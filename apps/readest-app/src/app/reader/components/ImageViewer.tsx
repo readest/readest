@@ -40,6 +40,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [isWheelZooming, setIsWheelZooming] = useState(false);
   const [showZoomLabel, setShowZoomLabel] = useState(true);
   const lastTouchDistance = useRef<number>(0);
   const dragStart = useRef({ x: 0, y: 0 });
@@ -47,9 +48,24 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const zoomLabelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wheelZoomEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Escape (desktop) and Android Back key → close the viewer.
   useKeyDownActions({ onCancel: onClose });
+
+  // A macOS trackpad pinch arrives as a rapid stream of ctrl+wheel events.
+  // Flag the gesture as active so the transform transition is suppressed while
+  // it streams (see the transition note below), then clear it shortly after the
+  // last event since wheel has no explicit gesture-end.
+  const markWheelZooming = () => {
+    setIsWheelZooming(true);
+    if (wheelZoomEndTimeoutRef.current) {
+      clearTimeout(wheelZoomEndTimeoutRef.current);
+    }
+    wheelZoomEndTimeoutRef.current = setTimeout(() => {
+      setIsWheelZooming(false);
+    }, 200);
+  };
 
   const hideZoomLabelAfterDelay = () => {
     if (zoomLabelTimeoutRef.current) {
@@ -154,6 +170,9 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
       if (zoomLabelTimeoutRef.current) {
         clearTimeout(zoomLabelTimeoutRef.current);
       }
+      if (wheelZoomEndTimeoutRef.current) {
+        clearTimeout(wheelZoomEndTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -170,6 +189,8 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
 
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
+
+    markWheelZooming();
 
     const delta = e.deltaY;
     const newScale = Math.min(
@@ -519,10 +540,12 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
             maxWidth: '100%',
             maxHeight: '100%',
             transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-            // No transition while dragging: the 0.05s ease made the image lag
-            // behind the cursor, which flickered on desktop (#4451). Keep the
-            // smoothing only for discrete zoom (buttons, double-click, wheel).
-            transition: isDragging ? 'none' : 'transform 0.05s ease-out',
+            // No transition during continuous gestures: the 0.05s ease made the
+            // image lag behind a moving pointer, which flickered on desktop
+            // (#4451). The same lag flickered a trackpad pinch (a rapid
+            // ctrl+wheel stream) on macOS (#4742). Keep the smoothing only for
+            // discrete zoom (buttons, double-click, keyboard).
+            transition: isDragging || isWheelZooming ? 'none' : 'transform 0.05s ease-out',
             // Promote to a GPU layer so transform changes don't repaint the
             // page (the `transform-gpu` class is overridden by this inline
             // transform, so its hint is lost).

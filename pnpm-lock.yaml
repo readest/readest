@@ -645,6 +645,22 @@ importers:
         specifier: ^5.1.4
         version: 5.1.4(webpack@5.106.2)
 
+  apps/readest-app/workers/iap-reconcile:
+    dependencies:
+      '@supabase/supabase-js':
+        specifier: ^2.45.0
+        version: 2.105.4
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.0.0
+        version: 4.20260518.1
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      wrangler:
+        specifier: ^4.0.0
+        version: 4.90.0(@cloudflare/workers-types@4.20260518.1)
+
   apps/readest-app/workers/send-email:
     dependencies:
       '@supabase/supabase-js':

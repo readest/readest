@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Trans } from 'react-i18next';
 import type { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
@@ -7,12 +7,18 @@ import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { formatNumber, formatProgress, getReferencePageInfo } from '@/utils/progress';
+import {
+  formatNumber,
+  formatProgress,
+  getChapterTickFractions,
+  getReferencePageInfo,
+} from '@/utils/progress';
 import { saveViewSettings } from '@/helpers/settings';
 import { eventDispatcher } from '@/utils/event';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import type { ProgressBarMode } from '@/types/book.ts';
 import StatusInfo from './StatusInfo.tsx';
+import StickyProgressBar from './StickyProgressBar.tsx';
 
 interface ProgressBarProps {
   bookKey: string;
@@ -67,6 +73,18 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const progressInfo = referenceInfo
     ? `${referenceInfo.current}${isVertical ? ' · ' : ' / '}${referenceInfo.total}`
     : formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
+
+  // Sticky progress bar is horizontal-only; vertical mode keeps its side footer.
+  const stickyBarActive = viewSettings.showStickyProgressBar && !isVertical;
+  const tickFractions = useMemo(
+    () => (stickyBarActive ? getChapterTickFractions(view, bookData?.bookDoc?.toc) : []),
+    [stickyBarActive, view, bookData?.bookDoc?.toc],
+  );
+  // Same size-domain as the chapter ticks; falls back to the page fraction
+  // before the first relocate has populated progress.fraction.
+  const fillFraction =
+    progress?.fraction ??
+    (pageInfo && pageInfo.total > 0 ? (pageInfo.current + 1) / pageInfo.total : 0);
 
   const { page: current = 0, pages: total = 0 } = view?.renderer || {};
   const pagesLeft = bookData?.isFixedLayout
@@ -244,14 +262,30 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     >
       <div
         aria-hidden='true'
-        className={clsx('flex items-center justify-between', isVertical ? 'h-full' : 'w-full')}
+        className={clsx(
+          'flex items-center',
+          isVertical ? 'h-full' : 'w-full',
+          // Sticky bar grows on the left; the info widgets pack to the right
+          // with even gaps. Without it, keep the 3-zone left/center/right row.
+          stickyBarActive ? 'gap-x-3' : 'justify-between',
+        )}
         style={isVertical ? {} : { height: `${viewSettings.marginBottomPx}px` }}
       >
+        {stickyBarActive && (
+          <StickyProgressBar
+            className='h-3 flex-1'
+            fraction={fillFraction}
+            tickFractions={tickFractions}
+            rtl={viewSettings.rtl}
+            isEink={isEink}
+          />
+        )}
         {(progressBarMode === 'all' || progressBarMode.includes('remaining')) &&
           hasRemainingInfo && (
             <div
               className={clsx(
-                'remaining-info flex-1 whitespace-nowrap text-start',
+                'remaining-info whitespace-nowrap text-start',
+                !stickyBarActive && 'flex-1',
                 showStatusInfo && 'overflow-hidden',
               )}
             >
@@ -308,7 +342,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           />
         )}
 
-        <div className='progress-info flex-1 items-center overflow-hidden whitespace-nowrap text-end tabular-nums'>
+        <div
+          className={clsx(
+            'progress-info items-center overflow-hidden whitespace-nowrap text-end tabular-nums',
+            !stickyBarActive && 'flex-1',
+          )}
+        >
           {(progressBarMode === 'all' || progressBarMode.includes('progress')) && (
             <>
               {viewSettings.showProgressInfo && (

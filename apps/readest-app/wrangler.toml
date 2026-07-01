@@ -40,3 +40,10 @@ id = "fa6e3eb1988a424bbf3c952e01650ced"
 [[r2_buckets]]
 binding = "NEXT_INC_CACHE_R2_BUCKET"
 bucket_name = "readest-next-inc-cache"
+
+# Per-event metrics for the App Store / Google Play subscription webhooks and the
+# reconciliation sweep. 100% capture, independent of the head-sampled Workers
+# Logs above. Queryable via the Analytics Engine SQL API.
+[[analytics_engine_datasets]]
+binding = "IAP_WEBHOOK_AE"
+dataset = "iap_webhooks"

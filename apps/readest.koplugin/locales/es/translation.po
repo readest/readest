@@ -68,6 +68,9 @@ msgstr "Ascendente"
 msgid "Actions"
 msgstr "Acciones"
 
+msgid "Download all books"
+msgstr "Descargar todos los libros"
+
 msgid "Rescan library"
 msgstr "Reescanear biblioteca"
 
@@ -133,6 +136,21 @@ msgstr "Falló la descarga de la portada."
 
 msgid "Could not delete the file."
 msgstr "No se pudo eliminar el archivo."
+
+msgid "No books to download."
+msgstr "No hay libros para descargar."
+
+msgid "Downloading %1 of %2…"
+msgstr "Descargando %1 de %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Descarga cancelada. %1 de %2 descargados."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 de %2 descargados (%3 omitidos)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 de %2 descargados."
 
 msgid "Removing from cloud…"
 msgstr "Eliminando de la nube…"

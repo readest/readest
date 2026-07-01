@@ -227,6 +227,54 @@ describe('ProofreadPopup Component', () => {
     });
   });
 
+  describe('Regex Toggle', () => {
+    it('should render the regex checkbox (off by default)', () => {
+      renderWithProviders(<ProofreadPopup {...defaultProps} />);
+
+      const regexLabel = screen.getByText('Regex:');
+      expect(regexLabel).toBeTruthy();
+      const checkbox = regexLabel
+        .closest('label')!
+        .querySelector('input[type="checkbox"]') as HTMLInputElement | null;
+      expect(checkbox).toBeTruthy();
+      expect(checkbox!.checked).toBe(false);
+    });
+
+    it('should call onConfirm with isRegex true when regex is enabled', async () => {
+      renderWithProviders(<ProofreadPopup {...defaultProps} />);
+
+      const regexLabel = screen.getByText('Regex:');
+      const regexCheckbox = regexLabel
+        .closest('label')!
+        .querySelector('input[type="checkbox"]') as HTMLInputElement;
+      fireEvent.click(regexCheckbox);
+
+      const input = screen.getByPlaceholderText('Enter text...');
+      fireEvent.change(input, { target: { value: 'replacement' } });
+
+      const applyButton = screen.getByText('Apply');
+      fireEvent.click(applyButton);
+
+      await waitFor(() => {
+        expect(mockOnConfirm).toHaveBeenCalledWith(expect.objectContaining({ isRegex: true }));
+      });
+    });
+
+    it('should default isRegex to false when the toggle is left off', async () => {
+      renderWithProviders(<ProofreadPopup {...defaultProps} />);
+
+      const input = screen.getByPlaceholderText('Enter text...');
+      fireEvent.change(input, { target: { value: 'replacement' } });
+
+      const applyButton = screen.getByText('Apply');
+      fireEvent.click(applyButton);
+
+      await waitFor(() => {
+        expect(mockOnConfirm).toHaveBeenCalledWith(expect.objectContaining({ isRegex: false }));
+      });
+    });
+  });
+
   describe('Click Outside Behavior', () => {
     it('should not call onClose when clicking inside the menu', () => {
       renderWithProviders(<ProofreadPopup {...defaultProps} />);

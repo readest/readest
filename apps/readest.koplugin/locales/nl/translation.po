@@ -68,6 +68,9 @@ msgstr "Oplopend"
 msgid "Actions"
 msgstr "Acties"
 
+msgid "Download all books"
+msgstr "Alle boeken downloaden"
+
 msgid "Rescan library"
 msgstr "Bibliotheek opnieuw scannen"
 
@@ -133,6 +136,21 @@ msgstr "Omslag downloaden mislukt."
 
 msgid "Could not delete the file."
 msgstr "Kon het bestand niet verwijderen."
+
+msgid "No books to download."
+msgstr "Geen boeken om te downloaden."
+
+msgid "Downloading %1 of %2…"
+msgstr "%1 van %2 wordt gedownload…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Download geannuleerd. %1 van %2 gedownload."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 van %2 gedownload (%3 overgeslagen)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 van %2 gedownload."
 
 msgid "Removing from cloud…"
 msgstr "Verwijderen uit cloud …"

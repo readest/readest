@@ -214,7 +214,17 @@ export class NativeTTSClient implements TTSClient {
   }
 
   async stop() {
-    await invoke('plugin:native-tts|stop');
+    // Bound the native stop so teardown (controller.stop / shutdown, and thus
+    // the TTS icon turning off) can never hang if the native side is slow to
+    // resolve — e.g. iOS AVSpeechSynthesizer / audio-session teardown. See #4676.
+    try {
+      await Promise.race([
+        invoke('plugin:native-tts|stop'),
+        new Promise<void>((resolve) => setTimeout(resolve, 1500)),
+      ]);
+    } catch (error) {
+      console.warn('Native TTS stop failed:', error);
+    }
     this.#activeUtterances.clear();
   }
 

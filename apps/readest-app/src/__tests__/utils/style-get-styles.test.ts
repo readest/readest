@@ -745,6 +745,32 @@ describe('getTranslationStyles branches (via getStyles)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// getRubyStyles branches (Word Lens gloss <rt> size + color)
+// ---------------------------------------------------------------------------
+describe('getRubyStyles branches (via getStyles)', () => {
+  const theme = makeThemeCode();
+  const rtBlock = (css: string) => css.match(/ruby\.wl-gloss\s*>\s*rt\s*\{([^}]*)\}/)?.[1] ?? '';
+
+  it('defaults the gloss to 0.5em and muted (opacity 0.7, no color override)', () => {
+    const block = rtBlock(getStyles(makeViewSettings(), theme));
+    expect(block).toMatch(/font-size:\s*0\.5em/);
+    expect(block).toMatch(/opacity:\s*0\.7/);
+    expect(block).not.toContain('color:');
+  });
+
+  it('applies a configured gloss font size', () => {
+    const block = rtBlock(getStyles(makeViewSettings({ wordLensGlossFontSize: 0.8 }), theme));
+    expect(block).toMatch(/font-size:\s*0\.8em/);
+  });
+
+  it('applies a configured gloss color at full opacity', () => {
+    const block = rtBlock(getStyles(makeViewSettings({ wordLensGlossColor: '#ff0000' }), theme));
+    expect(block).toMatch(/color:\s*#ff0000/);
+    expect(block).toMatch(/opacity:\s*1\b/);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getStyles integration: userStylesheet appended
 // ---------------------------------------------------------------------------
 describe('getStyles integration', () => {

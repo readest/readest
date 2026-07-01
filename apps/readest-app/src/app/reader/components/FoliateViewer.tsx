@@ -27,7 +27,7 @@ import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useEinkMode } from '@/hooks/useEinkMode';
 import { useKOSync } from '../hooks/useKOSync';
-import { useWebDAVSync } from '../hooks/useWebDAVSync';
+import { useFileSync } from '../hooks/useFileSync';
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
@@ -152,7 +152,7 @@ const FoliateViewer: React.FC<{
   useXRayAutoUpdate(bookKey);
   useBookCoverAutoSave(bookKey);
   const { syncState, conflictDetails, resolveWithLocal, resolveWithRemote } = useKOSync(bookKey);
-  useWebDAVSync(bookKey);
+  useFileSync(bookKey);
   useTextTranslation(bookKey, viewRef.current);
 
   // Coalesce setProgress writes within a single animation frame.
@@ -199,6 +199,7 @@ const FoliateViewer: React.FC<{
       pageInfo,
       detail.time,
       detail.range,
+      detail.fraction,
     );
   }, [bookKey, setProgress]);
 
@@ -206,6 +207,20 @@ const FoliateViewer: React.FC<{
     // Always stash the latest detail; if another rAF is already pending
     // it'll pick this up and the intermediate states are skipped.
     pendingRelocateRef.current = event as CustomEvent;
+    // requestAnimationFrame is paused while the WebView is backgrounded, so the
+    // rAF-coalesced commit below would never run during background TTS - which
+    // freezes book.progress (and readerProgressStore, and the home-screen
+    // widget that reads them). Commit synchronously when hidden so progress
+    // stays current. The page-follow relocate still fires; only the commit was
+    // being deferred.
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+      if (relocateRafRef.current != null) {
+        cancelAnimationFrame(relocateRafRef.current);
+        relocateRafRef.current = null;
+      }
+      commitRelocate();
+      return;
+    }
     if (relocateRafRef.current != null) return;
     relocateRafRef.current = requestAnimationFrame(commitRelocate);
   };
@@ -257,6 +272,7 @@ const FoliateViewer: React.FC<{
                 'language',
                 'sanitizer',
                 'simplecc',
+                'nbsp',
                 'proofread',
                 'warichu',
               ],
@@ -690,6 +706,14 @@ const FoliateViewer: React.FC<{
       } else {
         view.renderer.removeAttribute('animated');
       }
+      // iOS WebKit composites large/persistent page layers without the Android
+      // high-DPR Blink freeze, so opt this renderer into the GPU-accelerated
+      // page-turn path (persistent compositor layers + no main-thread
+      // rafAnimateScroll fallback) to keep 120Hz ProMotion turns smooth
+      // (readest#4768).
+      if (appService?.isIOSApp) {
+        view.renderer.setAttribute('gpu-composite', '');
+      }
       if (viewSettings.disableSwipe) {
         view.renderer.setAttribute('no-swipe', '');
       } else {
@@ -828,6 +852,7 @@ const FoliateViewer: React.FC<{
     viewSettings?.overrideColor,
     viewSettings?.invertImgColorInDark,
     viewSettings?.applyThemeToPDF,
+    viewSettings?.contrast,
     viewSettings?.hideScrollbar,
   ]);
 

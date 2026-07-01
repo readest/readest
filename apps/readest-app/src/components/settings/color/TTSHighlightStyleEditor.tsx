@@ -1,6 +1,7 @@
 import React from 'react';
 import { MdClose } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
+import { TTSHighlightGranularity } from '@/services/tts/types';
 import { BoxedList, SettingsRow, SettingsSelect } from '../primitives';
 import ColorInput from './ColorInput';
 
@@ -12,18 +13,22 @@ export type TTSHighlightStyle =
   | 'outline';
 
 interface TTSHighlightStyleEditorProps {
+  granularity: TTSHighlightGranularity;
   style: TTSHighlightStyle;
   color: string;
   customColors: string[];
+  onGranularityChange: (granularity: TTSHighlightGranularity) => void;
   onStyleChange: (style: TTSHighlightStyle) => void;
   onColorChange: (color: string) => void;
   onCustomColorsChange: (colors: string[]) => void;
 }
 
 const TTSHighlightStyleEditor: React.FC<TTSHighlightStyleEditorProps> = ({
+  granularity,
   style,
   color,
   customColors,
+  onGranularityChange,
   onStyleChange,
   onColorChange,
   onCustomColorsChange,
@@ -60,6 +65,18 @@ const TTSHighlightStyleEditor: React.FC<TTSHighlightStyleEditorProps> = ({
 
   return (
     <BoxedList title={_('TTS Highlighting')}>
+      <SettingsRow label={_('Granularity')}>
+        <SettingsSelect
+          value={granularity}
+          onChange={(e) => onGranularityChange(e.target.value as TTSHighlightGranularity)}
+          ariaLabel={_('Granularity')}
+          options={[
+            { value: 'word', label: _('Word') },
+            { value: 'sentence', label: _('Sentence') },
+          ]}
+        />
+      </SettingsRow>
+
       <SettingsRow label={_('Style')}>
         <SettingsSelect
           value={style}

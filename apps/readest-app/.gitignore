@@ -76,6 +76,7 @@ docs/superpowers
 .context/
 .claude/settings.local.json
 .claude/skills
+.claude/plans
 
 # Playwright web e2e
 /test-results/
@@ -83,3 +84,7 @@ docs/superpowers
 /blob-report/
 /playwright/.cache/
 
+
+# Word Lens build-input corpora (ECDICT, WikDict, FrequencyWords, etc.) — large,
+# downloaded on demand by scripts/build-wordlens-data.mjs; cached locally, not committed.
+/data/wordlens/.sources/

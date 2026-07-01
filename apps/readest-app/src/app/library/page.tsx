@@ -36,14 +36,19 @@ import { useTheme } from '@/hooks/useTheme';
 import { useUICSS } from '@/hooks/useUICSS';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
+import { useLibraryFileSync } from './hooks/useLibraryFileSync';
 import { useInboxDrainer } from '@/hooks/useInboxDrainer';
 import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTransferStore } from '@/store/transferStore';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
+import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
+import { getLibraryViewSettings } from '@/helpers/settings';
 import { useAppUrlIngress } from '@/hooks/useAppUrlIngress';
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { useOpenAnnotationLink } from '@/hooks/useOpenAnnotationLink';
+import { useOpenBookLink } from '@/hooks/useOpenBookLink';
+import { useReadingWidget } from '@/hooks/useReadingWidget';
 import { useOpenShareLink } from '@/hooks/useOpenShareLink';
 import { useClipUrlIngress } from '@/hooks/useClipUrlIngress';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
@@ -241,14 +246,39 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   useTheme({ systemUIVisible: true, appThemeColor: 'base-200' });
   useUICSS();
 
+  // Apply the library's own background texture (separate from the reader's,
+  // issue #4743). Re-applies on mount so returning from a textured book
+  // restores the library background, and whenever the library texture — or the
+  // reader/global texture it inherits when unset — changes from the Color panel.
+  const { applyBackgroundTexture } = useBackgroundTexture();
+  useEffect(() => {
+    applyBackgroundTexture(envConfig, getLibraryViewSettings(settings));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    envConfig,
+    applyBackgroundTexture,
+    settings.libraryBackgroundTextureId,
+    settings.libraryBackgroundOpacity,
+    settings.libraryBackgroundSize,
+    settings.globalViewSettings?.backgroundTextureId,
+    settings.globalViewSettings?.backgroundOpacity,
+    settings.globalViewSettings?.backgroundSize,
+  ]);
+
   useAppUrlIngress();
   useOpenWithBooks();
   useOpenAnnotationLink();
+  useOpenBookLink();
+  useReadingWidget();
   useOpenShareLink();
   useClipUrlIngress();
   useTransferQueue(libraryLoaded);
 
   const { pullLibrary, pushLibrary } = useBooksSync();
+  // Library-scoped auto-sync for the active third-party cloud provider (WebDAV /
+  // Google Drive): keeps library.json current on import / delete / book-close,
+  // parity with useBooksSync. No-op when no provider is enabled.
+  useLibraryFileSync();
   const { checkOPDSSubscriptions } = useOPDSSubscriptions();
   useInboxDrainer();
   const { isDragging } = useDragDropImport();
@@ -944,6 +974,32 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           metadata.coverImageBlobUrl || metadata.coverImageUrl,
           metadata.coverImageFile,
         );
+        // Cover-change sync (issue #4544): recompute the cover's content hash.
+        // If it actually changed, bump coverHash + coverUpdatedAt so peers
+        // re-download it (the book row already syncs via updatedAt).
+        // computeCoverHash returns null for a '_blank' deletion — we skip the
+        // bump there (cover deletion is intentionally not synced; peers keep
+        // their cover until a new one is set).
+        const newCoverHash = (await appService?.computeCoverHash(updatedBook)) ?? null;
+        if (newCoverHash && newCoverHash !== book.coverHash) {
+          // For a book already in the cloud, re-upload the cover FIRST and only
+          // advertise the new version if it succeeded — otherwise peers would
+          // try to fetch a cover that isn't there. A not-yet-uploaded book
+          // carries the new cover on its first full upload, so the bump is safe.
+          let coverUploaded = true;
+          if (user && updatedBook.uploadedAt) {
+            try {
+              await appService?.uploadBookCover(updatedBook);
+            } catch (uploadError) {
+              console.warn('Failed to upload updated cover:', uploadError);
+              coverUploaded = false;
+            }
+          }
+          if (coverUploaded) {
+            updatedBook.coverHash = newCoverHash;
+            updatedBook.coverUpdatedAt = Date.now();
+          }
+        }
       } catch (error) {
         console.warn('Failed to update cover image:', error);
       }
@@ -1453,6 +1509,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 handleBookUpload={handleBookUpload}
                 handleBookDownload={handleBookDownload}
                 handleBookDelete={handleBookDelete('both')}
+                handleBookPurge={handleBookDelete('purge')}
                 handleSetSelectMode={handleSetSelectMode}
                 handleShowDetailsBook={handleShowDetailsBook}
                 handleLibraryNavigation={handleLibraryNavigation}

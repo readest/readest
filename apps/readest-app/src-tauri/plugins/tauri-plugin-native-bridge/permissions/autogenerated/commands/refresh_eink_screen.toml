@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-refresh-eink-screen"
+description = "Enables the refresh_eink_screen command without any pre-configured scope."
+commands.allow = ["refresh_eink_screen"]
+
+[[permission]]
+identifier = "deny-refresh-eink-screen"
+description = "Denies the refresh_eink_screen command without any pre-configured scope."
+commands.deny = ["refresh_eink_screen"]

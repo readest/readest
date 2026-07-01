@@ -68,6 +68,9 @@ msgstr "صعودی"
 msgid "Actions"
 msgstr "اقدامات"
 
+msgid "Download all books"
+msgstr "دانلود همه کتاب‌ها"
+
 msgid "Rescan library"
 msgstr "اسکن مجدد کتابخانه"
 
@@ -133,6 +136,21 @@ msgstr "دانلود جلد ناموفق بود."
 
 msgid "Could not delete the file."
 msgstr "حذف فایل ممکن نشد."
+
+msgid "No books to download."
+msgstr "کتابی برای دانلود وجود ندارد."
+
+msgid "Downloading %1 of %2…"
+msgstr "در حال دانلود %1 از %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "دانلود لغو شد. %1 از %2 دانلود شد."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 از %2 دانلود شد (%3 رد شد)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 از %2 دانلود شد."
 
 msgid "Removing from cloud…"
 msgstr "در حال حذف از فضای ابری…"

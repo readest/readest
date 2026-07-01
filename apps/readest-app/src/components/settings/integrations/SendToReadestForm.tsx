@@ -257,7 +257,7 @@ const SendToReadestForm: React.FC<SendToReadestFormProps> = ({ onBack }) => {
             <SectionTitle className='mb-2'>{_('Your inbound address')}</SectionTitle>
             <div className='card eink-bordered border-base-200 bg-base-100 divide-base-200 overflow-hidden border'>
               <div className='flex items-center gap-2 px-4 py-3'>
-                <code className='min-w-0 flex-1 truncate text-sm'>{address}</code>
+                <code className='line-clamp-2 min-w-0 flex-1 break-all text-sm'>{address}</code>
                 {address && (
                   <button
                     type='button'
@@ -320,7 +320,7 @@ const SendToReadestForm: React.FC<SendToReadestFormProps> = ({ onBack }) => {
                 {senders.map((sender) => (
                   <div key={sender.id} className='flex items-center gap-3 px-4 py-3'>
                     <div className='flex min-w-0 flex-1 flex-col'>
-                      <SettingLabel>{sender.email}</SettingLabel>
+                      <code className='line-clamp-2 break-all text-sm'>{sender.email}</code>
                       {sender.status === 'pending' && (
                         <span className='text-warning text-[0.8em]'>{_('Pending approval')}</span>
                       )}

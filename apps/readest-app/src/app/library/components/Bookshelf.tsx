@@ -43,6 +43,7 @@ import {
   compareSortValues,
   resolveEffectivePrimarySort,
   resolveEffectiveSecondarySort,
+  selectRecentShelfBooks,
   withReadingStatus,
 } from '../utils/libraryUtils';
 import { eventDispatcher } from '@/utils/event';
@@ -51,7 +52,7 @@ import { MIMETYPES, EXTS } from '@/libs/document';
 import { makeSafeFilename } from '@/utils/misc';
 
 import { useSpatialNavigation } from '../hooks/useSpatialNavigation';
-import Alert from '@/components/Alert';
+import DeleteConfirmAlert from '@/components/DeleteConfirmAlert';
 import Spinner from '@/components/Spinner';
 import ModalPortal from '@/components/ModalPortal';
 import BookshelfItem, { generateBookshelfItems } from './BookshelfItem';
@@ -60,6 +61,8 @@ import ShareBookDialog from './ShareBookDialog';
 import { useAuth } from '@/context/AuthContext';
 import GroupingModal from './GroupingModal';
 import SetStatusAlert from './SetStatusAlert';
+import RecentShelf, { RECENT_SHELF_BOOK_COUNT } from './RecentShelf';
+import { useOpenBook } from '../hooks/useOpenBook';
 
 interface BookshelfProps {
   libraryBooks: Book[];
@@ -74,6 +77,7 @@ interface BookshelfProps {
   ) => Promise<boolean>;
   handleBookUpload: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
+  handleBookPurge: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleSetSelectMode: (selectMode: boolean) => void;
   handleShowDetailsBook: (book: Book) => void;
   handleLibraryNavigation: (targetGroup: string) => void;
@@ -89,6 +93,13 @@ interface BookshelfProps {
 type BookshelfListContext = {
   autoColumns: boolean;
   fixedColumns: number;
+  /**
+   * The recently-read shelf, rendered in the Virtuoso header so it scrolls with
+   * the shelf content (not sticky). `null` when hidden. Passed through context
+   * (rather than recreating the Header component) so Virtuoso keeps the Header
+   * identity stable and does not reset its scroller on every Bookshelf render.
+   */
+  recentShelfHeader: React.ReactNode;
 };
 
 const BOOKSHELF_GRID_CLASSES =
@@ -118,21 +129,28 @@ const BookshelfGridList: GridComponents<BookshelfListContext>['List'] = React.fo
 ));
 BookshelfGridList.displayName = 'BookshelfGridList';
 
-const BookshelfLinearList: Components['List'] = React.forwardRef<HTMLDivElement, ListProps>(
-  ({ children, style, 'data-testid': testId }, ref) => (
-    <div ref={ref} data-testid={testId} className={BOOKSHELF_LIST_CLASSES} style={style}>
-      {children}
-    </div>
-  ),
-);
+const BookshelfLinearList: Components<unknown, BookshelfListContext>['List'] = React.forwardRef<
+  HTMLDivElement,
+  ListProps
+>(({ children, style, 'data-testid': testId }, ref) => (
+  <div ref={ref} data-testid={testId} className={BOOKSHELF_LIST_CLASSES} style={style}>
+    {children}
+  </div>
+));
 BookshelfLinearList.displayName = 'BookshelfLinearList';
+
+const BookshelfHeader = ({ context }: { context?: BookshelfListContext }) => (
+  <>{context?.recentShelfHeader ?? null}</>
+);
 
 const GRID_VIRTUOSO_COMPONENTS: GridComponents<BookshelfListContext> = {
   List: BookshelfGridList,
+  Header: BookshelfHeader,
   Footer: () => <div style={{ height: 34 }} />,
 };
-const LIST_VIRTUOSO_COMPONENTS: Components = {
+const LIST_VIRTUOSO_COMPONENTS: Components<unknown, BookshelfListContext> = {
   List: BookshelfLinearList,
+  Header: BookshelfHeader,
   Footer: () => <div style={{ height: 34 }} />,
 };
 
@@ -146,6 +164,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   handleBookUpload,
   handleBookDownload,
   handleBookDelete,
+  handleBookPurge,
   handleSetSelectMode,
   handleShowDetailsBook,
   handleLibraryNavigation,
@@ -390,8 +409,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     return filteredBooks.filter((book) => wanted.has(book.hash) && !book.deletedAt);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = async (purgeData: boolean) => {
     const books = getBooksToDelete();
+    // Toggling "purge all reading data" on the confirmation routes the whole
+    // batch through the purge path, which also wipes each book's reading-data
+    // sidecars (config/nav) instead of leaving the metadata folder behind.
+    const deleteBook = purgeData ? handleBookPurge : handleBookDelete;
     const concurrency = 20;
 
     for (let i = 0; i < books.length; i += concurrency) {
@@ -400,7 +423,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         break;
       }
       const batch = books.slice(i, i + concurrency);
-      await Promise.all(batch.map((book) => handleBookDelete(book, false)));
+      await Promise.all(batch.map((book) => deleteBook(book, false)));
     }
     handlePushLibrary();
     setSelectedBooks([]);
@@ -662,12 +685,63 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   // last book; list mode doesn't have an import tile.
   const gridTotalCount = hasItems ? sortedBookshelfItems.length + 1 : 0;
 
+  // Recently-read shelf: shares the availability-aware open path with per-item
+  // taps so cloud-only synced books download before opening. `openBook` is
+  // memoized inside the hook, keeping `openRecentBook` -> `recentShelfHeader`
+  // -> `listContext` identities stable (no full-grid re-render churn).
+  const { openBook } = useOpenBook({ setLoading, handleBookDownload });
+  const openRecentBook = useCallback((book: Book) => openBook(book), [openBook]);
+
+  // Flat recency slice of the whole library, independent of the main shelf's
+  // sort/grouping. Built from `libraryBooks` (not the sorted/filtered items).
+  const recentBooks = useMemo(
+    () => selectRecentShelfBooks(libraryBooks, RECENT_SHELF_BOOK_COUNT),
+    [libraryBooks],
+  );
+
+  // A top-level quick-resume strip: hidden while searching, inside a group,
+  // selecting, or when nothing has been read yet.
+  const showRecentShelf =
+    settings.libraryRecentShelfEnabled &&
+    !queryTerm &&
+    !groupId &&
+    !isSelectMode &&
+    recentBooks.length > 0;
+
+  const recentShelfHeader = useMemo(
+    () =>
+      showRecentShelf ? (
+        <RecentShelf
+          books={recentBooks}
+          coverFit={coverFit as LibraryCoverFitType}
+          autoColumns={settings.libraryAutoColumns}
+          fixedColumns={settings.libraryColumns}
+          onOpenBook={openRecentBook}
+          handleBookUpload={handleBookUpload}
+          handleBookDownload={handleBookDownload}
+          showBookDetailsModal={handleShowDetailsBook}
+        />
+      ) : null,
+    [
+      showRecentShelf,
+      recentBooks,
+      coverFit,
+      settings.libraryAutoColumns,
+      settings.libraryColumns,
+      openRecentBook,
+      handleBookUpload,
+      handleBookDownload,
+      handleShowDetailsBook,
+    ],
+  );
+
   const listContext = useMemo<BookshelfListContext>(
     () => ({
       autoColumns: settings.libraryAutoColumns,
       fixedColumns: settings.libraryColumns,
+      recentShelfHeader,
     }),
-    [settings.libraryAutoColumns, settings.libraryColumns],
+    [settings.libraryAutoColumns, settings.libraryColumns, recentShelfHeader],
   );
 
   const renderBookshelfItem = useCallback(
@@ -780,10 +854,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           />
         )}
         {hasItems && !isGridMode && (
-          <Virtuoso
+          <Virtuoso<unknown, BookshelfListContext>
             overscan={200}
             totalCount={sortedBookshelfItems.length}
             components={LIST_VIRTUOSO_COMPONENTS}
+            context={listContext}
             computeItemKey={computeItemKey}
             itemContent={renderBookshelfItem}
             scrollerRef={handleScrollerRef}
@@ -843,11 +918,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             paddingBottom: `${(safeAreaInsets?.bottom || 0) + 16}px`,
           }}
         >
-          <Alert
+          <DeleteConfirmAlert
             title={_('Confirm Deletion')}
             message={_('Are you sure to delete {{count}} selected book(s)?', {
               count: getBooksToDelete().length,
             })}
+            showPurgeToggle
             onCancel={() => {
               abortDeletionRef.current = true;
               setShowDeleteAlert(false);

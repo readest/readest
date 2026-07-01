@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { buildRequestUrl } from '@/services/webdav/WebDAVClient';
+import { buildRequestUrl } from '@/services/sync/providers/webdav/client';
 
 describe('buildRequestUrl (encodePath)', () => {
   test('escapes spaces and unicode in each segment', () => {

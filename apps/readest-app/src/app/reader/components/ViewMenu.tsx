@@ -5,13 +5,21 @@ import { useRouter } from 'next/navigation';
 import { BiMoon, BiSun } from 'react-icons/bi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline } from 'react-icons/md';
+import { MdRemove, MdAdd, MdContrast } from 'react-icons/md';
 import { MdSync, MdSyncProblem } from 'react-icons/md';
 import { IoMdExpand } from 'react-icons/io';
 import { IoShareOutline } from 'react-icons/io5';
 import { TbArrowAutofitWidth } from 'react-icons/tb';
 import { TbColumns1, TbColumns2 } from 'react-icons/tb';
 
-import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
+import {
+  MAX_ZOOM_LEVEL,
+  MIN_ZOOM_LEVEL,
+  ZOOM_STEP,
+  MAX_CONTRAST,
+  MIN_CONTRAST,
+  CONTRAST_STEP,
+} from '@/services/constants';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeStore } from '@/store/themeStore';
@@ -60,6 +68,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     viewSettings?.paragraphMode?.enabled ?? false,
   );
   const [zoomLevel, setZoomLevel] = useState(viewSettings!.zoomLevel!);
+  const [contrast, setContrast] = useState(viewSettings!.contrast ?? 100);
   const [zoomMode, setZoomMode] = useState(viewSettings!.zoomMode!);
   const [spreadMode, setSpreadMode] = useState(viewSettings!.spreadMode!);
   const [keepCoverSpread, setKeepCoverSpread] = useState(viewSettings!.keepCoverSpread!);
@@ -71,6 +80,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const zoomIn = () => setZoomLevel((prev) => Math.min(prev + ZOOM_STEP, MAX_ZOOM_LEVEL));
   const zoomOut = () => setZoomLevel((prev) => Math.max(prev - ZOOM_STEP, MIN_ZOOM_LEVEL));
   const resetZoom = () => setZoomLevel(100);
+  const increaseContrast = () =>
+    setContrast((prev) => Math.min(prev + CONTRAST_STEP, MAX_CONTRAST));
+  const decreaseContrast = () =>
+    setContrast((prev) => Math.max(prev - CONTRAST_STEP, MIN_CONTRAST));
+  const resetContrast = () => setContrast(100);
   const toggleScrolledMode = () => setScrolledMode(!isScrolledMode);
   const toggleWebtoonMode = () => setWebtoonMode(!webtoonMode);
   const toggleParagraphMode = () => {
@@ -158,6 +172,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoomLevel]);
+
+  useEffect(() => {
+    if (contrast === viewSettings.contrast) return;
+    saveViewSettings(envConfig, bookKey, 'contrast', contrast, true, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contrast]);
 
   useEffect(() => {
     if (invertImgColorInDark === viewSettings.invertImgColorInDark) return;
@@ -254,6 +274,42 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
               )}
             >
               <MdZoomIn />
+            </button>
+          </div>
+
+          <div
+            title={_('Contrast')}
+            className={clsx('mt-2 flex items-center justify-between rounded-md')}
+          >
+            <button
+              title={_('Decrease Contrast')}
+              onClick={decreaseContrast}
+              className={clsx(
+                'hover:bg-base-300 text-base-content rounded-full p-2',
+                contrast <= MIN_CONTRAST && 'btn-disabled text-gray-400',
+              )}
+            >
+              <MdRemove />
+            </button>
+            <button
+              title={_('Reset Contrast')}
+              className={clsx(
+                'hover:bg-base-300 text-base-content flex h-8 min-h-8 w-[50%] items-center justify-center gap-1 rounded-md p-1 text-center',
+              )}
+              onClick={resetContrast}
+            >
+              <MdContrast size={16} />
+              {Math.round(contrast)}%
+            </button>
+            <button
+              title={_('Increase Contrast')}
+              onClick={increaseContrast}
+              className={clsx(
+                'hover:bg-base-300 text-base-content rounded-full p-2',
+                contrast >= MAX_CONTRAST && 'btn-disabled text-gray-400',
+              )}
+            >
+              <MdAdd />
             </button>
           </div>
 

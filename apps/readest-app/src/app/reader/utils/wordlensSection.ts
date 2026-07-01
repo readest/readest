@@ -53,7 +53,9 @@ export const refreshSectionGlosses = async (
     const source = toWordLensSource(ctx.bookLang);
     if (!source || !canTokenizeSource(source)) return;
     const hint = (viewSettings.wordLensHintLang || ctx.appLang).toLowerCase().split('-')[0] || '';
-    if (!hint || hint === source) return; // no self-gloss
+    // Same-language packs (e.g. en-en monolingual) are allowed; availability is
+    // decided by the manifest — loadGlossIndex returns null when no pack exists.
+    if (!hint) return;
     const index = await loadGlossIndex(ctx.appService, source, hint, {
       onProgress: ctx.onProgress,
       allowDownload: ctx.allowDownload,
@@ -69,6 +71,7 @@ export const refreshSectionGlosses = async (
       sourceLang: source,
       rankCutoff: getRankCutoff(source, viewSettings.wordLensLevel),
       cutZh: source === 'zh' ? cutZh : undefined,
+      monolingual: hint === source, // en-en: gloss is a build-formatted definition
     });
     if (occ.length) applyGlosses(doc, model, occ);
   } catch (err) {

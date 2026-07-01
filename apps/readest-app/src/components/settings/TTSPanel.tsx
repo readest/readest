@@ -6,7 +6,7 @@ import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { useTranslation } from '@/hooks/useTranslation';
 import { saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
-import { TTSMediaMetadataMode } from '@/services/tts/types';
+import { TTSHighlightGranularity, TTSMediaMetadataMode } from '@/services/tts/types';
 import { BoxedList, SettingsRow, SettingsSelect } from './primitives';
 import TTSHighlightStyleEditor, { TTSHighlightStyle } from './color/TTSHighlightStyleEditor';
 
@@ -19,6 +19,9 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
 
   const [ttsMediaMetadata, setTtsMediaMetadata] = useState<TTSMediaMetadataMode>(
     viewSettings.ttsMediaMetadata ?? 'sentence',
+  );
+  const [ttsHighlightGranularity, setTtsHighlightGranularity] = useState<TTSHighlightGranularity>(
+    viewSettings.ttsHighlightGranularity ?? 'word',
   );
   const [ttsHighlightStyle, setTtsHighlightStyle] = useState(
     viewSettings.ttsHighlightOptions.style,
@@ -35,6 +38,9 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
   const handleReset = () => {
     resetToDefaults({
       ttsMediaMetadata: setTtsMediaMetadata as React.Dispatch<React.SetStateAction<string>>,
+      ttsHighlightGranularity: setTtsHighlightGranularity as React.Dispatch<
+        React.SetStateAction<string>
+      >,
     });
   };
 
@@ -48,6 +54,19 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
     saveViewSettings(envConfig, bookKey, 'ttsMediaMetadata', ttsMediaMetadata, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsMediaMetadata]);
+
+  useEffect(() => {
+    if (ttsHighlightGranularity === viewSettings.ttsHighlightGranularity) return;
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'ttsHighlightGranularity',
+      ttsHighlightGranularity,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ttsHighlightGranularity]);
 
   const handleTTSStyleChange = (style: TTSHighlightStyle) => {
     setTtsHighlightStyle(style);
@@ -76,12 +95,18 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
     setTtsMediaMetadata(event.target.value as TTSMediaMetadataMode);
   };
 
+  const handleTTSGranularityChange = (granularity: TTSHighlightGranularity) => {
+    setTtsHighlightGranularity(granularity);
+  };
+
   return (
     <div className='my-4 w-full space-y-6'>
       <TTSHighlightStyleEditor
+        granularity={ttsHighlightGranularity}
         style={ttsHighlightStyle}
         color={ttsHighlightColor}
         customColors={customTtsHighlightColors}
+        onGranularityChange={handleTTSGranularityChange}
         onStyleChange={handleTTSStyleChange}
         onColorChange={handleTTSColorChange}
         onCustomColorsChange={handleCustomTtsColorsChange}

@@ -68,6 +68,9 @@ msgstr "Artan"
 msgid "Actions"
 msgstr "İşlemler"
 
+msgid "Download all books"
+msgstr "Tüm kitapları indir"
+
 msgid "Rescan library"
 msgstr "Kütüphaneyi yeniden tara"
 
@@ -133,6 +136,21 @@ msgstr "Kapak indirilemedi."
 
 msgid "Could not delete the file."
 msgstr "Dosya silinemedi."
+
+msgid "No books to download."
+msgstr "İndirilecek kitap yok."
+
+msgid "Downloading %1 of %2…"
+msgstr "%2 kitaptan %1. indiriliyor…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "İndirme iptal edildi. %2 kitaptan %1 tanesi indirildi."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 kitaptan %1 tanesi indirildi (%3 tanesi atlandı)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 kitaptan %1 tanesi indirildi."
 
 msgid "Removing from cloud…"
 msgstr "Buluttan kaldırılıyor…"

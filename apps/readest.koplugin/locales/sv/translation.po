@@ -68,6 +68,9 @@ msgstr "Stigande"
 msgid "Actions"
 msgstr "Åtgärder"
 
+msgid "Download all books"
+msgstr "Ladda ned alla böcker"
+
 msgid "Rescan library"
 msgstr "Skanna biblioteket igen"
 
@@ -133,6 +136,21 @@ msgstr "Nedladdning av omslag misslyckades."
 
 msgid "Could not delete the file."
 msgstr "Kunde inte ta bort filen."
+
+msgid "No books to download."
+msgstr "Inga böcker att ladda ned."
+
+msgid "Downloading %1 of %2…"
+msgstr "Laddar ned %1 av %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Nedladdning avbruten. %1 av %2 nedladdade."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Laddade ned %1 av %2 (hoppade över %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Laddade ned %1 av %2."
 
 msgid "Removing from cloud…"
 msgstr "Tar bort från molnet …"

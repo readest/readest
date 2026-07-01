@@ -15,54 +15,63 @@
       "source": "en",
       "target": "de",
       "file": "en-de.json",
-      "bytes": 962032,
-      "sha256": "e7475f241743006278a3d771b08570f4bc9a49faa32007837e7a74461ee188e9",
-      "entries": 14487
+      "bytes": 1013755,
+      "sha256": "a2919c2a0ceddca92d6cdcbcdc361b17c68f7264485ebf98a52af20533139264",
+      "entries": 14926
+    },
+    {
+      "pair": "en-en",
+      "source": "en",
+      "target": "en",
+      "file": "en-en.json",
+      "bytes": 1777292,
+      "sha256": "534bf6c6d3ad23027066693f558fe1a30f01b14024ed4dda0bcd202e31cbf22e",
+      "entries": 24246
     },
     {
       "pair": "en-es",
       "source": "en",
       "target": "es",
       "file": "en-es.json",
-      "bytes": 946854,
-      "sha256": "9b91c73c693bdade1458eb234eaa606a6490a6ec851deb229556fa4cbac21081",
-      "entries": 14322
+      "bytes": 997231,
+      "sha256": "407a48af3067139b2ad0cf29d9d93b4e06a56b3764544cde918255f5eec2e90a",
+      "entries": 14769
     },
     {
       "pair": "en-fr",
       "source": "en",
       "target": "fr",
       "file": "en-fr.json",
-      "bytes": 933430,
-      "sha256": "ff7dbd0a8b6a063db4ee69bcf595b718cd8f23542860a6f8377b43e0c093abdc",
-      "entries": 14653
+      "bytes": 982646,
+      "sha256": "d067f9b4d0a9d23f08c35d3546124cdc91e7e0fed47d48c02fb812dcab10a418",
+      "entries": 15070
     },
     {
       "pair": "en-pt",
       "source": "en",
       "target": "pt",
       "file": "en-pt.json",
-      "bytes": 924391,
-      "sha256": "776ce8b30aca99856927ddc767c432d987c79efe0024729418ada9f1c261bce8",
-      "entries": 14209
+      "bytes": 972984,
+      "sha256": "f29b738eacb4851cb2a20e95ee418d0a17e33e8aecfbafe3bbc705d9a2db6230",
+      "entries": 14656
     },
     {
       "pair": "en-ru",
       "source": "en",
       "target": "ru",
       "file": "en-ru.json",
-      "bytes": 1197025,
-      "sha256": "1d8e7c044d2412c6608dce7844dd0a90f40f041c95692879a9649284a55e6d6a",
-      "entries": 14491
+      "bytes": 1270231,
+      "sha256": "3cb82f8c167f6e5302d0164dcdff27c40b92424a09ab5fc920c3ec418565395d",
+      "entries": 14925
     },
     {
       "pair": "en-zh",
       "source": "en",
       "target": "zh",
       "file": "en-zh.json",
-      "bytes": 2343610,
-      "sha256": "693a94940e07e64c332366a9033dd3f3bd86ce18b6d439fdb7074383668bb5c6",
-      "entries": 26729
+      "bytes": 1803715,
+      "sha256": "4132a5b9262d6aaf933022be4a060fb41a7ac3fe71f2ccc82618c3215e35f60c",
+      "entries": 24446
     },
     {
       "pair": "es-en",

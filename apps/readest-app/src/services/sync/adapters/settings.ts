@@ -33,6 +33,10 @@ export const SETTINGS_REPLICA_ID = 'singleton';
 export const SETTINGS_WHITELIST = [
   'globalViewSettings.userStylesheet',
   'globalViewSettings.userUIStylesheet',
+  // Library-scope proofread (find/replace) rules. Whole-field LWW like the
+  // other arrays here. Book- and selection-scope rules already ride along the
+  // book config sync; only these global rules were stranded on one device.
+  'globalViewSettings.proofreadRules',
   'globalReadSettings.customThemes',
   'globalReadSettings.customHighlightColors',
   'globalReadSettings.userHighlightColors',
@@ -45,6 +49,7 @@ export const SETTINGS_WHITELIST = [
   'dictionarySettings.providerOrder',
   'dictionarySettings.providerEnabled',
   'dictionarySettings.webSearches',
+  'dictionarySettings.fontScale',
   // External integrations. Server URL + identifiers sync as plaintext;
   // the credential fields are listed in `encryptedFields` below so the
   // publish/pull middleware wraps them in cipher envelopes.
@@ -55,6 +60,15 @@ export const SETTINGS_WHITELIST = [
   'readwise.baseUrl',
   'readwise.accessToken',
   'hardcover.accessToken',
+  // WebDAV connection. serverUrl + rootPath sync as plaintext so a fresh
+  // device pre-fills the connect form; username / password are listed in
+  // `encryptedFields` below. Per-device bookkeeping (enabled, deviceId,
+  // lastSyncedAt, sync sub-toggles) is deliberately excluded — see KOSync,
+  // which likewise syncs credentials but not its `enabled` flag.
+  'webdav.serverUrl',
+  'webdav.username',
+  'webdav.password',
+  'webdav.rootPath',
 ] as const;
 
 /**
@@ -76,6 +90,8 @@ export const SETTINGS_ENCRYPTED_FIELDS = [
   'kosync.password',
   'readwise.accessToken',
   'hardcover.accessToken',
+  'webdav.username',
+  'webdav.password',
 ] as const;
 
 export type SettingsWhitelistKey = (typeof SETTINGS_WHITELIST)[number];

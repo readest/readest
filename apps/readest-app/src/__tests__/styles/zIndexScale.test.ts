@@ -42,6 +42,7 @@ const RSVP_CONTROLS = firstZ(
   read('src/app/reader/components/rsvp/RSVPStartDialog.tsx'),
   /z-\[(\d+)\]/,
 );
+const TOAST = firstZ(read('src/components/Toast.tsx'), /toast z-\[(\d+)\]/);
 const APP_LOCK = firstZ(read('src/components/AppLockScreen.tsx'), /z-\[(\d+)\]/);
 
 describe('overlay z-index scale', () => {
@@ -62,12 +63,21 @@ describe('overlay z-index scale', () => {
     expect(RSVP_OVERLAY).toBeGreaterThan(PAGE_FRAME);
   });
 
-  it('keeps the security lock screen on top of every modal', () => {
+  it('raises toasts above every modal so they show over open dialogs', () => {
+    // Regression: a sync-complete toast dispatched from the open Settings
+    // dialog was buried because the toast sat at z-50, below Settings (110)
+    // and ModalPortal (120).
+    expect(TOAST).toBeGreaterThan(MODAL);
+    expect(TOAST).toBeGreaterThan(SETTINGS);
+  });
+
+  it('keeps the security lock screen on top of every modal and toast', () => {
     expect(APP_LOCK).toBeGreaterThan(MODAL);
+    expect(APP_LOCK).toBeGreaterThan(TOAST);
   });
 
   it('uses a compact scale with no four-digit z-index', () => {
-    for (const value of [RSVP_OVERLAY, RSVP_CONTROLS, SETTINGS, MODAL, APP_LOCK]) {
+    for (const value of [RSVP_OVERLAY, RSVP_CONTROLS, SETTINGS, MODAL, TOAST, APP_LOCK]) {
       expect(value).toBeLessThan(1000);
     }
   });

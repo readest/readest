@@ -142,9 +142,10 @@ function createMockView(): FoliateView {
 
 // --- Helper: create mock AppService ---
 
-function createMockAppService(isAndroid = false): AppService {
+function createMockAppService(isAndroid = false, isIOS = false): AppService {
   return {
     isAndroidApp: isAndroid,
+    isIOSApp: isIOS,
   } as unknown as AppService;
 }
 
@@ -215,7 +216,13 @@ describe('TTSController', () => {
       expect(c.ttsNativeClient).not.toBeNull();
     });
 
-    test('does not create native client when not Android', () => {
+    test('creates native client when isIOSApp', () => {
+      const iosService = createMockAppService(false, true);
+      const c = new TTSController(iosService, mockView);
+      expect(c.ttsNativeClient).not.toBeNull();
+    });
+
+    test('does not create native client when neither Android nor iOS', () => {
       expect(controller.ttsNativeClient).toBeNull();
     });
 
@@ -737,6 +744,29 @@ describe('TTSController', () => {
       controller.prepareSpeakWords([]);
       expect(controller.getCurrentHighlightCfi()).toBeNull();
     });
+
+    test('granularity "sentence" forces sentence highlighting (skips word-by-word)', async () => {
+      controller.setHighlightGranularity('sentence');
+      await armWithSentence(makeSentenceRange());
+      getOverlayer().add.mockClear();
+      // Even when the client reports word boundaries and calls prepareSpeakWords,
+      // the user's "sentence" choice keeps highlighting at the sentence level: the
+      // sentence highlight was already drawn at mark dispatch (not suppressed), so
+      // prepareSpeakWords is a no-op and word mode never engages.
+      controller.prepareSpeakWords(['Hello', 'brave', 'world']);
+      expect(getOverlayer().add).not.toHaveBeenCalled();
+      expect(controller.getCurrentHighlightCfi()).toBeNull();
+    });
+
+    test('granularity "word" (default) still highlights word-by-word', async () => {
+      controller.setHighlightGranularity('word');
+      await armWithSentence(makeSentenceRange());
+      getOverlayer().add.mockClear();
+      controller.prepareSpeakWords(['Hello', 'brave', 'world']);
+      // First word highlighted immediately and word mode engaged.
+      expect(getOverlayer().add).toHaveBeenCalledTimes(1);
+      expect(controller.getCurrentHighlightCfi()).not.toBeNull();
+    });
   });
 
   describe('tts-position event', () => {
@@ -1106,6 +1136,92 @@ describe('TTSController', () => {
       // should not throw
       await controller.stop();
       expect(controller.state).toBe('stopped');
+    });
+  });
+
+  // Regression: Android System TTS (and iOS) read offline can report a terminal
+  // 'error' for an utterance it cannot synthesize — typically a specific
+  // unsupported character, hit characteristically on the first utterance after
+  // a chapter boundary even with a local/offline voice (online the engine often
+  // network-falls-back, which is why it only breaks offline). #speak only
+  // auto-advances on 'end', so without handling, one such error dead-ends
+  // playback ("stops at the end of the chapter") with the controls wedged in
+  // 'playing'. Re-speaking the same text would just fail again, so the
+  // controller skips the bad chunk and advances, bounding consecutive failures
+  // so a wholly-unusable engine still stops gracefully. See #4613, #4408.
+  describe('native TTS offline error recovery (#4613, #4408)', () => {
+    // An Android controller whose ACTIVE client is the native client, so the
+    // native-scoped recovery in #speak() is exercised.
+    const makeAndroidNativeController = async () => {
+      const androidService = createMockAppService(true);
+      const c = new TTSController(androidService, mockView);
+      await c.init();
+      c.ttsClient = c.ttsNativeClient!;
+      await c.initViewTTS(0);
+      return c;
+    };
+
+    // A native speak() mock that always reports a terminal 'error' for real
+    // (non-preload) utterances — i.e. a deterministically unspeakable chunk.
+    // Preload calls (used to warm caches) resolve immediately like the real
+    // client and never count as attempts.
+    const alwaysErrorSpeakMock = (state: { attempts: number }) =>
+      async function* (
+        _ssml: string,
+        _signal: AbortSignal,
+        preload?: boolean,
+      ): AsyncGenerator<TTSMessageEvent> {
+        if (preload) {
+          yield { code: 'end' };
+          return;
+        }
+        state.attempts += 1;
+        yield { code: 'error', message: 'TTS playback error:-8' };
+      };
+
+    test('skips a chunk the engine cannot speak and advances instead of dead-ending', async () => {
+      const c = await makeAndroidNativeController();
+      // Stub forward() so the skip is observable without recursing through the
+      // mock sections; the point is that an error triggers an advance at all
+      // (retrying the same unspeakable text would be futile).
+      const forwardSpy = vi.spyOn(c, 'forward').mockResolvedValue();
+
+      const state = { attempts: 0 };
+      vi.mocked(c.ttsNativeClient!.speak).mockImplementation(alwaysErrorSpeakMock(state));
+
+      c.speak('<speak>bad-char</speak>');
+
+      await vi.waitFor(
+        () => {
+          expect(forwardSpy).toHaveBeenCalled(); // advanced past the bad chunk
+        },
+        { timeout: 5000 },
+      );
+      // It advanced rather than freezing in a phantom 'playing' halt.
+      expect(c.state).toBe('playing');
+    });
+
+    test('stops gracefully after a run of consecutive unspeakable chunks', async () => {
+      const c = await makeAndroidNativeController();
+      // Real forward(): each error skips to the next (mock) chunk, which also
+      // errors, until the consecutive-error cap stops playback.
+
+      const state = { attempts: 0 };
+      vi.mocked(c.ttsNativeClient!.speak).mockImplementation(alwaysErrorSpeakMock(state));
+
+      c.speak('<speak>bad-char</speak>');
+
+      // It skips past each unspeakable chunk — attempts climb past 1 (not an
+      // immediate halt) — until the consecutive-error cap is reached. (We key
+      // off attempts, not state: the controller starts 'stopped' and forward()
+      // transiently re-enters 'stopped' between chunks.)
+      await vi.waitFor(() => expect(state.attempts).toBeGreaterThanOrEqual(5), { timeout: 8000 });
+
+      // Let the cap-stop settle, then confirm it terminated (bounded, not
+      // racing to the end of the book) and is no longer playing.
+      await new Promise((r) => setTimeout(r, 150));
+      expect(c.state).not.toBe('playing');
+      expect(state.attempts).toBeLessThanOrEqual(10);
     });
   });
 

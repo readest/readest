@@ -448,7 +448,11 @@ the mobile bump. Instead:
   system fonts.
 - **Secondary text** (SettingsRow description, NavigationRow status, Tips
   body, BoxedList description): use `text-[0.85em]` so it stays
-  proportional (≈12px desktop, ≈13.6px mobile).
+  proportional (≈12px desktop, ≈13.6px mobile). A **`SettingsRow`
+  description is clamped to a single line** (`line-clamp-1`, ellipsis on
+  overflow) by the primitive — keep it short enough to read on one line at
+  mobile width; it is a hint, not a paragraph. Move anything longer into a
+  `<Tips>` block below the list.
 - **Form controls** (`<input>`, `<select>`): browsers don't inherit
   font-size onto form elements, so add the `settings-content` class
   _directly on the element_ to re-apply the 14/16 cascade. The legacy

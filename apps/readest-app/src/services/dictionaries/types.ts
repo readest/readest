@@ -170,6 +170,14 @@ export interface DictionarySettings {
    * Merriam-Webster) are hardcoded in the registry and not stored here.
    */
   webSearches?: WebSearchEntry[];
+  /**
+   * Font-size multiplier for the dictionary popup content (independent of the
+   * main reading view, #4443). `1` = the default sizes; larger values scale
+   * every provider's rendered definition up. Drives the `--dict-font-scale`
+   * CSS variable on the popup content root, which feeds the light-DOM
+   * `font-size` rules and the MDict shadow `::part(dict-content)` rule alike.
+   */
+  fontScale?: number;
 }
 
 /** Stable ids for the built-in providers. */

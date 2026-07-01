@@ -48,6 +48,25 @@ const makeLineRects = (count: number, pitch: number, height: number): RulerTestR
     height,
   }));
 
+// A relocate range whose client rects are three vertical text columns (tall thin
+// strips) in iframe-content coordinates. No frameElement -> rects map straight to
+// overlay coordinates. Columns are listed right-to-left (reading order for
+// vertical-rl), but the builder derives order from geometry + the rtl flag.
+const makeVerticalColumnsRange = (): {
+  getClientRects: () => RulerTestRect[];
+  startContainer: object;
+} => {
+  const columnRects: RulerTestRect[] = [
+    { top: 50, bottom: 950, left: 760, right: 776, width: 16, height: 900 }, // rightmost column
+    { top: 50, bottom: 950, left: 400, right: 416, width: 16, height: 900 }, // middle column
+    { top: 50, bottom: 950, left: 40, right: 56, width: 16, height: 900 }, // leftmost column
+  ];
+  return {
+    startContainer: { ownerDocument: { defaultView: {} } },
+    getClientRects: () => columnRects,
+  };
+};
+
 // A single visible section whose iframe is offset by `frameTop` along the scroll
 // axis (negative = scrolled down). `buildScrolledLineBoxes` walks these contents.
 const makeScrolledContents = (
@@ -297,6 +316,89 @@ describe('ReadingRuler', () => {
 
     // The band must not move on its own as the reader scrolls.
     expect(rulerTop()).toBeCloseTo(initialTop, 5);
+  });
+
+  // Regression: issue #4865 — for vertical-rl (Japanese vertical) books columns
+  // progress right-to-left, so advancing the ruler forward must move the band to
+  // the LEFT. It used to run backwards because rtl was false for vertical-rl.
+  it('advances the vertical-rl ruler band to the left on a forward move', async () => {
+    mockProgress = { range: makeVerticalColumnsRange(), pageinfo: { current: 0 } };
+    const verticalSettings = { ...viewSettings } as ViewSettings;
+
+    const { container } = render(
+      <ReadingRuler
+        bookKey='book-1'
+        isVertical={true}
+        rtl={true}
+        lines={1}
+        position={4}
+        opacity={0.5}
+        color='transparent'
+        bookFormat='EPUB'
+        viewSettings={verticalSettings}
+        gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+      />,
+    );
+    const rulerLeft = () =>
+      parseFloat((container.querySelector('.ruler') as HTMLDivElement).style.left);
+
+    // Mount snaps the band onto the first (rightmost) column, near the right edge.
+    let before = 0;
+    await waitFor(() => {
+      before = rulerLeft();
+      expect(before).toBeGreaterThan(80);
+    });
+
+    const consumed = eventDispatcher.dispatchSync('reading-ruler-move', {
+      bookKey: 'book-1',
+      direction: 'forward',
+    });
+
+    expect(consumed).toBe(true);
+    // Forward => next column to the left => band's left percentage decreases.
+    await waitFor(() => {
+      expect(rulerLeft()).toBeLessThan(before);
+    });
+  });
+
+  // The vertical-lr (Mongolian) counterpart moves the other way: forward => right.
+  it('advances the vertical-lr ruler band to the right on a forward move', async () => {
+    mockProgress = { range: makeVerticalColumnsRange(), pageinfo: { current: 0 } };
+    const verticalSettings = { ...viewSettings } as ViewSettings;
+
+    const { container } = render(
+      <ReadingRuler
+        bookKey='book-1'
+        isVertical={true}
+        rtl={false}
+        lines={1}
+        position={4}
+        opacity={0.5}
+        color='transparent'
+        bookFormat='EPUB'
+        viewSettings={verticalSettings}
+        gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+      />,
+    );
+    const rulerLeft = () =>
+      parseFloat((container.querySelector('.ruler') as HTMLDivElement).style.left);
+
+    // Mount snaps the band onto the first (leftmost) column, near the left edge.
+    let before = 100;
+    await waitFor(() => {
+      before = rulerLeft();
+      expect(before).toBeLessThan(20);
+    });
+
+    const consumed = eventDispatcher.dispatchSync('reading-ruler-move', {
+      bookKey: 'book-1',
+      direction: 'forward',
+    });
+
+    expect(consumed).toBe(true);
+    await waitFor(() => {
+      expect(rulerLeft()).toBeGreaterThan(before);
+    });
   });
 
   it('still snaps the ruler to lines when advancing by click in scrolled mode', async () => {

@@ -9,7 +9,11 @@ import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
-import { pickFresherReadingStatus } from '@/app/library/utils/libraryUtils';
+import {
+  pickFresherReadingStatus,
+  needsCoverRefresh,
+  pickFresherCover,
+} from '@/app/library/utils/libraryUtils';
 
 export const useBooksSync = () => {
   const _ = useTranslation();
@@ -114,16 +118,23 @@ export const useBooksSync = () => {
     // Process old books first so that when we update the library the order is preserved
     syncedBooks.sort((a, b) => a.updatedAt - b.updatedAt);
     const bookHashesInSynced = new Set(syncedBooks.map((book) => book.hash));
+    const syncedByHash = new Map(syncedBooks.map((book) => [book.hash, book]));
     const liveLibrary = useLibraryStore.getState().library;
     const oldBooks = liveLibrary.filter((book) => bookHashesInSynced.has(book.hash));
+    // Books whose cover must be (re)fetched: never-downloaded, or a newer cover
+    // edit arrived from another device (issue #4544). Captured before the
+    // download loop so the post-download merge can still tell which covers were
+    // refreshed (the loop mutates coverDownloadedAt).
     const oldBooksNeedsDownload = oldBooks.filter((book) => {
-      return !book.deletedAt && book.uploadedAt && !book.coverDownloadedAt;
+      const matchingBook = syncedByHash.get(book.hash);
+      return !!matchingBook && needsCoverRefresh(book, matchingBook);
     });
+    const coverRefreshHashes = new Set(oldBooksNeedsDownload.map((book) => book.hash));
 
     const processOldBook = async (oldBook: Book) => {
-      const matchingBook = syncedBooks.find((newBook) => newBook.hash === oldBook.hash);
+      const matchingBook = syncedByHash.get(oldBook.hash);
       if (matchingBook) {
-        if (!matchingBook.deletedAt && matchingBook.uploadedAt && !oldBook.coverDownloadedAt) {
+        if (coverRefreshHashes.has(oldBook.hash)) {
           oldBook.coverImageUrl = await appService?.generateCoverImageUrl(oldBook);
         }
         const mergedBook =
@@ -135,6 +146,11 @@ export const useBooksSync = () => {
         const status = pickFresherReadingStatus(oldBook, matchingBook);
         mergedBook.readingStatus = status.readingStatus;
         mergedBook.readingStatusUpdatedAt = status.readingStatusUpdatedAt;
+        // Cover is likewise resolved by its own coverUpdatedAt, independent of
+        // the row's updatedAt — issue #4544.
+        const cover = pickFresherCover(oldBook, matchingBook);
+        mergedBook.coverHash = cover.coverHash;
+        mergedBook.coverUpdatedAt = cover.coverUpdatedAt;
         return mergedBook;
       }
       return oldBook;

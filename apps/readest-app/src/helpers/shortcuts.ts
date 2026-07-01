@@ -134,8 +134,25 @@ const DEFAULT_SHORTCUTS = {
     section: 'Selection',
   },
   onProofreadSelection: {
-    keys: ['ctrl+p', 'cmd+p'],
+    // alt+p is a print-free alternative on Windows/Linux, where ctrl+p is
+    // intercepted by the browser's print dialog (#4717).
+    keys: ['ctrl+p', 'cmd+p', 'alt+p'],
     description: _('Proofread Selection'),
+    section: 'Selection',
+  },
+  onAdjustTextSelection: {
+    // Standard desktop shortcuts for refining an active selection (#4728):
+    // Shift+←/→ by character, Ctrl/Alt(Option)+Shift+←/→ by word. Only act while
+    // text is selected; otherwise these keys fall through to page navigation.
+    keys: [
+      'shift+ArrowLeft',
+      'shift+ArrowRight',
+      'ctrl+shift+ArrowLeft',
+      'ctrl+shift+ArrowRight',
+      'opt+shift+ArrowLeft',
+      'opt+shift+ArrowRight',
+    ],
+    description: _('Adjust Text Selection'),
     section: 'Selection',
   },
   onOpenFontLayoutSettings: {

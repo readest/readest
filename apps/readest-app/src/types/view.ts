@@ -70,6 +70,7 @@ export interface FoliateView extends HTMLElement {
   init: (options: { lastLocation: string }) => void;
   goTo: (href: string) => void;
   goToFraction: (fraction: number) => void;
+  getSectionFractions: () => number[];
   prev: (distance?: number) => void;
   next: (distance?: number) => void;
   pan: (dx: number, dy: number) => void;
@@ -101,6 +102,9 @@ export interface FoliateView extends HTMLElement {
   ) => Promise<void>;
   book: BookDoc;
   tts: TTS | null;
+  // The most recent relocate location, set synchronously by foliate on every
+  // relocate — fresher than the rAF-debounced readerStore progress.
+  lastLocation?: { cfi?: string; range?: Range | null };
   isFixedLayout: boolean;
   language: {
     locale?: LocaleWithTextInfo;

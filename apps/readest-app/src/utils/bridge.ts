@@ -113,6 +113,11 @@ export interface GetStorefrontRegionCodeResponse {
   error?: string;
 }
 
+export interface RefreshEinkScreenResponse {
+  success: boolean;
+  error?: string;
+}
+
 export async function copyURIToPath(request: CopyURIRequest): Promise<CopyURIResponse> {
   const result = await invoke<CopyURIResponse>('plugin:native-bridge|copy_uri_to_path', {
     payload: request,
@@ -240,6 +245,16 @@ export async function getStorefrontRegionCode(): Promise<GetStorefrontRegionCode
   return result;
 }
 
+/**
+ * Trigger a deep e-ink full screen refresh (GC / GC16 waveform) to clear
+ * ghosting. Android-only; the native side probes several vendor mechanisms
+ * via reflection and returns `success: false` on devices with no e-ink
+ * controller. Other platforms reject with an unsupported-platform error.
+ */
+export async function refreshEinkScreen(): Promise<RefreshEinkScreenResponse> {
+  return await invoke<RefreshEinkScreenResponse>('plugin:native-bridge|refresh_eink_screen');
+}
+
 // ── Sync passphrase keychain ────────────────────────────────────────────
 // Tauri-only. Wired into the TauriPassphraseStore (src/libs/crypto/
 // passphrase.ts) so the user's sync passphrase persists across app
@@ -283,6 +298,73 @@ export async function clearSyncPassphrase(): Promise<SyncPassphraseResponse> {
 
 export async function isSyncKeychainAvailable(): Promise<SyncKeychainAvailableResponse> {
   return invoke<SyncKeychainAvailableResponse>('plugin:native-bridge|is_sync_keychain_available');
+}
+
+// ── Keyed secure key-value store ─────────────────────────────────────────
+// Tauri-only. A generic, keyed secret store over the same OS keychain backends
+// as the sync passphrase above, so secrets that aren't the single sync
+// passphrase (the Google Drive OAuth token set, and any future cloud
+// provider's refresh token) get the same XSS-free cross-launch persistence
+// without each needing its own native command. Availability is the same probe
+// as `is_sync_keychain_available`.
+
+export interface SetSecureItemRequest {
+  key: string;
+  value: string;
+}
+
+export interface GetSecureItemRequest {
+  key: string;
+}
+
+export interface SecureItemResponse {
+  success: boolean;
+  error?: string;
+}
+
+export interface GetSecureItemResponse {
+  value?: string;
+  error?: string;
+}
+
+export async function setSecureItem(request: SetSecureItemRequest): Promise<SecureItemResponse> {
+  return invoke<SecureItemResponse>('plugin:native-bridge|set_secure_item', { payload: request });
+}
+
+export async function getSecureItem(request: GetSecureItemRequest): Promise<GetSecureItemResponse> {
+  return invoke<GetSecureItemResponse>('plugin:native-bridge|get_secure_item', {
+    payload: request,
+  });
+}
+
+export async function clearSecureItem(request: GetSecureItemRequest): Promise<SecureItemResponse> {
+  return invoke<SecureItemResponse>('plugin:native-bridge|clear_secure_item', { payload: request });
+}
+
+// ── Reading widget ────────────────────────────────────────────────────────
+
+export interface ReadingWidgetBookPayload {
+  hash: string;
+  title: string;
+  author: string;
+  percent: number;
+  coverPath: string;
+}
+
+export interface ReadingWidgetTts {
+  active: boolean;
+  playing: boolean;
+}
+
+export interface UpdateReadingWidgetRequest {
+  books: ReadingWidgetBookPayload[];
+  sectionTitle: string;
+  emptyTitle: string;
+  tts?: ReadingWidgetTts;
+}
+
+export async function updateReadingWidget(request: UpdateReadingWidgetRequest): Promise<void> {
+  await invoke('plugin:native-bridge|update_reading_widget', { payload: request });
 }
 
 // ── Nightly updater (main-app commands, no native-bridge prefix) ─────────

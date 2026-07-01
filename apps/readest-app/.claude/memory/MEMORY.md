@@ -1,150 +1,148 @@
 # Readest Project Memory
 
-## Key Reference Documents
-- [Bug Fixing Patterns](bug-patterns.md) - Common bug categories, root causes, and fix strategies
-- [CSS & Style Fixes](css-style-fixes.md) - EPUB CSS override patterns and the style.ts pipeline
-- [TTS Fixes](tts-fixes.md) - Text-to-Speech architecture and bug patterns
-- [Layout & UI Fixes](layout-ui-fixes.md) - Safe insets, z-index, platform-specific UI issues
-- [Platform Compat Fixes](platform-compat-fixes.md) - Android, iOS, Linux, macOS platform-specific bugs
-- [Annotator & Reader Fixes](annotator-reader-fixes.md) - Highlight, selection, accessibility bugs
-
-## Security
-- [download_file scope Android regression](download-file-scope-android-regression.md) — #4639 strict `is_allowed` broke ALL Android downloads to app data dir (covers/dicts/books); `app.fs_scope()` lacks command-scoped capability globs; fix = `app.path()` base-dir membership. On-device CDP verify recipe + raw-invoke Channel trick
-- [Security advisories 2026-06](security-advisories-web-2026-06.md) — all 4 GHSA fixed in PR #4638 (web: A OPDS-proxy SSRF + canonical `isBlockedHost` in network.ts + `isLanAddress` merge, B storage `isSafeObjectKeyName`, D Stripe `metadata.userId` ownership) + PR #4639 (native C: `transfer_file.rs` fs_scope guard). OPDS proxy can't require auth (`<img>` usage); strict `is_allowed` for C; shared-target worktree build-cache pollution gotcha
-
-## Paginator Scroll Knowledge
-- [Issue #4112 scroll-anchoring](issue-4112-scroll-anchoring.md) — RESOLVED (PR #4349). Scroll-anchoring suppressed at scrollTop 0 when prepending a section in scrolled mode; fix patterns (prepend compensation, eager backward preload, no-blank nav) + test & dev-server gotchas
-- [Reading ruler line/column-aware](reading-ruler-line-aware.md) — ruler snaps to real lines; multi-column band spans one column; Range.getClientRects() returns tall block boxes that must be dropped; iframe frame-offset mapping; synthetic-key throttling
-- [TOC expand + auto-scroll](toc-expand-and-autoscroll.md) — #4059 collapse-by-default policy in `tocTree.ts`; pinned-sidebar mounts before progress → dynamic expansion breaks scroll-to-current via (1) spurious onScroll clearing pending and (2) Virtuoso scrollToIndex landing short after row growth (re-assert on rAF)
-- [BooknoteView auto-scroll (#4352)](booknote-view-autoscroll-4352.md) — virtualizing the annotation/bookmark list dropped auto-scroll-to-nearest; two paths (reload: OverlayScrollbars resets scrollTop → re-apply in `initialized` via ref; tab-switch: synchronous scrollToIndex on fresh-mounted list wedges Virtuoso → use `initialTopMostItemIndex` + skip-gate). Mirrors TOCView. Includes dev-server/Fast-Refresh/screenshot-vs-DOM verification gotchas
-- [TOC current-position row](toc-current-position-row.md) — synthetic "Current position" row (open-book icon + live `progress.page`) injected one level deeper under the active TOC item via `buildTOCDisplayItems` in `TOCItem.tsx`. INVARIANT: insert AFTER the active item so its `flatItems` index stays valid for the auto-scroll effects
-- [Swipe page-turn bg flash](paginator-swipe-bg-flash.md) — white↔black flash on swipe+animation only; `#background` was static screen-space and didn't track content during drag/snap; fix = sliding per-view full-bleed segments (`computeBackgroundSegments`) rebuilt on scroll + per-rAF synced to the view transform during snap
-- [Duokan fullscreen cover hidden in scroll mode](duokan-fullscreen-cover-scroll.md) — #4379 `data-duokan-page-fullscreen` cover pinned `position:absolute height:100%` collapses against auto-height scroll container; gate fullscreen on `this.#column` + reset stale absolute props on toggle (`setImageSize` in paginator.js)
-- [Paginated texture occlusion](paginated-texture-occlusion-4399.md) — #4399 host `.foliate-viewer::before` texture absent in paginated (shown in scrolled); opaque `#background` container (`= fallbackBg`) from the swipe-flash fix occludes it; shared `textureAwareBackground` helper + `hasTexture ? '' : fallbackBg` container
-- [Dark-mode texture occluded by body bg (#4446)](dark-mode-texture-body-bg-4446.md) — RESOLVED (PR #4564): `body.theme-dark{bg !important}` from #4392 (v0.11.4, NOT foliate-js) painted iframe bodies opaque dark → occluded host texture + poisoned `docBackground` capture → opaque segments/view bgs; fix = `transparent !important` UNCONDITIONALLY (texture-gating would go stale: capture is once-per-section-load); CDP gotchas = patch ALL multiview iframes, stale preload views survive navigation ±2, load-listener sees exact capture-time state
-- [Background overflows column (#4394, PR #4429)](paginator-gutter-bleed-asymmetry-4394.md) — paginated page bg stretched into the outer `--_outer-min` gutter → mixed cover/title 2-up spread shifted off-centre (~250px at 1920px). KEEP the grid (`--_outer-min` keeps margins symmetric); fix = clamp `computeBackgroundSegments` to `[containerStart,containerEnd]` (Math.max/Math.min) so bg stays in its column. 2 wrong tries first (bleed-gating, "page shouldn't be yellow"); foliate submodule needs dev-server RESTART to pick up edits
-- [Inline-block column overflow](inline-block-column-overflow.md) — chapter skips to "Reference materials", clipping a large middle; EPUB wraps body in `display:inline-block` div → atomic-inline box can't fragment across columns → vertical overflow clipped (scrollHeight≫clientHeight). Fix = paginator `#demoteUnfragmentableBoxes` in `columnize` (col-mode, over-tall atomic-inline→fragmentable block). Renders via goTo/next but pages unreachable; scrolled mode unaffected
-
+## Key Reference Documents (aggregators)
+- [Bug Patterns](bug-patterns.md) · [CSS & Style](css-style-fixes.md) — EPUB CSS + style.ts · [TTS](tts-fixes.md)
+- [Layout & UI](layout-ui-fixes.md) — insets/z-index · [Platform Compat](platform-compat-fixes.md) — Android/iOS/Linux/macOS · [Annotator & Reader](annotator-reader-fixes.md)
+## Safety & Security
+- [In-place delete wiped originals](in-place-delete-wiped-originals.md) — never `fs.removeFile` `external` source;
+- [Backup zip Windows paths (#4703)](backup-windows-zip-paths-4703.md) — `\` entry names broke restore; normalize
+- [download_file scope Android (#4639)](download-file-scope-android-regression.md) — strict `is_allowed` broke
+- [Security advisories 2026-06](security-advisories-web-2026-06.md) — 4 GHSA #4638 (OPDS SSRF, storage key, Stripe
+## Paginator & Scroll
+- [Reading ruler line-aware](reading-ruler-line-aware.md) — snaps to real lines; iframe frame-offset map
+- [TOC expand + auto-scroll](toc-expand-and-autoscroll.md) — #4059 collapse-default breaks scroll-to-current
+- [BooknoteView auto-scroll (#4352)](booknote-view-autoscroll-4352.md) — reload via `initialized` ref;
+- [TOC current-position row](toc-current-position-row.md) — synthetic row; insert AFTER to keep flatItems index
+- [Swipe page-turn bg flash](paginator-swipe-bg-flash.md) — static `#background`; `computeBackgroundSegments` per-rAF
+- [Paginated texture occlusion (#4399)](paginated-texture-occlusion-4399.md) — opaque bg occludes texture; `hasTexture
+- [Background overflows column (#4394)](paginator-gutter-bleed-asymmetry-4394.md) — bg bled into gutter; clamp to
+- [Inline-block column overflow](inline-block-column-overflow.md) — body can't fragment; `#demoteUnfragmentableBoxes`
+- [FXL fit-width scroll reset (#4683)](fixed-layout-paginated-scroll-reset-4683.md) — scrollTop not reset;
+- [PDF spread 1px seam (#4587)](pdf-spread-canvas-seam-4587.md) — fractional dpr truncates; pin `canvas.style=viewport`
+- [PDF scrolled wheel double (#4727)](pdf-scroll-mode-wheel-double-4727.md) — drop manual `scrollBy` over native
+- [Scrolled header title center (#4436)](scrolled-header-title-center-4436.md) — view covering `renderedStart + size/2`
+- [Duokan fullscreen cover scroll](duokan-fullscreen-cover-scroll.md) — #4379 cover collapses; gate on `this.#column`
+- [TOC table heading clip (#4439)](toc-table-heading-clip-4439.md) — #4400 scroll-wrapper `overflow:auto` clips
+- [Page-turn bg-replace reflow (#4785)](pageturn-bg-replace-reflow-4785.md) — `#replaceBackground` rebuilt context per
 ## Critical Files (Most Bug-Prone)
-- `src/utils/style.ts` - Central EPUB CSS transformation hub (14+ bug fixes)
-- `packages/foliate-js/paginator.js` - Page layout, image sizing, backgrounds
-- `src/services/tts/TTSController.ts` - TTS state machine, section tracking
-- `src/hooks/useSafeAreaInsets.ts` - Safe area inset management
-- `src/app/reader/components/FoliateViewer.tsx` - Reader view orchestration
-- `src/app/reader/components/annotator/Annotator.tsx` - Annotation lifecycle
-
+- `src/utils/style.ts` EPUB CSS hub · `packages/foliate-js/paginator.js` layout/image/bg · `src/services/tts/TTSController.ts` TTS state machine
+- `src/hooks/useSafeAreaInsets.ts` insets · `src/app/reader/components/FoliateViewer.tsx` view orchestration · `.../annotator/Annotator.tsx` annotation lifecycle
 ## Sync Notes
-- [KOSync CFI spine resolution](kosync-cfi-spine-resolution.md) — convert via the CFI's own spine (`getXPointerFromCFI`/`getCFIFromXPointer`), never `new XCFI(primaryDoc, primaryIndex)`; primaryIndex lags during scroll → spine-mismatch throw
-- [Empty-start CFI sync bug](empty-start-cfi-sync.md) — `epubcfi(/6/24!/4,,/20/1:58)` (empty-start range) from the cfi-inert skip-link transitional window; jumps to wrong section end; `isMalformedLocationCfi` → discard the synced value in `useProgressSync` (NOT the local open path); foliate fix doesn't repair already-synced values
-- [Custom fonts disappear on cloud sync (#4410)](custom-fonts-reincarnation-4410.md) — CRDT remove-wins: re-import-after-delete needs a `reincarnation` token or the pull re-applies the tombstone; `addFont`/`addTexture` minted none; fix mirrors dictionary (both cases) + OPDS token style; coverage matrix per kind
-- [koplugin note deletion sync](koplugin-note-deletion-sync.md) — koplugin push only walked LIVE annotations so deletions never reached the server; fix = `recordDeletion` persists a `deletedAt` tombstone to `doc_settings.readest_sync.deleted_notes`, `push` folds+clears them; deletion signal in `onAnnotationsModified` is `items.index_modified < 0`
-- [koplugin stats sync (#4666)](koplugin-stats-sync.md) — reading-stats sync (pull on open / push on close, whole statistics.sqlite3 delta, cursor-based); 3-bug chain: plain-table-not-LuaSettings `settings:readSetting` crash; missing required books/notes/configs; statBooks/statPages need `optional_params` (Spore expected=required∪optional, `payload`≠accepted); large-backlog UI-stall + silent-retry risk unfixed
-- [Statusless books re-pinned to top (#4677)](sync-statusless-book-rebump-4677.md) — never-statused (locally-imported, never-pulled) books send `reading_status:undefined` vs server `null`; server POST `statusChanged` (`undefined!==null`) rewrites `updated_at=now()` every push → batch-identical ts pins them top of date-sort; 1-day re-sync window amplifies; fix = `(a??null)!==(b??null)`. On-device CDP PUSH_SENT-vs-RETURNED proof recipe
-
-## Testing
-- [Nightly updater Android E2E](nightly-updater-android-e2e.md) — real Xiaomi/HyperOS test of #4577 self-updater; `pnpm dev-android` (--features devtools) for CDP, raw-socket CDP discovery, nightly>stable comparator, MIUI 单次安装授权 install gates
-- [Android CDP e2e lane](android-cdp-e2e-lane.md) — `pnpm test:android`: adb+CDP drives the installed app on device/emulator; discover-don't-assume targeting, injected hyphenation, MediaStore VIEW transient open (canonical `_data` path gotcha), per-section frame restore; CI workflow with KVM emulator + debug x86_64 APK (no signing secrets)
-- [CDP Android WebView profiling](cdp-android-webview-profiling.md) — drive the on-device Readest WebView via adb+CDP to run JS probes/benchmarks inside the live app (no rebuild); gotchas: locked device freezes fetch (not invoke), visible:false throttles setTimeout, `__TAURI_INTERNALS__.convertFileSrc/invoke` always present, books in internal `/data/user/0/...`, fs `read{rid,len}` last-8-bytes=nread, `fs|close` not ACL-allowed, curl mishandles WebView HTTP framing
-- [Tauri Rust↔JS parser parity tests](tauri-parser-parity-tests.md) — #4369 native Rust EPUB/MOBI parser; how to cross-check vs foliate-js in the `.tauri.test.ts` WebView suite (CWD disk path for Rust, Vite URL for JS, normalizer-based compare, cover presence-only, desc whitespace-collapse); the `dcterms:modified`→`published` divergence fix
-- [TTS browser e2e harness](tts-browser-e2e-harness.md) — faithful auto-advance test (real `<foliate-view>` + real `useTTSControl` + mock ONLY the 3 client modules; mock `speak()` yields `end` to drive the real `forward()` walk); seed readerStore/bookDataStore + `settings.globalViewSettings` (else `getMergedRules` crash stops TTS); reproduce FoliateViewer relocate→setProgress; sample-alice Ch4=section 6/Ch5=section 7; assert badge `false` BEFORE tts-stop
-- [TTS sync chrome verification](tts-sync-chrome-verification.md) — Edge TTS WORKS in claude-in-chrome (WebSpeech errors there with `InvalidStateError`); use an Edge voice to verify TTS-driven features live (RSVP followed at ~171 wpm). Synthetic-CFI debug recipe (expose controller, `syncToCfi(view.getCFI(docIndex, word.range))`). Exposed the #3235 cross-realm `instanceof Range` bug (frozen RSVP/paragraph follow) → `isRangeLike()` duck-type fix
-- [TTS sync paragraph+RSVP (#3235, PR #4576)](tts-sync-paragraph-rsvp-3235.md) — TTS-is-clock follow: canonical `tts-position{cfi,kind:word|sentence,sectionIndex,sequence}`; in-mode 🔊 audio toggle (`build{Paragraph,Rsvp}TtsSpeakDetail`, live-range gate); **current word/sentence highlight painted on the overlay CLONE via CSS Custom Highlight API** (no DOM mutation, spans inline; offsets relative to para-start map 1:1 to clone, `getTextSubRange` reuse, index-tagged vs stale); kind-gating `decideParagraphTtsHighlight` (Edge word wins, skip coarse sentence); `::highlight()` from `ttsHighlightOptions`
-
-## Build & Vendoring
-- [fastlane Apple App Store submission](fastlane-apple-appstore-submission.md) — `release_ios`/`release_macos` lanes (App Store review + TestFlight on the altool-uploaded build); gotchas = Tauri auto-notarizes if `APPLE_API_KEY_PATH` is in the macOS build env (keep it OUT, derive from key id), fastlane runs lanes from `./fastlane` so anchor paths via `repo_path`, npm-dotenv-cli vs Ruby-gem shadowing + `cd ../..`
-- [Turbopack build-cache OOM + gated Docker standalone (#4619)](turbopack-build-cache-oom-docker-standalone.md) — interrupted-build partial `turbopackFileSystemCacheForBuild` cache → 42 workers/18GB-swap freeze (clean build=~6.5GB); disabled the flag; `output:'standalone'` gated on `BUILD_STANDALONE` (Docker-only); tauri CI uses `next dev` (config-independent)
-- [Deps/security override workflow](deps-security-overrides-workflow.md) — fix transitive npm Dependabot alerts: main monorepo overrides live in `pnpm-workspace.yaml` (NOT root package.json); `packages/tauri-plugins` is a SEPARATE submodule project w/ own lockfile + `minimumReleaseAge` (main workspace has no age gate); bound 0.x overrides like `vite`; verify via test+lint+build-web. PR #4618 (esbuild 0.28.1, vitest 4.1.9)
-- [R2 rclone CreateBucket 403 (#4588)](r2-rclone-createbucket-403.md) — single-file `rclone copyto`/`moveto` probes CreateBucket → 403 on object-scoped R2 token; use a directory `rclone copy` (or `no_check_bucket=true`); broke nightly assemble, not the release flow
-- [Deploy workers.dev SNI-block + proxy](deploy-workers-dev-sni-proxy.md) — pnpm deploy crash (CN): workers.dev SNI-blocked (DoH useless), R2 populate WS hangs even via proxy; shipped fix = `dangerous.disableIncrementalCache:true` in open-next.config (stock deploy skips populate; readest has no ISR so runtime no-op)
-- [pdfjs vendor wasm decoders](pdfjs-vendor-wasm-decoders.md) — scanned PDFs blank in CI build only (0.11.2 regression); pdfjs 5.7.x moved JBIG2 to `jbig2.wasm`, `copy-pdfjs-wasm` allow-list dropped it; `cpx` no-errors on empty glob; local stale `public/vendor` (gitignored, not refreshed by `tauri build`) masked it; fix = copy `wasm/*`
-
+- [Grimmory native sync](grimmory-native-sync.md) — Booklore-fork REVERTED; id by ISBN/ASIN + koreader-hash
+- KOSync: [CFI spine resolution](kosync-cfi-spine-resolution.md) convert via CFI's own spine; [connect() false-positive #4692](kosync-connect-false-positive-4692.md)
+- [Empty-start CFI sync](empty-start-cfi-sync.md) — `isMalformedLocationCfi` → discard synced value
+- [Custom fonts vanish on sync (#4410)](custom-fonts-reincarnation-4410.md) — CRDT remove-wins; re-import
+- koplugin: [note deletion](koplugin-note-deletion-sync.md) `recordDeletion` tombstone; [stats #4666](koplugin-stats-sync.md) statistics.sqlite3 delta LuaSettings; [bulk download #4751](koplugin-bulk-download-4751.md)
+- [Statusless books re-pin top (#4677)](sync-statusless-book-rebump-4677.md) — `(a??null)!==(b??null)`
+- [Pull cursor via synced_at (#4678)](sync-synced-at-cursor-4678.md) — books `synced_at` + BEFORE trigger
+- [WebDAV metadata sync (#4756)](webdav-metadata-sync-4756.md) — PR #4776; LWW on `book.updatedAt` +
+- [File-sync refactor (#4784)](webdav-filesync-refactor-plan.md) — `FileSyncEngine`/`FileSyncProvider`/`merge.ts`;
+- [Third-party library auto-sync (#4835)](third-party-library-autosync-4835.md) — `useLibraryFileSync` parity w/
+- [WebDAV connect nullified (#4780)](webdav-connect-nullified-4780.md) — catch+finally saved STALE closure;
+- [WebDAV credential sync (#4810)](webdav-credential-sync-4810.md) — `webdav.*` missing from
+- [Multi-window settings clobber (#4580)](multiwindow-settings-clobber-4580.md) — stale window overwrites shared
+- Google Drive: [research](gdrive-sync-provider-research.md) Drive as `FileSyncProvider` token-persist+resumable; [multi-PR status](gdrive-provider-multipr-status.md)
+- [Hardcover progress edition_id (#4792)](hardcover-progress-edition-id-4792.md) — `edition_id` fell back to
+## Build, Testing & CI
+- [format:check separate gate](verify-format-check-gate.md) — `pnpm format:check` own gate before push
+- [Worktree rebase submodule drift](worktree-rebase-submodule-drift.md) — rebase leaves foliate-js submodule old; `git
+- [Android CDP e2e lane](android-cdp-e2e-lane.md) — `pnpm test:android` adb+CDP; CI KVM emulator
+- [CDP Android WebView profiling](cdp-android-webview-profiling.md) — adb+CDP JS probes; locked-device freezes fetch
+- [Tauri Rust↔JS parser parity](tauri-parser-parity-tests.md) — #4369 cross-check; `dcterms:modified`→`published`
+- [TTS browser e2e harness](tts-browser-e2e-harness.md) — seed `settings.globalViewSettings` or getMergedRules crashes
+- [TTS paragraph+RSVP sync (#3235)](tts-sync-paragraph-rsvp-3235.md) — TTS-is-clock; overlay CLONE via CSS Custom
+- [fastlane App Store](fastlane-apple-appstore-submission.md) — keep `APPLE_API_KEY_PATH` out of macOS build env
+- [Turbopack cache OOM (#4619)](turbopack-build-cache-oom-docker-standalone.md) — partial cache freeze; gate on
+- [Deps override workflow](deps-security-overrides-workflow.md) — overrides in `pnpm-workspace.yaml`; tauri-plugins
+- [pdfjs vendor wasm](pdfjs-vendor-wasm-decoders.md) — pdfjs 5.7 moved JBIG2 to `jbig2.wasm`; copy `wasm/*`
+- [CI/PR delivery + push keepalive](ci-pr-delivery-and-push.md) — temp-index plumbing; SSH `ServerAliveInterval`
 ## Platform Compat
-- [Android hyphen selection bounds (#1553)](android-hyphen-selection-bounds-1553.md) — Blink paints the start handle on the paragraph's LAST hyphen when a touch selection starts at the first word of a hyphenated paragraph (`ComputePaintingSelectionStateForCursor` lacks the generated-text offset remap, hyphen offsets {0,1}); drag-extend re-anchors base there. Fix = repair jumped anchor + suppress handles (empty-commit needs one painted frame) + `SelectionRangeEditor` custom handles; multicol NOT required; desktop/iOS unaffected
-- [Android NativeFile vs RemoteFile I/O](android-nativefile-remotefile-io.md) — why NativeFile is slow (4-IPC/chunk + bridge serialization, tauri#9190); RemoteFile CANNOT replace it on Android (asset-protocol Range broken: start>0 → "Failed to fetch", start-0 capped at 1,024,000; plain no-Range fetch returns full file at 281 MB/s); measured 44/100/281 MB/s; speedups = handle-reuse (2.3×), whole-file asset loader (6.3×), or fix wry upstream. Verified live via CDP.
-- [Window-state sanitizer (#4398)](window-state-sanitize-4398.md) — Windows launch crash (WebView2 0x80070057) from invalid `.window-state.json` (`-32000` minimized sentinel / `0×0`); our plugin already has upstream #253 fix so bad files are stale; defense-in-depth `window-state-sanitizer` plugin registered BEFORE window-state (plugin init = registration order); coord threshold `-16000` (~halfway to the -32000 sentinel; real desktops sit a few thousand px off origin) keeps multi-monitor negatives
-- [Android Open-with intent flow (#4521)](android-open-with-intent-flow.md) — "Open with"/"Send to" pipeline: `NativeBridgePlugin.kt::handleIntent` → `shared-intent` → `useAppUrlIngress` → `useOpenWithBooks` (VIEW=transient→reader, SEND=library+upload). Telegram fails where file-manager works on TWO axes: cold-start delivery (fixed by #4527, on dev NOT released v0.11.4) + foreign-private-file read (Telegram FileProvider non-persistable grant vs shared-storage FUSE real-path). adb MediaStore VIEW repro tests pipeline but CANNOT reproduce the read axis (MANAGE_EXTERNAL_STORAGE bypasses grant)
-- [Dict lookup → OEM browser hijack (#4559)](dict-lookup-browser-hijack-4559.md) — VIVO system-dict lookup opened the browser not Eudic. PRIMARY: no `<queries>` for `ACTION_PROCESS_TEXT` under targetSdk36 → dictionary apps invisible, only auto-visible browser returned (fix = add `<queries>` to plugin manifest). SECONDARY: browser registers PROCESS_TEXT + is default → filter browsers in pure `decideLookupDispatch` (explicit/chooser/unavailable). Remember-the-pick via `IntentSender`+`EXTRA_CHOSEN_COMPONENT`→`LookupChoiceReceiver`→SharedPreferences (`ACTION_CHOOSER` has no native Always); reset row in `CustomDictionaries.tsx`
-- [Android sideload same versionCode](android-sideload-same-versioncode.md) — sideloaded APK reinstall allows EQUAL versionCode (only strictly-lower blocked); Play Store's increment rule does NOT apply to sideload. Nightly APKs share base versionCode and still install. Corrects a plausible-but-wrong review claim
-- [Large-PDF OOM range flood (#3470)](pdf-oom-range-flood-3470.md) — 50MB+ PDF import/open crash = foliate makePDF firing ALL pdf.js range reads un-awaited (753 concurrent fetch→shouldInterceptRequest→Java byte[] → 512MB heap OOM), NOT whole-file load; official viewer survives via browser ~6-conn/host cap; fix = MAX_CONCURRENT_RANGES=6 queue in makePDF; on-device CDP recipe; Xiaomi13/WV147 won't OOM but flood 753→6 verified
-
-## Feature Notes
-- [Save image to gallery (Android, #4680)](save-image-to-gallery-android.md) — image-viewer Save button → MediaStore on Android (share sheet can't save-to-file: ACTION_SEND has no file-manager target); sharekit 0-byte self-copy bug (Temp==cacheDir); tsgo misses abstract-class conformance (real tsc catches); on-device CDP verify recipe
-- [Webtoon Mode (#3647)](webtoon-mode-3647.md) — seamless no-gap scrolled reading for image books (PRs #4662 + foliate-js#30); fixed-layout scroll mode is fit-width by construction (ignores `zoom`, only `scale-factor`); `scroll-gap` attr→`--scroll-page-gap` var; clear-on-leave in BOTH ViewMenu effect AND Shift+J; worktree submodule has local-path origin (push SHA direct to fork)
-- [Biometric app-lock (#4645)](biometric-app-lock-4645.md) — fingerprint/Face ID startup unlock layered over PIN (mobile); gate must read flag from `appLockStore` not un-seeded `settingsStore` (race); `tauri-plugin-biometric` is `#![cfg(mobile)]` (desktop clippy skips it; pin in root Cargo.lock); scope i18n manually (en unscanned, full extract churns drift)
-- [Tap to open image/table (#4600)](tap-to-open-image-table-4600.md) — single-tap opens gallery/table-zoom in **reflowable** EPUBs (long-press unchanged); `iframe-long-press` message renamed to `iframe-open-media`, hook `useLongPressEvent`→`useOpenMediaEvent`; shared `detectMediaTarget`; `handleClick` got `isFixedLayout`
-- [#4584 tap-death investigation](issue-4584-tap-death-investigation.md) — UNFIXED; `isPopuped` self-heals (RED HERRING, don't "fix" it); likely WebView-148-specific (emulator=133 can't repro); Android emulator/CDP gesture-verification gotchas (swiftshader ANR=artifact, CDP can't native-select, screenX=0)
-- [Dictionary lemmatization (#4574)](dict-lemmatization-4574.md) — inflected selections (`ran`/`mice`/`analyses`) resolve to base headwords (`run`/`mouse`/`analysis`) in dicts that store only lemmas (ODE). Pluggable `lemmatize/` registry (default English, explicit non-English no-op), English rules+irregulars, appended to tail of `buildLookupCandidates` so exact match wins; over-generate + dict-validates; `-ses→-sis` ordered before `-es`
-- [Word Lens inline gloss (feat/word-wise)](wordlens-feature.md) — Kindle-style native-language hint above hard words; CFI-safe via `<ruby cfi-skip>…<rt cfi-inert>` (epubcfi hoist+merge, NOT just tree-walk); TTS/search isolation (tags:['rt'] + rangeTextExcludingInert + search attributes:['cfi-inert']); gloss data = curated starters, full asset built by `build-wordlens-data.mjs` (ECDICT/CC-CEDICT+HSK)
-- [iOS instant-dict double popup](ios-instant-dict-double-popup.md) — iOS emits multiple `selectionchange`/long-press → instant sys-dict fired 2-3×; deferredAction `fired` once-per-gesture latch + `beginGesture`; tap-to-deselect re-fire fixed by `isLongPressHold` 300ms gate (!isAndroid); Word Lens `wantWordLensDict` now routes via `handleDictionary` to honor system dict
-- [Edge TTS word highlighting (#4017, PR #4566)](edge-tts-word-highlighting-4017.md) — keep sentence marks, add word highlight via `audio.metadata` WordBoundary (verbatim input span, 100-ns ticks) synced to `audio.currentTime` by rAF; readaloud endpoint gates on UA (Edg, non-headless) NOT Origin; fixed browser `new WebSocket(url,{headers})` SyntaxError (wss never worked on web); overlay = `<path>` in FOLIATE-PAGINATOR shadow root; dev-web verify recipe (browse --proxy + UA spoof, never Origin header)
-- [Reference Pages (#672+#4542, PR #4549)](reference-pages-672-4542.md) — 'reference' progressStyle from foliate `pageItem`/`book.pageList` (numeric-max total rule, roman-tail safe); per-book `referencePageCount` via skipGlobal save; verification EPUBs + dev-web synthetic drag-drop import trick; locale-tail rebase-conflict recipe (checkout --ours → re-extract → re-translate)
-- [OPDS Firefox strict-XML parse (#4479)](opds-firefox-strict-xml-4479.md) — MEK feed has junk after `</feed>`; Firefox DOMParser → `<parsererror>` (silent back-nav), Chrome lenient; `parseOPDSXML` slices root start→last close tag; jsdom mirrors Firefox; wired into page.tsx + validateOPDSURL + feedChecker (latter also #4181 `looksLikeXMLContent` swap)
-- [OPDS 2.0 JSON search greyed out (#4502)](opds2-json-search-4502.md) — `isSearchLink` ignored templated `application/opds+json` links → `hasSearch` false → disabled navbar input; add `MIME.OPDS2`+`templated`, `expandOPDSSearchTemplate` (foliate `uri-template.js`), handleSearch OPDS2 branch. Gotcha: `resolveURL` mangles `{?query}` braces — expand template BEFORE resolving
-- [OPDS HTML description (#4503)](opds-html-description-4503.md) — detail-view descriptions showed raw `<p>`/`&quot;` tags; aggregator double-escapes `type="text"` summary + `PublicationView` dumped it into unsanitized `dangerouslySetInnerHTML`; fix = `getOPDSDescriptionHtml` (decode-one-level-iff-fully-escaped, then `sanitizeHtml`)
-- [Manage Cache + iOS container layout](manage-cache-ios-layout.md) — `'Cache'` base = `Library/Caches/<bundle>` only (not all of Caches); iOS `Documents/Inbox` cleared too; WebKit cache + tmp out of reach; never touch App Support
-- [D-pad Navigation](dpad-navigation.md) — Android TV remote / keyboard arrow navigation design, key files, and pitfalls
-- [Cloudflare Workers WebSocket](cloudflare-workers-websocket.md) — use fetch() Upgrade pattern (not `ws` npm); CF delivers binary frames as Blob (must serialize async decodes)
-- [Share-a-Book Feature (in progress)](share-feature.md) — locked decisions for the /s/{token} share-link feature; plan at ~/.claude/plans/ok-we-will-learn-cosmic-acorn.md
-- [readest.koplugin i18n](koplugin-i18n.md) — gettext loader at `apps/readest.koplugin/i18n.lua`, `.po` catalog at `locales/<i18next-code>/translation.po`, extract/apply scripts in `scripts/`
-- [koplugin cover upload](koplugin-cover-upload.md) — #4374 uploadBook only shipped cached cloud covers; local-origin books uploaded blank. Fix = `extractLocalCover` via `FileManagerBookInfo:getCoverImage(nil, file)` → `writeToFile(path,"png")`. KOReader checkout at `/Users/chrox/dev/koreader`
-
-## Feedback
-- [Commit messages English-only](feedback-commit-message-english-only.md) — commit messages + PR titles must be English only (no CJK glyphs, no em/en dashes); keep CJK examples/screenshots in the PR body, code, and tests. From PR #4660
-
-## Patterns
-- [Virtuoso + OverlayScrollbars](virtuoso_overlayscrollbars.md) — useOverlayScrollbars hook integration for overlay scrollbars on mobile webviews
-- [Design system → DESIGN.md](feedback_design_system_doc.md) — codify recurring UI/UX rules in `apps/readest-app/DESIGN.md`; never `pl/pr/ml/mr/text-left/text-right` (RTL); §5 boxed list anatomy has uniform `min-h-14` rows and chromeless controls
-
-## Reader UI Fixes
-- [RSVP control bar overlap = REVERT](rsvp-control-bar-overlap-revert.md) — mobile RSVP TTS+settings overlapping transport was a REGRESSION: #4585 fixed it (in-flow `justify-between md:justify-center`), stale-branch #4589 (Word Wise) squash-reverted the whole fix incl. its guard test; re-fixed + on-device CDP recipe (Shift+V to enter RSVP, live-DOM preview)
-- [Overlay z-index scale](zindex-overlay-scale.md) — compact global scale (RSVP 100/101, Settings 110, ModalPortal/CmdPalette 120, toast 130, app-lock 200) replacing insane 10000s; Add-Catalog-behind-Settings was MOBILE-ONLY (desktop `.window-border` z-99 traps inline Settings; ModalPortal portals to body→wins); static invariant test `zIndexScale.test.ts`; on-device CDP verify via `pnpm dev-android` devtools build
-- [Search excerpt no context for styled words (#4594)](search-excerpt-context-4594.md) — RESOLVED (foliate-js#25 + readest#4631). italic/`<i>` word = own `strs[]` text node; `makeExcerpt` read context only WITHIN the node → empty pre/post; fix = `collectBefore/After` walk neighbour nodes (+2 latent multi-node match bugs: string-index `slice`, `start===end`)
-- [Global annotation page-turn lag (#4575)](global-annotation-pageturn-perf-4575.md) — highlighting recurring names = `global` highlights re-fanned-out (TreeWalker + getCFI/occurrence + SVG churn) EVERY page turn (~25-45ms desktop, ×mobile); fix = `WeakMap<Document,...>` memo in `globalAnnotations.ts` skips already-expanded sections; live-profiled via dev-web foliate-view; GBK-TXT synthetic-drop import recipe
-- [Overlayer splitRange by text nodes](overlayer-splitrange-textnodes.md) — highlight SVG missed bullet-list text when range also touched a `<p>`: `#splitRangeByParagraph`'s `'p,h1-h4'` selector dropped `li` (3rd whack-a-mole after f087826/920676b); fix = walk text nodes + `img,svg` in overlayer.js, never block-tag selectors; jsdom test stubs `Range.prototype.getClientRects`
-- [Android image callout freeze](android-image-callout-freeze.md) — long-press `<img>` fires WebView native callout that collides with app touch handlers → whole-app freeze; `-webkit-touch-callout: none` doesn't inherit so put `.no-context-menu` on an ancestor of the image (`.no-context-menu img` rule in globals.css); seen on book covers (#4345) + image preview/zoom (#4420, `ImageViewer.tsx`)
-- [ProgressBar focus-ring line (#4397)](progressbar-focus-ring-4397.md) — decorative `.progressinfo` footer was `tabIndex={-1}` → Android long-press focused it → stray content-width focus-ring line at the bottom every page; fix = drop tabIndex (role='presentation' must not be focusable); ffmpeg-the-video debugging + live-browser `:focus-visible` confirmation
-- [Table dark-mode tint regression (#4419)](table-dark-mode-tint-4419.md) — `blockquote, table *` color-mix tint in `getColorStyles` must stay gated on `overrideColor` (gate added #2377, removed #4055, re-broke → #4419); safe now that #4392 light-bg rewriters handle #4028 zebra legibility; SAME rule paints vertical-TOC `.space`/▉ spacer cells (▉ U+2589 = blank glyph, contours=0) → "spacing changes" symptom; both fixed by the gate
-- [Double-click-drag turns page (#4524)](dblclick-drag-pageturn-4524.md) — web double-click+drag selection also turned the page; 1st click's deferred single-click (250ms) fires mid-drag while 2nd-click button held; fix = `isMouseDown` flag in `iframeEventHandlers.ts` gates the deferred `postSingleClick`; synthetic-repro gotchas (shadow-DOM iframe walk, chained-repro timing pollution, reload to re-bind listeners)
-- [RSVP font face/family (#4519)](rsvp-font-settings-4519.md) — RSVP word was hardcoded `font-mono`; now mirrors the reader font via `getBaseFontFamily(viewSettings)` (new export in `style.ts`, shares `buildFontFamilyLists` with `getFontStyles`). Overlay renders in the TOP document (portal to body) where custom + basic Google fonts are mounted; known gap = built-in CJK web fonts only in top doc when `isCJKEnv()`
-- [RSVP RTL word display (#4630)](rsvp-rtl-word-display-4630.md) — Arabic/RTL word window showed separated, reversed letters: ORP focus-letter split slices words by char index (breaks shaping/order); fix = `isRTLText` → render RTL whole via the CJK `.rsvp-word-whole` branch with `dir=rtl`. Literal-RTL-char Edit pitfall → write regex with `\u` escapes
-- [Edge TTS word-highlight drift on middle sentences](tts-word-highlight-singletextnode-drift.md) — `rangeTextExcludingInert` TEXT_NODE fast path ignored range offsets → returned whole paragraph → word offsets drift (spoken "Those"→hl "if th"); only middle sentences of single-`<span>` paras (cac=TEXT_NODE); Edge-only; fix=slice [startOffset,endOffset]; added dev-only `[TTS] word-sync` log; select-word→popup-headphone repro
-- [TTS start-from-selection bugs](tts-start-from-selection.md) — foliate `from()` picked first mark at/after selection → started NEXT sentence for non-first words (fix=last mark at/before); + Annotator now `cloneRange()`+`view.deselect()` on TTS start so the word doesn't stay selected; jsdom needs `CSS.escape` polyfill (vitest.setup) since `from()` uses it
-- [Reuse TTS session on Paragraph/RSVP entry](tts-reuse-session-mode-entry.md) — modes only engaged following on a fresh `playing` event → entering with TTS already playing didn't sync. Fix = `TTSController.redispatchPosition()` + `useTTSControl` `tts-sync-request` replay (position-before-state) + per-mode engage-on-entry effect (following=true, reset lastSequenceSeen, dispatch request); RSVP paused branch also `setExternallyDriven(true)`. Paragraph live-verified ("Following audio" on entry)
-- [Footnote aside border line (#4438)](footnote-aside-namespace-order-4438.md) — v0.11.4 regression: stray horizontal line below footnote marker. #4383 inlined custom `@font-face` BEFORE the `@namespace epub` (which lived in `getPageLayoutStyles`), invalidating it per CSS spec → namespaced `aside[epub|type~="footnote"]{display:none}` dropped → book's `aside{border:3px double}` showed. Only with custom fonts loaded. Fix = hoist `@namespace` to front of `getStyles`. Repro needs XHTML (`epub:type` namespaced only in XML); Playwright `setContent` parses HTML and won't reproduce
-- [Scrolled-mode notch mask vs texture (#4486)](notch-mask-texture-4486.md) — top inset mask occluded the bg texture; full-cell + clip-path paint-box-matching for tile alignment; CDP-inject + MAE seam verification on device; adb taps in status-bar region eaten by SystemUI
-- [Paragraph-mode accidental exit + off-center bar (#4474)](paragraph-mode-accidental-exit-4474.md) — backdrop/center taps exited focus mode (stray "too high/low" taps); `ParagraphBar` only reshows on mousemove (no touch reshow) so can't just delete tap-exits → new `paragraph-show-controls` event reveals the bar instead. Also bar `absolute`→`fixed`: it centered on the gridcell which a pinned sidebar shifts right, while the paragraph centers on the `fixed inset-0` overlay/viewport
-- [Share intent + customizable toolbar (#4014)](annotation-share-toolbar-4014.md) — Share tool in the selection toolbar (sharekit gated mobile+macOS only re: #4343 Windows freeze; `canShareText`/`shareSelectedText` in dual-purpose `share.ts`) + drag-and-drop customizer sub-page; `annotationToolbarItems` view setting (Share hidden by default); pure helpers in `annotationToolbar.ts`
-
+- [Android hyphen selection (#1553)](android-hyphen-selection-bounds-1553.md) — Blink start handle on last hyphen;
+- [NativeFile vs RemoteFile I/O](android-nativefile-remotefile-io.md) — NativeFile slow; asset Range broken;
+- [Window-state sanitizer (#4398)](window-state-sanitize-4398.md) — invalid json crashes WebView2; sanitize before
+- [Android Open-with intent (#4521)](android-open-with-intent-flow.md) — VIEW gated by `autoImportBooksOnOpen`
+- [Dict lookup browser hijack (#4559)](dict-lookup-browser-hijack-4559.md) — missing `<queries>` sdk36; filter in
+- [Large-PDF OOM range flood (#3470)](pdf-oom-range-flood-3470.md) — un-awaited ranges OOM; MAX_CONCURRENT_RANGES=6
+- [Android themed icon (#4733)](android-themed-icon-4733.md) — no monochrome → force-commit; tint=SRC_IN
+## Reader Features & UI
+- [Mobile reading widgets (#1602/PR#4842)](mobile-reading-widgets.md) — home-screen widget iOS+Android; gotchas: iOS
+- [PDF scrolled-mode lag (#4795/#4031)](pdf-scroll-lag-preload-4795.md) — 415ms/page render vs 50% margin; widen to
+- [Scrolled-PDF pinch-zoom (#4817)](scrolled-pdf-pinch-zoom-4817.md) — live pinch + no-shift (gap×`--scroll-zoom` +
+- [Search modes #4560 + spoiler-bound bug](search-modes-4560-and-spoiler-bound-bug.md) — regex + nearby-words;
+- [OPDS groups carousel (#4750)](opds-groups-carousel-4750.md) — >=2 groups → virtuoso carousel; `scrollToIndex`
+- [WebDAV browser sort + search (#4724)](webdav-browse-sort-search-4724.md) — PR #4786;
+- [Image zoom trackpad flicker (#4742)](image-zoom-trackpad-flicker-4742.md) — macOS pinch=`ctrl+wheel`;
+- [Instant Highlight ate tap/swipe](instant-highlight-tap-paginate.md) — preventDefault killed tap-paginate;
+- [Keyboard selection adjust (#4728)](keyboard-selection-adjust-4728.md) — Shift+←/→ char, Ctrl/Alt+Shift word;
+- [Double-click word select](iframe-double-click-word-select.md) — orphaned `iframe-double-click` →
+- [Cross-page selection auto-turn (#4741)](cross-page-selection-autoturn-4741.md) — `useAutoPageTurn` dwell;
+- [Annotator onLoad listener leak (#4735)](annotator-onload-listener-leak-paragraph-mode.md) — `useRendererInputListener
+- [Paragraph mode toggle/resume (#4717)](paragraph-mode-toggle-resume-4717.md) — snapshot live Set; resume from fresh
+- [Paragraph-mode accidental exit (#4474)](paragraph-mode-accidental-exit-4474.md) — `paragraph-show-controls`; bar
+- [#4584 tap-death](issue-4584-tap-death-investigation.md) — UNFIXED; `isPopuped` RED HERRING; likely WebView-148
+- [Dblclick-drag turns page (#4524)](dblclick-drag-pageturn-4524.md) — `isMouseDown` gates `postSingleClick`
+- [Tap to open image/table (#4600)](tap-to-open-image-table-4600.md) — `iframe-open-media` + `detectMediaTarget`
+- [PDF/CBZ Contrast view-menu](pdf-cbz-contrast-view-menu.md) — per-book `contrast`; ONE `filter:` (invert+contrast);
+- [iOS instant-dict double popup](ios-instant-dict-double-popup.md) — once-per-gesture latch; `isLongPressHold` 300ms
+- Dict: [popup font size #4443](dict-popup-font-size-4443.md) `--dict-font-scale` MDict `::part(dict-content)`; [lemmatization #4574](dict-lemmatization-4574.md)
+- Word Lens: [inline gloss](wordlens-feature.md) CFI-safe `<ruby cfi-skip>…<rt cfi-inert>` TTS/search isolation; [en-en](wordlens-en-en.md)
+- [Stripe highest-active plan (#4694)](stripe-plan-highest-active-4694.md) — `plans.plan` = MAX over active subs
+- [Save image to gallery (#4680)](save-image-to-gallery-android.md) — MediaStore; sharekit 0-byte self-copy
+- [Webtoon Mode (#3647)](webtoon-mode-3647.md) — no-gap scrolled images; FXL fit-width; `--scroll-page-gap`
+- [Biometric app-lock (#4645)](biometric-app-lock-4645.md) — flag from `appLockStore`; plugin `cfg(mobile)`
+- [Reference Pages (#4542)](reference-pages-672-4542.md) — 'reference' progressStyle; `referencePageCount`
+- [E-ink screen refresh page-turner (#4687)](eink-screen-refresh-pageturner-4687.md) — bindable 'refresh' action;
+- [Share intent + toolbar (#4014)](annotation-share-toolbar-4014.md) — Share gated mobile+macOS;
+- [Instant highlight delete orphan (#4773)](instant-highlight-delete-orphan-4773.md) — stale memoized index + in-place
+- [Empty highlight leak on annotate cancel (#4791)](empty-highlight-leak-on-annotate-cancel-4791.md) — Annotate
+- [Customize Toolbar global (#4760)](customize-toolbar-global-serializeconfig.md) — `serializeConfig` ref-compare →
+- [Customize Toolbar e-ink black bar (#4839)](customize-toolbar-eink-black-bar-4839.md) — preview Zone copied
+- Native TTS: [iOS #4676](native-ios-tts-4676.md) AVSpeechSynthesizer pause==stop rate `pow^(1/2.5)`; [offline halt #4613](native-tts-offline-autoadvance-4613.md)
+- Edge TTS: [word highlight #4017](edge-tts-word-highlighting-4017.md) `audio.metadata` WordBoundary by rAF gate on UA; [drift](tts-word-highlight-singletextnode-drift.md)
+- [TTS highlight granularity setting](tts-highlight-granularity-setting.md) — Word/Sentence; gate `prepareSpeakWords`
+- [TTS start-from-selection](tts-start-from-selection.md) — use last mark at/before sel; cloneRange+deselect
+- [Reuse TTS session on mode entry](tts-reuse-session-mode-entry.md) — `redispatchPosition()` + `tts-sync-request`
+- RSVP: [control-bar overlap REVERT](rsvp-control-bar-overlap-revert.md) #4585 fixed/#4589 stale-reverted; [font face/family #4519](rsvp-font-settings-4519.md) `getBaseFontFamily` overlay top doc; [RTL word #4630](rsvp-rtl-word-display-4630.md)
+- [Overlay z-index scale](zindex-overlay-scale.md) — RSVP 100 / Settings 110 / ModalPortal 120 / toast 130 / app-lock
+- [Global annotation page-turn lag (#4575)](global-annotation-pageturn-perf-4575.md) — `global` re-fanned every turn;
+- [Overlayer splitRange text nodes](overlayer-splitrange-textnodes.md) — `'p,h1-h4'` dropped `li`; walk text nodes +
+- [Android image callout freeze](android-image-callout-freeze.md) — `.no-context-menu` on ANCESTOR
+- [Table dark-mode tint (#4419)](table-dark-mode-tint-4419.md) — `blockquote, table *` tint gated on `overrideColor`
+- [Footnote aside border line (#4438)](footnote-aside-namespace-order-4438.md) — @font-face before @namespace; hoist
+- Proofread: [enhancements #4700](proofread-enhancements-4700.md) regex UI/Ctrl+P reuse/`wholeWord` no-op; [per-book CRDT #4781](proofread-per-book-crdt-sync.md)
+- [Russian hanging-preposition NBSP (#4769)](russian-hanging-prepositions-nbsp-4769.md) — generic `nbsp` +
+- OPDS: [Firefox strict-XML #4479](opds-firefox-strict-xml-4479.md) junk after `</feed>` slice to last close; [JSON search #4502](opds2-json-search-4502.md) expand `{?query}` BEFORE resolveURL; [HTML desc #4503](opds-html-description-4503.md) decode-once+sanitize; [self-link meta #4749](opds-self-link-metadata-4749.md) `rel:self` deref; [popular dedup #4782](opds-popular-catalog-dedup-4782.md)
+- [D-pad Navigation](dpad-navigation.md) — Android TV remote / arrow-key nav
+- [koplugin cover upload (#4374)](koplugin-cover-upload.md) — `extractLocalCover` via `getCoverImage`
 ## Library Fixes
-- [Tauri menu append race (#4389)](tauri-menu-append-race-4389.md) — un-awaited `Menu.append()` (async IPC) in `BookshelfItem.tsx` → context-menu items shuffle order every open (native only, invisible in jsdom); fix = single `await Menu.new({ items })` of ordered `MenuItemOptions`; order/inclusion extracted to pure `getBookContextMenuItemIds` for unit testing
-- [TXT author recognition (#4390)](txt-author-recognition-4390.md) — 【】-titled Chinese web-novels show author missing/garbage; they're TXT→EPUB (title==full filename is the tell, check `txt.ts` not foliate-js); `extractTxtFilenameMetadata` only handled 《》 + greedy header capture grabbed metadata blobs; fix = `parseLabeledAuthor` for any filename + `isPlausibleAuthorName` guard
-- [TXT chapter measure-word false positives (#4658)](txt-chapter-measure-word-4658.md) — `第一封信`/`第四本书…` (量词 prose) detected as chapters; `createChapterRegexps('zh')` unit class split into strong `[章节回讲篇话]` (attached title OK) vs weak/量词 `[卷本册部封]` (title needs a separator or line end, never a bare noun)
-- [Cover stale until refresh (in-place mutation vs React.memo)](cover-stale-inplace-mutation-memo.md) — editing a book cover in details + Save left the library cover stale until reload; `handleUpdateMetadata` mutated `book` IN PLACE so memoized `<BookCover>`'s prev snapshot pointed at the same object → comparator saw no change → skip; fix = pure `getBookWithUpdatedMetadata` returns a NEW book object. Cloning in `updateBook` wouldn't help (original already mutated). Verified live on emulator via CDP fiber-store extraction (A: mutate→stale, B: new obj→updates)
-- [Series/author folder back no-op (#4437)](series-folder-back-noop-4437.md) — back arrow dead inside Series/Author folder after cold start; Next.js 16.2 static-export empty-search `router.replace` no-op (same as #3782/#3832); `GroupHeader.handleBack` missed the `group=''` workaround. CDP-verify gotcha: synthetic `el.click()` won't fire React onClick — use trusted `Input.dispatchMouseEvent`
-
-## Library Architecture
-- [Book action platform surfaces](book-actions-platform-surfaces.md) — library context menu is **Tauri-desktop-only** (`hasContextMenu` false on web + iOS/Android); cross-platform book actions go in `BookDetailView`'s icon row. #4543 Goodreads search added both surfaces + a built-in web-search provider for highlighted-text lookup
-
-## Architecture Notes
-- foliate-js is a git submodule at `packages/foliate-js/`
-- Multiview paginator: loads adjacent sections in background, multiple View/Overlayer instances per book
-- Style overrides: `getLayoutStyles()` (always), `getColorStyles()` (when overriding color)
-- `transformStylesheet()` does regex-based EPUB CSS rewriting at load time
-- TTS uses independent section tracking (`#ttsSectionIndex`) decoupled from view
-- Safe area insets flow: Native plugin -> useSafeAreaInsets hook -> component styles
-- Dropdown menus use `DropdownContext` (not blur-based) for screen reader compat
-- [Foliate touch-listener capture phase](foliate-touch-listener-capture-phase.md) — to suppress reader gestures from the app, use `{capture:true}`; the paginator registers bubble-phase doc listeners first (during `view.open()`)
-- [iframe cross-realm instanceof](iframe-cross-realm-instanceof.md) — app-bundle code (style.ts, iframeEventHandlers.ts) runs in top realm; `iframeEl instanceof Element` is ALWAYS false → guards silently drop all iframe elements (passes jsdom, dead in app). Duck-type `'closest' in target` instead. Bit PR #4391's touch routing + applyTableStyle dedupe
-
-## Workflow
-- [Test file filter](feedback_test_file_filter.md) — use `pnpm test <path>` without `--` to run a single file
-- [Always rebase before PR](feedback_pr_rebase.md) — rebase onto origin/main before creating PRs
-- [New branch per PR](feedback_pr_new_branch.md) — always create a fresh branch from main for each new PR/issue
-- [Upgrade gstack locally](feedback_gstack_upgrade.md) — always upgrade from the project's .claude/skills/gstack, not global
-- [No lookbehind regex](feedback_no_lookbehind_regex.md) — never use `(?<=)` or `(?<!)` in JS/TS; build check rejects them
-- [Use worktree](feedback_use_worktree.md) — never `git worktree add` directly; always `pnpm worktree:new` before PR review, issue fix, or feature work
-- [en/translation.json holds ONLY plural variants + proper nouns](feedback_en_plurals_manual.md) — non-plural strings stay out (defaultValue: key is the en source); plural strings (`_('...', { count })`) need hand-added `_one`/`_other` entries or the singular renders as "1 days"
-- [Never push on every change](feedback_dont_push_every_change.md) — hold pushes during active bug iteration; commit locally only until user confirms or work hits a clean done-state
-- [No test seams in production code](feedback_no_test_seams_in_prod.md) — production must never import or call `__reset*ForTests`; cross-module test resets belong in the test file's beforeEach/afterEach
-- [Dependabot transitive fixes](dependabot-pnpm-overrides.md) — pin patched min-version in `pnpm-workspace.yaml` `overrides:` (NOT package.json `pnpm.overrides`, which pnpm 9+ ignores); watch for existing too-low pins; alert#≠issue# so no `Closes #` (PR #4523)
-- [CI/PR delivery + push keepalive](ci-pr-delivery-and-push.md) — package small PRs from a dirty dev tree via temp-index plumbing (no worktree); slow pre-push hook (~55s full suite) + SOCKS-proxy SSH → idle "Broken pipe", fixed with `ServerAliveInterval`; `--no-verify` safe once the hook already passed (always `git ls-remote` to confirm a push landed)
+- [Book action platform surfaces](book-actions-platform-surfaces.md) — context menu Tauri-desktop-only; cross-platform
+- [Tauri menu append race (#4389)](tauri-menu-append-race-4389.md) — single `await Menu.new({ items })`
+- TXT: [author recognition #4390](txt-author-recognition-4390.md) `parseLabeledAuthor`+`isPlausibleAuthorName`; [chapter measure-word FP #4658](txt-chapter-measure-word-4658.md)
+- [Cover stale (in-place mutation)](cover-stale-inplace-mutation-memo.md) — pure `getBookWithUpdatedMetadata`
+- [Series/author back no-op (#4437)](series-folder-back-noop-4437.md) — Next 16.2 empty-search no-op; `handleBack`
+- [Library/reader separate texture (#4743)](library-reader-separate-texture-4743.md) — `libraryBackground*`
+- [List view series overflow (#4796)](list-view-series-overflow-4796.md) — fixed `h-28` clipped series+description
+- [Recently-read shelf (#3797)](recent-read-shelf-3797.md) — PR #4829; reuse `BookItem` + shared `useOpenBook`; flex
+## Architecture & Patterns
+- foliate-js submodule at `packages/foliate-js/`; multiview paginator preloads adjacent sections
+- [Markdown .md support (#774)](markdown-md-support-774.md) — in-memory foliate book (no EPUB) in `src/utils/md.ts`;
+- Style: `getLayoutStyles()` always, `getColorStyles()` when overriding color; `transformStylesheet()` rewrites EPUB CSS at load
+- TTS independent section tracking (`#ttsSectionIndex`); safe insets: native plugin → useSafeAreaInsets → styles; Dropdowns `DropdownContext`
+- Stale settings closure: store-hook `settings` stale across `await`; persist `useSettingsStore.getState().settings` ([#4780](webdav-connect-nullified-4780.md)
+- [Foliate touch-listener capture phase](foliate-touch-listener-capture-phase.md) — suppress gestures via
+- [iframe cross-realm instanceof](iframe-cross-realm-instanceof.md) — `instanceof Element` false; duck-type `'closest'
+- [Virtuoso + OverlayScrollbars](virtuoso_overlayscrollbars.md) — useOverlayScrollbars for mobile webviews
+- [Design system → DESIGN.md](feedback_design_system_doc.md) — never `pl/pr/ml/mr/text-left/right` (RTL)
+## Workflow & Feedback
+- [Commit messages English-only](feedback-commit-message-english-only.md) — English only (no CJK, no em/en dashes)
+- [Test file filter](feedback_test_file_filter.md) — `pnpm test <path>` without `--` runs one file
+- [Rebase before PR](feedback_pr_rebase.md) — rebase onto origin/main before PRs
+- [New branch per PR](feedback_pr_new_branch.md) — fresh branch from main per PR/issue
+- [Use worktree](feedback_use_worktree.md) — never `git worktree add`; always `pnpm worktree:new`
+- [Never push every change](feedback_dont_push_every_change.md) — commit locally until user confirms
+- [No test seams in prod](feedback_no_test_seams_in_prod.md) — prod never imports `__reset*ForTests`
+- [No lookbehind regex](feedback_no_lookbehind_regex.md) — never `(?<=)`/`(?<!)`; build check rejects
+- [en plurals manual](feedback_en_plurals_manual.md) — only plural variants + proper nouns; `_one`/`_other`
+- [i18n:extract prunes keys](i18n-extract-prunes-keys.md) — `removeUnusedKeys` deletes valid keys; revert churn, add
+- [Dependabot transitive fixes](dependabot-pnpm-overrides.md) — pin in `pnpm-workspace.yaml` `overrides:`; alert#≠issue#
+- [Upgrade gstack locally](feedback_gstack_upgrade.md) — upgrade from project `.claude/skills/gstack`

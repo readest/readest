@@ -75,6 +75,9 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [showRemainingTime, setShowRemainingTime] = useState(viewSettings.showRemainingTime);
   const [showRemainingPages, setShowRemainingPages] = useState(viewSettings.showRemainingPages);
   const [showProgressInfo, setShowProgressInfo] = useState(viewSettings.showProgressInfo);
+  const [showStickyProgressBar, setShowStickyProgressBar] = useState(
+    viewSettings.showStickyProgressBar,
+  );
   const [showCurrentTime, setShowCurrentTime] = useState(viewSettings.showCurrentTime);
   const [use24HourClock, setUse24HourClock] = useState(viewSettings.use24HourClock);
   const [showCurrentBatteryStatus, setShowCurrentBatteryStatus] = useState(
@@ -120,6 +123,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       showRemainingTime: setShowRemainingTime,
       showRemainingPages: setShowRemainingPages,
       showProgressInfo: setShowProgressInfo,
+      showStickyProgressBar: setShowStickyProgressBar,
       showCurrentTime: setShowCurrentTime,
       use24HourClock: setUse24HourClock,
       showCurrentBatteryStatus: setShowCurrentBatteryStatus,
@@ -351,6 +355,18 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     saveViewSettings(envConfig, bookKey, 'showProgressInfo', showProgressInfo, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showProgressInfo]);
+
+  useEffect(() => {
+    saveViewSettings(
+      envConfig,
+      bookKey,
+      'showStickyProgressBar',
+      showStickyProgressBar,
+      false,
+      false,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showStickyProgressBar]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'showCurrentTime', showCurrentTime, false, false);
@@ -740,6 +756,13 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
             data-setting-id='settings.layout.referencePageCount'
           />
         )}
+        <SettingsSwitchRow
+          label={_('Show Progress Bar')}
+          checked={showStickyProgressBar}
+          disabled={!showFooter}
+          onChange={() => setShowStickyProgressBar(!showStickyProgressBar)}
+          data-setting-id='settings.layout.showStickyProgressBar'
+        />
         <SettingsSwitchRow
           label={_('Show Current Time')}
           checked={showCurrentTime}

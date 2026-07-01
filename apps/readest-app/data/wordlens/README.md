@@ -17,7 +17,7 @@ See `ATTRIBUTION.md` for the data sources + licenses.
 ```bash
 mkdir -p /tmp/ww-data && cd /tmp/ww-data
 
-# en→中文: ECDICT (MIT) — ~66 MB
+# en→中文 + en→en: ECDICT (MIT) — ~66 MB
 curl -sL -o ecdict.csv https://raw.githubusercontent.com/skywind3000/ECDICT/master/ecdict.csv
 
 # 中文→en: CC-CEDICT (CC-BY-SA) + HSK levels (drkameleon)
@@ -34,8 +34,20 @@ for c in es fr de pt it ru; do curl -sL -o lemmatization-$c.txt https://raw.gith
 ```
 
 ## 2. Generate packs (run from `apps/readest-app`)
-> **Order matters:** build `en-zh` **first** — the en→X WikDict builds reuse its English
-> inflection table to lemmatize (`kept`→`keep`).
+> **Order matters:** build `en-en` **first** — every en→X build reuses its English
+> inflection + derivation table to lemmatize (enforced: en→X throws without `en-en.json`).
+>
+> **Lemmatization rule (all English-source pairs):** the gloss difficulty is gated by
+> the LEMMA's frequency rank. `en-en`/`en-zh` (built directly via `buildEnPack`) resolve
+> both inflected (`kept`→`keep`, via ECDICT `exchange`) AND transparently-derived forms
+> (`thickly`→`thick`, `kindness`→`kind`, `insufferable`→`suffer`, via
+> `enBaseFormCandidates` — suffixes `-ly/-ful/-ness/-less/-ward/-able/-ible` and negative
+> prefixes `un-/in-/im-/ir-/il-`) to their lemma. A candidate is accepted when the ECDICT
+> `definition` names the base OR the Chinese `translation` shares a content character with
+> it (for meaning-shifting families whose def never names the base). Drift (`hardly`⇏
+> `hard`) and coincidental stems (`ally`⇏`ale`, `capable`⇏`cap`) are rejected by both
+> checks. en→X packs inherit this via the `en-en` table — `en-en` is the canonical
+> English lemma source.
 ```bash
 cd apps/readest-app
 
@@ -43,12 +55,19 @@ cd apps/readest-app
 node scripts/build-wordlens-data.mjs en-zh /tmp/ww-data/ecdict.csv 30000
 node scripts/build-wordlens-data.mjs zh-en /tmp/ww-data/cedict.txt /tmp/ww-data/hsk.json 12000
 
+# en→en (monolingual), short English hints for learners: a simpler SYNONYM → else a
+# category (WordNet HYPERNYM) → else the ECDICT `definition` (first ≤2 senses). Packs
+# store the FULL hint; the display-time length cap lives in `cleanGloss` (runtime), so
+# changing it needs no regeneration. Needs WordNet (synsets + hypernyms):
+# `npm pack wordnet-db && tar xzf wordnet-db-*.tgz` gives package/dict. Reuses ecdict.csv.
+node scripts/build-wordlens-data.mjs en-en /tmp/ww-data/ecdict.csv /tmp/ww-data/package/dict 30000
+
 # X→en (foreign source): pass the source-language lemmatization list (6th arg) so
 # inflected source words ("corriendo" -> "correr") resolve to their lemma's gloss.
 for src in es fr de pt it ru; do
   node scripts/build-wordlens-data.mjs build-wikdict "$src" en "/tmp/ww-data/${src}_50k.txt" "/tmp/ww-data/$src-en.sqlite3" 20000 "/tmp/ww-data/lemmatization-$src.txt"
 done
-# en→X (English source): lemmatized automatically via en-zh.json (build it first)
+# en→X (English source): lemmatized automatically via en-en.json (built above)
 for tgt in es fr de pt ru; do
   node scripts/build-wordlens-data.mjs build-wikdict en "$tgt" /tmp/ww-data/en_50k.txt "/tmp/ww-data/en-$tgt.sqlite3" 20000
 done
@@ -84,4 +103,5 @@ On next load the app fetches `manifest.json` (≤5-min CDN cache), compares each
 | `topN` per pack | the build CLI's last arg |
 | commonest-N words skipped (`skipTop`) + per-chapter render cap (`DEFAULT_CAP`) | `src/services/wordlens/{planner,…}` and `buildPack` in the build script |
 | difficulty cutoffs per slider level | `src/services/wordlens/difficulty.ts` |
-| gloss cleaning (POS/`[…]`/`CL:` strip, 24-char cap) | `shortGloss` in `scripts/build-wordlens-data.mjs` |
+| gloss shaping in the pack (POS/`[…]`/`CL:` strip, ≤2 senses) | `shortGloss`/`shortDefGloss` in `scripts/build-wordlens-data.mjs` |
+| display length cap (`MAX_GLOSS_LEN`, applied at render, no regen) | `cleanGloss` in `src/services/wordlens/gloss.ts` |

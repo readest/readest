@@ -169,6 +169,20 @@ export async function updateCoverImage(
   }
 }
 
+/**
+ * Partial MD5 of the local cover.png, or null when the cover is absent. This is
+ * the content-addressed cover-change signal for cross-device sync (issue
+ * #4544): keeping `book.coverHash === computeCoverHash(book)` lets a peer
+ * re-download the cover iff the synced hash differs from the local one. An
+ * identical (re-extracted / re-imported) cover yields the same hash, so there
+ * is no re-sync churn.
+ */
+export async function computeCoverHash(fs: FileSystem, book: Book): Promise<string | null> {
+  if (!(await fs.exists(getCoverFilename(book), 'Books'))) return null;
+  const coverFile = await fs.openFile(getCoverFilename(book), 'Books');
+  return partialMD5(coverFile);
+}
+
 // --- Book Merge ---
 
 /**
@@ -510,6 +524,12 @@ export async function importBook(
         await fs.writeFile(getCoverFilename(book), 'Books', coverBytes);
       }
     }
+    // Maintain coverHash === partialMD5(cover.png) so cross-device cover sync
+    // can detect changes (issue #4544). Read from disk regardless of whether we
+    // just wrote it — a hash-match reimport may reuse an existing cover.
+    const coverHash = await computeCoverHash(fs, book);
+    book.coverHash = coverHash;
+    if (existingBook) existingBook.coverHash = coverHash;
     // Never overwrite the config file only when it's not existed
     if (!existingBook) {
       await saveBookConfigFn(book, INIT_BOOK_CONFIG);

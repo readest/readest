@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent" android:layout_height="match_parent"
+  android:orientation="vertical" android:background="@drawable/widget_card_bg"
+  android:padding="6dp">
+  <!-- Empty FrameLayout used as a spacer. RemoteViews does not allow the base
+       <View> type, so a whitelisted container is used instead. -->
+  <FrameLayout android:id="@+id/top_spacer"
+    android:layout_width="match_parent" android:layout_height="8dp"
+    android:visibility="gone" />
+  <LinearLayout android:id="@+id/row"
+    android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+    android:orientation="horizontal" android:baselineAligned="false">
+    <ImageView android:id="@+id/cover0"
+      android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+      android:layout_marginHorizontal="4dp" android:scaleType="fitCenter"
+      android:adjustViewBounds="true" android:contentDescription="@null" />
+    <ImageView android:id="@+id/cover1"
+      android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+      android:layout_marginHorizontal="4dp" android:scaleType="fitCenter"
+      android:adjustViewBounds="true" android:contentDescription="@null" />
+    <ImageView android:id="@+id/cover2"
+      android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+      android:layout_marginHorizontal="4dp" android:scaleType="fitCenter"
+      android:adjustViewBounds="true" android:contentDescription="@null" />
+  </LinearLayout>
+  <LinearLayout android:id="@+id/tts_bar"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="horizontal" android:gravity="center"
+    android:layout_marginTop="6dp" android:visibility="gone">
+    <ImageView android:id="@+id/btn_prev"
+      android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp"
+      android:src="@drawable/ic_widget_skip_previous" android:contentDescription="@null" />
+    <ImageView android:id="@+id/btn_play_pause"
+      android:layout_width="48dp" android:layout_height="48dp" android:padding="8dp"
+      android:layout_marginHorizontal="20dp"
+      android:src="@drawable/ic_widget_play" android:contentDescription="@null" />
+    <ImageView android:id="@+id/btn_next"
+      android:layout_width="40dp" android:layout_height="40dp" android:padding="8dp"
+      android:src="@drawable/ic_widget_skip_next" android:contentDescription="@null" />
+  </LinearLayout>
+  <TextView android:id="@+id/empty"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:gravity="center" android:visibility="gone" android:textSize="12sp"
+    android:textColor="?android:attr/textColorSecondary" />
+</LinearLayout>

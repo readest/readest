@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, renderHook } from '@testing-library/react';
 
 const DWELL_MS = 500;
-// The mocked reading frame is 1000x1000; with the 0.15 quarter-ellipse corner,
-// (920,920) sits in the bottom-right and (80,80) in the top-left.
+// The mocked reading frame is 1000x1000; the corner zone is capped at 50px, so
+// (970,970) sits in the bottom-right and (30,30) in the top-left.
 const VW = 1000;
 
 const h = vi.hoisted(() => ({
@@ -44,6 +44,7 @@ vi.mock('@/app/reader/hooks/useInstantAnnotation', () => ({
     handleInstantAnnotationPointerMove: vi.fn(),
     handleInstantAnnotationPointerCancel: vi.fn(),
     handleInstantAnnotationPointerUp: vi.fn(),
+    reapplyInstantAnnotation: vi.fn(),
     cancelInstantAnnotation: vi.fn(),
   }),
 }));
@@ -147,7 +148,7 @@ afterEach(() => {
 describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
   test('turns to the next page when a signal dwells in the bottom-right corner', async () => {
     const { result } = setup();
-    pointerMove(result, 920, 920);
+    pointerMove(result, 970, 970);
     await advance();
 
     expect(h.view.next).toHaveBeenCalledTimes(1);
@@ -156,7 +157,7 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
 
   test('turns to the previous page (not goLeft) in the top-left corner', async () => {
     const { result } = setup();
-    pointerMove(result, 80, 80);
+    pointerMove(result, 30, 30);
     await advance();
 
     expect(h.view.prev).toHaveBeenCalledTimes(1);
@@ -175,7 +176,7 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
 
   test('does not turn until the dwell has elapsed', async () => {
     const { result } = setup();
-    pointerMove(result, 920, 920);
+    pointerMove(result, 970, 970);
     await vi.advanceTimersByTimeAsync(DWELL_MS - 100);
 
     expect(h.view.next).not.toHaveBeenCalled();
@@ -183,7 +184,7 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
 
   test('cancels the turn if the pointer leaves the corner before the dwell', async () => {
     const { result } = setup();
-    pointerMove(result, 920, 920); // arms
+    pointerMove(result, 970, 970); // arms
     pointerMove(result, 500, 500); // leaves the corner -> disengage
     await advance();
 
@@ -192,24 +193,24 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
 
   test('turns one page per engagement and does not repeat while held', async () => {
     const { result } = setup();
-    pointerMove(result, 920, 920);
+    pointerMove(result, 970, 970);
     await advance();
     expect(h.view.next).toHaveBeenCalledTimes(1);
 
     // Still held in the same corner -> no further turns.
-    pointerMove(result, 920, 920);
+    pointerMove(result, 970, 970);
     await advance();
     expect(h.view.next).toHaveBeenCalledTimes(1);
   });
 
   test('re-arms after the pointer leaves the corner and returns', async () => {
     const { result } = setup();
-    pointerMove(result, 920, 920);
+    pointerMove(result, 970, 970);
     await advance();
     expect(h.view.next).toHaveBeenCalledTimes(1);
 
     pointerMove(result, 500, 500); // leave
-    pointerMove(result, 920, 920); // return
+    pointerMove(result, 970, 970); // return
     await advance();
     expect(h.view.next).toHaveBeenCalledTimes(2);
   });
@@ -225,7 +226,7 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
   test('does not auto-turn in scrolled mode', async () => {
     h.viewSettings = { scrolled: true };
     const { result } = setup();
-    pointerMove(result, 920, 920);
+    pointerMove(result, 970, 970);
     await advance();
 
     expect(h.view.next).not.toHaveBeenCalled();
@@ -241,31 +242,31 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
 
   test('the selection caret is also an engagement signal', async () => {
     const { result } = setup();
-    caretMove(result, 920, 920);
+    caretMove(result, 970, 970);
     await advance();
 
     expect(h.view.next).toHaveBeenCalledTimes(1);
   });
 
   test('measures corners against the content-inset reading area', async () => {
-    // A 100px inset shrinks the frame to [100,900]: the old outer corner (960,960)
-    // now falls outside the area, while (860,860) is inside the inset corner.
+    // A 100px inset shrinks the frame to [100,900]: the outer corner (960,960)
+    // now falls outside the area, while (870,870) is inside the inset corner.
     const { result } = setup({ top: 100, right: 100, bottom: 100, left: 100 });
     pointerMove(result, 960, 960);
     await advance();
     expect(h.view.next).not.toHaveBeenCalled();
 
-    pointerMove(result, 860, 860);
+    pointerMove(result, 870, 870);
     await advance();
     expect(h.view.next).toHaveBeenCalledTimes(1);
   });
 
   test('maps the pointer through the iframe offset (multi-column page)', async () => {
-    // The iframe is scrolled into a later column: a pointer at clientX=1620 maps
-    // to window x=920 (1620-700), landing in the bottom-right corner.
+    // The iframe is scrolled into a later column: a pointer at clientX=1670 maps
+    // to window x=970 (1670-700), landing in the bottom-right corner.
     frameOffset = { left: -700, top: 0 };
     const { result } = setup();
-    pointerMove(result, 1620, 920);
+    pointerMove(result, 1670, 970);
     await advance();
 
     expect(h.view.next).toHaveBeenCalledTimes(1);

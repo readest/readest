@@ -7,7 +7,7 @@ import { flattenSearchResults } from '../components/sidebar/SearchResultsNav';
 
 export function useSearchNav(bookKey: string) {
   const getView = useReaderStore((s) => s.getView);
-  const { setSideBarVisible } = useSidebarStore();
+  const { setSideBarVisible, setSearchBarVisible } = useSidebarStore();
   const { getSearchNavState, setSearchResultIndex, clearSearch } = useSidebarStore();
 
   const searchNavState = getSearchNavState(bookKey);
@@ -83,8 +83,11 @@ export function useSearchNav(bookKey: string) {
 
   const handleCloseSearch = useCallback(() => {
     clearSearch(bookKey);
+    // Exit the sidebar's search mode too, not just the results — otherwise
+    // reopening the sidebar still shows the (empty) search bar.
+    setSearchBarVisible(false);
     getView(bookKey)?.clearSearch();
-  }, [clearSearch, bookKey, getView]);
+  }, [clearSearch, bookKey, getView, setSearchBarVisible]);
 
   // Navigate to the previous page with results (last result before current page)
   const handlePreviousResult = useCallback(() => {

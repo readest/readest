@@ -68,6 +68,9 @@ msgstr "升序"
 msgid "Actions"
 msgstr "操作"
 
+msgid "Download all books"
+msgstr "下载所有书籍"
+
 msgid "Rescan library"
 msgstr "重新扫描书库"
 
@@ -133,6 +136,21 @@ msgstr "封面下载失败。"
 
 msgid "Could not delete the file."
 msgstr "无法删除文件。"
+
+msgid "No books to download."
+msgstr "没有可下载的书籍。"
+
+msgid "Downloading %1 of %2…"
+msgstr "正在下载第 %1 / %2 本…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "下载已取消。已下载 %2 本中的 %1 本。"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "已下载 %2 本中的 %1 本（跳过 %3 本）。"
+
+msgid "Downloaded %1 of %2."
+msgstr "已下载 %2 本中的 %1 本。"
 
 msgid "Removing from cloud…"
 msgstr "正在从云端删除…"

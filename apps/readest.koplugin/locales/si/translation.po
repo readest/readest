@@ -68,6 +68,9 @@ msgstr "ආරෝහණ"
 msgid "Actions"
 msgstr "ක්‍රියා"
 
+msgid "Download all books"
+msgstr "සියලු පොත් බාගන්න"
+
 msgid "Rescan library"
 msgstr "පුස්තකාලය නැවත පරිලෝකනය කරන්න"
 
@@ -133,6 +136,21 @@ msgstr "කවරය බාගත කිරීම අසාර්ථකයි."
 
 msgid "Could not delete the file."
 msgstr "ගොනුව මැකිය නොහැක."
+
+msgid "No books to download."
+msgstr "බාගත කිරීමට පොත් නැත."
+
+msgid "Downloading %1 of %2…"
+msgstr "%2 න් %1 බාගත කරමින්…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "බාගත කිරීම අවලංගු කළා. %2 න් %1 බාගත විය."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 න් %1 බාගත විය (%3 මඟ හැරියා)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 න් %1 බාගත විය."
 
 msgid "Removing from cloud…"
 msgstr "වළාකුළුවෙන් ඉවත් කරමින්…"

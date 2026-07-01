@@ -13,8 +13,13 @@ EPUBs a single tap on an `<img>` / `<svg>`-with-`<image>` / `<table>` now opens 
 
 - **Fixed-layout** (PDF/comics/manga, `bookData.isFixedLayout`) keeps tap-to-turn —
   there the tap IS the page-turn gesture.
-- **Long-press** is unchanged everywhere; **linked images** (inside `<a>`) still
-  follow the link (the existing `sup, a, audio, video` skip).
+- **Long-press** is unchanged everywhere.
+- **UPDATE #4757:** **linked images** (inside a plain `<a>`) now ALSO zoom on single
+  tap instead of following the link (was the `sup, a, audio, video` skip). Impl:
+  `postSingleClick` computes `media = !isFixedLayout && !footnote ? detectMediaTarget(element) : null`
+  up front, and the `<a>` early-return guard gains `!media &&` so a media target bypasses it.
+  **Footnotes are excluded** (`!footnote`) so footnote anchors keep popup/navigation. The
+  later dispatch reuses that `media` (no second `detectMediaTarget` call).
 
 Impl in `src/app/reader/utils/iframeEventHandlers.ts`:
 - New shared `detectMediaTarget(el) -> {elementType:'image',src} | {elementType:'table',html} | null`,

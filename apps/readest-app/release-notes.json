@@ -1,5 +1,19 @@
 {
   "releases": {
+    "0.11.17": {
+      "date": "2026-06-29",
+      "notes": [
+        "Sync: Added WebDAV and Google Drive sync for your books and reading data",
+        "Widgets: Added home-screen reading widgets on mobile so you can jump straight back into your book",
+        "Reading: You can now open and read Markdown(.md) files",
+        "Reading: You can select a word by double-clicking it, and search gained regex and nearby-words modes",
+        "Reading: Added a sticky progress bar with chapter markers, and keyboard shortcuts to fine-tune text selection",
+        "Library: Added a Recently Read shelf to quickly pick up where you left off, plus a separate background texture for your library",
+        "Text-to-Speech: Added offline voices on iOS, a setting to highlight by word or by sentence",
+        "PDF: Smoother pinch-zoom and panning, faster scrolling on mobile, and a new contrast option in the view menu",
+        "More: Customize the highlight toolbar across all books, filter exported annotations by color and style"
+      ]
+    },
     "0.11.12": {
       "date": "2026-06-20",
       "notes": [

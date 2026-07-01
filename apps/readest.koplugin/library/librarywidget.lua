@@ -19,6 +19,7 @@ local Trapper      = require("ui/trapper")
 local UIManager    = require("ui/uimanager")
 local logger       = require("logger")
 local _            = require("readest_i18n")
+local T            = require("ffi/util").template
 
 local LibraryStore   = require("library.librarystore")
 local libraryitem    = require("library.libraryitem")
@@ -946,6 +947,108 @@ local function removeLocalFile(row)
         file_path     = nil,
     })
     return true
+end
+
+-- ---------------------------------------------------------------------------
+-- downloadAll() — bulk-download every cloud-only book to this device (#4751).
+-- ---------------------------------------------------------------------------
+-- The KOReader counterpart to "download all" on Readest web/desktop: gather
+-- every book that's in the cloud with an uploaded file but not yet on this
+-- device (LibraryStore:listCloudOnlyBooks) and stream them one at a time,
+-- reusing the proven syncbooks.downloadBook path. Driven from the view-menu
+-- Actions section; uses M._opts/M._store like M.refresh() so the caller
+-- needs no arguments.
+--
+-- Progress + cancel: a Trapper:info message shows "Downloading X of N"; the
+-- batch yields to the event loop between books, so tapping the message
+-- raises Trapper's Abort/Continue confirm. Aborting finishes the in-flight
+-- book and then halts. Per-book failures (404, network, unknown format) are
+-- counted and skipped, never fatal, and a summary is shown at the end.
+function M.downloadAll()
+    local opts = M._opts
+    if not opts or not M._store then return end
+
+    -- Same download-dir resolution + guard as the single-book tap path.
+    local download_dir = opts.settings.library_download_dir
+        or G_reader_settings:readSetting("home_dir")
+    if not download_dir or download_dir == "" then
+        UIManager:show(InfoMessage:new{
+            text = _("Set Home folder in File Manager first to enable downloads."),
+            timeout = 3,
+        })
+        return
+    end
+
+    local books = M._store:listCloudOnlyBooks()
+    local total = #books
+    if total == 0 then
+        UIManager:show(InfoMessage:new{
+            text = _("No books to download."), timeout = 3,
+        })
+        return
+    end
+
+    Trapper:wrap(function()
+        local co = coroutine.running()
+        local done, failed, cancelled = 0, 0, false
+
+        for i, book in ipairs(books) do
+            -- Trapper:info returns false when the user taps the message and
+            -- confirms Abort. It also yields to UIManager, which is what
+            -- lets a tap queued during the previous (blocking) download get
+            -- processed here, at the book boundary.
+            local go_on = Trapper:info(
+                T(_("Downloading %1 of %2…"), i, total) .. "\n" .. (book.title or ""))
+            if not go_on then
+                cancelled = true
+                break
+            end
+
+            -- Await the download. downloadBook fires its callback exactly
+            -- once, either synchronously (token already fresh) or after an
+            -- async token refresh. Only resume when the coroutine actually
+            -- suspended; if the callback already ran inline, skip the yield.
+            local finished, result = false, nil
+            syncbooks.downloadBook(book, {
+                sync_auth    = opts.sync_auth,
+                sync_path    = opts.sync_path,
+                settings     = opts.settings,
+                download_dir = download_dir,
+            }, function(success, dst_or_err, status)
+                result = { success = success, dst = dst_or_err, status = status }
+                finished = true
+                if coroutine.status(co) == "suspended" then
+                    coroutine.resume(co)
+                end
+            end)
+            if not finished then coroutine.yield() end
+
+            if result and result.success then
+                M._store:upsertBook({
+                    hash = book.hash, title = book.title,
+                    local_present = 1, file_path = result.dst,
+                })
+                done = done + 1
+            else
+                failed = failed + 1
+            end
+        end
+
+        -- On the cancel path Trapper:info already closed its widget when it
+        -- returned false; only the run-to-completion path leaves one showing.
+        if not cancelled then Trapper:clear() end
+        M.refresh()
+
+        local summary
+        if cancelled then
+            summary = T(_("Download cancelled. %1 of %2 downloaded."), done, total)
+        elseif failed > 0 then
+            summary = T(_("Downloaded %1 of %2 (skipped %3)."), done, total, failed)
+        else
+            summary = T(_("Downloaded %1 of %2."), done, total)
+        end
+        UIManager:show(InfoMessage:new{ text = summary, timeout = 3 })
+    end)
 end
 
 -- ---------------------------------------------------------------------------

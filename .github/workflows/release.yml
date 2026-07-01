@@ -19,7 +19,7 @@ jobs:
       release_version: ${{ steps.get-release-notes.outputs.release_version }}
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: setup node
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
       - name: get version
@@ -89,7 +89,7 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: create KOReader plugin zip
         env:
@@ -122,6 +122,10 @@ jobs:
     needs: get-release
     permissions:
       contents: write
+      # Required by actions/attest-build-provenance: id-token mints the Sigstore
+      # OIDC identity, attestations writes the provenance to the repo's store.
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -156,7 +160,7 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: initialize git submodules
         run: git submodule update --init --recursive
@@ -267,6 +271,14 @@ jobs:
           gh release upload ${{ needs.get-release.outputs.release_tag }} $universial_apk.sig --clobber
           gh release upload ${{ needs.get-release.outputs.release_tag }} $arm64_apk.sig --clobber
 
+      - name: attest Android apks
+        if: matrix.config.release == 'android'
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: |
+            apps/readest-app/Readest_${{ needs.get-release.outputs.release_version }}_universal.apk
+            apps/readest-app/Readest_${{ needs.get-release.outputs.release_version }}_arm64.apk
+
       - name: download and update latest.json for Android release
         if: matrix.config.release == 'android'
         env:
@@ -309,6 +321,7 @@ jobs:
         run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --branch feat/truly-portable-appimage --force
 
       - uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
+        id: tauri
         if: matrix.config.release != 'android'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -331,6 +344,16 @@ jobs:
           releaseId: ${{ needs.get-release.outputs.release_id }}
           releaseBody: ${{ needs.get-release.outputs.release_note }}
           args: ${{ matrix.config.args || '' }}
+
+      # Attest the freshly built desktop bundles (installers, AppImage, dmg,
+      # updater archives + their .sig). tauri-action reports their on-disk paths
+      # as a JSON array; fromJSON('"\n"') yields a real newline to join them into
+      # the newline-delimited list subject-path expects.
+      - name: attest desktop bundles
+        if: matrix.config.release != 'android' && steps.tauri.outputs.artifactPaths != ''
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: ${{ join(fromJSON(steps.tauri.outputs.artifactPaths), fromJSON('"\n"')) }}
 
       - name: upload release notes to GitHub release
         env:
@@ -383,6 +406,15 @@ jobs:
           popd
           echo "Uploading signature to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} $bin_file.sig --clobber
+
+      # The portable rebuild above is not produced by tauri-action, so it is not
+      # covered by the "attest desktop bundles" step; attest it here. Exactly one
+      # portable exe is staged at the workspace root per Windows leg.
+      - name: attest Windows portable binary
+        if: matrix.config.os == 'windows-latest'
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: Readest_*-portable.exe
 
       - name: download and update latest.json for Windows portable release
         if: matrix.config.os == 'windows-latest'

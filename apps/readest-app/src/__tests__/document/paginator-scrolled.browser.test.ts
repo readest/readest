@@ -370,4 +370,125 @@ describe('Paginator scrolled mode (browser)', () => {
     }
     expect(paginator.getContents().map((c) => c.index)).toContain(firstBefore - 1);
   });
+
+  // Regression for issue #4436: in scrolled mode the header chapter title is
+  // wrong while transitioning between sections. When the tail of section K is
+  // a thin sliver at the very top of the viewport but section K+1 occupies the
+  // centre (and the majority) of the screen, the relocate event must report
+  // K+1 — the section the reader is actually reading — not K. The reported
+  // `index` is what `view.js` feeds to TOCProgress to resolve the header
+  // title, so reporting K here is exactly the mismatch users see versus
+  // paginated mode (where each page belongs to a single section).
+  it('should report the section occupying the viewport centre, not the sliver at the top', async () => {
+    paginator = createPaginator();
+    paginator.open(book);
+    paginator.setAttribute('flow', 'scrolled');
+
+    const sections = book.sections!;
+    const isLinear = (i: number) => i >= 0 && i < sections.length && sections[i]!.linear !== 'no';
+    // Two adjacent tall linear sections: K leaves a text-bearing sliver at the
+    // top while K+1 is tall enough to span the centre and most of the screen.
+    let K = -1;
+    for (let i = 0; i < sections.length - 1; i++) {
+      if (
+        isLinear(i) &&
+        isLinear(i + 1) &&
+        (sections[i]!.size ?? 0) > 8000 &&
+        (sections[i + 1]!.size ?? 0) > 8000
+      ) {
+        K = i;
+        break;
+      }
+    }
+    expect(K).toBeGreaterThanOrEqual(0);
+    const next = K + 1;
+
+    const stabilized = waitForStabilized(paginator);
+    await paginator.goTo({ index: K, anchor: 0 });
+    await stabilized;
+    await waitForFillComplete(paginator);
+
+    // Both sections must be loaded to exercise the boundary.
+    if (!paginator.getContents().some((c) => c.index === next)) return;
+
+    // Freeze the loaded set so preload/scroll-compensation can no longer shift
+    // view offsets out from under the absolute scrollTop we set below.
+    paginator.setAttribute('no-preload', '');
+
+    const container = paginator.shadowRoot!.getElementById('container')!;
+
+    // Map each loaded view element to its section index and its offset within
+    // the scroll content (independent of the current scrollTop).
+    const viewBoxes = () => {
+      const contents = paginator.getContents();
+      const cTop = container.getBoundingClientRect().top;
+      const scrollTop = container.scrollTop;
+      const boxes: { index: number; top: number; bottom: number; height: number }[] = [];
+      for (const child of Array.from(container.children) as HTMLElement[]) {
+        const iframe = child.querySelector('iframe');
+        if (!iframe) continue;
+        const match = contents.find((x) => x.doc === iframe.contentDocument);
+        if (!match) continue;
+        const r = child.getBoundingClientRect();
+        const top = r.top - cTop + scrollTop;
+        boxes.push({ index: match.index as number, top, bottom: top + r.height, height: r.height });
+      }
+      return boxes;
+    };
+
+    const boxK = viewBoxes().find((b) => b.index === K);
+    const boxNext = viewBoxes().find((b) => b.index === next);
+    expect(boxK).toBeDefined();
+    expect(boxNext).toBeDefined();
+
+    const size = paginator.size;
+    // Section K must be tall enough to leave a clear (text-bearing) sliver at
+    // the top while the viewport centre lands inside K+1.
+    if (boxK!.height <= 0.4 * size) return;
+
+    // Position the boundary in the top ~35% of the viewport: a sliver of K at
+    // the top, K+1 across the centre and most of the screen.
+    const target = boxNext!.top - 0.35 * size;
+    expect(target).toBeGreaterThan(boxK!.top);
+
+    // Sanity: with this scroll position the top-of-viewport section is K — the
+    // exact regime where the old "first overlapping view" heuristic mislabels
+    // the header.
+    const topIndexAt = (scrollTop: number) => {
+      const center = scrollTop + size / 2;
+      let topIdx: number | null = null;
+      for (const b of viewBoxes()) {
+        if (b.bottom <= scrollTop + 1 || b.top >= scrollTop + size) continue;
+        if (topIdx === null) topIdx = b.index;
+        if (center >= b.top && center < b.bottom) return { topIdx, centerIdx: b.index };
+      }
+      return { topIdx, centerIdx: topIdx };
+    };
+
+    const relocates: { reason: string; index: number }[] = [];
+    const onReloc = (e: Event) => {
+      const d = (e as CustomEvent).detail as { reason: string; index: number };
+      if (d.reason === 'scroll') relocates.push(d);
+    };
+    paginator.addEventListener('relocate', onReloc as EventListener);
+
+    // The first debounced scroll after a navigation just clears #justAnchored;
+    // nudge a few times (all inside the target regime) so a genuine
+    // afterScroll('scroll') fires and emits a relocate we can read.
+    const nudges = [target, target - 2, target];
+    for (const top of nudges) {
+      container.scrollTop = top;
+      container.dispatchEvent(new Event('scroll'));
+      await new Promise((r) => setTimeout(r, 350));
+    }
+    paginator.removeEventListener('relocate', onReloc as EventListener);
+
+    const { topIdx, centerIdx } = topIndexAt(container.scrollTop);
+    expect(topIdx).toBe(K); // sliver of K at the top
+    expect(centerIdx).toBe(next); // K+1 owns the centre
+
+    const last = relocates.at(-1);
+    expect(last).toBeDefined();
+    expect(last!.index).toBe(next);
+  });
 });

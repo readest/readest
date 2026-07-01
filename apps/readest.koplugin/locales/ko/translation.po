@@ -68,6 +68,9 @@ msgstr "오름차순"
 msgid "Actions"
 msgstr "작업"
 
+msgid "Download all books"
+msgstr "모든 책 다운로드"
+
 msgid "Rescan library"
 msgstr "라이브러리 다시 검색"
 
@@ -133,6 +136,21 @@ msgstr "표지 다운로드에 실패했습니다."
 
 msgid "Could not delete the file."
 msgstr "파일을 삭제할 수 없습니다."
+
+msgid "No books to download."
+msgstr "다운로드할 책이 없습니다."
+
+msgid "Downloading %1 of %2…"
+msgstr "%2개 중 %1개 다운로드 중…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "다운로드가 취소되었습니다. %2개 중 %1개를 다운로드했습니다."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2개 중 %1개를 다운로드했습니다 (%3개 건너뜀)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2개 중 %1개를 다운로드했습니다."
 
 msgid "Removing from cloud…"
 msgstr "클라우드에서 제거 중…"

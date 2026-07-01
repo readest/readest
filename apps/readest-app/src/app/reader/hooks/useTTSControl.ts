@@ -531,30 +531,52 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewSettings?.ttsHighlightOptions, viewSettings?.isEink, getTTSHighlightOptions]);
 
+  useEffect(() => {
+    if (ttsControllerRef.current && viewSettings?.ttsHighlightGranularity) {
+      ttsControllerRef.current.setHighlightGranularity(viewSettings.ttsHighlightGranularity);
+    }
+  }, [viewSettings?.ttsHighlightGranularity]);
+
   // handleStop (defined before handleTTSSpeak/handleTTSStop which reference it)
   const handleStop = useCallback(
     async (bookKey: string) => {
       const ttsController = ttsControllerRef.current;
-      if (ttsController) {
-        await ttsController.shutdown();
-        ttsControllerRef.current = null;
-        setTtsController(null);
-        getView(bookKey)?.deselect();
-        setIsPlaying(false);
-        emitPlaybackState('stopped');
-        onRequestHidePanel?.();
-        setShowIndicator(false);
-        setShowBackToCurrentTTSLocation(false);
-      }
+      // Reset all UI/session state up front — including the TTS toggle
+      // (ttsEnabled) and indicator that color the TTS icon — so disabling TTS
+      // always takes effect immediately. The teardown below is best-effort and
+      // must never block or skip these resets if it hangs or throws, which was
+      // observed with iOS system TTS (Edge TTS was unaffected). See #4676.
+      ttsControllerRef.current = null;
+      setTtsController(null);
+      setIsPlaying(false);
+      emitPlaybackState('stopped');
+      onRequestHidePanel?.();
+      setShowIndicator(false);
+      setShowBackToCurrentTTSLocation(false);
       previousSectionLabelRef.current = undefined;
-      if (appService?.isIOSApp) {
-        await invokeUseBackgroundAudio({ enabled: false });
-      }
+      setTTSEnabled(bookKey, false);
+      getView(bookKey)?.deselect();
       if (appService?.isMobile) {
         releaseUnblockAudio();
       }
-      await deinitMediaSession();
-      setTTSEnabled(bookKey, false);
+
+      // Tear down the controller, the lock-screen media session, and the
+      // background-audio session best-effort and IN PARALLEL. The controller's
+      // own shutdown can stall on iOS system TTS, and it must NOT gate the media
+      // session / background-audio teardown — otherwise the lock-screen Now
+      // Playing keeps running after TTS is disabled (Edge TTS was unaffected
+      // because it never hits the stalling native path). See #4676.
+      await Promise.all([
+        ttsController
+          ? Promise.resolve()
+              .then(() => ttsController.shutdown())
+              .catch((error) => console.warn('TTS shutdown failed:', error))
+          : Promise.resolve(),
+        appService?.isIOSApp
+          ? invokeUseBackgroundAudio({ enabled: false }).catch(() => {})
+          : Promise.resolve(),
+        deinitMediaSession().catch(() => {}),
+      ]);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [appService],
@@ -643,6 +665,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         ttsController.updateHighlightOptions(
           getTTSHighlightOptions(viewSettings.ttsHighlightOptions, viewSettings.isEink),
         );
+        ttsController.setHighlightGranularity(viewSettings.ttsHighlightGranularity ?? 'word');
         const ssml =
           oneTime && ttsSpeakRange
             ? genSSMLRaw(ttsSpeakRange.toString().trim())

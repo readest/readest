@@ -169,12 +169,43 @@ export const applyScrollableStyle = (document: Document) => {
     wrapper.setAttribute('cfi-skip', '');
     parent.insertBefore(wrapper, el);
     wrapper.appendChild(el);
+    hoistNegativeMargins(el, wrapper, win);
     decideTableFit(wrapper, win);
   };
   document.querySelectorAll('table').forEach(wrap);
   document.querySelectorAll('math').forEach((math) => {
     if (isDisplayMath(math)) wrap(math);
   });
+};
+
+/**
+ * Move any NEGATIVE margins from the wrapped element onto the wrapper, zeroing
+ * them on the element. The wrapper is an overflow:auto clip box; a negative
+ * margin on the element pulls its content past the box edge, where overflow
+ * clips it — a decorative TOC laid out with nested tables (`margin: -1em`) had
+ * the top half of its heading cut off this way (#4439). Hoisting keeps the box
+ * in the same place while letting the element sit flush inside it. Positive and
+ * auto margins are left alone, so a genuinely over-wide table still counts as
+ * overflowing and a centered table stays centered.
+ */
+const MARGIN_SIDES = ['Top', 'Right', 'Bottom', 'Left'] as const;
+const hoistNegativeMargins = (
+  el: Element,
+  wrapper: HTMLElement,
+  win: (Window & typeof globalThis) | null,
+) => {
+  if (!win) return;
+  const style = (el as HTMLElement).style;
+  if (!style) return;
+  const computed = win.getComputedStyle(el);
+  for (const side of MARGIN_SIDES) {
+    const prop = `margin${side}` as 'marginTop';
+    const value = computed[prop];
+    if (parseFloat(value) < 0) {
+      wrapper.style[prop] = value;
+      style[prop] = '0px';
+    }
+  }
 };
 
 /**

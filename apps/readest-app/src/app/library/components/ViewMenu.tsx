@@ -109,6 +109,14 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     await saveSysSettings(envConfig, 'libraryAutoColumns', newValue);
   };
 
+  const handleToggleRecentShelf = async () => {
+    await saveSysSettings(
+      envConfig,
+      'libraryRecentShelfEnabled',
+      !settings.libraryRecentShelfEnabled,
+    );
+  };
+
   const handleSetColumns = async (value: number) => {
     await saveSysSettings(envConfig, 'libraryColumns', value);
     await saveSysSettings(envConfig, 'libraryAutoColumns', false);
@@ -217,6 +225,16 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           transient
         />
       ))}
+
+      {/* Recently read shelf */}
+      <hr aria-hidden='true' className='border-base-200 my-1' />
+      <MenuItem
+        label={_('Show recently read')}
+        buttonClass='h-8'
+        toggled={settings.libraryRecentShelfEnabled}
+        onClick={handleToggleRecentShelf}
+        transient
+      />
 
       {/* Group By - Collapsible */}
       <hr aria-hidden='true' className='border-base-200 my-1' />

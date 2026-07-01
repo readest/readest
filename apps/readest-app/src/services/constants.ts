@@ -26,6 +26,7 @@ import {
   ReadwiseSettings,
   SystemSettings,
   WebDAVSettings,
+  GoogleDriveSettings,
 } from '@/types/settings';
 import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/quota';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
@@ -53,6 +54,7 @@ export const SUPPORTED_BOOK_EXTS = [
   'cbz',
   'pdf',
   'txt',
+  'md',
 ];
 export const BOOK_ACCEPT_FORMATS = SUPPORTED_BOOK_EXTS.map((ext) => `.${ext}`).join(', ');
 export const BOOK_UNGROUPED_NAME = '';
@@ -101,6 +103,16 @@ export const DEFAULT_WEBDAV_SETTINGS = {
   lastSyncedAt: 0,
 } as WebDAVSettings;
 
+export const DEFAULT_GOOGLE_DRIVE_SETTINGS = {
+  enabled: false,
+  syncProgress: true,
+  syncNotes: true,
+  syncBooks: false,
+  strategy: 'silent',
+  deviceId: '',
+  lastSyncedAt: 0,
+} as GoogleDriveSettings;
+
 export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
   autoUpload: true,
@@ -116,7 +128,13 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   swipeBrightnessGesture: true,
   hardwarePageTurner: {
     enabled: false,
-    bindings: { pagePrev: null, pageNext: null, sectionPrev: null, sectionNext: null },
+    bindings: {
+      pagePrev: null,
+      pageNext: null,
+      sectionPrev: null,
+      sectionNext: null,
+      refresh: null,
+    },
   },
   openLastBooks: false,
   lastOpenBooks: [],
@@ -132,6 +150,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryCoverFit: 'crop',
   libraryAutoColumns: true,
   libraryColumns: 6,
+  libraryRecentShelfEnabled: false,
 
   metadataSeriesCollapsed: false,
   metadataOthersCollapsed: false,
@@ -152,6 +171,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   readwise: DEFAULT_READWISE_SETTINGS,
   hardcover: DEFAULT_HARDCOVER_SETTINGS,
   webdav: DEFAULT_WEBDAV_SETTINGS,
+  googleDrive: DEFAULT_GOOGLE_DRIVE_SETTINGS,
   aiSettings: DEFAULT_AI_SETTINGS,
 
   lastSyncedAtBooks: 0,
@@ -172,6 +192,9 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
 
 export const DEFAULT_MOBILE_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryColumns: 3,
+  // Import files opened via the system "Open with" chooser into the library by
+  // default so they persist and sync, instead of opening them transiently.
+  autoImportBooksOnOpen: true,
 };
 
 export const HIGHLIGHT_COLOR_HEX: Record<HighlightColor, string> = {
@@ -294,6 +317,7 @@ export const DEFAULT_BOOK_STYLE: BookStyle = {
   keepCoverSpread: true,
   invertImgColorInDark: false,
   applyThemeToPDF: false,
+  contrast: 100,
 };
 
 export const DEFAULT_MOBILE_VIEW_SETTINGS: Partial<ViewSettings> = {
@@ -338,6 +362,7 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showRemainingTime: false,
   showRemainingPages: false,
   showProgressInfo: true,
+  showStickyProgressBar: false,
   showCurrentTime: false,
   showCurrentBatteryStatus: false,
   showBatteryPercentage: true,
@@ -367,6 +392,7 @@ export const DEFAULT_TTS_CONFIG: TTSConfig = {
   ttsLocation: '',
   showTTSBar: false,
   ttsHighlightOptions: { style: 'highlight', color: '#808080' },
+  ttsHighlightGranularity: 'word',
   ttsMediaMetadata: 'sentence',
 };
 
@@ -396,6 +422,8 @@ export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {
   useCustomTemplate: false,
   customTemplate: '',
   exportAsPlainText: false,
+  excludedColors: [],
+  excludedStyles: [],
 };
 
 export const DEFAULT_ANNOTATOR_CONFIG: AnnotatorConfig = {
@@ -410,6 +438,8 @@ export const DEFAULT_WORD_LENS_CONFIG: WordLensConfig = {
   wordLensEnabled: false,
   wordLensLevel: 3,
   wordLensHintLang: '',
+  wordLensGlossFontSize: 0.5,
+  wordLensGlossColor: '',
 };
 
 export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {
@@ -418,9 +448,12 @@ export const DEFAULT_SCREEN_CONFIG: ScreenConfig = {
 
 export const DEFAULT_BOOK_SEARCH_CONFIG: BookSearchConfig = {
   scope: 'book',
+  mode: 'contains',
   matchCase: false,
-  matchWholeWords: false,
   matchDiacritics: false,
+  nearbyWords: 10,
+  // kept for sync wire back-compat with pre-v3 clients (mirrors mode === 'whole-words')
+  matchWholeWords: false,
 };
 
 export const DEFAULT_VIEW_SETTINGS_CONFIG: ViewSettingsConfig = {
@@ -829,6 +862,10 @@ export const MAX_ZOOM_LEVEL = 500;
 export const MIN_ZOOM_LEVEL = 50;
 export const ZOOM_STEP = 10;
 
+export const MAX_CONTRAST = 300;
+export const MIN_CONTRAST = 50;
+export const CONTRAST_STEP = 10;
+
 export const SHOW_UNREAD_STATUS_BADGE = false;
 
 export const DEFAULT_STORAGE_QUOTA: UserStorageQuota = {
@@ -957,6 +994,7 @@ export const TRANSLATOR_LANGS: Record<string, string> = {
   sl: 'Slovenščina',
   sk: 'Slovenčina',
   fa: 'فارسی',
+  ur: 'اردو',
 };
 
 export const SUPPORTED_LANGS: Record<string, string> = { ...TRANSLATED_LANGS, zh: '中文' };

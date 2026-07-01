@@ -68,6 +68,9 @@ msgstr "Aufsteigend"
 msgid "Actions"
 msgstr "Aktionen"
 
+msgid "Download all books"
+msgstr "Alle Bücher herunterladen"
+
 msgid "Rescan library"
 msgstr "Bibliothek erneut einlesen"
 
@@ -133,6 +136,21 @@ msgstr "Cover-Download fehlgeschlagen."
 
 msgid "Could not delete the file."
 msgstr "Datei konnte nicht gelöscht werden."
+
+msgid "No books to download."
+msgstr "Keine Bücher zum Herunterladen."
+
+msgid "Downloading %1 of %2…"
+msgstr "%1 von %2 wird heruntergeladen…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Download abgebrochen. %1 von %2 heruntergeladen."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 von %2 heruntergeladen (%3 übersprungen)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 von %2 heruntergeladen."
 
 msgid "Removing from cloud…"
 msgstr "Wird aus der Cloud entfernt …"

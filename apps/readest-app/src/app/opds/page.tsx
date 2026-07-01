@@ -42,6 +42,7 @@ import {
   needsProxy,
   probeFilename,
 } from './utils/opdsReq';
+import { getPublicationDetailHref, parsePublicationDocument } from './utils/opdsPublication';
 import { ImportError } from '@/services/errors';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { findBookByOPDSSources, upsertOPDSSourceMapping } from '@/services/opds/sourceMap';
@@ -474,12 +475,77 @@ export default function BrowserPage() {
     [_, state, handleNavigate, addToHistory],
   );
 
-  const publication =
+  const basePublication =
     selectedPublication && state.feed
       ? state.feed.groups?.[selectedPublication.groupIndex]?.publications?.[
           selectedPublication.itemIndex
         ] || state.feed.publications?.[selectedPublication.itemIndex]
       : state.publication;
+
+  const fetchPublicationDocument = useCallback(
+    async (url: string): Promise<OPDSPublication | null> => {
+      try {
+        const useProxy = isWebAppPlatform();
+        const username = usernameRef.current || '';
+        const password = passwordRef.current || '';
+        const customHeaders = customHeadersRef.current;
+        const res = await fetchWithAuth(url, username, password, useProxy, {}, customHeaders);
+        if (!res.ok) return null;
+        const text = await res.text();
+        return parsePublicationDocument(text, res.url);
+      } catch (e) {
+        console.warn('Failed to load OPDS publication document:', e);
+        return null;
+      }
+    },
+    [],
+  );
+
+  // When a publication is listed in summary form but advertises a `rel="self"`
+  // link to its full document, dereference it and show the richer metadata
+  // (description, publisher, subjects, language) — readest issue #4749, matching
+  // what Thorium does. The summary renders immediately and is upgraded in place
+  // once the document loads; `source` ties the resolved record to the exact
+  // base publication it enriches so a stale fetch can't bleed into the next one.
+  const [detailPublication, setDetailPublication] = useState<{
+    source: OPDSPublication;
+    resolved: OPDSPublication;
+  } | null>(null);
+
+  useEffect(() => {
+    // Only enrich feed-selected summaries; a directly-loaded entry document
+    // (state.publication, no selection) is already the full record.
+    const detailLink =
+      selectedPublication && basePublication
+        ? getPublicationDetailHref(basePublication)
+        : undefined;
+    if (!basePublication || !detailLink) {
+      setDetailPublication(null);
+      return;
+    }
+    let cancelled = false;
+    const url = resolveURL(detailLink.href, state.baseURL);
+    void fetchPublicationDocument(url).then((resolved) => {
+      if (!cancelled && resolved) {
+        setDetailPublication({ source: basePublication, resolved });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPublication, basePublication, state.baseURL, fetchPublicationDocument]);
+
+  const publication = useMemo(() => {
+    if (!basePublication || detailPublication?.source !== basePublication) return basePublication;
+    const { resolved } = detailPublication;
+    // Prefer the full document's metadata; keep the feed's links/cover when the
+    // document omits them so downloads and the cover never regress.
+    return {
+      metadata: resolved.metadata,
+      links: resolved.links?.length ? resolved.links : basePublication.links,
+      images: resolved.images?.length ? resolved.images : basePublication.images,
+    };
+  }, [basePublication, detailPublication]);
 
   const handleDownload = useCallback(
     async (

@@ -196,7 +196,10 @@ describe('proofreadStore', () => {
         replacement: 'the',
       });
 
-      expect(rule.id).toBe('uid-1');
+      // Book rules now carry a stable content-derived id (not a random uid)
+      // so the same rule made on two devices dedupes on sync.
+      expect(rule.id).toBeTruthy();
+      expect(rule.id).not.toBe('uid-1');
       expect(rule.scope).toBe('book');
       expect(rule.pattern).toBe('teh');
       expect(rule.replacement).toBe('the');
@@ -246,6 +249,25 @@ describe('proofreadStore', () => {
 
       expect(mockSaveConfig).toHaveBeenCalledTimes(1);
     });
+
+    test('derives a stable content id (same pattern/scope/isRegex on two devices)', async () => {
+      mockViewSettingsMap['bookA'] = emptyViewSettings();
+      mockViewSettingsMap['bookB'] = emptyViewSettings();
+
+      const a = await useProofreadStore.getState().addRule(envConfig, 'bookA', {
+        scope: 'book',
+        pattern: 'teh',
+        replacement: 'the',
+      });
+      // Different replacement, same pattern — identity ignores replacement.
+      const b = await useProofreadStore.getState().addRule(envConfig, 'bookB', {
+        scope: 'book',
+        pattern: 'teh',
+        replacement: 'THE',
+      });
+
+      expect(a.id).toBe(b.id);
+    });
   });
 
   // -----------------------------------------------------------------------
@@ -281,6 +303,20 @@ describe('proofreadStore', () => {
       // Both rules should exist
       const rules = mockViewSettingsMap['book1']!.proofreadRules!;
       expect(rules.length).toBe(2);
+    });
+
+    test('uses a per-instance unique id (not a content hash)', async () => {
+      mockViewSettingsMap['book1'] = emptyViewSettings();
+
+      const rule = await useProofreadStore.getState().addRule(envConfig, 'book1', {
+        scope: 'selection',
+        pattern: 'dup',
+        replacement: 'new',
+      });
+
+      // Selection rules keep the random uniqueId so two selections of the same
+      // text are never collapsed.
+      expect(rule.id).toBe('uid-1');
     });
   });
 
@@ -331,17 +367,22 @@ describe('proofreadStore', () => {
   // removeRule – book scope
   // -----------------------------------------------------------------------
   describe('removeRule (book scope)', () => {
-    test('removes rule by id', async () => {
+    test('tombstones the rule (sets deletedAt) instead of hard-removing it', async () => {
       const rule = makeRule({ id: 'r1' });
       mockViewSettingsMap['book1'] = emptyViewSettings({ proofreadRules: [rule] });
 
       await useProofreadStore.getState().removeRule(envConfig, 'book1', 'r1', 'book');
 
+      // The row is retained with a deletedAt tombstone so the deletion can sync
+      // across devices (the per-id config merge would otherwise resurrect it).
       const rules = mockViewSettingsMap['book1']!.proofreadRules!;
-      expect(rules.length).toBe(0);
+      expect(rules.length).toBe(1);
+      expect(typeof rules[0]!.deletedAt).toBe('number');
+      // Hidden from consumers.
+      expect(useProofreadStore.getState().getBookRules('book1')).toEqual([]);
     });
 
-    test('does not remove unmatched rule', async () => {
+    test('does not tombstone an unmatched rule', async () => {
       const rule = makeRule({ id: 'r1' });
       mockViewSettingsMap['book1'] = emptyViewSettings({ proofreadRules: [rule] });
 
@@ -349,6 +390,78 @@ describe('proofreadStore', () => {
 
       const rules = mockViewSettingsMap['book1']!.proofreadRules!;
       expect(rules.length).toBe(1);
+      expect(rules[0]!.deletedAt ?? null).toBeNull();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // CRDT sync fields (updatedAt / deletedAt)
+  // -----------------------------------------------------------------------
+  describe('CRDT sync fields', () => {
+    test('addRule stamps updatedAt', async () => {
+      mockViewSettingsMap['book1'] = emptyViewSettings();
+      const rule = await useProofreadStore.getState().addRule(envConfig, 'book1', {
+        scope: 'book',
+        pattern: 'teh',
+        replacement: 'the',
+      });
+      expect(typeof rule.updatedAt).toBe('number');
+      expect(rule.updatedAt!).toBeGreaterThan(0);
+    });
+
+    test('updateRule bumps updatedAt', async () => {
+      const rule = makeRule({ id: 'r1', updatedAt: 1 });
+      mockViewSettingsMap['book1'] = emptyViewSettings({ proofreadRules: [rule] });
+
+      await useProofreadStore.getState().updateRule(envConfig, 'book1', 'r1', {
+        replacement: 'baz',
+      });
+
+      const updated = mockViewSettingsMap['book1']!.proofreadRules!.find((r) => r.id === 'r1');
+      expect(updated!.updatedAt!).toBeGreaterThan(1);
+    });
+
+    test('getBookRules hides tombstoned rules', () => {
+      mockViewSettingsMap['book1'] = emptyViewSettings({
+        proofreadRules: [makeRule({ id: 'a' }), makeRule({ id: 'b', deletedAt: 123 })],
+      });
+      expect(
+        useProofreadStore
+          .getState()
+          .getBookRules('book1')
+          .map((r) => r.id),
+      ).toEqual(['a']);
+    });
+
+    test('getMergedRules hides tombstoned rules from both stores', () => {
+      mockGlobalViewSettingsHolder.current = emptyViewSettings({
+        proofreadRules: [makeRule({ id: 'g', scope: 'library', deletedAt: 9 })],
+      });
+      mockViewSettingsMap['book1'] = emptyViewSettings({
+        proofreadRules: [makeRule({ id: 'b' })],
+      });
+      expect(
+        useProofreadStore
+          .getState()
+          .getMergedRules('book1')
+          .map((r) => r.id),
+      ).toEqual(['b']);
+    });
+
+    test('re-adding a tombstoned book pattern creates a fresh live rule', async () => {
+      mockViewSettingsMap['book1'] = emptyViewSettings({
+        proofreadRules: [makeRule({ id: 'old', pattern: 'teh', deletedAt: 999 })],
+      });
+
+      await useProofreadStore.getState().addRule(envConfig, 'book1', {
+        scope: 'book',
+        pattern: 'teh',
+        replacement: 'the',
+      });
+
+      const live = mockViewSettingsMap['book1']!.proofreadRules!.filter((r) => !r.deletedAt);
+      expect(live.length).toBe(1);
+      expect(live[0]!.pattern).toBe('teh');
     });
   });
 
@@ -501,6 +614,89 @@ describe('proofreadStore', () => {
       await expect(
         useProofreadStore.getState().toggleRule(envConfig, 'book1', 'no-exist'),
       ).rejects.toThrow('Rule not found: no-exist');
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // reorderRules
+  // -----------------------------------------------------------------------
+  describe('reorderRules', () => {
+    test('reassigns order fields for book-scope rules by position; saves config only', async () => {
+      mockViewSettingsMap['book1'] = emptyViewSettings({
+        proofreadRules: [
+          makeRule({ id: 'a', scope: 'book', order: 1000 }),
+          makeRule({ id: 'b', scope: 'book', order: 1000 }),
+          makeRule({ id: 'c', scope: 'book', order: 1000 }),
+        ],
+      });
+
+      await useProofreadStore.getState().reorderRules(envConfig, 'book1', ['c', 'a', 'b']);
+
+      const saved = mockViewSettingsMap['book1']!.proofreadRules!;
+      const orderById = Object.fromEntries(saved.map((r) => [r.id, r.order]));
+      expect(orderById).toEqual({ c: 0, a: 1, b: 2 });
+      expect(mockSaveConfig).toHaveBeenCalledTimes(1);
+      expect(mockSaveSettings).not.toHaveBeenCalled();
+    });
+
+    test('reassigns order for library-scope rules; saves settings only', async () => {
+      mockViewSettingsMap['book1'] = emptyViewSettings({ proofreadRules: [] });
+      mockGlobalViewSettingsHolder.current = emptyViewSettings({
+        proofreadRules: [
+          makeRule({ id: 'g1', scope: 'library', order: 1000 }),
+          makeRule({ id: 'g2', scope: 'library', order: 1000 }),
+        ],
+      });
+
+      await useProofreadStore.getState().reorderRules(envConfig, 'book1', ['g2', 'g1']);
+
+      const savedSettings = mockSaveSettings.mock.calls[0]![1] as {
+        globalViewSettings: ViewSettings;
+      };
+      const saved = savedSettings.globalViewSettings.proofreadRules!;
+      const orderById = Object.fromEntries(saved.map((r) => [r.id, r.order]));
+      expect(orderById).toEqual({ g2: 0, g1: 1 });
+      expect(mockSaveSettings).toHaveBeenCalledTimes(1);
+      expect(mockSaveConfig).not.toHaveBeenCalled();
+    });
+
+    test('a merged book+library reorder updates both stores', async () => {
+      mockViewSettingsMap['book1'] = emptyViewSettings({
+        proofreadRules: [makeRule({ id: 'bk', scope: 'book', order: 1000 })],
+      });
+      mockGlobalViewSettingsHolder.current = emptyViewSettings({
+        proofreadRules: [makeRule({ id: 'lib', scope: 'library', order: 1000 })],
+      });
+
+      // Drag the library rule above the book rule.
+      await useProofreadStore.getState().reorderRules(envConfig, 'book1', ['lib', 'bk']);
+
+      const savedBook = mockViewSettingsMap['book1']!.proofreadRules!.find((r) => r.id === 'bk');
+      const savedSettings = mockSaveSettings.mock.calls[0]![1] as {
+        globalViewSettings: ViewSettings;
+      };
+      const savedLib = savedSettings.globalViewSettings.proofreadRules!.find((r) => r.id === 'lib');
+      expect(savedLib!.order).toBe(0);
+      expect(savedBook!.order).toBe(1);
+      expect(mockSaveConfig).toHaveBeenCalledTimes(1);
+      expect(mockSaveSettings).toHaveBeenCalledTimes(1);
+    });
+
+    test('leaves rules outside the reordered set untouched', async () => {
+      mockViewSettingsMap['book1'] = emptyViewSettings({
+        proofreadRules: [
+          makeRule({ id: 'sel', scope: 'selection', order: 7 }),
+          makeRule({ id: 'a', scope: 'book', order: 1000 }),
+          makeRule({ id: 'b', scope: 'book', order: 1000 }),
+        ],
+      });
+
+      await useProofreadStore.getState().reorderRules(envConfig, 'book1', ['b', 'a']);
+
+      const saved = mockViewSettingsMap['book1']!.proofreadRules!;
+      expect(saved.find((r) => r.id === 'sel')!.order).toBe(7);
+      expect(saved.find((r) => r.id === 'b')!.order).toBe(0);
+      expect(saved.find((r) => r.id === 'a')!.order).toBe(1);
     });
   });
 });

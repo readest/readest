@@ -8,7 +8,20 @@ const Alert: React.FC<{
   message: string;
   onCancel: () => void;
   onConfirm: () => void;
-}> = ({ title, message, onCancel, onConfirm }) => {
+  // Optional content rendered between the title/message and the actions row
+  // (e.g. the delete confirmation's "purge reading data" toggle).
+  children?: React.ReactNode;
+  confirmLabel?: string;
+  confirmButtonClassName?: string;
+}> = ({
+  title,
+  message,
+  onCancel,
+  onConfirm,
+  children,
+  confirmLabel,
+  confirmButtonClassName = 'btn-warning',
+}) => {
   const _ = useTranslation();
   const [isProcessing, setIsProcessing] = React.useState(false);
   const divRef = useKeyDownActions({ onCancel, onConfirm });
@@ -50,18 +63,19 @@ const Alert: React.FC<{
             <div className='text-start text-sm'>{message}</div>
           </div>
         </div>
+        {children}
         <div className='buttons flex items-center justify-end gap-2'>
           <button className='btn btn-sm btn-neutral' onClick={onCancel}>
             {_('Cancel')}
           </button>
           <button
-            className={clsx('btn btn-sm btn-warning', { 'btn-disabled': isProcessing })}
+            className={clsx('btn btn-sm', confirmButtonClassName, { 'btn-disabled': isProcessing })}
             onClick={() => {
               setIsProcessing(true);
               onConfirm();
             }}
           >
-            {_('Confirm')}
+            {confirmLabel ?? _('Confirm')}
           </button>
         </div>
       </div>

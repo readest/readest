@@ -12,7 +12,7 @@ import { useMetadataEdit } from './useMetadataEdit';
 import { DeleteAction } from '@/types/system';
 import { eventDispatcher } from '@/utils/event';
 import { isWebAppPlatform } from '@/services/environment';
-import Alert from '@/components/Alert';
+import DeleteConfirmAlert from '@/components/DeleteConfirmAlert';
 import Dialog from '@/components/Dialog';
 import BookDetailView from './BookDetailView';
 import BookDetailEdit from './BookDetailEdit';
@@ -32,10 +32,15 @@ interface BookDetailModalProps {
   handleBookMetadataUpdate?: (book: Book, updatedMetadata: BookMetadata) => void;
 }
 
+// Purge is no longer a standalone menu action — it is an opt-in toggle on the
+// standard ('both') delete confirmation, so the menu only triggers these three.
+type DeleteMenuAction = Exclude<DeleteAction, 'purge'>;
+
 interface DeleteConfig {
   title: string;
   message: string;
   handler?: (book: Book) => void;
+  showPurgeToggle?: boolean;
 }
 
 const BookDetailModal: React.FC<BookDetailModalProps> = ({
@@ -54,7 +59,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
   const { safeAreaInsets } = useThemeStore();
-  const [activeDeleteAction, setActiveDeleteAction] = useState<DeleteAction | null>(null);
+  const [activeDeleteAction, setActiveDeleteAction] = useState<DeleteMenuAction | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookMetadata | null>(null);
@@ -83,11 +88,12 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     resetToOriginal,
   } = useMetadataEdit(bookMeta);
 
-  const deleteConfigs: Record<DeleteAction, DeleteConfig> = {
+  const deleteConfigs: Record<DeleteMenuAction, DeleteConfig> = {
     both: {
       title: _('Confirm Deletion'),
       message: _('Are you sure to delete the selected book?'),
       handler: handleBookDelete,
+      showPurgeToggle: !!handleBookPurge,
     },
     cloud: {
       title: _('Confirm Deletion'),
@@ -98,13 +104,6 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
       title: _('Confirm Deletion'),
       message: _('Are you sure to delete the local copy of the selected book?'),
       handler: handleBookDeleteLocalCopy,
-    },
-    purge: {
-      title: _('Purge Book Data'),
-      message: _(
-        'This permanently erases the book and all its data, including reading progress, notes, and bookmarks. This cannot be undone.',
-      ),
-      handler: handleBookPurge,
     },
   };
 
@@ -157,17 +156,22 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     }
   };
 
-  const handleDeleteAction = (action: DeleteAction) => {
+  const handleDeleteAction = (action: DeleteMenuAction) => {
     setActiveDeleteAction(action);
   };
 
-  const confirmDeleteAction = async () => {
+  const confirmDeleteAction = async (purgeData: boolean) => {
     if (!activeDeleteAction) return;
 
     const config = deleteConfigs[activeDeleteAction];
     handleClose();
 
-    if (config.handler) {
+    // The standard "Cloud & Device" delete escalates to a full purge when the
+    // user opts in via the confirmation toggle. The cloud-only / device-only
+    // variants keep the library entry, so purging reading data does not apply.
+    if (activeDeleteAction === 'both' && purgeData && handleBookPurge) {
+      handleBookPurge(book);
+    } else if (config.handler) {
       config.handler(book);
     }
   };
@@ -179,7 +183,6 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const handleDelete = () => handleDeleteAction('both');
   const handleDeleteCloudBackup = () => handleDeleteAction('cloud');
   const handleDeleteLocalCopy = () => handleDeleteAction('local');
-  const handlePurge = () => handleDeleteAction('purge');
 
   const handleShare = () => {
     // Close this modal first, then hand off to the share dialog hosted by
@@ -267,7 +270,6 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   handleBookDeleteCloudBackup ? handleDeleteCloudBackup : undefined
                 }
                 onDeleteLocalCopy={handleBookDeleteLocalCopy ? handleDeleteLocalCopy : undefined}
-                onPurge={handleBookPurge ? handlePurge : undefined}
                 onDownload={handleBookDownload ? handleRedownload : undefined}
                 onUpload={handleBookUpload ? handleReupload : undefined}
                 onShare={handleShare}
@@ -300,9 +302,10 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
               paddingBottom: `${(safeAreaInsets?.bottom || 0) + 16}px`,
             }}
           >
-            <Alert
+            <DeleteConfirmAlert
               title={currentDeleteConfig.title}
               message={currentDeleteConfig.message}
+              showPurgeToggle={currentDeleteConfig.showPurgeToggle}
               onCancel={cancelDeleteAction}
               onConfirm={confirmDeleteAction}
             />

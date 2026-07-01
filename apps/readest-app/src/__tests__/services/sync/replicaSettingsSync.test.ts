@@ -44,6 +44,7 @@ const makeSettings = (overrides: Partial<SystemSettings> = {}): SystemSettings =
     kosync: { serverUrl: '', username: '', userkey: '', password: '' },
     readwise: { accessToken: '' },
     hardcover: { accessToken: '' },
+    webdav: { serverUrl: '', username: '', password: '', rootPath: '/' },
     ...overrides,
   }) as unknown as SystemSettings;
 
@@ -317,6 +318,50 @@ describe('publishSettingsIfChanged', () => {
       expect(patch.kosync?.password).toBe('hunter2');
     });
 
+    test('omits WebDAV credentials but keeps serverUrl/rootPath when credentials sync is OFF (issue #4810)', async () => {
+      await setCredentials(undefined); // default OFF
+      isUnlocked = false;
+      await publishSettingsIfChanged(
+        makeSettings({
+          webdav: {
+            serverUrl: 'https://dav.example.com',
+            username: 'alice',
+            password: 'hunter2',
+            rootPath: '/Books',
+          } as SystemSettings['webdav'],
+        }),
+      );
+      expect(publishMock).toHaveBeenCalledTimes(1);
+      const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+      // Plaintext connection metadata still ships.
+      expect(patch.webdav?.serverUrl).toBe('https://dav.example.com');
+      expect(patch.webdav?.rootPath).toBe('/Books');
+      // Credentials are gated off.
+      expect(patch.webdav?.username).toBeUndefined();
+      expect(patch.webdav?.password).toBeUndefined();
+    });
+
+    test('publishes WebDAV credentials when credentials sync is ON (issue #4810)', async () => {
+      await setCredentials(true);
+      isUnlocked = true;
+      await publishSettingsIfChanged(
+        makeSettings({
+          webdav: {
+            serverUrl: 'https://dav.example.com',
+            username: 'alice',
+            password: 'hunter2',
+            rootPath: '/Books',
+          } as SystemSettings['webdav'],
+        }),
+      );
+      expect(publishMock).toHaveBeenCalledTimes(1);
+      const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+      expect(patch.webdav?.serverUrl).toBe('https://dav.example.com');
+      expect(patch.webdav?.username).toBe('alice');
+      expect(patch.webdav?.password).toBe('hunter2');
+      expect(patch.webdav?.rootPath).toBe('/Books');
+    });
+
     test('skipping all of the only-credential changes is a clean no-op (no empty publish)', async () => {
       await setCredentials(undefined);
       isUnlocked = false;
@@ -526,6 +571,47 @@ describe('applyRemoteSettings', () => {
 
     await publishSettingsIfChanged(useSettingsStore.getState().settings);
     expect(publishMock).not.toHaveBeenCalled();
+  });
+
+  test('deep-merges webdav credentials without clobbering local per-device fields (issue #4810)', () => {
+    const env = makeEnvConfig();
+    useSettingsStore.setState({
+      ...useSettingsStore.getState(),
+      settings: makeSettings({
+        webdav: {
+          enabled: true,
+          serverUrl: 'https://old.example.com',
+          username: 'old',
+          password: 'old-pass',
+          rootPath: '/Old',
+          deviceId: 'this-device',
+          lastSyncedAt: 999,
+          syncBooks: true,
+        } as unknown as SystemSettings['webdav'],
+      }),
+    });
+    applyRemoteSettings(env, {
+      name: 'singleton',
+      patch: {
+        webdav: {
+          serverUrl: 'https://dav.example.com',
+          username: 'alice',
+          password: 'hunter2',
+          rootPath: '/Books',
+        },
+      } as unknown as Partial<SystemSettings>,
+    });
+    const merged = useSettingsStore.getState().settings.webdav;
+    // Synced connection fields are applied.
+    expect(merged.serverUrl).toBe('https://dav.example.com');
+    expect(merged.username).toBe('alice');
+    expect(merged.password).toBe('hunter2');
+    expect(merged.rootPath).toBe('/Books');
+    // Per-device fields the remote patch omits must survive the merge.
+    expect(merged.enabled).toBe(true);
+    expect(merged.deviceId).toBe('this-device');
+    expect(merged.lastSyncedAt).toBe(999);
+    expect(merged.syncBooks).toBe(true);
   });
 
   test('empty patch is a no-op', () => {

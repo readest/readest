@@ -15,7 +15,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { useCustomTextureStore } from '@/store/customTextureStore';
 import { queueReplicaBinaryUpload } from '@/services/sync/replicaBinaryUpload';
-import { saveViewSettings } from '@/helpers/settings';
+import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { useFileSelector } from '@/hooks/useFileSelector';
@@ -42,6 +42,21 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const { getView, getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
+  // The Background Image picker is context-aware (issue #4743): opened from the
+  // library (no bookKey) it edits the library's own texture, which falls back
+  // to the reader/global value per-field until decoupled; opened while reading
+  // it edits the reader texture exactly as before.
+  const isLibraryContext = !bookKey;
+  const currentTextureId = isLibraryContext
+    ? (settings.libraryBackgroundTextureId ?? viewSettings.backgroundTextureId)
+    : viewSettings.backgroundTextureId;
+  const currentBackgroundOpacity = isLibraryContext
+    ? (settings.libraryBackgroundOpacity ?? viewSettings.backgroundOpacity)
+    : viewSettings.backgroundOpacity;
+  const currentBackgroundSize = isLibraryContext
+    ? (settings.libraryBackgroundSize ?? viewSettings.backgroundSize)
+    : viewSettings.backgroundSize;
+
   const [invertImgColorInDark, setInvertImgColorInDark] = useState(
     viewSettings.invertImgColorInDark,
   );
@@ -51,9 +66,9 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const [overrideColor, setOverrideColor] = useState(viewSettings.overrideColor);
   const [codeHighlighting, setcodeHighlighting] = useState(viewSettings.codeHighlighting);
   const [codeLanguage, setCodeLanguage] = useState(viewSettings.codeLanguage);
-  const [selectedTextureId, setSelectedTextureId] = useState(viewSettings.backgroundTextureId);
-  const [backgroundOpacity, setBackgroundOpacity] = useState(viewSettings.backgroundOpacity);
-  const [backgroundSize, setBackgroundSize] = useState(viewSettings.backgroundSize);
+  const [selectedTextureId, setSelectedTextureId] = useState(currentTextureId);
+  const [backgroundOpacity, setBackgroundOpacity] = useState(currentBackgroundOpacity);
+  const [backgroundSize, setBackgroundSize] = useState(currentBackgroundSize);
   const [highlightOpacity, setHighlightOpacity] = useState(viewSettings.highlightOpacity ?? 0.3);
   const [customHighlightColors, setCustomHighlightColors] = useState(
     settings.globalReadSettings.customHighlightColors,
@@ -161,22 +176,34 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   }, [codeHighlighting, codeLanguage]);
 
   useEffect(() => {
-    if (selectedTextureId === viewSettings.backgroundTextureId) return;
-    saveViewSettings(envConfig, bookKey, 'backgroundTextureId', selectedTextureId);
+    if (selectedTextureId === currentTextureId) return;
+    if (isLibraryContext) {
+      saveSysSettings(envConfig, 'libraryBackgroundTextureId', selectedTextureId);
+    } else {
+      saveViewSettings(envConfig, bookKey, 'backgroundTextureId', selectedTextureId);
+    }
     applyBackgroundTexture();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTextureId]);
 
   useEffect(() => {
-    if (backgroundOpacity === viewSettings.backgroundOpacity) return;
-    saveViewSettings(envConfig, bookKey, 'backgroundOpacity', backgroundOpacity);
+    if (backgroundOpacity === currentBackgroundOpacity) return;
+    if (isLibraryContext) {
+      saveSysSettings(envConfig, 'libraryBackgroundOpacity', backgroundOpacity);
+    } else {
+      saveViewSettings(envConfig, bookKey, 'backgroundOpacity', backgroundOpacity);
+    }
     applyBackgroundTexture();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backgroundOpacity]);
 
   useEffect(() => {
-    if (backgroundSize === viewSettings.backgroundSize) return;
-    saveViewSettings(envConfig, bookKey, 'backgroundSize', backgroundSize);
+    if (backgroundSize === currentBackgroundSize) return;
+    if (isLibraryContext) {
+      saveSysSettings(envConfig, 'libraryBackgroundSize', backgroundSize);
+    } else {
+      saveViewSettings(envConfig, bookKey, 'backgroundSize', backgroundSize);
+    }
     applyBackgroundTexture();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backgroundSize]);
@@ -364,6 +391,9 @@ const ColorPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
           <BackgroundTextureSelector
             predefinedTextures={PREDEFINED_TEXTURES}
             customTextures={customTextures.filter((t) => !t.deletedAt)}
+            title={
+              isLibraryContext ? _('Background Image (Library)') : _('Background Image (Reader)')
+            }
             selectedTextureId={selectedTextureId}
             backgroundOpacity={backgroundOpacity}
             backgroundSize={backgroundSize}

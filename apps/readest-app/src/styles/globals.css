@@ -570,6 +570,15 @@ input[type='range'].slider-input {
   background-color: theme('colors.base-100') !important;
 }
 
+/* Hide the horizontal scrollbar on the virtualized OPDS group carousels. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 [data-eink='true'] input.search-input,
 [data-eink='true'] input.search-input:focus {
   border-width: 1px !important;
@@ -682,6 +691,45 @@ input[type='range'].slider-input {
 
 [data-eink='true'] input[type='checkbox'] {
   --tglbg: theme('colors.base-100') !important;
+}
+
+/* Dictionary popup font size (#4443).
+ *
+ * `--dict-font-scale` is set per content card by DictionaryResultsView; `1`
+ * = default sizes. It scales every provider's rendered definition while
+ * leaving the popup chrome (header, source label, web-search rows — all
+ * outside this scope) untouched.
+ *
+ * `[data-dict-content]` is the per-tab content root. Light-DOM providers
+ * size text with Tailwind `text-*` utilities (root-relative `rem`), which a
+ * container `font-size` alone can't move — so those utilities are re-based to
+ * `em` WITHIN THIS SCOPE ONLY, letting them ride the scaled root.
+ *
+ * MDict renders into a shadow root, so its body is unreachable by ordinary
+ * selectors; `::part(dict-content)` (exposed on the body in mdictProvider) is
+ * the only hook that crosses the boundary. */
+[data-dict-content] {
+  font-size: calc(var(--dict-font-scale, 1) * 1em);
+}
+
+[data-dict-content] .text-xs {
+  font-size: 0.75em;
+}
+
+[data-dict-content] .text-sm {
+  font-size: 0.875em;
+}
+
+[data-dict-content] .text-base {
+  font-size: 1em;
+}
+
+[data-dict-content] .text-lg {
+  font-size: 1.125em;
+}
+
+[data-dict-content] .dict-shadow-host::part(dict-content) {
+  font-size: calc(var(--dict-font-scale, 1) * 0.875rem);
 }
 
 .no-transitions * {

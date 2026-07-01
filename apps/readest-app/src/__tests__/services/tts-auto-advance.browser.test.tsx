@@ -123,6 +123,7 @@ interface RelocateDetail {
   location: PageInfo;
   time: { section: number; total: number };
   range: Range;
+  fraction: number;
 }
 type BookProgressPageItem = { label?: string; href?: string } | null;
 
@@ -226,6 +227,7 @@ const wireRelocate = (view: FoliateView) => {
       pageInfo,
       detail.time,
       detail.range,
+      detail.fraction,
     );
   });
 };

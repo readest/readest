@@ -376,7 +376,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         onClick={toggleAutoUploadBooks}
       />
 
-      {isTauriAppPlatform() && !appService?.isMobile && (
+      {isTauriAppPlatform() && (
         <MenuItem
           label={_('Auto Import on File Open')}
           toggled={isAutoImportBooksOnOpen}

@@ -5,10 +5,16 @@ import {
   parseCsvLine,
   parseExchange,
   shortGloss,
+  shortDefGloss,
+  finalizeInflections as finalizeInflectionsUntyped,
+  parseWordNetData as parseWordNetDataUntyped,
+  parseWordNetIndex as parseWordNetIndexUntyped,
+  resolveEnEnGloss as resolveEnEnGlossUntyped,
   sha256Hex,
   packEntry,
   buildManifest,
   buildEnZh as buildEnZhUntyped,
+  buildEnEn as buildEnEnUntyped,
   buildZhEn as buildZhEnUntyped,
   parseFrequencyWords as parseFrequencyWordsUntyped,
   extractXToEn as extractXToEnUntyped,
@@ -23,6 +29,45 @@ import type { GlossIndexData } from '@/services/wordlens/types';
 // The .mjs script has no type annotations; pin the builders' returns to the
 // real GlossIndexData shape so the assertions are type-checked.
 const buildEnZh = buildEnZhUntyped as (csvText: string, topN: number) => GlossIndexData;
+
+type WnSynset = { members: string[]; hyper: string | null };
+type WnPrimary = {
+  noun: Map<string, string>;
+  verb: Map<string, string>;
+  adj: Map<string, string>;
+  adv: Map<string, string>;
+};
+interface WordNet {
+  byKey: Map<string, WnSynset>;
+  primary: WnPrimary;
+}
+const emptyWordNet = (): WordNet => ({
+  byKey: new Map(),
+  primary: { noun: new Map(), verb: new Map(), adj: new Map(), adv: new Map() },
+});
+const buildEnEn = buildEnEnUntyped as (
+  csvText: string,
+  wordnet: WordNet,
+  topN: number,
+) => GlossIndexData;
+const finalizeInflections = finalizeInflectionsUntyped as (
+  entries: Record<string, { r: number; g: string }>,
+  inflections: Record<string, string>,
+) => void;
+const parseWordNetData = parseWordNetDataUntyped as (
+  text: string,
+  pos: string,
+  byKey?: Map<string, WnSynset>,
+) => Map<string, WnSynset>;
+const parseWordNetIndex = parseWordNetIndexUntyped as (
+  text: string,
+  map?: Map<string, string>,
+) => Map<string, string>;
+const resolveEnEnGloss = resolveEnEnGlossUntyped as (
+  word: string,
+  rawDef: string,
+  ctx: { byKey: Map<string, WnSynset>; primary: WnPrimary; frqMap: Map<string, number> },
+) => string;
 const buildZhEn = buildZhEnUntyped as (
   cedictText: string,
   hskJson: unknown,
@@ -87,15 +132,14 @@ describe('parseExchange', () => {
 });
 
 describe('shortGloss', () => {
-  it('truncates to the first 1-2 senses joined by ；and ≤24 chars', () => {
+  it('keeps the first 1-2 senses joined by ；', () => {
     const g = shortGloss('to run; to operate; to manage; foo');
     expect(g).toBe('to run；to operate');
-    expect(g.length).toBeLessThanOrEqual(24);
   });
 
-  it('caps overly long senses at 24 chars', () => {
+  it('does not length-cap a long sense (the cap is applied at display, not in the pack)', () => {
     const g = shortGloss('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
-    expect(g.length).toBe(24);
+    expect(g).toBe('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'); // 32 chars stored as-is
   });
 
   it('strips leading POS tags, bracket annotations, and CL: clauses', () => {
@@ -103,6 +147,281 @@ describe('shortGloss', () => {
     expect(shortGloss('vt. 做；vi. 看')).toBe('做；看');
     expect(shortGloss('[网络] 隐；晦涩的')).toBe('隐；晦涩的');
     expect(shortGloss('government/CL:個|个[ge4]')).toBe('government');
+  });
+
+  it('keeps only the first synonym within each sense (","/"、"-separated)', () => {
+    // ";" separates senses; "," within a sense separates near-synonyms → keep first.
+    expect(shortGloss('阻止, 监禁, 拘留；隔离, 拘留, 滞留, 停')).toBe('阻止；隔离');
+    expect(shortGloss('house, home')).toBe('house');
+  });
+
+  it('dedupes when two senses share the same first synonym', () => {
+    expect(shortGloss('天的, 天国的, 天空的；天的, 天空的, 天国')).toBe('天的');
+  });
+});
+
+describe('shortDefGloss', () => {
+  it('shows at most two senses when there is no ";" (\\n-separated)', () => {
+    // ECDICT separates sense lines with a literal "\n" (backslash-n).
+    const def = String.raw`to begin\nto start\nto set in motion`;
+    expect(shortDefGloss(def)).toBe('to begin; to start');
+  });
+
+  it('treats each ";" part as a sense and keeps at most two of them', () => {
+    expect(shortDefGloss('quick; fast')).toBe('quick; fast');
+    expect(shortDefGloss('a; b; c; d; e')).toBe('a; b'); // at most two ";" parts
+    // a ";" within a line is a sense even when the line came from a \n split.
+    expect(shortDefGloss(String.raw`of an obscure nature; puzzling\nhidden`)).toBe(
+      'of an obscure nature; puzzling',
+    );
+  });
+
+  it('stores the full ≤2-sense definition without length-capping (the cap is applied at display)', () => {
+    expect(shortDefGloss('enjoying or showing or marked by joy or pleasure')).toBe(
+      'enjoying or showing or marked by joy or pleasure',
+    );
+  });
+
+  it('strips POS codes — period-terminated (n./adv.) or bare WordNet (v/s)', () => {
+    expect(shortDefGloss('v take the first step')).toBe('take the first step');
+    expect(shortDefGloss('s being present')).toBe('being present');
+    expect(shortDefGloss('adv. in a quick way')).toBe('in a quick way');
+    // a bare leading "a" is the article, not the adjective POS code → kept.
+    expect(shortDefGloss('n. a small house')).toBe('a small house');
+  });
+
+  it('strips bracket annotations and a Webster-style trailing period', () => {
+    expect(shortDefGloss('a happy state [psychology]')).toBe('a happy state');
+    expect(shortDefGloss('A magician.')).toBe('A magician');
+  });
+
+  it('returns empty string for empty / whitespace-only / all-empty senses', () => {
+    expect(shortDefGloss('')).toBe('');
+    expect(shortDefGloss('   ')).toBe('');
+    expect(shortDefGloss(String.raw`\n  \n`)).toBe('');
+  });
+});
+
+describe('buildEnEn', () => {
+  const header =
+    'word,phonetic,definition,translation,pos,collins,oxford,tag,bnc,frq,exchange,detail,audio';
+  const csv = [
+    header,
+    'Run,/rʌn/,move fast on foot,跑；经营,v,3,,,100,312,p:ran/i:running/3:runs/0:run,,',
+    String.raw`cryptic,/ˈkrɪptɪk/,having a hidden meaning\nmysterious,晦涩的,adj,2,,,500,18000,,,`,
+  ].join('\n');
+
+  it('falls back to the full ECDICT definition (≤2 senses) when no WordNet hint applies', () => {
+    const data = buildEnEn(csv, emptyWordNet(), 100);
+    expect(data.meta).toEqual({
+      source: 'en',
+      target: 'en',
+      metric: 'frq',
+      version: 1,
+      count: 2,
+    });
+    expect(data.entries['run']).toEqual({ r: 312, g: 'move fast on foot' });
+    // stored uncapped; the display-time cap (cleanGloss) shortens it when rendered.
+    expect(data.entries['cryptic']).toEqual({ r: 18000, g: 'having a hidden meaning; mysterious' });
+    // exchange forms map back to the lemma; the lemma itself is not an inflection.
+    expect(data.inflections['ran']).toBe('run');
+    expect(data.inflections['runs']).toBe('run');
+    expect(data.inflections['run']).toBeUndefined();
+  });
+
+  it('prefers a simpler synonym / category from WordNet over the definition', () => {
+    const csv2 = [
+      header,
+      'ship,/ʃ/,a large seagoing vessel,船,n,,,,100,4000,,,',
+      'vessel,/v/,a craft for traveling on water,船,n,,,,100,2500,,,',
+      'prejudice,/p/,an adverse judgment formed beforehand,偏见,n,,,,100,6000,,,',
+      'bias,/b/,a partiality,偏向,n,,,,100,3000,,,',
+    ].join('\n');
+    const wn = emptyWordNet();
+    wn.byKey.set('noun:1', { members: ['ship'], hyper: 'noun:2' });
+    wn.byKey.set('noun:2', { members: ['vessel'], hyper: null });
+    wn.byKey.set('noun:3', { members: ['prejudice', 'bias'], hyper: null });
+    wn.primary.noun.set('ship', '1');
+    wn.primary.noun.set('prejudice', '3');
+    const data = buildEnEn(csv2, wn, 100);
+    expect(data.entries['ship']!.g).toBe('vessel'); // no simpler synonym → hypernym
+    expect(data.entries['prejudice']!.g).toBe('bias'); // simpler synonym wins
+  });
+
+  it('skips a row whose definition is empty', () => {
+    const data = buildEnEn([header, 'word,/x/,,无,n,1,,,1,10,,,'].join('\n'), emptyWordNet(), 100);
+    expect(data.entries['word']).toBeUndefined();
+    expect(data.meta.count).toBe(0);
+  });
+
+  it('drops an inflected-form entry when its lemma is present (lemmatize)', () => {
+    const csv2 = [
+      header,
+      'keep,/kiːp/,hold on to,保持,v,5,,,50,120,p:kept/i:keeping/3:keeps,,',
+      'kept,/kept/,past tense of keep,过去式,v,,,,800,2500,,,',
+    ].join('\n');
+    const data = buildEnEn(csv2, emptyWordNet(), 100);
+    expect(data.entries['kept']).toBeUndefined();
+    expect(data.entries['keep']).toEqual({ r: 120, g: 'hold on to' });
+    expect(data.inflections['kept']).toBe('keep');
+    expect(data.meta.count).toBe(1);
+  });
+
+  it('lemmatizes a transparent derivation to its base when the definition names it (thickly ⇐ thick)', () => {
+    const csv2 = [
+      header,
+      'thick,/θ/,of great width,厚的,adj,,,,100,1000,,,',
+      'thickly,/θ/,in a thick manner,浓密地,adv,,,,500,15000,,,',
+    ].join('\n');
+    const data = buildEnEn(csv2, emptyWordNet(), 100);
+    // "thickly" resolves to "thick" (so the difficulty check uses thick's rank).
+    expect(data.entries['thickly']).toBeUndefined();
+    expect(data.inflections['thickly']).toBe('thick');
+    expect(data.entries['thick']).toEqual({ r: 1000, g: 'of great width' });
+  });
+
+  it('lemmatizes a negative -able derivation via translation overlap (insufferable ⇐ suffer)', () => {
+    // The English def never names "suffer", so def-mention alone can't validate it;
+    // the Chinese translations overlap (忍受) → transparent derivation.
+    const csv2 = [
+      header,
+      'suffer,/s/,undergo pain,"遭受, 经历, 忍受",v,,,,100,1099,d:suffered/p:suffered/i:suffering/3:suffers,,',
+      'insufferable,/i/,used of persons or their behavior,"不可忍受的, 忍耐不住的",adj,,,,500,24043,,,',
+    ].join('\n');
+    const data = buildEnEn(csv2, emptyWordNet(), 100);
+    expect(data.entries['insufferable']).toBeUndefined();
+    expect(data.inflections['insufferable']).toBe('suffer');
+    expect(data.entries['suffer']).toBeDefined();
+  });
+
+  it('keeps an -able word whose stem is a coincidence (capable ⇏ cap)', () => {
+    // morphologically capable→cap, but the translations share nothing → not a derivation.
+    const csv2 = [
+      header,
+      'cap,/k/,a head covering,"帽子, 盖",n,,,,100,2000,,,',
+      'capable,/k/,having the ability,"有能力的, 能干的",adj,,,,500,9000,,,',
+    ].join('\n');
+    const data = buildEnEn(csv2, emptyWordNet(), 100);
+    expect(data.inflections['capable']).toBeUndefined();
+    expect(data.entries['capable']).toBeDefined();
+  });
+
+  it('keeps a drifted derivation (hardly⇐hard) and a false base match (ally⇐ale)', () => {
+    const csv2 = [
+      header,
+      'hard,/h/,not easy,坚硬的,adj,,,,100,500,,,',
+      'hardly,/h/,almost not,几乎不,adv,,,,500,16000,,,',
+      'ale,/eɪl/,a kind of beer,啤酒,n,,,,100,3000,,,',
+      'ally,/ə/,a friendly nation,盟友,n,,,,500,8000,,,',
+    ].join('\n');
+    const data = buildEnEn(csv2, emptyWordNet(), 100);
+    // definition doesn't name the base → not a transparent derivation, kept as-is.
+    expect(data.inflections['hardly']).toBeUndefined();
+    expect(data.entries['hardly']).toBeDefined();
+    expect(data.inflections['ally']).toBeUndefined();
+    expect(data.entries['ally']).toBeDefined();
+  });
+});
+
+describe('WordNet hybrid (parse + resolve)', () => {
+  it('parseWordNetData: members + first hypernym pointer, keyed pos:offset', () => {
+    const line = '01382086 00 s 02 huge 0 immense 0 002 @ 01382033 a 0000 & 0 a 0000 | great';
+    const byKey = parseWordNetData(line, 'adj');
+    expect(byKey.get('adj:01382086')).toEqual({
+      members: ['huge', 'immense'],
+      hyper: 'adj:01382033',
+    });
+  });
+
+  it('parseWordNetIndex: lemma → primary (first) synset offset', () => {
+    const idx = ['huge a 2 1 & 2 0 01382086 09573200', 'enormous a 1 1 & 1 0 00109510'].join('\n');
+    const m = parseWordNetIndex(idx);
+    expect(m.get('huge')).toBe('01382086'); // first/primary offset, secondary dropped
+    expect(m.get('enormous')).toBe('00109510');
+  });
+
+  it('resolveEnEnGloss: synonym → hypernym → definition (POS-priority)', () => {
+    const byKey = new Map<string, WnSynset>([
+      ['noun:1', { members: ['ship'], hyper: 'noun:2' }],
+      ['noun:2', { members: ['vessel'], hyper: null }],
+      ['noun:3', { members: ['prejudice', 'bias'], hyper: null }],
+      ['noun:4', { members: ['thing'], hyper: 'noun:5' }],
+      ['noun:5', { members: ['entity'], hyper: null }], // generic hypernym
+    ]);
+    const primary: WnPrimary = {
+      noun: new Map([
+        ['ship', '1'],
+        ['prejudice', '3'],
+        ['thing', '4'],
+      ]),
+      verb: new Map(),
+      adj: new Map(),
+      adv: new Map(),
+    };
+    const frqMap = new Map<string, number>([
+      ['ship', 4000],
+      ['vessel', 2500],
+      ['prejudice', 6000],
+      ['bias', 3000],
+      ['thing', 50],
+    ]);
+    const ctx = { byKey, primary, frqMap };
+    expect(resolveEnEnGloss('prejudice', 'an adverse judgment', ctx)).toBe('bias'); // simpler synonym
+    expect(resolveEnEnGloss('ship', 'a large vessel', ctx)).toBe('vessel'); // hypernym (no synonym)
+    expect(resolveEnEnGloss('thing', 'a generic item', ctx)).toBe('a generic item'); // generic hyper → def
+    expect(resolveEnEnGloss('zzz', 'made up word', ctx)).toBe('made up word'); // no WordNet entry → def
+  });
+});
+
+describe('finalizeInflections', () => {
+  it('resolves an inflection chain to the terminal lemma (paintings→painting→paint)', () => {
+    const entries: Record<string, { r: number; g: string }> = {
+      paint: { r: 500, g: 'x' },
+      painting: { r: 800, g: 'y' },
+      paintings: { r: 1200, g: 'z' },
+    };
+    const inflections: Record<string, string> = { painting: 'paint', paintings: 'painting' };
+    finalizeInflections(entries, inflections);
+    expect(inflections['paintings']).toBe('paint'); // chain resolved to terminal
+    expect(inflections['painting']).toBe('paint');
+    expect(entries['painting']).toBeUndefined(); // both dropped (paint is more common)
+    expect(entries['paintings']).toBeUndefined();
+    expect(entries['paint']).toBeDefined();
+  });
+
+  it('prunes a wrong collision where the form outranks its lemma (number⇏numb)', () => {
+    const entries: Record<string, { r: number; g: string }> = {
+      number: { r: 300, g: 'a count' },
+      numb: { r: 9000, g: 'without feeling' },
+      numbers: { r: 1500, g: 'counts' },
+    };
+    const inflections: Record<string, string> = { number: 'numb', numbers: 'number' };
+    finalizeInflections(entries, inflections);
+    expect(inflections['number']).toBeUndefined(); // wrong link pruned
+    expect(entries['number']).toBeDefined(); // the common noun is kept as an entry
+    expect(inflections['numbers']).toBe('number'); // valid inflection of the kept entry
+    expect(entries['numbers']).toBeUndefined();
+  });
+
+  it('drops a mapping whose terminal lemma is not an entry (no dangling)', () => {
+    const entries: Record<string, { r: number; g: string }> = { run: { r: 100, g: 'go fast' } };
+    const inflections: Record<string, string> = { jogging: 'jog' }; // jog is not an entry
+    finalizeInflections(entries, inflections);
+    expect(inflections['jogging']).toBeUndefined();
+  });
+
+  it('breaks an inflection cycle instead of self-looping (axes↔axis)', () => {
+    const entries: Record<string, { r: number; g: string }> = {
+      axis: { r: 4000, g: 'a line' },
+      axes: { r: 5000, g: 'plural' },
+    };
+    const inflections: Record<string, string> = { axes: 'axis', axis: 'axes' }; // mutual
+    finalizeInflections(entries, inflections);
+    // No self-loop, no dangling: every surviving inflection points at a present entry.
+    for (const [form, lemma] of Object.entries(inflections)) {
+      expect(form).not.toBe(lemma);
+      expect(entries[lemma]).toBeDefined();
+    }
   });
 });
 
@@ -140,6 +459,18 @@ describe('buildEnZh', () => {
     const data = buildEnZh(csv, 1);
     expect(Object.keys(data.entries)).toEqual(['run']);
     expect(data.meta.count).toBe(1);
+  });
+
+  it('lemmatizes a derivation via the English definition column even though the gloss is Chinese', () => {
+    const csv2 = [
+      header,
+      'thick,/θ/,of great width,厚的,adj,,,,100,1000,,,',
+      'thickly,/θ/,in a thick manner,浓密地,adv,,,,500,15000,,,',
+    ].join('\n');
+    const data = buildEnZh(csv2, 100);
+    expect(data.entries['thickly']).toBeUndefined();
+    expect(data.inflections['thickly']).toBe('thick');
+    expect(data.entries['thick']).toEqual({ r: 1000, g: '厚的' }); // gloss still from translation
   });
 
   it('resolves an ambiguous inflected form to the most frequent lemma (first-wins)', () => {
@@ -409,6 +740,20 @@ describe('buildPack', () => {
     // The inflected form is NOT a standalone entry; it resolves to its lemma.
     expect(data.entries['perros']).toBeUndefined();
     expect(data.inflections['perros']).toBe('perro');
+  });
+
+  it('lemmatizes an English DERIVATION in an en-X pack via the reused en-zh table (thickly⇐thick)', () => {
+    // en-X (e.g. en-de) builds pass the en-zh inflection table as lemmaMap, which now
+    // carries derivations (thickly→thick) — so the rule holds for every en-source pair.
+    const freqList: FreqEntry[] = [
+      { word: 'thick', rank: 1 },
+      { word: 'thickly', rank: 2 },
+    ];
+    const glossMap = new Map<string, string[]>([['thick', ['breit']]]); // en→de gloss
+    const lemmaMap = new Map<string, string>([['thickly', 'thick']]); // from en-zh.json
+    const data = buildPack({ freqList, glossMap, meta, topN: 30000, skipTop: 0, lemmaMap });
+    expect(data.entries['thickly']).toBeUndefined();
+    expect(data.inflections['thickly']).toBe('thick');
   });
 });
 

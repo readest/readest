@@ -68,6 +68,9 @@ msgstr "จากน้อยไปมาก"
 msgid "Actions"
 msgstr "การกระทำ"
 
+msgid "Download all books"
+msgstr "ดาวน์โหลดหนังสือทั้งหมด"
+
 msgid "Rescan library"
 msgstr "สแกนคลังใหม่"
 
@@ -133,6 +136,21 @@ msgstr "ดาวน์โหลดปกไม่สำเร็จ"
 
 msgid "Could not delete the file."
 msgstr "ลบไฟล์ไม่ได้"
+
+msgid "No books to download."
+msgstr "ไม่มีหนังสือให้ดาวน์โหลด"
+
+msgid "Downloading %1 of %2…"
+msgstr "กำลังดาวน์โหลด %1 จาก %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "ยกเลิกการดาวน์โหลดแล้ว ดาวน์โหลด %1 จาก %2 แล้ว"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "ดาวน์โหลด %1 จาก %2 แล้ว (ข้าม %3)"
+
+msgid "Downloaded %1 of %2."
+msgstr "ดาวน์โหลด %1 จาก %2 แล้ว"
 
 msgid "Removing from cloud…"
 msgstr "กำลังลบจากคลาวด์…"

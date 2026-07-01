@@ -2,7 +2,13 @@ import { FoliateView } from '@/types/view';
 import { AppService } from '@/types/system';
 import { filterSSMLWithLang, parseSSMLMarks } from '@/utils/ssml';
 import { Overlayer } from 'foliate-js/overlayer.js';
-import { TTSGranularity, TTSHighlightOptions, TTSMark, TTSVoice } from './types';
+import {
+  TTSGranularity,
+  TTSHighlightGranularity,
+  TTSHighlightOptions,
+  TTSMark,
+  TTSVoice,
+} from './types';
 import { createRejectFilter } from '@/utils/node';
 import { WebSpeechClient } from './WebSpeechClient';
 import { NativeTTSClient } from './NativeTTSClient';
@@ -25,6 +31,18 @@ import {
 // across sessions.
 let ttsPositionSequence = 0;
 
+// Native TTS (Android System TTS / iOS) can report a terminal 'error' for an
+// utterance it cannot synthesize offline — typically a specific unsupported
+// character, hit characteristically on the first utterance after a chapter
+// boundary even with a local/offline voice (online the engine often
+// network-falls-back, which is why it only breaks offline). #speak only
+// auto-advances on 'end', so without handling, a single such error dead-ends
+// playback and wedges the controls in 'playing'. Re-speaking the same text
+// would just fail again, so we skip the bad chunk and advance — bounding
+// consecutive failures so a wholly-unusable engine still stops gracefully
+// instead of silently racing to the end of the book. See #4613, #4408.
+const TTS_NATIVE_SPEAK_MAX_CONSECUTIVE_ERRORS = 5;
+
 type TTSState =
   | 'stopped'
   | 'playing'
@@ -44,6 +62,10 @@ export class TTSController extends EventTarget {
   preprocessCallback?: (ssml: string) => Promise<string>;
   onSectionChange?: (sectionIndex: number) => Promise<void>;
   #nossmlCnt: number = 0;
+  // Consecutive native-TTS utterances that ended in a terminal 'error' without
+  // a successful 'end' in between. Reset on success; caps skip-on-error so a
+  // wholly-unusable engine stops instead of racing to the book end. See #4613.
+  #consecutiveSpeakErrors: number = 0;
   #currentSpeakAbortController: AbortController | null = null;
   #currentSpeakPromise: Promise<void> | null = null;
 
@@ -62,6 +84,11 @@ export class TTSController extends EventTarget {
   // re-apply the word instead of redrawing the whole sentence over it.
   #wordHighlightActive = false;
   #lastSpeakWordRange: Range | null = null;
+  // User-chosen highlight granularity. 'word' (default) highlights word-by-word
+  // when the active client reports word boundaries (Edge); 'sentence' keeps the
+  // highlight at the sentence level even then. Sentence highlighting is assumed
+  // supported by every client, so 'word' falls back to it automatically.
+  #highlightGranularity: TTSHighlightGranularity = 'word';
 
   state: TTSState = 'stopped';
   ttsLang: string = '';
@@ -87,8 +114,9 @@ export class TTSController extends EventTarget {
     super();
     this.ttsWebClient = new WebSpeechClient(this);
     this.ttsEdgeClient = new EdgeTTSClient(this, appService);
-    // TODO: implement native TTS client for iOS and PC
-    if (appService?.isAndroidApp) {
+    // Native TTS is backed by Android TextToSpeech and iOS AVSpeechSynthesizer.
+    // TODO: implement native TTS client for desktop platforms.
+    if (appService?.isAndroidApp || appService?.isIOSApp) {
       this.ttsNativeClient = new NativeTTSClient(this);
     }
     this.ttsClient = this.ttsWebClient;
@@ -171,6 +199,10 @@ export class TTSController extends EventTarget {
   updateHighlightOptions(options: TTSHighlightOptions) {
     this.options.style = options.style;
     this.options.color = options.color;
+  }
+
+  setHighlightGranularity(granularity: TTSHighlightGranularity) {
+    this.#highlightGranularity = granularity;
   }
 
   async initViewTTS(index?: number) {
@@ -399,6 +431,9 @@ export class TTSController extends EventTarget {
           }
           await this.preloadSSML(ssml, signal);
         }
+        // Only the native client surfaces an offline engine failure as a
+        // terminal 'error' code (Edge/Web throw, which the catch below handles).
+        const canSkipOnError = this.ttsClient === this.ttsNativeClient;
         const iter = await this.ttsClient.speak(ssml, signal);
         let lastCode;
         for await (const { code } of iter) {
@@ -410,8 +445,33 @@ export class TTSController extends EventTarget {
         }
 
         if (lastCode === 'end' && this.state === 'playing' && !oneTime) {
+          this.#consecutiveSpeakErrors = 0;
           resolve();
           await this.forward();
+        } else if (
+          lastCode === 'error' &&
+          canSkipOnError &&
+          !signal.aborted &&
+          this.state === 'playing' &&
+          !oneTime
+        ) {
+          // The native engine reported it can't speak this chunk. Offline this
+          // is almost always a specific unsynthesizable utterance (e.g. an
+          // unsupported character) that would fail every time, not a transient
+          // glitch — so retrying the same text is futile. Skip it and advance
+          // exactly as a normal 'end' would, so one bad chunk (often the first
+          // utterance across a chapter boundary) can't strand playback with the
+          // controls wedged in 'playing'. Bound consecutive failures so a
+          // wholly-unusable engine stops gracefully instead of silently racing
+          // to the end of the book. See #4613, #4408.
+          this.#consecutiveSpeakErrors++;
+          resolve();
+          if (this.#consecutiveSpeakErrors <= TTS_NATIVE_SPEAK_MAX_CONSECUTIVE_ERRORS) {
+            await this.forward();
+          } else {
+            this.#consecutiveSpeakErrors = 0;
+            await this.stop();
+          }
         }
         resolve();
       } catch (e) {
@@ -632,8 +692,11 @@ export class TTSController extends EventTarget {
         // When the active client highlights word-by-word, suppress the
         // sentence highlight that setMark would otherwise draw, so the page
         // doesn't flash the whole sentence before the first word. The fallback
-        // (no boundaries) is drawn later in prepareSpeakWords.
-        this.#suppressMarkHighlight = this.ttsClient.supportsWordBoundaries();
+        // (no boundaries) is drawn later in prepareSpeakWords. When the user
+        // forces sentence granularity we keep the sentence highlight, so don't
+        // suppress it.
+        this.#suppressMarkHighlight =
+          this.ttsClient.supportsWordBoundaries() && this.#highlightGranularity === 'word';
         const range = this.view.tts?.setMark(mark.name);
         this.#suppressMarkHighlight = false;
         this.#speakWordsArmed = !!range;
@@ -715,6 +778,10 @@ export class TTSController extends EventTarget {
   // sentence-level semantics.
   prepareSpeakWords(words: string[]) {
     if (!this.#speakWordsArmed) return;
+    // User forced sentence-level highlighting: the sentence highlight was drawn
+    // at mark dispatch (not suppressed), so there's nothing to do here — leave
+    // word mode off even though the client reported word boundaries.
+    if (this.#highlightGranularity === 'sentence') return;
     const range = this.view.tts?.getLastRange();
     if (!range) return;
     this.#speakWordBaseRange = range;

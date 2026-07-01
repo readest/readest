@@ -15,15 +15,39 @@ CREATE TABLE public.books (
   updated_at timestamp with time zone NULL DEFAULT now(),
   deleted_at timestamp with time zone NULL,
   uploaded_at timestamp with time zone NULL,
+  synced_at timestamp with time zone NOT NULL DEFAULT now(),
   progress integer[] NULL,
   reading_status text NULL,
   reading_status_updated_at timestamp with time zone NULL,
+  cover_hash text NULL,
+  cover_updated_at timestamp with time zone NULL,
   group_id text NULL,
   group_name text NULL,
   metadata json NULL,
   CONSTRAINT books_pkey PRIMARY KEY (user_id, book_hash),
   CONSTRAINT books_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE CASCADE
 );
+
+-- Server-assigned incremental-pull cursor, decoupled from updated_at (the
+-- client event time / sort key). A trigger stamps it on every write so a
+-- server-resolved merge propagates without reordering the date-read library.
+-- See migration 016_add_books_synced_at.sql (issue #4678).
+CREATE INDEX idx_books_user_synced ON public.books (user_id, synced_at);
+
+CREATE OR REPLACE FUNCTION public.set_books_synced_at()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.synced_at := now();
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER books_set_synced_at
+  BEFORE INSERT OR UPDATE ON public.books
+  FOR EACH ROW
+  EXECUTE FUNCTION public.set_books_synced_at();
 
 ALTER TABLE public.books ENABLE ROW LEVEL SECURITY;
 CREATE POLICY select_books ON public.books FOR SELECT TO authenticated USING ((SELECT auth.uid()) = user_id);

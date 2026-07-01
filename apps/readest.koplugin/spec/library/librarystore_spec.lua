@@ -540,6 +540,73 @@ describe("LibraryStore", function()
     end)
 
     -- =====================================================================
+    -- listCloudOnlyBooks — the bulk-download candidate set (#4751)
+    -- =====================================================================
+    -- A cloud-only book is downloadable but not yet on this device:
+    -- cloud_present=1, local_present=0, deleted_at IS NULL, and uploaded_at
+    -- set (the file actually exists in storage — a phantom record has none).
+    describe("listCloudOnlyBooks", function()
+        local store
+        before_each(function()
+            store = LibraryStore.new({ user_id = "alice" })
+            -- cloud-only, downloadable → included
+            store:upsertBook(book({
+                hash = "h1", title = "Foundation", author = "Asimov",
+                cloud_present = 1, local_present = 0, updated_at = T_OLD,
+            }))
+            -- on device already (cloud + local) → excluded
+            store:upsertBook(book({
+                hash = "h2", title = "Dune", author = "Herbert",
+                cloud_present = 1, local_present = 1, updated_at = T_RECENT,
+            }))
+            -- local-only (never uploaded) → excluded
+            store:upsertBook(book({
+                hash = "h3", title = "Hyperion", author = "Simmons",
+                local_present = 1, updated_at = T_MID,
+            }))
+        end)
+        after_each(function() store:close() end)
+
+        it("returns only cloud-present, not-local books", function()
+            local rows = store:listCloudOnlyBooks()
+            assert.are.equal(1, #rows)
+            assert.are.equal("Foundation", rows[1].title)
+        end)
+
+        it("excludes a phantom cloud record with no uploaded file", function()
+            store:upsertBook(book({
+                hash = "h-phantom", title = "Phantom",
+                cloud_present = 1, uploaded_at = false, local_present = 0,
+            }))
+            local rows = store:listCloudOnlyBooks()
+            assert.are.equal(1, #rows)
+            assert.are.equal("Foundation", rows[1].title)
+        end)
+
+        it("excludes cloud-deleted rows even when not yet local", function()
+            store:upsertBook(book({
+                hash = "h1", title = "Foundation",
+                cloud_present = 0, local_present = 0,
+                deleted_at = T_RECENT, _force_cloud_present = true,
+            }))
+            local rows = store:listCloudOnlyBooks()
+            assert.are.equal(0, #rows)
+        end)
+
+        it("scopes to the current user", function()
+            local bob = LibraryStore.new({ user_id = "bob" })
+            assert.are.equal(0, #bob:listCloudOnlyBooks())
+            bob:close()
+        end)
+
+        it("returns rows carrying the fields downloadBook needs", function()
+            local rows = store:listCloudOnlyBooks()
+            assert.are.equal("h1", rows[1].hash)
+            assert.are.equal("EPUB", rows[1].format)
+        end)
+    end)
+
+    -- =====================================================================
     -- getGroups
     -- =====================================================================
     describe("getGroups", function()

@@ -68,6 +68,9 @@ msgstr "आरोही"
 msgid "Actions"
 msgstr "क्रियाएँ"
 
+msgid "Download all books"
+msgstr "सभी पुस्तकें डाउनलोड करें"
+
 msgid "Rescan library"
 msgstr "लाइब्रेरी पुनः स्कैन करें"
 
@@ -133,6 +136,21 @@ msgstr "कवर डाउनलोड विफल।"
 
 msgid "Could not delete the file."
 msgstr "फ़ाइल हटाई नहीं जा सकी।"
+
+msgid "No books to download."
+msgstr "डाउनलोड करने के लिए कोई पुस्तक नहीं है।"
+
+msgid "Downloading %1 of %2…"
+msgstr "%2 में से %1 डाउनलोड हो रहा है…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "डाउनलोड रद्द किया गया। %2 में से %1 डाउनलोड हुई।"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 में से %1 डाउनलोड हुई (%3 छोड़ी गईं)।"
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 में से %1 डाउनलोड हुई।"
 
 msgid "Removing from cloud…"
 msgstr "क्लाउड से हटाया जा रहा है…"

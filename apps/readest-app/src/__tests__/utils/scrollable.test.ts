@@ -67,6 +67,42 @@ describe('applyScrollableStyle', () => {
     expect(table.parentElement?.classList.contains(SCROLL_WRAPPER_CLASS)).toBe(true);
   });
 
+  it('hoists a negative table margin onto the wrapper so it is not clipped (#4439)', () => {
+    // A decorative TOC lays out as nested tables; the inner table pulls itself
+    // up with a negative top margin. Inside an overflow:auto wrapper that margin
+    // would bleed the table (and its heading) past the box edge and get clipped.
+    document.body.innerHTML = `
+      <div>
+        <table style="margin: -1em 0 0 1em;"><tr><td>CONTENTS</td></tr></table>
+      </div>
+    `;
+    applyScrollableStyle(document);
+    const table = document.querySelector('table')!;
+    const wrapper = table.parentElement!;
+    expect(wrapper.classList.contains(SCROLL_WRAPPER_CLASS)).toBe(true);
+    // The negative top margin moves to the wrapper (box stays in place)...
+    expect(wrapper.style.marginTop).toBe('-1em');
+    // ...and is zeroed on the table so it sits flush inside the clip box.
+    expect(table.style.marginTop).toBe('0px');
+    // The positive left margin is left alone (still counts toward overflow).
+    expect(wrapper.style.marginLeft).toBe('');
+    expect(table.style.marginLeft).toBe('1em');
+  });
+
+  it('leaves a table with only non-negative margins untouched', () => {
+    document.body.innerHTML = `
+      <div>
+        <table style="margin: 1em auto;"><tr><td>Cell</td></tr></table>
+      </div>
+    `;
+    applyScrollableStyle(document);
+    const table = document.querySelector('table')!;
+    const wrapper = table.parentElement!;
+    expect(wrapper.style.marginTop).toBe('');
+    expect(table.style.marginTop).toBe('1em');
+    expect(table.style.marginLeft).toBe('auto');
+  });
+
   it('wraps a display equation (math that is the sole content of its container)', () => {
     document.body.innerHTML = `
       <div data-type="equation">

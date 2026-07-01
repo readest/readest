@@ -140,10 +140,23 @@ export class TauriMediaSession {
 }
 
 export function getMediaSession() {
+  const platform = getOSPlatform();
+  // Android: the native foreground-service media session (TextToSpeech and
+  // WebAudio both run with the app as the media owner; the Android WebView
+  // doesn't expose a usable Media Session here).
+  if (platform === 'android' && isTauriAppPlatform()) {
+    return new TauriMediaSession();
+  }
+  // iOS (and web): the audio always plays through the WebView — Edge TTS's media
+  // element, or the silent keep-alive element (`unblockAudio`) that runs during
+  // system TTS — so navigator.mediaSession, driven by that element, is what
+  // surfaces the lock-screen card with the cover + current sentence and the
+  // transport controls. AVSpeechSynthesizer is NOT a WebView media element and
+  // can't be surfaced via the native MPNowPlayingInfo path, so iOS must NOT be
+  // routed through the native plugin (doing so both hid the Edge cover/sentence
+  // and left system TTS with no controls). See #4676.
   if ('mediaSession' in navigator) {
     return navigator.mediaSession;
-  } else if (getOSPlatform() === 'android' && isTauriAppPlatform()) {
-    return new TauriMediaSession();
   }
   return null;
 }

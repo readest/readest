@@ -39,4 +39,9 @@ permissions = [
   "allow-get-sync-passphrase",
   "allow-clear-sync-passphrase",
   "allow-is-sync-keychain-available",
+  "allow-set-secure-item",
+  "allow-get-secure-item",
+  "allow-clear-secure-item",
+  "allow-refresh-eink-screen",
+  "allow-update-reading-widget",
 ]

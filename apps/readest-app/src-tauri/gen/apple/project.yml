@@ -97,6 +97,9 @@ targets:
       - target: ShareExtension
         embed: true
         codeSign: true
+      - target: ReadestWidget
+        embed: true
+        codeSign: true
       - sdk: CoreGraphics.framework
       - sdk: Metal.framework
       - sdk: MetalKit.framework
@@ -104,6 +107,7 @@ targets:
       - sdk: Security.framework
       - sdk: UIKit.framework
       - sdk: WebKit.framework
+      - sdk: WidgetKit.framework
     preBuildScripts:
       - script: pnpm tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}
         name: Build Rust Code
@@ -167,3 +171,35 @@ targets:
         ENABLE_BITCODE: false
         ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: false
         SKIP_INSTALL: true
+
+  # WidgetKit extension that surfaces the user's current reading progress
+  # on the iOS home screen / Today view. Reads from the App Group suite
+  # written by the main app's useReadingWidget hook (Task 7).
+  ReadestWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ReadestWidget
+    info:
+      path: ReadestWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Readest
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_NAME: ReadestWidget
+        PRODUCT_BUNDLE_IDENTIFIER: com.bilingify.readest.ReadestWidget
+        DEVELOPMENT_TEAM: J5W48D69VR
+        CODE_SIGN_ENTITLEMENTS: ReadestWidget/ReadestWidget.entitlements
+        CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: YES
+        SWIFT_VERSION: "5.0"
+        IPHONEOS_DEPLOYMENT_TARGET: 15.0
+        ARCHS: [arm64]
+        VALID_ARCHS: arm64
+        EXCLUDED_ARCHS[sdk=iphoneos*]: x86_64
+        ENABLE_BITCODE: false
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: false
+        SKIP_INSTALL: true
+    dependencies:
+      - sdk: WidgetKit.framework

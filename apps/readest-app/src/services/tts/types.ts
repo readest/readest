@@ -1,5 +1,7 @@
 export type TTSGranularity = 'sentence' | 'word';
 
+export type TTSHighlightGranularity = 'word' | 'sentence';
+
 export type TTSMediaMetadataMode = 'sentence' | 'paragraph' | 'chapter';
 
 export type TTSHighlightOptions = {

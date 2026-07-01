@@ -12,6 +12,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useProofreadStore } from '@/store/proofreadStore';
+import { eventDispatcher } from '@/utils/event';
 import { ProofreadRule } from '@/types/book';
 
 // ------------------------------
@@ -97,6 +99,7 @@ describe('ProofreadRulesManager', () => {
 
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
   });
 
   it('renders book and library (global) proofreading rules from stores', async () => {
@@ -243,6 +246,118 @@ describe('ProofreadRulesManager', () => {
     // Book section should still show book-wide rule
     expect(screen.getByText('book-wide')).toBeTruthy();
     expect(screen.getByText("'book-hit'")).toBeTruthy();
+  });
+
+  it('hides tombstoned (deleted) book rules from the list', async () => {
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
+      settings: { ...DEFAULT_SYSTEM_SETTINGS, globalViewSettings: { proofreadRules: [] } },
+    });
+
+    const liveRule: ProofreadRule = {
+      id: 'live',
+      scope: 'book',
+      pattern: 'visible-pattern',
+      replacement: 'kept',
+      enabled: true,
+      isRegex: false,
+      caseSensitive: true,
+      order: 1,
+      wholeWord: true,
+    };
+    const deletedRule: ProofreadRule = {
+      id: 'dead',
+      scope: 'book',
+      pattern: 'deleted-pattern',
+      replacement: 'gone',
+      enabled: true,
+      isRegex: false,
+      caseSensitive: true,
+      order: 2,
+      wholeWord: true,
+      updatedAt: 5,
+      deletedAt: 10,
+    };
+    const rules = [liveRule, deletedRule];
+
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
+      viewStates: { book1: { viewSettings: { proofreadRules: rules } } },
+    });
+    (useBookDataStore.setState as unknown as (state: unknown) => void)({
+      booksData: {
+        book1: {
+          id: 'book1',
+          book: null,
+          file: null,
+          config: { viewSettings: { proofreadRules: rules } },
+          bookDoc: null,
+          isFixedLayout: false,
+        },
+      },
+    });
+    useSidebarStore.setState({ sideBarBookKey: 'book1' });
+
+    renderWithProviders(<ProofreadRulesManager />);
+    await Promise.resolve();
+    setProofreadRulesVisibility(true);
+
+    await screen.findByRole('dialog');
+    expect(screen.getByText('visible-pattern')).toBeTruthy();
+    expect(screen.queryByText('deleted-pattern')).toBeNull();
+  });
+
+  it('renders a drag handle for each reorderable rule', async () => {
+    const selectionRule: ProofreadRule = {
+      id: 's1',
+      scope: 'selection',
+      pattern: 'only-once',
+      replacement: 'single-hit',
+      enabled: true,
+      isRegex: false,
+      caseSensitive: true,
+      order: 1,
+      wholeWord: true,
+      cfi: 'epubcfi(/6/14!/4/2,/1:0,/1:4)',
+      sectionHref: 'chapter1.html',
+    };
+    const bookRule: ProofreadRule = {
+      id: 'b1',
+      scope: 'book',
+      pattern: 'book-wide',
+      replacement: 'book-hit',
+      enabled: true,
+      isRegex: false,
+      caseSensitive: true,
+      order: 2,
+      wholeWord: true,
+    };
+
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
+      settings: { ...DEFAULT_SYSTEM_SETTINGS, globalViewSettings: { proofreadRules: [] } },
+    });
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
+      viewStates: { book1: { viewSettings: { proofreadRules: [selectionRule, bookRule] } } },
+    });
+    (useBookDataStore.setState as unknown as (state: unknown) => void)({
+      booksData: {
+        book1: {
+          id: 'book1',
+          book: null,
+          file: null,
+          config: { viewSettings: { proofreadRules: [selectionRule, bookRule] } },
+          bookDoc: null,
+          isFixedLayout: false,
+        },
+      },
+    });
+    useSidebarStore.setState({ sideBarBookKey: 'book1' });
+
+    renderWithProviders(<ProofreadRulesManager />);
+    await Promise.resolve();
+    setProofreadRulesVisibility(true);
+    await screen.findByRole('dialog');
+
+    const handles = screen.getAllByLabelText('Drag to reorder');
+    expect(handles.length).toBe(2);
   });
 
   it('displays correct scope labels for different rule types', async () => {
@@ -482,6 +597,116 @@ describe('ProofreadRulesManager', () => {
     // Check for empty state messages
     expect(screen.getByText('No selected text replacement rules')).toBeTruthy();
     expect(screen.getByText('No book-level replacement rules')).toBeTruthy();
+  });
+
+  describe('Add Rule form', () => {
+    const openManagerForAdd = async () => {
+      (useSettingsStore.setState as unknown as (state: unknown) => void)({
+        settings: {
+          ...DEFAULT_SYSTEM_SETTINGS,
+          globalViewSettings: { proofreadRules: [] },
+        },
+      });
+      (useReaderStore.setState as unknown as (state: unknown) => void)({
+        viewStates: { book1: { viewSettings: { proofreadRules: [] } } },
+      });
+      useSidebarStore.setState({ sideBarBookKey: 'book1' });
+
+      const addRuleSpy = vi
+        .spyOn(useProofreadStore.getState(), 'addRule')
+        .mockResolvedValue({} as ProofreadRule);
+      const recreateSpy = vi
+        .spyOn(useReaderStore.getState(), 'recreateViewer')
+        .mockResolvedValue(undefined as never);
+
+      renderWithProviders(<ProofreadRulesManager />);
+      await Promise.resolve();
+      setProofreadRulesVisibility(true);
+      await screen.findByRole('dialog');
+
+      return { addRuleSpy, recreateSpy };
+    };
+
+    it('creates a book-scoped rule from typed pattern + replacement', async () => {
+      const { addRuleSpy } = await openManagerForAdd();
+
+      fireEvent.change(screen.getByPlaceholderText('Find...'), { target: { value: 'colour' } });
+      fireEvent.change(screen.getByPlaceholderText('Replace with...'), {
+        target: { value: 'color' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Add Rule' }));
+
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(addRuleSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        'book1',
+        expect.objectContaining({
+          scope: 'book',
+          pattern: 'colour',
+          replacement: 'color',
+          isRegex: false,
+        }),
+      );
+    });
+
+    it('creates a regex rule when the Regex toggle is on', async () => {
+      const { addRuleSpy } = await openManagerForAdd();
+
+      fireEvent.change(screen.getByPlaceholderText('Find...'), { target: { value: '\\d+' } });
+      fireEvent.change(screen.getByPlaceholderText('Replace with...'), {
+        target: { value: '#' },
+      });
+      const regexLabel = screen.getByText('Regex:');
+      const regexCheckbox = regexLabel
+        .closest('label')!
+        .querySelector('input[type="checkbox"]') as HTMLInputElement;
+      fireEvent.click(regexCheckbox);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Add Rule' }));
+
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(addRuleSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        'book1',
+        expect.objectContaining({ pattern: '\\d+', isRegex: true }),
+      );
+    });
+
+    it('disables the Add Rule button until a find pattern is entered', async () => {
+      const { addRuleSpy } = await openManagerForAdd();
+      const button = screen.getByRole('button', { name: 'Add Rule' }) as HTMLButtonElement;
+
+      expect(button.disabled).toBe(true);
+      fireEvent.click(button);
+      await new Promise((r) => setTimeout(r, 0));
+      expect(addRuleSpy).not.toHaveBeenCalled();
+
+      fireEvent.change(screen.getByPlaceholderText('Find...'), { target: { value: 'colour' } });
+      expect(button.disabled).toBe(false);
+    });
+
+    it('warns and does not add when the regex is invalid', async () => {
+      const { addRuleSpy } = await openManagerForAdd();
+      const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+
+      fireEvent.change(screen.getByPlaceholderText('Find...'), { target: { value: '(' } });
+      const regexLabel = screen.getByText('Regex:');
+      const regexCheckbox = regexLabel
+        .closest('label')!
+        .querySelector('input[type="checkbox"]') as HTMLInputElement;
+      fireEvent.click(regexCheckbox);
+      fireEvent.click(screen.getByRole('button', { name: 'Add Rule' }));
+
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(addRuleSpy).not.toHaveBeenCalled();
+      expect(dispatchSpy).toHaveBeenCalledWith(
+        'toast',
+        expect.objectContaining({ type: 'warning' }),
+      );
+    });
   });
 
   it('merges book and library rules correctly in book section', async () => {

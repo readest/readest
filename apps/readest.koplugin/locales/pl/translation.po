@@ -68,6 +68,9 @@ msgstr "Rosnąco"
 msgid "Actions"
 msgstr "Akcje"
 
+msgid "Download all books"
+msgstr "Pobierz wszystkie książki"
+
 msgid "Rescan library"
 msgstr "Skanuj bibliotekę ponownie"
 
@@ -133,6 +136,21 @@ msgstr "Nie udało się pobrać okładki."
 
 msgid "Could not delete the file."
 msgstr "Nie można usunąć pliku."
+
+msgid "No books to download."
+msgstr "Brak książek do pobrania."
+
+msgid "Downloading %1 of %2…"
+msgstr "Pobieranie %1 z %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Pobieranie anulowane. Pobrano %1 z %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Pobrano %1 z %2 (pominięto %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Pobrano %1 z %2."
 
 msgid "Removing from cloud…"
 msgstr "Usuwanie z chmury…"

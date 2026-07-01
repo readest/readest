@@ -104,12 +104,25 @@ export interface HardcoverSettings {
   autoSync?: boolean;
 }
 
+/**
+ * Sort field for the WebDAV browser listing. 'name' reproduces the
+ * legacy directories-first/alphabetical default; the date fields drive
+ * the "pull up recent books" use case ('created' relies on the server
+ * reporting `<creationdate>`, which not all do). 'size' orders files.
+ */
+export type WebDAVBrowseSortByType = 'name' | 'modified' | 'created' | 'size';
+
 export interface WebDAVSettings {
   enabled: boolean;
   serverUrl: string;
   username: string;
   password: string;
   rootPath: string;
+  // Browser sort preference, persisted so a chosen "recent first" order
+  // survives across sessions. Both optional: absent => name/ascending,
+  // matching the pre-feature default (no migration needed).
+  browseSortBy?: WebDAVBrowseSortByType;
+  browseSortAscending?: boolean;
   // Sync sub-toggles. WebDAV sync runs as a parallel channel alongside the
   // native cloud sync, KOSync, Readwise, and Hardcover; each sub-toggle
   // gates a category independently so a user can e.g. mirror progress to
@@ -117,6 +130,10 @@ export interface WebDAVSettings {
   syncProgress?: boolean;
   syncNotes?: boolean;
   syncBooks?: boolean;
+  // When true, "Sync now" re-checks every book instead of only those whose
+  // local copy differs from the shared library.json index (the default
+  // incremental walk). An escape hatch for drift or a first full sync.
+  fullSync?: boolean;
   // Conflict policy — same vocabulary as KOSync so users only learn one.
   strategy?: KOSyncStrategy;
   // Stable per-device id (uuidv4); written into library.json so we can tell
@@ -125,99 +142,28 @@ export interface WebDAVSettings {
   // Wall-clock millisecond timestamp of the last successful end-to-end
   // sync, surfaced in the WebDAV settings sub-page.
   lastSyncedAt?: number;
-  // Diagnostic ring buffer: most recent ten "Sync now" runs, oldest first
-  // dropped when full. Persisted alongside the rest of settings so users
-  // can screenshot a failure breakdown when reporting issues. We keep the
-  // cap small both for storage hygiene and because debugging beyond ten
-  // back is rarely useful — by then the live state has long moved on.
-  syncLog?: WebDAVSyncLogEntry[];
 }
 
 /**
- * Outcome category for one entry in {@link WebDAVSettings.syncLog}. We
- * keep this coarse on purpose — it drives the colour of the status pill
- * in the history panel and nothing else. Per-step counters travel in the
- * same entry for users who want detail.
- *
- * - `success`: ran to completion with `failures === 0` and at least one
- *   meaningful action (download/upload). "Up to date" runs (no work) also
- *   land here.
- * - `partial`: ran to completion but `failures > 0`. At least one book
- *   may need a re-sync to fully converge.
- * - `failure`: did not finish. Either a top-level error (auth failed,
- *   network down before any work) or every book failed.
+ * Google Drive file-sync settings. A second file-sync backend alongside
+ * {@link WebDAVSettings}, sharing the same engine, sub-toggles, and strategy
+ * vocabulary. Drive has no URL / credentials / root path (it is OAuth + a
+ * fixed `/Readest` namespace under the `drive.file` scope), and no BYO client.
+ * The OAuth token is NOT stored here — it lives in the OS keychain. `deviceId`
+ * and `lastSyncedAt` are device-local (excluded from cross-device restore).
  */
-export type WebDAVSyncLogStatus = 'success' | 'partial' | 'failure';
-
-export interface WebDAVSyncLogFailure {
-  /** Stable identifier for the book — used as React key, never displayed. */
-  hash: string;
-  /** Human-readable book title at the time of the failed attempt. */
-  title: string;
-  /**
-   * Short, single-line failure description. We deliberately strip stacks
-   * and long server XML; users want "auth failed" / "404", not a wall of
-   * text. Truncate to ~200 chars at write time so the persisted log
-   * doesn't bloat settings.json.
-   */
-  reason: string;
+export interface GoogleDriveSettings {
+  enabled: boolean;
+  /** Connected account's email (or display name), shown in the settings UI. */
+  accountLabel?: string;
+  syncProgress?: boolean;
+  syncNotes?: boolean;
+  syncBooks?: boolean;
+  fullSync?: boolean;
+  strategy?: KOSyncStrategy;
+  deviceId?: string;
+  lastSyncedAt?: number;
 }
-
-export interface WebDAVSyncLogEntry {
-  /** UUIDv4. Used as React list key and for "expand details" toggling. */
-  id: string;
-  /** Wall-clock ms when handleSyncNow began. */
-  startedAt: number;
-  /** Wall-clock ms when the run finished or aborted. */
-  finishedAt: number;
-  status: WebDAVSyncLogStatus;
-  /**
-   * What kind of run this entry records. Defaults to 'sync' when
-   * absent so log entries persisted before this field was introduced
-   * keep rendering the same way they always did. 'cleanup' is set
-   * for entries written by the WebDAV browser's batch
-   * Delete-from-server action; renderers use this to swap the badge
-   * label and pick a cleanup-specific summary line.
-   */
-  kind?: 'sync' | 'cleanup';
-  /**
-   * What kicked off this run. v1 only writes 'manual' (the Sync now
-   * button is the only entry point). The reader-hook auto-pushes are
-   * intentionally NOT logged: they fire once per page-turn and would
-   * drown out the manual-run signal users care about.
-   */
-  trigger: 'manual' | 'auto';
-  /** Counters mirroring `SyncLibraryResult` — directly screenshot-friendly. */
-  totalBooks: number;
-  booksDownloaded: number;
-  filesUploaded: number;
-  filesAlreadyInSync: number;
-  configsUploaded: number;
-  configsDownloaded: number;
-  coversUploaded: number;
-  /**
-   * Number of per-hash directories successfully removed from the
-   * server in a cleanup run. Only meaningful when `kind === 'cleanup'`;
-   * sync entries leave this undefined / zero. Kept optional to avoid
-   * a migration step on existing settings.json files.
-   */
-  booksDeleted?: number;
-  failures: number;
-  /** The same one-liner shown in the toast. Kept for at-a-glance reading. */
-  summary: string;
-  /**
-   * Top-level error message when the run aborted before processing
-   * books (auth, root not reachable, connectivity). Mutually exclusive
-   * with `failedBooks` in practice — a top-level abort means we never
-   * iterated, so per-book failures don't apply.
-   */
-  errorMessage?: string;
-  /** Per-book failure breakdown when `failures > 0`. */
-  failedBooks?: WebDAVSyncLogFailure[];
-}
-
-/** Maximum entries retained in {@link WebDAVSettings.syncLog}. */
-export const WEBDAV_SYNC_LOG_LIMIT = 10;
 
 /**
  * User-facing sync categories. 'progress' gates the existing book-config
@@ -269,6 +215,8 @@ export interface HardwarePageTurnerSettings {
     pageNext: KeyBinding | null;
     sectionPrev: KeyBinding | null;
     sectionNext: KeyBinding | null;
+    /** E-ink full screen refresh (clears ghosting). Optional: absent on settings persisted before the feature existed. */
+    refresh?: KeyBinding | null;
   };
 }
 
@@ -324,6 +272,20 @@ export interface SystemSettings {
   libraryCoverFit: LibraryCoverFitType;
   libraryAutoColumns: boolean;
   libraryColumns: number;
+  /** Show the recently-read carousel at the top of the library (issue #3797). */
+  libraryRecentShelfEnabled: boolean;
+  /**
+   * Library page background texture, configured independently from the reader
+   * background (issue #4743). When any of these is undefined the library
+   * inherits the corresponding `globalViewSettings.background*` value, so an
+   * existing user's bookshelf looks unchanged until they pick a library
+   * texture. Device-local (the texture *selection* never syncs, matching the
+   * reader's `backgroundTextureId`); only the imported image binaries sync via
+   * the `texture` replica kind. Resolved by `getLibraryViewSettings`.
+   */
+  libraryBackgroundTextureId?: string;
+  libraryBackgroundOpacity?: number;
+  libraryBackgroundSize?: string;
   customFonts: CustomFont[];
   customTextures: CustomTexture[];
   customDictionaries: ImportedDictionary[];
@@ -359,6 +321,7 @@ export interface SystemSettings {
   readwise: ReadwiseSettings;
   hardcover: HardcoverSettings;
   webdav: WebDAVSettings;
+  googleDrive: GoogleDriveSettings;
 
   aiSettings: AISettings;
   /**

@@ -6,6 +6,29 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getStyles } from '@/utils/style';
 
+/**
+ * Resolve the effective background texture for the library page (issue #4743).
+ * The library texture is stored separately from the reader's, but each field
+ * falls back to the reader/global value when unset — so the bookshelf inherits
+ * the current look until the user explicitly picks a library texture, then
+ * decouples per-field. Returns a `ViewSettings` so it can be handed straight to
+ * `useBackgroundTexture().applyBackgroundTexture`.
+ */
+export const getLibraryViewSettings = (settings: SystemSettings): ViewSettings => {
+  // globalViewSettings can be absent on the very first renders — the store
+  // starts as `{} as SystemSettings` until appService.loadSettings() runs — so
+  // every read is optional and falls back to a no-texture default.
+  const globalViewSettings = settings.globalViewSettings;
+  return {
+    ...globalViewSettings,
+    backgroundTextureId:
+      settings.libraryBackgroundTextureId ?? globalViewSettings?.backgroundTextureId ?? 'none',
+    backgroundOpacity:
+      settings.libraryBackgroundOpacity ?? globalViewSettings?.backgroundOpacity ?? 0.6,
+    backgroundSize: settings.libraryBackgroundSize ?? globalViewSettings?.backgroundSize ?? 'cover',
+  };
+};
+
 export const saveViewSettings = async <K extends keyof ViewSettings>(
   envConfig: EnvConfigType,
   bookKey: string,

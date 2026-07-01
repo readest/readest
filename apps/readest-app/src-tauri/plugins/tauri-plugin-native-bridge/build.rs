@@ -34,6 +34,11 @@ const COMMANDS: &[&str] = &[
     "checkPermissions",
     "requestPermissions",
     "clip_url",
+    "set_secure_item",
+    "get_secure_item",
+    "clear_secure_item",
+    "refresh_eink_screen",
+    "update_reading_widget",
 ];
 
 fn main() {

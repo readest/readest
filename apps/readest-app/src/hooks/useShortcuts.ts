@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { loadShortcuts, ShortcutConfig } from '../helpers/shortcuts';
+import { matchesShortcut, ShortcutEventLike } from '../utils/shortcutKeys';
 
 export type KeyActionHandlers = {
   [K in keyof ShortcutConfig]?: (event?: KeyboardEvent | MessageEvent) => void;
@@ -17,45 +18,9 @@ const useShortcuts = (actions: KeyActionHandlers, dependencies: React.Dependency
     return () => window.removeEventListener('shortcutUpdate', handleShortcutUpdate);
   }, []);
 
-  const parseShortcut = (shortcut: string) => {
-    const keys = shortcut.toLowerCase().split('+');
-    return {
-      ctrlKey: keys.includes('ctrl'),
-      altKey: keys.includes('alt') || keys.includes('opt'),
-      metaKey: keys.includes('meta') || keys.includes('cmd'),
-      shiftKey: keys.includes('shift'),
-      key: keys.find((k) => !['ctrl', 'alt', 'opt', 'meta', 'cmd', 'shift'].includes(k)),
-    };
-  };
-
-  const isShortcutMatch = (
-    shortcut: string,
-    key: string,
-    ctrlKey: boolean,
-    altKey: boolean,
-    metaKey: boolean,
-    shiftKey: boolean,
-  ) => {
-    const parsedShortcut = parseShortcut(shortcut);
-    return (
-      parsedShortcut.key === key.toLowerCase() &&
-      parsedShortcut.ctrlKey === ctrlKey &&
-      parsedShortcut.altKey === altKey &&
-      parsedShortcut.metaKey === metaKey &&
-      parsedShortcut.shiftKey === shiftKey
-    );
-  };
-
-  const processKeyEvent = (
-    key: string,
-    ctrlKey: boolean,
-    altKey: boolean,
-    metaKey: boolean,
-    shiftKey: boolean,
-    event: KeyboardEvent | MessageEvent,
-  ) => {
+  const processKeyEvent = (eventLike: ShortcutEventLike, event: KeyboardEvent | MessageEvent) => {
     // FIXME: This is a temporary fix to disable Back button navigation
-    if (key === 'backspace') return true;
+    if (eventLike.key.toLowerCase() === 'backspace') return true;
     for (const [actionName, actionHandler] of Object.entries(actions)) {
       const shortcutKey = actionName as keyof ShortcutConfig;
       const handler = actionHandler as
@@ -63,12 +28,7 @@ const useShortcuts = (actions: KeyActionHandlers, dependencies: React.Dependency
         | undefined;
       const shortcutEntry = shortcuts[shortcutKey as keyof ShortcutConfig];
       // console.log('Checking action:', shortcutKey);
-      if (
-        handler &&
-        shortcutEntry?.keys?.some((shortcut) =>
-          isShortcutMatch(shortcut, key, ctrlKey, altKey, metaKey, shiftKey),
-        )
-      ) {
+      if (handler && shortcutEntry?.keys && matchesShortcut(eventLike, shortcutEntry.keys)) {
         if (handler(event)) {
           return true;
         }
@@ -103,7 +63,7 @@ const useShortcuts = (actions: KeyActionHandlers, dependencies: React.Dependency
         event.preventDefault();
       }
 
-      const handled = processKeyEvent(key.toLowerCase(), ctrlKey, altKey, metaKey, shiftKey, event);
+      const handled = processKeyEvent({ key, ctrlKey, altKey, metaKey, shiftKey }, event);
       // console.log('Key event handled:', key, handled);
       if (handled) event.preventDefault();
     } else if (
@@ -112,7 +72,7 @@ const useShortcuts = (actions: KeyActionHandlers, dependencies: React.Dependency
       event.data.type === 'iframe-keydown'
     ) {
       const { key, ctrlKey, altKey, metaKey, shiftKey } = event.data;
-      processKeyEvent(key.toLowerCase(), ctrlKey, altKey, metaKey, shiftKey, event);
+      processKeyEvent({ key, ctrlKey, altKey, metaKey, shiftKey }, event);
     }
   };
 

@@ -7,21 +7,49 @@
 
 // Leading dictionary POS tags: "a." "vt." "interj." (≤6 letters so interj. is covered).
 const LEADING_POS = /^\s*(?:[a-zA-Z]{1,6}\.\s*)+/;
-// Sense separators in both the zh packs ("，；、") and the en-target packs (",;/").
-const SENSE_SEPARATORS = /[,，、;；/]/;
+// Sense separators: ";" "；" "/". Commas are NOT here — within a cross-lingual sense
+// "，"/","/"、" separate near-synonyms, of which only the first is kept.
+const SENSE_SEPARATORS = /[;；/]/;
+const SYNONYM_SEPARATORS = /[,，、]/;
+// DISPLAY length cap. Lives here (not in the build), so changing it does NOT require
+// regenerating the gloss packs — they store the full hint and this trims it.
 const MAX_GLOSS_LEN = 24;
 
-/** First sense only, POS/bracket/classifier noise stripped, length-capped. */
-export function cleanGloss(gloss: string): string {
+const capForDisplay = (s: string): string =>
+  s.length <= MAX_GLOSS_LEN ? s : s.slice(0, MAX_GLOSS_LEN - 1).trimEnd() + '…';
+
+/**
+ * Normalize a stored gloss for display, applying the length cap (the packs store the
+ * full hint; the cap is applied here so it can change without regenerating them).
+ *
+ * Cross-lingual (word) packs: keep at most the first TWO senses; within each sense
+ * keep only the first near-synonym (so "阻止, 监禁, 拘留；隔离, 拘留, 滞留" → "阻止；隔离"),
+ * POS/bracket/classifier noise stripped, joined by "；".
+ *
+ * Monolingual (en-en) packs hold the final hint already (a synonym/category, or a
+ * ≤2-sense definition where "," is intra-sense content) — so they must NOT be
+ * sense/synonym-split here; just normalize whitespace, then cap.
+ */
+export function cleanGloss(gloss: string, monolingual = false): string {
   if (!gloss) return '';
-  const firstSense = gloss.split(SENSE_SEPARATORS)[0] ?? '';
-  return firstSense
-    .replace(LEADING_POS, '')
-    .replace(/\[[^\]]*\]/g, '') // [ge4] pinyin / [医] domain tags
-    .replace(/\bCL:.*$/, '') // CC-CEDICT classifier clause
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, MAX_GLOSS_LEN);
+  if (monolingual) return capForDisplay(gloss.replace(/\s+/g, ' ').trim());
+  const senses = gloss
+    .split(SENSE_SEPARATORS)
+    .map((sense) =>
+      sense
+        .replace(LEADING_POS, '')
+        .replace(/\[[^\]]*\]/g, '') // [ge4] pinyin / [医] domain tags
+        .replace(/\bCL:.*$/, '') // CC-CEDICT classifier clause
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(SYNONYM_SEPARATORS)[0]! // first near-synonym within the sense
+        .trim(),
+    )
+    .filter(Boolean);
+  const out = [...new Set(senses)] // dedupe: two senses can share a first synonym
+    .slice(0, 2)
+    .join('；');
+  return capForDisplay(out);
 }
 
 // Reverse-derivation rules. Over-generate candidates ("all possibilities"); the
@@ -53,6 +81,17 @@ export function baseFormCandidates(word: string): string[] {
     add(w.slice(0, -5) + 'y'); // happiness → happy
   }
   if (w.endsWith('less') && w.length >= 5) add(w.slice(0, -4)); // harmless → harm
+  if ((w.endsWith('able') || w.endsWith('ible')) && w.length >= 6) {
+    add(w.slice(0, -4)); // comfortable → comfort, sufferable → suffer
+    add(w.slice(0, -4) + 'e'); // sensible → sense, lovable → love
+  }
+  // Negative/reversive prefixes (unhappy → happy, insufferable → suffer once -able is
+  // stripped above): peel the prefix off the word and off each suffix candidate.
+  for (const stem of [w, ...out]) {
+    for (const p of ['un', 'in', 'im', 'ir', 'il']) {
+      if (stem.startsWith(p) && stem.length - p.length >= 3) add(stem.slice(p.length));
+    }
+  }
   out.delete(w);
   return [...out];
 }
@@ -67,6 +106,17 @@ const HAN = /\p{Script=Han}/u;
  * (knowing the base really does mean knowing the derived form). CJK glosses match
  * on a shared Han character; Latin-script glosses match on a shared word (≥3 letters).
  */
+/**
+ * Does a derived word's gloss literally mention its base form as a whole word?
+ * For en-en (definition) packs the base/derived glosses rarely share a word, but a
+ * transparent derivation's definition often names the base ("thickly" → "in a thick
+ * manner"), which is a strong signal it's transparent and should inherit the rank.
+ */
+export function glossMentionsWord(gloss: string, word: string): boolean {
+  if (!gloss || word.length < 3) return false;
+  return new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(gloss);
+}
+
 export function glossesShareMeaning(a: string, b: string): boolean {
   const an = (a || '').replace(PARTICLES, '');
   const bn = (b || '').replace(PARTICLES, '');

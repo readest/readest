@@ -1,6 +1,7 @@
 // Build trimmed Word Lens gloss indices from open datasets.
 //
 //   node scripts/build-wordlens-data.mjs en-zh path/to/ecdict.csv [topN]
+//   node scripts/build-wordlens-data.mjs en-en path/to/ecdict.csv path/to/wordnet/dict [topN]
 //   node scripts/build-wordlens-data.mjs zh-en path/to/cedict.txt path/to/hsk.json [topN]
 //   node scripts/build-wordlens-data.mjs build <src> <tgt> <freq.txt> <gloss.jsonl> [topN]
 //
@@ -36,11 +37,14 @@ import { execFileSync } from 'node:child_process';
 const OUT_DIR = resolve('data/wordlens');
 const TOP_DEFAULT = 30000;
 
-// Keep a hint short + clean: drop bracket annotations ([医], [网络], [ge4]),
-// leading part-of-speech tags (ECDICT "a." / "vt." / "n."), and CC-CEDICT
-// classifier clauses (CL:...); then keep the first 1–2 senses.
+// Keep a hint short + clean. ";"/"/" separate SENSES; within a sense, ","/"、"
+// separate near-synonyms — keep only the first. Drop bracket annotations ([医],
+// [网络], [ge4]), leading part-of-speech tags (ECDICT "a." / "vt." / "n."), and
+// CC-CEDICT classifier clauses (CL:...); then keep at most the first two senses.
+// NOTE: no length truncation here — the display length cap lives in cleanGloss
+// (src/services/wordlens/gloss.ts), so it can change without regenerating packs.
 export function shortGloss(s) {
-  return s
+  const senses = s
     .split(/[;；/]/)
     .map((x) =>
       x
@@ -48,12 +52,157 @@ export function shortGloss(s) {
         .replace(/^\s*(?:[a-zA-Z]{1,5}\.\s*)+/, '') // leading POS: "a. " "vt. "
         .replace(/\bCL:[^;；/]*/g, '') // CC-CEDICT classifier clause
         .replace(/\s+/g, ' ')
+        .trim()
+        .split(/[，,、]/)[0] // first synonym within the sense
         .trim(),
     )
-    .filter(Boolean)
+    .filter(Boolean);
+  return [...new Set(senses)] // dedupe: two senses can share a first synonym
     .slice(0, 2)
-    .join('；')
-    .slice(0, 24);
+    .join('；');
+}
+
+// Clean one ECDICT definition line: strip the leading POS code — a period-
+// terminated abbreviation ("n." / "adv." / "interj.") OR a bare single-letter
+// WordNet code without a period ("v" / "s"; the period is inconsistent in the
+// data). A BARE leading "a" is the article and is kept — only "a." is the
+// adjective code. Then drop [..] annotations, collapse whitespace, and drop a
+// Webster-style trailing dot. Keeps any ";" — those separate senses (see below).
+function cleanDefSense(s) {
+  return s
+    .replace(/^\s*(?:(?:[a-zA-Z]{1,6}\.|[nvsr])\s+)+/, '')
+    .replace(/\[[^\]]*\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\.+$/, '');
+}
+
+// Build the en-en gloss from an ECDICT English `definition` (lines separated by a
+// literal "\n"). At most TWO senses: when ";"-joined, each ";" segment is a sense and
+// the first two are kept; when there is no ";", the first two "\n" lines are kept;
+// joined with "; ". No length truncation here — the display cap lives in cleanGloss.
+export function shortDefGloss(def) {
+  const lines = String(def || '')
+    .split(/\\n/)
+    .map(cleanDefSense)
+    .filter(Boolean);
+  if (!lines.length) return '';
+  const senses = (
+    lines.some((l) => l.includes(';'))
+      ? lines.flatMap((l) => l.split(';').map((s) => s.trim())).filter(Boolean)
+      : lines
+  ).slice(0, 2);
+  return senses.join('; ');
+}
+
+// --- WordNet hybrid: short en-en hints (simpler synonym → category → definition) ---
+
+const cleanWnWord = (w) => w.replace(/\([^)]*\)$/, '').replace(/_/g, ' ').toLowerCase();
+// WordNet pointer POS code → file. "s" (adjective satellite) lives in data.adj.
+const PTR_POS = { n: 'noun', v: 'verb', a: 'adj', s: 'adj', r: 'adv' };
+
+// Profane/vulgar synset members WordNet carries (jack/dump share a synset with
+// "shit", rooster with "cock"); never surface them in a reading aid.
+const PROFANE_GLOSS_WORDS = new Set(
+  (
+    'shit shite crap piss fuck fucking fucker motherfucker cunt cock cocksucker dick dickhead ' +
+    'prick pussy bitch bastard asshole arsehole ass arse bugger bollocks slut whore turd wanker ' +
+    'twat horseshit bullshit nigger faggot fag retard'
+  ).split(' '),
+);
+
+// Over-generic WordNet hypernyms that don't explain anything — skip them so the hint
+// falls through to a more specific category or the definition.
+const GENERIC_HYPERNYMS = new Set([
+  'entity', 'physical entity', 'abstract entity', 'object', 'thing', 'whole', 'unit', 'part',
+  'portion', 'matter', 'substance', 'abstraction', 'group', 'grouping', 'collection',
+  'arrangement', 'act', 'action', 'activity', 'event', 'state', 'condition', 'attribute',
+  'property', 'quality', 'relation', 'magnitude', 'amount', 'measure', 'quantity', 'person',
+  'individual', 'being', 'content', 'cognition', 'feeling', 'psychological feature',
+  'phenomenon', 'artifact', 'instrumentality', 'device', 'structure', 'form',
+]);
+
+// Parse a WordNet data.<pos> file into byKey: `${pos}:${offset}` -> { members, hyper }.
+// Synset line: "<offset> <lexfile> <ss_type> <w_cnt(hex)> <word> <lex_id> ... <p_cnt>
+// [<ptr_symbol> <offset> <pos> <src/tgt>]... | gloss". "@"/"@i" pointers are the
+// (instance) hypernym; we keep the first. Words use "_" for spaces, may carry a marker.
+export function parseWordNetData(text, pos, byKey = new Map()) {
+  for (const line of text.split('\n')) {
+    if (!line || line[0] === ' ') continue;
+    const t = line.split(' ');
+    const wcnt = parseInt(t[3], 16);
+    if (!Number.isFinite(wcnt) || wcnt < 1) continue;
+    const members = [];
+    for (let j = 0; j < wcnt; j++) {
+      const raw = t[4 + 2 * j];
+      if (raw) members.push(cleanWnWord(raw));
+    }
+    const hm = line.match(/ @i? (\d{8}) ([nvasr]) /);
+    byKey.set(`${pos}:${t[0]}`, { members, hyper: hm ? `${PTR_POS[hm[2]]}:${hm[1]}` : null });
+  }
+  return byKey;
+}
+
+// Parse a WordNet index.<pos> file into lemma -> primary (first/most-frequent) synset
+// offset for that POS.
+export function parseWordNetIndex(text, map = new Map()) {
+  for (const line of text.split('\n')) {
+    if (!line || line[0] === ' ') continue;
+    const t = line.split(' ');
+    const lemma = cleanWnWord(t[0] || '');
+    const offset = t.find((x) => /^\d{8}$/.test(x));
+    if (lemma && offset && !map.has(lemma)) map.set(lemma, offset);
+  }
+  return map;
+}
+
+// Simplest synonym in a synset: the single, non-profane co-member with the lowest
+// (most common) frequency that is STRICTLY more common than `word`. '' if none.
+function simplestWnSynonym(word, key, byKey, frqMap) {
+  const syn = byKey.get(key);
+  if (!syn) return '';
+  const own = frqMap.get(word) ?? Number.MAX_SAFE_INTEGER;
+  let best = '',
+    bestFrq = own;
+  for (const m of syn.members) {
+    if (m === word || m.includes(' ') || PROFANE_GLOSS_WORDS.has(m)) continue;
+    const f = frqMap.get(m);
+    if (f == null || f >= bestFrq) continue;
+    bestFrq = f;
+    best = m;
+  }
+  return best;
+}
+
+// The synset's hypernym category — first non-generic, non-self member. '' if none.
+function wnHypernym(key, byKey, word) {
+  const syn = byKey.get(key);
+  if (!syn || !syn.hyper) return '';
+  const h = byKey.get(syn.hyper);
+  if (!h) return '';
+  for (const m of h.members) {
+    if (m === word || GENERIC_HYPERNYMS.has(m)) continue;
+    return m;
+  }
+  return '';
+}
+
+// EN→EN hint: a simpler SYNONYM, else a category (HYPERNYM), else a short DEFINITION.
+// POS priority (noun→verb→adj→adv) picks the dominant sense's synset without needing
+// sense-frequency data, avoiding wrong-POS picks (the noun "ship" → "vessel", not the
+// verb sense "send").
+export function resolveEnEnGloss(word, rawDef, { byKey, primary, frqMap }) {
+  const w = word.toLowerCase();
+  for (const pos of ['noun', 'verb', 'adj', 'adv']) {
+    const offset = primary[pos]?.get(w);
+    if (!offset) continue;
+    const key = `${pos}:${offset}`;
+    const syn = simplestWnSynonym(w, key, byKey, frqMap);
+    if (syn) return syn;
+    const hyper = wnHypernym(key, byKey, w);
+    if (hyper) return hyper;
+  }
+  return shortDefGloss(rawDef);
 }
 
 // Minimal CSV line parser (ECDICT quotes fields containing commas/newlines).
@@ -93,57 +242,219 @@ export function parseExchange(exchange, word) {
   return [...forms];
 }
 
-// Build the EN→中文 index from ECDICT CSV *text* (so it's unit-testable).
-export function buildEnZh(csvText, topN) {
+// Over-generate base forms for a transparent English derivation (lazily→lazy,
+// thickly→thick, kindness→kind, harmless→harm). Mirrors baseFormCandidates in
+// src/services/wordlens/gloss.ts. The caller validates each candidate against the
+// entry table + the word's definition, so wrong guesses are harmless.
+export function enBaseFormCandidates(word) {
+  const w = word.toLowerCase();
+  const out = new Set();
+  const add = (x) => {
+    if (x.length >= 2) out.add(x);
+  };
+  if (w.endsWith('ily') && w.length >= 5) add(w.slice(0, -3) + 'y'); // lazily → lazy
+  if (w.endsWith('ly') && w.length >= 4) {
+    add(w.slice(0, -2)); // shyly → shy, thickly → thick
+    add(w.slice(0, -2) + 'e'); // nicely → nice
+  }
+  if (w.endsWith('ful') && w.length >= 5) {
+    add(w.slice(0, -3)); // sorrowful → sorrow
+    add(w.slice(0, -4) + 'y'); // beautiful → beauty
+  }
+  if (w.endsWith('wards') && w.length >= 6) {
+    add(w.slice(0, -1)); // downwards → downward
+    add(w.slice(0, -5)); // downwards → down
+  } else if (w.endsWith('ward') && w.length >= 5) {
+    add(w.slice(0, -4)); // inward → in
+  }
+  if (w.endsWith('ness') && w.length >= 5) {
+    add(w.slice(0, -4)); // kindness → kind
+    add(w.slice(0, -5) + 'y'); // happiness → happy
+  }
+  if (w.endsWith('less') && w.length >= 5) add(w.slice(0, -4)); // harmless → harm
+  if ((w.endsWith('able') || w.endsWith('ible')) && w.length >= 6) {
+    add(w.slice(0, -4)); // comfortable → comfort, sufferable → suffer
+    add(w.slice(0, -4) + 'e'); // sensible → sense, lovable → love
+  }
+  // Negative/reversive prefixes (unhappy → happy, insufferable → suffer once -able is
+  // stripped above): peel the prefix off the word and off each suffix candidate.
+  for (const stem of [w, ...out]) {
+    for (const p of ['un', 'in', 'im', 'ir', 'il']) {
+      if (stem.startsWith(p) && stem.length - p.length >= 3) add(stem.slice(p.length));
+    }
+  }
+  out.delete(w);
+  return [...out];
+}
+
+// Does an entry's definition mention `base` as a whole word? Confirms a derivation
+// is transparent (thickly's def names "thick") and rejects drift (hardly's def
+// never says "hard") + coincidental string matches (ally's def never says "ale").
+function defMentionsWord(def, base) {
+  if (!def || base.length < 3) return false;
+  return new RegExp(`\\b${base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(def);
+}
+
+// Do a derived word and its candidate base share a content (Han) character in their
+// Chinese translations? Confirms a transparent derivation whose English def doesn't
+// name the base — meaning-shifting derivations like the negative -able/prefix family
+// (insufferable/忍受 ⇐ suffer/忍受), while rejecting coincidental stems (capable ⇏ cap,
+// 能力 vs 帽子). Particles carry no meaning and are stripped before the test.
+const HAN_PARTICLES = /[的地得了着之吗呢啊，,；;、。.\s/]/g;
+const HAN_CHAR = /\p{Script=Han}/u;
+function transShareMeaning(a, b) {
+  const an = (a || '').replace(HAN_PARTICLES, '');
+  const bn = (b || '').replace(HAN_PARTICLES, '');
+  if (!an || !bn) return false;
+  const setB = new Set([...bn].filter((ch) => HAN_CHAR.test(ch)));
+  return [...an].some((ch) => HAN_CHAR.test(ch) && setB.has(ch));
+}
+
+// Clean up a candidate form→lemma inflection map against the entry table, in place:
+//   1. Prune a wrong link where the FORM is a more-common standalone entry than its
+//      lemma — a primary word coincidentally matching an inflection pattern, not an
+//      inflection (the noun "number", rank 300, wrongly claimed as numb's comparative).
+//   2. Resolve chains to the terminal lemma ("paintings"→"painting"→"paint" becomes
+//      "paintings"→"paint"), so a dropped middle form never leaves a dangling pointer.
+//   3. Drop a form-entry whose terminal lemma is a present entry (it resolves to the
+//      lemma at lookup); drop the mapping entirely when the terminal isn't an entry.
+// Postcondition: every inflection's lemma is an entry, and no inflected form is also
+// an entry.
+export function finalizeInflections(entries, inflections) {
+  for (const [form, lemma] of Object.entries(inflections)) {
+    const fe = entries[form];
+    const le = entries[lemma];
+    if (fe && le && fe.r < le.r) delete inflections[form]; // form outranks its "lemma"
+  }
+  for (const form of Object.keys(inflections)) {
+    let lemma = inflections[form];
+    const seen = new Set([form]);
+    while (inflections[lemma] && !seen.has(lemma)) {
+      seen.add(lemma);
+      lemma = inflections[lemma];
+    }
+    // Stopped with `lemma` still a key ⇒ a cycle (ambiguous mutual inflections,
+    // e.g. "axes"↔"axis"); don't lemmatize this form — leave it a standalone entry.
+    if (inflections[lemma]) delete inflections[form];
+    else inflections[form] = lemma;
+  }
+  for (const [form, lemma] of Object.entries(inflections)) {
+    if (!entries[lemma]) delete inflections[form]; // terminal not an entry → no dangling
+    else if (entries[form]) delete entries[form]; // resolves to its lemma at lookup
+  }
+}
+
+// Build an English-source index from ECDICT CSV *text* (so it's unit-testable).
+// Shared by buildEnZh (gloss from the Chinese `translation`) and buildEnEn (gloss
+// from the English `definition`). `glossColumn` is the ECDICT column to read and
+// `makeGloss` turns that raw field into the trimmed hint; everything else — frq
+// rank, exchange-based inflection map, drop-inflected-when-lemma-present, and the
+// derivational lemmatization below — is shared. Lemmatizing both inflected AND
+// transparently-derived forms to their base, so the difficulty check runs against
+// the LEMMA's frequency rank, is a workflow rule for every English-source pair.
+function buildEnPack(csvText, topN, { target, glossColumn, makeGloss }) {
   const rows = csvText.split('\n');
   const header = parseCsvLine(rows[0]) ?? [];
   const col = (name) => header.indexOf(name);
   const iWord = col('word'),
-    iTr = col('translation'),
+    iGloss = col(glossColumn),
+    iDef = col('definition'),
+    iTrans = col('translation'),
     iFrq = col('frq'),
     iEx = col('exchange');
-  const entries = {};
-  const inflections = {};
-  const parsed = [];
+  // Pass 1: parse rows + build a word→frq map (a gloss builder may pick the simplest
+  // synonym by frequency, e.g. en-en's WordNet hybrid).
+  const raw = [];
+  const frqMap = new Map();
   for (let i = 1; i < rows.length; i++) {
     const c = parseCsvLine(rows[i]);
     if (!c || !c[iWord]) continue;
+    const word = c[iWord];
     const frq = parseInt(c[iFrq] || '0', 10) || Number.MAX_SAFE_INTEGER;
-    const g = shortGloss((c[iTr] || '').replace(/\\n/g, '；'));
+    const key = word.toLowerCase();
+    const prev = frqMap.get(key);
+    if (prev == null || frq < prev) frqMap.set(key, frq);
+    raw.push({
+      word,
+      frq,
+      gloss: c[iGloss] || '',
+      def: c[iDef] || '',
+      trans: c[iTrans] || '',
+      exchange: c[iEx] || '',
+    });
+  }
+  // Pass 2: build the final gloss for each row.
+  const entries = {};
+  const inflections = {};
+  const defByWord = new Map(); // lowercased word -> raw English definition (for lemmatization)
+  const transByWord = new Map(); // lowercased word -> Chinese translation (for lemmatization)
+  const parsed = [];
+  for (const r of raw) {
+    const g = makeGloss(r.gloss, { word: r.word, frqMap });
     if (!g) continue;
-    parsed.push({ word: c[iWord], frq, g, exchange: c[iEx] || '' });
+    parsed.push({ word: r.word, frq: r.frq, g, exchange: r.exchange, def: r.def, trans: r.trans });
   }
   parsed.sort((a, b) => a.frq - b.frq);
   for (const e of parsed.slice(0, topN)) {
-    entries[e.word.toLowerCase()] = { r: e.frq, g: e.g };
+    const key = e.word.toLowerCase();
+    entries[key] = { r: e.frq, g: e.g };
+    defByWord.set(key, e.def);
+    transByWord.set(key, e.trans);
     // exchange: "p:past/i:ing/3:thirdperson/..." — map every form back to the lemma.
     // `parsed` is sorted most-common-first, so the FIRST lemma to claim a surface
     // form wins: ambiguous forms resolve to the most frequent lemma (e.g. "does"
     // -> "do", not "doe"; "putting" -> "put", not "putt").
     for (const form of parseExchange(e.exchange, e.word)) {
-      const key = form.toLowerCase();
-      if (!inflections[key]) inflections[key] = e.word.toLowerCase();
+      const f = form.toLowerCase();
+      if (!inflections[f]) inflections[f] = key;
     }
   }
-  // Drop standalone inflected-form entries (e.g. "kept", "children") when their
-  // lemma is also present: at lookup the surface form resolves to the lemma via
-  // `inflections`, so it inherits the lemma's difficulty rank + real gloss instead
-  // of being judged on its own + showing a cross-reference ("keep的过去式…").
-  for (const [form, lemma] of Object.entries(inflections)) {
-    if (entries[form] && entries[lemma]) delete entries[form];
+  // Candidate transparent DERIVATIONS (thickly⇐thick, kindness⇐kind, insufferable⇐
+  // suffer): a base that is also an entry AND either named by this word's English
+  // definition OR sharing a Han character in its Chinese translation (for meaning-
+  // shifting families like negative -able/prefix, whose def never names the base).
+  // Both checks reject drift (hardly⇏hard) and coincidental stems (ally⇏ale, capable⇏
+  // cap). Recorded alongside the exchange inflections; finalizeInflections does the drop.
+  for (const word of Object.keys(entries)) {
+    if (inflections[word]) continue; // an exchange inflection already claimed it
+    for (const base of enBaseFormCandidates(word)) {
+      if (
+        entries[base] &&
+        (defMentionsWord(defByWord.get(word), base) ||
+          transShareMeaning(transByWord.get(word), transByWord.get(base)))
+      ) {
+        inflections[word] = base;
+        break;
+      }
+    }
   }
+  finalizeInflections(entries, inflections);
   return {
-    meta: {
-      source: 'en',
-      target: 'zh',
-      metric: 'frq',
-      version: 1,
-      count: Object.keys(entries).length,
-    },
+    meta: { source: 'en', target, metric: 'frq', version: 1, count: Object.keys(entries).length },
     entries,
     inflections,
   };
 }
+
+// EN→中文: gloss from ECDICT's `translation` column (senses split by literal "\n").
+export const buildEnZh = (csvText, topN) =>
+  buildEnPack(csvText, topN, {
+    target: 'zh',
+    glossColumn: 'translation',
+    makeGloss: (s) => shortGloss(s.replace(/\\n/g, '；')),
+  });
+
+// EN→EN (monolingual): short hint = a simpler synonym, else a category (hypernym),
+// else a trimmed definition (see resolveEnEnGloss). `wordnet` is { byKey, primary }
+// from parseWordNetData/parseWordNetIndex. ECDICT supplies the frequency rank +
+// inflections, so difficulty is identical to en-zh.
+export const buildEnEn = (csvText, wordnet, topN) =>
+  buildEnPack(csvText, topN, {
+    target: 'en',
+    glossColumn: 'definition',
+    makeGloss: (rawDef, { word, frqMap }) =>
+      resolveEnEnGloss(word, rawDef, { byKey: wordnet.byKey, primary: wordnet.primary, frqMap }),
+  });
 
 // Parse one CC-CEDICT line: `傳統 传统 [chuan2 tong3] /tradition/traditional/`.
 // Returns { simp, senses: [...] } or null for comments / malformed lines.
@@ -442,16 +753,13 @@ export function buildPack({ freqList, glossMap, meta, topN = 30000, skipTop = 10
     entries[word] = { r: rank, g };
     count++;
   }
-  // Inflected surface forms resolve to their lemma's entry via `inflections`, so
-  // drop any standalone inflected-form entry whose lemma is present (it then
-  // inherits the lemma's difficulty rank + gloss instead of being glossed itself).
+  // Inflected/derived surface forms resolve to their lemma's entry via `inflections`,
+  // so drop any standalone form-entry whose lemma is present. finalizeInflections
+  // prunes lemmas not present here, resolves chains, and rejects wrong collisions.
   const inflections = {};
   if (lemmaMap) {
-    for (const [form, lemma] of lemmaMap) {
-      if (!entries[lemma]) continue;
-      delete entries[form];
-      inflections[form] = lemma;
-    }
+    for (const [form, lemma] of lemmaMap) inflections[form] = lemma;
+    finalizeInflections(entries, inflections);
   }
   return {
     meta: { ...meta, metric: 'frequency', version: 1, count: Object.keys(entries).length },
@@ -497,6 +805,23 @@ function writeManifest() {
   return manifest;
 }
 
+// Every English-SOURCE pack must lemmatize via the en-en inflection table — the
+// canonical English inflection + derivation map. en-en is the English-native pack,
+// and its definition-present entry set is exactly what the derivational lemmatizer
+// validates against, so it's the proper source of truth. Enforced: en-en must exist
+// first, or this throws instead of silently shipping an un-lemmatized en-X pack.
+// (en-en / en-zh build the table directly via buildEnPack.)
+function requireEnLemmaMap() {
+  const enEnPath = resolve(OUT_DIR, 'en-en.json');
+  if (!existsSync(enEnPath)) {
+    throw new Error(
+      'English-source builds require data/wordlens/en-en.json for lemmatization ' +
+        '(inflections + derivations). Build en-en first.',
+    );
+  }
+  return inflectionMapFromPack(readFileSync(enEnPath, 'utf8'));
+}
+
 // CLI entry point — skipped when imported by tests.
 async function main() {
   const [pair, ...rest] = process.argv.slice(2);
@@ -523,7 +848,9 @@ async function main() {
       attribution:
         'Glosses: Wiktionary (CC-BY-SA-4.0) via kaikki.org. Frequency: hermitdave/FrequencyWords from OpenSubtitles/OPUS (CC-BY-SA-4.0).',
     };
-    const data = buildPack({ freqList, glossMap, meta, topN: Number(topN) || TOP_DEFAULT });
+    // English-source packs must lemmatize via the en-zh table (enforced).
+    const lemmaMap = src === 'en' ? requireEnLemmaMap() : null;
+    const data = buildPack({ freqList, glossMap, meta, topN: Number(topN) || TOP_DEFAULT, lemmaMap });
     const file = `${src}-${tgt}.json`;
     writeFileSync(resolve(OUT_DIR, file), JSON.stringify(data));
     console.log(`${file}: ${data.meta.count} entries`);
@@ -550,13 +877,13 @@ async function main() {
     const freqList = parseFrequencyWords(readFileSync(freqPath, 'utf8'));
     const glossMap = extractWikDict(rows);
     // Lemmatize the SOURCE language so inflected words are glossed via their lemma.
-    // English source reuses the en-zh pack's inflection table ("kept"->"keep"); a
-    // non-English source uses an optional michmech lemmatization list ("perros"->
-    // "perro"). No-op if neither is available.
+    // English source MUST reuse the en-en inflection + derivation table ("kept"->
+    // "keep", "thickly"->"thick") — enforced via requireEnLemmaMap (throws if en-en
+    // is missing). A non-English source uses an optional michmech lemmatization list
+    // ("perros"->"perro").
     let lemmaMap = null;
-    const enZhPath = resolve(OUT_DIR, 'en-zh.json');
-    if (src === 'en' && existsSync(enZhPath)) {
-      lemmaMap = inflectionMapFromPack(readFileSync(enZhPath, 'utf8'));
+    if (src === 'en') {
+      lemmaMap = requireEnLemmaMap();
     } else if (tgt === 'en' && lemmaFile && existsSync(lemmaFile)) {
       lemmaMap = parseLemmatizationList(readFileSync(lemmaFile, 'utf8'));
     }
@@ -581,6 +908,22 @@ async function main() {
       `en-zh.json: ${data.meta.count} entries, ${Object.keys(data.inflections).length} inflections`,
     );
     writeManifest();
+  } else if (pair === 'en-en') {
+    const [csv, wnDir, topN] = rest;
+    if (!csv || !wnDir)
+      throw new Error('usage: build-wordlens-data.mjs en-en <ecdict.csv> <wordnet-dict-dir> [topN]');
+    const byKey = new Map();
+    const primary = { noun: new Map(), verb: new Map(), adj: new Map(), adv: new Map() };
+    for (const pos of ['noun', 'verb', 'adj', 'adv']) {
+      parseWordNetData(readFileSync(resolve(wnDir, `data.${pos}`), 'utf8'), pos, byKey);
+      parseWordNetIndex(readFileSync(resolve(wnDir, `index.${pos}`), 'utf8'), primary[pos]);
+    }
+    const data = buildEnEn(readFileSync(csv, 'utf8'), { byKey, primary }, Number(topN) || TOP_DEFAULT);
+    writeFileSync(resolve(OUT_DIR, 'en-en.json'), JSON.stringify(data));
+    console.log(
+      `en-en.json: ${data.meta.count} entries, ${Object.keys(data.inflections).length} inflections`,
+    );
+    writeManifest();
   } else if (pair === 'zh-en') {
     const [cedict, hsk, topN] = rest;
     if (!cedict || !hsk)
@@ -598,7 +941,7 @@ async function main() {
     console.log('manifest.json:', m.packs.length, 'packs');
   } else {
     throw new Error(
-      'usage: build-wordlens-data.mjs <en-zh|zh-en|build|build-wikdict|manifest> <sources...> [topN]',
+      'usage: build-wordlens-data.mjs <en-zh|en-en|zh-en|build|build-wikdict|manifest> <sources...> [topN]',
     );
   }
 }

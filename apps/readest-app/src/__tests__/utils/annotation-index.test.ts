@@ -54,6 +54,22 @@ describe('buildAnnotationIndex / selectLocationAnnotations', () => {
     expect(globals).toEqual([]);
   });
 
+  it('skips an annotation deleted in place after the index was built (stale index)', () => {
+    // #4773: the re-apply effect holds a memoized index. A quick delete stamps
+    // `deletedAt` on the SAME object that is still sitting in the bucket (the
+    // memo has not recomputed yet). If the read trusts the build-time filter,
+    // the just-deleted highlight gets re-drawn and its overlay is orphaned —
+    // visible on the page until the book is reopened. The read must re-check.
+    const highlight = note({ style: 'highlight', color: 'yellow', note: 'hi' });
+    const index = buildAnnotationIndex([highlight]);
+    // The user deletes the highlight: `deletedAt` is stamped in place on the
+    // booknote object that the stale index still references.
+    highlight.deletedAt = 123;
+    const { annotations, notes } = selectLocationAnnotations(index, location);
+    expect(annotations).toEqual([]);
+    expect(notes).toEqual([]);
+  });
+
   it('classifies a styled annotation into annotations only', () => {
     const highlight = note({ style: 'highlight', color: 'yellow' });
     const index = buildAnnotationIndex([highlight]);

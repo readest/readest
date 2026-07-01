@@ -62,11 +62,11 @@ export interface ImportFromFolderResult {
    * (`settings.externalLibraryFolders`) and import its books in place
    * — Readest will read each file straight from its original location
    * instead of copying it into Books/<hash>/. Sidecars (cover, config,
-   * notes) still live in Readest's data dir, so deleting the local
-   * copy of a book on Readest's side will physically remove the
-   * source file under the registered folder. Defaults to `false`,
-   * which keeps the legacy "copy into Readest" behaviour and leaves
-   * the registered folder list untouched.
+   * notes) still live in Readest's data dir. Deleting such a book from
+   * Readest only removes those Readest-side sidecars; the original
+   * source file under the registered folder is left untouched.
+   * Defaults to `false`, which keeps the legacy "copy into Readest"
+   * behaviour and leaves the registered folder list untouched.
    */
   readInPlace: boolean;
 }
@@ -434,7 +434,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
           </button>
           <button
             type='button'
-            className={clsx('btn btn-primary btn-sm', confirmDisabled && 'btn-disabled')}
+            className={clsx('btn btn-contrast btn-sm', confirmDisabled && 'btn-disabled')}
             disabled={confirmDisabled}
             onClick={handleConfirm}
           >

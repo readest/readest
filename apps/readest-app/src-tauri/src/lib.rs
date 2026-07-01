@@ -33,6 +33,8 @@ mod mobi_parser;
 mod nightly_update;
 mod parser_common;
 mod range_file;
+#[cfg(desktop)]
+mod spawn_fresh_browser;
 mod transfer_file;
 #[cfg(desktop)]
 mod window_state;
@@ -291,6 +293,8 @@ pub fn run() {
             #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
             discord_rpc::clear_book_presence,
             clip_url::clip_url,
+            #[cfg(desktop)]
+            spawn_fresh_browser::spawn_fresh_browser,
             nightly_update::verify_update_signature,
             #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
             nightly_update::install_nightly_update,

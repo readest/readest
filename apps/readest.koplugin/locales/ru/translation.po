@@ -68,6 +68,9 @@ msgstr "По возрастанию"
 msgid "Actions"
 msgstr "Действия"
 
+msgid "Download all books"
+msgstr "Загрузить все книги"
+
 msgid "Rescan library"
 msgstr "Пересканировать библиотеку"
 
@@ -133,6 +136,21 @@ msgstr "Не удалось загрузить обложку."
 
 msgid "Could not delete the file."
 msgstr "Не удалось удалить файл."
+
+msgid "No books to download."
+msgstr "Нет книг для загрузки."
+
+msgid "Downloading %1 of %2…"
+msgstr "Загрузка %1 из %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Загрузка отменена. Загружено %1 из %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Загружено %1 из %2 (пропущено %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Загружено %1 из %2."
 
 msgid "Removing from cloud…"
 msgstr "Удаление из облака…"

@@ -1,10 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useTranslation } from '@/hooks/useTranslation';
 import { CachedImage } from '@/components/CachedImage';
 import { OPDSPublication, REL } from '@/types/opds';
-import { groupByArray } from '../utils/opdsUtils';
 
 interface PublicationCardProps {
   publication: OPDSPublication;
@@ -21,12 +19,6 @@ export function PublicationCard({
   resolveURL,
   onGenerateCachedImageUrl,
 }: PublicationCardProps) {
-  const _ = useTranslation();
-  const linksByRel = useMemo(
-    () => groupByArray(publication.links, (link) => link.rel),
-    [publication.links],
-  );
-
   const thumbnailImage = useMemo(() => {
     const thumbnails = publication.images?.filter((img) =>
       REL.THUMBNAIL.some((rel: string) => img.rel?.includes(rel)),
@@ -53,28 +45,9 @@ export function PublicationCard({
     return authorList.map((a) => (typeof a === 'string' ? a : a?.name)).filter(Boolean);
   }, [publication.metadata?.author]);
 
-  const price = useMemo(() => {
-    const priceLink = publication.links?.find((link) => link.properties?.price);
-    if (priceLink?.properties?.price) {
-      const priceObj = Array.isArray(priceLink.properties.price)
-        ? priceLink.properties.price[0]
-        : priceLink.properties.price;
-
-      if (priceObj) {
-        const { currency, value } = priceObj;
-        return `${currency ? currency + ' ' : ''}${value}`;
-      }
-    }
-    if (linksByRel.has(REL.ACQ + '/open-access')) {
-      return _('Open Access');
-    }
-    return null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [publication.links, linksByRel]);
-
   return (
     <div role='none' onClick={onClick} className='card cursor-pointer transition-shadow'>
-      <figure className='bg-base-200 relative aspect-[28/41] rounded-none shadow-md'>
+      <figure className='bg-base-200 relative aspect-[28/41] overflow-hidden rounded shadow-md'>
         <CachedImage
           src={imageUrl}
           alt={publication.metadata?.title || 'Book cover'}
@@ -90,11 +63,6 @@ export function PublicationCard({
         </h3>
         {authors && authors.length > 0 && (
           <p className='text-base-content/70 line-clamp-1 text-xs'>{authors.join(', ')}</p>
-        )}
-        {price && (
-          <div className='card-actions mt-2 justify-end'>
-            <div className='badge badge-outline badge-sm'>{price}</div>
-          </div>
         )}
       </div>
     </div>

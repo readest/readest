@@ -73,6 +73,46 @@ export function resolveReadingStatusMerge(
       };
 }
 
+/**
+ * Build the row written when the server wins a books row by `updated_at` but
+ * the client's reading_status is the fresher one: graft the status onto the
+ * server row and leave everything else — crucially `updated_at` — untouched.
+ *
+ * The `books_set_synced_at` trigger stamps `synced_at = now()` on this write,
+ * so peers re-pull the status change via the synced_at cursor without the
+ * date-read library (sorted by updated_at) jumping to sync-processing time.
+ * Previously this rewrote `updated_at = now()` to force propagation, which was
+ * the #4677 reorder symptom. See issue #4678.
+ */
+export function buildStatusPropagationRow(
+  serverBook: DBBook,
+  status: Pick<DBBook, 'reading_status' | 'reading_status_updated_at'>,
+): DBBook {
+  return {
+    ...serverBook,
+    reading_status: status.reading_status,
+    reading_status_updated_at: status.reading_status_updated_at,
+  };
+}
+
+/**
+ * Field-level last-writer-wins for a books row's cover: return the
+ * {cover_hash, cover_updated_at} with the newer cover_updated_at (ties →
+ * client). NULL timestamp = epoch 0. A cover edit shares the row with
+ * page-turn progress, so this lets the cover survive even when the whole row
+ * is decided the other way by updated_at — the same #4634 hazard the
+ * reading_status merge addresses (issue #4544).
+ */
+export function resolveCoverMerge(
+  client: Pick<DBBook, 'cover_hash' | 'cover_updated_at'>,
+  server: Pick<DBBook, 'cover_hash' | 'cover_updated_at'>,
+): Pick<DBBook, 'cover_hash' | 'cover_updated_at'> {
+  const ms = (s?: string | null) => (s ? new Date(s).getTime() : 0);
+  return ms(client.cover_updated_at) >= ms(server.cover_updated_at)
+    ? { cover_hash: client.cover_hash, cover_updated_at: client.cover_updated_at }
+    : { cover_hash: server.cover_hash, cover_updated_at: server.cover_updated_at };
+}
+
 const transformsToDB = {
   books: transformBookToDB,
   book_notes: transformBookNoteToDB,
@@ -131,6 +171,13 @@ export async function GET(req: NextRequest) {
       let offset = 0;
       let hasMore = true;
 
+      // books keys the pull on the server-assigned `synced_at` cursor, which a
+      // trigger bumps on every write — including deletes — so a server-resolved
+      // merge propagates without touching updated_at (the date-read sort key).
+      // configs/notes have no server-side merge, so they stay on updated_at and
+      // still need the explicit deleted_at clause. See issue #4678.
+      const cursorColumn = table === 'books' ? 'synced_at' : 'updated_at';
+
       while (hasMore) {
         let query = supabase
           .from(table)
@@ -146,8 +193,12 @@ export async function GET(req: NextRequest) {
           query = query.eq('meta_hash', metaHashParam);
         }
 
-        query = query.or(`updated_at.gt.${sinceIso},deleted_at.gt.${sinceIso}`);
-        query = query.order('updated_at', { ascending: false });
+        if (cursorColumn === 'synced_at') {
+          query = query.gt('synced_at', sinceIso);
+        } else {
+          query = query.or(`updated_at.gt.${sinceIso},deleted_at.gt.${sinceIso}`);
+        }
+        query = query.order(cursorColumn, { ascending: false });
 
         console.log('Querying table:', table, 'since:', sinceIso, 'offset:', offset);
 
@@ -417,38 +468,52 @@ export async function POST(req: NextRequest) {
           if (table === 'books') {
             // `dbRec` is DBBook | DBBookConfig; in the 'books' branch it is always DBBook.
             const clientBook = dbRec as DBBook;
-            // `serverData` is BookDataRecord but the DB row carries the status columns at
-            // runtime — widen the type without going through `unknown`.
+            // `serverData` is BookDataRecord but the DB row carries the status +
+            // cover columns at runtime — widen the type without going through `unknown`.
             const serverBook = serverData as BookDataRecord &
-              Partial<Pick<DBBook, 'reading_status' | 'reading_status_updated_at'>>;
+              Partial<
+                Pick<
+                  DBBook,
+                  'reading_status' | 'reading_status_updated_at' | 'cover_hash' | 'cover_updated_at'
+                >
+              >;
             const status = resolveReadingStatusMerge(clientBook, serverBook);
+            // Cover has its own field-level LWW so a page-turn can't clobber a
+            // cover edit (issue #4544; mirrors reading_status / #4634).
+            const cover = resolveCoverMerge(clientBook, serverBook);
             if (clientIsNewer) {
-              // Client wins the row; graft the fresher status onto it (server's
-              // status may be the newer one even though the row is older).
+              // Client wins the row; graft the fresher status + cover onto it
+              // (server's may be the newer one even though the row is older).
               clientBook.reading_status = status.reading_status;
               clientBook.reading_status_updated_at = status.reading_status_updated_at;
+              clientBook.cover_hash = cover.cover_hash;
+              clientBook.cover_updated_at = cover.cover_updated_at;
               toUpdate.push(clientBook);
             } else {
-              // Only rewrite when the resolved status VALUE differs from the
+              // Only rewrite when a resolved field VALUE differs from the
               // server's — a timestamp-only difference on the same value is a
               // no-op, and rewriting it would churn updated_at + re-propagate.
               const statusChanged = readingStatusChanged(
                 status.reading_status,
                 serverBook.reading_status,
               );
-              if (statusChanged) {
-                // Server wins the row, but the client's status is newer. Write
-                // server's row with the fresher status and bump updated_at so
-                // peers re-pull the status change.
+              const coverChanged = (cover.cover_hash ?? null) !== (serverBook.cover_hash ?? null);
+              if (statusChanged || coverChanged) {
+                // Server wins the row, but the client's status and/or cover is
+                // the fresher one. Graft the fresher fields onto the server row
+                // and leave updated_at untouched; the books_set_synced_at
+                // trigger advances synced_at so peers re-pull via the synced_at
+                // cursor without reordering the date-read library (#4678, #4544).
                 // The runtime DB row carries all DBBook columns; the static type
                 // of `serverBook` is a narrower intersection so `unknown` is
                 // required to bridge the gap at this one construction site.
-                toUpdate.push({
-                  ...serverBook,
-                  reading_status: status.reading_status,
-                  reading_status_updated_at: status.reading_status_updated_at,
-                  updated_at: new Date().toISOString(),
-                } as unknown as DBBook);
+                const propagated = buildStatusPropagationRow(
+                  serverBook as unknown as DBBook,
+                  status,
+                );
+                propagated.cover_hash = cover.cover_hash;
+                propagated.cover_updated_at = cover.cover_updated_at;
+                toUpdate.push(propagated);
               } else {
                 batchAuthoritativeRecords.push(serverData);
               }

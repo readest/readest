@@ -53,6 +53,18 @@
           <string>readest</string>
         </array>
       </dict>
+      <!-- Google Drive OAuth reverse-DNS redirect (iOS-type client). The
+           ASWebAuthenticationSession matches on this scheme; mirrors the
+           gdrive-oauth filter in AndroidManifest.xml and the deep-link.mobile
+           scheme in tauri.conf.json. -->
+      <dict>
+        <key>CFBundleURLName</key>
+        <string>com.googleusercontent.apps.gdrive-oauth</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>com.googleusercontent.apps.209390247301-ctpmep68ppfa56r1b8tr35e4qi4p60kq</string>
+        </array>
+      </dict>
     </array>
   </dict>
 </plist>

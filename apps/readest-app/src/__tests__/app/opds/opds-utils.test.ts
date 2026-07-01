@@ -56,8 +56,9 @@ import {
   MIME,
   validateOPDSURL,
   getOPDSNavLink,
+  getUnaddedPopularCatalogs,
 } from '@/app/opds/utils/opdsUtils';
-import type { OPDSBaseLink } from '@/types/opds';
+import type { OPDSBaseLink, OPDSCatalog } from '@/types/opds';
 import { fetchWithAuth } from '@/app/opds/utils/opdsReq';
 
 const mockFetchWithAuth = vi.mocked(fetchWithAuth);
@@ -779,6 +780,46 @@ describe('opdsUtils', () => {
 
     it('ignores entries without an href', () => {
       expect(getOPDSNavLink([{ type: 'application/opds+json' }])).toBeUndefined();
+    });
+  });
+
+  describe('getUnaddedPopularCatalogs', () => {
+    const popular: OPDSCatalog[] = [
+      { id: 'gutenberg', name: 'Project Gutenberg', url: 'https://m.gutenberg.org/ebooks.opds/' },
+      {
+        id: 'standardebooks',
+        name: 'Standard Ebooks',
+        url: 'https://standardebooks.org/feeds/opds',
+      },
+    ];
+
+    it('returns all popular catalogs when none are added', () => {
+      expect(getUnaddedPopularCatalogs(popular, [])).toEqual(popular);
+    });
+
+    it('drops a popular catalog already present in the added list', () => {
+      const added: OPDSCatalog[] = [
+        { id: '1', name: 'Project Gutenberg', url: 'https://m.gutenberg.org/ebooks.opds/' },
+      ];
+      const result = getUnaddedPopularCatalogs(popular, added);
+      expect(result.map((c) => c.id)).toEqual(['standardebooks']);
+    });
+
+    it('matches by normalized URL (case and surrounding whitespace)', () => {
+      const added: OPDSCatalog[] = [
+        { id: '1', name: 'Gutenberg', url: '  HTTPS://M.GUTENBERG.ORG/EBOOKS.OPDS/  ' },
+      ];
+      const result = getUnaddedPopularCatalogs(popular, added);
+      expect(result.map((c) => c.id)).toEqual(['standardebooks']);
+    });
+
+    it('excludes disabled popular catalogs', () => {
+      const withDisabled: OPDSCatalog[] = [
+        ...popular,
+        { id: 'manybooks', name: 'ManyBooks', url: 'https://manybooks.net/opds/', disabled: true },
+      ];
+      const result = getUnaddedPopularCatalogs(withDisabled, []);
+      expect(result.map((c) => c.id)).toEqual(['gutenberg', 'standardebooks']);
     });
   });
 });
