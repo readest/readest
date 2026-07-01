@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { makeMarkdownBook } from '@/utils/md';
 import type { BookDoc } from '@/libs/document';
+import { CFI } from '@/libs/document';
+import { getIndexFromCfi } from '@/utils/cfi';
 
 // makeMarkdownBook returns a foliate book with a few methods (resolveHref,
 // isExternal, destroy) and a per-section load() that the BookDoc type does not
@@ -78,6 +80,20 @@ describe('makeMarkdownBook', () => {
       expect(typeof sid).toBe('string');
       expect(sectionMap.get(sid as string)).toBeDefined();
     }
+  });
+
+  it('gives each section a CFI base that round-trips to its index (resume position)', async () => {
+    // foliate-js view.getCFI does `section.cfi ?? CFI.fake.fromIndex(index)`,
+    // so an empty-string cfi defeats the fallback and the generated location
+    // CFI loses its spine step. Reopening then resolves to no section and the
+    // reader falls back to the start. Verify each section carries a base CFI
+    // that survives the getCFI -> resolveCFI round-trip.
+    const book = await make('# One\n\na\n\n# Two\n\nb\n\n# Three\n\nc\n');
+    book.sections.forEach((section, index) => {
+      const baseCFI = section.cfi ?? CFI.fake.fromIndex(index);
+      const locationCFI = CFI.joinIndir(baseCFI, '/4/2:3');
+      expect(getIndexFromCfi(locationCFI)).toBe(index);
+    });
   });
 
   it('produces XHTML that parses without errors despite void tags', async () => {
