@@ -470,6 +470,16 @@ class NativeBridgePlugin: Plugin {
   private var webViewLifecycleManager: WebViewLifecycleManager?
   private var traitChangeRegistered = false
 
+  // Screen-brightness management. `UIScreen.main.brightness` is a *global*
+  // device setting, not a per-window one: once the app writes to it, iOS
+  // suppresses ambient auto-brightness and the override survives backgrounding,
+  // leaving the system stuck at the app's level until the user nudges it
+  // manually (issue #4885). We remember the value that was there before the
+  // first override so we can hand it back whenever the app leaves the
+  // foreground, and re-assert the app's value when it returns.
+  private var appDesiredBrightness: CGFloat?
+  private var systemBrightnessBeforeOverride: CGFloat?
+
   @objc public override func load(webview: WKWebView) {
     self.webView = webview
     logger.log("NativeBridgePlugin loaded")
@@ -536,6 +546,10 @@ class NativeBridgePlugin: Plugin {
 
   @objc func appWillEnterForeground() {
     logger.log("NativeBridgePlugin: App will enter foreground")
+    // Re-assert the app's brightness that was released on background (#4885).
+    if let desired = appDesiredBrightness {
+      UIScreen.main.brightness = desired
+    }
     webViewLifecycleManager?.handleAppWillEnterForeground()
   }
 
@@ -661,6 +675,11 @@ class NativeBridgePlugin: Plugin {
     logger.log("NativeBridgePlugin: App did enter background")
     if let handler = volumeKeyHandler, handler.isIntercepting {
       handler.stopInterception()
+    }
+    // Hand screen brightness back to iOS so ambient auto-brightness resumes
+    // while backgrounded; the override is re-applied on foreground (#4885).
+    if appDesiredBrightness != nil, let original = systemBrightnessBeforeOverride {
+      UIScreen.main.brightness = original
     }
     webViewLifecycleManager?.handleAppDidEnterBackground()
   }
@@ -1050,20 +1069,37 @@ class NativeBridgePlugin: Plugin {
 
     let brightness = args.brightness ?? 0.5
 
-    if brightness < 0.0 {
-      // Revert to system brightness - iOS doesn't have a direct "system brightness" setting
-      // We will restore the brightness that was set before the app modified it
-      return invoke.resolve(["success": true])
-    }
-
     if brightness > 1.0 {
       return invoke.reject("Brightness must be between 0.0 and 1.0")
     }
 
-    DispatchQueue.main.async {
-      UIScreen.main.brightness = CGFloat(brightness)
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self else { return }
+      if brightness < 0.0 {
+        // A negative value means "release control back to the system", mirroring
+        // Android's BRIGHTNESS_OVERRIDE_NONE. Restore the pre-override brightness
+        // so iOS resumes ambient auto-brightness.
+        self.releaseBrightnessControl()
+      } else {
+        if self.systemBrightnessBeforeOverride == nil {
+          self.systemBrightnessBeforeOverride = UIScreen.main.brightness
+        }
+        self.appDesiredBrightness = CGFloat(brightness)
+        UIScreen.main.brightness = CGFloat(brightness)
+      }
     }
     invoke.resolve(["success": true])
+  }
+
+  /// Restore the brightness captured before the app first overrode it so iOS
+  /// resumes ambient auto-brightness, then forget our managed state. Must run
+  /// on the main thread.
+  private func releaseBrightnessControl() {
+    if let original = systemBrightnessBeforeOverride {
+      UIScreen.main.brightness = original
+    }
+    appDesiredBrightness = nil
+    systemBrightnessBeforeOverride = nil
   }
 
   @objc public func copy_uri_to_path(_ invoke: Invoke) {
