@@ -8,7 +8,11 @@ import { ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
 
 import { Book } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
-import { buildBookLookupIndex } from '@/services/bookService';
+import {
+  buildBookLookupIndex,
+  normalizeFilePathForIndex,
+  selectNewImportableFiles,
+} from '@/services/bookService';
 import { navigateToLibrary, navigateToLogin, navigateToReader } from '@/utils/nav';
 import { getBookWithUpdatedMetadata, listFormater } from '@/utils/book';
 import { getImportErrorMessage } from '@/services/errors';
@@ -37,6 +41,7 @@ import { useUICSS } from '@/hooks/useUICSS';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
 import { useLibraryFileSync } from './hooks/useLibraryFileSync';
+import { useAutoImportFolders } from './hooks/useAutoImportFolders';
 import { useInboxDrainer } from '@/hooks/useInboxDrainer';
 import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -103,6 +108,9 @@ import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
 import ModalPortal from '@/components/ModalPortal';
 import TransferQueuePanel from './components/TransferQueuePanel';
+
+/** Skip tiny non-book artifacts during folder auto-scan (matches the manual import dialog default). */
+const AUTO_IMPORT_MIN_SIZE_BYTES = 20 * 1024;
 
 /**
  * Key used to persist the last directory the user imported books from.
@@ -830,6 +838,66 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
     setLoading(false);
   };
+
+  /**
+   * Re-scan the registered external library folders and import any newly-added
+   * books. Reuses the same in-place import + dedup as manual folder import, but
+   * stays quiet: unreadable folders are skipped (no toast), and `importBooks`
+   * runs only when genuinely-new files exist (its success toast then fires).
+   */
+  const autoImportFromWatchedFolders = async (folders: string[]) => {
+    if (!appService || loading) return;
+    const { library } = useLibraryStore.getState();
+    const osPlatform = appService.osPlatform;
+    const index = buildBookLookupIndex(library, osPlatform);
+    const existingPaths = new Set(index.byFilePath.keys());
+    const newFiles: SelectedFile[] = [];
+    for (const folder of folders) {
+      try {
+        await appService.allowPathsInScopes?.([folder], true);
+        const items = await appService.readDirectory(folder, 'None');
+        const entries = await Promise.all(
+          items.map(async (item) => ({
+            fullPath: await joinPaths(folder, item.path),
+            size: item.size,
+          })),
+        );
+        const fresh = selectNewImportableFiles(entries, {
+          extensions: SUPPORTED_BOOK_EXTS,
+          minSizeBytes: AUTO_IMPORT_MIN_SIZE_BYTES,
+          existingPaths,
+          osPlatform,
+        });
+        for (const entry of fresh) {
+          newFiles.push({ path: entry.fullPath });
+          // Prevent the same file matching again via a later overlapping folder.
+          const key = normalizeFilePathForIndex(entry.fullPath, osPlatform);
+          if (key) existingPaths.add(key);
+        }
+      } catch (e) {
+        // One unreadable/temporarily-missing folder must not abort the others
+        // or nag the user (unlike the manual path, which nudges a re-pick).
+        console.error('Auto-import: failed to scan folder', folder, e);
+      }
+    }
+    if (newFiles.length > 0) {
+      await importBooks(newFiles);
+    }
+  };
+
+  // Local-folder counterpart of useLibraryFileSync: re-scan registered external
+  // library folders and import newly-added books on library open and app focus.
+  // Desktop + Android only (iOS security-scoped bookmarks are out of scope).
+  useAutoImportFolders({
+    enabled:
+      settings.autoImportFromFolders === true &&
+      (settings.externalLibraryFolders?.length ?? 0) > 0 &&
+      libraryLoaded &&
+      isTauriAppPlatform() &&
+      !appService?.isIOSApp,
+    folders: settings.externalLibraryFolders ?? [],
+    scanAndImport: autoImportFromWatchedFolders,
+  });
 
   const updateBookTransferProgress = throttle((bookHash: string, progress: ProgressPayload) => {
     if (progress.total === 0) return;
