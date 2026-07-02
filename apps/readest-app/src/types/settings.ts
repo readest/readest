@@ -236,6 +236,14 @@ export interface SystemSettings {
    * settings backups via `BACKUP_SETTINGS_BLACKLIST`.
    */
   externalLibraryFolders?: string[];
+  /**
+   * When true, Readest re-scans the registered external library folders
+   * (`externalLibraryFolders`) on library open and whenever the app regains
+   * focus, importing any newly-added book files. Desktop + Android only.
+   * Default OFF (opt-in). Inert without registered folders, so it is safe to
+   * sync (not device-local like the folder paths themselves).
+   */
+  autoImportFromFolders?: boolean;
 
   keepLogin: boolean;
   autoUpload: boolean;
