@@ -52,6 +52,7 @@
           ])
           pkgs.rust-analyzer-nightly
           xdg-utils
+          self.formatter.${system}
         ];
 
         systemDeps = with pkgs; [
@@ -194,5 +195,7 @@
 
           default = self.devShells.${system}.web;
         };
+        
+        formatter = pkgs.nixfmt;
       });
 }
