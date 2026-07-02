@@ -59,4 +59,16 @@ describe('wire envelope (frozen)', () => {
     expect(ok?.books).toHaveLength(1);
     expect(ok?.updatedAt).toBe(5);
   });
+
+  test('parseRemoteLibraryIndex preserves the optional uploadedHashes record (#4856)', () => {
+    const parsed = parseRemoteLibraryIndex(
+      JSON.stringify({ schemaVersion: 1, books: [book], updatedAt: 5, uploadedHashes: ['h1'] }),
+    );
+    expect(parsed?.uploadedHashes).toEqual(['h1']);
+    // Legacy index without the field parses fine (treated as empty by the engine).
+    const legacy = parseRemoteLibraryIndex(
+      JSON.stringify({ schemaVersion: 1, books: [book], updatedAt: 5 }),
+    );
+    expect(legacy?.uploadedHashes).toBeUndefined();
+  });
 });

@@ -163,10 +163,11 @@ describe('FileSyncEngine.syncLibrary — receive strategy is pull-only', () => {
   });
 });
 
-const makeIndex = (books: Book[]): RemoteLibraryIndex => ({
+const makeIndex = (books: Book[], uploadedHashes?: string[]): RemoteLibraryIndex => ({
   schemaVersion: 1,
   updatedAt: 1,
   books,
+  ...(uploadedHashes ? { uploadedHashes } : {}),
 });
 
 const makeEnvelope = (over: Partial<RemoteBookConfig> = {}): RemoteBookConfig => ({
@@ -271,6 +272,150 @@ describe('FileSyncEngine.syncLibrary — incremental diff (default)', () => {
     expect(saveBookConfig).toHaveBeenCalledTimes(1);
     // Remote is newer, so the book is NOT in the push set — no config.json PUT.
     expect(configWrites(captured)).toHaveLength(0);
+  });
+
+  // #4856: enabling "Upload Book Files" AFTER the first (config-only) sync must
+  // upload the file even though the book's config is already in sync with the
+  // index (its updatedAt is unchanged, so the incremental cursor would skip it).
+  test('uploads the file when syncBooks is enabled after a config-only first sync', async () => {
+    const captured: Captured = { writes: [] };
+    const binaryWrites: string[] = [];
+    const provider = fakeProvider({
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify(makeIndex([makeBook('h1', { updatedAt: 100 })]))
+          : null,
+      head: async () => null, // no book file on the remote yet
+      writeBinary: async (path: string) => {
+        binaryWrites.push(path);
+      },
+      captured,
+    });
+    const store = fakeStore({
+      loadConfig: async () => ({ updatedAt: 1, booknotes: [] }),
+      loadBookFile: async () => ({ bytes: new ArrayBuffer(10), size: 10 }),
+    });
+
+    const res = await new FileSyncEngine(provider, store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      {
+        strategy: 'silent',
+        syncBooks: true,
+        deviceId: 'd',
+      },
+    );
+
+    expect(res.filesUploaded).toBe(1);
+    expect(binaryWrites.some((p) => p.includes('/Readest/books/h1/'))).toBe(true);
+    // The config is already in sync, so it must NOT be re-pushed.
+    expect(configWrites(captured)).toHaveLength(0);
+    // The upload is recorded so the next incremental sync skips the probe.
+    const idx = JSON.parse(
+      captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
+    ) as RemoteLibraryIndex;
+    expect(idx.uploadedHashes).toContain('h1');
+  });
+
+  test('skips the file when the remote already has a same-size copy (syncBooks on)', async () => {
+    const captured: Captured = { writes: [] };
+    const binaryWrites: string[] = [];
+    const provider = fakeProvider({
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify(makeIndex([makeBook('h1', { updatedAt: 100 })]))
+          : null,
+      head: async () => ({ size: 10 }), // remote already has the file, same size
+      writeBinary: async (path: string) => {
+        binaryWrites.push(path);
+      },
+      captured,
+    });
+    const store = fakeStore({
+      loadConfig: async () => ({ updatedAt: 1, booknotes: [] }),
+      loadBookFile: async () => ({ bytes: new ArrayBuffer(10), size: 10 }),
+    });
+
+    const res = await new FileSyncEngine(provider, store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      {
+        strategy: 'silent',
+        syncBooks: true,
+        deviceId: 'd',
+      },
+    );
+
+    expect(res.filesUploaded).toBe(0);
+    expect(res.filesAlreadyInSync).toBe(1);
+    expect(binaryWrites).toHaveLength(0);
+    expect(configWrites(captured)).toHaveLength(0);
+    // The freshly-verified file is now recorded so the next sync skips it.
+    const idx = JSON.parse(
+      captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
+    ) as RemoteLibraryIndex;
+    expect(idx.uploadedHashes).toContain('h1');
+  });
+
+  // #4856 perf: once a file is recorded in the index, an incremental sync must
+  // NOT HEAD-probe it again — the steady state stays O(changed), not O(library).
+  test('does not probe an already-recorded file (stays O(changed))', async () => {
+    const captured: Captured = { writes: [] };
+    const head = vi.fn(async () => null);
+    const loadBookFile = vi.fn(async () => ({ bytes: new ArrayBuffer(10), size: 10 }));
+    const provider = fakeProvider({
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify(makeIndex([makeBook('h1', { updatedAt: 100 })], ['h1']))
+          : null,
+      head,
+      captured,
+    });
+    const store = fakeStore({
+      loadConfig: async () => ({ updatedAt: 1, booknotes: [] }),
+      loadBookFile,
+    });
+
+    const res = await new FileSyncEngine(provider, store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      { strategy: 'silent', syncBooks: true, deviceId: 'd' },
+    );
+
+    // No file work at all: no HEAD probe, no bytes read, no upload.
+    expect(head).not.toHaveBeenCalled();
+    expect(loadBookFile).not.toHaveBeenCalled();
+    expect(res.filesUploaded).toBe(0);
+    expect(res.filesAlreadyInSync).toBe(0);
+    expect(res.booksSynced).toBe(0);
+    // The recorded hash is preserved across the re-push.
+    const idx = JSON.parse(
+      captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
+    ) as RemoteLibraryIndex;
+    expect(idx.uploadedHashes).toContain('h1');
+  });
+
+  test('fullSync re-probes a recorded file (drift escape hatch)', async () => {
+    const head = vi.fn(async () => ({ size: 10 }));
+    const provider = fakeProvider({
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify(makeIndex([makeBook('h1', { updatedAt: 100 })], ['h1']))
+          : null,
+      head,
+      captured: { writes: [] },
+    });
+    const store = fakeStore({
+      loadConfig: async () => ({ updatedAt: 1, booknotes: [] }),
+      loadBookFile: async () => ({ bytes: new ArrayBuffer(10), size: 10 }),
+    });
+
+    await new FileSyncEngine(provider, store).syncLibrary([makeBook('h1', { updatedAt: 100 })], {
+      strategy: 'silent',
+      syncBooks: true,
+      deviceId: 'd',
+      fullSync: true,
+    });
+
+    // Full Sync bypasses the record and re-verifies the file.
+    expect(head).toHaveBeenCalled();
   });
 
   test('fullSync re-pushes an in-sync book', async () => {

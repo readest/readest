@@ -413,6 +413,20 @@ export class FileSyncEngine {
       return (book.updatedAt ?? 0) > (remote.updatedAt ?? 0);
     };
 
+    // File-upload cursor (#4856): the index records which book FILES already
+    // live on the remote. A book's file is immutable per hash, so once recorded
+    // it never needs re-checking — this keeps an incremental sync O(changed)
+    // by skipping the per-book HEAD probe for already-mirrored files instead of
+    // probing every book each run. Seeded from the pulled index and carried
+    // forward (plus this run's uploads) into the re-pushed index. Empty in send
+    // mode / on a fresh remote, so the first sync verifies every file once.
+    const uploadedHashes = new Set<string>(remoteIndex?.uploadedHashes ?? []);
+    // A file needs (re)uploading only when syncBooks is on and the remote copy
+    // isn't recorded yet. Full Sync bypasses the record as an escape hatch for
+    // drift (e.g. a file deleted out-of-band via the browse pane).
+    const needsFilePush = (book: Book): boolean =>
+      options.syncBooks && (fullSync || !uploadedHashes.has(book.hash));
+
     const remoteBooksToDownload: Book[] = [];
     // The remote source of truth for a book's on-disk filename is the per-hash
     // directory listing — NOT the book's title (which may be stale). We always
@@ -608,6 +622,9 @@ export class FileSyncEngine {
             await this.store.addBookToLibrary(rb);
             result.booksDownloaded += 1;
             syncedHashes.add(rb.hash);
+            // We just pulled its bytes, so the file is on the remote — record it
+            // so a later push-side sync doesn't HEAD-probe it back.
+            uploadedHashes.add(rb.hash);
           } else {
             // No bytes returned (typically a 404 we couldn't resolve).
             result.failures += 1;
@@ -635,10 +652,16 @@ export class FileSyncEngine {
     // Books we just downloaded already exist on the remote — don't re-push
     // them. Only push books already present in the caller-supplied library.
     const downloadedHashes = new Set(remoteBooksToDownload.map((b) => b.hash));
-    // Incremental (default): push only books that changed locally since the
-    // last index push. Full-sync re-checks everything.
+    // A book's config/cover only need pushing when it changed locally since the
+    // last index push (incremental; full-sync re-checks everything). Its FILE,
+    // by contrast, is immutable per hash and only needs uploading when the
+    // remote copy is missing per the index's uploaded-file record (`needsFilePush`)
+    // — which catches the user enabling "Upload Book Files" only after the first
+    // (config-only) sync (#4856) without a per-book probe once files are recorded.
+    const configChanged = (b: Book): boolean => fullSync || isLocalNewer(b);
     const booksToPush = books.filter(
-      (b) => !b.deletedAt && !downloadedHashes.has(b.hash) && (fullSync || isLocalNewer(b)),
+      (b) =>
+        !b.deletedAt && !downloadedHashes.has(b.hash) && (configChanged(b) || needsFilePush(b)),
     );
     result.totalBooks = booksToPush.length;
 
@@ -654,51 +677,57 @@ export class FileSyncEngine {
         pushStarted += 1;
         let phase: SyncFailureEntry['phase'] = 'upload-config';
         try {
-          const config = await this.store.loadConfig(book);
-          if (config) {
-            // Mirror the reader hook's pull-merge-push discipline so a manual
-            // "Sync now" can't blind-overwrite state this device hasn't pulled
-            // yet. Only in two-way ('silent') mode — 'send' keeps the blind
-            // push. A failed pull-merge falls back to the local config.
-            let configToPush = config;
-            if (canPull) {
-              try {
-                const pull = await this.pullBookConfig(book, config);
-                if (pull.applied && pull.mergedConfig) {
-                  configToPush = pull.mergedConfig;
-                  // Persist the merged superset locally so this device
-                  // converges too, not just the remote.
-                  await this.store.saveBookConfig(book, pull.mergedConfig);
+          if (configChanged(book)) {
+            const config = await this.store.loadConfig(book);
+            if (config) {
+              // Mirror the reader hook's pull-merge-push discipline so a manual
+              // "Sync now" can't blind-overwrite state this device hasn't pulled
+              // yet. Only in two-way ('silent') mode — 'send' keeps the blind
+              // push. A failed pull-merge falls back to the local config.
+              let configToPush = config;
+              if (canPull) {
+                try {
+                  const pull = await this.pullBookConfig(book, config);
+                  if (pull.applied && pull.mergedConfig) {
+                    configToPush = pull.mergedConfig;
+                    // Persist the merged superset locally so this device
+                    // converges too, not just the remote.
+                    await this.store.saveBookConfig(book, pull.mergedConfig);
+                  }
+                } catch (e) {
+                  console.warn('file sync: config pull-merge failed', book.hash, e);
                 }
-              } catch (e) {
-                console.warn('file sync: config pull-merge failed', book.hash, e);
               }
-            }
-            await this.pushBookConfig(book, configToPush, options.deviceId);
-            result.configsUploaded += 1;
-            syncedHashes.add(book.hash);
-          }
-          // Covers ride along with the config-level sync, NOT with syncBooks:
-          // the receiving device can't regenerate them without the book bytes.
-          // Failures here are warnings, not hard failures.
-          try {
-            const coverResult = await this.pushBookCover(book);
-            if (coverResult.uploaded) {
-              result.coversUploaded += 1;
+              await this.pushBookConfig(book, configToPush, options.deviceId);
+              result.configsUploaded += 1;
               syncedHashes.add(book.hash);
             }
-          } catch (e) {
-            console.warn('file sync: cover failed', book.hash, e);
+            // Covers ride along with the config-level sync, NOT with syncBooks:
+            // the receiving device can't regenerate them without the book bytes.
+            // Failures here are warnings, not hard failures.
+            try {
+              const coverResult = await this.pushBookCover(book);
+              if (coverResult.uploaded) {
+                result.coversUploaded += 1;
+                syncedHashes.add(book.hash);
+              }
+            } catch (e) {
+              console.warn('file sync: cover failed', book.hash, e);
+            }
           }
-          if (options.syncBooks) {
+          if (needsFilePush(book)) {
             phase = 'upload-file';
             const fileResult = await this.pushBookFile(book);
             if (fileResult.uploaded) {
               result.filesUploaded += 1;
               syncedHashes.add(book.hash);
+              uploadedHashes.add(book.hash);
             } else if (fileResult.reason === 'remote-matches') {
               result.filesAlreadyInSync += 1;
+              uploadedHashes.add(book.hash);
             }
+            // 'no-source' → the file isn't on this device; leave it unrecorded
+            // so a device that does have it can upload and record it later.
           }
         } catch (e) {
           result.failures += 1;
@@ -723,6 +752,13 @@ export class FileSyncEngine {
           schemaVersion: 1,
           books: Array.from(allBooksMap.values()),
           updatedAt: Date.now(),
+          // Carry the uploaded-file record forward so the next incremental sync
+          // stays O(changed). Keep only hashes that still map to a live book so
+          // the set can't grow unbounded with tombstoned / evicted books.
+          uploadedHashes: Array.from(uploadedHashes).filter((hash) => {
+            const b = allBooksMap.get(hash);
+            return !!b && !b.deletedAt;
+          }),
         };
         await this.pushLibraryIndex(newIndex);
       } catch (e) {
