@@ -231,7 +231,7 @@ export async function POST(req: Request): Promise<Response> {
     if (parsed) {
       return Response.json(parsed);
     }
-    return Response.json({ entities: [], relationships: [], events: [], claims: [] });
+    return Response.json({ error: 'Invalid structured response from AI gateway' }, { status: 502 });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: `X-Ray extraction failed: ${errorMessage}` }), {

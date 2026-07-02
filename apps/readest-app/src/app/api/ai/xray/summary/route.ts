@@ -93,7 +93,7 @@ export async function POST(req: Request): Promise<Response> {
     if (summary.success) {
       return Response.json(summary.data);
     }
-    return Response.json({ summary: '' });
+    return Response.json({ error: 'Invalid summary response from AI gateway' }, { status: 502 });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: `X-Ray summary failed: ${errorMessage}` }), {

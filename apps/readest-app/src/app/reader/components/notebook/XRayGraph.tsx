@@ -1,4 +1,3 @@
-/* eslint-disable react/no-danger */
 'use client';
 
 import React, { useEffect, useMemo, useRef, useCallback } from 'react';
@@ -402,11 +401,19 @@ const XRayGraph: React.FC<XRayGraphProps> = ({
           (rel) => rel.sourceId === nodeId || rel.targetId === nodeId,
         );
         const types = Array.from(new Set(connections.map((rel) => rel.type))).slice(0, 3);
-        popup.innerHTML = `
-          <div class="font-semibold">${node.canonicalName}</div>
-          <div class="text-[11px] text-base-content/70">${_('Connections')}: ${connections.length}</div>
-          ${types.length > 0 ? `<div class="text-[11px] text-base-content/70">${types.join(', ')}</div>` : ''}
-        `;
+        const title = document.createElement('div');
+        title.className = 'font-semibold';
+        title.textContent = node.canonicalName;
+        const count = document.createElement('div');
+        count.className = 'text-[11px] text-base-content/70';
+        count.textContent = `${_('Connections')}: ${connections.length}`;
+        popup.append(title, count);
+        if (types.length > 0) {
+          const typeList = document.createElement('div');
+          typeList.className = 'text-[11px] text-base-content/70';
+          typeList.textContent = types.join(', ');
+          popup.append(typeList);
+        }
         popup.style.cssText = `
           position: absolute;
           background: ${themeColors.background};

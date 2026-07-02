@@ -6,6 +6,8 @@ import { GATEWAY_MODELS } from '../constants';
 import { AI_TIMEOUTS } from '../utils/retry';
 import { createProxiedEmbeddingModel } from './ProxiedGatewayEmbedding';
 
+const AI_GATEWAY_CHAT_COMPLETIONS_URL = 'https://ai-gateway.vercel.sh/v1/chat/completions';
+
 export class AIGatewayProvider implements AIProvider {
   id: AIProviderName = 'ai-gateway';
   name = 'AI Gateway (Cloud)';
@@ -55,13 +57,16 @@ export class AIGatewayProvider implements AIProvider {
       const modelId = this.settings.aiGatewayModel || GATEWAY_MODELS.GEMINI_FLASH_LITE;
       aiLogger.provider.init('ai-gateway', `healthCheck starting with model: ${modelId}`);
 
-      const response = await fetch('/api/ai/chat', {
+      const response = await fetch(AI_GATEWAY_CHAT_COMPLETIONS_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.settings.aiGatewayApiKey}`,
+        },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: 'hi' }],
-          apiKey: this.settings.aiGatewayApiKey,
           model: modelId,
+          stream: false,
+          messages: [{ role: 'user', content: 'hi' }],
         }),
         signal: AbortSignal.timeout(AI_TIMEOUTS.HEALTH_CHECK),
       });

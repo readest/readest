@@ -362,7 +362,7 @@ const AIPanel: React.FC = () => {
       };
 
       const aiProvider = getAIProvider(testSettings);
-      const isAvailable = await aiProvider.isAvailable();
+      const isAvailable = await aiProvider.healthCheck();
 
       if (isAvailable) {
         setCustomModelStatus('valid');

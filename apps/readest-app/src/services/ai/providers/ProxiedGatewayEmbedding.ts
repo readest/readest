@@ -23,6 +23,7 @@ export function createProxiedEmbeddingModel(options: ProxiedEmbeddingOptions): E
           texts: values,
           single: values.length === 1,
           apiKey: options.apiKey,
+          model: modelId,
         }),
       });
 
