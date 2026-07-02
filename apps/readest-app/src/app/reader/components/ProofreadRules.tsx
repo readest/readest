@@ -68,13 +68,26 @@ const RuleItem: React.FC<{
   rule: ProofreadRule;
   scope: ProofreadScope;
   isEditing: boolean;
-  editingData: { pattern: string; replacement: string; enabled: boolean };
+  editingData: {
+    pattern: string;
+    replacement: string;
+    enabled: boolean;
+    isRegex: boolean;
+    caseSensitive: boolean;
+  };
   onEdit: () => void;
   onDelete: () => void;
   onToggle: () => void;
   onSave: () => void;
   onCancel: () => void;
-  onEditChange: (field: 'replacement', value: string) => void;
+  onEditChange: (
+    patch: Partial<{
+      pattern: string;
+      replacement: string;
+      isRegex: boolean;
+      caseSensitive: boolean;
+    }>,
+  ) => void;
 }> = ({
   rule,
   scope,
@@ -98,14 +111,19 @@ const RuleItem: React.FC<{
   };
 
   if (isEditing) {
+    const isSelection = scope === 'selection';
     return (
       <div className='flex flex-col gap-3 p-3'>
         <div className='flex flex-col gap-1.5'>
-          <label className='text-base-content/70 text-xs font-medium'>{_('Selected text:')}</label>
+          <label className='text-base-content/70 text-xs font-medium'>
+            {isSelection ? _('Selected text:') : _('Find:')}
+          </label>
           <input
-            className='input input-sm bg-base-200 text-sm opacity-60'
+            className={clsx('input input-sm text-sm', isSelection && 'bg-base-200 opacity-60')}
             value={editingData.pattern}
-            disabled
+            disabled={isSelection}
+            spellCheck='false'
+            onChange={isSelection ? undefined : (e) => onEditChange({ pattern: e.target.value })}
           />
         </div>
 
@@ -114,9 +132,33 @@ const RuleItem: React.FC<{
           <input
             className='input input-sm text-sm'
             value={editingData.replacement}
-            onChange={(e) => onEditChange('replacement', e.target.value)}
+            spellCheck='false'
+            onChange={(e) => onEditChange({ replacement: e.target.value })}
           />
         </div>
+
+        {!isSelection && (
+          <div className='flex flex-wrap items-center gap-x-5 gap-y-3'>
+            <label className='flex cursor-pointer items-center gap-2'>
+              <span className='text-base-content/70 text-sm'>{_('Regex:')}</span>
+              <input
+                type='checkbox'
+                className='toggle toggle-sm'
+                checked={editingData.isRegex}
+                onChange={(e) => onEditChange({ isRegex: e.target.checked })}
+              />
+            </label>
+            <label className='flex cursor-pointer items-center gap-2'>
+              <span className='text-base-content/70 text-sm'>{_('Case sensitive:')}</span>
+              <input
+                type='checkbox'
+                className='toggle toggle-sm'
+                checked={editingData.caseSensitive}
+                onChange={(e) => onEditChange({ caseSensitive: e.target.checked })}
+              />
+            </label>
+          </div>
+        )}
 
         <div className='mt-1 flex gap-2'>
           <button className='btn btn-primary btn-sm flex-1' onClick={onSave}>
@@ -321,8 +363,19 @@ export const ProofreadRulesManager: React.FC = () => {
     pattern: string;
     replacement: string;
     enabled: boolean;
+    isRegex: boolean;
+    caseSensitive: boolean;
     onlyForTTS: boolean;
-  }>({ id: null, scope: null, pattern: '', replacement: '', enabled: true, onlyForTTS: false });
+  }>({
+    id: null,
+    scope: null,
+    pattern: '',
+    replacement: '',
+    enabled: true,
+    isRegex: false,
+    caseSensitive: true,
+    onlyForTTS: false,
+  });
 
   const { singleRules, bookRules } = useReplacementRules(sideBarBookKey);
 
@@ -341,6 +394,8 @@ export const ProofreadRulesManager: React.FC = () => {
       pattern: rule.pattern,
       replacement: rule.replacement,
       enabled: !!rule.enabled,
+      isRegex: !!rule.isRegex,
+      caseSensitive: rule.caseSensitive !== false,
       onlyForTTS: !!rule.onlyForTTS,
     });
   };
@@ -352,6 +407,8 @@ export const ProofreadRulesManager: React.FC = () => {
       pattern: '',
       replacement: '',
       enabled: true,
+      isRegex: false,
+      caseSensitive: true,
       onlyForTTS: false,
     });
   };
@@ -359,10 +416,28 @@ export const ProofreadRulesManager: React.FC = () => {
   const saveEdit = async () => {
     if (!editing.id || !editing.scope || !sideBarBookKey) return;
 
+    // Selection rules keep a read-only Find (anchored to the selected text), so
+    // only validate the pattern when the user can actually edit it.
+    const isSelection = editing.scope === 'selection';
+    const pattern = isSelection ? editing.pattern : editing.pattern.trim();
+    if (!isSelection) {
+      const validation = validateReplacementRulePattern(pattern, editing.isRegex);
+      if (!validation.valid) {
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: pattern ? _('Invalid regular expression') : _('Find pattern cannot be empty'),
+          timeout: 3000,
+        });
+        return;
+      }
+    }
+
     await updateRule(envConfig, sideBarBookKey, editing.id, {
       scope: editing.scope,
-      pattern: editing.pattern,
+      pattern,
       replacement: editing.replacement,
+      isRegex: editing.isRegex,
+      caseSensitive: editing.caseSensitive,
       enabled: editing.enabled,
       onlyForTTS: editing.onlyForTTS,
     });
@@ -468,7 +543,7 @@ export const ProofreadRulesManager: React.FC = () => {
                   onToggle={() => handleToggle(rule)}
                   onSave={saveEdit}
                   onCancel={cancelEdit}
-                  onEditChange={(_, value) => setEditing({ ...editing, replacement: value })}
+                  onEditChange={(patch) => setEditing((prev) => ({ ...prev, ...patch }))}
                 />
               ))}
             </ul>
