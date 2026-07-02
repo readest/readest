@@ -153,16 +153,16 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.bilingify.readest.ShareExtension
         DEVELOPMENT_TEAM: J5W48D69VR
         CODE_SIGN_ENTITLEMENTS: ShareExtension/ShareExtension.entitlements
-        # Permit Xcode's productPackagingUtility to write the auto-derived
-        # signing entitlements (application-identifier, team-identifier,
-        # get-task-allow) back to the source entitlements file at build
-        # time. Without this, Xcode 16+ refuses the modification it
-        # itself just performed and the build fails with:
-        #   "Entitlements file ... was modified during the build"
-        # Safe for this target because the entitlements file is empty —
-        # the only modifications Xcode performs are the team / app-id
-        # auto-population every iOS extension target needs anyway.
-        CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: YES
+        # Do NOT set CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION here. This
+        # entitlements file declares com.apple.security.application-groups
+        # (group.com.bilingify.readest). With automatic App Store signing,
+        # that flag lets `xcodebuild -exportArchive` overwrite the extension
+        # entitlements with a minimal auto-derived set that DROPS the app
+        # group — silently breaking App Group access in App Store builds
+        # (dev builds are unaffected). The main app ships the group
+        # correctly without this flag. If Xcode ever reports "Entitlements
+        # file was modified during the build", fix it by adding the
+        # auto-derived keys to the source file, not by re-enabling this flag.
         SWIFT_VERSION: "5.0"
         IPHONEOS_DEPLOYMENT_TARGET: 15.0
         ARCHS: [arm64]
@@ -192,7 +192,10 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.bilingify.readest.ReadestWidget
         DEVELOPMENT_TEAM: J5W48D69VR
         CODE_SIGN_ENTITLEMENTS: ReadestWidget/ReadestWidget.entitlements
-        CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: YES
+        # CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION is intentionally omitted
+        # (see ShareExtension): with it, the App Store export re-sign strips
+        # com.apple.security.application-groups, so the widget reads an empty
+        # snapshot from the App Group and shows only the placeholder book icon.
         SWIFT_VERSION: "5.0"
         IPHONEOS_DEPLOYMENT_TARGET: 15.0
         ARCHS: [arm64]
