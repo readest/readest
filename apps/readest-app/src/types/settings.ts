@@ -18,6 +18,7 @@ export const LibrarySortByType = {
   Size: 'size',
   Format: 'format',
   Published: 'published',
+  Progress: 'progress',
 } as const;
 
 export type LibrarySortByType = (typeof LibrarySortByType)[keyof typeof LibrarySortByType];

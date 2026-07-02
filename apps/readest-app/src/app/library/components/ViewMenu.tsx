@@ -76,6 +76,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     { label: _('Date Read'), value: LibrarySortByType.Updated },
     { label: _('Date Added'), value: LibrarySortByType.Created },
     { label: _('Date Published'), value: LibrarySortByType.Published },
+    { label: _('Progress Read'), value: LibrarySortByType.Progress },
   ];
 
   const sortBy2Options: { label: string; value: LibrarySecondarySortByType }[] = [

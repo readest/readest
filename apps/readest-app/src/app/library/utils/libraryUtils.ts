@@ -178,6 +178,17 @@ export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
   );
 };
 
+/**
+ * Fraction of the book that has been read, in [0, 1]. `progress` is a 1-based
+ * `[current, total]` page pair; books that have never been opened have no
+ * progress and read 0 (they sort to the unread end).
+ */
+const getBookReadRatio = (book: Book): number => {
+  const [current, total] = book.progress ?? [];
+  if (!current || !total || total <= 0) return 0;
+  return current / total;
+};
+
 const compareBookByKey = (a: Book, b: Book, sortBy: string, uiLanguage: string): number => {
   switch (sortBy) {
     case LibrarySortByType.Title: {
@@ -196,6 +207,8 @@ const compareBookByKey = (a: Book, b: Book, sortBy: string, uiLanguage: string):
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     case LibrarySortByType.Format:
       return a.format.localeCompare(b.format, uiLanguage || navigator.language);
+    case LibrarySortByType.Progress:
+      return getBookReadRatio(a) - getBookReadRatio(b);
     case LibrarySortByType.Series: {
       // Group by series name first so books of the same series stay consecutive,
       // then order within a series by index. Comparing index alone would interleave
@@ -496,6 +509,9 @@ export const getBookSortValue = (book: Book, sortBy: LibrarySortByType): number 
     case LibrarySortByType.Format:
       return book.format;
 
+    case LibrarySortByType.Progress:
+      return getBookReadRatio(book);
+
     case LibrarySortByType.Published: {
       const published = book.metadata?.published;
       if (!published) return 0;
@@ -554,6 +570,10 @@ export const getGroupSortValue = (
     case LibrarySortByType.Created:
       // Return the most recent createdAt
       return Math.max(...books.map((b) => b.createdAt));
+
+    case LibrarySortByType.Progress:
+      // Return the most-progressed book's read ratio
+      return Math.max(...books.map((b) => getBookReadRatio(b)));
 
     case LibrarySortByType.Published: {
       // Return the most recent published date

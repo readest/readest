@@ -1779,5 +1779,6 @@
   "Show recently read": "แสดงรายการอ่านล่าสุด",
   "Find:": "ค้นหา:",
   "Enable rule": "เปิดใช้กฎ",
-  "Disable rule": "ปิดใช้กฎ"
+  "Disable rule": "ปิดใช้กฎ",
+  "Progress Read": "ความคืบหน้าในการอ่าน"
 }

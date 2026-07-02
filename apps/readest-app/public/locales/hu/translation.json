@@ -1812,5 +1812,6 @@
   "Show recently read": "Nemrég olvasottak megjelenítése",
   "Find:": "Keresés:",
   "Enable rule": "Szabály engedélyezése",
-  "Disable rule": "Szabály letiltása"
+  "Disable rule": "Szabály letiltása",
+  "Progress Read": "Olvasási haladás"
 }
