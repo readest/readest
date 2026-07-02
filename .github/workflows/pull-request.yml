@@ -20,13 +20,13 @@ jobs:
       - name: setup sccache
         uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
       - name: Install minimal stable with clippy and rustfmt
-        uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
         with:
           toolchain: stable
           override: true
           components: rustfmt, clippy
       - name: Cache apt packages
-        uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /var/cache/apt/archives
           key: apt-rust-lint-${{ runner.os }}
@@ -84,7 +84,7 @@ jobs:
 
       - name: cache playwright browsers
         id: playwright-cache
-        uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
@@ -144,7 +144,7 @@ jobs:
       - name: cache playwright browsers
         if: matrix.shard == 1
         id: playwright-cache
-        uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
@@ -215,7 +215,7 @@ jobs:
 
       - name: cache apt packages
         if: steps.changes.outputs.koplugin == 'true'
-        uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /var/cache/apt/archives
           key: apt-test-koplugin-${{ runner.os }}
@@ -266,7 +266,7 @@ jobs:
       # The tauri tests run `next dev`, whose Turbopack cache lives in
       # `.next/dev/cache` (a different path from the `next build` cache).
       - name: cache Turbopack dev cache
-        uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: apps/readest-app/.next/dev/cache
           key: turbo-dev-tauri-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
@@ -282,7 +282,7 @@ jobs:
         uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
 
       - name: install Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
         with:
           toolchain: stable
           # Disable this action's built-in rust-cache so the explicit
@@ -307,7 +307,7 @@ jobs:
           cache-workspace-crates: 'true'
 
       - name: Cache apt packages
-        uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /var/cache/apt/archives
           key: apt-tauri-${{ runner.os }}
