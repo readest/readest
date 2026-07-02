@@ -86,6 +86,13 @@
           (lib.makeSearchPath "share/pkgconfig" (map getDev systemDeps))
         ];
 
+        xdgPath = "${
+          lib.makeSearchPath "share/gsettings-schemas" [
+            pkgs.gsettings-desktop-schemas
+            pkgs.gtk3
+          ]
+        }:$XDG_DATA_DIRS";
+
         libPath = lib.makeLibraryPath (map getLib systemDeps);
 
         mkCommonShell =
@@ -104,7 +111,12 @@
                 name = "LIBRARY_PATH";
                 value = libPath;
               }
-            ] ++ (optionals isDarwin [
+              {
+                name = "XDG_DATA_DIRS";
+                eval = xdgPath;
+              }
+            ]
+            ++ (optionals isDarwin [
               {
                 name = "RUSTFLAGS";
                 eval = "\"-L framework=$DEVSHELL_DIR/Library/Frameworks\"";
