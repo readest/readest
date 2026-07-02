@@ -90,6 +90,40 @@ export function normalizeFilePathForIndex(path: string, osPlatform?: OsPlatform)
   return caseInsensitive ? n.toLowerCase() : n;
 }
 
+export interface ScannedFileEntry {
+  /** Absolute path, already joined with the folder root. */
+  fullPath: string;
+  /** File size in bytes. */
+  size: number;
+}
+
+/**
+ * From a folder scan, keep only entries that (a) match one of `extensions`
+ * (lowercased, no leading dot), (b) are at least `minSizeBytes`, and (c) are
+ * NOT already in the library. Membership is tested against `existingPaths`,
+ * which the caller builds from `buildBookLookupIndex(...).byFilePath.keys()`
+ * (those keys are already normalized by `normalizeFilePathForIndex`, so we
+ * normalize each scanned path the same way before comparing). Pure — no I/O.
+ */
+export function selectNewImportableFiles(
+  entries: ScannedFileEntry[],
+  opts: {
+    extensions: string[];
+    minSizeBytes: number;
+    existingPaths: Set<string>;
+    osPlatform?: OsPlatform;
+  },
+): ScannedFileEntry[] {
+  const exts = new Set(opts.extensions.map((e) => e.toLowerCase()));
+  return entries.filter((entry) => {
+    const ext = entry.fullPath.split('.').pop()?.toLowerCase() ?? '';
+    if (!exts.has(ext)) return false;
+    if (opts.minSizeBytes > 0 && entry.size < opts.minSizeBytes) return false;
+    const key = normalizeFilePathForIndex(entry.fullPath, opts.osPlatform);
+    return !!key && !opts.existingPaths.has(key);
+  });
+}
+
 export interface CoverContext {
   fs: FileSystem;
   appPlatform: AppPlatform;
