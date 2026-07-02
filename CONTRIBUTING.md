@@ -20,8 +20,8 @@ Basically you need to install or update the following development tools:
 - **Rust** and **Cargo** for Tauri development
 
 ```bash
-nvm install v22
-nvm use v22
+nvm install v24
+nvm use v24
 npm install -g pnpm
 rustup update
 ```
