@@ -92,6 +92,7 @@ const makeStore = (overrides: Partial<LocalStore> = {}): LocalStore => ({
   saveBookCover: async () => {},
   addBookToLibrary: async () => {},
   updateBookMetadata: async () => {},
+  deleteBookLocally: async () => {},
   ...overrides,
 });
 

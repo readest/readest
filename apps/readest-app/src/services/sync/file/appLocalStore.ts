@@ -130,4 +130,22 @@ export const createAppLocalStore = ({
     // new title / author / cover show up without a reload.
     await useLibraryStore.getState().updateBook(envConfig, book);
   },
+
+  deleteBookLocally: async (book) => {
+    // Remove this device's managed copy of the book file (cloudService.deleteBook
+    // with 'local' only ever touches app-managed Books/<hash>/ sources; an
+    // in-place / external original is left untouched). The tombstone itself is
+    // set by the engine before this call — we just persist it.
+    try {
+      await appService.deleteBook(book, 'local');
+    } catch (e) {
+      console.warn('createAppLocalStore: local book delete failed', book.hash, e);
+    }
+    book.coverImageUrl = null;
+    book.syncedAt = Date.now();
+    if (!useLibraryStore.getState().libraryLoaded) {
+      useLibraryStore.getState().setLibrary(await appService.loadLibraryBooks());
+    }
+    await useLibraryStore.getState().updateBook(envConfig, book);
+  },
 });

@@ -50,4 +50,11 @@ export interface LocalStore {
   addBookToLibrary(book: Book): Promise<void>;
   /** Persist refreshed metadata for a book already in the local library. */
   updateBookMetadata(book: Book): Promise<void>;
+  /**
+   * Apply a peer's deletion locally: remove this device's managed copy of the
+   * book file and persist the tombstone (`book.deletedAt`) so the book drops
+   * off the shelf and stops being re-uploaded. External / in-place sources are
+   * never touched — only the app-managed `Books/<hash>/` copy is removed.
+   */
+  deleteBookLocally(book: Book): Promise<void>;
 }
