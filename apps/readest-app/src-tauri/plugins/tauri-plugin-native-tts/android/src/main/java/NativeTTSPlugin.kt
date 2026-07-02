@@ -549,15 +549,20 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         args.foregroundServiceText?.let { FOREGROUND_SERVICE_TEXT = it }
 
         try {
-            val intent = Intent(activity, MediaPlaybackService::class.java)
             if (active) {
                 cancelIdleTimer()
                 MediaPlaybackService.pluginEventTrigger = { event, data -> trigger(event, data) }
                 MediaPlaybackService.currentTitle = FOREGROUND_SERVICE_TITLE
                 MediaPlaybackService.currentArtist = FOREGROUND_SERVICE_TEXT
+                val intent = Intent(activity, MediaPlaybackService::class.java).apply {
+                    action = MediaPlaybackService.ACTION_ACTIVATE_SESSION
+                }
                 ContextCompat.startForegroundService(activity, intent)
             } else {
-                activity.stopService(intent)
+                // Not stopService: Android Auto may keep the service bound for
+                // browsing, in which case stopService would leave the foreground
+                // notification and the keep-alive player running.
+                MediaPlaybackService.requestDeactivation()
                 MediaPlaybackService.pluginEventTrigger = null
             }
             invoke.resolve()
@@ -577,8 +582,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
 
     private fun shutdownTTSEngine() {
         try {
-            val intent = Intent(activity, MediaPlaybackService::class.java)
-            activity.stopService(intent)
+            MediaPlaybackService.requestDeactivation()
             MediaPlaybackService.pluginEventTrigger = null
 
             textToSpeech?.shutdown()
@@ -602,8 +606,8 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         try {
             cancelIdleTimer()
 
-            val intent = Intent(activity, MediaPlaybackService::class.java)
-            activity.stopService(intent)
+            MediaPlaybackService.requestDeactivation()
+            MediaPlaybackService.pluginEventTrigger = null
 
             coroutineScope.cancel()
             textToSpeech?.shutdown()
