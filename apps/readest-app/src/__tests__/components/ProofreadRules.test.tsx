@@ -347,6 +347,62 @@ describe('ProofreadRulesManager', () => {
     expect(screen.getByText('disabled-pattern')).toBeTruthy();
   });
 
+  it('toggles a rule on/off via its switch', async () => {
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
+      settings: { ...DEFAULT_SYSTEM_SETTINGS, globalViewSettings: { proofreadRules: [] } },
+    });
+
+    const rule: ProofreadRule = {
+      id: 'b1',
+      scope: 'book',
+      pattern: 'toggle-me',
+      replacement: 'x',
+      enabled: true,
+      isRegex: false,
+      caseSensitive: true,
+      order: 1,
+      wholeWord: true,
+    };
+
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
+      viewStates: { book1: { viewSettings: { proofreadRules: [rule] } } },
+    });
+    (useBookDataStore.setState as unknown as (state: unknown) => void)({
+      booksData: {
+        book1: {
+          id: 'book1',
+          book: null,
+          file: null,
+          config: { viewSettings: { proofreadRules: [rule] } },
+          bookDoc: null,
+          isFixedLayout: false,
+        },
+      },
+    });
+    useSidebarStore.setState({ sideBarBookKey: 'book1' });
+
+    const toggleSpy = vi
+      .spyOn(useProofreadStore.getState(), 'toggleRule')
+      .mockResolvedValue(undefined);
+    const recreateSpy = vi
+      .spyOn(useReaderStore.getState(), 'recreateViewer')
+      .mockResolvedValue(undefined as never);
+
+    renderWithProviders(<ProofreadRulesManager />);
+    await Promise.resolve();
+    setProofreadRulesVisibility(true);
+    await screen.findByRole('dialog');
+
+    const row = screen.getByText('toggle-me').closest('li');
+    const toggle = within(row!).getByLabelText('Disable rule');
+    fireEvent.click(toggle);
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(toggleSpy).toHaveBeenCalledWith(expect.anything(), 'book1', 'b1');
+    expect(recreateSpy).toHaveBeenCalled();
+  });
+
   it('renders a drag handle for each reorderable rule', async () => {
     const selectionRule: ProofreadRule = {
       id: 's1',

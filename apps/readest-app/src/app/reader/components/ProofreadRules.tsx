@@ -71,6 +71,7 @@ const RuleItem: React.FC<{
   editingData: { pattern: string; replacement: string; enabled: boolean };
   onEdit: () => void;
   onDelete: () => void;
+  onToggle: () => void;
   onSave: () => void;
   onCancel: () => void;
   onEditChange: (field: 'replacement', value: string) => void;
@@ -81,6 +82,7 @@ const RuleItem: React.FC<{
   editingData,
   onEdit,
   onDelete,
+  onToggle,
   onSave,
   onCancel,
   onEditChange,
@@ -130,8 +132,13 @@ const RuleItem: React.FC<{
 
   return (
     <div className='relative flex items-start justify-between gap-3 p-3'>
-      <div className='flex min-w-0 flex-1 flex-col gap-1.5'>
-        <div className='break-words pe-20 text-base font-medium leading-snug'>{rule.pattern}</div>
+      <div
+        className={clsx(
+          'flex min-w-0 flex-1 flex-col gap-1.5',
+          rule.enabled === false && 'opacity-40',
+        )}
+      >
+        <div className='break-words pe-28 text-base font-medium leading-snug'>{rule.pattern}</div>
         <div className='text-base-content/70 break-words text-sm'>
           <span className='text-base-content/80 mr-1.5 text-xs font-medium'>
             {_('Replace with:')}
@@ -169,6 +176,13 @@ const RuleItem: React.FC<{
         </div>
       </div>
       <div className='absolute right-2 top-2 flex items-center gap-1'>
+        <input
+          type='checkbox'
+          className='toggle toggle-sm'
+          checked={rule.enabled !== false}
+          onChange={onToggle}
+          aria-label={rule.enabled !== false ? _('Disable rule') : _('Enable rule')}
+        />
         <button
           className='btn btn-ghost btn-sm h-8 w-8 p-0'
           onClick={onEdit}
@@ -284,7 +298,7 @@ export const ProofreadRulesManager: React.FC = () => {
   const { envConfig } = useEnv();
   const { recreateViewer } = useReaderStore();
   const { sideBarBookKey } = useSidebarStore();
-  const { addRule, updateRule, removeRule, reorderRules } = useProofreadStore();
+  const { addRule, updateRule, removeRule, reorderRules, toggleRule } = useProofreadStore();
 
   // dnd-kit sensors mirror the dictionaries reorder list: a small pointer
   // distance gate avoids hijacking handle clicks, a touch delay gives mobile
@@ -368,6 +382,14 @@ export const ProofreadRulesManager: React.FC = () => {
     }
   };
 
+  const handleToggle = async (rule: ProofreadRule) => {
+    if (!sideBarBookKey) return;
+    await toggleRule(envConfig, sideBarBookKey, rule.id);
+    if (!rule.onlyForTTS) {
+      recreateViewer(envConfig, sideBarBookKey);
+    }
+  };
+
   const handleAddRule = async () => {
     if (!sideBarBookKey) return;
     const pattern = addPattern.trim();
@@ -443,6 +465,7 @@ export const ProofreadRulesManager: React.FC = () => {
                   editingData={editing}
                   onEdit={() => startEdit(rule)}
                   onDelete={() => deleteRule(rule)}
+                  onToggle={() => handleToggle(rule)}
                   onSave={saveEdit}
                   onCancel={cancelEdit}
                   onEditChange={(_, value) => setEditing({ ...editing, replacement: value })}
