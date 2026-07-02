@@ -9,6 +9,7 @@ import { useEinkMode } from '@/hooks/useEinkMode';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
+import { PageTurnStyle } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
 import {
@@ -56,6 +57,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [copyToNotebook, setCopyToNotebook] = useState(viewSettings.copyToNotebook);
   const [showToolbarCustomizer, setShowToolbarCustomizer] = useState(false);
   const [animated, setAnimated] = useState(viewSettings.animated);
+  const [pageTurnStyle, setPageTurnStyle] = useState(viewSettings.pageTurnStyle || 'push');
   const [isEink, setIsEink] = useState(viewSettings.isEink);
   const [isColorEink, setIsColorEink] = useState(viewSettings.isColorEink);
   const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
@@ -194,6 +196,16 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animated]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'pageTurnStyle', pageTurnStyle, false, false);
+    if (pageTurnStyle && pageTurnStyle !== 'push') {
+      getView(bookKey)?.renderer.setAttribute('turn-style', pageTurnStyle);
+    } else {
+      getView(bookKey)?.renderer.removeAttribute('turn-style');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageTurnStyle]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'isEink', isEink);
@@ -426,6 +438,19 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           checked={animated}
           onChange={() => setAnimated(!animated)}
         />
+        <SettingsRow label={_('Animation Style')} data-setting-id='settings.control.pageTurnStyle'>
+          <SettingsSelect
+            value={pageTurnStyle}
+            onChange={(e) => setPageTurnStyle(e.target.value as PageTurnStyle)}
+            ariaLabel={_('Animation Style')}
+            options={[
+              { value: 'push', label: _('Push') },
+              { value: 'slide', label: _('Slide') },
+              { value: 'curl', label: _('Page Curl') },
+            ]}
+            disabled={!animated}
+          />
+        </SettingsRow>
       </BoxedList>
 
       <BoxedList title={_('Device')} data-setting-id='settings.control.device'>

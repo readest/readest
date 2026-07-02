@@ -374,6 +374,7 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   progressInfoMode: 'all',
 
   animated: false,
+  pageTurnStyle: 'push',
   isEink: false,
   isColorEink: false,
 

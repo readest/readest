@@ -702,6 +702,12 @@ const FoliateViewer: React.FC<{
       } else {
         view.renderer.removeAttribute('animated');
       }
+      const pageTurnStyle = viewSettings.pageTurnStyle;
+      if (pageTurnStyle && pageTurnStyle !== 'push') {
+        view.renderer.setAttribute('turn-style', pageTurnStyle);
+      } else {
+        view.renderer.removeAttribute('turn-style');
+      }
       // iOS WebKit composites large/persistent page layers without the Android
       // high-DPR Blink freeze, so opt this renderer into the GPU-accelerated
       // page-turn path (persistent compositor layers + no main-thread

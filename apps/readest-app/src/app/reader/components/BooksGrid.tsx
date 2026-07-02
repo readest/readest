@@ -142,6 +142,10 @@ const BookCellInner: React.FC<BookCellProps> = ({
   return (
     <div
       id={`gridcell-${bookKey}`}
+      // Layered page turns (slide/curl) snapshot this element, so the page
+      // header and footer rendered as siblings of the viewer turn with the
+      // page in both layers.
+      data-view-transition-root=''
       className={clsx(
         'relative h-full w-full overflow-hidden',
         appServiceHasRoundedWindow && 'rounded-window',

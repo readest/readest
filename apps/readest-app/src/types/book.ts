@@ -272,6 +272,9 @@ export interface BookLanguage {
 }
 
 export type ProgressBarMode = 'remaining' | 'progress' | 'battery' | 'time' | 'all' | 'none';
+// 'push' slides the whole strip; 'slide' and 'curl' layer the outgoing page
+// over the still incoming page (Apple Books style, needs View Transitions).
+export type PageTurnStyle = 'push' | 'slide' | 'curl';
 export interface ViewConfig {
   sideBarTab: string;
   uiLanguage: string;
@@ -297,6 +300,7 @@ export interface ViewConfig {
   progressInfoMode: ProgressBarMode;
 
   animated: boolean;
+  pageTurnStyle: PageTurnStyle;
   isEink: boolean;
   isColorEink: boolean;
 
