@@ -574,7 +574,17 @@ pub fn run() {
                 window.on_window_event(move |event| {
                     if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                         api.prevent_close();
-                        let _ = window_for_close.hide();
+                        // macOS 26 (Tahoe) regressed `NSWindow` ordering: `orderOut:`
+                        // (what `hide()` maps to) can leave a focused black phantom
+                        // window on screen instead of hiding it (#4875). Minimize
+                        // instead on Tahoe — a different AppKit path that still keeps
+                        // the app in the dock and preserves the open book. The Reopen
+                        // handler below already unminimizes on dock reopen.
+                        if macos::os_version::is_macos_tahoe_or_later() {
+                            let _ = window_for_close.minimize();
+                        } else {
+                            let _ = window_for_close.hide();
+                        }
                     }
                 });
             }
