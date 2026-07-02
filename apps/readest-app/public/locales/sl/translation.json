@@ -1875,5 +1875,8 @@
   "Granularity": "Granularnost",
   "Refresh Page": "Osveži stran",
   "Recently read": "Nedavno prebrano",
-  "Show recently read": "Pokaži nedavno prebrano"
+  "Show recently read": "Pokaži nedavno prebrano",
+  "Find:": "Najdi:",
+  "Enable rule": "Omogoči pravilo",
+  "Disable rule": "Onemogoči pravilo"
 }

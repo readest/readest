@@ -1842,5 +1842,8 @@
   "Granularity": "רמת פירוט",
   "Refresh Page": "רענן דף",
   "Recently read": "נקראו לאחרונה",
-  "Show recently read": "הצגת ספרים שנקראו לאחרונה"
+  "Show recently read": "הצגת ספרים שנקראו לאחרונה",
+  "Find:": "חיפוש:",
+  "Enable rule": "הפעל כלל",
+  "Disable rule": "השבת כלל"
 }

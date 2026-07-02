@@ -1809,5 +1809,8 @@
   "Granularity": "Tafsilot darajasi",
   "Refresh Page": "Sahifani yangilash",
   "Recently read": "Yaqinda o'qilgan",
-  "Show recently read": "Yaqinda o'qilganlarni ko'rsatish"
+  "Show recently read": "Yaqinda o'qilganlarni ko'rsatish",
+  "Find:": "Topish:",
+  "Enable rule": "Qoidani yoqish",
+  "Disable rule": "Qoidani o‘chirish"
 }

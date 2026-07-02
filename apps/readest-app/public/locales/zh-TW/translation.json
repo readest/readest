@@ -1776,5 +1776,8 @@
   "Granularity": "粒度",
   "Refresh Page": "重新整理頁面",
   "Recently read": "最近閱讀",
-  "Show recently read": "顯示最近閱讀"
+  "Show recently read": "顯示最近閱讀",
+  "Find:": "尋找：",
+  "Enable rule": "啟用規則",
+  "Disable rule": "停用規則"
 }

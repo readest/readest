@@ -1809,5 +1809,8 @@
   "Granularity": "Granulariteit",
   "Refresh Page": "Pagina vernieuwen",
   "Recently read": "Onlangs gelezen",
-  "Show recently read": "Onlangs gelezen tonen"
+  "Show recently read": "Onlangs gelezen tonen",
+  "Find:": "Zoeken:",
+  "Enable rule": "Regel inschakelen",
+  "Disable rule": "Regel uitschakelen"
 }

@@ -1776,5 +1776,8 @@
   "Granularity": "ระดับความละเอียด",
   "Refresh Page": "รีเฟรชหน้า",
   "Recently read": "อ่านล่าสุด",
-  "Show recently read": "แสดงรายการอ่านล่าสุด"
+  "Show recently read": "แสดงรายการอ่านล่าสุด",
+  "Find:": "ค้นหา:",
+  "Enable rule": "เปิดใช้กฎ",
+  "Disable rule": "ปิดใช้กฎ"
 }

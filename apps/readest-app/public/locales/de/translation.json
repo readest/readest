@@ -1809,5 +1809,8 @@
   "Granularity": "Granularität",
   "Refresh Page": "Seite aktualisieren",
   "Recently read": "Zuletzt gelesen",
-  "Show recently read": "Zuletzt gelesen anzeigen"
+  "Show recently read": "Zuletzt gelesen anzeigen",
+  "Find:": "Suchen:",
+  "Enable rule": "Regel aktivieren",
+  "Disable rule": "Regel deaktivieren"
 }

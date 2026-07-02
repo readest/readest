@@ -1809,5 +1809,8 @@
   "Granularity": "நுண்மை",
   "Refresh Page": "பக்கத்தைப் புதுப்பி",
   "Recently read": "சமீபத்தில் படித்தவை",
-  "Show recently read": "சமீபத்தில் படித்தவற்றைக் காட்டு"
+  "Show recently read": "சமீபத்தில் படித்தவற்றைக் காட்டு",
+  "Find:": "தேடு:",
+  "Enable rule": "விதியை இயக்கு",
+  "Disable rule": "விதியை முடக்கு"
 }

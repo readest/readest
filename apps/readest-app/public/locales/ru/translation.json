@@ -1875,5 +1875,8 @@
   "Granularity": "Детализация",
   "Refresh Page": "Обновить страницу",
   "Recently read": "Недавно прочитанные",
-  "Show recently read": "Показывать недавно прочитанные"
+  "Show recently read": "Показывать недавно прочитанные",
+  "Find:": "Найти:",
+  "Enable rule": "Включить правило",
+  "Disable rule": "Отключить правило"
 }

@@ -1770,5 +1770,8 @@
   "Granularity": "ཞིབ་ཕྲའི་ཚད",
   "Refresh Page": "ཤོག་ལྷེ་བསྐྱར་གསོ།",
   "Recently read": "ཉེ་ཆར་བཀླགས་པ།",
-  "Show recently read": "ཉེ་ཆར་བཀླགས་པ་སྟོན་པ།"
+  "Show recently read": "ཉེ་ཆར་བཀླགས་པ་སྟོན་པ།",
+  "Find:": "འཚོལ་བཤེར།:",
+  "Enable rule": "སྲིད་སྒྲིག་སྤྱོད་པ།",
+  "Disable rule": "སྲིད་སྒྲིག་སྒོ་བརྒྱབ།"
 }

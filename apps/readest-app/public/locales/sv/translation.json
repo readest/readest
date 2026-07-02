@@ -1809,5 +1809,8 @@
   "Granularity": "Detaljnivå",
   "Refresh Page": "Uppdatera sidan",
   "Recently read": "Nyligen lästa",
-  "Show recently read": "Visa nyligen lästa"
+  "Show recently read": "Visa nyligen lästa",
+  "Find:": "Sök:",
+  "Enable rule": "Aktivera regel",
+  "Disable rule": "Inaktivera regel"
 }

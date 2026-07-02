@@ -1809,5 +1809,8 @@
   "Granularity": "सूक्ष्मता",
   "Refresh Page": "पृष्ठ ताज़ा करें",
   "Recently read": "हाल ही में पढ़े गए",
-  "Show recently read": "हाल ही में पढ़े गए दिखाएँ"
+  "Show recently read": "हाल ही में पढ़े गए दिखाएँ",
+  "Find:": "खोजें:",
+  "Enable rule": "नियम सक्षम करें",
+  "Disable rule": "नियम अक्षम करें"
 }

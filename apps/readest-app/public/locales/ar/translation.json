@@ -1941,5 +1941,8 @@
   "Granularity": "الدقة",
   "Refresh Page": "تحديث الصفحة",
   "Recently read": "المقروءة مؤخرًا",
-  "Show recently read": "إظهار المقروءة مؤخرًا"
+  "Show recently read": "إظهار المقروءة مؤخرًا",
+  "Find:": "بحث:",
+  "Enable rule": "تفعيل القاعدة",
+  "Disable rule": "تعطيل القاعدة"
 }

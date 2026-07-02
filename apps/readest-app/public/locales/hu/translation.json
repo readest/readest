@@ -1809,5 +1809,8 @@
   "Granularity": "Részletesség",
   "Refresh Page": "Oldal frissítése",
   "Recently read": "Nemrég olvasott",
-  "Show recently read": "Nemrég olvasottak megjelenítése"
+  "Show recently read": "Nemrég olvasottak megjelenítése",
+  "Find:": "Keresés:",
+  "Enable rule": "Szabály engedélyezése",
+  "Disable rule": "Szabály letiltása"
 }

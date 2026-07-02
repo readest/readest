@@ -1776,5 +1776,8 @@
   "Granularity": "단위",
   "Refresh Page": "페이지 새로고침",
   "Recently read": "최근 읽은 책",
-  "Show recently read": "최근 읽은 책 표시"
+  "Show recently read": "최근 읽은 책 표시",
+  "Find:": "찾기:",
+  "Enable rule": "규칙 활성화",
+  "Disable rule": "규칙 비활성화"
 }

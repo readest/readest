@@ -1809,5 +1809,8 @@
   "Granularity": "دانه‌بندی",
   "Refresh Page": "تازه‌سازی صفحه",
   "Recently read": "اخیراً خوانده‌شده",
-  "Show recently read": "نمایش موارد اخیراً خوانده‌شده"
+  "Show recently read": "نمایش موارد اخیراً خوانده‌شده",
+  "Find:": "جستجو:",
+  "Enable rule": "فعال کردن قانون",
+  "Disable rule": "غیرفعال کردن قانون"
 }

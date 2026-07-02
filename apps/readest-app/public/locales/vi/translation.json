@@ -1776,5 +1776,8 @@
   "Granularity": "Mức độ chi tiết",
   "Refresh Page": "Làm mới trang",
   "Recently read": "Đã đọc gần đây",
-  "Show recently read": "Hiển thị mục đã đọc gần đây"
+  "Show recently read": "Hiển thị mục đã đọc gần đây",
+  "Find:": "Tìm:",
+  "Enable rule": "Bật quy tắc",
+  "Disable rule": "Tắt quy tắc"
 }

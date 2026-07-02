@@ -1809,5 +1809,8 @@
   "Granularity": "Ayrıntı düzeyi",
   "Refresh Page": "Sayfayı Yenile",
   "Recently read": "Son okunanlar",
-  "Show recently read": "Son okunanları göster"
+  "Show recently read": "Son okunanları göster",
+  "Find:": "Bul:",
+  "Enable rule": "Kuralı etkinleştir",
+  "Disable rule": "Kuralı devre dışı bırak"
 }

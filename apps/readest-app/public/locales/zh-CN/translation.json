@@ -1776,5 +1776,8 @@
   "Granularity": "粒度",
   "Refresh Page": "刷新页面",
   "Recently read": "最近阅读",
-  "Show recently read": "显示最近阅读"
+  "Show recently read": "显示最近阅读",
+  "Find:": "查找：",
+  "Enable rule": "启用规则",
+  "Disable rule": "禁用规则"
 }

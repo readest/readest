@@ -1809,5 +1809,8 @@
   "Granularity": "විස්තර මට්ටම",
   "Refresh Page": "පිටුව නැවුම් කරන්න",
   "Recently read": "මෑතකදී කියවූ",
-  "Show recently read": "මෑතකදී කියවූ ඒවා පෙන්වන්න"
+  "Show recently read": "මෑතකදී කියවූ ඒවා පෙන්වන්න",
+  "Find:": "සොයන්න:",
+  "Enable rule": "නියමය සක්‍රීය කරන්න",
+  "Disable rule": "නියමය අක්‍රීය කරන්න"
 }
