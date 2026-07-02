@@ -237,13 +237,16 @@ export interface SystemSettings {
    */
   externalLibraryFolders?: string[];
   /**
-   * When true, Readest re-scans the registered external library folders
-   * (`externalLibraryFolders`) on library open and whenever the app regains
-   * focus, importing any newly-added book files. Desktop + Android only.
-   * Default OFF (opt-in). Inert without registered folders, so it is safe to
-   * sync (not device-local like the folder paths themselves).
+   * Absolute paths of the external library folders the user has opted into
+   * auto-import for. On library open and whenever the app regains focus,
+   * Readest re-scans each of these and imports any newly-added book files.
+   * A subset of {@link externalLibraryFolders} (auto-import requires the
+   * folder to be read in place). Set per-folder from the Import-from-Folder
+   * dialog. Desktop + Android only. Device-local (paths are meaningful only
+   * on this filesystem) and excluded from cloud settings backups via
+   * `BACKUP_SETTINGS_BLACKLIST`.
    */
-  autoImportFromFolders?: boolean;
+  autoImportFolders?: string[];
 
   keepLogin: boolean;
   autoUpload: boolean;

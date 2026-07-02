@@ -37,6 +37,7 @@ export const BACKUP_SETTINGS_BLACKLIST = [
   'localBooksDir',
   'customRootDir',
   'externalLibraryFolders',
+  'autoImportFolders',
   'savedBookCoverForLockScreenPath',
   // Per-device identity — restoring causes sync identity / HLC collisions.
   'replicaDeviceId',

@@ -215,6 +215,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     initialSelectedGroupIds?: string[];
     initialMinSizeKB?: number;
     initialReadInPlace?: boolean;
+    initialAutoImport?: boolean;
   } | null>(null);
   const [currentGroupPath, setCurrentGroupPath] = useState<string | undefined>(undefined);
   const [currentSeriesAuthorGroup, setCurrentSeriesAuthorGroup] = useState<{
@@ -855,10 +856,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   /**
-   * Re-scan the registered external library folders and import any newly-added
-   * books. Reuses the same in-place import + dedup as manual folder import, but
-   * stays quiet: unreadable folders are skipped (no toast), and `importBooks`
-   * runs only when genuinely-new files exist (its success toast then fires).
+   * Re-scan the given watched folders (the user's `autoImportFolders`) and
+   * import any newly-added books. Reuses the same in-place import + dedup as
+   * manual folder import, but stays quiet: unreadable folders are skipped (no
+   * toast), and `importBooks` runs only when genuinely-new files exist (its
+   * success toast then fires).
    */
   const autoImportFromWatchedFolders = async (folders: string[]) => {
     if (!appService || loading) return;
@@ -908,17 +910,18 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }
   };
 
-  // Local-folder counterpart of useLibraryFileSync: re-scan registered external
-  // library folders and import newly-added books on library open and app focus.
-  // Desktop + Android only (iOS security-scoped bookmarks are out of scope).
+  // Local-folder counterpart of useLibraryFileSync: re-scan the folders the
+  // user opted into auto-import (a subset of externalLibraryFolders, chosen
+  // per-folder in the Import-from-Folder dialog) and import newly-added books
+  // on library open and app focus. Desktop + Android only (iOS security-scoped
+  // bookmarks are out of scope).
   useAutoImportFolders({
     enabled:
-      settings.autoImportFromFolders === true &&
-      (settings.externalLibraryFolders?.length ?? 0) > 0 &&
+      (settings.autoImportFolders?.length ?? 0) > 0 &&
       libraryLoaded &&
       isTauriAppPlatform() &&
       !appService?.isIOSApp,
-    folders: settings.externalLibraryFolders ?? [],
+    folders: settings.autoImportFolders ?? [],
     scanAndImport: autoImportFromWatchedFolders,
   });
 
@@ -1174,6 +1177,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         // by `runFolderImport` itself via the prefix check, so books
         // under a registered folder are imported in-place either way.
         readInPlace: false,
+        // Non-dialog path never opts into auto-import.
+        autoImport: false,
       });
       return;
     }
@@ -1206,6 +1211,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           ? parsedMinSize
           : undefined,
       initialReadInPlace: storedReadInPlace === '1',
+      initialAutoImport: isAutoImportFolder(storedDirectory),
     });
   };
 
@@ -1311,6 +1317,18 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   /**
+   * `true` when `directory` is in `settings.autoImportFolders` after path
+   * normalization. Seeds the dialog's "Auto-import new books from this
+   * folder" checkbox so re-opening on a watched folder shows it ticked.
+   */
+  const isAutoImportFolder = (directory: string): boolean => {
+    const target = normalizeRoot(directory);
+    if (!target) return false;
+    const roots = settings.autoImportFolders ?? [];
+    return roots.some((r) => normalizeRoot(r) === target);
+  };
+
+  /**
    * Add `directory` to `settings.externalLibraryFolders` (and persist
    * settings) so the ingest layer's `shouldImportInPlace` will pick
    * up subsequent imports from the same folder automatically. No-op
@@ -1334,6 +1352,32 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       await saveSettings(envConfig, nextSettings);
     } catch (e) {
       console.error('Failed to persist externalLibraryFolders update:', e);
+    }
+  };
+
+  /**
+   * Add or remove `directory` from `settings.autoImportFolders` (and persist)
+   * per the user's per-folder "Auto-import new books from this folder" choice.
+   * A no-op when the folder is already in the desired state. Errors are
+   * swallowed — the import itself still succeeds; we just won't watch (or stop
+   * watching) the folder until the next successful settings write.
+   */
+  const setAutoImportFolder = async (directory: string, enabled: boolean): Promise<void> => {
+    const target = normalizeRoot(directory);
+    if (!target) return;
+    const liveSettings = useSettingsStore.getState().settings;
+    const existing = liveSettings.autoImportFolders ?? [];
+    const present = existing.some((r) => normalizeRoot(r) === target);
+    if (enabled === present) return;
+    const next = enabled
+      ? [...existing, directory]
+      : existing.filter((r) => normalizeRoot(r) !== target);
+    const nextSettings = { ...liveSettings, autoImportFolders: next };
+    setSettings(nextSettings);
+    try {
+      await saveSettings(envConfig, nextSettings);
+    } catch (e) {
+      console.error('Failed to persist autoImportFolders update:', e);
     }
   };
 
@@ -1383,6 +1427,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     if (result.readInPlace) {
       await registerExternalLibraryFolder(result.directory);
     }
+    // Opt this folder into (or out of) auto-import per the dialog's per-folder
+    // checkbox. `result.autoImport` already implies `readInPlace` (the dialog
+    // gates it), so registration above has run; unchecking removes the folder
+    // from the watched set while leaving it registered as read-in-place.
+    await setAutoImportFolder(result.directory, result.autoImport);
 
     // Re-grant scopes for the directory before scanning. This matters
     // when `result.directory` came from somewhere the dialog plugin
@@ -1655,6 +1704,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           initialSelectedGroupIds={importFromFolderState.initialSelectedGroupIds}
           initialMinSizeKB={importFromFolderState.initialMinSizeKB}
           initialReadInPlace={importFromFolderState.initialReadInPlace}
+          initialAutoImport={importFromFolderState.initialAutoImport}
           isRegisteredExternalRoot={isRegisteredExternalRoot}
           onPickDirectory={pickImportDirectory}
           onCancel={() => setImportFromFolderState(null)}

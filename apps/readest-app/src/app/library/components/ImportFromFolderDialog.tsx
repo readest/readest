@@ -69,6 +69,14 @@ export interface ImportFromFolderResult {
    * behaviour and leaves the registered folder list untouched.
    */
   readInPlace: boolean;
+  /**
+   * When `true`, keep this folder watched: on every library open and app
+   * focus, Readest re-scans it and imports any newly-added books. Recorded
+   * in `settings.autoImportFolders`. Only meaningful together with
+   * {@link readInPlace} (auto-import reads books in place), so it is forced
+   * `false` whenever `readInPlace` is off. Defaults to `false`.
+   */
+  autoImport: boolean;
 }
 
 interface ImportFromFolderDialogProps {
@@ -98,6 +106,13 @@ interface ImportFromFolderDialogProps {
    * the switch again. Defaults to `false`.
    */
   initialReadInPlace?: boolean;
+  /**
+   * Initial value for the "Auto-import new books from this folder" checkbox.
+   * The caller seeds it from whether the shown folder is already in
+   * `settings.autoImportFolders`, so re-opening the dialog on a watched
+   * folder shows the box already ticked. Defaults to `false`.
+   */
+  initialAutoImport?: boolean;
   /**
    * Predicate the dialog uses to decide whether the currently-displayed
    * folder is already registered as an external library folder. When
@@ -139,6 +154,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
   initialSelectedGroupIds,
   initialMinSizeKB,
   initialReadInPlace = false,
+  initialAutoImport = false,
   isRegisteredExternalRoot,
   onPickDirectory,
   onCancel,
@@ -175,10 +191,16 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
   // in-place by design (the importer's `shouldImportInPlace` check is
   // path-prefix based and ignores any per-import opt-out).
   const [readInPlace, setReadInPlace] = useState<boolean>(initialReadInPlace);
+  // "Auto-import new books from this folder" — a sub-option of "Read in
+  // place". Auto-import scans the folder on every open/focus and reads its
+  // books in place, so it is only offered (and only takes effect) when the
+  // folder is read in place; `effectiveAutoImport` enforces that.
+  const [autoImport, setAutoImport] = useState<boolean>(initialAutoImport);
   const [picking, setPicking] = useState(false);
 
   const readInPlaceLocked = !!directory && (isRegisteredExternalRoot?.(directory) ?? false);
   const effectiveReadInPlace = readInPlaceLocked || readInPlace;
+  const effectiveAutoImport = effectiveReadInPlace && autoImport;
 
   // Enter to confirm, Escape / Android Back to cancel. We must wire
   // `onCancel` even though <Dialog> also listens for Back, because
@@ -241,6 +263,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
       minSizeKB: safeMinSizeKB,
       flatten: folderMode === 'flatten',
       readInPlace: effectiveReadInPlace,
+      autoImport: effectiveAutoImport,
     });
   };
 
@@ -379,6 +402,27 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
               </span>
             </span>
           </label>
+          {/* Auto-import sub-option. Only shown when the folder is read in
+              place — auto-import re-scans and reads books straight from the
+              folder, so it has no meaning for copied imports. */}
+          {effectiveReadInPlace && (
+            <label className='ms-6 flex cursor-pointer items-start gap-2 rounded-md px-1 py-1 text-sm hover:bg-base-200/50'>
+              <input
+                type='checkbox'
+                className='checkbox checkbox-sm mt-0.5'
+                checked={autoImport}
+                onChange={(e) => setAutoImport(e.target.checked)}
+              />
+              <span className='select-none'>
+                <span className='block'>{_('Auto-import new books from this folder')}</span>
+                <span className='text-base-content/60 block text-xs'>
+                  {_(
+                    'When new books are added to this folder, import them automatically the next time Readest opens or returns to the foreground.',
+                  )}
+                </span>
+              </span>
+            </label>
+          )}
         </div>
 
         {/* Folder-structure mode — radios let the user choose between

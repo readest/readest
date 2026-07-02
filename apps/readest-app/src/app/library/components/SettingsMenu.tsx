@@ -64,9 +64,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const [isAutoImportBooksOnOpen, setIsAutoImportBooksOnOpen] = useState(
     settings.autoImportBooksOnOpen,
   );
-  const [isAutoImportFromFolders, setIsAutoImportFromFolders] = useState(
-    settings.autoImportFromFolders ?? false,
-  );
   const [alwaysInForeground, setAlwaysInForeground] = useState(settings.alwaysInForeground);
   const [savedBookCoverForLockScreen, setSavedBookCoverForLockScreen] = useState(
     settings.savedBookCoverForLockScreen || '',
@@ -178,12 +175,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     const newValue = !settings.autoImportBooksOnOpen;
     saveSysSettings(envConfig, 'autoImportBooksOnOpen', newValue);
     setIsAutoImportBooksOnOpen(newValue);
-  };
-
-  const toggleAutoImportFromFolders = () => {
-    const newValue = !settings.autoImportFromFolders;
-    saveSysSettings(envConfig, 'autoImportFromFolders', newValue);
-    setIsAutoImportFromFolders(newValue);
   };
 
   const toggleOpenLastBooks = () => {
@@ -390,13 +381,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
           label={_('Auto Import on File Open')}
           toggled={isAutoImportBooksOnOpen}
           onClick={toggleAutoImportBooksOnOpen}
-        />
-      )}
-      {isTauriAppPlatform() && !appService?.isIOSApp && (
-        <MenuItem
-          label={_('Auto Import New Books from Folders')}
-          toggled={isAutoImportFromFolders}
-          onClick={toggleAutoImportFromFolders}
         />
       )}
       {isTauriAppPlatform() && (
