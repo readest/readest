@@ -579,7 +579,7 @@ function ReadestSync:pullBookStats(interactive)
         return
     end
     SyncStats:pull(self.settings, client, interactive,
-        function() SyncAuth:logout(self.settings, self.path) end)
+        function() SyncAuth:logout(self.settings, self.path) end, self.ui)
 end
 
 -- ── Annotation sync ────────────────────────────────────────────────

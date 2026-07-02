@@ -41,16 +41,86 @@ function SyncStats:collectSince(cursor)
     return books, pages
 end
 
+-- Fold duplicate book rows sharing one md5 into the row KOReader's native
+-- statistics plugin actually reads. That plugin keys rows by (title,
+-- authors, md5) — UNIQUE INDEX book_title_authors_md5 — so when its
+-- extracted metadata drifts from Readest's, the first native open adds a
+-- second, zeroed row and the synced reading time is stranded on the
+-- sync-created one (#4861). Only rows the native plugin never adopted
+-- (pages IS NULL; it always sets pages on the rows it creates or updates)
+-- are folded, and an adopted row is never deleted: an open reader session
+-- may hold its cached book id. live_book_id is the id the current session's
+-- statistics module cached — a session that adopted a sync-created row keeps
+-- pages NULL until its first close, so that row must not be folded either.
+local function mergeDuplicateBooks(conn, touched, live_book_id)
+    local dup_stmt = conn:prepare([[
+        SELECT md5 FROM book WHERE md5 IS NOT NULL AND md5 != ''
+        GROUP BY md5 HAVING COUNT(*) > 1;]])
+    local dups = {}
+    local row = dup_stmt:step()
+    while row ~= nil do
+        table.insert(dups, row[1])
+        row = dup_stmt:step()
+    end
+    dup_stmt:close()
+    if #dups == 0 then return end
+    local survivor_stmt = conn:prepare([[
+        SELECT id FROM book WHERE md5 = ?
+        ORDER BY (pages IS NOT NULL) DESC, last_open DESC, id ASC LIMIT 1;]])
+    local stranded_stmt = conn:prepare("SELECT id FROM book WHERE md5 = ? AND id != ? AND id != ? AND pages IS NULL;")
+    local move_pages = conn:prepare([[
+        INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages)
+        SELECT ?, page, start_time, duration, total_pages
+        FROM page_stat_data WHERE id_book = ?
+        ON CONFLICT(id_book, page, start_time)
+        DO UPDATE SET duration = max(duration, excluded.duration), total_pages = excluded.total_pages;]])
+    local del_pages = conn:prepare("DELETE FROM page_stat_data WHERE id_book = ?;")
+    local del_book = conn:prepare("DELETE FROM book WHERE id = ?;")
+    for _, md5 in ipairs(dups) do
+        local keep = tonumber(survivor_stmt:reset():bind(md5):step()[1])
+        local stranded = {}
+        stranded_stmt:reset():bind(md5, keep, tonumber(live_book_id) or -1)
+        local r = stranded_stmt:step()
+        while r ~= nil do
+            table.insert(stranded, tonumber(r[1]))
+            r = stranded_stmt:step()
+        end
+        for _, dead in ipairs(stranded) do
+            move_pages:reset():bind(keep, dead):step()
+            del_pages:reset():bind(dead):step()
+            del_book:reset():bind(dead):step()
+            touched[dead] = nil
+            touched[keep] = true
+            logger.dbg("ReadestStats applyRemote: folded duplicate book row "
+                .. dead .. " into " .. keep .. " (md5=" .. md5 .. ")")
+        end
+    end
+    survivor_stmt:close()
+    stranded_stmt:close()
+    move_pages:close()
+    del_pages:close()
+    del_book:close()
+end
+
 -- Upsert pulled rows into the local statistics.sqlite3 (union / longer-duration).
-function SyncStats:applyRemote(books, pages)
+function SyncStats:applyRemote(books, pages, live_book_id)
     local conn = SQ3.open(db_path())
     conn:exec("BEGIN;")
-    local insert_book = conn:prepare("INSERT OR IGNORE INTO book (title, authors, md5) VALUES (?, ?, ?);")
+    -- Insert a row only for an md5 this DB has never seen: if KOReader
+    -- already tracks the book under its own (possibly drifted) metadata,
+    -- adding one keyed on Readest's would duplicate it (#4861).
+    local insert_book = conn:prepare([[
+        INSERT INTO book (title, authors, md5)
+        SELECT ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM book WHERE md5 = ?);]])
     for _, b in ipairs(books or {}) do
-        insert_book:reset():bind(b.title or "", b.authors or "", b.book_hash):step()
+        insert_book:reset():bind(b.title or "", b.authors or "", b.book_hash, b.book_hash):step()
     end
     insert_book:close()
-    local find_id = conn:prepare("SELECT id FROM book WHERE md5 = ? LIMIT 1;")
+    -- Attach events to the row the native statistics plugin reads: it always
+    -- sets pages and last_open on its rows; sync-created rows leave them NULL.
+    local find_id = conn:prepare([[
+        SELECT id FROM book WHERE md5 = ?
+        ORDER BY (pages IS NOT NULL) DESC, last_open DESC, id ASC LIMIT 1;]])
     local insert_page = conn:prepare([[
         INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages)
         VALUES (?, ?, ?, ?, ?)
@@ -71,14 +141,18 @@ function SyncStats:applyRemote(books, pages)
     end
     find_id:close()
     insert_page:close()
+    mergeDuplicateBooks(conn, touched, live_book_id)
     -- Mirror the Readest app's recomputeBookTotals so a KOReader device shows
     -- fresh totals right after a pull (id is a trusted integer from the DB).
+    -- last_open never regresses: on native rows it is a real open timestamp
+    -- that can be newer than the last synced reading event.
     for id in pairs(touched) do
         conn:exec(string.format([[
             UPDATE book SET
                 total_read_time  = COALESCE((SELECT SUM(duration) FROM page_stat_data WHERE id_book = %d), 0),
                 total_read_pages = COALESCE((SELECT COUNT(DISTINCT page) FROM page_stat_data WHERE id_book = %d), 0),
-                last_open        = COALESCE((SELECT MAX(start_time + duration) FROM page_stat_data WHERE id_book = %d), last_open)
+                last_open        = MAX(COALESCE(last_open, 0),
+                                       COALESCE((SELECT MAX(start_time + duration) FROM page_stat_data WHERE id_book = %d), 0))
             WHERE id = %d;]], id, id, id, id))
     end
     conn:exec("COMMIT;")
@@ -130,7 +204,7 @@ function SyncStats:push(settings, client, interactive)
         end)
 end
 
-function SyncStats:pull(settings, client, interactive, logout_fn)
+function SyncStats:pull(settings, client, interactive, logout_fn, ui)
     local since = settings.stats_pull_cursor or 0
     logger.dbg("ReadestStats pull: since=" .. tostring(since)
         .. " interactive=" .. tostring(interactive))
@@ -152,7 +226,10 @@ function SyncStats:pull(settings, client, interactive, logout_fn)
             local nbooks = response and response.statBooks and #response.statBooks or 0
             local npages = response and response.statPages and #response.statPages or 0
             logger.dbg("ReadestStats pull: applying statBooks=" .. nbooks .. " statPages=" .. npages)
-            self:applyRemote(response.statBooks, response.statPages)
+            -- Resolved inside the callback so it reflects the session state
+            -- at apply time, after the async network round-trip.
+            local live_book_id = ui and ui.statistics and ui.statistics.id_curr_book or nil
+            self:applyRemote(response.statBooks, response.statPages, live_book_id)
             local newest = since
             for _, p in ipairs(response.statPages or {}) do
                 local u = tonumber(p.updated_at_ms) or 0
