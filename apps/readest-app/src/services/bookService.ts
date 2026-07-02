@@ -124,6 +124,26 @@ export function selectNewImportableFiles(
   });
 }
 
+/**
+ * Collect all known local source paths from the library into a normalized set.
+ *
+ * Unlike `buildBookLookupIndex(...).byFilePath`, this includes soft-deleted
+ * books (`deletedAt` set) so that auto-import does not resurrect a book the
+ * user intentionally removed from their library.
+ *
+ * URL-backed entries (remote books) are excluded — only on-disk paths matter.
+ */
+export function collectKnownSourcePaths(books: Book[], osPlatform?: OsPlatform): Set<string> {
+  const paths = new Set<string>();
+  for (const book of books) {
+    if (book.filePath && !isValidURL(book.filePath)) {
+      const key = normalizeFilePathForIndex(book.filePath, osPlatform);
+      if (key) paths.add(key);
+    }
+  }
+  return paths;
+}
+
 export interface CoverContext {
   fs: FileSystem;
   appPlatform: AppPlatform;
