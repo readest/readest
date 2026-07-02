@@ -305,6 +305,48 @@ describe('ProofreadRulesManager', () => {
     expect(screen.queryByText('deleted-pattern')).toBeNull();
   });
 
+  it('keeps a disabled book rule visible so it can be re-enabled', async () => {
+    (useSettingsStore.setState as unknown as (state: unknown) => void)({
+      settings: { ...DEFAULT_SYSTEM_SETTINGS, globalViewSettings: { proofreadRules: [] } },
+    });
+
+    const disabledRule: ProofreadRule = {
+      id: 'd1',
+      scope: 'book',
+      pattern: 'disabled-pattern',
+      replacement: 'x',
+      enabled: false,
+      isRegex: false,
+      caseSensitive: true,
+      order: 1,
+      wholeWord: true,
+    };
+
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
+      viewStates: { book1: { viewSettings: { proofreadRules: [disabledRule] } } },
+    });
+    (useBookDataStore.setState as unknown as (state: unknown) => void)({
+      booksData: {
+        book1: {
+          id: 'book1',
+          book: null,
+          file: null,
+          config: { viewSettings: { proofreadRules: [disabledRule] } },
+          bookDoc: null,
+          isFixedLayout: false,
+        },
+      },
+    });
+    useSidebarStore.setState({ sideBarBookKey: 'book1' });
+
+    renderWithProviders(<ProofreadRulesManager />);
+    await Promise.resolve();
+    setProofreadRulesVisibility(true);
+
+    await screen.findByRole('dialog');
+    expect(screen.getByText('disabled-pattern')).toBeTruthy();
+  });
+
   it('renders a drag handle for each reorderable rule', async () => {
     const selectionRule: ProofreadRule = {
       id: 's1',

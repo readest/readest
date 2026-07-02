@@ -261,21 +261,17 @@ const useReplacementRules = (bookKey: string | null) => {
     (r: ProofreadRule) => !r.deletedAt,
   );
 
-  // Merge book-scoped and global rules
-  const globalRuleIds = new Set(globalRules.map((gr: ProofreadRule) => gr.id));
-
-  // Remove orphaned overrides (disabled global rules that no longer exist)
-  const validBookRules = bookScopedRules.filter(
-    (br: ProofreadRule) => br.enabled !== false || globalRuleIds.has(br.id),
-  );
-
+  // Merge book-scoped rules with global (library) rules. Keep disabled rules so
+  // the per-rule enable/disable toggle can turn them back on; book and library
+  // ids never collide (ensureRuleId folds scope into the id), so dedup-by-id
+  // here only guards a legacy shared id from listing the same rule twice.
   // Sort by `order` so a drag-to-reorder (which rewrites the order field)
-  // persists visually; the stable sort keeps insertion order while every
-  // rule still shares the default order.
-  const mergedBookRules = validBookRules
+  // persists visually; the stable sort keeps insertion order while every rule
+  // still shares the default order.
+  const mergedBookRules = bookScopedRules
     .concat(
       globalRules.filter(
-        (gr: ProofreadRule) => !validBookRules.find((br: ProofreadRule) => br.id === gr.id),
+        (gr: ProofreadRule) => !bookScopedRules.find((br: ProofreadRule) => br.id === gr.id),
       ),
     )
     .sort(byOrder);
