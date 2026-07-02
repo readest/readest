@@ -10,7 +10,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getGridTemplate, getInsetEdges } from '@/utils/grid';
-import { getViewInsets } from '@/utils/insets';
+import { useContentInsets } from '../hooks/useContentInsets';
 import SearchResultsNav from './sidebar/SearchResultsNav';
 import BooknotesNav from './sidebar/BooknotesNav';
 import FoliateViewer from './FoliateViewer';
@@ -118,33 +118,10 @@ const BookCellInner: React.FC<BookCellProps> = ({
   const config = getConfig(bookKey);
   const { book, bookDoc } = bookData || {};
 
-  // viewSettings drives both viewInsets and the inset-derived geometry.
-  // Memoize off its identity so contentInsets stays stable while the
-  // user is just turning pages — viewSettings only changes when the
-  // user toggles settings, not on every relocate. Same logic for
-  // gridInsets which is keyed off the resolved Insets numbers.
-  const viewInsets = useMemo(
-    () => (viewSettings ? getViewInsets(viewSettings) : { top: 0, right: 0, bottom: 0, left: 0 }),
-    [viewSettings],
-  );
-  const contentInsets = useMemo(
-    () => ({
-      top: gridInsets.top + viewInsets.top,
-      right: gridInsets.right + viewInsets.right,
-      bottom: gridInsets.bottom + viewInsets.bottom,
-      left: gridInsets.left + viewInsets.left,
-    }),
-    [
-      gridInsets.top,
-      gridInsets.right,
-      gridInsets.bottom,
-      gridInsets.left,
-      viewInsets.top,
-      viewInsets.right,
-      viewInsets.bottom,
-      viewInsets.left,
-    ],
-  );
+  // viewInsets/contentInsets stay stable while the user is just turning pages
+  // (margins are unchanged) but update when a margin setting changes — even
+  // though saveViewSettings mutates viewSettings in place (#4898).
+  const { viewInsets, contentInsets } = useContentInsets(viewSettings, gridInsets);
 
   // Stable callback so HeaderBar doesn't see a new prop reference per
   // BooksGrid render.
