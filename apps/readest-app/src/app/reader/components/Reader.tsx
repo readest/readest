@@ -165,7 +165,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
       </Suspense>
     </div>
   ) : (
-    <div className={clsx('full-height', !appService?.isLinuxApp && 'bg-base-100')}></div>
+    <div className='full-height bg-base-100'></div>
   );
 };
 

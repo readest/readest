@@ -591,9 +591,14 @@ pub fn run() {
                 }
                 #[cfg(target_os = "linux")]
                 {
-                    builder = builder
-                        .transparent(true)
-                        .background_color(tauri::window::Color(0, 0, 0, 0));
+                    // Keep the window opaque on Linux. A transparent WebKitGTK
+                    // window (previously used to draw rounded corners, #1982)
+                    // composites as fully transparent whenever its web process is
+                    // too busy to repaint damaged regions (e.g. during a library
+                    // backup), so the app "turns invisible" on any interaction
+                    // (#3682). An opaque window instead retains its last painted
+                    // frame, at the cost of square corners.
+                    builder = builder.transparent(false);
                 }
 
                 builder

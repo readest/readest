@@ -557,7 +557,10 @@ export class NativeAppService extends BaseAppService {
   override hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   override hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   override hasContextMenu = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  override hasRoundedWindow = OS_TYPE === 'linux';
+  // No desktop platform draws a rounded, transparent window anymore: the Linux
+  // window is opaque with square corners to avoid the WebKitGTK "turns
+  // invisible while busy" bug (#3682).
+  override hasRoundedWindow = false;
   override hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
   override hasHaptics = OS_TYPE === 'ios' || OS_TYPE === 'android';
   override hasUpdater =
