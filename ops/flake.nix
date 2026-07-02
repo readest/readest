@@ -130,6 +130,11 @@
             inherit name;
             packages = commonPackages ++ extraPackages;
             env = extraEnv;
+            devshell.startup.init_project.text = ''
+              git submodule update --init --recursive
+              pnpm install
+              pnpm --filter @readest/readest-app setup-vendors
+            '';
           };
       in
       {
