@@ -38,18 +38,12 @@
         };
         # android-studio is not available in aarch64-darwin
         androidConditionalPackages = if pkgs.system != "aarch64-darwin" then [ pkgs.android-studio ] else [ ];
+
         commonPackages = with pkgs; [
           pnpm
           nodejs_24
           clang
           pkg-config
-          (pkgs.fenix.complete.withComponents [
-            "cargo"
-            "clippy"
-            "rust-src"
-            "rustc"
-            "rustfmt"
-          ])
           pkgs.rust-analyzer-nightly
           xdg-utils
           self.formatter.${system}
@@ -97,7 +91,9 @@
 
         mkCommonShell =
           { name
+          , postInit ? ""
           , extraPackages ? [ ]
+          , extraTargets ? [ ]
           , extraEnv ? [
               {
                 name = "PKG_CONFIG_PATH";
@@ -140,23 +136,42 @@
           }:
           pkgs.devshell.mkShell {
             inherit name;
-            packages = commonPackages ++ extraPackages;
+            packages =
+              commonPackages
+              ++ extraPackages
+              ++ [
+                (
+                  with pkgs.fenix;
+                  pkgs.fenix.combine [
+                    complete.cargo
+                    complete.clippy
+                    complete.rust-src
+                    complete.rustc
+                    complete.rustfmt
+                    extraTargets
+                  ]
+                )
+              ];
             env = extraEnv;
             devshell.startup.init_project.text = ''
               git submodule update --init --recursive
               pnpm install
               pnpm --filter @readest/readest-app setup-vendors
-            '';
+            '' + postInit;
           };
       in
       {
         packages = {
           android-sdk = android.sdk.${system} (sdkPkgs: with sdkPkgs; [
             # Useful packages for building and testing.
+            build-tools-36-0-0
+            build-tools-35-0-0
             build-tools-34-0-0
             cmdline-tools-latest
             emulator
             platform-tools
+            platforms-android-36
+            platforms-android-35
             platforms-android-34
             ndk-26-1-10909125
           ]
@@ -183,8 +198,28 @@
             extraPackages = [ pkgs.cocoapods ];
           };
 
-          android = mkCommonShell {
+          android = mkCommonShell rec {
             name = "readest-android";
+            postInit = ''
+              rm -rf apps/readest-app/src-tauri/gen/android
+              pnpm tauri android init
+              git checkout apps/readest-app/src-tauri/gen/android
+              pnpm tauri icon ../../data/icons/readest-book.png
+
+              if [ ! -d "$ANDROID_AVD_HOME/${name}.avd" ]; then
+                  avdmanager create avd \
+                    -n ${name} \
+                    -k "system-images;android-34;google_apis;x86_64" \
+                    -d "pixel" \
+                    --force
+                fi
+            '';
+            extraTargets = with pkgs.fenix.targets; [
+              aarch64-linux-android.latest.rust-std
+              armv7-linux-androideabi.latest.rust-std
+              i686-linux-android.latest.rust-std
+              x86_64-linux-android.latest.rust-std
+            ];
             extraPackages = [
               pkgs.android-sdk
               pkgs.gradle
@@ -206,6 +241,10 @@
               {
                 name = "JAVA_HOME";
                 value = pkgs.jdk.home;
+              }
+              {
+                  name = "ANDROID_AVD_HOME";
+                  eval = "$XDG_CONFIG_HOME/.android/avd";
               }
             ];
           };
