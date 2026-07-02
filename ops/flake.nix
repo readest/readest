@@ -40,7 +40,7 @@
         androidConditionalPackages = if pkgs.system != "aarch64-darwin" then [ pkgs.android-studio ] else [ ];
         commonPackages = with pkgs; [
           pnpm
-          nodejs_22
+          nodejs_24
           clang
           pkg-config
           (pkgs.fenix.complete.withComponents [
