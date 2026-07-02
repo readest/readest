@@ -592,6 +592,18 @@ export class NativeAppService extends BaseAppService {
   override async init() {
     const execDir = await invoke<string>('get_executable_dir');
     this.execDir = execDir;
+    // Ask Rust whether the in-app updater must stay hidden (READEST_DISABLE_UPDATER,
+    // Flatpak, or a Linux deb/rpm/pacman install that Tauri can't self-update). The
+    // command is the reliable source of truth; the `__READEST_UPDATER_DISABLED`
+    // init-script global isn't dependable on every Linux/WebKitGTK setup (#4874).
+    if (this.isDesktopApp) {
+      try {
+        const updaterDisabled = await invoke<boolean>('is_updater_disabled');
+        this.hasUpdater = this.hasUpdater && !updaterDisabled;
+      } catch (err) {
+        console.warn('[nativeAppService] is_updater_disabled failed:', err);
+      }
+    }
     if (
       process.env['NEXT_PUBLIC_PORTABLE_APP'] ||
       (await this.fs.exists(`${execDir}/${SETTINGS_FILENAME}`, 'None'))
