@@ -71,12 +71,11 @@ export const tauriHandleOnCloseWindow = async (callback: () => void) => {
 export const tauriHandleToggleFullScreen = async () => {
   const currentWindow = getCurrentWindow();
   const isFullscreen = await currentWindow.isFullscreen();
-  const isMaximized = await currentWindow.isMaximized();
-  if (isMaximized) {
-    await currentWindow.unmaximize();
-  } else {
-    await currentWindow.setFullscreen(!isFullscreen);
-  }
+  // Toggle fullscreen regardless of the maximized state. Previously a maximized
+  // window was only unmaximized here, so the fullscreen button did nothing when
+  // the window was maximized, which is always the case on mobile shells like
+  // Phosh and common on Windows (issue #4034).
+  await currentWindow.setFullscreen(!isFullscreen);
   if ((await osType()) === 'linux') {
     linuxWindowRestoreTransparentBg();
   }
