@@ -117,6 +117,16 @@ interface IframeTouchEvent {
   targetTouches: IframeTouch[];
 }
 
+// A two-finger gesture only becomes a pinch once the fingers' separation
+// changes by at least this many pixels AND that change outweighs how far the
+// pair has travelled together. On touchscreen laptops (e.g. Surface) users
+// scroll with two fingers moving the same direction, which nudges the spacing
+// a little; the deadzone keeps that from being read as an accidental zoom.
+const PINCH_ACTIVATION_THRESHOLD = 24;
+// Once the pair has translated this far together we lock the gesture as a
+// two-finger scroll and stop looking for a pinch for the rest of it.
+const TWO_FINGER_PAN_THRESHOLD = 12;
+
 export const useTouchEvent = (bookKey: string) => {
   const { getBookData } = useBookDataStore();
   const { hoveredBookKey, setHoveredBookKey, getViewSettings, getView } = useReaderStore();
@@ -126,7 +136,13 @@ export const useTouchEvent = (bookKey: string) => {
   const touchStartTimeRef = useRef<number | null>(null);
   const touchEndTimeRef = useRef<number | null>(null);
   const touchConsumedRef = useRef(false);
+  // Two fingers on a fixed-layout book start in a "pending" state: we wait to
+  // see whether they spread/converge (pinch) or slide together (scroll) before
+  // committing. isPinchingRef only flips true once a pinch is confirmed.
+  const pinchPendingRef = useRef(false);
   const isPinchingRef = useRef(false);
+  const initialTouch0Ref = useRef<IframeTouch | null>(null);
+  const initialTouch1Ref = useRef<IframeTouch | null>(null);
   const initialPinchDistRef = useRef(0);
   const initialZoomRef = useRef(100);
   const lastPinchRatioRef = useRef(1);
@@ -161,7 +177,10 @@ export const useTouchEvent = (bookKey: string) => {
     if (t0 && t1) {
       const bookData = getBookData(bookKey);
       if (bookData?.isFixedLayout) {
-        isPinchingRef.current = true;
+        pinchPendingRef.current = true;
+        isPinchingRef.current = false;
+        initialTouch0Ref.current = t0;
+        initialTouch1Ref.current = t1;
         initialPinchDistRef.current = getTouchDistance(t0, t1);
         initialZoomRef.current = getViewSettings(bookKey)?.zoomLevel ?? 100;
         lastPinchRatioRef.current = 1;
@@ -187,7 +206,34 @@ export const useTouchEvent = (bookKey: string) => {
   const onTouchMove = (e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>) => {
     const t0 = e.targetTouches[0] as IframeTouch | undefined;
     const t1 = e.targetTouches[1] as IframeTouch | undefined;
-    if (isPinchingRef.current && t0 && t1) {
+    if ((pinchPendingRef.current || isPinchingRef.current) && t0 && t1) {
+      if (pinchPendingRef.current) {
+        const init0 = initialTouch0Ref.current;
+        const init1 = initialTouch1Ref.current;
+        if (!init0 || !init1) return;
+        const currentDist = getTouchDistance(t0, t1);
+        const separationDelta = Math.abs(currentDist - initialPinchDistRef.current);
+        // How far the finger pair has slid together (midpoint travel). A pinch
+        // keeps the midpoint roughly still while the separation changes; a
+        // two-finger scroll moves the midpoint while the separation barely
+        // shifts.
+        const panX = (t0.screenX - init0.screenX + (t1.screenX - init1.screenX)) / 2;
+        const panY = (t0.screenY - init0.screenY + (t1.screenY - init1.screenY)) / 2;
+        const panDist = Math.sqrt(panX * panX + panY * panY);
+        if (separationDelta >= PINCH_ACTIVATION_THRESHOLD && separationDelta > panDist) {
+          // Confirmed pinch. Re-baseline the distance so the zoom starts at 1x
+          // from here — the deadzone travel is absorbed rather than snapping.
+          pinchPendingRef.current = false;
+          isPinchingRef.current = true;
+          initialPinchDistRef.current = currentDist;
+        } else if (panDist >= TWO_FINGER_PAN_THRESHOLD && panDist >= separationDelta) {
+          // Two-finger scroll — bow out and let the page scroll natively.
+          pinchPendingRef.current = false;
+          return;
+        } else {
+          return; // not enough movement to decide yet
+        }
+      }
       const currentDist = getTouchDistance(t0, t1);
       if (initialPinchDistRef.current > 0) {
         const ratio = currentDist / initialPinchDistRef.current;
@@ -232,13 +278,19 @@ export const useTouchEvent = (bookKey: string) => {
   };
 
   const onTouchEnd = (e: IframeTouchEvent | React.TouchEvent<HTMLDivElement>) => {
-    if (isPinchingRef.current) {
+    if (isPinchingRef.current || pinchPendingRef.current) {
       const t0 = e.targetTouches[0] as IframeTouch | undefined;
       const t1 = e.targetTouches[1] as IframeTouch | undefined;
-      if (t0 && t1) return; // still pinching with 2+ fingers
+      if (t0 && t1) return; // still two fingers down
+      const wasPinching = isPinchingRef.current;
       isPinchingRef.current = false;
+      pinchPendingRef.current = false;
+      initialTouch0Ref.current = null;
+      initialTouch1Ref.current = null;
+      // Only commit a zoom if a pinch was actually confirmed. A gesture that
+      // stayed pending (jitter) or resolved to a scroll leaves zoom untouched.
       const renderer = getView(bookKey)?.renderer;
-      if (renderer && initialPinchDistRef.current > 0) {
+      if (wasPinching && renderer && initialPinchDistRef.current > 0) {
         renderer.pinchEnd?.();
         const newZoom = Math.round(initialZoomRef.current * lastPinchRatioRef.current);
         const clampedZoom = Math.max(MIN_ZOOM_LEVEL, Math.min(MAX_ZOOM_LEVEL, newZoom));
