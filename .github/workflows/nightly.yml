@@ -78,7 +78,9 @@ jobs:
             args: '--target aarch64-pc-windows-msvc --bundles nsis'
 
     runs-on: ${{ matrix.config.os }}
-    timeout-minutes: 60
+    # Backstop only — must stay ABOVE setup time + the per-step timeouts below,
+    # because a job-level timeout reports `cancelled` and skips assemble-manifest.
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -173,6 +175,7 @@ jobs:
       - name: build and sign Android apks
         if: matrix.config.release == 'android'
         shell: bash
+        timeout-minutes: 55
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
@@ -213,9 +216,30 @@ jobs:
         if: matrix.config.release == 'linux'
         run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --branch feat/truly-portable-appimage --force
 
+      # The truly-portable AppImage bundler downloads quick-sharun.sh from
+      # Anylinux-AppImages@main ONLY when it is not already in the tauri tools
+      # cache. An upstream strace-mode change (2026-06-29) made bundling launch
+      # the app under Xvfb and hang forever, timing out the Linux legs (#4906).
+      # Seed the cache with the last known-good revision so the bundler never
+      # fetches the moving main-branch script.
+      - name: pin quick-sharun.sh for AppImage bundling (Linux)
+        if: matrix.config.release == 'linux'
+        run: |
+          set -euo pipefail
+          cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/tauri"
+          mkdir -p "$cache_dir"
+          curl -fsSL --retry 3 -o "$cache_dir/quick-sharun.sh" \
+            "https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/b3a9e985cdedf7efa81d172f182cd13983743147/useful-tools/quick-sharun.sh"
+          chmod +x "$cache_dir/quick-sharun.sh"
+
       - name: build desktop bundles
         if: matrix.config.release != 'android'
         shell: bash
+        # A hung build must fail the STEP (step timeout -> job failure), not hit
+        # the job-level timeout: job timeouts report `cancelled`, which the
+        # assemble-manifest guard treats as run cancellation and skips promoting
+        # latest.json for ALL platforms (#4906).
+        timeout-minutes: 45
         env:
           TAURI_BUNDLER_NEW_APPIMAGE_FORMAT: 'true'
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -244,6 +268,7 @@ jobs:
       - name: build and sign portable binaries (Windows only)
         if: matrix.config.os == 'windows-latest'
         shell: bash
+        timeout-minutes: 30
         env:
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}

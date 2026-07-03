@@ -320,6 +320,22 @@ jobs:
         if: matrix.config.release == 'linux'
         run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --branch feat/truly-portable-appimage --force
 
+      # The truly-portable AppImage bundler downloads quick-sharun.sh from
+      # Anylinux-AppImages@main ONLY when it is not already in the tauri tools
+      # cache. An upstream strace-mode change (2026-06-29) made bundling launch
+      # the app under Xvfb and hang forever (#4906). Seed the cache with the
+      # last known-good revision so the bundler never fetches the moving
+      # main-branch script. Keep in sync with nightly.yml.
+      - name: pin quick-sharun.sh for AppImage bundling (Linux)
+        if: matrix.config.release == 'linux'
+        run: |
+          set -euo pipefail
+          cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/tauri"
+          mkdir -p "$cache_dir"
+          curl -fsSL --retry 3 -o "$cache_dir/quick-sharun.sh" \
+            "https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/b3a9e985cdedf7efa81d172f182cd13983743147/useful-tools/quick-sharun.sh"
+          chmod +x "$cache_dir/quick-sharun.sh"
+
       - uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         id: tauri
         if: matrix.config.release != 'android'
