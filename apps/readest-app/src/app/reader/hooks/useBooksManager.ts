@@ -42,16 +42,45 @@ const useBooksManager = () => {
     setShouldUpdateSearchParams(true);
   };
 
-  // Open a book in-place when the widget taps a book while a reader is already
-  // mounted. REPLACE the open book(s) with the tapped one (single ids=<hash>)
-  // rather than appending: appending produced ids=a+b which, with the OS
-  // re-delivering the launch deep link, looped. The store update renders the
-  // new book immediately; closing the previous key follows the same path as
-  // dismissBook.
-  const openBookInReader = (bookHash: string) => {
+  // Jump the switched-in book to a deep-link cfi (#4887) once its view has
+  // finished initing. The freshly-opened FoliateView first lands on the saved
+  // reading position, so wait for `inited` and then goTo; mark it a preview so
+  // the saved position is not overwritten. The subscription cleans itself up on
+  // success or on load failure.
+  const goToCfiWhenReady = (bookKey: string, cfi: string) => {
+    const jump = () => {
+      const { getView, setPreviewMode } = useReaderStore.getState();
+      getView(bookKey)?.goTo(cfi);
+      setPreviewMode(bookKey, true);
+    };
+    const ready = (state: ReturnType<typeof useReaderStore.getState>) => {
+      const vs = state.viewStates[bookKey];
+      return { done: !!vs?.error || (!!vs?.inited && !!vs?.view), ok: !!vs?.inited && !!vs?.view };
+    };
+    const initial = ready(useReaderStore.getState());
+    if (initial.done) {
+      if (initial.ok) jump();
+      return;
+    }
+    const unsub = useReaderStore.subscribe((state) => {
+      const { done, ok } = ready(state);
+      if (!done) return;
+      unsub();
+      if (ok) jump();
+    });
+  };
+
+  // Open a book in-place when a widget/deep link targets a book while a reader
+  // is already mounted. REPLACE the open book(s) with the target one (single
+  // ids=<hash>) rather than appending: appending produced ids=a+b which, with
+  // the OS re-delivering the launch deep link, looped. The store update renders
+  // the new book immediately; closing the previous key follows the same path as
+  // dismissBook. An optional cfi (annotation deep link) is applied once ready.
+  const openBookInReader = (bookHash: string, cfi?: string) => {
     const existing = bookKeys.find((key) => key.startsWith(bookHash));
     if (existing) {
       setSideBarBookKey(existing);
+      if (cfi) goToCfiWhenReady(existing, cfi);
       return;
     }
     const newKey = `${bookHash}-${uniqueId()}`;
@@ -59,6 +88,7 @@ const useBooksManager = () => {
     setBookKeys([newKey]);
     setSideBarBookKey(newKey);
     setShouldUpdateSearchParams(true);
+    if (cfi) goToCfiWhenReady(newKey, cfi);
   };
 
   // Stable ref so the listener calls the latest closure without re-subscribing.
@@ -66,8 +96,8 @@ const useBooksManager = () => {
   openBookRef.current = openBookInReader;
   useEffect(() => {
     const handle = (event: CustomEvent) => {
-      const { bookHash } = event.detail as { bookHash: string };
-      openBookRef.current(bookHash);
+      const { bookHash, cfi } = event.detail as { bookHash: string; cfi?: string };
+      openBookRef.current(bookHash, cfi);
     };
     eventDispatcher.on('open-book-in-reader', handle);
     return () => eventDispatcher.off('open-book-in-reader', handle);
