@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-capture-webview-region"
+description = "Enables the capture_webview_region command without any pre-configured scope."
+commands.allow = ["capture_webview_region"]
+
+[[permission]]
+identifier = "deny-capture-webview-region"
+description = "Denies the capture_webview_region command without any pre-configured scope."
+commands.deny = ["capture_webview_region"]

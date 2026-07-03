@@ -352,12 +352,30 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
-    pub fn update_reading_widget(
-        &self,
-        _payload: UpdateReadingWidgetRequest,
-    ) -> crate::Result<()> {
+    pub fn update_reading_widget(&self, _payload: UpdateReadingWidgetRequest) -> crate::Result<()> {
         // Home-screen widgets are mobile-only; desktop is a no-op.
         Ok(())
+    }
+
+    /// Snapshot a region of `window`'s webview as PNG bytes for the mesh
+    /// page-curl texture (#555). macOS only so far; Windows
+    /// (`ICoreWebView2::CapturePreview`) and Linux
+    /// (`webkit_web_view_get_snapshot`) reject until implemented, and the
+    /// JS side falls back to the CSS curl.
+    pub fn capture_webview_region(
+        &self,
+        window: &tauri::WebviewWindow<R>,
+        payload: CaptureWebviewRegionRequest,
+    ) -> crate::Result<Vec<u8>> {
+        #[cfg(target_os = "macos")]
+        {
+            crate::platform::macos::capture_webview_region(window, payload)
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = (window, payload);
+            Err(crate::Error::UnsupportedPlatformError)
+        }
     }
 }
 

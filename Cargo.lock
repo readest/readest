@@ -8265,9 +8265,13 @@ name = "tauri-plugin-native-bridge"
 version = "0.1.0"
 dependencies = [
  "apple-native-keyring-store",
+ "base64 0.22.1",
+ "block",
+ "cocoa",
  "dbus-secret-service-keyring-store",
  "font-enumeration",
  "keyring-core",
+ "objc",
  "schemars 0.8.22",
  "serde",
  "serde_json",

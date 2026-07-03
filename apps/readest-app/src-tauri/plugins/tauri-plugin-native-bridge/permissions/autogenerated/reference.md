@@ -47,6 +47,7 @@ Default permissions for the plugin
 - `allow-clear-secure-item`
 - `allow-refresh-eink-screen`
 - `allow-update-reading-widget`
+- `allow-capture-webview-region`
 
 ## Permission Table
 
@@ -105,6 +106,32 @@ Enables the auth_with_safari command without any pre-configured scope.
 <td>
 
 Denies the auth_with_safari command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-capture-webview-region`
+
+</td>
+<td>
+
+Enables the capture_webview_region command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-capture-webview-region`
+
+</td>
+<td>
+
+Denies the capture_webview_region command without any pre-configured scope.
 
 </td>
 </tr>

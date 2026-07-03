@@ -288,3 +288,19 @@ pub(crate) async fn update_reading_widget<R: Runtime>(
 ) -> Result<()> {
     app.native_bridge().update_reading_widget(payload)
 }
+
+/// Snapshot a region of the calling webview and return it as binary PNG
+/// (`tauri::ipc::Response`, no JSON encoding) for the mesh page-curl
+/// texture (#555). Platforms without a capture implementation reject,
+/// which the JS side treats as "fall back to the CSS curl".
+#[command]
+pub(crate) async fn capture_webview_region<R: Runtime>(
+    app: AppHandle<R>,
+    window: tauri::WebviewWindow<R>,
+    payload: CaptureWebviewRegionRequest,
+) -> Result<tauri::ipc::Response> {
+    let png = app
+        .native_bridge()
+        .capture_webview_region(&window, payload)?;
+    Ok(tauri::ipc::Response::new(png))
+}

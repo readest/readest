@@ -361,3 +361,24 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 }
+
+impl<R: Runtime> NativeBridge<R> {
+    /// Snapshot a region of the webview as PNG bytes for the mesh
+    /// page-curl texture (#555). The Swift/Kotlin side resolves JSON, so
+    /// the image arrives base64-encoded and is decoded here; the JS-facing
+    /// command then returns it binary. Android has no implementation yet
+    /// and rejects, which the JS side treats as "use the CSS curl".
+    pub fn capture_webview_region(
+        &self,
+        _window: &tauri::WebviewWindow<R>,
+        payload: CaptureWebviewRegionRequest,
+    ) -> crate::Result<Vec<u8>> {
+        use base64::Engine as _;
+        let response: CaptureWebviewRegionResponse = self
+            .0
+            .run_mobile_plugin("capture_webview_region", payload)?;
+        base64::engine::general_purpose::STANDARD
+            .decode(response.data)
+            .map_err(|e| crate::Error::NativeBridgeError(format!("invalid base64 PNG: {e}")))
+    }
+}

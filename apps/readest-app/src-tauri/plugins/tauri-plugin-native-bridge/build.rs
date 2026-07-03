@@ -39,6 +39,7 @@ const COMMANDS: &[&str] = &[
     "clear_secure_item",
     "refresh_eink_screen",
     "update_reading_widget",
+    "capture_webview_region",
 ];
 
 fn main() {

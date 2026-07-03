@@ -90,6 +90,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::clear_secure_item,
             commands::refresh_eink_screen,
             commands::update_reading_widget,
+            commands::capture_webview_region,
         ])
         .setup(|app, api| {
             #[cfg(mobile)]

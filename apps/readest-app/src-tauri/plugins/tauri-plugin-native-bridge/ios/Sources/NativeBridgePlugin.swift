@@ -1558,6 +1558,30 @@ class NativeBridgePlugin: Plugin {
       invoke.resolve()
     }
   }
+
+  /// Snapshot a region of the webview for the mesh page-curl texture
+  /// (#555). The rect is in CSS pixels of the JS viewport (== points of
+  /// the WKWebView); `takeSnapshot` renders at screen scale, so the PNG
+  /// comes back Retina-sized. Resolved as base64 because the plugin
+  /// boundary is JSON-only; the Rust side decodes back to bytes.
+  @objc public func capture_webview_region(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(CaptureWebviewRegionArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    DispatchQueue.main.async { [weak self] in
+      guard let webView = self?.webView else {
+        return invoke.reject("WebView not available")
+      }
+      let config = WKSnapshotConfiguration()
+      config.rect = CGRect(x: args.x, y: args.y, width: args.width, height: args.height)
+      webView.takeSnapshot(with: config) { image, error in
+        guard let image = image, let data = image.pngData() else {
+          return invoke.reject(error?.localizedDescription ?? "Snapshot failed")
+        }
+        invoke.resolve(["data": data.base64EncodedString()])
+      }
+    }
+  }
 }
 
 /// Persistent store for security-scoped folder bookmarks.
@@ -1798,6 +1822,13 @@ struct UpdateReadingWidgetRequestArgs: Decodable {
   let books: [UpdateReadingWidgetBookArgs]
   let sectionTitle: String
   let emptyTitle: String
+}
+
+struct CaptureWebviewRegionArgs: Decodable {
+  let x: Double
+  let y: Double
+  let width: Double
+  let height: Double
 }
 
 @_cdecl("init_plugin_native_bridge")
