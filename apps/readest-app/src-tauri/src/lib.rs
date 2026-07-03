@@ -33,6 +33,7 @@ mod mobi_parser;
 mod nightly_update;
 mod parser_common;
 mod range_file;
+mod sentry_config;
 #[cfg(desktop)]
 mod spawn_fresh_browser;
 mod transfer_file;
@@ -302,6 +303,30 @@ struct SingleInstancePayload {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Initialize Sentry as early as possible so panics during startup are
+    // captured. `None` DSN (unset SENTRY_DSN) => disabled, so local and fork
+    // builds don't report. Desktop also starts the out-of-process minidump
+    // handler for native crashes; on mobile, native crashes belong to the
+    // sentry-android / sentry-cocoa SDKs. The guard must outlive the app, so it
+    // is held until `run()` returns (after the blocking `.run(...)` call).
+    let sentry_guard = sentry_config::sentry_dsn().map(|dsn| {
+        sentry::init((
+            dsn,
+            sentry::ClientOptions {
+                release: sentry::release_name!(),
+                environment: Some(sentry_config::sentry_environment().into()),
+                traces_sample_rate: 0.0,
+                send_default_pii: false,
+                ..Default::default()
+            },
+        ))
+    });
+
+    #[cfg(not(any(target_os = "ios", target_os = "android")))]
+    let _minidump_guard = sentry_guard
+        .as_ref()
+        .map(|guard| tauri_plugin_sentry::minidump::init(guard));
+
     let builder = tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::new()
@@ -416,6 +441,11 @@ pub fn run() {
 
     #[cfg(feature = "webdriver")]
     let builder = builder.plugin(tauri_plugin_webdriver::init());
+
+    let builder = match sentry_guard.as_ref() {
+        Some(client) => builder.plugin(tauri_plugin_sentry::init(client)),
+        None => builder,
+    };
 
     builder
         .setup(|#[allow(unused_variables)] app| {

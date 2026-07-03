@@ -29,6 +29,12 @@
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
 
+        <!-- Sentry auto-init (ContentProvider). Empty DSN => disabled. Release
+             is auto-detected from versionName; performance and PII stay at
+             their safe off/false defaults. -->
+        <meta-data android:name="io.sentry.dsn" android:value="${sentryDsn}" />
+        <meta-data android:name="io.sentry.environment" android:value="production" />
+
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
             android:launchMode="singleTask"

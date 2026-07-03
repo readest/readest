@@ -99,6 +99,20 @@ image = { version = "0.25", default-features = false, features = ["jpeg", "png",
 # WebView). Pure-Rust crate, ships to every Tauri target.
 mobi = "0.8"
 
+# Crash/error reporting. `tauri-plugin-sentry` injects @sentry/browser into
+# every webview and routes browser + Rust panic events through one client; it
+# re-exports sentry-rust-minidump for desktop native crashes. `rustls` avoids
+# the native-tls/OpenSSL system dependency so the transport builds for
+# Android/iOS. Native mobile crashes are handled by sentry-android/-cocoa.
+sentry = { version = "0.42", default-features = false, features = [
+  "backtrace",
+  "contexts",
+  "panic",
+  "reqwest",
+  "rustls",
+] }
+tauri-plugin-sentry = "0.5"
+
 [target."cfg(target_os = \"macos\")".dependencies]
 rand = "0.8"
 cocoa = "0.25"

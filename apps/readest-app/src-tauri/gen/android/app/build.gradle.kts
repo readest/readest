@@ -24,6 +24,20 @@ android {
     }
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
+        // Sentry DSN precedence: environment (CI secret / shell export) wins,
+        // else the gitignored .env.local, else .env at the app root (../../../
+        // from this module). Empty => Sentry auto-init no-ops.
+        manifestPlaceholders["sentryDsn"] = System.getenv("SENTRY_DSN")?.takeIf { it.isNotBlank() }
+            ?: listOf("../../../.env.local", "../../../.env")
+                .map { rootProject.file(it) }
+                .filter { it.exists() }
+                .firstNotNullOfOrNull { f ->
+                    f.readLines()
+                        .map { it.trim() }
+                        .firstOrNull { it.startsWith("SENTRY_DSN=") }
+                        ?.substringAfter("=")?.trim()?.trim('"', '\'')?.takeIf { it.isNotEmpty() }
+                }
+            ?: ""
         applicationId = "com.bilingify.readest"
         minSdk = 26
         targetSdk = 36
@@ -88,6 +102,15 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.10.1")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.lifecycle:lifecycle-process:2.10.0")
+    implementation("io.sentry:sentry-android:8.47.0") {
+        // androidx.lifecycle:lifecycle-common-java8 was merged into
+        // lifecycle-common and is no longer published at 2.9.0+. The project
+        // pins androidx.lifecycle to 2.10.0 (lifecycle-process above), which
+        // version-aligns this Sentry transitive to a nonexistent 2.10.0 and
+        // breaks dependency resolution. The Java8 lifecycle APIs Sentry uses now
+        // live in lifecycle-common, pulled in transitively via lifecycle-process.
+        exclude(group = "androidx.lifecycle", module = "lifecycle-common-java8")
+    }
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.4")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.0")
