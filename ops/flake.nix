@@ -17,7 +17,7 @@
   outputs = { self, nixpkgs, flake-utils, android, devshell, fenix }:
     {
       overlay = final: prev: {
-        inherit (self.packages.${final.system}) android-sdk android-studio;
+        inherit (self.packages.${final.stdenv.hostPlatform.system}) android-sdk android-studio;
       };
     }
     //
@@ -37,7 +37,7 @@
           ];
         };
         # android-studio is not available in aarch64-darwin
-        androidConditionalPackages = if pkgs.system != "aarch64-darwin" then [ pkgs.android-studio ] else [ ];
+        androidConditionalPackages = if pkgs.stdenv.hostPlatform.system != "aarch64-darwin" then [ pkgs.android-studio ] else [ ];
 
         commonPackages = with pkgs; [
           pnpm
@@ -46,7 +46,7 @@
           pkg-config
           pkgs.rust-analyzer-nightly
           xdg-utils
-          self.formatter.${system}
+          self.formatter.${pkgs.stdenv.hostPlatform.system}
         ];
 
         systemDeps = with pkgs; [
@@ -162,7 +162,7 @@
       in
       {
         packages = {
-          android-sdk = android.sdk.${system} (sdkPkgs: with sdkPkgs; [
+          android-sdk = android.sdk.${pkgs.stdenv.hostPlatform.system} (sdkPkgs: with sdkPkgs; [
             # Useful packages for building and testing.
             build-tools-36-0-0
             build-tools-35-0-0
@@ -249,7 +249,7 @@
             ];
           };
 
-          default = self.devShells.${system}.web;
+          default = self.devShells.${pkgs.stdenv.hostPlatform.system}.web;
         };
         
         formatter = pkgs.nixfmt;
