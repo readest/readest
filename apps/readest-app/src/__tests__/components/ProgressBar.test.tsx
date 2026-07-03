@@ -286,3 +286,51 @@ describe('ProgressBar — sticky progress bar', () => {
     expect(container.querySelector('.sticky-progress-bar')).toBeNull();
   });
 });
+
+describe('ProgressBar — contrast against the page (#4901)', () => {
+  // A light-mode PDF under a dark theme keeps its white page while the footer
+  // progress text stayed themed for the dark UI (neutral-content, light) and
+  // became unreadable over the white page. Blending the text spans against the
+  // real backdrop keeps the page number and remaining-pages text legible on
+  // any background. StatusInfo (clock/battery) is intentionally left alone — it
+  // manages its own blend against the battery glyph.
+  it('blends the progress and remaining text against the background in non-eink mode', () => {
+    currentViewSettings = {
+      ...baseSettings,
+      isEink: false,
+      showRemainingPages: true,
+      showRemainingTime: false,
+      progressInfoMode: 'all',
+    } as ViewSettings;
+    currentProgress = makeProgress(2, 5);
+    currentBookData = { isFixedLayout: false };
+    currentRenderer = { page: 1, pages: 4 };
+
+    const { container } = renderProgressBar();
+
+    const progress = container.querySelector('.progress-info') as HTMLElement;
+    const remaining = container.querySelector('.remaining-info') as HTMLElement;
+    expect(progress.classList.contains('mix-blend-difference')).toBe(true);
+    expect(progress.classList.contains('text-white/75')).toBe(true);
+    expect(remaining.classList.contains('mix-blend-difference')).toBe(true);
+    expect(remaining.classList.contains('text-white/75')).toBe(true);
+  });
+
+  it('does not blend in eink mode', () => {
+    currentViewSettings = {
+      ...baseSettings,
+      isEink: true,
+      showRemainingPages: true,
+      showRemainingTime: false,
+      progressInfoMode: 'all',
+    } as ViewSettings;
+    currentProgress = makeProgress(2, 5);
+    currentBookData = { isFixedLayout: false };
+    currentRenderer = { page: 1, pages: 4 };
+
+    const { container } = renderProgressBar();
+
+    const progress = container.querySelector('.progress-info') as HTMLElement;
+    expect(progress.classList.contains('mix-blend-difference')).toBe(false);
+  });
+});

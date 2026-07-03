@@ -68,3 +68,27 @@ describe('SectionInfo notch mask', () => {
     expect(notch.classList.contains('bg-base-100')).toBe(false);
   });
 });
+
+describe('SectionInfo contrast against the page (#4901)', () => {
+  // A light-mode PDF shown under a dark theme keeps its white page, but the
+  // running header text was themed for the dark UI (neutral-content, light)
+  // and became unreadable on the white page. mix-blend-mode: difference makes
+  // the text invert against whatever is actually behind it (the page or the
+  // themed margin), so it stays legible over any background.
+  it('blends the section title against the background in non-eink mode', () => {
+    const { container } = render(<SectionInfo {...baseProps} isEink={false} />);
+    const info = container.querySelector('.sectioninfo') as HTMLElement;
+
+    expect(info.classList.contains('mix-blend-difference')).toBe(true);
+    expect(info.classList.contains('text-white/75')).toBe(true);
+    // The theme-fixed neutral color is what made it unreadable on a white page.
+    expect(info.classList.contains('text-neutral-content')).toBe(false);
+  });
+
+  it('does not blend in eink mode (base-content text on the e-ink page)', () => {
+    const { container } = render(<SectionInfo {...baseProps} isEink={true} />);
+    const info = container.querySelector('.sectioninfo') as HTMLElement;
+
+    expect(info.classList.contains('mix-blend-difference')).toBe(false);
+  });
+});
