@@ -198,6 +198,18 @@ export const useTransferStore = create<TransferState>((set, get) => ({
       const transfer = state.transfers[transferId];
       if (!transfer) return state;
 
+      // No-op when nothing changed: re-applying identical progress would
+      // otherwise allocate a new state on every call and re-render every
+      // subscriber, which can sustain a render/update loop (Sentry READEST-2).
+      if (
+        transfer.progress === progress &&
+        transfer.transferredBytes === transferred &&
+        transfer.totalBytes === total &&
+        transfer.transferSpeed === speed
+      ) {
+        return state;
+      }
+
       return {
         transfers: {
           ...state.transfers,
