@@ -27,9 +27,53 @@ pub fn environment_for_version(version: &str) -> &'static str {
     "production"
 }
 
+/// The user-facing application version, taken from `package.json` at build time
+/// (baked as `READEST_APP_VERSION` by `build.rs`). Falls back to the crate version
+/// only if the bake is missing. The crate version (`Cargo.toml`, e.g. `0.2.2`) is
+/// not kept in lockstep with the app, so Sentry must key its release and
+/// environment off the app version instead of `CARGO_PKG_VERSION`.
+pub fn app_version() -> &'static str {
+    option_env!("READEST_APP_VERSION").unwrap_or(env!("CARGO_PKG_VERSION"))
+}
+
+/// Joins a crate name and version into Sentry's `name@version` release format
+/// (e.g. `Readest@0.11.17`), matching `sentry::release_name!()`'s shape.
+pub fn release_name(name: &str, version: &str) -> String {
+    format!("{name}@{version}")
+}
+
+/// Sentry `release` for the current build, keyed off the app version.
+pub fn sentry_release() -> String {
+    release_name(env!("CARGO_PKG_NAME"), app_version())
+}
+
 /// Sentry `environment` for the current build.
 pub fn sentry_environment() -> &'static str {
-    environment_for_version(env!("CARGO_PKG_VERSION"))
+    environment_for_version(app_version())
+}
+
+/// The Rust SDK's context integration derives the OS name from `uname()`, which
+/// reports "Linux" on Android (Android runs a Linux kernel). Given the build's
+/// `target_os` and the already-detected name, return the name Sentry should show,
+/// or `None` to leave it unchanged. Only Android is remapped; the native
+/// sentry-android/-cocoa SDKs report other platforms correctly on their own.
+pub fn corrected_os_name(target_os: &str, detected: Option<&str>) -> Option<&'static str> {
+    (target_os == "android" && detected != Some("Android")).then_some("Android")
+}
+
+/// Extracts the Android platform version from `uname`'s kernel release string
+/// (e.g. `6.1.162-android14-11-g5e8b0cffebd1-ab15202165` -> `"14"`). `uname`
+/// reports the Linux kernel version, not the Android version, but Android kernels
+/// embed an `android<N>` token. Returns `None` when no such token is present.
+pub fn android_version_from_uname(release: &str) -> Option<String> {
+    let digits = release
+        .split(['-', '_'])
+        .find_map(|token| token.strip_prefix("android"))?;
+    if !digits.is_empty() && digits.bytes().all(|b| b.is_ascii_digit()) {
+        Some(digits.to_string())
+    } else {
+        None
+    }
 }
 
 /// C-ABI accessor for the compile-time Sentry DSN, used by the iOS native
@@ -51,7 +95,10 @@ pub extern "C" fn readest_sentry_dsn() -> *const std::os::raw::c_char {
 
 #[cfg(test)]
 mod tests {
-    use super::{dsn_from_env, environment_for_version};
+    use super::{
+        android_version_from_uname, corrected_os_name, dsn_from_env, environment_for_version,
+        release_name,
+    };
 
     #[test]
     fn dsn_is_none_when_unset_or_blank() {
@@ -78,5 +125,44 @@ mod tests {
         assert_eq!(environment_for_version("0.11.17"), "production");
         assert_eq!(environment_for_version("0.11.17-rc.1"), "production");
         assert_eq!(environment_for_version("1.0.0-2026"), "production");
+    }
+
+    #[test]
+    fn release_name_joins_crate_name_and_app_version() {
+        assert_eq!(release_name("Readest", "0.11.17"), "Readest@0.11.17");
+    }
+
+    #[test]
+    fn os_name_is_corrected_to_android_on_android_target() {
+        assert_eq!(corrected_os_name("android", Some("Linux")), Some("Android"));
+        // No detected name still yields Android on an Android build.
+        assert_eq!(corrected_os_name("android", None), Some("Android"));
+    }
+
+    #[test]
+    fn os_name_is_left_unchanged_off_android_or_already_correct() {
+        assert_eq!(corrected_os_name("android", Some("Android")), None);
+        assert_eq!(corrected_os_name("linux", Some("Linux")), None);
+        assert_eq!(corrected_os_name("macos", Some("macOS")), None);
+        assert_eq!(corrected_os_name("windows", Some("Windows")), None);
+    }
+
+    #[test]
+    fn android_version_parsed_from_kernel_release() {
+        assert_eq!(
+            android_version_from_uname("6.1.162-android14-11-g5e8b0cffebd1-ab15202165"),
+            Some("14".to_string())
+        );
+        assert_eq!(
+            android_version_from_uname("5.10.101-android12-9-00001"),
+            Some("12".to_string())
+        );
+    }
+
+    #[test]
+    fn android_version_is_none_without_android_token() {
+        assert_eq!(android_version_from_uname("6.1.162"), None);
+        assert_eq!(android_version_from_uname(""), None);
+        assert_eq!(android_version_from_uname("6.1.162-androidX"), None);
     }
 }

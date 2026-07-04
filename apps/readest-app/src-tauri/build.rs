@@ -12,8 +12,50 @@ fn main() {
     }
 
     propagate_sentry_dsn();
+    propagate_app_version();
 
     tauri_build::build()
+}
+
+/// Bake the app version from `package.json` into the crate as `READEST_APP_VERSION`
+/// (read back via `option_env!`). Sentry keys its release/environment off this
+/// rather than `CARGO_PKG_VERSION`, because the crate version in `Cargo.toml` is
+/// not kept in sync with the app version (and only `package.json` carries the
+/// nightly `-YYYYMMDDHH` stamp). Absent/unparseable => unset, so the Rust code
+/// falls back to the crate version.
+fn propagate_app_version() {
+    let package_json = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap())
+        .join("..")
+        .join("package.json");
+    println!("cargo:rerun-if-changed={}", package_json.display());
+
+    if let Some(version) = read_json_string_field(&package_json, "version") {
+        println!("cargo:rustc-env=READEST_APP_VERSION={version}");
+    }
+}
+
+/// Read a top-level `"key": "value"` string from a JSON file without pulling in a
+/// JSON parser. Returns the first match; `None` if the file/key is absent or the
+/// value is empty. `package.json`'s own `"version"` is the first `"version"` key.
+fn read_json_string_field(path: &Path, key: &str) -> Option<String> {
+    let contents = fs::read_to_string(path).ok()?;
+    let needle = format!("\"{key}\"");
+    for line in contents.lines() {
+        let Some(rest) = line.trim_start().strip_prefix(&needle) else {
+            continue;
+        };
+        let value = rest
+            .trim_start()
+            .strip_prefix(':')?
+            .trim()
+            .trim_end_matches(',')
+            .trim()
+            .trim_matches('"');
+        if !value.is_empty() {
+            return Some(value.to_string());
+        }
+    }
+    None
 }
 
 /// Bake the Sentry DSN into the crate at build time via `cargo:rustc-env`, so

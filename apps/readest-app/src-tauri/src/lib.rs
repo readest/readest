@@ -313,10 +313,31 @@ pub fn run() {
         sentry::init((
             dsn,
             sentry::ClientOptions {
-                release: sentry::release_name!(),
+                release: Some(sentry_config::sentry_release().into()),
                 environment: Some(sentry_config::sentry_environment().into()),
                 traces_sample_rate: 0.0,
                 send_default_pii: false,
+                // On Android the context integration reads `uname()` and reports
+                // the OS as "Linux"; relabel it "Android" (and recover the Android
+                // version from the kernel string) so events group correctly.
+                before_send: Some(std::sync::Arc::new(|mut event| {
+                    if let Some(sentry::protocol::Context::Os(os)) = event.contexts.get_mut("os") {
+                        if let Some(name) = sentry_config::corrected_os_name(
+                            std::env::consts::OS,
+                            os.name.as_deref(),
+                        ) {
+                            os.name = Some(name.to_owned());
+                            if let Some(version) = os
+                                .version
+                                .as_deref()
+                                .and_then(sentry_config::android_version_from_uname)
+                            {
+                                os.version = Some(version);
+                            }
+                        }
+                    }
+                    Some(event)
+                })),
                 ..Default::default()
             },
         ))
