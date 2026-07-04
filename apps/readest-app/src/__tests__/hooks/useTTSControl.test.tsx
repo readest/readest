@@ -148,6 +148,9 @@ vi.mock('@/services/tts', () => ({
       getVoices: vi.fn().mockResolvedValue([]),
       getVoiceId: vi.fn().mockReturnValue(''),
       redispatchPosition: vi.fn(),
+      ensureTimeline: vi.fn().mockResolvedValue(null),
+      getPlaybackInfo: vi.fn().mockReturnValue(null),
+      seekToTime: vi.fn().mockResolvedValue(undefined),
       state: 'idle',
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
@@ -155,10 +158,15 @@ vi.mock('@/services/tts', () => ({
     });
     ttsControllerInstances.push(this);
   }),
+  ensureSharedAudioContext: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/libs/mediaSession', () => ({
   TauriMediaSession: class {},
+}));
+
+const { mockMediaSessionRef } = vi.hoisted(() => ({
+  mockMediaSessionRef: { current: null as unknown },
 }));
 
 vi.mock('@/utils/ssml', () => ({
@@ -205,7 +213,7 @@ const { mockDeinitMediaSession } = vi.hoisted(() => ({
 
 vi.mock('@/app/reader/hooks/useTTSMediaSession', () => ({
   useTTSMediaSession: () => ({
-    mediaSessionRef: { current: null },
+    mediaSessionRef: mockMediaSessionRef,
     unblockAudio: vi.fn(),
     releaseUnblockAudio: vi.fn(),
     initMediaSession: vi.fn().mockResolvedValue(undefined),
@@ -477,5 +485,105 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
 
     expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledTimes(1);
     expect(mockView.goTo).not.toHaveBeenCalled();
+  });
+});
+
+describe('useTTSControl media-session position and seek', () => {
+  interface FakeWebMediaSession {
+    setActionHandler: ReturnType<typeof vi.fn>;
+    setPositionState: ReturnType<typeof vi.fn>;
+    handlers: Map<string, (details: MediaSessionActionDetails) => void>;
+    metadata: unknown;
+    playbackState: string;
+  }
+
+  const makeFakeMediaSession = (): FakeWebMediaSession => {
+    const handlers = new Map<string, (details: MediaSessionActionDetails) => void>();
+    return {
+      handlers,
+      metadata: null,
+      playbackState: 'none',
+      setActionHandler: vi.fn((action: string, cb: (d: MediaSessionActionDetails) => void) => {
+        handlers.set(action, cb);
+      }),
+      setPositionState: vi.fn(),
+    };
+  };
+
+  type ControllerMock = {
+    ensureTimeline: ReturnType<typeof vi.fn>;
+    getPlaybackInfo: ReturnType<typeof vi.fn>;
+    seekToTime: ReturnType<typeof vi.fn>;
+    addEventListener: ReturnType<typeof vi.fn>;
+  };
+
+  beforeEach(() => {
+    ttsControllerInstances.length = 0;
+    pendingInitResolvers.length = 0;
+    mockMediaSessionRef.current = makeFakeMediaSession();
+  });
+
+  afterEach(() => {
+    mockMediaSessionRef.current = null;
+    cleanup();
+  });
+
+  const startTTS = async () => {
+    render(<Harness />);
+    await act(async () => {
+      const p = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await p;
+    });
+    return ttsControllerInstances[0] as ControllerMock;
+  };
+
+  it('registers a seekto handler that seeks the controller in seconds', async () => {
+    const controller = await startTTS();
+    const fake = mockMediaSessionRef.current as FakeWebMediaSession;
+    expect(fake.handlers.has('seekto')).toBe(true);
+    await act(async () => {
+      fake.handlers.get('seekto')!({ seekTime: 42 } as MediaSessionActionDetails);
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+    expect(controller.seekToTime).toHaveBeenCalledWith(42);
+  });
+
+  it('pushes clamped position state on tts-speak-mark', async () => {
+    const controller = await startTTS();
+    controller.getPlaybackInfo.mockReturnValue({
+      position: 20,
+      duration: 10,
+      measuredFraction: 1,
+    });
+    const markListener = controller.addEventListener.mock.calls.find(
+      ([type]) => type === 'tts-speak-mark',
+    )?.[1] as (e: Event) => void;
+    expect(markListener).toBeDefined();
+    await act(async () => {
+      markListener(new CustomEvent('tts-speak-mark', { detail: { text: 'hi', name: '0' } }));
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+    const fake = mockMediaSessionRef.current as FakeWebMediaSession;
+    expect(fake.setPositionState).toHaveBeenCalledWith({
+      duration: 10,
+      position: 10, // clamped to duration, never skipped
+      playbackRate: 1,
+    });
+  });
+
+  it('does not push position state while the timeline is unavailable', async () => {
+    const controller = await startTTS();
+    controller.getPlaybackInfo.mockReturnValue(null);
+    const markListener = controller.addEventListener.mock.calls.find(
+      ([type]) => type === 'tts-speak-mark',
+    )?.[1] as (e: Event) => void;
+    await act(async () => {
+      markListener(new CustomEvent('tts-speak-mark', { detail: { text: 'hi', name: '0' } }));
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+    const fake = mockMediaSessionRef.current as FakeWebMediaSession;
+    expect(fake.setPositionState).not.toHaveBeenCalled();
   });
 });

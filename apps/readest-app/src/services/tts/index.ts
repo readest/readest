@@ -5,3 +5,5 @@ export * from './EdgeTTSClient';
 export * from './NativeTTSClient';
 export * from './TTSController';
 export * from './TTSData';
+export { ensureSharedAudioContext } from './WebAudioPlayer';
+export { SectionTimeline } from './SectionTimeline';
