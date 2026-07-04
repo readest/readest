@@ -53,14 +53,6 @@ export const tap = (x: number, y: number): Promise<string> =>
 export const longPress = (x: number, y: number, ms = 700): Promise<string> =>
   adbShell(`input swipe ${Math.round(x)} ${Math.round(y)} ${Math.round(x)} ${Math.round(y)} ${ms}`);
 
-// Two taps in a single shell invocation so both `click` events reach the WebView
-// inside the double-click window (DOUBLE_CLICK_INTERVAL_THRESHOLD_MS = 250ms).
-export const doubleTap = (x: number, y: number): Promise<string> => {
-  const rx = Math.round(x);
-  const ry = Math.round(y);
-  return adbShell(`input tap ${rx} ${ry} && input tap ${rx} ${ry}`);
-};
-
 export interface MotionStep {
   x: number;
   y: number;
@@ -88,6 +80,16 @@ export const motionGesture = async (steps: MotionStep[]): Promise<string> => {
 
 export const pushFile = (local: string, remote: string): Promise<string> =>
   adb(['push', local, remote]);
+
+// App-private data files, via `run-as` — debug builds only (the package must
+// be debuggable). Paths are relative to the app's data dir root.
+export const readAppFile = (pkg: string, path: string): Promise<string> =>
+  adbShell(`run-as ${pkg} cat ${path}`);
+
+export const writeAppFile = async (pkg: string, path: string, content: string): Promise<void> => {
+  const b64 = Buffer.from(content, 'utf8').toString('base64');
+  await adbShell(`echo ${b64} | base64 -d | run-as ${pkg} sh -c 'cat > ${path}'`);
+};
 
 export const forwardTcpToLocalAbstract = async (port: number, socket: string): Promise<void> => {
   try {

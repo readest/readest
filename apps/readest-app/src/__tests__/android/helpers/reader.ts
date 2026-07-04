@@ -6,7 +6,9 @@ import {
   listDeviceSerials,
   longPress,
   pushFile,
+  readAppFile,
   tap,
+  writeAppFile,
 } from './adb';
 import { CdpPage, forwardWebViewDevtools, listPages } from './cdp';
 
@@ -48,6 +50,36 @@ export const waitFor = async <T>(
 };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Patch `globalViewSettings` in the app's persisted settings.json and return
+ * the previous values of the patched keys (pass them back to restore). The app
+ * is force-stopped first so it cannot overwrite the patch on exit; the next
+ * launch reads the seeded settings. A missing settings.json (fresh install) is
+ * fine: loadSettings deep-merges the partial file over the platform defaults.
+ * Uses `run-as`, so it works on debug builds only — like the rest of the lane.
+ */
+export const patchGlobalViewSettings = async (
+  patch: Record<string, unknown>,
+): Promise<Record<string, unknown>> => {
+  await adbShell(`am force-stop ${APP_PKG}`);
+  let settings: { globalViewSettings?: Record<string, unknown> } = {};
+  try {
+    settings = JSON.parse(await readAppFile(APP_PKG, 'settings.json'));
+  } catch {
+    // fresh install — seed a minimal settings file
+  }
+  settings.globalViewSettings ??= {};
+  const viewSettings = settings.globalViewSettings;
+  const previous: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(patch)) {
+    previous[key] = viewSettings[key];
+    if (value === undefined) delete viewSettings[key];
+    else viewSettings[key] = value;
+  }
+  await writeAppFile(APP_PKG, 'settings.json', JSON.stringify(settings));
+  return previous;
+};
 
 /**
  * Open a fixture EPUB in the reader via a VIEW intent (the "Open with" flow,
@@ -471,7 +503,20 @@ export const longPressWord = async (
 /** Tap an empty-ish text spot away from the popup to dismiss the selection. */
 export const dismissSelection = async (page: CdpPage): Promise<void> => {
   const { dpr, viewWidth, viewHeight } = await getReaderMetrics(page);
-  await tap(viewWidth * 0.5 * dpr, viewHeight * 0.78 * dpr);
+  // The annotation toolbar (.selection-popup) renders near the selection —
+  // wherever that is. A tap that lands on the toolbar presses a button instead
+  // of dismissing, so pick whichever mid-column spot the popup doesn't cover.
+  const dismissY = await page.evaluate<number>(`
+    const popup = document.querySelector('.selection-popup');
+    const candidates = [0.78, 0.25];
+    if (!popup) return candidates[0];
+    const rect = popup.getBoundingClientRect();
+    const clear = candidates.find(
+      (f) => ${viewHeight} * f < rect.top - 24 || ${viewHeight} * f > rect.bottom + 24,
+    );
+    return clear ?? candidates[0];
+  `);
+  await tap(viewWidth * 0.5 * dpr, viewHeight * dismissY * dpr);
   await waitFor(
     async () => {
       const handles = await getCustomHandles(page);
