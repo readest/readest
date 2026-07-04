@@ -342,6 +342,13 @@ export class TTSController extends EventTarget {
     return timeline;
   }
 
+  // Whether the active client can ever produce a timeline (Edge only). The
+  // scrubber renders a reserved disabled slot while true and info is still
+  // null, and hides entirely while false.
+  supportsPlaybackInfo(): boolean {
+    return this.ttsClient === this.ttsEdgeClient;
+  }
+
   // Position/duration of the current section playback at the current rate.
   // Null while no timeline exists (non-Edge client, timeline not yet built,
   // or nothing located yet) — the UI reserves a disabled slot for that state.

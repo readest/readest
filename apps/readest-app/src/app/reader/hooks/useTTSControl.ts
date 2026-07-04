@@ -769,6 +769,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     return ttsController.getPlaybackInfo();
   }, []);
 
+  const handleSupportsPlaybackInfo = useCallback(() => {
+    return ttsControllerRef.current?.supportsPlaybackInfo() ?? false;
+  }, []);
+
   // Playback callbacks
   const handleTogglePlay = useCallback(async () => {
     const ttsController = ttsControllerRef.current;
@@ -994,6 +998,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     handleBackToCurrentTTSLocation,
     handleSeekTo,
     handleGetPlaybackInfo,
+    handleSupportsPlaybackInfo,
     refreshTtsLang,
   };
 };

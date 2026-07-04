@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useState, ChangeEvent, useEffect } from 'react';
+import { useState, ChangeEvent, useEffect, useRef, useCallback } from 'react';
 import { MdPlayCircle, MdPauseCircle, MdFastRewind, MdFastForward, MdAlarm } from 'react-icons/md';
 import { TbChevronCompactDown, TbChevronCompactUp } from 'react-icons/tb';
 import { RiVoiceAiFill } from 'react-icons/ri';
@@ -11,6 +11,14 @@ import { TranslationFunc, useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDefaultIconSize, useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { getLanguageName } from '@/utils/lang';
+import { formatPlaybackTime } from '@/utils/time';
+import { eventDispatcher } from '@/utils/event';
+
+type TTSPlaybackInfo = {
+  position: number;
+  duration: number;
+  measuredFraction: number;
+};
 
 type TTSPanelProps = {
   bookKey: string;
@@ -27,6 +35,163 @@ type TTSPanelProps = {
   onGetVoiceId: () => string;
   onSelectTimeout: (bookKey: string, value: number) => void;
   onToogleTTSBar: () => void;
+  onSeek: (seconds: number) => Promise<void>;
+  onGetPlaybackInfo: () => TTSPlaybackInfo | null;
+  hasTimeline: boolean;
+};
+
+// Suppress poll updates briefly after a seek so the optimistic thumb never
+// snaps back while the cold-seek fetch completes.
+const SEEK_SUPPRESS_MS = 2000;
+// Small backward drifts come from estimate refinement, not playback — hold the
+// displayed position monotonic; larger jumps are deliberate (seek, chapter).
+const MONOTONIC_SLACK_SEC = 3;
+
+// Chapter progress row: elapsed / thin scrubber / total. Lives between the
+// rate slider and the transport cluster; the thin range-xs track plus flanking
+// time labels keep it visually distinct from the chunky tick-labeled rate
+// slider one block up (misgrabbing THAT persists a global setting).
+const TTSProgressRow = ({
+  bookKey,
+  isEink,
+  onSeek,
+  onGetPlaybackInfo,
+}: {
+  bookKey: string;
+  isEink: boolean;
+  onSeek: (seconds: number) => Promise<void>;
+  onGetPlaybackInfo: () => TTSPlaybackInfo | null;
+}) => {
+  const _ = useTranslation();
+  const [info, setInfo] = useState<TTSPlaybackInfo | null>(null);
+  const [stale, setStale] = useState(true);
+  const [displayTotal, setDisplayTotal] = useState<number | null>(null);
+  const [measuredFraction, setMeasuredFraction] = useState(0);
+  const [dragValue, setDragValue] = useState<number | null>(null);
+  const dragValueRef = useRef<number | null>(null);
+  const suppressUntilRef = useRef(0);
+  const lastPositionRef = useRef(0);
+  const keyboardCommitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const refresh = useCallback(() => {
+    if (dragValueRef.current !== null) return;
+    if (Date.now() < suppressUntilRef.current) return;
+    const next = onGetPlaybackInfo();
+    if (!next) {
+      // Keep the last-known values rendered (disabled) across chapter
+      // transitions and while the lazy timeline builds — no row blink.
+      setStale(true);
+      return;
+    }
+    let position = next.position;
+    if (
+      position < lastPositionRef.current &&
+      lastPositionRef.current - position < MONOTONIC_SLACK_SEC
+    ) {
+      position = lastPositionRef.current;
+    }
+    lastPositionRef.current = position;
+    setInfo({ ...next, position });
+    setMeasuredFraction(next.measuredFraction);
+    setStale(false);
+    // Quantize the displayed total: only follow estimate drift when it moves
+    // by more than 2%, so the chapter length reads stable, not twitchy.
+    setDisplayTotal((prev) =>
+      prev === null || Math.abs(next.duration - prev) / prev > 0.02 ? next.duration : prev,
+    );
+  }, [onGetPlaybackInfo]);
+
+  useEffect(() => {
+    refresh();
+    if (isEink) {
+      // No 1s repaints on e-ink: follow sentence-level position events only.
+      const handler = (event: CustomEvent) => {
+        const detail = event.detail as { bookKey?: string; kind?: string };
+        if (detail.bookKey === bookKey && detail.kind === 'sentence') refresh();
+      };
+      eventDispatcher.on('tts-position', handler);
+      return () => eventDispatcher.off('tts-position', handler);
+    }
+    const interval = setInterval(refresh, 1000);
+    return () => clearInterval(interval);
+  }, [refresh, isEink, bookKey]);
+
+  const commitSeek = (seconds: number) => {
+    dragValueRef.current = null;
+    setDragValue(null);
+    // Optimistic thumb: land on the target immediately and hold it there
+    // while the seek resolves; never snap back.
+    const previous = lastPositionRef.current;
+    suppressUntilRef.current = Date.now() + SEEK_SUPPRESS_MS;
+    lastPositionRef.current = seconds;
+    setInfo((prev) => (prev ? { ...prev, position: seconds } : prev));
+    onSeek(seconds).catch(() => {
+      // A silent snap-back is the exact violation the optimistic thumb
+      // prevents — restore visibly and say why.
+      suppressUntilRef.current = 0;
+      lastPositionRef.current = previous;
+      setInfo((prev) => (prev ? { ...prev, position: previous } : prev));
+      eventDispatcher.dispatch('toast', { message: _('Failed to seek'), type: 'error' });
+    });
+  };
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    // React fires range onChange continuously during a drag; track the value
+    // and commit only on pointer/key release.
+    const value = parseFloat(e.target.value);
+    dragValueRef.current = value;
+    setDragValue(value);
+  };
+
+  const handlePointerCommit = () => {
+    if (dragValueRef.current !== null) commitSeek(dragValueRef.current);
+  };
+
+  const handleKeyUp = () => {
+    // Holding an arrow key must not fire a network seek per press.
+    if (keyboardCommitRef.current) clearTimeout(keyboardCommitRef.current);
+    keyboardCommitRef.current = setTimeout(() => {
+      if (dragValueRef.current !== null) commitSeek(dragValueRef.current);
+    }, 500);
+  };
+
+  const total = displayTotal ?? info?.duration ?? 0;
+  const position = Math.min(dragValue ?? info?.position ?? 0, total);
+  const ready = info !== null && total > 0;
+  const forceHours = total >= 3600;
+  const step = Math.max(5, Math.round(total / 100)) || 5;
+  const elapsedLabel = ready ? formatPlaybackTime(position, forceHours) : '--:--';
+  const totalLabel = ready
+    ? `${measuredFraction < 0.5 ? '~' : ''}${formatPlaybackTime(total, forceHours)}`
+    : '--:--';
+
+  return (
+    <div className='flex w-full flex-col gap-0.5 pt-1'>
+      <span className='text-[10px] leading-3 opacity-60'>{_('This chapter')}</span>
+      <div className={clsx('flex w-full items-center gap-2', stale && 'opacity-60')}>
+        <span className='min-w-9 text-center text-xs tabular-nums'>{elapsedLabel}</span>
+        <input
+          className='range range-xs h-9 grow'
+          type='range'
+          min={0}
+          max={total || 1}
+          step={step}
+          value={position}
+          disabled={!ready || stale}
+          onChange={handleChange}
+          onPointerUp={handlePointerCommit}
+          onTouchEnd={handlePointerCommit}
+          onKeyUp={handleKeyUp}
+          aria-label={_('Chapter progress')}
+          aria-valuetext={_('{{elapsed}} of {{total}}', {
+            elapsed: elapsedLabel,
+            total: totalLabel,
+          })}
+        />
+        <span className='min-w-9 text-center text-xs tabular-nums'>{totalLabel}</span>
+      </div>
+    </div>
+  );
 };
 
 const getTTSTimeoutOptions = (_: TranslationFunc) => {
@@ -116,6 +281,9 @@ const TTSPanel = ({
   onGetVoiceId,
   onSelectTimeout,
   onToogleTTSBar,
+  onSeek,
+  onGetPlaybackInfo,
+  hasTimeline,
 }: TTSPanelProps) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
@@ -233,6 +401,14 @@ const TTSPanel = ({
           <span className='text-center'>{_('Fast')}</span>
         </div>
       </div>
+      {hasTimeline && (
+        <TTSProgressRow
+          bookKey={bookKey}
+          isEink={viewSettings?.isEink ?? false}
+          onSeek={onSeek}
+          onGetPlaybackInfo={onGetPlaybackInfo}
+        />
+      )}
       <div className='flex items-center justify-between space-x-2'>
         <button
           onClick={() => onBackward()}

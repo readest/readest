@@ -15,7 +15,11 @@ import TTSIcon from './TTSIcon';
 import TTSBar from './TTSBar';
 
 const POPUP_WIDTH = 282;
+// The popup is fixed-height and non-scrolling: these must track the panel's
+// content or rows get clipped. The taller variant fits the scrubber row that
+// only timeline-capable (Edge) playback shows.
 const POPUP_HEIGHT = 160;
+const POPUP_HEIGHT_WITH_PROGRESS = 200;
 const POPUP_PADDING = 10;
 
 interface TTSControlProps {
@@ -46,12 +50,16 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   const popupPadding = useResponsiveSize(POPUP_PADDING);
   const maxWidth = window.innerWidth - 2 * popupPadding;
   const popupWidth = Math.min(maxWidth, useResponsiveSize(POPUP_WIDTH));
-  const popupHeight = useResponsiveSize(POPUP_HEIGHT);
+  const popupBaseHeight = useResponsiveSize(POPUP_HEIGHT);
+  const popupProgressHeight = useResponsiveSize(POPUP_HEIGHT_WITH_PROGRESS);
 
   const tts = useTTSControl({
     bookKey,
     onRequestHidePanel: () => setShowPanel(false),
   });
+
+  const hasPlaybackInfo = tts.ttsClientsInited && tts.handleSupportsPlaybackInfo();
+  const popupHeight = hasPlaybackInfo ? popupProgressHeight : popupBaseHeight;
 
   useEffect(() => {
     if (tts.showBackToCurrentTTSLocation) {
@@ -230,6 +238,9 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
             onGetVoiceId={tts.handleGetVoiceId}
             onSelectTimeout={tts.handleSelectTimeout}
             onToogleTTSBar={tts.handleToggleTTSBar}
+            onSeek={tts.handleSeekTo}
+            onGetPlaybackInfo={tts.handleGetPlaybackInfo}
+            hasTimeline={hasPlaybackInfo}
           />
         </Popup>
       )}
