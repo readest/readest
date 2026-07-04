@@ -13,6 +13,7 @@ import { createRejectFilter } from '@/utils/node';
 import { WebSpeechClient } from './WebSpeechClient';
 import { NativeTTSClient } from './NativeTTSClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
+import { SectionTimeline, TimelineSentence } from './SectionTimeline';
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
 import { isValidLang } from '@/utils/lang';
@@ -55,6 +56,31 @@ type TTSState =
 
 const HIGHLIGHT_KEY = 'tts-highlight';
 
+// Node filter shared by the live TTS instance and the timeline enumeration —
+// the two MUST segment identically or timeline sentences drift from marks.
+const createTTSNodeFilter = () =>
+  createRejectFilter({
+    tags: ['rt', 'canvas', 'br'],
+    // Footnotes/endnotes are hidden in the rendered page (see the
+    // `.epubtype-footnote`/`aside[epub|type]` rules in getPageLayoutStyles);
+    // skip them in TTS too, including for background sections whose
+    // documents are loaded without those styles.
+    classes: [
+      'annotationLayer',
+      'epubtype-footnote',
+      'duokan-footnote-content',
+      'duokan-footnote-item',
+    ],
+    attributeTokens: [
+      {
+        tag: 'aside',
+        attribute: 'epub:type',
+        tokens: ['footnote', 'endnote', 'note', 'rearnote'],
+      },
+    ],
+    contents: [{ tag: 'a', content: /^[\[\(]?[\*\d]+[\)\]]?$/ }],
+  });
+
 export class TTSController extends EventTarget {
   appService: AppService | null = null;
   view: FoliateView;
@@ -70,6 +96,15 @@ export class TTSController extends EventTarget {
   #currentSpeakPromise: Promise<void> | null = null;
 
   #ttsSectionIndex: number = -1;
+
+  // Virtual section timeline for position/duration/seek (Edge client only).
+  // Built lazily OFF the playback critical path: enumerating a 2000-sentence
+  // chapter must never delay first audio.
+  #sectionTimeline: SectionTimeline | null = null;
+  #timelineSectionIndex: number = -1;
+  #currentSentenceIndex: number = -1;
+  #ttsDoc: Document | null = null;
+  #ttsGranularity: TTSGranularity = 'sentence';
 
   // Word-level highlight state for the currently spoken chunk. Armed by a
   // successful dispatchSpeakMark, populated by prepareSpeakWords when a TTS
@@ -243,6 +278,13 @@ export class TTSController extends EventTarget {
       }
     }
 
+    // The section changed (or is initializing): any previous timeline maps a
+    // dead document.
+    this.#sectionTimeline = null;
+    this.#timelineSectionIndex = -1;
+    this.#currentSentenceIndex = -1;
+    this.#ttsDoc = doc;
+
     if (this.view.tts && this.view.tts.doc === doc) {
       return true;
     }
@@ -254,37 +296,91 @@ export class TTSController extends EventTarget {
     if (!supportedGranularities.includes(granularity)) {
       granularity = supportedGranularities[0]!;
     }
+    this.#ttsGranularity = granularity;
 
     this.view.tts = new TTS(
       doc,
       textWalker,
-      createRejectFilter({
-        tags: ['rt', 'canvas', 'br'],
-        // Footnotes/endnotes are hidden in the rendered page (see the
-        // `.epubtype-footnote`/`aside[epub|type]` rules in getPageLayoutStyles);
-        // skip them in TTS too, including for background sections whose
-        // documents are loaded without those styles.
-        classes: [
-          'annotationLayer',
-          'epubtype-footnote',
-          'duokan-footnote-content',
-          'duokan-footnote-item',
-        ],
-        attributeTokens: [
-          {
-            tag: 'aside',
-            attribute: 'epub:type',
-            tokens: ['footnote', 'endnote', 'note', 'rearnote'],
-          },
-        ],
-        contents: [{ tag: 'a', content: /^[\[\(]?[\*\d]+[\)\]]?$/ }],
-      }),
+      createTTSNodeFilter(),
       this.#getHighlighter(),
       granularity,
     );
     console.log(`[TTS] Initialized TTS for section ${sectionIndex}`);
 
     return true;
+  }
+
+  // Build (or return) the virtual timeline for the current section. Edge-only:
+  // it is the only client with measurable audio durations and a chunk clock.
+  // Callers invoke this off the playback path (panel poll, media session).
+  async ensureTimeline(): Promise<SectionTimeline | null> {
+    if (this.ttsClient !== this.ttsEdgeClient) return null;
+    if (this.#sectionTimeline && this.#timelineSectionIndex === this.#ttsSectionIndex) {
+      return this.#sectionTimeline;
+    }
+    const doc = this.#ttsDoc;
+    if (!doc || this.#ttsSectionIndex < 0) return null;
+    const { getSentences } = await import('foliate-js/tts.js');
+    const { textWalker } = await import('foliate-js/text-walker.js');
+    const sentences: TimelineSentence[] = [];
+    for (const entry of getSentences(
+      doc,
+      textWalker,
+      createTTSNodeFilter(),
+      this.#ttsGranularity,
+    )) {
+      sentences.push({ ...entry, text: entry.range.toString() });
+    }
+    const timeline = new SectionTimeline(
+      sentences,
+      this.ttsLang || 'en',
+      this.ttsClient.getVoiceId(),
+    );
+    timeline.setRate(this.ttsRate);
+    this.#sectionTimeline = timeline;
+    this.#timelineSectionIndex = this.#ttsSectionIndex;
+    return timeline;
+  }
+
+  // Position/duration of the current section playback at the current rate.
+  // Null while no timeline exists (non-Edge client, timeline not yet built,
+  // or nothing located yet) — the UI reserves a disabled slot for that state.
+  getPlaybackInfo(): { position: number; duration: number; measuredFraction: number } | null {
+    if (this.ttsClient !== this.ttsEdgeClient) return null;
+    const timeline = this.#sectionTimeline;
+    if (!timeline || this.#timelineSectionIndex !== this.#ttsSectionIndex) return null;
+    const duration = timeline.getDuration();
+    if (!Number.isFinite(duration) || duration <= 0) return null;
+    let index = this.#currentSentenceIndex;
+    if (index < 0) {
+      const range = this.view.tts?.getLastRange();
+      index = range ? timeline.indexOfRange(range) : -1;
+    }
+    if (index < 0) return null;
+    const within = this.ttsClient.getChunkPosition?.() ?? 0;
+    return {
+      position: timeline.positionAt(index, within),
+      duration,
+      measuredFraction: timeline.getMeasuredFraction(),
+    };
+  }
+
+  // Sentence-snapped seek through the same navigation machinery as prev/next:
+  // foliate's from(range) returns the paragraph SSML sliced at the target
+  // sentence, so highlighting, page-follow, and mark bookkeeping come free.
+  async seekToTime(seconds: number): Promise<void> {
+    await this.initViewTTS();
+    const timeline = await this.ensureTimeline();
+    if (!timeline) return;
+    const target = timeline.sentenceAtTime(seconds);
+    if (!target) return;
+    const isPlaying = this.state === 'playing';
+    await this.stop();
+    if (!isPlaying) this.state = 'forward-paused';
+    this.#currentSentenceIndex = target.index;
+    const ssml = this.view.tts?.from(target.sentence.range);
+    await this.#handleNavigationWithSSML(ssml, isPlaying);
+    if (!isPlaying) this.reapplyCurrentHighlight();
   }
 
   async #initTTSForNextSection(): Promise<boolean> {
@@ -605,6 +701,7 @@ export class TTSController extends EventTarget {
   async setRate(rate: number) {
     this.state = 'setrate-paused';
     this.ttsRate = rate;
+    this.#sectionTimeline?.setRate(rate);
     await this.ttsClient.setRate(this.ttsRate);
   }
 
@@ -641,6 +738,9 @@ export class TTSController extends EventTarget {
     TTSUtils.setPreferredClient(this.ttsClient.name);
     TTSUtils.setPreferredVoice(this.ttsClient.name, lang, voiceId);
     await this.ttsClient.setVoice(voiceId);
+    // A different voice speaks at a different pace: re-estimate the timeline
+    // under the new voice (measured durations are keyed per voice already).
+    this.#sectionTimeline?.setVoice(this.ttsClient.getVoiceId());
   }
 
   getVoiceId() {
@@ -700,6 +800,12 @@ export class TTSController extends EventTarget {
         const range = this.view.tts?.setMark(mark.name);
         this.#suppressMarkHighlight = false;
         this.#speakWordsArmed = !!range;
+        if (this.#sectionTimeline && range) {
+          // Keep the timeline honest as measurements land, then locate the
+          // audible sentence for position reporting.
+          this.#sectionTimeline.refresh();
+          this.#currentSentenceIndex = this.#sectionTimeline.indexOfRange(range);
+        }
         const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
         this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
         this.#dispatchPosition(cfi, 'sentence');
@@ -860,6 +966,10 @@ export class TTSController extends EventTarget {
     await this.stop();
     this.#clearHighlighter();
     this.#ttsSectionIndex = -1;
+    this.#sectionTimeline = null;
+    this.#timelineSectionIndex = -1;
+    this.#currentSentenceIndex = -1;
+    this.#ttsDoc = null;
     this.view.tts = null;
     if (this.ttsWebClient.initialized) {
       await this.ttsWebClient.shutdown();
