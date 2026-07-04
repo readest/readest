@@ -34,7 +34,13 @@ export const useTTSMediaSession = ({ bookKey }: UseTTSMediaSessionProps) => {
     unblockerAudioRef.current.preload = 'auto';
     unblockerAudioRef.current.loop = true;
     unblockerAudioRef.current.src = SILENCE_DATA;
-    unblockerAudioRef.current.play();
+    unblockerAudioRef.current.play().catch((err) => {
+      // Autoplay policy rejects play() outside a user gesture (headless test
+      // runs, programmatic TTS starts). The keep-alive is best-effort: the
+      // production path calls this inside the tts-speak gesture handler, and
+      // a rejection here must not surface as an unhandled rejection.
+      console.warn('Keep-alive audio blocked:', err);
+    });
   };
 
   const releaseUnblockAudio = () => {
