@@ -19,7 +19,7 @@ const POPUP_WIDTH = 282;
 // content or rows get clipped. The taller variant fits the scrubber row that
 // only timeline-capable (Edge) playback shows.
 const POPUP_HEIGHT = 160;
-const POPUP_HEIGHT_WITH_PROGRESS = 200;
+const POPUP_HEIGHT_WITH_PROGRESS = 184;
 const POPUP_PADDING = 10;
 
 interface TTSControlProps {

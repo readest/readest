@@ -66,7 +66,6 @@ const TTSProgressRow = ({
   const [info, setInfo] = useState<TTSPlaybackInfo | null>(null);
   const [stale, setStale] = useState(true);
   const [displayTotal, setDisplayTotal] = useState<number | null>(null);
-  const [measuredFraction, setMeasuredFraction] = useState(0);
   const [dragValue, setDragValue] = useState<number | null>(null);
   const dragValueRef = useRef<number | null>(null);
   const suppressUntilRef = useRef(0);
@@ -92,7 +91,6 @@ const TTSProgressRow = ({
     }
     lastPositionRef.current = position;
     setInfo({ ...next, position });
-    setMeasuredFraction(next.measuredFraction);
     setStale(false);
     // Quantize the displayed total: only follow estimate drift when it moves
     // by more than 2%, so the chapter length reads stable, not twitchy.
@@ -161,35 +159,35 @@ const TTSProgressRow = ({
   const forceHours = total >= 3600;
   const step = Math.max(5, Math.round(total / 100)) || 5;
   const elapsedLabel = ready ? formatPlaybackTime(position, forceHours) : '--:--';
-  const totalLabel = ready
-    ? `${measuredFraction < 0.5 ? '~' : ''}${formatPlaybackTime(total, forceHours)}`
+  const remainingLabel = ready
+    ? `-${formatPlaybackTime(Math.max(total - position, 0), forceHours)}`
     : '--:--';
 
   return (
-    <div className='flex w-full flex-col gap-0.5 pt-1'>
-      <span className='text-[10px] leading-3 opacity-60'>{_('This chapter')}</span>
-      <div className={clsx('flex w-full items-center gap-2', stale && 'opacity-60')}>
-        <span className='min-w-9 text-center text-xs tabular-nums'>{elapsedLabel}</span>
-        <input
-          className='range range-xs h-9 grow'
-          type='range'
-          min={0}
-          max={total || 1}
-          step={step}
-          value={position}
-          disabled={!ready || stale}
-          onChange={handleChange}
-          onPointerUp={handlePointerCommit}
-          onTouchEnd={handlePointerCommit}
-          onKeyUp={handleKeyUp}
-          aria-label={_('Chapter progress')}
-          aria-valuetext={_('{{elapsed}} of {{total}}', {
-            elapsed: elapsedLabel,
-            total: totalLabel,
-          })}
-        />
-        <span className='min-w-9 text-center text-xs tabular-nums'>{totalLabel}</span>
-      </div>
+    <div className={clsx('flex w-full items-center gap-2 py-1', stale && 'opacity-60')}>
+      <span className='min-w-9 text-center text-xs tabular-nums'>{elapsedLabel}</span>
+      {/* Plain native range, matching the footer's Jump to Location slider:
+          thin track, small thumb, visually unmistakable for the chunky rate
+          slider above. */}
+      <input
+        className='text-base-content min-w-0 grow'
+        type='range'
+        min={0}
+        max={total || 1}
+        step={step}
+        value={position}
+        disabled={!ready || stale}
+        onChange={handleChange}
+        onPointerUp={handlePointerCommit}
+        onTouchEnd={handlePointerCommit}
+        onKeyUp={handleKeyUp}
+        aria-label={_('Chapter progress')}
+        aria-valuetext={_('{{elapsed}} of {{total}}', {
+          elapsed: elapsedLabel,
+          total: ready ? formatPlaybackTime(total, forceHours) : '--:--',
+        })}
+      />
+      <span className='min-w-10 text-center text-xs tabular-nums'>{remainingLabel}</span>
     </div>
   );
 };
