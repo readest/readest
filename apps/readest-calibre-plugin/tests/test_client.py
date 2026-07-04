@@ -187,6 +187,30 @@ class StorageTest(unittest.TestCase):
         with self.assertRaises(QuotaExceededError):
             client.get_upload_url('f', 5, 'h')
 
+    def test_list_files(self):
+        transport = FakeTransport()
+        transport.queue(200, {'files': [{'file_key': 'u/Readest/Books/h/h.epub'}]})
+        client = make_client(transport, tokens=valid_tokens())
+        files = client.list_files('h')
+
+        req = transport.requests[0]
+        self.assertEqual(req['method'], 'GET')
+        self.assertEqual(req['url'], f'{API_BASE}/storage/list?bookHash=h')
+        self.assertEqual(files, [{'file_key': 'u/Readest/Books/h/h.epub'}])
+
+    def test_delete_file(self):
+        transport = FakeTransport()
+        transport.queue(200, {'success': True})
+        client = make_client(transport, tokens=valid_tokens())
+        client.delete_file('u/Readest/Books/h/h.epub')
+
+        req = transport.requests[0]
+        self.assertEqual(req['method'], 'DELETE')
+        self.assertEqual(
+            req['url'],
+            f'{API_BASE}/storage/delete?fileKey=u%2FReadest%2FBooks%2Fh%2Fh.epub',
+        )
+
     def test_put_file_sends_content_length(self):
         transport = FakeTransport()
         transport.queue(200, b'')

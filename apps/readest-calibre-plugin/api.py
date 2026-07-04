@@ -14,6 +14,7 @@ import json
 import time
 import unicodedata
 import urllib.error
+import urllib.parse
 import urllib.request
 
 DEFAULT_API_BASE = 'https://web.readest.com/api'
@@ -300,6 +301,15 @@ class ReadestClient:
             'POST',
             '/storage/upload',
             body={'fileName': file_name, 'fileSize': file_size, 'bookHash': book_hash},
+        )
+
+    def list_files(self, book_hash):
+        result = self._api('GET', '/storage/list?bookHash=' + urllib.parse.quote(book_hash))
+        return (result or {}).get('files') or []
+
+    def delete_file(self, file_key):
+        return self._api(
+            'DELETE', '/storage/delete?fileKey=' + urllib.parse.quote(file_key, safe='')
         )
 
     def put_file(self, url, fileobj, size):

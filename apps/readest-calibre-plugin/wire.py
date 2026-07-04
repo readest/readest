@@ -88,6 +88,11 @@ def build_metadata(book):
         'subject': [_clean(t) for t in book.get('tags') or []] or None,
         'series': _clean(book.get('series')),
         'isbn': _clean(book.get('isbn')),
+        # Partial MD5 of the RAW calibre library file. The uploaded blob has
+        # metadata embedded so its hash (book_hash) shifts with every embed;
+        # this stable fingerprint is how a later push detects "the file
+        # itself changed" without any machine-local state.
+        'calibreSourceHash': book.get('source_hash'),
     }
     if book.get('series'):
         optional['seriesIndex'] = book.get('series_index')
@@ -161,27 +166,96 @@ def _row_matches_wire(row, wire):
     return _parse_row_metadata(row) == wire['metadata']
 
 
-def plan_push(server_row, wire, local_cover_hash):
+def row_source_hash(row):
+    """The raw-file fingerprint a server row was built from.
+
+    v2 rows carry it as metadata.calibreSourceHash; v1 rows uploaded the raw
+    file unmodified, so their book_hash IS the raw hash.
+    """
+    meta = _parse_row_metadata(row) or {}
+    return meta.get('calibreSourceHash') or row.get('book_hash')
+
+
+def metadata_uuid(meta):
+    """Calibre book uuid from a metadata dict's urn:uuid identifier."""
+    identifier = (meta or {}).get('identifier')
+    if isinstance(identifier, str) and 'urn:uuid:' in identifier:
+        return identifier.rsplit(':', 1)[-1].lower()
+    return None
+
+
+def _prefer_row(row, over):
+    row_live, over_live = not row.get('deleted_at'), not over.get('deleted_at')
+    if row_live != over_live:
+        return row_live
+    return (iso_to_ms(row.get('updated_at')) or 0) > (iso_to_ms(over.get('updated_at')) or 0)
+
+
+def index_rows_by_uuid(rows):
+    """Map calibre uuid -> best server row (live over tombstoned, then newest).
+
+    This is the identity that survives file-content changes: the uploaded blob
+    has metadata embedded, so book_hash shifts whenever the file or its
+    metadata does, but the calibre uuid in metadata.identifier stays put.
+    """
+    best = {}
+    for row in rows:
+        uuid = metadata_uuid(_parse_row_metadata(row))
+        if not uuid:
+            continue
+        current = best.get(uuid)
+        if current is None or _prefer_row(row, current):
+            best[uuid] = row
+    return best
+
+
+def pick_server_row(hash_row, uuid_row):
+    """Choose the row a push should target: live hash match, then live uuid
+    match, then whatever tombstone is left (for resurrection)."""
+    for row in (hash_row, uuid_row):
+        if row is not None and not row.get('deleted_at'):
+            return row
+    return hash_row if hash_row is not None else uuid_row
+
+
+def plan_push(server_row, wire, local_cover_hash, source_hash):
     """Decide what to do for one book.
 
-    Returns {'action': 'new' | 'reupload' | 'update' | 'skip',
+    Returns {'action': 'new' | 'replace' | 'update' | 'skip',
              'upload_cover': bool}.
-    - new:      no server row — upload file, insert row
-    - reupload: row exists but its file blob is not in cloud storage
-    - update:   row + file exist, but metadata/cover/tombstone differ
-    - skip:     row + file exist and nothing changed
+    - new:     no server row — embed metadata, upload file, insert row
+    - replace: the raw file changed (or the row has no file blob) — upload a
+               fresh embedded blob under its new hash, tombstone the old row
+    - update:  file unchanged, but metadata/cover/tombstone differ — row only
+    - skip:    file + metadata + cover all unchanged
     """
     if server_row is None:
         return {'action': 'new', 'upload_cover': bool(local_cover_hash)}
+    if not server_row.get('uploaded_at') or row_source_hash(server_row) != source_hash:
+        # A replaced book gets a new hash namespace, so it needs its own cover.
+        return {'action': 'replace', 'upload_cover': bool(local_cover_hash)}
     cover_changed = bool(local_cover_hash) and local_cover_hash != server_row.get('cover_hash')
-    if not server_row.get('uploaded_at'):
-        return {'action': 'reupload', 'upload_cover': cover_changed}
     changed = (
         not _row_matches_wire(server_row, wire)
         or bool(server_row.get('deleted_at'))
         or cover_changed
     )
     return {'action': 'update' if changed else 'skip', 'upload_cover': cover_changed}
+
+
+def tombstone_record(row, now_ms):
+    """Wire record that soft-deletes a replaced server row."""
+    return {
+        'hash': row['book_hash'],
+        'bookHash': row['book_hash'],
+        'metaHash': row.get('meta_hash'),
+        'format': row.get('format'),
+        'title': row.get('title') or '',
+        'author': row.get('author') or '',
+        'createdAt': iso_to_ms(row.get('created_at')) or now_ms,
+        'updatedAt': now_ms,
+        'deletedAt': now_ms,
+    }
 
 
 def merge_for_push(wire, server_row, now_ms, uploaded_at_ms=None, cover_hash=None):

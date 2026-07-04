@@ -11,13 +11,18 @@ Implements [readest/readest#4863](https://github.com/readest/readest/issues/4863
 
 - **Selective, manual push**: select books in calibre, click *Readest* in the
   toolbar. Nothing syncs in the background.
-- **Metadata included**: title, authors, series, tags, description, publisher,
-  language, identifiers — and optionally calibre custom columns (stored under
-  `customColumns` in the book's Readest metadata).
-- **Update on re-push**: a book whose file is already in your Readest library
-  is recognized (content hash) and only its metadata/cover entry is updated;
-  unchanged books are skipped. Reading progress, notes, grouping and reading
-  status in Readest are preserved.
+- **Metadata included and embedded**: title, authors, series, tags,
+  description, publisher, language, identifiers — and optionally calibre
+  custom columns. Metadata is written both to the Readest library entry
+  (custom columns under `customColumns`) and into the uploaded file's OPF
+  (calibre's own embedding, so custom columns travel as
+  `calibre:user_metadata`). Your calibre library files are never modified —
+  embedding happens on a temporary copy.
+- **Update on re-push**: books already in your Readest library are recognized
+  by their calibre uuid and only changed entries are rewritten; unchanged
+  books are skipped, and a changed file replaces the old entry instead of
+  duplicating it. Reading progress, grouping and reading status in Readest
+  are preserved.
 - **Per-book status report**: uploaded / updated / up to date / failed, with a
   storage-quota check (the push stops cleanly when your quota is exhausted).
 - **Login like the apps**: email + password, or browser sign-in with Google,
@@ -53,18 +58,31 @@ For each book the best Readest-supported format is pushed, preferring
 
 ## How updates and duplicates work
 
-Readest identifies a book by a partial MD5 hash of its file, so:
+At upload time the plugin embeds your current calibre metadata (including
+custom columns) into a temporary copy of the book file, so the copy in your
+Readest library is self-describing. Pushed books are then tracked by two keys:
 
-- Pushing the **same file** again never duplicates — the plugin compares your
-  calibre metadata with the cloud entry and either updates it or skips it.
-- **Metadata edits** in calibre don't change the file, so re-pushing only
-  rewrites the library entry (no re-upload).
-- **Changing the file itself** (e.g. re-converting the EPUB) produces a new
-  hash, which Readest treats as a new book. Delete the old entry in Readest if
-  you replace files.
-- The uploaded file is the one stored in your calibre library, byte for byte;
-  metadata is *not* embedded into the file (that would change its hash on
-  every edit and defeat duplicate detection).
+- the **calibre book uuid**, carried in the entry's metadata
+  (`urn:uuid:...`) — this recognizes "this calibre book is already in
+  Readest" across pushes, even when the file bytes change;
+- a **fingerprint of the raw calibre file** (`calibreSourceHash`), which
+  detects whether the file itself changed since the last push — no local
+  state, so it works from any machine.
+
+Re-push behavior:
+
+- **Nothing changed** → skipped.
+- **Metadata edited** → the Readest library entry is updated in place; the
+  file is not re-uploaded (its embedded OPF keeps the metadata from its
+  upload time).
+- **File changed** (e.g. re-converted) → the new file is uploaded with fresh
+  embedded metadata and *replaces* the old entry: reading status, grouping,
+  progress and the library date carry over, the old entry is removed and its
+  cloud files are deleted. Notes and reading positions re-attach when
+  title/authors are unchanged (Readest matches book versions by metadata
+  identity).
+- Books pushed by older plugin versions (or dragged into Readest manually)
+  are recognized too: their entry hash doubles as the raw-file fingerprint.
 
 ## Development
 
