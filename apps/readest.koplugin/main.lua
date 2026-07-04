@@ -797,6 +797,33 @@ function ReadestSync:onPageUpdate(page)
     end
 end
 
+-- Waking the device with a book already open should pull like reopening
+-- the book does (issue #4924). Delayed because Wi-Fi is usually still
+-- coming back up right after wake (kosync uses the same 1s delay); the
+-- pull helpers rerun themselves when online if that isn't enough. On
+-- devices where Suspend/Resume also fire on focus changes (Android),
+-- the debounce keeps this from hammering the API.
+function ReadestSync:onResume()
+    if not (self.settings.auto_sync and self.settings.access_token and self.ui.document) then
+        return
+    end
+    local now = os.time()
+    if now - (self.last_resume_sync_timestamp or 0) <= API_CALL_DEBOUNCE_DELAY then
+        return
+    end
+    self.last_resume_sync_timestamp = now
+    if self.resume_pull_task then
+        UIManager:unschedule(self.resume_pull_task)
+    end
+    self.resume_pull_task = function()
+        self.resume_pull_task = nil
+        self:pullBookConfig(false)
+        self:pullBookNotes(false)
+        self:pullBookStats(false)
+    end
+    UIManager:scheduleIn(1, self.resume_pull_task)
+end
+
 function ReadestSync:onAnnotationsModified(items)
     -- A removal fires AnnotationsModified with a negative index_modified and the
     -- deleted item at items[1]. Capture a tombstone now, before the item is gone
@@ -817,6 +844,10 @@ function ReadestSync:onCloseWidget()
     if self.delayed_push_task then
         UIManager:unschedule(self.delayed_push_task)
         self.delayed_push_task = nil
+    end
+    if self.resume_pull_task then
+        UIManager:unschedule(self.resume_pull_task)
+        self.resume_pull_task = nil
     end
 end
 
