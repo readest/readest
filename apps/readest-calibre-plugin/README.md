@@ -26,13 +26,21 @@ Implements [readest/readest#4863](https://github.com/readest/readest/issues/4863
 
 ## Install
 
+Download `Readest-<version>.calibre-plugin.zip` from the
+[latest release](https://github.com/readest/readest/releases/latest), or build
+it yourself:
+
 ```sh
-make zip                 # builds dist/Readest-<version>.zip
-calibre-customize -a dist/Readest-*.zip   # or: make install
+make zip                 # builds dist/Readest-<version>.calibre-plugin.zip
+calibre-customize -a dist/Readest-*.calibre-plugin.zip   # or: make install
 ```
 
 Or in calibre: *Preferences → Plugins → Load plugin from file*, then restart
 calibre and add the *Readest* button to the main toolbar if it is not visible.
+
+Release zips are versioned from `apps/readest-app/package.json` by the release
+workflow, which stamps `PLUGIN_VERSION` in `__init__.py` before zipping; the
+version committed in git is a development placeholder.
 
 ## Usage
 
