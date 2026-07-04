@@ -47,6 +47,18 @@ export interface SectionItem {
   createDocument: () => Promise<Document>;
 }
 
+// A Calibre custom column embedded in the OPF as "user metadata"; parsed by
+// foliate-js's getMetadata (see getCalibreUserMetadata in epub.js). `value`
+// is an array for multi-value columns, `extra` is the series index for
+// datatype 'series'.
+export interface CalibreCustomColumn {
+  label: string;
+  name: string;
+  datatype: string;
+  value: string | number | boolean | string[];
+  extra?: number;
+}
+
 export type BookMetadata = {
   // NOTE: the title and author fields should be formatted
   title: string | LanguageMap;
@@ -73,6 +85,8 @@ export type BookMetadata = {
   coverImageFile?: string;
   coverImageUrl?: string;
   coverImageBlobUrl?: string;
+
+  calibreColumns?: CalibreCustomColumn[];
 };
 
 export interface BookDoc {

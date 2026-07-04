@@ -148,6 +148,12 @@ export const expandBookshelfSelection = (ids: string[], items: (Book | BooksGrou
   return [...hashes];
 };
 
+// Calibre custom column names and values, flattened for searching (#4811).
+const getCalibreColumnsText = (item: Book) =>
+  (item.metadata?.calibreColumns ?? [])
+    .map(({ name, value }) => `${name} ${Array.isArray(value) ? value.join(' ') : value}`)
+    .join(' ');
+
 export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
   if (!queryTerm) return true;
   if (item.deletedAt) return false;
@@ -164,7 +170,9 @@ export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
       authors.includes(lowerQuery) ||
       item.format.toLowerCase().includes(lowerQuery) ||
       (item.groupName && item.groupName.toLowerCase().includes(lowerQuery)) ||
-      (item.metadata?.description && item.metadata.description.toLowerCase().includes(lowerQuery))
+      (item.metadata?.description &&
+        item.metadata.description.toLowerCase().includes(lowerQuery)) ||
+      getCalibreColumnsText(item).toLowerCase().includes(lowerQuery)
     );
   }
   const title = formatTitle(item.title);
@@ -174,7 +182,8 @@ export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
     searchTerm.test(authors) ||
     searchTerm.test(item.format) ||
     (item.groupName && searchTerm.test(item.groupName)) ||
-    (item.metadata?.description && searchTerm.test(item.metadata?.description))
+    (item.metadata?.description && searchTerm.test(item.metadata?.description)) ||
+    searchTerm.test(getCalibreColumnsText(item))
   );
 };
 
