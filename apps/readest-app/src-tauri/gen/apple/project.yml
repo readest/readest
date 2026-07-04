@@ -146,9 +146,13 @@ targets:
           NSExtensionPointIdentifier: com.apple.share-services
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
           NSExtensionAttributes:
+            # Web URLs only. Do NOT add NSExtensionActivationSupportsText: a
+            # .txt file is public.plain-text (conforms to public.text), so that
+            # key makes this article-URL clipper activate for plain-text FILES
+            # it can't handle (the share sheet hangs). Book files must fall
+            # through to the main app's CFBundleDocumentTypes import path.
             NSExtensionActivationRule:
               NSExtensionActivationSupportsWebURLWithMaxCount: 1
-              NSExtensionActivationSupportsText: true
     # Entitlements referenced via CODE_SIGN_ENTITLEMENTS build setting
     # rather than xcodegen's `entitlements:` block — otherwise xcodegen
     # may overwrite the file (even with no properties declared) during
