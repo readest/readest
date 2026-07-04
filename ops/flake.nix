@@ -17,7 +17,7 @@
   outputs = { self, nixpkgs, flake-utils, android, devshell, fenix }:
     {
       overlay = final: prev: {
-        inherit (self.packages.${final.stdenv.hostPlatform.system}) android-sdk android-studio;
+        inherit (self.packages.${final.stdenv.hostPlatform.system}) android-sdk;
       };
     }
     //
@@ -36,8 +36,6 @@
             self.overlay
           ];
         };
-        # android-studio is not available in aarch64-darwin
-        androidConditionalPackages = if pkgs.stdenv.hostPlatform.system != "aarch64-darwin" then [ pkgs.android-studio ] else [ ];
 
         commonPackages = with pkgs; [
           pnpm
@@ -183,9 +181,6 @@
             system-images-android-34-google-apis-x86-64
             system-images-android-34-google-apis-playstore-x86-64
           ]);
-        } // lib.optionalAttrs (system == "x86_64-linux") {
-          # Android Studio in nixpkgs is currently packaged for x86_64-linux only.
-          android-studio = pkgs.androidStudioPackages.stable;
         };
 
         devShells = {
@@ -224,7 +219,7 @@
               pkgs.android-sdk
               pkgs.gradle
               pkgs.jdk
-            ] ++ androidConditionalPackages;
+            ];
             extraEnv = [
               {
                 name = "ANDROID_HOME";
