@@ -1,5 +1,5 @@
 __license__ = 'AGPL v3'
-__copyright__ = '2026, The Readest Authors'
+__copyright__ = '2026, Bilingify LLC'
 
 from calibre.customize import InterfaceActionBase
 
@@ -13,7 +13,7 @@ class ReadestPlugin(InterfaceActionBase):
         'Re-pushing a book updates its existing entry instead of creating a duplicate.'
     )
     supported_platforms = ['windows', 'osx', 'linux']
-    author = 'The Readest Authors'
+    author = 'Bilingify LLC'
     version = PLUGIN_VERSION
     minimum_calibre_version = (6, 0, 0)
 

@@ -1,5 +1,5 @@
 __license__ = 'AGPL v3'
-__copyright__ = '2026, The Readest Authors'
+__copyright__ = '2026, Bilingify LLC'
 
 from qt.core import (
     QDialog,

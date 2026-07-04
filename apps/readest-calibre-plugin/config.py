@@ -1,5 +1,5 @@
 __license__ = 'AGPL v3'
-__copyright__ = '2026, The Readest Authors'
+__copyright__ = '2026, Bilingify LLC'
 
 from calibre.utils.config import JSONConfig
 from qt.core import QCheckBox, QLabel, QLineEdit, QVBoxLayout, QWidget
