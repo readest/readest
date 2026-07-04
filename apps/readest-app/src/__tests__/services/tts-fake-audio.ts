@@ -58,6 +58,11 @@ export class FakeSourceNode implements TTSAudioBufferSourceNode {
 }
 
 export class FakeAudioContext implements TTSAudioContext {
+  // Constructed instances, newest last — client tests stub the global
+  // AudioContext with this class and need a handle on the context the shared
+  // singleton created internally.
+  static instances: FakeAudioContext[] = [];
+
   currentTime = 0;
   state = 'running';
   destination = {};
@@ -74,6 +79,7 @@ export class FakeAudioContext implements TTSAudioContext {
 
   constructor(sampleRate = 24000) {
     this.sampleRate = sampleRate;
+    FakeAudioContext.instances.push(this);
   }
 
   async resume(): Promise<void> {

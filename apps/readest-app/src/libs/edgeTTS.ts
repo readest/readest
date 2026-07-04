@@ -353,11 +353,6 @@ export type EDGE_TTS_PROTOCOL = 'wss' | 'https';
 export class EdgeSpeechTTS {
   static voices = genVoiceList(EDGE_TTS_VOICES);
   private static audioCache = new LRUCache<string, Blob>(200);
-  private static audioUrlCache = new LRUCache<string, string>(200, (_, url) => {
-    if (url.startsWith('blob:')) {
-      URL.revokeObjectURL(url);
-    }
-  });
   private static boundariesCache = new LRUCache<string, TTSWordBoundary[]>(200);
   // In-flight fetches keyed by payload hash. The LRU dedupes storage, not
   // requests: the playback scheduler and the preload paths race for the same
@@ -785,23 +780,5 @@ export class EdgeSpeechTTS {
   ): Promise<{ data: ArrayBuffer; boundaries: TTSWordBoundary[] }> {
     const { blob, boundaries } = await this.#fetchAndCache(payload);
     return { data: await blob.arrayBuffer(), boundaries };
-  }
-
-  async createAudio(
-    payload: EdgeTTSPayload,
-  ): Promise<{ url: string; boundaries: TTSWordBoundary[] }> {
-    const cacheKey = hashTTSPayload(payload);
-    const cachedUrl = EdgeSpeechTTS.audioUrlCache.get(cacheKey);
-    if (cachedUrl) {
-      return { url: cachedUrl, boundaries: EdgeSpeechTTS.boundariesCache.get(cacheKey) ?? [] };
-    }
-    const { blob, boundaries } = await this.#fetchAndCache(payload);
-    const objectUrl = URL.createObjectURL(blob);
-    EdgeSpeechTTS.audioUrlCache.set(cacheKey, objectUrl);
-    return { url: objectUrl, boundaries };
-  }
-
-  async createAudioUrl(payload: EdgeTTSPayload): Promise<string> {
-    return (await this.createAudio(payload)).url;
   }
 }
