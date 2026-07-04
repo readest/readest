@@ -238,15 +238,15 @@
                 value = pkgs.jdk.home;
               }
               {
-                  name = "ANDROID_AVD_HOME";
-                  eval = "$XDG_CONFIG_HOME/.android/avd";
+                name = "ANDROID_AVD_HOME";
+                eval = "$XDG_CONFIG_HOME/.android/avd";
               }
             ];
           };
 
           default = self.devShells.${pkgs.stdenv.hostPlatform.system}.web;
         };
-        
-        formatter = pkgs.nixfmt;
+
+        formatter = pkgs.nixpkgs-fmt;
       });
 }
