@@ -114,6 +114,7 @@
 - OPDS: [Firefox strict-XML #4479](opds-firefox-strict-xml-4479.md) junk after `</feed>` slice to last close; [JSON search #4502](opds2-json-search-4502.md) expand `{?query}` BEFORE resolveURL; [HTML desc #4503](opds-html-description-4503.md) decode-once+sanitize; [self-link meta #4749](opds-self-link-metadata-4749.md) `rel:self` deref; [popular dedup #4782](opds-popular-catalog-dedup-4782.md)
 - [D-pad Navigation](dpad-navigation.md) — Android TV remote / arrow-key nav
 - [koplugin cover upload (#4374)](koplugin-cover-upload.md) — `extractLocalCover` via `getCoverImage`
+- [Calibre plugin push #4863](calibre-plugin-push-4863.md) apps/readest-calibre-plugin; OAuth localhost relay + /sync carry-over
 ## Library Fixes
 - [Book action platform surfaces](book-actions-platform-surfaces.md) — context menu Tauri-desktop-only; cross-platform
 - [Tauri menu append race (#4389)](tauri-menu-append-race-4389.md) — single `await Menu.new({ items })`
