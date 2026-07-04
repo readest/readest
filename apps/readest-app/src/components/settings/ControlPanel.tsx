@@ -12,6 +12,7 @@ import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { PageTurnStyle } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
+import { applyPageTurnAttributes } from '@/app/reader/hooks/useMeshPageCurl';
 import {
   BoxedList,
   NavigationRow,
@@ -159,16 +160,20 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDisableClick]);
 
+  // The renderer reads `turn-style`/`no-swipe` at touchmove/touchend time, so
+  // settings changes have to push the attributes through immediately rather
+  // than waiting for the next recreateViewer pass.
+  const applyTurnAttributes = () => {
+    const view = getView(bookKey);
+    const freshSettings = getViewSettings(bookKey);
+    if (view && freshSettings) {
+      applyPageTurnAttributes(view, freshSettings, !!bookData?.isFixedLayout);
+    }
+  };
+
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'disableSwipe', isDisableSwipe, false, false);
-    // The renderer reads `no-swipe` at touchmove/touchend time, so we have to
-    // push the attribute through immediately rather than waiting for the next
-    // recreateViewer pass.
-    if (isDisableSwipe) {
-      getView(bookKey)?.renderer.setAttribute('no-swipe', '');
-    } else {
-      getView(bookKey)?.renderer.removeAttribute('no-swipe');
-    }
+    applyTurnAttributes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDisableSwipe]);
 
@@ -194,16 +199,14 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     } else {
       getView(bookKey)?.renderer.removeAttribute('animated');
     }
+    // Mesh-curl eligibility depends on `animated`.
+    applyTurnAttributes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animated]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'pageTurnStyle', pageTurnStyle, false, false);
-    if (pageTurnStyle && pageTurnStyle !== 'push') {
-      getView(bookKey)?.renderer.setAttribute('turn-style', pageTurnStyle);
-    } else {
-      getView(bookKey)?.renderer.removeAttribute('turn-style');
-    }
+    applyTurnAttributes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageTurnStyle]);
 

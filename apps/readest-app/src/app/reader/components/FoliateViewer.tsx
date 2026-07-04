@@ -14,6 +14,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
 import { useMouseEvent, useTouchEvent, useOpenMediaEvent } from '../hooks/useIframeEvents';
+import { useMeshPageCurl, applyPageTurnAttributes } from '../hooks/useMeshPageCurl';
 import { useBrightnessGesture } from '../hooks/useBrightnessGesture';
 import BrightnessOverlay from './BrightnessOverlay';
 import { usePagination, viewPagination } from '../hooks/usePagination';
@@ -607,6 +608,8 @@ const FoliateViewer: React.FC<{
 
   useOpenMediaEvent(bookKey, handleImagePress, handleTablePress);
 
+  useMeshPageCurl(bookKey, viewRef);
+
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,
     onStabilized: stabilizedHandler,
@@ -702,12 +705,7 @@ const FoliateViewer: React.FC<{
       } else {
         view.renderer.removeAttribute('animated');
       }
-      const pageTurnStyle = viewSettings.pageTurnStyle;
-      if (pageTurnStyle && pageTurnStyle !== 'push') {
-        view.renderer.setAttribute('turn-style', pageTurnStyle);
-      } else {
-        view.renderer.removeAttribute('turn-style');
-      }
+      applyPageTurnAttributes(view, viewSettings, bookDoc.rendition?.layout === 'pre-paginated');
       // iOS WebKit composites large/persistent page layers without the Android
       // high-DPR Blink freeze, so opt this renderer into the GPU-accelerated
       // page-turn path (persistent compositor layers + no main-thread
@@ -715,11 +713,6 @@ const FoliateViewer: React.FC<{
       // (readest#4768).
       if (appService?.isIOSApp) {
         view.renderer.setAttribute('gpu-composite', '');
-      }
-      if (viewSettings.disableSwipe) {
-        view.renderer.setAttribute('no-swipe', '');
-      } else {
-        view.renderer.removeAttribute('no-swipe');
       }
       if (appService?.isAndroidApp) {
         if (eink) {
