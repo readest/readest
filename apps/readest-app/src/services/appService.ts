@@ -19,6 +19,7 @@ import type { BookNav } from '@/services/nav';
 import { getLibraryFilename, getLibraryBackupFilename } from '@/utils/book';
 
 import { getOSPlatform } from '@/utils/misc';
+import { isStoragePermissionError, requestStoragePermission } from '@/utils/permission';
 import { ProgressHandler } from '@/utils/transfer';
 import { CustomTextureInfo } from '@/styles/textures';
 import { CustomFont, CustomFontInfo } from '@/styles/fonts';
@@ -441,7 +442,31 @@ export abstract class BaseAppService implements AppService {
     return LibrarySvc.loadLibraryBooks(this.fs, this.generateCoverImageUrl.bind(this));
   }
 
+  // Prompt for storage permission at most once per session (see saveLibraryBooks).
+  private storagePermissionRequested = false;
+
   async saveLibraryBooks(books: Book[], options?: SaveLibraryBooksOptions): Promise<void> {
-    return LibrarySvc.saveLibraryBooks(this.fs, books, options);
+    try {
+      return await LibrarySvc.saveLibraryBooks(this.fs, books, options);
+    } catch (error) {
+      // A custom library folder on Android shared storage needs All Files
+      // Access. Without it the write fails with EACCES and, because callers
+      // (sync, imports) don't await/catch this, it surfaced as an unhandled
+      // rejection crash (Sentry READEST-A). Re-request the permission through
+      // the same flow used at import time and retry once. Only prompt once per
+      // session so background saves don't repeatedly yank the user to system
+      // settings; after that a still-denied save is logged, not crashed —
+      // the user was already shown the All Files Access screen.
+      if (!this.isAndroidApp || !isStoragePermissionError(error)) {
+        throw error;
+      }
+      if (!this.storagePermissionRequested) {
+        this.storagePermissionRequested = true;
+        if (await requestStoragePermission()) {
+          return await LibrarySvc.saveLibraryBooks(this.fs, books, options);
+        }
+      }
+      console.warn('[library] not saved: storage permission not granted', error);
+    }
   }
 }

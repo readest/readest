@@ -67,9 +67,20 @@ vi.mock('@/utils/misc', async (importOriginal) => {
   };
 });
 
+// Keep the real isStoragePermissionError; only stub the interactive request.
+vi.mock('@/utils/permission', async (importOriginal) => {
+  const original = await importOriginal<Record<string, unknown>>();
+  return {
+    ...original,
+    requestStoragePermission: vi.fn(),
+  };
+});
+
 import { BaseAppService } from '@/services/appService';
 import * as Settings from '@/services/settingsService';
 import * as BookSvc from '@/services/bookService';
+import * as LibrarySvc from '@/services/libraryService';
+import { requestStoragePermission } from '@/utils/permission';
 
 // Concrete test implementation of BaseAppService
 class TestAppService extends BaseAppService {
@@ -190,6 +201,70 @@ describe('BaseAppService', () => {
       await service.prepareBooksDir();
       expect(mockFs.getPrefix).toHaveBeenCalledWith('Books');
       expect(service.localBooksDir).toBe('/base/books');
+    });
+  });
+
+  describe('saveLibraryBooks storage permission (READEST-A)', () => {
+    // clearAllMocks resets call history but not implementations, so restore the
+    // shared saveLibraryBooks mock's default after these override it.
+    afterEach(() => {
+      vi.mocked(LibrarySvc.saveLibraryBooks).mockReset().mockResolvedValue(undefined);
+      vi.mocked(requestStoragePermission).mockReset();
+    });
+
+    const permError = () =>
+      new Error(
+        'Failed to save library.json: failed to open file at path: ' +
+          '/storage/emulated/0/Readest/Books/library.json.bak with error: ' +
+          'Permission denied (os error 13)',
+      );
+
+    test('on Android, requests storage permission and retries once when granted', async () => {
+      service.isAndroidApp = true;
+      vi.mocked(LibrarySvc.saveLibraryBooks)
+        .mockRejectedValueOnce(permError())
+        .mockResolvedValueOnce(undefined);
+      vi.mocked(requestStoragePermission).mockResolvedValue(true);
+
+      await expect(service.saveLibraryBooks([])).resolves.toBeUndefined();
+      expect(requestStoragePermission).toHaveBeenCalledTimes(1);
+      expect(LibrarySvc.saveLibraryBooks).toHaveBeenCalledTimes(2);
+    });
+
+    test('on Android, does not crash when permission is denied', async () => {
+      service.isAndroidApp = true;
+      vi.mocked(LibrarySvc.saveLibraryBooks).mockRejectedValue(permError());
+      vi.mocked(requestStoragePermission).mockResolvedValue(false);
+
+      await expect(service.saveLibraryBooks([])).resolves.toBeUndefined();
+      // No retry when the permission was declined.
+      expect(LibrarySvc.saveLibraryBooks).toHaveBeenCalledTimes(1);
+    });
+
+    test('only prompts once per session across repeated failing saves', async () => {
+      service.isAndroidApp = true;
+      vi.mocked(LibrarySvc.saveLibraryBooks).mockRejectedValue(permError());
+      vi.mocked(requestStoragePermission).mockResolvedValue(false);
+
+      await service.saveLibraryBooks([]);
+      await service.saveLibraryBooks([]);
+      expect(requestStoragePermission).toHaveBeenCalledTimes(1);
+    });
+
+    test('re-throws non-permission errors', async () => {
+      service.isAndroidApp = true;
+      vi.mocked(LibrarySvc.saveLibraryBooks).mockRejectedValue(new Error('disk full'));
+
+      await expect(service.saveLibraryBooks([])).rejects.toThrow('disk full');
+      expect(requestStoragePermission).not.toHaveBeenCalled();
+    });
+
+    test('does not intercept on non-Android platforms', async () => {
+      service.isAndroidApp = false;
+      vi.mocked(LibrarySvc.saveLibraryBooks).mockRejectedValue(permError());
+
+      await expect(service.saveLibraryBooks([])).rejects.toThrow('Permission denied');
+      expect(requestStoragePermission).not.toHaveBeenCalled();
     });
   });
 
