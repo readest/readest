@@ -259,6 +259,21 @@ class TransferManager {
     this.persistQueue();
   }
 
+  clearCompleted(): void {
+    useTransferStore.getState().clearCompleted();
+    this.persistQueue();
+  }
+
+  clearFailed(): void {
+    useTransferStore.getState().clearFailed();
+    this.persistQueue();
+  }
+
+  clearAll(): void {
+    useTransferStore.getState().clearAll();
+    this.persistQueue();
+  }
+
   private async processQueue(): Promise<void> {
     if (this.isProcessing) return;
 

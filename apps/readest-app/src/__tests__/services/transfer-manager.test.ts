@@ -527,6 +527,90 @@ describe('TransferManager', () => {
     });
   });
 
+  // ── clearCompleted ───────────────────────────────────────────────
+  describe('clearCompleted', () => {
+    test('removes completed transfers, keeps others, and persists the queue', async () => {
+      const book1 = makeBook({ hash: 'h1', title: 'B1' });
+      const book2 = makeBook({ hash: 'h2', title: 'B2' });
+      const appService = makeAppService();
+      await transferManager.initialize(
+        appService as never,
+        () => [book1, book2],
+        vi.fn(),
+        translationFn,
+      );
+
+      transferManager.pauseQueue();
+      const id1 = transferManager.queueUpload(book1)!;
+      const id2 = transferManager.queueDownload(book2)!;
+      useTransferStore.getState().setTransferStatus(id1, 'completed');
+
+      transferManager.clearCompleted();
+
+      expect(useTransferStore.getState().transfers[id1]).toBeUndefined();
+      expect(useTransferStore.getState().transfers[id2]).toBeDefined();
+
+      const stored = JSON.parse(localStorage.getItem('readest_transfer_queue')!);
+      expect(stored.transfers[id1]).toBeUndefined();
+      expect(stored.transfers[id2]).toBeDefined();
+    });
+  });
+
+  // ── clearFailed ──────────────────────────────────────────────────
+  describe('clearFailed', () => {
+    test('removes failed/cancelled transfers, keeps others, and persists the queue', async () => {
+      const book1 = makeBook({ hash: 'h1', title: 'B1' });
+      const book2 = makeBook({ hash: 'h2', title: 'B2' });
+      const appService = makeAppService();
+      await transferManager.initialize(
+        appService as never,
+        () => [book1, book2],
+        vi.fn(),
+        translationFn,
+      );
+
+      transferManager.pauseQueue();
+      const id1 = transferManager.queueUpload(book1)!;
+      const id2 = transferManager.queueDownload(book2)!;
+      useTransferStore.getState().setTransferStatus(id1, 'failed', 'boom');
+
+      transferManager.clearFailed();
+
+      expect(useTransferStore.getState().transfers[id1]).toBeUndefined();
+      expect(useTransferStore.getState().transfers[id2]).toBeDefined();
+
+      const stored = JSON.parse(localStorage.getItem('readest_transfer_queue')!);
+      expect(stored.transfers[id1]).toBeUndefined();
+      expect(stored.transfers[id2]).toBeDefined();
+    });
+  });
+
+  // ── clearAll ─────────────────────────────────────────────────────
+  describe('clearAll', () => {
+    test('removes every transfer and persists the empty queue', async () => {
+      const book1 = makeBook({ hash: 'h1', title: 'B1' });
+      const book2 = makeBook({ hash: 'h2', title: 'B2' });
+      const appService = makeAppService();
+      await transferManager.initialize(
+        appService as never,
+        () => [book1, book2],
+        vi.fn(),
+        translationFn,
+      );
+
+      transferManager.pauseQueue();
+      transferManager.queueUpload(book1);
+      transferManager.queueDownload(book2);
+
+      transferManager.clearAll();
+
+      expect(Object.keys(useTransferStore.getState().transfers)).toHaveLength(0);
+
+      const stored = JSON.parse(localStorage.getItem('readest_transfer_queue')!);
+      expect(Object.keys(stored.transfers)).toHaveLength(0);
+    });
+  });
+
   // ── Queue processing (integration-style) ─────────────────────────
   describe('queue processing', () => {
     test('successful upload calls appService.uploadBook and updates book', async () => {
