@@ -14,7 +14,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useParallelViewStore } from '@/store/parallelViewStore';
 import { useMouseEvent, useTouchEvent, useOpenMediaEvent } from '../hooks/useIframeEvents';
-import { useMeshPageCurl, applyPageTurnAttributes } from '../hooks/useMeshPageCurl';
+import { useCapturedTurn, applyPageTurnAttributes } from '../hooks/useCapturedTurn';
 import { useBrightnessGesture } from '../hooks/useBrightnessGesture';
 import BrightnessOverlay from './BrightnessOverlay';
 import { usePagination, viewPagination } from '../hooks/usePagination';
@@ -608,7 +608,7 @@ const FoliateViewer: React.FC<{
 
   useOpenMediaEvent(bookKey, handleImagePress, handleTablePress);
 
-  useMeshPageCurl(bookKey, viewRef);
+  useCapturedTurn(bookKey, viewRef);
 
   useFoliateEvents(viewRef.current, {
     onLoad: docLoadHandler,

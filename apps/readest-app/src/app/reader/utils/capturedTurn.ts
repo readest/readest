@@ -1,29 +1,36 @@
-import { PageCurlRenderer } from '@/utils/pageCurl';
+import { CurlGrab, PageCurlRenderer } from '@/utils/pageCurl';
+import { PageSlideRenderer } from '@/utils/pageSlide';
 
 /**
- * Mesh page-curl orchestration (readest#555, Tauri platforms).
+ * Captured page-turn orchestration (readest#555, Tauri platforms).
  *
- * A page turn cannot bend the live page — the page is a slice of one big
- * multi-column iframe. Instead the platform webview captures the outgoing
- * page as a bitmap, the live view turns instantly underneath, and a WebGL
- * overlay bends the captured bitmap over the (already turned) live page:
+ * A page turn cannot move the live page as a layer — the page is a slice of
+ * one big multi-column iframe. Instead the platform webview captures the
+ * outgoing page as a bitmap, the live view turns instantly underneath, and
+ * an overlay animates the captured bitmap over the (already turned) live
+ * page:
  *
  *   capture content box → mount overlay drawing the flat capture →
- *   navigate instantly under it → animate/scrub the curl → dispose.
+ *   navigate instantly under it → animate/scrub the turn → dispose.
  *
- * Backward turns run the same pipeline mirrored: the current page curls
- * away from the spine edge, revealing the previous page underneath — the
- * same "old page recedes" choreography the View Transitions curl uses.
+ * Two overlay renderers share the pipeline: the WebGL mesh curl, and the
+ * flat slide for engines where the View Transitions slide is unavailable
+ * (iOS 18 WebKit crashes on it; older engines lack the API).
  *
- * The controller only orchestrates DOM + GL; the host callbacks supply the
- * platform pieces (native capture, instant navigation, geometry), which
- * keeps it independent of stores and testable in a plain browser.
+ * Backward turns run the same pipeline mirrored: the current page curls or
+ * slides away from the spine edge, revealing the previous page underneath —
+ * the same "old page recedes" choreography the View Transitions turns use.
+ *
+ * The controller only orchestrates DOM + rendering; the host callbacks
+ * supply the platform pieces (native capture, instant navigation,
+ * geometry), which keeps it independent of stores and testable in a plain
+ * browser.
  */
-export interface MeshCurlHost {
+export interface CapturedTurnHost {
   /** Element the overlay mounts into (the reader grid cell). */
   getHostElement: () => HTMLElement | null;
   /**
-   * Rect of the page to capture and curl, in viewport CSS px. The whole
+   * Rect of the page to capture and turn, in viewport CSS px. The whole
    * reader cell — running header, footer, and margins included — turns
    * like a physical sheet, matching Apple Books.
    */
@@ -34,11 +41,21 @@ export interface MeshCurlHost {
   navigate: (forward: boolean) => Promise<void>;
 }
 
-interface ActiveCurl {
+export type CapturedTurnStyle = 'curl' | 'slide';
+
+/** What the overlay draws each frame; PageCurlRenderer and PageSlideRenderer. */
+interface TurnRenderer {
+  attach(container: HTMLElement, width: number, height: number): void;
+  setTexture(source: ImageBitmap): void;
+  render(progress: number, grab: CurlGrab, rtl: boolean): void;
+  dispose(): void;
+}
+
+interface ActiveTurn {
   overlay: HTMLElement;
-  renderer: PageCurlRenderer;
+  renderer: TurnRenderer;
   forward: boolean;
-  /** Renderer-space mirror flag (spine side of the fold), not book direction. */
+  /** Renderer-space mirror flag (spine side of the turn), not book direction. */
   rendererRtl: boolean;
   progress: number;
   grabY: number;
@@ -49,14 +66,14 @@ interface ActiveCurl {
 
 const easeInOutQuad = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (1 - t) * (1 - t) * 2);
 
-export class MeshCurlTurn {
-  #host: MeshCurlHost;
+export class CapturedPageTurn {
+  #host: CapturedTurnHost;
   #duration: number;
-  #active: ActiveCurl | null = null;
+  #active: ActiveTurn | null = null;
   /** Serializes turns: a new turn interrupts and awaits the previous one. */
   #pending: Promise<unknown> = Promise.resolve();
 
-  constructor(host: MeshCurlHost, options: { duration?: number } = {}) {
+  constructor(host: CapturedTurnHost, options: { duration?: number } = {}) {
     this.#host = host;
     this.#duration = options.duration ?? 450;
   }
@@ -66,15 +83,15 @@ export class MeshCurlTurn {
   }
 
   /**
-   * Programmatic page turn: curls all the way through. Resolves true when
-   * the mesh turn ran; rejects if the platform capture failed (the caller
-   * should mark mesh curl unavailable and fall back). `rtl` is the book's
-   * page progression direction.
+   * Programmatic page turn: animates all the way through. Resolves true
+   * when the captured turn ran; rejects if the platform capture failed (the
+   * caller should mark the capture unavailable and fall back). `rtl` is the
+   * book's page progression direction.
    */
-  async turn(forward: boolean, rtl: boolean): Promise<boolean> {
+  async turn(forward: boolean, rtl: boolean, style: CapturedTurnStyle = 'curl'): Promise<boolean> {
     const run = this.#pending.then(async () => {
       this.#finishActive();
-      const active = await this.#setUp(forward, rtl);
+      const active = await this.#setUp(forward, rtl, style);
       if (!active) return false;
       await this.#playTo(active, 1);
       this.#disposeActive();
@@ -87,13 +104,17 @@ export class MeshCurlTurn {
 
   /**
    * Finger-tracked turn: captures, navigates instantly under the overlay,
-   * and leaves the curl at progress 0 for `moveDrag` to scrub. Resolves
-   * false when the mesh could not start (no host element/rect).
+   * and leaves the turn at progress 0 for `moveDrag` to scrub. Resolves
+   * false when the turn could not start (no host element/rect).
    */
-  async beginDrag(forward: boolean, rtl: boolean): Promise<boolean> {
+  async beginDrag(
+    forward: boolean,
+    rtl: boolean,
+    style: CapturedTurnStyle = 'curl',
+  ): Promise<boolean> {
     const run = this.#pending.then(async () => {
       this.#finishActive();
-      const active = await this.#setUp(forward, rtl);
+      const active = await this.#setUp(forward, rtl, style);
       if (!active) return false;
       active.renderer.render(active.progress, this.#grab(active), active.rendererRtl);
       return true;
@@ -102,7 +123,7 @@ export class MeshCurlTurn {
     return run;
   }
 
-  /** Scrub the curl from the finger. Safe to call while beginDrag is pending. */
+  /** Scrub the turn from the finger. Safe to call while beginDrag is pending. */
   moveDrag(progress: number, grabY: number) {
     const active = this.#active;
     if (!active) return;
@@ -112,9 +133,10 @@ export class MeshCurlTurn {
   }
 
   /**
-   * Release the drag: play out to the end (commit) or un-curl and instantly
-   * turn the live view back (cancel) — the overlay shows the old page flat
-   * while the view underneath returns, so no wrong page ever flashes.
+   * Release the drag: play out to the end (commit) or animate back flat and
+   * instantly turn the live view back (cancel) — the overlay shows the old
+   * page flat while the view underneath returns, so no wrong page ever
+   * flashes.
    */
   async endDrag(commit: boolean) {
     const active = this.#active;
@@ -132,7 +154,11 @@ export class MeshCurlTurn {
     this.#finishActive();
   }
 
-  async #setUp(forward: boolean, rtl: boolean): Promise<ActiveCurl | null> {
+  async #setUp(
+    forward: boolean,
+    rtl: boolean,
+    style: CapturedTurnStyle,
+  ): Promise<ActiveTurn | null> {
     const hostElement = this.#host.getHostElement();
     const rect = this.#host.getContentRect();
     if (!hostElement || !rect || rect.width <= 0 || rect.height <= 0) return null;
@@ -159,7 +185,8 @@ export class MeshCurlTurn {
     });
     hostElement.appendChild(overlay);
 
-    const renderer = new PageCurlRenderer();
+    const renderer: TurnRenderer =
+      style === 'slide' ? new PageSlideRenderer() : new PageCurlRenderer();
     try {
       renderer.attach(overlay, rect.width, rect.height);
       renderer.setTexture(bitmap);
@@ -171,12 +198,13 @@ export class MeshCurlTurn {
       bitmap.close();
     }
 
-    const active: ActiveCurl = {
+    const active: ActiveTurn = {
       overlay,
       renderer,
       forward,
-      // Forward: the page lifts from its outer edge (right for LTR books).
-      // Backward: it lifts from the spine edge — the mirror image.
+      // Forward: the page moves out from its outer edge toward the spine
+      // (left for LTR books). Backward: the mirror image — it recedes over
+      // the outer edge, revealing the previous page.
       rendererRtl: forward ? rtl : !rtl,
       progress: 0,
       grabY: 0.5,
@@ -192,12 +220,12 @@ export class MeshCurlTurn {
     return active;
   }
 
-  #grab(active: ActiveCurl) {
+  #grab(active: ActiveTurn) {
     return { x: active.rendererRtl ? 0 : 1, y: active.grabY };
   }
 
-  /** Animate the active curl from its current progress to `target`. */
-  #playTo(active: ActiveCurl, target: number): Promise<void> {
+  /** Animate the active turn from its current progress to `target`. */
+  #playTo(active: ActiveTurn, target: number): Promise<void> {
     return new Promise((resolve) => {
       const from = active.progress;
       const span = target - from;

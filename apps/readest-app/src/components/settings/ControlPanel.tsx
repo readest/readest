@@ -12,7 +12,11 @@ import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { PageTurnStyle } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
-import { applyPageTurnAttributes } from '@/app/reader/hooks/useMeshPageCurl';
+import {
+  applyPageTurnAttributes,
+  supportsViewTransitionTurns,
+} from '@/app/reader/hooks/useCapturedTurn';
+import { isTauriAppPlatform } from '@/services/environment';
 import {
   BoxedList,
   NavigationRow,
@@ -74,6 +78,19 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const resetToDefaults = useResetViewSettings();
   const pageTurnerResetRef = useRef<() => void>(() => {});
   const canShare = canShareText(appService);
+
+  // The layered styles need an engine with full View Transitions support or
+  // the Tauri captured-turn fallback; engines like iOS 18 WebKit crash on
+  // the VT turns, so on the web they only get Push (readest#555).
+  const turnStyleOptions = [
+    { value: 'push', label: _('Push') },
+    ...(supportsViewTransitionTurns() || isTauriAppPlatform()
+      ? [
+          { value: 'slide', label: _('Slide') },
+          { value: 'curl', label: _('Page Curl') },
+        ]
+      : []),
+  ];
 
   const handleReset = () => {
     resetToDefaults({
@@ -443,14 +460,14 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         />
         <SettingsRow label={_('Animation Style')} data-setting-id='settings.control.pageTurnStyle'>
           <SettingsSelect
-            value={pageTurnStyle}
+            // A synced slide/curl setting from another device still reads as
+            // push here when this engine cannot animate it.
+            value={
+              turnStyleOptions.some((opt) => opt.value === pageTurnStyle) ? pageTurnStyle : 'push'
+            }
             onChange={(e) => setPageTurnStyle(e.target.value as PageTurnStyle)}
             ariaLabel={_('Animation Style')}
-            options={[
-              { value: 'push', label: _('Push') },
-              { value: 'slide', label: _('Slide') },
-              { value: 'curl', label: _('Page Curl') },
-            ]}
+            options={turnStyleOptions}
             disabled={!animated}
           />
         </SettingsRow>

@@ -5,49 +5,73 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { captureWebviewRegion } from '@/utils/bridge';
 import { isTauriAppPlatform } from '@/services/environment';
-import { MeshCurlTurn } from '../utils/meshCurl';
+import { CapturedPageTurn, CapturedTurnStyle } from '../utils/capturedTurn';
 import { useTouchInterceptor } from './useTouchInterceptor';
 
 // Once the native snapshot fails (older webview, capture bug), stop trying
-// for the rest of the session: the CSS arc-fold curl takes over via the
-// renderer's `turn-style` attribute.
-let meshCaptureBroken = false;
+// for the rest of the session: the renderer's own `turn-style` animations
+// take over where the engine supports them, push everywhere else.
+let captureBroken = false;
 
 /**
- * Whether the true mesh page curl should drive turns for this view. The
- * mesh needs a native webview snapshot (Tauri only) and only makes sense
- * for animated, paginated, reflowable books — everything else keeps the
- * paginator's own turn styles.
+ * Whether the engine runs the paginator's layered View Transition turns
+ * reliably. iOS 18 WebKit ships `document.startViewTransition` but crashes
+ * the WebContent process when a turn transition snapshots the reader, so
+ * the presence of the API is not enough; nested view-transition groups
+ * (Chrome/WebView 140+) mark the mature engines where the layered turns
+ * are known to work.
  */
-export const isMeshCurlEligible = (viewSettings: ViewSettings, isFixedLayout: boolean) =>
-  isTauriAppPlatform() &&
-  !meshCaptureBroken &&
-  viewSettings.pageTurnStyle === 'curl' &&
-  !!viewSettings.animated &&
-  !viewSettings.scrolled &&
-  !viewSettings.isEink &&
-  !isFixedLayout;
+export const supportsViewTransitionTurns = (): boolean =>
+  typeof document !== 'undefined' &&
+  'startViewTransition' in document &&
+  typeof CSS !== 'undefined' &&
+  typeof CSS.supports === 'function' &&
+  CSS.supports('view-transition-group', 'nearest');
 
 /**
- * Single source of truth for the page-turn renderer attributes. When the
- * mesh curl is active the paginator must stay out of the way: no
- * `turn-style` (the app curls the captured page itself) and `no-swipe`
- * (the touch interceptor scrubs the curl instead of the paginator's
- * finger-tracked View Transition).
+ * The turn style the captured-page pipeline should drive for this view, or
+ * null when the paginator's own turns apply. The pipeline needs a native
+ * webview snapshot (Tauri only) and only makes sense for animated,
+ * paginated, reflowable books. The curl always turns from a capture (a
+ * flat snapshot cannot mesh-bend); the slide prefers the View Transitions
+ * version and falls back to the captured slide on engines without full
+ * support.
+ */
+export const getCapturedTurnStyle = (
+  viewSettings: ViewSettings,
+  isFixedLayout: boolean,
+): CapturedTurnStyle | null => {
+  if (!isTauriAppPlatform() || captureBroken) return null;
+  if (!viewSettings.animated || viewSettings.scrolled || viewSettings.isEink || isFixedLayout) {
+    return null;
+  }
+  if (viewSettings.pageTurnStyle === 'curl') return 'curl';
+  if (viewSettings.pageTurnStyle === 'slide' && !supportsViewTransitionTurns()) return 'slide';
+  return null;
+};
+
+/**
+ * Single source of truth for the page-turn renderer attributes. When a
+ * captured turn is active the paginator must stay out of the way: no
+ * `turn-style` (the app animates the captured page itself) and `no-swipe`
+ * (the touch interceptor scrubs the turn instead of the paginator's
+ * finger-tracked View Transition). The layered `turn-style` values are
+ * withheld from engines without full View Transitions support — iOS 18
+ * WebKit crashes on them — leaving those on push.
  */
 export const applyPageTurnAttributes = (
   view: FoliateView,
   viewSettings: ViewSettings,
   isFixedLayout: boolean,
 ) => {
-  const mesh = isMeshCurlEligible(viewSettings, isFixedLayout);
+  const captured = getCapturedTurnStyle(viewSettings, isFixedLayout);
   const style = viewSettings.pageTurnStyle;
-  if (style && style !== 'push' && !mesh) {
+  if (style && style !== 'push' && !captured && supportsViewTransitionTurns()) {
     view.renderer.setAttribute('turn-style', style);
   } else {
     view.renderer.removeAttribute('turn-style');
   }
-  if (viewSettings.disableSwipe || mesh) {
+  if (viewSettings.disableSwipe || captured) {
     view.renderer.setAttribute('no-swipe', '');
   } else {
     view.renderer.removeAttribute('no-swipe');
@@ -61,25 +85,25 @@ interface DragState {
 }
 
 /**
- * Drives the true mesh page curl (readest#555) on Tauri platforms: wraps
+ * Drives the captured page turns (readest#555) on Tauri platforms: wraps
  * the view's `prev`/`next` so programmatic turns (taps, keys, wheel) run
  * the capture→overlay→instant-turn→animate pipeline, and registers a touch
- * interceptor that scrubs the curl from the finger. Falls back to the
- * paginator's CSS curl when the native capture is unavailable.
+ * interceptor that scrubs the turn from the finger. Falls back to the
+ * paginator's own animations when the native capture is unavailable.
  */
-export const useMeshPageCurl = (bookKey: string, viewRef: React.RefObject<FoliateView | null>) => {
+export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<FoliateView | null>) => {
   const { getViewSettings } = useReaderStore();
   const { getBookData } = useBookDataStore();
-  const controllerRef = useRef<MeshCurlTurn | null>(null);
+  const controllerRef = useRef<CapturedPageTurn | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const view = viewRef.current;
 
   const isFixedLayout = () => !!getBookData(bookKey)?.isFixedLayout;
 
   const markCaptureBroken = (error: unknown) => {
-    if (meshCaptureBroken) return;
-    meshCaptureBroken = true;
-    console.warn('Mesh page curl unavailable, falling back to CSS curl:', error);
+    if (captureBroken) return;
+    captureBroken = true;
+    console.warn('Captured page turn unavailable, falling back:', error);
     const currentView = viewRef.current;
     const viewSettings = getViewSettings(bookKey);
     if (currentView && viewSettings) {
@@ -98,9 +122,9 @@ export const useMeshPageCurl = (bookKey: string, viewRef: React.RefObject<Foliat
       prev: view.prev.bind(view),
       next: view.next.bind(view),
     };
-    const controller = new MeshCurlTurn({
+    const controller = new CapturedPageTurn({
       getHostElement: () => document.getElementById(`gridcell-${bookKey}`),
-      // The whole reader cell curls — running header, footer, and page
+      // The whole reader cell turns — running header, footer, and page
       // margins ride the turning page like a physical sheet (and like
       // Apple Books), so the capture spans the full cell, not just the
       // text content box.
@@ -123,26 +147,25 @@ export const useMeshPageCurl = (bookKey: string, viewRef: React.RefObject<Foliat
     });
     controllerRef.current = controller;
 
-    const meshTurn = async (forward: boolean, distance?: number) => {
+    const capturedTurn = async (forward: boolean, distance?: number) => {
       const viewSettings = getViewSettings(bookKey);
       const boundary = forward ? view.renderer.atEnd : view.renderer.atStart;
-      if (
-        distance !== undefined ||
-        !viewSettings ||
-        !isMeshCurlEligible(viewSettings, isFixedLayout()) ||
-        boundary
-      ) {
+      const style =
+        viewSettings && distance === undefined && !boundary
+          ? getCapturedTurnStyle(viewSettings, isFixedLayout())
+          : null;
+      if (!viewSettings || !style) {
         return forward ? originals.next(distance) : originals.prev(distance);
       }
       try {
-        await controller.turn(forward, viewSettings.rtl);
+        await controller.turn(forward, viewSettings.rtl, style);
       } catch (error) {
         markCaptureBroken(error);
         return forward ? originals.next() : originals.prev();
       }
     };
-    view.prev = (distance?: number) => void meshTurn(false, distance);
-    view.next = (distance?: number) => void meshTurn(true, distance);
+    view.prev = (distance?: number) => void capturedTurn(false, distance);
+    view.next = (distance?: number) => void capturedTurn(true, distance);
 
     return () => {
       view.prev = originals.prev;
@@ -154,7 +177,7 @@ export const useMeshPageCurl = (bookKey: string, viewRef: React.RefObject<Foliat
   }, [view, bookKey]);
 
   useTouchInterceptor(
-    `mesh-curl-${bookKey}`,
+    `captured-turn-${bookKey}`,
     (bk, detail) => {
       if (bk !== bookKey) return false;
       const currentView = viewRef.current;
@@ -170,13 +193,9 @@ export const useMeshPageCurl = (bookKey: string, viewRef: React.RefObject<Foliat
       if (detail.phase === 'move') {
         let state = dragRef.current;
         if (!state) {
-          if (
-            !viewSettings ||
-            viewSettings.disableSwipe ||
-            !isMeshCurlEligible(viewSettings, isFixedLayout())
-          ) {
-            return false;
-          }
+          if (!viewSettings || viewSettings.disableSwipe) return false;
+          const style = getCapturedTurnStyle(viewSettings, isFixedLayout());
+          if (!style) return false;
           // Horizontal intent only; leave vertical swipes and taps alone.
           const { deltaX, deltaY } = detail;
           if (Math.abs(deltaX) < 15 || Math.abs(deltaX) <= Math.abs(deltaY)) return false;
@@ -190,7 +209,7 @@ export const useMeshPageCurl = (bookKey: string, viewRef: React.RefObject<Foliat
           };
           dragRef.current = state;
           controller
-            .beginDrag(forward, viewSettings.rtl)
+            .beginDrag(forward, viewSettings.rtl, style)
             .then((ok) => {
               if (!ok) dragRef.current = null;
             })
