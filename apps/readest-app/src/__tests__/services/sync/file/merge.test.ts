@@ -129,6 +129,36 @@ describe('mergeBookMetadata (LWW field subset)', () => {
     expect(m.progress).toEqual([1, 2]);
     expect(m.updatedAt).toBe(9);
   });
+
+  test('carries remote group membership (add-to-group) when remote is newer (#4942)', () => {
+    const local = { hash: 'h', title: 'T', author: 'A', updatedAt: 1 } as Book;
+    const remote = {
+      hash: 'h',
+      title: 'T',
+      author: 'A',
+      groupId: 'g1',
+      groupName: 'Sci-Fi',
+      updatedAt: 9,
+    } as Book;
+    const m = mergeBookMetadata(local, remote);
+    expect(m.groupId).toBe('g1');
+    expect(m.groupName).toBe('Sci-Fi');
+  });
+
+  test('propagates group removal when remote cleared membership (#4942)', () => {
+    const local = {
+      hash: 'h',
+      title: 'T',
+      author: 'A',
+      groupId: 'g1',
+      groupName: 'Sci-Fi',
+      updatedAt: 1,
+    } as Book;
+    const remote = { hash: 'h', title: 'T', author: 'A', updatedAt: 9 } as Book;
+    const m = mergeBookMetadata(local, remote);
+    expect(m.groupId).toBeUndefined();
+    expect(m.groupName).toBeUndefined();
+  });
 });
 
 describe('isRemoteBookMetadataNewer', () => {

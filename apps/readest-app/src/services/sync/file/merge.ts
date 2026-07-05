@@ -87,14 +87,21 @@ export const mergeBookConfig = (
  * Overlay the user-facing metadata of `remote` onto `local`, preserving every
  * device-local / file-system field: `filePath`, `sourceTitle` (which names the
  * on-disk file), `coverImageUrl` (a device-local blob URL the caller
- * regenerates), reading progress, reading status, group membership, `hash`,
- * `format`, `createdAt`, etc.
+ * regenerates), reading progress, reading status, `hash`, `format`,
+ * `createdAt`, etc.
  *
- * Only the fields a metadata edit actually changes travel — this list mirrors
- * `getBookWithUpdatedMetadata` in `utils/book.ts`, which is the local side of
- * the same operation. The cover image is replicated separately as cover.png
- * bytes (see the reconciliation pass in the engine), so it is intentionally
- * absent here.
+ * Group membership (`groupId` / `groupName`) is user-facing metadata and travels
+ * too, matching the native cloud sync (`transform.ts` maps `group_id` /
+ * `group_name`). Without this, re-grouping a book already present on both
+ * devices bumps `updatedAt` and wins LWW, yet the group change is dropped by the
+ * overlay — so it never propagated for already-synced books (#4942). Assigning
+ * the raw remote values (not `?? local`) lets a group removal (undefined) clear
+ * membership on peers too.
+ *
+ * The scalar fields a metadata edit changes mirror `getBookWithUpdatedMetadata`
+ * in `utils/book.ts`, which is the local side of the same operation. The cover
+ * image is replicated separately as cover.png bytes (see the reconciliation pass
+ * in the engine), so it is intentionally absent here.
  */
 export const mergeBookMetadata = (local: Book, remote: Book): Book => ({
   ...local,
@@ -102,6 +109,8 @@ export const mergeBookMetadata = (local: Book, remote: Book): Book => ({
   author: remote.author,
   metadata: remote.metadata ?? local.metadata,
   primaryLanguage: remote.primaryLanguage ?? local.primaryLanguage,
+  groupId: remote.groupId,
+  groupName: remote.groupName,
   updatedAt: remote.updatedAt,
 });
 

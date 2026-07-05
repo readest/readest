@@ -130,6 +130,33 @@ describe('FileSyncEngine metadata reconciliation (#4756)', () => {
     expect(indexedBook.title).toBe('New Title');
   });
 
+  test('pulls newer remote group membership for a book the device already has (#4942)', async () => {
+    const local = makeLocalBook({ updatedAt: 100 });
+    const remote = makeLocalBook({ groupId: 'g1', groupName: 'Sci-Fi', updatedAt: 200 });
+    const capture: { index?: RemoteLibraryIndex | null } = {};
+    const provider = makeProvider(makeRemoteIndex(remote, 200), null, capture);
+
+    const updateBookMetadata = vi.fn(async (_book: Book) => {});
+    const store = makeStore({ updateBookMetadata });
+
+    const engine = new FileSyncEngine(provider, store);
+    const result = await engine.syncLibrary([local], {
+      strategy: 'silent',
+      syncBooks: false,
+      deviceId: 'pc-device',
+    });
+
+    expect(updateBookMetadata).toHaveBeenCalledTimes(1);
+    const merged = updateBookMetadata.mock.calls[0]![0];
+    expect(merged.groupId).toBe('g1');
+    expect(merged.groupName).toBe('Sci-Fi');
+    expect(result.metadataUpdated).toBe(1);
+
+    const indexedBook = capture.index!.books.find((b) => b.hash === 'h1')!;
+    expect(indexedBook.groupId).toBe('g1');
+    expect(indexedBook.groupName).toBe('Sci-Fi');
+  });
+
   test('does not overwrite local metadata when the local copy is newer', async () => {
     const local = makeLocalBook({ title: 'Local Newer', updatedAt: 300 });
     const remote = makeLocalBook({ title: 'Remote Older', updatedAt: 200 });
