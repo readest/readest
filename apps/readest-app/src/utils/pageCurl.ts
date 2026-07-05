@@ -37,7 +37,11 @@ void main() {
       z = 2.0 * uRadius;
     }
   }
-  vUv = vec2(aPos.x, 1.0 - aPos.y);
+  // Texture row 0 is the top of the captured page and aPos.y = 0 is the top
+  // of the page, so page coordinates are texture coordinates as-is. Do NOT
+  // rely on UNPACK_FLIP_Y_WEBGL to reconcile them: WebKit ignores it for
+  // ImageBitmap uploads, which turned the curl upside down on iOS.
+  vUv = aPos;
   vLift = clamp(z / (2.0 * uRadius + 1.0e-4), 0.0, 1.0);
   vec2 clip = (p / uPage) * 2.0 - 1.0;
   // Lifted parts draw on top of flat parts.
@@ -183,7 +187,10 @@ export class PageCurlRenderer {
     const tex = gl.createTexture();
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, tex);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+    // Upload unflipped; the vertex shader samples page coordinates directly.
+    // (WebKit ignores UNPACK_FLIP_Y_WEBGL for ImageBitmap sources, so any
+    // orientation scheme built on it breaks on iOS.)
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
