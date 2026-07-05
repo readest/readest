@@ -12,20 +12,17 @@ import { useTranslation } from '@/hooks/useTranslation';
 import {
   ensureSharedAudioContext,
   TTSController,
-  TTSMark,
   TTSHighlightOptions,
   TTSVoicesGroup,
 } from '@/services/tts';
-import { TauriMediaSession } from '@/libs/mediaSession';
 import { eventDispatcher } from '@/utils/event';
 import { genSSMLRaw, parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
 import { isCfiInLocation } from '@/utils/cfi';
 import { getLocale } from '@/utils/misc';
-import { buildTTSMediaMetadata } from '@/utils/ttsMetadata';
 import { invokeUseBackgroundAudio } from '@/utils/bridge';
 import { estimateTTSTime } from '@/utils/ttsTime';
-import { useTTSMediaSession } from './useTTSMediaSession';
+import { releaseUnblockAudio, ttsMediaBridge, unblockAudio } from '@/services/tts/ttsMediaBridge';
 
 interface UseTTSControlProps {
   bookKey: string;
@@ -66,14 +63,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   const playbackStateRef = useRef<'playing' | 'paused' | 'stopped'>('stopped');
   const [ttsController, setTtsController] = useState<TTSController | null>(null);
   const [ttsClientsInited, setTtsClientsInitialized] = useState(false);
-
-  const {
-    mediaSessionRef,
-    unblockAudio,
-    releaseUnblockAudio,
-    initMediaSession,
-    deinitMediaSession,
-  } = useTTSMediaSession({ bookKey });
 
   // Broadcast playback transitions on the app-wide bus so consumers that
   // can't read the hook-local isPlaying flag (RSVP, paragraph mode) can react.
@@ -195,59 +184,12 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   // Controller event listeners (re-registered when ttsController changes)
   useEffect(() => {
     if (!ttsController || !bookKey) return;
-    const bookData = getBookData(bookKey);
-    if (!bookData || !bookData.book) return;
-    const { title, author, coverImageUrl } = bookData.book;
-
     const handleNeedAuth = () => {
       eventDispatcher.dispatch('toast', {
         message: _('Please log in to use advanced TTS features'),
         type: 'error',
         timeout: 5000,
       });
-    };
-
-    const handleSpeakMark = (e: Event) => {
-      const progress = getProgress(bookKey);
-      const viewSettings = getViewSettings(bookKey);
-      const { sectionLabel } = progress || {};
-      const mark = (e as CustomEvent<TTSMark>).detail;
-      const ttsMediaMetadata = viewSettings?.ttsMediaMetadata ?? 'sentence';
-
-      const metadata = buildTTSMediaMetadata({
-        markText: mark?.text || '',
-        markName: mark?.name || '',
-        sectionLabel: sectionLabel || '',
-        title,
-        author,
-        ttsMediaMetadata,
-        previousSectionLabel: previousSectionLabelRef.current,
-      });
-
-      if (ttsMediaMetadata === 'chapter') {
-        previousSectionLabelRef.current = sectionLabel;
-      }
-
-      if (metadata.shouldUpdate && mediaSessionRef.current) {
-        const mediaSession = mediaSessionRef.current;
-        if (mediaSession instanceof TauriMediaSession) {
-          mediaSession.updateMetadata({
-            title: metadata.title,
-            artist: metadata.artist,
-            album: metadata.album,
-            artwork: '',
-          });
-        } else {
-          mediaSession.metadata = new MediaMetadata({
-            title: metadata.title,
-            artist: metadata.artist,
-            album: metadata.album,
-            artwork: [{ src: coverImageUrl || '/icon.png', sizes: '512x512', type: 'image/png' }],
-          });
-        }
-      }
-
-      void updateMediaSessionPosition();
     };
 
     const handleHighlightMark = (e: Event) => {
@@ -367,17 +309,34 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       });
     };
 
+    // Lock-screen play/pause acts on the controller through the media
+    // bridge; the panel derives its state from the controller, not from
+    // local optimistic taps. Transit 'stopped' (every paragraph advance) is
+    // ignored; terminal stops arrive via explicit stop paths.
+    const handleStateChange = (e: Event) => {
+      const { state } = (e as CustomEvent<{ state: string }>).detail;
+      if (state === 'playing') {
+        setIsPlaying(true);
+        setIsPaused(false);
+        emitPlaybackState('playing');
+      } else if (state.includes('paused')) {
+        setIsPlaying(false);
+        setIsPaused(true);
+        emitPlaybackState('paused');
+      }
+    };
+
     ttsController.addEventListener('tts-need-auth', handleNeedAuth);
-    ttsController.addEventListener('tts-speak-mark', handleSpeakMark);
     ttsController.addEventListener('tts-highlight-mark', handleHighlightMark);
     ttsController.addEventListener('tts-highlight-word', handleHighlightWord);
     ttsController.addEventListener('tts-position', handlePosition);
+    ttsController.addEventListener('tts-state-change', handleStateChange);
     return () => {
       ttsController.removeEventListener('tts-need-auth', handleNeedAuth);
-      ttsController.removeEventListener('tts-speak-mark', handleSpeakMark);
       ttsController.removeEventListener('tts-highlight-mark', handleHighlightMark);
       ttsController.removeEventListener('tts-highlight-word', handleHighlightWord);
       ttsController.removeEventListener('tts-position', handlePosition);
+      ttsController.removeEventListener('tts-state-change', handleStateChange);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsController, bookKey]);
@@ -581,7 +540,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         appService?.isIOSApp
           ? invokeUseBackgroundAudio({ enabled: false }).catch(() => {})
           : Promise.resolve(),
-        deinitMediaSession().catch(() => {}),
+        Promise.resolve()
+          .then(() => ttsMediaBridge.unbind())
+          .catch(() => {}),
       ]);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -657,7 +618,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         if (appService?.isIOSApp) {
           await invokeUseBackgroundAudio({ enabled: true });
         }
-        await initMediaSession();
         setTtsClientsInitialized(false);
 
         setShowIndicator(true);
@@ -670,6 +630,16 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         );
         ttsControllerRef.current = ttsController;
         setTtsController(ttsController);
+        ttsMediaBridge
+          .bind(ttsController, {
+            bookKey,
+            title: bookData.book.title,
+            author: bookData.book.author,
+            coverImageUrl: bookData.book.coverImageUrl || null,
+            metadataMode: viewSettings.ttsMediaMetadata ?? 'sentence',
+            getSectionLabel: () => getProgress(bookKey)?.sectionLabel,
+          })
+          .catch((err) => console.warn('TTS media bridge bind failed:', err));
 
         await ttsController.init();
         await ttsController.initViewTTS(ttsFromIndex);
@@ -715,49 +685,12 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     }
   };
 
-  // Push the section timeline's position/duration to the media session so the
-  // lock screen shows a live scrubber. Guarded against non-finite durations
-  // (empty/estimating timelines) and the position is CLAMPED, never skipped:
-  // skipping would freeze the lock-screen position when estimates overshoot.
-  const updateMediaSessionPosition = useCallback(async () => {
-    const ttsController = ttsControllerRef.current;
-    const mediaSession = mediaSessionRef.current;
-    if (!ttsController || !mediaSession) return;
-    await ttsController.ensureTimeline();
-    const info = ttsController.getPlaybackInfo();
-    if (!info || !Number.isFinite(info.duration) || info.duration <= 0) return;
-    const position = Math.min(Math.max(info.position, 0), info.duration);
-    if (mediaSession instanceof TauriMediaSession) {
-      await mediaSession.updatePlaybackState({
-        playing: ttsControllerRef.current?.state === 'playing',
-        position: Math.round(position * 1000),
-        duration: Math.round(info.duration * 1000),
-      });
-    } else if ('setPositionState' in mediaSession) {
-      try {
-        mediaSession.setPositionState({
-          duration: info.duration,
-          position,
-          playbackRate: 1,
-        });
-      } catch {
-        // Some engines reject transiently inconsistent states; the next mark
-        // updates again.
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Sentence-snapped seek used by the lock-screen scrubber and the panel.
-  const handleSeekTo = useCallback(
-    async (seconds: number) => {
-      const ttsController = ttsControllerRef.current;
-      if (!ttsController) return;
-      await ttsController.seekToTime(seconds);
-      void updateMediaSessionPosition();
-    },
-    [updateMediaSessionPosition],
-  );
+  const handleSeekTo = useCallback(async (seconds: number) => {
+    const ttsController = ttsControllerRef.current;
+    if (!ttsController) return;
+    await ttsController.seekToTime(seconds);
+  }, []);
 
   const handleGetPlaybackInfo = useCallback(() => {
     const ttsController = ttsControllerRef.current;
@@ -795,16 +728,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         await ttsController.start();
       }
     }
-
-    if (mediaSessionRef.current) {
-      const mediaSession = mediaSessionRef.current;
-      if (mediaSession instanceof TauriMediaSession) {
-        await mediaSession.updatePlaybackState({ playing: !isPlaying });
-      } else {
-        mediaSession.playbackState = isPlaying ? 'paused' : 'playing';
-      }
-    }
-  }, [isPlaying, isPaused, mediaSessionRef]);
+  }, [isPlaying, isPaused]);
 
   const handleBackward = useCallback(async (byMark = false) => {
     const ttsController = ttsControllerRef.current;
@@ -916,60 +840,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       setTtsLang(speakingLang);
     }
   }, []);
-
-  // Media session action handler effect
-  useEffect(() => {
-    const { current: mediaSession } = mediaSessionRef;
-    if (mediaSession) {
-      mediaSession.setActionHandler('play', () => {
-        handleTogglePlay();
-      });
-
-      mediaSession.setActionHandler('pause', () => {
-        handleTogglePlay();
-      });
-
-      mediaSession.setActionHandler('stop', () => {
-        handlePause();
-      });
-
-      mediaSession.setActionHandler('seekforward', () => {
-        handleForward(true);
-      });
-
-      mediaSession.setActionHandler('seekbackward', () => {
-        handleBackward(true);
-      });
-
-      mediaSession.setActionHandler('nexttrack', () => {
-        handleForward();
-      });
-
-      mediaSession.setActionHandler('previoustrack', () => {
-        handleBackward();
-      });
-
-      // Seek: units differ per backend — the native plugin reports
-      // milliseconds, navigator.mediaSession reports seconds. Both clamp in
-      // TTSController.seekToTime via the timeline (past-the-end lands on the
-      // last sentence, never a dead gesture).
-      if (mediaSession instanceof TauriMediaSession) {
-        mediaSession.setActionHandler('seekto', ((positionMs: number) => {
-          handleSeekTo(positionMs / 1000);
-        }) as (position: number) => void);
-      } else {
-        try {
-          mediaSession.setActionHandler('seekto', (details: MediaSessionActionDetails) => {
-            if (typeof details.seekTime === 'number') {
-              handleSeekTo(details.seekTime);
-            }
-          });
-        } catch {
-          // 'seekto' unsupported on this engine; the in-app scrubber covers it.
-        }
-      }
-    }
-  }, [handleTogglePlay, handlePause, handleForward, handleBackward, handleSeekTo, mediaSessionRef]);
 
   return {
     isPlaying,
