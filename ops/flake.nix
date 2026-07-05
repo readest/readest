@@ -12,16 +12,26 @@
       url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    crane.url = "github:ipetkov/crane";
   };
 
-  outputs = { self, nixpkgs, flake-utils, android, devshell, fenix }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+      android,
+      devshell,
+      fenix,
+      crane,
+    }:
     {
       overlay = final: prev: {
         inherit (self.packages.${final.stdenv.hostPlatform.system}) android-sdk;
       };
     }
-    //
-    flake-utils.lib.eachDefaultSystem (system:
+    // flake-utils.lib.eachDefaultSystem (
+      system:
       let
         inherit (nixpkgs) lib;
         inherit (pkgs.lib) optionals;
@@ -37,6 +47,14 @@
           ];
         };
 
+        toolchain = with pkgs.fenix.complete; [
+          cargo
+          clippy
+          rust-src
+          rustc
+          rustfmt
+        ];
+
         commonPackages = with pkgs; [
           pnpm
           nodejs_24
@@ -47,28 +65,32 @@
           self.formatter.${pkgs.stdenv.hostPlatform.system}
         ];
 
-        systemDeps = with pkgs; [
-          at-spi2-atk
-          atkmm
-          cairo
-          fontconfig
-          fontconfig.out
-          freetype
-          gdk-pixbuf
-          glib
-          gtk3
-          gtk4
-          harfbuzz
-          librsvg
-          libsoup_3
-          openssl
-          pango
-          zlib
-        ] ++ (optionals (!isDarwin) [
-          webkitgtk_4_1
-        ]) ++ (optionals isDarwin [
-          darwin.libiconv
-        ]);
+        systemDeps =
+          with pkgs;
+          [
+            at-spi2-atk
+            atkmm
+            cairo
+            fontconfig
+            fontconfig.out
+            freetype
+            gdk-pixbuf
+            glib
+            gtk3
+            gtk4
+            harfbuzz
+            librsvg
+            libsoup_3
+            openssl
+            pango
+            zlib
+          ]
+          ++ (optionals (!isDarwin) [
+            webkitgtk_4_1
+          ])
+          ++ (optionals isDarwin [
+            darwin.libiconv
+          ]);
         getDev = pkg: if pkg ? dev then pkg.dev else pkg;
         getLib = pkg: if pkg ? lib then pkg.lib else pkg;
 
@@ -88,11 +110,12 @@
         libPath = lib.makeLibraryPath (map getLib systemDeps);
 
         mkCommonShell =
-          { name
-          , postInit ? ""
-          , extraPackages ? [ ]
-          , extraTargets ? [ ]
-          , extraEnv ? [
+          {
+            name,
+            postInit ? "",
+            extraPackages ? [ ],
+            extraTargets ? [ ],
+            extraEnv ? [
               {
                 name = "PKG_CONFIG_PATH";
                 value = pkgConfigPath;
@@ -130,7 +153,7 @@
                     "${xcbuild}/Toolchains/XcodeDefault.xctoolchain"
                   ];
               }
-            ])
+            ]),
           }:
           pkgs.devshell.mkShell {
             inherit name;
@@ -140,12 +163,8 @@
               ++ [
                 (
                   with pkgs.fenix;
-                  pkgs.fenix.combine [
-                    complete.cargo
-                    complete.clippy
-                    complete.rust-src
-                    complete.rustc
-                    complete.rustfmt
+                  combine [
+                    toolchain
                     extraTargets
                   ]
                 )
@@ -155,32 +174,37 @@
               git submodule update --init --recursive
               pnpm install
               pnpm --filter @readest/readest-app setup-vendors
-            '' + postInit;
+            ''
+            + postInit;
           };
       in
       {
         packages = {
-          android-sdk = android.sdk.${pkgs.stdenv.hostPlatform.system} (sdkPkgs: with sdkPkgs; [
-            # Useful packages for building and testing.
-            build-tools-36-0-0
-            build-tools-35-0-0
-            build-tools-34-0-0
-            cmdline-tools-latest
-            emulator
-            platform-tools
-            platforms-android-36
-            platforms-android-35
-            platforms-android-34
-            ndk-26-1-10909125
-          ]
-          ++ lib.optionals (system == "aarch64-darwin") [
-            system-images-android-34-google-apis-arm64-v8a
-            system-images-android-34-google-apis-playstore-arm64-v8a
-          ]
-          ++ lib.optionals (system == "x86_64-darwin" || system == "x86_64-linux") [
-            system-images-android-34-google-apis-x86-64
-            system-images-android-34-google-apis-playstore-x86-64
-          ]);
+          android-sdk = android.sdk.${pkgs.stdenv.hostPlatform.system} (
+            sdkPkgs:
+            with sdkPkgs;
+            [
+              # Useful packages for building and testing.
+              build-tools-36-0-0
+              build-tools-35-0-0
+              build-tools-34-0-0
+              cmdline-tools-latest
+              emulator
+              platform-tools
+              platforms-android-36
+              platforms-android-35
+              platforms-android-34
+              ndk-26-1-10909125
+            ]
+            ++ lib.optionals (system == "aarch64-darwin") [
+              system-images-android-34-google-apis-arm64-v8a
+              system-images-android-34-google-apis-playstore-arm64-v8a
+            ]
+            ++ lib.optionals (system == "x86_64-darwin" || system == "x86_64-linux") [
+              system-images-android-34-google-apis-x86-64
+              system-images-android-34-google-apis-playstore-x86-64
+            ]
+          );
         };
 
         devShells = {
@@ -248,5 +272,32 @@
         };
 
         formatter = pkgs.nixpkgs-fmt;
-      });
+
+        packages.default =
+          let
+            craneLib = (crane.mkLib nixpkgs.legacyPackages.${system}).overrideToolchain toolchain;
+
+            commonArgs = {
+              src = ../.;
+
+              buildInputs = systemDeps;
+              nativeBuildInputs = with pkgs; [
+                clang
+                pkg-config
+                nodejs_24
+                pnpm
+              ];
+            };
+
+            cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+          in
+
+          craneLib.buildPackage (
+            commonArgs
+            // {
+              inherit cargoArtifacts;
+            }
+          );
+      }
+    );
 }
