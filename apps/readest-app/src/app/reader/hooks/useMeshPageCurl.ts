@@ -4,7 +4,6 @@ import { ViewSettings } from '@/types/book';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { captureWebviewRegion } from '@/utils/bridge';
-import { getViewInsets } from '@/utils/insets';
 import { isTauriAppPlatform } from '@/services/environment';
 import { MeshCurlTurn } from '../utils/meshCurl';
 import { useTouchInterceptor } from './useTouchInterceptor';
@@ -101,18 +100,12 @@ export const useMeshPageCurl = (bookKey: string, viewRef: React.RefObject<Foliat
     };
     const controller = new MeshCurlTurn({
       getHostElement: () => document.getElementById(`gridcell-${bookKey}`),
-      getContentRect: () => {
-        const viewSettings = getViewSettings(bookKey);
-        if (!viewSettings) return null;
-        const rect = view.getBoundingClientRect();
-        const insets = getViewInsets(viewSettings);
-        return new DOMRect(
-          rect.x + insets.left,
-          rect.y + insets.top,
-          rect.width - insets.left - insets.right,
-          rect.height - insets.top - insets.bottom,
-        );
-      },
+      // The whole reader cell curls — running header, footer, and page
+      // margins ride the turning page like a physical sheet (and like
+      // Apple Books), so the capture spans the full cell, not just the
+      // text content box.
+      getContentRect: () =>
+        document.getElementById(`gridcell-${bookKey}`)?.getBoundingClientRect() ?? null,
       capture: captureWebviewRegion,
       navigate: async (forward: boolean) => {
         // The paginator's animated paths (push slide and the layered VT

@@ -23,9 +23,9 @@ export interface MeshCurlHost {
   /** Element the overlay mounts into (the reader grid cell). */
   getHostElement: () => HTMLElement | null;
   /**
-   * Content-box rect (page margins excluded) in viewport CSS px. The
-   * header/footer live in the margins, so capturing only the content box
-   * keeps them static while the page turns, matching the layered VT turns.
+   * Rect of the page to capture and curl, in viewport CSS px. The whole
+   * reader cell — running header, footer, and margins included — turns
+   * like a physical sheet, matching Apple Books.
    */
   getContentRect: () => DOMRect | null;
   /** Native webview snapshot of `rect`, as PNG bytes. */
