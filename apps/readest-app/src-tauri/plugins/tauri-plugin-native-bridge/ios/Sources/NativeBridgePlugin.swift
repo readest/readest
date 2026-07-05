@@ -1561,9 +1561,12 @@ class NativeBridgePlugin: Plugin {
 
   /// Snapshot a region of the webview for the mesh page-curl texture
   /// (#555). The rect is in CSS pixels of the JS viewport (== points of
-  /// the WKWebView); `takeSnapshot` renders at screen scale, so the PNG
-  /// comes back Retina-sized. Resolved as base64 because the plugin
-  /// boundary is JSON-only; the Rust side decodes back to bytes.
+  /// the WKWebView). Like Android, the snapshot is capped at 2x CSS
+  /// pixels (Pro iPhones render at 3x) and encoded as JPEG — the page is
+  /// opaque and JPEG encodes several times faster than PNG, keeping the
+  /// dead time between the tap and the first curl frame short. Resolved
+  /// as base64 because the plugin boundary is JSON-only; the Rust side
+  /// decodes back to bytes.
   @objc public func capture_webview_region(_ invoke: Invoke) {
     guard let args = try? invoke.parseArgs(CaptureWebviewRegionArgs.self) else {
       return invoke.reject("Failed to parse arguments")
@@ -1574,11 +1577,25 @@ class NativeBridgePlugin: Plugin {
       }
       let config = WKSnapshotConfiguration()
       config.rect = CGRect(x: args.x, y: args.y, width: args.width, height: args.height)
+      // snapshotWidth is in points and the produced image is snapshotWidth
+      // x screen-scale pixels wide, so width x (2 / scale) points yields a
+      // 2x-CSS-pixel bitmap on 3x screens and native size elsewhere.
+      let scale = webView.window?.screen.scale ?? UIScreen.main.scale
+      if scale > 2 {
+        config.snapshotWidth = NSNumber(value: args.width * 2.0 / scale)
+      }
       webView.takeSnapshot(with: config) { image, error in
-        guard let image = image, let data = image.pngData() else {
+        guard let image = image else {
           return invoke.reject(error?.localizedDescription ?? "Snapshot failed")
         }
-        invoke.resolve(["data": data.base64EncodedString()])
+        // Encode and base64 off the main thread; the completion arrives on
+        // main and a full-screen encode is fast but not free.
+        DispatchQueue.global(qos: .userInteractive).async {
+          guard let data = image.jpegData(compressionQuality: 0.85) else {
+            return invoke.reject("JPEG encoding failed")
+          }
+          invoke.resolve(["data": data.base64EncodedString()])
+        }
       }
     }
   }

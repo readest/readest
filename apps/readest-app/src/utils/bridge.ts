@@ -265,9 +265,9 @@ export interface CaptureWebviewRegionRequest {
 
 /**
  * Capture a region of the running webview as compressed image bytes for
- * the mesh page-curl texture (#555): PNG on iOS/macOS, JPEG on Android
+ * the mesh page-curl texture (#555): PNG on macOS, JPEG on iOS/Android
  * (phone-CPU PNG encoding took ~1.5s per turn). The snapshot is taken at
- * screen scale, capped at 2x CSS pixels on Android. Rejects on platforms
+ * screen scale, capped at 2x CSS pixels on mobile. Rejects on platforms
  * without a native capture implementation (web, Windows/Linux so far) —
  * callers fall back to the CSS curl.
  */
