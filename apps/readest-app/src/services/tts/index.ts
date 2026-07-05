@@ -6,4 +6,6 @@ export * from './NativeTTSClient';
 export * from './TTSController';
 export * from './TTSData';
 export { ensureSharedAudioContext } from './WebAudioPlayer';
+export * from './TTSSessionManager';
+export { ttsMediaBridge, unblockAudio, releaseUnblockAudio } from './ttsMediaBridge';
 export { SectionTimeline } from './SectionTimeline';
