@@ -364,10 +364,10 @@ impl<R: Runtime> NativeBridge<R> {
 
 impl<R: Runtime> NativeBridge<R> {
     /// Snapshot a region of the webview as PNG bytes for the mesh
-    /// page-curl texture (#555). The Swift/Kotlin side resolves JSON, so
-    /// the image arrives base64-encoded and is decoded here; the JS-facing
-    /// command then returns it binary. Android has no implementation yet
-    /// and rejects, which the JS side treats as "use the CSS curl".
+    /// page-curl texture (#555). The Swift (WKWebView takeSnapshot) or
+    /// Kotlin (PixelCopy) side resolves JSON, so the image arrives
+    /// base64-encoded and is decoded here; the JS-facing command then
+    /// returns it binary.
     pub fn capture_webview_region(
         &self,
         _window: &tauri::WebviewWindow<R>,

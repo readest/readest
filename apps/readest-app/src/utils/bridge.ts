@@ -268,7 +268,7 @@ export interface CaptureWebviewRegionRequest {
  * page-curl texture (#555). The snapshot is taken at screen scale, so
  * the bitmap is devicePixelRatio times larger than the requested rect.
  * Rejects on platforms without a native capture implementation (web,
- * Windows/Linux/Android so far) — callers fall back to the CSS curl.
+ * Windows/Linux so far) — callers fall back to the CSS curl.
  */
 export async function captureWebviewRegion(
   request: CaptureWebviewRegionRequest,
