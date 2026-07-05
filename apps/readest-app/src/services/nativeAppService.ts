@@ -595,6 +595,13 @@ export class NativeAppService extends BaseAppService {
   override async init() {
     const execDir = await invoke<string>('get_executable_dir');
     this.execDir = execDir;
+    // Report the WebView User-Agent so Sentry can tag crashes with the
+    // engine/version (the injected browser SDK's UA context isn't forwarded).
+    try {
+      await invoke('set_webview_info', { userAgent: navigator.userAgent });
+    } catch (err) {
+      console.warn('[nativeAppService] set_webview_info failed:', err);
+    }
     // Ask Rust whether the in-app updater must stay hidden (READEST_DISABLE_UPDATER,
     // Flatpak, or a Linux deb/rpm/pacman install that Tauri can't self-update). The
     // command is the reliable source of truth; the `__READEST_UPDATER_DISABLED`

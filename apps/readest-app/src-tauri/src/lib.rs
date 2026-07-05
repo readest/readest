@@ -294,6 +294,16 @@ fn is_updater_disabled() -> bool {
     updater_disabled()
 }
 
+// Record the WebView engine/version (parsed from the app's User-Agent) so Sentry
+// events can be correlated with WebView version. Called once from
+// `NativeAppService.init()`; no-op when Sentry is disabled.
+#[tauri::command]
+fn set_webview_info(user_agent: String) {
+    if let Some((engine, version)) = sentry_config::parse_webview_info(&user_agent) {
+        sentry_config::set_webview_info(engine, version);
+    }
+}
+
 #[derive(Clone, serde::Serialize)]
 #[allow(dead_code)]
 struct SingleInstancePayload {
@@ -345,6 +355,16 @@ pub fn run() {
                             }
                         }
                     }
+                    // Tag the WebView engine/version (reported by the app at
+                    // startup) so crashes can be correlated with it.
+                    if let Some((engine, version)) = sentry_config::webview_info() {
+                        event
+                            .tags
+                            .insert("webview.engine".to_string(), engine.clone());
+                        event
+                            .tags
+                            .insert("webview.version".to_string(), version.clone());
+                    }
                     Some(event)
                 })),
                 ..Default::default()
@@ -374,6 +394,7 @@ pub fn run() {
             upload_file,
             get_environment_variable,
             get_executable_dir,
+            set_webview_info,
             #[cfg(desktop)]
             is_updater_disabled,
             allow_paths_in_scopes,
