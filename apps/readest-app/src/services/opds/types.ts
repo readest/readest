@@ -3,6 +3,11 @@ import type { Book } from '@/types/book';
 // --- Constants ---
 
 export const MAX_PAGES_PER_FEED = 5;
+// Directory-style catalogs (e.g. copyparty file listings) expose subfolders
+// as rel="subsection" navigation entries. When a catalog has no "by newest"
+// feed those subsections are crawled breadth-first, bounded by these caps.
+export const MAX_CRAWL_DEPTH = 5;
+export const MAX_FEEDS_PER_CRAWL = 50;
 export const MAX_KNOWN_ENTRIES = 2000;
 export const MAX_RETRY_ATTEMPTS = 3;
 export const RETRY_BACKOFF_MS = 60_000;
