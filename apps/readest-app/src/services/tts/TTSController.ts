@@ -56,6 +56,15 @@ type TTSState =
 
 const HIGHLIGHT_KEY = 'tts-highlight';
 
+// Hook-supplied callbacks rebound on view attach: the constructor-captured
+// closures belong to whichever reader hook created the controller and die
+// with it.
+export interface TTSViewBindings {
+  bookKey: string;
+  preprocessCallback?: (ssml: string) => Promise<string>;
+  onSectionChange?: (sectionIndex: number) => Promise<void>;
+}
+
 // Node filter shared by the live TTS instance and the timeline enumeration —
 // the two MUST segment identically or timeline sentences drift from marks.
 const createTTSNodeFilter = () =>
@@ -127,6 +136,11 @@ export class TTSController extends EventTarget {
 
   #state: TTSState = 'stopped';
   #terminated = false;
+  // View attachment: false while the session runs headless (book closed).
+  // The epoch invalidates in-flight attachView calls when a detach (or a
+  // newer attach) supersedes them.
+  #attached = true;
+  #attachEpoch = 0;
   // Controller-owned foliate TTS text instance. view.close() nulls view.tts,
   // so the controller keeps its own handle (mirrored to view.tts while a view
   // is attached, for external consumers).
@@ -206,6 +220,89 @@ export class TTSController extends EventTarget {
     });
   }
 
+  get isViewAttached(): boolean {
+    return this.#attached;
+  }
+
+  // Enter headless mode. Audio, the abort signal, and the in-flight speak
+  // generator are untouched: only layout-dependent work stops. The old view
+  // object is retained as a pure book handle (view.close() destroys the
+  // renderer but keeps view.book, and getCFI/resolveCFI are book+range math).
+  detachView(): void {
+    this.#attached = false;
+    this.#attachEpoch++;
+    // The unmounted hook's closures read wiped stores; running them headless
+    // crashes the speak loop (e.g. proofread preprocessing on a cleared
+    // viewSettings). Severed here, rebound by attachView.
+    this.preprocessCallback = undefined;
+    this.onSectionChange = undefined;
+  }
+
+  // Adopt a freshly mounted view without touching in-flight audio. Async prep
+  // builds a TTS text instance over the new view's document; the swap itself
+  // is synchronous and re-seeds from the OLD instance's cursor at swap time —
+  // forward() may have auto-advanced during prep, and a seed captured earlier
+  // would replay the previous paragraph.
+  async attachView(view: FoliateView, bindings: TTSViewBindings): Promise<void> {
+    const epoch = ++this.#attachEpoch;
+    const oldTts = this.#getTts();
+    const sectionIndex = Math.max(this.#ttsSectionIndex, 0);
+
+    // Prep (no controller state mutated): resolve the section document from
+    // the new view, preferring its rendered primary content.
+    const contents = view.renderer.getContents();
+    const primary = contents.find((x) => x.index === view.renderer.primaryIndex) ?? contents[0];
+    let doc = primary && (primary.index ?? 0) === sectionIndex ? primary.doc : undefined;
+    if (!doc) {
+      const section = view.book.sections?.[sectionIndex];
+      doc = section?.createDocument ? await section.createDocument() : undefined;
+    }
+    if (!doc) {
+      console.warn('[TTS] attachView: no document for section', sectionIndex);
+      return;
+    }
+    const { TTS } = await import('foliate-js/tts.js');
+    const { textWalker } = await import('foliate-js/text-walker.js');
+    const newTts = new TTS(
+      doc,
+      textWalker,
+      createTTSNodeFilter(),
+      this.#getHighlighter(),
+      this.#ttsGranularity,
+    );
+
+    // A detach (new view closed) or a newer attach superseded this one.
+    if (epoch !== this.#attachEpoch) return;
+
+    // Synchronous swap.
+    this.view = view;
+    this.preprocessCallback = bindings.preprocessCallback;
+    this.onSectionChange = bindings.onSectionChange;
+    this.#attached = true;
+    const lastRange = oldTts?.getLastRange?.();
+    if (lastRange) {
+      try {
+        // Re-derive the seed NOW: CFIs are valid from the old (content
+        // identical) document, and from() needs a range anchored in the new
+        // doc (compareBoundaryPoints throws cross-document).
+        const cfi = view.getCFI(sectionIndex, lastRange);
+        const anchored = view.resolveCFI(cfi).anchor(doc);
+        if (anchored) newTts.from(anchored); // position the iterator; discard SSML
+      } catch (err) {
+        console.warn('[TTS] attachView re-seed failed', err);
+      }
+    }
+    this.#tts = newTts;
+    this.view.tts = newTts;
+    this.#ttsDoc = doc;
+    // The timeline maps the old document's ranges; rebuild lazily.
+    this.#sectionTimeline = null;
+    this.#timelineSectionIndex = -1;
+    this.#currentSentenceIndex = -1;
+    this.reapplyCurrentHighlight();
+    this.redispatchPosition();
+  }
+
   async init() {
     const availableClients = [];
     if (await this.ttsEdgeClient.init()) {
@@ -233,6 +330,7 @@ export class TTSController extends EventTarget {
   }
 
   #getPrimaryContent() {
+    if (!this.#attached) return undefined;
     const contents = this.view.renderer.getContents();
     const primaryIndex = this.view.renderer.primaryIndex;
     return (contents.find((x) => x.index === primaryIndex) ?? contents[0]) as
@@ -890,6 +988,7 @@ export class TTSController extends EventTarget {
   // re-render). In word mode this re-draws the current word so the sentence
   // never reappears over it; otherwise it re-draws the sentence.
   reapplyCurrentHighlight() {
+    if (!this.#attached) return;
     if (this.#wordHighlightActive && this.#lastSpeakWordRange) {
       this.#getHighlighter()(this.#lastSpeakWordRange.cloneRange());
       return;
@@ -904,6 +1003,7 @@ export class TTSController extends EventTarget {
   // ttsLocation, so the word position is the accurate reference. Returns null
   // outside word mode, where the sentence-level ttsLocation is correct.
   getCurrentHighlightCfi(): string | null {
+    if (!this.#attached) return null;
     if (!this.#wordHighlightActive || !this.#lastSpeakWordRange || this.#ttsSectionIndex < 0) {
       return null;
     }
