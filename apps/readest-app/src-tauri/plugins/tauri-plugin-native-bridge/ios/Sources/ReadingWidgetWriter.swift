@@ -41,7 +41,13 @@ enum ReadingWidgetWriter {
     }
     let longEdge = max(image.size.width, image.size.height)
     let scale = longEdge > thumbMaxPixels ? thumbMaxPixels / longEdge : 1
-    let target = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+    // Round to whole pixels: the renderer allocates a whole-pixel buffer, so a
+    // fractional target would leave the trailing pixel column/row only partially
+    // covered (semi-transparent). Flattened into JPEG that shows up as a bright
+    // hairline along the right/bottom edge. Whole-pixel target == full coverage.
+    let target = CGSize(
+      width: (image.size.width * scale).rounded(),
+      height: (image.size.height * scale).rounded())
     let format = UIGraphicsImageRendererFormat()
     format.scale = 1.0
     let renderer = UIGraphicsImageRenderer(size: target, format: format)
