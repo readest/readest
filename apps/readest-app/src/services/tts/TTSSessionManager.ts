@@ -88,8 +88,25 @@ export class TTSSessionManager extends EventTarget {
   detach(bookHash: string): void {
     const session = this.getSessionByHash(bookHash);
     if (!session) return;
+    const wasPlaying = session.controller.state === 'playing' || !session.controller.terminated;
     session.controller.detachView();
     this.#emitSessionChanged('detached');
+    // Closing a book while it keeps talking inverts years of learned
+    // behavior; announce it exactly once, ever.
+    if (wasPlaying) {
+      try {
+        if (!localStorage.getItem('readest-tts-background-announced')) {
+          localStorage.setItem('readest-tts-background-announced', '1');
+          eventDispatcher.dispatch('toast', {
+            message: _('Reading aloud continues in the background'),
+            type: 'info',
+            timeout: 3000,
+          });
+        }
+      } catch {
+        // localStorage unavailable: skip the announcement.
+      }
+    }
   }
 
   // Rebind bookkeeping after the reader adopts the session under a fresh

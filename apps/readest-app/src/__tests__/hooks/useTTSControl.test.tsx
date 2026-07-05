@@ -71,6 +71,7 @@ const mockBookData = {
 vi.mock('@/store/readerStore', () => {
   const store = {
     hoveredBookKey: null,
+    bookKeys: ['book-1'],
     getView: () => mockView,
     getProgress: () => mockProgress,
     getViewSettings: () => mockViewSettings,
@@ -151,6 +152,11 @@ vi.mock('@/services/tts', () => ({
       ensureTimeline: vi.fn().mockResolvedValue(null),
       getPlaybackInfo: vi.fn().mockReturnValue(null),
       seekToTime: vi.fn().mockResolvedValue(undefined),
+      detachView: vi.fn(),
+      attachView: vi.fn().mockResolvedValue(undefined),
+      getSpeakingLang: vi.fn().mockReturnValue('en'),
+      terminated: false,
+      isViewAttached: true,
       state: 'idle',
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
@@ -164,6 +170,27 @@ vi.mock('@/services/tts', () => ({
 vi.mock('@/libs/mediaSession', () => ({
   TauriMediaSession: class {},
   getMediaSession: vi.fn(() => null),
+}));
+
+const { mockSessionManager } = vi.hoisted(() => ({
+  mockSessionManager: {
+    claim: vi.fn(),
+    detach: vi.fn(),
+    release: vi.fn(),
+    adopt: vi.fn(),
+    getSessionByHash: vi.fn((_hash: string) => null as unknown),
+    getActiveSession: vi.fn(() => null as unknown),
+    stopActive: vi.fn().mockResolvedValue(undefined),
+    setSleepTimer: vi.fn(),
+    getSleepTimer: vi.fn(() => null),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  },
+}));
+
+vi.mock('@/services/tts/TTSSessionManager', () => ({
+  getBookHashFromKey: (key: string) => key.split('-')[0]!,
+  ttsSessionManager: mockSessionManager,
 }));
 
 vi.mock('@/utils/ssml', () => ({
@@ -181,6 +208,7 @@ vi.mock('@/utils/cfi', () => ({
 
 vi.mock('@/utils/misc', () => ({
   getLocale: () => 'en',
+  stubTranslation: (key: string) => key,
 }));
 
 vi.mock('@/utils/ttsMetadata', () => ({
@@ -470,5 +498,155 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
 
     expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledTimes(1);
     expect(mockView.goTo).not.toHaveBeenCalled();
+  });
+});
+
+describe('useTTSControl background session lifecycle', () => {
+  type ControllerMock = {
+    shutdown: ReturnType<typeof vi.fn>;
+    detachView: ReturnType<typeof vi.fn>;
+    attachView: ReturnType<typeof vi.fn>;
+    terminated: boolean;
+    state: string;
+  };
+
+  beforeEach(() => {
+    ttsControllerInstances.length = 0;
+    pendingInitResolvers.length = 0;
+    mockSessionManager.claim.mockClear();
+    mockSessionManager.detach.mockClear();
+    mockSessionManager.release.mockClear();
+    mockSessionManager.adopt.mockClear();
+    mockSessionManager.stopActive.mockClear();
+    mockSessionManager.getSessionByHash.mockReturnValue(null);
+    mockSessionManager.getActiveSession.mockReturnValue(null);
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  const startSession = async () => {
+    render(<Harness />);
+    await act(async () => {
+      const p = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await p;
+    });
+    return ttsControllerInstances[0] as ControllerMock;
+  };
+
+  it('claims the session at controller birth', async () => {
+    await startSession();
+    expect(mockSessionManager.claim).toHaveBeenCalledWith(
+      'book-1',
+      ttsControllerInstances[0],
+      expect.objectContaining({ bookKey: 'book-1', title: 'T' }),
+    );
+  });
+
+  it('unmount while the session lives transfers ownership (detach, no shutdown)', async () => {
+    const controller = await startSession();
+    controller.state = 'playing';
+    controller.terminated = false;
+    mockSessionManager.getSessionByHash.mockReturnValue({
+      bookHash: 'book',
+      bookKey: 'book-1',
+      controller,
+    });
+    cleanup(); // unmounts the hook
+    expect(mockSessionManager.detach).toHaveBeenCalledWith('book');
+    expect(controller.shutdown).not.toHaveBeenCalled();
+  });
+
+  it('unmount after termination shuts down and releases', async () => {
+    const controller = await startSession();
+    controller.terminated = true;
+    mockSessionManager.getSessionByHash.mockReturnValue({
+      bookHash: 'book',
+      bookKey: 'book-1',
+      controller,
+    });
+    cleanup();
+    expect(controller.shutdown).toHaveBeenCalled();
+    expect(mockSessionManager.release).toHaveBeenCalledWith('book');
+  });
+
+  it('tts-close-book detaches a live session; tts-stop stays a hard stop', async () => {
+    const controller = await startSession();
+    controller.terminated = false;
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-close-book', { bookKey: 'book-1' });
+    });
+    expect(mockSessionManager.detach).toHaveBeenCalledWith('book');
+    expect(controller.shutdown).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-stop', { bookKey: 'book-1' });
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+    expect(controller.shutdown).toHaveBeenCalled();
+    expect(mockSessionManager.release).toHaveBeenCalledWith('book');
+  });
+
+  it('mounting a book stops an active session of a different, unmounted book', async () => {
+    mockSessionManager.getActiveSession.mockReturnValue({
+      bookHash: 'otherhash',
+      bookKey: 'otherhash-r9',
+      controller: {},
+    });
+    render(<Harness />);
+    await act(async () => {
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+    });
+    expect(mockSessionManager.stopActive).toHaveBeenCalledWith('replaced');
+  });
+
+  it('adopts a live session for the same book without constructing a controller', async () => {
+    const liveController = {
+      state: 'playing',
+      terminated: false,
+      isViewAttached: false,
+      shutdown: vi.fn(),
+      detachView: vi.fn(),
+      attachView: vi.fn().mockResolvedValue(undefined),
+      getSpeakingLang: vi.fn().mockReturnValue('en'),
+      getCurrentHighlightCfi: vi.fn().mockReturnValue(null),
+      getSpokenSentence: vi.fn().mockReturnValue(null),
+      updateHighlightOptions: vi.fn(),
+      setHighlightGranularity: vi.fn(),
+      getVoiceId: vi.fn().mockReturnValue(''),
+      setTargetLang: vi.fn(),
+      setLang: vi.fn(),
+      setRate: vi.fn(),
+      pause: vi.fn().mockResolvedValue(true),
+      resume: vi.fn().mockResolvedValue(true),
+      start: vi.fn().mockResolvedValue(undefined),
+      stop: vi.fn().mockResolvedValue(undefined),
+      forward: vi.fn().mockResolvedValue(undefined),
+      backward: vi.fn().mockResolvedValue(undefined),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      redispatchPosition: vi.fn(),
+    };
+    mockSessionManager.getSessionByHash.mockReturnValue({
+      bookHash: 'book',
+      bookKey: 'book-old',
+      controller: liveController,
+    });
+    render(<Harness />);
+    await act(async () => {
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+    });
+    expect(ttsControllerInstances).toHaveLength(0); // no new controller
+    expect(mockSessionManager.adopt).toHaveBeenCalledWith(
+      'book-1',
+      expect.objectContaining({ bookKey: 'book-1' }),
+    );
+    expect(liveController.attachView).toHaveBeenCalledWith(
+      mockView,
+      expect.objectContaining({ bookKey: 'book-1' }),
+    );
   });
 });
