@@ -89,9 +89,9 @@ describe("LibraryStore", function()
             s3:close()
         end)
 
-        it("sets PRAGMA user_version = 2", function()
+        it("sets PRAGMA user_version = 3", function()
             local store = LibraryStore.new({ user_id = "alice" })
-            assert.are.equal(2, store:getUserVersion())
+            assert.are.equal(3, store:getUserVersion())
             store:close()
         end)
 
@@ -109,7 +109,7 @@ describe("LibraryStore", function()
                 end
             end)
 
-            it("migrates an existing v1 DB: column added, row preserved, user_version=2", function()
+            it("migrates an existing v1 DB: column added, row preserved, user_version=current", function()
                 -- Build a temp file path; os.tmpname() creates the file, remove it
                 -- so sqlite.open() starts fresh instead of opening an existing file.
                 db_path = os.tmpname()
@@ -162,8 +162,9 @@ describe("LibraryStore", function()
                 -- Open the v1 file via LibraryStore; migration should run silently.
                 local store = LibraryStore.new({ user_id = "alice", db_path = db_path })
 
-                -- 1. user_version must now be 2
-                assert.are.equal(2, store:getUserVersion())
+                -- 1. Opening lands at the current schema (migrations are
+                -- cumulative: v1 -> v2 adds the column, v2 -> v3 splits cursors).
+                assert.are.equal(3, store:getUserVersion())
 
                 -- 2. The pre-existing row is still readable (no error, title intact)
                 local row = store:_getRowRaw("h-v1")
@@ -181,6 +182,75 @@ describe("LibraryStore", function()
                 assert.are.equal(1750000000000, row2.reading_status_updated_at)
 
                 store:close()
+            end)
+        end)
+
+        -- -----------------------------------------------------------------
+        -- v2 -> v3 migration: split the shared books cursor into a pull
+        -- cursor (server synced_at) and a push watermark (local updated_at).
+        -- The old shared `last_books_pulled_at` was advanced from client
+        -- updated_at, which a fast device clock could push into the future,
+        -- starving every later pull (issue #4934). The migration seeds the
+        -- new push watermark from the old value (so push dedup is unbroken)
+        -- and resets the pull cursor to 0, forcing one full re-pull that
+        -- re-establishes it on the server's synced_at clock.
+        -- -----------------------------------------------------------------
+        describe("v2 -> v3 migration", function()
+            local db_path
+            local SQ3 = require("lua-ljsqlite3/init")
+
+            after_each(function()
+                if db_path then
+                    os.remove(db_path)
+                    db_path = nil
+                end
+            end)
+
+            it("resets the pull cursor to 0 and seeds the push watermark from it", function()
+                db_path = os.tmpname()
+                os.remove(db_path)
+
+                -- Build a DB carrying a poisoned (future) shared cursor, then
+                -- force user_version back to 2 so reopening runs the migration.
+                local seed = LibraryStore.new({ user_id = "alice", db_path = db_path })
+                seed:setLastPulledAt(4102444800000)  -- ~2100-01-01, a future value
+                seed:close()
+                local raw = SQ3.open(db_path)
+                raw:exec("PRAGMA user_version = 2;")
+                raw:close()
+
+                local store = LibraryStore.new({ user_id = "alice", db_path = db_path })
+
+                assert.are.equal(3, store:getUserVersion())
+                -- Pull cursor reset → next sync does a full re-pull.
+                assert.are.equal(0, store:getLastPulledAt())
+                -- Push watermark seeded from the old shared cursor → no re-push storm.
+                assert.are.equal(4102444800000, store:getLastPushedAt())
+                store:close()
+            end)
+
+            it("is per-user (only migrates the rows it finds)", function()
+                db_path = os.tmpname()
+                os.remove(db_path)
+
+                local a = LibraryStore.new({ user_id = "alice", db_path = db_path })
+                a:setLastPulledAt(111)
+                a:close()
+                local b = LibraryStore.new({ user_id = "bob", db_path = db_path })
+                b:setLastPulledAt(222)
+                b:close()
+                local raw = SQ3.open(db_path)
+                raw:exec("PRAGMA user_version = 2;")
+                raw:close()
+
+                local alice = LibraryStore.new({ user_id = "alice", db_path = db_path })
+                assert.are.equal(0, alice:getLastPulledAt())
+                assert.are.equal(111, alice:getLastPushedAt())
+                alice:close()
+                local bob = LibraryStore.new({ user_id = "bob", db_path = db_path })
+                assert.are.equal(0, bob:getLastPulledAt())
+                assert.are.equal(222, bob:getLastPushedAt())
+                bob:close()
             end)
         end)
     end)
@@ -207,6 +277,18 @@ describe("LibraryStore", function()
             -- 2026-06-18T00:00:00Z = 1781740800 unix seconds = 1781740800000 ms
             assert.are.equal(1781740800000, parsed.reading_status_updated_at)
             assert.are.equal("abandoned", parsed.reading_status)
+        end)
+
+        it("parseSyncRow reads synced_at from the server ISO field (issue #4934)", function()
+            -- synced_at is the server-authoritative pull cursor. Even when a
+            -- book carries a future updated_at (a device with a fast clock),
+            -- synced_at reflects real server time.
+            local parsed = LibraryStore.parseSyncRow({
+                book_hash = "h3", title = "T",
+                updated_at = "2099-01-01T00:00:00+00:00",
+                synced_at  = "2026-06-18T00:00:00+00:00",
+            })
+            assert.are.equal(1781740800000, parsed.synced_at)
         end)
     end)
 
@@ -949,6 +1031,17 @@ describe("LibraryStore", function()
         it("setLastPulledAt round-trips", function()
             store:setLastPulledAt(T_RECENT)
             assert.are.equal(T_RECENT, store:getLastPulledAt())
+        end)
+
+        it("getLastPushedAt returns nil before any setLastPushedAt", function()
+            assert.is_nil(store:getLastPushedAt())
+        end)
+
+        it("setLastPushedAt round-trips independently of the pull cursor", function()
+            store:setLastPulledAt(T_OLD)
+            store:setLastPushedAt(T_RECENT)
+            assert.are.equal(T_OLD, store:getLastPulledAt())
+            assert.are.equal(T_RECENT, store:getLastPushedAt())
         end)
     end)
 

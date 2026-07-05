@@ -13,7 +13,7 @@
 local SQ3 = require("lua-ljsqlite3/init")
 local json = require("json")
 
-local SCHEMA_VERSION = 2
+local SCHEMA_VERSION = 3
 
 local SCHEMA_SQL = [[
 CREATE TABLE IF NOT EXISTS books (
@@ -152,6 +152,23 @@ function M.new(opts)
             self.db:exec("ALTER TABLE books ADD COLUMN reading_status_updated_at INTEGER;")
         end)
     end
+    -- v2 -> v3: split the shared books cursor into a pull cursor (server
+    -- synced_at) and a push watermark (local updated_at). The old shared
+    -- `last_books_pulled_at` was advanced from client updated_at, which a
+    -- device with a fast clock could push into the future, starving every
+    -- later synced_at-keyed pull so the library went stale and never
+    -- recovered (issue #4934). Seed the new push watermark from the old value
+    -- (local-change detection is unbroken), then zero the pull cursor so the
+    -- next sync re-establishes it on the server's synced_at clock.
+    if prev >= 1 and prev < 3 then
+        self.db:exec([[
+            INSERT INTO sync_state (user_id, key, value)
+                SELECT user_id, 'last_books_pushed_at', value
+                  FROM sync_state WHERE key = 'last_books_pulled_at'
+            ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value;
+            UPDATE sync_state SET value = '0' WHERE key = 'last_books_pulled_at';
+        ]])
+    end
     if prev < SCHEMA_VERSION then
         self.db:exec(string.format("PRAGMA user_version = %d;", SCHEMA_VERSION))
     end
@@ -186,6 +203,30 @@ function M:setLastPulledAt(ts)
         ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value
     ]])
     stmt:reset():bind(self.user_id, "last_books_pulled_at", tostring(ts)):step()
+    stmt:close()
+end
+
+-- The push watermark: max local updated_at | deleted_at we've already
+-- accounted for (pushed to the server or pulled from it). getChangedBooks
+-- keys on this so a book already on the server isn't re-pushed. It is kept
+-- SEPARATE from the pull cursor (last_books_pulled_at, server synced_at)
+-- because the two live on different clocks — mixing them starved pulls in
+-- issue #4934.
+function M:getLastPushedAt()
+    local stmt = self.db:prepare(
+        "SELECT value FROM sync_state WHERE user_id = ? AND key = ?")
+    local row = stmt:reset():bind(self.user_id, "last_books_pushed_at"):step()
+    stmt:close()
+    if not row then return nil end
+    return tonumber(row[1])
+end
+
+function M:setLastPushedAt(ts)
+    local stmt = self.db:prepare([[
+        INSERT INTO sync_state (user_id, key, value) VALUES (?, ?, ?)
+        ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value
+    ]])
+    stmt:reset():bind(self.user_id, "last_books_pushed_at", tostring(ts)):step()
     stmt:close()
 end
 
@@ -765,6 +806,9 @@ function M.parseSyncRow(dbRow)
         updated_at   = iso_to_ms(dbRow.updated_at),
         created_at   = iso_to_ms(dbRow.created_at),
         deleted_at   = iso_to_ms(dbRow.deleted_at),
+        -- Server-stamped pull cursor (issue #4678); transient — used only to
+        -- advance last_books_pulled_at, not persisted as a books column.
+        synced_at    = iso_to_ms(dbRow.synced_at),
     }
 
     -- Metadata: parse JSON string OR accept an already-parsed table; extract
