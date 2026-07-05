@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import * as React from 'react';
 import { MdChevronRight } from 'react-icons/md';
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
-import { ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
+import { ReadonlyURLSearchParams, useRouter, useSearchParams } from 'next/navigation';
 
 import { Book } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
@@ -155,6 +155,10 @@ const LibraryPageWithSearchParams = () => {
 
 const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchParams | null }) => {
   const router = useAppRouter();
+  // Opening the reader is a heavy render that overruns the View Transition
+  // DOM-update budget (TimeoutError, Sentry READEST-9), so navigate to it with
+  // the plain router; `router` above keeps transitions for lighter navigation.
+  const readerRouter = useRouter();
   const { envConfig, appService } = useEnv();
   const { token, user } = useAuth();
   const {
@@ -568,10 +572,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       const bookIds = pendingNavigationBookIds;
       setPendingNavigationBookIds(null);
       if (bookIds.length > 0) {
-        navigateToReader(router, bookIds);
+        navigateToReader(readerRouter, bookIds);
       }
     }
-  }, [pendingNavigationBookIds, appService, router]);
+  }, [pendingNavigationBookIds, appService, readerRouter]);
 
   useEffect(() => {
     if (isInitiating.current) return;
