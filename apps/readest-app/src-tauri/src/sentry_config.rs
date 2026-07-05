@@ -76,6 +76,15 @@ pub fn android_version_from_uname(release: &str) -> Option<String> {
     }
 }
 
+/// A known-benign browser error that is expected behavior, not an app bug, and
+/// only adds noise to crash reporting: the View Transition API skips a
+/// transition when the tab is hidden. Matched on the exception value so it is
+/// dropped in `before_send`. NOTE: a transition *timeout* abort is deliberately
+/// NOT ignored — a slow DOM update can signal a real performance problem.
+pub fn is_ignored_browser_error(value: &str) -> bool {
+    value.contains("View transition was skipped because document visibility state is hidden")
+}
+
 /// C-ABI accessor for the compile-time Sentry DSN, used by the iOS native
 /// bootstrap (sentry-cocoa) so it starts with the same DSN as the Rust client
 /// without a second env read or fragile Info.plist / preprocessor plumbing.
@@ -97,7 +106,7 @@ pub extern "C" fn readest_sentry_dsn() -> *const std::os::raw::c_char {
 mod tests {
     use super::{
         android_version_from_uname, corrected_os_name, dsn_from_env, environment_for_version,
-        release_name,
+        is_ignored_browser_error, release_name,
     };
 
     #[test]
@@ -164,5 +173,23 @@ mod tests {
         assert_eq!(android_version_from_uname("6.1.162"), None);
         assert_eq!(android_version_from_uname(""), None);
         assert_eq!(android_version_from_uname("6.1.162-androidX"), None);
+    }
+
+    #[test]
+    fn ignores_benign_hidden_view_transition_error() {
+        assert!(is_ignored_browser_error(
+            "InvalidStateError: View transition was skipped because document visibility state is hidden."
+        ));
+    }
+
+    #[test]
+    fn keeps_view_transition_timeout_and_real_errors() {
+        // A transition timeout can signal a real perf problem — do NOT suppress it.
+        assert!(!is_ignored_browser_error(
+            "TimeoutError: Transition was aborted because of timeout in DOM update"
+        ));
+        assert!(!is_ignored_browser_error("TypeError: Load failed"));
+        assert!(!is_ignored_browser_error("concurrent use forbidden"));
+        assert!(!is_ignored_browser_error(""));
     }
 }

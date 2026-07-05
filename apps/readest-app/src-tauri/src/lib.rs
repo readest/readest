@@ -321,6 +321,15 @@ pub fn run() {
                 // the OS as "Linux"; relabel it "Android" (and recover the Android
                 // version from the kernel string) so events group correctly.
                 before_send: Some(std::sync::Arc::new(|mut event| {
+                    // Drop known-benign browser noise (e.g. View Transition
+                    // skipped/aborted) before it is reported.
+                    if event.exception.values.iter().any(|ex| {
+                        ex.value
+                            .as_deref()
+                            .is_some_and(sentry_config::is_ignored_browser_error)
+                    }) {
+                        return None;
+                    }
                     if let Some(sentry::protocol::Context::Os(os)) = event.contexts.get_mut("os") {
                         if let Some(name) = sentry_config::corrected_os_name(
                             std::env::consts::OS,
