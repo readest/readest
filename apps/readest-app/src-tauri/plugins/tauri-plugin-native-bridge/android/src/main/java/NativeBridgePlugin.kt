@@ -1536,6 +1536,13 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
      * the hardware-accelerated WebView that View.draw would miss. Resolved
      * as base64 because the plugin boundary is JSON-only; the Rust side
      * decodes back to bytes.
+     *
+     * The result is JPEG, not PNG: a full-screen 3x PNG took ~1.5s to
+     * encode per page turn on a Xiaomi 13, which read as the curl not
+     * working at all. The page is opaque so JPEG loses nothing visible,
+     * and the destination bitmap is capped at 2x CSS pixels — PixelCopy
+     * scales into a smaller bitmap for free and the moving page stays
+     * visually sharp.
      */
     @Command
     fun capture_webview_region(invoke: Invoke) {
@@ -1558,7 +1565,10 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 invoke.reject("Empty capture region")
                 return@runOnUiThread
             }
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val captureScale = minOf(density, 2f)
+            val destWidth = (args.width * captureScale).toInt()
+            val destHeight = (args.height * captureScale).toInt()
+            val bitmap = Bitmap.createBitmap(destWidth, destHeight, Bitmap.Config.ARGB_8888)
             try {
                 PixelCopy.request(
                     window,
@@ -1566,12 +1576,12 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                     bitmap,
                     { result ->
                         if (result == PixelCopy.SUCCESS) {
-                            // PNG encode off the main thread: a full-page
-                            // bitmap takes tens of milliseconds to compress.
+                            // Encode off the main thread; ~100ms of work for
+                            // a full-screen 2x JPEG.
                             pluginScope.launch {
                                 val data = withContext(Dispatchers.IO) {
                                     val out = ByteArrayOutputStream()
-                                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                                    bitmap.compress(Bitmap.CompressFormat.JPEG, 85, out)
                                     Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
                                 }
                                 invoke.resolve(JSObject().put("data", data))

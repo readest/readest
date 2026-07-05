@@ -163,13 +163,16 @@ export class CapturedPageTurn {
     const rect = this.#host.getContentRect();
     if (!hostElement || !rect || rect.width <= 0 || rect.height <= 0) return null;
 
-    const png = await this.#host.capture({
+    const image = await this.#host.capture({
       x: rect.x,
       y: rect.y,
       width: rect.width,
       height: rect.height,
     });
-    const bitmap = await createImageBitmap(new Blob([png], { type: 'image/png' }));
+    // No mime: the platforms return different formats (PNG on iOS/macOS,
+    // JPEG on Android where PNG encoding took ~1.5s per turn) and the
+    // decoder sniffs the actual format from the bytes.
+    const bitmap = await createImageBitmap(new Blob([image]));
 
     // Position the overlay at the content box within the host element.
     const hostRect = hostElement.getBoundingClientRect();

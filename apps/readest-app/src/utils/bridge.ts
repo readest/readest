@@ -264,11 +264,12 @@ export interface CaptureWebviewRegionRequest {
 }
 
 /**
- * Capture a region of the running webview as PNG bytes for the mesh
- * page-curl texture (#555). The snapshot is taken at screen scale, so
- * the bitmap is devicePixelRatio times larger than the requested rect.
- * Rejects on platforms without a native capture implementation (web,
- * Windows/Linux so far) — callers fall back to the CSS curl.
+ * Capture a region of the running webview as compressed image bytes for
+ * the mesh page-curl texture (#555): PNG on iOS/macOS, JPEG on Android
+ * (phone-CPU PNG encoding took ~1.5s per turn). The snapshot is taken at
+ * screen scale, capped at 2x CSS pixels on Android. Rejects on platforms
+ * without a native capture implementation (web, Windows/Linux so far) —
+ * callers fall back to the CSS curl.
  */
 export async function captureWebviewRegion(
   request: CaptureWebviewRegionRequest,
