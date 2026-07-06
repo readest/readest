@@ -4,6 +4,7 @@ import {
   mergeBookConfig,
   mergeBookMetadata,
   isRemoteBookMetadataNewer,
+  shouldApplyRemoteBookMetadata,
 } from '@/services/sync/file/merge';
 import type { Book, BookConfig, BookNote } from '@/types/book';
 import type { RemoteBookConfig } from '@/services/sync/file/wire';
@@ -158,6 +159,138 @@ describe('mergeBookMetadata (LWW field subset)', () => {
     const m = mergeBookMetadata(local, remote);
     expect(m.groupId).toBeUndefined();
     expect(m.groupName).toBeUndefined();
+  });
+
+  test('carries remote tags when remote is newer; tag removal propagates', () => {
+    const local = { hash: 'h', title: 'T', author: 'A', tags: ['old'], updatedAt: 1 } as Book;
+    const tagged = {
+      hash: 'h',
+      title: 'T',
+      author: 'A',
+      tags: ['sf', 'fav'],
+      updatedAt: 9,
+    } as Book;
+    expect(mergeBookMetadata(local, tagged).tags).toEqual(['sf', 'fav']);
+
+    const cleared = { hash: 'h', title: 'T', author: 'A', updatedAt: 9 } as Book;
+    expect(mergeBookMetadata(local, cleared).tags).toBeUndefined();
+  });
+
+  test('keeps every local metadata field (incl. tags) when local is newer', () => {
+    const local = { hash: 'h', title: 'L', author: 'L', tags: ['mine'], updatedAt: 9 } as Book;
+    const remote = { hash: 'h', title: 'R', author: 'R', tags: ['theirs'], updatedAt: 1 } as Book;
+    const m = mergeBookMetadata(local, remote);
+    expect(m.title).toBe('L');
+    expect(m.tags).toEqual(['mine']);
+    expect(m.updatedAt).toBe(9);
+  });
+
+  test('readingStatus merges on its own timestamp even when local metadata is newer (#4634 semantics)', () => {
+    // Asymmetric case: this device edited the title AFTER the peer marked
+    // the book Finished. Whole-book LWW would drop the status change.
+    const local = {
+      hash: 'h',
+      title: 'Edited locally',
+      author: 'A',
+      readingStatus: 'reading',
+      readingStatusUpdatedAt: 5,
+      updatedAt: 20,
+    } as Book;
+    const remote = {
+      hash: 'h',
+      title: 'Old title',
+      author: 'A',
+      readingStatus: 'finished',
+      readingStatusUpdatedAt: 15,
+      updatedAt: 10,
+    } as Book;
+    const m = mergeBookMetadata(local, remote);
+    expect(m.readingStatus).toBe('finished');
+    expect(m.readingStatusUpdatedAt).toBe(15);
+    expect(m.title).toBe('Edited locally');
+    expect(m.updatedAt).toBe(20);
+  });
+
+  test('keeps the local readingStatus when it is newer, even as remote metadata wins', () => {
+    const local = {
+      hash: 'h',
+      title: 'L',
+      author: 'A',
+      readingStatus: 'finished',
+      readingStatusUpdatedAt: 15,
+      updatedAt: 1,
+    } as Book;
+    const remote = {
+      hash: 'h',
+      title: 'R',
+      author: 'A',
+      readingStatus: 'reading',
+      readingStatusUpdatedAt: 5,
+      updatedAt: 9,
+    } as Book;
+    const m = mergeBookMetadata(local, remote);
+    expect(m.title).toBe('R');
+    expect(m.readingStatus).toBe('finished');
+    expect(m.readingStatusUpdatedAt).toBe(15);
+  });
+
+  test('merge is idempotent: re-merging the same remote is a no-op', () => {
+    const local = {
+      hash: 'h',
+      title: 'L',
+      author: 'A',
+      readingStatus: 'reading',
+      readingStatusUpdatedAt: 5,
+      tags: ['a'],
+      updatedAt: 1,
+    } as Book;
+    const remote = {
+      hash: 'h',
+      title: 'R',
+      author: 'A',
+      readingStatus: 'finished',
+      readingStatusUpdatedAt: 15,
+      tags: ['b'],
+      updatedAt: 9,
+    } as Book;
+    const once = mergeBookMetadata(local, remote);
+    const twice = mergeBookMetadata(once, remote);
+    expect(twice).toEqual(once);
+  });
+});
+
+describe('shouldApplyRemoteBookMetadata', () => {
+  test('true when only the readingStatus timestamp is newer', () => {
+    const local = { updatedAt: 20, readingStatusUpdatedAt: 5 } as Book;
+    const remote = { updatedAt: 10, readingStatusUpdatedAt: 15 } as Book;
+    expect(shouldApplyRemoteBookMetadata(local, remote)).toBe(true);
+  });
+
+  test('true when book metadata is newer, false when neither is', () => {
+    expect(shouldApplyRemoteBookMetadata({ updatedAt: 1 } as Book, { updatedAt: 2 } as Book)).toBe(
+      true,
+    );
+    expect(
+      shouldApplyRemoteBookMetadata(
+        { updatedAt: 2, readingStatusUpdatedAt: 2 } as Book,
+        { updatedAt: 2, readingStatusUpdatedAt: 2 } as Book,
+      ),
+    ).toBe(false);
+  });
+
+  test('tombstone on either side disqualifies', () => {
+    expect(
+      shouldApplyRemoteBookMetadata(
+        { updatedAt: 1 } as Book,
+        { updatedAt: 9, readingStatusUpdatedAt: 9, deletedAt: 9 } as Book,
+      ),
+    ).toBe(false);
+    expect(
+      shouldApplyRemoteBookMetadata(
+        { updatedAt: 1, deletedAt: 1 } as Book,
+        { updatedAt: 9 } as Book,
+      ),
+    ).toBe(false);
   });
 });
 

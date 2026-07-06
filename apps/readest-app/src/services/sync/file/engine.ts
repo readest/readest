@@ -19,7 +19,7 @@ import {
   parseRemoteLibraryIndex,
   RemoteLibraryIndex,
 } from './wire';
-import { isRemoteBookMetadataNewer, mergeBookConfig, mergeBookMetadata } from './merge';
+import { mergeBookConfig, mergeBookMetadata, shouldApplyRemoteBookMetadata } from './merge';
 
 export type SyncStrategy = 'silent' | 'send' | 'receive';
 
@@ -438,7 +438,9 @@ export class FileSyncEngine {
 
     // Metadata reconciliation for books present BOTH locally and in the shared
     // library.json (#4756). Last-writer-wins on `book.updatedAt`: when a peer's
-    // indexed copy is strictly newer, pull its title / author / cover down.
+    // indexed copy is strictly newer, pull its title / author / tags / cover
+    // down; readingStatus rides its own readingStatusUpdatedAt clock so a
+    // status-only change also triggers (see shouldApplyRemoteBookMetadata).
     // Updating allBooksMap with the merged copy also stops the final index
     // re-push from clobbering the peer's newer metadata with this device's
     // stale copy.
@@ -446,7 +448,7 @@ export class FileSyncEngine {
       const remoteNewer = remoteIndex.books.filter((rb) => {
         if (rb.deletedAt) return false;
         const local = allBooksMap.get(rb.hash);
-        return !!local && !local.deletedAt && isRemoteBookMetadataNewer(local, rb);
+        return !!local && !local.deletedAt && shouldApplyRemoteBookMetadata(local, rb);
       });
       await runPool(remoteNewer, concurrency, async (rb) => {
         const local = allBooksMap.get(rb.hash)!;
