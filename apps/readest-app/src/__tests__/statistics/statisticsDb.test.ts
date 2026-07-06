@@ -103,6 +103,22 @@ describe('StatisticsDb', () => {
     expect(book!.total_read_time).toBe(8);
   });
 
+  it('serializes concurrent applyRemoteEvents without nesting transactions (READEST-N)', async () => {
+    // Two pulls racing on the shared connection (split-view trackers) must not
+    // open a BEGIN inside a BEGIN ("cannot start a transaction within a transaction").
+    const a = stats.applyRemoteEvents(
+      [{ bookMd5: 'ra', title: 'RA', authors: '' }],
+      [{ bookMd5: 'ra', page: 1, startTime: 400, duration: 3, totalPages: 10 }],
+    );
+    const b = stats.applyRemoteEvents(
+      [{ bookMd5: 'rb', title: 'RB', authors: '' }],
+      [{ bookMd5: 'rb', page: 1, startTime: 401, duration: 4, totalPages: 10 }],
+    );
+    await expect(Promise.all([a, b])).resolves.toBeDefined();
+    expect((await stats.getBookByMd5('ra'))!.total_read_time).toBe(3);
+    expect((await stats.getBookByMd5('rb'))!.total_read_time).toBe(4);
+  });
+
   it('reads and writes sync cursors', async () => {
     expect(await stats.getCursor('push')).toBe(0);
     await stats.setCursor('push', 1234);
