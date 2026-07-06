@@ -42,8 +42,7 @@ import {
 } from '@/services/sync/cloudSyncProvider';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
 import SubPageHeader from './SubPageHeader';
-import Quota from '@/components/Quota';
-import { NavigationRow, SectionTitle, SettingLabel, Tips } from './primitives';
+import { BoxedList, NavigationRow, SectionTitle, SettingLabel, Tips } from './primitives';
 
 type SubPage =
   | 'kosync'
@@ -87,7 +86,7 @@ const IntegrationsPanel: React.FC = () => {
   // temporarily UNGATED while the feature stabilises — `isCloudSyncAllowed`
   // returns true for every plan until `CLOUD_SYNC_REQUIRES_PREMIUM` is flipped
   // back on. The `?? 'free'` keeps the (re-gated) loading state non-premium.
-  const { userProfilePlan, quotas } = useQuotaStats();
+  const { userProfilePlan } = useQuotaStats();
   const isCloudSyncPremium = isCloudSyncAllowed(userProfilePlan ?? 'free');
 
   const [subPage, setSubPage] = useState<SubPage>(null);
@@ -227,18 +226,13 @@ const IntegrationsPanel: React.FC = () => {
           description={_('Sync your library, reading progress, and highlights with Readest Cloud.')}
           onBack={() => setSubPage(null)}
         />
-        <div className='space-y-5'>
-          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border px-4 py-3'>
-            <Quota quotas={quotas} labelClassName='h-10' />
-          </div>
-          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
-            <NavigationRow
-              title={_('Account and Storage')}
-              status={_('Manage your plan and stored files')}
-              onClick={() => navigateToProfile(router)}
-            />
-          </div>
-        </div>
+        <BoxedList>
+          <NavigationRow
+            title={_('Account and Storage')}
+            status={_('Manage your plan and stored files')}
+            onClick={() => navigateToProfile(router)}
+          />
+        </BoxedList>
       </div>
     );
   if (subPage === 'readwise')
@@ -335,7 +329,7 @@ const IntegrationsPanel: React.FC = () => {
           <div className='divide-base-200 divide-y'>
             <IntegrationRow
               icon={RiBookOpenLine}
-              title={_('KOReader Sync')}
+              title={_('KOReader')}
               status={koSyncStatus}
               onClick={() => setSubPage('kosync')}
             />
@@ -357,11 +351,6 @@ const IntegrationsPanel: React.FC = () => {
 
       <div className='w-full' data-setting-id='settings.integrations.cloudSync'>
         <SectionTitle className='mb-2'>{_('Cloud Sync')}</SectionTitle>
-        <p className='text-base-content/70 mb-2 px-1 text-sm leading-relaxed'>
-          {_(
-            'Choose where your library — books, progress, annotations — syncs on this device. App settings, reading statistics, and dictionaries always sync with your Readest account while signed in.',
-          )}
-        </p>
         <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
           <div
             className='divide-base-200 divide-y'
@@ -380,16 +369,6 @@ const IntegrationsPanel: React.FC = () => {
             />
             {isCloudSyncPremium ? (
               <>
-                <CloudProviderRow
-                  icon={RiCloudLine}
-                  title={_('WebDAV')}
-                  status={webdavStatus}
-                  isActive={activeCloudKind === 'webdav'}
-                  canActivate={webdavConfigured}
-                  onActivate={() => activateCloudProvider('webdav')}
-                  onOpen={() => setSubPage('webdav')}
-                  activateLabel={_('Use WebDAV')}
-                />
                 {(appService?.isDesktopApp ||
                   appService?.isAndroidApp ||
                   appService?.isIOSApp ||
@@ -406,6 +385,16 @@ const IntegrationsPanel: React.FC = () => {
                     activateLabel={_('Use Google Drive')}
                   />
                 )}
+                <CloudProviderRow
+                  icon={RiCloudLine}
+                  title={_('WebDAV')}
+                  status={webdavStatus}
+                  isActive={activeCloudKind === 'webdav'}
+                  canActivate={webdavConfigured}
+                  onActivate={() => activateCloudProvider('webdav')}
+                  onOpen={() => setSubPage('webdav')}
+                  activateLabel={_('Use WebDAV')}
+                />
               </>
             ) : (
               // Premium-gated: free users keep the Readest Cloud row above and

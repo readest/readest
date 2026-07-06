@@ -62,6 +62,17 @@ const PULL_COOLDOWN_MS = 60_000;
  */
 const OPEN_PULL_SKIP_MS = 30_000;
 
+/**
+ * Whether a pull actually landed a remote reading position: the merged
+ * location exists and differs from what this device already had. Drives the
+ * same top-right "Reading Progress Synced" hint the native cloud sync shows,
+ * so WebDAV / Google Drive give equal feedback.
+ */
+export const remoteProgressApplied = (
+  localLocation: string | null | undefined,
+  mergedLocation: string | null | undefined,
+): boolean => !!mergedLocation && mergedLocation !== localLocation;
+
 /** Settings key for a backend kind. */
 const settingsKeyFor = (kind: FileSyncBackendKind): 'webdav' | 'googleDrive' =>
   kind === 'gdrive' ? 'googleDrive' : 'webdav';
@@ -202,8 +213,8 @@ export const useFileSync = (bookKey: string) => {
       timeout: 5000,
       message:
         activeKind === 'gdrive'
-          ? _('Google Drive session expired. Reconnect in Settings.')
-          : _('Cloud sync session expired. Reconnect in Settings.'),
+          ? _('Google Drive session expired')
+          : _('Cloud sync session expired'),
     });
   }, [bookKey, activeKind, _]);
 
@@ -359,6 +370,14 @@ export const useFileSync = (bookKey: string) => {
       }
 
       setConfig(bookKey, toApply);
+      // Parity with the native cloud sync: surface the same top-right hint
+      // when a remote reading position was fetched and applied.
+      if (wantProgress && remoteProgressApplied(config.location, toApply.location)) {
+        eventDispatcher.dispatch('hint', {
+          bookKey,
+          message: _('Reading Progress Synced'),
+        });
+      }
       const latest = getConfig(bookKey);
       if (latest) await saveConfig(envConfig, bookKey, latest, settings);
       await updateLastSyncedAt(Date.now());
@@ -382,6 +401,7 @@ export const useFileSync = (bookKey: string) => {
     providerSettings,
     updateLastSyncedAt,
     handleSyncError,
+    _,
   ]);
 
   // Stash the latest callbacks in a ref so the event-bridge effect doesn't

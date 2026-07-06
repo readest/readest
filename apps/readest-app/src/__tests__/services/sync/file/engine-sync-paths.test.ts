@@ -146,6 +146,65 @@ describe('FileSyncEngine.syncLibrary — remote discovery + streaming download',
   });
 });
 
+// The explicit per-book Download action (Book Details / bookshelf cloud
+// button) routed to a third-party provider: fetch the binary from the hash
+// dir (filename resolved by listing — titles go stale), plus cover + config
+// best-effort.
+describe('FileSyncEngine.downloadBookFile', () => {
+  const hashDirListing = (withFile: boolean) => async (p: string) => {
+    if (!p.endsWith('/books/h1')) return [];
+    const entries = [
+      { name: 'config.json', path: '/Readest/books/h1/config.json', isDirectory: false, size: 1 },
+      { name: 'cover.png', path: '/Readest/books/h1/cover.png', isDirectory: false, size: 2 },
+    ];
+    if (withFile)
+      entries.push({
+        name: 'B.epub',
+        path: '/Readest/books/h1/B.epub',
+        isDirectory: false,
+        size: 9,
+      });
+    return entries;
+  };
+
+  test('downloads the book file into the local store', async () => {
+    const saveBookFile = vi.fn(async () => {});
+    const provider = fakeProvider({
+      list: hashDirListing(true),
+      readBinary: async () => new ArrayBuffer(9),
+    });
+    const store = fakeStore({ saveBookFile });
+
+    const ok = await new FileSyncEngine(provider, store).downloadBookFile(makeBook('h1'));
+
+    expect(ok).toBe(true);
+    expect(saveBookFile).toHaveBeenCalledTimes(1);
+  });
+
+  test('returns false when the remote holds no book file', async () => {
+    const saveBookFile = vi.fn(async () => {});
+    const provider = fakeProvider({ list: hashDirListing(false) });
+    const store = fakeStore({ saveBookFile });
+
+    const ok = await new FileSyncEngine(provider, store).downloadBookFile(makeBook('h1'));
+
+    expect(ok).toBe(false);
+    expect(saveBookFile).not.toHaveBeenCalled();
+  });
+
+  test('prefers the streaming downloader when available', async () => {
+    const downloadStream = vi.fn(async () => true);
+    const prepareLocalBookPath = vi.fn(async () => '/local/h1/B.epub');
+    const provider = fakeProvider({ list: hashDirListing(true), downloadStream });
+    const store = fakeStore({ prepareLocalBookPath });
+
+    const ok = await new FileSyncEngine(provider, store).downloadBookFile(makeBook('h1'));
+
+    expect(ok).toBe(true);
+    expect(downloadStream).toHaveBeenCalledWith('/Readest/books/h1/B.epub', '/local/h1/B.epub');
+  });
+});
+
 describe('FileSyncEngine.syncLibrary — receive strategy is pull-only', () => {
   test('never writes (no config push, no index re-push) under receive', async () => {
     const captured: Captured = { writes: [] };
@@ -209,8 +268,10 @@ describe('FileSyncEngine.syncLibrary — incremental diff (default)', () => {
     expect(configWrites(captured)).toHaveLength(0);
     expect(res.configsUploaded).toBe(0);
     expect(res.booksSynced).toBe(0);
-    // The index itself is still re-pushed.
-    expect(captured.writes.some((w) => w.path.endsWith('library.json'))).toBe(true);
+    // Nothing changed, so the byte-identical index is NOT re-pushed — a
+    // restamped copy would only churn the remote and defeat every other
+    // device's change detection.
+    expect(captured.writes.some((w) => w.path.endsWith('library.json'))).toBe(false);
   });
 
   test('pushes a book that is newer locally than the index', async () => {
@@ -382,12 +443,10 @@ describe('FileSyncEngine.syncLibrary — incremental diff (default)', () => {
       { strategy: 'silent', syncBooks: true, deviceId: 'd' },
     );
 
-    expect(head).not.toHaveBeenCalled();
+    expect(head).not.toHaveBeenCalledWith(expect.stringContaining('/books/'));
     expect(res.filesUploaded).toBe(0);
-    const idx = JSON.parse(
-      captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
-    ) as RemoteLibraryIndex;
-    expect(idx.uploadedHashes ?? []).not.toContain('h1');
+    // Nothing recorded and nothing changed: the index is not re-pushed.
+    expect(captured.writes.some((w) => w.path.endsWith('library.json'))).toBe(false);
   });
 
   test('leaves a no-source book unrecorded when the remote lacks it too', async () => {
@@ -412,11 +471,8 @@ describe('FileSyncEngine.syncLibrary — incremental diff (default)', () => {
     });
 
     // A device that does have the file must still be able to upload and
-    // record it later.
-    const idx = JSON.parse(
-      captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
-    ) as RemoteLibraryIndex;
-    expect(idx.uploadedHashes ?? []).not.toContain('h1');
+    // record it later: nothing was recorded (no index write at all).
+    expect(captured.writes.some((w) => w.path.endsWith('library.json'))).toBe(false);
   });
 
   // #4856 perf: once a file is recorded in the index, an incremental sync must
@@ -443,17 +499,14 @@ describe('FileSyncEngine.syncLibrary — incremental diff (default)', () => {
       { strategy: 'silent', syncBooks: true, deviceId: 'd' },
     );
 
-    // No file work at all: no HEAD probe, no bytes read, no upload.
-    expect(head).not.toHaveBeenCalled();
+    // No file work at all: no HEAD probe on the book, no bytes read, no upload.
+    expect(head).not.toHaveBeenCalledWith(expect.stringContaining('/books/'));
     expect(loadBookFile).not.toHaveBeenCalled();
     expect(res.filesUploaded).toBe(0);
     expect(res.filesAlreadyInSync).toBe(0);
     expect(res.booksSynced).toBe(0);
-    // The recorded hash is preserved across the re-push.
-    const idx = JSON.parse(
-      captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
-    ) as RemoteLibraryIndex;
-    expect(idx.uploadedHashes).toContain('h1');
+    // Nothing changed, so the index (and its record) is left untouched.
+    expect(captured.writes.some((w) => w.path.endsWith('library.json'))).toBe(false);
   });
 
   test('fullSync re-probes a recorded file (drift escape hatch)', async () => {
@@ -551,5 +604,190 @@ describe('FileSyncEngine.syncLibrary — bounded concurrency', () => {
     const { res, maxInFlight } = await runWithConcurrency(1, 4);
     expect(res.configsUploaded).toBe(4);
     expect(maxInFlight).toBe(1);
+  });
+});
+
+// The idle-run request budget: a sync where nothing changed on either side
+// must cost ONE metadata stat — no index download, no discovery listing, no
+// index re-push. The remote etag (Drive md5 / WebDAV ETag) is the change
+// signal: every peer mutation rewrites library.json, so an unchanged etag
+// means no remote-side news. The cache is keyed on the (memoised) provider,
+// so it survives across engine builds within a session.
+describe('FileSyncEngine.syncLibrary — remote change detection', () => {
+  const opts = { strategy: 'silent', syncBooks: false, deviceId: 'd' } as const;
+  const indexWrites = (captured: Captured) =>
+    captured.writes.filter((w) => w.path.endsWith('library.json'));
+
+  const makeChangeProbeHarness = (etagOf: () => string) => {
+    const captured: Captured = { writes: [] };
+    const readText = vi.fn(async (p: string) =>
+      p.endsWith('library.json')
+        ? JSON.stringify(makeIndex([makeBook('h1', { updatedAt: 100 })]))
+        : null,
+    );
+    const head = vi.fn(async (p: string) =>
+      p.endsWith('library.json') ? { etag: etagOf() } : null,
+    );
+    const list = vi.fn(async () => []);
+    const provider = fakeProvider({ readText, head, list, captured });
+    const store = fakeStore({ loadConfig: async () => ({ updatedAt: 1, booknotes: [] }) });
+    return { captured, readText, head, list, provider, store };
+  };
+
+  test('an unchanged remote index short-circuits: no pull, no discovery, no push', async () => {
+    const h = makeChangeProbeHarness(() => 'E1');
+    await new FileSyncEngine(h.provider, h.store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      opts,
+    );
+    expect(h.readText).toHaveBeenCalledTimes(1); // first run pulls
+    expect(h.list).toHaveBeenCalled(); // and discovers
+
+    h.readText.mockClear();
+    h.list.mockClear();
+    // Fresh engine, same provider — mirrors one engine build per sync run.
+    await new FileSyncEngine(h.provider, h.store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      opts,
+    );
+    expect(h.readText).not.toHaveBeenCalled();
+    expect(h.list).not.toHaveBeenCalled();
+    expect(indexWrites(h.captured)).toHaveLength(0); // clean on both runs
+  });
+
+  test('a local change under an unchanged remote index pushes without re-pulling', async () => {
+    const h = makeChangeProbeHarness(() => 'E1');
+    await new FileSyncEngine(h.provider, h.store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      opts,
+    );
+
+    await new FileSyncEngine(h.provider, h.store).syncLibrary(
+      [makeBook('h1', { updatedAt: 200 })],
+      opts,
+    );
+    // The index itself was never re-pulled (the push loop's config pull-merge
+    // reads config.json, which also goes through readText).
+    const libraryReads = h.readText.mock.calls.filter((c) => String(c[0]).endsWith('library.json'));
+    expect(libraryReads).toHaveLength(1);
+    expect(configWrites(h.captured)).toHaveLength(1);
+    expect(indexWrites(h.captured)).toHaveLength(1);
+  });
+
+  test('a changed remote etag re-pulls the index', async () => {
+    let etag = 'E1';
+    const h = makeChangeProbeHarness(() => etag);
+    await new FileSyncEngine(h.provider, h.store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      opts,
+    );
+    etag = 'E2';
+    await new FileSyncEngine(h.provider, h.store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      opts,
+    );
+    expect(h.readText).toHaveBeenCalledTimes(2);
+  });
+
+  test('a local tombstone missing from the remote index still pushes the index', async () => {
+    const h = makeChangeProbeHarness(() => 'E1');
+    await new FileSyncEngine(h.provider, h.store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100, deletedAt: 150 })],
+      opts,
+    );
+    // No per-book counters fire for a tombstone, but the index MUST publish it.
+    const idx = JSON.parse(indexWrites(h.captured)[0]!.body) as RemoteLibraryIndex;
+    expect(idx.books.find((b) => b.hash === 'h1')?.deletedAt).toBe(150);
+  });
+});
+
+// File-less hash dirs (config/cover only — legacy junk or peers that sync
+// without "Upload Book Files") used to be re-listed by discovery on every
+// run, forever. They are now recorded in the index once inspected and only
+// re-checked when the index says their file arrived (uploadedHashes), or on
+// a Full Sync.
+describe('FileSyncEngine.syncLibrary — empty-dir record', () => {
+  const opts = { strategy: 'silent', syncBooks: false, deviceId: 'd' } as const;
+  const orphanListing = (withFile: boolean) => async (p: string) => {
+    if (p.endsWith('/books')) return [{ name: 'h9', path: '/Readest/books/h9', isDirectory: true }];
+    const entries = [
+      { name: 'config.json', path: '/Readest/books/h9/config.json', isDirectory: false, size: 1 },
+    ];
+    if (withFile)
+      entries.push({
+        name: 'B.epub',
+        path: '/Readest/books/h9/B.epub',
+        isDirectory: false,
+        size: 9,
+      });
+    return entries;
+  };
+
+  test('records an inspected file-less dir in the index', async () => {
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify(makeIndex([makeBook('h9', { updatedAt: 100 })]))
+          : null,
+      list: orphanListing(false),
+      captured,
+    });
+    const res = await new FileSyncEngine(provider, fakeStore()).syncLibrary([], opts);
+
+    expect(res.booksDownloaded).toBe(0);
+    const idx = JSON.parse(
+      captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
+    ) as RemoteLibraryIndex;
+    expect(idx.emptyDirs).toContain('h9');
+  });
+
+  test('skips a recorded file-less dir on the next discovery', async () => {
+    const captured: Captured = { writes: [] };
+    const list = vi.fn(orphanListing(false));
+    const provider = fakeProvider({
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify({
+              ...makeIndex([makeBook('h9', { updatedAt: 100 })]),
+              emptyDirs: ['h9'],
+            })
+          : null,
+      list,
+      captured,
+    });
+    await new FileSyncEngine(provider, fakeStore()).syncLibrary([], opts);
+
+    expect(list).toHaveBeenCalledWith(expect.stringContaining('/books'));
+    expect(list).not.toHaveBeenCalledWith('/Readest/books/h9');
+    // Nothing changed — the record survives by NOT re-pushing the index.
+    expect(captured.writes.some((w) => w.path.endsWith('library.json'))).toBe(false);
+  });
+
+  test('re-inspects a recorded dir once the index says its file arrived', async () => {
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify({
+              ...makeIndex([makeBook('h9', { updatedAt: 100 })], ['h9']),
+              emptyDirs: ['h9'],
+            })
+          : null,
+      list: orphanListing(true),
+      readBinary: async () => new ArrayBuffer(9),
+      captured,
+    });
+    const addBookToLibrary = vi.fn(async () => {});
+    const res = await new FileSyncEngine(provider, fakeStore({ addBookToLibrary })).syncLibrary(
+      [],
+      opts,
+    );
+
+    expect(res.booksDownloaded).toBe(1);
+    const idx = JSON.parse(
+      captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
+    ) as RemoteLibraryIndex;
+    expect(idx.emptyDirs ?? []).not.toContain('h9');
   });
 });

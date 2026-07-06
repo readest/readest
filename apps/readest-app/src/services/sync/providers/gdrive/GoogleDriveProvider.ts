@@ -254,6 +254,42 @@ const parseRetryAfterMs = (header: string | null): number | undefined => {
 
 const defaultSleep: SleepFn = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Dev-only request diagnostics: one `[gdrive] op …` line per provider call
+ * (with the sync-layer's logical path) and one `[gdrive] #n …` line per HTTP
+ * attempt (with the decoded Drive request purpose), so a sync run's request
+ * budget can be attributed line-by-line from the console.
+ */
+const LOG_DRIVE_REQUESTS = process.env['NODE_ENV'] === 'development';
+let driveRequestSeq = 0;
+
+const logDriveOp = (op: string, detail: string): void => {
+  if (LOG_DRIVE_REQUESTS) console.log(`[gdrive] op ${op} ${detail}`);
+};
+
+/** Decode a Drive REST URL into a short human-readable purpose. */
+const describeDriveRequest = (url: string, method: string): string => {
+  try {
+    const u = new URL(url);
+    const q = u.searchParams.get('q');
+    if (q !== null) {
+      const name = /name = '([^']*)'/.exec(q)?.[1];
+      const parent = /'([^']*)' in parents/.exec(q)?.[1];
+      return name ? `lookup '${name}' in ${parent}` : `list children of ${parent}`;
+    }
+    const id = /\/files\/([^/?]+)/.exec(u.pathname)?.[1];
+    if (u.searchParams.get('alt') === 'media') return `download ${id}`;
+    if (u.pathname.includes('/upload/')) return id ? `upload(overwrite) ${id}` : 'upload(create)';
+    if (u.searchParams.has('addParents')) return `name+reparent ${id}`;
+    if (method === HTTP_DELETE) return `delete ${id}`;
+    if (id) return `stat ${id}`;
+    if (method === HTTP_POST) return 'create folder';
+    return u.pathname;
+  } catch {
+    return url;
+  }
+};
+
 class DriveProviderImpl {
   readonly rootPath = '/';
 
@@ -282,16 +318,19 @@ class DriveProviderImpl {
   ) {}
 
   async readText(path: string): Promise<string | null> {
+    logDriveOp('readText', path);
     const res = await this.getMedia(path);
     return res ? res.text() : null;
   }
 
   async readBinary(path: string): Promise<ArrayBuffer | null> {
+    logDriveOp('readBinary', path);
     const res = await this.getMedia(path);
     return res ? res.arrayBuffer() : null;
   }
 
   async head(path: string): Promise<FileHead | null> {
+    logDriveOp('head', path);
     const file = await this.statFresh(path, (id) => metadataUrl(id), 'stat');
     if (file === null) return null;
     return {
@@ -301,6 +340,7 @@ class DriveProviderImpl {
   }
 
   async list(path: string): Promise<FileEntry[]> {
+    logDriveOp('list', path);
     const folderId = await this.resolveFolderSegments(splitSegments(path), false);
     // Absent folder -> empty listing (Drive has no path, so a missing parent is
     // simply "no children"). Matches what the engine's discovery expects.
@@ -338,10 +378,28 @@ class DriveProviderImpl {
     body: ArrayBuffer,
     contentType: string = DEFAULT_BINARY_CONTENT_TYPE,
   ): Promise<void> {
+    logDriveOp('write', path);
     const segments = splitSegments(path);
     const name = segments.pop();
     if (name === undefined)
       throw new DriveHttpError(0, undefined, `Drive upload failed: empty path`);
+
+    // Fast path: a write to a path whose id is already cached PATCHes it in
+    // place with no lookup. The engine's steady state re-writes paths whose
+    // ids the preceding pull cached (config.json, library.json), so the
+    // per-PUT files.list was pure overhead. A stale id (deleted remotely)
+    // 404s: evict and fall through to the full resolve.
+    const cachedId = this.idCache.get(path);
+    if (cachedId !== undefined) {
+      try {
+        await this.uploadMedia(mediaUpdateUrl(cachedId), HTTP_PATCH, body, contentType, path);
+        return;
+      } catch (e) {
+        if (!(e instanceof DriveHttpError) || e.status !== HTTP_NOT_FOUND) throw e;
+        this.evict(path);
+      }
+    }
+
     // Auto-create the containing chain as a backup; the engine usually calls
     // ensureDir first, but a write must still materialise its parents.
     const folderId = await this.resolveFolderSegments(segments, true);
@@ -369,6 +427,7 @@ class DriveProviderImpl {
   }
 
   async ensureDir(paths: string[]): Promise<void> {
+    logDriveOp('ensureDir', paths[paths.length - 1] ?? '');
     // Create each directory's full chain (idempotent via cache + findChild). The
     // engine passes ancestors top-down, so deeper paths reuse the cached parents.
     for (const path of paths) {
@@ -377,6 +436,7 @@ class DriveProviderImpl {
   }
 
   async deleteDir(path: string): Promise<void> {
+    logDriveOp('deleteDir', path);
     const folderId = await this.resolveFolderSegments(splitSegments(path), false);
     // Already absent — nothing to delete (idempotent).
     if (folderId === null) return;
@@ -594,6 +654,7 @@ class DriveProviderImpl {
    * provider contract: the engine re-ensures dirs and retries once, then throws).
    */
   async uploadStream(remotePath: string, localPath: string): Promise<boolean> {
+    logDriveOp('uploadStream', remotePath);
     try {
       const segments = splitSegments(remotePath);
       const name = segments.pop();
@@ -670,6 +731,7 @@ class DriveProviderImpl {
    * Returns `false` when the file is absent or the transport swallows a failure.
    */
   async downloadStream(remotePath: string, localPath: string): Promise<boolean> {
+    logDriveOp('downloadStream', remotePath);
     try {
       const fileId = await this.resolveFile(remotePath);
       if (fileId === null) return false;
@@ -689,6 +751,10 @@ class DriveProviderImpl {
   /** Issue an authenticated Drive request, retried on transient failures. */
   private async authedFetch(url: string, method: string, init?: RequestInit): Promise<Response> {
     return this.withBackoff(async () => {
+      if (LOG_DRIVE_REQUESTS) {
+        driveRequestSeq += 1;
+        console.log(`[gdrive] #${driveRequestSeq} ${method} ${describeDriveRequest(url, method)}`);
+      }
       const token = await this.auth.getAccessToken();
       const headers: Record<string, string> = {
         Authorization: `Bearer ${token}`,

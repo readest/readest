@@ -19,6 +19,7 @@
 - `src/utils/style.ts` EPUB CSS hub · `packages/foliate-js/paginator.js` · `src/services/tts/TTSController.ts`
 - `src/hooks/useSafeAreaInsets.ts` · `src/app/reader/components/FoliateViewer.tsx` · `.../annotator/Annotator.tsx`
 ## Sync Notes
+- [Cloud Sync provider selection #4959/#4380](cloud-sync-provider-selection-plan.md) MERGED #4971+#4973+#4975+#4976: derived provider, exclusive routing, syncBooks auto-enable, fleet probe, chooser; i18n pass + live verify pending
 - [Grimmory native sync](grimmory-native-sync.md) Booklore-fork REVERTED
 - KOSync: [CFI spine resolution](kosync-cfi-spine-resolution.md); [connect() false-positive #4692](kosync-connect-false-positive-4692.md)
 - [Empty-start CFI sync](empty-start-cfi-sync.md) · [Custom fonts vanish #4410](custom-fonts-reincarnation-4410.md) CRDT remove-wins
@@ -30,7 +31,7 @@
 - File sync: [refactor #4784](webdav-filesync-refactor-plan.md) `FileSyncEngine`; [third-party auto-sync #4835](third-party-library-autosync-4835.md)
 - [Transfer Queue clear not persisted](transfer-queue-clear-persistence.md) hook mutated store directly, skipped `persistQueue()`; route clears through `transferManager`
 - [Multi-window settings clobber (#4580)](multiwindow-settings-clobber-4580.md)
-- Google Drive: [research](gdrive-sync-provider-research.md); [multi-PR status](gdrive-provider-multipr-status.md)
+- Google Drive: [research](gdrive-sync-provider-research.md); [multi-PR status](gdrive-provider-multipr-status.md); [full walk every sync](gdrive-fullwalk-every-sync-no-source-cursor.md) no-source books never recorded in uploadedHashes + focus refires pullLibrary
 - [Hardcover edition_id (#4792)](hardcover-progress-edition-id-4792.md)
 ## Build, Testing & CI
 - [Nightly quick-sharun hang #4906](nightly-quick-sharun-hang-4906.md) pin via cache pre-seed + step timeouts
@@ -61,7 +62,7 @@
 ## Reader Features & UI
 - [Android Auto TTS #3919/PR#4907](android-auto-tts-3919.md) MERGED; CarPlay blocked on entitlement
 - Widgets: [mobile reading #1602/PR#4842](mobile-reading-widgets.md); [iOS App Group stripped PR#4891](ios-widget-appgroup-stripped-appstore.md); [cover bright right-edge line](ios-widget-cover-bright-edge-line.md) fractional resize → round target to whole px
-- PDF: [scrolled lag #4795](pdf-scroll-lag-preload-4795.md); [scrolled pinch-zoom #4817](scrolled-pdf-pinch-zoom-4817.md); [pinch vs two-finger scroll #4858](pinch-vs-twofinger-scroll-4858.md); [text selection misplaced w/ OS font scale #4480](pdf-text-selection-fontscale-4480.md) divide `--total-scale-factor` by detected font scale
+- PDF: [scrolled lag #4795](pdf-scroll-lag-preload-4795.md); [scrolled pinch-zoom #4817](scrolled-pdf-pinch-zoom-4817.md); [pinch vs two-finger scroll #4858](pinch-vs-twofinger-scroll-4858.md); [text selection misplaced w/ OS font scale #4480](pdf-text-selection-fontscale-4480.md) OS font-scale inflates text-layer glyph size not positions; divide `--text-scale-factor` (font-size lever) by detected scale, NOT `--total-scale-factor`
 - [Search modes #4560](search-modes-4560-and-spoiler-bound-bug.md)
 - [OPDS groups carousel #4750](opds-groups-carousel-4750.md) · [WebDAV browser sort+search #4724](webdav-browse-sort-search-4724.md)
 - [Image zoom trackpad flicker (#4742)](image-zoom-trackpad-flicker-4742.md) macOS pinch=`ctrl+wheel`
@@ -100,6 +101,7 @@
 - OPDS: [Firefox strict-XML #4479](opds-firefox-strict-xml-4479.md); [JSON search #4502](opds2-json-search-4502.md); [HTML desc #4503](opds-html-description-4503.md); [self-link #4749](opds-self-link-metadata-4749.md); [popular dedup #4782](opds-popular-catalog-dedup-4782.md); [auto-download subdir crawl #4272](opds-autodownload-subdir-crawl-4272.md) bounded BFS, never crawl newest-feed catalogs
 - [D-pad Navigation](dpad-navigation.md)
 - [koplugin cover upload (#4374)](koplugin-cover-upload.md)
+- [koplugin Library slow open #4954](koplugin-library-open-mosaic-cache-4954.md) group mosaics recomposed every paint; PR#4974 availability-keyed cache + async compose + cache nil result
 - [Calibre plugin push #4863](calibre-plugin-push-4863.md) OAuth localhost relay
 - [Calibre custom columns #4811](calibre-custom-columns-4811.md) `metadata.calibreColumns`
 ## Library Fixes

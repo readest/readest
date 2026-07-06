@@ -34,6 +34,35 @@ export const getEnabledFileSyncBackends = (
 };
 
 /**
+ * One provider is memoised per connection key and shared by every surface
+ * (the reader's per-book sync, the library auto-sync, Sync now / pull to
+ * refresh). What makes reuse worth it is the provider's path->id cache
+ * (Drive): a cold provider re-resolves /Readest, books/ and library.json by
+ * name query on every engine build, so one engine per book open/close/sync
+ * turned each user action into a burst of redundant remote requests. The key
+ * mirrors the connection-relevant settings, so a config edit rebuilds; stale
+ * cached ids self-heal through the provider's 404 eviction. Drive connect /
+ * disconnect must call {@link resetFileSyncProviderCache} — its token source
+ * changes identity without any key input changing.
+ */
+let cachedProvider: { key: string; provider: FileSyncProvider } | null = null;
+
+const providerCacheKey = (
+  kind: FileSyncBackendKind,
+  settings: FileSyncBackendsSettings,
+): string => {
+  if (kind === 'webdav') {
+    const w = settings.webdav;
+    return `webdav:${w?.enabled}:${w?.serverUrl}:${w?.username}:${w?.password}:${w?.rootPath}`;
+  }
+  return 'gdrive';
+};
+
+export const resetFileSyncProviderCache = (): void => {
+  cachedProvider = null;
+};
+
+/**
  * Build the provider for one backend, or `null` when it cannot run here (WebDAV
  * without config, Drive without a baked client id / secure storage). Async
  * because Drive probes the keychain to assemble its token store.
@@ -42,8 +71,14 @@ export const createFileSyncProvider = async (
   kind: FileSyncBackendKind,
   settings: FileSyncBackendsSettings,
 ): Promise<FileSyncProvider | null> => {
-  if (kind === 'webdav') {
-    return settings.webdav ? createWebDAVProvider(settings.webdav) : null;
-  }
-  return buildGoogleDriveProvider();
+  const key = providerCacheKey(kind, settings);
+  if (cachedProvider?.key === key) return cachedProvider.provider;
+  const provider =
+    kind === 'webdav'
+      ? settings.webdav
+        ? createWebDAVProvider(settings.webdav)
+        : null
+      : await buildGoogleDriveProvider();
+  if (provider) cachedProvider = { key, provider };
+  return provider;
 };

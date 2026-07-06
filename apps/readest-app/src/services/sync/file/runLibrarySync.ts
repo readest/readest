@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import type { Book } from '@/types/book';
 import type { EnvConfigType } from '@/services/environment';
 import type { TranslationFunc } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -83,5 +84,73 @@ export const runActiveFileLibrarySync = async (
     return false;
   } finally {
     useFileSyncStore.getState().endSync(kind);
+  }
+};
+
+/**
+ * Build the ACTIVE third-party provider's engine, or null when Readest Cloud
+ * is selected / the provider cannot be constructed. Shared by the per-book
+ * upload / download actions below.
+ */
+const buildActiveEngine = async (envConfig: EnvConfigType): Promise<FileSyncEngine | null> => {
+  const settings = useSettingsStore.getState().settings;
+  const kind = getCloudSyncProvider(settings);
+  if (kind === 'readest') return null;
+  const appService = await envConfig.getAppService();
+  const fileProvider = await createFileSyncProvider(kind, settings);
+  if (!fileProvider) return null;
+  const store = createAppLocalStore({ appService, settings, envConfig });
+  return new FileSyncEngine(fileProvider, store);
+};
+
+/**
+ * Explicit per-book Upload routed to the ACTIVE third-party provider — the
+ * Book Details / bookshelf cloud buttons call this instead of the (gated)
+ * Readest Cloud transfer queue while WebDAV / Google Drive is selected.
+ * Pushes the binary (HEAD short-circuited; an already-mirrored file counts
+ * as success) plus the cover, best-effort. Toasts are the caller's job.
+ */
+export const runActiveFileBookUpload = async (
+  envConfig: EnvConfigType,
+  book: Book,
+): Promise<boolean> => {
+  try {
+    const engine = await buildActiveEngine(envConfig);
+    if (!engine) return false;
+    const result = await engine.pushBookFile(book);
+    if (!result.uploaded && result.reason !== 'remote-matches') return false;
+    try {
+      await engine.pushBookCover(book);
+    } catch (e) {
+      console.warn('[cloudSync] book cover upload failed', book.hash, e);
+    }
+    return true;
+  } catch (e) {
+    console.warn('[cloudSync] book upload failed', book.hash, e);
+    return false;
+  }
+};
+
+/**
+ * Explicit per-book Download routed to the ACTIVE third-party provider (also
+ * reached when opening a book whose file is not local). Stamps the book's
+ * downloadedAt/coverDownloadedAt like the native download path; persisting
+ * the book row (updateBook) and toasts are the caller's job.
+ */
+export const runActiveFileBookDownload = async (
+  envConfig: EnvConfigType,
+  book: Book,
+): Promise<boolean> => {
+  try {
+    const engine = await buildActiveEngine(envConfig);
+    if (!engine) return false;
+    const ok = await engine.downloadBookFile(book);
+    if (!ok) return false;
+    book.downloadedAt = Date.now();
+    if (!book.coverDownloadedAt) book.coverDownloadedAt = Date.now();
+    return true;
+  } catch (e) {
+    console.warn('[cloudSync] book download failed', book.hash, e);
+    return false;
   }
 };

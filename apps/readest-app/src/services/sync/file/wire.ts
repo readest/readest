@@ -108,6 +108,15 @@ export interface RemoteLibraryIndex {
    * re-verifies each file once (a bounded, self-healing HEAD) and re-records it.
    */
   uploadedHashes?: string[];
+  /**
+   * Hash dirs inspected by discovery and found to hold no book file (config /
+   * cover only — legacy leftovers, or peers syncing without "Upload Book
+   * Files"). Discovery skips them instead of re-listing every one on every
+   * run. A dir is re-checked when {@link uploadedHashes} says its file has
+   * arrived, on Full Sync, and whenever the record is dropped by a legacy
+   * client (same optional + additive self-healing contract as uploadedHashes).
+   */
+  emptyDirs?: string[];
 }
 
 export const parseRemoteLibraryIndex = (raw: string | null): RemoteLibraryIndex | null => {

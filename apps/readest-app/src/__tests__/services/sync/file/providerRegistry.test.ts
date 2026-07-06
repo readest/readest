@@ -8,6 +8,7 @@ import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/build
 import {
   createFileSyncProvider,
   getEnabledFileSyncBackends,
+  resetFileSyncProviderCache,
 } from '@/services/sync/file/providerRegistry';
 import type { FileSyncProvider } from '@/services/sync/file/provider';
 import type { WebDAVSettings } from '@/types/settings';
@@ -20,7 +21,10 @@ const webdav: WebDAVSettings = {
   rootPath: '/',
 };
 
-afterEach(() => vi.clearAllMocks());
+afterEach(() => {
+  vi.clearAllMocks();
+  resetFileSyncProviderCache();
+});
 
 describe('getEnabledFileSyncBackends', () => {
   test('lists only switched-on backends in a stable order', () => {
@@ -54,5 +58,39 @@ describe('createFileSyncProvider', () => {
     vi.mocked(buildGoogleDriveProvider).mockResolvedValueOnce(fake);
     expect(await createFileSyncProvider('gdrive', {})).toBe(fake);
     expect(buildGoogleDriveProvider).toHaveBeenCalledTimes(1);
+  });
+
+  // The provider is memoised per connection key so its path->id cache stays
+  // warm across surfaces (reader hook, library auto-sync, Sync now): a cold
+  // provider re-resolves /Readest, books/ and library.json by name query on
+  // every engine build, turning each book open/close/sync into a burst of
+  // redundant remote requests.
+  test('returns the same instance for an unchanged connection', async () => {
+    const first = await createFileSyncProvider('webdav', { webdav });
+    const second = await createFileSyncProvider('webdav', { webdav });
+    expect(second).toBe(first);
+  });
+
+  test('memoises the gdrive build (keychain probed once)', async () => {
+    const fake = { rootPath: '/' } as unknown as FileSyncProvider;
+    vi.mocked(buildGoogleDriveProvider).mockResolvedValue(fake);
+    await createFileSyncProvider('gdrive', {});
+    await createFileSyncProvider('gdrive', {});
+    expect(buildGoogleDriveProvider).toHaveBeenCalledTimes(1);
+  });
+
+  test('rebuilds when the connection settings change', async () => {
+    const first = await createFileSyncProvider('webdav', { webdav });
+    const second = await createFileSyncProvider('webdav', {
+      webdav: { ...webdav, password: 'changed' },
+    });
+    expect(second).not.toBe(first);
+  });
+
+  test('resetFileSyncProviderCache forces a rebuild', async () => {
+    const first = await createFileSyncProvider('webdav', { webdav });
+    resetFileSyncProviderCache();
+    const second = await createFileSyncProvider('webdav', { webdav });
+    expect(second).not.toBe(first);
   });
 });

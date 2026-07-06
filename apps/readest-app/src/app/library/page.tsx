@@ -26,6 +26,10 @@ import {
   getCloudSyncProvider,
   isReadestCloudStorageActive,
 } from '@/services/sync/cloudSyncProvider';
+import {
+  runActiveFileBookDownload,
+  runActiveFileBookUpload,
+} from '@/services/sync/file/runLibrarySync';
 import { getDirPath, getFilename, joinPaths } from '@/utils/path';
 import { parseOpenWithFiles } from '@/helpers/openWith';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
@@ -946,6 +950,20 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   const handleBookUpload = useCallback(
     async (book: Book, _syncBooks = true) => {
+      // Route the explicit action to the selected cloud provider: while
+      // WebDAV / Google Drive is active the Readest Cloud transfer queue is
+      // gated and would only answer with the "paused" notice.
+      if (getCloudSyncProvider(useSettingsStore.getState().settings) !== 'readest') {
+        const ok = await runActiveFileBookUpload(envConfig, book);
+        eventDispatcher.dispatch('toast', {
+          type: ok ? 'info' : 'error',
+          timeout: 2000,
+          message: ok
+            ? _('Book uploaded: {{title}}', { title: book.title })
+            : _('Failed to upload book: {{title}}', { title: book.title }),
+        });
+        return ok;
+      }
       // Use transfer queue for uploads - priority 1 for manual uploads (higher priority)
       const transferId = transferManager.queueUpload(book, 1);
       if (transferId) {
@@ -980,6 +998,20 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const handleBookDownload = useCallback(
     async (book: Book, downloadOptions: { redownload?: boolean; queued?: boolean } = {}) => {
       const { redownload = false, queued = false } = downloadOptions;
+      // Same provider routing as handleBookUpload — this path is also how a
+      // not-yet-local book gets fetched when the user opens it.
+      if (getCloudSyncProvider(useSettingsStore.getState().settings) !== 'readest') {
+        const ok = await runActiveFileBookDownload(envConfig, book);
+        if (ok) await updateBook(envConfig, book);
+        eventDispatcher.dispatch('toast', {
+          type: ok ? 'info' : 'error',
+          timeout: 2000,
+          message: ok
+            ? _('Book downloaded: {{title}}', { title: book.title })
+            : _('Failed to download book: {{title}}', { title: book.title }),
+        });
+        return ok;
+      }
       if (redownload || !queued) {
         try {
           await appService?.downloadBook(book, false, redownload, (progress) => {

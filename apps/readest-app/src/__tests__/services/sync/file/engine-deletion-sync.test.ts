@@ -209,8 +209,10 @@ describe('FileSyncEngine.syncLibrary — deletion propagation (#4860)', () => {
     });
     const store = fakeStore();
 
-    // Local library only has h1; it has never seen h2.
-    await new FileSyncEngine(provider, store).syncLibrary([makeBook('h1', { updatedAt: 100 })], {
+    // Local library only has h1; it has never seen h2. h1 is locally newer so
+    // the run is dirty and the index gets re-pushed — the union must carry
+    // h2's tombstone even though this device never materialised the book.
+    await new FileSyncEngine(provider, store).syncLibrary([makeBook('h1', { updatedAt: 200 })], {
       strategy: 'silent',
       syncBooks: false,
       deviceId: 'd',

@@ -322,8 +322,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       ? providerLastError
         ? _('Sync failed')
         : lastSyncTime
-          ? _('Synced via {{provider}} {{time}}', {
-              provider: cloudProviderName,
+          ? _('Synced {{time}}', {
               time: dayjs(lastSyncTime).fromNow(),
             })
           : _('Never synced')
@@ -378,6 +377,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
               labelClass='ps-2 pe-1 !mx-0'
               iconClassName={(user && isSyncing) || providerSyncing ? 'animate-reverse-spin' : ''}
               onClick={handleSyncLibrary}
+              description={
+                cloudProvider !== 'readest'
+                  ? _('Library sync via {{provider}}', {
+                      provider: cloudProviderName,
+                    })
+                  : undefined
+              }
             />
             {cloudProvider === 'readest' ? (
               <button
@@ -389,22 +395,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
               >
                 <Quota quotas={quotas} labelClassName='h-10 pl-3 pr-2' />
               </button>
-            ) : (
-              // Non-interactive caption in the quota slot — no hover/focus
-              // affordance (it is not a dead tappable row) — so the quota's
-              // disappearance reads as intentional, not broken.
-              <div
-                aria-hidden='true'
-                className='text-base-content/60 w-full px-3 py-2 text-[0.85em]'
-                style={{
-                  paddingInlineStart: `${iconSize}px`,
-                }}
-              >
-                {_("Books sync via {{provider}} - Readest Cloud storage isn't used", {
-                  provider: cloudProviderName,
-                })}
-              </div>
-            )}
+            ) : null}
             <MenuItem label={_('Account')} onClick={handleUserProfile} />
           </ul>
         </MenuItem>

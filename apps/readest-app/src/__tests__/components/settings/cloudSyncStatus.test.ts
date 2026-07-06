@@ -22,7 +22,7 @@ describe('getReadestCloudRowStatus', () => {
   test('active when signed in and selected', () => {
     expect(
       getReadestCloudRowStatus(_, { signedIn: true, planLoading: false, selected: true }),
-    ).toBe('Active — syncing your library on this device');
+    ).toBe('Active');
   });
 
   test('available when a third-party provider is selected instead', () => {
@@ -70,6 +70,6 @@ describe('getThirdPartyRowStatus', () => {
   });
 
   test('healthy active state', () => {
-    expect(getThirdPartyRowStatus(_, base)).toBe('Active — syncing your library on this device');
+    expect(getThirdPartyRowStatus(_, base)).toBe('Active');
   });
 });

@@ -18,7 +18,7 @@ export interface ReadestRowInputs {
 export const getReadestCloudRowStatus = (_: TranslationFunc, s: ReadestRowInputs): string => {
   if (!s.signedIn) return _('Not signed in');
   if (s.planLoading) return '…';
-  if (s.selected) return _('Active — syncing your library on this device');
+  if (s.selected) return _('Active');
   return _('Available');
 };
 
@@ -44,5 +44,5 @@ export const getThirdPartyRowStatus = (_: TranslationFunc, s: ThirdPartyRowInput
     // provider is opted out of book files) — the row must say so.
     return _('Active · Book file uploads off');
   }
-  return _('Active — syncing your library on this device');
+  return _('Active');
 };
