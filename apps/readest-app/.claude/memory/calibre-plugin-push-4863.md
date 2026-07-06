@@ -7,7 +7,7 @@ metadata:
   originSessionId: 5d4d83a0-0aee-4200-852f-555df5243bed
 ---
 
-`apps/readest-calibre-plugin/` (added 2026-07-04, commit 29a42853d on dev) implements #4863: calibre GUI plugin pushing selected books + metadata into the Readest cloud, modeled on BookFusion's plugin.
+`apps/readest-calibre-plugin/` implements #4863: calibre GUI plugin pushing selected books + metadata into the Readest cloud, modeled on BookFusion's plugin. MERGED to main via PR #4918 (2026-07-04, merge 6b403d019); packaged in releases as `Readest-<version>.calibre-plugin.zip` by release.yml's `build-calibre-plugin` job.
 
 Design decisions and hard-won protocol facts:
 - **Identity**: `Book.hash` = partial MD5 (KOReader algorithm; JS `1024 << -2` wraps to 0, so offsets are 0, 1024, 4096, ... 1024<<20). metaHash = `md5(NFC("title|authors,|ids,"))`, preferred id scheme uuid > calibre > isbn; Python impl verified byte-identical to `js-md5` output.
