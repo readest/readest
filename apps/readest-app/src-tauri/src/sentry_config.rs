@@ -76,13 +76,18 @@ pub fn android_version_from_uname(release: &str) -> Option<String> {
     }
 }
 
-/// A known-benign browser error that is expected behavior, not an app bug, and
-/// only adds noise to crash reporting: the View Transition API skips a
-/// transition when the tab is hidden. Matched on the exception value so it is
-/// dropped in `before_send`. NOTE: a transition *timeout* abort is deliberately
-/// NOT ignored — a slow DOM update can signal a real performance problem.
+/// Known-benign browser errors that are expected behavior, not app bugs, and
+/// only add noise to crash reporting: the View Transition API skips a transition
+/// when the tab is hidden or the navigation is superseded, and aborts it when the
+/// document is in an invalid state. These arrive as unhandled rejections while
+/// the navigation itself still completes. Matched (case-insensitively) on the
+/// exception value so they are dropped in `before_send`. NOTE: a transition
+/// *timeout* abort is deliberately NOT ignored — a slow DOM update can signal a
+/// real performance problem.
 pub fn is_ignored_browser_error(value: &str) -> bool {
-    value.contains("View transition was skipped because document visibility state is hidden")
+    let value = value.to_lowercase();
+    value.contains("transition was skipped")
+        || value.contains("transition was aborted because of invalid state")
 }
 
 /// The WebView (engine, major-version), set once at startup when the app reports
@@ -216,9 +221,18 @@ mod tests {
     }
 
     #[test]
-    fn ignores_benign_hidden_view_transition_error() {
+    fn ignores_benign_view_transition_errors() {
+        // Skipped because the tab is hidden (READEST-7).
         assert!(is_ignored_browser_error(
             "InvalidStateError: View transition was skipped because document visibility state is hidden."
+        ));
+        // Skipped because the navigation was superseded (READEST-F).
+        assert!(is_ignored_browser_error(
+            "AbortError: Transition was skipped"
+        ));
+        // Aborted because the document was in an invalid state (READEST-G).
+        assert!(is_ignored_browser_error(
+            "InvalidStateError: Transition was aborted because of invalid state"
         ));
     }
 
