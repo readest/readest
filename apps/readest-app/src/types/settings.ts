@@ -143,6 +143,11 @@ export interface WebDAVSettings {
   // Wall-clock millisecond timestamp of the last successful end-to-end
   // sync, surfaced in the WebDAV settings sub-page.
   lastSyncedAt?: number;
+  // Device-local wall-clock millis of when this provider was made the
+  // selected cloud sync backend on THIS device. Anchors the mixed-fleet
+  // detection probe: any native /api/sync row newer than this means
+  // another device is still writing the gated channels.
+  providerSelectedAt?: number;
 }
 
 /**
@@ -164,6 +169,8 @@ export interface GoogleDriveSettings {
   strategy?: KOSyncStrategy;
   deviceId?: string;
   lastSyncedAt?: number;
+  /** See {@link WebDAVSettings.providerSelectedAt}. */
+  providerSelectedAt?: number;
 }
 
 /**

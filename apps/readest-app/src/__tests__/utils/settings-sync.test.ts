@@ -16,6 +16,48 @@ const makeLocal = (overrides: Partial<SystemSettings> = {}): SystemSettings =>
     ...overrides,
   }) as SystemSettings;
 
+describe('mergeSyncedGlobalSettings cloud sync provider flags', () => {
+  test('adopts enabled flags and providerSelectedAt, preserving credentials and cursors', () => {
+    const local = makeLocal({
+      webdav: {
+        enabled: false,
+        serverUrl: 'https://dav',
+        password: 'secret',
+        deviceId: 'd1',
+        lastSyncedAt: 42,
+      },
+      googleDrive: { enabled: true, accountLabel: 'a@b' },
+    } as Partial<SystemSettings>);
+    const merged = mergeSyncedGlobalSettings(local, {
+      globalViewSettings: local.globalViewSettings,
+      globalReadSettings: local.globalReadSettings,
+      cloudSyncProviders: {
+        webdav: { enabled: true, providerSelectedAt: 999 },
+        googleDrive: { enabled: false },
+      },
+    });
+    expect(merged.webdav.enabled).toBe(true);
+    expect(merged.webdav.providerSelectedAt).toBe(999);
+    expect(merged.webdav.password).toBe('secret');
+    expect(merged.webdav.deviceId).toBe('d1');
+    expect(merged.webdav.lastSyncedAt).toBe(42);
+    expect(merged.googleDrive.enabled).toBe(false);
+    expect(merged.googleDrive.accountLabel).toBe('a@b');
+  });
+
+  test('a payload without provider flags leaves the slices untouched', () => {
+    const local = makeLocal({
+      webdav: { enabled: true, password: 'secret' },
+    } as Partial<SystemSettings>);
+    const merged = mergeSyncedGlobalSettings(local, {
+      globalViewSettings: local.globalViewSettings,
+      globalReadSettings: local.globalReadSettings,
+    });
+    expect(merged.webdav.enabled).toBe(true);
+    expect(merged.webdav.password).toBe('secret');
+  });
+});
+
 describe('mergeSyncedGlobalSettings', () => {
   test('adopts the broadcasting window global view settings', () => {
     const local = makeLocal();

@@ -10,8 +10,10 @@ describe('buildWebDAVConnectSettings', () => {
       password: 'hunter2',
       rootPath: '/Readest',
     });
+    // The builder is activation-agnostic: `enabled` (and the activation
+    // side effects like the syncBooks auto-flip) belong to
+    // withActiveCloudProvider, which the connect flow applies on top.
     expect(result).toEqual({
-      enabled: true,
       serverUrl: 'https://dav.example.com',
       username: 'alice',
       password: 'hunter2',
@@ -44,7 +46,10 @@ describe('buildWebDAVConnectSettings', () => {
       rootPath: '/Readest',
     });
 
-    expect(next.enabled).toBe(true);
+    // Still disabled: the connect flow activates via withActiveCloudProvider
+    // so the disabled -> enabled transition (and its syncBooks auto-flip)
+    // happens exactly once, in one place.
+    expect(next.enabled).toBe(false);
     // Stable per-device id MUST survive — losing it makes the next sync
     // look like a brand-new device and breaks cross-device clobber
     // detection in `RemoteBookConfig.writerDeviceId`.

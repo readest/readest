@@ -9,6 +9,11 @@ import { SYNC_BOOKS_INTERVAL_SEC } from '@/services/constants';
 import { throttle } from '@/utils/throttle';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
+import { useSettingsStore } from '@/store/settingsStore';
+import { getCloudSyncProvider } from '@/services/sync/cloudSyncProvider';
+import { runActiveFileLibrarySync } from '@/services/sync/file/runLibrarySync';
+import { checkMixedFleetOnce } from '@/services/sync/fleetDetection';
+import { useSyncContext } from '@/context/SyncContext';
 import {
   pickFresherReadingStatus,
   needsCoverRefresh,
@@ -18,10 +23,11 @@ import {
 export const useBooksSync = () => {
   const _ = useTranslation();
   const { user } = useAuth();
-  const { appService } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { library, isSyncing, libraryLoaded } = useLibraryStore();
   const { setLibrary, setIsSyncing, setSyncProgress } = useLibraryStore();
   const { useSyncInited, syncedBooks, syncBooks, lastSyncedAtBooks } = useSync();
+  const { syncClient } = useSyncContext();
   const isPullingRef = useRef(false);
 
   const getNewBooks = useCallback(() => {
@@ -53,6 +59,32 @@ export const useBooksSync = () => {
 
   const pullLibrary = useCallback(
     async (fullRefresh = false, verbose = false) => {
+      // While a third-party provider is selected, the native book channel
+      // is gated (syncBooks would return undefined and the toast would read
+      // "undefined book(s) synced"); every library-refresh surface — pull to
+      // refresh, the SettingsMenu sync row, BackupWindow — routes through
+      // here, so route them all to the file engine instead. Works logged out
+      // (file sync has no Readest account dependency).
+      const provider = getCloudSyncProvider(useSettingsStore.getState().settings);
+      if (provider !== 'readest') {
+        if (isPullingRef.current) return;
+        try {
+          isPullingRef.current = true;
+          const ok = await runActiveFileLibrarySync(envConfig, _);
+          if (verbose) {
+            const providerName = provider === 'gdrive' ? 'Google Drive' : 'WebDAV';
+            eventDispatcher.dispatch('toast', {
+              type: ok ? 'info' : 'error',
+              message: ok
+                ? _('Synced via {{provider}}', { provider: providerName })
+                : _('Sync failed'),
+            });
+          }
+        } finally {
+          isPullingRef.current = false;
+        }
+        return;
+      }
       if (!user) return;
       if (isPullingRef.current) return;
       try {
@@ -70,7 +102,7 @@ export const useBooksSync = () => {
         isPullingRef.current = false;
       }
     },
-    [_, user, libraryLoaded, syncBooks],
+    [_, user, libraryLoaded, syncBooks, envConfig],
   );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,6 +110,15 @@ export const useBooksSync = () => {
     throttle(
       async () => {
         if (isPullingRef.current) return;
+        // Third-party provider selected: the native book channel is gated,
+        // so the interval runs the read-only mixed-fleet probe instead —
+        // a device still writing natively would otherwise fork progress
+        // silently (the auto library sync itself is useLibraryFileSync's).
+        const settingsNow = useSettingsStore.getState().settings;
+        if (getCloudSyncProvider(settingsNow) !== 'readest') {
+          void checkMixedFleetOnce(syncClient, settingsNow, _);
+          return;
+        }
         const newBooks = getNewBooks();
         if (!newBooks.lastSyncedAt) return;
         isPullingRef.current = true;

@@ -16,6 +16,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { navigateToLogin } from '@/utils/nav';
+import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { formatAuthors, formatDescription, formatSeries } from '@/utils/book';
 import ReadingProgress from './ReadingProgress';
 import BookCover from '@/components/BookCover';
@@ -199,9 +200,11 @@ const BookItem: React.FC<BookItemProps> = ({
                     }
                   }}
                 >
-                  {!book.uploadedAt && settings.autoUpload && (
-                    <LiaCloudUploadAltSolid size={iconSize15} />
-                  )}
+                  {!book.uploadedAt &&
+                    settings.autoUpload &&
+                    isReadestCloudStorageActive(settings) && (
+                      <LiaCloudUploadAltSolid size={iconSize15} />
+                    )}
                   {book.uploadedAt && !book.downloadedAt && (
                     <LiaCloudDownloadAltSolid size={iconSize15} />
                   )}

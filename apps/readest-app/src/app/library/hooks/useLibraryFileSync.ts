@@ -159,7 +159,9 @@ export const useLibraryFileSync = () => {
         },
       });
       await updateLastSyncedAt(Date.now());
+      useFileSyncStore.getState().setLastError(kind, null);
     } catch (e) {
+      useFileSyncStore.getState().setLastError(kind, e instanceof Error ? e.message : String(e));
       console.warn('library file sync failed', e);
     } finally {
       useFileSyncStore.getState().endSync(kind);

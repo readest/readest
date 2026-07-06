@@ -15,7 +15,7 @@ import {
   parseImplicitRedirect,
   tokenSetFromRedirect,
 } from '@/services/sync/providers/gdrive/auth/webRedirectFlow';
-import { withActiveCloudProvider } from '@/components/settings/integrations/cloudSync';
+import { persistActiveCloudProvider } from '@/components/settings/integrations/cloudSync';
 
 /**
  * OAuth return route for the web Google Drive connect (full-page implicit flow).
@@ -50,20 +50,16 @@ export default function GDriveCallback() {
           .catch(() => null);
 
         // Mark Drive the single active cloud provider (turns WebDAV off) and
-        // stamp the account label. Load + save through appService so this works
-        // even though the settings store may not be hydrated on this route.
-        const appService = await envConfig.getAppService();
-        const settings = await appService.loadSettings();
-        const base = withActiveCloudProvider(settings, 'gdrive');
-        const next = {
-          ...base,
+        // stamp the account label. persistActiveCloudProvider loads via
+        // appService when the settings store isn't hydrated on this route,
+        // persists, hydrates the store, and broadcasts to other windows.
+        await persistActiveCloudProvider(envConfig, 'gdrive', (s) => ({
+          ...s,
           googleDrive: {
-            ...base.googleDrive,
-            accountLabel: accountLabel ?? base.googleDrive?.accountLabel,
+            ...s.googleDrive,
+            accountLabel: accountLabel ?? s.googleDrive?.accountLabel,
           },
-        };
-        await appService.saveSettings(next);
-        setSettings(next);
+        }));
         eventDispatcher.dispatch('toast', { type: 'info', message: _('Connected') });
       } catch (e) {
         console.warn('[gdrive] web callback failed', e);

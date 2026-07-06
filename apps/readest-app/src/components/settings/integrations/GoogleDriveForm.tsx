@@ -12,7 +12,7 @@ import {
 import { hasValidWebDriveToken } from '@/services/sync/providers/gdrive/auth/webTokenStore';
 import { Tips } from '../primitives';
 import FileSyncForm from './FileSyncForm';
-import { withActiveCloudProvider } from './cloudSync';
+import { persistActiveCloudProvider } from './cloudSync';
 
 const disconnectButtonClass = clsx(
   'eink-bordered',
@@ -68,14 +68,9 @@ const GoogleDriveForm: React.FC = () => {
   // Make Drive the active provider (turns WebDAV off), optionally stamping a
   // freshly-resolved account label.
   const activate = async (accountLabel?: string) => {
-    const latest = useSettingsStore.getState().settings;
-    const withLabel =
-      accountLabel === undefined
-        ? latest
-        : { ...latest, googleDrive: { ...latest.googleDrive, accountLabel } };
-    const next = withActiveCloudProvider(withLabel, 'gdrive');
-    setSettings(next);
-    await saveSettings(envConfig, next);
+    await persistActiveCloudProvider(envConfig, 'gdrive', (s) =>
+      accountLabel === undefined ? s : { ...s, googleDrive: { ...s.googleDrive, accountLabel } },
+    );
   };
 
   const handleConnect = async () => {
@@ -102,11 +97,10 @@ const GoogleDriveForm: React.FC = () => {
 
   const handleDisconnect = async () => {
     await runGoogleDriveDisconnect();
-    const latest = useSettingsStore.getState().settings;
-    const base = withActiveCloudProvider(latest, null);
-    const next = { ...base, googleDrive: { ...base.googleDrive, accountLabel: undefined } };
-    setSettings(next);
-    await saveSettings(envConfig, next);
+    await persistActiveCloudProvider(envConfig, null, (s) => ({
+      ...s,
+      googleDrive: { ...s.googleDrive, accountLabel: undefined },
+    }));
     eventDispatcher.dispatch('toast', { type: 'info', message: _('Disconnected') });
   };
 

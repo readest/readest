@@ -15,6 +15,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
+import { useFileSyncStore } from '@/store/fileSyncStore';
+import { getCloudSyncProvider } from '@/services/sync/cloudSyncProvider';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -100,6 +102,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setIsDropdownOpen?.(false);
   };
   const { isSyncing, setLibrary } = useLibraryStore();
+  const fileSyncByKind = useFileSyncStore((s) => s.byKind);
+  const fileSyncLastError = useFileSyncStore((s) => s.lastErrorByKind);
   const { stats, hasActiveTransfers, setIsTransferQueueOpen } = useTransferQueue();
 
   const openTransferQueue = () => {
@@ -294,11 +298,38 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const coverDir = savedBookCoverPath ? savedBookCoverPath.split('/').pop() : 'Images';
   const savedBookCoverDescription = `💾 ${coverDir}/last-book-cover.png`;
 
-  const lastSyncTime = Math.max(
-    settings.lastSyncedAtBooks || 0,
-    settings.lastSyncedAtConfigs || 0,
-    settings.lastSyncedAtNotes || 0,
-  );
+  // While a third-party provider is selected the native cursors freeze (the
+  // book/progress/note channels are gated), so the sync row must report the
+  // file engine's health instead — otherwise it reads "Synced 3 months ago"
+  // forever and looks broken.
+  const cloudProvider = getCloudSyncProvider(settings);
+  const cloudProviderName = cloudProvider === 'gdrive' ? 'Google Drive' : 'WebDAV';
+  const providerSyncing = cloudProvider !== 'readest' && !!fileSyncByKind[cloudProvider]?.isSyncing;
+  const providerLastError =
+    cloudProvider !== 'readest' ? fileSyncLastError[cloudProvider] : undefined;
+  const lastSyncTime =
+    cloudProvider !== 'readest'
+      ? (cloudProvider === 'gdrive'
+          ? settings.googleDrive?.lastSyncedAt
+          : settings.webdav?.lastSyncedAt) || 0
+      : Math.max(
+          settings.lastSyncedAtBooks || 0,
+          settings.lastSyncedAtConfigs || 0,
+          settings.lastSyncedAtNotes || 0,
+        );
+  const syncRowLabel =
+    cloudProvider !== 'readest'
+      ? providerLastError
+        ? _('Sync failed')
+        : lastSyncTime
+          ? _('Synced via {{provider}} {{time}}', {
+              provider: cloudProviderName,
+              time: dayjs(lastSyncTime).fromNow(),
+            })
+          : _('Never synced')
+      : lastSyncTime
+        ? _('Synced {{time}}', { time: dayjs(lastSyncTime).fromNow() })
+        : _('Never synced');
 
   return (
     <Menu
@@ -342,27 +373,38 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
               onClick={openTransferQueue}
             />
             <MenuItem
-              label={
-                lastSyncTime
-                  ? _('Synced {{time}}', {
-                      time: dayjs(lastSyncTime).fromNow(),
-                    })
-                  : _('Never synced')
-              }
+              label={syncRowLabel}
               Icon={user ? MdSync : MdSyncProblem}
               labelClass='ps-2 pe-1 !mx-0'
-              iconClassName={user && isSyncing ? 'animate-reverse-spin' : ''}
+              iconClassName={(user && isSyncing) || providerSyncing ? 'animate-reverse-spin' : ''}
               onClick={handleSyncLibrary}
             />
-            <button
-              onClick={handleUserProfile}
-              className='hover:bg-base-300 w-full rounded-md'
-              style={{
-                paddingInlineStart: `${iconSize}px`,
-              }}
-            >
-              <Quota quotas={quotas} labelClassName='h-10 pl-3 pr-2' />
-            </button>
+            {cloudProvider === 'readest' ? (
+              <button
+                onClick={handleUserProfile}
+                className='hover:bg-base-300 w-full rounded-md'
+                style={{
+                  paddingInlineStart: `${iconSize}px`,
+                }}
+              >
+                <Quota quotas={quotas} labelClassName='h-10 pl-3 pr-2' />
+              </button>
+            ) : (
+              // Non-interactive caption in the quota slot — no hover/focus
+              // affordance (it is not a dead tappable row) — so the quota's
+              // disappearance reads as intentional, not broken.
+              <div
+                aria-hidden='true'
+                className='text-base-content/60 w-full px-3 py-2 text-[0.85em]'
+                style={{
+                  paddingInlineStart: `${iconSize}px`,
+                }}
+              >
+                {_("Books sync via {{provider}} - Readest Cloud storage isn't used", {
+                  provider: cloudProviderName,
+                })}
+              </div>
+            )}
             <MenuItem label={_('Account')} onClick={handleUserProfile} />
           </ul>
         </MenuItem>
@@ -370,11 +412,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         <MenuItem label={_('Sign In')} Icon={PiUserCircle} onClick={handleUserLogin}></MenuItem>
       )}
 
-      <MenuItem
-        label={_('Auto Upload Books to Cloud')}
-        toggled={isAutoUpload}
-        onClick={toggleAutoUploadBooks}
-      />
+      {cloudProvider === 'readest' && (
+        <MenuItem
+          label={_('Auto Upload Books to Cloud')}
+          toggled={isAutoUpload}
+          onClick={toggleAutoUploadBooks}
+        />
+      )}
 
       {isTauriAppPlatform() && (
         <MenuItem

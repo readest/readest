@@ -32,7 +32,7 @@ import HardcoverForm from './integrations/HardcoverForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
 import WebDAVForm from './integrations/WebDAVForm';
 import GoogleDriveForm from './integrations/GoogleDriveForm';
-import { withActiveCloudProvider } from './integrations/cloudSync';
+import { persistActiveCloudProvider } from './integrations/cloudSync';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
 import SubPageHeader from './SubPageHeader';
 import { SectionTitle, SettingLabel } from './primitives';
@@ -56,8 +56,7 @@ const IntegrationsPanel: React.FC = () => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
-  const { settings, setSettings, saveSettings, requestedSubPage, setRequestedSubPage } =
-    useSettingsStore();
+  const { settings, requestedSubPage, setRequestedSubPage } = useSettingsStore();
   const opdsCatalogs = useCustomOPDSStore((s) => s.catalogs);
   const opdsCount = opdsCatalogs.filter((c) => !c.deletedAt).length;
   // Surface a library-wide WebDAV sync that's mid-flight in the row's
@@ -234,10 +233,7 @@ const IntegrationsPanel: React.FC = () => {
       : _('Not connected');
 
   const activateCloudProvider = async (kind: FileSyncBackendKind) => {
-    const latest = useSettingsStore.getState().settings;
-    const next = withActiveCloudProvider(latest, kind);
-    setSettings(next);
-    await saveSettings(envConfig, next);
+    await persistActiveCloudProvider(envConfig, kind);
   };
 
   const opdsStatus =

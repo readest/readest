@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { withActiveCloudProvider } from '@/components/settings/integrations/cloudSync';
+import { buildWebDAVConnectSettings } from '@/services/sync/providers/webdav/connectSettings';
+import type { WebDAVSettings } from '@/types/settings';
 import { CLOUD_SYNC_REQUIRES_PREMIUM, isCloudSyncAllowed, isCloudSyncInPlan } from '@/utils/access';
 import type { SystemSettings } from '@/types/settings';
 
@@ -70,6 +72,55 @@ describe('withActiveCloudProvider', () => {
       } as unknown as SystemSettings;
       const next = withActiveCloudProvider(active, null);
       expect(next.webdav.syncBooks).toBe(true);
+    });
+
+    test('fresh WebDAV connect flow (builder + activation) auto-enables syncBooks', () => {
+      // Regression: the builder must not pre-set `enabled`, or the
+      // activation never sees a disabled -> enabled transition and the
+      // most common path keeps the books-backed-up-nowhere default.
+      const previous = { enabled: false, syncBooks: false } as WebDAVSettings;
+      const connected = {
+        webdav: buildWebDAVConnectSettings(previous, {
+          serverUrl: 'https://dav.example.com',
+          username: 'alice',
+          password: 'hunter2',
+          rootPath: '/Readest',
+        }),
+        googleDrive: { enabled: false },
+      } as unknown as SystemSettings;
+      const next = withActiveCloudProvider(connected, 'webdav');
+      expect(next.webdav.enabled).toBe(true);
+      expect(next.webdav.syncBooks).toBe(true);
+    });
+  });
+
+  describe('providerSelectedAt stamp (mixed-fleet detection anchor)', () => {
+    const inactive = {
+      webdav: { enabled: false },
+      googleDrive: { enabled: false },
+    } as unknown as SystemSettings;
+
+    test('stamps the newly-activated provider only', () => {
+      const next = withActiveCloudProvider(inactive, 'webdav');
+      expect(typeof next.webdav.providerSelectedAt).toBe('number');
+      expect(next.webdav.providerSelectedAt!).toBeGreaterThan(0);
+      expect(next.googleDrive.providerSelectedAt).toBeUndefined();
+    });
+
+    test('does not re-stamp an already-active provider', () => {
+      const active = {
+        webdav: { enabled: true, providerSelectedAt: 111 },
+        googleDrive: { enabled: false },
+      } as unknown as SystemSettings;
+      expect(withActiveCloudProvider(active, 'webdav').webdav.providerSelectedAt).toBe(111);
+    });
+
+    test('deactivation leaves the stamp untouched', () => {
+      const active = {
+        webdav: { enabled: true, providerSelectedAt: 111 },
+        googleDrive: { enabled: false },
+      } as unknown as SystemSettings;
+      expect(withActiveCloudProvider(active, null).webdav.providerSelectedAt).toBe(111);
     });
   });
 });

@@ -17,9 +17,14 @@ export interface WebDAVConnectFormValues {
  * and MUST be preserved across a disconnect/reconnect cycle.
  *
  * Spreading `previous` first lets the form fields shadow the captured
- * credentials while every bookkeeping field rides through untouched. The
- * `enabled: true` flag is set last so a previously-disabled connection
- * comes back online without otherwise mutating user preferences.
+ * credentials while every bookkeeping field rides through untouched.
+ *
+ * Deliberately does NOT touch `enabled`: activation belongs to
+ * `withActiveCloudProvider`, which the connect flow applies on top. If the
+ * builder pre-set `enabled`, activation would never see the
+ * disabled -> enabled transition and its side effects (the syncBooks
+ * auto-flip, the providerSelectedAt stamp) would silently skip the most
+ * common path.
  *
  * Pulled out as a pure helper specifically to unit-test the "reconnect
  * preserves prior state" invariant: the inline version in WebDAVForm
@@ -32,7 +37,6 @@ export const buildWebDAVConnectSettings = (
 ): WebDAVSettings => {
   return {
     ...(previous ?? {}),
-    enabled: true,
     serverUrl: form.serverUrl.trim(),
     username: form.username,
     password: form.password,

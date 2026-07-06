@@ -23,11 +23,31 @@ import type { SystemSettings } from '@/types/settings';
  */
 export const SETTINGS_SYNC_EVENT = 'global-settings-window-sync';
 
+/**
+ * Minimal cloud-sync provider selection payload. ONLY the enabled flags
+ * plus the selection timestamp — never credentials (`webdav.password`
+ * must not ride window events) and never `lastSyncedAt` (the file-sync
+ * engine writes it after every push; if whole slices were broadcast, a
+ * reader window's routine cursor save interleaving with a provider
+ * switch could win and silently flip the selection back).
+ */
+export interface CloudSyncProviderFlags {
+  webdav: { enabled: boolean; providerSelectedAt?: number };
+  googleDrive: { enabled: boolean; providerSelectedAt?: number };
+}
+
 export interface SettingsSyncPayload {
   /** Label of the window that persisted the change, so receivers ignore their own echo. */
   sourceLabel: string;
   globalViewSettings: SystemSettings['globalViewSettings'];
   globalReadSettings: SystemSettings['globalReadSettings'];
+  /**
+   * Present only on provider-switch broadcasts (see
+   * `persistActiveCloudProvider`), NOT on routine saves — so a stale
+   * window's ordinary settings write can never carry stale flags that
+   * revert someone else's switch.
+   */
+  cloudSyncProviders?: CloudSyncProviderFlags;
 }
 
 /**
@@ -36,18 +56,31 @@ export interface SettingsSyncPayload {
  */
 export const mergeSyncedGlobalSettings = (
   local: SystemSettings,
-  payload: Pick<SettingsSyncPayload, 'globalViewSettings' | 'globalReadSettings'>,
-): SystemSettings => ({
-  ...local,
-  globalViewSettings: payload.globalViewSettings,
-  globalReadSettings: payload.globalReadSettings,
-});
+  payload: Pick<
+    SettingsSyncPayload,
+    'globalViewSettings' | 'globalReadSettings' | 'cloudSyncProviders'
+  >,
+): SystemSettings => {
+  const merged: SystemSettings = {
+    ...local,
+    globalViewSettings: payload.globalViewSettings,
+    globalReadSettings: payload.globalReadSettings,
+  };
+  if (payload.cloudSyncProviders) {
+    merged.webdav = { ...local.webdav, ...payload.cloudSyncProviders.webdav };
+    merged.googleDrive = { ...local.googleDrive, ...payload.cloudSyncProviders.googleDrive };
+  }
+  return merged;
+};
 
 /**
  * Broadcast this window's global settings to all other windows after a
  * settings write. Fire-and-forget and a no-op off Tauri.
  */
-export const broadcastGlobalSettings = async (settings: SystemSettings): Promise<void> => {
+export const broadcastGlobalSettings = async (
+  settings: SystemSettings,
+  opts: { includeCloudSyncProviders?: boolean } = {},
+): Promise<void> => {
   if (!isTauriAppPlatform()) return;
   if (!settings.globalViewSettings || !settings.globalReadSettings) return;
   try {
@@ -56,6 +89,18 @@ export const broadcastGlobalSettings = async (settings: SystemSettings): Promise
       globalViewSettings: settings.globalViewSettings,
       globalReadSettings: settings.globalReadSettings,
     };
+    if (opts.includeCloudSyncProviders) {
+      payload.cloudSyncProviders = {
+        webdav: {
+          enabled: !!settings.webdav?.enabled,
+          providerSelectedAt: settings.webdav?.providerSelectedAt,
+        },
+        googleDrive: {
+          enabled: !!settings.googleDrive?.enabled,
+          providerSelectedAt: settings.googleDrive?.providerSelectedAt,
+        },
+      };
+    }
     await emit(SETTINGS_SYNC_EVENT, payload);
   } catch (err) {
     console.warn('Failed to broadcast settings to other windows', err);

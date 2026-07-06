@@ -17,6 +17,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import {
   TransferItem,
   TransferStatus,
@@ -184,6 +186,12 @@ const TransferQueuePanel: React.FC = () => {
   const onClose = () => setIsOpen(false);
   const divRef = useKeyDownActions({ onCancel: onClose, onConfirm: onClose });
 
+  // Uploads target Readest Cloud storage; while a third-party provider is
+  // selected the queue refuses book uploads, so hide the affordance
+  // (downloads and replica transfers keep flowing regardless).
+  const settings = useSettingsStore((s) => s.settings);
+  const readestStorageActive = isReadestCloudStorageActive(settings);
+
   const booksToUpload = getVisibleLibrary().filter((book) => book.downloadedAt && !book.uploadedAt);
   const booksToDownload = getVisibleLibrary().filter(
     (book) => book.uploadedAt && !book.downloadedAt,
@@ -246,7 +254,7 @@ const TransferQueuePanel: React.FC = () => {
         <div className='border-base-300 flex items-center justify-between border-b p-4'>
           <h2 className='text-lg font-semibold'>{_('Transfer Queue')}</h2>
           <div className='flex items-center gap-2'>
-            {booksToUpload.length > 0 && (
+            {readestStorageActive && booksToUpload.length > 0 && (
               <button
                 onClick={handleUploadAll}
                 className='btn btn-ghost btn-sm gap-1'

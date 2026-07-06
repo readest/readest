@@ -53,6 +53,8 @@ export const BACKUP_SETTINGS_BLACKLIST = [
   'googleDrive.lastSyncedAt',
   'webdav.deviceId',
   'webdav.lastSyncedAt',
+  'webdav.providerSelectedAt',
+  'googleDrive.providerSelectedAt',
   // Transient runtime state — book keys may not exist post-restore; screen
   // brightness is live device state.
   'lastOpenBooks',
