@@ -186,7 +186,9 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
     <BoxedList>
       <SettingsSwitchRow
         label={_('Upload Book Files')}
-        description={_('Uploads book files to your other devices.')}
+        description={_(
+          'Uploads book files to your other devices. Readest Cloud uploads pause while this provider is selected.',
+        )}
         checked={stored.syncBooks ?? false}
         onChange={handleToggleSyncBooks}
       />

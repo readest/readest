@@ -29,6 +29,15 @@ describe('withActiveCloudProvider', () => {
     expect(next.googleDrive.enabled).toBe(false);
   });
 
+  test("'readest' behaves as deactivation of both third-party providers", () => {
+    const next = withActiveCloudProvider(base, 'readest');
+    expect(next.webdav.enabled).toBe(false);
+    expect(next.googleDrive.enabled).toBe(false);
+    // Config survives so switching back needs no re-entry.
+    expect(next.webdav.serverUrl).toBe('https://dav');
+    expect(next.googleDrive.accountLabel).toBe('a@b.com');
+  });
+
   test('leaves the rest of each provider config untouched', () => {
     const next = withActiveCloudProvider(base, 'gdrive');
     expect(next.webdav.serverUrl).toBe('https://dav');

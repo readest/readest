@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
+import { getCloudSyncProvider } from '@/services/sync/cloudSyncProvider';
 import {
   SYNC_CATEGORIES,
   isSyncCategoryLocked,
@@ -71,6 +72,8 @@ export function SyncCategoriesSection() {
   const { envConfig } = useEnv();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const copy = useCategoryCopy();
+  const cloudProvider = getCloudSyncProvider(settings);
+  const cloudProviderName = cloudProvider === 'gdrive' ? 'Google Drive' : 'WebDAV';
 
   if (!settings) return null;
 
@@ -110,12 +113,27 @@ export function SyncCategoriesSection() {
           const c = copy[category];
           const on = enabled(category);
           const locked = isSyncCategoryLocked(category);
+          // While a third-party cloud provider is selected, the book /
+          // progress / note channels are routed to it at runtime and these
+          // toggles have no immediate effect. The description says so in
+          // place (same pattern as `locked`), but the toggle stays
+          // interactive and persists: it governs the native channel the
+          // user returns to when Readest Cloud is re-selected.
+          const managedByProvider =
+            cloudProvider !== 'readest' &&
+            (category === 'book' || category === 'progress' || category === 'note');
           return (
             <li key={category} className='flex items-center justify-between gap-4 px-4 py-3'>
               <div className='flex flex-col gap-0.5'>
                 <span className='text-base-content text-sm font-medium'>{c.title}</span>
                 <span className='text-base-content/60 text-xs'>
-                  {locked ? _('Required while Dictionaries sync is enabled') : c.description}
+                  {managedByProvider
+                    ? _('Managed by {{provider}} while it is your cloud sync provider', {
+                        provider: cloudProviderName,
+                      })
+                    : locked
+                      ? _('Required while Dictionaries sync is enabled')
+                      : c.description}
                 </span>
               </div>
               <input

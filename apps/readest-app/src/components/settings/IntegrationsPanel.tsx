@@ -10,6 +10,7 @@ import {
   RiDiscordLine,
   RiSendPlaneLine,
   RiCloudLine,
+  RiCloudFill,
   RiGoogleLine,
 } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
@@ -33,11 +34,27 @@ import SendToReadestForm from './integrations/SendToReadestForm';
 import WebDAVForm from './integrations/WebDAVForm';
 import GoogleDriveForm from './integrations/GoogleDriveForm';
 import { persistActiveCloudProvider } from './integrations/cloudSync';
+import { getReadestCloudRowStatus, getThirdPartyRowStatus } from './integrations/cloudSyncStatus';
+import {
+  getCloudSyncProvider,
+  resolveCloudSyncGate,
+  type CloudSyncProviderKind,
+} from '@/services/sync/cloudSyncProvider';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
 import SubPageHeader from './SubPageHeader';
-import { SectionTitle, SettingLabel } from './primitives';
+import Quota from '@/components/Quota';
+import { NavigationRow, SectionTitle, SettingLabel, Tips } from './primitives';
 
-type SubPage = 'kosync' | 'webdav' | 'gdrive' | 'readwise' | 'hardcover' | 'opds' | 'send' | null;
+type SubPage =
+  | 'kosync'
+  | 'webdav'
+  | 'gdrive'
+  | 'readest-cloud'
+  | 'readwise'
+  | 'hardcover'
+  | 'opds'
+  | 'send'
+  | null;
 
 /**
  * Integrations panel — single point of discovery for external service config:
@@ -64,11 +81,13 @@ const IntegrationsPanel: React.FC = () => {
   // when they back out of the WebDAV sub-page or close the dialog.
   const isWebDAVSyncing = useFileSyncStore((s) => s.byKind.webdav?.isSyncing ?? false);
   const isGDriveSyncing = useFileSyncStore((s) => s.byKind.gdrive?.isSyncing ?? false);
+  const webdavLastError = useFileSyncStore((s) => s.lastErrorByKind.webdav);
+  const gdriveLastError = useFileSyncStore((s) => s.lastErrorByKind.gdrive);
   // Third-party cloud sync will be a premium feature (any paid plan), but it is
   // temporarily UNGATED while the feature stabilises — `isCloudSyncAllowed`
   // returns true for every plan until `CLOUD_SYNC_REQUIRES_PREMIUM` is flipped
   // back on. The `?? 'free'` keeps the (re-gated) loading state non-premium.
-  const { userProfilePlan } = useQuotaStats();
+  const { userProfilePlan, quotas } = useQuotaStats();
   const isCloudSyncPremium = isCloudSyncAllowed(userProfilePlan ?? 'free');
 
   const [subPage, setSubPage] = useState<SubPage>(null);
@@ -151,6 +170,22 @@ const IntegrationsPanel: React.FC = () => {
           onBack={() => setSubPage(null)}
         />
         <WebDAVForm />
+        {settings.webdav?.enabled && (
+          <div className='mt-5'>
+            <Tips>
+              <li>
+                {_(
+                  'While WebDAV is selected, books, progress, and annotations sync only to your server.',
+                )}
+              </li>
+              <li>
+                {_(
+                  'App settings, reading statistics, and dictionaries still sync through your Readest account while signed in.',
+                )}
+              </li>
+            </Tips>
+          </div>
+        )}
       </div>
     );
   if (subPage === 'gdrive')
@@ -165,6 +200,45 @@ const IntegrationsPanel: React.FC = () => {
           onBack={() => setSubPage(null)}
         />
         <GoogleDriveForm />
+        {settings.googleDrive?.enabled && (
+          <div className='mt-5'>
+            <Tips>
+              <li>
+                {_(
+                  'While Google Drive is selected, books, progress, and annotations sync only to your Drive.',
+                )}
+              </li>
+              <li>
+                {_(
+                  'App settings, reading statistics, and dictionaries still sync through your Readest account while signed in.',
+                )}
+              </li>
+            </Tips>
+          </div>
+        )}
+      </div>
+    );
+  if (subPage === 'readest-cloud')
+    return (
+      <div className='my-4 w-full'>
+        <SubPageHeader
+          parentLabel={_('Integrations')}
+          currentLabel={_('Readest Cloud')}
+          description={_('Sync your library, reading progress, and highlights with Readest Cloud.')}
+          onBack={() => setSubPage(null)}
+        />
+        <div className='space-y-5'>
+          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border px-4 py-3'>
+            <Quota quotas={quotas} labelClassName='h-10' />
+          </div>
+          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
+            <NavigationRow
+              title={_('Account and Storage')}
+              status={_('Manage your plan and stored files')}
+              onClick={() => navigateToProfile(router)}
+            />
+          </div>
+        </div>
       </div>
     );
   if (subPage === 'readwise')
@@ -207,32 +281,39 @@ const IntegrationsPanel: React.FC = () => {
   const readwiseStatus = settings.readwise?.enabled ? _('Connected') : _('Not connected');
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
 
-  // Third-party cloud providers are mutually exclusive: at most one is the
-  // active sync target. A "configured" provider (WebDAV creds / a Drive token)
-  // can be switched on inline; an unconfigured one must be opened to connect.
-  const activeCloudKind: FileSyncBackendKind | null = settings.webdav?.enabled
-    ? 'webdav'
-    : settings.googleDrive?.enabled
-      ? 'gdrive'
-      : null;
+  // Cloud sync providers are mutually exclusive: exactly one of
+  // {Readest Cloud, WebDAV, Google Drive} owns library sync. A "configured"
+  // third-party provider (WebDAV creds / a Drive token) can be switched on
+  // inline; an unconfigured one must be opened to connect.
+  const cloudProvider = getCloudSyncProvider(settings);
+  const activeCloudKind: FileSyncBackendKind | null =
+    cloudProvider === 'readest' ? null : cloudProvider;
+  const cloudGate = resolveCloudSyncGate(settings, userProfilePlan ?? 'free');
   const webdavConfigured = !!(settings.webdav?.serverUrl && settings.webdav?.username);
   const gdriveConfigured = !!settings.googleDrive?.accountLabel;
-  const webdavStatus = settings.webdav?.enabled
-    ? isWebDAVSyncing
-      ? _('Syncing…')
-      : _('Active')
-    : webdavConfigured
-      ? _('Configured')
-      : _('Not connected');
-  const gdriveStatus = settings.googleDrive?.enabled
-    ? isGDriveSyncing
-      ? _('Syncing…')
-      : _('Active')
-    : gdriveConfigured
-      ? _('Configured')
-      : _('Not connected');
+  const webdavStatus = getThirdPartyRowStatus(_, {
+    enabled: !!settings.webdav?.enabled,
+    configured: webdavConfigured,
+    syncing: isWebDAVSyncing,
+    paused: cloudGate.paused && cloudProvider === 'webdav',
+    lastError: webdavLastError,
+    syncBooks: settings.webdav?.syncBooks ?? false,
+  });
+  const gdriveStatus = getThirdPartyRowStatus(_, {
+    enabled: !!settings.googleDrive?.enabled,
+    configured: gdriveConfigured,
+    syncing: isGDriveSyncing,
+    paused: cloudGate.paused && cloudProvider === 'gdrive',
+    lastError: gdriveLastError,
+    syncBooks: settings.googleDrive?.syncBooks ?? false,
+  });
+  const readestStatus = getReadestCloudRowStatus(_, {
+    signedIn: !!user,
+    planLoading: userProfilePlan === undefined,
+    selected: cloudProvider === 'readest',
+  });
 
-  const activateCloudProvider = async (kind: FileSyncBackendKind) => {
+  const activateCloudProvider = async (kind: CloudSyncProviderKind) => {
     await persistActiveCloudProvider(envConfig, kind);
   };
 
@@ -275,9 +356,28 @@ const IntegrationsPanel: React.FC = () => {
       </div>
 
       <div className='w-full' data-setting-id='settings.integrations.cloudSync'>
-        <SectionTitle className='mb-2'>{_('Third-party Cloud Sync')}</SectionTitle>
+        <SectionTitle className='mb-2'>{_('Cloud Sync')}</SectionTitle>
+        <p className='text-base-content/70 mb-2 px-1 text-sm leading-relaxed'>
+          {_(
+            'Choose where your library — books, progress, annotations — syncs on this device. App settings, reading statistics, and dictionaries always sync with your Readest account while signed in.',
+          )}
+        </p>
         <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
-          <div className='divide-base-200 divide-y'>
+          <div
+            className='divide-base-200 divide-y'
+            role='radiogroup'
+            aria-label={_('Cloud sync provider')}
+          >
+            <CloudProviderRow
+              icon={RiCloudFill}
+              title={_('Readest Cloud')}
+              status={readestStatus}
+              isActive={!!user && cloudProvider === 'readest'}
+              canActivate={!!user}
+              onActivate={() => activateCloudProvider('readest')}
+              onOpen={() => (user ? setSubPage('readest-cloud') : navigateToLogin(router))}
+              activateLabel={_('Use Readest Cloud')}
+            />
             {isCloudSyncPremium ? (
               <>
                 <CloudProviderRow
@@ -308,11 +408,11 @@ const IntegrationsPanel: React.FC = () => {
                 )}
               </>
             ) : (
-              // Premium-gated: free users get an upgrade prompt instead of the
-              // provider rows. Tapping opens the plans page.
+              // Premium-gated: free users keep the Readest Cloud row above and
+              // get an upgrade prompt in place of the third-party rows.
               <IntegrationRow
                 icon={RiCloudLine}
-                title={_('Cloud Sync')}
+                title={_('Third-party Cloud Sync')}
                 status={_('Available on Plus, Pro, or Lifetime')}
                 onClick={() => navigateToProfile(router)}
               />
