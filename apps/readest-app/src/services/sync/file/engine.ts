@@ -162,11 +162,12 @@ const runPool = async <T>(
   items: T[],
   limit: number,
   worker: (item: T, index: number) => Promise<void>,
+  stopped?: () => boolean,
 ): Promise<void> => {
   if (items.length === 0) return;
   let cursor = 0;
   const runners = Array.from({ length: Math.min(Math.max(1, limit), items.length) }, async () => {
-    while (cursor < items.length) {
+    while (cursor < items.length && !stopped?.()) {
       const index = cursor;
       cursor += 1;
       await worker(items[index]!, index);
@@ -384,12 +385,27 @@ export class FileSyncEngine {
 
     let remoteIndex: RemoteLibraryIndex | null = null;
     if (canPull) {
-      try {
-        remoteIndex = await this.pullLibraryIndex();
-      } catch (e) {
-        console.warn('file sync: failed to pull index', e);
-      }
+      // An UNREADABLE index (throw — expired session, network) is NOT the
+      // same as an ABSENT one (404 → null, first-sync semantics). Proceeding
+      // with a null index here would treat every local book as unpushed (an
+      // attempted mass re-upload against a dead session) and the final index
+      // re-push would drop the peers' tombstones it failed to read (#4860),
+      // resurrecting deleted books. Abort the run instead; callers surface
+      // one error.
+      remoteIndex = await this.pullLibraryIndex();
     }
+
+    // Terminal-failure latch: once any remote call fails with AUTH_FAILED the
+    // session is gone for every subsequent call too. Stop scheduling work
+    // instead of marching the whole library through identical failures, skip
+    // the index re-push (a partial run must not rewrite library.json), and
+    // rethrow so the caller shows a single re-auth error. Mirrors the
+    // deleteRemoteBookDir contract (AUTH failures rethrow; the rest aggregate).
+    let abort: FileSyncError | null = null;
+    const noteAbort = (e: unknown): void => {
+      if (!abort && e instanceof FileSyncError && e.code === 'AUTH_FAILED') abort = e;
+    };
+    const aborted = (): boolean => abort !== null;
 
     const allBooksMap = new Map<string, Book>();
     for (const b of books) {
@@ -450,47 +466,54 @@ export class FileSyncEngine {
         const local = allBooksMap.get(rb.hash);
         return !!local && !local.deletedAt && shouldApplyRemoteBookMetadata(local, rb);
       });
-      await runPool(remoteNewer, concurrency, async (rb) => {
-        const local = allBooksMap.get(rb.hash)!;
-        const merged = mergeBookMetadata(local, rb);
-        // Re-pull the cover so a changed cover travels with the metadata. The
-        // subsequent push-side pushBookCover HEAD/size short-circuit then
-        // matches (local now equals remote), so we never bounce it back up.
-        try {
-          const coverBytes = await this.pullBookCover(rb.hash);
-          if (coverBytes) await this.store.saveBookCover(merged, coverBytes);
-        } catch (e) {
-          console.warn('file sync: metadata cover pull failed', rb.hash, e);
-        }
-        // Incremental only: the per-book push loop below skips remote-newer
-        // books, so pull their config here too — otherwise a peer's progress /
-        // notes wouldn't propagate without re-walking every book. In full-sync
-        // mode the push loop pulls each config, so we skip this to avoid a
-        // duplicate GET.
-        if (!fullSync) {
+      await runPool(
+        remoteNewer,
+        concurrency,
+        async (rb) => {
+          const local = allBooksMap.get(rb.hash)!;
+          const merged = mergeBookMetadata(local, rb);
+          // Re-pull the cover so a changed cover travels with the metadata. The
+          // subsequent push-side pushBookCover HEAD/size short-circuit then
+          // matches (local now equals remote), so we never bounce it back up.
           try {
-            const localConfig = (await this.store.loadConfig(merged)) ?? {
-              updatedAt: 0,
-              booknotes: [],
-            };
-            const pull = await this.pullBookConfig(merged, localConfig);
-            if (pull.applied && pull.mergedConfig) {
-              await this.store.saveBookConfig(merged, pull.mergedConfig);
-              result.configsDownloaded += 1;
-            }
+            const coverBytes = await this.pullBookCover(rb.hash);
+            if (coverBytes) await this.store.saveBookCover(merged, coverBytes);
           } catch (e) {
-            console.warn('file sync: metadata config pull failed', rb.hash, e);
+            noteAbort(e);
+            console.warn('file sync: metadata cover pull failed', rb.hash, e);
           }
-        }
-        try {
-          await this.store.updateBookMetadata(merged);
-          allBooksMap.set(rb.hash, merged);
-          result.metadataUpdated += 1;
-          syncedHashes.add(rb.hash);
-        } catch (e) {
-          console.warn('file sync: metadata update failed', rb.hash, e);
-        }
-      });
+          // Incremental only: the per-book push loop below skips remote-newer
+          // books, so pull their config here too — otherwise a peer's progress /
+          // notes wouldn't propagate without re-walking every book. In full-sync
+          // mode the push loop pulls each config, so we skip this to avoid a
+          // duplicate GET.
+          if (!fullSync) {
+            try {
+              const localConfig = (await this.store.loadConfig(merged)) ?? {
+                updatedAt: 0,
+                booknotes: [],
+              };
+              const pull = await this.pullBookConfig(merged, localConfig);
+              if (pull.applied && pull.mergedConfig) {
+                await this.store.saveBookConfig(merged, pull.mergedConfig);
+                result.configsDownloaded += 1;
+              }
+            } catch (e) {
+              noteAbort(e);
+              console.warn('file sync: metadata config pull failed', rb.hash, e);
+            }
+          }
+          try {
+            await this.store.updateBookMetadata(merged);
+            allBooksMap.set(rb.hash, merged);
+            result.metadataUpdated += 1;
+            syncedHashes.add(rb.hash);
+          } catch (e) {
+            console.warn('file sync: metadata update failed', rb.hash, e);
+          }
+        },
+        aborted,
+      );
     }
 
     // Deletion propagation (#4860): a book a peer tombstoned in the shared index
@@ -559,12 +582,14 @@ export class FileSyncEngine {
         }
       } catch (e) {
         // 404 is normal if the user has never pushed anything yet.
+        noteAbort(e);
         console.warn('file sync: failed to list books directory', e);
       }
 
       // 3) For every candidate, look inside its hash directory to find the
       //    actual book file (the only entry that isn't config.json/cover.png).
       for (const hash of candidateHashes) {
+        if (aborted()) break;
         try {
           const hashDirPath = `${buildBasePath(this.provider.rootPath)}/${SYNC_BOOKS_DIR}/${hash}`;
           const hashDirEntries = await this.provider.list(hashDirPath);
@@ -608,6 +633,7 @@ export class FileSyncEngine {
           remoteBooksToDownload.push(book);
           allBooksMap.set(hash, book);
         } catch (e) {
+          noteAbort(e);
           console.warn('file sync: failed to inspect hash dir', hash, e);
         }
       }
@@ -618,79 +644,85 @@ export class FileSyncEngine {
     // that exist remotely but not locally is the whole point of a sync.
     if (canPull) {
       let downloadStarted = 0;
-      await runPool(remoteBooksToDownload, concurrency, async (rb) => {
-        options.onProgress?.({
-          book: rb,
-          index: downloadStarted,
-          total: remoteBooksToDownload.length,
-          action: 'downloading',
-        });
-        downloadStarted += 1;
-        try {
-          const explicitPath = explicitRemotePaths.get(rb.hash);
-          // Prefer the streaming downloader. On Tauri/Android we MUST take
-          // this path — moving a 30 MB epub through the WebView<->Rust IPC
-          // bridge as a single Uint8Array crashes the renderer.
-          let written = false;
-          if (this.provider.downloadStream && explicitPath) {
-            const dst = await this.store.prepareLocalBookPath(rb);
-            written = await this.provider.downloadStream(explicitPath, dst);
-          } else {
-            const remotePath = explicitPath ?? buildBookFilePath(this.provider.rootPath, rb);
-            const fileBytes = await this.provider.readBinary(remotePath);
-            if (fileBytes) {
-              await this.store.saveBookFile(rb, fileBytes);
-              written = true;
-            }
-          }
-          if (written) {
-            try {
-              const coverBytes = await this.pullBookCover(rb.hash);
-              if (coverBytes) await this.store.saveBookCover(rb, coverBytes);
-            } catch (e) {
-              console.warn('file sync: cover download failed', rb.hash, e);
-            }
-            // Pull the remote config so progress, bookmarks and annotations
-            // travel with the book. Best-effort: a missing config is not a
-            // failure.
-            try {
-              const emptyLocal: BookConfig = { updatedAt: 0, booknotes: [] };
-              const pullResult = await this.pullBookConfig(rb, emptyLocal);
-              if (pullResult.applied && pullResult.mergedConfig) {
-                await this.store.saveBookConfig(rb, pullResult.mergedConfig);
-                result.configsDownloaded += 1;
+      await runPool(
+        remoteBooksToDownload,
+        concurrency,
+        async (rb) => {
+          options.onProgress?.({
+            book: rb,
+            index: downloadStarted,
+            total: remoteBooksToDownload.length,
+            action: 'downloading',
+          });
+          downloadStarted += 1;
+          try {
+            const explicitPath = explicitRemotePaths.get(rb.hash);
+            // Prefer the streaming downloader. On Tauri/Android we MUST take
+            // this path — moving a 30 MB epub through the WebView<->Rust IPC
+            // bridge as a single Uint8Array crashes the renderer.
+            let written = false;
+            if (this.provider.downloadStream && explicitPath) {
+              const dst = await this.store.prepareLocalBookPath(rb);
+              written = await this.provider.downloadStream(explicitPath, dst);
+            } else {
+              const remotePath = explicitPath ?? buildBookFilePath(this.provider.rootPath, rb);
+              const fileBytes = await this.provider.readBinary(remotePath);
+              if (fileBytes) {
+                await this.store.saveBookFile(rb, fileBytes);
+                written = true;
               }
-            } catch (e) {
-              console.warn('file sync: config download failed', rb.hash, e);
             }
-            await this.store.addBookToLibrary(rb);
-            result.booksDownloaded += 1;
-            syncedHashes.add(rb.hash);
-            // We just pulled its bytes, so the file is on the remote — record it
-            // so a later push-side sync doesn't HEAD-probe it back.
-            uploadedHashes.add(rb.hash);
-          } else {
-            // No bytes returned (typically a 404 we couldn't resolve).
+            if (written) {
+              try {
+                const coverBytes = await this.pullBookCover(rb.hash);
+                if (coverBytes) await this.store.saveBookCover(rb, coverBytes);
+              } catch (e) {
+                console.warn('file sync: cover download failed', rb.hash, e);
+              }
+              // Pull the remote config so progress, bookmarks and annotations
+              // travel with the book. Best-effort: a missing config is not a
+              // failure.
+              try {
+                const emptyLocal: BookConfig = { updatedAt: 0, booknotes: [] };
+                const pullResult = await this.pullBookConfig(rb, emptyLocal);
+                if (pullResult.applied && pullResult.mergedConfig) {
+                  await this.store.saveBookConfig(rb, pullResult.mergedConfig);
+                  result.configsDownloaded += 1;
+                }
+              } catch (e) {
+                console.warn('file sync: config download failed', rb.hash, e);
+              }
+              await this.store.addBookToLibrary(rb);
+              result.booksDownloaded += 1;
+              syncedHashes.add(rb.hash);
+              // We just pulled its bytes, so the file is on the remote — record it
+              // so a later push-side sync doesn't HEAD-probe it back.
+              uploadedHashes.add(rb.hash);
+            } else {
+              // No bytes returned (typically a 404 we couldn't resolve).
+              result.failures += 1;
+              result.failedBooks.push({
+                hash: rb.hash,
+                title: rb.title || rb.hash,
+                phase: 'download',
+                reason: 'No bytes returned (file may have been moved or deleted on the server)',
+              });
+              console.warn('file sync: book download produced no bytes', rb.hash, explicitPath);
+            }
+          } catch (e) {
+            noteAbort(e);
             result.failures += 1;
             result.failedBooks.push({
               hash: rb.hash,
               title: rb.title || rb.hash,
               phase: 'download',
-              reason: 'No bytes returned (file may have been moved or deleted on the server)',
+              reason: formatFailureReason(e),
             });
-            console.warn('file sync: book download produced no bytes', rb.hash, explicitPath);
+            console.warn('file sync: book download failed', rb.hash, e);
           }
-        } catch (e) {
-          result.failures += 1;
-          result.failedBooks.push({
-            hash: rb.hash,
-            title: rb.title || rb.hash,
-            phase: 'download',
-            reason: formatFailureReason(e),
-          });
-          console.warn('file sync: book download failed', rb.hash, e);
-        }
-      });
+        },
+        aborted,
+      );
     }
 
     // Books we just downloaded already exist on the remote — don't re-push
@@ -718,80 +750,91 @@ export class FileSyncEngine {
 
     if (canPush && booksToPush.length > 0) {
       let pushStarted = 0;
-      await runPool(booksToPush, concurrency, async (book) => {
-        options.onProgress?.({
-          book,
-          index: pushStarted,
-          total: booksToPush.length,
-          action: 'uploading',
-        });
-        pushStarted += 1;
-        let phase: SyncFailureEntry['phase'] = 'upload-config';
-        try {
-          if (configChanged(book)) {
-            const config = await this.store.loadConfig(book);
-            if (config) {
-              // Mirror the reader hook's pull-merge-push discipline so a manual
-              // "Sync now" can't blind-overwrite state this device hasn't pulled
-              // yet. Only in two-way ('silent') mode — 'send' keeps the blind
-              // push. A failed pull-merge falls back to the local config.
-              let configToPush = config;
-              if (canPull) {
-                try {
-                  const pull = await this.pullBookConfig(book, config);
-                  if (pull.applied && pull.mergedConfig) {
-                    configToPush = pull.mergedConfig;
-                    // Persist the merged superset locally so this device
-                    // converges too, not just the remote.
-                    await this.store.saveBookConfig(book, pull.mergedConfig);
+      await runPool(
+        booksToPush,
+        concurrency,
+        async (book) => {
+          options.onProgress?.({
+            book,
+            index: pushStarted,
+            total: booksToPush.length,
+            action: 'uploading',
+          });
+          pushStarted += 1;
+          let phase: SyncFailureEntry['phase'] = 'upload-config';
+          try {
+            if (configChanged(book)) {
+              const config = await this.store.loadConfig(book);
+              if (config) {
+                // Mirror the reader hook's pull-merge-push discipline so a manual
+                // "Sync now" can't blind-overwrite state this device hasn't pulled
+                // yet. Only in two-way ('silent') mode — 'send' keeps the blind
+                // push. A failed pull-merge falls back to the local config.
+                let configToPush = config;
+                if (canPull) {
+                  try {
+                    const pull = await this.pullBookConfig(book, config);
+                    if (pull.applied && pull.mergedConfig) {
+                      configToPush = pull.mergedConfig;
+                      // Persist the merged superset locally so this device
+                      // converges too, not just the remote.
+                      await this.store.saveBookConfig(book, pull.mergedConfig);
+                    }
+                  } catch (e) {
+                    console.warn('file sync: config pull-merge failed', book.hash, e);
                   }
-                } catch (e) {
-                  console.warn('file sync: config pull-merge failed', book.hash, e);
                 }
-              }
-              await this.pushBookConfig(book, configToPush, options.deviceId);
-              result.configsUploaded += 1;
-              syncedHashes.add(book.hash);
-            }
-            // Covers ride along with the config-level sync, NOT with syncBooks:
-            // the receiving device can't regenerate them without the book bytes.
-            // Failures here are warnings, not hard failures.
-            try {
-              const coverResult = await this.pushBookCover(book);
-              if (coverResult.uploaded) {
-                result.coversUploaded += 1;
+                await this.pushBookConfig(book, configToPush, options.deviceId);
+                result.configsUploaded += 1;
                 syncedHashes.add(book.hash);
               }
-            } catch (e) {
-              console.warn('file sync: cover failed', book.hash, e);
+              // Covers ride along with the config-level sync, NOT with syncBooks:
+              // the receiving device can't regenerate them without the book bytes.
+              // Failures here are warnings, not hard failures.
+              try {
+                const coverResult = await this.pushBookCover(book);
+                if (coverResult.uploaded) {
+                  result.coversUploaded += 1;
+                  syncedHashes.add(book.hash);
+                }
+              } catch (e) {
+                console.warn('file sync: cover failed', book.hash, e);
+              }
             }
-          }
-          if (needsFilePush(book)) {
-            phase = 'upload-file';
-            const fileResult = await this.pushBookFile(book);
-            if (fileResult.uploaded) {
-              result.filesUploaded += 1;
-              syncedHashes.add(book.hash);
-              uploadedHashes.add(book.hash);
-            } else if (fileResult.reason === 'remote-matches') {
-              result.filesAlreadyInSync += 1;
-              uploadedHashes.add(book.hash);
+            if (needsFilePush(book)) {
+              phase = 'upload-file';
+              const fileResult = await this.pushBookFile(book);
+              if (fileResult.uploaded) {
+                result.filesUploaded += 1;
+                syncedHashes.add(book.hash);
+                uploadedHashes.add(book.hash);
+              } else if (fileResult.reason === 'remote-matches') {
+                result.filesAlreadyInSync += 1;
+                uploadedHashes.add(book.hash);
+              }
+              // 'no-source' → the file isn't on this device; leave it unrecorded
+              // so a device that does have it can upload and record it later.
             }
-            // 'no-source' → the file isn't on this device; leave it unrecorded
-            // so a device that does have it can upload and record it later.
+          } catch (e) {
+            noteAbort(e);
+            result.failures += 1;
+            result.failedBooks.push({
+              hash: book.hash,
+              title: book.title || book.hash,
+              phase,
+              reason: formatFailureReason(e),
+            });
+            console.warn('file sync: book failed', book.hash, e);
           }
-        } catch (e) {
-          result.failures += 1;
-          result.failedBooks.push({
-            hash: book.hash,
-            title: book.title || book.hash,
-            phase,
-            reason: formatFailureReason(e),
-          });
-          console.warn('file sync: book failed', book.hash, e);
-        }
-      });
+        },
+        aborted,
+      );
     }
+
+    // A terminal auth failure surfaced mid-run: rethrow instead of re-pushing
+    // an index built from a partial run, and let the caller show one re-auth
+    // error rather than a per-book failure list.
+    if (abort) throw abort;
 
     // The final index whenever we're allowed to write, even if no binaries
     // moved this turn (keeps library.json authoritative). Union in any remote

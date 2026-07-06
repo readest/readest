@@ -7,6 +7,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
 import { isCloudSyncAllowed } from '@/utils/access';
+import { isWebAppPlatform } from '@/services/environment';
+import { hasValidWebDriveToken } from '@/services/sync/providers/gdrive/auth/webTokenStore';
 import { debounce } from '@/utils/debounce';
 import { FileSyncEngine } from '@/services/sync/file/engine';
 import { createAppLocalStore } from '@/services/sync/file/appLocalStore';
@@ -66,7 +68,14 @@ export const useLibraryFileSync = () => {
       const w = settings.webdav;
       return !!(w?.enabled && w?.serverUrl && w?.username);
     }
-    if (activeKind === 'gdrive') return !!settings.googleDrive?.enabled;
+    if (activeKind === 'gdrive') {
+      // Web Drive tokens are session-scoped with no refresh; once expired,
+      // every run would abort with AUTH_FAILED on the index pull. Skip the
+      // auto-sync until the user reconnects (the Drive settings form shows
+      // the Reconnect CTA), mirroring its disabled "Sync now".
+      if (isWebAppPlatform() && !hasValidWebDriveToken()) return false;
+      return !!settings.googleDrive?.enabled;
+    }
     return false;
   }, [isAllowed, activeKind, settings.webdav, settings.googleDrive]);
 
