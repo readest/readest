@@ -45,9 +45,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [noContinuousScroll, setNoContinuousScroll] = useState(viewSettings.noContinuousScroll);
   const [scrollingOverlap, setScrollingOverlap] = useState(viewSettings.scrollingOverlap);
   const [hideScrollbar, setHideScrollbar] = useState(viewSettings.hideScrollbar || false);
-  const [middleClickAutoscroll, setMiddleClickAutoscroll] = useState(
-    viewSettings.middleClickAutoscroll,
-  );
   const [showPaginationButtons, setShowPaginationButtons] = useState(
     viewSettings.showPaginationButtons,
   );
@@ -101,7 +98,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       noContinuousScroll: setNoContinuousScroll,
       scrollingOverlap: setScrollingOverlap,
       hideScrollbar: setHideScrollbar,
-      middleClickAutoscroll: setMiddleClickAutoscroll,
       showPaginationButtons: setShowPaginationButtons,
       disableClick: setIsDisableClick,
       disableSwipe: setIsDisableSwipe,
@@ -157,19 +153,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     saveViewSettings(envConfig, bookKey, 'hideScrollbar', hideScrollbar, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hideScrollbar]);
-
-  useEffect(() => {
-    if (middleClickAutoscroll === viewSettings.middleClickAutoscroll) return;
-    saveViewSettings(
-      envConfig,
-      bookKey,
-      'middleClickAutoscroll',
-      middleClickAutoscroll,
-      false,
-      false,
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [middleClickAutoscroll]);
 
   useEffect(() => {
     if (scrollingOverlap === viewSettings.scrollingOverlap) return;
@@ -389,15 +372,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           onChange={() => setHideScrollbar(!hideScrollbar)}
           data-setting-id='settings.control.scroll.hideScrollbar'
         />
-        {appService?.isDesktopApp && (
-          <SettingsSwitchRow
-            label={_('Middle-Click Autoscroll')}
-            checked={middleClickAutoscroll}
-            disabled={!viewSettings.scrolled}
-            onChange={() => setMiddleClickAutoscroll(!middleClickAutoscroll)}
-            data-setting-id='settings.control.scroll.middleClickAutoscroll'
-          />
-        )}
       </BoxedList>
 
       <BoxedList title={_('Pagination')} data-setting-id='settings.control.clickToPaginate'>

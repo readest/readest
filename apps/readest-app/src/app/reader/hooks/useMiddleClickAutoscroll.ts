@@ -27,8 +27,7 @@ export const useMiddleClickAutoscroll = (
   const viewSettings = getViewSettings(bookKey);
   const [anchor, setAnchor] = useState<AutoscrollAnchor | null>(null);
 
-  const armed =
-    !!appService?.isDesktopApp && !!viewSettings?.scrolled && !!viewSettings?.middleClickAutoscroll;
+  const armed = !!appService?.isDesktopApp && !!viewSettings?.scrolled;
   const armedRef = useRef(armed);
   armedRef.current = armed;
 
