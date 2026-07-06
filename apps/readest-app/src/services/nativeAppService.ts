@@ -658,7 +658,7 @@ export class NativeAppService extends BaseAppService {
       const settings = await this.loadSettings();
       const lastMigrationVersion = settings.migrationVersion || 0;
 
-      await super.runMigrations(lastMigrationVersion);
+      await super.runMigrations(lastMigrationVersion, settings);
 
       if (lastMigrationVersion < 20251029) {
         try {

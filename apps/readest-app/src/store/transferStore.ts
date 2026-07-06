@@ -4,6 +4,15 @@ import type { BaseDir } from '@/types/system';
 export type TransferType = 'upload' | 'download' | 'delete';
 export type TransferStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
 export type TransferKind = 'book' | 'replica';
+/**
+ * Why a transfer was cancelled. 'user' = an explicit cancel action;
+ * 'policy' = the app cancelled it because Readest Cloud is not the
+ * selected sync provider. Policy cancellations are not failures: they
+ * are excluded from the failed bucket, Retry All, and per-item retry
+ * (retrying would either no-op against the provider gate or loop
+ * cancel-retry-cancel), and they are pruned on the next restore.
+ */
+export type TransferCancelReason = 'user' | 'policy';
 
 export interface ReplicaTransferFile {
   logical: string;
@@ -28,6 +37,7 @@ export interface TransferItem {
   transferredBytes: number;
   transferSpeed: number; // bytes per second
   error?: string;
+  cancelReason?: TransferCancelReason;
   retryCount: number;
   maxRetries: number;
   createdAt: number;
@@ -76,7 +86,12 @@ interface TransferState {
     total: number,
     speed: number,
   ) => void;
-  setTransferStatus: (transferId: string, status: TransferStatus, error?: string) => void;
+  setTransferStatus: (
+    transferId: string,
+    status: TransferStatus,
+    error?: string,
+    cancelReason?: TransferCancelReason,
+  ) => void;
   retryTransfer: (transferId: string) => void;
   incrementRetryCount: (transferId: string) => void;
 
@@ -117,6 +132,16 @@ interface TransferState {
 const generateTransferId = (): string => {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 };
+
+/**
+ * The single failed-bucket predicate. Every surface that shows, counts,
+ * or retries "failed" transfers (store getters, useTransferQueue stats,
+ * TransferQueuePanel filter/retry) must use this instead of matching
+ * statuses inline, so policy cancellations stay out of the bucket
+ * everywhere at once.
+ */
+export const isFailedLikeTransfer = (t: TransferItem): boolean =>
+  t.status === 'failed' || (t.status === 'cancelled' && t.cancelReason !== 'policy');
 
 export const useTransferStore = create<TransferState>((set, get) => ({
   transfers: {},
@@ -225,12 +250,15 @@ export const useTransferStore = create<TransferState>((set, get) => ({
     });
   },
 
-  setTransferStatus: (transferId, status, error) => {
+  setTransferStatus: (transferId, status, error, cancelReason) => {
     set((state) => {
       const transfer = state.transfers[transferId];
       if (!transfer) return state;
 
       const updates: Partial<TransferItem> = { status, error };
+      if (status === 'cancelled') {
+        updates.cancelReason = cancelReason ?? transfer.cancelReason ?? 'user';
+      }
 
       if (status === 'in_progress' && !transfer.startedAt) {
         updates.startedAt = Date.now();
@@ -253,6 +281,9 @@ export const useTransferStore = create<TransferState>((set, get) => ({
     set((state) => {
       const transfer = state.transfers[transferId];
       if (!transfer) return state;
+      // Policy cancellations are not retryable: the provider gate would
+      // re-cancel the row immediately (cancel-retry-cancel loop).
+      if (transfer.status === 'cancelled' && transfer.cancelReason === 'policy') return state;
 
       return {
         transfers: {
@@ -264,6 +295,7 @@ export const useTransferStore = create<TransferState>((set, get) => ({
             transferredBytes: 0,
             transferSpeed: 0,
             error: undefined,
+            cancelReason: undefined,
             startedAt: undefined,
             completedAt: undefined,
           },
@@ -339,9 +371,7 @@ export const useTransferStore = create<TransferState>((set, get) => ({
   },
 
   getFailedTransfers: () => {
-    return Object.values(get().transfers).filter(
-      (t) => t.status === 'failed' || t.status === 'cancelled',
-    );
+    return Object.values(get().transfers).filter(isFailedLikeTransfer);
   },
 
   getCompletedTransfers: () => {
@@ -375,7 +405,7 @@ export const useTransferStore = create<TransferState>((set, get) => ({
       pending: transfers.filter((t) => t.status === 'pending').length,
       active: transfers.filter((t) => t.status === 'in_progress').length,
       completed: transfers.filter((t) => t.status === 'completed').length,
-      failed: transfers.filter((t) => t.status === 'failed' || t.status === 'cancelled').length,
+      failed: transfers.filter(isFailedLikeTransfer).length,
       total: transfers.length,
     };
   },
@@ -386,6 +416,11 @@ export const useTransferStore = create<TransferState>((set, get) => ({
     // Legacy rows persisted before the kind discriminator default to 'book'.
     const restoredTransfers: Record<string, TransferItem> = {};
     Object.entries(transfers).forEach(([id, transfer]) => {
+      // Policy-cancelled rows are session-scoped history: a large
+      // pre-switch queue must not leave hundreds of permanent
+      // "Cancelled" rows in the panel and localStorage. Prune on
+      // restore.
+      if (transfer.status === 'cancelled' && transfer.cancelReason === 'policy') return;
       const withKind: TransferItem = { ...transfer, kind: transfer.kind ?? 'book' };
       if (withKind.status === 'in_progress') {
         restoredTransfers[id] = {

@@ -1,4 +1,5 @@
 import { SystemSettings } from '@/types/settings';
+import { applySyncBooksAutoEnable } from '@/services/sync/cloudSyncProvider';
 import {
   AppPlatform,
   AppService,
@@ -68,7 +69,7 @@ export abstract class BaseAppService implements AppService {
   storefrontRegionCode: string | null = null;
   isOnlineCatalogsAccessible = true;
 
-  protected CURRENT_MIGRATION_VERSION = 20251124;
+  protected CURRENT_MIGRATION_VERSION = 20260706;
 
   protected abstract fs: FileSystem;
   protected abstract resolvePath(fp: string, base: BaseDir): ResolvedPath;
@@ -100,13 +101,36 @@ export abstract class BaseAppService implements AppService {
     opts?: DatabaseOpts,
   ): Promise<DatabaseService>;
 
-  protected async runMigrations(lastMigrationVersion: number): Promise<void> {
+  protected async runMigrations(
+    lastMigrationVersion: number,
+    settings?: SystemSettings,
+  ): Promise<void> {
     if (lastMigrationVersion < 20251124) {
       try {
         await this.migrate20251124();
       } catch (error) {
         console.error('Error migrating to version 20251124:', error);
       }
+    }
+    if (lastMigrationVersion < 20260706 && settings) {
+      try {
+        this.migrate20260706(settings);
+      } catch (error) {
+        console.error('Error migrating to version 20260706:', error);
+      }
+    }
+  }
+
+  /**
+   * Users with WebDAV/Drive already enabled become "third-party selected"
+   * when cloud sync provider selection ships, gating native Readest Cloud
+   * uploads off; flip the selected provider's syncBooks on once so their
+   * books keep backing up somewhere. Mutates the caller's settings
+   * snapshot, which the caller persists together with migrationVersion.
+   */
+  private migrate20260706(settings: SystemSettings): void {
+    if (applySyncBooksAutoEnable(settings)) {
+      console.log('Migration 20260706: enabled syncBooks for the selected cloud sync provider.');
     }
   }
 

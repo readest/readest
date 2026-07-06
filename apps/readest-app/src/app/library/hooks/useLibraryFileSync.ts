@@ -14,6 +14,7 @@ import {
   createFileSyncProvider,
   type FileSyncBackendKind,
 } from '@/services/sync/file/providerRegistry';
+import { getCloudSyncProvider } from '@/services/sync/cloudSyncProvider';
 
 /**
  * Library-scoped auto-sync for the active third-party cloud provider (WebDAV /
@@ -55,11 +56,8 @@ export const useLibraryFileSync = () => {
   const { userProfilePlan } = useQuotaStats();
 
   // The single active cloud provider (WebDAV and Google Drive are exclusive).
-  const activeKind: FileSyncBackendKind | null = settings.webdav?.enabled
-    ? 'webdav'
-    : settings.googleDrive?.enabled
-      ? 'gdrive'
-      : null;
+  const provider = getCloudSyncProvider(settings);
+  const activeKind: FileSyncBackendKind | null = provider === 'readest' ? null : provider;
 
   const isAllowed = isCloudSyncAllowed(userProfilePlan ?? 'free');
   const isReady = useMemo(() => {

@@ -22,6 +22,10 @@ import { eventDispatcher } from '@/utils/event';
 import { ProgressPayload } from '@/utils/transfer';
 import { throttle } from '@/utils/throttle';
 import { transferManager } from '@/services/transferManager';
+import {
+  getCloudSyncProvider,
+  isReadestCloudStorageActive,
+} from '@/services/sync/cloudSyncProvider';
 import { getDirPath, getFilename, joinPaths } from '@/utils/path';
 import { parseOpenWithFiles } from '@/helpers/openWith';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
@@ -953,6 +957,19 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           }),
         });
         return true;
+      }
+      // An explicit Upload action must never silently no-op: explain the
+      // provider gate when it is the reason the queue refused the book.
+      const currentSettings = useSettingsStore.getState().settings;
+      if (!isReadestCloudStorageActive(currentSettings)) {
+        const provider = getCloudSyncProvider(currentSettings);
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          timeout: 5000,
+          message: _('Uploads to Readest Cloud are paused while {{provider}} sync is selected', {
+            provider: provider === 'gdrive' ? 'Google Drive' : 'WebDAV',
+          }),
+        });
       }
       return false;
     },

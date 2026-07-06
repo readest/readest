@@ -18,6 +18,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
 import { transferManager } from '@/services/transferManager';
+import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useTheme } from '@/hooks/useTheme';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -625,7 +626,13 @@ export default function BrowserPage() {
                 console.error('OPDS: failed to update source map:', sourceMapError);
               }
             }
-            if (user && book && !book.uploadedAt && settings.autoUpload) {
+            if (
+              user &&
+              book &&
+              !book.uploadedAt &&
+              settings.autoUpload &&
+              isReadestCloudStorageActive(settings)
+            ) {
               setTimeout(() => {
                 transferManager.queueUpload(book);
               }, 3000);

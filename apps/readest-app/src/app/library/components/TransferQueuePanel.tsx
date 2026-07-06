@@ -17,7 +17,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibraryStore } from '@/store/libraryStore';
-import { TransferItem, TransferStatus, useTransferStore } from '@/store/transferStore';
+import {
+  TransferItem,
+  TransferStatus,
+  isFailedLikeTransfer,
+  useTransferStore,
+} from '@/store/transferStore';
 
 const formatBytes = (bytes: number): string => {
   if (bytes === 0) return '0 B';
@@ -109,7 +114,10 @@ const TransferItemRow: React.FC<{
             <span className='text-error'>{transfer.error || _('Failed')}</span>
           )}
           {transfer.status === 'completed' && (completedLabel[transfer.type] || _('Completed'))}
-          {transfer.status === 'cancelled' && _('Cancelled')}
+          {transfer.status === 'cancelled' &&
+            (transfer.cancelReason === 'policy'
+              ? `${_('Cancelled')} · ${_('Cloud provider switched')}`
+              : _('Cancelled'))}
           {' · '}
           {formatDateTime(transfer.completedAt || transfer.startedAt || transfer.createdAt)}
         </div>
@@ -125,7 +133,7 @@ const TransferItemRow: React.FC<{
       </div>
 
       <div className='flex items-center gap-1'>
-        {(transfer.status === 'failed' || transfer.status === 'cancelled') && (
+        {isFailedLikeTransfer(transfer) && (
           <button
             onClick={() => onRetry(transfer.id)}
             className='btn btn-ghost btn-sm btn-circle'
@@ -197,7 +205,7 @@ const TransferQueuePanel: React.FC = () => {
         case 'completed':
           return t.status === 'completed';
         case 'failed':
-          return t.status === 'failed' || t.status === 'cancelled';
+          return isFailedLikeTransfer(t) || t.status === 'cancelled';
         default:
           return true;
       }

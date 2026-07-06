@@ -17,6 +17,7 @@ import {
   createFileSyncProvider,
   type FileSyncBackendKind,
 } from '@/services/sync/file/providerRegistry';
+import { getCloudSyncProvider } from '@/services/sync/cloudSyncProvider';
 import { removeBookNoteOverlays } from '../utils/annotatorUtil';
 import { useWindowActiveChanged } from './useWindowActiveChanged';
 
@@ -79,11 +80,8 @@ export const useFileSync = (bookKey: string) => {
   const progress = useBookProgress(bookKey);
 
   // The single active cloud provider (WebDAV and Google Drive are exclusive).
-  const activeKind: FileSyncBackendKind | null = settings.webdav?.enabled
-    ? 'webdav'
-    : settings.googleDrive?.enabled
-      ? 'gdrive'
-      : null;
+  const provider = getCloudSyncProvider(settings);
+  const activeKind: FileSyncBackendKind | null = provider === 'readest' ? null : provider;
   const providerSettings = activeKind === 'gdrive' ? settings.googleDrive : settings.webdav;
 
   /** Flips true on the first local change after a push, false right before each push. */

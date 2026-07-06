@@ -32,6 +32,46 @@ describe('withActiveCloudProvider', () => {
     expect(next.webdav.serverUrl).toBe('https://dav');
     expect(next.googleDrive.accountLabel).toBe('a@b.com');
   });
+
+  // Selecting a third-party provider hands it the book-file channel:
+  // native Readest Cloud uploads gate off, so without syncBooks the books
+  // would back up nowhere. Activation therefore turns syncBooks on.
+  describe('syncBooks auto-enable on activation', () => {
+    const inactive = {
+      webdav: { enabled: false, serverUrl: 'https://dav', syncBooks: false },
+      googleDrive: { enabled: false, syncBooks: false },
+    } as unknown as SystemSettings;
+
+    test('activating a disabled provider turns its syncBooks on', () => {
+      const next = withActiveCloudProvider(inactive, 'webdav');
+      expect(next.webdav.syncBooks).toBe(true);
+      expect(next.googleDrive.syncBooks).toBe(false);
+    });
+
+    test('activating gdrive turns only gdrive syncBooks on', () => {
+      const next = withActiveCloudProvider(inactive, 'gdrive');
+      expect(next.googleDrive.syncBooks).toBe(true);
+      expect(next.webdav.syncBooks).toBe(false);
+    });
+
+    test('re-activating an already-active provider respects an explicit syncBooks opt-out', () => {
+      const active = {
+        webdav: { enabled: true, syncBooks: false },
+        googleDrive: { enabled: false },
+      } as unknown as SystemSettings;
+      const next = withActiveCloudProvider(active, 'webdav');
+      expect(next.webdav.syncBooks).toBe(false);
+    });
+
+    test('deactivating a provider leaves its syncBooks untouched', () => {
+      const active = {
+        webdav: { enabled: true, syncBooks: true },
+        googleDrive: { enabled: false, syncBooks: false },
+      } as unknown as SystemSettings;
+      const next = withActiveCloudProvider(active, null);
+      expect(next.webdav.syncBooks).toBe(true);
+    });
+  });
 });
 
 describe('isCloudSyncInPlan', () => {

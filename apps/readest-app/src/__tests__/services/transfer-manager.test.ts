@@ -1,5 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import { useTransferStore, TransferItem } from '@/store/transferStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import type { SystemSettings } from '@/types/settings';
 
 // ── Mocks ────────────────────────────────────────────────────────────
 // The transferManager module is a singleton, so we need to mock its
@@ -105,6 +107,16 @@ beforeEach(() => {
   resetTransferManager();
   vi.clearAllMocks();
   localStorage.clear();
+  // Book uploads are gated on the selected cloud sync provider and
+  // deferred until settings hydrate; hydrate with Readest Cloud selected
+  // so the pre-gating behavior under test is preserved.
+  useSettingsStore.setState({
+    settings: {
+      version: 1,
+      webdav: { enabled: false },
+      googleDrive: { enabled: false },
+    } as SystemSettings,
+  });
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
