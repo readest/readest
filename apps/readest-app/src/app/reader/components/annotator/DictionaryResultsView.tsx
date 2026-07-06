@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MdArrowBack, MdChevronRight, MdSettings } from 'react-icons/md';
+import { MdArrowBack, MdChevronRight, MdSettings, MdVolumeUp } from 'react-icons/md';
 import clsx from 'clsx';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
@@ -12,6 +12,7 @@ import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { getEnabledProviders } from '@/services/dictionaries/registry';
 import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates';
 import { isTauriAppPlatform } from '@/services/environment';
+import { cancelWordPronounce, pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
 import {
   getBuiltinWebSearch,
   substituteUrlTemplate,
@@ -51,6 +52,10 @@ export interface DictionaryResultsState {
   noProvidersAtAll: boolean;
   /** Dictionary popup font-size multiplier (#4443); `1` = default sizes. */
   fontScale: number;
+  /** Whether the current word is being fetched/spoken by the TTS engine (#4876). */
+  isSpeaking: boolean;
+  /** Pronounce the current word via Edge TTS (falling back to platform speech). */
+  speakWord: () => void;
 }
 
 /**
@@ -123,6 +128,30 @@ export function useDictionaryResults({
   const goBack = useCallback(() => {
     setHistoryStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
   }, []);
+
+  // Pronounce the current headword (#4876). `isSpeaking` covers both the
+  // Edge fetch and playback so the header button can show one active state.
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const langCode = typeof lang === 'string' ? lang : Array.isArray(lang) ? lang[0] : undefined;
+  const speakWord = useCallback(() => {
+    // Warm the audio context synchronously inside the click gesture; the
+    // synth/play happens after a network await, outside the gesture window.
+    warmWordAudio();
+    setIsSpeaking(true);
+    void pronounceWord(currentWord, langCode, { appService }, (status) => {
+      if (status !== 'playing') setIsSpeaking(false);
+    });
+  }, [currentWord, langCode, appService]);
+
+  // Stop any in-flight pronunciation when the word changes (in-content
+  // navigation / reopen) or the popup unmounts.
+  useEffect(() => {
+    return () => cancelWordPronounce();
+  }, []);
+  useEffect(() => {
+    cancelWordPronounce();
+    setIsSpeaking(false);
+  }, [currentWord]);
 
   const toggleExpanded = useCallback((id: string) => {
     setCards((prev) => {
@@ -315,6 +344,8 @@ export function useDictionaryResults({
     onWebSearchClickTauri,
     noProvidersAtAll,
     fontScale: settings.fontScale ?? 1,
+    isSpeaking,
+    speakWord,
   };
 }
 
@@ -324,6 +355,10 @@ interface DictionaryResultsHeaderProps {
   canGoBack: boolean;
   goBack: () => void;
   onManage?: () => void;
+  /** Pronounce the current word (#4876); omit to hide the speaker button. */
+  onSpeak?: () => void;
+  /** Whether pronunciation is in progress, for the active button state. */
+  speaking?: boolean;
 }
 
 export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = ({
@@ -332,6 +367,8 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
   canGoBack,
   goBack,
   onManage,
+  onSpeak,
+  speaking,
 }) => {
   const _ = useTranslation();
   return (
@@ -348,9 +385,28 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
           </button>
         ) : null}
       </div>
-      <span data-testid='dict-title' className='line-clamp-1 flex-1 text-center font-bold'>
-        {currentWord}
-      </span>
+      <div className='flex min-w-0 flex-1 items-center justify-center gap-1'>
+        {onSpeak ? (
+          <button
+            type='button'
+            aria-label={_('Speak')}
+            title={_('Speak')}
+            aria-pressed={!!speaking}
+            onClick={onSpeak}
+            className={clsx(
+              'btn btn-ghost btn-square btn-xs shrink-0',
+              speaking
+                ? 'text-base-content not-eink:animate-pulse'
+                : 'text-base-content/60 hover:text-base-content not-eink:hover:bg-base-200/60',
+            )}
+          >
+            <MdVolumeUp size={18} />
+          </button>
+        ) : null}
+        <span data-testid='dict-title' className='line-clamp-1 min-w-0 font-bold'>
+          {currentWord}
+        </span>
+      </div>
       <div className='flex h-8 w-8 items-center justify-center'>
         {onManage ? (
           <button

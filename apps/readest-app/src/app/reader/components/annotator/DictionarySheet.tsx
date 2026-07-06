@@ -33,6 +33,8 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({ word, lang, onDismiss
           canGoBack={state.canGoBack}
           goBack={state.goBack}
           onManage={onManage}
+          onSpeak={state.speakWord}
+          speaking={state.isSpeaking}
         />
       }
       contentClassName='!px-0 !mt-0'
