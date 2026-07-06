@@ -39,12 +39,6 @@ export interface PushBookFileResult {
   uploaded: boolean;
   /** Reason for the skip, when applicable — surfaced for diagnostics. */
   reason?: 'remote-matches' | 'no-source' | 'disabled';
-  /**
-   * With `no-source`: whether the HEAD probe saw the file on the remote
-   * anyway. Lets the caller record an already-mirrored file in the index's
-   * uploaded-file cursor even though this device holds no local copy.
-   */
-  remoteExists?: boolean;
 }
 
 export interface DeleteRemoteBookDirResult {
@@ -242,18 +236,28 @@ export class FileSyncEngine {
    * HEAD-probe + size compare skips re-uploading an already-mirrored book.
    * Streaming (provider.uploadStream, Tauri only) is preferred — constant JS
    * heap regardless of book size; web falls back to buffered writeBinary.
+   *
+   * The local source is resolved BEFORE any remote probe: a book this device
+   * does not hold can never be uploaded, so probing the remote for it buys
+   * nothing — and at library scale (a cloud-only web library) it turns every
+   * sync into a full per-book request storm. `no-source` costs zero requests.
    */
   async pushBookFile(book: Book): Promise<PushBookFileResult> {
     const dirPath = buildBookDirPath(this.provider.rootPath, book.hash);
     const path = buildBookFilePath(this.provider.rootPath, book);
     const dirs = [...ancestorsOf(`${dirPath}/.placeholder`), dirPath];
 
-    let remoteHead: FileHead | null = null;
-    try {
-      remoteHead = await this.provider.head(path);
-    } catch (e) {
-      if (!(e instanceof FileSyncError) || e.code !== 'NETWORK') throw e;
-    }
+    // A thrown non-NETWORK failure (e.g. AUTH_FAILED) propagates so the
+    // caller's terminal-failure latch can stop the run; a transport blip is
+    // treated as "remote unknown" and the upload proceeds.
+    const probeRemoteHead = async (): Promise<FileHead | null> => {
+      try {
+        return await this.provider.head(path);
+      } catch (e) {
+        if (!(e instanceof FileSyncError) || e.code !== 'NETWORK') throw e;
+        return null;
+      }
+    };
 
     // Streaming path: resolve the on-disk path + size only, then stream the
     // bytes straight from disk. The metadata fetch never reads the body, so
@@ -261,6 +265,7 @@ export class FileSyncEngine {
     if (this.provider.uploadStream) {
       const src = await this.store.resolveLocalBookPath(book);
       if (src) {
+        const remoteHead = await probeRemoteHead();
         if (remoteHead && remoteHead.size === src.size) {
           return { uploaded: false, reason: 'remote-matches' };
         }
@@ -280,7 +285,8 @@ export class FileSyncEngine {
     }
 
     const local = await this.store.loadBookFile(book);
-    if (!local) return { uploaded: false, reason: 'no-source', remoteExists: remoteHead !== null };
+    if (!local) return { uploaded: false, reason: 'no-source' };
+    const remoteHead = await probeRemoteHead();
     if (remoteHead && remoteHead.size === local.size) {
       return { uploaded: false, reason: 'remote-matches' };
     }
@@ -817,15 +823,11 @@ export class FileSyncEngine {
               } else if (fileResult.reason === 'remote-matches') {
                 result.filesAlreadyInSync += 1;
                 uploadedHashes.add(book.hash);
-              } else if (fileResult.reason === 'no-source' && fileResult.remoteExists) {
-                // No local copy, but the probe saw the file on the remote —
-                // record it, or a device that never holds the bytes (e.g. web
-                // with a cloud-only library) re-probes the entire library on
-                // every sync instead of staying O(changed).
-                uploadedHashes.add(book.hash);
               }
-              // 'no-source' with no remote copy stays unrecorded so a device
-              // that does have the file can upload and record it later.
+              // 'no-source' → the file isn't on this device; the verdict is
+              // reached from local state alone (no remote probe) and stays
+              // unrecorded so a device that does have the file can upload
+              // and record it later.
             }
           } catch (e) {
             noteAbort(e);

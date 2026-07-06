@@ -357,17 +357,19 @@ describe('FileSyncEngine.syncLibrary — incremental diff (default)', () => {
   });
 
   // A device that holds no local copy of a book (e.g. web with a cloud-only
-  // library) still learns from the HEAD probe that the file is already on the
-  // remote. That must be recorded, or every subsequent sync re-probes the
-  // entire library — one Drive/WebDAV request per book, per run.
-  test('records a no-source book whose file already exists on the remote', async () => {
+  // library) can never upload it, so the remote probe buys nothing — and at
+  // library scale it is a full per-book request storm on every sync. The
+  // no-source verdict must be reached from local state alone, with zero
+  // remote traffic; the device that does hold the bytes uploads and records.
+  test('spends no remote request on a no-source book', async () => {
     const captured: Captured = { writes: [] };
+    const head = vi.fn(async () => ({ size: 10 }));
     const provider = fakeProvider({
       readText: async (p) =>
         p.endsWith('library.json')
           ? JSON.stringify(makeIndex([makeBook('h1', { updatedAt: 100 })]))
           : null,
-      head: async () => ({ size: 10 }), // remote already has the file
+      head,
       captured,
     });
     const store = fakeStore({
@@ -380,11 +382,12 @@ describe('FileSyncEngine.syncLibrary — incremental diff (default)', () => {
       { strategy: 'silent', syncBooks: true, deviceId: 'd' },
     );
 
+    expect(head).not.toHaveBeenCalled();
     expect(res.filesUploaded).toBe(0);
     const idx = JSON.parse(
       captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
     ) as RemoteLibraryIndex;
-    expect(idx.uploadedHashes).toContain('h1');
+    expect(idx.uploadedHashes ?? []).not.toContain('h1');
   });
 
   test('leaves a no-source book unrecorded when the remote lacks it too', async () => {
