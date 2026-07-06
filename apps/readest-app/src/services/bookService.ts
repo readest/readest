@@ -537,9 +537,12 @@ export async function importBook(
       existingBook.downloadedAt = Date.now();
     }
 
-    if (!(await fs.exists(getDir(book), 'Books'))) {
-      await fs.createDir(getDir(book), 'Books');
-    }
+    // Idempotent create (recursive): a plain createDir defaults to
+    // non-recursive and throws if the dir already exists, and the check-then-
+    // create above races two concurrent imports of the same book — on Windows
+    // the loser fails with "Cannot create a file when that file already exists"
+    // (Sentry READEST-H). create_dir_all is a no-op when the dir exists.
+    await fs.createDir(getDir(book), 'Books', true);
     const bookFilename = getLocalBookFilename(book);
     const willWriteBookFile =
       saveBook &&
