@@ -1,15 +1,19 @@
 -- group_covers.lua
 -- macOS-style folder previews: a 2x2 mosaic of the first N child book
 -- covers, served as a synthetic readest-group:// URI through the
--- patched BookInfoManager. Composites are recomposed in memory on every
--- paint — no on-disk cache. Earlier versions cached PNGs under
--- <settings>/readest_group_covers/, content-fingerprinted by child
--- hashes, but any partial composite written while children's covers
--- were still downloading would freeze: the fingerprint stayed the same
--- once all four arrived, so the partial PNG kept serving forever.
--- Recomposing each paint is cheap (4 small covers + scale + blit) and
--- side-steps that cache-coherency surface entirely.
+-- patched BookInfoManager.
+--
+-- Composites are cached in memory (per group) and composed off the paint
+-- path — see the "Mosaic cache + background compositing" section below.
+-- We deliberately keep NO on-disk cache: an earlier version wrote PNGs
+-- under <settings>/readest_group_covers/ fingerprinted by child hashes,
+-- but a partial composite written while children's covers were still
+-- downloading kept serving forever, because the hash-only fingerprint
+-- didn't change once the late covers arrived. The in-memory cache keys on
+-- child-cover *availability* too, so a late cover flips the key and forces
+-- exactly one recompose.
 
+local logger       = require("logger")
 local cloud_covers = require("library.cloud_covers")
 
 local M = {}
@@ -151,10 +155,120 @@ function M.cells_for(shape)
     return layout.cols * layout.rows
 end
 
--- High-level: query the store, compose a fresh mosaic, return (bb,
--- books). books is the resolved list (so callers can reuse it without a
--- second query). bb is freshly composed every call — see the module
--- header for why we deliberately don't cache.
+-- ---------------------------------------------------------------------------
+-- Mosaic cache + background compositing (issue #4954)
+-- ---------------------------------------------------------------------------
+-- Recomposing a folder mosaic on every paint (up to 4 MuPDF cover decodes +
+-- scales per cell) dominated the Library's open cost on large libraries.
+-- Two fixes, mirroring cloud_covers' async download pattern:
+--   * cache the composed master bb per group, keyed by a signature that
+--     flips when the child set OR any child's cover availability changes;
+--     serve cheap copies on a hit.
+--   * compose off the first-paint path: a miss enqueues a background job
+--     (one per UI tick) and returns nil so the cell paints its FakeCover
+--     placeholder immediately; finished mosaics coalesce into one refresh.
+local _mosaic_cache    = {}    -- identity → { key = signature, bb = master }
+local _compose_queue   = {}    -- FIFO of pending compose jobs
+local _compose_pending = {}    -- identity → true while queued/in-flight
+local _refresh_pending = false
+local _pump_scheduled  = false
+
+-- Whether a child's cover can be produced without a network fetch: a local
+-- book whose file is on disk, or a cloud book whose <hash>.png is cached.
+-- Cheap (a stat, no image decode) — only used to build the cache signature.
+function M.child_cover_available(book)
+    if not book then return false end
+    if book.local_present == 1 and book.file_path then
+        local lfs = require("libs/libkoreader-lfs")
+        if lfs.attributes(book.file_path, "mode") == "file" then return true end
+    end
+    if book.hash and book.hash ~= "" and cloud_covers.cover_exists(book.hash) then
+        return true
+    end
+    return false
+end
+
+-- Signature that changes exactly when a mosaic's inputs change: the ordered
+-- child hashes plus a per-child cover-availability bit. A keyed lookup on
+-- this recomposes on child-set changes and when a missing cover arrives, and
+-- hits otherwise. "\0" joins fields that can't contain it.
+function M.mosaic_cache_key(group_by, value, shape, books)
+    local n = M.cells_for(shape)
+    local parts = {}
+    for i = 1, math.min(n, #books) do
+        local b = books[i]
+        parts[i] = (b.hash or "?") .. (M.child_cover_available(b) and "+" or "-")
+    end
+    return table.concat({ group_by, value, shape, table.concat(parts, ",") }, "\0")
+end
+
+-- ImageWidget frees whatever bb it's handed, so the cached master can't be
+-- shared directly — every serve returns a disposable copy.
+local function copy_bb(src)
+    local Blitbuffer = require("ffi/blitbuffer")
+    local dst = Blitbuffer.new(src:getWidth(), src:getHeight(), src:getType())
+    dst:blitFrom(src, 0, 0, 0, 0, src:getWidth(), src:getHeight())
+    return dst
+end
+
+local function store_master(identity, key, bb)
+    local prev = _mosaic_cache[identity]
+    if prev and prev.bb and prev.bb ~= bb then prev.bb:free() end
+    _mosaic_cache[identity] = { key = key, bb = bb }
+end
+
+-- Coalesce mosaic-completion repaints: many mosaics landing across ticks
+-- still trigger one Library refresh, not a flicker storm.
+local function schedule_refresh()
+    if _refresh_pending then return end
+    _refresh_pending = true
+    local UIManager = require("ui/uimanager")
+    UIManager:nextTick(function()
+        _refresh_pending = false
+        local ok, LibraryWidget = pcall(require, "library.librarywidget")
+        if ok and LibraryWidget._menu then LibraryWidget.refresh() end
+    end)
+end
+
+-- Background compose pump: one mosaic per UI tick so a page of folders fills
+-- in progressively instead of freezing the paint. _pump_scheduled coalesces
+-- the nextTick so N misses in one paint don't stack N pumps.
+local process_compose_queue  -- forward declaration for schedule_pump
+
+local function schedule_pump()
+    if _pump_scheduled then return end
+    _pump_scheduled = true
+    local UIManager = require("ui/uimanager")
+    UIManager:nextTick(process_compose_queue)
+end
+
+process_compose_queue = function()
+    _pump_scheduled = false
+    local job = table.remove(_compose_queue, 1)
+    if not job then return end
+    _compose_pending[job.identity] = nil
+    -- Cache the result under this availability signature even when compose
+    -- returns nil (no child cover ready → the cell keeps its FakeCover
+    -- placeholder). Without caching the nil, a coverless group would miss
+    -- and recompose on every refresh forever; a later cover download flips
+    -- the signature (the key), which misses and recomposes exactly once.
+    store_master(job.identity, job.key, compose(job.books, job.shape,
+        job.orig_getBookInfo, job.BIM))
+    schedule_refresh()
+    if #_compose_queue > 0 then schedule_pump() end
+end
+
+local function enqueue_compose(job)
+    if _compose_pending[job.identity] then return end
+    _compose_pending[job.identity] = true
+    _compose_queue[#_compose_queue + 1] = job
+    schedule_pump()
+end
+
+-- High-level: resolve the group's first-N children, then either serve the
+-- cached master (as a copy) or enqueue a background compose and return nil
+-- so the cell shows its FakeCover placeholder until the mosaic lands. Second
+-- return is the resolved child list, so callers reuse it without re-querying.
 function M.serve_or_compose(group_by, value, shape,
                             store, settings, orig_getBookInfo, BIM)
     if not store then return nil, {} end
@@ -163,7 +277,33 @@ function M.serve_or_compose(group_by, value, shape,
         sort_by  = settings and settings.library_sort_by,
         sort_asc = settings and settings.library_sort_ascending == true,
     })
-    return compose(books, shape, orig_getBookInfo, BIM), books
+    local identity = table.concat({ group_by, value, shape }, "\0")
+    local key = M.mosaic_cache_key(group_by, value, shape, books)
+    local entry = _mosaic_cache[identity]
+    if entry and entry.key == key then
+        -- Already composed for this exact signature: serve a copy of the
+        -- master, or nil (placeholder) if no cover was available — but do
+        -- NOT re-enqueue, else a coverless group recomposes every refresh.
+        return entry.bb and copy_bb(entry.bb) or nil, books
+    end
+    enqueue_compose({
+        identity = identity, key = key, books = books, shape = shape,
+        orig_getBookInfo = orig_getBookInfo, BIM = BIM,
+    })
+    logger.dbg("ReadestLibrary mosaic miss, composing in background: " .. identity)
+    return nil, books
+end
+
+-- Free cached masters when the Library closes so a big grid doesn't pin
+-- ~0.7MB per folder for the app's lifetime; reopen recomposes in the
+-- background (non-blocking).
+function M.clear_cache()
+    for _identity, entry in pairs(_mosaic_cache) do
+        if entry.bb then entry.bb:free() end
+    end
+    _mosaic_cache = {}
+    _compose_queue = {}
+    _compose_pending = {}
 end
 
 return M

@@ -17,9 +17,18 @@ local NetworkMgr   = require("ui/network/manager")
 local TitleBar     = require("ui/widget/titlebar")
 local Trapper      = require("ui/trapper")
 local UIManager    = require("ui/uimanager")
+local time         = require("ui/time")
 local logger       = require("logger")
 local _            = require("readest_i18n")
 local T            = require("ffi/util").template
+
+-- Milliseconds elapsed since a ui/time snapshot, floored to an int for logs.
+-- Temporary open-path instrumentation for issue #4954 (large-library load
+-- speed): times each synchronous stage so a reporter's crash.log pinpoints
+-- which one dominates before we commit to a fix.
+local function elapsed_ms(since)
+    return math.floor(time.to_ms(time.since(since)))
+end
 
 local LibraryStore   = require("library.librarystore")
 local libraryitem    = require("library.libraryitem")
@@ -498,9 +507,14 @@ local function runCloudSync(opts, store)
     logger.info("ReadestLibrary runCloudSync: mode=" .. mode
         .. " auto_sync=" .. tostring(opts.settings.auto_sync))
 
+    -- Deferred (post-paint) but still on the UI loop, so a slow network sync
+    -- can freeze the Library after it appears — time it so the reporter's log
+    -- distinguishes this from the synchronous open-path cost (issue #4954).
+    local t_sync = time.now()
     local function done(success, msg, status)
         logger.info("ReadestLibrary runCloudSync[" .. mode .. "] done: success="
-            .. tostring(success) .. " msg=" .. tostring(msg) .. " status=" .. tostring(status))
+            .. tostring(success) .. " msg=" .. tostring(msg) .. " status=" .. tostring(status)
+            .. " elapsed=" .. elapsed_ms(t_sync) .. "ms")
         M.refresh()
     end
 
@@ -546,9 +560,15 @@ local function runOpenSync(opts, store, menu)
         -- has been uploaded to Readest cloud yet) would never appear in
         -- the menu, since the initial item_table was built from the
         -- pre-scan store snapshot.
+        local t_scan = time.now()
         local ok, err = pcall(localscanner.lightScan, { store = store })
+        logger.info(string.format("ReadestLibrary runOpenSync: lightScan %dms",
+            elapsed_ms(t_scan)))
         if not ok then logger.warn("ReadestLibrary lightScan failed:", err) end
+        local t_refresh = time.now()
         M.refresh()
+        logger.info(string.format("ReadestLibrary runOpenSync: post-scan refresh %dms",
+            elapsed_ms(t_refresh)))
 
         -- 2. Cloud sync — deferred so the menu paints first.
         -- willRerunWhenOnline + the inline call moved into the
@@ -579,6 +599,7 @@ function M.open(opts, internal)
         return
     end
 
+    local t_open = time.now()
     M._opts = opts
     -- Each fresh open starts at the root shelf; group drill-in state is
     -- per-session, never persisted to disk. M.reopen passes keep_state
@@ -670,13 +691,19 @@ function M.open(opts, internal)
     local portrait  = Screen:getWidth() <= Screen:getHeight()
     local items_per_page = portrait and (nb_cols_p * nb_rows_p) or (nb_cols_l * nb_rows_l)
 
+    local t_build = time.now()
+    local initial_items = build_item_table(store, opts.settings, M._search)
+    logger.info(string.format(
+        "ReadestLibrary open: initial build_item_table %dms (%d items)",
+        elapsed_ms(t_build), #initial_items))
+
     menu = Menu:new{
         name             = "readest_library",
         is_borderless    = true,
         is_popout        = false,
         covers_fullscreen = true,
         custom_title_bar = title_bar,
-        item_table       = build_item_table(store, opts.settings, M._search),
+        item_table       = initial_items,
         width            = Screen:getWidth(),
         height           = Screen:getHeight(),
         items_per_page    = items_per_page,
@@ -752,6 +779,12 @@ function M.open(opts, internal)
     UIManager:show(menu)
 
     runOpenSync(opts, store, menu)
+    -- Everything above ran synchronously inside the tap handler, so the UI
+    -- cannot repaint until M.open returns — this is the "blocks first paint"
+    -- window the reporter perceives as slow load (issue #4954).
+    logger.info(string.format(
+        "ReadestLibrary open: total synchronous open path %dms (blocks first paint)",
+        elapsed_ms(t_open)))
 end
 
 -- ---------------------------------------------------------------------------

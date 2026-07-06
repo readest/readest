@@ -78,6 +78,15 @@ function M.load_cover_bb(hash)
     return bb
 end
 
+-- Whether the on-disk <hash>.png cover cache exists. Cheap (a stat, no
+-- decode) — group_covers uses it to build its mosaic cache signature so a
+-- late-arriving cover flips the signature and forces one recompose.
+function M.cover_exists(hash)
+    if not hash or hash == "" then return false end
+    local lfs = require("libs/libkoreader-lfs")
+    return lfs.attributes(cover_path_for(hash), "mode") == "file"
+end
+
 -- "<hash8> '<title>'" formatted log tag — searchable by either id.
 local function tag_for(hash)
     local meta = _meta[hash] or {}
