@@ -356,6 +356,66 @@ describe('FileSyncEngine.syncLibrary — incremental diff (default)', () => {
     expect(idx.uploadedHashes).toContain('h1');
   });
 
+  // A device that holds no local copy of a book (e.g. web with a cloud-only
+  // library) still learns from the HEAD probe that the file is already on the
+  // remote. That must be recorded, or every subsequent sync re-probes the
+  // entire library — one Drive/WebDAV request per book, per run.
+  test('records a no-source book whose file already exists on the remote', async () => {
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify(makeIndex([makeBook('h1', { updatedAt: 100 })]))
+          : null,
+      head: async () => ({ size: 10 }), // remote already has the file
+      captured,
+    });
+    const store = fakeStore({
+      loadConfig: async () => ({ updatedAt: 1, booknotes: [] }),
+      loadBookFile: async () => null, // no local copy on this device
+    });
+
+    const res = await new FileSyncEngine(provider, store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      { strategy: 'silent', syncBooks: true, deviceId: 'd' },
+    );
+
+    expect(res.filesUploaded).toBe(0);
+    const idx = JSON.parse(
+      captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
+    ) as RemoteLibraryIndex;
+    expect(idx.uploadedHashes).toContain('h1');
+  });
+
+  test('leaves a no-source book unrecorded when the remote lacks it too', async () => {
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify(makeIndex([makeBook('h1', { updatedAt: 100 })]))
+          : null,
+      head: async () => null, // not on the remote either
+      captured,
+    });
+    const store = fakeStore({
+      loadConfig: async () => ({ updatedAt: 1, booknotes: [] }),
+      loadBookFile: async () => null, // no local copy on this device
+    });
+
+    await new FileSyncEngine(provider, store).syncLibrary([makeBook('h1', { updatedAt: 100 })], {
+      strategy: 'silent',
+      syncBooks: true,
+      deviceId: 'd',
+    });
+
+    // A device that does have the file must still be able to upload and
+    // record it later.
+    const idx = JSON.parse(
+      captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
+    ) as RemoteLibraryIndex;
+    expect(idx.uploadedHashes ?? []).not.toContain('h1');
+  });
+
   // #4856 perf: once a file is recorded in the index, an incremental sync must
   // NOT HEAD-probe it again — the steady state stays O(changed), not O(library).
   test('does not probe an already-recorded file (stays O(changed))', async () => {

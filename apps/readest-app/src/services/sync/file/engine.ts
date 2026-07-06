@@ -39,6 +39,12 @@ export interface PushBookFileResult {
   uploaded: boolean;
   /** Reason for the skip, when applicable — surfaced for diagnostics. */
   reason?: 'remote-matches' | 'no-source' | 'disabled';
+  /**
+   * With `no-source`: whether the HEAD probe saw the file on the remote
+   * anyway. Lets the caller record an already-mirrored file in the index's
+   * uploaded-file cursor even though this device holds no local copy.
+   */
+  remoteExists?: boolean;
 }
 
 export interface DeleteRemoteBookDirResult {
@@ -274,7 +280,7 @@ export class FileSyncEngine {
     }
 
     const local = await this.store.loadBookFile(book);
-    if (!local) return { uploaded: false, reason: 'no-source' };
+    if (!local) return { uploaded: false, reason: 'no-source', remoteExists: remoteHead !== null };
     if (remoteHead && remoteHead.size === local.size) {
       return { uploaded: false, reason: 'remote-matches' };
     }
@@ -811,9 +817,15 @@ export class FileSyncEngine {
               } else if (fileResult.reason === 'remote-matches') {
                 result.filesAlreadyInSync += 1;
                 uploadedHashes.add(book.hash);
+              } else if (fileResult.reason === 'no-source' && fileResult.remoteExists) {
+                // No local copy, but the probe saw the file on the remote —
+                // record it, or a device that never holds the bytes (e.g. web
+                // with a cloud-only library) re-probes the entire library on
+                // every sync instead of staying O(changed).
+                uploadedHashes.add(book.hash);
               }
-              // 'no-source' → the file isn't on this device; leave it unrecorded
-              // so a device that does have it can upload and record it later.
+              // 'no-source' with no remote copy stays unrecorded so a device
+              // that does have the file can upload and record it later.
             }
           } catch (e) {
             noteAbort(e);
