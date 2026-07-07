@@ -1904,5 +1904,11 @@
   "Open Read Aloud player": "Abrir o player de leitura em voz alta",
   "Read Aloud": "Leitura em voz alta",
   "Voice": "Voz",
-  "Sleep Timer": "Timer de sono"
+  "Sleep Timer": "Timer de sono",
+  "Slower": "Mais lento",
+  "Faster": "Mais rápido",
+  "Exit Auto Scroll": "Sair da rolagem automática",
+  "Auto Scroll": "Rolagem automática",
+  "End of book": "Fim do livro",
+  "Toggle Auto Scroll": "Alternar rolagem automática"
 }

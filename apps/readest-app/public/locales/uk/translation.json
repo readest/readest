@@ -1939,5 +1939,11 @@
   "Open Read Aloud player": "Відкрити програвач читання вголос",
   "Read Aloud": "Читання вголос",
   "Voice": "Голос",
-  "Sleep Timer": "Таймер сну"
+  "Sleep Timer": "Таймер сну",
+  "Slower": "Повільніше",
+  "Faster": "Швидше",
+  "Exit Auto Scroll": "Вийти з автоматичної прокрутки",
+  "Auto Scroll": "Автоматична прокрутка",
+  "End of book": "Кінець книги",
+  "Toggle Auto Scroll": "Перемкнути автоматичну прокрутку"
 }

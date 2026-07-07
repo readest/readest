@@ -1904,5 +1904,11 @@
   "Open Read Aloud player": "Ouvrir le lecteur de lecture à voix haute",
   "Read Aloud": "Lecture à voix haute",
   "Voice": "Voix",
-  "Sleep Timer": "Minuteur de veille"
+  "Sleep Timer": "Minuteur de veille",
+  "Slower": "Plus lent",
+  "Faster": "Plus rapide",
+  "Exit Auto Scroll": "Quitter le défilement automatique",
+  "Auto Scroll": "Défilement automatique",
+  "End of book": "Fin du livre",
+  "Toggle Auto Scroll": "Basculer le défilement automatique"
 }

@@ -1869,5 +1869,11 @@
   "Open Read Aloud player": "Felolvasó lejátszó megnyitása",
   "Read Aloud": "Felolvasás",
   "Voice": "Hang",
-  "Sleep Timer": "Elalvási időzítő"
+  "Sleep Timer": "Elalvási időzítő",
+  "Slower": "Lassabb",
+  "Faster": "Gyorsabb",
+  "Exit Auto Scroll": "Kilépés az automatikus görgetésből",
+  "Auto Scroll": "Automatikus görgetés",
+  "End of book": "A könyv vége",
+  "Toggle Auto Scroll": "Automatikus görgetés be/ki"
 }

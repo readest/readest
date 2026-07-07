@@ -360,6 +360,14 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     eventDispatcher.dispatch('rsvp-start', { bookKey: sideBarBookKey });
   };
 
+  const toggleAutoScroll = () => {
+    if (!sideBarBookKey) return;
+    // Auto Scroll only exists in scrolled mode (#4998); the View menu item is
+    // disabled outside it, so the shortcut silently no-ops there too.
+    if (!getViewSettings(sideBarBookKey)?.scrolled) return;
+    eventDispatcher.dispatch('autoscroll-toggle', { bookKey: sideBarBookKey });
+  };
+
   const handlePinchZoom = (event: CustomEvent) => {
     const zoomLevel = event.detail?.zoomLevel;
     if (zoomLevel != null) {
@@ -393,6 +401,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onToggleBookmark: toggleBookmark,
       onToggleParagraphMode: toggleParagraphMode,
       onStartRSVP: startRSVP,
+      onToggleAutoScroll: toggleAutoScroll,
       onToggleToolbar: toggleToolbar,
       onOpenFontLayoutSettings: () => setSettingsDialogOpen(true),
       onShowSearchBar: showSearchBar,

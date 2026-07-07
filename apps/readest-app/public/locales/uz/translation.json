@@ -1869,5 +1869,11 @@
   "Open Read Aloud player": "Ovoz chiqarib oʻqish pleyerini ochish",
   "Read Aloud": "Ovoz chiqarib oʻqish",
   "Voice": "Ovoz",
-  "Sleep Timer": "Uyqu taymeri"
+  "Sleep Timer": "Uyqu taymeri",
+  "Slower": "Sekinroq",
+  "Faster": "Tezroq",
+  "Exit Auto Scroll": "Avtomatik aylantirishdan chiqish",
+  "Auto Scroll": "Avtomatik aylantirish",
+  "End of book": "Kitob oxiri",
+  "Toggle Auto Scroll": "Avtomatik aylantirishni ochish/yopish"
 }

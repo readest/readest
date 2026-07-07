@@ -2009,5 +2009,11 @@
   "Open Read Aloud player": "فتح مشغل القراءة بصوت عالٍ",
   "Read Aloud": "القراءة بصوت عالٍ",
   "Voice": "الصوت",
-  "Sleep Timer": "مؤقت النوم"
+  "Sleep Timer": "مؤقت النوم",
+  "Slower": "أبطأ",
+  "Faster": "أسرع",
+  "Exit Auto Scroll": "الخروج من التمرير التلقائي",
+  "Auto Scroll": "التمرير التلقائي",
+  "End of book": "نهاية الكتاب",
+  "Toggle Auto Scroll": "تبديل التمرير التلقائي"
 }

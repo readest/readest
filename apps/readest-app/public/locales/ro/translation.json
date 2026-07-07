@@ -1904,5 +1904,11 @@
   "Open Read Aloud player": "Deschide playerul de citire cu voce tare",
   "Read Aloud": "Citire cu voce tare",
   "Voice": "Voce",
-  "Sleep Timer": "Temporizator de somn"
+  "Sleep Timer": "Temporizator de somn",
+  "Slower": "Mai lent",
+  "Faster": "Mai rapid",
+  "Exit Auto Scroll": "Ieșire din derularea automată",
+  "Auto Scroll": "Derulare automată",
+  "End of book": "Sfârșitul cărții",
+  "Toggle Auto Scroll": "Comută derularea automată"
 }

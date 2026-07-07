@@ -1869,5 +1869,11 @@
   "Open Read Aloud player": "ज़ोर से पढ़ें प्लेयर खोलें",
   "Read Aloud": "ज़ोर से पढ़ें",
   "Voice": "आवाज़",
-  "Sleep Timer": "स्लीप टाइमर"
+  "Sleep Timer": "स्लीप टाइमर",
+  "Slower": "धीमा",
+  "Faster": "तेज़",
+  "Exit Auto Scroll": "स्वचालित स्क्रॉल से बाहर निकलें",
+  "Auto Scroll": "स्वचालित स्क्रॉल",
+  "End of book": "पुस्तक का अंत",
+  "Toggle Auto Scroll": "स्वचालित स्क्रॉल टॉगल करें"
 }

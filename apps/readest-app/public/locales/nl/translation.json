@@ -1869,5 +1869,11 @@
   "Open Read Aloud player": "Voorleesspeler openen",
   "Read Aloud": "Voorlezen",
   "Voice": "Stem",
-  "Sleep Timer": "Slaaptimer"
+  "Sleep Timer": "Slaaptimer",
+  "Slower": "Langzamer",
+  "Faster": "Sneller",
+  "Exit Auto Scroll": "Automatisch scrollen afsluiten",
+  "Auto Scroll": "Automatisch scrollen",
+  "End of book": "Einde van het boek",
+  "Toggle Auto Scroll": "Automatisch scrollen wisselen"
 }

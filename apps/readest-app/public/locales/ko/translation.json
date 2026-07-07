@@ -1834,5 +1834,11 @@
   "Open Read Aloud player": "소리 내어 읽기 플레이어 열기",
   "Read Aloud": "소리 내어 읽기",
   "Voice": "음성",
-  "Sleep Timer": "수면 타이머"
+  "Sleep Timer": "수면 타이머",
+  "Slower": "느리게",
+  "Faster": "빠르게",
+  "Exit Auto Scroll": "자동 스크롤 종료",
+  "Auto Scroll": "자동 스크롤",
+  "End of book": "책의 끝",
+  "Toggle Auto Scroll": "자동 스크롤 전환"
 }

@@ -1939,5 +1939,11 @@
   "Open Read Aloud player": "Odpri predvajalnik glasnega branja",
   "Read Aloud": "Glasno branje",
   "Voice": "Glas",
-  "Sleep Timer": "Časovnik spanja"
+  "Sleep Timer": "Časovnik spanja",
+  "Slower": "Počasneje",
+  "Faster": "Hitreje",
+  "Exit Auto Scroll": "Izhod iz samodejnega pomikanja",
+  "Auto Scroll": "Samodejno pomikanje",
+  "End of book": "Konec knjige",
+  "Toggle Auto Scroll": "Preklopi samodejno pomikanje"
 }

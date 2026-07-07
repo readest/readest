@@ -1834,5 +1834,11 @@
   "Open Read Aloud player": "เปิดเครื่องเล่นอ่านออกเสียง",
   "Read Aloud": "อ่านออกเสียง",
   "Voice": "เสียง",
-  "Sleep Timer": "ตั้งเวลาปิด"
+  "Sleep Timer": "ตั้งเวลาปิด",
+  "Slower": "ช้าลง",
+  "Faster": "เร็วขึ้น",
+  "Exit Auto Scroll": "ออกจากการเลื่อนอัตโนมัติ",
+  "Auto Scroll": "เลื่อนอัตโนมัติ",
+  "End of book": "จุดสิ้นสุดของหนังสือ",
+  "Toggle Auto Scroll": "สลับการเลื่อนอัตโนมัติ"
 }

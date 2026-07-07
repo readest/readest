@@ -1869,5 +1869,11 @@
   "Open Read Aloud player": "ශබ්ද නඟා කියවීමේ ධාවකය විවෘත කරන්න",
   "Read Aloud": "ශබ්ද නඟා කියවීම",
   "Voice": "හඬ",
-  "Sleep Timer": "නින්ද කාල ගණකය"
+  "Sleep Timer": "නින්ද කාල ගණකය",
+  "Slower": "මන්දගාමී",
+  "Faster": "වේගවත්",
+  "Exit Auto Scroll": "ස්වයංක්‍රීය අනුචලනයෙන් පිටවන්න",
+  "Auto Scroll": "ස්වයංක්‍රීය අනුචලනය",
+  "End of book": "පොතේ අවසානය",
+  "Toggle Auto Scroll": "ස්වයංක්‍රීය අනුචලනය මාරු කරන්න"
 }

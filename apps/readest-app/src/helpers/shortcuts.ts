@@ -83,6 +83,11 @@ const DEFAULT_SHORTCUTS = {
     description: _('Toggle Paragraph Mode'),
     section: 'General',
   },
+  onToggleAutoScroll: {
+    keys: ['shift+a'],
+    description: _('Toggle Auto Scroll'),
+    section: 'General',
+  },
   onStartRSVP: {
     keys: ['shift+v'],
     description: _('Speed Reading Mode'),

@@ -1834,5 +1834,11 @@
   "Open Read Aloud player": "読み上げプレーヤーを開く",
   "Read Aloud": "読み上げ",
   "Voice": "音声",
-  "Sleep Timer": "スリープタイマー"
+  "Sleep Timer": "スリープタイマー",
+  "Slower": "遅く",
+  "Faster": "速く",
+  "Exit Auto Scroll": "自動スクロールを終了",
+  "Auto Scroll": "自動スクロール",
+  "End of book": "本の終わり",
+  "Toggle Auto Scroll": "自動スクロールの切り替え"
 }

@@ -1939,5 +1939,11 @@
   "Open Read Aloud player": "Otwórz odtwarzacz czytania na głos",
   "Read Aloud": "Czytanie na głos",
   "Voice": "Głos",
-  "Sleep Timer": "Minutnik snu"
+  "Sleep Timer": "Minutnik snu",
+  "Slower": "Wolniej",
+  "Faster": "Szybciej",
+  "Exit Auto Scroll": "Zakończ automatyczne przewijanie",
+  "Auto Scroll": "Automatyczne przewijanie",
+  "End of book": "Koniec książki",
+  "Toggle Auto Scroll": "Przełącz automatyczne przewijanie"
 }

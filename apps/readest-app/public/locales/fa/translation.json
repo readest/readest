@@ -1869,5 +1869,11 @@
   "Open Read Aloud player": "باز کردن پخش‌کننده خواندن با صدای بلند",
   "Read Aloud": "خواندن با صدای بلند",
   "Voice": "صدا",
-  "Sleep Timer": "تایمر خواب"
+  "Sleep Timer": "تایمر خواب",
+  "Slower": "کندتر",
+  "Faster": "سریع‌تر",
+  "Exit Auto Scroll": "خروج از پیمایش خودکار",
+  "Auto Scroll": "پیمایش خودکار",
+  "End of book": "پایان کتاب",
+  "Toggle Auto Scroll": "تغییر پیمایش خودکار"
 }

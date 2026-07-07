@@ -79,8 +79,10 @@ import { eventDispatcher } from '@/utils/event';
 import { isFontType } from '@/utils/font';
 import { getScrollGapAttr } from '@/utils/webtoon';
 import { useMiddleClickAutoscroll } from '../hooks/useMiddleClickAutoscroll';
+import { useAutoScroll } from '../hooks/useAutoScroll';
 import { ParagraphControl } from './paragraph';
 import AutoscrollIndicator from './AutoscrollIndicator';
+import AutoScrollControl from './AutoScrollControl';
 import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
 import ImageViewer from './ImageViewer';
@@ -517,6 +519,7 @@ const FoliateViewer: React.FC<{
   const mouseHandlers = useMouseEvent(bookKey, handlePageFlip);
   const touchHandlers = useTouchEvent(bookKey);
   const autoscrollAnchor = useMiddleClickAutoscroll(bookKey, viewRef, containerRef);
+  const autoScroll = useAutoScroll(bookKey, viewRef);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedTableHtml, setSelectedTableHtml] = useState<string | null>(null);
@@ -963,6 +966,17 @@ const FoliateViewer: React.FC<{
         {...touchHandlers}
       />
       {autoscrollAnchor && <AutoscrollIndicator anchor={autoscrollAnchor} />}
+      {autoScroll.active && (
+        <AutoScrollControl
+          bookKey={bookKey}
+          paused={autoScroll.paused}
+          speed={autoScroll.speed}
+          onTogglePause={autoScroll.togglePause}
+          onAdjustSpeed={autoScroll.adjustSpeed}
+          onStop={autoScroll.stop}
+          gridInsets={gridInsets}
+        />
+      )}
       <BrightnessOverlay visible={overlayVisible} level={overlayLevel} />
       <ParagraphControl bookKey={bookKey} viewRef={viewRef} gridInsets={gridInsets} />
       {((!docLoaded.current && loading) || viewState?.loading) && (

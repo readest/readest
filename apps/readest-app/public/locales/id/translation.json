@@ -1834,5 +1834,11 @@
   "Open Read Aloud player": "Buka pemutar baca nyaring",
   "Read Aloud": "Baca Nyaring",
   "Voice": "Suara",
-  "Sleep Timer": "Timer Tidur"
+  "Sleep Timer": "Timer Tidur",
+  "Slower": "Lebih lambat",
+  "Faster": "Lebih cepat",
+  "Exit Auto Scroll": "Keluar dari gulir otomatis",
+  "Auto Scroll": "Gulir Otomatis",
+  "End of book": "Akhir buku",
+  "Toggle Auto Scroll": "Alihkan gulir otomatis"
 }

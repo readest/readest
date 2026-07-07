@@ -1869,5 +1869,11 @@
   "Open Read Aloud player": "Öppna uppläsningsspelaren",
   "Read Aloud": "Uppläsning",
   "Voice": "Röst",
-  "Sleep Timer": "Sovtimer"
+  "Sleep Timer": "Sovtimer",
+  "Slower": "Långsammare",
+  "Faster": "Snabbare",
+  "Exit Auto Scroll": "Avsluta automatisk rullning",
+  "Auto Scroll": "Automatisk rullning",
+  "End of book": "Slutet av boken",
+  "Toggle Auto Scroll": "Växla automatisk rullning"
 }

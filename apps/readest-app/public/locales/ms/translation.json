@@ -1834,5 +1834,11 @@
   "Open Read Aloud player": "Buka pemain baca lantang",
   "Read Aloud": "Baca Lantang",
   "Voice": "Suara",
-  "Sleep Timer": "Pemasa Tidur"
+  "Sleep Timer": "Pemasa Tidur",
+  "Slower": "Lebih perlahan",
+  "Faster": "Lebih cepat",
+  "Exit Auto Scroll": "Keluar daripada tatal automatik",
+  "Auto Scroll": "Tatal Automatik",
+  "End of book": "Penghujung buku",
+  "Toggle Auto Scroll": "Togol tatal automatik"
 }

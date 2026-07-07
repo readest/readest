@@ -1834,5 +1834,11 @@
   "Open Read Aloud player": "開啟朗讀播放器",
   "Read Aloud": "朗讀",
   "Voice": "語音",
-  "Sleep Timer": "定時關閉"
+  "Sleep Timer": "定時關閉",
+  "Slower": "減慢",
+  "Faster": "加快",
+  "Exit Auto Scroll": "退出自動捲動",
+  "Auto Scroll": "自動捲動",
+  "End of book": "已到達書末",
+  "Toggle Auto Scroll": "切換自動捲動"
 }

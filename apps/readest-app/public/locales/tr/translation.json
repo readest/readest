@@ -1869,5 +1869,11 @@
   "Open Read Aloud player": "Sesli okuma oynatıcısını aç",
   "Read Aloud": "Sesli Okuma",
   "Voice": "Ses",
-  "Sleep Timer": "Uyku Zamanlayıcısı"
+  "Sleep Timer": "Uyku Zamanlayıcısı",
+  "Slower": "Daha yavaş",
+  "Faster": "Daha hızlı",
+  "Exit Auto Scroll": "Otomatik kaydırmadan çık",
+  "Auto Scroll": "Otomatik Kaydırma",
+  "End of book": "Kitabın sonu",
+  "Toggle Auto Scroll": "Otomatik kaydırmayı aç/kapat"
 }

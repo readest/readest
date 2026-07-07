@@ -42,6 +42,9 @@ interface ViewState {
      `getBookProgress(key)` for one-shot reads. */
   ribbonVisible: boolean;
   ttsEnabled: boolean;
+  /* True while an Auto Scroll session (#4998) is engaged for this view;
+     session-only, never persisted. Drives the View menu checkmark. */
+  autoScrollEnabled: boolean;
   syncing: boolean;
   gridInsets: Insets | null;
   /* True while the reader is showing a position requested by an external
@@ -65,6 +68,7 @@ interface ReaderStore {
   setHoveredBookKey: (key: string | null) => void;
   setBookmarkRibbonVisibility: (key: string, visible: boolean) => void;
   setTTSEnabled: (key: string, enabled: boolean) => void;
+  setAutoScrollEnabled: (key: string, enabled: boolean) => void;
   setIsLoading: (key: string, loading: boolean) => void;
   setIsSyncing: (key: string, syncing: boolean) => void;
   setProgress: (
@@ -157,6 +161,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           error: null,
           ribbonVisible: false,
           ttsEnabled: false,
+          autoScrollEnabled: false,
           syncing: false,
           gridInsets: null,
           previewMode: false,
@@ -296,6 +301,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             error: null,
             ribbonVisible: false,
             ttsEnabled: false,
+            autoScrollEnabled: false,
             syncing: false,
             gridInsets: null,
             previewMode: false,
@@ -319,6 +325,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             error: 'Failed to load book.',
             ribbonVisible: false,
             ttsEnabled: false,
+            autoScrollEnabled: false,
             syncing: false,
             gridInsets: null,
             previewMode: false,
@@ -462,6 +469,17 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         [key]: {
           ...state.viewStates[key]!,
           ttsEnabled: enabled,
+        },
+      },
+    })),
+
+  setAutoScrollEnabled: (key: string, enabled: boolean) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          autoScrollEnabled: enabled,
         },
       },
     })),

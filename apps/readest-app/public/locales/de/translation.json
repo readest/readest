@@ -1869,5 +1869,11 @@
   "Open Read Aloud player": "Vorlese-Player öffnen",
   "Read Aloud": "Vorlesen",
   "Voice": "Stimme",
-  "Sleep Timer": "Einschlaftimer"
+  "Sleep Timer": "Einschlaftimer",
+  "Slower": "Langsamer",
+  "Faster": "Schneller",
+  "Exit Auto Scroll": "Automatisches Scrollen beenden",
+  "Auto Scroll": "Automatisches Scrollen",
+  "End of book": "Ende des Buches",
+  "Toggle Auto Scroll": "Automatisches Scrollen umschalten"
 }

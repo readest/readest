@@ -1834,5 +1834,11 @@
   "Open Read Aloud player": "Mở trình phát đọc to",
   "Read Aloud": "Đọc to",
   "Voice": "Giọng đọc",
-  "Sleep Timer": "Hẹn giờ ngủ"
+  "Sleep Timer": "Hẹn giờ ngủ",
+  "Slower": "Chậm hơn",
+  "Faster": "Nhanh hơn",
+  "Exit Auto Scroll": "Thoát tự động cuộn",
+  "Auto Scroll": "Tự động cuộn",
+  "End of book": "Cuối sách",
+  "Toggle Auto Scroll": "Chuyển chế độ tự động cuộn"
 }

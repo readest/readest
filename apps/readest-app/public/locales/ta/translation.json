@@ -1869,5 +1869,11 @@
   "Open Read Aloud player": "உரக்க வாசித்தல் பிளேயரைத் திற",
   "Read Aloud": "உரக்க வாசித்தல்",
   "Voice": "குரல்",
-  "Sleep Timer": "ஸ்லீப் டைமர்"
+  "Sleep Timer": "ஸ்லீப் டைமர்",
+  "Slower": "மெதுவாக",
+  "Faster": "வேகமாக",
+  "Exit Auto Scroll": "தானியங்கி உருட்டலில் இருந்து வெளியேறு",
+  "Auto Scroll": "தானியங்கி உருட்டல்",
+  "End of book": "புத்தகத்தின் முடிவு",
+  "Toggle Auto Scroll": "தானியங்கி உருட்டலை மாற்று"
 }

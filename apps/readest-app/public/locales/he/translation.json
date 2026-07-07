@@ -1904,5 +1904,11 @@
   "Open Read Aloud player": "פתיחת נגן ההקראה",
   "Read Aloud": "הקראה",
   "Voice": "קול",
-  "Sleep Timer": "טיימר שינה"
+  "Sleep Timer": "טיימר שינה",
+  "Slower": "איטי יותר",
+  "Faster": "מהיר יותר",
+  "Exit Auto Scroll": "צא מגלילה אוטומטית",
+  "Auto Scroll": "גלילה אוטומטית",
+  "End of book": "סוף הספר",
+  "Toggle Auto Scroll": "החלף גלילה אוטומטית"
 }
