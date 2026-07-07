@@ -143,12 +143,6 @@ const GoogleDriveForm: React.FC = () => {
   if (isConfigured) {
     return (
       <div className='space-y-5'>
-        <Tips>
-          <li>
-            {_('Connected as {{account}}', { account: stored.accountLabel })}
-            {_('. Make Google Drive the active cloud provider.')}
-          </li>
-        </Tips>
         <div className='flex justify-end gap-2'>
           <button type='button' onClick={handleDisconnect} className={disconnectButtonClass}>
             {_('Disconnect')}
@@ -157,6 +151,12 @@ const GoogleDriveForm: React.FC = () => {
             {_('Use Google Drive')}
           </button>
         </div>
+        <Tips>
+          <li>
+            {_('Connected as {{account}}', { account: stored.accountLabel })}
+            {_('. Make Google Drive the active cloud provider.')}
+          </li>
+        </Tips>
       </div>
     );
   }

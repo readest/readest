@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import dayjs from 'dayjs';
 import React from 'react';
 import { MdCloudSync } from 'react-icons/md';
 import { v4 as uuidv4 } from 'uuid';
@@ -89,6 +90,7 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
   const beginSync = useFileSyncStore((s) => s.beginSync);
   const updateProgress = useFileSyncStore((s) => s.updateProgress);
   const endSync = useFileSyncStore((s) => s.endSync);
+  const setLastError = useFileSyncStore((s) => s.setLastError);
 
   const handleToggleSyncBooks = () => persist({ syncBooks: !(stored.syncBooks ?? false) });
   const handleToggleFullSync = () => persist({ fullSync: !(stored.fullSync ?? false) });
@@ -161,6 +163,10 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
       });
 
       await persist({ lastSyncedAt: Date.now() });
+      // A completed run heals the provider's health surfaces (the Cloud Sync
+      // chooser row, the SettingsMenu sync row) — otherwise a pre-restart
+      // failure keeps reading "Sync failed" after a successful manual sync.
+      setLastError(kind, null);
       if (result.failures > 0) {
         eventDispatcher.dispatch('toast', {
           type: 'warning',
@@ -176,6 +182,7 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
         });
       }
     } catch (e) {
+      setLastError(kind, e instanceof Error ? e.message : String(e));
       eventDispatcher.dispatch('toast', { type: 'error', message: formatSyncError(_, e) });
     } finally {
       endSync(kind);
@@ -213,7 +220,7 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
           syncProgressLabel
             ? syncProgressLabel
             : stored.lastSyncedAt
-              ? _('Last synced {{when}}', { when: new Date(stored.lastSyncedAt).toLocaleString() })
+              ? _('Synced {{time}}', { time: dayjs(stored.lastSyncedAt).fromNow() })
               : _('Never synced')
         }
         description={
