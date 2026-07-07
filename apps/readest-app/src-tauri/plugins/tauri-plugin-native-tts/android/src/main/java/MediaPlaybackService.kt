@@ -71,6 +71,15 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         var currentArtist: String = "Reading your content"
         var currentArtwork: Bitmap? = null
 
+        // Estimated section timeline (Edge/WebAudio engine only) in milliseconds.
+        // Drives the lock-screen scrubber: position is the thumb, duration is
+        // the track length. Native TextToSpeech has no timeline and leaves
+        // duration at 0, so the scrubber simply does not appear there.
+        @Volatile
+        var currentPositionMs: Long = 0L
+        @Volatile
+        var currentDurationMs: Long = 0L
+
         @Volatile
         private var instance: MediaPlaybackService? = null
 
@@ -101,9 +110,14 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             Handler(Looper.getMainLooper()).post { service.applyMetadata() }
         }
 
-        fun pushPlaybackState(playing: Boolean, position: Long) {
+        // position/duration are null when the update only reports a play/pause
+        // flip (that payload omits them); keep the last known values so the
+        // scrubber does not snap back to 0 on pause.
+        fun pushPlaybackState(playing: Boolean, position: Long?, duration: Long?) {
+            if (position != null) currentPositionMs = position
+            if (duration != null) currentDurationMs = duration
             val service = instance ?: return
-            Handler(Looper.getMainLooper()).post { service.applyPlaybackState(playing, position) }
+            Handler(Looper.getMainLooper()).post { service.applyPlaybackState(playing) }
         }
     }
 
@@ -122,6 +136,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                 PlaybackStateCompat.ACTION_STOP or
                 PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
                 PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
+                PlaybackStateCompat.ACTION_SEEK_TO or
                 PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID or
                 PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH
             )
@@ -213,6 +228,18 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             pluginEventTrigger?.invoke("media-session-previous", JSObject())
         }
 
+        // Scrubber drag: hand the target back to the JS controller, which owns
+        // the real audio timeline (seekToTime), and optimistically move the
+        // thumb so the lock screen feels responsive before the seek lands.
+        override fun onSeekTo(pos: Long) {
+            currentPositionMs = pos
+            pluginEventTrigger?.invoke("media-session-seek", JSObject().apply { put("position", pos) })
+            val state = if (player.isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
+            mediaSession?.setPlaybackState(
+                stateBuilder.setState(state, pos, 1f).build()
+            )
+        }
+
         override fun onPlayFromMediaId(mediaId: String?, extras: Bundle?) {
             onPlay()
         }
@@ -231,14 +258,25 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         showNotification(state)
     }
 
-    // Push the current statics into the live session + notification. Invoked
-    // in-process from Companion.pushMetadata on the main thread.
-    private fun applyMetadata() {
-        val metadataBuilder = MediaMetadataCompat.Builder()
+    // Last section duration written to the session metadata; the scrubber only
+    // needs a metadata refresh when it actually changes (per section), not on
+    // every position tick.
+    private var appliedDurationMs: Long = -1L
+
+    private fun buildMediaMetadata(): MediaMetadataCompat {
+        return MediaMetadataCompat.Builder()
             .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentTitle)
             .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentArtist)
             .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentArtwork)
-        mediaSession?.setMetadata(metadataBuilder.build())
+            .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, currentDurationMs)
+            .build()
+    }
+
+    // Push the current statics into the live session + notification. Invoked
+    // in-process from Companion.pushMetadata on the main thread.
+    private fun applyMetadata() {
+        appliedDurationMs = currentDurationMs
+        mediaSession?.setMetadata(buildMediaMetadata())
         notifyChildrenChanged(MEDIA_ROOT_ID)
         if (sessionActive) {
             showNotification(
@@ -250,19 +288,25 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
     // Reflect the WebView/TextToSpeech playback state onto the silent
     // keep-alive player, the media session, and the notification. Invoked
-    // in-process from Companion.pushPlaybackState on the main thread.
-    private fun applyPlaybackState(playing: Boolean, position: Long) {
+    // in-process from Companion.pushPlaybackState on the main thread; reads the
+    // preserved position/duration statics.
+    private fun applyPlaybackState(playing: Boolean) {
         if (!sessionActive) return
         if (playing && !player.isPlaying) {
             player.play()
         } else if (!playing && player.isPlaying) {
             player.pause()
         }
-        player.seekTo(position)
+        player.seekTo(currentPositionMs)
         val state = if (playing) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
         mediaSession?.setPlaybackState(
-            stateBuilder.setState(state, position, 1f).build()
+            stateBuilder.setState(state, currentPositionMs, 1f).build()
         )
+        // Refresh the scrubber length when the section duration changes.
+        if (currentDurationMs != appliedDurationMs) {
+            appliedDurationMs = currentDurationMs
+            mediaSession?.setMetadata(buildMediaMetadata())
+        }
         showNotification(state)
     }
 

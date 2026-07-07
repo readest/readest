@@ -515,12 +515,17 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     fun update_media_session_state(invoke: Invoke) {
         val args = invoke.parseArgs(UpdateMediaSessionStateArgs::class.java)
         val isPlaying = args.playing ?: false
-        val position = args.position ?: 0
 
         try {
             // In-process update on the running service; never startService()
-            // — that throws "app is in background" once backgrounded.
-            MediaPlaybackService.pushPlaybackState(isPlaying, position.toLong())
+            // — that throws "app is in background" once backgrounded. position
+            // and duration are null on a bare play/pause flip; the service
+            // keeps the last known values so the scrubber does not reset.
+            MediaPlaybackService.pushPlaybackState(
+                isPlaying,
+                args.position?.toLong(),
+                args.duration?.toLong(),
+            )
             invoke.resolve()
         } catch (e: Exception) {
             invoke.reject("Failed to update playback state: ${e.message}")
