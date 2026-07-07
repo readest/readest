@@ -230,7 +230,6 @@ describe('services/constants', () => {
       expect(typeof DEFAULT_SYSTEM_SETTINGS.alwaysOnTop).toBe('boolean');
       expect(typeof DEFAULT_SYSTEM_SETTINGS.openBookInNewWindow).toBe('boolean');
       expect(typeof DEFAULT_SYSTEM_SETTINGS.alwaysShowStatusBar).toBe('boolean');
-      expect(typeof DEFAULT_SYSTEM_SETTINGS.alwaysInForeground).toBe('boolean');
       expect(typeof DEFAULT_SYSTEM_SETTINGS.autoCheckUpdates).toBe('boolean');
       expect(typeof DEFAULT_SYSTEM_SETTINGS.screenWakeLock).toBe('boolean');
       expect(typeof DEFAULT_SYSTEM_SETTINGS.openLastBooks).toBe('boolean');

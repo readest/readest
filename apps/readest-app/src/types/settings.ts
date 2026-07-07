@@ -295,7 +295,6 @@ export interface SystemSettings {
   swipeBrightnessGesture: boolean;
   hardwarePageTurner: HardwarePageTurnerSettings;
   alwaysShowStatusBar: boolean;
-  alwaysInForeground: boolean;
   openLastBooks: boolean;
   lastOpenBooks: string[];
   autoImportBooksOnOpen: boolean;

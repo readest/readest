@@ -93,9 +93,8 @@ describe('TauriMediaSession.setActive', () => {
   test('requests POST_NOTIFICATIONS whenever the session activates', async () => {
     // The foreground-service media notification IS the lock-screen control; on
     // Android 13+ it is silently suppressed unless POST_NOTIFICATIONS is
-    // granted. The request must fire on activation, NOT be gated on the
-    // alwaysInForeground setting (regression from #4941, which dropped the
-    // keepAppInForeground flag that used to drive it).
+    // granted. The request must fire on every activation (it used to be gated
+    // on an opt-in setting, which left the control missing by default).
     vi.mocked(invoke).mockImplementation(async (cmd: string) => {
       if (cmd === 'plugin:native-tts|checkPermissions') {
         return { postNotification: 'prompt' } as unknown;

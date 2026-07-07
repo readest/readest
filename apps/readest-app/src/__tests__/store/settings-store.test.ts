@@ -38,7 +38,6 @@ function makeSettings(overrides: Partial<SystemSettings> = {}): SystemSettings {
     screenBrightness: 1,
     autoScreenBrightness: true,
     alwaysShowStatusBar: false,
-    alwaysInForeground: false,
     openLastBooks: false,
     lastOpenBooks: [],
     autoImportBooksOnOpen: false,
