@@ -7,6 +7,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -156,6 +157,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     }
 
     private fun activateSession() {
+        Log.d("MediaPlaybackService", "activateSession (wasActive=$sessionActive)")
         if (!sessionActive) {
             sessionActive = true
 
@@ -315,7 +317,21 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             val channel = NotificationChannel(CHANNEL_ID, "Media Controls", NotificationManager.IMPORTANCE_LOW)
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
-        startForeground(NOTIFICATION_ID, buildNotification(playbackState))
+        // Promote with an explicit mediaPlayback type (required/robust on
+        // targetSdk 34+); ServiceCompat handles the pre-Q signature. A throw
+        // here means the service never becomes foreground and the OS reclaims
+        // it on idle, so surface it loudly instead of swallowing.
+        try {
+            ServiceCompat.startForeground(
+                this,
+                NOTIFICATION_ID,
+                buildNotification(playbackState),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK,
+            )
+            Log.d("MediaPlaybackService", "startForeground ok (state=$playbackState)")
+        } catch (e: Exception) {
+            Log.e("MediaPlaybackService", "startForeground failed", e)
+        }
     }
 
     private fun buildNotification(playbackState: Int): Notification {

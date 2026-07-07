@@ -551,6 +551,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                 val intent = Intent(activity, MediaPlaybackService::class.java).apply {
                     action = MediaPlaybackService.ACTION_ACTIVATE_SESSION
                 }
+                Log.d(TAG, "set_media_session_active: startForegroundService")
                 ContextCompat.startForegroundService(activity, intent)
             } else {
                 // Not stopService: Android Auto may keep the service bound for

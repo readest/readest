@@ -112,6 +112,25 @@ describe('TauriMediaSession.setActive', () => {
     });
   });
 
+  test('still activates the native session when the permission request throws', async () => {
+    // A thrown/hung permission request must never abort the foreground-service
+    // start, or the service never becomes foreground and the OS reclaims it on
+    // idle (observed on MIUI: "Stopping service due to app idle").
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|checkPermissions') {
+        throw new Error('permission plugin unavailable');
+      }
+      return undefined as unknown;
+    });
+
+    const session = new TauriMediaSession();
+    await session.setActive({ active: true });
+
+    expect(invoke).toHaveBeenCalledWith('plugin:native-tts|set_media_session_active', {
+      payload: { active: true },
+    });
+  });
+
   test('does not re-prompt once the permission is already decided', async () => {
     vi.mocked(invoke).mockImplementation(async (cmd: string) => {
       if (cmd === 'plugin:native-tts|checkPermissions') {
