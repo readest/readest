@@ -31,10 +31,31 @@ export interface CloudSyncGate {
   paused: boolean;
 }
 
+/** Settings slice key for a third-party backend kind. */
+export const settingsKeyForBackend = (
+  kind: FileSyncBackendKind,
+): 'webdav' | 'googleDrive' | 's3' => (kind === 'gdrive' ? 'googleDrive' : kind);
+
+/** Human-readable provider name (product names — deliberately untranslated). */
+export const cloudProviderDisplayName = (kind: CloudSyncProviderKind): string =>
+  kind === 'gdrive'
+    ? 'Google Drive'
+    : kind === 'webdav'
+      ? 'WebDAV'
+      : kind === 's3'
+        ? 'S3'
+        : 'Readest Cloud';
+
 export const getCloudSyncProvider = (
   settings: SystemSettings | null | undefined,
 ): CloudSyncProviderKind =>
-  settings?.webdav?.enabled ? 'webdav' : settings?.googleDrive?.enabled ? 'gdrive' : 'readest';
+  settings?.webdav?.enabled
+    ? 'webdav'
+    : settings?.googleDrive?.enabled
+      ? 'gdrive'
+      : settings?.s3?.enabled
+        ? 's3'
+        : 'readest';
 
 /**
  * `isCloudSyncAllowed` needs the UserPlan, which comes from the async

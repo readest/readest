@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
-import { getCloudSyncProvider } from '@/services/sync/cloudSyncProvider';
+import { getCloudSyncProvider, cloudProviderDisplayName } from '@/services/sync/cloudSyncProvider';
 import {
   SYNC_CATEGORIES,
   isSyncCategoryLocked,
@@ -73,7 +73,7 @@ export function SyncCategoriesSection() {
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const copy = useCategoryCopy();
   const cloudProvider = getCloudSyncProvider(settings);
-  const cloudProviderName = cloudProvider === 'gdrive' ? 'Google Drive' : 'WebDAV';
+  const cloudProviderName = cloudProviderDisplayName(cloudProvider);
 
   if (!settings) return null;
 

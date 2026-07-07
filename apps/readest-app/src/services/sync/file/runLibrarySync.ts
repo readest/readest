@@ -5,10 +5,10 @@ import type { TranslationFunc } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
-import { getCloudSyncProvider } from '@/services/sync/cloudSyncProvider';
+import { resolveCloudSyncGate, settingsKeyForBackend } from '@/services/sync/cloudSyncProvider';
 import { createFileSyncProvider } from '@/services/sync/file/providerRegistry';
 import { createAppLocalStore } from '@/services/sync/file/appLocalStore';
-import { FileSyncEngine } from '@/services/sync/file/engine';
+import { FileSyncEngine, type SyncLibraryResult } from '@/services/sync/file/engine';
 
 /**
  * Run one library-wide sync against the ACTIVE third-party provider —
@@ -18,30 +18,34 @@ import { FileSyncEngine } from '@/services/sync/file/engine';
  *
  * Honours the same guards as `useLibraryFileSync`: never syncs a
  * not-yet-loaded library (an empty index push would clobber the remote)
- * and respects the global library-sync mutex. Returns true only when a
- * sync actually ran to completion; failures record `lastError` on the
+ * and respects the global library-sync mutex. Returns the engine's
+ * {@link SyncLibraryResult} when a sync ran to completion — callers
+ * surface `booksSynced` in the toast, same as the native cloud sync —
+ * and null when skipped or failed; failures record `lastError` on the
  * fileSyncStore for the health surfaces.
  */
 export const runActiveFileLibrarySync = async (
   envConfig: EnvConfigType,
   _: TranslationFunc,
-): Promise<boolean> => {
-  const provider = getCloudSyncProvider(useSettingsStore.getState().settings);
-  if (provider === 'readest') return false;
-  const kind = provider;
+): Promise<SyncLibraryResult | null> => {
+  const gate = resolveCloudSyncGate(useSettingsStore.getState().settings);
+  // Paused means paused (#4959): a downgraded account's still-selected
+  // provider must not sync, and must not fall back to Readest Cloud either.
+  if (gate.provider === 'readest' || gate.paused) return null;
+  const kind = gate.provider;
 
-  if (!useLibraryStore.getState().libraryLoaded) return false;
+  if (!useLibraryStore.getState().libraryLoaded) return null;
 
   const syncStore = useFileSyncStore.getState();
-  if (!syncStore.beginSync(kind, _('Syncing…'))) return false;
+  if (!syncStore.beginSync(kind, _('Syncing…'))) return null;
 
   try {
     const appService = await envConfig.getAppService();
     const current = useSettingsStore.getState().settings;
     const fileProvider = await createFileSyncProvider(kind, current);
-    if (!fileProvider) return false;
+    if (!fileProvider) return null;
 
-    const key = kind === 'gdrive' ? 'googleDrive' : 'webdav';
+    const key = settingsKeyForBackend(kind);
     const ps = current[key];
     let deviceId = ps?.deviceId;
     if (!deviceId) {
@@ -54,7 +58,7 @@ export const runActiveFileLibrarySync = async (
     const store = createAppLocalStore({ appService, settings: current, envConfig });
     const engine = new FileSyncEngine(fileProvider, store);
     const strategy = ps?.strategy ?? 'silent';
-    await engine.syncLibrary(useLibraryStore.getState().library, {
+    const result = await engine.syncLibrary(useLibraryStore.getState().library, {
       strategy: strategy === 'prompt' ? 'silent' : strategy,
       syncBooks: ps?.syncBooks ?? false,
       fullSync: false,
@@ -76,12 +80,12 @@ export const runActiveFileLibrarySync = async (
     await appService.saveSettings(next);
 
     useFileSyncStore.getState().setLastError(kind, null);
-    return true;
+    return result;
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     useFileSyncStore.getState().setLastError(kind, message);
     console.warn('[cloudSync] library file sync failed', kind, e);
-    return false;
+    return null;
   } finally {
     useFileSyncStore.getState().endSync(kind);
   }
@@ -94,8 +98,9 @@ export const runActiveFileLibrarySync = async (
  */
 const buildActiveEngine = async (envConfig: EnvConfigType): Promise<FileSyncEngine | null> => {
   const settings = useSettingsStore.getState().settings;
-  const kind = getCloudSyncProvider(settings);
-  if (kind === 'readest') return null;
+  const gate = resolveCloudSyncGate(settings);
+  if (gate.provider === 'readest' || gate.paused) return null;
+  const kind = gate.provider;
   const appService = await envConfig.getAppService();
   const fileProvider = await createFileSyncProvider(kind, settings);
   if (!fileProvider) return null;

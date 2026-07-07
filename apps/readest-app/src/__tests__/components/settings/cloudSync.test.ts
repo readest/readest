@@ -23,6 +23,29 @@ describe('withActiveCloudProvider', () => {
     expect(next.googleDrive.enabled).toBe(true);
   });
 
+  test('enabling S3 disables WebDAV and Google Drive (exclusive)', () => {
+    const withS3 = {
+      ...base,
+      s3: { enabled: false, endpoint: 'https://acc.r2.cloudflarestorage.com', bucket: 'b' },
+    } as unknown as SystemSettings;
+    const next = withActiveCloudProvider(withS3, 's3');
+    expect(next.s3.enabled).toBe(true);
+    expect(next.webdav.enabled).toBe(false);
+    expect(next.googleDrive.enabled).toBe(false);
+    // Activation hands S3 the book-file channel and anchors fleet detection.
+    expect(next.s3.syncBooks).toBe(true);
+    expect(next.s3.providerSelectedAt).toBeTruthy();
+    // Config survives deactivation elsewhere; endpoint untouched here.
+    expect(next.s3.endpoint).toBe('https://acc.r2.cloudflarestorage.com');
+  });
+
+  test('enabling WebDAV disables S3 (exclusive)', () => {
+    const withS3 = { ...base, s3: { enabled: true } } as unknown as SystemSettings;
+    const next = withActiveCloudProvider(withS3, 'webdav');
+    expect(next.s3.enabled).toBe(false);
+    expect(next.webdav.enabled).toBe(true);
+  });
+
   test('null disables both', () => {
     const next = withActiveCloudProvider(base, null);
     expect(next.webdav.enabled).toBe(false);
@@ -146,12 +169,12 @@ describe('isCloudSyncInPlan', () => {
   });
 });
 
-describe('isCloudSyncAllowed (temporary ungate)', () => {
-  test('cloud sync is currently ungated for every plan, including free', () => {
-    // The feature ships ungated while it stabilises. When the paywall is
-    // restored (flip CLOUD_SYNC_REQUIRES_PREMIUM back to true), update this.
-    expect(CLOUD_SYNC_REQUIRES_PREMIUM).toBe(false);
-    expect(isCloudSyncAllowed('free')).toBe(true);
+describe('isCloudSyncAllowed (premium paywall)', () => {
+  test('third-party cloud sync requires a paid plan', () => {
+    expect(CLOUD_SYNC_REQUIRES_PREMIUM).toBe(true);
+    expect(isCloudSyncAllowed('free')).toBe(false);
     expect(isCloudSyncAllowed('plus')).toBe(true);
+    expect(isCloudSyncAllowed('pro')).toBe(true);
+    expect(isCloudSyncAllowed('purchase')).toBe(true);
   });
 });

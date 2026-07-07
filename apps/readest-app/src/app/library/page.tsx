@@ -25,6 +25,7 @@ import { transferManager } from '@/services/transferManager';
 import {
   getCloudSyncProvider,
   isReadestCloudStorageActive,
+  cloudProviderDisplayName,
 } from '@/services/sync/cloudSyncProvider';
 import {
   runActiveFileBookDownload,
@@ -981,7 +982,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           type: 'info',
           timeout: 5000,
           message: _('Uploads to Readest Cloud are paused while {{provider}} sync is selected', {
-            provider: provider === 'gdrive' ? 'Google Drive' : 'WebDAV',
+            provider: cloudProviderDisplayName(provider),
           }),
         });
       }
@@ -1690,7 +1691,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
               style={{
                 paddingRight: `${insets.right}px`,
                 paddingLeft: `${insets.left}px`,
-                paddingBottom: 'var(--now-playing-inset, 0px)',
               }}
             >
               <DropIndicator />

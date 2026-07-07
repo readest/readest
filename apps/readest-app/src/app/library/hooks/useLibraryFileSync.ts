@@ -16,7 +16,7 @@ import {
   createFileSyncProvider,
   type FileSyncBackendKind,
 } from '@/services/sync/file/providerRegistry';
-import { getCloudSyncProvider } from '@/services/sync/cloudSyncProvider';
+import { getCloudSyncProvider, settingsKeyForBackend } from '@/services/sync/cloudSyncProvider';
 
 /**
  * Library-scoped auto-sync for the active third-party cloud provider (WebDAV /
@@ -44,9 +44,6 @@ import { getCloudSyncProvider } from '@/services/sync/cloudSyncProvider';
 
 /** Quiet window before an auto library sync fires; collapses import bursts. */
 const SYNC_DEBOUNCE_MS = 5_000;
-
-const settingsKeyFor = (kind: FileSyncBackendKind): 'webdav' | 'googleDrive' =>
-  kind === 'gdrive' ? 'googleDrive' : 'webdav';
 
 export const useLibraryFileSync = () => {
   const _ = useTranslation();
@@ -111,7 +108,7 @@ export const useLibraryFileSync = () => {
 
   const ensureDeviceId = useCallback((): string => {
     const latest = useSettingsStore.getState().settings;
-    const key = activeKind ? settingsKeyFor(activeKind) : 'webdav';
+    const key = activeKind ? settingsKeyForBackend(activeKind) : 'webdav';
     let id = latest[key]?.deviceId;
     if (!id) {
       id = uuidv4();
@@ -125,7 +122,7 @@ export const useLibraryFileSync = () => {
   const updateLastSyncedAt = useCallback(
     async (ts: number) => {
       const latest = useSettingsStore.getState().settings;
-      const key = activeKind ? settingsKeyFor(activeKind) : 'webdav';
+      const key = activeKind ? settingsKeyForBackend(activeKind) : 'webdav';
       const next = { ...latest, [key]: { ...latest[key], lastSyncedAt: ts } };
       setSettings(next);
       await saveSettings(envConfig, next);
@@ -141,7 +138,7 @@ export const useLibraryFileSync = () => {
 
     const kind = activeKind;
     const latest = useSettingsStore.getState().settings;
-    const ps = kind === 'gdrive' ? latest.googleDrive : latest.webdav;
+    const ps = latest[settingsKeyForBackend(kind)];
     const strategy = ps?.strategy ?? 'silent';
 
     const syncStore = useFileSyncStore.getState();

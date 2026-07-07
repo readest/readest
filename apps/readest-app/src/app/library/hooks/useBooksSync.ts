@@ -70,13 +70,14 @@ export const useBooksSync = () => {
         if (isPullingRef.current) return;
         try {
           isPullingRef.current = true;
-          const ok = await runActiveFileLibrarySync(envConfig, _);
+          const result = await runActiveFileLibrarySync(envConfig, _);
           if (verbose) {
-            const providerName = provider === 'gdrive' ? 'Google Drive' : 'WebDAV';
+            // Same message as the native Readest Cloud sync below, so every
+            // provider reports its work the same way.
             eventDispatcher.dispatch('toast', {
-              type: ok ? 'info' : 'error',
-              message: ok
-                ? _('Synced via {{provider}}', { provider: providerName })
+              type: result ? 'info' : 'error',
+              message: result
+                ? _('{{count}} book(s) synced', { count: result.booksSynced })
                 : _('Sync failed'),
             });
           }

@@ -2,7 +2,7 @@ import type { SyncClient } from '@/libs/sync';
 import type { SystemSettings } from '@/types/settings';
 import type { TranslationFunc } from '@/hooks/useTranslation';
 import { useFileSyncStore } from '@/store/fileSyncStore';
-import { getCloudSyncProvider } from '@/services/sync/cloudSyncProvider';
+import { getCloudSyncProvider, settingsKeyForBackend } from '@/services/sync/cloudSyncProvider';
 import { eventDispatcher } from '@/utils/event';
 
 /**
@@ -32,7 +32,7 @@ export const checkMixedFleetOnce = async (
   if (provider === 'readest') return false;
   if (useFileSyncStore.getState().fleetNoticeShown) return false;
 
-  const key = provider === 'gdrive' ? 'googleDrive' : 'webdav';
+  const key = settingsKeyForBackend(provider);
   const selectedAt = settings[key]?.providerSelectedAt;
   if (!selectedAt) return false;
 

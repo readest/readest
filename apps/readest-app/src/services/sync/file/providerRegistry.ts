@@ -11,16 +11,18 @@
  * keychain token, so it needs no settings to construct.
  */
 import type { FileSyncProvider } from './provider';
-import type { WebDAVSettings } from '@/types/settings';
+import type { S3Settings, WebDAVSettings } from '@/types/settings';
 import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVProvider';
 import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
+import { createS3Provider } from '@/services/sync/providers/s3/S3Provider';
 
-export type FileSyncBackendKind = 'webdav' | 'gdrive';
+export type FileSyncBackendKind = 'webdav' | 'gdrive' | 's3';
 
 /** Minimal settings the registry reads to pick + build backends. */
 export interface FileSyncBackendsSettings {
   webdav?: WebDAVSettings;
   googleDrive?: { enabled?: boolean };
+  s3?: S3Settings;
 }
 
 /** The backends the user has switched on, in a stable order. */
@@ -30,6 +32,7 @@ export const getEnabledFileSyncBackends = (
   const enabled: FileSyncBackendKind[] = [];
   if (settings.webdav?.enabled) enabled.push('webdav');
   if (settings.googleDrive?.enabled) enabled.push('gdrive');
+  if (settings.s3?.enabled) enabled.push('s3');
   return enabled;
 };
 
@@ -55,6 +58,10 @@ const providerCacheKey = (
     const w = settings.webdav;
     return `webdav:${w?.enabled}:${w?.serverUrl}:${w?.username}:${w?.password}:${w?.rootPath}`;
   }
+  if (kind === 's3') {
+    const c = settings.s3;
+    return `s3:${c?.enabled}:${c?.endpoint}:${c?.region}:${c?.bucket}:${c?.accessKeyId}:${c?.secretAccessKey}`;
+  }
   return 'gdrive';
 };
 
@@ -78,7 +85,11 @@ export const createFileSyncProvider = async (
       ? settings.webdav
         ? createWebDAVProvider(settings.webdav)
         : null
-      : await buildGoogleDriveProvider();
+      : kind === 's3'
+        ? settings.s3
+          ? createS3Provider(settings.s3)
+          : null
+        : await buildGoogleDriveProvider();
   if (provider) cachedProvider = { key, provider };
   return provider;
 };

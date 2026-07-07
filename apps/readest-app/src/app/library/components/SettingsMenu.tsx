@@ -16,7 +16,11 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useFileSyncStore } from '@/store/fileSyncStore';
-import { getCloudSyncProvider } from '@/services/sync/cloudSyncProvider';
+import {
+  getCloudSyncProvider,
+  cloudProviderDisplayName,
+  settingsKeyForBackend,
+} from '@/services/sync/cloudSyncProvider';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -303,15 +307,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   // file engine's health instead — otherwise it reads "Synced 3 months ago"
   // forever and looks broken.
   const cloudProvider = getCloudSyncProvider(settings);
-  const cloudProviderName = cloudProvider === 'gdrive' ? 'Google Drive' : 'WebDAV';
+  const cloudProviderName = cloudProviderDisplayName(cloudProvider);
   const providerSyncing = cloudProvider !== 'readest' && !!fileSyncByKind[cloudProvider]?.isSyncing;
   const providerLastError =
     cloudProvider !== 'readest' ? fileSyncLastError[cloudProvider] : undefined;
   const lastSyncTime =
     cloudProvider !== 'readest'
-      ? (cloudProvider === 'gdrive'
-          ? settings.googleDrive?.lastSyncedAt
-          : settings.webdav?.lastSyncedAt) || 0
+      ? settings[settingsKeyForBackend(cloudProvider)]?.lastSyncedAt || 0
       : Math.max(
           settings.lastSyncedAtBooks || 0,
           settings.lastSyncedAtConfigs || 0,

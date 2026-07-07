@@ -27,6 +27,7 @@ import {
   SystemSettings,
   WebDAVSettings,
   GoogleDriveSettings,
+  S3Settings,
 } from '@/types/settings';
 import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/quota';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
@@ -113,6 +114,21 @@ export const DEFAULT_GOOGLE_DRIVE_SETTINGS = {
   lastSyncedAt: 0,
 } as GoogleDriveSettings;
 
+export const DEFAULT_S3_SETTINGS = {
+  enabled: false,
+  endpoint: '',
+  region: 'auto',
+  bucket: '',
+  accessKeyId: '',
+  secretAccessKey: '',
+  syncProgress: true,
+  syncNotes: true,
+  syncBooks: false,
+  strategy: 'silent',
+  deviceId: '',
+  lastSyncedAt: 0,
+} as S3Settings;
+
 export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
   autoUpload: true,
@@ -172,6 +188,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   hardcover: DEFAULT_HARDCOVER_SETTINGS,
   webdav: DEFAULT_WEBDAV_SETTINGS,
   googleDrive: DEFAULT_GOOGLE_DRIVE_SETTINGS,
+  s3: DEFAULT_S3_SETTINGS,
   aiSettings: DEFAULT_AI_SETTINGS,
 
   lastSyncedAtBooks: 0,

@@ -11,10 +11,12 @@ vi.mock('@/utils/access', async (importOriginal) => {
 
 import {
   applySyncBooksAutoEnable,
+  cloudProviderDisplayName,
   getCloudSyncProvider,
   isReadestCloudStorageActive,
   resolveCloudSyncGate,
   setCachedUserPlan,
+  settingsKeyForBackend,
 } from '@/services/sync/cloudSyncProvider';
 import { isCloudSyncAllowed } from '@/utils/access';
 
@@ -43,6 +45,19 @@ describe('getCloudSyncProvider', () => {
   test('derives gdrive when google drive is enabled', () => {
     const settings = makeSettings({ googleDrive: { enabled: true } } as Partial<SystemSettings>);
     expect(getCloudSyncProvider(settings)).toBe('gdrive');
+  });
+
+  test('derives s3 when s3 is enabled', () => {
+    const settings = makeSettings({ s3: { enabled: true } } as Partial<SystemSettings>);
+    expect(getCloudSyncProvider(settings)).toBe('s3');
+  });
+
+  test('webdav wins deterministically over s3 when both are enabled (corrupt state)', () => {
+    const settings = makeSettings({
+      webdav: { enabled: true },
+      s3: { enabled: true },
+    } as Partial<SystemSettings>);
+    expect(getCloudSyncProvider(settings)).toBe('webdav');
   });
 
   test('webdav wins deterministically when both flags are enabled (corrupt state)', () => {
@@ -154,5 +169,22 @@ describe('isReadestCloudStorageActive', () => {
     vi.mocked(isCloudSyncAllowed).mockReturnValue(false);
     const settings = makeSettings({ googleDrive: { enabled: true } } as Partial<SystemSettings>);
     expect(isReadestCloudStorageActive(settings, 'free')).toBe(false);
+  });
+});
+
+describe('settingsKeyForBackend', () => {
+  test('maps each backend kind to its settings slice', () => {
+    expect(settingsKeyForBackend('webdav')).toBe('webdav');
+    expect(settingsKeyForBackend('gdrive')).toBe('googleDrive');
+    expect(settingsKeyForBackend('s3')).toBe('s3');
+  });
+});
+
+describe('cloudProviderDisplayName', () => {
+  test('names every provider kind', () => {
+    expect(cloudProviderDisplayName('webdav')).toBe('WebDAV');
+    expect(cloudProviderDisplayName('gdrive')).toBe('Google Drive');
+    expect(cloudProviderDisplayName('s3')).toBe('S3');
+    expect(cloudProviderDisplayName('readest')).toBe('Readest Cloud');
   });
 });

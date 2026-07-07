@@ -11,7 +11,7 @@ import {
   resetFileSyncProviderCache,
 } from '@/services/sync/file/providerRegistry';
 import type { FileSyncProvider } from '@/services/sync/file/provider';
-import type { WebDAVSettings } from '@/types/settings';
+import type { S3Settings, WebDAVSettings } from '@/types/settings';
 
 const webdav: WebDAVSettings = {
   enabled: true,
@@ -19,6 +19,15 @@ const webdav: WebDAVSettings = {
   username: 'u',
   password: 'p',
   rootPath: '/',
+};
+
+const s3: S3Settings = {
+  enabled: true,
+  endpoint: 'https://acc.r2.cloudflarestorage.com',
+  region: 'auto',
+  bucket: 'readest',
+  accessKeyId: 'AKID',
+  secretAccessKey: 'SECRET',
 };
 
 afterEach(() => {
@@ -51,6 +60,20 @@ describe('createFileSyncProvider', () => {
 
   test('returns null for webdav without settings', async () => {
     expect(await createFileSyncProvider('webdav', {})).toBeNull();
+  });
+
+  test('builds an S3 provider from its settings and memoises it', async () => {
+    const first = await createFileSyncProvider('s3', { s3 });
+    expect(first?.rootPath).toBe('/');
+    const second = await createFileSyncProvider('s3', { s3 });
+    expect(second).toBe(first);
+    // A credential change rebuilds.
+    const third = await createFileSyncProvider('s3', { s3: { ...s3, secretAccessKey: 'X' } });
+    expect(third).not.toBe(first);
+  });
+
+  test('returns null for s3 without settings', async () => {
+    expect(await createFileSyncProvider('s3', {})).toBeNull();
   });
 
   test('delegates gdrive to buildGoogleDriveProvider', async () => {

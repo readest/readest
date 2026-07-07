@@ -34,6 +34,8 @@ export const SETTINGS_SYNC_EVENT = 'global-settings-window-sync';
 export interface CloudSyncProviderFlags {
   webdav: { enabled: boolean; providerSelectedAt?: number };
   googleDrive: { enabled: boolean; providerSelectedAt?: number };
+  /** Optional: absent on payloads from pre-S3 windows (treated as unchanged). */
+  s3?: { enabled: boolean; providerSelectedAt?: number };
 }
 
 export interface SettingsSyncPayload {
@@ -69,6 +71,9 @@ export const mergeSyncedGlobalSettings = (
   if (payload.cloudSyncProviders) {
     merged.webdav = { ...local.webdav, ...payload.cloudSyncProviders.webdav };
     merged.googleDrive = { ...local.googleDrive, ...payload.cloudSyncProviders.googleDrive };
+    if (payload.cloudSyncProviders.s3) {
+      merged.s3 = { ...local.s3, ...payload.cloudSyncProviders.s3 };
+    }
   }
   return merged;
 };
@@ -98,6 +103,10 @@ export const broadcastGlobalSettings = async (
         googleDrive: {
           enabled: !!settings.googleDrive?.enabled,
           providerSelectedAt: settings.googleDrive?.providerSelectedAt,
+        },
+        s3: {
+          enabled: !!settings.s3?.enabled,
+          providerSelectedAt: settings.s3?.providerSelectedAt,
         },
       };
     }

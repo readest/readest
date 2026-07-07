@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { useSettingsStore } from '@/store/settingsStore';
+import { setCachedUserPlan } from '@/services/sync/cloudSyncProvider';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
 import type { SystemSettings } from '@/types/settings';
@@ -73,6 +74,8 @@ const setProvider = (patch: Partial<SystemSettings>): void => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Third-party cloud sync is premium; run the suite as a paid plan.
+  setCachedUserPlan('pro');
   syncLibrary.mockClear().mockResolvedValue({ booksSynced: 0 });
   useFileSyncStore.setState({ byKind: {}, activeKind: null, lastErrorByKind: {} });
   useLibraryStore.setState({ library: [], libraryLoaded: true } as never);
@@ -81,7 +84,7 @@ beforeEach(() => {
 describe('runActiveFileLibrarySync', () => {
   test('returns false without syncing when readest is the provider', async () => {
     setProvider({});
-    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBe(false);
+    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBeNull();
     expect(syncLibrary).not.toHaveBeenCalled();
   });
 
@@ -91,7 +94,10 @@ describe('runActiveFileLibrarySync', () => {
     } as Partial<SystemSettings>);
     useFileSyncStore.getState().setLastError('webdav', 'stale error');
 
-    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBe(true);
+    syncLibrary.mockResolvedValueOnce({ booksSynced: 3 });
+    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toMatchObject({
+      booksSynced: 3,
+    });
 
     expect(syncLibrary).toHaveBeenCalledTimes(1);
     const [, options] = syncLibrary.mock.calls[0]!;
@@ -108,7 +114,7 @@ describe('runActiveFileLibrarySync', () => {
     } as Partial<SystemSettings>);
     syncLibrary.mockRejectedValueOnce(new Error('server unreachable'));
 
-    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBe(false);
+    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBeNull();
 
     expect(useFileSyncStore.getState().lastErrorByKind.webdav).toContain('server unreachable');
     expect(useFileSyncStore.getState().activeKind).toBeNull();
@@ -117,14 +123,14 @@ describe('runActiveFileLibrarySync', () => {
   test('skips when the library has not loaded (would push an empty index)', async () => {
     setProvider({ webdav: { enabled: true } } as Partial<SystemSettings>);
     useLibraryStore.setState({ libraryLoaded: false } as never);
-    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBe(false);
+    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBeNull();
     expect(syncLibrary).not.toHaveBeenCalled();
   });
 
   test('skips when another backend holds the library-sync mutex', async () => {
     setProvider({ webdav: { enabled: true } } as Partial<SystemSettings>);
     useFileSyncStore.getState().beginSync('gdrive', 'busy');
-    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBe(false);
+    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBeNull();
     expect(syncLibrary).not.toHaveBeenCalled();
   });
 });
@@ -191,5 +197,26 @@ describe('runActiveFileBookDownload', () => {
     setProvider({ webdav: { enabled: true } } as Partial<SystemSettings>);
     downloadBookFile.mockRejectedValueOnce(new Error('server unreachable'));
     expect(await runActiveFileBookDownload(envConfig, makeBook('h1'))).toBe(false);
+  });
+});
+
+// Paused means paused (#4959 contract): a free plan with a still-enabled
+// third-party provider (downgrade) must not sync — neither the library run
+// nor the per-book actions.
+describe('premium gating of the active provider', () => {
+  test('library sync is skipped for a free plan', async () => {
+    setCachedUserPlan('free');
+    setProvider({ webdav: { enabled: true, deviceId: 'd1' } } as Partial<SystemSettings>);
+    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBeNull();
+    expect(syncLibrary).not.toHaveBeenCalled();
+  });
+
+  test('per-book upload and download are skipped for a free plan', async () => {
+    setCachedUserPlan('free');
+    setProvider({ webdav: { enabled: true } } as Partial<SystemSettings>);
+    expect(await runActiveFileBookUpload(envConfig, makeBook('h1'))).toBe(false);
+    expect(await runActiveFileBookDownload(envConfig, makeBook('h1'))).toBe(false);
+    expect(pushBookFile).not.toHaveBeenCalled();
+    expect(downloadBookFile).not.toHaveBeenCalled();
   });
 });
