@@ -47,7 +47,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [showIndicator, setShowIndicator] = useState(false);
-  const [showTTSBar, setShowTTSBar] = useState(() => !!getViewSettings(bookKey)?.showTTSBar);
   const [showBackToCurrentTTSLocation, setShowBackToCurrentTTSLocation] = useState(false);
 
   const [timeoutOption, setTimeoutOption] = useState(0);
@@ -953,16 +952,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     setTimeoutTimestamp(value > 0 ? Date.now() + value * 1000 : 0);
   };
 
-  const handleToggleTTSBar = () => {
-    const viewSettings = getViewSettings(bookKey)!;
-    viewSettings.showTTSBar = !viewSettings.showTTSBar;
-    setShowTTSBar(viewSettings.showTTSBar);
-    if (viewSettings.showTTSBar) {
-      onRequestHidePanel?.();
-    }
-    setViewSettings(bookKey, viewSettings);
-  };
-
   const refreshTtsLang = useCallback(() => {
     const speakingLang = ttsControllerRef.current?.getSpeakingLang();
     if (speakingLang) {
@@ -977,7 +966,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     ttsClientsInited,
     isTTSActive: ttsController !== null,
     showIndicator,
-    showTTSBar,
     showBackToCurrentTTSLocation,
     timeoutOption,
     timeoutTimestamp,
@@ -993,7 +981,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     handleGetVoices,
     handleGetVoiceId,
     handleSelectTimeout,
-    handleToggleTTSBar,
     handleBackToCurrentTTSLocation,
     handleSeekTo,
     handleGetPlaybackInfo,
