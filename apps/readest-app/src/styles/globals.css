@@ -974,3 +974,31 @@ textarea:focus-within,
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* TTS player scrubber: the track is painted by an inline three-stop gradient
+   (played / buffered / rest), so the native appearance must be blanked and
+   the element itself becomes the 4px track. Thumb inherits currentColor. */
+.tts-scrubber {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+}
+.tts-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: currentColor;
+}
+.tts-scrubber::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 9999px;
+  background: currentColor;
+}
+.tts-scrubber:disabled {
+  opacity: 0.5;
+}
