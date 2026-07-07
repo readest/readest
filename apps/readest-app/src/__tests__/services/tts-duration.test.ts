@@ -95,6 +95,41 @@ describe('estimateSentenceSeconds', () => {
   });
 });
 
+describe('calibration stability (cumulative history)', () => {
+  test('a single outlier barely moves a well-established calibration', () => {
+    const voice = 'stable-voice';
+    for (let i = 0; i < 100; i++) {
+      calibrateVoiceRate(voice, 'a'.repeat(50), 5); // 10 cps, 500s of history
+    }
+    const before = estimateSentenceSeconds('z'.repeat(100), 'en', voice);
+    calibrateVoiceRate(voice, 'b'.repeat(90), 3); // 30 cps outlier sentence
+    const after = estimateSentenceSeconds('z'.repeat(100), 'en', voice);
+    // The whole point of cumulative smoothing: one weird sentence must not
+    // re-price the chapter. (The old EMA moved this by ~28%.)
+    expect(Math.abs(after - before) / before).toBeLessThan(0.02);
+  });
+
+  test('history is duration-weighted, not sample-weighted', () => {
+    const voice = 'weighted-voice';
+    calibrateVoiceRate(voice, 'a'.repeat(40), 2); // 20 cps for 2s
+    calibrateVoiceRate(voice, 'b'.repeat(90), 9); // 10 cps for 9s
+    // Cumulative ratio: 130 chars / 11 s, NOT the sample mean of 20 and 10.
+    const est = estimateSentenceSeconds('c'.repeat(100), 'en', voice);
+    expect(est).toBeCloseTo(100 / (130 / 11), 1);
+  });
+
+  test('legacy {cps,n} storage format is migrated as a prior', async () => {
+    localStorage.setItem(
+      'readest-tts-voice-cps',
+      JSON.stringify({ 'legacy-voice': { cps: 20, n: 5 } }),
+    );
+    vi.resetModules();
+    const fresh = await import('@/services/tts/ttsDuration');
+    const est = fresh.estimateSentenceSeconds('d'.repeat(100), 'en', 'legacy-voice');
+    expect(est).toBeCloseTo(5, 1); // 100 chars at the legacy 20 cps
+  });
+});
+
 describe('persistence', () => {
   test('per-voice calibration survives a module reload via localStorage', async () => {
     calibrateVoiceRate('persisted-voice', 'a'.repeat(50), 5);
