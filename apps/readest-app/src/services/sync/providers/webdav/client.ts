@@ -163,6 +163,42 @@ export const buildBasicAuthHeader = buildAuthHeader;
 const getFetch = () => (isTauriAppPlatform() ? tauriFetch : window.fetch.bind(window));
 
 /**
+ * Per-request timeouts. Metadata round-trips (PROPFIND / HEAD / MKCOL /
+ * DELETE) answer with headers only, so a server that has not replied within
+ * seconds is down or unreachable — fail fast instead of pinning the sync UI
+ * on a dead LAN host. GET / PUT carry book-sized bodies over possibly slow
+ * links, so they keep a generous ceiling instead.
+ */
+const METADATA_TIMEOUT_MS = 5_000;
+const TRANSFER_TIMEOUT_MS = 300_000;
+const METADATA_METHODS = new Set(['PROPFIND', 'HEAD', 'MKCOL', 'DELETE']);
+const timeoutForMethod = (method: string): number =>
+  METADATA_METHODS.has(method.toUpperCase()) ? METADATA_TIMEOUT_MS : TRANSFER_TIMEOUT_MS;
+
+/**
+ * `fetch` with an AbortController deadline. On expiry the request is aborted
+ * and a plain 'Request timed out' error is thrown — call sites wrap it into
+ * the WebDAVRequestError taxonomy as a NETWORK failure.
+ */
+const fetchWithTimeout = async (
+  fetchFn: ReturnType<typeof getFetch>,
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetchFn(url, { ...init, signal: controller.signal });
+  } catch (e) {
+    if (controller.signal.aborted) throw new Error('Request timed out');
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+/**
  * Pull the inner text of the first matching tag, regardless of namespace
  * prefix. WebDAV servers are inconsistent about prefixes (`d:`, `D:`, none)
  * so a tolerant local-name match keeps the parser robust without reaching
@@ -266,15 +302,20 @@ export const checkConnection = async (
   const url = buildUrl(config.serverUrl, rootPath);
   const fetchFn = getFetch();
   try {
-    const response = await fetchFn(url, {
-      method: 'PROPFIND',
-      headers: {
-        Authorization: buildAuthHeader(config.username, config.password),
-        Depth: '0',
-        'Content-Type': 'application/xml; charset=utf-8',
+    const response = await fetchWithTimeout(
+      fetchFn,
+      url,
+      {
+        method: 'PROPFIND',
+        headers: {
+          Authorization: buildAuthHeader(config.username, config.password),
+          Depth: '0',
+          'Content-Type': 'application/xml; charset=utf-8',
+        },
+        body: PROPFIND_BODY,
       },
-      body: PROPFIND_BODY,
-    });
+      METADATA_TIMEOUT_MS,
+    );
     if (response.status === 207 || response.status === 200) {
       return { success: true, status: response.status };
     }
@@ -312,15 +353,20 @@ export const listDirectory = async (
   // not-found / network) instead of flattening every failure to UNKNOWN.
   let response: Response;
   try {
-    response = await fetchFn(url, {
-      method: 'PROPFIND',
-      headers: {
-        Authorization: buildAuthHeader(config.username, config.password),
-        Depth: '1',
-        'Content-Type': 'application/xml; charset=utf-8',
+    response = await fetchWithTimeout(
+      fetchFn,
+      url,
+      {
+        method: 'PROPFIND',
+        headers: {
+          Authorization: buildAuthHeader(config.username, config.password),
+          Depth: '1',
+          'Content-Type': 'application/xml; charset=utf-8',
+        },
+        body: PROPFIND_BODY,
       },
-      body: PROPFIND_BODY,
-    });
+      METADATA_TIMEOUT_MS,
+    );
   } catch (e) {
     throw new WebDAVRequestError((e as Error).message || 'Network error', undefined, 'NETWORK');
   }
@@ -413,7 +459,12 @@ const requestWithMethod = async (
     ...(init.headers || {}),
   };
   try {
-    return await fetchFn(url, { method, headers, body: init.body ?? null });
+    return await fetchWithTimeout(
+      fetchFn,
+      url,
+      { method, headers, body: init.body ?? null },
+      timeoutForMethod(method),
+    );
   } catch (e) {
     throw new WebDAVRequestError((e as Error).message || 'Network error', undefined, 'NETWORK');
   }
