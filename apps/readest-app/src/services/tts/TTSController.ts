@@ -367,10 +367,16 @@ export class TTSController extends EventTarget {
     };
   }
 
-  #clearHighlighter() {
-    const content = this.#getPrimaryContent();
-    const overlayer = content?.overlayer as Overlayer | undefined;
-    overlayer?.remove(HIGHLIGHT_KEY);
+  // Clear the TTS highlight from EVERY live view, not just the primary one.
+  // Preloaded adjacent sections keep their documents (and overlays) alive, so
+  // a section change or stop that only clears the primary leaves the last
+  // spoken word highlighted in the neighboring view forever.
+  #clearAllHighlights() {
+    if (!this.#attached) return;
+    const contents = this.view.renderer.getContents() as { overlayer?: Overlayer }[];
+    for (const { overlayer } of contents) {
+      overlayer?.remove(HIGHLIGHT_KEY);
+    }
   }
 
   updateHighlightOptions(options: TTSHighlightOptions) {
@@ -399,6 +405,10 @@ export class TTSController extends EventTarget {
     if (!section?.createDocument) {
       return false;
     }
+
+    // Entering a section: drop any highlight left behind in the views that
+    // are still rendering the outgoing section.
+    this.#clearAllHighlights();
 
     this.#ttsSectionIndex = sectionIndex;
 
@@ -993,6 +1003,18 @@ export class TTSController extends EventTarget {
       this.#getHighlighter()(this.#lastSpeakWordRange.cloneRange());
       return;
     }
+    // Word mode during playback: between a sentence's mark and its first word
+    // boundary there is nothing word-level to re-draw yet, and re-drawing the
+    // sentence here is exactly the whole-sentence flash word mode suppresses
+    // at setMark. Draw nothing; the next word boundary paints momentarily.
+    // Paused/stopped states keep the sentence re-draw (navigation UX).
+    if (
+      this.state === 'playing' &&
+      this.ttsClient.supportsWordBoundaries() &&
+      this.#highlightGranularity === 'word'
+    ) {
+      return;
+    }
     const range = this.#getTts()?.getLastRange();
     if (range) this.#getHighlighter()(range.cloneRange());
   }
@@ -1127,7 +1149,7 @@ export class TTSController extends EventTarget {
 
   async shutdown() {
     await this.stop();
-    this.#clearHighlighter();
+    this.#clearAllHighlights();
     this.#ttsSectionIndex = -1;
     this.#sectionTimeline = null;
     this.#timelineSectionIndex = -1;

@@ -67,6 +67,7 @@ vi.mock('foliate-js/tts.js', () => ({
       nextMark: vi.fn().mockReturnValue('<speak>nextMark</speak>'),
       prevMark: vi.fn().mockReturnValue('<speak>prevMark</speak>'),
       setMark: vi.fn().mockReturnValue(new Range()),
+      getLastRange: vi.fn().mockReturnValue(new Range()),
       doc: null,
     });
   }),
@@ -1317,6 +1318,70 @@ describe('TTSController', () => {
       controller.addEventListener('test-event', handler);
       controller.dispatchEvent(new CustomEvent('test-event', { detail: 'data' }));
       expect(handler).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('highlight hygiene', () => {
+    test('section change clears highlights from every live view, not just the primary', async () => {
+      // Two sections rendered at once (spread / preloaded adjacent view); the
+      // view has already navigated ahead so the primary is the NEW section.
+      const mockDoc = { querySelector: vi.fn().mockReturnValue(null) } as unknown as Document;
+      const overlayers = [
+        { remove: vi.fn(), add: vi.fn() },
+        { remove: vi.fn(), add: vi.fn() },
+      ];
+      const twoSectionView = {
+        renderer: {
+          primaryIndex: 1,
+          getContents: vi.fn().mockReturnValue([
+            { doc: mockDoc, index: 0, overlayer: overlayers[0] },
+            { doc: mockDoc, index: 1, overlayer: overlayers[1] },
+          ]),
+        },
+        book: {
+          sections: [
+            { createDocument: vi.fn().mockResolvedValue(mockDoc) },
+            { createDocument: vi.fn().mockResolvedValue(mockDoc) },
+          ],
+        },
+        language: { isCJK: false },
+        tts: null,
+        getCFI: vi.fn().mockReturnValue('cfi-string'),
+        resolveCFI: vi.fn().mockReturnValue({ anchor: vi.fn().mockReturnValue(new Range()) }),
+      } as unknown as FoliateView;
+      const c = new TTSController(mockAppService, twoSectionView, false);
+      // Every section entry (start, prev/next, auto-advance) funnels through
+      // #initTTSForSection; entering a section must scrub the TTS highlight
+      // from EVERY live view, or the outgoing section's last spoken word
+      // stays highlighted forever in the preloaded neighbor.
+      await c.initViewTTS(0);
+      expect(overlayers[0]!.remove).toHaveBeenCalledWith('tts-highlight');
+      expect(overlayers[1]!.remove).toHaveBeenCalledWith('tts-highlight');
+    });
+
+    test('reapplyCurrentHighlight never draws the sentence in word mode while playing', async () => {
+      await controller.initViewTTS(0);
+      controller.ttsClient.supportsWordBoundaries = vi
+        .fn()
+        .mockReturnValue(true) as unknown as () => boolean;
+      controller.setHighlightGranularity('word');
+      controller.state = 'playing';
+      const content = (
+        mockView.renderer.getContents() as unknown as {
+          overlayer: { add: ReturnType<typeof vi.fn> };
+        }[]
+      )[0]!;
+      content.overlayer.add.mockClear();
+
+      // Between a sentence's mark and its first word boundary a page relocate
+      // triggers a re-apply; the whole sentence must not flash in.
+      controller.reapplyCurrentHighlight();
+      expect(content.overlayer.add).not.toHaveBeenCalled();
+
+      // Paused keeps the sentence re-draw (deliberate navigation UX).
+      controller.state = 'paused';
+      controller.reapplyCurrentHighlight();
+      expect(content.overlayer.add).toHaveBeenCalled();
     });
   });
 });
