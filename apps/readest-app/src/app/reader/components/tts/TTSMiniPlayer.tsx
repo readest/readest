@@ -106,16 +106,16 @@ const TTSMiniPlayer = ({
           <div
             aria-hidden='true'
             className={clsx(
-              'bg-base-content/15 absolute inset-x-0 bottom-0 h-[3px]',
+              'audio-track not-eink:bg-neutral-content/15 absolute inset-x-0 bottom-0 h-[3px]',
               'eink:bg-base-100 eink:border-base-content eink:border-t eink:h-[5px]',
             )}
           >
             <div
-              className='bg-base-content/35 eink:hidden absolute inset-y-0 left-0'
+              className='audio-buffered-part bg-base-content/35 eink:hidden absolute inset-y-0 left-0'
               style={{ width: `${bufferedPct}%` }}
             />
             <div
-              className='bg-primary eink:bg-base-content absolute inset-y-0 left-0'
+              className='audio-played-part not-eink:bg-primary eink:bg-base-content absolute inset-y-0 left-0'
               style={{ width: `${playedPct}%` }}
             />
           </div>

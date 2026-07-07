@@ -181,9 +181,13 @@ const TTSPlayerSheet = ({
   // just names itself (the alarm icon already carries the affordance).
   const timerCaption = timeoutOption > 0 && timerLabel ? timerLabel : _('Sleep Timer');
 
-  const header = (
-    <div className='relative flex h-11 w-full items-center px-1'>
-      {view !== 'main' ? (
+  // The main view carries no header label (the content speaks for itself and
+  // vertical space is tight); sub-views keep the back button and their title.
+  const header =
+    view === 'main' ? (
+      <div />
+    ) : (
+      <div className='relative flex h-11 w-full items-center px-1'>
         <button
           type='button'
           aria-label={_('Go Back')}
@@ -192,22 +196,17 @@ const TTSPlayerSheet = ({
         >
           <MdArrowBackIosNew size={iconSize24 * 0.8} className='rtl:rotate-180' />
         </button>
-      ) : (
-        <span className='w-8' />
-      )}
-      <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
-        <span className='line-clamp-1 text-center font-bold'>
-          {view === 'speed'
-            ? _('Speed')
-            : view === 'voice'
-              ? _('Select Voice')
-              : view === 'timer'
-                ? _('Set Timeout')
-                : _('Read Aloud')}
-        </span>
+        <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
+          <span className='line-clamp-1 text-center font-bold'>
+            {view === 'speed'
+              ? _('Speed')
+              : view === 'voice'
+                ? _('Select Voice')
+                : _('Set Timeout')}
+          </span>
+        </div>
       </div>
-    </div>
-  );
+    );
 
   return (
     <Dialog
@@ -217,7 +216,7 @@ const TTSPlayerSheet = ({
       title={_('Read Aloud')}
       header={header}
       boxClassName='sm:!h-auto sm:!max-h-[85%] sm:!w-[420px] sm:!min-w-0'
-      contentClassName='!px-4 sm:!px-4'
+      contentClassName='!px-4 sm:!px-4 mt-[-4px]'
       onClose={onClose}
     >
       {view === 'main' && (

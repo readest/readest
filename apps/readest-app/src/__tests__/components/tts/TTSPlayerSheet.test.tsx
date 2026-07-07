@@ -123,6 +123,8 @@ describe('TTSPlayerSheet', () => {
     expect(screen.getByLabelText('Speed')).toBeTruthy();
     expect(screen.getByLabelText('Sleep Timer')).toBeTruthy();
     expect(await screen.findByText('Ava')).toBeTruthy(); // voice button caption
+    // The main view carries no header label (vertical space).
+    expect(screen.queryByText('Read Aloud')).toBeNull();
   });
 
   test('degrades without a timeline: no scrubber, estimate text instead', () => {
