@@ -23,13 +23,12 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { getLanguageName } from '@/utils/lang';
 import { formatPlaybackTime } from '@/utils/time';
 import Dialog from '@/components/Dialog';
-import { BoxedList, NavigationRow } from '@/components/settings/primitives';
 import { TTSPlaybackInfo } from './usePlaybackInfo';
 import { useCountdownLabel } from './useCountdownLabel';
 import TTSScrubber from './TTSScrubber';
-import SpeedChips from './SpeedChips';
+import SpeedChips, { formatRate } from './SpeedChips';
 
-type SheetView = 'main' | 'voice' | 'timer';
+type SheetView = 'main' | 'speed' | 'voice' | 'timer';
 
 const getTTSTimeoutOptions = (_: TranslationFunc) => {
   return [
@@ -72,9 +71,9 @@ type TTSPlayerSheetProps = {
   onGetPlaybackInfo: () => TTSPlaybackInfo | null;
 };
 
-// Full player sheet: cover, chapter, scrubber, transport, speed chips, and
-// voice / sleep-timer rows that drill into in-sheet sub-views (dropdowns
-// clip inside the dialog's scroll container).
+// Full player sheet: cover, chapter, scrubber, transport, and one compact
+// row of speed / voice / sleep-timer buttons that drill into in-sheet
+// sub-views (dropdowns clip inside the dialog's scroll container).
 const TTSPlayerSheet = ({
   bookKey,
   isOpen,
@@ -108,6 +107,7 @@ const TTSPlayerSheet = ({
   const [rate, setRate] = useState(viewSettings?.ttsRate ?? 1.0);
   const [selectedVoice, setSelectedVoice] = useState('');
   const timerLabel = useCountdownLabel(timeoutTimestamp);
+  const iconSize18 = useResponsiveSize(18);
   const iconSize24 = useResponsiveSize(24);
   const iconSize32 = useResponsiveSize(32);
 
@@ -177,10 +177,9 @@ const TTSPlayerSheet = ({
   const currentVoiceName = voiceGroups
     .flatMap((group) => group.voices)
     .find((voice) => voice.id === selectedVoice)?.name;
-  const timerStatus =
-    timeoutOption > 0 && timerLabel
-      ? timerLabel
-      : timeoutOptions.find((option) => option.value === timeoutOption)?.label;
+  // Armed timer shows its live countdown on the button; otherwise the button
+  // just names itself (the alarm icon already carries the affordance).
+  const timerCaption = timeoutOption > 0 && timerLabel ? timerLabel : _('Sleep Timer');
 
   const header = (
     <div className='relative flex h-11 w-full items-center px-1'>
@@ -198,11 +197,13 @@ const TTSPlayerSheet = ({
       )}
       <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
         <span className='line-clamp-1 text-center font-bold'>
-          {view === 'voice'
-            ? _('Select Voice')
-            : view === 'timer'
-              ? _('Set Timeout')
-              : _('Read Aloud')}
+          {view === 'speed'
+            ? _('Speed')
+            : view === 'voice'
+              ? _('Select Voice')
+              : view === 'timer'
+                ? _('Set Timeout')
+                : _('Read Aloud')}
         </span>
       </div>
     </div>
@@ -295,21 +296,44 @@ const TTSPlayerSheet = ({
               <MdFastForward size={iconSize24} />
             </button>
           </div>
-          <SpeedChips rate={rate} onSelect={handleSelectRate} />
-          <BoxedList className='w-full'>
-            <NavigationRow
-              icon={RiVoiceAiFill}
-              title={_('Voice')}
-              status={currentVoiceName}
+          <div className='flex w-full gap-2'>
+            <button
+              type='button'
+              aria-label={_('Speed')}
+              onClick={() => setView('speed')}
+              className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
+            >
+              <span className='text-sm font-semibold tabular-nums'>{formatRate(rate)}</span>
+              <span className='text-base-content/60 text-xs'>{_('Speed')}</span>
+            </button>
+            <button
+              type='button'
+              aria-label={_('Voice')}
               onClick={() => setView('voice')}
-            />
-            <NavigationRow
-              icon={MdAlarm}
-              title={_('Sleep Timer')}
-              status={timerStatus}
+              className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
+            >
+              <RiVoiceAiFill size={iconSize18} />
+              <span className='text-base-content/60 max-w-full truncate px-1 text-xs'>
+                {currentVoiceName ?? _('Voice')}
+              </span>
+            </button>
+            <button
+              type='button'
+              aria-label={_('Sleep Timer')}
               onClick={() => setView('timer')}
-            />
-          </BoxedList>
+              className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
+            >
+              <MdAlarm size={iconSize18} />
+              <span className='text-base-content/60 max-w-full truncate px-1 text-xs tabular-nums'>
+                {timerCaption}
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+      {view === 'speed' && (
+        <div className='flex w-full flex-col items-center pb-4 pt-2'>
+          <SpeedChips rate={rate} onSelect={handleSelectRate} />
         </div>
       )}
       {view === 'voice' && (

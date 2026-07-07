@@ -119,7 +119,10 @@ describe('TTSPlayerSheet', () => {
     expect(screen.getByRole('slider')).toBeTruthy();
     expect(screen.getByLabelText('Previous Paragraph')).toBeTruthy();
     expect(screen.getByLabelText('Next Paragraph')).toBeTruthy();
-    expect(await screen.findByText('Ava')).toBeTruthy(); // voice row status
+    // Compact one-row controls: speed / voice / sleep timer buttons.
+    expect(screen.getByLabelText('Speed')).toBeTruthy();
+    expect(screen.getByLabelText('Sleep Timer')).toBeTruthy();
+    expect(await screen.findByText('Ava')).toBeTruthy(); // voice button caption
   });
 
   test('degrades without a timeline: no scrubber, estimate text instead', () => {
@@ -149,9 +152,10 @@ describe('TTSPlayerSheet', () => {
     expect(props.onForward).toHaveBeenCalledWith(false);
   });
 
-  test('selecting a speed chip applies and persists the rate', () => {
+  test('speed button drills into the chips and selecting persists the rate', () => {
     const props = makeProps();
     render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Speed'));
     fireEvent.click(screen.getByRole('radio', { name: '1.5×' }));
     expect(props.onSetRate).toHaveBeenCalledWith(1.5);
     expect(viewSettings['ttsRate']).toBe(1.5);
@@ -159,19 +163,19 @@ describe('TTSPlayerSheet', () => {
     expect(saveSettings).toHaveBeenCalled();
   });
 
-  test('voice row drills into the voice list and selects a voice', async () => {
+  test('voice button drills into the voice list and selects a voice', async () => {
     const props = makeProps();
     render(<TTSPlayerSheet {...props} />);
-    fireEvent.click(await screen.findByText('Voice'));
+    fireEvent.click(screen.getByLabelText('Voice'));
     fireEvent.click(await screen.findByText('Guy'));
     expect(props.onSetVoice).toHaveBeenCalledWith('guy', 'en-US');
     expect(viewSettings['ttsVoice']).toBe('guy');
   });
 
-  test('timer row drills into the timer list and selects a timeout', async () => {
+  test('timer button drills into the timer list and selects a timeout', async () => {
     const props = makeProps();
     render(<TTSPlayerSheet {...props} />);
-    fireEvent.click(screen.getByText('Sleep Timer'));
+    fireEvent.click(screen.getByLabelText('Sleep Timer'));
     // The translation mock interpolates, so options render as real labels.
     fireEvent.click(await screen.findByText('30 minutes'));
     expect(props.onSelectTimeout).toHaveBeenCalledWith('b1', 1800);
@@ -180,7 +184,7 @@ describe('TTSPlayerSheet', () => {
   test('reopening the sheet returns to the main view', async () => {
     const props = makeProps();
     const { rerender } = render(<TTSPlayerSheet {...props} />);
-    fireEvent.click(await screen.findByText('Voice'));
+    fireEvent.click(screen.getByLabelText('Voice'));
     expect(await screen.findByText('Guy')).toBeTruthy();
     rerender(<TTSPlayerSheet {...props} isOpen={false} />);
     rerender(<TTSPlayerSheet {...props} isOpen={true} />);
