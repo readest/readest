@@ -81,6 +81,7 @@ describe('TTSControl', () => {
     Object.assign(ttsState, { showIndicator: false, ttsClientsInited: false });
     render(<TTSControl bookKey='b1' gridInsets={gridInsets} />);
     expect(screen.queryByTestId('mini-player')).toBeNull();
+    expect(screen.queryByTestId('player-sheet')).toBeNull();
   });
 
   test('expanding the mini player opens the sheet', () => {

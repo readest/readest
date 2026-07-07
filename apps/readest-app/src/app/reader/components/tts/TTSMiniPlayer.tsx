@@ -143,42 +143,44 @@ const TTSMiniPlayer = ({
           {timerLabel && (
             <span className='shrink-0 text-xs tabular-nums opacity-70'>{timerLabel}</span>
           )}
-          <button
-            type='button'
-            className='shrink-0 rounded-full p-1'
-            aria-label={_('Previous Sentence')}
-            onClick={() => onBackward(true)}
-          >
-            <MdSkipPrevious size={iconSize28} />
-          </button>
-          <button
-            type='button'
-            className='shrink-0 rounded-full p-0.5'
-            aria-label={isPlaying ? _('Pause') : _('Play')}
-            onClick={onTogglePlay}
-          >
-            {isPlaying ? (
-              <MdPauseCircleFilled size={iconSize40} />
-            ) : (
-              <MdPlayCircleFilled size={iconSize40} />
-            )}
-          </button>
-          <button
-            type='button'
-            className='shrink-0 rounded-full p-1'
-            aria-label={_('Next Sentence')}
-            onClick={() => onForward(true)}
-          >
-            <MdSkipNext size={iconSize28} />
-          </button>
-          <button
-            type='button'
-            className='shrink-0 rounded-full p-1'
-            aria-label={_('Stop reading aloud')}
-            onClick={onStop}
-          >
-            <MdClose size={iconSize20} />
-          </button>
+          <div dir='ltr' className='flex shrink-0 items-center gap-1'>
+            <button
+              type='button'
+              className='shrink-0 rounded-full p-1'
+              aria-label={_('Previous Sentence')}
+              onClick={() => onBackward(true)}
+            >
+              <MdSkipPrevious size={iconSize28} />
+            </button>
+            <button
+              type='button'
+              className='shrink-0 rounded-full p-0.5'
+              aria-label={isPlaying ? _('Pause') : _('Play')}
+              onClick={onTogglePlay}
+            >
+              {isPlaying ? (
+                <MdPauseCircleFilled size={iconSize40} />
+              ) : (
+                <MdPlayCircleFilled size={iconSize40} />
+              )}
+            </button>
+            <button
+              type='button'
+              className='shrink-0 rounded-full p-1'
+              aria-label={_('Next Sentence')}
+              onClick={() => onForward(true)}
+            >
+              <MdSkipNext size={iconSize28} />
+            </button>
+            <button
+              type='button'
+              className='shrink-0 rounded-full p-1'
+              aria-label={_('Stop reading aloud')}
+              onClick={onStop}
+            >
+              <MdClose size={iconSize20} />
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -81,6 +81,7 @@ describe('TTSMiniPlayer', () => {
     expect(props.onForward).toHaveBeenCalledWith(true);
     fireEvent.click(screen.getByLabelText('Pause'));
     expect(props.onTogglePlay).toHaveBeenCalled();
+    expect(screen.getByLabelText('Next Sentence').closest('[dir="ltr"]')).toBeTruthy();
   });
 
   test('stop button stops without expanding', () => {

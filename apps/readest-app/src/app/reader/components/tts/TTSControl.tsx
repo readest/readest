@@ -102,7 +102,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           onGetPlaybackInfo={tts.handleGetPlaybackInfo}
         />
       )}
-      {tts.ttsClientsInited && (
+      {tts.ttsClientsInited && showPlayerSheet && (
         <TTSPlayerSheet
           bookKey={bookKey}
           isOpen={showPlayerSheet}
