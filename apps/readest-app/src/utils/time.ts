@@ -49,3 +49,12 @@ export const formatPlaybackTime = (seconds: number, forceHours = false): string 
   }
   return `${minutes}:${String(secs).padStart(2, '0')}`;
 };
+
+// Countdown label for TTS sleep-timer chips: total minutes : seconds
+// (a 90-minute timer reads 90:00, matching the lock-screen convention).
+export const formatCountdown = (msLeft: number): string => {
+  const total = Math.max(0, Math.floor(msLeft / 1000));
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+};

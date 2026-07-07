@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { formatPlaybackTime } from '@/utils/time';
+import { formatCountdown, formatPlaybackTime } from '@/utils/time';
 
 describe('formatPlaybackTime', () => {
   test('formats minutes and seconds by default', () => {
@@ -29,5 +29,18 @@ describe('formatPlaybackTime', () => {
 
   test('truncates fractional seconds', () => {
     expect(formatPlaybackTime(59.9)).toBe('0:59');
+  });
+});
+
+describe('formatCountdown', () => {
+  test('formats total minutes and seconds', () => {
+    expect(formatCountdown(90_000)).toBe('1:30');
+    expect(formatCountdown(5_000)).toBe('0:05');
+    // Total minutes, never rolled into hours: 90 minutes reads 90:00.
+    expect(formatCountdown(90 * 60_000)).toBe('90:00');
+  });
+
+  test('clamps negative remaining time to zero', () => {
+    expect(formatCountdown(-1_000)).toBe('0:00');
   });
 });
