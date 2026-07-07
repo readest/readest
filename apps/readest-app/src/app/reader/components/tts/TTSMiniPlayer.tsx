@@ -38,7 +38,7 @@ type TTSMiniPlayerProps = {
 };
 
 // Persistent mini-player shown while a TTS session is active: passive
-// progress line with buffer-ahead fill on the card's top edge, book info
+// progress line with buffer-ahead fill on the card's bottom edge, book info
 // (tap to expand the full player sheet), sentence transport, and stop.
 const TTSMiniPlayer = ({
   bookKey,
@@ -101,7 +101,10 @@ const TTSMiniPlayer = ({
     >
       <div className='not-eink:bg-base-300 eink-bordered relative overflow-hidden rounded-2xl shadow-lg'>
         {hasTimeline && (
-          <div aria-hidden='true' className='bg-base-content/15 absolute inset-x-0 top-0 h-[3px]'>
+          <div
+            aria-hidden='true'
+            className='bg-base-content/15 absolute inset-x-0 bottom-0 h-[3px]'
+          >
             <div
               className='bg-base-content/35 absolute inset-y-0 left-0'
               style={{ width: `${bufferedPct}%` }}
