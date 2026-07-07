@@ -614,7 +614,9 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           value={showHeader && !isVertical ? marginTopPx : compactMarginTopPx}
           onChange={showHeader && !isVertical ? setMarginTopPx : setCompactMarginTopPx}
           min={
-            showHeader && !isVertical ? Math.max(0, Math.round((16 - gridInsets.top) / 4) * 4) : 0
+            showHeader && !isVertical
+              ? Math.max(0, Math.round((16 - gridInsets.top) / 4) * 4) - gridInsets.top
+              : 0
           }
           max={88}
           step={4}
@@ -625,7 +627,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           onChange={showFooter && !isVertical ? setMarginBottomPx : setCompactMarginBottomPx}
           min={
             showFooter && !isVertical
-              ? Math.max(0, Math.round((16 - gridInsets.bottom) / 4) * 4)
+              ? Math.max(0, Math.round((16 - gridInsets.bottom) / 4) * 4) - gridInsets.bottom
               : 0
           }
           max={88}

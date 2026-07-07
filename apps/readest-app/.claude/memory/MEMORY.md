@@ -10,10 +10,11 @@
 - Reading ruler: [line-aware](reading-ruler-line-aware.md) frame-offset map; [vertical-rl backwards #4865](reading-ruler-vertical-rtl-4865.md)
 - [Vertical-rl horizontal pagination (#624)](vertical-rl-horizontal-pagination-624.md) — horizontal inputs + two-phase slide; rtl gated `!vertical`
 - [Slide/curl turn styles via VT (#555)](page-turn-styles-viewtransitions-555.md) — VT turns gated on nested-VT-groups support (iOS 18 WebKit crashes despite having the API); Tauri fallback = `CapturedPageTurn` capture pipeline (WebGL mesh curl + flat canvas slide, full-gridcell capture, instant nav = drop `animated`); MERGED #4940 (2026-07-05), verified live mac/iOS/Android (mobile = JPEG capped 2x, PNG was 1.5s/turn); Win/Linux capture still open
+  - [Captured turn ignored instant-highlight hold](captured-turn-instant-highlight-scrolllock.md) — captured slide/curl swipe path (app interceptor, `no-swipe` set) didn't honor `renderer.scrollLocked`; fix = foliate `get scrollLocked()` + gate `useCapturedTurn` move on it (push/VT-slide already gated); PR#5000 + foliate#51
 - TOC: [expand + auto-scroll](toc-expand-and-autoscroll.md); [current-position row](toc-current-position-row.md); [table heading clip #4439](toc-table-heading-clip-4439.md); [BooknoteView auto-scroll #4352](booknote-view-autoscroll-4352.md)
 - Paginated bg: [swipe flash](paginator-swipe-bg-flash.md); [texture occlusion #4399](paginated-texture-occlusion-4399.md); [gutter bleed #4394](paginator-gutter-bleed-asymmetry-4394.md); [bg-replace reflow #4785](pageturn-bg-replace-reflow-4785.md)
 - [Inline-block column overflow](inline-block-column-overflow.md) `#demoteUnfragmentableBoxes`
-- FXL/PDF: [fit-width scroll reset #4683](fixed-layout-paginated-scroll-reset-4683.md); [PDF spread seam #4587](pdf-spread-canvas-seam-4587.md); [spine seam #4857](fxl-spread-spine-seam-4857.md)
+- FXL/PDF: [fit-width scroll reset #4683](fixed-layout-paginated-scroll-reset-4683.md); [PDF spread seam #4587](pdf-spread-canvas-seam-4587.md); [spine seam #4857](fxl-spread-spine-seam-4857.md); [portrait auto-spread off-center #4984](fxl-portrait-autospread-offcenter-4984.md) MERGED PR#4992+foliate#50 lone page kept one-sided auto margin -> stranded + taps turned page; `computeSpreadInlineMargins`
 - Scrolled: [PDF wheel double #4727](pdf-scroll-mode-wheel-double-4727.md); [header title center #4436](scrolled-header-title-center-4436.md); [Duokan fullscreen cover](duokan-fullscreen-cover-scroll.md)
 ## Critical Files (Most Bug-Prone)
 - `src/utils/style.ts` EPUB CSS hub · `packages/foliate-js/paginator.js` · `src/services/tts/TTSController.ts`
@@ -82,11 +83,14 @@
 - [Save image to gallery (#4680)](save-image-to-gallery-android.md) MediaStore
 - [Webtoon Mode (#3647)](webtoon-mode-3647.md)
 - [Middle-click autoscroll #4951](middle-click-autoscroll-4951.md) Autoscroller RAF core; `containerPosition +=`; armed-books preventDefault
+- [Auto Scroll teleprompter #4998](auto-scroll-teleprompter-4998.md) MERGED PR#4999 PacedScroller + useAutoScroll + gridcell-centered pill; scrolled-only; tap=pause via iframe-single-click consume
 - [Biometric app-lock #4645](biometric-app-lock-4645.md) · [Reference Pages #4542](reference-pages-672-4542.md) · [e-ink refresh page-turner #4687](eink-screen-refresh-pageturner-4687.md)
 - [Share intent + toolbar (#4014)](annotation-share-toolbar-4014.md)
 - Customize Toolbar: [global serializeConfig #4760](customize-toolbar-global-serializeconfig.md); [e-ink black bar #4839](customize-toolbar-eink-black-bar-4839.md)
 - [Edge TTS Web Audio engine (#3851)](edge-tts-webaudio-engine.md) gapless WebAudioPlayer + WSOLA
 - [Background TTS sessions PR#4941](tts-background-session-decoupling.md) — hash-keyed session manager, detach/attach, NowPlayingBar; header X routes `onCloseBook` NOT `onGoToLibrary`
+- [TTS player redesign](tts-player-redesign.md) mini-player + Dialog sheet replaces icon/popup/TTSBar; MERGED #4996; open: isPlaying glyph desync at section transitions
+- [Android bg TTS media session fix](android-bg-tts-media-session-fix.md) — #4941/#4931 regression: `startService()` dies backgrounded → in-process instance calls; always request POST_NOTIFICATIONS; + lock-screen duration scrubber + `onSeekTo` (Edge-only)
 - Native TTS: [iOS #4676](native-ios-tts-4676.md) pause==stop; [offline halt #4613](native-tts-offline-autoadvance-4613.md)
 - Edge TTS: [word highlight #4017](edge-tts-word-highlighting-4017.md); [drift](tts-word-highlight-singletextnode-drift.md)
 - TTS UX: [highlight granularity](tts-highlight-granularity-setting.md); [start-from-selection](tts-start-from-selection.md); [reuse session](tts-reuse-session-mode-entry.md)

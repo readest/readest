@@ -781,6 +781,7 @@ const FoliateViewer: React.FC<{
   const applyMarginAndGap = () => {
     const viewSettings = getViewSettings(bookKey)!;
     const viewState = getViewState(bookKey);
+    const bookData = getBookData(bookKey);
     const viewInsets = getViewInsets(viewSettings);
     const showDoubleBorder = viewSettings.vertical && viewSettings.doubleBorder;
     const showDoubleBorderHeader = showDoubleBorder && viewSettings.showHeader;
@@ -814,7 +815,7 @@ const FoliateViewer: React.FC<{
       const scrollBottom = footerVisible
         ? Math.max(footerBarHeight, miniPlayerClearance)
         : miniPlayerClearance;
-      setScrollMargins({ top: scrollTop, bottom: scrollBottom });
+      setScrollMargins({ top: bookData?.isFixedLayout ? 0 : scrollTop, bottom: scrollBottom });
     } else {
       setScrollMargins({ top: 0, bottom: 0 });
     }

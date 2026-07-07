@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import SectionInfo from '@/app/reader/components/SectionInfo';
 
+let currentBookData: { isFixedLayout: boolean } | undefined;
+
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ appService: { isAndroidApp: false, isMobile: true } }),
 }));
@@ -18,6 +20,14 @@ vi.mock('@/store/readerStore', () => ({
     setHoveredBookKey: vi.fn(),
   }),
 }));
+
+vi.mock('@/store/bookDataStore', () => {
+  const state = { getBookData: () => currentBookData };
+  return {
+    useBookDataStore: <R,>(selector?: (s: typeof state) => R) =>
+      selector ? selector(state) : state,
+  };
+});
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string) => key,
@@ -70,22 +80,32 @@ describe('SectionInfo notch mask', () => {
 });
 
 describe('SectionInfo contrast against the page (#4901)', () => {
-  // A light-mode PDF shown under a dark theme keeps its white page, but the
-  // running header text was themed for the dark UI (neutral-content, light)
-  // and became unreadable on the white page. mix-blend-mode: difference makes
-  // the text invert against whatever is actually behind it (the page or the
-  // themed margin), so it stays legible over any background.
-  it('blends the section title against the background in non-eink mode', () => {
+  // A light-mode PDF shown under a dark theme keeps its white page, so the
+  // running header blends against the real backdrop (text-white/75 +
+  // mix-blend-difference) to stay legible on any background. Reflowable books
+  // theme their own page to the UI, so the header uses plain base-content text
+  // instead of the blend.
+  it('blends the section title over a fixed-layout page in non-eink mode', () => {
+    currentBookData = { isFixedLayout: true };
     const { container } = render(<SectionInfo {...baseProps} isEink={false} />);
     const info = container.querySelector('.sectioninfo') as HTMLElement;
 
     expect(info.classList.contains('mix-blend-difference')).toBe(true);
     expect(info.classList.contains('text-white/75')).toBe(true);
-    // The theme-fixed neutral color is what made it unreadable on a white page.
-    expect(info.classList.contains('text-neutral-content')).toBe(false);
+  });
+
+  it('uses themed base-content text for reflowable books in non-eink mode', () => {
+    currentBookData = { isFixedLayout: false };
+    const { container } = render(<SectionInfo {...baseProps} isEink={false} />);
+    const info = container.querySelector('.sectioninfo') as HTMLElement;
+
+    expect(info.classList.contains('mix-blend-difference')).toBe(false);
+    expect(info.classList.contains('text-white/75')).toBe(false);
+    expect(info.classList.contains('text-base-content')).toBe(true);
   });
 
   it('does not blend in eink mode (base-content text on the e-ink page)', () => {
+    currentBookData = { isFixedLayout: true };
     const { container } = render(<SectionInfo {...baseProps} isEink={true} />);
     const info = container.querySelector('.sectioninfo') as HTMLElement;
 

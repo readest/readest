@@ -28,7 +28,7 @@ const StatusInfo: React.FC<StatusInfoProps> = ({
   return (
     <div
       className={clsx(
-        'status-bar flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums',
+        'status-bar flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums text-base-content',
         isVertical ? 'my-auto' : 'flex-row',
       )}
     >
