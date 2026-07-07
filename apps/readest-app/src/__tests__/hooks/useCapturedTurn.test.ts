@@ -1,9 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import {
-  applyPageTurnAttributes,
-  getCapturedTurnStyle,
-  supportsViewTransitionTurns,
-} from '@/app/reader/hooks/useCapturedTurn';
+import { applyPageTurnAttributes, getCapturedTurnStyle } from '@/app/reader/hooks/useCapturedTurn';
 import type { FoliateView } from '@/types/view';
 import type { ViewSettings } from '@/types/book';
 
@@ -48,23 +44,6 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
   delete (document as unknown as VTDocument).startViewTransition;
-});
-
-describe('supportsViewTransitionTurns', () => {
-  it('reports no support without startViewTransition', () => {
-    stubEngine({ startViewTransition: false, nestedGroups: true });
-    expect(supportsViewTransitionTurns()).toBe(false);
-  });
-
-  it('reports no support when nested view-transition groups are missing (iOS 18 WebKit)', () => {
-    stubEngine({ startViewTransition: true, nestedGroups: false });
-    expect(supportsViewTransitionTurns()).toBe(false);
-  });
-
-  it('reports support on engines with nested view-transition groups', () => {
-    stubEngine({ startViewTransition: true, nestedGroups: true });
-    expect(supportsViewTransitionTurns()).toBe(true);
-  });
 });
 
 describe('getCapturedTurnStyle', () => {

@@ -12,10 +12,7 @@ import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { PageTurnStyle } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
-import {
-  applyPageTurnAttributes,
-  supportsViewTransitionTurns,
-} from '@/app/reader/hooks/useCapturedTurn';
+import { applyPageTurnAttributes } from '@/app/reader/hooks/useCapturedTurn';
 import { isTauriAppPlatform } from '@/services/environment';
 import {
   BoxedList,
@@ -84,7 +81,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   // the VT turns, so on the web they only get Push (readest#555).
   const turnStyleOptions = [
     { value: 'push', label: _('Push') },
-    ...(supportsViewTransitionTurns() || isTauriAppPlatform()
+    ...(appService?.supportsViewTransitionGroup || isTauriAppPlatform()
       ? [
           { value: 'slide', label: _('Slide') },
           { value: 'curl', label: _('Page Curl') },

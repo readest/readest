@@ -5,6 +5,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { captureWebviewRegion } from '@/utils/bridge';
 import { isTauriAppPlatform } from '@/services/environment';
+import { detectViewTransitionGroup } from '@/utils/viewTransition';
 import { CapturedPageTurn, CapturedTurnStyle } from '../utils/capturedTurn';
 import { useTouchInterceptor } from './useTouchInterceptor';
 
@@ -12,21 +13,6 @@ import { useTouchInterceptor } from './useTouchInterceptor';
 // for the rest of the session: the renderer's own `turn-style` animations
 // take over where the engine supports them, push everywhere else.
 let captureBroken = false;
-
-/**
- * Whether the engine runs the paginator's layered View Transition turns
- * reliably. iOS 18 WebKit ships `document.startViewTransition` but crashes
- * the WebContent process when a turn transition snapshots the reader, so
- * the presence of the API is not enough; nested view-transition groups
- * (Chrome/WebView 140+) mark the mature engines where the layered turns
- * are known to work.
- */
-export const supportsViewTransitionTurns = (): boolean =>
-  typeof document !== 'undefined' &&
-  'startViewTransition' in document &&
-  typeof CSS !== 'undefined' &&
-  typeof CSS.supports === 'function' &&
-  CSS.supports('view-transition-group', 'nearest');
 
 /**
  * The turn style the captured-page pipeline should drive for this view, or
@@ -46,7 +32,7 @@ export const getCapturedTurnStyle = (
     return null;
   }
   if (viewSettings.pageTurnStyle === 'curl') return 'curl';
-  if (viewSettings.pageTurnStyle === 'slide' && !supportsViewTransitionTurns()) return 'slide';
+  if (viewSettings.pageTurnStyle === 'slide' && !detectViewTransitionGroup()) return 'slide';
   return null;
 };
 
@@ -66,7 +52,7 @@ export const applyPageTurnAttributes = (
 ) => {
   const captured = getCapturedTurnStyle(viewSettings, isFixedLayout);
   const style = viewSettings.pageTurnStyle;
-  if (style && style !== 'push' && !captured && supportsViewTransitionTurns()) {
+  if (style && style !== 'push' && !captured && detectViewTransitionGroup()) {
     view.renderer.setAttribute('turn-style', style);
   } else {
     view.renderer.removeAttribute('turn-style');

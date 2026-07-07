@@ -3,8 +3,8 @@ import { Book } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAppRouter } from '@/hooks/useAppRouter';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToReader, showReaderWindow } from '@/utils/nav';
 
@@ -25,11 +25,7 @@ interface UseOpenBookOptions {
  */
 export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptions) => {
   const _ = useTranslation();
-  // Open the reader with the plain router, NOT the View Transition router:
-  // the reader's initial render is heavy enough to blow the transition's ~4s
-  // DOM-update budget, which aborts with a TimeoutError (Sentry READEST-9).
-  // This matches how every other into-reader path already navigates.
-  const router = useRouter();
+  const router = useAppRouter();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { updateBook } = useLibraryStore();

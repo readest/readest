@@ -107,6 +107,8 @@ export interface AppService {
   canCustomizeRootDir: boolean;
   canReadExternalDir: boolean;
   supportsCanvasContext2DFilter: boolean;
+  supportsViewTransitionsAPI: boolean;
+  supportsViewTransitionGroup: boolean;
   distChannel: DistChannel;
   storefrontRegionCode: string | null;
   isOnlineCatalogsAccessible: boolean;
