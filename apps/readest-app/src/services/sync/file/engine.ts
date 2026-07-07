@@ -190,6 +190,17 @@ const remoteIndexCache = new WeakMap<
   { etag: string; index: RemoteLibraryIndex }
 >();
 
+/**
+ * Per-provider memo of "this device holds no source for this book" verdicts,
+ * keyed to the book's `updatedAt` at the time of the verdict. Without it,
+ * every sync run re-walks all books whose file is recorded nowhere and pays
+ * two local fs probes per book per run (the Tauri plugin:fs|exists storm)
+ * just to relearn the same answer. A book re-qualifies for a probe only when
+ * its local row changes (any download or progress save bumps `updatedAt`),
+ * on Full Sync, or in a fresh session (same lifetime as the provider memo).
+ */
+const noSourceVerdicts = new WeakMap<FileSyncProvider, Map<string, number>>();
+
 /** Order-insensitive string-array equality (duplicates collapse). */
 const sameStringSet = (a: string[], b: string[]): boolean => {
   if (a.length !== b.length) return false;
@@ -548,11 +559,30 @@ export class FileSyncEngine {
     // forward (plus this run's uploads) into the re-pushed index. Empty in send
     // mode / on a fresh remote, so the first sync verifies every file once.
     const uploadedHashes = new Set<string>(remoteIndex?.uploadedHashes ?? []);
-    // A file needs (re)uploading only when syncBooks is on and the remote copy
-    // isn't recorded yet. Full Sync bypasses the record as an escape hatch for
-    // drift (e.g. a file deleted out-of-band via the browse pane).
+    // A file needs (re)uploading only when syncBooks is on, the remote copy
+    // isn't recorded yet, and the LIBRARY ROW says this device holds the file.
+    // The row is authoritative (import / download / delete all stamp
+    // downloadedAt; merges keep it device-local), so a book the row marks as
+    // absent costs zero filesystem and zero remote probes — incremental sync
+    // stays pure metadata diffing instead of an O(library) fs walk (the
+    // Tauri plugin:fs|exists storm). The noSourceVerdicts memo additionally
+    // suppresses re-probes of DRIFTED rows (row claims a file the filesystem
+    // no longer has) within a session. Row-vs-filesystem split-brain in
+    // either direction is healed by Full Sync, which bypasses all three
+    // records and audits the real filesystem.
+    let noSourceMemo = noSourceVerdicts.get(this.provider);
+    if (!noSourceMemo) {
+      noSourceMemo = new Map();
+      noSourceVerdicts.set(this.provider, noSourceMemo);
+    }
+    const knownNoSource = noSourceMemo;
+    const hasLocalFile = (b: Book): boolean => !!(b.downloadedAt || b.filePath);
     const needsFilePush = (book: Book): boolean =>
-      options.syncBooks && (fullSync || !uploadedHashes.has(book.hash));
+      options.syncBooks &&
+      (fullSync ||
+        (!uploadedHashes.has(book.hash) &&
+          hasLocalFile(book) &&
+          knownNoSource.get(book.hash) !== (book.updatedAt ?? 0)));
 
     const remoteBooksToDownload: Book[] = [];
     // The remote source of truth for a book's on-disk filename is the per-hash
@@ -939,11 +969,13 @@ export class FileSyncEngine {
               } else if (fileResult.reason === 'remote-matches') {
                 result.filesAlreadyInSync += 1;
                 uploadedHashes.add(book.hash);
+              } else if (fileResult.reason === 'no-source') {
+                // The file isn't on this device; remember the verdict for this
+                // exact row so the next run doesn't re-pay the fs probes. It
+                // stays out of uploadedHashes so a device that does have the
+                // file can upload and record it later.
+                knownNoSource.set(book.hash, book.updatedAt ?? 0);
               }
-              // 'no-source' → the file isn't on this device; the verdict is
-              // reached from local state alone (no remote probe) and stays
-              // unrecorded so a device that does have the file can upload
-              // and record it later.
             }
           } catch (e) {
             noteAbort(e);

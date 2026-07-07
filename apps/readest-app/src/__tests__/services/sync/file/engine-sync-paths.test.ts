@@ -359,7 +359,7 @@ describe('FileSyncEngine.syncLibrary — incremental diff (default)', () => {
     });
 
     const res = await new FileSyncEngine(provider, store).syncLibrary(
-      [makeBook('h1', { updatedAt: 100 })],
+      [makeBook('h1', { updatedAt: 100, downloadedAt: 1 })],
       {
         strategy: 'silent',
         syncBooks: true,
@@ -398,7 +398,7 @@ describe('FileSyncEngine.syncLibrary — incremental diff (default)', () => {
     });
 
     const res = await new FileSyncEngine(provider, store).syncLibrary(
-      [makeBook('h1', { updatedAt: 100 })],
+      [makeBook('h1', { updatedAt: 100, downloadedAt: 1 })],
       {
         strategy: 'silent',
         syncBooks: true,
@@ -789,5 +789,115 @@ describe('FileSyncEngine.syncLibrary — empty-dir record', () => {
       captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
     ) as RemoteLibraryIndex;
     expect(idx.emptyDirs ?? []).not.toContain('h9');
+  });
+});
+
+// Row-as-truth: the library row is authoritative for local file presence
+// (import / download / delete all stamp downloadedAt; merges never let a
+// peer clobber it). A book the row marks as absent is skipped without a
+// single filesystem or remote probe — incremental sync stays pure metadata
+// diffing. Row-vs-filesystem split-brain is healed by Full Sync, which
+// bypasses the gate and audits the real filesystem.
+describe('FileSyncEngine.syncLibrary — row-as-truth local file gate', () => {
+  test('a book whose row marks no local file is never probed at all', async () => {
+    const head = vi.fn(async (p: string) => (p.endsWith('library.json') ? { etag: 'E9' } : null));
+    const provider = fakeProvider({
+      head,
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify(makeIndex([makeBook('h1', { updatedAt: 100 })]))
+          : null,
+      captured: { writes: [] },
+    });
+    const loadBookFile = vi.fn(async () => null);
+    const resolveLocalBookPath = vi.fn(async () => null);
+    const store = fakeStore({
+      loadConfig: async () => ({ updatedAt: 1, booknotes: [] }),
+      loadBookFile,
+      resolveLocalBookPath,
+    });
+
+    // No downloadedAt, no filePath: this device has never had the file.
+    await new FileSyncEngine(provider, store).syncLibrary([makeBook('h1', { updatedAt: 100 })], {
+      strategy: 'silent',
+      syncBooks: true,
+      deviceId: 'd',
+    });
+
+    expect(loadBookFile).not.toHaveBeenCalled();
+    expect(resolveLocalBookPath).not.toHaveBeenCalled();
+    expect(head).not.toHaveBeenCalledWith(expect.stringContaining('/books/'));
+  });
+});
+
+// The plugin:fs|exists storm (Tauri): every sync run re-walked all books
+// whose file is recorded nowhere, paying two local fs probes per book per
+// run just to relearn "no local source". The verdict is now memoised per
+// provider session, keyed to the book's updatedAt — an unchanged library
+// costs zero local and zero remote probes on repeat runs; only a locally
+// updated book, Full Sync, or a fresh session re-qualifies a probe.
+describe('FileSyncEngine.syncLibrary — no-source probe memo', () => {
+  const opts = { strategy: 'silent', syncBooks: true, deviceId: 'd' } as const;
+
+  const makeProbeHarness = () => {
+    const head = vi.fn(async (p: string) => (p.endsWith('library.json') ? { etag: 'E1' } : null));
+    const readText = vi.fn(async (p: string) =>
+      p.endsWith('library.json')
+        ? JSON.stringify(makeIndex([makeBook('h1', { updatedAt: 100 })]))
+        : null,
+    );
+    const provider = fakeProvider({ head, readText, captured: { writes: [] } });
+    // Drifted row: downloadedAt claims a local file, the filesystem disagrees.
+    const loadBookFile = vi.fn(async () => null);
+    const resolveLocalBookPath = vi.fn(async () => null);
+    const store = fakeStore({
+      loadConfig: async () => ({ updatedAt: 1, booknotes: [] }),
+      loadBookFile,
+      resolveLocalBookPath,
+    });
+    return { provider, store, head, loadBookFile };
+  };
+
+  test('an unchanged no-source book is probed once per provider session', async () => {
+    const h = makeProbeHarness();
+    await new FileSyncEngine(h.provider, h.store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100, downloadedAt: 1 })],
+      opts,
+    );
+    expect(h.loadBookFile).toHaveBeenCalledTimes(1); // first run learns the verdict
+
+    // Fresh engine, same (memoised) provider — one engine build per sync run.
+    await new FileSyncEngine(h.provider, h.store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100, downloadedAt: 1 })],
+      opts,
+    );
+    expect(h.loadBookFile).toHaveBeenCalledTimes(1); // no local re-probe
+    expect(h.head).not.toHaveBeenCalledWith(expect.stringContaining('/books/')); // no remote probe
+  });
+
+  test('a locally updated book is probed again', async () => {
+    const h = makeProbeHarness();
+    await new FileSyncEngine(h.provider, h.store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100, downloadedAt: 1 })],
+      opts,
+    );
+    await new FileSyncEngine(h.provider, h.store).syncLibrary(
+      [makeBook('h1', { updatedAt: 200, downloadedAt: 1 })],
+      opts,
+    );
+    expect(h.loadBookFile).toHaveBeenCalledTimes(2);
+  });
+
+  test('fullSync bypasses the memo', async () => {
+    const h = makeProbeHarness();
+    await new FileSyncEngine(h.provider, h.store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100, downloadedAt: 1 })],
+      opts,
+    );
+    await new FileSyncEngine(h.provider, h.store).syncLibrary(
+      [makeBook('h1', { updatedAt: 100, downloadedAt: 1 })],
+      { ...opts, fullSync: true },
+    );
+    expect(h.loadBookFile).toHaveBeenCalledTimes(2);
   });
 });
