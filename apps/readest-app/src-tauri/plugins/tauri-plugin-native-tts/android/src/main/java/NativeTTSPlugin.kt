@@ -95,7 +95,6 @@ class UpdateMediaSessionStateArgs {
 @InvokeArg
 class SetMediaSessionActiveArgs {
   var active: Boolean? = null
-  var keepAppInForeground: Boolean? = null
   var notificationTitle: String? = null
   var notificationText: String? = null
   var foregroundServiceTitle: String? = null
