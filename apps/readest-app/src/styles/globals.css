@@ -1002,3 +1002,11 @@ textarea:focus-within,
 .tts-scrubber:disabled {
   opacity: 0.5;
 }
+
+/* E-ink: the gradient's grey stops wash out, so a crisp 1px border marks the
+   track's extent while the solid currentColor fill and thumb carry the
+   position. Slightly taller so the fill stays visible inside the border. */
+[data-eink='true'] .tts-scrubber {
+  height: 6px;
+  border: 1px solid currentColor;
+}

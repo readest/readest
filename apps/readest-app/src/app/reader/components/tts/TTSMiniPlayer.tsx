@@ -101,16 +101,21 @@ const TTSMiniPlayer = ({
     >
       <div className='not-eink:bg-base-300 eink-bordered relative overflow-hidden rounded-2xl shadow-lg'>
         {hasTimeline && (
+          // E-ink has no legible grey tints: delineate the track with a crisp
+          // 1px hairline, drop the buffer fill, and paint progress solid.
           <div
             aria-hidden='true'
-            className='bg-base-content/15 absolute inset-x-0 bottom-0 h-[3px]'
+            className={clsx(
+              'bg-base-content/15 absolute inset-x-0 bottom-0 h-[3px]',
+              'eink:bg-base-100 eink:border-base-content eink:border-t eink:h-[5px]',
+            )}
           >
             <div
-              className='bg-base-content/35 absolute inset-y-0 left-0'
+              className='bg-base-content/35 eink:hidden absolute inset-y-0 left-0'
               style={{ width: `${bufferedPct}%` }}
             />
             <div
-              className='bg-primary absolute inset-y-0 left-0'
+              className='bg-primary eink:bg-base-content absolute inset-y-0 left-0'
               style={{ width: `${playedPct}%` }}
             />
           </div>
