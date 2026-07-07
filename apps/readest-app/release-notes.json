@@ -1,5 +1,19 @@
 {
   "releases": {
+    "0.11.18": {
+      "date": "2026-07-08",
+      "notes": [
+        "Reading: Added Auto Scroll, a hands-free mode that scrolls the page for you at an adjustable pace, plus middle-click autoscroll on the desktop",
+        "Reading: Added slide and page-curl animations when turning pages for a more natural feel",
+        "Reading: Fixed page turning and the reading ruler for vertical right-to-left books, PDF text selection when system font scaling is on, and header/footer readability over light PDFs in dark mode",
+        "Text-to-Speech: Redesigned read-aloud as a mini player with an expandable full player, and playback now keeps going even after you close the book",
+        "Text-to-Speech: Online voices now play gap-free with chapter seeking and lock-screen controls, plus Android Auto support so you can listen in the car",
+        "Sync: Added S3-compatible cloud storage and a new Cloud Sync screen to choose and switch between your sync providers",
+        "Integrations: Added a Calibre plugin to push books and custom columns into Readest, and improved OPDS sign-in and auto-download for self-hosted catalogs",
+        "Library: New books dropped into watched folders now import automatically, and you can sort your shelf by reading progress",
+        "More: Added a speak button in the dictionary popup, a cleaner theme switcher, and per-rule toggles for proofreading"
+      ]
+    },
     "0.11.17": {
       "date": "2026-06-29",
       "notes": [

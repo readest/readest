@@ -70,6 +70,21 @@
   </supports>
 
   <releases>
+    <release version="0.11.18" date="2026-07-08">
+      <description>
+        <ul>
+          <li>Reading: Added Auto Scroll, a hands-free mode that scrolls the page for you at an adjustable pace, plus middle-click autoscroll on the desktop</li>
+          <li>Reading: Added slide and page-curl animations when turning pages for a more natural feel</li>
+          <li>Reading: Fixed page turning and the reading ruler for vertical right-to-left books, PDF text selection when system font scaling is on, and header/footer readability over light PDFs in dark mode</li>
+          <li>Text-to-Speech: Redesigned read-aloud as a mini player with an expandable full player, and playback now keeps going even after you close the book</li>
+          <li>Text-to-Speech: Online voices now play gap-free with chapter seeking and lock-screen controls, plus Android Auto support so you can listen in the car</li>
+          <li>Sync: Added S3-compatible cloud storage and a new Cloud Sync screen to choose and switch between your sync providers</li>
+          <li>Integrations: Added a Calibre plugin to push books and custom columns into Readest, and improved OPDS sign-in and auto-download for self-hosted catalogs</li>
+          <li>Library: New books dropped into watched folders now import automatically, and you can sort your shelf by reading progress</li>
+          <li>More: Added a speak button in the dictionary popup, a cleaner theme switcher, and per-rule toggles for proofreading</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.11.17" date="2026-06-29">
       <description>
         <ul>
@@ -206,20 +221,6 @@
           <li>Speed Reading: Added per-chapter progress bar and speed selector dropdown</li>
           <li>Android: Added D-pad navigation for Android TV remote controller</li>
           <li>Theme: Added atmosphere Easter egg with video overlay and ambient audio</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.10.1" date="2026-03-22">
-      <description>
-        <ul>
-          <li>Reading: Added continuous scroll and spread layout support for EPUBs</li>
-          <li>Reading: Added current time and battery display in footer</li>
-          <li>Reading: Added TTS, annotation support, pinch-to-zoom, and scroll mode for PDFs</li>
-          <li>Library: Added backup/restore to a zip file and batch metadata refresh</li>
-          <li>KOReader: Added bookmark and annotation sync between KOReader and Readest devices</li>
-          <li>Footnotes: Added back navigation with link history and more responsive popup sizing</li>
-          <li>Annotations: Added loupe display when selecting text in instant annotation mode</li>
-          <li>Text-to-Speech: Fixed TTS reading position tracking in scrolled mode</li>
         </ul>
       </description>
     </release>
