@@ -30,7 +30,6 @@
   "Edit": "편집",
   "Excerpts": "발췌",
   "Failed to import book(s): {{filenames}}": "책 가져오기 실패: {{filenames}}",
-  "Fast": "빠름",
   "Font": "글꼴",
   "Font & Layout": "글꼴 및 레이아웃",
   "Font Face": "글꼴 스타일",
@@ -89,7 +88,6 @@
   "Sign In": "로그인",
   "Sign Out": "로그아웃",
   "Sky": "하늘색",
-  "Slow": "느림",
   "Solarized": "솔라라이즈드",
   "Speak": "말하기",
   "Subjects": "주제",
@@ -865,7 +863,6 @@
   "Export": "내보내기",
   "Set Timeout": "시간 제한 설정",
   "Select Voice": "음성 선택",
-  "Toggle Sticky Bottom TTS Bar": "고정 TTS 바 전환",
   "Display what I'm reading on Discord": "Discord에 읽는 책 표시",
   "Show on Discord": "Discord에 표시",
   "Instant {{action}}": "즉시 {{action}}",
@@ -1831,5 +1828,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "{{provider}}를 선택하면 책, 진행률, 주석이 Drive에만 동기화됩니다.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "{{provider}}를 선택하면 책, 진행률, 주석이 버킷에만 동기화됩니다.",
   "Premium": "프리미엄",
-  "S3 Storage": "S3 스토리지"
+  "S3 Storage": "S3 스토리지",
+  "Speed": "속도",
+  "{{time}} left in chapter": "이 장의 남은 시간 {{time}}",
+  "Open Read Aloud player": "소리 내어 읽기 플레이어 열기",
+  "Read Aloud": "소리 내어 읽기",
+  "Voice": "음성",
+  "Sleep Timer": "수면 타이머"
 }

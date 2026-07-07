@@ -30,7 +30,6 @@
   "Edit": "ویرایش",
   "Excerpts": "گزیده‌ها",
   "Failed to import book(s): {{filenames}}": "وارد کردن کتاب(ها) «{{filenames}}» ناموفق بود.",
-  "Fast": "سریع",
   "Font": "فونت",
   "Font & Layout": "فونت و چیدمان",
   "Font Face": "نمای فونت",
@@ -88,7 +87,6 @@
   "Sign In": "ورود",
   "Sign Out": "خروج",
   "Sky": "آسمانی",
-  "Slow": "آهسته",
   "Solarized": "آفتابی",
   "Speak": "خواندن",
   "Subjects": "موضوعات",
@@ -876,7 +874,6 @@
   "Export": "خروجی",
   "Set Timeout": "تنظیم مهلت زمانی",
   "Select Voice": "انتخاب صدا",
-  "Toggle Sticky Bottom TTS Bar": "تغییر نوار TTS ثابت",
   "Display what I'm reading on Discord": "نمایش کتاب در حال خواندن در Discord",
   "Show on Discord": "نمایش در Discord",
   "Instant {{action}}": "{{action}} فوری",
@@ -1866,5 +1863,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "تا زمانی که {{provider}} انتخاب شده باشد، کتاب‌ها، پیشرفت و یادداشت‌ها فقط با Drive شما همگام‌سازی می‌شوند.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "تا زمانی که {{provider}} انتخاب شده باشد، کتاب‌ها، پیشرفت و یادداشت‌ها فقط با باکت شما همگام‌سازی می‌شوند.",
   "Premium": "پریمیوم",
-  "S3 Storage": "فضای ذخیره‌سازی S3"
+  "S3 Storage": "فضای ذخیره‌سازی S3",
+  "Speed": "سرعت",
+  "{{time}} left in chapter": "{{time}} از فصل باقی مانده",
+  "Open Read Aloud player": "باز کردن پخش‌کننده خواندن با صدای بلند",
+  "Read Aloud": "خواندن با صدای بلند",
+  "Voice": "صدا",
+  "Sleep Timer": "تایمر خواب"
 }

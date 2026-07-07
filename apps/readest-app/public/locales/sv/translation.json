@@ -278,8 +278,6 @@
   "{{value}} hour": "{{value}} timme",
   "{{value}} hours": "{{value}} timmar",
   "Voices for {{lang}}": "Röster för {{lang}}",
-  "Slow": "Långsam",
-  "Fast": "Snabb",
   "{{engine}}: {{count}} voices_one": "{{engine}}: {{count}} röst",
   "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} röster",
   "Zoom Level": "Zoomnivå",
@@ -876,7 +874,6 @@
   "Export": "Exportera",
   "Set Timeout": "Ställ in timeout",
   "Select Voice": "Välj röst",
-  "Toggle Sticky Bottom TTS Bar": "Växla fast TTS-fält",
   "Display what I'm reading on Discord": "Visa vad jag läser på Discord",
   "Show on Discord": "Visa på Discord",
   "Instant {{action}}": "Omedelbar {{action}}",
@@ -1866,5 +1863,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "När {{provider}} är valt synkroniseras böcker, framsteg och anteckningar endast med din Drive.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "När {{provider}} är valt synkroniseras böcker, framsteg och anteckningar endast med din bucket.",
   "Premium": "Premium",
-  "S3 Storage": "S3-lagring"
+  "S3 Storage": "S3-lagring",
+  "Speed": "Hastighet",
+  "{{time}} left in chapter": "{{time}} kvar i kapitlet",
+  "Open Read Aloud player": "Öppna uppläsningsspelaren",
+  "Read Aloud": "Uppläsning",
+  "Voice": "Röst",
+  "Sleep Timer": "Sovtimer"
 }

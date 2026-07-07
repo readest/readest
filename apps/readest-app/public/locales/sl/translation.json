@@ -596,15 +596,12 @@
   "{{value}} hour": "{{value}} ura",
   "{{value}} hours": "{{value}} ur",
   "Voices for {{lang}}": "Glasovi za {{lang}}",
-  "Slow": "Počasi",
-  "Fast": "Hitro",
   "Set Timeout": "Nastavi časovno omejitev",
   "Select Voice": "Izberi glas",
   "{{engine}}: {{count}} voices_one": "{{engine}}: {{count}} glas",
   "{{engine}}: {{count}} voices_two": "{{engine}}: {{count}} glasova",
   "{{engine}}: {{count}} voices_few": "{{engine}}: {{count}} glasovi",
   "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} glasov",
-  "Toggle Sticky Bottom TTS Bar": "Preklopi fiksno spodnjo TTS vrstico",
   "Zoom Level": "Raven povečave",
   "Zoom Out": "Pomanjšaj",
   "Reset Zoom": "Ponastavi povečavo",
@@ -1936,5 +1933,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "Dokler je izbran {{provider}}, se knjige, napredek in opombe sinhronizirajo samo z vašim Drive.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "Dokler je izbran {{provider}}, se knjige, napredek in opombe sinhronizirajo samo z vašim vedrom.",
   "Premium": "Premium",
-  "S3 Storage": "Shramba S3"
+  "S3 Storage": "Shramba S3",
+  "Speed": "Hitrost",
+  "{{time}} left in chapter": "{{time}} preostalo v poglavju",
+  "Open Read Aloud player": "Odpri predvajalnik glasnega branja",
+  "Read Aloud": "Glasno branje",
+  "Voice": "Glas",
+  "Sleep Timer": "Časovnik spanja"
 }

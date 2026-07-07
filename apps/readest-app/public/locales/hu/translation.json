@@ -630,13 +630,10 @@
   "{{value}} hour": "{{value}} óra",
   "{{value}} hours": "{{value}} óra",
   "Voices for {{lang}}": "Hangok ehhez: {{lang}}",
-  "Slow": "Lassú",
-  "Fast": "Gyors",
   "Set Timeout": "Időkorlát beállítása",
   "Select Voice": "Hang kiválasztása",
   "{{engine}}: {{count}} voices_one": "{{engine}}: {{count}} hang",
   "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} hang",
-  "Toggle Sticky Bottom TTS Bar": "Rögzített alsó TTS-sáv be/ki",
   "Zoom Level": "Nagyítási szint",
   "Zoom Out": "Kicsinyítés",
   "Reset Zoom": "Nagyítás visszaállítása",
@@ -1866,5 +1863,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "Amíg a(z) {{provider}} van kiválasztva, a könyvek, az előrehaladás és a jegyzetek csak a Drive-odba szinkronizálódnak.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "Amíg a(z) {{provider}} van kiválasztva, a könyvek, az előrehaladás és a jegyzetek csak a bucketedbe szinkronizálódnak.",
   "Premium": "Prémium",
-  "S3 Storage": "S3-tárhely"
+  "S3 Storage": "S3-tárhely",
+  "Speed": "Sebesség",
+  "{{time}} left in chapter": "{{time}} van hátra a fejezetből",
+  "Open Read Aloud player": "Felolvasó lejátszó megnyitása",
+  "Read Aloud": "Felolvasás",
+  "Voice": "Hang",
+  "Sleep Timer": "Elalvási időzítő"
 }

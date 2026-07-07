@@ -30,7 +30,6 @@
   "Edit": "编辑",
   "Excerpts": "摘录",
   "Failed to import book(s): {{filenames}}": "导入书籍失败：{{filenames}}",
-  "Fast": "快",
   "Font": "字体",
   "Font & Layout": "字体和布局",
   "Font Face": "字型",
@@ -90,7 +89,6 @@
   "Sign In": "登录",
   "Sign Out": "登出账户",
   "Sky": "天青",
-  "Slow": "慢",
   "Solarized": "日晖",
   "Speak": "朗读",
   "Subjects": "主题",
@@ -866,7 +864,6 @@
   "Export": "导出",
   "Set Timeout": "设置超时",
   "Select Voice": "选择语音",
-  "Toggle Sticky Bottom TTS Bar": "切换固定TTS栏",
   "Display what I'm reading on Discord": "在Discord显示阅读状态",
   "Show on Discord": "在Discord显示",
   "Instant {{action}}": "即时{{action}}",
@@ -1831,5 +1828,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "选择 {{provider}} 后，书籍、进度和标注仅同步到您的 Drive。",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "选择 {{provider}} 后，书籍、进度和标注仅同步到您的存储桶。",
   "Premium": "高级版",
-  "S3 Storage": "S3 存储"
+  "S3 Storage": "S3 存储",
+  "Speed": "语速",
+  "{{time}} left in chapter": "本章剩余 {{time}}",
+  "Open Read Aloud player": "打开朗读播放器",
+  "Read Aloud": "朗读",
+  "Voice": "语音",
+  "Sleep Timer": "定时关闭"
 }

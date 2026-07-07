@@ -30,7 +30,6 @@
   "Edit": "Редагувати",
   "Excerpts": "Уривки",
   "Failed to import book(s): {{filenames}}": "Не вдалося імпортувати книгу(и): {{filenames}}",
-  "Fast": "Швидко",
   "Font": "Шрифт",
   "Font & Layout": "Шрифт та макет",
   "Font Face": "Налаштування шрифту",
@@ -89,7 +88,6 @@
   "Sign In": "Увійти",
   "Sign Out": "Вийти",
   "Sky": "Небесний",
-  "Slow": "Повільно",
   "Solarized": "Сонячний",
   "Speak": "Озвучити",
   "Subjects": "Жанри",
@@ -898,7 +896,6 @@
   "Export": "Експортувати",
   "Set Timeout": "Встановити тайм-аут",
   "Select Voice": "Вибрати голос",
-  "Toggle Sticky Bottom TTS Bar": "Перемкнути закріплену панель TTS",
   "Display what I'm reading on Discord": "Показувати книгу в Discord",
   "Show on Discord": "Показати в Discord",
   "Instant {{action}}": "Швидка дія: {{action}}",
@@ -1936,5 +1933,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "Поки вибрано {{provider}}, книги, прогрес і анотації синхронізуються лише з вашим Drive.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "Поки вибрано {{provider}}, книги, прогрес і анотації синхронізуються лише з вашим бакетом.",
   "Premium": "Преміум",
-  "S3 Storage": "Сховище S3"
+  "S3 Storage": "Сховище S3",
+  "Speed": "Швидкість",
+  "{{time}} left in chapter": "Залишилося {{time}} у розділі",
+  "Open Read Aloud player": "Відкрити програвач читання вголос",
+  "Read Aloud": "Читання вголос",
+  "Voice": "Голос",
+  "Sleep Timer": "Таймер сну"
 }

@@ -320,8 +320,6 @@
   "{{value}} hour": "{{value}} ঘন্টা",
   "{{value}} hours": "{{value}} ঘন্টা",
   "Voices for {{lang}}": "{{lang}} এর জন্য কণ্ঠস্বর",
-  "Slow": "ধীর",
-  "Fast": "দ্রুত",
   "{{engine}}: {{count}} voices_one": "{{engine}}: ১টি কণ্ঠস্বর",
   "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}}টি কণ্ঠস্বর",
   "Sign in to Sync": "সিঙ্কের জন্য সাইন ইন",
@@ -876,7 +874,6 @@
   "Export": "রপ্তানি",
   "Set Timeout": "টাইমআউট সেট করুন",
   "Select Voice": "ভয়েস নির্বাচন করুন",
-  "Toggle Sticky Bottom TTS Bar": "স্থির TTS বার টগল করুন",
   "Display what I'm reading on Discord": "Discord-এ পড়ছি যা দেখান",
   "Show on Discord": "Discord-এ দেখান",
   "Instant {{action}}": "তাৎক্ষণিক {{action}}",
@@ -1866,5 +1863,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "{{provider}} নির্বাচিত থাকাকালীন বই, অগ্রগতি ও টীকা শুধুমাত্র আপনার Drive-এ সিঙ্ক হয়।",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "{{provider}} নির্বাচিত থাকাকালীন বই, অগ্রগতি ও টীকা শুধুমাত্র আপনার বাকেটে সিঙ্ক হয়।",
   "Premium": "প্রিমিয়াম",
-  "S3 Storage": "S3 স্টোরেজ"
+  "S3 Storage": "S3 স্টোরেজ",
+  "Speed": "গতি",
+  "{{time}} left in chapter": "অধ্যায়ে {{time}} বাকি",
+  "Open Read Aloud player": "জোরে পড়ার প্লেয়ার খুলুন",
+  "Read Aloud": "জোরে পড়ুন",
+  "Voice": "কণ্ঠস্বর",
+  "Sleep Timer": "স্লিপ টাইমার"
 }

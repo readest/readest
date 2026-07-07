@@ -320,8 +320,6 @@
   "{{value}} hour": "{{value}} மணிநேரம்",
   "{{value}} hours": "{{value}} மணிநேரங்கள்",
   "Voices for {{lang}}": "{{lang}} க்கான குரல்கள்",
-  "Slow": "மெதுவாக",
-  "Fast": "வேகமாக",
   "{{engine}}: {{count}} voices_one": "{{engine}}: 1 குரல்",
   "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} குரல்கள்",
   "Sign in to Sync": "ஒத்திசைக்க உள்நுழையவும்",
@@ -876,7 +874,6 @@
   "Export": "ஏற்றுமதி",
   "Set Timeout": "நேர வரம்பை அமைக்கவும்",
   "Select Voice": "குரலைத் தேர்ந்தெடுக்கவும்",
-  "Toggle Sticky Bottom TTS Bar": "நிலையான TTS பட்டியை மாற்றவும்",
   "Display what I'm reading on Discord": "Discord இல் படிக்கும் புத்தகத்தை காட்டு",
   "Show on Discord": "Discord இல் காட்டு",
   "Instant {{action}}": "உடனடி {{action}}",
@@ -1866,5 +1863,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "{{provider}} தேர்ந்தெடுக்கப்பட்டிருக்கும் போது, புத்தகங்கள், முன்னேற்றம் மற்றும் குறிப்புகள் உங்கள் Drive உடன் மட்டுமே ஒத்திசைக்கப்படும்.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "{{provider}} தேர்ந்தெடுக்கப்பட்டிருக்கும் போது, புத்தகங்கள், முன்னேற்றம் மற்றும் குறிப்புகள் உங்கள் பக்கெட்டுடன் மட்டுமே ஒத்திசைக்கப்படும்.",
   "Premium": "பிரீமியம்",
-  "S3 Storage": "S3 சேமிப்பகம்"
+  "S3 Storage": "S3 சேமிப்பகம்",
+  "Speed": "வேகம்",
+  "{{time}} left in chapter": "அத்தியாயத்தில் {{time}} மீதம்",
+  "Open Read Aloud player": "உரக்க வாசித்தல் பிளேயரைத் திற",
+  "Read Aloud": "உரக்க வாசித்தல்",
+  "Voice": "குரல்",
+  "Sleep Timer": "ஸ்லீப் டைமர்"
 }

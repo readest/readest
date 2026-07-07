@@ -568,14 +568,11 @@
   "{{value}} hour": "שעה {{value}}",
   "{{value}} hours": "{{value}} שעות",
   "Voices for {{lang}}": "קולות עבור {{lang}}",
-  "Slow": "איטי",
-  "Fast": "מהיר",
   "Set Timeout": "הגדר הגבלת זמן",
   "Select Voice": "בחר קול",
   "{{engine}}: {{count}} voices_one": "{{engine}}: קול אחד",
   "{{engine}}: {{count}} voices_two": "{{engine}}: {{count}} קולות",
   "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} קולות",
-  "Toggle Sticky Bottom TTS Bar": "הצג/הסתר שורת TTS תחתונה קבועה",
   "Zoom Level": "רמת זום",
   "Zoom Out": "הקטן",
   "Reset Zoom": "אפס זום",
@@ -1901,5 +1898,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "כאשר {{provider}} נבחר, ספרים, התקדמות והערות מסתנכרנים רק עם ה-Drive שלך.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "כאשר {{provider}} נבחר, ספרים, התקדמות והערות מסתנכרנים רק עם הדלי שלך.",
   "Premium": "פרימיום",
-  "S3 Storage": "אחסון S3"
+  "S3 Storage": "אחסון S3",
+  "Speed": "מהירות",
+  "{{time}} left in chapter": "נותרו {{time}} בפרק",
+  "Open Read Aloud player": "פתיחת נגן ההקראה",
+  "Read Aloud": "הקראה",
+  "Voice": "קול",
+  "Sleep Timer": "טיימר שינה"
 }

@@ -623,14 +623,11 @@
   "{{value}} hour": "{{value}} oră",
   "{{value}} hours": "{{value}} ore",
   "Voices for {{lang}}": "Voci pentru {{lang}}",
-  "Slow": "Încet",
-  "Fast": "Rapid",
   "Set Timeout": "Setează limita de timp",
   "Select Voice": "Selectează vocea",
   "{{engine}}: {{count}} voices_one": "{{engine}}: {{count}} voce",
   "{{engine}}: {{count}} voices_few": "{{engine}}: {{count}} voci",
   "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} de voci",
-  "Toggle Sticky Bottom TTS Bar": "Comută bara TTS fixată jos",
   "Zoom Level": "Nivel de zoom",
   "Zoom Out": "Micșorare",
   "Reset Zoom": "Resetează zoomul",
@@ -1901,5 +1898,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "Cât timp {{provider}} este selectat, cărțile, progresul și adnotările se sincronizează doar cu Drive-ul tău.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "Cât timp {{provider}} este selectat, cărțile, progresul și adnotările se sincronizează doar cu bucketul tău.",
   "Premium": "Premium",
-  "S3 Storage": "Stocare S3"
+  "S3 Storage": "Stocare S3",
+  "Speed": "Viteză",
+  "{{time}} left in chapter": "{{time}} rămas în capitol",
+  "Open Read Aloud player": "Deschide playerul de citire cu voce tare",
+  "Read Aloud": "Citire cu voce tare",
+  "Voice": "Voce",
+  "Sleep Timer": "Temporizator de somn"
 }

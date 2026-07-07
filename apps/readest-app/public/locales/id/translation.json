@@ -30,7 +30,6 @@
   "Edit": "Edit",
   "Excerpts": "Kutipan",
   "Failed to import book(s): {{filenames}}": "Gagal mengimpor buku: {{filenames}}",
-  "Fast": "Cepat",
   "Font": "Font",
   "Font & Layout": "Font & Tata Letak",
   "Font Face": "Jenis Font",
@@ -89,7 +88,6 @@
   "Sign In": "Masuk",
   "Sign Out": "Keluar",
   "Sky": "Langit",
-  "Slow": "Lambat",
   "Solarized": "Solarized",
   "Speak": "Bicara",
   "Subjects": "Subjek",
@@ -865,7 +863,6 @@
   "Export": "Ekspor",
   "Set Timeout": "Atur batas waktu",
   "Select Voice": "Pilih suara",
-  "Toggle Sticky Bottom TTS Bar": "Alihkan bilah TTS tetap",
   "Display what I'm reading on Discord": "Tampilkan buku yang sedang dibaca di Discord",
   "Show on Discord": "Tampilkan di Discord",
   "Instant {{action}}": "{{action}} Instan",
@@ -1831,5 +1828,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "Saat {{provider}} dipilih, buku, progres, dan anotasi hanya disinkronkan ke Drive Anda.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "Saat {{provider}} dipilih, buku, progres, dan anotasi hanya disinkronkan ke bucket Anda.",
   "Premium": "Premium",
-  "S3 Storage": "Penyimpanan S3"
+  "S3 Storage": "Penyimpanan S3",
+  "Speed": "Kecepatan",
+  "{{time}} left in chapter": "{{time}} tersisa di bab ini",
+  "Open Read Aloud player": "Buka pemutar baca nyaring",
+  "Read Aloud": "Baca Nyaring",
+  "Voice": "Suara",
+  "Sleep Timer": "Timer Tidur"
 }

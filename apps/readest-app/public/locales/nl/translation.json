@@ -208,8 +208,6 @@
   "{{value}} minutes": "{{value}} minuten",
   "{{value}} hour": "{{value}} uur",
   "{{value}} hours": "{{value}} uren",
-  "Slow": "Langzaam",
-  "Fast": "Snel",
   "Reading Progress Synced": "Leesvoortgang gesynchroniseerd",
   "Failed to delete user. Please try again later.": "Gebruiker verwijderen mislukt. Probeer het later opnieuw.",
   "Community Support": "Community-ondersteuning",
@@ -876,7 +874,6 @@
   "Export": "Exporteren",
   "Set Timeout": "Time-out instellen",
   "Select Voice": "Stem selecteren",
-  "Toggle Sticky Bottom TTS Bar": "Vaste TTS-balk schakelen",
   "Display what I'm reading on Discord": "Toon wat ik lees op Discord",
   "Show on Discord": "Toon op Discord",
   "Instant {{action}}": "Directe {{action}}",
@@ -1866,5 +1863,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "Zolang {{provider}} is geselecteerd, worden boeken, voortgang en annotaties alleen met uw Drive gesynchroniseerd.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "Zolang {{provider}} is geselecteerd, worden boeken, voortgang en annotaties alleen met uw bucket gesynchroniseerd.",
   "Premium": "Premium",
-  "S3 Storage": "S3-opslag"
+  "S3 Storage": "S3-opslag",
+  "Speed": "Snelheid",
+  "{{time}} left in chapter": "{{time}} resterend in hoofdstuk",
+  "Open Read Aloud player": "Voorleesspeler openen",
+  "Read Aloud": "Voorlezen",
+  "Voice": "Stem",
+  "Sleep Timer": "Slaaptimer"
 }

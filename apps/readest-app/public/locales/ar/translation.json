@@ -30,7 +30,6 @@
   "Edit": "تحرير",
   "Excerpts": "مقتطفات",
   "Failed to import book(s): {{filenames}}": "فشل استيراد الكتاب/الكتب: {{filenames}}",
-  "Fast": "سريع",
   "Font": "الخط",
   "Font & Layout": "الخط والتخطيط",
   "Font Face": "نوع الخط",
@@ -88,7 +87,6 @@
   "Sign In": "تسجيل الدخول",
   "Sign Out": "تسجيل الخروج",
   "Sky": "سماوي",
-  "Slow": "بطيء",
   "Solarized": "سولاريزد",
   "Speak": "تحدث",
   "Subjects": "المواضيع",
@@ -920,7 +918,6 @@
   "Export": "تصدير",
   "Set Timeout": "تعيين المهلة",
   "Select Voice": "اختر الصوت",
-  "Toggle Sticky Bottom TTS Bar": "تبديل شريط TTS الثابت",
   "Display what I'm reading on Discord": "عرض ما أقرأه على Discord",
   "Show on Discord": "عرض على Discord",
   "Instant {{action}}": "{{action}} فوري",
@@ -2006,5 +2003,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "عند اختيار {{provider}}، تتم مزامنة الكتب والتقدم والتعليقات التوضيحية إلى Drive الخاص بك فقط.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "عند اختيار {{provider}}، تتم مزامنة الكتب والتقدم والتعليقات التوضيحية إلى حاويتك فقط.",
   "Premium": "بريميوم",
-  "S3 Storage": "تخزين S3"
+  "S3 Storage": "تخزين S3",
+  "Speed": "السرعة",
+  "{{time}} left in chapter": "متبقي {{time}} في الفصل",
+  "Open Read Aloud player": "فتح مشغل القراءة بصوت عالٍ",
+  "Read Aloud": "القراءة بصوت عالٍ",
+  "Voice": "الصوت",
+  "Sleep Timer": "مؤقت النوم"
 }

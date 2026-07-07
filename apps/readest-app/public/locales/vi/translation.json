@@ -30,7 +30,6 @@
   "Edit": "Chỉnh sửa",
   "Excerpts": "Trích dẫn",
   "Failed to import book(s): {{filenames}}": "Không thể nhập sách: {{filenames}}",
-  "Fast": "Nhanh",
   "Font": "Phông chữ",
   "Font & Layout": "Phông chữ & Bố cục",
   "Font Face": "Kiểu chữ",
@@ -89,7 +88,6 @@
   "Sign In": "Đăng nhập",
   "Sign Out": "Đăng xuất",
   "Sky": "Xanh trời",
-  "Slow": "Chậm",
   "Solarized": "Solarized",
   "Speak": "Đọc",
   "Subjects": "Chủ đề",
@@ -865,7 +863,6 @@
   "Export": "Xuất",
   "Set Timeout": "Đặt thời gian chờ",
   "Select Voice": "Chọn giọng nói",
-  "Toggle Sticky Bottom TTS Bar": "Bật/tắt thanh TTS cố định",
   "Display what I'm reading on Discord": "Hiển thị sách đang đọc trên Discord",
   "Show on Discord": "Hiện trên Discord",
   "Instant {{action}}": "{{action}} tức thì",
@@ -1831,5 +1828,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "Khi {{provider}} được chọn, sách, tiến độ và chú thích chỉ đồng bộ với Drive của bạn.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "Khi {{provider}} được chọn, sách, tiến độ và chú thích chỉ đồng bộ với bucket của bạn.",
   "Premium": "Premium",
-  "S3 Storage": "Lưu trữ S3"
+  "S3 Storage": "Lưu trữ S3",
+  "Speed": "Tốc độ",
+  "{{time}} left in chapter": "Còn {{time}} trong chương",
+  "Open Read Aloud player": "Mở trình phát đọc to",
+  "Read Aloud": "Đọc to",
+  "Voice": "Giọng đọc",
+  "Sleep Timer": "Hẹn giờ ngủ"
 }

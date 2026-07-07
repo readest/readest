@@ -30,7 +30,6 @@
   "Edit": "Editar",
   "Excerpts": "Extractos",
   "Failed to import book(s): {{filenames}}": "Error al importar libro(s): {{filenames}}",
-  "Fast": "Rápido",
   "Font": "Fuente",
   "Font & Layout": "Fuente y diseño",
   "Font Face": "Tipo de fuente",
@@ -112,7 +111,6 @@
   "Sign In": "Iniciar sesión",
   "Sign Out": "Cerrar sesión",
   "Sky": "Cielo",
-  "Slow": "Lento",
   "Solarized": "Solarizado",
   "Speak": "Leer",
   "Subjects": "Temas",
@@ -887,7 +885,6 @@
   "Export": "Exportar",
   "Set Timeout": "Establecer tiempo límite",
   "Select Voice": "Seleccionar voz",
-  "Toggle Sticky Bottom TTS Bar": "Alternar barra TTS fija",
   "Display what I'm reading on Discord": "Mostrar lo que estoy leyendo en Discord",
   "Show on Discord": "Mostrar en Discord",
   "Instant {{action}}": "{{action}} instantáneo",
@@ -1901,5 +1898,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "Mientras {{provider}} esté seleccionado, los libros, el progreso y las anotaciones se sincronizan solo con tu Drive.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "Mientras {{provider}} esté seleccionado, los libros, el progreso y las anotaciones se sincronizan solo con tu bucket.",
   "Premium": "Premium",
-  "S3 Storage": "Almacenamiento S3"
+  "S3 Storage": "Almacenamiento S3",
+  "Speed": "Velocidad",
+  "{{time}} left in chapter": "{{time}} restante en el capítulo",
+  "Open Read Aloud player": "Abrir el reproductor de lectura en voz alta",
+  "Read Aloud": "Lectura en voz alta",
+  "Voice": "Voz",
+  "Sleep Timer": "Temporizador de apagado"
 }

@@ -30,7 +30,6 @@
   "Edit": "Επεξεργασία",
   "Excerpts": "Αποσπάσματα",
   "Failed to import book(s): {{filenames}}": "Αποτυχία εισαγωγής βιβλίου(ων): {{filenames}}",
-  "Fast": "Γρήγορα",
   "Font": "Γραμματοσειρά",
   "Font & Layout": "Γραμματοσειρά & Διάταξη",
   "Font Face": "Τύπος γραμματοσειράς",
@@ -89,7 +88,6 @@
   "Sign In": "Σύνδεση",
   "Sign Out": "Αποσύνδεση",
   "Sky": "Ουρανός",
-  "Slow": "Αργά",
   "Solarized": "Solarized",
   "Speak": "Ομιλία",
   "Subjects": "Θέματα",
@@ -876,7 +874,6 @@
   "Export": "Εξαγωγή",
   "Set Timeout": "Ορισμός χρονικού ορίου",
   "Select Voice": "Επιλογή φωνής",
-  "Toggle Sticky Bottom TTS Bar": "Εναλλαγή καρφιτσωμένης μπάρας TTS",
   "Display what I'm reading on Discord": "Εμφάνιση του βιβλίου που διαβάζω στο Discord",
   "Show on Discord": "Εμφάνιση στο Discord",
   "Instant {{action}}": "Άμεση {{action}}",
@@ -1866,5 +1863,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "Όσο είναι επιλεγμένο το {{provider}}, τα βιβλία, η πρόοδος και οι σημειώσεις συγχρονίζονται μόνο με το Drive σας.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "Όσο είναι επιλεγμένο το {{provider}}, τα βιβλία, η πρόοδος και οι σημειώσεις συγχρονίζονται μόνο με τον κάδο σας.",
   "Premium": "Premium",
-  "S3 Storage": "Αποθήκευση S3"
+  "S3 Storage": "Αποθήκευση S3",
+  "Speed": "Ταχύτητα",
+  "{{time}} left in chapter": "{{time}} απομένει στο κεφάλαιο",
+  "Open Read Aloud player": "Άνοιγμα προγράμματος αναπαραγωγής εκφώνησης",
+  "Read Aloud": "Εκφώνηση",
+  "Voice": "Φωνή",
+  "Sleep Timer": "Χρονοδιακόπτης ύπνου"
 }

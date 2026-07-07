@@ -30,7 +30,6 @@
   "Edit": "རྩོམ་སྒྲིག",
   "Excerpts": "དྲངས་བཏུས།",
   "Failed to import book(s): {{filenames}}": "དཔེ་དེབ་ནང་འདྲེན་བྱས་མ་ཐུབ། {{filenames}}",
-  "Fast": "མགྱོགས་པོ།",
   "Font": "ཡིག་གཟུགས།",
   "Font & Layout": "ཡིག་གཟུགས་དང་བཀོད་སྒྲིག",
   "Font Face": "ཡིག་གཟུགས་ཀྱི་རྣམ་པ།",
@@ -89,7 +88,6 @@
   "Sign In": "ནང་བསྐྱོད།",
   "Sign Out": "ཕྱིར་བུད།",
   "Sky": "མཁའ་དཀར།",
-  "Slow": "དལ་བ།",
   "Solarized": "ཉི་འོད།",
   "Speak": "སྒྲ་ཀློག",
   "Subjects": "བརྗོད་བྱ།",
@@ -865,7 +863,6 @@
   "Export": "ཕྱིར་འདོན།",
   "Set Timeout": "དུས་ཚོད་སྒྲིག་པ།",
   "Select Voice": "སྐད་གདངས་འདེམས།",
-  "Toggle Sticky Bottom TTS Bar": "TTS སྡོམ་ཐིག་བརྗེ་བ།",
   "Display what I'm reading on Discord": "Discord ཐོག་ཀློག་བཞིན་པའི་དཔེ་ཆ་སྟོན།",
   "Show on Discord": "Discord ཐོག་སྟོན།",
   "Instant {{action}}": "འཕྲལ་མར་{{action}}",
@@ -1831,5 +1828,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "{{provider}} བདམས་ཡོད་སྐབས། དཔེ་ཆ་དང་བགྲོད་རིམ། མཆན་འགྲེལ་བཅས་ཁྱེད་ཀྱི་ Drive ནང་ཁོ་ནར་མཉམ་བསྒྲིག་བྱེད།",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "{{provider}} བདམས་ཡོད་སྐབས། དཔེ་ཆ་དང་བགྲོད་རིམ། མཆན་འགྲེལ་བཅས་ཁྱེད་ཀྱི་ bucket ནང་ཁོ་ནར་མཉམ་བསྒྲིག་བྱེད།",
   "Premium": "སྤུས་ལྡན།",
-  "S3 Storage": "S3 གསོག་མཛོད།"
+  "S3 Storage": "S3 གསོག་མཛོད།",
+  "Speed": "མྱུར་ཚད།",
+  "{{time}} left in chapter": "ལེའུ་འདིར་ {{time}} ལྷག་ཡོད།",
+  "Open Read Aloud player": "སྐད་སྒྲས་ཀློག་པའི་གཏོང་ཆས་ཁ་ཕྱེ།",
+  "Read Aloud": "སྐད་སྒྲས་ཀློག་པ།",
+  "Voice": "སྐད་སྒྲ།",
+  "Sleep Timer": "གཉིད་ཀྱི་དུས་ཚོད།"
 }

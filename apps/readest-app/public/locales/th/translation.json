@@ -271,8 +271,6 @@
   "{{value}} minutes": "{{value}} นาที",
   "{{value}} hour": "{{value}} ชั่วโมง",
   "{{value}} hours": "{{value}} ชั่วโมง",
-  "Slow": "ช้า",
-  "Fast": "เร็ว",
   "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} เสียง",
   "Sign in to Sync": "เข้าสู่ระบบเพื่อซิงค์",
   "Never synced": "ไม่เคยซิงค์",
@@ -865,7 +863,6 @@
   "Export": "ส่งออก",
   "Set Timeout": "ตั้งค่าหมดเวลา",
   "Select Voice": "เลือกเสียง",
-  "Toggle Sticky Bottom TTS Bar": "สลับแถบ TTS แบบติด",
   "Display what I'm reading on Discord": "แสดงหนังสือที่กำลังอ่านบน Discord",
   "Show on Discord": "แสดงบน Discord",
   "Instant {{action}}": "{{action}}ทันที",
@@ -1831,5 +1828,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "เมื่อเลือก {{provider}} หนังสือ ความคืบหน้า และคำอธิบายประกอบจะซิงค์ไปยัง Drive ของคุณเท่านั้น",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "เมื่อเลือก {{provider}} หนังสือ ความคืบหน้า และคำอธิบายประกอบจะซิงค์ไปยังบักเก็ตของคุณเท่านั้น",
   "Premium": "พรีเมียม",
-  "S3 Storage": "พื้นที่จัดเก็บ S3"
+  "S3 Storage": "พื้นที่จัดเก็บ S3",
+  "Speed": "ความเร็ว",
+  "{{time}} left in chapter": "เหลือ {{time}} ในบทนี้",
+  "Open Read Aloud player": "เปิดเครื่องเล่นอ่านออกเสียง",
+  "Read Aloud": "อ่านออกเสียง",
+  "Voice": "เสียง",
+  "Sleep Timer": "ตั้งเวลาปิด"
 }

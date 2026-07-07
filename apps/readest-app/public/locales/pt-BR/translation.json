@@ -701,14 +701,11 @@
   "{{value}} hour": "{{value}} hora",
   "{{value}} hours": "{{value}} horas",
   "Voices for {{lang}}": "Vozes para {{lang}}",
-  "Slow": "Lento",
-  "Fast": "Rápido",
   "Set Timeout": "Definir tempo limite",
   "Select Voice": "Selecionar voz",
   "{{engine}}: {{count}} voices_one": "{{engine}}: {{count}} voz",
   "{{engine}}: {{count}} voices_many": "{{engine}}: {{count}} vozes",
   "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} vozes",
-  "Toggle Sticky Bottom TTS Bar": "Alternar barra TTS fixada",
   "Zoom Level": "Nível de zoom",
   "Zoom Out": "Reduzir zoom",
   "Reset Zoom": "Redefinir zoom",
@@ -1901,5 +1898,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "Enquanto o {{provider}} estiver selecionado, livros, progresso e anotações são sincronizados apenas com seu Drive.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "Enquanto o {{provider}} estiver selecionado, livros, progresso e anotações são sincronizados apenas com seu bucket.",
   "Premium": "Premium",
-  "S3 Storage": "Armazenamento S3"
+  "S3 Storage": "Armazenamento S3",
+  "Speed": "Velocidade",
+  "{{time}} left in chapter": "{{time}} restante no capítulo",
+  "Open Read Aloud player": "Abrir o player de leitura em voz alta",
+  "Read Aloud": "Leitura em voz alta",
+  "Voice": "Voz",
+  "Sleep Timer": "Timer de sono"
 }

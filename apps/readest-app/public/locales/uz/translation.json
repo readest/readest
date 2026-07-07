@@ -689,13 +689,10 @@
   "{{value}} hour": "{{value}} soat",
   "{{value}} hours": "{{value}} soat",
   "Voices for {{lang}}": "{{lang}} uchun ovozlar",
-  "Slow": "Sekin",
-  "Fast": "Tez",
   "Set Timeout": "Vaqt cheklovini belgilash",
   "Select Voice": "Ovozni tanlash",
   "{{engine}}: {{count}} voices_one": "{{engine}}: {{count}} ovoz",
   "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} ovoz",
-  "Toggle Sticky Bottom TTS Bar": "Pastki yopishqoq TTS panelini ochish/yopish",
   "Zoom Level": "Kattalashtirish darajasi",
   "Zoom Out": "Kichraytirish",
   "Reset Zoom": "Kattalashtirishni tiklash",
@@ -1866,5 +1863,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "{{provider}} tanlangan paytda kitoblar, jarayon va izohlar faqat Drive'ingizga sinxronlanadi.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "{{provider}} tanlangan paytda kitoblar, jarayon va izohlar faqat bucketingizga sinxronlanadi.",
   "Premium": "Premium",
-  "S3 Storage": "S3 saqlash"
+  "S3 Storage": "S3 saqlash",
+  "Speed": "Tezlik",
+  "{{time}} left in chapter": "Bobda {{time}} qoldi",
+  "Open Read Aloud player": "Ovoz chiqarib oʻqish pleyerini ochish",
+  "Read Aloud": "Ovoz chiqarib oʻqish",
+  "Voice": "Ovoz",
+  "Sleep Timer": "Uyqu taymeri"
 }

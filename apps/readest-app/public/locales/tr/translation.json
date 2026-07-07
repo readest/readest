@@ -30,7 +30,6 @@
   "Edit": "Düzenle",
   "Excerpts": "Alıntılar",
   "Failed to import book(s): {{filenames}}": "Kitap(lar) içe aktarılamadı: {{filenames}}",
-  "Fast": "Hızlı",
   "Font": "Yazı Tipi",
   "Font & Layout": "Yazı Tipi ve Düzen",
   "Font Face": "Yazı Tipi Yüzü",
@@ -89,7 +88,6 @@
   "Sign In": "Giriş Yap",
   "Sign Out": "Çıkış Yap",
   "Sky": "Gökyüzü",
-  "Slow": "Yavaş",
   "Solarized": "Solarized",
   "Speak": "Konuş",
   "Subjects": "Konular",
@@ -876,7 +874,6 @@
   "Export": "Dışa Aktar",
   "Set Timeout": "Zaman aşımını ayarla",
   "Select Voice": "Ses seç",
-  "Toggle Sticky Bottom TTS Bar": "Sabit TTS çubuğunu değiştir",
   "Display what I'm reading on Discord": "Discord'da okuduğumu göster",
   "Show on Discord": "Discord'da göster",
   "Instant {{action}}": "Anında {{action}}",
@@ -1866,5 +1863,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "{{provider}} seçili olduğunda kitaplar, ilerleme ve açıklamalar yalnızca Drive'ınızla senkronize edilir.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "{{provider}} seçili olduğunda kitaplar, ilerleme ve açıklamalar yalnızca bucket'ınızla senkronize edilir.",
   "Premium": "Premium",
-  "S3 Storage": "S3 depolama"
+  "S3 Storage": "S3 depolama",
+  "Speed": "Hız",
+  "{{time}} left in chapter": "Bölümde {{time}} kaldı",
+  "Open Read Aloud player": "Sesli okuma oynatıcısını aç",
+  "Read Aloud": "Sesli Okuma",
+  "Voice": "Ses",
+  "Sleep Timer": "Uyku Zamanlayıcısı"
 }

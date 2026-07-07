@@ -30,7 +30,6 @@
   "Edit": "Редактировать",
   "Excerpts": "Отрывки",
   "Failed to import book(s): {{filenames}}": "Не удалось импортировать книгу(и): {{filenames}}",
-  "Fast": "Быстро",
   "Font": "Шрифт",
   "Font & Layout": "Шрифт и макет",
   "Font Face": "Начертание шрифта",
@@ -89,7 +88,6 @@
   "Sign In": "Войти",
   "Sign Out": "Выйти",
   "Sky": "Небесный",
-  "Slow": "Медленно",
   "Solarized": "Солнечный",
   "Speak": "Произнести",
   "Subjects": "Темы",
@@ -898,7 +896,6 @@
   "Export": "Экспортировать",
   "Set Timeout": "Установить тайм-аут",
   "Select Voice": "Выбрать голос",
-  "Toggle Sticky Bottom TTS Bar": "Переключить закреплённую панель TTS",
   "Display what I'm reading on Discord": "Показывать книгу в Discord",
   "Show on Discord": "Показать в Discord",
   "Instant {{action}}": "Мгновенное {{action}}",
@@ -1936,5 +1933,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "Пока выбран {{provider}}, книги, прогресс и аннотации синхронизируются только с вашим Drive.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "Пока выбран {{provider}}, книги, прогресс и аннотации синхронизируются только с вашим бакетом.",
   "Premium": "Премиум",
-  "S3 Storage": "Хранилище S3"
+  "S3 Storage": "Хранилище S3",
+  "Speed": "Скорость",
+  "{{time}} left in chapter": "Осталось {{time}} в главе",
+  "Open Read Aloud player": "Открыть плеер чтения вслух",
+  "Read Aloud": "Чтение вслух",
+  "Voice": "Голос",
+  "Sleep Timer": "Таймер сна"
 }

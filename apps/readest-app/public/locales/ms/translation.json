@@ -296,8 +296,6 @@
   "{{value}} hour": "{{value}} jam",
   "{{value}} hours": "{{value}} jam",
   "Voices for {{lang}}": "Suara untuk {{lang}}",
-  "Slow": "Perlahan",
-  "Fast": "Pantas",
   "{{engine}}: {{count}} voices_other": "{{engine}}: {{count}} suara",
   "Zoom Level": "Tahap Zum",
   "Zoom Out": "Zum Keluar",
@@ -865,7 +863,6 @@
   "Export": "Eksport",
   "Set Timeout": "Tetapkan masa tamat",
   "Select Voice": "Pilih suara",
-  "Toggle Sticky Bottom TTS Bar": "Togol bar TTS melekit",
   "Display what I'm reading on Discord": "Papar buku yang sedang dibaca di Discord",
   "Show on Discord": "Papar di Discord",
   "Instant {{action}}": "{{action}} Segera",
@@ -1831,5 +1828,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "Semasa {{provider}} dipilih, buku, kemajuan dan anotasi hanya disegerakkan ke Drive anda.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "Semasa {{provider}} dipilih, buku, kemajuan dan anotasi hanya disegerakkan ke bucket anda.",
   "Premium": "Premium",
-  "S3 Storage": "Storan S3"
+  "S3 Storage": "Storan S3",
+  "Speed": "Kelajuan",
+  "{{time}} left in chapter": "{{time}} berbaki dalam bab",
+  "Open Read Aloud player": "Buka pemain baca lantang",
+  "Read Aloud": "Baca Lantang",
+  "Voice": "Suara",
+  "Sleep Timer": "Pemasa Tidur"
 }

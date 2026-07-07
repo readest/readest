@@ -30,7 +30,6 @@
   "Edit": "編集",
   "Excerpts": "抜粋",
   "Failed to import book(s): {{filenames}}": "書籍のインポートに失敗しました：{{filenames}}",
-  "Fast": "高速",
   "Font": "フォント",
   "Font & Layout": "フォントとレイアウト",
   "Font Face": "書体",
@@ -89,7 +88,6 @@
   "Sign In": "サインイン",
   "Sign Out": "サインアウト",
   "Sky": "スカイ",
-  "Slow": "低速",
   "Solarized": "ソーラライズド",
   "Speak": "読み上げ",
   "Subjects": "主題",
@@ -865,7 +863,6 @@
   "Export": "エクスポート",
   "Set Timeout": "タイムアウト設定",
   "Select Voice": "音声選択",
-  "Toggle Sticky Bottom TTS Bar": "TTSバー固定切替",
   "Display what I'm reading on Discord": "読書中の本をDiscordに表示",
   "Show on Discord": "Discordに表示",
   "Instant {{action}}": "インスタント{{action}}",
@@ -1831,5 +1828,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "{{provider}} を選択している間、書籍・進捗・注釈は Drive にのみ同期されます。",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "{{provider}} を選択している間、書籍・進捗・注釈はバケットにのみ同期されます。",
   "Premium": "プレミアム",
-  "S3 Storage": "S3 ストレージ"
+  "S3 Storage": "S3 ストレージ",
+  "Speed": "速度",
+  "{{time}} left in chapter": "この章の残り {{time}}",
+  "Open Read Aloud player": "読み上げプレーヤーを開く",
+  "Read Aloud": "読み上げ",
+  "Voice": "音声",
+  "Sleep Timer": "スリープタイマー"
 }

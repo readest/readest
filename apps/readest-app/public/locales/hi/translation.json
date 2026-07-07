@@ -30,7 +30,6 @@
   "Edit": "संपादित करें",
   "Excerpts": "अंश",
   "Failed to import book(s): {{filenames}}": "पुस्तक(ें) आयात करने में विफल: {{filenames}}",
-  "Fast": "तेज़",
   "Font": "फ़ॉन्ट",
   "Font & Layout": "फ़ॉन्ट और लेआउट",
   "Font Face": "फ़ॉन्ट फेस",
@@ -89,7 +88,6 @@
   "Sign In": "साइन इन करें",
   "Sign Out": "साइन आउट करें",
   "Sky": "आकाश",
-  "Slow": "धीमा",
   "Solarized": "सोलराइज्ड",
   "Speak": "बोलें",
   "Subjects": "विषय",
@@ -876,7 +874,6 @@
   "Export": "निर्यात करें",
   "Set Timeout": "टाइमआउट सेट करें",
   "Select Voice": "आवाज़ चुनें",
-  "Toggle Sticky Bottom TTS Bar": "स्थिर TTS बार टॉगल करें",
   "Display what I'm reading on Discord": "Discord पर पढ़ रही किताब दिखाएं",
   "Show on Discord": "Discord पर दिखाएं",
   "Instant {{action}}": "तत्काल {{action}}",
@@ -1866,5 +1863,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "जब {{provider}} चुना गया हो, तो किताबें, प्रगति और एनोटेशन केवल आपके Drive से सिंक होते हैं।",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "जब {{provider}} चुना गया हो, तो किताबें, प्रगति और एनोटेशन केवल आपके बकेट से सिंक होते हैं।",
   "Premium": "प्रीमियम",
-  "S3 Storage": "S3 स्टोरेज"
+  "S3 Storage": "S3 स्टोरेज",
+  "Speed": "गति",
+  "{{time}} left in chapter": "अध्याय में {{time}} शेष",
+  "Open Read Aloud player": "ज़ोर से पढ़ें प्लेयर खोलें",
+  "Read Aloud": "ज़ोर से पढ़ें",
+  "Voice": "आवाज़",
+  "Sleep Timer": "स्लीप टाइमर"
 }

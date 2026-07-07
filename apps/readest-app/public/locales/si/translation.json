@@ -320,8 +320,6 @@
   "{{value}} hour": "පැය {{value}}",
   "{{value}} hours": "පැය {{value}}",
   "Voices for {{lang}}": "{{lang}} සඳහා හඬ",
-  "Slow": "මන්දගාමී",
-  "Fast": "වේගවත්",
   "{{engine}}: {{count}} voices_one": "{{engine}}: හඬ 1",
   "{{engine}}: {{count}} voices_other": "{{engine}}: හඬ {{count}}",
   "Sign in to Sync": "සමමුහුර්ත කිරීම සඳහා ඇතුල් වන්න",
@@ -876,7 +874,6 @@
   "Export": "අපනයනය කරන්න",
   "Set Timeout": "කාල සීමාව සකසන්න",
   "Select Voice": "හඬ තෝරන්න",
-  "Toggle Sticky Bottom TTS Bar": "ඇලවූ TTS තීරුව මාරු කරන්න",
   "Display what I'm reading on Discord": "Discord හි කියවන පොත පෙන්වන්න",
   "Show on Discord": "Discord හි පෙන්වන්න",
   "Instant {{action}}": "ක්ෂණික {{action}}",
@@ -1866,5 +1863,11 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your Drive.": "{{provider}} තෝරා ඇති විට, පොත්, ප්‍රගතිය සහ සටහන් ඔබේ Drive වෙත පමණක් සමමුහුර්ත වේ.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your bucket.": "{{provider}} තෝරා ඇති විට, පොත්, ප්‍රගතිය සහ සටහන් ඔබේ බකට් එකට පමණක් සමමුහුර්ත වේ.",
   "Premium": "ප්‍රිමියම්",
-  "S3 Storage": "S3 ගබඩාව"
+  "S3 Storage": "S3 ගබඩාව",
+  "Speed": "වේගය",
+  "{{time}} left in chapter": "පරිච්ඡේදයේ {{time}} ඉතිරිය",
+  "Open Read Aloud player": "ශබ්ද නඟා කියවීමේ ධාවකය විවෘත කරන්න",
+  "Read Aloud": "ශබ්ද නඟා කියවීම",
+  "Voice": "හඬ",
+  "Sleep Timer": "නින්ද කාල ගණකය"
 }
