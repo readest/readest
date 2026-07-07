@@ -5,7 +5,7 @@
 - [Layout & UI](layout-ui-fixes.md) insets/z-index · [Platform Compat](platform-compat-fixes.md) · [Annotator & Reader](annotator-reader-fixes.md)
 ## Safety & Security
 - [In-place delete wiped originals](in-place-delete-wiped-originals.md) never `fs.removeFile` `external` · [Backup zip Windows paths #4703](backup-windows-zip-paths-4703.md) normalize `\` · [download_file scope Android #4639](download-file-scope-android-regression.md)
-- [Security advisories 2026-06](security-advisories-web-2026-06.md) 4 GHSA #4638
+- [Security advisories 2026-06](security-advisories-web-2026-06.md) 4 GHSA #4638; SSRF guard broke dev-LAN OPDS, dev-only exemption 2026-07
 ## Paginator & Scroll
 - Reading ruler: [line-aware](reading-ruler-line-aware.md) frame-offset map; [vertical-rl backwards #4865](reading-ruler-vertical-rtl-4865.md)
 - [Vertical-rl horizontal pagination (#624)](vertical-rl-horizontal-pagination-624.md) — horizontal inputs + two-phase slide; rtl gated `!vertical`
@@ -103,7 +103,7 @@
 - [Table dark-mode tint #4419](table-dark-mode-tint-4419.md) · [footnote aside border #4438](footnote-aside-namespace-order-4438.md)
 - Proofread: [enhancements #4700](proofread-enhancements-4700.md); [per-book CRDT #4781](proofread-per-book-crdt-sync.md); [edit Find + toggle #4859](proofread-edit-toggle-4859.md)
 - [Russian NBSP (#4769)](russian-hanging-prepositions-nbsp-4769.md)
-- OPDS: [Firefox strict-XML #4479](opds-firefox-strict-xml-4479.md); [JSON search #4502](opds2-json-search-4502.md); [HTML desc #4503](opds-html-description-4503.md); [self-link #4749](opds-self-link-metadata-4749.md); [popular dedup #4782](opds-popular-catalog-dedup-4782.md); [auto-download subdir crawl #4272](opds-autodownload-subdir-crawl-4272.md) bounded BFS, never crawl newest-feed catalogs
+- OPDS: [Firefox strict-XML #4479](opds-firefox-strict-xml-4479.md); [JSON search #4502](opds2-json-search-4502.md); [HTML desc #4503](opds-html-description-4503.md); [self-link #4749](opds-self-link-metadata-4749.md); [popular dedup #4782](opds-popular-catalog-dedup-4782.md); [auto-download subdir crawl #4272](opds-autodownload-subdir-crawl-4272.md) bounded BFS, never crawl newest-feed catalogs; [preemptive Basic 400s digest Calibre](opds-preemptive-basic-digest-400.md) bare-retry on 400; [auto-download TLS #4988](opds-autodownload-tls-skipssl-4988.md) skipSslVerification parity
 - [D-pad Navigation](dpad-navigation.md)
 - [koplugin cover upload (#4374)](koplugin-cover-upload.md)
 - [koplugin Library slow open #4954](koplugin-library-open-mosaic-cache-4954.md) group mosaics recomposed every paint; PR#4974 availability-keyed cache + async compose + cache nil result
