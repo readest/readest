@@ -85,7 +85,8 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           </button>
         </div>
       )}
-      {tts.showIndicator && tts.ttsClientsInited && (
+      {/* One surface at a time: the sheet replaces the mini player while open. */}
+      {tts.showIndicator && tts.ttsClientsInited && !showPlayerSheet && (
         <TTSMiniPlayer
           bookKey={bookKey}
           isPlaying={tts.isPlaying}

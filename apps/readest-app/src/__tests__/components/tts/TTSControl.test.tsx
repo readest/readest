@@ -84,10 +84,12 @@ describe('TTSControl', () => {
     expect(screen.queryByTestId('player-sheet')).toBeNull();
   });
 
-  test('expanding the mini player opens the sheet', () => {
+  test('expanding the mini player opens the sheet and hides the mini player', () => {
     render(<TTSControl bookKey='b1' gridInsets={gridInsets} />);
     fireEvent.click(screen.getByTestId('mini-player'));
     expect(screen.getByTestId('player-sheet')).toBeTruthy();
+    // The two surfaces never show at the same time.
+    expect(screen.queryByTestId('mini-player')).toBeNull();
   });
 
   test('shows the back-to-TTS-location pill when reading has drifted', () => {
