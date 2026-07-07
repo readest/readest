@@ -57,7 +57,6 @@ const mockViewSettings = {
   ttsRate: 1,
   ttsHighlightOptions: { style: 'highlight', color: '#ffff00' },
   isEink: false,
-  showTTSBar: false,
   ttsMediaMetadata: 'sentence',
   translationEnabled: false,
   ttsReadAloudText: 'source',

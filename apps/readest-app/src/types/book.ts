@@ -317,7 +317,6 @@ export interface TTSConfig {
   ttsRate: number;
   ttsVoice: string;
   ttsLocation: string;
-  showTTSBar: boolean;
   ttsHighlightOptions: TTSHighlightOptions;
   ttsHighlightGranularity: TTSHighlightGranularity;
   ttsMediaMetadata: TTSMediaMetadataMode;

@@ -407,7 +407,6 @@ export const DEFAULT_TTS_CONFIG: TTSConfig = {
   ttsRate: 1.3,
   ttsVoice: '',
   ttsLocation: '',
-  showTTSBar: false,
   ttsHighlightOptions: { style: 'highlight', color: '#808080' },
   ttsHighlightGranularity: 'word',
   ttsMediaMetadata: 'sentence',

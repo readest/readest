@@ -85,6 +85,7 @@ import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
 import ImageViewer from './ImageViewer';
 import TableViewer from './TableViewer';
+import { TTS_MINI_PLAYER_CLEARANCE } from './tts/TTSMiniPlayer';
 
 declare global {
   interface Window {
@@ -784,11 +785,12 @@ const FoliateViewer: React.FC<{
     const showTopHeader = viewSettings.showHeader && !viewSettings.vertical;
     const showBottomFooter = viewSettings.showFooter && !viewSettings.vertical;
     const moreTopInset = showTopHeader ? Math.max(0, 16 - insets.top) : 0;
-    const ttsBarHeight =
-      viewState?.ttsEnabled && viewSettings.showTTSBar ? 52 + gridInsets.bottom * 0.33 : 0;
+    const miniPlayerClearance = viewState?.ttsEnabled
+      ? TTS_MINI_PLAYER_CLEARANCE + gridInsets.bottom * 0.33
+      : 0;
     const moreBottomInset = showBottomFooter
-      ? Math.max(0, Math.max(ttsBarHeight, 16) - insets.bottom)
-      : Math.max(0, ttsBarHeight);
+      ? Math.max(0, Math.max(miniPlayerClearance, 16) - insets.bottom)
+      : Math.max(0, miniPlayerClearance);
     const moreRightInset = showDoubleBorderHeader ? 32 : 0;
     const moreLeftInset = showDoubleBorderFooter ? 32 : 0;
     const topMargin = (showTopHeader ? insets.top : viewInsets.top) + moreTopInset;
@@ -806,7 +808,9 @@ const FoliateViewer: React.FC<{
       const safeBottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
       const footerBarHeight = safeBottomPadding + viewSettings.marginBottomPx;
       const scrollTop = headerVisible ? gridInsets.top + viewSettings.marginTopPx : 0;
-      const scrollBottom = footerVisible ? Math.max(footerBarHeight, ttsBarHeight) : ttsBarHeight;
+      const scrollBottom = footerVisible
+        ? Math.max(footerBarHeight, miniPlayerClearance)
+        : miniPlayerClearance;
       setScrollMargins({ top: scrollTop, bottom: scrollBottom });
     } else {
       setScrollMargins({ top: 0, bottom: 0 });
@@ -919,7 +923,6 @@ const FoliateViewer: React.FC<{
     viewSettings?.doubleBorder,
     viewSettings?.showHeader,
     viewSettings?.showFooter,
-    viewSettings?.showTTSBar,
     viewSettings?.scrolled,
     viewSettings?.noContinuousScroll,
     viewState?.ttsEnabled,

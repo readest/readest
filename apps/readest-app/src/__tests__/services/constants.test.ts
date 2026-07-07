@@ -652,7 +652,6 @@ describe('services/constants', () => {
       expect(DEFAULT_TTS_CONFIG.ttsRate).toBeGreaterThan(0);
       expect(typeof DEFAULT_TTS_CONFIG.ttsVoice).toBe('string');
       expect(typeof DEFAULT_TTS_CONFIG.ttsLocation).toBe('string');
-      expect(typeof DEFAULT_TTS_CONFIG.showTTSBar).toBe('boolean');
       expect(typeof DEFAULT_TTS_CONFIG.ttsMediaMetadata).toBe('string');
     });
 
