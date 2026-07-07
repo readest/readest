@@ -45,3 +45,30 @@ export const findSpeechBounds = (
   const endSec = Math.min(samples.length / sampleRate, (last + 1) / sampleRate + TAIL_PAD_SEC);
   return { startSec, endSec };
 };
+
+// ~3ms: below one syllable so it is inaudible on speech, but far longer than a
+// single sample so the ramp is smooth.
+const EDGE_FADE_SEC = 0.003;
+
+// Ramp the first and last samples to zero, in place.
+//
+// Speech buffers are cut at an amplitude threshold, not a zero crossing, so
+// each begins and ends on a non-zero sample. An AudioBufferSourceNode steps
+// straight from/to silence at its edges, and that discontinuity clicks/pops
+// between sentences. A short linear fade removes the step without audibly
+// touching the speech. Mutates the passed array, so callers pass a buffer they
+// own (never a subarray view of the decoded audio).
+export const applyEdgeFade = (
+  samples: Float32Array,
+  sampleRate: number,
+  fadeSec = EDGE_FADE_SEC,
+): void => {
+  const n = Math.min(Math.floor(fadeSec * sampleRate), Math.floor(samples.length / 2));
+  if (n <= 0) return;
+  const last = samples.length - 1;
+  for (let i = 0; i < n; i++) {
+    const gain = i / n;
+    samples[i]! *= gain;
+    samples[last - i]! *= gain;
+  }
+};

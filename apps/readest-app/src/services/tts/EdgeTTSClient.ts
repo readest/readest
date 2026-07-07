@@ -8,7 +8,7 @@ import { parseSSMLMarks } from '@/utils/ssml';
 import { TTSController } from './TTSController';
 import { TTSUtils } from './TTSUtils';
 import { findBoundaryIndexAtTime } from './wordHighlight';
-import { findSpeechBounds } from './pcm';
+import { applyEdgeFade, findSpeechBounds } from './pcm';
 import { timeStretch } from './timeStretch';
 import {
   calibrateVoiceRate,
@@ -396,6 +396,9 @@ export class EdgeTTSClient implements TTSClient {
     const trimmedDurationSec = trimmed.length / sampleRate;
     const samples = rate !== 1 ? timeStretch(trimmed, sampleRate, rate) : trimmed;
     const buffer = await this.#player.createMonoBuffer(samples, sampleRate);
+    // Silence-trimmed edges sit on non-zero samples; fade the buffer's own copy
+    // so chunk starts/ends don't click against the inter-sentence gap.
+    applyEdgeFade(buffer.getChannelData(0), sampleRate);
     return { buffer, trimStartSec: startSample / sampleRate, trimmedDurationSec };
   }
 
