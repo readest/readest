@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { MdClose, MdPauseCircleFilled, MdPlayCircleFilled } from 'react-icons/md';
 import { ttsSessionManager, TTSSession } from '@/services/tts';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -39,6 +40,8 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
   const [stopping, setStopping] = useState(false);
   const [entered, setEntered] = useState(false);
   const [timerLabel, setTimerLabel] = useState('');
+  const size20 = useResponsiveSize(20);
+  const size30 = useResponsiveSize(30);
 
   useEffect(() => {
     const onSessionChanged = () => {
@@ -126,7 +129,7 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
         'motion-safe:transition-all motion-safe:duration-200',
         entered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
       )}
-      style={{ paddingBottom: `${(safeAreaInsets?.bottom ?? 0) + 16}px` }}
+      style={{ paddingBottom: `${(safeAreaInsets?.bottom ?? 0) / 3 + 16}px` }}
     >
       <div
         role='button'
@@ -138,13 +141,17 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
         aria-label={`${_('Open Book')}: ${title}`}
         className={clsx(
           'not-eink:bg-base-300 eink-bordered flex items-center gap-2 rounded-full shadow-lg',
-          'h-11 max-w-[calc(100vw-1rem)] cursor-pointer ps-2 pe-1',
+          'h-14 max-w-[calc(100vw-1rem)] cursor-pointer px-2',
           'focus-visible:ring-primary focus-visible:ring-2 focus-visible:outline-none',
         )}
       >
         {coverImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={coverImageUrl} alt='' className='h-8 w-8 shrink-0 rounded-full object-cover' />
+          <img
+            src={coverImageUrl}
+            alt=''
+            className='h-10 w-10 shrink-0 rounded-full object-cover'
+          />
         ) : null}
         <span className='min-w-0 flex-1 truncate text-sm'>{title}</span>
         {timerLabel && (
@@ -159,7 +166,7 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
             handleToggle();
           }}
         >
-          {isPlaying ? <MdPauseCircleFilled size={28} /> : <MdPlayCircleFilled size={28} />}
+          {isPlaying ? <MdPauseCircleFilled size={size30} /> : <MdPlayCircleFilled size={size30} />}
         </button>
         <button
           type='button'
@@ -170,7 +177,7 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
             handleStop();
           }}
         >
-          <MdClose size={22} />
+          <MdClose size={size20} />
         </button>
       </div>
     </div>
