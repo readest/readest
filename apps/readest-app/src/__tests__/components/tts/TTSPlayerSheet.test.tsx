@@ -176,4 +176,15 @@ describe('TTSPlayerSheet', () => {
     fireEvent.click(await screen.findByText('30 minutes'));
     expect(props.onSelectTimeout).toHaveBeenCalledWith('b1', 1800);
   });
+
+  test('reopening the sheet returns to the main view', async () => {
+    const props = makeProps();
+    const { rerender } = render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(await screen.findByText('Voice'));
+    expect(await screen.findByText('Guy')).toBeTruthy();
+    rerender(<TTSPlayerSheet {...props} isOpen={false} />);
+    rerender(<TTSPlayerSheet {...props} isOpen={true} />);
+    expect(screen.getByLabelText('Previous Paragraph')).toBeTruthy();
+    expect(screen.queryByText('Guy')).toBeNull();
+  });
 });
