@@ -29,14 +29,12 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import app.tauri.plugin.JSObject
-import kotlinx.coroutines.*
 
 class MediaPlaybackService : MediaBrowserServiceCompat() {
     private var mediaSession: MediaSessionCompat? = null
     private lateinit var player: ExoPlayer
     private lateinit var stateBuilder: PlaybackStateCompat.Builder
     private lateinit var audioManager: AudioManager
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     // True only between session activation (TTS playback started) and
     // deactivation. Android Auto can bind this service at any time to browse,
@@ -84,6 +82,28 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         fun requestDeactivation() {
             val service = instance ?: return
             Handler(Looper.getMainLooper()).post { service.deactivateSession() }
+        }
+
+        // Deliver metadata/state updates to the live service in-process rather
+        // than via startService(): once the app is backgrounded, startService()
+        // is rejected with "app is in background" (the Android 8+ background
+        // service-start restriction), which silently dropped every playback
+        // update — killing the lock-screen control and the notification refresh
+        // that keeps the foreground service alive. A direct call on the running
+        // instance is not a service *start*, so it is exempt. The statics are
+        // refreshed regardless so a not-yet-created service picks them up when
+        // it activates.
+        fun pushMetadata(title: String, artist: String, artwork: Bitmap?) {
+            currentTitle = title
+            currentArtist = artist
+            if (artwork != null) currentArtwork = artwork
+            val service = instance ?: return
+            Handler(Looper.getMainLooper()).post { service.applyMetadata() }
+        }
+
+        fun pushPlaybackState(playing: Boolean, position: Long) {
+            val service = instance ?: return
+            Handler(Looper.getMainLooper()).post { service.applyPlaybackState(playing, position) }
         }
     }
 
@@ -211,6 +231,41 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         showNotification(state)
     }
 
+    // Push the current statics into the live session + notification. Invoked
+    // in-process from Companion.pushMetadata on the main thread.
+    private fun applyMetadata() {
+        val metadataBuilder = MediaMetadataCompat.Builder()
+            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentTitle)
+            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentArtist)
+            .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentArtwork)
+        mediaSession?.setMetadata(metadataBuilder.build())
+        notifyChildrenChanged(MEDIA_ROOT_ID)
+        if (sessionActive) {
+            showNotification(
+                if (player.isPlaying) PlaybackStateCompat.STATE_PLAYING
+                else PlaybackStateCompat.STATE_PAUSED
+            )
+        }
+    }
+
+    // Reflect the WebView/TextToSpeech playback state onto the silent
+    // keep-alive player, the media session, and the notification. Invoked
+    // in-process from Companion.pushPlaybackState on the main thread.
+    private fun applyPlaybackState(playing: Boolean, position: Long) {
+        if (!sessionActive) return
+        if (playing && !player.isPlaying) {
+            player.play()
+        } else if (!playing && player.isPlaying) {
+            player.pause()
+        }
+        player.seekTo(position)
+        val state = if (playing) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
+        mediaSession?.setPlaybackState(
+            stateBuilder.setState(state, position, 1f).build()
+        )
+        showNotification(state)
+    }
+
     private fun showNotification(playbackState: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(CHANNEL_ID, "Media Controls", NotificationManager.IMPORTANCE_LOW)
@@ -326,56 +381,6 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                     stopSelf(startId)
                 }
             }
-            "UPDATE_METADATA" -> {
-                currentTitle = intent.getStringExtra("title") ?: currentTitle
-                currentArtist = intent.getStringExtra("artist") ?: currentArtist
-                // Unmarshal the artwork Bitmap off the main thread; copying its
-                // pixel buffer out of the Parcel can stall the UI thread and trip
-                // an ANR for large covers.
-                serviceScope.launch {
-                    val newArtwork = withContext(Dispatchers.Default) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            intent.getParcelableExtra("artwork", Bitmap::class.java)
-                        } else {
-                            @Suppress("DEPRECATION")
-                            intent.getParcelableExtra("artwork")
-                        }
-                    }
-                    if (newArtwork != null) {
-                        currentArtwork = newArtwork
-                    }
-                    if (!isActive) return@launch
-                    val metadataBuilder = MediaMetadataCompat.Builder()
-                        .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentTitle)
-                        .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentArtist)
-                        .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentArtwork)
-                    mediaSession?.setMetadata(metadataBuilder.build())
-                    notifyChildrenChanged(MEDIA_ROOT_ID)
-                    if (sessionActive) {
-                        showNotification(if (player.isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED)
-                    }
-                }
-            }
-            "UPDATE_PLAYBACK_STATE" -> {
-                if (sessionActive) {
-                    val isPlaying = intent.getBooleanExtra("playing", false)
-                    val position = intent.getLongExtra("position", 0L) // in milliseconds
-                    val duration = intent.getLongExtra("duration", 0L) // in milliseconds
-
-                    if (isPlaying && !player.isPlaying) {
-                        player.play()
-                    } else if (!isPlaying && player.isPlaying) {
-                        player.pause()
-                    }
-                    player.seekTo(position)
-
-                    val state = if (isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
-                    mediaSession?.setPlaybackState(
-                        stateBuilder.setState(state, position, 1f).build()
-                    )
-                    showNotification(state)
-                }
-            }
         }
 
         return super.onStartCommand(intent, flags, startId)
@@ -383,7 +388,6 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
     override fun onDestroy() {
         instance = null
-        serviceScope.cancel()
         super.onDestroy()
         player.release()
         mediaSession?.release()

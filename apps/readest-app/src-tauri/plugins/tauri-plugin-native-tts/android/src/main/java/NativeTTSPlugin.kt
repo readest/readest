@@ -497,19 +497,13 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         val args = invoke.parseArgs(UpdateMediaSessionMetadataArgs::class.java)
         val title = args.title ?: ""
         val artist = args.artist ?: ""
-        val album = args.album ?: ""
 
         coroutineScope.launch {
             try {
                 val artworkBitmap = args.artwork?.let { loadArtworkFromUrl(it) }
-                val intent = Intent(activity, MediaPlaybackService::class.java).apply {
-                    action = "UPDATE_METADATA"
-                    putExtra("title", title)
-                    putExtra("artist", artist)
-                    putExtra("album", album)
-                    putExtra("artwork", artworkBitmap)
-                }
-                activity.startService(intent)
+                // In-process update on the running service; never startService()
+                // — that throws "app is in background" once backgrounded.
+                MediaPlaybackService.pushMetadata(title, artist, artworkBitmap)
                 invoke.resolve()
             } catch (e: Exception) {
                 invoke.reject("Failed to update metadata: ${e.message}")
@@ -519,19 +513,14 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
 
     @Command
     fun update_media_session_state(invoke: Invoke) {
-        var args = invoke.parseArgs(UpdateMediaSessionStateArgs::class.java)
+        val args = invoke.parseArgs(UpdateMediaSessionStateArgs::class.java)
         val isPlaying = args.playing ?: false
         val position = args.position ?: 0
-        val duration = args.duration ?: 0
 
         try {
-            val intent = Intent(activity, MediaPlaybackService::class.java).apply {
-                action = "UPDATE_PLAYBACK_STATE"
-                putExtra("playing", isPlaying)
-                putExtra("position", position)
-                putExtra("duration", duration)
-            }
-            activity.startService(intent)
+            // In-process update on the running service; never startService()
+            // — that throws "app is in background" once backgrounded.
+            MediaPlaybackService.pushPlaybackState(isPlaying, position.toLong())
             invoke.resolve()
         } catch (e: Exception) {
             invoke.reject("Failed to update playback state: ${e.message}")

@@ -115,9 +115,12 @@ export class TauriMediaSession {
   async setActive(sessionState: MediaSessionState) {
     try {
       if (sessionState.active) {
-        if (sessionState.keepAppInForeground) {
-          await this.requestPostNotificationPermission();
-        }
+        // The foreground-service media notification IS the lock-screen control;
+        // on Android 13+ it is silently suppressed unless POST_NOTIFICATIONS is
+        // granted. Request it on every activation (no-op once decided) rather
+        // than gating on keepAppInForeground, so the control shows regardless
+        // of the alwaysInForeground setting.
+        await this.requestPostNotificationPermission();
         await this.initializeListeners();
       } else {
         await this.cleanupListeners();
