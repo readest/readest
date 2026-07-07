@@ -32,6 +32,7 @@
 - [Transfer Queue clear not persisted](transfer-queue-clear-persistence.md) hook mutated store directly, skipped `persistQueue()`; route clears through `transferManager`
 - [Multi-window settings clobber (#4580)](multiwindow-settings-clobber-4580.md)
 - Google Drive: [research](gdrive-sync-provider-research.md); [multi-PR status](gdrive-provider-multipr-status.md); [full walk every sync](gdrive-fullwalk-every-sync-no-source-cursor.md) no-source books never recorded in uploadedHashes + focus refires pullLibrary
+- [S3/R2 provider](s3-r2-sync-provider.md) third backend, aws4fetch SigV4 path-style, full slice on dev uncommitted; live R2 verify pending
 - [Hardcover edition_id (#4792)](hardcover-progress-edition-id-4792.md)
 ## Build, Testing & CI
 - [Nightly quick-sharun hang #4906](nightly-quick-sharun-hang-4906.md) pin via cache pre-seed + step timeouts
