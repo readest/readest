@@ -179,6 +179,11 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       if (detail.phase === 'move') {
         let state = dragRef.current;
         if (!state) {
+          // Instant highlight engaged (still-hold on text) locks scrolling so
+          // the finger extends the highlight, not turns the page. The push
+          // paginator honors the same lock in its native swipe (paginator's
+          // #scrollLocked); mirror it here so slide/curl behaves identically.
+          if (currentView.renderer.scrollLocked) return false;
           if (!viewSettings || viewSettings.disableSwipe) return false;
           const style = getCapturedTurnStyle(viewSettings, isFixedLayout());
           if (!style) return false;
