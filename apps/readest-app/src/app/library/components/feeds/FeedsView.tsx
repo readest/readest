@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MdAdd, MdDelete, MdRefresh, MdArrowBack } from 'react-icons/md';
 import Dialog from '@/components/Dialog';
@@ -10,7 +10,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useFeedStore } from '@/store/feedStore';
-import { loadFeeds, saveFeeds } from '@/services/rss/feedPersistence';
 import { openFeedArticle, handleOpenArticle } from '@/services/rss/articleIngest';
 import { navigateToReader } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
@@ -33,17 +32,24 @@ export function FeedsView({ onClose }: FeedsViewProps) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [refreshing, setRefreshing] = useState<string | null>(null);
 
-  // Hydrate on mount and persist on every feeds change.
-  useEffect(() => {
-    if (!appService) return;
-    loadFeeds(appService.fs)
-      .then((loaded) => useFeedStore.getState().hydrate(loaded))
-      .catch(() => {});
-  }, [appService]);
+  const hydratedRef = useRef(false);
 
   useEffect(() => {
     if (!appService) return;
-    saveFeeds(appService.fs, feeds).catch(() => {});
+    appService
+      .loadFeeds()
+      .then((loaded) => {
+        useFeedStore.getState().hydrate(loaded);
+        hydratedRef.current = true;
+      })
+      .catch(() => {
+        hydratedRef.current = true;
+      });
+  }, [appService]);
+
+  useEffect(() => {
+    if (!appService || !hydratedRef.current) return;
+    appService.saveFeeds(feeds).catch(() => {});
   }, [appService, feeds]);
 
   const handleRefresh = async (feed: RssFeed) => {

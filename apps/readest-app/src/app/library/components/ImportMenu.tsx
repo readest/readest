@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { MdLink, MdRssFeed } from 'react-icons/md';
+import { MdLink, MdRssFeed, MdOutlineDynamicFeed } from 'react-icons/md';
 import { IoFileTray } from 'react-icons/io5';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -82,7 +82,7 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
       />
       <MenuItem
         label={_('Feeds')}
-        Icon={<MdRssFeed className='h-5 w-5' />}
+        Icon={<MdOutlineDynamicFeed className='h-5 w-5' />}
         onClick={handleOpenFeeds}
       />
     </Menu>

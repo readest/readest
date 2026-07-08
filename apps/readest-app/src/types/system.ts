@@ -1,4 +1,5 @@
 import { SystemSettings } from './settings';
+import type { RssFeed } from '@/types/rss';
 import { Book, BookConfig, BookContent, ImportBookOptions, ViewSettings } from './book';
 import { BookMetadata } from '@/libs/document';
 import type { BookNav } from '@/services/nav';
@@ -79,7 +80,6 @@ export interface SaveLibraryBooksOptions {
 }
 
 export interface AppService {
-  readonly fs: FileSystem;
   osPlatform: OsPlatform;
   appPlatform: AppPlatform;
   hasTrafficLight: boolean;
@@ -221,6 +221,8 @@ export interface AppService {
   saveBookNav(book: Book, nav: BookNav): Promise<void>;
   loadBookContent(book: Book): Promise<BookContent>;
   resolveNativeBookFilePath(book: Book): Promise<string | null>;
+  loadFeeds(): Promise<RssFeed[]>;
+  saveFeeds(feeds: RssFeed[]): Promise<void>;
   loadLibraryBooks(): Promise<Book[]>;
   saveLibraryBooks(books: Book[], options?: SaveLibraryBooksOptions): Promise<void>;
   getCoverImageUrl(book: Book): string;
