@@ -151,6 +151,23 @@ describe('parseOpenWithFiles', () => {
 
       expect(result).toBeNull();
     });
+
+    test('degrades to intent when CLI arg parsing rejects (READEST-Y)', async () => {
+      // sentry-minidump relaunches the app with `--crash-reporter-server`, which
+      // the file-only CLI schema rejects. A rejected getMatches() must not leak
+      // an unhandled rejection; fall through to the intent path instead.
+      mockHasCli = true;
+      mockGetMatches.mockRejectedValue(
+        new Error(
+          "failed to parse arguments: error: unexpected argument '--crash-reporter-server' found",
+        ),
+      );
+      mockGetCurrent.mockResolvedValue(null);
+
+      const result = await parseOpenWithFiles(null);
+
+      expect(result).toBeNull();
+    });
   });
 
   // ── Intent / Deep Link ────────────────────────────────────────
