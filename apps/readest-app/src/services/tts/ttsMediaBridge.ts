@@ -107,8 +107,13 @@ export class TTSMediaBridge {
     this.#meta = meta;
     this.#mediaSession = this.#resolveMediaSession();
     if (!this.#mediaSession) return;
+    // bind() awaits below (cover fetch, setActive), during which a concurrent
+    // unbind() (e.g. a stop during startup) nulls #mediaSession. Use the
+    // captured session for the awaited calls so they can't deref null, then
+    // bail before wiring handlers onto a torn-down session (READEST-1A).
+    const mediaSession = this.#mediaSession;
 
-    if (this.#mediaSession instanceof TauriMediaSession) {
+    if (mediaSession instanceof TauriMediaSession) {
       let artwork = '/icon.png';
       try {
         artwork = await fetchImageAsBase64(meta.coverImageUrl || '/icon.png');
@@ -119,14 +124,16 @@ export class TTSMediaBridge {
           artwork = '';
         }
       }
-      await this.#mediaSession.setActive({ active: true });
-      await this.#mediaSession.updateMetadata({
+      await mediaSession.setActive({ active: true });
+      await mediaSession.updateMetadata({
         title: meta.title,
         artist: meta.author,
         album: meta.title,
         artwork,
       });
     }
+
+    if (this.#mediaSession !== mediaSession) return;
 
     this.#registerActionHandlers();
 

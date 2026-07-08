@@ -5,6 +5,8 @@ vi.mock('@/utils/image', () => ({
 }));
 
 import { TTSMediaBridge } from '@/services/tts/ttsMediaBridge';
+import { fetchImageAsBase64 } from '@/utils/image';
+import { TauriMediaSession } from '@/libs/mediaSession';
 import type { TTSController } from '@/services/tts/TTSController';
 
 // A controller stand-in: EventTarget + the surface the bridge consumes.
@@ -163,5 +165,32 @@ describe('TTSMediaBridge', () => {
     // Metadata still reflects the last known chapter, no crash, no blanking.
     expect(first).toBeTruthy();
     expect(bridge.isBound).toBe(true);
+  });
+});
+
+describe('TTSMediaBridge bind teardown race (READEST-1A)', () => {
+  test('does not crash when unbound while the cover loads', async () => {
+    // A real TauriMediaSession instance so bind() takes the Tauri branch; its
+    // native methods are stubbed so nothing hits `invoke`.
+    const tauriSession = new TauriMediaSession();
+    tauriSession.setActive = vi.fn().mockResolvedValue(undefined);
+    tauriSession.updateMetadata = vi.fn().mockResolvedValue(undefined);
+    tauriSession.setActionHandler = vi.fn();
+
+    const bridge = new TTSMediaBridge(() => tauriSession);
+    const controller = new FakeController();
+
+    // Tear the session down mid-flight, exactly like a stop during startup:
+    // #mediaSession becomes null before the awaited setActive/updateMetadata.
+    vi.mocked(fetchImageAsBase64).mockImplementationOnce(async () => {
+      bridge.unbind();
+      return 'data:image/png;base64,x';
+    });
+
+    await expect(
+      bridge.bind(controller as unknown as TTSController, meta({ coverImageUrl: 'cover.png' })),
+    ).resolves.toBeUndefined();
+    // The bind aborted after teardown; no handlers were wired on a dead session.
+    expect(bridge.isBound).toBe(false);
   });
 });
