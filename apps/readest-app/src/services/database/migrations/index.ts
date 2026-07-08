@@ -83,7 +83,13 @@ const migrations: Record<SchemaType, MigrationEntry[]> = {
                (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) t,
                (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) h;
 
-        CREATE VIEW IF NOT EXISTS page_stat AS
+        -- turso ignores IF NOT EXISTS on CREATE VIEW (READEST-13), so a plain
+        -- CREATE VIEW IF NOT EXISTS still throws "already exists" when the view
+        -- is present (KOReader-imported stats DB, or a partially-applied run).
+        -- DROP first (turso honors DROP VIEW IF EXISTS) to stay idempotent.
+        DROP VIEW IF EXISTS page_stat;
+
+        CREATE VIEW page_stat AS
           SELECT id_book, first_page + idx - 1 AS page, start_time, duration / (last_page - first_page + 1) AS duration
           FROM (
             SELECT id_book, page, total_pages, pages, start_time, duration,

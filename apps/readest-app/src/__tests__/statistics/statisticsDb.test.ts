@@ -32,6 +32,22 @@ describe('statistics migration', () => {
     expect(names).toContain('readest_stat_sync_state');
   });
 
+  it('is idempotent when the page_stat view already exists (READEST-13)', async () => {
+    // A DB imported from KOReader (or left by a partially-applied migration)
+    // already has a page_stat view but no migration record. turso ignores
+    // IF NOT EXISTS on CREATE VIEW, so a non-idempotent migration throws
+    // "View page_stat already exists" here.
+    const imported = await NodeDatabaseService.open(':memory:');
+    await imported.execute('CREATE VIEW page_stat AS SELECT 1 AS x');
+
+    await expect(migrate(imported, getMigrations('statistics'))).resolves.toBeUndefined();
+
+    const views = await imported.select<{ name: string }>(
+      `SELECT name FROM sqlite_master WHERE type = 'view'`,
+    );
+    expect(views.map((v) => v.name)).toContain('page_stat');
+  });
+
   it('seeds the numbers helper table 1..1000', async () => {
     const rows = await db.select<{ c: number }>(`SELECT COUNT(*) AS c FROM numbers`);
     expect(rows[0]!.c).toBe(1000);
