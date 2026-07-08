@@ -137,12 +137,20 @@ This project is a monorepo. The code for the `readest-app` is in the `apps/reade
 | `pnpm dev-web`   | Starts the development server for the web app only |
 | `pnpm build-web` | Builds the web app                                 |
 
-Recommended Visual Studio Code plugins for development:
+### Editor-specific setup
 
-- JavaScript and TypeScript Nightly (ms-vscode.vscode-typescript-next)
-- VS Code ESLint extension (dbaeumer.vscode-eslint)
-- Biome - Code formatter and linter (biomejs.biome)
-- rust-analyzer (rust-lang.rust-analyzer) (for Tauri development only)
+#### VS Code
+
+Upon opening the project, you will be prompted to install the following recommended extensions:
+
+- JavaScript and TypeScript Nightly (`ms-vscode.vscode-typescript-next`)
+- VS Code ESLint extension (`dbaeumer.vscode-eslint`)
+- Biome - Code formatter and linter (`biomejs.biome`)
+- rust-analyzer (`rust-lang.rust-analyzer`) (for Tauri development only)
+
+#### Zed
+
+The only extension needed is [biome-zed](https://github.com/biomejs/biome-zed), for code formatting and linting.
 
 ### When you're done
 
