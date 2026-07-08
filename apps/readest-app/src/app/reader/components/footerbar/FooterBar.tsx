@@ -249,13 +249,16 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   return (
     <>
-      {/* Hover trigger area. z-0 keeps it below the ProgressBar info text
-          (z-10) so hovering the text itself never summons the bar. */}
+      {/* Hover trigger zone. A thin strip at the very bottom edge, spatially
+          below the ProgressBar info text (which sits centered in the
+          marginBottomPx band) and stacked under it (z-0 vs z-10). A 52px
+          band here used to cover the info text, so the nav bar popped up
+          over it and swallowed the click the user was aiming at the text. */}
       <div
         role='none'
         tabIndex={-1}
         className={clsx(
-          'absolute bottom-0 left-0 z-0 flex h-[52px] w-full',
+          'footer-hover-zone absolute bottom-0 left-0 z-0 flex h-3 w-full',
           needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
           isMobile || pointerInDoc ? 'pointer-events-none' : '',
         )}
