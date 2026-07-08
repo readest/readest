@@ -223,14 +223,18 @@ export const useTransferStore = create<TransferState>((set, get) => ({
       const transfer = state.transfers[transferId];
       if (!transfer) return state;
 
-      // No-op when nothing changed: re-applying identical progress would
-      // otherwise allocate a new state on every call and re-render every
-      // subscriber, which can sustain a render/update loop (Sentry READEST-2).
+      // No-op when nothing meaningful changed: re-applying identical progress
+      // would otherwise allocate a new state on every call and re-render every
+      // subscriber, sustaining a render/update loop (Sentry READEST-2).
+      // transferSpeed is deliberately excluded: it is recomputed from wall-clock
+      // time on every emission (utils/transfer.ts), so it is almost always
+      // different and would defeat the guard. A speed-only delta is not worth a
+      // re-render. The primary defense against high-frequency churn is the
+      // per-transfer coalescing in transferManager.
       if (
         transfer.progress === progress &&
         transfer.transferredBytes === transferred &&
-        transfer.totalBytes === total &&
-        transfer.transferSpeed === speed
+        transfer.totalBytes === total
       ) {
         return state;
       }

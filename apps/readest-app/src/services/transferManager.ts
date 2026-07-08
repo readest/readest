@@ -4,12 +4,18 @@ import { useTransferStore, TransferItem, ReplicaTransferFile } from '@/store/tra
 import { useSettingsStore } from '@/store/settingsStore';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { TranslationFunc } from '@/hooks/useTranslation';
-import { ProgressHandler, ProgressPayload } from '@/utils/transfer';
+import { createProgressThrottle, ProgressHandler, ProgressPayload } from '@/utils/transfer';
 import { eventDispatcher } from '@/utils/event';
 import { getTransferMessages } from './transferMessages';
 
 const TRANSFER_QUEUE_KEY = 'readest_transfer_queue';
 const RETRY_DELAY_BASE_MS = 2000;
+// Coalesce per-chunk progress emissions to at most ~10/sec per transfer so the
+// transfer-store fan-out cannot sustain a synchronous React update storm (a
+// buffered download emits progress once per chunk in a microtask burst, and
+// transferSpeed changes every call so the store's no-op guard cannot help)
+// (Sentry READEST-2).
+const PROGRESS_THROTTLE_MS = 100;
 // Quota failures in a batch import arrive one per book as transfers drain;
 // collapse them into one summary toast per burst instead of N identical toasts.
 const QUOTA_TOAST_FLUSH_MS = 1500;
@@ -407,11 +413,8 @@ class TransferManager {
     store.setTransferStatus(transfer.id, 'in_progress');
     store.setActiveCount(store.getActiveTransfers().length + 1);
 
-    const progressHandler = (progress: ProgressPayload) => {
-      if (abortController.signal.aborted) return;
-
+    const progressThrottle = createProgressThrottle((progress) => {
       const percentage = progress.total > 0 ? (progress.progress / progress.total) * 100 : 0;
-
       useTransferStore
         .getState()
         .updateTransferProgress(
@@ -421,6 +424,11 @@ class TransferManager {
           progress.total,
           progress.transferSpeed,
         );
+    }, PROGRESS_THROTTLE_MS);
+
+    const progressHandler = (progress: ProgressPayload) => {
+      if (abortController.signal.aborted) return;
+      progressThrottle.push(progress);
     };
 
     try {
@@ -430,6 +438,8 @@ class TransferManager {
         await this.executeBookTransfer(transfer, progressHandler, abortController);
       }
 
+      // Land the final progress value that the throttle may still be holding.
+      progressThrottle.flush();
       useTransferStore.getState().setTransferStatus(transfer.id, 'completed');
 
       const messages = getTransferMessages(transfer, _);
@@ -492,6 +502,9 @@ class TransferManager {
         useTransferStore.getState().setTransferStatus(transfer.id, 'failed', errorMessage);
       }
     } finally {
+      // Drop any pending throttled progress + its trailing timer (a
+      // failed/aborted transfer's stale progress must not fire after teardown).
+      progressThrottle.cancel();
       this.abortControllers.delete(transfer.id);
 
       const currentStore = useTransferStore.getState();
