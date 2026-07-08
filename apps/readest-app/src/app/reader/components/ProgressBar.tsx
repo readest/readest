@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Trans } from 'react-i18next';
 import type { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
@@ -16,7 +16,6 @@ import {
 import { saveViewSettings } from '@/helpers/settings';
 import { eventDispatcher } from '@/utils/event';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
-import type { ProgressBarMode } from '@/types/book.ts';
 import StatusInfo from './StatusInfo.tsx';
 import StickyProgressBar from './StickyProgressBar.tsx';
 
@@ -131,85 +130,9 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           })
     : '';
 
-  const [progressBarMode, setProgressBarMode] = useState<string>(viewSettings.progressInfoMode);
-
   const hasRemainingInfo = viewSettings.showRemainingTime || viewSettings.showRemainingPages;
-  const hasProgressInfo = viewSettings.showProgressInfo;
   const hasTimeInfo = viewSettings.showCurrentTime;
   const hasBatteryInfo = viewSettings.showCurrentBatteryStatus;
-  const cycleProgressInfoModes = () => {
-    if (!viewSettings.tapToToggleFooter) return;
-
-    const modeSequence: string[] = [
-      'all',
-      `${hasRemainingInfo ? 'remaining+' : ''}${hasProgressInfo ? 'progress' : ''}`,
-      `${hasRemainingInfo ? 'remaining' : ''}`,
-      `${hasProgressInfo ? 'progress' : ''}`,
-      `${hasBatteryInfo ? 'battery+' : ''}${hasTimeInfo ? 'time' : ''}`,
-      `${hasBatteryInfo ? 'battery' : ''}`,
-      `${hasTimeInfo ? 'time' : ''}`,
-      'none',
-    ]
-      .map((mode) => mode.replace(/^\+|\+$/g, ''))
-      .filter((mode) => mode !== '')
-      .filter((mode, index, self) => self.indexOf(mode) === index);
-
-    const currentMode = progressBarMode;
-    const currentIndex = modeSequence.indexOf(currentMode);
-    for (let i = 1; i <= modeSequence.length; i++) {
-      const nextIndex = (currentIndex + i) % modeSequence.length;
-      const nextMode = modeSequence[nextIndex]!;
-
-      const currentRenders = {
-        remaining:
-          currentMode === 'all' || currentMode.includes('remaining') ? hasRemainingInfo : false,
-        progress:
-          currentMode === 'all' || currentMode.includes('progress') ? hasProgressInfo : false,
-        battery: currentMode === 'all' || currentMode.includes('battery') ? hasBatteryInfo : false,
-        time: currentMode === 'all' || currentMode.includes('time') ? hasTimeInfo : false,
-        none: currentMode === 'none',
-      };
-
-      const nextRenders = {
-        remaining: nextMode === 'all' || nextMode.includes('remaining') ? hasRemainingInfo : false,
-        progress: nextMode === 'all' || nextMode.includes('progress') ? hasProgressInfo : false,
-        battery: nextMode === 'all' || nextMode.includes('battery') ? hasBatteryInfo : false,
-        time: nextMode === 'all' || nextMode.includes('time') ? hasTimeInfo : false,
-        none: nextMode === 'none',
-      };
-
-      const isDifferent =
-        currentRenders.remaining !== nextRenders.remaining ||
-        currentRenders.progress !== nextRenders.progress ||
-        currentRenders.battery !== nextRenders.battery ||
-        currentRenders.time !== nextRenders.time ||
-        currentRenders.none !== nextRenders.none;
-      if (isDifferent) {
-        setProgressBarMode(nextMode);
-        return;
-      }
-    }
-
-    const nextIndex = (currentIndex + 1) % modeSequence.length;
-    setProgressBarMode(modeSequence[nextIndex]!);
-  };
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'progressInfoMode', progressBarMode as ProgressBarMode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progressBarMode]);
-
-  // Self-heal a stuck "none" (or partial) mode left over from a prior
-  // tap-to-toggle session. Without this, dismissing the footer via tap
-  // and then disabling the toggle in settings would leave the footer
-  // permanently hidden — the user's only way back to a visible footer
-  // would be to re-enable the toggle and tap through the cycle.
-  useEffect(() => {
-    if (!viewSettings.tapToToggleFooter && progressBarMode !== 'all') {
-      setProgressBarMode('all');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewSettings.tapToToggleFooter]);
 
   // Only the shrink-wrapped info elements are tap targets; the full-width
   // container stays pointer-events-none so the footer never intercepts taps
@@ -217,10 +140,18 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   // targets also outrank the footer-bar hover strip (z-10 vs z-0), so
   // mousing over the info text doesn't summon the nav bar before the user
   // can click the text to toggle it.
+  //
+  // A tap toggles the whole footer by flipping showFooter, exactly as if
+  // "Show Footer" were switched in settings (the settings panel reflects
+  // it). tapToToggleFooter itself stays on. While hidden, the component
+  // stays mounted rendering only two small restore pads so tapping the
+  // same spot brings the footer back without a trip through settings.
   const tapTargetsEnabled = viewSettings.tapToToggleFooter;
+  const footerHidden = !viewSettings.showFooter;
   const handleInfoClick = () => {
     if (eventDispatcher.dispatchSync('iframe-single-click')) return;
-    cycleProgressInfoModes();
+    if (!viewSettings.tapToToggleFooter) return;
+    saveViewSettings(envConfig, bookKey, 'showFooter', footerHidden, false, false);
   };
   const tapTargetClass = tapTargetsEnabled && 'cursor-pointer pointer-events-auto';
   // Scrolled mode reserves no bottom band (footerReservesBand) — the info
@@ -231,11 +162,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     !isVertical &&
     !stickyBarActive &&
     'progress-pill eink-bordered rounded-md bg-base-100/85 px-1.5';
-  const showStatusInfo =
-    (progressBarMode === 'all' ||
-      progressBarMode.includes('battery') ||
-      progressBarMode.includes('time')) &&
-    (hasTimeInfo || hasBatteryInfo);
+  const showStatusInfo = hasTimeInfo || hasBatteryInfo;
 
   return (
     <div
@@ -245,18 +172,22 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-extralight',
         isVertical ? 'writing-vertical-rl' : 'w-full',
       )}
-      aria-label={[
-        progress
-          ? _('On {{current}} of {{total}} page', {
-              current: current + 1,
-              total: total,
-            })
-          : '',
-        timeLeftStr,
-        pagesLeftStr,
-      ]
-        .filter(Boolean)
-        .join(', ')}
+      aria-label={
+        footerHidden
+          ? undefined
+          : [
+              progress
+                ? _('On {{current}} of {{total}} page', {
+                    current: current + 1,
+                    total: total,
+                  })
+                : '',
+              timeLeftStr,
+              pagesLeftStr,
+            ]
+              .filter(Boolean)
+              .join(', ')
+      }
       style={
         isVertical
           ? {
@@ -285,114 +216,119 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         )}
         style={isVertical ? {} : { height: `${viewSettings.marginBottomPx}px` }}
       >
-        {stickyBarActive && (
-          <StickyProgressBar
-            className='h-3 flex-1'
-            fraction={fillFraction}
-            tickFractions={tickFractions}
-            rtl={viewSettings.rtl}
-            isEink={isEink}
-          />
-        )}
-        {/* In 'none' mode nothing renders (and the layout band collapses), so
-            leave two small invisible pads at the ends of the row — where the
-            info sat — as the only tap targets to bring the footer back. */}
-        {tapTargetsEnabled && progressBarMode === 'none' && (
-          <div
-            role='none'
-            className={clsx(
-              'progress-restore-pad cursor-pointer pointer-events-auto',
-              isVertical ? 'h-11 w-full' : 'h-full w-11',
+        {footerHidden ? (
+          // Hidden by tap: two invisible pads at the ends of the row — where
+          // the info sat — are the only tap targets to bring the footer back.
+          tapTargetsEnabled && (
+            <>
+              <div
+                role='none'
+                className={clsx(
+                  'progress-restore-pad cursor-pointer pointer-events-auto',
+                  isVertical ? 'h-11 w-full' : 'h-full w-11',
+                )}
+                onClick={handleInfoClick}
+              />
+              <div
+                role='none'
+                className={clsx(
+                  'progress-restore-pad cursor-pointer pointer-events-auto',
+                  isVertical ? 'h-11 w-full' : 'h-full w-11',
+                )}
+                onClick={handleInfoClick}
+              />
+            </>
+          )
+        ) : (
+          <>
+            {stickyBarActive && (
+              <StickyProgressBar
+                className='h-3 flex-1'
+                fraction={fillFraction}
+                tickFractions={tickFractions}
+                rtl={viewSettings.rtl}
+                isEink={isEink}
+              />
             )}
-            onClick={handleInfoClick}
-          />
-        )}
-        {(progressBarMode === 'all' || progressBarMode.includes('remaining')) &&
-          hasRemainingInfo && (
+            {hasRemainingInfo && (
+              <div
+                className={clsx(
+                  'remaining-info whitespace-nowrap text-start',
+                  !stickyBarActive && 'flex-1',
+                  showStatusInfo && 'overflow-hidden',
+                  bookData?.isFixedLayout && !isEink
+                    ? 'text-white/75 mix-blend-difference'
+                    : 'text-base-content',
+                )}
+              >
+                {viewSettings.showRemainingTime ? (
+                  <span
+                    className={clsx('time-left-label text-start', tapTargetClass, pillClass)}
+                    onClick={handleInfoClick}
+                  >
+                    {timeLeftStr}
+                  </span>
+                ) : viewSettings.showRemainingPages && showPagesLeft ? (
+                  <span
+                    className={clsx('text-start', tapTargetClass, pillClass)}
+                    onClick={handleInfoClick}
+                  >
+                    {localize ? (
+                      remainingInBook ? (
+                        <Trans
+                          i18nKey='{{number}} pages left in book'
+                          values={{ number: formatNumber(pagesLeft, localize, lang) }}
+                        >
+                          <span className='pages-left-number'>{'{{number}}'}</span>
+                          <span className='pages-left-label'>{' pages left in book'}</span>
+                        </Trans>
+                      ) : (
+                        <Trans
+                          i18nKey='{{number}} pages left in chapter'
+                          values={{ number: formatNumber(pagesLeft, localize, lang) }}
+                        >
+                          <span className='pages-left-number'>{'{{number}}'}</span>
+                          <span className='pages-left-label'>{' pages left in chapter'}</span>
+                        </Trans>
+                      )
+                    ) : remainingInBook ? (
+                      <Trans i18nKey='{{count}} pages left in book' count={pagesLeft}>
+                        <span className='pages-left-number'>{'{{count}}'}</span>
+                        <span className='pages-left-label'>{' pages left in book'}</span>
+                      </Trans>
+                    ) : (
+                      <Trans i18nKey='{{count}} pages left in chapter' count={pagesLeft}>
+                        <span className='pages-left-number'>{'{{count}}'}</span>
+                        <span className='pages-left-label'>{' pages left in chapter'}</span>
+                      </Trans>
+                    )}
+                  </span>
+                ) : null}
+              </div>
+            )}
+
+            {showStatusInfo && (
+              <StatusInfo
+                showTime={hasTimeInfo}
+                use24Hour={viewSettings.use24HourClock}
+                showBattery={hasBatteryInfo}
+                showBatteryPercentage={viewSettings.showBatteryPercentage}
+                isVertical={isVertical}
+                isEink={isEink}
+                className={clsx(tapTargetClass, pillClass) || undefined}
+                onClick={tapTargetsEnabled ? handleInfoClick : undefined}
+              />
+            )}
+
             <div
               className={clsx(
-                'remaining-info whitespace-nowrap text-start',
+                'progress-info items-center overflow-hidden whitespace-nowrap text-end tabular-nums',
                 !stickyBarActive && 'flex-1',
-                showStatusInfo && 'overflow-hidden',
                 bookData?.isFixedLayout && !isEink
                   ? 'text-white/75 mix-blend-difference'
                   : 'text-base-content',
               )}
             >
-              {viewSettings.showRemainingTime ? (
-                <span
-                  className={clsx('time-left-label text-start', tapTargetClass, pillClass)}
-                  onClick={handleInfoClick}
-                >
-                  {timeLeftStr}
-                </span>
-              ) : viewSettings.showRemainingPages && showPagesLeft ? (
-                <span
-                  className={clsx('text-start', tapTargetClass, pillClass)}
-                  onClick={handleInfoClick}
-                >
-                  {localize ? (
-                    remainingInBook ? (
-                      <Trans
-                        i18nKey='{{number}} pages left in book'
-                        values={{ number: formatNumber(pagesLeft, localize, lang) }}
-                      >
-                        <span className='pages-left-number'>{'{{number}}'}</span>
-                        <span className='pages-left-label'>{' pages left in book'}</span>
-                      </Trans>
-                    ) : (
-                      <Trans
-                        i18nKey='{{number}} pages left in chapter'
-                        values={{ number: formatNumber(pagesLeft, localize, lang) }}
-                      >
-                        <span className='pages-left-number'>{'{{number}}'}</span>
-                        <span className='pages-left-label'>{' pages left in chapter'}</span>
-                      </Trans>
-                    )
-                  ) : remainingInBook ? (
-                    <Trans i18nKey='{{count}} pages left in book' count={pagesLeft}>
-                      <span className='pages-left-number'>{'{{count}}'}</span>
-                      <span className='pages-left-label'>{' pages left in book'}</span>
-                    </Trans>
-                  ) : (
-                    <Trans i18nKey='{{count}} pages left in chapter' count={pagesLeft}>
-                      <span className='pages-left-number'>{'{{count}}'}</span>
-                      <span className='pages-left-label'>{' pages left in chapter'}</span>
-                    </Trans>
-                  )}
-                </span>
-              ) : null}
-            </div>
-          )}
-
-        {showStatusInfo && (
-          <StatusInfo
-            showTime={
-              (progressBarMode === 'all' || progressBarMode.includes('time')) && hasTimeInfo
-            }
-            use24Hour={viewSettings.use24HourClock}
-            showBattery={
-              (progressBarMode === 'all' || progressBarMode.includes('battery')) && hasBatteryInfo
-            }
-            showBatteryPercentage={viewSettings.showBatteryPercentage}
-            isVertical={isVertical}
-            isEink={isEink}
-            className={clsx(tapTargetClass, pillClass) || undefined}
-            onClick={tapTargetsEnabled ? handleInfoClick : undefined}
-          />
-        )}
-
-        <div
-          className={clsx(
-            'progress-info items-center overflow-hidden whitespace-nowrap text-end tabular-nums',
-            !stickyBarActive && 'flex-1',
-            bookData?.isFixedLayout && !isEink
-              ? 'text-white/75 mix-blend-difference'
-              : 'text-base-content',
-          )}
-        >
-          {(progressBarMode === 'all' || progressBarMode.includes('progress')) && (
-            <>
               {viewSettings.showProgressInfo && (
                 <span
                   className={clsx(
@@ -406,18 +342,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
                   {progressInfo}
                 </span>
               )}
-            </>
-          )}
-        </div>
-        {tapTargetsEnabled && progressBarMode === 'none' && (
-          <div
-            role='none'
-            className={clsx(
-              'progress-restore-pad cursor-pointer pointer-events-auto',
-              isVertical ? 'h-11 w-full' : 'h-full w-11',
-            )}
-            onClick={handleInfoClick}
-          />
+            </div>
+          </>
         )}
       </div>
     </div>

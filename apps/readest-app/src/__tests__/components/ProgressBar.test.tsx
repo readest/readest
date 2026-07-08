@@ -113,70 +113,12 @@ const makeProgress = (current: number, total: number): BookProgress =>
     timeinfo: { section: 0, total: 0 },
   }) as BookProgress;
 
-describe('ProgressBar — tap-to-toggle disabled reverts hidden footer', () => {
-  it("resets progressInfoMode to 'all' when the user disables tapToToggleFooter while mode was 'none'", () => {
-    // Simulate a user who tapped the footer to dismiss it (mode='none')
-    // while tapToToggleFooter was on. Now they have it switched off.
-    currentViewSettings = {
-      ...baseSettings,
-      tapToToggleFooter: false,
-      progressInfoMode: 'none',
-    } as ViewSettings;
-
-    renderProgressBar();
-
-    // The persisted progressInfoMode should be reset to the default
-    // ('all') so the footer reverts to its default visibility.
-    const persistCalls = saveViewSettings.mock.calls.filter(
-      (args) => args[2] === 'progressInfoMode',
-    );
-    expect(persistCalls.length).toBeGreaterThanOrEqual(1);
-    const lastCall = persistCalls[persistCalls.length - 1]!;
-    expect(lastCall[3]).toBe('all');
-  });
-
-  it("does not overwrite mode when tapToToggleFooter is on (user's cycled state stays)", () => {
-    currentViewSettings = {
-      ...baseSettings,
-      tapToToggleFooter: true,
-      progressInfoMode: 'none',
-    } as ViewSettings;
-
-    renderProgressBar();
-
-    // initial save mirrors the existing mode; importantly we never see
-    // a save with 'all' overriding the user's tap-cycled choice.
-    const persistCalls = saveViewSettings.mock.calls.filter(
-      (args) => args[2] === 'progressInfoMode',
-    );
-    expect(persistCalls.every((args) => args[3] === 'none')).toBe(true);
-  });
-
-  it("leaves mode untouched when tapToToggleFooter is off but mode is already 'all'", () => {
-    currentViewSettings = {
-      ...baseSettings,
-      tapToToggleFooter: false,
-      progressInfoMode: 'all',
-    } as ViewSettings;
-
-    renderProgressBar();
-
-    const persistCalls = saveViewSettings.mock.calls.filter(
-      (args) => args[2] === 'progressInfoMode',
-    );
-    // Either no save or a save matching the existing 'all' value — never
-    // a transition through some intermediate state.
-    expect(persistCalls.every((args) => args[3] === 'all')).toBe(true);
-  });
-});
-
 describe('ProgressBar — fixed-layout remaining pages', () => {
   it('says "in book" with section-derived count for fixed-layout books', () => {
     currentViewSettings = {
       ...baseSettings,
       showRemainingPages: true,
       showRemainingTime: false,
-      progressInfoMode: 'all',
     } as ViewSettings;
     currentProgress = makeProgress(2, 5);
     currentBookData = { isFixedLayout: true, bookDoc: { metadata: {} } };
@@ -193,7 +135,6 @@ describe('ProgressBar — fixed-layout remaining pages', () => {
       ...baseSettings,
       showRemainingPages: true,
       showRemainingTime: false,
-      progressInfoMode: 'all',
     } as ViewSettings;
     currentProgress = makeProgress(2, 5);
     currentBookData = { isFixedLayout: false };
@@ -216,7 +157,6 @@ describe('ProgressBar — decorative footer is not focusable', () => {
     // not be focusable so it can never receive a focus ring.
     currentViewSettings = {
       ...baseSettings,
-      progressInfoMode: 'all',
     } as ViewSettings;
     currentProgress = makeProgress(2, 5);
     currentBookData = { isFixedLayout: false };
@@ -237,7 +177,6 @@ describe('ProgressBar — sticky progress bar', () => {
     currentViewSettings = {
       ...baseSettings,
       showStickyProgressBar: true,
-      progressInfoMode: 'all',
       ...overrides,
     } as ViewSettings;
     // fraction (0.5) deliberately differs from the page fraction
@@ -298,7 +237,6 @@ describe('ProgressBar — footer never paints or blocks a full-width bar', () =>
     currentViewSettings = {
       ...baseSettings,
       tapToToggleFooter: true,
-      progressInfoMode: 'all',
       ...overrides,
     } as ViewSettings;
     currentProgress = makeProgress(2, 5);
@@ -317,7 +255,10 @@ describe('ProgressBar — footer never paints or blocks a full-width bar', () =>
     expect(progressInfo.classList.contains('pointer-events-auto')).toBe(false);
   });
 
-  it('makes only the info text a tap target, and tapping it cycles the mode', () => {
+  it('tapping the info text turns the whole footer off (persists showFooter=false)', () => {
+    // The tap-to-toggle setting removes the entire footer, exactly as if
+    // "Show Footer" were switched off in settings — no partial cycling of
+    // individual widgets. tapToToggleFooter itself stays on.
     readerSettings();
     currentAppService = { isMobile: true, hasSafeAreaInset: false };
 
@@ -327,15 +268,15 @@ describe('ProgressBar — footer never paints or blocks a full-width bar', () =>
     expect(label.classList.contains('pointer-events-auto')).toBe(true);
 
     fireEvent.click(label);
-    // Defaults show only progress info, so the cycle from 'all' lands on 'none'.
-    const persistCalls = saveViewSettings.mock.calls.filter(
-      (args) => args[2] === 'progressInfoMode',
-    );
-    expect(persistCalls[persistCalls.length - 1]![3]).toBe('none');
+    const showFooterCalls = saveViewSettings.mock.calls.filter((args) => args[2] === 'showFooter');
+    expect(showFooterCalls.length).toBe(1);
+    expect(showFooterCalls[0]![3]).toBe(false);
+    // Never touches the toggle setting itself.
+    expect(saveViewSettings.mock.calls.some((args) => args[2] === 'tapToToggleFooter')).toBe(false);
   });
 
   it('is clickable on desktop too, stacked above the footer-bar hover strip', () => {
-    // Desktop uses a full-width hover strip to summon the nav footer bar.
+    // Desktop uses a bottom-edge hover strip to summon the nav footer bar.
     // The info text must sit above that strip (z-10 on the container) and
     // accept clicks itself so the user can toggle the footer with a mouse.
     readerSettings();
@@ -349,10 +290,9 @@ describe('ProgressBar — footer never paints or blocks a full-width bar', () =>
     expect(label.classList.contains('pointer-events-auto')).toBe(true);
 
     fireEvent.click(label);
-    const persistCalls = saveViewSettings.mock.calls.filter(
-      (args) => args[2] === 'progressInfoMode',
-    );
-    expect(persistCalls[persistCalls.length - 1]![3]).toBe('none');
+    const showFooterCalls = saveViewSettings.mock.calls.filter((args) => args[2] === 'showFooter');
+    expect(showFooterCalls.length).toBe(1);
+    expect(showFooterCalls[0]![3]).toBe(false);
   });
 
   it('renders no tap targets when tapToToggleFooter is off', () => {
@@ -363,22 +303,35 @@ describe('ProgressBar — footer never paints or blocks a full-width bar', () =>
     expect(container.querySelector('.pointer-events-auto')).toBeNull();
   });
 
-  it("in 'none' mode leaves only small restore pads, and tapping one brings the info back", () => {
-    readerSettings({ progressInfoMode: 'none' });
+  it('when hidden by tap, leaves only restore pads and tapping one brings the footer back', () => {
+    // After a tap flips showFooter off, the user must be able to tap again
+    // to bring the footer back without a round-trip through settings. The
+    // component stays mounted (BooksGrid keeps it while tapToToggleFooter is
+    // on) and renders only two small invisible pads at the ends of the row.
+    readerSettings({ showFooter: false });
 
     const { container } = renderProgressBar();
 
-    const progressInfo = container.querySelector('.progressinfo') as HTMLElement;
-    expect(progressInfo.classList.contains('pointer-events-none')).toBe(true);
+    expect(container.querySelector('.progress-info-label')).toBeNull();
+    expect(container.querySelector('.remaining-info')).toBeNull();
+    expect(container.querySelector('.sticky-progress-bar')).toBeNull();
 
     const pads = container.querySelectorAll('.progress-restore-pad');
-    expect(pads.length).toBeGreaterThan(0);
+    expect(pads.length).toBe(2);
 
     fireEvent.click(pads[0]!);
-    const persistCalls = saveViewSettings.mock.calls.filter(
-      (args) => args[2] === 'progressInfoMode',
-    );
-    expect(persistCalls[persistCalls.length - 1]![3]).toBe('all');
+    const showFooterCalls = saveViewSettings.mock.calls.filter((args) => args[2] === 'showFooter');
+    expect(showFooterCalls.length).toBe(1);
+    expect(showFooterCalls[0]![3]).toBe(true);
+  });
+
+  it('renders nothing interactive when hidden and tapToToggleFooter is off', () => {
+    readerSettings({ showFooter: false, tapToToggleFooter: false });
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-restore-pad')).toBeNull();
+    expect(container.querySelector('.pointer-events-auto')).toBeNull();
   });
 
   it('wraps each info segment in its own pill backdrop in scrolled mode', () => {
@@ -417,7 +370,6 @@ describe('ProgressBar — contrast against the page (#4901)', () => {
       isEink: false,
       showRemainingPages: true,
       showRemainingTime: false,
-      progressInfoMode: 'all',
     } as ViewSettings;
     currentProgress = makeProgress(2, 5);
     currentBookData = { isFixedLayout: true };
@@ -439,7 +391,6 @@ describe('ProgressBar — contrast against the page (#4901)', () => {
       isEink: false,
       showRemainingPages: true,
       showRemainingTime: false,
-      progressInfoMode: 'all',
     } as ViewSettings;
     currentProgress = makeProgress(2, 5);
     currentBookData = { isFixedLayout: false };
@@ -461,7 +412,6 @@ describe('ProgressBar — contrast against the page (#4901)', () => {
       isEink: true,
       showRemainingPages: true,
       showRemainingTime: false,
-      progressInfoMode: 'all',
     } as ViewSettings;
     currentProgress = makeProgress(2, 5);
     currentBookData = { isFixedLayout: false };

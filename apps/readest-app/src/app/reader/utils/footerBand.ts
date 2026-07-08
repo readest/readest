@@ -2,20 +2,17 @@ import type { ViewSettings } from '@/types/book';
 
 /**
  * Whether the footer currently displays any info widget, mirroring the
- * per-widget gating in ProgressBar: a widget renders only when it is both
- * enabled in settings and included in the tap-cycled progressInfoMode.
+ * per-widget gating in ProgressBar. (Tapping the footer flips showFooter off
+ * wholesale — see ProgressBar — so visibility is purely settings-driven.)
  */
-export const footerInfoVisible = (viewSettings: ViewSettings): boolean => {
-  const mode = viewSettings.progressInfoMode || 'all';
-  const remaining =
-    (mode === 'all' || mode.includes('remaining')) &&
-    (viewSettings.showRemainingTime || viewSettings.showRemainingPages);
-  const progress = (mode === 'all' || mode.includes('progress')) && viewSettings.showProgressInfo;
-  const status =
-    (mode === 'all' || mode.includes('time') || mode.includes('battery')) &&
-    (viewSettings.showCurrentTime || viewSettings.showCurrentBatteryStatus);
-  return !!(remaining || progress || status);
-};
+export const footerInfoVisible = (viewSettings: ViewSettings): boolean =>
+  !!(
+    viewSettings.showRemainingTime ||
+    viewSettings.showRemainingPages ||
+    viewSettings.showProgressInfo ||
+    viewSettings.showCurrentTime ||
+    viewSettings.showCurrentBatteryStatus
+  );
 
 /**
  * Whether the book layout must reserve the full-width bottom band

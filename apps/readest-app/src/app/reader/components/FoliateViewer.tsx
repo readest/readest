@@ -936,8 +936,7 @@ const FoliateViewer: React.FC<{
     viewSettings?.noContinuousScroll,
     viewState?.ttsEnabled,
     // footerReservesBand inputs: the band must collapse/return live when the
-    // user tap-cycles the footer info or flips these settings.
-    viewSettings?.progressInfoMode,
+    // user flips these settings.
     viewSettings?.showStickyProgressBar,
     viewSettings?.showRemainingTime,
     viewSettings?.showRemainingPages,

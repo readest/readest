@@ -611,7 +611,6 @@ describe('services/constants', () => {
 
     it('has progress style settings', () => {
       expect(typeof DEFAULT_VIEW_CONFIG.progressStyle).toBe('string');
-      expect(typeof DEFAULT_VIEW_CONFIG.progressInfoMode).toBe('string');
     });
 
     it('has animation and eink flags', () => {

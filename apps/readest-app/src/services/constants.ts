@@ -388,7 +388,6 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showPaginationButtons: false,
   progressStyle: 'fraction',
   referencePageCount: 0,
-  progressInfoMode: 'all',
 
   animated: false,
   pageTurnStyle: 'push',

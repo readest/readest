@@ -791,10 +791,12 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           disabled={!showFooter || !showCurrentBatteryStatus}
           onChange={() => setShowBatteryPercentage(!showBatteryPercentage)}
         />
+        {/* Never disabled on !showFooter: a tap on the footer flips Show
+            Footer off, and this setting is what keeps the restore tap
+            targets alive to bring it back. */}
         <SettingsSwitchRow
           label={_('Tap to Toggle Footer')}
           checked={tapToToggleFooter}
-          disabled={!showFooter}
           onChange={() => setTapToToggleFooter(!tapToToggleFooter)}
         />
       </BoxedList>

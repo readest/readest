@@ -239,7 +239,9 @@ const BookCellInner: React.FC<BookCellProps> = ({
           gridInsets={gridInsets}
         />
       )}
-      {showFooter && (
+      {/* Keep the footer mounted while tap-to-toggle is on even when hidden:
+          it renders only small restore pads so a tap can bring it back. */}
+      {(showFooter || viewSettings.tapToToggleFooter) && (
         <ProgressBar
           bookKey={bookKey}
           horizontalGap={horizontalGapPercent}
