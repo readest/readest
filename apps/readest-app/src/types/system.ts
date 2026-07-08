@@ -79,6 +79,7 @@ export interface SaveLibraryBooksOptions {
 }
 
 export interface AppService {
+  readonly fs: FileSystem;
   osPlatform: OsPlatform;
   appPlatform: AppPlatform;
   hasTrafficLight: boolean;

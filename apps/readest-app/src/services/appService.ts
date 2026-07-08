@@ -73,7 +73,7 @@ export abstract class BaseAppService implements AppService {
 
   protected CURRENT_MIGRATION_VERSION = 20260706;
 
-  protected abstract fs: FileSystem;
+  abstract fs: FileSystem;
   protected abstract resolvePath(fp: string, base: BaseDir): ResolvedPath;
 
   abstract init(): Promise<void>;

@@ -343,7 +343,7 @@ export const nodeFileSystem: FileSystem = {
 };
 
 export class NodeAppService extends BaseAppService {
-  protected fs = nodeFileSystem;
+  fs = nodeFileSystem;
   override appPlatform = 'node' as const;
   override osPlatform: OsPlatform =
     process.platform === 'darwin'

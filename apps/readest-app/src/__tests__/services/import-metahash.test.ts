@@ -36,7 +36,7 @@ import { buildBookLookupIndex } from '@/services/bookService';
 
 // Concrete test subclass of BaseAppService with mocked fs
 class TestAppService extends BaseAppService {
-  protected fs = {
+  fs = {
     openFile: vi.fn(),
     readFile: vi.fn(),
     writeFile: vi.fn(),
