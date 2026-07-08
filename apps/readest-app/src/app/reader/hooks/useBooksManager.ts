@@ -7,10 +7,12 @@ import { uniqueId } from '@/utils/misc';
 import { useParallelViewStore } from '@/store/parallelViewStore';
 import { navigateToReader } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const useBooksManager = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const _ = useTranslation();
   const { envConfig } = useEnv();
   const { bookKeys } = useReaderStore();
   const { setBookKeys, initViewState } = useReaderStore();
@@ -29,10 +31,20 @@ const useBooksManager = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKeys, shouldUpdateSearchParams]);
 
+  // initViewState is called fire-and-forget here; it rejects when the book is
+  // missing (e.g. "Book not found" after a library reload dropped the in-memory
+  // entry). It already records the failure on the view state, so just keep the
+  // rejection from becoming an unhandled rejection (READEST-1V) and let the user
+  // know the open failed.
+  const handleOpenError = (error: unknown) => {
+    console.warn('Failed to open book in reader', error);
+    eventDispatcher.dispatch('toast', { message: _('Unable to open book'), type: 'error' });
+  };
+
   // Append a new book and sync with bookKeys and URL
   const appendBook = (id: string, isPrimary: boolean, isParallel: boolean) => {
     const newKey = `${id}-${uniqueId()}`;
-    initViewState(envConfig, id, newKey, isPrimary);
+    initViewState(envConfig, id, newKey, isPrimary).catch(handleOpenError);
     if (!bookKeys.includes(newKey)) {
       const updatedKeys = [...bookKeys, newKey];
       setBookKeys(updatedKeys);
@@ -84,7 +96,7 @@ const useBooksManager = () => {
       return;
     }
     const newKey = `${bookHash}-${uniqueId()}`;
-    initViewState(envConfig, bookHash, newKey, true);
+    initViewState(envConfig, bookHash, newKey, true).catch(handleOpenError);
     setBookKeys([newKey]);
     setSideBarBookKey(newKey);
     setShouldUpdateSearchParams(true);
