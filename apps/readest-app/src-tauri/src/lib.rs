@@ -332,11 +332,26 @@ pub fn run() {
                 // version from the kernel string) so events group correctly.
                 before_send: Some(std::sync::Arc::new(|mut event| {
                     // Drop known-benign browser noise (e.g. View Transition
-                    // skipped/aborted) before it is reported.
+                    // skipped/aborted, ResizeObserver loop) before it is reported.
                     if event.exception.values.iter().any(|ex| {
                         ex.value
                             .as_deref()
                             .is_some_and(sentry_config::is_ignored_browser_error)
+                    }) {
+                        return None;
+                    }
+                    // Drop the contained MOBI cover panic: the `mobi` crate panics
+                    // on a corrupt cover record, which extract_cover catch_unwinds
+                    // (the import still succeeds), but the panic hook reports it
+                    // anyway. Match our own frame so unrelated slice panics stay.
+                    if event.exception.values.iter().any(|ex| {
+                        ex.stacktrace.iter().any(|st| {
+                            st.frames.iter().any(|f| {
+                                f.function
+                                    .as_deref()
+                                    .is_some_and(sentry_config::is_mobi_cover_panic_frame)
+                            })
+                        })
                     }) {
                         return None;
                     }

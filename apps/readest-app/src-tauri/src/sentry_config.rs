@@ -77,17 +77,37 @@ pub fn android_version_from_uname(release: &str) -> Option<String> {
 }
 
 /// Known-benign browser errors that are expected behavior, not app bugs, and
-/// only add noise to crash reporting: the View Transition API skips a transition
-/// when the tab is hidden or the navigation is superseded, and aborts it when the
-/// document is in an invalid state. These arrive as unhandled rejections while
-/// the navigation itself still completes. Matched (case-insensitively) on the
-/// exception value so they are dropped in `before_send`. NOTE: a transition
-/// *timeout* abort is deliberately NOT ignored — a slow DOM update can signal a
-/// real performance problem.
+/// only add noise to crash reporting:
+/// - The View Transition API skips a transition when the tab is hidden or the
+///   navigation is superseded, and aborts it when the document is in an invalid
+///   state. These arrive as unhandled rejections while the navigation itself
+///   still completes. NOTE: a transition *timeout* abort is deliberately NOT
+///   ignored, since a slow DOM update can signal a real performance problem.
+/// - "ResizeObserver loop limit exceeded" / "ResizeObserver loop completed with
+///   undelivered notifications" is a benign notice the browser fires when
+///   observer callbacks don't settle within one frame; the spec defines it as
+///   safe to ignore and layout still converges (READEST-R / READEST-1Y /
+///   READEST-26).
+///
+/// Matched (case-insensitively) on the exception value so they are dropped in
+/// `before_send`.
 pub fn is_ignored_browser_error(value: &str) -> bool {
     let value = value.to_lowercase();
     value.contains("transition was skipped")
         || value.contains("transition was aborted because of invalid state")
+        || value.contains("resizeobserver loop")
+}
+
+/// Identifies a stack-frame function belonging to the MOBI cover extraction
+/// path. The third-party `mobi` crate panics on a corrupt cover record
+/// (an inverted slice range) when importing a truncated file (READEST-1Q /
+/// READEST-10). `mobi_parser::extract_cover` contains that panic with
+/// `catch_unwind` so the import still succeeds, but Sentry's panic hook reports
+/// it regardless; `before_send` drops events whose stack hits this frame so the
+/// contained panic stops adding noise. Matched on our own module path (not the
+/// generic slice-index message) so unrelated slice panics are still reported.
+pub fn is_mobi_cover_panic_frame(function: &str) -> bool {
+    function.contains("mobi_parser::extract_cover")
 }
 
 /// The WebView (engine, major-version), set once at startup when the app reports
@@ -151,7 +171,7 @@ pub extern "C" fn readest_sentry_dsn() -> *const std::os::raw::c_char {
 mod tests {
     use super::{
         android_version_from_uname, corrected_os_name, dsn_from_env, environment_for_version,
-        is_ignored_browser_error, parse_webview_info, release_name,
+        is_ignored_browser_error, is_mobi_cover_panic_frame, parse_webview_info, release_name,
     };
 
     #[test]
@@ -233,6 +253,39 @@ mod tests {
         // Aborted because the document was in an invalid state (READEST-G).
         assert!(is_ignored_browser_error(
             "InvalidStateError: Transition was aborted because of invalid state"
+        ));
+    }
+
+    #[test]
+    fn matches_mobi_cover_panic_frame() {
+        assert!(is_mobi_cover_panic_frame(
+            "readestlib::mobi_parser::extract_cover"
+        ));
+        // After catch_unwind the panicking frame is the inner fn.
+        assert!(is_mobi_cover_panic_frame(
+            "readestlib::mobi_parser::extract_cover_inner"
+        ));
+    }
+
+    #[test]
+    fn keeps_unrelated_panic_frames() {
+        assert!(!is_mobi_cover_panic_frame(
+            "readestlib::epub_parser::extract_epub_cover_full"
+        ));
+        assert!(!is_mobi_cover_panic_frame(
+            "core::slice::index::slice_index_fail"
+        ));
+        assert!(!is_mobi_cover_panic_frame(""));
+    }
+
+    #[test]
+    fn ignores_resize_observer_loop_noise() {
+        // Both browser phrasings are benign (READEST-R / READEST-1Y / READEST-26).
+        assert!(is_ignored_browser_error(
+            "ResizeObserver loop limit exceeded"
+        ));
+        assert!(is_ignored_browser_error(
+            "Error: ResizeObserver loop completed with undelivered notifications."
         ));
     }
 
