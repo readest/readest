@@ -64,3 +64,25 @@ export async function openFeedArticle(params: OpenFeedArticleParams): Promise<Bo
   if (!book) throw new Error('Import produced no book');
   return book;
 }
+
+export interface HandleOpenDeps {
+  openArticle: typeof openFeedArticle;
+  updateBooks: (books: Book[]) => Promise<void>;
+  markRead: () => void;
+  navigate: (hash: string) => void;
+  onError: (message: string) => void;
+}
+
+export async function handleOpenArticle(
+  params: OpenFeedArticleParams,
+  deps: HandleOpenDeps,
+): Promise<void> {
+  try {
+    const book = await deps.openArticle(params);
+    await deps.updateBooks([book]);
+    deps.markRead();
+    deps.navigate(book.hash);
+  } catch (err) {
+    deps.onError(err instanceof Error ? err.message : String(err));
+  }
+}
