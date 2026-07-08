@@ -1,4 +1,4 @@
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ProgressBar from '@/app/reader/components/ProgressBar';
@@ -26,8 +26,9 @@ vi.mock('@/hooks/useTranslation', () => ({
       .replace('{{time}}', String(values?.['time'] ?? '{{time}}')),
 }));
 
+let currentAppService = { isMobile: false, hasSafeAreaInset: false };
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {}, appService: { isMobile: false, hasSafeAreaInset: false } }),
+  useEnv: () => ({ envConfig: {}, appService: currentAppService }),
 }));
 
 // Production code uses per-field selectors; mock must apply them so each
@@ -97,6 +98,7 @@ afterEach(() => {
 
 beforeEach(() => {
   saveViewSettings.mockClear();
+  currentAppService = { isMobile: false, hasSafeAreaInset: false };
   currentProgress = null;
   currentBookData = { isFixedLayout: false };
   currentRenderer = { page: 0, pages: 0 };
@@ -284,6 +286,121 @@ describe('ProgressBar — sticky progress bar', () => {
     const { container } = renderProgressBar();
 
     expect(container.querySelector('.sticky-progress-bar')).toBeNull();
+  });
+});
+
+describe('ProgressBar — footer never paints or blocks a full-width bar', () => {
+  // The footer overlay is stacked above the book. It must never intercept
+  // taps or text selection outside the info text it actually displays, and
+  // in scrolled mode (no reserved band) each info segment must carry its own
+  // shrink-wrapped pill backdrop instead of a full-width bar.
+  const readerSettings = (overrides?: Partial<ViewSettings>) => {
+    currentViewSettings = {
+      ...baseSettings,
+      tapToToggleFooter: true,
+      progressInfoMode: 'all',
+      ...overrides,
+    } as ViewSettings;
+    currentProgress = makeProgress(2, 5);
+    currentBookData = { isFixedLayout: false };
+    currentRenderer = { page: 1, pages: 4 };
+  };
+
+  it('keeps the full-width container pointer-events-none even on mobile', () => {
+    readerSettings();
+    currentAppService = { isMobile: true, hasSafeAreaInset: false };
+
+    const { container } = renderProgressBar();
+
+    const progressInfo = container.querySelector('.progressinfo') as HTMLElement;
+    expect(progressInfo.classList.contains('pointer-events-none')).toBe(true);
+    expect(progressInfo.classList.contains('pointer-events-auto')).toBe(false);
+  });
+
+  it('makes only the info text a tap target, and tapping it cycles the mode', () => {
+    readerSettings();
+    currentAppService = { isMobile: true, hasSafeAreaInset: false };
+
+    const { container } = renderProgressBar();
+
+    const label = container.querySelector('.progress-info-label') as HTMLElement;
+    expect(label.classList.contains('pointer-events-auto')).toBe(true);
+
+    fireEvent.click(label);
+    // Defaults show only progress info, so the cycle from 'all' lands on 'none'.
+    const persistCalls = saveViewSettings.mock.calls.filter(
+      (args) => args[2] === 'progressInfoMode',
+    );
+    expect(persistCalls[persistCalls.length - 1]![3]).toBe('none');
+  });
+
+  it('is clickable on desktop too, stacked above the footer-bar hover strip', () => {
+    // Desktop uses a full-width hover strip to summon the nav footer bar.
+    // The info text must sit above that strip (z-10 on the container) and
+    // accept clicks itself so the user can toggle the footer with a mouse.
+    readerSettings();
+
+    const { container } = renderProgressBar();
+
+    const progressInfo = container.querySelector('.progressinfo') as HTMLElement;
+    expect(progressInfo.classList.contains('z-10')).toBe(true);
+
+    const label = container.querySelector('.progress-info-label') as HTMLElement;
+    expect(label.classList.contains('pointer-events-auto')).toBe(true);
+
+    fireEvent.click(label);
+    const persistCalls = saveViewSettings.mock.calls.filter(
+      (args) => args[2] === 'progressInfoMode',
+    );
+    expect(persistCalls[persistCalls.length - 1]![3]).toBe('none');
+  });
+
+  it('renders no tap targets when tapToToggleFooter is off', () => {
+    readerSettings({ tapToToggleFooter: false, showRemainingPages: true });
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.pointer-events-auto')).toBeNull();
+  });
+
+  it("in 'none' mode leaves only small restore pads, and tapping one brings the info back", () => {
+    readerSettings({ progressInfoMode: 'none' });
+
+    const { container } = renderProgressBar();
+
+    const progressInfo = container.querySelector('.progressinfo') as HTMLElement;
+    expect(progressInfo.classList.contains('pointer-events-none')).toBe(true);
+
+    const pads = container.querySelectorAll('.progress-restore-pad');
+    expect(pads.length).toBeGreaterThan(0);
+
+    fireEvent.click(pads[0]!);
+    const persistCalls = saveViewSettings.mock.calls.filter(
+      (args) => args[2] === 'progressInfoMode',
+    );
+    expect(persistCalls[persistCalls.length - 1]![3]).toBe('all');
+  });
+
+  it('wraps each info segment in its own pill backdrop in scrolled mode', () => {
+    // Scrolled mode reserves no bottom band — the info floats over the book
+    // text, so each segment needs a shrink-wrapped backdrop to stay legible.
+    readerSettings({ scrolled: true, showRemainingPages: true });
+
+    const { container } = renderProgressBar();
+
+    const pills = container.querySelectorAll('.progress-pill');
+    expect(pills.length).toBeGreaterThanOrEqual(2); // remaining + progress
+    for (const pill of pills) {
+      expect((pill as HTMLElement).classList.contains('bg-base-100/85')).toBe(true);
+    }
+  });
+
+  it('does not add pill backdrops in paginated mode (band holds the info)', () => {
+    readerSettings({ scrolled: false, showRemainingPages: true });
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-pill')).toBeNull();
   });
 });
 

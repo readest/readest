@@ -211,7 +211,26 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewSettings.tapToToggleFooter]);
 
-  const isMobile = appService?.isMobile || window.innerWidth < 640;
+  // Only the shrink-wrapped info elements are tap targets; the full-width
+  // container stays pointer-events-none so the footer never intercepts taps
+  // or text selection over book content along the bottom of the page. The
+  // targets also outrank the footer-bar hover strip (z-10 vs z-0), so
+  // mousing over the info text doesn't summon the nav bar before the user
+  // can click the text to toggle it.
+  const tapTargetsEnabled = viewSettings.tapToToggleFooter;
+  const handleInfoClick = () => {
+    if (eventDispatcher.dispatchSync('iframe-single-click')) return;
+    cycleProgressInfoModes();
+  };
+  const tapTargetClass = tapTargetsEnabled && 'cursor-pointer pointer-events-auto';
+  // Scrolled mode reserves no bottom band (footerReservesBand) — the info
+  // floats over the book text, so each segment carries its own shrink-wrapped
+  // pill backdrop to stay legible instead of a full-width bar.
+  const pillClass =
+    viewSettings.scrolled &&
+    !isVertical &&
+    !stickyBarActive &&
+    'progress-pill eink-bordered rounded-md bg-base-100/85 px-1.5';
   const showStatusInfo =
     (progressBarMode === 'all' ||
       progressBarMode.includes('battery') ||
@@ -222,15 +241,10 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     <div
       role='presentation'
       className={clsx(
-        'progressinfo absolute bottom-0 flex items-center justify-between font-sans',
+        'progressinfo pointer-events-none absolute bottom-0 z-10 flex items-center justify-between font-sans',
         isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-extralight',
         isVertical ? 'writing-vertical-rl' : 'w-full',
-        isMobile ? 'pointer-events-auto' : 'pointer-events-none',
       )}
-      onClick={() => {
-        if (eventDispatcher.dispatchSync('iframe-single-click')) return;
-        cycleProgressInfoModes();
-      }}
       aria-label={[
         progress
           ? _('On {{current}} of {{total}} page', {
@@ -280,6 +294,19 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
             isEink={isEink}
           />
         )}
+        {/* In 'none' mode nothing renders (and the layout band collapses), so
+            leave two small invisible pads at the ends of the row — where the
+            info sat — as the only tap targets to bring the footer back. */}
+        {tapTargetsEnabled && progressBarMode === 'none' && (
+          <div
+            role='none'
+            className={clsx(
+              'progress-restore-pad cursor-pointer pointer-events-auto',
+              isVertical ? 'h-11 w-full' : 'h-full w-11',
+            )}
+            onClick={handleInfoClick}
+          />
+        )}
         {(progressBarMode === 'all' || progressBarMode.includes('remaining')) &&
           hasRemainingInfo && (
             <div
@@ -293,9 +320,17 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               )}
             >
               {viewSettings.showRemainingTime ? (
-                <span className='time-left-label text-start'>{timeLeftStr}</span>
+                <span
+                  className={clsx('time-left-label text-start', tapTargetClass, pillClass)}
+                  onClick={handleInfoClick}
+                >
+                  {timeLeftStr}
+                </span>
               ) : viewSettings.showRemainingPages && showPagesLeft ? (
-                <span className='text-start'>
+                <span
+                  className={clsx('text-start', tapTargetClass, pillClass)}
+                  onClick={handleInfoClick}
+                >
                   {localize ? (
                     remainingInBook ? (
                       <Trans
@@ -342,6 +377,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
             showBatteryPercentage={viewSettings.showBatteryPercentage}
             isVertical={isVertical}
             isEink={isEink}
+            className={clsx(tapTargetClass, pillClass) || undefined}
+            onClick={tapTargetsEnabled ? handleInfoClick : undefined}
           />
         )}
 
@@ -361,7 +398,10 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
                   className={clsx(
                     'progress-info-label text-end',
                     isVertical ? 'mt-auto' : 'ms-auto',
+                    tapTargetClass,
+                    pillClass,
                   )}
+                  onClick={handleInfoClick}
                 >
                   {progressInfo}
                 </span>
@@ -369,6 +409,16 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
             </>
           )}
         </div>
+        {tapTargetsEnabled && progressBarMode === 'none' && (
+          <div
+            role='none'
+            className={clsx(
+              'progress-restore-pad cursor-pointer pointer-events-auto',
+              isVertical ? 'h-11 w-full' : 'h-full w-11',
+            )}
+            onClick={handleInfoClick}
+          />
+        )}
       </div>
     </div>
   );

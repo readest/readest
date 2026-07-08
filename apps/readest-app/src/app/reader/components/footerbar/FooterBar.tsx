@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
+import { useHoverIntent } from '@/hooks/useHoverIntent';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -238,18 +239,28 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const isMobile = appService?.isMobile || window.innerWidth < 640;
 
+  // Summon the bar only after the pointer dwells on the strip. A raw
+  // mouseenter fired while the mouse merely traveled across the strip toward
+  // the ProgressBar info text, covering it before the user could click it.
+  const { start: startHoverIntent, cancel: cancelHoverIntent } = useHoverIntent(
+    () => setHoveredBookKey(bookKey),
+    300,
+  );
+
   return (
     <>
-      {/* Hover trigger area */}
+      {/* Hover trigger area. z-0 keeps it below the ProgressBar info text
+          (z-10) so hovering the text itself never summons the bar. */}
       <div
         role='none'
         tabIndex={-1}
         className={clsx(
-          'absolute bottom-0 left-0 z-10 flex h-[52px] w-full',
+          'absolute bottom-0 left-0 z-0 flex h-[52px] w-full',
           needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
           isMobile || pointerInDoc ? 'pointer-events-none' : '',
         )}
-        onMouseEnter={() => !isMobile && setHoveredBookKey(bookKey)}
+        onMouseEnter={() => !isMobile && startHoverIntent()}
+        onMouseLeave={cancelHoverIntent}
         onTouchStart={() => !isMobile && setHoveredBookKey(bookKey)}
       />
 
