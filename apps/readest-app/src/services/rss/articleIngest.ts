@@ -5,6 +5,8 @@ import { convertToEpubWithWorker } from '@/services/send/conversion/conversionWo
 import { getClipOptions } from '@/services/send/clipOptions';
 import { ingestFile } from '@/services/ingestService';
 import { isTauriAppPlatform } from '@/services/environment';
+import { md5Fingerprint } from '@/utils/md5';
+import { stubTranslation as _ } from '@/utils/misc';
 import type { AppService } from '@/types/system';
 import type { SystemSettings } from '@/types/settings';
 import type { Book } from '@/types/book';
@@ -19,7 +21,7 @@ export function resolveArticleInput(item: RssFeedItem, pageHtml: string | null):
   if (pageHtml) {
     return { kind: 'page', html: pageHtml, url: item.link };
   }
-  throw new Error('This article has no full content; open it in a browser.');
+  throw new Error(_('This article has no full content; open it in a browser.'));
 }
 
 export interface OpenFeedArticleParams {
@@ -58,10 +60,16 @@ export async function openFeedArticle(params: OpenFeedArticleParams): Promise<Bo
 
   const converted = await convert(resolveArticleInput(item, pageHtml));
   const book = await ingest(
-    { file: converted.file, books, groupName: feed.title, forceUpload: true },
+    {
+      file: converted.file,
+      books,
+      groupId: md5Fingerprint(feed.title),
+      groupName: feed.title,
+      forceUpload: true,
+    },
     { appService, settings, isLoggedIn },
   );
-  if (!book) throw new Error('Import produced no book');
+  if (!book) throw new Error(_('Import produced no book'));
   return book;
 }
 

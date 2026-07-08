@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { resolveArticleInput, handleOpenArticle } from '@/services/rss/articleIngest';
-import type { RssFeedItem } from '@/types/rss';
+import {
+  resolveArticleInput,
+  handleOpenArticle,
+  openFeedArticle,
+} from '@/services/rss/articleIngest';
+import { md5Fingerprint } from '@/utils/md5';
+import type { Book } from '@/types/book';
+import type { RssFeed, RssFeedItem } from '@/types/rss';
 
 const item = (over: Partial<RssFeedItem>): RssFeedItem => ({
   id: '1',
@@ -61,5 +67,42 @@ describe('handleOpenArticle', () => {
       onError: (m) => calls.push(`error:${m}`),
     });
     expect(calls).toEqual(['error:fetch failed']);
+  });
+});
+
+describe('openFeedArticle grouping', () => {
+  it('tags the imported article into the per-feed group (groupId + groupName)', async () => {
+    const feed = {
+      id: 'f',
+      url: 'https://x/feed',
+      title: 'My Feed',
+      addedAt: 0,
+      items: [],
+    } as RssFeed;
+    const feedItem = {
+      id: 'i',
+      title: 'T',
+      link: 'https://x/a',
+      read: false,
+      contentHtml: `<p>${'word '.repeat(80)}</p>`,
+    } as RssFeedItem;
+    let captured: { groupId?: string; groupName?: string } | undefined;
+    const book = await openFeedArticle({
+      item: feedItem,
+      feed,
+      books: [],
+      appService: {} as never,
+      settings: {} as never,
+      isLoggedIn: false,
+      translate: (k: string) => k,
+      convert: async () => ({ file: new File(['x'], 'a.epub'), title: 'T', author: '' }),
+      ingest: (async (opts: { groupId?: string; groupName?: string }) => {
+        captured = { groupId: opts.groupId, groupName: opts.groupName };
+        return { hash: 'h1', title: 'T' } as Book;
+      }) as never,
+    });
+    expect(book.hash).toBe('h1');
+    expect(captured?.groupName).toBe('My Feed');
+    expect(captured?.groupId).toBe(md5Fingerprint('My Feed'));
   });
 });

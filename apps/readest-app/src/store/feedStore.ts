@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { fetchAndParseFeed } from '@/services/rss/feedClient';
+import { stubTranslation as _ } from '@/utils/misc';
 import type { ParsedFeed, RssFeed, RssFeedItem } from '@/types/rss';
 
 type Fetcher = (url: string) => Promise<ParsedFeed>;
@@ -36,7 +37,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   hydrate: (feeds) => set({ feeds }),
   addFeed: async (url, fetcher = fetchAndParseFeed) => {
     if (get().feeds.some((f) => f.url === url)) {
-      throw new Error('You are already subscribed to this feed.');
+      throw new Error(_('You are already subscribed to this feed.'));
     }
     const parsed = await fetcher(url);
     const feed: RssFeed = {
