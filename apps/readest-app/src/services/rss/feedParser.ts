@@ -3,6 +3,15 @@ import type { ParsedFeed, RssFeedItem } from '@/types/rss';
 
 const text = (el: Element | null | undefined): string => el?.textContent?.trim() ?? '';
 
+// Reduce an HTML string to a plain-text preview. Feed summaries (RSS
+// <description>, Atom <summary>) are frequently HTML; rendered verbatim in a
+// list row they show raw tags, so strip to text for the preview.
+const stripHtml = (html: string): string => {
+  if (!html) return '';
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return (doc.body?.textContent ?? '').replace(/\s+/g, ' ').trim();
+};
+
 const toIso = (raw: string): string | undefined => {
   if (!raw) return undefined;
   const d = new Date(raw);
@@ -25,7 +34,9 @@ const parseRss = (doc: Document): ParsedFeed => {
     const guid = text(item.querySelector('guid'));
     // content:encoded — querySelector cannot match the namespaced tag reliably
     // across parsers, so fall back to getElementsByTagName on the local name.
-    const encoded = item.getElementsByTagName('content:encoded')[0];
+    const encoded =
+      item.getElementsByTagName('content:encoded')[0]?.textContent?.trim() || undefined;
+    const descriptionHtml = text(item.querySelector('description')) || undefined;
     const enclosure = item.querySelector('enclosure[type^="image"]');
     return {
       id: guid || link,
@@ -33,8 +44,14 @@ const parseRss = (doc: Document): ParsedFeed => {
       link,
       author: text(item.querySelector('author')) || undefined,
       publishedAt: toIso(text(item.querySelector('pubDate'))),
-      summary: text(item.querySelector('description')) || undefined,
-      contentHtml: encoded?.textContent?.trim() || undefined,
+      // Preview is always plain text; <description> is frequently HTML.
+      summary: descriptionHtml ? stripHtml(descriptionHtml) || undefined : undefined,
+      // Prefer content:encoded; otherwise many feeds (and self-hosted blogs)
+      // ship the full article body in <description>. Using it lets the reader
+      // open from the feed with no page re-fetch — which also avoids Android's
+      // cleartext-HTTP block on http:// article links. resolveArticleInput's
+      // length gate still routes genuinely short summaries to a page fetch.
+      contentHtml: encoded ?? descriptionHtml,
       imageUrl: enclosure?.getAttribute('url') ?? undefined,
       read: false,
     };
@@ -60,7 +77,7 @@ const parseAtom = (doc: Document): ParsedFeed => {
       publishedAt: toIso(
         text(entry.querySelector('updated')) || text(entry.querySelector('published')),
       ),
-      summary: text(entry.querySelector('summary')) || undefined,
+      summary: stripHtml(text(entry.querySelector('summary'))) || undefined,
       contentHtml: text(entry.querySelector('content')) || undefined,
       read: false,
     };

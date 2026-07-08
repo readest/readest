@@ -92,4 +92,39 @@ describe('parseFeed', () => {
       'Unrecognized feed format',
     );
   });
+
+  it('uses a full-content <description> as contentHtml when there is no content:encoded', () => {
+    const body = `<p>${'长文内容 '.repeat(40)}</p><a href="http://x/y">link</a>`;
+    const rss = `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <title>Blog</title><link>https://b.example.com</link>
+  <item>
+    <title>Post</title><link>http://b.example.com/p</link>
+    <description><![CDATA[${body}]]></description>
+  </item>
+</channel></rss>`;
+    const item = parseFeed(rss, 'https://b.example.com/feed').items[0]!;
+    // Full HTML body is preserved for the reader (no page re-fetch needed).
+    expect(item.contentHtml).toContain('<p>');
+    expect(item.contentHtml).toContain('长文内容');
+    // The list-row summary is plain text — no raw tags.
+    expect(item.summary).toBeTruthy();
+    expect(item.summary).not.toContain('<');
+    expect(item.summary).toContain('长文内容');
+  });
+
+  it('prefers content:encoded over description and keeps summary as plain text', () => {
+    const rss = `<?xml version="1.0"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel>
+  <title>B</title>
+  <item>
+    <title>P</title><link>https://b/p</link>
+    <description>plain summary</description>
+    <content:encoded><![CDATA[<p>full body</p>]]></content:encoded>
+  </item>
+</channel></rss>`;
+    const item = parseFeed(rss, 'https://b/feed').items[0]!;
+    expect(item.contentHtml).toContain('full body');
+    expect(item.summary).toBe('plain summary');
+  });
 });
