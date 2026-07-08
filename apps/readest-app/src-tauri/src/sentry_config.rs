@@ -79,10 +79,13 @@ pub fn android_version_from_uname(release: &str) -> Option<String> {
 /// Known-benign browser errors that are expected behavior, not app bugs, and
 /// only add noise to crash reporting:
 /// - The View Transition API skips a transition when the tab is hidden or the
-///   navigation is superseded, and aborts it when the document is in an invalid
-///   state. These arrive as unhandled rejections while the navigation itself
-///   still completes. NOTE: a transition *timeout* abort is deliberately NOT
-///   ignored, since a slow DOM update can signal a real performance problem.
+///   navigation is superseded, aborts it when the document is in an invalid
+///   state, and times out when the DOM update overruns its ~4s budget (e.g. a
+///   large library grid render on a slow device). All arrive as unhandled
+///   rejections while the navigation itself still completes without the
+///   animation, so none is an app bug (READEST-7 / READEST-F / READEST-G /
+///   READEST-9). The timeout was previously kept for its perf signal, but on
+///   supported engines it is just a slow render and only added backlog noise.
 /// - "ResizeObserver loop limit exceeded" / "ResizeObserver loop completed with
 ///   undelivered notifications" is a benign notice the browser fires when
 ///   observer callbacks don't settle within one frame; the spec defines it as
@@ -95,6 +98,7 @@ pub fn is_ignored_browser_error(value: &str) -> bool {
     let value = value.to_lowercase();
     value.contains("transition was skipped")
         || value.contains("transition was aborted because of invalid state")
+        || value.contains("aborted because of timeout in dom update")
         || value.contains("resizeobserver loop")
 }
 
@@ -254,6 +258,10 @@ mod tests {
         assert!(is_ignored_browser_error(
             "InvalidStateError: Transition was aborted because of invalid state"
         ));
+        // Timed out because a slow DOM update overran the budget (READEST-9).
+        assert!(is_ignored_browser_error(
+            "TimeoutError: Transition was aborted because of timeout in DOM update"
+        ));
     }
 
     #[test]
@@ -290,11 +298,7 @@ mod tests {
     }
 
     #[test]
-    fn keeps_view_transition_timeout_and_real_errors() {
-        // A transition timeout can signal a real perf problem — do NOT suppress it.
-        assert!(!is_ignored_browser_error(
-            "TimeoutError: Transition was aborted because of timeout in DOM update"
-        ));
+    fn keeps_real_errors() {
         assert!(!is_ignored_browser_error("TypeError: Load failed"));
         assert!(!is_ignored_browser_error("concurrent use forbidden"));
         assert!(!is_ignored_browser_error(""));
