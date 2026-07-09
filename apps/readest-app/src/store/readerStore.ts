@@ -18,6 +18,10 @@ import {
   openPseStreamBook,
   parsePseStreamFileName,
 } from '@/services/opds/pseStream';
+import type { FileSystem } from '@/types/system';
+import { isFeedBookUrl, parseFeedBookUrl } from '@/services/rss/feedBookUrl';
+import { refreshFeedManifest, buildFeedBookDoc } from '@/services/rss/feedReader';
+import { loadManifest } from '@/services/rss/feedManifest';
 import { BOOK_NAV_VERSION, computeBookNav, hydrateBookNav, updateToc } from '@/services/nav';
 import { formatTitle, getMetadataHash, getPrimaryLanguage } from '@/utils/book';
 import { getBaseFilename } from '@/utils/path';
@@ -181,14 +185,26 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         throw new Error('Book not found');
       }
       const isPseStream = !!book.url && isPseStreamFileName(book.url);
+      const isFeed = !!book.url && isFeedBookUrl(book.url);
       let bookDoc = bookData?.bookDoc;
       let file: File | null = bookData?.file ?? null;
-      if (!bookDoc || (!isPseStream && !file) || reload) {
+      if (!bookDoc || (!isPseStream && !isFeed && !file) || reload) {
         console.log('Loading book', key);
         if (isPseStream) {
           const data = parsePseStreamFileName(book.url!);
           const doc = await openPseStreamBook(data);
           bookDoc = doc.book;
+          file = null;
+        } else if (isFeed) {
+          const { feedUrl } = parseFeedBookUrl(book.url!);
+          const fs = appService as unknown as FileSystem;
+          let manifest;
+          try {
+            manifest = await refreshFeedManifest(fs, book.hash, feedUrl, book.title);
+          } catch {
+            manifest = await loadManifest(fs, book.hash, feedUrl, book.title);
+          }
+          bookDoc = await buildFeedBookDoc(fs, book.hash, manifest);
           file = null;
         } else {
           const content = (await appService.loadBookContent(book)) as BookContent;

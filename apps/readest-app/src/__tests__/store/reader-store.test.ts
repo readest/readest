@@ -60,6 +60,17 @@ vi.mock('@/services/opds/pseStream', () => ({
   openPseStreamBook: vi.fn(),
   parsePseStreamFileName: vi.fn(),
 }));
+vi.mock('@/services/rss/feedBookUrl', () => ({
+  isFeedBookUrl: () => false,
+  parseFeedBookUrl: vi.fn(),
+}));
+vi.mock('@/services/rss/feedReader', () => ({
+  refreshFeedManifest: vi.fn(),
+  buildFeedBookDoc: vi.fn(),
+}));
+vi.mock('@/services/rss/feedManifest', () => ({
+  loadManifest: vi.fn(),
+}));
 
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
