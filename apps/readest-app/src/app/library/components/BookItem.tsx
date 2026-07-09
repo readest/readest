@@ -114,7 +114,7 @@ const BookItem: React.FC<BookItemProps> = ({
         )}
         {isFeedBook && (
           <div
-            className='eink-bordered absolute end-1 top-1 rounded-full border border-base-content/20 bg-base-100/90 p-0.5 shadow-sm'
+            className='eink-bordered border-base-content/20 bg-base-100/90 absolute end-1 top-1 rounded-full border p-0.5'
             aria-label='Feed'
           >
             <MdRssFeed className='text-base-content h-3.5 w-3.5' />
