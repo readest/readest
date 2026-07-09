@@ -31,6 +31,40 @@ export function generateFeedCoverSvg(feedUrl: string, title: string): EpubImage 
   });
 }
 
+// Rasterize the generated SVG cover to PNG. The shelf stores covers as
+// Books/<hash>/cover.png and the Android WebView will not render SVG bytes
+// served under a .png name, so we draw the SVG onto a canvas first (the
+// same approach importBook uses for embedded covers).
+export async function rasterizeCoverSvg(svg: EpubImage, scale = 2): Promise<ArrayBuffer> {
+  const blob = new Blob([svg.bytes], { type: svg.mime || 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('Failed to load cover SVG'));
+      img.src = url;
+    });
+    const w = img.naturalWidth || 600;
+    const h = img.naturalHeight || 900;
+    const canvas = document.createElement('canvas');
+    canvas.width = w * scale;
+    canvas.height = h * scale;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D context unavailable');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const pngBlob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))),
+        'image/png',
+      );
+    });
+    return await pngBlob.arrayBuffer();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export function createFeedBook(feedUrl: string, parsed: ParsedFeed): Book {
   const now = Date.now();
   return {

@@ -88,7 +88,7 @@ import { CatalogDialog } from './components/OPDSDialog';
 import { FeedsView } from './components/feeds/FeedsView';
 import AddFeedModal from './components/feeds/AddFeedModal';
 import { fetchAndParseFeed } from '@/services/rss/feedClient';
-import { createFeedBook, generateFeedCoverSvg } from '@/services/rss/feedBook';
+import { createFeedBook, generateFeedCoverSvg, rasterizeCoverSvg } from '@/services/rss/feedBook';
 import { MigrateDataWindow } from './components/MigrateDataWindow';
 import { BackupWindow } from './components/BackupWindow';
 import { CacheManagerWindow } from './components/CacheManagerWindow';
@@ -577,8 +577,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     if (appService) {
       try {
         const cover = generateFeedCoverSvg(url, book.title);
+        const pngBytes = await rasterizeCoverSvg(cover);
         await appService.createDir(book.hash, 'Books', true);
-        await appService.writeFile(getCoverFilename(book), 'Books', cover.bytes);
+        await appService.writeFile(getCoverFilename(book), 'Books', pngBytes);
         book.coverImageUrl = await appService.generateCoverImageUrl(book);
       } catch (e) {
         console.warn('Failed to generate feed book cover:', e);
