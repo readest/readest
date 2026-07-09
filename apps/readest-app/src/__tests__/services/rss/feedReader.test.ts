@@ -54,6 +54,22 @@ describe('refreshFeedManifest', () => {
     expect(m.entries.find((e) => e.id === 'c')!.slot).toBe(slotForArticleId('c'));
     expect(extractCalls).toEqual(['b', 'c']);
   });
+
+  it('one failing extraction does not abort the refresh', async () => {
+    const fs = memFs();
+    const deps = {
+      fetchAndParse: async () =>
+        parsed([{ id: 'good', contentHtml: `<p>${'x '.repeat(120)}</p>` }, { id: 'bad' }]),
+      extractFor: async (e: FeedArticleEntryLike) => {
+        if (e.id === 'bad') throw new Error('network fail');
+        return '<p>ok</p>';
+      },
+    };
+    const m = await refreshFeedManifest(fs, 'fh', 'https://x/feed', 'Blog', deps);
+    // Both entries kept their manifest slots despite 'bad' failing:
+    expect(m.entries.map((e) => e.id).sort()).toEqual(['bad', 'good']);
+    // 'good' was cached from feed content; 'bad' skipped, not cached.
+  });
 });
 
 type FeedArticleEntryLike = { id: string; link: string };

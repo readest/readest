@@ -44,10 +44,16 @@ export async function refreshFeedManifest(
   const itemById = new Map(parsed.items.map((it) => [it.id, it]));
   for (const entry of manifest.entries) {
     if ((await loadArticleCache(fs, feedHash, entry.id)) !== null) continue;
-    const item = itemById.get(entry.id);
-    const decision = item ? resolveArticleHtml(item) : ({ needsPage: true } as const);
-    const html = 'html' in decision ? decision.html : await extractFor(entry);
-    await saveArticleCache(fs, feedHash, entry.id, html);
+    try {
+      const item = itemById.get(entry.id);
+      const decision = item ? resolveArticleHtml(item) : ({ needsPage: true } as const);
+      const html = 'html' in decision ? decision.html : await extractFor(entry);
+      await saveArticleCache(fs, feedHash, entry.id, html);
+    } catch {
+      // One article failing (network, extraction) must not abort the refresh:
+      // the entry keeps its slot, renders as an offline placeholder, and is
+      // retried on the next refresh.
+    }
   }
   const updated: FeedManifest = { ...manifest, lastFetchedAt: Date.now() };
   await saveManifest(fs, feedHash, updated);
