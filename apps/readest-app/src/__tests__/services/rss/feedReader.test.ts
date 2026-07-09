@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { refreshFeedManifest } from '@/services/rss/feedReader';
+import { slotForArticleId } from '@/services/rss/feedManifest';
 import type { FileSystem } from '@/types/system';
 import type { ParsedFeed } from '@/types/rss';
 
@@ -50,7 +51,7 @@ describe('refreshFeedManifest', () => {
       parsed([{ id: 'c' }, { id: 'a', contentHtml: `<p>${'x '.repeat(120)}</p>` }, { id: 'b' }]);
     m = await refreshFeedManifest(fs, 'feedhash', 'https://x/feed', 'Blog', deps);
     expect([...m.entries].map((e) => e.id).sort()).toEqual(['a', 'b', 'c']);
-    expect(m.entries.find((e) => e.id === 'c')!.slot).toBe(2);
+    expect(m.entries.find((e) => e.id === 'c')!.slot).toBe(slotForArticleId('c'));
     expect(extractCalls).toEqual(['b', 'c']);
   });
 });

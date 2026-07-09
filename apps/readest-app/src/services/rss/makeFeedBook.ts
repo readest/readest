@@ -29,11 +29,19 @@ export async function makeFeedBook(
   manifest: FeedManifest,
   loadArticleHtml: (entry: FeedArticleEntry) => Promise<string>,
 ): Promise<BookDoc> {
-  const htmls = await Promise.all(manifest.entries.map((e) => loadArticleHtml(e)));
+  // Sort entries by publishedAt ascending; entries without a date go last,
+  // preserving their relative manifest order. Do NOT mutate manifest.entries.
+  const sortedEntries = [...manifest.entries].sort((a, b) => {
+    const aDate = a.publishedAt ? new Date(a.publishedAt).getTime() : Infinity;
+    const bDate = b.publishedAt ? new Date(b.publishedAt).getTime() : Infinity;
+    return aDate - bDate;
+  });
+
+  const htmls = await Promise.all(sortedEntries.map((e) => loadArticleHtml(e)));
 
   const serializer = new XMLSerializer();
 
-  const xhtml = manifest.entries.map((entry, i) => {
+  const xhtml = sortedEntries.map((entry, i) => {
     const rawHtml = htmls[i]!;
     const safeHtml = sanitizeHtml(rawHtml);
     const docBody = new DOMParser().parseFromString(safeHtml, 'text/html').body;
@@ -46,7 +54,7 @@ export async function makeFeedBook(
 
   const urls: (string | undefined)[] = new Array(xhtml.length).fill(undefined);
 
-  const sections: FeedSection[] = manifest.entries.map((entry, index) => {
+  const sections: FeedSection[] = sortedEntries.map((entry, index) => {
     const str = xhtml[index]!;
     return {
       id: String(entry.slot),
@@ -70,7 +78,7 @@ export async function makeFeedBook(
     };
   });
 
-  const toc = manifest.entries.map((e) => ({ label: e.title, href: String(e.slot) }));
+  const toc = sortedEntries.map((e) => ({ label: e.title, href: String(e.slot) }));
 
   const book = {
     metadata: {
@@ -94,6 +102,15 @@ export async function makeFeedBook(
         return { index, anchor: (doc: Document) => (b ? doc.getElementById(b) : null) };
       }
       return null;
+    },
+    resolveCFI: (cfi: string) => {
+      const parts = CFI.parse(cfi);
+      const slot = CFI.fake.toIndex((parts.parent ?? parts).shift());
+      const index = sections.findIndex((s) => s.id === String(slot));
+      return {
+        index: index >= 0 ? index : 0,
+        anchor: (doc: Document) => CFI.toRange(doc, parts),
+      };
     },
     isExternal: (uri: string): boolean => isExternalUri(uri),
     getCover: async (): Promise<Blob | null> => null,
