@@ -60,7 +60,13 @@ export async function makeFeedBook(
         return urls[index]!;
       },
       loadText: async () => str,
-      createDocument: async () => new DOMParser().parseFromString(str, 'application/xhtml+xml'),
+      createDocument: async () => {
+        const doc = new DOMParser().parseFromString(str, 'application/xhtml+xml');
+        if (doc.querySelector('parsererror')) {
+          return new DOMParser().parseFromString(str, 'text/html');
+        }
+        return doc;
+      },
     };
   });
 

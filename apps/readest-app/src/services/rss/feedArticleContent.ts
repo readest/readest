@@ -21,8 +21,13 @@ export function resolveArticleHtml(item: RssFeedItem): { html: string } | { need
   return { needsPage: true };
 }
 
-export function extractArticle(pageHtml: string, _url: string): string {
+export function extractArticle(pageHtml: string, url: string): string {
   const doc = new DOMParser().parseFromString(sanitizeForParsing(pageHtml), 'text/html');
+  if (doc.head && !doc.querySelector('base')) {
+    const base = doc.createElement('base');
+    base.setAttribute('href', url);
+    doc.head.prepend(base);
+  }
   const parsed = new Readability(doc).parse();
   if (!parsed?.content) throw new Error('No readable content');
   const parts = [`<h1>${escapeHtml(parsed.title ?? '')}</h1>`];
