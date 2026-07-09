@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ProgressBar from '@/app/reader/components/ProgressBar';
@@ -228,15 +228,15 @@ describe('ProgressBar — sticky progress bar', () => {
   });
 });
 
-describe('ProgressBar — footer never paints or blocks a full-width bar', () => {
-  // The footer overlay is stacked above the book. It must never intercept
-  // taps or text selection outside the info text it actually displays, and
-  // in scrolled mode (no reserved band) each info segment must carry its own
-  // shrink-wrapped pill backdrop instead of a full-width bar.
+describe('ProgressBar — display-only footer overlay', () => {
+  // The footer overlay is stacked above the book but is purely informational:
+  // it must never intercept taps or text selection over book content, and it
+  // exposes no clickable tap targets. In scrolled mode (no reserved band) each
+  // info segment carries its own shrink-wrapped pill backdrop so it stays
+  // legible floating over the text instead of a full-width bar.
   const readerSettings = (overrides?: Partial<ViewSettings>) => {
     currentViewSettings = {
       ...baseSettings,
-      tapToToggleFooter: true,
       ...overrides,
     } as ViewSettings;
     currentProgress = makeProgress(2, 5);
@@ -245,7 +245,7 @@ describe('ProgressBar — footer never paints or blocks a full-width bar', () =>
   };
 
   it('keeps the full-width container pointer-events-none even on mobile', () => {
-    readerSettings();
+    readerSettings({ showRemainingPages: true });
     currentAppService = { isMobile: true, hasSafeAreaInset: false };
 
     const { container } = renderProgressBar();
@@ -255,83 +255,16 @@ describe('ProgressBar — footer never paints or blocks a full-width bar', () =>
     expect(progressInfo.classList.contains('pointer-events-auto')).toBe(false);
   });
 
-  it('tapping the info text turns the whole footer off (persists showFooter=false)', () => {
-    // The tap-to-toggle setting removes the entire footer, exactly as if
-    // "Show Footer" were switched off in settings — no partial cycling of
-    // individual widgets. tapToToggleFooter itself stays on.
-    readerSettings();
-    currentAppService = { isMobile: true, hasSafeAreaInset: false };
-
-    const { container } = renderProgressBar();
-
-    const label = container.querySelector('.progress-info-label') as HTMLElement;
-    expect(label.classList.contains('pointer-events-auto')).toBe(true);
-
-    fireEvent.click(label);
-    const showFooterCalls = saveViewSettings.mock.calls.filter((args) => args[2] === 'showFooter');
-    expect(showFooterCalls.length).toBe(1);
-    expect(showFooterCalls[0]![3]).toBe(false);
-    // Never touches the toggle setting itself.
-    expect(saveViewSettings.mock.calls.some((args) => args[2] === 'tapToToggleFooter')).toBe(false);
-  });
-
-  it('is clickable on desktop too, stacked above the footer-bar hover strip', () => {
-    // Desktop uses a bottom-edge hover strip to summon the nav footer bar.
-    // The info text must sit above that strip (z-10 on the container) and
-    // accept clicks itself so the user can toggle the footer with a mouse.
-    readerSettings();
-
-    const { container } = renderProgressBar();
-
-    const progressInfo = container.querySelector('.progressinfo') as HTMLElement;
-    expect(progressInfo.classList.contains('z-10')).toBe(true);
-
-    const label = container.querySelector('.progress-info-label') as HTMLElement;
-    expect(label.classList.contains('pointer-events-auto')).toBe(true);
-
-    fireEvent.click(label);
-    const showFooterCalls = saveViewSettings.mock.calls.filter((args) => args[2] === 'showFooter');
-    expect(showFooterCalls.length).toBe(1);
-    expect(showFooterCalls[0]![3]).toBe(false);
-  });
-
-  it('renders no tap targets when tapToToggleFooter is off', () => {
-    readerSettings({ tapToToggleFooter: false, showRemainingPages: true });
+  it('exposes no interactive targets (display-only, no tap-to-toggle)', () => {
+    readerSettings({ showRemainingPages: true });
 
     const { container } = renderProgressBar();
 
     expect(container.querySelector('.pointer-events-auto')).toBeNull();
-  });
-
-  it('when hidden by tap, leaves only restore pads and tapping one brings the footer back', () => {
-    // After a tap flips showFooter off, the user must be able to tap again
-    // to bring the footer back without a round-trip through settings. The
-    // component stays mounted (BooksGrid keeps it while tapToToggleFooter is
-    // on) and renders only two small invisible pads at the ends of the row.
-    readerSettings({ showFooter: false });
-
-    const { container } = renderProgressBar();
-
-    expect(container.querySelector('.progress-info-label')).toBeNull();
-    expect(container.querySelector('.remaining-info')).toBeNull();
-    expect(container.querySelector('.sticky-progress-bar')).toBeNull();
-
-    const pads = container.querySelectorAll('.progress-restore-pad');
-    expect(pads.length).toBe(2);
-
-    fireEvent.click(pads[0]!);
-    const showFooterCalls = saveViewSettings.mock.calls.filter((args) => args[2] === 'showFooter');
-    expect(showFooterCalls.length).toBe(1);
-    expect(showFooterCalls[0]![3]).toBe(true);
-  });
-
-  it('renders nothing interactive when hidden and tapToToggleFooter is off', () => {
-    readerSettings({ showFooter: false, tapToToggleFooter: false });
-
-    const { container } = renderProgressBar();
-
+    expect(container.querySelector('.cursor-pointer')).toBeNull();
     expect(container.querySelector('.progress-restore-pad')).toBeNull();
-    expect(container.querySelector('.pointer-events-auto')).toBeNull();
+    // No showFooter write ever originates from tapping the footer.
+    expect(saveViewSettings.mock.calls.some((args) => args[2] === 'showFooter')).toBe(false);
   });
 
   it('wraps each info segment in its own pill backdrop in scrolled mode', () => {

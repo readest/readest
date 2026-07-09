@@ -2,8 +2,7 @@ import type { ViewSettings } from '@/types/book';
 
 /**
  * Whether the footer currently displays any info widget, mirroring the
- * per-widget gating in ProgressBar. (Tapping the footer flips showFooter off
- * wholesale — see ProgressBar — so visibility is purely settings-driven.)
+ * per-widget gating in ProgressBar.
  */
 export const footerInfoVisible = (viewSettings: ViewSettings): boolean =>
   !!(
@@ -20,7 +19,7 @@ export const footerInfoVisible = (viewSettings: ViewSettings): boolean =>
  *
  * The band used to be reserved whenever Show Footer was on, which read as a
  * "solid bar" across the bottom of the screen: scrolled text clipped hard at
- * its edge, and tap-toggling the info off left the empty band behind. Now:
+ * its edge, and it lingered even when the footer had nothing to show. Now:
  *   - the sticky progress bar (always-visible, display-only) keeps its band
  *   - scrolled mode never reserves it — the info floats over the text in
  *     shrink-wrapped pills (see ProgressBar) instead of a full-width strip

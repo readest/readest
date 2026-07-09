@@ -384,7 +384,6 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showCurrentBatteryStatus: false,
   showBatteryPercentage: true,
   use24HourClock: false,
-  tapToToggleFooter: false,
   showPaginationButtons: false,
   progressStyle: 'fraction',
   referencePageCount: 0,

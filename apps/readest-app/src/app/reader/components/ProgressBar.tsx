@@ -13,8 +13,6 @@ import {
   getChapterTickFractions,
   getReferencePageInfo,
 } from '@/utils/progress';
-import { saveViewSettings } from '@/helpers/settings';
-import { eventDispatcher } from '@/utils/event';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import StatusInfo from './StatusInfo.tsx';
 import StickyProgressBar from './StickyProgressBar.tsx';
@@ -33,7 +31,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   gridInsets,
 }) => {
   const _ = useTranslation();
-  const { envConfig, appService } = useEnv();
+  const { appService } = useEnv();
   const getBookData = useBookDataStore((s) => s.getBookData);
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
   const getView = useReaderStore((s) => s.getView);
@@ -134,26 +132,11 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const hasTimeInfo = viewSettings.showCurrentTime;
   const hasBatteryInfo = viewSettings.showCurrentBatteryStatus;
 
-  // Only the shrink-wrapped info elements are tap targets; the full-width
-  // container stays pointer-events-none so the footer never intercepts taps
-  // or text selection over book content along the bottom of the page. The
-  // targets also outrank the footer-bar hover strip (z-10 vs z-0), so
-  // mousing over the info text doesn't summon the nav bar before the user
-  // can click the text to toggle it.
+  // The footer is display-only: the full-width container stays
+  // pointer-events-none so it never intercepts taps or text selection over
+  // book content along the bottom of the page. To hide it, use Settings →
+  // Layout → Show Footer.
   //
-  // A tap toggles the whole footer by flipping showFooter, exactly as if
-  // "Show Footer" were switched in settings (the settings panel reflects
-  // it). tapToToggleFooter itself stays on. While hidden, the component
-  // stays mounted rendering only two small restore pads so tapping the
-  // same spot brings the footer back without a trip through settings.
-  const tapTargetsEnabled = viewSettings.tapToToggleFooter;
-  const footerHidden = !viewSettings.showFooter;
-  const handleInfoClick = () => {
-    if (eventDispatcher.dispatchSync('iframe-single-click')) return;
-    if (!viewSettings.tapToToggleFooter) return;
-    saveViewSettings(envConfig, bookKey, 'showFooter', footerHidden, false, false);
-  };
-  const tapTargetClass = tapTargetsEnabled && 'cursor-pointer pointer-events-auto';
   // Scrolled mode reserves no bottom band (footerReservesBand) — the info
   // floats over the book text, so each segment carries its own shrink-wrapped
   // pill backdrop to stay legible instead of a full-width bar.
@@ -168,26 +151,22 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     <div
       role='presentation'
       className={clsx(
-        'progressinfo pointer-events-none absolute bottom-0 z-10 flex items-center justify-between font-sans',
+        'progressinfo pointer-events-none absolute bottom-0 flex items-center justify-between font-sans',
         isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-extralight',
         isVertical ? 'writing-vertical-rl' : 'w-full',
       )}
-      aria-label={
-        footerHidden
-          ? undefined
-          : [
-              progress
-                ? _('On {{current}} of {{total}} page', {
-                    current: current + 1,
-                    total: total,
-                  })
-                : '',
-              timeLeftStr,
-              pagesLeftStr,
-            ]
-              .filter(Boolean)
-              .join(', ')
-      }
+      aria-label={[
+        progress
+          ? _('On {{current}} of {{total}} page', {
+              current: current + 1,
+              total: total,
+            })
+          : '',
+        timeLeftStr,
+        pagesLeftStr,
+      ]
+        .filter(Boolean)
+        .join(', ')}
       style={
         isVertical
           ? {
@@ -216,135 +195,97 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         )}
         style={isVertical ? {} : { height: `${viewSettings.marginBottomPx}px` }}
       >
-        {footerHidden ? (
-          // Hidden by tap: two invisible pads at the ends of the row — where
-          // the info sat — are the only tap targets to bring the footer back.
-          tapTargetsEnabled && (
-            <>
-              <div
-                role='none'
-                className={clsx(
-                  'progress-restore-pad cursor-pointer pointer-events-auto',
-                  isVertical ? 'h-11 w-full' : 'h-full w-11',
-                )}
-                onClick={handleInfoClick}
-              />
-              <div
-                role='none'
-                className={clsx(
-                  'progress-restore-pad cursor-pointer pointer-events-auto',
-                  isVertical ? 'h-11 w-full' : 'h-full w-11',
-                )}
-                onClick={handleInfoClick}
-              />
-            </>
-          )
-        ) : (
-          <>
-            {stickyBarActive && (
-              <StickyProgressBar
-                className='h-3 flex-1'
-                fraction={fillFraction}
-                tickFractions={tickFractions}
-                rtl={viewSettings.rtl}
-                isEink={isEink}
-              />
+        {stickyBarActive && (
+          <StickyProgressBar
+            className='h-3 flex-1'
+            fraction={fillFraction}
+            tickFractions={tickFractions}
+            rtl={viewSettings.rtl}
+            isEink={isEink}
+          />
+        )}
+        {hasRemainingInfo && (
+          <div
+            className={clsx(
+              'remaining-info whitespace-nowrap text-start',
+              !stickyBarActive && 'flex-1',
+              showStatusInfo && 'overflow-hidden',
+              bookData?.isFixedLayout && !isEink
+                ? 'text-white/75 mix-blend-difference'
+                : 'text-base-content',
             )}
-            {hasRemainingInfo && (
-              <div
-                className={clsx(
-                  'remaining-info whitespace-nowrap text-start',
-                  !stickyBarActive && 'flex-1',
-                  showStatusInfo && 'overflow-hidden',
-                  bookData?.isFixedLayout && !isEink
-                    ? 'text-white/75 mix-blend-difference'
-                    : 'text-base-content',
+          >
+            {viewSettings.showRemainingTime ? (
+              <span className={clsx('time-left-label text-start', pillClass)}>{timeLeftStr}</span>
+            ) : viewSettings.showRemainingPages && showPagesLeft ? (
+              <span className={clsx('text-start', pillClass)}>
+                {localize ? (
+                  remainingInBook ? (
+                    <Trans
+                      i18nKey='{{number}} pages left in book'
+                      values={{ number: formatNumber(pagesLeft, localize, lang) }}
+                    >
+                      <span className='pages-left-number'>{'{{number}}'}</span>
+                      <span className='pages-left-label'>{' pages left in book'}</span>
+                    </Trans>
+                  ) : (
+                    <Trans
+                      i18nKey='{{number}} pages left in chapter'
+                      values={{ number: formatNumber(pagesLeft, localize, lang) }}
+                    >
+                      <span className='pages-left-number'>{'{{number}}'}</span>
+                      <span className='pages-left-label'>{' pages left in chapter'}</span>
+                    </Trans>
+                  )
+                ) : remainingInBook ? (
+                  <Trans i18nKey='{{count}} pages left in book' count={pagesLeft}>
+                    <span className='pages-left-number'>{'{{count}}'}</span>
+                    <span className='pages-left-label'>{' pages left in book'}</span>
+                  </Trans>
+                ) : (
+                  <Trans i18nKey='{{count}} pages left in chapter' count={pagesLeft}>
+                    <span className='pages-left-number'>{'{{count}}'}</span>
+                    <span className='pages-left-label'>{' pages left in chapter'}</span>
+                  </Trans>
                 )}
-              >
-                {viewSettings.showRemainingTime ? (
-                  <span
-                    className={clsx('time-left-label text-start', tapTargetClass, pillClass)}
-                    onClick={handleInfoClick}
-                  >
-                    {timeLeftStr}
-                  </span>
-                ) : viewSettings.showRemainingPages && showPagesLeft ? (
-                  <span
-                    className={clsx('text-start', tapTargetClass, pillClass)}
-                    onClick={handleInfoClick}
-                  >
-                    {localize ? (
-                      remainingInBook ? (
-                        <Trans
-                          i18nKey='{{number}} pages left in book'
-                          values={{ number: formatNumber(pagesLeft, localize, lang) }}
-                        >
-                          <span className='pages-left-number'>{'{{number}}'}</span>
-                          <span className='pages-left-label'>{' pages left in book'}</span>
-                        </Trans>
-                      ) : (
-                        <Trans
-                          i18nKey='{{number}} pages left in chapter'
-                          values={{ number: formatNumber(pagesLeft, localize, lang) }}
-                        >
-                          <span className='pages-left-number'>{'{{number}}'}</span>
-                          <span className='pages-left-label'>{' pages left in chapter'}</span>
-                        </Trans>
-                      )
-                    ) : remainingInBook ? (
-                      <Trans i18nKey='{{count}} pages left in book' count={pagesLeft}>
-                        <span className='pages-left-number'>{'{{count}}'}</span>
-                        <span className='pages-left-label'>{' pages left in book'}</span>
-                      </Trans>
-                    ) : (
-                      <Trans i18nKey='{{count}} pages left in chapter' count={pagesLeft}>
-                        <span className='pages-left-number'>{'{{count}}'}</span>
-                        <span className='pages-left-label'>{' pages left in chapter'}</span>
-                      </Trans>
-                    )}
-                  </span>
-                ) : null}
-              </div>
-            )}
+              </span>
+            ) : null}
+          </div>
+        )}
 
-            {showStatusInfo && (
-              <StatusInfo
-                showTime={hasTimeInfo}
-                use24Hour={viewSettings.use24HourClock}
-                showBattery={hasBatteryInfo}
-                showBatteryPercentage={viewSettings.showBatteryPercentage}
-                isVertical={isVertical}
-                isEink={isEink}
-                className={clsx(tapTargetClass, pillClass) || undefined}
-                onClick={tapTargetsEnabled ? handleInfoClick : undefined}
-              />
-            )}
+        {showStatusInfo && (
+          <StatusInfo
+            showTime={hasTimeInfo}
+            use24Hour={viewSettings.use24HourClock}
+            showBattery={hasBatteryInfo}
+            showBatteryPercentage={viewSettings.showBatteryPercentage}
+            isVertical={isVertical}
+            isEink={isEink}
+            className={pillClass || undefined}
+          />
+        )}
 
-            <div
+        <div
+          className={clsx(
+            'progress-info items-center overflow-hidden whitespace-nowrap text-end tabular-nums',
+            !stickyBarActive && 'flex-1',
+            bookData?.isFixedLayout && !isEink
+              ? 'text-white/75 mix-blend-difference'
+              : 'text-base-content',
+          )}
+        >
+          {viewSettings.showProgressInfo && (
+            <span
               className={clsx(
-                'progress-info items-center overflow-hidden whitespace-nowrap text-end tabular-nums',
-                !stickyBarActive && 'flex-1',
-                bookData?.isFixedLayout && !isEink
-                  ? 'text-white/75 mix-blend-difference'
-                  : 'text-base-content',
+                'progress-info-label text-end',
+                isVertical ? 'mt-auto' : 'ms-auto',
+                pillClass,
               )}
             >
-              {viewSettings.showProgressInfo && (
-                <span
-                  className={clsx(
-                    'progress-info-label text-end',
-                    isVertical ? 'mt-auto' : 'ms-auto',
-                    tapTargetClass,
-                    pillClass,
-                  )}
-                  onClick={handleInfoClick}
-                >
-                  {progressInfo}
-                </span>
-              )}
-            </div>
-          </>
-        )}
+              {progressInfo}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

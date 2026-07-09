@@ -605,7 +605,6 @@ describe('services/constants', () => {
       expect(typeof DEFAULT_VIEW_CONFIG.showCurrentBatteryStatus).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showBatteryPercentage).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.use24HourClock).toBe('boolean');
-      expect(typeof DEFAULT_VIEW_CONFIG.tapToToggleFooter).toBe('boolean');
       expect(typeof DEFAULT_VIEW_CONFIG.showPaginationButtons).toBe('boolean');
     });
 

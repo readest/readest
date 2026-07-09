@@ -86,7 +86,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [showBatteryPercentage, setShowBatteryPercentage] = useState(
     viewSettings.showBatteryPercentage,
   );
-  const [tapToToggleFooter, setTapToToggleFooter] = useState(viewSettings.tapToToggleFooter);
   const [progressStyle, setProgressStyle] = useState(viewSettings.progressStyle);
   const [referencePageCount, setReferencePageCount] = useState(viewSettings.referencePageCount);
   const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation);
@@ -128,7 +127,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       use24HourClock: setUse24HourClock,
       showCurrentBatteryStatus: setShowCurrentBatteryStatus,
       showBatteryPercentage: setShowBatteryPercentage,
-      tapToToggleFooter: setTapToToggleFooter,
     });
   };
 
@@ -411,11 +409,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     saveViewSettings(envConfig, bookKey, 'referencePageCount', referencePageCount, true, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [referencePageCount]);
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'tapToToggleFooter', tapToToggleFooter, false, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tapToToggleFooter]);
 
   useEffect(() => {
     if (showHeader === viewSettings.showHeader) return;
@@ -790,14 +783,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           checked={showBatteryPercentage}
           disabled={!showFooter || !showCurrentBatteryStatus}
           onChange={() => setShowBatteryPercentage(!showBatteryPercentage)}
-        />
-        {/* Never disabled on !showFooter: a tap on the footer flips Show
-            Footer off, and this setting is what keeps the restore tap
-            targets alive to bring it back. */}
-        <SettingsSwitchRow
-          label={_('Tap to Toggle Footer')}
-          checked={tapToToggleFooter}
-          onChange={() => setTapToToggleFooter(!tapToToggleFooter)}
         />
       </BoxedList>
 

@@ -12,8 +12,8 @@ import type { ViewSettings } from '@/types/book';
 //     in shrink-wrapped pills instead
 //   - paginated mode reserves it only while some widget is enabled
 //   - the sticky progress bar (always-visible, display-only) keeps its band
-// Tapping the footer flips showFooter off entirely (see ProgressBar), which
-// unmounts the footer and releases the band through the showFooter gate.
+// Turning Show Footer off (Settings -> Layout) unmounts the footer and
+// releases the band through the showFooter gate.
 const settings = (overrides: Partial<ViewSettings>): ViewSettings =>
   ({ ...DEFAULT_VIEW_CONFIG, ...overrides }) as ViewSettings;
 

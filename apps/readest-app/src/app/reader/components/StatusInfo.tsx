@@ -11,7 +11,6 @@ interface StatusInfoProps {
   isVertical?: boolean;
   isEink?: boolean;
   className?: string;
-  onClick?: () => void;
 }
 
 const StatusInfo: React.FC<StatusInfoProps> = ({
@@ -22,7 +21,6 @@ const StatusInfo: React.FC<StatusInfoProps> = ({
   isVertical,
   isEink,
   className,
-  onClick,
 }) => {
   const formattedTime = useCurrentTime(showTime, use24Hour);
   const batteryLevel = useCurrentBatteryStatus(showBattery);
@@ -36,7 +34,6 @@ const StatusInfo: React.FC<StatusInfoProps> = ({
         isVertical ? 'my-auto' : 'flex-row',
         className,
       )}
-      onClick={onClick}
     >
       {showTime && <span>{formattedTime}</span>}
       {showBattery && batteryLevel !== null && (

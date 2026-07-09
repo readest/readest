@@ -2,7 +2,6 @@ import clsx from 'clsx';
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
-import { useHoverIntent } from '@/hooks/useHoverIntent';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -239,31 +238,18 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const isMobile = appService?.isMobile || window.innerWidth < 640;
 
-  // Summon the bar only after the pointer dwells on the strip. A raw
-  // mouseenter fired while the mouse merely traveled across the strip toward
-  // the ProgressBar info text, covering it before the user could click it.
-  const { start: startHoverIntent, cancel: cancelHoverIntent } = useHoverIntent(
-    () => setHoveredBookKey(bookKey),
-    300,
-  );
-
   return (
     <>
-      {/* Hover trigger zone. A thin strip at the very bottom edge, spatially
-          below the ProgressBar info text (which sits centered in the
-          marginBottomPx band) and stacked under it (z-0 vs z-10). A 52px
-          band here used to cover the info text, so the nav bar popped up
-          over it and swallowed the click the user was aiming at the text. */}
+      {/* Hover trigger area */}
       <div
         role='none'
         tabIndex={-1}
         className={clsx(
-          'footer-hover-zone absolute bottom-0 left-0 z-0 flex h-3 w-full',
+          'absolute bottom-0 left-0 z-10 flex h-[52px] w-full',
           needHorizontalScroll && 'sm:!bottom-3 sm:!h-7',
           isMobile || pointerInDoc ? 'pointer-events-none' : '',
         )}
-        onMouseEnter={() => !isMobile && startHoverIntent()}
-        onMouseLeave={cancelHoverIntent}
+        onMouseEnter={() => !isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !isMobile && setHoveredBookKey(bookKey)}
       />
 
