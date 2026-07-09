@@ -28,6 +28,10 @@ const nextConfig = {
   // tree (see Dockerfile) so it can ship only the traced runtime; all other
   // web builds fall back to the default server output.
   output: exportOutput ? 'export' : standaloneOutput ? 'standalone' : undefined,
+  // Emit browser source maps for the Tauri export build so Sentry can
+  // symbolicate crashes. `scripts/upload-sourcemaps.mjs` uploads them after the
+  // build and strips the .map files, so they never ship inside the app bundle.
+  productionBrowserSourceMaps: exportOutput,
   // Monorepo: trace from the repo root so workspace packages land in the
   // standalone tree. Only relevant to — and only set for — the Docker build.
   outputFileTracingRoot: standaloneOutput ? path.join(__dirname, '../../') : undefined,
