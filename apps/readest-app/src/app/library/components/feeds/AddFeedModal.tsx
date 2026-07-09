@@ -89,7 +89,7 @@ const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose, onSubmit }
           </button>
           <button
             type='button'
-            className='btn btn-primary btn-sm'
+            className='btn btn-contrast btn-sm'
             onClick={() => void submit()}
             disabled={submitting || !url.trim()}
           >

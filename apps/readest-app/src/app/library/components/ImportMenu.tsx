@@ -1,5 +1,6 @@
 import clsx from 'clsx';
-import { MdLink, MdRssFeed, MdOutlineDynamicFeed } from 'react-icons/md';
+import { MdLink, MdRssFeed } from 'react-icons/md';
+import { LuLibrary } from 'react-icons/lu';
 import { IoFileTray } from 'react-icons/io5';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -76,14 +77,14 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
         />
       )}
       <MenuItem
-        label={appService?.isOnlineCatalogsAccessible ? _('Online Library') : _('OPDS Catalogs')}
+        label={_('From Feed URL')}
         Icon={<MdRssFeed className='h-5 w-5' />}
-        onClick={handleOpenCatalogManager}
+        onClick={handleOpenFeeds}
       />
       <MenuItem
-        label={_('Feeds')}
-        Icon={<MdOutlineDynamicFeed className='h-5 w-5' />}
-        onClick={handleOpenFeeds}
+        label={appService?.isOnlineCatalogsAccessible ? _('Online Library') : _('OPDS Catalogs')}
+        Icon={<LuLibrary className='h-5 w-5' />}
+        onClick={handleOpenCatalogManager}
       />
     </Menu>
   );
