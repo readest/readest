@@ -87,6 +87,7 @@ export type BookMetadata = {
   coverImageBlobUrl?: string;
 
   calibreColumns?: CalibreCustomColumn[];
+  feedUrl?: string;
 };
 
 export interface BookDoc {

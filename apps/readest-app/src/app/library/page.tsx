@@ -86,6 +86,9 @@ import { BookDetailModal } from '@/components/metadata';
 import { UpdaterWindow } from '@/components/UpdaterWindow';
 import { CatalogDialog } from './components/OPDSDialog';
 import { FeedsView } from './components/feeds/FeedsView';
+import AddFeedModal from './components/feeds/AddFeedModal';
+import { fetchAndParseFeed } from '@/services/rss/feedClient';
+import { createFeedBook } from '@/services/rss/feedBook';
 import { MigrateDataWindow } from './components/MigrateDataWindow';
 import { BackupWindow } from './components/BackupWindow';
 import { CacheManagerWindow } from './components/CacheManagerWindow';
@@ -206,6 +209,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     searchParams?.get('opds') === 'true',
   );
   const [showFeeds, setShowFeeds] = useState(false);
+  const [showAddFeed, setShowAddFeed] = useState(false);
   const [showImportFromUrl, setShowImportFromUrl] = useState(false);
   const [loading, setLoading] = useState(false);
   // Seed from the library store: if we already have books in memory (the
@@ -564,7 +568,18 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   const handleShowFeeds = () => {
-    setShowFeeds(true);
+    setShowAddFeed(true);
+  };
+
+  const handleAddFeedSubmit = async (url: string) => {
+    const parsed = await fetchAndParseFeed(url);
+    const book = createFeedBook(url, parsed);
+    await useLibraryStore.getState().updateBooks(envConfig, [book]);
+    eventDispatcher.dispatch('toast', {
+      type: 'success',
+      message: _('Subscribed to "{{title}}"', { title: book.title }),
+      timeout: 3000,
+    });
   };
 
   const handleShowOPDSDialog = () => {
@@ -1755,6 +1770,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
       {showCatalogManager && <CatalogDialog onClose={handleDismissOPDSDialog} />}
       {showFeeds && <FeedsView onClose={() => setShowFeeds(false)} />}
+      <AddFeedModal
+        isOpen={showAddFeed}
+        onClose={() => setShowAddFeed(false)}
+        onSubmit={handleAddFeedSubmit}
+      />
       {failedImportsModal && (
         <FailedImportsDialog
           failedImports={failedImportsModal}

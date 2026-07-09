@@ -9,9 +9,11 @@ import { eventDispatcher } from '@/utils/event';
 interface AddFeedModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Optional override: if provided, called instead of the default feedStore.addFeed path. */
+  onSubmit?: (url: string) => Promise<void>;
 }
 
-const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) => {
+const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const _ = useTranslation();
   const [url, setUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -33,12 +35,16 @@ const AddFeedModal: React.FC<AddFeedModalProps> = ({ isOpen, onClose }) => {
     setSubmitting(true);
     setError(null);
     try {
-      await useFeedStore.getState().addFeed(target);
-      eventDispatcher.dispatch('toast', {
-        type: 'success',
-        message: _('Feed added successfully'),
-        timeout: 2500,
-      });
+      if (onSubmit) {
+        await onSubmit(target);
+      } else {
+        await useFeedStore.getState().addFeed(target);
+        eventDispatcher.dispatch('toast', {
+          type: 'success',
+          message: _('Feed added successfully'),
+          timeout: 2500,
+        });
+      }
       onClose();
     } catch (e) {
       const message =
