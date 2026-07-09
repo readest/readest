@@ -94,19 +94,22 @@ pub fn maybe_resize_cover(bytes: Vec<u8>, hint_mime: &str) -> (Vec<u8>, String) 
 }
 
 /// Mirror of `utils/md5.ts::partialMD5`:
+///
+/// ```ts
 ///   step = 1024, size = 1024
 ///   for i in -1..=10:
 ///     start = min(file.size, step << (2*i))   // JS 32-bit shift
 ///     end   = min(start + size, file.size)
 ///     if start >= file.size: break
 ///     hash file[start..end]
+/// ```
 ///
 /// JS bit-shift operands are masked to their low 5 bits, so `1024 << -2`
 /// actually means `1024 << 30`, which is far larger than any reasonable
-/// file. That makes the very first iteration (i = -1) immediately break
-/// for files smaller than ~1 GiB, leaving the hasher empty -> md5 of "" =
+/// file. That makes the very first iteration (`i = -1`) immediately break
+/// for files smaller than ~1 `GiB`, leaving the hasher empty -> md5 of "" =
 /// d41d8cd9... We must reproduce that behaviour bit-for-bit so existing
-/// on-disk hashes (Books/<hash>/...) keep matching.
+/// on-disk hashes (`Books/<hash>/...`) keep matching.
 pub fn compute_partial_md5(path: &Path) -> std::io::Result<String> {
     const STEP: u32 = 1024;
     const CHUNK: u64 = 1024;
