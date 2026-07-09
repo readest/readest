@@ -125,7 +125,7 @@ useEffect(() => {
 }, [myNewToggle]);
 ```
 
-The `useEffect`-on-local-state pattern is the established convention in `LayoutPanel`, `ControlPanel`, `ColorPanel`, etc. It keeps the UI responsive and batches store updates until the user stops interacting.
+The `useEffect`-on-local-state pattern is the established convention in `LayoutPanel`, `ControlPanel`, `ThemePanel`, etc. It keeps the UI responsive and batches store updates until the user stops interacting.
 
 #### Signature
 

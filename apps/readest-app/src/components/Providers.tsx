@@ -154,7 +154,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
         // Seed the customTextureStore with the disk-loaded textures (preserving
         // their saved ids) so the boot-time applyBackgroundTexture below can
         // resolve a custom textureId. Without this, the store is empty until
-        // ColorPanel or the replica-pull seed runs — and the in-hook addTexture
+        // ThemePanel or the replica-pull seed runs — and the in-hook addTexture
         // fallback re-derives the id from name, which mismatches whenever the
         // saved id wasn't computed from the current name (legacy imports,
         // cross-device sync, name-based id collisions).
