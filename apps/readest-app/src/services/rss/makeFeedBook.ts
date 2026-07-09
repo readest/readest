@@ -8,9 +8,18 @@ const XHTML_NS = 'http://www.w3.org/1999/xhtml';
 const escapeHtml = (text: string): string =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+const FEED_STYLE = `
+img { max-width: 100%; height: auto; }
+pre { white-space: pre-wrap; overflow-wrap: break-word; }
+pre, code { font-family: monospace; }
+table { border-collapse: collapse; }
+th, td { border: 1px solid currentColor; padding: 0.2em 0.5em; }
+blockquote { margin-inline: 1em; }
+`;
+
 const wrapXhtml = (inner: string): string =>
   '<?xml version="1.0" encoding="utf-8"?>\n' +
-  `<html xmlns="${XHTML_NS}"><head><meta charset="utf-8"/></head><body>${inner}</body></html>`;
+  `<html xmlns="${XHTML_NS}"><head><meta charset="utf-8"/><style>${FEED_STYLE}</style></head><body>${inner}</body></html>`;
 
 const isExternalUri = (uri: string): boolean => /^(?:https?|mailto|tel):/i.test(uri);
 
