@@ -141,6 +141,13 @@ const FoliateViewer: React.FC<{
   const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
 
+  // A pending anti-flash timer must not fire setNavigating on an unmounted component.
+  useEffect(() => {
+    return () => {
+      if (navSpinnerTimerRef.current) clearTimeout(navSpinnerTimerRef.current);
+    };
+  }, []);
+
   useAutoFocus<HTMLDivElement>({ ref: containerRef });
 
   useDiscordPresence(
