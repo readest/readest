@@ -20,8 +20,7 @@ import {
 } from '@/services/opds/pseStream';
 import type { FileSystem } from '@/types/system';
 import { isFeedBookUrl, parseFeedBookUrl } from '@/services/rss/feedBookUrl';
-import { refreshFeedManifest, buildFeedBookDoc } from '@/services/rss/feedReader';
-import { loadManifest } from '@/services/rss/feedManifest';
+import { openFeedBookDoc } from '@/services/rss/feedReader';
 import { BOOK_NAV_VERSION, computeBookNav, hydrateBookNav, updateToc } from '@/services/nav';
 import { formatTitle, getMetadataHash, getPrimaryLanguage } from '@/utils/book';
 import { getBaseFilename } from '@/utils/path';
@@ -197,14 +196,9 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           file = null;
         } else if (isFeed) {
           const { feedUrl } = parseFeedBookUrl(book.url!);
+          // AppService publicly exposes the readFile/writeFile/exists surface of FileSystem.
           const fs = appService as unknown as FileSystem;
-          let manifest;
-          try {
-            manifest = await refreshFeedManifest(fs, book.hash, feedUrl, book.title);
-          } catch {
-            manifest = await loadManifest(fs, book.hash, feedUrl, book.title);
-          }
-          bookDoc = await buildFeedBookDoc(fs, book.hash, manifest);
+          bookDoc = await openFeedBookDoc(fs, book.hash, feedUrl, book.title);
           file = null;
         } else {
           const content = (await appService.loadBookContent(book)) as BookContent;

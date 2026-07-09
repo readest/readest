@@ -18,9 +18,13 @@ import {
 import { guardedFetchText } from './feedGuardedFetch';
 import { makeFeedBook } from './makeFeedBook';
 
-interface RefreshDeps {
+export interface RefreshDeps {
   fetchAndParse?: (feedUrl: string) => Promise<ParsedFeed>;
   extractFor?: (entry: FeedArticleEntry) => Promise<string>;
+}
+
+export interface OpenFeedDeps extends RefreshDeps {
+  refresh?: typeof refreshFeedManifest;
 }
 
 const defaultExtractFor = async (entry: FeedArticleEntry): Promise<string> =>
@@ -69,4 +73,34 @@ export async function buildFeedBookDoc(
     const cached = await loadArticleCache(fs, feedHash, entry.id);
     return cached ?? '<p>Article content unavailable offline.</p>';
   });
+}
+
+// Stale-while-revalidate open: when the manifest already has entries, build
+// the BookDoc from local data immediately and refresh in the background
+// (new articles are persisted and appear on the next open). Only a first
+// open (empty manifest) blocks on the network — there is nothing to show yet.
+export async function openFeedBookDoc(
+  fs: FileSystem,
+  feedHash: string,
+  feedUrl: string,
+  title: string,
+  deps: OpenFeedDeps = {},
+): Promise<BookDoc> {
+  const refresh = deps.refresh ?? refreshFeedManifest;
+  const prev = await loadManifest(fs, feedHash, feedUrl, title);
+  if (prev.entries.length > 0) {
+    void refresh(fs, feedHash, feedUrl, title, deps).catch(() => {
+      // Background refresh failure is silent: the reader already has content
+      // and the next open retries.
+    });
+    return buildFeedBookDoc(fs, feedHash, prev);
+  }
+  let manifest = prev;
+  try {
+    manifest = await refresh(fs, feedHash, feedUrl, title, deps);
+  } catch {
+    // First-open fetch failed: fall through to the (empty) local manifest so
+    // the reader shows the book shell instead of crashing.
+  }
+  return buildFeedBookDoc(fs, feedHash, manifest);
 }

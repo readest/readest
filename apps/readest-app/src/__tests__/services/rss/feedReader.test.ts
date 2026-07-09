@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { refreshFeedManifest } from '@/services/rss/feedReader';
+import { refreshFeedManifest, openFeedBookDoc } from '@/services/rss/feedReader';
 import { slotForArticleId } from '@/services/rss/feedManifest';
 import type { FileSystem } from '@/types/system';
 import type { ParsedFeed } from '@/types/rss';
@@ -73,3 +73,42 @@ describe('refreshFeedManifest', () => {
 });
 
 type FeedArticleEntryLike = { id: string; link: string };
+
+describe('openFeedBookDoc (stale-while-revalidate)', () => {
+  it('opens instantly from a warm manifest without awaiting the refresh', async () => {
+    const fs = memFs();
+    // Seed: first refresh populates manifest + cache.
+    await refreshFeedManifest(fs, 'fh', 'https://x/feed', 'Blog', {
+      fetchAndParse: async () => parsed([{ id: 'a', contentHtml: `<p>${'x '.repeat(120)}</p>` }]),
+    });
+    // Warm open: refresh hangs forever — open must still resolve.
+    let refreshStarted = false;
+    const never = new Promise<never>(() => {});
+    const doc = await openFeedBookDoc(fs, 'fh', 'https://x/feed', 'Blog', {
+      refresh: ((): Promise<never> => {
+        refreshStarted = true;
+        return never;
+      }) as unknown as typeof refreshFeedManifest,
+    });
+    expect(refreshStarted).toBe(true); // background refresh fired
+    expect(doc.sections).toHaveLength(1); // built from local manifest
+  });
+
+  it('first open (empty manifest) awaits the fetch', async () => {
+    const fs = memFs();
+    const doc = await openFeedBookDoc(fs, 'fh2', 'https://x/feed', 'Blog', {
+      fetchAndParse: async () => parsed([{ id: 'a', contentHtml: `<p>${'x '.repeat(120)}</p>` }]),
+    });
+    expect(doc.sections).toHaveLength(1); // fetched then built
+  });
+
+  it('first open survives a failing fetch with an empty book', async () => {
+    const fs = memFs();
+    const doc = await openFeedBookDoc(fs, 'fh3', 'https://x/feed', 'Blog', {
+      fetchAndParse: async () => {
+        throw new Error('offline');
+      },
+    });
+    expect(doc.sections).toHaveLength(0);
+  });
+});

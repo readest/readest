@@ -65,11 +65,7 @@ vi.mock('@/services/rss/feedBookUrl', () => ({
   parseFeedBookUrl: vi.fn(),
 }));
 vi.mock('@/services/rss/feedReader', () => ({
-  refreshFeedManifest: vi.fn(),
-  buildFeedBookDoc: vi.fn(),
-}));
-vi.mock('@/services/rss/feedManifest', () => ({
-  loadManifest: vi.fn(),
+  openFeedBookDoc: vi.fn(),
 }));
 
 import { useReaderStore } from '@/store/readerStore';
