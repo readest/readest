@@ -23,12 +23,6 @@
         android:hardwareAccelerated="true"
         android:usesCleartextTraffic="${usesCleartextTraffic}">
 
-        <!-- Android Auto: advertise the media capability so the Readest icon
-             shows up in the car launcher and projects the TTS media session. -->
-        <meta-data
-            android:name="com.google.android.gms.car.application"
-            android:resource="@xml/automotive_app_desc" />
-
         <!-- Sentry auto-init (ContentProvider). Empty DSN => disabled. Release
              is auto-detected from versionName; performance and PII stay at
              their safe off/false defaults. -->

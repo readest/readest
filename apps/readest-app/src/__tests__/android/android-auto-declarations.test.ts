@@ -9,6 +9,14 @@ import { resolve } from 'path';
  * automotive descriptor that declares the `media` capability. Android Auto
  * then connects to the exported MediaBrowserService
  * (com.readest.native_tts.MediaPlaybackService) to drive TTS playback.
+ *
+ * TEMPORARILY WITHDRAWN: Google Play rejected the release in Android Auto
+ * review because the Auto TTS flow still has a bug. The car meta-data is the
+ * sole signal Play uses to detect Auto support, so it is removed from the
+ * manifest until the bug is fixed. The automotive descriptor and the
+ * MediaBrowserService stay: the descriptor makes re-enabling a one-line
+ * revert, and the service powers the phone lock-screen and background TTS
+ * media session.
  */
 
 const manifest = readFileSync(
@@ -17,12 +25,12 @@ const manifest = readFileSync(
 );
 
 describe('Android Auto declarations (#3919)', () => {
-  it('declares the car application meta-data pointing at the automotive descriptor', () => {
-    expect(manifest).toContain('com.google.android.gms.car.application');
-    expect(manifest).toContain('@xml/automotive_app_desc');
+  it('withholds the car application meta-data until the Auto TTS bug is fixed', () => {
+    expect(manifest).not.toContain('com.google.android.gms.car.application');
+    expect(manifest).not.toContain('@xml/automotive_app_desc');
   });
 
-  it('ships an automotive descriptor with the media capability', () => {
+  it('keeps the automotive descriptor with the media capability for re-enabling', () => {
     const desc = readFileSync(
       resolve(process.cwd(), 'src-tauri/gen/android/app/src/main/res/xml/automotive_app_desc.xml'),
       'utf-8',
