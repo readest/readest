@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { useEffect, useState } from 'react';
-import { MdCheckCircle, MdCheckCircleOutline, MdRssFeed } from 'react-icons/md';
+import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
 import {
   LiaCloudUploadAltSolid,
   LiaCloudDownloadAltSolid,
@@ -18,7 +18,6 @@ import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { navigateToLogin } from '@/utils/nav';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { formatAuthors, formatDescription, formatSeries } from '@/utils/book';
-import { isFeedBookUrl } from '@/services/rss/feedBookUrl';
 import ReadingProgress from './ReadingProgress';
 import BookCover from '@/components/BookCover';
 
@@ -68,7 +67,6 @@ const BookItem: React.FC<BookItemProps> = ({
     : undefined;
 
   const seriesText = formatSeries(book.metadata?.series, book.metadata?.seriesIndex);
-  const isFeedBook = !!book.url && isFeedBookUrl(book.url);
 
   return (
     <div
@@ -110,14 +108,6 @@ const BookItem: React.FC<BookItemProps> = ({
             ) : (
               <MdCheckCircleOutline className='fill-gray-300 drop-shadow-sm' />
             )}
-          </div>
-        )}
-        {isFeedBook && (
-          <div
-            className='eink-bordered border-base-content/20 bg-base-100/90 absolute end-1 top-1 rounded-full border p-0.5'
-            aria-label='Feed'
-          >
-            <MdRssFeed className='text-base-content h-3.5 w-3.5' />
           </div>
         )}
       </div>
