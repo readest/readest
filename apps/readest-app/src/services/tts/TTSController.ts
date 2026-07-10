@@ -150,7 +150,7 @@ export class TTSController extends EventTarget {
   ttsRate: number = 1.0;
   ttsClient: TTSClient;
   ttsWebClient: TTSClient;
-  ttsEdgeClient: TTSClient;
+  ttsEdgeClient: EdgeTTSClient;
   ttsNativeClient: TTSClient | null = null;
   ttsWebVoices: TTSVoice[] = [];
   ttsEdgeVoices: TTSVoice[] = [];
@@ -503,6 +503,18 @@ export class TTSController extends EventTarget {
   // null, and hides entirely while false.
   supportsPlaybackInfo(): boolean {
     return this.ttsClient === this.ttsEdgeClient;
+  }
+
+  // Whether the active client supports the inter-sentence gap control (Edge only).
+  supportsGapControl(): boolean {
+    return this.ttsClient === this.ttsEdgeClient;
+  }
+
+  // Passthrough to the Edge client's inter-sentence gap. ttsEdgeClient is
+  // always a constructed instance, whether or not it's the currently active
+  // client (same as supportsPlaybackInfo/supportsGapControl's comparison).
+  setSentenceGap(sec: number): void {
+    this.ttsEdgeClient.setSentenceGap(sec);
   }
 
   // Position/duration of the current section playback at the current rate.
