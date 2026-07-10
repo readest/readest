@@ -1898,5 +1898,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Kutubxonangiz, oʻqish jarayoni va belgilashlaringizni Microsoft OneDrive bilan sinxronlang.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} tanlangan paytda kitoblar, jarayon va izohlar faqat OneDrive'ingizga sinxronlanadi.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest OneDrive-ingizda faqat oʻzi yaratgan fayllarga kiradi.",
-  ". Make OneDrive the active cloud provider.": ". OneDrive-ni faol bulut provayderi qiling."
+  ". Make OneDrive the active cloud provider.": ". OneDrive-ni faol bulut provayderi qiling.",
+  "Sentence Pause": "Gaplar orasidagi pauza"
 }

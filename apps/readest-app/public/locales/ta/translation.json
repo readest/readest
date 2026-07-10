@@ -1898,5 +1898,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "உங்கள் நூலகம், வாசிப்பு முன்னேற்றம் மற்றும் சிறப்பம்சங்களை உங்கள் Microsoft OneDrive உடன் ஒத்திசைக்கவும்.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} தேர்ந்தெடுக்கப்பட்டிருக்கும் போது, புத்தகங்கள், முன்னேற்றம் மற்றும் குறிப்புகள் உங்கள் OneDrive உடன் மட்டுமே ஒத்திசைக்கப்படும்.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest உங்கள் OneDrive இல் தானே உருவாக்கும் கோப்புகளை மட்டுமே அணுகும்.",
-  ". Make OneDrive the active cloud provider.": ". OneDrive ஐ செயலில் உள்ள cloud வழங்குநராக அமைக்கவும்."
+  ". Make OneDrive the active cloud provider.": ". OneDrive ஐ செயலில் உள்ள cloud வழங்குநராக அமைக்கவும்.",
+  "Sentence Pause": "வாக்கிய இடைவேளை"
 }

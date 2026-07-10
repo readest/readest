@@ -1933,5 +1933,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Sincronize a sua biblioteca, o progresso de leitura e os destaques com o seu Microsoft OneDrive.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Enquanto o {{provider}} estiver selecionado, os livros, o progresso e as anotações são sincronizados apenas com o seu OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "O Readest só acede aos ficheiros que cria no seu OneDrive.",
-  ". Make OneDrive the active cloud provider.": ". Torne o OneDrive o fornecedor de nuvem ativo."
+  ". Make OneDrive the active cloud provider.": ". Torne o OneDrive o fornecedor de nuvem ativo.",
+  "Sentence Pause": "Pausa entre frases"
 }

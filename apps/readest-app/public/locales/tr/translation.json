@@ -1898,5 +1898,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Kütüphanenizi, okuma ilerlemenizi ve vurgularınızı Microsoft OneDrive'ınızla senkronize edin.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} seçili olduğunda kitaplar, ilerleme ve açıklamalar yalnızca OneDrive'ınızla senkronize edilir.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest yalnızca OneDrive'ınızda kendi oluşturduğu dosyalara erişir.",
-  ". Make OneDrive the active cloud provider.": ". OneDrive'ı etkin bulut sağlayıcısı yapın."
+  ". Make OneDrive the active cloud provider.": ". OneDrive'ı etkin bulut sağlayıcısı yapın.",
+  "Sentence Pause": "Cümle Arası Duraklama"
 }
