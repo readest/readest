@@ -1927,5 +1927,11 @@
   "Subscribed to \"{{title}}\"": "Abonat la „{{title}}”",
   "This article has no full content; open it in a browser.": "Acest articol nu are conținut complet; deschide-l într-un browser.",
   "Import produced no book": "Importul nu a produs nicio carte",
-  "You are already subscribed to this feed.": "Ești deja abonat la acest flux."
+  "You are already subscribed to this feed.": "Ești deja abonat la acest flux.",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "Folosește OneDrive",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Sincronizează-ți biblioteca, progresul citirii și evidențierile cu Microsoft OneDrive-ul tău.",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Cât timp {{provider}} este selectat, cărțile, progresul și adnotările se sincronizează doar cu OneDrive-ul tău.",
+  "Readest only accesses the files it creates in your OneDrive.": "Readest accesează doar fișierele pe care le creează în OneDrive-ul tău.",
+  ". Make OneDrive the active cloud provider.": ". Setează OneDrive ca furnizor de cloud activ."
 }

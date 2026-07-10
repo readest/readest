@@ -27,6 +27,7 @@ describe('mergeSyncedGlobalSettings cloud sync provider flags', () => {
         lastSyncedAt: 42,
       },
       googleDrive: { enabled: true, accountLabel: 'a@b' },
+      onedrive: { enabled: false, accountLabel: 'c@d' },
     } as Partial<SystemSettings>);
     const merged = mergeSyncedGlobalSettings(local, {
       globalViewSettings: local.globalViewSettings,
@@ -34,6 +35,7 @@ describe('mergeSyncedGlobalSettings cloud sync provider flags', () => {
       cloudSyncProviders: {
         webdav: { enabled: true, providerSelectedAt: 999 },
         googleDrive: { enabled: false },
+        onedrive: { enabled: true, providerSelectedAt: 888 },
       },
     });
     expect(merged.webdav.enabled).toBe(true);
@@ -43,11 +45,15 @@ describe('mergeSyncedGlobalSettings cloud sync provider flags', () => {
     expect(merged.webdav.lastSyncedAt).toBe(42);
     expect(merged.googleDrive.enabled).toBe(false);
     expect(merged.googleDrive.accountLabel).toBe('a@b');
+    expect(merged.onedrive.enabled).toBe(true);
+    expect(merged.onedrive.providerSelectedAt).toBe(888);
+    expect(merged.onedrive.accountLabel).toBe('c@d');
   });
 
   test('a payload without provider flags leaves the slices untouched', () => {
     const local = makeLocal({
       webdav: { enabled: true, password: 'secret' },
+      onedrive: { enabled: true, accountLabel: 'c@d' },
     } as Partial<SystemSettings>);
     const merged = mergeSyncedGlobalSettings(local, {
       globalViewSettings: local.globalViewSettings,
@@ -55,6 +61,25 @@ describe('mergeSyncedGlobalSettings cloud sync provider flags', () => {
     });
     expect(merged.webdav.enabled).toBe(true);
     expect(merged.webdav.password).toBe('secret');
+    expect(merged.onedrive.enabled).toBe(true);
+    expect(merged.onedrive.accountLabel).toBe('c@d');
+  });
+
+  test('an absent onedrive flag in the payload leaves the local slice untouched', () => {
+    const local = makeLocal({
+      webdav: { enabled: false },
+      onedrive: { enabled: true, accountLabel: 'c@d' },
+    } as Partial<SystemSettings>);
+    const merged = mergeSyncedGlobalSettings(local, {
+      globalViewSettings: local.globalViewSettings,
+      globalReadSettings: local.globalReadSettings,
+      cloudSyncProviders: {
+        webdav: { enabled: true },
+        googleDrive: { enabled: false },
+      },
+    });
+    expect(merged.onedrive.enabled).toBe(true);
+    expect(merged.onedrive.accountLabel).toBe('c@d');
   });
 });
 

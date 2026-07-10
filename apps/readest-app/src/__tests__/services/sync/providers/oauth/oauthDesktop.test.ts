@@ -2,10 +2,21 @@ import { describe, expect, test, vi } from 'vitest';
 import {
   runDesktopDeepLinkOAuth,
   type DesktopDeepLinkDeps,
-} from '@/services/sync/providers/gdrive/auth/oauthDesktop';
+} from '@/services/sync/providers/oauth/oauthDesktop';
+import type { OAuthClientConfig } from '@/services/sync/providers/oauth/oauthFlow';
 
 const CLIENT_ID = 'cid.apps.googleusercontent.com';
 const REDIRECT = 'com.googleusercontent.apps.cid:/oauthredirect';
+
+const CONFIG: OAuthClientConfig = {
+  clientId: CLIENT_ID,
+  scope: 'drive.file',
+  authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+  tokenEndpoint: 'https://oauth2.googleapis.com/token',
+  redirectUri: REDIRECT,
+  redirectScheme: 'com.googleusercontent.apps.cid',
+  authParams: { access_type: 'offline', prompt: 'consent' },
+};
 
 const tokenJson = (): Response =>
   new Response(JSON.stringify({ access_token: 'AT', refresh_token: 'RT', expires_in: 3600 }), {
@@ -46,11 +57,7 @@ describe('runDesktopDeepLinkOAuth', () => {
     });
     const fetchFn = exchangeFetch();
 
-    const tokens = await runDesktopDeepLinkOAuth(
-      { clientId: CLIENT_ID, scope: 'drive.file' },
-      fetchFn,
-      deps,
-    );
+    const tokens = await runDesktopDeepLinkOAuth(CONFIG, fetchFn, deps);
 
     expect(deps.openDefaultBrowser).toHaveBeenCalledTimes(1);
     expect(tokens.accessToken).toBe('AT');
@@ -68,11 +75,9 @@ describe('runDesktopDeepLinkOAuth', () => {
       fallbackDelayMs: 10,
       connectDeadlineMs: 50,
     });
-    const result = runDesktopDeepLinkOAuth(
-      { clientId: CLIENT_ID, scope: 'drive.file' },
-      exchangeFetch(),
-      deps,
-    ).catch((e: Error) => e.message);
+    const result = runDesktopDeepLinkOAuth(CONFIG, exchangeFetch(), deps).catch(
+      (e: Error) => e.message,
+    );
 
     await delay(90);
     expect(spawnFreshBrowser).toHaveBeenCalledTimes(1);
@@ -86,8 +91,8 @@ describe('runDesktopDeepLinkOAuth', () => {
       fallbackDelayMs: 1_000_000,
       connectDeadlineMs: 20,
     });
-    await expect(
-      runDesktopDeepLinkOAuth({ clientId: CLIENT_ID, scope: 'drive.file' }, exchangeFetch(), deps),
-    ).rejects.toThrow(/did not complete in time/);
+    await expect(runDesktopDeepLinkOAuth(CONFIG, exchangeFetch(), deps)).rejects.toThrow(
+      /did not complete in time/,
+    );
   });
 });

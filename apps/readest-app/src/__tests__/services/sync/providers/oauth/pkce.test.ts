@@ -3,7 +3,7 @@ import {
   buildAuthUrl,
   computeChallenge,
   createPkcePair,
-} from '@/services/sync/providers/gdrive/auth/pkce';
+} from '@/services/sync/providers/oauth/pkce';
 
 describe('pkce', () => {
   test('computeChallenge matches the RFC 7636 Appendix B known-answer vector', async () => {
@@ -30,6 +30,8 @@ describe('pkce', () => {
         scope: 'https://www.googleapis.com/auth/drive.file',
         challenge: 'CHALLENGE',
         state: 'STATE',
+        authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+        extraParams: { access_type: 'offline', prompt: 'consent' },
       }),
     );
     expect(url.origin + url.pathname).toBe('https://accounts.google.com/o/oauth2/v2/auth');
@@ -43,5 +45,26 @@ describe('pkce', () => {
     expect(p.get('state')).toBe('STATE');
     expect(p.get('access_type')).toBe('offline');
     expect(p.get('prompt')).toBe('consent');
+  });
+
+  test('buildAuthUrl uses the given authEndpoint and appends extraParams', () => {
+    const url = new URL(
+      buildAuthUrl({
+        clientId: 'CID',
+        redirectUri: 'readest-onedrive://auth',
+        scope: 'Files.ReadWrite.AppFolder offline_access',
+        challenge: 'CH',
+        state: 'ST',
+        authEndpoint: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+        extraParams: { prompt: 'select_account' },
+      }),
+    );
+    expect(url.origin + url.pathname).toBe(
+      'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+    );
+    expect(url.searchParams.get('code_challenge')).toBe('CH');
+    expect(url.searchParams.get('code_challenge_method')).toBe('S256');
+    expect(url.searchParams.get('prompt')).toBe('select_account');
+    expect(url.searchParams.get('access_type')).toBeNull();
   });
 });

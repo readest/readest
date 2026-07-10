@@ -4,7 +4,12 @@ vi.mock('@/services/sync/providers/gdrive/buildGoogleDriveProvider', () => ({
   buildGoogleDriveProvider: vi.fn(),
 }));
 
+vi.mock('@/services/sync/providers/onedrive/buildOneDriveProvider', () => ({
+  buildOneDriveProvider: vi.fn(),
+}));
+
 import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
+import { buildOneDriveProvider } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import {
   createFileSyncProvider,
   getEnabledFileSyncBackends,
@@ -49,6 +54,10 @@ describe('getEnabledFileSyncBackends', () => {
         googleDrive: { enabled: true },
       }),
     ).toEqual(['gdrive']);
+  });
+
+  test("getEnabledFileSyncBackends includes 'onedrive' when enabled", () => {
+    expect(getEnabledFileSyncBackends({ onedrive: { enabled: true } })).toContain('onedrive');
   });
 });
 
@@ -100,6 +109,13 @@ describe('createFileSyncProvider', () => {
     await createFileSyncProvider('gdrive', {});
     await createFileSyncProvider('gdrive', {});
     expect(buildGoogleDriveProvider).toHaveBeenCalledTimes(1);
+  });
+
+  test('delegates onedrive to buildOneDriveProvider and does not throw', async () => {
+    vi.mocked(buildOneDriveProvider).mockResolvedValueOnce(null);
+    const result = await createFileSyncProvider('onedrive', { onedrive: { enabled: true } });
+    expect(result).toBeNull();
+    expect(buildOneDriveProvider).toHaveBeenCalledTimes(1);
   });
 
   test('rebuilds when the connection settings change', async () => {

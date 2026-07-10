@@ -1892,5 +1892,11 @@
   "Subscribed to \"{{title}}\"": "\"{{title}}\" වෙත දායක විය",
   "This article has no full content; open it in a browser.": "මෙම ලිපියේ සම්පූර්ණ අන්තර්ගතය නොමැත; බ්‍රව්සරයේ විවෘත කරන්න.",
   "Import produced no book": "ආයාතයෙන් පොතක් සෑදුණේ නැත",
-  "You are already subscribed to this feed.": "ඔබ දැනටමත් මෙම සංග්‍රහයට දායක වී ඇත."
+  "You are already subscribed to this feed.": "ඔබ දැනටමත් මෙම සංග්‍රහයට දායක වී ඇත.",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "OneDrive භාවිතා කරන්න",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ඔබේ පුස්තකාලය, කියවීමේ ප්‍රගතිය සහ ඉස්මතු කිරීම් ඔබේ Microsoft OneDrive සමඟ සමමුහුර්ත කරන්න.",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} තෝරා ඇති විට, පොත්, ප්‍රගතිය සහ සටහන් ඔබේ OneDrive වෙත පමණක් සමමුහුර්ත වේ.",
+  "Readest only accesses the files it creates in your OneDrive.": "Readest ප්‍රවේශ වන්නේ ඔබේ OneDrive හි එය සාදන ගොනුවලට පමණි.",
+  ". Make OneDrive the active cloud provider.": ". OneDrive සක්‍රිය cloud සපයන්නා ලෙස සකසන්න."
 }

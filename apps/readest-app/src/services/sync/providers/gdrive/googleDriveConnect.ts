@@ -9,14 +9,14 @@ import { type as osType } from '@tauri-apps/plugin-os';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { getGoogleClientId, getGoogleWebClientId } from './buildGoogleDriveProvider';
 import { createDriveTokenPersistence } from './driveTokenStore';
-import { runDesktopDeepLinkOAuth } from './auth/oauthDesktop';
-import { runAndroidOAuth } from './auth/oauthAndroid';
-import { runIosOAuth } from './auth/oauthIos';
+import { runDesktopDeepLinkOAuth } from '@/services/sync/providers/oauth/oauthDesktop';
+import { runAndroidOAuth } from '@/services/sync/providers/oauth/oauthAndroid';
+import { runIosOAuth } from '@/services/sync/providers/oauth/oauthIos';
 import { resetFileSyncProviderCache } from '@/services/sync/file/providerRegistry';
 import { beginWebDriveRedirect, webDriveRedirectUri } from './auth/webRedirectFlow';
 import { clearWebDriveToken } from './auth/webTokenStore';
-import type { OAuthClientConfig } from './auth/oauthFlow';
-import type { TokenSet } from './auth/tokenStore';
+import type { OAuthClientConfig } from '@/services/sync/providers/oauth/oauthFlow';
+import type { TokenSet } from '@/services/sync/providers/oauth/tokenEndpoint';
 import {
   connectGoogleDrive,
   disconnectGoogleDrive,

@@ -46,6 +46,29 @@ describe('withActiveCloudProvider', () => {
     expect(next.webdav.enabled).toBe(true);
   });
 
+  test('enabling OneDrive disables WebDAV, Google Drive, and S3 (exclusive)', () => {
+    const withOneDrive = {
+      ...base,
+      s3: { enabled: true },
+      onedrive: { enabled: false },
+    } as unknown as SystemSettings;
+    const next = withActiveCloudProvider(withOneDrive, 'onedrive');
+    expect(next.onedrive.enabled).toBe(true);
+    expect(next.webdav.enabled).toBe(false);
+    expect(next.googleDrive.enabled).toBe(false);
+    expect(next.s3.enabled).toBe(false);
+    // Activation hands OneDrive the book-file channel and anchors fleet detection.
+    expect(next.onedrive.syncBooks).toBe(true);
+    expect(next.onedrive.providerSelectedAt).toBeTruthy();
+  });
+
+  test('enabling WebDAV disables OneDrive (exclusive)', () => {
+    const withOneDrive = { ...base, onedrive: { enabled: true } } as unknown as SystemSettings;
+    const next = withActiveCloudProvider(withOneDrive, 'webdav');
+    expect(next.onedrive.enabled).toBe(false);
+    expect(next.webdav.enabled).toBe(true);
+  });
+
   test('null disables both', () => {
     const next = withActiveCloudProvider(base, null);
     expect(next.webdav.enabled).toBe(false);

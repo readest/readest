@@ -73,8 +73,9 @@ export const useLibraryFileSync = () => {
       if (isWebAppPlatform() && !hasValidWebDriveToken()) return false;
       return !!settings.googleDrive?.enabled;
     }
+    if (activeKind === 'onedrive') return !!settings.onedrive?.enabled;
     return false;
-  }, [isAllowed, activeKind, settings.webdav, settings.googleDrive]);
+  }, [isAllowed, activeKind, settings.webdav, settings.googleDrive, settings.onedrive]);
 
   // Build the engine async (Drive probes the OS keychain). Keyed on the
   // connection-relevant settings so an unrelated write (e.g. lastSyncedAt)
@@ -85,8 +86,9 @@ export const useLibraryFileSync = () => {
       return `webdav:${w?.enabled}:${w?.serverUrl}:${w?.username}:${w?.password}:${w?.rootPath}`;
     }
     if (activeKind === 'gdrive') return `gdrive:${settings.googleDrive?.enabled}`;
+    if (activeKind === 'onedrive') return `onedrive:${settings.onedrive?.enabled}`;
     return 'none';
-  }, [activeKind, settings.webdav, settings.googleDrive]);
+  }, [activeKind, settings.webdav, settings.googleDrive, settings.onedrive]);
 
   const [engine, setEngine] = useState<FileSyncEngine | null>(null);
   useEffect(() => {

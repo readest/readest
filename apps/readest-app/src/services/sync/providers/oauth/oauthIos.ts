@@ -24,9 +24,8 @@
  */
 import { authWithSafari } from '@/app/auth/utils/nativeAuth';
 import { createPkcePair } from './pkce';
-import { deriveReverseDnsRedirectScheme, deriveReverseDnsRedirectUri } from './reverseDnsRedirect';
 import { runOAuthFlow, type OAuthClientConfig } from './oauthFlow';
-import { exchangeCode, type FetchFn, type TokenSet } from './tokenStore';
+import { exchangeCode, type FetchFn, type TokenSet } from './tokenEndpoint';
 
 /**
  * Run the iOS `ASWebAuthenticationSession` OAuth flow and return the resulting
@@ -35,11 +34,11 @@ import { exchangeCode, type FetchFn, type TokenSet } from './tokenStore';
  * redirect the native bridge captures.
  */
 export const runIosOAuth = (config: OAuthClientConfig, fetchFn: FetchFn): Promise<TokenSet> => {
-  const redirectUri = deriveReverseDnsRedirectUri(config.clientId);
+  const redirectUri = config.redirectUri;
   // ASWebAuthenticationSession matches on the bare scheme (no path); pass the
   // client-id-derived reverse-DNS scheme so the native session recognises the
   // `com.googleusercontent.apps.<id>:/oauthredirect?...` bounce-back.
-  const callbackScheme = deriveReverseDnsRedirectScheme(config.clientId);
+  const callbackScheme = config.redirectScheme;
 
   // `auth_with_safari` opens consent AND resolves with the redirect URL in a
   // single native round-trip — so it needs the auth URL, which `runOAuthFlow`
@@ -64,7 +63,18 @@ export const runIosOAuth = (config: OAuthClientConfig, fetchFn: FetchFn): Promis
       return redirectUrl;
     },
     redirectUri,
+    authEndpoint: config.authEndpoint,
+    authParams: config.authParams,
     exchange: ({ code, verifier, redirectUri: uri }) =>
-      exchangeCode({ code, verifier, clientId: config.clientId, redirectUri: uri }, fetchFn),
+      exchangeCode(
+        {
+          code,
+          verifier,
+          clientId: config.clientId,
+          redirectUri: uri,
+          tokenEndpoint: config.tokenEndpoint,
+        },
+        fetchFn,
+      ),
   });
 };

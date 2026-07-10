@@ -1,8 +1,9 @@
 import { describe, expect, test, vi } from 'vitest';
-import { PersistedDriveAuth } from '@/services/sync/providers/gdrive/PersistedDriveAuth';
-import type { FetchFn } from '@/services/sync/providers/gdrive/GoogleDriveProvider';
-import type { TokenPersistence } from '@/services/sync/providers/gdrive/driveTokenStore';
-import type { TokenSet } from '@/services/sync/providers/gdrive/auth/tokenStore';
+import { PersistedOAuth } from '@/services/sync/providers/oauth/persistedOAuth';
+import type { FetchFn, TokenSet } from '@/services/sync/providers/oauth/tokenEndpoint';
+import type { TokenPersistence } from '@/services/sync/providers/oauth/keychainTokenStore';
+
+const TOKEN_ENDPOINT = 'https://example.com/token';
 
 const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -20,14 +21,20 @@ const makePersistence = (initial: TokenSet | null = null) => {
   } satisfies TokenPersistence & { save: ReturnType<typeof vi.fn> };
 };
 
-describe('PersistedDriveAuth', () => {
+/** Stub account-label resolver: the shared class only needs to delegate to it. */
+const stubResolveAccountLabel = vi.fn(async () => 'stub-label');
+
+describe('PersistedOAuth', () => {
   test('returns the seeded access token without any network or load', async () => {
     const fetchFn = vi.fn();
     const persistence = makePersistence();
-    const auth = new PersistedDriveAuth({
+    const auth = new PersistedOAuth({
       clientId: 'cid',
+      tokenEndpoint: TOKEN_ENDPOINT,
       fetchFn: fetchFn as unknown as FetchFn,
       persistence,
+      providerLabel: 'Test',
+      resolveAccountLabel: stubResolveAccountLabel,
       initialTokens: { accessToken: 'AT', refreshToken: 'RT', expiresAt: 1000 },
       now: () => 500,
     });
@@ -38,10 +45,13 @@ describe('PersistedDriveAuth', () => {
 
   test('lazily loads tokens from persistence when not seeded', async () => {
     const persistence = makePersistence({ accessToken: 'AT', refreshToken: 'RT', expiresAt: 1000 });
-    const auth = new PersistedDriveAuth({
+    const auth = new PersistedOAuth({
       clientId: 'cid',
+      tokenEndpoint: TOKEN_ENDPOINT,
       fetchFn: vi.fn() as unknown as FetchFn,
       persistence,
+      providerLabel: 'Test',
+      resolveAccountLabel: stubResolveAccountLabel,
       now: () => 500,
     });
     expect(await auth.getAccessToken()).toBe('AT');
@@ -50,12 +60,15 @@ describe('PersistedDriveAuth', () => {
 
   test('refreshes an expired token, carries the old refresh token forward, saves once', async () => {
     const persistence = makePersistence();
-    // Google omits refresh_token on refresh.
+    // Some providers (e.g. Google) omit refresh_token on a refresh response.
     const fetchFn = vi.fn(async () => json({ access_token: 'AT2', expires_in: 3600 }));
-    const auth = new PersistedDriveAuth({
+    const auth = new PersistedOAuth({
       clientId: 'cid',
+      tokenEndpoint: TOKEN_ENDPOINT,
       fetchFn: fetchFn as unknown as FetchFn,
       persistence,
+      providerLabel: 'Test',
+      resolveAccountLabel: stubResolveAccountLabel,
       initialTokens: { accessToken: 'AT', refreshToken: 'RT', expiresAt: 0 },
       now: () => 1000,
     });
@@ -75,10 +88,13 @@ describe('PersistedDriveAuth', () => {
         }),
     );
     const persistence = makePersistence();
-    const auth = new PersistedDriveAuth({
+    const auth = new PersistedOAuth({
       clientId: 'cid',
+      tokenEndpoint: TOKEN_ENDPOINT,
       fetchFn: fetchFn as unknown as FetchFn,
       persistence,
+      providerLabel: 'Test',
+      resolveAccountLabel: stubResolveAccountLabel,
       initialTokens: { accessToken: 'AT', refreshToken: 'RT', expiresAt: 0 },
       now: () => 1000,
     });
@@ -92,40 +108,46 @@ describe('PersistedDriveAuth', () => {
     expect(persistence.save).toHaveBeenCalledTimes(1);
   });
 
-  test('throws AUTH_FAILED when there are no tokens at all', async () => {
-    const auth = new PersistedDriveAuth({
+  test('throws AUTH_FAILED naming the provider when there are no tokens at all', async () => {
+    const auth = new PersistedOAuth({
       clientId: 'cid',
+      tokenEndpoint: TOKEN_ENDPOINT,
       fetchFn: vi.fn() as unknown as FetchFn,
       persistence: makePersistence(null),
+      providerLabel: 'Test',
+      resolveAccountLabel: stubResolveAccountLabel,
     });
     await expect(auth.getAccessToken()).rejects.toMatchObject({ code: 'AUTH_FAILED' });
+    await expect(auth.getAccessToken()).rejects.toThrow(/Test is not connected/);
   });
 
   test('throws AUTH_FAILED when expired with no refresh token', async () => {
-    const auth = new PersistedDriveAuth({
+    const auth = new PersistedOAuth({
       clientId: 'cid',
+      tokenEndpoint: TOKEN_ENDPOINT,
       fetchFn: vi.fn() as unknown as FetchFn,
       persistence: makePersistence(),
+      providerLabel: 'Test',
+      resolveAccountLabel: stubResolveAccountLabel,
       initialTokens: { accessToken: 'AT', expiresAt: 0 },
       now: () => 1000,
     });
     await expect(auth.getAccessToken()).rejects.toMatchObject({ code: 'AUTH_FAILED' });
   });
 
-  test('accountLabel reads the email from about.get', async () => {
-    const fetchFn = vi.fn(async (url: string) => {
-      if (url.includes('/about')) {
-        return json({ user: { emailAddress: 'a@b.com', displayName: 'A B' } });
-      }
-      throw new Error(`unexpected fetch ${url}`);
-    });
-    const auth = new PersistedDriveAuth({
+  test('accountLabel delegates to the injected resolver with the current access token', async () => {
+    const resolveAccountLabel = vi.fn(async (accessToken: string) => `label-for-${accessToken}`);
+    const auth = new PersistedOAuth({
       clientId: 'cid',
-      fetchFn: fetchFn as unknown as FetchFn,
+      tokenEndpoint: TOKEN_ENDPOINT,
+      fetchFn: vi.fn() as unknown as FetchFn,
       persistence: makePersistence(),
+      providerLabel: 'Test',
+      resolveAccountLabel,
       initialTokens: { accessToken: 'AT', refreshToken: 'RT', expiresAt: 9999 },
       now: () => 0,
     });
-    expect(await auth.accountLabel()).toBe('a@b.com');
+    expect(await auth.accountLabel()).toBe('label-for-AT');
+    expect(resolveAccountLabel).toHaveBeenCalledWith('AT', expect.any(Function));
   });
 });

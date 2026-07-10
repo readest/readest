@@ -1,7 +1,9 @@
 /**
- * Google OAuth 2.0 token endpoint operations for the PKCE authorization-code
- * flow: exchanging an authorization `code` for tokens, and later refreshing the
- * short-lived access token.
+ * OAuth 2.0 token endpoint operations for the PKCE authorization-code flow:
+ * exchanging an authorization `code` for tokens, and later refreshing the
+ * short-lived access token. The token endpoint URL is provider-specific and
+ * supplied by the caller (see `tokenEndpoint` on {@link ExchangeCodeParams} /
+ * {@link RefreshTokenParams}).
  *
  * Readest's official Google client is the iOS application type, which has NO
  * client secret — neither request sends one. The authorization code is instead
@@ -14,14 +16,11 @@
  * used with the author's explicit permission.
  */
 
-/** Google's OAuth 2.0 token endpoint (exchanges/refreshes tokens). */
-export const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
-
 /**
- * Renew the access token this many seconds *before* its real expiry. Google
- * reports the lifetime via `expires_in`; trimming the usable lifetime by a small
- * margin guarantees the token is comfortably valid for the duration of any
- * single request we make with it, despite client/Google clock skew.
+ * Renew the access token this many seconds *before* its real expiry. The
+ * provider reports the lifetime via `expires_in`; trimming the usable lifetime
+ * by a small margin guarantees the token is comfortably valid for the duration
+ * of any single request we make with it, despite client/server clock skew.
  */
 export const TOKEN_EXPIRY_SAFETY_MARGIN_SEC = 60;
 
@@ -67,22 +66,26 @@ export interface TokenSet {
 
 /** Inputs for {@link exchangeCode}. */
 export interface ExchangeCodeParams {
-  /** Authorization code Google returned to the redirect URI. */
+  /** Authorization code the provider returned to the redirect URI. */
   code: string;
   /** PKCE verifier whose challenge was sent to the authorization endpoint. */
   verifier: string;
-  /** OAuth client ID registered for this app in Google Cloud. */
+  /** OAuth client ID registered for this app with the provider. */
   clientId: string;
   /** Redirect URI used in the authorization request; must match exactly. */
   redirectUri: string;
+  /** Provider-specific token endpoint (Google / Microsoft). */
+  tokenEndpoint: string;
 }
 
 /** Inputs for {@link refreshAccessToken}. */
 export interface RefreshTokenParams {
   /** Refresh token obtained from a prior {@link exchangeCode}. */
   refreshToken: string;
-  /** OAuth client ID registered for this app in Google Cloud. */
+  /** OAuth client ID registered for this app with the provider. */
   clientId: string;
+  /** Provider-specific token endpoint (Google / Microsoft). */
+  tokenEndpoint: string;
 }
 
 /**
@@ -100,11 +103,11 @@ interface TokenEndpointResponse {
 type TokenOperation = 'exchange' | 'refresh';
 
 /**
- * Best-effort read of Google's error payload so a thrown error can name the
- * cause. The token endpoint returns `{ error, error_description }` on failure
- * (e.g. `invalid_grant`, `redirect_uri_mismatch`) — the most useful signal when
- * debugging the live flow. Reading the body can itself fail, so any problem
- * collapses to no detail rather than masking the original HTTP error.
+ * Best-effort read of the provider's error payload so a thrown error can name
+ * the cause. The token endpoint returns `{ error, error_description }` on
+ * failure (e.g. `invalid_grant`, `redirect_uri_mismatch`) — the most useful
+ * signal when debugging the live flow. Reading the body can itself fail, so any
+ * problem collapses to no detail rather than masking the original HTTP error.
  */
 const readErrorDetail = async (res: Response): Promise<string> => {
   try {
@@ -122,11 +125,12 @@ const readErrorDetail = async (res: Response): Promise<string> => {
  * lives in exactly one place.
  */
 const requestTokens = async (
+  tokenEndpoint: string,
   params: URLSearchParams,
   operation: TokenOperation,
   fetchFn: FetchFn,
 ): Promise<TokenSet> => {
-  const res = await fetchFn(GOOGLE_TOKEN_ENDPOINT, {
+  const res = await fetchFn(tokenEndpoint, {
     method: HTTP_POST,
     headers: { [CONTENT_TYPE_HEADER]: FORM_CONTENT_TYPE },
     body: params.toString(),
@@ -134,7 +138,7 @@ const requestTokens = async (
 
   if (!res.ok) {
     const detail = await readErrorDetail(res);
-    throw new Error(`Google token ${operation} failed with HTTP ${res.status}${detail}`);
+    throw new Error(`OAuth token ${operation} failed with HTTP ${res.status}${detail}`);
   }
 
   const data = (await res.json()) as TokenEndpointResponse;
@@ -155,7 +159,7 @@ const requestTokens = async (
  * (Readest's client is the iOS application type, which has none).
  */
 export const exchangeCode = (
-  { code, verifier, clientId, redirectUri }: ExchangeCodeParams,
+  { code, verifier, clientId, redirectUri, tokenEndpoint }: ExchangeCodeParams,
   fetchFn: FetchFn,
 ): Promise<TokenSet> => {
   const params = new URLSearchParams();
@@ -164,21 +168,21 @@ export const exchangeCode = (
   params.set(TOKEN_PARAM.codeVerifier, verifier);
   params.set(TOKEN_PARAM.clientId, clientId);
   params.set(TOKEN_PARAM.redirectUri, redirectUri);
-  return requestTokens(params, 'exchange', fetchFn);
+  return requestTokens(tokenEndpoint, params, 'exchange', fetchFn);
 };
 
 /**
  * Trade a refresh token for a fresh access token once the previous one nears
- * expiry. Google does not return a new refresh token here, so the caller keeps
- * the existing one.
+ * expiry. Some providers (e.g. Google) omit a new refresh token here, so the
+ * caller should keep the existing one when the response doesn't include one.
  */
 export const refreshAccessToken = (
-  { refreshToken, clientId }: RefreshTokenParams,
+  { refreshToken, clientId, tokenEndpoint }: RefreshTokenParams,
   fetchFn: FetchFn,
 ): Promise<TokenSet> => {
   const params = new URLSearchParams();
   params.set(TOKEN_PARAM.grantType, GRANT_TYPE.refreshToken);
   params.set(TOKEN_PARAM.refreshToken, refreshToken);
   params.set(TOKEN_PARAM.clientId, clientId);
-  return requestTokens(params, 'refresh', fetchFn);
+  return requestTokens(tokenEndpoint, params, 'refresh', fetchFn);
 };

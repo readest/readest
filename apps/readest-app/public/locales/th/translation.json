@@ -1857,5 +1857,11 @@
   "Subscribed to \"{{title}}\"": "ติดตาม \"{{title}}\" แล้ว",
   "This article has no full content; open it in a browser.": "บทความนี้ไม่มีเนื้อหาฉบับเต็ม โปรดเปิดในเบราว์เซอร์",
   "Import produced no book": "การนำเข้าไม่ได้สร้างหนังสือ",
-  "You are already subscribed to this feed.": "คุณติดตามฟีดนี้อยู่แล้ว"
+  "You are already subscribed to this feed.": "คุณติดตามฟีดนี้อยู่แล้ว",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "ใช้ OneDrive",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ซิงค์คลังหนังสือ ความคืบหน้าการอ่าน และไฮไลต์ของคุณกับ Microsoft OneDrive ของคุณ",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "เมื่อเลือก {{provider}} หนังสือ ความคืบหน้า และคำอธิบายประกอบจะซิงค์ไปยัง OneDrive ของคุณเท่านั้น",
+  "Readest only accesses the files it creates in your OneDrive.": "Readest จะเข้าถึงเฉพาะไฟล์ที่สร้างขึ้นเองใน OneDrive ของคุณเท่านั้น",
+  ". Make OneDrive the active cloud provider.": ". ตั้งให้ OneDrive เป็นผู้ให้บริการคลาวด์ที่ใช้งานอยู่"
 }

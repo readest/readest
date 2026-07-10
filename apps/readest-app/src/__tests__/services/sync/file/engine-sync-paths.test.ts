@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 
-import type { Book } from '@/types/book';
+import type { Book, BookConfig } from '@/types/book';
 import { FileSyncEngine } from '@/services/sync/file/engine';
 import type { FileSyncProvider } from '@/services/sync/file/provider';
 import type { LocalStore } from '@/services/sync/file/localStore';
@@ -899,5 +899,60 @@ describe('FileSyncEngine.syncLibrary — no-source probe memo', () => {
       { ...opts, fullSync: true },
     );
     expect(h.loadBookFile).toHaveBeenCalledTimes(2);
+  });
+});
+
+// The engine passes the FULL ancestor chain to ensureDir for every book, so a
+// stateless provider (OneDrive create-folder, WebDAV MKCOL) re-creates the
+// shared parents (/Readest, /Readest/books) on each book — a redundant round
+// trip and a 409 "name already exists" flood at library scale. The engine now
+// memoises ensured dirs (+ single-flights concurrent creates) for the session.
+describe('FileSyncEngine — ensureDir session cache', () => {
+  const cfg = { updatedAt: 1, booknotes: [] } as unknown as BookConfig;
+
+  test('creates each shared parent once across books', async () => {
+    const ensured: string[] = [];
+    const provider = fakeProvider({
+      captured: { writes: [] },
+      ensureDir: async (paths: string[]) => {
+        ensured.push(...paths);
+      },
+    });
+    const engine = new FileSyncEngine(provider, fakeStore());
+    await engine.pushBookConfig(makeBook('h1'), cfg, 'd');
+    await engine.pushBookConfig(makeBook('h2'), cfg, 'd');
+
+    // The shared parents are created exactly once despite two books...
+    expect(ensured.filter((d) => d === '/Readest')).toHaveLength(1);
+    expect(ensured.filter((d) => d === '/Readest/books')).toHaveLength(1);
+    // ...while each book's own hash dir is still created.
+    expect(ensured.filter((d) => d === '/Readest/books/h1')).toHaveLength(1);
+    expect(ensured.filter((d) => d === '/Readest/books/h2')).toHaveLength(1);
+  });
+
+  test('single-flights concurrent creates of the same shared parent', async () => {
+    let inFlightReadest = 0;
+    let maxInFlightReadest = 0;
+    const provider = fakeProvider({
+      captured: { writes: [] },
+      ensureDir: async (paths: string[]) => {
+        if (paths[0] === '/Readest') {
+          inFlightReadest += 1;
+          maxInFlightReadest = Math.max(maxInFlightReadest, inFlightReadest);
+          await new Promise((r) => setTimeout(r, 5));
+          inFlightReadest -= 1;
+        }
+      },
+    });
+    const engine = new FileSyncEngine(provider, fakeStore());
+    await Promise.all([
+      engine.pushBookConfig(makeBook('h1'), cfg, 'd'),
+      engine.pushBookConfig(makeBook('h2'), cfg, 'd'),
+      engine.pushBookConfig(makeBook('h3'), cfg, 'd'),
+    ]);
+
+    // Three book pushes race to ensure /Readest, but the in-flight lock collapses
+    // them to a single create.
+    expect(maxInFlightReadest).toBe(1);
   });
 });

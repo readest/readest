@@ -1,6 +1,8 @@
 /**
- * PKCE (Proof Key for Code Exchange, RFC 7636) helpers for Google's OAuth 2.0
- * authorization-code flow, plus the matching authorization-URL builder.
+ * PKCE (Proof Key for Code Exchange, RFC 7636) helpers for an OAuth 2.0
+ * authorization-code flow, plus the matching authorization-URL builder. The
+ * authorization endpoint and any extra query params are provider-specific and
+ * supplied by the caller (see {@link AuthUrlParams}).
  *
  * Readest ships as a distributed native app (desktop + mobile). Such public
  * clients cannot keep a client secret confidential, so the flow uses PKCE
@@ -25,42 +27,6 @@ const VERIFIER_RANDOM_BYTES = 64;
 /** Digest algorithm for the PKCE challenge; the only secure option per RFC 7636. */
 const CHALLENGE_DIGEST_ALGORITHM = 'SHA-256';
 
-/** Google's OAuth 2.0 authorization endpoint (the page where the user consents). */
-const GOOGLE_AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
-
-/** OAuth query-parameter names sent to {@link GOOGLE_AUTH_ENDPOINT}. */
-const AUTH_PARAM = {
-  clientId: 'client_id',
-  redirectUri: 'redirect_uri',
-  responseType: 'response_type',
-  scope: 'scope',
-  codeChallenge: 'code_challenge',
-  codeChallengeMethod: 'code_challenge_method',
-  state: 'state',
-  accessType: 'access_type',
-  prompt: 'prompt',
-} as const;
-
-/** We run the authorization-code flow, so the endpoint must return a `code`. */
-const RESPONSE_TYPE_CODE = 'code';
-
-/** Tells Google the challenge is the SHA-256 (S256) transform, not plaintext. */
-const CODE_CHALLENGE_METHOD_S256 = 'S256';
-
-/**
- * `offline` makes Google issue a refresh token alongside the access token, so
- * the app can keep syncing after the short-lived access token expires without
- * sending the user back through consent.
- */
-const ACCESS_TYPE_OFFLINE = 'offline';
-
-/**
- * `consent` forces the consent screen every time. Google only returns a refresh
- * token on the *first* consent for a given client unless re-consent is forced,
- * so this guarantees `access_type=offline` actually yields a refresh token.
- */
-const PROMPT_CONSENT = 'consent';
-
 /** A cryptographically random PKCE verifier and its derived S256 challenge. */
 export interface PkcePair {
   /** High-entropy secret kept by the client and replayed at the token endpoint. */
@@ -69,18 +35,22 @@ export interface PkcePair {
   challenge: string;
 }
 
-/** Inputs needed to assemble the Google authorization URL. */
+/** Inputs needed to assemble the authorization URL. */
 export interface AuthUrlParams {
-  /** OAuth client ID registered for this app in Google Cloud. */
+  /** OAuth client ID registered for this app with the provider. */
   clientId: string;
-  /** Where Google redirects after consent (the reverse-DNS scheme). */
+  /** Where the provider redirects after consent (the reverse-DNS scheme). */
   redirectUri: string;
   /** Space-delimited OAuth scopes (e.g. the Drive app-file scope). */
   scope: string;
   /** The PKCE `code_challenge` produced by {@link createPkcePair}. */
   challenge: string;
-  /** Opaque anti-CSRF value echoed back by Google for the caller to verify. */
+  /** Opaque anti-CSRF value echoed back by the provider for the caller to verify. */
   state: string;
+  /** Authorization endpoint (provider-specific: Google / Microsoft). */
+  authEndpoint: string;
+  /** Extra provider-specific query params (e.g. Google access_type/prompt). */
+  extraParams?: Record<string, string>;
 }
 
 /**
@@ -123,9 +93,11 @@ export const createPkcePair = async (): Promise<PkcePair> => {
 };
 
 /**
- * Build the Google authorization URL the user is sent to in order to grant
- * access. The caller opens this URL and later exchanges the returned `code` plus
- * the PKCE `verifier` for tokens.
+ * Build the authorization URL the user is sent to in order to grant access. The
+ * caller opens this URL and later exchanges the returned `code` plus the PKCE
+ * `verifier` for tokens. `authEndpoint` and `extraParams` are provider-specific
+ * (e.g. Google's `access_type`/`prompt`), so every provider builds its own URL
+ * from the same PKCE + state shape.
  */
 export const buildAuthUrl = ({
   clientId,
@@ -133,17 +105,18 @@ export const buildAuthUrl = ({
   scope,
   challenge,
   state,
+  authEndpoint,
+  extraParams,
 }: AuthUrlParams): string => {
-  const url = new URL(GOOGLE_AUTH_ENDPOINT);
+  const url = new URL(authEndpoint);
   const params = url.searchParams;
-  params.set(AUTH_PARAM.clientId, clientId);
-  params.set(AUTH_PARAM.redirectUri, redirectUri);
-  params.set(AUTH_PARAM.responseType, RESPONSE_TYPE_CODE);
-  params.set(AUTH_PARAM.scope, scope);
-  params.set(AUTH_PARAM.codeChallenge, challenge);
-  params.set(AUTH_PARAM.codeChallengeMethod, CODE_CHALLENGE_METHOD_S256);
-  params.set(AUTH_PARAM.state, state);
-  params.set(AUTH_PARAM.accessType, ACCESS_TYPE_OFFLINE);
-  params.set(AUTH_PARAM.prompt, PROMPT_CONSENT);
+  params.set('client_id', clientId);
+  params.set('redirect_uri', redirectUri);
+  params.set('response_type', 'code');
+  params.set('scope', scope);
+  params.set('code_challenge', challenge);
+  params.set('code_challenge_method', 'S256');
+  params.set('state', state);
+  for (const [k, v] of Object.entries(extraParams ?? {})) params.set(k, v);
   return url.toString();
 };

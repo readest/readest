@@ -11,11 +11,22 @@ vi.mock('@/app/auth/utils/nativeAuth', () => ({
   }),
 }));
 
-import { runAndroidOAuth } from '@/services/sync/providers/gdrive/auth/oauthAndroid';
+import { runAndroidOAuth } from '@/services/sync/providers/oauth/oauthAndroid';
 import { authWithCustomTab } from '@/app/auth/utils/nativeAuth';
-import type { FetchFn } from '@/services/sync/providers/gdrive/auth/tokenStore';
+import type { FetchFn } from '@/services/sync/providers/oauth/tokenEndpoint';
+import type { OAuthClientConfig } from '@/services/sync/providers/oauth/oauthFlow';
 
 const CLIENT_ID = 'cid.apps.googleusercontent.com';
+
+const CONFIG: OAuthClientConfig = {
+  clientId: CLIENT_ID,
+  scope: 'drive.file',
+  authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+  tokenEndpoint: 'https://oauth2.googleapis.com/token',
+  redirectUri: 'com.googleusercontent.apps.cid:/oauthredirect',
+  redirectScheme: 'com.googleusercontent.apps.cid',
+  authParams: { access_type: 'offline', prompt: 'consent' },
+};
 
 const tokenJson = (): Response =>
   new Response(JSON.stringify({ access_token: 'AT', refresh_token: 'RT', expires_in: 3600 }), {
@@ -26,7 +37,7 @@ const tokenJson = (): Response =>
 describe('runAndroidOAuth', () => {
   test('opens a Custom Tab, captures the redirect, and exchanges the code', async () => {
     const fetchFn = vi.fn(async () => tokenJson()) as unknown as FetchFn;
-    const tokens = await runAndroidOAuth({ clientId: CLIENT_ID, scope: 'drive.file' }, fetchFn);
+    const tokens = await runAndroidOAuth(CONFIG, fetchFn);
 
     expect(authWithCustomTab).toHaveBeenCalledTimes(1);
     // The Custom Tab is handed the consent URL (with the PKCE challenge + state).
@@ -43,8 +54,6 @@ describe('runAndroidOAuth', () => {
       redirectUrl: 'com.googleusercontent.apps.cid:/oauthredirect?code=CODE&state=ATTACKER',
     });
     const fetchFn = vi.fn(async () => tokenJson()) as unknown as FetchFn;
-    await expect(
-      runAndroidOAuth({ clientId: CLIENT_ID, scope: 'drive.file' }, fetchFn),
-    ).rejects.toThrow(/state mismatch/i);
+    await expect(runAndroidOAuth(CONFIG, fetchFn)).rejects.toThrow(/state mismatch/i);
   });
 });

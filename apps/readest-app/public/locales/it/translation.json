@@ -1927,5 +1927,11 @@
   "Subscribed to \"{{title}}\"": "Iscritto a \"{{title}}\"",
   "This article has no full content; open it in a browser.": "Questo articolo non ha il contenuto completo; aprilo in un browser.",
   "Import produced no book": "L'importazione non ha prodotto alcun libro",
-  "You are already subscribed to this feed.": "Sei già iscritto a questo feed."
+  "You are already subscribed to this feed.": "Sei già iscritto a questo feed.",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "Usa OneDrive",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Sincronizza la tua biblioteca, il progresso di lettura e le evidenziazioni con il tuo Microsoft OneDrive.",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Finché {{provider}} è selezionato, libri, progressi e annotazioni si sincronizzano solo con il tuo OneDrive.",
+  "Readest only accesses the files it creates in your OneDrive.": "Readest accede solo ai file che crea nel tuo OneDrive.",
+  ". Make OneDrive the active cloud provider.": ". Imposta OneDrive come provider cloud attivo."
 }

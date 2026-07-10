@@ -1857,5 +1857,11 @@
   "Subscribed to \"{{title}}\"": "Đã đăng ký \"{{title}}\"",
   "This article has no full content; open it in a browser.": "Bài viết này không có nội dung đầy đủ; hãy mở trong trình duyệt.",
   "Import produced no book": "Quá trình nhập không tạo ra sách nào",
-  "You are already subscribed to this feed.": "Bạn đã đăng ký nguồn cấp này rồi."
+  "You are already subscribed to this feed.": "Bạn đã đăng ký nguồn cấp này rồi.",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "Dùng OneDrive",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Đồng bộ thư viện, tiến trình đọc và điểm nổi bật của bạn với Microsoft OneDrive của bạn.",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Khi {{provider}} được chọn, sách, tiến độ và chú thích chỉ đồng bộ với OneDrive của bạn.",
+  "Readest only accesses the files it creates in your OneDrive.": "Readest chỉ truy cập các tệp do chính nó tạo trong OneDrive của bạn.",
+  ". Make OneDrive the active cloud provider.": ". Đặt OneDrive làm nhà cung cấp đám mây đang hoạt động."
 }

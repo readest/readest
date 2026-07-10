@@ -1,10 +1,14 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { exchangeCode, refreshAccessToken } from '@/services/sync/providers/gdrive/auth/tokenStore';
+import {
+  exchangeCode,
+  refreshAccessToken,
+  type FetchFn,
+} from '@/services/sync/providers/oauth/tokenEndpoint';
 
 const jsonResponse = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 
-describe('tokenStore', () => {
+describe('tokenEndpoint', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(0);
@@ -20,7 +24,13 @@ describe('tokenStore', () => {
       return jsonResponse({ access_token: 'AT', refresh_token: 'RT', expires_in: 3600 });
     });
     const tokens = await exchangeCode(
-      { code: 'C', verifier: 'V', clientId: 'cid', redirectUri: 'R' },
+      {
+        code: 'C',
+        verifier: 'V',
+        clientId: 'cid',
+        redirectUri: 'R',
+        tokenEndpoint: 'https://oauth2.googleapis.com/token',
+      },
       fetchFn,
     );
     expect(captured?.url).toBe('https://oauth2.googleapis.com/token');
@@ -41,7 +51,10 @@ describe('tokenStore', () => {
       captured = { init };
       return jsonResponse({ access_token: 'AT2', expires_in: 3600 });
     });
-    const tokens = await refreshAccessToken({ refreshToken: 'RT', clientId: 'cid' }, fetchFn);
+    const tokens = await refreshAccessToken(
+      { refreshToken: 'RT', clientId: 'cid', tokenEndpoint: 'https://oauth2.googleapis.com/token' },
+      fetchFn,
+    );
     const form = new URLSearchParams(captured?.init.body as string);
     expect(form.get('grant_type')).toBe('refresh_token');
     expect(form.get('refresh_token')).toBe('RT');
@@ -54,7 +67,13 @@ describe('tokenStore', () => {
   test('clamps expiry so a token shorter than the margin is not already-expired', async () => {
     const fetchFn = async () => jsonResponse({ access_token: 'AT', expires_in: 30 });
     const tokens = await exchangeCode(
-      { code: 'C', verifier: 'V', clientId: 'cid', redirectUri: 'R' },
+      {
+        code: 'C',
+        verifier: 'V',
+        clientId: 'cid',
+        redirectUri: 'R',
+        tokenEndpoint: 'https://oauth2.googleapis.com/token',
+      },
       fetchFn,
     );
     expect(tokens.expiresAt).toBe(0);
@@ -64,7 +83,35 @@ describe('tokenStore', () => {
     const fetchFn = async () =>
       jsonResponse({ error: 'invalid_grant', error_description: 'bad code' }, 400);
     await expect(
-      exchangeCode({ code: 'C', verifier: 'V', clientId: 'cid', redirectUri: 'R' }, fetchFn),
+      exchangeCode(
+        {
+          code: 'C',
+          verifier: 'V',
+          clientId: 'cid',
+          redirectUri: 'R',
+          tokenEndpoint: 'https://oauth2.googleapis.com/token',
+        },
+        fetchFn,
+      ),
     ).rejects.toThrow(/HTTP 400: invalid_grant — bad code/);
+  });
+
+  test('exchangeCode posts to the given tokenEndpoint', async () => {
+    let seenUrl = '';
+    const fetchFn = (async (url: string) => {
+      seenUrl = url;
+      return new Response(JSON.stringify({ access_token: 'A', expires_in: 3600 }), { status: 200 });
+    }) as unknown as FetchFn;
+    await exchangeCode(
+      {
+        code: 'C',
+        verifier: 'V',
+        clientId: 'CID',
+        redirectUri: 'r',
+        tokenEndpoint: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+      },
+      fetchFn,
+    );
+    expect(seenUrl).toBe('https://login.microsoftonline.com/common/oauth2/v2.0/token');
   });
 });

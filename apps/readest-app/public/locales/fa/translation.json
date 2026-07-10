@@ -1892,5 +1892,11 @@
   "Subscribed to \"{{title}}\"": "در «{{title}}» مشترک شدید",
   "This article has no full content; open it in a browser.": "این مقاله محتوای کامل ندارد؛ آن را در مرورگر باز کنید.",
   "Import produced no book": "درون‌ریزی کتابی ایجاد نکرد",
-  "You are already subscribed to this feed.": "شما قبلاً در این خوراک مشترک شده‌اید."
+  "You are already subscribed to this feed.": "شما قبلاً در این خوراک مشترک شده‌اید.",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "استفاده از OneDrive",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "کتابخانه، وضعیت مطالعه و هایلایت‌های خود را با Microsoft OneDrive خود همگام‌سازی کنید.",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "تا زمانی که {{provider}} انتخاب شده باشد، کتاب‌ها، پیشرفت و یادداشت‌ها فقط با OneDrive شما همگام‌سازی می‌شوند.",
+  "Readest only accesses the files it creates in your OneDrive.": "Readest فقط به فایل‌هایی دسترسی دارد که خودش در OneDrive شما ایجاد می‌کند.",
+  ". Make OneDrive the active cloud provider.": ". OneDrive را ارائه‌دهنده فعال ابری قرار دهید."
 }

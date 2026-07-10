@@ -221,6 +221,50 @@ export class FileSyncEngine {
   ) {}
 
   /**
+   * Directories already created (or confirmed to exist) during this engine
+   * instance's sync session. The engine passes the FULL ancestor chain
+   * (`/Readest`, `/Readest/books`, `/Readest/books/<hash>`) to `ensureDir` for
+   * every book, so without this cache the shared parents get re-created on each
+   * book — a redundant round-trip, and a 409 "name already exists" flood on
+   * providers that create folders explicitly (OneDrive) or re-MKCOL (WebDAV).
+   * S3's `ensureDir` no-ops and Drive caches path->id internally, so both are
+   * unaffected. The engine is built per sync session, so the cache lifetime is
+   * one run.
+   */
+  private readonly ensuredDirs = new Set<string>();
+  /**
+   * In-flight per-dir creations, so the concurrency-bounded book workers that
+   * all find a shared parent missing on a fresh remote collapse to one create
+   * instead of several racing calls.
+   */
+  private readonly ensuringDirs = new Map<string, Promise<void>>();
+
+  /**
+   * Session-cached, single-flighted wrapper over {@link FileSyncProvider.ensureDir}.
+   * Ensures each dir top-down (order preserved), skipping any already ensured
+   * this session and de-duplicating concurrent creates of the same path. A
+   * failed create is not cached, so it is retried on the next call.
+   */
+  private async ensureDirs(dirs: string[]): Promise<void> {
+    for (const dir of dirs) {
+      if (this.ensuredDirs.has(dir)) continue;
+      let pending = this.ensuringDirs.get(dir);
+      if (!pending) {
+        pending = this.provider
+          .ensureDir([dir])
+          .then(() => {
+            this.ensuredDirs.add(dir);
+          })
+          .finally(() => {
+            this.ensuringDirs.delete(dir);
+          });
+        this.ensuringDirs.set(dir, pending);
+      }
+      await pending;
+    }
+  }
+
+  /**
    * Pull `<rootPath>/Readest/books/<hash>/config.json`, merge into the
    * provided local config, and return the merged result. The caller writes
    * the merged config back (so the engine stays free of store-write side
@@ -249,13 +293,13 @@ export class FileSyncEngine {
     const dirPath = buildBookDirPath(this.provider.rootPath, book.hash);
     const path = buildBookConfigPath(this.provider.rootPath, book.hash);
     const dirs = [...ancestorsOf(`${dirPath}/.placeholder`), dirPath];
-    await this.provider.ensureDir(dirs);
+    await this.ensureDirs(dirs);
     const body = JSON.stringify(buildRemotePayload(book, config, deviceId));
     try {
       await this.provider.writeText(path, body);
     } catch (e) {
       if (e instanceof FileSyncError && e.status === 409) {
-        await this.provider.ensureDir(dirs);
+        await this.ensureDirs(dirs);
         await this.provider.writeText(path, body);
         return;
       }
@@ -301,12 +345,12 @@ export class FileSyncEngine {
         if (remoteHead && remoteHead.size === src.size) {
           return { uploaded: false, reason: 'remote-matches' };
         }
-        await this.provider.ensureDir(dirs);
+        await this.ensureDirs(dirs);
         let ok = await this.provider.uploadStream(path, src.path);
         if (!ok) {
           // Mirror the buffered path's one-shot retry: a parent may have been
           // recreated mid-PUT (409). Re-ensure directories and try once more.
-          await this.provider.ensureDir(dirs);
+          await this.ensureDirs(dirs);
           ok = await this.provider.uploadStream(path, src.path);
           if (!ok) throw new FileSyncError('Streaming upload failed', 'NETWORK');
         }
@@ -322,12 +366,12 @@ export class FileSyncEngine {
     if (remoteHead && remoteHead.size === local.size) {
       return { uploaded: false, reason: 'remote-matches' };
     }
-    await this.provider.ensureDir(dirs);
+    await this.ensureDirs(dirs);
     try {
       await this.provider.writeBinary(path, local.bytes);
     } catch (e) {
       if (e instanceof FileSyncError && e.status === 409) {
-        await this.provider.ensureDir(dirs);
+        await this.ensureDirs(dirs);
         await this.provider.writeBinary(path, local.bytes);
       } else {
         throw e;
@@ -358,12 +402,12 @@ export class FileSyncEngine {
     if (remoteHead && remoteHead.size === local.size) {
       return { uploaded: false, reason: 'remote-matches' };
     }
-    await this.provider.ensureDir(dirs);
+    await this.ensureDirs(dirs);
     try {
       await this.provider.writeBinary(path, local.bytes, 'image/png');
     } catch (e) {
       if (e instanceof FileSyncError && e.status === 409) {
-        await this.provider.ensureDir(dirs);
+        await this.ensureDirs(dirs);
         await this.provider.writeBinary(path, local.bytes, 'image/png');
       } else {
         throw e;
@@ -433,7 +477,7 @@ export class FileSyncEngine {
   /** PUT the shared library.json index, creating its parent dirs. */
   async pushLibraryIndex(index: RemoteLibraryIndex): Promise<void> {
     const path = buildLibraryPath(this.provider.rootPath);
-    await this.provider.ensureDir(ancestorsOf(path));
+    await this.ensureDirs(ancestorsOf(path));
     await this.provider.writeText(path, JSON.stringify(index));
   }
 

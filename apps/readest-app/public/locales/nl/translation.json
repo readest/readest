@@ -1892,5 +1892,11 @@
   "Subscribed to \"{{title}}\"": "Geabonneerd op \"{{title}}\"",
   "This article has no full content; open it in a browser.": "Dit artikel heeft geen volledige inhoud; open het in een browser.",
   "Import produced no book": "Import leverde geen boek op",
-  "You are already subscribed to this feed.": "Je bent al geabonneerd op deze feed."
+  "You are already subscribed to this feed.": "Je bent al geabonneerd op deze feed.",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "OneDrive gebruiken",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Synchroniseer je bibliotheek, leesvoortgang en markeringen met je Microsoft OneDrive.",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Zolang {{provider}} is geselecteerd, worden boeken, voortgang en annotaties alleen met uw OneDrive gesynchroniseerd.",
+  "Readest only accesses the files it creates in your OneDrive.": "Readest heeft alleen toegang tot de bestanden die het zelf in je OneDrive aanmaakt.",
+  ". Make OneDrive the active cloud provider.": ". Maak OneDrive de actieve cloudprovider."
 }

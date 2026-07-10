@@ -1927,5 +1927,11 @@
   "Subscribed to \"{{title}}\"": "נרשמת אל \"{{title}}\"",
   "This article has no full content; open it in a browser.": "למאמר זה אין תוכן מלא; פתחו אותו בדפדפן.",
   "Import produced no book": "הייבוא לא יצר ספר",
-  "You are already subscribed to this feed.": "כבר נרשמת להזנה זו."
+  "You are already subscribed to this feed.": "כבר נרשמת להזנה זו.",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "השתמש ב-OneDrive",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "סנכרן את הספרייה, התקדמות הקריאה וההדגשות שלך עם Microsoft OneDrive שלך.",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "כאשר {{provider}} נבחר, ספרים, התקדמות והערות מסתנכרנים רק עם ה-OneDrive שלך.",
+  "Readest only accesses the files it creates in your OneDrive.": "Readest ניגש רק לקבצים שהוא יוצר ב-OneDrive שלך.",
+  ". Make OneDrive the active cloud provider.": ". הפוך את OneDrive לספק הענן הפעיל."
 }

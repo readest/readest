@@ -1892,5 +1892,11 @@
   "Subscribed to \"{{title}}\"": "\"{{title}}\" की सदस्यता ली गई",
   "This article has no full content; open it in a browser.": "इस लेख में पूरी सामग्री नहीं है; इसे ब्राउज़र में खोलें।",
   "Import produced no book": "आयात से कोई पुस्तक नहीं बनी",
-  "You are already subscribed to this feed.": "आपने इस फ़ीड की सदस्यता पहले से ली है।"
+  "You are already subscribed to this feed.": "आपने इस फ़ीड की सदस्यता पहले से ली है।",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "OneDrive का उपयोग करें",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "अपनी लाइब्रेरी, पढ़ने की प्रगति और हाइलाइट्स को अपनी Microsoft OneDrive से सिंक करें।",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "जब {{provider}} चुना गया हो, तो किताबें, प्रगति और एनोटेशन केवल आपके OneDrive से सिंक होते हैं।",
+  "Readest only accesses the files it creates in your OneDrive.": "Readest केवल उन्हीं फ़ाइलों तक पहुँचता है जिन्हें वह आपकी OneDrive में बनाता है।",
+  ". Make OneDrive the active cloud provider.": "। OneDrive को सक्रिय क्लाउड प्रदाता बनाएं।"
 }

@@ -1857,5 +1857,11 @@
   "Subscribed to \"{{title}}\"": "Melanggan \"{{title}}\"",
   "This article has no full content; open it in a browser.": "Artikel ini tiada kandungan penuh; buka dalam pelayar.",
   "Import produced no book": "Import tidak menghasilkan buku",
-  "You are already subscribed to this feed.": "Anda sudah melanggan suapan ini."
+  "You are already subscribed to this feed.": "Anda sudah melanggan suapan ini.",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "Guna OneDrive",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Segerakkan perpustakaan, kemajuan bacaan dan penonjolan anda dengan Microsoft OneDrive anda.",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Semasa {{provider}} dipilih, buku, kemajuan dan anotasi hanya disegerakkan ke OneDrive anda.",
+  "Readest only accesses the files it creates in your OneDrive.": "Readest hanya mengakses fail yang diciptanya dalam OneDrive anda.",
+  ". Make OneDrive the active cloud provider.": ". Jadikan OneDrive sebagai penyedia awan yang aktif."
 }

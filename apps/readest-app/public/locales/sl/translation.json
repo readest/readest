@@ -1962,5 +1962,11 @@
   "Subscribed to \"{{title}}\"": "Naročeni na \"{{title}}\"",
   "This article has no full content; open it in a browser.": "Ta članek nima celotne vsebine; odprite ga v brskalniku.",
   "Import produced no book": "Uvoz ni ustvaril nobene knjige",
-  "You are already subscribed to this feed.": "Na ta vir ste že naročeni."
+  "You are already subscribed to this feed.": "Na ta vir ste že naročeni.",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "Uporabi OneDrive",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Sinhronizirajte knjižnico, napredek branja in označbe s svojim Microsoft OneDrive.",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Dokler je izbran {{provider}}, se knjige, napredek in opombe sinhronizirajo samo z vašim OneDrive.",
+  "Readest only accesses the files it creates in your OneDrive.": "Readest dostopa le do datotek, ki jih sam ustvari v vašem OneDrive.",
+  ". Make OneDrive the active cloud provider.": ". Nastavite OneDrive kot aktivnega ponudnika oblaka."
 }

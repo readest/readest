@@ -1857,5 +1857,11 @@
   "Subscribed to \"{{title}}\"": "\"{{title}}\" མངགས་ཉོ་བྱས་ཟིན།",
   "This article has no full content; open it in a browser.": "རྩོམ་ཡིག་འདིར་ནང་དོན་ཆ་ཚང་མེད། བཤར་ཆས་ནང་ཁ་ཕྱེ་རོགས།",
   "Import produced no book": "ནང་འདྲེན་གྱིས་དཔེ་ཆ་མ་བཟོས།",
-  "You are already subscribed to this feed.": "ཁྱེད་ཀྱིས་བརྒྱུད་ལམ་འདི་སྔོན་ནས་མངགས་ཉོ་བྱས་ཟིན།"
+  "You are already subscribed to this feed.": "ཁྱེད་ཀྱིས་བརྒྱུད་ལམ་འདི་སྔོན་ནས་མངགས་ཉོ་བྱས་ཟིན།",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "OneDrive བེད་སྤྱོད།",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ཁྱེད་ཀྱི་དཔེ་མཛོད་དང་། ཀློག་པའི་ཡར་འཕེལ། གཙོ་གནད་བཅས་ཁྱེད་ཀྱི་ Microsoft OneDrive དང་མཉམ་སྒྲིག་བྱེད།",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} བདམས་ཡོད་སྐབས། དཔེ་ཆ་དང་བགྲོད་རིམ། མཆན་འགྲེལ་བཅས་ཁྱེད་ཀྱི་ OneDrive ནང་ཁོ་ནར་མཉམ་བསྒྲིག་བྱེད།",
+  "Readest only accesses the files it creates in your OneDrive.": "Readest ཀྱིས་ཁྱེད་ཀྱི་ OneDrive ནང་རང་ཉིད་ཀྱིས་བཟོས་པའི་ཡིག་ཆ་ཁོ་ནར་ལྟ་སྤྱོད་བྱེད།",
+  ". Make OneDrive the active cloud provider.": "། OneDrive དེ་སྤྱོད་བཞིན་པའི་སྤྲིན་ཞབས་ཞུ་མཁོ་སྤྲོད་པར་སྒྲིག་པ།"
 }

@@ -13,6 +13,7 @@ import {
   RiCloudFill,
   RiDatabase2Line,
   RiGoogleLine,
+  RiMicrosoftLine,
 } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -27,6 +28,7 @@ import { saveSysSettings } from '@/helpers/settings';
 import { isCloudSyncAllowed } from '@/utils/access';
 import { isWebAppPlatform } from '@/services/environment';
 import { getGoogleWebClientId } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
+import { getMicrosoftClientId } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
@@ -34,6 +36,7 @@ import HardcoverForm from './integrations/HardcoverForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
 import WebDAVForm from './integrations/WebDAVForm';
 import GoogleDriveForm from './integrations/GoogleDriveForm';
+import OneDriveForm from './integrations/OneDriveForm';
 import S3Form from './integrations/S3Form';
 import { persistActiveCloudProvider } from './integrations/cloudSync';
 import { getReadestCloudRowStatus, getThirdPartyRowStatus } from './integrations/cloudSyncStatus';
@@ -51,6 +54,7 @@ type SubPage =
   | 'webdav'
   | 'gdrive'
   | 's3'
+  | 'onedrive'
   | 'readest-cloud'
   | 'readwise'
   | 'hardcover'
@@ -84,9 +88,11 @@ const IntegrationsPanel: React.FC = () => {
   const isWebDAVSyncing = useFileSyncStore((s) => s.byKind.webdav?.isSyncing ?? false);
   const isGDriveSyncing = useFileSyncStore((s) => s.byKind.gdrive?.isSyncing ?? false);
   const isS3Syncing = useFileSyncStore((s) => s.byKind.s3?.isSyncing ?? false);
+  const isOneDriveSyncing = useFileSyncStore((s) => s.byKind.onedrive?.isSyncing ?? false);
   const webdavLastError = useFileSyncStore((s) => s.lastErrorByKind.webdav);
   const gdriveLastError = useFileSyncStore((s) => s.lastErrorByKind.gdrive);
   const s3LastError = useFileSyncStore((s) => s.lastErrorByKind.s3);
+  const onedriveLastError = useFileSyncStore((s) => s.lastErrorByKind.onedrive);
   // Third-party cloud sync will be a premium feature (any paid plan), but it is
   // temporarily UNGATED while the feature stabilises — `isCloudSyncAllowed`
   // returns true for every plan until `CLOUD_SYNC_REQUIRES_PREMIUM` is flipped
@@ -128,6 +134,7 @@ const IntegrationsPanel: React.FC = () => {
       requestedSubPage === 'webdav' ||
       requestedSubPage === 'gdrive' ||
       requestedSubPage === 's3' ||
+      requestedSubPage === 'onedrive' ||
       requestedSubPage === 'cloudsync';
     // Cloud-sync sub-pages are premium-gated. If the plan is still loading, wait
     // (don't consume the request); once known, only honor it for paid plans.
@@ -141,6 +148,7 @@ const IntegrationsPanel: React.FC = () => {
       requestedSubPage === 'webdav' ||
       requestedSubPage === 'gdrive' ||
       requestedSubPage === 's3' ||
+      requestedSubPage === 'onedrive' ||
       requestedSubPage === 'readwise' ||
       requestedSubPage === 'hardcover' ||
       requestedSubPage === 'opds' ||
@@ -271,6 +279,37 @@ const IntegrationsPanel: React.FC = () => {
         </div>
       </div>
     );
+  if (subPage === 'onedrive')
+    return (
+      <div className='my-4 w-full'>
+        <SubPageHeader
+          parentLabel={_('Integrations')}
+          currentLabel={_('OneDrive')}
+          description={_(
+            'Sync your library, reading progress, and highlights with your Microsoft OneDrive.',
+          )}
+          onBack={() => setSubPage(null)}
+        />
+        <OneDriveForm />
+        {settings.onedrive?.enabled && (
+          <div className='mt-5'>
+            <Tips>
+              <li>
+                {_(
+                  'While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.',
+                  { provider: _('OneDrive') },
+                )}
+              </li>
+              <li>
+                {_(
+                  'App settings, reading statistics, and dictionaries still sync through your Readest account while signed in.',
+                )}
+              </li>
+            </Tips>
+          </div>
+        )}
+      </div>
+    );
   if (subPage === 'readest-cloud')
     return (
       <div className='my-4 w-full'>
@@ -368,6 +407,15 @@ const IntegrationsPanel: React.FC = () => {
     paused: cloudGate.paused && cloudProvider === 's3',
     lastError: s3LastError,
     syncBooks: settings.s3?.syncBooks ?? false,
+  });
+  const onedriveConfigured = !!settings.onedrive?.accountLabel;
+  const onedriveStatus = getThirdPartyRowStatus(_, {
+    enabled: !!settings.onedrive?.enabled,
+    configured: onedriveConfigured,
+    syncing: isOneDriveSyncing,
+    paused: cloudGate.paused && cloudProvider === 'onedrive',
+    lastError: onedriveLastError,
+    syncBooks: settings.onedrive?.syncBooks ?? false,
   });
   const readestStatus = getReadestCloudRowStatus(_, {
     signedIn: !!user,
@@ -479,6 +527,25 @@ const IntegrationsPanel: React.FC = () => {
               onOpen={() => (isCloudSyncPremium ? setSubPage('s3') : navigateToProfile(router))}
               activateLabel={_('Use S3')}
             />
+            {(appService?.isDesktopApp ||
+              appService?.isAndroidApp ||
+              appService?.isIOSApp ||
+              // Web: only when a Web-type Microsoft client id is configured for this build.
+              (isWebAppPlatform() && !!getMicrosoftClientId())) && (
+              <CloudProviderRow
+                icon={RiMicrosoftLine}
+                title={_('OneDrive')}
+                status={onedriveStatus}
+                badge={_('Premium')}
+                isActive={activeCloudKind === 'onedrive'}
+                canActivate={isCloudSyncPremium && onedriveConfigured}
+                onActivate={() => activateCloudProvider('onedrive')}
+                onOpen={() =>
+                  isCloudSyncPremium ? setSubPage('onedrive') : navigateToProfile(router)
+                }
+                activateLabel={_('Use OneDrive')}
+              />
+            )}
           </div>
         </div>
       </div>

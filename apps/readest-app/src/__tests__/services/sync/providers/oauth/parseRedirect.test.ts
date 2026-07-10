@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { parseRedirect } from '@/services/sync/providers/gdrive/auth/parseRedirect';
+import { parseRedirect } from '@/services/sync/providers/oauth/parseRedirect';
 
 const REDIRECT_URI = 'com.googleusercontent.apps.cid:/oauthredirect';
 

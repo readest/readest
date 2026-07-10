@@ -15,18 +15,28 @@
  */
 import { buildAuthUrl } from './pkce';
 import { parseRedirect } from './parseRedirect';
-import type { TokenSet } from './tokenStore';
+import type { TokenSet } from './tokenEndpoint';
 
 /**
- * The OAuth client identity a platform wrapper needs to run a flow. The redirect
- * URI is *not* here because it is platform-derived from the client id (the
- * reverse-DNS scheme).
+ * The OAuth client identity + endpoints a platform wrapper needs to run a flow.
+ * Provider-specific values (Google's endpoints/params today, another provider's
+ * later) all live here so the runners themselves stay provider-agnostic.
  */
 export interface OAuthClientConfig {
-  /** OAuth client ID registered for this app in Google Cloud. */
+  /** OAuth client ID registered for this app with the provider. */
   clientId: string;
   /** Space-delimited OAuth scopes to request (e.g. the Drive app-file scope). */
   scope: string;
+  /** Authorization endpoint (the page where the user consents). */
+  authEndpoint: string;
+  /** Token endpoint (exchanges/refreshes tokens). */
+  tokenEndpoint: string;
+  /** Redirect URI the provider bounces back to after consent. */
+  redirectUri: string;
+  /** Bare scheme of `redirectUri` (no path); used to match incoming URLs. */
+  redirectScheme: string;
+  /** Extra provider-specific query params for the auth request (e.g. Google's `access_type`/`prompt`). */
+  authParams?: Record<string, string>;
 }
 
 /**
@@ -47,6 +57,10 @@ export interface OAuthFlowDeps {
   awaitRedirect: (redirectUri: string) => Promise<string>;
   /** Reverse-DNS redirect URI for this client; must match the auth request. */
   redirectUri: string;
+  /** Authorization endpoint (provider-specific: Google / Microsoft). */
+  authEndpoint: string;
+  /** Extra provider-specific query params for the auth request. */
+  authParams?: Record<string, string>;
   /** Exchange the authorization `code` (+ PKCE verifier) for tokens. */
   exchange: (args: { code: string; verifier: string; redirectUri: string }) => Promise<TokenSet>;
 }
@@ -74,6 +88,8 @@ export const runOAuthFlow = async (scope: string, deps: OAuthFlowDeps): Promise<
     scope,
     challenge,
     state,
+    authEndpoint: deps.authEndpoint,
+    extraParams: deps.authParams,
   });
 
   // Begin awaiting the redirect BEFORE opening the consent URL: opening can race

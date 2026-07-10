@@ -1962,5 +1962,11 @@
   "Subscribed to \"{{title}}\"": "Підписано на «{{title}}»",
   "This article has no full content; open it in a browser.": "Ця стаття не має повного тексту; відкрийте її в браузері.",
   "Import produced no book": "Імпорт не створив книгу",
-  "You are already subscribed to this feed.": "Ви вже підписані на цю стрічку."
+  "You are already subscribed to this feed.": "Ви вже підписані на цю стрічку.",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "Використовувати OneDrive",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Синхронізуйте свою бібліотеку, проґрес читання та виділення з вашим Microsoft OneDrive.",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Поки вибрано {{provider}}, книги, прогрес і анотації синхронізуються лише з вашим OneDrive.",
+  "Readest only accesses the files it creates in your OneDrive.": "Readest має доступ лише до файлів, які сам створює у вашому OneDrive.",
+  ". Make OneDrive the active cloud provider.": ". Зробити OneDrive активним хмарним провайдером."
 }

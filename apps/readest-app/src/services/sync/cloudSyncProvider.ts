@@ -34,7 +34,7 @@ export interface CloudSyncGate {
 /** Settings slice key for a third-party backend kind. */
 export const settingsKeyForBackend = (
   kind: FileSyncBackendKind,
-): 'webdav' | 'googleDrive' | 's3' => (kind === 'gdrive' ? 'googleDrive' : kind);
+): 'webdav' | 'googleDrive' | 's3' | 'onedrive' => (kind === 'gdrive' ? 'googleDrive' : kind);
 
 /** Human-readable provider name (product names — deliberately untranslated). */
 export const cloudProviderDisplayName = (kind: CloudSyncProviderKind): string =>
@@ -44,7 +44,9 @@ export const cloudProviderDisplayName = (kind: CloudSyncProviderKind): string =>
       ? 'WebDAV'
       : kind === 's3'
         ? 'S3'
-        : 'Readest Cloud';
+        : kind === 'onedrive'
+          ? 'OneDrive'
+          : 'Readest Cloud';
 
 export const getCloudSyncProvider = (
   settings: SystemSettings | null | undefined,
@@ -55,7 +57,9 @@ export const getCloudSyncProvider = (
       ? 'gdrive'
       : settings?.s3?.enabled
         ? 's3'
-        : 'readest';
+        : settings?.onedrive?.enabled
+          ? 'onedrive'
+          : 'readest';
 
 /**
  * `isCloudSyncAllowed` needs the UserPlan, which comes from the async
@@ -102,6 +106,10 @@ export const applySyncBooksAutoEnable = (settings: SystemSettings): boolean => {
   }
   if (provider === 'gdrive' && settings.googleDrive && !settings.googleDrive.syncBooks) {
     settings.googleDrive = { ...settings.googleDrive, syncBooks: true };
+    return true;
+  }
+  if (provider === 'onedrive' && settings.onedrive && !settings.onedrive.syncBooks) {
+    settings.onedrive = { ...settings.onedrive, syncBooks: true };
     return true;
   }
   return false;

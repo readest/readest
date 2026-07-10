@@ -14,15 +14,17 @@ import type { FileSyncProvider } from './provider';
 import type { S3Settings, WebDAVSettings } from '@/types/settings';
 import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVProvider';
 import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
+import { buildOneDriveProvider } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import { createS3Provider } from '@/services/sync/providers/s3/S3Provider';
 
-export type FileSyncBackendKind = 'webdav' | 'gdrive' | 's3';
+export type FileSyncBackendKind = 'webdav' | 'gdrive' | 's3' | 'onedrive';
 
 /** Minimal settings the registry reads to pick + build backends. */
 export interface FileSyncBackendsSettings {
   webdav?: WebDAVSettings;
   googleDrive?: { enabled?: boolean };
   s3?: S3Settings;
+  onedrive?: { enabled?: boolean };
 }
 
 /** The backends the user has switched on, in a stable order. */
@@ -33,6 +35,7 @@ export const getEnabledFileSyncBackends = (
   if (settings.webdav?.enabled) enabled.push('webdav');
   if (settings.googleDrive?.enabled) enabled.push('gdrive');
   if (settings.s3?.enabled) enabled.push('s3');
+  if (settings.onedrive?.enabled) enabled.push('onedrive');
   return enabled;
 };
 
@@ -62,6 +65,7 @@ const providerCacheKey = (
     const c = settings.s3;
     return `s3:${c?.enabled}:${c?.endpoint}:${c?.region}:${c?.bucket}:${c?.accessKeyId}:${c?.secretAccessKey}`;
   }
+  if (kind === 'onedrive') return 'onedrive';
   return 'gdrive';
 };
 
@@ -89,7 +93,9 @@ export const createFileSyncProvider = async (
         ? settings.s3
           ? createS3Provider(settings.s3)
           : null
-        : await buildGoogleDriveProvider();
+        : kind === 'onedrive'
+          ? await buildOneDriveProvider()
+          : await buildGoogleDriveProvider();
   if (provider) cachedProvider = { key, provider };
   return provider;
 };

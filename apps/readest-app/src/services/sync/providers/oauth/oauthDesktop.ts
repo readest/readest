@@ -28,13 +28,8 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { createPkcePair } from './pkce';
-import {
-  deriveReverseDnsRedirectScheme,
-  deriveReverseDnsRedirectUri,
-  matchesReverseDnsRedirect,
-} from './reverseDnsRedirect';
 import { runOAuthFlow, type OAuthClientConfig } from './oauthFlow';
-import { exchangeCode, type FetchFn, type TokenSet } from './tokenStore';
+import { exchangeCode, type FetchFn, type TokenSet } from './tokenEndpoint';
 
 /**
  * Grace period before the cold-browser fallback. Long enough that a user
@@ -55,6 +50,15 @@ export const CONNECT_DEADLINE_MS = 15 * 60_000;
 
 /** Native command that opens a URL in a freshly-spawned, isolated browser. */
 const SPAWN_FRESH_BROWSER_COMMAND = 'spawn_fresh_browser';
+
+/**
+ * Whether an OS-delivered URL is this client's redirect, matched by scheme only
+ * (case-insensitively — Windows can relaunch the app with a differently-cased
+ * scheme in argv than was registered; the trailing `:` is required so a scheme
+ * that is a prefix of a longer one cannot false-match).
+ */
+const schemeMatches = (url: string, scheme: string): boolean =>
+  url.toLowerCase().startsWith(`${scheme.toLowerCase()}:`);
 
 /** Payload of the desktop `single-instance` event (mirrors `useAppUrlIngress`). */
 interface SingleInstancePayload {
@@ -161,7 +165,7 @@ const awaitRedirectWithFallback = (
 
     deps
       .subscribeRedirects((url) => {
-        if (matchesReverseDnsRedirect(url, scheme)) finish(url);
+        if (schemeMatches(url, scheme)) finish(url);
       })
       .then((dispose) => {
         unlisten = dispose;
@@ -209,8 +213,8 @@ export const runDesktopDeepLinkOAuth = (
   fetchFn: FetchFn,
   deps: DesktopDeepLinkDeps = defaultDesktopDeepLinkDeps,
 ): Promise<TokenSet> => {
-  const redirectUri = deriveReverseDnsRedirectUri(config.clientId);
-  const scheme = deriveReverseDnsRedirectScheme(config.clientId);
+  const redirectUri = config.redirectUri;
+  const scheme = config.redirectScheme;
 
   // The cold-browser fallback needs the consent URL, which `runOAuthFlow` only
   // hands to `openUrl`. Bridge the two with a deferred: `openUrl` supplies the
@@ -230,7 +234,18 @@ export const runDesktopDeepLinkOAuth = (
     },
     awaitRedirect: () => awaitRedirectWithFallback(scheme, authUrlReady, deps),
     redirectUri,
+    authEndpoint: config.authEndpoint,
+    authParams: config.authParams,
     exchange: ({ code, verifier, redirectUri: uri }) =>
-      exchangeCode({ code, verifier, clientId: config.clientId, redirectUri: uri }, fetchFn),
+      exchangeCode(
+        {
+          code,
+          verifier,
+          clientId: config.clientId,
+          redirectUri: uri,
+          tokenEndpoint: config.tokenEndpoint,
+        },
+        fetchFn,
+      ),
   });
 };

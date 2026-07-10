@@ -30,9 +30,8 @@
  */
 import { authWithCustomTab } from '@/app/auth/utils/nativeAuth';
 import { createPkcePair } from './pkce';
-import { deriveReverseDnsRedirectUri } from './reverseDnsRedirect';
 import { runOAuthFlow, type OAuthClientConfig } from './oauthFlow';
-import { exchangeCode, type FetchFn, type TokenSet } from './tokenStore';
+import { exchangeCode, type FetchFn, type TokenSet } from './tokenEndpoint';
 
 /**
  * Run the Android Custom-Tab OAuth flow and return the resulting tokens. Wires
@@ -40,7 +39,7 @@ import { exchangeCode, type FetchFn, type TokenSet } from './tokenStore';
  * Custom Tab and resolve with the redirect the native bridge captures.
  */
 export const runAndroidOAuth = (config: OAuthClientConfig, fetchFn: FetchFn): Promise<TokenSet> => {
-  const redirectUri = deriveReverseDnsRedirectUri(config.clientId);
+  const redirectUri = config.redirectUri;
 
   // `auth_with_custom_tab` opens consent AND resolves with the redirect URL in a
   // single native round-trip — so it needs the auth URL, which `runOAuthFlow`
@@ -66,7 +65,18 @@ export const runAndroidOAuth = (config: OAuthClientConfig, fetchFn: FetchFn): Pr
       return redirectUrl;
     },
     redirectUri,
+    authEndpoint: config.authEndpoint,
+    authParams: config.authParams,
     exchange: ({ code, verifier, redirectUri: uri }) =>
-      exchangeCode({ code, verifier, clientId: config.clientId, redirectUri: uri }, fetchFn),
+      exchangeCode(
+        {
+          code,
+          verifier,
+          clientId: config.clientId,
+          redirectUri: uri,
+          tokenEndpoint: config.tokenEndpoint,
+        },
+        fetchFn,
+      ),
   });
 };

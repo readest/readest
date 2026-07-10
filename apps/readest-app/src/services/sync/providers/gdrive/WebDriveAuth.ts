@@ -1,6 +1,7 @@
 /**
  * Browser {@link DriveAuth} for the web build — the counterpart of
- * {@link PersistedDriveAuth} (which refreshes a keychain refresh token on native).
+ * {@link createGoogleDriveAuth} (which refreshes a keychain refresh token on
+ * native).
  *
  * The web OAuth model (full-page implicit redirect; see {@link webRedirectFlow})
  * yields only a short-lived access token, kept in `sessionStorage` by
@@ -10,8 +11,8 @@
  */
 import { FileSyncError } from '@/services/sync/file/provider';
 import type { DriveAuth, FetchFn } from './GoogleDriveProvider';
-import type { TokenSet } from './auth/tokenStore';
-import { aboutUrl } from './driveRest';
+import type { TokenSet } from '@/services/sync/providers/oauth/tokenEndpoint';
+import { resolveGoogleAccountLabel } from './googleDriveAuth';
 import { loadWebDriveToken } from './auth/webTokenStore';
 
 export class WebDriveAuth implements DriveAuth {
@@ -30,11 +31,6 @@ export class WebDriveAuth implements DriveAuth {
   /** Human-readable account label (email, falling back to display name) or null. */
   async accountLabel(): Promise<string | null> {
     const token = await this.getAccessToken();
-    const res = await this.fetchFn(aboutUrl(), {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return null;
-    const body = (await res.json()) as { user?: { emailAddress?: string; displayName?: string } };
-    return body.user?.emailAddress ?? body.user?.displayName ?? null;
+    return resolveGoogleAccountLabel(token, this.fetchFn);
   }
 }

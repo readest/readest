@@ -1,7 +1,8 @@
 /**
  * Assemble a ready-to-use Google Drive {@link FileSyncProvider} from the pieces
  * built in this folder: the env-baked OAuth client id, a CSP-bypassing native
- * `fetch`, the keychain token store, and the single-flight {@link PersistedDriveAuth}.
+ * `fetch`, the keychain token store, and the single-flight
+ * {@link createGoogleDriveAuth}.
  *
  * Returns `null` when Drive cannot run here — no client id baked into the build,
  * or no secure token storage (web, or a Tauri keychain that failed to probe).
@@ -12,7 +13,7 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import type { FileSyncProvider } from '@/services/sync/file/provider';
 import { createGoogleDriveProvider, type FetchFn } from './GoogleDriveProvider';
-import { PersistedDriveAuth } from './PersistedDriveAuth';
+import { createGoogleDriveAuth } from './googleDriveAuth';
 import { WebDriveAuth } from './WebDriveAuth';
 import { createDriveTokenPersistence } from './driveTokenStore';
 
@@ -73,6 +74,6 @@ export const buildGoogleDriveProvider = async (): Promise<FileSyncProvider | nul
   if (!persistence) return null;
 
   const fetchFn = resolveFetch();
-  const auth = new PersistedDriveAuth({ clientId, fetchFn, persistence });
+  const auth = createGoogleDriveAuth({ clientId, fetchFn, persistence });
   return createGoogleDriveProvider(auth, fetchFn);
 };

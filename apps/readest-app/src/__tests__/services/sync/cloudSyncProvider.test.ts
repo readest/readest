@@ -52,6 +52,12 @@ describe('getCloudSyncProvider', () => {
     expect(getCloudSyncProvider(settings)).toBe('s3');
   });
 
+  test("returns 'onedrive' when only OneDrive is enabled", () => {
+    expect(getCloudSyncProvider({ onedrive: { enabled: true } } as SystemSettings)).toBe(
+      'onedrive',
+    );
+  });
+
   test('webdav wins deterministically over s3 when both are enabled (corrupt state)', () => {
     const settings = makeSettings({
       webdav: { enabled: true },
@@ -177,6 +183,7 @@ describe('settingsKeyForBackend', () => {
     expect(settingsKeyForBackend('webdav')).toBe('webdav');
     expect(settingsKeyForBackend('gdrive')).toBe('googleDrive');
     expect(settingsKeyForBackend('s3')).toBe('s3');
+    expect(settingsKeyForBackend('onedrive')).toBe('onedrive');
   });
 });
 
@@ -185,6 +192,7 @@ describe('cloudProviderDisplayName', () => {
     expect(cloudProviderDisplayName('webdav')).toBe('WebDAV');
     expect(cloudProviderDisplayName('gdrive')).toBe('Google Drive');
     expect(cloudProviderDisplayName('s3')).toBe('S3');
+    expect(cloudProviderDisplayName('onedrive')).toBe('OneDrive');
     expect(cloudProviderDisplayName('readest')).toBe('Readest Cloud');
   });
 });

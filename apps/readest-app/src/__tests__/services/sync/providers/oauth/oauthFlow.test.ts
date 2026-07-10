@@ -1,13 +1,15 @@
 import { describe, expect, test, vi } from 'vitest';
-import { runOAuthFlow, type OAuthFlowDeps } from '@/services/sync/providers/gdrive/auth/oauthFlow';
+import { runOAuthFlow, type OAuthFlowDeps } from '@/services/sync/providers/oauth/oauthFlow';
 
 const REDIRECT_URI = 'com.googleusercontent.apps.cid:/oauthredirect';
+const AUTH_ENDPOINT = 'https://example.com/oauth2/authorize';
 
 const makeDeps = (overrides: Partial<OAuthFlowDeps>, order: string[]): OAuthFlowDeps => ({
   createPkcePair: async () => ({ verifier: 'VER', challenge: 'CHAL' }),
   newState: () => 'STATE',
   clientId: 'cid',
   redirectUri: REDIRECT_URI,
+  authEndpoint: AUTH_ENDPOINT,
   openUrl: async () => {
     order.push('open');
   },

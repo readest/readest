@@ -62,6 +62,7 @@ export const runActiveFileLibrarySync = async (
       strategy: strategy === 'prompt' ? 'silent' : strategy,
       syncBooks: ps?.syncBooks ?? false,
       fullSync: false,
+      concurrency: 6,
       deviceId,
       onProgress: ({ index, total, action }) => {
         const label = action === 'downloading' ? _('Downloading') : _('Uploading');

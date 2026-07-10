@@ -2032,5 +2032,11 @@
   "Subscribed to \"{{title}}\"": "تم الاشتراك في \"{{title}}\"",
   "This article has no full content; open it in a browser.": "هذا المقال لا يحتوي على المحتوى الكامل؛ افتحه في المتصفح.",
   "Import produced no book": "لم ينتج عن الاستيراد أي كتاب",
-  "You are already subscribed to this feed.": "أنت مشترك بالفعل في هذه الخلاصة."
+  "You are already subscribed to this feed.": "أنت مشترك بالفعل في هذه الخلاصة.",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "استخدام OneDrive",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "زامن مكتبتك وتقدم القراءة والتمييزات مع Microsoft OneDrive الخاص بك.",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "عند اختيار {{provider}}، تتم مزامنة الكتب والتقدم والتعليقات التوضيحية إلى OneDrive الخاص بك فقط.",
+  "Readest only accesses the files it creates in your OneDrive.": "لا يصل Readest إلا إلى الملفات التي ينشئها في OneDrive الخاص بك.",
+  ". Make OneDrive the active cloud provider.": ". اجعل OneDrive مزود السحابة النشط."
 }

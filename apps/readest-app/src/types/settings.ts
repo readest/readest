@@ -202,6 +202,28 @@ export interface S3Settings {
 }
 
 /**
+ * Microsoft OneDrive file-sync settings. An OAuth-based file-sync backend
+ * alongside {@link GoogleDriveSettings}, storing data in the Graph App Folder
+ * (approot). No URL / credentials / root path and no BYO client; the OAuth
+ * token lives in the OS keychain (native) or sessionStorage (web), never here.
+ * `deviceId`/`lastSyncedAt`/`providerSelectedAt` are device-local.
+ */
+export interface OneDriveSettings {
+  enabled: boolean;
+  /** Connected account's userPrincipalName/email, shown in the settings UI. */
+  accountLabel?: string;
+  syncProgress?: boolean;
+  syncNotes?: boolean;
+  syncBooks?: boolean;
+  fullSync?: boolean;
+  strategy?: KOSyncStrategy;
+  deviceId?: string;
+  lastSyncedAt?: number;
+  /** See {@link WebDAVSettings.providerSelectedAt}. */
+  providerSelectedAt?: number;
+}
+
+/**
  * User-facing sync categories. 'progress' gates the existing book-config
  * (reading progress) sync, 'note' gates annotations, 'book' gates book
  * binaries + metadata, 'dictionary' gates the imported-dictionary replica
@@ -369,6 +391,7 @@ export interface SystemSettings {
   webdav: WebDAVSettings;
   googleDrive: GoogleDriveSettings;
   s3: S3Settings;
+  onedrive: OneDriveSettings;
 
   aiSettings: AISettings;
   /**

@@ -8,7 +8,7 @@
  * sessions via the `googleDrive.enabled` settings flag, and a new session
  * re-acquires the token by reconnecting.
  */
-import type { TokenSet } from './tokenStore';
+import type { TokenSet } from '@/services/sync/providers/oauth/tokenEndpoint';
 
 /** sessionStorage key holding the serialised {@link TokenSet}. */
 const WEB_TOKEN_KEY = 'gdrive_web_token';

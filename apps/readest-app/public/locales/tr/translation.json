@@ -1892,5 +1892,11 @@
   "Subscribed to \"{{title}}\"": "\"{{title}}\" akışına abone olundu",
   "This article has no full content; open it in a browser.": "Bu makalenin tam içeriği yok; tarayıcıda açın.",
   "Import produced no book": "İçe aktarma bir kitap oluşturmadı",
-  "You are already subscribed to this feed.": "Bu akışa zaten abonesiniz."
+  "You are already subscribed to this feed.": "Bu akışa zaten abonesiniz.",
+  "OneDrive": "OneDrive",
+  "Use OneDrive": "OneDrive Kullan",
+  "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Kütüphanenizi, okuma ilerlemenizi ve vurgularınızı Microsoft OneDrive'ınızla senkronize edin.",
+  "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} seçili olduğunda kitaplar, ilerleme ve açıklamalar yalnızca OneDrive'ınızla senkronize edilir.",
+  "Readest only accesses the files it creates in your OneDrive.": "Readest yalnızca OneDrive'ınızda kendi oluşturduğu dosyalara erişir.",
+  ". Make OneDrive the active cloud provider.": ". OneDrive'ı etkin bulut sağlayıcısı yapın."
 }
