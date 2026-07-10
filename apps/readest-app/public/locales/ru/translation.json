@@ -1969,5 +1969,6 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Пока выбран {{provider}}, книги, прогресс и аннотации синхронизируются только с вашим OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest получает доступ только к тем файлам, которые сам создаёт на вашем OneDrive.",
   ". Make OneDrive the active cloud provider.": ". Сделать OneDrive активным облачным провайдером.",
-  "Sentence Pause": "Пауза между предложениями"
+  "Sentence Pause": "Пауза между предложениями",
+  "Paragraph Gap": "Пауза между абзацами"
 }

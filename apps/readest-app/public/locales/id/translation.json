@@ -1864,5 +1864,6 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Saat {{provider}} dipilih, buku, progres, dan anotasi hanya disinkronkan ke OneDrive Anda.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest hanya mengakses file yang dibuatnya di OneDrive Anda.",
   ". Make OneDrive the active cloud provider.": ". Jadikan OneDrive penyedia cloud yang aktif.",
-  "Sentence Pause": "Jeda Antar Kalimat"
+  "Sentence Pause": "Jeda Antar Kalimat",
+  "Paragraph Gap": "Jeda antarparagraf"
 }

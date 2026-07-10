@@ -1899,5 +1899,6 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Amíg a(z) {{provider}} van kiválasztva, a könyvek, az előrehaladás és a jegyzetek csak a OneDrive-odba szinkronizálódnak.",
   "Readest only accesses the files it creates in your OneDrive.": "A Readest csak azokhoz a fájlokhoz fér hozzá, amelyeket ő hozott létre a OneDrive-jában.",
   ". Make OneDrive the active cloud provider.": ". Tegye a OneDrive-ot az aktív felhőszolgáltatóvá.",
-  "Sentence Pause": "Mondatszünet"
+  "Sentence Pause": "Mondatszünet",
+  "Paragraph Gap": "Bekezdésszünet"
 }

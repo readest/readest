@@ -89,6 +89,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   onForward: vi.fn(),
   onSetRate: vi.fn(),
   onSetSentenceGap: vi.fn(),
+  onSetParagraphGap: vi.fn(),
   onGetVoices: vi.fn().mockResolvedValue(voiceGroups),
   onSetVoice: vi.fn(),
   onGetVoiceId: vi.fn().mockReturnValue('ava'),

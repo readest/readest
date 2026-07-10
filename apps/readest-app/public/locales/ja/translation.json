@@ -1864,5 +1864,6 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} を選択している間、書籍・進捗・注釈は OneDrive にのみ同期されます。",
   "Readest only accesses the files it creates in your OneDrive.": "Readest がアクセスするのは、OneDrive 内に自身が作成したファイルのみです。",
   ". Make OneDrive the active cloud provider.": "。OneDrive を使用するクラウドプロバイダーに設定します。",
-  "Sentence Pause": "文間のポーズ"
+  "Sentence Pause": "文間のポーズ",
+  "Paragraph Gap": "段落間のポーズ"
 }

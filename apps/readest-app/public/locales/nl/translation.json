@@ -1899,5 +1899,6 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Zolang {{provider}} is geselecteerd, worden boeken, voortgang en annotaties alleen met uw OneDrive gesynchroniseerd.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest heeft alleen toegang tot de bestanden die het zelf in je OneDrive aanmaakt.",
   ". Make OneDrive the active cloud provider.": ". Maak OneDrive de actieve cloudprovider.",
-  "Sentence Pause": "Zinspauze"
+  "Sentence Pause": "Zinspauze",
+  "Paragraph Gap": "Alineapauze"
 }

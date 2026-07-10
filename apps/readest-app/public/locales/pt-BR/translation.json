@@ -1934,5 +1934,6 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Enquanto o {{provider}} estiver selecionado, livros, progresso e anotações são sincronizados apenas com seu OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "O Readest só acessa os arquivos que cria no seu OneDrive.",
   ". Make OneDrive the active cloud provider.": ". Torne o OneDrive o provedor de nuvem ativo.",
-  "Sentence Pause": "Pausa entre frases"
+  "Sentence Pause": "Pausa entre frases",
+  "Paragraph Gap": "Pausa entre parágrafos"
 }

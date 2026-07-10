@@ -1969,5 +1969,6 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Dokler je izbran {{provider}}, se knjige, napredek in opombe sinhronizirajo samo z vašim OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest dostopa le do datotek, ki jih sam ustvari v vašem OneDrive.",
   ". Make OneDrive the active cloud provider.": ". Nastavite OneDrive kot aktivnega ponudnika oblaka.",
-  "Sentence Pause": "Premor med stavki"
+  "Sentence Pause": "Premor med stavki",
+  "Paragraph Gap": "Premor med odstavki"
 }

@@ -1899,5 +1899,6 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "När {{provider}} är valt synkroniseras böcker, framsteg och anteckningar endast med din OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest kommer bara åt de filer som appen skapar i din OneDrive.",
   ". Make OneDrive the active cloud provider.": ". Gör OneDrive till aktiv molnleverantör.",
-  "Sentence Pause": "Meningspaus"
+  "Sentence Pause": "Meningspaus",
+  "Paragraph Gap": "Styckepaus"
 }

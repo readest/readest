@@ -1899,5 +1899,6 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "जब {{provider}} चुना गया हो, तो किताबें, प्रगति और एनोटेशन केवल आपके OneDrive से सिंक होते हैं।",
   "Readest only accesses the files it creates in your OneDrive.": "Readest केवल उन्हीं फ़ाइलों तक पहुँचता है जिन्हें वह आपकी OneDrive में बनाता है।",
   ". Make OneDrive the active cloud provider.": "। OneDrive को सक्रिय क्लाउड प्रदाता बनाएं।",
-  "Sentence Pause": "वाक्यों के बीच विराम"
+  "Sentence Pause": "वाक्यों के बीच विराम",
+  "Paragraph Gap": "अनुच्छेदों के बीच विराम"
 }

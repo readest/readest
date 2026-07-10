@@ -1899,5 +1899,6 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Όσο είναι επιλεγμένο το {{provider}}, τα βιβλία, η πρόοδος και οι σημειώσεις συγχρονίζονται μόνο με το OneDrive σας.",
   "Readest only accesses the files it creates in your OneDrive.": "Το Readest έχει πρόσβαση μόνο στα αρχεία που δημιουργεί στο OneDrive σας.",
   ". Make OneDrive the active cloud provider.": ". Ορίστε το OneDrive ως ενεργό πάροχο cloud.",
-  "Sentence Pause": "Παύση μεταξύ προτάσεων"
+  "Sentence Pause": "Παύση μεταξύ προτάσεων",
+  "Paragraph Gap": "Παύση παραγράφου"
 }

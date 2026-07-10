@@ -1899,5 +1899,6 @@
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} tanlangan paytda kitoblar, jarayon va izohlar faqat OneDrive'ingizga sinxronlanadi.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest OneDrive-ingizda faqat oʻzi yaratgan fayllarga kiradi.",
   ". Make OneDrive the active cloud provider.": ". OneDrive-ni faol bulut provayderi qiling.",
-  "Sentence Pause": "Gaplar orasidagi pauza"
+  "Sentence Pause": "Gaplar orasidagi pauza",
+  "Paragraph Gap": "Paragraflar orasidagi tanaffus"
 }

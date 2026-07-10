@@ -121,6 +121,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           onForward={tts.handleForward}
           onSetRate={tts.handleSetRate}
           onSetSentenceGap={tts.handleSetSentenceGap}
+          onSetParagraphGap={tts.handleSetParagraphGap}
           onGetVoices={tts.handleGetVoices}
           onSetVoice={tts.handleSetVoice}
           onGetVoiceId={tts.handleGetVoiceId}
