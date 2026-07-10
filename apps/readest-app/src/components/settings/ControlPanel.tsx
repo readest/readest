@@ -9,8 +9,11 @@ import { useEinkMode } from '@/hooks/useEinkMode';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
 import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
+import { PageTurnStyle } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
+import { applyPageTurnAttributes } from '@/app/reader/hooks/useCapturedTurn';
+import { isTauriAppPlatform } from '@/services/environment';
 import {
   BoxedList,
   NavigationRow,
@@ -56,6 +59,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [copyToNotebook, setCopyToNotebook] = useState(viewSettings.copyToNotebook);
   const [showToolbarCustomizer, setShowToolbarCustomizer] = useState(false);
   const [animated, setAnimated] = useState(viewSettings.animated);
+  const [pageTurnStyle, setPageTurnStyle] = useState(viewSettings.pageTurnStyle || 'push');
   const [isEink, setIsEink] = useState(viewSettings.isEink);
   const [isColorEink, setIsColorEink] = useState(viewSettings.isColorEink);
   const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
@@ -71,6 +75,19 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const resetToDefaults = useResetViewSettings();
   const pageTurnerResetRef = useRef<() => void>(() => {});
   const canShare = canShareText(appService);
+
+  // The layered styles need an engine with full View Transitions support or
+  // the Tauri captured-turn fallback; engines like iOS 18 WebKit crash on
+  // the VT turns, so on the web they only get Push (readest#555).
+  const turnStyleOptions = [
+    { value: 'push', label: _('Push') },
+    ...(appService?.supportsViewTransitionGroup || isTauriAppPlatform()
+      ? [
+          { value: 'slide', label: _('Slide') },
+          { value: 'curl', label: _('Page Curl') },
+        ]
+      : []),
+  ];
 
   const handleReset = () => {
     resetToDefaults({
@@ -157,16 +174,20 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDisableClick]);
 
+  // The renderer reads `turn-style`/`no-swipe` at touchmove/touchend time, so
+  // settings changes have to push the attributes through immediately rather
+  // than waiting for the next recreateViewer pass.
+  const applyTurnAttributes = () => {
+    const view = getView(bookKey);
+    const freshSettings = getViewSettings(bookKey);
+    if (view && freshSettings) {
+      applyPageTurnAttributes(view, freshSettings, !!bookData?.isFixedLayout);
+    }
+  };
+
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'disableSwipe', isDisableSwipe, false, false);
-    // The renderer reads `no-swipe` at touchmove/touchend time, so we have to
-    // push the attribute through immediately rather than waiting for the next
-    // recreateViewer pass.
-    if (isDisableSwipe) {
-      getView(bookKey)?.renderer.setAttribute('no-swipe', '');
-    } else {
-      getView(bookKey)?.renderer.removeAttribute('no-swipe');
-    }
+    applyTurnAttributes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDisableSwipe]);
 
@@ -192,8 +213,16 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     } else {
       getView(bookKey)?.renderer.removeAttribute('animated');
     }
+    // Mesh-curl eligibility depends on `animated`.
+    applyTurnAttributes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animated]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'pageTurnStyle', pageTurnStyle, false, false);
+    applyTurnAttributes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageTurnStyle]);
 
   useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'isEink', isEink);
@@ -426,6 +455,19 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           checked={animated}
           onChange={() => setAnimated(!animated)}
         />
+        <SettingsRow label={_('Animation Style')} data-setting-id='settings.control.pageTurnStyle'>
+          <SettingsSelect
+            // A synced slide/curl setting from another device still reads as
+            // push here when this engine cannot animate it.
+            value={
+              turnStyleOptions.some((opt) => opt.value === pageTurnStyle) ? pageTurnStyle : 'push'
+            }
+            onChange={(e) => setPageTurnStyle(e.target.value as PageTurnStyle)}
+            ariaLabel={_('Animation Style')}
+            options={turnStyleOptions}
+            disabled={!animated}
+          />
+        </SettingsRow>
       </BoxedList>
 
       <BoxedList title={_('Device')} data-setting-id='settings.control.device'>

@@ -29,4 +29,9 @@ export interface TTSClient {
   supportsWordBoundaries(): boolean;
   getVoiceId(): string;
   getSpeakingLang(): string;
+  // Playback position within the currently audible sentence, in trimmed media
+  // seconds at rate 1.0, clamped to [0, sentenceDuration]. Optional: only
+  // clients with a real audio clock (Edge via Web Audio) implement it; the
+  // section timeline treats absence as sentence-granularity positions.
+  getChunkPosition?(): number | null;
 }

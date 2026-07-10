@@ -14,7 +14,10 @@
  * reconnects per session (a server-side token broker would be needed for
  * background refresh; out of scope here).
  */
-import { TOKEN_EXPIRY_SAFETY_MARGIN_SEC, type TokenSet } from './tokenStore';
+import {
+  TOKEN_EXPIRY_SAFETY_MARGIN_SEC,
+  type TokenSet,
+} from '@/services/sync/providers/oauth/tokenEndpoint';
 
 /** Google's OAuth 2.0 authorization endpoint. */
 const GOOGLE_AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';

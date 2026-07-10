@@ -44,4 +44,5 @@ permissions = [
   "allow-clear-secure-item",
   "allow-refresh-eink-screen",
   "allow-update-reading-widget",
+  "allow-capture-webview-region",
 ]

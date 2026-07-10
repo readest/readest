@@ -470,6 +470,16 @@ class NativeBridgePlugin: Plugin {
   private var webViewLifecycleManager: WebViewLifecycleManager?
   private var traitChangeRegistered = false
 
+  // Screen-brightness management. `UIScreen.main.brightness` is a *global*
+  // device setting, not a per-window one: once the app writes to it, iOS
+  // suppresses ambient auto-brightness and the override survives backgrounding,
+  // leaving the system stuck at the app's level until the user nudges it
+  // manually (issue #4885). We remember the value that was there before the
+  // first override so we can hand it back whenever the app leaves the
+  // foreground, and re-assert the app's value when it returns.
+  private var appDesiredBrightness: CGFloat?
+  private var systemBrightnessBeforeOverride: CGFloat?
+
   @objc public override func load(webview: WKWebView) {
     self.webView = webview
     logger.log("NativeBridgePlugin loaded")
@@ -536,6 +546,10 @@ class NativeBridgePlugin: Plugin {
 
   @objc func appWillEnterForeground() {
     logger.log("NativeBridgePlugin: App will enter foreground")
+    // Re-assert the app's brightness that was released on background (#4885).
+    if let desired = appDesiredBrightness {
+      UIScreen.main.brightness = desired
+    }
     webViewLifecycleManager?.handleAppWillEnterForeground()
   }
 
@@ -661,6 +675,11 @@ class NativeBridgePlugin: Plugin {
     logger.log("NativeBridgePlugin: App did enter background")
     if let handler = volumeKeyHandler, handler.isIntercepting {
       handler.stopInterception()
+    }
+    // Hand screen brightness back to iOS so ambient auto-brightness resumes
+    // while backgrounded; the override is re-applied on foreground (#4885).
+    if appDesiredBrightness != nil, let original = systemBrightnessBeforeOverride {
+      UIScreen.main.brightness = original
     }
     webViewLifecycleManager?.handleAppDidEnterBackground()
   }
@@ -1050,20 +1069,37 @@ class NativeBridgePlugin: Plugin {
 
     let brightness = args.brightness ?? 0.5
 
-    if brightness < 0.0 {
-      // Revert to system brightness - iOS doesn't have a direct "system brightness" setting
-      // We will restore the brightness that was set before the app modified it
-      return invoke.resolve(["success": true])
-    }
-
     if brightness > 1.0 {
       return invoke.reject("Brightness must be between 0.0 and 1.0")
     }
 
-    DispatchQueue.main.async {
-      UIScreen.main.brightness = CGFloat(brightness)
+    DispatchQueue.main.async { [weak self] in
+      guard let self = self else { return }
+      if brightness < 0.0 {
+        // A negative value means "release control back to the system", mirroring
+        // Android's BRIGHTNESS_OVERRIDE_NONE. Restore the pre-override brightness
+        // so iOS resumes ambient auto-brightness.
+        self.releaseBrightnessControl()
+      } else {
+        if self.systemBrightnessBeforeOverride == nil {
+          self.systemBrightnessBeforeOverride = UIScreen.main.brightness
+        }
+        self.appDesiredBrightness = CGFloat(brightness)
+        UIScreen.main.brightness = CGFloat(brightness)
+      }
     }
     invoke.resolve(["success": true])
+  }
+
+  /// Restore the brightness captured before the app first overrode it so iOS
+  /// resumes ambient auto-brightness, then forget our managed state. Must run
+  /// on the main thread.
+  private func releaseBrightnessControl() {
+    if let original = systemBrightnessBeforeOverride {
+      UIScreen.main.brightness = original
+    }
+    appDesiredBrightness = nil
+    systemBrightnessBeforeOverride = nil
   }
 
   @objc public func copy_uri_to_path(_ invoke: Invoke) {
@@ -1522,6 +1558,47 @@ class NativeBridgePlugin: Plugin {
       invoke.resolve()
     }
   }
+
+  /// Snapshot a region of the webview for the mesh page-curl texture
+  /// (#555). The rect is in CSS pixels of the JS viewport (== points of
+  /// the WKWebView). Like Android, the snapshot is capped at 2x CSS
+  /// pixels (Pro iPhones render at 3x) and encoded as JPEG — the page is
+  /// opaque and JPEG encodes several times faster than PNG, keeping the
+  /// dead time between the tap and the first curl frame short. Resolved
+  /// as base64 because the plugin boundary is JSON-only; the Rust side
+  /// decodes back to bytes.
+  @objc public func capture_webview_region(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(CaptureWebviewRegionArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    DispatchQueue.main.async { [weak self] in
+      guard let webView = self?.webView else {
+        return invoke.reject("WebView not available")
+      }
+      let config = WKSnapshotConfiguration()
+      config.rect = CGRect(x: args.x, y: args.y, width: args.width, height: args.height)
+      // snapshotWidth is in points and the produced image is snapshotWidth
+      // x screen-scale pixels wide, so width x (2 / scale) points yields a
+      // 2x-CSS-pixel bitmap on 3x screens and native size elsewhere.
+      let scale = webView.window?.screen.scale ?? UIScreen.main.scale
+      if scale > 2 {
+        config.snapshotWidth = NSNumber(value: args.width * 2.0 / scale)
+      }
+      webView.takeSnapshot(with: config) { image, error in
+        guard let image = image else {
+          return invoke.reject(error?.localizedDescription ?? "Snapshot failed")
+        }
+        // Encode and base64 off the main thread; the completion arrives on
+        // main and a full-screen encode is fast but not free.
+        DispatchQueue.global(qos: .userInteractive).async {
+          guard let data = image.jpegData(compressionQuality: 0.85) else {
+            return invoke.reject("JPEG encoding failed")
+          }
+          invoke.resolve(["data": data.base64EncodedString()])
+        }
+      }
+    }
+  }
 }
 
 /// Persistent store for security-scoped folder bookmarks.
@@ -1762,6 +1839,13 @@ struct UpdateReadingWidgetRequestArgs: Decodable {
   let books: [UpdateReadingWidgetBookArgs]
   let sectionTitle: String
   let emptyTitle: String
+}
+
+struct CaptureWebviewRegionArgs: Decodable {
+  let x: Double
+  let y: Double
+  let width: Double
+  let height: Double
 }
 
 @_cdecl("init_plugin_native_bridge")

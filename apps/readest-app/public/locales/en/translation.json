@@ -173,5 +173,9 @@
   "←": "←",
   "Recently read": "Recently read",
   "Show recently read": "Show recently read",
-  "Your books will appear here": "Your books will appear here"
+  "Your books will appear here": "Your books will appear here",
+  "{{count}} results_one": "{{count}} result",
+  "{{count}} results_other": "{{count}} results",
+  "{{count}} uploads failed: insufficient storage quota_one": "{{count}} upload failed: insufficient storage quota",
+  "{{count}} uploads failed: insufficient storage quota_other": "{{count}} uploads failed: insufficient storage quota"
 }

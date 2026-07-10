@@ -49,6 +49,51 @@ describe('isSyncCategoryEnabled', () => {
     expect(isSyncCategoryEnabled('font')).toBe(true);
   });
 
+  describe('cloud sync provider gate (exclusive routing, #4380)', () => {
+    test('book/progress/note are gated off while a third-party provider is selected', () => {
+      setSettings({ webdav: { enabled: true } } as Partial<SystemSettings>);
+      expect(isSyncCategoryEnabled('book')).toBe(false);
+      expect(isSyncCategoryEnabled('progress')).toBe(false);
+      expect(isSyncCategoryEnabled('note')).toBe(false);
+    });
+
+    test('legacy plural/singular aliases are gated too', () => {
+      setSettings({ googleDrive: { enabled: true } } as Partial<SystemSettings>);
+      expect(isSyncCategoryEnabled('books')).toBe(false);
+      expect(isSyncCategoryEnabled('configs')).toBe(false);
+      expect(isSyncCategoryEnabled('config')).toBe(false);
+      expect(isSyncCategoryEnabled('notes')).toBe(false);
+    });
+
+    test('account channels stay native while a third-party provider is selected', () => {
+      setSettings({ webdav: { enabled: true } } as Partial<SystemSettings>);
+      expect(isSyncCategoryEnabled('stats')).toBe(true);
+      expect(isSyncCategoryEnabled('settings')).toBe(true);
+      expect(isSyncCategoryEnabled('dictionary')).toBe(true);
+      expect(isSyncCategoryEnabled('font')).toBe(true);
+      expect(isSyncCategoryEnabled('opds_catalog')).toBe(true);
+    });
+
+    test('the gate overrides an explicitly-true user category toggle', () => {
+      setSettings({
+        webdav: { enabled: true },
+        syncCategories: { book: true, progress: true },
+      } as Partial<SystemSettings>);
+      expect(isSyncCategoryEnabled('book')).toBe(false);
+      expect(isSyncCategoryEnabled('progress')).toBe(false);
+    });
+
+    test('no gating when readest is the provider', () => {
+      setSettings({
+        webdav: { enabled: false },
+        googleDrive: { enabled: false },
+      } as Partial<SystemSettings>);
+      expect(isSyncCategoryEnabled('book')).toBe(true);
+      expect(isSyncCategoryEnabled('progress')).toBe(true);
+      expect(isSyncCategoryEnabled('note')).toBe(true);
+    });
+  });
+
   test('settings is togglable on its own', () => {
     setSettings({
       syncCategories: { settings: false, dictionary: false } as Partial<

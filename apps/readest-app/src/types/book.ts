@@ -209,6 +209,8 @@ export interface BookLayout {
   scrollingOverlap: number;
   allowScript: boolean;
   hideScrollbar: boolean;
+  /* Auto Scroll (#4998) speed as a percentage; 100 = AUTO_SCROLL_BASE_PX_PER_SEC. */
+  autoScrollSpeed: number;
 }
 
 export interface BookStyle {
@@ -271,7 +273,9 @@ export interface BookLanguage {
   convertChineseVariant: ConvertChineseVariant;
 }
 
-export type ProgressBarMode = 'remaining' | 'progress' | 'battery' | 'time' | 'all' | 'none';
+// 'push' slides the whole strip; 'slide' and 'curl' layer the outgoing page
+// over the still incoming page (Apple Books style, needs View Transitions).
+export type PageTurnStyle = 'push' | 'slide' | 'curl';
 export interface ViewConfig {
   sideBarTab: string;
   uiLanguage: string;
@@ -290,13 +294,12 @@ export interface ViewConfig {
   use24HourClock: boolean;
   showCurrentBatteryStatus: boolean;
   showBatteryPercentage: boolean;
-  tapToToggleFooter: boolean;
   showPaginationButtons: boolean;
   progressStyle: 'percentage' | 'fraction' | 'reference';
   referencePageCount: number;
-  progressInfoMode: ProgressBarMode;
 
   animated: boolean;
+  pageTurnStyle: PageTurnStyle;
   isEink: boolean;
   isColorEink: boolean;
 
@@ -313,7 +316,6 @@ export interface TTSConfig {
   ttsRate: number;
   ttsVoice: string;
   ttsLocation: string;
-  showTTSBar: boolean;
   ttsHighlightOptions: TTSHighlightOptions;
   ttsHighlightGranularity: TTSHighlightGranularity;
   ttsMediaMetadata: TTSMediaMetadataMode;

@@ -219,4 +219,48 @@ describe('GoogleDriveProvider — Drive transport', () => {
       .mockResolvedValueOnce(text('SECOND')); // media GET on XID2
     expect(await h.provider.readText('/Readest/x.json')).toBe('SECOND');
   });
+
+  // Writes to a known path must not pay a lookup: the engine's steady state
+  // (config.json and library.json PUTs right after their pull) re-writes paths
+  // whose ids the read already cached, so the extra files.list per PUT was
+  // pure overhead at one query per book config and per index push.
+  test('writeText to a cached path PATCHes the known id without a lookup', async () => {
+    const h = makeDrive();
+    h.fetchMock
+      .mockResolvedValueOnce(json({ files: [folder('RID')] })) // findChild('Readest')
+      .mockResolvedValueOnce(json({ files: [{ id: 'XID' }] })) // findChild('x.json')
+      .mockResolvedValueOnce(text('FIRST')); // media download
+    await h.provider.readText('/Readest/x.json');
+
+    h.fetchMock.mockResolvedValueOnce(json({ id: 'XID' })); // PATCH media update
+    await h.provider.writeText('/Readest/x.json', 'BODY');
+    expect(h.fetchMock).toHaveBeenCalledTimes(4);
+    expect(h.url(3)).toContain('/upload/drive/v3/files/XID');
+    expect(h.method(3)).toBe('PATCH');
+  });
+
+  test('a stale cached id on write evicts and falls back to the full resolve', async () => {
+    const h = makeDrive();
+    h.fetchMock
+      .mockResolvedValueOnce(json({ files: [folder('RID')] })) // findChild('Readest')
+      .mockResolvedValueOnce(json({ files: [{ id: 'XID' }] })) // findChild('x.json')
+      .mockResolvedValueOnce(text('FIRST')); // media download
+    await h.provider.readText('/Readest/x.json');
+
+    // Cached XID was deleted remotely: the fast-path PATCH 404s, the provider
+    // evicts and re-resolves, finds no existing file, and create-then-names.
+    h.fetchMock
+      .mockResolvedValueOnce(json({}, 404)) // PATCH on stale XID
+      .mockResolvedValueOnce(json({ files: [folder('RID')] })) // re-resolve Readest
+      .mockResolvedValueOnce(json({ files: [] })) // findChild('x.json') — gone
+      .mockResolvedValueOnce(json({ id: 'NID' })) // POST upload
+      .mockResolvedValueOnce(json({ id: 'NID' })); // PATCH name + reparent
+    await h.provider.writeText('/Readest/x.json', 'BODY');
+    expect(h.fetchMock).toHaveBeenCalledTimes(8);
+
+    // The recreated file's id is cached: a follow-up read is one media GET.
+    h.fetchMock.mockResolvedValueOnce(text('AFTER'));
+    expect(await h.provider.readText('/Readest/x.json')).toBe('AFTER');
+    expect(h.url(8)).toContain('/NID?alt=media');
+  });
 });

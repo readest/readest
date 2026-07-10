@@ -4,10 +4,11 @@ import {
   disconnectGoogleDrive,
   DRIVE_FILE_SCOPE,
 } from '@/services/sync/providers/gdrive/connectGoogleDrive';
+import { buildGoogleOAuthConfig } from '@/services/sync/providers/gdrive/googleOAuthConfig';
 import { FileSyncError } from '@/services/sync/file/provider';
 import type { FetchFn } from '@/services/sync/providers/gdrive/GoogleDriveProvider';
 import type { TokenPersistence } from '@/services/sync/providers/gdrive/driveTokenStore';
-import type { TokenSet } from '@/services/sync/providers/gdrive/auth/tokenStore';
+import type { TokenSet } from '@/services/sync/providers/oauth/tokenEndpoint';
 
 const tokens: TokenSet = { accessToken: 'AT', refreshToken: 'RT', expiresAt: 9_999_999_999_999 };
 
@@ -40,7 +41,7 @@ describe('connectGoogleDrive', () => {
       runOAuth,
     });
 
-    expect(runOAuth).toHaveBeenCalledWith({ clientId: 'cid', scope: DRIVE_FILE_SCOPE }, fetchFn);
+    expect(runOAuth).toHaveBeenCalledWith(buildGoogleOAuthConfig('cid', DRIVE_FILE_SCOPE), fetchFn);
     expect(persistence.save).toHaveBeenCalledWith(tokens);
     expect(res.accountLabel).toBe('a@b.com');
   });

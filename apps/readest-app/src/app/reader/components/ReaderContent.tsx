@@ -150,12 +150,12 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     }
     window.addEventListener('beforeunload', handleCloseBooks);
     eventDispatcher.on('beforereload', handleCloseBooks);
-    eventDispatcher.on('close-reader', handleCloseBooks);
+    eventDispatcher.on('close-reader', handleCloseReaderToLibrary);
     eventDispatcher.on('quit-app', handleCloseBooks);
     return () => {
       window.removeEventListener('beforeunload', handleCloseBooks);
       eventDispatcher.off('beforereload', handleCloseBooks);
-      eventDispatcher.off('close-reader', handleCloseBooks);
+      eventDispatcher.off('close-reader', handleCloseReaderToLibrary);
       eventDispatcher.off('quit-app', handleCloseBooks);
       unlistenOnCloseWindow?.then((fn) => fn());
     };
@@ -174,7 +174,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     }
   };
 
-  const saveConfigAndCloseBook = async (bookKey: string) => {
+  const saveConfigAndCloseBook = async (bookKey: string, keepTTSAlive = false) => {
     console.log('Closing book', bookKey);
 
     const viewState = getViewState(bookKey);
@@ -188,7 +188,13 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     } catch {
       console.info('Error closing book', bookKey);
     }
-    eventDispatcher.dispatch('tts-stop', { bookKey });
+    // Closes that keep the webview alive (back to library, Android back, pane
+    // dismiss) let a live TTS session continue in the background;
+    // webview-destroying closes (quit, window close, reload) hard-stop so the
+    // media session and Android foreground service tear down with the page.
+    eventDispatcher.dispatch(keepTTSAlive ? 'tts-close-book' : 'tts-stop', {
+      bookKey,
+    });
     await saveBookConfig(bookKey);
     clearViewState(bookKey);
   };
@@ -202,14 +208,25 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     navigateBackToLibrary();
   };
 
-  const handleCloseBooks = throttle(async () => {
+  const handleCloseReaderToLibrary = () => {
+    return handleCloseBooks(true);
+  };
+
+  // Also wired directly to beforeunload/quit-app/window-close, which pass an
+  // event object: only a literal `true` keeps TTS alive.
+  const handleCloseBooks = throttle(async (keepTTSAlive?: unknown) => {
     const settings = useSettingsStore.getState().settings;
-    await Promise.all(bookKeys.map(async (key) => await saveConfigAndCloseBook(key)));
+    await Promise.all(
+      bookKeys.map(async (key) => await saveConfigAndCloseBook(key, keepTTSAlive === true)),
+    );
     await saveSettings(envConfig, settings);
   }, 200);
 
   const handleCloseBooksToLibrary = async () => {
-    handleCloseBooks();
+    // SPA navigation in the main window (or on web) keeps the webview alive:
+    // TTS may continue headless. Non-main Tauri windows close their webview
+    // below, but their per-window TTS dies with the window either way.
+    handleCloseBooks(true);
     if (isTauriAppPlatform()) {
       const currentWindow = getCurrentWindow();
       if (currentWindow.label === 'main') {
@@ -226,7 +243,10 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   };
 
   const handleCloseBook = async (bookKey: string) => {
-    saveConfigAndCloseBook(bookKey);
+    // Header X / pane close: an SPA-side close on web and the main window.
+    // The Tauri reader-window branches below destroy their webview, which
+    // takes the per-window TTS with it either way.
+    saveConfigAndCloseBook(bookKey, true);
     if (sideBarBookKey === bookKey) {
       setSideBarBookKey(getNextBookKey(sideBarBookKey));
     }

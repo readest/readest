@@ -65,6 +65,18 @@
           <string>com.googleusercontent.apps.209390247301-ctpmep68ppfa56r1b8tr35e4qi4p60kq</string>
         </array>
       </dict>
+      <!-- OneDrive OAuth redirect. The ASWebAuthenticationSession matches on
+           this scheme; mirrors the onedrive-oauth filter in
+           AndroidManifest.xml and the deep-link.mobile scheme in
+           tauri.conf.json. -->
+      <dict>
+        <key>CFBundleURLName</key>
+        <string>com.bilingify.readest.onedrive-oauth</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>readest-onedrive</string>
+        </array>
+      </dict>
     </array>
   </dict>
 </plist>

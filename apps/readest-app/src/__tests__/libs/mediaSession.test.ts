@@ -16,6 +16,7 @@ vi.mock('@tauri-apps/api/core', () => ({
   addPluginListener: vi.fn(),
 }));
 
+import { invoke } from '@tauri-apps/api/core';
 import { getMediaSession, TauriMediaSession } from '@/libs/mediaSession';
 import { getOSPlatform } from '@/utils/misc';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -81,5 +82,69 @@ describe('getMediaSession', () => {
     setNavigatorMediaSession(false);
 
     expect(getMediaSession()).toBeNull();
+  });
+});
+
+describe('TauriMediaSession.setActive', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test('requests POST_NOTIFICATIONS whenever the session activates', async () => {
+    // The foreground-service media notification IS the lock-screen control; on
+    // Android 13+ it is silently suppressed unless POST_NOTIFICATIONS is
+    // granted. The request must fire on every activation (it used to be gated
+    // on an opt-in setting, which left the control missing by default).
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|checkPermissions') {
+        return { postNotification: 'prompt' } as unknown;
+      }
+      return undefined as unknown;
+    });
+
+    const session = new TauriMediaSession();
+    await session.setActive({ active: true });
+
+    expect(invoke).toHaveBeenCalledWith('plugin:native-tts|checkPermissions');
+    expect(invoke).toHaveBeenCalledWith('plugin:native-tts|requestPermissions', {
+      permissions: ['postNotification'],
+    });
+  });
+
+  test('still activates the native session when the permission request throws', async () => {
+    // A thrown/hung permission request must never abort the foreground-service
+    // start, or the service never becomes foreground and the OS reclaims it on
+    // idle (observed on MIUI: "Stopping service due to app idle").
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|checkPermissions') {
+        throw new Error('permission plugin unavailable');
+      }
+      return undefined as unknown;
+    });
+
+    const session = new TauriMediaSession();
+    await session.setActive({ active: true });
+
+    expect(invoke).toHaveBeenCalledWith('plugin:native-tts|set_media_session_active', {
+      payload: { active: true },
+    });
+  });
+
+  test('does not re-prompt once the permission is already decided', async () => {
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'plugin:native-tts|checkPermissions') {
+        return { postNotification: 'granted' } as unknown;
+      }
+      return undefined as unknown;
+    });
+
+    const session = new TauriMediaSession();
+    await session.setActive({ active: true });
+
+    expect(invoke).toHaveBeenCalledWith('plugin:native-tts|checkPermissions');
+    expect(invoke).not.toHaveBeenCalledWith(
+      'plugin:native-tts|requestPermissions',
+      expect.anything(),
+    );
   });
 });

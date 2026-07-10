@@ -6,7 +6,6 @@ import { PiSun, PiMoon } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdCloudSync, MdSync, MdSyncProblem } from 'react-icons/md';
 
-import { invoke, PermissionState } from '@tauri-apps/api/core';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { DOWNLOAD_READEST_URL } from '@/services/constants';
 import { setBackupDialogVisible } from '@/app/library/components/BackupWindow';
@@ -15,6 +14,12 @@ import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
+import { useFileSyncStore } from '@/store/fileSyncStore';
+import {
+  getCloudSyncProvider,
+  cloudProviderDisplayName,
+  settingsKeyForBackend,
+} from '@/services/sync/cloudSyncProvider';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -44,11 +49,6 @@ interface SettingsMenuProps {
   setIsDropdownOpen?: (isOpen: boolean) => void;
 }
 
-interface Permissions {
-  postNotification: PermissionState;
-  manageStorage: PermissionState;
-}
-
 const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdownOpen }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -64,7 +64,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const [isAutoImportBooksOnOpen, setIsAutoImportBooksOnOpen] = useState(
     settings.autoImportBooksOnOpen,
   );
-  const [alwaysInForeground, setAlwaysInForeground] = useState(settings.alwaysInForeground);
   const [savedBookCoverForLockScreen, setSavedBookCoverForLockScreen] = useState(
     settings.savedBookCoverForLockScreen || '',
   );
@@ -100,6 +99,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setIsDropdownOpen?.(false);
   };
   const { isSyncing, setLibrary } = useLibraryStore();
+  const fileSyncByKind = useFileSyncStore((s) => s.byKind);
+  const fileSyncLastError = useFileSyncStore((s) => s.lastErrorByKind);
   const { stats, hasActiveTransfers, setIsTransferQueueOpen } = useTransferQueue();
 
   const openTransferQueue = () => {
@@ -258,23 +259,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setSavedBookCoverForLockScreen(newValue);
   };
 
-  const toggleAlwaysInForeground = async () => {
-    const requestAlwaysInForeground = !settings.alwaysInForeground;
-
-    if (requestAlwaysInForeground) {
-      let permission = await invoke<Permissions>('plugin:native-tts|checkPermissions');
-      if (permission.postNotification !== 'granted') {
-        permission = await invoke<Permissions>('plugin:native-tts|requestPermissions', {
-          permissions: ['postNotification'],
-        });
-      }
-      if (permission.postNotification !== 'granted') return;
-    }
-
-    saveSysSettings(envConfig, 'alwaysInForeground', requestAlwaysInForeground);
-    setAlwaysInForeground(requestAlwaysInForeground);
-  };
-
   const handleSyncLibrary = () => {
     onPullLibrary(true, true);
     setIsDropdownOpen?.(false);
@@ -294,11 +278,35 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const coverDir = savedBookCoverPath ? savedBookCoverPath.split('/').pop() : 'Images';
   const savedBookCoverDescription = `💾 ${coverDir}/last-book-cover.png`;
 
-  const lastSyncTime = Math.max(
-    settings.lastSyncedAtBooks || 0,
-    settings.lastSyncedAtConfigs || 0,
-    settings.lastSyncedAtNotes || 0,
-  );
+  // While a third-party provider is selected the native cursors freeze (the
+  // book/progress/note channels are gated), so the sync row must report the
+  // file engine's health instead — otherwise it reads "Synced 3 months ago"
+  // forever and looks broken.
+  const cloudProvider = getCloudSyncProvider(settings);
+  const cloudProviderName = cloudProviderDisplayName(cloudProvider);
+  const providerSyncing = cloudProvider !== 'readest' && !!fileSyncByKind[cloudProvider]?.isSyncing;
+  const providerLastError =
+    cloudProvider !== 'readest' ? fileSyncLastError[cloudProvider] : undefined;
+  const lastSyncTime =
+    cloudProvider !== 'readest'
+      ? settings[settingsKeyForBackend(cloudProvider)]?.lastSyncedAt || 0
+      : Math.max(
+          settings.lastSyncedAtBooks || 0,
+          settings.lastSyncedAtConfigs || 0,
+          settings.lastSyncedAtNotes || 0,
+        );
+  const syncRowLabel =
+    cloudProvider !== 'readest'
+      ? providerLastError
+        ? _('Sync failed')
+        : lastSyncTime
+          ? _('Synced {{time}}', {
+              time: dayjs(lastSyncTime).fromNow(),
+            })
+          : _('Never synced')
+      : lastSyncTime
+        ? _('Synced {{time}}', { time: dayjs(lastSyncTime).fromNow() })
+        : _('Never synced');
 
   return (
     <Menu
@@ -342,27 +350,30 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
               onClick={openTransferQueue}
             />
             <MenuItem
-              label={
-                lastSyncTime
-                  ? _('Synced {{time}}', {
-                      time: dayjs(lastSyncTime).fromNow(),
-                    })
-                  : _('Never synced')
-              }
+              label={syncRowLabel}
               Icon={user ? MdSync : MdSyncProblem}
               labelClass='ps-2 pe-1 !mx-0'
-              iconClassName={user && isSyncing ? 'animate-reverse-spin' : ''}
+              iconClassName={(user && isSyncing) || providerSyncing ? 'animate-reverse-spin' : ''}
               onClick={handleSyncLibrary}
+              description={
+                cloudProvider !== 'readest'
+                  ? _('Library sync via {{provider}}', {
+                      provider: cloudProviderName,
+                    })
+                  : undefined
+              }
             />
-            <button
-              onClick={handleUserProfile}
-              className='hover:bg-base-300 w-full rounded-md'
-              style={{
-                paddingInlineStart: `${iconSize}px`,
-              }}
-            >
-              <Quota quotas={quotas} labelClassName='h-10 pl-3 pr-2' />
-            </button>
+            {cloudProvider === 'readest' ? (
+              <button
+                onClick={handleUserProfile}
+                className='hover:bg-base-300 w-full rounded-md'
+                style={{
+                  paddingInlineStart: `${iconSize}px`,
+                }}
+              >
+                <Quota quotas={quotas} labelClassName='h-10 pl-3 pr-2' />
+              </button>
+            ) : null}
             <MenuItem label={_('Account')} onClick={handleUserProfile} />
           </ul>
         </MenuItem>
@@ -370,11 +381,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         <MenuItem label={_('Sign In')} Icon={PiUserCircle} onClick={handleUserLogin}></MenuItem>
       )}
 
-      <MenuItem
-        label={_('Auto Upload Books to Cloud')}
-        toggled={isAutoUpload}
-        onClick={toggleAutoUploadBooks}
-      />
+      {cloudProvider === 'readest' && (
+        <MenuItem
+          label={_('Auto Upload Books to Cloud')}
+          toggled={isAutoUpload}
+          onClick={toggleAutoUploadBooks}
+        />
+      )}
 
       {isTauriAppPlatform() && (
         <MenuItem
@@ -407,13 +420,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
           label={_('Always Show Status Bar')}
           toggled={isAlwaysShowStatusBar}
           onClick={toggleAlwaysShowStatusBar}
-        />
-      )}
-      {appService?.isAndroidApp && (
-        <MenuItem
-          label={_(_('Background Read Aloud'))}
-          toggled={alwaysInForeground}
-          onClick={toggleAlwaysInForeground}
         />
       )}
       <MenuItem

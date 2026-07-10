@@ -13,6 +13,33 @@ interface UseAuthCallbackOptions {
   errorDescription?: string | null;
 }
 
+export interface OAuthCallbackParams {
+  accessToken: string | null;
+  refreshToken: string | null;
+  type: string | null;
+  next: string | null;
+  error: string | null;
+  errorCode: string | null;
+  errorDescription: string | null;
+}
+
+// OAuth callbacks may carry data in the URL fragment (implicit flow tokens) or
+// the query string (provider/GoTrue errors), so we read from both.
+export function parseOAuthCallbackUrl(url: string): OAuthCallbackParams {
+  const hashParams = new URLSearchParams(url.match(/#(.*)/)?.[1] ?? '');
+  const queryParams = new URLSearchParams(url.match(/\?([^#]*)/)?.[1] ?? '');
+  const getParam = (key: string) => hashParams.get(key) ?? queryParams.get(key);
+  return {
+    accessToken: getParam('access_token'),
+    refreshToken: getParam('refresh_token'),
+    type: getParam('type'),
+    next: getParam('next'),
+    error: getParam('error'),
+    errorCode: getParam('error_code'),
+    errorDescription: getParam('error_description'),
+  };
+}
+
 export function handleAuthCallback({
   accessToken,
   refreshToken,

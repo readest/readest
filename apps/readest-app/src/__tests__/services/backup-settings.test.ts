@@ -59,6 +59,15 @@ function makeSettings(overrides: Partial<SystemSettings> = {}): SystemSettings {
       checksumMethod: 'binary',
       strategy: 'prompt',
     },
+    webdav: {
+      enabled: true,
+      serverUrl: 'https://dav.example',
+      username: 'wuser',
+      password: 'wpass',
+      rootPath: '/',
+      deviceId: 'webdav-device-id',
+      lastSyncedAt: 666,
+    },
     readwise: { enabled: true, accessToken: 'rw-token', lastSyncedAt: 999 },
     hardcover: { enabled: false, accessToken: 'hc-token', lastSyncedAt: 888 },
     googleDrive: {
@@ -104,6 +113,11 @@ describe('sanitizeSettingsForBackup - blacklist', () => {
     expect(rec(out['googleDrive'])['deviceId']).toBeUndefined();
     // Non-identity Drive settings still travel with the backup.
     expect(rec(out['googleDrive'])['enabled']).toBe(true);
+    // WebDAV device identity and cursor stay on the device; restoring
+    // them onto a second device would duplicate WebDAV sync identity.
+    expect(rec(out['webdav'])['deviceId']).toBeUndefined();
+    expect(rec(out['webdav'])['lastSyncedAt']).toBeUndefined();
+    expect(rec(out['webdav'])['serverUrl']).toBe('https://dav.example');
   });
 
   it('strips sync cursors', () => {

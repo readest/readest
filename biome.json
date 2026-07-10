@@ -40,7 +40,8 @@
       "!**/*.mjs",
       "!**/*.cjs",
       "!**/*.mts",
-      "!pnpm-lock.yaml"
+      "!pnpm-lock.yaml",
+      "!**/nix/store/**"
     ]
   },
   "assist": { "enabled": false },

@@ -432,3 +432,24 @@ pub struct UpdateReadingWidgetRequest {
     #[serde(default)]
     pub tts: Option<ReadingWidgetTts>,
 }
+
+/// Region of the webview to snapshot for the mesh page-curl (#555),
+/// in CSS pixels of the webview viewport (origin top-left). The native
+/// side applies the screen scale factor.
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CaptureWebviewRegionRequest {
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
+}
+
+/// Mobile-side response: Swift/Kotlin can only resolve JSON, so the
+/// PNG crosses the plugin boundary base64-encoded; `mobile.rs` decodes
+/// it back to bytes so the JS-facing command stays binary.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CaptureWebviewRegionResponse {
+    pub data: String,
+}

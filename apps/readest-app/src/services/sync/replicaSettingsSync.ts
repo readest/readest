@@ -379,6 +379,14 @@ const mergeSettings = (current: SystemSettings, patch: Partial<SystemSettings>):
     // preserves them when the remote updates the synced connection fields.
     out.webdav = { ...current.webdav, ...patch.webdav };
   }
+  if (patch.s3) {
+    // Only endpoint / region / bucket / accessKeyId / secretAccessKey are
+    // whitelisted, so the remote patch never carries the per-device fields
+    // (enabled, deviceId, lastSyncedAt, providerSelectedAt, sub-toggles).
+    // Spread-with-current preserves them when the remote updates the synced
+    // connection fields.
+    out.s3 = { ...current.s3, ...patch.s3 };
+  }
   if (patch.dictionarySettings) {
     // `defaultProviderId` (last-used tab) is per-device — not in the
     // whitelist, so the remote patch never sends it. Spread-with-current

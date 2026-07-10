@@ -4,6 +4,7 @@ import { SchemaType } from '@/services/database/migrate';
 import { getOSPlatform, isValidURL } from '@/utils/misc';
 import { isSafariBrowser } from '@/utils/ua';
 import { RemoteFile } from '@/utils/file';
+import { detectViewTransitionGroup, detectViewTransitionsAPI } from '@/utils/viewTransition';
 import { isPWA } from './environment';
 import { BaseAppService } from './appService';
 import {
@@ -289,6 +290,8 @@ export class WebAppService extends BaseAppService {
   override isMobile = ['android', 'ios'].includes(getOSPlatform());
   override appPlatform = 'web' as AppPlatform;
   override supportsCanvasContext2DFilter = !isSafariBrowser();
+  override supportsViewTransitionsAPI = detectViewTransitionsAPI();
+  override supportsViewTransitionGroup = detectViewTransitionGroup();
   override hasSafeAreaInset = isPWA();
 
   override async init() {
@@ -302,7 +305,7 @@ export class WebAppService extends BaseAppService {
       const settings = await this.loadSettings();
       const lastMigrationVersion = settings.migrationVersion || 0;
 
-      await super.runMigrations(lastMigrationVersion);
+      await super.runMigrations(lastMigrationVersion, settings);
 
       if (lastMigrationVersion < this.CURRENT_MIGRATION_VERSION) {
         await this.saveSettings({

@@ -69,6 +69,14 @@ vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string) => s,
 }));
 
+// The word pronouncer talks to Edge/WebAudio; stub it so the sheet's speak
+// button can be exercised without real audio. (#4876)
+vi.mock('@/services/tts/wordPronouncer', () => ({
+  pronounceWord: vi.fn().mockResolvedValue(undefined),
+  warmWordAudio: vi.fn(),
+  cancelWordPronounce: vi.fn(),
+}));
+
 const mockOpenUrl = vi.fn().mockResolvedValue(undefined);
 vi.mock('@tauri-apps/plugin-opener', () => ({
   openUrl: (...args: unknown[]) => mockOpenUrl(...args),
@@ -217,6 +225,7 @@ const buildExactProvider = (storedHeadword: string): DictionaryProvider => {
 // ---------------------------------------------------------------------------
 
 import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
+import { pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
 
 const renderSheet = (
   props: Partial<{
@@ -268,6 +277,24 @@ describe('DictionarySheet — header', () => {
     expect((await screen.findByTestId('dict-title')).textContent).toBe('hello');
     expect(screen.getByLabelText('Manage Dictionaries')).toBeTruthy();
     expect(screen.queryByLabelText('Back')).toBeNull();
+  });
+});
+
+describe('DictionarySheet — speak button', () => {
+  it('warms audio and pronounces the current word when the speaker is tapped', async () => {
+    providersForNextRender.push(buildRealStarDictProvider());
+    renderSheet({ word: 'hello', lang: 'en' });
+
+    const speak = await screen.findByLabelText('Speak');
+    fireEvent.click(speak);
+
+    expect(warmWordAudio).toHaveBeenCalledTimes(1);
+    expect(pronounceWord).toHaveBeenCalledWith(
+      'hello',
+      'en',
+      expect.any(Object),
+      expect.any(Function),
+    );
   });
 });
 

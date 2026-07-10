@@ -118,6 +118,33 @@ jobs:
           echo "Uploading ${plugin_zip} to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
 
+  build-calibre-plugin:
+    needs: get-release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: create calibre plugin zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=${{ needs.get-release.outputs.release_version }}
+
+          # Stamp PLUGIN_VERSION in __init__.py with the release version
+          # (from apps/readest-app/package.json, mirroring the koplugin's
+          # _meta.lua stamp above); the committed value is a dev placeholder.
+          version_tuple=$(echo "${version}" | awk -F. '{printf "(%d, %d, %d)", $1, $2, $3}')
+          perl -i -pe "s/^PLUGIN_VERSION = \(\d+, \d+, \d+\)/PLUGIN_VERSION = ${version_tuple}/" \
+            apps/readest-calibre-plugin/__init__.py
+
+          make -C apps/readest-calibre-plugin zip
+          plugin_zip="apps/readest-calibre-plugin/dist/Readest-${version}.calibre-plugin.zip"
+
+          echo "Uploading ${plugin_zip} to GitHub release"
+          gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
+
   build-tauri:
     needs: get-release
     permissions:
@@ -176,7 +203,7 @@ jobs:
 
       - name: setup Java (for Android build only)
         if: matrix.config.release == 'android'
-        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5
+        uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -229,6 +256,10 @@ jobs:
           echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.local
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.local
           echo "NEXT_PUBLIC_APP_PLATFORM=tauri" >> .env.local
+          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env.local
+          echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" >> .env.local
+          echo "SENTRY_ORG=readest" >> .env.local
+          echo "SENTRY_PROJECT=readest" >> .env.local
           cp .env.local apps/readest-app/.env.local
 
       - name: build and upload Android apks
@@ -319,6 +350,22 @@ jobs:
       - name: Override tauri-cli with custom AppImage format (Linux)
         if: matrix.config.release == 'linux'
         run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --branch feat/truly-portable-appimage --force
+
+      # The truly-portable AppImage bundler downloads quick-sharun.sh from
+      # Anylinux-AppImages@main ONLY when it is not already in the tauri tools
+      # cache. An upstream strace-mode change (2026-06-29) made bundling launch
+      # the app under Xvfb and hang forever (#4906). Seed the cache with the
+      # last known-good revision so the bundler never fetches the moving
+      # main-branch script. Keep in sync with nightly.yml.
+      - name: pin quick-sharun.sh for AppImage bundling (Linux)
+        if: matrix.config.release == 'linux'
+        run: |
+          set -euo pipefail
+          cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/tauri"
+          mkdir -p "$cache_dir"
+          curl -fsSL --retry 3 -o "$cache_dir/quick-sharun.sh" \
+            "https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/b3a9e985cdedf7efa81d172f182cd13983743147/useful-tools/quick-sharun.sh"
+          chmod +x "$cache_dir/quick-sharun.sh"
 
       - uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         id: tauri

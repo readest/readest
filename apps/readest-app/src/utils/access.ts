@@ -57,18 +57,20 @@ export const isCloudSyncInPlan = (plan: UserPlan): boolean =>
   (CLOUD_SYNC_PLANS as readonly UserPlan[]).includes(plan);
 
 /**
- * Master switch for the third-party cloud-sync premium paywall. Temporarily
- * OFF: cloud sync (WebDAV / Google Drive) ships ungated to every plan — including
- * free — while the feature stabilises, and will be re-gated to
- * {@link CLOUD_SYNC_PLANS} in an upcoming release. Every gate goes through
- * {@link isCloudSyncAllowed}, so flipping this back to `true` is the whole toggle.
+ * Master switch for the third-party cloud-sync premium paywall. ON: cloud
+ * sync (WebDAV / Google Drive / S3) requires a {@link CLOUD_SYNC_PLANS} plan —
+ * free users see the provider rows with a Premium badge and an upgrade route
+ * instead of the config sub-pages, and a downgraded account's still-selected
+ * provider is paused (never a silent fallback to Readest Cloud uploads, #4959).
+ * Every gate goes through {@link isCloudSyncAllowed}, so this flag is the
+ * whole toggle.
  */
-export const CLOUD_SYNC_REQUIRES_PREMIUM = false;
+export const CLOUD_SYNC_REQUIRES_PREMIUM = true;
 
 /**
- * Whether third-party cloud sync is available for a plan. While
- * {@link CLOUD_SYNC_REQUIRES_PREMIUM} is off this is always true; once it is
- * re-enabled it falls back to the {@link isCloudSyncInPlan} paywall.
+ * Whether third-party cloud sync is available for a plan. Falls back to the
+ * {@link isCloudSyncInPlan} paywall while {@link CLOUD_SYNC_REQUIRES_PREMIUM}
+ * is on; flipping the switch off ungates every plan.
  */
 export const isCloudSyncAllowed = (plan: UserPlan): boolean =>
   !CLOUD_SYNC_REQUIRES_PREMIUM || isCloudSyncInPlan(plan);

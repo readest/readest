@@ -17,7 +17,7 @@
   outputs = { self, nixpkgs, flake-utils, android, devshell, fenix }:
     {
       overlay = final: prev: {
-        inherit (self.packages.${final.system}) android-sdk android-studio;
+        inherit (self.packages.${final.stdenv.hostPlatform.system}) android-sdk;
       };
     }
     //
@@ -36,22 +36,15 @@
             self.overlay
           ];
         };
-        # android-studio is not available in aarch64-darwin
-        androidConditionalPackages = if pkgs.system != "aarch64-darwin" then [ pkgs.android-studio ] else [ ];
+
         commonPackages = with pkgs; [
           pnpm
-          nodejs_22
+          nodejs_24
           clang
           pkg-config
-          (pkgs.fenix.complete.withComponents [
-            "cargo"
-            "clippy"
-            "rust-src"
-            "rustc"
-            "rustfmt"
-          ])
           pkgs.rust-analyzer-nightly
           xdg-utils
+          self.formatter.${pkgs.stdenv.hostPlatform.system}
         ];
 
         systemDeps = with pkgs; [
@@ -79,12 +72,26 @@
         getDev = pkg: if pkg ? dev then pkg.dev else pkg;
         getLib = pkg: if pkg ? lib then pkg.lib else pkg;
 
-        pkgConfigPath = lib.makeSearchPath "lib/pkgconfig" (map getDev systemDeps);
+        # zlib stores zlib.pc in share/pkgconfig while everything else is stored in lib/pkgconfig
+        pkgConfigPath = lib.concatStringsSep ":" [
+          (lib.makeSearchPath "lib/pkgconfig" (map getDev systemDeps))
+          (lib.makeSearchPath "share/pkgconfig" (map getDev systemDeps))
+        ];
+
+        xdgPath = "${
+          lib.makeSearchPath "share/gsettings-schemas" [
+            pkgs.gsettings-desktop-schemas
+            pkgs.gtk3
+          ]
+        }:$XDG_DATA_DIRS";
+
         libPath = lib.makeLibraryPath (map getLib systemDeps);
 
         mkCommonShell =
           { name
+          , postInit ? ""
           , extraPackages ? [ ]
+          , extraTargets ? [ ]
           , extraEnv ? [
               {
                 name = "PKG_CONFIG_PATH";
@@ -98,7 +105,12 @@
                 name = "LIBRARY_PATH";
                 value = libPath;
               }
-            ] ++ (optionals isDarwin [
+              {
+                name = "XDG_DATA_DIRS";
+                eval = xdgPath;
+              }
+            ]
+            ++ (optionals isDarwin [
               {
                 name = "RUSTFLAGS";
                 eval = "\"-L framework=$DEVSHELL_DIR/Library/Frameworks\"";
@@ -122,18 +134,42 @@
           }:
           pkgs.devshell.mkShell {
             inherit name;
-            packages = commonPackages ++ extraPackages;
+            packages =
+              commonPackages
+              ++ extraPackages
+              ++ [
+                (
+                  with pkgs.fenix;
+                  pkgs.fenix.combine [
+                    complete.cargo
+                    complete.clippy
+                    complete.rust-src
+                    complete.rustc
+                    complete.rustfmt
+                    extraTargets
+                  ]
+                )
+              ];
             env = extraEnv;
+            devshell.startup.init_project.text = ''
+              git submodule update --init --recursive
+              pnpm install
+              pnpm --filter @readest/readest-app setup-vendors
+            '' + postInit;
           };
       in
       {
         packages = {
-          android-sdk = android.sdk.${system} (sdkPkgs: with sdkPkgs; [
+          android-sdk = android.sdk.${pkgs.stdenv.hostPlatform.system} (sdkPkgs: with sdkPkgs; [
             # Useful packages for building and testing.
+            build-tools-36-0-0
+            build-tools-35-0-0
             build-tools-34-0-0
             cmdline-tools-latest
             emulator
             platform-tools
+            platforms-android-36
+            platforms-android-35
             platforms-android-34
             ndk-26-1-10909125
           ]
@@ -145,9 +181,6 @@
             system-images-android-34-google-apis-x86-64
             system-images-android-34-google-apis-playstore-x86-64
           ]);
-        } // lib.optionalAttrs (system == "x86_64-linux") {
-          # Android Studio in nixpkgs is currently packaged for x86_64-linux only.
-          android-studio = pkgs.androidStudioPackages.stable;
         };
 
         devShells = {
@@ -160,13 +193,33 @@
             extraPackages = [ pkgs.cocoapods ];
           };
 
-          android = mkCommonShell {
+          android = mkCommonShell rec {
             name = "readest-android";
+            postInit = ''
+              rm -rf apps/readest-app/src-tauri/gen/android
+              pnpm tauri android init
+              git checkout apps/readest-app/src-tauri/gen/android
+              pnpm tauri icon ../../data/icons/readest-book.png
+
+              if [ ! -d "$ANDROID_AVD_HOME/${name}.avd" ]; then
+                  avdmanager create avd \
+                    -n ${name} \
+                    -k "system-images;android-34;google_apis;x86_64" \
+                    -d "pixel" \
+                    --force
+                fi
+            '';
+            extraTargets = with pkgs.fenix.targets; [
+              aarch64-linux-android.latest.rust-std
+              armv7-linux-androideabi.latest.rust-std
+              i686-linux-android.latest.rust-std
+              x86_64-linux-android.latest.rust-std
+            ];
             extraPackages = [
               pkgs.android-sdk
               pkgs.gradle
               pkgs.jdk
-            ] ++ androidConditionalPackages;
+            ];
             extraEnv = [
               {
                 name = "ANDROID_HOME";
@@ -184,10 +237,16 @@
                 name = "JAVA_HOME";
                 value = pkgs.jdk.home;
               }
+              {
+                name = "ANDROID_AVD_HOME";
+                eval = "$XDG_CONFIG_HOME/.android/avd";
+              }
             ];
           };
 
-          default = self.devShells.${system}.web;
+          default = self.devShells.${pkgs.stdenv.hostPlatform.system}.web;
         };
+
+        formatter = pkgs.nixpkgs-fmt;
       });
 }

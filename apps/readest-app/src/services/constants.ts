@@ -27,6 +27,8 @@ import {
   SystemSettings,
   WebDAVSettings,
   GoogleDriveSettings,
+  S3Settings,
+  OneDriveSettings,
 } from '@/types/settings';
 import { UserStorageQuota, UserDailyTranslationQuota } from '@/types/quota';
 import { getDefaultMaxBlockSize, getDefaultMaxInlineSize } from '@/utils/config';
@@ -113,13 +115,37 @@ export const DEFAULT_GOOGLE_DRIVE_SETTINGS = {
   lastSyncedAt: 0,
 } as GoogleDriveSettings;
 
+export const DEFAULT_S3_SETTINGS = {
+  enabled: false,
+  endpoint: '',
+  region: 'auto',
+  bucket: '',
+  accessKeyId: '',
+  secretAccessKey: '',
+  syncProgress: true,
+  syncNotes: true,
+  syncBooks: false,
+  strategy: 'silent',
+  deviceId: '',
+  lastSyncedAt: 0,
+} as S3Settings;
+
+export const DEFAULT_ONEDRIVE_SETTINGS = {
+  enabled: false,
+  syncProgress: true,
+  syncNotes: true,
+  syncBooks: false,
+  strategy: 'silent',
+  deviceId: '',
+  lastSyncedAt: 0,
+} as OneDriveSettings;
+
 export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   keepLogin: false,
   autoUpload: true,
   alwaysOnTop: false,
   openBookInNewWindow: true,
   alwaysShowStatusBar: false,
-  alwaysInForeground: false,
   autoCheckUpdates: true,
   updateChannel: 'stable',
   screenWakeLock: false,
@@ -172,6 +198,8 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   hardcover: DEFAULT_HARDCOVER_SETTINGS,
   webdav: DEFAULT_WEBDAV_SETTINGS,
   googleDrive: DEFAULT_GOOGLE_DRIVE_SETTINGS,
+  s3: DEFAULT_S3_SETTINGS,
+  onedrive: DEFAULT_ONEDRIVE_SETTINGS,
   aiSettings: DEFAULT_AI_SETTINGS,
 
   lastSyncedAtBooks: 0,
@@ -281,6 +309,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   scrollingOverlap: 0,
   allowScript: false,
   hideScrollbar: false,
+  autoScrollSpeed: 100,
 };
 
 export const DEFAULT_BOOK_LANGUAGE: BookLanguage = {
@@ -367,13 +396,12 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   showCurrentBatteryStatus: false,
   showBatteryPercentage: true,
   use24HourClock: false,
-  tapToToggleFooter: false,
   showPaginationButtons: false,
   progressStyle: 'fraction',
   referencePageCount: 0,
-  progressInfoMode: 'all',
 
   animated: false,
+  pageTurnStyle: 'push',
   isEink: false,
   isColorEink: false,
 
@@ -390,7 +418,6 @@ export const DEFAULT_TTS_CONFIG: TTSConfig = {
   ttsRate: 1.3,
   ttsVoice: '',
   ttsLocation: '',
-  showTTSBar: false,
   ttsHighlightOptions: { style: 'highlight', color: '#808080' },
   ttsHighlightGranularity: 'word',
   ttsMediaMetadata: 'sentence',
@@ -865,6 +892,12 @@ export const ZOOM_STEP = 10;
 export const MAX_CONTRAST = 300;
 export const MIN_CONTRAST = 50;
 export const CONTRAST_STEP = 10;
+
+// Auto Scroll (#4998): speed is stored as a percentage of the base velocity.
+export const AUTO_SCROLL_BASE_PX_PER_SEC = 20;
+export const MAX_AUTO_SCROLL_SPEED = 500;
+export const MIN_AUTO_SCROLL_SPEED = 25;
+export const AUTO_SCROLL_SPEED_STEP = 25;
 
 export const SHOW_UNREAD_STATUS_BADGE = false;
 

@@ -417,4 +417,89 @@ describe("library.syncbooks", function()
             end)
         end)
     end)
+
+    -- =====================================================================
+    -- _row_pull_cursor — per-row incremental-pull watermark contribution.
+    -- Mirrors computeMaxTimestamp at apps/readest-app/src/hooks/useSync.ts:29.
+    -- The server keys the books pull on the server-stamped `synced_at`
+    -- (issue #4678), so the cursor must track synced_at — NOT updated_at,
+    -- which is client-supplied and can run ahead of the server on a device
+    -- with a fast clock, starving every later pull (issue #4934).
+    -- =====================================================================
+    describe("_row_pull_cursor", function()
+        it("returns synced_at when present, ignoring a larger (future) updated_at", function()
+            assert.are.equal(100, syncbooks._row_pull_cursor({
+                synced_at = 100, updated_at = 999999999, deleted_at = nil,
+            }))
+        end)
+
+        it("falls back to max(updated_at, deleted_at) when synced_at is absent", function()
+            assert.are.equal(70, syncbooks._row_pull_cursor({ updated_at = 50, deleted_at = 70 }))
+            assert.are.equal(80, syncbooks._row_pull_cursor({ updated_at = 80 }))
+            assert.are.equal(90, syncbooks._row_pull_cursor({ deleted_at = 90 }))
+        end)
+
+        it("returns 0 for a row with no timestamps", function()
+            assert.are.equal(0, syncbooks._row_pull_cursor({}))
+        end)
+    end)
+
+    -- =====================================================================
+    -- pullBooks — end-to-end cursor advancement with an injected sync_auth +
+    -- client and a real in-memory LibraryStore. Regression guard for #4934:
+    -- the pull cursor must advance from synced_at, and the push watermark
+    -- (used for local-change detection) must advance from updated_at, so the
+    -- two never contaminate each other.
+    -- =====================================================================
+    describe("pullBooks cursor (issue #4934)", function()
+        local LibraryStore = require("library.librarystore")
+
+        local function fake_sync_auth(rows)
+            return {
+                withFreshToken = function(_self, _settings, _path, cb) cb(true) end,
+                getReadestSyncClient = function()
+                    return {
+                        pullBooks = function(_self2, _params, cb)
+                            cb(true, { books = rows }, 200)
+                        end,
+                    }
+                end,
+            }
+        end
+
+        local function pull(store, rows)
+            syncbooks.pullBooks({
+                sync_auth = fake_sync_auth(rows),
+                sync_path = "/tmp",
+                settings  = { user_id = "u1" },
+                store     = store,
+            }, function() end)
+        end
+
+        it("advances the pull cursor from synced_at, not a future updated_at", function()
+            local store = LibraryStore.new({ user_id = "u1" })
+            pull(store, {
+                { book_hash = "h1", title = "B",
+                  updated_at = "2099-01-01T00:00:00+00:00",   -- fast-clock device
+                  synced_at  = "2026-06-18T00:00:00+00:00" }, -- real server time
+            })
+            -- Pre-fix the cursor jumped to 2099 and the library never updated.
+            assert.are.equal(1781740800000, store:getLastPulledAt())  -- 2026-06-18Z
+            store:close()
+        end)
+
+        it("advances pull cursor (synced_at) and push watermark (updated_at) distinctly", function()
+            local store = LibraryStore.new({ user_id = "u1" })
+            pull(store, {
+                { book_hash = "h1", title = "B",
+                  updated_at = "2026-06-18T00:00:00+00:00",
+                  synced_at  = "2026-06-20T00:00:00+00:00" },
+            })
+            assert.are.equal(1781913600000, store:getLastPulledAt())  -- synced_at 2026-06-20Z
+            -- Push watermark tracks local updated_at so a just-pulled book is
+            -- not re-pushed on the next sync (dedup parity with the old cursor).
+            assert.are.equal(1781740800000, store:getLastPushedAt())  -- updated_at 2026-06-18Z
+            store:close()
+        end)
+    end)
 end)

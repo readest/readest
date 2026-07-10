@@ -1,4 +1,4 @@
-import { BookMetadata, EXTS } from '@/libs/document';
+import { BookMetadata, CalibreCustomColumn, EXTS } from '@/libs/document';
 import {
   Book,
   BOOK_CONFIG_SCHEMA_VERSION,
@@ -222,6 +222,31 @@ export const formatDate = (date: string | number | Date | null | undefined, isUT
     });
   } catch {
     return;
+  }
+};
+
+export const formatCalibreColumnValue = (column: CalibreCustomColumn): string => {
+  const { datatype, value, extra } = column;
+  if (Array.isArray(value)) return value.join(', ');
+  switch (datatype) {
+    case 'rating': {
+      // 0-10 in half stars, like calibre's own rendering
+      const rating = typeof value === 'number' ? value : 0;
+      return '★'.repeat(Math.floor(rating / 2)) + (rating % 2 ? '½' : '');
+    }
+    case 'series':
+      return extra != null ? `${value} [${extra}]` : String(value);
+    case 'datetime':
+      return formatDate(String(value), true) || '';
+    case 'comments':
+      return String(value)
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    case 'bool':
+      return value ? '✓' : '✗';
+    default:
+      return String(value);
   }
 };
 

@@ -90,6 +90,60 @@ export function normalizeFilePathForIndex(path: string, osPlatform?: OsPlatform)
   return caseInsensitive ? n.toLowerCase() : n;
 }
 
+export interface ScannedFileEntry {
+  /** Absolute path, already joined with the folder root. */
+  fullPath: string;
+  /** File size in bytes. */
+  size: number;
+}
+
+/**
+ * From a folder scan, keep only entries that (a) match one of `extensions`
+ * (lowercased, no leading dot), (b) are at least `minSizeBytes`, and (c) are
+ * NOT already in the library. Membership is tested against `existingPaths`,
+ * which the caller builds from `buildBookLookupIndex(...).byFilePath.keys()`
+ * (those keys are already normalized by `normalizeFilePathForIndex`, so we
+ * normalize each scanned path the same way before comparing). Pure — no I/O.
+ */
+export function selectNewImportableFiles(
+  entries: ScannedFileEntry[],
+  opts: {
+    extensions: string[];
+    minSizeBytes: number;
+    existingPaths: Set<string>;
+    osPlatform?: OsPlatform;
+  },
+): ScannedFileEntry[] {
+  const exts = new Set(opts.extensions.map((e) => e.toLowerCase()));
+  return entries.filter((entry) => {
+    const ext = entry.fullPath.split('.').pop()?.toLowerCase() ?? '';
+    if (!exts.has(ext)) return false;
+    if (opts.minSizeBytes > 0 && entry.size < opts.minSizeBytes) return false;
+    const key = normalizeFilePathForIndex(entry.fullPath, opts.osPlatform);
+    return !!key && !opts.existingPaths.has(key);
+  });
+}
+
+/**
+ * Collect all known local source paths from the library into a normalized set.
+ *
+ * Unlike `buildBookLookupIndex(...).byFilePath`, this includes soft-deleted
+ * books (`deletedAt` set) so that auto-import does not resurrect a book the
+ * user intentionally removed from their library.
+ *
+ * URL-backed entries (remote books) are excluded — only on-disk paths matter.
+ */
+export function collectKnownSourcePaths(books: Book[], osPlatform?: OsPlatform): Set<string> {
+  const paths = new Set<string>();
+  for (const book of books) {
+    if (book.filePath && !isValidURL(book.filePath)) {
+      const key = normalizeFilePathForIndex(book.filePath, osPlatform);
+      if (key) paths.add(key);
+    }
+  }
+  return paths;
+}
+
 export interface CoverContext {
   fs: FileSystem;
   appPlatform: AppPlatform;
@@ -483,9 +537,12 @@ export async function importBook(
       existingBook.downloadedAt = Date.now();
     }
 
-    if (!(await fs.exists(getDir(book), 'Books'))) {
-      await fs.createDir(getDir(book), 'Books');
-    }
+    // Idempotent create (recursive): a plain createDir defaults to
+    // non-recursive and throws if the dir already exists, and the check-then-
+    // create above races two concurrent imports of the same book — on Windows
+    // the loser fails with "Cannot create a file when that file already exists"
+    // (Sentry READEST-H). create_dir_all is a no-op when the dir exists.
+    await fs.createDir(getDir(book), 'Books', true);
     const bookFilename = getLocalBookFilename(book);
     const willWriteBookFile =
       saveBook &&

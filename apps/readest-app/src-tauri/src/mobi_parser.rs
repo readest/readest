@@ -120,9 +120,28 @@ fn extract_mobi_cover_full_sync(file_path: &str) -> Result<RawCoverImage, String
 ///      MOBI generators almost always place the cover first, and a
 ///      "wrong but plausible" thumbnail is better than no thumbnail.
 ///
-/// Returns `None` only when the file has no image records at all (rare
-/// for real Kindle content).
+/// Returns `None` when the file has no image records at all (rare for real
+/// Kindle content), or when parsing the (untrusted) file panics.
+///
+/// `mobi::Mobi::image_records()` slices raw record bytes and panics on a
+/// truncated / corrupt file whose PDB record offsets are inverted ("slice index
+/// starts at N but ends at M", READEST-1Q / READEST-10). Left unguarded, that
+/// panic unwinds out of the `spawn_blocking` task and fails the whole import, so
+/// contain it here: a bad cover yields no thumbnail instead of a failed import.
 fn extract_cover(mobi: &Mobi) -> Option<RawCoverImage> {
+    catch_cover_panic(|| extract_cover_inner(mobi))
+}
+
+/// Run cover extraction, converting a panic into `None`. Split out so the panic
+/// isolation is unit-testable without a malformed-MOBI fixture.
+fn catch_cover_panic<F>(f: F) -> Option<RawCoverImage>
+where
+    F: FnOnce() -> Option<RawCoverImage>,
+{
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)).unwrap_or(None)
+}
+
+fn extract_cover_inner(mobi: &Mobi) -> Option<RawCoverImage> {
     let images = mobi.image_records();
     if images.is_empty() {
         return None;
@@ -202,6 +221,29 @@ fn sniff_image_mime(bytes: &[u8]) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn catch_cover_panic_swallows_a_slice_index_panic() {
+        // The exact shape the `mobi` crate raises on a corrupt file
+        // (READEST-1Q / READEST-10). Silence the backtrace for a clean test log.
+        let prev = std::panic::take_hook();
+        std::panic::set_hook(Box::new(|_| {}));
+        let cover =
+            catch_cover_panic(|| panic!("slice index starts at 3301038 but ends at 3300924"));
+        std::panic::set_hook(prev);
+        assert!(cover.is_none());
+    }
+
+    #[test]
+    fn catch_cover_panic_passes_through_a_cover() {
+        let cover = catch_cover_panic(|| {
+            Some(RawCoverImage {
+                bytes: vec![0xFF, 0xD8, 0xFF],
+                mime: "image/jpeg".to_string(),
+            })
+        });
+        assert_eq!(cover.map(|c| c.mime), Some("image/jpeg".to_string()));
+    }
 
     #[test]
     fn sniff_image_mime_jpeg() {

@@ -37,6 +37,16 @@ keyring-core = "1"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 apple-native-keyring-store = { version = "1", features = ["keychain"] }
+# WKWebView snapshot for the mesh page-curl texture (#555) — same
+# dynamic-ObjC stack the main app's `src/macos/` modules use.
+objc = "0.2.7"
+cocoa = "0.25"
+block = "0.1.6"
+
+[target.'cfg(any(target_os = "ios", target_os = "android"))'.dependencies]
+# The Swift/Kotlin plugin boundary is JSON-only, so webview snapshots
+# arrive base64-encoded and are decoded back to bytes in mobile.rs.
+base64 = "0.22"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-native-keyring-store = "1"

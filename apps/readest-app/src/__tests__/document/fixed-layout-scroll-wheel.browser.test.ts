@@ -68,17 +68,26 @@ describe('fixed-layout scroll mode wheel handling (readest#4727)', () => {
     });
 
     const scroller = renderer as unknown as HTMLElement;
-    scroller.scrollTop = 0;
 
     // A wheel over the page iframe. With the bug, the iframe handler runs
-    // `host.scrollBy({ top: deltaY })`, moving the host scroller by ~120px on
-    // top of the (here absent) native scroll. With the fix it must stay put.
+    // `host.scrollBy({ top: deltaY, behavior: 'instant' })`, an *instant*
+    // (synchronous) scroll that lands by ~120px before dispatchEvent() returns.
+    // With the fix the handler only drops pointer-events and never scrolls.
+    //
+    // Measure the scroll position synchronously around dispatchEvent() — with no
+    // await in between — so we capture only the wheel handler's own effect. Do
+    // NOT await/settle here: as sibling pages finish loading, the renderer runs
+    // #restoreScrollModeAnchor asynchronously, which snaps scrollTop to a page's
+    // offsetTop (the 4px --scroll-page-gap). A post-dispatch delay races that
+    // re-anchoring and observed scrollTop === 4 instead of 0 on slow CI runners
+    // (readest CI flake). The buggy scrollBy is synchronous, so a synchronous
+    // before/after comparison still catches it while being immune to the race.
+    const before = scroller.scrollTop;
     iframe.contentDocument!.dispatchEvent(
       new WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true }),
     );
+    const after = scroller.scrollTop;
 
-    await new Promise((r) => setTimeout(r, 60));
-
-    expect(scroller.scrollTop).toBe(0);
+    expect(after).toBe(before);
   });
 });

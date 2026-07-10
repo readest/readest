@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { useFileSyncStore } from '@/store/fileSyncStore';
 
-const reset = () => useFileSyncStore.setState({ byKind: {}, activeKind: null });
+const reset = () =>
+  useFileSyncStore.setState({ byKind: {}, activeKind: null, lastErrorByKind: {} });
 
 describe('fileSyncStore', () => {
   beforeEach(reset);
@@ -43,5 +44,18 @@ describe('fileSyncStore', () => {
     const p = useFileSyncStore.getState().byKind.webdav;
     expect(p?.progressLabel).toBe('Uploading 2 / 3');
     expect(p?.progressDetail).toBe('Project Hail Mary');
+  });
+
+  test('lastError is recorded per backend and survives endSync until cleared', () => {
+    const { beginSync, setLastError, endSync } = useFileSyncStore.getState();
+    beginSync('webdav', 'a');
+    setLastError('webdav', 'AUTH_FAILED: 401');
+    endSync('webdav');
+    // The health surface reads this after the run finished.
+    expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBe('AUTH_FAILED: 401');
+    expect(useFileSyncStore.getState().lastErrorByKind.gdrive).toBeUndefined();
+    // A later successful run clears it.
+    setLastError('webdav', null);
+    expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBeNull();
   });
 });

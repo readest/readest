@@ -22,7 +22,7 @@ import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
-import { handleAuthCallback } from '@/helpers/auth';
+import { handleAuthCallback, parseOAuthCallbackUrl } from '@/helpers/auth';
 import { getUserProfilePlan } from '@/utils/access';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
@@ -163,20 +163,26 @@ export default function AuthPage() {
 
   const handleOAuthUrl = async (url: string) => {
     console.log('Handle OAuth URL:', url);
-    const hashMatch = url.match(/#(.*)/);
-    if (hashMatch) {
-      const hash = hashMatch[1];
-      const params = new URLSearchParams(hash);
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-      const type = params.get('type');
-      if (accessToken) {
-        let next = params.get('next') ?? '/';
-        if (getUserProfilePlan(accessToken) === 'free') {
-          next = '/user';
-        }
-        handleAuthCallback({ accessToken, refreshToken, type, next, login, navigate: router.push });
+    const { accessToken, refreshToken, type, next, error, errorCode, errorDescription } =
+      parseOAuthCallbackUrl(url);
+    if (error) {
+      console.error('OAuth callback error:', error, errorCode, errorDescription);
+      handleAuthCallback({ error, errorCode, errorDescription, login, navigate: router.push });
+      return;
+    }
+    if (accessToken) {
+      let nextPath = next ?? '/';
+      if (getUserProfilePlan(accessToken) === 'free') {
+        nextPath = '/user';
       }
+      handleAuthCallback({
+        accessToken,
+        refreshToken,
+        type,
+        next: nextPath,
+        login,
+        navigate: router.push,
+      });
     }
   };
 

@@ -993,3 +993,39 @@ textarea:focus-within,
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* TTS player scrubber: the track is painted by an inline three-stop gradient
+   (played / buffered / rest), so the native appearance must be blanked and
+   the element itself becomes the 4px track. Thumb inherits currentColor. */
+.tts-scrubber {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+}
+.tts-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: currentColor;
+}
+.tts-scrubber::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 9999px;
+  background: currentColor;
+}
+.tts-scrubber:disabled {
+  opacity: 0.5;
+}
+
+/* E-ink: the gradient's grey stops wash out, so a crisp 1px border marks the
+   track's extent while the solid currentColor fill and thumb carry the
+   position. Slightly taller so the fill stays visible inside the border. */
+[data-eink='true'] .tts-scrubber {
+  height: 6px;
+  border: 1px solid currentColor;
+}

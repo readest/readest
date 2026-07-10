@@ -544,6 +544,18 @@ describe('getGroupSortValue', () => {
     expect(getGroupSortValue(group, LibrarySortByType.Series)).toBe('My Series');
   });
 
+  it('should return max read ratio for progress sort', () => {
+    const group = createMockGroup({
+      books: [
+        createMockBook({ progress: [10, 100] }),
+        createMockBook({ progress: [80, 100] }),
+        createMockBook({}),
+      ],
+    });
+
+    expect(getGroupSortValue(group, LibrarySortByType.Progress)).toBe(0.8);
+  });
+
   it('should handle empty groups gracefully', () => {
     const group = createMockGroup({ books: [] });
 

@@ -14,7 +14,7 @@ import { buildWebDAVConnectSettings } from '@/services/sync/providers/webdav/con
 import { SectionTitle } from '../primitives';
 import FileSyncForm from './FileSyncForm';
 import WebDAVBrowsePane from './WebDAVBrowsePane';
-import { withActiveCloudProvider } from './cloudSync';
+import { persistActiveCloudProvider } from './cloudSync';
 
 /**
  * Translate a connection-probe failure into a user-facing string. Each branch is
@@ -75,31 +75,26 @@ const WebDAVForm: React.FC = () => {
       setIsConnecting(false);
       return;
     }
-    const latest = useSettingsStore.getState().settings;
     // Build the WebDAV connect settings (preserves deviceId / sub-toggles), then
     // make WebDAV the single active cloud provider (turns Google Drive off).
-    const connected = {
-      ...latest,
-      webdav: buildWebDAVConnectSettings(latest.webdav, {
+    // persistActiveCloudProvider owns activation, persistence, and the
+    // cross-window provider broadcast.
+    await persistActiveCloudProvider(envConfig, 'webdav', (s) => ({
+      ...s,
+      webdav: buildWebDAVConnectSettings(s.webdav, {
         serverUrl: url,
         username,
         password,
         rootPath: normalizedRoot,
       }),
-    };
-    const next = withActiveCloudProvider(connected, 'webdav');
-    setSettings(next);
-    await saveSettings(envConfig, next);
+    }));
     setIsConnecting(false);
     eventDispatcher.dispatch('toast', { type: 'info', message: _('Connected') });
   };
 
   const handleDisconnect = async () => {
-    const latest = useSettingsStore.getState().settings;
     // Deactivate (keep the credentials so a later reconnect is one click).
-    const next = withActiveCloudProvider(latest, null);
-    setSettings(next);
-    await saveSettings(envConfig, next);
+    await persistActiveCloudProvider(envConfig, null);
     setShowPassword(false);
     eventDispatcher.dispatch('toast', { type: 'info', message: _('Disconnected') });
   };

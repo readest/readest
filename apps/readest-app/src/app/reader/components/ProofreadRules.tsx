@@ -68,12 +68,26 @@ const RuleItem: React.FC<{
   rule: ProofreadRule;
   scope: ProofreadScope;
   isEditing: boolean;
-  editingData: { pattern: string; replacement: string; enabled: boolean };
+  editingData: {
+    pattern: string;
+    replacement: string;
+    enabled: boolean;
+    isRegex: boolean;
+    caseSensitive: boolean;
+  };
   onEdit: () => void;
   onDelete: () => void;
+  onToggle: () => void;
   onSave: () => void;
   onCancel: () => void;
-  onEditChange: (field: 'replacement', value: string) => void;
+  onEditChange: (
+    patch: Partial<{
+      pattern: string;
+      replacement: string;
+      isRegex: boolean;
+      caseSensitive: boolean;
+    }>,
+  ) => void;
 }> = ({
   rule,
   scope,
@@ -81,6 +95,7 @@ const RuleItem: React.FC<{
   editingData,
   onEdit,
   onDelete,
+  onToggle,
   onSave,
   onCancel,
   onEditChange,
@@ -96,14 +111,19 @@ const RuleItem: React.FC<{
   };
 
   if (isEditing) {
+    const isSelection = scope === 'selection';
     return (
       <div className='flex flex-col gap-3 p-3'>
         <div className='flex flex-col gap-1.5'>
-          <label className='text-base-content/70 text-xs font-medium'>{_('Selected text:')}</label>
+          <label className='text-base-content/70 text-xs font-medium'>
+            {isSelection ? _('Selected text:') : _('Find:')}
+          </label>
           <input
-            className='input input-sm bg-base-200 text-sm opacity-60'
+            className={clsx('input input-sm text-sm', isSelection && 'bg-base-200 opacity-60')}
             value={editingData.pattern}
-            disabled
+            disabled={isSelection}
+            spellCheck='false'
+            onChange={isSelection ? undefined : (e) => onEditChange({ pattern: e.target.value })}
           />
         </div>
 
@@ -112,9 +132,33 @@ const RuleItem: React.FC<{
           <input
             className='input input-sm text-sm'
             value={editingData.replacement}
-            onChange={(e) => onEditChange('replacement', e.target.value)}
+            spellCheck='false'
+            onChange={(e) => onEditChange({ replacement: e.target.value })}
           />
         </div>
+
+        {!isSelection && (
+          <div className='flex flex-wrap items-center gap-x-5 gap-y-3'>
+            <label className='flex cursor-pointer items-center gap-2'>
+              <span className='text-base-content/70 text-sm'>{_('Regex:')}</span>
+              <input
+                type='checkbox'
+                className='toggle toggle-sm'
+                checked={editingData.isRegex}
+                onChange={(e) => onEditChange({ isRegex: e.target.checked })}
+              />
+            </label>
+            <label className='flex cursor-pointer items-center gap-2'>
+              <span className='text-base-content/70 text-sm'>{_('Case sensitive:')}</span>
+              <input
+                type='checkbox'
+                className='toggle toggle-sm'
+                checked={editingData.caseSensitive}
+                onChange={(e) => onEditChange({ caseSensitive: e.target.checked })}
+              />
+            </label>
+          </div>
+        )}
 
         <div className='mt-1 flex gap-2'>
           <button className='btn btn-primary btn-sm flex-1' onClick={onSave}>
@@ -130,8 +174,13 @@ const RuleItem: React.FC<{
 
   return (
     <div className='relative flex items-start justify-between gap-3 p-3'>
-      <div className='flex min-w-0 flex-1 flex-col gap-1.5'>
-        <div className='break-words pe-20 text-base font-medium leading-snug'>{rule.pattern}</div>
+      <div
+        className={clsx(
+          'flex min-w-0 flex-1 flex-col gap-1.5',
+          rule.enabled === false && 'opacity-40',
+        )}
+      >
+        <div className='break-words pe-28 text-base font-medium leading-snug'>{rule.pattern}</div>
         <div className='text-base-content/70 break-words text-sm'>
           <span className='text-base-content/80 mr-1.5 text-xs font-medium'>
             {_('Replace with:')}
@@ -169,6 +218,13 @@ const RuleItem: React.FC<{
         </div>
       </div>
       <div className='absolute right-2 top-2 flex items-center gap-1'>
+        <input
+          type='checkbox'
+          className='toggle toggle-sm'
+          checked={rule.enabled !== false}
+          onChange={onToggle}
+          aria-label={rule.enabled !== false ? _('Disable rule') : _('Enable rule')}
+        />
         <button
           className='btn btn-ghost btn-sm h-8 w-8 p-0'
           onClick={onEdit}
@@ -261,21 +317,17 @@ const useReplacementRules = (bookKey: string | null) => {
     (r: ProofreadRule) => !r.deletedAt,
   );
 
-  // Merge book-scoped and global rules
-  const globalRuleIds = new Set(globalRules.map((gr: ProofreadRule) => gr.id));
-
-  // Remove orphaned overrides (disabled global rules that no longer exist)
-  const validBookRules = bookScopedRules.filter(
-    (br: ProofreadRule) => br.enabled !== false || globalRuleIds.has(br.id),
-  );
-
+  // Merge book-scoped rules with global (library) rules. Keep disabled rules so
+  // the per-rule enable/disable toggle can turn them back on; book and library
+  // ids never collide (ensureRuleId folds scope into the id), so dedup-by-id
+  // here only guards a legacy shared id from listing the same rule twice.
   // Sort by `order` so a drag-to-reorder (which rewrites the order field)
-  // persists visually; the stable sort keeps insertion order while every
-  // rule still shares the default order.
-  const mergedBookRules = validBookRules
+  // persists visually; the stable sort keeps insertion order while every rule
+  // still shares the default order.
+  const mergedBookRules = bookScopedRules
     .concat(
       globalRules.filter(
-        (gr: ProofreadRule) => !validBookRules.find((br: ProofreadRule) => br.id === gr.id),
+        (gr: ProofreadRule) => !bookScopedRules.find((br: ProofreadRule) => br.id === gr.id),
       ),
     )
     .sort(byOrder);
@@ -288,7 +340,7 @@ export const ProofreadRulesManager: React.FC = () => {
   const { envConfig } = useEnv();
   const { recreateViewer } = useReaderStore();
   const { sideBarBookKey } = useSidebarStore();
-  const { addRule, updateRule, removeRule, reorderRules } = useProofreadStore();
+  const { addRule, updateRule, removeRule, reorderRules, toggleRule } = useProofreadStore();
 
   // dnd-kit sensors mirror the dictionaries reorder list: a small pointer
   // distance gate avoids hijacking handle clicks, a touch delay gives mobile
@@ -311,8 +363,19 @@ export const ProofreadRulesManager: React.FC = () => {
     pattern: string;
     replacement: string;
     enabled: boolean;
+    isRegex: boolean;
+    caseSensitive: boolean;
     onlyForTTS: boolean;
-  }>({ id: null, scope: null, pattern: '', replacement: '', enabled: true, onlyForTTS: false });
+  }>({
+    id: null,
+    scope: null,
+    pattern: '',
+    replacement: '',
+    enabled: true,
+    isRegex: false,
+    caseSensitive: true,
+    onlyForTTS: false,
+  });
 
   const { singleRules, bookRules } = useReplacementRules(sideBarBookKey);
 
@@ -331,6 +394,8 @@ export const ProofreadRulesManager: React.FC = () => {
       pattern: rule.pattern,
       replacement: rule.replacement,
       enabled: !!rule.enabled,
+      isRegex: !!rule.isRegex,
+      caseSensitive: rule.caseSensitive !== false,
       onlyForTTS: !!rule.onlyForTTS,
     });
   };
@@ -342,6 +407,8 @@ export const ProofreadRulesManager: React.FC = () => {
       pattern: '',
       replacement: '',
       enabled: true,
+      isRegex: false,
+      caseSensitive: true,
       onlyForTTS: false,
     });
   };
@@ -349,10 +416,28 @@ export const ProofreadRulesManager: React.FC = () => {
   const saveEdit = async () => {
     if (!editing.id || !editing.scope || !sideBarBookKey) return;
 
+    // Selection rules keep a read-only Find (anchored to the selected text), so
+    // only validate the pattern when the user can actually edit it.
+    const isSelection = editing.scope === 'selection';
+    const pattern = isSelection ? editing.pattern : editing.pattern.trim();
+    if (!isSelection) {
+      const validation = validateReplacementRulePattern(pattern, editing.isRegex);
+      if (!validation.valid) {
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: pattern ? _('Invalid regular expression') : _('Find pattern cannot be empty'),
+          timeout: 3000,
+        });
+        return;
+      }
+    }
+
     await updateRule(envConfig, sideBarBookKey, editing.id, {
       scope: editing.scope,
-      pattern: editing.pattern,
+      pattern,
       replacement: editing.replacement,
+      isRegex: editing.isRegex,
+      caseSensitive: editing.caseSensitive,
       enabled: editing.enabled,
       onlyForTTS: editing.onlyForTTS,
     });
@@ -367,6 +452,14 @@ export const ProofreadRulesManager: React.FC = () => {
   const deleteRule = async (rule: ProofreadRule) => {
     if (!sideBarBookKey) return;
     await removeRule(envConfig, sideBarBookKey, rule.id, rule.scope);
+    if (!rule.onlyForTTS) {
+      recreateViewer(envConfig, sideBarBookKey);
+    }
+  };
+
+  const handleToggle = async (rule: ProofreadRule) => {
+    if (!sideBarBookKey) return;
+    await toggleRule(envConfig, sideBarBookKey, rule.id);
     if (!rule.onlyForTTS) {
       recreateViewer(envConfig, sideBarBookKey);
     }
@@ -447,9 +540,10 @@ export const ProofreadRulesManager: React.FC = () => {
                   editingData={editing}
                   onEdit={() => startEdit(rule)}
                   onDelete={() => deleteRule(rule)}
+                  onToggle={() => handleToggle(rule)}
                   onSave={saveEdit}
                   onCancel={cancelEdit}
-                  onEditChange={(_, value) => setEditing({ ...editing, replacement: value })}
+                  onEditChange={(patch) => setEditing((prev) => ({ ...prev, ...patch }))}
                 />
               ))}
             </ul>

@@ -9,13 +9,14 @@ import { type as osType } from '@tauri-apps/plugin-os';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { getGoogleClientId, getGoogleWebClientId } from './buildGoogleDriveProvider';
 import { createDriveTokenPersistence } from './driveTokenStore';
-import { runDesktopDeepLinkOAuth } from './auth/oauthDesktop';
-import { runAndroidOAuth } from './auth/oauthAndroid';
-import { runIosOAuth } from './auth/oauthIos';
+import { runDesktopDeepLinkOAuth } from '@/services/sync/providers/oauth/oauthDesktop';
+import { runAndroidOAuth } from '@/services/sync/providers/oauth/oauthAndroid';
+import { runIosOAuth } from '@/services/sync/providers/oauth/oauthIos';
+import { resetFileSyncProviderCache } from '@/services/sync/file/providerRegistry';
 import { beginWebDriveRedirect, webDriveRedirectUri } from './auth/webRedirectFlow';
 import { clearWebDriveToken } from './auth/webTokenStore';
-import type { OAuthClientConfig } from './auth/oauthFlow';
-import type { TokenSet } from './auth/tokenStore';
+import type { OAuthClientConfig } from '@/services/sync/providers/oauth/oauthFlow';
+import type { TokenSet } from '@/services/sync/providers/oauth/tokenEndpoint';
 import {
   connectGoogleDrive,
   disconnectGoogleDrive,
@@ -48,6 +49,10 @@ const resolveOAuthRunner = (): ((
 
 /** Run the platform Drive sign-in and return the connected account label. */
 export const runGoogleDriveConnect = async (): Promise<ConnectGoogleDriveResult> => {
+  // The memoised provider holds the previous connection's auth (and its
+  // path->id cache, which is account-scoped under drive.file); a (re)connect
+  // must not keep serving it.
+  resetFileSyncProviderCache();
   // Web: full-page redirect to Google (the popup/GIS path is broken by the
   // app's COOP). This navigates away and never resolves — the token returns to
   // the /gdrive-callback route, which finalizes the connection and routes back.
@@ -83,6 +88,7 @@ export const runGoogleDriveConnect = async (): Promise<ConnectGoogleDriveResult>
 
 /** Forget the stored Drive token (the settings flag is cleared by the caller). */
 export const runGoogleDriveDisconnect = async (): Promise<void> => {
+  resetFileSyncProviderCache();
   if (isWebAppPlatform()) {
     clearWebDriveToken();
     return;

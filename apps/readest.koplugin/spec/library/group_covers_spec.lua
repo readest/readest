@@ -151,6 +151,104 @@ describe("library.group_covers", function()
             assert.are.equal(0, #trigger_calls)
         end)
     end)
+
+    -- =====================================================================
+    -- cover availability + mosaic cache key (issue #4954)
+    -- =====================================================================
+    -- Group mosaics are cached and served as copies instead of recomposed
+    -- on every paint. The cache key must change exactly when a mosaic's
+    -- inputs change: the child set OR a previously-missing child cover
+    -- becoming available. The availability bit is what fixes the historical
+    -- "partial composite served forever" bug the old on-disk cache had.
+    describe("cover availability + mosaic cache key", function()
+        local real_lfs = require("lfs")
+
+        local function write_file(path)
+            local f = assert(io.open(path, "w"))
+            f:write("x")
+            f:close()
+        end
+
+        local function write_cover(hash)
+            local dir = cloud_covers.covers_dir()
+            real_lfs.mkdir(dir)
+            write_file(dir .. "/" .. hash .. ".png")
+        end
+
+        describe("cloud_covers.cover_exists", function()
+            it("is false when no <hash>.png is on disk", function()
+                assert.is_false(cloud_covers.cover_exists("missing1"))
+            end)
+
+            it("is true once the <hash>.png file exists", function()
+                write_cover("present1")
+                assert.is_true(cloud_covers.cover_exists("present1"))
+            end)
+        end)
+
+        describe("group_covers.child_cover_available", function()
+            it("is true for a cloud child whose cover .png is cached", function()
+                write_cover("cloudcov")
+                assert.is_true(group_covers.child_cover_available(
+                    { hash = "cloudcov", cloud_present = 1, local_present = 0 }))
+            end)
+
+            it("is false for a cloud child whose cover isn't downloaded yet", function()
+                assert.is_false(group_covers.child_cover_available(
+                    { hash = "nocover1", cloud_present = 1, local_present = 0 }))
+            end)
+
+            it("is true for a local child whose file is on disk", function()
+                local path = require("datastorage"):getSettingsDir() .. "/localbook.epub"
+                write_file(path)
+                assert.is_true(group_covers.child_cover_available(
+                    { hash = "localbk1", local_present = 1, file_path = path }))
+            end)
+
+            it("is false when neither a local file nor a cached cover exists", function()
+                assert.is_false(group_covers.child_cover_available(
+                    { hash = "ghost001", local_present = 1, file_path = "/no/such/file.epub" }))
+            end)
+        end)
+
+        describe("group_covers.mosaic_cache_key", function()
+            local books = {
+                { hash = "aaa" }, { hash = "bbb" }, { hash = "ccc" }, { hash = "ddd" },
+            }
+
+            it("is stable across calls with identical inputs (enables cache hits)", function()
+                assert.are.equal(
+                    group_covers.mosaic_cache_key("group_name", "Fantasy", "grid", books),
+                    group_covers.mosaic_cache_key("group_name", "Fantasy", "grid", books))
+            end)
+
+            it("changes when the child set changes", function()
+                local other = {
+                    { hash = "aaa" }, { hash = "zzz" }, { hash = "ccc" }, { hash = "ddd" },
+                }
+                assert.are_not.equal(
+                    group_covers.mosaic_cache_key("group_name", "Fantasy", "grid", books),
+                    group_covers.mosaic_cache_key("group_name", "Fantasy", "grid", other))
+            end)
+
+            it("changes when a missing child cover becomes available (anti-regression)", function()
+                local one = { { hash = "latecov" } }
+                local before = group_covers.mosaic_cache_key("author", "Asimov", "grid", one)
+                write_cover("latecov")
+                local after = group_covers.mosaic_cache_key("author", "Asimov", "grid", one)
+                assert.are_not.equal(before, after)
+            end)
+
+            it("distinguishes different groups and shapes", function()
+                assert.are_not.equal(
+                    group_covers.mosaic_cache_key("group_name", "A", "grid", books),
+                    group_covers.mosaic_cache_key("group_name", "A", "list", books))
+                assert.are_not.equal(
+                    group_covers.mosaic_cache_key("group_name", "A", "grid", books),
+                    group_covers.mosaic_cache_key("group_name", "B", "grid", books))
+            end)
+        end)
+    end)
 end)
 
 -- =====================================================================

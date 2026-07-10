@@ -40,3 +40,7 @@ rust-version = "1.77.2"
 [patch.crates-io]
 tauri = { path = "packages/tauri/crates/tauri" }
 tauri-plugin-fs = { path = "packages/tauri-plugins/plugins/fs" }
+# Xcode 26.2 (Swift 6.2) broke upstream swift-rs 1.0.7's per-swiftc target
+# override; the vendored copy cross-compiles via `--triple`/`--sdk` instead.
+# Upstream is unmaintained (last release 2024). See packages/swift-rs.
+swift-rs = { path = "packages/swift-rs" }

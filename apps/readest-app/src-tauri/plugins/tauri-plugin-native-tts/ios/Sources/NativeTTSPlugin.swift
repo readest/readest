@@ -37,7 +37,6 @@ class UpdateMediaSessionStateArgs: Decodable {
 
 class SetMediaSessionActiveArgs: Decodable {
   let active: Bool?
-  let keepAppInForeground: Bool?
   let notificationTitle: String?
   let notificationText: String?
   let foregroundServiceTitle: String?

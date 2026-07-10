@@ -21,6 +21,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
 
@@ -60,6 +61,22 @@ describe('OPDS proxy SSRF guard', () => {
     const res = await GET(proxyReq('https://feeds.example.com/redirect'));
     expect(res.status).toBe(400);
     // The internal hop must never be fetched.
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows LAN catalog targets in development', async () => {
+    // `next dev` runs on the developer's own machine, where a LAN OPDS server
+    // (e.g. Calibre-Web on the local network) is the normal use case and the
+    // CatalogManager UI only forbids LAN URLs in production builds.
+    vi.stubEnv('NODE_ENV', 'development');
+    fetchSpy.mockResolvedValueOnce(
+      new Response('<feed/>', {
+        status: 200,
+        headers: { 'Content-Type': 'application/atom+xml' },
+      }),
+    );
+    const res = await GET(proxyReq('http://192.168.2.120:8080/opds'));
+    expect(res.status).toBe(200);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 

@@ -47,6 +47,9 @@ end
 function M.set_visible_hashes(menu)
     if not menu then
         cloud_covers.set_visible_hashes(nil)
+        -- Library closing: drop cached group-mosaic masters so they don't
+        -- pin memory for the app's lifetime (issue #4954).
+        group_covers.clear_cache()
         return
     end
 

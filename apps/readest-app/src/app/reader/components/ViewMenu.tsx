@@ -123,6 +123,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     eventDispatcher.dispatch('rsvp-start', { bookKey });
   };
 
+  const toggleAutoScroll = () => {
+    setIsDropdownOpen?.(false);
+    eventDispatcher.dispatch('autoscroll-toggle', { bookKey });
+  };
+
   const handleShare = () => {
     setIsDropdownOpen?.(false);
     if (!bookData?.book) return;
@@ -380,6 +385,14 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         shortcut='Shift+J'
         Icon={isScrolledMode ? MdCheck : undefined}
         onClick={toggleScrolledMode}
+      />
+
+      <MenuItem
+        label={_('Auto Scroll')}
+        shortcut='Shift+A'
+        Icon={viewState?.autoScrollEnabled ? MdCheck : undefined}
+        onClick={toggleAutoScroll}
+        disabled={!isScrolledMode}
       />
 
       <hr aria-hidden='true' className='border-base-300 my-1' />

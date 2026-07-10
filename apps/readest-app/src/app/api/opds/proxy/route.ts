@@ -6,6 +6,11 @@ import { isBlockedHost } from '@/utils/network';
 // Cap redirect hops so the SSRF host check below can re-run on every one.
 const MAX_REDIRECTS = 5;
 
+// In `next dev` the server runs on the developer's own machine, where a LAN
+// OPDS catalog is the normal use case (the CatalogManager UI only forbids
+// adding LAN URLs in production builds), so the host blocklist is skipped.
+const isPrivateHostAllowed = () => process.env.NODE_ENV === 'development';
+
 /**
  * Fetch the target while running the SSRF host check on every redirect hop.
  * `fetch`'s default `redirect: 'follow'` would let a public URL 302 to an
@@ -25,7 +30,7 @@ async function fetchFollowingRedirects(
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       throw new SsrfBlockedError('Only http(s) URLs are supported');
     }
-    if (isBlockedHost(parsed.hostname)) {
+    if (!isPrivateHostAllowed() && isBlockedHost(parsed.hostname)) {
       throw new SsrfBlockedError('This URL is not allowed');
     }
     const response = await fetch(currentUrl, { ...init, redirect: 'manual' });
@@ -79,7 +84,7 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
   if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
     return NextResponse.json({ error: 'Only http(s) URLs are supported' }, { status: 400 });
   }
-  if (isBlockedHost(parsedUrl.hostname)) {
+  if (!isPrivateHostAllowed() && isBlockedHost(parsedUrl.hostname)) {
     return NextResponse.json({ error: 'This URL is not allowed' }, { status: 400 });
   }
 

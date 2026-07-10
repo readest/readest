@@ -125,7 +125,43 @@ describe('settingsAdapter', () => {
     expect(out.patch.globalReadSettings?.userHighlightColors).toEqual(userColors);
   });
 
-  test('declares encryptedFields covering kosync / readwise / hardcover / webdav credentials only (not serverUrl)', () => {
+  test('pack ∘ unpack round-trips S3 connection fields, dropping per-device state', () => {
+    const record: SettingsRemoteRecord = {
+      name: 'singleton',
+      patch: {
+        s3: {
+          enabled: true,
+          endpoint: 'https://acc.r2.cloudflarestorage.com',
+          region: 'auto',
+          bucket: 'readest',
+          accessKeyId: 'AKIA',
+          secretAccessKey: 'shh',
+          deviceId: 'this-device',
+          lastSyncedAt: 123,
+          providerSelectedAt: 456,
+        },
+      } as unknown as Partial<SystemSettings>,
+    };
+    const fields = settingsAdapter.pack(record);
+    expect(fields['s3.endpoint']).toBe('https://acc.r2.cloudflarestorage.com');
+    expect(fields['s3.region']).toBe('auto');
+    expect(fields['s3.bucket']).toBe('readest');
+    expect(fields['s3.accessKeyId']).toBe('AKIA');
+    expect(fields['s3.secretAccessKey']).toBe('shh');
+    // Per-device bookkeeping must not ship.
+    expect(fields['s3.enabled']).toBeUndefined();
+    expect(fields['s3.deviceId']).toBeUndefined();
+    expect(fields['s3.lastSyncedAt']).toBeUndefined();
+    expect(fields['s3.providerSelectedAt']).toBeUndefined();
+
+    const out = settingsAdapter.unpack(fields);
+    expect(out.patch.s3?.endpoint).toBe('https://acc.r2.cloudflarestorage.com');
+    expect(out.patch.s3?.accessKeyId).toBe('AKIA');
+    expect(out.patch.s3?.secretAccessKey).toBe('shh');
+    expect(out.patch.s3?.enabled).toBeUndefined();
+  });
+
+  test('declares encryptedFields covering kosync / readwise / hardcover / webdav / s3 credentials only (not serverUrl / endpoint)', () => {
     expect(settingsAdapter.encryptedFields).toEqual([
       'kosync.username',
       'kosync.userkey',
@@ -134,6 +170,8 @@ describe('settingsAdapter', () => {
       'hardcover.accessToken',
       'webdav.username',
       'webdav.password',
+      's3.accessKeyId',
+      's3.secretAccessKey',
     ]);
   });
 
@@ -144,6 +182,12 @@ describe('settingsAdapter', () => {
   test('webdav.serverUrl and webdav.rootPath are plaintext (not in encryptedFields)', () => {
     expect(settingsAdapter.encryptedFields).not.toContain('webdav.serverUrl');
     expect(settingsAdapter.encryptedFields).not.toContain('webdav.rootPath');
+  });
+
+  test('s3.endpoint / region / bucket are plaintext (not in encryptedFields)', () => {
+    expect(settingsAdapter.encryptedFields).not.toContain('s3.endpoint');
+    expect(settingsAdapter.encryptedFields).not.toContain('s3.region');
+    expect(settingsAdapter.encryptedFields).not.toContain('s3.bucket');
   });
 
   test('unpackRow reconstructs the patch from CRDT envelopes', () => {
@@ -183,6 +227,17 @@ describe('SETTINGS_WHITELIST', () => {
     expect(SETTINGS_WHITELIST).toContain('dictionarySettings.webSearches');
     // Dictionary popup font size (#4443) follows the user across devices.
     expect(SETTINGS_WHITELIST).toContain('dictionarySettings.fontScale');
+  });
+
+  test('includes the S3 connection fields but not its per-device bookkeeping', () => {
+    expect(SETTINGS_WHITELIST).toContain('s3.endpoint');
+    expect(SETTINGS_WHITELIST).toContain('s3.region');
+    expect(SETTINGS_WHITELIST).toContain('s3.bucket');
+    expect(SETTINGS_WHITELIST).toContain('s3.accessKeyId');
+    expect(SETTINGS_WHITELIST).toContain('s3.secretAccessKey');
+    expect(SETTINGS_WHITELIST).not.toContain('s3.enabled');
+    expect(SETTINGS_WHITELIST).not.toContain('s3.deviceId');
+    expect(SETTINGS_WHITELIST).not.toContain('s3.providerSelectedAt');
   });
 
   test('does NOT sync dictionarySettings.defaultProviderId (per-device last-used tab)', () => {

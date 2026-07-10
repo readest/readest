@@ -20,6 +20,7 @@ export interface Renderer extends HTMLElement {
   atStart: boolean;
   atEnd: boolean;
   containerPosition: number;
+  scrollProp: 'scrollLeft' | 'scrollTop';
   sideProp: 'width' | 'height';
   pageColors?: {
     background: string;
@@ -132,5 +133,20 @@ export const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
     };
     return originalAddAnnotation(annotation, remove);
   };
+
+  const originalGoTo = originalView.goTo.bind(originalView);
+  // The FoliateView interface declares goTo as (href: string) => void, but
+  // Foliate's runtime implementation returns a Promise. Returning a Promise
+  // here is compatible with the void return type in TypeScript and lets callers
+  // that know about the promise (e.g. tests, async handlers) await completion.
+  originalView.goTo = (href: string): Promise<void> => {
+    // Cross-section jumps can take seconds (the target section's images block
+    // its iframe load); surface start/end so the viewer can show a spinner.
+    originalView.dispatchEvent(new CustomEvent('navigate-start'));
+    return Promise.resolve(originalGoTo(href)).finally(() => {
+      originalView.dispatchEvent(new CustomEvent('navigate-end'));
+    });
+  };
+
   return originalView;
 };

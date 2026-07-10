@@ -76,6 +76,12 @@ async function downloadAndImport(
     url: downloadUrl,
     headers,
     singleThreaded: true,
+    // Same self-signed/private-CA workaround as the manual download path
+    // (#2871): the native downloader's rustls validation ignores the OS
+    // trust store, so without this flag auto-download fails the TLS
+    // handshake on servers where feed browsing and manual download work
+    // (#4988).
+    skipSslVerification: true,
   });
 
   const probedFilename = await probeFilename(responseHeaders);

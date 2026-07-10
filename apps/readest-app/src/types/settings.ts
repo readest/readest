@@ -18,6 +18,7 @@ export const LibrarySortByType = {
   Size: 'size',
   Format: 'format',
   Published: 'published',
+  Progress: 'progress',
 } as const;
 
 export type LibrarySortByType = (typeof LibrarySortByType)[keyof typeof LibrarySortByType];
@@ -142,6 +143,11 @@ export interface WebDAVSettings {
   // Wall-clock millisecond timestamp of the last successful end-to-end
   // sync, surfaced in the WebDAV settings sub-page.
   lastSyncedAt?: number;
+  // Device-local wall-clock millis of when this provider was made the
+  // selected cloud sync backend on THIS device. Anchors the mixed-fleet
+  // detection probe: any native /api/sync row newer than this means
+  // another device is still writing the gated channels.
+  providerSelectedAt?: number;
 }
 
 /**
@@ -163,6 +169,58 @@ export interface GoogleDriveSettings {
   strategy?: KOSyncStrategy;
   deviceId?: string;
   lastSyncedAt?: number;
+  /** See {@link WebDAVSettings.providerSelectedAt}. */
+  providerSelectedAt?: number;
+}
+
+/**
+ * S3-compatible object-store file-sync settings — the third file-sync
+ * backend alongside {@link WebDAVSettings} and {@link GoogleDriveSettings},
+ * sharing the same engine, sub-toggles, and strategy vocabulary. Covers any
+ * SigV4 endpoint: Cloudflare R2, AWS S3, MinIO, Backblaze B2. Addressing is
+ * path-style (`<endpoint>/<bucket>/<key>`). Credentials live here like
+ * WebDAV's (same encrypted cross-device credential-sync semantics).
+ */
+export interface S3Settings {
+  enabled: boolean;
+  /** Service endpoint origin, e.g. `https://<account-id>.r2.cloudflarestorage.com`. */
+  endpoint: string;
+  /** SigV4 region; 'auto' works for R2/MinIO, AWS wants the bucket region. */
+  region?: string;
+  bucket: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  syncProgress?: boolean;
+  syncNotes?: boolean;
+  syncBooks?: boolean;
+  fullSync?: boolean;
+  strategy?: KOSyncStrategy;
+  deviceId?: string;
+  lastSyncedAt?: number;
+  /** See {@link WebDAVSettings.providerSelectedAt}. */
+  providerSelectedAt?: number;
+}
+
+/**
+ * Microsoft OneDrive file-sync settings. An OAuth-based file-sync backend
+ * alongside {@link GoogleDriveSettings}, storing data in the Graph App Folder
+ * (approot). No URL / credentials / root path and no BYO client; the OAuth
+ * token lives in the OS keychain (native) or sessionStorage (web), never here.
+ * `deviceId`/`lastSyncedAt`/`providerSelectedAt` are device-local.
+ */
+export interface OneDriveSettings {
+  enabled: boolean;
+  /** Connected account's userPrincipalName/email, shown in the settings UI. */
+  accountLabel?: string;
+  syncProgress?: boolean;
+  syncNotes?: boolean;
+  syncBooks?: boolean;
+  fullSync?: boolean;
+  strategy?: KOSyncStrategy;
+  deviceId?: string;
+  lastSyncedAt?: number;
+  /** See {@link WebDAVSettings.providerSelectedAt}. */
+  providerSelectedAt?: number;
 }
 
 /**
@@ -235,6 +293,17 @@ export interface SystemSettings {
    * settings backups via `BACKUP_SETTINGS_BLACKLIST`.
    */
   externalLibraryFolders?: string[];
+  /**
+   * Absolute paths of the external library folders the user has opted into
+   * auto-import for. On library open and whenever the app regains focus,
+   * Readest re-scans each of these and imports any newly-added book files.
+   * A subset of {@link externalLibraryFolders} (auto-import requires the
+   * folder to be read in place). Set per-folder from the Import-from-Folder
+   * dialog. Desktop + Android only. Device-local (paths are meaningful only
+   * on this filesystem) and excluded from cloud settings backups via
+   * `BACKUP_SETTINGS_BLACKLIST`.
+   */
+  autoImportFolders?: string[];
 
   keepLogin: boolean;
   autoUpload: boolean;
@@ -248,7 +317,6 @@ export interface SystemSettings {
   swipeBrightnessGesture: boolean;
   hardwarePageTurner: HardwarePageTurnerSettings;
   alwaysShowStatusBar: boolean;
-  alwaysInForeground: boolean;
   openLastBooks: boolean;
   lastOpenBooks: string[];
   autoImportBooksOnOpen: boolean;
@@ -322,6 +390,8 @@ export interface SystemSettings {
   hardcover: HardcoverSettings;
   webdav: WebDAVSettings;
   googleDrive: GoogleDriveSettings;
+  s3: S3Settings;
+  onedrive: OneDriveSettings;
 
   aiSettings: AISettings;
   /**

@@ -1,0 +1,38 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build:
+    name: Build
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        rust: [stable, beta]
+    steps:
+      - uses: actions/checkout@v3
+        name: Checkout
+      - name: Install specific rust version
+        run: |
+          rustup install ${{ matrix.rust }} --profile minimal
+          rustup component add --toolchain ${{ matrix.rust }} rustfmt clippy
+      - name: Setup cache
+        uses: Swatinem/rust-cache@v2
+      - name: Test example
+        working-directory: example
+        run: cargo +${{ matrix.rust }} run
+      - name: Run Tests
+        env:
+          TEST_SWIFT_RS: "true"
+        run: cargo +${{ matrix.rust }} test --features build
+      - name: Check Code Formatting
+        run: cargo +${{ matrix.rust }} fmt --all -- --check
+      - name: Lints
+        run: cargo +${{ matrix.rust }} clippy -- -D warnings

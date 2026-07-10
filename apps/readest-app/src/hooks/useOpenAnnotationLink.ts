@@ -62,19 +62,34 @@ export function useOpenAnnotationLink() {
         return;
       }
 
-      const { viewStates, setPreviewMode } = useReaderStore.getState();
-      const openEntry = Object.entries(viewStates).find(
-        ([key, state]) => key.startsWith(bookHash) && state.view,
-      );
-      if (openEntry) {
-        const [bookKey, state] = openEntry;
+      // Only books in the current bookKeys are actually displayed. viewStates
+      // accumulates stale entries for books switched away from in place (their
+      // views are detached from the DOM, never cleared on switch), so matching
+      // against all viewStates would goTo a dead view and the reader would stay
+      // stuck on the current book when switching back to a previously-open one
+      // (#4887). Scope the "already open" check to the displayed bookKeys.
+      const { viewStates, bookKeys, setPreviewMode } = useReaderStore.getState();
+      const openKey = bookKeys.find((key) => key.startsWith(bookHash) && viewStates[key]?.view);
+      if (openKey) {
         if (cfi) {
-          state.view!.goTo(cfi);
-          setPreviewMode(bookKey, true);
+          viewStates[openKey]!.view!.goTo(cfi);
+          setPreviewMode(openKey, true);
         }
         return;
       }
 
+      // A reader is already mounted showing a different book. router.push to the
+      // same /reader route does NOT re-run the reader's one-shot init effect, so
+      // navigateToReader is a no-op and the reader stays on the current book
+      // (#4887). Switch the book in place via useBooksManager, carrying the cfi
+      // so the freshly-opened view jumps to the annotation once it is ready.
+      if (window.location.pathname.startsWith('/reader')) {
+        eventDispatcher.dispatch('open-book-in-reader', { bookHash, cfi });
+        return;
+      }
+
+      // No reader mounted (library / cold start) - navigate fresh; FoliateViewer
+      // reads ?cfi= at init.
       const queryParams = cfi ? `cfi=${encodeURIComponent(cfi)}` : undefined;
       navigateToReader(router, [bookHash], queryParams);
     },

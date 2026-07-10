@@ -255,6 +255,30 @@ export async function refreshEinkScreen(): Promise<RefreshEinkScreenResponse> {
   return await invoke<RefreshEinkScreenResponse>('plugin:native-bridge|refresh_eink_screen');
 }
 
+/** Webview region to snapshot, in CSS pixels of the viewport (origin top-left). */
+export interface CaptureWebviewRegionRequest {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Capture a region of the running webview as compressed image bytes for
+ * the mesh page-curl texture (#555): PNG on macOS, JPEG on iOS/Android
+ * (phone-CPU PNG encoding took ~1.5s per turn). The snapshot is taken at
+ * screen scale, capped at 2x CSS pixels on mobile. Rejects on platforms
+ * without a native capture implementation (web, Windows/Linux so far) —
+ * callers fall back to the CSS curl.
+ */
+export async function captureWebviewRegion(
+  request: CaptureWebviewRegionRequest,
+): Promise<ArrayBuffer> {
+  return await invoke<ArrayBuffer>('plugin:native-bridge|capture_webview_region', {
+    payload: request,
+  });
+}
+
 // ── Sync passphrase keychain ────────────────────────────────────────────
 // Tauri-only. Wired into the TauriPassphraseStore (src/libs/crypto/
 // passphrase.ts) so the user's sync passphrase persists across app

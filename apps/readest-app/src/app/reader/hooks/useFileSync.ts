@@ -17,6 +17,7 @@ import {
   createFileSyncProvider,
   type FileSyncBackendKind,
 } from '@/services/sync/file/providerRegistry';
+import { getCloudSyncProvider, settingsKeyForBackend } from '@/services/sync/cloudSyncProvider';
 import { removeBookNoteOverlays } from '../utils/annotatorUtil';
 import { useWindowActiveChanged } from './useWindowActiveChanged';
 
@@ -61,9 +62,16 @@ const PULL_COOLDOWN_MS = 60_000;
  */
 const OPEN_PULL_SKIP_MS = 30_000;
 
-/** Settings key for a backend kind. */
-const settingsKeyFor = (kind: FileSyncBackendKind): 'webdav' | 'googleDrive' =>
-  kind === 'gdrive' ? 'googleDrive' : 'webdav';
+/**
+ * Whether a pull actually landed a remote reading position: the merged
+ * location exists and differs from what this device already had. Drives the
+ * same top-right "Reading Progress Synced" hint the native cloud sync shows,
+ * so WebDAV / Google Drive give equal feedback.
+ */
+export const remoteProgressApplied = (
+  localLocation: string | null | undefined,
+  mergedLocation: string | null | undefined,
+): boolean => !!mergedLocation && mergedLocation !== localLocation;
 
 export const useFileSync = (bookKey: string) => {
   const _ = useTranslation();
@@ -79,12 +87,9 @@ export const useFileSync = (bookKey: string) => {
   const progress = useBookProgress(bookKey);
 
   // The single active cloud provider (WebDAV and Google Drive are exclusive).
-  const activeKind: FileSyncBackendKind | null = settings.webdav?.enabled
-    ? 'webdav'
-    : settings.googleDrive?.enabled
-      ? 'gdrive'
-      : null;
-  const providerSettings = activeKind === 'gdrive' ? settings.googleDrive : settings.webdav;
+  const provider = getCloudSyncProvider(settings);
+  const activeKind: FileSyncBackendKind | null = provider === 'readest' ? null : provider;
+  const providerSettings = activeKind ? settings[settingsKeyForBackend(activeKind)] : undefined;
 
   /** Flips true on the first local change after a push, false right before each push. */
   const dirtyRef = useRef(false);
@@ -114,7 +119,7 @@ export const useFileSync = (bookKey: string) => {
   // opens, and a closure-based merge could clobber a sibling write.
   const ensureDeviceId = useCallback((): string => {
     const latest = useSettingsStore.getState().settings;
-    const key = activeKind ? settingsKeyFor(activeKind) : 'webdav';
+    const key = activeKind ? settingsKeyForBackend(activeKind) : 'webdav';
     let id = latest[key]?.deviceId;
     if (!id) {
       id = uuidv4();
@@ -128,7 +133,7 @@ export const useFileSync = (bookKey: string) => {
   const updateLastSyncedAt = useCallback(
     async (ts: number) => {
       const latest = useSettingsStore.getState().settings;
-      const key = activeKind ? settingsKeyFor(activeKind) : 'webdav';
+      const key = activeKind ? settingsKeyForBackend(activeKind) : 'webdav';
       const next = { ...latest, [key]: { ...latest[key], lastSyncedAt: ts } };
       setSettings(next);
       await saveSettings(envConfig, next);
@@ -150,8 +155,20 @@ export const useFileSync = (bookKey: string) => {
       return !!(w?.enabled && w?.serverUrl && w?.username);
     }
     if (activeKind === 'gdrive') return !!settings.googleDrive?.enabled;
+    if (activeKind === 's3') {
+      const c = settings.s3;
+      return !!(c?.enabled && c?.endpoint && c?.bucket && c?.accessKeyId && c?.secretAccessKey);
+    }
+    if (activeKind === 'onedrive') return !!settings.onedrive?.enabled;
     return false;
-  }, [isPremium, activeKind, settings.webdav, settings.googleDrive]);
+  }, [
+    isPremium,
+    activeKind,
+    settings.webdav,
+    settings.googleDrive,
+    settings.s3,
+    settings.onedrive,
+  ]);
 
   const strategy = providerSettings?.strategy ?? 'silent';
   const allowPush = isReady && strategy !== 'receive';
@@ -167,8 +184,13 @@ export const useFileSync = (bookKey: string) => {
       return `webdav:${w?.enabled}:${w?.serverUrl}:${w?.username}:${w?.password}:${w?.rootPath}`;
     }
     if (activeKind === 'gdrive') return `gdrive:${settings.googleDrive?.enabled}`;
+    if (activeKind === 's3') {
+      const c = settings.s3;
+      return `s3:${c?.enabled}:${c?.endpoint}:${c?.region}:${c?.bucket}:${c?.accessKeyId}:${c?.secretAccessKey}`;
+    }
+    if (activeKind === 'onedrive') return `onedrive:${settings.onedrive?.enabled}`;
     return 'none';
-  }, [activeKind, settings.webdav, settings.googleDrive]);
+  }, [activeKind, settings.webdav, settings.googleDrive, settings.s3, settings.onedrive]);
 
   const [engine, setEngine] = useState<FileSyncEngine | null>(null);
   useEffect(() => {
@@ -204,8 +226,8 @@ export const useFileSync = (bookKey: string) => {
       timeout: 5000,
       message:
         activeKind === 'gdrive'
-          ? _('Google Drive session expired. Reconnect in Settings.')
-          : _('Cloud sync session expired. Reconnect in Settings.'),
+          ? _('Google Drive session expired')
+          : _('Cloud sync session expired'),
     });
   }, [bookKey, activeKind, _]);
 
@@ -361,6 +383,14 @@ export const useFileSync = (bookKey: string) => {
       }
 
       setConfig(bookKey, toApply);
+      // Parity with the native cloud sync: surface the same top-right hint
+      // when a remote reading position was fetched and applied.
+      if (wantProgress && remoteProgressApplied(config.location, toApply.location)) {
+        eventDispatcher.dispatch('hint', {
+          bookKey,
+          message: _('Reading Progress Synced'),
+        });
+      }
       const latest = getConfig(bookKey);
       if (latest) await saveConfig(envConfig, bookKey, latest, settings);
       await updateLastSyncedAt(Date.now());
@@ -384,6 +414,7 @@ export const useFileSync = (bookKey: string) => {
     providerSettings,
     updateLastSyncedAt,
     handleSyncError,
+    _,
   ]);
 
   // Stash the latest callbacks in a ref so the event-bridge effect doesn't

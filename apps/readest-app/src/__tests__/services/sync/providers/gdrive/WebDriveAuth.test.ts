@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from 'vitest';
 import { WebDriveAuth } from '@/services/sync/providers/gdrive/WebDriveAuth';
 import { FileSyncError } from '@/services/sync/file/provider';
 import type { FetchFn } from '@/services/sync/providers/gdrive/GoogleDriveProvider';
-import type { TokenSet } from '@/services/sync/providers/gdrive/auth/tokenStore';
+import type { TokenSet } from '@/services/sync/providers/oauth/tokenEndpoint';
 
 const fetchStub = vi.fn(async () => new Response('{}')) as unknown as FetchFn;
 const token = (overrides: Partial<TokenSet> = {}): TokenSet => ({

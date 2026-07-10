@@ -173,6 +173,25 @@ end
 M._row_to_wire = row_to_wire  -- exported for tests
 
 -- ---------------------------------------------------------------------------
+-- row_pull_cursor(parsed) — this parsed row's contribution to the
+-- incremental-pull watermark. The server keys the books pull on the
+-- server-stamped `synced_at` (issue #4678), so when present it wins outright:
+-- updated_at/deleted_at are client-supplied and can run ahead of the server
+-- on a device with a fast clock, which pushed the cursor into the future and
+-- starved every later pull (issue #4934). Rows from a pre-synced_at server
+-- fall back to max(updated_at, deleted_at). Mirrors computeMaxTimestamp at
+-- apps/readest-app/src/hooks/useSync.ts:29.
+-- ---------------------------------------------------------------------------
+local function row_pull_cursor(parsed)
+    if parsed.synced_at then return parsed.synced_at end
+    local ts = 0
+    if parsed.updated_at and parsed.updated_at > ts then ts = parsed.updated_at end
+    if parsed.deleted_at and parsed.deleted_at > ts then ts = parsed.deleted_at end
+    return ts
+end
+M._row_pull_cursor = row_pull_cursor  -- exported for tests
+
+-- ---------------------------------------------------------------------------
 -- pushBook(book_row, opts, cb) — POST a single book row to /sync. Used
 -- after touchBook bumps updated_at on reader close, mirroring what
 -- Readest web does after every reading session.
@@ -234,7 +253,7 @@ function M.pushChangedBooks(opts, cb)
         return
     end
 
-    local since = store:getLastPulledAt() or 0
+    local since = store:getLastPushedAt() or 0
     local changed = store:getChangedBooks(since)
     if #changed == 0 then
         logger.info("ReadestLibrary pushChangedBooks: nothing to push (since=" .. since .. ")")
@@ -272,7 +291,7 @@ function M.pushChangedBooks(opts, cb)
                     if cb then cb(false, body and body.error or "push failed", status) end
                     return
                 end
-                store:setLastPulledAt(max_ts)
+                store:setLastPushedAt(max_ts)
                 if cb then cb(true, #books_wire) end
             end)
     end)
@@ -381,7 +400,14 @@ function M.pullBooks(opts, cb)
             end
 
             local rows = body and body.books or {}
-            local max_ts = 0
+            -- Two separate watermarks, seeded from their stored values so a
+            -- partial/empty page never regresses either cursor (issue #4934):
+            --   pull_ts  — server synced_at; the `since` we send next pull.
+            --   push_ts  — local updated_at | deleted_at; getChangedBooks's
+            --              cursor, advanced here too so a just-pulled book
+            --              (already on the server) isn't re-pushed.
+            local pull_ts = opts.store:getLastPulledAt() or 0
+            local push_ts = opts.store:getLastPushedAt() or 0
             local upserted = 0
             for _, raw in ipairs(rows) do
                 local parsed = LibraryStore.parseSyncRow(raw)
@@ -389,19 +415,21 @@ function M.pullBooks(opts, cb)
                     parsed.user_id = opts.settings.user_id
                     opts.store:upsertBook(parsed)
                     upserted = upserted + 1
-                    -- Watermark = max of returned updated_at | deleted_at,
-                    -- not local now (codex round 1, finding 8).
-                    if parsed.updated_at and parsed.updated_at > max_ts then
-                        max_ts = parsed.updated_at
+                    local rc = row_pull_cursor(parsed)
+                    if rc > pull_ts then pull_ts = rc end
+                    if parsed.updated_at and parsed.updated_at > push_ts then
+                        push_ts = parsed.updated_at
                     end
-                    if parsed.deleted_at and parsed.deleted_at > max_ts then
-                        max_ts = parsed.deleted_at
+                    if parsed.deleted_at and parsed.deleted_at > push_ts then
+                        push_ts = parsed.deleted_at
                     end
                 end
             end
-            if max_ts > 0 then opts.store:setLastPulledAt(max_ts) end
+            opts.store:setLastPulledAt(pull_ts)
+            opts.store:setLastPushedAt(push_ts)
             logger.info("ReadestLibrary pullBooks complete: rows=" .. #rows
-                .. " upserted=" .. upserted .. " new_watermark=" .. max_ts)
+                .. " upserted=" .. upserted .. " new_watermark=" .. pull_ts
+                .. " push_watermark=" .. push_ts)
             if cb then cb(true, upserted) end
         end)
     end)

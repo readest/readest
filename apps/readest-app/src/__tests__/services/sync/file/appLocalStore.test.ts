@@ -44,6 +44,7 @@ beforeEach(() => {
       savedLibrary = books;
     }),
     generateCoverImageUrl: vi.fn(async () => 'blob:cover'),
+    deleteBook: vi.fn(async () => {}),
   } as unknown as AppService;
   envConfig = { getAppService: async () => appService } as unknown as EnvConfigType;
 });
@@ -83,5 +84,22 @@ describe('createAppLocalStore — library hydration (data-loss guard)', () => {
 
     expect(appService.loadLibraryBooks).not.toHaveBeenCalled();
     expect(savedLibrary!.map((b) => b.hash).sort()).toEqual(['a', 'b', 'c']);
+  });
+
+  test('deleteBookLocally removes the managed copy and persists the tombstone (#4860)', async () => {
+    useLibraryStore.getState().setLibrary([makeBook('a'), makeBook('b')]);
+
+    await makeStore().deleteBookLocally(makeBook('a', { deletedAt: 500 }));
+
+    // The managed local copy is removed via the 'local' delete action.
+    expect(appService.deleteBook).toHaveBeenCalledWith(
+      expect.objectContaining({ hash: 'a' }),
+      'local',
+    );
+    // The tombstone is persisted and the other book survives.
+    expect(savedLibrary!.map((b) => b.hash).sort()).toEqual(['a', 'b']);
+    expect(savedLibrary!.find((b) => b.hash === 'a')!.deletedAt).toBe(500);
+    // The deleted book drops off the visible shelf.
+    expect(useLibraryStore.getState().visibleLibrary.map((b) => b.hash)).toEqual(['b']);
   });
 });
