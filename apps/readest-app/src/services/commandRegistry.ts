@@ -149,7 +149,7 @@ export const groupResultsByCategory = (
 const panelIcons: Record<SettingsPanelType, IconType> = {
   Font: RiFontSize,
   Layout: RiDashboardLine,
-  Color: VscSymbolColor,
+  Theme: VscSymbolColor,
   Control: LiaHandPointerSolid,
   TTS: PiSpeakerHigh,
   Language: RiTranslate,
@@ -716,7 +716,7 @@ export const buildCommandRegistry = (options: CommandRegistryOptions): CommandIt
 
   // add color panel items
   for (const def of colorPanelItems) {
-    items.push(createSettingsItem(def, 'Color'));
+    items.push(createSettingsItem(def, 'Theme'));
   }
 
   // add control panel items
