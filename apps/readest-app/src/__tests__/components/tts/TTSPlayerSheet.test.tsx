@@ -172,7 +172,7 @@ describe('TTSPlayerSheet', () => {
     const props = makeProps({ hasGapControl: false });
     render(<TTSPlayerSheet {...props} />);
     fireEvent.click(screen.getByLabelText('Speed'));
-    expect(screen.queryByText('Sentence Pause')).toBeNull();
+    expect(screen.queryByText(/Sentence Pause/)).toBeNull();
     expect(screen.queryByRole('radiogroup', { name: 'Sentence Pause' })).toBeNull();
   });
 

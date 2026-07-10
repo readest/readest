@@ -207,8 +207,8 @@ describe('EdgeTTSClient Web Audio playback', () => {
     sources = ctx().sources;
     expect(sources.length).toBeGreaterThanOrEqual(4);
 
-    // Chunk 3 is the first chunk scheduled after setSentenceGap,
-    // so it should use the new gap (from chunk 2's timing)
+    // Chunk 2 is the first chunk scheduled after setSentenceGap, so the gap
+    // preceding chunk 3 (chunk 2's schedule-time gap) reflects the new value.
     const [, , thirdChunk, fourthChunk] = sources;
     expect(fourthChunk!.startedAt! - thirdChunk!.endTime).toBeCloseTo(0.3, 5);
 
