@@ -61,7 +61,9 @@ describe('TTSControl', () => {
       handleBackToCurrentTTSLocation: vi.fn(),
       handleSeekTo: vi.fn(),
       handleGetPlaybackInfo: vi.fn().mockReturnValue(null),
+      handleSetSentenceGap: vi.fn(),
       handleSupportsPlaybackInfo: vi.fn().mockReturnValue(true),
+      handleSupportsGapControl: vi.fn().mockReturnValue(false),
       refreshTtsLang: vi.fn(),
     });
   });
