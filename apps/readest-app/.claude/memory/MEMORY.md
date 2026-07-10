@@ -34,6 +34,7 @@
 - [Multi-window settings clobber (#4580)](multiwindow-settings-clobber-4580.md)
 - Google Drive: [research](gdrive-sync-provider-research.md); [multi-PR status](gdrive-provider-multipr-status.md); [full walk every sync](gdrive-fullwalk-every-sync-no-source-cursor.md) no-source books never recorded in uploadedHashes + focus refires pullLibrary
 - [S3/R2 provider](s3-r2-sync-provider.md) third backend, aws4fetch SigV4 path-style, full slice on dev uncommitted; live R2 verify pending
+- [OneDrive provider #5007](onedrive-sync-provider.md) 4th backend; shared `providers/oauth/` extraction + path-addressed Graph App Folder; branch `feat/onedrive-sync` 28 commits merge-ready, LOCAL; Azure client id = ops blocker; LESSON: settingsSync.ts #4580 slice + s3 backup-blacklist gap
 - [Hardcover edition_id (#4792)](hardcover-progress-edition-id-4792.md)
 ## Build, Testing & CI
 - [Nightly quick-sharun hang #4906](nightly-quick-sharun-hang-4906.md) pin via cache pre-seed + step timeouts
@@ -62,7 +63,8 @@
 - [Updater disable non-AppImage (#4874)](updater-disable-nonappimage-linux-4874.md)
 - [Fullscreen no-op Phosh (#4034)](fullscreen-maximized-phosh-4034.md) drop `isMaximized` branch
 ## Reader Features & UI
-- [Android Auto TTS #3919/PR#4907](android-auto-tts-3919.md) MERGED; CarPlay blocked on entitlement
+- [Readest Voice self-hosted TTS](selfhosted-premium-tts-plans.md) plans APPROVED via /autoplan 2026-07-08; Kokoro=Plus/Qwen3=Pro on RunPod; impl not started
+- [Android Auto TTS #3919/PR#4907](android-auto-tts-3919.md) MERGED; Play REJECTED Auto feature, car meta-data pulled PR#5038 MERGED pending bug fix (guard test asserts absence); CarPlay blocked on entitlement
 - Widgets: [mobile reading #1602/PR#4842](mobile-reading-widgets.md); [iOS App Group stripped PR#4891](ios-widget-appgroup-stripped-appstore.md); [cover bright right-edge line](ios-widget-cover-bright-edge-line.md) fractional resize → round target to whole px
 - PDF: [scrolled lag #4795](pdf-scroll-lag-preload-4795.md); [scrolled pinch-zoom #4817](scrolled-pdf-pinch-zoom-4817.md); [pinch vs two-finger scroll #4858](pinch-vs-twofinger-scroll-4858.md); [text selection misplaced w/ OS font scale #4480](pdf-text-selection-fontscale-4480.md) OS font-scale inflates text-layer glyph size not positions; divide `--text-scale-factor` (font-size lever) by detected scale, NOT `--total-scale-factor`
 - [Search modes #4560](search-modes-4560-and-spoiler-bound-bug.md)
@@ -129,6 +131,7 @@
 - [iframe cross-realm instanceof](iframe-cross-realm-instanceof.md) duck-type `'closest'`
 - [Virtuoso + OverlayScrollbars](virtuoso_overlayscrollbars.md)
 - [Design system → DESIGN.md](feedback_design_system_doc.md) never `pl/pr/ml/mr` (RTL)
+- [Theorem competitor analysis](theorem-competitor-feature-analysis.md) MIT Readest-peer; feature gaps + RSS-as-in-memory-Foliate-book reuse insight (`md.ts` `makeMarkdownBook`)
 ## Workflow & Feedback
 - [Commit messages English-only](feedback-commit-message-english-only.md) no CJK, no em/en dashes
 - PR flow: [rebase onto origin/main](feedback_pr_rebase.md); [fresh branch per PR](feedback_pr_new_branch.md); [always `pnpm worktree:new`](feedback_use_worktree.md); [commit locally, don't push until confirmed](feedback_dont_push_every_change.md)

@@ -152,7 +152,10 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       role='presentation'
       className={clsx(
         'progressinfo pointer-events-none absolute bottom-0 flex items-center justify-between font-sans',
-        isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-extralight',
+        isEink ? 'text-sm font-normal' : 'text-xs font-extralight',
+        bookData?.isFixedLayout && !isEink
+          ? 'text-white/75 mix-blend-difference'
+          : 'text-base-content',
         isVertical ? 'writing-vertical-rl' : 'w-full',
       )}
       aria-label={[
@@ -210,9 +213,6 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               'remaining-info whitespace-nowrap text-start',
               !stickyBarActive && 'flex-1',
               showStatusInfo && 'overflow-hidden',
-              bookData?.isFixedLayout && !isEink
-                ? 'text-white/75 mix-blend-difference'
-                : 'text-base-content',
             )}
           >
             {viewSettings.showRemainingTime ? (
@@ -269,9 +269,6 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           className={clsx(
             'progress-info items-center overflow-hidden whitespace-nowrap text-end tabular-nums',
             !stickyBarActive && 'flex-1',
-            bookData?.isFixedLayout && !isEink
-              ? 'text-white/75 mix-blend-difference'
-              : 'text-base-content',
           )}
         >
           {viewSettings.showProgressInfo && (

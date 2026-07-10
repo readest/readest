@@ -310,12 +310,9 @@ describe('ProgressBar — contrast against the page (#4901)', () => {
 
     const { container } = renderProgressBar();
 
-    const progress = container.querySelector('.progress-info') as HTMLElement;
-    const remaining = container.querySelector('.remaining-info') as HTMLElement;
-    expect(progress.classList.contains('mix-blend-difference')).toBe(true);
-    expect(progress.classList.contains('text-white/75')).toBe(true);
-    expect(remaining.classList.contains('mix-blend-difference')).toBe(true);
-    expect(remaining.classList.contains('text-white/75')).toBe(true);
+    const info = container.querySelector('.progressinfo') as HTMLElement;
+    expect(info.classList.contains('mix-blend-difference')).toBe(true);
+    expect(info.classList.contains('text-white/75')).toBe(true);
   });
 
   it('uses themed base-content text for reflowable books in non-eink mode', () => {
@@ -331,12 +328,9 @@ describe('ProgressBar — contrast against the page (#4901)', () => {
 
     const { container } = renderProgressBar();
 
-    const progress = container.querySelector('.progress-info') as HTMLElement;
-    const remaining = container.querySelector('.remaining-info') as HTMLElement;
-    expect(progress.classList.contains('mix-blend-difference')).toBe(false);
-    expect(progress.classList.contains('text-base-content')).toBe(true);
-    expect(remaining.classList.contains('mix-blend-difference')).toBe(false);
-    expect(remaining.classList.contains('text-base-content')).toBe(true);
+    const info = container.querySelector('.progressinfo') as HTMLElement;
+    expect(info.classList.contains('mix-blend-difference')).toBe(false);
+    expect(info.classList.contains('text-base-content')).toBe(true);
   });
 
   it('does not blend in eink mode', () => {
@@ -352,7 +346,7 @@ describe('ProgressBar — contrast against the page (#4901)', () => {
 
     const { container } = renderProgressBar();
 
-    const progress = container.querySelector('.progress-info') as HTMLElement;
-    expect(progress.classList.contains('mix-blend-difference')).toBe(false);
+    const info = container.querySelector('.progressinfo') as HTMLElement;
+    expect(info.classList.contains('mix-blend-difference')).toBe(false);
   });
 });

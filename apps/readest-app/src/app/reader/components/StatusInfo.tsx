@@ -30,7 +30,7 @@ const StatusInfo: React.FC<StatusInfoProps> = ({
   return (
     <div
       className={clsx(
-        'status-bar flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums text-base-content',
+        'status-bar flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums',
         isVertical ? 'my-auto' : 'flex-row',
         className,
       )}
@@ -74,7 +74,6 @@ const StatusInfo: React.FC<StatusInfoProps> = ({
               className={clsx(
                 'absolute text-[8px] font-medium leading-none invert',
                 isVertical && '[writing-mode:horizontal-tb]',
-                isEink ? 'text-black mix-blend-difference' : 'text-base-300 mix-blend-luminosity',
               )}
               style={{ left: '11px', transform: 'translateX(-50%)' }}
             >
