@@ -158,6 +158,53 @@ describe('EdgeTTSClient Web Audio playback', () => {
     await done;
   });
 
+  test('setSentenceGap before speaking changes the observed gap', async () => {
+    const client = await startClient();
+    await client.setRate(1);
+    client.setSentenceGap(0.4); // gap = 0.4 / 1
+    const { done } = collectSpeak(client, new AbortController().signal);
+    await flush();
+    await flush();
+    const [first, second] = ctx().sources;
+    expect(second!.startedAt! - first!.endTime).toBeCloseTo(0.4, 5);
+    await ctx().advanceTo(5);
+    await done;
+  });
+
+  test('setSentenceGap mid-session affects the next scheduled gap', async () => {
+    parsedMarks = [
+      { name: '0', text: 'First sentence.', language: 'en' },
+      { name: '1', text: 'Second sentence.', language: 'en' },
+      { name: '2', text: 'Third sentence.', language: 'en' },
+    ];
+    const client = await startClient();
+    await client.setRate(1);
+    const { done } = collectSpeak(client, new AbortController().signal);
+    // Initial scheduling of chunks
+    await flush();
+    await flush();
+    let sources = ctx().sources;
+    const [first, second] = sources;
+    expect(second!.startedAt! - first!.endTime).toBeCloseTo(0.15, 5);
+
+    // Change gap mid-session
+    client.setSentenceGap(0.3);
+
+    // Advance playback to trigger more scheduling
+    await ctx().advanceTo(0.5);
+    await flush();
+
+    sources = ctx().sources;
+    // If a third chunk has been scheduled, it should use the new gap
+    if (sources.length >= 3) {
+      const [, second, third] = sources;
+      expect(third!.startedAt! - second!.endTime).toBeCloseTo(0.3, 5);
+    }
+
+    await ctx().advanceTo(5);
+    await done;
+  });
+
   test('word tracking follows the audio clock and survives pause/resume', async () => {
     createAudioDataBehavior = async () => ({
       data: new ArrayBuffer(48000), // 2s

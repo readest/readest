@@ -27,7 +27,7 @@ import { TTSAudioBuffer, WebAudioPlayer, WebAudioPlayerEvent } from './WebAudioP
 // Natural pause between sentences, replacing Edge's baked-in ~300ms trailing
 // silence. Divided by the playback rate so pauses shrink with speed (#2033's
 // "gaps don't scale" complaint).
-const INTER_SENTENCE_GAP_SEC = 0.15;
+export const DEFAULT_SENTENCE_GAP_SEC = 0.15;
 const TICKS_PER_SECOND = 10_000_000;
 
 interface ChunkMeta {
@@ -72,6 +72,7 @@ export class EdgeTTSClient implements TTSClient {
   #currentVoiceId = '';
   #rate = 1.0;
   #pitch = 1.0;
+  #sentenceGapSec = DEFAULT_SENTENCE_GAP_SEC;
 
   #edgeTTS: EdgeSpeechTTS | null = null;
   #player = new WebAudioPlayer();
@@ -363,7 +364,7 @@ export class EdgeTTSClient implements TTSClient {
         this.#player.scheduleChunk(generation, prepared.buffer, {
           trimStartSec: prepared.trimStartSec,
           mediaScale: prepared.trimmedDurationSec / prepared.buffer.duration,
-          gapSec: INTER_SENTENCE_GAP_SEC / rate,
+          gapSec: this.#sentenceGapSec / rate,
         });
       }
       if (!signal.aborted && this.#activeGeneration === generation) {
@@ -500,6 +501,10 @@ export class EdgeTTSClient implements TTSClient {
     if (selectedVoice) {
       this.#currentVoiceId = selectedVoice.id;
     }
+  }
+
+  setSentenceGap(sec: number): void {
+    this.#sentenceGapSec = sec;
   }
 
   async getAllVoices(): Promise<TTSVoice[]> {
