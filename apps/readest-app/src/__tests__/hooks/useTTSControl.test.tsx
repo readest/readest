@@ -136,11 +136,14 @@ vi.mock('@/services/tts', () => ({
       setHighlightGranularity: vi.fn(),
       setLang: vi.fn(),
       setRate: vi.fn(),
+      setSentenceGap: vi.fn(),
+      supportsGapControl: vi.fn().mockReturnValue(false),
       setVoice: vi.fn(),
       setTargetLang: vi.fn(),
       speak: vi.fn(),
       pause: vi.fn().mockResolvedValue(undefined),
       resume: vi.fn().mockResolvedValue(undefined),
+      start: vi.fn().mockResolvedValue(undefined),
       stop: vi.fn().mockResolvedValue(undefined),
       shutdown: vi.fn().mockResolvedValue(undefined),
       forward: vi.fn().mockResolvedValue(undefined),
@@ -687,5 +690,72 @@ describe('useTTSControl background session lifecycle', () => {
       mockView,
       expect.objectContaining({ bookKey: 'book-1' }),
     );
+  });
+});
+
+describe('useTTSControl gap control (handleSetSentenceGap / handleSupportsGapControl)', () => {
+  let hookResult: ReturnType<typeof useTTSControl> | null = null;
+
+  const CaptureHarness = () => {
+    hookResult = useTTSControl({ bookKey: 'book-1' });
+    return null;
+  };
+
+  beforeEach(() => {
+    ttsControllerInstances.length = 0;
+    pendingInitResolvers.length = 0;
+    hookResult = null;
+    mockSessionManager.claim.mockClear();
+    mockSessionManager.getSessionByHash.mockReturnValue(null);
+    mockSessionManager.getActiveSession.mockReturnValue(null);
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  const startSession = async () => {
+    render(<CaptureHarness />);
+    await act(async () => {
+      const p = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await p;
+    });
+    return ttsControllerInstances[0] as {
+      setSentenceGap: ReturnType<typeof vi.fn>;
+      supportsGapControl: ReturnType<typeof vi.fn>;
+      stop: ReturnType<typeof vi.fn>;
+      start: ReturnType<typeof vi.fn>;
+      state: string;
+    };
+  };
+
+  it('handleSetSentenceGap calls controller.setSentenceGap directly, without stop/start', async () => {
+    const controller = await startSession();
+    controller.state = 'playing';
+
+    act(() => {
+      hookResult!.handleSetSentenceGap(0.5);
+    });
+
+    expect(controller.setSentenceGap).toHaveBeenCalledWith(0.5);
+    expect(controller.stop).not.toHaveBeenCalled();
+    expect(controller.start).not.toHaveBeenCalled();
+  });
+
+  it('handleSupportsGapControl reflects controller.supportsGapControl()', async () => {
+    const controller = await startSession();
+
+    controller.supportsGapControl.mockReturnValue(false);
+    expect(hookResult!.handleSupportsGapControl()).toBe(false);
+
+    controller.supportsGapControl.mockReturnValue(true);
+    expect(hookResult!.handleSupportsGapControl()).toBe(true);
+  });
+
+  it('handleSupportsGapControl returns false when no controller exists yet', () => {
+    render(<CaptureHarness />);
+    expect(hookResult!.handleSupportsGapControl()).toBe(false);
   });
 });
