@@ -362,6 +362,52 @@ describe('publishSettingsIfChanged', () => {
       expect(patch.webdav?.rootPath).toBe('/Books');
     });
 
+    test('omits S3 credentials but keeps endpoint/region/bucket when credentials sync is OFF', async () => {
+      await setCredentials(undefined); // default OFF
+      isUnlocked = false;
+      await publishSettingsIfChanged(
+        makeSettings({
+          s3: {
+            endpoint: 'https://acc.r2.cloudflarestorage.com',
+            region: 'auto',
+            bucket: 'readest',
+            accessKeyId: 'AKIA',
+            secretAccessKey: 'shh',
+          } as SystemSettings['s3'],
+        }),
+      );
+      expect(publishMock).toHaveBeenCalledTimes(1);
+      const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+      // Plaintext connection metadata still ships.
+      expect(patch.s3?.endpoint).toBe('https://acc.r2.cloudflarestorage.com');
+      expect(patch.s3?.region).toBe('auto');
+      expect(patch.s3?.bucket).toBe('readest');
+      // Access keys are gated off.
+      expect(patch.s3?.accessKeyId).toBeUndefined();
+      expect(patch.s3?.secretAccessKey).toBeUndefined();
+    });
+
+    test('publishes S3 credentials when credentials sync is ON', async () => {
+      await setCredentials(true);
+      isUnlocked = true;
+      await publishSettingsIfChanged(
+        makeSettings({
+          s3: {
+            endpoint: 'https://acc.r2.cloudflarestorage.com',
+            region: 'auto',
+            bucket: 'readest',
+            accessKeyId: 'AKIA',
+            secretAccessKey: 'shh',
+          } as SystemSettings['s3'],
+        }),
+      );
+      expect(publishMock).toHaveBeenCalledTimes(1);
+      const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+      expect(patch.s3?.endpoint).toBe('https://acc.r2.cloudflarestorage.com');
+      expect(patch.s3?.accessKeyId).toBe('AKIA');
+      expect(patch.s3?.secretAccessKey).toBe('shh');
+    });
+
     test('skipping all of the only-credential changes is a clean no-op (no empty publish)', async () => {
       await setCredentials(undefined);
       isUnlocked = false;
@@ -611,6 +657,51 @@ describe('applyRemoteSettings', () => {
     expect(merged.enabled).toBe(true);
     expect(merged.deviceId).toBe('this-device');
     expect(merged.lastSyncedAt).toBe(999);
+    expect(merged.syncBooks).toBe(true);
+  });
+
+  test('deep-merges S3 credentials without clobbering local per-device fields', () => {
+    const env = makeEnvConfig();
+    useSettingsStore.setState({
+      ...useSettingsStore.getState(),
+      settings: makeSettings({
+        s3: {
+          enabled: true,
+          endpoint: 'https://old.r2.cloudflarestorage.com',
+          region: 'auto',
+          bucket: 'old-bucket',
+          accessKeyId: 'OLD',
+          secretAccessKey: 'old-secret',
+          deviceId: 'this-device',
+          lastSyncedAt: 999,
+          providerSelectedAt: 111,
+          syncBooks: true,
+        } as unknown as SystemSettings['s3'],
+      }),
+    });
+    applyRemoteSettings(env, {
+      name: 'singleton',
+      patch: {
+        s3: {
+          endpoint: 'https://acc.r2.cloudflarestorage.com',
+          region: 'auto',
+          bucket: 'readest',
+          accessKeyId: 'AKIA',
+          secretAccessKey: 'shh',
+        },
+      } as unknown as Partial<SystemSettings>,
+    });
+    const merged = useSettingsStore.getState().settings.s3;
+    // Synced connection fields are applied.
+    expect(merged.endpoint).toBe('https://acc.r2.cloudflarestorage.com');
+    expect(merged.bucket).toBe('readest');
+    expect(merged.accessKeyId).toBe('AKIA');
+    expect(merged.secretAccessKey).toBe('shh');
+    // Per-device fields the remote patch omits must survive the merge.
+    expect(merged.enabled).toBe(true);
+    expect(merged.deviceId).toBe('this-device');
+    expect(merged.lastSyncedAt).toBe(999);
+    expect(merged.providerSelectedAt).toBe(111);
     expect(merged.syncBooks).toBe(true);
   });
 
