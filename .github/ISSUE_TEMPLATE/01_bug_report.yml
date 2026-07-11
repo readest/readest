@@ -1,0 +1,93 @@
+name: Report a bug
+description: Report a bug or a functional regression
+title: "BUG DESCRIPTION"
+labels: ["type: bug"]
+body:
+  - type: "markdown"
+    attributes:
+      value: |
+        <p align="center">
+          <img src="https://github.com/readest/readest/blob/main/apps/readest-app/src-tauri/icons/icon.png?raw=true" alt="Readest Logo" width="20%" />
+        </p>
+
+        Please replace the **`BUG DESCRPTION`** template above with a clear and concise description of what the current behvaior is.
+
+        An example of a good bug report title would look like:
+        ```plaintext
+        In DarkMode, a blank square appears in bottom right corner while scrolling
+        ```
+
+        ---
+  - type: "textarea"
+    id: "description"
+    attributes:
+      label: "Bug Description"
+      description: |
+        A clear and concise description of what the current behavior is.
+
+        Please also add **screenshots** of the issue if applicable.
+      placeholder: "E.g: In DarkMode, when scrollbar are displayed, we see a blank square in the bottom right corner"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "steps_to_reproduce"
+    attributes:
+      label: "Steps to Reproduce"
+      description: |
+        Please include a step-by-step guide for reproducing this issue. Consider writing in concise, numbered bullet points.
+    validations:
+      required: true
+  - type: "textarea"
+    id: "expected_behvaior"
+    attributes:
+      label: "Expected Behavior"
+      description: |
+        A clear and concise description of what the expected behavior is.
+      placeholder: "The blank square should be transparent (invisible)"
+    validations:
+      required: true
+  - type: "input"
+    id: "reproduction_file"
+    attributes:
+      label: "Reproduction File"
+      description: "If applicable, upload a link to download the specific file that is causing the issue, so as to allow us to easily reproduce the bug."
+  - type: "dropdown"
+    id: "os_kind"
+    attributes:
+      label: "Operating System"
+      description: "Select the operating system(s) that this bug occurs on."
+      multiple: true
+      options:
+        - "macOS"
+        - "Windows"
+        - "Linux"
+        - "iOS/iPadOS"
+        - "Android"
+        - "Web"
+    validations:
+      required: true
+  - type: "input"
+    id: "os_version"
+    attributes:
+      label: "OS Version"
+      description: |
+        The OS version you are running.
+      placeholder: "E.g: Windows 11 24H2, macOS 15.5, Ubuntu 24.04, Android 14, iOS 18.5"
+    validations:
+      required: true
+  - type: "input"
+    id: "readest_version"
+    attributes:
+      label: "Readest Version"
+      description: |
+        The Readest version you are running.
+
+        To find this, go to **☰ -> About Readest**.
+      placeholder: "Version x.xx.xx (WebView xxx.x.xx)"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "custom_css"
+    attributes:
+      label: "Custom CSS"
+      description: "If you have custom CSS, please paste it here, as it could be affecting the issue."
