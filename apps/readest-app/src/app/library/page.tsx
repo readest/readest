@@ -554,7 +554,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     if (lastBookIds.length === 0) return false;
     const bookIds: string[] = [];
     for (const bookId of lastBookIds) {
-      const book = libraryBooks.find((b) => b.hash === bookId);
+      const book = libraryBooks.find((b) => b.hash === bookId && b.readingStatus !== 'finished');
       if (book && (await appService.isBookAvailable(book))) {
         bookIds.push(book.hash);
       }
