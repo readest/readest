@@ -16,7 +16,7 @@ vi.mock('@tauri-apps/api/core', () => ({
   addPluginListener: vi.fn(),
 }));
 
-import { invoke } from '@tauri-apps/api/core';
+import { invoke, addPluginListener, type PluginListener } from '@tauri-apps/api/core';
 import { getMediaSession, TauriMediaSession } from '@/libs/mediaSession';
 import { getOSPlatform } from '@/utils/misc';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -146,5 +146,38 @@ describe('TauriMediaSession.setActive', () => {
       'plugin:native-tts|requestPermissions',
       expect.anything(),
     );
+  });
+});
+
+describe('TauriMediaSession media-session-seek', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test('routes the native seek payload to the seekto handler', async () => {
+    // addPluginListener delivers the native payload DIRECTLY (like the
+    // native-bridge shared-intent listener), not wrapped in { payload }. The
+    // seek listener used to read `event.payload.position`, which threw, so
+    // lock-screen / Android Auto seeks silently did nothing while in-app seeks
+    // (which call the controller directly) worked. Guard the payload shape.
+    const listeners: Record<string, (payload: unknown) => void> = {};
+    vi.mocked(addPluginListener).mockImplementation((async (
+      _plugin: string,
+      event: string,
+      cb: (payload: unknown) => void,
+    ) => {
+      listeners[event] = cb;
+      return { unregister: vi.fn() } as unknown as PluginListener;
+    }) as unknown as typeof addPluginListener);
+    vi.mocked(invoke).mockResolvedValue({ postNotification: 'granted' } as unknown);
+
+    const session = new TauriMediaSession();
+    const seekHandler = vi.fn();
+    session.setActionHandler('seekto', seekHandler as (position: number) => void);
+    await session.setActive({ active: true });
+
+    // Native fires the payload directly: { position }.
+    listeners['media-session-seek']!({ position: 42000 });
+    expect(seekHandler).toHaveBeenCalledWith(42000);
   });
 });

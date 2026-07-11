@@ -10,6 +10,16 @@ describe('parseBookDeepLink', () => {
       bookHash: 'abc123',
     });
   });
+  it('surfaces the Android Auto autoplay flag', () => {
+    expect(parseBookDeepLink('readest://book/abc123?autoplay=tts')).toEqual({
+      bookHash: 'abc123',
+      autoplay: true,
+    });
+  });
+  it('omits autoplay when absent or not tts', () => {
+    expect(parseBookDeepLink('readest://book/abc123?autoplay=foo')).toEqual({ bookHash: 'abc123' });
+    expect(parseBookDeepLink('readest://book/abc123')).toEqual({ bookHash: 'abc123' });
+  });
   it('does NOT match the annotation form', () => {
     expect(parseBookDeepLink('readest://book/abc123/annotation/n1')).toBeNull();
   });

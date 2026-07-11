@@ -8,6 +8,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -26,10 +27,13 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.media.MediaBrowserServiceCompat
 import androidx.media.session.MediaButtonReceiver
+import androidx.core.content.FileProvider
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import app.tauri.plugin.JSObject
+import java.io.File
+import java.io.FileOutputStream
 
 class MediaPlaybackService : MediaBrowserServiceCompat() {
     private var mediaSession: MediaSessionCompat? = null
@@ -64,13 +68,34 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         private const val NOTIFICATION_ID = 1002
         private const val MEDIA_ROOT_ID = "media_root_id"
         private const val CURRENT_READING_MEDIA_ID = "readest_current_reading"
+        private const val RESUME_MEDIA_ID = "readest_resume_last_book"
         const val ACTION_ACTIVATE_SESSION = "ACTIVATE_SESSION"
+
+        private const val PREFS_LAST_BOOK = "media_last_book"
+        private const val KEY_HASH = "hash"
+        private const val KEY_TITLE = "title"
+        private const val KEY_AUTHOR = "author"
 
         var pluginEventTrigger: ((String, JSObject) -> Unit)? = null
 
         var currentTitle: String = "Read Aloud"
         var currentArtist: String = "Reading your content"
         var currentArtwork: Bitmap? = null
+
+        // Stable content:// URI for the current cover (served via FileProvider).
+        // Android Auto/the lock screen cache artwork by URI, so per-sentence
+        // metadata updates no longer force a bitmap reload — which flashed the
+        // cover. The bitmap is still kept for the notification's large icon.
+        @Volatile
+        var currentArtworkUri: Uri? = null
+
+        // Media browser clients that render the cover and therefore need read
+        // access granted to the FileProvider artwork URI.
+        private val ARTWORK_URI_CLIENTS = listOf(
+            "com.google.android.projection.gearhead",
+            "com.google.android.gms",
+            "com.android.systemui",
+        )
 
         // Estimated section timeline (Edge/WebAudio engine only) in milliseconds.
         // Drives the lock-screen scrubber: position is the thumb, duration is
@@ -80,6 +105,34 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         var currentPositionMs: Long = 0L
         @Volatile
         var currentDurationMs: Long = 0L
+
+        // Last book read aloud, persisted across process death so the Android
+        // Auto browse tree can offer a "Resume last book" entry when opened cold
+        // (no active session). Hash addresses a readest://book/{hash} resume.
+        @Volatile
+        var lastBookHash: String? = null
+        @Volatile
+        var lastBookTitle: String? = null
+        @Volatile
+        var lastBookAuthor: String? = null
+
+        fun saveLastBook(context: Context, hash: String, title: String?, author: String?) {
+            lastBookHash = hash
+            lastBookTitle = title
+            lastBookAuthor = author
+            context.getSharedPreferences(PREFS_LAST_BOOK, Context.MODE_PRIVATE).edit()
+                .putString(KEY_HASH, hash)
+                .putString(KEY_TITLE, title)
+                .putString(KEY_AUTHOR, author)
+                .apply()
+        }
+
+        private fun loadLastBook(context: Context) {
+            val prefs = context.getSharedPreferences(PREFS_LAST_BOOK, Context.MODE_PRIVATE)
+            lastBookHash = prefs.getString(KEY_HASH, null)
+            lastBookTitle = prefs.getString(KEY_TITLE, null)
+            lastBookAuthor = prefs.getString(KEY_AUTHOR, null)
+        }
 
         @Volatile
         private var instance: MediaPlaybackService? = null
@@ -125,6 +178,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        // Android Auto binds this service cold (no session); restore the last
+        // book so the browse tree can offer a "Resume last book" entry.
+        loadLastBook(this)
 
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         player = ExoPlayer.Builder(this).build()
@@ -220,13 +276,16 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             updatePlaybackState()
         }
 
+        // Next/previous just relay the intent to the WebView, which owns the
+        // real paragraph navigation and pushes the new metadata/state back.
+        // Seeking the silent keep-alive player here does nothing useful and
+        // muddied the transition, so the JS side (ttsMediaBridge) holds an
+        // optimistic playing state until the skipped-to segment speaks.
         override fun onSkipToNext() {
-            player.seekTo(0)
             pluginEventTrigger?.invoke("media-session-next", JSObject())
         }
 
         override fun onSkipToPrevious() {
-            player.seekTo(0)
             pluginEventTrigger?.invoke("media-session-previous", JSObject())
         }
 
@@ -243,7 +302,24 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         }
 
         override fun onPlayFromMediaId(mediaId: String?, extras: Bundle?) {
-            onPlay()
+            if (sessionActive) {
+                onPlay()
+                return
+            }
+            // Cold start from the car: launch the reader on the last book with
+            // an autoplay flag so it starts TTS once loaded; playback then flows
+            // back through this media session. The mediaId carries the hash;
+            // fall back to the persisted one.
+            val hash = mediaId?.substringAfter("$RESUME_MEDIA_ID:", "")?.takeIf { it.isNotEmpty() }
+                ?: lastBookHash ?: return
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("readest://book/$hash?autoplay=tts"))
+                .setPackage(packageName)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            try {
+                startActivity(intent)
+            } catch (e: Exception) {
+                Log.e("MediaPlaybackService", "Failed to launch reader for resume", e)
+            }
         }
 
         override fun onPlayFromSearch(query: String?, extras: Bundle?) {
@@ -254,8 +330,12 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     private fun updatePlaybackState() {
         if (!sessionActive) return
         val state = if (player.isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
+        // Report the WebView playback position (currentPositionMs), NOT the
+        // silent keep-alive player's position. silence.mp3 is a 10s loop, so
+        // player.currentPosition saturates at ~10s and would freeze the car /
+        // lock-screen scrubber there while the book plays on.
         mediaSession?.setPlaybackState(
-            stateBuilder.setState(state, player.currentPosition, 1f).build()
+            stateBuilder.setState(state, currentPositionMs, 1f).build()
         )
         showNotification(state)
     }
@@ -265,13 +345,65 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     // every position tick.
     private var appliedDurationMs: Long = -1L
 
+    // Guards against rewriting the cache file on every (per-sentence) metadata
+    // build: the URI is only re-published when the cover bitmap itself changes.
+    private var artworkUriSource: Bitmap? = null
+    private var artworkUriVersion = 0
+    private var artworkUriFile: File? = null
+
+    // Packages that have opened the browse tree (Android Auto's projection, the
+    // media system components). The cover URI is cross-UID, so each must be
+    // granted read access or its art loader hits a SecurityException and the
+    // cover shows blank.
+    private val browserClients =
+        java.util.Collections.synchronizedSet(mutableSetOf<String>())
+
+    private fun grantArtworkTo(pkg: String) {
+        val uri = currentArtworkUri ?: return
+        try {
+            grantUriPermission(pkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        } catch (e: Exception) {
+            Log.w("MediaPlaybackService", "grant artwork to $pkg failed", e)
+        }
+    }
+
+    // Materialize currentArtwork as a stable content:// URI (once per cover) so
+    // clients cache it instead of reloading the bitmap on every metadata update.
+    // A fresh filename per cover keeps the URI stable within a book but changed
+    // across books, so a new cover still refreshes. Cheap no-op while unchanged.
+    private fun refreshArtworkUri() {
+        val art = currentArtwork ?: return
+        if (art !== artworkUriSource || currentArtworkUri == null) {
+            try {
+                val file = File(cacheDir, "tts_cover_${artworkUriVersion++}.png")
+                FileOutputStream(file).use { out -> art.compress(Bitmap.CompressFormat.PNG, 100, out) }
+                artworkUriFile?.delete()
+                artworkUriFile = file
+                currentArtworkUri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+                artworkUriSource = art
+            } catch (e: Exception) {
+                Log.w("MediaPlaybackService", "Failed to publish artwork uri", e)
+                return
+            }
+        }
+        // Re-grant every build: a client may connect before or after the cover
+        // is set, and the grant is cheap + idempotent.
+        for (pkg in ARTWORK_URI_CLIENTS) grantArtworkTo(pkg)
+        for (pkg in browserClients.toList()) grantArtworkTo(pkg)
+    }
+
     private fun buildMediaMetadata(): MediaMetadataCompat {
-        return MediaMetadataCompat.Builder()
+        refreshArtworkUri()
+        val builder = MediaMetadataCompat.Builder()
             .putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentTitle)
             .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentArtist)
             .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentArtwork)
             .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, currentDurationMs)
-            .build()
+        currentArtworkUri?.let {
+            builder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, it.toString())
+            builder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, it.toString())
+        }
+        return builder.build()
     }
 
     // Push the current statics into the live session + notification. Invoked
@@ -299,7 +431,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         } else if (!playing && player.isPlaying) {
             player.pause()
         }
-        player.seekTo(currentPositionMs)
+        // Do NOT seek the silent keep-alive player to currentPositionMs: it is a
+        // 10s loop, so seeking past its end clamps (and can trip STATE_ENDED).
+        // Its position is never read for the scrubber; only play/pause matters.
         val state = if (playing) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
         mediaSession?.setPlaybackState(
             stateBuilder.setState(state, currentPositionMs, 1f).build()
@@ -391,6 +525,10 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     }
 
     override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot? {
+        // Grant the cover URI to the connecting browser client (Android Auto,
+        // the media system UI) so its art loader can read it across UIDs.
+        browserClients.add(clientPackageName)
+        grantArtworkTo(clientPackageName)
         return BrowserRoot(MEDIA_ROOT_ID, null)
     }
 
@@ -421,6 +559,12 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                 .build()
             items.add(MediaBrowserCompat.MediaItem(description, MediaBrowserCompat.MediaItem.FLAG_PLAYABLE))
         }
+        // Idle (no active session): show nothing rather than a "Resume last
+        // book" entry. Android Auto blocks launching Readest's WebView activity
+        // while projecting, so cold play-from-media-id hangs on "Getting your
+        // selection"; only expose the current book while it is actually playing.
+        // (The persisted last-book fields + onPlayFromMediaId cold-launch stay
+        // dormant for a future cold-start solution.)
         result.sendResult(items)
     }
 

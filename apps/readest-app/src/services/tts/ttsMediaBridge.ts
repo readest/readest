@@ -86,6 +86,15 @@ export class TTSMediaBridge {
   #previousSectionLabel: string | undefined;
   #onSpeakMark: ((e: Event) => void) | null = null;
   #onStateChange: ((e: Event) => void) | null = null;
+  // A nexttrack/previoustrack from the car (or lock screen) makes the
+  // controller stop() then advance a paragraph — a ~1s round trip. While it
+  // is in flight the controller churns (stop -> transient paused, timeline
+  // reset), which otherwise reaches the car as a pause flicker / progress
+  // reset with no track change: "the forward button does not work". #skipping
+  // holds an optimistic playing state and swallows that churn until the next
+  // segment's mark lands (or a safety timeout fires).
+  #skipping = false;
+  #skipTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(resolveMediaSession: () => BridgeMediaSession | null = getMediaSession) {
     this.#resolveMediaSession = resolveMediaSession;
@@ -124,7 +133,14 @@ export class TTSMediaBridge {
           artwork = '';
         }
       }
-      await mediaSession.setActive({ active: true });
+      await mediaSession.setActive({
+        active: true,
+        // bookKey is `${hash}-${uniqueId()}`; the hash alone addresses the book
+        // for a readest://book/{hash} resume deep link from the car.
+        bookHash: meta.bookKey.split('-')[0],
+        bookTitle: meta.title,
+        bookAuthor: meta.author,
+      });
       await mediaSession.updateMetadata({
         title: meta.title,
         artist: meta.author,
@@ -139,6 +155,11 @@ export class TTSMediaBridge {
 
     this.#onSpeakMark = (e: Event) => {
       const mark = (e as CustomEvent<TTSMark>).detail;
+      // Only end the hold once the skipped-to segment is actually playing. A
+      // stray mark from the aborted segment (stop() during forward/backward)
+      // would otherwise clear the hold early and let the position push below
+      // surface a paused/stale state — the residual backward flicker.
+      if (this.#controller?.state === 'playing') this.#endSkip();
       void this.#updateMetadata(mark);
       void this.#updatePositionState();
     };
@@ -180,6 +201,7 @@ export class TTSMediaBridge {
         void mediaSession.setActive({ active: false });
       }
     }
+    this.#endSkip();
     this.#controller = null;
     this.#meta = null;
     this.#mediaSession = null;
@@ -213,8 +235,14 @@ export class TTSMediaBridge {
     });
     mediaSession.setActionHandler('seekforward', () => void controller()?.forward(true));
     mediaSession.setActionHandler('seekbackward', () => void controller()?.backward(true));
-    mediaSession.setActionHandler('nexttrack', () => void controller()?.forward());
-    mediaSession.setActionHandler('previoustrack', () => void controller()?.backward());
+    mediaSession.setActionHandler('nexttrack', () => {
+      this.#beginSkip();
+      void controller()?.forward();
+    });
+    mediaSession.setActionHandler('previoustrack', () => {
+      this.#beginSkip();
+      void controller()?.backward();
+    });
     if (mediaSession instanceof TauriMediaSession) {
       mediaSession.setActionHandler('seekto', ((positionMs: number) => {
         void controller()?.seekToTime(positionMs / 1000);
@@ -276,6 +304,9 @@ export class TTSMediaBridge {
     const mediaSession = this.#mediaSession;
     const ctrl = this.#controller;
     if (!mediaSession || !ctrl) return;
+    // Hold position/playing steady through a skip: a stray mark mid-transition
+    // must not push the timeline reset or a paused state to the car.
+    if (this.#skipping) return;
     await ctrl.ensureTimeline();
     const info = ctrl.getPlaybackInfo();
     if (!info || !Number.isFinite(info.duration) || info.duration <= 0) return;
@@ -296,6 +327,30 @@ export class TTSMediaBridge {
     }
   }
 
+  // Enter the skip hold: assert playing at the last-known position right away
+  // so the car gets instant, coherent feedback before the round trip lands.
+  #beginSkip(): void {
+    const mediaSession = this.#mediaSession;
+    this.#skipping = true;
+    if (mediaSession instanceof TauriMediaSession) {
+      void mediaSession.updatePlaybackState({ playing: true });
+    } else if (mediaSession) {
+      mediaSession.playbackState = 'playing';
+    }
+    if (this.#skipTimer) clearTimeout(this.#skipTimer);
+    // Safety net: if no mark arrives (e.g. the skip failed) stop holding so a
+    // later pause/stop can surface.
+    this.#skipTimer = setTimeout(() => this.#endSkip(), 4000);
+  }
+
+  #endSkip(): void {
+    if (this.#skipTimer) {
+      clearTimeout(this.#skipTimer);
+      this.#skipTimer = null;
+    }
+    this.#skipping = false;
+  }
+
   async #updatePlaybackState(): Promise<void> {
     const mediaSession = this.#mediaSession;
     const ctrl = this.#controller;
@@ -303,6 +358,10 @@ export class TTSMediaBridge {
     // Transit 'stopped' flickers on every paragraph advance; only surface
     // playing/paused flips to the OS.
     if (ctrl.state === 'stopped' && !ctrl.terminated) return;
+    // Hold the optimistic playing state through a skip's stop/paused churn; a
+    // terminal stop (end of book) still surfaces and ends the hold.
+    if (this.#skipping && !ctrl.terminated) return;
+    if (ctrl.terminated) this.#endSkip();
     if (mediaSession instanceof TauriMediaSession) {
       await mediaSession.updatePlaybackState({ playing: ctrl.state === 'playing' });
     } else {

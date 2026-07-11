@@ -150,6 +150,86 @@ describe('TTSMediaBridge', () => {
     expect(bridge.isBound).toBe(false);
   });
 
+  // Android Auto (and the lock screen) drive nexttrack/previoustrack. The
+  // native onSkipToNext/Previous fire an event into the WebView, where
+  // forward()/backward() run stop() then advance a paragraph — a ~1s round
+  // trip. During that window the controller churns (stop -> transient
+  // paused), which surfaced to the car as a pause flicker / progress-bar
+  // reset with no track change, i.e. "the forward button does not work".
+  // The bridge must give instant, coherent feedback: assert playing at once
+  // and swallow the transient churn until the next segment's mark lands.
+  test('skip asserts playing immediately (no dead zone before the round trip)', async () => {
+    await bind();
+    expect(fake.playbackState).toBe('none');
+    fake.handlers.get('nexttrack')!({} as MediaSessionActionDetails);
+    expect(controller.forward).toHaveBeenCalled();
+    expect(fake.playbackState).toBe('playing');
+  });
+
+  test('skip suppresses the transient stop/pause churn until the next mark', async () => {
+    await bind();
+    controller.emitState('playing');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.playbackState).toBe('playing');
+
+    // press "forward" in the car
+    fake.handlers.get('previoustrack')!({} as MediaSessionActionDetails);
+    expect(controller.backward).toHaveBeenCalled();
+
+    // backward() internally stops then re-speaks; the transient paused must
+    // not flicker to the car while the skip is in flight.
+    controller.emitState('paused');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.playbackState).toBe('playing'); // held, not flickered
+
+    // the new segment starts speaking -> the guard clears, metadata updates
+    controller.state = 'playing';
+    controller.emitMark('The new sentence.', '0');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.metadata).toBeTruthy();
+
+    // once the skip has landed, real state changes surface again
+    controller.emitState('paused');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.playbackState).toBe('paused');
+  });
+
+  test('a stray mark mid-skip (aborted segment) keeps the hold, no flicker', async () => {
+    await bind();
+    controller.emitState('playing');
+    await new Promise((r) => setTimeout(r, 0));
+
+    fake.handlers.get('previoustrack')!({} as MediaSessionActionDetails);
+    expect(fake.playbackState).toBe('playing');
+
+    // stop() aborts the old segment and emits a stray mark while NOT playing;
+    // it must not clear the hold or push a paused/position update.
+    controller.state = 'stopped';
+    controller.emitMark('aborted tail', '3');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.playbackState).toBe('playing'); // held
+    expect(fake.setPositionState).not.toHaveBeenCalled(); // position suppressed
+
+    // the real new segment plays -> hold ends, updates resume
+    controller.state = 'playing';
+    controller.emitMark('the previous sentence', '0');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.metadata).toBeTruthy();
+    expect(fake.setPositionState).toHaveBeenCalled();
+  });
+
+  test('a terminal stop during a skip (end of book) still surfaces', async () => {
+    await bind();
+    controller.emitState('playing');
+    await new Promise((r) => setTimeout(r, 0));
+    fake.handlers.get('nexttrack')!({} as MediaSessionActionDetails);
+    // forward() ran off the end of the book -> terminate.
+    controller.terminated = true;
+    controller.emitState('stopped');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.playbackState).toBe('paused'); // terminal stop is not swallowed
+  });
+
   test('section label falls back to the last known value when the source dies', async () => {
     let label: string | undefined = 'Chapter 7';
     await bridge.bind(controller as unknown as TTSController, {

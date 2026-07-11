@@ -7,6 +7,7 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { navigateToReader } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { parseBookDeepLink } from '@/utils/deeplink';
+import { setPendingTTSAutoplay } from '@/utils/ttsAutoplay';
 import { useTranslation } from './useTranslation';
 
 // Module-scoped: survives hook remounts (library <-> reader). getCurrent()
@@ -60,6 +61,9 @@ export function useOpenBookLink() {
     const handle = (url: string, coldStart = false) => {
       const parsed = parseBookDeepLink(url);
       if (!parsed) return;
+      // Android Auto cold-resume: remember to start read-aloud once this book's
+      // view inits (consumed in useBooksManager). Harmless if it never opens.
+      if (parsed.autoplay) setPendingTTSAutoplay(parsed.bookHash);
       // Dedupe ONLY the cold-start path. The OS persists the launch deep link
       // and re-delivers it via getCurrent() on every reader reload, which would
       // re-open the book in a loop. Live taps (app-incoming-url) are genuine

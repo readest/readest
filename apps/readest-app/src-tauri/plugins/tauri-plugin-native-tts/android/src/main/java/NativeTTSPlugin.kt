@@ -99,6 +99,9 @@ class SetMediaSessionActiveArgs {
   var notificationText: String? = null
   var foregroundServiceTitle: String? = null
   var foregroundServiceText: String? = null
+  var bookHash: String? = null
+  var bookTitle: String? = null
+  var bookAuthor: String? = null
 }
 
 @TauriPlugin(
@@ -547,6 +550,11 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                 MediaPlaybackService.pluginEventTrigger = { event, data -> trigger(event, data) }
                 MediaPlaybackService.currentTitle = FOREGROUND_SERVICE_TITLE
                 MediaPlaybackService.currentArtist = FOREGROUND_SERVICE_TEXT
+                // Persist the book so the Android Auto browse tree can offer a
+                // "Resume last book" entry after the process is cold.
+                args.bookHash?.let {
+                    MediaPlaybackService.saveLastBook(activity, it, args.bookTitle, args.bookAuthor)
+                }
                 val intent = Intent(activity, MediaPlaybackService::class.java).apply {
                     action = MediaPlaybackService.ACTION_ACTIVATE_SESSION
                 }

@@ -70,6 +70,11 @@ pub struct SetMediaSessionActiveRequest {
     pub notification_text: Option<String>,
     pub foreground_service_title: Option<String>,
     pub foreground_service_text: Option<String>,
+    // Identity of the book being read, persisted so the Android Auto browse
+    // tree can offer a "Resume last book" entry after the process is cold.
+    pub book_hash: Option<String>,
+    pub book_title: Option<String>,
+    pub book_author: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

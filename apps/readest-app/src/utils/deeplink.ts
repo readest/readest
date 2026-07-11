@@ -97,7 +97,7 @@ export const parseAnnotationDeepLink = (url: string): AnnotationDeepLink | null 
  * 4-segment annotation form `book/{hash}/annotation/{id}` is handled by
  * parseAnnotationDeepLink and must NOT match here.
  */
-export const parseBookDeepLink = (url: string): { bookHash: string } | null => {
+export const parseBookDeepLink = (url: string): { bookHash: string; autoplay?: boolean } | null => {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -121,6 +121,12 @@ export const parseBookDeepLink = (url: string): { bookHash: string } | null => {
   }
 
   if (segments.length === 2 && segments[0] === 'book' && segments[1]) {
+    // `?autoplay=tts` is appended by the Android Auto cold-resume launch to ask
+    // the reader to start read-aloud once the book is open. Only surface the
+    // flag when set so the common shape stays `{ bookHash }`.
+    if (parsed.searchParams.get('autoplay') === 'tts') {
+      return { bookHash: segments[1], autoplay: true };
+    }
     return { bookHash: segments[1] };
   }
   return null;

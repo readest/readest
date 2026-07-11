@@ -22,6 +22,11 @@ export interface MediaSessionState {
   notificationText?: string;
   foregroundServiceTitle?: string;
   foregroundServiceText?: string;
+  // Book identity persisted natively so Android Auto can offer a "Resume last
+  // book" entry when the process is cold (no active session).
+  bookHash?: string;
+  bookTitle?: string;
+  bookAuthor?: string;
 }
 
 interface Permissions {
@@ -77,8 +82,11 @@ export class TauriMediaSession {
     const seekListener = await addPluginListener(
       'native-tts',
       'media-session-seek',
-      (event: { payload: { position: number } }) => {
-        const position = event.payload.position;
+      // addPluginListener delivers the payload directly (as the other native-tts
+      // and native-bridge listeners consume it) — reading `.payload.position`
+      // threw, so lock-screen / Android Auto seeks never reached seekToTime.
+      (payload: { position: number }) => {
+        const position = payload.position;
         if (this.handlers['seekto']) {
           (this.handlers['seekto'] as (position: number) => void)(position);
         }

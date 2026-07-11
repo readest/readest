@@ -23,6 +23,14 @@
         android:hardwareAccelerated="true"
         android:usesCleartextTraffic="${usesCleartextTraffic}">
 
+        <!-- Android Auto: advertise the media capability so Readest shows up in
+             the car launcher and projects the TTS media session. Withdrawn in
+             #5038 after a Play Auto rejection (broken forward/back feedback);
+             re-enabled once the skip controls give instant, coherent state. -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+
         <!-- Sentry auto-init (ContentProvider). Empty DSN => disabled. Release
              is auto-detected from versionName; performance and PII stay at
              their safe off/false defaults. -->
@@ -149,6 +157,19 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="readest" />
+                
+                
+                
+                
+                
+            </intent-filter>
+            <intent-filter >
+                <action android:name="android.intent.action.VIEW" />
+                <!-- ChromeOS ARC++ uses a different action for deep links -->
+                <action android:name="org.chromium.arc.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="readest-onedrive" />
                 
                 
                 
