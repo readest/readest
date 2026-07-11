@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useSidebarStore } from '@/store/sidebarStore';
 import { DEFAULT_BOOK_SEARCH_CONFIG } from '@/services/constants';
 import { lookupTerm } from '@/services/ai/xrayService';
 import { isBookIndexed } from '@/services/ai/ragService';
@@ -41,6 +42,8 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
   const { settings } = useSettingsStore();
   const { getConfig } = useBookDataStore();
   const { getView } = useReaderStore();
+  const setSideBarBookKey = useSidebarStore((state) => state.setSideBarBookKey);
+  const setNotebookVisible = useNotebookStore((state) => state.setNotebookVisible);
   const setNotebookActiveTab = useNotebookStore((state) => state.setNotebookActiveTab);
   const aiSettings = settings?.aiSettings;
   const providerUnsupported = aiSettings?.enabled && aiSettings.provider !== 'ai-gateway';
@@ -164,6 +167,8 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
   };
 
   const handleOpenAI = () => {
+    setSideBarBookKey(bookKey);
+    setNotebookVisible(true);
     setNotebookActiveTab('ai');
     onDismiss?.();
   };
