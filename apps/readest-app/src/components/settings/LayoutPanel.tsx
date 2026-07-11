@@ -611,7 +611,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               ? Math.max(0, Math.round((16 - gridInsets.top) / 4) * 4) - gridInsets.top
               : 0
           }
-          max={88}
+          max={144}
           step={4}
         />
         <NumberInput
@@ -623,7 +623,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               ? Math.max(0, Math.round((16 - gridInsets.bottom) / 4) * 4) - gridInsets.bottom
               : 0
           }
-          max={88}
+          max={144}
           step={4}
         />
         <NumberInput
@@ -631,7 +631,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           value={showFooter && isVertical ? marginLeftPx : compactMarginLeftPx}
           onChange={showFooter && isVertical ? setMarginLeftPx : setCompactMarginLeftPx}
           min={0}
-          max={88}
+          max={144}
           step={4}
         />
         <NumberInput
@@ -639,7 +639,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           value={showHeader && isVertical ? marginRightPx : compactMarginRightPx}
           onChange={showHeader && isVertical ? setMarginRightPx : setCompactMarginRightPx}
           min={0}
-          max={88}
+          max={144}
           step={4}
         />
         <NumberInput
