@@ -2014,5 +2014,7 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "আপনার লাইব্রেরি, পড়ার অগ্রগতি এবং হাইলাইটগুলি আপনার Microsoft OneDrive-এর সাথে সিঙ্ক করুন।",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} নির্বাচিত থাকাকালীন বই, অগ্রগতি ও টীকা শুধুমাত্র আপনার OneDrive-এ সিঙ্ক হয়।",
   "Readest only accesses the files it creates in your OneDrive.": "Readest শুধুমাত্র আপনার OneDrive-এ নিজে তৈরি করা ফাইলগুলিতেই প্রবেশ করে।",
-  ". Make OneDrive the active cloud provider.": "। OneDrive-কে সক্রিয় ক্লাউড প্রদানকারী করুন।"
+  ". Make OneDrive the active cloud provider.": "। OneDrive-কে সক্রিয় ক্লাউড প্রদানকারী করুন।",
+  "Sentence Pause": "বাক্যের মধ্যে বিরতি",
+  "Paragraph Gap": "অনুচ্ছেদের মধ্যে বিরতি"
 }

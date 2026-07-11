@@ -2014,5 +2014,7 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Synchronisieren Sie Ihre Bibliothek, Ihren Lesefortschritt und Ihre Markierungen mit Ihrem Microsoft OneDrive.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Solange {{provider}} ausgewählt ist, werden Bücher, Fortschritt und Anmerkungen nur mit Ihrem OneDrive synchronisiert.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest greift nur auf die Dateien zu, die es in Ihrem OneDrive erstellt.",
-  ". Make OneDrive the active cloud provider.": ". OneDrive als aktiven Cloud-Anbieter festlegen."
+  ". Make OneDrive the active cloud provider.": ". OneDrive als aktiven Cloud-Anbieter festlegen.",
+  "Sentence Pause": "Satzpause",
+  "Paragraph Gap": "Absatzpause"
 }

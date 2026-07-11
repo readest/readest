@@ -1979,5 +1979,7 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "將您的書庫、閱讀進度和高亮與您的 Microsoft OneDrive 同步。",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "選擇 {{provider}} 後，書籍、進度和標註僅同步到您的 OneDrive。",
   "Readest only accesses the files it creates in your OneDrive.": "Readest 只會存取它在您的 OneDrive 中建立的檔案。",
-  ". Make OneDrive the active cloud provider.": "。將 OneDrive 設為目前使用的雲端服務供應商。"
+  ". Make OneDrive the active cloud provider.": "。將 OneDrive 設為目前使用的雲端服務供應商。",
+  "Sentence Pause": "句間停頓",
+  "Paragraph Gap": "段落間隔"
 }

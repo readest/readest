@@ -84,7 +84,7 @@ describe('buildCommandRegistry', () => {
     const panels = new Set(settingsItems.map((i) => i.panel));
     expect(panels.has('Font')).toBe(true);
     expect(panels.has('Layout')).toBe(true);
-    expect(panels.has('Color')).toBe(true);
+    expect(panels.has('Theme')).toBe(true);
     expect(panels.has('Control')).toBe(true);
     expect(panels.has('Language')).toBe(true);
     expect(panels.has('Custom')).toBe(true);

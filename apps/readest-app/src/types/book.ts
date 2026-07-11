@@ -314,6 +314,8 @@ export interface ViewConfig {
 
 export interface TTSConfig {
   ttsRate: number;
+  ttsSentenceGap: number;
+  ttsParagraphGap: number;
   ttsVoice: string;
   ttsLocation: string;
   ttsHighlightOptions: TTSHighlightOptions;

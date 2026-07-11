@@ -90,12 +90,21 @@ const createTTSNodeFilter = () =>
     contents: [{ tag: 'a', content: /^[\[\(]?[\*\d]+[\)\]]?$/ }],
   });
 
+// Silence inserted between paragraphs when auto-advancing during continuous
+// playback. Unlike the Edge-only inter-sentence gap, this applies to every
+// TTS client: the paragraph-to-paragraph transition (stop -> next -> speak)
+// is engine-agnostic, handled entirely in #speak()/forward() below. There is
+// no natural pause here otherwise -- the transition is as fast as the async
+// stop/init overhead allows, which reads as no pause at all.
+export const DEFAULT_PARAGRAPH_GAP_SEC = 0.3;
+
 export class TTSController extends EventTarget {
   appService: AppService | null = null;
   view: FoliateView;
   isAuthenticated: boolean = false;
   preprocessCallback?: (ssml: string) => Promise<string>;
   onSectionChange?: (sectionIndex: number) => Promise<void>;
+  #paragraphGapSec: number = DEFAULT_PARAGRAPH_GAP_SEC;
   #nossmlCnt: number = 0;
   // Consecutive native-TTS utterances that ended in a terminal 'error' without
   // a successful 'end' in between. Reset on success; caps skip-on-error so a
@@ -150,7 +159,7 @@ export class TTSController extends EventTarget {
   ttsRate: number = 1.0;
   ttsClient: TTSClient;
   ttsWebClient: TTSClient;
-  ttsEdgeClient: TTSClient;
+  ttsEdgeClient: EdgeTTSClient;
   ttsNativeClient: TTSClient | null = null;
   ttsWebVoices: TTSVoice[] = [];
   ttsEdgeVoices: TTSVoice[] = [];
@@ -505,6 +514,44 @@ export class TTSController extends EventTarget {
     return this.ttsClient === this.ttsEdgeClient;
   }
 
+  // Whether the active client supports the inter-sentence gap control (Edge only).
+  supportsGapControl(): boolean {
+    return this.ttsClient === this.ttsEdgeClient;
+  }
+
+  // Passthrough to the Edge client's inter-sentence gap. ttsEdgeClient is
+  // always a constructed instance, whether or not it's the currently active
+  // client (same as supportsPlaybackInfo/supportsGapControl's comparison).
+  setSentenceGap(sec: number): void {
+    this.ttsEdgeClient.setSentenceGap(sec);
+  }
+
+  // Universal (not Edge-only) paragraph-to-paragraph gap. See
+  // DEFAULT_PARAGRAPH_GAP_SEC and #delayParagraphGap for where it's applied.
+  setParagraphGap(sec: number): void {
+    this.#paragraphGapSec = sec;
+  }
+
+  // Abortable delay inserted before auto-advancing to the next paragraph.
+  // Scales with rate like the sentence gap so pauses shrink with speed.
+  // Races against `signal` so a stop()/pause() during the gap resolves
+  // immediately instead of leaving a stray forward() to fire afterward.
+  async #delayParagraphGap(signal: AbortSignal): Promise<void> {
+    const ms = (this.#paragraphGapSec / this.ttsRate) * 1000;
+    if (ms <= 0 || signal.aborted) return;
+    await new Promise<void>((resolve) => {
+      const onAbort = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+      const timer = setTimeout(() => {
+        signal.removeEventListener('abort', onAbort);
+        resolve();
+      }, ms);
+      signal.addEventListener('abort', onAbort, { once: true });
+    });
+  }
+
   // Position/duration of the current section playback at the current rate.
   // Null while no timeline exists (non-Edge client, timeline not yet built,
   // or nothing located yet) — the UI reserves a disabled slot for that state.
@@ -712,6 +759,8 @@ export class TTSController extends EventTarget {
         if (lastCode === 'end' && this.state === 'playing' && !oneTime) {
           this.#consecutiveSpeakErrors = 0;
           resolve();
+          await this.#delayParagraphGap(signal);
+          if (signal.aborted) return;
           await this.forward();
         } else if (
           lastCode === 'error' &&

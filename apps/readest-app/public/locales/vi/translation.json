@@ -1979,5 +1979,7 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Đồng bộ thư viện, tiến trình đọc và điểm nổi bật của bạn với Microsoft OneDrive của bạn.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Khi {{provider}} được chọn, sách, tiến độ và chú thích chỉ đồng bộ với OneDrive của bạn.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest chỉ truy cập các tệp do chính nó tạo trong OneDrive của bạn.",
-  ". Make OneDrive the active cloud provider.": ". Đặt OneDrive làm nhà cung cấp đám mây đang hoạt động."
+  ". Make OneDrive the active cloud provider.": ". Đặt OneDrive làm nhà cung cấp đám mây đang hoạt động.",
+  "Sentence Pause": "Khoảng dừng giữa các câu",
+  "Paragraph Gap": "Khoảng dừng giữa đoạn văn"
 }

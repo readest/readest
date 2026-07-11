@@ -158,6 +158,64 @@ describe('EdgeTTSClient Web Audio playback', () => {
     await done;
   });
 
+  test('setSentenceGap before speaking changes the observed gap', async () => {
+    const client = await startClient();
+    await client.setRate(1);
+    client.setSentenceGap(0.4); // gap = 0.4 / 1
+    const { done } = collectSpeak(client, new AbortController().signal);
+    await flush();
+    await flush();
+    const [first, second] = ctx().sources;
+    expect(second!.startedAt! - first!.endTime).toBeCloseTo(0.4, 5);
+    await ctx().advanceTo(5);
+    await done;
+  });
+
+  test('setSentenceGap mid-session affects the next scheduled gap', async () => {
+    parsedMarks = [
+      { name: '0', text: 'First sentence.', language: 'en' },
+      { name: '1', text: 'Second sentence.', language: 'en' },
+      { name: '2', text: 'Third sentence.', language: 'en' },
+      { name: '3', text: 'Fourth sentence.', language: 'en' },
+    ];
+    const client = await startClient();
+    await client.setRate(1);
+    const { done } = collectSpeak(client, new AbortController().signal);
+    // Initial scheduling of chunks
+    await flush();
+    await flush();
+    let sources = ctx().sources;
+    const [first, second] = sources;
+    expect(second!.startedAt! - first!.endTime).toBeCloseTo(0.15, 5);
+
+    // Change gap mid-session
+    client.setSentenceGap(0.3);
+
+    // Advance playback to trigger chunk 0's onended and free scheduling capacity
+    // for chunk 2 to be scheduled. Then advance more to free chunk 1 so chunk 3 is scheduled.
+    await ctx().advanceTo(1.1);
+    await flush();
+
+    // Chunk 2 should now be scheduled with the old gap (from chunk 1's timing)
+    sources = ctx().sources;
+    expect(sources.length).toBeGreaterThanOrEqual(3);
+
+    // Advance further to free chunk 2, allowing chunk 3 to be scheduled with the new gap
+    await ctx().advanceTo(3.4);
+    await flush();
+
+    sources = ctx().sources;
+    expect(sources.length).toBeGreaterThanOrEqual(4);
+
+    // Chunk 2 is the first chunk scheduled after setSentenceGap, so the gap
+    // preceding chunk 3 (chunk 2's schedule-time gap) reflects the new value.
+    const [, , thirdChunk, fourthChunk] = sources;
+    expect(fourthChunk!.startedAt! - thirdChunk!.endTime).toBeCloseTo(0.3, 5);
+
+    await ctx().advanceTo(5);
+    await done;
+  });
+
   test('word tracking follows the audio clock and survives pause/resume', async () => {
     createAudioDataBehavior = async () => ({
       data: new ArrayBuffer(48000), // 2s

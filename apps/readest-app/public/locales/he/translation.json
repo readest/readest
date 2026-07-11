@@ -1974,5 +1974,7 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "סנכרן את הספרייה, התקדמות הקריאה וההדגשות שלך עם Microsoft OneDrive שלך.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "כאשר {{provider}} נבחר, ספרים, התקדמות והערות מסתנכרנים רק עם ה-OneDrive שלך.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest ניגש רק לקבצים שהוא יוצר ב-OneDrive שלך.",
-  ". Make OneDrive the active cloud provider.": ". הפוך את OneDrive לספק הענן הפעיל."
+  ". Make OneDrive the active cloud provider.": ". הפוך את OneDrive לספק הענן הפעיל.",
+  "Sentence Pause": "השהיה בין משפטים",
+  "Paragraph Gap": "הפסקה בין פסקאות"
 }

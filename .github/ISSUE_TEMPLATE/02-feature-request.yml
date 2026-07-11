@@ -1,0 +1,46 @@
+name: Feature request
+description: Share an idea or suggestion
+title: "FR: FEATURE REQUEST"
+labels: ["type: enhancement"]
+body:
+  - type: "markdown"
+    attributes:
+      value: |
+        <p align="center">
+          <img src="https://github.com/readest/readest/blob/main/apps/readest-app/src-tauri/icons/icon.png?raw=true" alt="Readest Logo" width="20%" />
+        </p>
+
+        Please replace the **`FEATURE REQUEST`** template above describing your feature request.
+
+        ---
+  - type: "textarea"
+    id: "problem_being_solved"
+    attributes:
+      label: "What problem would this feature solve?"
+      description: |
+        A clear and concise of what problem this feature solves.
+      placeholder: "E.g: I think it takes too many steps to [...]"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "feature_request"
+    attributes:
+      label: "Describe the solution you'd like."
+      description: |
+        A clear and concise of what problem this feature solves.
+      placeholder: "E.g: I think it takes too many steps to [...]"
+    validations:
+      required: true
+  - type: "textarea"
+    id: "alternatives"
+    attributes:
+      label: "Describe workarounds you may have used to acheive the same results."
+      description: |
+        A clear and concise description of any workarounds you've used.
+      placeholder: "E.g: This functionality can be changed in the settings menu, but I want a keyboard shortcut as well."
+  - type: "textarea"
+    id: "additional_context"
+    attributes:
+      label: "Additional Context"
+      description: |
+        Add any additional context or screenshots about the feature request here.

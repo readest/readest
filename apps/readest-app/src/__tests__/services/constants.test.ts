@@ -648,6 +648,8 @@ describe('services/constants', () => {
       expect(typeof DEFAULT_TTS_CONFIG).toBe('object');
       expect(typeof DEFAULT_TTS_CONFIG.ttsRate).toBe('number');
       expect(DEFAULT_TTS_CONFIG.ttsRate).toBeGreaterThan(0);
+      expect(typeof DEFAULT_TTS_CONFIG.ttsSentenceGap).toBe('number');
+      expect(DEFAULT_TTS_CONFIG.ttsSentenceGap).toBeGreaterThan(0);
       expect(typeof DEFAULT_TTS_CONFIG.ttsVoice).toBe('string');
       expect(typeof DEFAULT_TTS_CONFIG.ttsLocation).toBe('string');
       expect(typeof DEFAULT_TTS_CONFIG.ttsMediaMetadata).toBe('string');

@@ -44,7 +44,7 @@ vi.mock('@/store/readerStore', () => ({
   }),
 }));
 
-const settings = { globalViewSettings: { ttsRate: 1.0 } };
+const settings = { globalViewSettings: { ttsRate: 1.0, ttsSentenceGap: 0.15 } };
 const saveSettings = vi.fn();
 const settingsState = { settings, setSettings: vi.fn(), saveSettings };
 vi.mock('@/store/settingsStore', () => ({
@@ -79,6 +79,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   ttsLang: 'en',
   isPlaying: true,
   hasTimeline: true,
+  hasGapControl: false,
   timeoutOption: 0,
   timeoutTimestamp: 0,
   chapterRemainingSec: null as number | null,
@@ -87,6 +88,8 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   onBackward: vi.fn(),
   onForward: vi.fn(),
   onSetRate: vi.fn(),
+  onSetSentenceGap: vi.fn(),
+  onSetParagraphGap: vi.fn(),
   onGetVoices: vi.fn().mockResolvedValue(voiceGroups),
   onSetVoice: vi.fn(),
   onGetVoiceId: vi.fn().mockReturnValue('ava'),
@@ -101,6 +104,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
 describe('TTSPlayerSheet', () => {
   beforeEach(() => {
     viewSettings['ttsRate'] = 1.0;
+    viewSettings['ttsSentenceGap'] = 0.15;
     viewSettings['isEink'] = false;
     getBookData.mockReturnValue({
       book: { title: 'Alice in Wonderland', coverImageUrl: null },
@@ -162,6 +166,26 @@ describe('TTSPlayerSheet', () => {
     expect(props.onSetRate).toHaveBeenCalledWith(1.5);
     expect(viewSettings['ttsRate']).toBe(1.5);
     expect(settings.globalViewSettings.ttsRate).toBe(1.5);
+    expect(saveSettings).toHaveBeenCalled();
+  });
+
+  test('gap control is absent for a non-Edge client (hasGapControl false)', () => {
+    const props = makeProps({ hasGapControl: false });
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Speed'));
+    expect(screen.queryByText(/Sentence Pause/)).toBeNull();
+    expect(screen.queryByRole('radiogroup', { name: 'Sentence Pause' })).toBeNull();
+  });
+
+  test('gap chips show for an Edge client and selecting persists the gap', () => {
+    const props = makeProps({ hasGapControl: true });
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Speed'));
+    expect(screen.getByText(/Sentence Pause/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('radio', { name: '0.4s' }));
+    expect(props.onSetSentenceGap).toHaveBeenCalledWith(0.4);
+    expect(viewSettings['ttsSentenceGap']).toBe(0.4);
+    expect(settings.globalViewSettings.ttsSentenceGap).toBe(0.4);
     expect(saveSettings).toHaveBeenCalled();
   });
 

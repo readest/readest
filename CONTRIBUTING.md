@@ -108,7 +108,7 @@ pnpm tauri icon ../../data/icons/readest-book.png
 pnpm tauri ios dev
 # or if you want to dev on a real device
 pnpm tauri ios dev --host
-``
+```
 
 ### 5. Build for Production
 

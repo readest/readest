@@ -1979,5 +1979,7 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ซิงค์คลังหนังสือ ความคืบหน้าการอ่าน และไฮไลต์ของคุณกับ Microsoft OneDrive ของคุณ",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "เมื่อเลือก {{provider}} หนังสือ ความคืบหน้า และคำอธิบายประกอบจะซิงค์ไปยัง OneDrive ของคุณเท่านั้น",
   "Readest only accesses the files it creates in your OneDrive.": "Readest จะเข้าถึงเฉพาะไฟล์ที่สร้างขึ้นเองใน OneDrive ของคุณเท่านั้น",
-  ". Make OneDrive the active cloud provider.": ". ตั้งให้ OneDrive เป็นผู้ให้บริการคลาวด์ที่ใช้งานอยู่"
+  ". Make OneDrive the active cloud provider.": ". ตั้งให้ OneDrive เป็นผู้ให้บริการคลาวด์ที่ใช้งานอยู่",
+  "Sentence Pause": "หยุดระหว่างประโยค",
+  "Paragraph Gap": "หยุดชั่วคราวระหว่างย่อหน้า"
 }

@@ -15,6 +15,8 @@ import {
   TTSHighlightOptions,
   TTSVoicesGroup,
 } from '@/services/tts';
+import { DEFAULT_SENTENCE_GAP_SEC } from '@/services/tts/EdgeTTSClient';
+import { DEFAULT_PARAGRAPH_GAP_SEC } from '@/services/tts/TTSController';
 import { eventDispatcher } from '@/utils/event';
 import { genSSMLRaw, parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
@@ -790,6 +792,8 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
           ttsController.setLang(lang);
           ttsController.setRate(viewSettings.ttsRate);
+          ttsController.setSentenceGap(viewSettings.ttsSentenceGap ?? DEFAULT_SENTENCE_GAP_SEC);
+          ttsController.setParagraphGap(viewSettings.ttsParagraphGap ?? DEFAULT_PARAGRAPH_GAP_SEC);
           ttsController.speak(ssml, oneTime, () => handleStop(bookKey));
           ttsController.setTargetLang(getTTSTargetLang() || '');
         }
@@ -848,6 +852,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
   const handleSupportsPlaybackInfo = useCallback(() => {
     return ttsControllerRef.current?.supportsPlaybackInfo() ?? false;
+  }, []);
+
+  const handleSupportsGapControl = useCallback(() => {
+    return ttsControllerRef.current?.supportsGapControl() ?? false;
   }, []);
 
   // Playback callbacks
@@ -918,6 +926,18 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     [],
   );
 
+  // Inter-sentence gap: read live at schedule time by the controller, so
+  // changing it must not stop/restart playback like handleSetRate does.
+  const handleSetSentenceGap = useCallback((sec: number) => {
+    ttsControllerRef.current?.setSentenceGap(sec);
+  }, []);
+
+  // Paragraph gap: applies to every TTS client (not Edge-only), read live by
+  // the controller when auto-advancing, so no stop/restart here either.
+  const handleSetParagraphGap = useCallback((sec: number) => {
+    ttsControllerRef.current?.setParagraphGap(sec);
+  }, []);
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSetVoice = useCallback(
     throttle(async (voice: string, lang: string) => {
@@ -985,6 +1005,8 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     handleForward,
     handlePause,
     handleSetRate,
+    handleSetSentenceGap,
+    handleSetParagraphGap,
     handleSetVoice,
     handleGetVoices,
     handleGetVoiceId,
@@ -993,6 +1015,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     handleSeekTo,
     handleGetPlaybackInfo,
     handleSupportsPlaybackInfo,
+    handleSupportsGapControl,
     refreshTtsLang,
   };
 };

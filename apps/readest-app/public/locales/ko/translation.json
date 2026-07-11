@@ -1979,5 +1979,7 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "라이브러리, 읽기 진행 상황, 하이라이트를 Microsoft OneDrive와 동기화합니다.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}}를 선택하면 책, 진행률, 주석이 OneDrive에만 동기화됩니다.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest는 OneDrive에서 직접 만든 파일에만 접근합니다.",
-  ". Make OneDrive the active cloud provider.": ". OneDrive를 사용할 클라우드 제공업체로 설정합니다."
+  ". Make OneDrive the active cloud provider.": ". OneDrive를 사용할 클라우드 제공업체로 설정합니다.",
+  "Sentence Pause": "문장 사이 일시정지",
+  "Paragraph Gap": "문단 간 정지"
 }

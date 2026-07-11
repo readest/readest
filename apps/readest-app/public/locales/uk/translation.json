@@ -2084,5 +2084,7 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Синхронізуйте свою бібліотеку, проґрес читання та виділення з вашим Microsoft OneDrive.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Поки вибрано {{provider}}, книги, прогрес і анотації синхронізуються лише з вашим OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest має доступ лише до файлів, які сам створює у вашому OneDrive.",
-  ". Make OneDrive the active cloud provider.": ". Зробити OneDrive активним хмарним провайдером."
+  ". Make OneDrive the active cloud provider.": ". Зробити OneDrive активним хмарним провайдером.",
+  "Sentence Pause": "Пауза між реченнями",
+  "Paragraph Gap": "Пауза між абзацами"
 }

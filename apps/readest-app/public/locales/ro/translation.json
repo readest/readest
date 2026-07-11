@@ -1974,5 +1974,7 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Sincronizează-ți biblioteca, progresul citirii și evidențierile cu Microsoft OneDrive-ul tău.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Cât timp {{provider}} este selectat, cărțile, progresul și adnotările se sincronizează doar cu OneDrive-ul tău.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest accesează doar fișierele pe care le creează în OneDrive-ul tău.",
-  ". Make OneDrive the active cloud provider.": ". Setează OneDrive ca furnizor de cloud activ."
+  ". Make OneDrive the active cloud provider.": ". Setează OneDrive ca furnizor de cloud activ.",
+  "Sentence Pause": "Pauză între propoziții",
+  "Paragraph Gap": "Pauză între paragrafe"
 }

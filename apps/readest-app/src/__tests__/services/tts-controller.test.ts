@@ -16,7 +16,7 @@ vi.mock('@/services/tts/WebSpeechClient', () => ({
 
 vi.mock('@/services/tts/EdgeTTSClient', () => ({
   EdgeTTSClient: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
-    Object.assign(this, createMockTTSClient('edge'));
+    Object.assign(this, createMockTTSClient('edge'), { setSentenceGap: vi.fn() });
   }),
 }));
 
@@ -293,6 +293,25 @@ describe('TTSController', () => {
     test('delegates to ttsClient.setRate', async () => {
       await controller.setRate(2.0);
       expect(controller.ttsClient.setRate).toHaveBeenCalledWith(2.0);
+    });
+  });
+
+  describe('supportsGapControl', () => {
+    test('returns true when ttsClient is the edge client', () => {
+      controller.ttsClient = controller.ttsEdgeClient;
+      expect(controller.supportsGapControl()).toBe(true);
+    });
+
+    test('returns false when ttsClient is not the edge client', () => {
+      controller.ttsClient = controller.ttsWebClient;
+      expect(controller.supportsGapControl()).toBe(false);
+    });
+  });
+
+  describe('setSentenceGap', () => {
+    test('delegates to ttsEdgeClient.setSentenceGap with the given value', () => {
+      controller.setSentenceGap(0.5);
+      expect(controller.ttsEdgeClient.setSentenceGap).toHaveBeenCalledWith(0.5);
     });
   });
 

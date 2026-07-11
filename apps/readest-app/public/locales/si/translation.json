@@ -2014,5 +2014,7 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ඔබේ පුස්තකාලය, කියවීමේ ප්‍රගතිය සහ ඉස්මතු කිරීම් ඔබේ Microsoft OneDrive සමඟ සමමුහුර්ත කරන්න.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} තෝරා ඇති විට, පොත්, ප්‍රගතිය සහ සටහන් ඔබේ OneDrive වෙත පමණක් සමමුහුර්ත වේ.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest ප්‍රවේශ වන්නේ ඔබේ OneDrive හි එය සාදන ගොනුවලට පමණි.",
-  ". Make OneDrive the active cloud provider.": ". OneDrive සක්‍රිය cloud සපයන්නා ලෙස සකසන්න."
+  ". Make OneDrive the active cloud provider.": ". OneDrive සක්‍රිය cloud සපයන්නා ලෙස සකසන්න.",
+  "Sentence Pause": "වාක්‍ය අතර විරාමය",
+  "Paragraph Gap": "ඡේද අතර විරාමය"
 }
