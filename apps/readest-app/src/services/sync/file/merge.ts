@@ -87,7 +87,7 @@ export const mergeBookConfig = (
  * Overlay the user-facing metadata of `remote` onto `local`, preserving every
  * device-local / file-system field: `filePath`, `sourceTitle` (which names the
  * on-disk file), `coverImageUrl` (a device-local blob URL the caller
- * regenerates), reading progress, `hash`, `format`, `createdAt`, etc.
+ * regenerates), `hash`, `format`, `createdAt`, etc.
  *
  * Two independent merge clocks, mirroring the native cloud sync:
  *   - The metadata field subset applies only when `remote.updatedAt` is
@@ -102,6 +102,17 @@ export const mergeBookConfig = (
  *     #4634). This survives the asymmetric race where this device edited
  *     metadata AFTER a peer changed the status: whole-book LWW alone would
  *     silently drop the status change.
+ *
+ * `progress` rides the row's `updatedAt` clock like the rest of the subset, so
+ * a peer's reading position reaches the shelf without opening the book (#5067).
+ * The bookshelf renders `book.progress`, and only `saveConfig` ever wrote it —
+ * so before this the percentage stayed stale until the user opened the book,
+ * even though the row itself re-sorted to the front on the remote `updatedAt`.
+ * This is the same field the native cloud sync carries on its `books` row.
+ * Unlike tags / groups it falls back to the local value when the remote row has
+ * none: absent progress means "that peer never opened the book", not "the user
+ * cleared it" (there is no clear-progress gesture), and a raw assignment would
+ * let a rename on an unread peer wipe a real percentage.
  *
  * The metadata subset mirrors `getBookWithUpdatedMetadata` in `utils/book.ts`,
  * the local side of the same operation. The cover image is replicated
@@ -120,6 +131,7 @@ export const mergeBookMetadata = (local: Book, remote: Book): Book => {
         groupId: remote.groupId,
         groupName: remote.groupName,
         tags: remote.tags,
+        progress: remote.progress ?? local.progress,
         updatedAt: remote.updatedAt,
       }
     : { ...local };

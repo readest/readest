@@ -111,14 +111,13 @@ describe('mergeBookConfig (LWW scalars + CRDT notes)', () => {
 });
 
 describe('mergeBookMetadata (LWW field subset)', () => {
-  test('overlays only metadata fields, preserves local file/progress fields', () => {
+  test('overlays only metadata fields, preserves local file-system fields', () => {
     const local = {
       hash: 'h',
       title: 'L',
       author: 'L',
       sourceTitle: 'src',
       filePath: '/p',
-      progress: [1, 2],
       updatedAt: 1,
     } as Book;
     const remote = { hash: 'h', title: 'R', author: 'R', updatedAt: 9 } as Book;
@@ -127,8 +126,35 @@ describe('mergeBookMetadata (LWW field subset)', () => {
     expect(m.author).toBe('R');
     expect(m.sourceTitle).toBe('src');
     expect(m.filePath).toBe('/p');
-    expect(m.progress).toEqual([1, 2]);
     expect(m.updatedAt).toBe(9);
+  });
+
+  test('carries remote reading progress when remote is newer (#5067)', () => {
+    const local = { hash: 'h', title: 'T', author: 'A', progress: [1, 100], updatedAt: 1 } as Book;
+    const remote = {
+      hash: 'h',
+      title: 'T',
+      author: 'A',
+      progress: [62, 100],
+      updatedAt: 9,
+    } as Book;
+    expect(mergeBookMetadata(local, remote).progress).toEqual([62, 100]);
+  });
+
+  test('keeps local reading progress when local is newer (#5067)', () => {
+    const local = { hash: 'h', title: 'T', author: 'A', progress: [62, 100], updatedAt: 9 } as Book;
+    const remote = { hash: 'h', title: 'T', author: 'A', progress: [1, 100], updatedAt: 1 } as Book;
+    expect(mergeBookMetadata(local, remote).progress).toEqual([62, 100]);
+  });
+
+  test('a progress-less remote row never wipes local progress (#5067)', () => {
+    // Unlike tags / group membership, absent progress means "this peer never
+    // opened the book", not "the user cleared it" — there is no clear gesture.
+    const local = { hash: 'h', title: 'T', author: 'A', progress: [62, 100], updatedAt: 1 } as Book;
+    const remote = { hash: 'h', title: 'R', author: 'A', updatedAt: 9 } as Book;
+    const m = mergeBookMetadata(local, remote);
+    expect(m.title).toBe('R');
+    expect(m.progress).toEqual([62, 100]);
   });
 
   test('carries remote group membership (add-to-group) when remote is newer (#4942)', () => {

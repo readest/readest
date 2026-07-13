@@ -158,6 +158,31 @@ describe('FileSyncEngine metadata reconciliation (#4756)', () => {
     expect(indexedBook.groupName).toBe('Sci-Fi');
   });
 
+  test('pulls newer remote reading progress onto the library row (#5067)', async () => {
+    // The peer read to 62% and pushed its row. Without this, the shelf keeps
+    // rendering 0% until the user opens the book (which copies the synced
+    // config.progress onto the row), even though the row itself re-sorts to
+    // the front because the merge applies the remote updatedAt.
+    const local = makeLocalBook({ updatedAt: 100 });
+    const remote = makeLocalBook({ progress: [62, 100], updatedAt: 200 });
+    const capture: { index?: RemoteLibraryIndex | null } = {};
+    const provider = makeProvider(makeRemoteIndex(remote, 200), null, capture);
+
+    const updateBookMetadata = vi.fn(async (_book: Book) => {});
+    const store = makeStore({ updateBookMetadata });
+
+    const engine = new FileSyncEngine(provider, store);
+    await engine.syncLibrary([local], {
+      strategy: 'silent',
+      syncBooks: false,
+      deviceId: 'pc-device',
+    });
+
+    expect(updateBookMetadata).toHaveBeenCalledTimes(1);
+    expect(updateBookMetadata.mock.calls[0]![0].progress).toEqual([62, 100]);
+    expect(capture.index!.books.find((b) => b.hash === 'h1')!.progress).toEqual([62, 100]);
+  });
+
   test('pulls a peer readingStatus change even when local metadata is newer (#4634 semantics)', async () => {
     // Peer marked the book Finished (status clock 250), then this device
     // edited the title (book clock 300 > remote 200). Whole-book LWW alone
