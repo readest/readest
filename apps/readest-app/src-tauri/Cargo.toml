@@ -104,6 +104,12 @@ mobi = "0.8"
 # re-exports sentry-rust-minidump for desktop native crashes. `rustls` avoids
 # the native-tls/OpenSSL system dependency so the transport builds for
 # Android/iOS. Native mobile crashes are handled by sentry-android/-cocoa.
+#
+# The plugin's default `minidump` feature pulls in crash-handler, which
+# interposes `pthread_create` and panics on 32-bit ARM when it cannot resolve
+# the real symbol. That panic crosses a `nounwind` libc boundary, so every
+# armeabi-v7a device aborted at launch (#5070). Minidumps are desktop-only, so
+# the feature is enabled per-target below instead of by default.
 sentry = { version = "0.42", default-features = false, features = [
   "backtrace",
   "contexts",
@@ -111,7 +117,7 @@ sentry = { version = "0.42", default-features = false, features = [
   "reqwest",
   "rustls",
 ] }
-tauri-plugin-sentry = "0.5"
+tauri-plugin-sentry = { version = "0.5", default-features = false }
 
 [target."cfg(target_os = \"macos\")".dependencies]
 rand = "0.8"
@@ -130,6 +136,9 @@ tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-window-state = "2"
 discord-rich-presence = "1.0.0"
+# Out-of-process minidump handler for native desktop crashes; `minidump::init`
+# is only called on these targets.
+tauri-plugin-sentry = { version = "0.5", features = ["minidump"] }
 
 [target.'cfg(windows)'.dependencies]
 # Resolve the user's default browser from the registry for the cold-browser

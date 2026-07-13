@@ -178,6 +178,35 @@ mod tests {
         is_ignored_browser_error, is_mobi_cover_panic_frame, parse_webview_info, release_name,
     };
 
+    /// `tauri-plugin-sentry`'s default `minidump` feature pulls in
+    /// sentry-rust-minidump -> minidumper-child -> crash-handler, whose
+    /// `pthread_create` interposer panics on 32-bit ARM ("We could not obtain the
+    /// real pthread_create()"). The panic unwinds out of a `nounwind` libc
+    /// function, so every armeabi-v7a device aborted with SIGABRT at launch
+    /// (#5070). Minidumps are desktop-only anyway (`minidump::init` is
+    /// `cfg`-gated off for mobile), so the feature must be enabled per-target
+    /// rather than by default, keeping crash-handler out of Android/iOS builds.
+    #[test]
+    fn minidump_feature_is_not_enabled_by_default() {
+        let manifest = include_str!("../Cargo.toml");
+        let base_dep = manifest
+            .lines()
+            .map(str::trim)
+            .find(|line| line.starts_with("tauri-plugin-sentry"))
+            .expect("tauri-plugin-sentry must be declared in Cargo.toml");
+
+        assert!(
+            base_dep.contains("default-features = false"),
+            "tauri-plugin-sentry must set default-features = false so mobile builds \
+             don't link crash-handler (#5070); found: {base_dep}"
+        );
+        assert!(
+            !base_dep.contains("minidump"),
+            "the minidump feature must be enabled only for desktop targets (#5070); \
+             found: {base_dep}"
+        );
+    }
+
     #[test]
     fn dsn_is_none_when_unset_or_blank() {
         assert_eq!(dsn_from_env(None), None);
