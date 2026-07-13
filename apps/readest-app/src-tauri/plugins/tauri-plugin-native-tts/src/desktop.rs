@@ -63,3 +63,21 @@ impl<R: Runtime> NativeTts<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 }
+
+impl<R: Runtime> NativeTts<R> {
+    pub fn playout_enqueue(
+        &self,
+        _payload: PlayoutEnqueueRequest,
+    ) -> crate::Result<PlayoutEnqueueResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+    pub fn playout_control(
+        &self,
+        _payload: PlayoutControlRequest,
+    ) -> crate::Result<PlayoutControlResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+    pub fn playout_position(&self) -> crate::Result<PlayoutPositionResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+}

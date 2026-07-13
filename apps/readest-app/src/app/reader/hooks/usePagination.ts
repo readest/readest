@@ -200,7 +200,9 @@ export const usePagination = (
   const hardwarePageTurner = useSettingsStore((s) => s.settings.hardwarePageTurner);
   // While this book's TTS is actively playing, the volume keys must control the
   // system volume instead of flipping pages (#4691). A paused or stopped session
-  // hands them back to the page-flip interception.
+  // hands them back to the page-flip interception. Safe on iOS because the
+  // native interception never reconfigures the audio session while native TTS
+  // owns it (a .mixWithOthers flip there would vacate the Now Playing slot).
   const [ttsPlaying, setTtsPlaying] = useState(false);
 
   const handlePageFlip = async (

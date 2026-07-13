@@ -355,6 +355,42 @@
           "markdownDescription": "Denies the pause command without any pre-configured scope."
         },
         {
+          "description": "Enables the playout_control command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-playout-control",
+          "markdownDescription": "Enables the playout_control command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the playout_control command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-playout-control",
+          "markdownDescription": "Denies the playout_control command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the playout_enqueue command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-playout-enqueue",
+          "markdownDescription": "Enables the playout_enqueue command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the playout_enqueue command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-playout-enqueue",
+          "markdownDescription": "Denies the playout_enqueue command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the playout_position command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-playout-position",
+          "markdownDescription": "Enables the playout_position command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the playout_position command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-playout-position",
+          "markdownDescription": "Denies the playout_position command without any pre-configured scope."
+        },
+        {
           "description": "Enables the register_listener command without any pre-configured scope.",
           "type": "string",
           "const": "allow-register-listener",
@@ -523,10 +559,10 @@
           "markdownDescription": "Denies the update_media_session_state command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-init`\n- `allow-speak`\n- `allow-stop`\n- `allow-pause`\n- `allow-resume`\n- `allow-set-rate`\n- `allow-set-pitch`\n- `allow-set-voice`\n- `allow-get-all-voices`\n- `allow-set-media-session-active`\n- `allow-update-media-session-state`\n- `allow-update-media-session-metadata`\n- `allow-update-carplay-state`\n- `allow-register-listener`\n- `allow-remove-listener`\n- `allow-check-permissions`\n- `allow-request-permissions`\n- `allow-checkPermissions`\n- `allow-requestPermissions`",
+          "description": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-init`\n- `allow-speak`\n- `allow-stop`\n- `allow-pause`\n- `allow-resume`\n- `allow-set-rate`\n- `allow-set-pitch`\n- `allow-set-voice`\n- `allow-get-all-voices`\n- `allow-set-media-session-active`\n- `allow-update-media-session-state`\n- `allow-update-media-session-metadata`\n- `allow-update-carplay-state`\n- `allow-playout-enqueue`\n- `allow-playout-control`\n- `allow-playout-position`\n- `allow-register-listener`\n- `allow-remove-listener`\n- `allow-check-permissions`\n- `allow-request-permissions`\n- `allow-checkPermissions`\n- `allow-requestPermissions`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-init`\n- `allow-speak`\n- `allow-stop`\n- `allow-pause`\n- `allow-resume`\n- `allow-set-rate`\n- `allow-set-pitch`\n- `allow-set-voice`\n- `allow-get-all-voices`\n- `allow-set-media-session-active`\n- `allow-update-media-session-state`\n- `allow-update-media-session-metadata`\n- `allow-update-carplay-state`\n- `allow-register-listener`\n- `allow-remove-listener`\n- `allow-check-permissions`\n- `allow-request-permissions`\n- `allow-checkPermissions`\n- `allow-requestPermissions`"
+          "markdownDescription": "Default permissions for the plugin\n#### This default permission set includes:\n\n- `allow-init`\n- `allow-speak`\n- `allow-stop`\n- `allow-pause`\n- `allow-resume`\n- `allow-set-rate`\n- `allow-set-pitch`\n- `allow-set-voice`\n- `allow-get-all-voices`\n- `allow-set-media-session-active`\n- `allow-update-media-session-state`\n- `allow-update-media-session-metadata`\n- `allow-update-carplay-state`\n- `allow-playout-enqueue`\n- `allow-playout-control`\n- `allow-playout-position`\n- `allow-register-listener`\n- `allow-remove-listener`\n- `allow-check-permissions`\n- `allow-request-permissions`\n- `allow-checkPermissions`\n- `allow-requestPermissions`"
         }
       ]
     }

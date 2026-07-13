@@ -38,6 +38,14 @@ vi.mock('@/utils/ssml', () => ({
 
 vi.mock('@/utils/misc', () => ({
   getUserLocale: vi.fn((lang: string) => (lang === 'en' ? 'en-US' : lang)),
+  // Pins the WebAudioPlayer path: iOS Tauri selects the native playout.
+  getOSPlatform: vi.fn(() => 'macos'),
+  stubTranslation: (key: string) => key,
+}));
+
+vi.mock('@/services/environment', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/environment')>()),
+  isTauriAppPlatform: () => false,
 }));
 
 vi.mock('@/services/tts/TTSUtils', async (importOriginal) => {

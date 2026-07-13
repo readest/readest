@@ -16,6 +16,15 @@
 //
 // This module speaks to the context through structural interfaces so jsdom
 // tests can drive a fake clock.
+//
+// iOS now-playing note: TTS has no HTMLMediaElement (chunks connect straight
+// to ctx.destination), so WebKit never publishes a now-playing session for it.
+// Routing the graph through a MediaStreamAudioDestinationNode + <audio> was
+// tried and reverted: WebKit then published the element's own stream clock,
+// fighting setPositionState on the lock screen/CarPlay (jumping timeline) and
+// rendering underrun glitches while the context was suspended. iOS instead
+// drives MPNowPlayingInfoCenter/MPRemoteCommandCenter natively via the
+// native-tts plugin (getMediaSession -> TauriMediaSession).
 
 export interface TTSAudioBuffer {
   readonly sampleRate: number;

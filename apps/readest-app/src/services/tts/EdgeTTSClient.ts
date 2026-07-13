@@ -1,5 +1,7 @@
-import { getUserLocale } from '@/utils/misc';
+import { getOSPlatform, getUserLocale } from '@/utils/misc';
+import { isTauriAppPlatform } from '@/services/environment';
 import { isSameLang } from '@/utils/lang';
+import { NativeAudioPlayer } from './NativeAudioPlayer';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
 import { EdgeSpeechTTS, EdgeTTSPayload, EDGE_TTS_PROTOCOL, TTSWordBoundary } from '@/libs/edgeTTS';
 import { TTSGranularity, TTSMark, TTSVoice, TTSVoicesGroup } from './types';
@@ -75,7 +77,15 @@ export class EdgeTTSClient implements TTSClient {
   #sentenceGapSec = DEFAULT_SENTENCE_GAP_SEC;
 
   #edgeTTS: EdgeSpeechTTS | null = null;
-  #player = new WebAudioPlayer();
+  // iOS plays natively (app-process AVPlayer): audio in the app's own audio
+  // session makes Now Playing, pause-slot retention, AirPods routing, and the
+  // mute switch behave like a music app — the WebAudio path renders in
+  // WebKit's GPU process under a session the app cannot own. Everywhere else
+  // the gapless WSOLA WebAudio pipeline stays.
+  #player: WebAudioPlayer | NativeAudioPlayer =
+    getOSPlatform() === 'ios' && isTauriAppPlatform()
+      ? new NativeAudioPlayer()
+      : new WebAudioPlayer();
   #activeGeneration: number | null = null;
   #activeQueue: AsyncQueue<SpeakQueueEvent> | null = null;
   #chunkMeta: ChunkMeta[] = [];
@@ -338,13 +348,44 @@ export class EdgeTTSClient implements TTSClient {
         if (!audio || signal.aborted || this.#activeGeneration !== generation) return;
         this.#recordDurations(voiceId, mark.text, audio.boundaries);
 
+        if (this.#player instanceof NativeAudioPlayer) {
+          // Native playout: no decode/trim/WSOLA — the raw MP3 goes to the
+          // AVPlayer, which time-stretches at the pitch-preserving native
+          // rate. Word boundaries stay in original media time, matching the
+          // player's media clock, so trimStartSec is 0 by construction.
+          const ready = await this.#player.waitUntilReady(generation);
+          if (!ready || signal.aborted) return;
+          const index = chunkMeta.length;
+          const meta: ChunkMeta = {
+            mark,
+            boundaries: audio.boundaries,
+            trimStartSec: 0,
+            trimmedDurationSec: 0,
+          };
+          // Push before enqueue: the chunk-start event can arrive as soon as
+          // the native side starts the item.
+          chunkMeta.push(meta);
+          try {
+            const durationSec = await this.#player.scheduleRawChunk(generation, index, audio.data, {
+              gapSec: this.#sentenceGapSec / rate,
+            });
+            meta.trimmedDurationSec = durationSec;
+            this.#recordDurations(voiceId, mark.text, audio.boundaries, durationSec);
+          } catch (error) {
+            console.warn('Failed to enqueue TTS audio for:', mark.text, error);
+            queue.push({ kind: 'chunk-skip', markName: mark.name });
+          }
+          continue;
+        }
+
+        const webPlayer = this.#player;
         let prepared: {
           buffer: TTSAudioBuffer;
           trimStartSec: number;
           trimmedDurationSec: number;
         };
         try {
-          prepared = await this.#prepareChunkBuffer(audio.data, rate);
+          prepared = await this.#prepareChunkBuffer(webPlayer, audio.data, rate);
         } catch (error) {
           // Malformed MP3 must not dead-end the session: same UX as no-audio.
           console.warn('Failed to decode TTS audio for:', mark.text, error);
@@ -379,13 +420,14 @@ export class EdgeTTSClient implements TTSClient {
   }
 
   async #prepareChunkBuffer(
+    player: WebAudioPlayer,
     data: ArrayBuffer,
     rate: number,
   ): Promise<{ buffer: TTSAudioBuffer; trimStartSec: number; trimmedDurationSec: number }> {
     // decodeAudioData resamples to the context rate (44.1/48kHz on real
     // devices, not the stream's 24kHz) — all math below must use the decoded
     // buffer's sampleRate.
-    const decoded = await this.#player.decode(data);
+    const decoded = await player.decode(data);
     const sampleRate = decoded.sampleRate;
     const channel = decoded.getChannelData(0);
     const bounds = findSpeechBounds(channel, sampleRate);
@@ -396,7 +438,7 @@ export class EdgeTTSClient implements TTSClient {
     const trimmed = channel.subarray(startSample, endSample);
     const trimmedDurationSec = trimmed.length / sampleRate;
     const samples = rate !== 1 ? timeStretch(trimmed, sampleRate, rate) : trimmed;
-    const buffer = await this.#player.createMonoBuffer(samples, sampleRate);
+    const buffer = await player.createMonoBuffer(samples, sampleRate);
     // Silence-trimmed edges sit on non-zero samples; fade the buffer's own copy
     // so chunk starts/ends don't click against the inter-sentence gap.
     applyEdgeFade(buffer.getChannelData(0), sampleRate);
@@ -485,10 +527,13 @@ export class EdgeTTSClient implements TTSClient {
   }
 
   async setRate(rate: number) {
-    // Applied client-side via WSOLA time-stretch at schedule time; takes
-    // effect on the next speak() session (the controller restarts playback on
-    // rate changes).
+    // Web path: applied client-side via WSOLA time-stretch at schedule time;
+    // takes effect on the next speak() session (the controller restarts
+    // playback on rate changes). Native path: applied live by the AVPlayer.
     this.#rate = rate;
+    if (this.#player instanceof NativeAudioPlayer) {
+      await this.#player.setRate(rate);
+    }
   }
 
   async setPitch(pitch: number) {

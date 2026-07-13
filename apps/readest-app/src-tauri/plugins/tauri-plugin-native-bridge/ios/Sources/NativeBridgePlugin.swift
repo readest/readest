@@ -105,6 +105,56 @@ class VolumeKeyHandler: NSObject {
   private(set) var isIntercepting = false
   private var webView: WKWebView?
   private var volumeSlider: UISlider?
+  private var ttsOwnsAudioSession = false
+  private var ttsSessionObservers: [NSObjectProtocol] = []
+
+  override init() {
+    super.init()
+    // tauri-plugin-native-tts announces claim/release of the shared audio
+    // session (see claimAudioSession/deactivateRemoteCommands there). While
+    // TTS owns it (playing or paused), interception must not reconfigure the
+    // session: flipping the non-mixable .playback claim to .mixWithOthers
+    // makes the app ineligible for the Now Playing slot (lock-screen card
+    // dismissed, AirPod controls fall through to another app). Volume KVO
+    // works on the TTS-held session as-is.
+    let center = NotificationCenter.default
+    ttsSessionObservers.append(
+      center.addObserver(
+        forName: Notification.Name("ReadestTTSAudioSessionClaimed"), object: nil, queue: .main
+      ) { [weak self] _ in
+        self?.ttsOwnsAudioSession = true
+      })
+    ttsSessionObservers.append(
+      center.addObserver(
+        forName: Notification.Name("ReadestTTSAudioSessionReleased"), object: nil, queue: .main
+      ) { [weak self] _ in
+        guard let self = self else { return }
+        self.ttsOwnsAudioSession = false
+        // TTS teardown deactivated the session, and it is unordered relative
+        // to a (re)start of interception. If interception is live, re-own the
+        // session so volume KVO keeps firing.
+        if self.isIntercepting {
+          self.configureAudioSession()
+        }
+      })
+  }
+
+  deinit {
+    for observer in ttsSessionObservers {
+      NotificationCenter.default.removeObserver(observer)
+    }
+  }
+
+  private func configureAudioSession() {
+    // TTS holds an active non-mixable session; leave it untouched (see init).
+    if ttsOwnsAudioSession { return }
+    do {
+      try audioSession?.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+      try audioSession?.setActive(true)
+    } catch {
+      logger.error("Failed to activate audio session: \(error)")
+    }
+  }
 
   func startInterception(webView: WKWebView) {
     if isIntercepting {
@@ -116,12 +166,7 @@ class VolumeKeyHandler: NSObject {
     isIntercepting = true
 
     audioSession = AVAudioSession.sharedInstance()
-    do {
-      try audioSession?.setCategory(.playback, mode: .default, options: [.mixWithOthers])
-      try audioSession?.setActive(true)
-    } catch {
-      logger.error("Failed to activate audio session: \(error)")
-    }
+    configureAudioSession()
 
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
       guard let self = self else { return }
@@ -770,6 +815,10 @@ class NativeBridgePlugin: Plugin {
     }
   }
 
+  // OBSOLETE for TTS (no JS callers since 2026-07): the native-tts plugin now
+  // claims the audio session itself (non-mixable .playback/.spokenAudio) when
+  // its media session activates. The .mixWithOthers set here disqualifies the
+  // app from Now Playing — do not reintroduce calls around TTS playback.
   @objc public func use_background_audio(_ invoke: Invoke) {
     do {
       let args = try invoke.parseArgs(UseBackgroundAudioRequestArgs.self)

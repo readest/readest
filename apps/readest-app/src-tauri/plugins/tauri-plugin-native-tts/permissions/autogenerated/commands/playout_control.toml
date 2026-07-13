@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-playout-control"
+description = "Enables the playout_control command without any pre-configured scope."
+commands.allow = ["playout_control"]
+
+[[permission]]
+identifier = "deny-playout-control"
+description = "Denies the playout_control command without any pre-configured scope."
+commands.deny = ["playout_control"]

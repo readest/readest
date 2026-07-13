@@ -12,7 +12,6 @@ import env from '@/services/environment';
 import { stubTranslation as _ } from '@/utils/misc';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { invokeUseBackgroundAudio } from '@/utils/bridge';
 import { eventDispatcher } from '@/utils/event';
 import { releaseUnblockAudio, ttsMediaBridge, TTSMediaBridgeMeta } from './ttsMediaBridge';
 import type { TTSController } from './TTSController';
@@ -152,10 +151,9 @@ export class TTSSessionManager extends EventTarget {
 
     ttsMediaBridge.unbind();
     releaseUnblockAudio();
-    await Promise.all([
-      session.controller.shutdown().catch((err) => console.warn('TTS shutdown failed:', err)),
-      invokeUseBackgroundAudio({ enabled: false }).catch(() => {}),
-    ]);
+    // No use_background_audio(false) here: bridge.unbind() deactivates the
+    // native media session, which releases the iOS audio session itself.
+    await session.controller.shutdown().catch((err) => console.warn('TTS shutdown failed:', err));
     this.#stopping = false;
   }
 

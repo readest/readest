@@ -22,7 +22,6 @@ import { genSSMLRaw, parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
 import { isCfiInLocation } from '@/utils/cfi';
 import { getLocale } from '@/utils/misc';
-import { invokeUseBackgroundAudio } from '@/utils/bridge';
 import { estimateTTSTime } from '@/utils/ttsTime';
 import { releaseUnblockAudio, ttsMediaBridge, unblockAudio } from '@/services/tts/ttsMediaBridge';
 import { getBookHashFromKey, ttsSessionManager } from '@/services/tts/TTSSessionManager';
@@ -669,9 +668,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
               .then(() => ttsController.shutdown())
               .catch((error) => console.warn('TTS shutdown failed:', error))
           : Promise.resolve(),
-        appService?.isIOSApp
-          ? invokeUseBackgroundAudio({ enabled: false }).catch(() => {})
-          : Promise.resolve(),
         Promise.resolve()
           .then(() => ttsMediaBridge.unbind())
           .catch(() => {}),
@@ -748,9 +744,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         // HTMLMediaElement is playing, and Edge playback no longer has one.
         unblockAudio();
         void ensureSharedAudioContext();
-        if (appService?.isIOSApp) {
-          await invokeUseBackgroundAudio({ enabled: true });
-        }
+        // No use_background_audio here: on iOS the native-tts media session
+        // claims the audio session itself on activation (non-mixable
+        // .playback/.spokenAudio). The old call set .mixWithOthers, which
+        // disqualifies the app from Now Playing and fought the claim.
         setTtsClientsInitialized(false);
 
         setShowIndicator(true);

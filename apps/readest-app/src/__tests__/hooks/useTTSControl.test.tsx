@@ -210,6 +210,7 @@ vi.mock('@/utils/cfi', () => ({
 
 vi.mock('@/utils/misc', () => ({
   getLocale: () => 'en',
+  getOSPlatform: () => 'macos',
   stubTranslation: (key: string) => key,
 }));
 

@@ -17,6 +17,9 @@ Default permissions for the plugin
 - `allow-update-media-session-state`
 - `allow-update-media-session-metadata`
 - `allow-update-carplay-state`
+- `allow-playout-enqueue`
+- `allow-playout-control`
+- `allow-playout-position`
 - `allow-register-listener`
 - `allow-remove-listener`
 - `allow-check-permissions`
@@ -159,6 +162,84 @@ Enables the pause command without any pre-configured scope.
 <td>
 
 Denies the pause command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:allow-playout-control`
+
+</td>
+<td>
+
+Enables the playout_control command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:deny-playout-control`
+
+</td>
+<td>
+
+Denies the playout_control command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:allow-playout-enqueue`
+
+</td>
+<td>
+
+Enables the playout_enqueue command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:deny-playout-enqueue`
+
+</td>
+<td>
+
+Denies the playout_enqueue command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:allow-playout-position`
+
+</td>
+<td>
+
+Enables the playout_position command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:deny-playout-position`
+
+</td>
+<td>
+
+Denies the playout_position command without any pre-configured scope.
 
 </td>
 </tr>

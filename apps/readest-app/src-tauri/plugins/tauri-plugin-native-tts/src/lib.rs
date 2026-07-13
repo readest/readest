@@ -49,6 +49,9 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::update_media_session_state,
             commands::update_media_session_metadata,
             commands::update_carplay_state,
+            commands::playout_enqueue,
+            commands::playout_control,
+            commands::playout_position,
         ])
         .setup(|app, api| {
             #[cfg(mobile)]

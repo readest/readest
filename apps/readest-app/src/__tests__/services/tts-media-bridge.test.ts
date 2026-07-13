@@ -108,6 +108,49 @@ describe('TTSMediaBridge', () => {
     expect(controller.forward).toHaveBeenCalled();
   });
 
+  // 'play'/'pause' are reused by audio-focus events (iOS interruptions,
+  // Android focus loss, headphone unplug). As toggles they would INVERT when
+  // state already matches — unplugging headphones while paused would start
+  // speaking from the phone speaker.
+  test('play and pause handlers are directional, not toggles', async () => {
+    await bind();
+    controller.state = 'playing';
+    fake.handlers.get('play')!({} as MediaSessionActionDetails);
+    expect(controller.start).not.toHaveBeenCalled();
+    controller.state = 'paused';
+    fake.handlers.get('pause')!({} as MediaSessionActionDetails);
+    expect(controller.pause).not.toHaveBeenCalled();
+    // The web MediaSession vocabulary has no 'toggle'; it is Tauri-only.
+    expect(fake.handlers.has('toggle')).toBe(false);
+  });
+
+  test('the Tauri session gets a toggle action that toggles both ways', async () => {
+    class RecordingTauriSession extends TauriMediaSession {
+      actions = new Map<string, (() => void) | ((position: number) => void)>();
+      override setActionHandler(
+        action: string,
+        handler: (() => void) | ((position: number) => void) | null,
+      ) {
+        if (handler) this.actions.set(action, handler);
+        else this.actions.delete(action);
+      }
+      override async setActive() {}
+      override async updateMetadata() {}
+      override async updatePlaybackState() {}
+    }
+    const tauriSession = new RecordingTauriSession();
+    bridge = new TTSMediaBridge(() => tauriSession as unknown as MediaSession);
+    await bridge.bind(controller as unknown as TTSController, meta());
+    const toggle = tauriSession.actions.get('toggle') as () => void;
+    expect(toggle).toBeDefined();
+    controller.state = 'playing';
+    toggle();
+    expect(controller.pause).toHaveBeenCalled();
+    controller.state = 'paused';
+    toggle();
+    expect(controller.start).toHaveBeenCalled();
+  });
+
   test('speak-mark events update metadata and clamped position state headless', async () => {
     await bind();
     controller.getPlaybackInfo.mockReturnValue({ position: 90, duration: 60, measuredFraction: 1 });
@@ -133,6 +176,62 @@ describe('TTSMediaBridge', () => {
     controller.emitState('playing');
     await new Promise((r) => setTimeout(r, 0));
     expect(fake.playbackState).toBe('playing');
+  });
+
+  // Every paragraph advance transits 'playing' -> 'stopped' -> 'playing'. A
+  // position push triggered by the transit 'stopped' (or resolving during it)
+  // reads a non-playing state and lands a rate-0 write; when it arrives after
+  // the follow-up 'playing' write, the lock screen / CarPlay shows paused with
+  // a frozen clock while audio keeps playing (and CarPlay's play button then
+  // toggle-PAUSES the live session).
+  test('a transit stopped state change never pushes a paused position state', async () => {
+    await bind();
+    controller.emitState('playing');
+    await new Promise((r) => setTimeout(r, 0));
+    fake.setPositionState.mockClear();
+
+    controller.emitState('stopped'); // transit: paragraph advance
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.setPositionState).not.toHaveBeenCalledWith(
+      expect.objectContaining({ playbackRate: 0 }),
+    );
+  });
+
+  test('a mark position push that resolves mid-transit is dropped, not sent paused', async () => {
+    await bind();
+    controller.emitState('playing');
+    await new Promise((r) => setTimeout(r, 0));
+    fake.setPositionState.mockClear();
+
+    // The timeline await yields, and the paragraph transit begins meanwhile.
+    let releaseTimeline!: () => void;
+    controller.ensureTimeline.mockReturnValueOnce(
+      new Promise<null>((resolve) => {
+        releaseTimeline = () => resolve(null);
+      }),
+    );
+    controller.emitMark('Sentence.', '0');
+    await new Promise((r) => setTimeout(r, 0));
+    controller.state = 'stopped'; // transit begins while the push is in flight
+    releaseTimeline();
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(fake.setPositionState).not.toHaveBeenCalledWith(
+      expect.objectContaining({ playbackRate: 0 }),
+    );
+  });
+
+  test('a real pause pushes a frozen position state (rate 0)', async () => {
+    await bind();
+    controller.emitState('playing');
+    await new Promise((r) => setTimeout(r, 0));
+    fake.setPositionState.mockClear();
+
+    controller.emitState('paused');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.setPositionState).toHaveBeenCalledWith(
+      expect.objectContaining({ playbackRate: 0 }),
+    );
   });
 
   test('rebinding the same controller refreshes meta without duplicate listeners', async () => {
@@ -203,6 +302,10 @@ describe('TTSMediaBridge', () => {
     await bind();
     controller.emitState('playing');
     await new Promise((r) => setTimeout(r, 0));
+    // A state change now also pushes the position/rate (so a mid-sentence
+    // pause reaches the car); clear it so the assertion below isolates the
+    // skip window, where the position must stay suppressed.
+    fake.setPositionState.mockClear();
 
     fake.handlers.get('previoustrack')!({} as MediaSessionActionDetails);
     expect(fake.playbackState).toBe('playing');
