@@ -63,6 +63,15 @@ describe('OllamaProvider', () => {
     expect(result).toBe(true);
   });
 
+  test('isAvailable should use default Ollama URL when settings URL is empty', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true });
+    const settings: AISettings = { ...DEFAULT_AI_SETTINGS, enabled: true, ollamaBaseUrl: '' };
+    const provider = new OllamaProvider(settings);
+
+    await provider.isAvailable();
+    expect(mockFetch).toHaveBeenCalledWith('http://127.0.0.1:11434/api/tags', expect.any(Object));
+  });
+
   test('isAvailable should return false when Ollama not running', async () => {
     mockFetch.mockRejectedValueOnce(new Error('Connection refused'));
     const settings: AISettings = { ...DEFAULT_AI_SETTINGS, enabled: true };
@@ -110,6 +119,10 @@ describe('OllamaProvider', () => {
 });
 
 describe('AIGatewayProvider', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   test('should throw if no API key', () => {
     const settings: AISettings = { ...DEFAULT_AI_SETTINGS, enabled: true, provider: 'ai-gateway' };
 
@@ -168,6 +181,35 @@ describe('AIGatewayProvider', () => {
     (provider as unknown as { settings: AISettings }).settings.aiGatewayApiKey = '';
     const result = await provider.healthCheck();
     expect(result).toBe(false);
+  });
+
+  test('healthCheck should make a minimal Gateway request with the selected model', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true });
+    const settings: AISettings = {
+      ...DEFAULT_AI_SETTINGS,
+      enabled: true,
+      provider: 'ai-gateway',
+      aiGatewayApiKey: 'test-key',
+      aiGatewayModel: 'openai/gpt-5-nano',
+    };
+    const provider = new AIGatewayProvider(settings);
+
+    await expect(provider.healthCheck()).resolves.toBe(true);
+    const [url, init] = mockFetch.mock.calls[0]!;
+    expect(url).toBe('https://ai-gateway.vercel.sh/v1/chat/completions');
+    expect(init).toEqual(
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({ Authorization: 'Bearer test-key' }),
+      }),
+    );
+    expect(JSON.parse((init as RequestInit).body as string)).toEqual(
+      expect.objectContaining({
+        model: 'openai/gpt-5-nano',
+        stream: false,
+        messages: [{ role: 'user', content: 'hi' }],
+      }),
+    );
   });
 });
 

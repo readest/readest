@@ -61,6 +61,7 @@ export function chunkSection(
             bookHash,
             sectionIndex,
             chapterTitle,
+            chapterNumber: sectionIndex + 1,
             text: text.trim(),
             pageNumber: Math.floor(cumulativeSizeBeforeSection / SIZE_PER_PAGE),
           },
@@ -83,6 +84,7 @@ export function chunkSection(
           bookHash,
           sectionIndex,
           chapterTitle,
+          chapterNumber: sectionIndex + 1,
           text: remaining,
           pageNumber: Math.floor((cumulativeSizeBeforeSection + position) / SIZE_PER_PAGE),
         });
@@ -101,6 +103,7 @@ export function chunkSection(
         bookHash,
         sectionIndex,
         chapterTitle,
+        chapterNumber: sectionIndex + 1,
         text: chunkText,
         pageNumber: Math.floor((cumulativeSizeBeforeSection + position) / SIZE_PER_PAGE),
       });

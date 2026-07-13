@@ -32,7 +32,8 @@ beforeEach(() => {
     activeConversationId: null,
     conversations: [],
     messages: [],
-    isLoadingHistory: false,
+    isLoadingConversations: false,
+    isLoadingMessages: false,
     currentBookHash: null,
   });
 });
@@ -45,7 +46,8 @@ describe('aiChatStore', () => {
       expect(state.activeConversationId).toBeNull();
       expect(state.conversations).toEqual([]);
       expect(state.messages).toEqual([]);
-      expect(state.isLoadingHistory).toBe(false);
+      expect(state.isLoadingConversations).toBe(false);
+      expect(state.isLoadingMessages).toBe(false);
       expect(state.currentBookHash).toBeNull();
     });
   });
@@ -63,7 +65,7 @@ describe('aiChatStore', () => {
       const state = useAIChatStore.getState();
       expect(state.conversations).toEqual(convs);
       expect(state.currentBookHash).toBe('book1');
-      expect(state.isLoadingHistory).toBe(false);
+      expect(state.isLoadingConversations).toBe(false);
       expect(mockGetConversations).toHaveBeenCalledWith('book1');
     });
 
@@ -101,7 +103,7 @@ describe('aiChatStore', () => {
       await useAIChatStore.getState().loadConversations('book1');
 
       const state = useAIChatStore.getState();
-      expect(state.isLoadingHistory).toBe(false);
+      expect(state.isLoadingConversations).toBe(false);
       expect(state.conversations).toEqual([]);
     });
   });
@@ -133,7 +135,7 @@ describe('aiChatStore', () => {
       const state = useAIChatStore.getState();
       expect(state.activeConversationId).toBe('c1');
       expect(state.messages).toEqual(msgs);
-      expect(state.isLoadingHistory).toBe(false);
+      expect(state.isLoadingMessages).toBe(false);
     });
 
     test('handles error when loading messages', async () => {
@@ -144,7 +146,7 @@ describe('aiChatStore', () => {
       const state = useAIChatStore.getState();
       expect(state.activeConversationId).toBe('c1');
       expect(state.messages).toEqual([]);
-      expect(state.isLoadingHistory).toBe(false);
+      expect(state.isLoadingMessages).toBe(false);
     });
   });
 

@@ -9,7 +9,7 @@ export async function POST(req: Request): Promise<Response> {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 403 });
     }
 
-    const { texts, single, apiKey } = await req.json();
+    const { texts, single, apiKey, model } = await req.json();
 
     if (!texts || !Array.isArray(texts) || texts.length === 0) {
       return NextResponse.json({ error: 'Texts array required' }, { status: 400 });
@@ -21,15 +21,17 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     const gateway = createGateway({ apiKey: gatewayApiKey });
-    const model = gateway.embeddingModel(
-      process.env['AI_GATEWAY_EMBEDDING_MODEL'] || 'openai/text-embedding-3-small',
+    const embeddingModel = gateway.embeddingModel(
+      typeof model === 'string' && model.trim().length > 0
+        ? model.trim()
+        : process.env['AI_GATEWAY_EMBEDDING_MODEL'] || 'openai/text-embedding-3-small',
     );
 
     if (single) {
-      const { embedding } = await embed({ model, value: texts[0] });
+      const { embedding } = await embed({ model: embeddingModel, value: texts[0] });
       return NextResponse.json({ embedding });
     } else {
-      const { embeddings } = await embedMany({ model, values: texts });
+      const { embeddings } = await embedMany({ model: embeddingModel, values: texts });
       return NextResponse.json({ embeddings });
     }
   } catch (error) {

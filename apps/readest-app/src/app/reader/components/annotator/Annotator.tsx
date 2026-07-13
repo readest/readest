@@ -74,6 +74,7 @@ import { annotationToolButtons } from './AnnotationTools';
 import AnnotationRangeEditor from './AnnotationRangeEditor';
 import SelectionRangeEditor from './SelectionRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
+import XRayPopup from './XRayPopup';
 import DictionaryPopup from './DictionaryPopup';
 import DictionarySheet from './DictionarySheet';
 import TranslatorPopup from './TranslatorPopup';
@@ -144,6 +145,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const [selection, setSelection] = useState<TextSelection | null>(null);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
+  const [showXRayPopup, setShowXRayPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
@@ -188,7 +190,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const pendingWordLensDictRef = useRef(false);
 
   const showingPopup =
-    showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup;
+    showAnnotPopup || showDictionaryPopup || showXRayPopup || showDeepLPopup || showProofreadPopup;
 
   const popupPadding = useResponsiveSize(10);
   const trianglePadding = popupPadding * 2 + 6;
@@ -303,6 +305,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       setSelection(null);
       setShowAnnotPopup(false);
       setShowDictionaryPopup(false);
+      setShowXRayPopup(false);
       setShowDeepLPopup(false);
       setShowProofreadPopup(false);
       setEditingAnnotation(null);
@@ -421,6 +424,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
               setShowAnnotPopup(false);
               setShowDeepLPopup(true);
               setShowDictionaryPopup(false);
+              setShowXRayPopup(false);
             }
           }
         } catch (err) {
@@ -1042,6 +1046,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setShowAnnotPopup(true);
     setShowDeepLPopup(false);
     setShowDictionaryPopup(false);
+    setShowXRayPopup(false);
   };
 
   const handleCopy = (dismissPopup = true) => {
@@ -1293,7 +1298,15 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       return;
     }
     setShowAnnotPopup(false);
+    setShowXRayPopup(false);
     setShowDictionaryPopup(true);
+  };
+
+  const handleXRay = () => {
+    if (!selection || !selection.text) return;
+    setShowAnnotPopup(false);
+    setShowDictionaryPopup(false);
+    setShowXRayPopup(true);
   };
 
   const handleTranslation = () => {
@@ -1671,6 +1684,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         return { tooltipText: _(label), Icon, onClick: handleSearch };
       case 'dictionary':
         return { tooltipText: _(label), Icon, onClick: handleDictionary };
+      case 'xray':
+        return { tooltipText: _(label), Icon, onClick: handleXRay };
       case 'translate':
         return { tooltipText: _(label), Icon, onClick: handleTranslation };
       case 'tts':
@@ -1734,6 +1749,19 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             />
           );
         })()}
+      {showXRayPopup && trianglePosition && dictPopupPosition && (
+        <XRayPopup
+          term={selection?.text as string}
+          bookKey={bookKey}
+          language={bookData.bookDoc?.metadata.language as string}
+          maxPageIncluded={progress?.pageinfo?.current ?? 0}
+          position={dictPopupPosition}
+          trianglePosition={trianglePosition}
+          popupWidth={dictPopupWidth}
+          popupHeight={dictPopupHeight}
+          onDismiss={handleDismissPopupAndSelection}
+        />
+      )}
       {showDeepLPopup && trianglePosition && translatorPopupPosition && (
         <TranslatorPopup
           text={selection?.text as string}

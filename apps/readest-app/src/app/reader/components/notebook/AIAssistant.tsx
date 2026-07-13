@@ -15,7 +15,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useAIChatStore } from '@/store/aiChatStore';
-import { aiLogger, createTauriAdapter } from '@/services/ai';
+import { aiLogger, aiStore, createTauriAdapter, updateXRayForProgress } from '@/services/ai';
 import {
   LegacyIdbBackend,
   ReedyBackend,
@@ -24,11 +24,12 @@ import {
   type RetrievalBackend,
   type SourceItem,
 } from '@/services/ai/adapters';
-import type { EmbeddingProgress, AISettings, AIMessage } from '@/services/ai/types';
+import type { EmbeddingProgress, AISettings, AIMessage, IndexingState } from '@/services/ai/types';
 import type { RetrievedChunk } from '@/services/reedy/retrieval/BookRetriever';
 import { useEnv } from '@/context/EnvContext';
 import { isTauriAppPlatform } from '@/services/environment';
 import type { AppService } from '@/types/system';
+import { eventDispatcher } from '@/utils/event';
 import { ReedyAssistant } from '@/services/reedy/ui/ReedyAssistant';
 import type { ReadingContextSnapshot } from '@/services/reedy/tools/builtins/types';
 
@@ -104,7 +105,7 @@ const AIAssistantChat = ({
     activeConversationId,
     messages: storedMessages,
     addMessage,
-    isLoadingHistory,
+    isLoadingMessages,
   } = useAIChatStore();
 
   // use a ref to keep up-to-date options without triggering re-renders of the runtime
@@ -180,7 +181,7 @@ const AIAssistantChat = ({
       adapter={adapter}
       historyAdapter={historyAdapter}
       onResetIndex={onResetIndex}
-      isLoadingHistory={isLoadingHistory}
+      isLoadingHistory={isLoadingMessages}
       hasActiveConversation={!!activeConversationId}
       sourceStore={sourceStore}
       currentTurnId={currentTurnId}
@@ -317,16 +318,25 @@ const LegacyAIAssistant = ({ bookKey }: AIAssistantProps) => {
   const progress = useBookProgress(bookKey);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isIndexing, setIsIndexing] = useState(false);
-  const [indexProgress, setIndexProgress] = useState<EmbeddingProgress | null>(null);
+  const [indexingState, setIndexingState] = useState<IndexingState | null>(null);
   const [indexed, setIndexed] = useState(false);
   const [currentTurnId, setCurrentTurnId] = useState<string | null>(null);
+  const hasAutoRestored = useRef(false);
 
   const bookHash = bookKey.split('-')[0] || '';
   const bookTitle = bookData?.book?.title || 'Unknown';
   const authorName = bookData?.book?.author || '';
   const currentPage = progress?.pageinfo?.current ?? 0;
   const aiSettings = settings?.aiSettings;
+  const { loadConversations, setActiveConversation, createConversation } = useAIChatStore();
+  const isIndexing = !indexed && indexingState?.status === 'indexing';
+  const indexProgress: EmbeddingProgress | null = indexingState?.phase
+    ? {
+        current: indexingState.current ?? 0,
+        total: indexingState.total ?? 0,
+        phase: indexingState.phase,
+      }
+    : null;
 
   // Per-instance source store, plus the active backend chosen via the same
   // selectBackend gate the chat adapter will hit (Reedy on Tauri when
@@ -344,37 +354,193 @@ const LegacyAIAssistant = ({ bookKey }: AIAssistantProps) => {
 
   // check if book is indexed on mount
   useEffect(() => {
-    if (bookHash && backend) {
-      backend.isIndexed(bookHash).then((result) => {
-        setIndexed(result);
+    let cancelled = false;
+
+    const loadIndexState = async () => {
+      if (!bookHash || !backend) {
         setIsLoading(false);
-      });
-    } else if (!backend) {
+        setIndexingState(null);
+        return;
+      }
+
+      const [indexedResult, storedState] = await Promise.all([
+        backend.isIndexed(bookHash),
+        backend.kind === 'legacy-idb' ? aiStore.getIndexingState(bookHash) : Promise.resolve(null),
+      ]);
+      if (cancelled) return;
+      setIndexed(indexedResult);
+      setIndexingState(storedState);
       setIsLoading(false);
-    } else {
-      setIsLoading(false);
-    }
+    };
+    void loadIndexState();
+
+    const handleIndexingUpdate = (event: CustomEvent) => {
+      const state = event.detail as IndexingState;
+      if (state.bookHash !== bookHash) return;
+      setIndexingState(state);
+      if (state.status === 'complete') setIndexed(true);
+    };
+
+    eventDispatcher.on('rag-indexing-updated', handleIndexingUpdate);
+
+    return () => {
+      cancelled = true;
+      eventDispatcher.off('rag-indexing-updated', handleIndexingUpdate);
+    };
   }, [bookHash, backend]);
+
+  useEffect(() => {
+    hasAutoRestored.current = false;
+  }, [bookHash]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const ensureConversation = async () => {
+      if (!bookHash || !aiSettings?.enabled) return;
+
+      await loadConversations(bookHash);
+      if (cancelled || hasAutoRestored.current) return;
+
+      const { conversations, activeConversationId, currentBookHash, messages } =
+        useAIChatStore.getState();
+
+      if (currentBookHash !== bookHash) return;
+
+      const hasValidActive =
+        !!activeConversationId && conversations.some((conv) => conv.id === activeConversationId);
+
+      if (hasValidActive) {
+        if (activeConversationId && messages.length === 0) {
+          await setActiveConversation(activeConversationId);
+        }
+        hasAutoRestored.current = true;
+        return;
+      }
+
+      if (conversations.length > 0) {
+        const mostRecent = conversations[0];
+        if (!mostRecent) return;
+        await setActiveConversation(mostRecent.id);
+        hasAutoRestored.current = true;
+        return;
+      }
+
+      await createConversation(bookHash, `Chat about ${bookTitle}`);
+      hasAutoRestored.current = true;
+    };
+
+    ensureConversation();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    bookHash,
+    bookTitle,
+    aiSettings?.enabled,
+    loadConversations,
+    setActiveConversation,
+    createConversation,
+  ]);
 
   const handleIndex = useCallback(async () => {
     if (!bookData?.bookDoc || !aiSettings || !backend) return;
-    setIsIndexing(true);
+
+    let indexSucceeded = false;
+    setIndexingState({
+      bookHash,
+      status: 'indexing',
+      progress: 0,
+      chunksProcessed: 0,
+      totalChunks: 0,
+      phase: 'chunking',
+      current: 0,
+      total: 1,
+      updatedAt: Date.now(),
+    });
+
     try {
-      await backend.indexBook(bookData.bookDoc, bookHash, { onProgress: setIndexProgress });
+      await backend.indexBook(bookData.bookDoc, bookHash, {
+        onProgress: (indexProgress) => {
+          setIndexingState((current) => ({
+            bookHash,
+            status: 'indexing',
+            progress:
+              indexProgress.phase === 'embedding' && indexProgress.total > 0
+                ? Math.round((indexProgress.current / indexProgress.total) * 100)
+                : (current?.progress ?? 0),
+            chunksProcessed: current?.chunksProcessed ?? 0,
+            totalChunks: current?.totalChunks ?? 0,
+            phase: indexProgress.phase,
+            current: indexProgress.current,
+            total: indexProgress.total,
+            updatedAt: Date.now(),
+          }));
+        },
+      });
+      indexSucceeded = true;
       setIndexed(true);
+      setIndexingState((current) => ({
+        bookHash,
+        status: 'complete',
+        progress: 100,
+        chunksProcessed: current?.chunksProcessed ?? current?.current ?? 0,
+        totalChunks: current?.totalChunks ?? current?.total ?? 0,
+        phase: 'indexing',
+        current: 1,
+        total: 1,
+        updatedAt: Date.now(),
+      }));
     } catch (e) {
-      aiLogger.rag.indexError(bookHash, (e as Error).message);
-    } finally {
-      setIsIndexing(false);
-      setIndexProgress(null);
+      const message = (e as Error).message;
+      aiLogger.rag.indexError(bookHash, message);
+      setIndexingState((current) => ({
+        bookHash,
+        status: 'error',
+        progress: current?.progress ?? 0,
+        chunksProcessed: current?.chunksProcessed ?? 0,
+        totalChunks: current?.totalChunks ?? 0,
+        error: message,
+        phase: current?.phase,
+        current: current?.current,
+        total: current?.total,
+        updatedAt: Date.now(),
+      }));
     }
-  }, [bookData?.bookDoc, bookHash, aiSettings]);
+
+    if (indexSucceeded && backend.kind === 'legacy-idb') {
+      void updateXRayForProgress({
+        bookHash,
+        currentPage,
+        settings: aiSettings,
+        bookTitle,
+        appService,
+        force: true,
+        bookMetadata: bookData?.book?.metadata,
+      }).catch((error) => {
+        aiLogger.rag.indexError(bookHash, (error as Error).message);
+      });
+    }
+  }, [
+    bookData?.bookDoc,
+    bookData?.book?.metadata,
+    bookHash,
+    aiSettings,
+    backend,
+    currentPage,
+    bookTitle,
+    appService,
+  ]);
 
   const handleResetIndex = useCallback(async () => {
     if (!appService || !backend) return;
     if (!(await appService.ask(_('Are you sure you want to re-index this book?')))) return;
     await backend.clearBook(bookHash);
+    await aiStore.clearXRayBook(bookHash);
+    await aiStore.clearIndexingState(bookHash);
     setIndexed(false);
+    setIndexingState(null);
   }, [bookHash, appService, backend, _]);
 
   // Navigate the reader to a clicked source's CFI. Legacy backend chunks have
@@ -415,7 +581,7 @@ const LegacyAIAssistant = ({ bookKey }: AIAssistantProps) => {
         <div>
           <h3 className='text-foreground mb-0.5 text-sm font-medium'>{_('Index This Book')}</h3>
           <p className='text-muted-foreground text-xs'>
-            {_('Enable AI search and chat for this book')}
+            {_('Enable AI chat and X-Ray for this book')}
           </p>
         </div>
         <Button onClick={handleIndex} size='sm' className='h-8 text-xs'>

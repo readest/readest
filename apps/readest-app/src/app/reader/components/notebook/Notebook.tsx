@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { RiQuillPenLine } from 'react-icons/ri';
 
 import { useSettingsStore } from '@/store/settingsStore';
@@ -8,6 +9,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { useAIChatStore } from '@/store/aiChatStore';
+import type { NotebookTab } from '@/store/notebookStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeStore } from '@/store/themeStore';
 import { useEnv } from '@/context/EnvContext';
@@ -35,6 +37,8 @@ import NoteEditor from './NoteEditor';
 import SearchBar from './SearchBar';
 import NotebookTabNavigation from './NotebookTabNavigation';
 import EmptyState from '../EmptyState';
+
+const XRayView = dynamic(() => import('./XRayView'), { ssr: false });
 
 const MIN_NOTEBOOK_WIDTH = 0.15;
 const MAX_NOTEBOOK_WIDTH = 0.45;
@@ -137,7 +141,8 @@ const Notebook: React.FC = ({}) => {
     saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
   };
 
-  const handleTabChange = (tab: 'notes' | 'ai') => {
+  const handleTabChange = (tab: NotebookTab) => {
+    if (tab === notebookActiveTab) return;
     setNotebookActiveTab(tab);
     const globalReadSettings = settings.globalReadSettings;
     const newGlobalReadSettings = { ...globalReadSettings, notebookActiveTab: tab };
@@ -349,7 +354,7 @@ const Notebook: React.FC = ({}) => {
       <div
         ref={notebookRef}
         className={clsx(
-          'notebook-container right-0 flex min-w-60 select-none flex-col',
+          'notebook-container right-0 flex min-w-60 select-none flex-col overflow-x-hidden',
           'full-height font-sans text-base font-normal transition-[padding-top] duration-300 sm:text-sm',
           viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
           appService?.hasRoundedWindow && 'rounded-window-top-right rounded-window-bottom-right',
@@ -385,7 +390,7 @@ const Notebook: React.FC = ({}) => {
         `}</style>
         <div
           className={clsx(
-            'drag-bar absolute -left-2 top-0 h-full w-0.5 cursor-col-resize bg-transparent p-2',
+            'drag-bar pointer-events-auto absolute -left-2 top-0 z-30 h-full w-0.5 cursor-col-resize bg-transparent p-2',
             isMobile && 'hidden',
           )}
           role='slider'
@@ -438,6 +443,10 @@ const Notebook: React.FC = ({}) => {
         {notebookActiveTab === 'ai' ? (
           <div className='flex min-h-0 flex-1 flex-col'>
             <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
+          </div>
+        ) : notebookActiveTab === 'xray' ? (
+          <div className='flex min-h-0 flex-1 flex-col'>
+            <XRayView bookKey={sideBarBookKey} />
           </div>
         ) : isNotesTabEmpty ? (
           <div className='flex flex-grow items-center justify-center overflow-y-auto px-3'>
