@@ -558,13 +558,10 @@ describe('getGroupSortValue', () => {
 
   it('should return least time remaining for time remaining sort', () => {
     const group = createMockGroup({
-      books: [
-        createMockBook({ timeRemainingMinutes: 20 }),
-        createMockBook({ timeRemainingMinutes: 120 }),
-      ],
+      books: [createMockBook({ progress: [10, 100] }), createMockBook({ progress: [80, 100] })],
     });
 
-    expect(getGroupSortValue(group, LibrarySortByType.TimeRemaining)).toBe(20);
+    expect(getGroupSortValue(group, LibrarySortByType.TimeRemaining)).toBe(19);
   });
 
   it('should handle empty groups gracefully', () => {

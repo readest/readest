@@ -417,7 +417,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       if (progressPercentage >= 100 && existingBook.readingStatus !== 'finished') {
         newReadingStatus = 'finished';
       }
-      updateBookProgress(id, progress, timeRemainingMinutes, newReadingStatus);
+      updateBookProgress(id, progress, newReadingStatus);
     }
 
     // Only the primary view persists progress into the shared bookData

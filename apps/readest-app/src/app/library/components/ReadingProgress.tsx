@@ -4,6 +4,7 @@ import type { Book } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SHOW_UNREAD_STATUS_BADGE } from '@/services/constants';
 import StatusBadge from './StatusBadge';
+import { getTimeRemainingMinutes } from '../utils/libraryUtils';
 
 interface ReadingProgressProps {
   book: Book;
@@ -25,7 +26,7 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
     const _ = useTranslation();
     const progressPercentage = useMemo(() => getProgressPercentage(book), [book]);
 
-    const minutes = book.timeRemainingMinutes;
+    const minutes = getTimeRemainingMinutes(book);
     const hours = minutes ? Math.floor(minutes / 60) : undefined;
     const mins = minutes ? minutes % 60 : undefined;
     const timeRemainingLabel =

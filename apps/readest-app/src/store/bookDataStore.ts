@@ -141,7 +141,6 @@ export const useBookDataStore = create<BookDataState>((set, get) => ({
     const updatedBook: Book = {
       ...original,
       progress: config.progress,
-      timeRemainingMinutes: config.timeRemainingMinutes,
       updatedAt: now,
       downloadedAt: original.downloadedAt || now,
     };

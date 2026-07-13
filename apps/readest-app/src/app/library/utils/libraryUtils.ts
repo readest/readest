@@ -6,6 +6,7 @@ import {
 } from '@/types/settings';
 import { formatAuthors, formatTitle } from '@/utils/book';
 import { md5Fingerprint } from '@/utils/md5';
+import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 
 /** Valid sort types for the library */
 const VALID_SORT_TYPES: LibrarySortByType[] = Object.values(LibrarySortByType);
@@ -198,6 +199,11 @@ const getBookReadRatio = (book: Book): number => {
   return current / total;
 };
 
+export const getTimeRemainingMinutes = (book: Book): number | undefined => {
+  const pagesLeft = book.progress ? book.progress[1] - book.progress[0] : undefined;
+  return pagesLeft ? Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT) : undefined;
+};
+
 const compareBookByKey = (a: Book, b: Book, sortBy: string, uiLanguage: string): number => {
   switch (sortBy) {
     case LibrarySortByType.Title: {
@@ -251,8 +257,8 @@ const compareBookByKey = (a: Book, b: Book, sortBy: string, uiLanguage: string):
       return aDate - bDate;
     }
     case LibrarySortByType.TimeRemaining: {
-      const aTime = a.timeRemainingMinutes ?? Infinity;
-      const bTime = b.timeRemainingMinutes ?? Infinity;
+      const aTime = getTimeRemainingMinutes(a) ?? Infinity;
+      const bTime = getTimeRemainingMinutes(b) ?? Infinity;
       return aTime - bTime;
     }
     default:
@@ -535,7 +541,7 @@ export const getBookSortValue = (book: Book, sortBy: LibrarySortByType): number 
 
     case LibrarySortByType.TimeRemaining:
       // Return Infinity if a book does not have time remaining (ie. if the book is unread or finished) so it is sorted after books with time remaining
-      return book.timeRemainingMinutes ?? Infinity;
+      return getTimeRemainingMinutes(book) ?? Infinity;
 
     default:
       return book.updatedAt;
@@ -606,7 +612,7 @@ export const getGroupSortValue = (
 
     case LibrarySortByType.TimeRemaining:
       // Return book with least amount of time remaining
-      return Math.min(...books.map((b) => b.timeRemainingMinutes ?? Infinity));
+      return Math.min(...books.map((b) => getTimeRemainingMinutes(b) ?? Infinity));
 
     default:
       return Math.max(...books.map((b) => b.updatedAt));
