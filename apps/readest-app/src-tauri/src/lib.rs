@@ -319,6 +319,15 @@ pub fn run() {
     // handler for native crashes; on mobile, native crashes belong to the
     // sentry-android / sentry-cocoa SDKs. The guard must outlive the app, so it
     // is held until `run()` returns (after the blocking `.run(...)` call).
+
+    // Set the WEBKIT_DISABLE_DMABUF_RENDERER environment var on Linux to prevent issues with Nvidia
+    // drivers
+    #[cfg(target_os = "linux")]
+    {
+        if std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none() {
+            std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+        }
+    }
     let sentry_guard = sentry_config::sentry_dsn().map(|dsn| {
         sentry::init((
             dsn,
