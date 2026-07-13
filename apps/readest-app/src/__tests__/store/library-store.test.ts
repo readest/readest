@@ -95,7 +95,7 @@ describe('libraryStore', () => {
       const books = [makeBook({ hash: 'a', progress: [1, 100], readingStatus: 'unread' })];
       useLibraryStore.getState().setLibrary(books);
 
-      useLibraryStore.getState().updateBookProgress('a', [50, 100], undefined);
+      useLibraryStore.getState().updateBookProgress('a', [50, 100], 50, undefined);
 
       const book = useLibraryStore.getState().getBookByHash('a');
       expect(book?.progress).toEqual([50, 100]);
@@ -105,7 +105,7 @@ describe('libraryStore', () => {
 
     test('does nothing for unknown hash', () => {
       useLibraryStore.getState().setLibrary([makeBook({ hash: 'a' })]);
-      useLibraryStore.getState().updateBookProgress('nonexistent', [1, 1], undefined);
+      useLibraryStore.getState().updateBookProgress('nonexistent', [1, 1], 0, undefined);
       expect(useLibraryStore.getState().library).toHaveLength(1);
     });
 
@@ -113,7 +113,7 @@ describe('libraryStore', () => {
       const books = [makeBook({ hash: 'a' })];
       useLibraryStore.getState().setLibrary(books);
 
-      useLibraryStore.getState().updateBookProgress('a', [100, 100], 'finished');
+      useLibraryStore.getState().updateBookProgress('a', [100, 100], 0, 'finished');
 
       expect(useLibraryStore.getState().getBookByHash('a')?.readingStatus).toBe('finished');
     });
@@ -122,7 +122,7 @@ describe('libraryStore', () => {
       useLibraryStore.getState().setLibrary([makeBook({ hash: 'a' })]);
       const before = useLibraryStore.getState().library;
 
-      useLibraryStore.getState().updateBookProgress('a', [50, 100], undefined);
+      useLibraryStore.getState().updateBookProgress('a', [50, 100], 50, undefined);
 
       const after = useLibraryStore.getState().library;
       expect(after).not.toBe(before);
@@ -132,7 +132,7 @@ describe('libraryStore', () => {
       const original = makeBook({ hash: 'a', progress: [1, 100] });
       useLibraryStore.getState().setLibrary([original]);
 
-      useLibraryStore.getState().updateBookProgress('a', [50, 100], undefined);
+      useLibraryStore.getState().updateBookProgress('a', [50, 100], 50, undefined);
 
       // Original reference must NOT be mutated
       expect(original.progress).toEqual([1, 100]);
@@ -143,7 +143,7 @@ describe('libraryStore', () => {
     test('updates visibleLibrary cache so callers see fresh progress', () => {
       useLibraryStore.getState().setLibrary([makeBook({ hash: 'a', progress: [1, 100] })]);
 
-      useLibraryStore.getState().updateBookProgress('a', [42, 100], undefined);
+      useLibraryStore.getState().updateBookProgress('a', [42, 100], 42, undefined);
 
       const visible = useLibraryStore.getState().getVisibleLibrary();
       expect(visible).toHaveLength(1);
@@ -158,7 +158,7 @@ describe('libraryStore', () => {
       ];
       useLibraryStore.getState().setLibrary(books);
 
-      useLibraryStore.getState().updateBookProgress('a', [10, 100], undefined);
+      useLibraryStore.getState().updateBookProgress('a', [10, 100], 10, undefined);
 
       const visible = useLibraryStore.getState().getVisibleLibrary();
       expect(visible.map((b) => b.hash)).toEqual(['a', 'c']);
@@ -166,7 +166,7 @@ describe('libraryStore', () => {
 
     test('stamps readingStatusUpdatedAt when the status changes', () => {
       useLibraryStore.getState().setLibrary([makeBook({ hash: 'a', readingStatus: undefined })]);
-      useLibraryStore.getState().updateBookProgress('a', [100, 100], 'finished');
+      useLibraryStore.getState().updateBookProgress('a', [100, 100], 0, 'finished');
       const book = useLibraryStore.getState().getBookByHash('a');
       expect(book?.readingStatus).toBe('finished');
       expect(book?.readingStatusUpdatedAt).toBeGreaterThan(0);
@@ -178,7 +178,7 @@ describe('libraryStore', () => {
         .setLibrary([
           makeBook({ hash: 'a', readingStatus: 'reading', readingStatusUpdatedAt: 111 }),
         ]);
-      useLibraryStore.getState().updateBookProgress('a', [50, 100], 'reading');
+      useLibraryStore.getState().updateBookProgress('a', [50, 100], 50, 'reading');
       const book = useLibraryStore.getState().getBookByHash('a');
       expect(book?.readingStatusUpdatedAt).toBe(111);
     });
