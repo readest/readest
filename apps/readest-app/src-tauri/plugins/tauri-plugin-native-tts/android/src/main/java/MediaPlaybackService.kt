@@ -15,8 +15,11 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.graphics.Bitmap
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioManager
-import android.media.AudioManager.OnAudioFocusChangeListener
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaDescriptionCompat
 import android.support.v4.media.MediaMetadataCompat
@@ -47,19 +50,107 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     // player, the foreground notification) must be gated on this flag.
     private var sessionActive = false
 
+    // Resume after a TRANSIENT focus loss only if the loss is what paused us
+    // (nav prompt, call); a user pause before the loss must stay a pause.
+    private var resumeOnFocusGain = false
+
+    // The real TTS audio renders in the WebView (or TextToSpeech), so pausing
+    // the local keep-alive player alone would keep speech talking over the
+    // interrupting audio. Focus changes route through the SAME plugin events
+    // as lock-screen buttons; the JS TTSController pause/resume pushes state
+    // back down and the keep-alive player follows (applyPlaybackState). The
+    // local player is also flipped immediately so the lock-screen card does
+    // not lag the round trip.
     private val afChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
-        Log.i("MediaPlaybackService", "Audio focus changed: $focusChange, $player.isPlaying")
+        Log.i("MediaPlaybackService", "Audio focus changed: $focusChange, playing=${player.isPlaying}")
         when (focusChange) {
             AudioManager.AUDIOFOCUS_GAIN -> {
-                player.volume = 1.0f
-                if (!player.isPlaying) player.play()
+                if (resumeOnFocusGain) {
+                    resumeOnFocusGain = false
+                    player.play()
+                    pluginEventTrigger?.invoke("media-session-play", JSObject())
+                    updatePlaybackState()
+                }
             }
+            // Spoken audio pauses for transient loss instead of ducking or
+            // talking over it (speech ducked under speech is unintelligible);
+            // setWillPauseWhenDucked routes CAN_DUCK here rather than letting
+            // the system auto-duck.
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                player.volume = 0.3f
+                resumeOnFocusGain = player.isPlaying
+                if (player.isPlaying) {
+                    player.pause()
+                    pluginEventTrigger?.invoke("media-session-pause", JSObject())
+                    updatePlaybackState()
+                }
             }
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                if (player.isPlaying) player.pause()
+            // Permanent loss (another media app took over): pause and stay
+            // paused; the system never sends a GAIN after this.
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                resumeOnFocusGain = false
+                if (player.isPlaying) {
+                    player.pause()
+                    pluginEventTrigger?.invoke("media-session-pause", JSObject())
+                    updatePlaybackState()
+                }
             }
+        }
+    }
+
+    // Headphones unplugged / Bluetooth dropped: pause, never auto-resume —
+    // otherwise spoken audio blasts from the phone speaker.
+    private var noisyReceiverRegistered = false
+    private val becomingNoisyReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action != AudioManager.ACTION_AUDIO_BECOMING_NOISY) return
+            resumeOnFocusGain = false
+            if (player.isPlaying) {
+                player.pause()
+                pluginEventTrigger?.invoke("media-session-pause", JSObject())
+                updatePlaybackState()
+            }
+        }
+    }
+
+    // Android O+ default is system auto-duck; declaring speech content and
+    // willPauseWhenDucked opts into the audiobook contract (the counterpart of
+    // iOS .spokenAudio): nav prompts pause us and GAIN resumes us.
+    private var focusRequest: AudioFocusRequest? = null
+
+    private fun requestFocus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build()
+                )
+                .setWillPauseWhenDucked(true)
+                .setOnAudioFocusChangeListener(afChangeListener)
+                .build()
+            focusRequest = request
+            if (audioManager.requestAudioFocus(request) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                Log.w("MediaPlaybackService", "Failed to gain audio focus")
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.requestAudioFocus(
+                afChangeListener,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN
+            )
+        }
+    }
+
+    private fun abandonFocus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            focusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+            focusRequest = null
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.abandonAudioFocus(afChangeListener)
         }
     }
 
@@ -217,15 +308,15 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         if (!sessionActive) {
             sessionActive = true
 
-            val result = audioManager.requestAudioFocus(
-                afChangeListener,
-                AudioManager.STREAM_MUSIC,
-                AudioManager.AUDIOFOCUS_GAIN
-            )
-            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                Log.d("MediaPlaybackService", "Audio focus granted")
-            } else {
-                Log.w("MediaPlaybackService", "Failed to gain audio focus")
+            requestFocus()
+            if (!noisyReceiverRegistered) {
+                noisyReceiverRegistered = true
+                ContextCompat.registerReceiver(
+                    this,
+                    becomingNoisyReceiver,
+                    IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY),
+                    ContextCompat.RECEIVER_NOT_EXPORTED
+                )
             }
 
             // Silent keep-alive track: holds the audio route and drives the
@@ -251,7 +342,12 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
         player.playWhenReady = false
         player.stop()
-        audioManager.abandonAudioFocus(afChangeListener)
+        resumeOnFocusGain = false
+        abandonFocus()
+        if (noisyReceiverRegistered) {
+            noisyReceiverRegistered = false
+            unregisterReceiver(becomingNoisyReceiver)
+        }
 
         mediaSession?.isActive = false
         mediaSession?.setPlaybackState(
@@ -271,6 +367,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         }
 
         override fun onPause() {
+            // An explicit user pause must stick: cancel any pending
+            // resume-after-interruption.
+            resumeOnFocusGain = false
             player.pause()
             pluginEventTrigger?.invoke("media-session-pause", JSObject())
             updatePlaybackState()
@@ -593,6 +692,11 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     override fun onDestroy() {
         instance = null
         super.onDestroy()
+        if (noisyReceiverRegistered) {
+            noisyReceiverRegistered = false
+            unregisterReceiver(becomingNoisyReceiver)
+        }
+        abandonFocus()
         player.release()
         mediaSession?.release()
     }
