@@ -29,7 +29,9 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
     const hours = minutes ? Math.floor(minutes / 60) : undefined;
     const mins = minutes ? minutes % 60 : undefined;
     const timeRemainingLabel =
-      hours && mins ? `${progressPercentage}% · ${hours}h ${mins}m left` : `${progressPercentage}%`;
+      hours && mins
+        ? _(`${progressPercentage}% · ${hours}h ${mins}m left`)
+        : `${progressPercentage}%`;
 
     if (book.readingStatus === 'finished') {
       return (
