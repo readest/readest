@@ -25,6 +25,20 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
     const _ = useTranslation();
     const progressPercentage = useMemo(() => getProgressPercentage(book), [book]);
 
+    let timeRemainingHours;
+    let timeRemainingMinutes;
+    if (book.timeRemainingMinutes) {
+      timeRemainingHours = Math.floor(book.timeRemainingMinutes / 60);
+      timeRemainingMinutes = book.timeRemainingMinutes % 60;
+    }
+
+    let timeRemainingLabel;
+    if (timeRemainingHours && timeRemainingMinutes) {
+      timeRemainingLabel = `${progressPercentage}% · ${timeRemainingHours}h ${timeRemainingMinutes}m left`;
+    } else {
+      timeRemainingLabel = `${progressPercentage}%`;
+    }
+
     if (book.readingStatus === 'finished') {
       return (
         <div className='flex justify-start'>
@@ -69,7 +83,7 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
         role='status'
         aria-label={`${progressPercentage}%`}
       >
-        <span>{progressPercentage}%</span>
+        <span>{timeRemainingLabel}</span>
       </div>
     );
   },
