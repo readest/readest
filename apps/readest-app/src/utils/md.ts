@@ -1,7 +1,14 @@
-import { marked } from 'marked';
+import { Marked } from 'marked';
+import markedFootnote from 'marked-footnote';
 
 import type { BookDoc, SectionItem } from '@/libs/document';
 import { CFI } from '@/libs/document';
+import {
+  FOOTNOTE_PREFIX_ID,
+  buildChapterFootnotes,
+  expandInlineFootnotes,
+  extractFootnoteDefs,
+} from './mdFootnotes';
 import { sanitizeHtml } from './sanitize';
 
 // Render a standalone Markdown (.md) file into an in-memory foliate-js book at
@@ -13,6 +20,13 @@ import { sanitizeHtml } from './sanitize';
 
 const XHTML_NS = 'http://www.w3.org/1999/xhtml';
 
+// A scoped parser: `marked` itself is a shared singleton also imported by the
+// annotation note renderer and the export dialog, and must not gain footnote
+// parsing as a side effect.
+const markdown = new Marked({ gfm: true }).use(markedFootnote({ prefixId: FOOTNOTE_PREFIX_ID }), {
+  hooks: { preprocess: expandInlineFootnotes },
+});
+
 // Minimal defaults so code blocks wrap inside the paginated column (long lines
 // would otherwise overflow and break pagination) and tables/images stay legible
 // under every theme. `currentColor` keeps borders readable in dark / e-ink.
@@ -23,6 +37,10 @@ pre, code { font-family: monospace; }
 table { border-collapse: collapse; }
 th, td { border: 1px solid currentColor; padding: 0.2em 0.5em; }
 blockquote { margin-inline: 1em; }
+.md-footnotes { margin-block-start: 2em; font-size: 0.9em; }
+.md-footnotes hr { width: 30%; margin-inline-start: 0; border: 0; border-top: 1px solid currentColor; opacity: 0.4; }
+sup a, .footnote-backref { text-decoration: none; }
+.footnote-backref { margin-inline-start: 0.4em; }
 `;
 
 const wrapXhtml = (inner: string): string =>
@@ -73,9 +91,14 @@ type MarkdownSection = SectionItem & { load: () => string };
 export async function makeMarkdownBook(file: File): Promise<BookDoc> {
   const text = await file.text();
   const { body, meta } = stripFrontmatter(text);
-  const rawHtml = await marked.parse(body, { gfm: true });
+  const rawHtml = await markdown.parse(body);
   const safeHtml = sanitizeHtml(rawHtml);
   const docBody = new DOMParser().parseFromString(safeHtml, 'text/html').body;
+
+  // Lift the collected footnote definitions out before anything else looks at
+  // the document: they are re-emitted per chapter below, and taking them out
+  // here also keeps the generated "Footnotes" heading out of the TOC.
+  const footnoteDefs = extractFootnoteDefs(docBody);
 
   // Ensure every id is unique (including author-provided ids on raw HTML /
   // footnotes), then give each heading a stable slug id for TOC anchors and
@@ -117,6 +140,14 @@ export async function makeMarkdownBook(file: File): Promise<BookDoc> {
   }
   if (hasContent(current)) groups.push(current);
   if (groups.length === 0) groups.push([]);
+
+  // Give each chapter its own endnote list, numbered from 1, so a reference in
+  // chapter 2 resolves within chapter 2 instead of jumping to the end of the
+  // book. Must run before the ids below are mapped to sections.
+  groups.forEach((nodes, index) => {
+    const notes = buildChapterFootnotes(nodes, index, footnoteDefs, uniqueId);
+    if (notes) nodes.push(notes);
+  });
 
   // Serialize each section to well-formed XHTML. Marked emits HTML5 void tags
   // (<br>, <hr>, <img>) that are parse errors under application/xhtml+xml, so

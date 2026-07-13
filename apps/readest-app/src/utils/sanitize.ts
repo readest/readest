@@ -56,6 +56,9 @@ export function sanitizeHtml(html: string): string {
       'img',
       'figure',
       'figcaption',
+      // Markdown footnote definitions arrive wrapped in <section class="footnotes">
+      // (see utils/mdFootnotes.ts), which must survive to be found and re-emitted.
+      'section',
     ],
     // `id` is allowed so heading anchors survive — the EPUB's nested
     // navMap uses `chapter1.xhtml#heading-id` to link the TOC sidebar to

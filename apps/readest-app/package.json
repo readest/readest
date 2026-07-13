@@ -181,6 +181,7 @@
     "lunr": "^2.3.9",
     "mammoth": "^1.12.0",
     "marked": "^15.0.12",
+    "marked-footnote": "^1.4.0",
     "nanoid": "^5.1.6",
     "next": "16.2.6",
     "next-view-transitions": "^0.3.5",
