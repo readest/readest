@@ -43,6 +43,8 @@ export interface DictionaryResultsState {
   goBack: () => void;
   visibleDefinitionProviders: DictionaryProvider[];
   webSearchProviders: DictionaryProvider[];
+  /** Whether the web-search section renders above the dictionaries one (#5083). */
+  webSearchFirst: boolean;
   cards: Record<string, CardState>;
   setContainerRef: (id: string) => (el: HTMLDivElement | null) => void;
   handleContainerClick: (e: React.MouseEvent) => void;
@@ -91,6 +93,11 @@ export function useDictionaryResults({
 
   const definitionProviders = useMemo(() => providers.filter((p) => p.kind !== 'web'), [providers]);
   const webSearchProviders = useMemo(() => providers.filter((p) => p.kind === 'web'), [providers]);
+  // Web entries live in their own section, so `providerOrder` alone can't lift
+  // one above the dictionary cards (#5083). Let the top-most enabled provider
+  // decide which section leads. Derived from the full enabled list rather than
+  // the visible one so the sections don't reshuffle as lookups settle.
+  const webSearchFirst = providers[0]?.kind === 'web';
 
   const [historyStack, setHistoryStack] = useState<string[]>([word.trim()]);
   const currentWord = historyStack[historyStack.length - 1] ?? word.trim();
@@ -336,6 +343,7 @@ export function useDictionaryResults({
     goBack,
     visibleDefinitionProviders,
     webSearchProviders,
+    webSearchFirst,
     cards,
     setContainerRef,
     handleContainerClick,
@@ -429,6 +437,7 @@ interface DictionaryResultsBodyProps extends DictionaryResultsState {}
 export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   visibleDefinitionProviders,
   webSearchProviders,
+  webSearchFirst,
   cards,
   setContainerRef,
   handleContainerClick,
@@ -439,6 +448,112 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   fontScale,
 }) => {
   const _ = useTranslation();
+
+  // `first:pt-2` keeps the leading section's tighter top padding whichever of
+  // the two comes first.
+  const sectionClassName = 'px-4 pt-4 first:pt-2';
+
+  const definitionsSection = visibleDefinitionProviders.length > 0 && (
+    <section className={sectionClassName}>
+      <h3 className='not-eink:opacity-60 mb-2 text-xs font-medium uppercase tracking-wide'>
+        {_('Dictionaries')}
+      </h3>
+      <ul className='flex flex-col gap-3'>
+        {visibleDefinitionProviders.map((p) => {
+          const card = cards[p.id];
+          const isLoading = !card || card.state === 'loading';
+          const expanded = card?.expanded ?? false;
+          const sourceLabel =
+            card?.outcome?.ok && card.outcome.sourceLabel ? card.outcome.sourceLabel : _(p.label);
+          return (
+            <li key={p.id}>
+              <div
+                data-testid='dict-card'
+                role='button'
+                tabIndex={0}
+                aria-expanded={expanded}
+                onClick={(e) => {
+                  const path = e.nativeEvent.composedPath();
+                  for (const node of path) {
+                    if (node === e.currentTarget) break;
+                    if (node instanceof Element) {
+                      const tag = node.tagName;
+                      if (tag === 'A' || tag === 'BUTTON' || tag === 'IMG') return;
+                    }
+                  }
+                  toggleExpanded(p.id);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleExpanded(p.id);
+                  }
+                }}
+                className={clsx('cursor-pointer rounded-lg')}
+              >
+                {isLoading && (
+                  <div
+                    data-testid='dict-card-skeleton'
+                    className='bg-base-200/50 h-12 animate-pulse rounded'
+                  />
+                )}
+                <div
+                  ref={setContainerRef(p.id)}
+                  onClick={handleContainerClick}
+                  // `data-dict-content` + `--dict-font-scale` drive the
+                  // popup font-size rules in globals.css (#4443): the
+                  // light-DOM `font-size` cascade and the MDict shadow
+                  // `::part(dict-content)` rule both read this scope.
+                  data-dict-content=''
+                  style={{ '--dict-font-scale': fontScale } as React.CSSProperties}
+                  className={clsx(
+                    'font-sans',
+                    isLoading && 'hidden',
+                    !isLoading &&
+                      !expanded &&
+                      'line-clamp-4 max-h-40 overflow-hidden [-webkit-box-orient:vertical] [display:-webkit-box]',
+                  )}
+                />
+                {!isLoading && (
+                  <div className='border-base-content/10 -me-4 mt-2 border-b pb-2'>
+                    <span className='not-eink:opacity-60 text-xs'>{sourceLabel}</span>
+                  </div>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+
+  const webSearchSection = webSearchProviders.length > 0 && (
+    <section className={sectionClassName}>
+      <h3 className='not-eink:opacity-60 mb-2 text-xs font-medium uppercase tracking-wide'>
+        {_('Search the web')}
+      </h3>
+      <ul className='flex flex-col'>
+        {webSearchProviders.map((p) => {
+          const url = resolveWebSearchUrl(p.id);
+          return (
+            <li key={p.id}>
+              <a
+                href={url ?? '#'}
+                target={isTauri ? undefined : '_blank'}
+                rel='noopener noreferrer'
+                onClick={(e) => onWebSearchClickTauri(e, p.id)}
+                className='hover:bg-base-200/40 flex w-full items-center justify-between rounded-md px-2 py-3 text-left text-sm no-underline'
+              >
+                <span>{_(p.label)}</span>
+                <MdChevronRight className='not-eink:opacity-60' size={18} />
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+
   return (
     <div className='flex h-full flex-col'>
       <div className='flex-1 overflow-y-auto'>
@@ -449,110 +564,15 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
               {_('Enable a dictionary in Settings → Language → Dictionaries.')}
             </p>
           </div>
+        ) : webSearchFirst ? (
+          <>
+            {webSearchSection}
+            {definitionsSection}
+          </>
         ) : (
           <>
-            {visibleDefinitionProviders.length > 0 && (
-              <section className='px-4 pt-2'>
-                <h3 className='not-eink:opacity-60 mb-2 text-xs font-medium uppercase tracking-wide'>
-                  {_('Dictionaries')}
-                </h3>
-                <ul className='flex flex-col gap-3'>
-                  {visibleDefinitionProviders.map((p) => {
-                    const card = cards[p.id];
-                    const isLoading = !card || card.state === 'loading';
-                    const expanded = card?.expanded ?? false;
-                    const sourceLabel =
-                      card?.outcome?.ok && card.outcome.sourceLabel
-                        ? card.outcome.sourceLabel
-                        : _(p.label);
-                    return (
-                      <li key={p.id}>
-                        <div
-                          data-testid='dict-card'
-                          role='button'
-                          tabIndex={0}
-                          aria-expanded={expanded}
-                          onClick={(e) => {
-                            const path = e.nativeEvent.composedPath();
-                            for (const node of path) {
-                              if (node === e.currentTarget) break;
-                              if (node instanceof Element) {
-                                const tag = node.tagName;
-                                if (tag === 'A' || tag === 'BUTTON' || tag === 'IMG') return;
-                              }
-                            }
-                            toggleExpanded(p.id);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              toggleExpanded(p.id);
-                            }
-                          }}
-                          className={clsx('cursor-pointer rounded-lg')}
-                        >
-                          {isLoading && (
-                            <div
-                              data-testid='dict-card-skeleton'
-                              className='bg-base-200/50 h-12 animate-pulse rounded'
-                            />
-                          )}
-                          <div
-                            ref={setContainerRef(p.id)}
-                            onClick={handleContainerClick}
-                            // `data-dict-content` + `--dict-font-scale` drive the
-                            // popup font-size rules in globals.css (#4443): the
-                            // light-DOM `font-size` cascade and the MDict shadow
-                            // `::part(dict-content)` rule both read this scope.
-                            data-dict-content=''
-                            style={{ '--dict-font-scale': fontScale } as React.CSSProperties}
-                            className={clsx(
-                              'font-sans',
-                              isLoading && 'hidden',
-                              !isLoading &&
-                                !expanded &&
-                                'line-clamp-4 max-h-40 overflow-hidden [-webkit-box-orient:vertical] [display:-webkit-box]',
-                            )}
-                          />
-                          {!isLoading && (
-                            <div className='border-base-content/10 -me-4 mt-2 border-b pb-2'>
-                              <span className='not-eink:opacity-60 text-xs'>{sourceLabel}</span>
-                            </div>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            )}
-
-            {webSearchProviders.length > 0 && (
-              <section className='px-4 pt-4'>
-                <h3 className='not-eink:opacity-60 mb-2 text-xs font-medium uppercase tracking-wide'>
-                  {_('Search the web')}
-                </h3>
-                <ul className='flex flex-col'>
-                  {webSearchProviders.map((p) => {
-                    const url = resolveWebSearchUrl(p.id);
-                    return (
-                      <li key={p.id}>
-                        <a
-                          href={url ?? '#'}
-                          target={isTauri ? undefined : '_blank'}
-                          rel='noopener noreferrer'
-                          onClick={(e) => onWebSearchClickTauri(e, p.id)}
-                          className='hover:bg-base-200/40 flex w-full items-center justify-between rounded-md px-2 py-3 text-left text-sm no-underline'
-                        >
-                          <span>{_(p.label)}</span>
-                          <MdChevronRight className='not-eink:opacity-60' size={18} />
-                        </a>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            )}
+            {definitionsSection}
+            {webSearchSection}
           </>
         )}
       </div>

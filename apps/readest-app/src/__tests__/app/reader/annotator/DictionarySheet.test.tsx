@@ -495,6 +495,39 @@ describe('DictionarySheet — web search row', () => {
   });
 });
 
+describe('DictionarySheet — section order', () => {
+  // The registry hands the sheet its providers already sorted by
+  // `settings.providerOrder`, so the first entry of `providersForNextRender`
+  // is whatever the user dragged to the top in settings.
+  const buildWebEntry = (): DictionaryProvider => ({
+    id: BUILTIN_WEB_SEARCH_IDS.google,
+    kind: 'web',
+    label: 'Google',
+    async lookup() {
+      return { ok: true };
+    },
+  });
+
+  const sectionHeadings = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll('section > h3')).map((h) => h.textContent);
+
+  it('puts the web-search section first when a web entry is top of the configured order (#5083)', async () => {
+    providersForNextRender.push(buildWebEntry(), buildRealStarDictProvider());
+    const { container } = renderSheet({ word: 'hello' });
+
+    await screen.findByText('CMU American English spelling');
+    expect(sectionHeadings(container)).toEqual(['Search the web', 'Dictionaries']);
+  });
+
+  it('keeps the dictionaries section first when a dictionary is top of the configured order', async () => {
+    providersForNextRender.push(buildRealStarDictProvider(), buildWebEntry());
+    const { container } = renderSheet({ word: 'hello' });
+
+    await screen.findByText('CMU American English spelling');
+    expect(sectionHeadings(container)).toEqual(['Dictionaries', 'Search the web']);
+  });
+});
+
 describe('DictionarySheet — empty state', () => {
   it('renders "No dictionaries enabled" + manage gear when zero providers are configured', async () => {
     // providersForNextRender stays empty.
