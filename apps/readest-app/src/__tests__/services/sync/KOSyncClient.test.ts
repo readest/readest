@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { KOSyncClient } from '@/services/sync/KOSyncClient';
+import { Book } from '@/types/book';
 import { KOSyncSettings } from '@/types/settings';
 
 // The LAN-server branch of KOSyncClient.request uses window.fetch (mocked
@@ -43,6 +44,80 @@ const jsonResponse = (status: number, body: unknown) => ({
   ok: status >= 200 && status < 300,
   status,
   json: async () => body,
+});
+
+const makeBook = (): Book =>
+  ({
+    hash: 'f248ce0f15105ff390e5292085e0622b',
+    title: 'A Book',
+  }) as Book;
+
+describe('KOSyncClient.getProgress – server response shapes', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('accepts a progress payload that omits `document`', async () => {
+    // Not every KOSync-compatible server echoes the document hash back on GET.
+    // koreader-sync only selects progress/percentage/device/device_id/timestamp,
+    // so requiring `document` silently discarded a perfectly good remote
+    // position and the reader then pushed its stale one over it. (#5063, #5065)
+    setFetch(() =>
+      jsonResponse(200, {
+        progress: '/body/DocFragment[3]/body/div/p[12].0',
+        percentage: 0.0174,
+        device: 'KindlePaperWhite5',
+        device_id: '8F6F541940B74D32B606503DB6B43E0F',
+        timestamp: 1783773009,
+      }),
+    );
+
+    const client = new KOSyncClient(makeConfig({ userkey: 'key' }));
+    const progress = await client.getProgress(makeBook());
+
+    expect(progress).not.toBeNull();
+    expect(progress!.progress).toBe('/body/DocFragment[3]/body/div/p[12].0');
+    expect(progress!.percentage).toBe(0.0174);
+    // The requested hash stands in for the document the server left out.
+    expect(progress!.document).toBe('f248ce0f15105ff390e5292085e0622b');
+  });
+
+  it('accepts a progress payload that includes `document`', async () => {
+    setFetch(() =>
+      jsonResponse(200, {
+        document: 'f248ce0f15105ff390e5292085e0622b',
+        progress: '/body/DocFragment[3]/body/div/p[12].0',
+        percentage: 0.0174,
+        timestamp: 1783773009,
+      }),
+    );
+
+    const client = new KOSyncClient(makeConfig({ userkey: 'key' }));
+    const progress = await client.getProgress(makeBook());
+
+    expect(progress!.document).toBe('f248ce0f15105ff390e5292085e0622b');
+  });
+
+  it('returns null when a 200 body carries no usable position', async () => {
+    // Some servers answer "no progress stored" with 200 and a status body
+    // instead of a 404; that must not be mistaken for a remote position.
+    setFetch(() => jsonResponse(200, { status: 'not found' }));
+
+    const client = new KOSyncClient(makeConfig({ userkey: 'key' }));
+
+    expect(await client.getProgress(makeBook())).toBeNull();
+  });
+
+  it('returns null when the server answers 404', async () => {
+    setFetch(() => jsonResponse(404, { status: 'not found' }));
+
+    const client = new KOSyncClient(makeConfig({ userkey: 'key' }));
+
+    expect(await client.getProgress(makeBook())).toBeNull();
+  });
 });
 
 describe('KOSyncClient.connect – server validation', () => {
