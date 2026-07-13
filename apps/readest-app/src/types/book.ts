@@ -119,6 +119,7 @@ export interface Book {
 
   lastUpdated?: number; // deprecated in favor of updatedAt
   progress?: [number, number]; // Add progress field: [current, total], 1-based page number
+  timeRemainingMinutes?: number; // Time left until the end of the book
   readingStatus?: ReadingStatus;
   readingStatusUpdatedAt?: number; // ms; bumped only when readingStatus changes
   primaryLanguage?: string;
@@ -487,6 +488,7 @@ export interface BookConfig {
   bookHash?: string;
   metaHash?: string;
   progress?: [number, number]; // [current pagenum, total pagenum], 1-based page number
+  timeRemainingMinutes?: number; // Time left until the end of the book
   location?: string; // CFI of the current location
   xpointer?: string; // XPointer of the current location (for Koreader interoperability)
   booknotes?: BookNote[];

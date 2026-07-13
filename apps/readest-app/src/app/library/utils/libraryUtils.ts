@@ -250,6 +250,11 @@ const compareBookByKey = (a: Book, b: Book, sortBy: string, uiLanguage: string):
 
       return aDate - bDate;
     }
+    case LibrarySortByType.TimeRemaining: {
+      const aTime = a.timeRemainingMinutes ?? Infinity;
+      const bTime = b.timeRemainingMinutes ?? Infinity;
+      return aTime - bTime;
+    }
     default:
       return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
   }
@@ -528,6 +533,10 @@ export const getBookSortValue = (book: Book, sortBy: LibrarySortByType): number 
       return isNaN(publishedTime) ? 0 : publishedTime;
     }
 
+    case LibrarySortByType.TimeRemaining:
+      // Return Infinity if a book does not have time remaining (ie. if the book is unread or finished) so it is sorted after books with time remaining
+      return book.timeRemainingMinutes ?? Infinity;
+
     default:
       return book.updatedAt;
   }
@@ -594,6 +603,10 @@ export const getGroupSortValue = (
 
       return publishedDates.length > 0 ? Math.max(...publishedDates) : 0;
     }
+
+    case LibrarySortByType.TimeRemaining:
+      // Return book with least amount of time remaining
+      return Math.min(...books.map((b) => b.timeRemainingMinutes ?? Infinity));
 
     default:
       return Math.max(...books.map((b) => b.updatedAt));
