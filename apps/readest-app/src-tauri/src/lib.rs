@@ -387,9 +387,13 @@ pub fn run() {
         ))
     });
 
+    // The minidump handler starts its crash-reporter server by re-exec'ing our own
+    // binary, which the sandboxed Mac App Store build cannot do — the child aborts
+    // in dyld before `main()`. Skip it there; see `sentry_config::is_app_sandboxed`.
     #[cfg(not(any(target_os = "ios", target_os = "android")))]
     let _minidump_guard = sentry_guard
         .as_ref()
+        .filter(|_| !sentry_config::is_app_sandboxed())
         .map(|guard| tauri_plugin_sentry::minidump::init(guard));
 
     let builder = tauri::Builder::default()

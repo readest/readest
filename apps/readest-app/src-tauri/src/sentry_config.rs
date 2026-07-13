@@ -114,6 +114,38 @@ pub fn is_mobi_cover_panic_frame(function: &str) -> bool {
     function.contains("mobi_parser::extract_cover")
 }
 
+/// Whether a process on `target_os` with this `APP_SANDBOX_CONTAINER_ID` value
+/// runs inside the macOS App Sandbox. The variable is macOS-only, so every other
+/// target is reported unsandboxed regardless of what the environment holds.
+pub fn app_sandboxed(target_os: &str, sandbox_container_id: Option<&str>) -> bool {
+    target_os == "macos" && sandbox_container_id.is_some()
+}
+
+/// True when this process runs inside the macOS App Sandbox, i.e. it is the Mac
+/// App Store build (the DMG and direct-download builds are not sandboxed).
+///
+/// This gates the out-of-process minidump handler. `sentry-rust-minidump` starts
+/// its crash-reporter server by re-exec'ing our own main executable (its
+/// `minidumper-child` spawns `current_exe()` with `--crash-reporter-server=<socket>`),
+/// and that child is the same signed binary — so it carries the app's
+/// `com.apple.security.app-sandbox` entitlement. `libsystem_secinit` then aborts
+/// in dyld's initializers, before `main()` runs, because it cannot apply the
+/// sandbox profile to a process that already inherited one: SIGILL with a
+/// `SYSCALL_SET_PROFILE` signature (#5053). A sandboxed app may only spawn a
+/// *separate* helper binary entitled with `com.apple.security.inherit`, which a
+/// re-exec of the main binary can never be, so the App Store build goes without
+/// native minidumps. Rust panic and WebView error reporting are unaffected.
+///
+/// `libsystem_secinit` exports `APP_SANDBOX_CONTAINER_ID` into every sandboxed
+/// process's environment during startup, so reading it detects the sandbox
+/// without linking the private `sandbox_check` SPI.
+pub fn is_app_sandboxed() -> bool {
+    app_sandboxed(
+        std::env::consts::OS,
+        std::env::var("APP_SANDBOX_CONTAINER_ID").ok().as_deref(),
+    )
+}
+
 /// The WebView (engine, major-version), set once at startup when the app reports
 /// its User-Agent. Stored globally so `before_send` can tag every event — the
 /// browser context integration doesn't run for events forwarded from the webview.
@@ -174,9 +206,29 @@ pub extern "C" fn readest_sentry_dsn() -> *const std::os::raw::c_char {
 #[cfg(test)]
 mod tests {
     use super::{
-        android_version_from_uname, corrected_os_name, dsn_from_env, environment_for_version,
-        is_ignored_browser_error, is_mobi_cover_panic_frame, parse_webview_info, release_name,
+        android_version_from_uname, app_sandboxed, corrected_os_name, dsn_from_env,
+        environment_for_version, is_ignored_browser_error, is_mobi_cover_panic_frame,
+        parse_webview_info, release_name,
     };
+
+    #[test]
+    fn mac_app_store_build_is_detected_as_sandboxed() {
+        // The Mac App Store build runs under the App Sandbox, so libsystem_secinit
+        // exports the container id. The minidump handler must not re-exec our own
+        // binary there (#5053).
+        assert!(app_sandboxed("macos", Some("com.bilingify.readest")));
+    }
+
+    #[test]
+    fn direct_download_and_other_desktops_are_not_sandboxed() {
+        // DMG / direct-download macOS builds are not sandboxed and keep minidumps.
+        assert!(!app_sandboxed("macos", None));
+        // APP_SANDBOX_CONTAINER_ID is a macOS-only variable: never let a stray
+        // value in the environment disable minidumps on the other desktops.
+        assert!(!app_sandboxed("windows", None));
+        assert!(!app_sandboxed("linux", None));
+        assert!(!app_sandboxed("linux", Some("com.bilingify.readest")));
+    }
 
     /// `tauri-plugin-sentry`'s default `minidump` feature pulls in
     /// sentry-rust-minidump -> minidumper-child -> crash-handler, whose
