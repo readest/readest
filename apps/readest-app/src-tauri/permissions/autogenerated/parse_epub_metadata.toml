@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-parse-epub-metadata"
+description = "Enables the parse_epub_metadata command without any pre-configured scope."
+commands.allow = ["parse_epub_metadata"]
+
+[[permission]]
+identifier = "deny-parse-epub-metadata"
+description = "Denies the parse_epub_metadata command without any pre-configured scope."
+commands.deny = ["parse_epub_metadata"]

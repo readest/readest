@@ -117,6 +117,11 @@ const useBooksManager = () => {
     if (existing) {
       setSideBarBookKey(existing);
       if (cfi) goToCfiWhenReady(existing, cfi);
+      // Cold-restore autoplay: the deep link can land after this book is
+      // already mounted (the app relaunches straight into the reader), and
+      // focusing it leaves bookKeys unchanged — the consumption effect below
+      // never re-runs — so consume the pending request here too.
+      if (consumePendingTTSAutoplay(bookHash)) startTTSWhenReady(existing);
       return;
     }
     const newKey = `${bookHash}-${uniqueId()}`;

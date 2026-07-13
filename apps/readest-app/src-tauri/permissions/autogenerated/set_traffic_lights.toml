@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-set-traffic-lights"
+description = "Enables the set_traffic_lights command without any pre-configured scope."
+commands.allow = ["set_traffic_lights"]
+
+[[permission]]
+identifier = "deny-set-traffic-lights"
+description = "Denies the set_traffic_lights command without any pre-configured scope."
+commands.deny = ["set_traffic_lights"]

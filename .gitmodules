@@ -25,3 +25,6 @@
 [submodule "apps/readest-app/src-tauri/plugins/tauri-plugin-webview-upgrade"]
 	path = apps/readest-app/src-tauri/plugins/tauri-plugin-webview-upgrade
 	url = https://github.com/readest/tauri-plugin-webview-upgrade.git
+[submodule "packages/tao"]
+	path = packages/tao
+	url = https://github.com/readest/tao.git

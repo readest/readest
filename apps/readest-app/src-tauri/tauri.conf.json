@@ -13,6 +13,7 @@
   "app": {
     "windows": [],
     "security": {
+      "capabilities": ["default", "desktop-capability"],
       "csp": {
         "default-src": "'self' 'unsafe-inline' blob: data: customprotocol: asset: http://asset.localhost http://rangefile.localhost ipc: http://ipc.localhost",
         "connect-src": "'self' blob: data: asset: http://asset.localhost http://rangefile.localhost ipc: http://ipc.localhost http://*:* https://*:* https://*.sentry.io https://*.posthog.com https://*.deepl.com https://*.wikipedia.org https://*.wiktionary.org https://*.supabase.co https://*.readest.com wss://speech.platform.bing.com https://*.cloudflarestorage.com https://translate.googleapis.com https://translate.toil.cc https://*.microsofttranslator.com https://edge.microsoft.com https://*.googleusercontent.com https://graph.microsoft.com https://login.microsoftonline.com",
@@ -159,9 +160,19 @@
     },
     "deep-link": {
       "mobile": [
-        { "scheme": ["https"], "host": "web.readest.com", "appLink": true },
-        { "scheme": ["readest"], "appLink": false },
-        { "scheme": ["readest-onedrive"], "appLink": false },
+        {
+          "scheme": ["https"],
+          "host": "web.readest.com",
+          "appLink": true
+        },
+        {
+          "scheme": ["readest"],
+          "appLink": false
+        },
+        {
+          "scheme": ["readest-onedrive"],
+          "appLink": false
+        },
         {
           "scheme": ["com.googleusercontent.apps.209390247301-ctpmep68ppfa56r1b8tr35e4qi4p60kq"],
           "appLink": false

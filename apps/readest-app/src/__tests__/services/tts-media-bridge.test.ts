@@ -4,6 +4,11 @@ vi.mock('@/utils/image', () => ({
   fetchImageAsBase64: vi.fn().mockResolvedValue('data:image/png;base64,x'),
 }));
 
+const notifyCarPlayMock = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/services/tts/carPlaySession', () => ({
+  notifyCarPlayState: (...a: unknown[]) => notifyCarPlayMock(...a),
+}));
+
 import { TTSMediaBridge } from '@/services/tts/ttsMediaBridge';
 import { fetchImageAsBase64 } from '@/utils/image';
 import { TauriMediaSession } from '@/libs/mediaSession';
@@ -245,6 +250,32 @@ describe('TTSMediaBridge', () => {
     // Metadata still reflects the last known chapter, no crash, no blanking.
     expect(first).toBeTruthy();
     expect(bridge.isBound).toBe(true);
+  });
+
+  test('bind reports an active CarPlay state', async () => {
+    notifyCarPlayMock.mockClear();
+    await bind();
+    expect(notifyCarPlayMock).toHaveBeenCalledWith({
+      active: true,
+      title: 'Alice',
+      author: 'Carroll',
+    });
+  });
+
+  test('unbind reports an inactive CarPlay state', async () => {
+    await bind();
+    notifyCarPlayMock.mockClear();
+    bridge.unbind();
+    expect(notifyCarPlayMock).toHaveBeenCalledWith({ active: false });
+  });
+
+  test('a fresh bind does not emit an inactive CarPlay state', async () => {
+    // bind() calls unbind() internally before (re)activating; on a fresh
+    // bridge that internal unbind must be a no-op w.r.t. CarPlay signaling
+    // (no controller was ever bound), so no {active:false} should surface.
+    notifyCarPlayMock.mockClear();
+    await bind();
+    expect(notifyCarPlayMock).not.toHaveBeenCalledWith({ active: false });
   });
 });
 

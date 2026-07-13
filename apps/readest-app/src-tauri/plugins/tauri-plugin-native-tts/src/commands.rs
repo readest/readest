@@ -75,3 +75,11 @@ pub(crate) async fn update_media_session_metadata<R: Runtime>(
 ) -> Result<()> {
     app.native_tts().update_media_session_metadata(payload)
 }
+
+#[command]
+pub(crate) async fn update_carplay_state<R: Runtime>(
+    app: AppHandle<R>,
+    payload: UpdateCarPlayStateRequest,
+) -> Result<()> {
+    app.native_tts().update_carplay_state(payload)
+}

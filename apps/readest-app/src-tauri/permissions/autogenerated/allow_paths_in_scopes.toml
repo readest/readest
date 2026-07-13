@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-allow-paths-in-scopes"
+description = "Enables the allow_paths_in_scopes command without any pre-configured scope."
+commands.allow = ["allow_paths_in_scopes"]
+
+[[permission]]
+identifier = "deny-allow-paths-in-scopes"
+description = "Denies the allow_paths_in_scopes command without any pre-configured scope."
+commands.deny = ["allow_paths_in_scopes"]

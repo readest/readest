@@ -14,6 +14,7 @@
 import { buildTTSMediaMetadata } from '@/utils/ttsMetadata';
 import { fetchImageAsBase64 } from '@/utils/image';
 import { getMediaSession, TauriMediaSession } from '@/libs/mediaSession';
+import { notifyCarPlayState } from './carPlaySession';
 import { SILENCE_DATA } from './TTSData';
 import type { TTSController } from './TTSController';
 import type { TTSMark, TTSMediaMetadataMode } from './types';
@@ -153,6 +154,9 @@ export class TTSMediaBridge {
 
     this.#registerActionHandlers();
 
+    // Mirror the session onto CarPlay (iOS only; no-op elsewhere).
+    void notifyCarPlayState({ active: true, title: meta.title, author: meta.author });
+
     this.#onSpeakMark = (e: Event) => {
       const mark = (e as CustomEvent<TTSMark>).detail;
       // Only end the hold once the skipped-to segment is actually playing. A
@@ -178,6 +182,7 @@ export class TTSMediaBridge {
       if (this.#onStateChange) {
         this.#controller.removeEventListener('tts-state-change', this.#onStateChange);
       }
+      void notifyCarPlayState({ active: false });
     }
     const mediaSession = this.#mediaSession;
     if (mediaSession) {

@@ -13,6 +13,7 @@ permissions = [
   "allow-set-media-session-active",
   "allow-update-media-session-state",
   "allow-update-media-session-metadata",
+  "allow-update-carplay-state",
   "allow-register-listener",
   "allow-remove-listener",
   "allow-check-permissions",

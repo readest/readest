@@ -93,3 +93,11 @@ pub struct UpdateMediaSessionMetadataRequest {
     pub album: Option<String>,
     pub artwork: Option<String>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateCarPlayStateRequest {
+    pub active: bool,
+    pub title: Option<String>,
+    pub author: Option<String>,
+}

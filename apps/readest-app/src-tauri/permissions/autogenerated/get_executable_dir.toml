@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-executable-dir"
+description = "Enables the get_executable_dir command without any pre-configured scope."
+commands.allow = ["get_executable_dir"]
+
+[[permission]]
+identifier = "deny-get-executable-dir"
+description = "Denies the get_executable_dir command without any pre-configured scope."
+commands.deny = ["get_executable_dir"]

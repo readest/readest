@@ -29,6 +29,12 @@ class UpdateMediaSessionMetadataArgs: Decodable {
   let artwork: String?
 }
 
+struct UpdateCarPlayStateArgs: Decodable {
+  let active: Bool?
+  let title: String?
+  let author: String?
+}
+
 class UpdateMediaSessionStateArgs: Decodable {
   let playing: Bool?
   let position: Double?  // milliseconds
@@ -329,6 +335,29 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
       invoke.resolve()
     } catch {
       invoke.reject("Failed to update metadata: \(error.localizedDescription)")
+    }
+  }
+
+  // CarPlay-only signal. Deliberately does NOT touch MPRemoteCommandCenter,
+  // the audio session, or MPNowPlayingInfoCenter (those stay owned by the
+  // WebView navigator.mediaSession path, see #4676). It only records the
+  // current now-reading state for the CarPlay scene delegate and pings it to
+  // refresh its root list.
+  @objc public func update_carplay_state(_ invoke: Invoke) {
+    do {
+      let args = try invoke.parseArgs(UpdateCarPlayStateArgs.self)
+      let active = args.active ?? false
+      let defaults = UserDefaults.standard
+      defaults.set(active, forKey: "readest.carplay.active")
+      defaults.set(args.title ?? "", forKey: "readest.carplay.title")
+      defaults.set(args.author ?? "", forKey: "readest.carplay.author")
+      DispatchQueue.main.async {
+        NotificationCenter.default.post(
+          name: Notification.Name("readestCarPlayStateChanged"), object: nil)
+      }
+      invoke.resolve()
+    } catch {
+      invoke.reject("Failed to update CarPlay state: \(error.localizedDescription)")
     }
   }
 

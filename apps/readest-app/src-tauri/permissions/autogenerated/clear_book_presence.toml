@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-clear-book-presence"
+description = "Enables the clear_book_presence command without any pre-configured scope."
+commands.allow = ["clear_book_presence"]
+
+[[permission]]
+identifier = "deny-clear-book-presence"
+description = "Denies the clear_book_presence command without any pre-configured scope."
+commands.deny = ["clear_book_presence"]

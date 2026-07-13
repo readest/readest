@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-start-apple-sign-in"
+description = "Enables the start_apple_sign_in command without any pre-configured scope."
+commands.allow = ["start_apple_sign_in"]
+
+[[permission]]
+identifier = "deny-start-apple-sign-in"
+description = "Denies the start_apple_sign_in command without any pre-configured scope."
+commands.deny = ["start_apple_sign_in"]

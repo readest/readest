@@ -44,3 +44,10 @@ tauri-plugin-fs = { path = "packages/tauri-plugins/plugins/fs" }
 # override; the vendored copy cross-compiles via `--triple`/`--sdk` instead.
 # Upstream is unmaintained (last release 2024). See packages/swift-rs.
 swift-rs = { path = "packages/swift-rs" }
+# tao 0.35.3 + a use-after-free fix in the iOS scene-configuration callback
+# (configuration_for_connecting_scene_session returned a raw borrow of a
+# Retained it dropped; UIKit then retained a freed UISceneConfiguration and
+# the app SIGSEGVed at launch on real devices whenever an
+# UIApplicationSceneManifest is present - i.e. the CarPlay scene). See
+# packages/tao/src/platform_impl/ios/view.rs; worth an upstream PR.
+tao = { path = "packages/tao" }

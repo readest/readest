@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-spawn-fresh-browser"
+description = "Enables the spawn_fresh_browser command without any pre-configured scope."
+commands.allow = ["spawn_fresh_browser"]
+
+[[permission]]
+identifier = "deny-spawn-fresh-browser"
+description = "Denies the spawn_fresh_browser command without any pre-configured scope."
+commands.deny = ["spawn_fresh_browser"]

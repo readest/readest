@@ -1,0 +1,36 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "webdriver-remote",
+  "description": "Grants the app commands to the vitest webdriver tester page, which tauri classifies as a remote origin (it is served from vitest's own port, not the devUrl). Not listed in app.security.capabilities, so it is inert in shipped builds; scripts/test-tauri.sh selects it via a --config override.",
+  "local": false,
+  "remote": {
+    "urls": ["http://localhost:*", "http://127.0.0.1:*"]
+  },
+  "windows": ["main"],
+  "permissions": [
+    "allow-start-server",
+    "allow-download-file",
+    "allow-upload-file",
+    "allow-get-environment-variable",
+    "allow-get-executable-dir",
+    "allow-set-webview-info",
+    "allow-is-updater-disabled",
+    "allow-allow-paths-in-scopes",
+    "allow-read-dir",
+    "allow-parse-epub-metadata",
+    "allow-extract-epub-cover-full",
+    "allow-parse-epub-full",
+    "allow-parse-mobi-metadata",
+    "allow-extract-mobi-cover-full",
+    "allow-auth-with-safari",
+    "allow-start-apple-sign-in",
+    "allow-set-traffic-lights",
+    "allow-show-lookup-popover",
+    "allow-update-book-presence",
+    "allow-clear-book-presence",
+    "allow-clip-url",
+    "allow-spawn-fresh-browser",
+    "allow-verify-update-signature",
+    "allow-install-nightly-update"
+  ]
+}

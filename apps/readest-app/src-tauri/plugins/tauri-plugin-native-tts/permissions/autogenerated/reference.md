@@ -16,6 +16,7 @@ Default permissions for the plugin
 - `allow-set-media-session-active`
 - `allow-update-media-session-state`
 - `allow-update-media-session-metadata`
+- `allow-update-carplay-state`
 - `allow-register-listener`
 - `allow-remove-listener`
 - `allow-check-permissions`
@@ -444,6 +445,32 @@ Enables the stop command without any pre-configured scope.
 <td>
 
 Denies the stop command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:allow-update-carplay-state`
+
+</td>
+<td>
+
+Enables the update_carplay_state command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-tts:deny-update-carplay-state`
+
+</td>
+<td>
+
+Denies the update_carplay_state command without any pre-configured scope.
 
 </td>
 </tr>
