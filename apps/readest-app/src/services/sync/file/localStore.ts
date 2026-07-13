@@ -51,6 +51,16 @@ export interface LocalStore {
   /** Persist refreshed metadata for a book already in the local library. */
   updateBookMetadata(book: Book): Promise<void>;
   /**
+   * Record that these books' files are present on the remote (`uploadedAt`), in
+   * one library write — the engine can confirm many books in a single run.
+   *
+   * Field-scoped by contract: the stamp is applied to the LIVE library rows, not
+   * to the snapshots the engine captured when the run started. A sync can take
+   * minutes, and writing whole snapshots back would roll back any progress or
+   * metadata the user saved while it was running.
+   */
+  markBooksUploaded(hashes: string[], uploadedAt: number): Promise<void>;
+  /**
    * Apply a peer's deletion locally: remove this device's managed copy of the
    * book file and persist the tombstone (`book.deletedAt`) so the book drops
    * off the shelf and stops being re-uploaded. External / in-place sources are

@@ -102,4 +102,26 @@ describe('createAppLocalStore — library hydration (data-loss guard)', () => {
     // The deleted book drops off the visible shelf.
     expect(useLibraryStore.getState().visibleLibrary.map((b) => b.hash)).toEqual(['b']);
   });
+
+  test('markBooksUploaded stamps the live rows, not the engine snapshot (#5084)', async () => {
+    // The engine captured `a` at the start of a long run; meanwhile the user
+    // read it and saved progress. The stamp must not roll that back.
+    useLibraryStore.getState().setLibrary([makeBook('a', { progress: [42, 100] }), makeBook('b')]);
+
+    await makeStore().markBooksUploaded(['a'], 900);
+
+    const stamped = savedLibrary!.find((b) => b.hash === 'a')!;
+    expect(stamped.uploadedAt).toBe(900);
+    expect(stamped.progress).toEqual([42, 100]);
+    // Books the engine didn't confirm keep their (absent) cloud state.
+    expect(savedLibrary!.find((b) => b.hash === 'b')!.uploadedAt).toBeFalsy();
+  });
+
+  test('markBooksUploaded hydrates from disk when the store is unloaded', async () => {
+    await makeStore().markBooksUploaded(['a'], 900);
+
+    expect(appService.loadLibraryBooks).toHaveBeenCalled();
+    expect(savedLibrary!.map((b) => b.hash).sort()).toEqual(['a', 'b']);
+    expect(savedLibrary!.find((b) => b.hash === 'a')!.uploadedAt).toBe(900);
+  });
 });

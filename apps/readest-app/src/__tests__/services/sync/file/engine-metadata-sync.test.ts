@@ -93,6 +93,7 @@ const makeStore = (overrides: Partial<LocalStore> = {}): LocalStore => ({
   addBookToLibrary: async () => {},
   updateBookMetadata: async () => {},
   deleteBookLocally: async () => {},
+  markBooksUploaded: async () => {},
   ...overrides,
 });
 

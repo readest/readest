@@ -17,6 +17,7 @@ import {
   buildRemotePayload,
   parseRemotePayload,
   parseRemoteLibraryIndex,
+  stripDeviceLocalFields,
   RemoteLibraryIndex,
 } from './wire';
 import { mergeBookConfig, mergeBookMetadata, shouldApplyRemoteBookMetadata } from './merge';
@@ -628,6 +629,33 @@ export class FileSyncEngine {
           hasLocalFile(book) &&
           knownNoSource.get(book.hash) !== (book.updatedAt ?? 0)));
 
+    // A book whose FILE is on the remote is cloud-backed, exactly like a book in
+    // Readest Cloud storage — and `book.uploadedAt` is the only thing the rest of
+    // the app reads to know that. Leaving it null for a provider-synced book made
+    // the whole library misread it as purely-local: it could never be re-downloaded
+    // (`makeBookAvailable` gates on `uploadedAt`), the shelf offered Upload instead
+    // of Download, and — the data loss in #5084 — once "Remove from Device Only"
+    // cleared `downloadedAt`, the stale-record cleanup treated it as a local book
+    // whose file had vanished and offered a delete that GC'd it off the remote.
+    // Stamps are collected and persisted in one batch at the end of the run.
+    const stampedAt = Date.now();
+    const cloudCopyStamps = new Map<string, Book>();
+    const stampCloudCopy = (hash: string): void => {
+      const current = allBooksMap.get(hash);
+      if (!current || current.uploadedAt || current.deletedAt) return;
+      // A fresh object, never an in-place mutation: the caller's rows are the
+      // ones React renders, and a mutated row is invisible to the memo.
+      const stamped: Book = { ...current, uploadedAt: stampedAt };
+      allBooksMap.set(hash, stamped);
+      cloudCopyStamps.set(hash, stamped);
+    };
+    // The index's uploaded-file record already proves the file is on the remote,
+    // so a book another device (or an earlier run) pushed gets stamped without
+    // any request of its own.
+    for (const book of books) {
+      if (uploadedHashes.has(book.hash)) stampCloudCopy(book.hash);
+    }
+
     const remoteBooksToDownload: Book[] = [];
     // The remote source of truth for a book's on-disk filename is the per-hash
     // directory listing — NOT the book's title (which may be stale). We always
@@ -755,8 +783,11 @@ export class FileSyncEngine {
           if (!allBooksMap.has(rb.hash) && !rb.deletedAt) {
             candidateHashes.add(rb.hash);
             // Provisionally register the indexed book — fields refreshed below
-            // once we've inspected the actual hash dir.
-            allBooksMap.set(rb.hash, rb);
+            // once we've inspected the actual hash dir. Strip the pushing
+            // device's local fields: an index written by an older client still
+            // carries its `filePath`, and adopting it would make this device
+            // read the book as a purely-local record (#5084).
+            allBooksMap.set(rb.hash, stripDeviceLocalFields(rb));
           }
         }
       }
@@ -894,11 +925,13 @@ export class FileSyncEngine {
               } catch (e) {
                 console.warn('file sync: config download failed', rb.hash, e);
               }
+              // We just pulled its bytes, so the file is on the remote: the row is
+              // cloud-backed (#5084) and addBookToLibrary persists the stamp.
+              rb.uploadedAt = Date.now();
               await this.store.addBookToLibrary(rb);
               result.booksDownloaded += 1;
               syncedHashes.add(rb.hash);
-              // We just pulled its bytes, so the file is on the remote — record it
-              // so a later push-side sync doesn't HEAD-probe it back.
+              // Record it so a later push-side sync doesn't HEAD-probe it back.
               uploadedHashes.add(rb.hash);
             } else {
               // No bytes returned (typically a 404 we couldn't resolve).
@@ -1010,9 +1043,11 @@ export class FileSyncEngine {
                 result.filesUploaded += 1;
                 syncedHashes.add(book.hash);
                 uploadedHashes.add(book.hash);
+                stampCloudCopy(book.hash);
               } else if (fileResult.reason === 'remote-matches') {
                 result.filesAlreadyInSync += 1;
                 uploadedHashes.add(book.hash);
+                stampCloudCopy(book.hash);
               } else if (fileResult.reason === 'no-source') {
                 // The file isn't on this device; remember the verdict for this
                 // exact row so the next run doesn't re-pay the fs probes. It
@@ -1111,7 +1146,7 @@ export class FileSyncEngine {
         try {
           const newIndex: RemoteLibraryIndex = {
             schemaVersion: 1,
-            books: Array.from(indexByHash.values()),
+            books: Array.from(indexByHash.values()).map(stripDeviceLocalFields),
             updatedAt: Date.now(),
             uploadedHashes: nextUploadedHashes,
             emptyDirs: nextEmptyDirs,
@@ -1123,6 +1158,17 @@ export class FileSyncEngine {
         } catch (e) {
           console.warn('file sync: failed to push index', e);
         }
+      }
+    }
+
+    // Persist the cloud-copy stamps in one library write. They must survive a
+    // restart: a row that boots without `uploadedAt` is read as purely-local
+    // again, which is what made "Remove from Device Only" destructive (#5084).
+    if (cloudCopyStamps.size > 0) {
+      try {
+        await this.store.markBooksUploaded(Array.from(cloudCopyStamps.keys()), stampedAt);
+      } catch (e) {
+        console.warn('file sync: failed to persist cloud-copy stamps', e);
       }
     }
 

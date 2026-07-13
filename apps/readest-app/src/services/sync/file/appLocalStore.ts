@@ -131,6 +131,22 @@ export const createAppLocalStore = ({
     await useLibraryStore.getState().updateBook(envConfig, book);
   },
 
+  markBooksUploaded: async (hashes, uploadedAt) => {
+    if (!hashes.length) return;
+    if (!useLibraryStore.getState().libraryLoaded) {
+      useLibraryStore.getState().setLibrary(await appService.loadLibraryBooks());
+    }
+    // Stamp the LIVE rows (see the LocalStore contract): a book the user read
+    // while the sync was running must keep the progress it saved meanwhile.
+    const wanted = new Set(hashes);
+    const rows = useLibraryStore
+      .getState()
+      .library.filter((book) => wanted.has(book.hash) && !book.uploadedAt && !book.deletedAt)
+      .map((book) => ({ ...book, uploadedAt }));
+    if (!rows.length) return;
+    await useLibraryStore.getState().updateBooks(envConfig, rows);
+  },
+
   deleteBookLocally: async (book) => {
     // Remove this device's managed copy of the book file (cloudService.deleteBook
     // with 'local' only ever touches app-managed Books/<hash>/ sources; an

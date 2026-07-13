@@ -138,13 +138,18 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                     label={_('Remove from Cloud & Device')}
                     onClick={onDelete}
                   />
-                  <MenuItem
-                    noIcon
-                    transient
-                    label={_('Remove from Cloud Only')}
-                    onClick={onDeleteCloudBackup}
-                    disabled={!book.uploadedAt}
-                  />
+                  {/* Offered only where a cloud-only removal means something: a
+                      third-party provider mirrors the library, so it would just
+                      re-upload the still-local book on its next sync (#5084). */}
+                  {onDeleteCloudBackup && (
+                    <MenuItem
+                      noIcon
+                      transient
+                      label={_('Remove from Cloud Only')}
+                      onClick={onDeleteCloudBackup}
+                      disabled={!book.uploadedAt}
+                    />
+                  )}
                   <MenuItem
                     noIcon
                     transient

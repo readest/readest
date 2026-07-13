@@ -1118,11 +1118,22 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           if (syncBooks) pushLibrary();
         }
 
-        // Queue cloud deletion
+        // Cloud deletion. The transfer queue only speaks to Readest storage, so a
+        // book whose cloud copy lives on the selected third-party provider must
+        // not be routed through it — it would delete nothing. 'both' / 'purge'
+        // tombstoned the book above, and the file sync GCs a tombstoned book's
+        // remote directory on its next run, so the removal is already covered.
+        // ("Remove from Cloud Only" is not offered for those providers — see
+        // BookDetailModal.)
         if (deleteAction === 'cloud' || deleteAction === 'both' || deleteAction === 'purge') {
-          const transferId = transferManager.queueDelete(book, 1, true);
-          if (!transferId) {
-            throw new Error('Failed to queue cloud deletion');
+          if (isReadestCloudStorageActive(useSettingsStore.getState().settings)) {
+            const transferId = transferManager.queueDelete(book, 1, true);
+            if (!transferId) {
+              throw new Error('Failed to queue cloud deletion');
+            }
+          } else {
+            book.uploadedAt = null;
+            await updateBook(envConfig, book);
           }
         }
 
@@ -1761,7 +1772,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           handleBookUpload={handleBookUpload}
           handleBookDownload={handleBookDownload}
           handleBookDelete={handleBookDelete('both')}
-          handleBookDeleteCloudBackup={handleBookDelete('cloud')}
+          // Readest storage only. A third-party provider mirrors the library, so
+          // removing just its cloud copy is not expressible: the next sync would
+          // upload the still-local book straight back (#5084).
+          handleBookDeleteCloudBackup={
+            isReadestCloudStorageActive(settings) ? handleBookDelete('cloud') : undefined
+          }
           handleBookDeleteLocalCopy={handleBookDelete('local')}
           handleBookPurge={handleBookDelete('purge')}
           handleBookMetadataUpdate={handleUpdateMetadata}

@@ -129,3 +129,33 @@ export const parseRemoteLibraryIndex = (raw: string | null): RemoteLibraryIndex 
   }
   return null;
 };
+
+/**
+ * Fields that describe THIS device's copy of a book rather than the book
+ * itself: an absolute path from an in-place / transient import, the blob URL of
+ * the rendered cover, and the two "this device holds the bytes" stamps.
+ *
+ * They must never cross devices. A peer that adopts a foreign `filePath` reads
+ * the row as a purely-local book (that is what `book.filePath` means to the
+ * rest of the app), so as soon as its managed copy is absent — exactly the
+ * state "Remove from Device Only" creates — the stale-record cleanup in
+ * `useOpenBook` offers to delete the "missing" book, which runs the cloud-and-
+ * device delete and GCs the book off the shared remote (#5084).
+ * `useBooksSync.getNewBooks` strips `filePath` from the native channel for the
+ * same reason; the shared index needs the same discipline.
+ */
+const DEVICE_LOCAL_BOOK_FIELDS = [
+  'filePath',
+  'coverImageUrl',
+  'downloadedAt',
+  'coverDownloadedAt',
+] as const satisfies readonly (keyof Book)[];
+
+/** A copy of `book` safe to publish to — or adopt from — the shared index. */
+export const stripDeviceLocalFields = (book: Book): Book => {
+  const copy = { ...book };
+  for (const field of DEVICE_LOCAL_BOOK_FIELDS) {
+    delete copy[field];
+  }
+  return copy;
+};

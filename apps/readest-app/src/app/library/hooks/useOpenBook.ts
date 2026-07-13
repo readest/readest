@@ -32,27 +32,31 @@ export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptio
 
   const makeBookAvailable = useCallback(
     async (book: Book) => {
-      if (book.uploadedAt && !book.downloadedAt) {
-        if (await appService?.isBookAvailable(book)) {
-          if (!book.downloadedAt || !book.coverDownloadedAt) {
-            book.downloadedAt = Date.now();
-            book.coverDownloadedAt = Date.now();
-            await updateBook(envConfig, book);
-          }
-          return true;
-        }
-        let available = false;
-        const loadingTimeout = setTimeout(() => setLoading(true), 200);
-        try {
-          available = await handleBookDownload(book, { queued: false });
+      // A book with no cloud copy has nothing to fetch; `openBook` below already
+      // handles the case where such a book's local file is gone.
+      if (!book.uploadedAt) return true;
+      // The row's `downloadedAt` is not proof that the file is still here: a
+      // "Remove from Device Only" evicts the file, and an in-place original can
+      // be moved or deleted behind our back. Probe, and re-fetch from the cloud
+      // when it's really gone, instead of opening a reader that cannot load.
+      if (await appService?.isBookAvailable(book)) {
+        if (!book.downloadedAt || !book.coverDownloadedAt) {
+          book.downloadedAt = Date.now();
+          book.coverDownloadedAt = Date.now();
           await updateBook(envConfig, book);
-        } finally {
-          if (loadingTimeout) clearTimeout(loadingTimeout);
-          setLoading(false);
         }
-        return available;
+        return true;
       }
-      return true;
+      let available = false;
+      const loadingTimeout = setTimeout(() => setLoading(true), 200);
+      try {
+        available = await handleBookDownload(book, { queued: false });
+        await updateBook(envConfig, book);
+      } finally {
+        if (loadingTimeout) clearTimeout(loadingTimeout);
+        setLoading(false);
+      }
+      return available;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [appService, envConfig, handleBookDownload, setLoading],

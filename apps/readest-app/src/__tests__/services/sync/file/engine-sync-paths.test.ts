@@ -59,6 +59,7 @@ const fakeStore = (opts: Partial<LocalStore> = {}): LocalStore => ({
   addBookToLibrary: opts.addBookToLibrary ?? (async () => {}),
   updateBookMetadata: opts.updateBookMetadata ?? (async () => {}),
   deleteBookLocally: opts.deleteBookLocally ?? (async () => {}),
+  markBooksUploaded: opts.markBooksUploaded ?? (async () => {}),
 });
 
 describe('FileSyncEngine.pushBookFile — streaming upload', () => {
