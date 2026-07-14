@@ -132,8 +132,12 @@ describe('checkMixedFleetOnce', () => {
     const pullChanges = vi.fn().mockResolvedValue({ books: [] });
     const settings = {
       // No readestCloud field: derived off, because a backend is enabled.
-      onedrive: { enabled: true, providerSelectedAt: 9000 },
-      webdav: { enabled: true, providerSelectedAt: 3000 },
+      // webdav is enumerated before onedrive by getEnabledFileSyncBackends,
+      // but its providerSelectedAt is the LATER one, so a correct
+      // implementation must take the minimum across backends rather than
+      // the first enabled backend's value.
+      webdav: { enabled: true, providerSelectedAt: 9000 },
+      onedrive: { enabled: true, providerSelectedAt: 3000 },
     } as unknown as SystemSettings;
 
     await checkMixedFleetOnce({ pullChanges } as never, settings, translationFn);
