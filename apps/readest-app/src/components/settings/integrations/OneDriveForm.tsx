@@ -154,8 +154,10 @@ const OneDriveForm: React.FC = () => {
         </div>
         <Tips>
           <li>
-            {_('Connected as {{account}}', { account: stored.accountLabel })}
-            {_('. Make OneDrive the active cloud provider.')}
+            {_('Connected as {{account}}. Make {{provider}} the active cloud provider.', {
+              account: stored.accountLabel,
+              provider: 'OneDrive',
+            })}
           </li>
         </Tips>
       </div>

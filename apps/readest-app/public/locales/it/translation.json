@@ -1837,8 +1837,6 @@
   "Full Sync": "Sincronizzazione completa",
   "Waiting for sign-in…": "In attesa dell'accesso…",
   "Reconnect": "Riconnetti",
-  "Connected as {{account}}": "Collegato come {{account}}",
-  ". Make Google Drive the active cloud provider.": ". Imposta Google Drive come provider cloud attivo.",
   "Use Google Drive": "Usa Google Drive",
   "Sign-in opens in your browser.": "L'accesso si apre nel browser.",
   "Readest only accesses the files it creates in your Drive.": "Readest accede solo ai file che crea nel tuo Drive.",
@@ -1933,11 +1931,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Sincronizza la tua biblioteca, il progresso di lettura e le evidenziazioni con il tuo Microsoft OneDrive.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Finché {{provider}} è selezionato, libri, progressi e annotazioni si sincronizzano solo con il tuo OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest accede solo ai file che crea nel tuo OneDrive.",
-  ". Make OneDrive the active cloud provider.": ". Imposta OneDrive come provider cloud attivo.",
   "Sentence Pause": "Pausa tra le frasi",
   "Paragraph Gap": "Pausa tra i paragrafi",
   "{{minutes}}m left": "{{minutes}} min rimasti",
   "{{hours}}h left": "{{hours}} h rimaste",
   "Time Remaining": "Tempo rimanente",
-  "Theme": "Tema"
+  "Theme": "Tema",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Collegato come {{account}}. Imposta {{provider}} come provider cloud attivo."
 }

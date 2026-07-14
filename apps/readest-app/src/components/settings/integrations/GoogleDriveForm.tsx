@@ -153,8 +153,10 @@ const GoogleDriveForm: React.FC = () => {
         </div>
         <Tips>
           <li>
-            {_('Connected as {{account}}', { account: stored.accountLabel })}
-            {_('. Make Google Drive the active cloud provider.')}
+            {_('Connected as {{account}}. Make {{provider}} the active cloud provider.', {
+              account: stored.accountLabel,
+              provider: 'Google Drive',
+            })}
           </li>
         </Tips>
       </div>

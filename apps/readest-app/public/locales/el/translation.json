@@ -1803,8 +1803,6 @@
   "Full Sync": "Πλήρης συγχρονισμός",
   "Waiting for sign-in…": "Αναμονή για σύνδεση…",
   "Reconnect": "Επανασύνδεση",
-  "Connected as {{account}}": "Έχετε συνδεθεί ως {{account}}",
-  ". Make Google Drive the active cloud provider.": ". Ορίστε το Google Drive ως ενεργό πάροχο cloud.",
   "Use Google Drive": "Χρήση Google Drive",
   "Sign-in opens in your browser.": "Η σύνδεση ανοίγει στο πρόγραμμα περιήγησής σας.",
   "Readest only accesses the files it creates in your Drive.": "Το Readest έχει πρόσβαση μόνο στα αρχεία που δημιουργεί στο Drive σας.",
@@ -1898,11 +1896,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Συγχρονίστε τη βιβλιοθήκη, την πρόοδο ανάγνωσης και τις επισημάνσεις σας με το Microsoft OneDrive σας.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Όσο είναι επιλεγμένο το {{provider}}, τα βιβλία, η πρόοδος και οι σημειώσεις συγχρονίζονται μόνο με το OneDrive σας.",
   "Readest only accesses the files it creates in your OneDrive.": "Το Readest έχει πρόσβαση μόνο στα αρχεία που δημιουργεί στο OneDrive σας.",
-  ". Make OneDrive the active cloud provider.": ". Ορίστε το OneDrive ως ενεργό πάροχο cloud.",
   "Sentence Pause": "Παύση μεταξύ προτάσεων",
   "Paragraph Gap": "Παύση παραγράφου",
   "{{minutes}}m left": "απομένουν {{minutes}} λεπτά",
   "{{hours}}h left": "απομένουν {{hours}} ώρες",
   "Time Remaining": "Υπολειπόμενος χρόνος",
-  "Theme": "Θέμα"
+  "Theme": "Θέμα",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Έχετε συνδεθεί ως {{account}}. Ορίστε το {{provider}} ως ενεργό πάροχο cloud."
 }

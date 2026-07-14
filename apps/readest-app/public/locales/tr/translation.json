@@ -1803,8 +1803,6 @@
   "Full Sync": "Tam Senkronizasyon",
   "Waiting for sign-in…": "Giriş bekleniyor…",
   "Reconnect": "Yeniden Bağlan",
-  "Connected as {{account}}": "{{account}} olarak bağlanıldı",
-  ". Make Google Drive the active cloud provider.": ". Google Drive'ı etkin bulut sağlayıcısı yapın.",
   "Use Google Drive": "Google Drive Kullan",
   "Sign-in opens in your browser.": "Giriş tarayıcınızda açılır.",
   "Readest only accesses the files it creates in your Drive.": "Readest yalnızca Drive'ınızda kendi oluşturduğu dosyalara erişir.",
@@ -1898,11 +1896,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Kütüphanenizi, okuma ilerlemenizi ve vurgularınızı Microsoft OneDrive'ınızla senkronize edin.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} seçili olduğunda kitaplar, ilerleme ve açıklamalar yalnızca OneDrive'ınızla senkronize edilir.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest yalnızca OneDrive'ınızda kendi oluşturduğu dosyalara erişir.",
-  ". Make OneDrive the active cloud provider.": ". OneDrive'ı etkin bulut sağlayıcısı yapın.",
   "Sentence Pause": "Cümle Arası Duraklama",
   "Paragraph Gap": "Paragraf arası duraklama",
   "{{minutes}}m left": "{{minutes}} dk kaldı",
   "{{hours}}h left": "{{hours}} sa kaldı",
   "Time Remaining": "Kalan süre",
-  "Theme": "Tema"
+  "Theme": "Tema",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} olarak bağlanıldı. {{provider}}'ı etkin bulut sağlayıcısı yapın."
 }

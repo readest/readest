@@ -1769,8 +1769,6 @@
   "Full Sync": "Segerak Penuh",
   "Waiting for sign-in…": "Menunggu log masuk…",
   "Reconnect": "Sambung Semula",
-  "Connected as {{account}}": "Disambungkan sebagai {{account}}",
-  ". Make Google Drive the active cloud provider.": ". Jadikan Google Drive sebagai penyedia awan yang aktif.",
   "Use Google Drive": "Guna Google Drive",
   "Sign-in opens in your browser.": "Log masuk akan dibuka dalam pelayar anda.",
   "Readest only accesses the files it creates in your Drive.": "Readest hanya mengakses fail yang diciptanya dalam Drive anda.",
@@ -1863,11 +1861,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Segerakkan perpustakaan, kemajuan bacaan dan penonjolan anda dengan Microsoft OneDrive anda.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Semasa {{provider}} dipilih, buku, kemajuan dan anotasi hanya disegerakkan ke OneDrive anda.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest hanya mengakses fail yang diciptanya dalam OneDrive anda.",
-  ". Make OneDrive the active cloud provider.": ". Jadikan OneDrive sebagai penyedia awan yang aktif.",
   "Sentence Pause": "Jeda Antara Ayat",
   "Paragraph Gap": "Jeda antara perenggan",
   "{{minutes}}m left": "{{minutes}} min lagi",
   "{{hours}}h left": "{{hours}} jam lagi",
   "Time Remaining": "Masa berbaki",
-  "Theme": "Tema"
+  "Theme": "Tema",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Disambungkan sebagai {{account}}. Jadikan {{provider}} sebagai penyedia awan yang aktif."
 }

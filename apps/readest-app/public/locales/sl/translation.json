@@ -1871,8 +1871,6 @@
   "Full Sync": "Polna sinhronizacija",
   "Waiting for sign-in…": "Čakanje na prijavo…",
   "Reconnect": "Znova poveži",
-  "Connected as {{account}}": "Povezano kot {{account}}",
-  ". Make Google Drive the active cloud provider.": ". Nastavite Google Drive kot aktivnega ponudnika oblaka.",
   "Use Google Drive": "Uporabi Google Drive",
   "Sign-in opens in your browser.": "Prijava se odpre v vašem brskalniku.",
   "Readest only accesses the files it creates in your Drive.": "Readest dostopa le do datotek, ki jih sam ustvari v vašem Google Drive.",
@@ -1968,11 +1966,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Sinhronizirajte knjižnico, napredek branja in označbe s svojim Microsoft OneDrive.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Dokler je izbran {{provider}}, se knjige, napredek in opombe sinhronizirajo samo z vašim OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest dostopa le do datotek, ki jih sam ustvari v vašem OneDrive.",
-  ". Make OneDrive the active cloud provider.": ". Nastavite OneDrive kot aktivnega ponudnika oblaka.",
   "Sentence Pause": "Premor med stavki",
   "Paragraph Gap": "Premor med odstavki",
   "{{minutes}}m left": "Še {{minutes}} min",
   "{{hours}}h left": "Še {{hours}} h",
   "Time Remaining": "Preostali čas",
-  "Theme": "Tema"
+  "Theme": "Tema",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Povezano kot {{account}}. Nastavite {{provider}} kot aktivnega ponudnika oblaka."
 }

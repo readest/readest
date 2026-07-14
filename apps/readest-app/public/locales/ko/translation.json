@@ -1769,8 +1769,6 @@
   "Full Sync": "전체 동기화",
   "Waiting for sign-in…": "로그인을 기다리는 중…",
   "Reconnect": "다시 연결",
-  "Connected as {{account}}": "{{account}}(으)로 연결됨",
-  ". Make Google Drive the active cloud provider.": ". Google Drive를 사용할 클라우드 제공업체로 설정합니다.",
   "Use Google Drive": "Google Drive 사용",
   "Sign-in opens in your browser.": "로그인은 브라우저에서 열립니다.",
   "Readest only accesses the files it creates in your Drive.": "Readest는 Drive에서 직접 만든 파일에만 접근합니다.",
@@ -1863,11 +1861,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "라이브러리, 읽기 진행 상황, 하이라이트를 Microsoft OneDrive와 동기화합니다.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}}를 선택하면 책, 진행률, 주석이 OneDrive에만 동기화됩니다.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest는 OneDrive에서 직접 만든 파일에만 접근합니다.",
-  ". Make OneDrive the active cloud provider.": ". OneDrive를 사용할 클라우드 제공업체로 설정합니다.",
   "Sentence Pause": "문장 사이 일시정지",
   "Paragraph Gap": "문단 간 정지",
   "{{minutes}}m left": "{{minutes}}분 남음",
   "{{hours}}h left": "{{hours}}시간 남음",
   "Time Remaining": "남은 시간",
-  "Theme": "테마"
+  "Theme": "테마",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}}(으)로 연결됨. {{provider}}를 사용할 클라우드 제공업체로 설정합니다."
 }

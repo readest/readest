@@ -1803,8 +1803,6 @@
   "Full Sync": "Volledige synchronisatie",
   "Waiting for sign-in…": "Wachten op inloggen…",
   "Reconnect": "Opnieuw verbinden",
-  "Connected as {{account}}": "Verbonden als {{account}}",
-  ". Make Google Drive the active cloud provider.": ". Maak Google Drive de actieve cloudprovider.",
   "Use Google Drive": "Google Drive gebruiken",
   "Sign-in opens in your browser.": "Inloggen opent in je browser.",
   "Readest only accesses the files it creates in your Drive.": "Readest heeft alleen toegang tot de bestanden die het zelf in je Drive aanmaakt.",
@@ -1898,11 +1896,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Synchroniseer je bibliotheek, leesvoortgang en markeringen met je Microsoft OneDrive.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Zolang {{provider}} is geselecteerd, worden boeken, voortgang en annotaties alleen met uw OneDrive gesynchroniseerd.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest heeft alleen toegang tot de bestanden die het zelf in je OneDrive aanmaakt.",
-  ". Make OneDrive the active cloud provider.": ". Maak OneDrive de actieve cloudprovider.",
   "Sentence Pause": "Zinspauze",
   "Paragraph Gap": "Alineapauze",
   "{{minutes}}m left": "Nog {{minutes}} min",
   "{{hours}}h left": "Nog {{hours}} u",
   "Time Remaining": "Resterende tijd",
-  "Theme": "Thema"
+  "Theme": "Thema",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Verbonden als {{account}}. Maak {{provider}} de actieve cloudprovider."
 }

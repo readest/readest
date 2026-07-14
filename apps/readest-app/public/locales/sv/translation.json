@@ -1803,8 +1803,6 @@
   "Full Sync": "Fullständig synk",
   "Waiting for sign-in…": "Väntar på inloggning…",
   "Reconnect": "Anslut igen",
-  "Connected as {{account}}": "Ansluten som {{account}}",
-  ". Make Google Drive the active cloud provider.": ". Gör Google Drive till aktiv molnleverantör.",
   "Use Google Drive": "Använd Google Drive",
   "Sign-in opens in your browser.": "Inloggningen öppnas i din webbläsare.",
   "Readest only accesses the files it creates in your Drive.": "Readest kommer bara åt de filer som appen skapar i din Drive.",
@@ -1898,11 +1896,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Synka ditt bibliotek, dina läsframsteg och markeringar med din Microsoft OneDrive.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "När {{provider}} är valt synkroniseras böcker, framsteg och anteckningar endast med din OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest kommer bara åt de filer som appen skapar i din OneDrive.",
-  ". Make OneDrive the active cloud provider.": ". Gör OneDrive till aktiv molnleverantör.",
   "Sentence Pause": "Meningspaus",
   "Paragraph Gap": "Styckepaus",
   "{{minutes}}m left": "{{minutes}} min kvar",
   "{{hours}}h left": "{{hours}} h kvar",
   "Time Remaining": "Återstående tid",
-  "Theme": "Tema"
+  "Theme": "Tema",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Ansluten som {{account}}. Gör {{provider}} till aktiv molnleverantör."
 }

@@ -1803,8 +1803,6 @@
   "Full Sync": "Toʻliq sinxronlash",
   "Waiting for sign-in…": "Kirish kutilmoqda…",
   "Reconnect": "Qayta ulanish",
-  "Connected as {{account}}": "{{account}} sifatida ulangan",
-  ". Make Google Drive the active cloud provider.": ". Google Drive-ni faol bulut provayderi qiling.",
   "Use Google Drive": "Google Drive-dan foydalanish",
   "Sign-in opens in your browser.": "Kirish brauzeringizda ochiladi.",
   "Readest only accesses the files it creates in your Drive.": "Readest Drive-ingizda faqat oʻzi yaratgan fayllarga kiradi.",
@@ -1898,11 +1896,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Kutubxonangiz, oʻqish jarayoni va belgilashlaringizni Microsoft OneDrive bilan sinxronlang.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} tanlangan paytda kitoblar, jarayon va izohlar faqat OneDrive'ingizga sinxronlanadi.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest OneDrive-ingizda faqat oʻzi yaratgan fayllarga kiradi.",
-  ". Make OneDrive the active cloud provider.": ". OneDrive-ni faol bulut provayderi qiling.",
   "Sentence Pause": "Gaplar orasidagi pauza",
   "Paragraph Gap": "Paragraflar orasidagi tanaffus",
   "{{minutes}}m left": "{{minutes}} daqiqa qoldi",
   "{{hours}}h left": "{{hours}} soat qoldi",
   "Time Remaining": "Qolgan vaqt",
-  "Theme": "Mavzu"
+  "Theme": "Mavzu",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} sifatida ulangan. {{provider}}-ni faol bulut provayderi qiling."
 }

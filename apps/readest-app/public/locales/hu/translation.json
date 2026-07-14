@@ -1803,8 +1803,6 @@
   "Full Sync": "Teljes szinkronizálás",
   "Waiting for sign-in…": "Várakozás a bejelentkezésre…",
   "Reconnect": "Újracsatlakozás",
-  "Connected as {{account}}": "Csatlakozva mint {{account}}",
-  ". Make Google Drive the active cloud provider.": ". Tegye a Google Drive-ot az aktív felhőszolgáltatóvá.",
   "Use Google Drive": "Google Drive használata",
   "Sign-in opens in your browser.": "A bejelentkezés a böngészőben nyílik meg.",
   "Readest only accesses the files it creates in your Drive.": "A Readest csak azokhoz a fájlokhoz fér hozzá, amelyeket ő hozott létre a Drive-jában.",
@@ -1898,11 +1896,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Szinkronizálja könyvtárát, olvasási haladását és kiemeléseit a Microsoft OneDrive-jával.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Amíg a(z) {{provider}} van kiválasztva, a könyvek, az előrehaladás és a jegyzetek csak a OneDrive-odba szinkronizálódnak.",
   "Readest only accesses the files it creates in your OneDrive.": "A Readest csak azokhoz a fájlokhoz fér hozzá, amelyeket ő hozott létre a OneDrive-jában.",
-  ". Make OneDrive the active cloud provider.": ". Tegye a OneDrive-ot az aktív felhőszolgáltatóvá.",
   "Sentence Pause": "Mondatszünet",
   "Paragraph Gap": "Bekezdésszünet",
   "{{minutes}}m left": "{{minutes}} perc van hátra",
   "{{hours}}h left": "{{hours}} óra van hátra",
   "Time Remaining": "Hátralévő idő",
-  "Theme": "Téma"
+  "Theme": "Téma",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Csatlakozva mint {{account}}. Tegye a {{provider}}-ot az aktív felhőszolgáltatóvá."
 }

@@ -1837,8 +1837,6 @@
   "Full Sync": "Sincronizare integrală",
   "Waiting for sign-in…": "Se așteaptă conectarea…",
   "Reconnect": "Reconectare",
-  "Connected as {{account}}": "Conectat ca {{account}}",
-  ". Make Google Drive the active cloud provider.": ". Setează Google Drive ca furnizor de cloud activ.",
   "Use Google Drive": "Folosește Google Drive",
   "Sign-in opens in your browser.": "Conectarea se deschide în browser.",
   "Readest only accesses the files it creates in your Drive.": "Readest accesează doar fișierele pe care le creează în Drive-ul tău.",
@@ -1933,11 +1931,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Sincronizează-ți biblioteca, progresul citirii și evidențierile cu Microsoft OneDrive-ul tău.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Cât timp {{provider}} este selectat, cărțile, progresul și adnotările se sincronizează doar cu OneDrive-ul tău.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest accesează doar fișierele pe care le creează în OneDrive-ul tău.",
-  ". Make OneDrive the active cloud provider.": ". Setează OneDrive ca furnizor de cloud activ.",
   "Sentence Pause": "Pauză între propoziții",
   "Paragraph Gap": "Pauză între paragrafe",
   "{{minutes}}m left": "Au rămas {{minutes}} min",
   "{{hours}}h left": "Au rămas {{hours}} h",
   "Time Remaining": "Timp rămas",
-  "Theme": "Temă"
+  "Theme": "Temă",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Conectat ca {{account}}. Setează {{provider}} ca furnizor de cloud activ."
 }

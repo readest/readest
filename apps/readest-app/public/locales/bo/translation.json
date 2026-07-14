@@ -1763,8 +1763,6 @@
   "Full Sync": "ཡོངས་རྫོགས་མཉམ་སྒྲིག",
   "Waiting for sign-in…": "ནང་བསྐྱོད་ལ་སྒུག་བཞིན་པ།…",
   "Reconnect": "ཡང་བསྐྱར་འབྲེལ་མཐུད།",
-  "Connected as {{account}}": "{{account}} ཐོག་ནས་འབྲེལ་མཐུད་ཟིན།",
-  ". Make Google Drive the active cloud provider.": "། Google Drive དེ་སྤྱོད་བཞིན་པའི་སྤྲིན་ཞབས་ཞུ་མཁོ་སྤྲོད་པར་སྒྲིག་པ།",
   "Use Google Drive": "Google Drive བེད་སྤྱོད།",
   "Sign-in opens in your browser.": "ནང་བསྐྱོད་ཁྱེད་ཀྱི་བརྡར་ཞིབ་ཆས་ནང་ཁ་ཕྱེ་ངེས།",
   "Readest only accesses the files it creates in your Drive.": "Readest ཀྱིས་ཁྱེད་ཀྱི་ Drive ནང་རང་ཉིད་ཀྱིས་བཟོས་པའི་ཡིག་ཆ་ཁོ་ནར་ལྟ་སྤྱོད་བྱེད།",
@@ -1863,11 +1861,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ཁྱེད་ཀྱི་དཔེ་མཛོད་དང་། ཀློག་པའི་ཡར་འཕེལ། གཙོ་གནད་བཅས་ཁྱེད་ཀྱི་ Microsoft OneDrive དང་མཉམ་སྒྲིག་བྱེད།",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} བདམས་ཡོད་སྐབས། དཔེ་ཆ་དང་བགྲོད་རིམ། མཆན་འགྲེལ་བཅས་ཁྱེད་ཀྱི་ OneDrive ནང་ཁོ་ནར་མཉམ་བསྒྲིག་བྱེད།",
   "Readest only accesses the files it creates in your OneDrive.": "Readest ཀྱིས་ཁྱེད་ཀྱི་ OneDrive ནང་རང་ཉིད་ཀྱིས་བཟོས་པའི་ཡིག་ཆ་ཁོ་ནར་ལྟ་སྤྱོད་བྱེད།",
-  ". Make OneDrive the active cloud provider.": "། OneDrive དེ་སྤྱོད་བཞིན་པའི་སྤྲིན་ཞབས་ཞུ་མཁོ་སྤྲོད་པར་སྒྲིག་པ།",
   "Sentence Pause": "ཚིག་གྲུབ་བར་གསེང་",
   "Paragraph Gap": "དོན་ཚན་བར་གསེང་",
   "{{minutes}}m left": "ད་དུང་ {{minutes}} སྐར་མ་ལྷག་ཡོད།",
   "{{hours}}h left": "ད་དུང་ {{hours}} ཆུ་ཚོད་ལྷག་ཡོད།",
   "Time Remaining": "ལྷག་ཡོད་པའི་དུས་ཚོད།",
-  "Theme": "བརྗོད་བྱ།"
+  "Theme": "བརྗོད་བྱ།",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} ཐོག་ནས་འབྲེལ་མཐུད་ཟིན། {{provider}} དེ་སྤྱོད་བཞིན་པའི་སྤྲིན་ཞབས་ཞུ་མཁོ་སྤྲོད་པར་སྒྲིག་པ།"
 }

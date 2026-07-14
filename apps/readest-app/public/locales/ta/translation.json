@@ -1803,8 +1803,6 @@
   "Full Sync": "முழு ஒத்திசைவு",
   "Waiting for sign-in…": "உள்நுழைவுக்காகக் காத்திருக்கிறது…",
   "Reconnect": "மீண்டும் இணைக்கவும்",
-  "Connected as {{account}}": "{{account}} ஆக இணைக்கப்பட்டுள்ளது",
-  ". Make Google Drive the active cloud provider.": ". Google Drive ஐ செயலில் உள்ள cloud வழங்குநராக அமைக்கவும்.",
   "Use Google Drive": "Google Drive ஐப் பயன்படுத்தவும்",
   "Sign-in opens in your browser.": "உள்நுழைவு உங்கள் உலாவியில் திறக்கும்.",
   "Readest only accesses the files it creates in your Drive.": "Readest உங்கள் Drive இல் தானே உருவாக்கும் கோப்புகளை மட்டுமே அணுகும்.",
@@ -1898,11 +1896,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "உங்கள் நூலகம், வாசிப்பு முன்னேற்றம் மற்றும் சிறப்பம்சங்களை உங்கள் Microsoft OneDrive உடன் ஒத்திசைக்கவும்.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} தேர்ந்தெடுக்கப்பட்டிருக்கும் போது, புத்தகங்கள், முன்னேற்றம் மற்றும் குறிப்புகள் உங்கள் OneDrive உடன் மட்டுமே ஒத்திசைக்கப்படும்.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest உங்கள் OneDrive இல் தானே உருவாக்கும் கோப்புகளை மட்டுமே அணுகும்.",
-  ". Make OneDrive the active cloud provider.": ". OneDrive ஐ செயலில் உள்ள cloud வழங்குநராக அமைக்கவும்.",
   "Sentence Pause": "வாக்கிய இடைவேளை",
   "Paragraph Gap": "பத்தி இடைவேளை",
   "{{minutes}}m left": "{{minutes}} நிமிடங்கள் மீதம்",
   "{{hours}}h left": "{{hours}} மணி நேரம் மீதம்",
   "Time Remaining": "மீதமுள்ள நேரம்",
-  "Theme": "தீம்"
+  "Theme": "தீம்",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} ஆக இணைக்கப்பட்டுள்ளது. {{provider}} ஐ செயலில் உள்ள cloud வழங்குநராக அமைக்கவும்."
 }

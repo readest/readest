@@ -1803,8 +1803,6 @@
   "Full Sync": "همگام‌سازی کامل",
   "Waiting for sign-in…": "در انتظار ورود…",
   "Reconnect": "اتصال دوباره",
-  "Connected as {{account}}": "متصل به‌عنوان {{account}}",
-  ". Make Google Drive the active cloud provider.": ". Google Drive را ارائه‌دهنده فعال ابری قرار دهید.",
   "Use Google Drive": "استفاده از Google Drive",
   "Sign-in opens in your browser.": "ورود در مرورگر شما باز می‌شود.",
   "Readest only accesses the files it creates in your Drive.": "Readest فقط به فایل‌هایی دسترسی دارد که خودش در Drive شما ایجاد می‌کند.",
@@ -1898,11 +1896,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "کتابخانه، وضعیت مطالعه و هایلایت‌های خود را با Microsoft OneDrive خود همگام‌سازی کنید.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "تا زمانی که {{provider}} انتخاب شده باشد، کتاب‌ها، پیشرفت و یادداشت‌ها فقط با OneDrive شما همگام‌سازی می‌شوند.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest فقط به فایل‌هایی دسترسی دارد که خودش در OneDrive شما ایجاد می‌کند.",
-  ". Make OneDrive the active cloud provider.": ". OneDrive را ارائه‌دهنده فعال ابری قرار دهید.",
   "Sentence Pause": "مکث بین جملات",
   "Paragraph Gap": "وقفه بین پاراگراف‌ها",
   "{{minutes}}m left": "{{minutes}} دقیقه باقی‌مانده",
   "{{hours}}h left": "{{hours}} ساعت باقی‌مانده",
   "Time Remaining": "زمان باقی‌مانده",
-  "Theme": "تم"
+  "Theme": "تم",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "متصل به‌عنوان {{account}}. {{provider}} را ارائه‌دهنده فعال ابری قرار دهید."
 }

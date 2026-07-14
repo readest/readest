@@ -1803,8 +1803,6 @@
   "Full Sync": "पूर्ण सिंक",
   "Waiting for sign-in…": "साइन-इन की प्रतीक्षा में…",
   "Reconnect": "फिर से कनेक्ट करें",
-  "Connected as {{account}}": "{{account}} के रूप में कनेक्टेड",
-  ". Make Google Drive the active cloud provider.": "। Google Drive को सक्रिय क्लाउड प्रदाता बनाएं।",
   "Use Google Drive": "Google Drive का उपयोग करें",
   "Sign-in opens in your browser.": "साइन-इन आपके ब्राउज़र में खुलता है।",
   "Readest only accesses the files it creates in your Drive.": "Readest केवल उन्हीं फ़ाइलों तक पहुँचता है जिन्हें वह आपकी Drive में बनाता है।",
@@ -1898,11 +1896,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "अपनी लाइब्रेरी, पढ़ने की प्रगति और हाइलाइट्स को अपनी Microsoft OneDrive से सिंक करें।",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "जब {{provider}} चुना गया हो, तो किताबें, प्रगति और एनोटेशन केवल आपके OneDrive से सिंक होते हैं।",
   "Readest only accesses the files it creates in your OneDrive.": "Readest केवल उन्हीं फ़ाइलों तक पहुँचता है जिन्हें वह आपकी OneDrive में बनाता है।",
-  ". Make OneDrive the active cloud provider.": "। OneDrive को सक्रिय क्लाउड प्रदाता बनाएं।",
   "Sentence Pause": "वाक्यों के बीच विराम",
   "Paragraph Gap": "अनुच्छेदों के बीच विराम",
   "{{minutes}}m left": "{{minutes}} मिनट शेष",
   "{{hours}}h left": "{{hours}} घंटे शेष",
   "Time Remaining": "शेष समय",
-  "Theme": "थीम"
+  "Theme": "थीम",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} के रूप में कनेक्टेड। {{provider}} को सक्रिय क्लाउड प्रदाता बनाएं।"
 }

@@ -1837,8 +1837,6 @@
   "Full Sync": "סנכרון מלא",
   "Waiting for sign-in…": "ממתין להתחברות…",
   "Reconnect": "התחבר מחדש",
-  "Connected as {{account}}": "מחובר כ-{{account}}",
-  ". Make Google Drive the active cloud provider.": ". הפוך את Google Drive לספק הענן הפעיל.",
   "Use Google Drive": "השתמש ב-Google Drive",
   "Sign-in opens in your browser.": "ההתחברות נפתחת בדפדפן שלך.",
   "Readest only accesses the files it creates in your Drive.": "Readest ניגש רק לקבצים שהוא יוצר ב-Drive שלך.",
@@ -1933,11 +1931,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "סנכרן את הספרייה, התקדמות הקריאה וההדגשות שלך עם Microsoft OneDrive שלך.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "כאשר {{provider}} נבחר, ספרים, התקדמות והערות מסתנכרנים רק עם ה-OneDrive שלך.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest ניגש רק לקבצים שהוא יוצר ב-OneDrive שלך.",
-  ". Make OneDrive the active cloud provider.": ". הפוך את OneDrive לספק הענן הפעיל.",
   "Sentence Pause": "השהיה בין משפטים",
   "Paragraph Gap": "הפסקה בין פסקאות",
   "{{minutes}}m left": "נותרו {{minutes}} דקות",
   "{{hours}}h left": "נותרו {{hours}} שעות",
   "Time Remaining": "זמן שנותר",
-  "Theme": "ערכת נושא"
+  "Theme": "ערכת נושא",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "מחובר כ-{{account}}. הפוך את {{provider}} לספק הענן הפעיל."
 }

@@ -1769,8 +1769,6 @@
   "Full Sync": "ซิงค์แบบเต็ม",
   "Waiting for sign-in…": "กำลังรอการเข้าสู่ระบบ…",
   "Reconnect": "เชื่อมต่อใหม่",
-  "Connected as {{account}}": "เชื่อมต่อในชื่อ {{account}}",
-  ". Make Google Drive the active cloud provider.": ". ตั้งให้ Google Drive เป็นผู้ให้บริการคลาวด์ที่ใช้งานอยู่",
   "Use Google Drive": "ใช้ Google Drive",
   "Sign-in opens in your browser.": "การเข้าสู่ระบบจะเปิดในเบราว์เซอร์ของคุณ",
   "Readest only accesses the files it creates in your Drive.": "Readest จะเข้าถึงเฉพาะไฟล์ที่สร้างขึ้นเองใน Drive ของคุณเท่านั้น",
@@ -1863,11 +1861,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ซิงค์คลังหนังสือ ความคืบหน้าการอ่าน และไฮไลต์ของคุณกับ Microsoft OneDrive ของคุณ",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "เมื่อเลือก {{provider}} หนังสือ ความคืบหน้า และคำอธิบายประกอบจะซิงค์ไปยัง OneDrive ของคุณเท่านั้น",
   "Readest only accesses the files it creates in your OneDrive.": "Readest จะเข้าถึงเฉพาะไฟล์ที่สร้างขึ้นเองใน OneDrive ของคุณเท่านั้น",
-  ". Make OneDrive the active cloud provider.": ". ตั้งให้ OneDrive เป็นผู้ให้บริการคลาวด์ที่ใช้งานอยู่",
   "Sentence Pause": "หยุดระหว่างประโยค",
   "Paragraph Gap": "หยุดชั่วคราวระหว่างย่อหน้า",
   "{{minutes}}m left": "เหลือ {{minutes}} นาที",
   "{{hours}}h left": "เหลือ {{hours}} ชม.",
   "Time Remaining": "เวลาที่เหลือ",
-  "Theme": "ธีม"
+  "Theme": "ธีม",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "เชื่อมต่อในชื่อ {{account}} ตั้งให้ {{provider}} เป็นผู้ให้บริการคลาวด์ที่ใช้งานอยู่"
 }

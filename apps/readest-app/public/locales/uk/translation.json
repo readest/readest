@@ -1871,8 +1871,6 @@
   "Full Sync": "Повна синхронізація",
   "Waiting for sign-in…": "Очікування входу…",
   "Reconnect": "Під'єднатися повторно",
-  "Connected as {{account}}": "Під'єднано як {{account}}",
-  ". Make Google Drive the active cloud provider.": ". Зробити Google Drive активним хмарним провайдером.",
   "Use Google Drive": "Використовувати Google Drive",
   "Sign-in opens in your browser.": "Вхід відкриється у вашому браузері.",
   "Readest only accesses the files it creates in your Drive.": "Readest має доступ лише до файлів, які сам створює у вашому Google Drive.",
@@ -1968,11 +1966,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Синхронізуйте свою бібліотеку, проґрес читання та виділення з вашим Microsoft OneDrive.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "Поки вибрано {{provider}}, книги, прогрес і анотації синхронізуються лише з вашим OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest має доступ лише до файлів, які сам створює у вашому OneDrive.",
-  ". Make OneDrive the active cloud provider.": ". Зробити OneDrive активним хмарним провайдером.",
   "Sentence Pause": "Пауза між реченнями",
   "Paragraph Gap": "Пауза між абзацами",
   "{{minutes}}m left": "Залишилось {{minutes}} хв",
   "{{hours}}h left": "Залишилось {{hours}} год",
   "Time Remaining": "Час, що залишився",
-  "Theme": "Тема"
+  "Theme": "Тема",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Під'єднано як {{account}}. Зробити {{provider}} активним хмарним провайдером."
 }

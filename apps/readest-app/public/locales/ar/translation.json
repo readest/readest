@@ -1939,8 +1939,6 @@
   "Full Sync": "مزامنة كاملة",
   "Waiting for sign-in…": "في انتظار تسجيل الدخول…",
   "Reconnect": "إعادة الاتصال",
-  "Connected as {{account}}": "متصل باسم {{account}}",
-  ". Make Google Drive the active cloud provider.": ". اجعل Google Drive مزود السحابة النشط.",
   "Use Google Drive": "استخدام Google Drive",
   "Sign-in opens in your browser.": "يتم فتح تسجيل الدخول في متصفحك.",
   "Readest only accesses the files it creates in your Drive.": "لا يصل Readest إلا إلى الملفات التي ينشئها في Drive الخاص بك.",
@@ -2038,11 +2036,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "زامن مكتبتك وتقدم القراءة والتمييزات مع Microsoft OneDrive الخاص بك.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "عند اختيار {{provider}}، تتم مزامنة الكتب والتقدم والتعليقات التوضيحية إلى OneDrive الخاص بك فقط.",
   "Readest only accesses the files it creates in your OneDrive.": "لا يصل Readest إلا إلى الملفات التي ينشئها في OneDrive الخاص بك.",
-  ". Make OneDrive the active cloud provider.": ". اجعل OneDrive مزود السحابة النشط.",
   "Sentence Pause": "وقفة بين الجمل",
   "Paragraph Gap": "وقفة بين الفقرات",
   "{{minutes}}m left": "بقيت {{minutes}} دقيقة",
   "{{hours}}h left": "بقيت {{hours}} ساعة",
   "Time Remaining": "الوقت المتبقي",
-  "Theme": "السمة"
+  "Theme": "السمة",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "متصل باسم {{account}}. اجعل {{provider}} مزود السحابة النشط."
 }

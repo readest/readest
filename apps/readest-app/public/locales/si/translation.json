@@ -1803,8 +1803,6 @@
   "Full Sync": "සම්පූර්ණ සමමුහුර්තය",
   "Waiting for sign-in…": "ඇතුල් වීම සඳහා රැඳී සිටිමින්…",
   "Reconnect": "නැවත සම්බන්ධ වන්න",
-  "Connected as {{account}}": "{{account}} ලෙස සම්බන්ධ වී ඇත",
-  ". Make Google Drive the active cloud provider.": ". Google Drive සක්‍රිය cloud සපයන්නා ලෙස සකසන්න.",
   "Use Google Drive": "Google Drive භාවිතා කරන්න",
   "Sign-in opens in your browser.": "ඇතුල් වීම ඔබේ බ්‍රව්සරයේ විවෘත වේ.",
   "Readest only accesses the files it creates in your Drive.": "Readest ප්‍රවේශ වන්නේ ඔබේ Drive හි එය සාදන ගොනුවලට පමණි.",
@@ -1898,11 +1896,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ඔබේ පුස්තකාලය, කියවීමේ ප්‍රගතිය සහ ඉස්මතු කිරීම් ඔබේ Microsoft OneDrive සමඟ සමමුහුර්ත කරන්න.",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} තෝරා ඇති විට, පොත්, ප්‍රගතිය සහ සටහන් ඔබේ OneDrive වෙත පමණක් සමමුහුර්ත වේ.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest ප්‍රවේශ වන්නේ ඔබේ OneDrive හි එය සාදන ගොනුවලට පමණි.",
-  ". Make OneDrive the active cloud provider.": ". OneDrive සක්‍රිය cloud සපයන්නා ලෙස සකසන්න.",
   "Sentence Pause": "වාක්‍ය අතර විරාමය",
   "Paragraph Gap": "ඡේද අතර විරාමය",
   "{{minutes}}m left": "මිනිත්තු {{minutes}} ක් ඉතිරි",
   "{{hours}}h left": "පැය {{hours}} ක් ඉතිරි",
   "Time Remaining": "ඉතිරි කාලය",
-  "Theme": "තේමාව"
+  "Theme": "තේමාව",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} ලෙස සම්බන්ධ වී ඇත. {{provider}} සක්‍රිය cloud සපයන්නා ලෙස සකසන්න."
 }

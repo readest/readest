@@ -1769,8 +1769,6 @@
   "Full Sync": "完全同期",
   "Waiting for sign-in…": "サインインを待っています…",
   "Reconnect": "再接続",
-  "Connected as {{account}}": "{{account}} として接続済み",
-  ". Make Google Drive the active cloud provider.": "。Google Drive を使用するクラウドプロバイダーに設定します。",
   "Use Google Drive": "Google Drive を使用",
   "Sign-in opens in your browser.": "サインインはブラウザで開きます。",
   "Readest only accesses the files it creates in your Drive.": "Readest がアクセスするのは、Drive 内に自身が作成したファイルのみです。",
@@ -1863,11 +1861,11 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ライブラリ、読書進捗、ハイライトを Microsoft OneDrive と同期します。",
   "While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.": "{{provider}} を選択している間、書籍・進捗・注釈は OneDrive にのみ同期されます。",
   "Readest only accesses the files it creates in your OneDrive.": "Readest がアクセスするのは、OneDrive 内に自身が作成したファイルのみです。",
-  ". Make OneDrive the active cloud provider.": "。OneDrive を使用するクラウドプロバイダーに設定します。",
   "Sentence Pause": "文間のポーズ",
   "Paragraph Gap": "段落間のポーズ",
   "{{minutes}}m left": "残り{{minutes}}分",
   "{{hours}}h left": "残り{{hours}}時間",
   "Time Remaining": "残り時間",
-  "Theme": "テーマ"
+  "Theme": "テーマ",
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} として接続済み。{{provider}} を使用するクラウドプロバイダーに設定します。"
 }
