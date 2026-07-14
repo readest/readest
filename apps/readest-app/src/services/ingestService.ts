@@ -238,10 +238,11 @@ export async function ingestFile(
   // they are equivalent to a hash-copy book — only the local storage
   // location differs. uploadBook reads straight from book.filePath in that
   // case; downloads on other devices land in Books/<hash>/ as a normal copy.
-  // When a third-party provider (WebDAV/Drive) is the selected cloud sync
-  // backend, Readest Cloud storage is not written to at all — the file-sync
-  // engine mirrors the import instead (including Sent books, which then reach
-  // other devices via that provider when its syncBooks toggle is on).
+  // Readest Cloud storage is written only when Readest Cloud is one of the
+  // enabled providers (#5062 lets several run at once). When it is unchecked,
+  // this gate is false and the file-sync engine mirrors the import instead
+  // (including Sent books, which reach other devices via each enabled backend
+  // whose syncBooks toggle is on).
   if (
     !opts.transient &&
     isLoggedIn &&

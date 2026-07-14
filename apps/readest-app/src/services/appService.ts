@@ -129,15 +129,17 @@ export abstract class BaseAppService implements AppService {
   }
 
   /**
-   * Users with WebDAV/Drive already enabled become "third-party selected"
-   * when cloud sync provider selection ships, gating native Readest Cloud
-   * uploads off; flip the selected provider's syncBooks on once so their
-   * books keep backing up somewhere. Mutates the caller's settings
-   * snapshot, which the caller persists together with migrationVersion.
+   * Users with WebDAV/Drive already enabled had native Readest Cloud uploads
+   * gated off when cloud sync provider selection shipped; flip syncBooks on
+   * once for every enabled third-party backend so their books keep backing up
+   * somewhere. This force-enables syncBooks a single time even for a user who
+   * had explicitly turned it off — intentional, since the alternative is books
+   * backing up nowhere. Mutates the caller's settings snapshot, which the
+   * caller persists together with migrationVersion.
    */
   private migrate20260706(settings: SystemSettings): void {
     if (applySyncBooksAutoEnable(settings)) {
-      console.log('Migration 20260706: enabled syncBooks for the selected cloud sync provider.');
+      console.log('Migration 20260706: enabled syncBooks for enabled cloud sync backends.');
     }
   }
 
