@@ -66,7 +66,7 @@ interface BookshelfProps {
   isSelectAll: boolean;
   isSelectNone: boolean;
   onScrollerRef: (el: HTMLDivElement | null) => void;
-  handleImportBooks: () => void;
+  handleShowImportDialog: () => void;
   handleBookDownload: (
     book: Book,
     options?: { redownload?: boolean; queued?: boolean },
@@ -141,7 +141,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   isSelectAll,
   isSelectNone,
   onScrollerRef,
-  handleImportBooks,
+  handleShowImportDialog,
   handleBookUpload,
   handleBookDownload,
   handleBookDelete,
@@ -688,7 +688,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
                 'flex items-center justify-center',
                 'aspect-[28/41] w-full',
               )}
-              onClick={handleImportBooks}
+              onClick={handleShowImportDialog}
             >
               <div className='flex items-center justify-center'>
                 <PiPlus className='size-10' color='gray' />
@@ -734,7 +734,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       isSelectMode,
       booksTransferProgress,
       iconSize15,
-      handleImportBooks,
+      handleShowImportDialog,
       toggleSelection,
       handleBookUpload,
       handleBookDownload,

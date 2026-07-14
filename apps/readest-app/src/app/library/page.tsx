@@ -98,6 +98,7 @@ import DropIndicator from '@/components/DropIndicator';
 import SettingsDialog from '@/components/settings/SettingsDialog';
 import ModalPortal from '@/components/ModalPortal';
 import TransferQueuePanel from './components/TransferQueuePanel';
+import { ImportDialog } from './components/ImportDialog';
 
 /**
  * Key used to persist the last directory the user imported books from.
@@ -178,6 +179,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [showCatalogManager, setShowCatalogManager] = useState(
     searchParams?.get('opds') === 'true',
   );
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [showImportFromUrl, setShowImportFromUrl] = useState(false);
   const [loading, setLoading] = useState(false);
   // Seed from the library store: if we already have books in memory (the
@@ -515,6 +517,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const params = new URLSearchParams(searchParams?.toString());
     params.delete('opds');
     navigateToLibrary(router, `${params.toString()}`);
+  };
+
+  const handleShowImportDialog = () => {
+    setShowImportDialog(true);
+  };
+
+  const handleDismissImportDialog = () => {
+    setShowImportDialog(false);
   };
 
   useEffect(() => {
@@ -1435,7 +1445,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 isSelectAll={isSelectAll}
                 isSelectNone={isSelectNone}
                 onScrollerRef={handleScrollerRef}
-                handleImportBooks={handleImportBooksFromFiles}
+                handleShowImportDialog={handleShowImportDialog}
                 handleBookUpload={handleBookUpload}
                 handleBookDownload={handleBookDownload}
                 handleBookDelete={handleBookDelete('both')}
@@ -1450,7 +1460,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         ) : (
           <div className='hero drop-zone h-screen items-center justify-center'>
             <DropIndicator />
-            <LibraryEmptyState onImport={handleImportBooksFromFiles} />
+            <LibraryEmptyState onImport={handleShowImportDialog} />
           </div>
         ))}
       {showDetailsBook && (
@@ -1479,6 +1489,17 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       <CacheManagerWindow />
       {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
       {showCatalogManager && <CatalogDialog onClose={handleDismissOPDSDialog} />}
+      {showImportDialog && (
+        <ImportDialog
+          onClose={handleDismissImportDialog}
+          onImportBooksFromFiles={handleImportBooksFromFiles}
+          onImportBooksFromDirectory={
+            appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
+          }
+          onImportBookFromUrl={isTauriAppPlatform() ? () => setShowImportFromUrl(true) : undefined}
+          onOpenCatalogManager={handleShowOPDSDialog}
+        />
+      )}
       {failedImportsModal && (
         <FailedImportsDialog
           failedImports={failedImportsModal}
