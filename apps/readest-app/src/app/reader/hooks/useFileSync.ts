@@ -123,8 +123,13 @@ export const useFileSync = (bookKey: string) => {
   const fileSyncedRef = useRef(new Set<FileSyncBackendKind>());
   /** Backends whose cover this instance already pushed. */
   const coverSyncedRef = useRef(new Set<FileSyncBackendKind>());
-  /** One-shot guard so an expired session toasts once, not on every page-turn. */
-  const authNotifiedRef = useRef(false);
+  /**
+   * One-shot guard PER BACKEND so an expired session toasts once, not on
+   * every page-turn — a `Set` rather than a single boolean, because one
+   * backend can be healthy while a sibling's session is expired, and each
+   * must be notified (and re-armed) independently.
+   */
+  const authNotifiedRef = useRef(new Set<FileSyncBackendKind>());
 
   // Switching the enabled backend SET mid-session resets the per-book locks so
   // newly-active backends do a fresh pull-on-open and re-check file/cover.
@@ -135,7 +140,7 @@ export const useFileSync = (bookKey: string) => {
     coverSyncedRef.current.clear();
     lastPulledAtRef.current = 0;
     dirtyRef.current = false;
-    authNotifiedRef.current = false;
+    authNotifiedRef.current.clear();
   }, [activeKindsKey]);
 
   // Per-backend settings slice + strategy helpers, replacing the old single
@@ -172,11 +177,38 @@ export const useFileSync = (bookKey: string) => {
     [envConfig, setSettings, saveSettings],
   );
 
+  /**
+   * Stamp `lastSyncedAt` for every kind in `kinds` in ONE settings write —
+   * looping backends through the single-kind version would persist the whole
+   * settings file once per backend, and with 4 enabled backends that is 4
+   * full writes per push cycle (every `PUSH_DEBOUNCE_MS` while reading) where
+   * the single-backend original did 1. Reads the latest settings from the
+   * store (not a closure) because pull and push can fire back-to-back on
+   * book open, and a closure-based merge would clobber a sibling write.
+   */
   const updateLastSyncedAt = useCallback(
-    async (kind: FileSyncBackendKind, ts: number) => {
-      const latest = useSettingsStore.getState().settings;
-      const key = settingsKeyForBackend(kind);
-      const next = { ...latest, [key]: { ...latest[key], lastSyncedAt: ts } };
+    async (kinds: FileSyncBackendKind[], ts: number) => {
+      if (kinds.length === 0) return;
+      let next = useSettingsStore.getState().settings;
+      for (const kind of kinds) {
+        // A switch (rather than a generically-keyed write) keeps each
+        // branch's settings slice type intact; `next[key] = { ...slice, ts }`
+        // does not typecheck when `key` is a union of literal keys.
+        switch (kind) {
+          case 'webdav':
+            next = { ...next, webdav: { ...next.webdav, lastSyncedAt: ts } };
+            break;
+          case 'gdrive':
+            next = { ...next, googleDrive: { ...next.googleDrive, lastSyncedAt: ts } };
+            break;
+          case 's3':
+            next = { ...next, s3: { ...next.s3, lastSyncedAt: ts } };
+            break;
+          case 'onedrive':
+            next = { ...next, onedrive: { ...next.onedrive, lastSyncedAt: ts } };
+            break;
+        }
+      }
       setSettings(next);
       await saveSettings(envConfig, next);
     },
@@ -238,8 +270,8 @@ export const useFileSync = (bookKey: string) => {
    */
   const notifyAuthExpiredOnce = useCallback(
     (kind: FileSyncBackendKind) => {
-      if (authNotifiedRef.current) return;
-      authNotifiedRef.current = true;
+      if (authNotifiedRef.current.has(kind)) return;
+      authNotifiedRef.current.add(kind);
       eventDispatcher.dispatch('hint', {
         bookKey,
         timeout: 5000,
@@ -270,7 +302,7 @@ export const useFileSync = (bookKey: string) => {
     const book = getBookData(bookKey)?.book;
     if (!config || !book) return;
 
-    let anyPushed = false;
+    const pushedKinds: FileSyncBackendKind[] = [];
     for (const { kind, engine } of engines) {
       if (!allowsPush(kind)) continue;
       const ps = sliceFor(kind);
@@ -279,15 +311,17 @@ export const useFileSync = (bookKey: string) => {
       if (!wantProgress && !wantNotes) continue;
       try {
         await engine.pushBookConfig(book, config, ensureDeviceId(kind));
-        await updateLastSyncedAt(kind, Date.now());
-        anyPushed = true;
+        // This backend's session is proven live — clear its own expired-auth
+        // notice without touching a sibling's (still-expired) one.
+        authNotifiedRef.current.delete(kind);
+        pushedKinds.push(kind);
       } catch (e) {
         handleSyncError(kind, 'file sync push failed', e);
       }
     }
-    if (anyPushed) {
+    if (pushedKinds.length > 0) {
       dirtyRef.current = false;
-      authNotifiedRef.current = false;
+      await updateLastSyncedAt(pushedKinds, Date.now());
     }
   }, [
     isReady,
@@ -311,6 +345,7 @@ export const useFileSync = (bookKey: string) => {
     if (!isReady) return;
     const book = getBookData(bookKey)?.book;
     if (!book) return;
+    const uploadedKinds: FileSyncBackendKind[] = [];
     for (const { kind, engine } of engines) {
       if (!allowsPush(kind)) continue;
       if (!(sliceFor(kind)?.syncBooks ?? false)) continue;
@@ -318,13 +353,14 @@ export const useFileSync = (bookKey: string) => {
       fileSyncedRef.current.add(kind);
       try {
         const result = await engine.pushBookFile(book);
-        if (result.uploaded) await updateLastSyncedAt(kind, Date.now());
+        if (result.uploaded) uploadedKinds.push(kind);
       } catch (e) {
         // Reset this backend's lock so a later trigger retries it.
         fileSyncedRef.current.delete(kind);
         handleSyncError(kind, 'file sync book push failed', e);
       }
     }
+    if (uploadedKinds.length > 0) await updateLastSyncedAt(uploadedKinds, Date.now());
   }, [
     isReady,
     engines,
@@ -366,6 +402,14 @@ export const useFileSync = (bookKey: string) => {
    * them against the ORIGINAL local config and keeping one result would
    * silently drop whichever mirror lost the race. Returns `true` when at
    * least one backend had a payload to merge.
+   *
+   * Sub-toggle masking happens INSIDE the loop, per backend: `pullBookConfig`
+   * merges a backend's WHOLE remote into `working` regardless of that
+   * backend's own `syncProgress` / `syncNotes` toggles, so a backend that
+   * opted out of a field must have that field reverted to its pre-merge value
+   * right after its own merge — otherwise its remote data for an opted-out
+   * field rides in on a sibling backend's opt-in (a union computed once at
+   * the end would let exactly that happen).
    */
   const pullNow = useCallback(async (): Promise<boolean> => {
     if (!isReady) return false;
@@ -376,8 +420,7 @@ export const useFileSync = (bookKey: string) => {
     let working = config;
     let applied = false;
     let mergedNotes: BookNote[] | undefined;
-    let wantProgressAny = false;
-    let wantNotesAny = false;
+    const pulledKinds: FileSyncBackendKind[] = [];
 
     for (const { kind, engine } of engines) {
       if (!allowsPull(kind)) continue;
@@ -385,28 +428,46 @@ export const useFileSync = (bookKey: string) => {
       const wantProgress = ps?.syncProgress ?? true;
       const wantNotes = ps?.syncNotes ?? true;
       if (!wantProgress && !wantNotes) continue;
-      wantProgressAny = wantProgressAny || wantProgress;
-      wantNotesAny = wantNotesAny || wantNotes;
+      const before = working;
       try {
         const result = await engine.pullBookConfig(book, working);
         lastPulledAtRef.current = Date.now();
-        // The pull's getAccessToken succeeded — clear any expired-session notice.
-        authNotifiedRef.current = false;
-        await updateLastSyncedAt(kind, Date.now());
+        // This backend's getAccessToken succeeded — clear its own
+        // expired-session notice without touching a sibling's.
+        authNotifiedRef.current.delete(kind);
+        pulledKinds.push(kind);
         if (!result.applied || !result.mergedConfig) continue;
         applied = true;
-        working = result.mergedConfig;
-        if (result.mergedNotes) mergedNotes = result.mergedNotes;
+        let merged = result.mergedConfig;
+        // Revert the fields this backend opted out of back to their
+        // pre-merge value, so its remote data for them never enters `working`.
+        if (!wantProgress) {
+          merged = {
+            ...merged,
+            progress: before.progress,
+            location: before.location,
+            xpointer: before.xpointer,
+          };
+        }
+        if (!wantNotes) {
+          merged = { ...merged, booknotes: before.booknotes };
+        } else if (result.mergedNotes) {
+          mergedNotes = result.mergedNotes;
+        }
+        working = merged;
       } catch (e) {
         handleSyncError(kind, 'file sync pull failed', e);
       }
     }
 
+    if (pulledKinds.length > 0) await updateLastSyncedAt(pulledKinds, Date.now());
     if (!applied) return false;
 
     // Surface merged notes through the live view so highlights re-appear /
-    // disappear without waiting for the next render pass.
-    if (wantNotesAny && mergedNotes) {
+    // disappear without waiting for the next render pass. `mergedNotes` is
+    // only ever set from a backend that wanted notes, so this already
+    // reflects the notes that actually landed in `working`.
+    if (mergedNotes) {
       const view = getView(bookKey);
       const previousById = new Map((config.booknotes ?? []).map((n) => [n.id, n]));
       for (const note of mergedNotes) {
@@ -423,21 +484,12 @@ export const useFileSync = (bookKey: string) => {
       }
     }
 
-    // Honour sub-toggles: drop the parts the user opted out of everywhere.
-    const toApply = { ...working };
-    if (!wantProgressAny) {
-      toApply.progress = config.progress;
-      toApply.location = config.location;
-      toApply.xpointer = config.xpointer;
-    }
-    if (!wantNotesAny) {
-      toApply.booknotes = config.booknotes;
-    }
-
-    setConfig(bookKey, toApply);
+    setConfig(bookKey, working);
     // Parity with the native cloud sync: surface the same top-right hint when a
-    // remote reading position was fetched and applied.
-    if (wantProgressAny && remoteProgressApplied(config.location, toApply.location)) {
+    // remote reading position was fetched and applied. `working` is already
+    // masked per backend, so this is false when every pulling backend opted
+    // out of progress.
+    if (remoteProgressApplied(config.location, working.location)) {
       eventDispatcher.dispatch('hint', {
         bookKey,
         message: _('Reading Progress Synced'),
@@ -445,8 +497,6 @@ export const useFileSync = (bookKey: string) => {
     }
     const latest = getConfig(bookKey);
     if (latest) await saveConfig(envConfig, bookKey, latest, settings);
-    // No updateLastSyncedAt here: each backend already stamped its own inside
-    // the loop above.
     return true;
   }, [
     isReady,
@@ -578,7 +628,7 @@ export const useFileSync = (bookKey: string) => {
     };
   }, [debouncedPush]);
 
-  return { pushNow, pullNow };
+  return { pushNow, pullNow, pushBookFileNow, pushBookCoverNow };
 };
 
 export default useFileSync;

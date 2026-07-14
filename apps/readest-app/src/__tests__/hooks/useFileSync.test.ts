@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { Book, BookConfig, BookNote } from '@/types/book';
 import type { SystemSettings } from '@/types/settings';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
+import { FileSyncError } from '@/services/sync/file/provider';
+import { eventDispatcher } from '@/utils/event';
 
 /**
  * Issue #5062 — cloud sync providers are independently selectable, so a book
@@ -229,5 +231,188 @@ describe('useFileSync across multiple backends (#5062)', () => {
     renderHook(() => useFileSync('h1-view1'));
 
     await waitFor(() => expect(pushBookConfig).toHaveBeenCalledTimes(2));
+  });
+});
+
+/**
+ * Review fixes on top of the initial multi-backend conversion: a single
+ * boolean auth-notified guard re-firing forever, a cross-backend sub-toggle
+ * leak in the pull chain, and three failure-isolation / lock-release paths
+ * that were never pinned by a test.
+ */
+describe('useFileSync review fixes', () => {
+  test('one backend pull failing does not stop the other from applying (no break in the catch)', async () => {
+    // webdav's pull throws; gdrive's must still run and its merge must still
+    // land in the applied config — a `break` in the catch would abort the
+    // loop after webdav and gdrive would never be called.
+    pullBookConfig.mockRejectedValueOnce(new Error('webdav down')).mockResolvedValueOnce({
+      applied: true,
+      mergedConfig: { updatedAt: 2, location: 'from-gdrive', booknotes: [] },
+    } as never);
+
+    renderHook(() => useFileSync('h1-view1'));
+
+    await waitFor(() => expect(pullBookConfig).toHaveBeenCalledTimes(2));
+    expect(setConfigMock).toHaveBeenCalledWith(
+      'h1-view1',
+      expect.objectContaining({ location: 'from-gdrive' }),
+    );
+  });
+
+  test('a failed book-file upload releases the backend lock so a later attempt retries', async () => {
+    routing.backends = ['webdav'];
+    settingsState.settings = {
+      webdav: {
+        enabled: true,
+        serverUrl: 'https://dav.example',
+        username: 'u',
+        password: 'p',
+        syncBooks: true,
+      },
+    } as unknown as SystemSettings;
+    pushBookFile.mockRejectedValueOnce(new Error('network blip'));
+
+    const { result } = renderHook(() => useFileSync('h1-view1'));
+
+    // The natural book-open flow drives the first (failing) attempt.
+    await waitFor(() => expect(pushBookFile).toHaveBeenCalledTimes(1));
+
+    // A later attempt — driven directly, not through the manual "Sync now"
+    // event bridge, which unconditionally clears the lock regardless of the
+    // catch's own bookkeeping and would mask a regression here — must retry
+    // because the failed attempt released its own lock.
+    await act(async () => {
+      await result.current.pushBookFileNow();
+    });
+    expect(pushBookFile).toHaveBeenCalledTimes(2);
+  });
+
+  test('a backend that uploaded its book file successfully is not re-uploaded on a later attempt', async () => {
+    routing.backends = ['webdav'];
+    settingsState.settings = {
+      webdav: {
+        enabled: true,
+        serverUrl: 'https://dav.example',
+        username: 'u',
+        password: 'p',
+        syncBooks: true,
+      },
+    } as unknown as SystemSettings;
+    // Default mock resolves { uploaded: true } — the natural attempt succeeds.
+
+    const { result } = renderHook(() => useFileSync('h1-view1'));
+
+    await waitFor(() => expect(pushBookFile).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      await result.current.pushBookFileNow();
+    });
+    // Still 1 — the lock from the successful attempt stays set.
+    expect(pushBookFile).toHaveBeenCalledTimes(1);
+  });
+
+  test('a failed cover upload releases the backend lock so a later attempt retries', async () => {
+    routing.backends = ['webdav'];
+    pushBookCover.mockRejectedValueOnce(new Error('network blip'));
+
+    const { result } = renderHook(() => useFileSync('h1-view1'));
+
+    await waitFor(() => expect(pushBookCover).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      await result.current.pushBookCoverNow();
+    });
+    expect(pushBookCover).toHaveBeenCalledTimes(2);
+  });
+
+  test('the expired-session hint fires once per backend across many push cycles while a sibling keeps succeeding', async () => {
+    routing.backends = ['webdav', 'gdrive'];
+    // Engines are built in `activeKinds` order (webdav, then gdrive), and
+    // every push cycle calls pushBookConfig once per engine in that fixed
+    // order — so odd calls are webdav (kept healthy) and even calls are
+    // gdrive (kept expired).
+    let callIndex = 0;
+    pushBookConfig.mockImplementation(async () => {
+      callIndex += 1;
+      if (callIndex % 2 === 0) {
+        throw new FileSyncError('Drive session expired', 'AUTH_FAILED');
+      }
+      return undefined;
+    });
+
+    const hints: string[] = [];
+    const onHint = (e: CustomEvent) => {
+      const detail = e.detail as { message?: string } | undefined;
+      if (detail?.message) hints.push(detail.message);
+    };
+    eventDispatcher.on('hint', onHint);
+
+    const { result } = renderHook(() => useFileSync('h1-view1'));
+
+    // Cycle 1: the natural book-open flow (default pull resolves
+    // `applied: false`, which falls through to an immediate push).
+    await waitFor(() => expect(pushBookConfig).toHaveBeenCalledTimes(2));
+
+    // Cycles 2 and 3, driven directly instead of waiting on the 15s debounce.
+    await act(async () => {
+      await result.current.pushNow();
+    });
+    await act(async () => {
+      await result.current.pushNow();
+    });
+
+    eventDispatcher.off('hint', onHint);
+
+    expect(pushBookConfig).toHaveBeenCalledTimes(6);
+    const expiredHints = hints.filter((m) => m === 'Google Drive session expired');
+    expect(expiredHints).toHaveLength(1);
+  });
+
+  test('a backend with syncNotes false does not contribute its remote notes even when a sibling wants notes', async () => {
+    routing.backends = ['webdav', 'gdrive'];
+    settingsState.settings = {
+      webdav: {
+        enabled: true,
+        serverUrl: 'https://dav.example',
+        username: 'u',
+        password: 'p',
+        syncNotes: false,
+      },
+      googleDrive: { enabled: true, syncNotes: true },
+    } as unknown as SystemSettings;
+
+    // webdav's remote contributes noteA; gdrive's mock mirrors the real
+    // engine's union-merge behaviour (it merges what it's handed with its own
+    // remote note), so if noteA had leaked past webdav's opt-out it would
+    // show up here too.
+    pullBookConfig
+      .mockImplementationOnce(
+        async () =>
+          ({
+            applied: true,
+            mergedConfig: { updatedAt: 2, location: 'local-loc', booknotes: [noteA] },
+            mergedNotes: [noteA],
+          }) as never,
+      )
+      .mockImplementationOnce(
+        async (_book: Book, config: BookConfig) =>
+          ({
+            applied: true,
+            mergedConfig: {
+              updatedAt: 3,
+              location: 'local-loc',
+              booknotes: [...(config.booknotes ?? []), noteB],
+            },
+            mergedNotes: [...(config.booknotes ?? []), noteB],
+          }) as never,
+      );
+
+    renderHook(() => useFileSync('h1-view1'));
+
+    await waitFor(() => expect(pullBookConfig).toHaveBeenCalledTimes(2));
+    expect(setConfigMock).toHaveBeenCalledWith(
+      'h1-view1',
+      expect.objectContaining({ booknotes: [noteB] }),
+    );
   });
 });
