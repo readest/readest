@@ -49,7 +49,15 @@ export const getRemoteLocalFraction = async (
     // Resolve against the XPointer's own spine section; the converter loads the
     // correct off-screen document when it differs from the primary view.
     const content = view.renderer.getContents().find((x) => x.index === view.renderer.primaryIndex);
-    const cfi = await getCFIFromXPointer(remote.progress!, content?.doc, content?.index, bookDoc);
+    // Pass the server-reported percentage so xcfi can correct CREngine↔foliate
+    // DocFragment drift (Bug A) when picking the target spine section.
+    const cfi = await getCFIFromXPointer(
+      remote.progress!,
+      content?.doc,
+      content?.index,
+      bookDoc,
+      remote.percentage,
+    );
     const progress = await view.getCFIProgress(cfi);
     return progress?.fraction;
   } catch (error) {

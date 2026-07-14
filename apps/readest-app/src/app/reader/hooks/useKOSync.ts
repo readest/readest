@@ -143,6 +143,7 @@ export const useKOSync = (bookKey: string) => {
             content?.doc,
             content?.index,
             bookDoc,
+            remote.percentage,
           );
           view.goTo(cfi);
           navigated = true;

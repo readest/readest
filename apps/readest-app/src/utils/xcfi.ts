@@ -598,20 +598,141 @@ export class XCFI {
   }
 }
 
+/**
+ * Minimal spine-section shape needed to anchor a CREngine DocFragment to a
+ * foliate-js section. Satisfied by `BookDoc.sections[i]` (which carries the
+ * spine `size` and `linear` attributes) as well as lightweight test stubs.
+ */
+export interface SpineSectionInfo {
+  size?: number;
+  linear?: string;
+}
+
+/**
+ * Cumulative reading-fraction boundaries for the spine, in `sections` order.
+ *
+ * Returns an array of length `sections.length + 1` where entry `i` is the
+ * fraction of the book (0..1) at the START of section `i`, so section `i`
+ * occupies `[boundaries[i], boundaries[i + 1])`. Weighting is by section
+ * `size` (foliate exposes the item byte size); when sizes are missing or all
+ * zero we fall back to equal weights so the table degrades gracefully.
+ */
+export const buildSectionFractionTable = (sections: SpineSectionInfo[]): number[] => {
+  const n = sections.length;
+  const boundaries = new Array<number>(n + 1).fill(0);
+  if (n === 0) return boundaries;
+
+  const weights = sections.map((s) =>
+    typeof s?.size === 'number' && Number.isFinite(s.size) && s.size > 0 ? s.size : 0,
+  );
+  const total = weights.reduce((a, b) => a + b, 0);
+
+  if (total <= 0) {
+    // No usable sizes: assume uniform section weights.
+    for (let i = 0; i <= n; i++) boundaries[i] = i / n;
+    return boundaries;
+  }
+
+  let cum = 0;
+  for (let i = 0; i < n; i++) {
+    boundaries[i] = cum / total;
+    cum += weights[i]!;
+    boundaries[i + 1] = cum / total;
+  }
+  boundaries[n] = 1;
+  return boundaries;
+};
+
+/**
+ * Section index whose fraction range contains `fraction` (0..1), using the
+ * cumulative boundaries from {@link buildSectionFractionTable}. Ranges are
+ * treated as upper-exclusive, so a value exactly on a boundary maps to the
+ * section that STARTS there.
+ */
+export const sectionIndexForFraction = (fraction: number, boundaries: number[]): number => {
+  const n = boundaries.length - 1;
+  if (n <= 0) return 0;
+  const f = Math.min(Math.max(fraction, 0), 1);
+  for (let i = 0; i < n; i++) {
+    if (f < boundaries[i + 1]!) return i;
+  }
+  return n - 1;
+};
+
+/**
+ * Resolve the FOLIATE spine-section index that a CREngine DocFragment XPointer
+ * actually points to.
+ *
+ * CREngine (KOReader) does NOT number its DocFragments in strict bijection with
+ * foliate-js's `sections` (the spine `<itemref>` order). Non-spine manifest
+ * files and fragment splitting make CREngine's `DocFragment[N]` drift away from
+ * foliate's section `N - 1`, producing a cumulative offset — real reports show
+ * `DocFragment[326]` landing on foliate section 274, and the reference case of
+ * KOReader chapter 9 opening on Readest chapter 10.
+ *
+ * Strategy — spine-order table + percentage anchor:
+ *  1. `nominalIndex` is CREngine's own 0-based number (`DocFragment[N] - 1`).
+ *  2. When the server also reports a reading `percentage`, map it to a section
+ *     via the cumulative size table of foliate sections (which ARE in spine
+ *     order). If `percentage` is CONSISTENT with the nominal section's own
+ *     fraction range, trust `nominalIndex` (keeps intra-section precision from
+ *     the XPointer path). If it is NOT (drift detected), re-anchor to the
+ *     percentage-derived section.
+ *  3. No usable percentage (or no sections) → clamp `nominalIndex` into range.
+ */
+export const resolveSpineSectionIndex = (
+  nominalIndex: number,
+  sections?: SpineSectionInfo[],
+  percentage?: number,
+): number => {
+  if (!sections || sections.length === 0) {
+    return Math.max(0, nominalIndex);
+  }
+  const lastIndex = sections.length - 1;
+  const clampedNominal = Math.min(Math.max(nominalIndex, 0), lastIndex);
+
+  if (
+    typeof percentage !== 'number' ||
+    !Number.isFinite(percentage) ||
+    percentage <= 0 ||
+    percentage > 1
+  ) {
+    return clampedNominal;
+  }
+
+  const boundaries = buildSectionFractionTable(sections);
+  const nominalStart = boundaries[clampedNominal]!;
+  const nominalEnd = boundaries[clampedNominal + 1]!;
+  // Small tolerance so a position exactly on a section boundary, or the
+  // sub-section paging difference between CREngine and foliate, doesn't
+  // trigger a spurious re-anchor when the nominal index is already correct.
+  const tol = 1e-4;
+  if (percentage >= nominalStart - tol && percentage <= nominalEnd + tol) {
+    return clampedNominal;
+  }
+  // Drift detected: CREngine's DocFragment number disagrees with where the
+  // reported percentage actually falls in spine order. Re-anchor by percentage.
+  return sectionIndexForFraction(percentage, boundaries);
+};
+
 export const getCFIFromXPointer = async (
   xpointer: string,
   doc?: Document,
   index?: number,
   bookDoc?: BookDoc,
+  percentage?: number,
 ) => {
-  const xSpineIndex = XCFI.extractSpineIndex(xpointer);
+  const nominalIndex = XCFI.extractSpineIndex(xpointer);
+  // Correct CREngine↔foliate DocFragment drift using the spine-order size
+  // table, anchored by the server-reported percentage when available.
+  const xSpineIndex = resolveSpineSectionIndex(nominalIndex, bookDoc?.sections, percentage);
   let converter: XCFI;
   if (index === xSpineIndex && doc) {
-    converter = new XCFI(doc, index || 0);
+    converter = new XCFI(doc, index);
   } else {
-    const doc = await bookDoc?.sections?.[xSpineIndex]?.createDocument();
-    if (!doc) throw new Error('Failed to load document for XPointer conversion.');
-    converter = new XCFI(doc, xSpineIndex || 0);
+    const sectionDoc = await bookDoc?.sections?.[xSpineIndex]?.createDocument();
+    if (!sectionDoc) throw new Error('Failed to load document for XPointer conversion.');
+    converter = new XCFI(sectionDoc, xSpineIndex);
   }
 
   const cfi = converter.xPointerToCFI(xpointer);
