@@ -7,9 +7,9 @@ import { useBookProgress } from '@/store/readerProgressStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
-import { isCloudSyncAllowed } from '@/utils/access';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
+import type { BookNote } from '@/types/book';
 import { FileSyncEngine } from '@/services/sync/file/engine';
 import { FileSyncError } from '@/services/sync/file/provider';
 import { createAppLocalStore } from '@/services/sync/file/appLocalStore';
@@ -17,19 +17,42 @@ import {
   createFileSyncProvider,
   type FileSyncBackendKind,
 } from '@/services/sync/file/providerRegistry';
-import { getCloudSyncProvider, settingsKeyForBackend } from '@/services/sync/cloudSyncProvider';
+import { canBackendRun } from '@/services/sync/file/runLibrarySync';
+import {
+  getActiveFileSyncBackends,
+  settingsKeyForBackend,
+} from '@/services/sync/cloudSyncProvider';
 import { removeBookNoteOverlays } from '../utils/annotatorUtil';
 import { useWindowActiveChanged } from './useWindowActiveChanged';
 
 /**
- * Per-book file-sync hook for the active third-party cloud provider.
+ * Per-book file-sync hook — drives EVERY enabled third-party backend at once.
  *
- * The third-party cloud providers (WebDAV, Google Drive) are mutually exclusive
- * — only one is enabled at a time (see the Cloud Sync settings page) — so this
- * hook drives exactly that one active backend, built through the provider
- * registry. Same architecture as `useKOSync` / `useProgressSync`: pull-once on
- * book open, debounced push on progress / booknote changes, manual flush on the
- * `flush-file-sync` event.
+ * Cloud sync providers are independently selectable (#5062): several
+ * third-party backends (WebDAV, Google Drive, S3, OneDrive) can mirror a
+ * book's progress and annotations in parallel, alongside (or instead of)
+ * Readest Cloud, whose native progress sync is `useProgressSync`'s job, not
+ * this hook's, and runs independently.
+ *
+ * The hook is called exactly once per book (React forbids a variable hook
+ * count), so every scalar the single-backend version used to hold —
+ * `activeKind`, `providerSettings`, `engineKey`, `isReady`, `allowPush` /
+ * `allowPull`, and the per-book locks (`fileSyncedRef`, `coverSyncedRef`) —
+ * is a per-backend collection here, and the four sync operations (push
+ * config, pull config, push book file, push cover) loop over the enabled
+ * backends instead of touching one.
+ *
+ * Failure isolation: one backend throwing must not stop the others from
+ * pushing or pulling — redundancy is worthless if a dead mirror takes the
+ * live one down with it. Every per-backend operation is wrapped in its own
+ * try/catch.
+ *
+ * Merge chaining (the subtle part): `engine.pullBookConfig(book, config)`
+ * merges `config` with that backend's remote and returns the merged result.
+ * Pulling from several backends CHAINS — backend 2 must merge on top of the
+ * config backend 1 already merged, so the final config reflects every
+ * mirror. Pulling all of them against the ORIGINAL local config and keeping
+ * one result would silently drop whichever mirror lost the race.
  *
  * Energy budget — these constants are deliberately tuned for mobile:
  *   - Push debounce: 15 s. Real reading sessions involve continuous page-turns,
@@ -39,11 +62,7 @@ import { useWindowActiveChanged } from './useWindowActiveChanged';
  *   - Open-pull skip: 30 s. Quickly closing/reopening a book shouldn't re-fetch
  *     the same config that's already current in memory.
  *
- * Gating: the active provider's `enabled` master switch, plus WebDAV's
- * serverUrl/username (the Connect flow guarantees these). Google Drive's token
- * lives in the OS keychain, so `enabled` is the only settings gate there.
- *
- * Strategy semantics — same vocabulary as KOSync:
+ * Strategy semantics — same vocabulary as KOSync, evaluated per backend:
  *   - 'silent' (default): always push and always pull, latest writer wins
  *   - 'send':   push only, never pull (this device feeds others)
  *   - 'receive': pull only, never push (this device follows others)
@@ -86,123 +105,120 @@ export const useFileSync = (bookKey: string) => {
   // Reactive: triggers the auto-push effect on page turns.
   const progress = useBookProgress(bookKey);
 
-  // The single active cloud provider (WebDAV and Google Drive are exclusive).
-  const provider = getCloudSyncProvider(settings);
-  const activeKind: FileSyncBackendKind | null = provider === 'readest' ? null : provider;
-  const providerSettings = activeKind ? settings[settingsKeyForBackend(activeKind)] : undefined;
+  const { userProfilePlan } = useQuotaStats();
+  // Every enabled third-party backend syncs this book in parallel (#5062);
+  // Readest Cloud's native progress sync is useProgressSync's job, not this
+  // hook's, and runs independently.
+  const activeKinds = useMemo(
+    () => getActiveFileSyncBackends(settings, userProfilePlan ?? 'free'),
+    [settings, userProfilePlan],
+  );
 
   /** Flips true on the first local change after a push, false right before each push. */
   const dirtyRef = useRef(false);
   /** Last successful pull timestamp; gates window-focus and open-book pulls. */
   const lastPulledAtRef = useRef(0);
   const hasPulledOnce = useRef(false);
-  /** Per-instance lock for the book-file uploader (hash-keyed content). */
-  const fileSyncedRef = useRef(false);
-  /** Per-instance lock for the cover uploader (gated differently than files). */
-  const coverSyncedRef = useRef(false);
+  /** Backends whose book binary this instance already pushed. */
+  const fileSyncedRef = useRef(new Set<FileSyncBackendKind>());
+  /** Backends whose cover this instance already pushed. */
+  const coverSyncedRef = useRef(new Set<FileSyncBackendKind>());
   /** One-shot guard so an expired session toasts once, not on every page-turn. */
   const authNotifiedRef = useRef(false);
 
-  // Switching the active provider mid-session resets the per-book locks so the
-  // newly-active backend does a fresh pull-on-open and re-checks file/cover.
+  // Switching the enabled backend SET mid-session resets the per-book locks so
+  // newly-active backends do a fresh pull-on-open and re-check file/cover.
+  const activeKindsKey = activeKinds.join(',');
   useEffect(() => {
     hasPulledOnce.current = false;
-    fileSyncedRef.current = false;
-    coverSyncedRef.current = false;
+    fileSyncedRef.current.clear();
+    coverSyncedRef.current.clear();
     lastPulledAtRef.current = 0;
     dirtyRef.current = false;
     authNotifiedRef.current = false;
-  }, [activeKind]);
+  }, [activeKindsKey]);
 
-  // Read latest settings from the store (not the closure) when patching the
-  // active provider's slice: pull → push can fire back-to-back when a book
-  // opens, and a closure-based merge could clobber a sibling write.
-  const ensureDeviceId = useCallback((): string => {
-    const latest = useSettingsStore.getState().settings;
-    const key = activeKind ? settingsKeyForBackend(activeKind) : 'webdav';
-    let id = latest[key]?.deviceId;
-    if (!id) {
-      id = uuidv4();
-      const next = { ...latest, [key]: { ...latest[key], deviceId: id } };
-      setSettings(next);
-      saveSettings(envConfig, next);
-    }
-    return id;
-  }, [activeKind, envConfig, setSettings, saveSettings]);
+  // Per-backend settings slice + strategy helpers, replacing the old single
+  // `providerSettings` / `allowPush` / `allowPull`.
+  const sliceFor = useCallback(
+    (kind: FileSyncBackendKind) => settings[settingsKeyForBackend(kind)],
+    [settings],
+  );
+  const allowsPush = useCallback(
+    (kind: FileSyncBackendKind) => (sliceFor(kind)?.strategy ?? 'silent') !== 'receive',
+    [sliceFor],
+  );
+  const allowsPull = useCallback(
+    (kind: FileSyncBackendKind) => (sliceFor(kind)?.strategy ?? 'silent') !== 'send',
+    [sliceFor],
+  );
+
+  // Read latest settings from the store (not the closure) when patching a
+  // backend's slice: pull → push can fire back-to-back when a book opens, and
+  // a closure-based merge could clobber a sibling write.
+  const ensureDeviceId = useCallback(
+    (kind: FileSyncBackendKind): string => {
+      const latest = useSettingsStore.getState().settings;
+      const key = settingsKeyForBackend(kind);
+      let id = latest[key]?.deviceId;
+      if (!id) {
+        id = uuidv4();
+        const next = { ...latest, [key]: { ...latest[key], deviceId: id } };
+        setSettings(next);
+        saveSettings(envConfig, next);
+      }
+      return id;
+    },
+    [envConfig, setSettings, saveSettings],
+  );
 
   const updateLastSyncedAt = useCallback(
-    async (ts: number) => {
+    async (kind: FileSyncBackendKind, ts: number) => {
       const latest = useSettingsStore.getState().settings;
-      const key = activeKind ? settingsKeyForBackend(activeKind) : 'webdav';
+      const key = settingsKeyForBackend(kind);
       const next = { ...latest, [key]: { ...latest[key], lastSyncedAt: ts } };
       setSettings(next);
       await saveSettings(envConfig, next);
     },
-    [activeKind, envConfig, setSettings, saveSettings],
+    [envConfig, setSettings, saveSettings],
   );
 
-  // Third-party cloud sync will be a premium feature (the reader's auto-sync
-  // would stay off for free plans), but it is temporarily UNGATED while the
-  // feature stabilises — `isCloudSyncAllowed` returns true for every plan until
-  // `CLOUD_SYNC_REQUIRES_PREMIUM` is flipped back on.
-  const { userProfilePlan } = useQuotaStats();
-  const isPremium = isCloudSyncAllowed(userProfilePlan ?? 'free');
-
-  const isReady = useMemo(() => {
-    if (!isPremium) return false;
-    if (activeKind === 'webdav') {
-      const w = settings.webdav;
-      return !!(w?.enabled && w?.serverUrl && w?.username);
-    }
-    if (activeKind === 'gdrive') return !!settings.googleDrive?.enabled;
-    if (activeKind === 's3') {
-      const c = settings.s3;
-      return !!(c?.enabled && c?.endpoint && c?.bucket && c?.accessKeyId && c?.secretAccessKey);
-    }
-    if (activeKind === 'onedrive') return !!settings.onedrive?.enabled;
-    return false;
-  }, [
-    isPremium,
-    activeKind,
-    settings.webdav,
-    settings.googleDrive,
-    settings.s3,
-    settings.onedrive,
-  ]);
-
-  const strategy = providerSettings?.strategy ?? 'silent';
-  const allowPush = isReady && strategy !== 'receive';
-  const allowPull = isReady && strategy !== 'send';
-
-  // The engine is built asynchronously: the Google Drive provider probes the OS
+  // The engine list is built asynchronously: Google Drive probes the OS
   // keychain to assemble its token store. Keyed on the connection-relevant
   // settings (not the whole settings object) so a `lastSyncedAt` write doesn't
   // rebuild it — which for Drive would re-probe the keychain on every push.
   const engineKey = useMemo(() => {
-    if (activeKind === 'webdav') {
-      const w = settings.webdav;
-      return `webdav:${w?.enabled}:${w?.serverUrl}:${w?.username}:${w?.password}:${w?.rootPath}`;
-    }
-    if (activeKind === 'gdrive') return `gdrive:${settings.googleDrive?.enabled}`;
-    if (activeKind === 's3') {
-      const c = settings.s3;
-      return `s3:${c?.enabled}:${c?.endpoint}:${c?.region}:${c?.bucket}:${c?.accessKeyId}:${c?.secretAccessKey}`;
-    }
-    if (activeKind === 'onedrive') return `onedrive:${settings.onedrive?.enabled}`;
-    return 'none';
-  }, [activeKind, settings.webdav, settings.googleDrive, settings.s3, settings.onedrive]);
+    const w = settings.webdav;
+    const c = settings.s3;
+    return [
+      activeKindsKey,
+      `webdav:${w?.serverUrl}:${w?.username}:${w?.password}:${w?.rootPath}`,
+      `gdrive:${settings.googleDrive?.enabled}`,
+      `s3:${c?.endpoint}:${c?.region}:${c?.bucket}:${c?.accessKeyId}:${c?.secretAccessKey}`,
+      `onedrive:${settings.onedrive?.enabled}`,
+    ].join('|');
+  }, [activeKindsKey, settings.webdav, settings.googleDrive, settings.s3, settings.onedrive]);
 
-  const [engine, setEngine] = useState<FileSyncEngine | null>(null);
+  const [engines, setEngines] = useState<
+    Array<{ kind: FileSyncBackendKind; engine: FileSyncEngine }>
+  >([]);
   useEffect(() => {
     let cancelled = false;
-    setEngine(null);
-    if (!isReady || !appService || activeKind === null) return;
+    setEngines([]);
+    if (!appService || activeKinds.length === 0) return;
     (async () => {
       const current = useSettingsStore.getState().settings;
-      const provider = await createFileSyncProvider(activeKind, current);
-      if (cancelled || !provider) return;
-      const store = createAppLocalStore({ appService, settings: current, envConfig });
-      setEngine(new FileSyncEngine(provider, store));
+      const built: Array<{ kind: FileSyncBackendKind; engine: FileSyncEngine }> = [];
+      for (const kind of activeKinds) {
+        // Same transport gate the library pass uses — an expired web Drive token
+        // would otherwise abort every push and pull with a terminal AUTH_FAILED.
+        if (!canBackendRun(kind)) continue;
+        const provider = await createFileSyncProvider(kind, current);
+        if (!provider) continue;
+        const store = createAppLocalStore({ appService, settings: current, envConfig });
+        built.push({ kind, engine: new FileSyncEngine(provider, store) });
+      }
+      if (!cancelled) setEngines(built);
     })();
     return () => {
       cancelled = true;
@@ -210,209 +226,243 @@ export const useFileSync = (bookKey: string) => {
     // `engineKey` captures the connection-relevant settings; the rest is read
     // fresh inside the effect so unrelated settings writes don't rebuild.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [engineKey, isReady, activeKind, appService, envConfig]);
+  }, [engineKey, appService, envConfig]);
+
+  const isReady = engines.length > 0;
 
   /**
-   * Notify (once) that the active provider's session expired so the user knows
-   * to reconnect — a single top-right reader `hint` (same affordance as the
-   * native "Reading Progress Synced" hint), NOT a per-failure error toast. Reset
-   * on a successful sync / provider switch.
+   * Notify (once) that a backend's session expired so the user knows to
+   * reconnect — a single top-right reader `hint` (same affordance as the
+   * native "Reading Progress Synced" hint), NOT a per-failure error toast.
+   * Reset on a successful sync / backend-set change.
    */
-  const notifyAuthExpiredOnce = useCallback(() => {
-    if (authNotifiedRef.current) return;
-    authNotifiedRef.current = true;
-    eventDispatcher.dispatch('hint', {
-      bookKey,
-      timeout: 5000,
-      message:
-        activeKind === 'gdrive'
-          ? _('Google Drive session expired')
-          : _('Cloud sync session expired'),
-    });
-  }, [bookKey, activeKind, _]);
+  const notifyAuthExpiredOnce = useCallback(
+    (kind: FileSyncBackendKind) => {
+      if (authNotifiedRef.current) return;
+      authNotifiedRef.current = true;
+      eventDispatcher.dispatch('hint', {
+        bookKey,
+        timeout: 5000,
+        message:
+          kind === 'gdrive' ? _('Google Drive session expired') : _('Cloud sync session expired'),
+      });
+    },
+    [bookKey, _],
+  );
 
   /** Map a sync error: surface an expired session once, log everything. */
   const handleSyncError = useCallback(
-    (label: string, e: unknown) => {
-      if (e instanceof FileSyncError && e.code === 'AUTH_FAILED') notifyAuthExpiredOnce();
-      console.warn(label, e);
+    (kind: FileSyncBackendKind, label: string, e: unknown) => {
+      if (e instanceof FileSyncError && e.code === 'AUTH_FAILED') notifyAuthExpiredOnce(kind);
+      console.warn(label, kind, e);
     },
     [notifyAuthExpiredOnce],
   );
 
   /**
-   * Push the latest config (progress + booknotes) to the remote. Skips while the
-   * user is previewing a deep-link target — that in-memory position reflects the
-   * annotation, not actual reading.
+   * Push the latest config (progress + booknotes) to every backend that
+   * allows it. One backend failing must not stop the others.
    */
   const pushNow = useCallback(async () => {
-    if (!allowPush) return;
+    if (!isReady) return;
     if (useReaderStore.getState().getViewState(bookKey)?.previewMode) return;
-    const wantProgress = providerSettings?.syncProgress ?? true;
-    const wantNotes = providerSettings?.syncNotes ?? true;
-    if (!wantProgress && !wantNotes) return;
-
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
-    if (!config || !book || !engine) return;
+    if (!config || !book) return;
 
-    try {
-      const deviceId = ensureDeviceId();
-      await engine.pushBookConfig(book, config, deviceId);
+    let anyPushed = false;
+    for (const { kind, engine } of engines) {
+      if (!allowsPush(kind)) continue;
+      const ps = sliceFor(kind);
+      const wantProgress = ps?.syncProgress ?? true;
+      const wantNotes = ps?.syncNotes ?? true;
+      if (!wantProgress && !wantNotes) continue;
+      try {
+        await engine.pushBookConfig(book, config, ensureDeviceId(kind));
+        await updateLastSyncedAt(kind, Date.now());
+        anyPushed = true;
+      } catch (e) {
+        handleSyncError(kind, 'file sync push failed', e);
+      }
+    }
+    if (anyPushed) {
       dirtyRef.current = false;
       authNotifiedRef.current = false;
-      await updateLastSyncedAt(Date.now());
-    } catch (e) {
-      handleSyncError('file sync push failed', e);
     }
   }, [
-    allowPush,
+    isReady,
     bookKey,
+    engines,
     getConfig,
     getBookData,
+    allowsPush,
+    sliceFor,
     ensureDeviceId,
-    engine,
-    providerSettings,
     updateLastSyncedAt,
     handleSyncError,
   ]);
 
   /**
-   * Upload the book binary if syncBooks is on and the remote doesn't already
-   * have a same-sized copy. Cheap on the steady state (a single HEAD per book
-   * per session); re-runs within the same instance no-op via `fileSyncedRef`.
+   * Upload the book binary to every backend with syncBooks on. Cheap on the
+   * steady state (a single HEAD per book per backend per session); re-runs
+   * within the same instance no-op via `fileSyncedRef`.
    */
   const pushBookFileNow = useCallback(async () => {
-    if (!allowPush) return;
-    if (!(providerSettings?.syncBooks ?? false)) return;
-    if (fileSyncedRef.current) return;
-    fileSyncedRef.current = true;
-
+    if (!isReady) return;
     const book = getBookData(bookKey)?.book;
-    if (!book || !engine) return;
-
-    try {
-      const result = await engine.pushBookFile(book);
-      if (result.uploaded) await updateLastSyncedAt(Date.now());
-    } catch (e) {
-      // Reset the lock on failure so a later trigger retries.
-      fileSyncedRef.current = false;
-      handleSyncError('file sync book push failed', e);
+    if (!book) return;
+    for (const { kind, engine } of engines) {
+      if (!allowsPush(kind)) continue;
+      if (!(sliceFor(kind)?.syncBooks ?? false)) continue;
+      if (fileSyncedRef.current.has(kind)) continue;
+      fileSyncedRef.current.add(kind);
+      try {
+        const result = await engine.pushBookFile(book);
+        if (result.uploaded) await updateLastSyncedAt(kind, Date.now());
+      } catch (e) {
+        // Reset this backend's lock so a later trigger retries it.
+        fileSyncedRef.current.delete(kind);
+        handleSyncError(kind, 'file sync book push failed', e);
+      }
     }
   }, [
-    allowPush,
-    providerSettings,
-    getBookData,
+    isReady,
+    engines,
     bookKey,
-    engine,
+    getBookData,
+    allowsPush,
+    sliceFor,
     updateLastSyncedAt,
     handleSyncError,
   ]);
 
   /**
-   * Push the local cover image, independent of `syncBooks` — covers are part of
-   * the book's metadata and the receiving device can't regenerate them without
-   * the book bytes. Best-effort: a missing local cover silently no-ops.
+   * Push the local cover image to every backend, independent of `syncBooks` —
+   * covers are part of the book's metadata and the receiving device can't
+   * regenerate them without the book bytes. Best-effort: a missing local
+   * cover silently no-ops.
    */
   const pushBookCoverNow = useCallback(async () => {
-    if (!allowPush) return;
-    if (coverSyncedRef.current) return;
-    coverSyncedRef.current = true;
-
+    if (!isReady) return;
     const book = getBookData(bookKey)?.book;
-    if (!book || !engine) return;
-
-    try {
-      await engine.pushBookCover(book);
-    } catch (e) {
-      coverSyncedRef.current = false;
-      handleSyncError('file sync cover push failed', e);
+    if (!book) return;
+    for (const { kind, engine } of engines) {
+      if (!allowsPush(kind)) continue;
+      if (coverSyncedRef.current.has(kind)) continue;
+      coverSyncedRef.current.add(kind);
+      try {
+        await engine.pushBookCover(book);
+      } catch (e) {
+        coverSyncedRef.current.delete(kind);
+        handleSyncError(kind, 'file sync cover push failed', e);
+      }
     }
-  }, [allowPush, getBookData, bookKey, engine, handleSyncError]);
+  }, [isReady, engines, bookKey, getBookData, allowsPush, handleSyncError]);
 
   /**
-   * Pull, merge, and persist, using the same per-config / per-note merge as the
-   * native cloud sync. Returns `true` when the remote had a payload (merge
-   * happened), `false` when empty — callers use that to bootstrap an initial push.
+   * Pull, merge, and persist from every backend that allows it, CHAINING the
+   * merges: each backend merges on top of the config the previous backend
+   * already merged, so the final config reflects every mirror. Pulling all of
+   * them against the ORIGINAL local config and keeping one result would
+   * silently drop whichever mirror lost the race. Returns `true` when at
+   * least one backend had a payload to merge.
    */
   const pullNow = useCallback(async (): Promise<boolean> => {
-    if (!allowPull) return false;
-    const wantProgress = providerSettings?.syncProgress ?? true;
-    const wantNotes = providerSettings?.syncNotes ?? true;
-    if (!wantProgress && !wantNotes) return false;
-
+    if (!isReady) return false;
     const config = getConfig(bookKey);
     const book = getBookData(bookKey)?.book;
-    if (!config || !book || !engine) return false;
+    if (!config || !book) return false;
 
-    try {
-      const result = await engine.pullBookConfig(book, config);
-      lastPulledAtRef.current = Date.now();
-      // The pull's getAccessToken succeeded — clear any expired-session notice.
-      authNotifiedRef.current = false;
-      if (!result.applied || !result.mergedConfig) return false;
+    let working = config;
+    let applied = false;
+    let mergedNotes: BookNote[] | undefined;
+    let wantProgressAny = false;
+    let wantNotesAny = false;
 
-      // Surface merged notes through the live view so highlights re-appear /
-      // disappear without waiting for the next render pass.
-      if (wantNotes && result.mergedNotes) {
-        const view = getView(bookKey);
-        const previousById = new Map((config.booknotes ?? []).map((n) => [n.id, n]));
-        for (const note of result.mergedNotes) {
-          const prev = previousById.get(note.id);
-          if (note.deletedAt && (!prev || !prev.deletedAt)) {
-            getViewsById(bookKey.split('-')[0]!).forEach((v) => removeBookNoteOverlays(v, note));
-          } else if (!note.deletedAt && note.cfi && view) {
-            try {
-              view.addAnnotation(note);
-            } catch {
-              // The annotation may not belong to the current spine index.
-            }
+    for (const { kind, engine } of engines) {
+      if (!allowsPull(kind)) continue;
+      const ps = sliceFor(kind);
+      const wantProgress = ps?.syncProgress ?? true;
+      const wantNotes = ps?.syncNotes ?? true;
+      if (!wantProgress && !wantNotes) continue;
+      wantProgressAny = wantProgressAny || wantProgress;
+      wantNotesAny = wantNotesAny || wantNotes;
+      try {
+        const result = await engine.pullBookConfig(book, working);
+        lastPulledAtRef.current = Date.now();
+        // The pull's getAccessToken succeeded — clear any expired-session notice.
+        authNotifiedRef.current = false;
+        await updateLastSyncedAt(kind, Date.now());
+        if (!result.applied || !result.mergedConfig) continue;
+        applied = true;
+        working = result.mergedConfig;
+        if (result.mergedNotes) mergedNotes = result.mergedNotes;
+      } catch (e) {
+        handleSyncError(kind, 'file sync pull failed', e);
+      }
+    }
+
+    if (!applied) return false;
+
+    // Surface merged notes through the live view so highlights re-appear /
+    // disappear without waiting for the next render pass.
+    if (wantNotesAny && mergedNotes) {
+      const view = getView(bookKey);
+      const previousById = new Map((config.booknotes ?? []).map((n) => [n.id, n]));
+      for (const note of mergedNotes) {
+        const prev = previousById.get(note.id);
+        if (note.deletedAt && (!prev || !prev.deletedAt)) {
+          getViewsById(bookKey.split('-')[0]!).forEach((v) => removeBookNoteOverlays(v, note));
+        } else if (!note.deletedAt && note.cfi && view) {
+          try {
+            view.addAnnotation(note);
+          } catch {
+            // The annotation may not belong to the current spine index.
           }
         }
       }
-
-      // Honour sub-toggles: drop the parts the user opted out of.
-      const toApply = { ...result.mergedConfig };
-      if (!wantProgress) {
-        toApply.progress = config.progress;
-        toApply.location = config.location;
-        toApply.xpointer = config.xpointer;
-      }
-      if (!wantNotes) {
-        toApply.booknotes = config.booknotes;
-      }
-
-      setConfig(bookKey, toApply);
-      // Parity with the native cloud sync: surface the same top-right hint
-      // when a remote reading position was fetched and applied.
-      if (wantProgress && remoteProgressApplied(config.location, toApply.location)) {
-        eventDispatcher.dispatch('hint', {
-          bookKey,
-          message: _('Reading Progress Synced'),
-        });
-      }
-      const latest = getConfig(bookKey);
-      if (latest) await saveConfig(envConfig, bookKey, latest, settings);
-      await updateLastSyncedAt(Date.now());
-      return true;
-    } catch (e) {
-      handleSyncError('file sync pull failed', e);
-      return false;
     }
+
+    // Honour sub-toggles: drop the parts the user opted out of everywhere.
+    const toApply = { ...working };
+    if (!wantProgressAny) {
+      toApply.progress = config.progress;
+      toApply.location = config.location;
+      toApply.xpointer = config.xpointer;
+    }
+    if (!wantNotesAny) {
+      toApply.booknotes = config.booknotes;
+    }
+
+    setConfig(bookKey, toApply);
+    // Parity with the native cloud sync: surface the same top-right hint when a
+    // remote reading position was fetched and applied.
+    if (wantProgressAny && remoteProgressApplied(config.location, toApply.location)) {
+      eventDispatcher.dispatch('hint', {
+        bookKey,
+        message: _('Reading Progress Synced'),
+      });
+    }
+    const latest = getConfig(bookKey);
+    if (latest) await saveConfig(envConfig, bookKey, latest, settings);
+    // No updateLastSyncedAt here: each backend already stamped its own inside
+    // the loop above.
+    return true;
   }, [
-    allowPull,
+    isReady,
     bookKey,
+    engines,
     getConfig,
     getBookData,
     getView,
     getViewsById,
     setConfig,
     saveConfig,
-    engine,
+    allowsPull,
+    sliceFor,
+    updateLastSyncedAt,
     envConfig,
     settings,
-    providerSettings,
-    updateLastSyncedAt,
     handleSyncError,
     _,
   ]);
@@ -438,11 +488,11 @@ export const useFileSync = (bookKey: string) => {
     debouncedPush();
   }, [debouncedPush]);
 
-  // Pull once on book open (waiting for the async engine + a known location),
-  // then push if the remote was empty so the per-book directory is created on
-  // first use. The book-file/cover uploads ride along on the same trigger.
+  // Pull once on book open (waiting for a known location), then push if the
+  // remote was empty so the per-book directory is created on first use. The
+  // book-file/cover uploads ride along on the same trigger.
   useEffect(() => {
-    if (!isReady || !engine) return;
+    if (!isReady) return;
     if (!progress?.location) return;
     if (hasPulledOnce.current) return;
     hasPulledOnce.current = true;
@@ -455,7 +505,7 @@ export const useFileSync = (bookKey: string) => {
       }
       await Promise.all([syncRefs.current.pushBookCoverNow(), syncRefs.current.pushBookFileNow()]);
     })();
-  }, [isReady, engine, progress?.location]);
+  }, [isReady, progress?.location]);
 
   // Auto-push on progress changes (debounced; the dirty check short-circuits).
   useEffect(() => {
@@ -488,8 +538,8 @@ export const useFileSync = (bookKey: string) => {
     const handlePush = (event: CustomEvent) => {
       if (event.detail?.bookKey && event.detail.bookKey !== bookKey) return;
       dirtyRef.current = true;
-      fileSyncedRef.current = false;
-      coverSyncedRef.current = false;
+      fileSyncedRef.current.clear();
+      coverSyncedRef.current.clear();
       debouncedPush.flush();
       syncRefs.current.pushBookFileNow();
       syncRefs.current.pushBookCoverNow();
