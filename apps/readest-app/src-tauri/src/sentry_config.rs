@@ -146,6 +146,29 @@ pub fn is_app_sandboxed() -> bool {
     )
 }
 
+/// The argument `minidumper-child` passes to the copy of our binary it re-execs
+/// to host the crash-reporter server (its default `server_arg`, matched there by
+/// prefix because the socket path is appended as `=<socket>`).
+const CRASH_REPORTER_SERVER_ARG: &str = "--crash-reporter-server";
+
+/// Whether `args` belong to the crash-reporter server process.
+pub fn is_crash_reporter_args<I: IntoIterator<Item = S>, S: AsRef<str>>(args: I) -> bool {
+    args.into_iter()
+        .any(|arg| arg.as_ref().starts_with(CRASH_REPORTER_SERVER_ARG))
+}
+
+/// True when this process is the crash-reporter server that the minidump handler
+/// started by re-exec'ing our own binary, not the app the user launched.
+///
+/// The server process must never boot the UI. `minidump::init` normally runs the
+/// server loop and exits the process from inside, but when the server fails to
+/// start it returns an error instead, and the process would otherwise fall
+/// through into a full second copy of the app — a duplicate window on top of the
+/// user's real one (#5052).
+pub fn is_crash_reporter_process() -> bool {
+    is_crash_reporter_args(std::env::args())
+}
+
 /// The WebView (engine, major-version), set once at startup when the app reports
 /// its User-Agent. Stored globally so `before_send` can tag every event — the
 /// browser context integration doesn't run for events forwarded from the webview.
@@ -207,9 +230,33 @@ pub extern "C" fn readest_sentry_dsn() -> *const std::os::raw::c_char {
 mod tests {
     use super::{
         android_version_from_uname, app_sandboxed, corrected_os_name, dsn_from_env,
-        environment_for_version, is_ignored_browser_error, is_mobi_cover_panic_frame,
-        parse_webview_info, release_name,
+        environment_for_version, is_crash_reporter_args, is_ignored_browser_error,
+        is_mobi_cover_panic_frame, parse_webview_info, release_name,
     };
+
+    #[test]
+    fn crash_reporter_process_is_detected_from_its_server_arg() {
+        // `minidumper-child` re-execs our binary with the socket appended.
+        assert!(is_crash_reporter_args([
+            "/Applications/Readest.app/Contents/MacOS/readest",
+            "--crash-reporter-server=/var/folders/dz/T/temp-socket-6e72b890",
+        ]));
+        // Its own detection matches by prefix, so a bare flag counts too.
+        assert!(is_crash_reporter_args([
+            "readest",
+            "--crash-reporter-server"
+        ]));
+    }
+
+    #[test]
+    fn the_app_the_user_launched_is_not_the_crash_reporter() {
+        assert!(!is_crash_reporter_args(["readest"]));
+        // Open-with passes book paths, never the reporter flag.
+        assert!(!is_crash_reporter_args([
+            "readest",
+            "/Users/me/Books/crash-reporter-server.epub",
+        ]));
+    }
 
     #[test]
     fn mac_app_store_build_is_detected_as_sandboxed() {

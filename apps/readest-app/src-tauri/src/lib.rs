@@ -396,6 +396,19 @@ pub fn run() {
         .filter(|_| !sentry_config::is_app_sandboxed())
         .map(|guard| tauri_plugin_sentry::minidump::init(guard));
 
+    // In the re-exec'd crash-reporter process, `minidump::init` runs the server
+    // loop and exits the process from inside, so reaching this line there means
+    // the server failed to start and `init` returned an error. Without this guard
+    // the process keeps going and boots a whole second copy of the app next to the
+    // user's real one — a duplicate window, dock icon and webview (#5052). Exit
+    // instead: the app that spawned us gives up after its connect timeout and runs
+    // on without native minidumps.
+    #[cfg(not(any(target_os = "ios", target_os = "android")))]
+    if sentry_config::is_crash_reporter_process() {
+        eprintln!("crash-reporter server failed to start; exiting the reporter process");
+        std::process::exit(1);
+    }
+
     let builder = tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::new()
