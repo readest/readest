@@ -628,7 +628,7 @@ export const useFileSync = (bookKey: string) => {
     };
   }, [debouncedPush]);
 
-  return { pushNow, pullNow, pushBookFileNow, pushBookCoverNow };
+  return { pushNow, pullNow };
 };
 
 export default useFileSync;
