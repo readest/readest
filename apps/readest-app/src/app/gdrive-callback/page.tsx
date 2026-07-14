@@ -15,13 +15,13 @@ import {
   parseImplicitRedirect,
   tokenSetFromRedirect,
 } from '@/services/sync/providers/gdrive/auth/webRedirectFlow';
-import { persistActiveCloudProvider } from '@/components/settings/integrations/cloudSync';
+import { persistCloudProviderEnabled } from '@/components/settings/integrations/cloudSync';
 
 /**
  * OAuth return route for the web Google Drive connect (full-page implicit flow).
  * Google redirects here with the access token in the URL fragment; we validate
- * the CSRF state, store the token, mark Drive the active cloud provider, then
- * route back to where the user started. See `gdrive/auth/webRedirectFlow.ts`.
+ * the CSRF state, store the token, switch Drive on, then route back to where
+ * the user started. See `gdrive/auth/webRedirectFlow.ts`.
  */
 export default function GDriveCallback() {
   const router = useRouter();
@@ -49,11 +49,11 @@ export default function GDriveCallback() {
           .accountLabel()
           .catch(() => null);
 
-        // Mark Drive the single active cloud provider (turns WebDAV off) and
-        // stamp the account label. persistActiveCloudProvider loads via
+        // Switch Drive on and stamp the account label; every other provider
+        // is left untouched (#5062). persistCloudProviderEnabled loads via
         // appService when the settings store isn't hydrated on this route,
         // persists, hydrates the store, and broadcasts to other windows.
-        await persistActiveCloudProvider(envConfig, 'gdrive', (s) => ({
+        await persistCloudProviderEnabled(envConfig, 'gdrive', true, (s) => ({
           ...s,
           googleDrive: {
             ...s.googleDrive,

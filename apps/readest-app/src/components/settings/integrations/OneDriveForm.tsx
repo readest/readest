@@ -12,7 +12,7 @@ import {
 import { hasValidWebOneDriveToken } from '@/services/sync/providers/onedrive/webAuthCodeFlow';
 import { Tips } from '../primitives';
 import FileSyncForm from './FileSyncForm';
-import { persistActiveCloudProvider } from './cloudSync';
+import { persistCloudProviderEnabled } from './cloudSync';
 
 const disconnectButtonClass = clsx(
   'eink-bordered',
@@ -35,11 +35,12 @@ const primaryButtonClass = clsx(
  * - **Active** (`onedrive.enabled`): the shared {@link FileSyncForm} controls
  *   + Disconnect (which clears the keychain token — a full teardown).
  * - **Configured but inactive** (a token exists — `accountLabel` is set — but
- *   another provider is active): "Use OneDrive" re-activates it WITHOUT a
- *   fresh sign-in, so switching back is frictionless; Disconnect tears it down.
+ *   OneDrive itself is switched off): "Use OneDrive" re-activates it WITHOUT
+ *   a fresh sign-in, so switching back is frictionless; Disconnect tears it down.
  * - **Not connected**: the OAuth Connect button.
  *
- * Activating makes OneDrive the single active cloud provider (turns WebDAV off).
+ * Activating turns OneDrive on; every other provider is left exactly as it was
+ * (#5062).
  */
 const OneDriveForm: React.FC = () => {
   const _ = useTranslation();
@@ -66,10 +67,10 @@ const OneDriveForm: React.FC = () => {
     await saveSettings(envConfig, next);
   };
 
-  // Make OneDrive the active provider (turns WebDAV off), optionally stamping a
-  // freshly-resolved account label.
+  // Switch OneDrive on, optionally stamping a freshly-resolved account label.
+  // Every other provider is left untouched (#5062).
   const activate = async (accountLabel?: string) => {
-    await persistActiveCloudProvider(envConfig, 'onedrive', (s) =>
+    await persistCloudProviderEnabled(envConfig, 'onedrive', true, (s) =>
       accountLabel === undefined ? s : { ...s, onedrive: { ...s.onedrive, accountLabel } },
     );
   };
@@ -98,7 +99,9 @@ const OneDriveForm: React.FC = () => {
 
   const handleDisconnect = async () => {
     await runOneDriveDisconnect();
-    await persistActiveCloudProvider(envConfig, null, (s) => ({
+    // Switch OneDrive off and clear its account label (a full teardown).
+    // Other providers keep syncing.
+    await persistCloudProviderEnabled(envConfig, 'onedrive', false, (s) => ({
       ...s,
       onedrive: { ...s.onedrive, accountLabel: undefined },
     }));
@@ -154,7 +157,7 @@ const OneDriveForm: React.FC = () => {
         </div>
         <Tips>
           <li>
-            {_('Connected as {{account}}. Make {{provider}} the active cloud provider.', {
+            {_('Connected as {{account}}. Turn {{provider}} on to start syncing.', {
               account: stored.accountLabel,
               provider: 'OneDrive',
             })}

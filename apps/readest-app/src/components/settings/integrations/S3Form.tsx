@@ -9,7 +9,7 @@ import { FileSyncError } from '@/services/sync/file/provider';
 import { createS3Provider } from '@/services/sync/providers/s3/S3Provider';
 import { SectionTitle } from '../primitives';
 import FileSyncForm from './FileSyncForm';
-import { persistActiveCloudProvider } from './cloudSync';
+import { persistCloudProviderEnabled } from './cloudSync';
 
 /**
  * Translate a connection-probe failure into a user-facing string. Each branch
@@ -41,8 +41,8 @@ const formatConnectError = (_: TranslationFunc, e: unknown): string => {
  * - **Inactive**: the endpoint/bucket/credentials form (pre-filled from saved
  *   settings, so a previously-configured bucket reconnects in one click).
  *   Connect probes the bucket with one signed listing — wrong keys surface as
- *   an auth failure, a wrong bucket as not-found — then makes S3 the single
- *   active cloud provider (providers are mutually exclusive).
+ *   an auth failure, a wrong bucket as not-found — then turns S3 on. Every
+ *   other provider is left exactly as it was (#5062).
  */
 const S3Form: React.FC = () => {
   const _ = useTranslation();
@@ -85,10 +85,9 @@ const S3Form: React.FC = () => {
       return;
     }
     // Merge the connection into the s3 slice (preserving deviceId and
-    // sub-toggles), then make S3 the single active cloud provider.
-    // persistActiveCloudProvider owns activation, persistence, and the
-    // cross-window provider broadcast.
-    await persistActiveCloudProvider(envConfig, 's3', (s) => ({
+    // sub-toggles), then switch S3 on. persistCloudProviderEnabled owns
+    // activation, persistence, and the cross-window provider broadcast.
+    await persistCloudProviderEnabled(envConfig, 's3', true, (s) => ({
       ...s,
       s3: { ...s.s3, ...draft },
     }));
@@ -97,8 +96,9 @@ const S3Form: React.FC = () => {
   };
 
   const handleDisconnect = async () => {
-    // Deactivate (keep the credentials so a later reconnect is one click).
-    await persistActiveCloudProvider(envConfig, null);
+    // Switch S3 off only — other providers keep syncing. Credentials stay so
+    // a later reconnect is one click.
+    await persistCloudProviderEnabled(envConfig, 's3', false);
     setShowSecret(false);
     eventDispatcher.dispatch('toast', { type: 'info', message: _('Disconnected') });
   };

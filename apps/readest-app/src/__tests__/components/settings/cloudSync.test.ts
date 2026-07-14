@@ -4,9 +4,9 @@ vi.mock('@/utils/settingsSync', () => ({
   broadcastGlobalSettings: vi.fn(),
 }));
 
-import { withActiveCloudProvider } from '@/components/settings/integrations/cloudSync';
 import {
   persistCloudProviderEnabled,
+  withActiveCloudProvider,
   withCloudProviderEnabled,
 } from '@/services/sync/cloudSyncActivation';
 import { buildWebDAVConnectSettings } from '@/services/sync/providers/webdav/connectSettings';

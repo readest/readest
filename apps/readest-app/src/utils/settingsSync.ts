@@ -55,7 +55,7 @@ export interface SettingsSyncPayload {
   globalReadSettings: SystemSettings['globalReadSettings'];
   /**
    * Present only on provider-switch broadcasts (see
-   * `persistActiveCloudProvider`), NOT on routine saves — so a stale
+   * `persistCloudProviderEnabled`), NOT on routine saves — so a stale
    * window's ordinary settings write can never carry stale flags that
    * revert someone else's switch.
    */

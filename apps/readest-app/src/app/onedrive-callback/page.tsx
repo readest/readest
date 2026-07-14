@@ -16,15 +16,15 @@ import {
   oneDriveWebRedirectUri,
   saveWebOneDriveToken,
 } from '@/services/sync/providers/onedrive/webAuthCodeFlow';
-import { persistActiveCloudProvider } from '@/components/settings/integrations/cloudSync';
+import { persistCloudProviderEnabled } from '@/components/settings/integrations/cloudSync';
 
 /**
  * OAuth return route for the web OneDrive connect (full-page auth-code + PKCE
  * flow). Microsoft redirects here with the authorization code in the URL
  * query string (not the `#` fragment, unlike gdrive's implicit flow); we
- * validate the CSRF state, exchange the code for tokens, store them, mark
- * OneDrive the active cloud provider, then route back to where the user
- * started. See `onedrive/webAuthCodeFlow.ts`.
+ * validate the CSRF state, exchange the code for tokens, store them, switch
+ * OneDrive on, then route back to where the user started. See
+ * `onedrive/webAuthCodeFlow.ts`.
  */
 export default function OneDriveCallback() {
   const router = useRouter();
@@ -67,11 +67,12 @@ export default function OneDriveCallback() {
           () => null,
         );
 
-        // Mark OneDrive the single active cloud provider (turns others off) and
-        // stamp the account label. persistActiveCloudProvider loads via
-        // appService when the settings store isn't hydrated on this route,
-        // persists, hydrates the store, and broadcasts to other windows.
-        await persistActiveCloudProvider(envConfig, 'onedrive', (s) => ({
+        // Switch OneDrive on and stamp the account label; every other
+        // provider is left untouched (#5062). persistCloudProviderEnabled
+        // loads via appService when the settings store isn't hydrated on
+        // this route, persists, hydrates the store, and broadcasts to other
+        // windows.
+        await persistCloudProviderEnabled(envConfig, 'onedrive', true, (s) => ({
           ...s,
           onedrive: {
             ...s.onedrive,

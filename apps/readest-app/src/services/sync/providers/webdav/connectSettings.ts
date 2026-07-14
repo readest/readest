@@ -20,7 +20,7 @@ export interface WebDAVConnectFormValues {
  * credentials while every bookkeeping field rides through untouched.
  *
  * Deliberately does NOT touch `enabled`: activation belongs to
- * `withActiveCloudProvider`, which the connect flow applies on top. If the
+ * `withCloudProviderEnabled`, which the connect flow applies on top. If the
  * builder pre-set `enabled`, activation would never see the
  * disabled -> enabled transition and its side effects (the syncBooks
  * auto-flip, the providerSelectedAt stamp) would silently skip the most
