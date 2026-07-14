@@ -22,12 +22,7 @@ import { eventDispatcher } from '@/utils/event';
 import { ProgressPayload } from '@/utils/transfer';
 import { throttle } from '@/utils/throttle';
 import { transferManager } from '@/services/transferManager';
-import {
-  getCloudSyncProvider,
-  isReadestCloudStorageActive,
-  cloudProviderDisplayName,
-} from '@/services/sync/cloudSyncProvider';
-import { runFileBookDownload, runFileBookUpload } from '@/services/sync/file/runLibrarySync';
+import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { getDirPath, getFilename, joinPaths } from '@/utils/path';
 import { parseOpenWithFiles } from '@/helpers/openWith';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
@@ -48,6 +43,7 @@ import { useUICSS } from '@/hooks/useUICSS';
 import { useDemoBooks } from './hooks/useDemoBooks';
 import { useBooksSync } from './hooks/useBooksSync';
 import { useLibraryFileSync } from './hooks/useLibraryFileSync';
+import { useBookTransferActions } from './hooks/useBookTransferActions';
 import { useAutoImportFolders } from './hooks/useAutoImportFolders';
 import { useInboxDrainer } from '@/hooks/useInboxDrainer';
 import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
@@ -971,111 +967,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     }));
   }, 500);
 
-  const handleBookUpload = useCallback(
-    async (book: Book, _syncBooks = true) => {
-      // Route the explicit action to the selected cloud provider: while
-      // WebDAV / Google Drive is active the Readest Cloud transfer queue is
-      // gated and would only answer with the "paused" notice.
-      if (getCloudSyncProvider(useSettingsStore.getState().settings) !== 'readest') {
-        const ok = await runFileBookUpload(envConfig, book);
-        eventDispatcher.dispatch('toast', {
-          type: ok ? 'info' : 'error',
-          timeout: 2000,
-          message: ok
-            ? _('Book uploaded: {{title}}', { title: book.title })
-            : _('Failed to upload book: {{title}}', { title: book.title }),
-        });
-        return ok;
-      }
-      // Use transfer queue for uploads - priority 1 for manual uploads (higher priority)
-      const transferId = transferManager.queueUpload(book, 1);
-      if (transferId) {
-        eventDispatcher.dispatch('toast', {
-          type: 'info',
-          timeout: 2000,
-          message: _('Upload queued: {{title}}', {
-            title: book.title,
-          }),
-        });
-        return true;
-      }
-      // An explicit Upload action must never silently no-op: explain the
-      // provider gate when it is the reason the queue refused the book.
-      const currentSettings = useSettingsStore.getState().settings;
-      if (!isReadestCloudStorageActive(currentSettings)) {
-        const provider = getCloudSyncProvider(currentSettings);
-        eventDispatcher.dispatch('toast', {
-          type: 'info',
-          timeout: 5000,
-          message: _('Uploads to Readest Cloud are paused while {{provider}} sync is selected', {
-            provider: cloudProviderDisplayName(provider),
-          }),
-        });
-      }
-      return false;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
-
-  const handleBookDownload = useCallback(
-    async (book: Book, downloadOptions: { redownload?: boolean; queued?: boolean } = {}) => {
-      const { redownload = false, queued = false } = downloadOptions;
-      // Same provider routing as handleBookUpload — this path is also how a
-      // not-yet-local book gets fetched when the user opens it.
-      if (getCloudSyncProvider(useSettingsStore.getState().settings) !== 'readest') {
-        const ok = await runFileBookDownload(envConfig, book);
-        if (ok) await updateBook(envConfig, book);
-        eventDispatcher.dispatch('toast', {
-          type: ok ? 'info' : 'error',
-          timeout: 2000,
-          message: ok
-            ? _('Book downloaded: {{title}}', { title: book.title })
-            : _('Failed to download book: {{title}}', { title: book.title }),
-        });
-        return ok;
-      }
-      if (redownload || !queued) {
-        try {
-          await appService?.downloadBook(book, false, redownload, (progress) => {
-            updateBookTransferProgress(book.hash, progress);
-          });
-          await updateBook(envConfig, book);
-          eventDispatcher.dispatch('toast', {
-            type: 'info',
-            timeout: 2000,
-            message: _('Book downloaded: {{title}}', {
-              title: book.title,
-            }),
-          });
-          return true;
-        } catch {
-          eventDispatcher.dispatch('toast', {
-            message: _('Failed to download book: {{title}}', {
-              title: book.title,
-            }),
-            type: 'error',
-          });
-          return false;
-        }
-      }
-
-      // Use transfer queue for normal downloads - priority 1 for manual downloads
-      const transferId = transferManager.queueDownload(book, 1);
-      if (transferId) {
-        eventDispatcher.dispatch('toast', {
-          type: 'info',
-          timeout: 2000,
-          message: _('Download queued: {{title}}', {
-            title: book.title,
-          }),
-        });
-        return true;
-      }
-      return false;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [appService],
+  const { handleBookUpload, handleBookDownload } = useBookTransferActions(
+    envConfig,
+    appService,
+    updateBook,
+    updateBookTransferProgress,
   );
 
   const handleBookDelete = (deleteAction: DeleteAction) => {

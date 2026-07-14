@@ -4,7 +4,11 @@ import clsx from 'clsx';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
-import { getCloudSyncProvider, cloudProviderDisplayName } from '@/services/sync/cloudSyncProvider';
+import {
+  isReadestCloudEnabled,
+  getEnabledFileSyncBackends,
+  cloudProvidersDisplayName,
+} from '@/services/sync/cloudSyncProvider';
 import {
   SYNC_CATEGORIES,
   isSyncCategoryLocked,
@@ -72,8 +76,9 @@ export function SyncCategoriesSection() {
   const { envConfig } = useEnv();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const copy = useCategoryCopy();
-  const cloudProvider = getCloudSyncProvider(settings);
-  const cloudProviderName = cloudProviderDisplayName(cloudProvider);
+  const readestEnabled = isReadestCloudEnabled(settings);
+  const backends = getEnabledFileSyncBackends(settings);
+  const cloudProviderName = cloudProvidersDisplayName(backends);
 
   if (!settings) return null;
 
@@ -113,14 +118,15 @@ export function SyncCategoriesSection() {
           const c = copy[category];
           const on = enabled(category);
           const locked = isSyncCategoryLocked(category);
-          // While a third-party cloud provider is selected, the book /
-          // progress / note channels are routed to it at runtime and these
-          // toggles have no immediate effect. The description says so in
-          // place (same pattern as `locked`), but the toggle stays
-          // interactive and persists: it governs the native channel the
-          // user returns to when Readest Cloud is re-selected.
+          // While Readest Cloud is switched off and a file backend is on, the
+          // book / progress / note channels are routed to the file backend at
+          // runtime and these toggles have no immediate effect. The
+          // description says so in place (same pattern as `locked`), but the
+          // toggle stays interactive and persists: it governs the native
+          // channel the user returns to when Readest Cloud is re-enabled.
           const managedByProvider =
-            cloudProvider !== 'readest' &&
+            !readestEnabled &&
+            backends.length > 0 &&
             (category === 'book' || category === 'progress' || category === 'note');
           return (
             <li key={category} className='flex items-center justify-between gap-4 px-4 py-3'>

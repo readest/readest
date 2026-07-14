@@ -16,8 +16,10 @@ import { useThemeStore } from '@/store/themeStore';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useFileSyncStore } from '@/store/fileSyncStore';
 import {
-  getCloudSyncProvider,
-  cloudProviderDisplayName,
+  getCloudSyncProviders,
+  isReadestCloudEnabled,
+  getActiveFileSyncBackends,
+  cloudProvidersDisplayName,
   settingsKeyForBackend,
 } from '@/services/sync/cloudSyncProvider';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -278,35 +280,34 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const coverDir = savedBookCoverPath ? savedBookCoverPath.split('/').pop() : 'Images';
   const savedBookCoverDescription = `💾 ${coverDir}/last-book-cover.png`;
 
-  // While a third-party provider is selected the native cursors freeze (the
-  // book/progress/note channels are gated), so the sync row must report the
-  // file engine's health instead — otherwise it reads "Synced 3 months ago"
-  // forever and looks broken.
-  const cloudProvider = getCloudSyncProvider(settings);
-  const cloudProviderName = cloudProviderDisplayName(cloudProvider);
-  const providerSyncing = cloudProvider !== 'readest' && !!fileSyncByKind[cloudProvider]?.isSyncing;
-  const providerLastError =
-    cloudProvider !== 'readest' ? fileSyncLastError[cloudProvider] : undefined;
-  const lastSyncTime =
-    cloudProvider !== 'readest'
-      ? settings[settingsKeyForBackend(cloudProvider)]?.lastSyncedAt || 0
-      : Math.max(
-          settings.lastSyncedAtBooks || 0,
-          settings.lastSyncedAtConfigs || 0,
-          settings.lastSyncedAtNotes || 0,
-        );
-  const syncRowLabel =
-    cloudProvider !== 'readest'
-      ? providerLastError
-        ? _('Sync failed')
-        : lastSyncTime
-          ? _('Synced {{time}}', {
-              time: dayjs(lastSyncTime).fromNow(),
-            })
-          : _('Never synced')
-      : lastSyncTime
-        ? _('Synced {{time}}', { time: dayjs(lastSyncTime).fromNow() })
-        : _('Never synced');
+  // The sync row reports the health of whatever the user selected. Native
+  // cursors freeze while Readest Cloud is off (the book/progress/note channels
+  // are gated), so the file engine's timestamps have to stand in.
+  const providers = getCloudSyncProviders(settings);
+  const readestEnabled = isReadestCloudEnabled(settings);
+  const backends = getActiveFileSyncBackends(settings);
+  const providerNames = cloudProvidersDisplayName(providers);
+
+  const providerSyncing = backends.some((kind) => !!fileSyncByKind[kind]?.isSyncing);
+  const providerLastError = backends.map((kind) => fileSyncLastError[kind]).find(Boolean);
+  const backendLastSyncedAt = Math.max(
+    0,
+    ...backends.map((kind) => settings[settingsKeyForBackend(kind)]?.lastSyncedAt || 0),
+  );
+  const nativeLastSyncedAt = readestEnabled
+    ? Math.max(
+        settings.lastSyncedAtBooks || 0,
+        settings.lastSyncedAtConfigs || 0,
+        settings.lastSyncedAtNotes || 0,
+      )
+    : 0;
+  const lastSyncTime = Math.max(backendLastSyncedAt, nativeLastSyncedAt);
+
+  const syncRowLabel = providerLastError
+    ? _('Sync failed')
+    : lastSyncTime
+      ? _('Synced {{time}}', { time: dayjs(lastSyncTime).fromNow() })
+      : _('Never synced');
 
   return (
     <Menu
@@ -356,14 +357,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
               iconClassName={(user && isSyncing) || providerSyncing ? 'animate-reverse-spin' : ''}
               onClick={handleSyncLibrary}
               description={
-                cloudProvider !== 'readest'
-                  ? _('Library sync via {{provider}}', {
-                      provider: cloudProviderName,
-                    })
+                backends.length > 0
+                  ? _('Library sync via {{provider}}', { provider: providerNames })
                   : undefined
               }
             />
-            {cloudProvider === 'readest' ? (
+            {readestEnabled ? (
               <button
                 onClick={handleUserProfile}
                 className='hover:bg-base-300 w-full rounded-md'
@@ -381,7 +380,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         <MenuItem label={_('Sign In')} Icon={PiUserCircle} onClick={handleUserLogin}></MenuItem>
       )}
 
-      {cloudProvider === 'readest' && (
+      {readestEnabled && (
         <MenuItem
           label={_('Auto Upload Books to Cloud')}
           toggled={isAutoUpload}
