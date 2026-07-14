@@ -233,6 +233,9 @@ msgstr "Надіслати нотатки Readest з цього пристрою
 msgid "Pull readest annotations from other devices"
 msgstr "Отримати нотатки Readest з інших пристроїв"
 
+msgid "Full sync all readest annotations"
+msgstr "Повна синхронізація всіх нотаток Readest"
+
 msgid "Add to Readest"
 msgstr "Додати до Readest"
 
@@ -257,6 +260,12 @@ msgstr "Уже у вашій бібліотеці Readest:"
 msgid "Added to Readest:"
 msgstr "Додано до Readest:"
 
+msgid "No book is open"
+msgstr "Жодну книгу не відкрито"
+
+msgid "Uploaded to Readest:"
+msgstr "Завантажено до Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Увійти до облікового запису Readest"
 
@@ -280,6 +289,9 @@ msgstr "Надіслати книги зараз"
 
 msgid "Pull books now"
 msgstr "Отримати книги зараз"
+
+msgid "Upload current book to Readest"
+msgstr "Завантажити поточну книгу до Readest"
 
 msgid "Push reading progress now"
 msgstr "Надіслати прогрес читання зараз"
@@ -310,9 +322,6 @@ msgstr "Спочатку увійдіть"
 
 msgid "Please configure Readest settings first"
 msgstr "Спочатку налаштуйте параметри Readest"
-
-msgid "No book is open"
-msgstr "Жодну книгу не відкрито"
 
 msgid "(none)"
 msgstr "(немає)"

@@ -233,6 +233,9 @@ msgstr "Readest jegyzetek küldése erről az eszközről"
 msgid "Pull readest annotations from other devices"
 msgstr "Readest jegyzetek lekérése más eszközökről"
 
+msgid "Full sync all readest annotations"
+msgstr "Az összes Readest jegyzet teljes szinkronizálása"
+
 msgid "Add to Readest"
 msgstr "Hozzáadás a Readesthez"
 
@@ -257,6 +260,12 @@ msgstr "Már a Readest könyvtáradban van:"
 msgid "Added to Readest:"
 msgstr "Hozzáadva a Readesthez:"
 
+msgid "No book is open"
+msgstr "Nincs megnyitott könyv"
+
+msgid "Uploaded to Readest:"
+msgstr "Feltöltve a Readestbe:"
+
 msgid "Log in Readest Account"
 msgstr "Bejelentkezés Readest-fiókba"
 
@@ -280,6 +289,9 @@ msgstr "Könyvek küldése most"
 
 msgid "Pull books now"
 msgstr "Könyvek letöltése most"
+
+msgid "Upload current book to Readest"
+msgstr "Az aktuális könyv feltöltése a Readestbe"
 
 msgid "Push reading progress now"
 msgstr "Olvasási haladás küldése most"
@@ -310,9 +322,6 @@ msgstr "Először jelentkezz be"
 
 msgid "Please configure Readest settings first"
 msgstr "Először állítsd be a Readest paramétereit"
-
-msgid "No book is open"
-msgstr "Nincs megnyitott könyv"
 
 msgid "(none)"
 msgstr "(nincs)"

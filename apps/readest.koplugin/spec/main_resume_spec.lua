@@ -4,68 +4,11 @@
 -- does, debounced, and the delayed task must not outlive the widget.
 
 require("spec_helper")
+-- KOReader stubs main.lua pulls at require-time. Shared with the other main.*
+-- specs — see spec/koreader_stubs.lua for why they can't live in this file.
+local stubs = require("spec.koreader_stubs")
 
--- Minimal KOReader stubs main.lua pulls at require-time.
-local UIManagerStub = {
-    _scheduled = {},
-    show = function() end,
-    nextTick = function(self, fn)
-        table.insert(self._scheduled, { delay = 0, fn = fn })
-    end,
-    scheduleIn = function(self, delay, fn)
-        table.insert(self._scheduled, { delay = delay, fn = fn })
-    end,
-    unschedule = function(self, fn)
-        for i = #self._scheduled, 1, -1 do
-            if self._scheduled[i].fn == fn then
-                table.remove(self._scheduled, i)
-            end
-        end
-    end,
-}
-
-package.preload["dispatcher"] = function()
-    return { registerAction = function() end }
-end
-package.preload["ui/event"] = function()
-    return { new = function(_, name) return { name = name } end }
-end
-package.preload["ui/widget/infomessage"] = function()
-    return { new = function(_, o) return o or {} end }
-end
-package.preload["ui/widget/keyvaluepage"] = function()
-    return { new = function(_, o) return o or {} end }
-end
-package.preload["ui/widget/multiinputdialog"] = function()
-    return { new = function(_, o) return o or {} end }
-end
-package.preload["ui/widget/container/widgetcontainer"] = function()
-    return {
-        new = function(self, o)
-            o = o or {}
-            setmetatable(o, { __index = self })
-            if o.init then o:init() end
-            return o
-        end,
-    }
-end
-package.preload["ui/network/manager"] = function()
-    return {
-        willRerunWhenOnline = function() return false end,
-        goOnlineToRun = function(_, cb) cb() end,
-    }
-end
-package.preload["ui/uimanager"] = function() return UIManagerStub end
-package.preload["ffi/sha2"] = function()
-    return { base64_to_bin = function(s) return s end }
-end
-package.preload["ffi/util"] = function()
-    return { template = function(s) return s end }
-end
-package.preload["util"] = function() return {} end
-package.preload["readest_i18n"] = function()
-    return function(s) return s end
-end
+local UIManagerStub = stubs.UIManager
 
 local ReadestSync = require("main")
 
@@ -90,7 +33,7 @@ end
 
 describe("ReadestSync:onResume", function()
     before_each(function()
-        UIManagerStub._scheduled = {}
+        stubs.reset()
     end)
 
     it("schedules a delayed pull of config, notes and stats", function()

@@ -233,6 +233,9 @@ msgstr "මෙම උපාංගයෙන් Readest සටහන් යවන�
 msgid "Pull readest annotations from other devices"
 msgstr "වෙනත් උපාංගවලින් Readest සටහන් ලබාගන්න"
 
+msgid "Full sync all readest annotations"
+msgstr "සියලු Readest සටහන් සම්පූර්ණ සමමුහූර්තකරණය"
+
 msgid "Add to Readest"
 msgstr "Readest වෙත එකතු කරන්න"
 
@@ -257,6 +260,12 @@ msgstr "දැනටමත් ඔබගේ Readest පුස්තකාලය�
 msgid "Added to Readest:"
 msgstr "Readest වෙත එකතු කරන ලදී:"
 
+msgid "No book is open"
+msgstr "පොතක් විවෘතව නැත"
+
+msgid "Uploaded to Readest:"
+msgstr "Readest වෙත උඩුගත කරන ලදී:"
+
 msgid "Log in Readest Account"
 msgstr "Readest ගිණුමට පිවිසෙන්න"
 
@@ -280,6 +289,9 @@ msgstr "දැන් පොත් යවන්න"
 
 msgid "Pull books now"
 msgstr "දැන් පොත් ලබාගන්න"
+
+msgid "Upload current book to Readest"
+msgstr "වත්මන් පොත Readest වෙත උඩුගත කරන්න"
 
 msgid "Push reading progress now"
 msgstr "කියවීමේ ප්‍රගතිය දැන් යවන්න"
@@ -310,9 +322,6 @@ msgstr "කරුණාකර මුලින්ම පිවිසෙන්න"
 
 msgid "Please configure Readest settings first"
 msgstr "කරුණාකර මුලින්ම Readest සැකසුම් වින්‍යාස කරන්න"
-
-msgid "No book is open"
-msgstr "පොතක් විවෘතව නැත"
 
 msgid "(none)"
 msgstr "(කිසිවක් නැත)"

@@ -233,6 +233,9 @@ msgstr "Pošlji opombe Readest iz te naprave"
 msgid "Pull readest annotations from other devices"
 msgstr "Pridobi opombe Readest iz drugih naprav"
 
+msgid "Full sync all readest annotations"
+msgstr "Polna sinhronizacija vseh opomb Readest"
+
 msgid "Add to Readest"
 msgstr "Dodaj v Readest"
 
@@ -257,6 +260,12 @@ msgstr "Že v vaši knjižnici Readest:"
 msgid "Added to Readest:"
 msgstr "Dodano v Readest:"
 
+msgid "No book is open"
+msgstr "Nobena knjiga ni odprta"
+
+msgid "Uploaded to Readest:"
+msgstr "Naloženo v Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Prijava v račun Readest"
 
@@ -280,6 +289,9 @@ msgstr "Pošlji knjige zdaj"
 
 msgid "Pull books now"
 msgstr "Pridobi knjige zdaj"
+
+msgid "Upload current book to Readest"
+msgstr "Naloži trenutno knjigo v Readest"
 
 msgid "Push reading progress now"
 msgstr "Pošlji napredek branja zdaj"
@@ -310,9 +322,6 @@ msgstr "Najprej se prijavite"
 
 msgid "Please configure Readest settings first"
 msgstr "Najprej nastavite Readest"
-
-msgid "No book is open"
-msgstr "Nobena knjiga ni odprta"
 
 msgid "(none)"
 msgstr "(brez)"

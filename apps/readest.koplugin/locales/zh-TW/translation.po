@@ -233,6 +233,9 @@ msgstr "從此裝置推送 Readest 註釋"
 msgid "Pull readest annotations from other devices"
 msgstr "從其他裝置拉取 Readest 註釋"
 
+msgid "Full sync all readest annotations"
+msgstr "完整同步所有 Readest 註釋"
+
 msgid "Add to Readest"
 msgstr "新增到 Readest"
 
@@ -257,6 +260,12 @@ msgstr "已在您的 Readest 書庫中："
 msgid "Added to Readest:"
 msgstr "已新增到 Readest："
 
+msgid "No book is open"
+msgstr "沒有開啟的書籍"
+
+msgid "Uploaded to Readest:"
+msgstr "已上傳到 Readest："
+
 msgid "Log in Readest Account"
 msgstr "登入 Readest 帳戶"
 
@@ -280,6 +289,9 @@ msgstr "立即推送書籍"
 
 msgid "Pull books now"
 msgstr "立即拉取書籍"
+
+msgid "Upload current book to Readest"
+msgstr "上傳目前書籍到 Readest"
 
 msgid "Push reading progress now"
 msgstr "立即推送閱讀進度"
@@ -310,9 +322,6 @@ msgstr "請先登入"
 
 msgid "Please configure Readest settings first"
 msgstr "請先設定 Readest"
-
-msgid "No book is open"
-msgstr "沒有開啟的書籍"
 
 msgid "(none)"
 msgstr "（無）"

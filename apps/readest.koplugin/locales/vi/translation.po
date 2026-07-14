@@ -233,6 +233,9 @@ msgstr "Đẩy ghi chú Readest từ thiết bị này"
 msgid "Pull readest annotations from other devices"
 msgstr "Lấy ghi chú Readest từ thiết bị khác"
 
+msgid "Full sync all readest annotations"
+msgstr "Đồng bộ đầy đủ tất cả ghi chú Readest"
+
 msgid "Add to Readest"
 msgstr "Thêm vào Readest"
 
@@ -257,6 +260,12 @@ msgstr "Đã có trong thư viện Readest của bạn:"
 msgid "Added to Readest:"
 msgstr "Đã thêm vào Readest:"
 
+msgid "No book is open"
+msgstr "Không có sách nào đang mở"
+
+msgid "Uploaded to Readest:"
+msgstr "Đã tải lên Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Đăng nhập tài khoản Readest"
 
@@ -280,6 +289,9 @@ msgstr "Gửi sách ngay"
 
 msgid "Pull books now"
 msgstr "Lấy sách ngay"
+
+msgid "Upload current book to Readest"
+msgstr "Tải sách hiện tại lên Readest"
 
 msgid "Push reading progress now"
 msgstr "Đẩy tiến trình đọc ngay"
@@ -310,9 +322,6 @@ msgstr "Vui lòng đăng nhập trước"
 
 msgid "Please configure Readest settings first"
 msgstr "Vui lòng cấu hình cài đặt Readest trước"
-
-msgid "No book is open"
-msgstr "Không có sách nào đang mở"
 
 msgid "(none)"
 msgstr "(không có)"

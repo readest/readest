@@ -84,7 +84,11 @@ function ReadestSync:onDispatcherRegisterReaderActions()
     Dispatcher:registerAction("readest_sync_push_progress", { category="none", event="ReadestSyncPushProgress", title=_("Push readest progress from this device"), reader=true,})
     Dispatcher:registerAction("readest_sync_pull_progress", { category="none", event="ReadestSyncPullProgress", title=_("Pull readest progress from other devices"), reader=true, separator=true,})
     Dispatcher:registerAction("readest_sync_push_annotations", { category="none", event="ReadestSyncPushAnnotations", title=_("Push readest annotations from this device"), reader=true,})
-    Dispatcher:registerAction("readest_sync_pull_annotations", { category="none", event="ReadestSyncPullAnnotations", title=_("Pull readest annotations from other devices"), reader=true, separator=true,})
+    Dispatcher:registerAction("readest_sync_pull_annotations", { category="none", event="ReadestSyncPullAnnotations", title=_("Pull readest annotations from other devices"), reader=true,})
+    -- Issue #5094: reaching a full annotation sync through the menu takes
+    -- several taps. The title keeps the "readest" token because the gesture
+    -- picker pools every plugin's actions into one flat list.
+    Dispatcher:registerAction("readest_sync_full_annotations", { category="none", event="ReadestSyncFullSyncAnnotations", title=_("Full sync all readest annotations"), reader=true, separator=true,})
 end
 
 function ReadestSync:onReaderReady()
@@ -290,6 +294,147 @@ function ReadestSync:onAddToReadest(file)
     self:addToReadest(file)
 end
 
+local function refreshLibraryWidget()
+    local LibraryWidget = require("library.librarywidget")
+    if LibraryWidget._menu then LibraryWidget.refresh() end
+end
+
+-- Upload the book currently open in the reader, mirroring the Library
+-- widget's long-press "Upload to Cloud" (library/librarywidget.lua). Both
+-- routes end in syncbooks.uploadAndRecord, so the cloud + store bookkeeping
+-- stays identical between them.
+--
+-- The wrinkle the Library route doesn't have: a book you sideloaded and
+-- opened may have no LibraryStore row at all — rows only appear via "Add to
+-- Readest" or a cloud pull — and uploadBook needs one for the hash, format
+-- and file path. So we create the row first, exactly as addToReadest does.
+function ReadestSync:uploadCurrentBook()
+    if not self.settings.access_token then
+        UIManager:show(InfoMessage:new{
+            text = _("Sign in to Readest first."), timeout = 3,
+        })
+        return
+    end
+    if not self.ui.document then
+        UIManager:show(InfoMessage:new{
+            text = _("No book is open"), timeout = 2,
+        })
+        return
+    end
+
+    local file = self.ui.document.file
+    local ext = file and file:match("%.([^./\\]+)$")
+    local format = readest_format_for_ext(ext)
+    if not format then
+        UIManager:show(InfoMessage:new{
+            text = _("Unsupported book format."), timeout = 3,
+        })
+        return
+    end
+
+    local store = self:getLibraryStore()
+    if not store then
+        UIManager:show(InfoMessage:new{
+            text = _("Sign in to Readest first."), timeout = 3,
+        })
+        return
+    end
+
+    -- KOReader stamps partial_md5_checksum into the .sdr sidecar for most
+    -- books, but localscanner treats it as optional, so fall back to computing
+    -- it — same util.partialMD5 addToReadest uses.
+    local hash = self.ui.doc_settings:readSetting("partial_md5_checksum")
+    if hash and hash ~= "" then
+        self:_uploadBookRow(store, file, hash, format)
+        return
+    end
+
+    local util = require("util")
+    local progress = InfoMessage:new{
+        text = _("Hashing book…"),
+    }
+    UIManager:show(progress)
+    UIManager:nextTick(function()
+        local computed = util.partialMD5(file)
+        UIManager:close(progress)
+        if not computed then
+            UIManager:show(InfoMessage:new{
+                text = _("Could not read file."), timeout = 3,
+            })
+            return
+        end
+        self:_uploadBookRow(store, file, computed, format)
+    end)
+end
+
+function ReadestSync:_uploadBookRow(store, file, hash, format)
+    local now = math.floor(os.time() * 1000)
+    local existing = store:_getRowRaw(hash)
+
+    -- Prefer the title the library already holds: the user may have renamed
+    -- the book, or a cloud pull may carry richer metadata than the file does.
+    local title = existing and existing.title
+    if not title or title == "" then
+        local doc_props = self.ui.doc_settings:readSetting("doc_props") or {}
+        if doc_props.title and doc_props.title ~= "" then
+            title = doc_props.title
+        else
+            local basename = file:match("([^/]+)$") or file
+            title = basename:gsub("%.[^.]+$", "")
+        end
+    end
+
+    -- Same row shape addToReadest writes, so both entry points produce the
+    -- same row for the same book. _clear_fields un-tombstones a previously
+    -- deleted book: a bare deleted_at = nil would be dropped by Lua's table
+    -- semantics and then copied forward by upsertBook's preserve pass.
+    store:upsertBook({
+        hash          = hash,
+        title         = title,
+        format        = format,
+        file_path     = file,
+        local_present = 1,
+        created_at    = (existing and existing.created_at) or now,
+        updated_at    = now,
+        _clear_fields = { "deleted_at" },
+    })
+
+    local row = store:_getRowRaw(hash)
+    local progress = InfoMessage:new{
+        text = _("Uploading…") .. " " .. (row.title or ""),
+    }
+    UIManager:show(progress)
+
+    local DataStorage = require("datastorage")
+    local syncbooks = require("library.syncbooks")
+    syncbooks.uploadAndRecord(row, {
+        sync_auth  = SyncAuth,
+        sync_path  = self.path,
+        settings   = self.settings,
+        store      = store,
+        covers_dir = DataStorage:getSettingsDir() .. "/readest_covers",
+        on_pushed  = refreshLibraryWidget,
+    }, function(success, msg, status)
+        UIManager:close(progress)
+        if not success then
+            local text
+            if status == 403 and msg and msg:find("quota", 1, true) then
+                text = _("Storage quota exceeded.")
+            else
+                text = _("Upload failed.")
+                    .. " (" .. tostring(msg or status) .. ")"
+            end
+            UIManager:show(InfoMessage:new{ text = text, timeout = 4 })
+            return
+        end
+        UIManager:show(InfoMessage:new{
+            text = _("Uploaded to Readest:") .. " " .. (row.title or ""),
+            timeout = 2,
+        })
+        refreshLibraryWidget()
+    end)
+end
+
 -- ── Menu ───────────────────────────────────────────────────────────
 
 function ReadestSync:addToMainMenu(menu_items)
@@ -365,6 +510,15 @@ function ReadestSync:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self:syncBooksLibrary("pull", true)
+                end,
+            },
+            {
+                text = _("Upload current book to Readest"),
+                enabled_func = function()
+                    return self.settings.access_token ~= nil and self.ui.document ~= nil
+                end,
+                callback = function()
+                    self:uploadCurrentBook()
                 end,
                 separator = true,
             },
@@ -644,6 +798,10 @@ end
 
 function ReadestSync:onReadestSyncPullAnnotations()
     self:pullBookNotes(true)
+end
+
+function ReadestSync:onReadestSyncFullSyncAnnotations()
+    self:fullSyncBookNotes()
 end
 
 function ReadestSync:openLibrary()

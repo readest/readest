@@ -233,6 +233,9 @@ msgstr "Skicka Readest-anteckningar från den här enheten"
 msgid "Pull readest annotations from other devices"
 msgstr "Hämta Readest-anteckningar från andra enheter"
 
+msgid "Full sync all readest annotations"
+msgstr "Synkronisera alla Readest-anteckningar fullständigt"
+
 msgid "Add to Readest"
 msgstr "Lägg till i Readest"
 
@@ -257,6 +260,12 @@ msgstr "Redan i ditt Readest-bibliotek:"
 msgid "Added to Readest:"
 msgstr "Tillagd i Readest:"
 
+msgid "No book is open"
+msgstr "Ingen bok är öppen"
+
+msgid "Uploaded to Readest:"
+msgstr "Uppladdad till Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Logga in på Readest-konto"
 
@@ -280,6 +289,9 @@ msgstr "Skicka böcker nu"
 
 msgid "Pull books now"
 msgstr "Hämta böcker nu"
+
+msgid "Upload current book to Readest"
+msgstr "Ladda upp aktuell bok till Readest"
 
 msgid "Push reading progress now"
 msgstr "Skicka läsförloppet nu"
@@ -310,9 +322,6 @@ msgstr "Logga in först"
 
 msgid "Please configure Readest settings first"
 msgstr "Konfigurera Readest-inställningarna först"
-
-msgid "No book is open"
-msgstr "Ingen bok är öppen"
 
 msgid "(none)"
 msgstr "(ingen)"

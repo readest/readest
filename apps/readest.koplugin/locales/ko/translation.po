@@ -233,6 +233,9 @@ msgstr "이 기기에서 Readest 주석 보내기"
 msgid "Pull readest annotations from other devices"
 msgstr "다른 기기에서 Readest 주석 가져오기"
 
+msgid "Full sync all readest annotations"
+msgstr "모든 Readest 주석 전체 동기화"
+
 msgid "Add to Readest"
 msgstr "Readest에 추가"
 
@@ -257,6 +260,12 @@ msgstr "이미 Readest 라이브러리에 있습니다:"
 msgid "Added to Readest:"
 msgstr "Readest에 추가됨:"
 
+msgid "No book is open"
+msgstr "열린 책이 없습니다"
+
+msgid "Uploaded to Readest:"
+msgstr "Readest에 업로드됨:"
+
 msgid "Log in Readest Account"
 msgstr "Readest 계정에 로그인"
 
@@ -280,6 +289,9 @@ msgstr "지금 책 푸시"
 
 msgid "Pull books now"
 msgstr "지금 책 풀"
+
+msgid "Upload current book to Readest"
+msgstr "현재 책을 Readest에 업로드"
 
 msgid "Push reading progress now"
 msgstr "지금 읽기 진행 상황 보내기"
@@ -310,9 +322,6 @@ msgstr "먼저 로그인하세요"
 
 msgid "Please configure Readest settings first"
 msgstr "먼저 Readest 설정을 구성하세요"
-
-msgid "No book is open"
-msgstr "열린 책이 없습니다"
 
 msgid "(none)"
 msgstr "(없음)"

@@ -233,6 +233,9 @@ msgstr "Bu cihazdan Readest açıklamalarını gönder"
 msgid "Pull readest annotations from other devices"
 msgstr "Diğer cihazlardan Readest açıklamalarını al"
 
+msgid "Full sync all readest annotations"
+msgstr "Tüm Readest açıklamalarını tam senkronize et"
+
 msgid "Add to Readest"
 msgstr "Readest'e ekle"
 
@@ -257,6 +260,12 @@ msgstr "Zaten Readest kütüphanenizde:"
 msgid "Added to Readest:"
 msgstr "Readest'e eklendi:"
 
+msgid "No book is open"
+msgstr "Açık kitap yok"
+
+msgid "Uploaded to Readest:"
+msgstr "Readest'e yüklendi:"
+
 msgid "Log in Readest Account"
 msgstr "Readest hesabına giriş yap"
 
@@ -280,6 +289,9 @@ msgstr "Kitapları şimdi gönder"
 
 msgid "Pull books now"
 msgstr "Kitapları şimdi al"
+
+msgid "Upload current book to Readest"
+msgstr "Geçerli kitabı Readest'e yükle"
 
 msgid "Push reading progress now"
 msgstr "Okuma ilerlemesini şimdi gönder"
@@ -310,9 +322,6 @@ msgstr "Önce giriş yapın"
 
 msgid "Please configure Readest settings first"
 msgstr "Önce Readest ayarlarını yapılandırın"
-
-msgid "No book is open"
-msgstr "Açık kitap yok"
 
 msgid "(none)"
 msgstr "(yok)"

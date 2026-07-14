@@ -233,6 +233,9 @@ msgstr "ส่งคำอธิบาย Readest จากอุปกรณ์
 msgid "Pull readest annotations from other devices"
 msgstr "ดึงคำอธิบาย Readest จากอุปกรณ์อื่น"
 
+msgid "Full sync all readest annotations"
+msgstr "ซิงค์คำอธิบาย Readest ทั้งหมดแบบเต็ม"
+
 msgid "Add to Readest"
 msgstr "เพิ่มลง Readest"
 
@@ -257,6 +260,12 @@ msgstr "มีอยู่แล้วในคลัง Readest ของคุ
 msgid "Added to Readest:"
 msgstr "เพิ่มลง Readest แล้ว:"
 
+msgid "No book is open"
+msgstr "ไม่มีหนังสือที่เปิดอยู่"
+
+msgid "Uploaded to Readest:"
+msgstr "อัปโหลดไปยัง Readest แล้ว:"
+
 msgid "Log in Readest Account"
 msgstr "เข้าสู่ระบบบัญชี Readest"
 
@@ -280,6 +289,9 @@ msgstr "ส่งหนังสือเดี๋ยวนี้"
 
 msgid "Pull books now"
 msgstr "ดึงหนังสือเดี๋ยวนี้"
+
+msgid "Upload current book to Readest"
+msgstr "อัปโหลดหนังสือปัจจุบันไปยัง Readest"
 
 msgid "Push reading progress now"
 msgstr "ส่งความคืบหน้าการอ่านตอนนี้"
@@ -310,9 +322,6 @@ msgstr "โปรดเข้าสู่ระบบก่อน"
 
 msgid "Please configure Readest settings first"
 msgstr "โปรดกำหนดค่า Readest ก่อน"
-
-msgid "No book is open"
-msgstr "ไม่มีหนังสือที่เปิดอยู่"
 
 msgid "(none)"
 msgstr "(ไม่มี)"

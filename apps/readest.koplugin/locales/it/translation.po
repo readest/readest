@@ -233,6 +233,9 @@ msgstr "Invia annotazioni Readest da questo dispositivo"
 msgid "Pull readest annotations from other devices"
 msgstr "Ricevi annotazioni Readest dagli altri dispositivi"
 
+msgid "Full sync all readest annotations"
+msgstr "Sincronizzazione completa di tutte le annotazioni Readest"
+
 msgid "Add to Readest"
 msgstr "Aggiungi a Readest"
 
@@ -257,6 +260,12 @@ msgstr "Già nella tua libreria Readest:"
 msgid "Added to Readest:"
 msgstr "Aggiunto a Readest:"
 
+msgid "No book is open"
+msgstr "Nessun libro aperto"
+
+msgid "Uploaded to Readest:"
+msgstr "Caricato su Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Accedi all'account Readest"
 
@@ -280,6 +289,9 @@ msgstr "Invia libri ora"
 
 msgid "Pull books now"
 msgstr "Recupera libri ora"
+
+msgid "Upload current book to Readest"
+msgstr "Carica il libro corrente su Readest"
 
 msgid "Push reading progress now"
 msgstr "Invia ora il progresso di lettura"
@@ -310,9 +322,6 @@ msgstr "Effettua prima l'accesso"
 
 msgid "Please configure Readest settings first"
 msgstr "Configura prima le impostazioni Readest"
-
-msgid "No book is open"
-msgstr "Nessun libro aperto"
 
 msgid "(none)"
 msgstr "(nessuno)"

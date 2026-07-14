@@ -233,6 +233,9 @@ msgstr "Readest-aantekeningen van dit apparaat verzenden"
 msgid "Pull readest annotations from other devices"
 msgstr "Readest-aantekeningen van andere apparaten ophalen"
 
+msgid "Full sync all readest annotations"
+msgstr "Alle Readest-aantekeningen volledig synchroniseren"
+
 msgid "Add to Readest"
 msgstr "Toevoegen aan Readest"
 
@@ -257,6 +260,12 @@ msgstr "Al in je Readest-bibliotheek:"
 msgid "Added to Readest:"
 msgstr "Toegevoegd aan Readest:"
 
+msgid "No book is open"
+msgstr "Geen boek geopend"
+
+msgid "Uploaded to Readest:"
+msgstr "Geüpload naar Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Aanmelden bij Readest-account"
 
@@ -280,6 +289,9 @@ msgstr "Boeken nu pushen"
 
 msgid "Pull books now"
 msgstr "Boeken nu pullen"
+
+msgid "Upload current book to Readest"
+msgstr "Huidig boek uploaden naar Readest"
 
 msgid "Push reading progress now"
 msgstr "Leesvoortgang nu verzenden"
@@ -310,9 +322,6 @@ msgstr "Meld eerst aan"
 
 msgid "Please configure Readest settings first"
 msgstr "Configureer eerst de Readest-instellingen"
-
-msgid "No book is open"
-msgstr "Geen boek geopend"
 
 msgid "(none)"
 msgstr "(geen)"

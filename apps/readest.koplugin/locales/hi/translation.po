@@ -233,6 +233,9 @@ msgstr "इस डिवाइस से Readest एनोटेशन भेज
 msgid "Pull readest annotations from other devices"
 msgstr "अन्य डिवाइसों से Readest एनोटेशन प्राप्त करें"
 
+msgid "Full sync all readest annotations"
+msgstr "सभी Readest एनोटेशन का पूर्ण सिंक"
+
 msgid "Add to Readest"
 msgstr "Readest में जोड़ें"
 
@@ -257,6 +260,12 @@ msgstr "पहले से ही आपकी Readest लाइब्रेर
 msgid "Added to Readest:"
 msgstr "Readest में जोड़ा गया:"
 
+msgid "No book is open"
+msgstr "कोई पुस्तक खुली नहीं है"
+
+msgid "Uploaded to Readest:"
+msgstr "Readest पर अपलोड किया गया:"
+
 msgid "Log in Readest Account"
 msgstr "Readest खाते में लॉग इन करें"
 
@@ -280,6 +289,9 @@ msgstr "अभी पुस्तकें पुश करें"
 
 msgid "Pull books now"
 msgstr "अभी पुस्तकें पुल करें"
+
+msgid "Upload current book to Readest"
+msgstr "वर्तमान पुस्तक को Readest पर अपलोड करें"
 
 msgid "Push reading progress now"
 msgstr "अभी पठन प्रगति भेजें"
@@ -310,9 +322,6 @@ msgstr "कृपया पहले लॉग इन करें"
 
 msgid "Please configure Readest settings first"
 msgstr "कृपया पहले Readest सेटिंग्स कॉन्फ़िगर करें"
-
-msgid "No book is open"
-msgstr "कोई पुस्तक खुली नहीं है"
 
 msgid "(none)"
 msgstr "(कोई नहीं)"

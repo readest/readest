@@ -233,6 +233,9 @@ msgstr "Kirim anotasi Readest dari perangkat ini"
 msgid "Pull readest annotations from other devices"
 msgstr "Ambil anotasi Readest dari perangkat lain"
 
+msgid "Full sync all readest annotations"
+msgstr "Sinkronisasi penuh semua anotasi Readest"
+
 msgid "Add to Readest"
 msgstr "Tambahkan ke Readest"
 
@@ -257,6 +260,12 @@ msgstr "Sudah ada di Pustaka Readest Anda:"
 msgid "Added to Readest:"
 msgstr "Ditambahkan ke Readest:"
 
+msgid "No book is open"
+msgstr "Tidak ada buku terbuka"
+
+msgid "Uploaded to Readest:"
+msgstr "Diunggah ke Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Masuk ke akun Readest"
 
@@ -280,6 +289,9 @@ msgstr "Kirim buku sekarang"
 
 msgid "Pull books now"
 msgstr "Tarik buku sekarang"
+
+msgid "Upload current book to Readest"
+msgstr "Unggah buku saat ini ke Readest"
 
 msgid "Push reading progress now"
 msgstr "Kirim progres baca sekarang"
@@ -310,9 +322,6 @@ msgstr "Silakan masuk terlebih dahulu"
 
 msgid "Please configure Readest settings first"
 msgstr "Konfigurasikan pengaturan Readest terlebih dahulu"
-
-msgid "No book is open"
-msgstr "Tidak ada buku terbuka"
 
 msgid "(none)"
 msgstr "(tidak ada)"

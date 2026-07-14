@@ -233,6 +233,9 @@ msgstr "このデバイスから Readest の注釈を送信"
 msgid "Pull readest annotations from other devices"
 msgstr "他のデバイスから Readest の注釈を取得"
 
+msgid "Full sync all readest annotations"
+msgstr "すべての Readest 注釈をフル同期"
+
 msgid "Add to Readest"
 msgstr "Readest に追加"
 
@@ -257,6 +260,12 @@ msgstr "すでに Readest ライブラリにあります:"
 msgid "Added to Readest:"
 msgstr "Readest に追加しました:"
 
+msgid "No book is open"
+msgstr "書籍が開かれていません"
+
+msgid "Uploaded to Readest:"
+msgstr "Readest にアップロードしました:"
+
 msgid "Log in Readest Account"
 msgstr "Readest アカウントにログイン"
 
@@ -280,6 +289,9 @@ msgstr "今すぐ書籍を送信"
 
 msgid "Pull books now"
 msgstr "今すぐ書籍を取得"
+
+msgid "Upload current book to Readest"
+msgstr "現在の書籍を Readest にアップロード"
 
 msgid "Push reading progress now"
 msgstr "読書の進捗をすぐに送信"
@@ -310,9 +322,6 @@ msgstr "先にログインしてください"
 
 msgid "Please configure Readest settings first"
 msgstr "先に Readest の設定を行ってください"
-
-msgid "No book is open"
-msgstr "書籍が開かれていません"
 
 msgid "(none)"
 msgstr "（なし）"

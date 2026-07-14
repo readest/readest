@@ -233,6 +233,9 @@ msgstr "Readest izohlarini ushbu qurilmadan yuborish"
 msgid "Pull readest annotations from other devices"
 msgstr "Readest izohlarini boshqa qurilmalardan olish"
 
+msgid "Full sync all readest annotations"
+msgstr "Barcha Readest izohlarini toʻliq sinxronlash"
+
 msgid "Add to Readest"
 msgstr "Readest-ga qoʻshish"
 
@@ -257,6 +260,12 @@ msgstr "Allaqachon Readest kutubxonangizda:"
 msgid "Added to Readest:"
 msgstr "Readest-ga qoʻshildi:"
 
+msgid "No book is open"
+msgstr "Hech qanday kitob ochilmagan"
+
+msgid "Uploaded to Readest:"
+msgstr "Readest-ga yuklandi:"
+
 msgid "Log in Readest Account"
 msgstr "Readest hisobiga kirish"
 
@@ -280,6 +289,9 @@ msgstr "Kitoblarni hozir yuborish"
 
 msgid "Pull books now"
 msgstr "Kitoblarni hozir olish"
+
+msgid "Upload current book to Readest"
+msgstr "Joriy kitobni Readest-ga yuklash"
 
 msgid "Push reading progress now"
 msgstr "Oʻqish jarayonini hozir yuborish"
@@ -310,9 +322,6 @@ msgstr "Iltimos, avval tizimga kiring"
 
 msgid "Please configure Readest settings first"
 msgstr "Iltimos, avval Readest sozlamalarini sozlang"
-
-msgid "No book is open"
-msgstr "Hech qanday kitob ochilmagan"
 
 msgid "(none)"
 msgstr "(yoʻq)"

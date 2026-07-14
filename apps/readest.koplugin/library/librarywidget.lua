@@ -1239,11 +1239,17 @@ function M.handleHold(item, opts)
             }
             UIManager:show(progress)
             local DataStorage = require("datastorage")
-            syncbooks.uploadBook(row, {
+            -- uploadAndRecord carries the post-upload bookkeeping (mark cloud
+            -- present, stamp uploaded_at, un-tombstone, push the row). It's
+            -- shared with the plugin menu's "Upload current book to Readest"
+            -- so the two upload routes can't drift apart.
+            syncbooks.uploadAndRecord(row, {
                 sync_auth   = opts.sync_auth,
                 sync_path   = opts.sync_path,
                 settings    = opts.settings,
+                store       = M._store,
                 covers_dir  = DataStorage:getSettingsDir() .. "/readest_covers",
+                on_pushed   = function() M.refresh() end,
             }, function(success, msg, status)
                 UIManager:close(progress)
                 if not success then
@@ -1257,31 +1263,6 @@ function M.handleHold(item, opts)
                     UIManager:show(InfoMessage:new{ text = text, timeout = 4 })
                     return
                 end
-                -- Mirror cloudService.uploadBook's bookkeeping: clear
-                -- deleted_at, bump uploaded_at + updated_at, mark cloud
-                -- present, then push the row so peers see the metadata.
-                -- _clear_fields un-tombstones since Lua nil in the row
-                -- table would otherwise be preserved by upsertBook.
-                local now = math.floor(os.time() * 1000)
-                M._store:upsertBook({
-                    hash          = row.hash,
-                    title         = row.title,
-                    cloud_present = 1,
-                    uploaded_at   = now,
-                    updated_at    = now,
-                    _clear_fields = { "deleted_at" },
-                })
-                local pushed = {}
-                for k, v in pairs(row) do pushed[k] = v end
-                pushed.cloud_present = 1
-                pushed.uploaded_at   = now
-                pushed.updated_at    = now
-                pushed.deleted_at    = nil
-                syncbooks.pushBook(pushed, {
-                    sync_auth = opts.sync_auth,
-                    sync_path = opts.sync_path,
-                    settings  = opts.settings,
-                }, function() M.refresh() end)
                 M.refresh()
             end)
         end)

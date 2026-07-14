@@ -233,6 +233,9 @@ msgstr "ارسال یادداشت‌های Readest از این دستگاه"
 msgid "Pull readest annotations from other devices"
 msgstr "دریافت یادداشت‌های Readest از دستگاه‌های دیگر"
 
+msgid "Full sync all readest annotations"
+msgstr "همگام‌سازی کامل تمام یادداشت‌های Readest"
+
 msgid "Add to Readest"
 msgstr "افزودن به Readest"
 
@@ -257,6 +260,12 @@ msgstr "از قبل در کتابخانه Readest شما موجود است:"
 msgid "Added to Readest:"
 msgstr "به Readest افزوده شد:"
 
+msgid "No book is open"
+msgstr "هیچ کتابی باز نیست"
+
+msgid "Uploaded to Readest:"
+msgstr "در Readest بارگذاری شد:"
+
 msgid "Log in Readest Account"
 msgstr "ورود به حساب Readest"
 
@@ -280,6 +289,9 @@ msgstr "اکنون ارسال کتاب‌ها"
 
 msgid "Pull books now"
 msgstr "اکنون دریافت کتاب‌ها"
+
+msgid "Upload current book to Readest"
+msgstr "بارگذاری کتاب فعلی در Readest"
 
 msgid "Push reading progress now"
 msgstr "ارسال پیشرفت مطالعه اکنون"
@@ -310,9 +322,6 @@ msgstr "ابتدا وارد شوید"
 
 msgid "Please configure Readest settings first"
 msgstr "ابتدا تنظیمات Readest را پیکربندی کنید"
-
-msgid "No book is open"
-msgstr "هیچ کتابی باز نیست"
 
 msgid "(none)"
 msgstr "(هیچ‌کدام)"

@@ -233,6 +233,9 @@ msgstr "שלח הערות Readest ממכשיר זה"
 msgid "Pull readest annotations from other devices"
 msgstr "משוך הערות Readest ממכשירים אחרים"
 
+msgid "Full sync all readest annotations"
+msgstr "סנכרון מלא של כל הערות Readest"
+
 msgid "Add to Readest"
 msgstr "הוסף ל-Readest"
 
@@ -257,6 +260,12 @@ msgstr "כבר בספריית Readest שלך:"
 msgid "Added to Readest:"
 msgstr "נוסף ל-Readest:"
 
+msgid "No book is open"
+msgstr "לא פתוח ספר"
+
+msgid "Uploaded to Readest:"
+msgstr "הועלה ל-Readest:"
+
 msgid "Log in Readest Account"
 msgstr "התחבר לחשבון Readest"
 
@@ -280,6 +289,9 @@ msgstr "שלח ספרים עכשיו"
 
 msgid "Pull books now"
 msgstr "משוך ספרים עכשיו"
+
+msgid "Upload current book to Readest"
+msgstr "העלה את הספר הנוכחי ל-Readest"
 
 msgid "Push reading progress now"
 msgstr "שלח התקדמות קריאה כעת"
@@ -310,9 +322,6 @@ msgstr "התחבר תחילה"
 
 msgid "Please configure Readest settings first"
 msgstr "הגדר תחילה את הגדרות Readest"
-
-msgid "No book is open"
-msgstr "לא פתוח ספר"
 
 msgid "(none)"
 msgstr "(אין)"

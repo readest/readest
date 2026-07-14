@@ -907,6 +907,64 @@ function M.uploadBook(book, opts, cb)
 end
 
 -- ---------------------------------------------------------------------------
+-- uploadAndRecord(book, opts, cb) — uploadBook plus the bookkeeping that has
+-- to follow a successful upload.
+-- ---------------------------------------------------------------------------
+-- Mirrors cloudService.uploadBook's post-upload writes: mark the row
+-- cloud-present, stamp uploaded_at + updated_at, clear any tombstone, then
+-- push the row so other devices learn the book is in the cloud.
+--
+-- Shared by the Library widget's long-press "Upload to Cloud" and the plugin
+-- menu's "Upload current book to Readest" so the two can't drift. Skipping
+-- this step would strand the book: the row would stay cloud_present=0, so the
+-- Library would keep showing the upload icon and peers would never see it.
+--
+-- Nothing is recorded when the upload fails — claiming cloud_present for bytes
+-- that never landed would tell peers to download a file that isn't there.
+--
+-- The push runs in the background: the book is in the cloud and the local row
+-- already knows it, so callers shouldn't hold a progress dialog open waiting
+-- on a metadata round-trip. opts.on_pushed fires when it lands.
+--
+-- opts: { sync_auth, sync_path, settings, store, covers_dir = optional,
+--         on_pushed = optional }
+-- cb: function(success, msg, status)
+-- ---------------------------------------------------------------------------
+function M.uploadAndRecord(book, opts, cb)
+    M.uploadBook(book, opts, function(success, msg, status)
+        if not success then
+            if cb then cb(false, msg, status) end
+            return
+        end
+
+        local now = math.floor(os.time() * 1000)
+        opts.store:upsertBook({
+            hash          = book.hash,
+            title         = book.title,
+            cloud_present = 1,
+            uploaded_at   = now,
+            updated_at    = now,
+            _clear_fields = { "deleted_at" },
+        })
+
+        -- Copy rather than mutate: callers hand us a live row (the Library
+        -- widget passes its on-screen entry), and the wire row needs
+        -- deleted_at gone so peers stop treating the book as deleted.
+        local pushed = {}
+        for k, v in pairs(book) do pushed[k] = v end
+        pushed.cloud_present = 1
+        pushed.uploaded_at   = now
+        pushed.updated_at    = now
+        pushed.deleted_at    = nil
+
+        M.pushBook(pushed, opts, function()
+            if opts.on_pushed then opts.on_pushed() end
+        end)
+        if cb then cb(true) end
+    end)
+end
+
+-- ---------------------------------------------------------------------------
 -- deleteCloudFiles(book, opts, cb) — discover the storage objects for a
 -- book hash via /storage/list, then DELETE each one. Mirrors Readest's
 -- cloudService.deleteBook flow at apps/readest-app/src/services/

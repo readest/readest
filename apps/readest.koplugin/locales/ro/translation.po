@@ -233,6 +233,9 @@ msgstr "Trimite adnotările Readest de pe acest dispozitiv"
 msgid "Pull readest annotations from other devices"
 msgstr "Obține adnotările Readest de pe alte dispozitive"
 
+msgid "Full sync all readest annotations"
+msgstr "Sincronizare completă a tuturor adnotărilor Readest"
+
 msgid "Add to Readest"
 msgstr "Adaugă la Readest"
 
@@ -257,6 +260,12 @@ msgstr "Deja în biblioteca ta Readest:"
 msgid "Added to Readest:"
 msgstr "Adăugat la Readest:"
 
+msgid "No book is open"
+msgstr "Nicio carte deschisă"
+
+msgid "Uploaded to Readest:"
+msgstr "Încărcat în Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Autentificare în contul Readest"
 
@@ -280,6 +289,9 @@ msgstr "Trimite cărțile acum"
 
 msgid "Pull books now"
 msgstr "Preia cărțile acum"
+
+msgid "Upload current book to Readest"
+msgstr "Încarcă cartea curentă în Readest"
 
 msgid "Push reading progress now"
 msgstr "Trimite progresul de citire acum"
@@ -310,9 +322,6 @@ msgstr "Autentifică-te mai întâi"
 
 msgid "Please configure Readest settings first"
 msgstr "Configurează mai întâi setările Readest"
-
-msgid "No book is open"
-msgstr "Nicio carte deschisă"
 
 msgid "(none)"
 msgstr "(niciunul)"
