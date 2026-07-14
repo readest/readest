@@ -4,13 +4,13 @@ import {
   MdAlarm,
   MdArrowBackIosNew,
   MdCheck,
-  MdFastForward,
-  MdFastRewind,
+  MdKeyboardArrowLeft,
+  MdKeyboardArrowRight,
+  MdKeyboardDoubleArrowLeft,
+  MdKeyboardDoubleArrowRight,
   MdOutlinePause,
   MdPlayArrow,
   MdSegment,
-  MdSkipNext,
-  MdSkipPrevious,
 } from 'react-icons/md';
 import { RiVoiceAiFill } from 'react-icons/ri';
 import { TTSVoicesGroup } from '@/services/tts';
@@ -124,6 +124,7 @@ const TTSPlayerSheet = ({
   const timerLabel = useCountdownLabel(timeoutTimestamp);
   const iconSize18 = useResponsiveSize(18);
   const iconSize24 = useResponsiveSize(24);
+  const iconSize28 = useResponsiveSize(28);
   const iconSize32 = useResponsiveSize(32);
 
   const book = getBookData(bookKey)?.book;
@@ -304,7 +305,7 @@ const TTSPlayerSheet = ({
               aria-label={_('Previous Paragraph')}
               onClick={() => onBackward(false)}
             >
-              <MdFastRewind size={iconSize24} />
+              <MdKeyboardDoubleArrowLeft size={iconSize24} />
             </button>
             <button
               type='button'
@@ -313,7 +314,7 @@ const TTSPlayerSheet = ({
               aria-label={_('Previous Sentence')}
               onClick={() => onBackward(true)}
             >
-              <MdSkipPrevious size={iconSize32} />
+              <MdKeyboardArrowLeft size={iconSize28} />
             </button>
             <button
               type='button'
@@ -330,7 +331,7 @@ const TTSPlayerSheet = ({
               aria-label={_('Next Sentence')}
               onClick={() => onForward(true)}
             >
-              <MdSkipNext size={iconSize32} />
+              <MdKeyboardArrowRight size={iconSize28} />
             </button>
             <button
               type='button'
@@ -339,7 +340,7 @@ const TTSPlayerSheet = ({
               aria-label={_('Next Paragraph')}
               onClick={() => onForward(false)}
             >
-              <MdFastForward size={iconSize24} />
+              <MdKeyboardDoubleArrowRight size={iconSize24} />
             </button>
           </div>
           <div className='flex w-full gap-2'>
