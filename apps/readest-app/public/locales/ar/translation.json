@@ -2042,5 +2042,6 @@
   "{{hours}}h left": "بقيت {{hours}} ساعة",
   "Time Remaining": "الوقت المتبقي",
   "Theme": "السمة",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "متصل باسم {{account}}. اجعل {{provider}} مزود السحابة النشط."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "متصل باسم {{account}}. اجعل {{provider}} مزود السحابة النشط.",
+  "Only while reading": "أثناء القراءة فقط"
 }

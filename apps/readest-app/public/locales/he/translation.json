@@ -1937,5 +1937,6 @@
   "{{hours}}h left": "נותרו {{hours}} שעות",
   "Time Remaining": "זמן שנותר",
   "Theme": "ערכת נושא",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "מחובר כ-{{account}}. הפוך את {{provider}} לספק הענן הפעיל."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "מחובר כ-{{account}}. הפוך את {{provider}} לספק הענן הפעיל.",
+  "Only while reading": "רק בזמן הקריאה"
 }

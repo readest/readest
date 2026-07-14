@@ -1867,5 +1867,6 @@
   "{{hours}}h left": "ད་དུང་ {{hours}} ཆུ་ཚོད་ལྷག་ཡོད།",
   "Time Remaining": "ལྷག་ཡོད་པའི་དུས་ཚོད།",
   "Theme": "བརྗོད་བྱ།",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} ཐོག་ནས་འབྲེལ་མཐུད་ཟིན། {{provider}} དེ་སྤྱོད་བཞིན་པའི་སྤྲིན་ཞབས་ཞུ་མཁོ་སྤྲོད་པར་སྒྲིག་པ།"
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} ཐོག་ནས་འབྲེལ་མཐུད་ཟིན། {{provider}} དེ་སྤྱོད་བཞིན་པའི་སྤྲིན་ཞབས་ཞུ་མཁོ་སྤྲོད་པར་སྒྲིག་པ།",
+  "Only while reading": "ཀློག་པའི་སྐབས་སུ་ཁོ་ན།"
 }

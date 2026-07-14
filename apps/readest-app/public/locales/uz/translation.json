@@ -1902,5 +1902,6 @@
   "{{hours}}h left": "{{hours}} soat qoldi",
   "Time Remaining": "Qolgan vaqt",
   "Theme": "Mavzu",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} sifatida ulangan. {{provider}}-ni faol bulut provayderi qiling."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} sifatida ulangan. {{provider}}-ni faol bulut provayderi qiling.",
+  "Only while reading": "Faqat oʻqish paytida"
 }

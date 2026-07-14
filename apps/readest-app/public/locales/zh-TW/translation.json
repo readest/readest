@@ -1867,5 +1867,6 @@
   "{{hours}}h left": "{{hours}}小時",
   "Time Remaining": "剩餘時間",
   "Theme": "主題",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "已以 {{account}} 身分連線。將 {{provider}} 設為目前使用的雲端服務供應商。"
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "已以 {{account}} 身分連線。將 {{provider}} 設為目前使用的雲端服務供應商。",
+  "Only while reading": "僅在閱讀時"
 }

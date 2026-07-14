@@ -1972,5 +1972,6 @@
   "{{hours}}h left": "Še {{hours}} h",
   "Time Remaining": "Preostali čas",
   "Theme": "Tema",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Povezano kot {{account}}. Nastavite {{provider}} kot aktivnega ponudnika oblaka."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Povezano kot {{account}}. Nastavite {{provider}} kot aktivnega ponudnika oblaka.",
+  "Only while reading": "Samo med branjem"
 }

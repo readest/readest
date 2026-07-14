@@ -1902,5 +1902,6 @@
   "{{hours}}h left": "පැය {{hours}} ක් ඉතිරි",
   "Time Remaining": "ඉතිරි කාලය",
   "Theme": "තේමාව",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} ලෙස සම්බන්ධ වී ඇත. {{provider}} සක්‍රිය cloud සපයන්නා ලෙස සකසන්න."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} ලෙස සම්බන්ධ වී ඇත. {{provider}} සක්‍රිය cloud සපයන්නා ලෙස සකසන්න.",
+  "Only while reading": "කියවීමේදී පමණි"
 }

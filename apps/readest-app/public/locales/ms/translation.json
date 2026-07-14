@@ -1867,5 +1867,6 @@
   "{{hours}}h left": "{{hours}} jam lagi",
   "Time Remaining": "Masa berbaki",
   "Theme": "Tema",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Disambungkan sebagai {{account}}. Jadikan {{provider}} sebagai penyedia awan yang aktif."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Disambungkan sebagai {{account}}. Jadikan {{provider}} sebagai penyedia awan yang aktif.",
+  "Only while reading": "Hanya semasa membaca"
 }

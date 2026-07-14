@@ -1902,5 +1902,6 @@
   "{{hours}}h left": "{{hours}} ساعت باقی‌مانده",
   "Time Remaining": "زمان باقی‌مانده",
   "Theme": "تم",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "متصل به‌عنوان {{account}}. {{provider}} را ارائه‌دهنده فعال ابری قرار دهید."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "متصل به‌عنوان {{account}}. {{provider}} را ارائه‌دهنده فعال ابری قرار دهید.",
+  "Only while reading": "فقط هنگام مطالعه"
 }

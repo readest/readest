@@ -1972,5 +1972,6 @@
   "{{hours}}h left": "Залишилось {{hours}} год",
   "Time Remaining": "Час, що залишився",
   "Theme": "Тема",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Під'єднано як {{account}}. Зробити {{provider}} активним хмарним провайдером."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Під'єднано як {{account}}. Зробити {{provider}} активним хмарним провайдером.",
+  "Only while reading": "Лише під час читання"
 }

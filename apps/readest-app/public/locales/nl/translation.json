@@ -1902,5 +1902,6 @@
   "{{hours}}h left": "Nog {{hours}} u",
   "Time Remaining": "Resterende tijd",
   "Theme": "Thema",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Verbonden als {{account}}. Maak {{provider}} de actieve cloudprovider."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Verbonden als {{account}}. Maak {{provider}} de actieve cloudprovider.",
+  "Only while reading": "Alleen tijdens het lezen"
 }

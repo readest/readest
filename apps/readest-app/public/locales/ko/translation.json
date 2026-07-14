@@ -1867,5 +1867,6 @@
   "{{hours}}h left": "{{hours}}시간 남음",
   "Time Remaining": "남은 시간",
   "Theme": "테마",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}}(으)로 연결됨. {{provider}}를 사용할 클라우드 제공업체로 설정합니다."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}}(으)로 연결됨. {{provider}}를 사용할 클라우드 제공업체로 설정합니다.",
+  "Only while reading": "독서 중에만"
 }

@@ -1867,5 +1867,6 @@
   "{{hours}}h left": "残り{{hours}}時間",
   "Time Remaining": "残り時間",
   "Theme": "テーマ",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} として接続済み。{{provider}} を使用するクラウドプロバイダーに設定します。"
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} として接続済み。{{provider}} を使用するクラウドプロバイダーに設定します。",
+  "Only while reading": "読書中のみ"
 }

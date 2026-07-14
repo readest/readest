@@ -1902,5 +1902,6 @@
   "{{hours}}h left": "{{hours}} ঘণ্টা বাকি",
   "Time Remaining": "অবশিষ্ট সময়",
   "Theme": "থিম",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} হিসেবে সংযুক্ত। {{provider}}-কে সক্রিয় ক্লাউড প্রদানকারী করুন।"
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} হিসেবে সংযুক্ত। {{provider}}-কে সক্রিয় ক্লাউড প্রদানকারী করুন।",
+  "Only while reading": "শুধু পড়ার সময়"
 }

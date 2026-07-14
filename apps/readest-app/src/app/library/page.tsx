@@ -56,7 +56,6 @@ import { useInboxDrainer } from '@/hooks/useInboxDrainer';
 import { useOPDSSubscriptions } from '@/hooks/useOPDSSubscriptions';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTransferStore } from '@/store/transferStore';
-import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { getLibraryViewSettings } from '@/helpers/settings';
 import { useAppUrlIngress } from '@/hooks/useAppUrlIngress';
@@ -332,8 +331,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       checkOPDSSubscriptions(true);
     },
   );
-  useScreenWakeLock(settings.screenWakeLock);
-
   useShortcuts({
     onToggleFullscreen: async () => {
       if (isTauriAppPlatform()) {

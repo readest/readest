@@ -1902,5 +1902,6 @@
   "{{hours}}h left": "{{hours}} sa kaldı",
   "Time Remaining": "Kalan süre",
   "Theme": "Tema",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} olarak bağlanıldı. {{provider}}'ı etkin bulut sağlayıcısı yapın."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} olarak bağlanıldı. {{provider}}'ı etkin bulut sağlayıcısı yapın.",
+  "Only while reading": "Yalnızca okurken"
 }

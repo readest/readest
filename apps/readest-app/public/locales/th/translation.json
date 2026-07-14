@@ -1867,5 +1867,6 @@
   "{{hours}}h left": "เหลือ {{hours}} ชม.",
   "Time Remaining": "เวลาที่เหลือ",
   "Theme": "ธีม",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "เชื่อมต่อในชื่อ {{account}} ตั้งให้ {{provider}} เป็นผู้ให้บริการคลาวด์ที่ใช้งานอยู่"
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "เชื่อมต่อในชื่อ {{account}} ตั้งให้ {{provider}} เป็นผู้ให้บริการคลาวด์ที่ใช้งานอยู่",
+  "Only while reading": "เฉพาะขณะอ่าน"
 }

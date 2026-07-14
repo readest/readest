@@ -1972,5 +1972,6 @@
   "{{hours}}h left": "Pozostało {{hours}} godz.",
   "Time Remaining": "Pozostały czas",
   "Theme": "Motyw",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Połączono jako {{account}}. Ustaw {{provider}} jako aktywnego dostawcę chmury."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Połączono jako {{account}}. Ustaw {{provider}} jako aktywnego dostawcę chmury.",
+  "Only while reading": "Tylko podczas czytania"
 }

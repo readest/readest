@@ -1902,5 +1902,6 @@
   "{{hours}}h left": "{{hours}} óra van hátra",
   "Time Remaining": "Hátralévő idő",
   "Theme": "Téma",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Csatlakozva mint {{account}}. Tegye a {{provider}}-ot az aktív felhőszolgáltatóvá."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Csatlakozva mint {{account}}. Tegye a {{provider}}-ot az aktív felhőszolgáltatóvá.",
+  "Only while reading": "Csak olvasás közben"
 }

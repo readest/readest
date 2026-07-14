@@ -506,6 +506,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         )}
         <SettingsSwitchRow
           label={_('Keep Screen Awake')}
+          description={_('Only while reading')}
           checked={screenWakeLock}
           onChange={() => setScreenWakeLock(!screenWakeLock)}
           data-setting-id='settings.control.screenWakeLock'

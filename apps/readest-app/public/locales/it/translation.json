@@ -1937,5 +1937,6 @@
   "{{hours}}h left": "{{hours}} h rimaste",
   "Time Remaining": "Tempo rimanente",
   "Theme": "Tema",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Collegato come {{account}}. Imposta {{provider}} come provider cloud attivo."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Collegato come {{account}}. Imposta {{provider}} come provider cloud attivo.",
+  "Only while reading": "Solo durante la lettura"
 }

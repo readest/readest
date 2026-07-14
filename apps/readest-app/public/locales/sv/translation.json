@@ -1902,5 +1902,6 @@
   "{{hours}}h left": "{{hours}} h kvar",
   "Time Remaining": "Återstående tid",
   "Theme": "Tema",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Ansluten som {{account}}. Gör {{provider}} till aktiv molnleverantör."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Ansluten som {{account}}. Gör {{provider}} till aktiv molnleverantör.",
+  "Only while reading": "Endast under läsning"
 }

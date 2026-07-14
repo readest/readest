@@ -1867,5 +1867,6 @@
   "{{hours}}h left": "Còn {{hours}} giờ",
   "Time Remaining": "Thời gian còn lại",
   "Theme": "Chủ đề",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Đã kết nối với tư cách {{account}}. Đặt {{provider}} làm nhà cung cấp đám mây đang hoạt động."
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Đã kết nối với tư cách {{account}}. Đặt {{provider}} làm nhà cung cấp đám mây đang hoạt động.",
+  "Only while reading": "Chỉ khi đang đọc"
 }

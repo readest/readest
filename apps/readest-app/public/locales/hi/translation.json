@@ -1902,5 +1902,6 @@
   "{{hours}}h left": "{{hours}} घंटे शेष",
   "Time Remaining": "शेष समय",
   "Theme": "थीम",
-  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} के रूप में कनेक्टेड। {{provider}} को सक्रिय क्लाउड प्रदाता बनाएं।"
+  "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} के रूप में कनेक्टेड। {{provider}} को सक्रिय क्लाउड प्रदाता बनाएं।",
+  "Only while reading": "केवल पढ़ते समय"
 }
