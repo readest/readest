@@ -1,10 +1,23 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi, beforeEach } from 'vitest';
+
+vi.mock('@/utils/settingsSync', () => ({
+  broadcastGlobalSettings: vi.fn(),
+}));
+
 import { withActiveCloudProvider } from '@/components/settings/integrations/cloudSync';
-import { withCloudProviderEnabled } from '@/services/sync/cloudSyncActivation';
+import {
+  persistCloudProviderEnabled,
+  withCloudProviderEnabled,
+} from '@/services/sync/cloudSyncActivation';
 import { buildWebDAVConnectSettings } from '@/services/sync/providers/webdav/connectSettings';
+import { useSettingsStore } from '@/store/settingsStore';
+import { broadcastGlobalSettings } from '@/utils/settingsSync';
 import type { WebDAVSettings } from '@/types/settings';
 import { CLOUD_SYNC_REQUIRES_PREMIUM, isCloudSyncAllowed, isCloudSyncInPlan } from '@/utils/access';
 import type { SystemSettings } from '@/types/settings';
+import type { EnvConfigType } from '@/services/environment';
+
+const mockBroadcastGlobalSettings = vi.mocked(broadcastGlobalSettings);
 
 const base = {
   webdav: { enabled: true, serverUrl: 'https://dav', username: 'u', password: 'p', rootPath: '/' },
@@ -263,5 +276,89 @@ describe('withCloudProviderEnabled', () => {
     next = withCloudProviderEnabled(next, 'readest', false);
     expect(next.webdav.enabled).toBe(false);
     expect(next.readestCloud?.enabled).toBe(false);
+  });
+});
+
+// The single write path for provider selection once #5062's Task 14 removes
+// `persistActiveCloudProvider` — every side effect below must survive a
+// future refactor of this 5-line orchestrator.
+describe('persistCloudProviderEnabled', () => {
+  beforeEach(() => {
+    useSettingsStore.setState({ settings: {} as SystemSettings });
+    mockBroadcastGlobalSettings.mockClear();
+  });
+
+  const makeEnvConfig = (
+    saveSettings: (settings: SystemSettings) => Promise<void>,
+    loadSettings?: () => Promise<SystemSettings>,
+  ): EnvConfigType =>
+    ({
+      getAppService: vi.fn().mockResolvedValue({ saveSettings, loadSettings }),
+    }) as unknown as EnvConfigType;
+
+  test('hydrates the store, persists, and broadcasts with the provider flags included', async () => {
+    const saveSettings = vi.fn().mockResolvedValue(undefined);
+    const envConfig = makeEnvConfig(saveSettings);
+    useSettingsStore.setState({
+      settings: { version: 1, webdav: { enabled: false } } as unknown as SystemSettings,
+    });
+
+    const next = await persistCloudProviderEnabled(envConfig, 'gdrive', true);
+
+    expect(useSettingsStore.getState().settings.googleDrive.enabled).toBe(true);
+    expect(saveSettings).toHaveBeenCalledWith(next);
+    expect(mockBroadcastGlobalSettings).toHaveBeenCalledWith(next, {
+      includeCloudSyncProviders: true,
+    });
+  });
+
+  test('loads settings from the app service when the store was never hydrated (OAuth callback route)', async () => {
+    const saveSettings = vi.fn().mockResolvedValue(undefined);
+    const loadSettings = vi
+      .fn()
+      .mockResolvedValue({ version: 1, webdav: { enabled: false } } as unknown as SystemSettings);
+    const envConfig = makeEnvConfig(saveSettings, loadSettings);
+    // Store starts unhydrated, as on a route that never loaded settings.
+    useSettingsStore.setState({ settings: {} as SystemSettings });
+
+    const next = await persistCloudProviderEnabled(envConfig, 'webdav', true);
+
+    expect(loadSettings).toHaveBeenCalled();
+    expect(useSettingsStore.getState().settings.webdav.enabled).toBe(true);
+    expect(saveSettings).toHaveBeenCalledWith(next);
+    expect(mockBroadcastGlobalSettings).toHaveBeenCalledWith(next, {
+      includeCloudSyncProviders: true,
+    });
+  });
+
+  test('mutate runs before the toggle, so a connect flow supplying credentials still activates syncBooks', async () => {
+    const saveSettings = vi.fn().mockResolvedValue(undefined);
+    const envConfig = makeEnvConfig(saveSettings);
+    useSettingsStore.setState({
+      settings: {
+        version: 1,
+        webdav: { enabled: false, syncBooks: false },
+      } as unknown as SystemSettings,
+    });
+
+    const next = await persistCloudProviderEnabled(envConfig, 'webdav', true, (settings) => ({
+      ...settings,
+      webdav: {
+        ...(settings as unknown as { webdav: WebDAVSettings }).webdav,
+        serverUrl: 'https://dav.example.com',
+        username: 'alice',
+        password: 'hunter2',
+        rootPath: '/Readest',
+      },
+    }));
+
+    // The credentials from `mutate` made it through...
+    expect(next.webdav.serverUrl).toBe('https://dav.example.com');
+    expect(next.webdav.password).toBe('hunter2');
+    // ...and because `mutate` didn't pre-set `enabled`, the toggle still saw
+    // an off -> on edge and ran the activation side effects.
+    expect(next.webdav.enabled).toBe(true);
+    expect(next.webdav.syncBooks).toBe(true);
+    expect(next.webdav.providerSelectedAt).toBeTruthy();
   });
 });

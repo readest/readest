@@ -2,6 +2,7 @@ import type { SystemSettings } from '@/types/settings';
 import type { EnvConfigType } from '@/services/environment';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
 import type { CloudSyncProviderKind } from '@/services/sync/cloudSyncProvider';
+import { settingsKeyForBackend } from '@/services/sync/cloudSyncProvider';
 import { useSettingsStore } from '@/store/settingsStore';
 import { broadcastGlobalSettings } from '@/utils/settingsSync';
 
@@ -127,56 +128,17 @@ export const withCloudProviderEnabled = (
       },
     };
   }
-  // A switch (rather than a generically-keyed write) keeps each branch's
-  // settings slice type intact; `settings[key] = { ...slice, enabled }`
-  // does not typecheck when `key` is a union of literal keys (see
-  // `applySyncBooksAutoEnable` above for the same constraint).
-  switch (kind) {
-    case 'webdav': {
-      const activating = enabled && !settings.webdav?.enabled;
-      return {
-        ...settings,
-        webdav: {
-          ...settings.webdav,
-          enabled,
-          ...(activating ? { syncBooks: true, providerSelectedAt: Date.now() } : {}),
-        },
-      };
-    }
-    case 'gdrive': {
-      const activating = enabled && !settings.googleDrive?.enabled;
-      return {
-        ...settings,
-        googleDrive: {
-          ...settings.googleDrive,
-          enabled,
-          ...(activating ? { syncBooks: true, providerSelectedAt: Date.now() } : {}),
-        },
-      };
-    }
-    case 's3': {
-      const activating = enabled && !settings.s3?.enabled;
-      return {
-        ...settings,
-        s3: {
-          ...settings.s3,
-          enabled,
-          ...(activating ? { syncBooks: true, providerSelectedAt: Date.now() } : {}),
-        },
-      };
-    }
-    case 'onedrive': {
-      const activating = enabled && !settings.onedrive?.enabled;
-      return {
-        ...settings,
-        onedrive: {
-          ...settings.onedrive,
-          enabled,
-          ...(activating ? { syncBooks: true, providerSelectedAt: Date.now() } : {}),
-        },
-      };
-    }
-  }
+  const key = settingsKeyForBackend(kind);
+  const slice = settings[key];
+  const activating = enabled && !slice?.enabled;
+  return {
+    ...settings,
+    [key]: {
+      ...slice,
+      enabled,
+      ...(activating ? { syncBooks: true, providerSelectedAt: Date.now() } : {}),
+    },
+  };
 };
 
 /**
