@@ -404,8 +404,6 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     const progress: [number, number] = [pageInfo.current + 1, pageInfo.total];
     const progressPercentage = Math.round((progress[0] / progress[1]) * 100);
 
-    const timeRemainingMinutes = Math.round(timeinfo.total);
-
     // Lightweight library update — O(1) lookup, no array copy, no refreshGroups
     const { getBookByHash, updateBookProgress } = useLibraryStore.getState();
     const existingBook = getBookByHash(id);
@@ -436,7 +434,6 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
               config: {
                 ...existing.config,
                 progress,
-                timeRemainingMinutes,
                 location,
               } as BookConfig,
             },
