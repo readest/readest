@@ -100,16 +100,19 @@ image = { version = "0.25", default-features = false, features = ["jpeg", "png",
 mobi = "0.8"
 
 # Crash/error reporting. `tauri-plugin-sentry` injects @sentry/browser into
-# every webview and routes browser + Rust panic events through one client; it
-# re-exports sentry-rust-minidump for desktop native crashes. `rustls` avoids
-# the native-tls/OpenSSL system dependency so the transport builds for
-# Android/iOS. Native mobile crashes are handled by sentry-android/-cocoa.
+# every webview and routes browser + Rust panic events through one client.
+# `rustls` avoids the native-tls/OpenSSL system dependency so the transport
+# builds for Android/iOS. Native mobile crashes are handled by
+# sentry-android/-cocoa.
 #
-# The plugin's default `minidump` feature pulls in crash-handler, which
-# interposes `pthread_create` and panics on 32-bit ARM when it cannot resolve
-# the real symbol. That panic crosses a `nounwind` libc boundary, so every
-# armeabi-v7a device aborted at launch (#5070). Minidumps are desktop-only, so
-# the feature is enabled per-target below instead of by default.
+# The plugin's default `minidump` feature is off on every target. It starts an
+# out-of-process crash-reporter server by re-exec'ing our own main executable
+# (`--crash-reporter-server=<socket>`), and that one behavior broke the app at
+# launch three times: the re-exec'd process booted a second copy of the app
+# whenever its server failed to start (#5052), a sandboxed App Store build can
+# never re-exec itself so it aborted in dyld (#5053), and its crash-handler
+# `pthread_create` interposer panics on 32-bit ARM, aborting every armeabi-v7a
+# device (#5070). See `minidump_feature_is_enabled_on_no_target`.
 sentry = { version = "0.42", default-features = false, features = [
   "backtrace",
   "contexts",
@@ -136,9 +139,6 @@ tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-window-state = "2"
 discord-rich-presence = "1.0.0"
-# Out-of-process minidump handler for native desktop crashes; `minidump::init`
-# is only called on these targets.
-tauri-plugin-sentry = { version = "0.5", features = ["minidump"] }
 
 [target.'cfg(windows)'.dependencies]
 # Resolve the user's default browser from the registry for the cold-browser

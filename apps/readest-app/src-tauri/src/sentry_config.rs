@@ -114,61 +114,6 @@ pub fn is_mobi_cover_panic_frame(function: &str) -> bool {
     function.contains("mobi_parser::extract_cover")
 }
 
-/// Whether a process on `target_os` with this `APP_SANDBOX_CONTAINER_ID` value
-/// runs inside the macOS App Sandbox. The variable is macOS-only, so every other
-/// target is reported unsandboxed regardless of what the environment holds.
-pub fn app_sandboxed(target_os: &str, sandbox_container_id: Option<&str>) -> bool {
-    target_os == "macos" && sandbox_container_id.is_some()
-}
-
-/// True when this process runs inside the macOS App Sandbox, i.e. it is the Mac
-/// App Store build (the DMG and direct-download builds are not sandboxed).
-///
-/// This gates the out-of-process minidump handler. `sentry-rust-minidump` starts
-/// its crash-reporter server by re-exec'ing our own main executable (its
-/// `minidumper-child` spawns `current_exe()` with `--crash-reporter-server=<socket>`),
-/// and that child is the same signed binary — so it carries the app's
-/// `com.apple.security.app-sandbox` entitlement. `libsystem_secinit` then aborts
-/// in dyld's initializers, before `main()` runs, because it cannot apply the
-/// sandbox profile to a process that already inherited one: SIGILL with a
-/// `SYSCALL_SET_PROFILE` signature (#5053). A sandboxed app may only spawn a
-/// *separate* helper binary entitled with `com.apple.security.inherit`, which a
-/// re-exec of the main binary can never be, so the App Store build goes without
-/// native minidumps. Rust panic and WebView error reporting are unaffected.
-///
-/// `libsystem_secinit` exports `APP_SANDBOX_CONTAINER_ID` into every sandboxed
-/// process's environment during startup, so reading it detects the sandbox
-/// without linking the private `sandbox_check` SPI.
-pub fn is_app_sandboxed() -> bool {
-    app_sandboxed(
-        std::env::consts::OS,
-        std::env::var("APP_SANDBOX_CONTAINER_ID").ok().as_deref(),
-    )
-}
-
-/// The argument `minidumper-child` passes to the copy of our binary it re-execs
-/// to host the crash-reporter server (its default `server_arg`, matched there by
-/// prefix because the socket path is appended as `=<socket>`).
-const CRASH_REPORTER_SERVER_ARG: &str = "--crash-reporter-server";
-
-/// Whether `args` belong to the crash-reporter server process.
-pub fn is_crash_reporter_args<I: IntoIterator<Item = S>, S: AsRef<str>>(args: I) -> bool {
-    args.into_iter()
-        .any(|arg| arg.as_ref().starts_with(CRASH_REPORTER_SERVER_ARG))
-}
-
-/// True when this process is the crash-reporter server that the minidump handler
-/// started by re-exec'ing our own binary, not the app the user launched.
-///
-/// The server process must never boot the UI. `minidump::init` normally runs the
-/// server loop and exits the process from inside, but when the server fails to
-/// start it returns an error instead, and the process would otherwise fall
-/// through into a full second copy of the app — a duplicate window on top of the
-/// user's real one (#5052).
-pub fn is_crash_reporter_process() -> bool {
-    is_crash_reporter_args(std::env::args())
-}
-
 /// The WebView (engine, major-version), set once at startup when the app reports
 /// its User-Agent. Stored globally so `before_send` can tag every event — the
 /// browser context integration doesn't run for events forwarded from the webview.
@@ -229,81 +174,48 @@ pub extern "C" fn readest_sentry_dsn() -> *const std::os::raw::c_char {
 #[cfg(test)]
 mod tests {
     use super::{
-        android_version_from_uname, app_sandboxed, corrected_os_name, dsn_from_env,
-        environment_for_version, is_crash_reporter_args, is_ignored_browser_error,
-        is_mobi_cover_panic_frame, parse_webview_info, release_name,
+        android_version_from_uname, corrected_os_name, dsn_from_env, environment_for_version,
+        is_ignored_browser_error, is_mobi_cover_panic_frame, parse_webview_info, release_name,
     };
 
+    /// `tauri-plugin-sentry`'s `minidump` feature pulls in sentry-rust-minidump ->
+    /// minidumper-child -> crash-handler, and it starts its crash-reporter server
+    /// by re-exec'ing our own main executable with `--crash-reporter-server`. That
+    /// one behavior broke the app at launch three times: the re-exec'd process
+    /// booted a whole second copy of the app whenever its server failed to start
+    /// (#5052), a sandboxed App Store build can never re-exec itself so it aborted
+    /// in dyld before `main()` (#5053), and crash-handler's `pthread_create`
+    /// interposer panics on 32-bit ARM, aborting every armeabi-v7a device (#5070).
+    /// It bought ~49 native crash events a month, nearly all unsymbolicated WebView
+    /// frames. Sentry still reports Rust panics, WebView errors and native mobile
+    /// crashes without it, so the feature stays off on every target. Bringing native
+    /// desktop dumps back means shipping a *separate* helper binary, never a re-exec
+    /// of our own.
     #[test]
-    fn crash_reporter_process_is_detected_from_its_server_arg() {
-        // `minidumper-child` re-execs our binary with the socket appended.
-        assert!(is_crash_reporter_args([
-            "/Applications/Readest.app/Contents/MacOS/readest",
-            "--crash-reporter-server=/var/folders/dz/T/temp-socket-6e72b890",
-        ]));
-        // Its own detection matches by prefix, so a bare flag counts too.
-        assert!(is_crash_reporter_args([
-            "readest",
-            "--crash-reporter-server"
-        ]));
-    }
-
-    #[test]
-    fn the_app_the_user_launched_is_not_the_crash_reporter() {
-        assert!(!is_crash_reporter_args(["readest"]));
-        // Open-with passes book paths, never the reporter flag.
-        assert!(!is_crash_reporter_args([
-            "readest",
-            "/Users/me/Books/crash-reporter-server.epub",
-        ]));
-    }
-
-    #[test]
-    fn mac_app_store_build_is_detected_as_sandboxed() {
-        // The Mac App Store build runs under the App Sandbox, so libsystem_secinit
-        // exports the container id. The minidump handler must not re-exec our own
-        // binary there (#5053).
-        assert!(app_sandboxed("macos", Some("com.bilingify.readest")));
-    }
-
-    #[test]
-    fn direct_download_and_other_desktops_are_not_sandboxed() {
-        // DMG / direct-download macOS builds are not sandboxed and keep minidumps.
-        assert!(!app_sandboxed("macos", None));
-        // APP_SANDBOX_CONTAINER_ID is a macOS-only variable: never let a stray
-        // value in the environment disable minidumps on the other desktops.
-        assert!(!app_sandboxed("windows", None));
-        assert!(!app_sandboxed("linux", None));
-        assert!(!app_sandboxed("linux", Some("com.bilingify.readest")));
-    }
-
-    /// `tauri-plugin-sentry`'s default `minidump` feature pulls in
-    /// sentry-rust-minidump -> minidumper-child -> crash-handler, whose
-    /// `pthread_create` interposer panics on 32-bit ARM ("We could not obtain the
-    /// real pthread_create()"). The panic unwinds out of a `nounwind` libc
-    /// function, so every armeabi-v7a device aborted with SIGABRT at launch
-    /// (#5070). Minidumps are desktop-only anyway (`minidump::init` is
-    /// `cfg`-gated off for mobile), so the feature must be enabled per-target
-    /// rather than by default, keeping crash-handler out of Android/iOS builds.
-    #[test]
-    fn minidump_feature_is_not_enabled_by_default() {
+    fn minidump_feature_is_enabled_on_no_target() {
         let manifest = include_str!("../Cargo.toml");
-        let base_dep = manifest
+        let deps: Vec<&str> = manifest
             .lines()
             .map(str::trim)
-            .find(|line| line.starts_with("tauri-plugin-sentry"))
-            .expect("tauri-plugin-sentry must be declared in Cargo.toml");
+            .filter(|line| line.starts_with("tauri-plugin-sentry"))
+            .collect();
 
         assert!(
-            base_dep.contains("default-features = false"),
-            "tauri-plugin-sentry must set default-features = false so mobile builds \
-             don't link crash-handler (#5070); found: {base_dep}"
+            !deps.is_empty(),
+            "tauri-plugin-sentry must be declared in Cargo.toml"
         );
-        assert!(
-            !base_dep.contains("minidump"),
-            "the minidump feature must be enabled only for desktop targets (#5070); \
-             found: {base_dep}"
-        );
+        for dep in deps {
+            assert!(
+                dep.contains("default-features = false"),
+                "tauri-plugin-sentry must set default-features = false: its default \
+                 feature set is [\"minidump\"] (#5052/#5053/#5070); found: {dep}"
+            );
+            assert!(
+                !dep.contains("minidump"),
+                "the minidump feature must stay off on every target \
+                 (#5052/#5053/#5070); found: {dep}"
+            );
+        }
     }
 
     #[test]

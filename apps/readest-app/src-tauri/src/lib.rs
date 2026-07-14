@@ -315,10 +315,13 @@ struct SingleInstancePayload {
 pub fn run() {
     // Initialize Sentry as early as possible so panics during startup are
     // captured. `None` DSN (unset SENTRY_DSN) => disabled, so local and fork
-    // builds don't report. Desktop also starts the out-of-process minidump
-    // handler for native crashes; on mobile, native crashes belong to the
-    // sentry-android / sentry-cocoa SDKs. The guard must outlive the app, so it
-    // is held until `run()` returns (after the blocking `.run(...)` call).
+    // builds don't report. This client covers Rust panics and the events the
+    // WebView forwards; native crashes belong to the sentry-android /
+    // sentry-cocoa SDKs on mobile and go unreported on desktop, where the
+    // out-of-process minidump handler is deliberately off (see the
+    // `minidump_feature_is_enabled_on_no_target` test). The guard must outlive
+    // the app, so it is held until `run()` returns (after the blocking
+    // `.run(...)` call).
     let sentry_guard = sentry_config::sentry_dsn().map(|dsn| {
         sentry::init((
             dsn,
@@ -386,28 +389,6 @@ pub fn run() {
             },
         ))
     });
-
-    // The minidump handler starts its crash-reporter server by re-exec'ing our own
-    // binary, which the sandboxed Mac App Store build cannot do — the child aborts
-    // in dyld before `main()`. Skip it there; see `sentry_config::is_app_sandboxed`.
-    #[cfg(not(any(target_os = "ios", target_os = "android")))]
-    let _minidump_guard = sentry_guard
-        .as_ref()
-        .filter(|_| !sentry_config::is_app_sandboxed())
-        .map(|guard| tauri_plugin_sentry::minidump::init(guard));
-
-    // In the re-exec'd crash-reporter process, `minidump::init` runs the server
-    // loop and exits the process from inside, so reaching this line there means
-    // the server failed to start and `init` returned an error. Without this guard
-    // the process keeps going and boots a whole second copy of the app next to the
-    // user's real one — a duplicate window, dock icon and webview (#5052). Exit
-    // instead: the app that spawned us gives up after its connect timeout and runs
-    // on without native minidumps.
-    #[cfg(not(any(target_os = "ios", target_os = "android")))]
-    if sentry_config::is_crash_reporter_process() {
-        eprintln!("crash-reporter server failed to start; exiting the reporter process");
-        std::process::exit(1);
-    }
 
     let builder = tauri::Builder::default()
         .plugin(
