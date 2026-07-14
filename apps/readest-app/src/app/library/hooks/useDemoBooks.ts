@@ -4,14 +4,7 @@ import { useEnv } from '@/context/EnvContext';
 import { Book } from '@/types/book';
 import { getUserLang } from '@/utils/misc';
 import { isWebAppPlatform } from '@/services/environment';
-
-import libraryEn from '@/data/demo/library.en.json';
-import libraryZh from '@/data/demo/library.zh.json';
-
-const libraries = {
-  en: libraryEn,
-  zh: libraryZh,
-};
+import { demoLibraries as libraries } from '@/services/demoBooks';
 
 interface DemoBooks {
   library: string[];

@@ -11,6 +11,7 @@ import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
 import { useSettingsStore } from '@/store/settingsStore';
 import { getCloudSyncProvider } from '@/services/sync/cloudSyncProvider';
+import { isDemoBook } from '@/services/demoBooks';
 import { runActiveFileLibrarySync } from '@/services/sync/file/runLibrarySync';
 import { checkMixedFleetOnce } from '@/services/sync/fleetDetection';
 import { useSyncContext } from '@/context/SyncContext';
@@ -34,6 +35,9 @@ export const useBooksSync = () => {
     if (!user) return {};
     const library = useLibraryStore.getState().library;
     const newBooks = library
+      // Demo books are the sample shelf we hand anonymous web visitors, not the
+      // user's content — they never go to the cloud (issue #5049).
+      .filter((book) => !isDemoBook(book))
       .filter(
         (book) =>
           !book.syncedAt ||
@@ -157,10 +161,24 @@ export const useBooksSync = () => {
   const updateLibrary = useCallback(async () => {
     if (!syncedBooks?.length) return;
 
+    // A cloud row for a demo book can only be a stale one pushed before #5049.
+    // Merging it back would write over the local demo row — and, because a
+    // delete doesn't bump `updatedAt`, the not-deleted cloud row wins the LWW
+    // tie and clears `deletedAt`, resurrecting a book the user just deleted
+    // (coverless, since its cover was never uploaded either).
+    const demoHashes = new Set(
+      useLibraryStore
+        .getState()
+        .library.filter(isDemoBook)
+        .map((book) => book.hash),
+    );
+    const cloudBooks = syncedBooks.filter((book) => !demoHashes.has(book.hash));
+    if (!cloudBooks.length) return;
+
     // Process old books first so that when we update the library the order is preserved
-    syncedBooks.sort((a, b) => a.updatedAt - b.updatedAt);
-    const bookHashesInSynced = new Set(syncedBooks.map((book) => book.hash));
-    const syncedByHash = new Map(syncedBooks.map((book) => [book.hash, book]));
+    cloudBooks.sort((a, b) => a.updatedAt - b.updatedAt);
+    const bookHashesInSynced = new Set(cloudBooks.map((book) => book.hash));
+    const syncedByHash = new Map(cloudBooks.map((book) => [book.hash, book]));
     const liveLibrary = useLibraryStore.getState().library;
     const oldBooks = liveLibrary.filter((book) => bookHashesInSynced.has(book.hash));
     // Books whose cover must be (re)fetched: never-downloaded, or a newer cover
@@ -209,7 +227,7 @@ export const useBooksSync = () => {
     appService?.saveLibraryBooks(updatedLibrary);
 
     const bookHashesInLibrary = new Set(updatedLibrary.map((book) => book.hash));
-    const newBooks = syncedBooks.filter(
+    const newBooks = cloudBooks.filter(
       (newBook) =>
         !bookHashesInLibrary.has(newBook.hash) && newBook.uploadedAt && !newBook.deletedAt,
     );
