@@ -20,6 +20,7 @@ import {
 import {
   decideRemoteConflict,
   getRemoteFraction,
+  isReportedByKOReader,
   isXPointerProgress,
   resolveRemoteLocalFraction,
   type RemoteFractionResolution,
@@ -144,12 +145,19 @@ export const useKOSync = (bookKey: string) => {
           const content = view.renderer
             .getContents()
             .find((x) => x.index === view.renderer.primaryIndex);
+          // Only feed percentage into the CREngine↔foliate drift anchor when
+          // the report actually comes from KOReader (#5109) — a look-alike
+          // server's percentage isn't comparable to foliate's section table
+          // and re-anchors to the wrong chapter otherwise.
+          const driftAnchorPercentage = isReportedByKOReader(remote)
+            ? remote.percentage
+            : undefined;
           const cfi = await getCFIFromXPointer(
             remote.progress!,
             content?.doc,
             content?.index,
             bookDoc,
-            remote.percentage,
+            driftAnchorPercentage,
           );
           view.goTo(cfi);
           navigated = true;

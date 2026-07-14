@@ -3,6 +3,7 @@ import type { BookDoc } from '@/libs/document';
 import type { FoliateView } from '@/types/view';
 import {
   decideRemoteConflict,
+  isReportedByKOReader,
   resolveRemoteLocalFraction,
   type RemoteFractionResolution,
 } from '@/app/reader/hooks/kosyncProgress';
@@ -24,6 +25,28 @@ const makeView = (fraction: number | null | undefined): FoliateView =>
   }) as unknown as FoliateView;
 
 const bookDoc = {} as BookDoc;
+
+describe('isReportedByKOReader', () => {
+  it('trusts a report with no device string (the common KOReader case)', () => {
+    expect(isReportedByKOReader({})).toBe(true);
+  });
+
+  it('trusts a report whose device does not match a known look-alike', () => {
+    expect(isReportedByKOReader({ device: 'Boox Palma' })).toBe(true);
+    expect(isReportedByKOReader({ device: 'Kobo' })).toBe(true);
+  });
+
+  it('distrusts Kavita (#5109 — non-CREngine percentage on a CREngine-shaped XPointer)', () => {
+    expect(isReportedByKOReader({ device: 'Kavita' })).toBe(false);
+    expect(isReportedByKOReader({ device: 'kavita' })).toBe(false);
+  });
+
+  it('distrusts other known KOReader-sync look-alikes', () => {
+    expect(isReportedByKOReader({ device: 'Komga' })).toBe(false);
+    expect(isReportedByKOReader({ device: 'Stump' })).toBe(false);
+    expect(isReportedByKOReader({ device: 'calibre-web' })).toBe(false);
+  });
+});
 
 describe('resolveRemoteLocalFraction', () => {
   beforeEach(() => mockGetCFIFromXPointer.mockReset());
@@ -71,6 +94,42 @@ describe('resolveRemoteLocalFraction', () => {
     );
     expect(res).toEqual({ status: 'not-xpointer' });
     expect(mockGetCFIFromXPointer).not.toHaveBeenCalled();
+  });
+
+  // #5109: Kavita's KOReader-compatible endpoint emits a real
+  // `/body/DocFragment[...]` XPointer, so it IS treated as XPointer progress —
+  // but its `percentage` comes from Kavita's own pagination, not CREngine's,
+  // and must never be forwarded as the drift-correction anchor (5th arg).
+  it('does NOT forward percentage as the drift anchor when the report is from Kavita (#5109)', async () => {
+    mockGetCFIFromXPointer.mockResolvedValue('epubcfi(/6/32!/4/2/6)');
+    await resolveRemoteLocalFraction(
+      { progress: XPOINTER, percentage: 0.2777778, device: 'Kavita' },
+      makeView(0.42),
+      bookDoc,
+    );
+    expect(mockGetCFIFromXPointer).toHaveBeenCalledWith(
+      XPOINTER,
+      undefined,
+      undefined,
+      bookDoc,
+      undefined,
+    );
+  });
+
+  it('still forwards percentage as the drift anchor for a plain KOReader report (no device string)', async () => {
+    mockGetCFIFromXPointer.mockResolvedValue('epubcfi(/6/32!/4/2/6)');
+    await resolveRemoteLocalFraction(
+      { progress: XPOINTER, percentage: 0.217 },
+      makeView(0.42),
+      bookDoc,
+    );
+    expect(mockGetCFIFromXPointer).toHaveBeenCalledWith(
+      XPOINTER,
+      undefined,
+      undefined,
+      bookDoc,
+      0.217,
+    );
   });
 });
 

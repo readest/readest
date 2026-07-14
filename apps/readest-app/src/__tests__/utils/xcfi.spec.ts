@@ -459,6 +459,54 @@ describe('CFIToXPointerConverter', () => {
     });
   });
 
+  describe('element-offset XPointers (tag[idx].offset with no text() step)', () => {
+    // Reference regression: KOReader/CREngine emits `.N` directly on the last
+    // path element (no `text()` step at all) when the target point falls at
+    // the very start of that element's own text content, e.g.
+    // `/body/DocFragment[16]/body/section/div[1].0`.
+    it('resolves a real-world KOSync XPointer with an offset on the last element', () => {
+      const doc = new DOMParser().parseFromString(
+        `<html><body>
+          <section>
+            <div>Some paragraph text right at the start of the div.</div>
+          </section>
+        </body></html>`,
+        'text/html',
+      );
+
+      const converter = new XCFI(doc, 15);
+      const xp = '/body/DocFragment[16]/body/section/div[1].0';
+      const cfi = converter.xPointerToCFI(xp);
+
+      expect(cfi).toMatch(/^epubcfi\(/);
+      // (15 + 1) * 2 = 32
+      expect(cfi).toMatch(/^epubcfi\(\/6\/32!/);
+    });
+
+    it('treats element[idx].N the same as element[idx]/text().N', () => {
+      const doc = new DOMParser().parseFromString(
+        `<html><body><p>Hello world</p></body></html>`,
+        'text/html',
+      );
+      const converter = new XCFI(doc, 0);
+
+      const withoutTextStep = converter.xPointerToCFI('/body/DocFragment[1]/body/p[1].5');
+      const withTextStep = converter.xPointerToCFI('/body/DocFragment[1]/body/p[1]/text().5');
+
+      expect(withoutTextStep).toBe(withTextStep);
+    });
+
+    it('supports an offset of 0 on an implicit-index element', () => {
+      const doc = new DOMParser().parseFromString(
+        `<html><body><div>First div text.</div></body></html>`,
+        'text/html',
+      );
+      const converter = new XCFI(doc, 3);
+      const cfi = converter.xPointerToCFI('/body/DocFragment[4]/body/div.0');
+      expect(cfi).toMatch(/^epubcfi\(/);
+    });
+  });
+
   describe('cfi-inert elements should be invisible to XPointer', () => {
     it('should skip cfi-inert div when resolving KOReader XPointer', () => {
       const doc = new DOMParser().parseFromString(

@@ -188,9 +188,14 @@ export class XCFI {
   /**
    * Parse XPointer string to extract element and text offset
    *
-   * Supports two KOReader text reference formats:
-   * - `/text().N`     — cumulative character offset across all text in the element
-   * - `/text()[K].N`  — Kth direct text node child (1-based), offset N within that node
+   * Supports three KOReader text reference formats:
+   * - `/text().N`      — cumulative character offset across all text in the element
+   * - `/text()[K].N`   — Kth direct text node child (1-based), offset N within that node
+   * - `/tag[idx].N`    — offset N directly on the last path element (no explicit
+   *                      `text()` step); CREngine emits this when the target
+   *                      point falls at the very start of an element's text
+   *                      content, e.g. `div[1].0`. Semantically equivalent to
+   *                      `/tag[idx]/text().N`.
    */
   private parseXPointer(xpointer: string): { element: Element; textOffset?: number } {
     // Format: /text()[K].N — indexed text node with offset
@@ -212,17 +217,41 @@ export class XCFI {
 
     // Format: /text().N — cumulative character offset
     const textOffsetMatch = xpointer.match(/\/text\(\)\.(\d+)$/);
-    const textOffset = textOffsetMatch ? parseInt(textOffsetMatch[1]!, 10) : undefined;
+    if (textOffsetMatch) {
+      const textOffset = parseInt(textOffsetMatch[1]!, 10);
+      const elementPath = xpointer.replace(/\/text\(\)\.\d+$/, '');
 
-    const elementPath =
-      textOffset !== undefined ? xpointer.replace(/\/text\(\)\.\d+$/, '') : xpointer;
+      const element = this.resolveXPointerPath(elementPath);
+      if (!element) {
+        throw new Error(`Cannot resolve XPointer path: ${elementPath}`);
+      }
 
-    const element = this.resolveXPointerPath(elementPath);
-    if (!element) {
-      throw new Error(`Cannot resolve XPointer path: ${elementPath}`);
+      return { element, textOffset };
     }
 
-    return { element, textOffset };
+    // Format: /tag[idx].N — offset directly on the last element segment, with
+    // no `text()` step at all. Must be checked before the plain-path fallback
+    // since the trailing `.N` is not a valid tag/index segment on its own.
+    const elementOffsetMatch = xpointer.match(/^(.*\/\w+(?:\[\d+\])?)\.(\d+)$/);
+    if (elementOffsetMatch) {
+      const elementPath = elementOffsetMatch[1]!;
+      const textOffset = parseInt(elementOffsetMatch[2]!, 10);
+
+      const element = this.resolveXPointerPath(elementPath);
+      if (!element) {
+        throw new Error(`Cannot resolve XPointer path: ${elementPath}`);
+      }
+
+      return { element, textOffset };
+    }
+
+    // No offset suffix: point at the start of the element itself.
+    const element = this.resolveXPointerPath(xpointer);
+    if (!element) {
+      throw new Error(`Cannot resolve XPointer path: ${xpointer}`);
+    }
+
+    return { element };
   }
 
   /**
