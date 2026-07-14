@@ -11,27 +11,33 @@ export interface ReadestRowInputs {
   signedIn: boolean;
   /** Plan still resolving from the JWT (signed-in only). */
   planLoading: boolean;
-  /** Readest Cloud is the derived provider. */
-  selected: boolean;
+  /** Readest Cloud syncs the library on this device. */
+  enabled: boolean;
 }
 
 export const getReadestCloudRowStatus = (_: TranslationFunc, s: ReadestRowInputs): string => {
   if (!s.signedIn) return _('Not signed in');
   if (s.planLoading) return '…';
-  if (s.selected) return _('Active');
-  return _('Available');
+  return s.enabled ? _('Active') : _('Off');
 };
 
 export interface ThirdPartyRowInputs {
   enabled: boolean;
   configured: boolean;
   syncing: boolean;
-  /** Selected but disallowed by the premium guard (never silently unpaused). */
+  /** Enabled but disallowed by the premium guard (never silently unpaused). */
   paused: boolean;
   /** Last terminal sync error, from fileSyncStore. */
   lastError: string | null | undefined;
-  /** The provider's Upload Book Files toggle. */
+  /** This provider's Upload Book Files toggle. */
   syncBooks: boolean;
+  /**
+   * Some OTHER enabled provider takes the book files (another backend with
+   * syncBooks on, or Readest Cloud). Providers are no longer exclusive (#5062),
+   * so "this one does not upload book files" is only alarming when nothing else
+   * does.
+   */
+  booksBackedUpElsewhere: boolean;
 }
 
 export const getThirdPartyRowStatus = (_: TranslationFunc, s: ThirdPartyRowInputs): string => {
@@ -39,9 +45,8 @@ export const getThirdPartyRowStatus = (_: TranslationFunc, s: ThirdPartyRowInput
   if (s.paused) return _('Paused — plan required');
   if (s.syncing) return _('Syncing…');
   if (s.lastError) return _('Sync failed');
-  if (!s.syncBooks) {
-    // Books back up NOWHERE in this state (native uploads are gated and the
-    // provider is opted out of book files) — the row must say so.
+  if (!s.syncBooks && !s.booksBackedUpElsewhere) {
+    // Books back up NOWHERE in this state — the row must say so.
     return _('Active · Book file uploads off');
   }
   return _('Active');

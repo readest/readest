@@ -6,5 +6,6 @@
 export {
   withActiveCloudProvider,
   persistActiveCloudProvider,
+  persistCloudProviderEnabled,
   type CloudSyncActivationKind,
 } from '@/services/sync/cloudSyncActivation';

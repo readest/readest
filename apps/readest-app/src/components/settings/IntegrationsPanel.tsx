@@ -38,11 +38,13 @@ import WebDAVForm from './integrations/WebDAVForm';
 import GoogleDriveForm from './integrations/GoogleDriveForm';
 import OneDriveForm from './integrations/OneDriveForm';
 import S3Form from './integrations/S3Form';
-import { persistActiveCloudProvider } from './integrations/cloudSync';
+import { persistCloudProviderEnabled } from './integrations/cloudSync';
 import { getReadestCloudRowStatus, getThirdPartyRowStatus } from './integrations/cloudSyncStatus';
 import {
-  getCloudSyncProvider,
+  getCloudSyncProviders,
+  isReadestCloudEnabled,
   resolveCloudSyncGate,
+  settingsKeyForBackend,
   type CloudSyncProviderKind,
 } from '@/services/sync/cloudSyncProvider';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
@@ -188,10 +190,9 @@ const IntegrationsPanel: React.FC = () => {
           <div className='mt-5'>
             <Tips>
               <li>
-                {_(
-                  'While {{provider}} is selected, books, progress, and annotations sync only to your server.',
-                  { provider: _('WebDAV') },
-                )}
+                {_('{{provider}} keeps a full copy of your books, progress, and annotations.', {
+                  provider: _('WebDAV'),
+                })}
               </li>
               <li>
                 {_(
@@ -219,10 +220,9 @@ const IntegrationsPanel: React.FC = () => {
           <div className='mt-5'>
             <Tips>
               <li>
-                {_(
-                  'While {{provider}} is selected, books, progress, and annotations sync only to your Drive.',
-                  { provider: _('Google Drive') },
-                )}
+                {_('{{provider}} keeps a full copy of your books, progress, and annotations.', {
+                  provider: _('Google Drive'),
+                })}
               </li>
               <li>
                 {_(
@@ -250,10 +250,9 @@ const IntegrationsPanel: React.FC = () => {
           <Tips>
             {
               <li>
-                {_(
-                  'While {{provider}} is selected, books, progress, and annotations sync only to your bucket.',
-                  { provider: _('S3-Compatible Storage') },
-                )}
+                {_('{{provider}} keeps a full copy of your books, progress, and annotations.', {
+                  provider: _('S3-Compatible Storage'),
+                })}
               </li>
             }
             {
@@ -295,10 +294,9 @@ const IntegrationsPanel: React.FC = () => {
           <div className='mt-5'>
             <Tips>
               <li>
-                {_(
-                  'While {{provider}} is selected, books, progress, and annotations sync only to your OneDrive.',
-                  { provider: _('OneDrive') },
-                )}
+                {_('{{provider}} keeps a full copy of your books, progress, and annotations.', {
+                  provider: _('OneDrive'),
+                })}
               </li>
               <li>
                 {_(
@@ -368,31 +366,42 @@ const IntegrationsPanel: React.FC = () => {
   const readwiseStatus = settings.readwise?.enabled ? _('Connected') : _('Not connected');
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
 
-  // Cloud sync providers are mutually exclusive: exactly one of
-  // {Readest Cloud, WebDAV, Google Drive} owns library sync. A "configured"
-  // third-party provider (WebDAV creds / a Drive token) can be switched on
-  // inline; an unconfigured one must be opened to connect.
-  const cloudProvider = getCloudSyncProvider(settings);
-  const activeCloudKind: FileSyncBackendKind | null =
-    cloudProvider === 'readest' ? null : cloudProvider;
+  // Cloud sync providers are independently selectable (#5062): any subset of
+  // {Readest Cloud, WebDAV, Google Drive, S3, OneDrive} can sync the library
+  // at once. A "configured" third-party provider (WebDAV creds / a Drive
+  // token) can be switched on inline; an unconfigured one must be opened to
+  // connect.
+  const providers = getCloudSyncProviders(settings);
+  const readestEnabled = isReadestCloudEnabled(settings);
   const cloudGate = resolveCloudSyncGate(settings, userProfilePlan ?? 'free');
+  const enabledBackends = cloudGate.backends;
+
+  /** Book files have a home when Readest Cloud is on or some backend uploads them. */
+  const booksBackedUpBy = (kind: FileSyncBackendKind): boolean =>
+    (readestEnabled && !!settings.autoUpload) ||
+    enabledBackends.some(
+      (k) => k !== kind && (settings[settingsKeyForBackend(k)]?.syncBooks ?? false),
+    );
+
   const webdavConfigured = !!(settings.webdav?.serverUrl && settings.webdav?.username);
   const gdriveConfigured = !!settings.googleDrive?.accountLabel;
   const webdavStatus = getThirdPartyRowStatus(_, {
     enabled: !!settings.webdav?.enabled,
     configured: webdavConfigured,
     syncing: isWebDAVSyncing,
-    paused: cloudGate.paused && cloudProvider === 'webdav',
+    paused: cloudGate.paused,
     lastError: webdavLastError,
     syncBooks: settings.webdav?.syncBooks ?? false,
+    booksBackedUpElsewhere: booksBackedUpBy('webdav'),
   });
   const gdriveStatus = getThirdPartyRowStatus(_, {
     enabled: !!settings.googleDrive?.enabled,
     configured: gdriveConfigured,
     syncing: isGDriveSyncing,
-    paused: cloudGate.paused && cloudProvider === 'gdrive',
+    paused: cloudGate.paused,
     lastError: gdriveLastError,
     syncBooks: settings.googleDrive?.syncBooks ?? false,
+    booksBackedUpElsewhere: booksBackedUpBy('gdrive'),
   });
   const s3Configured = !!(
     settings.s3?.endpoint &&
@@ -404,27 +413,29 @@ const IntegrationsPanel: React.FC = () => {
     enabled: !!settings.s3?.enabled,
     configured: s3Configured,
     syncing: isS3Syncing,
-    paused: cloudGate.paused && cloudProvider === 's3',
+    paused: cloudGate.paused,
     lastError: s3LastError,
     syncBooks: settings.s3?.syncBooks ?? false,
+    booksBackedUpElsewhere: booksBackedUpBy('s3'),
   });
   const onedriveConfigured = !!settings.onedrive?.accountLabel;
   const onedriveStatus = getThirdPartyRowStatus(_, {
     enabled: !!settings.onedrive?.enabled,
     configured: onedriveConfigured,
     syncing: isOneDriveSyncing,
-    paused: cloudGate.paused && cloudProvider === 'onedrive',
+    paused: cloudGate.paused,
     lastError: onedriveLastError,
     syncBooks: settings.onedrive?.syncBooks ?? false,
+    booksBackedUpElsewhere: booksBackedUpBy('onedrive'),
   });
   const readestStatus = getReadestCloudRowStatus(_, {
     signedIn: !!user,
     planLoading: userProfilePlan === undefined,
-    selected: cloudProvider === 'readest',
+    enabled: readestEnabled,
   });
 
-  const activateCloudProvider = async (kind: CloudSyncProviderKind) => {
-    await persistActiveCloudProvider(envConfig, kind);
+  const toggleCloudProvider = async (kind: CloudSyncProviderKind, next: boolean) => {
+    await persistCloudProviderEnabled(envConfig, kind, next);
   };
 
   const opdsStatus =
@@ -470,22 +481,22 @@ const IntegrationsPanel: React.FC = () => {
         <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
           <div
             className='divide-base-200 divide-y'
-            role='radiogroup'
+            role='group'
             aria-label={_('Cloud sync provider')}
           >
             <CloudProviderRow
               icon={RiCloudFill}
               title={_('Readest Cloud')}
               status={readestStatus}
-              isActive={!!user && cloudProvider === 'readest'}
-              canActivate={!!user}
-              onActivate={() => activateCloudProvider('readest')}
+              checked={readestEnabled}
+              canToggle={!!user}
+              onToggle={(next) => toggleCloudProvider('readest', next)}
               onOpen={() => (user ? setSubPage('readest-cloud') : navigateToLogin(router))}
-              activateLabel={_('Use Readest Cloud')}
+              toggleLabel={_('Sync with Readest Cloud')}
             />
             {/* Third-party providers are premium: every row carries the tier
-                badge; on a free plan the radio is disabled and opening a row
-                routes to the upgrade page instead of the config sub-page. */}
+                badge; on a free plan the checkbox is disabled and opening a
+                row routes to the upgrade page instead of the config sub-page. */}
             {(appService?.isDesktopApp ||
               appService?.isAndroidApp ||
               appService?.isIOSApp ||
@@ -496,13 +507,15 @@ const IntegrationsPanel: React.FC = () => {
                 title={_('Google Drive')}
                 status={gdriveStatus}
                 badge={_('Premium')}
-                isActive={activeCloudKind === 'gdrive'}
-                canActivate={isCloudSyncPremium && gdriveConfigured}
-                onActivate={() => activateCloudProvider('gdrive')}
+                checked={!!settings.googleDrive?.enabled}
+                canToggle={
+                  isCloudSyncPremium && (gdriveConfigured || !!settings.googleDrive?.enabled)
+                }
+                onToggle={(next) => toggleCloudProvider('gdrive', next)}
                 onOpen={() =>
                   isCloudSyncPremium ? setSubPage('gdrive') : navigateToProfile(router)
                 }
-                activateLabel={_('Use Google Drive')}
+                toggleLabel={_('Sync with Google Drive')}
               />
             )}
             <CloudProviderRow
@@ -510,22 +523,22 @@ const IntegrationsPanel: React.FC = () => {
               title={_('WebDAV')}
               status={webdavStatus}
               badge={_('Premium')}
-              isActive={activeCloudKind === 'webdav'}
-              canActivate={isCloudSyncPremium && webdavConfigured}
-              onActivate={() => activateCloudProvider('webdav')}
+              checked={!!settings.webdav?.enabled}
+              canToggle={isCloudSyncPremium && (webdavConfigured || !!settings.webdav?.enabled)}
+              onToggle={(next) => toggleCloudProvider('webdav', next)}
               onOpen={() => (isCloudSyncPremium ? setSubPage('webdav') : navigateToProfile(router))}
-              activateLabel={_('Use WebDAV')}
+              toggleLabel={_('Sync with WebDAV')}
             />
             <CloudProviderRow
               icon={RiDatabase2Line}
               title={_('S3 Storage')}
               status={s3Status}
               badge={_('Premium')}
-              isActive={activeCloudKind === 's3'}
-              canActivate={isCloudSyncPremium && s3Configured}
-              onActivate={() => activateCloudProvider('s3')}
+              checked={!!settings.s3?.enabled}
+              canToggle={isCloudSyncPremium && (s3Configured || !!settings.s3?.enabled)}
+              onToggle={(next) => toggleCloudProvider('s3', next)}
               onOpen={() => (isCloudSyncPremium ? setSubPage('s3') : navigateToProfile(router))}
-              activateLabel={_('Use S3')}
+              toggleLabel={_('Sync with S3')}
             />
             {(appService?.isDesktopApp ||
               appService?.isAndroidApp ||
@@ -537,17 +550,35 @@ const IntegrationsPanel: React.FC = () => {
                 title={_('OneDrive')}
                 status={onedriveStatus}
                 badge={_('Premium')}
-                isActive={activeCloudKind === 'onedrive'}
-                canActivate={isCloudSyncPremium && onedriveConfigured}
-                onActivate={() => activateCloudProvider('onedrive')}
+                checked={!!settings.onedrive?.enabled}
+                canToggle={
+                  isCloudSyncPremium && (onedriveConfigured || !!settings.onedrive?.enabled)
+                }
+                onToggle={(next) => toggleCloudProvider('onedrive', next)}
                 onOpen={() =>
                   isCloudSyncPremium ? setSubPage('onedrive') : navigateToProfile(router)
                 }
-                activateLabel={_('Use OneDrive')}
+                toggleLabel={_('Sync with OneDrive')}
               />
             )}
           </div>
         </div>
+        {providers.length === 0 && (
+          <div className='mt-3'>
+            <Tips>
+              <li>
+                {_(
+                  'Library sync is off. Your books, progress, and annotations stay on this device.',
+                )}
+              </li>
+              <li>
+                {_(
+                  'App settings, reading statistics, and dictionaries still sync through your Readest account while signed in.',
+                )}
+              </li>
+            </Tips>
+          </div>
+        )}
       </div>
 
       <div className='w-full' data-setting-id='settings.integrations.catalogs'>
@@ -631,33 +662,33 @@ interface CloudProviderRowProps {
   icon: React.ElementType;
   title: string;
   status: string;
-  /** This provider is the active sync target. */
-  isActive: boolean;
-  /** Configured (credentials / token present) — can be switched on inline. */
-  canActivate: boolean;
-  onActivate: () => void;
+  /** This provider syncs the library. */
+  checked: boolean;
+  /** Can be toggled inline (configured, and allowed by the plan). */
+  canToggle: boolean;
+  onToggle: (next: boolean) => void;
   onOpen: () => void;
-  /** Accessible label for the activate radio (e.g. "Use WebDAV"). */
-  activateLabel: string;
-  /** End-aligned tier chip (e.g. "Premium") — uniform column before the radio. */
+  /** Accessible label for the checkbox (e.g. "Sync with WebDAV"). */
+  toggleLabel: string;
+  /** End-aligned tier chip (e.g. "Premium") — uniform column before the checkbox. */
   badge?: string;
 }
 
 /**
- * A third-party cloud-sync provider row. Two controls: a trailing radio that
- * makes this provider the (single) active one inline — enabled only when it's
- * already configured — and the row body / chevron that opens its config
- * sub-page (connect, sync options, disconnect).
+ * A cloud-sync provider row. Two controls: a trailing checkbox that turns
+ * this provider's library sync on or off (several may be on at once) —
+ * enabled only when it's already configured — and the row body / chevron
+ * that opens its config sub-page (connect, sync options, disconnect).
  */
 const CloudProviderRow: React.FC<CloudProviderRowProps> = ({
   icon: Icon,
   title,
   status,
-  isActive,
-  canActivate,
-  onActivate,
+  checked,
+  canToggle,
+  onToggle,
   onOpen,
-  activateLabel,
+  toggleLabel,
   badge,
 }) => {
   return (
@@ -687,14 +718,13 @@ const CloudProviderRow: React.FC<CloudProviderRowProps> = ({
       </button>
       {badge && <span className='badge badge-sm badge-ghost shrink-0'>{badge}</span>}
       <input
-        type='radio'
-        name='cloud-sync-active'
-        className='radio radio-sm flex-shrink-0'
-        checked={isActive}
-        disabled={!canActivate}
-        onChange={onActivate}
-        aria-label={activateLabel}
-        title={activateLabel}
+        type='checkbox'
+        className='checkbox checkbox-sm flex-shrink-0'
+        checked={checked}
+        disabled={!canToggle}
+        onChange={(e) => onToggle(e.target.checked)}
+        aria-label={toggleLabel}
+        title={toggleLabel}
       />
       <button
         type='button'
