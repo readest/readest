@@ -1424,7 +1424,6 @@
   "Credentials": "Облікові дані",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Токени, імена користувачів і паролі для OPDS, KOReader, Hardcover, Readwise та WebDAV. Якщо вимкнено, облікові дані залишаються лише на цьому пристрої і ніколи не вивантажуються.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Конфіденційні синхронізовані поля шифруються перед вивантаженням. Установіть парольну фразу зараз або пізніше, коли знадобиться шифрування.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "Збережено в цьому обліковому записі. Вас запитають про неї під час розшифровування облікових даних.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Прогрес читання на цьому пристрої відрізняється від «{{deviceName}}».",
   "This device": "Цей пристрій",
   "Red": "Червоний",
@@ -1622,7 +1621,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Парольну фразу синхронізації забуто. Усі зашифровані поля очищено.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Видалити {{n}} книг із сервера WebDAV?\n\nЦе видалить лише віддалені файли; ваша локальна бібліотека не зміниться. Видалення неможливо скасувати. Дані на сервері зникнуть назавжди.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "Неправильна парольна фраза синхронізації. Не вдалося розшифрувати синхронізовані облікові дані.",
   "Email books straight to your library": "Надсилайте книги електронною поштою прямо в бібліотеку",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Пересилайте вкладення та статті на свою приватну адресу Readest. Доступно в планах Plus, Pro і Lifetime.",
   "View plans": "Переглянути плани",
@@ -1973,5 +1971,11 @@
   "Time Remaining": "Час, що залишився",
   "Theme": "Тема",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Під'єднано як {{account}}. Зробити {{provider}} активним хмарним провайдером.",
-  "Only while reading": "Лише під час читання"
+  "Only while reading": "Лише під час читання",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "Розблоковано на цьому пристрої. Синхронізовані облікові дані розшифровуються.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "Установлено для цього облікового запису. Уведіть її на цьому пристрої, щоб розшифрувати синхронізовані облікові дані.",
+  "Re-enter passphrase": "Увести парольну фразу знову",
+  "Enter passphrase": "Увести парольну фразу",
+  "Incorrect passphrase. Please try again.": "Неправильна парольна фраза. Спробуйте ще раз.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "Неправильна парольна фраза синхронізації. Уведіть її знову в Налаштуваннях, щоб розблокувати облікові дані."
 }

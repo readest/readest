@@ -1349,7 +1349,6 @@
   "Credentials": "ངོས་སྦྱོར་ཆ་འཕྲིན།",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise, དང་ WebDAV བཅས་ཀྱི་ཐོ་ཀེན་དང་སྤྱོད་མི་མིང་དང་གསང་གྲངས། སྤོ་འཛུགས་མེད་པའི་སྐབས། ངོས་སྦྱོར་ཆ་འཕྲིན་ཡིག་ཆས་འདི་ཁོ་ནར་གནས་པ་དང་ནམ་ཡང་སྤོ་གཏོང་མི་བྱེད།",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "གཙོ་གནད་ཆགས་པའི་མཉམ་སྡེབ་ཐོ་ཁོངས་ཡིག་ཆ་སྤོ་གཏོང་མ་བྱས་སྔོན་ལ་གསང་སྦས་སུ་འགྱུར་བར་བཟོ། གསང་སྦས་དགོས་སྐབས་ད་ལྟ་འམ་ཕྱིས་སུ་གསང་ཚིག་ཕྲེང་གཅིག་སྒྲིག་འཛུགས་གནང་རོགས།",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "རྩིས་ཐོ་འདིར་ཉར་ཚགས་བྱས་ཡོད། ངོས་སྦྱོར་ཆ་འཕྲིན་ལ་གསང་སྦས་འགྲོལ་སྐབས་ཁྱེད་ལ་འདྲི་སློང་གནང་འགྱུར།",
   "Reading progress on this device differs from \"{{deviceName}}\".": "སྒྲིག་ཆས་འདིའི་ཀློག་འགྲོས་ནི་\"{{deviceName}}\"དང་མི་འདྲ།",
   "This device": "སྒྲིག་ཆས་འདི།",
   "Red": "དམར་པོ།",
@@ -1532,7 +1531,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "མཉམ་སྦྲེལ་གསང་ཨང་བརྗེད་སོང་། གསང་སྦས་བྱས་པའི་ཁོངས་གཙང་འཕྱག་བྱས་ཟིན།",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV རིམ་པ་ཟུང་འབྲེལ་ནས་དཔེ་ཆ་{{n}}་སུབ་དགོས་སམ?\n\nའདིས་རྒྱང་རིང་གི་ཡིག་ཆ་ཁོ་ན་སུབ་པ་ཡིན། ཁྱེད་ཀྱི་ས་གནས་དཔེ་མཛོད་ལ་གནོད་མི་འགྱུར། སུབ་པ་འདི་ཕྱིར་ལོག་མི་ཐུབ། རིམ་པ་ཟུང་འབྲེལ་གྱི་ཟིན་བྲིས་གཏན་ནས་མེད་པར་འགྱུར།",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "མཉམ་སྦྲེལ་གསང་ཨང་ནོར་འདུག། མཉམ་སྦྲེལ་བྱས་པའི་ངོ་སྤྲོད་ཀྱི་གསང་སྒྲིག་འགྲོལ་མ་ཐུབ།",
   "Email books straight to your library": "གློག་འཕྲིན་གྱིས་དཔེ་ཆ་ཁྱེད་ཀྱི་དཔེ་མཛོད་དུ་ཐད་ཀར་སྐུར།",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "མཉམ་སྦྱར་དང་ཡིག་རྩོམ་ཁྱེད་ཀྱི་སྒེར་གྱི་ Readest ས་གནས་སུ་གཏོང་། Plus, Pro, Lifetime འཆར་གཞི་ལ་ཐོབ་པ།",
   "View plans": "འཆར་གཞི་ལ་ལྟ།",
@@ -1868,5 +1866,11 @@
   "Time Remaining": "ལྷག་ཡོད་པའི་དུས་ཚོད།",
   "Theme": "བརྗོད་བྱ།",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} ཐོག་ནས་འབྲེལ་མཐུད་ཟིན། {{provider}} དེ་སྤྱོད་བཞིན་པའི་སྤྲིན་ཞབས་ཞུ་མཁོ་སྤྲོད་པར་སྒྲིག་པ།",
-  "Only while reading": "ཀློག་པའི་སྐབས་སུ་ཁོ་ན།"
+  "Only while reading": "ཀློག་པའི་སྐབས་སུ་ཁོ་ན།",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "སྒྲིག་ཆས་འདིར་སྒོ་ཕྱེས་ཟིན། ཁྱེད་ཀྱི་མཉམ་སྦྱོར་དཔང་ཡིག་གསང་སྒྲོལ་བྱེད་བཞིན་ཡོད།",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "རྩིས་ཐོ་འདིར་བཙུགས་ཟིན། མཉམ་སྦྱོར་དཔང་ཡིག་གསང་སྒྲོལ་བྱེད་པར་སྒྲིག་ཆས་འདིར་འཇུག་རོགས།",
+  "Re-enter passphrase": "གསང་ཚིག་ཡང་བསྐྱར་འཇུག་པ།",
+  "Enter passphrase": "གསང་ཚིག་འཇུག་པ།",
+  "Incorrect passphrase. Please try again.": "གསང་ཚིག་ནོར་འདུག ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "མཉམ་སྦྱོར་གསང་ཚིག་ནོར་འདུག སྒྲིག་སྟངས་ནང་ཡང་བསྐྱར་འཇུག་ནས་དཔང་ཡིག་སྒོ་ཕྱེ་རོགས།"
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cryptoSession } from '@/libs/crypto/session';
-import { ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
+import { clearVerificationSample, ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
 import { replicaSyncClient } from '@/libs/replicaSyncClient';
 import { isSyncError } from '@/libs/errors';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -23,10 +23,12 @@ export function SyncPassphraseSection() {
     (state) => state.settings?.syncCategories?.credentials === true,
   );
   const [status, setStatus] = useState<SyncPassphraseStatus>('loading');
+  const [unlocked, setUnlocked] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const refreshStatus = async () => {
+    setUnlocked(cryptoSession.isUnlocked());
     try {
       const rows = await replicaSyncClient.listReplicaKeys();
       setStatus(rows.length === 0 ? 'unset' : 'set');
@@ -46,25 +48,28 @@ export function SyncPassphraseSection() {
     void refreshStatus();
   }, [credentialsSync]);
 
-  // Credentials sync off → no passphrase UI at all (set / forget /
+  // Credentials sync off → no passphrase UI at all (set / enter / forget /
   // status indicator are all hidden).
   if (!credentialsSync) return null;
   if (status === 'loading') return null;
 
-  // First-time setup: when the user has no replica_keys row yet, the
-  // gate's `kind === 'setup'` branch creates a fresh salt + key. Once
-  // a passphrase exists the unlock prompt fires automatically on the
-  // first encrypted-field push or pull, so there's no manual unlock
-  // affordance — the only button left is "Forgot passphrase".
-  const handleSetOrUnlock = async () => {
+  /**
+   * The manual way in. Without it, a device that holds the wrong passphrase
+   * has no recovery: the pull sees an "unlocked" session, never prompts, and
+   * just fails to decrypt. `invalidate` throws away whatever this device is
+   * holding (including the copy in the OS keychain) so the prompt asks again
+   * from scratch and verifies the answer before accepting it.
+   */
+  const handleSetOrEnter = async () => {
     setBusy(true);
     setMessage(null);
     try {
-      await ensurePassphraseUnlocked();
+      await ensurePassphraseUnlocked({ invalidate: unlocked });
       await refreshStatus();
       setMessage(_('Sync passphrase ready'));
     } catch (err) {
       setMessage(err instanceof Error ? err.message : String(err));
+      setUnlocked(cryptoSession.isUnlocked());
     } finally {
       setBusy(false);
     }
@@ -84,6 +89,7 @@ export function SyncPassphraseSection() {
     setMessage(null);
     try {
       await cryptoSession.forget();
+      clearVerificationSample();
       await refreshStatus();
       setMessage(_('Sync passphrase forgotten. All encrypted fields cleared.'));
     } catch (err) {
@@ -101,15 +107,20 @@ export function SyncPassphraseSection() {
           ? _(
               'Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.',
             )
-          : _('Saved to this account. You will be prompted for it when decrypting credentials.')}
+          : unlocked
+            ? _('Unlocked on this device. Your synced credentials are being decrypted.')
+            : _('Set on this account. Enter it on this device to decrypt your synced credentials.')}
       </p>
       {message && <p className='text-base-content/60 mb-3 text-xs'>{message}</p>}
       <div className='flex flex-wrap gap-2'>
-        {status === 'unset' ? (
-          <button className='btn btn-primary btn-sm' disabled={busy} onClick={handleSetOrUnlock}>
-            {_('Set passphrase')}
-          </button>
-        ) : (
+        <button className='btn btn-contrast btn-sm' disabled={busy} onClick={handleSetOrEnter}>
+          {status === 'unset'
+            ? _('Set passphrase')
+            : unlocked
+              ? _('Re-enter passphrase')
+              : _('Enter passphrase')}
+        </button>
+        {status !== 'unset' && (
           <button
             className='btn btn-error btn-outline btn-sm'
             disabled={busy}

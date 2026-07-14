@@ -1374,7 +1374,6 @@
   "Credentials": "क्रेडेंशियल",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise और WebDAV के लिए टोकन, उपयोगकर्ता नाम और पासवर्ड। अक्षम होने पर, क्रेडेंशियल केवल इसी डिवाइस पर रहते हैं और कभी अपलोड नहीं किए जाते।",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "संवेदनशील सिंक किए गए फ़ील्ड अपलोड से पहले एन्क्रिप्ट किए जाते हैं। अभी पासफ़्रेज़ सेट करें या बाद में जब एन्क्रिप्शन की आवश्यकता हो।",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "इस खाते में सहेजा गया। क्रेडेंशियल डिक्रिप्ट करते समय आपसे पूछा जाएगा।",
   "Reading progress on this device differs from \"{{deviceName}}\".": "इस डिवाइस पर पढ़ने की प्रगति \"{{deviceName}}\" से भिन्न है।",
   "This device": "यह डिवाइस",
   "Red": "लाल",
@@ -1562,7 +1561,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "सिंक पासफ़्रेज़ भुलाया गया। सभी एन्क्रिप्ट किए गए फ़ील्ड साफ़ कर दिए गए।",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV सर्वर से {{n}} किताब(ें) हटाएं?\n\nयह केवल रिमोट फ़ाइलें हटाता है; आपकी स्थानीय लाइब्रेरी अप्रभावित रहती है। हटाना पूर्ववत नहीं किया जा सकता। सर्वर पर डेटा हमेशा के लिए चला जाएगा।",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "गलत सिंक पासफ़्रेज़। सिंक की गई क्रेडेंशियल्स को डिक्रिप्ट नहीं किया जा सका।",
   "Email books straight to your library": "अपनी लाइब्रेरी में सीधे ईमेल से किताबें भेजें",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "अनुलग्नक और लेख अपने निजी Readest पते पर अग्रेषित करें। Plus, Pro और Lifetime प्लान में उपलब्ध।",
   "View plans": "योजनाएँ देखें",
@@ -1903,5 +1901,11 @@
   "Time Remaining": "शेष समय",
   "Theme": "थीम",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} के रूप में कनेक्टेड। {{provider}} को सक्रिय क्लाउड प्रदाता बनाएं।",
-  "Only while reading": "केवल पढ़ते समय"
+  "Only while reading": "केवल पढ़ते समय",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "इस डिवाइस पर अनलॉक है। आपके सिंक किए गए क्रेडेंशियल डिक्रिप्ट किए जा रहे हैं।",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "इस खाते पर सेट है। सिंक किए गए क्रेडेंशियल डिक्रिप्ट करने के लिए इसे इस डिवाइस पर दर्ज करें।",
+  "Re-enter passphrase": "पासफ़्रेज़ फिर से दर्ज करें",
+  "Enter passphrase": "पासफ़्रेज़ दर्ज करें",
+  "Incorrect passphrase. Please try again.": "गलत पासफ़्रेज़। कृपया फिर से प्रयास करें।",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "सिंक पासफ़्रेज़ गलत है। अपने क्रेडेंशियल अनलॉक करने के लिए इसे सेटिंग्स में फिर से दर्ज करें।"
 }

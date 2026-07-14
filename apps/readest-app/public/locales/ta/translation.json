@@ -1374,7 +1374,6 @@
   "Credentials": "அங்கீகாரத் தரவுகள்",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise மற்றும் WebDAV-க்கான டோக்கன்கள், பயனர் பெயர்கள் மற்றும் கடவுச்சொற்கள். முடக்கப்பட்டிருக்கும் போது, அங்கீகாரத் தரவுகள் இந்த சாதனத்தில் மட்டுமே இருக்கும், ஒருபோதும் பதிவேற்றப்படாது.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "முக்கியமான ஒத்திசைக்கப்பட்ட புலங்கள் பதிவேற்றத்திற்கு முன் குறியாக்கம் செய்யப்படுகின்றன. குறியாக்கம் தேவைப்படும் போது இப்போது அல்லது பின்னர் கடவுச்சொற்றொடரை அமைக்கவும்.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "இந்த கணக்கில் சேமிக்கப்பட்டது. அங்கீகாரத் தரவுகளை மறைகுறியாக்கும்போது உங்களிடம் கேட்கப்படும்.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "இந்தச் சாதனத்தில் படிப்பு முன்னேற்றம் \"{{deviceName}}\" என்பதிலிருந்து வேறுபடுகிறது.",
   "This device": "இந்தச் சாதனம்",
   "Red": "சிவப்பு",
@@ -1562,7 +1561,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "ஒத்திசைவு கடவுச்சொற்றொடர் மறக்கப்பட்டது. அனைத்து குறியாக்கப்பட்ட புலங்களும் அழிக்கப்பட்டன.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV சேவையகத்திலிருந்து {{n}} புத்தகம்(ங்கள்) நீக்க வேண்டுமா?\n\nஇது தொலைதூர கோப்புகளை மட்டுமே நீக்கும்; உங்கள் உள்ளூர் நூலகம் பாதிக்கப்படாது. நீக்கலை மீட்க முடியாது. சேவையகத்தில் உள்ள தரவு நிரந்தரமாக மறையும்.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "தவறான ஒத்திசைவு கடவுச்சொற்றொடர். ஒத்திசைக்கப்பட்ட சான்றுகளை மறைகுறியாக்க முடியவில்லை.",
   "Email books straight to your library": "புத்தகங்களை மின்னஞ்சல் வழியாக நேரடியாக உங்கள் நூலகத்திற்கு அனுப்பவும்",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "இணைப்புகள் மற்றும் கட்டுரைகளை உங்கள் தனிப்பட்ட Readest முகவரிக்கு முன்னனுப்பவும். Plus, Pro மற்றும் Lifetime திட்டங்களில் கிடைக்கும்.",
   "View plans": "திட்டங்களைப் பார்",
@@ -1903,5 +1901,11 @@
   "Time Remaining": "மீதமுள்ள நேரம்",
   "Theme": "தீம்",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} ஆக இணைக்கப்பட்டுள்ளது. {{provider}} ஐ செயலில் உள்ள cloud வழங்குநராக அமைக்கவும்.",
-  "Only while reading": "வாசிக்கும் போது மட்டும்"
+  "Only while reading": "வாசிக்கும் போது மட்டும்",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "இந்தச் சாதனத்தில் திறக்கப்பட்டுள்ளது. ஒத்திசைக்கப்பட்ட உங்கள் சான்றுகள் மறைநீக்கம் செய்யப்படுகின்றன.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "இந்தக் கணக்கில் அமைக்கப்பட்டுள்ளது. ஒத்திசைக்கப்பட்ட சான்றுகளை மறைநீக்க இந்தச் சாதனத்தில் அதை உள்ளிடவும்.",
+  "Re-enter passphrase": "கடவுச்சொற்றொடரை மீண்டும் உள்ளிடவும்",
+  "Enter passphrase": "கடவுச்சொற்றொடரை உள்ளிடவும்",
+  "Incorrect passphrase. Please try again.": "தவறான கடவுச்சொற்றொடர். மீண்டும் முயற்சிக்கவும்.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "ஒத்திசைவு கடவுச்சொற்றொடர் தவறானது. உங்கள் சான்றுகளைத் திறக்க அமைப்புகளில் மீண்டும் உள்ளிடவும்."
 }

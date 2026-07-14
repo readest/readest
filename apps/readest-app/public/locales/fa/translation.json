@@ -1374,7 +1374,6 @@
   "Credentials": "اعتبارنامه‌ها",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "توکن‌ها، نام‌های کاربری و رمزهای عبور OPDS، KOReader، Hardcover، Readwise و WebDAV. هنگام غیرفعال بودن، اعتبارنامه‌ها فقط روی این دستگاه باقی می‌مانند و هرگز بارگذاری نمی‌شوند.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "فیلدهای حساسِ همگام‌سازی‌شده پیش از بارگذاری رمزگذاری می‌شوند. اکنون یا بعداً، هنگامی که به رمزگذاری نیاز شد، یک عبارت عبور تنظیم کنید.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "در این حساب ذخیره شد. هنگام رمزگشایی اعتبارنامه‌ها از شما خواسته می‌شود.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "پیشرفت مطالعه در این دستگاه با «{{deviceName}}» تفاوت دارد.",
   "This device": "این دستگاه",
   "Red": "قرمز",
@@ -1562,7 +1561,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "عبارت عبور همگام‌سازی فراموش شد. تمام فیلدهای رمزگذاری‌شده پاک شدند.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "{{n}} کتاب از سرور WebDAV حذف شود؟\n\nاین فقط فایل‌های راه‌دور را حذف می‌کند؛ کتابخانه محلی شما دست‌نخورده می‌ماند. حذف غیرقابل بازگشت است. داده‌های روی سرور برای همیشه از بین می‌رود.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "عبارت عبور همگام‌سازی نادرست است. اعتبارنامه‌های همگام‌شده قابل رمزگشایی نبودند.",
   "Email books straight to your library": "کتاب‌ها را مستقیماً به کتابخانه‌تان ایمیل کنید",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "پیوست‌ها و مقالات را به آدرس خصوصی Readest خود ارسال کنید. در پلن‌های Plus، Pro و Lifetime در دسترس است.",
   "View plans": "مشاهده پلن‌ها",
@@ -1903,5 +1901,11 @@
   "Time Remaining": "زمان باقی‌مانده",
   "Theme": "تم",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "متصل به‌عنوان {{account}}. {{provider}} را ارائه‌دهنده فعال ابری قرار دهید.",
-  "Only while reading": "فقط هنگام مطالعه"
+  "Only while reading": "فقط هنگام مطالعه",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "روی این دستگاه باز شد. اطلاعات ورود همگام‌سازی‌شده شما در حال رمزگشایی است.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "برای این حساب تنظیم شده است. برای رمزگشایی اطلاعات ورود همگام‌سازی‌شده، آن را در این دستگاه وارد کنید.",
+  "Re-enter passphrase": "وارد کردن دوباره عبارت عبور",
+  "Enter passphrase": "وارد کردن عبارت عبور",
+  "Incorrect passphrase. Please try again.": "عبارت عبور نادرست است. لطفاً دوباره تلاش کنید.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "عبارت عبور همگام‌سازی نادرست است. برای باز کردن اطلاعات ورود، آن را در تنظیمات دوباره وارد کنید."
 }

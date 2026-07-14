@@ -1374,7 +1374,6 @@
   "Credentials": "ক্রেডেনশিয়াল",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise এবং WebDAV-এর জন্য টোকেন, ব্যবহারকারীর নাম এবং পাসওয়ার্ড। নিষ্ক্রিয় থাকলে ক্রেডেনশিয়ালগুলি কেবল এই ডিভাইসেই থাকে এবং কখনই আপলোড হয় না।",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "সংবেদনশীল সিঙ্ক করা ক্ষেত্রগুলি আপলোডের আগে এনক্রিপ্ট করা হয়। এনক্রিপশনের প্রয়োজন হলে এখনই অথবা পরে একটি পাসফ্রেজ সেট করুন।",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "এই অ্যাকাউন্টে সংরক্ষিত। ক্রেডেনশিয়াল ডিক্রিপ্ট করার সময় আপনাকে এটি দিতে বলা হবে।",
   "Reading progress on this device differs from \"{{deviceName}}\".": "এই ডিভাইসে পড়ার অগ্রগতি \"{{deviceName}}\" থেকে আলাদা।",
   "This device": "এই ডিভাইস",
   "Red": "লাল",
@@ -1562,7 +1561,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "সিঙ্ক পাসফ্রেজ ভুলে যাওয়া হয়েছে। সমস্ত এনক্রিপ্ট করা ফিল্ড পরিষ্কার করা হয়েছে।",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV সার্ভার থেকে {{n}}টি বই মুছে ফেলবেন?\n\nএটি শুধু রিমোট ফাইল মুছে; আপনার স্থানীয় লাইব্রেরি অপরিবর্তিত থাকে। মুছে ফেলা পূর্বাবস্থায় ফেরানো যাবে না। সার্ভারের ডেটা স্থায়ীভাবে চলে যাবে।",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "ভুল সিঙ্ক পাসফ্রেজ। সিঙ্ক করা ক্রেডেনশিয়াল ডিক্রিপ্ট করা যায়নি।",
   "Email books straight to your library": "ইমেইলের মাধ্যমে সরাসরি বই আপনার লাইব্রেরিতে পাঠান",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "অ্যাটাচমেন্ট এবং নিবন্ধগুলি আপনার ব্যক্তিগত Readest ঠিকানায় ফরওয়ার্ড করুন। Plus, Pro এবং Lifetime প্ল্যানে উপলব্ধ।",
   "View plans": "প্ল্যান দেখুন",
@@ -1903,5 +1901,11 @@
   "Time Remaining": "অবশিষ্ট সময়",
   "Theme": "থিম",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} হিসেবে সংযুক্ত। {{provider}}-কে সক্রিয় ক্লাউড প্রদানকারী করুন।",
-  "Only while reading": "শুধু পড়ার সময়"
+  "Only while reading": "শুধু পড়ার সময়",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "এই ডিভাইসে আনলক করা হয়েছে। আপনার সিঙ্ক করা শংসাপত্রগুলি ডিক্রিপ্ট করা হচ্ছে।",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "এই অ্যাকাউন্টে সেট করা আছে। সিঙ্ক করা শংসাপত্র ডিক্রিপ্ট করতে এই ডিভাইসে এটি লিখুন।",
+  "Re-enter passphrase": "পাসফ্রেজ আবার লিখুন",
+  "Enter passphrase": "পাসফ্রেজ লিখুন",
+  "Incorrect passphrase. Please try again.": "ভুল পাসফ্রেজ। অনুগ্রহ করে আবার চেষ্টা করুন।",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "সিঙ্ক পাসফ্রেজ ভুল। শংসাপত্র আনলক করতে সেটিংসে এটি আবার লিখুন।"
 }

@@ -1374,7 +1374,6 @@
   "Credentials": "Kimlik Bilgileri",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise ve WebDAV için belirteçler, kullanıcı adları ve parolalar. Devre dışı bırakıldığında kimlik bilgileri yalnızca bu cihazda kalır ve hiçbir zaman karşıya yüklenmez.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Hassas senkronize alanlar yüklemeden önce şifrelenir. Şifreleme gerektiğinde şimdi ya da daha sonra bir parola tümcesi belirleyin.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "Bu hesaba kaydedildi. Kimlik bilgileri şifresi çözülürken sizden istenecektir.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Bu cihazdaki okuma ilerlemesi \"{{deviceName}}\" cihazından farklı.",
   "This device": "Bu cihaz",
   "Red": "Kırmızı",
@@ -1562,7 +1561,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Eşitleme parola tümcesi unutuldu. Tüm şifreli alanlar temizlendi.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV sunucusundan {{n}} kitap silinsin mi?\n\nBu yalnızca uzak dosyaları kaldırır; yerel kitaplığınız etkilenmez. Silme geri alınamaz. Sunucudaki veriler kalıcı olarak yok olur.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "Yanlış eşitleme parola tümcesi. Eşitlenmiş kimlik bilgileri çözülemedi.",
   "Email books straight to your library": "Kitapları e-postayla doğrudan kitaplığınıza gönderin",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Ekleri ve makaleleri özel Readest adresinize iletin. Plus, Pro ve Lifetime planlarında kullanılabilir.",
   "View plans": "Planları görüntüle",
@@ -1903,5 +1901,11 @@
   "Time Remaining": "Kalan süre",
   "Theme": "Tema",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} olarak bağlanıldı. {{provider}}'ı etkin bulut sağlayıcısı yapın.",
-  "Only while reading": "Yalnızca okurken"
+  "Only while reading": "Yalnızca okurken",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "Bu cihazda kilidi açıldı. Eşitlenen kimlik bilgilerinizin şifresi çözülüyor.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "Bu hesapta ayarlandı. Eşitlenen kimlik bilgilerinizin şifresini çözmek için bu cihazda girin.",
+  "Re-enter passphrase": "Parolayı yeniden girin",
+  "Enter passphrase": "Parolayı girin",
+  "Incorrect passphrase. Please try again.": "Parola yanlış. Lütfen tekrar deneyin.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "Eşitleme parolası yanlış. Kimlik bilgilerinizin kilidini açmak için Ayarlar'da yeniden girin."
 }

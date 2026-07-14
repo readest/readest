@@ -1349,7 +1349,6 @@
   "Credentials": "ข้อมูลรับรอง",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "โทเคน ชื่อผู้ใช้ และรหัสผ่านสำหรับ OPDS, KOReader, Hardcover, Readwise และ WebDAV เมื่อปิดใช้งาน ข้อมูลรับรองจะยังคงอยู่ในอุปกรณ์นี้เท่านั้นและจะไม่ถูกอัปโหลด",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "ฟิลด์ที่ซิงค์ที่มีความละเอียดอ่อนจะถูกเข้ารหัสก่อนอัปโหลด ตั้งวลีรหัสผ่านตอนนี้หรือภายหลังเมื่อจำเป็นต้องเข้ารหัส",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "บันทึกในบัญชีนี้แล้ว คุณจะได้รับแจ้งเมื่อจำเป็นต้องถอดรหัสข้อมูลรับรอง",
   "Reading progress on this device differs from \"{{deviceName}}\".": "ความคืบหน้าการอ่านบนอุปกรณ์นี้แตกต่างจาก \"{{deviceName}}\"",
   "This device": "อุปกรณ์นี้",
   "Red": "แดง",
@@ -1532,7 +1531,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "ลืมรหัสผ่านการซิงค์แล้ว ฟิลด์ที่เข้ารหัสทั้งหมดถูกล้าง",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "ลบหนังสือ {{n}} เล่มจากเซิร์ฟเวอร์ WebDAV?\n\nสิ่งนี้จะลบเฉพาะไฟล์ระยะไกล; คลังข้อมูลในเครื่องของคุณจะไม่ได้รับผลกระทบ การลบไม่สามารถย้อนกลับได้ ข้อมูลบนเซิร์ฟเวอร์จะหายไปอย่างถาวร",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "รหัสผ่านการซิงค์ไม่ถูกต้อง ไม่สามารถถอดรหัสข้อมูลรับรองที่ซิงค์ได้",
   "Email books straight to your library": "ส่งหนังสือทางอีเมลไปยังคลังของคุณโดยตรง",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "ส่งต่อไฟล์แนบและบทความไปยังที่อยู่ Readest ส่วนตัวของคุณ ใช้งานได้ในแผน Plus, Pro และ Lifetime",
   "View plans": "ดูแผน",
@@ -1868,5 +1866,11 @@
   "Time Remaining": "เวลาที่เหลือ",
   "Theme": "ธีม",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "เชื่อมต่อในชื่อ {{account}} ตั้งให้ {{provider}} เป็นผู้ให้บริการคลาวด์ที่ใช้งานอยู่",
-  "Only while reading": "เฉพาะขณะอ่าน"
+  "Only while reading": "เฉพาะขณะอ่าน",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "ปลดล็อกบนอุปกรณ์นี้แล้ว กำลังถอดรหัสข้อมูลรับรองที่ซิงค์ไว้ของคุณ",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "ตั้งค่าไว้กับบัญชีนี้แล้ว ป้อนบนอุปกรณ์นี้เพื่อถอดรหัสข้อมูลรับรองที่ซิงค์ไว้",
+  "Re-enter passphrase": "ป้อนวลีรหัสผ่านอีกครั้ง",
+  "Enter passphrase": "ป้อนวลีรหัสผ่าน",
+  "Incorrect passphrase. Please try again.": "วลีรหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "วลีรหัสผ่านสำหรับซิงค์ไม่ถูกต้อง ป้อนอีกครั้งในการตั้งค่าเพื่อปลดล็อกข้อมูลรับรองของคุณ"
 }

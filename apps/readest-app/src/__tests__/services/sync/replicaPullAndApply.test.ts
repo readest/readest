@@ -14,16 +14,19 @@ vi.mock('@/libs/crypto/session', () => ({
 }));
 
 const passphraseMocks = vi.hoisted(() => ({
-  ensure: vi.fn(async () => {}),
+  ensure: vi.fn(async (_deps?: Record<string, unknown>) => {}),
+  remember: vi.fn((_envelope: unknown) => {}),
 }));
 vi.mock('@/services/sync/passphraseGate', () => ({
-  ensurePassphraseUnlocked: () => passphraseMocks.ensure(),
+  ensurePassphraseUnlocked: (deps?: Record<string, unknown>) => passphraseMocks.ensure(deps),
+  rememberVerificationSample: (envelope: unknown) => passphraseMocks.remember(envelope),
 }));
 
 import { replicaPullAndApply, type PullAndApplyDeps } from '@/services/sync/replicaPullAndApply';
 import { dictionaryAdapter } from '@/services/sync/adapters/dictionary';
 import { opdsCatalogAdapter } from '@/services/sync/adapters/opdsCatalog';
 import { hlcPack } from '@/libs/crdt';
+import { SyncError } from '@/libs/errors';
 import type { CipherEnvelope, Hlc, Manifest, ReplicaRow } from '@/types/replica';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { OPDSCatalog } from '@/types/opds';
@@ -471,6 +474,7 @@ describe('replicaPullAndApply credentials category gate (opds adapter)', () => {
     cryptoMocks.decryptField.mockReset();
     passphraseMocks.ensure.mockReset();
     passphraseMocks.ensure.mockResolvedValue(undefined);
+    passphraseMocks.remember.mockReset();
   });
 
   afterEach(() => {
@@ -536,5 +540,34 @@ describe('replicaPullAndApply credentials category gate (opds adapter)', () => {
     // Gate prompted (cipher present + locked + cipher fingerprint not seen).
     expect(passphraseMocks.ensure).toHaveBeenCalledTimes(1);
     expect(cryptoMocks.decryptField).toHaveBeenCalledTimes(2);
+  });
+
+  test('re-prompts and recovers when the session holds the wrong passphrase', async () => {
+    setCredentialsCategory(true);
+    // The stranded-device state (issue #5068): the session reports unlocked
+    // because a wrong passphrase was accepted and keychained, so the locked-
+    // path prompt never fires — every decrypt just fails.
+    cryptoMocks.isUnlocked.mockReturnValue(true);
+    let rightKey = false;
+    cryptoMocks.decryptField.mockImplementation(async () => {
+      if (!rightKey) throw new SyncError('DECRYPT', 'AES-GCM decryption failed');
+      return 'plain';
+    });
+    passphraseMocks.ensure.mockImplementation(async () => {
+      rightKey = true;
+    });
+
+    const deps = makeOpdsDeps();
+    (deps.pull as ReturnType<typeof vi.fn>).mockResolvedValue([opdsRow()]);
+
+    await replicaPullAndApply(deps);
+
+    // The bad passphrase is thrown away (keychain included) and re-asked for,
+    // once — then both fields decrypt on the retry.
+    expect(passphraseMocks.ensure).toHaveBeenCalledTimes(1);
+    expect(passphraseMocks.ensure.mock.calls[0]![0]).toMatchObject({ invalidate: true });
+    const applied = (deps.applyRemote as ReturnType<typeof vi.fn>).mock.calls[0]![0] as OPDSCatalog;
+    expect(applied.username).toBe('plain');
+    expect(applied.password).toBe('plain');
   });
 });

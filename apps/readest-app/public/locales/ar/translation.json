@@ -1474,7 +1474,6 @@
   "Credentials": "بيانات الاعتماد",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "الرموز وأسماء المستخدمين وكلمات المرور لـ OPDS و KOReader و Hardcover و Readwise و WebDAV. عند التعطيل، تبقى بيانات الاعتماد على هذا الجهاز فقط ولا تُرفع أبدًا.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "تُشفَّر الحقول الحساسة المتزامنة قبل الرفع. عيّن عبارة مرور الآن أو لاحقًا عند الحاجة إلى التشفير.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "محفوظة في هذا الحساب. سيُطلب منك إدخالها عند فك تشفير بيانات الاعتماد.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "يختلف تقدم القراءة على هذا الجهاز عن «{{deviceName}}».",
   "This device": "هذا الجهاز",
   "Red": "أحمر",
@@ -1682,7 +1681,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "تم نسيان عبارة المرور للمزامنة. تم مسح جميع الحقول المشفرة.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "هل تريد حذف {{n}} كتاب/كتب من خادم WebDAV؟\n\nهذا يحذف الملفات البعيدة فقط؛ مكتبتك المحلية لن تتأثر. لا يمكن التراجع عن الحذف. البيانات على الخادم ستزول للأبد.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "عبارة مرور المزامنة غير صحيحة. تعذر فك تشفير بيانات الاعتماد المتزامنة.",
   "Email books straight to your library": "أرسل الكتب مباشرة إلى مكتبتك عبر البريد الإلكتروني",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "أعد توجيه المرفقات والمقالات إلى عنوان Readest الخاص بك. متوفر في خطط Plus وPro وLifetime.",
   "View plans": "عرض الخطط",
@@ -2043,5 +2041,11 @@
   "Time Remaining": "الوقت المتبقي",
   "Theme": "السمة",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "متصل باسم {{account}}. اجعل {{provider}} مزود السحابة النشط.",
-  "Only while reading": "أثناء القراءة فقط"
+  "Only while reading": "أثناء القراءة فقط",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "تم فتح القفل على هذا الجهاز. يجري فك تشفير بيانات الاعتماد المتزامنة.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "تم تعيينها لهذا الحساب. أدخلها على هذا الجهاز لفك تشفير بيانات الاعتماد المتزامنة.",
+  "Re-enter passphrase": "إعادة إدخال عبارة المرور",
+  "Enter passphrase": "إدخال عبارة المرور",
+  "Incorrect passphrase. Please try again.": "عبارة مرور غير صحيحة. يرجى المحاولة مرة أخرى.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "عبارة مرور المزامنة غير صحيحة. أعد إدخالها في الإعدادات لفتح بيانات الاعتماد."
 }

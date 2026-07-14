@@ -1374,7 +1374,6 @@
   "Credentials": "Inloggegevens",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Tokens, gebruikersnamen en wachtwoorden voor OPDS, KOReader, Hardcover, Readwise en WebDAV. Wanneer uitgeschakeld blijven inloggegevens alleen op dit apparaat en worden ze nooit geüpload.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Gevoelige gesynchroniseerde velden worden vóór het uploaden versleuteld. Stel nu of later een wachtwoordzin in wanneer versleuteling nodig is.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "Opgeslagen op dit account. Er wordt om gevraagd wanneer inloggegevens ontsleuteld moeten worden.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "De leesvoortgang op dit apparaat verschilt van \"{{deviceName}}\".",
   "This device": "Dit apparaat",
   "Red": "Rood",
@@ -1562,7 +1561,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Sync-wachtwoordzin vergeten. Alle versleutelde velden gewist.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "{{n}} boek(en) van WebDAV-server verwijderen?\n\nDit verwijdert alleen de externe bestanden; je lokale bibliotheek wordt niet beïnvloed. Verwijderen kan niet ongedaan worden gemaakt. De bytes op de server zijn permanent verloren.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "Verkeerde sync-wachtwoordzin. Gesynchroniseerde inloggegevens konden niet worden ontsleuteld.",
   "Email books straight to your library": "Mail boeken rechtstreeks naar je bibliotheek",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Stuur bijlagen en artikelen door naar je privé Readest-adres. Beschikbaar in de Plus-, Pro- en Lifetime-abonnementen.",
   "View plans": "Abonnementen bekijken",
@@ -1903,5 +1901,11 @@
   "Time Remaining": "Resterende tijd",
   "Theme": "Thema",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Verbonden als {{account}}. Maak {{provider}} de actieve cloudprovider.",
-  "Only while reading": "Alleen tijdens het lezen"
+  "Only while reading": "Alleen tijdens het lezen",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "Ontgrendeld op dit apparaat. Je gesynchroniseerde inloggegevens worden ontsleuteld.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "Ingesteld voor dit account. Voer deze op dit apparaat in om je gesynchroniseerde inloggegevens te ontsleutelen.",
+  "Re-enter passphrase": "Wachtwoordzin opnieuw invoeren",
+  "Enter passphrase": "Wachtwoordzin invoeren",
+  "Incorrect passphrase. Please try again.": "Onjuiste wachtwoordzin. Probeer het opnieuw.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "Onjuiste sync-wachtwoordzin. Voer deze opnieuw in bij Instellingen om je inloggegevens te ontgrendelen."
 }

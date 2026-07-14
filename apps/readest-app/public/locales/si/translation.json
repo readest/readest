@@ -1374,7 +1374,6 @@
   "Credentials": "අක්තපත්‍ර",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise, සහ WebDAV සඳහා ටෝකන, පරිශීලක නාම සහ මුරපද. අක්‍රිය කළ විට, අක්තපත්‍ර මෙම උපාංගයේ පමණක් රැඳී පවතින අතර කිසිදා උඩුගත නොකෙරේ.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "සංවේදී සමමුහූර්ත ක්ෂේත්‍ර උඩුගත කිරීමට පෙර සංකේතනය වේ. සංකේතනය අවශ්‍ය වූ විට දැන් හෝ පසුව මුර වැකියක් සකසන්න.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "මෙම ගිණුමට සුරකින ලදී. අක්තපත්‍ර විකේතනය කිරීමේදී ඔබෙන් එය ඉල්ලනු ලැබේ.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "මෙම උපාංගයේ කියවීමේ ප්‍රගතිය \"{{deviceName}}\" වලින් වෙනස් වේ.",
   "This device": "මෙම උපාංගය",
   "Red": "රතු",
@@ -1562,7 +1561,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "සමමුහුර්ත මුරපදය අමතක කරන ලදී. සියලුම සංකේතාංකන ක්ෂේත්‍ර හිස් කරන ලදී.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV සේවාදායකයෙන් පොත් {{n}}ක් මකන්න ද?\n\nමෙය දුරස්ථ ගොනු පමණක් ඉවත් කරයි; ඔබේ දේශීය පුස්තකාලය බලපාන්නේ නැත. මැකීම අහෝසි කළ නොහැක. සේවාදායකයේ දත්ත සදහටම නැති වේ.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "වැරදි සමමුහුර්ත මුරපදය. සමමුහුර්ත අක්තපත්‍ර විකේතනය කළ නොහැකි විය.",
   "Email books straight to your library": "ඊමේල් මගින් ඔබේ පුස්තකාලයට කෙලින්ම පොත් යවන්න",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "ඇමුණුම් සහ ලිපි ඔබේ පෞද්ගලික Readest ලිපිනය වෙත ඉදිරියට යවන්න. Plus, Pro සහ Lifetime සැලසුම් වල ලබා ගත හැක.",
   "View plans": "සැලසුම් බලන්න",
@@ -1903,5 +1901,11 @@
   "Time Remaining": "ඉතිරි කාලය",
   "Theme": "තේමාව",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} ලෙස සම්බන්ධ වී ඇත. {{provider}} සක්‍රිය cloud සපයන්නා ලෙස සකසන්න.",
-  "Only while reading": "කියවීමේදී පමණි"
+  "Only while reading": "කියවීමේදී පමණි",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "මෙම උපාංගයේ අගුළු හැර ඇත. ඔබේ සමමුහුර්ත අක්තපත්‍ර විකේතනය වෙමින් පවතී.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "මෙම ගිණුමට සකසා ඇත. සමමුහුර්ත අක්තපත්‍ර විකේතනය කිරීමට එය මෙම උපාංගයේ ඇතුළත් කරන්න.",
+  "Re-enter passphrase": "මුරපදය නැවත ඇතුළත් කරන්න",
+  "Enter passphrase": "මුරපදය ඇතුළත් කරන්න",
+  "Incorrect passphrase. Please try again.": "මුරපදය වැරදියි. නැවත උත්සාහ කරන්න.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "සමමුහුර්ත මුරපදය වැරදියි. ඔබේ අක්තපත්‍ර අගුළු ඇරීමට එය සැකසුම් තුළ නැවත ඇතුළත් කරන්න."
 }

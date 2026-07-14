@@ -1424,7 +1424,6 @@
   "Credentials": "Poverilnice",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Žetoni, uporabniška imena in gesla za OPDS, KOReader, Hardcover, Readwise in WebDAV. Ko je onemogočeno, poverilnice ostanejo le na tej napravi in se nikoli ne naložijo.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Občutljiva sinhronizirana polja so pred nalaganjem šifrirana. Nastavite geselsko frazo zdaj ali pozneje, ko bo šifriranje potrebno.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "Shranjeno v tem računu. Pozvani boste, ko bo treba dešifrirati poverilnice.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Napredek branja na tej napravi se razlikuje od »{{deviceName}}«.",
   "This device": "Ta naprava",
   "Red": "Rdeča",
@@ -1622,7 +1621,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Sinhronizacijska gesla pozabljena. Vsa šifrirana polja so počiščena.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Izbrišem {{n}} knjig s strežnika WebDAV?\n\nTo odstrani samo oddaljene datoteke; vaša lokalna knjižnica ostane nedotaknjena. Izbrisa ni mogoče razveljaviti. Biti na strežniku bodo trajno izgubljeni.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "Napačno geslo sinhronizacije. Sinhroniziranih poverilnic ni bilo mogoče dešifrirati.",
   "Email books straight to your library": "Knjige po e-pošti pošljite naravnost v knjižnico",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Posredujte priponke in članke na svoj zasebni Readest naslov. Na voljo v paketih Plus, Pro in Lifetime.",
   "View plans": "Oglej si pakete",
@@ -1973,5 +1971,11 @@
   "Time Remaining": "Preostali čas",
   "Theme": "Tema",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Povezano kot {{account}}. Nastavite {{provider}} kot aktivnega ponudnika oblaka.",
-  "Only while reading": "Samo med branjem"
+  "Only while reading": "Samo med branjem",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "Odklenjeno v tej napravi. Vaše sinhronizirane poverilnice se dešifrirajo.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "Nastavljeno za ta račun. Vnesite ga v tej napravi, da dešifrirate sinhronizirane poverilnice.",
+  "Re-enter passphrase": "Znova vnesite geslo",
+  "Enter passphrase": "Vnesite geslo",
+  "Incorrect passphrase. Please try again.": "Napačno geslo. Poskusite znova.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "Napačno sinhronizacijsko geslo. Znova ga vnesite v Nastavitvah, da odklenete poverilnice."
 }

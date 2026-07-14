@@ -1374,7 +1374,6 @@
   "Credentials": "Hisob ma'lumotlari",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise va WebDAV uchun tokenlar, foydalanuvchi nomlari va parollar. O'chirilganda, hisob ma'lumotlari faqat shu qurilmada qoladi va hech qachon yuklanmaydi.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Maxfiy sinxronlashtirilgan maydonlar yuklashdan oldin shifrlanadi. Hozir yoki keyinroq, shifrlash kerak bo'lganda parol iborasini o'rnating.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "Ushbu hisobga saqlangan. Hisob ma'lumotlarini deshifrlashda sizdan so'raladi.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Bu qurilmadagi o'qish jarayoni \"{{deviceName}}\" qurilmasidan farq qiladi.",
   "This device": "Ushbu qurilma",
   "Red": "Qizil",
@@ -1562,7 +1561,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Sinxronlash parol iborasi unutildi. Barcha shifrlangan maydonlar tozalandi.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV serveridan {{n}} ta kitob o'chirilsinmi?\n\nBu faqat masofaviy fayllarni o'chiradi; mahalliy kutubxonangiz ta'sirlanmaydi. O'chirishni bekor qilib bo'lmaydi. Serverdagi ma'lumotlar mangulikka yo'qoladi.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "Noto'g'ri sinxronlash parol iborasi. Sinxronlangan hisob ma'lumotlarini parolini ochib bo'lmadi.",
   "Email books straight to your library": "Kitoblarni elektron pochta orqali to'g'ridan-to'g'ri kutubxonangizga yuboring",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Ilovalar va maqolalarni shaxsiy Readest manzilingizga yuboring. Plus, Pro va Lifetime tariflarida mavjud.",
   "View plans": "Tariflarni ko'rish",
@@ -1903,5 +1901,11 @@
   "Time Remaining": "Qolgan vaqt",
   "Theme": "Mavzu",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} sifatida ulangan. {{provider}}-ni faol bulut provayderi qiling.",
-  "Only while reading": "Faqat oʻqish paytida"
+  "Only while reading": "Faqat oʻqish paytida",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "Bu qurilmada qulfi ochilgan. Sinxronlangan hisob ma’lumotlaringiz shifrdan chiqarilmoqda.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "Bu hisob uchun o‘rnatilgan. Sinxronlangan hisob ma’lumotlarini shifrdan chiqarish uchun uni bu qurilmada kiriting.",
+  "Re-enter passphrase": "Parol iborasini qayta kiriting",
+  "Enter passphrase": "Parol iborasini kiriting",
+  "Incorrect passphrase. Please try again.": "Parol iborasi noto‘g‘ri. Qayta urinib ko‘ring.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "Sinxronlash parol iborasi noto‘g‘ri. Hisob ma’lumotlaringiz qulfini ochish uchun uni Sozlamalarda qayta kiriting."
 }

@@ -1349,7 +1349,6 @@
   "Credentials": "Kelayakan",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Token, nama pengguna dan kata laluan untuk OPDS, KOReader, Hardcover, Readwise dan WebDAV. Apabila dilumpuhkan, kelayakan hanya kekal pada peranti ini dan tidak pernah dimuat naik.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Medan disegerakkan yang sensitif disulitkan sebelum dimuat naik. Tetapkan frasa laluan sekarang atau kemudian apabila penyulitan diperlukan.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "Disimpan dalam akaun ini. Anda akan diminta memasukkannya apabila kelayakan perlu dinyahsulit.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Kemajuan membaca pada peranti ini berbeza daripada \"{{deviceName}}\".",
   "This device": "Peranti ini",
   "Red": "Merah",
@@ -1532,7 +1531,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Frasa kata laluan penyegerakan dilupakan. Semua medan yang disulitkan dibersihkan.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Padam {{n}} buah buku dari pelayan WebDAV?\n\nIni hanya membuang fail jauh; perpustakaan tempatan anda tidak terjejas. Pemadaman tidak boleh dibatalkan. Bait di pelayan akan hilang selamanya.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "Frasa kata laluan penyegerakan salah. Bukti kelayakan yang disegerakkan tidak dapat dinyahsulit.",
   "Email books straight to your library": "E-mel buku terus ke perpustakaan anda",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Majukan lampiran dan artikel ke alamat Readest peribadi anda. Tersedia pada pelan Plus, Pro dan Lifetime.",
   "View plans": "Lihat pelan",
@@ -1868,5 +1866,11 @@
   "Time Remaining": "Masa berbaki",
   "Theme": "Tema",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Disambungkan sebagai {{account}}. Jadikan {{provider}} sebagai penyedia awan yang aktif.",
-  "Only while reading": "Hanya semasa membaca"
+  "Only while reading": "Hanya semasa membaca",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "Dibuka pada peranti ini. Kelayakan tersegerak anda sedang dinyahsulit.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "Ditetapkan pada akaun ini. Masukkannya pada peranti ini untuk menyahsulit kelayakan tersegerak anda.",
+  "Re-enter passphrase": "Masukkan semula frasa laluan",
+  "Enter passphrase": "Masukkan frasa laluan",
+  "Incorrect passphrase. Please try again.": "Frasa laluan salah. Sila cuba lagi.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "Frasa laluan penyegerakan salah. Masukkannya semula dalam Tetapan untuk membuka kelayakan anda."
 }

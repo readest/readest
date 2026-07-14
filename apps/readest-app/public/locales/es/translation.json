@@ -1399,7 +1399,6 @@
   "Credentials": "Credenciales",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Tokens, nombres de usuario y contraseñas de OPDS, KOReader, Hardcover, Readwise y WebDAV. Si está desactivado, las credenciales permanecen solo en este dispositivo y nunca se cargan.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Los campos sincronizados sensibles se cifran antes de subirlos. Establece una frase de contraseña ahora o más tarde, cuando se necesite el cifrado.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "Guardada en esta cuenta. Se te pedirá cuando se necesite descifrar credenciales.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "El progreso de lectura en este dispositivo difiere del de «{{deviceName}}».",
   "This device": "Este dispositivo",
   "Red": "Rojo",
@@ -1592,7 +1591,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Frase de paso de sincronización olvidada. Se borraron todos los campos cifrados.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "¿Eliminar {{n}} libro(s) del servidor WebDAV?\n\nEsto solo elimina los archivos remotos; tu biblioteca local no se verá afectada. La eliminación no se puede deshacer. Los bytes en el servidor desaparecerán permanentemente.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "Frase de paso de sincronización incorrecta. No se pudieron descifrar las credenciales sincronizadas.",
   "Email books straight to your library": "Envía libros por correo directamente a tu biblioteca",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Reenvía archivos adjuntos y artículos a tu dirección privada de Readest. Disponible en los planes Plus, Pro y Lifetime.",
   "View plans": "Ver planes",
@@ -1938,5 +1936,11 @@
   "{{hours}}h left": "{{hours}} h restantes",
   "Theme": "Tema",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Conectado como {{account}}. Haz que {{provider}} sea el proveedor de nube activo.",
-  "Only while reading": "Solo durante la lectura"
+  "Only while reading": "Solo durante la lectura",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "Desbloqueada en este dispositivo. Tus credenciales sincronizadas se están descifrando.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "Establecida en esta cuenta. Introdúcela en este dispositivo para descifrar tus credenciales sincronizadas.",
+  "Re-enter passphrase": "Volver a introducir la frase de contraseña",
+  "Enter passphrase": "Introducir frase de contraseña",
+  "Incorrect passphrase. Please try again.": "Frase de contraseña incorrecta. Inténtalo de nuevo.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "Frase de contraseña de sincronización incorrecta. Vuelve a introducirla en Configuraciones para desbloquear tus credenciales."
 }

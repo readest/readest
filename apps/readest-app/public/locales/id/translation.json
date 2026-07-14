@@ -1349,7 +1349,6 @@
   "Credentials": "Kredensial",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Token, nama pengguna, dan kata sandi untuk OPDS, KOReader, Hardcover, Readwise, dan WebDAV. Saat dinonaktifkan, kredensial hanya tetap di perangkat ini dan tidak pernah diunggah.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Bidang sinkron yang sensitif dienkripsi sebelum diunggah. Atur frasa sandi sekarang atau nanti saat enkripsi diperlukan.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "Disimpan di akun ini. Anda akan diminta memasukkannya saat mendekripsi kredensial.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Progres membaca di perangkat ini berbeda dari \"{{deviceName}}\".",
   "This device": "Perangkat ini",
   "Red": "Merah",
@@ -1532,7 +1531,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Frasa sandi sinkronisasi dilupakan. Semua bidang terenkripsi dihapus.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Hapus {{n}} buku dari server WebDAV?\n\nIni hanya menghapus file jarak jauh; perpustakaan lokal Anda tidak terpengaruh. Penghapusan tidak dapat dibatalkan. Data di server akan hilang permanen.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "Frasa sandi sinkronisasi salah. Kredensial yang disinkronkan tidak dapat didekripsi.",
   "Email books straight to your library": "Kirim buku langsung ke perpustakaan Anda melalui email",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Teruskan lampiran dan artikel ke alamat Readest pribadi Anda. Tersedia di paket Plus, Pro, dan Lifetime.",
   "View plans": "Lihat paket",
@@ -1868,5 +1866,11 @@
   "Time Remaining": "Sisa waktu",
   "Theme": "Tema",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Terhubung sebagai {{account}}. Jadikan {{provider}} penyedia cloud yang aktif.",
-  "Only while reading": "Hanya saat membaca"
+  "Only while reading": "Hanya saat membaca",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "Terbuka di perangkat ini. Kredensial tersinkronisasi Anda sedang didekripsi.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "Disetel pada akun ini. Masukkan di perangkat ini untuk mendekripsi kredensial tersinkronisasi Anda.",
+  "Re-enter passphrase": "Masukkan ulang frasa sandi",
+  "Enter passphrase": "Masukkan frasa sandi",
+  "Incorrect passphrase. Please try again.": "Frasa sandi salah. Silakan coba lagi.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "Frasa sandi sinkronisasi salah. Masukkan lagi di Pengaturan untuk membuka kredensial Anda."
 }

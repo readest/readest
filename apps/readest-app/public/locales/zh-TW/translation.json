@@ -1349,7 +1349,6 @@
   "Credentials": "憑證",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS、KOReader、Hardcover、Readwise 與 WebDAV 的權杖、使用者名稱與密碼。停用時，憑證僅留在此裝置上，永不上傳。",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "敏感的同步欄位會在上傳前加密。立即設定密碼短語，或稍後在需要加密時再設定。",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "已儲存到此帳號。需要解密憑證時會提示您輸入。",
   "Reading progress on this device differs from \"{{deviceName}}\".": "此裝置上的閱讀進度與「{{deviceName}}」不同。",
   "This device": "此裝置",
   "Red": "紅色",
@@ -1532,7 +1531,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "已忘記同步密碼短語。所有加密欄位已清空。",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "從 WebDAV 伺服器刪除 {{n}} 本書？\n\n這只會移除遠端檔案；您的本機書庫不受影響。刪除無法復原。伺服器上的資料將永久消失。",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "同步密碼短語錯誤。無法解密已同步的憑證。",
   "Email books straight to your library": "透過電子郵件直接將書籍傳送到您的書庫",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "將附件和文章轉寄到您的專屬 Readest 地址。Plus、Pro 和 Lifetime 方案可用。",
   "View plans": "查看方案",
@@ -1868,5 +1866,11 @@
   "Time Remaining": "剩餘時間",
   "Theme": "主題",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "已以 {{account}} 身分連線。將 {{provider}} 設為目前使用的雲端服務供應商。",
-  "Only while reading": "僅在閱讀時"
+  "Only while reading": "僅在閱讀時",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "已在此裝置解鎖。正在解密您已同步的憑證。",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "已在此帳戶設定。在此裝置輸入密語即可解密已同步的憑證。",
+  "Re-enter passphrase": "重新輸入密語",
+  "Enter passphrase": "輸入密語",
+  "Incorrect passphrase. Please try again.": "密語不正確，請再試一次。",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "同步密語錯誤。請在「設定」中重新輸入以解鎖您的憑證。"
 }

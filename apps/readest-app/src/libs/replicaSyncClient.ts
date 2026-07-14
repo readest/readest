@@ -265,10 +265,12 @@ export class ReplicaSyncClient {
       throw new SyncError('SERVER', 'replica-keys create returned no row');
     }
     // Splice the new salt into the cache so the next listReplicaKeys
-    // call sees it without another round trip. Rotation appends — old
-    // salts stay accessible for decrypting envelopes still under them.
+    // call sees it without another round trip. Newest first, matching the
+    // server's ORDER BY created_at DESC — CryptoSession reads rows[0] as the
+    // active salt, so appending here would hand it the oldest one. Old salts
+    // stay in the list: envelopes still under them must remain decryptable.
     if (this.replicaKeysCache !== null) {
-      this.replicaKeysCache = [...this.replicaKeysCache, data.row];
+      this.replicaKeysCache = [data.row, ...this.replicaKeysCache];
     }
     return data.row;
   }

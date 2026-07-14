@@ -1399,7 +1399,6 @@
   "Credentials": "Acreditări",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Token-uri, nume de utilizator și parole pentru OPDS, KOReader, Hardcover, Readwise și WebDAV. Când sunt dezactivate, acreditările rămân doar pe acest dispozitiv și nu sunt niciodată încărcate.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Câmpurile sincronizate sensibile sunt criptate înainte de încărcare. Setați o frază de acces acum sau mai târziu, când criptarea va fi necesară.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "Salvată în acest cont. Vi se va cere când va trebui să se decripteze acreditările.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Progresul de citire pe acest dispozitiv diferă de „{{deviceName}}”.",
   "This device": "Acest dispozitiv",
   "Red": "Roșu",
@@ -1592,7 +1591,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Parola de sincronizare uitată. Toate câmpurile criptate au fost șterse.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Ștergi {{n}} carte/cărți de pe serverul WebDAV?\n\nAceasta elimină doar fișierele de la distanță; biblioteca locală nu este afectată. Ștergerea nu poate fi anulată. Datele de pe server vor dispărea definitiv.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "Parolă de sincronizare incorectă. Acreditările sincronizate nu au putut fi decriptate.",
   "Email books straight to your library": "Trimite cărți prin e-mail direct în biblioteca ta",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Redirecționează atașamente și articole către adresa ta Readest privată. Disponibil în planurile Plus, Pro și Lifetime.",
   "View plans": "Vezi planurile",
@@ -1938,5 +1936,11 @@
   "Time Remaining": "Timp rămas",
   "Theme": "Temă",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Conectat ca {{account}}. Setează {{provider}} ca furnizor de cloud activ.",
-  "Only while reading": "Doar în timpul citirii"
+  "Only while reading": "Doar în timpul citirii",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "Deblocată pe acest dispozitiv. Datele de autentificare sincronizate sunt decriptate.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "Setată pe acest cont. Introdu-o pe acest dispozitiv pentru a decripta datele de autentificare sincronizate.",
+  "Re-enter passphrase": "Introdu din nou fraza de acces",
+  "Enter passphrase": "Introdu fraza de acces",
+  "Incorrect passphrase. Please try again.": "Frază de acces incorectă. Încearcă din nou.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "Frază de acces pentru sincronizare incorectă. Introdu-o din nou în Setări pentru a debloca datele de autentificare."
 }

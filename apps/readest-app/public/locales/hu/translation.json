@@ -1374,7 +1374,6 @@
   "Credentials": "Hitelesítő adatok",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Tokenek, felhasználónevek és jelszavak az OPDS, KOReader, Hardcover, Readwise és WebDAV szolgáltatásokhoz. Ha le van tiltva, a hitelesítő adatok csak ezen az eszközön maradnak, és soha nem töltődnek fel.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Az érzékeny szinkronizált mezők feltöltés előtt titkosítva vannak. Állíts be egy jelmondatot most, vagy később, amikor titkosításra lesz szükség.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "Mentve ehhez a fiókhoz. Akkor kérjük majd, amikor hitelesítő adatokat kell visszafejteni.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Az olvasási előrehaladás ezen az eszközön eltér a következőtől: „{{deviceName}}”.",
   "This device": "Ez az eszköz",
   "Red": "Piros",
@@ -1562,7 +1561,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "A szinkronizálási jelmondat törölve. Minden titkosított mező törölve.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Törli a(z) {{n}} könyvet a WebDAV kiszolgálóról?\n\nEz csak a távoli fájlokat törli; a helyi könyvtárát nem érinti. A törlés nem vonható vissza. A kiszolgálón lévő adatok véglegesen eltűnnek.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "Hibás szinkronizálási jelmondat. A szinkronizált hitelesítő adatokat nem sikerült visszafejteni.",
   "Email books straight to your library": "Küldjön könyveket közvetlenül e-mailben a könyvtárába",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Továbbítsa a mellékleteket és cikkeket a privát Readest-címére. Elérhető a Plus, Pro és Lifetime csomagokban.",
   "View plans": "Csomagok megtekintése",
@@ -1903,5 +1901,11 @@
   "Time Remaining": "Hátralévő idő",
   "Theme": "Téma",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Csatlakozva mint {{account}}. Tegye a {{provider}}-ot az aktív felhőszolgáltatóvá.",
-  "Only while reading": "Csak olvasás közben"
+  "Only while reading": "Csak olvasás közben",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "Feloldva ezen az eszközön. A szinkronizált hitelesítő adatok visszafejtése folyamatban van.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "Beállítva ehhez a fiókhoz. Adja meg ezen az eszközön a szinkronizált hitelesítő adatok visszafejtéséhez.",
+  "Re-enter passphrase": "Jelmondat ismételt megadása",
+  "Enter passphrase": "Jelmondat megadása",
+  "Incorrect passphrase. Please try again.": "Hibás jelmondat. Kérjük, próbálja újra.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "Hibás szinkronizálási jelmondat. Adja meg újra a Beállításokban a hitelesítő adatok feloldásához."
 }

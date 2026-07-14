@@ -1349,7 +1349,6 @@
   "Credentials": "認証情報",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS、KOReader、Hardcover、Readwise、WebDAV のトークン、ユーザー名、パスワード。無効にすると、認証情報はこのデバイスにのみ残り、アップロードされません。",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "機密性の高い同期フィールドはアップロード前に暗号化されます。パスフレーズは今すぐ設定するか、暗号化が必要なときに後で設定できます。",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "このアカウントに保存されました。認証情報を復号する際に入力を求められます。",
   "Reading progress on this device differs from \"{{deviceName}}\".": "このデバイスの読書進捗は「{{deviceName}}」と異なります。",
   "This device": "このデバイス",
   "Red": "赤",
@@ -1532,7 +1531,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "同期パスフレーズを忘却しました。すべての暗号化フィールドがクリアされました。",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV サーバーから {{n}} 冊を削除しますか?\n\nこの操作はリモートファイルのみを削除します。ローカルライブラリには影響しません。削除は元に戻せません。サーバー上のデータは完全に失われます。",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "同期パスフレーズが正しくありません。同期された認証情報を復号できませんでした。",
   "Email books straight to your library": "本をメールで直接ライブラリに送信",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "添付ファイルや記事をあなた専用の Readest アドレスに転送できます。Plus、Pro、Lifetime プランで利用可能。",
   "View plans": "プランを見る",
@@ -1868,5 +1866,11 @@
   "Time Remaining": "残り時間",
   "Theme": "テーマ",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}} として接続済み。{{provider}} を使用するクラウドプロバイダーに設定します。",
-  "Only while reading": "読書中のみ"
+  "Only while reading": "読書中のみ",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "このデバイスでロック解除済みです。同期された認証情報を復号しています。",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "このアカウントに設定されています。同期された認証情報を復号するには、このデバイスで入力してください。",
+  "Re-enter passphrase": "パスフレーズを再入力",
+  "Enter passphrase": "パスフレーズを入力",
+  "Incorrect passphrase. Please try again.": "パスフレーズが正しくありません。もう一度お試しください。",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "同期パスフレーズが正しくありません。設定で再入力して認証情報のロックを解除してください。"
 }

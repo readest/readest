@@ -1349,7 +1349,6 @@
   "Credentials": "Thông tin xác thực",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Mã thông báo, tên người dùng và mật khẩu cho OPDS, KOReader, Hardcover, Readwise và WebDAV. Khi bị tắt, thông tin xác thực chỉ ở trên thiết bị này và không bao giờ được tải lên.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Các trường đồng bộ nhạy cảm được mã hóa trước khi tải lên. Đặt cụm mật khẩu ngay bây giờ hoặc sau khi cần mã hóa.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "Đã lưu vào tài khoản này. Bạn sẽ được nhắc nhập khi cần giải mã thông tin xác thực.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Tiến trình đọc trên thiết bị này khác với \"{{deviceName}}\".",
   "This device": "Thiết bị này",
   "Red": "Đỏ",
@@ -1532,7 +1531,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Đã quên cụm mật khẩu đồng bộ. Tất cả các trường được mã hóa đã bị xóa.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Xóa {{n}} sách khỏi máy chủ WebDAV?\n\nThao tác này chỉ xóa các tệp từ xa; thư viện cục bộ của bạn không bị ảnh hưởng. Không thể hoàn tác. Dữ liệu trên máy chủ sẽ mất vĩnh viễn.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "Cụm mật khẩu đồng bộ không đúng. Không thể giải mã thông tin xác thực đã đồng bộ.",
   "Email books straight to your library": "Gửi sách qua email thẳng đến thư viện của bạn",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Chuyển tiếp tệp đính kèm và bài viết đến địa chỉ Readest riêng của bạn. Có sẵn trong các gói Plus, Pro và Lifetime.",
   "View plans": "Xem các gói",
@@ -1868,5 +1866,11 @@
   "Time Remaining": "Thời gian còn lại",
   "Theme": "Chủ đề",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Đã kết nối với tư cách {{account}}. Đặt {{provider}} làm nhà cung cấp đám mây đang hoạt động.",
-  "Only while reading": "Chỉ khi đang đọc"
+  "Only while reading": "Chỉ khi đang đọc",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "Đã mở khóa trên thiết bị này. Thông tin đăng nhập đã đồng bộ của bạn đang được giải mã.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "Đã đặt cho tài khoản này. Nhập trên thiết bị này để giải mã thông tin đăng nhập đã đồng bộ.",
+  "Re-enter passphrase": "Nhập lại cụm mật khẩu",
+  "Enter passphrase": "Nhập cụm mật khẩu",
+  "Incorrect passphrase. Please try again.": "Cụm mật khẩu không đúng. Vui lòng thử lại.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "Cụm mật khẩu đồng bộ không đúng. Nhập lại trong Cài đặt để mở khóa thông tin đăng nhập của bạn."
 }

@@ -1374,7 +1374,6 @@
   "Credentials": "Διαπιστευτήρια",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "Διακριτικά, ονόματα χρήστη και κωδικοί πρόσβασης για OPDS, KOReader, Hardcover, Readwise και WebDAV. Όταν είναι απενεργοποιημένο, τα διαπιστευτήρια παραμένουν μόνο σε αυτή τη συσκευή και δεν αποστέλλονται ποτέ.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "Τα ευαίσθητα συγχρονισμένα πεδία κρυπτογραφούνται πριν τη μεταφόρτωση. Ορίστε μια φράση πρόσβασης τώρα ή αργότερα, όταν χρειαστεί η κρυπτογράφηση.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "Αποθηκεύτηκε σε αυτόν τον λογαριασμό. Θα σας ζητηθεί όταν χρειαστεί να αποκρυπτογραφηθούν διαπιστευτήρια.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "Η πρόοδος ανάγνωσης σε αυτή τη συσκευή διαφέρει από το «{{deviceName}}».",
   "This device": "Αυτή η συσκευή",
   "Red": "Κόκκινο",
@@ -1562,7 +1561,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "Η συνθηματική φράση συγχρονισμού λησμονήθηκε. Όλα τα κρυπτογραφημένα πεδία διαγράφηκαν.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "Διαγραφή {{n}} βιβλίων από τον διακομιστή WebDAV;\n\nΑυτό αφαιρεί μόνο τα απομακρυσμένα αρχεία· η τοπική σας βιβλιοθήκη παραμένει ανέπαφη. Η διαγραφή είναι μη αναστρέψιμη. Τα δεδομένα στον διακομιστή θα χαθούν οριστικά.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "Λανθασμένη συνθηματική φράση συγχρονισμού. Δεν ήταν δυνατή η αποκρυπτογράφηση των συγχρονισμένων διαπιστευτηρίων.",
   "Email books straight to your library": "Στείλτε βιβλία απευθείας στη βιβλιοθήκη σας μέσω email",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "Προωθήστε συνημμένα και άρθρα στην ιδιωτική σας διεύθυνση Readest. Διαθέσιμο στα πλάνα Plus, Pro και Lifetime.",
   "View plans": "Προβολή πλάνων",
@@ -1903,5 +1901,11 @@
   "Time Remaining": "Υπολειπόμενος χρόνος",
   "Theme": "Θέμα",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "Έχετε συνδεθεί ως {{account}}. Ορίστε το {{provider}} ως ενεργό πάροχο cloud.",
-  "Only while reading": "Μόνο κατά την ανάγνωση"
+  "Only while reading": "Μόνο κατά την ανάγνωση",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "Ξεκλειδώθηκε σε αυτήν τη συσκευή. Τα συγχρονισμένα διαπιστευτήριά σας αποκρυπτογραφούνται.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "Έχει οριστεί σε αυτόν τον λογαριασμό. Εισαγάγετέ την σε αυτήν τη συσκευή για να αποκρυπτογραφήσετε τα συγχρονισμένα διαπιστευτήριά σας.",
+  "Re-enter passphrase": "Εισαγωγή φράσης πρόσβασης ξανά",
+  "Enter passphrase": "Εισαγωγή φράσης πρόσβασης",
+  "Incorrect passphrase. Please try again.": "Λανθασμένη φράση πρόσβασης. Δοκιμάστε ξανά.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "Λανθασμένη φράση πρόσβασης συγχρονισμού. Εισαγάγετέ την ξανά στις Ρυθμίσεις για να ξεκλειδώσετε τα διαπιστευτήριά σας."
 }

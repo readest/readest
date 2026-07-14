@@ -1349,7 +1349,6 @@
   "Credentials": "자격 증명",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "OPDS, KOReader, Hardcover, Readwise, WebDAV의 토큰, 사용자 이름, 비밀번호입니다. 비활성화되면 자격 증명이 이 기기에만 남아 있고 절대 업로드되지 않습니다.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "민감한 동기화 필드는 업로드 전에 암호화됩니다. 지금 또는 암호화가 필요할 때 나중에 암호 문구를 설정하세요.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "이 계정에 저장되었습니다. 자격 증명을 복호화할 때 입력하라는 메시지가 표시됩니다.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "이 기기의 읽기 진행 상황이 \"{{deviceName}}\"와(과) 다릅니다.",
   "This device": "이 기기",
   "Red": "빨강",
@@ -1532,7 +1531,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "동기화 암호구를 잊었습니다. 모든 암호화된 필드가 지워졌습니다.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "WebDAV 서버에서 {{n}}권을 삭제하시겠습니까?\n\n이 작업은 원격 파일만 제거합니다; 로컬 라이브러리에는 영향을 주지 않습니다. 삭제는 취소할 수 없습니다. 서버의 데이터는 영구히 사라집니다.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "동기화 암호구가 잘못되었습니다. 동기화된 자격 증명을 복호화할 수 없습니다.",
   "Email books straight to your library": "이메일로 책을 라이브러리에 바로 전송",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "첨부 파일과 기사를 개인 Readest 주소로 전달하세요. Plus, Pro, Lifetime 요금제에서 사용할 수 있습니다.",
   "View plans": "요금제 보기",
@@ -1868,5 +1866,11 @@
   "Time Remaining": "남은 시간",
   "Theme": "테마",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "{{account}}(으)로 연결됨. {{provider}}를 사용할 클라우드 제공업체로 설정합니다.",
-  "Only while reading": "독서 중에만"
+  "Only while reading": "독서 중에만",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "이 기기에서 잠금 해제됨. 동기화된 자격 증명을 복호화하고 있습니다.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "이 계정에 설정되어 있습니다. 동기화된 자격 증명을 복호화하려면 이 기기에서 입력하세요.",
+  "Re-enter passphrase": "암호 문구 다시 입력",
+  "Enter passphrase": "암호 문구 입력",
+  "Incorrect passphrase. Please try again.": "암호 문구가 올바르지 않습니다. 다시 시도해 주세요.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "동기화 암호 문구가 올바르지 않습니다. 설정에서 다시 입력하여 자격 증명을 잠금 해제하세요."
 }

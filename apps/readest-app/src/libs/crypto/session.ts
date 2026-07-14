@@ -1,4 +1,4 @@
-import { SyncError } from '@/libs/errors';
+import { isWrongPassphraseError, SyncError } from '@/libs/errors';
 import type { CipherEnvelope } from '@/types/replica';
 import { replicaSyncClient } from '@/libs/replicaSyncClient';
 import type { ReplicaKeyRow, ReplicaSyncClient } from '@/libs/replicaSyncClient';
@@ -32,6 +32,16 @@ export interface CryptoSessionDeps {
    * upgrades to OS keychain on Tauri). Tests pass a mock.
    */
   store?: PassphraseStore;
+}
+
+export interface UnlockOptions {
+  /**
+   * A cipher envelope belonging to this account, trial-decrypted to prove
+   * the candidate passphrase is the right one before it is accepted and
+   * persisted. Omit only when the account holds no ciphertext to check
+   * against.
+   */
+  verifyWith?: CipherEnvelope;
 }
 
 export class CryptoSession {
@@ -79,8 +89,17 @@ export class CryptoSession {
    * the account has no salt yet — callers must call setup() instead.
    * On success, persists the passphrase to the configured store so the
    * next launch can silently restore (Tauri keychain) or re-prompt (web).
+   *
+   * PBKDF2 derivation succeeds for *any* string, so without
+   * `opts.verifyWith` this call cannot tell a right passphrase from a
+   * wrong one. Pass a cipher envelope the account is known to hold and
+   * the candidate is trial-decrypted first: a wrong passphrase throws,
+   * the session stays locked, and nothing is persisted. Callers that
+   * skip verification (no cipher exists yet) can still land a wrong
+   * passphrase — the pull path catches that later and calls
+   * `invalidatePassphrase`.
    */
-  async unlock(passphrase: string): Promise<void> {
+  async unlock(passphrase: string, opts: UnlockOptions = {}): Promise<void> {
     const rows = await this.client.listReplicaKeys();
     if (rows.length === 0) {
       throw new SyncError(
@@ -91,8 +110,48 @@ export class CryptoSession {
     this.ingestRows(rows);
     this.passphrase = passphrase;
     this.activeSaltId = rows[0]!.saltId;
-    await this.deriveKeyFor(this.activeSaltId);
+    try {
+      await this.deriveKeyFor(this.activeSaltId);
+      if (opts.verifyWith) await this.verifyAgainst(opts.verifyWith);
+    } catch (err) {
+      // Leave nothing half-derived behind: a rejected candidate must not
+      // sit in this.keys / this.passphrase where isUnlocked() would
+      // report a working session.
+      this.lock();
+      throw err;
+    }
     await this.persistPassphrase(passphrase);
+  }
+
+  /**
+   * Trial-decrypt the sample. Only a wrong-passphrase signature is fatal —
+   * SALT_NOT_FOUND (cipher orphaned by an out-of-band replica_keys reset) or
+   * a crypto-unavailable environment means "can't tell", and refusing there
+   * would lock the user out of an account whose passphrase is actually right.
+   */
+  private async verifyAgainst(sample: CipherEnvelope): Promise<void> {
+    try {
+      await this.decryptField(sample);
+    } catch (err) {
+      if (isWrongPassphraseError(err)) throw err;
+      console.warn('[cryptoSession] passphrase sample could not be verified', err);
+    }
+  }
+
+  /**
+   * The passphrase this session holds is wrong (a decrypt failed with an
+   * auth-tag mismatch). Drop it from memory AND from the store, so the
+   * keychain doesn't silently restore the same bad passphrase on the next
+   * launch — that loop is what stranded devices with an undismissable
+   * "wrong sync passphrase" toast and no way to re-enter it.
+   */
+  async invalidatePassphrase(): Promise<void> {
+    this.lock();
+    try {
+      await this.store().clear();
+    } catch (err) {
+      console.warn('[cryptoSession] failed to clear passphrase store', err);
+    }
   }
 
   /**

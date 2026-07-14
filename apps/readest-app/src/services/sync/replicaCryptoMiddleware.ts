@@ -14,7 +14,7 @@
  * Local plaintext copies are preserved by the store's applyRemote
  * merge — see customOPDSStore.applyRemoteCatalog.
  */
-import { isSyncError, SyncError } from '@/libs/errors';
+import { isSyncError, isWrongPassphraseError, SyncError } from '@/libs/errors';
 import { isCipherEnvelope } from '@/types/replica';
 import type { CipherEnvelope, FieldsObject } from '@/types/replica';
 import type { CryptoSession } from '@/libs/crypto/session';
@@ -134,6 +134,25 @@ export const collectDecryptSuccess = (
 };
 
 /**
+ * Return the first cipher envelope among the named fields, or null. The
+ * orchestrator uses it as the verification sample the passphrase gate
+ * trial-decrypts before accepting an entered passphrase.
+ */
+export const firstCipherEnvelope = (
+  fields: FieldsObject,
+  encryptedFields: readonly string[] | undefined,
+): CipherEnvelope | null => {
+  if (!encryptedFields) return null;
+  for (const fieldName of encryptedFields) {
+    const envelope = fields[fieldName];
+    if (!envelope || typeof envelope !== 'object' || !('v' in envelope)) continue;
+    const v = (envelope as { v: unknown }).v;
+    if (isCipherEnvelope(v)) return v as CipherEnvelope;
+  }
+  return null;
+};
+
+/**
  * Decrypt the named fields of a row's fields_jsonb in place. Each named
  * field's CRDT envelope value (the `v` slot) is replaced with the
  * decrypted plaintext so the adapter's unpackRow sees a plain value.
@@ -141,12 +160,26 @@ export const collectDecryptSuccess = (
  * publishing device hadn't unlocked yet, or this is a metadata-only
  * legacy row) are left untouched. Decrypt failures delete the field
  * from fields_jsonb entirely.
- *
- * `onLocked` is invoked at most once per call when the session is
- * locked AND a cipher field is encountered. The orchestrator wires
- * this to the passphrase gate so a sync fresh device prompts the user
- * before silently dropping the encrypted creds.
  */
+export interface DecryptRowHooks {
+  /**
+   * Invoked at most once per call, when the session is locked AND a cipher
+   * field is encountered. The orchestrator wires this to the passphrase
+   * gate so a fresh device prompts the user before silently dropping the
+   * encrypted creds.
+   */
+  onLocked?: (sample: CipherEnvelope) => Promise<void>;
+  /**
+   * Invoked at most once per call, when a decrypt fails with a wrong-
+   * passphrase signature. The session holds a passphrase that doesn't match
+   * this account's ciphertext — on native it was restored from the keychain
+   * without ever being checked. The orchestrator wires this to the gate's
+   * `invalidate` path: drop the bad passphrase, prompt for the right one,
+   * and this call retries the field afterwards.
+   */
+  onWrongPassphrase?: (sample: CipherEnvelope) => Promise<void>;
+}
+
 export interface DecryptRowResult {
   /**
    * Field paths whose decrypt failed because the cipher envelope's
@@ -164,11 +197,12 @@ export const decryptRowFields = async (
   fields: FieldsObject,
   encryptedFields: readonly string[] | undefined,
   session: CryptoSession = defaultCryptoSession,
-  onLocked?: () => Promise<void>,
+  hooks: DecryptRowHooks = {},
 ): Promise<DecryptRowResult> => {
   if (!encryptedFields || encryptedFields.length === 0) return { saltNotFound: [] };
   const saltNotFound: string[] = [];
   let promptAttempted = false;
+  let repromptAttempted = false;
   let lastFailureCode: string | null = null;
   let failedFieldCount = 0;
   for (const fieldName of encryptedFields) {
@@ -176,14 +210,15 @@ export const decryptRowFields = async (
     if (!envelope || typeof envelope !== 'object' || !('v' in envelope)) continue;
     const v = (envelope as { v: unknown }).v;
     if (!isCipherEnvelope(v)) continue;
+    const cipher = v as CipherEnvelope;
     // Locked session + cipher field: ask the gate to unlock once per
     // decryptRowFields call. If the unlock succeeds, fall through to
     // decrypt; if it fails (user cancelled, gate has no prompter),
     // drop the field and preserve the local plaintext copy.
-    if (!session.isUnlocked() && onLocked && !promptAttempted) {
+    if (!session.isUnlocked() && hooks.onLocked && !promptAttempted) {
       promptAttempted = true;
       try {
-        await onLocked();
+        await hooks.onLocked(cipher);
       } catch {
         // Ignore — the next isUnlocked() check below decides what to do.
       }
@@ -193,9 +228,23 @@ export const decryptRowFields = async (
       continue;
     }
     try {
-      const plaintext = await session.decryptField(v as CipherEnvelope);
-      (envelope as { v: unknown }).v = plaintext;
+      (envelope as { v: unknown }).v = await session.decryptField(cipher);
     } catch (err) {
+      // The session is unlocked but its key can't read this ciphertext —
+      // the passphrase is wrong. Ask for the right one (once per call) and
+      // retry the field; a successful recovery decrypts the remaining
+      // fields directly, since the session is now correctly unlocked.
+      if (isWrongPassphraseError(err) && hooks.onWrongPassphrase && !repromptAttempted) {
+        repromptAttempted = true;
+        try {
+          await hooks.onWrongPassphrase(cipher);
+          (envelope as { v: unknown }).v = await session.decryptField(cipher);
+          continue;
+        } catch {
+          // Fall through to the failure bookkeeping below with the retry's
+          // own error folded in — the field is unreadable either way.
+        }
+      }
       const code = isSyncError(err) ? (err as SyncError).code : 'unknown';
       // Loud + uniformly prefixed so it's easy to grep in production
       // console output. AES-GCM failures (wrong passphrase) surface
@@ -212,9 +261,11 @@ export const decryptRowFields = async (
   }
 
   // One toast per call, surfaced after the loop so the user notices
-  // even if they don't watch the console.
-  //   * DECRYPT / INTEGRITY: AES-GCM or sidecar verification failed —
-  //     almost always "wrong sync passphrase entered on this device".
+  // even if they don't watch the console. Only fields we couldn't recover
+  // get here — a passphrase re-entry that worked leaves the count at zero.
+  //   * DECRYPT / INTEGRITY: AES-GCM or sidecar verification failed and the
+  //     user didn't (or couldn't) enter a working passphrase. Point them at
+  //     the manual re-entry action rather than leaving a dead-end error.
   //     Local plaintext copy is preserved.
   //   * SALT_NOT_FOUND: the row's cipher envelope references a salt
   //     that no longer exists in `replica_keys` server-side. This
@@ -228,7 +279,7 @@ export const decryptRowFields = async (
   if (failedFieldCount > 0 && lastFailureCode !== null) {
     let message: string;
     if (lastFailureCode === 'DECRYPT' || lastFailureCode === 'INTEGRITY') {
-      message = _('Wrong sync passphrase. Synced credentials could not be decrypted.');
+      message = _('Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.');
     } else if (lastFailureCode === 'SALT_NOT_FOUND') {
       message = _(
         'Sync passphrase data on the server was reset. Re-encrypting your credentials under the new passphrase…',

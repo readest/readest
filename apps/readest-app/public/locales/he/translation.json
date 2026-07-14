@@ -1399,7 +1399,6 @@
   "Credentials": "אישורים",
   "Tokens, usernames, and passwords for OPDS, KOReader, Hardcover, Readwise, and WebDAV. When disabled, credentials remain on this device only and are never uploaded.": "אסימונים, שמות משתמש וסיסמאות עבור OPDS, KOReader, Hardcover, Readwise ו-WebDAV. כאשר מבוטל, האישורים נשמרים רק במכשיר זה ולעולם אינם מועלים.",
   "Sensitive synced fields are encrypted before upload. Set a passphrase now or later when encryption is needed.": "שדות מסונכרנים רגישים מוצפנים לפני העלאה. הגדר ביטוי סיסמה עכשיו או מאוחר יותר, כאשר תידרש הצפנה.",
-  "Saved to this account. You will be prompted for it when decrypting credentials.": "נשמר בחשבון זה. תתבקש להזינו בעת פענוח אישורים.",
   "Reading progress on this device differs from \"{{deviceName}}\".": "התקדמות הקריאה במכשיר זה שונה מ-\"{{deviceName}}\".",
   "This device": "מכשיר זה",
   "Red": "אדום",
@@ -1592,7 +1591,6 @@
   "Sync passphrase forgotten. All encrypted fields cleared.": "משפט הסיסמה לסנכרון נשכח. כל השדות המוצפנים נמחקו.",
   "Delete {{n}} book(s) from the WebDAV server?\n\nThis only removes the remote files; your local library is unaffected. The deletion cannot be undone. The bytes on the server will be permanently gone.": "למחוק {{n}} ספרים משרת ה-WebDAV?\n\nפעולה זו מסירה רק את הקבצים המרוחקים; הספרייה המקומית שלך אינה מושפעת. לא ניתן לבטל את המחיקה. הבייטים בשרת ייעלמו לתמיד.",
   "{{action}} {{n}} / {{total}}": "{{action}} {{n}} / {{total}}",
-  "Wrong sync passphrase. Synced credentials could not be decrypted.": "משפט סיסמה לסנכרון שגוי. לא ניתן היה לפענח את פרטי הכניסה המסונכרנים.",
   "Email books straight to your library": "שלח ספרים ישירות לספרייה שלך באמצעות אימייל",
   "Forward attachments and articles to your private Readest address. Available on the Plus, Pro, and Lifetime plans.": "העבר קבצים מצורפים ומאמרים לכתובת Readest הפרטית שלך. זמין בתוכניות Plus, Pro ו-Lifetime.",
   "View plans": "הצג תוכניות",
@@ -1938,5 +1936,11 @@
   "Time Remaining": "זמן שנותר",
   "Theme": "ערכת נושא",
   "Connected as {{account}}. Make {{provider}} the active cloud provider.": "מחובר כ-{{account}}. הפוך את {{provider}} לספק הענן הפעיל.",
-  "Only while reading": "רק בזמן הקריאה"
+  "Only while reading": "רק בזמן הקריאה",
+  "Unlocked on this device. Your synced credentials are being decrypted.": "נפתח במכשיר הזה. פרטי הכניסה המסונכרנים שלך מפוענחים.",
+  "Set on this account. Enter it on this device to decrypt your synced credentials.": "הוגדר בחשבון הזה. הזן אותו במכשיר הזה כדי לפענח את פרטי הכניסה המסונכרנים.",
+  "Re-enter passphrase": "הזן שוב ביטוי סיסמה",
+  "Enter passphrase": "הזן ביטוי סיסמה",
+  "Incorrect passphrase. Please try again.": "ביטוי סיסמה שגוי. נסה שוב.",
+  "Wrong sync passphrase. Re-enter it in Settings to unlock your credentials.": "ביטוי סיסמה לסנכרון שגוי. הזן אותו שוב בהגדרות כדי לפתוח את פרטי הכניסה."
 }
