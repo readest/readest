@@ -39,6 +39,7 @@ import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
 import { copyURIToPath, getStorefrontRegionCode, saveImageToGallery } from '@/utils/bridge';
+import { galleryFileName } from '@/utils/image';
 import { copyFiles } from '@/utils/files';
 import { detectViewTransitionGroup, detectViewTransitionsAPI } from '@/utils/viewTransition';
 
@@ -845,19 +846,27 @@ export class NativeAppService extends BaseAppService {
   ): Promise<boolean> {
     // MediaStore is Android-only; other platforms keep the saveFile/share path.
     if (!this.isAndroidApp) return false;
+    // Every image reaching here is called `image.<ext>`, which left the insert at
+    // the mercy of the OEM's duplicate handling. Name each save uniquely instead.
+    const galleryName = galleryFileName(filename);
     // Write the bytes to a Temp subdirectory (not the Temp root, mirroring the
     // share path), then hand the path to the native MediaStore insert.
     const shareDir = await this.resolveFilePath('shared', 'Temp');
     await mkdir(shareDir, { recursive: true });
-    const srcPath = await this.resolveFilePath(`shared/${filename}`, 'Temp');
+    const srcPath = await this.resolveFilePath(`shared/${galleryName}`, 'Temp');
     try {
       await writeFile(srcPath, new Uint8Array(content));
       const res = await saveImageToGallery({
         srcPath,
-        fileName: filename,
+        fileName: galleryName,
         mimeType,
         albumName: 'Readest',
       });
+      if (!res.success) {
+        // The plugin returns the MediaStore exception here. Dropping it left an
+        // OEM-specific insert failure showing up as nothing but a toast.
+        console.error('Failed to save image to gallery:', res.error);
+      }
       return res.success;
     } catch (error) {
       console.error('Failed to save image to gallery:', error);

@@ -35,6 +35,28 @@ export function imageExtensionFromMime(mimeType: string): string {
   return base === 'jpeg' ? 'jpg' : base;
 }
 
+// Strictly increasing so two saves in the same millisecond still get distinct
+// names.
+let lastGalleryStamp = 0;
+
+const pad = (value: number, width: number) => String(value).padStart(width, '0');
+
+/**
+ * A collision-free name for an image handed to the gallery. Android's MediaStore
+ * neither overwrites an existing display name nor de-duplicates it consistently:
+ * AOSP renames to `image (1).png`, while stricter OEM providers reject the row
+ * outright. Naming each save ourselves keeps the insert independent of that.
+ */
+export function galleryFileName(filename: string, now = Date.now()): string {
+  const dot = filename.lastIndexOf('.');
+  const ext = dot > 0 ? filename.slice(dot) : '';
+  lastGalleryStamp = Math.max(now, lastGalleryStamp + 1);
+  const d = new Date(lastGalleryStamp);
+  const date = `${d.getFullYear()}${pad(d.getMonth() + 1, 2)}${pad(d.getDate(), 2)}`;
+  const time = `${pad(d.getHours(), 2)}${pad(d.getMinutes(), 2)}${pad(d.getSeconds(), 2)}`;
+  return `readest-${date}-${time}-${pad(d.getMilliseconds(), 3)}${ext}`;
+}
+
 /**
  * Process book cover for Discord Rich Presence:
  * - Fit to 512x512 with transparent background
