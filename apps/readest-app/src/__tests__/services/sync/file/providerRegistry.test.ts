@@ -12,7 +12,6 @@ import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/build
 import { buildOneDriveProvider } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import {
   createFileSyncProvider,
-  getEnabledFileSyncBackends,
   resetFileSyncProviderCache,
 } from '@/services/sync/file/providerRegistry';
 import type { FileSyncProvider } from '@/services/sync/file/provider';
@@ -38,27 +37,6 @@ const s3: S3Settings = {
 afterEach(() => {
   vi.clearAllMocks();
   resetFileSyncProviderCache();
-});
-
-describe('getEnabledFileSyncBackends', () => {
-  test('lists only switched-on backends in a stable order', () => {
-    expect(getEnabledFileSyncBackends({})).toEqual([]);
-    expect(getEnabledFileSyncBackends({ webdav })).toEqual(['webdav']);
-    expect(getEnabledFileSyncBackends({ webdav, googleDrive: { enabled: true } })).toEqual([
-      'webdav',
-      'gdrive',
-    ]);
-    expect(
-      getEnabledFileSyncBackends({
-        webdav: { ...webdav, enabled: false },
-        googleDrive: { enabled: true },
-      }),
-    ).toEqual(['gdrive']);
-  });
-
-  test("getEnabledFileSyncBackends includes 'onedrive' when enabled", () => {
-    expect(getEnabledFileSyncBackends({ onedrive: { enabled: true } })).toContain('onedrive');
-  });
 });
 
 describe('createFileSyncProvider', () => {

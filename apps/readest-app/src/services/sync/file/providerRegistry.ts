@@ -27,18 +27,6 @@ export interface FileSyncBackendsSettings {
   onedrive?: { enabled?: boolean };
 }
 
-/** The backends the user has switched on, in a stable order. */
-export const getEnabledFileSyncBackends = (
-  settings: FileSyncBackendsSettings,
-): FileSyncBackendKind[] => {
-  const enabled: FileSyncBackendKind[] = [];
-  if (settings.webdav?.enabled) enabled.push('webdav');
-  if (settings.googleDrive?.enabled) enabled.push('gdrive');
-  if (settings.s3?.enabled) enabled.push('s3');
-  if (settings.onedrive?.enabled) enabled.push('onedrive');
-  return enabled;
-};
-
 /**
  * One provider is memoised per connection key and shared by every surface
  * (the reader's per-book sync, the library auto-sync, Sync now / pull to

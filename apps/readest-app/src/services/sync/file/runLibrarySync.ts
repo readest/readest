@@ -29,10 +29,10 @@ export const runActiveFileLibrarySync = async (
   _: TranslationFunc,
 ): Promise<SyncLibraryResult | null> => {
   const gate = resolveCloudSyncGate(useSettingsStore.getState().settings);
-  // Paused means paused (#4959): a downgraded account's still-selected
-  // provider must not sync, and must not fall back to Readest Cloud either.
-  if (gate.provider === 'readest' || gate.paused) return null;
-  const kind = gate.provider;
+  const kind = gate.backends[0];
+  // Paused means paused (#4959): a downgraded account's still-enabled
+  // backend must not sync, and must not fall back to Readest Cloud either.
+  if (!kind || gate.paused) return null;
 
   if (!useLibraryStore.getState().libraryLoaded) return null;
 
@@ -100,8 +100,8 @@ export const runActiveFileLibrarySync = async (
 const buildActiveEngine = async (envConfig: EnvConfigType): Promise<FileSyncEngine | null> => {
   const settings = useSettingsStore.getState().settings;
   const gate = resolveCloudSyncGate(settings);
-  if (gate.provider === 'readest' || gate.paused) return null;
-  const kind = gate.provider;
+  const kind = gate.backends[0];
+  if (!kind || gate.paused) return null;
   const appService = await envConfig.getAppService();
   const fileProvider = await createFileSyncProvider(kind, settings);
   if (!fileProvider) return null;
