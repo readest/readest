@@ -642,6 +642,25 @@ describe('createGroupSorter', () => {
     expect(sorted[1]!.name).toBe('Group A');
   });
 
+  it('should sort groups by most least time remaining for time remaining sort', () => {
+    const groups = [
+      createMockGroup({
+        name: 'Group A',
+        books: [createMockBook({ progress: [20, 100] })],
+      }),
+      createMockGroup({
+        name: 'Group B',
+        books: [createMockBook({ progress: [90, 100] })],
+      }),
+    ];
+
+    const sorter = createGroupSorter(LibrarySortByType.TimeRemaining, 'en');
+    const sorted = [...groups].sort(sorter);
+
+    expect(sorted[0]!.name).toBe('Group B');
+    expect(sorted[1]!.name).toBe('Group A');
+  });
+
   it('should handle groups with single book', () => {
     const groups = [
       createMockGroup({
@@ -736,6 +755,21 @@ describe('createBookSorter', () => {
     expect(sorted[0]!.title).toBe('Book B');
     expect(sorted[1]!.title).toBe('Book A');
     expect(sorted[2]!.title).toBe('Book C');
+  });
+
+  it('should sort by least time remaining for time remaining', () => {
+    const books = [
+      createMockBook({ title: 'Book A', progress: [10, 100] }),
+      createMockBook({ title: 'Book B', progress: [50, 100] }),
+      createMockBook({ title: 'Book C', progress: [90, 100] }),
+    ];
+
+    const sorter = createBookSorter(LibrarySortByType.TimeRemaining, 'en');
+    const sorted = [...books].sort(sorter);
+
+    expect(sorted[0]!.title).toBe('Book C');
+    expect(sorted[1]!.title).toBe('Book B');
+    expect(sorted[2]!.title).toBe('Book A');
   });
 });
 
