@@ -59,3 +59,31 @@ describe('fileSyncStore', () => {
     expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBeNull();
   });
 });
+
+describe('fileSyncStore pass mutex', () => {
+  beforeEach(reset);
+
+  test('switchSync hands the lock to the next backend without releasing it', () => {
+    const store = useFileSyncStore.getState();
+    expect(store.beginSync('webdav', 'Syncing…')).toBe(true);
+
+    useFileSyncStore.getState().switchSync('gdrive', 'Syncing…');
+
+    const s = useFileSyncStore.getState();
+    expect(s.activeKind).toBe('gdrive');
+    expect(s.byKind.gdrive?.isSyncing).toBe(true);
+    // The finished backend goes idle, but the lock was never free.
+    expect(s.byKind.webdav?.isSyncing).toBe(false);
+    // An auto-sync trying to start mid-pass is still refused.
+    expect(useFileSyncStore.getState().beginSync('s3', 'Syncing…')).toBe(false);
+  });
+
+  test('endSync after a switch releases the lock', () => {
+    useFileSyncStore.getState().beginSync('webdav', 'Syncing…');
+    useFileSyncStore.getState().switchSync('gdrive', 'Syncing…');
+    useFileSyncStore.getState().endSync('gdrive');
+
+    expect(useFileSyncStore.getState().activeKind).toBeNull();
+    expect(useFileSyncStore.getState().beginSync('s3', 'Syncing…')).toBe(true);
+  });
+});
