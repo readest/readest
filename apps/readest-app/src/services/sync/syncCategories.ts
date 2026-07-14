@@ -24,7 +24,7 @@
  * helper applies a cascade. See `CATEGORY_DEPENDENTS` below.
  */
 import { useSettingsStore } from '@/store/settingsStore';
-import { getCloudSyncProvider } from '@/services/sync/cloudSyncProvider';
+import { isReadestCloudEnabled } from '@/services/sync/cloudSyncProvider';
 import { SYNC_CATEGORIES, type SyncCategory } from '@/types/settings';
 
 export { SYNC_CATEGORIES };
@@ -104,12 +104,12 @@ export const isSyncCategoryLocked = (category: SyncCategory): boolean => {
 
 /**
  * Book-data categories routed exclusively to the selected cloud sync
- * provider (#4380). While WebDAV/Drive is selected, the file-sync engine
- * owns these channels (library.json + per-book config.json) and the
- * native rows must not be pushed or pulled — dual-running the channels
- * is what let quota errors and split metadata happen. Account-level
- * categories (settings, stats, dictionaries, fonts, textures, OPDS
- * catalogs) have no file-based counterpart and always stay native.
+ * provider (#4380). Providers are independently selectable (#5062): these
+ * categories ride the native channels whenever Readest Cloud is switched on,
+ * and any enabled file backend mirrors them in parallel through library.json
+ * + config.json. Only an unchecked Readest Cloud gates the native rows off.
+ * Account-level categories (settings, stats, dictionaries, fonts, textures,
+ * OPDS catalogs) have no file-based counterpart and always stay native.
  */
 const PROVIDER_GATED_CATEGORIES: ReadonlySet<SyncCategory> = new Set([
   'book',
@@ -122,7 +122,7 @@ export const isSyncCategoryEnabled = (id: string): boolean => {
   if (!category) return true; // unknown id → always-on
   if (
     PROVIDER_GATED_CATEGORIES.has(category) &&
-    getCloudSyncProvider(useSettingsStore.getState().settings) !== 'readest'
+    !isReadestCloudEnabled(useSettingsStore.getState().settings)
   ) {
     // Runtime override, deliberately not written into syncCategories:
     // the user's own toggles persist untouched and govern the native

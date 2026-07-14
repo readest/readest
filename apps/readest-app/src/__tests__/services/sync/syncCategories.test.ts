@@ -191,6 +191,35 @@ describe('isSyncCategoryEnabled', () => {
     expect(isSyncCategoryEnabled('books')).toBe(false);
     expect(isSyncCategoryEnabled('notes')).toBe(false);
   });
+
+  describe('provider gating with multiple providers', () => {
+    test('native book channels stay on when Readest Cloud runs alongside Drive', () => {
+      setSettings({
+        readestCloud: { enabled: true },
+        googleDrive: { enabled: true },
+      } as Partial<SystemSettings>);
+      expect(isSyncCategoryEnabled('book')).toBe(true);
+      expect(isSyncCategoryEnabled('progress')).toBe(true);
+      expect(isSyncCategoryEnabled('note')).toBe(true);
+    });
+
+    test('native book channels gate off when Readest Cloud is unchecked', () => {
+      setSettings({
+        readestCloud: { enabled: false },
+        googleDrive: { enabled: true },
+      } as Partial<SystemSettings>);
+      expect(isSyncCategoryEnabled('book')).toBe(false);
+      expect(isSyncCategoryEnabled('progress')).toBe(false);
+      expect(isSyncCategoryEnabled('note')).toBe(false);
+      // Account-level categories are never provider-gated.
+      expect(isSyncCategoryEnabled('settings')).toBe(true);
+    });
+
+    test('a legacy Drive user (no readestCloud field) keeps the native channels gated', () => {
+      setSettings({ googleDrive: { enabled: true } } as Partial<SystemSettings>);
+      expect(isSyncCategoryEnabled('book')).toBe(false);
+    });
+  });
 });
 
 describe('SYNC_CATEGORIES', () => {
