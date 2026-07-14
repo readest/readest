@@ -14,7 +14,6 @@ import {
   cloudProviderDisplayName,
   cloudProvidersDisplayName,
   getActiveFileSyncBackends,
-  getCloudSyncProvider,
   getCloudSyncProviders,
   getEnabledFileSyncBackends,
   isReadestCloudEnabled,
@@ -37,55 +36,6 @@ const s = (partial: Partial<SystemSettings>): SystemSettings => partial as Syste
 beforeEach(() => {
   vi.mocked(isCloudSyncAllowed).mockReturnValue(true);
   setCachedUserPlan('free');
-});
-
-describe('getCloudSyncProvider', () => {
-  test('derives readest when no third-party provider is enabled', () => {
-    expect(getCloudSyncProvider(makeSettings())).toBe('readest');
-  });
-
-  test('derives webdav when webdav is enabled', () => {
-    const settings = makeSettings({ webdav: { enabled: true } } as Partial<SystemSettings>);
-    expect(getCloudSyncProvider(settings)).toBe('webdav');
-  });
-
-  test('derives gdrive when google drive is enabled', () => {
-    const settings = makeSettings({ googleDrive: { enabled: true } } as Partial<SystemSettings>);
-    expect(getCloudSyncProvider(settings)).toBe('gdrive');
-  });
-
-  test('derives s3 when s3 is enabled', () => {
-    const settings = makeSettings({ s3: { enabled: true } } as Partial<SystemSettings>);
-    expect(getCloudSyncProvider(settings)).toBe('s3');
-  });
-
-  test("returns 'onedrive' when only OneDrive is enabled", () => {
-    expect(getCloudSyncProvider({ onedrive: { enabled: true } } as SystemSettings)).toBe(
-      'onedrive',
-    );
-  });
-
-  test('webdav wins deterministically over s3 when both are enabled (corrupt state)', () => {
-    const settings = makeSettings({
-      webdav: { enabled: true },
-      s3: { enabled: true },
-    } as Partial<SystemSettings>);
-    expect(getCloudSyncProvider(settings)).toBe('webdav');
-  });
-
-  test('webdav wins deterministically when both flags are enabled (corrupt state)', () => {
-    const settings = makeSettings({
-      webdav: { enabled: true },
-      googleDrive: { enabled: true },
-    } as Partial<SystemSettings>);
-    expect(getCloudSyncProvider(settings)).toBe('webdav');
-  });
-
-  test('defaults to readest for missing slices and missing settings', () => {
-    expect(getCloudSyncProvider({} as SystemSettings)).toBe('readest');
-    expect(getCloudSyncProvider(null)).toBe('readest');
-    expect(getCloudSyncProvider(undefined)).toBe('readest');
-  });
 });
 
 describe('resolveCloudSyncGate', () => {

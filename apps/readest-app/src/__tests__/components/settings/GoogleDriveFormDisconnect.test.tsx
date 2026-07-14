@@ -7,11 +7,11 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 
 /**
- * Regression for #5062: every provider's Disconnect used to call
- * `persistActiveCloudProvider(envConfig, null)`, which writes `enabled: false`
- * to ALL FOUR backend slices (the exclusive-provider era's "no third-party
- * provider active" meaning). Under multi-select that silently turns off every
- * OTHER mirror too — disconnecting Google Drive would also stop WebDAV.
+ * Regression for #5062: every provider's Disconnect used to call the old
+ * exclusive-provider activation helper, which wrote `enabled: false` to ALL
+ * FOUR backend slices (that era's "no third-party provider active" meaning).
+ * Under multi-select that silently turns off every OTHER mirror too —
+ * disconnecting Google Drive would also stop WebDAV.
  *
  * This renders the real GoogleDriveForm component and clicks its actual
  * Disconnect button (not just the underlying `withCloudProviderEnabled`

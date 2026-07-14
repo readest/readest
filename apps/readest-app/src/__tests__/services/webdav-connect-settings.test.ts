@@ -12,7 +12,7 @@ describe('buildWebDAVConnectSettings', () => {
     });
     // The builder is activation-agnostic: `enabled` (and the activation
     // side effects like the syncBooks auto-flip) belong to
-    // withActiveCloudProvider, which the connect flow applies on top.
+    // persistCloudProviderEnabled, which the connect flow applies on top.
     expect(result).toEqual({
       serverUrl: 'https://dav.example.com',
       username: 'alice',
@@ -46,7 +46,7 @@ describe('buildWebDAVConnectSettings', () => {
       rootPath: '/Readest',
     });
 
-    // Still disabled: the connect flow activates via withActiveCloudProvider
+    // Still disabled: the connect flow activates via persistCloudProviderEnabled
     // so the disabled -> enabled transition (and its syncBooks auto-flip)
     // happens exactly once, in one place.
     expect(next.enabled).toBe(false);

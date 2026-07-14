@@ -4,17 +4,16 @@ import { isCloudSyncAllowed } from '@/utils/access';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
 
 /**
- * The user's selected cloud sync provider for library data (book files,
- * book rows, progress, notes). 'readest' is the native Readest Cloud;
- * the others are the third-party file-sync backends. Account-level data
- * (settings replicas, reading stats, dictionaries/fonts, translations)
- * always syncs via Readest Cloud regardless of this selection.
+ * The cloud sync provider kind for library data (book files, book rows,
+ * progress, notes). 'readest' is the native Readest Cloud; the others are
+ * the third-party file-sync backends.
  *
- * Providers are independently selectable (#5062): several can sync the
- * library at once (e.g. Readest Cloud AND Google Drive, for redundancy).
- * `getCloudSyncProviders` returns every provider currently syncing;
- * `getCloudSyncProvider` (below) is a transitional single-provider view
- * kept only until its remaining callers migrate.
+ * Providers are INDEPENDENT (#5062): any subset may sync the library at once,
+ * including none. Readest Cloud's flag has a derived default so an absent value
+ * reproduces the old exclusive behaviour; every third-party backend is a plain
+ * per-device `enabled` flag. Account-level data (settings replicas, reading
+ * stats, dictionaries/fonts, translations) always syncs via Readest Cloud while
+ * signed in, regardless of this selection.
  */
 export type CloudSyncProviderKind = 'readest' | FileSyncBackendKind;
 
@@ -78,11 +77,6 @@ export const getCloudSyncProviders = (
 /** Comma-joined product names, for the "Synced via {{provider}}" copy. */
 export const cloudProvidersDisplayName = (kinds: CloudSyncProviderKind[]): string =>
   kinds.map(cloudProviderDisplayName).join(', ');
-
-/** @deprecated Transitional. Use getCloudSyncProviders / isReadestCloudEnabled. */
-export const getCloudSyncProvider = (
-  settings: SystemSettings | null | undefined,
-): CloudSyncProviderKind => getEnabledFileSyncBackends(settings)[0] ?? 'readest';
 
 /**
  * `isCloudSyncAllowed` needs the UserPlan, which comes from the async
