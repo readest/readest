@@ -94,3 +94,116 @@ export const persistActiveCloudProvider = async (
   void broadcastGlobalSettings(next, { includeCloudSyncProviders: true });
   return next;
 };
+
+/**
+ * Turn ONE cloud sync provider on or off, leaving every other provider exactly
+ * as it was (#5062). Providers used to be mutually exclusive; they are now an
+ * independent set, so this replaces `withActiveCloudProvider`.
+ *
+ * Provider config (WebDAV credentials, the Drive/OneDrive account label) is
+ * left untouched when switching a provider off, so re-enabling it later needs
+ * no re-entry; only an explicit Disconnect tears the config down.
+ *
+ * Switching a third-party provider ON (off -> on edge only) also turns its
+ * `syncBooks` on and stamps `providerSelectedAt`: checking a provider means
+ * "mirror my library here". An explicit `syncBooks` opt-out while the provider
+ * stays on is respected — a redundant re-activation changes nothing.
+ *
+ * Switching Readest Cloud OFF stamps `readestCloud.disabledAt`, the anchor for
+ * mixed-fleet detection ("when did this device stop writing native rows").
+ */
+export const withCloudProviderEnabled = (
+  settings: SystemSettings,
+  kind: CloudSyncProviderKind,
+  enabled: boolean,
+): SystemSettings => {
+  if (kind === 'readest') {
+    return {
+      ...settings,
+      readestCloud: {
+        ...settings.readestCloud,
+        enabled,
+        disabledAt: enabled ? undefined : Date.now(),
+      },
+    };
+  }
+  // A switch (rather than a generically-keyed write) keeps each branch's
+  // settings slice type intact; `settings[key] = { ...slice, enabled }`
+  // does not typecheck when `key` is a union of literal keys (see
+  // `applySyncBooksAutoEnable` above for the same constraint).
+  switch (kind) {
+    case 'webdav': {
+      const activating = enabled && !settings.webdav?.enabled;
+      return {
+        ...settings,
+        webdav: {
+          ...settings.webdav,
+          enabled,
+          ...(activating ? { syncBooks: true, providerSelectedAt: Date.now() } : {}),
+        },
+      };
+    }
+    case 'gdrive': {
+      const activating = enabled && !settings.googleDrive?.enabled;
+      return {
+        ...settings,
+        googleDrive: {
+          ...settings.googleDrive,
+          enabled,
+          ...(activating ? { syncBooks: true, providerSelectedAt: Date.now() } : {}),
+        },
+      };
+    }
+    case 's3': {
+      const activating = enabled && !settings.s3?.enabled;
+      return {
+        ...settings,
+        s3: {
+          ...settings.s3,
+          enabled,
+          ...(activating ? { syncBooks: true, providerSelectedAt: Date.now() } : {}),
+        },
+      };
+    }
+    case 'onedrive': {
+      const activating = enabled && !settings.onedrive?.enabled;
+      return {
+        ...settings,
+        onedrive: {
+          ...settings.onedrive,
+          enabled,
+          ...(activating ? { syncBooks: true, providerSelectedAt: Date.now() } : {}),
+        },
+      };
+    }
+  }
+};
+
+/**
+ * The single write path for switching a cloud sync provider on or off. Every
+ * surface (the Cloud Sync checkboxes, each provider's connect/disconnect flow,
+ * the Drive and OneDrive OAuth callbacks) routes through here so the change
+ * always (a) persists, (b) hydrates the settings store even on routes where it
+ * was never loaded (the OAuth callbacks), and (c) broadcasts to other windows —
+ * a stale reader window would otherwise clobber the change on its next
+ * whole-file save.
+ *
+ * `mutate` runs BEFORE the toggle so connect flows can apply credentials or an
+ * account label without pre-setting `enabled` (which would suppress the
+ * activation side effects).
+ */
+export const persistCloudProviderEnabled = async (
+  envConfig: EnvConfigType,
+  kind: CloudSyncProviderKind,
+  enabled: boolean,
+  mutate: (settings: SystemSettings) => SystemSettings = (s) => s,
+): Promise<SystemSettings> => {
+  const store = useSettingsStore.getState();
+  const appService = await envConfig.getAppService();
+  const current = store.settings?.version ? store.settings : await appService.loadSettings();
+  const next = withCloudProviderEnabled(mutate(current), kind, enabled);
+  store.setSettings(next);
+  await appService.saveSettings(next);
+  void broadcastGlobalSettings(next, { includeCloudSyncProviders: true });
+  return next;
+};

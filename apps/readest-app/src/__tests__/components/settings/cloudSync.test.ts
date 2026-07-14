@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { withActiveCloudProvider } from '@/components/settings/integrations/cloudSync';
+import { withCloudProviderEnabled } from '@/services/sync/cloudSyncActivation';
 import { buildWebDAVConnectSettings } from '@/services/sync/providers/webdav/connectSettings';
 import type { WebDAVSettings } from '@/types/settings';
 import { CLOUD_SYNC_REQUIRES_PREMIUM, isCloudSyncAllowed, isCloudSyncInPlan } from '@/utils/access';
@@ -199,5 +200,68 @@ describe('isCloudSyncAllowed (premium paywall)', () => {
     expect(isCloudSyncAllowed('plus')).toBe(true);
     expect(isCloudSyncAllowed('pro')).toBe(true);
     expect(isCloudSyncAllowed('purchase')).toBe(true);
+  });
+});
+
+describe('withCloudProviderEnabled', () => {
+  const both = {
+    webdav: {
+      enabled: true,
+      serverUrl: 'https://dav',
+      username: 'u',
+      password: 'p',
+      rootPath: '/',
+    },
+    googleDrive: { enabled: false, accountLabel: 'a@b.com' },
+    s3: { enabled: false },
+    onedrive: { enabled: false },
+  } as unknown as SystemSettings;
+
+  test('enabling one provider leaves the others alone', () => {
+    const next = withCloudProviderEnabled(both, 'gdrive', true);
+    expect(next.googleDrive.enabled).toBe(true);
+    expect(next.webdav.enabled).toBe(true);
+  });
+
+  test('activation stamps syncBooks and providerSelectedAt on the off-to-on edge only', () => {
+    const next = withCloudProviderEnabled(both, 'gdrive', true);
+    expect(next.googleDrive.syncBooks).toBe(true);
+    expect(next.googleDrive.providerSelectedAt).toBeTruthy();
+
+    // An explicit opt-out survives a redundant re-activation.
+    const optedOut = {
+      ...next,
+      googleDrive: { ...next.googleDrive, syncBooks: false },
+    } as SystemSettings;
+    const again = withCloudProviderEnabled(optedOut, 'gdrive', true);
+    expect(again.googleDrive.syncBooks).toBe(false);
+  });
+
+  test('disabling a provider keeps its config so reconnecting is one click', () => {
+    const next = withCloudProviderEnabled(both, 'webdav', false);
+    expect(next.webdav.enabled).toBe(false);
+    expect(next.webdav.serverUrl).toBe('https://dav');
+    expect(next.webdav.password).toBe('p');
+  });
+
+  test('turning Readest Cloud off writes an explicit false and stamps disabledAt', () => {
+    const next = withCloudProviderEnabled(both, 'readest', false);
+    expect(next.readestCloud?.enabled).toBe(false);
+    expect(next.readestCloud?.disabledAt).toBeTruthy();
+    expect(next.webdav.enabled).toBe(true);
+  });
+
+  test('turning Readest Cloud on writes an explicit true and clears disabledAt', () => {
+    const off = withCloudProviderEnabled(both, 'readest', false);
+    const on = withCloudProviderEnabled(off, 'readest', true);
+    expect(on.readestCloud?.enabled).toBe(true);
+    expect(on.readestCloud?.disabledAt).toBeUndefined();
+  });
+
+  test('every provider can be off at once', () => {
+    let next = withCloudProviderEnabled(both, 'webdav', false);
+    next = withCloudProviderEnabled(next, 'readest', false);
+    expect(next.webdav.enabled).toBe(false);
+    expect(next.readestCloud?.enabled).toBe(false);
   });
 });
