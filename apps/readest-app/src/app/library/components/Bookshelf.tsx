@@ -191,6 +191,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     settings.librarySortBy2 ?? 'none',
   );
   const sortBy2 = resolveEffectiveSecondarySort(sortBy2Raw, groupBy);
+  const showTimeRemaining =
+    sortBy === LibrarySortByType.TimeRemaining || sortBy2 === LibrarySortByType.TimeRemaining;
   const coverFit = searchParams?.get('cover') || settings.libraryCoverFit;
 
   const [loading, setLoading] = useState(false);
@@ -720,6 +722,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           handleBookUpload={handleBookUpload}
           handleBookDownload={handleBookDownload}
           showBookDetailsModal={handleShowDetailsBook}
+          showTimeRemaining={showTimeRemaining}
         />
       ) : null,
     [
@@ -732,6 +735,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       handleBookUpload,
       handleBookDownload,
       handleShowDetailsBook,
+      showTimeRemaining,
     ],
   );
 
@@ -740,8 +744,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       autoColumns: settings.libraryAutoColumns,
       fixedColumns: settings.libraryColumns,
       recentShelfHeader,
+      showTimeRemaining,
     }),
-    [settings.libraryAutoColumns, settings.libraryColumns, recentShelfHeader],
+    [settings.libraryAutoColumns, settings.libraryColumns, recentShelfHeader, showTimeRemaining],
   );
 
   const renderBookshelfItem = useCallback(
@@ -796,6 +801,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           transferProgress={
             'hash' in item ? booksTransferProgress[(item as Book).hash] || null : null
           }
+          showTimeRemaining={showTimeRemaining}
         />
       );
     },
@@ -818,6 +824,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       handleShowDetailsBook,
       handleLibraryNavigation,
       handleUpdateReadingStatus,
+      showTimeRemaining,
     ],
   );
 
@@ -845,6 +852,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         {hasItems && isGridMode && (
           <VirtuosoGrid<unknown, BookshelfListContext>
             overscan={200}
+            key={showTimeRemaining ? 'time' : 'not-time'}
             totalCount={gridTotalCount}
             components={GRID_VIRTUOSO_COMPONENTS}
             context={listContext}

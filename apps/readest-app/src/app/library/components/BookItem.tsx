@@ -31,6 +31,7 @@ interface BookItemProps {
   handleBookUpload: (book: Book) => void;
   handleBookDownload: (book: Book, options?: { redownload?: boolean; queued?: boolean }) => void;
   showBookDetailsModal: (book: Book) => void;
+  showTimeRemaining: boolean;
 }
 
 const BookItem: React.FC<BookItemProps> = ({
@@ -43,6 +44,7 @@ const BookItem: React.FC<BookItemProps> = ({
   handleBookUpload,
   handleBookDownload,
   showBookDetailsModal,
+  showTimeRemaining,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -152,7 +154,9 @@ const BookItem: React.FC<BookItemProps> = ({
             minHeight: `${iconSize15}px`,
           }}
         >
-          {(book.progress || book.readingStatus) && <ReadingProgress book={book} />}
+          {(book.progress || book.readingStatus) && (
+            <ReadingProgress book={book} showTimeRemaining={showTimeRemaining} />
+          )}
           <div className='flex items-center justify-center gap-x-2'>
             {!appService?.isMobile && (
               <button

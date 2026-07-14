@@ -8,6 +8,7 @@ import { getTimeRemainingMinutes } from '../utils/libraryUtils';
 
 interface ReadingProgressProps {
   book: Book;
+  showTimeRemaining: boolean;
 }
 
 const getProgressPercentage = (book: Book) => {
@@ -22,15 +23,15 @@ const getProgressPercentage = (book: Book) => {
 };
 
 const ReadingProgress: React.FC<ReadingProgressProps> = memo(
-  ({ book }) => {
+  ({ book, showTimeRemaining }) => {
     const _ = useTranslation();
     const progressPercentage = useMemo(() => getProgressPercentage(book), [book]);
 
     const minutes = getTimeRemainingMinutes(book);
     const hours = minutes ? Math.floor(minutes / 60) : undefined;
     const mins = minutes ? minutes % 60 : undefined;
-    const timeRemainingLabel =
-      hours && mins
+    const progressLabel =
+      showTimeRemaining && hours && mins
         ? _(`${progressPercentage}% · ${hours}h ${mins}m left`)
         : `${progressPercentage}%`;
 
@@ -78,7 +79,7 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
         role='status'
         aria-label={`${progressPercentage}%`}
       >
-        <span>{timeRemainingLabel}</span>
+        <span>{progressLabel}</span>
       </div>
     );
   },

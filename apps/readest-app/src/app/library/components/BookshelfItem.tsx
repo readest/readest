@@ -105,6 +105,7 @@ interface BookshelfItemProps {
   handleShowDetailsBook: (book: Book) => void;
   handleLibraryNavigation: (targetGroup: string) => void;
   handleUpdateReadingStatus: (book: Book, status: ReadingStatus | undefined) => void;
+  showTimeRemaining: boolean;
 }
 
 const BookshelfItem: React.FC<BookshelfItemProps> = ({
@@ -123,6 +124,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   handleShowDetailsBook,
   handleLibraryNavigation,
   handleUpdateReadingStatus,
+  showTimeRemaining,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -411,6 +413,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
               handleBookUpload={handleBookUpload}
               handleBookDownload={handleBookDownload}
               showBookDetailsModal={showBookDetailsModal}
+              showTimeRemaining={showTimeRemaining}
             />
           ) : (
             <GroupItem

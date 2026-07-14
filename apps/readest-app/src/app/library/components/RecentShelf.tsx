@@ -23,6 +23,7 @@ interface RecentShelfProps {
   handleBookUpload: (book: Book) => void;
   handleBookDownload: (book: Book, options?: { redownload?: boolean; queued?: boolean }) => void;
   showBookDetailsModal: (book: Book) => void;
+  showTimeRemaining: boolean;
 }
 
 /**
@@ -37,7 +38,12 @@ const RECENT_SLIDE_WIDTH =
 
 type RecentSlideProps = Pick<
   RecentShelfProps,
-  'coverFit' | 'onOpenBook' | 'handleBookUpload' | 'handleBookDownload' | 'showBookDetailsModal'
+  | 'coverFit'
+  | 'onOpenBook'
+  | 'handleBookUpload'
+  | 'handleBookDownload'
+  | 'showBookDetailsModal'
+  | 'showTimeRemaining'
 > & { book: Book };
 
 const RecentSlide: React.FC<RecentSlideProps> = ({
@@ -47,6 +53,7 @@ const RecentSlide: React.FC<RecentSlideProps> = ({
   handleBookUpload,
   handleBookDownload,
   showBookDetailsModal,
+  showTimeRemaining,
 }) => {
   // Pointer-based tap, exactly like the grid (`BookItem` stops click
   // propagation). A swipe-to-scroll moves past useLongPress's moveThreshold and
@@ -91,6 +98,7 @@ const RecentSlide: React.FC<RecentSlideProps> = ({
             handleBookUpload={handleBookUpload}
             handleBookDownload={handleBookDownload}
             showBookDetailsModal={showBookDetailsModal}
+            showTimeRemaining={showTimeRemaining}
           />
         </div>
       </div>
@@ -114,6 +122,7 @@ const RecentShelf: React.FC<RecentShelfProps> = ({
   handleBookUpload,
   handleBookDownload,
   showBookDetailsModal,
+  showTimeRemaining,
 }) => {
   const _ = useTranslation();
   // `--rs-cols` mirrors the grid's column count: the responsive ladder
@@ -195,6 +204,7 @@ const RecentShelf: React.FC<RecentShelfProps> = ({
                 handleBookUpload={handleBookUpload}
                 handleBookDownload={handleBookDownload}
                 showBookDetailsModal={showBookDetailsModal}
+                showTimeRemaining={showTimeRemaining}
               />
             ))}
           </div>
