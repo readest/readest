@@ -1,11 +1,5 @@
 import clsx from 'clsx';
-import {
-  MdClose,
-  MdPauseCircleFilled,
-  MdPlayCircleFilled,
-  MdSkipNext,
-  MdSkipPrevious,
-} from 'react-icons/md';
+import { MdClose, MdPauseCircleFilled, MdPlayCircleFilled } from 'react-icons/md';
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
@@ -16,6 +10,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { formatPlaybackTime } from '@/utils/time';
 import { TTSPlaybackInfo, usePlaybackInfo } from './usePlaybackInfo';
 import { useCountdownLabel } from './useCountdownLabel';
+import { BsFastForwardFill, BsRewindFill } from 'react-icons/bs';
 
 // Reader text reserves this much bottom clearance while a session is active
 // (card height + bottom gap); FoliateViewer consumes it via applyMarginAndGap.
@@ -63,7 +58,6 @@ const TTSMiniPlayer = ({
   const playback = usePlaybackInfo({ bookKey, isEink, onGetPlaybackInfo });
   const timerLabel = useCountdownLabel(timeoutTimestamp);
   const iconSize20 = useResponsiveSize(20);
-  const iconSize28 = useResponsiveSize(28);
   const iconSize40 = useResponsiveSize(40);
 
   const isVisible = hoveredBookKey !== bookKey;
@@ -158,7 +152,7 @@ const TTSMiniPlayer = ({
               aria-label={_('Previous Sentence')}
               onClick={() => onBackward(true)}
             >
-              <MdSkipPrevious size={iconSize28} />
+              <BsRewindFill size={iconSize20} />
             </button>
             <button
               type='button'
@@ -178,7 +172,7 @@ const TTSMiniPlayer = ({
               aria-label={_('Next Sentence')}
               onClick={() => onForward(true)}
             >
-              <MdSkipNext size={iconSize28} />
+              <BsFastForwardFill size={iconSize20} />
             </button>
             <button
               type='button'
