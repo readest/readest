@@ -15,7 +15,7 @@ import {
   getActiveFileSyncBackends,
 } from '@/services/sync/cloudSyncProvider';
 import { isDemoBook } from '@/services/demoBooks';
-import { runActiveFileLibrarySync } from '@/services/sync/file/runLibrarySync';
+import { runFileLibrarySyncPass } from '@/services/sync/file/runLibrarySync';
 import { checkMixedFleetOnce } from '@/services/sync/fleetDetection';
 import { useSyncContext } from '@/context/SyncContext';
 import {
@@ -75,43 +75,47 @@ export const useBooksSync = () => {
       const settingsNow = useSettingsStore.getState().settings;
       const backends = getActiveFileSyncBackends(settingsNow);
       const readest = isReadestCloudEnabled(settingsNow);
+      const runFilePass = backends.length > 0;
+      const runNativePull = readest && !!user;
 
-      if (backends.length > 0) {
-        if (isPullingRef.current) return;
-        try {
-          isPullingRef.current = true;
-          // Task 7 renames this to `runFileLibrarySyncPass` and makes it loop
-          // every backend; keep the current name here so this task compiles.
-          const result = await runActiveFileLibrarySync(envConfig, _);
-          if (verbose) {
-            // Same message as the native Readest Cloud sync below, so every
-            // provider reports its work the same way.
-            eventDispatcher.dispatch('toast', {
-              type: result ? 'info' : 'error',
-              message: result
-                ? _('{{count}} book(s) synced', { count: result.booksSynced })
-                : _('Sync failed'),
-            });
-          }
-        } finally {
-          isPullingRef.current = false;
-        }
-        // Readest Cloud, when also enabled, still runs its native pull below.
-        if (!readest) return;
-      }
-      if (!readest || !user) return;
+      if (!runFilePass && !runNativePull) return;
       if (isPullingRef.current) return;
+
+      isPullingRef.current = true;
       try {
-        isPullingRef.current = true;
-        const library = useLibraryStore.getState().library;
-        const since = (libraryLoaded && library.length === 0) || fullRefresh ? 0 : undefined;
-        const syncedBooksCount = await syncBooks([], 'pull', since);
-        // Only toast here when the file pass above didn't already report —
-        // otherwise a dual-provider pull would double-toast.
-        if (verbose && backends.length === 0) {
+        // Both legs run to completion (under the same isPullingRef guard)
+        // before anything is reported: a `verbose` pull emits exactly ONE
+        // toast for the combined outcome, never one per provider. Reporting
+        // from the file leg alone would fire before the native pull even
+        // started, and would show its outcome only — a file-pass failure
+        // masking a native pull that then succeeds, or a book count that
+        // ignores what the native pull actually synced.
+        let fileSynced = 0;
+        let fileSucceeded = false;
+        if (runFilePass) {
+          const result = await runFileLibrarySyncPass(envConfig, _);
+          fileSucceeded = result !== null;
+          fileSynced = result?.booksSynced ?? 0;
+        }
+
+        let nativeSynced = 0;
+        if (runNativePull) {
+          const library = useLibraryStore.getState().library;
+          const since = (libraryLoaded && library.length === 0) || fullRefresh ? 0 : undefined;
+          nativeSynced = (await syncBooks([], 'pull', since)) ?? 0;
+        }
+
+        if (verbose) {
+          // The native pull swallows its own errors (returns a count, never
+          // throws), so it never contributes a "failed" leg here — matching
+          // its pre-existing standalone behaviour. Only report failure when
+          // every leg that ran actually failed.
+          const succeeded = (runFilePass && fileSucceeded) || runNativePull;
           eventDispatcher.dispatch('toast', {
-            type: 'info',
-            message: _('{{count}} book(s) synced', { count: syncedBooksCount }),
+            type: succeeded ? 'info' : 'error',
+            message: succeeded
+              ? _('{{count}} book(s) synced', { count: fileSynced + nativeSynced })
+              : _('Sync failed'),
           });
         }
       } finally {

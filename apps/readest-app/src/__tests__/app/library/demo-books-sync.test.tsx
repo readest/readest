@@ -63,7 +63,7 @@ vi.mock('@/services/sync/cloudSyncProvider', () => ({
 }));
 
 vi.mock('@/services/sync/file/runLibrarySync', () => ({
-  runActiveFileLibrarySync: vi.fn(async () => ({ booksSynced: 0 })),
+  runFileLibrarySyncPass: vi.fn(async () => ({ booksSynced: 0 })),
 }));
 
 vi.mock('@/services/sync/fleetDetection', () => ({

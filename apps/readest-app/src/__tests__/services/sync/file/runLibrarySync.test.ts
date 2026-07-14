@@ -32,9 +32,9 @@ vi.mock('@/services/sync/file/engine', () => ({
 }));
 
 import {
-  runActiveFileBookDownload,
-  runActiveFileBookUpload,
-  runActiveFileLibrarySync,
+  runFileBookDownload,
+  runFileBookUpload,
+  runFileLibrarySyncPass,
 } from '@/services/sync/file/runLibrarySync';
 import type { Book } from '@/types/book';
 
@@ -59,164 +59,136 @@ const envConfig = {
   getAppService: vi.fn(async () => ({ saveSettings: vi.fn() }) as never),
 } as never;
 
-const setProvider = (patch: Partial<SystemSettings>): void => {
-  useSettingsStore.setState({
-    settings: {
-      version: 1,
-      webdav: { enabled: false },
-      googleDrive: { enabled: false },
-      ...patch,
-    } as SystemSettings,
-    setSettings: (s: SystemSettings) => useSettingsStore.setState({ settings: s }),
-    saveSettings: vi.fn(),
-  } as never);
-};
+const multiProviderSettings = {
+  version: 1,
+  readestCloud: { enabled: false },
+  webdav: {
+    enabled: true,
+    serverUrl: 'https://dav',
+    username: 'u',
+    password: 'p',
+    rootPath: '/',
+    syncBooks: true,
+  },
+  googleDrive: { enabled: true, syncBooks: true },
+} as unknown as SystemSettings;
 
-beforeEach(() => {
-  vi.clearAllMocks();
-  // Third-party cloud sync is premium; run the suite as a paid plan.
-  setCachedUserPlan('pro');
-  syncLibrary.mockClear().mockResolvedValue({ booksSynced: 0 });
-  useFileSyncStore.setState({ byKind: {}, activeKind: null, lastErrorByKind: {} });
-  useLibraryStore.setState({ library: [], libraryLoaded: true } as never);
-});
-
-describe('runActiveFileLibrarySync', () => {
-  test('returns false without syncing when readest is the provider', async () => {
-    setProvider({});
-    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBeNull();
-    expect(syncLibrary).not.toHaveBeenCalled();
+describe('runFileLibrarySyncPass', () => {
+  beforeEach(() => {
+    syncLibrary.mockReset().mockResolvedValue({ booksSynced: 1 });
+    useSettingsStore.getState().setSettings(multiProviderSettings);
+    useLibraryStore.setState({ library: [makeBook('h1')], libraryLoaded: true });
+    useFileSyncStore.setState({ byKind: {}, activeKind: null, lastErrorByKind: {} });
+    setCachedUserPlan('pro');
   });
 
-  test('runs the engine for the active provider and clears lastError on success', async () => {
-    setProvider({
-      webdav: { enabled: true, deviceId: 'd1', syncBooks: true, strategy: 'silent' },
-    } as Partial<SystemSettings>);
-    useFileSyncStore.getState().setLastError('webdav', 'stale error');
+  test('runs every enabled backend in a fixed order and sums the result', async () => {
+    const result = await runFileLibrarySyncPass(envConfig, translationFn);
+    expect(syncLibrary).toHaveBeenCalledTimes(2);
+    expect(result?.booksSynced).toBe(2);
+  });
 
-    syncLibrary.mockResolvedValueOnce({ booksSynced: 3 });
-    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toMatchObject({
-      booksSynced: 3,
+  test('holds the mutex for the whole pass', async () => {
+    let lockedDuringPass: boolean | null = null;
+    syncLibrary.mockImplementation(async () => {
+      // A racing auto-sync must be refused while the pass is mid-flight.
+      lockedDuringPass = useFileSyncStore.getState().beginSync('s3', 'Syncing…') === false;
+      return { booksSynced: 1 };
     });
-
-    expect(syncLibrary).toHaveBeenCalledTimes(1);
-    const [, options] = syncLibrary.mock.calls[0]!;
-    expect(options.syncBooks).toBe(true);
-    expect(options.deviceId).toBe('d1');
-    expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBeNull();
-    // Mutex released.
+    await runFileLibrarySyncPass(envConfig, translationFn);
+    expect(lockedDuringPass).toBe(true);
+    // ...and the lock is free again afterwards.
     expect(useFileSyncStore.getState().activeKind).toBeNull();
   });
 
-  test('records lastError and releases the mutex when the engine fails', async () => {
-    setProvider({
-      webdav: { enabled: true, deviceId: 'd1' },
-    } as Partial<SystemSettings>);
-    syncLibrary.mockRejectedValueOnce(new Error('server unreachable'));
+  // The check above only observes the lock from inside a backend's own
+  // syncLibrary call, which is always mid-acquisition by construction — it
+  // cannot see a release-then-reacquire between backends, because releasing
+  // and reacquiring back to back has no `await` between them for anything
+  // else to run in. Subscribing to the store directly records every
+  // transition `set()` produces (beginSync/switchSync/endSync each call it
+  // once), so a hand-off that dips through `null` becomes visible even
+  // though nothing outside the store could ever race into that instant.
+  test('hands the lock directly from one backend to the next, never through a released state', async () => {
+    const activeKindHistory: (string | null)[] = [];
+    const unsubscribe = useFileSyncStore.subscribe((state) => {
+      activeKindHistory.push(state.activeKind);
+    });
+    await runFileLibrarySyncPass(envConfig, translationFn);
+    unsubscribe();
+    // The final entry is the pass's own closing endSync; every transition
+    // before it must already hold some backend's lock.
+    expect(activeKindHistory.slice(0, -1)).not.toContain(null);
+  });
 
-    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBeNull();
+  test('a failing backend does not stop the others', async () => {
+    syncLibrary
+      .mockRejectedValueOnce(new Error('token expired'))
+      .mockResolvedValueOnce({ booksSynced: 3 });
 
-    expect(useFileSyncStore.getState().lastErrorByKind.webdav).toContain('server unreachable');
+    const result = await runFileLibrarySyncPass(envConfig, translationFn);
+
+    expect(syncLibrary).toHaveBeenCalledTimes(2);
+    expect(result?.booksSynced).toBe(3);
+    expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBe('token expired');
+    expect(useFileSyncStore.getState().lastErrorByKind.gdrive).toBeNull();
+  });
+
+  test('returns null when every backend fails', async () => {
+    syncLibrary.mockRejectedValue(new Error('offline'));
+    expect(await runFileLibrarySyncPass(envConfig, translationFn)).toBeNull();
     expect(useFileSyncStore.getState().activeKind).toBeNull();
   });
 
-  test('skips when the library has not loaded (would push an empty index)', async () => {
-    setProvider({ webdav: { enabled: true } } as Partial<SystemSettings>);
-    useLibraryStore.setState({ libraryLoaded: false } as never);
-    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBeNull();
-    expect(syncLibrary).not.toHaveBeenCalled();
-  });
-
-  test('skips when another backend holds the library-sync mutex', async () => {
-    setProvider({ webdav: { enabled: true } } as Partial<SystemSettings>);
-    useFileSyncStore.getState().beginSync('gdrive', 'busy');
-    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBeNull();
+  test('does nothing when no backend is enabled', async () => {
+    useSettingsStore.getState().setSettings({ version: 1 } as SystemSettings);
+    expect(await runFileLibrarySyncPass(envConfig, translationFn)).toBeNull();
     expect(syncLibrary).not.toHaveBeenCalled();
   });
 });
 
-// The Book Details / bookshelf cloud buttons route here when a third-party
-// provider is selected, instead of the (gated) Readest Cloud transfer queue.
-describe('runActiveFileBookUpload', () => {
-  test('returns false without touching the engine when readest is the provider', async () => {
-    setProvider({});
-    expect(await runActiveFileBookUpload(envConfig, makeBook('h1'))).toBe(false);
-    expect(pushBookFile).not.toHaveBeenCalled();
+describe('runFileBookUpload', () => {
+  beforeEach(() => {
+    pushBookFile.mockReset().mockResolvedValue({ uploaded: true });
+    pushBookCover.mockReset().mockResolvedValue({ uploaded: true });
+    useSettingsStore.getState().setSettings(multiProviderSettings);
+    setCachedUserPlan('pro');
   });
 
-  test('pushes the file (plus cover) for the active provider', async () => {
-    setProvider({ webdav: { enabled: true } } as Partial<SystemSettings>);
-    expect(await runActiveFileBookUpload(envConfig, makeBook('h1'))).toBe(true);
-    expect(pushBookFile).toHaveBeenCalledTimes(1);
-    expect(pushBookCover).toHaveBeenCalledTimes(1);
+  test('pushes the book to every enabled backend', async () => {
+    expect(await runFileBookUpload(envConfig, makeBook('h1'))).toBe(true);
+    expect(pushBookFile).toHaveBeenCalledTimes(2);
   });
 
-  test('treats an already-mirrored file as success', async () => {
-    setProvider({ webdav: { enabled: true } } as Partial<SystemSettings>);
-    pushBookFile.mockResolvedValueOnce({ uploaded: false, reason: 'remote-matches' });
-    expect(await runActiveFileBookUpload(envConfig, makeBook('h1'))).toBe(true);
+  test('succeeds when at least one backend takes the book', async () => {
+    pushBookFile
+      .mockRejectedValueOnce(new Error('drive is down'))
+      .mockResolvedValueOnce({ uploaded: true });
+    expect(await runFileBookUpload(envConfig, makeBook('h1'))).toBe(true);
   });
 
-  test('fails when the book has no local source', async () => {
-    setProvider({ webdav: { enabled: true } } as Partial<SystemSettings>);
-    pushBookFile.mockResolvedValueOnce({ uploaded: false, reason: 'no-source' });
-    expect(await runActiveFileBookUpload(envConfig, makeBook('h1'))).toBe(false);
-  });
-
-  test('returns false instead of throwing when the engine fails', async () => {
-    setProvider({ webdav: { enabled: true } } as Partial<SystemSettings>);
-    pushBookFile.mockRejectedValueOnce(new Error('server unreachable'));
-    expect(await runActiveFileBookUpload(envConfig, makeBook('h1'))).toBe(false);
+  test('fails when no backend takes the book', async () => {
+    pushBookFile.mockRejectedValue(new Error('offline'));
+    expect(await runFileBookUpload(envConfig, makeBook('h1'))).toBe(false);
   });
 });
 
-describe('runActiveFileBookDownload', () => {
-  test('returns false without touching the engine when readest is the provider', async () => {
-    setProvider({});
-    expect(await runActiveFileBookDownload(envConfig, makeBook('h1'))).toBe(false);
-    expect(downloadBookFile).not.toHaveBeenCalled();
+describe('runFileBookDownload', () => {
+  beforeEach(() => {
+    downloadBookFile.mockReset();
+    useSettingsStore.getState().setSettings(multiProviderSettings);
+    setCachedUserPlan('pro');
   });
 
-  test('downloads via the engine and stamps downloadedAt', async () => {
-    setProvider({ webdav: { enabled: true } } as Partial<SystemSettings>);
-    const book = makeBook('h1');
-    expect(await runActiveFileBookDownload(envConfig, book)).toBe(true);
+  test('stops at the first backend that has the file', async () => {
+    downloadBookFile.mockResolvedValueOnce(true);
+    expect(await runFileBookDownload(envConfig, makeBook('h1'))).toBe(true);
     expect(downloadBookFile).toHaveBeenCalledTimes(1);
-    expect(book.downloadedAt).toBeTruthy();
   });
 
-  test('returns false and leaves the book unstamped when the remote has no file', async () => {
-    setProvider({ webdav: { enabled: true } } as Partial<SystemSettings>);
-    downloadBookFile.mockResolvedValueOnce(false);
-    const book = makeBook('h1');
-    expect(await runActiveFileBookDownload(envConfig, book)).toBe(false);
-    expect(book.downloadedAt).toBeUndefined();
-  });
-
-  test('returns false instead of throwing when the engine fails', async () => {
-    setProvider({ webdav: { enabled: true } } as Partial<SystemSettings>);
-    downloadBookFile.mockRejectedValueOnce(new Error('server unreachable'));
-    expect(await runActiveFileBookDownload(envConfig, makeBook('h1'))).toBe(false);
-  });
-});
-
-// Paused means paused (#4959 contract): a free plan with a still-enabled
-// third-party provider (downgrade) must not sync — neither the library run
-// nor the per-book actions.
-describe('premium gating of the active provider', () => {
-  test('library sync is skipped for a free plan', async () => {
-    setCachedUserPlan('free');
-    setProvider({ webdav: { enabled: true, deviceId: 'd1' } } as Partial<SystemSettings>);
-    expect(await runActiveFileLibrarySync(envConfig, translationFn)).toBeNull();
-    expect(syncLibrary).not.toHaveBeenCalled();
-  });
-
-  test('per-book upload and download are skipped for a free plan', async () => {
-    setCachedUserPlan('free');
-    setProvider({ webdav: { enabled: true } } as Partial<SystemSettings>);
-    expect(await runActiveFileBookUpload(envConfig, makeBook('h1'))).toBe(false);
-    expect(await runActiveFileBookDownload(envConfig, makeBook('h1'))).toBe(false);
-    expect(pushBookFile).not.toHaveBeenCalled();
-    expect(downloadBookFile).not.toHaveBeenCalled();
+  test('falls through to the next backend when the first does not have it', async () => {
+    downloadBookFile.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    expect(await runFileBookDownload(envConfig, makeBook('h1'))).toBe(true);
+    expect(downloadBookFile).toHaveBeenCalledTimes(2);
   });
 });

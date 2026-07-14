@@ -27,10 +27,7 @@ import {
   isReadestCloudStorageActive,
   cloudProviderDisplayName,
 } from '@/services/sync/cloudSyncProvider';
-import {
-  runActiveFileBookDownload,
-  runActiveFileBookUpload,
-} from '@/services/sync/file/runLibrarySync';
+import { runFileBookDownload, runFileBookUpload } from '@/services/sync/file/runLibrarySync';
 import { getDirPath, getFilename, joinPaths } from '@/utils/path';
 import { parseOpenWithFiles } from '@/helpers/openWith';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
@@ -980,7 +977,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       // WebDAV / Google Drive is active the Readest Cloud transfer queue is
       // gated and would only answer with the "paused" notice.
       if (getCloudSyncProvider(useSettingsStore.getState().settings) !== 'readest') {
-        const ok = await runActiveFileBookUpload(envConfig, book);
+        const ok = await runFileBookUpload(envConfig, book);
         eventDispatcher.dispatch('toast', {
           type: ok ? 'info' : 'error',
           timeout: 2000,
@@ -1027,7 +1024,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       // Same provider routing as handleBookUpload — this path is also how a
       // not-yet-local book gets fetched when the user opens it.
       if (getCloudSyncProvider(useSettingsStore.getState().settings) !== 'readest') {
-        const ok = await runActiveFileBookDownload(envConfig, book);
+        const ok = await runFileBookDownload(envConfig, book);
         if (ok) await updateBook(envConfig, book);
         eventDispatcher.dispatch('toast', {
           type: ok ? 'info' : 'error',

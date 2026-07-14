@@ -5,103 +5,39 @@ import type { TranslationFunc } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
-import { resolveCloudSyncGate, settingsKeyForBackend } from '@/services/sync/cloudSyncProvider';
-import { createFileSyncProvider } from '@/services/sync/file/providerRegistry';
+import { isWebAppPlatform } from '@/services/environment';
+import { hasValidWebDriveToken } from '@/services/sync/providers/gdrive/auth/webTokenStore';
+import {
+  getActiveFileSyncBackends,
+  settingsKeyForBackend,
+} from '@/services/sync/cloudSyncProvider';
+import {
+  createFileSyncProvider,
+  type FileSyncBackendKind,
+} from '@/services/sync/file/providerRegistry';
 import { createAppLocalStore } from '@/services/sync/file/appLocalStore';
 import { FileSyncEngine, type SyncLibraryResult } from '@/services/sync/file/engine';
 
 /**
- * Run one library-wide sync against the ACTIVE third-party provider —
- * the shared execution owner for surfaces outside the auto-sync hooks
- * (the SettingsMenu sync row, pull-to-refresh) so they don't each
- * duplicate engine construction, deviceId minting, and error handling.
+ * Whether a backend's transport can work at all right now. Web Google Drive
+ * tokens are session-scoped with no refresh; once expired, every run aborts with
+ * a terminal AUTH_FAILED on the index pull. Skipping is quieter than failing:
+ * the Drive settings form already shows a Reconnect CTA, and a doomed request on
+ * every library change would just spam the log and the row's error state.
  *
- * Honours the same guards as `useLibraryFileSync`: never syncs a
- * not-yet-loaded library (an empty index push would clobber the remote)
- * and respects the global library-sync mutex. Returns the engine's
- * {@link SyncLibraryResult} when a sync ran to completion — callers
- * surface `booksSynced` in the toast, same as the native cloud sync —
- * and null when skipped or failed; failures record `lastError` on the
- * fileSyncStore for the health surfaces.
+ * This lives in the runner, not the hooks, so the manual "Sync now", the library
+ * auto-sync, and the reader's per-book sync all honour it.
  */
-export const runActiveFileLibrarySync = async (
+export const canBackendRun = (kind: FileSyncBackendKind): boolean =>
+  !(kind === 'gdrive' && isWebAppPlatform() && !hasValidWebDriveToken());
+
+/** Build one backend's engine, or null when it cannot run here. */
+const buildEngine = async (
   envConfig: EnvConfigType,
-  _: TranslationFunc,
-): Promise<SyncLibraryResult | null> => {
-  const gate = resolveCloudSyncGate(useSettingsStore.getState().settings);
-  const kind = gate.backends[0];
-  // Paused means paused (#4959): a downgraded account's still-enabled
-  // backend must not sync, and must not fall back to Readest Cloud either.
-  if (!kind || gate.paused) return null;
-
-  if (!useLibraryStore.getState().libraryLoaded) return null;
-
-  const syncStore = useFileSyncStore.getState();
-  if (!syncStore.beginSync(kind, _('Syncing…'))) return null;
-
-  try {
-    const appService = await envConfig.getAppService();
-    const current = useSettingsStore.getState().settings;
-    const fileProvider = await createFileSyncProvider(kind, current);
-    if (!fileProvider) return null;
-
-    const key = settingsKeyForBackend(kind);
-    const ps = current[key];
-    let deviceId = ps?.deviceId;
-    if (!deviceId) {
-      deviceId = uuidv4();
-      const next = { ...current, [key]: { ...current[key], deviceId } };
-      useSettingsStore.getState().setSettings(next);
-      await appService.saveSettings(next);
-    }
-
-    const store = createAppLocalStore({ appService, settings: current, envConfig });
-    const engine = new FileSyncEngine(fileProvider, store);
-    const strategy = ps?.strategy ?? 'silent';
-    const result = await engine.syncLibrary(useLibraryStore.getState().library, {
-      strategy: strategy === 'prompt' ? 'silent' : strategy,
-      syncBooks: ps?.syncBooks ?? false,
-      fullSync: false,
-      concurrency: 6,
-      deviceId,
-      onProgress: ({ index, total, action }) => {
-        const label = action === 'downloading' ? _('Downloading') : _('Uploading');
-        useFileSyncStore
-          .getState()
-          .updateProgress(
-            kind,
-            _('{{action}} {{n}} / {{total}}', { action: label, n: index + 1, total }),
-          );
-      },
-    });
-
-    const latest = useSettingsStore.getState().settings;
-    const next = { ...latest, [key]: { ...latest[key], lastSyncedAt: Date.now() } };
-    useSettingsStore.getState().setSettings(next);
-    await appService.saveSettings(next);
-
-    useFileSyncStore.getState().setLastError(kind, null);
-    return result;
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    useFileSyncStore.getState().setLastError(kind, message);
-    console.warn('[cloudSync] library file sync failed', kind, e);
-    return null;
-  } finally {
-    useFileSyncStore.getState().endSync(kind);
-  }
-};
-
-/**
- * Build the ACTIVE third-party provider's engine, or null when Readest Cloud
- * is selected / the provider cannot be constructed. Shared by the per-book
- * upload / download actions below.
- */
-const buildActiveEngine = async (envConfig: EnvConfigType): Promise<FileSyncEngine | null> => {
+  kind: FileSyncBackendKind,
+): Promise<FileSyncEngine | null> => {
+  if (!canBackendRun(kind)) return null;
   const settings = useSettingsStore.getState().settings;
-  const gate = resolveCloudSyncGate(settings);
-  const kind = gate.backends[0];
-  if (!kind || gate.paused) return null;
   const appService = await envConfig.getAppService();
   const fileProvider = await createFileSyncProvider(kind, settings);
   if (!fileProvider) return null;
@@ -109,54 +45,164 @@ const buildActiveEngine = async (envConfig: EnvConfigType): Promise<FileSyncEngi
   return new FileSyncEngine(fileProvider, store);
 };
 
-/**
- * Explicit per-book Upload routed to the ACTIVE third-party provider — the
- * Book Details / bookshelf cloud buttons call this instead of the (gated)
- * Readest Cloud transfer queue while WebDAV / Google Drive is selected.
- * Pushes the binary (HEAD short-circuited; an already-mirrored file counts
- * as success) plus the cover, best-effort. Toasts are the caller's job.
- */
-export const runActiveFileBookUpload = async (
+/** One backend's library sync. Throws; the caller isolates the failure. */
+const syncOneBackend = async (
   envConfig: EnvConfigType,
-  book: Book,
-): Promise<boolean> => {
-  try {
-    const engine = await buildActiveEngine(envConfig);
-    if (!engine) return false;
-    const result = await engine.pushBookFile(book);
-    if (!result.uploaded && result.reason !== 'remote-matches') return false;
-    try {
-      await engine.pushBookCover(book);
-    } catch (e) {
-      console.warn('[cloudSync] book cover upload failed', book.hash, e);
-    }
-    return true;
-  } catch (e) {
-    console.warn('[cloudSync] book upload failed', book.hash, e);
-    return false;
+  kind: FileSyncBackendKind,
+  _: TranslationFunc,
+): Promise<SyncLibraryResult | null> => {
+  const appService = await envConfig.getAppService();
+  const current = useSettingsStore.getState().settings;
+  const engine = await buildEngine(envConfig, kind);
+  if (!engine) return null;
+
+  const key = settingsKeyForBackend(kind);
+  const ps = current[key];
+  let deviceId = ps?.deviceId;
+  if (!deviceId) {
+    deviceId = uuidv4();
+    const next = { ...current, [key]: { ...current[key], deviceId } };
+    useSettingsStore.getState().setSettings(next);
+    await appService.saveSettings(next);
   }
+
+  const strategy = ps?.strategy ?? 'silent';
+  const result = await engine.syncLibrary(useLibraryStore.getState().library, {
+    strategy: strategy === 'prompt' ? 'silent' : strategy,
+    syncBooks: ps?.syncBooks ?? false,
+    fullSync: false,
+    concurrency: 6,
+    deviceId,
+    onProgress: ({ index, total, action }) => {
+      const label = action === 'downloading' ? _('Downloading') : _('Uploading');
+      useFileSyncStore
+        .getState()
+        .updateProgress(
+          kind,
+          _('{{action}} {{n}} / {{total}}', { action: label, n: index + 1, total }),
+        );
+    },
+  });
+
+  const latest = useSettingsStore.getState().settings;
+  const next = { ...latest, [key]: { ...latest[key], lastSyncedAt: Date.now() } };
+  useSettingsStore.getState().setSettings(next);
+  await appService.saveSettings(next);
+  return result;
 };
 
 /**
- * Explicit per-book Download routed to the ACTIVE third-party provider (also
- * reached when opening a book whose file is not local). Stamps the book's
- * downloadedAt/coverDownloadedAt like the native download path; persisting
- * the book row (updateBook) and toasts are the caller's job.
+ * Run one library-wide sync PASS across every enabled third-party backend
+ * (#5062) — the shared execution owner for surfaces outside the auto-sync hooks
+ * (the SettingsMenu sync row, pull to refresh).
+ *
+ * The backends run one after another, in a fixed order, against the SAME local
+ * library — which is the merge point, so backend N sees everything backends
+ * 1..N-1 pulled in. The last-to-first edge lands on the next pass; a pull that
+ * changed the library re-triggers the debounced auto-sync, so it converges
+ * without extra machinery.
+ *
+ * The mutex is held for the WHOLE pass, not per backend: releasing between
+ * backends would let an auto-sync start a second reconcile of the same library.
+ *
+ * Failure is isolated per backend. An expired Drive token throws a terminal
+ * AUTH_FAILED, and the pass records it and moves on — redundancy is worthless
+ * if a dead mirror takes the live one down with it. Returns the summed result
+ * of the backends that succeeded, or null when none did.
  */
-export const runActiveFileBookDownload = async (
+export const runFileLibrarySyncPass = async (
+  envConfig: EnvConfigType,
+  _: TranslationFunc,
+): Promise<SyncLibraryResult | null> => {
+  // Paused means paused (#4959): a downgraded account's still-enabled backends
+  // must not sync, and must not fall back to Readest Cloud either.
+  const backends = getActiveFileSyncBackends(useSettingsStore.getState().settings);
+  if (backends.length === 0) return null;
+
+  // NEVER sync a library that is not loaded from disk: pushing an empty index
+  // would clobber the remote.
+  if (!useLibraryStore.getState().libraryLoaded) return null;
+
+  if (!useFileSyncStore.getState().beginSync(backends[0]!, _('Syncing…'))) return null;
+
+  let merged: SyncLibraryResult | null = null;
+  try {
+    for (let i = 0; i < backends.length; i++) {
+      const kind = backends[i]!;
+      if (i > 0) useFileSyncStore.getState().switchSync(kind, _('Syncing…'));
+      try {
+        const result = await syncOneBackend(envConfig, kind, _);
+        useFileSyncStore.getState().setLastError(kind, null);
+        if (result) {
+          merged = merged
+            ? { ...result, booksSynced: merged.booksSynced + result.booksSynced }
+            : result;
+        }
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        useFileSyncStore.getState().setLastError(kind, message);
+        console.warn('[cloudSync] library file sync failed', kind, e);
+      }
+    }
+  } finally {
+    useFileSyncStore.getState().endSync(backends[backends.length - 1]!);
+  }
+  return merged;
+};
+
+/**
+ * Explicit per-book Upload, mirrored to EVERY enabled backend — the Book Details
+ * / bookshelf cloud buttons call this alongside (or instead of) the Readest
+ * Cloud transfer queue. Pushes the binary (HEAD short-circuited; an
+ * already-mirrored file counts as success) plus the cover, best-effort per
+ * backend. Succeeds when at least one backend took the book. Toasts are the
+ * caller's job.
+ */
+export const runFileBookUpload = async (envConfig: EnvConfigType, book: Book): Promise<boolean> => {
+  const backends = getActiveFileSyncBackends(useSettingsStore.getState().settings);
+  let anyUploaded = false;
+  for (const kind of backends) {
+    try {
+      const engine = await buildEngine(envConfig, kind);
+      if (!engine) continue;
+      const result = await engine.pushBookFile(book);
+      if (!result.uploaded && result.reason !== 'remote-matches') continue;
+      anyUploaded = true;
+      try {
+        await engine.pushBookCover(book);
+      } catch (e) {
+        console.warn('[cloudSync] book cover upload failed', kind, book.hash, e);
+      }
+    } catch (e) {
+      console.warn('[cloudSync] book upload failed', kind, book.hash, e);
+    }
+  }
+  return anyUploaded;
+};
+
+/**
+ * Explicit per-book Download (also reached when opening a book whose file is not
+ * local). Tries the enabled backends in order and stops at the first one holding
+ * the file — the mirrors are equivalent, so there is nothing to gain from asking
+ * the rest. Stamps downloadedAt/coverDownloadedAt like the native download path;
+ * persisting the book row (updateBook) and toasts are the caller's job.
+ */
+export const runFileBookDownload = async (
   envConfig: EnvConfigType,
   book: Book,
 ): Promise<boolean> => {
-  try {
-    const engine = await buildActiveEngine(envConfig);
-    if (!engine) return false;
-    const ok = await engine.downloadBookFile(book);
-    if (!ok) return false;
-    book.downloadedAt = Date.now();
-    if (!book.coverDownloadedAt) book.coverDownloadedAt = Date.now();
-    return true;
-  } catch (e) {
-    console.warn('[cloudSync] book download failed', book.hash, e);
-    return false;
+  const backends = getActiveFileSyncBackends(useSettingsStore.getState().settings);
+  for (const kind of backends) {
+    try {
+      const engine = await buildEngine(envConfig, kind);
+      if (!engine) continue;
+      if (!(await engine.downloadBookFile(book))) continue;
+      book.downloadedAt = Date.now();
+      if (!book.coverDownloadedAt) book.coverDownloadedAt = Date.now();
+      return true;
+    } catch (e) {
+      console.warn('[cloudSync] book download failed', kind, book.hash, e);
+    }
   }
+  return false;
 };

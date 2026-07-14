@@ -45,7 +45,9 @@ const routing = vi.hoisted(() => ({
   backends: [] as ('webdav' | 'gdrive' | 's3' | 'onedrive')[],
 }));
 
-const runActiveFileLibrarySync = vi.hoisted(() => vi.fn(async () => ({ booksSynced: 1 })));
+const runFileLibrarySyncPass = vi.hoisted(() =>
+  vi.fn(async (): Promise<{ booksSynced: number } | null> => ({ booksSynced: 1 })),
+);
 
 const checkMixedFleetOnce = vi.hoisted(() => vi.fn(async () => false));
 
@@ -62,7 +64,15 @@ vi.mock('@/context/SyncContext', () => ({
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (text: string) => text,
+  useTranslation:
+    () =>
+    (text: string, params?: Record<string, string | number>): string => {
+      if (!params) return text;
+      return Object.entries(params).reduce(
+        (acc, [k, v]) => acc.replace(`{{${k}}}`, String(v)),
+        text,
+      );
+    },
 }));
 
 vi.mock('@/hooks/useSync', () => ({
@@ -75,7 +85,7 @@ vi.mock('@/services/sync/cloudSyncProvider', () => ({
 }));
 
 vi.mock('@/services/sync/file/runLibrarySync', () => ({
-  runActiveFileLibrarySync,
+  runFileLibrarySyncPass,
 }));
 
 vi.mock('@/services/sync/fleetDetection', () => ({
@@ -114,7 +124,7 @@ describe('useBooksSync pullLibrary routing (issue #5062)', () => {
     // The mount effect calls pullLibrary() once automatically; this is the
     // critical assertion — a check that only the file pass ran would not
     // catch a regression that returns before the native pull ever starts.
-    await waitFor(() => expect(runActiveFileLibrarySync).toHaveBeenCalled());
+    await waitFor(() => expect(runFileLibrarySyncPass).toHaveBeenCalled());
     await waitFor(() => expect(syncState.syncBooks).toHaveBeenCalled());
 
     const pullCalls = syncState.syncBooks.mock.calls.filter((call) => call[1] === 'pull');
@@ -127,7 +137,7 @@ describe('useBooksSync pullLibrary routing (issue #5062)', () => {
 
     renderHook(() => useBooksSync());
 
-    await waitFor(() => expect(runActiveFileLibrarySync).toHaveBeenCalled());
+    await waitFor(() => expect(runFileLibrarySyncPass).toHaveBeenCalled());
     // Give any (incorrect) native call a chance to fire before asserting it didn't.
     await act(async () => {
       await Promise.resolve();
@@ -144,7 +154,7 @@ describe('useBooksSync pullLibrary routing (issue #5062)', () => {
     await waitFor(() => expect(syncState.syncBooks).toHaveBeenCalled());
     const pullCalls = syncState.syncBooks.mock.calls.filter((call) => call[1] === 'pull');
     expect(pullCalls.length).toBeGreaterThan(0);
-    expect(runActiveFileLibrarySync).not.toHaveBeenCalled();
+    expect(runFileLibrarySyncPass).not.toHaveBeenCalled();
   });
 
   it('toasts exactly once for a verbose pull when both providers are enabled', async () => {
@@ -157,11 +167,11 @@ describe('useBooksSync pullLibrary routing (issue #5062)', () => {
 
     // Let the mount effect's non-verbose pullLibrary() call settle first so it
     // doesn't contend with the explicit call below over isPullingRef.
-    await waitFor(() => expect(runActiveFileLibrarySync).toHaveBeenCalled());
+    await waitFor(() => expect(runFileLibrarySyncPass).toHaveBeenCalled());
     await waitFor(() => expect(syncState.syncBooks).toHaveBeenCalled());
 
     dispatchSpy.mockClear();
-    runActiveFileLibrarySync.mockClear();
+    runFileLibrarySyncPass.mockClear();
     syncState.syncBooks.mockClear();
 
     await act(async () => {
@@ -170,6 +180,60 @@ describe('useBooksSync pullLibrary routing (issue #5062)', () => {
 
     const toastCalls = dispatchSpy.mock.calls.filter(([event]) => event === 'toast');
     expect(toastCalls).toHaveLength(1);
+  });
+
+  it('sums the books synced across both legs in the single combined toast', async () => {
+    routing.readestEnabled = true;
+    routing.backends = ['gdrive'];
+
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+
+    const { result } = renderHook(() => useBooksSync());
+
+    await waitFor(() => expect(runFileLibrarySyncPass).toHaveBeenCalled());
+    await waitFor(() => expect(syncState.syncBooks).toHaveBeenCalled());
+
+    dispatchSpy.mockClear();
+    runFileLibrarySyncPass.mockClear();
+    syncState.syncBooks.mockClear();
+    runFileLibrarySyncPass.mockResolvedValueOnce({ booksSynced: 2 });
+    syncState.syncBooks.mockResolvedValueOnce(5);
+
+    await act(async () => {
+      await result.current.pullLibrary(false, true);
+    });
+
+    const toastCalls = dispatchSpy.mock.calls.filter(([event]) => event === 'toast');
+    expect(toastCalls).toHaveLength(1);
+    expect(toastCalls[0]?.[1]).toMatchObject({ type: 'info', message: '7 book(s) synced' });
+  });
+
+  it('still reports a combined success when the file pass fails but the native pull succeeds', async () => {
+    routing.readestEnabled = true;
+    routing.backends = ['gdrive'];
+
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+
+    const { result } = renderHook(() => useBooksSync());
+
+    await waitFor(() => expect(runFileLibrarySyncPass).toHaveBeenCalled());
+    await waitFor(() => expect(syncState.syncBooks).toHaveBeenCalled());
+
+    dispatchSpy.mockClear();
+    runFileLibrarySyncPass.mockClear();
+    syncState.syncBooks.mockClear();
+    // An expired Drive token throws inside the pass; the pass itself catches
+    // it per-backend and returns null when every backend it ran failed.
+    runFileLibrarySyncPass.mockResolvedValueOnce(null);
+    syncState.syncBooks.mockResolvedValueOnce(4);
+
+    await act(async () => {
+      await result.current.pullLibrary(false, true);
+    });
+
+    const toastCalls = dispatchSpy.mock.calls.filter(([event]) => event === 'toast');
+    expect(toastCalls).toHaveLength(1);
+    expect(toastCalls[0]?.[1]).toMatchObject({ type: 'info', message: '4 book(s) synced' });
   });
 });
 
