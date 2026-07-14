@@ -2,8 +2,8 @@ import { MdChevronRight } from 'react-icons/md';
 
 import Dialog from '@/components/Dialog';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useImportOptions } from './importOptions';
-import type { ImportOptionHandlers } from './importOptions';
+import { useImportOptions } from '../hooks/useImportOptions';
+import type { ImportOptionHandlers } from '../hooks/useImportOptions';
 
 interface ImportDialogProps extends ImportOptionHandlers {
   onClose: () => void;

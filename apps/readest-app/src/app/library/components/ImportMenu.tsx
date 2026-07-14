@@ -1,8 +1,8 @@
 import clsx from 'clsx';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
-import { useImportOptions } from './importOptions';
-import type { ImportOptionHandlers } from './importOptions';
+import { useImportOptions } from '../hooks/useImportOptions';
+import type { ImportOptionHandlers } from '../hooks/useImportOptions';
 
 interface ImportMenuProps extends ImportOptionHandlers {
   setIsDropdownOpen?: (open: boolean) => void;
