@@ -210,3 +210,16 @@ describe('single-tap opens image gallery / table zoom in reflowable books (#4584
     expect(types).not.toContain('iframe-open-media');
   });
 });
+
+describe('long-press does not open the image gallery / table zoom (#5069)', () => {
+  // A hold over an image/table used to arm a 500ms timer, cancelled only once the
+  // pointer travelled 10px. A slow scroll covers less than that in half a second, so
+  // the timer fired mid-scroll and the viewer opened under the reader's finger. Tap
+  // (#4584) already reaches the same viewer, so nothing registers a long-press
+  // anymore: the iframe handlers must expose no way to attach one.
+  test('the iframe handlers expose no long-press attachment', async () => {
+    const handlers = await importHandlers();
+
+    expect(handlers).not.toHaveProperty('addLongPressListeners');
+  });
+});

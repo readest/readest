@@ -78,9 +78,8 @@ export const useMouseEvent = (
 };
 
 // Opens the image gallery / table zoom viewer when the iframe reports that the
-// user activated an image or table — via either a long-press (any book) or a
-// single tap (reflowable books). See the `iframe-open-media` producers in
-// iframeEventHandlers.ts.
+// user tapped an image or table (reflowable books only). See the
+// `iframe-open-media` producer in iframeEventHandlers.ts.
 export const useOpenMediaEvent = (
   bookKey: string,
   handleImagePress: (src: string) => void,

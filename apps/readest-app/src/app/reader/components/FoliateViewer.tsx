@@ -58,7 +58,6 @@ import {
   handleTouchStart,
   handleTouchMove,
   handleTouchEnd,
-  addLongPressListeners,
 } from '../utils/iframeEventHandlers';
 import { getMaxInlineSize } from '@/utils/config';
 import { getDirFromUILanguage } from '@/utils/rtl';
@@ -426,7 +425,6 @@ const FoliateViewer: React.FC<{
         detail.doc.addEventListener('touchstart', handleTouchStart.bind(null, bookKey));
         detail.doc.addEventListener('touchmove', handleTouchMove.bind(null, bookKey));
         detail.doc.addEventListener('touchend', handleTouchEnd.bind(null, bookKey));
-        addLongPressListeners(bookKey, detail.doc);
         registerBrightnessListeners(detail.doc);
       }
     }

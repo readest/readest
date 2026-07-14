@@ -373,6 +373,13 @@ const getPageLayoutStyles = (
     padding: unset;
     margin: unset;
   }
+  /* -webkit-touch-callout on html/body does not reach descendant images in
+     Android WebView, and the native image callout collides with the reader's
+     touch handlers and can freeze the app */
+  img {
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
+  }
   svg:where(:not([width])), img:where(:not([width])) {
     width: auto;
   }
