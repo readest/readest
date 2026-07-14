@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
+  canToggleCloudProvider,
   getReadestCloudRowStatus,
   getThirdPartyRowStatus,
 } from '@/components/settings/integrations/cloudSyncStatus';
@@ -93,5 +94,37 @@ describe('getThirdPartyRowStatus: book file coverage', () => {
 
   test('stays plain Active when another provider holds the book files', () => {
     expect(getThirdPartyRowStatus(_, { ...base, booksBackedUpElsewhere: true })).toBe('Active');
+  });
+});
+
+describe('canToggleCloudProvider', () => {
+  test('premium and configured can be toggled', () => {
+    expect(canToggleCloudProvider({ isPremium: true, isConfigured: true, isEnabled: false })).toBe(
+      true,
+    );
+  });
+
+  test('premium, unconfigured, and not enabled cannot be toggled', () => {
+    expect(canToggleCloudProvider({ isPremium: true, isConfigured: false, isEnabled: false })).toBe(
+      false,
+    );
+  });
+
+  test('a lapsed-plan user can always switch an enabled provider off', () => {
+    expect(canToggleCloudProvider({ isPremium: false, isConfigured: false, isEnabled: true })).toBe(
+      true,
+    );
+  });
+
+  test('not premium and not enabled cannot be toggled', () => {
+    expect(
+      canToggleCloudProvider({ isPremium: false, isConfigured: false, isEnabled: false }),
+    ).toBe(false);
+  });
+
+  test('premium with cleared config but still enabled can be toggled (rescue)', () => {
+    expect(canToggleCloudProvider({ isPremium: true, isConfigured: false, isEnabled: true })).toBe(
+      true,
+    );
   });
 });

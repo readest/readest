@@ -39,7 +39,11 @@ import GoogleDriveForm from './integrations/GoogleDriveForm';
 import OneDriveForm from './integrations/OneDriveForm';
 import S3Form from './integrations/S3Form';
 import { persistCloudProviderEnabled } from './integrations/cloudSync';
-import { getReadestCloudRowStatus, getThirdPartyRowStatus } from './integrations/cloudSyncStatus';
+import {
+  canToggleCloudProvider,
+  getReadestCloudRowStatus,
+  getThirdPartyRowStatus,
+} from './integrations/cloudSyncStatus';
 import {
   getCloudSyncProviders,
   isReadestCloudEnabled,
@@ -482,13 +486,13 @@ const IntegrationsPanel: React.FC = () => {
           <div
             className='divide-base-200 divide-y'
             role='group'
-            aria-label={_('Cloud sync provider')}
+            aria-label={_('Cloud sync providers')}
           >
             <CloudProviderRow
               icon={RiCloudFill}
               title={_('Readest Cloud')}
               status={readestStatus}
-              checked={readestEnabled}
+              checked={!!user && readestEnabled}
               canToggle={!!user}
               onToggle={(next) => toggleCloudProvider('readest', next)}
               onOpen={() => (user ? setSubPage('readest-cloud') : navigateToLogin(router))}
@@ -508,9 +512,11 @@ const IntegrationsPanel: React.FC = () => {
                 status={gdriveStatus}
                 badge={_('Premium')}
                 checked={!!settings.googleDrive?.enabled}
-                canToggle={
-                  isCloudSyncPremium && (gdriveConfigured || !!settings.googleDrive?.enabled)
-                }
+                canToggle={canToggleCloudProvider({
+                  isPremium: isCloudSyncPremium,
+                  isConfigured: gdriveConfigured,
+                  isEnabled: !!settings.googleDrive?.enabled,
+                })}
                 onToggle={(next) => toggleCloudProvider('gdrive', next)}
                 onOpen={() =>
                   isCloudSyncPremium ? setSubPage('gdrive') : navigateToProfile(router)
@@ -524,7 +530,11 @@ const IntegrationsPanel: React.FC = () => {
               status={webdavStatus}
               badge={_('Premium')}
               checked={!!settings.webdav?.enabled}
-              canToggle={isCloudSyncPremium && (webdavConfigured || !!settings.webdav?.enabled)}
+              canToggle={canToggleCloudProvider({
+                isPremium: isCloudSyncPremium,
+                isConfigured: webdavConfigured,
+                isEnabled: !!settings.webdav?.enabled,
+              })}
               onToggle={(next) => toggleCloudProvider('webdav', next)}
               onOpen={() => (isCloudSyncPremium ? setSubPage('webdav') : navigateToProfile(router))}
               toggleLabel={_('Sync with WebDAV')}
@@ -535,7 +545,11 @@ const IntegrationsPanel: React.FC = () => {
               status={s3Status}
               badge={_('Premium')}
               checked={!!settings.s3?.enabled}
-              canToggle={isCloudSyncPremium && (s3Configured || !!settings.s3?.enabled)}
+              canToggle={canToggleCloudProvider({
+                isPremium: isCloudSyncPremium,
+                isConfigured: s3Configured,
+                isEnabled: !!settings.s3?.enabled,
+              })}
               onToggle={(next) => toggleCloudProvider('s3', next)}
               onOpen={() => (isCloudSyncPremium ? setSubPage('s3') : navigateToProfile(router))}
               toggleLabel={_('Sync with S3')}
@@ -551,9 +565,11 @@ const IntegrationsPanel: React.FC = () => {
                 status={onedriveStatus}
                 badge={_('Premium')}
                 checked={!!settings.onedrive?.enabled}
-                canToggle={
-                  isCloudSyncPremium && (onedriveConfigured || !!settings.onedrive?.enabled)
-                }
+                canToggle={canToggleCloudProvider({
+                  isPremium: isCloudSyncPremium,
+                  isConfigured: onedriveConfigured,
+                  isEnabled: !!settings.onedrive?.enabled,
+                })}
                 onToggle={(next) => toggleCloudProvider('onedrive', next)}
                 onOpen={() =>
                   isCloudSyncPremium ? setSubPage('onedrive') : navigateToProfile(router)
@@ -564,7 +580,7 @@ const IntegrationsPanel: React.FC = () => {
           </div>
         </div>
         {providers.length === 0 && (
-          <div className='mt-3'>
+          <div className='mt-5'>
             <Tips>
               <li>
                 {_(
