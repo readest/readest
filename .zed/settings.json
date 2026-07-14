@@ -79,6 +79,11 @@
     "vtsls": {
       "settings": {
         "typescript": {
+          "tsserver": {
+            "experimental": {
+              "enableProjectDiagnostics": true // Disable if you don't want vtsls to scan the entire codebase
+            }
+          },
           "inlayHints": {
             "parameterNames": {
               "enabled": "all"
