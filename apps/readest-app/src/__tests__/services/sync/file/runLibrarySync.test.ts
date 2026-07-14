@@ -145,6 +145,18 @@ describe('runFileLibrarySyncPass', () => {
     expect(await runFileLibrarySyncPass(envConfig, translationFn)).toBeNull();
     expect(syncLibrary).not.toHaveBeenCalled();
   });
+
+  test('skips when the library has not loaded (would push an empty index)', async () => {
+    useLibraryStore.setState({ libraryLoaded: false });
+    expect(await runFileLibrarySyncPass(envConfig, translationFn)).toBeNull();
+    expect(syncLibrary).not.toHaveBeenCalled();
+  });
+
+  test('skips when another backend holds the library-sync mutex', async () => {
+    useFileSyncStore.getState().beginSync('s3', 'busy');
+    expect(await runFileLibrarySyncPass(envConfig, translationFn)).toBeNull();
+    expect(syncLibrary).not.toHaveBeenCalled();
+  });
 });
 
 describe('runFileBookUpload', () => {
@@ -171,6 +183,13 @@ describe('runFileBookUpload', () => {
     pushBookFile.mockRejectedValue(new Error('offline'));
     expect(await runFileBookUpload(envConfig, makeBook('h1'))).toBe(false);
   });
+
+  test('treats an already-mirrored file as success', async () => {
+    pushBookFile
+      .mockResolvedValueOnce({ uploaded: false, reason: 'remote-matches' })
+      .mockResolvedValueOnce({ uploaded: false, reason: 'no-source' });
+    expect(await runFileBookUpload(envConfig, makeBook('h1'))).toBe(true);
+  });
 });
 
 describe('runFileBookDownload', () => {
@@ -190,5 +209,13 @@ describe('runFileBookDownload', () => {
     downloadBookFile.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
     expect(await runFileBookDownload(envConfig, makeBook('h1'))).toBe(true);
     expect(downloadBookFile).toHaveBeenCalledTimes(2);
+  });
+
+  test('stamps downloadedAt and coverDownloadedAt on success', async () => {
+    downloadBookFile.mockResolvedValueOnce(true);
+    const book = makeBook('h1');
+    expect(await runFileBookDownload(envConfig, book)).toBe(true);
+    expect(book.downloadedAt).toBeTruthy();
+    expect(book.coverDownloadedAt).toBeTruthy();
   });
 });

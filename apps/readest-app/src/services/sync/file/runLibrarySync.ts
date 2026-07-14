@@ -145,7 +145,8 @@ export const runFileLibrarySyncPass = async (
       }
     }
   } finally {
-    useFileSyncStore.getState().endSync(backends[backends.length - 1]!);
+    const held = useFileSyncStore.getState().activeKind;
+    useFileSyncStore.getState().endSync(held ?? backends[0]!);
   }
   return merged;
 };
