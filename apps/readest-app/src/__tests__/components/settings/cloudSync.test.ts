@@ -341,14 +341,20 @@ describe('persistCloudProviderEnabled', () => {
       } as unknown as SystemSettings,
     });
 
+    // mutate sets syncBooks: false on a disabled provider. If the toggle runs
+    // first (wrong order), it would set syncBooks: true, then mutate would
+    // override it to false, and this assertion would fail. Correct order
+    // (mutate then toggle) ensures the off-to-on edge fires after mutate,
+    // so the toggle's syncBooks: true wins.
     const next = await persistCloudProviderEnabled(envConfig, 'webdav', true, (settings) => ({
       ...settings,
       webdav: {
-        ...(settings as unknown as { webdav: WebDAVSettings }).webdav,
+        ...settings.webdav,
         serverUrl: 'https://dav.example.com',
         username: 'alice',
         password: 'hunter2',
         rootPath: '/Readest',
+        syncBooks: false,
       },
     }));
 
@@ -356,7 +362,8 @@ describe('persistCloudProviderEnabled', () => {
     expect(next.webdav.serverUrl).toBe('https://dav.example.com');
     expect(next.webdav.password).toBe('hunter2');
     // ...and because `mutate` didn't pre-set `enabled`, the toggle still saw
-    // an off -> on edge and ran the activation side effects.
+    // an off -> on edge and ran the activation side effects, overwriting
+    // mutate's syncBooks: false with syncBooks: true.
     expect(next.webdav.enabled).toBe(true);
     expect(next.webdav.syncBooks).toBe(true);
     expect(next.webdav.providerSelectedAt).toBeTruthy();
