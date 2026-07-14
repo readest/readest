@@ -103,4 +103,40 @@ describe('checkMixedFleetOnce', () => {
     expect(await checkMixedFleetOnce(client, settings, translationFn)).toBe(false);
     expect(vi.mocked(eventDispatcher.dispatch)).not.toHaveBeenCalled();
   });
+
+  test('does not probe when Readest Cloud is enabled alongside a backend', async () => {
+    const pullChanges = vi.fn();
+    const settings = {
+      readestCloud: { enabled: true },
+      googleDrive: { enabled: true, providerSelectedAt: 1000 },
+    } as unknown as SystemSettings;
+
+    expect(await checkMixedFleetOnce({ pullChanges } as never, settings, translationFn)).toBe(
+      false,
+    );
+    expect(pullChanges).not.toHaveBeenCalled();
+  });
+
+  test('probes since readestCloud.disabledAt when Readest Cloud is off', async () => {
+    const pullChanges = vi.fn().mockResolvedValue({ books: [{ hash: 'h' }] });
+    const settings = {
+      readestCloud: { enabled: false, disabledAt: 5000 },
+      googleDrive: { enabled: true, providerSelectedAt: 1000 },
+    } as unknown as SystemSettings;
+
+    expect(await checkMixedFleetOnce({ pullChanges } as never, settings, translationFn)).toBe(true);
+    expect(pullChanges).toHaveBeenCalledWith(5000, 'books', undefined, undefined, 1);
+  });
+
+  test('falls back to the earliest providerSelectedAt for a legacy user', async () => {
+    const pullChanges = vi.fn().mockResolvedValue({ books: [] });
+    const settings = {
+      // No readestCloud field: derived off, because a backend is enabled.
+      onedrive: { enabled: true, providerSelectedAt: 9000 },
+      webdav: { enabled: true, providerSelectedAt: 3000 },
+    } as unknown as SystemSettings;
+
+    await checkMixedFleetOnce({ pullChanges } as never, settings, translationFn);
+    expect(pullChanges).toHaveBeenCalledWith(3000, 'books', undefined, undefined, 1);
+  });
 });
