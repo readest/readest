@@ -86,4 +86,20 @@ describe('fileSyncStore pass mutex', () => {
     expect(useFileSyncStore.getState().activeKind).toBeNull();
     expect(useFileSyncStore.getState().beginSync('s3', 'Syncing…')).toBe(true);
   });
+
+  test('switchSync with lock free is a no-op and does not acquire the lock', () => {
+    const store = useFileSyncStore.getState();
+    // Call switchSync when activeKind is null (lock is free).
+    store.switchSync('gdrive', 'Syncing…');
+
+    const s = useFileSyncStore.getState();
+    // Lock must remain free.
+    expect(s.activeKind).toBeNull();
+    // No byKind entry should have been created for gdrive.
+    expect(s.byKind.gdrive).toBeUndefined();
+    // A subsequent beginSync must succeed, proving the lock was never taken.
+    expect(store.beginSync('gdrive', 'Syncing…')).toBe(true);
+    // After beginSync, the lock should be acquired.
+    expect(useFileSyncStore.getState().activeKind).toBe('gdrive');
+  });
 });
