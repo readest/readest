@@ -14,6 +14,7 @@ import {
   createFileSyncProvider,
   resetFileSyncProviderCache,
 } from '@/services/sync/file/providerRegistry';
+import type { FileSyncBackendsSettings } from '@/services/sync/file/providerRegistry';
 import type { FileSyncProvider } from '@/services/sync/file/provider';
 import type { S3Settings, WebDAVSettings } from '@/types/settings';
 
@@ -109,5 +110,83 @@ describe('createFileSyncProvider', () => {
     resetFileSyncProviderCache();
     const second = await createFileSyncProvider('webdav', { webdav });
     expect(second).not.toBe(first);
+  });
+});
+
+describe('per-backend provider cache', () => {
+  test('alternating backends do not evict each other', async () => {
+    resetFileSyncProviderCache();
+    const settings = {
+      webdav: {
+        enabled: true,
+        serverUrl: 'https://dav',
+        username: 'u',
+        password: 'p',
+        rootPath: '/',
+      },
+      s3: {
+        enabled: true,
+        endpoint: 'https://acc.r2.cloudflarestorage.com',
+        bucket: 'b',
+        accessKeyId: 'k',
+        secretAccessKey: 's',
+      },
+    } as unknown as FileSyncBackendsSettings;
+
+    const webdav1 = await createFileSyncProvider('webdav', settings);
+    const s3First = await createFileSyncProvider('s3', settings);
+    const webdav2 = await createFileSyncProvider('webdav', settings);
+
+    expect(webdav1).toBeTruthy();
+    expect(s3First).toBeTruthy();
+    // The WebDAV provider survived the S3 build: same instance, cache intact.
+    expect(webdav2).toBe(webdav1);
+  });
+
+  test('editing one backend config rebuilds only that backend', async () => {
+    resetFileSyncProviderCache();
+    const base = {
+      webdav: {
+        enabled: true,
+        serverUrl: 'https://dav',
+        username: 'u',
+        password: 'p',
+        rootPath: '/',
+      },
+      s3: {
+        enabled: true,
+        endpoint: 'https://acc.r2.cloudflarestorage.com',
+        bucket: 'b',
+        accessKeyId: 'k',
+        secretAccessKey: 's',
+      },
+    } as unknown as FileSyncBackendsSettings;
+
+    const s3First = await createFileSyncProvider('s3', base);
+    const webdavFirst = await createFileSyncProvider('webdav', base);
+
+    const edited = {
+      ...base,
+      webdav: { ...base.webdav, serverUrl: 'https://other' },
+    } as unknown as FileSyncBackendsSettings;
+
+    expect(await createFileSyncProvider('webdav', edited)).not.toBe(webdavFirst);
+    expect(await createFileSyncProvider('s3', edited)).toBe(s3First);
+  });
+
+  test('reset clears every backend', async () => {
+    resetFileSyncProviderCache();
+    const settings = {
+      webdav: {
+        enabled: true,
+        serverUrl: 'https://dav',
+        username: 'u',
+        password: 'p',
+        rootPath: '/',
+      },
+    } as unknown as FileSyncBackendsSettings;
+    const first = await createFileSyncProvider('webdav', settings);
+    resetFileSyncProviderCache();
+    expect(await createFileSyncProvider('webdav', settings)).not.toBe(first);
   });
 });

@@ -28,18 +28,22 @@ export interface FileSyncBackendsSettings {
 }
 
 /**
- * One provider is memoised per connection key and shared by every surface
- * (the reader's per-book sync, the library auto-sync, Sync now / pull to
- * refresh). What makes reuse worth it is the provider's path->id cache
- * (Drive): a cold provider re-resolves /Readest, books/ and library.json by
- * name query on every engine build, so one engine per book open/close/sync
- * turned each user action into a burst of redundant remote requests. The key
- * mirrors the connection-relevant settings, so a config edit rebuilds; stale
- * cached ids self-heal through the provider's 404 eviction. Drive connect /
- * disconnect must call {@link resetFileSyncProviderCache} — its token source
- * changes identity without any key input changing.
+ * One provider is memoised PER BACKEND and shared by every surface (the reader's
+ * per-book sync, the library auto-sync, Sync now / pull to refresh). What makes
+ * reuse worth it is the provider's path->id cache (Drive): a cold provider
+ * re-resolves /Readest, books/ and library.json by name query on every engine
+ * build, so one engine per book open/close/sync turned each user action into a
+ * burst of redundant remote requests.
+ *
+ * The cache is keyed by backend kind because several backends now sync in the
+ * same pass (#5062) — a single shared slot would have them evict each other on
+ * every alternation. The value's `key` mirrors the connection-relevant settings,
+ * so a config edit rebuilds that backend only; stale cached ids self-heal through
+ * the provider's 404 eviction. Drive / OneDrive connect and disconnect must call
+ * {@link resetFileSyncProviderCache} — their token source changes identity
+ * without any key input changing.
  */
-let cachedProvider: { key: string; provider: FileSyncProvider } | null = null;
+const providerCache = new Map<FileSyncBackendKind, { key: string; provider: FileSyncProvider }>();
 
 const providerCacheKey = (
   kind: FileSyncBackendKind,
@@ -58,7 +62,7 @@ const providerCacheKey = (
 };
 
 export const resetFileSyncProviderCache = (): void => {
-  cachedProvider = null;
+  providerCache.clear();
 };
 
 /**
@@ -71,7 +75,8 @@ export const createFileSyncProvider = async (
   settings: FileSyncBackendsSettings,
 ): Promise<FileSyncProvider | null> => {
   const key = providerCacheKey(kind, settings);
-  if (cachedProvider?.key === key) return cachedProvider.provider;
+  const cached = providerCache.get(kind);
+  if (cached?.key === key) return cached.provider;
   const provider =
     kind === 'webdav'
       ? settings.webdav
@@ -84,6 +89,6 @@ export const createFileSyncProvider = async (
         : kind === 'onedrive'
           ? await buildOneDriveProvider()
           : await buildGoogleDriveProvider();
-  if (provider) cachedProvider = { key, provider };
+  if (provider) providerCache.set(kind, { key, provider });
   return provider;
 };
