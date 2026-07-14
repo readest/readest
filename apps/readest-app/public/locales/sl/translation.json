@@ -1970,5 +1970,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Readest dostopa le do datotek, ki jih sam ustvari v vašem OneDrive.",
   ". Make OneDrive the active cloud provider.": ". Nastavite OneDrive kot aktivnega ponudnika oblaka.",
   "Sentence Pause": "Premor med stavki",
-  "Paragraph Gap": "Premor med odstavki"
+  "Paragraph Gap": "Premor med odstavki",
+  "{{minutes}}m left": "Še {{minutes}} min",
+  "{{hours}}h left": "Še {{hours}} h",
+  "Time Remaining": "Preostali čas",
+  "Theme": "Tema"
 }

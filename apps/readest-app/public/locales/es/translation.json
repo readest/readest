@@ -1936,5 +1936,8 @@
   ". Make OneDrive the active cloud provider.": ". Haz que OneDrive sea el proveedor de nube activo.",
   "Sentence Pause": "Pausa entre frases",
   "Paragraph Gap": "Pausa entre párrafos",
-  "Time Remaining": "Tiempo restante"
+  "Time Remaining": "Tiempo restante",
+  "{{minutes}}m left": "{{minutes}} min restantes",
+  "{{hours}}h left": "{{hours}} h restantes",
+  "Theme": "Tema"
 }

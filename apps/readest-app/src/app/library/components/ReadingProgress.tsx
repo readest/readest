@@ -4,7 +4,7 @@ import type { Book } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SHOW_UNREAD_STATUS_BADGE } from '@/services/constants';
 import StatusBadge from './StatusBadge';
-import { getTimeRemainingMinutes } from '../utils/libraryUtils';
+import { getDisplayedTimeRemaining } from '../utils/libraryUtils';
 
 interface ReadingProgressProps {
   book: Book;
@@ -27,12 +27,18 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
     const _ = useTranslation();
     const progressPercentage = useMemo(() => getProgressPercentage(book), [book]);
 
-    const minutes = getTimeRemainingMinutes(book);
-    const hours = minutes ? Math.floor(minutes / 60) : undefined;
-    const mins = minutes ? minutes % 60 : undefined;
+    const minutes = getDisplayedTimeRemaining(book);
+    const formatTimeLeft = (total: number) => {
+      if (total < 60) return _('{{minutes}}m left', { minutes: total });
+      const hours = total / 60;
+      // One decimal below 10h (1.6h), whole hours above it (23h) — a tenth of an
+      // hour stops being meaningful once there are dozens of them left.
+      const rounded = hours < 10 ? Math.round(hours * 10) / 10 : Math.round(hours);
+      return _('{{hours}}h left', { hours: rounded });
+    };
     const progressLabel =
-      showTimeRemaining && hours && mins
-        ? _(`${progressPercentage}% · ${hours}h ${mins}m left`)
+      showTimeRemaining && minutes
+        ? `${progressPercentage}% · ${formatTimeLeft(minutes)}`
         : `${progressPercentage}%`;
 
     if (book.readingStatus === 'finished') {
@@ -75,11 +81,11 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
 
     return (
       <div
-        className='text-neutral-content/70 flex justify-between text-xs'
+        className='text-neutral-content/70 flex min-w-0 justify-between text-xs'
         role='status'
         aria-label={`${progressPercentage}%`}
       >
-        <span>{progressLabel}</span>
+        <span className='truncate'>{progressLabel}</span>
       </div>
     );
   },
@@ -87,7 +93,8 @@ const ReadingProgress: React.FC<ReadingProgressProps> = memo(
     return (
       prevProps.book.hash === nextProps.book.hash &&
       prevProps.book.updatedAt === nextProps.book.updatedAt &&
-      prevProps.book.readingStatus === nextProps.book.readingStatus
+      prevProps.book.readingStatus === nextProps.book.readingStatus &&
+      prevProps.showTimeRemaining === nextProps.showTimeRemaining
     );
   },
 );

@@ -2040,5 +2040,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "لا يصل Readest إلا إلى الملفات التي ينشئها في OneDrive الخاص بك.",
   ". Make OneDrive the active cloud provider.": ". اجعل OneDrive مزود السحابة النشط.",
   "Sentence Pause": "وقفة بين الجمل",
-  "Paragraph Gap": "وقفة بين الفقرات"
+  "Paragraph Gap": "وقفة بين الفقرات",
+  "{{minutes}}m left": "بقيت {{minutes}} دقيقة",
+  "{{hours}}h left": "بقيت {{hours}} ساعة",
+  "Time Remaining": "الوقت المتبقي",
+  "Theme": "السمة"
 }

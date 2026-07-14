@@ -1900,5 +1900,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Readest kommer bara åt de filer som appen skapar i din OneDrive.",
   ". Make OneDrive the active cloud provider.": ". Gör OneDrive till aktiv molnleverantör.",
   "Sentence Pause": "Meningspaus",
-  "Paragraph Gap": "Styckepaus"
+  "Paragraph Gap": "Styckepaus",
+  "{{minutes}}m left": "{{minutes}} min kvar",
+  "{{hours}}h left": "{{hours}} h kvar",
+  "Time Remaining": "Återstående tid",
+  "Theme": "Tema"
 }

@@ -1865,5 +1865,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Readest 只會存取它在您的 OneDrive 中建立的檔案。",
   ". Make OneDrive the active cloud provider.": "。將 OneDrive 設為目前使用的雲端服務供應商。",
   "Sentence Pause": "句間停頓",
-  "Paragraph Gap": "段落間隔"
+  "Paragraph Gap": "段落間隔",
+  "{{minutes}}m left": "{{minutes}}分鐘",
+  "{{hours}}h left": "{{hours}}小時",
+  "Time Remaining": "剩餘時間",
+  "Theme": "主題"
 }

@@ -1900,5 +1900,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Readest heeft alleen toegang tot de bestanden die het zelf in je OneDrive aanmaakt.",
   ". Make OneDrive the active cloud provider.": ". Maak OneDrive de actieve cloudprovider.",
   "Sentence Pause": "Zinspauze",
-  "Paragraph Gap": "Alineapauze"
+  "Paragraph Gap": "Alineapauze",
+  "{{minutes}}m left": "Nog {{minutes}} min",
+  "{{hours}}h left": "Nog {{hours}} u",
+  "Time Remaining": "Resterende tijd",
+  "Theme": "Thema"
 }

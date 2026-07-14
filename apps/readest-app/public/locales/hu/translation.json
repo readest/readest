@@ -1900,5 +1900,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "A Readest csak azokhoz a fájlokhoz fér hozzá, amelyeket ő hozott létre a OneDrive-jában.",
   ". Make OneDrive the active cloud provider.": ". Tegye a OneDrive-ot az aktív felhőszolgáltatóvá.",
   "Sentence Pause": "Mondatszünet",
-  "Paragraph Gap": "Bekezdésszünet"
+  "Paragraph Gap": "Bekezdésszünet",
+  "{{minutes}}m left": "{{minutes}} perc van hátra",
+  "{{hours}}h left": "{{hours}} óra van hátra",
+  "Time Remaining": "Hátralévő idő",
+  "Theme": "Téma"
 }

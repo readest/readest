@@ -1865,5 +1865,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Readest จะเข้าถึงเฉพาะไฟล์ที่สร้างขึ้นเองใน OneDrive ของคุณเท่านั้น",
   ". Make OneDrive the active cloud provider.": ". ตั้งให้ OneDrive เป็นผู้ให้บริการคลาวด์ที่ใช้งานอยู่",
   "Sentence Pause": "หยุดระหว่างประโยค",
-  "Paragraph Gap": "หยุดชั่วคราวระหว่างย่อหน้า"
+  "Paragraph Gap": "หยุดชั่วคราวระหว่างย่อหน้า",
+  "{{minutes}}m left": "เหลือ {{minutes}} นาที",
+  "{{hours}}h left": "เหลือ {{hours}} ชม.",
+  "Time Remaining": "เวลาที่เหลือ",
+  "Theme": "ธีม"
 }

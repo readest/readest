@@ -157,7 +157,7 @@ const BookItem: React.FC<BookItemProps> = ({
           {(book.progress || book.readingStatus) && (
             <ReadingProgress book={book} showTimeRemaining={showTimeRemaining} />
           )}
-          <div className='flex items-center justify-center gap-x-2'>
+          <div className='flex shrink-0 items-center justify-center gap-x-2'>
             {!appService?.isMobile && (
               <button
                 aria-label={_('Show Book Details')}

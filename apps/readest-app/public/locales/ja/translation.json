@@ -1865,5 +1865,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Readest がアクセスするのは、OneDrive 内に自身が作成したファイルのみです。",
   ". Make OneDrive the active cloud provider.": "。OneDrive を使用するクラウドプロバイダーに設定します。",
   "Sentence Pause": "文間のポーズ",
-  "Paragraph Gap": "段落間のポーズ"
+  "Paragraph Gap": "段落間のポーズ",
+  "{{minutes}}m left": "残り{{minutes}}分",
+  "{{hours}}h left": "残り{{hours}}時間",
+  "Time Remaining": "残り時間",
+  "Theme": "テーマ"
 }

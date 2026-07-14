@@ -1900,5 +1900,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Το Readest έχει πρόσβαση μόνο στα αρχεία που δημιουργεί στο OneDrive σας.",
   ". Make OneDrive the active cloud provider.": ". Ορίστε το OneDrive ως ενεργό πάροχο cloud.",
   "Sentence Pause": "Παύση μεταξύ προτάσεων",
-  "Paragraph Gap": "Παύση παραγράφου"
+  "Paragraph Gap": "Παύση παραγράφου",
+  "{{minutes}}m left": "απομένουν {{minutes}} λεπτά",
+  "{{hours}}h left": "απομένουν {{hours}} ώρες",
+  "Time Remaining": "Υπολειπόμενος χρόνος",
+  "Theme": "Θέμα"
 }

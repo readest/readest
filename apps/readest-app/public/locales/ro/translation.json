@@ -1935,5 +1935,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Readest accesează doar fișierele pe care le creează în OneDrive-ul tău.",
   ". Make OneDrive the active cloud provider.": ". Setează OneDrive ca furnizor de cloud activ.",
   "Sentence Pause": "Pauză între propoziții",
-  "Paragraph Gap": "Pauză între paragrafe"
+  "Paragraph Gap": "Pauză între paragrafe",
+  "{{minutes}}m left": "Au rămas {{minutes}} min",
+  "{{hours}}h left": "Au rămas {{hours}} h",
+  "Time Remaining": "Timp rămas",
+  "Theme": "Temă"
 }

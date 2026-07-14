@@ -1900,5 +1900,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Readest ප්‍රවේශ වන්නේ ඔබේ OneDrive හි එය සාදන ගොනුවලට පමණි.",
   ". Make OneDrive the active cloud provider.": ". OneDrive සක්‍රිය cloud සපයන්නා ලෙස සකසන්න.",
   "Sentence Pause": "වාක්‍ය අතර විරාමය",
-  "Paragraph Gap": "ඡේද අතර විරාමය"
+  "Paragraph Gap": "ඡේද අතර විරාමය",
+  "{{minutes}}m left": "මිනිත්තු {{minutes}} ක් ඉතිරි",
+  "{{hours}}h left": "පැය {{hours}} ක් ඉතිරි",
+  "Time Remaining": "ඉතිරි කාලය",
+  "Theme": "තේමාව"
 }

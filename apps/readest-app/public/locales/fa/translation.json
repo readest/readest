@@ -1900,5 +1900,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Readest فقط به فایل‌هایی دسترسی دارد که خودش در OneDrive شما ایجاد می‌کند.",
   ". Make OneDrive the active cloud provider.": ". OneDrive را ارائه‌دهنده فعال ابری قرار دهید.",
   "Sentence Pause": "مکث بین جملات",
-  "Paragraph Gap": "وقفه بین پاراگراف‌ها"
+  "Paragraph Gap": "وقفه بین پاراگراف‌ها",
+  "{{minutes}}m left": "{{minutes}} دقیقه باقی‌مانده",
+  "{{hours}}h left": "{{hours}} ساعت باقی‌مانده",
+  "Time Remaining": "زمان باقی‌مانده",
+  "Theme": "تم"
 }

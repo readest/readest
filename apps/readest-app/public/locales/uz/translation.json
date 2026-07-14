@@ -1900,5 +1900,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Readest OneDrive-ingizda faqat oʻzi yaratgan fayllarga kiradi.",
   ". Make OneDrive the active cloud provider.": ". OneDrive-ni faol bulut provayderi qiling.",
   "Sentence Pause": "Gaplar orasidagi pauza",
-  "Paragraph Gap": "Paragraflar orasidagi tanaffus"
+  "Paragraph Gap": "Paragraflar orasidagi tanaffus",
+  "{{minutes}}m left": "{{minutes}} daqiqa qoldi",
+  "{{hours}}h left": "{{hours}} soat qoldi",
+  "Time Remaining": "Qolgan vaqt",
+  "Theme": "Mavzu"
 }

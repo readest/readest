@@ -1865,5 +1865,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Readest hanya mengakses fail yang diciptanya dalam OneDrive anda.",
   ". Make OneDrive the active cloud provider.": ". Jadikan OneDrive sebagai penyedia awan yang aktif.",
   "Sentence Pause": "Jeda Antara Ayat",
-  "Paragraph Gap": "Jeda antara perenggan"
+  "Paragraph Gap": "Jeda antara perenggan",
+  "{{minutes}}m left": "{{minutes}} min lagi",
+  "{{hours}}h left": "{{hours}} jam lagi",
+  "Time Remaining": "Masa berbaki",
+  "Theme": "Tema"
 }

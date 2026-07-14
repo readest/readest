@@ -1935,5 +1935,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "O Readest só acessa os arquivos que cria no seu OneDrive.",
   ". Make OneDrive the active cloud provider.": ". Torne o OneDrive o provedor de nuvem ativo.",
   "Sentence Pause": "Pausa entre frases",
-  "Paragraph Gap": "Pausa entre parágrafos"
+  "Paragraph Gap": "Pausa entre parágrafos",
+  "{{minutes}}m left": "{{minutes}} min restantes",
+  "{{hours}}h left": "{{hours}} h restantes",
+  "Time Remaining": "Tempo restante",
+  "Theme": "Tema"
 }

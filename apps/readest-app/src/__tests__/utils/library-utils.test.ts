@@ -15,6 +15,7 @@ import {
   getGroupDisplayName,
   expandBookshelfSelection,
   buildGroupNameUpdatedAt,
+  withTimeRemainingLast,
 } from '../../app/library/utils/libraryUtils';
 import { Book, BooksGroup } from '../../types/book';
 import { LibraryGroupByType, LibrarySortByType } from '../../types/settings';
@@ -1386,5 +1387,74 @@ describe('ensureLibrarySecondarySortByType', () => {
       LibrarySortByType.Title,
     );
     expect(ensureLibrarySecondarySortByType(null, 'none')).toBe('none');
+  });
+});
+
+describe('withTimeRemainingLast', () => {
+  const createMockBook = (overrides: Partial<Book> = {}): Book =>
+    ({
+      hash: `hash-${overrides.title ?? 'x'}`,
+      format: 'EPUB',
+      title: 'Test Book',
+      author: 'Test Author',
+      createdAt: 1,
+      updatedAt: 1,
+      ...overrides,
+    }) as Book;
+
+  const createMockGroup = (overrides: Partial<BooksGroup> = {}): BooksGroup =>
+    ({
+      id: 'g',
+      name: 'Group',
+      displayName: 'Group',
+      books: [],
+      updatedAt: 1,
+      ...overrides,
+    }) as BooksGroup;
+
+  // Books whose tile shows a time; `reading` is the sortable one.
+  const reading = createMockBook({ title: 'Reading', progress: [10, 500] });
+  const nearlyDone = createMockBook({ title: 'NearlyDone', progress: [490, 500] });
+  // Books whose tile shows a status badge instead of a time — note `finished`
+  // still has pages left, so it does have a remaining time; it just never shows one.
+  const finished = createMockBook({
+    title: 'Finished',
+    progress: [200, 500],
+    readingStatus: 'finished',
+  });
+  const unread = createMockBook({ title: 'Unread', readingStatus: 'unread' });
+  const group = createMockGroup({ books: [reading] });
+
+  const byTimeAsc = createBookSorter(LibrarySortByType.TimeRemaining, 'en');
+
+  it('keeps no-time items last when ascending', () => {
+    const sorter = withTimeRemainingLast<Book>(LibrarySortByType.TimeRemaining, byTimeAsc);
+    const sorted = [finished, unread, reading, nearlyDone].sort(sorter);
+    expect(sorted.map((b) => b.title)).toEqual(['NearlyDone', 'Reading', 'Finished', 'Unread']);
+  });
+
+  it('keeps no-time items last when descending too', () => {
+    // Descending = the comparator is negated; the no-time bucket must not flip with it.
+    const sorter = withTimeRemainingLast<Book>(
+      LibrarySortByType.TimeRemaining,
+      (a, b) => byTimeAsc(a, b) * -1,
+    );
+    const sorted = [finished, reading, unread, nearlyDone].sort(sorter);
+    expect(sorted.map((b) => b.title)).toEqual(['Reading', 'NearlyDone', 'Finished', 'Unread']);
+  });
+
+  it('sinks groups, which never render a remaining time', () => {
+    const sorter = withTimeRemainingLast<Book | BooksGroup>(
+      LibrarySortByType.TimeRemaining,
+      () => 0,
+    );
+    const sorted = [group, reading].sort(sorter);
+    expect(sorted[0]).toBe(reading);
+    expect(sorted[1]).toBe(group);
+  });
+
+  it('leaves other sorts untouched', () => {
+    const sorter = withTimeRemainingLast<Book>(LibrarySortByType.Title, () => -1);
+    expect(sorter(finished, reading)).toBe(-1);
   });
 });

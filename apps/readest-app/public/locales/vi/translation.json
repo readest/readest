@@ -1865,5 +1865,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Readest chỉ truy cập các tệp do chính nó tạo trong OneDrive của bạn.",
   ". Make OneDrive the active cloud provider.": ". Đặt OneDrive làm nhà cung cấp đám mây đang hoạt động.",
   "Sentence Pause": "Khoảng dừng giữa các câu",
-  "Paragraph Gap": "Khoảng dừng giữa đoạn văn"
+  "Paragraph Gap": "Khoảng dừng giữa đoạn văn",
+  "{{minutes}}m left": "Còn {{minutes}} phút",
+  "{{hours}}h left": "Còn {{hours}} giờ",
+  "Time Remaining": "Thời gian còn lại",
+  "Theme": "Chủ đề"
 }

@@ -1865,5 +1865,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Readest ཀྱིས་ཁྱེད་ཀྱི་ OneDrive ནང་རང་ཉིད་ཀྱིས་བཟོས་པའི་ཡིག་ཆ་ཁོ་ནར་ལྟ་སྤྱོད་བྱེད།",
   ". Make OneDrive the active cloud provider.": "། OneDrive དེ་སྤྱོད་བཞིན་པའི་སྤྲིན་ཞབས་ཞུ་མཁོ་སྤྲོད་པར་སྒྲིག་པ།",
   "Sentence Pause": "ཚིག་གྲུབ་བར་གསེང་",
-  "Paragraph Gap": "དོན་ཚན་བར་གསེང་"
+  "Paragraph Gap": "དོན་ཚན་བར་གསེང་",
+  "{{minutes}}m left": "ད་དུང་ {{minutes}} སྐར་མ་ལྷག་ཡོད།",
+  "{{hours}}h left": "ད་དུང་ {{hours}} ཆུ་ཚོད་ལྷག་ཡོད།",
+  "Time Remaining": "ལྷག་ཡོད་པའི་དུས་ཚོད།",
+  "Theme": "བརྗོད་བྱ།"
 }

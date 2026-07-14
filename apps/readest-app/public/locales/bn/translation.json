@@ -1900,5 +1900,9 @@
   "Readest only accesses the files it creates in your OneDrive.": "Readest শুধুমাত্র আপনার OneDrive-এ নিজে তৈরি করা ফাইলগুলিতেই প্রবেশ করে।",
   ". Make OneDrive the active cloud provider.": "। OneDrive-কে সক্রিয় ক্লাউড প্রদানকারী করুন।",
   "Sentence Pause": "বাক্যের মধ্যে বিরতি",
-  "Paragraph Gap": "অনুচ্ছেদের মধ্যে বিরতি"
+  "Paragraph Gap": "অনুচ্ছেদের মধ্যে বিরতি",
+  "{{minutes}}m left": "{{minutes}} মিনিট বাকি",
+  "{{hours}}h left": "{{hours}} ঘণ্টা বাকি",
+  "Time Remaining": "অবশিষ্ট সময়",
+  "Theme": "থিম"
 }
