@@ -30,6 +30,11 @@ export const MIME = {
   OPDS2: 'application/opds+json',
 };
 
+export const getSafeDOMParserMimeType = (mimeType: string): DOMParserSupportedType =>
+  mimeType.toLowerCase().includes('xml')
+    ? (MIME.XML as DOMParserSupportedType)
+    : (mimeType as DOMParserSupportedType);
+
 export const enum VALIDATION_ERROR {
   INVALID_URL = 'Invalid URL format',
   LOAD_FAILED = 'Failed to load OPDS feed',
@@ -110,7 +115,7 @@ const hasXMLParseError = (doc: Document): boolean =>
  * callers fall through to their existing HTML/non-OPDS handling.
  */
 export const parseOPDSXML = (text: string): Document => {
-  const doc = new DOMParser().parseFromString(text, MIME.XML as DOMParserSupportedType);
+  const doc = new DOMParser().parseFromString(text, getSafeDOMParserMimeType(MIME.XML));
   if (!hasXMLParseError(doc)) return doc;
 
   const rootMatch = text.match(/<([A-Za-z_][\w.:-]*)/);
@@ -121,7 +126,7 @@ export const parseOPDSXML = (text: string): Document => {
     const closeIdx = text.lastIndexOf(closeTag);
     if (closeIdx > startIdx) {
       const sliced = text.slice(startIdx, closeIdx + closeTag.length);
-      const retry = new DOMParser().parseFromString(sliced, MIME.XML as DOMParserSupportedType);
+      const retry = new DOMParser().parseFromString(sliced, getSafeDOMParserMimeType(MIME.XML));
       if (!hasXMLParseError(retry)) return retry;
     }
   }
@@ -250,7 +255,7 @@ export const validateOPDSURL = async (
         // Check for HTML with OPDS link
         const contentType = res.headers.get('Content-Type') ?? MIME.HTML;
         const type = parseMediaType(contentType)?.mediaType ?? MIME.HTML;
-        const htmlDoc = new DOMParser().parseFromString(text, type as DOMParserSupportedType);
+        const htmlDoc = new DOMParser().parseFromString(text, getSafeDOMParserMimeType(type));
 
         if (!htmlDoc.head) {
           return {

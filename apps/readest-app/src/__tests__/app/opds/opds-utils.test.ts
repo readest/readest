@@ -51,6 +51,7 @@ import {
   expandOPDSSearchTemplate,
   resolveURL,
   getFileExtFromPath,
+  getSafeDOMParserMimeType,
   looksLikeXMLContent,
   parseOPDSXML,
   MIME,
@@ -448,6 +449,19 @@ describe('opdsUtils', () => {
 
     it('returns false for an empty string', () => {
       expect(looksLikeXMLContent('')).toBe(false);
+    });
+  });
+
+  describe('getSafeDOMParserMimeType', () => {
+    it('maps XML-like MIME types to application/xml', () => {
+      expect(getSafeDOMParserMimeType('application/atom+xml')).toBe('application/xml');
+      expect(getSafeDOMParserMimeType('application/atom+xml;profile=opds-catalog')).toBe(
+        'application/xml',
+      );
+    });
+
+    it('leaves HTML MIME types unchanged', () => {
+      expect(getSafeDOMParserMimeType('text/html')).toBe('text/html');
     });
   });
 

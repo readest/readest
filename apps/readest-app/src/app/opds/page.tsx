@@ -29,6 +29,7 @@ import { OPDSFeed, OPDSPublication, OPDSSearch, REL } from '@/types/opds';
 import {
   expandOPDSSearchTemplate,
   getFileExtFromPath,
+  getSafeDOMParserMimeType,
   isSearchLink,
   looksLikeXMLContent,
   MIME,
@@ -307,7 +308,7 @@ export default function BrowserPage() {
           } else {
             const contentType = res.headers.get('Content-Type') ?? MIME.HTML;
             const type = parseMediaType(contentType)?.mediaType ?? MIME.HTML;
-            const htmlDoc = new DOMParser().parseFromString(text, type as DOMParserSupportedType);
+            const htmlDoc = new DOMParser().parseFromString(text, getSafeDOMParserMimeType(type));
 
             if (!htmlDoc.head) {
               stashOPDSReturnTarget(searchParams);
