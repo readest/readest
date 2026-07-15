@@ -14,6 +14,7 @@
 // AVPlayer.currentTime reports item time, not wall time.
 
 import { addPluginListener, invoke, PluginListener } from '@tauri-apps/api/core';
+import type { TTSAudioPlayer } from './TTSAudioPlayer';
 import type { WebAudioPlayerEvent } from './WebAudioPlayer';
 
 interface PlayoutPosition {
@@ -55,7 +56,7 @@ const toBase64 = (data: ArrayBuffer): string => {
   return btoa(binary);
 };
 
-export class NativeAudioPlayer {
+export class NativeAudioPlayer implements TTSAudioPlayer {
   #generation = 0;
   #session: NativePlayerSession | null = null;
   #listener: PluginListener | null = null;

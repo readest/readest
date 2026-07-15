@@ -66,6 +66,6 @@ describe('WebSpeechClient getVoices', () => {
   });
 
   test('does not support word boundaries (sentence highlight only)', () => {
-    expect(client.supportsWordBoundaries()).toBe(false);
+    expect(client.getCapabilities().wordBoundaries).toBe(false);
   });
 });

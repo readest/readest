@@ -26,7 +26,12 @@ const makeMockClient = (name: string): TTSClient => ({
   getAllVoices: vi.fn().mockResolvedValue([]),
   getVoices: vi.fn().mockResolvedValue([]),
   getGranularities: vi.fn().mockReturnValue(['sentence']),
-  supportsWordBoundaries: vi.fn().mockReturnValue(true),
+  getCapabilities: vi.fn().mockReturnValue({
+    wordBoundaries: true,
+    mediaClock: true,
+    gapControl: true,
+    liveRateChange: false,
+  }),
   getVoiceId: vi.fn().mockReturnValue('timeline-ctrl-voice'),
   getSpeakingLang: vi.fn().mockReturnValue('en'),
   getChunkPosition: vi.fn().mockReturnValue(0.5),

@@ -49,6 +49,14 @@ export async function deleteBook(
       if (await fs.exists(dir, 'Books')) {
         await fs.removeDir(dir, 'Books', true);
       }
+      // The per-book TTS audio cache lives under Cache (kept out of Books/
+      // so backups and sync never pick it up); purge erases every trace of
+      // the book, so drop it too. Non-purge deletes leave it: like
+      // config.json, a re-downloaded book resumes with a warm audio cache.
+      const ttsCacheDir = `tts-cache/${book.hash}`;
+      if (await fs.exists(ttsCacheDir, 'Cache')) {
+        await fs.removeDir(ttsCacheDir, 'Cache', true);
+      }
     }
 
     if (deleteAction === 'both' && (await fs.exists(getCoverFilename(book), 'Books'))) {

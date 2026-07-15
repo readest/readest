@@ -239,7 +239,7 @@ describe('EdgeTTSClient', () => {
 
   describe('supportsWordBoundaries', () => {
     test('returns true (Edge reports word-boundary timings)', () => {
-      expect(client.supportsWordBoundaries()).toBe(true);
+      expect(client.getCapabilities().wordBoundaries).toBe(true);
     });
   });
 

@@ -1,6 +1,6 @@
 import { getUserLocale } from '@/utils/misc';
 import { isSameLang } from '@/utils/lang';
-import { TTSClient, TTSMessageEvent } from './TTSClient';
+import { TTSCapabilities, TTSClient, TTSMessageEvent } from './TTSClient';
 import { parseSSMLMarks } from '@/utils/ssml';
 import { TTSGranularity, TTSMark, TTSVoice, TTSVoicesGroup } from './types';
 import { WEB_SPEECH_BLACKLISTED_VOICES } from './TTSData';
@@ -266,8 +266,10 @@ export class WebSpeechClient implements TTSClient {
     return [voicesGroup];
   }
 
-  supportsWordBoundaries(): boolean {
-    return false;
+  getCapabilities(): TTSCapabilities {
+    // Direct-speak engine: the OS renders the audio, so there is no media
+    // clock, no word boundaries, and no gap or live-rate control.
+    return { wordBoundaries: false, mediaClock: false, gapControl: false, liveRateChange: false };
   }
 
   getGranularities(): TTSGranularity[] {

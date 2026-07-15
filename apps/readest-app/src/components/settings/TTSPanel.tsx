@@ -7,7 +7,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { TTSHighlightGranularity, TTSMediaMetadataMode } from '@/services/tts/types';
-import { BoxedList, SettingsRow, SettingsSelect } from './primitives';
+import { getTTSCacheConfig, setTTSCacheConfig } from '@/services/tts/providers/bookCacheStore';
+import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from './primitives';
 import TTSHighlightStyleEditor, { TTSHighlightStyle } from './color/TTSHighlightStyleEditor';
 
 const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
@@ -32,6 +33,13 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
   const [customTtsHighlightColors, setCustomTtsHighlightColors] = useState(
     settings.globalReadSettings.customTtsHighlightColors || [],
   );
+
+  const [ttsCacheConfig, setTtsCacheConfigState] = useState(getTTSCacheConfig());
+
+  const updateTTSCacheConfig = (config: typeof ttsCacheConfig) => {
+    setTtsCacheConfigState(config);
+    setTTSCacheConfig(config);
+  };
 
   const resetToDefaults = useResetViewSettings();
 
@@ -123,6 +131,48 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
               { value: 'sentence', label: _('Every Sentence') },
               { value: 'paragraph', label: _('Every Paragraph') },
               { value: 'chapter', label: _('Every Chapter') },
+            ]}
+          />
+        </SettingsRow>
+      </BoxedList>
+
+      <BoxedList title={_('Audio Cache')} data-setting-id='settings.tts.audioCache'>
+        <SettingsSwitchRow
+          label={_('Cache Synthesized Audio')}
+          description={_('Reuse generated speech across sessions without refetching')}
+          checked={ttsCacheConfig.enabled}
+          onChange={() =>
+            updateTTSCacheConfig({ ...ttsCacheConfig, enabled: !ttsCacheConfig.enabled })
+          }
+          data-setting-id='settings.tts.audioCacheEnabled'
+        />
+        <SettingsSwitchRow
+          label={_('Sync Audio Cache')}
+          description={_('Share section audio between your devices through your file sync service')}
+          checked={ttsCacheConfig.syncEnabled}
+          disabled={!ttsCacheConfig.enabled}
+          onChange={() =>
+            updateTTSCacheConfig({ ...ttsCacheConfig, syncEnabled: !ttsCacheConfig.syncEnabled })
+          }
+          data-setting-id='settings.tts.audioCacheSync'
+        />
+        <SettingsRow label={_('Storage Limit')}>
+          <SettingsSelect
+            value={String(ttsCacheConfig.budgetMB)}
+            onChange={(event) =>
+              updateTTSCacheConfig({
+                ...ttsCacheConfig,
+                budgetMB: Number(event.target.value),
+              })
+            }
+            ariaLabel={_('Storage Limit')}
+            disabled={!ttsCacheConfig.enabled}
+            options={[
+              { value: '50', label: '50 MB' },
+              { value: '100', label: '100 MB' },
+              { value: '200', label: '200 MB' },
+              { value: '500', label: '500 MB' },
+              { value: '1024', label: '1 GB' },
             ]}
           />
         </SettingsRow>

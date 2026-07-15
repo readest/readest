@@ -758,6 +758,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           preprocessSSMLForTTS,
           handleSectionChange,
         );
+        // The constructor takes the view directly (attachView, which also binds
+        // this, only runs on the background-session reattach path), so set the
+        // book key here or the per-book audio cache never gets a hash to open.
+        ttsController.bookKey = bookKey;
         ttsControllerRef.current = ttsController;
         setTtsController(ttsController);
         ttsSessionManager.claim(bookKey, ttsController, {
@@ -854,6 +858,13 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   const handleSupportsGapControl = useCallback(() => {
     return ttsControllerRef.current?.supportsGapControl() ?? false;
   }, []);
+
+  // Stable handle for the download/chapters surface (reads the cache and
+  // drives headless pre-synthesis off the playback path). MUST be memoized:
+  // an inline arrow here changes identity every render, which would cascade
+  // through useTTSDownloads' refresh callback into its effect and spin an
+  // infinite render loop the moment the sheet opens.
+  const getController = useCallback(() => ttsControllerRef.current, []);
 
   // Playback callbacks
   const handleTogglePlay = useCallback(async () => {
@@ -1014,5 +1025,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     handleSupportsPlaybackInfo,
     handleSupportsGapControl,
     refreshTtsLang,
+    getController,
   };
 };

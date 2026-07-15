@@ -66,7 +66,12 @@ function makeMockTTSClient(name: string): TTSClient {
     getAllVoices: () => Promise.resolve([]),
     getVoices: () => Promise.resolve([]),
     getGranularities: () => ['sentence'],
-    supportsWordBoundaries: () => false,
+    getCapabilities: () => ({
+      wordBoundaries: false,
+      mediaClock: false,
+      gapControl: false,
+      liveRateChange: false,
+    }),
     getVoiceId: () => 'mock-voice',
     getSpeakingLang: () => 'en',
   };

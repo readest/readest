@@ -14,6 +14,7 @@ import { WebSpeechClient } from './WebSpeechClient';
 import { NativeTTSClient } from './NativeTTSClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
 import { SectionTimeline, TimelineSentence } from './SectionTimeline';
+import { DownloadableSentence, SectionEnumerator, TTSDownloader } from './TTSDownloader';
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
 import { isValidLang } from '@/utils/lang';
@@ -101,6 +102,9 @@ export const DEFAULT_PARAGRAPH_GAP_SEC = 0.3;
 export class TTSController extends EventTarget {
   appService: AppService | null = null;
   view: FoliateView;
+  // The owning reader's book key, bound (and re-bound) by attachView; the
+  // per-book TTS cache derives its book hash from it.
+  bookKey?: string;
   isAuthenticated: boolean = false;
   preprocessCallback?: (ssml: string) => Promise<string>;
   onSectionChange?: (sectionIndex: number) => Promise<void>;
@@ -285,6 +289,7 @@ export class TTSController extends EventTarget {
 
     // Synchronous swap.
     this.view = view;
+    this.bookKey = bindings.bookKey;
     this.preprocessCallback = bindings.preprocessCallback;
     this.onSectionChange = bindings.onSectionChange;
     this.#attached = true;
@@ -367,6 +372,10 @@ export class TTSController extends EventTarget {
       try {
         const cfi = this.view.getCFI(index, range);
         const visibleRange = this.view.resolveCFI(cfi).anchor(doc);
+        // A stale range (re-applied after a relocate that changed the section
+        // content) resolves to nothing in the current doc; overlayer.add would
+        // then dereference a null range. Skip instead.
+        if (!visibleRange) return;
         const { style, color } = this.options;
         overlayer?.remove(HIGHLIGHT_KEY);
         overlayer?.add(HIGHLIGHT_KEY, visibleRange, Overlayer[style], { color });
@@ -504,7 +513,106 @@ export class TTSController extends EventTarget {
     timeline.setRate(this.ttsRate);
     this.#sectionTimeline = timeline;
     this.#timelineSectionIndex = this.#ttsSectionIndex;
+    // Tell the cache which sentences make up this section (ordinal-keyed);
+    // once every ordinal has a recorded synthesis key, the section can be
+    // compacted into one pack file.
+    this.ttsClient.registerSectionManifest?.(
+      this.#ttsSectionIndex,
+      sentences.map((s) => `${s.blockIndex}:${s.markName}`),
+    );
     return timeline;
+  }
+
+  // Build a downloader for headless pre-synthesis, or null when the Edge
+  // client has no cache to download into. The enumerator replays the exact
+  // live pipeline (per-block SSML -> preprocess -> parseSSMLMarks) on a FRESH
+  // document + TTS instance per section, so it never disturbs live playback,
+  // and labels sentences identically to ensureTimeline so packs written here
+  // and by playback share one manifest.
+  canDownload(): boolean {
+    return this.ttsEdgeClient.canDownload();
+  }
+
+  getTTSDownloader(): TTSDownloader | null {
+    const edge = this.ttsEdgeClient;
+    if (!edge.canDownload()) return null;
+    const enumerator: SectionEnumerator = {
+      enumerateSection: async (sectionIndex: number) => {
+        const sections = this.view.book.sections;
+        const section = sections?.[sectionIndex];
+        if (!section?.createDocument) return null;
+        try {
+          const doc = await section.createDocument();
+          const html = doc.querySelector('html');
+          const lang = html?.getAttribute('lang') || html?.getAttribute('xml:lang') || '';
+          if (html && !isValidLang(lang) && this.ttsLang) {
+            html.setAttribute('lang', this.ttsLang);
+            html.setAttribute('xml:lang', this.ttsLang);
+          }
+          const { TTS, getSentences } = await import('foliate-js/tts.js');
+          const { textWalker } = await import('foliate-js/text-walker.js');
+          const nodeFilter = createTTSNodeFilter();
+          let granularity: TTSGranularity = this.view.language.isCJK ? 'sentence' : 'word';
+          const supported = edge.getGranularities();
+          if (!supported.includes(granularity)) granularity = supported[0]!;
+
+          // getSentences enumerates EVERY segment; parseSSMLMarks drops the
+          // ones that carry no speech (punctuation- or symbol-only lines like
+          // "* * *", empty separators). The manifest must count only the
+          // recordable sentences, or a section with any such separator can
+          // never complete. Filter getSentences by the same rule so the
+          // meaningful segments line up 1:1 with the marks.
+          const isSpeakable = (text: string) => {
+            const trimmed = text.trim();
+            return trimmed.length > 0 && !/^[\p{P}\p{S}]+$/u.test(trimmed);
+          };
+          const speakableSegs: { blockIndex: number; markName: string }[] = [];
+          for (const entry of getSentences(doc, textWalker, nodeFilter, granularity)) {
+            if (isSpeakable(entry.range.toString())) {
+              speakableSegs.push({ blockIndex: entry.blockIndex, markName: entry.markName });
+            }
+          }
+          // Per-sentence language + preprocessed text: identical to what
+          // playback synthesizes, so the computed cache keys match. A no-op
+          // highlighter: this throwaway instance only generates SSML and must
+          // never draw on the live view.
+          const tts = new TTS(doc, textWalker, nodeFilter, () => {}, granularity);
+          const marks: { language: string; text: string }[] = [];
+          let raw = tts.start();
+          while (raw) {
+            const ssml = await this.#preprocessSSML(raw);
+            if (ssml) marks.push(...parseSSMLMarks(ssml, this.ttsLang || 'en').marks);
+            raw = tts.next();
+          }
+          // Pair speakable segments with marks in reading order; contiguous
+          // ordinals so the manifest is exactly what gets recorded.
+          const n = Math.min(speakableSegs.length, marks.length);
+          const out: DownloadableSentence[] = [];
+          for (let i = 0; i < n; i++) {
+            out.push({
+              ordinal: i,
+              label: `${speakableSegs[i]!.blockIndex}:${speakableSegs[i]!.markName}`,
+              lang: marks[i]!.language,
+              text: marks[i]!.text,
+            });
+          }
+          return out;
+        } catch (err) {
+          console.warn('TTS download enumeration failed for section', sectionIndex, err);
+          return null;
+        }
+      },
+    };
+    return new TTSDownloader(enumerator, edge);
+  }
+
+  // Per-section download status keyed by section index, for the podcast UI.
+  async getSectionCacheStatuses() {
+    return this.ttsEdgeClient.getSectionCacheStatuses();
+  }
+
+  async getCacheBytes() {
+    return this.ttsEdgeClient.getCacheBytes();
   }
 
   // Whether the active client can ever produce a timeline (Edge only). The
@@ -514,9 +622,9 @@ export class TTSController extends EventTarget {
     return this.ttsClient === this.ttsEdgeClient;
   }
 
-  // Whether the active client supports the inter-sentence gap control (Edge only).
+  // Whether the active client supports the inter-sentence gap control.
   supportsGapControl(): boolean {
-    return this.ttsClient === this.ttsEdgeClient;
+    return this.ttsClient.getCapabilities().gapControl;
   }
 
   // Passthrough to the Edge client's inter-sentence gap. ttsEdgeClient is
@@ -787,6 +895,21 @@ export class TTSController extends EventTarget {
             this.#terminate('error');
             await this.stop();
           }
+        } else if (
+          lastCode === 'error' &&
+          !canSkipOnError &&
+          !signal.aborted &&
+          this.state === 'playing' &&
+          !oneTime
+        ) {
+          // A buffered client (Edge/Web) reported a synthesis error that
+          // survived its retries: offline with this sentence uncached, or a
+          // persistent service failure, with no online fallback available.
+          // Stop cleanly rather than skip to the end of the book or leave the
+          // controls wedged in 'playing'.
+          resolve();
+          this.#terminate('error');
+          await this.stop();
         }
         resolve();
       } catch (e) {
@@ -1003,7 +1126,11 @@ export class TTSController extends EventTarget {
     );
   }
 
-  dispatchSpeakMark(mark?: TTSMark) {
+  // Returns where the mark landed on the section timeline (section index +
+  // sentence ordinal) when a timeline exists, so the buffered client can
+  // record the sentence's cache key against the section manifest.
+  dispatchSpeakMark(mark?: TTSMark): { sectionIndex: number; sentenceIndex: number } | null {
+    let located: { sectionIndex: number; sentenceIndex: number } | null = null;
     this.#resetSpeakWords();
     this.dispatchEvent(new CustomEvent('tts-speak-mark', { detail: mark || { text: '' } }));
     if (mark && mark.name !== '-1') {
@@ -1015,7 +1142,7 @@ export class TTSController extends EventTarget {
         // forces sentence granularity we keep the sentence highlight, so don't
         // suppress it.
         this.#suppressMarkHighlight =
-          this.ttsClient.supportsWordBoundaries() && this.#highlightGranularity === 'word';
+          this.ttsClient.getCapabilities().wordBoundaries && this.#highlightGranularity === 'word';
         const range = this.#getTts()?.setMark(mark.name);
         this.#suppressMarkHighlight = false;
         this.#speakWordsArmed = !!range;
@@ -1024,6 +1151,12 @@ export class TTSController extends EventTarget {
           // audible sentence for position reporting.
           this.#sectionTimeline.refresh();
           this.#currentSentenceIndex = this.#sectionTimeline.indexOfRange(range);
+          if (this.#currentSentenceIndex >= 0) {
+            located = {
+              sectionIndex: this.#ttsSectionIndex,
+              sentenceIndex: this.#currentSentenceIndex,
+            };
+          }
         }
         const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
         this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
@@ -1032,6 +1165,7 @@ export class TTSController extends EventTarget {
         this.#suppressMarkHighlight = false;
       }
     }
+    return located;
   }
 
   #resetSpeakWords() {
@@ -1059,7 +1193,7 @@ export class TTSController extends EventTarget {
     // Paused/stopped states keep the sentence re-draw (navigation UX).
     if (
       this.state === 'playing' &&
-      this.ttsClient.supportsWordBoundaries() &&
+      this.ttsClient.getCapabilities().wordBoundaries &&
       this.#highlightGranularity === 'word'
     ) {
       return;
@@ -1127,21 +1261,6 @@ export class TTSController extends EventTarget {
     const matchText = rangeTextExcludingInert(range);
     this.#speakWordOffsets = computeWordOffsets(matchText, words);
     this.#speakWordRanges = [];
-    if (process.env.NODE_ENV !== 'production') {
-      // Dev-only trace of the Edge word-sync: each spoken (boundary) word vs the
-      // text it actually highlights. A drifted or "(unmatched)" mapping — or an
-      // empty word list — pinpoints word-highlight bugs without instrumenting
-      // the overlayer by hand. `process.env.NODE_ENV` is statically inlined, so
-      // this whole block is dropped from production builds.
-      const mapping = words.map((word, i) => {
-        const offset = this.#speakWordOffsets[i];
-        const highlighted = offset
-          ? getTextSubRange(range, offset.start, offset.end)?.toString()
-          : '';
-        return { spoken: word, highlighted: highlighted || '(unmatched)' };
-      });
-      console.log('[TTS] word-sync', { sentence: matchText, words: mapping });
-    }
     if (words.length === 0) {
       // No word boundaries for this chunk: the sentence highlight was
       // suppressed at mark dispatch, so draw it now as the fallback.

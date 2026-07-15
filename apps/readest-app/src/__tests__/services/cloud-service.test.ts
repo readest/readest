@@ -190,6 +190,15 @@ describe('cloudService', () => {
         expect(mockFs.removeDir).toHaveBeenCalledWith(book.hash, 'Books', true);
       });
 
+      test('removes the per-book TTS audio cache (#tts-cache)', async () => {
+        // The cache lives under Cache (backup- and sync-excluded), so the
+        // Books/<hash>/ wipe cannot cover it; purge erases every trace.
+        const book = createMockBook();
+        await deleteBook(mockFs, book, 'purge');
+
+        expect(mockFs.removeDir).toHaveBeenCalledWith(`tts-cache/${book.hash}`, 'Cache', true);
+      });
+
       test('does not remove the managed book file individually (the dir wipe covers it)', async () => {
         const book = createMockBook();
         await deleteBook(mockFs, book, 'purge');

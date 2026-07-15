@@ -4,6 +4,8 @@ import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTTSControl } from '@/app/reader/hooks/useTTSControl';
+import { useTTSDownloads } from '@/app/reader/hooks/useTTSDownloads';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { Insets } from '@/types/misc';
 import { eventDispatcher } from '@/utils/event';
 import TTSMiniPlayer from './TTSMiniPlayer';
@@ -28,6 +30,9 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     bookKey,
     onRequestHidePanel: () => setShowPlayerSheet(false),
   });
+
+  const downloads = useTTSDownloads(bookKey, tts.getController, showPlayerSheet);
+  const activeSectionIndex = useBookProgress(bookKey)?.index ?? null;
 
   const isEink = getViewSettings(bookKey)?.isEink ?? false;
   const hasTimeline = tts.ttsClientsInited && tts.handleSupportsPlaybackInfo();
@@ -128,6 +133,8 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           onSelectTimeout={tts.handleSelectTimeout}
           onSeek={tts.handleSeekTo}
           onGetPlaybackInfo={tts.handleGetPlaybackInfo}
+          downloads={downloads}
+          activeSectionIndex={activeSectionIndex}
         />
       )}
     </>

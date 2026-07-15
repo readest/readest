@@ -8,6 +8,21 @@ export interface TTSMessageEvent {
   mark?: string;
 }
 
+// What the active engine can actually do, so the controller and UI degrade
+// uniformly instead of probing per-feature or comparing client identities.
+export interface TTSCapabilities {
+  // Reports word-boundary timings during playback: the controller highlights
+  // word-by-word and suppresses the sentence highlight.
+  wordBoundaries: boolean;
+  // Has a real audio clock: getChunkPosition() returns positions, enabling
+  // the scrubber/seek via the section timeline.
+  mediaClock: boolean;
+  // The inter-sentence gap setting applies.
+  gapControl: boolean;
+  // Rate changes apply to in-flight audio without restarting the session.
+  liveRateChange: boolean;
+}
+
 export interface TTSClient {
   name: string;
   initialized: boolean;
@@ -24,14 +39,15 @@ export interface TTSClient {
   getAllVoices(): Promise<TTSVoice[]>;
   getVoices(lang: string): Promise<TTSVoicesGroup[]>;
   getGranularities(): TTSGranularity[];
-  // Whether this client reports word-boundary timings during playback so the
-  // controller can highlight word-by-word (and suppress the sentence highlight).
-  supportsWordBoundaries(): boolean;
+  getCapabilities(): TTSCapabilities;
+  // Ordered sentence labels for a section (timeline enumeration), consumed
+  // by clients with a persistent cache to drive section-pack compaction.
+  registerSectionManifest?(section: number, marks: string[]): void;
   getVoiceId(): string;
   getSpeakingLang(): string;
   // Playback position within the currently audible sentence, in trimmed media
-  // seconds at rate 1.0, clamped to [0, sentenceDuration]. Optional: only
-  // clients with a real audio clock (Edge via Web Audio) implement it; the
-  // section timeline treats absence as sentence-granularity positions.
+  // seconds at rate 1.0, clamped to [0, sentenceDuration]. Only meaningful
+  // when capabilities.mediaClock is true; the section timeline treats absence
+  // as sentence-granularity positions.
   getChunkPosition?(): number | null;
 }

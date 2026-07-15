@@ -98,7 +98,12 @@ function createMockTTSClient(name: string): TTSClient {
     getAllVoices: vi.fn().mockResolvedValue([]),
     getVoices: vi.fn().mockResolvedValue([]),
     getGranularities: vi.fn().mockReturnValue(['word', 'sentence'] as TTSGranularity[]),
-    supportsWordBoundaries: vi.fn().mockReturnValue(name === 'edge'),
+    getCapabilities: vi.fn().mockImplementation(() => ({
+      wordBoundaries: name === 'edge',
+      mediaClock: name === 'edge',
+      gapControl: name === 'edge',
+      liveRateChange: false,
+    })),
     getVoiceId: vi.fn().mockReturnValue('voice-1'),
     getSpeakingLang: vi.fn().mockReturnValue('en'),
   };
@@ -1380,9 +1385,12 @@ describe('TTSController', () => {
 
     test('reapplyCurrentHighlight never draws the sentence in word mode while playing', async () => {
       await controller.initViewTTS(0);
-      controller.ttsClient.supportsWordBoundaries = vi
-        .fn()
-        .mockReturnValue(true) as unknown as () => boolean;
+      controller.ttsClient.getCapabilities = vi.fn().mockReturnValue({
+        wordBoundaries: true,
+        mediaClock: false,
+        gapControl: false,
+        liveRateChange: false,
+      }) as unknown as typeof controller.ttsClient.getCapabilities;
       controller.setHighlightGranularity('word');
       controller.state = 'playing';
       const content = (

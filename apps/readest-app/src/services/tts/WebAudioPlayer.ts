@@ -26,6 +26,8 @@
 // drives MPNowPlayingInfoCenter/MPRemoteCommandCenter natively via the
 // native-tts plugin (getMediaSession -> TauriMediaSession).
 
+import type { TTSAudioPlayer } from './TTSAudioPlayer';
+
 export interface TTSAudioBuffer {
   readonly sampleRate: number;
   readonly length: number;
@@ -123,7 +125,7 @@ export const ensureSharedAudioContext = async (): Promise<void> => {
   }
 };
 
-export class WebAudioPlayer {
+export class WebAudioPlayer implements TTSAudioPlayer {
   #createContext: () => TTSAudioContext;
   #usesSharedContext: boolean;
   #ctx: TTSAudioContext | null = null;

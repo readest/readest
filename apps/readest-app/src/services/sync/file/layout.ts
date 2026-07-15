@@ -32,6 +32,10 @@ export const SYNC_BOOKS_DIR = 'books';
 export const SYNC_LIBRARY_FILE = 'library.json';
 export const SYNC_BOOK_CONFIG_FILE = 'config.json';
 export const SYNC_BOOK_COVER_FILE = 'cover.png';
+// TTS section packs (<section>-<keysfp>.mp3 + .json sidecars) live in a
+// per-book subdirectory. Additive to the frozen layout above: older clients
+// simply never look inside it.
+export const SYNC_BOOK_TTS_DIR = 'tts';
 
 /**
  * Normalise the user-entered rootPath so the rest of the code can rely on
@@ -58,6 +62,14 @@ export const buildBasePath = (rootPath: string): string =>
 /** Absolute path of the per-book directory keyed by hash. */
 export const buildBookDirPath = (rootPath: string, bookHash: string): string =>
   join(buildBasePath(rootPath), SYNC_BOOKS_DIR, bookHash);
+
+/** Absolute path of the per-book TTS pack directory. */
+export const buildBookTTSDirPath = (rootPath: string, bookHash: string): string =>
+  join(buildBookDirPath(rootPath, bookHash), SYNC_BOOK_TTS_DIR);
+
+/** Absolute path of one TTS pack file (or sidecar) inside the tts dir. */
+export const buildBookTTSFilePath = (rootPath: string, bookHash: string, name: string): string =>
+  join(buildBookTTSDirPath(rootPath, bookHash), name);
 
 /** Absolute path of a book's config.json (progress + booknotes). */
 export const buildBookConfigPath = (rootPath: string, bookHash: string): string =>
