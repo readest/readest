@@ -10,21 +10,15 @@ vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string) => s,
 }));
 
-// Mocked SketchPicker that tracks mount/unmount via a shared module-level
+// Mocked HexColorPicker that tracks mount/unmount via a shared module-level
 // registry, so we can detect whether the picker was remounted across a hex
 // change. Each mount gets a unique id; a mount is "alive" while its cleanup
 // hasn't run.
 const mountLog: Array<{ id: number; alive: boolean }> = [];
 let nextMountId = 0;
 
-vi.mock('react-color', () => ({
-  SketchPicker: ({
-    color,
-    onChange,
-  }: {
-    color: string;
-    onChange: (c: { hex: string }) => void;
-  }) => {
+vi.mock('react-colorful', () => ({
+  HexColorPicker: ({ color, onChange }: { color: string; onChange: (c: string) => void }) => {
     const [mountId] = useState(() => {
       const id = nextMountId++;
       mountLog.push({ id, alive: true });
@@ -42,11 +36,10 @@ vi.mock('react-color', () => ({
         data-mount-id={mountId}
         data-color={color}
         // Expose a way to trigger onChange as if from a drag.
-        onClick={() => onChange({ hex: '#112233' })}
+        onClick={() => onChange('#112233')}
       />
     );
   },
-  ColorResult: undefined,
 }));
 
 afterEach(() => {
@@ -75,8 +68,8 @@ const Harness: React.FC<{ initialUserColors: UserHighlightColor[] }> = ({ initia
   );
 };
 
-describe('HighlightColorsEditor — user color SketchPicker stability', () => {
-  it('keeps the SketchPicker mounted when the user-color hex updates (so drag is not interrupted)', () => {
+describe('HighlightColorsEditor — user color HexColorPicker stability', () => {
+  it('keeps the HexColorPicker mounted when the user-color hex updates (so drag is not interrupted)', () => {
     render(<Harness initialUserColors={[{ hex: '#aabbcc' }]} />);
 
     // ColorInput swatchOnly renders a circular button per color, all with
@@ -88,14 +81,14 @@ describe('HighlightColorsEditor — user color SketchPicker stability', () => {
     const userSwatch = editColorButtons[editColorButtons.length - 1]! as HTMLButtonElement;
     expect(userSwatch.style.backgroundColor).toBe('rgb(170, 187, 204)');
 
-    // Open the SketchPicker for this user color.
+    // Open the HexColorPicker for this user color.
     fireEvent.click(userSwatch);
 
     const picker = screen.getByTestId('mock-sketch-picker');
     const initialMountId = picker.getAttribute('data-mount-id');
     expect(initialMountId).not.toBeNull();
 
-    // Simulate an onChange coming from the SketchPicker during drag.
+    // Simulate an onChange coming from the HexColorPicker during drag.
     // (In the real picker this fires continuously as the user drags.)
     fireEvent.click(picker);
 
@@ -104,8 +97,8 @@ describe('HighlightColorsEditor — user color SketchPicker stability', () => {
     // mount would be gone and React would have mounted a fresh one — the
     // drag's window-level mouse listeners would be torn down with it.
     const sameMount = mountLog.find((m) => String(m.id) === initialMountId);
-    expect(sameMount, 'SketchPicker mount with initial id should still exist').toBeDefined();
-    expect(sameMount!.alive, 'SketchPicker should not be unmounted on hex change').toBe(true);
+    expect(sameMount, 'HexColorPicker mount with initial id should still exist').toBeDefined();
+    expect(sameMount!.alive, 'HexColorPicker should not be unmounted on hex change').toBe(true);
 
     // And a picker for the new color should still be visible in the DOM.
     const pickerAfter = screen.queryByTestId('mock-sketch-picker');
