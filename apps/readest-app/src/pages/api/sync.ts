@@ -267,6 +267,15 @@ export async function GET(req: NextRequest) {
       // event, so page through both tables (ordered by updated_at ascending for a
       // stable cursor) and accumulate every row — otherwise a device pulling >1000
       // events only gets the first page and then advances its cursor past the rest.
+      //
+      // Cursor is `updated_at > since` ONLY (no `OR deleted_at > since`). Every
+      // stat push server-stamps `updated_at = now()` including deletes (see the
+      // upserts below), so a delete always lands with updated_at greater than any
+      // peer's max(updated_at) pull cursor — `updated_at > since` already returns
+      // it. The redundant OR was the #1 query by total DB time: it defeats the
+      // (user_id, updated_at) index range scan and forces a walk of the user's
+      // entire page-event history on every incremental sync. Same rationale as the
+      // books `synced_at` cursor (#4678); here updated_at is itself server-stamped.
       const PAGE = 1000;
       const fetchAll = async (table: 'stat_books' | 'stat_pages', filterBook: boolean) => {
         const all: Record<string, unknown>[] = [];
@@ -276,7 +285,7 @@ export async function GET(req: NextRequest) {
             .from(table)
             .select('*')
             .eq('user_id', user.id)
-            .or(`updated_at.gt.${sinceIso},deleted_at.gt.${sinceIso}`)
+            .gt('updated_at', sinceIso)
             .order('updated_at', { ascending: true })
             .range(offset, offset + PAGE - 1);
           if (filterBook && bookParam) q = q.eq('book_hash', bookParam);
@@ -297,7 +306,7 @@ export async function GET(req: NextRequest) {
           .from('stat_pages')
           .select('*')
           .eq('user_id', user.id)
-          .or(`updated_at.gt.${sinceIso},deleted_at.gt.${sinceIso}`)
+          .gt('updated_at', sinceIso)
           .order('updated_at', { ascending: true })
           .range(0, statsLimit - 1);
         if (bookParam) q = q.eq('book_hash', bookParam);
