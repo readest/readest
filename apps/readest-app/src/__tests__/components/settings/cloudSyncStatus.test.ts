@@ -61,6 +61,18 @@ describe('getThirdPartyRowStatus', () => {
     expect(getThirdPartyRowStatus(_, { ...base, syncing: true })).toBe('Syncing…');
   });
 
+  test('needs reauth when the web token is gone (outranks syncing/active, not paused)', () => {
+    expect(getThirdPartyRowStatus(_, { ...base, needsReauth: true })).toBe('Reconnect required');
+    // A gone token must never read as active or as an in-flight sync.
+    expect(getThirdPartyRowStatus(_, { ...base, needsReauth: true, syncing: true })).toBe(
+      'Reconnect required',
+    );
+    // But a plan-level pause still outranks it.
+    expect(getThirdPartyRowStatus(_, { ...base, needsReauth: true, paused: true })).toBe(
+      'Paused — plan required',
+    );
+  });
+
   test('sync failed after a terminal error', () => {
     expect(getThirdPartyRowStatus(_, { ...base, lastError: 'AUTH_FAILED' })).toBe('Sync failed');
   });

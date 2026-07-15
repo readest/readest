@@ -16,12 +16,12 @@ import { useThemeStore } from '@/store/themeStore';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useFileSyncStore } from '@/store/fileSyncStore';
 import {
-  getCloudSyncProviders,
   isReadestCloudEnabled,
-  getActiveFileSyncBackends,
   cloudProvidersDisplayName,
   settingsKeyForBackend,
+  type CloudSyncProviderKind,
 } from '@/services/sync/cloudSyncProvider';
+import { getReadyFileSyncBackends } from '@/services/sync/file/runLibrarySync';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -283,9 +283,16 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   // The sync row reports the health of whatever the user selected. Native
   // cursors freeze while Readest Cloud is off (the book/progress/note channels
   // are gated), so the file engine's timestamps have to stand in.
-  const providers = getCloudSyncProviders(settings);
   const readestEnabled = isReadestCloudEnabled(settings);
-  const backends = getActiveFileSyncBackends(settings);
+  // Only the providers that can ACTUALLY sync right now. A web Google Drive whose
+  // token expired is still enabled but silently skipped, so it must not be counted
+  // as active or reported as synced (it would otherwise inflate the count and lend
+  // its stale lastSyncedAt to "Synced X ago").
+  const backends = getReadyFileSyncBackends(settings);
+  const providers: CloudSyncProviderKind[] = [
+    ...(readestEnabled ? (['readest'] as const) : []),
+    ...backends,
+  ];
   const providerNames = cloudProvidersDisplayName(providers);
 
   const providerSyncing = backends.some((kind) => !!fileSyncByKind[kind]?.isSyncing);

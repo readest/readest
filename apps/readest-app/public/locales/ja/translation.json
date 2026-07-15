@@ -1767,6 +1767,7 @@
   "Full Sync": "完全同期",
   "Waiting for sign-in…": "サインインを待っています…",
   "Reconnect": "再接続",
+  "Reconnect required": "再接続が必要",
   "Use Google Drive": "Google Drive を使用",
   "Sign-in opens in your browser.": "サインインはブラウザで開きます。",
   "Readest only accesses the files it creates in your Drive.": "Readest がアクセスするのは、Drive 内に自身が作成したファイルのみです。",

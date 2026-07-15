@@ -1767,6 +1767,7 @@
   "Full Sync": "完全同步",
   "Waiting for sign-in…": "等待登录…",
   "Reconnect": "重新连接",
+  "Reconnect required": "需要重新连接",
   "Use Google Drive": "使用 Google Drive",
   "Sign-in opens in your browser.": "登录将在浏览器中打开。",
   "Readest only accesses the files it creates in your Drive.": "Readest 只会访问它在您的 Drive 中创建的文件。",

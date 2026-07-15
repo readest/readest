@@ -52,6 +52,7 @@ import {
   type CloudSyncProviderKind,
 } from '@/services/sync/cloudSyncProvider';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
+import { canBackendRun } from '@/services/sync/file/runLibrarySync';
 import SubPageHeader from './SubPageHeader';
 import { BoxedList, NavigationRow, SectionTitle, SettingLabel, Tips } from './primitives';
 
@@ -413,6 +414,8 @@ const IntegrationsPanel: React.FC = () => {
     lastError: gdriveLastError,
     syncBooks: settings.googleDrive?.syncBooks ?? false,
     booksBackedUpElsewhere: booksBackedUpBy('gdrive'),
+    // Web Google Drive with a gone/expired token can't sync until reconnected.
+    needsReauth: !canBackendRun('gdrive'),
   });
   const s3Configured = !!(
     settings.s3?.endpoint &&

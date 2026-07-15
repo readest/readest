@@ -1869,6 +1869,7 @@
   "Full Sync": "Полная синхронизация",
   "Waiting for sign-in…": "Ожидание входа…",
   "Reconnect": "Переподключиться",
+  "Reconnect required": "Требуется переподключение",
   "Use Google Drive": "Использовать Google Drive",
   "Sign-in opens in your browser.": "Вход откроется в вашем браузере.",
   "Readest only accesses the files it creates in your Drive.": "Readest получает доступ только к тем файлам, которые сам создаёт на вашем Google Drive.",

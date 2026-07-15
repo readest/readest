@@ -1801,6 +1801,7 @@
   "Full Sync": "Fullständig synk",
   "Waiting for sign-in…": "Väntar på inloggning…",
   "Reconnect": "Anslut igen",
+  "Reconnect required": "Återanslutning krävs",
   "Use Google Drive": "Använd Google Drive",
   "Sign-in opens in your browser.": "Inloggningen öppnas i din webbläsare.",
   "Readest only accesses the files it creates in your Drive.": "Readest kommer bara åt de filer som appen skapar i din Drive.",

@@ -1937,6 +1937,7 @@
   "Full Sync": "مزامنة كاملة",
   "Waiting for sign-in…": "في انتظار تسجيل الدخول…",
   "Reconnect": "إعادة الاتصال",
+  "Reconnect required": "يلزم إعادة الاتصال",
   "Use Google Drive": "استخدام Google Drive",
   "Sign-in opens in your browser.": "يتم فتح تسجيل الدخول في متصفحك.",
   "Readest only accesses the files it creates in your Drive.": "لا يصل Readest إلا إلى الملفات التي ينشئها في Drive الخاص بك.",

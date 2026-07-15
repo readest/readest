@@ -1767,6 +1767,7 @@
   "Full Sync": "전체 동기화",
   "Waiting for sign-in…": "로그인을 기다리는 중…",
   "Reconnect": "다시 연결",
+  "Reconnect required": "다시 연결 필요",
   "Use Google Drive": "Google Drive 사용",
   "Sign-in opens in your browser.": "로그인은 브라우저에서 열립니다.",
   "Readest only accesses the files it creates in your Drive.": "Readest는 Drive에서 직접 만든 파일에만 접근합니다.",

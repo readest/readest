@@ -1835,6 +1835,7 @@
   "Full Sync": "Synchronisation complète",
   "Waiting for sign-in…": "En attente de connexion…",
   "Reconnect": "Se reconnecter",
+  "Reconnect required": "Reconnexion requise",
   "Use Google Drive": "Utiliser Google Drive",
   "Sign-in opens in your browser.": "La connexion s'ouvre dans votre navigateur.",
   "Readest only accesses the files it creates in your Drive.": "Readest accède uniquement aux fichiers qu'il crée dans votre Drive.",

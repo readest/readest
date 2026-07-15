@@ -1801,6 +1801,7 @@
   "Full Sync": "Teljes szinkronizálás",
   "Waiting for sign-in…": "Várakozás a bejelentkezésre…",
   "Reconnect": "Újracsatlakozás",
+  "Reconnect required": "Újracsatlakozás szükséges",
   "Use Google Drive": "Google Drive használata",
   "Sign-in opens in your browser.": "A bejelentkezés a böngészőben nyílik meg.",
   "Readest only accesses the files it creates in your Drive.": "A Readest csak azokhoz a fájlokhoz fér hozzá, amelyeket ő hozott létre a Drive-jában.",

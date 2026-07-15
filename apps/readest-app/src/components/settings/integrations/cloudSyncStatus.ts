@@ -38,6 +38,13 @@ export interface ThirdPartyRowInputs {
    * does.
    */
   booksBackedUpElsewhere: boolean;
+  /**
+   * Enabled, but its short-lived web OAuth token is gone/expired, so it cannot
+   * actually sync until the user reconnects (web Google Drive; the token lives
+   * in sessionStorage and is dropped when the tab closes). Without this the row
+   * would show "Active" while silently syncing nothing.
+   */
+  needsReauth?: boolean;
 }
 
 export interface CanToggleCloudProviderInputs {
@@ -58,6 +65,9 @@ export const canToggleCloudProvider = (s: CanToggleCloudProviderInputs): boolean
 export const getThirdPartyRowStatus = (_: TranslationFunc, s: ThirdPartyRowInputs): string => {
   if (!s.enabled) return s.configured ? _('Configured') : _('Not connected');
   if (s.paused) return _('Paused — plan required');
+  // Enabled but the web token is gone — it silently syncs nothing until the user
+  // reconnects, so the row must not claim it is active.
+  if (s.needsReauth) return _('Reconnect required');
   if (s.syncing) return _('Syncing…');
   if (s.lastError) return _('Sync failed');
   if (!s.syncBooks && !s.booksBackedUpElsewhere) {

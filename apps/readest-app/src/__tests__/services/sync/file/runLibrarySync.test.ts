@@ -31,7 +31,22 @@ vi.mock('@/services/sync/file/engine', () => ({
   }),
 }));
 
+// Defaults keep `canBackendRun('gdrive')` true (non-web), so the existing pass
+// tests still run gdrive; the getReadyFileSyncBackends block toggles them.
+vi.mock('@/services/environment', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/environment')>()),
+  isWebAppPlatform: vi.fn(() => false),
+}));
+vi.mock('@/services/sync/providers/gdrive/auth/webTokenStore', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/sync/providers/gdrive/auth/webTokenStore')>()),
+  hasValidWebDriveToken: vi.fn(() => false),
+}));
+
+import { isWebAppPlatform } from '@/services/environment';
+import { hasValidWebDriveToken } from '@/services/sync/providers/gdrive/auth/webTokenStore';
 import {
+  canBackendRun,
+  getReadyFileSyncBackends,
   runFileBookDownload,
   runFileBookUpload,
   runFileLibrarySyncPass,
@@ -217,5 +232,47 @@ describe('runFileBookDownload', () => {
     expect(await runFileBookDownload(envConfig, book)).toBe(true);
     expect(book.downloadedAt).toBeTruthy();
     expect(book.coverDownloadedAt).toBeTruthy();
+  });
+});
+
+describe('getReadyFileSyncBackends', () => {
+  const settings = {
+    version: 1,
+    webdav: {
+      enabled: true,
+      serverUrl: 'https://dav',
+      username: 'u',
+      password: 'p',
+      rootPath: '/',
+    },
+    googleDrive: { enabled: true },
+  } as unknown as SystemSettings;
+
+  beforeEach(() => {
+    vi.mocked(isWebAppPlatform).mockReturnValue(true);
+    vi.mocked(hasValidWebDriveToken).mockReturnValue(true);
+    setCachedUserPlan('pro');
+  });
+
+  test('includes gdrive when the web token is valid', () => {
+    expect(getReadyFileSyncBackends(settings)).toEqual(['webdav', 'gdrive']);
+  });
+
+  test('drops gdrive when the web token is gone (canBackendRun false)', () => {
+    vi.mocked(hasValidWebDriveToken).mockReturnValue(false);
+    expect(canBackendRun('gdrive')).toBe(false);
+    expect(canBackendRun('webdav')).toBe(true);
+    expect(getReadyFileSyncBackends(settings)).toEqual(['webdav']);
+  });
+
+  test('native (non-web) keeps gdrive regardless of the web token', () => {
+    vi.mocked(isWebAppPlatform).mockReturnValue(false);
+    vi.mocked(hasValidWebDriveToken).mockReturnValue(false);
+    expect(getReadyFileSyncBackends(settings)).toEqual(['webdav', 'gdrive']);
+  });
+
+  test('excludes everything when the plan gate pauses third-party sync', () => {
+    setCachedUserPlan('free');
+    expect(getReadyFileSyncBackends(settings)).toEqual([]);
   });
 });
