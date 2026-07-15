@@ -25,11 +25,35 @@ const sanitizeXmlBuffer = (buf: ArrayBuffer): ArrayBuffer => {
   const bytes = new Uint8Array(buf);
   for (const byte of bytes) text += String.fromCharCode(byte);
 
-  text = text.replace(/&(?!([a-zA-Z0-9]+|#[0-9]+|#x[0-9a-fA-F]+);)/g, '&amp;');
+  let out = '';
+  let inCdata = false;
+  for (let i = 0; i < text.length; i++) {
+    if (!inCdata && text.startsWith('<![CDATA[', i)) {
+      inCdata = true;
+      out += '<![CDATA[';
+      i += '<![CDATA['.length - 1;
+      continue;
+    }
+    if (inCdata && text.startsWith(']]>', i)) {
+      inCdata = false;
+      out += ']]>';
+      i += ']]>'.length - 1;
+      continue;
+    }
+    if (
+      !inCdata &&
+      text[i] === '&' &&
+      !text.slice(i).match(/^&(amp|lt|gt|quot|apos|#[0-9]+|#x[0-9a-fA-F]+);/)
+    ) {
+      out += '&amp;';
+      continue;
+    }
+    out += text[i];
+  }
 
-  const out = new Uint8Array(text.length);
-  for (let i = 0; i < text.length; i++) out[i] = text.charCodeAt(i) & 0xff;
-  return out.buffer;
+  const outBytes = new Uint8Array(out.length);
+  for (let i = 0; i < out.length; i++) outBytes[i] = out.charCodeAt(i) & 0xff;
+  return outBytes.buffer;
 };
 
 async function fetchFollowingRedirects(

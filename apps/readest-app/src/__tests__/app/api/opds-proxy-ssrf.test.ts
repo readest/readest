@@ -117,8 +117,21 @@ describe('OPDS proxy SSRF guard', () => {
 
     const res = await GET(proxyReq('https://feeds.example.com/catalog.atom'));
     expect(res.status).toBe(200);
-    expect(Buffer.from(await res.arrayBuffer()).toString('latin1')).toContain(
-      'José &amp; María',
+    expect(Buffer.from(await res.arrayBuffer()).toString('latin1')).toContain('José &amp; María');
+  });
+
+  it('leaves ampersands inside CDATA unchanged', async () => {
+    fetchSpy.mockResolvedValueOnce(
+      new Response('<feed><content><![CDATA[Tom & Jerry]]></content></feed>', {
+        status: 200,
+        headers: { 'Content-Type': 'application/xml' },
+      }),
     );
+
+    const res = await GET(proxyReq('https://feeds.example.com/catalog.atom'));
+    const body = await res.text();
+    expect(res.status).toBe(200);
+    expect(body).toContain('<![CDATA[Tom & Jerry]]>');
+    expect(body).not.toContain('<![CDATA[Tom &amp; Jerry]]>');
   });
 });
