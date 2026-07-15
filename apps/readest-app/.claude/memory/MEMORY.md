@@ -1,40 +1,47 @@
 # Readest Project Memory
 
 ## Key Reference Documents (aggregators)
-- [Bug Patterns](bug-patterns.md) · [CSS & Style](css-style-fixes.md) EPUB CSS + style.ts · [TTS](tts-fixes.md)
-- [Layout & UI](layout-ui-fixes.md) insets/z-index · [Platform Compat](platform-compat-fixes.md) · [Annotator & Reader](annotator-reader-fixes.md)
+- [Bug Patterns](bug-patterns.md) · [CSS & Style](css-style-fixes.md) · [TTS](tts-fixes.md)
+- [Layout & UI](layout-ui-fixes.md) · [Platform Compat](platform-compat-fixes.md) · [Annotator & Reader](annotator-reader-fixes.md)
 ## Safety & Security
-- [In-place delete wiped originals](in-place-delete-wiped-originals.md) never `fs.removeFile` `external` · [Backup zip Windows paths #4703](backup-windows-zip-paths-4703.md) normalize `\` · [download_file scope Android #4639](download-file-scope-android-regression.md)
-- [Security advisories 2026-06](security-advisories-web-2026-06.md) 4 GHSA #4638; SSRF guard dev-only exemption PR#5002
+- [In-place delete wiped originals](in-place-delete-wiped-originals.md) never `fs.removeFile` `external`
+- ["Delete locally" wiped Google Drive #5084](gdrive-delete-locally-wiped-cloud-5084.md) · [Backup zip Windows paths #4703](backup-windows-zip-paths-4703.md) · [download_file scope Android #4639](download-file-scope-android-regression.md)
+- [Security advisories 2026-06](security-advisories-web-2026-06.md) 4 GHSA #4638; SSRF guard dev-only PR#5002
+- [iOS PDF WebContent OOM #5118](pdf-ios-webcontent-oom-zoom-5118.md) 2.1GB highwater kill on zoom; foliate render() clamp renderDpr + render DOM at DISPLAY size, over-sample only canvas bitmap (no transform=GPU bomb, no zoom=breaks getBoundingClientRect); sim can't repro (SW compositing)
 ## Paginator & Scroll
-- Reading ruler: [line-aware](reading-ruler-line-aware.md) frame-offset map; [vertical-rl backwards #4865](reading-ruler-vertical-rtl-4865.md)
-- [Vertical-rl horizontal pagination (#624)](vertical-rl-horizontal-pagination-624.md) horizontal inputs + two-phase slide
-- [Slide/curl turn styles via VT (#555)](page-turn-styles-viewtransitions-555.md) MERGED #4940; VT gated on nested-VT-groups; Tauri fallback `CapturedPageTurn` (WebGL curl/canvas slide); Win/Linux capture open
-  - [Captured turn ignored instant-highlight hold](captured-turn-instant-highlight-scrolllock.md) gate on `renderer.scrollLocked`; PR#5000+foliate#51
+- Reading ruler: [line-aware](reading-ruler-line-aware.md); [vertical-rl backwards #4865](reading-ruler-vertical-rtl-4865.md)
+- [Vertical-rl horizontal pagination (#624)](vertical-rl-horizontal-pagination-624.md)
+- [Slide/curl turn styles via VT (#555)](page-turn-styles-viewtransitions-555.md) MERGED #4940; Win/Linux capture open
+  - [Captured turn ignored instant-highlight hold](captured-turn-instant-highlight-scrolllock.md) gate `renderer.scrollLocked`
 - TOC: [expand + auto-scroll](toc-expand-and-autoscroll.md); [current-position row](toc-current-position-row.md); [table heading clip #4439](toc-table-heading-clip-4439.md); [BooknoteView auto-scroll #4352](booknote-view-autoscroll-4352.md)
 - Paginated bg: [swipe flash](paginator-swipe-bg-flash.md); [texture occlusion #4399](paginated-texture-occlusion-4399.md); [gutter bleed #4394](paginator-gutter-bleed-asymmetry-4394.md); [bg-replace reflow #4785](pageturn-bg-replace-reflow-4785.md)
 - [Inline-block column overflow](inline-block-column-overflow.md) `#demoteUnfragmentableBoxes`
-- FXL/PDF: [fit-width scroll reset #4683](fixed-layout-paginated-scroll-reset-4683.md); [PDF spread seam #4587](pdf-spread-canvas-seam-4587.md); [spine seam #4857](fxl-spread-spine-seam-4857.md); [portrait auto-spread off-center #4984](fxl-portrait-autospread-offcenter-4984.md) MERGED #4992+foliate#50
+- FXL/PDF: [fit-width scroll reset #4683](fixed-layout-paginated-scroll-reset-4683.md); [PDF spread seam #4587](pdf-spread-canvas-seam-4587.md); [spine seam #4857](fxl-spread-spine-seam-4857.md); [portrait auto-spread #4984](fxl-portrait-autospread-offcenter-4984.md) MERGED #4992
 - Scrolled: [PDF wheel double #4727](pdf-scroll-mode-wheel-double-4727.md); [header title center #4436](scrolled-header-title-center-4436.md); [Duokan fullscreen cover](duokan-fullscreen-cover-scroll.md)
 ## Critical Files (Most Bug-Prone)
 - `src/utils/style.ts` EPUB CSS hub · `packages/foliate-js/paginator.js` · `src/services/tts/TTSController.ts`
 - `src/hooks/useSafeAreaInsets.ts` · `src/app/reader/components/FoliateViewer.tsx` · `.../annotator/Annotator.tsx`
 ## Sync Notes
-- [Cloud Sync provider selection #4959/#4380](cloud-sync-provider-selection-plan.md) MERGED #4971-#4976; i18n pass + live verify pending
+- [Multi-provider cloud sync #5062](multi-provider-cloud-sync-5062.md) MERGED #5122; any subset of providers at once; REVERSES exclusive model, keeps #4380/#4959 fixes; `readestCloud.enabled ?? !hasAnyThirdParty` no-migration; native + both-remotes-in-one-pass verify still pending
+- [Cloud Sync provider selection #4959/#4380](cloud-sync-provider-selection-plan.md) MERGED #4971-#4976
 - [Grimmory native sync](grimmory-native-sync.md) REVERTED
-- KOSync: [CFI spine resolution](kosync-cfi-spine-resolution.md); [connect() false-positive #4692](kosync-connect-false-positive-4692.md)
+- KOSync: [CFI spine resolution](kosync-cfi-spine-resolution.md); [connect() false-positive #4692](kosync-connect-false-positive-4692.md); [pull dropped progress #5063/#5065](kosync-getprogress-document-guard-5063-5065.md) MERGED #5090
+- [Sync passphrase never verified #5068](sync-passphrase-unverified-5068.md) MERGED #5115; PBKDF2 trial-decrypt before persisting; identity-mock translator hides untranslated-key bugs
 - [Empty-start CFI sync](empty-start-cfi-sync.md) · [Custom fonts vanish #4410](custom-fonts-reincarnation-4410.md) CRDT remove-wins
-- koplugin: [note deletion](koplugin-note-deletion-sync.md) tombstone; [stats #4666](koplugin-stats-sync.md); [bulk download #4751](koplugin-bulk-download-4751.md); [dup book rows #4861](koplugin-stats-duplicate-book-rows-4861.md)
+- koplugin: [note deletion](koplugin-note-deletion-sync.md); [stats #4666](koplugin-stats-sync.md); [bulk download #4751](koplugin-bulk-download-4751.md); [dup book rows #4861](koplugin-stats-duplicate-book-rows-4861.md)
 - [Statusless re-pin #4677](sync-statusless-book-rebump-4677.md) · [pull cursor synced_at #4678](sync-synced-at-cursor-4678.md)
+- [deleted_at OR cursor invariant](sync-deleted-at-cursor-invariant.md) stats drop redundant OR (server updated_at, was #1 43% DB time); notes/configs OR load-bearing (client updated_at, delete bumps only deletedAt)
 - [koplugin library stale #4934](koplugin-library-stale-synced-cursor-4934.md) synced_at cursor + push watermark + v3 heal
-- WebDAV: [metadata #4756](webdav-metadata-sync-4756.md) LWW; [group membership #4942](webdav-group-membership-sync-4942.md); [credentials #4810](webdav-credential-sync-4810.md); [connect nullified #4780](webdav-connect-nullified-4780.md) stale closure
+- WebDAV: [metadata #4756](webdav-metadata-sync-4756.md) LWW; [group membership #4942](webdav-group-membership-sync-4942.md); [credentials #4810](webdav-credential-sync-4810.md); [connect nullified #4780](webdav-connect-nullified-4780.md)
 - [WebDAV deletion + upload-after-enable (#4860/#4856)](webdav-deletion-and-upload-after-enable-4860-4856.md) edit-wins LWW + tombstone union
 - File sync: [refactor #4784](webdav-filesync-refactor-plan.md) `FileSyncEngine`; [third-party auto-sync #4835](third-party-library-autosync-4835.md)
-- [Transfer Queue clear not persisted](transfer-queue-clear-persistence.md) route through `transferManager`
+- [Demo books synced + resurrected #5049](demo-books-cloud-sync-5049.md) MERGED #5110; delete sets `deletedAt` not `updatedAt`; `isDemoBook` by url
+- [Shelf progress never pulled #5067](filesync-shelf-progress-5067.md) MERGED #5096; `mergeBookMetadata` field subset = what travels
+- [Transfer Queue clear not persisted](transfer-queue-clear-persistence.md) via `transferManager`
 - [Multi-window settings clobber (#4580)](multiwindow-settings-clobber-4580.md)
 - Google Drive: [research](gdrive-sync-provider-research.md); [multi-PR status](gdrive-provider-multipr-status.md); [full walk every sync](gdrive-fullwalk-every-sync-no-source-cursor.md)
-- [S3/R2 provider](s3-r2-sync-provider.md) aws4fetch SigV4 path-style; encrypted cross-device config MERGED #5051; live R2 verify pending
-- [OneDrive provider #5007](onedrive-sync-provider.md) MERGED #5048; shared `providers/oauth/`; client id BAKED test tenant (corp M365 blocked)
+- [S3/R2 provider](s3-r2-sync-provider.md) aws4fetch SigV4; encrypted config MERGED #5051
+- [OneDrive provider #5007](onedrive-sync-provider.md) MERGED #5048; shared `providers/oauth/`; client id BAKED
 - [Hardcover edition_id (#4792)](hardcover-progress-edition-id-4792.md)
 ## Build, Testing & CI
 - [Nightly quick-sharun hang #4906](nightly-quick-sharun-hang-4906.md) cache pre-seed + step timeouts
@@ -43,14 +50,15 @@
 - [Tauri Rust↔JS parser parity](tauri-parser-parity-tests.md)
 - TTS tests: [browser e2e harness](tts-browser-e2e-harness.md); [paragraph+RSVP sync #3235](tts-sync-paragraph-rsvp-3235.md) TTS-is-clock
 - [fastlane App Store](fastlane-apple-appstore-submission.md) `APPLE_API_KEY_PATH` out of build env
-- [Turbopack cache OOM (#4619)](turbopack-build-cache-oom-docker-standalone.md)
+- [Turbopack cache OOM (#4619)](turbopack-build-cache-oom-docker-standalone.md) · [pdfjs vendor wasm](pdfjs-vendor-wasm-decoders.md) copy `wasm/*`
 - [Deps override workflow](deps-security-overrides-workflow.md) `pnpm-workspace.yaml`
+- [pnpm version mismatch](pnpm-version-mismatch-lockfile-churn.md) PATH pnpm 9 vs pinned 11.1.1 → `npx pnpm@11.1.1`
 - [Xcode 26.2 broke iOS builds (swift-rs)](xcode26-swiftrs-ios-build-broken.md) vendored `packages/swift-rs`
-- [iOS SPM Sentry proxy TLS-1.3 download hang](ios-spm-sentry-proxy-tls-download.md) wget + workspace-state inject; `~/sentry-xcframeworks-8.58.4/reinject.sh`
-- [pdfjs vendor wasm](pdfjs-vendor-wasm-decoders.md) copy `wasm/*`
+- [iOS SPM Sentry proxy TLS-1.3 hang](ios-spm-sentry-proxy-tls-download.md) wget + workspace-state inject
 - [CI/PR delivery + push keepalive](ci-pr-delivery-and-push.md)
-- [tauri 2.11 remote ACL app commands](tauri-211-remote-acl-app-commands.md) webdriver tests = remote origin; AppManifest + webdriver-remote capability; sync build.rs with generate_handler
+- [tauri 2.11 remote ACL app commands](tauri-211-remote-acl-app-commands.md) webdriver = remote origin; sync build.rs with generate_handler
 ## Platform Compat
+- [Sentry minidump DROPPED #5112](crash-reporter-second-window-5052.md); [MAS SIGILL #5053](mas-sandbox-minidump-launch-crash-5053.md) #5091; [armv7 SIGABRT #5070](android-armv7-sentry-crash-handler-5070.md) #5089 — native dumps ever again = SEPARATE helper, never re-exec; guard `minidump_feature_is_enabled_on_no_target`
 - Android: [hyphen selection #1553](android-hyphen-selection-bounds-1553.md); [NativeFile vs RemoteFile I/O](android-nativefile-remotefile-io.md)
 - [Window-state sanitizer #4398](window-state-sanitize-4398.md) · [Android themed icon #4733](android-themed-icon-4733.md)
 - [Open-with intent #4521](android-open-with-intent-flow.md) · [dict lookup hijack #4559](dict-lookup-browser-hijack-4559.md)
@@ -59,89 +67,85 @@
 - [macOS 26 Tahoe close→black window (#4875)](macos26-tahoe-close-black-screen-4875.md) `minimize()` not `hide()`
 - [Linux app invisible after backup (#3682)](linux-transparent-window-invisible-3682.md) FIXED PR#4904
 - [Apple OAuth expired + deeplink swallowed (#4881)](oauth-deeplink-error-swallowed-4881.md)
-- [Annotation link ignored when reader open #4887](deeplink-drop-running-macos-4887.md) `open-book-in-reader` event
+- [Annotation link ignored when reader open #4887](deeplink-drop-running-macos-4887.md) `open-book-in-reader`
 - [iOS auto-brightness locks (#4885)](ios-brightness-lock-background-4885.md) release on bg
 - [iOS share .txt stuck #4917](ios-share-txt-stuck-supportstext.md) drop SupportsText in `project.yml`
 - [Updater disable non-AppImage (#4874)](updater-disable-nonappimage-linux-4874.md)
 - [Fullscreen no-op Phosh (#4034)](fullscreen-maximized-phosh-4034.md) drop `isMaximized` branch
 ## Reader Features & UI
 - [Readest Voice self-hosted TTS](selfhosted-premium-tts-plans.md) plans APPROVED 2026-07-08; impl not started
-- [Android Auto TTS #3919/PR#4907](android-auto-tts-3919.md) MERGED; Play rejected Auto, car meta-data pulled PR#5038
-- [CarPlay TTS support](carplay-tts-support.md) tao 0.35/wry 0.55; device crash = tao UAF in scene config → `packages/tao` submodule readest/tao@readest-0.35 `autorelease_return`; plist edits → `Info-ios.plist` seed
-- [iOS TTS native media session](ios-tts-media-session-native.md) PR#5085; native AVPlayer playout; non-mixable .playback/.spokenAudio; pause-card killer was volume-key .mixWithOthers → grep app log `opts=1` first
-- [TTS architecture refactor plan](tts-architecture-refactor-plan.md) APPROVED after PR#5085 merges: SpeechProvider seam + CachingProvider + TTSAudioPlayer iface; playout stays per-platform
+- [Android Auto TTS #3919/PR#4907](android-auto-tts-3919.md) MERGED; car meta-data pulled PR#5038
+- [CarPlay TTS support](carplay-tts-support.md) tao 0.35/wry 0.55; device crash = tao UAF → `packages/tao`; plist → `Info-ios.plist`
+- [iOS TTS native media session](ios-tts-media-session-native.md) PR#5085; pause-card killer = volume-key .mixWithOthers → grep `opts=1`
+- [TTS architecture refactor plan](tts-architecture-refactor-plan.md) SHIPPED #5126: SpeechProvider seam + per-book SQLite cache + section packs + premium-gated offline downloads
 - Widgets: [mobile reading #1602/PR#4842](mobile-reading-widgets.md); [iOS App Group stripped PR#4891](ios-widget-appgroup-stripped-appstore.md); [cover bright right-edge line](ios-widget-cover-bright-edge-line.md)
-- PDF: [scrolled lag #4795](pdf-scroll-lag-preload-4795.md); [scrolled pinch-zoom #4817](scrolled-pdf-pinch-zoom-4817.md); [pinch vs two-finger scroll #4858](pinch-vs-twofinger-scroll-4858.md); [text selection misplaced w/ OS font scale #4480](pdf-text-selection-fontscale-4480.md) divide `--text-scale-factor` not `--total-scale-factor`
+- PDF: [scrolled lag #4795](pdf-scroll-lag-preload-4795.md); [scrolled pinch-zoom #4817](scrolled-pdf-pinch-zoom-4817.md); [pinch vs two-finger scroll #4858](pinch-vs-twofinger-scroll-4858.md); [selection off w/ OS font scale #4480](pdf-text-selection-fontscale-4480.md) divide `--text-scale-factor`
 - [Search modes #4560](search-modes-4560-and-spoiler-bound-bug.md)
 - [OPDS groups carousel #4750](opds-groups-carousel-4750.md) · [WebDAV browser sort+search #4724](webdav-browse-sort-search-4724.md)
 - [Image zoom trackpad flicker (#4742)](image-zoom-trackpad-flicker-4742.md) macOS pinch=`ctrl+wheel`
 - Instant highlight: [ate tap/swipe](instant-highlight-tap-paginate.md); [delete orphan #4773](instant-highlight-delete-orphan-4773.md); [empty leak #4791](empty-highlight-leak-on-annotate-cancel-4791.md)
 - Selection: [keyboard adjust #4728](keyboard-selection-adjust-4728.md); [cross-page auto-turn #4741](cross-page-selection-autoturn-4741.md)
 - Click/tap: [double-click word select](iframe-double-click-word-select.md); [dblclick-drag #4524](dblclick-drag-pageturn-4524.md); [tap open image/table #4600](tap-to-open-image-table-4600.md)
+- [Long-press zoom REMOVED #5069](longpress-zoom-removed-5069.md) MERGED #5108; timer+cancel opened viewer mid-scroll; `img` `-webkit-touch-callout:none`
+- [Save to gallery failed on Samsung](gallery-save-samsung-mediastore.md) MERGED #5109 (unconfirmed); dup name `image.<ext>`; MediaStore error swallowed
 - [Annotator onLoad listener leak (#4735)](annotator-onload-listener-leak-paragraph-mode.md)
 - Paragraph mode: [toggle/resume #4717](paragraph-mode-toggle-resume-4717.md); [accidental exit #4474](paragraph-mode-accidental-exit-4474.md)
 - [#4584 tap-death](issue-4584-tap-death-investigation.md) UNFIXED; likely WebView-148
-- [PDF/CBZ Contrast view-menu](pdf-cbz-contrast-view-menu.md) ONE `filter:`
-- [Header/footer over light PDF in dark (#4901)](pdf-header-footer-contrast-blend-4901.md) `mix-blend-difference`
+- [PDF/CBZ Contrast view-menu](pdf-cbz-contrast-view-menu.md) ONE `filter:` · [Header/footer over light PDF in dark (#4901)](pdf-header-footer-contrast-blend-4901.md) `mix-blend-difference`
 - [iOS instant-dict double popup](ios-instant-dict-double-popup.md) once-per-gesture latch
 - Dict: [popup font size #4443](dict-popup-font-size-4443.md); [lemmatization #4574](dict-lemmatization-4574.md); [popup speak button #4876](dict-popup-tts-speak-4876.md) wordPronouncer
 - Word Lens: [inline gloss](wordlens-feature.md) CFI-safe ruby; [en-en](wordlens-en-en.md)
-- [Stripe highest-active plan (#4694)](stripe-plan-highest-active-4694.md)
-- [Save image to gallery (#4680)](save-image-to-gallery-android.md) MediaStore
-- [Webtoon Mode (#3647)](webtoon-mode-3647.md)
+- [Stripe highest-active plan (#4694)](stripe-plan-highest-active-4694.md) · [Save image to gallery (#4680)](save-image-to-gallery-android.md) MediaStore
+- [Webtoon Mode (#3647)](webtoon-mode-3647.md) · [D-pad Navigation](dpad-navigation.md)
 - [Middle-click autoscroll #4951](middle-click-autoscroll-4951.md) Autoscroller RAF core
 - [Auto Scroll teleprompter #4998](auto-scroll-teleprompter-4998.md) MERGED #4999 PacedScroller; scrolled-only
 - [Biometric app-lock #4645](biometric-app-lock-4645.md) · [Reference Pages #4542](reference-pages-672-4542.md) · [e-ink refresh page-turner #4687](eink-screen-refresh-pageturner-4687.md)
 - [Share intent + toolbar (#4014)](annotation-share-toolbar-4014.md)
 - Customize Toolbar: [global serializeConfig #4760](customize-toolbar-global-serializeconfig.md); [e-ink black bar #4839](customize-toolbar-eink-black-bar-4839.md)
 - [Edge TTS Web Audio engine (#3851)](edge-tts-webaudio-engine.md) gapless WebAudioPlayer + WSOLA
-- [Background TTS sessions PR#4941](tts-background-session-decoupling.md) hash-keyed sessions; header X = `onCloseBook`
+- [Background TTS sessions PR#4941](tts-background-session-decoupling.md) hash-keyed; header X = `onCloseBook`
 - [TTS player redesign](tts-player-redesign.md) MERGED #4996; open: isPlaying glyph desync at section transitions
-- [Android bg TTS media session fix](android-bg-tts-media-session-fix.md) in-process instance calls; POST_NOTIFICATIONS; scrubber + onSeekTo
+- [Android bg TTS media session fix](android-bg-tts-media-session-fix.md) in-process calls; POST_NOTIFICATIONS; scrubber + onSeekTo
 - Native TTS: [iOS #4676](native-ios-tts-4676.md) pause==stop; [offline halt #4613](native-tts-offline-autoadvance-4613.md)
 - Edge TTS: [word highlight #4017](edge-tts-word-highlighting-4017.md); [drift](tts-word-highlight-singletextnode-drift.md)
 - TTS UX: [highlight granularity](tts-highlight-granularity-setting.md); [start-from-selection](tts-start-from-selection.md); [reuse session](tts-reuse-session-mode-entry.md)
 - RSVP: [control-bar REVERT](rsvp-control-bar-overlap-revert.md); [font #4519](rsvp-font-settings-4519.md); [RTL word #4630](rsvp-rtl-word-display-4630.md)
 - [Overlay z-index scale](zindex-overlay-scale.md) RSVP 100 → app-lock
-- [Global annotation page-turn lag (#4575)](global-annotation-pageturn-perf-4575.md)
-- [Overlayer splitRange text nodes](overlayer-splitrange-textnodes.md)
+- [Global annotation page-turn lag (#4575)](global-annotation-pageturn-perf-4575.md) · [Overlayer splitRange text nodes](overlayer-splitrange-textnodes.md)
 - [Android image callout freeze](android-image-callout-freeze.md) `.no-context-menu` ANCESTOR
 - [Inline-img vertical-align (#4866)](inline-img-vertical-align-4866.md) gated on computed valign
 - [Table dark-mode tint #4419](table-dark-mode-tint-4419.md) · [footnote aside border #4438](footnote-aside-namespace-order-4438.md)
 - Proofread: [enhancements #4700](proofread-enhancements-4700.md); [per-book CRDT #4781](proofread-per-book-crdt-sync.md); [edit Find + toggle #4859](proofread-edit-toggle-4859.md)
 - [Russian NBSP (#4769)](russian-hanging-prepositions-nbsp-4769.md)
-- OPDS: [Firefox strict-XML #4479](opds-firefox-strict-xml-4479.md); [JSON search #4502](opds2-json-search-4502.md); [HTML desc #4503](opds-html-description-4503.md); [self-link #4749](opds-self-link-metadata-4749.md); [popular dedup #4782](opds-popular-catalog-dedup-4782.md); [auto-download subdir crawl #4272](opds-autodownload-subdir-crawl-4272.md); [preemptive Basic 400s digest](opds-preemptive-basic-digest-400.md); [auto-download TLS #4988](opds-autodownload-tls-skipssl-4988.md)
-- [D-pad Navigation](dpad-navigation.md)
-- [koplugin cover upload (#4374)](koplugin-cover-upload.md)
-- [koplugin Library slow open #4954](koplugin-library-open-mosaic-cache-4954.md) PR#4974 mosaic cache
-- [Calibre plugin push #4863](calibre-plugin-push-4863.md) OAuth localhost relay
-- [Calibre custom columns #4811](calibre-custom-columns-4811.md) `metadata.calibreColumns`
+- OPDS: [Firefox strict-XML #4479](opds-firefox-strict-xml-4479.md); [JSON search #4502](opds2-json-search-4502.md); [HTML desc #4503](opds-html-description-4503.md); [self-link #4749](opds-self-link-metadata-4749.md); [popular dedup #4782](opds-popular-catalog-dedup-4782.md); [subdir crawl #4272](opds-autodownload-subdir-crawl-4272.md); [preemptive Basic 400s](opds-preemptive-basic-digest-400.md); [auto-download TLS #4988](opds-autodownload-tls-skipssl-4988.md)
+- koplugin: [cover upload #4374](koplugin-cover-upload.md); [full-sync gesture + upload current #5094](koplugin-gesture-and-upload-current-book-5094.md) PR#5106 open book may have NO LibraryStore row; busted = ONE Lua state; [Library slow open #4954](koplugin-library-open-mosaic-cache-4954.md) PR#4974
+- Calibre: [plugin push #4863](calibre-plugin-push-4863.md) OAuth localhost relay; [custom columns #4811](calibre-custom-columns-4811.md) `metadata.calibreColumns`
 ## Library Fixes
 - [Book action platform surfaces](book-actions-platform-surfaces.md) · [menu append race #4389](tauri-menu-append-race-4389.md)
 - TXT: [author recognition #4390](txt-author-recognition-4390.md); [chapter measure-word FP #4658](txt-chapter-measure-word-4658.md)
-- [Cover stale (in-place mutation)](cover-stale-inplace-mutation-memo.md)
-- [Series/author back no-op (#4437)](series-folder-back-noop-4437.md)
+- [Cover stale (in-place mutation)](cover-stale-inplace-mutation-memo.md) · [Series/author back no-op (#4437)](series-folder-back-noop-4437.md)
 - [Library/reader separate texture #4743](library-reader-separate-texture-4743.md) · [list view series overflow #4796](list-view-series-overflow-4796.md)
-- [Recently-read shelf (#3797)](recent-read-shelf-3797.md)
-- [Auto-import watched folders (#3889)](auto-import-watched-folders-3889.md) per-folder opt-in
+- [Recently-read shelf (#3797)](recent-read-shelf-3797.md) · [Auto-import watched folders (#3889)](auto-import-watched-folders-3889.md) per-folder opt-in
+- [Time Remaining sort #5079](library-sort-time-remaining-5079.md) MERGED; `Infinity-Infinity=NaN`; "no time" bucket OUTSIDE sort-order multiplier
+- [memo comparator swallows new prop](react-memo-comparator-swallows-new-prop.md) Virtuoso `key=` "fix" masks this
 ## Architecture & Patterns
 - foliate-js submodule at `packages/foliate-js/`; multiview paginator preloads adjacent sections
+- [Encoded href reserved chars #5097](epub-encoded-href-reserved-chars-5097.md) MERGED #5100; `decodeURI` NEVER decodes `; / ? : @ & = + $ , #`; blank chapter = href missed its zip entry
 - [Turso "concurrent use forbidden"](turso-concurrent-use-forbidden.md) `op_lock` async mutex
-- Markdown: [.md support #774](markdown-md-support-774.md); [resume position #4862](markdown-resume-position-4862.md)
+- Markdown: [.md support #774](markdown-md-support-774.md); [resume position #4862](markdown-resume-position-4862.md); [footnotes #5074](markdown-footnotes-5074.md) MERGED #5095
 - Style: `getLayoutStyles()` always, `getColorStyles()` when overriding; `transformStylesheet()` rewrites EPUB CSS
 - TTS `#ttsSectionIndex`; insets: native plugin → useSafeAreaInsets → styles; Dropdowns `DropdownContext`
 - Stale settings closure: persist `useSettingsStore.getState().settings` ([#4780](webdav-connect-nullified-4780.md))
 - [Page margins not live #4898](page-margin-live-update-4898.md) in-place mutation froze memo
-- [Foliate touch-listener capture phase](foliate-touch-listener-capture-phase.md)
-- [iframe cross-realm instanceof](iframe-cross-realm-instanceof.md) duck-type `'closest'`
+- [Foliate touch-listener capture phase](foliate-touch-listener-capture-phase.md) · [iframe cross-realm instanceof](iframe-cross-realm-instanceof.md) duck-type `'closest'`
 - [Virtuoso + OverlayScrollbars](virtuoso_overlayscrollbars.md)
 - [Design system → DESIGN.md](feedback_design_system_doc.md) never `pl/pr/ml/mr` (RTL)
-- [Theorem competitor analysis](theorem-competitor-feature-analysis.md) feature gaps + RSS-as-Foliate-book insight
+- [Theorem competitor analysis](theorem-competitor-feature-analysis.md) feature gaps + RSS-as-Foliate-book
 ## Workflow & Feedback
+- [Perf finding: slice-in-loop NOT O(n^2)](review-perf-slice-not-quadratic.md) V8 SlicedString = O(1) view; isolate variable at fixed size before claiming complexity (retracted PR#5121)
 - [Commit messages English-only](feedback-commit-message-english-only.md) no CJK, no em/en dashes
 - PR flow: [rebase onto origin/main](feedback_pr_rebase.md); [fresh branch per PR](feedback_pr_new_branch.md); [always `pnpm worktree:new`](feedback_use_worktree.md); [commit locally, don't push until confirmed](feedback_dont_push_every_change.md)
 - [Test file filter](feedback_test_file_filter.md) `pnpm test <path>` no `--`
 - [No test seams in prod](feedback_no_test_seams_in_prod.md) · [no lookbehind regex](feedback_no_lookbehind_regex.md)
-- i18n: [en plurals manual](feedback_en_plurals_manual.md); [i18n:extract prunes keys](i18n-extract-prunes-keys.md)
-- [Dependabot transitive fixes](dependabot-pnpm-overrides.md) `pnpm-workspace.yaml` `overrides:`
-- [Upgrade gstack locally](feedback_gstack_upgrade.md)
+- i18n: [en plurals manual](feedback_en_plurals_manual.md); [i18n:extract prunes keys](i18n-extract-prunes-keys.md); [{{provider}} bakes case suffixes #5102](i18n-provider-template-inflection.md)
+- [Dependabot transitive fixes](dependabot-pnpm-overrides.md) `pnpm-workspace.yaml` `overrides:` · [Upgrade gstack locally](feedback_gstack_upgrade.md)
