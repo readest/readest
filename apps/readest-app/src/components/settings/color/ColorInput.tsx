@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SketchPicker, ColorResult } from 'react-color';
+import { HexColorPicker } from 'react-colorful';
 import { CgColorPicker } from 'react-icons/cg';
 
 type ColorInputProps = {
@@ -60,8 +60,8 @@ const ColorInput: React.FC<ColorInputProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onCommit]);
 
-  const handlePickerChange = (colorResult: ColorResult) => {
-    onChange(colorResult.hex);
+  const handlePickerChange = (colorResultHex: string) => {
+    onChange(colorResultHex);
   };
 
   const getPickerPositionClass = () => {
@@ -100,12 +100,7 @@ const ColorInput: React.FC<ColorInputProps> = ({
             ref={pickerRef}
             className={`absolute top-full z-50 py-1 ${getPickerPositionClass()}`}
           >
-            <SketchPicker
-              width='200px'
-              color={value}
-              onChange={handlePickerChange}
-              disableAlpha={true}
-            />
+            <HexColorPicker color={value} onChange={handlePickerChange} />
           </div>
         )}
       </div>
@@ -130,12 +125,7 @@ const ColorInput: React.FC<ColorInputProps> = ({
             ref={pickerRef}
             className={`absolute top-full z-50 py-1 ${getPickerPositionClass()}`}
           >
-            <SketchPicker
-              width='200px'
-              color={value}
-              onChange={handlePickerChange}
-              disableAlpha={true}
-            />
+            <HexColorPicker color={value} onChange={handlePickerChange} />
           </div>
         )}
       </div>
@@ -165,12 +155,7 @@ const ColorInput: React.FC<ColorInputProps> = ({
       {isOpen && (
         <div ref={pickerRef} className='relative z-50 mt-2'>
           <div className='absolute'>
-            <SketchPicker
-              width='100%'
-              color={value}
-              onChange={handlePickerChange}
-              disableAlpha={true}
-            />
+            <HexColorPicker color={value} onChange={handlePickerChange} className='w-full' />
           </div>
         </div>
       )}
