@@ -238,7 +238,13 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
       });
       return new NextResponse(response.body, { status: 200, headers });
     } else {
-      const buf = await response.arrayBuffer();
+      let buf = await response.arrayBuffer();
+      if (contentType.toLowerCase().includes('xml')) {
+        const xmlText = new TextDecoder('utf-8')
+          .decode(buf)
+          .replace(/&(?!([a-zA-Z0-9]+|#[0-9]+|#x[0-9a-fA-F]+);)/g, '&amp;');
+        buf = new TextEncoder().encode(xmlText).buffer;
+      }
       const length = buf.byteLength;
       console.log(`[OPDS Proxy] Buffered Success: ${url} (${length} bytes)`);
       return new NextResponse(buf, {

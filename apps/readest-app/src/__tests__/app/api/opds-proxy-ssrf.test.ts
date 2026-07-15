@@ -93,4 +93,16 @@ describe('OPDS proxy SSRF guard', () => {
     const body = await res.text();
     expect(body).toContain('<feed');
   });
+
+  it('escapes stray ampersands in XML responses', async () => {
+    fetchSpy.mockResolvedValueOnce(
+      new Response('<feed><link href="BOOKS.zip&file=1"/></feed>', {
+        status: 200,
+        headers: { 'Content-Type': 'application/xml' },
+      }),
+    );
+    const res = await GET(proxyReq('https://feeds.example.com/catalog.atom'));
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain('BOOKS.zip&amp;file=1');
+  });
 });
