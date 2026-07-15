@@ -105,4 +105,20 @@ describe('OPDS proxy SSRF guard', () => {
     expect(res.status).toBe(200);
     expect(await res.text()).toContain('BOOKS.zip&amp;file=1');
   });
+
+  it('preserves non-utf8 XML bytes while escaping stray ampersands', async () => {
+    const latin1 = Buffer.from('<feed><title>José & María</title></feed>', 'latin1');
+    fetchSpy.mockResolvedValueOnce(
+      new Response(latin1, {
+        status: 200,
+        headers: { 'Content-Type': 'application/xml; charset=iso-8859-1' },
+      }),
+    );
+
+    const res = await GET(proxyReq('https://feeds.example.com/catalog.atom'));
+    expect(res.status).toBe(200);
+    expect(Buffer.from(await res.arrayBuffer()).toString('latin1')).toContain(
+      'José &amp; María',
+    );
+  });
 });

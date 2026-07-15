@@ -20,6 +20,18 @@ const isPrivateHostAllowed = () => process.env.NODE_ENV === 'development';
  */
 class SsrfBlockedError extends Error {}
 
+const sanitizeXmlBuffer = (buf: ArrayBuffer): ArrayBuffer => {
+  let text = '';
+  const bytes = new Uint8Array(buf);
+  for (const byte of bytes) text += String.fromCharCode(byte);
+
+  text = text.replace(/&(?!([a-zA-Z0-9]+|#[0-9]+|#x[0-9a-fA-F]+);)/g, '&amp;');
+
+  const out = new Uint8Array(text.length);
+  for (let i = 0; i < text.length; i++) out[i] = text.charCodeAt(i) & 0xff;
+  return out.buffer;
+};
+
 async function fetchFollowingRedirects(
   startUrl: string,
   init: { method: 'GET' | 'HEAD'; headers: Headers; signal: AbortSignal },
@@ -240,10 +252,7 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
     } else {
       let buf = await response.arrayBuffer();
       if (contentType.toLowerCase().includes('xml')) {
-        const xmlText = new TextDecoder('utf-8')
-          .decode(buf)
-          .replace(/&(?!([a-zA-Z0-9]+|#[0-9]+|#x[0-9a-fA-F]+);)/g, '&amp;');
-        buf = new TextEncoder().encode(xmlText).buffer;
+        buf = sanitizeXmlBuffer(buf);
       }
       const length = buf.byteLength;
       console.log(`[OPDS Proxy] Buffered Success: ${url} (${length} bytes)`);
