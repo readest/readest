@@ -112,23 +112,24 @@ describe('PDF spread canvas seam (#4587)', () => {
     // fractional: 612 * zoom * 1.5 must not be an integer.
     const zoom = 0.8523;
     const pageBoxWidth = PAGE_W * zoom; // CSS px width of the page box
-    const viewportWidth = pageBoxWidth * 1.5; // un-truncated device-pixel width
+    const bitmapWidth = pageBoxWidth * 1.5; // un-truncated over-sampled bitmap width
 
     await onZoom({ doc, scale: zoom, pageColors: null });
 
     const canvas = doc.querySelector('#canvas canvas') as HTMLCanvasElement;
     expect(canvas).toBeTruthy();
 
-    // Bitmap width is an integer and is truncated below the ideal device size —
-    // this is the truncation that, left to drive layout, produced the seam.
+    // The over-sampled bitmap width is an integer and is truncated below its
+    // ideal size — this is the truncation that, left to drive layout, produced
+    // the seam.
     expect(Number.isInteger(canvas.width)).toBe(true);
-    expect(canvas.width).toBeLessThan(viewportWidth);
+    expect(canvas.width).toBeLessThan(bitmapWidth);
 
-    // The fix: an explicit CSS size equal to the un-truncated viewport width, so
-    // the page fills its box exactly (displayed width = box width) and the left
-    // page reaches the spine — no white seam.
+    // The fix: the canvas CSS box is the un-truncated *display* size (the page
+    // box), independent of the truncated bitmap, so the page fills its box
+    // exactly (displayed width = box width) and the left page reaches the spine —
+    // no white seam. The browser scales the over-sampled bitmap to fill the box.
     expect(canvas.style.width).not.toBe('');
-    expect(parseFloat(canvas.style.width)).toBeCloseTo(viewportWidth, 3);
-    expect(parseFloat(canvas.style.width) / 1.5).toBeCloseTo(pageBoxWidth, 3);
+    expect(parseFloat(canvas.style.width)).toBeCloseTo(pageBoxWidth, 3);
   });
 });
