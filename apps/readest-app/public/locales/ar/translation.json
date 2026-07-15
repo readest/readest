@@ -2047,5 +2047,11 @@
   "Sync with WebDAV": "المزامنة مع WebDAV",
   "Sync with S3": "المزامنة مع S3",
   "Sync with OneDrive": "المزامنة مع OneDrive",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "مزامنة المكتبة متوقفة. تبقى كتبك وتقدمك وملاحظاتك على هذا الجهاز."
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "مزامنة المكتبة متوقفة. تبقى كتبك وتقدمك وملاحظاتك على هذا الجهاز.",
+  "Library sync via {{count}} providers_zero": "مزامنة المكتبة عبر {{count}} مزودين",
+  "Library sync via {{count}} providers_one": "مزامنة المكتبة عبر {{count}} مزود",
+  "Library sync via {{count}} providers_two": "مزامنة المكتبة عبر {{count}} مزودين",
+  "Library sync via {{count}} providers_few": "مزامنة المكتبة عبر {{count}} مزودين",
+  "Library sync via {{count}} providers_many": "مزامنة المكتبة عبر {{count}} مزودًا",
+  "Library sync via {{count}} providers_other": "مزامنة المكتبة عبر {{count}} مزود"
 }

@@ -1942,5 +1942,8 @@
   "Sync with WebDAV": "Sincronizza con WebDAV",
   "Sync with S3": "Sincronizza con S3",
   "Sync with OneDrive": "Sincronizza con OneDrive",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "La sincronizzazione della libreria è disattivata. I tuoi libri, il tuo progresso e le tue annotazioni restano su questo dispositivo."
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "La sincronizzazione della libreria è disattivata. I tuoi libri, il tuo progresso e le tue annotazioni restano su questo dispositivo.",
+  "Library sync via {{count}} providers_one": "Sincronizzazione della libreria tramite {{count}} fornitore",
+  "Library sync via {{count}} providers_many": "Sincronizzazione della libreria tramite {{count}} fornitori",
+  "Library sync via {{count}} providers_other": "Sincronizzazione della libreria tramite {{count}} fornitori"
 }

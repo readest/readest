@@ -1907,5 +1907,7 @@
   "Sync with WebDAV": "Synka med WebDAV",
   "Sync with S3": "Synka med S3",
   "Sync with OneDrive": "Synka med OneDrive",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "Biblioteksynkronisering är avstängd. Dina böcker, ditt läsframsteg och dina anteckningar stannar kvar på den här enheten."
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "Biblioteksynkronisering är avstängd. Dina böcker, ditt läsframsteg och dina anteckningar stannar kvar på den här enheten.",
+  "Library sync via {{count}} providers_one": "Bibliotekssynkronisering via {{count}} leverantör",
+  "Library sync via {{count}} providers_other": "Bibliotekssynkronisering via {{count}} leverantörer"
 }

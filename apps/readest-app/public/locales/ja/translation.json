@@ -1872,5 +1872,6 @@
   "Sync with WebDAV": "WebDAV と同期",
   "Sync with S3": "S3 と同期",
   "Sync with OneDrive": "OneDrive と同期",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "ライブラリ同期はオフです。本、読書の進捗、注釈はこのデバイスに残ります。"
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "ライブラリ同期はオフです。本、読書の進捗、注釈はこのデバイスに残ります。",
+  "Library sync via {{count}} providers_other": "{{count}} 件のプロバイダー経由でライブラリを同期"
 }

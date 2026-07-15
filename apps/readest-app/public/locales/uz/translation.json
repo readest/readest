@@ -1907,5 +1907,7 @@
   "Sync with WebDAV": "WebDAV bilan sinxronlash",
   "Sync with S3": "S3 bilan sinxronlash",
   "Sync with OneDrive": "OneDrive bilan sinxronlash",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "Kutubxona sinxronlashi o'chirilgan. Kitoblaringiz, jarayoningiz va izohlaringiz shu qurilmada qoladi."
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "Kutubxona sinxronlashi o'chirilgan. Kitoblaringiz, jarayoningiz va izohlaringiz shu qurilmada qoladi.",
+  "Library sync via {{count}} providers_one": "Kutubxona {{count}} ta provayder orqali sinxronlashtiriladi",
+  "Library sync via {{count}} providers_other": "Kutubxona {{count}} ta provayder orqali sinxronlashtiriladi"
 }

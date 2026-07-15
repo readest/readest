@@ -357,9 +357,15 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
               iconClassName={(user && isSyncing) || providerSyncing ? 'animate-reverse-spin' : ''}
               onClick={handleSyncLibrary}
               description={
-                backends.length > 0
-                  ? _('Library sync via {{provider}}', { provider: providerNames })
-                  : undefined
+                backends.length === 0
+                  ? undefined
+                  : providers.length > 1
+                    ? // Several providers named in full would overrun the row; show a
+                      // count. `count` (not a plain var) so i18next applies each
+                      // locale's plural rule — the common case is exactly 2, where
+                      // Slavic/Arabic paucal forms differ from the generic plural.
+                      _('Library sync via {{count}} providers', { count: providers.length })
+                    : _('Library sync via {{provider}}', { provider: providerNames })
               }
             />
             {readestEnabled ? (

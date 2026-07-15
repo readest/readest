@@ -1872,5 +1872,6 @@
   "Sync with WebDAV": "Segerakkan dengan WebDAV",
   "Sync with S3": "Segerakkan dengan S3",
   "Sync with OneDrive": "Segerakkan dengan OneDrive",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "Penyegerakan perpustakaan dimatikan. Buku, kemajuan membaca dan anotasi anda kekal pada peranti ini."
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "Penyegerakan perpustakaan dimatikan. Buku, kemajuan membaca dan anotasi anda kekal pada peranti ini.",
+  "Library sync via {{count}} providers_other": "Penyegerakan pustaka melalui {{count}} penyedia"
 }

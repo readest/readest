@@ -1907,5 +1907,7 @@
   "Sync with WebDAV": "WebDAV ile senkronize et",
   "Sync with S3": "S3 ile senkronize et",
   "Sync with OneDrive": "OneDrive ile senkronize et",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "Kitaplık senkronizasyonu kapalı. Kitaplarınız, ilerlemeniz ve notlarınız bu cihazda kalır."
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "Kitaplık senkronizasyonu kapalı. Kitaplarınız, ilerlemeniz ve notlarınız bu cihazda kalır.",
+  "Library sync via {{count}} providers_one": "{{count}} sağlayıcı ile kitaplık eşitleme",
+  "Library sync via {{count}} providers_other": "{{count}} sağlayıcı ile kitaplık eşitleme"
 }

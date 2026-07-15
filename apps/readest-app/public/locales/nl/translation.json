@@ -1907,5 +1907,7 @@
   "Sync with WebDAV": "Synchroniseren met WebDAV",
   "Sync with S3": "Synchroniseren met S3",
   "Sync with OneDrive": "Synchroniseren met OneDrive",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "Bibliotheeksynchronisatie is uitgeschakeld. Je boeken, voortgang en aantekeningen blijven op dit apparaat."
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "Bibliotheeksynchronisatie is uitgeschakeld. Je boeken, voortgang en aantekeningen blijven op dit apparaat.",
+  "Library sync via {{count}} providers_one": "Bibliotheeksynchronisatie via {{count}} provider",
+  "Library sync via {{count}} providers_other": "Bibliotheeksynchronisatie via {{count}} providers"
 }

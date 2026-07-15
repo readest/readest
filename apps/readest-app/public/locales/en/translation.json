@@ -74,5 +74,7 @@
   "{{count}} results_one": "{{count}} result",
   "{{count}} results_other": "{{count}} results",
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}} upload failed: insufficient storage quota",
-  "{{count}} uploads failed: insufficient storage quota_other": "{{count}} uploads failed: insufficient storage quota"
+  "{{count}} uploads failed: insufficient storage quota_other": "{{count}} uploads failed: insufficient storage quota",
+  "Library sync via {{count}} providers_one": "Library sync via {{count}} provider",
+  "Library sync via {{count}} providers_other": "Library sync via {{count}} providers"
 }

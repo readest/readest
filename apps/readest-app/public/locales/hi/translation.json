@@ -1907,5 +1907,7 @@
   "Sync with WebDAV": "WebDAV के साथ सिंक करें",
   "Sync with S3": "S3 के साथ सिंक करें",
   "Sync with OneDrive": "OneDrive के साथ सिंक करें",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "लाइब्रेरी सिंक बंद है। आपकी किताबें, प्रगति और टिप्पणियां इसी डिवाइस पर रहेंगी।"
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "लाइब्रेरी सिंक बंद है। आपकी किताबें, प्रगति और टिप्पणियां इसी डिवाइस पर रहेंगी।",
+  "Library sync via {{count}} providers_one": "{{count}} प्रदाता के माध्यम से लाइब्रेरी सिंक",
+  "Library sync via {{count}} providers_other": "{{count}} प्रदाताओं के माध्यम से लाइब्रेरी सिंक"
 }

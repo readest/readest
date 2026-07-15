@@ -1872,5 +1872,6 @@
   "Sync with WebDAV": "WebDAV와 동기화",
   "Sync with S3": "S3와 동기화",
   "Sync with OneDrive": "OneDrive와 동기화",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "라이브러리 동기화가 꺼져 있습니다. 책, 읽기 진행 상황, 주석이 이 기기에 남습니다."
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "라이브러리 동기화가 꺼져 있습니다. 책, 읽기 진행 상황, 주석이 이 기기에 남습니다.",
+  "Library sync via {{count}} providers_other": "{{count}}개의 제공자를 통한 서재 동기화"
 }

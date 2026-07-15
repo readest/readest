@@ -1907,5 +1907,7 @@
   "Sync with WebDAV": "WebDAV உடன் ஒத்திசைக்கவும்",
   "Sync with S3": "S3 உடன் ஒத்திசைக்கவும்",
   "Sync with OneDrive": "OneDrive உடன் ஒத்திசைக்கவும்",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "நூலக ஒத்திசைவு முடக்கப்பட்டுள்ளது. உங்கள் புத்தகங்கள், முன்னேற்றம் மற்றும் குறிப்புகள் இந்த சாதனத்தில் மட்டும் இருக்கும்."
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "நூலக ஒத்திசைவு முடக்கப்பட்டுள்ளது. உங்கள் புத்தகங்கள், முன்னேற்றம் மற்றும் குறிப்புகள் இந்த சாதனத்தில் மட்டும் இருக்கும்.",
+  "Library sync via {{count}} providers_one": "{{count}} வழங்குநர் வழியாக நூலக ஒத்திசைவு",
+  "Library sync via {{count}} providers_other": "{{count}} வழங்குநர்கள் வழியாக நூலக ஒத்திசைவு"
 }

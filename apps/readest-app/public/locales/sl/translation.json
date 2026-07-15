@@ -1977,5 +1977,9 @@
   "Sync with WebDAV": "Sinhroniziraj z WebDAV",
   "Sync with S3": "Sinhroniziraj z S3",
   "Sync with OneDrive": "Sinhroniziraj z OneDrive",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "Sinhronizacija knjižnice je izklopljena. Vaše knjige, napredek in opombe ostanejo na tej napravi."
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "Sinhronizacija knjižnice je izklopljena. Vaše knjige, napredek in opombe ostanejo na tej napravi.",
+  "Library sync via {{count}} providers_one": "Sinhronizacija knjižnice prek {{count}} ponudnika",
+  "Library sync via {{count}} providers_two": "Sinhronizacija knjižnice prek {{count}} ponudnikov",
+  "Library sync via {{count}} providers_few": "Sinhronizacija knjižnice prek {{count}} ponudnikov",
+  "Library sync via {{count}} providers_other": "Sinhronizacija knjižnice prek {{count}} ponudnikov"
 }

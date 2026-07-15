@@ -1942,5 +1942,8 @@
   "Sync with WebDAV": "Sincronizare cu WebDAV",
   "Sync with S3": "Sincronizare cu S3",
   "Sync with OneDrive": "Sincronizare cu OneDrive",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "Sincronizarea bibliotecii este dezactivată. Cărțile, progresul și adnotările tale rămân pe acest dispozitiv."
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "Sincronizarea bibliotecii este dezactivată. Cărțile, progresul și adnotările tale rămân pe acest dispozitiv.",
+  "Library sync via {{count}} providers_one": "Sincronizarea bibliotecii prin {{count}} furnizor",
+  "Library sync via {{count}} providers_few": "Sincronizarea bibliotecii prin {{count}} furnizori",
+  "Library sync via {{count}} providers_other": "Sincronizarea bibliotecii prin {{count}} de furnizori"
 }

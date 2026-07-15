@@ -1907,5 +1907,7 @@
   "Sync with WebDAV": "Συγχρονισμός με WebDAV",
   "Sync with S3": "Συγχρονισμός με S3",
   "Sync with OneDrive": "Συγχρονισμός με OneDrive",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "Ο συγχρονισμός βιβλιοθήκης είναι απενεργοποιημένος. Τα βιβλία, η πρόοδος και οι σχολιασμοί σας παραμένουν σε αυτή τη συσκευή."
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "Ο συγχρονισμός βιβλιοθήκης είναι απενεργοποιημένος. Τα βιβλία, η πρόοδος και οι σχολιασμοί σας παραμένουν σε αυτή τη συσκευή.",
+  "Library sync via {{count}} providers_one": "Συγχρονισμός βιβλιοθήκης μέσω {{count}} παρόχου",
+  "Library sync via {{count}} providers_other": "Συγχρονισμός βιβλιοθήκης μέσω {{count}} παρόχων"
 }

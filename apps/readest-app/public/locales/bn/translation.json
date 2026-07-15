@@ -1907,5 +1907,7 @@
   "Sync with WebDAV": "WebDAV-এর সাথে সিঙ্ক করুন",
   "Sync with S3": "S3-এর সাথে সিঙ্ক করুন",
   "Sync with OneDrive": "OneDrive-এর সাথে সিঙ্ক করুন",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "লাইব্রেরি সিঙ্ক বন্ধ আছে। আপনার বই, অগ্রগতি এবং মন্তব্য এই ডিভাইসেই থাকবে।"
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "লাইব্রেরি সিঙ্ক বন্ধ আছে। আপনার বই, অগ্রগতি এবং মন্তব্য এই ডিভাইসেই থাকবে।",
+  "Library sync via {{count}} providers_one": "{{count}}টি প্রোভাইডারের মাধ্যমে লাইব্রেরি সিঙ্ক",
+  "Library sync via {{count}} providers_other": "{{count}}টি প্রোভাইডারের মাধ্যমে লাইব্রেরি সিঙ্ক"
 }

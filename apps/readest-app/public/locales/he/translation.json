@@ -1942,5 +1942,8 @@
   "Sync with WebDAV": "סנכרון עם WebDAV",
   "Sync with S3": "סנכרון עם S3",
   "Sync with OneDrive": "סנכרון עם OneDrive",
-  "Library sync is off. Your books, progress, and annotations stay on this device.": "סנכרון הספרייה כבוי. הספרים, ההתקדמות וההערות שלך נשארים במכשיר הזה."
+  "Library sync is off. Your books, progress, and annotations stay on this device.": "סנכרון הספרייה כבוי. הספרים, ההתקדמות וההערות שלך נשארים במכשיר הזה.",
+  "Library sync via {{count}} providers_one": "סנכרון הספרייה באמצעות {{count}} ספק",
+  "Library sync via {{count}} providers_two": "סנכרון הספרייה באמצעות {{count}} ספקים",
+  "Library sync via {{count}} providers_other": "סנכרון הספרייה באמצעות {{count}} ספקים"
 }
