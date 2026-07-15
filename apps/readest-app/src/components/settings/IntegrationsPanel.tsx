@@ -105,6 +105,13 @@ const IntegrationsPanel: React.FC = () => {
   // back on. The `?? 'free'` keeps the (re-gated) loading state non-premium.
   const { userProfilePlan } = useQuotaStats();
   const isCloudSyncPremium = isCloudSyncAllowed(userProfilePlan ?? 'free');
+  // Only surface the tier chip to users who cannot use the feature yet — signed
+  // out (known immediately), or signed in on a plan without cloud sync (known
+  // once the plan resolves). An entitled user already has it, so the badge is
+  // noise. Suppressing it while a signed-in user's plan is still loading avoids
+  // flashing the chip at a premium user on every open.
+  const premiumBadge =
+    !user || (userProfilePlan !== undefined && !isCloudSyncPremium) ? _('Premium') : undefined;
 
   const [subPage, setSubPage] = useState<SubPage>(null);
 
@@ -510,7 +517,7 @@ const IntegrationsPanel: React.FC = () => {
                 icon={RiGoogleLine}
                 title={_('Google Drive')}
                 status={gdriveStatus}
-                badge={_('Premium')}
+                badge={premiumBadge}
                 checked={!!settings.googleDrive?.enabled}
                 canToggle={canToggleCloudProvider({
                   isPremium: isCloudSyncPremium,
@@ -528,7 +535,7 @@ const IntegrationsPanel: React.FC = () => {
               icon={RiCloudLine}
               title={_('WebDAV')}
               status={webdavStatus}
-              badge={_('Premium')}
+              badge={premiumBadge}
               checked={!!settings.webdav?.enabled}
               canToggle={canToggleCloudProvider({
                 isPremium: isCloudSyncPremium,
@@ -543,7 +550,7 @@ const IntegrationsPanel: React.FC = () => {
               icon={RiDatabase2Line}
               title={_('S3 Storage')}
               status={s3Status}
-              badge={_('Premium')}
+              badge={premiumBadge}
               checked={!!settings.s3?.enabled}
               canToggle={canToggleCloudProvider({
                 isPremium: isCloudSyncPremium,
@@ -563,7 +570,7 @@ const IntegrationsPanel: React.FC = () => {
                 icon={RiMicrosoftLine}
                 title={_('OneDrive')}
                 status={onedriveStatus}
-                badge={_('Premium')}
+                badge={premiumBadge}
                 checked={!!settings.onedrive?.enabled}
                 canToggle={canToggleCloudProvider({
                   isPremium: isCloudSyncPremium,
