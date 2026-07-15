@@ -4,7 +4,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    devshell.url = "github:numtide/devshell";
     android = {
       url = "github:tadfisher/android-nixpkgs/stable";
     };
@@ -14,7 +13,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, android, devshell, fenix }:
+  outputs = { self, nixpkgs, flake-utils, android, fenix }:
     {
       overlay = final: prev: {
         inherit (self.packages.${final.stdenv.hostPlatform.system}) android-sdk;
@@ -25,13 +24,13 @@
       let
         inherit (nixpkgs) lib;
         inherit (pkgs.lib) optionals;
+        inherit (pkgs.lib) optionalAttrs;
         inherit (pkgs.stdenv) isDarwin;
 
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = true;
           overlays = [
-            devshell.overlays.default
             fenix.overlays.default
             self.overlay
           ];
@@ -92,51 +91,9 @@
           , postInit ? ""
           , extraPackages ? [ ]
           , extraTargets ? [ ]
-          , extraEnv ? [
-              {
-                name = "PKG_CONFIG_PATH";
-                value = pkgConfigPath;
-              }
-              {
-                name = "GDK_BACKEND";
-                value = "x11";
-              }
-              {
-                name = "RUSTFLAGS";
-                value = "-C link-arg=-Wl,-rpath,${libPath}";
-              }
-              {
-                name = "LIBRARY_PATH";
-                value = libPath;
-              }
-              {
-                name = "XDG_DATA_DIRS";
-                eval = xdgPath;
-              }
-            ]
-            ++ (optionals isDarwin [
-              {
-                name = "RUSTFLAGS";
-                eval = "\"-L framework=$DEVSHELL_DIR/Library/Frameworks\"";
-              }
-              {
-                name = "RUSTDOCFLAGS";
-                eval = "\"-L framework=$DEVSHELL_DIR/Library/Frameworks\"";
-              }
-              {
-                name = "PATH";
-                prefix =
-                  let
-                    inherit (pkgs) xcbuild;
-                  in
-                  lib.makeBinPath [
-                    xcbuild
-                    "${xcbuild}/Toolchains/XcodeDefault.xctoolchain"
-                  ];
-              }
-            ])
+          , extraEnv ? { }
           }:
-          pkgs.devshell.mkShell {
+          pkgs.mkShell {
             inherit name;
             packages =
               commonPackages
@@ -154,12 +111,27 @@
                   ]
                 )
               ];
-            env = extraEnv;
-            devshell.startup.init_project.text = ''
+            env = {
+              PKG_CONFIG_PATH = pkgConfigPath;
+              RUSTFLAGS = "-C link-arg=-Wl,-rpath,${libPath}";
+              LIBRARY_PATH = libPath;
+              XDG_DATA_DIRS = xdgPath;
+              GDK_BACKEND = "x11";
+            } // (optionalAttrs isDarwin {
+              RUSTFLAGS = ''"-L framework=$DEVSHELL_DIR/Library/Frameworks"'';
+              RUSTDOCFLAGS = ''"-L framework=$DEVSHELL_DIR/Library/Frameworks"'';
+              PATH = "${lib.makeBinPath [
+                  pkgs.xcbuild
+                  "${pkgs.xcbuild}/Toolchains/XcodeDefault.xctoolchain"
+                ]}:$PATH";
+            }) // extraEnv;
+            shellHook = ''
               git submodule update --init --recursive
               pnpm install
               pnpm --filter @readest/readest-app setup-vendors
-            '' + postInit;
+
+              ${postInit}
+            '';
           };
       in
       {
@@ -224,28 +196,13 @@
               pkgs.gradle
               pkgs.jdk
             ];
-            extraEnv = [
-              {
-                name = "ANDROID_HOME";
-                value = "${pkgs.android-sdk}/share/android-sdk";
-              }
-              {
-                name = "ANDROID_SDK_ROOT";
-                value = "${pkgs.android-sdk}/share/android-sdk";
-              }
-              {
-                name = "NDK_HOME";
-                value = "${pkgs.android-sdk}/share/android-sdk/ndk/26.1.10909125";
-              }
-              {
-                name = "JAVA_HOME";
-                value = pkgs.jdk.home;
-              }
-              {
-                name = "ANDROID_AVD_HOME";
-                eval = "$XDG_CONFIG_HOME/.android/avd";
-              }
-            ];
+            extraEnv = {
+              ANDROID_HOME = "${pkgs.android-sdk}/share/android-sdk";
+              ANDROID_SDK_ROOT = "${pkgs.android-sdk}/share/android-sdk";
+              NDK_HOME = "${pkgs.android-sdk}/share/android-sdk/ndk/26.1.10909125";
+              JAVA_HOME = pkgs.jdk.home;
+              ANDROID_AVD_HOME = "$XDG_CONFIG_HOME/.android/avd";
+            };
           };
 
           default = self.devShells.${pkgs.stdenv.hostPlatform.system}.web;
