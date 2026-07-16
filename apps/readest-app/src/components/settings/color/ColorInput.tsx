@@ -102,6 +102,7 @@ const ColorInput: React.FC<ColorInputProps> = ({
             <HexColorInput
               color={value}
               onChange={handlePickerChange}
+              prefixed
               className='rounded-md px-2 py-1 bg-base-300 text-base-content w-[200px] font-mono'
             />
           </div>
