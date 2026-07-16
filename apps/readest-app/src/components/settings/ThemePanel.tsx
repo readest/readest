@@ -244,7 +244,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
           light: generateLightPalette(customTheme.colors.light),
           dark: generateDarkPalette(customTheme.colors.dark),
         },
-        isCustomizale: true,
+        isCustomizable: true,
       })),
     );
   }, [settings]);
