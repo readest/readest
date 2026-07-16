@@ -101,7 +101,7 @@ const ColorInput: React.FC<ColorInputProps> = ({
             <HexColorPicker
               color={value}
               onChange={handlePickerChange}
-              className='eink-bordered rounded-lg'
+              className='eink-bordered rounded-lg m-2'
             />
             <HexColorInput
               color={value}
