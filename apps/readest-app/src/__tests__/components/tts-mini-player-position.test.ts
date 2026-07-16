@@ -27,6 +27,32 @@ describe('getTTSMiniPlayerBottomOffset', () => {
     ).toBe(60);
   });
 
+  it('rides above an expanded action panel with an 8px gap', () => {
+    expect(
+      getTTSMiniPlayerBottomOffset(settings({}), {
+        barVisible: true,
+        usesMobileBar: true,
+        panelTopOffset: 200,
+      }),
+    ).toBe(208);
+  });
+
+  it('never drops below the bar offset for a tiny panel measurement', () => {
+    expect(
+      getTTSMiniPlayerBottomOffset(settings({}), {
+        barVisible: true,
+        usesMobileBar: true,
+        panelTopOffset: 20,
+      }),
+    ).toBe(72);
+  });
+
+  it('ignores the panel offset once the bar is dismissed', () => {
+    expect(
+      getTTSMiniPlayerBottomOffset(settings({}), { barVisible: false, panelTopOffset: 200 }),
+    ).toBe(DEFAULT_BOOK_LAYOUT.marginBottomPx);
+  });
+
   it('sits above the footer band once the bar is dismissed (default settings)', () => {
     expect(getTTSMiniPlayerBottomOffset(settings({}), { barVisible: false })).toBe(
       DEFAULT_BOOK_LAYOUT.marginBottomPx,

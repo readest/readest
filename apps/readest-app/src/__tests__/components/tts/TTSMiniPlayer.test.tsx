@@ -18,6 +18,7 @@ vi.mock('@/context/EnvContext', () => ({
 
 const readerState = {
   hoveredBookKey: '',
+  bottomBarTab: '',
   setHoveredBookKey: vi.fn(),
   getViewSettings: () => ({ ...DEFAULT_VIEW_CONFIG, ...DEFAULT_BOOK_LAYOUT }),
 };
@@ -61,6 +62,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
 describe('TTSMiniPlayer', () => {
   beforeEach(() => {
     readerState.hoveredBookKey = '';
+    readerState.bottomBarTab = '';
     getBookData.mockReturnValue({ book: { title: 'Alice in Wonderland', coverImageUrl: null } });
   });
 
@@ -111,6 +113,27 @@ describe('TTSMiniPlayer', () => {
     // Desktop footer bar (52px) + 8px gap; the card stays interactive.
     expect(card.style.bottom).toBe('60px');
     expect(card.className).not.toContain('pointer-events-none');
+  });
+
+  test('rides above an expanded action panel while one is open', () => {
+    readerState.hoveredBookKey = 'b1';
+    readerState.bottomBarTab = 'font';
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-b1';
+    const panel = document.createElement('div');
+    panel.className = 'footerbar-font-mobile';
+    cell.appendChild(panel);
+    document.body.appendChild(cell);
+    cell.getBoundingClientRect = () => ({ bottom: 800, top: 0, height: 800 }) as DOMRect;
+    // Panel settled at 600..736 above the nav bar; no transform in jsdom.
+    panel.getBoundingClientRect = () => ({ top: 600, bottom: 736, height: 136 }) as DOMRect;
+    try {
+      render(<TTSMiniPlayer {...makeProps()} />);
+      // 800 - 600 + 8px gap; beats the plain above-the-bar offset.
+      expect(screen.getByRole('status').style.bottom).toBe('208px');
+    } finally {
+      cell.remove();
+    }
   });
 
   test('rests above the footer info band once the bar is dismissed', () => {
