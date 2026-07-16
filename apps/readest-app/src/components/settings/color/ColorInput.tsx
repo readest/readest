@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { HexColorPicker } from 'react-colorful';
+import { HexColorInput, HexColorPicker } from 'react-colorful';
 import { CgColorPicker } from 'react-icons/cg';
 
 type ColorInputProps = {
@@ -98,9 +98,14 @@ const ColorInput: React.FC<ColorInputProps> = ({
         {isOpen && (
           <div
             ref={pickerRef}
-            className={`absolute top-full z-50 py-1 ${getPickerPositionClass()}`}
+            className={`absolute top-full z-50 mt-2 flex flex-col gap-2 rounded-lg border border-base-300/50 bg-base-100 p-3 shadow-xl items-center ${getPickerPositionClass()} `}
           >
             <HexColorPicker color={value} onChange={handlePickerChange} />
+            <HexColorInput
+              color={value}
+              onChange={handlePickerChange}
+              className='rounded-md px-2 py-1 bg-base-300 text-base-content w-[200px] font-mono'
+            />
           </div>
         )}
       </div>

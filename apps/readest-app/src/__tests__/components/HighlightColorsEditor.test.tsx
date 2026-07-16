@@ -40,6 +40,7 @@ vi.mock('react-colorful', () => ({
       />
     );
   },
+  HexColorInput: () => <input data-testid='mock-hex-input' />,
 }));
 
 afterEach(() => {
