@@ -33,7 +33,7 @@ const ThemePreview: React.FC<{
       >
         <p className='mb-2 whitespace-pre-line text-xs'>
           {_(
-            "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare",
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
           )}
           {'\n\n'}
           <span
@@ -42,7 +42,7 @@ const ThemePreview: React.FC<{
               color: primaryColor,
             }}
           >
-            {_("(from 'As You Like It', Act II)")}
+            {_('Click me!')}
           </span>
         </p>
       </div>
