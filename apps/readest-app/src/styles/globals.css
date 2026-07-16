@@ -674,6 +674,17 @@ input[type='range'].slider-input {
   --tglbg: theme('colors.base-100') !important;
 }
 
+/* DaisyUI checkboxes on e-ink: the default unchecked border is a ~20%-opacity
+ * theme color that barely registers on a grayscale panel, so a configured-but-
+ * disabled control (e.g. a cloud sync provider's enable box, #5141) reads as
+ * empty space. Give the box a crisp 1px base-content outline so it stays
+ * visible when unchecked. Scoped to `.checkbox` so the `.toggle` switch keeps
+ * its own treatment. */
+[data-eink='true'] input[type='checkbox'].checkbox {
+  border-width: 1px !important;
+  border-color: theme('colors.base-content') !important;
+}
+
 /* Dictionary popup font size (#4443).
  *
  * `--dict-font-scale` is set per content card by DictionaryResultsView; `1`

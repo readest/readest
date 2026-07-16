@@ -445,35 +445,37 @@ describe('publishSettingsIfChanged', () => {
     expect(patch.hardcover?.accessToken).toBeUndefined();
   });
 
-  test('initSettingsSync(initialSettings) primes the snapshot so the first setSettings(disk_default) does not push', async () => {
+  test('initSettingsSync(initialSettings) primes the snapshot so structural disk defaults do not re-push', async () => {
     // Real-world bug: a fresh-install Device B's library boot calls
     // setSettings(disk_default) which fires publishSettingsIfChanged
-    // with an empty lastPublishedFields snapshot. Every whitelisted
-    // field looks "changed from undefined" and gets pushed to the
-    // server with a fresh HLC, overwriting the cross-device
+    // with an empty lastPublishedFields snapshot. Every structural
+    // whitelisted field looks "changed from undefined" and gets pushed
+    // to the server with a fresh HLC, overwriting the cross-device
     // authoritative values another device set. Disk-priming via
     // initSettingsSync(initialSettings) seeds the snapshot from the
-    // just-loaded disk so the same-value first publish is a no-op.
+    // just-loaded disk so the same-value first publish skips them.
+    //
+    // Credential connection metadata (webdav.rootPath, kosync.serverUrl, ...)
+    // is push-hash tracked, NOT disk-seeded, so it is intentionally exempt
+    // from this priming — that exemption is what lets a configured-but-never-
+    // published URL reach the other devices (#5141).
     const diskSettings = makeSettings({
       dictionarySettings: {
         providerOrder: ['builtin:wiktionary', 'builtin:wikipedia'],
         providerEnabled: { 'builtin:wiktionary': true, 'builtin:wikipedia': true },
         webSearches: [],
       },
-      kosync: {
-        serverUrl: 'https://sync.koreader.rocks/',
-        username: '',
-        userkey: '',
-        password: '',
-      } as SystemSettings['kosync'],
     } as Partial<SystemSettings>);
     initSettingsSync(diskSettings);
 
-    // The same disk_default replayed (typical library page initLibrary
-    // flow) — should produce no publish because every whitelisted
-    // field already matches the primed snapshot.
+    // The same disk_default replayed (typical library page initLibrary flow).
     await publishSettingsIfChanged(diskSettings);
-    expect(publishMock).not.toHaveBeenCalled();
+
+    // Structural fields primed from disk stay out of the diff — only the
+    // hash-tracked connection metadata (if any) may publish.
+    const patch = publishMock.mock.calls[0]?.[1].patch as Partial<SystemSettings> | undefined;
+    expect(patch?.dictionarySettings?.providerEnabled).toBeUndefined();
+    expect(patch?.globalReadSettings).toBeUndefined();
   });
 
   test('initSettingsSync priming does not block legitimate user changes against the seeded baseline', async () => {
@@ -501,6 +503,34 @@ describe('publishSettingsIfChanged', () => {
     expect(publishMock).toHaveBeenCalledTimes(1);
     const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
     expect(patch.kosync?.serverUrl).toBe('https://kosync.example');
+  });
+
+  test('re-publishes a disk-configured connection URL that was never synced, so it rejoins its credentials (issue #5141)', async () => {
+    enableCredentialsSync();
+    isUnlocked = true;
+    // A device that configured WebDAV before serverUrl entered the sync
+    // whitelist (#4810): the URL + credentials are on disk at boot, but were
+    // never actually published to the server.
+    const disk = makeSettings({
+      webdav: {
+        serverUrl: 'https://dav.example.com',
+        username: 'alice',
+        password: 'hunter2',
+        rootPath: '/Books',
+      } as SystemSettings['webdav'],
+    });
+    initSettingsSync(disk);
+
+    // Any settings save re-runs the publisher. The credentials (no stored
+    // push-hash) publish; the server URL and root path MUST ride along
+    // rather than stay stranded on this device.
+    await publishSettingsIfChanged(disk);
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+    expect(patch.webdav?.username).toBe('alice');
+    expect(patch.webdav?.password).toBe('hunter2');
+    expect(patch.webdav?.serverUrl).toBe('https://dav.example.com');
+    expect(patch.webdav?.rootPath).toBe('/Books');
   });
 
   test('does NOT trigger the gate when only plaintext settings change', async () => {

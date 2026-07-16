@@ -6,12 +6,20 @@
  * Push side: `publishSettingsIfChanged(settings)` runs after every
  * settingsStore save. It walks the whitelist, diffs against the
  * snapshot, and emits a single replica upsert with only the changed
- * fields. Encrypted paths use a SHA-256 hash of the value as the
- * snapshot (persisted in localStorage so refresh-after-credential-set
- * doesn't re-fire the prompt). When the diff includes a new
- * non-empty encrypted value AND the CryptoSession is locked, we
- * proactively trigger the passphrase gate — that's the moment the
- * user is opting into encrypted-credential sync.
+ * fields. There are three tracking flavors:
+ *   * Plain settings diff against an in-memory `lastPublishedFields`
+ *     snapshot, seeded from disk at boot (see `initSettingsSync`).
+ *   * Encrypted paths use a SHA-256 hash of the value as the snapshot
+ *     (persisted in localStorage so refresh-after-credential-set doesn't
+ *     re-fire the prompt). When the diff includes a new non-empty
+ *     encrypted value AND the CryptoSession is locked, we proactively
+ *     trigger the passphrase gate — the moment the user opts into
+ *     encrypted-credential sync.
+ *   * Credential connection metadata (`CONNECTION_PATHS`: serverUrl,
+ *     endpoint, rootPath, ...) is plaintext but push-hash tracked like
+ *     the encrypted fields rather than disk-seeded, so a URL configured
+ *     before it was ever published still reaches the other devices
+ *     alongside its credentials (#5141).
  *
  * Pull side: `applyRemoteSettings(record)` merges a remote partial
  * into useSettingsStore, persists, and updates both snapshots so the
@@ -42,6 +50,32 @@ import { isCredentialsSyncEnabled } from '@/services/sync/syncCategories';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 
 const ENCRYPTED_PATHS: ReadonlySet<string> = new Set(SETTINGS_ENCRYPTED_FIELDS);
+
+/**
+ * Plaintext connection metadata that belongs to a credential-bearing group
+ * (webdav.serverUrl / rootPath, s3.endpoint / region / bucket,
+ * kosync.serverUrl, readwise.baseUrl). Derived as: whitelisted, not itself
+ * encrypted, but sharing a top-level group with an encrypted field.
+ *
+ * These use the same persisted push-hash tracking as the encrypted fields
+ * (see below) rather than the disk-seeded `lastPublishedFields` snapshot. The
+ * snapshot marks any value already on disk at boot as "already published", so
+ * a URL that was configured before it entered the sync whitelist (#4810) — or
+ * before localStorage recorded a push — would be stranded on one device while
+ * its credentials (which have no stored hash, so they DO publish) sync to the
+ * others: the peer receives username/password but not the server URL (#5141).
+ * Hash tracking lets a never-published URL publish on the next save so it
+ * reunites with its credentials. Empty values stay local, mirroring the
+ * encrypted-field rule.
+ */
+const CREDENTIAL_GROUPS: ReadonlySet<string> = new Set(
+  SETTINGS_ENCRYPTED_FIELDS.map((path) => path.split('.')[0]!),
+);
+const CONNECTION_PATHS: ReadonlySet<string> = new Set(
+  SETTINGS_WHITELIST.filter(
+    (path) => !ENCRYPTED_PATHS.has(path) && CREDENTIAL_GROUPS.has(path.split('.')[0]!),
+  ),
+);
 
 const HASH_KEY_PREFIX = 'readest_settings_pushed_hash_v1:';
 const CIPHER_KEY = 'readest_settings_last_seen_cipher_v1';
@@ -199,10 +233,12 @@ const setStoredLastSeenCipher = (val: Record<string, string>): void => {
 
 export const publishSettingsIfChanged = async (settings: SystemSettings): Promise<void> => {
   // Pass 1: figure out what's changed. Plaintext paths use the
-  // in-memory snapshot; encrypted paths compare against the
-  // persisted SHA-256 hash so refresh-after-credential-set doesn't
-  // mistake a re-load for a fresh change.
+  // in-memory snapshot; encrypted paths AND credential connection
+  // metadata compare against the persisted SHA-256 hash so
+  // refresh-after-credential-set doesn't mistake a re-load for a fresh
+  // change (and a never-published URL isn't stranded — see #5141).
   const plainChanged: Record<string, unknown> = {};
+  const connectionChanged: Array<{ path: string; value: unknown; hash: string }> = [];
   const encryptedChanged: Array<{ path: string; value: unknown; hash: string }> = [];
   let hasNewEncryptedContent = false;
 
@@ -229,6 +265,15 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
       if (currentHash === getStoredEncryptedHash(path)) continue;
       encryptedChanged.push({ path, value: current, hash: currentHash });
       hasNewEncryptedContent = true;
+    } else if (CONNECTION_PATHS.has(path)) {
+      // Credential connection metadata: tracked by a persisted push-hash like
+      // the encrypted fields (NOT the disk-seeded snapshot) so a URL that was
+      // configured before it was ever published still reaches the other
+      // devices alongside its credentials (#5141). Empty values stay local.
+      if (!isMeaningful(current)) continue;
+      const currentHash = await sha256Hex(current);
+      if (currentHash === getStoredEncryptedHash(path)) continue;
+      connectionChanged.push({ path, value: current, hash: currentHash });
     } else {
       // Auto-mutation gate: paths in PATHS_REQUIRING_EXPLICIT_PUBLISH
       // (currently dictionarySettings.providerOrder) only ship when a
@@ -256,7 +301,13 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
     explicitPublishPending.delete(path);
   }
 
-  if (Object.keys(plainChanged).length === 0 && encryptedChanged.length === 0) return;
+  if (
+    Object.keys(plainChanged).length === 0 &&
+    connectionChanged.length === 0 &&
+    encryptedChanged.length === 0
+  ) {
+    return;
+  }
 
   // Proactive prompt: only fire when the user has actually entered a
   // meaningful encrypted value (not just blanked out) AND we don't
@@ -280,6 +331,9 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
   for (const [path, value] of Object.entries(plainChanged)) {
     writePath(patch, path, value);
   }
+  for (const { path, value } of connectionChanged) {
+    writePath(patch, path, value);
+  }
   for (const { path, value } of encryptedChanged) {
     writePath(patch, path, value);
   }
@@ -288,6 +342,12 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
     patch: patch as Partial<SystemSettings>,
   };
   void publishReplicaUpsert(SETTINGS_KIND, record, SETTINGS_REPLICA_ID);
+
+  // Connection metadata is plaintext — its publish always ships, so record
+  // its push-hash unconditionally.
+  for (const { path, hash } of connectionChanged) {
+    setStoredEncryptedHash(path, hash);
+  }
 
   // Persist hashes for encrypted paths only when the session is
   // unlocked (the publish actually ships their values). Otherwise
@@ -328,8 +388,9 @@ export const applyRemoteSettings = (
   for (const path of SETTINGS_WHITELIST) {
     const v = readPath(record.patch, path);
     if (v === undefined) continue;
-    if (ENCRYPTED_PATHS.has(path)) {
-      // Stored hash mirrors the just-applied plaintext.
+    if (ENCRYPTED_PATHS.has(path) || CONNECTION_PATHS.has(path)) {
+      // Both are push-hash tracked; the stored hash mirrors the just-applied
+      // plaintext so the post-save publish hook sees no diff.
       void sha256Hex(v).then((h) => setStoredEncryptedHash(path, h));
     } else {
       lastPublishedFields.set(path, v);
@@ -428,10 +489,12 @@ export const initSettingsSync = (initialSettings?: SystemSettings): void => {
     for (const path of SETTINGS_WHITELIST) {
       const v = readPath(initialSettings, path);
       if (v === undefined) continue;
-      // Encrypted paths use the persisted-hash mechanism that already
-      // survives reloads; plaintext paths are the ones that need
-      // in-memory priming.
-      if (!ENCRYPTED_PATHS.has(path)) {
+      // Encrypted paths and credential connection metadata both use the
+      // persisted-hash mechanism that already survives reloads; only the
+      // remaining plaintext paths need in-memory priming. (Seeding the
+      // connection fields here is what stranded a configured-but-unpublished
+      // URL — see CONNECTION_PATHS and #5141.)
+      if (!ENCRYPTED_PATHS.has(path) && !CONNECTION_PATHS.has(path)) {
         lastPublishedFields.set(path, v);
       }
     }
