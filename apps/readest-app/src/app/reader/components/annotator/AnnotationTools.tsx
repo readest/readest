@@ -5,8 +5,7 @@ import { FiShare } from 'react-icons/fi';
 import { PiHighlighterFill } from 'react-icons/pi';
 import { BsPencilSquare } from 'react-icons/bs';
 import { BsTranslate } from 'react-icons/bs';
-import { TbHexagonLetterD } from 'react-icons/tb';
-import { FaHeadphones } from 'react-icons/fa6';
+import { FaHeadphones, FaBook } from 'react-icons/fa6';
 import { IoIosBuild } from 'react-icons/io';
 import { AnnotationToolType } from '@/types/annotator';
 import { stubTranslation as _ } from '@/utils/misc';
@@ -67,7 +66,7 @@ export const annotationToolButtons = createAnnotationToolButtons([
     type: 'dictionary',
     label: _('Dictionary'),
     tooltip: _('Look up text in dictionary after selection'),
-    Icon: TbHexagonLetterD,
+    Icon: FaBook,
     quickAction: true,
   },
   {
