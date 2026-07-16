@@ -203,7 +203,6 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
               <ColorInput
                 label={_('Edit color')}
                 value={customHighlightColors[color]!}
-                swatchOnly
                 pickerPosition={position}
                 onChange={(value: string) => handleDefaultHexChange(color, value)}
               />
@@ -233,7 +232,6 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
           <ColorInput
             label={_('Add custom color')}
             value={newColor}
-            swatchOnly
             showPickerIcon
             pickerPosition='right'
             onChange={setNewColor}
@@ -248,7 +246,6 @@ const HighlightColorsEditor: React.FC<HighlightColorsEditorProps> = ({
                 <ColorInput
                   label={_('Edit color')}
                   value={hex}
-                  swatchOnly
                   pickerPosition={index === 0 ? 'left' : 'center'}
                   onChange={(value: string) => handleUserHexChange(hex, value)}
                 />

@@ -96,7 +96,6 @@ const TTSHighlightStyleEditor: React.FC<TTSHighlightStyleEditorProps> = ({
         <ColorInput
           label={_('Choose color')}
           value={color}
-          swatchOnly
           showPickerIcon
           pickerPosition='right'
           onChange={onColorChange}

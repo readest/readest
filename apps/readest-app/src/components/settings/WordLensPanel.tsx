@@ -391,7 +391,6 @@ const WordLensPanel: React.FC<WordLensPanelProps> = ({ bookKey, onBack }) => {
               value={glossColor || DEFAULT_GLOSS_SWATCH}
               onChange={handleGlossColorChange}
               onCommit={handleGlossColorCommit}
-              swatchOnly
               showPickerIcon
               pickerPosition='right'
             />

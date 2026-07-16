@@ -73,11 +73,11 @@ describe('HighlightColorsEditor — user color HexColorPicker stability', () => 
   it('keeps the HexColorPicker mounted when the user-color hex updates (so drag is not interrupted)', () => {
     render(<Harness initialUserColors={[{ hex: '#aabbcc' }]} />);
 
-    // ColorInput swatchOnly renders a circular button per color, all with
-    // aria-label "Edit color". Default palette is rendered first, then the
-    // "add new" swatch in the Custom Colors header (aria-label "Add custom
-    // color"), then the existing user colors. Find the last "Edit color"
-    // button — that's the user color we care about.
+    // ColorInput renders a circular button per color, all with aria-label
+    // "Edit color". Default palette is rendered first, then the "add new"
+    // swatch in the Custom Colors header (aria-label "Add custom color"), then
+    // the existing user colors. Find the last "Edit color" button — that's the
+    // user color we care about.
     const editColorButtons = screen.getAllByLabelText('Edit color');
     const userSwatch = editColorButtons[editColorButtons.length - 1]! as HTMLButtonElement;
     expect(userSwatch.style.backgroundColor).toBe('rgb(170, 187, 204)');
