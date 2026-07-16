@@ -96,14 +96,18 @@ const ColorInput: React.FC<ColorInputProps> = ({
         {isOpen && (
           <div
             ref={pickerRef}
-            className={`absolute top-full z-50 mt-2 flex flex-col gap-2 rounded-lg border border-base-300/50 bg-base-100 p-3 shadow-xl items-center ${getPickerPositionClass()} `}
+            className={`absolute top-full z-50 mt-2 flex flex-col gap-2 rounded-lg border not-eink:border-base-300/50 bg-base-100 p-3 shadow-xl items-center ${getPickerPositionClass()}`}
           >
-            <HexColorPicker color={value} onChange={handlePickerChange} />
+            <HexColorPicker
+              color={value}
+              onChange={handlePickerChange}
+              className='eink-bordered rounded-lg'
+            />
             <HexColorInput
               color={value}
               onChange={handlePickerChange}
               prefixed
-              className='rounded-md px-2 py-1 bg-base-300 text-base-content w-[200px] font-mono'
+              className='rounded-md px-2 py-1 bg-base-300 text-base-content w-[200px] font-mono eink-bordered'
             />
           </div>
         )}
