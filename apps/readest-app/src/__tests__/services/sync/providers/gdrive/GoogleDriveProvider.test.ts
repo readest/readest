@@ -69,22 +69,19 @@ describe('GoogleDriveProvider — Drive transport', () => {
     expect(h.fetchMock).toHaveBeenCalledTimes(4);
   });
 
-  test('writeText uploads via create-then-name and auto-creates the parent folder', async () => {
+  test('writeText uploads via a multipart create and auto-creates the parent folder', async () => {
     const h = makeDrive();
     h.fetchMock
       .mockResolvedValueOnce(json({ files: [] })) // findChild('Readest') — missing
       .mockResolvedValueOnce(json({ id: 'RID' })) // createFolder('Readest')
       .mockResolvedValueOnce(json({ files: [folder('RID')] })) // re-query winner
       .mockResolvedValueOnce(json({ files: [] })) // findChild('new.json') — not exists
-      .mockResolvedValueOnce(json({ id: 'NID' })) // POST upload
-      .mockResolvedValueOnce(json({ id: 'NID' })); // PATCH name + reparent
+      .mockResolvedValueOnce(json({ id: 'NID' })); // multipart create
     await h.provider.writeText('/Readest/new.json', '{"a":1}');
-    expect(h.fetchMock).toHaveBeenCalledTimes(6);
+    expect(h.fetchMock).toHaveBeenCalledTimes(5);
     expect(h.method(1)).toBe('POST'); // create folder
-    expect(h.url(4)).toContain('uploadType=media');
-    expect(h.method(4)).toBe('POST'); // create file bytes
-    expect(h.url(5)).toContain('addParents=RID');
-    expect(h.method(5)).toBe('PATCH'); // name + reparent
+    expect(h.url(4)).toContain('uploadType=multipart');
+    expect(h.method(4)).toBe('POST'); // create file (metadata + bytes together)
   });
 
   test('list drains every nextPageToken page', async () => {
@@ -239,6 +236,70 @@ describe('GoogleDriveProvider — Drive transport', () => {
     expect(h.method(3)).toBe('PATCH');
   });
 
+  // #5147: the old create path POSTed the bytes unnamed (Drive materialises
+  // that as a file literally called "Untitled" in the user's Drive ROOT) and
+  // only a second PATCH named + reparented it. Any failure between the two —
+  // rate limit, network drop, app suspension — stranded the "Untitled" file
+  // where the user can see it. Metadata and bytes must travel in ONE request.
+  test('creating a new file sends name+parent and bytes in one multipart request (#5147)', async () => {
+    const h = makeDrive();
+    h.fetchMock
+      .mockResolvedValueOnce(json({ files: [folder('RID')] })) // findChild('Readest')
+      .mockResolvedValueOnce(json({ files: [] })) // findChild('new.json') — not exists
+      .mockResolvedValueOnce(json({ id: 'NID' })); // multipart create
+    await h.provider.writeText('/Readest/new.json', '{"a":1}');
+    expect(h.fetchMock).toHaveBeenCalledTimes(3);
+    expect(h.url(2)).toContain('uploadType=multipart');
+    expect(h.method(2)).toBe('POST');
+    const init = h.fetchMock.mock.calls[2]![1] as RequestInit;
+    const bodyText = new TextDecoder().decode(init.body as ArrayBuffer);
+    expect(bodyText).toContain('"name":"new.json"');
+    expect(bodyText).toContain('"parents":["RID"]');
+    expect(bodyText).toContain('{"a":1}');
+
+    // The created id is cached: a follow-up read is a single media GET.
+    h.fetchMock.mockResolvedValueOnce(text('AFTER'));
+    expect(await h.provider.readText('/Readest/new.json')).toBe('AFTER');
+    expect(h.url(3)).toContain('/NID?alt=media');
+  });
+
+  test('a failed create leaves nothing unnamed in the Drive root (#5147)', async () => {
+    const h = makeDrive();
+    h.fetchMock
+      .mockResolvedValueOnce(json({ files: [folder('RID')] })) // findChild('Readest')
+      .mockResolvedValueOnce(json({ files: [] })) // findChild('new.json') — not exists
+      .mockResolvedValue(json({ error: { errors: [{ reason: 'userRateLimitExceeded' }] } }, 403));
+    await expect(h.provider.writeText('/Readest/new.json', 'X')).rejects.toMatchObject({
+      code: 'NETWORK',
+    });
+    // Every upload attempt carried the name and target parent inline, so a
+    // failure creates no file at all — never an orphaned "Untitled" at root.
+    for (const call of h.fetchMock.mock.calls.slice(2)) {
+      expect(call[0] as string).toContain('uploadType=multipart');
+      const bodyText = new TextDecoder().decode((call[1] as RequestInit).body as ArrayBuffer);
+      expect(bodyText).toContain('"name":"new.json"');
+      expect(bodyText).toContain('"parents":["RID"]');
+    }
+  });
+
+  test('a large buffered create carries its metadata in a resumable session (#5147)', async () => {
+    const h = makeDrive();
+    const big = new Uint8Array(5 * 1024 * 1024 + 1);
+    h.fetchMock
+      .mockResolvedValueOnce(json({ files: [folder('RID')] })) // findChild('Readest')
+      .mockResolvedValueOnce(json({ files: [] })) // findChild('big.bin') — not exists
+      .mockResolvedValueOnce(
+        new Response(null, { status: 200, headers: { Location: 'https://upload.test/session' } }),
+      ) // resumable initiation (metadata rides here)
+      .mockResolvedValueOnce(json({ id: 'NID' })); // PUT bytes to the session URI
+    await h.provider.writeBinary('/Readest/big.bin', big.buffer);
+    expect(h.url(2)).toContain('uploadType=resumable');
+    const initBody = (h.fetchMock.mock.calls[2]![1] as RequestInit).body as string;
+    expect(JSON.parse(initBody)).toEqual({ name: 'big.bin', parents: ['RID'] });
+    expect(h.url(3)).toBe('https://upload.test/session');
+    expect(h.method(3)).toBe('PUT');
+  });
+
   test('a stale cached id on write evicts and falls back to the full resolve', async () => {
     const h = makeDrive();
     h.fetchMock
@@ -248,19 +309,18 @@ describe('GoogleDriveProvider — Drive transport', () => {
     await h.provider.readText('/Readest/x.json');
 
     // Cached XID was deleted remotely: the fast-path PATCH 404s, the provider
-    // evicts and re-resolves, finds no existing file, and create-then-names.
+    // evicts and re-resolves, finds no existing file, and multipart-creates.
     h.fetchMock
       .mockResolvedValueOnce(json({}, 404)) // PATCH on stale XID
       .mockResolvedValueOnce(json({ files: [folder('RID')] })) // re-resolve Readest
       .mockResolvedValueOnce(json({ files: [] })) // findChild('x.json') — gone
-      .mockResolvedValueOnce(json({ id: 'NID' })) // POST upload
-      .mockResolvedValueOnce(json({ id: 'NID' })); // PATCH name + reparent
+      .mockResolvedValueOnce(json({ id: 'NID' })); // multipart create
     await h.provider.writeText('/Readest/x.json', 'BODY');
-    expect(h.fetchMock).toHaveBeenCalledTimes(8);
+    expect(h.fetchMock).toHaveBeenCalledTimes(7);
 
     // The recreated file's id is cached: a follow-up read is one media GET.
     h.fetchMock.mockResolvedValueOnce(text('AFTER'));
     expect(await h.provider.readText('/Readest/x.json')).toBe('AFTER');
-    expect(h.url(8)).toContain('/NID?alt=media');
+    expect(h.url(7)).toContain('/NID?alt=media');
   });
 });

@@ -74,29 +74,31 @@ export const childrenQuery = (parentId: string): string =>
 export const mediaDownloadUrl = (fileId: string): string => `${FILES_ENDPOINT}/${fileId}?alt=media`;
 
 /**
- * URL for a simple (single-request) media upload that creates a new file.
- * `uploadType=media` means the request body *is* the file bytes (no multipart
- * metadata envelope). `fields` narrows the JSON response to the new `id` plus
- * the `md5Checksum`/`size`.
+ * URL for a multipart upload that creates a new file with its metadata (name +
+ * parent) and its bytes in ONE request. Atomicity is the point: the previous
+ * two-request create (an unnamed `uploadType=media` POST, which Drive
+ * materialises as a file literally called "Untitled" in the user's Drive root,
+ * followed by a rename/reparent PATCH) stranded that "Untitled" file whenever
+ * the second request failed (#5147).
  */
-export const simpleUploadUrl = (): string =>
-  `${UPLOAD_ENDPOINT}?uploadType=media&fields=id,md5Checksum,size`;
+export const multipartUploadUrl = (): string =>
+  `${UPLOAD_ENDPOINT}?uploadType=multipart&fields=id,md5Checksum,size`;
 
 /**
- * URL to overwrite an *existing* file's bytes via a media PATCH. Same simple
- * media transfer as {@link simpleUploadUrl}, targeted at a known file id.
+ * URL to overwrite an *existing* file's bytes via a media PATCH. The request
+ * body is the raw file bytes (`uploadType=media`), targeted at a known file id.
  */
 export const mediaUpdateUrl = (fileId: string): string =>
   `${UPLOAD_ENDPOINT}/${fileId}?uploadType=media&fields=id,md5Checksum,size`;
 
 /**
- * URL to open a *resumable* upload session that creates a new file. Unlike the
- * simple media upload, the resumable initiation request carries the file
- * metadata (name + parent) in its body, so no follow-up reparent PATCH is
- * needed. The POST replies with the one-time session URI in its `Location`
- * header; the bytes are then streamed to that URI from disk (constant heap,
- * the whole point for large books on mobile). `fields=id` narrows the
- * completion response to the new file id.
+ * URL to open a *resumable* upload session that creates a new file. Like the
+ * multipart create, the initiation request carries the file metadata (name +
+ * parent) in its body, so the file can never appear unnamed in the Drive root.
+ * The POST replies with the one-time session URI in its `Location` header; the
+ * bytes are then PUT to that URI — streamed from disk on Tauri (constant heap,
+ * the whole point for large books on mobile), or buffered for a large web
+ * upload. `fields=id` narrows the completion response to the new file id.
  */
 export const resumableCreateUrl = (): string => `${UPLOAD_ENDPOINT}?uploadType=resumable&fields=id`;
 
@@ -118,23 +120,6 @@ export const metadataUrl = (fileId: string): string =>
 
 /** URL to delete a file by id. */
 export const deleteUrl = (fileId: string): string => `${FILES_ENDPOINT}/${fileId}`;
-
-/**
- * URL for the metadata PATCH that renames a freshly-uploaded file and moves it
- * from the upload's default root location into its target folder. `addParents`
- * attaches the file to the destination folder and `removeParents` detaches it
- * from `root`. Both are query parameters; only the new `name` rides in the body.
- */
-export const reparentUrl = (
-  fileId: string,
-  addParentId: string,
-  removeParentId: string,
-): string => {
-  const url = new URL(`${FILES_ENDPOINT}/${fileId}`);
-  url.searchParams.set('addParents', addParentId);
-  url.searchParams.set('removeParents', removeParentId);
-  return url.toString();
-};
 
 /**
  * URL for the `about.get` call that returns the signed-in user's identity. The

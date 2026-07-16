@@ -10,10 +10,9 @@ import {
   mediaDownloadUrl,
   mediaUpdateUrl,
   metadataUrl,
-  reparentUrl,
+  multipartUploadUrl,
   resumableCreateUrl,
   resumableUpdateUrl,
-  simpleUploadUrl,
 } from '@/services/sync/providers/gdrive/driveRest';
 
 describe('driveRest', () => {
@@ -45,9 +44,11 @@ describe('driveRest', () => {
     expect(mediaDownloadUrl('FID')).toBe(`${FILES_ENDPOINT}/FID?alt=media`);
   });
 
-  test('upload URLs use uploadType=media and request id/md5/size', () => {
-    expect(simpleUploadUrl()).toContain('uploadType=media');
-    expect(simpleUploadUrl()).toContain('fields=id,md5Checksum,size');
+  test('upload URLs carry the right uploadType and request id/md5/size', () => {
+    // Creates are multipart so the name + parent ride WITH the bytes — an
+    // unnamed create would materialise as "Untitled" in the Drive root (#5147).
+    expect(multipartUploadUrl()).toContain('uploadType=multipart');
+    expect(multipartUploadUrl()).toContain('fields=id,md5Checksum,size');
     expect(mediaUpdateUrl('FID')).toContain('/FID?uploadType=media');
   });
 
@@ -65,13 +66,6 @@ describe('driveRest', () => {
       `${FILES_ENDPOINT}/FID?fields=id,name,mimeType,size,modifiedTime,md5Checksum`,
     );
     expect(deleteUrl('FID')).toBe(`${FILES_ENDPOINT}/FID`);
-  });
-
-  test('reparentUrl moves a file from one parent to another via query params', () => {
-    const url = new URL(reparentUrl('FID', 'NEWPARENT', 'root'));
-    expect(url.pathname.endsWith('/FID')).toBe(true);
-    expect(url.searchParams.get('addParents')).toBe('NEWPARENT');
-    expect(url.searchParams.get('removeParents')).toBe('root');
   });
 
   test('aboutUrl requests only the user identity fields', () => {
