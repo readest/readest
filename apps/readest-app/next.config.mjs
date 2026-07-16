@@ -54,7 +54,7 @@ const nextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ['isows'],
   allowedDevOrigins: ['192.168.2.120'],
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       nunjucks: 'nunjucks/browser/nunjucks.js',
@@ -64,6 +64,9 @@ const nextConfig = {
       // can't find fflate (only installed in this app's node_modules).
       fflate: path.resolve(__dirname, 'node_modules/fflate'),
       ...(appPlatform !== 'web' ? { '@tursodatabase/database-wasm': false } : {}),
+      ...(isServer && appPlatform === 'web'
+        ? { '@readest/turso-database-wasm/webpack': false, 'jieba-wasm': false }
+        : {}),
     };
     return config;
   },

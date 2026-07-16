@@ -108,6 +108,9 @@ importers:
       '@fabianlars/tauri-plugin-oauth':
         specifier: '2'
         version: 2.0.0
+      '@googleapis/androidpublisher':
+        specifier: ^36.0.0
+        version: 36.0.0
       '@mozilla/readability':
         specifier: ^0.6.0
         version: 0.6.0
@@ -282,9 +285,6 @@ importers:
       google-auth-library:
         specifier: ^10.5.0
         version: 10.6.2
-      googleapis:
-        specifier: ^164.1.0
-        version: 164.1.0
       highlight.js:
         specifier: ^11.11.1
         version: 11.11.1
@@ -1605,6 +1605,10 @@ packages:
 
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
+
+  '@googleapis/androidpublisher@36.0.0':
+    resolution: {integrity: sha512-Lnm4+oMK6wDYgDtF/Ydn+LrGuRGgSrJT1MRB238KajyaoNfo7m6Zl0wOO9ti485aFe5IFSMBr4Sg8SMOglrY9A==}
+    engines: {node: '>=12.0.0'}
 
   '@gulpjs/to-absolute-glob@4.0.0':
     resolution: {integrity: sha512-kjotm7XJrJ6v+7knhPaRgaT6q8F8K2jiafwYdNHLzmV0uGLuZY43FK6smNSHUPrhq5kX2slCUy+RGG/xGqmIKA==}
@@ -5634,10 +5638,6 @@ packages:
   googleapis-common@8.0.1:
     resolution: {integrity: sha512-eCzNACUXPb1PW5l0ULTzMHaL/ltPRADoPgjBlT8jWsTbxkCp6siv+qKJ/1ldaybCthGwsYFYallF7u9AkU4L+A==}
     engines: {node: '>=18.0.0'}
-
-  googleapis@164.1.0:
-    resolution: {integrity: sha512-dIN768H8so9qGucFtjYPBZJ+OCEgDi/xYyvYQHniPL1ZCYvrRDBTmtbjVjKCPG1CuOhG4CKHZDXiFe6QZ2qBeQ==}
-    engines: {node: '>=18'}
 
   gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
@@ -10122,6 +10122,12 @@ snapshots:
 
   '@floating-ui/utils@0.2.11': {}
 
+  '@googleapis/androidpublisher@36.0.0':
+    dependencies:
+      googleapis-common: 8.0.1
+    transitivePeerDependencies:
+      - supports-color
+
   '@gulpjs/to-absolute-glob@4.0.0':
     dependencies:
       is-negated-glob: 1.0.0
@@ -14370,13 +14376,6 @@ snapshots:
       google-auth-library: 10.6.2
       qs: 6.15.2
       url-template: 2.0.8
-    transitivePeerDependencies:
-      - supports-color
-
-  googleapis@164.1.0:
-    dependencies:
-      google-auth-library: 10.6.2
-      googleapis-common: 8.0.1
     transitivePeerDependencies:
       - supports-color
 
