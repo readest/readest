@@ -172,6 +172,15 @@ describe('TTSController', () => {
   let mockView: FoliateView;
   let mockAppService: AppService;
 
+  // Controllers that kick off a detached `#speak` loop (the native-TTS tests
+  // start speak() un-awaited and only assert on an early side-effect). They
+  // must be stopped after the test, or the loop keeps running past teardown
+  // and its deferred `set state` dispatch — queueMicrotask(() =>
+  // dispatchEvent(new CustomEvent(...))) — fires once the jsdom env is gone,
+  // where `CustomEvent` is Node's global rather than jsdom's and jsdom's
+  // EventTarget rejects it as "parameter 1 is not of type 'Event'" (#5149).
+  const speakingControllers: TTSController[] = [];
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockView = createMockView();
@@ -188,6 +197,19 @@ describe('TTSController', () => {
     } catch {
       // ignore
     }
+    // Abort any detached speak loop started on a locally-created controller so
+    // no trailing state change escapes into env teardown (see speakingControllers).
+    for (const c of speakingControllers) {
+      try {
+        await c.stop();
+      } catch {
+        // ignore
+      }
+    }
+    speakingControllers.length = 0;
+    // Flush the deferred set-state dispatch microtasks while the jsdom realm
+    // is still alive.
+    await new Promise((resolve) => setTimeout(resolve, 0));
     vi.restoreAllMocks();
   });
 
@@ -1193,6 +1215,7 @@ describe('TTSController', () => {
       await c.init();
       c.ttsClient = c.ttsNativeClient!;
       await c.initViewTTS(0);
+      speakingControllers.push(c);
       return c;
     };
 
@@ -1268,6 +1291,7 @@ describe('TTSController', () => {
       await c.init();
       c.ttsClient = c.ttsNativeClient!;
       await c.initViewTTS(0);
+      speakingControllers.push(c);
       return c;
     };
 
