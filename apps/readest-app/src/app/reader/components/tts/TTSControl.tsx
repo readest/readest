@@ -58,6 +58,9 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   }, [tts.showBackToCurrentTTSLocation]);
 
   const handleExpand = () => {
+    // The mini player mounts as soon as the session starts; the full sheet
+    // needs initialized clients (voices, timeline), so ignore taps until then.
+    if (!tts.ttsClientsInited) return;
     tts.refreshTtsLang();
     setShowPlayerSheet(true);
   };
@@ -91,8 +94,10 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           </button>
         </div>
       )}
-      {/* One surface at a time: the sheet replaces the mini player while open. */}
-      {tts.showIndicator && tts.ttsClientsInited && !showPlayerSheet && (
+      {/* One surface at a time: the sheet replaces the mini player while open.
+          Mounts on showIndicator alone so the card appears the moment the
+          session starts, before the TTS clients finish initializing. */}
+      {tts.showIndicator && !showPlayerSheet && (
         <TTSMiniPlayer
           bookKey={bookKey}
           isPlaying={tts.isPlaying}

@@ -750,7 +750,11 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         // disqualifies the app from Now Playing and fought the claim.
         setTtsClientsInitialized(false);
 
+        // Show the mini player immediately, in the "playing" state: client
+        // init below can take a while and the session is conceptually already
+        // starting. The catch handler rolls both back if the start fails.
         setShowIndicator(true);
+        setIsPlaying(true);
         const ttsController = new TTSController(
           appService,
           view,
@@ -797,10 +801,15 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           ttsController.setParagraphGap(viewSettings.ttsParagraphGap ?? DEFAULT_PARAGRAPH_GAP_SEC);
           ttsController.speak(ssml, oneTime, () => handleStop(bookKey));
           ttsController.setTargetLang(getTTSTargetLang() || '');
+        } else {
+          // Nothing to speak: roll back the optimistic playing state.
+          setIsPlaying(false);
         }
         setTtsClientsInitialized(true);
         setTTSEnabled(bookKey, true);
       } catch (error) {
+        setShowIndicator(false);
+        setIsPlaying(false);
         eventDispatcher.dispatch('toast', {
           message: _('TTS not supported for this document'),
           type: 'error',

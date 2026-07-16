@@ -16,7 +16,11 @@ vi.mock('@/context/EnvContext', () => ({
   }),
 }));
 
-const readerState = { hoveredBookKey: '', setHoveredBookKey: vi.fn() };
+const readerState = {
+  hoveredBookKey: '',
+  setHoveredBookKey: vi.fn(),
+  getViewSettings: () => ({ ...DEFAULT_VIEW_CONFIG, ...DEFAULT_BOOK_LAYOUT }),
+};
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => readerState,
 }));
@@ -31,6 +35,7 @@ vi.mock('@/store/bookDataStore', () => ({
 }));
 
 import TTSMiniPlayer from '@/app/reader/components/tts/TTSMiniPlayer';
+import { DEFAULT_BOOK_LAYOUT, DEFAULT_VIEW_CONFIG } from '@/services/constants';
 
 const gridInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 
@@ -99,10 +104,18 @@ describe('TTSMiniPlayer', () => {
     expect(props.onExpand).toHaveBeenCalled();
   });
 
-  test('fades out while the footer bar is up for this book', () => {
+  test('rides above the bottom bar while it is up for this book', () => {
     readerState.hoveredBookKey = 'b1';
     render(<TTSMiniPlayer {...makeProps()} />);
-    expect(screen.getByRole('status').className).toContain('pointer-events-none');
+    const card = screen.getByRole('status');
+    // Desktop footer bar (52px) + 8px gap; the card stays interactive.
+    expect(card.style.bottom).toBe('60px');
+    expect(card.className).not.toContain('pointer-events-none');
+  });
+
+  test('rests above the footer info band once the bar is dismissed', () => {
+    render(<TTSMiniPlayer {...makeProps()} />);
+    expect(screen.getByRole('status').style.bottom).toBe(`${DEFAULT_BOOK_LAYOUT.marginBottomPx}px`);
   });
 
   test('without a timeline shows the estimated chapter remaining instead', () => {
