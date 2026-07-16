@@ -13,7 +13,6 @@ type ColorInputProps = {
    * settles, not on every onChange tick.
    */
   onCommit?: () => void;
-  compact?: boolean;
   /**
    * Render only the color swatch as a circular button — no hex input. Click
    * the swatch to open the picker. Cleaner UX for casual users who don't
@@ -35,7 +34,6 @@ const ColorInput: React.FC<ColorInputProps> = ({
   value,
   onChange,
   onCommit,
-  compact = false,
   swatchOnly = false,
   showPickerIcon = false,
   pickerPosition = 'left',
@@ -106,31 +104,6 @@ const ColorInput: React.FC<ColorInputProps> = ({
               onChange={handlePickerChange}
               className='rounded-md px-2 py-1 bg-base-300 text-base-content w-[200px] font-mono'
             />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (compact) {
-    return (
-      <div className='relative'>
-        <input
-          type='text'
-          value={value}
-          spellCheck={false}
-          onChange={(e) => onChange(e.target.value)}
-          onBlur={() => onCommit?.()}
-          onClick={() => setIsOpen(!isOpen)}
-          className='bg-base-100 text-base-content border-base-200/75 w-16 cursor-pointer rounded border px-1 py-0.5 text-center font-mono text-xs'
-        />
-
-        {isOpen && (
-          <div
-            ref={pickerRef}
-            className={`absolute top-full z-50 py-1 ${getPickerPositionClass()}`}
-          >
-            <HexColorPicker color={value} onChange={handlePickerChange} />
           </div>
         )}
       </div>
