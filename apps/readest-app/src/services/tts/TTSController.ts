@@ -17,6 +17,7 @@ import { SectionTimeline, TimelineSentence } from './SectionTimeline';
 import { DownloadableSentence, SectionEnumerator, TTSDownloader } from './TTSDownloader';
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
+import { startAudioKeepAlive, stopAudioKeepAlive } from './WebAudioPlayer';
 import { isValidLang } from '@/utils/lang';
 import {
   computeWordOffsets,
@@ -228,9 +229,28 @@ export class TTSController extends EventTarget {
   #terminate(reason: 'ended' | 'error') {
     if (this.#terminated) return;
     this.#terminated = true;
+    stopAudioKeepAlive();
     queueMicrotask(() => {
       this.dispatchEvent(new CustomEvent('tts-session-ended', { detail: { reason } }));
     });
+  }
+
+  // A direct-speak engine (Android system TTS) renders its audio in the OS, not
+  // the WebView, and advances sentence-to-sentence from JS timers here. With the
+  // screen locked the hidden WebView would be throttled/frozen and that loop
+  // stalls — so keep an inaudible tone playing to hold the page "audible" and
+  // its timers alive, exactly the exemption Edge/WebAudio playback earns for
+  // free. Android-only (iOS drives playout through its own native audio
+  // session); a no-op for buffered engines that already emit audible output.
+  // See #4408.
+  #syncNativeAudioKeepAlive() {
+    const needsKeepAlive =
+      !!this.appService?.isAndroidApp && this.ttsClient.getCapabilities().mediaClock === false;
+    if (needsKeepAlive) {
+      startAudioKeepAlive();
+    } else {
+      stopAudioKeepAlive();
+    }
   }
 
   get isViewAttached(): boolean {
@@ -816,6 +836,7 @@ export class TTSController extends EventTarget {
       try {
         console.log('[TTS] speak');
         this.state = 'playing';
+        this.#syncNativeAudioKeepAlive();
 
         signal.addEventListener('abort', () => {
           resolve();
@@ -969,6 +990,7 @@ export class TTSController extends EventTarget {
 
   async pause() {
     this.state = 'paused';
+    stopAudioKeepAlive();
     if (!(await this.ttsClient.pause().catch((e) => this.error(e)))) {
       await this.stop();
       this.state = 'stop-paused';
@@ -1316,6 +1338,7 @@ export class TTSController extends EventTarget {
   }
 
   async shutdown() {
+    stopAudioKeepAlive();
     await this.stop();
     this.#clearAllHighlights();
     this.#ttsSectionIndex = -1;

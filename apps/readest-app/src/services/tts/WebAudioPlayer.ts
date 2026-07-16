@@ -125,6 +125,59 @@ export const ensureSharedAudioContext = async (): Promise<void> => {
   }
 };
 
+// Inaudible background keep-alive for direct-speak engines (Android system TTS).
+//
+// When the screen locks the WebView page becomes hidden, and Chromium throttles
+// (and eventually freezes) a hidden page's timers and task queues — which stalls
+// the JS-driven per-sentence auto-advance loop that direct-speak engines rely on
+// (their audio renders in the external TTS engine, not the WebView). A page that
+// is emitting audio is exempt from that throttling: that is precisely why Edge
+// TTS keeps reading with the screen off (its speech is audible WebAudio output)
+// while system TTS stops after a page. Merely having a running-but-idle context
+// does NOT earn the exemption — Chromium keys off actual, non-silent output — so
+// we play a continuous 40 Hz tone at ~-62 dBFS: below the reach of phone
+// speakers and masked to inaudibility by the speech, but non-silent enough to
+// keep the page "audible" and its timers alive. See #4408.
+const KEEP_ALIVE_FREQ_HZ = 40;
+const KEEP_ALIVE_GAIN = 0.0008;
+let keepAliveOsc: OscillatorNode | null = null;
+let keepAliveGain: GainNode | null = null;
+
+export const startAudioKeepAlive = (): void => {
+  if (typeof AudioContext === 'undefined') return;
+  if (keepAliveOsc) return;
+  try {
+    const ctx = getSharedContext() as unknown as AudioContext;
+    // The gesture handler already resumed the shared context; nudge it best-
+    // effort in case autoplay policy left it suspended.
+    if (ctx.state !== 'running') void ctx.resume();
+    const osc = ctx.createOscillator();
+    osc.frequency.value = KEEP_ALIVE_FREQ_HZ;
+    const gain = ctx.createGain();
+    gain.gain.value = KEEP_ALIVE_GAIN;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    keepAliveOsc = osc;
+    keepAliveGain = gain;
+  } catch (err) {
+    console.warn('[TTS] audio keep-alive start failed', err);
+  }
+};
+
+export const stopAudioKeepAlive = (): void => {
+  if (!keepAliveOsc && !keepAliveGain) return;
+  try {
+    keepAliveOsc?.stop();
+    keepAliveOsc?.disconnect();
+    keepAliveGain?.disconnect();
+  } catch (err) {
+    console.warn('[TTS] audio keep-alive stop failed', err);
+  }
+  keepAliveOsc = null;
+  keepAliveGain = null;
+};
+
 export class WebAudioPlayer implements TTSAudioPlayer {
   #createContext: () => TTSAudioContext;
   #usesSharedContext: boolean;
