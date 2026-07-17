@@ -54,13 +54,16 @@ const ColorInput: React.FC<ColorInputProps> = ({
     onChange(colorResultHex);
   };
 
+  // Anchored positioning only applies from `sm` up; below that the popup is
+  // rendered as a centered floating card (see the popup container classes) so
+  // it can never overflow the panel and cause horizontal scrolling.
   const getPickerPositionClass = () => {
     if (pickerPosition === 'right') {
-      return 'end-0';
+      return 'sm:start-auto sm:end-0 sm:translate-x-0';
     } else if (pickerPosition === 'center') {
-      return 'start-1/2 -translate-x-1/2';
+      return 'sm:start-1/2';
     }
-    return 'start-0';
+    return 'sm:start-0 sm:translate-x-0';
   };
 
   return (
@@ -87,7 +90,7 @@ const ColorInput: React.FC<ColorInputProps> = ({
       {isOpen && (
         <div
           ref={pickerRef}
-          className={`absolute top-full z-50 mt-2 flex flex-col gap-2 rounded-lg border not-eink:border-base-300/50 bg-base-100 p-3 not-eink:shadow-xl items-center ${getPickerPositionClass()}`}
+          className={`fixed start-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 sm:absolute sm:top-full sm:mt-2 sm:translate-y-0 flex flex-col gap-2 rounded-lg border not-eink:border-base-300/50 bg-base-100 p-3 not-eink:shadow-xl items-center ${getPickerPositionClass()}`}
         >
           <HexColorPicker
             color={value}

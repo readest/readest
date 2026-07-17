@@ -31,7 +31,7 @@ const ThemePreview: React.FC<{
           color: textColor,
         }}
       >
-        <p className='mb-2 whitespace-pre-line text-xs'>
+        <p className='mb-2 whitespace-pre-line break-words text-xs'>
           {_(
             "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare",
           )}
@@ -57,9 +57,13 @@ const ThemeColorInput: React.FC<{
   pickerPosition?: 'left' | 'center' | 'right';
 }> = ({ label, hex, onChange, pickerPosition = 'left' }) => {
   return (
-    <div className='flex gap-2 items-center justify-between'>
-      <span>{label}</span>
-      <ColorInput label={label} value={hex} onChange={onChange} pickerPosition={pickerPosition} />
+    <div className='flex items-center justify-between gap-2'>
+      <span className='min-w-0 flex-1 truncate' title={label}>
+        {label}
+      </span>
+      <div className='shrink-0'>
+        <ColorInput label={label} value={hex} onChange={onChange} pickerPosition={pickerPosition} />
+      </div>
     </div>
   );
 };
@@ -129,7 +133,9 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
 
       <div className='grid grid-cols-2 gap-6 mt-4'>
         <div className='bg-base-100 rounded-lg p-3'>
-          <h3 className='mb-3 text-center font-medium'>{_('Light Mode')}</h3>
+          <h3 className='mb-3 truncate text-center font-medium' title={_('Light Mode')}>
+            {_('Light Mode')}
+          </h3>
 
           <div className='flex flex-col gap-2'>
             <ThemeColorInput
@@ -158,7 +164,9 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
         </div>
 
         <div className='bg-base-100 rounded-lg p-3'>
-          <h3 className='mb-3 text-center font-medium'>{_('Dark Mode')}</h3>
+          <h3 className='mb-3 truncate text-center font-medium' title={_('Dark Mode')}>
+            {_('Dark Mode')}
+          </h3>
 
           <div className='flex flex-col gap-2'>
             <ThemeColorInput
