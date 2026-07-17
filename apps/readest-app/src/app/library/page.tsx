@@ -183,7 +183,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const { clearBookData } = useBookDataStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const { isSettingsDialogOpen, setSettingsDialogOpen } = useSettingsStore();
-  const { isTransferQueueOpen } = useTransferStore();
+  // Field selector, not `const { isTransferQueueOpen } = useTransferStore()`:
+  // a whole-store subscription re-renders the entire library tree on every
+  // transfer progress tick (~10/sec per active upload), freezing the app
+  // during a bulk cloud upload (issue #5047).
+  const isTransferQueueOpen = useTransferStore((state) => state.isTransferQueueOpen);
 
   // Library page pulls user replicas (dictionaries, custom fonts,
   // background textures, OPDS catalogs, bundled settings). Deferred
