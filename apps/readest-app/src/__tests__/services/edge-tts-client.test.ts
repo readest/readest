@@ -43,9 +43,10 @@ vi.mock('@/utils/misc', () => ({
   stubTranslation: (key: string) => key,
 }));
 
+let tauriPlatform = false;
 vi.mock('@/services/environment', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/services/environment')>()),
-  isTauriAppPlatform: () => false,
+  isTauriAppPlatform: () => tauriPlatform,
 }));
 
 vi.mock('@/services/tts/TTSUtils', async (importOriginal) => {
@@ -75,6 +76,7 @@ describe('EdgeTTSClient', () => {
   let client: EdgeTTSClient;
 
   beforeEach(() => {
+    tauriPlatform = false;
     createBehavior = () => Promise.resolve(undefined);
     createAudioDataBehavior = vi.fn<() => Promise<MockAudioData>>(() =>
       Promise.resolve({ data: new ArrayBuffer(8), boundaries: [] }),
@@ -144,6 +146,27 @@ describe('EdgeTTSClient', () => {
       expect(c.initialized).toBe(true);
       // Two calls: initial wss attempt + https fallback
       expect(callCount).toBe(2);
+    });
+
+    test('wss failure does not fall back to https on Tauri even when authenticated', async () => {
+      tauriPlatform = true;
+      const mockController = {
+        isAuthenticated: true,
+        dispatchEvent: vi.fn(),
+      } as unknown as TTSController;
+      const c = new EdgeTTSClient(mockController);
+
+      let callCount = 0;
+      createBehavior = () => {
+        callCount++;
+        return Promise.reject(new Error('offline'));
+      };
+
+      const result = await c.init();
+      expect(result).toBe(false);
+      // Only the wss probe ran: the /api/tts/edge proxy must not be requested
+      // from the Tauri app (its native wss transport is the only Edge path).
+      expect(callCount).toBe(1);
     });
 
     test('wss failure dispatches tts-need-auth when not authenticated', async () => {

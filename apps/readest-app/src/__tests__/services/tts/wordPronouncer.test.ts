@@ -49,6 +49,12 @@ const h = vi.hoisted(() => {
   };
 });
 
+let tauriPlatform = false;
+vi.mock('@/services/environment', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/environment')>()),
+  isTauriAppPlatform: () => tauriPlatform,
+}));
+
 vi.mock('@/libs/edgeTTS', () => {
   class EdgeSpeechTTS {
     static voices = [
@@ -90,6 +96,7 @@ import { pronounceWord, pickEdgeVoiceId, cancelWordPronounce } from '@/services/
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 beforeEach(() => {
+  tauriPlatform = false;
   vi.clearAllMocks();
   (globalThis as unknown as { AudioContext: unknown }).AudioContext = vi.fn();
   h.createAudioData.mockReset();
@@ -166,6 +173,29 @@ describe('pronounceWord — fallback path', () => {
 
     expect(h.nativeSpeak).toHaveBeenCalledTimes(1);
     expect(h.webSpeak).not.toHaveBeenCalled();
+  });
+
+  it('retries via the authenticated https proxy on the web when wss fails', async () => {
+    h.createAudioData.mockRejectedValue(new Error('wss blocked'));
+
+    await pronounceWord('hello', 'en', {}, vi.fn());
+    await flush();
+
+    // wss attempt + https proxy retry
+    expect(h.createAudioData).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry via the https proxy on Tauri when wss fails', async () => {
+    tauriPlatform = true;
+    h.createAudioData.mockRejectedValue(new Error('offline'));
+
+    await pronounceWord('hello', 'en', { appService: { isMobile: true } as never }, vi.fn());
+    await flush();
+
+    // Only the native wss attempt: the /api/tts/edge proxy must not be
+    // requested from the Tauri app; the word drops to the platform speech.
+    expect(h.createAudioData).toHaveBeenCalledTimes(1);
+    expect(h.nativeSpeak).toHaveBeenCalledTimes(1);
   });
 });
 
