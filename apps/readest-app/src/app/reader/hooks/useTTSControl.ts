@@ -316,15 +316,20 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     };
 
     const handleHighlightMark = (e: Event) => {
-      const { cfi } = (e as CustomEvent<{ cfi: string }>).detail;
+      const { cfi, preview } = (e as CustomEvent<{ cfi: string; preview?: boolean }>).detail;
       const view = getView(bookKey);
       const progress = getProgress(bookKey);
       const viewSettings = getViewSettings(bookKey);
       const { location } = progress || {};
       if (!cfi || !view || !location || !viewSettings) return;
 
-      viewSettings.ttsLocation = cfi;
-      setViewSettings(bookKey, viewSettings);
+      // A scrubber-drag preview navigates the view but must not move the
+      // session's saved location — only a committed seek (which fires a
+      // non-preview mark) does that.
+      if (!preview) {
+        viewSettings.ttsLocation = cfi;
+        setViewSettings(bookKey, viewSettings);
+      }
 
       const hlContents = view.renderer.getContents();
       const hlPrimaryIdx = view.renderer.primaryIndex;
@@ -358,7 +363,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         return;
       }
 
-      if (!followingTTSLocationRef.current) return;
+      // A drag preview is an explicit "show me there" gesture: it navigates
+      // even when auto-follow was suppressed by the user paging away.
+      if (!preview && !followingTTSLocationRef.current) return;
 
       if (hlContents.some(({ doc }) => (doc.getSelection()?.toString().length ?? 0) > 0)) {
         return;
@@ -850,6 +857,12 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     await ttsController.seekToTime(seconds);
   }, []);
 
+  // Throttled by the scrubber: preview the location under an in-flight drag
+  // (navigate + highlight) without moving the session.
+  const handleSeekPreview = useCallback((seconds: number) => {
+    ttsControllerRef.current?.previewSeekTime(seconds);
+  }, []);
+
   const handleGetPlaybackInfo = useCallback(() => {
     const ttsController = ttsControllerRef.current;
     if (!ttsController) return null;
@@ -1030,6 +1043,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     handleSelectTimeout,
     handleBackToCurrentTTSLocation,
     handleSeekTo,
+    handleSeekPreview,
     handleGetPlaybackInfo,
     handleSupportsPlaybackInfo,
     handleSupportsGapControl,

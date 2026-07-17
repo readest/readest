@@ -57,6 +57,11 @@ type TTSState =
   | 'setvoice-paused';
 
 const HIGHLIGHT_KEY = 'tts-highlight';
+// Scrubber-drag preview overlay. A separate key from the playback highlight:
+// while a drag previews a location, playback keeps repainting the spoken
+// word/sentence under HIGHLIGHT_KEY, and sharing a key would erase the
+// preview on every word boundary.
+const SEEK_PREVIEW_KEY = 'tts-seek-preview';
 
 // Hook-supplied callbacks rebound on view attach: the constructor-captured
 // closures belong to whichever reader hook created the controller and die
@@ -414,6 +419,7 @@ export class TTSController extends EventTarget {
     const contents = this.view.renderer.getContents() as { overlayer?: Overlayer }[];
     for (const { overlayer } of contents) {
       overlayer?.remove(HIGHLIGHT_KEY);
+      overlayer?.remove(SEEK_PREVIEW_KEY);
     }
   }
 
@@ -703,10 +709,54 @@ export class TTSController extends EventTarget {
     };
   }
 
+  // Live preview of the sentence under a scrubber drag, without touching
+  // playback or session state: navigate the view along the same follow path
+  // as playback highlights (preview-flagged so it doesn't stamp ttsLocation)
+  // and draw a preview overlay at the target sentence. Synchronous on
+  // purpose — the scrubber only renders once playback info (and thus the
+  // timeline) exists, and a drag fires this at a 100ms cadence.
+  previewSeekTime(seconds: number): void {
+    if (!this.#attached) return;
+    const timeline = this.#sectionTimeline;
+    if (!timeline || this.#timelineSectionIndex !== this.#ttsSectionIndex) return;
+    const target = timeline.sentenceAtTime(seconds);
+    if (!target) return;
+    const range = target.sentence.range;
+    try {
+      const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
+      this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi, preview: true } }));
+    } catch {}
+    this.#drawSeekPreview(range);
+  }
+
+  #drawSeekPreview(range: Range) {
+    const content = this.#getPrimaryContent();
+    if (!content) return;
+    const { doc, index, overlayer } = content;
+    if (!doc || index === undefined || index !== this.#ttsSectionIndex) return;
+    try {
+      const cfi = this.view.getCFI(index, range);
+      const visibleRange = this.view.resolveCFI(cfi).anchor(doc);
+      if (!visibleRange) return;
+      const { style, color } = this.options;
+      overlayer?.remove(SEEK_PREVIEW_KEY);
+      overlayer?.add(SEEK_PREVIEW_KEY, visibleRange, Overlayer[style], { color });
+    } catch {}
+  }
+
+  clearSeekPreview() {
+    if (!this.#attached) return;
+    const contents = this.view.renderer.getContents() as { overlayer?: Overlayer }[];
+    for (const { overlayer } of contents) {
+      overlayer?.remove(SEEK_PREVIEW_KEY);
+    }
+  }
+
   // Sentence-snapped seek through the same navigation machinery as prev/next:
   // foliate's from(range) returns the paragraph SSML sliced at the target
   // sentence, so highlighting, page-follow, and mark bookkeeping come free.
   async seekToTime(seconds: number): Promise<void> {
+    this.clearSeekPreview();
     await this.initViewTTS();
     const timeline = await this.ensureTimeline();
     if (!timeline) return;

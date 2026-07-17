@@ -16,6 +16,54 @@ describe('TTSScrubber', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    vi.useRealTimers();
+  });
+
+  test('scrubs continuously in 1-second steps regardless of duration', () => {
+    render(
+      <TTSScrubber
+        bookKey='b1'
+        isEink={false}
+        onSeek={vi.fn()}
+        onGetPlaybackInfo={makeGet(10, 900)}
+      />,
+    );
+    const slider = screen.getByRole('slider') as HTMLInputElement;
+    expect(slider.getAttribute('step')).toBe('1');
+  });
+
+  test('previews the drag location at most every 100ms and stops after release', () => {
+    vi.useFakeTimers();
+    const onSeek = vi.fn().mockResolvedValue(undefined);
+    const onSeekPreview = vi.fn();
+    render(
+      <TTSScrubber
+        bookKey='b1'
+        isEink={false}
+        onSeek={onSeek}
+        onSeekPreview={onSeekPreview}
+        onGetPlaybackInfo={makeGet(10)}
+      />,
+    );
+    const slider = screen.getByRole('slider') as HTMLInputElement;
+    fireEvent.change(slider, { target: { value: '30' } });
+    expect(onSeekPreview).toHaveBeenCalledTimes(1); // leading call
+    expect(onSeekPreview).toHaveBeenCalledWith(30);
+    fireEvent.change(slider, { target: { value: '40' } });
+    expect(onSeekPreview).toHaveBeenCalledTimes(1); // throttled inside the window
+    vi.advanceTimersByTime(100);
+    expect(onSeekPreview).toHaveBeenCalledTimes(2); // trailing emit
+    expect(onSeekPreview).toHaveBeenLastCalledWith(40);
+    fireEvent.change(slider, { target: { value: '50' } });
+    expect(onSeekPreview).toHaveBeenCalledTimes(3); // window elapsed, leading again
+    fireEvent.change(slider, { target: { value: '60' } });
+    expect(onSeekPreview).toHaveBeenCalledTimes(3); // trailing pending
+    fireEvent.touchEnd(slider);
+    expect(onSeek).toHaveBeenCalledWith(60);
+    vi.advanceTimersByTime(200);
+    // The commit path owns navigation after release; the pending trailing
+    // preview must not redraw an overlay nothing would clear.
+    expect(onSeekPreview).toHaveBeenCalledTimes(3);
   });
 
   test('renders elapsed and remaining labels', () => {

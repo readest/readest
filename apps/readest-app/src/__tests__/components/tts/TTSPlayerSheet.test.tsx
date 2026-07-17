@@ -116,6 +116,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   onGetVoiceId: vi.fn().mockReturnValue('ava'),
   onSelectTimeout: vi.fn(),
   onSeek: vi.fn().mockResolvedValue(undefined),
+  onSeekPreview: vi.fn(),
   onGetPlaybackInfo: vi
     .fn()
     .mockReturnValue({ position: 10, duration: 100, measuredFraction: 0.4 }),

@@ -1,14 +1,16 @@
 import clsx from 'clsx';
-import { ChangeEvent, useRef, useState } from 'react';
+import { ChangeEvent, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatPlaybackTime } from '@/utils/time';
 import { eventDispatcher } from '@/utils/event';
+import { throttle } from '@/utils/throttle';
 import { TTSPlaybackInfo, usePlaybackInfo } from './usePlaybackInfo';
 
 type TTSScrubberProps = {
   bookKey: string;
   isEink: boolean;
   onSeek: (seconds: number) => Promise<void>;
+  onSeekPreview?: (seconds: number) => void;
   onGetPlaybackInfo: () => TTSPlaybackInfo | null;
 };
 
@@ -16,12 +18,33 @@ type TTSScrubberProps = {
 // inline three-stop gradient — played (solid), buffered/prefetched (mid), rest
 // (faint) — YouTube-style; `.tts-scrubber` in globals.css blanks the native
 // track so the gradient IS the track.
-const TTSScrubber = ({ bookKey, isEink, onSeek, onGetPlaybackInfo }: TTSScrubberProps) => {
+const TTSScrubber = ({
+  bookKey,
+  isEink,
+  onSeek,
+  onSeekPreview,
+  onGetPlaybackInfo,
+}: TTSScrubberProps) => {
   const _ = useTranslation();
   const playback = usePlaybackInfo({ bookKey, isEink, onGetPlaybackInfo });
   const [dragValue, setDragValue] = useState<number | null>(null);
   const dragValueRef = useRef<number | null>(null);
   const keyboardCommitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Live location preview while the thumb moves, throttled so a fast drag
+  // doesn't relocate the reader on every pixel. The trailing emit can land
+  // after release; the committed seek owns navigation from that point, so
+  // it must not redraw a preview nothing would clear.
+  const throttledPreview = useMemo(
+    () =>
+      onSeekPreview
+        ? throttle((seconds: number) => {
+            if (dragValueRef.current === null) return;
+            onSeekPreview(seconds);
+          }, 100)
+        : null,
+    [onSeekPreview],
+  );
 
   const commitSeek = (seconds: number) => {
     dragValueRef.current = null;
@@ -43,6 +66,7 @@ const TTSScrubber = ({ bookKey, isEink, onSeek, onGetPlaybackInfo }: TTSScrubber
     dragValueRef.current = value;
     setDragValue(value);
     playback.setRefreshPaused(true);
+    throttledPreview?.(value);
   };
 
   const handlePointerCommit = () => {
@@ -60,7 +84,6 @@ const TTSScrubber = ({ bookKey, isEink, onSeek, onGetPlaybackInfo }: TTSScrubber
   const { ready, stale, total, measuredFraction } = playback;
   const position = Math.min(dragValue ?? playback.position, total);
   const forceHours = total >= 3600;
-  const step = Math.max(5, Math.round(total / 100)) || 5;
   const elapsedLabel = ready ? formatPlaybackTime(position, forceHours) : '--:--';
   const remainingLabel = ready
     ? `-${formatPlaybackTime(Math.max(total - position, 0), forceHours)}`
@@ -76,7 +99,7 @@ const TTSScrubber = ({ bookKey, isEink, onSeek, onGetPlaybackInfo }: TTSScrubber
         type='range'
         min={0}
         max={total || 1}
-        step={step}
+        step={1}
         value={position}
         disabled={!ready || stale}
         onChange={handleChange}

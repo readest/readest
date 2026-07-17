@@ -85,6 +85,7 @@ type TTSPlayerSheetProps = {
   onGetVoiceId: () => string;
   onSelectTimeout: (bookKey: string, value: number) => void;
   onSeek: (seconds: number) => Promise<void>;
+  onSeekPreview: (seconds: number) => void;
   onGetPlaybackInfo: () => TTSPlaybackInfo | null;
   downloads: UseTTSDownloadsResult;
   activeSectionIndex: number | null;
@@ -115,6 +116,7 @@ const TTSPlayerSheet = ({
   onGetVoiceId,
   onSelectTimeout,
   onSeek,
+  onSeekPreview,
   onGetPlaybackInfo,
   downloads,
   activeSectionIndex,
@@ -335,6 +337,7 @@ const TTSPlayerSheet = ({
               bookKey={bookKey}
               isEink={isEink}
               onSeek={onSeek}
+              onSeekPreview={onSeekPreview}
               onGetPlaybackInfo={onGetPlaybackInfo}
             />
           ) : (
