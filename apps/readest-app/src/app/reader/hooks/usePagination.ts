@@ -42,7 +42,7 @@ const hasHorizontalPanning = (
   return isPanningView(view, viewSettings) && view.isOverflowX();
 };
 
-const hasVerticalPanning = (
+export const hasVerticalPanning = (
   view: FoliateView | null,
   viewSettings: ViewSettings | null | undefined,
 ) => {

@@ -113,3 +113,80 @@ describe('useTouchEvent pinch vs two-finger scroll', () => {
     expect(mocks.dispatch).not.toHaveBeenCalledWith('pinch-zoom', expect.anything());
   });
 });
+
+// Swipe-up toggles the header/footer bars — but never when the swipe is a
+// vertical pan of an overflowing fixed-layout page (#5142: fit-width in
+// landscape overflows vertically even at 100% zoom).
+describe('useTouchEvent swipe-up bar toggle on fixed-layout', () => {
+  const swipeUp = (h: { current: Handlers }) => {
+    h.current.onTouchStart(touchEvent([touch(100, 500)], 0));
+    h.current.onTouchMove(touchEvent([touch(100, 300)], 50));
+    h.current.onTouchEnd(touchEvent([], 100));
+  };
+
+  const fxlView = (isOverflowY: boolean) => ({
+    book: { rendition: { layout: 'pre-paginated' } },
+    isOverflowY: () => isOverflowY,
+    renderer: {},
+  });
+
+  beforeEach(() => {
+    mocks.hoveredBookKey = null;
+    mocks.getBookData.mockReturnValue({ isFixedLayout: true });
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 100,
+      zoomMode: 'fit-width',
+      scrolled: false,
+      vertical: false,
+    });
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  test('swipe up on a vertically overflowing page (fit-width landscape) pans, not toggles', () => {
+    mocks.getView.mockReturnValue(fxlView(true));
+    const h = renderTouchHook();
+    swipeUp(h);
+
+    expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+  });
+
+  test('swipe up still toggles the bars when the page fits vertically', () => {
+    mocks.getView.mockReturnValue(fxlView(false));
+    const h = renderTouchHook();
+    swipeUp(h);
+
+    expect(mocks.setHoveredBookKey).toHaveBeenCalledWith('book-1');
+  });
+
+  test('swipe up on a zoomed page with vertical overflow pans, not toggles', () => {
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 150,
+      zoomMode: 'fit-page',
+      scrolled: false,
+      vertical: false,
+    });
+    mocks.getView.mockReturnValue(fxlView(true));
+    const h = renderTouchHook();
+    swipeUp(h);
+
+    expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+  });
+
+  test('swipe up toggles on a zoomed page that still fits vertically', () => {
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 150,
+      zoomMode: 'fit-page',
+      scrolled: false,
+      vertical: false,
+    });
+    mocks.getView.mockReturnValue(fxlView(false));
+    const h = renderTouchHook();
+    swipeUp(h);
+
+    expect(mocks.setHoveredBookKey).toHaveBeenCalledWith('book-1');
+  });
+});

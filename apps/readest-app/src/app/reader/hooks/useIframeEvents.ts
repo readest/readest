@@ -5,6 +5,7 @@ import { eventDispatcher } from '@/utils/event';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL } from '@/services/constants';
 import { createWheelGestureDetector } from '@/app/reader/utils/wheelGesture';
 import { dispatchTouchInterceptors, TouchDetail } from './useTouchInterceptor';
+import { hasVerticalPanning } from './usePagination';
 
 export const useMouseEvent = (
   bookKey: string,
@@ -341,10 +342,13 @@ export const useTouchEvent = (bookKey: string) => {
       ) {
         const viewSettings = getViewSettings(bookKey)!;
         const bookData = getBookData(bookKey)!;
+        // On a fixed-layout page that can pan vertically (e.g. fit-width in
+        // landscape overflows vertically even at 100% zoom) an upward swipe
+        // is a pan, not a toggle-the-bars gesture (#5142).
         if (
           !viewSettings!.scrolled &&
           !viewSettings!.vertical &&
-          (!bookData.isFixedLayout || viewSettings.zoomLevel <= 100)
+          (!bookData.isFixedLayout || !hasVerticalPanning(getView(bookKey), viewSettings))
         ) {
           setHoveredBookKey(hoveredBookKey ? null : bookKey);
         }
