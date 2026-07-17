@@ -1,6 +1,6 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string, opts?: Record<string, unknown>) =>
@@ -257,6 +257,20 @@ describe('TTSPlayerSheet', () => {
     expect(props.onSetSentenceGap).toHaveBeenCalledWith(0.4);
     expect(viewSettings['ttsSentenceGap']).toBe(0.4);
     expect(settings.globalViewSettings.ttsSentenceGap).toBe(0.4);
+    expect(saveSettings).toHaveBeenCalled();
+  });
+
+  test('the speed view carries the paragraph pause chips for every client', () => {
+    const props = makeProps({ hasGapControl: false });
+    render(<TTSPlayerSheet {...props} />);
+    // No dedicated sub-view or main-row button anymore.
+    expect(screen.queryByLabelText('Paragraph Gap')).toBeNull();
+    fireEvent.click(screen.getByLabelText('Speed'));
+    expect(screen.getByText(/Paragraph Pause/)).toBeTruthy();
+    const group = screen.getByRole('radiogroup', { name: 'Paragraph Pause' });
+    fireEvent.click(within(group).getByRole('radio', { name: '0.75s' }));
+    expect(props.onSetParagraphGap).toHaveBeenCalledWith(0.75);
+    expect(viewSettings['ttsParagraphGap']).toBe(0.75);
     expect(saveSettings).toHaveBeenCalled();
   });
 

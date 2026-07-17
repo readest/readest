@@ -10,8 +10,9 @@ type ParagraphGapChipsProps = {
 };
 
 // Paragraph-pause presets as a wrapping chip grid (lives in the sheet's
-// Paragraph Gap sub-view). A persisted off-preset gap merges in as a
-// selectable chip in sorted position so the grid always shows the truth.
+// Speed sub-view under the Sentence Pause chips). A persisted off-preset gap
+// merges in as a selectable chip in sorted position so the grid always shows
+// the truth.
 const ParagraphGapChips = ({ gap, onSelect }: ParagraphGapChipsProps) => {
   const _ = useTranslation();
   const values = PARAGRAPH_GAP_PRESETS.includes(gap)
@@ -21,7 +22,7 @@ const ParagraphGapChips = ({ gap, onSelect }: ParagraphGapChipsProps) => {
   return (
     <div
       role='radiogroup'
-      aria-label={_('Paragraph Gap')}
+      aria-label={_('Paragraph Pause')}
       className='flex w-full flex-wrap justify-center gap-2 px-1 py-1'
     >
       {values.map((value) => {

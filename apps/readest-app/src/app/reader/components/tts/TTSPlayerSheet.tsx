@@ -10,7 +10,6 @@ import {
   MdKeyboardDoubleArrowRight,
   MdOutlinePause,
   MdPlayArrow,
-  MdSegment,
   MdOutlineFileDownload,
   MdChevronRight,
 } from 'react-icons/md';
@@ -42,7 +41,7 @@ import ParagraphGapChips from './ParagraphGapChips';
 import TTSChaptersView from './TTSChaptersView';
 import type { UseTTSDownloadsResult } from '@/app/reader/hooks/useTTSDownloads';
 
-type SheetView = 'main' | 'speed' | 'voice' | 'timer' | 'paragraphGap' | 'chapters';
+type SheetView = 'main' | 'speed' | 'voice' | 'timer' | 'chapters';
 
 const getTTSTimeoutOptions = (_: TranslationFunc) => {
   return [
@@ -306,11 +305,9 @@ const TTSPlayerSheet = ({
               ? _('Speed')
               : view === 'voice'
                 ? _('Select Voice')
-                : view === 'paragraphGap'
-                  ? _('Paragraph Gap')
-                  : view === 'chapters'
-                    ? _('Offline Audio')
-                    : _('Set Timeout')}
+                : view === 'chapters'
+                  ? _('Offline Audio')
+                  : _('Set Timeout')}
           </span>
         </div>
       </div>
@@ -441,17 +438,6 @@ const TTSPlayerSheet = ({
                 {timerCaption}
               </span>
             </button>
-            <button
-              type='button'
-              aria-label={_('Paragraph Gap')}
-              onClick={() => setView('paragraphGap')}
-              className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
-            >
-              <MdSegment size={iconSize18} />
-              <span className='text-base-content/60 max-w-full truncate px-1 text-xs tabular-nums'>
-                {formatGap(paragraphGap)}
-              </span>
-            </button>
           </div>
           {downloads.supported && downloads.chapters.length > 0 && (
             <button
@@ -499,10 +485,9 @@ const TTSPlayerSheet = ({
               <GapChips gap={gap} onSelect={handleSelectGap} />
             </>
           )}
-        </div>
-      )}
-      {view === 'paragraphGap' && (
-        <div className='flex w-full flex-col items-center pb-4 pt-2'>
+          <div className='text-base-content/60 w-full px-2 py-1 text-sm sm:text-xs'>
+            {_('Paragraph Pause')} · {formatGap(paragraphGap)}
+          </div>
           <ParagraphGapChips gap={paragraphGap} onSelect={handleSelectParagraphGap} />
         </div>
       )}
