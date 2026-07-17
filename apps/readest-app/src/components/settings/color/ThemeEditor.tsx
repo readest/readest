@@ -33,7 +33,7 @@ const ThemePreview: React.FC<{
       >
         <p className='mb-2 whitespace-pre-line text-xs'>
           {_(
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+            "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare",
           )}
           {'\n\n'}
           <span
@@ -42,7 +42,7 @@ const ThemePreview: React.FC<{
               color: primaryColor,
             }}
           >
-            {_('Click me!')}
+            {_("(from 'As You Like It', Act II)")}
           </span>
         </p>
       </div>
@@ -54,11 +54,12 @@ const ThemeColorInput: React.FC<{
   label: string;
   hex: string;
   onChange: (hex: string) => void;
-}> = ({ label, hex, onChange }) => {
+  pickerPosition?: 'left' | 'center' | 'right';
+}> = ({ label, hex, onChange, pickerPosition = 'left' }) => {
   return (
     <div className='flex gap-2 items-center justify-between'>
       <span>{label}</span>
-      <ColorInput label='' value={hex} onChange={onChange} />
+      <ColorInput label={label} value={hex} onChange={onChange} pickerPosition={pickerPosition} />
     </div>
   );
 };
@@ -90,7 +91,7 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
 
   const [themeName, setThemeName] = useState(customTheme?.label || _('Custom'));
 
-  const themeExists = settings.globalReadSettings.customThemes.find(
+  const existingTheme = settings.globalReadSettings.customThemes.find(
     (theme) => theme.name === md5Fingerprint(themeName),
   );
 
@@ -115,14 +116,14 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
 
   return (
     <div className='flex flex-col gap-2 mt-6 rounded-lg'>
-      <label className='font-medium'>{_('Theme Name')}</label>
-      <div className='flex flex-col sm:flex-row w-full items-center justify-between gap-4'>
+      <div className='flex items-center gap-4'>
+        <label className='font-medium whitespace-nowrap'>{_('Theme Name')}</label>
         <input
           type='text'
           value={themeName}
           onChange={(e) => setThemeName(e.target.value)}
-          className='bg-base-100 text-base-content border-base-200 rounded border p-2 text-sm w-full'
-          placeholder='Custom Theme'
+          className='bg-base-100 text-base-content border-base-200 min-w-0 flex-1 rounded border p-2 text-sm'
+          placeholder={_('Custom Theme')}
         />
       </div>
 
@@ -142,7 +143,7 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
               onChange={setLightBackgroundColor}
             />
             <ThemeColorInput
-              label={_('Primary Color')}
+              label={_('Link Color')}
               hex={lightPrimaryColor}
               onChange={setLightPrimaryColor}
             />
@@ -161,17 +162,20 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
 
           <div className='flex flex-col gap-2'>
             <ThemeColorInput
+              pickerPosition='right'
               label={_('Text Color')}
               hex={darkTextColor}
               onChange={setDarkTextColor}
             />
             <ThemeColorInput
+              pickerPosition='right'
               label={_('Background Color')}
               hex={darkBackgroundColor}
               onChange={setDarkBackgroundColor}
             />
             <ThemeColorInput
-              label={_('Primary Color')}
+              pickerPosition='right'
+              label={_('Link Color')}
               hex={darkPrimaryColor}
               onChange={setDarkPrimaryColor}
             />
@@ -188,19 +192,16 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
       <div
         className={clsx(
           'flex sticky bottom-0 bg-base-200 py-2',
-          themeExists ? 'justify-between' : 'justify-end',
+          existingTheme ? 'justify-between' : 'justify-end',
         )}
       >
-        {themeExists && (
-          <button
-            className='btn btn-ghost btn-sm px-2 text-white bg-red-500 hover:bg-red-600'
-            onClick={() => onDelete(getCustomTheme())}
-          >
+        {existingTheme && (
+          <button className='btn btn-error btn-sm px-2' onClick={() => onDelete(getCustomTheme())}>
             {_('Delete')}
           </button>
         )}
 
-        <div>
+        <div className='flex gap-2'>
           <button className='btn btn-ghost btn-sm px-2' onClick={onCancel}>
             {_('Cancel')}
           </button>
