@@ -26,8 +26,9 @@ vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => readerState,
 }));
 
+const progressState: { sectionLabel: string | undefined } = { sectionLabel: 'Chapter 5' };
 vi.mock('@/store/readerProgressStore', () => ({
-  useBookProgress: () => ({ sectionLabel: 'Chapter 5' }),
+  useBookProgress: () => progressState,
 }));
 
 const getBookData = vi.fn();
@@ -63,6 +64,7 @@ describe('TTSMiniPlayer', () => {
   beforeEach(() => {
     readerState.hoveredBookKey = '';
     readerState.bottomBarTab = '';
+    progressState.sectionLabel = 'Chapter 5';
     getBookData.mockReturnValue({ book: { title: 'Alice in Wonderland', coverImageUrl: null } });
   });
 
@@ -71,24 +73,48 @@ describe('TTSMiniPlayer', () => {
     vi.clearAllMocks();
   });
 
-  test('shows title, section label, and elapsed/remaining time', () => {
-    render(<TTSMiniPlayer {...makeProps()} />);
-    expect(screen.getByText('Alice in Wonderland')).toBeTruthy();
-    expect(screen.getByText(/Chapter 5/)).toBeTruthy();
+  test('leads with the chapter, keeps time below, and drops title and cover', () => {
+    getBookData.mockReturnValue({
+      book: { title: 'Alice in Wonderland', coverImageUrl: 'blob:cover' },
+    });
+    const { container } = render(<TTSMiniPlayer {...makeProps()} />);
+    expect(screen.getByText('Chapter 5')).toBeTruthy();
+    expect(screen.queryByText('Alice in Wonderland')).toBeNull();
+    expect(container.querySelector('img')).toBeNull();
     expect(screen.getByText(/0:10/)).toBeTruthy();
     expect(screen.getByText(/-1:30/)).toBeTruthy();
   });
 
-  test('sentence skips and play/pause drive the transport callbacks', () => {
+  test('falls back to the book title when no section label exists', () => {
+    progressState.sectionLabel = undefined;
+    render(<TTSMiniPlayer {...makeProps()} />);
+    expect(screen.getByText('Alice in Wonderland')).toBeTruthy();
+  });
+
+  test('sentence and paragraph skips and play/pause drive the transport callbacks', () => {
     const props = makeProps();
     render(<TTSMiniPlayer {...props} />);
     fireEvent.click(screen.getByLabelText('Previous Sentence'));
     expect(props.onBackward).toHaveBeenCalledWith(true);
     fireEvent.click(screen.getByLabelText('Next Sentence'));
     expect(props.onForward).toHaveBeenCalledWith(true);
+    fireEvent.click(screen.getByLabelText('Previous Paragraph'));
+    expect(props.onBackward).toHaveBeenCalledWith(false);
+    fireEvent.click(screen.getByLabelText('Next Paragraph'));
+    expect(props.onForward).toHaveBeenCalledWith(false);
     fireEvent.click(screen.getByLabelText('Pause'));
     expect(props.onTogglePlay).toHaveBeenCalled();
     expect(screen.getByLabelText('Next Sentence').closest('[dir="ltr"]')).toBeTruthy();
+    expect(screen.getByLabelText('Next Paragraph').closest('[dir="ltr"]')).toBeTruthy();
+  });
+
+  test('play and pause glyphs share a size so toggling does not shift the row', () => {
+    const { rerender } = render(<TTSMiniPlayer {...makeProps({ isPlaying: true })} />);
+    const pauseWidth = screen.getByLabelText('Pause').querySelector('svg')?.getAttribute('width');
+    rerender(<TTSMiniPlayer {...makeProps({ isPlaying: false })} />);
+    const playWidth = screen.getByLabelText('Play').querySelector('svg')?.getAttribute('width');
+    expect(pauseWidth).toBeTruthy();
+    expect(playWidth).toBe(pauseWidth);
   });
 
   test('stop button stops without expanding', () => {
@@ -102,7 +128,7 @@ describe('TTSMiniPlayer', () => {
   test('tapping the body expands the player sheet', () => {
     const props = makeProps();
     render(<TTSMiniPlayer {...props} />);
-    fireEvent.click(screen.getByText('Alice in Wonderland'));
+    fireEvent.click(screen.getByText('Chapter 5'));
     expect(props.onExpand).toHaveBeenCalled();
   });
 

@@ -1,6 +1,15 @@
 import clsx from 'clsx';
 import { useLayoutEffect, useState } from 'react';
-import { MdClose, MdPauseCircleFilled, MdPlayCircleFilled } from 'react-icons/md';
+import {
+  MdAlarm,
+  MdClose,
+  MdKeyboardArrowLeft,
+  MdKeyboardArrowRight,
+  MdKeyboardDoubleArrowLeft,
+  MdKeyboardDoubleArrowRight,
+  MdOutlinePause,
+  MdPlayArrow,
+} from 'react-icons/md';
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
@@ -11,7 +20,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { formatPlaybackTime } from '@/utils/time';
 import { TTSPlaybackInfo, usePlaybackInfo } from './usePlaybackInfo';
 import { useCountdownLabel } from './useCountdownLabel';
-import { BsFastForwardFill, BsRewindFill } from 'react-icons/bs';
 import { getTTSMiniPlayerBottomOffset } from '../../utils/ttsMiniPlayerPosition';
 
 type TTSMiniPlayerProps = {
@@ -31,8 +39,11 @@ type TTSMiniPlayerProps = {
 };
 
 // Persistent mini-player shown while a TTS session is active: passive
-// progress line with buffer-ahead fill on the card's bottom edge, book info
-// (tap to expand the full player sheet), sentence transport, and stop.
+// progress line with buffer-ahead fill on the card's bottom edge, chapter +
+// time info (tap to expand the full player sheet), and the same
+// paragraph/sentence transport vocabulary as the full player (#5101 — the
+// paragraph skips matter to eyes-off listeners). Deliberately chrome-free:
+// no cover, no book title, plain glyph buttons.
 const TTSMiniPlayer = ({
   bookKey,
   isPlaying,
@@ -55,8 +66,10 @@ const TTSMiniPlayer = ({
   const progress = useBookProgress(bookKey);
   const playback = usePlaybackInfo({ bookKey, isEink, onGetPlaybackInfo });
   const timerLabel = useCountdownLabel(timeoutTimestamp);
+  const iconSize14 = useResponsiveSize(14);
   const iconSize20 = useResponsiveSize(20);
-  const iconSize40 = useResponsiveSize(40);
+  const iconSize22 = useResponsiveSize(22);
+  const iconSize28 = useResponsiveSize(28);
 
   const book = getBookData(bookKey)?.book;
   const sectionLabel = progress?.sectionLabel;
@@ -150,7 +163,7 @@ const TTSMiniPlayer = ({
             />
           </div>
         )}
-        <div className='text-base-content flex h-14 items-center gap-1 px-2'>
+        <div className='text-base-content flex h-14 items-center gap-2 pe-1 ps-3'>
           <div
             role='button'
             tabIndex={0}
@@ -159,48 +172,48 @@ const TTSMiniPlayer = ({
               if (e.key === 'Enter' || e.key === ' ') onExpand();
             }}
             aria-label={_('Open Read Aloud player')}
-            className='flex min-w-0 flex-1 cursor-pointer items-center gap-2'
+            className='flex min-w-0 flex-1 cursor-pointer flex-col justify-center gap-0.5'
           >
-            {book?.coverImageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={book.coverImageUrl}
-                alt=''
-                className='h-10 w-10 shrink-0 rounded-lg object-cover'
-              />
-            ) : null}
-            <div className='flex min-w-0 flex-col'>
-              <span className='truncate text-sm'>{book?.title ?? ''}</span>
-              {(sectionLabel || timeLabel) && (
-                <span className='text-base-content/70 truncate text-xs tabular-nums'>
-                  {[sectionLabel, timeLabel].filter(Boolean).join(' · ')}
-                </span>
-              )}
-            </div>
+            <span className='truncate text-sm font-medium'>
+              {sectionLabel || book?.title || ''}
+            </span>
+            {(timeLabel || timerLabel) && (
+              <span className='text-base-content/60 flex items-center gap-1.5 text-xs tabular-nums'>
+                {timeLabel && <span className='truncate'>{timeLabel}</span>}
+                {timerLabel && (
+                  <span className='flex shrink-0 items-center gap-0.5'>
+                    <MdAlarm size={iconSize14} aria-hidden='true' />
+                    {timerLabel}
+                  </span>
+                )}
+              </span>
+            )}
           </div>
-          {timerLabel && (
-            <span className='shrink-0 text-xs tabular-nums opacity-70'>{timerLabel}</span>
-          )}
-          <div dir='ltr' className='flex shrink-0 items-center gap-1'>
+          <div dir='ltr' className='flex shrink-0 items-center'>
+            <button
+              type='button'
+              className='shrink-0 rounded-full p-1'
+              aria-label={_('Previous Paragraph')}
+              onClick={() => onBackward(false)}
+            >
+              <MdKeyboardDoubleArrowLeft size={iconSize20} />
+            </button>
             <button
               type='button'
               className='shrink-0 rounded-full p-1'
               aria-label={_('Previous Sentence')}
               onClick={() => onBackward(true)}
             >
-              <BsRewindFill size={iconSize20} />
+              <MdKeyboardArrowLeft size={iconSize22} />
             </button>
             <button
               type='button'
-              className='shrink-0 rounded-full p-0.5'
+              className='shrink-0 rounded-full p-1'
               aria-label={isPlaying ? _('Pause') : _('Play')}
               onClick={onTogglePlay}
             >
-              {isPlaying ? (
-                <MdPauseCircleFilled size={iconSize40} />
-              ) : (
-                <MdPlayCircleFilled size={iconSize40} />
-              )}
+              {/* Same canvas size for both glyphs, or the row shifts on toggle. */}
+              {isPlaying ? <MdOutlinePause size={iconSize28} /> : <MdPlayArrow size={iconSize28} />}
             </button>
             <button
               type='button'
@@ -208,11 +221,19 @@ const TTSMiniPlayer = ({
               aria-label={_('Next Sentence')}
               onClick={() => onForward(true)}
             >
-              <BsFastForwardFill size={iconSize20} />
+              <MdKeyboardArrowRight size={iconSize22} />
             </button>
             <button
               type='button'
               className='shrink-0 rounded-full p-1'
+              aria-label={_('Next Paragraph')}
+              onClick={() => onForward(false)}
+            >
+              <MdKeyboardDoubleArrowRight size={iconSize20} />
+            </button>
+            <button
+              type='button'
+              className='text-base-content/70 ms-0.5 shrink-0 rounded-full p-1'
               aria-label={_('Stop reading aloud')}
               onClick={onStop}
             >
