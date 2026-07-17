@@ -21,6 +21,7 @@ import {
   buildAnnotationWebUrl,
 } from '@/utils/deeplink';
 import Dialog from '@/components/Dialog';
+import { Toggle } from '@/components/primitives/toggle';
 
 interface ExportMarkdownDialogProps {
   bookKey: string;
@@ -811,11 +812,9 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
         <div className='mt-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
           <div className='flex items-center gap-3'>
             <label className='flex cursor-pointer items-center gap-2'>
-              <input
-                type='checkbox'
+              <Toggle
                 checked={exportConfig.exportAsPlainText}
                 onChange={() => handleToggle('exportAsPlainText')}
-                className='toggle'
               />
               <span className='line-clamp-2 text-xs'>
                 {exportConfig.exportAsPlainText

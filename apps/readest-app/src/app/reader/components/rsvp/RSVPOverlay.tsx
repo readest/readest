@@ -31,6 +31,7 @@ import { Overlay } from '@/components/Overlay';
 import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
 import DictionaryPopup from '@/app/reader/components/annotator/DictionaryPopup';
 import TTSFollowIndicator, { TtsSyncStatus } from '@/app/reader/components/tts/TTSFollowIndicator';
+import { Toggle } from '@/components/primitives/toggle';
 
 interface FlatChapter {
   label: string;
@@ -1264,9 +1265,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             {/* Split hyphenated words */}
             <div className='config-item gap-2'>
               <span className='opacity-50'>{_('Split Hyphens')}</span>
-              <input
-                type='checkbox'
-                className='toggle'
+              <Toggle
                 checked={state.splitHyphens}
                 onChange={(e) => controller.setSplitHyphens(e.target.checked)}
               />
@@ -1276,10 +1275,8 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             {state.hasCJK && (
               <div className='config-item gap-2'>
                 <span className='opacity-50'>{_('Character Mode')}</span>
-                <input
-                  type='checkbox'
+                <Toggle
                   data-testid='rsvp-char-mode-toggle'
-                  className='toggle'
                   checked={state.cjkCharMode}
                   onChange={(e) => controller.setCjkCharMode(e.target.checked)}
                 />
@@ -1290,10 +1287,8 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             {state.hasCJK && (
               <div className='config-item gap-2'>
                 <span className='opacity-50'>{_('Highlight Word')}</span>
-                <input
-                  type='checkbox'
+                <Toggle
                   data-testid='rsvp-highlight-word-toggle'
-                  className='toggle'
                   checked={highlightWholeWord}
                   onChange={(e) => updateHighlightWholeWord(e.target.checked)}
                 />

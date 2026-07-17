@@ -12,6 +12,7 @@ import { debounce } from '@/utils/debounce';
 import { getOSPlatform } from '@/utils/misc';
 import SubPageHeader from '../SubPageHeader';
 import { SectionTitle, SettingLabel, SettingsSelect } from '../primitives';
+import { Toggle } from '@/components/primitives/toggle';
 
 interface KOSyncFormProps {
   onBack: () => void;
@@ -162,12 +163,7 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
                   to match modern preferences-panel convention. */}
               <label className='flex min-h-14 items-center justify-between px-4'>
                 <SettingLabel>{_('Sync Server Connected')}</SettingLabel>
-                <input
-                  type='checkbox'
-                  className='toggle'
-                  checked={settings.kosync.enabled}
-                  onChange={handleToggleEnabled}
-                />
+                <Toggle checked={settings.kosync.enabled} onChange={handleToggleEnabled} />
               </label>
               {/* SettingsSelect handles the chromeless treatment, the
                   custom MdArrowDropDown icon at the trailing edge (so the

@@ -32,6 +32,7 @@ import BackgroundTextureSelector from './color/BackgroundTextureSelector';
 import HighlightColorsEditor from './color/HighlightColorsEditor';
 import CodeHighlightingSettings from './color/CodeHighlightingSettings';
 import ReadingRulerSettings from './color/ReadingRulerSettings';
+import { Toggle } from '../primitives/toggle';
 
 const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -356,9 +357,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             )}
           >
             <SettingLabel>{_('Invert Image In Dark Mode')}</SettingLabel>
-            <input
-              type='checkbox'
-              className='toggle'
+            <Toggle
               checked={invertImgColorInDark}
               disabled={!isDarkMode}
               onChange={() => setInvertImgColorInDark(!invertImgColorInDark)}
@@ -370,12 +369,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
             className='flex cursor-pointer items-center justify-between px-4'
           >
             <SettingLabel>{_('Override Book Color')}</SettingLabel>
-            <input
-              type='checkbox'
-              className='toggle'
-              checked={overrideColor}
-              onChange={() => setOverrideColor(!overrideColor)}
-            />
+            <Toggle checked={overrideColor} onChange={() => setOverrideColor(!overrideColor)} />
           </label>
 
           <ThemeColorSelector

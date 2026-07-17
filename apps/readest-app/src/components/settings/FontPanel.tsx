@@ -32,6 +32,7 @@ import { BoxedList, NavigationRow, SettingLabel, SettingsRow } from './primitive
 import NumberInput from './NumberInput';
 import FontDropdown from './FontDropDown';
 import CustomFonts from './CustomFonts';
+import { Toggle } from '../primitives/toggle';
 
 const genCJKFontsList = (sysFonts: string[]) => {
   return Array.from(new Set([...sysFonts, ...CJK_SERIF_FONTS, ...CJK_SANS_SERIF_FONTS]))
@@ -306,12 +307,7 @@ const FontPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
         className='flex cursor-pointer items-center justify-between px-4'
       >
         <SettingLabel>{_('Override Book Font')}</SettingLabel>
-        <input
-          type='checkbox'
-          className='toggle'
-          checked={overrideFont}
-          onChange={() => setOverrideFont(!overrideFont)}
-        />
+        <Toggle checked={overrideFont} onChange={() => setOverrideFont(!overrideFont)} />
       </label>
 
       <BoxedList title={_('Font Size')}>
