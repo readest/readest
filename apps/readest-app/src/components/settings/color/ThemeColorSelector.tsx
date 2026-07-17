@@ -1,11 +1,11 @@
 import React from 'react';
-import { CgColorPicker } from 'react-icons/cg';
 import { MdRadioButtonUnchecked, MdRadioButtonChecked } from 'react-icons/md';
 import { PiPlus } from 'react-icons/pi';
 import { Theme } from '@/styles/themes';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { SectionTitle } from '../primitives';
+import { BiPencil } from 'react-icons/bi';
 
 interface ThemeColorSelectorProps {
   themes: Theme[];
@@ -73,7 +73,7 @@ const ThemeColorSelector: React.FC<ThemeColorSelectorProps> = ({
             <span className='max-w-full truncate'>{_(label)}</span>
             {isCustomizable && themeColor === name && (
               <button onClick={() => onEditTheme(name)}>
-                <CgColorPicker size={iconSize16} className='absolute right-2 top-2' />
+                <BiPencil size={iconSize16} className='absolute right-2 top-2' />
               </button>
             )}
           </button>
