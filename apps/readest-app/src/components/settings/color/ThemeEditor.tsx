@@ -205,7 +205,7 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
             {_('Cancel')}
           </button>
           <button
-            className='btn btn-ghost btn-sm text-base-content px-2'
+            className='btn btn-contrast btn-sm text-base-content px-2'
             onClick={() => onSave(getCustomTheme())}
           >
             {_('Save')}
