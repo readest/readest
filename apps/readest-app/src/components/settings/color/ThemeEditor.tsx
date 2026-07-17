@@ -90,6 +90,10 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
 
   const [themeName, setThemeName] = useState(customTheme?.label || _('Custom'));
 
+  const themeExists = settings.globalReadSettings.customThemes.find(
+    (theme) => theme.name === md5Fingerprint(themeName),
+  );
+
   const getCustomTheme = () => {
     return {
       name: md5Fingerprint(themeName),
@@ -181,26 +185,32 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
           />
         </div>
       </div>
-      <div className='flex justify-end sticky bottom-0 bg-base-200 py-2'>
-        <button className='btn btn-ghost btn-sm px-2' onClick={onCancel}>
-          {_('Cancel')}
-        </button>
-        {settings.globalReadSettings.customThemes.find(
-          (theme) => theme.name === md5Fingerprint(themeName),
-        ) && (
+      <div
+        className={clsx(
+          'flex sticky bottom-0 bg-base-200 py-2',
+          themeExists ? 'justify-between' : 'justify-end',
+        )}
+      >
+        {themeExists && (
           <button
-            className={clsx('btn btn-ghost btn-sm px-2')}
+            className='btn btn-ghost btn-sm px-2 text-white bg-red-500 hover:bg-red-600'
             onClick={() => onDelete(getCustomTheme())}
           >
             {_('Delete')}
           </button>
         )}
-        <button
-          className='btn btn-ghost btn-sm text-base-content px-2'
-          onClick={() => onSave(getCustomTheme())}
-        >
-          {_('Save')}
-        </button>
+
+        <div>
+          <button className='btn btn-ghost btn-sm px-2' onClick={onCancel}>
+            {_('Cancel')}
+          </button>
+          <button
+            className='btn btn-ghost btn-sm text-base-content px-2'
+            onClick={() => onSave(getCustomTheme())}
+          >
+            {_('Save')}
+          </button>
+        </div>
       </div>
     </div>
   );
