@@ -50,6 +50,19 @@ const ThemePreview: React.FC<{
   );
 };
 
+const ThemeColorInput: React.FC<{
+  label: string;
+  hex: string;
+  onChange: (hex: string) => void;
+}> = ({ label, hex, onChange }) => {
+  return (
+    <div className='flex gap-2 items-center justify-between'>
+      <span>{label}</span>
+      <ColorInput label='' value={hex} onChange={onChange} />
+    </div>
+  );
+};
+
 const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete, onCancel }) => {
   const _ = useTranslation();
   const { settings } = useSettingsStore();
@@ -136,19 +149,23 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
         <div className='bg-base-200 rounded-lg p-3'>
           <h3 className='mb-3 text-center font-medium'>{_('Light Mode')}</h3>
 
-          <ColorInput label={_('Text Color')} value={lightTextColor} onChange={setLightTextColor} />
-
-          <ColorInput
-            label={_('Background Color')}
-            value={lightBackgroundColor}
-            onChange={setLightBackgroundColor}
-          />
-
-          <ColorInput
-            label={_('Link Color')}
-            value={lightPrimaryColor}
-            onChange={setLightPrimaryColor}
-          />
+          <div className='flex flex-col gap-2'>
+            <ThemeColorInput
+              label={_('Text Color')}
+              hex={lightTextColor}
+              onChange={setLightTextColor}
+            />
+            <ThemeColorInput
+              label={_('Background Color')}
+              hex={lightBackgroundColor}
+              onChange={setLightBackgroundColor}
+            />
+            <ThemeColorInput
+              label={_('Primary Color')}
+              hex={lightPrimaryColor}
+              onChange={setLightPrimaryColor}
+            />
+          </div>
 
           <ThemePreview
             textColor={lightTextColor}
@@ -161,19 +178,23 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
         <div className='bg-base-300 rounded-lg p-3'>
           <h3 className='mb-3 text-center font-medium'>{_('Dark Mode')}</h3>
 
-          <ColorInput label={_('Text Color')} value={darkTextColor} onChange={setDarkTextColor} />
-
-          <ColorInput
-            label={_('Background Color')}
-            value={darkBackgroundColor}
-            onChange={setDarkBackgroundColor}
-          />
-
-          <ColorInput
-            label={_('Link Color')}
-            value={darkPrimaryColor}
-            onChange={setDarkPrimaryColor}
-          />
+          <div className='flex flex-col gap-2'>
+            <ThemeColorInput
+              label={_('Text Color')}
+              hex={darkTextColor}
+              onChange={setDarkTextColor}
+            />
+            <ThemeColorInput
+              label={_('Background Color')}
+              hex={darkBackgroundColor}
+              onChange={setDarkBackgroundColor}
+            />
+            <ThemeColorInput
+              label={_('Primary Color')}
+              hex={darkPrimaryColor}
+              onChange={setDarkPrimaryColor}
+            />
+          </div>
 
           <ThemePreview
             textColor={darkTextColor}
