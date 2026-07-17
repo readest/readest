@@ -35,6 +35,7 @@ import { formatPlaybackTime } from '@/utils/time';
 import Dialog from '@/components/Dialog';
 import { TTSPlaybackInfo } from './usePlaybackInfo';
 import { useCountdownLabel } from './useCountdownLabel';
+import Slider from '@/components/Slider';
 import TTSScrubber from './TTSScrubber';
 import SpeedChips, { formatRate } from './SpeedChips';
 import GapChips, { formatGap } from './GapChips';
@@ -467,7 +468,20 @@ const TTSPlayerSheet = ({
         />
       )}
       {view === 'speed' && (
-        <div className='flex w-full flex-col items-center pb-4 pt-2'>
+        <div className='flex w-full flex-col items-center gap-4 pb-4 pt-2'>
+          <div className='w-full px-2'>
+            <Slider
+              label={_('Speed')}
+              min={0.5}
+              max={3.0}
+              step={0.05}
+              initialValue={rate}
+              bubbleLabel={formatRate(rate)}
+              minLabel={_('Slow')}
+              maxLabel={_('Fast')}
+              onChange={handleSelectRate}
+            />
+          </div>
           <SpeedChips rate={rate} onSelect={handleSelectRate} />
           {hasGapControl && (
             <>

@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import { useTranslation } from '@/hooks/useTranslation';
 
-export const SPEED_PRESETS = [0.5, 0.75, 0.8, 0.85, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0];
+export const SPEED_PRESETS = [0.5, 0.75, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0];
 
 export const formatRate = (rate: number) => `${parseFloat(rate.toFixed(2))}×`;
 
