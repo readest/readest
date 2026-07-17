@@ -150,8 +150,13 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         return forward ? originals.next() : originals.prev();
       }
     };
-    view.prev = (distance?: number) => void capturedTurn(false, distance);
-    view.next = (distance?: number) => void capturedTurn(true, distance);
+    // Return the turn's promise (the foliate originals do too, despite the
+    // published void type): the corner auto-turn awaits it to hold its
+    // isAutoTurning guard up until the turn settles — discarding it resolves
+    // awaiters ~300ms early, and the #873 selection scroll-pin then snaps the
+    // still-animating page straight back (nightly Android e2e regression).
+    view.prev = (distance?: number) => capturedTurn(false, distance);
+    view.next = (distance?: number) => capturedTurn(true, distance);
 
     return () => {
       view.prev = originals.prev;

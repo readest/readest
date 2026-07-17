@@ -102,3 +102,39 @@ describe('useCapturedTurn scroll-lock gate', () => {
     expect(h.controller.beginDrag).not.toHaveBeenCalled();
   });
 });
+
+describe('useCapturedTurn view.next replacement', () => {
+  // The corner auto-turn awaits view.next() to keep its isAutoTurning guard up
+  // (and the #873 selection scroll-pin suspended) until the turn settles. The
+  // replaced view.next must return the turn's promise — discarding it resolves
+  // awaiters while the page is still animating, and the pin snaps the turn back.
+  test('the replaced view.next resolves only when the underlying turn settles', async () => {
+    const savedStyle = h.viewSettings.pageTurnStyle;
+    // push is never captured, so the wrapper takes the originals fallback path.
+    h.viewSettings.pageTurnStyle = 'push';
+    let resolveTurn!: () => void;
+    const originalNext = vi.fn(
+      () =>
+        new Promise<void>((r) => {
+          resolveTurn = r;
+        }),
+    );
+    const view = {
+      renderer: h.renderer,
+      prev: vi.fn(),
+      next: originalNext,
+    } as unknown as FoliateView;
+    renderHook(() => useCapturedTurn('book-1', { current: view }));
+
+    const settled = vi.fn();
+    Promise.resolve(view.next() as unknown as Promise<void>).then(settled);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(originalNext).toHaveBeenCalled();
+    expect(settled).not.toHaveBeenCalled();
+
+    resolveTurn();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(settled).toHaveBeenCalled();
+    h.viewSettings.pageTurnStyle = savedStyle;
+  });
+});
