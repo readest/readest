@@ -26,7 +26,8 @@ What we take from Adwaita:
 - **Boldly minimal.** Restraint over density. Whitespace is structural.
 - **Surface hierarchy** — window → view → card — three explicit elevation tiers, no shadow
   gymnastics.
-- **Color discipline.** Brand color is rare and earned. Neutral palette carries the weight.
+- **Color discipline.** Brand color is rare, reserved for key actions. Neutral palette
+  carries the weight.
 - **Boxed lists are the chassis.** AdwActionRow's prefix · title · suffix anatomy is the
   canonical settings/list row everywhere.
 - **Pills, ghosts, flats.** Three-tier button palette: pill/circular ghost in headers, flat
@@ -63,13 +64,17 @@ detached card siblings of the dictionary list above it because they share
 >
 > **Good**: list and add-button share the same surface vocabulary. The eye flows.
 
-#### 2.2 Color is earned
+#### 2.2 Brand color is reserved for CTAs
 
-Brand `primary` is reserved for **the** primary action of a surface. Most actions don't have
-a primary action — they have a list of equally-weighted choices, or a single accent.
+Brand `primary` is reserved for true **call-to-action** moments — the actions the product
+invites the user to take. A surface's primary action is usually not a CTA: Save, Confirm,
+Connect just complete what the user already started, and use the theme-neutral
+`btn-contrast` (§4.1) instead of brand color.
 
 - Settings dialog has no primary. Every panel is a list of toggles. **Zero brand color.**
-- "Import a Book" in onboarding is a primary CTA. **One brand color.**
+- "Save" in an edit dialog is the surface's primary action, not a CTA. **`btn-contrast`,
+  zero brand color.**
+- "Import a Book" in onboarding is a true CTA. **One brand color (`btn-primary`).**
 - "Add Web Search" extends a list — it's not the surface's primary action. **Neutral.**
 
 #### 2.3 Two-step depth
@@ -95,8 +100,9 @@ gimmicky under Adwaita's calm rhythm.
 #### 2.6 Eink-first by default
 
 Every custom-styled bordered surface gets the `eink-bordered` class. Every primary action
-gets `btn-primary` (which has dedicated eink rules). Don't rely on color or shadow alone
-for hierarchy — eink screens have neither.
+gets `btn-contrast` (already e-ink-correct) or, for true CTAs, `btn-primary` (which has
+dedicated eink rules). Don't rely on color or shadow alone for hierarchy — eink screens
+have neither.
 
 If you can't toggle Settings → Misc → Eink and still tell which button is the CTA, the
 hierarchy is broken.
@@ -214,12 +220,32 @@ list), it inherits the card's surface treatment: same `bg-base-100`, same
 
 ### 4. Action vocabulary
 
-Six archetypes. Pick by **role**, not by **appearance**.
+Seven archetypes. Pick by **role**, not by **appearance**.
 
-#### 4.1 Accent CTA
+#### 4.1 Contrast primary
 
-The primary, accent-colored button. **One per surface, max.** Submit on a form, "Open
-Book", "Sign In".
+The default solid primary button: theme-neutral `base-content` background with a
+`base-100` label (`.btn-contrast` in `globals.css`). Use it for the primary action of a
+surface — Save, Confirm, Connect, Apply, dialog submits. **Most primary buttons should
+be this archetype**, not `btn-primary`.
+
+```tsx
+className = 'btn btn-contrast';
+```
+
+It carries clear weight without spending brand color, fits the minimalist themes, and is
+already e-ink-correct (a solid `base-content` fill needs no inversion).
+
+> **Why changed (Jul 2026):** `btn-primary` used to be the blanket "primary action"
+> class. Primary actions now default to `btn-contrast` so brand color stays reserved
+> for true call-to-action moments (§2.2).
+
+#### 4.2 Accent CTA
+
+The brand-colored button. Reserved for true **call-to-action** moments — actions the
+product invites the user to take: "Sign In", "Import a Book" in onboarding, upgrade
+prompts. **One per surface, max**, and most surfaces have none — if the button merely
+completes what the user already started, use `btn-contrast` (§4.1).
 
 ```tsx
 className = 'btn btn-primary';
@@ -228,7 +254,7 @@ className = 'btn btn-primary';
 Eink: `btn-primary` has dedicated rules (inverts to base-content bg + base-100 text) so it
 stays distinct from secondary actions on monochrome screens.
 
-#### 4.2 Suggested
+#### 4.3 Suggested
 
 A non-accent-but-emphasized action. Used when there are multiple equally-weighted actions
 and one is the recommended path. Adwaita's "suggested-action" CSS class.
@@ -239,7 +265,7 @@ className = 'btn btn-neutral';
 
 Rare. Most surfaces don't need this tier.
 
-#### 4.3 Flat
+#### 4.4 Flat
 
 The default secondary button. Sits on a view or card surface, no border, hover lifts to
 `base-200`. The bulk of buttons should be flat.
@@ -254,7 +280,7 @@ className={clsx(
 )}
 ```
 
-#### 4.4 Pill / Circular ghost
+#### 4.5 Pill / Circular ghost
 
 Compact icon-only buttons in header bars and toolbars. Always `rounded-full`,
 `btn-circle` or hand-rolled circular ghost.
@@ -265,7 +291,7 @@ className = 'btn btn-ghost btn-circle h-8 min-h-8 w-8 p-0';
 
 The window controls in `SettingsDialog.tsx` (search, menu, close) use this archetype.
 
-#### 4.5 Destructive
+#### 4.6 Destructive
 
 Delete, remove, irreversible. Adwaita uses `destructive-action`. Readest uses red
 sparingly — usually only the icon, not the whole button.
@@ -279,7 +305,7 @@ className = 'btn btn-ghost btn-sm shrink-0 px-1';
 For destructive **dialogs** (confirmation modals), the confirm button can be `btn-error`,
 but only in the modal — never on the main surface.
 
-#### 4.6 ListExtension
+#### 4.7 ListExtension
 
 A Readest-named archetype for "add another row to the list above" affordances. The two
 buttons at the bottom of `CustomDictionaries.tsx` are the canonical example.
@@ -731,7 +757,8 @@ override layer in `src/styles/globals.css:484-622` that:
 - Removes all `box-shadow`.
 - Forces `text-base-content`, `text-blue-*`, `text-red-*`, `text-neutral-content` to a
   single foreground color.
-- Inverts `btn-primary` and `btn-outline` to base-content bg + base-100 text.
+- Inverts `btn-primary` and `btn-outline` to base-content bg + base-100 text
+  (`btn-contrast` already renders this way in every mode).
 - Adds 1px contrast borders to `.eink-bordered`, `.modal-box`, `.menu-container`,
   `.popup-container`, `.alert`, `.opds-navigation .card`, `.booknote-item`,
   `.bookitem-main`.
@@ -741,7 +768,8 @@ What this means for new components:
 | Surface type                         | Required class          | Why                                                           |
 | ------------------------------------ | ----------------------- | ------------------------------------------------------------- |
 | Custom bordered button or input      | `eink-bordered`         | Gets the 1px contrast border in eink                          |
-| Primary CTA                          | `btn-primary`           | Picks up the inverted treatment                               |
+| Primary action (default)             | `btn-contrast`          | Solid base-content fill is already e-ink-correct              |
+| Accent CTA                           | `btn-primary`           | Picks up the inverted treatment                               |
 | Cancel / secondary action            | `btn-ghost` (no border) | Reads as "outlined" only after pairing with the CTA           |
 | Card / panel using `border-base-200` | `eink-bordered`         | Otherwise the soft border vanishes in eink                    |
 | Modal / Popup                        | (auto)                  | `modal-box` and `.popup-container` are handled in globals.css |
@@ -830,7 +858,7 @@ or commit reference.
   Import Dictionary
 </button>
 
-// Correct: ListExtension archetype (see §4.6)
+// Correct: ListExtension archetype (see §4.7)
 ```
 
 Why it broke: the buttons read as primary CTAs but are list extensions. They competed
@@ -904,7 +932,8 @@ weight for hierarchy on muted secondary text.
 
 // Correct: pick an archetype from §4.
 <button className="btn btn-ghost">Cancel</button>      // Flat
-<button className="btn btn-primary">Save</button>      // Accent CTA
+<button className="btn btn-contrast">Save</button>     // Contrast primary
+<button className="btn btn-primary">Sign In</button>   // Accent CTA (true CTAs only)
 ```
 
 Why: daisyui's `btn` default isn't tuned for any specific role. Pick from the action
@@ -951,8 +980,9 @@ When designing a new surface, walk this checklist:
 
 1. **What's the surface tier?** Window / View / Card. (§3)
 2. **What's the corner radius?** Match the tier. (§3)
-3. **Is there a primary action?** If yes, ONE accent CTA. If no, all flats. (§4.1, §4.3)
-4. **Are there list extensions?** Use the ListExtension archetype, not `btn-outline btn-primary`. (§4.6)
+3. **Is there a primary action?** If yes, ONE solid primary — `btn-contrast` by default,
+   `btn-primary` only for a true CTA. If no, all flats. (§4.1, §4.2, §4.4)
+4. **Are there list extensions?** Use the ListExtension archetype, not `btn-outline btn-primary`. (§4.7)
 5. **Is it a list?** Use the BoxedList chassis with ActionRow / SwitchRow / ComboRow / ExpanderRow rows. (§5)
 6. **Does it need `eink-bordered`?** If it has a soft border that must stay visible in
    eink mode, yes. (§8)
@@ -974,7 +1004,9 @@ When designing a new surface, walk this checklist:
 - **AdwBanner**: top-of-window inline alert (persistent).
 - **AdwToast**: bottom slide-in transient alert.
 - **Window / View / Card**: surface tiers (§3).
-- **ListExtension**: Readest-named archetype for "+ add new row" buttons (§4.6).
+- **btn-contrast**: theme-neutral solid primary button (`base-content` bg, `base-100`
+  label) defined in `globals.css`; the default for surface-primary actions (§4.1).
+- **ListExtension**: Readest-named archetype for "+ add new row" buttons (§4.7).
 - **eink-bordered**: utility class in `globals.css` that gives a surface its e-ink-mode
   contrast border. Opt-in.
 - **Pill ghost**: circular icon button, `btn-ghost btn-circle`.
