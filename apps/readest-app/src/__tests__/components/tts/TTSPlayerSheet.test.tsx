@@ -195,11 +195,14 @@ describe('TTSPlayerSheet', () => {
     expect(props.onForward).toHaveBeenCalledWith(false);
   });
 
-  test('speed button drills into the chips and selecting persists the rate', () => {
+  test('speed button drills into the ruler and releasing a drag persists the rate', () => {
     const props = makeProps();
     render(<TTSPlayerSheet {...props} />);
     fireEvent.click(screen.getByLabelText('Speed'));
-    fireEvent.click(screen.getByRole('radio', { name: '1.5×' }));
+    const slider = screen.getByRole('slider', { name: 'Speed' });
+    fireEvent.change(slider, { target: { value: '1.5' } });
+    expect(props.onSetRate).not.toHaveBeenCalled();
+    fireEvent.pointerUp(slider);
     expect(props.onSetRate).toHaveBeenCalledWith(1.5);
     expect(viewSettings['ttsRate']).toBe(1.5);
     expect(settings.globalViewSettings.ttsRate).toBe(1.5);
