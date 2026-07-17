@@ -16,13 +16,13 @@ describe('SpeedChips', () => {
     render(<SpeedChips rate={1.0} onSelect={vi.fn()} />);
     const active = screen.getByRole('radio', { checked: true });
     expect(active.textContent).toBe('1×');
-    expect(screen.getAllByRole('radio').length).toBe(11);
+    expect(screen.getAllByRole('radio').length).toBe(13);
   });
 
   test('an off-preset persisted rate appears as an extra active chip in order', () => {
     render(<SpeedChips rate={1.3} onSelect={vi.fn()} />);
     const chips = screen.getAllByRole('radio');
-    expect(chips.length).toBe(12);
+    expect(chips.length).toBe(14);
     const labels = chips.map((c) => c.textContent);
     expect(labels.indexOf('1.3×')).toBe(labels.indexOf('1.25×') + 1);
     expect(screen.getByRole('radio', { checked: true }).textContent).toBe('1.3×');
