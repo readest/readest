@@ -117,32 +117,9 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
           type='text'
           value={themeName}
           onChange={(e) => setThemeName(e.target.value)}
-          className='bg-base-100 text-base-content border-base-200 rounded border p-2 text-sm w-72'
+          className='bg-base-100 text-base-content border-base-200 rounded border p-2 text-sm w-full'
           placeholder='Custom Theme'
         />
-        <div className='flex gap-2 justify-end shrink-0'>
-          <button
-            className='btn btn-ghost btn-sm text-base-content px-2'
-            onClick={() => onSave(getCustomTheme())}
-          >
-            {_('Save')}
-          </button>
-
-          {settings.globalReadSettings.customThemes.find(
-            (theme) => theme.name === md5Fingerprint(themeName),
-          ) && (
-            <button
-              className={clsx('btn btn-ghost btn-sm px-2')}
-              onClick={() => onDelete(getCustomTheme())}
-            >
-              {_('Delete')}
-            </button>
-          )}
-
-          <button className='btn btn-ghost btn-sm px-2' onClick={onCancel}>
-            {_('Cancel')}
-          </button>
-        </div>
       </div>
 
       <div className='grid grid-cols-2 gap-6 mt-4'>
@@ -203,6 +180,27 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
             label={_('Preview')}
           />
         </div>
+      </div>
+      <div className='flex justify-end sticky bottom-0 bg-base-200 py-2'>
+        <button className='btn btn-ghost btn-sm px-2' onClick={onCancel}>
+          {_('Cancel')}
+        </button>
+        {settings.globalReadSettings.customThemes.find(
+          (theme) => theme.name === md5Fingerprint(themeName),
+        ) && (
+          <button
+            className={clsx('btn btn-ghost btn-sm px-2')}
+            onClick={() => onDelete(getCustomTheme())}
+          >
+            {_('Delete')}
+          </button>
+        )}
+        <button
+          className='btn btn-ghost btn-sm text-base-content px-2'
+          onClick={() => onSave(getCustomTheme())}
+        >
+          {_('Save')}
+        </button>
       </div>
     </div>
   );
