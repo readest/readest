@@ -35,6 +35,10 @@ export interface TTSCacheStore {
   compact?(): Promise<number | void>;
   // Per-section download status + total size, for the podcast UI.
   getSectionStatuses?(): Promise<Map<number, { total: number; recorded: number; packed: boolean }>>;
+  // Per-ordinal audio durations (seconds) of a section's cached sentences for
+  // one voice, boundary-derived without reading audio. Feeds the timeline's
+  // duration hydration so downloaded chapters report a measured timeline.
+  getSectionDurations?(section: number, voice: string): Promise<Map<number, number>>;
   totalCacheBytes?(): Promise<number>;
   // Flush and release backing resources (the per-book database handle).
   close?(): Promise<void>;
@@ -153,6 +157,15 @@ export class CachingProvider implements SpeechProvider {
     Map<number, { total: number; recorded: number; packed: boolean }>
   > {
     return (await this.#store.getSectionStatuses?.()) ?? new Map();
+  }
+
+  async getSectionDurations(section: number, voice: string): Promise<Map<number, number>> {
+    try {
+      return (await this.#store.getSectionDurations?.(section, voice)) ?? new Map();
+    } catch (err) {
+      console.warn('TTS cache duration read failed', err);
+      return new Map();
+    }
   }
 
   async totalCacheBytes(): Promise<number> {

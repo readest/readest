@@ -14,6 +14,7 @@ import { WebSpeechClient } from './WebSpeechClient';
 import { NativeTTSClient } from './NativeTTSClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
 import { SectionTimeline, TimelineSentence } from './SectionTimeline';
+import { hydrateProvisionalDurations } from './ttsDuration';
 import { DownloadableSentence, SectionEnumerator, TTSDownloader } from './TTSDownloader';
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
@@ -546,7 +547,34 @@ export class TTSController extends EventTarget {
       this.#ttsSectionIndex,
       sentences.map((s) => `${s.blockIndex}:${s.markName}`),
     );
+    // Off the critical path: pull cached per-sentence durations (downloaded
+    // or previously played audio) into the duration store, so a fully cached
+    // chapter reports a fully measured timeline — without this the buffered
+    // bar showed an "unbuffered" tail on downloaded chapters until every
+    // sentence had been replayed.
+    void this.#hydrateTimelineDurations(timeline, sentences, this.#ttsSectionIndex);
     return timeline;
+  }
+
+  async #hydrateTimelineDurations(
+    timeline: SectionTimeline,
+    sentences: TimelineSentence[],
+    sectionIndex: number,
+  ): Promise<void> {
+    try {
+      const durations = await this.ttsClient.getSectionDurations?.(sectionIndex);
+      if (!durations?.size) return;
+      // A section change or voice switch rebuilt the timeline meanwhile.
+      if (this.#sectionTimeline !== timeline) return;
+      const applied = hydrateProvisionalDurations(
+        this.ttsClient.getVoiceId(),
+        sentences,
+        durations,
+      );
+      if (applied > 0) timeline.refresh();
+    } catch {
+      // Cache is best-effort; the timeline keeps its estimates.
+    }
   }
 
   // Build a downloader for headless pre-synthesis, or null when the Edge

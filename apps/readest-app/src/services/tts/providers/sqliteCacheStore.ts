@@ -538,6 +538,37 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     return out;
   }
 
+  // Per-ordinal seconds for one voice's cached sentences of a section. Reads
+  // boundaries/duration_ms only (audio stays untouched, packed or not):
+  // decode-time duration when recorded, else the last word boundary's end.
+  async getSectionDurations(section: number, voice: string): Promise<Map<number, number>> {
+    await this.#ensureSchema();
+    const out = new Map<number, number>();
+    const rows = await this.#db.select<
+      DatabaseRow & { ordinal: number; boundaries: string; duration_ms: number | null }
+    >(
+      `SELECT mm.ordinal, e.boundaries, e.duration_ms FROM manifest_marks mm
+         JOIN entries e ON e.key = mm.key
+        WHERE mm.section = ? AND e.voice = ?`,
+      [section, voice],
+    );
+    for (const row of rows) {
+      let seconds = row.duration_ms != null ? row.duration_ms / 1000 : 0;
+      if (!(seconds > 0)) {
+        try {
+          const boundaries = JSON.parse(row.boundaries) as TTSWordBoundary[];
+          const last = boundaries[boundaries.length - 1];
+          // Boundary offsets are Edge wire ticks (100ns) from stream start.
+          if (last) seconds = (last.offset + last.duration) / 10_000_000;
+        } catch {
+          continue;
+        }
+      }
+      if (seconds > 0) out.set(row.ordinal, seconds);
+    }
+    return out;
+  }
+
   async totalCacheBytes(): Promise<number> {
     await this.#ensureSchema();
     const rows = await this.#db.select<DatabaseRow & { total: number | null }>(

@@ -122,6 +122,26 @@ export const recordProvisionalDuration = (voiceId: string, text: string, seconds
 export const getMeasuredDuration = (voiceId: string, text: string): number | undefined =>
   measured.get(durationKey(voiceId, text));
 
+// Bulk provisional hydration from the persistent audio cache: `durations`
+// maps a section's sentence ordinals to boundary-derived seconds. Lets a
+// downloaded (or previously played) chapter start with a fully measured
+// timeline instead of estimates, without decoding any audio. Returns how
+// many sentences were applied.
+export const hydrateProvisionalDurations = (
+  voiceId: string,
+  sentences: { text: string }[],
+  durations: Map<number, number>,
+): number => {
+  let applied = 0;
+  for (const [ordinal, seconds] of durations) {
+    const sentence = sentences[ordinal];
+    if (!sentence || !Number.isFinite(seconds) || seconds <= 0) continue;
+    recordProvisionalDuration(voiceId, sentence.text, seconds);
+    applied += 1;
+  }
+  return applied;
+};
+
 export const calibrateVoiceRate = (voiceId: string, text: string, seconds: number): void => {
   if (!Number.isFinite(seconds) || seconds <= 0) return;
   const chars = normalizeText(text).length;

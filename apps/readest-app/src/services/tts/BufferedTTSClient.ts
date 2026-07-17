@@ -605,6 +605,13 @@ export class BufferedTTSClient implements TTSClient {
     }
   }
 
+  // Per-ordinal cached durations for the section under the current voice,
+  // consumed by the timeline's hydration pass.
+  async getSectionDurations(section: number): Promise<Map<number, number>> {
+    if (!(this.provider instanceof CachingProvider)) return new Map();
+    return this.provider.getSectionDurations(section, this.#currentVoiceId);
+  }
+
   // ── Headless pre-synthesis (TTSDownloader CacheWarmer) ─────────────────
 
   // Whether this client has a persistent cache to download into.

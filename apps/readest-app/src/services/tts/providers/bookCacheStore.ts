@@ -202,6 +202,11 @@ export class BookTTSCacheStore implements TTSCacheStore {
     return opened ? opened.store.getSectionStatuses() : new Map();
   }
 
+  async getSectionDurations(section: number, voice: string): Promise<Map<number, number>> {
+    const opened = await this.#open();
+    return opened ? opened.store.getSectionDurations(section, voice) : new Map();
+  }
+
   async totalCacheBytes(): Promise<number> {
     const opened = await this.#open();
     return opened ? opened.store.totalCacheBytes() : 0;
