@@ -196,6 +196,13 @@ describe('TTSPlayerSheet', () => {
     expect(props.onForward).toHaveBeenCalledWith(false);
   });
 
+  test('main view offers a close button since desktop has no drag handle', () => {
+    const props = makeProps();
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Close'));
+    expect(props.onClose).toHaveBeenCalled();
+  });
+
   test('main view keeps the cover clear of the sheet top edge on desktop', () => {
     // The sheet content is pulled up (mt-[-4px]) to tuck under the mobile
     // drag handle; on sm+ the handle is hidden and the main view needs its
