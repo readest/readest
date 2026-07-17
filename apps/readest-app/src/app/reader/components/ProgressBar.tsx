@@ -194,7 +194,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           isVertical ? 'h-full' : 'w-full',
           // Sticky bar grows on the left; the info widgets pack to the right
           // with even gaps. Without it, keep the 3-zone left/center/right row.
-          stickyBarActive ? 'gap-x-3' : 'justify-between',
+          stickyBarActive ? 'gap-x-3' : 'justify-between gap-x-2',
         )}
         style={isVertical ? {} : { height: `${viewSettings.marginBottomPx}px` }}
       >
@@ -210,9 +210,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         {hasRemainingInfo && (
           <div
             className={clsx(
-              'remaining-info whitespace-nowrap text-start',
-              !stickyBarActive && 'flex-1',
-              showStatusInfo && 'overflow-hidden',
+              'remaining-info text-start truncate',
+              !stickyBarActive && 'flex-1 min-w-0',
             )}
           >
             {viewSettings.showRemainingTime ? (
@@ -267,8 +266,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
         <div
           className={clsx(
-            'progress-info items-center overflow-hidden whitespace-nowrap text-end tabular-nums',
-            !stickyBarActive && 'flex-1',
+            'progress-info items-center text-end tabular-nums truncate',
+            !stickyBarActive && 'flex-1 min-w-0',
           )}
         >
           {viewSettings.showProgressInfo && (
