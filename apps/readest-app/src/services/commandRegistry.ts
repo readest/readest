@@ -385,6 +385,12 @@ const colorPanelItems = [
     section: 'TTS',
   },
   {
+    id: 'settings.tts.playerStyle',
+    labelKey: _('TTS Player Style'),
+    keywords: ['tts', 'player', 'mini', 'style', 'cover', 'full', 'minimal'],
+    section: 'TTS',
+  },
+  {
     id: 'settings.color.readingRuler',
     labelKey: _('Reading Ruler'),
     keywords: ['reading', 'ruler', 'line', 'guide', 'focus'],

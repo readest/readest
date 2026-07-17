@@ -1852,7 +1852,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "將您的書庫、閱讀進度和高亮與您的 Microsoft OneDrive 同步。",
   "Readest only accesses the files it creates in your OneDrive.": "Readest 只會存取它在您的 OneDrive 中建立的檔案。",
   "Sentence Pause": "句間停頓",
-  "Paragraph Gap": "段落間隔",
   "{{minutes}}m left": "{{minutes}}分鐘",
   "{{hours}}h left": "{{hours}}小時",
   "Time Remaining": "剩餘時間",
@@ -1892,5 +1891,11 @@
   "Reuse generated speech across sessions without refetching": "跨工作階段重複使用已產生的語音，無需重新取得",
   "Sync Audio Cache": "同步音訊快取",
   "Share section audio between your devices through your file sync service": "透過您的檔案同步服務在裝置間共享章節音訊",
-  "Storage Limit": "儲存空間上限"
+  "Storage Limit": "儲存空間上限",
+  "Playback settings": "播放設定",
+  "Paragraph Pause": "段落間隔",
+  "Player Style": "播放器樣式",
+  "Full": "完整",
+  "Minimal": "簡約",
+  "TTS Player Style": "TTS 播放器樣式"
 }

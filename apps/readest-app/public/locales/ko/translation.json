@@ -1852,7 +1852,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "라이브러리, 읽기 진행 상황, 하이라이트를 Microsoft OneDrive와 동기화합니다.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest는 OneDrive에서 직접 만든 파일에만 접근합니다.",
   "Sentence Pause": "문장 사이 일시정지",
-  "Paragraph Gap": "문단 간 정지",
   "{{minutes}}m left": "{{minutes}}분 남음",
   "{{hours}}h left": "{{hours}}시간 남음",
   "Time Remaining": "남은 시간",
@@ -1892,5 +1891,11 @@
   "Reuse generated speech across sessions without refetching": "생성된 음성을 다시 가져오지 않고 세션 간에 재사용합니다",
   "Sync Audio Cache": "오디오 캐시 동기화",
   "Share section audio between your devices through your file sync service": "파일 동기화 서비스를 통해 기기 간에 섹션 오디오 공유",
-  "Storage Limit": "저장 용량 제한"
+  "Storage Limit": "저장 용량 제한",
+  "Playback settings": "재생 설정",
+  "Paragraph Pause": "문단 간 정지",
+  "Player Style": "플레이어 스타일",
+  "Full": "전체",
+  "Minimal": "미니멀",
+  "TTS Player Style": "TTS 플레이어 스타일"
 }

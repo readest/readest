@@ -1922,7 +1922,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Sincronize sua biblioteca, progresso de leitura e destaques com o seu Microsoft OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "O Readest só acessa os arquivos que cria no seu OneDrive.",
   "Sentence Pause": "Pausa entre frases",
-  "Paragraph Gap": "Pausa entre parágrafos",
   "{{minutes}}m left": "{{minutes}} min restantes",
   "{{hours}}h left": "{{hours}} h restantes",
   "Time Remaining": "Tempo restante",
@@ -1964,5 +1963,11 @@
   "Reuse generated speech across sessions without refetching": "Reutilizar a voz gerada entre sessões sem baixá-la novamente",
   "Sync Audio Cache": "Sincronizar cache de áudio",
   "Share section audio between your devices through your file sync service": "Compartilhar o áudio das seções entre seus dispositivos pelo seu serviço de sincronização de arquivos",
-  "Storage Limit": "Limite de armazenamento"
+  "Storage Limit": "Limite de armazenamento",
+  "Playback settings": "Configurações de reprodução",
+  "Paragraph Pause": "Pausa entre parágrafos",
+  "Player Style": "Estilo do reprodutor",
+  "Full": "Completo",
+  "Minimal": "Minimalista",
+  "TTS Player Style": "Estilo do reprodutor TTS"
 }

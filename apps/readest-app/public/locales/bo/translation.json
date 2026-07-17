@@ -1852,7 +1852,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ཁྱེད་ཀྱི་དཔེ་མཛོད་དང་། ཀློག་པའི་ཡར་འཕེལ། གཙོ་གནད་བཅས་ཁྱེད་ཀྱི་ Microsoft OneDrive དང་མཉམ་སྒྲིག་བྱེད།",
   "Readest only accesses the files it creates in your OneDrive.": "Readest ཀྱིས་ཁྱེད་ཀྱི་ OneDrive ནང་རང་ཉིད་ཀྱིས་བཟོས་པའི་ཡིག་ཆ་ཁོ་ནར་ལྟ་སྤྱོད་བྱེད།",
   "Sentence Pause": "ཚིག་གྲུབ་བར་གསེང་",
-  "Paragraph Gap": "དོན་ཚན་བར་གསེང་",
   "{{minutes}}m left": "ད་དུང་ {{minutes}} སྐར་མ་ལྷག་ཡོད།",
   "{{hours}}h left": "ད་དུང་ {{hours}} ཆུ་ཚོད་ལྷག་ཡོད།",
   "Time Remaining": "ལྷག་ཡོད་པའི་དུས་ཚོད།",
@@ -1892,5 +1891,11 @@
   "Reuse generated speech across sessions without refetching": "བཟོས་ཟིན་པའི་སྐད་སྒྲ་བསྐྱར་དུ་ལེན་མི་དགོས་པར་བསྐྱར་སྤྱོད་བྱེད།",
   "Sync Audio Cache": "སྒྲའི་གསོག་མཛོད་མཉམ་འགྲིག",
   "Share section audio between your devices through your file sync service": "ཡིག་ཆ་མཉམ་འགྲིག་ཞབས་ཞུ་བརྒྱུད་སྒྲིག་ཆས་བར་ས་བཅད་ཀྱི་སྒྲ་མཉམ་སྤྱོད།",
-  "Storage Limit": "གསོག་ཉར་ཚད་བཀག"
+  "Storage Limit": "གསོག་ཉར་ཚད་བཀག",
+  "Playback settings": "གཏོང་བའི་སྒྲིག་སྟངས།",
+  "Paragraph Pause": "དོན་ཚན་བར་གསེང་",
+  "Player Style": "གཏོང་ཆས་ཀྱི་བཟོ་དབྱིབས།",
+  "Full": "ཆ་ཚང་།",
+  "Minimal": "སྟབས་བདེ།",
+  "TTS Player Style": "TTS གཏོང་ཆས་ཀྱི་བཟོ་དབྱིབས།"
 }

@@ -1957,7 +1957,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Sinhronizirajte knjižnico, napredek branja in označbe s svojim Microsoft OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest dostopa le do datotek, ki jih sam ustvari v vašem OneDrive.",
   "Sentence Pause": "Premor med stavki",
-  "Paragraph Gap": "Premor med odstavki",
   "{{minutes}}m left": "Še {{minutes}} min",
   "{{hours}}h left": "Še {{hours}} h",
   "Time Remaining": "Preostali čas",
@@ -2000,5 +1999,11 @@
   "Reuse generated speech across sessions without refetching": "Ponovno uporabi ustvarjeni govor med sejami brez ponovnega prenosa",
   "Sync Audio Cache": "Sinhroniziraj zvočni predpomnilnik",
   "Share section audio between your devices through your file sync service": "Delite zvok razdelkov med napravami prek storitve za sinhronizacijo datotek",
-  "Storage Limit": "Omejitev shrambe"
+  "Storage Limit": "Omejitev shrambe",
+  "Playback settings": "Nastavitve predvajanja",
+  "Paragraph Pause": "Premor med odstavki",
+  "Player Style": "Slog predvajalnika",
+  "Full": "Polni",
+  "Minimal": "Minimalni",
+  "TTS Player Style": "Slog predvajalnika TTS"
 }

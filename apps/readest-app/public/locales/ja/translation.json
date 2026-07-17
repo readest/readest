@@ -1852,7 +1852,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ライブラリ、読書進捗、ハイライトを Microsoft OneDrive と同期します。",
   "Readest only accesses the files it creates in your OneDrive.": "Readest がアクセスするのは、OneDrive 内に自身が作成したファイルのみです。",
   "Sentence Pause": "文間のポーズ",
-  "Paragraph Gap": "段落間のポーズ",
   "{{minutes}}m left": "残り{{minutes}}分",
   "{{hours}}h left": "残り{{hours}}時間",
   "Time Remaining": "残り時間",
@@ -1892,5 +1891,11 @@
   "Reuse generated speech across sessions without refetching": "生成した音声をセッションをまたいで再利用し、再取得を不要にします",
   "Sync Audio Cache": "音声キャッシュを同期",
   "Share section audio between your devices through your file sync service": "ファイル同期サービスを通じてセクションの音声をデバイス間で共有",
-  "Storage Limit": "ストレージ上限"
+  "Storage Limit": "ストレージ上限",
+  "Playback settings": "再生設定",
+  "Paragraph Pause": "段落間のポーズ",
+  "Player Style": "プレーヤーのスタイル",
+  "Full": "フル",
+  "Minimal": "ミニマル",
+  "TTS Player Style": "TTSプレーヤーのスタイル"
 }

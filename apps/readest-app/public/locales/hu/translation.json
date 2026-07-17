@@ -1887,7 +1887,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Szinkronizálja könyvtárát, olvasási haladását és kiemeléseit a Microsoft OneDrive-jával.",
   "Readest only accesses the files it creates in your OneDrive.": "A Readest csak azokhoz a fájlokhoz fér hozzá, amelyeket ő hozott létre a OneDrive-jában.",
   "Sentence Pause": "Mondatszünet",
-  "Paragraph Gap": "Bekezdésszünet",
   "{{minutes}}m left": "{{minutes}} perc van hátra",
   "{{hours}}h left": "{{hours}} óra van hátra",
   "Time Remaining": "Hátralévő idő",
@@ -1928,5 +1927,11 @@
   "Reuse generated speech across sessions without refetching": "A generált beszéd újrafelhasználása a munkamenetek között újbóli letöltés nélkül",
   "Sync Audio Cache": "Hang-gyorsítótár szinkronizálása",
   "Share section audio between your devices through your file sync service": "Szakaszok hangjának megosztása eszközei között a fájlszinkronizálási szolgáltatással",
-  "Storage Limit": "Tárhelykorlát"
+  "Storage Limit": "Tárhelykorlát",
+  "Playback settings": "Lejátszási beállítások",
+  "Paragraph Pause": "Bekezdésszünet",
+  "Player Style": "Lejátszó stílusa",
+  "Full": "Teljes",
+  "Minimal": "Minimális",
+  "TTS Player Style": "TTS lejátszó stílusa"
 }

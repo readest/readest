@@ -1852,7 +1852,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Đồng bộ thư viện, tiến trình đọc và điểm nổi bật của bạn với Microsoft OneDrive của bạn.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest chỉ truy cập các tệp do chính nó tạo trong OneDrive của bạn.",
   "Sentence Pause": "Khoảng dừng giữa các câu",
-  "Paragraph Gap": "Khoảng dừng giữa đoạn văn",
   "{{minutes}}m left": "Còn {{minutes}} phút",
   "{{hours}}h left": "Còn {{hours}} giờ",
   "Time Remaining": "Thời gian còn lại",
@@ -1892,5 +1891,11 @@
   "Reuse generated speech across sessions without refetching": "Dùng lại giọng nói đã tạo giữa các phiên mà không cần tải lại",
   "Sync Audio Cache": "Đồng bộ bộ nhớ đệm âm thanh",
   "Share section audio between your devices through your file sync service": "Chia sẻ âm thanh của các phần giữa các thiết bị qua dịch vụ đồng bộ tệp của bạn",
-  "Storage Limit": "Giới hạn lưu trữ"
+  "Storage Limit": "Giới hạn lưu trữ",
+  "Playback settings": "Cài đặt phát",
+  "Paragraph Pause": "Khoảng dừng giữa đoạn văn",
+  "Player Style": "Kiểu trình phát",
+  "Full": "Đầy đủ",
+  "Minimal": "Tối giản",
+  "TTS Player Style": "Kiểu trình phát TTS"
 }

@@ -425,6 +425,7 @@ export const DEFAULT_TTS_CONFIG: TTSConfig = {
   ttsHighlightOptions: { style: 'highlight', color: '#808080' },
   ttsHighlightGranularity: 'word',
   ttsMediaMetadata: 'sentence',
+  ttsPlayerStyle: 'full',
 };
 
 export const DEFAULT_TRANSLATOR_CONFIG: TranslatorConfig = {

@@ -1922,7 +1922,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Sincronizează-ți biblioteca, progresul citirii și evidențierile cu Microsoft OneDrive-ul tău.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest accesează doar fișierele pe care le creează în OneDrive-ul tău.",
   "Sentence Pause": "Pauză între propoziții",
-  "Paragraph Gap": "Pauză între paragrafe",
   "{{minutes}}m left": "Au rămas {{minutes}} min",
   "{{hours}}h left": "Au rămas {{hours}} h",
   "Time Remaining": "Timp rămas",
@@ -1964,5 +1963,11 @@
   "Reuse generated speech across sessions without refetching": "Reutilizați vocea generată între sesiuni fără a o prelua din nou",
   "Sync Audio Cache": "Sincronizează cache-ul audio",
   "Share section audio between your devices through your file sync service": "Partajați audio-ul secțiunilor între dispozitive prin serviciul de sincronizare a fișierelor",
-  "Storage Limit": "Limită de stocare"
+  "Storage Limit": "Limită de stocare",
+  "Playback settings": "Setări de redare",
+  "Paragraph Pause": "Pauză între paragrafe",
+  "Player Style": "Stilul playerului",
+  "Full": "Complet",
+  "Minimal": "Minimal",
+  "TTS Player Style": "Stilul playerului TTS"
 }

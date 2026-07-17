@@ -1887,7 +1887,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Συγχρονίστε τη βιβλιοθήκη, την πρόοδο ανάγνωσης και τις επισημάνσεις σας με το Microsoft OneDrive σας.",
   "Readest only accesses the files it creates in your OneDrive.": "Το Readest έχει πρόσβαση μόνο στα αρχεία που δημιουργεί στο OneDrive σας.",
   "Sentence Pause": "Παύση μεταξύ προτάσεων",
-  "Paragraph Gap": "Παύση παραγράφου",
   "{{minutes}}m left": "απομένουν {{minutes}} λεπτά",
   "{{hours}}h left": "απομένουν {{hours}} ώρες",
   "Time Remaining": "Υπολειπόμενος χρόνος",
@@ -1928,5 +1927,11 @@
   "Reuse generated speech across sessions without refetching": "Επαναχρησιμοποίηση της παραγόμενης ομιλίας μεταξύ συνεδριών χωρίς εκ νέου λήψη",
   "Sync Audio Cache": "Συγχρονισμός προσωρινής μνήμης ήχου",
   "Share section audio between your devices through your file sync service": "Κοινή χρήση του ήχου ενοτήτων μεταξύ των συσκευών σας μέσω της υπηρεσίας συγχρονισμού αρχείων",
-  "Storage Limit": "Όριο αποθήκευσης"
+  "Storage Limit": "Όριο αποθήκευσης",
+  "Playback settings": "Ρυθμίσεις αναπαραγωγής",
+  "Paragraph Pause": "Παύση παραγράφου",
+  "Player Style": "Στυλ αναπαραγωγής",
+  "Full": "Πλήρες",
+  "Minimal": "Μινιμαλιστικό",
+  "TTS Player Style": "Στυλ αναπαραγωγής TTS"
 }

@@ -1887,7 +1887,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ඔබේ පුස්තකාලය, කියවීමේ ප්‍රගතිය සහ ඉස්මතු කිරීම් ඔබේ Microsoft OneDrive සමඟ සමමුහුර්ත කරන්න.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest ප්‍රවේශ වන්නේ ඔබේ OneDrive හි එය සාදන ගොනුවලට පමණි.",
   "Sentence Pause": "වාක්‍ය අතර විරාමය",
-  "Paragraph Gap": "ඡේද අතර විරාමය",
   "{{minutes}}m left": "මිනිත්තු {{minutes}} ක් ඉතිරි",
   "{{hours}}h left": "පැය {{hours}} ක් ඉතිරි",
   "Time Remaining": "ඉතිරි කාලය",
@@ -1928,5 +1927,11 @@
   "Reuse generated speech across sessions without refetching": "ජනනය කළ කථනය නැවත ලබා නොගෙන සැසි අතර නැවත භාවිත කරන්න",
   "Sync Audio Cache": "ශ්‍රව්‍ය කෑෂය සමමුහුර්ත කරන්න",
   "Share section audio between your devices through your file sync service": "ඔබගේ ගොනු සමමුහුර්ත සේවාව හරහා උපාංග අතර කොටස් ශ්‍රව්‍ය බෙදාගන්න",
-  "Storage Limit": "ගබඩා සීමාව"
+  "Storage Limit": "ගබඩා සීමාව",
+  "Playback settings": "වාදන සැකසුම්",
+  "Paragraph Pause": "ඡේද අතර විරාමය",
+  "Player Style": "වාදක විලාසය",
+  "Full": "සම්පූර්ණ",
+  "Minimal": "අවම",
+  "TTS Player Style": "TTS වාදක විලාසය"
 }

@@ -1887,7 +1887,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "अपनी लाइब्रेरी, पढ़ने की प्रगति और हाइलाइट्स को अपनी Microsoft OneDrive से सिंक करें।",
   "Readest only accesses the files it creates in your OneDrive.": "Readest केवल उन्हीं फ़ाइलों तक पहुँचता है जिन्हें वह आपकी OneDrive में बनाता है।",
   "Sentence Pause": "वाक्यों के बीच विराम",
-  "Paragraph Gap": "अनुच्छेदों के बीच विराम",
   "{{minutes}}m left": "{{minutes}} मिनट शेष",
   "{{hours}}h left": "{{hours}} घंटे शेष",
   "Time Remaining": "शेष समय",
@@ -1928,5 +1927,11 @@
   "Reuse generated speech across sessions without refetching": "जनरेट की गई आवाज़ को दोबारा प्राप्त किए बिना सत्रों में फिर से उपयोग करें",
   "Sync Audio Cache": "ऑडियो कैश सिंक करें",
   "Share section audio between your devices through your file sync service": "अपनी फ़ाइल सिंक सेवा के ज़रिये अपने डिवाइसों के बीच खंड ऑडियो साझा करें",
-  "Storage Limit": "संग्रहण सीमा"
+  "Storage Limit": "संग्रहण सीमा",
+  "Playback settings": "प्लेबैक सेटिंग्स",
+  "Paragraph Pause": "अनुच्छेदों के बीच विराम",
+  "Player Style": "प्लेयर शैली",
+  "Full": "पूर्ण",
+  "Minimal": "न्यूनतम",
+  "TTS Player Style": "TTS प्लेयर शैली"
 }

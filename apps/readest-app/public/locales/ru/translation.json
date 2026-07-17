@@ -1957,7 +1957,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Синхронизируйте свою библиотеку, прогресс чтения и выделения с вашим Microsoft OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest получает доступ только к тем файлам, которые сам создаёт на вашем OneDrive.",
   "Sentence Pause": "Пауза между предложениями",
-  "Paragraph Gap": "Пауза между абзацами",
   "{{minutes}}m left": "Осталось {{minutes}} мин",
   "{{hours}}h left": "Осталось {{hours}} ч",
   "Time Remaining": "Оставшееся время",
@@ -2000,5 +1999,11 @@
   "Reuse generated speech across sessions without refetching": "Повторно использовать созданную речь между сеансами без повторной загрузки",
   "Sync Audio Cache": "Синхронизировать аудиокэш",
   "Share section audio between your devices through your file sync service": "Делитесь аудио разделов между устройствами через сервис синхронизации файлов",
-  "Storage Limit": "Лимит хранилища"
+  "Storage Limit": "Лимит хранилища",
+  "Playback settings": "Настройки воспроизведения",
+  "Paragraph Pause": "Пауза между абзацами",
+  "Player Style": "Стиль плеера",
+  "Full": "Полный",
+  "Minimal": "Минимальный",
+  "TTS Player Style": "Стиль TTS-плеера"
 }

@@ -6,7 +6,11 @@ import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { useTranslation } from '@/hooks/useTranslation';
 import { saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelPanelProp } from './SettingsDialog';
-import { TTSHighlightGranularity, TTSMediaMetadataMode } from '@/services/tts/types';
+import {
+  TTSHighlightGranularity,
+  TTSMediaMetadataMode,
+  TTSPlayerStyle,
+} from '@/services/tts/types';
 import { getTTSCacheConfig, setTTSCacheConfig } from '@/services/tts/providers/bookCacheStore';
 import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from './primitives';
 import TTSHighlightStyleEditor, { TTSHighlightStyle } from './color/TTSHighlightStyleEditor';
@@ -20,6 +24,9 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
 
   const [ttsMediaMetadata, setTtsMediaMetadata] = useState<TTSMediaMetadataMode>(
     viewSettings.ttsMediaMetadata ?? 'sentence',
+  );
+  const [ttsPlayerStyle, setTtsPlayerStyle] = useState<TTSPlayerStyle>(
+    viewSettings.ttsPlayerStyle ?? 'full',
   );
   const [ttsHighlightGranularity, setTtsHighlightGranularity] = useState<TTSHighlightGranularity>(
     viewSettings.ttsHighlightGranularity ?? 'word',
@@ -46,6 +53,7 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
   const handleReset = () => {
     resetToDefaults({
       ttsMediaMetadata: setTtsMediaMetadata as React.Dispatch<React.SetStateAction<string>>,
+      ttsPlayerStyle: setTtsPlayerStyle as React.Dispatch<React.SetStateAction<string>>,
       ttsHighlightGranularity: setTtsHighlightGranularity as React.Dispatch<
         React.SetStateAction<string>
       >,
@@ -62,6 +70,12 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
     saveViewSettings(envConfig, bookKey, 'ttsMediaMetadata', ttsMediaMetadata, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsMediaMetadata]);
+
+  useEffect(() => {
+    if (ttsPlayerStyle === viewSettings.ttsPlayerStyle) return;
+    saveViewSettings(envConfig, bookKey, 'ttsPlayerStyle', ttsPlayerStyle, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ttsPlayerStyle]);
 
   useEffect(() => {
     if (ttsHighlightGranularity === viewSettings.ttsHighlightGranularity) return;
@@ -103,6 +117,10 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
     setTtsMediaMetadata(event.target.value as TTSMediaMetadataMode);
   };
 
+  const handlePlayerStyleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setTtsPlayerStyle(event.target.value as TTSPlayerStyle);
+  };
+
   const handleTTSGranularityChange = (granularity: TTSHighlightGranularity) => {
     setTtsHighlightGranularity(granularity);
   };
@@ -122,6 +140,17 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
       />
 
       <BoxedList title={_('Media Info')} data-setting-id='settings.tts.mediaMetadata'>
+        <SettingsRow label={_('Player Style')} data-setting-id='settings.tts.playerStyle'>
+          <SettingsSelect
+            value={ttsPlayerStyle}
+            onChange={handlePlayerStyleChange}
+            ariaLabel={_('Player Style')}
+            options={[
+              { value: 'full', label: _('Full') },
+              { value: 'minimal', label: _('Minimal') },
+            ]}
+          />
+        </SettingsRow>
         <SettingsRow label={_('Update Frequency')}>
           <SettingsSelect
             value={ttsMediaMetadata}

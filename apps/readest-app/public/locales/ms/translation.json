@@ -1852,7 +1852,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Segerakkan perpustakaan, kemajuan bacaan dan penonjolan anda dengan Microsoft OneDrive anda.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest hanya mengakses fail yang diciptanya dalam OneDrive anda.",
   "Sentence Pause": "Jeda Antara Ayat",
-  "Paragraph Gap": "Jeda antara perenggan",
   "{{minutes}}m left": "{{minutes}} min lagi",
   "{{hours}}h left": "{{hours}} jam lagi",
   "Time Remaining": "Masa berbaki",
@@ -1892,5 +1891,11 @@
   "Reuse generated speech across sessions without refetching": "Guna semula suara yang dijana antara sesi tanpa mendapatkannya semula",
   "Sync Audio Cache": "Segerakkan cache audio",
   "Share section audio between your devices through your file sync service": "Kongsi audio bahagian antara peranti anda melalui perkhidmatan penyegerakan fail",
-  "Storage Limit": "Had storan"
+  "Storage Limit": "Had storan",
+  "Playback settings": "Tetapan main balik",
+  "Paragraph Pause": "Jeda antara perenggan",
+  "Player Style": "Gaya Pemain",
+  "Full": "Penuh",
+  "Minimal": "Minimal",
+  "TTS Player Style": "Gaya Pemain TTS"
 }

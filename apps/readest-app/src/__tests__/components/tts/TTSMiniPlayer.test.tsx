@@ -16,6 +16,7 @@ vi.mock('@/context/EnvContext', () => ({
   }),
 }));
 
+let viewSettingsOverride: Record<string, unknown> = {};
 const readerState = {
   hoveredBookKey: '',
   bottomBarTab: '',
@@ -24,6 +25,7 @@ const readerState = {
     ...DEFAULT_VIEW_CONFIG,
     ...DEFAULT_BOOK_LAYOUT,
     ...DEFAULT_TTS_CONFIG,
+    ...viewSettingsOverride,
   }),
 };
 vi.mock('@/store/readerStore', () => ({
@@ -66,6 +68,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
 
 describe('TTSMiniPlayer', () => {
   beforeEach(() => {
+    viewSettingsOverride = {};
     readerState.hoveredBookKey = '';
     readerState.bottomBarTab = '';
     progressState.sectionLabel = 'Chapter 5';
@@ -77,25 +80,46 @@ describe('TTSMiniPlayer', () => {
     vi.clearAllMocks();
   });
 
-  test('leads with the chapter, keeps time below, and drops title and cover', () => {
+  test('minimal style shows only the time info, dropping chapter, title and cover', () => {
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
     getBookData.mockReturnValue({
       book: { title: 'Alice in Wonderland', coverImageUrl: 'blob:cover' },
     });
     const { container } = render(<TTSMiniPlayer {...makeProps()} />);
-    expect(screen.getByText('Chapter 5')).toBeTruthy();
+    expect(screen.queryByText('Chapter 5')).toBeNull();
     expect(screen.queryByText('Alice in Wonderland')).toBeNull();
     expect(container.querySelector('img')).toBeNull();
     expect(screen.getByText(/0:10/)).toBeTruthy();
     expect(screen.getByText(/-1:30/)).toBeTruthy();
   });
 
-  test('falls back to the book title when no section label exists', () => {
-    progressState.sectionLabel = undefined;
+  test('minimal style stacks the sleep timer on a second line below the time', () => {
+    vi.useFakeTimers();
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
+    render(<TTSMiniPlayer {...makeProps({ timeoutTimestamp: Date.now() + 90_000 })} />);
+    const body = screen.getByLabelText('Open Read Aloud player');
+    expect(body.className).toContain('flex-col');
+    // Time row and timer chip are separate stacked children, so the timer
+    // cannot squeeze the elapsed time into truncation.
+    const timer = screen.getByText(/^1:(2\d|30)$/);
+    const elapsed = screen.getByText('0:10');
+    expect(timer.parentElement).toBe(body);
+    expect(elapsed.parentElement?.parentElement).toBe(body);
+    vi.useRealTimers();
+  });
+
+  test('minimal style centers the time and emphasizes elapsed over remaining', () => {
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
     render(<TTSMiniPlayer {...makeProps()} />);
-    expect(screen.getByText('Alice in Wonderland')).toBeTruthy();
+    const body = screen.getByLabelText('Open Read Aloud player');
+    expect(body.className).toContain('justify-center');
+    const elapsed = screen.getByText('0:10');
+    expect(elapsed.className).toContain('font-medium');
+    expect(screen.getByText(/-1:30/).className).toContain('text-base-content/60');
   });
 
   test('sentence and paragraph skips and play/pause drive the transport callbacks', () => {
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
     const props = makeProps();
     render(<TTSMiniPlayer {...props} />);
     fireEvent.click(screen.getByLabelText('Previous Sentence'));
@@ -113,6 +137,7 @@ describe('TTSMiniPlayer', () => {
   });
 
   test('play and pause glyphs share a size so toggling does not shift the row', () => {
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
     const { rerender } = render(<TTSMiniPlayer {...makeProps({ isPlaying: true })} />);
     const pauseWidth = screen.getByLabelText('Pause').querySelector('svg')?.getAttribute('width');
     rerender(<TTSMiniPlayer {...makeProps({ isPlaying: false })} />);
@@ -130,13 +155,15 @@ describe('TTSMiniPlayer', () => {
   });
 
   test('tapping the body expands the player sheet', () => {
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
     const props = makeProps();
     render(<TTSMiniPlayer {...props} />);
-    fireEvent.click(screen.getByText('Chapter 5'));
+    fireEvent.click(screen.getByLabelText('Open Read Aloud player'));
     expect(props.onExpand).toHaveBeenCalled();
   });
 
   test('the settings affordance shows the speed and opens the full player', () => {
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
     const props = makeProps();
     render(<TTSMiniPlayer {...props} />);
     const btn = screen.getByLabelText('Playback settings');
@@ -199,5 +226,39 @@ describe('TTSMiniPlayer', () => {
     render(<TTSMiniPlayer {...makeProps({ timeoutTimestamp: Date.now() + 90_000 })} />);
     expect(screen.getByText(/^1:(2\d|30)$/)).toBeTruthy();
     vi.useRealTimers();
+  });
+
+  // Player Style 'full': the pre-#5162 card (0.11.18) with book cover, book
+  // title, chapter + timestamps line, and the sentence-only transport.
+  test('full style is the default and shows cover, book title, chapter and timestamps', () => {
+    getBookData.mockReturnValue({
+      book: { title: 'Alice in Wonderland', coverImageUrl: 'blob:cover' },
+    });
+    const { container } = render(<TTSMiniPlayer {...makeProps()} />);
+    expect(screen.getByText('Alice in Wonderland')).toBeTruthy();
+    expect(container.querySelector('img')?.getAttribute('src')).toBe('blob:cover');
+    expect(screen.getByText('Chapter 5 · 0:10 · -1:30')).toBeTruthy();
+  });
+
+  test('full style keeps the sentence-only transport without minimal chrome', () => {
+    const props = makeProps();
+    render(<TTSMiniPlayer {...props} />);
+    fireEvent.click(screen.getByLabelText('Previous Sentence'));
+    expect(props.onBackward).toHaveBeenCalledWith(true);
+    fireEvent.click(screen.getByLabelText('Next Sentence'));
+    expect(props.onForward).toHaveBeenCalledWith(true);
+    expect(screen.queryByLabelText('Previous Paragraph')).toBeNull();
+    expect(screen.queryByLabelText('Next Paragraph')).toBeNull();
+    expect(screen.queryByLabelText('Playback settings')).toBeNull();
+  });
+
+  test('full style expands the sheet from the book info area', () => {
+    getBookData.mockReturnValue({
+      book: { title: 'Alice in Wonderland', coverImageUrl: 'blob:cover' },
+    });
+    const props = makeProps();
+    render(<TTSMiniPlayer {...props} />);
+    fireEvent.click(screen.getByLabelText('Open Read Aloud player'));
+    expect(props.onExpand).toHaveBeenCalled();
   });
 });

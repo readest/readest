@@ -1887,7 +1887,6 @@
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Kutubxonangiz, oʻqish jarayoni va belgilashlaringizni Microsoft OneDrive bilan sinxronlang.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest OneDrive-ingizda faqat oʻzi yaratgan fayllarga kiradi.",
   "Sentence Pause": "Gaplar orasidagi pauza",
-  "Paragraph Gap": "Paragraflar orasidagi tanaffus",
   "{{minutes}}m left": "{{minutes}} daqiqa qoldi",
   "{{hours}}h left": "{{hours}} soat qoldi",
   "Time Remaining": "Qolgan vaqt",
@@ -1928,5 +1927,11 @@
   "Reuse generated speech across sessions without refetching": "Yaratilgan nutqni qayta yuklab olmasdan seanslar orasida qayta ishlatish",
   "Sync Audio Cache": "Audio keshni sinxronlash",
   "Share section audio between your devices through your file sync service": "Boʻlim audiosini fayl sinxronlash xizmati orqali qurilmalaringiz oʻrtasida ulashing",
-  "Storage Limit": "Saqlash chegarasi"
+  "Storage Limit": "Saqlash chegarasi",
+  "Playback settings": "Ijro sozlamalari",
+  "Paragraph Pause": "Paragraflar orasidagi tanaffus",
+  "Player Style": "Pleyer uslubi",
+  "Full": "Toʻliq",
+  "Minimal": "Minimal",
+  "TTS Player Style": "TTS pleyer uslubi"
 }
