@@ -146,7 +146,7 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
       </div>
 
       <div className='grid grid-cols-2 gap-6 mt-4'>
-        <div className='bg-base-200 rounded-lg p-3'>
+        <div className='bg-base-100 rounded-lg p-3'>
           <h3 className='mb-3 text-center font-medium'>{_('Light Mode')}</h3>
 
           <div className='flex flex-col gap-2'>
@@ -175,7 +175,7 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
           />
         </div>
 
-        <div className='bg-base-300 rounded-lg p-3'>
+        <div className='bg-base-100 rounded-lg p-3'>
           <h3 className='mb-3 text-center font-medium'>{_('Dark Mode')}</h3>
 
           <div className='flex flex-col gap-2'>
