@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { CapturedPageTurn, CapturedTurnHost } from '@/app/reader/utils/capturedTurn';
+import {
+  CapturedPageTurn,
+  CapturedTurnHost,
+  type CapturedTurnStyle,
+} from '@/app/reader/utils/capturedTurn';
 
 // Choreography tests for the captured page-turn controller (readest#555):
 // capture the page → overlay the captured bitmap → instantly navigate the
@@ -66,6 +70,48 @@ describe('CapturedPageTurn (browser)', () => {
     expect(host.querySelector('canvas')).toBeNull();
   });
 
+  it('notifies the host after the covering frame is mounted and before navigation', async () => {
+    const onCovered = vi.fn<NonNullable<CapturedTurnHost['onCovered']>>(async (style) => {
+      expect(style).toBe('curl');
+      expect(host.querySelector('canvas')).not.toBeNull();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+    const covered = new CapturedPageTurn({
+      getHostElement: () => host,
+      getContentRect: contentRect,
+      capture,
+      onCovered,
+      navigate,
+    });
+
+    expect(await covered.beginDrag(true, false)).toBe(true);
+    expect(onCovered).toHaveBeenCalledOnce();
+    expect(navigate).toHaveBeenCalledOnce();
+    covered.dispose();
+  });
+
+  it('records host state before starting the native snapshot', async () => {
+    const order: string[] = [];
+    const onBeforeCapture = vi.fn(() => {
+      order.push('before');
+    });
+    const orderedCapture = vi.fn<CapturedTurnHost['capture']>(async (rect) => {
+      order.push('capture');
+      return capture(rect);
+    });
+    const prepared = new CapturedPageTurn({
+      getHostElement: () => host,
+      getContentRect: contentRect,
+      capture: orderedCapture,
+      onBeforeCapture,
+      navigate,
+    });
+
+    expect(await prepared.beginDrag(true, false)).toBe(true);
+    expect(order).toEqual(['before', 'capture']);
+    prepared.dispose();
+  });
+
   it('mounts the overlay canvas over the content box while animating', async () => {
     // Slow animation so the overlay is reliably observable mid-turn.
     const slow = new CapturedPageTurn(
@@ -83,6 +129,22 @@ describe('CapturedPageTurn (browser)', () => {
     slow.dispose();
     await turned;
     expect(host.querySelector('canvas')).toBeNull();
+  });
+
+  it('uses the official WebGL mesh renderer for curl turns', async () => {
+    const slow = new CapturedPageTurn(
+      { getHostElement: () => host, getContentRect: contentRect, capture, navigate },
+      { duration: 5000 },
+    );
+    const turned = slow.turn(true, false);
+    await vi.waitFor(() => {
+      const canvas = host.querySelector('canvas');
+      expect(canvas).not.toBeNull();
+      expect(canvas?.dataset['pageCurlBackend']).toBeUndefined();
+      expect(canvas?.getContext('webgl')).not.toBeNull();
+    });
+    slow.dispose();
+    await turned;
   });
 
   it('slides the captured page toward the spine on a forward LTR turn', async () => {
@@ -131,6 +193,53 @@ describe('CapturedPageTurn (browser)', () => {
     expect(host.querySelector('canvas')).toBeNull();
   });
 
+  it('restores host state and removes the overlay when instant navigation fails', async () => {
+    const onCancelled = vi.fn<NonNullable<CapturedTurnHost['onCancelled']>>();
+    navigate.mockRejectedValueOnce(new Error('navigation failed'));
+    const failing = new CapturedPageTurn({
+      getHostElement: () => host,
+      getContentRect: contentRect,
+      capture,
+      onCancelled,
+      navigate,
+    });
+
+    await expect(failing.turn(true, false)).rejects.toThrow('navigation failed');
+
+    expect(onCancelled).toHaveBeenCalledWith('curl');
+    expect(host.querySelector('canvas')).toBeNull();
+    failing.dispose();
+  });
+
+  it('restores host state and removes the overlay when reverse navigation fails', async () => {
+    const onCancelled = vi.fn<NonNullable<CapturedTurnHost['onCancelled']>>();
+    navigate
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('reverse navigation failed'));
+    const failing = new CapturedPageTurn(
+      {
+        getHostElement: () => host,
+        getContentRect: contentRect,
+        capture,
+        onCancelled,
+        navigate,
+      },
+      { duration: 1 },
+    );
+
+    expect(await failing.beginDrag(true, false)).toBe(true);
+    failing.moveDrag(0.2, 0.5);
+    await expect(failing.endDrag(false)).rejects.toThrow('reverse navigation failed');
+
+    expect(onCancelled).toHaveBeenCalledWith('curl');
+    expect(failing.active).toBe(false);
+    expect(host.querySelector('canvas')).toBeNull();
+
+    // A rejected cancellation must not poison the serialized turn queue.
+    await expect(failing.turn(true, false)).resolves.toBe(true);
+    failing.dispose();
+  });
+
   it('interrupts an in-flight turn when a new one starts', async () => {
     const first = controller.turn(true, false);
     await vi.waitFor(() => expect(navigate).toHaveBeenCalledTimes(1));
@@ -151,6 +260,32 @@ describe('CapturedPageTurn (browser)', () => {
     // Cancel: back to flat, then instantly turn back under the overlay.
     expect(navigate).toHaveBeenNthCalledWith(2, false);
     expect(host.querySelector('canvas')).toBeNull();
+  });
+
+  it.each([
+    'curl',
+    'slide',
+  ] as CapturedTurnStyle[])('notifies the host under the flat overlay when a %s drag is cancelled', async (style) => {
+    const onCancelled = vi.fn(async (cancelledStyle: CapturedTurnStyle) => {
+      expect(cancelledStyle).toBe(style);
+      expect(navigate).toHaveBeenNthCalledWith(2, false);
+      expect(host.querySelector('canvas')).not.toBeNull();
+    });
+    const cancellable = new CapturedPageTurn({
+      getHostElement: () => host,
+      getContentRect: contentRect,
+      capture,
+      onCancelled,
+      navigate,
+    });
+
+    expect(await cancellable.beginDrag(true, false, style)).toBe(true);
+    cancellable.moveDrag(0.3, 0.5);
+    await cancellable.endDrag(false);
+
+    expect(onCancelled).toHaveBeenCalledOnce();
+    expect(host.querySelector('canvas')).toBeNull();
+    cancellable.dispose();
   });
 
   it('scrubs a slide drag and cleans up on commit', async () => {
@@ -221,5 +356,96 @@ describe('CapturedPageTurn (browser)', () => {
     expect(navigate).toHaveBeenCalledTimes(1);
     expect(host.querySelector('canvas')).toBeNull();
     expect(controller.active).toBe(false);
+  });
+
+  it('finishes a fast swipe released before its snapshot is ready', async () => {
+    let resolveCapture!: (image: ArrayBuffer) => void;
+    const deferredCapture = new Promise<ArrayBuffer>((resolve) => {
+      resolveCapture = resolve;
+    });
+    const rapid = new CapturedPageTurn({
+      getHostElement: () => host,
+      getContentRect: contentRect,
+      capture: () => deferredCapture,
+      navigate,
+    });
+
+    const beginning = rapid.beginDrag(true, false);
+    const ending = rapid.endDrag(true);
+    resolveCapture(await makePngBuffer());
+    await Promise.all([beginning, ending]);
+
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(host.querySelector('canvas')).toBeNull();
+    rapid.dispose();
+  });
+
+  it('does not mount or navigate when disposed during capture', async () => {
+    let resolveCapture!: (image: ArrayBuffer) => void;
+    const deferredCapture = new Promise<ArrayBuffer>((resolve) => {
+      resolveCapture = resolve;
+    });
+    const onCovered = vi.fn<NonNullable<CapturedTurnHost['onCovered']>>();
+    const pending = new CapturedPageTurn({
+      getHostElement: () => host,
+      getContentRect: contentRect,
+      capture: () => deferredCapture,
+      onCovered,
+      navigate,
+    });
+
+    const beginning = pending.beginDrag(true, false);
+    await Promise.resolve();
+    pending.dispose();
+    resolveCapture(await makePngBuffer());
+
+    await expect(beginning).resolves.toBe(false);
+    expect(onCovered).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(host.querySelector('canvas')).toBeNull();
+  });
+
+  it('restores host state without navigating when disposed while covered', async () => {
+    let releaseCovered!: () => void;
+    const coveredGate = new Promise<void>((resolve) => {
+      releaseCovered = resolve;
+    });
+    const onCovered = vi.fn<NonNullable<CapturedTurnHost['onCovered']>>(() => coveredGate);
+    const onCancelled = vi.fn<NonNullable<CapturedTurnHost['onCancelled']>>();
+    const pending = new CapturedPageTurn({
+      getHostElement: () => host,
+      getContentRect: contentRect,
+      capture,
+      onCovered,
+      onCancelled,
+      navigate,
+    });
+
+    const beginning = pending.beginDrag(true, false);
+    await vi.waitFor(() => expect(onCovered).toHaveBeenCalledOnce());
+    pending.dispose();
+    releaseCovered();
+
+    await expect(beginning).resolves.toBe(false);
+    expect(onCancelled).toHaveBeenCalledWith('curl');
+    expect(navigate).not.toHaveBeenCalled();
+    expect(host.querySelector('canvas')).toBeNull();
+  });
+
+  it('still removes the overlay when disposal restoration throws synchronously', async () => {
+    const pending = new CapturedPageTurn({
+      getHostElement: () => host,
+      getContentRect: contentRect,
+      capture,
+      onCancelled: () => {
+        throw new Error('restore failed');
+      },
+      navigate,
+    });
+
+    expect(await pending.beginDrag(true, false)).toBe(true);
+    expect(() => pending.dispose()).not.toThrow();
+    expect(pending.active).toBe(false);
+    expect(host.querySelector('canvas')).toBeNull();
   });
 });

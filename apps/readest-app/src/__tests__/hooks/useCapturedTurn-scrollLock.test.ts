@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 import type { FoliateView } from '@/types/view';
 import type { ViewSettings } from '@/types/book';
 import type { TouchDetail } from '@/app/reader/hooks/useTouchInterceptor';
@@ -10,6 +10,13 @@ import type { TouchDetail } from '@/app/reader/hooks/useTouchInterceptor';
 // is set (instant highlight engaged). This test pins the captured turn to the
 // same gate so a hold-then-swipe extends the highlight instead of paginating.
 const h = vi.hoisted(() => ({
+  controllerHost: null as null | {
+    onBeforeCapture?: (style: 'curl' | 'slide') => Promise<void> | void;
+    onCovered?: (style: 'curl' | 'slide') => Promise<void> | void;
+    onCancelled?: (style: 'curl' | 'slide') => Promise<void> | void;
+  },
+  hoveredBookKey: 'book-1' as string | null,
+  setHoveredBookKey: vi.fn(),
   controller: {
     turn: vi.fn(async () => {}),
     beginDrag: vi.fn(async () => true),
@@ -19,6 +26,7 @@ const h = vi.hoisted(() => ({
   },
   selection: null as { rangeCount: number; isCollapsed: boolean } | null,
   renderer: {
+    listeners: new Map<string, Set<EventListener>>(),
     scrollLocked: false,
     atEnd: false,
     atStart: false,
@@ -29,6 +37,17 @@ const h = vi.hoisted(() => ({
     hasAttribute: () => false,
     setAttribute: () => {},
     removeAttribute: () => {},
+    addEventListener(type: string, listener: EventListener) {
+      const listeners = this.listeners.get(type) ?? new Set<EventListener>();
+      listeners.add(listener);
+      this.listeners.set(type, listeners);
+    },
+    removeEventListener(type: string, listener: EventListener) {
+      this.listeners.get(type)?.delete(listener);
+    },
+    dispatchEvent(event: Event) {
+      for (const listener of this.listeners.get(event.type) ?? []) listener(event);
+    },
   },
   viewSettings: {
     pageTurnStyle: 'curl',
@@ -40,9 +59,14 @@ const h = vi.hoisted(() => ({
   } as ViewSettings,
 }));
 
-vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({ getViewSettings: () => h.viewSettings }),
-}));
+vi.mock('@/store/readerStore', () => {
+  const useReaderStore = () => ({
+    getViewSettings: () => h.viewSettings,
+    setHoveredBookKey: h.setHoveredBookKey,
+  });
+  useReaderStore.getState = () => ({ hoveredBookKey: h.hoveredBookKey });
+  return { useReaderStore };
+});
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: () => ({ getBookData: () => ({ isFixedLayout: false }) }),
 }));
@@ -50,7 +74,8 @@ vi.mock('@/utils/bridge', () => ({ captureWebviewRegion: vi.fn() }));
 vi.mock('@/utils/viewTransition', () => ({ detectViewTransitionGroup: () => false }));
 vi.mock('@/app/reader/utils/capturedTurn', () => ({
   CapturedPageTurn: class {
-    constructor() {
+    constructor(host: NonNullable<typeof h.controllerHost>) {
+      h.controllerHost = host;
       Object.assign(this, h.controller);
     }
   },
@@ -73,15 +98,21 @@ const detail = (phase: TouchDetail['phase'], deltaX = 0, deltaY = 0): TouchDetai
 
 beforeEach(() => {
   vi.clearAllMocks();
+  h.controller.beginDrag.mockResolvedValue(true);
+  h.setHoveredBookKey.mockReset();
   vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
   h.renderer.scrollLocked = false;
   h.renderer.atEnd = false;
   h.renderer.atStart = false;
   h.selection = null;
+  h.renderer.listeners.clear();
+  h.controllerHost = null;
+  h.hoveredBookKey = 'book-1';
 });
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  document.getElementById('gridcell-book-1')?.remove();
   cleanup();
 });
 
@@ -94,6 +125,17 @@ describe('useCapturedTurn scroll-lock gate', () => {
 
     expect(consumed).toBe(true);
     expect(h.controller.beginDrag).toHaveBeenCalled();
+  });
+
+  test('touch cancellation always reverses an active captured drag', () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    dispatchTouchInterceptors('book-1', detail('move', -60, 3));
+    const consumed = dispatchTouchInterceptors('book-1', detail('cancel', -60, 3));
+
+    expect(consumed).toBe(true);
+    expect(h.controller.endDrag).toHaveBeenCalledWith(false);
   });
 
   test('scroll lock (instant highlight engaged) leaves the swipe to the highlight', () => {
@@ -205,6 +247,185 @@ describe('useCapturedTurn scroll-lock gate', () => {
 
     expect(consumed).toBe(true);
     expect(h.controller.beginDrag).toHaveBeenCalled();
+  });
+
+  test.each([
+    'curl',
+    'slide',
+  ] as const)('hides live toolbar without transitions once the %s snapshot covers it', async (style) => {
+    const gridCell = document.createElement('div');
+    gridCell.id = 'gridcell-book-1';
+    document.body.appendChild(gridCell);
+    h.setHoveredBookKey.mockImplementationOnce(() => {
+      expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(true);
+    });
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    await act(async () => {
+      await h.controllerHost?.onBeforeCapture?.(style);
+      await h.controllerHost?.onCovered?.(style);
+    });
+
+    expect(h.setHoveredBookKey).toHaveBeenCalledWith(null);
+    expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(false);
+  });
+
+  test.each([
+    'curl',
+    'slide',
+  ] as const)('restores a previously visible toolbar when a %s turn is cancelled', async (style) => {
+    const gridCell = document.createElement('div');
+    gridCell.id = 'gridcell-book-1';
+    document.body.appendChild(gridCell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    await act(async () => {
+      await h.controllerHost?.onBeforeCapture?.(style);
+      await h.controllerHost?.onCovered?.(style);
+      await h.controllerHost?.onCancelled?.(style);
+    });
+
+    expect(h.setHoveredBookKey.mock.calls).toEqual([[null], ['book-1']]);
+  });
+
+  test('does not show the toolbar after cancellation when it started hidden', async () => {
+    h.hoveredBookKey = null;
+    const gridCell = document.createElement('div');
+    gridCell.id = 'gridcell-book-1';
+    document.body.appendChild(gridCell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    await act(async () => {
+      await h.controllerHost?.onBeforeCapture?.('curl');
+      await h.controllerHost?.onCovered?.('curl');
+      await h.controllerHost?.onCancelled?.('curl');
+    });
+
+    expect(h.setHoveredBookKey).not.toHaveBeenCalled();
+  });
+
+  test('restores the toolbar state captured before the snapshot starts', async () => {
+    const gridCell = document.createElement('div');
+    gridCell.id = 'gridcell-book-1';
+    document.body.appendChild(gridCell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    await act(async () => {
+      await h.controllerHost?.onBeforeCapture?.('curl');
+      // A later event must not overwrite the gesture's original UI state.
+      h.hoveredBookKey = null;
+      await h.controllerHost?.onCovered?.('curl');
+      await h.controllerHost?.onCancelled?.('curl');
+    });
+
+    expect(h.setHoveredBookKey.mock.calls).toEqual([[null], ['book-1']]);
+  });
+
+  test('paints the snapshot before hiding chrome and keeps transitions disabled for a painted frame', async () => {
+    const frames: FrameRequestCallback[] = [];
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    const gridCell = document.createElement('div');
+    gridCell.id = 'gridcell-book-1';
+    document.body.appendChild(gridCell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    try {
+      await h.controllerHost?.onBeforeCapture?.('curl');
+      const covered = Promise.resolve(h.controllerHost?.onCovered?.('curl'));
+
+      // The live toolbar must remain untouched until the flat snapshot has
+      // survived a rendering opportunity.
+      expect(h.setHoveredBookKey).not.toHaveBeenCalled();
+      frames.shift()?.(16);
+      await Promise.resolve();
+      expect(h.setHoveredBookKey).not.toHaveBeenCalled();
+      frames.shift()?.(32);
+      await Promise.resolve();
+
+      expect(h.setHoveredBookKey).toHaveBeenCalledWith(null);
+      expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(true);
+
+      // Keep transition:none through another painted frame before restoring
+      // the normal CSS transition declaration.
+      frames.shift()?.(48);
+      await Promise.resolve();
+      expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(true);
+      frames.shift()?.(64);
+      await covered;
+      expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(false);
+    } finally {
+      raf.mockRestore();
+    }
+  });
+
+  test('synchronizes toolbar state with a native layered slide lifecycle', async () => {
+    const gridCell = document.createElement('div');
+    gridCell.id = 'gridcell-book-1';
+    document.body.appendChild(gridCell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    const dispatch = (phase: string) =>
+      h.renderer.dispatchEvent(
+        new CustomEvent('layered-turn-state', {
+          detail: { phase, style: 'slide', forward: true },
+        }),
+      );
+
+    act(() => {
+      dispatch('before-capture');
+      dispatch('covered');
+    });
+    expect(h.setHoveredBookKey).toHaveBeenLastCalledWith(null);
+    expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(true);
+
+    act(() => dispatch('ready'));
+    expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(false);
+
+    act(() => dispatch('cancelled'));
+    expect(h.setHoveredBookKey).toHaveBeenLastCalledWith('book-1');
+    expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(true);
+
+    act(() => dispatch('finished'));
+    expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(false);
+  });
+
+  test.each([
+    'curl',
+    'slide',
+  ] as const)('synchronizes toolbar state with a web layered %s lifecycle', (style) => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'web');
+    const gridCell = document.createElement('div');
+    gridCell.id = 'gridcell-book-1';
+    document.body.appendChild(gridCell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    const dispatch = (phase: string) =>
+      h.renderer.dispatchEvent(
+        new CustomEvent('layered-turn-state', {
+          detail: { phase, style, forward: true },
+        }),
+      );
+
+    act(() => {
+      dispatch('before-capture');
+      dispatch('covered');
+    });
+    expect(h.controllerHost).toBeNull();
+    expect(h.setHoveredBookKey).toHaveBeenLastCalledWith(null);
+    expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(true);
+
+    act(() => dispatch('ready'));
+    expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(false);
+
+    act(() => dispatch('cancelled'));
+    expect(h.setHoveredBookKey).toHaveBeenLastCalledWith('book-1');
+    expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(true);
+
+    act(() => dispatch('finished'));
+    expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(false);
   });
 });
 

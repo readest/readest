@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { FoliateView } from '@/types/view';
 import { ViewSettings } from '@/types/book';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -7,7 +8,11 @@ import { captureWebviewRegion } from '@/utils/bridge';
 import { isTauriAppPlatform } from '@/services/environment';
 import { detectViewTransitionGroup } from '@/utils/viewTransition';
 import { CapturedPageTurn, CapturedTurnStyle } from '../utils/capturedTurn';
-import { useTouchInterceptor } from './useTouchInterceptor';
+import {
+  setLayeredTurnGestureActive,
+  TOUCH_SWIPE_THRESHOLD_PX,
+  useTouchInterceptor,
+} from './useTouchInterceptor';
 
 // Once the native snapshot fails (older webview, capture bug), stop trying
 // for the rest of the session: the renderer's own `turn-style` animations
@@ -88,7 +93,7 @@ const hasActiveSelection = (view: FoliateView) => {
  * paginator's own animations when the native capture is unavailable.
  */
 export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<FoliateView | null>) => {
-  const { getViewSettings } = useReaderStore();
+  const { getViewSettings, setHoveredBookKey } = useReaderStore();
   const { getBookData } = useBookDataStore();
   const controllerRef = useRef<CapturedPageTurn | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -101,6 +106,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
   //   at release runs before the gesture's queued trailing touchmoves are
   //   delivered, and their full-stroke deltas would read as a swipe).
   const gestureClaimed = useRef(false);
+  const restoreToolbarOnCancelRef = useRef(false);
   const view = viewRef.current;
 
   const isFixedLayout = () => !!getBookData(bookKey)?.isFixedLayout;
@@ -117,7 +123,67 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
   };
 
   useEffect(() => {
-    if (!view || !isTauriAppPlatform()) return;
+    if (!view) return;
+
+    const waitForPaint = () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+    const setToolbarVisibilityNow = (visible: boolean) => {
+      const gridCell = document.getElementById(`gridcell-${bookKey}`);
+      if (!gridCell) return null;
+
+      gridCell.classList.add('captured-turn-sync-chrome');
+      flushSync(() => setHoveredBookKey(visible ? bookKey : null));
+      return gridCell;
+    };
+    const syncToolbarVisibility = async (visible: boolean) => {
+      // The page snapshot covers this state change. Suppress the normal
+      // 300ms toolbar transition, commit the matching live state underneath,
+      // and keep the override through one painted frame before removing it.
+      const gridCell = setToolbarVisibilityNow(visible);
+      if (!gridCell) return;
+      try {
+        await waitForPaint();
+      } finally {
+        gridCell.classList.remove('captured-turn-sync-chrome');
+      }
+    };
+    const handleLayeredTurnState = (event: Event) => {
+      const detail = (event as CustomEvent<{ phase?: string }>).detail;
+      if (detail.phase === 'before-capture') {
+        setLayeredTurnGestureActive(bookKey, true);
+        restoreToolbarOnCancelRef.current = useReaderStore.getState().hoveredBookKey === bookKey;
+      } else if (detail.phase === 'covered') {
+        if (restoreToolbarOnCancelRef.current) setToolbarVisibilityNow(false);
+      } else if (detail.phase === 'ready') {
+        document
+          .getElementById(`gridcell-${bookKey}`)
+          ?.classList.remove('captured-turn-sync-chrome');
+      } else if (detail.phase === 'cancelled') {
+        const shouldRestore = restoreToolbarOnCancelRef.current;
+        restoreToolbarOnCancelRef.current = false;
+        if (shouldRestore) void syncToolbarVisibility(true);
+      } else if (detail.phase === 'finished') {
+        setLayeredTurnGestureActive(bookKey, false);
+        restoreToolbarOnCancelRef.current = false;
+        document
+          .getElementById(`gridcell-${bookKey}`)
+          ?.classList.remove('captured-turn-sync-chrome');
+      }
+    };
+    const cleanupLayeredTurn = () => {
+      view.renderer.removeEventListener('layered-turn-state', handleLayeredTurnState);
+      setLayeredTurnGestureActive(bookKey, false);
+      restoreToolbarOnCancelRef.current = false;
+      document.getElementById(`gridcell-${bookKey}`)?.classList.remove('captured-turn-sync-chrome');
+    };
+    view.renderer.addEventListener('layered-turn-state', handleLayeredTurnState);
+
+    // Browser View Transitions emit the same lifecycle as Tauri layered
+    // turns, so toolbar/snapshot synchronization is shared. Only the native
+    // platform needs the captured-canvas controller and prev/next wrappers.
+    if (!isTauriAppPlatform()) return cleanupLayeredTurn;
 
     // The foliate implementation returns the turn's promise even though the
     // published type is void; navigate() awaits it so the overlay only starts
@@ -135,7 +201,22 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       // text content box.
       getContentRect: () =>
         document.getElementById(`gridcell-${bookKey}`)?.getBoundingClientRect() ?? null,
+      onBeforeCapture: () => {
+        restoreToolbarOnCancelRef.current = useReaderStore.getState().hoveredBookKey === bookKey;
+      },
       capture: captureWebviewRegion,
+      onCovered: async () => {
+        // Let the flat canvas reach the compositor before touching the live
+        // chrome; otherwise the toolbar can flash out before its captured copy
+        // is actually visible on Android/iOS WebViews.
+        await waitForPaint();
+        if (restoreToolbarOnCancelRef.current) await syncToolbarVisibility(false);
+      },
+      onCancelled: async () => {
+        const shouldRestore = restoreToolbarOnCancelRef.current;
+        restoreToolbarOnCancelRef.current = false;
+        if (shouldRestore) await syncToolbarVisibility(true);
+      },
       navigate: async (forward: boolean) => {
         // The paginator's animated paths (push slide and the layered VT
         // turns) all gate on the `animated` attribute; dropping it makes
@@ -181,6 +262,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       view.prev = originals.prev;
       view.next = originals.next;
       controller.dispose();
+      cleanupLayeredTurn();
       controllerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -202,7 +284,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
 
       const viewSettings = getViewSettings(bookKey);
       if (detail.phase === 'move') {
-        let state = dragRef.current;
+        const state = dragRef.current;
         if (!state) {
           // Instant highlight engaged (still-hold on text) locks scrolling so
           // the finger extends the highlight, not turns the page. The push
@@ -226,23 +308,27 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           if (!style) return false;
           // Horizontal intent only; leave vertical swipes and taps alone.
           const { deltaX, deltaY } = detail;
-          if (Math.abs(deltaX) < 15 || Math.abs(deltaX) <= Math.abs(deltaY)) return false;
+          if (Math.abs(deltaX) < TOUCH_SWIPE_THRESHOLD_PX || Math.abs(deltaX) <= Math.abs(deltaY)) {
+            return false;
+          }
           const forward = viewSettings.rtl ? deltaX > 0 : deltaX < 0;
           if (forward ? currentView.renderer.atEnd : currentView.renderer.atStart) return false;
           const rect = document.getElementById(`gridcell-${bookKey}`)?.getBoundingClientRect();
-          state = {
+          const startedState: DragState = {
             forward,
             width: rect?.width || window.innerWidth,
             height: rect?.height || window.innerHeight,
           };
-          dragRef.current = state;
+          dragRef.current = startedState;
           controller
             .beginDrag(forward, viewSettings.rtl, style)
             .then((ok) => {
-              if (!ok) dragRef.current = null;
+              if (!ok) {
+                if (dragRef.current === startedState) dragRef.current = null;
+              }
             })
             .catch((error) => {
-              dragRef.current = null;
+              if (dragRef.current === startedState) dragRef.current = null;
               markCaptureBroken(error);
             });
           return true;
@@ -256,16 +342,23 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         return true;
       }
 
-      // phase === 'end'
+      // phase === 'end' | 'cancel'
       const state = dragRef.current;
       if (!state) return false;
       dragRef.current = null;
+      if (detail.phase === 'cancel') {
+        controller.endDrag(false).catch(() => {});
+        return true;
+      }
       const progress = dragProgress(state, detail.deltaX, viewSettings?.rtl ?? false);
       const signed = progress * state.width;
       const velocity = signed / (detail.deltaT || 1);
       // Same carousel rule as the paginator: a flick along the turn commits
       // regardless of distance; otherwise commit past halfway.
       const commit = velocity > 0.3 ? true : progress > 0.5;
+      // CapturedPageTurn serializes endDrag behind an in-flight beginDrag, so
+      // queue release immediately. This also keeps a following gesture behind
+      // the complete begin/end pair instead of letting it supersede the turn.
       controller.endDrag(commit).catch(() => {});
       return true;
     },

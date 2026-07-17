@@ -5,6 +5,11 @@ import { findGlossWord } from '@/app/reader/utils/wordlensRuby';
 let lastClickTime = 0;
 let longHoldTimeout: ReturnType<typeof setTimeout> | null = null;
 let isMouseDown = false;
+const touchGestures = new Map<string, { startX: number; startY: number; moved: boolean }>();
+const suppressedSwipeClicks = new Map<string, { until: number; endX: number; endY: number }>();
+const SYNTHESIZED_CLICK_SWIPE_DISTANCE_PX = 15;
+const SYNTHESIZED_CLICK_SUPPRESSION_MS = 750;
+const SYNTHESIZED_CLICK_POSITION_SLOP_PX = 15;
 
 // Middle-click autoscroll (#4951). Books where the feature is armed (desktop
 // app, scrolled mode, setting on) get the middle button's defaults suppressed,
@@ -246,6 +251,20 @@ export const handleClick = (
   event: MouseEvent,
 ) => {
   const now = Date.now();
+  const suppressedSwipe = suppressedSwipeClicks.get(bookKey);
+  if (suppressedSwipe) {
+    if (now > suppressedSwipe.until) {
+      suppressedSwipeClicks.delete(bookKey);
+    } else {
+      const nearEnd =
+        Math.hypot(event.screenX - suppressedSwipe.endX, event.screenY - suppressedSwipe.endY) <=
+        SYNTHESIZED_CLICK_POSITION_SLOP_PX;
+      if (nearEnd) {
+        suppressedSwipeClicks.delete(bookKey);
+        return;
+      }
+    }
+  }
 
   if (!doubleClickDisabled.current && now - lastClickTime < DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
     lastClickTime = now;
@@ -366,25 +385,65 @@ const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
   // Use event.touches (all active touches) instead of event.targetTouches
   // so that multi-finger gestures work even when fingers land on different
   // elements within the iframe (e.g. canvas vs textLayer spans in PDF)
-  const touchList = type === 'iframe-touchend' ? event.targetTouches : event.touches;
-  const touches = [];
-  for (let i = 0; i < touchList.length; i++) {
-    const touch = touchList[i];
+  const serializeTouches = (touchList: TouchList) => {
+    const touches = [];
+    for (let i = 0; i < touchList.length; i++) {
+      const touch = touchList[i];
+      if (touch) {
+        touches.push({
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+          screenX: touch.screenX,
+          screenY: touch.screenY,
+        });
+      }
+    }
+    return touches;
+  };
+  const targetTouches = serializeTouches(event.touches);
+  const changedTouches = serializeTouches(event.changedTouches);
+  if (type === 'iframe-touchstart') {
+    const touch = targetTouches[0];
     if (touch) {
-      touches.push({
-        clientX: touch.clientX,
-        clientY: touch.clientY,
-        screenX: touch.screenX,
-        screenY: touch.screenY,
+      touchGestures.set(bookKey, { startX: touch.screenX, startY: touch.screenY, moved: false });
+    }
+  } else if (type === 'iframe-touchmove') {
+    const gesture = touchGestures.get(bookKey);
+    const touch = targetTouches[0];
+    if (gesture && touch) {
+      const distance = Math.hypot(touch.screenX - gesture.startX, touch.screenY - gesture.startY);
+      if (distance >= SYNTHESIZED_CLICK_SWIPE_DISTANCE_PX) gesture.moved = true;
+    }
+  } else if (type === 'iframe-touchend' || type === 'iframe-touchcancel') {
+    const gesture = touchGestures.get(bookKey);
+    // Very fast flicks can go from touchstart straight to touchend without a
+    // touchmove event. Include the released finger when deciding whether the
+    // browser-generated click belongs to a swipe.
+    const releasedTouch = changedTouches[0];
+    const moved =
+      gesture?.moved ||
+      (gesture &&
+        releasedTouch &&
+        Math.hypot(
+          releasedTouch.screenX - gesture.startX,
+          releasedTouch.screenY - gesture.startY,
+        ) >= SYNTHESIZED_CLICK_SWIPE_DISTANCE_PX);
+    if (type === 'iframe-touchend' && moved && gesture) {
+      suppressedSwipeClicks.set(bookKey, {
+        until: Date.now() + SYNTHESIZED_CLICK_SUPPRESSION_MS,
+        endX: releasedTouch?.screenX ?? gesture.startX,
+        endY: releasedTouch?.screenY ?? gesture.startY,
       });
     }
+    touchGestures.delete(bookKey);
   }
   window.postMessage(
     {
       type: type,
       bookKey,
       timeStamp: Date.now(),
-      targetTouches: touches,
+      targetTouches,
+      changedTouches,
       ...getKeyStatus(event),
     },
     '*',
@@ -401,4 +460,8 @@ export const handleTouchMove = (bookKey: string, event: TouchEvent) => {
 
 export const handleTouchEnd = (bookKey: string, event: TouchEvent) => {
   handleTouchEv(bookKey, event, 'iframe-touchend');
+};
+
+export const handleTouchCancel = (bookKey: string, event: TouchEvent) => {
+  handleTouchEv(bookKey, event, 'iframe-touchcancel');
 };

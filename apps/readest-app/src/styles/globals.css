@@ -986,6 +986,14 @@ textarea:focus-within,
   box-shadow: none !important;
 }
 
+/* A captured or View Transition curl/slide snapshot already contains the
+   visible reader chrome. Sync its live copy underneath without playing the
+   regular toolbar transition alongside the page turn or cancellation. */
+.captured-turn-sync-chrome .header-bar,
+.captured-turn-sync-chrome .footer-bar {
+  transition: none !important;
+}
+
 /* TTS player scrubber: the track is painted by an inline three-stop gradient
    (played / buffered / rest), so the native appearance must be blanked and
    the element itself becomes the 4px track. Thumb inherits currentColor. */

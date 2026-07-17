@@ -37,6 +37,12 @@ export interface CapturedTurnHost {
   getContentRect: () => DOMRect | null;
   /** Native webview snapshot of `rect`, as PNG bytes. */
   capture: (rect: { x: number; y: number; width: number; height: number }) => Promise<ArrayBuffer>;
+  /** Records live UI state before the native snapshot starts. */
+  onBeforeCapture?: (style: CapturedTurnStyle) => void | Promise<void>;
+  /** Called once the flat captured frame covers the live reader. */
+  onCovered?: (style: CapturedTurnStyle) => void | Promise<void>;
+  /** Called under the restored flat frame before a cancelled turn is removed. */
+  onCancelled?: (style: CapturedTurnStyle) => void | Promise<void>;
   /** Instant (animation-less) page turn of the live view. */
   navigate: (forward: boolean) => Promise<void>;
 }
@@ -54,6 +60,7 @@ interface TurnRenderer {
 interface ActiveTurn {
   overlay: HTMLElement;
   renderer: TurnRenderer;
+  style: CapturedTurnStyle;
   forward: boolean;
   /** Renderer-space mirror flag (spine side of the turn), not book direction. */
   rendererRtl: boolean;
@@ -70,6 +77,7 @@ export class CapturedPageTurn {
   #host: CapturedTurnHost;
   #duration: number;
   #active: ActiveTurn | null = null;
+  #disposed = false;
   /** Serializes turns: a new turn interrupts and awaits the previous one. */
   #pending: Promise<unknown> = Promise.resolve();
 
@@ -90,12 +98,16 @@ export class CapturedPageTurn {
    */
   async turn(forward: boolean, rtl: boolean, style: CapturedTurnStyle = 'curl'): Promise<boolean> {
     const run = this.#pending.then(async () => {
+      if (this.#disposed) return false;
       this.#finishActive();
       const active = await this.#setUp(forward, rtl, style);
       if (!active) return false;
-      await this.#playTo(active, 1);
-      this.#disposeActive();
-      return true;
+      try {
+        await this.#playTo(active, 1);
+        return true;
+      } finally {
+        if (this.#active === active) this.#disposeActive();
+      }
     });
     // Keep the chain alive after failures so later turns still run.
     this.#pending = run.catch(() => {});
@@ -113,6 +125,7 @@ export class CapturedPageTurn {
     style: CapturedTurnStyle = 'curl',
   ): Promise<boolean> {
     const run = this.#pending.then(async () => {
+      if (this.#disposed) return false;
       this.#finishActive();
       const active = await this.#setUp(forward, rtl, style);
       if (!active) return false;
@@ -147,21 +160,51 @@ export class CapturedPageTurn {
    */
   async endDrag(commit: boolean) {
     const run = this.#pending.then(async () => {
+      if (this.#disposed) return;
       const active = this.#active;
       if (!active) return;
-      if (commit) {
-        await this.#playTo(active, 1);
-      } else {
-        await this.#playTo(active, 0);
-        if (this.#active === active) await this.#host.navigate(!active.forward);
+      try {
+        if (commit) {
+          await this.#playTo(active, 1);
+        } else {
+          await this.#playTo(active, 0);
+          if (this.#active === active) {
+            let navigationError: unknown;
+            try {
+              await this.#host.navigate(!active.forward);
+            } catch (error) {
+              navigationError = error;
+            }
+            try {
+              await this.#host.onCancelled?.(active.style);
+            } catch (error) {
+              if (navigationError === undefined) throw error;
+            }
+            if (navigationError !== undefined) throw navigationError;
+          }
+        }
+      } finally {
+        if (this.#active === active) this.#disposeActive();
       }
-      this.#disposeActive();
     });
     this.#pending = run.catch(() => {});
     return run;
   }
 
   dispose() {
+    if (this.#disposed) return;
+    this.#disposed = true;
+    const active = this.#active;
+    if (active) {
+      // Start restoration before invalidating the active frame. Async host
+      // callbacks run synchronously through their first await, which lets the
+      // hook recover toolbar state before its own cleanup clears that state.
+      try {
+        Promise.resolve(this.#host.onCancelled?.(active.style)).catch(() => {});
+      } catch {
+        // Disposal must still release the GPU renderer and overlay.
+      }
+    }
     this.#finishActive();
   }
 
@@ -170,20 +213,28 @@ export class CapturedPageTurn {
     rtl: boolean,
     style: CapturedTurnStyle,
   ): Promise<ActiveTurn | null> {
+    if (this.#disposed) return null;
     const hostElement = this.#host.getHostElement();
     const rect = this.#host.getContentRect();
     if (!hostElement || !rect || rect.width <= 0 || rect.height <= 0) return null;
 
+    await this.#host.onBeforeCapture?.(style);
+    if (this.#disposed) return null;
     const image = await this.#host.capture({
       x: rect.x,
       y: rect.y,
       width: rect.width,
       height: rect.height,
     });
+    if (this.#disposed) return null;
     // No mime: the platforms return different formats (PNG on iOS/macOS,
     // JPEG on Android where PNG encoding took ~1.5s per turn) and the
     // decoder sniffs the actual format from the bytes.
     const bitmap = await createImageBitmap(new Blob([image]));
+    if (this.#disposed) {
+      bitmap.close();
+      return null;
+    }
 
     // Position the overlay at the content box within the host element.
     const hostRect = hostElement.getBoundingClientRect();
@@ -215,6 +266,7 @@ export class CapturedPageTurn {
     const active: ActiveTurn = {
       overlay,
       renderer,
+      style,
       forward,
       // Forward: the page moves out from its outer edge toward the spine
       // (left for LTR books). Backward: the mirror image — it recedes over
@@ -229,9 +281,28 @@ export class CapturedPageTurn {
 
     // First frame draws the captured page exactly covering the content box,
     // hiding the instant page swap happening underneath.
-    renderer.render(0, this.#grab(active), active.rendererRtl);
-    await this.#host.navigate(forward);
-    return active;
+    try {
+      renderer.render(0, this.#grab(active), active.rendererRtl);
+      await this.#host.onCovered?.(style);
+      if (this.#disposed || this.#active !== active) return null;
+      await this.#host.navigate(forward);
+      if (this.#disposed || this.#active !== active) return null;
+      return active;
+    } catch (error) {
+      if (this.#disposed) return null;
+      // Once the covering frame is mounted, any later failure must restore
+      // the pre-turn chrome and remove the overlay. Otherwise a failed instant
+      // navigation can leave both the toolbar and the captured canvas stuck.
+      if (this.#active === active) {
+        try {
+          await this.#host.onCancelled?.(style);
+        } catch {
+          // Preserve the setup/navigation failure as the caller-facing error.
+        }
+        this.#disposeActive();
+      }
+      throw error;
+    }
   }
 
   #grab(active: ActiveTurn) {

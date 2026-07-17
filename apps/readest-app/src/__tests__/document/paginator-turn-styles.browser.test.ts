@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import { DocumentLoader } from '@/libs/document';
 import type { BookDoc } from '@/libs/document';
 import type { Renderer } from '@/types/view';
@@ -190,6 +190,39 @@ describe('Page turn styles (browser)', () => {
     expect(paginator.containerPosition).toBe(before + size);
   });
 
+  it('finishes a vertical programmatic turn when a touch starts mid-transition', async () => {
+    await setup(verticalBook, 'slide', 0);
+    const size = paginator.size;
+    const before = paginator.containerPosition;
+
+    const turn = paginator.next();
+    fireTouch('touchstart', 500, 300);
+    fireTouch('touchmove', 580, 300);
+    fireTouch('touchend', 580, 300);
+    await turn;
+
+    expect(paginator.containerPosition).toBe(before + size);
+    expect(document.documentElement.className).not.toContain('foliate-vt');
+
+    await paginator.prev();
+    expect(paginator.containerPosition).toBe(before);
+  });
+
+  it('cleans up an active programmatic transition when destroyed', async () => {
+    await setup(ltrBook, 'slide');
+
+    const turn = paginator.next();
+    await vi.waitFor(() => {
+      expect(document.documentElement.className).toContain('foliate-vt');
+      expect(paginator.style.viewTransitionName).toBe('foliate-turn');
+    });
+    paginator.destroy();
+    await turn;
+
+    expect(document.documentElement.className).not.toContain('foliate-vt');
+    expect(paginator.style.viewTransitionName).toBe('');
+  });
+
   const makeTouch = (x: number, y: number) =>
     new Touch({ identifier: 1, target: paginator, screenX: x, screenY: y, clientX: x, clientY: y });
 
@@ -198,7 +231,7 @@ describe('Page turn styles (browser)', () => {
       new TouchEvent(type, {
         bubbles: true,
         cancelable: true,
-        touches: type === 'touchend' ? [] : [makeTouch(x, y)],
+        touches: type === 'touchend' || type === 'touchcancel' ? [] : [makeTouch(x, y)],
         changedTouches: [makeTouch(x, y)],
       }),
     );
@@ -214,6 +247,10 @@ describe('Page turn styles (browser)', () => {
   it('tracks the finger: the paused snapshot follows the drag and commits on release', async () => {
     await setup(ltrBook, 'slide');
     const page = paginator.page;
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
 
     // ltr: finger moves LEFT to go forward.
     let x = 700;
@@ -238,14 +275,24 @@ describe('Page turn styles (browser)', () => {
 
     fireTouch('touchend', x, 300);
     const t0 = performance.now();
-    while (paginator.page !== page + 1 && performance.now() - t0 < 2000) await wait(50);
+    while (
+      (paginator.page !== page + 1 || !phases.includes('finished')) &&
+      performance.now() - t0 < 2000
+    ) {
+      await wait(50);
+    }
     expect(paginator.page).toBe(page + 1);
+    expect(phases).toEqual(['before-capture', 'covered', 'ready', 'finished']);
   });
 
   it('tracks the finger: a mostly-returned drag reverses without turning', async () => {
     await setup(ltrBook, 'slide');
     const page = paginator.page;
     const before = paginator.containerPosition;
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
 
     let x = 700;
     fireTouch('touchstart', x, 300);
@@ -267,6 +314,123 @@ describe('Page turn styles (browser)', () => {
     expect(paginator.page).toBe(page);
     expect(paginator.containerPosition).toBe(before);
     expect(scrubbedAnimations().length).toBe(0);
+    expect(phases).toEqual(['before-capture', 'covered', 'ready', 'cancelled', 'finished']);
+  });
+
+  it('cancels a layered drag on touchcancel and cleans up its lifecycle', async () => {
+    await setup(ltrBook, 'slide');
+    const page = paginator.page;
+    const before = paginator.containerPosition;
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    fireTouch('touchstart', 700, 300);
+    fireTouch('touchmove', 620, 300);
+    await vi.waitFor(() => {
+      expect(scrubbedAnimations().length).toBeGreaterThan(0);
+      expect(phases).toContain('ready');
+    });
+    fireTouch('touchcancel', 620, 300);
+    await vi.waitFor(
+      () => {
+        expect(phases).toContain('finished');
+      },
+      { timeout: 2000 },
+    );
+
+    expect(paginator.page).toBe(page);
+    expect(paginator.containerPosition).toBe(before);
+    expect(scrubbedAnimations()).toHaveLength(0);
+    expect(phases).toEqual(['before-capture', 'covered', 'ready', 'cancelled', 'finished']);
+    expect(document.documentElement.className).not.toContain('foliate-vt');
+    expect(paginator.style.viewTransitionName).toBe('');
+  });
+
+  it('orders lifecycle events when touchcancel arrives before capture is ready', async () => {
+    await setup(ltrBook, 'slide');
+    const before = paginator.containerPosition;
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    fireTouch('touchstart', 700, 300);
+    fireTouch('touchmove', 620, 300);
+    fireTouch('touchcancel', 620, 300);
+    await vi.waitFor(
+      () => {
+        expect(phases).toContain('finished');
+      },
+      { timeout: 2000 },
+    );
+
+    expect(paginator.containerPosition).toBe(before);
+    expect(phases[0]).toBe('before-capture');
+    expect(phases.indexOf('covered')).toBeGreaterThan(0);
+    expect(phases.indexOf('cancelled')).toBeGreaterThan(phases.indexOf('covered'));
+    expect(phases.at(-1)).toBe('finished');
+    expect(document.documentElement.className).not.toContain('foliate-vt');
+    expect(paginator.style.viewTransitionName).toBe('');
+  });
+
+  it('finishes a vertical layered cancellation when another tap starts immediately', async () => {
+    await setup(verticalBook, 'slide', 0);
+    const before = paginator.containerPosition;
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    // vertical-rl uses RTL page progression: a rightward finger advances.
+    fireTouch('touchstart', 100, 300);
+    fireTouch('touchmove', 180, 300);
+    await vi.waitFor(() => expect(phases).toContain('ready'));
+    fireTouch('touchcancel', 180, 300);
+    // This second touch used to bump the shared slide generation and make the
+    // first turn return before cleanup/finished.
+    fireTouch('touchstart', 500, 300);
+    fireTouch('touchend', 500, 300);
+
+    await vi.waitFor(
+      () => {
+        expect(phases).toContain('finished');
+      },
+      { timeout: 2000 },
+    );
+    expect(paginator.containerPosition).toBe(before);
+    expect(phases).toEqual(['before-capture', 'covered', 'ready', 'cancelled', 'finished']);
+    expect(document.documentElement.className).not.toContain('foliate-vt');
+  });
+
+  it('finishes cancellation before accepting another programmatic turn', async () => {
+    await setup(ltrBook, 'slide');
+    const page = paginator.page;
+    const before = paginator.containerPosition;
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    fireTouch('touchstart', 700, 300);
+    fireTouch('touchmove', 620, 300);
+    await vi.waitFor(() => expect(phases).toContain('ready'));
+    fireTouch('touchcancel', 620, 300);
+    // Programmatic navigation shares the same document-level pseudo tree and
+    // must not supersede cancellation before its terminal event.
+    await paginator.next();
+    await vi.waitFor(
+      () => {
+        expect(phases).toContain('finished');
+      },
+      { timeout: 2000 },
+    );
+
+    expect(paginator.page).toBe(page);
+    expect(paginator.containerPosition).toBe(before);
+    expect(phases).toEqual(['before-capture', 'covered', 'ready', 'cancelled', 'finished']);
+    expect(document.documentElement.className).not.toContain('foliate-vt');
   });
 
   // Xiaomi report (Android 16, WebView 148): with the layered slide style, a
