@@ -7,8 +7,17 @@ on:
 permissions:
   contents: read
 jobs:
+  # The Rust format/clippy/test steps only run when src-tauri changed, so the
+  # ~45s toolchain + system-dep install (and the compile itself) is skipped on
+  # PRs that don't touch the Rust backend. The job still runs and reports
+  # success so it stays green as a required check.
   rust_lint:
     runs-on: ubuntu-latest
+    # pull-requests: read lets dorny/paths-filter list a PR's changed files
+    # via the REST API (the top-level grant is contents: read only).
+    permissions:
+      contents: read
+      pull-requests: read
     env:
       RUSTFLAGS: '-C target-cpu=skylake'
       SCCACHE_GHA_ENABLED: 'true'
@@ -17,30 +26,44 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           submodules: 'true'
+      - name: detect src-tauri changes
+        id: changes
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
+        with:
+          filters: |
+            tauri:
+              - 'apps/readest-app/src-tauri/**'
       - name: setup sccache
+        if: steps.changes.outputs.tauri == 'true'
         uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
       - name: Install minimal stable with clippy and rustfmt
+        if: steps.changes.outputs.tauri == 'true'
         uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
         with:
           toolchain: stable
           override: true
           components: rustfmt, clippy
       - name: Cache apt packages
+        if: steps.changes.outputs.tauri == 'true'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /var/cache/apt/archives
           key: apt-rust-lint-${{ runner.os }}
       - name: Install system dependencies
+        if: steps.changes.outputs.tauri == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y pkg-config libfontconfig-dev libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libsoup-3.0-dev
       - name: Format check
+        if: steps.changes.outputs.tauri == 'true'
         working-directory: apps/readest-app/src-tauri
         run: cargo fmt --check
       - name: Clippy Check
+        if: steps.changes.outputs.tauri == 'true'
         working-directory: apps/readest-app/src-tauri
         run: cargo clippy -p Readest --no-deps -- -D warnings
       - name: Unit tests
+        if: steps.changes.outputs.tauri == 'true'
         working-directory: apps/readest-app/src-tauri
         run: cargo test -p Readest --lib
 
