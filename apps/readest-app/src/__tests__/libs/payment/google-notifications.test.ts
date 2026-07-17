@@ -24,6 +24,7 @@ import { handleGoogleNotification } from '@/libs/payment/iap/google/notification
 
 type Captures = {
   googleSubUpserts: Array<Record<string, unknown>>;
+  googleSubUpsertOptions: Array<Record<string, unknown> | undefined>;
   planUpdates: Array<Record<string, unknown>>;
   paymentUpdates: Array<Record<string, unknown>>;
 };
@@ -33,7 +34,12 @@ function createSupabaseMock(state: {
   paymentRow?: unknown;
   completedPayments?: Array<{ storage_gb: number }>;
 }) {
-  const captures: Captures = { googleSubUpserts: [], planUpdates: [], paymentUpdates: [] };
+  const captures: Captures = {
+    googleSubUpserts: [],
+    googleSubUpsertOptions: [],
+    planUpdates: [],
+    paymentUpdates: [],
+  };
   const client = {
     from(table: string) {
       switch (table) {
@@ -42,8 +48,9 @@ function createSupabaseMock(state: {
             select: () => ({
               eq: () => ({ single: () => Promise.resolve({ data: state.googleSubRow ?? null }) }),
             }),
-            upsert: (obj: Record<string, unknown>) => {
+            upsert: (obj: Record<string, unknown>, options?: Record<string, unknown>) => {
               captures.googleSubUpserts.push(obj);
+              captures.googleSubUpsertOptions.push(options);
               return Promise.resolve({ data: obj, error: null });
             },
           };
@@ -185,6 +192,45 @@ describe('handleGoogleNotification — subscriptions', () => {
 
     expect(res).toMatchObject({ handled: true, status: 'expired' });
     expect(sb.captures.planUpdates.at(-1)).toEqual({ plan: 'free', status: 'expired' });
+  });
+
+  it('does not downgrade when re-verification fails on a renewal', async () => {
+    // A failed Play API call on a non-terminal event (renewal/recovery/purchase)
+    // is transient; the handler must surface an error so Pub/Sub retries instead
+    // of downgrading a paying user to free.
+    googleMocks.verifyPurchase.mockResolvedValue({ success: false, error: 'api unavailable' });
+    const sb = createSupabaseMock({ googleSubRow: subRow });
+    h.supabase = sb;
+
+    await expect(handleGoogleNotification(subscriptionMessage(2))).rejects.toThrow(
+      /re-verification failed/,
+    );
+    expect(sb.captures.googleSubUpserts).toHaveLength(0);
+    expect(sb.captures.planUpdates).toHaveLength(0);
+  });
+
+  it('records a renewal under the stable purchase-token key', async () => {
+    // After a renewal the Play API returns the order id with a `..N` suffix.
+    // The upsert must conflict on (user_id, purchase_token) — the token never
+    // changes across renewals — so the existing row is updated instead of an
+    // insert that collides with the unique_user_purchase constraint.
+    googleMocks.verifyPurchase.mockResolvedValue({
+      ...activeVerification(),
+      purchaseData: { ...activeVerification().purchaseData, orderId: 'order-1..3' },
+    });
+    const sb = createSupabaseMock({ googleSubRow: subRow });
+    h.supabase = sb;
+
+    const res = await handleGoogleNotification(subscriptionMessage(2)); // SUBSCRIPTION_RENEWED
+
+    expect(res).toMatchObject({ handled: true, status: 'active' });
+    expect(sb.captures.googleSubUpsertOptions.at(-1)).toMatchObject({
+      onConflict: 'user_id,purchase_token',
+    });
+    const upsert = sb.captures.googleSubUpserts.at(-1)!;
+    expect(upsert).toMatchObject({ order_id: 'order-1..3', purchase_token: TOKEN });
+    // created_at has a DB default and must not be rewritten on every upsert.
+    expect(upsert).not.toHaveProperty('created_at');
   });
 
   it('ignores notifications for an unknown purchase token', async () => {

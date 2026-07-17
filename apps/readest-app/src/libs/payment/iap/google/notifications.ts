@@ -142,7 +142,22 @@ async function handleSubscriptionNotification(
   }
 
   // Re-verification failed (e.g. a revoked purchase is no longer queryable).
-  // For terminal events we still downgrade the user using the stored row.
+  // Only terminal/grace events may downgrade the user from the stored row; for
+  // anything else (renewal, recovery, purchase) a failed verification is a
+  // transient or environmental error, so surface it for a Pub/Sub retry
+  // instead of downgrading a paying user to free.
+  const isDowngradeEvent = [
+    SubscriptionNotificationType.REVOKED,
+    SubscriptionNotificationType.EXPIRED,
+    SubscriptionNotificationType.ON_HOLD,
+    SubscriptionNotificationType.PAUSED,
+    SubscriptionNotificationType.IN_GRACE_PERIOD,
+  ].includes(notificationType);
+  if (!isDowngradeEvent) {
+    throw new Error(
+      `Google re-verification failed for notification type ${notificationType}: ${verificationResult.error}`,
+    );
+  }
   const status = overrideStatus('expired', notificationType);
   await createOrUpdateSubscription(
     subRow.user_id,

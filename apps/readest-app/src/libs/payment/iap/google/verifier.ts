@@ -155,7 +155,8 @@ export class GoogleIAPVerifier {
         purchaseData: purchase,
         purchaseType: 'subscription',
       };
-    } catch {
+    } catch (error) {
+      console.error('Google Play subscription verification failed:', error);
       return {
         success: false,
         error: 'Not a subscription purchase',
@@ -189,7 +190,8 @@ export class GoogleIAPVerifier {
         purchaseData: purchase,
         purchaseType: 'product',
       };
-    } catch {
+    } catch (error) {
+      console.error('Google Play product verification failed:', error);
       return {
         success: false,
         error: 'Purchase not found',

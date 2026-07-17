@@ -75,11 +75,14 @@ export async function createOrUpdateSubscription(userId: string, purchase: Verif
         obfuscated_external_profile_id: purchase.obfuscatedExternalProfileId,
         cancel_reason: purchase.cancelReason,
         user_cancellation_time_millis: purchase.userCancellationTimeMillis,
-        created_at: new Date(),
         updated_at: new Date(),
       },
       {
-        onConflict: 'user_id,order_id',
+        // The purchase token is the stable key across a subscription's life;
+        // the Play API order id gains a `..N` suffix on every renewal, so
+        // conflicting on order_id would insert instead of update and collide
+        // with the unique (user_id, purchase_token) constraint.
+        onConflict: 'user_id,purchase_token',
       },
     );
 
