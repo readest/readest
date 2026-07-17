@@ -36,12 +36,18 @@ import { TTSPlaybackInfo } from './usePlaybackInfo';
 import { useCountdownLabel } from './useCountdownLabel';
 import TTSScrubber from './TTSScrubber';
 import SpeedRuler, { formatRate } from './SpeedRuler';
-import GapChips, { formatGap } from './GapChips';
-import ParagraphGapChips from './ParagraphGapChips';
+import TickRuler from './TickRuler';
 import TTSChaptersView from './TTSChaptersView';
 import type { UseTTSDownloadsResult } from '@/app/reader/hooks/useTTSDownloads';
 
 type SheetView = 'main' | 'speed' | 'voice' | 'timer' | 'chapters';
+
+export const formatGap = (sec: number) => `${parseFloat(sec.toFixed(2))}s`;
+
+// Pause ruler configurations: 0.05s steps keep every legacy chip preset
+// reachable (sentence 0-0.6s, paragraph 0-2s).
+const SENTENCE_PAUSE_MARKS = [0, 0.2, 0.4, 0.6];
+const PARAGRAPH_PAUSE_MARKS = [0, 0.5, 1, 1.5, 2];
 
 const getTTSTimeoutOptions = (_: TranslationFunc) => {
   return [
@@ -480,15 +486,35 @@ const TTSPlayerSheet = ({
           {hasGapControl && (
             <>
               <div className='text-base-content/60 w-full px-2 py-1 text-sm sm:text-xs'>
-                {_('Sentence Pause')} · {formatGap(gap)}
+                {_('Sentence Pause')}
               </div>
-              <GapChips gap={gap} onSelect={handleSelectGap} />
+              <TickRuler
+                min={0}
+                max={0.6}
+                step={0.05}
+                marks={SENTENCE_PAUSE_MARKS}
+                value={gap}
+                ariaLabel={_('Sentence Pause')}
+                formatValue={formatGap}
+                formatMark={formatGap}
+                onSelect={handleSelectGap}
+              />
             </>
           )}
           <div className='text-base-content/60 w-full px-2 py-1 text-sm sm:text-xs'>
-            {_('Paragraph Pause')} · {formatGap(paragraphGap)}
+            {_('Paragraph Pause')}
           </div>
-          <ParagraphGapChips gap={paragraphGap} onSelect={handleSelectParagraphGap} />
+          <TickRuler
+            min={0}
+            max={2}
+            step={0.05}
+            marks={PARAGRAPH_PAUSE_MARKS}
+            value={paragraphGap}
+            ariaLabel={_('Paragraph Pause')}
+            formatValue={formatGap}
+            formatMark={formatGap}
+            onSelect={handleSelectParagraphGap}
+          />
         </div>
       )}
       {view === 'voice' && (
