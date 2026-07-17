@@ -20,7 +20,11 @@ const readerState = {
   hoveredBookKey: '',
   bottomBarTab: '',
   setHoveredBookKey: vi.fn(),
-  getViewSettings: () => ({ ...DEFAULT_VIEW_CONFIG, ...DEFAULT_BOOK_LAYOUT }),
+  getViewSettings: () => ({
+    ...DEFAULT_VIEW_CONFIG,
+    ...DEFAULT_BOOK_LAYOUT,
+    ...DEFAULT_TTS_CONFIG,
+  }),
 };
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => readerState,
@@ -37,7 +41,7 @@ vi.mock('@/store/bookDataStore', () => ({
 }));
 
 import TTSMiniPlayer from '@/app/reader/components/tts/TTSMiniPlayer';
-import { DEFAULT_BOOK_LAYOUT, DEFAULT_VIEW_CONFIG } from '@/services/constants';
+import { DEFAULT_BOOK_LAYOUT, DEFAULT_TTS_CONFIG, DEFAULT_VIEW_CONFIG } from '@/services/constants';
 
 const gridInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 
@@ -129,6 +133,15 @@ describe('TTSMiniPlayer', () => {
     const props = makeProps();
     render(<TTSMiniPlayer {...props} />);
     fireEvent.click(screen.getByText('Chapter 5'));
+    expect(props.onExpand).toHaveBeenCalled();
+  });
+
+  test('the settings affordance shows the speed and opens the full player', () => {
+    const props = makeProps();
+    render(<TTSMiniPlayer {...props} />);
+    const btn = screen.getByLabelText('Playback settings');
+    expect(btn.textContent).toBe('1.3×'); // DEFAULT_VIEW_CONFIG ttsRate
+    fireEvent.click(btn);
     expect(props.onExpand).toHaveBeenCalled();
   });
 

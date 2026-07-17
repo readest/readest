@@ -20,7 +20,37 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { formatPlaybackTime } from '@/utils/time';
 import { TTSPlaybackInfo, usePlaybackInfo } from './usePlaybackInfo';
 import { useCountdownLabel } from './useCountdownLabel';
+import { formatRate } from './SpeedRuler';
 import { getTTSMiniPlayerBottomOffset } from '../../utils/ttsMiniPlayerPosition';
+
+// Playback-settings glyph: a hex nut whose top-right edge is left open so
+// the current speed sits in the gap (podcast-player convention). The number
+// juts past the icon box on purpose; the button reserves room for it.
+const SpeedSettingsIcon = ({ size, label }: { size: number; label: string }) => (
+  <span className='relative inline-flex shrink-0'>
+    <svg
+      width={size}
+      height={size}
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='currentColor'
+      strokeWidth={2}
+      strokeLinecap='round'
+      strokeLinejoin='round'
+      aria-hidden='true'
+    >
+      {/* Edges numbered clockwise from the top: the path starts two thirds
+          into edge 2 (only its trailing third draws), runs through edges
+          3-6, and stops at edge 1's midpoint (only its leading half draws).
+          The opening between the two partial edges carries the speed label. */}
+      <path d='M19.33 10.66 L20.8 13.2 L16.4 20.82 L7.6 20.82 L3.2 13.2 L7.6 5.58 L12 5.58' />
+      <circle cx='12' cy='13.2' r='3.2' />
+    </svg>
+    <span className='absolute start-[56%] top-[6%] text-[9px] font-semibold leading-none tabular-nums'>
+      {label}
+    </span>
+  </span>
+);
 
 type TTSMiniPlayerProps = {
   bookKey: string;
@@ -163,7 +193,19 @@ const TTSMiniPlayer = ({
             />
           </div>
         )}
-        <div className='text-base-content flex h-14 items-center gap-2 pe-1 ps-3'>
+        <div className='text-base-content flex h-14 items-center gap-2 pe-1 ps-1.5'>
+          {/* Visible route into the full player: a settings glyph carrying
+              the live speed as a superscript (the sheet is where speed and
+              voice live). The chapter text expands too, but text alone
+              reads as a label, not an affordance. */}
+          <button
+            type='button'
+            aria-label={_('Playback settings')}
+            onClick={onExpand}
+            className='text-base-content/70 flex shrink-0 rounded-full p-1 pe-4'
+          >
+            <SpeedSettingsIcon size={iconSize22} label={formatRate(viewSettings?.ttsRate ?? 1.0)} />
+          </button>
           <div
             role='button'
             tabIndex={0}
