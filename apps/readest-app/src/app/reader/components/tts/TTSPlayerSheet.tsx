@@ -312,7 +312,10 @@ const TTSPlayerSheet = ({
       onClose={onClose}
     >
       {view === 'main' && (
-        <div className='flex w-full flex-col items-center gap-4 pb-4'>
+        // sm:pt-4 keeps the cover clear of the box's rounded top edge on
+        // desktop, where the mobile drag handle (and its clearance) is
+        // hidden; on mobile the handle already provides the gap.
+        <div className='flex w-full flex-col items-center gap-4 pb-4 sm:pt-4'>
           {book?.coverImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -395,7 +398,9 @@ const TTSPlayerSheet = ({
               className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
             >
               <span className='text-sm font-semibold tabular-nums'>{formatRate(rate)}</span>
-              <span className='text-base-content/60 text-xs'>{_('Speed')}</span>
+              <span className='text-base-content/60 max-w-full truncate px-1 text-xs'>
+                {_('Speed')}
+              </span>
             </button>
             <button
               type='button'

@@ -195,6 +195,29 @@ describe('TTSPlayerSheet', () => {
     expect(props.onForward).toHaveBeenCalledWith(false);
   });
 
+  test('main view keeps the cover clear of the sheet top edge on desktop', () => {
+    // The sheet content is pulled up (mt-[-4px]) to tuck under the mobile
+    // drag handle; on sm+ the handle is hidden and the main view needs its
+    // own top padding or the cover clips into the rounded top edge.
+    getBookData.mockReturnValue({
+      book: { title: 'Alice in Wonderland', coverImageUrl: 'blob:cover' },
+    });
+    const { container } = render(<TTSPlayerSheet {...makeProps()} />);
+    const cover = container.querySelector('img');
+    expect(cover).toBeTruthy();
+    expect(cover?.parentElement?.className).toContain('sm:pt-4');
+  });
+
+  test('the speed caption pads and truncates like its sibling captions', () => {
+    // 'Geschwindigkeit' (de) overflows the compact button edge-to-edge
+    // without the max-w-full/truncate/px-1 combo the other captions use.
+    render(<TTSPlayerSheet {...makeProps()} />);
+    const caption = screen.getByText('Speed');
+    expect(caption.className).toContain('max-w-full');
+    expect(caption.className).toContain('truncate');
+    expect(caption.className).toContain('px-1');
+  });
+
   test('speed button drills into the ruler and releasing a drag persists the rate', () => {
     const props = makeProps();
     render(<TTSPlayerSheet {...props} />);
