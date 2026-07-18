@@ -22,6 +22,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    silent: 'passed-only',
     setupFiles: ['./vitest.setup.ts'],
     exclude: [
       '**/node_modules/**',

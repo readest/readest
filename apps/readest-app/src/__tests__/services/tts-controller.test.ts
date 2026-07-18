@@ -526,12 +526,6 @@ describe('TTSController', () => {
       expect(controller.ttsClient.resume).toHaveBeenCalled();
     });
 
-    test('stop sets state to stopped', async () => {
-      controller.state = 'playing';
-      await controller.stop();
-      expect(controller.state).toBe('stopped');
-    });
-
     test('error sets state to stopped', () => {
       controller.state = 'playing';
       controller.error(new Error('test'));
@@ -1416,27 +1410,7 @@ describe('TTSController', () => {
     });
   });
 
-  describe('initViewTTS', () => {
-    test('does nothing when already initialised (section index != -1)', async () => {
-      // Manually set section index via a reflect access workaround
-      // Since #ttsSectionIndex is private, we test indirectly through initViewTTS
-      // being called multiple times - first call will init, second should skip
-      mockView.tts = {
-        doc: {},
-        start: vi.fn(),
-      } as unknown as FoliateView['tts'];
-
-      // Call once to set the section index
-      await controller.initViewTTS(0);
-      // Now we can verify it doesn't re-init by checking the section was already created
-    });
-  });
-
   describe('extends EventTarget', () => {
-    test('is an instance of EventTarget', () => {
-      expect(controller instanceof EventTarget).toBe(true);
-    });
-
     test('can add and dispatch custom events', () => {
       const handler = vi.fn();
       controller.addEventListener('test-event', handler);

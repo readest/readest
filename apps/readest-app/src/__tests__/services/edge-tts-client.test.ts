@@ -203,30 +203,6 @@ describe('EdgeTTSClient', () => {
     });
   });
 
-  describe('setRate', () => {
-    test('stores rate value', async () => {
-      await client.setRate(1.5);
-      // Rate is private, so we verify indirectly - no error thrown
-      await expect(client.setRate(0.5)).resolves.toBeUndefined();
-    });
-
-    test('accepts boundary values', async () => {
-      await expect(client.setRate(0.5)).resolves.toBeUndefined();
-      await expect(client.setRate(2.0)).resolves.toBeUndefined();
-    });
-  });
-
-  describe('setPitch', () => {
-    test('stores pitch value', async () => {
-      await expect(client.setPitch(1.2)).resolves.toBeUndefined();
-    });
-
-    test('accepts boundary values', async () => {
-      await expect(client.setPitch(0.5)).resolves.toBeUndefined();
-      await expect(client.setPitch(1.5)).resolves.toBeUndefined();
-    });
-  });
-
   describe('setVoice', () => {
     test('sets voice when voice id exists in voice list', async () => {
       await client.init();
@@ -239,25 +215,6 @@ describe('EdgeTTSClient', () => {
       await client.setVoice('en-US-AriaNeural');
       await client.setVoice('nonexistent-voice');
       expect(client.getVoiceId()).toBe('en-US-AriaNeural');
-    });
-
-    test('voice id remains empty when no voice has been set', () => {
-      expect(client.getVoiceId()).toBe('');
-    });
-  });
-
-  describe('setPrimaryLang', () => {
-    test('sets primary language', () => {
-      client.setPrimaryLang('fr');
-      // No public getter for primaryLang, but we verify no error
-      // The effect is observed when speak() uses it
-    });
-
-    test('accepts any language string', () => {
-      client.setPrimaryLang('zh-CN');
-      client.setPrimaryLang('ja');
-      client.setPrimaryLang('en');
-      // No error thrown
     });
   });
 

@@ -37,6 +37,7 @@ const config: Config = {
     }),
   ],
   daisyui: {
+    logs: false,
     themes: themes.reduce(
       (acc, { name, colors }) => {
         acc.push({

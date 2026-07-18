@@ -418,10 +418,6 @@ describe('BaseAppService', () => {
       const result = await service.loadLibraryBooks();
       expect(result).toEqual([{ title: 'Book1' }]);
     });
-
-    test('saveLibraryBooks delegates', async () => {
-      await service.saveLibraryBooks([]);
-    });
   });
 
   describe('runMigrations', () => {

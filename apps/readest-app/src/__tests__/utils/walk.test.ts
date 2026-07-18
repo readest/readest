@@ -196,29 +196,4 @@ describe('walkTextNodes', () => {
     expect(result).toHaveLength(1);
     expect(result[0]!.textContent).toBe('Text');
   });
-
-  test.skip('walks into shadow DOM (requires real shadow DOM support)', () => {
-    // jsdom has limited shadow DOM support; skipping for now
-    const host = document.createElement('div');
-    const shadow = host.attachShadow({ mode: 'open' });
-    shadow.appendChild(el('p', 'Shadow text'));
-    const root = el('div', host);
-    const result = walkTextNodes(root);
-    expect(result).toHaveLength(1);
-    expect(result[0]!.textContent).toBe('Shadow text');
-  });
-
-  test.skip('walks into iframe contentDocument (not supported in jsdom)', () => {
-    // jsdom iframes do not have usable contentDocument; skipping
-    const iframe = document.createElement('iframe');
-    document.body.appendChild(iframe);
-    const iframeDoc = iframe.contentDocument;
-    if (iframeDoc) {
-      iframeDoc.body.appendChild(el('p', 'Iframe text'));
-    }
-    const root = el('div', iframe);
-    const result = walkTextNodes(root);
-    expect(result).toHaveLength(1);
-    document.body.removeChild(iframe);
-  });
 });

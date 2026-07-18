@@ -53,3 +53,11 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
       dispatchEvent: () => false,
     }) as MediaQueryList;
 }
+
+// jsdom reports these unimplemented methods to its virtual console even when
+// the calling test passes. Tests that need media behavior replace them locally.
+if (typeof HTMLMediaElement !== 'undefined') {
+  HTMLMediaElement.prototype.play = () => Promise.resolve();
+  HTMLMediaElement.prototype.pause = () => {};
+  HTMLMediaElement.prototype.load = () => {};
+}

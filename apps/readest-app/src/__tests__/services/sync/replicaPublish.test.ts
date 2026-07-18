@@ -82,6 +82,7 @@ describe('publishReplicaUpsert (dictionary adapter)', () => {
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(null);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
     await upsertDict(baseDict());
+    expect(getUserID).not.toHaveBeenCalled();
   });
 
   test('no-ops when no adapter registered for the kind', async () => {
@@ -167,6 +168,7 @@ describe('publishReplicaDelete', () => {
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(null);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
     await publishReplicaDelete('dictionary', 'content-hash-abc');
+    expect(getUserID).not.toHaveBeenCalled();
   });
 
   test('no-ops when user not authenticated', async () => {
@@ -204,6 +206,7 @@ describe('publishReplicaManifest', () => {
     (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(null);
     (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
     await publishReplicaManifest('dictionary', 'content-hash-abc', []);
+    expect(getUserID).not.toHaveBeenCalled();
   });
 
   test('no-ops when user not authenticated', async () => {
