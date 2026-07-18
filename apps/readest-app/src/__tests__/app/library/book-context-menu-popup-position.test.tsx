@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import type { Book } from '@/types/book';
 
@@ -18,13 +18,33 @@ import type { Book } from '@/types/book';
  * Passing an explicit position makes muda anchor to the app window's own
  * GdkWindow instead, which always has a parent. So the popup call must carry
  * the pointer position from the triggering contextmenu event.
+ *
+ * CSS pixels are not window-logical pixels when the webview carries a page
+ * zoom. WebKitGTK folds the desktop text-scaling factor into such a zoom
+ * without reflecting it in devicePixelRatio (e.g. GDK scale 2 × 0.8 text
+ * scale: CSS→physical is 1.6 while dPR reports 2), so both raw client
+ * coordinates and clientX×dPR land the menu offset from the click by a
+ * factor that grows with distance. The zoom-proof conversion is the click's
+ * *fraction* of the CSS viewport mapped onto the window's logical size:
+ * any uniform zoom cancels out of the ratio.
  */
 
-const popupSpy = vi.hoisted(() => vi.fn(async () => {}));
-const menuNew = vi.hoisted(() => vi.fn(async () => ({ popup: popupSpy })));
+const popupSpy = vi.hoisted(() => vi.fn(async (_pos?: unknown) => {}));
+const menuNew = vi.hoisted(() => vi.fn(async () => ({ popup: popupSpy, close: vi.fn() })));
+const windowState = vi.hoisted(() => ({
+  innerSize: { width: 2560, height: 1600 },
+  scaleFactor: 2,
+}));
 
 vi.mock('@tauri-apps/api/menu', () => ({
   Menu: { new: menuNew },
+}));
+
+vi.mock('@tauri-apps/api/window', () => ({
+  getCurrentWindow: () => ({
+    innerSize: async () => windowState.innerSize,
+    scaleFactor: async () => windowState.scaleFactor,
+  }),
 }));
 
 vi.mock('@tauri-apps/plugin-opener', () => ({
@@ -98,7 +118,19 @@ describe('library context menu popup position (issue #5181)', () => {
     vi.clearAllMocks();
   });
 
-  it('passes the contextmenu pointer position to menu.popup', async () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  const setViewport = (width: number, height: number) => {
+    Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
+    Object.defineProperty(window, 'innerHeight', { value: height, configurable: true });
+  };
+
+  it('passes the contextmenu position to menu.popup in window-logical pixels', async () => {
+    // CSS viewport matches the window logical size (1280×800): no zoom, so
+    // the popup position equals the client coordinates.
+    setViewport(1280, 800);
     renderItem();
 
     fireEvent.contextMenu(screen.getByRole('button', { name: 'Test Book' }), {
@@ -107,6 +139,28 @@ describe('library context menu popup position (issue #5181)', () => {
     });
 
     await waitFor(() => expect(popupSpy).toHaveBeenCalled());
-    expect(popupSpy).toHaveBeenCalledWith(expect.objectContaining({ x: 123, y: 456 }));
+    const pos = popupSpy.mock.calls[0]![0] as unknown as { type: string; x: number; y: number };
+    expect(pos.type).toBe('Logical');
+    expect(pos.x).toBeCloseTo(123);
+    expect(pos.y).toBeCloseTo(456);
+  });
+
+  it('compensates a webview page zoom when mapping the click to window coordinates', async () => {
+    // A 0.8 page zoom inflates the CSS viewport to 1600×1000 while the
+    // window is still 1280×800 logical: client coordinates must shrink by
+    // the same ratio or the menu lands past the click (issue #5181).
+    setViewport(1600, 1000);
+    renderItem();
+
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Test Book' }), {
+      clientX: 500,
+      clientY: 250,
+    });
+
+    await waitFor(() => expect(popupSpy).toHaveBeenCalled());
+    const pos = popupSpy.mock.calls[0]![0] as unknown as { type: string; x: number; y: number };
+    expect(pos.type).toBe('Logical');
+    expect(pos.x).toBeCloseTo(400);
+    expect(pos.y).toBeCloseTo(200);
   });
 });
