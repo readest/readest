@@ -22,6 +22,10 @@ local ReadestSync = WidgetContainer:new{
 }
 
 local API_CALL_DEBOUNCE_DELAY = 30
+-- Delay before the on-open pull runs, so the reader paints and becomes
+-- interactive first and rapid book switching coalesces to a single pull for
+-- the book you settle on, instead of stacking blocking round-trips (#5006).
+local READER_READY_PULL_DELAY = 1
 local SUPABAE_ANON_KEY_BASE64 = "ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5aaWMzbDRablZ6YW1weFpIaHJhbkZzZVhOaklpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzTXpReE1qTTJOekVzSW1WNGNDSTZNakEwT1RZNU9UWTNNWDAuM1U1VXFhb3VfMVNnclZlMWVvOXJBcGMwdUtqcWhwUWRVWGh2d1VIbVVmZw=="
 
 ReadestSync.default_settings = {
@@ -93,11 +97,19 @@ end
 
 function ReadestSync:onReaderReady()
     if self.settings.auto_sync and self.settings.access_token then
-        UIManager:nextTick(function()
+        -- Defer the per-book pull so the reader is interactive first, and keep a
+        -- handle so a rapid book switch cancels it (onCloseWidget) instead of
+        -- stacking blocking round-trips on the UI thread (issue #5006).
+        if self.reader_ready_pull_task then
+            UIManager:unschedule(self.reader_ready_pull_task)
+        end
+        self.reader_ready_pull_task = function()
+            self.reader_ready_pull_task = nil
             self:pullBookConfig(false)
             self:pullBookNotes(false)
             self:pullBookStats(false)
-        end)
+        end
+        UIManager:scheduleIn(READER_READY_PULL_DELAY, self.reader_ready_pull_task)
     end
     self:onDispatcherRegisterReaderActions()
 end
@@ -924,13 +936,43 @@ function ReadestSync:syncBooksLibrary(mode, interactive)
     end)
 end
 
+-- pushOpenBook(interactive) — push ONLY the currently-open book's library
+-- row. Closing a book has to persist this book's reading progress and
+-- timestamps, but it does NOT need other devices' rows, so we skip the full
+-- library pull whose ~3s blocking round-trip froze the UI on every close
+-- (issue #5006). The cross-device library pull still runs when the Library
+-- widget opens. touchOpenBook returns the row with the cloud-side uploaded_at
+-- / metadata / group_id still in place (from the last pull), so this
+-- single-book push preserves them — no explicit-null wipe (issue #4138), same
+-- as the existing interactive "push" path.
+function ReadestSync:pushOpenBook(interactive)
+    if not (self.settings.access_token and self.settings.user_id) then return end
+    local touched = self:touchOpenBook()
+    if not touched then return end
+    local syncbooks = require("library.syncbooks")
+    syncbooks.pushBook(touched, {
+        sync_auth = SyncAuth,
+        sync_path = self.path,
+        settings  = self.settings,
+    }, function(success, _msg, status)
+        logger.info("ReadestSync pushOpenBook done: success=" .. tostring(success)
+            .. " status=" .. tostring(status))
+        if interactive then
+            UIManager:show(InfoMessage:new{
+                text = success and _("Books synced") or _("Books sync failed"),
+                timeout = 2,
+            })
+        end
+    end)
+end
+
 function ReadestSync:onCloseDocument()
     if self.settings.auto_sync and self.settings.access_token then
         NetworkMgr:goOnlineToRun(function()
             self:pushBookConfig(false)
             self:pushBookNotes(false)
             self:pushBookStats(false)
-            self:syncBooksLibrary("both", false)
+            self:pushOpenBook(false)
         end)
     end
 end
@@ -1006,6 +1048,10 @@ function ReadestSync:onCloseWidget()
     if self.resume_pull_task then
         UIManager:unschedule(self.resume_pull_task)
         self.resume_pull_task = nil
+    end
+    if self.reader_ready_pull_task then
+        UIManager:unschedule(self.reader_ready_pull_task)
+        self.reader_ready_pull_task = nil
     end
 end
 
