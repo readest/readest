@@ -214,6 +214,39 @@ describe("library.syncbooks", function()
             assert.is_nil(syncbooks._row_to_wire(nil))
         end)
 
+        -- Regression (#5006): KOReader's require("json") is LuaJSON, whose
+        -- decoder represents a JSON null as a *function* sentinel
+        -- (json.util.null). The push payload is re-encoded by Spore with
+        -- dkjson, which raises "type 'function' is not supported by JSON" and
+        -- fails the whole pushChanges. row_to_wire must neutralise those
+        -- sentinels so the payload always re-encodes. The test harness swaps
+        -- in dkjson (which drops nulls) so we stub the LuaJSON behaviour here.
+        it("re-encodes cleanly when decoded metadata holds a JSON null (LuaJSON sentinel)", function()
+            local null_fn  -- LuaJSON: JSON null -> function sentinel
+            null_fn = function() return null_fn end
+            local prev_json = package.loaded["json"]
+            package.loaded["json"] = {
+                decode = function(_)
+                    return { series = "Foundation", published = null_fn }
+                end,
+            }
+            finally(function() package.loaded["json"] = prev_json end)
+
+            local out = syncbooks._row_to_wire({
+                hash = "h1", title = "T",
+                metadata_json = '{"series":"Foundation","published":null}',
+            })
+
+            -- The wire payload is serialized by Spore/dkjson; must not raise.
+            local dkjson = require("dkjson")
+            local ok, err = pcall(dkjson.encode, { books = { out }, notes = {}, configs = {} })
+            assert.is_true(ok, "payload must be dkjson-encodable: " .. tostring(err))
+            -- Null preserved as JSON null (byte-faithful to the wire), not a function.
+            assert.are_not.equal("function", type(out.metadata.published))
+            assert.are.equal(dkjson.null, out.metadata.published)
+            assert.are.equal("Foundation", out.metadata.series)
+        end)
+
         it("emits readingStatusUpdatedAt in the wire payload", function()
             local wire = syncbooks._row_to_wire({ hash = "h1", title = "T",
                 reading_status = "finished", reading_status_updated_at = 1750000000000 })

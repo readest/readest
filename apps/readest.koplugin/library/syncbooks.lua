@@ -125,6 +125,24 @@ function M.resolve_collision(candidate, exists)
     return candidate
 end
 
+-- sanitize_json_nulls(v) — recursively replace function-valued JSON null
+-- sentinels with dkjson's null. KOReader's require("json") is LuaJSON, whose
+-- decoder represents a JSON null as a *function* (json.util.null). The /sync
+-- push payload is re-encoded by Spore's Format.JSON middleware with dkjson,
+-- which raises "type 'function' is not supported by JSON" on any function and
+-- fails the entire pushChanges (issue #5006). Converting the sentinel to
+-- dkjson.null re-encodes it as a JSON null — byte-faithful to what the
+-- metadata carried on the wire, with no metadata churn across devices.
+local function sanitize_json_nulls(v)
+    if type(v) == "function" then
+        return require("dkjson").null
+    elseif type(v) == "table" then
+        for k, val in pairs(v) do v[k] = sanitize_json_nulls(val) end
+    end
+    return v
+end
+M._sanitize_json_nulls = sanitize_json_nulls  -- exported for tests
+
 -- ---------------------------------------------------------------------------
 -- row_to_wire(row) — convert our internal snake_case row to the
 -- camelCase Book shape Readest's server expects on POST /sync (mirrors
@@ -159,14 +177,14 @@ local function row_to_wire(row)
     if row.metadata_json and row.metadata_json ~= "" then
         local json = require("json")
         local ok, parsed = pcall(json.decode, row.metadata_json)
-        if ok and type(parsed) == "table" then out.metadata = parsed end
+        if ok and type(parsed) == "table" then out.metadata = sanitize_json_nulls(parsed) end
     end
     -- progress: stored locally as JSON tuple [cur, total] in progress_lib;
     -- the wire format expects the actual array.
     if row.progress_lib and row.progress_lib ~= "" then
         local json = require("json")
         local ok, parsed = pcall(json.decode, row.progress_lib)
-        if ok and type(parsed) == "table" then out.progress = parsed end
+        if ok and type(parsed) == "table" then out.progress = sanitize_json_nulls(parsed) end
     end
     return out
 end
