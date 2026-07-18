@@ -15,22 +15,22 @@ vi.mock('@/components/CachedImage', () => ({
 // synchronously via itemContent, matching the TOCView/BooknoteView test mocks.
 vi.mock('react-virtuoso', async () => {
   const React = await import('react');
+  const renderAll = (
+    {
+      totalCount,
+      itemContent,
+    }: { totalCount: number; itemContent: (index: number) => React.ReactNode },
+    _ref: React.Ref<unknown>,
+  ) => (
+    <div>
+      {Array.from({ length: totalCount }, (_, index) => (
+        <div key={index}>{itemContent(index)}</div>
+      ))}
+    </div>
+  );
   return {
-    Virtuoso: React.forwardRef(
-      (
-        {
-          totalCount,
-          itemContent,
-        }: { totalCount: number; itemContent: (index: number) => React.ReactNode },
-        _ref: React.Ref<unknown>,
-      ) => (
-        <div>
-          {Array.from({ length: totalCount }, (_, index) => (
-            <div key={index}>{itemContent(index)}</div>
-          ))}
-        </div>
-      ),
-    ),
+    Virtuoso: React.forwardRef(renderAll),
+    VirtuosoGrid: React.forwardRef(renderAll),
   };
 });
 
@@ -84,6 +84,29 @@ describe('FeedView groups', () => {
     expect(screen.queryByTestId('group-carousel')).toBeNull();
     // Publications still render in the (grid) layout.
     expect(screen.getByText('Only Group A')).toBeTruthy();
+  });
+
+  it('shows card authors with Calibre pipes restored to commas, joined by & (issue #5183)', () => {
+    const feed: OPDSFeed = {
+      metadata: { title: 'Catalog' },
+      links: [],
+      publications: [
+        {
+          metadata: {
+            title: 'Two Authors',
+            author: [
+              { name: 'Doe| John Walter', links: [] },
+              { name: 'Smith| James Richard', links: [] },
+            ],
+          },
+          links: [],
+          images: [],
+        },
+      ],
+    };
+    renderFeed(feed);
+
+    expect(screen.getByText('Doe, John Walter & Smith, James Richard')).toBeTruthy();
   });
 
   it('selects the right publication when a carousel item is clicked', () => {

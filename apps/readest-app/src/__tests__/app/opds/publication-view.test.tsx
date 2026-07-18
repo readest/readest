@@ -240,6 +240,40 @@ describe('PublicationView', () => {
     expect(screen.getByText('Washington: Government printing office, 1904.')).toBeTruthy();
   });
 
+  it('restores Calibre pipe-escaped commas and joins authors with & (issue #5183)', () => {
+    const calibrePublication: OPDSPublication = {
+      metadata: {
+        title: 'Two Authors',
+        author: [
+          {
+            name: 'Doe| John Walter',
+            links: [{ href: '/opds/search?author_id=1', type: 'application/opds+json' }],
+          },
+          { name: 'Smith| James Richard', links: [] },
+        ],
+      },
+      links: [],
+      images: [],
+    };
+
+    const { container } = render(
+      <DropdownProvider>
+        <PublicationView
+          publication={calibrePublication}
+          baseURL='https://calibre.example.com/opds'
+          resolveURL={(href, base) => new URL(href, base).toString()}
+          onDownload={vi.fn(async () => null)}
+          onNavigate={vi.fn()}
+          onGenerateCachedImageUrl={vi.fn(async (url: string) => url)}
+        />
+      </DropdownProvider>,
+    );
+
+    expect(container.textContent).toContain('Doe, John Walter & Smith, James Richard');
+    // Linked authors stay clickable with the normalized name.
+    expect(screen.getByRole('button', { name: 'Doe, John Walter' })).toBeTruthy();
+  });
+
   it('renders a tag without an OPDS link as plain, non-clickable text', () => {
     render(
       <DropdownProvider>

@@ -58,6 +58,7 @@ import {
   validateOPDSURL,
   getOPDSNavLink,
   getUnaddedPopularCatalogs,
+  formatContributorName,
 } from '@/app/opds/utils/opdsUtils';
 import type { OPDSBaseLink, OPDSCatalog } from '@/types/opds';
 import { fetchWithAuth } from '@/app/opds/utils/opdsReq';
@@ -67,6 +68,18 @@ const mockFetchWithAuth = vi.mocked(fetchWithAuth);
 describe('opdsUtils', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  describe('formatContributorName', () => {
+    // Calibre stores commas in author names as `|` (e.g. `Doe| John`), and
+    // Calibre-Web OPDS feeds serve that raw form (readest issue #5183).
+    it('restores commas that Calibre escaped as pipes', () => {
+      expect(formatContributorName('Doe| John Walter')).toBe('Doe, John Walter');
+    });
+
+    it('leaves names without pipes unchanged', () => {
+      expect(formatContributorName('John Walter Doe')).toBe('John Walter Doe');
+    });
   });
 
   describe('groupByArray', () => {

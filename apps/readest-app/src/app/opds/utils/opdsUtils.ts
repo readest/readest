@@ -144,6 +144,13 @@ export const getOPDSNavLink = (
   links?: Array<{ href?: string; type?: string }>,
 ): string | undefined => links?.find((link) => link.href && isOPDSCatalog(link.type ?? ''))?.href;
 
+/**
+ * Calibre stores commas in contributor names escaped as pipes (`Doe, John` →
+ * `Doe| John`), and Calibre-Web serves that raw form in its OPDS feeds
+ * (readest issue #5183). Restore the commas for display.
+ */
+export const formatContributorName = (name: string): string => name.replace(/\|/g, ',');
+
 export const isSearchLink = (link: OPDSBaseLink): boolean => {
   const rels = Array.isArray(link.rel) ? link.rel : [link.rel || ''];
   if (!rels.includes('search')) return false;

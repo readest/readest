@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { CachedImage } from '@/components/CachedImage';
 import { OPDSPublication, REL } from '@/types/opds';
+import { formatContributorName } from '../utils/opdsUtils';
 
 interface PublicationCardProps {
   publication: OPDSPublication;
@@ -42,7 +43,10 @@ export function PublicationCard({
 
     const authorList = Array.isArray(author) ? author : [author];
 
-    return authorList.map((a) => (typeof a === 'string' ? a : a?.name)).filter(Boolean);
+    return authorList
+      .map((a) => (typeof a === 'string' ? a : a?.name))
+      .filter((name): name is string => Boolean(name))
+      .map(formatContributorName);
   }, [publication.metadata?.author]);
 
   return (
@@ -62,7 +66,7 @@ export function PublicationCard({
           {publication.metadata?.title || 'Untitled'}
         </h3>
         {authors && authors.length > 0 && (
-          <p className='text-base-content/70 line-clamp-1 text-xs'>{authors.join(', ')}</p>
+          <p className='text-base-content/70 line-clamp-1 text-xs'>{authors.join(' & ')}</p>
         )}
       </div>
     </div>

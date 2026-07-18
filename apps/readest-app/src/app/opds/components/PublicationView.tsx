@@ -13,7 +13,7 @@ import { getImportErrorMessage, ImportError } from '@/services/errors';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToReader } from '@/utils/nav';
 import { CachedImage } from '@/components/CachedImage';
-import { groupByArray, getOPDSNavLink } from '../utils/opdsUtils';
+import { groupByArray, getOPDSNavLink, formatContributorName } from '../utils/opdsUtils';
 import { getOPDSDescriptionHtml } from '../utils/opdsContent';
 import Dropdown from '@/components/Dropdown';
 import MenuItem from '@/components/MenuItem';
@@ -104,7 +104,8 @@ export function PublicationView({
           ? { name: a, href: undefined as string | undefined }
           : { name: a?.name, href: getOPDSNavLink(a?.links) },
       )
-      .filter((a): a is { name: string; href: string | undefined } => Boolean(a.name));
+      .filter((a): a is { name: string; href: string | undefined } => Boolean(a.name))
+      .map((a) => ({ ...a, name: formatContributorName(a.name) }));
   }, [publication.metadata?.author]);
 
   const authorNames = useMemo(() => authors.map((a) => a.name), [authors]);
@@ -212,7 +213,7 @@ export function PublicationView({
               <p className='text-base-content/70 text-sm'>
                 {authors.map((author, index) => (
                   <span key={index}>
-                    {index > 0 && ', '}
+                    {index > 0 && ' & '}
                     {author.href ? (
                       <button
                         type='button'
@@ -326,7 +327,7 @@ export function PublicationView({
                           link.href!,
                           count,
                           publication.metadata?.title || '',
-                          authorNames.join(', '),
+                          authorNames.join(' & '),
                         )
                       }
                       disabled={downloading || !!downloadedBook}
