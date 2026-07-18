@@ -64,7 +64,7 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
-import { lockScreenOrientation } from '@/utils/bridge';
+import { lockScreenOrientation, setTextSelectionSuppressed } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
 import { useDiscordPresence } from '@/hooks/useDiscordPresence';
@@ -870,6 +870,29 @@ const FoliateViewer: React.FC<{
       }
     }
   };
+
+  // iOS: the system long-press selection would race the instant-highlight
+  // hold — WebKit consults selectability before any touch handler runs, so
+  // JS-level suppression cannot win. Suppress it natively while the highlight
+  // quick action owns the gesture; restore when the mode turns off or the
+  // reader closes.
+  useEffect(() => {
+    if (!appService?.isIOSApp) return;
+    const suppressed =
+      !!viewSettings?.enableAnnotationQuickActions &&
+      viewSettings?.annotationQuickAction === 'highlight';
+    setTextSelectionSuppressed({ suppressed }).catch(() => {});
+    return () => {
+      if (suppressed) {
+        setTextSelectionSuppressed({ suppressed: false }).catch(() => {});
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    appService?.isIOSApp,
+    viewSettings?.enableAnnotationQuickActions,
+    viewSettings?.annotationQuickAction,
+  ]);
 
   useEffect(() => {
     if (viewRef.current && viewRef.current.renderer) {

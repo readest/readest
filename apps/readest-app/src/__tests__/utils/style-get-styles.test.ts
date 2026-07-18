@@ -880,3 +880,26 @@ describe('custom @font-face inlining (via getStyles)', () => {
     expect(css).not.toContain('font-family: "My Test Font"');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Instant-highlight selection suppression
+// ---------------------------------------------------------------------------
+// The instant-highlight quick action owns the touch long-press. Stylesheet
+// `user-select: none` is NOT used for this: on iOS WebKit it breaks
+// `caretRangeFromPoint` (returns null on non-selectable content), killing the
+// instant highlight itself. The system selection is suppressed natively
+// instead (TextSelectionSuppressor in the native-bridge iOS plugin, driven by
+// setTextSelectionSuppressed from FoliateViewer); getStyles must stay free of
+// user-select suppression so caret positioning keeps working.
+describe('instant-highlight selection suppression stays out of getStyles', () => {
+  const theme = makeThemeCode();
+
+  it('never makes the content non-selectable, even with instant highlight on', () => {
+    const vs = makeViewSettings({
+      enableAnnotationQuickActions: true,
+      annotationQuickAction: 'highlight',
+    });
+    const css = getStyles(vs, theme);
+    expect(css).not.toContain('user-select: none !important');
+  });
+});

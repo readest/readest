@@ -117,6 +117,7 @@ export const useTextSelector = (
   const {
     isInstantAnnotationEnabled,
     handleInstantAnnotationPointerDown,
+    handleInstantAnnotationEngage,
     handleInstantAnnotationPointerMove,
     handleInstantAnnotationPointerCancel,
     handleInstantAnnotationPointerUp,
@@ -196,7 +197,11 @@ export const useTextSelector = (
   // Begin the touch still-hold: engage the instant annotation only once the
   // finger has stayed put on the text for INSTANT_HOLD_MS. preventDefault is NOT
   // called here, so a tap or swipe that bows out keeps its native page-turn.
-  const armInstantHold = (doc: Document, ev: PointerEvent) => {
+  // The native long-press selection needs no suppression here: instant mode
+  // makes the content non-selectable at the stylesheet level (getStyles) —
+  // JS-applied user-select at pointer-down proved too late for iOS WebKit's
+  // long-press recognizer.
+  const armInstantHold = (doc: Document, index: number, ev: PointerEvent) => {
     const feRect = doc.defaultView?.frameElement?.getBoundingClientRect();
     instantHoldTarget.current = ev.target as HTMLElement;
     instantHoldStartClient.current = { x: ev.clientX, y: ev.clientY };
@@ -220,6 +225,10 @@ export const useTextSelector = (
         return;
       }
       startInstantAnnotating(target, startClient);
+      // Preview the word under the finger right away (the feedback the
+      // suppressed system long-press selection used to give); a release
+      // without a drag commits it and opens the range editor.
+      handleInstantAnnotationEngage(doc, index);
     }, INSTANT_HOLD_MS);
   };
 
@@ -245,7 +254,7 @@ export const useTextSelector = (
       const isTouch = ev.pointerType === 'touch' || ev.pointerType === 'pen';
       if (isTouch) {
         // Touch: gate behind a still hold so a tap or swipe still turns the page.
-        armInstantHold(doc, ev);
+        armInstantHold(doc, index, ev);
       } else {
         // Mouse: a press-drag is an unambiguous highlight intent; engage at once.
         ev.preventDefault();
@@ -437,6 +446,9 @@ export const useTextSelector = (
     sel.removeAllRanges();
     sel.addRange(range);
     releaseProgrammaticSelection();
+    // With the instant-highlight stylesheet suppression active, WebKit may
+    // refuse the programmatic selection on non-selectable content.
+    if (sel.rangeCount === 0) return;
     // No isUpToPopup latch here: a double-tap is two taps both consumed by the
     // double-click detection, so no trailing single-click follows that would
     // dismiss the popup — the next deliberate tap should dismiss it normally.
@@ -451,6 +463,14 @@ export const useTextSelector = (
     if (isInstantAnnotating.current && ev) {
       stopInstantAnnotating();
       const handled = await handleInstantAnnotationPointerUp(doc, index, ev);
+      if (handled === 'editor') {
+        // The hold committed a word highlight and left the range editor open.
+        // Consume the trailing click with the "this release leads to a popup"
+        // latch (same as the selection popup flow) — the 200ms isTextSelected
+        // latch below would let the click dismiss the fresh editor instead.
+        isUpToPopup.current = true;
+        return;
+      }
       if (handled) {
         isTextSelected.current = true;
         setTimeout(() => {

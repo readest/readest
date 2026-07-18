@@ -56,6 +56,12 @@ pub struct UseBackgroundAudioRequest {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct SetTextSelectionSuppressedRequest {
+    pub suppressed: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct InstallPackageRequest {
     pub path: String,
 }

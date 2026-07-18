@@ -45,4 +45,5 @@ permissions = [
   "allow-refresh-eink-screen",
   "allow-update-reading-widget",
   "allow-capture-webview-region",
+  "allow-set-text-selection-suppressed",
 ]

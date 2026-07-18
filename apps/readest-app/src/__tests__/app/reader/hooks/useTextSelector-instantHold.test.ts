@@ -19,6 +19,11 @@ const h = vi.hoisted(() => ({
   viewSettings: { scrolled: false } as { scrolled: boolean; vertical?: boolean },
   // Whether the pointer landed on selectable text (instant-highlight eligible).
   eligible: true,
+  engage: vi.fn(),
+  // What handleInstantAnnotationPointerUp resolves to ('editor' = the hold
+  // committed a word highlight and left the range editor open).
+  upResult: false as boolean | 'editor',
+  onSyncHandlers: {} as Record<string, (...args: unknown[]) => unknown>,
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -35,7 +40,14 @@ vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: () => ({ getBookData: () => ({}) }),
 }));
 vi.mock('@/utils/event', () => ({
-  eventDispatcher: { onSync: vi.fn(), offSync: vi.fn(), on: vi.fn(), off: vi.fn() },
+  eventDispatcher: {
+    onSync: vi.fn((name: string, handler: (...args: unknown[]) => unknown) => {
+      h.onSyncHandlers[name] = handler;
+    }),
+    offSync: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+  },
 }));
 vi.mock('@/app/reader/hooks/useInstantAnnotation', () => ({
   useInstantAnnotation: () => ({
@@ -43,7 +55,8 @@ vi.mock('@/app/reader/hooks/useInstantAnnotation', () => ({
     handleInstantAnnotationPointerDown: vi.fn(() => h.eligible),
     handleInstantAnnotationPointerMove: vi.fn(() => true),
     handleInstantAnnotationPointerCancel: vi.fn(),
-    handleInstantAnnotationPointerUp: vi.fn(async () => false),
+    handleInstantAnnotationPointerUp: vi.fn(async () => h.upResult),
+    handleInstantAnnotationEngage: h.engage,
     reapplyInstantAnnotation: vi.fn(),
     cancelInstantAnnotation: vi.fn(),
   }),
@@ -102,6 +115,8 @@ beforeEach(() => {
   h.viewSettings = { scrolled: false };
   h.view.renderer.scrollLocked = false;
   h.eligible = true;
+  h.upResult = false;
+  h.onSyncHandlers = {};
 });
 
 afterEach(() => {
@@ -168,5 +183,65 @@ describe('useTextSelector instant-highlight still-hold gate', () => {
 
     expect(down.preventDefault).toHaveBeenCalled();
     expect(result.current.isInstantAnnotating.current).toBe(true);
+  });
+});
+
+// The system long-press selection is suppressed NATIVELY while
+// instant-highlight mode is on (TextSelectionSuppressor in the native-bridge
+// iOS plugin, driven by setTextSelectionSuppressed from FoliateViewer): no JS
+// or stylesheet layer can win that race — user-select breaks
+// caretRangeFromPoint on iOS WebKit (see the guard test in
+// style-get-styles.test.ts) and selectstart never fires for long-press
+// selections.
+
+// A still hold engages on the word under the finger (instant preview), and a
+// release without dragging leaves the annotation range editor open.
+describe('useTextSelector hold-a-word engagement', () => {
+  test('a still touch hold engages the word preview through the hook', async () => {
+    const { result } = setup();
+
+    result.current.handlePointerDown(doc, 3, pointerEvent('touch', 100, 100));
+    expect(h.engage).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(HOLD_MS + 20);
+    expect(h.engage).toHaveBeenCalledWith(doc, 3);
+  });
+
+  test('a mouse press does not engage the word preview', () => {
+    const { result } = setup();
+
+    result.current.handlePointerDown(doc, 0, pointerEvent('mouse', 100, 100));
+
+    expect(h.engage).not.toHaveBeenCalled();
+  });
+
+  test('an editor release consumes the trailing click without dismissing', async () => {
+    const dismiss = vi.fn();
+    const noop = vi.fn();
+    const { result } = renderHook(() =>
+      useTextSelector(
+        'book-1',
+        ZERO_INSETS,
+        noop,
+        noop,
+        noop,
+        vi.fn(async () => ''),
+        dismiss,
+      ),
+    );
+
+    result.current.handlePointerDown(doc, 0, pointerEvent('touch', 100, 100));
+    await vi.advanceTimersByTimeAsync(HOLD_MS + 20);
+    expect(result.current.isInstantAnnotating.current).toBe(true);
+
+    h.upResult = 'editor';
+    await result.current.handlePointerUp(doc, 0, pointerEvent('touch', 100, 100));
+
+    // The trailing synthetic click after the release must be consumed (so it
+    // doesn't paginate) WITHOUT dismissing the freshly opened editor.
+    const click = h.onSyncHandlers['iframe-single-click']!;
+    expect(click()).toBe(true);
+    expect(dismiss).not.toHaveBeenCalled();
+    expect(h.view.deselect).not.toHaveBeenCalled();
   });
 });

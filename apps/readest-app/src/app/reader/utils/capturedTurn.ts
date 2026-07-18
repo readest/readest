@@ -137,17 +137,28 @@ export class CapturedPageTurn {
    * instantly turn the live view back (cancel) — the overlay shows the old
    * page flat while the view underneath returns, so no wrong page ever
    * flashes.
+   *
+   * Serialized on the same chain as beginDrag: the release can arrive while
+   * the drag's async capture is still in flight (after an instant-highlight
+   * release, the gesture's queued trailing touchmoves race the unlock and can
+   * start a drag milliseconds before the touchend). A direct no-op here left
+   * that drag stranded — overlay frozen at progress 0 over an already-turned
+   * live view, making every following turn off by one page.
    */
   async endDrag(commit: boolean) {
-    const active = this.#active;
-    if (!active) return;
-    if (commit) {
-      await this.#playTo(active, 1);
-    } else {
-      await this.#playTo(active, 0);
-      if (this.#active === active) await this.#host.navigate(!active.forward);
-    }
-    this.#disposeActive();
+    const run = this.#pending.then(async () => {
+      const active = this.#active;
+      if (!active) return;
+      if (commit) {
+        await this.#playTo(active, 1);
+      } else {
+        await this.#playTo(active, 0);
+        if (this.#active === active) await this.#host.navigate(!active.forward);
+      }
+      this.#disposeActive();
+    });
+    this.#pending = run.catch(() => {});
+    return run;
   }
 
   dispose() {

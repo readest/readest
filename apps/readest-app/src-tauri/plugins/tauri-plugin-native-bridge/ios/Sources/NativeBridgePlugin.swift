@@ -40,6 +40,10 @@ class UseBackgroundAudioRequestArgs: Decodable {
   let enabled: Bool
 }
 
+class SetTextSelectionSuppressedRequestArgs: Decodable {
+  let suppressed: Bool
+}
+
 class SetSystemUIVisibilityRequestArgs: Decodable {
   let visible: Bool
   let darkMode: Bool
@@ -837,6 +841,17 @@ class NativeBridgePlugin: Plugin {
     } catch {
       logger.error("Failed to set up audio session: \(error)")
     }
+  }
+
+  // Instant-highlight mode owns the touch long-press: suppress the system
+  // text selection for non-editable content so it can never race the app's
+  // hold-to-highlight gesture. See TextSelectionSuppressor.
+  @objc public func set_text_selection_suppressed(_ invoke: Invoke) throws {
+    let args = try invoke.parseArgs(SetTextSelectionSuppressedRequestArgs.self)
+    DispatchQueue.main.async {
+      TextSelectionSuppressor.setSuppressed(args.suppressed)
+    }
+    invoke.resolve()
   }
 
   @objc public func auth_with_safari(_ invoke: Invoke) throws {

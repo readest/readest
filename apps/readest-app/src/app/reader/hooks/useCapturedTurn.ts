@@ -70,6 +70,16 @@ interface DragState {
   height: number;
 }
 
+// Whether the visible section's document holds a non-collapsed selection —
+// the same condition the paginator's native swipe bows out on (#onTouchMove
+// selection gate), mirrored for the captured-turn interceptor.
+const hasActiveSelection = (view: FoliateView) => {
+  const { renderer } = view;
+  const doc = renderer.getContents().find((c) => c.index === renderer.primaryIndex)?.doc;
+  const selection = doc?.getSelection();
+  return !!selection && selection.rangeCount > 0 && !selection.isCollapsed;
+};
+
 /**
  * Drives the captured page turns (readest#555) on Tauri platforms: wraps
  * the view's `prev`/`next` so programmatic turns (taps, keys, wheel) run
@@ -82,6 +92,15 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
   const { getBookData } = useBookDataStore();
   const controllerRef = useRef<CapturedPageTurn | null>(null);
   const dragRef = useRef<DragState | null>(null);
+  // Whether the current touch gesture is claimed by another interaction and
+  // must never morph into a page turn, even after the claim is released:
+  // - it began with an active selection (a handle drag stays a selection
+  //   gesture even if app code deselects mid-drag — the instant quick action
+  //   dismisses on selectionchange and iOS re-confirms right after);
+  // - it was ever blocked by the instant-highlight scroll lock (the unlock
+  //   at release runs before the gesture's queued trailing touchmoves are
+  //   delivered, and their full-stroke deltas would read as a swipe).
+  const gestureClaimed = useRef(false);
   const view = viewRef.current;
 
   const isFixedLayout = () => !!getBookData(bookKey)?.isFixedLayout;
@@ -177,6 +196,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
 
       if (detail.phase === 'start') {
         dragRef.current = null;
+        gestureClaimed.current = hasActiveSelection(currentView);
         return false;
       }
 
@@ -187,8 +207,20 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           // Instant highlight engaged (still-hold on text) locks scrolling so
           // the finger extends the highlight, not turns the page. The push
           // paginator honors the same lock in its native swipe (paginator's
-          // #scrollLocked); mirror it here so slide/curl behaves identically.
-          if (currentView.renderer.scrollLocked) return false;
+          // #scrollLocked); mirror it here so slide/curl behaves identically —
+          // and claim the whole gesture, so the trailing moves delivered
+          // after the release's unlock cannot start a stray drag.
+          if (currentView.renderer.scrollLocked) {
+            gestureClaimed.current = true;
+            return false;
+          }
+          // A non-collapsed selection means the finger is creating or
+          // adjusting a text selection (long-press select, handle drags);
+          // the paginator's native swipe bows out then too (#onTouchMove
+          // selection gate), so the captured turn must as well. The claim
+          // latch keeps a handle drag from morphing into a turn during a
+          // transient mid-drag deselect.
+          if (gestureClaimed.current || hasActiveSelection(currentView)) return false;
           if (!viewSettings || viewSettings.disableSwipe) return false;
           const style = getCapturedTurnStyle(viewSettings, isFixedLayout());
           if (!style) return false;

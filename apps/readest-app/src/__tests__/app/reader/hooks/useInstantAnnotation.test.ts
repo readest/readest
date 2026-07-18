@@ -21,11 +21,16 @@ vi.mock('@/store/settingsStore', () => ({
     },
   }),
 }));
+const stores = vi.hoisted(() => ({
+  saveConfig: vi.fn(),
+  updateBooknotes: vi.fn(() => ({})),
+}));
+
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: () => ({
     getConfig: () => ({ booknotes: [] }),
-    saveConfig: vi.fn(),
-    updateBooknotes: vi.fn(() => ({})),
+    saveConfig: stores.saveConfig,
+    updateBooknotes: stores.updateBooknotes,
   }),
 }));
 vi.mock('@/store/readerStore', () => ({
@@ -59,16 +64,17 @@ const setup = () => {
   const setSelection = vi.fn((s: TextSelection | null) => {
     captured.selection = s;
   });
+  const setEditingAnnotation = vi.fn();
   const hook = renderHook(() =>
     useInstantAnnotation({
       bookKey: 'book-1',
       getAnnotationText: vi.fn(async () => 'text'),
       setSelection: setSelection as never,
-      setEditingAnnotation: vi.fn(),
+      setEditingAnnotation: setEditingAnnotation as never,
       setExternalDragPoint: vi.fn(),
     }),
   );
-  return { ...hook, captured, setSelection };
+  return { ...hook, captured, setSelection, setEditingAnnotation };
 };
 
 const pointer = (x: number, y: number) =>
@@ -146,5 +152,79 @@ describe('useInstantAnnotation DOM-anchored start', () => {
 
     expect(handled).toBe(false);
     expect(setSelection).toHaveBeenLastCalledWith(null);
+  });
+});
+
+// A still hold (touch) engages on the word under the finger: the word is
+// previewed at engage time (the feedback the suppressed system selection used
+// to give), and a release without dragging commits it as a real highlight and
+// leaves the annotation range editor open for adjustment — the same state as
+// tapping an existing highlight.
+describe('useInstantAnnotation hold-a-word engage and commit', () => {
+  test('engage draws the word under the pointer as the preview', () => {
+    const { result, captured } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationEngage(document, 0);
+
+    expect(h.view.addAnnotation).toHaveBeenCalled();
+    expect(captured.selection?.annotated).toBe(true);
+    expect(captured.selection?.range?.startContainer).toBe(t1);
+  });
+
+  test('a hold-release commits the word and opens the editor', async () => {
+    const { result, captured, setEditingAnnotation } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationEngage(document, 0);
+    const handled = await result.current.handleInstantAnnotationPointerUp(
+      document,
+      0,
+      pointer(12, 11),
+    );
+
+    expect(handled).toBe('editor');
+    // Persisted like a finished instant highlight.
+    expect(stores.updateBooknotes).toHaveBeenCalled();
+    // Editor state left open: an annotation with a color for the range editor,
+    // and a selection carrying the real text (isTextSelected stays false in
+    // useTextSelector, so the Annotator shows the options row, not the quick
+    // action).
+    const editing = setEditingAnnotation.mock.lastCall?.[0];
+    expect(editing?.color).toBeTruthy();
+    expect(captured.selection?.annotated).toBe(true);
+    expect(captured.selection?.text).toBe('text');
+  });
+
+  test('a drag after engage still commits and closes (no editor left open)', async () => {
+    const { result, setSelection } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationEngage(document, 0);
+    result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
+    const handled = await result.current.handleInstantAnnotationPointerUp(
+      document,
+      0,
+      pointer(60, 10),
+    );
+
+    expect(handled).toBe(true);
+    expect(setSelection).toHaveBeenLastCalledWith(null);
+  });
+
+  test('engage without a resolvable word leaves the release a tap', async () => {
+    const { result } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    (document as unknown as { caretPositionFromPoint: unknown }).caretPositionFromPoint = () =>
+      null;
+    result.current.handleInstantAnnotationEngage(document, 0);
+    const handled = await result.current.handleInstantAnnotationPointerUp(
+      document,
+      0,
+      pointer(12, 11),
+    );
+
+    expect(handled).toBe(false);
   });
 });

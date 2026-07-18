@@ -17,10 +17,15 @@ const h = vi.hoisted(() => ({
     endDrag: vi.fn(async () => {}),
     dispose: vi.fn(),
   },
+  selection: null as { rangeCount: number; isCollapsed: boolean } | null,
   renderer: {
     scrollLocked: false,
     atEnd: false,
     atStart: false,
+    primaryIndex: 0,
+    getContents() {
+      return [{ index: 0, doc: { getSelection: () => h.selection } }];
+    },
     hasAttribute: () => false,
     setAttribute: () => {},
     removeAttribute: () => {},
@@ -72,6 +77,7 @@ beforeEach(() => {
   h.renderer.scrollLocked = false;
   h.renderer.atEnd = false;
   h.renderer.atStart = false;
+  h.selection = null;
 });
 
 afterEach(() => {
@@ -100,6 +106,105 @@ describe('useCapturedTurn scroll-lock gate', () => {
 
     expect(consumed).toBe(false);
     expect(h.controller.beginDrag).not.toHaveBeenCalled();
+  });
+
+  // Non-instant selection: a long-press selection (or a drag of its handles)
+  // moves the finger horizontally without engaging scrollLocked. The push
+  // paginator's native swipe bows out when the primary document holds a
+  // non-collapsed selection (#onTouchMove); the captured slide/curl
+  // interceptor must honor the same gate or it turns the page mid-selection
+  // (iOS 18.7, where slide/curl always take the captured path).
+  test('an active text selection leaves the swipe to the selection', () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    h.selection = { rangeCount: 1, isCollapsed: false };
+    dispatchTouchInterceptors('book-1', detail('start'));
+    const consumed = dispatchTouchInterceptors('book-1', detail('move', -60, 3));
+
+    expect(consumed).toBe(false);
+    expect(h.controller.beginDrag).not.toHaveBeenCalled();
+  });
+
+  test('a collapsed selection does not block the captured turn', () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    h.selection = { rangeCount: 1, isCollapsed: true };
+    dispatchTouchInterceptors('book-1', detail('start'));
+    const consumed = dispatchTouchInterceptors('book-1', detail('move', -60, 3));
+
+    expect(consumed).toBe(true);
+    expect(h.controller.beginDrag).toHaveBeenCalled();
+  });
+
+  // A drag of the system selection handles adjusts the selection; app code can
+  // deselect mid-drag (the instant quick action dismisses on selectionchange),
+  // and on iOS WebKit the native handle drag re-confirms the selection right
+  // after. The collapsed-selection window between the two must not let the
+  // handle drag morph into a page turn: a gesture that began with an active
+  // selection is a selection gesture for its whole lifetime.
+  test('a gesture that starts with a selection never turns, even if deselected mid-drag', () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    h.selection = { rangeCount: 1, isCollapsed: false };
+    dispatchTouchInterceptors('book-1', detail('start'));
+    // Mid-gesture deselect (e.g. the quick action's dismiss).
+    h.selection = null;
+    const consumed = dispatchTouchInterceptors('book-1', detail('move', -60, 3));
+
+    expect(consumed).toBe(false);
+    expect(h.controller.beginDrag).not.toHaveBeenCalled();
+  });
+
+  test('the selection latch clears on the next gesture', () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    h.selection = { rangeCount: 1, isCollapsed: false };
+    dispatchTouchInterceptors('book-1', detail('start'));
+    h.selection = null;
+    dispatchTouchInterceptors('book-1', detail('end', -60, 3));
+
+    // A fresh gesture with no selection swipes normally.
+    dispatchTouchInterceptors('book-1', detail('start'));
+    const consumed = dispatchTouchInterceptors('book-1', detail('move', -60, 3));
+
+    expect(consumed).toBe(true);
+    expect(h.controller.beginDrag).toHaveBeenCalled();
+  });
+
+  // Instant highlighting locks scrolling for the drag and unlocks at release —
+  // but the unlock runs before the gesture's queued trailing touchmoves are
+  // delivered, and their deltas span the whole highlight stroke. A gesture
+  // that was ever blocked by the lock must stay claimed to its end, or those
+  // trailing moves read as a full swipe and start a stray captured drag whose
+  // endDrag races the capture (the stranded-overlay bug).
+  test('a gesture ever blocked by scroll lock never turns, even after unlock', () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    h.renderer.scrollLocked = true;
+    dispatchTouchInterceptors('book-1', detail('move', -30, 3));
+    // Instant highlight released: unlocked before the queued moves arrive.
+    h.renderer.scrollLocked = false;
+    const consumed = dispatchTouchInterceptors('book-1', detail('move', -70, 3));
+
+    expect(consumed).toBe(false);
+    expect(h.controller.beginDrag).not.toHaveBeenCalled();
+  });
+
+  test('the scroll-lock claim clears on the next gesture', () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    h.renderer.scrollLocked = true;
+    dispatchTouchInterceptors('book-1', detail('move', -30, 3));
+    h.renderer.scrollLocked = false;
+    dispatchTouchInterceptors('book-1', detail('end', -70, 3));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    const consumed = dispatchTouchInterceptors('book-1', detail('move', -60, 3));
+
+    expect(consumed).toBe(true);
+    expect(h.controller.beginDrag).toHaveBeenCalled();
   });
 });
 

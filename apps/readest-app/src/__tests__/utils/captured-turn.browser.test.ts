@@ -171,4 +171,55 @@ describe('CapturedPageTurn (browser)', () => {
     expect(navigate).toHaveBeenCalledTimes(1);
     expect(host.querySelector('canvas')).toBeNull();
   });
+
+  // The release's endDrag can arrive while beginDrag's async capture is still
+  // in flight — after an instant-highlight release, the queued trailing
+  // touchmoves race the unlock and can start a drag milliseconds before the
+  // touchend. A direct no-op left the overlay stranded at progress 0 (the
+  // degraded captured bitmap on screen) with the live view already turned
+  // underneath, making every following turn off by one page.
+  it('an endDrag racing the capture still cancels once set up (no stranded overlay)', async () => {
+    const png = await makePngBuffer();
+    let resolveCapture!: (png: ArrayBuffer) => void;
+    capture.mockImplementationOnce(
+      () =>
+        new Promise<ArrayBuffer>((resolve) => {
+          resolveCapture = resolve;
+        }),
+    );
+
+    const began = controller.beginDrag(true, false);
+    const ended = controller.endDrag(false);
+    await vi.waitFor(() => expect(capture).toHaveBeenCalled());
+    resolveCapture(png);
+    await Promise.all([began, ended]);
+
+    // The queued cancel navigated back and nothing is left on screen.
+    expect(navigate).toHaveBeenNthCalledWith(1, true);
+    expect(navigate).toHaveBeenNthCalledWith(2, false);
+    expect(navigate).toHaveBeenCalledTimes(2);
+    expect(host.querySelector('canvas')).toBeNull();
+    expect(controller.active).toBe(false);
+  });
+
+  it('an endDrag racing the capture can also commit', async () => {
+    const png = await makePngBuffer();
+    let resolveCapture!: (png: ArrayBuffer) => void;
+    capture.mockImplementationOnce(
+      () =>
+        new Promise<ArrayBuffer>((resolve) => {
+          resolveCapture = resolve;
+        }),
+    );
+
+    const began = controller.beginDrag(true, false);
+    const ended = controller.endDrag(true);
+    await vi.waitFor(() => expect(capture).toHaveBeenCalled());
+    resolveCapture(png);
+    await Promise.all([began, ended]);
+
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(host.querySelector('canvas')).toBeNull();
+    expect(controller.active).toBe(false);
+  });
 });
