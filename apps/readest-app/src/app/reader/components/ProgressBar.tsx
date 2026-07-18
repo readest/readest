@@ -13,9 +13,12 @@ import {
   getChapterTickFractions,
   getReferencePageInfo,
 } from '@/utils/progress';
-import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import StatusInfo from './StatusInfo.tsx';
 import StickyProgressBar from './StickyProgressBar.tsx';
+import {
+  convertPagesToTimeRemainingMinutes,
+  useMedianPageDurationSecs,
+} from '@/app/library/utils/libraryUtils.ts';
 
 interface ProgressBarProps {
   bookKey: string;
@@ -90,6 +93,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       : 0
     : Math.min(Math.max(total - current, 1), pageInfo ? pageInfo.total - pageInfo.current : total);
   const showPagesLeft = pagesLeft > 0 && (total > 0 || !!bookData?.isFixedLayout);
+  const md5 = bookData?.book?.hash;
+  const medianPageDurationSecs = useMedianPageDurationSecs(md5) ?? undefined;
   // Fixed-layout formats (CBZ, PDF) have no chapter structure — every page is
   // its own section — so the remaining count is the whole book, not a chapter.
   const remainingInBook = !!bookData?.isFixedLayout;
@@ -97,14 +102,14 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     ? remainingInBook
       ? _('{{time}} min left in book', {
           time: formatNumber(
-            Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT),
+            convertPagesToTimeRemainingMinutes(pagesLeft, medianPageDurationSecs),
             localize,
             lang,
           ),
         })
       : _('{{time}} min left in chapter', {
           time: formatNumber(
-            Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT),
+            convertPagesToTimeRemainingMinutes(pagesLeft, medianPageDurationSecs),
             localize,
             lang,
           ),

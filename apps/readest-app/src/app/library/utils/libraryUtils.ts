@@ -202,12 +202,12 @@ const getBookReadRatio = (book: Book): number => {
   return current / total;
 };
 
-export const useMedianPageDurationSecs = (bookMd5: string): number | null => {
+export const useMedianPageDurationSecs = (bookMd5?: string): number | null => {
   const { appService } = useEnv();
   const [medianPageDurationSecs, setMedianPageDurationSecs] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!appService) return;
+    if (!appService || !bookMd5) return;
 
     const load = async () => {
       const db = await StatisticsDb.open(appService);
@@ -230,6 +230,13 @@ export const getTimeRemainingMinutes = (
 ): number | undefined => {
   const pagesLeft = book.progress ? book.progress[1] - book.progress[0] : undefined;
   if (!pagesLeft) return undefined;
+  return convertPagesToTimeRemainingMinutes(pagesLeft, medianPageDurationSecs);
+};
+
+export const convertPagesToTimeRemainingMinutes = (
+  pagesLeft: number,
+  medianPageDurationSecs?: number,
+): number => {
   return medianPageDurationSecs
     ? Math.round((pagesLeft * medianPageDurationSecs) / 60)
     : Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT); // Fall back to less precise calculation
