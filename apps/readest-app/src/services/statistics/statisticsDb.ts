@@ -148,16 +148,16 @@ export class StatisticsDb {
     const rows = await this.db.select<{ duration: number }>(
       `SELECT duration
          FROM page_stat_data
-         WHERE id_book = ?`,
+         WHERE id_book = ?
+         ORDER BY start_time DESC`,
       [idBook],
     );
-    const pageTimes = rows.map((d) => d['duration']);
-    if (pageTimes.length <= PAGE_THRESHOLD) return null;
-    const mid = Math.floor(pageTimes.length / 2),
-      sorted = [...pageTimes].sort((a, b) => a - b);
-    return pageTimes.length % 2 !== 0
-      ? (sorted[mid] ?? 0)
-      : (sorted[mid - 1] ?? 0 + (sorted[mid] ?? 0)) / 2;
+    const pageDurations = rows.map((d) => d['duration']);
+    if (pageDurations.length <= PAGE_THRESHOLD) return null;
+    const mid = Math.floor(pageDurations.length / 2);
+    return pageDurations.length % 2 !== 0
+      ? (pageDurations[mid] ?? 0)
+      : (pageDurations[mid - 1] ?? 0 + (pageDurations[mid] ?? 0)) / 2;
   }
 
   async getBookByMd5(md5: string): Promise<BookRow | null> {
