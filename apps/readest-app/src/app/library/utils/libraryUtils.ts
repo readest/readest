@@ -1,3 +1,4 @@
+import { useEnv } from '@/context/EnvContext';
 import { Book, BooksGroup, ReadingStatus } from '@/types/book';
 import {
   LibraryGroupByType,
@@ -7,6 +8,8 @@ import {
 import { formatAuthors, formatTitle } from '@/utils/book';
 import { md5Fingerprint } from '@/utils/md5';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
+import { useEffect, useState } from 'react';
+import { StatisticsDb } from '@/services/statistics/statisticsDb';
 
 /** Valid sort types for the library */
 const VALID_SORT_TYPES: LibrarySortByType[] = Object.values(LibrarySortByType);
@@ -221,9 +224,15 @@ export const useMedianPageDurationSecs = (bookMd5: string): number | null => {
   return medianPageDurationSecs;
 };
 
-export const getTimeRemainingMinutes = (book: Book): number | undefined => {
+export const getTimeRemainingMinutes = (
+  book: Book,
+  medianPageDurationSecs?: number,
+): number | undefined => {
   const pagesLeft = book.progress ? book.progress[1] - book.progress[0] : undefined;
-  return pagesLeft ? Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT) : undefined;
+  if (!pagesLeft) return undefined;
+  return medianPageDurationSecs
+    ? Math.round((pagesLeft * medianPageDurationSecs) / 60)
+    : Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT); // Fall back to less precise calculation
 };
 
 /**
@@ -232,20 +241,26 @@ export const getTimeRemainingMinutes = (book: Book): number | undefined => {
  * `ReadingProgress`), even when they still have pages left — so they have no time
  * to sort by. Sorting and the label must agree on this, hence the shared helper.
  */
-export const getDisplayedTimeRemaining = (book: Book): number | undefined => {
+export const getDisplayedTimeRemaining = (
+  book: Book,
+  medianPageDurationSecs?: number,
+): number | undefined => {
   const { readingStatus } = book;
   if (readingStatus === 'finished' || readingStatus === 'abandoned' || readingStatus === 'unread') {
     return undefined;
   }
-  return getTimeRemainingMinutes(book);
+  return getTimeRemainingMinutes(book, medianPageDurationSecs);
 };
 
 /**
  * Remaining minutes for a shelf item, or `undefined` when its tile can show no
  * time at all — that includes every group, since a group tile renders no progress.
  */
-const getShelfItemTimeRemaining = (item: Book | BooksGroup): number | undefined =>
-  'books' in item ? undefined : getDisplayedTimeRemaining(item);
+const getShelfItemTimeRemaining = (
+  item: Book | BooksGroup,
+  medianPageDurationSecs?: number,
+): number | undefined =>
+  'books' in item ? undefined : getDisplayedTimeRemaining(item, medianPageDurationSecs);
 
 /**
  * Wrap a comparator that has *already* had the sort direction applied, so items
@@ -254,18 +269,28 @@ const getShelfItemTimeRemaining = (item: Book | BooksGroup): number | undefined 
  * sort-order multiplier, otherwise descending would float those items to the top.
  */
 export const withTimeRemainingLast =
-  <T extends Book | BooksGroup>(sortBy: LibrarySortByType, compare: (a: T, b: T) => number) =>
+  <T extends Book | BooksGroup>(
+    sortBy: LibrarySortByType,
+    compare: (a: T, b: T) => number,
+    medianPageDurationSecs?: number,
+  ) =>
   (a: T, b: T): number => {
     if (sortBy !== LibrarySortByType.TimeRemaining) return compare(a, b);
-    const aTime = getShelfItemTimeRemaining(a);
-    const bTime = getShelfItemTimeRemaining(b);
+    const aTime = getShelfItemTimeRemaining(a, medianPageDurationSecs);
+    const bTime = getShelfItemTimeRemaining(b, medianPageDurationSecs);
     if (aTime === undefined && bTime === undefined) return 0;
     if (aTime === undefined) return 1;
     if (bTime === undefined) return -1;
     return compare(a, b);
   };
 
-const compareBookByKey = (a: Book, b: Book, sortBy: string, uiLanguage: string): number => {
+const compareBookByKey = (
+  a: Book,
+  b: Book,
+  sortBy: string,
+  uiLanguage: string,
+  medianPageDurationSecs?: number,
+): number => {
   switch (sortBy) {
     case LibrarySortByType.Title: {
       const aTitle = formatTitle(a.title);
@@ -318,8 +343,8 @@ const compareBookByKey = (a: Book, b: Book, sortBy: string, uiLanguage: string):
       return aDate - bDate;
     }
     case LibrarySortByType.TimeRemaining: {
-      const aTime = getDisplayedTimeRemaining(a);
-      const bTime = getDisplayedTimeRemaining(b);
+      const aTime = getDisplayedTimeRemaining(a, medianPageDurationSecs);
+      const bTime = getDisplayedTimeRemaining(b, medianPageDurationSecs);
       // Never subtract two Infinities here: NaN makes the comparator inconsistent
       // and Array.sort then scatters the no-time books through the shelf.
       if (aTime === undefined && bTime === undefined) return 0;
