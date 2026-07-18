@@ -199,6 +199,28 @@ const getBookReadRatio = (book: Book): number => {
   return current / total;
 };
 
+export const useMedianPageDurationSecs = (bookMd5: string): number | null => {
+  const { appService } = useEnv();
+  const [medianPageDurationSecs, setMedianPageDurationSecs] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!appService) return;
+
+    const load = async () => {
+      const db = await StatisticsDb.open(appService);
+      const book = await db.getBookByMd5(bookMd5);
+      if (!book) return;
+      const id = book.id;
+      const medianPageDurationSecs = await db.getMedianPageDurationSecs(id);
+      setMedianPageDurationSecs(medianPageDurationSecs);
+    };
+
+    void load();
+  });
+
+  return medianPageDurationSecs;
+};
+
 export const getTimeRemainingMinutes = (book: Book): number | undefined => {
   const pagesLeft = book.progress ? book.progress[1] - book.progress[0] : undefined;
   return pagesLeft ? Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT) : undefined;
