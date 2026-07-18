@@ -5,6 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLongPress } from '@/hooks/useLongPress';
 import { Menu, type MenuItemOptions } from '@tauri-apps/api/menu';
+import { LogicalPosition } from '@tauri-apps/api/dpi';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { eventDispatcher } from '@/utils/event';
 import { openExternalUrl } from '@/utils/open';
@@ -159,7 +160,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     [isSelectMode, handleLibraryNavigation],
   );
 
-  const bookContextMenuHandler = async (book: Book) => {
+  const bookContextMenuHandler = async (book: Book, position: { x: number; y: number }) => {
     if (!appService?.hasContextMenu) return;
     const osPlatform = getOSPlatform();
     const fileRevealLabel =
@@ -258,10 +259,13 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     };
     const items = getBookContextMenuItemIds(book).map((id) => itemOptions[id]);
     const menu = await Menu.new({ items });
-    await menu.popup();
+    // Pop up at an explicit window position: a positionless popup is anchored
+    // to the X11 root window, which doesn't exist on Wayland, so the menu
+    // fails to map and disappears immediately (issue #5181).
+    await menu.popup(new LogicalPosition(position.x, position.y));
   };
 
-  const groupContextMenuHandler = async (group: BooksGroup) => {
+  const groupContextMenuHandler = async (group: BooksGroup, position: { x: number; y: number }) => {
     if (!appService?.hasContextMenu) return;
     // Single Menu.new({ items }) call keeps the order deterministic — see the
     // note in bookContextMenuHandler about the Menu.append() IPC race (#4389).
@@ -296,7 +300,9 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       },
     ];
     const menu = await Menu.new({ items });
-    await menu.popup();
+    // See the note in bookContextMenuHandler: the Wayland popup needs an
+    // explicit position to get a parent window (issue #5181).
+    await menu.popup(new LogicalPosition(position.x, position.y));
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -332,11 +338,11 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleContextMenu = useCallback(
-    throttle(() => {
+    throttle((position: { x: number; y: number }) => {
       if ('format' in item) {
-        bookContextMenuHandler(item as Book);
+        bookContextMenuHandler(item as Book, position);
       } else {
-        groupContextMenuHandler(item as BooksGroup);
+        groupContextMenuHandler(item as BooksGroup, position);
       }
     }, 100),
     [itemSelected, settings.localBooksDir],
@@ -350,9 +356,9 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       onTap: () => {
         handleOpenItem();
       },
-      onContextMenu: () => {
+      onContextMenu: (e) => {
         if (appService?.hasContextMenu) {
-          handleContextMenu();
+          handleContextMenu({ x: e.clientX, y: e.clientY });
         } else if (appService?.isAndroidApp) {
           handleSelectItem();
         }
@@ -368,7 +374,8 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     }
     if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
       e.preventDefault();
-      handleContextMenu();
+      const rect = e.currentTarget.getBoundingClientRect();
+      handleContextMenu({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
     }
   };
 
