@@ -1,10 +1,13 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor as waitForWithOptions } from '@testing-library/react';
 import type { Book, BookConfig, BookNote } from '@/types/book';
 import type { SystemSettings } from '@/types/settings';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
 import { FileSyncError } from '@/services/sync/file/provider';
 import { eventDispatcher } from '@/utils/event';
+
+const waitFor = <T>(callback: () => T | Promise<T>) =>
+  waitForWithOptions(callback, { interval: 1 });
 
 /**
  * Issue #5062 — cloud sync providers are independently selectable, so a book

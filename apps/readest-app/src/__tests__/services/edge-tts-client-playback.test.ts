@@ -110,6 +110,7 @@ describe('EdgeTTSClient Web Audio playback', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -350,7 +351,9 @@ describe('EdgeTTSClient Web Audio playback', () => {
       throw new Error('network exploded');
     };
     const client = await startClient();
+    vi.useFakeTimers();
     const { events, done } = collectSpeak(client, new AbortController().signal);
+    await vi.runAllTimersAsync();
     await done;
     expect(events.at(-1)).toMatchObject({ code: 'error', message: 'network exploded' });
   }, 10000);

@@ -116,62 +116,42 @@ describe('popup — initial render', () => {
 });
 
 describe('popup — render(progress)', () => {
-  test('"capturing" disables Send and shows the reading label', async () => {
+  test('renders each progress phase', async () => {
     await loadPopup();
+
     pushProgress({ phase: 'capturing' });
     expect(document.getElementById('progress-label')?.textContent).toBe('Reading page…');
     expect((document.getElementById('send') as HTMLButtonElement).disabled).toBe(true);
     expect(document.getElementById('progress')?.classList.contains('show')).toBe(true);
-  });
 
-  test('"converting" shows the EPUB-build label', async () => {
-    await loadPopup();
     pushProgress({ phase: 'converting' });
     expect(document.getElementById('progress-label')?.textContent).toBe('Building EPUB…');
-  });
 
-  test('"uploading" shows the send-to-Readest label', async () => {
-    await loadPopup();
     pushProgress({ phase: 'uploading' });
     expect(document.getElementById('progress-label')?.textContent).toBe('Sending to Readest…');
-  });
 
-  test('"done" hides progress, re-enables Send, shows success status', async () => {
-    await loadPopup();
     pushProgress({ phase: 'done' });
     expect(document.getElementById('progress')?.classList.contains('show')).toBe(false);
     expect((document.getElementById('send') as HTMLButtonElement).disabled).toBe(false);
     const status = document.getElementById('status')!;
     expect(status.classList.contains('ok')).toBe(true);
     expect(status.textContent).toContain('Saved to your library');
-  });
 
-  test('"done" with missingAssets surfaces the image-fetch failure count', async () => {
-    await loadPopup();
     pushProgress({ phase: 'done', missingAssets: 3 });
     expect(document.getElementById('status')?.textContent).toContain(
       '3 images could not be fetched',
     );
-  });
 
-  test('"done" with a single missing asset uses singular grammar', async () => {
-    await loadPopup();
     pushProgress({ phase: 'done', missingAssets: 1 });
     expect(document.getElementById('status')?.textContent).toContain(
       '1 image could not be fetched',
     );
-  });
 
-  test('"error" surfaces the message and re-enables Send', async () => {
-    await loadPopup();
     pushProgress({ phase: 'error', code: 'server-error', message: 'Server returned 500' });
     expect((document.getElementById('send') as HTMLButtonElement).disabled).toBe(false);
     expect(document.getElementById('status')?.classList.contains('err')).toBe(true);
     expect(document.getElementById('status')?.textContent).toBe('Server returned 500');
-  });
 
-  test('"error" with session-expired flips to the signed-out view', async () => {
-    await loadPopup();
     pushProgress({ phase: 'error', code: 'session-expired', message: 'Session expired' });
     expect(document.getElementById('signed-in-view')?.classList.contains('hidden')).toBe(true);
     expect(document.getElementById('signed-out-view')?.classList.contains('hidden')).toBe(false);

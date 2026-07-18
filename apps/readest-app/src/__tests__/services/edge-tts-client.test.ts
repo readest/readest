@@ -86,6 +86,7 @@ describe('EdgeTTSClient', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -464,7 +465,10 @@ describe('EdgeTTSClient', () => {
       parsedMarks = [{ name: 'mark-0', text: 'hello', language: 'en' }];
       createAudioDataBehavior = vi.fn(() => Promise.reject(new Error('network error')));
 
-      await consumePreload(client, new AbortController().signal);
+      vi.useFakeTimers();
+      const preload = consumePreload(client, new AbortController().signal);
+      await vi.runAllTimersAsync();
+      await preload;
 
       expect(createAudioDataBehavior).toHaveBeenCalledTimes(3);
     });
@@ -489,7 +493,10 @@ describe('EdgeTTSClient', () => {
           : Promise.resolve({ data: new ArrayBuffer(8), boundaries: [] });
       });
 
-      await consumePreload(client, new AbortController().signal);
+      vi.useFakeTimers();
+      const preload = consumePreload(client, new AbortController().signal);
+      await vi.runAllTimersAsync();
+      await preload;
 
       expect(createAudioDataBehavior).toHaveBeenCalledTimes(2);
     });

@@ -1,5 +1,11 @@
 import React from 'react';
-import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  waitFor as waitForWithOptions,
+} from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ParagraphOverlay from '@/app/reader/components/paragraph/ParagraphOverlay';
@@ -22,6 +28,20 @@ const currentViewSettings = {
 const mockGetViewSettings = vi.fn(() => currentViewSettings);
 const mockSetViewSettings = vi.fn();
 const mockGetProgress = vi.fn(() => null);
+const realSetTimeout = globalThis.setTimeout;
+const waitFor = <T,>(callback: () => T | Promise<T>) =>
+  waitForWithOptions(callback, { interval: 1 });
+
+beforeEach(() => {
+  // Preserve Testing Library's 1s failure timeout while collapsing app animation/debounce waits.
+  vi.spyOn(globalThis, 'setTimeout').mockImplementation((handler, timeout) =>
+    realSetTimeout(handler, typeof timeout === 'number' && timeout < 500 ? 0 : timeout),
+  );
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 let mockIsFixedLayout = false;
 
@@ -343,6 +363,8 @@ describe('paragraph mode', () => {
       y: 0,
       toJSON: () => ({}),
     } as DOMRect);
+    let clickTime = 1_000;
+    vi.spyOn(Date, 'now').mockImplementation(() => clickTime);
 
     fireEvent.click(contentArea, { clientX: 150, clientY: 20 });
     await waitFor(() => {
@@ -363,9 +385,7 @@ describe('paragraph mode', () => {
     });
     dispatchSpy.mockClear();
 
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 320));
-    });
+    clickTime += 320;
 
     fireEvent.click(contentArea, { clientX: 40, clientY: 150 });
     await waitFor(() => {

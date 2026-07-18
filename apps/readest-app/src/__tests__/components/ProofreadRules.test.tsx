@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, within, act } from '@testing-library/react';
 import React from 'react';
 import { vi } from 'vitest';
 
@@ -153,7 +153,7 @@ describe('ProofreadRulesManager', () => {
     // wait a tick so the component's effect attaches the event listener
     await Promise.resolve();
     // open via helper which dispatches the custom event
-    setProofreadRulesVisibility(true);
+    await act(async () => setProofreadRulesVisibility(true));
 
     // Assert
     const dialog = await screen.findByRole('dialog');
@@ -232,7 +232,7 @@ describe('ProofreadRulesManager', () => {
     // Act: render and open dialog
     renderWithProviders(<ProofreadRulesManager />);
     await Promise.resolve();
-    setProofreadRulesVisibility(true);
+    await act(async () => setProofreadRulesVisibility(true));
 
     // Assert
     const dialog = await screen.findByRole('dialog');
@@ -298,7 +298,7 @@ describe('ProofreadRulesManager', () => {
 
     renderWithProviders(<ProofreadRulesManager />);
     await Promise.resolve();
-    setProofreadRulesVisibility(true);
+    await act(async () => setProofreadRulesVisibility(true));
 
     await screen.findByRole('dialog');
     expect(screen.getByText('visible-pattern')).toBeTruthy();
@@ -341,7 +341,7 @@ describe('ProofreadRulesManager', () => {
 
     renderWithProviders(<ProofreadRulesManager />);
     await Promise.resolve();
-    setProofreadRulesVisibility(true);
+    await act(async () => setProofreadRulesVisibility(true));
 
     await screen.findByRole('dialog');
     expect(screen.getByText('disabled-pattern')).toBeTruthy();
@@ -390,7 +390,7 @@ describe('ProofreadRulesManager', () => {
 
     renderWithProviders(<ProofreadRulesManager />);
     await Promise.resolve();
-    setProofreadRulesVisibility(true);
+    await act(async () => setProofreadRulesVisibility(true));
     await screen.findByRole('dialog');
 
     const row = screen.getByText('toggle-me').closest('li');
@@ -444,7 +444,7 @@ describe('ProofreadRulesManager', () => {
 
     renderWithProviders(<ProofreadRulesManager />);
     await Promise.resolve();
-    setProofreadRulesVisibility(true);
+    await act(async () => setProofreadRulesVisibility(true));
     await screen.findByRole('dialog');
 
     const row = screen.getByText('old-find').closest('li');
@@ -503,7 +503,7 @@ describe('ProofreadRulesManager', () => {
 
     renderWithProviders(<ProofreadRulesManager />);
     await Promise.resolve();
-    setProofreadRulesVisibility(true);
+    await act(async () => setProofreadRulesVisibility(true));
     await screen.findByRole('dialog');
 
     const row = screen.getByText('sel-text').closest('li');
@@ -554,7 +554,7 @@ describe('ProofreadRulesManager', () => {
 
     renderWithProviders(<ProofreadRulesManager />);
     await Promise.resolve();
-    setProofreadRulesVisibility(true);
+    await act(async () => setProofreadRulesVisibility(true));
     await screen.findByRole('dialog');
 
     const row = screen.getByText('valid').closest('li');
@@ -618,7 +618,7 @@ describe('ProofreadRulesManager', () => {
 
     renderWithProviders(<ProofreadRulesManager />);
     await Promise.resolve();
-    setProofreadRulesVisibility(true);
+    await act(async () => setProofreadRulesVisibility(true));
     await screen.findByRole('dialog');
 
     const handles = screen.getAllByLabelText('Drag to reorder');
@@ -704,7 +704,7 @@ describe('ProofreadRulesManager', () => {
 
     renderWithProviders(<ProofreadRulesManager />);
     await Promise.resolve();
-    setProofreadRulesVisibility(true);
+    await act(async () => setProofreadRulesVisibility(true));
 
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeTruthy();
@@ -782,7 +782,7 @@ describe('ProofreadRulesManager', () => {
 
     renderWithProviders(<ProofreadRulesManager />);
     await Promise.resolve();
-    setProofreadRulesVisibility(true);
+    await act(async () => setProofreadRulesVisibility(true));
 
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeTruthy();
@@ -854,7 +854,7 @@ describe('ProofreadRulesManager', () => {
 
     renderWithProviders(<ProofreadRulesManager />);
     await Promise.resolve();
-    setProofreadRulesVisibility(true);
+    await act(async () => setProofreadRulesVisibility(true));
 
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeTruthy();
@@ -886,7 +886,7 @@ describe('ProofreadRulesManager', () => {
 
       renderWithProviders(<ProofreadRulesManager />);
       await Promise.resolve();
-      setProofreadRulesVisibility(true);
+      await act(async () => setProofreadRulesVisibility(true));
       await screen.findByRole('dialog');
 
       return { addRuleSpy, recreateSpy };
@@ -1039,7 +1039,7 @@ describe('ProofreadRulesManager', () => {
 
     renderWithProviders(<ProofreadRulesManager />);
     await Promise.resolve();
-    setProofreadRulesVisibility(true);
+    await act(async () => setProofreadRulesVisibility(true));
 
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeTruthy();

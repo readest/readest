@@ -1,6 +1,12 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor as waitForWithOptions,
+} from '@testing-library/react';
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string, opts?: Record<string, unknown>) =>
@@ -83,6 +89,9 @@ vi.mock('@/app/reader/components/tts/TTSChaptersView', () => ({
 
 import TTSPlayerSheet from '@/app/reader/components/tts/TTSPlayerSheet';
 
+const waitFor = <T,>(callback: () => T | Promise<T>) =>
+  waitForWithOptions(callback, { interval: 1 });
+
 const voiceGroups = [
   {
     id: 'edge',
@@ -164,7 +173,7 @@ describe('TTSPlayerSheet', () => {
     // Compact one-row controls: speed / voice / sleep timer buttons.
     expect(screen.getByLabelText('Speed')).toBeTruthy();
     expect(screen.getByLabelText('Sleep Timer')).toBeTruthy();
-    expect(await screen.findByText('Ava')).toBeTruthy(); // voice button caption
+    expect(await waitFor(() => screen.getByText('Ava'))).toBeTruthy(); // voice button caption
     // The main view carries no header label (vertical space).
     expect(screen.queryByText('Read Aloud')).toBeNull();
   });
@@ -282,7 +291,7 @@ describe('TTSPlayerSheet', () => {
     const props = makeProps();
     render(<TTSPlayerSheet {...props} />);
     fireEvent.click(screen.getByLabelText('Voice'));
-    fireEvent.click(await screen.findByText('Guy'));
+    fireEvent.click(await waitFor(() => screen.getByText('Guy')));
     expect(props.onSetVoice).toHaveBeenCalledWith('guy', 'en-US');
     expect(viewSettings['ttsVoice']).toBe('guy');
   });
@@ -292,7 +301,7 @@ describe('TTSPlayerSheet', () => {
     render(<TTSPlayerSheet {...props} />);
     fireEvent.click(screen.getByLabelText('Sleep Timer'));
     // The translation mock interpolates, so options render as real labels.
-    fireEvent.click(await screen.findByText('30 minutes'));
+    fireEvent.click(screen.getByText('30 minutes'));
     expect(props.onSelectTimeout).toHaveBeenCalledWith('b1', 1800);
   });
 
@@ -350,7 +359,7 @@ describe('TTSPlayerSheet', () => {
     const props = makeProps();
     const { rerender } = render(<TTSPlayerSheet {...props} />);
     fireEvent.click(screen.getByLabelText('Voice'));
-    expect(await screen.findByText('Guy')).toBeTruthy();
+    expect(await waitFor(() => screen.getByText('Guy'))).toBeTruthy();
     rerender(<TTSPlayerSheet {...props} isOpen={false} />);
     rerender(<TTSPlayerSheet {...props} isOpen={true} />);
     expect(screen.getByLabelText('Previous Paragraph')).toBeTruthy();

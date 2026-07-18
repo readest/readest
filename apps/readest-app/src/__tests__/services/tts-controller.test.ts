@@ -1275,9 +1275,8 @@ describe('TTSController', () => {
       // transiently re-enters 'stopped' between chunks.)
       await vi.waitFor(() => expect(state.attempts).toBeGreaterThanOrEqual(5), { timeout: 8000 });
 
-      // Let the cap-stop settle, then confirm it terminated (bounded, not
-      // racing to the end of the book) and is no longer playing.
-      await new Promise((r) => setTimeout(r, 150));
+      // Confirm the cap-stop settled (bounded, not racing to the end of the book).
+      await vi.waitFor(() => expect(c.state).not.toBe('playing'));
       expect(c.state).not.toBe('playing');
       expect(state.attempts).toBeLessThanOrEqual(10);
     });

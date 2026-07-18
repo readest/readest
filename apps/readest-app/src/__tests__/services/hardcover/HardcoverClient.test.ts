@@ -26,6 +26,7 @@ type TestBookContext = {
 
 type HardcoverClientTestApi = {
   token: string;
+  minRequestIntervalMs: number;
   extractISBN: (book: Book) => string | null;
   request: <TVariables, TData>(query: string, variables: TVariables) => Promise<TData>;
   fetchBookContext: (book: Book) => Promise<TestBookContext | null>;
@@ -70,6 +71,8 @@ describe('HardcoverClient', () => {
 
     client = new HardcoverClient(mockSettings, mockMapStore);
     clientApi = client as unknown as HardcoverClientTestApi;
+    // Mocked API responses do not need the production request-rate throttle.
+    clientApi.minRequestIntervalMs = 0;
   });
 
   test('should normalize accessToken correctly', () => {
