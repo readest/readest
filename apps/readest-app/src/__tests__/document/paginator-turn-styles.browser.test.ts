@@ -269,6 +269,131 @@ describe('Page turn styles (browser)', () => {
     expect(scrubbedAnimations().length).toBe(0);
   });
 
+  // Xiaomi report (Android 16, WebView 148): with the layered slide style, a
+  // vertical toolbar-toggle swipe randomly turned the page forward/backward.
+  // snap() judged gesture alignment by the LAST-SAMPLE velocity ratio, so a
+  // vertical swipe whose finger hooks slightly sideways in its final
+  // milliseconds read as horizontal, and the layered path's displacement*10
+  // heuristic amplified the tiny net x-drift into a full page turn. Alignment
+  // for displacement-judged releases must weigh the whole gesture.
+  it('a vertical swipe with a sideways lift-off hook does not turn (slide)', async () => {
+    await setup(ltrBook, 'slide');
+    const page = paginator.page;
+    const before = paginator.containerPosition;
+
+    for (const hook of [40, -40]) {
+      const x = 400;
+      fireTouch('touchstart', x, 500);
+      for (let i = 1; i <= 8; i++) {
+        await wait(16);
+        fireTouch('touchmove', i === 8 ? x + hook : x, 500 - i * 30);
+      }
+      fireTouch('touchend', x + hook, 500 - 8 * 30);
+      await wait(700);
+      expect(paginator.page).toBe(page);
+      expect(paginator.containerPosition).toBe(before);
+    }
+  });
+
+  // The finger-realistic variant (verified over CDP on a Xiaomi, Android 16,
+  // WebView 148): a finger lands with a small sideways WOBBLE before the
+  // vertical run. The cumulative start gate saw |dx| >= max(|dy|, 12) on the
+  // wobble alone and silently started the layered drag; the release then
+  // committed on last-sample flick jitter — a random forward/backward turn
+  // from a toolbar-toggle swipe. A drag whose whole gesture is not
+  // predominantly horizontal must always cancel.
+  it('a wobble-start vertical swipe never engages the layered turn (slide)', async () => {
+    await setup(ltrBook, 'slide');
+    // Away from the section edges so drags can start in both directions.
+    await paginator.next();
+    await paginator.next();
+    await wait(600);
+    const page = paginator.page;
+    const before = paginator.containerPosition;
+
+    // Not turning is not enough: a snapshot that engages and cancels still
+    // FLASHES a slide over the vertical swipe (seen on the Xiaomi). For a
+    // horizontal writing mode, only a horizontal gesture may start the
+    // layered turn at all.
+    const origVT = document.startViewTransition.bind(document);
+    let vtCalls = 0;
+    document.startViewTransition = ((cb: () => Promise<void> | void) => {
+      vtCalls++;
+      return origVT(cb);
+    }) as typeof document.startViewTransition;
+
+    try {
+      for (const [wobble, hook] of [
+        [16, 20],
+        [16, -20],
+        [-16, 20],
+        [16, 0],
+        [20, 40],
+      ]) {
+        const x = 400;
+        fireTouch('touchstart', x, 500);
+        // Landing wobble: sideways before any vertical distance accumulates.
+        await wait(16);
+        fireTouch('touchmove', x + wobble!, 496);
+        await wait(16);
+        fireTouch('touchmove', x + wobble!, 488);
+        // The vertical run, with a lift-off hook on the final sample.
+        for (let i = 1; i <= 8; i++) {
+          await wait(16);
+          fireTouch('touchmove', x + wobble! + (i === 8 ? hook! : 0), 488 - i * 28);
+        }
+        fireTouch('touchend', x + wobble! + hook!, 488 - 8 * 28);
+        await wait(700);
+        expect(paginator.page, `wobble ${wobble} hook ${hook}`).toBe(page);
+        expect(paginator.containerPosition, `wobble ${wobble} hook ${hook}`).toBe(before);
+        expect(vtCalls, `wobble ${wobble} hook ${hook} flashed a transition`).toBe(0);
+      }
+    } finally {
+      document.startViewTransition = origVT;
+    }
+  });
+
+  // On fractional-DPR devices (Xiaomi, dpr 2.75) the container scroll rests a
+  // sub-pixel off the page offset, so the release snap missed #scrollTo's
+  // exact-equality short-circuit and ran a full-page layered view transition
+  // to the SAME page — a visible slide flash on every vertical toolbar-toggle
+  // swipe, even with no drag and no page change.
+  it('a sub-pixel scroll offset never flashes a layered settle on release (slide)', async () => {
+    await setup(ltrBook, 'slide');
+    await paginator.next();
+    await wait(600);
+    const page = paginator.page;
+
+    // Simulate the fractional resting offset of a dpr-2.75 screen. The
+    // vitest browser context runs at deviceScaleFactor 2, so half-pixel
+    // offsets are representable and must persist for this repro to be real.
+    const integral = paginator.containerPosition;
+    paginator.containerPosition = integral + 0.5;
+    expect(paginator.containerPosition, 'fractional offset did not persist').not.toBe(integral);
+
+    const origVT = document.startViewTransition.bind(document);
+    let vtCalls = 0;
+    document.startViewTransition = ((cb: () => Promise<void> | void) => {
+      vtCalls++;
+      return origVT(cb);
+    }) as typeof document.startViewTransition;
+
+    try {
+      const x = 400;
+      fireTouch('touchstart', x, 500);
+      for (let i = 1; i <= 8; i++) {
+        await wait(16);
+        fireTouch('touchmove', x, 500 - i * 28);
+      }
+      fireTouch('touchend', x, 500 - 8 * 28);
+      await wait(700);
+      expect(paginator.page).toBe(page);
+      expect(vtCalls, 'the same-page settle flashed a transition').toBe(0);
+    } finally {
+      document.startViewTransition = origVT;
+    }
+  });
+
   it('falls back to the push animation when view transitions are unavailable', async () => {
     const original = document.startViewTransition;
     // @ts-expect-error simulate an engine without the View Transitions API
