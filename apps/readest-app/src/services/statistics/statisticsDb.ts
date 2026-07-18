@@ -149,7 +149,8 @@ export class StatisticsDb {
       `SELECT duration
          FROM page_stat_data
          WHERE id_book = ?
-         ORDER BY start_time DESC`,
+         ORDER BY start_time DESC
+         LIMIT 50`,
       [idBook],
     );
     const pageDurations = rows.map((d) => d['duration']);
