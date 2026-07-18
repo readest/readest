@@ -61,6 +61,11 @@ export const useTextSelector = (
   const isUpToPopup = useRef(false);
   const isTextSelected = useRef(false);
   const isTouchStarted = useRef(false);
+  // A touch selectionchange deferred until the gesture ends: iOS streams
+  // selectionchange while a finger drags the system selection handles, and
+  // the Annotator hides the popup on every touchmove — re-showing it per
+  // change made the annotation toolbar flash. Processed in handleTouchEnd.
+  const pendingTouchSelection = useRef(false);
   const selectionPosition = useRef<number | null>(null);
   const lastPointerType = useRef<string>('mouse');
   // Whether a pointer drag (mouse/touch selection) is currently in progress.
@@ -513,6 +518,7 @@ export const useTextSelector = (
   };
   const handleTouchStart = () => {
     isTouchStarted.current = true;
+    pendingTouchSelection.current = false;
     gestureInitialRef.current = null;
     sanitizedGestureRef.current = false;
     // Pointer positions are per-gesture: a stale point from a previous touch
@@ -524,8 +530,25 @@ export const useTextSelector = (
       ev.preventDefault();
     }
   };
-  const handleTouchEnd = () => {
+  // Ends the touch gesture and processes a selectionchange that was deferred
+  // while the finger was down (see handleSelectionchange): the selection state
+  // updates once, so the annotation popup appears once, at the release. The
+  // Android native-touch bridge calls this without a doc (it never defers).
+  const handleTouchEnd = (doc?: Document, index?: number) => {
     isTouchStarted.current = false;
+    if (!pendingTouchSelection.current) return;
+    pendingTouchSelection.current = false;
+    if (!doc || index === undefined) return;
+    const sel = doc.getSelection();
+    if (sel && isValidSelection(sel)) {
+      if (selectionPosition.current === null) {
+        selectionPosition.current = view?.renderer?.containerPosition ?? null;
+      }
+      makeSelection(sel, index, false);
+    } else if (isTextSelected.current) {
+      handleDismissPopup();
+      isTextSelected.current = false;
+    }
   };
 
   // The corner the latest pointer (pointermove / native touchmove) position is in.
@@ -582,6 +605,17 @@ export const useTextSelector = (
     // adjustment (#4728) has no pointerup — process it as long as a pointer drag
     // isn't in progress (mid-drag still defers to pointerup).
     if (!isAndroid && !isTouchInput && isPointerDown.current) return;
+    // Touch drags in paginated mode (iOS/web): the system handle drag streams
+    // selectionchange while the Annotator's touchmove handler hides the popup;
+    // processing each change re-showed it and made the toolbar flash. Defer to
+    // the gesture end (handleTouchEnd). Scroll mode keeps the immediate path —
+    // there the gesture can end in pointercancel with no processing after it.
+    // Android keeps it too: selectionchange is its primary selection signal
+    // and its popup-hiding touchmove never fires.
+    if (!isAndroid && isTouchInput && isTouchStarted.current && !viewSettings?.scrolled) {
+      pendingTouchSelection.current = true;
+      return;
+    }
     if (isValidSelection(sel)) {
       if (selectionPosition.current === null) {
         // Save the absolute container scroll, not `renderer.start` — the

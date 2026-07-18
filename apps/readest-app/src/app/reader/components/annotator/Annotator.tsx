@@ -374,7 +374,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const opts = { passive: false };
     detail.doc?.addEventListener('touchstart', handleTouchStart, opts);
     detail.doc?.addEventListener('touchmove', handleTouchmove, opts);
-    detail.doc?.addEventListener('touchend', handleTouchEnd);
+    // Bound to the section so a selectionchange deferred during the drag can
+    // be processed (and the popup shown once) when the gesture ends.
+    detail.doc?.addEventListener('touchend', handleTouchEnd.bind(null, doc, index));
     // Re-arm the instant quick action at the start of each gesture. Android does
     // this via the native-touch touchstart above; iOS/desktop have no such path,
     // and a single iOS long-press emits multiple selectionchange events for the
