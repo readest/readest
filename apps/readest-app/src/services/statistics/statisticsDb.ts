@@ -153,8 +153,8 @@ export class StatisticsDb {
          LIMIT 50`,
       [idBook],
     );
+    if (rows.length < PAGE_THRESHOLD) return null;
     const pageDurations = rows.map((d) => d['duration']);
-    if (pageDurations.length <= PAGE_THRESHOLD) return null;
     const mid = Math.floor(pageDurations.length / 2);
     return pageDurations.length % 2 !== 0
       ? (pageDurations[mid] ?? 0)
