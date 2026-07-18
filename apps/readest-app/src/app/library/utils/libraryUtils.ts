@@ -237,9 +237,11 @@ export const convertPagesToTimeRemainingMinutes = (
   pagesLeft: number,
   medianPageDurationSecs?: number,
 ): number => {
-  return medianPageDurationSecs
+  const minutes = medianPageDurationSecs
     ? Math.round((pagesLeft * medianPageDurationSecs) / 60)
     : Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT); // Fall back to less precise calculation
+
+  return Math.max(1, minutes);
 };
 
 /**
