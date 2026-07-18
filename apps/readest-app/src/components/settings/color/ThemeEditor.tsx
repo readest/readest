@@ -32,9 +32,7 @@ const ThemePreview: React.FC<{
         }}
       >
         <p className='mb-2 whitespace-pre-line break-words text-xs'>
-          {_(
-            "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare",
-          )}
+          {_('All that glisters is not gold.')}
           {'\n\n'}
           <span
             className='mt-4 cursor-pointer italic'
@@ -42,7 +40,7 @@ const ThemePreview: React.FC<{
               color: primaryColor,
             }}
           >
-            {_("(from 'As You Like It', Act II)")}
+            {_('— William Shakespeare, Merchant of Venice')}
           </span>
         </p>
       </div>
