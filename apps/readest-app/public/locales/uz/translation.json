@@ -993,8 +993,6 @@
   "Ruler Color": "Chizgʻich rangi",
   "Theme Color": "Mavzu rangi",
   "Custom": "Maxsus",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Butun dunyo — sahna,\nVa barcha erkaklar va ayollar oddiy aktyorlardir;\nUlarning oʻz chiqishlari va kirishlari bor,\nVa bir kishi oʻz davrida koʻp rollar oʻynaydi,\nUning amallari yetti yoshda boʻladi.\n\n— Uilyam Shekspir",
-  "(from 'As You Like It', Act II)": "('Sizga maʼqulidir' asaridan, II parda)",
   "Custom Theme": "Maxsus mavzu",
   "Theme Name": "Mavzu nomi",
   "Text Color": "Matn rangi",
@@ -1935,5 +1933,7 @@
   "Minimal": "Minimal",
   "TTS Player Style": "TTS pleyer uslubi",
   "Show translation": "Tarjimani ko'rsatish",
-  "Show original": "Aslini ko'rsatish"
+  "Show original": "Aslini ko'rsatish",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Butun dunyo — sahna, va barcha erkagu ayol faqat aktyorlardir; ularning o‘z chiqishlari va kirishlari bor, va inson umri davomida ko‘p rollarni o‘ynaydi.",
+  "— William Shakespeare, As You Like It": "— Uilyam Shekspir, Xohishingizga ko‘ra"
 }

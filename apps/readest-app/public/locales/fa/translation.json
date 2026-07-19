@@ -185,7 +185,6 @@
   "No supported files found. Supported formats: {{formats}}": "فایل پشتیبانی‌شده‌ای یافت نشد. فرمت‌های قابل پشتیبانی: {{formats}}",
   "Drop to Import Books": "برای وارد کردن کتاب‌ها، فایل را رها کنید",
   "Custom": "سفارشی",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "تمام دنیا صحنه‌ای است،\nو همه‌ی مردان و زنان تنها بازیگرانی بیش نیستند؛\nآن‌ها ورود و خروج خود را دارند،\nو هر آدمی در طول زمان نقش‌های بسیاری ایفا می‌کند،\nاعمال او هفت دوره‌اند.\n\n— ویلیام شکسپیر",
   "Custom Theme": "تم سفارشی",
   "Theme Name": "نام تم",
   "Text Color": "رنگ متن",
@@ -247,7 +246,6 @@
   "No description available": "هیچ توضیحی موجود نیست",
   "List": "لیست",
   "Grid": "جدول",
-  "(from 'As You Like It', Act II)": "(از «همان‌طور که دوست دارید»، پرده‌ی دوم)",
   "Link Color": "رنگ لینک",
   "Screen": "صفحه",
   "Orientation": "جهت",
@@ -1935,5 +1933,7 @@
   "Minimal": "ساده",
   "TTS Player Style": "سبک پخش‌کننده TTS",
   "Show translation": "نمایش ترجمه",
-  "Show original": "نمایش متن اصلی"
+  "Show original": "نمایش متن اصلی",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "تمام دنیا یک صحنه است و همه‌ی مردان و زنان تنها بازیگرند؛ آن‌ها را خروج‌ها و ورودهایی است، و هر کس در طول عمر خود نقش‌های بسیاری بازی می‌کند.",
+  "— William Shakespeare, As You Like It": "— ویلیام شکسپیر، هرطور که دوست دارید"
 }

@@ -186,7 +186,6 @@
   "No supported files found. Supported formats: {{formats}}": "Không tìm thấy tệp được hỗ trợ. Định dạng được hỗ trợ: {{formats}}",
   "Drop to Import Books": "Kéo và thả để nhập sách",
   "Custom": "Tùy chỉnh",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Cả thế giới này là một sân khấu,\nVà tất cả đàn ông và phụ nữ chỉ là những diễn viên;\nHọ có cửa ra và cửa vào của mình,\nVà một người trong cuộc đời mình đóng nhiều vai,\nHành động của mình là bảy tuổi.\n\n— William Shakespeare",
   "Custom Theme": "Chủ đề tùy chỉnh",
   "Theme Name": "Tên chủ đề",
   "Text Color": "Màu văn bản",
@@ -248,7 +247,6 @@
   "No description available": "Không có mô tả nào",
   "List": "Danh sách",
   "Grid": "Lưới",
-  "(from 'As You Like It', Act II)": "(từ 'Như bạn thích', Hành động II)",
   "Link Color": "Màu liên kết",
   "Screen": "Màn hình",
   "Orientation": "Định hướng",
@@ -1899,5 +1897,7 @@
   "Minimal": "Tối giản",
   "TTS Player Style": "Kiểu trình phát TTS",
   "Show translation": "Hiển thị bản dịch",
-  "Show original": "Hiển thị bản gốc"
+  "Show original": "Hiển thị bản gốc",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Cả thế giới là một sân khấu, và tất cả đàn ông đàn bà chỉ là những diễn viên; họ có lúc ra và lúc vào, và một người trong đời mình đóng nhiều vai.",
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Theo Ý Thích"
 }

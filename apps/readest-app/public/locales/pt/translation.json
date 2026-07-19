@@ -186,7 +186,6 @@
   "No supported files found. Supported formats: {{formats}}": "Nenhum arquivo suportado encontrado. Formatos suportados: {{formats}}",
   "Drop to Import Books": "Arraste para Importar Livros",
   "Custom": "Personalizado",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Todo o mundo é um palco,\nE todos os homens e mulheres são meros atores;\nEles têm suas saídas e suas entradas,\nE um homem em seu tempo desempenha muitos papéis,\nSeus atos sendo sete idades.\n\n— William Shakespeare",
   "Custom Theme": "Tema Personalizado",
   "Theme Name": "Nome do Tema",
   "Text Color": "Cor do Texto",
@@ -248,7 +247,6 @@
   "No description available": "Nenhuma descrição disponível",
   "List": "Lista",
   "Grid": "Grade",
-  "(from 'As You Like It', Act II)": "(de 'Como Gostais', Ato II)",
   "Link Color": "Cor do Link",
   "Screen": "Tela",
   "Orientation": "Orientação",
@@ -1971,5 +1969,7 @@
   "Minimal": "Minimalista",
   "TTS Player Style": "Estilo do leitor TTS",
   "Show translation": "Mostrar tradução",
-  "Show original": "Mostrar original"
+  "Show original": "Mostrar original",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "O mundo inteiro é um palco, e todos os homens e mulheres não passam de atores; têm as suas saídas e as suas entradas, e um homem, no seu tempo, representa muitos papéis.",
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Como Gostais"
 }

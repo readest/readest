@@ -285,8 +285,6 @@
   "Color": "রঙ",
   "Behavior": "আচরণ",
   "Reset {{settings}}": "{{settings}} রিসেট",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "সারা বিশ্বটাই একটা মঞ্চ,\nআর সব নর-নারী কেবল অভিনেতা;\nতাদের আছে প্রস্থান ও প্রবেশ,\nআর একজন মানুষ তার জীবনে অনেক চরিত্র পালন করে,\nতার অভিনয় সাত যুগের।\n\n— উইলিয়াম শেক্সপিয়র",
-  "(from 'As You Like It', Act II)": "('অ্যাজ ইউ লাইক ইট', দ্বিতীয় অঙ্ক থেকে)",
   "Custom Theme": "কাস্টম থিম",
   "Theme Name": "থিমের নাম",
   "Text Color": "টেক্সট রঙ",
@@ -1935,5 +1933,7 @@
   "Minimal": "ন্যূনতম",
   "TTS Player Style": "TTS প্লেয়ার শৈলী",
   "Show translation": "অনুবাদ দেখান",
-  "Show original": "মূল দেখান"
+  "Show original": "মূল দেখান",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "সমগ্র বিশ্বই একটি রঙ্গমঞ্চ, আর সব নারী-পুরুষ কেবল অভিনেতা; তাদের আছে প্রস্থান আর প্রবেশ, আর একজন মানুষ তার জীবনে বহু ভূমিকায় অভিনয় করে।",
+  "— William Shakespeare, As You Like It": "— উইলিয়াম শেক্সপিয়ার, অ্যাজ ইউ লাইক ইট"
 }

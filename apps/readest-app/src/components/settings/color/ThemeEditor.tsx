@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { CustomTheme } from '@/styles/themes';
 import { md5Fingerprint } from '@/utils/md5';
@@ -32,7 +33,9 @@ const ThemePreview: React.FC<{
         }}
       >
         <p className='mb-2 whitespace-pre-line break-words text-xs'>
-          {_('All that glisters is not gold.')}
+          {_(
+            'All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.',
+          )}
           {'\n\n'}
           <span
             className='mt-4 cursor-pointer italic'
@@ -40,7 +43,7 @@ const ThemePreview: React.FC<{
               color: primaryColor,
             }}
           >
-            {_('— William Shakespeare, Merchant of Venice')}
+            {_('— William Shakespeare, As You Like It')}
           </span>
         </p>
       </div>
@@ -116,8 +119,46 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
     };
   };
 
+  // Render the Save/Cancel bar outside the dialog's scroll viewport (pinned to
+  // the modal box) instead of as a sticky footer inside it. A sticky footer
+  // overlaps the scrolling preview cards, which leaks a hairline of card pixels
+  // at its clipped bottom edge on fractional-DPR screens and jumps a pixel when
+  // the scroll bottoms out. Portaling it out of the scroller sidesteps both.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [footerContainer, setFooterContainer] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setFooterContainer(rootRef.current?.closest<HTMLElement>('.modal-box') ?? null);
+  }, []);
+
+  const footer = (
+    <div
+      className={clsx(
+        'flex shrink-0 bg-base-200 px-6 py-2 sm:px-[10%]',
+        existingTheme ? 'justify-between' : 'justify-end',
+      )}
+    >
+      {existingTheme && (
+        <button className='btn btn-error btn-sm px-2' onClick={() => onDelete(getCustomTheme())}>
+          {_('Delete')}
+        </button>
+      )}
+
+      <div className='flex gap-2'>
+        <button className='btn btn-ghost btn-sm px-2' onClick={onCancel}>
+          {_('Cancel')}
+        </button>
+        <button
+          className='btn btn-contrast btn-sm text-base-content px-2'
+          onClick={() => onSave(getCustomTheme())}
+        >
+          {_('Save')}
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className='flex flex-col gap-2 mt-6 rounded-lg'>
+    <div ref={rootRef} className='flex flex-col gap-2 mt-6 rounded-lg'>
       <div className='flex items-center gap-4'>
         <label className='font-medium whitespace-nowrap'>{_('Theme Name')}</label>
         <input
@@ -129,7 +170,7 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
         />
       </div>
 
-      <div className='grid grid-cols-2 gap-6 mt-4'>
+      <div className='grid grid-cols-1 gap-4 mt-4 sm:grid-cols-2 sm:gap-6'>
         <div className='bg-base-100 rounded-lg p-3'>
           <h3 className='mb-3 truncate text-center font-medium' title={_('Light Mode')}>
             {_('Light Mode')}
@@ -195,30 +236,7 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
           />
         </div>
       </div>
-      <div
-        className={clsx(
-          'flex sticky bottom-0 bg-base-200 py-2',
-          existingTheme ? 'justify-between' : 'justify-end',
-        )}
-      >
-        {existingTheme && (
-          <button className='btn btn-error btn-sm px-2' onClick={() => onDelete(getCustomTheme())}>
-            {_('Delete')}
-          </button>
-        )}
-
-        <div className='flex gap-2'>
-          <button className='btn btn-ghost btn-sm px-2' onClick={onCancel}>
-            {_('Cancel')}
-          </button>
-          <button
-            className='btn btn-contrast btn-sm text-base-content px-2'
-            onClick={() => onSave(getCustomTheme())}
-          >
-            {_('Save')}
-          </button>
-        </div>
-      </div>
+      {footerContainer ? createPortal(footer, footerContainer) : footer}
     </div>
   );
 };

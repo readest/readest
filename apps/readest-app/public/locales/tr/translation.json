@@ -186,7 +186,6 @@
   "No supported files found. Supported formats: {{formats}}": "Desteklenen dosya bulunamadı. Desteklenen formatlar: {{formats}}",
   "Drop to Import Books": "Kitapları İçe Aktarmak İçin Bırak",
   "Custom": "Özel",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Tüm dünya bir sahnedir,\nVe tüm erkekler ve kadınlar sadece oyunculardır;\nOnların çıkışları ve girişleri vardır,\nVe bir adam zamanında birçok rol oynar,\nOnun eylemleri yedi yaşındadır.\n\n— William Shakespeare",
   "Custom Theme": "Özel Tema",
   "Theme Name": "Tema Adı",
   "Text Color": "Metin Rengi",
@@ -248,7 +247,6 @@
   "No description available": "Tanım mevcut değil",
   "List": "Liste",
   "Grid": "Izgara",
-  "(from 'As You Like It', Act II)": "(As You Like It, 2. Perde)",
   "Link Color": "Bağlantı Rengi",
   "Screen": "Ekran",
   "Orientation": "Yönlendirme",
@@ -1935,5 +1933,7 @@
   "Minimal": "Minimal",
   "TTS Player Style": "TTS Oynatıcı Stili",
   "Show translation": "Çeviriyi göster",
-  "Show original": "Orijinali göster"
+  "Show original": "Orijinali göster",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Bütün dünya bir sahne, ve bütün kadınlar, erkekler sadece birer oyuncu; girişleri ve çıkışları var, ve bir insan ömrü boyunca birçok rol oynuyor.",
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Nasıl Hoşunuza Giderse"
 }

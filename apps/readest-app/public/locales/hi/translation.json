@@ -186,7 +186,6 @@
   "No supported files found. Supported formats: {{formats}}": "कोई समर्थित फ़ाइलें नहीं मिलीं। समर्थित प्रारूप: {{formats}}",
   "Drop to Import Books": "पुस्तकें आयात करने के लिए छोड़ें",
   "Custom": "कस्टम",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "पूरी दुनिया एक स्टेज है,\nऔर सभी आदमी और महिलाएँ केवल अभिनेता हैं;\nउनके निकास और प्रवेश होते हैं,\nऔर एक आदमी अपने समय में कई भूमिकाएँ निभाता है,\nउसके कार्य सात युग होते हैं।\n\n— विलियम शेक्सपियर",
   "Custom Theme": "कस्टम थीम",
   "Theme Name": "थीम का नाम",
   "Text Color": "टेक्स्ट रंग",
@@ -248,7 +247,6 @@
   "No description available": "कोई विवरण उपलब्ध नहीं है",
   "List": "सूची",
   "Grid": "ग्रिड",
-  "(from 'As You Like It', Act II)": "('जैसा आप इसे पसंद करते हैं', अधिनियम II)",
   "Link Color": "लिंक रंग",
   "Screen": "स्क्रीन",
   "Orientation": "अवयव",
@@ -1935,5 +1933,7 @@
   "Minimal": "न्यूनतम",
   "TTS Player Style": "TTS प्लेयर शैली",
   "Show translation": "अनुवाद दिखाएं",
-  "Show original": "मूल दिखाएं"
+  "Show original": "मूल दिखाएं",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "सारा संसार एक रंगमंच है, और सभी स्त्री-पुरुष केवल अभिनेता हैं; उनके अपने प्रस्थान और प्रवेश होते हैं, और एक मनुष्य अपने जीवनकाल में अनेक भूमिकाएँ निभाता है।",
+  "— William Shakespeare, As You Like It": "— विलियम शेक्सपियर, एज़ यू लाइक इट"
 }

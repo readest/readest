@@ -186,7 +186,6 @@
   "No supported files found. Supported formats: {{formats}}": "Δεν βρέθηκαν υποστηριζόμενα αρχεία. Υποστηριζόμενες μορφές: {{formats}}",
   "Drop to Import Books": "Ρίξτε για εισαγωγή βιβλίων",
   "Custom": "Προσαρμοσμένο",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Όλος ο κόσμος είναι σκηνή,\nΚαι όλοι οι άνδρες και οι γυναίκες απλώς ηθοποιοί·\nΈχουν τις εξόδους και τις εισόδους τους,\nΚαι ένας άνθρωπος στον χρόνο του παίζει πολλούς ρόλους,\nΟι πράξεις του υπάρχουν σε επτά ηλικίες.\n\n— William Shakespeare",
   "Custom Theme": "Προσαρμοσμένο θέμα",
   "Theme Name": "Όνομα θέματος",
   "Text Color": "Χρώμα κειμένου",
@@ -248,7 +247,6 @@
   "No description available": "Δεν είναι διαθέσιμη καμία περιγραφή",
   "List": "Λίστα",
   "Grid": "Πλέγμα",
-  "(from 'As You Like It', Act II)": "('Όπως σας αρέσει', Πράξη II)",
   "Link Color": "Χρώμα συνδέσμου",
   "Screen": "Οθόνη",
   "Orientation": "Προσανατολισμός",
@@ -1935,5 +1933,7 @@
   "Minimal": "Μινιμαλιστικό",
   "TTS Player Style": "Στυλ αναπαραγωγής TTS",
   "Show translation": "Εμφάνιση μετάφρασης",
-  "Show original": "Εμφάνιση πρωτοτύπου"
+  "Show original": "Εμφάνιση πρωτοτύπου",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Όλος ο κόσμος είναι μια σκηνή, και όλοι οι άντρες κι οι γυναίκες απλοί ηθοποιοί· έχουν τις εξόδους και τις εισόδους τους, κι ένας άνθρωπος στη ζωή του παίζει πολλούς ρόλους.",
+  "— William Shakespeare, As You Like It": "— Ουίλιαμ Σαίξπηρ, Όπως Αγαπάτε"
 }

@@ -183,7 +183,6 @@
   "Font": "Lettertype",
   "Layout": "Opmaak",
   "Color": "Kleur",
-  "(from 'As You Like It', Act II)": "(uit 'As You Like It', Akte II)",
   "Custom Theme": "Aangepast thema",
   "Theme Name": "Themanaam",
   "Text Color": "Tekstkleur",
@@ -259,7 +258,6 @@
   "Reveal in File Explorer": "Tonen in Verkenner",
   "Reveal in Folder": "Tonen in map",
   "Don't have an account? Sign up": "Nog geen account? Registreer u",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "De hele wereld is een toneel,\nEn alle mannen en vrouwen slechts spelers;\nZij hebben hun uitgangen en hun entrees,\nEn één man speelt in zijn tijd vele rollen,\nZijn daden zijnde zeven leeftijden.\n\n— William Shakespeare",
   "Next Section": "Volgende sectie",
   "Previous Section": "Vorige sectie",
   "Next Page": "Volgende pagina",
@@ -1935,5 +1933,7 @@
   "Minimal": "Minimaal",
   "TTS Player Style": "TTS-spelerstijl",
   "Show translation": "Vertaling tonen",
-  "Show original": "Origineel tonen"
+  "Show original": "Origineel tonen",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "De hele wereld is een toneel, en alle mannen en vrouwen slechts spelers; zij hebben hun aftredens en hun optredens, en één mens speelt in zijn leven vele rollen.",
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Zoals u het wilt"
 }

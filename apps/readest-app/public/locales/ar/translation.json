@@ -185,7 +185,6 @@
   "No supported files found. Supported formats: {{formats}}": "لم يتم العثور على ملفات مدعومة. الصيغ المدعومة: {{formats}}",
   "Drop to Import Books": "قم بالسحب والإسقاط لاستيراد الكتب",
   "Custom": "مخصص",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "العالم مسرح،\nوالناس فيه ممثلون؛\nلهم مخارج ومداخل،\nوالإنسان في حياته يلعب دورًا كثيرًا،\nوأفعاله تمر بسبع مراحل.\n\n— ويليام شكسبير",
   "Custom Theme": "سمة مخصصة",
   "Theme Name": "اسم السمة",
   "Text Color": "لون النص",
@@ -247,7 +246,6 @@
   "No description available": "لا يوجد وصف متاح",
   "List": "قائمة",
   "Grid": "شبكة",
-  "(from 'As You Like It', Act II)": "(من 'كما تحب'، الفصل الثاني)",
   "Link Color": "لون الرابط",
   "Screen": "الشاشة",
   "Orientation": "الاتجاه",
@@ -2079,5 +2077,7 @@
   "Minimal": "مبسط",
   "TTS Player Style": "نمط مشغل TTS",
   "Show translation": "إظهار الترجمة",
-  "Show original": "إظهار الأصل"
+  "Show original": "إظهار الأصل",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "العالم كله مسرح، وكل الرجال والنساء مجرد ممثلين؛ لهم مخارجهم ومداخلهم، والمرء الواحد في زمنه يؤدي أدوارًا كثيرة.",
+  "— William Shakespeare, As You Like It": "— ويليام شكسبير، كما تشاء"
 }

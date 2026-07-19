@@ -186,7 +186,6 @@
   "No supported files found. Supported formats: {{formats}}": "サポートされているファイルが見つかりません。サポートされている形式：{{formats}}",
   "Drop to Import Books": "書籍をインポートするにはドロップ",
   "Custom": "カスタム",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "全世界は舞台であり、\nそしてすべての男性と女性は単なる役者です。\n彼らは出入り口を持っており、\nそして一人の男性は時に多くの役を演じます。\n彼の行為は七つの時代です。\n\n— ウィリアム・シェイクスピア",
   "Custom Theme": "カスタムテーマ",
   "Theme Name": "テーマ名",
   "Text Color": "テキストカラー",
@@ -248,7 +247,6 @@
   "No description available": "説明はありません",
   "List": "リスト",
   "Grid": "グリッド",
-  "(from 'As You Like It', Act II)": "(「お気に召すまま」第2幕)",
   "Link Color": "リンクカラー",
   "Screen": "画面",
   "Orientation": "向き",
@@ -1899,5 +1897,7 @@
   "Minimal": "ミニマル",
   "TTS Player Style": "TTSプレーヤーのスタイル",
   "Show translation": "翻訳を表示",
-  "Show original": "原文を表示"
+  "Show original": "原文を表示",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "この世はすべて舞台、男も女もみな役者にすぎない。彼らには退場があり登場があり、一人の人間はその一生でいくつもの役を演じる。",
+  "— William Shakespeare, As You Like It": "— ウィリアム・シェイクスピア『お気に召すまま』"
 }

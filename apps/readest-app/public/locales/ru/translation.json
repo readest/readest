@@ -186,7 +186,6 @@
   "No supported files found. Supported formats: {{formats}}": "Поддерживаемые файлы не найдены. Поддерживаемые форматы: {{formats}}",
   "Drop to Import Books": "Перетащите сюда книги для импорта",
   "Custom": "Пользовательский",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Весь мир — театр,\nИ все мужчины и женщины — просто актёры;\nУ них есть свои выходы и входы,\nИ один человек в своё время играет много ролей,\nЕго поступки — это семь веков.\n\n— Уильям Шекспир",
   "Custom Theme": "Пользовательская тема",
   "Theme Name": "Название темы",
   "Text Color": "Цвет текста",
@@ -248,7 +247,6 @@
   "No description available": "Нет доступного описания",
   "List": "Список",
   "Grid": "Сетка",
-  "(from 'As You Like It', Act II)": "(из 'Как вам это понравится', Акт II)",
   "Link Color": "Цвет ссылки",
   "Screen": "Экран",
   "Orientation": "Ориентация",
@@ -2007,5 +2005,7 @@
   "Minimal": "Минимальный",
   "TTS Player Style": "Стиль TTS-плеера",
   "Show translation": "Показать перевод",
-  "Show original": "Показать оригинал"
+  "Show original": "Показать оригинал",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Весь мир — театр, а люди в нём — актёры; у них есть свои уходы и выходы, и каждый за свою жизнь играет множество ролей.",
+  "— William Shakespeare, As You Like It": "— Уильям Шекспир, «Как вам это понравится»"
 }

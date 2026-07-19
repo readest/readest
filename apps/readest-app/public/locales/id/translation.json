@@ -186,7 +186,6 @@
   "No supported files found. Supported formats: {{formats}}": "Tidak ada file yang didukung ditemukan. Format yang didukung: {{formats}}",
   "Drop to Import Books": "Jatuhkan untuk Mengimpor Buku",
   "Custom": "Kustom",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Seluruh dunia adalah panggung,\nDan semua pria dan wanita hanyalah pemain;\nMereka memiliki keluar dan masuk mereka,\nDan seorang pria dalam hidupnya memainkan banyak peran,\nTindakannya ada tujuh zaman.\n\n— William Shakespeare",
   "Custom Theme": "Tema Kustom",
   "Theme Name": "Nama Tema",
   "Text Color": "Warna Teks",
@@ -248,7 +247,6 @@
   "No description available": "Tidak ada deskripsi yang tersedia",
   "List": "Daftar",
   "Grid": "Jala",
-  "(from 'As You Like It', Act II)": "(dari 'Seperti yang Anda Inginkan', Bab II)",
   "Link Color": "Warna Tautan",
   "Screen": "Screen",
   "Orientation": "Orientasi",
@@ -1899,5 +1897,7 @@
   "Minimal": "Minimal",
   "TTS Player Style": "Gaya Pemutar TTS",
   "Show translation": "Tampilkan terjemahan",
-  "Show original": "Tampilkan asli"
+  "Show original": "Tampilkan asli",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Seluruh dunia adalah panggung, dan semua pria dan wanita hanyalah pemain; mereka punya saat keluar dan saat masuk, dan seseorang dalam hidupnya memainkan banyak peran.",
+  "— William Shakespeare, As You Like It": "— William Shakespeare, As You Like It"
 }

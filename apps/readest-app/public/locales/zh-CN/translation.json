@@ -187,7 +187,6 @@
   "No supported files found. Supported formats: {{formats}}": "未找到支持的文件。支持的格式：{{formats}}",
   "Drop to Import Books": "拖放导入书籍",
   "Custom": "自定义",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "世界是座舞台， \n所有男女都只是演员； \n各有其出场和入场； \n每个人皆扮演许多角色， \n而演出共分为七个阶段。\n\n——威廉·莎士比亚",
   "Custom Theme": "自定义主题",
   "Theme Name": "主题名称",
   "Text Color": "文本颜色",
@@ -249,7 +248,6 @@
   "No description available": "暂无简介",
   "List": "列表",
   "Grid": "网格",
-  "(from 'As You Like It', Act II)": "出自《皆大欢喜》，第二幕",
   "Link Color": "链接颜色",
   "Screen": "屏幕",
   "Orientation": "屏幕方向",
@@ -1899,5 +1897,7 @@
   "Minimal": "简约",
   "TTS Player Style": "TTS 播放器样式",
   "Show translation": "显示译文",
-  "Show original": "显示原文"
+  "Show original": "显示原文",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "整个世界是一座舞台，所有的男男女女不过是演员；他们各有登场和退场，一个人一生中要扮演许多角色。",
+  "— William Shakespeare, As You Like It": "— 威廉·莎士比亚，《皆大欢喜》"
 }

@@ -897,8 +897,6 @@
   "Ruler Color": "Vonalzó színe",
   "Theme Color": "Téma színe",
   "Custom": "Egyéni",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Színház az egész világ,\nÉs színész benne minden férfi és nő;\nMegvan a föllépése, lelépése,\nS mindenki több szerepben is megjelenik,\nHét felvonásra oszlik egy-egy élet.\n\n— William Shakespeare",
-  "(from 'As You Like It', Act II)": "(az 'Ahogy tetszik' c. műből, II. felvonás)",
   "Custom Theme": "Egyéni téma",
   "Theme Name": "Téma neve",
   "Text Color": "Szöveg színe",
@@ -1935,5 +1933,7 @@
   "Minimal": "Minimális",
   "TTS Player Style": "TTS lejátszó stílusa",
   "Show translation": "Fordítás megjelenítése",
-  "Show original": "Eredeti megjelenítése"
+  "Show original": "Eredeti megjelenítése",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Színház az egész világ, és színész benne minden férfi és nő; megvannak a maguk kilépői és belépői, és egy ember életében sok szerepet játszik el.",
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Ahogy tetszik"
 }

@@ -1014,8 +1014,6 @@
   "Ruler Color": "Cor da régua",
   "Theme Color": "Cor do tema",
   "Custom": "Personalizado",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Todo o mundo é um palco,\nE todos os homens e mulheres são meros atores;\nEles têm suas saídas e suas entradas,\nE um homem em seu tempo desempenha muitos papéis,\nSeus atos sendo sete idades.\n\n— William Shakespeare",
-  "(from 'As You Like It', Act II)": "(de 'Como Quiserdes', Ato II)",
   "Custom Theme": "Tema personalizado",
   "Theme Name": "Nome do tema",
   "Text Color": "Cor do texto",
@@ -1971,5 +1969,7 @@
   "Minimal": "Minimalista",
   "TTS Player Style": "Estilo do reprodutor TTS",
   "Show translation": "Mostrar tradução",
-  "Show original": "Mostrar original"
+  "Show original": "Mostrar original",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "O mundo inteiro é um palco, e todos os homens e mulheres não passam de atores; eles têm suas saídas e suas entradas, e um homem, em seu tempo, representa muitos papéis.",
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Como Gostais"
 }

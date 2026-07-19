@@ -886,8 +886,6 @@
   "Ruler Color": "Culoarea riglei",
   "Theme Color": "Culoarea temei",
   "Custom": "Personalizat",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Lumea întreagă e o scenă,\nȘi toți oamenii-s doar actori;\nAu intrările și ieșirile lor,\nȘi fiecare, în timpul lui, joacă mai multe roluri,\nActele sale fiind cele șapte vârste.\n\n— William Shakespeare",
-  "(from 'As You Like It', Act II)": "(din „Cum vă place”, Actul II)",
   "Custom Theme": "Temă personalizată",
   "Theme Name": "Numele temei",
   "Text Color": "Culoare text",
@@ -1971,5 +1969,7 @@
   "Minimal": "Minimal",
   "TTS Player Style": "Stilul playerului TTS",
   "Show translation": "Afișează traducerea",
-  "Show original": "Afișează originalul"
+  "Show original": "Afișează originalul",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Lumea întreagă e o scenă, iar toți bărbații și femeile doar actori; ei au ieșirile și intrările lor, iar un om joacă în viața lui multe roluri.",
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Cum vă place"
 }

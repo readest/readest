@@ -822,8 +822,6 @@
   "Ruler Color": "צבע סרגל",
   "Theme Color": "צבע ערכת נושא",
   "Custom": "מותאם אישית",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "כל העולם במה,\nוכל הגברים והנשים רק שחקנים הם;\nיש להם את היציאות והכניסות שלהם,\nואדם אחד בזמנו משחק תפקידים רבים,\nמעשיו הם שבעה גילאים.\n\n— ויליאם שייקספיר",
-  "(from 'As You Like It', Act II)": "(מתוך 'כטוב בעיניכם', מערכה שנייה)",
   "Custom Theme": "ערכת נושא מותאמת אישית",
   "Theme Name": "שם ערכת הנושא",
   "Text Color": "צבע טקסט",
@@ -1971,5 +1969,7 @@
   "Minimal": "מינימלי",
   "TTS Player Style": "סגנון נגן TTS",
   "Show translation": "הצג תרגום",
-  "Show original": "הצג מקור"
+  "Show original": "הצג מקור",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "כל העולם במה, וכל הגברים והנשים אינם אלא שחקנים; יש להם יציאות ויש להם כניסות, ואדם אחד משחק בימי חייו תפקידים רבים.",
+  "— William Shakespeare, As You Like It": "— ויליאם שייקספיר, כטוב בעיניכם"
 }

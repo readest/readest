@@ -332,7 +332,12 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   };
 
   return (
-    <div className='my-4 w-full space-y-6'>
+    // In editor mode the ThemeEditor owns its own top spacing (mt-6) and pins a
+    // sticky Save/Cancel footer to the scroll bottom. Dropping the wrapper's
+    // bottom margin here removes the gap between the editor's bottom edge and
+    // the scroll viewport, so the footer sits flush with no bottom gap and no
+    // upward jump when scrolled to the end.
+    <div className={clsx('w-full', showCustomThemeEditor ? '' : 'my-4 space-y-6')}>
       {showCustomThemeEditor ? (
         <ThemeEditor
           customTheme={editTheme}

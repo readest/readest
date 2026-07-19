@@ -862,8 +862,6 @@
   "Ruler Color": "Barva ravnila",
   "Theme Color": "Barva teme",
   "Custom": "Po meri",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Ves svet je oder,\nin vsi moški in ženske le igralci;\nimajo svoje izhode in svoje vhode,\nin vsak v svojem času igra mnogo vlog,\nnjegova dejanja pa so sedem obdobij.\n\n— William Shakespeare",
-  "(from 'As You Like It', Act II)": "(iz 'Kakor vam drago', 2. dejanje)",
   "Custom Theme": "Tema po meri",
   "Theme Name": "Ime teme",
   "Text Color": "Barva besedila",
@@ -2007,5 +2005,7 @@
   "Minimal": "Minimalni",
   "TTS Player Style": "Slog predvajalnika TTS",
   "Show translation": "Pokaži prevod",
-  "Show original": "Pokaži izvirnik"
+  "Show original": "Pokaži izvirnik",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Ves svet je oder, in vsi ljudje, moški in ženske, so le igralci; imajo svoje odhode in prihode, in en sam človek v svojem življenju igra mnogo vlog.",
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Kakor vam drago"
 }

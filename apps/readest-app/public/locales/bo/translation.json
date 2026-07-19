@@ -247,7 +247,6 @@
   "No description available": "ད་རེས་ངོ་སྤྲོད་བསྡུས་དོན་མེད།",
   "List": "ཐོ་རེའུ།",
   "Grid": "དྲྭ་རྡལ།",
-  "(from 'As You Like It', Act II)": "《ཐམས་ཅད་དགའ་བ》ནས་དྲངས་པ། ལེའུ་གཉིས་པ།",
   "Link Color": "སྦྲེལ་ཐག་གི་ཚོན་མདོག",
   "Screen": "བརྡ་ཁྱབ་ངོས།",
   "Orientation": "བརྡ་ཁྱབ་ངོས་ཀྱི་ཁ་ཕྱོགས།",
@@ -473,7 +472,6 @@
   "KOReader Sync": "KOReader སྤྲི་དོན་འདེམས་པ།",
   "Sync Conflict": "སྤྲི་དོན་འབྱུང་ཁུངས།",
   "another device": "གཞན་ཡིག་སྣེ།",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "འབྱུང་ཁུངས་འདེམས་པ་བྱས་ནས་བརྗེ་བ།",
   "Page {{page}} of {{total}} ({{percentage}}%)": "ཤོག་ {{page}} དང་ {{total}} ({{percentage}}%)",
   "Current position": "ད་ལྟའི་གནས་ས།",
   "Approximately page {{page}} of {{total}} ({{percentage}}%)": "ཕྲན་བུ་ཤོག་ངོས་ {{page}} / {{total}} ({{percentage}}%)",
@@ -1899,5 +1897,7 @@
   "Minimal": "སྟབས་བདེ།",
   "TTS Player Style": "TTS གཏོང་ཆས་ཀྱི་བཟོ་དབྱིབས།",
   "Show translation": "འགྱུར་ཡིག་སྟོན་པ།",
-  "Show original": "མ་ཡིག་སྟོན་པ།"
+  "Show original": "མ་ཡིག་སྟོན་པ།",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "འཇིག་རྟེན་ཧྲིལ་པོ་ནི་འཁྲབ་སྟེགས་ཤིག་ཡིན། སྐྱེས་པ་དང་བུད་མེད་ཐམས་ཅད་ནི་འཁྲབ་མཁན་ཙམ་ཡིན། ཁོ་ཚོ་ལ་ཐོན་པ་དང་འཛུལ་བ་ཡོད་ཅིང། མི་གཅིག་གིས་རང་གི་མི་ཚེའི་ནང་དུ་འཁྲབ་གཞུང་མང་པོ་འཁྲབ།",
+  "— William Shakespeare, As You Like It": "— ཝི་ལི་ཡམ་ཤེགས་སི་པིར།"
 }

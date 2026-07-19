@@ -473,8 +473,6 @@
   "Highlight Colors": "Warna Penonjolan",
   "Theme Color": "Warna Tema",
   "Custom": "Tersuai",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "Seluruh dunia adalah pentas,\nDan semua lelaki dan wanita hanyalah pelakon;\nMereka ada pintu keluar dan pintu masuk mereka,\nDan seseorang dalam masanya memainkan banyak peranan,\nTindakannya adalah tujuh zaman.\n\n— William Shakespeare",
-  "(from 'As You Like It', Act II)": "(daripada 'As You Like It', Babak II)",
   "Custom Theme": "Tema Tersuai",
   "Theme Name": "Nama Tema",
   "Text Color": "Warna Teks",
@@ -1899,5 +1897,7 @@
   "Minimal": "Minimal",
   "TTS Player Style": "Gaya Pemain TTS",
   "Show translation": "Tunjukkan terjemahan",
-  "Show original": "Tunjukkan asal"
+  "Show original": "Tunjukkan asal",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Seluruh dunia ini pentas, dan semua lelaki dan wanita hanyalah pelakon; mereka ada masa keluar dan masa masuk, dan seseorang dalam hidupnya memainkan pelbagai peranan.",
+  "— William Shakespeare, As You Like It": "— William Shakespeare, As You Like It"
 }

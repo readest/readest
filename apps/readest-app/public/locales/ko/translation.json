@@ -186,7 +186,6 @@
   "No supported files found. Supported formats: {{formats}}": "지원되는 파일이 없습니다. 지원되는 형식: {{formats}}",
   "Drop to Import Books": "책 가져오기 위해 드롭",
   "Custom": "사용자 정의",
-  "All the world's a stage,\nAnd all the men and women merely players;\nThey have their exits and their entrances,\nAnd one man in his time plays many parts,\nHis acts being seven ages.\n\n— William Shakespeare": "세상은 무대이며,\n그리고 모든 남자와 여자는 단지 배우일 뿐입니다;\n그들은 나가는 곳과 들어오는 곳이 있으며,\n그리고 한 남자는 그의 시간에 많은 역할을 합니다,\n그의 행동은 일곱 시대입니다.\n\n— 윌리엄 셰익스피어",
   "Custom Theme": "사용자 정의 테마",
   "Theme Name": "테마 이름",
   "Text Color": "텍스트 색상",
@@ -248,7 +247,6 @@
   "No description available": "설명 없음",
   "List": "목록",
   "Grid": "격자",
-  "(from 'As You Like It', Act II)": "(당신이 좋아하는 대로, 2막)",
   "Link Color": "링크 색상",
   "Screen": "화면",
   "Orientation": "방향",
@@ -1899,5 +1897,7 @@
   "Minimal": "미니멀",
   "TTS Player Style": "TTS 플레이어 스타일",
   "Show translation": "번역 표시",
-  "Show original": "원문 표시"
+  "Show original": "원문 표시",
+  "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "온 세상은 무대이고, 모든 남자와 여자는 한낱 배우일 뿐이다. 그들에게는 퇴장이 있고 등장이 있으며, 한 사람은 살아가는 동안 여러 역을 연기한다.",
+  "— William Shakespeare, As You Like It": "— 윌리엄 셰익스피어, 「뜻대로 하세요」"
 }
