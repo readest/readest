@@ -936,10 +936,19 @@ class NativeBridgePlugin: Plugin {
         if volumeKeys {
           self.activateVolumeKeyInterception()
         } else {
+          // Stop intercepting but KEEP the handler alive — do NOT nil it. Its
+          // ReadestTTSAudioSessionClaimed/Released observers must survive the
+          // play/pause cycle. usePagination releases interception the instant TTS
+          // starts playing (the `ttsPlaying` gate) — which is exactly when
+          // tauri-plugin-native-tts posts "Claimed" — and re-acquires it on
+          // pause. If the handler is destroyed here, that fire-once "Claimed" is
+          // lost, and the fresh handler built on the next pause has
+          // ttsOwnsAudioSession=false, so it reconfigures the TTS-owned session
+          // to .mixWithOthers. A mixable session is ineligible for Now Playing,
+          // so iOS vacates the slot and AirPods / lock-screen play resumes
+          // whatever app played before us. A single long-lived handler catches
+          // the claim and leaves the TTS session untouched.
           self.volumeKeyHandler?.stopInterception()
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.volumeKeyHandler = nil
-          }
         }
       }
 

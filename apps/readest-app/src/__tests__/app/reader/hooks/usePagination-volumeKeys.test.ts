@@ -48,6 +48,7 @@ import { interceptKeys } from '@/utils/bridge';
 import { eventDispatcher } from '@/utils/event';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { usePagination } from '@/app/reader/hooks/usePagination';
+import type { FoliateView } from '@/types/view';
 
 const BOOK_KEY = 'book-1';
 
@@ -55,6 +56,25 @@ const setup = () => {
   const viewRef = { current: null };
   const containerRef = { current: null };
   return renderHook(() => usePagination(BOOK_KEY, viewRef, containerRef));
+};
+
+const makeView = () => ({
+  renderer: { scrolled: false },
+  book: { dir: 'ltr' as const },
+  next: vi.fn(),
+  prev: vi.fn(),
+});
+
+const setupWithView = (view: ReturnType<typeof makeView>) => {
+  const viewRef = { current: view as unknown as FoliateView };
+  const containerRef = { current: null };
+  return renderHook(() => usePagination(BOOK_KEY, viewRef, containerRef));
+};
+
+const pressVolumeKey = async (keyName: 'VolumeUp' | 'VolumeDown') => {
+  await act(async () => {
+    await eventDispatcher.dispatch('native-key-down', { keyName });
+  });
 };
 
 const emitPlayback = async (state: string, bookKey = BOOK_KEY) => {
@@ -134,5 +154,41 @@ describe('usePagination volume-key interception with TTS (#4691)', () => {
     setup();
     expect(interceptKeys).not.toHaveBeenCalledWith({ volumeKeys: true });
     expect(useDeviceControlStore.getState().volumeKeysIntercepted).toBe(false);
+  });
+
+  // The native side still forwards volume keys to the web layer while TTS plays
+  // (iOS via a lingering KVO, Android calls onNativeKeyDown unconditionally), so
+  // handlePageFlip must itself refuse to page-flip while TTS is playing — the
+  // key should fall through to controlling the volume instead.
+  test('does not page-flip on volume keys while TTS is playing', async () => {
+    const view = makeView();
+    setupWithView(view);
+    await emitPlayback('playing');
+
+    await pressVolumeKey('VolumeUp');
+    await pressVolumeKey('VolumeDown');
+
+    expect(view.prev).not.toHaveBeenCalled();
+    expect(view.next).not.toHaveBeenCalled();
+  });
+
+  test('page-flips on volume keys when TTS is paused', async () => {
+    const view = makeView();
+    setupWithView(view);
+    await emitPlayback('playing');
+    await emitPlayback('paused');
+
+    await pressVolumeKey('VolumeDown');
+
+    expect(view.next).toHaveBeenCalled();
+  });
+
+  test('page-flips on volume keys when TTS is idle', async () => {
+    const view = makeView();
+    setupWithView(view);
+
+    await pressVolumeKey('VolumeUp');
+
+    expect(view.prev).toHaveBeenCalled();
   });
 });
