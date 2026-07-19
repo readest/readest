@@ -1,7 +1,7 @@
 import type { Book } from '@/types/book';
 import type { AppService } from '@/types/system';
 import { useLibraryStore } from '@/store/libraryStore';
-import { getCoverFilename } from '@/utils/book';
+import { getCoverFilename, isCurrentlyReadingBook } from '@/utils/book';
 import { updateReadingWidget } from '@/utils/bridge';
 import type { ReadingWidgetTts } from '@/utils/bridge';
 
@@ -20,8 +20,6 @@ export interface ReadingWidgetPayload {
   tts?: ReadingWidgetTts;
 }
 
-const EXCLUDED_STATUSES = new Set(['finished', 'abandoned']);
-
 export const computeReadingPercent = (book: Book): number => {
   const progress = book.progress;
   if (!progress) return 0;
@@ -32,7 +30,7 @@ export const computeReadingPercent = (book: Book): number => {
 
 export const selectReadingWidgetBooks = (library: Book[], limit = 3): Book[] =>
   library
-    .filter((b) => !b.deletedAt && !EXCLUDED_STATUSES.has(b.readingStatus ?? 'unread'))
+    .filter(isCurrentlyReadingBook)
     .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
     .slice(0, limit);
 

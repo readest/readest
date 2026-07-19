@@ -51,18 +51,20 @@ describe('computeReadingPercent', () => {
 });
 
 describe('selectReadingWidgetBooks', () => {
-  it('keeps non-deleted, non-finished, non-abandoned and sorts by updatedAt desc', () => {
+  it('keeps only currently-reading books and sorts by updatedAt desc', () => {
     const books = [
-      mk({ hash: 'a', updatedAt: 10, readingStatus: 'reading' }),
-      mk({ hash: 'b', updatedAt: 30, readingStatus: 'unread' }),
-      mk({ hash: 'c', updatedAt: 20, readingStatus: 'finished' }),
-      mk({ hash: 'd', updatedAt: 40, readingStatus: 'abandoned' }),
-      mk({ hash: 'e', updatedAt: 50, deletedAt: 123 }),
+      mk({ hash: 'a', updatedAt: 10, progress: [1, 2] }), // reading (no explicit status)
+      mk({ hash: 'r', updatedAt: 35, progress: [1, 2], readingStatus: 'reading' }),
+      mk({ hash: 'b', updatedAt: 30, progress: [1, 2], readingStatus: 'unread' }), // parked
+      mk({ hash: 'c', updatedAt: 20, progress: [1, 2], readingStatus: 'finished' }),
+      mk({ hash: 'd', updatedAt: 40, progress: [1, 2], readingStatus: 'abandoned' }),
+      mk({ hash: 'e', updatedAt: 50, progress: [1, 2], deletedAt: 123 }), // deleted
+      mk({ hash: 'n', updatedAt: 60, progress: undefined }), // newly imported, never opened
     ];
-    expect(selectReadingWidgetBooks(books).map((b) => b.hash)).toEqual(['b', 'a']);
+    expect(selectReadingWidgetBooks(books).map((b) => b.hash)).toEqual(['r', 'a']);
   });
   it('caps at the limit', () => {
-    const books = [1, 2, 3, 4].map((n) => mk({ hash: String(n), updatedAt: n }));
+    const books = [1, 2, 3, 4].map((n) => mk({ hash: String(n), updatedAt: n, progress: [1, 2] }));
     expect(selectReadingWidgetBooks(books, 3)).toHaveLength(3);
   });
 });

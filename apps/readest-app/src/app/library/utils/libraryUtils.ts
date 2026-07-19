@@ -4,7 +4,7 @@ import {
   LibrarySecondarySortByType,
   LibrarySortByType,
 } from '@/types/settings';
-import { formatAuthors, formatTitle } from '@/utils/book';
+import { formatAuthors, formatTitle, isCurrentlyReadingBook } from '@/utils/book';
 import { md5Fingerprint } from '@/utils/md5';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 
@@ -342,23 +342,18 @@ export const createBookSorter =
   };
 
 /**
- * A book counts as "read" once it has reading progress. Importing a book sets
- * timestamps but never `progress`; only opening it does. Gating on this keeps
- * freshly-added-but-unopened books off the shelf.
- */
-const hasBeenRead = (book: Book): boolean => book.progress != null;
-
-/**
  * Pick the books for the recently-read shelf: most-recently-read first, capped
- * at `count`. Recency uses `updatedAt` (the library's "Updated" sort key) so the
- * row matches the app's existing sort convention. NB: `updatedAt` is last-modified
- * (also bumped by status/metadata edits and sync), not strictly last-read.
- * Independent of the main shelf's sort/grouping — always a flat, recency slice.
+ * at `count`. Only currently-reading books qualify (see `isCurrentlyReadingBook`):
+ * finished, abandoned and freshly-imported books are left off. Recency uses
+ * `updatedAt` (the library's "Updated" sort key) so the row matches the app's
+ * existing sort convention. NB: `updatedAt` is last-modified (also bumped by
+ * status/metadata edits and sync), not strictly last-read. Independent of the
+ * main shelf's sort/grouping — always a flat, recency slice.
  */
 export const selectRecentShelfBooks = (books: Book[], count: number): Book[] => {
   const byRecency = createBookSorter(LibrarySortByType.Updated, '');
   return books
-    .filter((book) => !book.deletedAt && hasBeenRead(book))
+    .filter(isCurrentlyReadingBook)
     .sort((a, b) => -byRecency(a, b))
     .slice(0, count);
 };
