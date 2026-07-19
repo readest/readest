@@ -24,6 +24,7 @@ export interface AutoScrollState {
   speed: number;
   togglePause: () => void;
   adjustSpeed: (dir: 1 | -1) => void;
+  setSpeed: (value: number, persist?: boolean) => void;
   stop: () => void;
 }
 
@@ -43,7 +44,7 @@ export const useAutoScroll = (
   const viewSettings = getViewSettings(bookKey);
   const [active, setActive] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [speed, setSpeed] = useState(viewSettings?.autoScrollSpeed ?? 100);
+  const [speed, setSpeedState] = useState(viewSettings?.autoScrollSpeed ?? 100);
 
   // Undoes the per-session window listeners; set on start.
   const sessionCleanupRef = useRef<(() => void) | null>(null);
@@ -100,15 +101,21 @@ export const useAutoScroll = (
     setPaused(scroller.paused);
   };
 
-  const adjustSpeed = (dir: 1 | -1) => {
-    const current = getViewSettings(bookKey)?.autoScrollSpeed ?? speed;
+  // Commit a speed (percent). `persist` off skips the settings write, for the
+  // per-frame updates of a continuous drag; the release persists once.
+  const setSpeed = (value: number, persist = true) => {
     const next = Math.min(
       MAX_AUTO_SCROLL_SPEED,
-      Math.max(MIN_AUTO_SCROLL_SPEED, current + dir * AUTO_SCROLL_SPEED_STEP),
+      Math.max(MIN_AUTO_SCROLL_SPEED, Math.round(value)),
     );
-    setSpeed(next);
+    setSpeedState(next);
     scrollerRef.current!.setVelocity((AUTO_SCROLL_BASE_PX_PER_SEC * next) / 100);
-    saveViewSettings(envConfig, bookKey, 'autoScrollSpeed', next, false, false);
+    if (persist) saveViewSettings(envConfig, bookKey, 'autoScrollSpeed', next, false, false);
+  };
+
+  const adjustSpeed = (dir: 1 | -1) => {
+    const current = getViewSettings(bookKey)?.autoScrollSpeed ?? speed;
+    setSpeed(current + dir * AUTO_SCROLL_SPEED_STEP);
   };
 
   const startSession = () => {
@@ -116,7 +123,7 @@ export const useAutoScroll = (
     const renderer = viewRef.current?.renderer;
     if (!renderer?.scrolled) return;
     const speedNow = getViewSettings(bookKey)?.autoScrollSpeed ?? 100;
-    setSpeed(speedNow);
+    setSpeedState(speedNow);
     stallStartRef.current = null;
     scroller.start((AUTO_SCROLL_BASE_PX_PER_SEC * speedNow) / 100);
     setActive(true);
@@ -177,6 +184,7 @@ export const useAutoScroll = (
     speed,
     togglePause,
     adjustSpeed,
+    setSpeed,
     stop: () => scrollerRef.current?.stop(),
   };
 };

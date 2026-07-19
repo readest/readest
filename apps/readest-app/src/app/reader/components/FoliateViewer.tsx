@@ -81,9 +81,11 @@ import { isFontType } from '@/utils/font';
 import { getScrollGapAttr } from '@/utils/webtoon';
 import { useMiddleClickAutoscroll } from '../hooks/useMiddleClickAutoscroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
+import { useAutoScrollSpeedGesture } from '../hooks/useAutoScrollSpeedGesture';
 import { ParagraphControl } from './paragraph';
 import AutoscrollIndicator from './AutoscrollIndicator';
 import AutoScrollControl from './AutoScrollControl';
+import AutoScrollSpeedOverlay from './AutoScrollSpeedOverlay';
 import Spinner from '@/components/Spinner';
 import KOSyncConflictResolver from './KOSyncResolver';
 import ImageViewer from './ImageViewer';
@@ -143,6 +145,10 @@ const FoliateViewer: React.FC<{
   const navSpinnerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
+
+  const autoScroll = useAutoScroll(bookKey, viewRef);
+  const { registerSpeedListeners, overlayVisible: speedOverlayVisible } =
+    useAutoScrollSpeedGesture(autoScroll);
 
   // A pending anti-flash timer must not fire setNavigating on an unmounted component.
   useEffect(() => {
@@ -431,6 +437,7 @@ const FoliateViewer: React.FC<{
         detail.doc.addEventListener('touchend', handleTouchEnd.bind(null, bookKey));
         detail.doc.addEventListener('touchcancel', handleTouchCancel.bind(null, bookKey));
         registerBrightnessListeners(detail.doc);
+        registerSpeedListeners(detail.doc);
       }
     }
   };
@@ -546,7 +553,6 @@ const FoliateViewer: React.FC<{
   const mouseHandlers = useMouseEvent(bookKey, handlePageFlip);
   const touchHandlers = useTouchEvent(bookKey);
   const autoscrollAnchor = useMiddleClickAutoscroll(bookKey, viewRef, containerRef);
-  const autoScroll = useAutoScroll(bookKey, viewRef);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedTableHtml, setSelectedTableHtml] = useState<string | null>(null);
@@ -1053,6 +1059,9 @@ const FoliateViewer: React.FC<{
         />
       )}
       <BrightnessOverlay visible={overlayVisible} level={overlayLevel} />
+      {autoScroll.active && (
+        <AutoScrollSpeedOverlay visible={speedOverlayVisible} speed={autoScroll.speed} />
+      )}
       <ParagraphControl bookKey={bookKey} viewRef={viewRef} gridInsets={gridInsets} />
       {((!docLoaded.current && loading) || navigating || viewState?.loading) && (
         <div className='absolute left-0 top-0 z-10 flex h-full w-full items-center justify-center'>
