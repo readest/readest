@@ -4,8 +4,9 @@
  * Draws a captured page bitmap as a grid mesh deformed around a cylinder —
  * the classic page curl: content before the fold stays flat, content past the
  * fold wraps over the cylinder and comes out mirrored on top, showing the
- * whitened back of the page. The canvas is transparent wherever the page has
- * curled away, so the live (already turned) page shows through underneath.
+ * back of the page: the content bleeding through the theme paper (see
+ * setBackdrop). The canvas is transparent wherever the page has curled
+ * away, so the live (already turned) page shows through underneath.
  *
  * The renderer knows nothing about capture or gestures: callers provide an
  * ImageBitmap of the outgoing page and drive `render(progress, grab)`.
@@ -52,6 +53,7 @@ void main() {
 const FRAGMENT_SHADER = `
 precision mediump float;
 uniform sampler2D uTex;
+uniform sampler2D uBack;
 varying vec2 vUv;
 varying float vLift;
 
@@ -61,8 +63,10 @@ void main() {
     // Slight contact shading as the page lifts.
     c.rgb *= 1.0 - 0.18 * vLift;
   } else {
-    // The back of the page: the mirrored content bleeding through paper.
-    c.rgb = mix(c.rgb, vec3(1.0), 0.72);
+    // The back of the page: the mirrored content bleeding through the
+    // paper — the theme background supplied via setBackdrop.
+    vec3 paper = texture2D(uBack, vUv).rgb;
+    c.rgb = mix(c.rgb, paper, 0.72);
     c.rgb *= 1.0 - 0.08 * vLift;
   }
   gl_FragColor = vec4(c.rgb, c.a);
@@ -80,6 +84,7 @@ export interface CurlGrab {
 export class PageCurlRenderer {
   private canvas: HTMLCanvasElement | null = null;
   private gl: WebGLRenderingContext | null = null;
+  private backTex: WebGLTexture | null = null;
   private indexCount = 0;
   private width = 0;
   private height = 0;
@@ -164,10 +169,33 @@ export class PageCurlRenderer {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
 
-    for (const name of ['uPage', 'uFold', 'uDir', 'uRadius', 'uTex']) {
+    for (const name of ['uPage', 'uFold', 'uDir', 'uRadius', 'uTex', 'uBack']) {
       this.uniforms[name] = gl.getUniformLocation(program, name);
     }
     gl.uniform2f(this.uniforms['uPage']!, width, height);
+
+    // Back-face paper on unit 1: plain white until setBackdrop supplies the
+    // theme background.
+    this.backTex = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.backTex);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      1,
+      1,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      new Uint8Array([255, 255, 255, 255]),
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.uniform1i(this.uniforms['uBack']!, 1);
+    gl.activeTexture(gl.TEXTURE0);
 
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.enable(gl.DEPTH_TEST);
@@ -197,6 +225,17 @@ export class PageCurlRenderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.uniform1i(this.uniforms['uTex']!, 0);
+  }
+
+  /** Paper drawn on the back of the page (theme background color + texture). */
+  setBackdrop(source: TexImageSource) {
+    const gl = this.gl;
+    if (!gl || !this.backTex) return;
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.backTex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+    gl.activeTexture(gl.TEXTURE0);
   }
 
   /**

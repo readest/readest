@@ -96,6 +96,30 @@ describe('PageCurlRenderer (browser)', () => {
     expect(front[0]).toBeLessThan(120);
   });
 
+  it('tints the folded back with the backdrop paper instead of white', () => {
+    const paper = document.createElement('canvas');
+    paper.width = W;
+    paper.height = H;
+    const ctx = paper.getContext('2d')!;
+    ctx.fillStyle = 'rgb(20, 20, 20)';
+    ctx.fillRect(0, 0, W, H);
+    renderer.setBackdrop(paper);
+    renderer.render(0.45, { x: 1, y: 0.5 });
+
+    // Same wrapped-over sample point as the whitened-back test: with a dark
+    // theme backdrop the mirrored blue content mixes toward the dark paper,
+    // not toward white.
+    const back = renderer.readPixel(100, 75);
+    expect(back[3]).toBe(255);
+    expect(back[0]).toBeLessThan(60);
+    expect(back[2]).toBeGreaterThan(35); // faint blue remainder
+    expect(back[2]).toBeLessThan(90);
+
+    // The flat front is not tinted by the backdrop.
+    const front = renderer.readPixel(12, 75);
+    expect(front[1]).toBeGreaterThan(100);
+  });
+
   it('fully clears the page at progress 1', () => {
     renderer.render(1, { x: 1, y: 0.5 });
     for (const x of [20, W / 2, W - 20]) {

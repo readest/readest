@@ -131,6 +131,43 @@ describe('CapturedPageTurn (browser)', () => {
     expect(host.querySelector('canvas')).toBeNull();
   });
 
+  it('draws the host backdrop on the back of the curling page', async () => {
+    const paper = document.createElement('canvas');
+    paper.width = W;
+    paper.height = H;
+    const ctx = paper.getContext('2d')!;
+    ctx.fillStyle = 'rgb(20, 20, 20)';
+    ctx.fillRect(0, 0, W, H);
+    const getBackdrop = vi.fn(() => paper);
+    const withBackdrop = new CapturedPageTurn(
+      { getHostElement: () => host, getContentRect: contentRect, capture, navigate, getBackdrop },
+      { duration: 5000 },
+    );
+
+    expect(await withBackdrop.beginDrag(true, false)).toBe(true);
+    expect(getBackdrop).toHaveBeenCalledOnce();
+    withBackdrop.moveDrag(0.45, 0.5);
+
+    // The wrapped-over back face shows the red page mixed toward the dark
+    // theme paper — the hardcoded whitened back would read near-white here.
+    const canvas = host.querySelector('canvas')!;
+    const gl = canvas.getContext('webgl')!;
+    const dpr = window.devicePixelRatio;
+    const px = new Uint8Array(4);
+    gl.readPixels(
+      Math.round(100 * dpr),
+      canvas.height - 1 - Math.round(60 * dpr),
+      1,
+      1,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      px,
+    );
+    expect(px[3]).toBe(255);
+    expect(px[0]).toBeLessThan(100);
+    withBackdrop.dispose();
+  });
+
   it('uses the official WebGL mesh renderer for curl turns', async () => {
     const slow = new CapturedPageTurn(
       { getHostElement: () => host, getContentRect: contentRect, capture, navigate },

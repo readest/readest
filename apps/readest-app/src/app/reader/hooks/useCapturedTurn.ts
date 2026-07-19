@@ -4,10 +4,12 @@ import { FoliateView } from '@/types/view';
 import { ViewSettings } from '@/types/book';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useThemeStore } from '@/store/themeStore';
 import { captureWebviewRegion } from '@/utils/bridge';
 import { isTauriAppPlatform } from '@/services/environment';
 import { detectViewTransitionGroup } from '@/utils/viewTransition';
 import { CapturedPageTurn, CapturedTurnStyle } from '../utils/capturedTurn';
+import { renderTurnBackdrop } from '../utils/turnBackdrop';
 import {
   setLayeredTurnGestureActive,
   TOUCH_SWIPE_THRESHOLD_PX,
@@ -205,6 +207,19 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         restoreToolbarOnCancelRef.current = useReaderStore.getState().hoveredBookKey === bookKey;
       },
       capture: captureWebviewRegion,
+      getBackdrop: () => {
+        const cell = document.getElementById(`gridcell-${bookKey}`);
+        const rect = cell?.getBoundingClientRect();
+        if (!cell || !rect) return null;
+        // The back of the curl shows the theme paper: the background color
+        // plus the texture layer painted on the viewer's ::before.
+        return renderTurnBackdrop(
+          cell.querySelector('.foliate-viewer'),
+          useThemeStore.getState().themeCode.bg,
+          rect.width,
+          rect.height,
+        );
+      },
       onCovered: async () => {
         // Let the flat canvas reach the compositor before touching the live
         // chrome; otherwise the toolbar can flash out before its captured copy

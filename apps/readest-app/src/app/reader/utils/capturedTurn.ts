@@ -37,6 +37,12 @@ export interface CapturedTurnHost {
   getContentRect: () => DOMRect | null;
   /** Native webview snapshot of `rect`, as PNG bytes. */
   capture: (rect: { x: number; y: number; width: number; height: number }) => Promise<ArrayBuffer>;
+  /**
+   * Theme paper (background color + texture) drawn on the back of the
+   * curling page. Fetched concurrently with the capture; a missing or
+   * failing backdrop falls back to the renderer's plain white back.
+   */
+  getBackdrop?: () => Promise<TexImageSource | null> | TexImageSource | null;
   /** Records live UI state before the native snapshot starts. */
   onBeforeCapture?: (style: CapturedTurnStyle) => void | Promise<void>;
   /** Called once the flat captured frame covers the live reader. */
@@ -53,6 +59,7 @@ export type CapturedTurnStyle = 'curl' | 'slide';
 interface TurnRenderer {
   attach(container: HTMLElement, width: number, height: number): void;
   setTexture(source: ImageBitmap): void;
+  setBackdrop?(source: TexImageSource): void;
   render(progress: number, grab: CurlGrab, rtl: boolean): void;
   dispose(): void;
 }
@@ -220,6 +227,14 @@ export class CapturedPageTurn {
 
     await this.#host.onBeforeCapture?.(style);
     if (this.#disposed) return null;
+    // Only the curl shows the back of the page; fetch its paper while the
+    // native capture is in flight so it never delays the turn.
+    const backdropPromise =
+      style === 'curl' && this.#host.getBackdrop
+        ? Promise.resolve()
+            .then(() => this.#host.getBackdrop!())
+            .catch(() => null)
+        : null;
     const image = await this.#host.capture({
       x: rect.x,
       y: rect.y,
@@ -231,6 +246,7 @@ export class CapturedPageTurn {
     // JPEG on Android where PNG encoding took ~1.5s per turn) and the
     // decoder sniffs the actual format from the bytes.
     const bitmap = await createImageBitmap(new Blob([image]));
+    const backdrop = backdropPromise ? await backdropPromise : null;
     if (this.#disposed) {
       bitmap.close();
       return null;
@@ -255,6 +271,7 @@ export class CapturedPageTurn {
     try {
       renderer.attach(overlay, rect.width, rect.height);
       renderer.setTexture(bitmap);
+      if (backdrop) renderer.setBackdrop?.(backdrop);
     } catch (error) {
       renderer.dispose();
       overlay.remove();
