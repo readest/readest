@@ -1655,7 +1655,7 @@ class NativeBridgePlugin: Plugin {
         // Encode and base64 off the main thread; the completion arrives on
         // main and a full-screen encode is fast but not free.
         DispatchQueue.global(qos: .userInteractive).async {
-          guard let data = image.jpegData(compressionQuality: 0.85) else {
+          guard let data = image.jpegData(compressionQuality: 0.9) else {
             return invoke.reject("JPEG encoding failed")
           }
           invoke.resolve(["data": data.base64EncodedString()])

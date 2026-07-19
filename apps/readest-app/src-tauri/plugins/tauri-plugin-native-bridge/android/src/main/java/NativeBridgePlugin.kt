@@ -1587,7 +1587,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                             pluginScope.launch {
                                 val data = withContext(Dispatchers.IO) {
                                     val out = ByteArrayOutputStream()
-                                    bitmap.compress(Bitmap.CompressFormat.JPEG, 85, out)
+                                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
                                     Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
                                 }
                                 invoke.resolve(JSObject().put("data", data))
