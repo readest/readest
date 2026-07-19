@@ -5,8 +5,8 @@
  * synthesizes via EdgeSpeechTTS directly (no throwaway init synth), plays on a
  * dedicated Web Audio context, and drops to the platform speech client
  * (Web Speech on desktop/web, native on the mobile app) when Edge is
- * unavailable. These tests pin that Edge-first / fallback-on-failure contract
- * and the language -> Edge voice selection.
+ * unavailable. These tests pin online Edge playback, direct offline platform
+ * speech, fallback-on-failure, and the language -> Edge voice selection.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -99,6 +99,7 @@ beforeEach(() => {
   tauriPlatform = false;
   vi.clearAllMocks();
   (globalThis as unknown as { AudioContext: unknown }).AudioContext = vi.fn();
+  Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
   h.createAudioData.mockReset();
 });
 
@@ -149,7 +150,19 @@ describe('pronounceWord — Edge path', () => {
   });
 });
 
-describe('pronounceWord — fallback path', () => {
+describe('pronounceWord — platform speech path', () => {
+  it('uses Web Speech without contacting Edge when the device is offline', async () => {
+    Object.defineProperty(navigator, 'onLine', { configurable: true, value: false });
+    const onStatus = vi.fn();
+
+    await pronounceWord('hello', 'en', {}, onStatus);
+    await flush();
+
+    expect(h.createAudioData).not.toHaveBeenCalled();
+    expect(h.webSpeak).toHaveBeenCalledTimes(1);
+    expect(onStatus).toHaveBeenLastCalledWith('ended');
+  });
+
   it('drops to Web Speech on desktop/web when Edge fails', async () => {
     h.createAudioData.mockRejectedValue(new Error('wss blocked'));
     const onStatus = vi.fn();
