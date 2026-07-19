@@ -430,6 +430,79 @@ describe('CapturedPageTurn (browser)', () => {
     rapid.dispose();
   });
 
+  it('settles a pending capture from its latest buffered drag sample', async () => {
+    let resolveCapture!: (image: ArrayBuffer) => void;
+    const deferredCapture = new Promise<ArrayBuffer>((resolve) => {
+      resolveCapture = resolve;
+    });
+    const rapid = new CapturedPageTurn(
+      {
+        getHostElement: () => host,
+        getContentRect: contentRect,
+        capture: () => deferredCapture,
+        navigate,
+      },
+      { duration: 5000 },
+    );
+
+    const beginning = rapid.beginDrag(true, false, 'slide');
+    rapid.moveDrag(0.75, 0.52);
+    const ending = rapid.endDrag(true);
+    resolveCapture(await makePngBuffer());
+
+    await beginning;
+    const canvas = host.querySelector('canvas')!;
+    expect(new DOMMatrixReadOnly(getComputedStyle(canvas).transform).e).toBeCloseTo(-W * 0.75, 0);
+
+    // Stop the deliberately slow settle and let its promise drain.
+    rapid.dispose();
+    await ending;
+  });
+
+  it('cancels an unreleased drag before starting its replacement', async () => {
+    expect(await controller.beginDrag(true, false, 'slide')).toBe(true);
+    controller.moveDrag(0.3, 0.5);
+
+    // No endDrag for the first gesture: beginDrag must synthesize its cancel
+    // before it captures and navigates the replacement page.
+    expect(await controller.beginDrag(true, false, 'slide')).toBe(true);
+    expect(navigate).toHaveBeenNthCalledWith(1, true);
+    expect(navigate).toHaveBeenNthCalledWith(2, false);
+    expect(navigate).toHaveBeenNthCalledWith(3, true);
+
+    await controller.endDrag(false);
+    expect(navigate).toHaveBeenNthCalledWith(4, false);
+    expect(host.querySelector('canvas')).toBeNull();
+  });
+
+  it('cancels an unreleased drag before a programmatic turn', async () => {
+    expect(await controller.beginDrag(true, false, 'slide')).toBe(true);
+    controller.moveDrag(0.3, 0.5);
+
+    expect(await controller.turn(true, false, 'slide')).toBe(true);
+    expect(navigate).toHaveBeenNthCalledWith(1, true);
+    expect(navigate).toHaveBeenNthCalledWith(2, false);
+    expect(navigate).toHaveBeenNthCalledWith(3, true);
+    expect(host.querySelector('canvas')).toBeNull();
+  });
+
+  it('ignores drag samples delivered after release', async () => {
+    const slow = new CapturedPageTurn(
+      { getHostElement: () => host, getContentRect: contentRect, capture, navigate },
+      { duration: 5000 },
+    );
+    expect(await slow.beginDrag(true, false, 'slide')).toBe(true);
+    const canvas = host.querySelector('canvas')!;
+    slow.moveDrag(0.25, 0.5);
+    const ending = slow.endDrag(true);
+
+    slow.moveDrag(0.9, 0.5);
+    expect(new DOMMatrixReadOnly(getComputedStyle(canvas).transform).e).toBeCloseTo(-W * 0.25, 0);
+
+    slow.dispose();
+    await ending;
+  });
+
   it('does not mount or navigate when disposed during capture', async () => {
     let resolveCapture!: (image: ArrayBuffer) => void;
     const deferredCapture = new Promise<ArrayBuffer>((resolve) => {

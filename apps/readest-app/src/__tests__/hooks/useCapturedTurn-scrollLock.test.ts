@@ -127,6 +127,94 @@ describe('useCapturedTurn scroll-lock gate', () => {
     expect(h.controller.beginDrag).toHaveBeenCalled();
   });
 
+  test('catches the captured drag up to the activation-threshold distance', async () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    dispatchTouchInterceptors('book-1', detail('move', -15, 0));
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(h.controller.moveDrag).toHaveBeenLastCalledWith(15 / window.innerWidth, 0.5);
+  });
+
+  test('preserves total travel when horizontal intent is recognized later', async () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    dispatchTouchInterceptors('book-1', detail('move', -60, 80));
+    expect(h.controller.beginDrag).not.toHaveBeenCalled();
+
+    dispatchTouchInterceptors('book-1', detail('move', -100, 80));
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(h.controller.moveDrag).toHaveBeenLastCalledWith(
+      100 / window.innerWidth,
+      expect.any(Number),
+    );
+  });
+
+  test('forwards the latest sample before queueing release while capture is pending', async () => {
+    let finishCapture!: (ok: boolean) => void;
+    h.controller.beginDrag.mockImplementationOnce(
+      () => new Promise<boolean>((resolve) => (finishCapture = resolve)),
+    );
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    dispatchTouchInterceptors('book-1', detail('move', -15, 0));
+    dispatchTouchInterceptors('book-1', detail('move', -240, 10));
+    const released = dispatchTouchInterceptors('book-1', detail('end', -240, 10));
+
+    expect(released).toBe(true);
+    expect(h.controller.endDrag).toHaveBeenCalledWith(true);
+    const lastSample = h.controller.moveDrag.mock.calls.at(-1)!;
+    // 240px of total travel across the 300px captured reader cell.
+    expect(lastSample[0]).toBeCloseTo(0.8);
+    expect(lastSample[1]).toBeCloseTo(0.52);
+    expect(h.controller.moveDrag.mock.invocationCallOrder.at(-1)!).toBeLessThan(
+      h.controller.endDrag.mock.invocationCallOrder[0]!,
+    );
+
+    await act(async () => {
+      finishCapture(true);
+      await Promise.resolve();
+    });
+  });
+
+  test('commits a short fast flick before halfway', () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    dispatchTouchInterceptors('book-1', detail('move', -20, 0));
+    dispatchTouchInterceptors('book-1', { ...detail('end', -20, 0), deltaT: 50 });
+
+    // 20px / 50ms = 0.4px/ms, above the 0.3 flick threshold.
+    expect(h.controller.endDrag).toHaveBeenCalledWith(true);
+  });
+
+  test('cancels an unfinished drag before accepting a replacement touch sequence', () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    dispatchTouchInterceptors('book-1', detail('move', -60, 0));
+    dispatchTouchInterceptors('book-1', detail('start'));
+    dispatchTouchInterceptors('book-1', detail('move', -60, 0));
+
+    expect(h.controller.beginDrag).toHaveBeenCalledTimes(2);
+    expect(h.controller.endDrag).toHaveBeenCalledWith(false);
+    expect(h.controller.endDrag.mock.invocationCallOrder[0]!).toBeLessThan(
+      h.controller.beginDrag.mock.invocationCallOrder[1]!,
+    );
+  });
+
   test('touch cancellation always reverses an active captured drag', () => {
     renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
 

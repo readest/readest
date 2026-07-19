@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 
-// A horizontal page-turn gesture becomes intentional at this distance. Keep
-// the generic toolbar handling and captured turn interceptor on the same
-// boundary so neither can act in the gap before the other claims the swipe.
+// Native captured turns become intentional at this distance. Browser layered
+// turns keep the paginator's stricter claim gate; generic toolbar handling
+// defers its move-time update while that path can still claim the gesture.
 export const TOUCH_SWIPE_THRESHOLD_PX = 15;
 
 // Movement below this distance is still a tap. Touchend must leave these
@@ -11,9 +11,9 @@ export const TOUCH_SWIPE_THRESHOLD_PX = 15;
 export const TOUCH_TAP_SLOP_PX = TOUCH_SWIPE_THRESHOLD_PX;
 
 // The paginator announces layered turns only after it has actually claimed a
-// horizontal gesture. Generic toolbar handling yields to that active gesture,
-// not merely to a configured turn style (which may be inactive in scroll,
-// E-ink, no-animation, selection, or boundary cases).
+// horizontal gesture. This remains the authoritative lifecycle ownership once
+// active; candidate detection only delays generic move-time toolbar changes
+// until the paginator either claims the gesture or it ends normally.
 const activeLayeredTurnGestures = new Set<string>();
 
 export const setLayeredTurnGestureActive = (bookKey: string, active: boolean) => {

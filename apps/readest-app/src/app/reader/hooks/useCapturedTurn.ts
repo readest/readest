@@ -13,6 +13,7 @@ import { renderTurnBackdrop } from '../utils/turnBackdrop';
 import {
   setLayeredTurnGestureActive,
   TOUCH_SWIPE_THRESHOLD_PX,
+  type TouchDetail,
   useTouchInterceptor,
 } from './useTouchInterceptor';
 
@@ -75,6 +76,8 @@ interface DragState {
   forward: boolean;
   width: number;
   height: number;
+  progress: number;
+  grabY: number;
 }
 
 // Whether the visible section's document holds a non-collapsed selection —
@@ -292,6 +295,11 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       if (!currentView || !controller) return false;
 
       if (detail.phase === 'start') {
+        // Some webviews can start a replacement touch sequence without
+        // delivering the previous touchend. Cancel the old drag before its
+        // state is replaced so it cannot remain over, or settle onto, the
+        // following page.
+        if (dragRef.current) controller.endDrag(false).catch(() => {});
         dragRef.current = null;
         gestureClaimed.current = hasActiveSelection(currentView);
         return false;
@@ -333,10 +341,16 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
             forward,
             width: rect?.width || window.innerWidth,
             height: rect?.height || window.innerHeight,
+            progress: 0,
+            grabY: 0.5,
           };
+          updateDragSample(startedState, detail, viewSettings.rtl);
           dragRef.current = startedState;
-          controller
-            .beginDrag(forward, viewSettings.rtl, style)
+          const beginning = controller.beginDrag(forward, viewSettings.rtl, style);
+          // moveDrag buffers this initial sample even while native capture is
+          // pending, then applies it before a queued release can settle.
+          controller.moveDrag(startedState.progress, startedState.grabY);
+          beginning
             .then((ok) => {
               if (!ok) {
                 if (dragRef.current === startedState) dragRef.current = null;
@@ -348,12 +362,8 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
             });
           return true;
         }
-        controller.moveDrag(
-          dragProgress(state, detail.deltaX, viewSettings?.rtl ?? false),
-          // The fold tilts as the finger strays vertically, curling corners
-          // like a real page pinch.
-          Math.max(0.05, Math.min(0.95, 0.5 + detail.deltaY / state.height)),
-        );
+        updateDragSample(state, detail, viewSettings?.rtl ?? false);
+        controller.moveDrag(state.progress, state.grabY);
         return true;
       }
 
@@ -361,16 +371,19 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       const state = dragRef.current;
       if (!state) return false;
       dragRef.current = null;
+      updateDragSample(state, detail, viewSettings?.rtl ?? false);
+      // Store the release position before endDrag joins the controller's
+      // serialized queue. This ordering also covers touchcancel.
+      controller.moveDrag(state.progress, state.grabY);
       if (detail.phase === 'cancel') {
         controller.endDrag(false).catch(() => {});
         return true;
       }
-      const progress = dragProgress(state, detail.deltaX, viewSettings?.rtl ?? false);
-      const signed = progress * state.width;
+      const signed = dragDistance(state, detail.deltaX, viewSettings?.rtl ?? false);
       const velocity = signed / (detail.deltaT || 1);
       // Same carousel rule as the paginator: a flick along the turn commits
       // regardless of distance; otherwise commit past halfway.
-      const commit = velocity > 0.3 ? true : progress > 0.5;
+      const commit = velocity > 0.3 ? true : state.progress > 0.5;
       // CapturedPageTurn serializes endDrag behind an in-flight beginDrag, so
       // queue release immediately. This also keeps a following gesture behind
       // the complete begin/end pair instead of letting it supersede the turn.
@@ -383,7 +396,21 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
 };
 
 const dragProgress = (state: DragState, deltaX: number, rtl: boolean) => {
-  const along = rtl ? -deltaX : deltaX;
-  const signed = state.forward ? -along : along;
+  const signed = dragDistance(state, deltaX, rtl);
+  // Preserve the full displacement from touchstart: recognition catches the
+  // animation up to the gesture, and later progress remains based on the same
+  // cumulative travel.
   return Math.max(0, Math.min(1, signed / state.width));
+};
+
+const dragDistance = (state: DragState, deltaX: number, rtl: boolean) => {
+  const along = rtl ? -deltaX : deltaX;
+  return state.forward ? -along : along;
+};
+
+const updateDragSample = (state: DragState, detail: TouchDetail, rtl: boolean) => {
+  state.progress = dragProgress(state, detail.deltaX, rtl);
+  // The fold tilts as the finger strays vertically, curling corners like a
+  // real page pinch.
+  state.grabY = Math.max(0.05, Math.min(0.95, 0.5 + detail.deltaY / state.height));
 };

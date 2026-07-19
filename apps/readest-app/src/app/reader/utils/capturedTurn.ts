@@ -64,6 +64,11 @@ interface TurnRenderer {
   dispose(): void;
 }
 
+interface DragSession {
+  progress: number;
+  grabY: number;
+}
+
 interface ActiveTurn {
   overlay: HTMLElement;
   renderer: TurnRenderer;
@@ -73,6 +78,8 @@ interface ActiveTurn {
   rendererRtl: boolean;
   progress: number;
   grabY: number;
+  /** Buffered input and identity token, absent for programmatic turns. */
+  dragSession: DragSession | null;
   raf: number;
   /** Resolves when the play-out animation finishes or is interrupted. */
   finish: (() => void) | null;
@@ -84,8 +91,10 @@ export class CapturedPageTurn {
   #host: CapturedTurnHost;
   #duration: number;
   #active: ActiveTurn | null = null;
+  /** Latest sample and identity for the currently open finger drag. */
+  #dragSession: DragSession | null = null;
   #disposed = false;
-  /** Serializes turns: a new turn interrupts and awaits the previous one. */
+  /** Serializes drag setup/settle and accepted programmatic turns. */
   #pending: Promise<unknown> = Promise.resolve();
   /** True while a programmatic `turn()` is running, gating concurrent ones. */
   #running = false;
@@ -115,6 +124,9 @@ export class CapturedPageTurn {
     // page straight back the moment the first turn lands.
     if (this.#running) return false;
     this.#running = true;
+    // An accepted keyboard/tap turn can also race a touch sequence whose end
+    // event was dropped. Restore that drag before capturing the new turn.
+    this.#cancelOpenDrag();
     const run = this.#pending.then(async () => {
       try {
         if (this.#disposed) return false;
@@ -141,21 +153,42 @@ export class CapturedPageTurn {
 
   /**
    * Finger-tracked turn: captures, navigates instantly under the overlay,
-   * and leaves the turn at progress 0 for `moveDrag` to scrub. Resolves
-   * false when the turn could not start (no host element/rect).
+   * then applies the latest `moveDrag` sample (including samples buffered
+   * during capture). Resolves false when the turn could not start (no host
+   * element/rect).
    */
   async beginDrag(
     forward: boolean,
     rtl: boolean,
     style: CapturedTurnStyle = 'curl',
   ): Promise<boolean> {
+    // A replacement drag can arrive when a platform drops the previous
+    // touchend. Cancel that specific request before queueing the new one;
+    // token matching keeps the synthesized cancellation on its own overlay.
+    this.#cancelOpenDrag();
+    const session: DragSession = { progress: 0, grabY: 0.5 };
+    this.#dragSession = session;
     const run = this.#pending.then(async () => {
-      if (this.#disposed) return false;
+      if (this.#disposed) {
+        if (this.#dragSession === session) this.#dragSession = null;
+        return false;
+      }
       this.#finishActive();
-      const active = await this.#setUp(forward, rtl, style);
-      if (!active) return false;
-      active.renderer.render(active.progress, this.#grab(active), active.rendererRtl);
-      return true;
+      try {
+        const active = await this.#setUp(forward, rtl, style, session);
+        if (!active) {
+          if (this.#dragSession === session) this.#dragSession = null;
+          return false;
+        }
+        // A sample may have arrived before native capture produced an active
+        // overlay. Apply it before beginDrag resolves, so a queued endDrag
+        // always settles from the latest finger position rather than zero.
+        this.#applyDragSession(active, session);
+        return true;
+      } catch (error) {
+        if (this.#dragSession === session) this.#dragSession = null;
+        throw error;
+      }
     });
     this.#pending = run.catch(() => {});
     return run;
@@ -163,11 +196,15 @@ export class CapturedPageTurn {
 
   /** Scrub the turn from the finger. Safe to call while beginDrag is pending. */
   moveDrag(progress: number, grabY: number) {
+    const session = this.#dragSession;
+    if (!session) return;
+    session.progress = Math.min(1, Math.max(0, progress));
+    session.grabY = grabY;
     const active = this.#active;
-    if (!active) return;
-    active.progress = Math.min(1, Math.max(0, progress));
-    active.grabY = grabY;
-    active.renderer.render(active.progress, this.#grab(active), active.rendererRtl);
+    // A following drag can be queued while the previous overlay is settling.
+    // Never paint the new gesture's sample onto that older page.
+    if (!active || active.dragSession !== session) return;
+    this.#applyDragSession(active, session);
   }
 
   /**
@@ -184,11 +221,22 @@ export class CapturedPageTurn {
    * live view, making every following turn off by one page.
    */
   async endDrag(commit: boolean) {
+    const session = this.#dragSession;
+    if (!session) return;
+    // Seal the released sample immediately. Late touchmoves cannot mutate a
+    // page that has already started committing or returning, while a new
+    // beginDrag can safely install its own independent input buffer.
+    this.#dragSession = null;
+    return this.#endDrag(session, commit);
+  }
+
+  #endDrag(session: DragSession, commit: boolean) {
     const run = this.#pending.then(async () => {
       if (this.#disposed) return;
       const active = this.#active;
-      if (!active) return;
+      if (!active || active.dragSession !== session) return;
       try {
+        this.#applyDragSession(active, session);
         if (commit) {
           await this.#playTo(active, 1);
         } else {
@@ -216,6 +264,13 @@ export class CapturedPageTurn {
     return run;
   }
 
+  #cancelOpenDrag() {
+    const session = this.#dragSession;
+    if (!session) return;
+    this.#dragSession = null;
+    this.#endDrag(session, false).catch(() => {});
+  }
+
   dispose() {
     if (this.#disposed) return;
     this.#disposed = true;
@@ -231,12 +286,14 @@ export class CapturedPageTurn {
       }
     }
     this.#finishActive();
+    this.#dragSession = null;
   }
 
   async #setUp(
     forward: boolean,
     rtl: boolean,
     style: CapturedTurnStyle,
+    dragSession: DragSession | null = null,
   ): Promise<ActiveTurn | null> {
     if (this.#disposed) return null;
     const hostElement = this.#host.getHostElement();
@@ -309,6 +366,7 @@ export class CapturedPageTurn {
       rendererRtl: forward ? rtl : !rtl,
       progress: 0,
       grabY: 0.5,
+      dragSession,
       raf: 0,
       finish: null,
     };
@@ -344,6 +402,12 @@ export class CapturedPageTurn {
     return { x: active.rendererRtl ? 0 : 1, y: active.grabY };
   }
 
+  #applyDragSession(active: ActiveTurn, session: DragSession) {
+    active.progress = session.progress;
+    active.grabY = session.grabY;
+    active.renderer.render(active.progress, this.#grab(active), active.rendererRtl);
+  }
+
   /** Animate the active turn from its current progress to `target`. */
   #playTo(active: ActiveTurn, target: number): Promise<void> {
     return new Promise((resolve) => {
@@ -374,6 +438,9 @@ export class CapturedPageTurn {
     const active = this.#active;
     if (!active) return;
     this.#active = null;
+    if (active.dragSession && this.#dragSession === active.dragSession) {
+      this.#dragSession = null;
+    }
     cancelAnimationFrame(active.raf);
     active.finish?.();
     active.renderer.dispose();

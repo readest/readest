@@ -41,6 +41,7 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 describe('Page turn styles (browser)', () => {
   let paginator: Renderer;
+  let transitionRoot: HTMLDivElement | null = null;
 
   beforeAll(async () => {
     ltrBook = await loadEPUB(LTR_EPUB_URL, 'sample-alice.epub');
@@ -48,7 +49,7 @@ describe('Page turn styles (browser)', () => {
     await import('foliate-js/paginator.js');
   }, 30000);
 
-  const createPaginator = () => {
+  const createPaginator = (rootWidth?: number) => {
     const el = document.createElement('foliate-paginator') as Renderer;
     Object.assign(el.style, {
       width: '800px',
@@ -57,12 +58,26 @@ describe('Page turn styles (browser)', () => {
       left: '0',
       top: '0',
     });
-    document.body.appendChild(el);
+    if (rootWidth) {
+      transitionRoot = document.createElement('div');
+      transitionRoot.setAttribute('data-view-transition-root', '');
+      Object.assign(transitionRoot.style, {
+        width: `${rootWidth}px`,
+        height: '600px',
+        position: 'absolute',
+        left: '0',
+        top: '0',
+      });
+      transitionRoot.appendChild(el);
+      document.body.appendChild(transitionRoot);
+    } else {
+      document.body.appendChild(el);
+    }
     return el;
   };
 
-  const setup = async (book: BookDoc, style: string, index = 3) => {
-    paginator = createPaginator();
+  const setup = async (book: BookDoc, style: string, index = 3, rootWidth?: number) => {
+    paginator = createPaginator(rootWidth);
     paginator.setAttribute('animated', '');
     paginator.setAttribute('turn-style', style);
     paginator.open(book);
@@ -81,6 +96,8 @@ describe('Page turn styles (browser)', () => {
       }
       paginator.remove();
     }
+    transitionRoot?.remove();
+    transitionRoot = null;
     // A transition may still be running; let it finish before the next test.
     await wait(600);
   });
@@ -244,6 +261,11 @@ describe('Page turn styles (browser)', () => {
         (a.effect as KeyframeEffect | null)?.pseudoElement?.includes('(foliate-turn)'),
       );
 
+  const scrubProgress = (animation: Animation) => {
+    const duration = Number((animation.effect as KeyframeEffect).getTiming().duration);
+    return Number(animation.currentTime) / (duration * 0.999);
+  };
+
   it('tracks the finger: the paused snapshot follows the drag and commits on release', async () => {
     await setup(ltrBook, 'slide');
     const page = paginator.page;
@@ -261,10 +283,13 @@ describe('Page turn styles (browser)', () => {
       await wait(16);
     }
     // Mid-drag: the transition exists, is paused, and its progress tracks the
-    // finger (~180px of an 800px-wide page).
+    // finger (~180px of total travel on an 800px-wide page).
     const anims = scrubbedAnimations();
     expect(anims.length).toBeGreaterThan(0);
     expect(anims.every((a) => a.playState === 'paused')).toBe(true);
+    expect(anims.every((a) => (a.effect as KeyframeEffect).getTiming().easing === 'linear')).toBe(
+      true,
+    );
     const timeA = Number(anims[0]!.currentTime);
     expect(timeA).toBeGreaterThan(0);
     x -= 60;
@@ -283,6 +308,46 @@ describe('Page turn styles (browser)', () => {
     }
     expect(paginator.page).toBe(page + 1);
     expect(phases).toEqual(['before-capture', 'covered', 'ready', 'finished']);
+  });
+
+  it('uses the named transition root width while preserving total drag distance', async () => {
+    await setup(ltrBook, 'slide', 3, 1000);
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    expect(paginator.getBoundingClientRect().width).toBe(800);
+    expect(transitionRoot?.getBoundingClientRect().width).toBe(1000);
+
+    // This first move exceeds 24px but remains too diagonal to claim. The
+    // second becomes horizontal enough only after 80px of travel. Recognition
+    // catches the snapshot up to that cumulative displacement.
+    fireTouch('touchstart', 700, 300);
+    fireTouch('touchmove', 640, 345);
+    expect(scrubbedAnimations()).toHaveLength(0);
+    fireTouch('touchmove', 620, 330);
+    const t0 = performance.now();
+    while (
+      (scrubbedAnimations().length === 0 ||
+        scrubbedAnimations().some((animation) => animation.playState !== 'paused')) &&
+      performance.now() - t0 < 1000
+    ) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
+    const animations = scrubbedAnimations();
+    expect(animations.length).toBeGreaterThan(0);
+    expect(scrubProgress(animations[0]!)).toBeCloseTo(80 / 1000, 2);
+
+    // Further movement remains one-to-one against the actual 1000px snapshot.
+    fireTouch('touchmove', 540, 330);
+    await vi.waitFor(() => expect(scrubProgress(animations[0]!)).toBeCloseTo(160 / 1000, 2));
+
+    // Return to the origin and cancel so no transition leaks into cleanup.
+    fireTouch('touchmove', 700, 300);
+    fireTouch('touchend', 700, 300);
+    await vi.waitFor(() => expect(phases.at(-1)).toBe('finished'), { timeout: 2000 });
+    expect(scrubbedAnimations()).toHaveLength(0);
   });
 
   it('tracks the finger: a mostly-returned drag reverses without turning', async () => {

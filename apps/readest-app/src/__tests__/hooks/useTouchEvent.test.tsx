@@ -231,6 +231,105 @@ describe('useTouchEvent pinch vs two-finger scroll', () => {
   test.each([
     'curl',
     'slide',
+  ] as const)('keeps the toolbar visible when a web %s turn claims after the pre-claim gap', (pageTurnStyle) => {
+    mocks.hoveredBookKey = 'book-1';
+    mocks.getBookData.mockReturnValue({ isFixedLayout: false });
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 100,
+      scrolled: false,
+      vertical: false,
+      pageTurnStyle,
+      animated: true,
+      isEink: false,
+      disableSwipe: false,
+    });
+    mocks.getView.mockReturnValue({
+      renderer: {
+        getAttribute: (name: string) => (name === 'turn-style' ? pageTurnStyle : null),
+      },
+    });
+    const h = renderTouchHook();
+
+    h.current.onTouchStart(touchEvent([touch(200, 300)], 100));
+    // Readest's 15px native threshold has been crossed, but the paginator's
+    // stricter browser-layered gate has not claimed the gesture yet.
+    h.current.onTouchMove(touchEvent([touch(184, 300)], 116));
+    expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+
+    // The paginator synchronously claims on a later raw touchmove before its
+    // forwarded iframe message arrives. Ownership stays sticky through the
+    // cancellation lifecycle, even if `finished` precedes touchend delivery.
+    setLayeredTurnGestureActive('book-1', true);
+    h.current.onTouchMove(touchEvent([touch(175, 300)], 132));
+    h.current.onTouchMove(touchEvent([touch(190, 300)], 148));
+    setLayeredTurnGestureActive('book-1', false);
+    h.current.onTouchEnd(touchEvent([], 164, [touch(190, 300)]));
+
+    expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    'curl',
+    'slide',
+  ] as const)('does not hide the toolbar when an unclaimed web %s turn is cancelled', (pageTurnStyle) => {
+    mocks.hoveredBookKey = 'book-1';
+    mocks.getBookData.mockReturnValue({ isFixedLayout: false });
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 100,
+      scrolled: false,
+      vertical: false,
+      pageTurnStyle,
+      animated: true,
+      isEink: false,
+      disableSwipe: false,
+    });
+    mocks.getView.mockReturnValue({
+      renderer: {
+        getAttribute: (name: string) => (name === 'turn-style' ? pageTurnStyle : null),
+      },
+    });
+    const h = renderTouchHook();
+
+    h.current.onTouchStart(touchEvent([touch(200, 300)], 100));
+    h.current.onTouchMove(touchEvent([touch(184, 300)], 116));
+    h.current.onTouchCancel(touchEvent([], 132, [touch(184, 300)]));
+
+    expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    'curl',
+    'slide',
+  ] as const)('defers an unclaimed web %s toolbar update until touchend', (pageTurnStyle) => {
+    mocks.hoveredBookKey = 'book-1';
+    mocks.getBookData.mockReturnValue({ isFixedLayout: false });
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 100,
+      scrolled: false,
+      vertical: false,
+      pageTurnStyle,
+      animated: true,
+      isEink: false,
+      disableSwipe: false,
+    });
+    mocks.getView.mockReturnValue({
+      renderer: {
+        getAttribute: (name: string) => (name === 'turn-style' ? pageTurnStyle : null),
+      },
+    });
+    const h = renderTouchHook();
+
+    h.current.onTouchStart(touchEvent([touch(200, 300)], 100));
+    h.current.onTouchMove(touchEvent([touch(184, 300)], 116));
+    expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+
+    h.current.onTouchEnd(touchEvent([], 132, [touch(184, 300)]));
+    expect(mocks.setHoveredBookKey).toHaveBeenCalledWith(null);
+  });
+
+  test.each([
+    'curl',
+    'slide',
   ] as const)('does not fade the web %s toolbar before a fast flick snapshot settles', (pageTurnStyle) => {
     mocks.hoveredBookKey = 'book-1';
     mocks.getBookData.mockReturnValue({ isFixedLayout: false });
