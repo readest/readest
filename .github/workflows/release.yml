@@ -145,6 +145,38 @@ jobs:
           echo "Uploading ${plugin_zip} to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} ${plugin_zip} --clobber
 
+  build-browser-extension:
+    needs: get-release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+
+      - name: setup node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: create and upload Send to Readest extension zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pnpm --filter @readest/send-to-readest-extension zip
+
+          extension_version=$(node -p "require('./apps/readest-app/extensions/send-to-readest/manifest.json').version")
+          extension_zip="apps/readest-app/extensions/send-to-readest/send-to-readest-${extension_version}.zip"
+
+          echo "Uploading ${extension_zip} to GitHub release"
+          gh release upload "${{ needs.get-release.outputs.release_tag }}" "${extension_zip}" --clobber
+
   build-tauri:
     needs: get-release
     permissions:
