@@ -87,6 +87,8 @@ export class CapturedPageTurn {
   #disposed = false;
   /** Serializes turns: a new turn interrupts and awaits the previous one. */
   #pending: Promise<unknown> = Promise.resolve();
+  /** True while a programmatic `turn()` is running, gating concurrent ones. */
+  #running = false;
 
   constructor(host: CapturedTurnHost, options: { duration?: number } = {}) {
     this.#host = host;
@@ -104,16 +106,32 @@ export class CapturedPageTurn {
    * book's page progression direction.
    */
   async turn(forward: boolean, rtl: boolean, style: CapturedTurnStyle = 'curl'): Promise<boolean> {
+    // Programmatic turns (keys, taps, wheel, hardware page-turner) mirror the
+    // paginator's #locked push turn: while one is still running, drop the next
+    // instead of queuing it. A finger drag carries its own gesture and uses the
+    // begin/move/end path; a keyed turn has none, so without this gate a rapid
+    // or spurious opposite key — e.g. the echo an iOS volume press emits when
+    // the session volume is reset — queues behind the animation and turns the
+    // page straight back the moment the first turn lands.
+    if (this.#running) return false;
+    this.#running = true;
     const run = this.#pending.then(async () => {
-      if (this.#disposed) return false;
-      this.#finishActive();
-      const active = await this.#setUp(forward, rtl, style);
-      if (!active) return false;
       try {
-        await this.#playTo(active, 1);
-        return true;
+        if (this.#disposed) return false;
+        this.#finishActive();
+        const active = await this.#setUp(forward, rtl, style);
+        if (!active) return false;
+        try {
+          await this.#playTo(active, 1);
+          return true;
+        } finally {
+          if (this.#active === active) this.#disposeActive();
+        }
       } finally {
-        if (this.#active === active) this.#disposeActive();
+        // Release the gate as the turn settles, before the caller's awaiter
+        // resumes, so a genuine sequential turn is never mistaken for a
+        // concurrent one.
+        this.#running = false;
       }
     });
     // Keep the chain alive after failures so later turns still run.

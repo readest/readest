@@ -277,11 +277,24 @@ describe('CapturedPageTurn (browser)', () => {
     failing.dispose();
   });
 
-  it('interrupts an in-flight turn when a new one starts', async () => {
+  it('drops a concurrent programmatic turn instead of queuing it', async () => {
+    // A programmatic turn (key/tap/page-turner) arriving while one is still
+    // running is dropped, like the paginator's #locked push turn — it does not
+    // queue behind the animation. This is what keeps a spurious opposite key
+    // (e.g. the echo an iOS volume press emits when the session volume resets)
+    // from turning the page straight back the moment the first turn lands.
     const first = controller.turn(true, false);
-    await vi.waitFor(() => expect(navigate).toHaveBeenCalledTimes(1));
-    const second = controller.turn(true, false);
-    await Promise.all([first, second]);
+    const second = controller.turn(false, false);
+    await expect(second).resolves.toBe(false);
+    await first;
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith(true);
+    expect(host.querySelector('canvas')).toBeNull();
+  });
+
+  it('runs sequential programmatic turns once the previous one settles', async () => {
+    expect(await controller.turn(true, false)).toBe(true);
+    expect(await controller.turn(true, false)).toBe(true);
     expect(navigate).toHaveBeenCalledTimes(2);
     expect(host.querySelector('canvas')).toBeNull();
   });
