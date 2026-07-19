@@ -1969,5 +1969,7 @@
   "Player Style": "Style du lecteur",
   "Full": "Complet",
   "Minimal": "Minimal",
-  "TTS Player Style": "Style du lecteur TTS"
+  "TTS Player Style": "Style du lecteur TTS",
+  "Show translation": "Afficher la traduction",
+  "Show original": "Afficher l'original"
 }
