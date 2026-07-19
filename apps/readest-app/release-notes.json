@@ -1,5 +1,19 @@
 {
   "releases": {
+    "0.11.20": {
+      "date": "2026-07-20",
+      "notes": [
+        "Text-to-Speech: Read-aloud voices can now be downloaded per book for offline listening, and adjustable pauses between sentences and paragraphs",
+        "Text-to-Speech: Added CarPlay support on iOS and more reliable Android Auto controls so you can listen while driving",
+        "Sync: Added OneDrive as a cloud provider, you can now sync to several providers at once",
+        "Reading: Added a right-edge swipe to change Auto Scroll speed, footnotes in Markdown books, and copying text now keeps its paragraph breaks",
+        "Reading: Smoother page-turn animations, steadier text selection on iOS, and a redesigned custom theme editor that stays readable on mobile",
+        "Annotations: You can now copy a highlight or note together with a deep link that jumps straight back to its spot in the book",
+        "Library: You can now sort and filter your shelf by time remaining, and the Recently Read shelf and widget show only books you're currently reading",
+        "PDF: Fixed a crash that could happen when turning pages or zooming large PDFs on iOS",
+        "More: Fixed OPDS catalogs disappearing after a restart, and improved 32-bit Android stability"
+      ]
+    },
     "0.11.18": {
       "date": "2026-07-08",
       "notes": [

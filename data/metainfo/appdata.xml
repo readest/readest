@@ -70,6 +70,22 @@
   </supports>
 
   <releases>
+    <release version="0.11.20" date="2026-07-20">
+      <description>
+        <ul>
+          <li>Reading: You can now subscribe to RSS, Atom, and JSON feeds and read them as periodical books in your library</li>
+          <li>Text-to-Speech: Read-aloud voices can now be downloaded per book for offline listening, alongside a redesigned player, new 0.8x and 0.85x speeds, and adjustable pauses between sentences and paragraphs</li>
+          <li>Text-to-Speech: Added CarPlay support on iOS and more reliable Android Auto controls so you can listen while driving</li>
+          <li>Sync: Added OneDrive as a cloud provider, you can now sync to several providers at once, and a wrong sync passphrase is caught and recoverable instead of failing silently</li>
+          <li>Reading: Added a right-edge swipe to change Auto Scroll speed, offline dictionary pronunciation, footnotes in Markdown books, and copying text now keeps its paragraph breaks</li>
+          <li>Reading: Smoother page-turn animations, steadier text selection on iOS, and a redesigned custom theme editor that stays readable on mobile</li>
+          <li>Annotations: You can now copy a highlight or note together with a deep link that jumps straight back to its spot in the book</li>
+          <li>Library: You can now sort and filter your shelf by time remaining, and the Recently Read shelf and widget show only books you're currently reading</li>
+          <li>PDF: Fixed a crash that could happen when turning pages or zooming large PDFs on iOS</li>
+          <li>More: Kept paying subscribers from being downgraded by mistake, fixed OPDS catalogs disappearing after a restart, and improved 32-bit Android stability and app-lock privacy</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.11.18" date="2026-07-08">
       <description>
         <ul>
@@ -204,23 +220,6 @@
           <li>Accessibility: Dropdown menus now open reliably when activated with the keyboard</li>
           <li>Reading: Background textures now display correctly when you override the theme background color</li>
           <li>Translation: Temporarily disabled the Yandex provider while its service is unavailable</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.10.2" date="2026-04-05">
-      <description>
-        <ul>
-          <li>Reading: Added single section scroll option, keyboard shortcuts help dialog, and reading ruler improvements</li>
-          <li>Reading: Fixed Adobe font deobfuscation and applied theme colors to PDFs</li>
-          <li>Reading: Fixed paginator freeze, image sizing on resize, and vertical writing mode compatibility</li>
-          <li>Annotations: Fixed annotations grouped under wrong chapter and added highlight opacity setting</li>
-          <li>Text-to-Speech: Added dedicated TTS settings tab with highlight opacity and keyboard shortcuts for navigation</li>
-          <li>Sync: Added Hardcover.app sync integration and improved KOSync progress accuracy</li>
-          <li>KOReader Plugin: Added full annotation sync option and fixed sync-related crashes</li>
-          <li>OPDS: Added custom catalog headers with web proxy consent and fixed feed display issues</li>
-          <li>Speed Reading: Added per-chapter progress bar and speed selector dropdown</li>
-          <li>Android: Added D-pad navigation for Android TV remote controller</li>
-          <li>Theme: Added atmosphere Easter egg with video overlay and ambient audio</li>
         </ul>
       </description>
     </release>
