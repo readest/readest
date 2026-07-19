@@ -76,4 +76,45 @@ describe('AppLockScreen biometric gate', () => {
     expect(authenticateWithBiometricsMock).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: /Use/ })).toBeNull();
   });
+
+  it('hides the PIN entry on mount while the biometric check is pending', () => {
+    // getBiometricStatus resolves on a later microtask, so on the first
+    // render the biometric attempt is still pending and the PIN entry must
+    // not show behind the incoming system sheet.
+    render(<AppLockScreen />);
+    expect(screen.queryByText('Enter your PIN')).toBeNull();
+    expect(screen.queryByLabelText('PIN code')).toBeNull();
+  });
+
+  it('keeps the PIN entry hidden while the biometric prompt is in flight', async () => {
+    let resolveAuth: (v: boolean) => void = () => {};
+    authenticateWithBiometricsMock.mockReturnValue(
+      new Promise<boolean>((res) => {
+        resolveAuth = res;
+      }),
+    );
+    render(<AppLockScreen />);
+    await waitFor(() => expect(authenticateWithBiometricsMock).toHaveBeenCalledTimes(1));
+    // System Face ID sheet is up — the PIN entry must stay hidden behind it.
+    expect(screen.queryByText('Enter your PIN')).toBeNull();
+    expect(screen.queryByLabelText('PIN code')).toBeNull();
+    // Dismiss/fail the sheet — now the PIN fallback is revealed.
+    resolveAuth(false);
+    await waitFor(() => expect(screen.getByLabelText('PIN code')).toBeTruthy());
+    expect(screen.getByText('Enter your PIN')).toBeTruthy();
+  });
+
+  it('shows the PIN entry immediately when biometric is unsupported', () => {
+    isSupported = false;
+    render(<AppLockScreen />);
+    expect(screen.getByLabelText('PIN code')).toBeTruthy();
+    expect(screen.getByText('Enter your PIN')).toBeTruthy();
+  });
+
+  it('shows the PIN entry immediately when biometric unlock is disabled', () => {
+    biometricUnlockEnabled = false;
+    render(<AppLockScreen />);
+    expect(screen.getByLabelText('PIN code')).toBeTruthy();
+    expect(screen.getByText('Enter your PIN')).toBeTruthy();
+  });
 });

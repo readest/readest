@@ -25,6 +25,14 @@ export default function AppLockScreen() {
   const [error, setError] = useState('');
   const [shaking, setShaking] = useState(false);
   const [kbInset, setKbInset] = useState(0);
+  // Keep the PIN entry hidden while a biometric attempt is pending or its
+  // native sheet is on screen, so the user only ever sees one unlock method
+  // at a time (the system Face ID / Touch ID sheet, then the PIN fallback).
+  // Seeded from the synchronous platform check so the PIN never flashes
+  // before the sheet on a biometric-enabled launch.
+  const [biometricBusy, setBiometricBusy] = useState(
+    () => isBiometricSupported(appService) && !!biometricUnlockEnabled,
+  );
   const biometricAttemptedRef = useRef(false);
   const biometricInFlightRef = useRef(false);
   const autoFocusEnabled = !appService?.isMobile;
@@ -32,16 +40,21 @@ export default function AppLockScreen() {
   const runBiometric = async () => {
     if (biometricInFlightRef.current) return;
     biometricInFlightRef.current = true;
+    setBiometricBusy(true);
     try {
       const ok = await authenticateWithBiometrics(_('Unlock Readest'));
       if (ok) unlock();
     } finally {
       biometricInFlightRef.current = false;
+      setBiometricBusy(false);
     }
   };
 
   useEffect(() => {
-    if (!isBiometricSupported(appService)) return;
+    if (!isBiometricSupported(appService)) {
+      setBiometricBusy(false);
+      return;
+    }
     let cancelled = false;
     void (async () => {
       const { available, biometryType } = await getBiometricStatus();
@@ -53,9 +66,13 @@ export default function AppLockScreen() {
           available,
         })
       ) {
+        setBiometricBusy(false);
         return;
       }
       setBiometryLabel(_(getBiometryLabelKey(biometryType)));
+      // Already attempted (the effect can re-run): leave `biometricBusy`
+      // to `runBiometric`'s own finally so a re-run can't reveal the PIN
+      // while the first attempt's native sheet is still in flight.
       if (biometricAttemptedRef.current) return;
       biometricAttemptedRef.current = true;
       await runBiometric();
@@ -122,52 +139,54 @@ export default function AppLockScreen() {
       aria-modal='true'
       aria-label={_('App locked')}
     >
-      <div className='flex max-w-sm flex-col items-center text-center'>
-        <h1 className='text-base-content mb-2 text-xl font-semibold tracking-tight'>
-          {_('Enter your PIN')}
-        </h1>
-        <p className='text-base-content/60 mb-8 text-sm leading-relaxed'>
-          {_('Readest is locked. Enter your 4-digit PIN to continue.')}
-        </p>
+      {!biometricBusy && (
+        <div className='flex max-w-sm flex-col items-center text-center'>
+          <h1 className='text-base-content mb-2 text-xl font-semibold tracking-tight'>
+            {_('Enter your PIN')}
+          </h1>
+          <p className='text-base-content/60 mb-8 text-sm leading-relaxed'>
+            {_('Readest is locked. Enter your 4-digit PIN to continue.')}
+          </p>
 
-        <PinInput
-          value={pin}
-          onChange={handleChange}
-          ariaLabel={_('PIN code')}
-          stickyFocus={autoFocusEnabled}
-          shake={shaking}
-        />
+          <PinInput
+            value={pin}
+            onChange={handleChange}
+            ariaLabel={_('PIN code')}
+            stickyFocus={autoFocusEnabled}
+            shake={shaking}
+          />
 
-        <p
-          className={clsx(
-            'text-error mt-4 h-5 text-sm transition-opacity',
-            error ? 'opacity-100' : 'opacity-0',
-          )}
-          aria-live='polite'
-        >
-          {error || ' '}
-        </p>
-
-        {biometryLabel && (
-          <button
-            type='button'
-            onClick={runBiometric}
+          <p
             className={clsx(
-              'eink-bordered',
-              'mt-2 h-10 rounded-lg px-4 text-sm font-medium',
-              'text-base-content hover:bg-base-200 transition-colors duration-150',
+              'text-error mt-4 h-5 text-sm transition-opacity',
+              error ? 'opacity-100' : 'opacity-0',
             )}
+            aria-live='polite'
           >
-            {_('Use {{biometry}}', { biometry: biometryLabel })}
-          </button>
-        )}
+            {error || ' '}
+          </p>
 
-        <p className='text-base-content/40 mt-10 text-xs leading-relaxed'>
-          {_(
-            "Forgetting your PIN locks you out of this device. You'll need to clear the app's data to reset it.",
+          {biometryLabel && (
+            <button
+              type='button'
+              onClick={runBiometric}
+              className={clsx(
+                'eink-bordered',
+                'mt-2 h-10 rounded-lg px-4 text-sm font-medium',
+                'text-base-content hover:bg-base-200 transition-colors duration-150',
+              )}
+            >
+              {_('Use {{biometry}}', { biometry: biometryLabel })}
+            </button>
           )}
-        </p>
-      </div>
+
+          <p className='text-base-content/40 mt-10 text-xs leading-relaxed'>
+            {_(
+              "Forgetting your PIN locks you out of this device. You'll need to clear the app's data to reset it.",
+            )}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
