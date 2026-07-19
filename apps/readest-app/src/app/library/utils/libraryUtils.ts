@@ -212,11 +212,11 @@ export const convertPagesToTimeRemainingMinutes = (
   pagesLeft: number,
   medianPageDurationSecs?: number,
 ): number => {
-  const minutes = medianPageDurationSecs
-    ? Math.round((pagesLeft * medianPageDurationSecs) / 60)
-    : Math.round((pagesLeft * SIZE_PER_LOC) / SIZE_PER_TIME_UNIT); // Fall back to less precise calculation
-
-  return Math.max(1, minutes);
+  // Prefer the reader's own pace; fall back to the coarse global estimate.
+  const minutesPerPage = medianPageDurationSecs
+    ? medianPageDurationSecs / 60
+    : SIZE_PER_LOC / SIZE_PER_TIME_UNIT;
+  return Math.max(1, Math.round(pagesLeft * minutesPerPage));
 };
 
 /**
@@ -240,11 +240,8 @@ export const getDisplayedTimeRemaining = (
  * Remaining minutes for a shelf item, or `undefined` when its tile can show no
  * time at all — that includes every group, since a group tile renders no progress.
  */
-const getShelfItemTimeRemaining = (
-  item: Book | BooksGroup,
-  medianPageDurationSecs?: number,
-): number | undefined =>
-  'books' in item ? undefined : getDisplayedTimeRemaining(item, medianPageDurationSecs);
+const getShelfItemTimeRemaining = (item: Book | BooksGroup): number | undefined =>
+  'books' in item ? undefined : getDisplayedTimeRemaining(item);
 
 /**
  * Wrap a comparator that has *already* had the sort direction applied, so items
@@ -253,28 +250,18 @@ const getShelfItemTimeRemaining = (
  * sort-order multiplier, otherwise descending would float those items to the top.
  */
 export const withTimeRemainingLast =
-  <T extends Book | BooksGroup>(
-    sortBy: LibrarySortByType,
-    compare: (a: T, b: T) => number,
-    medianPageDurationSecs?: number,
-  ) =>
+  <T extends Book | BooksGroup>(sortBy: LibrarySortByType, compare: (a: T, b: T) => number) =>
   (a: T, b: T): number => {
     if (sortBy !== LibrarySortByType.TimeRemaining) return compare(a, b);
-    const aTime = getShelfItemTimeRemaining(a, medianPageDurationSecs);
-    const bTime = getShelfItemTimeRemaining(b, medianPageDurationSecs);
+    const aTime = getShelfItemTimeRemaining(a);
+    const bTime = getShelfItemTimeRemaining(b);
     if (aTime === undefined && bTime === undefined) return 0;
     if (aTime === undefined) return 1;
     if (bTime === undefined) return -1;
     return compare(a, b);
   };
 
-const compareBookByKey = (
-  a: Book,
-  b: Book,
-  sortBy: string,
-  uiLanguage: string,
-  medianPageDurationSecs?: number,
-): number => {
+const compareBookByKey = (a: Book, b: Book, sortBy: string, uiLanguage: string): number => {
   switch (sortBy) {
     case LibrarySortByType.Title: {
       const aTitle = formatTitle(a.title);
@@ -327,8 +314,8 @@ const compareBookByKey = (
       return aDate - bDate;
     }
     case LibrarySortByType.TimeRemaining: {
-      const aTime = getDisplayedTimeRemaining(a, medianPageDurationSecs);
-      const bTime = getDisplayedTimeRemaining(b, medianPageDurationSecs);
+      const aTime = getDisplayedTimeRemaining(a);
+      const bTime = getDisplayedTimeRemaining(b);
       // Never subtract two Infinities here: NaN makes the comparator inconsistent
       // and Array.sort then scatters the no-time books through the shelf.
       if (aTime === undefined && bTime === undefined) return 0;
