@@ -101,7 +101,19 @@ type BookshelfListContext = {
    * identity stable and does not reset its scroller on every Bookshelf render.
    */
   recentShelfHeader: React.ReactNode;
+  /**
+   * Height (px) of the trailing Footer spacer. Defaults to the baseline
+   * breathing room, but grows to clear the fixed select-mode action bar so the
+   * last book can scroll above it instead of hiding behind it (#5175).
+   */
+  footerHeight: number;
 };
+
+const DEFAULT_FOOTER_HEIGHT = 34;
+
+const BookshelfFooter = ({ context }: { context?: BookshelfListContext }) => (
+  <div style={{ height: context?.footerHeight ?? DEFAULT_FOOTER_HEIGHT }} />
+);
 
 const BOOKSHELF_GRID_CLASSES =
   'bookshelf-items transform-wrapper grid gap-x-4 px-4 sm:gap-x-0 sm:px-2 ' +
@@ -147,12 +159,12 @@ const BookshelfHeader = ({ context }: { context?: BookshelfListContext }) => (
 const GRID_VIRTUOSO_COMPONENTS: GridComponents<BookshelfListContext> = {
   List: BookshelfGridList,
   Header: BookshelfHeader,
-  Footer: () => <div style={{ height: 34 }} />,
+  Footer: BookshelfFooter,
 };
 const LIST_VIRTUOSO_COMPONENTS: Components<unknown, BookshelfListContext> = {
   List: BookshelfLinearList,
   Header: BookshelfHeader,
-  Footer: () => <div style={{ height: 34 }} />,
+  Footer: BookshelfFooter,
 };
 
 const Bookshelf: React.FC<BookshelfProps> = ({
@@ -198,6 +210,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   const [loading, setLoading] = useState(false);
   const [showSelectModeActions, setShowSelectModeActions] = useState(false);
+  const [selectModeActionsHeight, setSelectModeActionsHeight] = useState(0);
   const [bookIdsToDelete, setBookIdsToDelete] = useState<string[]>([]);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showStatusAlert, setShowStatusAlert] = useState(false);
@@ -741,14 +754,30 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     ],
   );
 
+  // Reserve enough trailing space for the fixed select-mode action bar so the
+  // last book scrolls clear of it (#5175). `selectModeActionsHeight` already
+  // includes the bar's safe-area padding and is 0 whenever the bar is hidden,
+  // so the baseline breathing room applies at all other times.
+  const footerHeight =
+    selectModeActionsHeight > 0
+      ? selectModeActionsHeight + DEFAULT_FOOTER_HEIGHT
+      : DEFAULT_FOOTER_HEIGHT;
+
   const listContext = useMemo<BookshelfListContext>(
     () => ({
       autoColumns: settings.libraryAutoColumns,
       fixedColumns: settings.libraryColumns,
       recentShelfHeader,
       showTimeRemaining,
+      footerHeight,
     }),
-    [settings.libraryAutoColumns, settings.libraryColumns, recentShelfHeader, showTimeRemaining],
+    [
+      settings.libraryAutoColumns,
+      settings.libraryColumns,
+      recentShelfHeader,
+      showTimeRemaining,
+      footerHeight,
+    ],
   );
 
   const renderBookshelfItem = useCallback(
@@ -883,6 +912,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         <SelectModeActions
           selectedBooks={selectedBooks}
           safeAreaBottom={safeAreaInsets?.bottom || 0}
+          onHeightChange={setSelectModeActionsHeight}
           // Native send targets: iOS, Android, macOS — route through
           // tauri-plugin-sharekit (UIActivityViewController /
           // Intent.ACTION_SEND / NSSharingServicePicker). Linux has no

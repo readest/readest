@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { useEffect, useRef } from 'react';
 import {
   MdDelete,
   MdOpenInNew,
@@ -32,6 +33,10 @@ interface SelectModeActionsProps {
   onSend: () => void;
   onDelete: () => void;
   onCancel: () => void;
+  // Reports the popup's rendered height (including its safe-area padding) so the
+  // shelf can reserve matching trailing space and keep the last book from being
+  // hidden behind this fixed bar (#5175). Reports 0 on unmount.
+  onHeightChange?: (height: number) => void;
 }
 
 const SelectModeActions: React.FC<SelectModeActionsProps> = ({
@@ -45,17 +50,36 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
   onSend,
   onDelete,
   onCancel,
+  onHeightChange,
 }) => {
   const _ = useTranslation();
 
   const hasSelection = selectedBooks.length > 0;
   const hasValidBooks = selectedBooks.every((id) => isMd5(id));
   const hasSingleSelection = selectedBooks.length === 1;
-  const divRef = useKeyDownActions({ onCancel });
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  useKeyDownActions({ onCancel, elementRef: rootRef });
+
+  useEffect(() => {
+    if (!onHeightChange) return;
+    const el = rootRef.current;
+    if (!el) return;
+    const report = () => onHeightChange(el.getBoundingClientRect().height);
+    report();
+    let observer: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(report);
+      observer.observe(el);
+    }
+    return () => {
+      observer?.disconnect();
+      onHeightChange(0);
+    };
+  }, [onHeightChange]);
 
   return (
     <div
-      ref={divRef}
+      ref={rootRef}
       className='fixed bottom-0 left-0 right-0 z-40'
       style={{
         paddingBottom: `${safeAreaBottom + 16}px`,
