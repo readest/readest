@@ -129,7 +129,7 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
         'motion-safe:transition-all motion-safe:duration-200',
         entered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
       )}
-      style={{ paddingBottom: `${(safeAreaInsets?.bottom ?? 0) / 3 + 16}px` }}
+      style={{ paddingBottom: `${(safeAreaInsets?.bottom ?? 0) / 4 + 16}px` }}
     >
       <div
         role='button'
@@ -141,7 +141,7 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
         aria-label={`${_('Open Book')}: ${title}`}
         className={clsx(
           'not-eink:bg-base-300 eink-bordered flex items-center gap-2 rounded-full shadow-lg',
-          'h-14 max-w-[calc(100vw-2rem)] cursor-pointer px-2',
+          'h-14 max-w-[calc(100vw-2rem)] min-w-[60vw] sm:min-w-0 cursor-pointer px-2',
           'focus-visible:ring-primary focus-visible:ring-2 focus-visible:outline-none',
         )}
       >

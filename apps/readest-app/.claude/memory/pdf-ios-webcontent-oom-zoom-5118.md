@@ -34,9 +34,9 @@ build shares the limit. No Sentry issue (process kill, not JS exception).
    IOSurface (x deviceDpr). Zoom grows it quadratically -> 2.1 GB past ~150%.
    (Dominates zoom case; user's "ridiculous for a zoomed canvas" insight.)
 
-**Fix (foliate `packages/foliate-js/pdf.js` render(), branch
-`fix/pdf-render-dpr-memory-5118`, commits 442bb72 + de6d810; readest dev
-e3a4cce8f + 5120b77b9):**
+**Fix (foliate `packages/foliate-js/pdf.js` render()) — MERGED: readest #5129
+(single commit) bumping foliate to squash-merged foliate#55 = `98fc0d5` on
+foliate main:**
 - `getRenderDpr(page, zoom)` = `min(devicePixelRatio, MAX_RENDER_DPR=2)` then
   shrink so bitmap area <= `MAX_CANVAS_PIXELS = 2048*1536`, floor 1. (page-turn
   fix, user-confirmed.)
