@@ -1,4 +1,3 @@
-import { useEnv } from '@/context/EnvContext';
 import { Book, BooksGroup, ReadingStatus } from '@/types/book';
 import {
   LibraryGroupByType,
@@ -8,8 +7,6 @@ import {
 import { formatAuthors, formatTitle } from '@/utils/book';
 import { md5Fingerprint } from '@/utils/md5';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
-import { useEffect, useState } from 'react';
-import { StatisticsDb } from '@/services/statistics/statisticsDb';
 
 /** Valid sort types for the library */
 const VALID_SORT_TYPES: LibrarySortByType[] = Object.values(LibrarySortByType);
@@ -200,28 +197,6 @@ const getBookReadRatio = (book: Book): number => {
   const [current, total] = book.progress ?? [];
   if (!current || !total || total <= 0) return 0;
   return current / total;
-};
-
-export const useMedianPageDurationSecs = (bookMd5?: string): number | null => {
-  const { appService } = useEnv();
-  const [medianPageDurationSecs, setMedianPageDurationSecs] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!appService || !bookMd5) return;
-
-    const load = async () => {
-      const db = await StatisticsDb.open(appService);
-      const book = await db.getBookByMd5(bookMd5);
-      if (!book) return;
-      const id = book.id;
-      const medianPageDurationSecs = await db.getMedianPageDurationSecs(id);
-      setMedianPageDurationSecs(medianPageDurationSecs);
-    };
-
-    void load();
-  });
-
-  return medianPageDurationSecs;
 };
 
 export const getTimeRemainingMinutes = (

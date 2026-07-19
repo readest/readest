@@ -15,10 +15,8 @@ import {
 } from '@/utils/progress';
 import StatusInfo from './StatusInfo.tsx';
 import StickyProgressBar from './StickyProgressBar.tsx';
-import {
-  convertPagesToTimeRemainingMinutes,
-  useMedianPageDurationSecs,
-} from '@/app/library/utils/libraryUtils.ts';
+import { convertPagesToTimeRemainingMinutes } from '@/app/library/utils/libraryUtils.ts';
+import { useMedianPageDurationSecs } from '@/hooks/useMedianPageDurationSecs';
 
 interface ProgressBarProps {
   bookKey: string;

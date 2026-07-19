@@ -4,7 +4,8 @@ import type { Book } from '@/types/book';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SHOW_UNREAD_STATUS_BADGE } from '@/services/constants';
 import StatusBadge from './StatusBadge';
-import { getDisplayedTimeRemaining, useMedianPageDurationSecs } from '../utils/libraryUtils';
+import { getDisplayedTimeRemaining } from '../utils/libraryUtils';
+import { useMedianPageDurationSecs } from '@/hooks/useMedianPageDurationSecs';
 
 interface ReadingProgressProps {
   book: Book;

@@ -154,11 +154,12 @@ export class StatisticsDb {
       [idBook],
     );
     if (rows.length < PAGE_THRESHOLD) return null;
-    const pageDurations = rows.map((d) => d['duration']);
+    // The query orders by recency; sort by value so the middle is the true median.
+    const pageDurations = rows.map((d) => d['duration']).sort((a, b) => a - b);
     const mid = Math.floor(pageDurations.length / 2);
     return pageDurations.length % 2 !== 0
       ? (pageDurations[mid] ?? 0)
-      : (pageDurations[mid - 1] ?? 0 + (pageDurations[mid] ?? 0)) / 2;
+      : ((pageDurations[mid - 1] ?? 0) + (pageDurations[mid] ?? 0)) / 2;
   }
 
   async getBookByMd5(md5: string): Promise<BookRow | null> {
