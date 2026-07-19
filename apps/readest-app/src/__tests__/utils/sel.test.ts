@@ -392,6 +392,21 @@ describe('sel utilities', () => {
       document.body.removeChild(container);
     });
 
+    it('should separate selected paragraphs with newlines', async () => {
+      const { getTextFromRange } = await import('@/utils/sel');
+      const container = document.createElement('div');
+      container.innerHTML = '<p>First paragraph</p><p>Second paragraph</p><p>Third paragraph</p>';
+      document.body.appendChild(container);
+
+      const range = document.createRange();
+      range.setStart(container.children[0]!.firstChild!, 6);
+      range.setEnd(container.children[2]!.firstChild!, 5);
+
+      expect(getTextFromRange(range)).toBe('paragraph\nSecond paragraph\nThird');
+
+      document.body.removeChild(container);
+    });
+
     it('should insert a newline for <br> between adjacent text spans (PDF line wrap)', async () => {
       const { getTextFromRange } = await import('@/utils/sel');
       // Mirrors how pdf.js renders the text layer: each text run is its

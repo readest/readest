@@ -789,18 +789,20 @@ export const getTextFromRange = (range: Range, rejectTags: string[] = []): strin
     },
   );
 
-  // pdf.js inserts <br role="presentation"> between text spans at line endings
-  // (see TextLayer#appendText in pdfjs). Without this, multi-line PDF
-  // selections collapse adjacent line-final and line-initial words into a
-  // single token (e.g. "lastfirst"). Treat <br> as a newline, matching how
-  // Selection.toString() handles line breaks in the browser.
+  // Preserve explicit line and paragraph boundaries. Without this, adjacent
+  // PDF lines or HTML paragraphs collapse into a single token.
   let text = '';
   let node: Node | null;
   while ((node = walker.nextNode())) {
     if (node.nodeType === Node.TEXT_NODE) {
       text += (node as Text).nodeValue ?? '';
-    } else if ((node as Element).tagName === 'BR') {
-      text += '\n';
+    } else {
+      const tagName = (node as Element).tagName.toLowerCase();
+      if (tagName === 'p' && text && !text.endsWith('\n')) {
+        text += '\n';
+      } else if (tagName === 'br') {
+        text += '\n';
+      }
     }
   }
 
