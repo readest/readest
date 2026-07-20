@@ -17,6 +17,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import BooknoteItem from './BooknoteItem';
 import EmptyState from '../EmptyState';
+import SearchBar from '../notebook/SearchBar';
+import clsx from 'clsx';
 
 type FlatBooknoteRow =
   | { kind: 'group-header'; key: string; group: BooknoteGroup }
@@ -37,6 +39,8 @@ const BooknoteView: React.FC<{
   const { getConfig } = useBookDataStore();
   const { getProgress } = useReaderStore();
   const { setActiveBooknoteType, setBooknoteResults } = useSidebarStore();
+  const { sideBarBookKey } = useSidebarStore();
+  const [_searchResults, setSearchResults] = useState<BookNote[] | null>(null);
   const config = getConfig(bookKey)!;
   const progress = getProgress(bookKey);
   const allNotes = config.booknotes ?? [];
@@ -274,6 +278,8 @@ const BooknoteView: React.FC<{
     [flatItems, bookKey, nearestCfi, handleBrowseBookNotes],
   );
 
+  if (!sideBarBookKey) return null;
+
   // Always mount the containerRef host so the height-measurement effect (and
   // its ResizeObserver) can attach on first mount, even when starting from the
   // empty state. Otherwise transitioning empty -> populated (e.g. after
@@ -282,7 +288,7 @@ const BooknoteView: React.FC<{
   const isEmpty = sortedGroups.length === 0;
 
   return (
-    <div ref={containerRef} className='booknote-list rounded pt-2' role='tree'>
+    <div ref={containerRef} className='booknote-list rounded pt-2 flex flex-col' role='tree'>
       {isEmpty ? (
         <div
           className='flex items-center justify-center overflow-hidden'
@@ -311,22 +317,36 @@ const BooknoteView: React.FC<{
           ref={osRootRef}
           data-overlayscrollbars-initialize=''
           style={{ height: containerHeight }}
+          className='flex flex-col'
         >
-          <Virtuoso
-            ref={virtuosoRef}
-            scrollerRef={handleScrollerRef}
-            initialTopMostItemIndex={
-              initialTopIndex > 0 ? { index: initialTopIndex, align: 'center' } : 0
-            }
-            rangeChanged={({ startIndex, endIndex }) => {
-              visibleCenterRef.current = Math.floor((startIndex + endIndex) / 2);
-            }}
-            style={{ height: containerHeight }}
-            totalCount={flatItems.length}
-            computeItemKey={(index) => flatItems[index]?.key ?? index}
-            itemContent={renderItem}
-            overscan={500}
-          />
+          <div
+            className={clsx('search-bar', {
+              'search-bar-visible': true,
+            })}
+          >
+            <SearchBar
+              isVisible={true}
+              bookKey={sideBarBookKey}
+              searchTerm=''
+              onSearchResultChange={setSearchResults}
+            />
+          </div>
+          <div className='min-h-0 flex-1'>
+            <Virtuoso
+              ref={virtuosoRef}
+              scrollerRef={handleScrollerRef}
+              initialTopMostItemIndex={
+                initialTopIndex > 0 ? { index: initialTopIndex, align: 'center' } : 0
+              }
+              rangeChanged={({ startIndex, endIndex }) => {
+                visibleCenterRef.current = Math.floor((startIndex + endIndex) / 2);
+              }}
+              totalCount={flatItems.length}
+              computeItemKey={(index) => flatItems[index]?.key ?? index}
+              itemContent={renderItem}
+              overscan={500}
+            />
+          </div>
         </div>
       )}
     </div>
