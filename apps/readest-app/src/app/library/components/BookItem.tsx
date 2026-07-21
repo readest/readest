@@ -96,8 +96,11 @@ const BookItem: React.FC<BookItemProps> = ({
           mode={mode}
           book={book}
           coverFit={coverFit}
-          showSpine={false}
-          imageClassName='rounded shadow-md'
+          showSpine={settings.librarySkeuomorphicCovers}
+          imageClassName={clsx(
+            'shadow-md',
+            settings.librarySkeuomorphicCovers ? 'rounded-none' : 'rounded',
+          )}
           onAspectRatioChange={setCoverAspect}
         />
         {bookSelected && (

@@ -7,6 +7,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { BooksGroup } from '@/types/book';
 import { LibraryViewModeType } from '@/types/settings';
 import BookCover from '@/components/BookCover';
+import { useSettingsStore } from '@/store/settingsStore';
 
 interface GroupItemProps {
   mode: LibraryViewModeType;
@@ -18,6 +19,7 @@ interface GroupItemProps {
 const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupSelected }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const { settings } = useSettingsStore();
   const iconSize15 = useResponsiveSize(15);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -141,7 +143,12 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
                   mode === 'list' && 'flex-shrink-0',
                 )}
               >
-                <BookCover book={book} isPreview imageClassName='rounded-[2px]' />
+                <BookCover
+                  book={book}
+                  isPreview
+                  showSpine={settings.librarySkeuomorphicCovers}
+                  imageClassName='rounded-[2px]'
+                />
               </div>
             ))}
           </div>

@@ -177,6 +177,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryCoverFit: 'crop',
   libraryAutoColumns: true,
   libraryColumns: 6,
+  librarySkeuomorphicCovers: true, // TODO: Disable by default
   libraryRecentShelfEnabled: false,
 
   metadataSeriesCollapsed: false,

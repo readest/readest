@@ -366,6 +366,7 @@ export interface SystemSettings {
   libraryCoverFit: LibraryCoverFitType;
   libraryAutoColumns: boolean;
   libraryColumns: number;
+  librarySkeuomorphicCovers: boolean;
   /** Show the recently-read carousel at the top of the library (issue #3797). */
   libraryRecentShelfEnabled: boolean;
   /**

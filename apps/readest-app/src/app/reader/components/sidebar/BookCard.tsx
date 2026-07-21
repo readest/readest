@@ -8,10 +8,12 @@ import { eventDispatcher } from '@/utils/event';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { formatAuthors, formatTitle } from '@/utils/book';
 import BookCover from '@/components/BookCover';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const BookCard = ({ book }: { book: Book }) => {
   const { title, author } = book;
   const _ = useTranslation();
+  const { settings } = useSettingsStore();
   const { isDarkMode } = useThemeStore();
   const iconSize18 = useResponsiveSize(18);
   const bookCoverRef = useRef<HTMLDivElement | null>(null);
@@ -33,6 +35,7 @@ const BookCard = ({ book }: { book: Book }) => {
           book={book}
           mode='list'
           coverFit='crop'
+          showSpine={settings.librarySkeuomorphicCovers}
           imageClassName='rounded-sm'
           onImageError={() => (bookCoverRef.current!.style.display = 'none')}
         />
