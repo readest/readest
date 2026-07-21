@@ -18,7 +18,6 @@ import { eventDispatcher } from '@/utils/event';
 import BooknoteItem from './BooknoteItem';
 import EmptyState from '../EmptyState';
 import SearchBar from '../notebook/SearchBar';
-import clsx from 'clsx';
 
 type FlatBooknoteRow =
   | { kind: 'group-header'; key: string; group: BooknoteGroup }
