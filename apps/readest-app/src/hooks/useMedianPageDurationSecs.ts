@@ -22,7 +22,9 @@ export const useMedianPageDurationSecs = (bookMd5?: string): number | null => {
       setMedianPageDurationSecs(median);
     };
 
-    void load();
+    // Statistics are best-effort: a failed DB open/read (e.g. torn down on app
+    // teardown) must never surface as an unhandled rejection (Sentry READEST-6).
+    void load().catch((err) => console.warn('[stats] median page duration failed:', err));
   }, [appService, bookMd5]);
 
   return medianPageDurationSecs;
