@@ -23,13 +23,17 @@
         android:hardwareAccelerated="true"
         android:usesCleartextTraffic="${usesCleartextTraffic}">
 
-        <!-- Android Auto: advertise the media capability so Readest shows up in
-             the car launcher and projects the TTS media session. Withdrawn in
-             #5038 after a Play Auto rejection (broken forward/back feedback);
-             re-enabled once the skip controls give instant, coherent state. -->
-        <meta-data
-            android:name="com.google.android.gms.car.application"
-            android:resource="@xml/automotive_app_desc" />
+        <!-- Android Auto media capability intentionally NOT declared here. The
+             car-application meta-data (gms car application) is withdrawn for
+             this release to pass Play's Auto review, which rejected version
+             code 11020 for inconsistent TTS playback in the car. Previously
+             withdrawn in #5038 for the same reason and re-enabled in #5066; it
+             is withdrawn again until the car audio bug is fixed. The
+             automotive_app_desc.xml resource and the exported
+             MediaBrowserService (needed for the phone lock-screen/background
+             TTS media session) stay in place; re-add the car-application
+             meta-data pointing at @xml/automotive_app_desc to re-enable
+             Android Auto. -->
 
         <!-- Sentry auto-init (ContentProvider). Empty DSN => disabled. Release
              is auto-detected from versionName; performance and PII stay at
