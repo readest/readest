@@ -36,6 +36,7 @@
              their safe off/false defaults. -->
         <meta-data android:name="io.sentry.dsn" android:value="${sentryDsn}" />
         <meta-data android:name="io.sentry.environment" android:value="production" />
+        <meta-data android:name="io.sentry.ndk.enable" android:value="false" />
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
