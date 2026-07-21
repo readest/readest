@@ -317,20 +317,14 @@ const BooknoteView: React.FC<{
           ref={osRootRef}
           data-overlayscrollbars-initialize=''
           style={{ height: containerHeight }}
-          className='flex flex-col'
+          className='flex !flex-col' // TODO: Get rid of !flex-col (which is the only solution that's worked so far)
         >
-          <div
-            className={clsx('search-bar', {
-              'search-bar-visible': true,
-            })}
-          >
-            <SearchBar
-              isVisible={true}
-              bookKey={sideBarBookKey}
-              searchTerm=''
-              onSearchResultChange={setSearchResults}
-            />
-          </div>
+          <SearchBar
+            isVisible={true}
+            bookKey={sideBarBookKey}
+            searchTerm=''
+            onSearchResultChange={setSearchResults}
+          />
           <div className='min-h-0 flex-1'>
             <Virtuoso
               ref={virtuosoRef}
