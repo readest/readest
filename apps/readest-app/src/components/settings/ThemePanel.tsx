@@ -25,13 +25,13 @@ import { DefaultHighlightColor, HighlightColor, UserHighlightColor } from '@/typ
 import clsx from 'clsx';
 import { SettingLabel } from './primitives';
 import { HIGHLIGHT_COLOR_HEX } from '@/services/constants';
-import ThemeEditor from './color/ThemeEditor';
-import ThemeModeSelector from './color/ThemeModeSelector';
-import ThemeColorSelector from './color/ThemeColorSelector';
-import BackgroundTextureSelector from './color/BackgroundTextureSelector';
-import HighlightColorsEditor from './color/HighlightColorsEditor';
-import CodeHighlightingSettings from './color/CodeHighlightingSettings';
-import ReadingRulerSettings from './color/ReadingRulerSettings';
+import ThemeEditor from './theme/ThemeEditor';
+import ThemeModeSelector from './theme/ThemeModeSelector';
+import ThemeColorSelector from './theme/ThemeColorSelector';
+import BackgroundTextureSelector from './theme/BackgroundTextureSelector';
+import HighlightColorsEditor from './theme/HighlightColorsEditor';
+import CodeHighlightingSettings from './theme/CodeHighlightingSettings';
+import ReadingRulerSettings from './theme/ReadingRulerSettings';
 import { Toggle } from '../primitives/toggle';
 
 const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
