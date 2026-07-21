@@ -409,8 +409,12 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
       const hlContents = view.renderer.getContents();
       const hlPrimaryIdx = view.renderer.primaryIndex;
-      const { doc, index: viewSectionIndex } = (hlContents.find((x) => x.index === hlPrimaryIdx) ??
-        hlContents[0]) as { doc: Document; index?: number };
+      const hlContent = hlContents.find((x) => x.index === hlPrimaryIdx) ?? hlContents[0];
+      if (!hlContent) return;
+      const { doc, index: viewSectionIndex } = hlContent as {
+        doc: Document;
+        index?: number;
+      };
 
       const { anchor, index: ttsSectionIndex } = view.resolveCFI(cfi);
       // Cross-section navigation is driven by the sentence-level mark handler.

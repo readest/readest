@@ -48,7 +48,7 @@ const mockView = {
 const mockProgress = {
   location: { start: { cfi: '' }, end: { cfi: '' } },
   index: 0,
-  range: null,
+  range: null as Range | null,
   sectionLabel: '',
 };
 
@@ -448,7 +448,9 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
     // Reset renderer state a test may override (a throwing assertion can skip
     // an inline restore, leaking into later tests).
     mockView.renderer.getContents = () => [{ index: 0, doc: document as unknown as Document }];
+    mockView.renderer.primaryIndex = 0;
     mockView.renderer.scrolled = false;
+    mockProgress.range = null;
     mockViewSettings.ttsLocation = null;
   });
 
@@ -456,7 +458,9 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
     cleanup();
   });
 
-  const setupAndCaptureHighlightHandler = async () => {
+  const setupAndCaptureHighlightHandler = async (
+    eventName: 'tts-highlight-mark' | 'tts-highlight-word' = 'tts-highlight-mark',
+  ) => {
     render(<Harness />);
 
     await act(async () => {
@@ -475,8 +479,8 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
       addEventListener: { mock: { calls: [string, (e: Event) => void][] } };
     };
     const calls = controller.addEventListener.mock.calls;
-    const entry = calls.find(([name]) => name === 'tts-highlight-mark');
-    if (!entry) throw new Error('tts-highlight-mark listener was not registered');
+    const entry = calls.find(([name]) => name === eventName);
+    if (!entry) throw new Error(`${eventName} listener was not registered`);
     return entry[1];
   };
 
@@ -541,6 +545,45 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
     expect(() => {
       handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
     }).not.toThrow();
+  });
+
+  it('does not throw when a word highlight fires with no loaded contents (READEST-4S)', async () => {
+    const handler = await setupAndCaptureHighlightHandler('tts-highlight-word');
+    mockView.renderer.getContents = () => [];
+
+    expect(() => {
+      handler(new CustomEvent('tts-highlight-word', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+    }).not.toThrow();
+  });
+
+  it('follows a visible-section word using the first loaded content as fallback', async () => {
+    const handler = await setupAndCaptureHighlightHandler('tts-highlight-word');
+    const wordRange = {
+      compareBoundaryPoints: vi.fn().mockReturnValueOnce(1).mockReturnValueOnce(0),
+    } as unknown as Range;
+    const visibleRange = {} as Range;
+    mockView.renderer.primaryIndex = 1;
+    mockView.renderer.getContents = () => [{ index: 0, doc: document as unknown as Document }];
+    mockProgress.range = visibleRange;
+    mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => wordRange });
+
+    handler(new CustomEvent('tts-highlight-word', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+
+    expect(wordRange.compareBoundaryPoints).toHaveBeenCalledWith(Range.END_TO_START, visibleRange);
+    expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledWith(wordRange);
+  });
+
+  it('follows a word in the primary loaded section', async () => {
+    const handler = await setupAndCaptureHighlightHandler('tts-highlight-word');
+    const wordRange = {
+      compareBoundaryPoints: vi.fn().mockReturnValueOnce(1).mockReturnValueOnce(0),
+    } as unknown as Range;
+    mockProgress.range = {} as Range;
+    mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => wordRange });
+
+    handler(new CustomEvent('tts-highlight-word', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+
+    expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledWith(wordRange);
   });
 });
 
