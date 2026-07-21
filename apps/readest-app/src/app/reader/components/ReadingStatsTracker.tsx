@@ -55,11 +55,13 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
   useEffect(() => {
     if (!appService) return;
     let cancelled = false;
-    StatisticsDb.open(appService).then((db) => {
-      if (cancelled) return;
-      dbRef.current = db;
-      if (syncEnabled()) runBestEffort(pullStats(db, new SyncClient()));
-    });
+    runBestEffort(
+      StatisticsDb.open(appService).then((db) => {
+        if (cancelled) return;
+        dbRef.current = db;
+        if (syncEnabled()) runBestEffort(pullStats(db, new SyncClient()));
+      }),
+    );
     return () => {
       cancelled = true;
     };

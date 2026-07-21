@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
 import { migrate } from '@/services/database/migrate';
 import { getMigrations } from '@/services/database/migrations';
 import type { DatabaseService } from '@/types/database';
+import type { AppService } from '@/types/system';
 import { StatisticsDb } from '@/services/statistics/statisticsDb';
 
 async function freshStatsDb(): Promise<DatabaseService> {
@@ -195,5 +196,20 @@ describe('StatisticsDb', () => {
     }
     // Sorted: [10, 20, 30, 40, 50, 60] -> (30 + 40) / 2 = 35.
     expect(await stats.getMedianPageDurationSecs(id)).toBe(35);
+  });
+});
+
+describe('StatisticsDb.open', () => {
+  it('retries after a transient singleton open failure', async () => {
+    const db = await freshStatsDb();
+    const error = new Error('transient open failure');
+    const openDatabase = vi.fn().mockRejectedValueOnce(error).mockResolvedValueOnce(db);
+    const appService = { openDatabase } as unknown as AppService;
+
+    await expect(StatisticsDb.open(appService)).rejects.toBe(error);
+
+    const stats = await StatisticsDb.open(appService);
+    expect(openDatabase).toHaveBeenCalledTimes(2);
+    await stats.close();
   });
 });
