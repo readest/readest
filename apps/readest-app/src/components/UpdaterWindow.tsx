@@ -484,33 +484,40 @@ export const UpdaterContent = ({
     let lastLogged = 0;
     setProgress(0);
     setIsDownloading(true);
-    await update.downloadAndInstall?.((event) => {
-      switch (event.event) {
-        case 'Started':
-          contentLength = event.data.contentLength!;
-          setContentLength(contentLength);
-          break;
-        case 'Progress':
-          downloaded += event.data.chunkLength;
-          setDownloaded(downloaded);
-          // Guard against a 0 total (server omitted Content-Length): keep the
-          // bar at an indeterminate 0% instead of NaN/Infinity.
-          const percent = contentLength > 0 ? Math.floor((downloaded / contentLength) * 100) : 0;
-          setProgress(percent);
-          if (downloaded - lastLogged >= 1 * 1024 * 1024) {
-            console.log(`downloaded ${downloaded} bytes from ${contentLength}`);
-            lastLogged = downloaded;
-          }
-          break;
-        case 'Finished':
-          console.log('download finished');
-          setProgress(100);
-          break;
+    try {
+      await update.downloadAndInstall?.((event) => {
+        switch (event.event) {
+          case 'Started':
+            contentLength = event.data.contentLength!;
+            setContentLength(contentLength);
+            break;
+          case 'Progress':
+            downloaded += event.data.chunkLength;
+            setDownloaded(downloaded);
+            // Guard against a 0 total (server omitted Content-Length): keep the
+            // bar at an indeterminate 0% instead of NaN/Infinity.
+            const percent = contentLength > 0 ? Math.floor((downloaded / contentLength) * 100) : 0;
+            setProgress(percent);
+            if (downloaded - lastLogged >= 1 * 1024 * 1024) {
+              console.log(`downloaded ${downloaded} bytes from ${contentLength}`);
+              lastLogged = downloaded;
+            }
+            break;
+          case 'Finished':
+            console.log('download finished');
+            setProgress(100);
+            break;
+        }
+      });
+      console.log('package installed');
+      if (!appService?.isAndroidApp && process.env.NODE_ENV === 'production') {
+        await relaunch();
       }
-    });
-    console.log('package installed');
-    if (!appService?.isAndroidApp && process.env.NODE_ENV === 'production') {
-      await relaunch();
+    } catch (error) {
+      console.error('Failed to download and install update:', error);
+      setError(_('Failed to download and install update'));
+    } finally {
+      setIsDownloading(false);
     }
   };
 
