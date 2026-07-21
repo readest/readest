@@ -25,7 +25,7 @@ vi.mock('@/store/atmosphereStore', () => ({
   }),
 }));
 
-import ThemeModeSelector from '@/components/settings/color/ThemeModeSelector';
+import ThemeModeSelector from '@/components/settings/theme/ThemeModeSelector';
 
 afterEach(() => cleanup());
 
