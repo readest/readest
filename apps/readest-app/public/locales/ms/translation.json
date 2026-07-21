@@ -109,7 +109,6 @@
   "View account details and quota": "Lihat butiran akaun dan kuota",
   "Account": "Akaun",
   "Sign In": "Log Masuk",
-  "Auto Upload Books to Cloud": "Auto Muat Naik Buku ke Awan",
   "Auto Import on File Open": "Auto Import Apabila Buka Fail",
   "Open Last Book on Start": "Buka Buku Terakhir Semasa Mula",
   "Check Updates on Start": "Semak Kemas Kini Semasa Mula",
@@ -1899,5 +1898,6 @@
   "Show translation": "Tunjukkan terjemahan",
   "Show original": "Tunjukkan asal",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Seluruh dunia ini pentas, dan semua lelaki dan wanita hanyalah pelakon; mereka ada masa keluar dan masa masuk, dan seseorang dalam hidupnya memainkan pelbagai peranan.",
-  "— William Shakespeare, As You Like It": "— William Shakespeare, As You Like It"
+  "— William Shakespeare, As You Like It": "— William Shakespeare, As You Like It",
+  "Failed to download and install update": "Gagal memuat turun dan memasang kemas kini"
 }

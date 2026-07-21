@@ -69,7 +69,6 @@
   "Logged in": "เข้าสู่ระบบแล้ว",
   "Account": "บัญชี",
   "Sign In": "เข้าสู่ระบบ",
-  "Auto Upload Books to Cloud": "อัปโหลดหนังสืออัตโนมัติ",
   "Auto Import on File Open": "นำเข้าอัตโนมัติเมื่อเปิดไฟล์",
   "Open Last Book on Start": "เปิดหนังสือล่าสุดเมื่อเริ่มใช้",
   "Check Updates on Start": "ตรวจสอบอัปเดตเมื่อเริ่มใช้",
@@ -1899,5 +1898,6 @@
   "Show translation": "แสดงคำแปล",
   "Show original": "แสดงต้นฉบับ",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "โลกทั้งใบคือเวที และชายหญิงทั้งปวงล้วนเป็นเพียงนักแสดง พวกเขาต่างมีวาระเข้าและออก และคนหนึ่งในชั่วชีวิตของเขาย่อมสวมบทบาทมากมาย",
-  "— William Shakespeare, As You Like It": "— วิลเลียม เชกสเปียร์, As You Like It"
+  "— William Shakespeare, As You Like It": "— วิลเลียม เชกสเปียร์, As You Like It",
+  "Failed to download and install update": "ดาวน์โหลดและติดตั้งการอัปเดตไม่สำเร็จ"
 }

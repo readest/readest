@@ -333,7 +333,6 @@ export interface SystemSettings {
   autoImportFolders?: string[];
 
   keepLogin: boolean;
-  autoUpload: boolean;
   alwaysOnTop: boolean;
   openBookInNewWindow: boolean;
   autoCheckUpdates: boolean;

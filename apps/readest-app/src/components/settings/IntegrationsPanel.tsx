@@ -390,7 +390,7 @@ const IntegrationsPanel: React.FC = () => {
 
   /** Book files have a home when Readest Cloud is on or some backend uploads them. */
   const booksBackedUpBy = (kind: FileSyncBackendKind): boolean =>
-    (readestEnabled && !!settings.autoUpload) ||
+    readestEnabled ||
     enabledBackends.some(
       (k) => k !== kind && (settings[settingsKeyForBackend(k)]?.syncBooks ?? false),
     );

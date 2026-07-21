@@ -119,7 +119,6 @@
   "Book downloaded: {{title}}": "Το βιβλίο με τίτλο {{title}} κατέβηκε",
   "Failed to download book: {{title}}": "Αποτυχία λήψης βιβλίου: {{title}}",
   "Upload Book": "Ανέβασμα βιβλίου",
-  "Auto Upload Books to Cloud": "Αυτόματη αποθήκευση στο cloud",
   "Book deleted: {{title}}": "Το βιβλίο με τίτλο {{title}} διαγράφηκε",
   "Failed to delete book: {{title}}": "Αποτυχία διαγραφής βιβλίου: {{title}}",
   "Check Updates on Start": "Αυτόματος έλεγχος ενημερώσεων",
@@ -1935,5 +1934,6 @@
   "Show translation": "Εμφάνιση μετάφρασης",
   "Show original": "Εμφάνιση πρωτοτύπου",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Όλος ο κόσμος είναι μια σκηνή, και όλοι οι άντρες κι οι γυναίκες απλοί ηθοποιοί· έχουν τις εξόδους και τις εισόδους τους, κι ένας άνθρωπος στη ζωή του παίζει πολλούς ρόλους.",
-  "— William Shakespeare, As You Like It": "— Ουίλιαμ Σαίξπηρ, Όπως Αγαπάτε"
+  "— William Shakespeare, As You Like It": "— Ουίλιαμ Σαίξπηρ, Όπως Αγαπάτε",
+  "Failed to download and install update": "Αποτυχία λήψης και εγκατάστασης της ενημέρωσης"
 }

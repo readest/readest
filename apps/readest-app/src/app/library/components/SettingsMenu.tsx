@@ -59,7 +59,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const { userProfilePlan, quotas } = useQuotaStats(true);
   const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettingsDialogOpen } = useSettingsStore();
-  const [isAutoUpload, setIsAutoUpload] = useState(settings.autoUpload);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
   const [isAlwaysShowStatusBar, setIsAlwaysShowStatusBar] = useState(settings.alwaysShowStatusBar);
   const [isOpenLastBooks, setIsOpenLastBooks] = useState(settings.openLastBooks);
@@ -162,16 +161,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     const newValue = !settings.alwaysShowStatusBar;
     saveSysSettings(envConfig, 'alwaysShowStatusBar', newValue);
     setIsAlwaysShowStatusBar(newValue);
-  };
-
-  const toggleAutoUploadBooks = () => {
-    const newValue = !settings.autoUpload;
-    saveSysSettings(envConfig, 'autoUpload', newValue);
-    setIsAutoUpload(newValue);
-
-    if (newValue && !user) {
-      navigateToLogin(router);
-    }
   };
 
   const toggleAutoImportBooksOnOpen = () => {
@@ -391,14 +380,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
         </MenuItem>
       ) : (
         <MenuItem label={_('Sign In')} Icon={PiUserCircle} onClick={handleUserLogin}></MenuItem>
-      )}
-
-      {readestEnabled && (
-        <MenuItem
-          label={_('Auto Upload Books to Cloud')}
-          toggled={isAutoUpload}
-          onClick={toggleAutoUploadBooks}
-        />
       )}
 
       {isTauriAppPlatform() && (

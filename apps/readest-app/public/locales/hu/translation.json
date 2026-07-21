@@ -149,7 +149,6 @@
   "Never synced": "Még nem szinkronizált",
   "Account": "Fiók",
   "Sign In": "Bejelentkezés",
-  "Auto Upload Books to Cloud": "Könyvek automatikus feltöltése a felhőbe",
   "Auto Import on File Open": "Automatikus importálás fájl megnyitásakor",
   "Open Last Book on Start": "Utolsó könyv megnyitása indításkor",
   "Check Updates on Start": "Frissítések keresése indításkor",
@@ -1935,5 +1934,6 @@
   "Show translation": "Fordítás megjelenítése",
   "Show original": "Eredeti megjelenítése",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Színház az egész világ, és színész benne minden férfi és nő; megvannak a maguk kilépői és belépői, és egy ember életében sok szerepet játszik el.",
-  "— William Shakespeare, As You Like It": "— William Shakespeare, Ahogy tetszik"
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Ahogy tetszik",
+  "Failed to download and install update": "A frissítés letöltése és telepítése sikertelen"
 }

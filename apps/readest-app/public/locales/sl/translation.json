@@ -138,7 +138,6 @@
   "Never synced": "Nikoli sinhronizirano",
   "Account": "Račun",
   "Sign In": "Prijava",
-  "Auto Upload Books to Cloud": "Samodejno nalaganje knjig v oblak",
   "Auto Import on File Open": "Samodejni uvoz ob odpiranju datoteke",
   "Open Last Book on Start": "Ob zagonu odpri zadnjo knjigo",
   "Check Updates on Start": "Ob zagonu preveri posodobitve",
@@ -2007,5 +2006,6 @@
   "Show translation": "Pokaži prevod",
   "Show original": "Pokaži izvirnik",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Ves svet je oder, in vsi ljudje, moški in ženske, so le igralci; imajo svoje odhode in prihode, in en sam človek v svojem življenju igra mnogo vlog.",
-  "— William Shakespeare, As You Like It": "— William Shakespeare, Kakor vam drago"
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Kakor vam drago",
+  "Failed to download and install update": "Prenos in namestitev posodobitve ni uspela"
 }

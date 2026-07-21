@@ -119,7 +119,6 @@
   "Book downloaded: {{title}}": "Livre téléchargé : {{title}}",
   "Failed to download book: {{title}}": "Échec du téléchargement du livre : {{title}}",
   "Upload Book": "Télécharger un livre",
-  "Auto Upload Books to Cloud": "Télécharger automatiquement les livres dans le cloud",
   "Book deleted: {{title}}": "Livre supprimé : {{title}}",
   "Failed to delete book: {{title}}": "Échec de la suppression du livre : {{title}}",
   "Check Updates on Start": "Vérifier les mises à jour au démarrage",
@@ -1971,5 +1970,6 @@
   "Show translation": "Afficher la traduction",
   "Show original": "Afficher l'original",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Le monde entier est un théâtre, et tous, hommes et femmes, ne sont que des acteurs; ils ont leurs entrées et leurs sorties, et un homme, dans le cours de sa vie, joue bien des rôles.",
-  "— William Shakespeare, As You Like It": "— William Shakespeare, Comme il vous plaira"
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Comme il vous plaira",
+  "Failed to download and install update": "Échec du téléchargement et de l'installation de la mise à jour"
 }

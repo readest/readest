@@ -119,7 +119,6 @@
   "Book downloaded: {{title}}": "Книгу завантажено: {{title}}",
   "Failed to download book: {{title}}": "Не вдалося завантажити книгу: {{title}}",
   "Upload Book": "Завантажити книгу",
-  "Auto Upload Books to Cloud": "Автоматично завантажувати книги в хмару",
   "Book deleted: {{title}}": "Книгу видалено: {{title}}",
   "Failed to delete book: {{title}}": "Не вдалося видалити книгу: {{title}}",
   "Check Updates on Start": "Перевіряти оновлення при запуску",
@@ -2007,5 +2006,6 @@
   "Show translation": "Показати переклад",
   "Show original": "Показати оригінал",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Увесь світ — театр, і всі чоловіки й жінки в ньому — лише актори; вони мають свої виходи й входи, і кожна людина за своє життя грає багато ролей.",
-  "— William Shakespeare, As You Like It": "— Вільям Шекспір, «Як вам це сподобається»"
+  "— William Shakespeare, As You Like It": "— Вільям Шекспір, «Як вам це сподобається»",
+  "Failed to download and install update": "Не вдалося завантажити та встановити оновлення"
 }

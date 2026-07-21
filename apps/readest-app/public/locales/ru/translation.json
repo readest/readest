@@ -119,7 +119,6 @@
   "Book downloaded: {{title}}": "Книга скачана: {{title}}",
   "Failed to download book: {{title}}": "Не удалось скачать книгу: {{title}}",
   "Upload Book": "Загрузить книгу",
-  "Auto Upload Books to Cloud": "Автоматическая загрузка книг в облако",
   "Book deleted: {{title}}": "Книга удалена: {{title}}",
   "Failed to delete book: {{title}}": "Не удалось удалить книгу: {{title}}",
   "Check Updates on Start": "Проверять обновления при запуске",
@@ -2007,5 +2006,6 @@
   "Show translation": "Показать перевод",
   "Show original": "Показать оригинал",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Весь мир — театр, а люди в нём — актёры; у них есть свои уходы и выходы, и каждый за свою жизнь играет множество ролей.",
-  "— William Shakespeare, As You Like It": "— Уильям Шекспир, «Как вам это понравится»"
+  "— William Shakespeare, As You Like It": "— Уильям Шекспир, «Как вам это понравится»",
+  "Failed to download and install update": "Не удалось загрузить и установить обновление"
 }

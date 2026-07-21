@@ -153,7 +153,6 @@
   "Never synced": "Nu s-a sincronizat niciodată",
   "Account": "Cont",
   "Sign In": "Conectare",
-  "Auto Upload Books to Cloud": "Încărcați automat cărți în cloud",
   "Auto Import on File Open": "Import automat pe fișier deschis",
   "Open Last Book on Start": "Deschide Ultima carte la Start",
   "Check Updates on Start": "Verificați actualizările la Start",
@@ -1971,5 +1970,6 @@
   "Show translation": "Afișează traducerea",
   "Show original": "Afișează originalul",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Lumea întreagă e o scenă, iar toți bărbații și femeile doar actori; ei au ieșirile și intrările lor, iar un om joacă în viața lui multe roluri.",
-  "— William Shakespeare, As You Like It": "— William Shakespeare, Cum vă place"
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Cum vă place",
+  "Failed to download and install update": "Descărcarea și instalarea actualizării au eșuat"
 }

@@ -119,7 +119,6 @@
   "Book downloaded: {{title}}": "पुस्तक डाउनलोड की गई: {{title}}",
   "Failed to download book: {{title}}": "पुस्तक डाउनलोड करने में विफल: {{title}}",
   "Upload Book": "पुस्तक अपलोड करें",
-  "Auto Upload Books to Cloud": "पुस्तकें बादल में स्वचालित रूप से अपलोड करें",
   "Book deleted: {{title}}": "पुस्तक हटाई गई: {{title}}",
   "Failed to delete book: {{title}}": "पुस्तक हटाने में विफल: {{title}}",
   "Check Updates on Start": "शुरू में अपडेट जांचें",
@@ -1935,5 +1934,6 @@
   "Show translation": "अनुवाद दिखाएं",
   "Show original": "मूल दिखाएं",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "सारा संसार एक रंगमंच है, और सभी स्त्री-पुरुष केवल अभिनेता हैं; उनके अपने प्रस्थान और प्रवेश होते हैं, और एक मनुष्य अपने जीवनकाल में अनेक भूमिकाएँ निभाता है।",
-  "— William Shakespeare, As You Like It": "— विलियम शेक्सपियर, एज़ यू लाइक इट"
+  "— William Shakespeare, As You Like It": "— विलियम शेक्सपियर, एज़ यू लाइक इट",
+  "Failed to download and install update": "अपडेट डाउनलोड और इंस्टॉल करने में विफल"
 }

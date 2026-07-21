@@ -68,6 +68,7 @@
 - [tauri 2.11 remote ACL app commands](tauri-211-remote-acl-app-commands.md) webdriver = remote origin
 ## Platform Compat
 - Sentry: [#5112 minidump DROPPED](crash-reporter-second-window-5052.md); [#5053 MAS SIGILL](mas-sandbox-minidump-launch-crash-5053.md); [#5070 armv7 SIGABRT](android-armv7-sentry-crash-handler-5070.md) — native dumps = SEPARATE helper, never re-exec
+- [#5227 drop sentry NDK](sentry-crash-reporting-4914.md) PR#5234 `io.sentry.ndk.enable=false`; READEST-P = WebView renderer death (unhandled onRenderProcessGone); OP bugreport was 0.11.18+11019 not 0.11.20
 - Android: [hyphen selection #1553](android-hyphen-selection-bounds-1553.md); [NativeFile vs RemoteFile I/O](android-nativefile-remotefile-io.md)
 - [Window-state sanitizer #4398](window-state-sanitize-4398.md) · [Android themed icon #4733](android-themed-icon-4733.md)
 - [Open-with intent #4521](android-open-with-intent-flow.md) · [dict lookup hijack #4559](dict-lookup-browser-hijack-4559.md)

@@ -135,7 +135,6 @@
   "Never synced": "מעולם לא סונכרן",
   "Account": "חשבון",
   "Sign In": "התחבר",
-  "Auto Upload Books to Cloud": "העלאת ספרים אוטומטית לענן",
   "Auto Import on File Open": "ייבוא אוטומטי בעת פתיחת קובץ",
   "Open Last Book on Start": "פתח ספר אחרון בהפעלה",
   "Check Updates on Start": "בדוק עדכונים בהפעלה",
@@ -1971,5 +1970,6 @@
   "Show translation": "הצג תרגום",
   "Show original": "הצג מקור",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "כל העולם במה, וכל הגברים והנשים אינם אלא שחקנים; יש להם יציאות ויש להם כניסות, ואדם אחד משחק בימי חייו תפקידים רבים.",
-  "— William Shakespeare, As You Like It": "— ויליאם שייקספיר, כטוב בעיניכם"
+  "— William Shakespeare, As You Like It": "— ויליאם שייקספיר, כטוב בעיניכם",
+  "Failed to download and install update": "הורדת העדכון והתקנתו נכשלו"
 }

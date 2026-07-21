@@ -156,7 +156,6 @@
   "Never synced": "Nunca sincronizado",
   "Account": "Conta",
   "Sign In": "Entrar",
-  "Auto Upload Books to Cloud": "Enviar livros para a nuvem automaticamente",
   "Auto Import on File Open": "Importação automática ao abrir arquivo",
   "Open Last Book on Start": "Abrir o último livro ao iniciar",
   "Check Updates on Start": "Verificar atualizações ao iniciar",
@@ -1971,5 +1970,6 @@
   "Show translation": "Mostrar tradução",
   "Show original": "Mostrar original",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "O mundo inteiro é um palco, e todos os homens e mulheres não passam de atores; eles têm suas saídas e suas entradas, e um homem, em seu tempo, representa muitos papéis.",
-  "— William Shakespeare, As You Like It": "— William Shakespeare, Como Gostais"
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Como Gostais",
+  "Failed to download and install update": "Falha ao baixar e instalar a atualização"
 }

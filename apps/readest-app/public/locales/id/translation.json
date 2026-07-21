@@ -119,7 +119,6 @@
   "Book downloaded: {{title}}": "Buku diunduh: {{title}}",
   "Failed to download book: {{title}}": "Gagal mengunduh buku: {{title}}",
   "Upload Book": "Unggah Buku",
-  "Auto Upload Books to Cloud": "Unggah Buku Otomatis ke Cloud",
   "Book deleted: {{title}}": "Buku dihapus: {{title}}",
   "Failed to delete book: {{title}}": "Gagal menghapus buku: {{title}}",
   "Check Updates on Start": "Periksa Pembaruan saat Memulai",
@@ -1899,5 +1898,6 @@
   "Show translation": "Tampilkan terjemahan",
   "Show original": "Tampilkan asli",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Seluruh dunia adalah panggung, dan semua pria dan wanita hanyalah pemain; mereka punya saat keluar dan saat masuk, dan seseorang dalam hidupnya memainkan banyak peran.",
-  "— William Shakespeare, As You Like It": "— William Shakespeare, As You Like It"
+  "— William Shakespeare, As You Like It": "— William Shakespeare, As You Like It",
+  "Failed to download and install update": "Gagal mengunduh dan memasang pembaruan"
 }

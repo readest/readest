@@ -59,7 +59,6 @@
   "Logged in": "Ingelogd",
   "Account": "Account",
   "Sign In": "Inloggen",
-  "Auto Upload Books to Cloud": "Boeken automatisch uploaden naar cloud",
   "Auto Import on File Open": "Automatisch importeren bij bestand openen",
   "Open Last Book on Start": "Open laatste boek bij opstarten",
   "Check Updates on Start": "Controleer updates bij opstarten",
@@ -1935,5 +1934,6 @@
   "Show translation": "Vertaling tonen",
   "Show original": "Origineel tonen",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "De hele wereld is een toneel, en alle mannen en vrouwen slechts spelers; zij hebben hun aftredens en hun optredens, en één mens speelt in zijn leven vele rollen.",
-  "— William Shakespeare, As You Like It": "— William Shakespeare, Zoals u het wilt"
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Zoals u het wilt",
+  "Failed to download and install update": "Kan de update niet downloaden en installeren"
 }

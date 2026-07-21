@@ -180,7 +180,7 @@ export const applySyncBooksAutoEnable = (settings: SystemSettings): boolean => {
  * native book/progress/note rows). Now simply "is Readest Cloud switched on" —
  * it no longer means "and nothing else is". A user can mirror to Drive AND keep
  * Readest Cloud; whether book *files* also go to Readest is still governed
- * separately by `autoUpload` and the transfer queue.
+ * separately by the Manage Sync "book" toggle and the transfer queue.
  */
 export const isReadestCloudStorageActive = (
   settings: SystemSettings | null | undefined,

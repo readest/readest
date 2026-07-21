@@ -118,7 +118,6 @@
   "Book downloaded: {{title}}": "کتاب «{{title}}» دانلود شد.",
   "Failed to download book: {{title}}": "دانلود کتاب «{{title}}» ناموفق بود.",
   "Upload Book": "بارگذاری کتاب",
-  "Auto Upload Books to Cloud": "بارگذاری خودکار کتاب‌ها در فضای ابری",
   "Book deleted: {{title}}": "کتاب «{{title}}» حذف شد.",
   "Failed to delete book: {{title}}": "حذف کتاب «{{title}}» ناموفق بود.",
   "Check Updates on Start": "بررسی به‌روزرسانی‌ها هنگام شروع",
@@ -1935,5 +1934,6 @@
   "Show translation": "نمایش ترجمه",
   "Show original": "نمایش متن اصلی",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "تمام دنیا یک صحنه است و همه‌ی مردان و زنان تنها بازیگرند؛ آن‌ها را خروج‌ها و ورودهایی است، و هر کس در طول عمر خود نقش‌های بسیاری بازی می‌کند.",
-  "— William Shakespeare, As You Like It": "— ویلیام شکسپیر، هرطور که دوست دارید"
+  "— William Shakespeare, As You Like It": "— ویلیام شکسپیر، هرطور که دوست دارید",
+  "Failed to download and install update": "دانلود و نصب به‌روزرسانی ناموفق بود"
 }

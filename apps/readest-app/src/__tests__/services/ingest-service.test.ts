@@ -27,7 +27,7 @@ function makeBook(overrides: Partial<Book> = {}): Book {
 function makeDeps(
   over: {
     importResult?: Book | null;
-    autoUpload?: boolean;
+    bookSyncEnabled?: boolean;
     isLoggedIn?: boolean;
     externalLibraryFolders?: string[];
     osPlatform?: OsPlatform;
@@ -42,9 +42,11 @@ function makeDeps(
     importBook,
     osPlatform: over.osPlatform ?? ('linux' as OsPlatform),
   } as unknown as AppService;
+  // The Manage Sync "book" category defaults on; only an explicit `false`
+  // opts out of auto-upload. Leaving syncCategories unset mirrors that default.
   const settings = {
-    autoUpload: over.autoUpload ?? false,
     externalLibraryFolders: over.externalLibraryFolders,
+    syncCategories: over.bookSyncEnabled === false ? { book: false } : undefined,
   } as SystemSettings;
   return { appService, settings, isLoggedIn: over.isLoggedIn ?? false, importBook };
 }
@@ -150,9 +152,9 @@ describe('ingestFile', () => {
     expect(book?.updatedAt).toBe(2000);
   });
 
-  test('forceUpload queues an upload even when autoUpload is off', async () => {
+  test('forceUpload queues an upload even when book sync is turned off', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: false,
+      bookSyncEnabled: false,
       isLoggedIn: true,
     });
     await ingestFile(
@@ -162,18 +164,17 @@ describe('ingestFile', () => {
     expect(transferManager.queueUpload).toHaveBeenCalledTimes(1);
   });
 
-  test('autoUpload queues an upload without forceUpload', async () => {
+  test('queues an upload by default without forceUpload', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: true,
       isLoggedIn: true,
     });
     await ingestFile({ file: 'book.epub', books: [] }, { appService, settings, isLoggedIn });
     expect(transferManager.queueUpload).toHaveBeenCalledTimes(1);
   });
 
-  test('does not queue an upload when neither forceUpload nor autoUpload is set', async () => {
+  test('does not queue an upload when book sync is turned off in manage sync', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: false,
+      bookSyncEnabled: false,
       isLoggedIn: true,
     });
     await ingestFile({ file: 'book.epub', books: [] }, { appService, settings, isLoggedIn });
@@ -182,7 +183,6 @@ describe('ingestFile', () => {
 
   test('does not queue an upload when the user is not logged in', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: true,
       isLoggedIn: false,
     });
     await ingestFile(
@@ -194,7 +194,6 @@ describe('ingestFile', () => {
 
   test('never queues an upload for a transient import', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: true,
       isLoggedIn: true,
     });
     await ingestFile(
@@ -220,7 +219,6 @@ describe('ingestFile', () => {
   test('does not queue an upload when the book is already uploaded', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
       importResult: makeBook({ uploadedAt: 5000 }),
-      autoUpload: true,
       isLoggedIn: true,
     });
     await ingestFile(
@@ -630,9 +628,8 @@ describe('ingestFile', () => {
   // shape is identical to a hash-copy book; uploadBook reads from book.filePath
   // when set, which is asserted in cloud-service.test.ts.
 
-  test('autoUpload still queues an in-place book (book.filePath set)', async () => {
+  test('queues an in-place book by default (book.filePath set)', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: true,
       isLoggedIn: true,
       externalLibraryFolders: ['/Users/me/Library'],
       importResult: makeBook({ filePath: '/Users/me/Library/sample.epub' }),
@@ -644,9 +641,9 @@ describe('ingestFile', () => {
     expect(transferManager.queueUpload).toHaveBeenCalledTimes(1);
   });
 
-  test('forceUpload still queues an in-place book even when autoUpload is off', async () => {
+  test('forceUpload still queues an in-place book even when book sync is off', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: false,
+      bookSyncEnabled: false,
       isLoggedIn: true,
       externalLibraryFolders: ['/Users/me/Library'],
       importResult: makeBook({ filePath: '/Users/me/Library/sample.epub' }),
@@ -660,7 +657,6 @@ describe('ingestFile', () => {
 
   test('transient still trumps in-place — no upload even with forceUpload', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: true,
       isLoggedIn: true,
       externalLibraryFolders: ['/Users/me/Library'],
       importResult: makeBook({ filePath: '/Users/me/Library/sample.epub' }),

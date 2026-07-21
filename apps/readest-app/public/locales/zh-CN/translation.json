@@ -120,7 +120,6 @@
   "Book downloaded: {{title}}": "书籍已下载：{{title}}",
   "Failed to download book: {{title}}": "下载书籍失败：{{title}}",
   "Upload Book": "上传书籍",
-  "Auto Upload Books to Cloud": "自动上传书籍到云端",
   "Book deleted: {{title}}": "书籍已删除：{{title}}",
   "Failed to delete book: {{title}}": "删除书籍失败：{{title}}",
   "Check Updates on Start": "启动时检查更新",
@@ -1899,5 +1898,6 @@
   "Show translation": "显示译文",
   "Show original": "显示原文",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "整个世界是一座舞台，所有的男男女女不过是演员；他们各有登场和退场，一个人一生中要扮演许多角色。",
-  "— William Shakespeare, As You Like It": "— 威廉·莎士比亚，《皆大欢喜》"
+  "— William Shakespeare, As You Like It": "— 威廉·莎士比亚，《皆大欢喜》",
+  "Failed to download and install update": "下载并安装更新失败"
 }

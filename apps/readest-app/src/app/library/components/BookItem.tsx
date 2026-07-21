@@ -204,11 +204,9 @@ const BookItem: React.FC<BookItemProps> = ({
                     }
                   }}
                 >
-                  {!book.uploadedAt &&
-                    settings.autoUpload &&
-                    isReadestCloudStorageActive(settings) && (
-                      <LiaCloudUploadAltSolid size={iconSize15} />
-                    )}
+                  {!book.uploadedAt && isReadestCloudStorageActive(settings) && (
+                    <LiaCloudUploadAltSolid size={iconSize15} />
+                  )}
                   {book.uploadedAt && !book.downloadedAt && (
                     <LiaCloudDownloadAltSolid size={iconSize15} />
                   )}

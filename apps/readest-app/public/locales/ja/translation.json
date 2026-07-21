@@ -119,7 +119,6 @@
   "Book downloaded: {{title}}": "書籍がダウンロードされました：{{title}}",
   "Failed to download book: {{title}}": "書籍のダウンロードに失敗しました：{{title}}",
   "Upload Book": "書籍をアップロード",
-  "Auto Upload Books to Cloud": "書籍を自動的にクラウドにアップロード",
   "Book deleted: {{title}}": "書籍が削除されました：{{title}}",
   "Failed to delete book: {{title}}": "書籍の削除に失敗しました：{{title}}",
   "Check Updates on Start": "開始時に更新を確認",
@@ -1899,5 +1898,6 @@
   "Show translation": "翻訳を表示",
   "Show original": "原文を表示",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "この世はすべて舞台、男も女もみな役者にすぎない。彼らには退場があり登場があり、一人の人間はその一生でいくつもの役を演じる。",
-  "— William Shakespeare, As You Like It": "— ウィリアム・シェイクスピア『お気に召すまま』"
+  "— William Shakespeare, As You Like It": "— ウィリアム・シェイクスピア『お気に召すまま』",
+  "Failed to download and install update": "アップデートのダウンロードとインストールに失敗しました"
 }

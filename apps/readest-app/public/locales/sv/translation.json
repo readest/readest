@@ -102,7 +102,6 @@
   "View account details and quota": "Visa kontodetaljer och kvot",
   "Account": "Konto",
   "Sign In": "Logga in",
-  "Auto Upload Books to Cloud": "Auto-ladda upp böcker till moln",
   "Auto Import on File Open": "Auto-importera vid filöppning",
   "Open Last Book on Start": "Öppna senaste bok vid start",
   "Check Updates on Start": "Sök uppdateringar vid start",
@@ -1935,5 +1934,6 @@
   "Show translation": "Visa översättning",
   "Show original": "Visa original",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Hela världen är en scen, och alla människor, män som kvinnor, blott skådespelare; de har sina sortier och sina entréer, och en människa spelar under sin tid många roller.",
-  "— William Shakespeare, As You Like It": "— William Shakespeare, Som ni behagar"
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Som ni behagar",
+  "Failed to download and install update": "Det gick inte att ladda ner och installera uppdateringen"
 }

@@ -119,7 +119,6 @@
   "Book downloaded: {{title}}": "དཔེ་དེབ་ཕབ་ལེན་བྱས་ཟིན། {{title}}",
   "Failed to download book: {{title}}": "དཔེ་དེབ་ཕབ་ལེན་བྱས་མ་ཐུབ། {{title}}",
   "Upload Book": "དཔེ་དེབ་སྤྲད་པ།",
-  "Auto Upload Books to Cloud": "དཔེ་དེབ་རང་འགུལ་གྱིས་སྤྲི་དོན་ལ་སྤྲད་པ།",
   "Book deleted: {{title}}": "དཔེ་དེབ་བསུབ་ཟིན། {{title}}",
   "Failed to delete book: {{title}}": "དཔེ་དེབ་བསུབ་མ་ཐུབ། {{title}}",
   "Check Updates on Start": "འགོ་སློང་སྐབས་བསྐྱར་བརྗེ་བརྟག་དཔྱད།",
@@ -1899,5 +1898,6 @@
   "Show translation": "འགྱུར་ཡིག་སྟོན་པ།",
   "Show original": "མ་ཡིག་སྟོན་པ།",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "འཇིག་རྟེན་ཧྲིལ་པོ་ནི་འཁྲབ་སྟེགས་ཤིག་ཡིན། སྐྱེས་པ་དང་བུད་མེད་ཐམས་ཅད་ནི་འཁྲབ་མཁན་ཙམ་ཡིན། ཁོ་ཚོ་ལ་ཐོན་པ་དང་འཛུལ་བ་ཡོད་ཅིང། མི་གཅིག་གིས་རང་གི་མི་ཚེའི་ནང་དུ་འཁྲབ་གཞུང་མང་པོ་འཁྲབ།",
-  "— William Shakespeare, As You Like It": "— ཝི་ལི་ཡམ་ཤེགས་སི་པིར།"
+  "— William Shakespeare, As You Like It": "— ཝི་ལི་ཡམ་ཤེགས་སི་པིར།",
+  "Failed to download and install update": "གསར་སྒྱུར་ཕབ་ལེན་དང་སྒྲིག་འཇུག་བྱེད་མ་ཐུབ།"
 }

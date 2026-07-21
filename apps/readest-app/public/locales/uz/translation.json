@@ -152,7 +152,6 @@
   "Never synced": "Sinxronlanmagan",
   "Account": "Hisob",
   "Sign In": "Kirish",
-  "Auto Upload Books to Cloud": "Kitoblarni bulutga avtomatik yuklash",
   "Auto Import on File Open": "Fayl ochilganda avtomatik import qilish",
   "Open Last Book on Start": "Ishga tushishda oxirgi kitobni ochish",
   "Check Updates on Start": "Ishga tushishda yangilanishlarni tekshirish",
@@ -1935,5 +1934,6 @@
   "Show translation": "Tarjimani ko'rsatish",
   "Show original": "Aslini ko'rsatish",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Butun dunyo — sahna, va barcha erkagu ayol faqat aktyorlardir; ularning o‘z chiqishlari va kirishlari bor, va inson umri davomida ko‘p rollarni o‘ynaydi.",
-  "— William Shakespeare, As You Like It": "— Uilyam Shekspir, Xohishingizga ko‘ra"
+  "— William Shakespeare, As You Like It": "— Uilyam Shekspir, Xohishingizga ko‘ra",
+  "Failed to download and install update": "Yangilanishni yuklab olish va o'rnatishda xatolik yuz berdi"
 }

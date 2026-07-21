@@ -72,7 +72,6 @@
   "Logged in": "පුරනගද්",
   "Account": "ගිණුම",
   "Sign In": "ඇතුල් වන්න",
-  "Auto Upload Books to Cloud": "ස්වයංක්‍රීයව cloud එකට පොත් උඩුගත කරන්න",
   "Auto Import on File Open": "ගොනුව විවෘත කිරීමේදී ස්වයංක්‍රීයව ආයාත කරන්න",
   "Open Last Book on Start": "ආරම්භයේදී අන්තිම පොත විවෘත කරන්න",
   "Check Updates on Start": "ආරම්භයේදී යාවත්කාලීන පරීක්ෂා කරන්න",
@@ -1935,5 +1934,6 @@
   "Show translation": "පරිවර්තනය පෙන්වන්න",
   "Show original": "මුල් පිටපත පෙන්වන්න",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "මුළු ලෝකයම වේදිකාවකි; සියලු පිරිමින් හා ගැහැනුන් හුදෙක් නළු නිළියෝ පමණි; ඔවුනට පිටවීම් හා පිවිසීම් ඇත, එක් මිනිසෙක් තම ජීවිත කාලයේදී භූමිකා රැසක් රඟ දක්වයි.",
-  "— William Shakespeare, As You Like It": "— විලියම් ෂේක්ස්පියර්, As You Like It"
+  "— William Shakespeare, As You Like It": "— විලියම් ෂේක්ස්පියර්, As You Like It",
+  "Failed to download and install update": "යාවත්කාලීනය බාගත කර ස්ථාපනය කිරීමට අසමත් විය"
 }

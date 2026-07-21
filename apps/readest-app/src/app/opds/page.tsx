@@ -628,13 +628,7 @@ export default function BrowserPage() {
                 console.error('OPDS: failed to update source map:', sourceMapError);
               }
             }
-            if (
-              user &&
-              book &&
-              !book.uploadedAt &&
-              settings.autoUpload &&
-              isReadestCloudStorageActive(settings)
-            ) {
+            if (user && book && !book.uploadedAt && isReadestCloudStorageActive(settings)) {
               setTimeout(() => {
                 transferManager.queueUpload(book);
               }, 3000);
@@ -652,7 +646,7 @@ export default function BrowserPage() {
         throw e;
       }
     },
-    [user, state.baseURL, appService, libraryLoaded, settings.autoUpload, catalogSourceId],
+    [user, state.baseURL, appService, libraryLoaded, catalogSourceId],
   );
 
   const handleStream = useCallback(

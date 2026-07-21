@@ -118,7 +118,6 @@
   "Book downloaded: {{title}}": "تم تنزيل الكتاب: {{title}}",
   "Failed to download book: {{title}}": "فشل تنزيل الكتاب: {{title}}",
   "Upload Book": "تحميل الكتاب",
-  "Auto Upload Books to Cloud": "تحميل الكتب تلقائيًا إلى السحابة",
   "Book deleted: {{title}}": "تم حذف الكتاب: {{title}}",
   "Failed to delete book: {{title}}": "فشل حذف الكتاب: {{title}}",
   "Check Updates on Start": "التحقق من التحديثات عند البدء",
@@ -2079,5 +2078,6 @@
   "Show translation": "إظهار الترجمة",
   "Show original": "إظهار الأصل",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "العالم كله مسرح، وكل الرجال والنساء مجرد ممثلين؛ لهم مخارجهم ومداخلهم، والمرء الواحد في زمنه يؤدي أدوارًا كثيرة.",
-  "— William Shakespeare, As You Like It": "— ويليام شكسبير، كما تشاء"
+  "— William Shakespeare, As You Like It": "— ويليام شكسبير، كما تشاء",
+  "Failed to download and install update": "فشل تنزيل التحديث وتثبيته"
 }

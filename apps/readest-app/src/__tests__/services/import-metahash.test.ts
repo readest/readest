@@ -179,7 +179,7 @@ describe('importBook metaHash deduplication', () => {
 
     expect(result).toBe(existingBook);
     expect(existingBook.hash).toBe('new-hash-456');
-    // uploadedAt cleared → autoUpload / manual upload re-pushes the new file.
+    // uploadedAt cleared → book sync / manual upload re-pushes the new file.
     expect(existingBook.uploadedAt).toBeNull();
   });
 

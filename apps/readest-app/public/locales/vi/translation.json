@@ -119,7 +119,6 @@
   "Book downloaded: {{title}}": "Sách đã tải về: {{title}}",
   "Failed to download book: {{title}}": "Không thể tải về sách: {{title}}",
   "Upload Book": "Tải lên sách",
-  "Auto Upload Books to Cloud": "Tự động tải sách lên đám mây",
   "Book deleted: {{title}}": "Sách đã xóa: {{title}}",
   "Failed to delete book: {{title}}": "Không thể xóa sách: {{title}}",
   "Check Updates on Start": "Kiểm tra cập nhật khi khởi động",
@@ -1899,5 +1898,6 @@
   "Show translation": "Hiển thị bản dịch",
   "Show original": "Hiển thị bản gốc",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Cả thế giới là một sân khấu, và tất cả đàn ông đàn bà chỉ là những diễn viên; họ có lúc ra và lúc vào, và một người trong đời mình đóng nhiều vai.",
-  "— William Shakespeare, As You Like It": "— William Shakespeare, Theo Ý Thích"
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Theo Ý Thích",
+  "Failed to download and install update": "Không thể tải xuống và cài đặt bản cập nhật"
 }

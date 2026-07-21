@@ -72,7 +72,6 @@
   "Logged in": "உள்நுழைந்துள்ளீர்கள்",
   "Account": "கணக்கு",
   "Sign In": "உள்நுழையவும்",
-  "Auto Upload Books to Cloud": "புத்தகங்களை cloud இல் தானாக பதிவேற்றவும்",
   "Auto Import on File Open": "கோப்பு திறக்கும்போது தானாக இறக்குமதி",
   "Open Last Book on Start": "தொடங்கும்போது கடைசி புத்தகத்தைத் திறக்கவும்",
   "Check Updates on Start": "தொடங்கும்போது புதுப்பிப்புகளைச் சரிபார்க்கவும்",
@@ -1935,5 +1934,6 @@
   "Show translation": "மொழிபெயர்ப்பைக் காட்டு",
   "Show original": "மூலத்தைக் காட்டு",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "உலகம் முழுவதும் ஒரு நாடக அரங்கம், ஆண்களும் பெண்களும் அனைவரும் நடிகர்களே; அவர்களுக்கு வெளியேற்றங்களும் நுழைவுகளும் உண்டு, ஒரு மனிதன் தன் வாழ்நாளில் பல பாத்திரங்களை ஏற்று நடிக்கிறான்.",
-  "— William Shakespeare, As You Like It": "— வில்லியம் ஷேக்ஸ்பியர், As You Like It"
+  "— William Shakespeare, As You Like It": "— வில்லியம் ஷேக்ஸ்பியர், As You Like It",
+  "Failed to download and install update": "புதுப்பிப்பைப் பதிவிறக்கி நிறுவ முடியவில்லை"
 }

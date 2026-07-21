@@ -646,11 +646,6 @@ const actionItems = [
     keywords: ['screen', 'wake', 'lock', 'awake', 'sleep', 'display'],
   },
   {
-    id: 'action.autoUpload',
-    labelKey: _('Auto Upload Books to Cloud'),
-    keywords: ['auto', 'upload', 'cloud', 'sync', 'backup'],
-  },
-  {
     id: 'action.reload',
     labelKey: _('Reload Page'),
     keywords: ['reload', 'refresh', 'page'],
@@ -679,7 +674,6 @@ export interface CommandRegistryOptions {
   toggleFullscreen: () => void;
   toggleAlwaysOnTop: () => void;
   toggleScreenWakeLock: () => void;
-  toggleAutoUpload: () => void;
   reloadPage: () => void;
   toggleOpenLastBooks: () => void;
   showAbout: () => void;
@@ -801,13 +795,6 @@ export const buildCommandRegistry = (options: CommandRegistryOptions): CommandIt
     createActionItem({
       id: 'action.screenWakeLock',
       action: options.toggleScreenWakeLock,
-    }),
-  );
-
-  items.push(
-    createActionItem({
-      id: 'action.autoUpload',
-      action: options.toggleAutoUpload,
     }),
   );
 

@@ -9,7 +9,6 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/window';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { saveSysSettings } from '@/helpers/settings';
-import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { SettingsPanelType } from '@/components/settings/SettingsDialog';
 import {
   CommandItem,
@@ -82,11 +81,6 @@ export const CommandPaletteProvider: React.FC<CommandPaletteProviderProps> = ({ 
     saveSysSettings(envConfig, 'screenWakeLock', newValue);
   }, [envConfig, settings.screenWakeLock]);
 
-  const toggleAutoUpload = useCallback(() => {
-    const newValue = !settings.autoUpload;
-    saveSysSettings(envConfig, 'autoUpload', newValue);
-  }, [envConfig, settings.autoUpload]);
-
   const reloadPage = useCallback(() => {
     window.location.reload();
   }, []);
@@ -117,39 +111,30 @@ export const CommandPaletteProvider: React.FC<CommandPaletteProviderProps> = ({ 
     [setSettingsDialogOpen, setActiveSettingsItemId],
   );
 
-  // Auto-upload targets Readest Cloud storage, which is not written to while
-  // a third-party provider is selected — hide the toggle then.
-  const readestStorageActive = isReadestCloudStorageActive(settings);
-
   // build command registry
   const commandItems = useMemo(
-    () => {
-      const items = buildCommandRegistry({
+    () =>
+      buildCommandRegistry({
         _,
         openSettingsPanel,
         toggleTheme,
         toggleFullscreen,
         toggleAlwaysOnTop,
         toggleScreenWakeLock,
-        toggleAutoUpload,
         reloadPage,
         toggleOpenLastBooks,
         showAbout,
         toggleTelemetry,
         isDesktop,
-      });
-      return readestStorageActive ? items : items.filter((i) => i.id !== 'action.autoUpload');
-    },
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      readestStorageActive,
       _,
       openSettingsPanel,
       toggleTheme,
       toggleFullscreen,
       toggleAlwaysOnTop,
       toggleScreenWakeLock,
-      toggleAutoUpload,
       reloadPage,
       toggleOpenLastBooks,
       showAbout,

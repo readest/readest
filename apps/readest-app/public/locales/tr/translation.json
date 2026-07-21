@@ -119,7 +119,6 @@
   "Book downloaded: {{title}}": "Kitap indirildi: {{title}}",
   "Failed to download book: {{title}}": "Kitap indirilemedi: {{title}}",
   "Upload Book": "Kitap Yükle",
-  "Auto Upload Books to Cloud": "Kitapları Otomatik Olarak Buluta Yükle",
   "Book deleted: {{title}}": "Kitap silindi: {{title}}",
   "Failed to delete book: {{title}}": "Kitap silinemedi: {{title}}",
   "Check Updates on Start": "Başlangıçta Güncellemeleri Kontrol Et",
@@ -1935,5 +1934,6 @@
   "Show translation": "Çeviriyi göster",
   "Show original": "Orijinali göster",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Bütün dünya bir sahne, ve bütün kadınlar, erkekler sadece birer oyuncu; girişleri ve çıkışları var, ve bir insan ömrü boyunca birçok rol oynuyor.",
-  "— William Shakespeare, As You Like It": "— William Shakespeare, Nasıl Hoşunuza Giderse"
+  "— William Shakespeare, As You Like It": "— William Shakespeare, Nasıl Hoşunuza Giderse",
+  "Failed to download and install update": "Güncelleme indirilip yüklenemedi"
 }

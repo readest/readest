@@ -73,16 +73,15 @@
     <release version="0.11.20" date="2026-07-20">
       <description>
         <ul>
-          <li>Reading: You can now subscribe to RSS, Atom, and JSON feeds and read them as periodical books in your library</li>
-          <li>Text-to-Speech: Read-aloud voices can now be downloaded per book for offline listening, alongside a redesigned player, new 0.8x and 0.85x speeds, and adjustable pauses between sentences and paragraphs</li>
+          <li>Text-to-Speech: Read-aloud voices can now be downloaded per book for offline listening, and adjustable pauses between sentences and paragraphs</li>
           <li>Text-to-Speech: Added CarPlay support on iOS and more reliable Android Auto controls so you can listen while driving</li>
-          <li>Sync: Added OneDrive as a cloud provider, you can now sync to several providers at once, and a wrong sync passphrase is caught and recoverable instead of failing silently</li>
-          <li>Reading: Added a right-edge swipe to change Auto Scroll speed, offline dictionary pronunciation, footnotes in Markdown books, and copying text now keeps its paragraph breaks</li>
+          <li>Sync: Added OneDrive as a cloud provider, you can now sync to several providers at once</li>
+          <li>Reading: Added a right-edge swipe to change Auto Scroll speed, footnotes in Markdown books, and copying text now keeps its paragraph breaks</li>
           <li>Reading: Smoother page-turn animations, steadier text selection on iOS, and a redesigned custom theme editor that stays readable on mobile</li>
           <li>Annotations: You can now copy a highlight or note together with a deep link that jumps straight back to its spot in the book</li>
           <li>Library: You can now sort and filter your shelf by time remaining, and the Recently Read shelf and widget show only books you're currently reading</li>
           <li>PDF: Fixed a crash that could happen when turning pages or zooming large PDFs on iOS</li>
-          <li>More: Kept paying subscribers from being downgraded by mistake, fixed OPDS catalogs disappearing after a restart, and improved 32-bit Android stability and app-lock privacy</li>
+          <li>More: Fixed OPDS catalogs disappearing after a restart, and improved 32-bit Android stability</li>
         </ul>
       </description>
     </release>

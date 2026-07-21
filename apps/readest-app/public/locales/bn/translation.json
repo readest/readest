@@ -72,7 +72,6 @@
   "Logged in": "লগ ইন করেছেন",
   "Account": "অ্যাকাউন্ট",
   "Sign In": "সাইন ইন",
-  "Auto Upload Books to Cloud": "স্বয়ংক্রিয় ক্লাউডে বই আপলোড",
   "Auto Import on File Open": "ফাইল খোলার সময় স্বয়ংক্রিয় আমদানি",
   "Open Last Book on Start": "শুরুতে শেষ বইটি খুলুন",
   "Check Updates on Start": "শুরুতে আপডেট চেক করুন",
@@ -1935,5 +1934,6 @@
   "Show translation": "অনুবাদ দেখান",
   "Show original": "মূল দেখান",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "সমগ্র বিশ্বই একটি রঙ্গমঞ্চ, আর সব নারী-পুরুষ কেবল অভিনেতা; তাদের আছে প্রস্থান আর প্রবেশ, আর একজন মানুষ তার জীবনে বহু ভূমিকায় অভিনয় করে।",
-  "— William Shakespeare, As You Like It": "— উইলিয়াম শেক্সপিয়ার, অ্যাজ ইউ লাইক ইট"
+  "— William Shakespeare, As You Like It": "— উইলিয়াম শেক্সপিয়ার, অ্যাজ ইউ লাইক ইট",
+  "Failed to download and install update": "আপডেট ডাউনলোড এবং ইনস্টল করতে ব্যর্থ হয়েছে"
 }

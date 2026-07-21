@@ -119,7 +119,6 @@
   "Book downloaded: {{title}}": "책 다운로드됨: {{title}}",
   "Failed to download book: {{title}}": "책 다운로드 실패: {{title}}",
   "Upload Book": "책 업로드",
-  "Auto Upload Books to Cloud": "책 자동으로 클라우드에 업로드",
   "Book deleted: {{title}}": "책 삭제됨: {{title}}",
   "Failed to delete book: {{title}}": "책 삭제 실패: {{title}}",
   "Check Updates on Start": "시작 시 업데이트 확인",
@@ -1899,5 +1898,6 @@
   "Show translation": "번역 표시",
   "Show original": "원문 표시",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "온 세상은 무대이고, 모든 남자와 여자는 한낱 배우일 뿐이다. 그들에게는 퇴장이 있고 등장이 있으며, 한 사람은 살아가는 동안 여러 역을 연기한다.",
-  "— William Shakespeare, As You Like It": "— 윌리엄 셰익스피어, 「뜻대로 하세요」"
+  "— William Shakespeare, As You Like It": "— 윌리엄 셰익스피어, 「뜻대로 하세요」",
+  "Failed to download and install update": "업데이트 다운로드 및 설치에 실패했습니다"
 }

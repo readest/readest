@@ -59,7 +59,6 @@ function createMockOptions(
     toggleFullscreen: vi.fn(),
     toggleAlwaysOnTop: vi.fn(),
     toggleScreenWakeLock: vi.fn(),
-    toggleAutoUpload: vi.fn(),
     reloadPage: vi.fn(),
     toggleOpenLastBooks: vi.fn(),
     showAbout: vi.fn(),
