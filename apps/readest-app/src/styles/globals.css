@@ -430,34 +430,25 @@ foliate-fxl {
   user-select: none;
 }
 
+/* Stolen from https://varundhawan.com/blog/2022/01/18/skeuomorphic-book-cover-css */
 .book-spine {
-  background-image:
-    linear-gradient(
-      180deg,
-      hsla(0, 0%, 95%, 0.2) 0%,
-      /* Top highlight */ hsla(0, 0%, 90%, 0.1) 1%,
-      /* Top highlight */ transparent 2%,
-      /* Main book surface */ transparent 50%,
-      /* Main book surface */ hsla(0, 0%, 25%, 0.15) 95%,
-      /* Bottom shadow */ hsla(0, 0%, 15%, 0.2) 100% /* Bottom edge dark */
-    ),
-    linear-gradient(
-      90deg,
-      hsla(0, 0%, 0%, 0.1) 0%,
-      /* Left binding shadow */ hsla(0, 0%, 20%, 0.2) 0.5%,
-      /* Dark transition */ hsla(0, 0%, 95%, 0.4) 0.8%,
-      /* Peak highlight */ hsla(0, 0%, 85%, 0.4) 2%,
-      /* Peak highlight */ hsla(0, 0%, 60%, 0.3) 2.8%,
-      /* Gradient highlight */ hsla(0, 0%, 40%, 0.2) 4.2%,
-      /* Shadow between highlights */ hsla(0, 0%, 70%, 0.15) 4.6%,
-      /* Second peak highlight */ hsla(0, 0%, 60%, 0.15) 5.4%,
-      /* Second gradient highlight */ hsla(0, 0%, 40%, 0.1) 6%,
-      /* Transition shadow */ transparent 88%,
-      /* Main book surface */ hsla(0, 0%, 30%, 0.1) 99%,
-      /* Right edge highlight */ hsla(0, 0%, 30%, 0.2) 99.5%,
-      /* Right edge shadow */ hsla(0, 0%, 10%, 0.2) 100% /* Right binding edge */
-    );
-  mask: linear-gradient(180deg, black 0%, rgba(0, 0, 0, 0.9) 50%, rgba(0, 0, 0, 0.5) 100%);
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.02) 0%,
+    rgba(0, 0, 0, 0.05) 0.75%,
+    rgba(255, 255, 255, 0.5) 1.0%,
+    rgba(255, 255, 255, 0.6) 1.3%,
+    rgba(255, 255, 255, 0.5) 1.4%,
+    rgba(255, 255, 255, 0.3) 1.5%,
+    rgba(255, 255, 255, 0.3) 2.4%,
+    rgba(0, 0, 0, 0.05) 2.7%,
+    rgba(0, 0, 0, 0.05) 3.5%,
+    rgba(255, 255, 255, 0.3) 4%,
+    rgba(255, 255, 255, 0.3) 4.5%,
+    rgba(244, 244, 244, 0.1) 5.4%,
+    rgba(244, 244, 244, 0.1) 99%,
+    rgba(144, 144, 144, 0.2) 100%
+  );
 }
 
 .visible-focus-inset-2:focus-visible {
