@@ -47,7 +47,7 @@
           pnpm
           nodejs_24
           clang
-          pkgs.rust-analyzer-nightly
+          rust-analyzer-nightly
           pkg-config
           xdg-utils
           self.formatter.${pkgs.stdenv.hostPlatform.system}
