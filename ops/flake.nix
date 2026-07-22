@@ -24,7 +24,6 @@
       let
         inherit (nixpkgs) lib;
         inherit (pkgs.lib) optionals;
-        inherit (pkgs.lib) optionalAttrs;
         inherit (pkgs.stdenv) isDarwin;
 
         pkgs = import nixpkgs {
@@ -36,95 +35,61 @@
           ];
         };
 
-        commonPackages = with pkgs; [
+        toolchain = with pkgs.fenix.complete; [
+          cargo
+          clippy
+          rust-src
+          rustc
+          rustfmt
+        ];
+
+        commonNativeBuildInupts = with pkgs; [
           pnpm
           nodejs_24
           clang
-          pkg-config
           pkgs.rust-analyzer-nightly
+          pkg-config
           xdg-utils
           self.formatter.${pkgs.stdenv.hostPlatform.system}
         ];
 
-        systemDeps = with pkgs; [
-          at-spi2-atk
-          atkmm
-          cairo
-          fontconfig
-          fontconfig.out
-          freetype
-          gdk-pixbuf
-          glib
+        commonBuildInputs = with pkgs; [
           gtk3
-          gtk4
-          harfbuzz
           librsvg
-          libsoup_3
           openssl
-          pango
           zlib
+          fontconfig
         ] ++ (optionals (!isDarwin) [
           webkitgtk_4_1
         ]) ++ (optionals isDarwin [
           darwin.libiconv
         ]);
-        getDev = pkg: if pkg ? dev then pkg.dev else pkg;
-        getLib = pkg: if pkg ? lib then pkg.lib else pkg;
-
-        # zlib stores zlib.pc in share/pkgconfig while everything else is stored in lib/pkgconfig
-        pkgConfigPath = lib.concatStringsSep ":" [
-          (lib.makeSearchPath "lib/pkgconfig" (map getDev systemDeps))
-          (lib.makeSearchPath "share/pkgconfig" (map getDev systemDeps))
-        ];
-
-        xdgPath = "${
-          lib.makeSearchPath "share/gsettings-schemas" [
-            pkgs.gsettings-desktop-schemas
-            pkgs.gtk3
-          ]
-        }:$XDG_DATA_DIRS";
-
-        libPath = lib.makeLibraryPath (map getLib systemDeps);
 
         mkCommonShell =
           { name
           , postInit ? ""
-          , extraPackages ? [ ]
+          , extraNativeBuildInputs ? [ ]
           , extraTargets ? [ ]
           , extraEnv ? { }
           }:
           pkgs.mkShell {
             inherit name;
-            packages =
-              commonPackages
-              ++ extraPackages
-              ++ [
-                (
-                  with pkgs.fenix;
-                  pkgs.fenix.combine [
-                    complete.cargo
-                    complete.clippy
-                    complete.rust-src
-                    complete.rustc
-                    complete.rustfmt
-                    extraTargets
-                  ]
-                )
-              ];
+
+            nativeBuildInputs = commonNativeBuildInupts ++ extraNativeBuildInputs;
+            buildInputs = commonBuildInputs ++ [
+              (
+                with pkgs.fenix;
+                combine [
+                  toolchain
+                  extraTargets
+                ]
+              )
+            ];
+
             env = {
-              PKG_CONFIG_PATH = pkgConfigPath;
-              RUSTFLAGS = "-C link-arg=-Wl,-rpath,${libPath}";
-              LIBRARY_PATH = libPath;
-              XDG_DATA_DIRS = xdgPath;
               GDK_BACKEND = "x11";
-            } // (optionalAttrs isDarwin {
-              RUSTFLAGS = ''"-L framework=$DEVSHELL_DIR/Library/Frameworks"'';
-              RUSTDOCFLAGS = ''"-L framework=$DEVSHELL_DIR/Library/Frameworks"'';
-              PATH = "${lib.makeBinPath [
-                  pkgs.xcbuild
-                  "${pkgs.xcbuild}/Toolchains/XcodeDefault.xctoolchain"
-                ]}:$PATH";
-            }) // extraEnv;
+            } // extraEnv;
+
             shellHook = ''
               git submodule update --init --recursive
               pnpm install
@@ -166,7 +131,7 @@
 
           ios = mkCommonShell {
             name = "readest-ios";
-            extraPackages = [ pkgs.cocoapods ];
+            extraNativeBuildInputs = [ pkgs.cocoapods ];
           };
 
           android = mkCommonShell rec {
@@ -191,7 +156,7 @@
               i686-linux-android.latest.rust-std
               x86_64-linux-android.latest.rust-std
             ];
-            extraPackages = [
+            extraNativeBuildInputs = [
               pkgs.android-sdk
               pkgs.gradle
               pkgs.jdk
