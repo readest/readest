@@ -89,6 +89,14 @@ export class PageCurlRenderer {
   private width = 0;
   private height = 0;
   private uniforms: Record<string, WebGLUniformLocation | null> = {};
+  private preserveDrawingBuffer: boolean;
+
+  constructor(options: { preserveDrawingBuffer?: boolean } = {}) {
+    // Standalone pixel/readback users retain the historical default. The
+    // captured-turn pipeline opts out because its idle surface can stay alive
+    // much longer and redraws before reveal.
+    this.preserveDrawingBuffer = options.preserveDrawingBuffer ?? true;
+  }
 
   /** Mount the overlay canvas covering `rect` (CSS px) inside `container`. */
   attach(container: HTMLElement, width: number, height: number, dpr = window.devicePixelRatio) {
@@ -108,13 +116,13 @@ export class PageCurlRenderer {
     container.appendChild(canvas);
     this.canvas = canvas;
 
-    // preserveDrawingBuffer keeps readPixels valid after the browser
-    // composites (readbacks otherwise silently return zeros past an await);
-    // one short-lived overlay per turn, so the extra buffer copy is cheap.
+    // preserveDrawingBuffer is only needed by readback callers. Long-lived
+    // prepared turn surfaces disable it to avoid retaining another full-size
+    // color buffer while idle.
     const gl = canvas.getContext('webgl', {
       alpha: true,
       premultipliedAlpha: true,
-      preserveDrawingBuffer: true,
+      preserveDrawingBuffer: this.preserveDrawingBuffer,
     });
     if (!gl) {
       this.dispose();
@@ -287,6 +295,11 @@ export class PageCurlRenderer {
     const data = new Uint8Array(4);
     gl.readPixels(x, canvas.height - 1 - y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, data);
     return [data[0]!, data[1]!, data[2]!, data[3]!];
+  }
+
+  /** An idle prepared surface may lose its WebGL context under memory pressure. */
+  isUsable() {
+    return !!this.gl && !this.gl.isContextLost();
   }
 
   dispose() {

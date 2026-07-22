@@ -17,6 +17,7 @@ interface ModalPortalProps {
 const ModalPortal: React.FC<ModalPortalProps> = ({ children, showOverlay = true }) => {
   return ReactDOM.createPortal(
     <div
+      data-capture-blocking-overlay='true'
       className={clsx(
         'fixed inset-0 isolate z-[120] flex items-center justify-center',
         showOverlay && 'bg-black bg-opacity-50',

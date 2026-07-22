@@ -149,6 +149,8 @@ const Popup = ({
       <div
         id='popup-container'
         ref={containerRef}
+        aria-hidden={!isOpen}
+        data-capture-blocking-overlay={isOpen ? 'true' : undefined}
         className={clsx(
           'popup-container bg-base-300 absolute z-50 rounded-lg font-sans',
           'eink:border eink:border-base-content',
