@@ -1,5 +1,5 @@
 import { CurlGrab, PageCurlRenderer } from '@/utils/pageCurl';
-import { PageSlideRenderer } from '@/utils/pageSlide';
+import { PageSlideRenderer, type PageSlideSettleOptions } from '@/utils/pageSlide';
 
 /**
  * Captured page-turn orchestration (readest#555, Tauri platforms).
@@ -14,8 +14,9 @@ import { PageSlideRenderer } from '@/utils/pageSlide';
  *   navigate instantly under it → animate/scrub the turn → dispose.
  *
  * Two overlay renderers share the pipeline: the WebGL mesh curl, and the
- * flat slide for engines where the View Transitions slide is unavailable
- * (iOS 18 WebKit crashes on it; older engines lack the API).
+ * flat slide. Mobile Tauri keeps both here so the decoded outgoing page can
+ * be prepared before a gesture; web and desktop builds can use browser View
+ * Transitions for the slide.
  *
  * Backward turns run the same pipeline mirrored: the current page curls or
  * slides away from the spine edge, revealing the previous page underneath —
@@ -35,7 +36,7 @@ export interface CapturedTurnHost {
    * like a physical sheet, matching Apple Books.
    */
   getContentRect: () => DOMRect | null;
-  /** Native webview snapshot of `rect`, as PNG bytes. */
+  /** Native webview snapshot of `rect`, as compressed image bytes. */
   capture: (rect: { x: number; y: number; width: number; height: number }) => Promise<ArrayBuffer>;
   /**
    * Theme paper (background color + texture) drawn on the back of the
@@ -61,12 +62,37 @@ interface TurnRenderer {
   setTexture(source: ImageBitmap): void;
   setBackdrop?(source: TexImageSource): void;
   render(progress: number, grab: CurlGrab, rtl: boolean): void;
+  animateSettle?(options: PageSlideSettleOptions): Animation | null;
   dispose(): void;
 }
 
 interface DragSession {
   progress: number;
   grabY: number;
+}
+
+interface CaptureRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface PreparedCapture {
+  bitmap: ImageBitmap;
+  rect: CaptureRect;
+  hostElement: HTMLElement;
+  dpr: number;
+  /** `undefined` means the warm-up did not request curl paper. */
+  backdrop: TexImageSource | null | undefined;
+}
+
+interface PreparingCapture {
+  epoch: number;
+  rect: CaptureRect;
+  hostElement: HTMLElement;
+  dpr: number;
+  promise: Promise<PreparedCapture | null>;
 }
 
 interface ActiveTurn {
@@ -81,11 +107,40 @@ interface ActiveTurn {
   /** Buffered input and identity token, absent for programmatic turns. */
   dragSession: DragSession | null;
   raf: number;
+  animation: Animation | null;
   /** Resolves when the play-out animation finishes or is interrupted. */
   finish: (() => void) | null;
 }
 
 const easeInOutQuad = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (1 - t) * (1 - t) * 2);
+const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
+const RELEASE_SETTLE_CONFIG = {
+  slide: { minSpeed: 0.2, maxSpeed: 1, maxPlaybackRate: 2 },
+  curl: { minSpeed: 0.3, maxSpeed: 1.5, maxPlaybackRate: 1.5 },
+} as const satisfies Record<
+  CapturedTurnStyle,
+  { minSpeed: number; maxSpeed: number; maxPlaybackRate: number }
+>;
+const MIN_BOOSTED_SETTLE_MS = 90;
+// easeOutCubic starts with a normalized slope of 3. Limit its blend so a
+// maximum flick starts near the settle's average speed instead of shooting
+// forward at three times that already-boosted rate.
+const MAX_RELEASE_EASE_OUT_BLEND = 1 / 3;
+
+const captureRectFrom = (rect: DOMRect): CaptureRect => ({
+  x: rect.x,
+  y: rect.y,
+  width: rect.width,
+  height: rect.height,
+});
+
+const sameCaptureRect = (a: CaptureRect, b: CaptureRect) =>
+  Math.abs(a.x - b.x) < 0.5 &&
+  Math.abs(a.y - b.y) < 0.5 &&
+  Math.abs(a.width - b.width) < 0.5 &&
+  Math.abs(a.height - b.height) < 0.5;
+
+const currentDpr = () => globalThis.devicePixelRatio || 1;
 
 export class CapturedPageTurn {
   #host: CapturedTurnHost;
@@ -93,11 +148,19 @@ export class CapturedPageTurn {
   #active: ActiveTurn | null = null;
   /** Latest sample and identity for the currently open finger drag. */
   #dragSession: DragSession | null = null;
+  /** Drag lifetimes, including capture/settle after touchend cleared #dragSession. */
+  #busyDragSessions = new Set<DragSession>();
   #disposed = false;
   /** Serializes drag setup/settle and accepted programmatic turns. */
   #pending: Promise<unknown> = Promise.resolve();
   /** True while a programmatic `turn()` is running, gating concurrent ones. */
   #running = false;
+  /** One decoded, idle-time snapshot of the currently visible reader cell. */
+  #preparedCapture: PreparedCapture | null = null;
+  /** Native capture already in flight; a turn can reuse it instead of restarting. */
+  #preparingCapture: PreparingCapture | null = null;
+  /** Invalidates both completed and in-flight prepared captures. */
+  #captureEpoch = 0;
 
   constructor(host: CapturedTurnHost, options: { duration?: number } = {}) {
     this.#host = host;
@@ -106,6 +169,39 @@ export class CapturedPageTurn {
 
   get active(): boolean {
     return this.#active !== null;
+  }
+
+  /**
+   * Decode the current reader cell ahead of the next turn. This intentionally
+   * stops at an ImageBitmap: keeping a full WebGL renderer resident for every
+   * open book costs considerably more GPU memory and risks context eviction.
+   *
+   * Warm-up failures are non-fatal. A later turn simply runs the established
+   * capture path and reports a real platform failure through that path.
+   */
+  async prepareCapture(style: CapturedTurnStyle = 'curl'): Promise<boolean> {
+    if (this.#disposed || this.#active || this.#running || this.#busyDragSessions.size) {
+      return false;
+    }
+    const hostElement = this.#host.getHostElement();
+    const rect = this.#host.getContentRect();
+    if (!hostElement || !rect || rect.width <= 0 || rect.height <= 0) return false;
+    try {
+      return !!(await this.#ensurePreparedCapture(
+        hostElement,
+        captureRectFrom(rect),
+        currentDpr(),
+        style,
+      ));
+    } catch {
+      return false;
+    }
+  }
+
+  /** Drop a stale idle snapshot; an in-flight result is discarded on arrival. */
+  invalidatePreparedCapture() {
+    this.#captureEpoch++;
+    this.#closePreparedCapture();
   }
 
   /**
@@ -162,15 +258,21 @@ export class CapturedPageTurn {
     rtl: boolean,
     style: CapturedTurnStyle = 'curl',
   ): Promise<boolean> {
+    // A finger that lands while a programmatic capture is running belongs to
+    // that navigation epoch. Do not queue a fresh captured turn behind it;
+    // the hook latches the touch until the next touchstart as well.
+    if (this.#running) return false;
     // A replacement drag can arrive when a platform drops the previous
     // touchend. Cancel that specific request before queueing the new one;
     // token matching keeps the synthesized cancellation on its own overlay.
     this.#cancelOpenDrag();
     const session: DragSession = { progress: 0, grabY: 0.5 };
     this.#dragSession = session;
+    this.#busyDragSessions.add(session);
     const run = this.#pending.then(async () => {
       if (this.#disposed) {
         if (this.#dragSession === session) this.#dragSession = null;
+        this.#busyDragSessions.delete(session);
         return false;
       }
       this.#finishActive();
@@ -178,6 +280,7 @@ export class CapturedPageTurn {
         const active = await this.#setUp(forward, rtl, style, session);
         if (!active) {
           if (this.#dragSession === session) this.#dragSession = null;
+          this.#busyDragSessions.delete(session);
           return false;
         }
         // A sample may have arrived before native capture produced an active
@@ -187,6 +290,7 @@ export class CapturedPageTurn {
         return true;
       } catch (error) {
         if (this.#dragSession === session) this.#dragSession = null;
+        this.#busyDragSessions.delete(session);
         throw error;
       }
     });
@@ -211,7 +315,8 @@ export class CapturedPageTurn {
    * Release the drag: play out to the end (commit) or animate back flat and
    * instantly turn the live view back (cancel) — the overlay shows the old
    * page flat while the view underneath returns, so no wrong page ever
-   * flashes.
+   * flashes. `releaseVelocity` is the recent signed finger velocity in
+   * CSS px/ms; it only accelerates a settle when it points toward the target.
    *
    * Serialized on the same chain as beginDrag: the release can arrive while
    * the drag's async capture is still in flight (after an instant-highlight
@@ -220,27 +325,33 @@ export class CapturedPageTurn {
    * that drag stranded — overlay frozen at progress 0 over an already-turned
    * live view, making every following turn off by one page.
    */
-  async endDrag(commit: boolean) {
+  async endDrag(commit: boolean, releaseVelocity = 0) {
     const session = this.#dragSession;
     if (!session) return;
     // Seal the released sample immediately. Late touchmoves cannot mutate a
     // page that has already started committing or returning, while a new
     // beginDrag can safely install its own independent input buffer.
     this.#dragSession = null;
-    return this.#endDrag(session, commit);
+    return this.#endDrag(session, commit, releaseVelocity);
   }
 
-  #endDrag(session: DragSession, commit: boolean) {
+  #endDrag(session: DragSession, commit: boolean, releaseVelocity = 0) {
     const run = this.#pending.then(async () => {
-      if (this.#disposed) return;
+      if (this.#disposed) {
+        this.#busyDragSessions.delete(session);
+        return;
+      }
       const active = this.#active;
-      if (!active || active.dragSession !== session) return;
+      if (!active || active.dragSession !== session) {
+        this.#busyDragSessions.delete(session);
+        return;
+      }
       try {
         this.#applyDragSession(active, session);
         if (commit) {
-          await this.#playTo(active, 1);
+          await this.#playTo(active, 1, releaseVelocity);
         } else {
-          await this.#playTo(active, 0);
+          await this.#playTo(active, 0, releaseVelocity);
           if (this.#active === active) {
             let navigationError: unknown;
             try {
@@ -258,6 +369,7 @@ export class CapturedPageTurn {
         }
       } finally {
         if (this.#active === active) this.#disposeActive();
+        this.#busyDragSessions.delete(session);
       }
     });
     this.#pending = run.catch(() => {});
@@ -287,6 +399,8 @@ export class CapturedPageTurn {
     }
     this.#finishActive();
     this.#dragSession = null;
+    this.#busyDragSessions.clear();
+    this.invalidatePreparedCapture();
   }
 
   async #setUp(
@@ -296,32 +410,82 @@ export class CapturedPageTurn {
     dragSession: DragSession | null = null,
   ): Promise<ActiveTurn | null> {
     if (this.#disposed) return null;
-    const hostElement = this.#host.getHostElement();
-    const rect = this.#host.getContentRect();
+    let hostElement = this.#host.getHostElement();
+    let rect = this.#host.getContentRect();
     if (!hostElement || !rect || rect.width <= 0 || rect.height <= 0) return null;
 
     await this.#host.onBeforeCapture?.(style);
     if (this.#disposed) return null;
-    // Only the curl shows the back of the page; fetch its paper while the
-    // native capture is in flight so it never delays the turn.
-    const backdropPromise =
-      style === 'curl' && this.#host.getBackdrop
-        ? Promise.resolve()
-            .then(() => this.#host.getBackdrop!())
-            .catch(() => null)
+    hostElement = this.#host.getHostElement();
+    rect = this.#host.getContentRect();
+    if (!hostElement || !rect || rect.width <= 0 || rect.height <= 0) return null;
+    let captureRect = captureRectFrom(rect);
+    let dpr = currentDpr();
+    let prepared = this.#takePreparedCapture(hostElement, captureRect, dpr);
+    if (
+      !prepared &&
+      this.#preparingCapture?.epoch === this.#captureEpoch &&
+      this.#preparingCapture.hostElement === hostElement &&
+      this.#preparingCapture.dpr === dpr &&
+      sameCaptureRect(this.#preparingCapture.rect, captureRect)
+    ) {
+      try {
+        await this.#preparingCapture.promise;
+      } catch {
+        // A speculative warm-up must never prevent the normal capture path.
+      }
+      if (this.#disposed) return null;
+      const currentHostElement = this.#host.getHostElement();
+      const currentRect = this.#host.getContentRect();
+      const currentCaptureRect = currentRect ? captureRectFrom(currentRect) : null;
+      const currentCaptureDpr = currentDpr();
+      if (
+        !currentHostElement ||
+        !currentRect ||
+        !currentCaptureRect ||
+        currentRect.width <= 0 ||
+        currentRect.height <= 0
+      ) {
+        return null;
+      }
+      if (
+        currentHostElement !== hostElement ||
+        currentCaptureDpr !== dpr ||
+        !sameCaptureRect(currentCaptureRect, captureRect)
+      ) {
+        // The prepared frame finished after a rotation or layout change. It
+        // is no longer safe to position over the live reader; recapture the
+        // current target instead of using either the old bitmap or old rect.
+        this.invalidatePreparedCapture();
+        hostElement = currentHostElement;
+        rect = currentRect;
+        captureRect = currentCaptureRect;
+        dpr = currentCaptureDpr;
+      } else {
+        prepared = this.#takePreparedCapture(hostElement, captureRect, dpr);
+      }
+    }
+    if (!prepared) {
+      prepared = await this.#capturePrepared(
+        hostElement,
+        captureRect,
+        dpr,
+        style,
+        this.#captureEpoch,
+        false,
+      );
+    }
+    if (!prepared || this.#disposed) {
+      prepared?.bitmap.close();
+      return null;
+    }
+    const bitmap = prepared.bitmap;
+    const backdrop =
+      style === 'curl'
+        ? prepared.backdrop !== undefined
+          ? prepared.backdrop
+          : await this.#getBackdrop()
         : null;
-    const image = await this.#host.capture({
-      x: rect.x,
-      y: rect.y,
-      width: rect.width,
-      height: rect.height,
-    });
-    if (this.#disposed) return null;
-    // No mime: the platforms return different formats (PNG on iOS/macOS,
-    // JPEG on Android where PNG encoding took ~1.5s per turn) and the
-    // decoder sniffs the actual format from the bytes.
-    const bitmap = await createImageBitmap(new Blob([image]));
-    const backdrop = backdropPromise ? await backdropPromise : null;
     if (this.#disposed) {
       bitmap.close();
       return null;
@@ -368,6 +532,7 @@ export class CapturedPageTurn {
       grabY: 0.5,
       dragSession,
       raf: 0,
+      animation: null,
       finish: null,
     };
     this.#active = active;
@@ -408,28 +573,216 @@ export class CapturedPageTurn {
     active.renderer.render(active.progress, this.#grab(active), active.rendererRtl);
   }
 
+  async #ensurePreparedCapture(
+    hostElement: HTMLElement,
+    rect: CaptureRect,
+    dpr: number,
+    style: CapturedTurnStyle,
+  ): Promise<PreparedCapture | null> {
+    const cached = this.#preparedCapture;
+    if (
+      cached &&
+      cached.hostElement === hostElement &&
+      cached.dpr === dpr &&
+      sameCaptureRect(cached.rect, rect)
+    ) {
+      if (style !== 'curl' || cached.backdrop !== undefined) return cached;
+      cached.backdrop = await this.#getBackdrop();
+      return this.#preparedCapture === cached ? cached : null;
+    }
+    if (cached) this.#closePreparedCapture();
+
+    const epoch = this.#captureEpoch;
+    const pending = this.#preparingCapture;
+    if (pending) {
+      if (
+        pending.epoch === epoch &&
+        pending.hostElement === hostElement &&
+        pending.dpr === dpr &&
+        sameCaptureRect(pending.rect, rect)
+      ) {
+        const result = await pending.promise;
+        if (result && style === 'curl' && result.backdrop === undefined) {
+          result.backdrop = await this.#getBackdrop();
+        }
+        return this.#preparedCapture === result ? result : null;
+      }
+      try {
+        await pending.promise;
+      } catch {
+        // Its epoch or geometry is stale; create the requested frame below.
+      }
+      if (this.#disposed || epoch !== this.#captureEpoch) return null;
+    }
+
+    const promise = this.#capturePrepared(hostElement, rect, dpr, style, epoch).then((result) => {
+      if (!result) return null;
+      if (this.#disposed || epoch !== this.#captureEpoch) {
+        result.bitmap.close();
+        return null;
+      }
+      this.#closePreparedCapture();
+      this.#preparedCapture = result;
+      return result;
+    });
+    const preparing: PreparingCapture = { epoch, rect, hostElement, dpr, promise };
+    this.#preparingCapture = preparing;
+    try {
+      return await promise;
+    } finally {
+      if (this.#preparingCapture === preparing) this.#preparingCapture = null;
+    }
+  }
+
+  async #capturePrepared(
+    hostElement: HTMLElement,
+    rect: CaptureRect,
+    dpr: number,
+    style: CapturedTurnStyle,
+    epoch: number,
+    discardWhenStale = true,
+  ): Promise<PreparedCapture | null> {
+    const backdropPromise = style === 'curl' ? this.#getBackdrop() : Promise.resolve(undefined);
+    const image = await this.#host.capture(rect);
+    if (this.#disposed || (discardWhenStale && epoch !== this.#captureEpoch)) return null;
+    // No mime: the platforms return different formats (PNG on macOS,
+    // JPEG on iOS/Android) and the decoder sniffs the bytes.
+    const bitmap = await createImageBitmap(new Blob([image]));
+    const backdrop = await backdropPromise;
+    if (this.#disposed || (discardWhenStale && epoch !== this.#captureEpoch)) {
+      bitmap.close();
+      return null;
+    }
+    return { bitmap, rect, hostElement, dpr, backdrop };
+  }
+
+  #getBackdrop(): Promise<TexImageSource | null> {
+    if (!this.#host.getBackdrop) return Promise.resolve(null);
+    return Promise.resolve()
+      .then(() => this.#host.getBackdrop!())
+      .catch(() => null);
+  }
+
+  #takePreparedCapture(
+    hostElement: HTMLElement,
+    rect: CaptureRect,
+    dpr: number,
+  ): PreparedCapture | null {
+    const prepared = this.#preparedCapture;
+    if (!prepared) return null;
+    if (
+      prepared.hostElement !== hostElement ||
+      prepared.dpr !== dpr ||
+      !sameCaptureRect(prepared.rect, rect)
+    ) {
+      this.#closePreparedCapture();
+      return null;
+    }
+    this.#preparedCapture = null;
+    return prepared;
+  }
+
+  #closePreparedCapture() {
+    this.#preparedCapture?.bitmap.close();
+    this.#preparedCapture = null;
+  }
+
   /** Animate the active turn from its current progress to `target`. */
-  #playTo(active: ActiveTurn, target: number): Promise<void> {
+  #playTo(active: ActiveTurn, target: number, releaseVelocity = 0): Promise<void> {
     return new Promise((resolve) => {
       const from = active.progress;
       const span = target - from;
       if (span === 0) return resolve();
-      const duration = Math.max(1, this.#duration * Math.abs(span));
-      const start = performance.now();
+      const towardTarget = releaseVelocity * span > 0;
+      const { minSpeed, maxSpeed, maxPlaybackRate } = RELEASE_SETTLE_CONFIG[active.style];
+      const speedRange = maxSpeed - minSpeed;
+      const releaseBoost = towardTarget
+        ? Math.max(0, Math.min(1, (Math.abs(releaseVelocity) - minSpeed) / speedRange))
+        : 0;
+      const playbackRate = 1 + (maxPlaybackRate - 1) * releaseBoost;
+      const baseDuration = Math.max(1, this.#duration * Math.abs(span));
+      const duration =
+        releaseBoost > 0
+          ? Math.max(Math.min(MIN_BOOSTED_SETTLE_MS, baseDuration), baseDuration / playbackRate)
+          : baseDuration;
+      const easeOutBlend = releaseBoost * MAX_RELEASE_EASE_OUT_BLEND;
+      const easing = (t: number) =>
+        easeInOutQuad(t) * (1 - easeOutBlend) + easeOutCubic(t) * easeOutBlend;
       active.finish = resolve;
-      const step = (now: number) => {
-        if (this.#active !== active) return resolve();
-        const t = Math.min(1, (now - start) / duration);
-        active.progress = from + span * easeInOutQuad(t);
-        active.renderer.render(active.progress, this.#grab(active), active.rendererRtl);
-        if (t < 1) {
-          active.raf = requestAnimationFrame(step);
-        } else {
-          active.finish = null;
-          resolve();
-        }
+
+      const runRafFallback = () => {
+        const start = performance.now();
+        const step = (now: number) => {
+          if (this.#active !== active) return resolve();
+          const t = Math.min(1, (now - start) / duration);
+          active.progress = from + span * easing(t);
+          active.renderer.render(active.progress, this.#grab(active), active.rendererRtl);
+          if (t < 1) {
+            active.raf = requestAnimationFrame(step);
+          } else {
+            active.finish = null;
+            resolve();
+          }
+        };
+        active.raf = requestAnimationFrame(step);
       };
-      active.raf = requestAnimationFrame(step);
+
+      let animation: Animation | null = null;
+      try {
+        animation =
+          active.renderer.animateSettle?.({
+            from,
+            target,
+            rtl: active.rendererRtl,
+            duration,
+            easing,
+          }) ?? null;
+      } catch {
+        // A partial/buggy WAAPI implementation falls back to the established
+        // requestAnimationFrame path instead of breaking the turn.
+      }
+      if (!animation) return runRafFallback();
+
+      const settleAnimation = animation;
+      active.animation = settleAnimation;
+      let settled = false;
+      const clearHandlers = () => {
+        settleAnimation.onfinish = null;
+        settleAnimation.oncancel = null;
+      };
+      const finishSettle = () => {
+        if (settled) return;
+        settled = true;
+        if (this.#active !== active || active.animation !== settleAnimation) return resolve();
+        // Persist the terminal transform before removing the fill effect. This
+        // is essential on cancellation: the old page must remain flat while
+        // the live paginator and toolbar are restored underneath it.
+        active.progress = target;
+        active.renderer.render(target, this.#grab(active), active.rendererRtl);
+        active.animation = null;
+        active.finish = null;
+        clearHandlers();
+        settleAnimation.cancel();
+        resolve();
+      };
+      const cancelSettle = () => {
+        if (settled) return;
+        settled = true;
+        if (this.#active !== active || active.animation !== settleAnimation) return resolve();
+        active.animation = null;
+        clearHandlers();
+        runRafFallback();
+      };
+      settleAnimation.onfinish = finishSettle;
+      settleAnimation.oncancel = cancelSettle;
+      // Some older WebViews have dropped finish events while still resolving
+      // Animation.finished. Listen to both channels through the same idempotent
+      // handlers; partial implementations can keep using the event callbacks.
+      try {
+        void settleAnimation.finished.then(finishSettle, cancelSettle);
+      } catch {
+        // `finished` is not essential when onfinish/oncancel are available.
+      }
     });
   }
 
@@ -441,8 +794,16 @@ export class CapturedPageTurn {
     if (active.dragSession && this.#dragSession === active.dragSession) {
       this.#dragSession = null;
     }
+    const finish = active.finish;
+    active.finish = null;
+    if (active.animation) {
+      active.animation.onfinish = null;
+      active.animation.oncancel = null;
+      active.animation.cancel();
+      active.animation = null;
+    }
     cancelAnimationFrame(active.raf);
-    active.finish?.();
+    finish?.();
     active.renderer.dispose();
     active.overlay.remove();
   }

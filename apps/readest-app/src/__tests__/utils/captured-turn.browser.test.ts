@@ -32,6 +32,7 @@ describe('CapturedPageTurn (browser)', () => {
   let controller: CapturedPageTurn;
 
   const contentRect = () => new DOMRect(10, 20, W, H);
+  const slideSheet = () => host.querySelector<HTMLElement>('[data-page-slide-sheet]')!;
 
   beforeEach(async () => {
     host = document.createElement('div');
@@ -112,6 +113,42 @@ describe('CapturedPageTurn (browser)', () => {
     prepared.dispose();
   });
 
+  it('uses a prepared decoded snapshot without recapturing at turn time', async () => {
+    expect(await controller.prepareCapture('slide')).toBe(true);
+    expect(capture).toHaveBeenCalledTimes(1);
+
+    expect(await controller.turn(true, false, 'slide')).toBe(true);
+    expect(capture).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to a live capture after the prepared snapshot is invalidated', async () => {
+    expect(await controller.prepareCapture('slide')).toBe(true);
+    controller.invalidatePreparedCapture();
+
+    expect(await controller.turn(true, false, 'slide')).toBe(true);
+    expect(capture).toHaveBeenCalledTimes(2);
+  });
+
+  it('lets a turn reuse a matching warm-up already in flight', async () => {
+    const png = await makePngBuffer();
+    let resolveCapture!: (image: ArrayBuffer) => void;
+    capture.mockImplementationOnce(
+      () =>
+        new Promise<ArrayBuffer>((resolve) => {
+          resolveCapture = resolve;
+        }),
+    );
+
+    const warming = controller.prepareCapture('slide');
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledOnce());
+    const turning = controller.turn(true, false, 'slide');
+    resolveCapture(png);
+
+    expect(await warming).toBe(true);
+    expect(await turning).toBe(true);
+    expect(capture).toHaveBeenCalledTimes(1);
+  });
+
   it('mounts the overlay canvas over the content box while animating', async () => {
     // Slow animation so the overlay is reliably observable mid-turn.
     const slow = new CapturedPageTurn(
@@ -152,7 +189,7 @@ describe('CapturedPageTurn (browser)', () => {
     // theme paper — the hardcoded whitened back would read near-white here.
     const canvas = host.querySelector('canvas')!;
     const gl = canvas.getContext('webgl')!;
-    const dpr = window.devicePixelRatio;
+    const dpr = canvas.width / W;
     const px = new Uint8Array(4);
     gl.readPixels(
       Math.round(100 * dpr),
@@ -194,10 +231,14 @@ describe('CapturedPageTurn (browser)', () => {
       expect(host.querySelector('canvas')).not.toBeNull();
     });
     const canvas = host.querySelector('canvas')!;
+    const sheet = slideSheet();
     // The overlay clips the exiting page to the content box like the VT slide.
-    expect(canvas.parentElement!.style.overflow).toBe('hidden');
+    expect(sheet.parentElement!.style.overflow).toBe('hidden');
+    expect(sheet.style.willChange).toBe('transform');
+    expect(canvas.style.boxShadow).toBe('');
+    expect(host.querySelector<HTMLElement>('[data-page-slide-shadow]')?.style.left).toBe('100%');
     await vi.waitFor(() => {
-      const shift = new DOMMatrixReadOnly(getComputedStyle(canvas).transform).e;
+      const shift = new DOMMatrixReadOnly(getComputedStyle(sheet).transform).e;
       expect(shift).toBeLessThan(0);
     });
     slow.dispose();
@@ -214,9 +255,10 @@ describe('CapturedPageTurn (browser)', () => {
     await vi.waitFor(() => {
       expect(host.querySelector('canvas')).not.toBeNull();
     });
-    const canvas = host.querySelector('canvas')!;
+    const sheet = slideSheet();
+    expect(host.querySelector<HTMLElement>('[data-page-slide-shadow]')?.style.left).toBe('-28px');
     await vi.waitFor(() => {
-      const shift = new DOMMatrixReadOnly(getComputedStyle(canvas).transform).e;
+      const shift = new DOMMatrixReadOnly(getComputedStyle(sheet).transform).e;
       expect(shift).toBeGreaterThan(0);
     });
     slow.dispose();
@@ -292,6 +334,17 @@ describe('CapturedPageTurn (browser)', () => {
     expect(host.querySelector('canvas')).toBeNull();
   });
 
+  it('does not queue a finger drag behind a running programmatic turn', async () => {
+    const turning = controller.turn(true, false);
+
+    await expect(controller.beginDrag(true, false)).resolves.toBe(false);
+    await turning;
+
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith(true);
+    expect(host.querySelector('canvas')).toBeNull();
+  });
+
   it('runs sequential programmatic turns once the previous one settles', async () => {
     expect(await controller.turn(true, false)).toBe(true);
     expect(await controller.turn(true, false)).toBe(true);
@@ -320,6 +373,9 @@ describe('CapturedPageTurn (browser)', () => {
       expect(cancelledStyle).toBe(style);
       expect(navigate).toHaveBeenNthCalledWith(2, false);
       expect(host.querySelector('canvas')).not.toBeNull();
+      if (cancelledStyle === 'slide') {
+        expect(new DOMMatrixReadOnly(getComputedStyle(slideSheet()).transform).e).toBeCloseTo(0, 5);
+      }
     });
     const cancellable = new CapturedPageTurn({
       getHostElement: () => host,
@@ -341,12 +397,134 @@ describe('CapturedPageTurn (browser)', () => {
   it('scrubs a slide drag and cleans up on commit', async () => {
     const began = await controller.beginDrag(true, false, 'slide');
     expect(began).toBe(true);
-    const canvas = host.querySelector('canvas')!;
+    const sheet = slideSheet();
     controller.moveDrag(0.5, 0.5);
-    expect(new DOMMatrixReadOnly(getComputedStyle(canvas).transform).e).toBeCloseTo(-W / 2, 0);
+    expect(new DOMMatrixReadOnly(getComputedStyle(sheet).transform).e).toBeCloseTo(-W / 2, 0);
     await controller.endDrag(true);
     expect(navigate).toHaveBeenCalledTimes(1);
     expect(host.querySelector('canvas')).toBeNull();
+  });
+
+  it('keeps Curl settle on the requestAnimationFrame path', async () => {
+    const paced = new CapturedPageTurn(
+      { getHostElement: () => host, getContentRect: contentRect, capture, navigate },
+      { duration: 1000 },
+    );
+    expect(await paced.beginDrag(true, false, 'curl')).toBe(true);
+    paced.moveDrag(0.5, 0.5);
+
+    const frames: FrameRequestCallback[] = [];
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    const now = vi.spyOn(performance, 'now').mockReturnValue(0);
+    try {
+      const ending = paced.endDrag(true, 1.5);
+      await vi.waitFor(() => expect(frames).toHaveLength(1));
+
+      const expectedDuration = 500 / 1.5;
+      frames.shift()!(expectedDuration - 1);
+      expect(paced.active).toBe(true);
+      expect(frames).toHaveLength(1);
+
+      frames.shift()!(expectedDuration);
+      await ending;
+      expect(paced.active).toBe(false);
+    } finally {
+      paced.dispose();
+      raf.mockRestore();
+      now.mockRestore();
+    }
+  });
+
+  it.each([
+    { progress: 0.5, velocity: 1.5, commit: true, expectedDuration: 250 },
+    { progress: 0.5, velocity: 0.6, commit: true, expectedDuration: 500 / 1.5 },
+    { progress: 0.8, velocity: 1.5, commit: true, expectedDuration: 100 },
+    {
+      progress: 0.95,
+      velocity: 1.5,
+      commit: true,
+      expectedDuration: 1000 * Math.abs(1 - 0.95),
+    },
+    { progress: 0.5, velocity: -1.5, commit: true, expectedDuration: 500 },
+    { progress: 0.5, velocity: -1.5, commit: false, expectedDuration: 250 },
+  ] as const)('settles Slide from $progress toward commit=$commit on WAAPI at the bounded momentum duration', async ({
+    progress,
+    velocity,
+    commit,
+    expectedDuration,
+  }) => {
+    const paced = new CapturedPageTurn(
+      { getHostElement: () => host, getContentRect: contentRect, capture, navigate },
+      { duration: 1000 },
+    );
+    expect(await paced.beginDrag(true, false, 'slide')).toBe(true);
+    paced.moveDrag(progress, 0.5);
+    const sheet = slideSheet();
+    const nativeAnimate = sheet.animate.bind(sheet);
+    const animate = vi.spyOn(sheet, 'animate').mockImplementation((keyframes, options) => {
+      const animation = nativeAnimate(keyframes, options);
+      animation.pause();
+      return animation;
+    });
+    const raf = vi.spyOn(window, 'requestAnimationFrame');
+    try {
+      const ending = paced.endDrag(commit, velocity);
+      await vi.waitFor(() => expect(animate).toHaveBeenCalledOnce());
+      const animation = animate.mock.results[0]!.value;
+      const effect = animation.effect as KeyframeEffect;
+
+      expect(Number(effect.getTiming().duration)).toBeCloseTo(expectedDuration, 5);
+      expect(effect.getTiming().easing).toBe('linear');
+      const keyframes = effect.getKeyframes();
+      expect(keyframes).toHaveLength(33);
+      expect(keyframes[0]!.offset).toBe(0);
+      expect(keyframes.at(-1)!.offset).toBe(1);
+      expect(raf).not.toHaveBeenCalled();
+
+      animation.finish();
+      await ending;
+      expect(paced.active).toBe(false);
+      if (!commit) expect(navigate).toHaveBeenLastCalledWith(false);
+    } finally {
+      paced.dispose();
+      animate.mockRestore();
+      raf.mockRestore();
+    }
+  });
+
+  it('falls back to requestAnimationFrame when Slide WAAPI is unavailable', async () => {
+    const paced = new CapturedPageTurn(
+      { getHostElement: () => host, getContentRect: contentRect, capture, navigate },
+      { duration: 1000 },
+    );
+    expect(await paced.beginDrag(true, false, 'slide')).toBe(true);
+    paced.moveDrag(0.5, 0.5);
+    const sheet = slideSheet();
+    Object.defineProperty(sheet, 'animate', { value: undefined, configurable: true });
+
+    const frames: FrameRequestCallback[] = [];
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    const now = vi.spyOn(performance, 'now').mockReturnValue(0);
+    try {
+      const ending = paced.endDrag(true);
+      await vi.waitFor(() => expect(frames).toHaveLength(1));
+      frames.shift()!(499);
+      expect(paced.active).toBe(true);
+      frames.shift()!(500);
+      await ending;
+      expect(paced.active).toBe(false);
+    } finally {
+      Reflect.deleteProperty(sheet, 'animate');
+      paced.dispose();
+      raf.mockRestore();
+      now.mockRestore();
+    }
   });
 
   it('commits a drag without a second navigation', async () => {
@@ -451,8 +629,10 @@ describe('CapturedPageTurn (browser)', () => {
     resolveCapture(await makePngBuffer());
 
     await beginning;
-    const canvas = host.querySelector('canvas')!;
-    expect(new DOMMatrixReadOnly(getComputedStyle(canvas).transform).e).toBeCloseTo(-W * 0.75, 0);
+    expect(new DOMMatrixReadOnly(getComputedStyle(slideSheet()).transform).e).toBeCloseTo(
+      -W * 0.75,
+      0,
+    );
 
     // Stop the deliberately slow settle and let its promise drain.
     rapid.dispose();
@@ -492,12 +672,12 @@ describe('CapturedPageTurn (browser)', () => {
       { duration: 5000 },
     );
     expect(await slow.beginDrag(true, false, 'slide')).toBe(true);
-    const canvas = host.querySelector('canvas')!;
+    const sheet = slideSheet();
     slow.moveDrag(0.25, 0.5);
     const ending = slow.endDrag(true);
 
     slow.moveDrag(0.9, 0.5);
-    expect(new DOMMatrixReadOnly(getComputedStyle(canvas).transform).e).toBeCloseTo(-W * 0.25, 0);
+    expect(new DOMMatrixReadOnly(getComputedStyle(sheet).transform).e).toBeCloseTo(-W * 0.25, 0);
 
     slow.dispose();
     await ending;

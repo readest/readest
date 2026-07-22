@@ -18,6 +18,8 @@ function mouseEvent(overrides: Partial<MouseEvent> = {}): MouseEvent {
     altKey: false,
     metaKey: false,
     target: null,
+    preventDefault: vi.fn(),
+    stopImmediatePropagation: vi.fn(),
     ...overrides,
   } as unknown as MouseEvent;
 }
@@ -30,7 +32,9 @@ function touchEvent(touches: Touch[], changedTouches: Touch[] = touches): TouchE
   return {
     touches: touches as unknown as TouchList,
     changedTouches: changedTouches as unknown as TouchList,
-  } as TouchEvent;
+    timeStamp: 0,
+    preventDefault: vi.fn(),
+  } as unknown as TouchEvent;
 }
 
 function postedTypes(spy: ReturnType<typeof vi.spyOn>): string[] {
@@ -240,6 +244,7 @@ describe('iframeEventHandlers touch forwarding', () => {
 
   beforeEach(() => {
     vi.resetModules();
+    vi.useFakeTimers();
     postSpy = vi.spyOn(window, 'postMessage').mockImplementation(() => {});
   });
 
@@ -318,11 +323,23 @@ describe('iframeEventHandlers touch forwarding', () => {
     handleMousedown('book-1', mouseEvent({ screenX: 160, screenY: 300 }));
     handleMouseup('book-1', mouseEvent({ screenX: 160, screenY: 300 }));
     handleClick('book-1', { current: true }, false, mouseEvent({ screenX: 160, screenY: 300 }));
+    vi.advanceTimersByTime(0);
 
     const singleClicks = postSpy.mock.calls
       .map((call: unknown[]) => call[0] as { type: string; screenX?: number })
       .filter((message: { type: string }) => message.type === 'iframe-single-click');
     expect(singleClicks).toEqual([expect.objectContaining({ screenX: 160 })]);
+  });
+
+  test('tracks the raw touch lifetime independently of app interceptor ownership', async () => {
+    const { handleTouchStart, handleTouchEnd, isLayeredTurnTouchActive } = await importHandlers();
+    const point = touchPoint(200, 300);
+
+    expect(isLayeredTurnTouchActive('book-1')).toBe(false);
+    handleTouchStart('book-1', touchEvent([point]));
+    expect(isLayeredTurnTouchActive('book-1')).toBe(true);
+    handleTouchEnd('book-1', touchEvent([], [point]));
+    expect(isLayeredTurnTouchActive('book-1')).toBe(false);
   });
 
   test('a swipe suppresses its synthesized click', async () => {
@@ -345,6 +362,63 @@ describe('iframeEventHandlers touch forwarding', () => {
     handleMouseup('book-1', mouseEvent({ screenX: 120, screenY: 300 }));
     handleClick('book-1', { current: false }, false, mouseEvent({ screenX: 120, screenY: 300 }));
     vi.advanceTimersByTime(300);
+
+    expect(postedTypes(postSpy)).not.toContain('iframe-single-click');
+  });
+
+  test('a layered turn claimed below 15px suppresses its synthesized click', async () => {
+    vi.useFakeTimers();
+    const {
+      handleClick,
+      handleMousedown,
+      handleMouseup,
+      handleTouchStart,
+      handleTouchMove,
+      handleTouchEnd,
+      setLayeredTurnTouchClaimed,
+    } = await importHandlers();
+    const start = touchPoint(200, 300);
+    const end = touchPoint(194, 300);
+
+    handleTouchStart('book-1', touchEvent([start]));
+    handleTouchMove('book-1', touchEvent([end]));
+    setLayeredTurnTouchClaimed('book-1', true);
+    const touchEnd = touchEvent([], [end]);
+    handleTouchEnd('book-1', touchEnd);
+    handleMousedown('book-1', mouseEvent({ screenX: 194, screenY: 300 }));
+    handleMouseup('book-1', mouseEvent({ screenX: 194, screenY: 300 }));
+    const click = mouseEvent({ screenX: 194, screenY: 300 });
+    handleClick('book-1', { current: false }, false, click);
+    vi.advanceTimersByTime(300);
+
+    expect(postedTypes(postSpy)).not.toContain('iframe-single-click');
+    expect(touchEnd.preventDefault).toHaveBeenCalled();
+    expect(click.preventDefault).toHaveBeenCalled();
+    expect(click.stopImmediatePropagation).toHaveBeenCalled();
+  });
+
+  test('a native layered claim arriving after touchend still suppresses its click', async () => {
+    vi.useFakeTimers();
+    const {
+      handleClick,
+      handleMousedown,
+      handleMouseup,
+      handleTouchStart,
+      handleTouchMove,
+      handleTouchEnd,
+      setLayeredTurnTouchClaimed,
+    } = await importHandlers();
+    const start = touchPoint(200, 300);
+    const end = touchPoint(194, 300);
+
+    handleTouchStart('book-1', touchEvent([start]));
+    handleTouchMove('book-1', touchEvent([end]));
+    handleTouchEnd('book-1', touchEvent([], [end]));
+    handleMousedown('book-1', mouseEvent({ screenX: 194, screenY: 300 }));
+    handleMouseup('book-1', mouseEvent({ screenX: 194, screenY: 300 }));
+    handleClick('book-1', { current: true }, false, mouseEvent({ screenX: 194, screenY: 300 }));
+    setLayeredTurnTouchClaimed('book-1', true);
+    vi.advanceTimersByTime(0);
 
     expect(postedTypes(postSpy)).not.toContain('iframe-single-click');
   });
@@ -399,10 +473,12 @@ describe('iframeEventHandlers touch forwarding', () => {
     handleMousedown('book-1', mouseEvent({ screenX: 210, screenY: 300 }));
     handleMouseup('book-1', mouseEvent({ screenX: 210, screenY: 300 }));
     handleClick('book-1', { current: true }, false, mouseEvent({ screenX: 210, screenY: 300 }));
+    vi.advanceTimersByTime(0);
 
     handleMousedown('book-1', mouseEvent({ screenX: 120, screenY: 300 }));
     handleMouseup('book-1', mouseEvent({ screenX: 120, screenY: 300 }));
     handleClick('book-1', { current: true }, false, mouseEvent({ screenX: 120, screenY: 300 }));
+    vi.advanceTimersByTime(0);
 
     const singleClicks = postSpy.mock.calls
       .map((call: unknown[]) => call[0] as { type: string; screenX?: number })
