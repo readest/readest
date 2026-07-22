@@ -212,6 +212,25 @@ describe('useKOSync — applying a newer remote position (#5065)', () => {
     expect(h.getProgressMock).toHaveBeenCalled();
     expect(h.goTo).toHaveBeenCalledWith('epubcfi(/6/650!/4/2/6)');
   });
+
+  test('applies a newer percentage-only response from a compatible server', async () => {
+    h.settings.kosync.strategy = 'receive';
+    h.remote = {
+      progress: null,
+      percentage: 0.42,
+      timestamp: Math.floor(Date.now() / 1000) + 10_000,
+      device: 'BookLore',
+      device_id: 'BookLore',
+    };
+    h.getProgressMock.mockResolvedValue(h.remote);
+
+    renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(h.getProgressMock).toHaveBeenCalled();
+    expect(h.goToFraction).toHaveBeenCalledWith(0.42);
+    expect(h.goTo).not.toHaveBeenCalled();
+  });
 });
 
 describe('useKOSync — no clobbering when the pull is unresolved (#5065)', () => {

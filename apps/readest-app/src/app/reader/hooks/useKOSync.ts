@@ -20,6 +20,7 @@ import {
 import {
   decideRemoteConflict,
   getRemoteFraction,
+  hasUsableRemoteProgress,
   isReportedByKOReader,
   isXPointerProgress,
   resolveRemoteLocalFraction,
@@ -307,7 +308,7 @@ export const useKOSync = (bookKey: string) => {
 
       setSyncState('checking');
       const remoteProgress = await kosyncClient.getProgress(book);
-      if (!remoteProgress || !remoteProgress.progress) {
+      if (!hasUsableRemoteProgress(remoteProgress)) {
         setSyncState('synced');
         return;
       }
