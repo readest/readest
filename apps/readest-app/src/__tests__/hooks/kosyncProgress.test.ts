@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { isXPointerProgress, getRemoteFraction } from '@/app/reader/hooks/kosyncProgress';
+import {
+  getRemoteFraction,
+  hasUsableRemoteProgress,
+  isXPointerProgress,
+} from '@/app/reader/hooks/kosyncProgress';
 
 describe('isXPointerProgress', () => {
   it('accepts CREngine XPointers', () => {
@@ -37,5 +41,19 @@ describe('getRemoteFraction', () => {
     const remote = { progress: 'page-42', percentage: 0.5 };
     expect(isXPointerProgress(remote.progress)).toBe(false);
     expect(getRemoteFraction(remote)).toBe(0.5);
+  });
+});
+
+describe('hasUsableRemoteProgress', () => {
+  it('accepts either a position string or a usable percentage', () => {
+    expect(hasUsableRemoteProgress({ progress: '/body/DocFragment[3]/body/p' })).toBe(true);
+    expect(hasUsableRemoteProgress({ percentage: 0.42 })).toBe(true);
+  });
+
+  it('rejects empty responses and unusable percentages', () => {
+    expect(hasUsableRemoteProgress(null)).toBe(false);
+    expect(hasUsableRemoteProgress({})).toBe(false);
+    expect(hasUsableRemoteProgress({ progress: '', percentage: 0 })).toBe(false);
+    expect(hasUsableRemoteProgress({ percentage: Number.NaN })).toBe(false);
   });
 });
