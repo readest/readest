@@ -98,6 +98,10 @@
                 value = pkgConfigPath;
               }
               {
+                name = "GDK_BACKEND";
+                value = "x11";
+              }
+              {
                 name = "RUSTFLAGS";
                 value = "-C link-arg=-Wl,-rpath,${libPath}";
               }
