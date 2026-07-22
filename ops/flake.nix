@@ -50,15 +50,31 @@
           rust-analyzer-nightly
           pkg-config
           xdg-utils
+          patchelf
+          wrapGAppsHook4
           self.formatter.${pkgs.stdenv.hostPlatform.system}
         ];
 
         commonBuildInputs = with pkgs; [
-          gtk3
-          librsvg
-          openssl
-          zlib
+          at-spi2-atk
+          atkmm
+          cairo
           fontconfig
+          freetype
+          gdk-pixbuf
+          glib
+          gtk3
+          harfbuzz
+          librsvg
+          libsoup_3
+          openssl
+          pango
+          zlib
+        
+          gst_all_1.gstreamer
+          gst_all_1.gst-plugins-base
+          gst_all_1.gst-plugins-good
+          gst_all_1.gst-plugins-bad
         ] ++ (optionals (!isDarwin) [
           webkitgtk_4_1
         ]) ++ (optionals isDarwin [
@@ -94,7 +110,7 @@
             shellHook = ''
               git submodule update --init --recursive
               pnpm install
-              pnpm --filter @readest/readest-app setup-vendors
+              # pnpm --filter @readest/readest-app setup-vendors
 
               ${postInit}
             '';
