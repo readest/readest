@@ -19,6 +19,7 @@ export interface TranslationProvider {
     targetLang: string,
     token?: string | null,
     useCache?: boolean,
+    signal?: AbortSignal,
   ) => Promise<string[]>;
 }
 
