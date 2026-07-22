@@ -57,6 +57,16 @@ export const getRemoteFraction = (remote: KoSyncProgress): number | undefined =>
 };
 
 /**
+ * Whether a KOSync response contains enough information to move the reader.
+ * Some compatible servers can report only a percentage when they cannot
+ * translate their native locator into a KOReader XPointer.
+ */
+export const hasUsableRemoteProgress = (
+  remote: KoSyncProgress | null | undefined,
+): remote is KoSyncProgress =>
+  !!remote && (!!remote.progress || getRemoteFraction(remote) !== undefined);
+
+/**
  * Outcome of resolving a remote KOReader position against the LOCAL book.
  *
  * The distinction between `unresolved` and `not-xpointer` is critical for
