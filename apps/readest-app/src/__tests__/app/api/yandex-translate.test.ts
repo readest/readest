@@ -117,7 +117,7 @@ describe('yandex-translate proxy route', () => {
         }),
     );
 
-    const pending = [1, 2, 3].map((index) =>
+    const pending = [1, 2, 3].map(() =>
       POST(
         makeReq('endpoint=session', {
           origin: 'https://web.readest.com',
