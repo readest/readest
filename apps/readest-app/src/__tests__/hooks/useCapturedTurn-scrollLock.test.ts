@@ -22,8 +22,11 @@ const h = vi.hoisted(() => ({
     beginDrag: vi.fn(async () => true),
     moveDrag: vi.fn(),
     endDrag: vi.fn(async () => {}),
+    prepareCapture: vi.fn(async () => true),
+    invalidatePreparedCapture: vi.fn(),
     dispose: vi.fn(),
   },
+  viewListeners: new Map<string, Set<EventListener>>(),
   selection: null as { rangeCount: number; isCollapsed: boolean } | null,
   renderer: {
     listeners: new Map<string, Set<EventListener>>(),
@@ -34,6 +37,7 @@ const h = vi.hoisted(() => ({
     getContents() {
       return [{ index: 0, doc: { getSelection: () => h.selection } }];
     },
+    getAttribute: vi.fn(() => null as string | null),
     hasAttribute: () => false,
     setAttribute: () => {},
     removeAttribute: () => {},
@@ -64,7 +68,12 @@ vi.mock('@/store/readerStore', () => {
     getViewSettings: () => h.viewSettings,
     setHoveredBookKey: h.setHoveredBookKey,
   });
-  useReaderStore.getState = () => ({ hoveredBookKey: h.hoveredBookKey });
+  useReaderStore.getState = () => ({
+    hoveredBookKey: h.hoveredBookKey,
+    bottomBarTab: '',
+    viewStates: { 'book-1': { inited: true, ttsEnabled: false } },
+  });
+  useReaderStore.subscribe = () => () => {};
   return { useReaderStore };
 });
 vi.mock('@/store/bookDataStore', () => ({
@@ -85,15 +94,33 @@ import { useCapturedTurn } from '@/app/reader/hooks/useCapturedTurn';
 import { dispatchTouchInterceptors } from '@/app/reader/hooks/useTouchInterceptor';
 
 const makeView = () =>
-  ({ renderer: h.renderer, prev: vi.fn(), next: vi.fn() }) as unknown as FoliateView;
+  ({
+    renderer: h.renderer,
+    prev: vi.fn(),
+    next: vi.fn(),
+    addEventListener(type: string, listener: EventListener) {
+      const listeners = h.viewListeners.get(type) ?? new Set<EventListener>();
+      listeners.add(listener);
+      h.viewListeners.set(type, listeners);
+    },
+    removeEventListener(type: string, listener: EventListener) {
+      h.viewListeners.get(type)?.delete(listener);
+    },
+  }) as unknown as FoliateView;
 
-const detail = (phase: TouchDetail['phase'], deltaX = 0, deltaY = 0): TouchDetail => ({
+const detail = (
+  phase: TouchDetail['phase'],
+  deltaX = 0,
+  deltaY = 0,
+  deltaT = 16,
+  startX = 0,
+): TouchDetail => ({
   phase,
-  touch: { screenX: 0, screenY: 0 },
-  touchStart: { screenX: 0, screenY: 0 },
+  touch: { screenX: startX + deltaX, screenY: deltaY },
+  touchStart: { screenX: startX, screenY: 0 },
   deltaX,
   deltaY,
-  deltaT: 16,
+  deltaT,
 });
 
 beforeEach(() => {
@@ -104,10 +131,13 @@ beforeEach(() => {
   h.renderer.scrollLocked = false;
   h.renderer.atEnd = false;
   h.renderer.atStart = false;
+  h.renderer.getAttribute.mockReset().mockReturnValue(null);
   h.selection = null;
+  h.viewListeners.clear();
   h.renderer.listeners.clear();
   h.controllerHost = null;
   h.hoveredBookKey = 'book-1';
+  h.viewSettings.pageTurnStyle = 'curl';
 });
 
 afterEach(() => {
@@ -117,6 +147,144 @@ afterEach(() => {
 });
 
 describe('useCapturedTurn scroll-lock gate', () => {
+  test('claims the first inward sample from the right edge', () => {
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 285));
+    const consumed = dispatchTouchInterceptors('book-1', detail('move', -1, 0, 16, 285));
+
+    expect(consumed).toBe(true);
+    expect(h.controller.beginDrag).toHaveBeenCalledWith(true, false, 'curl');
+  });
+
+  test('an edge claim at a boundary cannot reverse into a second turn', () => {
+    h.renderer.atEnd = true;
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 285));
+    expect(dispatchTouchInterceptors('book-1', detail('move', -1, 0, 16, 285))).toBe(true);
+    expect(dispatchTouchInterceptors('book-1', detail('move', 30, 0, 32, 285))).toBe(false);
+
+    expect(h.controller.beginDrag).not.toHaveBeenCalled();
+  });
+
+  test('claims a central drag after two coherent samples at 6px', () => {
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    expect(dispatchTouchInterceptors('book-1', detail('move', -3, 0, 16, 150))).toBe(false);
+    expect(dispatchTouchInterceptors('book-1', detail('move', -6, 0, 32, 150))).toBe(true);
+
+    expect(h.controller.beginDrag).toHaveBeenCalledWith(true, false, 'curl');
+  });
+
+  test('starts a claimed Slide flat and follows only post-claim finger travel', () => {
+    h.viewSettings.pageTurnStyle = 'slide';
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    dispatchTouchInterceptors('book-1', detail('move', -3, 0, 16, 150));
+    dispatchTouchInterceptors('book-1', detail('move', -6, 0, 32, 150));
+
+    expect(h.controller.beginDrag).toHaveBeenCalledWith(true, false, 'slide');
+    expect(h.controller.moveDrag).toHaveBeenLastCalledWith(0, 0.5);
+
+    dispatchTouchInterceptors('book-1', detail('move', -36, 0, 48, 150));
+    expect(h.controller.moveDrag).toHaveBeenLastCalledWith(30 / 300, 0.5);
+  });
+
+  test('does not use the central fast path for an outward edge drag', () => {
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 45));
+    expect(dispatchTouchInterceptors('book-1', detail('move', -3, 0, 16, 45))).toBe(false);
+    expect(dispatchTouchInterceptors('book-1', detail('move', -6, 0, 32, 45))).toBe(false);
+    expect(dispatchTouchInterceptors('book-1', detail('move', -15, 0, 48, 45))).toBe(true);
+
+    expect(h.controller.beginDrag).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not combine coherent samples separated by more than 80ms', () => {
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    expect(dispatchTouchInterceptors('book-1', detail('move', -3, 0, 16, 150))).toBe(false);
+    expect(dispatchTouchInterceptors('book-1', detail('move', -6, 0, 120, 150))).toBe(false);
+    expect(dispatchTouchInterceptors('book-1', detail('move', -9, 0, 136, 150))).toBe(true);
+
+    expect(h.controller.beginDrag).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not early-claim inside the left brightness strip', () => {
+    h.renderer.getAttribute.mockReturnValue('0.1');
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 10));
+    expect(dispatchTouchInterceptors('book-1', detail('move', 3, 0, 16, 10))).toBe(false);
+    expect(dispatchTouchInterceptors('book-1', detail('move', 6, 0, 32, 10))).toBe(false);
+
+    expect(h.controller.beginDrag).not.toHaveBeenCalled();
+  });
+
+  test('uses the 24px fallback inside the left brightness strip', () => {
+    h.renderer.getAttribute.mockReturnValue('0.1');
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 10));
+    expect(dispatchTouchInterceptors('book-1', detail('move', 15, 0, 16, 10))).toBe(false);
+    expect(dispatchTouchInterceptors('book-1', detail('move', 23, 0, 32, 10))).toBe(false);
+    expect(dispatchTouchInterceptors('book-1', detail('move', 24, 0, 48, 10))).toBe(true);
+
+    expect(h.controller.beginDrag).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not claim after a central gesture locks vertically', () => {
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    expect(dispatchTouchInterceptors('book-1', detail('move', -4, 0, 16, 150))).toBe(false);
+    expect(dispatchTouchInterceptors('book-1', detail('move', -4, -10, 32, 150))).toBe(false);
+    expect(dispatchTouchInterceptors('book-1', detail('move', -30, -10, 48, 150))).toBe(false);
+
+    expect(h.controller.beginDrag).not.toHaveBeenCalled();
+  });
+
   test('a horizontal swipe starts the captured turn when scroll is not locked', () => {
     renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
 
@@ -130,8 +298,8 @@ describe('useCapturedTurn scroll-lock gate', () => {
   test('catches the captured drag up to the activation-threshold distance', async () => {
     renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
 
-    dispatchTouchInterceptors('book-1', detail('start'));
-    dispatchTouchInterceptors('book-1', detail('move', -15, 0));
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    dispatchTouchInterceptors('book-1', detail('move', -15, 0, 16, 150));
     await act(async () => {
       await Promise.resolve();
     });
@@ -142,11 +310,11 @@ describe('useCapturedTurn scroll-lock gate', () => {
   test('preserves total travel when horizontal intent is recognized later', async () => {
     renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
 
-    dispatchTouchInterceptors('book-1', detail('start'));
-    dispatchTouchInterceptors('book-1', detail('move', -60, 80));
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    dispatchTouchInterceptors('book-1', detail('move', -4, 6, 16, 150));
     expect(h.controller.beginDrag).not.toHaveBeenCalled();
 
-    dispatchTouchInterceptors('book-1', detail('move', -100, 80));
+    dispatchTouchInterceptors('book-1', detail('move', -100, 80, 32, 150));
     await act(async () => {
       await Promise.resolve();
     });
@@ -169,12 +337,12 @@ describe('useCapturedTurn scroll-lock gate', () => {
     renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
 
     dispatchTouchInterceptors('book-1', detail('start'));
-    dispatchTouchInterceptors('book-1', detail('move', -15, 0));
-    dispatchTouchInterceptors('book-1', detail('move', -240, 10));
-    const released = dispatchTouchInterceptors('book-1', detail('end', -240, 10));
+    dispatchTouchInterceptors('book-1', detail('move', -15, 0, 16));
+    dispatchTouchInterceptors('book-1', detail('move', -240, 10, 32));
+    const released = dispatchTouchInterceptors('book-1', detail('end', -240, 10, 48));
 
     expect(released).toBe(true);
-    expect(h.controller.endDrag).toHaveBeenCalledWith(true);
+    expect(h.controller.endDrag).toHaveBeenCalledWith(true, 5);
     const lastSample = h.controller.moveDrag.mock.calls.at(-1)!;
     // 240px of total travel across the 300px captured reader cell.
     expect(lastSample[0]).toBeCloseTo(0.8);
@@ -192,12 +360,97 @@ describe('useCapturedTurn scroll-lock gate', () => {
   test('commits a short fast flick before halfway', () => {
     renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
 
-    dispatchTouchInterceptors('book-1', detail('start'));
-    dispatchTouchInterceptors('book-1', detail('move', -20, 0));
-    dispatchTouchInterceptors('book-1', { ...detail('end', -20, 0), deltaT: 50 });
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    dispatchTouchInterceptors('book-1', detail('move', -20, 0, 16, 150));
+    dispatchTouchInterceptors('book-1', detail('end', -20, 0, 50, 150));
 
     // 20px / 50ms = 0.4px/ms, above the 0.3 flick threshold.
-    expect(h.controller.endDrag).toHaveBeenCalledWith(true);
+    expect(h.controller.endDrag).toHaveBeenCalledWith(true, 0.4);
+  });
+
+  test('lets distance and sub-flick release speed combine to commit a Slide', () => {
+    h.viewSettings.pageTurnStyle = 'slide';
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    dispatchTouchInterceptors('book-1', detail('move', -102, 0, 310));
+    dispatchTouchInterceptors('book-1', detail('move', -102, 0, 410));
+    dispatchTouchInterceptors('book-1', detail('end', -120, 0, 500));
+
+    // Neither 40% distance nor 0.2px/ms speed passes the old independent
+    // threshold. Together they project to 56%, so the Slide commits.
+    expect(h.controller.endDrag).toHaveBeenCalledWith(true, 0.2);
+  });
+
+  test('cancels a rested Slide below halfway', () => {
+    h.viewSettings.pageTurnStyle = 'slide';
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    dispatchTouchInterceptors('book-1', detail('move', -108, 0, 500));
+    dispatchTouchInterceptors('book-1', detail('end', -108, 0, 600));
+
+    expect(h.controller.endDrag).toHaveBeenCalledWith(false, 0);
+  });
+
+  test('lets a sub-flick reverse release pull projected Slide progress back', () => {
+    h.viewSettings.pageTurnStyle = 'slide';
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    dispatchTouchInterceptors('book-1', detail('move', -174, 0, 410));
+    dispatchTouchInterceptors('book-1', detail('move', -174, 0, 510));
+    dispatchTouchInterceptors('book-1', detail('end', -165, 0, 600));
+
+    // Distance alone is 55%, but projecting the -0.1px/ms release returns it
+    // to 47%, so the Slide cancels.
+    expect(h.controller.endDrag).toHaveBeenCalledWith(false, -0.1);
+  });
+
+  test("uses recent release velocity without changing Curl's full-gesture commit rule", () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    dispatchTouchInterceptors('book-1', detail('move', -40, 0, 200));
+    dispatchTouchInterceptors('book-1', detail('move', -40, 0, 300));
+    dispatchTouchInterceptors('book-1', detail('end', -120, 0, 340));
+
+    // Commit still uses 120px / 340ms; settle momentum uses the latest
+    // 80px of movement inside the interpolated 90ms release window.
+    expect(h.controller.endDrag).toHaveBeenCalledWith(true, 80 / 90);
+  });
+
+  test('drops release momentum after the finger pauses for more than 80ms', () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    dispatchTouchInterceptors('book-1', detail('move', -120, 0, 40));
+    dispatchTouchInterceptors('book-1', detail('end', -120, 0, 130));
+
+    expect(h.controller.endDrag).toHaveBeenCalledWith(true, 0);
+  });
+
+  test('passes a reverse release velocity to a cancelling settle', () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start'));
+    dispatchTouchInterceptors('book-1', detail('move', -120, 0, 40));
+    dispatchTouchInterceptors('book-1', detail('move', -120, 0, 100));
+    dispatchTouchInterceptors('book-1', detail('end', -40, 0, 140));
+
+    expect(h.controller.endDrag).toHaveBeenCalledWith(false, -80 / 90);
   });
 
   test('cancels an unfinished drag before accepting a replacement touch sequence', () => {
@@ -213,6 +466,45 @@ describe('useCapturedTurn scroll-lock gate', () => {
     expect(h.controller.endDrag.mock.invocationCallOrder[0]!).toBeLessThan(
       h.controller.beginDrag.mock.invocationCallOrder[1]!,
     );
+  });
+
+  test('an accepted programmatic turn permanently rejects a pending touch sequence', () => {
+    const view = makeView();
+    renderHook(() => useCapturedTurn('book-1', { current: view }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    void view.next();
+    const consumed = dispatchTouchInterceptors('book-1', detail('move', -60, 0, 16, 150));
+
+    expect(h.controller.turn).toHaveBeenCalledWith(true, false, 'curl');
+    expect(consumed).toBe(false);
+    expect(h.controller.beginDrag).not.toHaveBeenCalled();
+  });
+
+  test('a touch that starts during a programmatic turn stays rejected until its release', async () => {
+    let resolveTurn!: () => void;
+    h.controller.turn.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveTurn = resolve;
+        }),
+    );
+    const view = makeView();
+    renderHook(() => useCapturedTurn('book-1', { current: view }));
+
+    const turning = view.next() as unknown as Promise<void>;
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    expect(dispatchTouchInterceptors('book-1', detail('move', -60, 0, 16, 150))).toBe(false);
+
+    resolveTurn();
+    await act(async () => turning);
+    expect(dispatchTouchInterceptors('book-1', detail('move', -90, 0, 32, 150))).toBe(false);
+    expect(h.controller.beginDrag).not.toHaveBeenCalled();
+
+    dispatchTouchInterceptors('book-1', detail('end', -90, 0, 48, 150));
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    expect(dispatchTouchInterceptors('book-1', detail('move', -60, 0, 16, 150))).toBe(true);
+    expect(h.controller.beginDrag).toHaveBeenCalledOnce();
   });
 
   test('touch cancellation always reverses an active captured drag', () => {
@@ -533,11 +825,8 @@ describe('useCapturedTurn view.next replacement', () => {
           resolveTurn = r;
         }),
     );
-    const view = {
-      renderer: h.renderer,
-      prev: vi.fn(),
-      next: originalNext,
-    } as unknown as FoliateView;
+    const view = makeView();
+    view.next = originalNext;
     renderHook(() => useCapturedTurn('book-1', { current: view }));
 
     const settled = vi.fn();

@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 
-// Native captured turns become intentional at this distance. Browser layered
-// turns keep the paginator's stricter claim gate; generic toolbar handling
-// defers its move-time update while that path can still claim the gesture.
+// Generic swipe/tap fallback shared by toolbar and click handling. Layered
+// turns may claim earlier through their edge/trajectory arena, while ambiguous
+// gestures retain this established distance before generic behavior applies.
 export const TOUCH_SWIPE_THRESHOLD_PX = 15;
 
 // Movement below this distance is still a tap. Touchend must leave these

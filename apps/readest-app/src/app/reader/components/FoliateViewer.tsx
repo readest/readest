@@ -54,6 +54,7 @@ import {
   handleMousemove,
   handleAuxclick,
   handleClick,
+  handleClickCapture,
   handleWheel,
   handleTouchStart,
   handleTouchMove,
@@ -427,14 +428,21 @@ const FoliateViewer: React.FC<{
         detail.doc.addEventListener('mouseup', handleMouseup.bind(null, bookKey));
         detail.doc.addEventListener('mousemove', handleMousemove.bind(null, bookKey));
         detail.doc.addEventListener('auxclick', handleAuxclick.bind(null, bookKey));
+        detail.doc.addEventListener('click', handleClickCapture.bind(null, bookKey), {
+          capture: true,
+        });
         detail.doc.addEventListener(
           'click',
           handleClick.bind(null, bookKey, doubleClickDisabled, !!bookData?.isFixedLayout),
         );
         detail.doc.addEventListener('wheel', handleWheel.bind(null, bookKey));
         detail.doc.addEventListener('touchstart', handleTouchStart.bind(null, bookKey));
-        detail.doc.addEventListener('touchmove', handleTouchMove.bind(null, bookKey));
-        detail.doc.addEventListener('touchend', handleTouchEnd.bind(null, bookKey));
+        detail.doc.addEventListener('touchmove', handleTouchMove.bind(null, bookKey), {
+          passive: false,
+        });
+        detail.doc.addEventListener('touchend', handleTouchEnd.bind(null, bookKey), {
+          passive: false,
+        });
         detail.doc.addEventListener('touchcancel', handleTouchCancel.bind(null, bookKey));
         registerBrightnessListeners(detail.doc);
         registerSpeedListeners(detail.doc);
