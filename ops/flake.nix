@@ -72,7 +72,7 @@
           , extraTargets ? [ ]
           , extraEnv ? { }
           }:
-          pkgs.mkShell {
+          pkgs.mkShell rec {
             inherit name;
 
             nativeBuildInputs = commonNativeBuildInupts ++ extraNativeBuildInputs;
@@ -88,6 +88,7 @@
 
             env = {
               GDK_BACKEND = "x11";
+              LD_LIBRARY_PATH = lib.makeLibraryPath buildInputs;
             } // extraEnv;
 
             shellHook = ''
