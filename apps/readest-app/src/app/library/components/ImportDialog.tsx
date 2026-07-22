@@ -14,6 +14,7 @@ export function ImportDialog({
   onImportBooksFromFiles,
   onImportBooksFromDirectory,
   onImportBookFromUrl,
+  onOpenFeeds,
   onOpenCatalogManager,
 }: ImportDialogProps) {
   const _ = useTranslation();
@@ -21,6 +22,7 @@ export function ImportDialog({
     onImportBooksFromFiles,
     onImportBooksFromDirectory,
     onImportBookFromUrl,
+    onOpenFeeds,
     onOpenCatalogManager,
   });
 

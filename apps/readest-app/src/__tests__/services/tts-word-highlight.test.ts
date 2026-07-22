@@ -1,8 +1,9 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, it, expect } from 'vitest';
 import {
   computeWordOffsets,
   findBoundaryIndexAtTime,
   getTextSubRange,
+  rangeTextExcludingInert,
 } from '@/services/tts/wordHighlight';
 
 describe('computeWordOffsets', () => {
@@ -147,5 +148,70 @@ describe('getTextSubRange', () => {
     expect(getTextSubRange(base, 2, 2)).toBeNull();
     expect(getTextSubRange(base, 3, 2)).toBeNull();
     expect(getTextSubRange(base, -1, 2)).toBeNull();
+  });
+});
+
+const makeBaseRangeFrom = (html: string): Range => {
+  document.body.innerHTML = html;
+  const root = document.body.firstElementChild!;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes: Text[] = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n as Text);
+  const range = document.createRange();
+  range.setStart(nodes[0]!, 0);
+  range.setEnd(nodes.at(-1)!, nodes.at(-1)!.length);
+  return range;
+};
+
+describe('rangeTextExcludingInert respects the range offsets', () => {
+  // A paragraph whose whole text is a single text node (e.g. wrapped in one
+  // <span>): a middle sentence is a sub-range of that node with non-zero
+  // start/end offsets. The text must be the sentence, not the whole node.
+  it('returns only the sub-range text when the range is inside a single text node', () => {
+    document.body.innerHTML =
+      '<p><span>First sentence. Second sentence. Third sentence.</span></p>';
+    const textNode = document.querySelector('span')!.firstChild as Text;
+    const data = textNode.data;
+    const base = document.createRange();
+    base.setStart(textNode, data.indexOf('Second'));
+    base.setEnd(textNode, data.indexOf('Third'));
+    expect(base.toString()).toBe('Second sentence. ');
+    expect(rangeTextExcludingInert(base)).toBe('Second sentence. ');
+  });
+
+  // The actual word-highlight failure: offsets computed from the matching text
+  // must line up with getTextSubRange (which respects the range offsets), or
+  // every highlighted word drifts. Reproduces the "second/third sentence"
+  // skipping seen with single-text-node paragraphs.
+  it('word offsets from rangeTextExcludingInert align with getTextSubRange mid-node', () => {
+    document.body.innerHTML =
+      '<p><span>First sentence here. Those immortals are going crazy. Last one.</span></p>';
+    const textNode = document.querySelector('span')!.firstChild as Text;
+    const data = textNode.data;
+    const base = document.createRange();
+    base.setStart(textNode, data.indexOf('Those'));
+    base.setEnd(textNode, data.indexOf('Last'));
+    const sentenceText = rangeTextExcludingInert(base);
+    const offsets = computeWordOffsets(sentenceText, ['Those', 'immortals', 'crazy']);
+    expect(getTextSubRange(base, offsets[0]!.start, offsets[0]!.end)?.toString()).toBe('Those');
+    expect(getTextSubRange(base, offsets[1]!.start, offsets[1]!.end)?.toString()).toBe('immortals');
+    expect(getTextSubRange(base, offsets[2]!.start, offsets[2]!.end)?.toString()).toBe('crazy');
+  });
+});
+
+describe('gloss-aware word highlighting', () => {
+  it('rangeTextExcludingInert drops cfi-inert gloss text', () => {
+    const base = makeBaseRangeFrom(
+      `<p>The <ruby cfi-skip="">quick<rt cfi-inert="">敏捷</rt></ruby> fox</p>`,
+    );
+    expect(rangeTextExcludingInert(base)).toBe('The quick fox');
+  });
+
+  it('getTextSubRange ignores the gloss when slicing a word', () => {
+    const base = makeBaseRangeFrom(
+      `<p>The <ruby cfi-skip="">quick<rt cfi-inert="">敏捷</rt></ruby> fox</p>`,
+    );
+    const sub = getTextSubRange(base, 10, 13)!;
+    expect(sub.toString()).toBe('fox');
   });
 });

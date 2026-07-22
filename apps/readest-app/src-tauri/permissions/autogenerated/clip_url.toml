@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-clip-url"
+description = "Enables the clip_url command without any pre-configured scope."
+commands.allow = ["clip_url"]
+
+[[permission]]
+identifier = "deny-clip-url"
+description = "Denies the clip_url command without any pre-configured scope."
+commands.deny = ["clip_url"]

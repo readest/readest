@@ -38,8 +38,10 @@ import {
 import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
-import { copyURIToPath, getStorefrontRegionCode } from '@/utils/bridge';
+import { copyURIToPath, getStorefrontRegionCode, saveImageToGallery } from '@/utils/bridge';
+import { galleryFileName } from '@/utils/image';
 import { copyFiles } from '@/utils/files';
+import { detectViewTransitionGroup, detectViewTransitionsAPI } from '@/utils/viewTransition';
 
 import { BaseAppService } from './appService';
 import { DatabaseOpts, DatabaseService } from '@/types/database';
@@ -557,7 +559,10 @@ export class NativeAppService extends BaseAppService {
   override hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   override hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
   override hasContextMenu = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  override hasRoundedWindow = OS_TYPE === 'linux';
+  // No desktop platform draws a rounded, transparent window anymore: the Linux
+  // window is opaque with square corners to avoid the WebKitGTK "turns
+  // invisible while busy" bug (#3682).
+  override hasRoundedWindow = false;
   override hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
   override hasHaptics = OS_TYPE === 'ios' || OS_TYPE === 'android';
   override hasUpdater =
@@ -575,6 +580,11 @@ export class NativeAppService extends BaseAppService {
   override canReadExternalDir = DIST_CHANNEL !== 'appstore' && DIST_CHANNEL !== 'playstore';
   override supportsCanvasContext2DFilter =
     OS_TYPE !== 'ios' && OS_TYPE !== 'macos' && OS_TYPE !== 'linux';
+  // WebKitGTK on Linux crashes when a View Transition snapshots the window,
+  // so both capabilities are unavailable there regardless of what the engine
+  // reports; every other webview is gated on the real feature probe.
+  override supportsViewTransitionsAPI = OS_TYPE !== 'linux' && detectViewTransitionsAPI();
+  override supportsViewTransitionGroup = OS_TYPE !== 'linux' && detectViewTransitionGroup();
   override distChannel = DIST_CHANNEL;
   override storefrontRegionCode: string | null = null;
   override isOnlineCatalogsAccessible = true;
@@ -592,6 +602,25 @@ export class NativeAppService extends BaseAppService {
   override async init() {
     const execDir = await invoke<string>('get_executable_dir');
     this.execDir = execDir;
+    // Report the WebView User-Agent so Sentry can tag crashes with the
+    // engine/version (the injected browser SDK's UA context isn't forwarded).
+    try {
+      await invoke('set_webview_info', { userAgent: navigator.userAgent });
+    } catch (err) {
+      console.warn('[nativeAppService] set_webview_info failed:', err);
+    }
+    // Ask Rust whether the in-app updater must stay hidden (READEST_DISABLE_UPDATER,
+    // Flatpak, or a Linux deb/rpm/pacman install that Tauri can't self-update). The
+    // command is the reliable source of truth; the `__READEST_UPDATER_DISABLED`
+    // init-script global isn't dependable on every Linux/WebKitGTK setup (#4874).
+    if (this.isDesktopApp) {
+      try {
+        const updaterDisabled = await invoke<boolean>('is_updater_disabled');
+        this.hasUpdater = this.hasUpdater && !updaterDisabled;
+      } catch (err) {
+        console.warn('[nativeAppService] is_updater_disabled failed:', err);
+      }
+    }
     if (
       process.env['NEXT_PUBLIC_PORTABLE_APP'] ||
       (await this.fs.exists(`${execDir}/${SETTINGS_FILENAME}`, 'None'))
@@ -636,7 +665,7 @@ export class NativeAppService extends BaseAppService {
       const settings = await this.loadSettings();
       const lastMigrationVersion = settings.migrationVersion || 0;
 
-      await super.runMigrations(lastMigrationVersion);
+      await super.runMigrations(lastMigrationVersion, settings);
 
       if (lastMigrationVersion < 20251029) {
         try {
@@ -756,7 +785,15 @@ export class NativeAppService extends BaseAppService {
       if (wantShare) {
         let shareablePath = options?.filePath;
         if (!shareablePath) {
-          shareablePath = await this.resolveFilePath(filename, 'Temp');
+          // Write into a Temp SUBDIRECTORY, never the Temp root. On Android the
+          // sharekit plugin copies the shared file to `<cacheDir>/<name>` before
+          // sharing, and Tauri's Temp dir IS `<cacheDir>` — writing to the root
+          // makes that a copy onto itself, whose output stream truncates the
+          // source to 0 bytes (the shared image came out 0 KB). A subdirectory
+          // gives the plugin's copy a distinct source path. (#4680)
+          const shareDir = await this.resolveFilePath('shared', 'Temp');
+          await mkdir(shareDir, { recursive: true });
+          shareablePath = await this.resolveFilePath(`shared/${filename}`, 'Temp');
           if (typeof content === 'string') {
             await writeTextFile(shareablePath, content);
           } else if (content) {
@@ -799,6 +836,44 @@ export class NativeAppService extends BaseAppService {
     } catch (error) {
       console.error('Failed to save file:', error);
       return false;
+    }
+  }
+
+  async saveImageToGallery(
+    filename: string,
+    content: ArrayBuffer,
+    mimeType: string,
+  ): Promise<boolean> {
+    // MediaStore is Android-only; other platforms keep the saveFile/share path.
+    if (!this.isAndroidApp) return false;
+    // Every image reaching here is called `image.<ext>`, which left the insert at
+    // the mercy of the OEM's duplicate handling. Name each save uniquely instead.
+    const galleryName = galleryFileName(filename);
+    // Write the bytes to a Temp subdirectory (not the Temp root, mirroring the
+    // share path), then hand the path to the native MediaStore insert.
+    const shareDir = await this.resolveFilePath('shared', 'Temp');
+    await mkdir(shareDir, { recursive: true });
+    const srcPath = await this.resolveFilePath(`shared/${galleryName}`, 'Temp');
+    try {
+      await writeFile(srcPath, new Uint8Array(content));
+      const res = await saveImageToGallery({
+        srcPath,
+        fileName: galleryName,
+        mimeType,
+        albumName: 'Readest',
+      });
+      if (!res.success) {
+        // The plugin returns the MediaStore exception here. Dropping it left an
+        // OEM-specific insert failure showing up as nothing but a toast.
+        console.error('Failed to save image to gallery:', res.error);
+      }
+      return res.success;
+    } catch (error) {
+      console.error('Failed to save image to gallery:', error);
+      return false;
+    } finally {
+      // Best-effort cleanup of the staged file.
+      await remove(srcPath).catch(() => {});
     }
   }
 

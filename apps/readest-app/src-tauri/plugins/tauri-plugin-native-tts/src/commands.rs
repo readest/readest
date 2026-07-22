@@ -75,3 +75,32 @@ pub(crate) async fn update_media_session_metadata<R: Runtime>(
 ) -> Result<()> {
     app.native_tts().update_media_session_metadata(payload)
 }
+
+#[command]
+pub(crate) async fn update_carplay_state<R: Runtime>(
+    app: AppHandle<R>,
+    payload: UpdateCarPlayStateRequest,
+) -> Result<()> {
+    app.native_tts().update_carplay_state(payload)
+}
+
+#[command]
+pub(crate) async fn playout_enqueue<R: Runtime>(
+    app: AppHandle<R>,
+    payload: PlayoutEnqueueRequest,
+) -> Result<PlayoutEnqueueResponse> {
+    app.native_tts().playout_enqueue(payload)
+}
+
+#[command]
+pub(crate) async fn playout_control<R: Runtime>(
+    app: AppHandle<R>,
+    payload: PlayoutControlRequest,
+) -> Result<PlayoutControlResponse> {
+    app.native_tts().playout_control(payload)
+}
+
+#[command]
+pub(crate) async fn playout_position<R: Runtime>(app: AppHandle<R>) -> Result<PlayoutPositionResponse> {
+    app.native_tts().playout_position()
+}

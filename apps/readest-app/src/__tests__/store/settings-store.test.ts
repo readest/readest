@@ -10,20 +10,26 @@ vi.mock('@/utils/time', () => ({
   initDayjs: vi.fn(),
 }));
 
+vi.mock('@/utils/settingsSync', () => ({
+  broadcastGlobalSettings: vi.fn(),
+}));
+
 import i18n from '@/i18n/i18n';
 import { initDayjs } from '@/utils/time';
+import { broadcastGlobalSettings } from '@/utils/settingsSync';
 import { useSettingsStore } from '@/store/settingsStore';
+import type { EnvConfigType } from '@/services/environment';
 import type { SystemSettings } from '@/types/settings';
 
 const mockChangeLanguage = vi.mocked(i18n.changeLanguage);
 const mockInitDayjs = vi.mocked(initDayjs);
+const mockBroadcastGlobalSettings = vi.mocked(broadcastGlobalSettings);
 
 function makeSettings(overrides: Partial<SystemSettings> = {}): SystemSettings {
   return {
     version: 1,
     localBooksDir: '/books',
     keepLogin: false,
-    autoUpload: false,
     alwaysOnTop: false,
     openBookInNewWindow: false,
     autoCheckUpdates: true,
@@ -31,7 +37,6 @@ function makeSettings(overrides: Partial<SystemSettings> = {}): SystemSettings {
     screenBrightness: 1,
     autoScreenBrightness: true,
     alwaysShowStatusBar: false,
-    alwaysInForeground: false,
     openLastBooks: false,
     lastOpenBooks: [],
     autoImportBooksOnOpen: false,
@@ -88,6 +93,21 @@ describe('settingsStore', () => {
       useSettingsStore.getState().setSettings(settings2);
 
       expect(useSettingsStore.getState().settings.localBooksDir).toBe('/new');
+    });
+  });
+
+  describe('saveSettings', () => {
+    test('persists settings and broadcasts globals to other windows', async () => {
+      const settings = makeSettings({ version: 7 });
+      const saveSettings = vi.fn().mockResolvedValue(undefined);
+      const envConfig = {
+        getAppService: vi.fn().mockResolvedValue({ saveSettings }),
+      } as unknown as EnvConfigType;
+
+      await useSettingsStore.getState().saveSettings(envConfig, settings);
+
+      expect(saveSettings).toHaveBeenCalledWith(settings);
+      expect(mockBroadcastGlobalSettings).toHaveBeenCalledWith(settings);
     });
   });
 

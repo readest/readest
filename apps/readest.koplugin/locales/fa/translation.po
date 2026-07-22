@@ -68,6 +68,9 @@ msgstr "صعودی"
 msgid "Actions"
 msgstr "اقدامات"
 
+msgid "Download all books"
+msgstr "دانلود همه کتاب‌ها"
+
 msgid "Rescan library"
 msgstr "اسکن مجدد کتابخانه"
 
@@ -133,6 +136,21 @@ msgstr "دانلود جلد ناموفق بود."
 
 msgid "Could not delete the file."
 msgstr "حذف فایل ممکن نشد."
+
+msgid "No books to download."
+msgstr "کتابی برای دانلود وجود ندارد."
+
+msgid "Downloading %1 of %2…"
+msgstr "در حال دانلود %1 از %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "دانلود لغو شد. %1 از %2 دانلود شد."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 از %2 دانلود شد (%3 رد شد)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 از %2 دانلود شد."
 
 msgid "Removing from cloud…"
 msgstr "در حال حذف از فضای ابری…"
@@ -215,6 +233,9 @@ msgstr "ارسال یادداشت‌های Readest از این دستگاه"
 msgid "Pull readest annotations from other devices"
 msgstr "دریافت یادداشت‌های Readest از دستگاه‌های دیگر"
 
+msgid "Full sync all readest annotations"
+msgstr "همگام‌سازی کامل تمام یادداشت‌های Readest"
+
 msgid "Add to Readest"
 msgstr "افزودن به Readest"
 
@@ -239,6 +260,12 @@ msgstr "از قبل در کتابخانه Readest شما موجود است:"
 msgid "Added to Readest:"
 msgstr "به Readest افزوده شد:"
 
+msgid "No book is open"
+msgstr "هیچ کتابی باز نیست"
+
+msgid "Uploaded to Readest:"
+msgstr "در Readest بارگذاری شد:"
+
 msgid "Log in Readest Account"
 msgstr "ورود به حساب Readest"
 
@@ -251,11 +278,20 @@ msgstr "همگام‌سازی خودکار"
 msgid "Readest library"
 msgstr "کتابخانه Readest"
 
+msgid "Push stats now"
+msgstr "اکنون ارسال آمار"
+
+msgid "Pull stats now"
+msgstr "اکنون دریافت آمار"
+
 msgid "Push books now"
 msgstr "اکنون ارسال کتاب‌ها"
 
 msgid "Pull books now"
 msgstr "اکنون دریافت کتاب‌ها"
+
+msgid "Upload current book to Readest"
+msgstr "بارگذاری کتاب فعلی در Readest"
 
 msgid "Push reading progress now"
 msgstr "ارسال پیشرفت مطالعه اکنون"
@@ -286,9 +322,6 @@ msgstr "ابتدا وارد شوید"
 
 msgid "Please configure Readest settings first"
 msgstr "ابتدا تنظیمات Readest را پیکربندی کنید"
-
-msgid "No book is open"
-msgstr "هیچ کتابی باز نیست"
 
 msgid "(none)"
 msgstr "(هیچ‌کدام)"
@@ -436,3 +469,18 @@ msgstr "پیشرفت مطالعه همگام‌سازی شد"
 
 msgid "No saved reading progress found for this book"
 msgstr "پیشرفت مطالعه ذخیره‌شده‌ای برای این کتاب یافت نشد"
+
+msgid "Reading statistics are up to date"
+msgstr "آمار مطالعه به‌روز است"
+
+msgid "Reading statistics pushed"
+msgstr "آمار مطالعه ارسال شد"
+
+msgid "Failed to push reading statistics"
+msgstr "ارسال آمار مطالعه ناموفق بود"
+
+msgid "Failed to pull reading statistics"
+msgstr "دریافت آمار مطالعه ناموفق بود"
+
+msgid "Reading statistics pulled"
+msgstr "آمار مطالعه دریافت شد"

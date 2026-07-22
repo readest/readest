@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-is-updater-disabled"
+description = "Enables the is_updater_disabled command without any pre-configured scope."
+commands.allow = ["is_updater_disabled"]
+
+[[permission]]
+identifier = "deny-is-updater-disabled"
+description = "Denies the is_updater_disabled command without any pre-configured scope."
+commands.deny = ["is_updater_disabled"]

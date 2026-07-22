@@ -1,5 +1,75 @@
 {
   "releases": {
+    "0.11.20": {
+      "date": "2026-07-20",
+      "notes": [
+        "Text-to-Speech: Read-aloud voices can now be downloaded per book for offline listening, and adjustable pauses between sentences and paragraphs",
+        "Text-to-Speech: Added CarPlay support on iOS and more reliable Android Auto controls so you can listen while driving",
+        "Sync: Added OneDrive as a cloud provider, you can now sync to several providers at once",
+        "Reading: Added a right-edge swipe to change Auto Scroll speed, footnotes in Markdown books, and copying text now keeps its paragraph breaks",
+        "Reading: Smoother page-turn animations, steadier text selection on iOS, and a redesigned custom theme editor that stays readable on mobile",
+        "Annotations: You can now copy a highlight or note together with a deep link that jumps straight back to its spot in the book",
+        "Library: You can now sort and filter your shelf by time remaining, and the Recently Read shelf and widget show only books you're currently reading",
+        "PDF: Fixed a crash that could happen when turning pages or zooming large PDFs on iOS",
+        "More: Fixed OPDS catalogs disappearing after a restart, and improved 32-bit Android stability"
+      ]
+    },
+    "0.11.18": {
+      "date": "2026-07-08",
+      "notes": [
+        "Reading: Added Auto Scroll, a hands-free mode that scrolls the page for you at an adjustable pace, plus middle-click autoscroll on the desktop",
+        "Reading: Added slide and page-curl animations when turning pages for a more natural feel",
+        "Reading: Fixed page turning and the reading ruler for vertical right-to-left books, PDF text selection when system font scaling is on, and header/footer readability over light PDFs in dark mode",
+        "Text-to-Speech: Redesigned read-aloud as a mini player with an expandable full player, and playback now keeps going even after you close the book",
+        "Text-to-Speech: Online voices now play gap-free with chapter seeking and lock-screen controls, plus Android Auto support so you can listen in the car",
+        "Sync: Added S3-compatible cloud storage and a new Cloud Sync screen to choose and switch between your sync providers",
+        "Integrations: Added a Calibre plugin to push books and custom columns into Readest, and improved OPDS sign-in and auto-download for self-hosted catalogs",
+        "Library: New books dropped into watched folders now import automatically, and you can sort your shelf by reading progress",
+        "More: Added a speak button in the dictionary popup, a cleaner theme switcher, and per-rule toggles for proofreading"
+      ]
+    },
+    "0.11.17": {
+      "date": "2026-06-29",
+      "notes": [
+        "Sync: Added WebDAV and Google Drive sync for your books and reading data",
+        "Widgets: Added home-screen reading widgets on mobile so you can jump straight back into your book",
+        "Reading: You can now open and read Markdown(.md) files",
+        "Reading: You can select a word by double-clicking it, and search gained regex and nearby-words modes",
+        "Reading: Added a sticky progress bar with chapter markers, and keyboard shortcuts to fine-tune text selection",
+        "Library: Added a Recently Read shelf to quickly pick up where you left off, plus a separate background texture for your library",
+        "Text-to-Speech: Added offline voices on iOS, a setting to highlight by word or by sentence",
+        "PDF: Smoother pinch-zoom and panning, faster scrolling on mobile, and a new contrast option in the view menu",
+        "More: Customize the highlight toolbar across all books, filter exported annotations by color and style"
+      ]
+    },
+    "0.11.12": {
+      "date": "2026-06-20",
+      "notes": [
+        "Reading: Fixed full-page cover images and cover backgrounds that didn't display correctly under a page texture",
+        "Reading: Fixed a crash when opening large PDF files on mobile devices",
+        "Reading: You can now save or share an image straight from the image viewer",
+        "Speed Reading: Fixed the control bar overlapping the playback controls on mobile",
+        "Sync: Books without a reading status no longer jump back to the top after every sync",
+        "Sync: Your per-device reading view settings now stay local instead of syncing between devices",
+        "OPDS: Fixed the Add Catalog dialog appearing behind Settings on mobile"
+      ]
+    },
+    "0.11.10": {
+      "date": "2026-06-19",
+      "notes": [
+        "Reading: Added Word Lens, which shows a quick translation above difficult words as you read",
+        "Reading: Added real page numbers from the book's own page list, and the current page now appears under the active chapter in the table of contents",
+        "Reading: Added Webtoon Mode for seamless, gap-free scrolling through comics and image books, and you can now tap an image or table to open it full-screen",
+        "Reading Stats: Track your reading time and pages, now synced across your devices and with KOReader",
+        "Library: Unlock the app with your fingerprint or Face ID, browse books by series in list view, search any title on Goodreads",
+        "Integrations: Hardcover progress and notes sync automatically, OPDS catalogs gained search and richer descriptions",
+        "Text-to-Speech: Words are highlighted one at a time as they're read aloud, with read-along following you through paragraph and speed reading modes",
+        "Speed Reading: Added a start delay, word-by-word stepping, dictionary lookups, keyboard shortcuts, and your reading font now styles the focused word",
+        "Dictionary: Word variations now resolve to their base forms, with more reliable system dictionary lookups on Android and iOS",
+        "Annotations: Customize the highlight toolbar, share selected text to other apps, and highlights now render correctly over bulleted lists",
+        "Platform: Added an opt-in nightly update channel for early access to new features, plus faster, smoother reading and many platform fixes"
+      ]
+    },
     "0.11.4": {
       "date": "2026-06-03",
       "notes": [

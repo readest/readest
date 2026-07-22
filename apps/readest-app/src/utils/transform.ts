@@ -10,6 +10,7 @@ import {
 } from '@/types/book';
 import { DBBookConfig, DBBook, DBBookNote } from '@/types/records';
 import { sanitizeString } from './sanitize';
+import { buildFeedBookUrl } from '@/services/rss/feedBookUrl';
 
 export const transformBookConfigToDB = (bookConfig: unknown, userId: string): DBBookConfig => {
   const {
@@ -76,6 +77,9 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
     tags,
     progress,
     readingStatus,
+    readingStatusUpdatedAt,
+    coverHash,
+    coverUpdatedAt,
     metadata,
     createdAt,
     updatedAt,
@@ -95,6 +99,11 @@ export const transformBookToDB = (book: unknown, userId: string): DBBook => {
     tags: tags,
     progress: progress,
     reading_status: readingStatus,
+    reading_status_updated_at: readingStatusUpdatedAt
+      ? new Date(readingStatusUpdatedAt).toISOString()
+      : null,
+    cover_hash: coverHash ?? null,
+    cover_updated_at: coverUpdatedAt ? new Date(coverUpdatedAt).toISOString() : null,
     source_title: sanitizeString(sourceTitle),
     metadata: metadata ? sanitizeString(JSON.stringify(metadata)) : null,
     created_at: new Date(createdAt ?? Date.now()).toISOString(),
@@ -116,6 +125,9 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
     tags,
     progress,
     reading_status,
+    reading_status_updated_at,
+    cover_hash,
+    cover_updated_at,
     source_title,
     metadata,
     created_at,
@@ -124,7 +136,7 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
     uploaded_at,
   } = dbBook;
 
-  return {
+  const book: Book = {
     hash: book_hash,
     metaHash: meta_hash,
     format: format as BookFormat,
@@ -135,6 +147,11 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
     tags: tags,
     progress: progress,
     readingStatus: reading_status as ReadingStatus,
+    readingStatusUpdatedAt: reading_status_updated_at
+      ? new Date(reading_status_updated_at).getTime()
+      : undefined,
+    coverHash: cover_hash ?? null,
+    coverUpdatedAt: cover_updated_at ? new Date(cover_updated_at).getTime() : null,
     sourceTitle: source_title,
     metadata: metadata ? JSON.parse(metadata) : null,
     createdAt: new Date(created_at!).getTime(),
@@ -142,6 +159,12 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
     deletedAt: deleted_at ? new Date(deleted_at).getTime() : null,
     uploadedAt: uploaded_at ? new Date(uploaded_at).getTime() : null,
   };
+  // Native cloud DBBook has no `url` column; a feed book carries its feed URL in
+  // metadata so the reader can rebuild the feed:// descriptor here.
+  if (!book.url && book.metadata?.feedUrl) {
+    book.url = buildFeedBookUrl(book.metadata.feedUrl);
+  }
+  return book;
 };
 
 export const transformBookNoteToDB = (bookNote: unknown, userId: string): DBBookNote => {

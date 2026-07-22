@@ -76,6 +76,45 @@ describe('customOPDSStore', () => {
       expect(revived.reincarnation).toBeTruthy();
       expect(publishReplicaUpsert).toHaveBeenCalledTimes(1);
     });
+
+    test('re-adding after a restart (local tombstone stripped) still revives the server row', async () => {
+      // Reporter scenario (#5180): the catalog carries a server-side
+      // tombstone (from a prior delete on this or another device). After
+      // an app restart the local tombstone is gone — saveCustomOPDSCatalogs
+      // strips deletedAt entries from persisted settings — so addCatalog
+      // sees no in-memory entry and, before this fix, never minted a
+      // reincarnation token. Under CRDT remove-wins the re-added catalog
+      // then loses to the tombstone and vanishes on the next pull. The
+      // re-add must reincarnate even though no local tombstone survives.
+      const env = makeEnvConfig();
+      const first = useCustomOPDSStore.getState().addCatalog({
+        id: 'l1',
+        name: 'L1',
+        url: 'https://example.com/opds',
+      });
+      useCustomOPDSStore.getState().removeCatalog(first.id);
+      await useCustomOPDSStore.getState().saveCustomOPDSCatalogs(env);
+      // The tombstone did not survive persistence...
+      expect(useSettingsStore.getState().settings.opdsCatalogs).toHaveLength(0);
+
+      // ...so a restart hydrates an empty store.
+      useCustomOPDSStore.setState({ catalogs: [], loading: false });
+      await useCustomOPDSStore.getState().loadCustomOPDSCatalogs(env);
+      expect(useCustomOPDSStore.getState().catalogs).toHaveLength(0);
+
+      vi.clearAllMocks();
+      const revived = useCustomOPDSStore.getState().addCatalog({
+        id: 'l2',
+        name: 'L1 again',
+        url: 'https://example.com/opds',
+      });
+      expect(revived.deletedAt).toBeUndefined();
+      expect(revived.reincarnation).toBeTruthy();
+      // The published upsert must carry the reincarnation token so the
+      // server-side tombstone is revived rather than winning again.
+      const call = (publishReplicaUpsert as unknown as ReturnType<typeof vi.fn>).mock.calls[0]!;
+      expect(call[3]).toBeTruthy();
+    });
   });
 
   describe('updateCatalog', () => {

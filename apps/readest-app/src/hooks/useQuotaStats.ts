@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { QuotaType, UserPlan } from '@/types/quota';
 import { getStoragePlanData, getTranslationPlanData, getUserProfilePlan } from '@/utils/access';
+import { setCachedUserPlan } from '@/services/sync/cloudSyncProvider';
 import { useTranslation } from './useTranslation';
 
 export const useQuotaStats = (briefName = false) => {
@@ -41,7 +42,12 @@ export const useQuotaStats = (briefName = false) => {
       unit: 'K',
       resetAt: translationResetAt,
     };
-    setUserProfilePlan(getUserProfilePlan(token));
+    const profilePlan = getUserProfilePlan(token);
+    setUserProfilePlan(profilePlan);
+    // Non-React modules (transferManager, syncCategories) need the plan
+    // synchronously for the cloud-sync provider gate; cache it here, the
+    // one place the plan is resolved from the JWT.
+    setCachedUserPlan(profilePlan);
     setQuotas([storageQuota, translationQuota]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);

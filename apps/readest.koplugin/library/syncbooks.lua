@@ -125,6 +125,24 @@ function M.resolve_collision(candidate, exists)
     return candidate
 end
 
+-- sanitize_json_nulls(v) — recursively replace function-valued JSON null
+-- sentinels with dkjson's null. KOReader's require("json") is LuaJSON, whose
+-- decoder represents a JSON null as a *function* (json.util.null). The /sync
+-- push payload is re-encoded by Spore's Format.JSON middleware with dkjson,
+-- which raises "type 'function' is not supported by JSON" on any function and
+-- fails the entire pushChanges (issue #5006). Converting the sentinel to
+-- dkjson.null re-encodes it as a JSON null — byte-faithful to what the
+-- metadata carried on the wire, with no metadata churn across devices.
+local function sanitize_json_nulls(v)
+    if type(v) == "function" then
+        return require("dkjson").null
+    elseif type(v) == "table" then
+        for k, val in pairs(v) do v[k] = sanitize_json_nulls(val) end
+    end
+    return v
+end
+M._sanitize_json_nulls = sanitize_json_nulls  -- exported for tests
+
 -- ---------------------------------------------------------------------------
 -- row_to_wire(row) — convert our internal snake_case row to the
 -- camelCase Book shape Readest's server expects on POST /sync (mirrors
@@ -148,6 +166,7 @@ local function row_to_wire(row)
         groupId       = row.group_id,
         groupName     = row.group_name,
         readingStatus = row.reading_status,
+        readingStatusUpdatedAt = num(row.reading_status_updated_at),
         createdAt     = num(row.created_at),
         updatedAt     = num(row.updated_at),
         deletedAt     = num(row.deleted_at),
@@ -158,18 +177,37 @@ local function row_to_wire(row)
     if row.metadata_json and row.metadata_json ~= "" then
         local json = require("json")
         local ok, parsed = pcall(json.decode, row.metadata_json)
-        if ok and type(parsed) == "table" then out.metadata = parsed end
+        if ok and type(parsed) == "table" then out.metadata = sanitize_json_nulls(parsed) end
     end
     -- progress: stored locally as JSON tuple [cur, total] in progress_lib;
     -- the wire format expects the actual array.
     if row.progress_lib and row.progress_lib ~= "" then
         local json = require("json")
         local ok, parsed = pcall(json.decode, row.progress_lib)
-        if ok and type(parsed) == "table" then out.progress = parsed end
+        if ok and type(parsed) == "table" then out.progress = sanitize_json_nulls(parsed) end
     end
     return out
 end
 M._row_to_wire = row_to_wire  -- exported for tests
+
+-- ---------------------------------------------------------------------------
+-- row_pull_cursor(parsed) — this parsed row's contribution to the
+-- incremental-pull watermark. The server keys the books pull on the
+-- server-stamped `synced_at` (issue #4678), so when present it wins outright:
+-- updated_at/deleted_at are client-supplied and can run ahead of the server
+-- on a device with a fast clock, which pushed the cursor into the future and
+-- starved every later pull (issue #4934). Rows from a pre-synced_at server
+-- fall back to max(updated_at, deleted_at). Mirrors computeMaxTimestamp at
+-- apps/readest-app/src/hooks/useSync.ts:29.
+-- ---------------------------------------------------------------------------
+local function row_pull_cursor(parsed)
+    if parsed.synced_at then return parsed.synced_at end
+    local ts = 0
+    if parsed.updated_at and parsed.updated_at > ts then ts = parsed.updated_at end
+    if parsed.deleted_at and parsed.deleted_at > ts then ts = parsed.deleted_at end
+    return ts
+end
+M._row_pull_cursor = row_pull_cursor  -- exported for tests
 
 -- ---------------------------------------------------------------------------
 -- pushBook(book_row, opts, cb) — POST a single book row to /sync. Used
@@ -233,7 +271,7 @@ function M.pushChangedBooks(opts, cb)
         return
     end
 
-    local since = store:getLastPulledAt() or 0
+    local since = store:getLastPushedAt() or 0
     local changed = store:getChangedBooks(since)
     if #changed == 0 then
         logger.info("ReadestLibrary pushChangedBooks: nothing to push (since=" .. since .. ")")
@@ -271,7 +309,7 @@ function M.pushChangedBooks(opts, cb)
                     if cb then cb(false, body and body.error or "push failed", status) end
                     return
                 end
-                store:setLastPulledAt(max_ts)
+                store:setLastPushedAt(max_ts)
                 if cb then cb(true, #books_wire) end
             end)
     end)
@@ -380,7 +418,14 @@ function M.pullBooks(opts, cb)
             end
 
             local rows = body and body.books or {}
-            local max_ts = 0
+            -- Two separate watermarks, seeded from their stored values so a
+            -- partial/empty page never regresses either cursor (issue #4934):
+            --   pull_ts  — server synced_at; the `since` we send next pull.
+            --   push_ts  — local updated_at | deleted_at; getChangedBooks's
+            --              cursor, advanced here too so a just-pulled book
+            --              (already on the server) isn't re-pushed.
+            local pull_ts = opts.store:getLastPulledAt() or 0
+            local push_ts = opts.store:getLastPushedAt() or 0
             local upserted = 0
             for _, raw in ipairs(rows) do
                 local parsed = LibraryStore.parseSyncRow(raw)
@@ -388,19 +433,21 @@ function M.pullBooks(opts, cb)
                     parsed.user_id = opts.settings.user_id
                     opts.store:upsertBook(parsed)
                     upserted = upserted + 1
-                    -- Watermark = max of returned updated_at | deleted_at,
-                    -- not local now (codex round 1, finding 8).
-                    if parsed.updated_at and parsed.updated_at > max_ts then
-                        max_ts = parsed.updated_at
+                    local rc = row_pull_cursor(parsed)
+                    if rc > pull_ts then pull_ts = rc end
+                    if parsed.updated_at and parsed.updated_at > push_ts then
+                        push_ts = parsed.updated_at
                     end
-                    if parsed.deleted_at and parsed.deleted_at > max_ts then
-                        max_ts = parsed.deleted_at
+                    if parsed.deleted_at and parsed.deleted_at > push_ts then
+                        push_ts = parsed.deleted_at
                     end
                 end
             end
-            if max_ts > 0 then opts.store:setLastPulledAt(max_ts) end
+            opts.store:setLastPulledAt(pull_ts)
+            opts.store:setLastPushedAt(push_ts)
             logger.info("ReadestLibrary pullBooks complete: rows=" .. #rows
-                .. " upserted=" .. upserted .. " new_watermark=" .. max_ts)
+                .. " upserted=" .. upserted .. " new_watermark=" .. pull_ts
+                .. " push_watermark=" .. push_ts)
             if cb then cb(true, upserted) end
         end)
     end)
@@ -874,6 +921,64 @@ function M.uploadBook(book, opts, cb)
                 if cb then cb(true) end
             end
         end)
+    end)
+end
+
+-- ---------------------------------------------------------------------------
+-- uploadAndRecord(book, opts, cb) — uploadBook plus the bookkeeping that has
+-- to follow a successful upload.
+-- ---------------------------------------------------------------------------
+-- Mirrors cloudService.uploadBook's post-upload writes: mark the row
+-- cloud-present, stamp uploaded_at + updated_at, clear any tombstone, then
+-- push the row so other devices learn the book is in the cloud.
+--
+-- Shared by the Library widget's long-press "Upload to Cloud" and the plugin
+-- menu's "Upload current book to Readest" so the two can't drift. Skipping
+-- this step would strand the book: the row would stay cloud_present=0, so the
+-- Library would keep showing the upload icon and peers would never see it.
+--
+-- Nothing is recorded when the upload fails — claiming cloud_present for bytes
+-- that never landed would tell peers to download a file that isn't there.
+--
+-- The push runs in the background: the book is in the cloud and the local row
+-- already knows it, so callers shouldn't hold a progress dialog open waiting
+-- on a metadata round-trip. opts.on_pushed fires when it lands.
+--
+-- opts: { sync_auth, sync_path, settings, store, covers_dir = optional,
+--         on_pushed = optional }
+-- cb: function(success, msg, status)
+-- ---------------------------------------------------------------------------
+function M.uploadAndRecord(book, opts, cb)
+    M.uploadBook(book, opts, function(success, msg, status)
+        if not success then
+            if cb then cb(false, msg, status) end
+            return
+        end
+
+        local now = math.floor(os.time() * 1000)
+        opts.store:upsertBook({
+            hash          = book.hash,
+            title         = book.title,
+            cloud_present = 1,
+            uploaded_at   = now,
+            updated_at    = now,
+            _clear_fields = { "deleted_at" },
+        })
+
+        -- Copy rather than mutate: callers hand us a live row (the Library
+        -- widget passes its on-screen entry), and the wire row needs
+        -- deleted_at gone so peers stop treating the book as deleted.
+        local pushed = {}
+        for k, v in pairs(book) do pushed[k] = v end
+        pushed.cloud_present = 1
+        pushed.uploaded_at   = now
+        pushed.updated_at    = now
+        pushed.deleted_at    = nil
+
+        M.pushBook(pushed, opts, function()
+            if opts.on_pushed then opts.on_pushed() end
+        end)
+        if cb then cb(true) end
     end)
 end
 

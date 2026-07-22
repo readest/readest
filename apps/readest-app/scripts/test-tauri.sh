@@ -48,8 +48,12 @@ while ! curl -sf "http://localhost:${DEV_PORT}" >/dev/null 2>&1; do
 done
 
 echo "Starting Tauri app with webdriver (no-watch, skip beforeDevCommand)..."
+# webdriver-remote grants the app commands to the vitest tester page, which
+# tauri treats as a remote origin (served from vitest's port, not the devUrl).
+# It is excluded from app.security.capabilities in tauri.conf.json, so it only
+# exists in this harness run.
 dotenv -e .env.tauri -- tauri dev --features webdriver --no-watch \
-  --config '{"build":{"beforeDevCommand":""}}' &
+  --config '{"build":{"beforeDevCommand":""},"app":{"security":{"capabilities":["default","desktop-capability","webdriver-remote"]}}}' &
 TAURI_PID=$!
 
 echo "Waiting for WebDriver server on port $WEBDRIVER_PORT (timeout ${TIMEOUT}s)..."

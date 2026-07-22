@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, cleanup, fireEvent } from '@testing-library/react';
+import { render, cleanup, fireEvent, act } from '@testing-library/react';
 
 import ImageViewer from '@/app/reader/components/ImageViewer';
 
@@ -10,6 +10,11 @@ vi.mock('@/hooks/useTranslation', () => ({
 // useKeyDownActions pulls in EnvContext + device store; not under test here.
 vi.mock('@/hooks/useKeyDownActions', () => ({
   useKeyDownActions: () => {},
+}));
+
+// ImageViewer reads appService (for the save button) via useEnv; stub it.
+vi.mock('@/context/EnvContext', () => ({
+  useEnv: () => ({ appService: null }),
 }));
 
 // ZoomControls reaches into the theme store and Tauri window APIs; stub it out.
@@ -77,5 +82,36 @@ describe('ImageViewer', () => {
 
     fireEvent.mouseUp(window);
     expect(img.style.transition).not.toBe('none');
+  });
+
+  // Trackpad pinch flicker (#4742): on macOS a trackpad pinch-to-zoom arrives
+  // as a rapid stream of ctrl+wheel events. With the 0.05s transition left on,
+  // each event restarts the in-flight transition from its interpolated
+  // mid-point, so the image lags and flickers — the same root cause as the
+  // #4451 pan flicker. The transition must be off while the wheel-zoom gesture
+  // is streaming, then return for discrete zoom once the gesture settles.
+  it('disables the transform transition during ctrl+wheel (trackpad pinch) zoom', () => {
+    vi.useFakeTimers();
+    try {
+      const { container } = render(
+        <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+      );
+      const img = container.querySelector('img')!;
+
+      expect(img.style.transition).not.toBe('none');
+
+      act(() => {
+        fireEvent.wheel(img, { deltaY: -50, ctrlKey: true, clientX: 100, clientY: 100 });
+      });
+      expect(img.style.transition).toBe('none');
+
+      // After the gesture settles the smoothing returns for discrete zoom.
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      expect(img.style.transition).not.toBe('none');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

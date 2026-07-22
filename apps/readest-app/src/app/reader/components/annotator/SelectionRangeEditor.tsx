@@ -17,6 +17,9 @@ interface SelectionRangeEditorProps {
   handleColor: HighlightColor;
   onRangeChange: (range: Range, index: number, commit: boolean) => void;
   onStartDrag: () => void;
+  noteAutoTurnPoint: (point: Point | null) => void;
+  cancelAutoTurn: () => void;
+  onAutoTurn: (cb: () => void) => () => void;
 }
 
 // Drag handles for a plain (not yet annotated) text selection. Used on
@@ -31,6 +34,9 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
   handleColor,
   onRangeChange,
   onStartDrag,
+  noteAutoTurnPoint,
+  cancelAutoTurn,
+  onAutoTurn,
 }) => {
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
@@ -45,6 +51,8 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
   const startRef = useRef<Point>({ x: 0, y: 0 });
   const endRef = useRef<Point>({ x: 0, y: 0 });
   const lastBuiltRef = useRef<{ range: Range; index: number } | null>(null);
+  // Unsubscribe for the after-turn re-emit while a handle is being dragged.
+  const autoTurnUnsubRef = useRef<(() => void) | null>(null);
   const [draggingHandle, setDraggingHandle] = useState<'start' | 'end' | null>(null);
   const [currentStart, setCurrentStart] = useState<Point>({ x: 0, y: 0 });
   const [currentEnd, setCurrentEnd] = useState<Point>({ x: 0, y: 0 });
@@ -86,9 +94,22 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
       if (!built) return;
       lastBuiltRef.current = { range: built, index: selection.index };
       onRangeChange(built, selection.index, false);
+      // Drag the handle into the corner to turn the page; the anchored end keeps
+      // the previous page's part of the selection across the turn.
+      noteAutoTurnPoint(viewSettings?.scrolled ? null : point);
     },
-    [selection.index, onRangeChange],
+    [selection.index, onRangeChange, noteAutoTurnPoint, viewSettings?.scrolled],
   );
+
+  // Rebuild the range from the held handle position after an auto page-turn, so
+  // the selection extends onto the new page without waiting for the next move.
+  const subscribeAutoTurnReemit = useCallback(() => {
+    autoTurnUnsubRef.current?.();
+    autoTurnUnsubRef.current = onAutoTurn(() => {
+      const point = draggingRef.current === 'start' ? startRef.current : endRef.current;
+      updateFromDraggedPoint(point);
+    });
+  }, [onAutoTurn, updateFromDraggedPoint]);
 
   const handleStartDragStart = useCallback(() => {
     const base = lastBuiltRef.current?.range ?? selection.range;
@@ -96,8 +117,9 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
     draggingRef.current = 'start';
     setDraggingHandle('start');
     setLoupePoint({ ...startRef.current });
+    subscribeAutoTurnReemit();
     onStartDrag();
-  }, [selection, onStartDrag]);
+  }, [selection, onStartDrag, subscribeAutoTurnReemit]);
 
   const handleEndDragStart = useCallback(() => {
     const base = lastBuiltRef.current?.range ?? selection.range;
@@ -105,8 +127,9 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
     draggingRef.current = 'end';
     setDraggingHandle('end');
     setLoupePoint({ ...endRef.current });
+    subscribeAutoTurnReemit();
     onStartDrag();
-  }, [selection, onStartDrag]);
+  }, [selection, onStartDrag, subscribeAutoTurnReemit]);
 
   const handleStartDrag = useCallback(
     (point: Point) => {
@@ -132,11 +155,14 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
     draggingRef.current = null;
     setDraggingHandle(null);
     setLoupePoint(null);
+    cancelAutoTurn();
+    autoTurnUnsubRef.current?.();
+    autoTurnUnsubRef.current = null;
     const last = lastBuiltRef.current;
     if (last) {
       onRangeChange(last.range, last.index, true);
     }
-  }, [onRangeChange]);
+  }, [onRangeChange, cancelAutoTurn]);
 
   if (currentStart.x === 0 && currentStart.y === 0) {
     return null;

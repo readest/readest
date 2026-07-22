@@ -2,10 +2,15 @@ import { useEffect, useCallback, useMemo } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from './useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
-import { useTransferStore, TransferType } from '@/store/transferStore';
+import { useTransferStore, TransferType, isFailedLikeTransfer } from '@/store/transferStore';
 import { transferManager } from '@/services/transferManager';
 import { Book } from '@/types/book';
 
+// The `libraryLoaded = true` default lets surfaces like SettingsMenu and
+// TransferQueuePanel initialize the manager on mount, before settings
+// hydrate. That is safe: the manager defers book uploads until
+// settings.version is truthy and reconciles them against the selected
+// cloud sync provider once it is (see transferManager.isSettingsLoaded).
 export function useTransferQueue(libraryLoaded = true, delayInit = 0) {
   const { envConfig, appService } = useEnv();
   const _ = useTranslation();
@@ -67,15 +72,19 @@ export function useTransferQueue(libraryLoaded = true, delayInit = 0) {
   }, []);
 
   const clearCompleted = useCallback(() => {
-    useTransferStore.getState().clearCompleted();
+    transferManager.clearCompleted();
   }, []);
 
   const clearFailed = useCallback(() => {
-    useTransferStore.getState().clearFailed();
+    transferManager.clearFailed();
+  }, []);
+
+  const clearPending = useCallback(() => {
+    transferManager.clearPending();
   }, []);
 
   const clearAll = useCallback(() => {
-    useTransferStore.getState().clearAll();
+    transferManager.clearAll();
   }, []);
 
   const getTransferProgress = useCallback((bookHash: string, type: TransferType) => {
@@ -88,7 +97,7 @@ export function useTransferQueue(libraryLoaded = true, delayInit = 0) {
       pending: transferList.filter((t) => t.status === 'pending').length,
       active: transferList.filter((t) => t.status === 'in_progress').length,
       completed: transferList.filter((t) => t.status === 'completed').length,
-      failed: transferList.filter((t) => t.status === 'failed' || t.status === 'cancelled').length,
+      failed: transferList.filter(isFailedLikeTransfer).length,
       total: transferList.length,
     };
   }, [transfers]);
@@ -102,9 +111,7 @@ export function useTransferQueue(libraryLoaded = true, delayInit = 0) {
   }, [transfers]);
 
   const failedTransfers = useMemo(() => {
-    return Object.values(transfers).filter(
-      (t) => t.status === 'failed' || t.status === 'cancelled',
-    );
+    return Object.values(transfers).filter(isFailedLikeTransfer);
   }, [transfers]);
 
   const completedTransfers = useMemo(() => {
@@ -136,6 +143,7 @@ export function useTransferQueue(libraryLoaded = true, delayInit = 0) {
     resumeQueue,
     clearCompleted,
     clearFailed,
+    clearPending,
     clearAll,
     getTransferProgress,
   };

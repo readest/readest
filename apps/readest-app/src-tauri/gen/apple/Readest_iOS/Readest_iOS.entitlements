@@ -14,5 +14,7 @@
 	<array>
 		<string>group.com.bilingify.readest</string>
 	</array>
+	<key>com.apple.developer.carplay-audio</key>
+	<true/>
 </dict>
 </plist>

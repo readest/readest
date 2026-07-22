@@ -43,6 +43,15 @@ export class SyncError extends Error {
 export const isSyncError = (e: unknown): e is SyncError =>
   e instanceof SyncError || (e instanceof Error && e.name === 'SyncError');
 
+/**
+ * The signature of "this key can't read this ciphertext": AES-GCM auth-tag
+ * failure or SHA-256 sidecar mismatch. In practice both mean the passphrase
+ * behind the derived key is wrong. Distinct from SALT_NOT_FOUND /
+ * CRYPTO_UNAVAILABLE, which say nothing about the passphrase.
+ */
+export const isWrongPassphraseError = (e: unknown): boolean =>
+  isSyncError(e) && (e.code === 'DECRYPT' || e.code === 'INTEGRITY');
+
 export const assertNever = (x: never): never => {
   throw new SyncError('VALIDATION', `Unexpected value: ${JSON.stringify(x)}`);
 };

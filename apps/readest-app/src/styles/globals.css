@@ -551,6 +551,15 @@ input[type='range'].slider-input {
   background-color: theme('colors.base-100') !important;
 }
 
+/* Hide the horizontal scrollbar on the virtualized OPDS group carousels. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 [data-eink='true'] input.search-input,
 [data-eink='true'] input.search-input:focus {
   border-width: 1px !important;
@@ -663,6 +672,56 @@ input[type='range'].slider-input {
 
 [data-eink='true'] input[type='checkbox'] {
   --tglbg: theme('colors.base-100') !important;
+}
+
+/* DaisyUI checkboxes on e-ink: the default unchecked border is a ~20%-opacity
+ * theme color that barely registers on a grayscale panel, so a configured-but-
+ * disabled control (e.g. a cloud sync provider's enable box, #5141) reads as
+ * empty space. Give the box a crisp 1px base-content outline so it stays
+ * visible when unchecked. Scoped to `.checkbox` so the `.toggle` switch keeps
+ * its own treatment. */
+[data-eink='true'] input[type='checkbox'].checkbox {
+  border-width: 1px !important;
+  border-color: theme('colors.base-content') !important;
+}
+
+/* Dictionary popup font size (#4443).
+ *
+ * `--dict-font-scale` is set per content card by DictionaryResultsView; `1`
+ * = default sizes. It scales every provider's rendered definition while
+ * leaving the popup chrome (header, source label, web-search rows — all
+ * outside this scope) untouched.
+ *
+ * `[data-dict-content]` is the per-tab content root. Light-DOM providers
+ * size text with Tailwind `text-*` utilities (root-relative `rem`), which a
+ * container `font-size` alone can't move — so those utilities are re-based to
+ * `em` WITHIN THIS SCOPE ONLY, letting them ride the scaled root.
+ *
+ * MDict renders into a shadow root, so its body is unreachable by ordinary
+ * selectors; `::part(dict-content)` (exposed on the body in mdictProvider) is
+ * the only hook that crosses the boundary. */
+[data-dict-content] {
+  font-size: calc(var(--dict-font-scale, 1) * 1em);
+}
+
+[data-dict-content] .text-xs {
+  font-size: 0.75em;
+}
+
+[data-dict-content] .text-sm {
+  font-size: 0.875em;
+}
+
+[data-dict-content] .text-base {
+  font-size: 1em;
+}
+
+[data-dict-content] .text-lg {
+  font-size: 1.125em;
+}
+
+[data-dict-content] .dict-shadow-host::part(dict-content) {
+  font-size: calc(var(--dict-font-scale, 1) * 0.875rem);
 }
 
 .no-transitions * {
@@ -925,4 +984,48 @@ textarea:focus-within,
 .textarea:focus-within {
   outline: none !important;
   box-shadow: none !important;
+}
+
+/* A captured or View Transition curl/slide snapshot already contains the
+   visible reader chrome. Sync its live copy underneath without playing the
+   regular toolbar transition alongside the page turn or cancellation. */
+.captured-turn-sync-chrome .header-bar,
+.captured-turn-sync-chrome .footer-bar {
+  transition: none !important;
+}
+
+/* TTS player scrubber: the track is painted by an inline three-stop gradient
+   (played / buffered / rest), so the native appearance must be blanked and
+   the element itself becomes the 4px track. Thumb inherits currentColor. */
+.tts-scrubber {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+}
+.tts-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: currentColor;
+}
+.tts-scrubber::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: none;
+  border-radius: 9999px;
+  background: currentColor;
+}
+.tts-scrubber:disabled {
+  opacity: 0.5;
+}
+
+/* E-ink: the gradient's grey stops wash out, so a crisp 1px border marks the
+   track's extent while the solid currentColor fill and thumb carry the
+   position. Slightly taller so the fill stays visible inside the border. */
+[data-eink='true'] .tts-scrubber {
+  height: 6px;
+  border: 1px solid currentColor;
 }

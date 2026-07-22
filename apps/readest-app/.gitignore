@@ -59,8 +59,14 @@ next-env.d.ts
 #generated
 src-tauri/gen
 
+# local dev overrides (personal signing, etc.)
+src-tauri/tauri.*.local.json
+
 # vendor
 /public/vendor
+
+# docs
+docs/superpowers
 
 # Auto Generated PWA files
 /public/sw.js
@@ -73,6 +79,7 @@ src-tauri/gen
 .context/
 .claude/settings.local.json
 .claude/skills
+.claude/plans
 
 # Playwright web e2e
 /test-results/
@@ -80,3 +87,7 @@ src-tauri/gen
 /blob-report/
 /playwright/.cache/
 
+
+# Word Lens build-input corpora (ECDICT, WikDict, FrequencyWords, etc.) — large,
+# downloaded on demand by scripts/build-wordlens-data.mjs; cached locally, not committed.
+/data/wordlens/.sources/

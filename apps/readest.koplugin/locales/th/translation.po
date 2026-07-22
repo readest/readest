@@ -68,6 +68,9 @@ msgstr "จากน้อยไปมาก"
 msgid "Actions"
 msgstr "การกระทำ"
 
+msgid "Download all books"
+msgstr "ดาวน์โหลดหนังสือทั้งหมด"
+
 msgid "Rescan library"
 msgstr "สแกนคลังใหม่"
 
@@ -133,6 +136,21 @@ msgstr "ดาวน์โหลดปกไม่สำเร็จ"
 
 msgid "Could not delete the file."
 msgstr "ลบไฟล์ไม่ได้"
+
+msgid "No books to download."
+msgstr "ไม่มีหนังสือให้ดาวน์โหลด"
+
+msgid "Downloading %1 of %2…"
+msgstr "กำลังดาวน์โหลด %1 จาก %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "ยกเลิกการดาวน์โหลดแล้ว ดาวน์โหลด %1 จาก %2 แล้ว"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "ดาวน์โหลด %1 จาก %2 แล้ว (ข้าม %3)"
+
+msgid "Downloaded %1 of %2."
+msgstr "ดาวน์โหลด %1 จาก %2 แล้ว"
 
 msgid "Removing from cloud…"
 msgstr "กำลังลบจากคลาวด์…"
@@ -215,6 +233,9 @@ msgstr "ส่งคำอธิบาย Readest จากอุปกรณ์
 msgid "Pull readest annotations from other devices"
 msgstr "ดึงคำอธิบาย Readest จากอุปกรณ์อื่น"
 
+msgid "Full sync all readest annotations"
+msgstr "ซิงค์คำอธิบาย Readest ทั้งหมดแบบเต็ม"
+
 msgid "Add to Readest"
 msgstr "เพิ่มลง Readest"
 
@@ -239,6 +260,12 @@ msgstr "มีอยู่แล้วในคลัง Readest ของคุ
 msgid "Added to Readest:"
 msgstr "เพิ่มลง Readest แล้ว:"
 
+msgid "No book is open"
+msgstr "ไม่มีหนังสือที่เปิดอยู่"
+
+msgid "Uploaded to Readest:"
+msgstr "อัปโหลดไปยัง Readest แล้ว:"
+
 msgid "Log in Readest Account"
 msgstr "เข้าสู่ระบบบัญชี Readest"
 
@@ -251,11 +278,20 @@ msgstr "ซิงค์อัตโนมัติ"
 msgid "Readest library"
 msgstr "คลัง Readest"
 
+msgid "Push stats now"
+msgstr "ส่งสถิติเดี๋ยวนี้"
+
+msgid "Pull stats now"
+msgstr "ดึงสถิติเดี๋ยวนี้"
+
 msgid "Push books now"
 msgstr "ส่งหนังสือเดี๋ยวนี้"
 
 msgid "Pull books now"
 msgstr "ดึงหนังสือเดี๋ยวนี้"
+
+msgid "Upload current book to Readest"
+msgstr "อัปโหลดหนังสือปัจจุบันไปยัง Readest"
 
 msgid "Push reading progress now"
 msgstr "ส่งความคืบหน้าการอ่านตอนนี้"
@@ -286,9 +322,6 @@ msgstr "โปรดเข้าสู่ระบบก่อน"
 
 msgid "Please configure Readest settings first"
 msgstr "โปรดกำหนดค่า Readest ก่อน"
-
-msgid "No book is open"
-msgstr "ไม่มีหนังสือที่เปิดอยู่"
 
 msgid "(none)"
 msgstr "(ไม่มี)"
@@ -436,3 +469,18 @@ msgstr "ซิงค์ความคืบหน้าการอ่านแ
 
 msgid "No saved reading progress found for this book"
 msgstr "ไม่พบความคืบหน้าการอ่านที่บันทึกไว้สำหรับหนังสือเล่มนี้"
+
+msgid "Reading statistics are up to date"
+msgstr "สถิติการอ่านเป็นปัจจุบันแล้ว"
+
+msgid "Reading statistics pushed"
+msgstr "ส่งสถิติการอ่านแล้ว"
+
+msgid "Failed to push reading statistics"
+msgstr "ส่งสถิติการอ่านไม่สำเร็จ"
+
+msgid "Failed to pull reading statistics"
+msgstr "ดึงสถิติการอ่านไม่สำเร็จ"
+
+msgid "Reading statistics pulled"
+msgstr "ดึงสถิติการอ่านแล้ว"

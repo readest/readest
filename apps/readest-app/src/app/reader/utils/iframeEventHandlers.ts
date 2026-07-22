@@ -1,9 +1,51 @@
 import { DOUBLE_CLICK_INTERVAL_THRESHOLD_MS, LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { eventDispatcher } from '@/utils/event';
+import { findGlossWord } from '@/app/reader/utils/wordlensRuby';
 
 let lastClickTime = 0;
 let longHoldTimeout: ReturnType<typeof setTimeout> | null = null;
 let isMouseDown = false;
+const touchGestures = new Map<string, { startX: number; startY: number; moved: boolean }>();
+const suppressedSwipeClicks = new Map<string, { until: number; endX: number; endY: number }>();
+const SYNTHESIZED_CLICK_SWIPE_DISTANCE_PX = 15;
+const SYNTHESIZED_CLICK_SUPPRESSION_MS = 750;
+const SYNTHESIZED_CLICK_POSITION_SLOP_PX = 15;
+
+// Middle-click autoscroll (#4951). Books where the feature is armed (desktop
+// app, scrolled mode, setting on) get the middle button's defaults suppressed,
+// so the WebView's own autoscroll (WebView2) can't scroll alongside ours and a
+// middle-clicked link doesn't open. These handlers run in the main realm, so
+// the hook toggles this state directly.
+const autoscrollArmedBooks = new Set<string>();
+// Whether an autoscroll session is running; gates mousemove forwarding so the
+// stream costs nothing while idle.
+let autoscrollTracking = false;
+
+export const setAutoscrollArmed = (bookKey: string, armed: boolean) => {
+  if (armed) autoscrollArmedBooks.add(bookKey);
+  else autoscrollArmedBooks.delete(bookKey);
+};
+
+export const setAutoscrollTracking = (tracking: boolean) => {
+  autoscrollTracking = tracking;
+};
+
+// The event's position in main-window viewport coordinates: iframe client
+// coordinates offset by the frame's on-screen rect. The rect already includes
+// any zoom transform on the frame's ancestors, so client sizes are rescaled.
+const getWindowPoint = (event: MouseEvent) => {
+  const win = event.view;
+  const frame = win?.frameElement;
+  if (!win || !frame) return { windowX: event.clientX, windowY: event.clientY };
+  const rect = frame.getBoundingClientRect();
+  const { clientWidth, clientHeight } = win.document.documentElement;
+  const scaleX = clientWidth ? rect.width / clientWidth : 1;
+  const scaleY = clientHeight ? rect.height / clientHeight : 1;
+  return {
+    windowX: rect.left + event.clientX * scaleX,
+    windowY: rect.top + event.clientY * scaleY,
+  };
+};
 
 let keyboardState = {
   key: '',
@@ -93,6 +135,10 @@ export const handleMousedown = (bookKey: string, event: MouseEvent) => {
     longHoldTimeout = null;
   }, LONG_HOLD_THRESHOLD);
 
+  if (event.button === 1 && autoscrollArmedBooks.has(bookKey)) {
+    event.preventDefault();
+  }
+
   window.postMessage(
     {
       type: 'iframe-mousedown',
@@ -104,7 +150,30 @@ export const handleMousedown = (bookKey: string, event: MouseEvent) => {
       clientY: event.clientY,
       offsetX: event.offsetX,
       offsetY: event.offsetY,
+      // Anchor point for the autoscroll indicator, which renders in the parent.
+      ...(event.button === 1 ? getWindowPoint(event) : null),
       ...getKeyStatus(event),
+    },
+    '*',
+  );
+};
+
+export const handleAuxclick = (bookKey: string, event: MouseEvent) => {
+  // Swallow the middle button's auxclick while autoscroll is armed so a
+  // middle-clicked link doesn't also navigate or open elsewhere.
+  if (event.button === 1 && autoscrollArmedBooks.has(bookKey)) {
+    event.preventDefault();
+  }
+};
+
+export const handleMousemove = (bookKey: string, event: MouseEvent) => {
+  if (!autoscrollTracking) return;
+  window.postMessage(
+    {
+      type: 'iframe-mousemove',
+      bookKey,
+      screenX: event.screenX,
+      screenY: event.screenY,
     },
     '*',
   );
@@ -154,12 +223,48 @@ export const handleWheel = (bookKey: string, event: WheelEvent) => {
   );
 };
 
+// A tappable media element under the pointer, resolved to the payload the image
+// gallery / table zoom viewers consume.
+type MediaTarget = { elementType: 'image'; src: string } | { elementType: 'table'; html: string };
+
+const detectMediaTarget = (target: HTMLElement | null): MediaTarget | null => {
+  if (!target) return null;
+  if (target.localName === 'img') {
+    return { elementType: 'image', src: (target as HTMLImageElement).src };
+  }
+  const svgImage = target.closest('svg')?.querySelector('image');
+  if (svgImage) {
+    const href =
+      svgImage.getAttribute('href') ||
+      svgImage.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+    if (href) return { elementType: 'image', src: href };
+  }
+  const table = target.localName === 'table' ? target : target.closest('table');
+  if (table) return { elementType: 'table', html: (table as HTMLElement).outerHTML };
+  return null;
+};
+
 export const handleClick = (
   bookKey: string,
   doubleClickDisabled: React.MutableRefObject<boolean>,
+  isFixedLayout: boolean,
   event: MouseEvent,
 ) => {
   const now = Date.now();
+  const suppressedSwipe = suppressedSwipeClicks.get(bookKey);
+  if (suppressedSwipe) {
+    if (now > suppressedSwipe.until) {
+      suppressedSwipeClicks.delete(bookKey);
+    } else {
+      const nearEnd =
+        Math.hypot(event.screenX - suppressedSwipe.endX, event.screenY - suppressedSwipe.endY) <=
+        SYNTHESIZED_CLICK_POSITION_SLOP_PX;
+      if (nearEnd) {
+        suppressedSwipeClicks.delete(bookKey);
+        return;
+      }
+    }
+  }
 
   if (!doubleClickDisabled.current && now - lastClickTime < DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
     lastClickTime = now;
@@ -184,12 +289,6 @@ export const handleClick = (
 
   const postSingleClick = () => {
     const element = event.target as HTMLElement | null;
-    if (
-      element?.closest('sup, a, audio, video') &&
-      !element?.closest('a.duokan-footnote:not([href])')
-    ) {
-      return;
-    }
     const footnoteSelector = [
       '.js_readerFooterNote',
       '.zhangyue-footnote',
@@ -197,6 +296,19 @@ export const handleClick = (
       '.qqreader-footnote',
     ].join(', ');
     const footnote = element?.closest(footnoteSelector);
+    // In reflowable books a single tap on an image/table opens the media
+    // viewer. A media element wrapped in a plain link (e.g. a figure linking to
+    // its full-resolution image) should still zoom rather than follow the link
+    // (#4757). Footnotes are excluded so footnote links keep their
+    // popup/navigation behavior.
+    const media = !isFixedLayout && !footnote ? detectMediaTarget(element) : null;
+    if (
+      !media &&
+      element?.closest('sup, a, audio, video') &&
+      !element?.closest('a.duokan-footnote:not([href])')
+    ) {
+      return;
+    }
     if (footnote) {
       eventDispatcher.dispatch('footnote-popup', {
         bookKey,
@@ -221,6 +333,25 @@ export const handleClick = (
 
     // if long hold is detected, we don't want to send single click event
     if (!longHoldTimeout) {
+      return;
+    }
+
+    // Word Lens: tapping a glossed word looks it up in the dictionary. Checked
+    // after the drag/long-hold guards so only a clean single tap triggers it.
+    const glossWord = findGlossWord(element);
+    if (glossWord) {
+      const ruby = element?.closest('ruby.wl-gloss') ?? null;
+      eventDispatcher.dispatch('wordlens-dictionary', { bookKey, element: ruby, word: glossWord });
+      return;
+    }
+
+    // In reflowable books a single tap on an image/table opens the image gallery
+    // / table zoom (#4584) — it is the only gesture that does, since long-press
+    // fired mid-scroll and was removed (#5069). Fixed-layout books
+    // (PDF/comics/manga) keep tap-to-turn, since there the tap is the page-turn
+    // gesture (media is null there).
+    if (media) {
+      window.postMessage({ type: 'iframe-open-media', bookKey, ...media }, '*');
       return;
     }
 
@@ -254,25 +385,65 @@ const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
   // Use event.touches (all active touches) instead of event.targetTouches
   // so that multi-finger gestures work even when fingers land on different
   // elements within the iframe (e.g. canvas vs textLayer spans in PDF)
-  const touchList = type === 'iframe-touchend' ? event.targetTouches : event.touches;
-  const touches = [];
-  for (let i = 0; i < touchList.length; i++) {
-    const touch = touchList[i];
+  const serializeTouches = (touchList: TouchList) => {
+    const touches = [];
+    for (let i = 0; i < touchList.length; i++) {
+      const touch = touchList[i];
+      if (touch) {
+        touches.push({
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+          screenX: touch.screenX,
+          screenY: touch.screenY,
+        });
+      }
+    }
+    return touches;
+  };
+  const targetTouches = serializeTouches(event.touches);
+  const changedTouches = serializeTouches(event.changedTouches);
+  if (type === 'iframe-touchstart') {
+    const touch = targetTouches[0];
     if (touch) {
-      touches.push({
-        clientX: touch.clientX,
-        clientY: touch.clientY,
-        screenX: touch.screenX,
-        screenY: touch.screenY,
+      touchGestures.set(bookKey, { startX: touch.screenX, startY: touch.screenY, moved: false });
+    }
+  } else if (type === 'iframe-touchmove') {
+    const gesture = touchGestures.get(bookKey);
+    const touch = targetTouches[0];
+    if (gesture && touch) {
+      const distance = Math.hypot(touch.screenX - gesture.startX, touch.screenY - gesture.startY);
+      if (distance >= SYNTHESIZED_CLICK_SWIPE_DISTANCE_PX) gesture.moved = true;
+    }
+  } else if (type === 'iframe-touchend' || type === 'iframe-touchcancel') {
+    const gesture = touchGestures.get(bookKey);
+    // Very fast flicks can go from touchstart straight to touchend without a
+    // touchmove event. Include the released finger when deciding whether the
+    // browser-generated click belongs to a swipe.
+    const releasedTouch = changedTouches[0];
+    const moved =
+      gesture?.moved ||
+      (gesture &&
+        releasedTouch &&
+        Math.hypot(
+          releasedTouch.screenX - gesture.startX,
+          releasedTouch.screenY - gesture.startY,
+        ) >= SYNTHESIZED_CLICK_SWIPE_DISTANCE_PX);
+    if (type === 'iframe-touchend' && moved && gesture) {
+      suppressedSwipeClicks.set(bookKey, {
+        until: Date.now() + SYNTHESIZED_CLICK_SUPPRESSION_MS,
+        endX: releasedTouch?.screenX ?? gesture.startX,
+        endY: releasedTouch?.screenY ?? gesture.startY,
       });
     }
+    touchGestures.delete(bookKey);
   }
   window.postMessage(
     {
       type: type,
       bookKey,
       timeStamp: Date.now(),
-      targetTouches: touches,
+      targetTouches,
+      changedTouches,
       ...getKeyStatus(event),
     },
     '*',
@@ -291,193 +462,6 @@ export const handleTouchEnd = (bookKey: string, event: TouchEvent) => {
   handleTouchEv(bookKey, event, 'iframe-touchend');
 };
 
-export const addLongPressListeners = (bookKey: string, doc: Document) => {
-  const longPressDuration = 500;
-  const moveThreshold = 10; // pixels - movement threshold to detect dragging/selection
-  const pressTimers = new Map<Element, ReturnType<typeof setTimeout>>();
-  const pressStartPositions = new Map<Element, { x: number; y: number }>();
-
-  const handleLongPress = (event: Event, target: HTMLElement) => {
-    event.preventDefault?.();
-
-    // Check if there's an active text selection - if so, don't trigger long-press
-    const selection = doc.getSelection();
-    if (selection && selection.toString().length > 0) {
-      return;
-    }
-
-    if (target.localName === 'img') {
-      const imgTarget = target as HTMLImageElement;
-      window.postMessage(
-        {
-          type: 'iframe-long-press',
-          bookKey,
-          elementType: 'image',
-          src: imgTarget.src,
-        },
-        '*',
-      );
-    } else if (target.closest('svg')) {
-      const svg = target.closest('svg')!;
-      const svgImage = svg.querySelector('image');
-      const href =
-        svgImage?.getAttribute('href') ||
-        svgImage?.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
-      if (href) {
-        window.postMessage(
-          {
-            type: 'iframe-long-press',
-            bookKey,
-            elementType: 'image',
-            src: href,
-          },
-          '*',
-        );
-      }
-    } else if (target.localName === 'table' || target.closest('table')) {
-      const tableTarget = (
-        target.localName === 'table' ? target : target.closest('table')
-      ) as HTMLTableElement;
-      window.postMessage(
-        {
-          type: 'iframe-long-press',
-          bookKey,
-          elementType: 'table',
-          html: tableTarget.outerHTML,
-        },
-        '*',
-      );
-    }
-  };
-
-  const startPress = (event: Event) => {
-    const target = event.target as HTMLElement;
-    const isImage = target.localName === 'img';
-    const isSvgImage = !isImage && !!target.closest('svg')?.querySelector('image');
-    const isTableOrInTable = target.localName === 'table' || target.closest('table');
-
-    if (!isImage && !isSvgImage && !isTableOrInTable) return;
-
-    const elementToTrack = isImage
-      ? target
-      : isSvgImage
-        ? (target.closest('svg') as unknown as HTMLElement)
-        : ((target.localName === 'table' ? target : target.closest('table')) as HTMLElement);
-
-    // Store initial position for movement detection
-    if ('clientX' in event && 'clientY' in event) {
-      const mouseEvent = event as MouseEvent;
-      pressStartPositions.set(elementToTrack, { x: mouseEvent.clientX, y: mouseEvent.clientY });
-    } else if ('touches' in event) {
-      const touchEvent = event as TouchEvent;
-      const touch = touchEvent.touches[0];
-      if (touch) {
-        pressStartPositions.set(elementToTrack, { x: touch.clientX, y: touch.clientY });
-      }
-    }
-
-    clearTimeout(pressTimers.get(elementToTrack));
-    const timer = setTimeout(() => handleLongPress(event, elementToTrack), longPressDuration);
-    pressTimers.set(elementToTrack, timer);
-  };
-
-  const handleMove = (event: Event) => {
-    const target = event.target as HTMLElement;
-    const isImage = target.localName === 'img';
-    const isSvgImage = !isImage && !!target.closest('svg')?.querySelector('image');
-    const isTableOrInTable = target.localName === 'table' || target.closest('table');
-
-    if (!isImage && !isSvgImage && !isTableOrInTable) return;
-
-    const elementToTrack = isImage
-      ? target
-      : isSvgImage
-        ? (target.closest('svg') as unknown as HTMLElement)
-        : ((target.localName === 'table' ? target : target.closest('table')) as HTMLElement);
-
-    // Check if mouse/touch moved beyond threshold - if so, user is probably selecting text or dragging
-    const startPos = pressStartPositions.get(elementToTrack);
-    if (startPos) {
-      let currentX = 0;
-      let currentY = 0;
-
-      if ('clientX' in event && 'clientY' in event) {
-        const mouseEvent = event as MouseEvent;
-        currentX = mouseEvent.clientX;
-        currentY = mouseEvent.clientY;
-      } else if ('touches' in event) {
-        const touchEvent = event as TouchEvent;
-        const touch = touchEvent.touches[0];
-        if (touch) {
-          currentX = touch.clientX;
-          currentY = touch.clientY;
-        }
-      }
-
-      const distance = Math.sqrt(
-        Math.pow(currentX - startPos.x, 2) + Math.pow(currentY - startPos.y, 2),
-      );
-
-      // If moved beyond threshold, cancel the long-press
-      if (distance > moveThreshold) {
-        clearTimeout(pressTimers.get(elementToTrack));
-        pressTimers.delete(elementToTrack);
-        pressStartPositions.delete(elementToTrack);
-      }
-    }
-  };
-
-  const cancelPress = (event: Event) => {
-    const target = event.target as HTMLElement;
-    const isImage = target.localName === 'img';
-    const isSvgImage = !isImage && !!target.closest('svg')?.querySelector('image');
-    const isTableOrInTable = target.localName === 'table' || target.closest('table');
-
-    if (!isImage && !isSvgImage && !isTableOrInTable) return;
-
-    const elementToTrack = isImage
-      ? target
-      : isSvgImage
-        ? (target.closest('svg') as unknown as HTMLElement)
-        : ((target.localName === 'table' ? target : target.closest('table')) as HTMLElement);
-
-    clearTimeout(pressTimers.get(elementToTrack));
-    pressTimers.delete(elementToTrack);
-    pressStartPositions.delete(elementToTrack);
-  };
-
-  const processElements = () => {
-    const addLongPressListeners = (el: Element) => {
-      if (el.hasAttribute('data-long-press-added')) return;
-      el.setAttribute('data-long-press-added', 'true');
-      el.addEventListener('mousedown', startPress);
-      el.addEventListener('mousemove', handleMove);
-      el.addEventListener('mouseup', cancelPress);
-      el.addEventListener('mouseleave', cancelPress);
-      el.addEventListener('touchstart', startPress, { passive: true });
-      el.addEventListener('touchmove', handleMove, { passive: true });
-      el.addEventListener('touchend', cancelPress);
-    };
-
-    doc.querySelectorAll('img, table').forEach(addLongPressListeners);
-    doc.querySelectorAll('svg').forEach((svg) => {
-      if (svg.querySelector('image')) addLongPressListeners(svg);
-    });
-  };
-
-  processElements();
-
-  const observer = new MutationObserver((mutations) => {
-    const hasNewElements = mutations.some((m) => m.type === 'childList' && m.addedNodes.length > 0);
-    if (hasNewElements) {
-      processElements();
-    }
-  });
-
-  observer.observe(doc.body, { childList: true, subtree: true });
-
-  return () => {
-    observer.disconnect();
-    pressTimers.forEach((timer) => clearTimeout(timer));
-  };
+export const handleTouchCancel = (bookKey: string, event: TouchEvent) => {
+  handleTouchEv(bookKey, event, 'iframe-touchcancel');
 };

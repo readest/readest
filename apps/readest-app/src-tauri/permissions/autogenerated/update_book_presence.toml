@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-update-book-presence"
+description = "Enables the update_book_presence command without any pre-configured scope."
+commands.allow = ["update_book_presence"]
+
+[[permission]]
+identifier = "deny-update-book-presence"
+description = "Denies the update_book_presence command without any pre-configured scope."
+commands.deny = ["update_book_presence"]

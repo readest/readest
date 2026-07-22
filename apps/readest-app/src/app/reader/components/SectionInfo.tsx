@@ -6,6 +6,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
+import { useBookDataStore } from '@/store/bookDataStore';
 
 interface SectionInfoProps {
   bookKey: string;
@@ -34,7 +35,9 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
   const { appService } = useEnv();
   const { hoveredBookKey, getView, getViewSettings, setHoveredBookKey } = useReaderStore();
   const { systemUIVisible, statusBarHeight } = useThemeStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const viewSettings = getViewSettings(bookKey)!;
+  const bookData = getBookData(bookKey);
   const topInset = Math.max(
     gridInsets.top,
     appService?.isAndroidApp && systemUIVisible ? statusBarHeight / 2 : 0,
@@ -75,7 +78,11 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
       <div
         className={clsx(
           'sectioninfo absolute flex items-center overflow-hidden font-sans',
-          isEink ? 'text-sm font-normal' : 'text-neutral-content text-xs font-light',
+          isEink
+            ? 'text-sm font-normal'
+            : bookData?.isFixedLayout
+              ? 'text-white/75 mix-blend-difference text-xs font-light'
+              : 'text-base-content text-xs font-light',
           isVertical ? 'writing-vertical-rl max-h-[85%]' : 'top-0',
         )}
         role='none'

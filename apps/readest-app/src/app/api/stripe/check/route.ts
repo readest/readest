@@ -19,6 +19,15 @@ export async function POST(request: Request) {
     const stripe = getStripe();
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
+    // Bind the entitlement to the session's owner, not the caller. `sessionId`
+    // is client-supplied and Stripe sessions share a global id space, so without
+    // this check any authenticated user could replay one paid session id to
+    // upgrade their own (or many) accounts (GHSA-pv88-3727-j7v8). The checkout
+    // route stamps `metadata.userId`; the webhook relies on the same field.
+    if (session.metadata?.['userId'] !== user.id) {
+      return NextResponse.json({ error: 'Session does not belong to user' }, { status: 403 });
+    }
+
     const customerId = session.customer as string;
     if (session.payment_status === 'paid' && session.subscription) {
       await createOrUpdateSubscription(user.id, customerId, session.subscription as string);

@@ -2,6 +2,7 @@ import { GooglePaymentData } from '@/types/payment';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { updateUserStorage } from '@/libs/payment/storage';
 import {
+  isEntitledStatus,
   isStoragePurchase,
   mapProductIdToProductName,
   mapProductIdToUserPlan,
@@ -74,11 +75,14 @@ export async function createOrUpdateSubscription(userId: string, purchase: Verif
         obfuscated_external_profile_id: purchase.obfuscatedExternalProfileId,
         cancel_reason: purchase.cancelReason,
         user_cancellation_time_millis: purchase.userCancellationTimeMillis,
-        created_at: new Date(),
         updated_at: new Date(),
       },
       {
-        onConflict: 'user_id,order_id',
+        // The purchase token is the stable key across a subscription's life;
+        // the Play API order id gains a `..N` suffix on every renewal, so
+        // conflicting on order_id would insert instead of update and collide
+        // with the unique (user_id, purchase_token) constraint.
+        onConflict: 'user_id,purchase_token',
       },
     );
 
@@ -91,7 +95,7 @@ export async function createOrUpdateSubscription(userId: string, purchase: Verif
     await supabase
       .from('plans')
       .update({
-        plan: ['active', 'trialing'].includes(purchase.status) ? plan : 'free',
+        plan: isEntitledStatus(purchase.status) ? plan : 'free',
         status: purchase.status,
       })
       .eq('id', userId);

@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { BookNote } from '@/types/book';
-import { Point, TextSelection, snapRangeToWords } from '@/utils/sel';
+import { Point, TextSelection, getWordRangeFromPoint, snapRangeToWords } from '@/utils/sel';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -29,10 +29,25 @@ export const useInstantAnnotation = ({
   const { getView, getViewsById, getViewSettings, getProgress } = useReaderStore();
 
   const startPointRef = useRef<Point | null>(null);
+  // The DOM position the drag started at, captured once at pointer-down. The
+  // range is rebuilt from this anchor each move so it survives a page scroll —
+  // the start *coordinates* would otherwise resolve to whatever content scrolls
+  // under them after a corner auto page-turn, losing the previous page's part.
+  const startPosRef = useRef<{ node: Node; offset: number } | null>(null);
   const startDocRef = useRef<Document | null>(null);
   const startIndexRef = useRef<number>(0);
+  // Latest drag end-point (iframe coords), so the preview can be rebuilt from the
+  // held position after an auto page-turn without waiting for the next move.
+  const lastEndPointRef = useRef<Point | null>(null);
   const previewAnnotationRef = useRef<BookNote | null>(null);
   const annotationIdRef = useRef<string>(uniqueId());
+  // The word previewed when the still hold engaged: a release without a drag
+  // commits exactly this range. Cleared once any drag repaints the preview.
+  const engageRangeRef = useRef<Range | null>(null);
+  // Whether a move (or an after-turn re-emit) has repainted the preview since
+  // pointer-down — distinguishes a pure still hold from a drag that happened
+  // to land back near its start (the cross-page case keeps the anchor range).
+  const dragPaintedRef = useRef(false);
 
   const isInstantAnnotationEnabled = useCallback(() => {
     const viewSettings = getViewSettings(bookKey);
@@ -111,13 +126,12 @@ export const useInstantAnnotation = ({
     [findPositionAtPoint],
   );
 
-  const createRangeFromPoints = useCallback(
-    (doc: Document, startPoint: Point, endPoint: Point) => {
-      const startPos = findPositionAtPoint(doc, startPoint.x, startPoint.y);
-      const endPos = findPositionAtPoint(doc, endPoint.x, endPoint.y);
-
-      if (!startPos || !endPos) return null;
-
+  const rangeFromPositions = useCallback(
+    (
+      doc: Document,
+      startPos: { node: Node; offset: number },
+      endPos: { node: Node; offset: number },
+    ) => {
       const newRange = doc.createRange();
       try {
         const positionComparison = startPos.node.compareDocumentPosition(endPos.node);
@@ -144,7 +158,26 @@ export const useInstantAnnotation = ({
         return null;
       }
     },
-    [findPositionAtPoint],
+    [],
+  );
+
+  // Build the range from the DOM-anchored start (captured at pointer-down) to the
+  // current end-point. Anchoring the start to the DOM — not its coordinates — is
+  // what lets the highlight continue across a corner auto page-turn. Falls back to
+  // resolving the start coords when the down point did not land on a text node.
+  const buildRangeFromAnchor = useCallback(
+    (doc: Document, endPoint: Point) => {
+      const endPos = findPositionAtPoint(doc, endPoint.x, endPoint.y);
+      if (!endPos) return null;
+      const startPos =
+        startPosRef.current ??
+        (startPointRef.current
+          ? findPositionAtPoint(doc, startPointRef.current.x, startPointRef.current.y)
+          : null);
+      if (!startPos) return null;
+      return rangeFromPositions(doc, startPos, endPos);
+    },
+    [findPositionAtPoint, rangeFromPositions],
   );
 
   const createAnnotation = useCallback((cfi: string, text?: string) => {
@@ -165,48 +198,49 @@ export const useInstantAnnotation = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleInstantAnnotationPointerDown = useCallback(
-    (doc: Document, index: number, ev: PointerEvent) => {
-      if (!isInstantAnnotationEnabled()) return false;
+  // Store a finished annotation in the booknotes (updating an existing record
+  // with the same cfi in place, keeping its id) and save. Returns the record
+  // as stored, so callers that keep referring to it (the range editor) hold
+  // the persisted identity.
+  const persistAnnotation = useCallback(
+    (annotation: BookNote): BookNote => {
+      const config = getConfig(bookKey)!;
+      const progress = getProgress(bookKey)!;
+      const { booknotes: annotations = [] } = config;
+      const existingIndex = annotations.findIndex(
+        (a) => a.cfi === annotation.cfi && a.type === 'annotation' && a.style && !a.deletedAt,
+      );
 
-      // Only handle primary button (left click / touch / stylus)
-      if (ev.button !== 0) return false;
+      let stored: BookNote;
+      if (existingIndex !== -1) {
+        stored = {
+          ...annotations[existingIndex]!,
+          ...annotation,
+          page: progress.page,
+          id: annotations[existingIndex]!.id,
+        };
+        annotations[existingIndex] = stored;
+      } else {
+        stored = { ...annotation, page: progress.page };
+        annotations.push(stored);
+      }
 
-      if (!isSelectableContent(doc, ev.clientX, ev.clientY)) return false;
-
-      startPointRef.current = { x: ev.clientX, y: ev.clientY };
-      startDocRef.current = doc;
-      startIndexRef.current = index;
-      previewAnnotationRef.current = null;
-      annotationIdRef.current = uniqueId();
-      return true;
+      const updatedConfig = updateBooknotes(bookKey, annotations);
+      if (updatedConfig) {
+        saveConfig(envConfig, bookKey, updatedConfig, settings);
+      }
+      return stored;
     },
-    [isInstantAnnotationEnabled, isSelectableContent],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bookKey],
   );
 
-  const handleInstantAnnotationPointerMove = useCallback(
-    (doc: Document, index: number, ev: PointerEvent) => {
-      if (!isInstantAnnotationEnabled()) return false;
-
+  // Draw (or redraw) the live preview highlight for a range and reposition the
+  // loupe. Shared by the pointer-move handler and the after-turn re-emit.
+  const drawPreview = useCallback(
+    (doc: Document, index: number, newRange: Range, dragPoint: Point): boolean => {
       const view = getView(bookKey);
-      if (!startPointRef.current || !startDocRef.current || !view) {
-        return false;
-      }
-
-      const endPoint: Point = { x: ev.clientX, y: ev.clientY };
-      const startPoint = startPointRef.current;
-
-      const deltaX = Math.abs(endPoint.x - startPoint.x);
-      const deltaY = Math.abs(endPoint.y - startPoint.y);
-      const distance = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
-      // need a longer horizontal or vertical drag to avoid accidental selections
-      if (distance < 20 || (deltaX / deltaY < 5 && deltaY / deltaX < 5 && distance < 30)) {
-        return false;
-      }
-
-      const newRange = createRangeFromPoints(doc, startPoint, endPoint);
-      if (!newRange) return false;
-
+      if (!view) return false;
       const cfi = view.getCFI(index, newRange);
       if (!cfi) return false;
 
@@ -229,50 +263,181 @@ export const useInstantAnnotation = ({
       });
 
       // Convert iframe pointer coords to parent viewport coords for the loupe
-      setExternalDragPoint(toParentViewportPoint(doc, ev.clientX, ev.clientY));
-
+      setExternalDragPoint(toParentViewportPoint(doc, dragPoint.x, dragPoint.y));
       return true;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isInstantAnnotationEnabled, createRangeFromPoints],
+    [bookKey, clearPreviewAnnotation, createAnnotation, getViewsById],
   );
 
-  const handleInstantAnnotationPointerCancel = useCallback(() => {
-    if (!isInstantAnnotationEnabled()) return false;
+  const handleInstantAnnotationPointerDown = useCallback(
+    (doc: Document, index: number, ev: PointerEvent) => {
+      if (!isInstantAnnotationEnabled()) return false;
 
-    startPointRef.current = null;
-    startDocRef.current = null;
-    clearInstantAnnotationState();
-    return true;
-  }, [isInstantAnnotationEnabled, clearInstantAnnotationState]);
+      // Only handle primary button (left click / touch / stylus)
+      if (ev.button !== 0) return false;
 
-  const handleInstantAnnotationPointerUp = useCallback(
-    async (doc: Document, index: number, ev: PointerEvent) => {
+      if (!isSelectableContent(doc, ev.clientX, ev.clientY)) return false;
+
+      startPointRef.current = { x: ev.clientX, y: ev.clientY };
+      // Anchor the start to the DOM so the range survives a page scroll.
+      startPosRef.current = findPositionAtPoint(doc, ev.clientX, ev.clientY);
+      lastEndPointRef.current = null;
+      startDocRef.current = doc;
+      startIndexRef.current = index;
+      previewAnnotationRef.current = null;
+      annotationIdRef.current = uniqueId();
+      engageRangeRef.current = null;
+      dragPaintedRef.current = false;
+      return true;
+    },
+    [isInstantAnnotationEnabled, isSelectableContent, findPositionAtPoint],
+  );
+
+  // The still hold engaged (touch/pen): preview the word under the finger —
+  // the anchored feedback the suppressed system long-press selection used to
+  // provide. A release without a drag commits exactly this word.
+  const handleInstantAnnotationEngage = useCallback(
+    (doc: Document, index: number) => {
+      if (!isInstantAnnotationEnabled()) return;
+      const start = startPointRef.current;
+      if (!start) return;
+      const wordRange = getWordRangeFromPoint(doc, start.x, start.y);
+      if (!wordRange) return;
+      engageRangeRef.current = wordRange;
+      drawPreview(doc, index, wordRange, start);
+    },
+    [isInstantAnnotationEnabled, drawPreview],
+  );
+
+  const handleInstantAnnotationPointerMove = useCallback(
+    (doc: Document, index: number, ev: PointerEvent) => {
       if (!isInstantAnnotationEnabled()) return false;
 
       const view = getView(bookKey);
-      if (!startPointRef.current || !view) {
-        startPointRef.current = null;
-        startDocRef.current = null;
-        clearInstantAnnotationState();
+      if (!startPointRef.current || !startDocRef.current || !view) {
         return false;
       }
 
       const endPoint: Point = { x: ev.clientX, y: ev.clientY };
       const startPoint = startPointRef.current;
 
-      startPointRef.current = null;
-      startDocRef.current = null;
+      const deltaX = Math.abs(endPoint.x - startPoint.x);
+      const deltaY = Math.abs(endPoint.y - startPoint.y);
+      const distance = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+      // need a longer horizontal or vertical drag to avoid accidental selections
+      if (distance < 20 || (deltaX / deltaY < 5 && deltaY / deltaX < 5 && distance < 30)) {
+        return false;
+      }
 
-      const distance = Math.sqrt(
-        Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2),
-      );
-      if (distance < 10) {
+      const newRange = buildRangeFromAnchor(doc, endPoint);
+      if (!newRange) return false;
+
+      lastEndPointRef.current = endPoint;
+      const drawn = drawPreview(doc, index, newRange, endPoint);
+      if (drawn) dragPaintedRef.current = true;
+      return drawn;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isInstantAnnotationEnabled, buildRangeFromAnchor, drawPreview],
+  );
+
+  // Rebuild the preview from the held position after a corner auto page-turn: the
+  // start stays DOM-anchored on the previous page while the end-point coordinates
+  // now resolve to content on the page just turned to.
+  const reapplyInstantAnnotation = useCallback(() => {
+    const doc = startDocRef.current;
+    const endPoint = lastEndPointRef.current;
+    if (!doc || !endPoint) return;
+    const newRange = buildRangeFromAnchor(doc, endPoint);
+    if (newRange && drawPreview(doc, startIndexRef.current, newRange, endPoint)) {
+      dragPaintedRef.current = true;
+    }
+  }, [buildRangeFromAnchor, drawPreview]);
+
+  const handleInstantAnnotationPointerCancel = useCallback(() => {
+    if (!isInstantAnnotationEnabled()) return false;
+
+    startPointRef.current = null;
+    startPosRef.current = null;
+    lastEndPointRef.current = null;
+    startDocRef.current = null;
+    engageRangeRef.current = null;
+    clearInstantAnnotationState();
+    return true;
+  }, [isInstantAnnotationEnabled, clearInstantAnnotationState]);
+
+  const handleInstantAnnotationPointerUp = useCallback(
+    async (doc: Document, index: number, ev: PointerEvent): Promise<boolean | 'editor'> => {
+      if (!isInstantAnnotationEnabled()) return false;
+
+      const view = getView(bookKey);
+      if (!startPointRef.current || !view) {
+        startPointRef.current = null;
+        startPosRef.current = null;
+        lastEndPointRef.current = null;
+        startDocRef.current = null;
+        engageRangeRef.current = null;
         clearInstantAnnotationState();
         return false;
       }
 
-      const newRange = createRangeFromPoints(doc, startPoint, endPoint);
+      const endPoint: Point = { x: ev.clientX, y: ev.clientY };
+      const startPoint = startPointRef.current;
+      const heldWordRange = engageRangeRef.current;
+
+      // Build before clearing the anchor (it reads startPosRef).
+      const newRange = buildRangeFromAnchor(doc, endPoint);
+
+      startPointRef.current = null;
+      startPosRef.current = null;
+      lastEndPointRef.current = null;
+      startDocRef.current = null;
+      engageRangeRef.current = null;
+
+      const distance = Math.sqrt(
+        Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2),
+      );
+
+      // A pure still hold (engaged on a word, never dragged): commit the
+      // previewed word as a real highlight and leave the annotation range
+      // editor open on it. The state mirrors tapping an existing highlight —
+      // a selection carrying the real text with `isTextSelected` left false —
+      // so the Annotator's selection effect shows the options row and the
+      // editor instead of running the instant quick action.
+      if (distance < 10 && heldWordRange && !dragPaintedRef.current) {
+        const text = await getAnnotationText(heldWordRange);
+        const cfi = view.getCFI(index, heldWordRange);
+        if (text && cfi && text.trim().length > 0) {
+          clearPreviewAnnotation();
+          const annotation = createAnnotation(cfi, text);
+          const views = getViewsById(bookKey.split('-')[0]!);
+          views.forEach((v) => v?.addAnnotation(annotation));
+          const stored = persistAnnotation(annotation);
+          const progress = getProgress(bookKey);
+          setEditingAnnotation(stored);
+          setSelection({
+            key: bookKey,
+            text,
+            cfi,
+            page: progress?.page || 0,
+            range: heldWordRange,
+            index,
+            annotated: true,
+          });
+          setExternalDragPoint(null);
+          return 'editor';
+        }
+      }
+
+      // A barely-moved gesture is a tap, not a highlight — unless a preview was
+      // actually drawn during the drag (after a cross-page turn the finger can
+      // land near its start screen-position while the range spans pages).
+      if (distance < 10 && !dragPaintedRef.current) {
+        clearInstantAnnotationState();
+        return false;
+      }
+
       if (!newRange) {
         clearInstantAnnotationState();
         return false;
@@ -290,53 +455,37 @@ export const useInstantAnnotation = ({
       const annotation = createAnnotation(cfi, text);
       const views = getViewsById(bookKey.split('-')[0]!);
       views.forEach((v) => v?.addAnnotation(annotation));
-
-      const config = getConfig(bookKey)!;
-      const progress = getProgress(bookKey)!;
-      const { booknotes: annotations = [] } = config;
-      const existingIndex = annotations.findIndex(
-        (a) => a.cfi === cfi && a.type === 'annotation' && a.style && !a.deletedAt,
-      );
-
-      if (existingIndex !== -1) {
-        annotations[existingIndex] = {
-          ...annotations[existingIndex]!,
-          ...annotation,
-          page: progress.page,
-          id: annotations[existingIndex]!.id,
-        };
-      } else {
-        annotations.push({ ...annotation, page: progress.page });
-      }
-
-      const updatedConfig = updateBooknotes(bookKey, annotations);
-      if (updatedConfig) {
-        saveConfig(envConfig, bookKey, updatedConfig, settings);
-      }
+      persistAnnotation(annotation);
 
       return true;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       isInstantAnnotationEnabled,
-      createRangeFromPoints,
+      buildRangeFromAnchor,
       getAnnotationText,
       clearInstantAnnotationState,
+      persistAnnotation,
     ],
   );
 
   const cancelInstantAnnotation = useCallback(() => {
     startPointRef.current = null;
+    startPosRef.current = null;
+    lastEndPointRef.current = null;
     startDocRef.current = null;
+    engageRangeRef.current = null;
     clearInstantAnnotationState();
   }, [clearInstantAnnotationState]);
 
   return {
     isInstantAnnotationEnabled,
     handleInstantAnnotationPointerDown,
+    handleInstantAnnotationEngage,
     handleInstantAnnotationPointerMove,
     handleInstantAnnotationPointerCancel,
     handleInstantAnnotationPointerUp,
+    reapplyInstantAnnotation,
     cancelInstantAnnotation,
   };
 };

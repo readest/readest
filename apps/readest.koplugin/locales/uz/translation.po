@@ -68,6 +68,9 @@ msgstr "Oʻsish boʻyicha"
 msgid "Actions"
 msgstr "Amallar"
 
+msgid "Download all books"
+msgstr "Barcha kitoblarni yuklab olish"
+
 msgid "Rescan library"
 msgstr "Kutubxonani qayta skanerlash"
 
@@ -133,6 +136,21 @@ msgstr "Muqovani yuklab olib boʻlmadi."
 
 msgid "Could not delete the file."
 msgstr "Faylni oʻchirib boʻlmadi."
+
+msgid "No books to download."
+msgstr "Yuklab olish uchun kitob yoʻq."
+
+msgid "Downloading %1 of %2…"
+msgstr "%2 tadan %1-si yuklab olinmoqda…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Yuklab olish bekor qilindi. %2 tadan %1 tasi yuklab olindi."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 tadan %1 tasi yuklab olindi (%3 tasi oʻtkazib yuborildi)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 tadan %1 tasi yuklab olindi."
 
 msgid "Removing from cloud…"
 msgstr "Bulutdan olib tashlanmoqda…"
@@ -215,6 +233,9 @@ msgstr "Readest izohlarini ushbu qurilmadan yuborish"
 msgid "Pull readest annotations from other devices"
 msgstr "Readest izohlarini boshqa qurilmalardan olish"
 
+msgid "Full sync all readest annotations"
+msgstr "Barcha Readest izohlarini toʻliq sinxronlash"
+
 msgid "Add to Readest"
 msgstr "Readest-ga qoʻshish"
 
@@ -239,6 +260,12 @@ msgstr "Allaqachon Readest kutubxonangizda:"
 msgid "Added to Readest:"
 msgstr "Readest-ga qoʻshildi:"
 
+msgid "No book is open"
+msgstr "Hech qanday kitob ochilmagan"
+
+msgid "Uploaded to Readest:"
+msgstr "Readest-ga yuklandi:"
+
 msgid "Log in Readest Account"
 msgstr "Readest hisobiga kirish"
 
@@ -251,11 +278,20 @@ msgstr "Avtomatik sinxronlash"
 msgid "Readest library"
 msgstr "Readest kutubxonasi"
 
+msgid "Push stats now"
+msgstr "Statistikani hozir yuborish"
+
+msgid "Pull stats now"
+msgstr "Statistikani hozir olish"
+
 msgid "Push books now"
 msgstr "Kitoblarni hozir yuborish"
 
 msgid "Pull books now"
 msgstr "Kitoblarni hozir olish"
+
+msgid "Upload current book to Readest"
+msgstr "Joriy kitobni Readest-ga yuklash"
 
 msgid "Push reading progress now"
 msgstr "Oʻqish jarayonini hozir yuborish"
@@ -286,9 +322,6 @@ msgstr "Iltimos, avval tizimga kiring"
 
 msgid "Please configure Readest settings first"
 msgstr "Iltimos, avval Readest sozlamalarini sozlang"
-
-msgid "No book is open"
-msgstr "Hech qanday kitob ochilmagan"
 
 msgid "(none)"
 msgstr "(yoʻq)"
@@ -436,3 +469,18 @@ msgstr "Oʻqish jarayoni sinxronlandi"
 
 msgid "No saved reading progress found for this book"
 msgstr "Ushbu kitob uchun saqlangan oʻqish jarayoni topilmadi"
+
+msgid "Reading statistics are up to date"
+msgstr "Oʻqish statistikasi eng songgi holatda"
+
+msgid "Reading statistics pushed"
+msgstr "Oʻqish statistikasi yuborildi"
+
+msgid "Failed to push reading statistics"
+msgstr "Oʻqish statistikasini yuborib boʻlmadi"
+
+msgid "Failed to pull reading statistics"
+msgstr "Oʻqish statistikasini olib boʻlmadi"
+
+msgid "Reading statistics pulled"
+msgstr "Oʻqish statistikasi olindi"

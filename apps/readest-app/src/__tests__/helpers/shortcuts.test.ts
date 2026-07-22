@@ -56,6 +56,14 @@ describe('TTS navigation shortcuts', () => {
   });
 });
 
+describe('Proofread selection shortcut (#4717)', () => {
+  it('binds alt+p alongside ctrl+p/cmd+p so it avoids the print conflict', async () => {
+    const shortcuts = await getDefaults();
+    expect(shortcuts.onProofreadSelection.keys).toContain('alt+p');
+    expect(shortcuts.onProofreadSelection.keys).toEqual(['ctrl+p', 'cmd+p', 'alt+p']);
+  });
+});
+
 describe('No identical keybinding lists across actions (#3675)', () => {
   // Pre-existing pairs where two actions intentionally share the exact
   // same key list — both handlers guard on runtime context.

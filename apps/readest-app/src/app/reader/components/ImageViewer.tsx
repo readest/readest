@@ -3,7 +3,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
+import { useEnv } from '@/context/EnvContext';
 import { Insets } from '@/types/misc';
+import { eventDispatcher } from '@/utils/event';
+import { canShareText } from '@/utils/share';
+import { dataUrlToBytes, imageExtensionFromMime } from '@/utils/image';
 import ZoomControls from './ZoomControls';
 
 interface ImageViewerProps {
@@ -27,9 +31,16 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   gridInsets,
 }) => {
   const _ = useTranslation();
+  const { appService } = useEnv();
+  // On Android the button saves straight to the photo gallery (the share sheet
+  // can't save to a file there); elsewhere it shares where supported, else
+  // exports. The affordance reflects the actual action.
+  const saveToGallery = appService?.isAndroidApp ?? false;
+  const canShare = !saveToGallery && canShareText(appService);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [isWheelZooming, setIsWheelZooming] = useState(false);
   const [showZoomLabel, setShowZoomLabel] = useState(true);
   const lastTouchDistance = useRef<number>(0);
   const dragStart = useRef({ x: 0, y: 0 });
@@ -37,9 +48,24 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const zoomLabelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wheelZoomEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Escape (desktop) and Android Back key → close the viewer.
   useKeyDownActions({ onCancel: onClose });
+
+  // A macOS trackpad pinch arrives as a rapid stream of ctrl+wheel events.
+  // Flag the gesture as active so the transform transition is suppressed while
+  // it streams (see the transition note below), then clear it shortly after the
+  // last event since wheel has no explicit gesture-end.
+  const markWheelZooming = () => {
+    setIsWheelZooming(true);
+    if (wheelZoomEndTimeoutRef.current) {
+      clearTimeout(wheelZoomEndTimeoutRef.current);
+    }
+    wheelZoomEndTimeoutRef.current = setTimeout(() => {
+      setIsWheelZooming(false);
+    }, 200);
+  };
 
   const hideZoomLabelAfterDelay = () => {
     if (zoomLabelTimeoutRef.current) {
@@ -144,6 +170,9 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
       if (zoomLabelTimeoutRef.current) {
         clearTimeout(zoomLabelTimeoutRef.current);
       }
+      if (wheelZoomEndTimeoutRef.current) {
+        clearTimeout(wheelZoomEndTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -160,6 +189,8 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
 
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
+
+    markWheelZooming();
 
     const delta = e.deltaY;
     const newScale = Math.min(
@@ -325,6 +356,55 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     hideZoomLabelAfterDelay();
   };
 
+  // Save the currently viewed image to the device. `appService.saveFile`
+  // routes to the native/web Share sheet where available and falls back to a
+  // save dialog / browser download otherwise.
+  const handleSaveImage = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!src || !appService) return;
+    // Anchor the macOS / iPad share popover to the button rect (mirrors the
+    // annotation export flow); ignored on platforms that don't use it.
+    const rect = e.currentTarget.getBoundingClientRect();
+    const sharePosition = {
+      x: rect.left + rect.width / 2,
+      y: rect.top,
+      preferredEdge: 'bottom' as const,
+    };
+    try {
+      const { bytes, mimeType } = dataUrlToBytes(decodeURIComponent(src));
+      const filename = `image.${imageExtensionFromMime(mimeType)}`;
+      if (saveToGallery) {
+        const saved = await appService.saveImageToGallery(
+          filename,
+          bytes.buffer as ArrayBuffer,
+          mimeType,
+        );
+        eventDispatcher.dispatch('toast', {
+          type: saved ? 'info' : 'error',
+          message: saved ? _('Image saved to gallery') : _('Failed to save the image'),
+        });
+        return;
+      }
+      const saved = await appService.saveFile(filename, bytes.buffer as ArrayBuffer, {
+        share: true,
+        mimeType,
+        sharePosition,
+      });
+      // The Share sheet provides its own feedback; only confirm the export path.
+      if (!canShare) {
+        eventDispatcher.dispatch('toast', {
+          type: saved ? 'info' : 'error',
+          message: saved ? _('Image saved successfully') : _('Failed to save the image'),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to save image:', error);
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Failed to save the image'),
+      });
+    }
+  };
+
   const onDoubleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -391,7 +471,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
       <div
         role='button'
         tabIndex={0}
-        className='not-eink:bg-black/50 eink:bg-base-100 not-eink:backdrop-blur-md absolute inset-0'
+        className='image-viewer-overlay not-eink:bg-black/50 eink:bg-base-100 not-eink:backdrop-blur-md absolute inset-0'
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             onClose();
@@ -400,7 +480,9 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
       />
       <ZoomControls
         gridInsets={gridInsets}
+        canShare={canShare}
         onClose={onClose}
+        onSave={handleSaveImage}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onReset={handleReset}
@@ -458,10 +540,12 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
             maxWidth: '100%',
             maxHeight: '100%',
             transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-            // No transition while dragging: the 0.05s ease made the image lag
-            // behind the cursor, which flickered on desktop (#4451). Keep the
-            // smoothing only for discrete zoom (buttons, double-click, wheel).
-            transition: isDragging ? 'none' : 'transform 0.05s ease-out',
+            // No transition during continuous gestures: the 0.05s ease made the
+            // image lag behind a moving pointer, which flickered on desktop
+            // (#4451). The same lag flickered a trackpad pinch (a rapid
+            // ctrl+wheel stream) on macOS (#4742). Keep the smoothing only for
+            // discrete zoom (buttons, double-click, keyboard).
+            transition: isDragging || isWheelZooming ? 'none' : 'transform 0.05s ease-out',
             // Promote to a GPU layer so transform changes don't repaint the
             // page (the `transform-gpu` class is overridden by this inline
             // transform, so its hint is lost).

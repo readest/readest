@@ -6,6 +6,7 @@ import {
   __resetPassphraseGateForTests,
 } from '@/services/sync/passphraseGate';
 import { isSyncError } from '@/libs/errors';
+import type { CipherEnvelope } from '@/types/replica';
 import type { ReplicaKeyRow } from '@/libs/replicaSyncClient';
 
 const ITER = 1000;
@@ -59,14 +60,17 @@ describe('ensurePassphraseUnlocked', () => {
     expect(prompter).not.toHaveBeenCalled();
   });
 
-  test('throws NO_PASSPHRASE when no prompter is registered', async () => {
-    let caught: unknown = null;
+  test('throws NO_PASSPHRASE when no prompter ever registers', async () => {
+    vi.useFakeTimers();
     try {
-      await ensurePassphraseUnlocked({ session, client });
-    } catch (e) {
-      caught = e;
+      const pending = ensurePassphraseUnlocked({ session, client });
+      const caught = pending.catch((e: unknown) => e);
+      await vi.advanceTimersByTimeAsync(30_000);
+      const err = await caught;
+      expect(isSyncError(err) && err.code).toBe('NO_PASSPHRASE');
+    } finally {
+      vi.useRealTimers();
     }
-    expect(isSyncError(caught) && caught.code).toBe('NO_PASSPHRASE');
   });
 
   test('prompts with kind=setup when account has no salt', async () => {
@@ -116,6 +120,144 @@ describe('ensurePassphraseUnlocked', () => {
       ensurePassphraseUnlocked({ session, client }),
     ]);
     expect(calls).toBe(1);
+    expect(session.isUnlocked()).toBe(true);
+  });
+
+  test('waits for a prompter that registers after the request', async () => {
+    const pending = ensurePassphraseUnlocked({ session, client });
+    await Promise.resolve();
+    setPassphrasePrompter(async () => 'pw');
+    await pending;
+    expect(session.isUnlocked()).toBe(true);
+  });
+});
+
+describe('ensurePassphraseUnlocked — wrong passphrase recovery', () => {
+  let client: FakeClient;
+  let session: CryptoSession;
+  let cipher: CipherEnvelope;
+
+  beforeEach(async () => {
+    client = new FakeClient();
+    const writer = new CryptoSession({ client, iterations: ITER });
+    await writer.setup('correct');
+    cipher = await writer.encryptField('secret');
+    session = new CryptoSession({ client, iterations: ITER });
+  });
+
+  afterEach(() => {
+    __resetPassphraseGateForTests();
+  });
+
+  test('re-prompts with an error until the passphrase verifies', async () => {
+    const seen: (string | undefined)[] = [];
+    const answers = ['wrong', 'still-wrong', 'correct'];
+    setPassphrasePrompter(async ({ error }) => {
+      seen.push(error);
+      return answers.shift()!;
+    });
+
+    await ensurePassphraseUnlocked({ session, client, verifyWith: cipher });
+
+    expect(session.isUnlocked()).toBe(true);
+    expect(await session.decryptField(cipher)).toBe('secret');
+    // First prompt is clean; every retry carries the "that was wrong" copy.
+    expect(seen[0]).toBeUndefined();
+    expect(seen[1]).toBeTruthy();
+    expect(seen[2]).toBeTruthy();
+  });
+
+  test('cancelling a retry rejects with NO_PASSPHRASE and leaves the session locked', async () => {
+    const answers: (string | null)[] = ['wrong', null];
+    setPassphrasePrompter(async () => answers.shift()!);
+
+    await expect(
+      ensurePassphraseUnlocked({ session, client, verifyWith: cipher }),
+    ).rejects.toMatchObject({ code: 'NO_PASSPHRASE' });
+    expect(session.isUnlocked()).toBe(false);
+  });
+
+  test('invalidate drops a known-bad unlocked session and prompts again', async () => {
+    // The Android dead-end: a wrong passphrase was accepted before verification
+    // existed, so the session reports unlocked while every decrypt fails.
+    await session.unlock('wrong');
+    expect(session.isUnlocked()).toBe(true);
+
+    setPassphrasePrompter(async () => 'correct');
+    await ensurePassphraseUnlocked({ session, client, verifyWith: cipher, invalidate: true });
+
+    expect(await session.decryptField(cipher)).toBe('secret');
+  });
+
+  test('automatic recovery runs once per run, then stays out of the way', async () => {
+    await session.unlock('wrong');
+    // Answers a wrong passphrase, then cancels the retry — the first recovery
+    // ends in failure.
+    let call = 0;
+    const prompter = vi.fn(async (): Promise<string | null> => (call++ === 0 ? 'nope' : null));
+    setPassphrasePrompter(prompter);
+
+    await expect(
+      ensurePassphraseUnlocked({
+        session,
+        client,
+        verifyWith: cipher,
+        invalidate: true,
+        auto: true,
+      }),
+    ).rejects.toMatchObject({ code: 'NO_PASSPHRASE' });
+
+    // An account whose rows carry ciphers under two different passphrases can
+    // never satisfy them all — the next pull must not reopen the modal and
+    // wipe the session again.
+    prompter.mockClear();
+    await expect(
+      ensurePassphraseUnlocked({
+        session,
+        client,
+        verifyWith: cipher,
+        invalidate: true,
+        auto: true,
+      }),
+    ).rejects.toMatchObject({ code: 'NO_PASSPHRASE' });
+    expect(prompter).not.toHaveBeenCalled();
+  });
+
+  test('concurrent recovery requests share one prompt', async () => {
+    await session.unlock('wrong');
+    const prompter = vi.fn(async (): Promise<string | null> => 'correct');
+    setPassphrasePrompter(prompter);
+
+    await Promise.all([
+      ensurePassphraseUnlocked({ session, client, verifyWith: cipher, invalidate: true }),
+      ensurePassphraseUnlocked({ session, client, verifyWith: cipher, invalidate: true }),
+    ]);
+
+    // The second request must not invalidate the session the first one just
+    // unlocked — it waits for that same prompt instead.
+    expect(prompter).toHaveBeenCalledTimes(1);
+    expect(session.isUnlocked()).toBe(true);
+    expect(await session.decryptField(cipher)).toBe('secret');
+  });
+
+  test('auto requests stay quiet after the user cancels, user-initiated ones do not', async () => {
+    const prompter = vi.fn(async (): Promise<string | null> => null);
+    setPassphrasePrompter(prompter);
+
+    await expect(
+      ensurePassphraseUnlocked({ session, client, verifyWith: cipher, auto: true }),
+    ).rejects.toMatchObject({ code: 'NO_PASSPHRASE' });
+    // A declined user must not be re-prompted by every focus / periodic pull.
+    await expect(
+      ensurePassphraseUnlocked({ session, client, verifyWith: cipher, auto: true }),
+    ).rejects.toMatchObject({ code: 'NO_PASSPHRASE' });
+    expect(prompter).toHaveBeenCalledTimes(1);
+
+    // ...but an explicit user action (Settings → Enter passphrase, saving a
+    // new credential) always gets its prompt back.
+    prompter.mockImplementation(async () => 'correct');
+    await ensurePassphraseUnlocked({ session, client, verifyWith: cipher });
+    expect(prompter).toHaveBeenCalledTimes(2);
     expect(session.isUnlocked()).toBe(true);
   });
 });

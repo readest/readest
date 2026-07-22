@@ -58,6 +58,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::auth_with_safari,
             commands::auth_with_custom_tab,
             commands::copy_uri_to_path,
+            commands::save_image_to_gallery,
             commands::use_background_audio,
             commands::install_package,
             commands::set_system_ui_visibility,
@@ -84,6 +85,13 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::get_sync_passphrase,
             commands::clear_sync_passphrase,
             commands::is_sync_keychain_available,
+            commands::set_secure_item,
+            commands::get_secure_item,
+            commands::clear_secure_item,
+            commands::refresh_eink_screen,
+            commands::update_reading_widget,
+            commands::capture_webview_region,
+            commands::set_text_selection_suppressed,
         ])
         .setup(|app, api| {
             #[cfg(mobile)]

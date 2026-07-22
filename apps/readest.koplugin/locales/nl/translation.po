@@ -68,6 +68,9 @@ msgstr "Oplopend"
 msgid "Actions"
 msgstr "Acties"
 
+msgid "Download all books"
+msgstr "Alle boeken downloaden"
+
 msgid "Rescan library"
 msgstr "Bibliotheek opnieuw scannen"
 
@@ -133,6 +136,21 @@ msgstr "Omslag downloaden mislukt."
 
 msgid "Could not delete the file."
 msgstr "Kon het bestand niet verwijderen."
+
+msgid "No books to download."
+msgstr "Geen boeken om te downloaden."
+
+msgid "Downloading %1 of %2…"
+msgstr "%1 van %2 wordt gedownload…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Download geannuleerd. %1 van %2 gedownload."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 van %2 gedownload (%3 overgeslagen)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 van %2 gedownload."
 
 msgid "Removing from cloud…"
 msgstr "Verwijderen uit cloud …"
@@ -215,6 +233,9 @@ msgstr "Readest-aantekeningen van dit apparaat verzenden"
 msgid "Pull readest annotations from other devices"
 msgstr "Readest-aantekeningen van andere apparaten ophalen"
 
+msgid "Full sync all readest annotations"
+msgstr "Alle Readest-aantekeningen volledig synchroniseren"
+
 msgid "Add to Readest"
 msgstr "Toevoegen aan Readest"
 
@@ -239,6 +260,12 @@ msgstr "Al in je Readest-bibliotheek:"
 msgid "Added to Readest:"
 msgstr "Toegevoegd aan Readest:"
 
+msgid "No book is open"
+msgstr "Geen boek geopend"
+
+msgid "Uploaded to Readest:"
+msgstr "Geüpload naar Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Aanmelden bij Readest-account"
 
@@ -251,11 +278,20 @@ msgstr "Automatische synchronisatie"
 msgid "Readest library"
 msgstr "Readest-bibliotheek"
 
+msgid "Push stats now"
+msgstr "Statistieken nu pushen"
+
+msgid "Pull stats now"
+msgstr "Statistieken nu pullen"
+
 msgid "Push books now"
 msgstr "Boeken nu pushen"
 
 msgid "Pull books now"
 msgstr "Boeken nu pullen"
+
+msgid "Upload current book to Readest"
+msgstr "Huidig boek uploaden naar Readest"
 
 msgid "Push reading progress now"
 msgstr "Leesvoortgang nu verzenden"
@@ -286,9 +322,6 @@ msgstr "Meld eerst aan"
 
 msgid "Please configure Readest settings first"
 msgstr "Configureer eerst de Readest-instellingen"
-
-msgid "No book is open"
-msgstr "Geen boek geopend"
 
 msgid "(none)"
 msgstr "(geen)"
@@ -436,3 +469,18 @@ msgstr "Leesvoortgang gesynchroniseerd"
 
 msgid "No saved reading progress found for this book"
 msgstr "Geen opgeslagen leesvoortgang gevonden voor dit boek"
+
+msgid "Reading statistics are up to date"
+msgstr "Leesstatistieken zijn up-to-date"
+
+msgid "Reading statistics pushed"
+msgstr "Leesstatistieken verzonden"
+
+msgid "Failed to push reading statistics"
+msgstr "Leesstatistieken verzenden mislukt"
+
+msgid "Failed to pull reading statistics"
+msgstr "Leesstatistieken ophalen mislukt"
+
+msgid "Reading statistics pulled"
+msgstr "Leesstatistieken opgehaald"

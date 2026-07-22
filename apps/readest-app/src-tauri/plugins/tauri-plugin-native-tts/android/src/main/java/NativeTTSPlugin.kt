@@ -95,11 +95,13 @@ class UpdateMediaSessionStateArgs {
 @InvokeArg
 class SetMediaSessionActiveArgs {
   var active: Boolean? = null
-  var keepAppInForeground: Boolean? = null
   var notificationTitle: String? = null
   var notificationText: String? = null
   var foregroundServiceTitle: String? = null
   var foregroundServiceText: String? = null
+  var bookHash: String? = null
+  var bookTitle: String? = null
+  var bookAuthor: String? = null
 }
 
 @TauriPlugin(
@@ -497,19 +499,13 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         val args = invoke.parseArgs(UpdateMediaSessionMetadataArgs::class.java)
         val title = args.title ?: ""
         val artist = args.artist ?: ""
-        val album = args.album ?: ""
 
         coroutineScope.launch {
             try {
                 val artworkBitmap = args.artwork?.let { loadArtworkFromUrl(it) }
-                val intent = Intent(activity, MediaPlaybackService::class.java).apply {
-                    action = "UPDATE_METADATA"
-                    putExtra("title", title)
-                    putExtra("artist", artist)
-                    putExtra("album", album)
-                    putExtra("artwork", artworkBitmap)
-                }
-                activity.startService(intent)
+                // In-process update on the running service; never startService()
+                // — that throws "app is in background" once backgrounded.
+                MediaPlaybackService.pushMetadata(title, artist, artworkBitmap)
                 invoke.resolve()
             } catch (e: Exception) {
                 invoke.reject("Failed to update metadata: ${e.message}")
@@ -519,19 +515,19 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
 
     @Command
     fun update_media_session_state(invoke: Invoke) {
-        var args = invoke.parseArgs(UpdateMediaSessionStateArgs::class.java)
+        val args = invoke.parseArgs(UpdateMediaSessionStateArgs::class.java)
         val isPlaying = args.playing ?: false
-        val position = args.position ?: 0
-        val duration = args.duration ?: 0
 
         try {
-            val intent = Intent(activity, MediaPlaybackService::class.java).apply {
-                action = "UPDATE_PLAYBACK_STATE"
-                putExtra("playing", isPlaying)
-                putExtra("position", position)
-                putExtra("duration", duration)
-            }
-            activity.startService(intent)
+            // In-process update on the running service; never startService()
+            // — that throws "app is in background" once backgrounded. position
+            // and duration are null on a bare play/pause flip; the service
+            // keeps the last known values so the scrubber does not reset.
+            MediaPlaybackService.pushPlaybackState(
+                isPlaying,
+                args.position?.toLong(),
+                args.duration?.toLong(),
+            )
             invoke.resolve()
         } catch (e: Exception) {
             invoke.reject("Failed to update playback state: ${e.message}")
@@ -549,15 +545,26 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         args.foregroundServiceText?.let { FOREGROUND_SERVICE_TEXT = it }
 
         try {
-            val intent = Intent(activity, MediaPlaybackService::class.java)
             if (active) {
                 cancelIdleTimer()
                 MediaPlaybackService.pluginEventTrigger = { event, data -> trigger(event, data) }
                 MediaPlaybackService.currentTitle = FOREGROUND_SERVICE_TITLE
                 MediaPlaybackService.currentArtist = FOREGROUND_SERVICE_TEXT
+                // Persist the book so the Android Auto browse tree can offer a
+                // "Resume last book" entry after the process is cold.
+                args.bookHash?.let {
+                    MediaPlaybackService.saveLastBook(activity, it, args.bookTitle, args.bookAuthor)
+                }
+                val intent = Intent(activity, MediaPlaybackService::class.java).apply {
+                    action = MediaPlaybackService.ACTION_ACTIVATE_SESSION
+                }
+                Log.d(TAG, "set_media_session_active: startForegroundService")
                 ContextCompat.startForegroundService(activity, intent)
             } else {
-                activity.stopService(intent)
+                // Not stopService: Android Auto may keep the service bound for
+                // browsing, in which case stopService would leave the foreground
+                // notification and the keep-alive player running.
+                MediaPlaybackService.requestDeactivation()
                 MediaPlaybackService.pluginEventTrigger = null
             }
             invoke.resolve()
@@ -577,8 +584,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
 
     private fun shutdownTTSEngine() {
         try {
-            val intent = Intent(activity, MediaPlaybackService::class.java)
-            activity.stopService(intent)
+            MediaPlaybackService.requestDeactivation()
             MediaPlaybackService.pluginEventTrigger = null
 
             textToSpeech?.shutdown()
@@ -602,8 +608,8 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
         try {
             cancelIdleTimer()
 
-            val intent = Intent(activity, MediaPlaybackService::class.java)
-            activity.stopService(intent)
+            MediaPlaybackService.requestDeactivation()
+            MediaPlaybackService.pluginEventTrigger = null
 
             coroutineScope.cancel()
             textToSpeech?.shutdown()

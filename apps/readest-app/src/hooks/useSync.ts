@@ -20,19 +20,40 @@ const transformsFromDB = {
   configs: transformBookConfigFromDB,
 };
 
-const computeMaxTimestamp = (records: BookDataRecord[]): number => {
+// The incremental-pull watermark. The server stamps a `synced_at` on every
+// books write (issue #4678), so it — not updated_at — is the monotonic cursor:
+// keying on it lets a server-resolved merge propagate without the date-read
+// library jumping to sync-processing time. Rows without synced_at (configs,
+// notes, or a pre-migration server) fall back to max(updated_at, deleted_at);
+// for books a delete bumps synced_at too, so deleted_at need not be consulted.
+export const computeMaxTimestamp = (records: BookDataRecord[]): number => {
   let maxTime = 0;
   for (const rec of records) {
+    if (rec.synced_at) {
+      maxTime = Math.max(maxTime, new Date(rec.synced_at).getTime());
+      continue;
+    }
     if (rec.updated_at) {
-      const updatedTime = new Date(rec.updated_at).getTime();
-      maxTime = Math.max(maxTime, updatedTime);
+      maxTime = Math.max(maxTime, new Date(rec.updated_at).getTime());
     }
     if (rec.deleted_at) {
-      const deletedTime = new Date(rec.deleted_at).getTime();
-      maxTime = Math.max(maxTime, deletedTime);
+      maxTime = Math.max(maxTime, new Date(rec.deleted_at).getTime());
     }
   }
   return maxTime;
+};
+
+// Count the records a pull surfaces to the user as "synced". Deleted records
+// never count. For books we additionally require an upload state: a book is
+// indexed in the cloud as soon as its metadata syncs, but updateLibrary only
+// adds books that are uploaded && !deleted, so counting metadata-only books
+// would over-report relative to what actually lands in the library.
+export const countSyncedRecords = (
+  type: SyncType,
+  records: BookDataRecord[] | null | undefined,
+): number => {
+  if (!records?.length) return 0;
+  return records.filter((rec) => !rec.deleted_at && (type !== 'books' || !!rec.uploaded_at)).length;
 };
 
 const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -109,8 +130,12 @@ export function useSync(bookKey?: string) {
 
     try {
       const result = await syncClient.pullChanges(since, type, bookId, metaHash);
-      setSyncResult({ ...syncResult, [type]: result[type] });
-      const records = result[type];
+      const resultAsRecord = result as unknown as Record<
+        string,
+        BookDataRecord[] | null | undefined
+      >;
+      setSyncResult({ ...syncResult, [type]: resultAsRecord[type] });
+      const records = resultAsRecord[type];
       if (since > 1000 && !records?.length) return 0;
       // For since <= 1000, we set lastSyncedAt to now if no records returned
       const maxTime = records?.length ? computeMaxTimestamp(records) : Date.now();
@@ -141,13 +166,15 @@ export function useSync(bookKey?: string) {
           }
           break;
       }
-      return records?.filter((rec) => !rec.deleted_at).length || 0;
+      return countSyncedRecords(type, records);
     } catch (err: unknown) {
       console.error(err);
       if (err instanceof Error) {
-        if (err.message.includes('Not authenticated') && settings.keepLogin) {
-          settings.keepLogin = false;
-          setSettings(settings);
+        // Read live store settings, not the stale hook closure (see below).
+        const latest = useSettingsStore.getState().settings;
+        if (err.message.includes('Not authenticated') && latest.keepLogin) {
+          latest.keepLogin = false;
+          setSettings(latest);
           navigateToLogin(router);
         }
         setSyncError(err.message || `Error pulling ${type}`);
@@ -157,7 +184,13 @@ export function useSync(bookKey?: string) {
       return 0;
     } finally {
       setSyncing(false);
-      saveSettings(envConfig, settings);
+      // Persist the LIVE store settings, never the hook-closure `settings`
+      // captured at this pull's render. On a slow connection a settings
+      // change that lands mid-pull (notably a WebDAV connect, which is the
+      // only integration not re-hydrated from the server replica) would be
+      // silently overwritten on disk here and read back as "Not connected"
+      // after the app is reopened. Issue #4780.
+      saveSettings(envConfig, useSettingsStore.getState().settings);
     }
   };
 

@@ -64,6 +64,38 @@ export const formatKeyForDisplay = (key: string, isMac: boolean): string => {
   return [...modifiers, displayKey].join('+');
 };
 
+export type ShortcutEventLike = Pick<
+  KeyboardEvent,
+  'key' | 'ctrlKey' | 'altKey' | 'metaKey' | 'shiftKey'
+>;
+
+const parseShortcut = (shortcut: string) => {
+  const keys = shortcut.toLowerCase().split('+');
+  return {
+    ctrlKey: keys.includes('ctrl'),
+    altKey: keys.includes('alt') || keys.includes('opt'),
+    metaKey: keys.includes('meta') || keys.includes('cmd'),
+    shiftKey: keys.includes('shift'),
+    key: keys.find((k) => !MODIFIERS.has(k)),
+  };
+};
+
+// Whether a keyboard event matches any of the given shortcut strings. `alt`/`opt`
+// and `cmd`/`meta` are treated as equivalent, matching how shortcuts are authored.
+export const matchesShortcut = (event: ShortcutEventLike, keys: string[]): boolean => {
+  const key = event.key.toLowerCase();
+  return keys.some((shortcut) => {
+    const parsed = parseShortcut(shortcut);
+    return (
+      parsed.key === key &&
+      parsed.ctrlKey === event.ctrlKey &&
+      parsed.altKey === event.altKey &&
+      parsed.metaKey === event.metaKey &&
+      parsed.shiftKey === event.shiftKey
+    );
+  });
+};
+
 const MAC_MODIFIERS = new Set(['cmd', 'opt']);
 const OTHER_MODIFIERS = new Set(['ctrl', 'alt']);
 

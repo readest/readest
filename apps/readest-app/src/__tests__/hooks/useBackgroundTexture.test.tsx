@@ -107,4 +107,25 @@ describe('useBackgroundTexture', () => {
 
     expect(useCustomTextureStore.getState().getTexture(SAVED_TEXTURE.id)).toBeUndefined();
   });
+
+  test('unmounts any mounted texture when textureId is "none"', async () => {
+    // Library/reader share the single #background-texture style element. When a
+    // page whose texture is "none" becomes active (e.g. returning to a
+    // None-background library after reading a textured book), applying it must
+    // actively clear the leftover texture, not silently leave it mounted.
+    const { mountBackgroundTexture, unmountBackgroundTexture } = await import('@/styles/textures');
+    vi.mocked(mountBackgroundTexture).mockClear();
+    vi.mocked(unmountBackgroundTexture).mockClear();
+
+    const { result } = renderHook(() => useBackgroundTexture());
+    result.current.applyBackgroundTexture(
+      createMockEnvConfig(),
+      makeViewSettings({ backgroundTextureId: 'none' }),
+    );
+
+    await vi.waitFor(() => {
+      expect(unmountBackgroundTexture).toHaveBeenCalled();
+    });
+    expect(mountBackgroundTexture).not.toHaveBeenCalled();
+  });
 });

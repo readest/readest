@@ -3,6 +3,7 @@ import { RsvpWord, RsvpState, RsvpPosition, RsvpStopPosition, RsvpStartChoice } 
 import { containsCJK, isCJKPunctuation, splitTextIntoWords, getHyphenParts } from './utils';
 import { compare as compareCFI } from 'foliate-js/epubcfi.js';
 import { XCFI } from '@/utils/xcfi';
+import { isRangeLike } from '@/utils/range';
 
 const DEFAULT_WPM = 300;
 const MIN_WPM = 100;
@@ -14,6 +15,20 @@ const DEFAULT_SPLIT_HYPHENS = false;
 const DEFAULT_CJK_CHAR_MODE = false;
 const DEFAULT_START_DELAY_SECONDS = 3;
 const START_DELAY_OPTIONS = [0, 1, 2, 3];
+
+// Slice 5 (#3235): non-Edge TTS estimator. Sentence-only voices give us one
+// mark per sentence; RSVP jumps to the sentence's first word then SELF-PACES
+// forward through the following words at a rate estimated from the TTS voice
+// rate, until the next sentence mark snaps it back into alignment.
+//   wpm = clamp(BASE * ttsRate, FLOOR, CEIL)
+const ESTIMATED_TTS_WPM_BASE = 190;
+const ESTIMATED_TTS_WPM_FLOOR = 60;
+const ESTIMATED_TTS_WPM_CEIL = 600;
+// Cap self-advance to this many words past the sentence's first word. The
+// sentence end isn't known until the next mark arrives, so without a cap a fast
+// estimate could outrun the audio across the rest of the section. At the cap the
+// estimator HOLDS (stops its timer) and waits for the next snap.
+const ESTIMATED_MAX_WORDS_AHEAD = 60;
 const STORAGE_KEY_PREFIX = 'readest_rsvp_wpm_';
 const PUNCTUATION_PAUSE_KEY_PREFIX = 'readest_rsvp_pause_';
 const POSITION_KEY_PREFIX = 'readest_rsvp_pos_';
@@ -50,6 +65,22 @@ export class RSVPController extends EventTarget {
   private pendingStartWordIndex: number | null = null;
   private countdown: number | null = null;
   private cachedWords: { docIndex: number; doc: Document; words: RsvpWord[] } | null = null;
+
+  // Slice 3a (#3235): externally-driven sync (e.g. TTS drives RSVP word display).
+  // #lastSyncIndex is a monotonic cursor so forward word-by-word sync scans from
+  // the previous match (~O(1)) instead of from 0; backward seeks binary-search.
+  #lastSyncIndex = -1;
+  // While true, scheduleNextWord becomes a no-op so the auto-advance timer never
+  // fires — the external driver owns advancement via syncToCfi.
+  #externallyDriven = false;
+
+  // Slice 5 (#3235): non-Edge estimator pacing. Its own timer + the cap anchor
+  // it self-advances from. Kept separate from playbackTimer so the estimator and
+  // the normal WPM auto-advance can never co-run; both are gated by
+  // #externallyDriven anyway, but separate state keeps the cap bookkeeping clean.
+  #estimatorTimer: ReturnType<typeof setTimeout> | null = null;
+  #estimatorAnchorIndex = -1;
+  #estimatorWpm = ESTIMATED_TTS_WPM_BASE;
 
   constructor(view: FoliateView, bookKey: string, primaryLanguage?: string) {
     super();
@@ -396,7 +427,9 @@ export class RSVPController extends EventTarget {
         return null;
       }
       const anchor = resolved.anchor(target.doc);
-      if (anchor instanceof Range) return anchor;
+      // Realm-safe: anchor is an iframe-realm Range, so `instanceof Range` (top
+      // realm) is always false. Duck-type instead (cross-realm instanceof).
+      if (isRangeLike(anchor)) return anchor;
       if (anchor && anchor instanceof target.doc.defaultView!.Node) {
         const range = target.doc.createRange();
         range.selectNode(anchor as Node);
@@ -449,6 +482,8 @@ export class RSVPController extends EventTarget {
     }
 
     const clampedStart = words.length > 0 ? Math.min(words.length - 1, Math.max(0, startIndex)) : 0;
+    // New word list => the sync cursor from any previous section is stale.
+    this.#lastSyncIndex = -1;
     this.state = {
       ...this.state,
       active: true,
@@ -483,9 +518,12 @@ export class RSVPController extends EventTarget {
   private startCountdown(onComplete: () => void): void {
     this.clearCountdown();
 
-    // A delay of 0 means instant start — skip the countdown entirely.
+    // A delay of 0 means instant start — skip the countdown entirely. When TTS
+    // owns pacing (externally driven, e.g. RSVP entered while TTS is playing),
+    // there is nothing to "get ready" for, so skip it too — the spoken word
+    // shows immediately and advancement is driven by syncToCfi.
     let count = this.state.startDelaySeconds;
-    if (count <= 0) {
+    if (count <= 0 || this.#externallyDriven) {
       onComplete();
       return;
     }
@@ -544,6 +582,8 @@ export class RSVPController extends EventTarget {
 
     this.clearTimer();
     this.clearCountdown();
+    this.stopEstimator();
+    this.#lastSyncIndex = -1;
     this.state = {
       ...this.state,
       active: false,
@@ -698,18 +738,27 @@ export class RSVPController extends EventTarget {
     this.emitStateChange();
   }
 
+  // Slice 5 (#3235): a user-initiated jump (skip/seek/word-step) decouples RSVP
+  // from TTS following. Emitted so the TTS-sync wiring can set following=false;
+  // sync/estimator paths set currentIndex directly and never fire this.
+  private emitManualNav(): void {
+    this.dispatchEvent(new CustomEvent('rsvp-manual-nav'));
+  }
+
   skipForward(count: number = 10): void {
     this.state.currentIndex = Math.min(
       this.state.words.length - 1,
       this.state.currentIndex + count,
     );
     this.state.currentPartIndex = 0;
+    this.emitManualNav();
     this.emitStateChange();
   }
 
   skipBackward(count: number = 10): void {
     this.state.currentIndex = Math.max(0, this.state.currentIndex - count);
     this.state.currentPartIndex = 0;
+    this.emitManualNav();
     this.emitStateChange();
   }
 
@@ -723,6 +772,7 @@ export class RSVPController extends EventTarget {
       this.state.currentIndex + 1,
     );
     this.state.currentPartIndex = 0;
+    this.emitManualNav();
     this.emitStateChange();
   }
 
@@ -730,6 +780,7 @@ export class RSVPController extends EventTarget {
     if (this.state.playing) this.pause();
     this.state.currentIndex = Math.max(0, this.state.currentIndex - 1);
     this.state.currentPartIndex = 0;
+    this.emitManualNav();
     this.emitStateChange();
   }
 
@@ -738,6 +789,7 @@ export class RSVPController extends EventTarget {
     const newIndex = Math.floor((percentage / 100) * this.state.words.length);
     this.state.currentIndex = Math.max(0, Math.min(this.state.words.length - 1, newIndex));
     this.state.currentPartIndex = 0;
+    this.emitManualNav();
     this.emitStateChange();
   }
 
@@ -745,7 +797,238 @@ export class RSVPController extends EventTarget {
     if (this.state.words.length === 0) return;
     this.state.currentIndex = Math.max(0, Math.min(this.state.words.length - 1, index));
     this.state.currentPartIndex = 0;
+    this.emitManualNav();
     this.emitStateChange();
+  }
+
+  // Slice 5 (#3235): cap exposed for the non-Edge estimator's tests + callers.
+  static readonly ESTIMATED_MAX_WORDS_AHEAD = ESTIMATED_MAX_WORDS_AHEAD;
+
+  // Slice 5 (#3235): estimated reading rate for a non-Edge TTS voice rate.
+  //   clamp(BASE * ttsRate, FLOOR, CEIL)
+  static estimatedWpmFromRate(ttsRate: number): number {
+    const wpm = ESTIMATED_TTS_WPM_BASE * (ttsRate || 1);
+    return Math.max(ESTIMATED_TTS_WPM_FLOOR, Math.min(ESTIMATED_TTS_WPM_CEIL, wpm));
+  }
+
+  // Slice 3a (#3235): suspend/restore the auto-advance timer so an external
+  // driver (e.g. TTS) can own word advancement via syncToCfi without the
+  // controller's own setTimeout racing it.
+  setExternallyDriven(on: boolean): void {
+    if (this.#externallyDriven === on) return;
+    this.#externallyDriven = on;
+    if (on) {
+      // Stop any pending auto-advance immediately.
+      this.clearTimer();
+      // TTS owns pacing now; a get-ready countdown is meaningless, so hide one
+      // already in progress (e.g. TTS started from the in-RSVP audio toggle).
+      this.clearCountdown();
+    } else {
+      // Leaving external-drive mode: kill any estimator pacing first so it
+      // can't keep advancing, then resume normal auto-advance if playing.
+      this.stopEstimator();
+      if (this.state.playing && this.state.active) {
+        this.scheduleNextWord();
+      }
+    }
+  }
+
+  // Slice 5 (#3235): drive RSVP from a non-Edge sentence mark. Jumps to the
+  // sentence's first word (syncToCfi — corrects any drift; that's the "snap"),
+  // then SELF-PACES forward through the following words on a timer at the given
+  // estimated wpm. Capped at ESTIMATED_MAX_WORDS_AHEAD past the anchor so a fast
+  // estimate can't outrun the audio past the (still-unknown) sentence end; at
+  // the cap it HOLDS until the next drive. No-op (and leaves the cursor put) if
+  // the cfi can't be resolved in this section.
+  driveEstimatedFromCfi(cfi: string, wpm: number): boolean {
+    // Stop any in-flight estimator pacing before re-anchoring (snap).
+    this.stopEstimator();
+    if (!this.syncToCfi(cfi)) return false;
+    this.#estimatorAnchorIndex = this.state.currentIndex;
+    this.#estimatorWpm = Math.max(ESTIMATED_TTS_WPM_FLOOR, Math.min(ESTIMATED_TTS_WPM_CEIL, wpm));
+    this.scheduleEstimatorAdvance();
+    return true;
+  }
+
+  // Slice 5 (#3235): cancel estimator pacing (e.g. disengage / stop / snap).
+  stopEstimator(): void {
+    if (this.#estimatorTimer) {
+      clearTimeout(this.#estimatorTimer);
+      this.#estimatorTimer = null;
+    }
+    this.#estimatorAnchorIndex = -1;
+  }
+
+  private scheduleEstimatorAdvance(): void {
+    if (this.#estimatorTimer) {
+      clearTimeout(this.#estimatorTimer);
+      this.#estimatorTimer = null;
+    }
+    if (!this.#externallyDriven || this.#estimatorAnchorIndex < 0) return;
+
+    // HOLD at the cap: never advance more than MAX_WORDS_AHEAD past the anchor.
+    const capIndex = Math.min(
+      this.state.words.length - 1,
+      this.#estimatorAnchorIndex + ESTIMATED_MAX_WORDS_AHEAD,
+    );
+    if (this.state.currentIndex >= capIndex) return;
+
+    const perWordMs = 60000 / this.#estimatorWpm;
+    this.#estimatorTimer = setTimeout(() => {
+      this.#estimatorTimer = null;
+      if (!this.#externallyDriven || this.#estimatorAnchorIndex < 0) return;
+      const next = Math.min(this.state.words.length - 1, this.state.currentIndex + 1);
+      if (next === this.state.currentIndex) return;
+      this.state.currentIndex = next;
+      this.state.currentPartIndex = 0;
+      this.#lastSyncIndex = next;
+      this.emitStateChange();
+      this.scheduleEstimatorAdvance();
+    }, perWordMs);
+  }
+
+  // Slice 3a (#3235): drive the displayed word from an external CFI (e.g. the
+  // word/sentence TTS is currently speaking). Resolves the CFI to a DOM range
+  // via the same fast path findWordIndexByCfi uses (no per-word view.getCFI),
+  // maps it to a word by CONTAINMENT (fixing the mid-token skip), and displays
+  // that word WITHOUT arming the auto-advance timer. Returns false (leaving
+  // currentIndex untouched) when the CFI can't be resolved in this section.
+  syncToCfi(cfi: string): boolean {
+    const words = this.state.words;
+    if (words.length === 0) return false;
+
+    const targetSpineIndex = this.getSpineIndex(cfi);
+    if (targetSpineIndex < 0) return false;
+
+    const targetRange = this.resolveCfiToRange(cfi, targetSpineIndex);
+    if (!targetRange) return false;
+
+    const index = this.findWordIndexContaining(words, targetRange, targetSpineIndex);
+    if (index < 0) return false;
+
+    this.#lastSyncIndex = index;
+    this.state.currentIndex = index;
+    this.state.currentPartIndex = 0;
+    // Display the word but do NOT call scheduleNextWord(): the external driver
+    // controls advancement. This mirrors the seek display path (set index +
+    // emit) minus the timer.
+    this.emitStateChange();
+    return true;
+  }
+
+  // Map a resolved target range to a word by CONTAINMENT: the word whose range
+  // contains the target's start position. If the target falls in a gap
+  // (whitespace between words), fall back to the nearest FOLLOWING word.
+  //
+  // Uses a monotonic cursor (#lastSyncIndex): forward syncs scan from the last
+  // match (~O(1)); a target before the cursor binary-searches the
+  // document-ordered word ranges.
+  private findWordIndexContaining(
+    words: RsvpWord[],
+    targetRange: Range,
+    targetSpineIndex: number,
+  ): number {
+    const cursor = this.#lastSyncIndex;
+
+    // Decide direction: if the target starts before the cursor word, binary
+    // search backward; otherwise linear-scan forward from the cursor.
+    let backward = false;
+    if (cursor >= 0 && cursor < words.length) {
+      const cursorRange = words[cursor]?.range;
+      if (cursorRange && words[cursor]?.docIndex === targetSpineIndex) {
+        try {
+          // target.start < cursor.start  =>  cursor.start > target.start
+          backward = cursorRange.compareBoundaryPoints(Range.START_TO_START, targetRange) > 0;
+        } catch {
+          backward = false;
+        }
+      }
+    }
+
+    if (backward) {
+      const found = this.binarySearchWord(words, targetRange, targetSpineIndex);
+      if (found >= 0) return found;
+      // Fall through to a forward scan from 0 if binary search couldn't decide.
+    }
+
+    return this.linearScanWord(
+      words,
+      targetRange,
+      targetSpineIndex,
+      backward ? 0 : Math.max(0, cursor),
+    );
+  }
+
+  // Forward linear scan from `from`. Returns the containing word, else the
+  // nearest following word (gap fallback).
+  private linearScanWord(
+    words: RsvpWord[],
+    targetRange: Range,
+    targetSpineIndex: number,
+    from: number,
+  ): number {
+    let firstFollowing = -1;
+    for (let i = from; i < words.length; i++) {
+      const word = words[i];
+      if (!word?.range || word.docIndex !== targetSpineIndex) continue;
+      const rel = this.compareWordToTarget(word.range, targetRange);
+      if (rel === 0) return i; // contains the target start
+      if (rel > 0 && firstFollowing < 0) firstFollowing = i; // first word after target
+    }
+    return firstFollowing;
+  }
+
+  // Binary search over the document-ordered word ranges for the word containing
+  // the target start; if none contains it, return the nearest following word.
+  private binarySearchWord(
+    words: RsvpWord[],
+    targetRange: Range,
+    targetSpineIndex: number,
+  ): number {
+    let lo = 0;
+    let hi = words.length - 1;
+    let firstFollowing = -1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const word = words[mid];
+      if (!word?.range || word.docIndex !== targetSpineIndex) {
+        // Ranges without a comparable range break ordering; fall back to a
+        // linear scan from the low bound.
+        return this.linearScanWord(words, targetRange, targetSpineIndex, lo);
+      }
+      const rel = this.compareWordToTarget(word.range, targetRange);
+      if (rel === 0) return mid;
+      if (rel < 0) {
+        // word is entirely before the target — search right.
+        lo = mid + 1;
+      } else {
+        // word starts after the target — candidate following word.
+        firstFollowing = mid;
+        hi = mid - 1;
+      }
+    }
+    return firstFollowing;
+  }
+
+  // Classify a word range relative to a collapsed target position:
+  //  -1 : word ends at-or-before the target start (word is before the target)
+  //   0 : word contains the target start (word.start <= target < word.end)
+  //  +1 : word starts after the target start (word is after the target)
+  private compareWordToTarget(wordRange: Range, targetRange: Range): number {
+    try {
+      // DOM compareBoundaryPoints(how, source) semantics:
+      //   START_TO_START -> this.start vs source.start
+      //   START_TO_END   -> this.end   vs source.start
+      // (END_TO_START is this.start vs source.end — NOT what we want here.)
+      const startCmp = wordRange.compareBoundaryPoints(Range.START_TO_START, targetRange);
+      if (startCmp > 0) return 1; // word starts after the target start
+      // word.start <= target.start. Check word.end vs target.start.
+      const endCmp = wordRange.compareBoundaryPoints(Range.START_TO_END, targetRange);
+      if (endCmp > 0) return 0; // word.end > target.start  => contains the target start
+      return -1; // word.end <= target.start => word entirely before the target
+    } catch {
+      return -1;
+    }
   }
 
   loadNextPageContent(retryCount = 0): void {
@@ -761,6 +1044,8 @@ export class RSVPController extends EventTarget {
     }
 
     const wasPlaying = this.state.playing;
+    // New section => the sync cursor from the previous section is stale.
+    this.#lastSyncIndex = -1;
     this.state = {
       ...this.state,
       playing: false,
@@ -804,6 +1089,8 @@ export class RSVPController extends EventTarget {
       }
     }
 
+    // Re-segmentation invalidates the prior word indices the cursor referenced.
+    this.#lastSyncIndex = -1;
     this.state = {
       ...this.state,
       words,
@@ -824,6 +1111,10 @@ export class RSVPController extends EventTarget {
 
   private scheduleNextWord(): void {
     this.clearTimer();
+
+    // When externally driven (e.g. by TTS), the driver advances words via
+    // syncToCfi; the auto-advance timer must never arm.
+    if (this.#externallyDriven) return;
 
     if (!this.state.playing || !this.state.active) return;
 

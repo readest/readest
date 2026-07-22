@@ -34,6 +34,20 @@ export function containsCJK(text: string): boolean {
   return false;
 }
 
+// Strong right-to-left scripts: Hebrew, Arabic, Syriac, Thaana, N'Ko,
+// Samaritan, Mandaic and the Arabic Extended blocks (U+0590–U+08FF), plus the
+// Hebrew/Arabic presentation forms (U+FB1D–U+FDFF and U+FE70–U+FEFF).
+const RTL_PATTERN = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+
+/**
+ * Check if text contains any right-to-left characters. Splitting such text by
+ * character index (as the RSVP focus-letter layout does) breaks letter shaping
+ * and reverses the visual order, so RTL words are rendered whole instead (#4630).
+ */
+export function isRTLText(text: string): boolean {
+  return RTL_PATTERN.test(text);
+}
+
 /**
  * Check if text is CJK punctuation
  */

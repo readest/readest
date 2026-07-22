@@ -58,14 +58,18 @@ function simulateKeyboardActivation() {
 }
 
 async function waitForAutoFocus() {
-  await act(() => new Promise((r) => setTimeout(r, 150)));
+  await act(() => vi.advanceTimersByTimeAsync(150));
 }
 
 describe('useToolbarKeyNavigation', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     _resetLastKeyboardTime();
   });
-  afterEach(() => cleanup());
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
 
   describe('auto-focus', () => {
     it('focuses first enabled button when keyboard-activated', async () => {

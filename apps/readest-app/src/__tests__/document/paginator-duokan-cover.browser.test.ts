@@ -104,6 +104,25 @@ describe('Paginator Duokan fullscreen cover (#4379)', () => {
     expect(img!.offsetHeight).toBeGreaterThan(0);
   });
 
+  it('stretches the fullscreen cover to fill the page (object-fit: fill)', async () => {
+    paginator = createPaginator();
+    paginator.open(book);
+
+    const stabilized = waitForStabilized(paginator);
+    await paginator.goTo({ index: 0 });
+    await stabilized;
+
+    const img = getCoverImg(paginator);
+    expect(img).toBeTruthy();
+    await waitForImgLoaded(img!);
+    await waitForVisibleHeight(img!);
+
+    // The fullscreen treatment stretches the cover edge-to-edge, ignoring the
+    // image's aspect ratio, to match Duokan's native full-page rendering.
+    const cs = img!.ownerDocument.defaultView!.getComputedStyle(img!);
+    expect(cs.objectFit).toBe('fill');
+  });
+
   it('shows the cover image in scrolled mode', async () => {
     paginator = createPaginator();
     paginator.open(book);

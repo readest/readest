@@ -7,70 +7,81 @@ on:
 permissions:
   contents: read
 jobs:
+  # The Rust format/clippy/test steps only run when src-tauri changed, so the
+  # ~45s toolchain + system-dep install (and the compile itself) is skipped on
+  # PRs that don't touch the Rust backend. The job still runs and reports
+  # success so it stays green as a required check.
   rust_lint:
     runs-on: ubuntu-latest
+    # pull-requests: read lets dorny/paths-filter list a PR's changed files
+    # via the REST API (the top-level grant is contents: read only).
+    permissions:
+      contents: read
+      pull-requests: read
     env:
       RUSTFLAGS: '-C target-cpu=skylake'
       SCCACHE_GHA_ENABLED: 'true'
       RUSTC_WRAPPER: sccache
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           submodules: 'true'
+      - name: detect src-tauri changes
+        id: changes
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
+        with:
+          filters: |
+            tauri:
+              - 'apps/readest-app/src-tauri/**'
       - name: setup sccache
+        if: steps.changes.outputs.tauri == 'true'
         uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
       - name: Install minimal stable with clippy and rustfmt
-        uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1
+        if: steps.changes.outputs.tauri == 'true'
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
         with:
           toolchain: stable
           override: true
           components: rustfmt, clippy
       - name: Cache apt packages
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        if: steps.changes.outputs.tauri == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /var/cache/apt/archives
           key: apt-rust-lint-${{ runner.os }}
       - name: Install system dependencies
+        if: steps.changes.outputs.tauri == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y pkg-config libfontconfig-dev libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libsoup-3.0-dev
       - name: Format check
+        if: steps.changes.outputs.tauri == 'true'
         working-directory: apps/readest-app/src-tauri
         run: cargo fmt --check
       - name: Clippy Check
+        if: steps.changes.outputs.tauri == 'true'
         working-directory: apps/readest-app/src-tauri
         run: cargo clippy -p Readest --no-deps -- -D warnings
       - name: Unit tests
+        if: steps.changes.outputs.tauri == 'true'
         working-directory: apps/readest-app/src-tauri
         run: cargo test -p Readest --lib
 
   build_web_app:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           submodules: 'true'
 
       - name: setup pnpm
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - name: setup node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
           node-version: 24
           cache: pnpm
-
-      # Turbopack persists its build cache here (turbopackFileSystemCacheForBuild).
-      # The key is deterministic (no commit SHA) so every PR restores the same
-      # entry — in practice the one `main` last saved, which is the only cache
-      # sibling PRs can all see.
-      - name: cache Turbopack build cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-        with:
-          path: apps/readest-app/.next/cache
-          key: turbo-build-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            turbo-build-web-${{ runner.os }}-
 
       - name: install Dependencies
         working-directory: apps/readest-app
@@ -96,7 +107,7 @@ jobs:
 
       - name: cache playwright browsers
         id: playwright-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
@@ -134,15 +145,15 @@ jobs:
       matrix:
         shard: [1, 2]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           submodules: 'true'
 
       - name: setup pnpm
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - name: setup node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
           node-version: 24
           cache: pnpm
@@ -156,7 +167,7 @@ jobs:
       - name: cache playwright browsers
         if: matrix.shard == 1
         id: playwright-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
@@ -191,23 +202,23 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           submodules: 'true'
 
       - name: detect koplugin changes
         id: changes
-        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
         with:
           filters: |
             koplugin:
               - 'apps/readest.koplugin/**'
 
       - name: setup pnpm
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - name: setup node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
           node-version: 24
           cache: pnpm
@@ -227,7 +238,7 @@ jobs:
 
       - name: cache apt packages
         if: steps.changes.outputs.koplugin == 'true'
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /var/cache/apt/archives
           key: apt-test-koplugin-${{ runner.os }}
@@ -262,15 +273,15 @@ jobs:
       SCCACHE_GHA_ENABLED: 'true'
       RUSTC_WRAPPER: sccache
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           submodules: 'true'
 
       - name: setup pnpm
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
 
       - name: setup node
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
         with:
           node-version: 24
           cache: pnpm
@@ -278,7 +289,7 @@ jobs:
       # The tauri tests run `next dev`, whose Turbopack cache lives in
       # `.next/dev/cache` (a different path from the `next build` cache).
       - name: cache Turbopack dev cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: apps/readest-app/.next/dev/cache
           key: turbo-dev-tauri-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
@@ -294,9 +305,15 @@ jobs:
         uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
 
       - name: install Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
         with:
           toolchain: stable
+          # This action defaults RUSTFLAGS to -D warnings. Path-patched
+          # dependencies (packages/tao, packages/tauri) build without
+          # cap-lints, so upstream warnings in them (e.g. glib deprecations
+          # in tao's Linux backend) would fail the app build. Warnings in
+          # our own crate are enforced by the rust_lint job instead.
+          rustflags: ''
           # Disable this action's built-in rust-cache so the explicit
           # Swatinem/rust-cache below is the single cache (it's the one
           # configured with cache-workspace-crates for the vendored tauri fork).
@@ -319,7 +336,7 @@ jobs:
           cache-workspace-crates: 'true'
 
       - name: Cache apt packages
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /var/cache/apt/archives
           key: apt-tauri-${{ runner.os }}

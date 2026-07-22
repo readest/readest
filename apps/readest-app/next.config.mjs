@@ -14,12 +14,27 @@ if (isDev) {
 }
 
 const exportOutput = appPlatform !== 'web' && !isDev;
+// Opt-in standalone output, set only by the Docker production build
+// (Dockerfile). Every other path keeps the original behavior: Tauri `export`,
+// local `build-web` (output undefined), dev, and the Cloudflare/OpenNext
+// deploy — which forces standalone itself via NEXT_PRIVATE_STANDALONE.
+const standaloneOutput = !exportOutput && process.env['BUILD_STANDALONE'] === 'true';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Ensure Next.js uses SSG instead of SSR
   // https://nextjs.org/docs/pages/building-your-application/deploying/static-exports
-  output: exportOutput ? 'export' : undefined,
+  // The Docker production image opts into a self-contained `.next/standalone`
+  // tree (see Dockerfile) so it can ship only the traced runtime; all other
+  // web builds fall back to the default server output.
+  output: exportOutput ? 'export' : standaloneOutput ? 'standalone' : undefined,
+  // Emit browser source maps for the Tauri export build so Sentry can
+  // symbolicate crashes. `scripts/upload-sourcemaps.mjs` uploads them after the
+  // build and strips the .map files, so they never ship inside the app bundle.
+  productionBrowserSourceMaps: exportOutput,
+  // Monorepo: trace from the repo root so workspace packages land in the
+  // standalone tree. Only relevant to — and only set for — the Docker build.
+  outputFileTracingRoot: standaloneOutput ? path.join(__dirname, '../../') : undefined,
   pageExtensions: exportOutput ? ['jsx', 'tsx'] : ['js', 'jsx', 'ts', 'tsx'],
   // Note: This feature is required to use the Next.js Image component in SSG mode.
   // See https://nextjs.org/docs/messages/export-image-api for different workarounds.
@@ -28,18 +43,18 @@ const nextConfig = {
   },
   devIndicators: false,
   experimental: {
-    // Persist Turbopack's compilation cache to `.next/` so CI can restore it
-    // between runs. Dev caching is on by default since Next 16.1; build
-    // caching is opt-in (beta).
+    // Dev caching is on by default since Next 16.1. We deliberately do NOT
+    // enable Turbopack's build cache (turbopackFileSystemCacheForBuild, beta):
+    // a build interrupted mid-compile leaves a partial cache that the next
+    // build mishandles, fanning out workers until it exhausts RAM.
     turbopackFileSystemCacheForDev: true,
-    turbopackFileSystemCacheForBuild: true,
   },
   // Configure assetPrefix or else the server won't properly resolve your assets.
   assetPrefix: '',
   reactStrictMode: true,
   serverExternalPackages: ['isows'],
   allowedDevOrigins: ['192.168.2.120'],
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       nunjucks: 'nunjucks/browser/nunjucks.js',
@@ -49,6 +64,9 @@ const nextConfig = {
       // can't find fflate (only installed in this app's node_modules).
       fflate: path.resolve(__dirname, 'node_modules/fflate'),
       ...(appPlatform !== 'web' ? { '@tursodatabase/database-wasm': false } : {}),
+      ...(isServer && appPlatform === 'web'
+        ? { '@readest/turso-database-wasm/webpack': false, 'jieba-wasm': false }
+        : {}),
     };
     return config;
   },

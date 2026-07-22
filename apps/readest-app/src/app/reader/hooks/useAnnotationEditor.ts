@@ -1,12 +1,11 @@
 import { useCallback, useRef, useState } from 'react';
 import { BookNote } from '@/types/book';
-import { Point, TextSelection } from '@/utils/sel';
+import { TextSelection } from '@/utils/sel';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import {
-  buildRangeFromPoints,
   getHandlePositionsFromRange as getHandlePositionsForBook,
   HandlePositions,
 } from '../utils/annotatorUtil';
@@ -39,13 +38,11 @@ export const useAnnotationEditor = ({
     [bookKey],
   );
 
-  const handleAnnotationRangeChange = useCallback(
-    async (startPoint: Point, endPoint: Point, isVertical: boolean, isDragging: boolean) => {
+  // Apply an already-built range (anchored at the non-dragged end in the editor
+  // component so it survives a corner auto page-turn) to the edited annotation.
+  const applyAnnotationRange = useCallback(
+    async (newRange: Range, targetIndex: number, isVertical: boolean, isDragging: boolean) => {
       if (!editingAnnotationRef.current || !view) return;
-
-      const built = buildRangeFromPoints(view, startPoint, endPoint);
-      if (!built) return;
-      const { range: newRange, index: targetIndex } = built;
 
       const newPositions = getHandlePositionsFromRange(newRange, isVertical);
       if (newPositions) {
@@ -105,6 +102,6 @@ export const useAnnotationEditor = ({
     handlePositions,
     setHandlePositions,
     getHandlePositionsFromRange,
-    handleAnnotationRangeChange,
+    applyAnnotationRange,
   };
 };

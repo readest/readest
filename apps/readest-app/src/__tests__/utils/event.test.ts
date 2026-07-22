@@ -68,6 +68,31 @@ describe('EventDispatcher', () => {
       eventDispatcher.off('no-detail', fn);
     });
 
+    it('does not call listeners added during an in-progress dispatch (snapshot semantics)', async () => {
+      // Regression: a listener that (re)subscribes another listener mid-dispatch
+      // must not have that new listener fire for the *current* event. The live
+      // Set used to be iterated directly, so a handler added during an awaited
+      // listener got invoked in the same dispatch — causing paragraph mode to
+      // toggle twice per keypress (#4717).
+      const added = vi.fn();
+      const adder = vi.fn(async () => {
+        await Promise.resolve();
+        eventDispatcher.on('reentrant', added);
+      });
+      eventDispatcher.on('reentrant', adder);
+
+      await eventDispatcher.dispatch('reentrant');
+      expect(adder).toHaveBeenCalledOnce();
+      expect(added).not.toHaveBeenCalled();
+
+      // The newly-added listener takes effect on the next dispatch.
+      await eventDispatcher.dispatch('reentrant');
+      expect(added).toHaveBeenCalledOnce();
+
+      eventDispatcher.off('reentrant', adder);
+      eventDispatcher.off('reentrant', added);
+    });
+
     it('awaits async listeners sequentially', async () => {
       const order: string[] = [];
       const slowFn = vi.fn(async () => {

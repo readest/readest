@@ -68,6 +68,9 @@ msgstr "오름차순"
 msgid "Actions"
 msgstr "작업"
 
+msgid "Download all books"
+msgstr "모든 책 다운로드"
+
 msgid "Rescan library"
 msgstr "라이브러리 다시 검색"
 
@@ -133,6 +136,21 @@ msgstr "표지 다운로드에 실패했습니다."
 
 msgid "Could not delete the file."
 msgstr "파일을 삭제할 수 없습니다."
+
+msgid "No books to download."
+msgstr "다운로드할 책이 없습니다."
+
+msgid "Downloading %1 of %2…"
+msgstr "%2개 중 %1개 다운로드 중…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "다운로드가 취소되었습니다. %2개 중 %1개를 다운로드했습니다."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2개 중 %1개를 다운로드했습니다 (%3개 건너뜀)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2개 중 %1개를 다운로드했습니다."
 
 msgid "Removing from cloud…"
 msgstr "클라우드에서 제거 중…"
@@ -215,6 +233,9 @@ msgstr "이 기기에서 Readest 주석 보내기"
 msgid "Pull readest annotations from other devices"
 msgstr "다른 기기에서 Readest 주석 가져오기"
 
+msgid "Full sync all readest annotations"
+msgstr "모든 Readest 주석 전체 동기화"
+
 msgid "Add to Readest"
 msgstr "Readest에 추가"
 
@@ -239,6 +260,12 @@ msgstr "이미 Readest 라이브러리에 있습니다:"
 msgid "Added to Readest:"
 msgstr "Readest에 추가됨:"
 
+msgid "No book is open"
+msgstr "열린 책이 없습니다"
+
+msgid "Uploaded to Readest:"
+msgstr "Readest에 업로드됨:"
+
 msgid "Log in Readest Account"
 msgstr "Readest 계정에 로그인"
 
@@ -251,11 +278,20 @@ msgstr "자동 동기화"
 msgid "Readest library"
 msgstr "Readest 라이브러리"
 
+msgid "Push stats now"
+msgstr "지금 통계 푸시"
+
+msgid "Pull stats now"
+msgstr "지금 통계 풀"
+
 msgid "Push books now"
 msgstr "지금 책 푸시"
 
 msgid "Pull books now"
 msgstr "지금 책 풀"
+
+msgid "Upload current book to Readest"
+msgstr "현재 책을 Readest에 업로드"
 
 msgid "Push reading progress now"
 msgstr "지금 읽기 진행 상황 보내기"
@@ -286,9 +322,6 @@ msgstr "먼저 로그인하세요"
 
 msgid "Please configure Readest settings first"
 msgstr "먼저 Readest 설정을 구성하세요"
-
-msgid "No book is open"
-msgstr "열린 책이 없습니다"
 
 msgid "(none)"
 msgstr "(없음)"
@@ -436,3 +469,18 @@ msgstr "읽기 진행 상황이 동기화되었습니다"
 
 msgid "No saved reading progress found for this book"
 msgstr "이 책의 저장된 읽기 진행 상황을 찾을 수 없습니다"
+
+msgid "Reading statistics are up to date"
+msgstr "읽기 통계가 최신 상태입니다"
+
+msgid "Reading statistics pushed"
+msgstr "읽기 통계를 보냈습니다"
+
+msgid "Failed to push reading statistics"
+msgstr "읽기 통계 보내기에 실패했습니다"
+
+msgid "Failed to pull reading statistics"
+msgstr "읽기 통계 가져오기에 실패했습니다"
+
+msgid "Reading statistics pulled"
+msgstr "읽기 통계를 가져왔습니다"

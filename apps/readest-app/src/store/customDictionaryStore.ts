@@ -53,6 +53,7 @@ const DEFAULT_DICTIONARY_SETTINGS: DictionarySettings = {
     [BUILTIN_WEB_SEARCH_IDS.goodreads]: false,
   },
   webSearches: [],
+  fontScale: 1,
 };
 
 interface DictionaryStoreState {
@@ -114,6 +115,8 @@ interface DictionaryStoreState {
   setEnabled(id: string, enabled: boolean): void;
   /** Persist the last-used tab id so the popup re-opens on it. */
   setDefaultProviderId(id: string | undefined): void;
+  /** Set the dictionary popup font-size multiplier (#4443). */
+  setFontScale(scale: number): void;
 
   /** Add a custom web search (id is generated). Appended + enabled by default. */
   addWebSearch(name: string, urlTemplate: string): WebSearchEntry;
@@ -435,6 +438,12 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     }));
   },
 
+  setFontScale: (scale) => {
+    set((state) => ({
+      settings: { ...state.settings, fontScale: scale },
+    }));
+  },
+
   addWebSearch: (name, urlTemplate) => {
     const trimmedName = name.trim();
     const trimmedUrl = urlTemplate.trim();
@@ -582,6 +591,7 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         },
         defaultProviderId: persistedSettings.defaultProviderId,
         webSearches: persistedSettings.webSearches ?? [],
+        fontScale: persistedSettings.fontScale ?? DEFAULT_DICTIONARY_SETTINGS.fontScale,
       };
       set({ dictionaries, settings: settingsMerged });
     } catch (error) {

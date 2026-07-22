@@ -16,6 +16,8 @@
     "fs:allow-stat",
     "fs:allow-fstat",
     "fs:allow-lstat",
+    "fs:read-all",
+    "fs:write-all",
     {
       "identifier": "fs:scope-appconfig-recursive",
       "allow": [
@@ -50,28 +52,6 @@
       ]
     },
     {
-      "identifier": "fs:allow-cache-read",
-      "allow": [
-        {
-          "path": "$APPCACHE/**/*"
-        },
-        {
-          "path": "/private/var/mobile/Containers/Data/Application/**/*"
-        }
-      ]
-    },
-    {
-      "identifier": "fs:allow-cache-write",
-      "allow": [
-        {
-          "path": "$APPCACHE/**/*"
-        },
-        {
-          "path": "/private/var/mobile/Containers/Data/Application/**/*"
-        }
-      ]
-    },
-    {
       "identifier": "fs:scope",
       "allow": [
         {
@@ -88,6 +68,12 @@
         },
         {
           "path": "$TEMP/**/*"
+        },
+        {
+          "path": "$APPCACHE/**/*"
+        },
+        {
+          "path": "/private/var/mobile/Containers/Data/Application/**/*"
         }
       ]
     },
@@ -176,20 +162,37 @@
         {
           "name": "start-readest",
           "cmd": "cmd",
-          "args": ["/C", "start", "", { "validator": "^.*Readest(.*)\\.exe$" }]
+          "args": [
+            "/C",
+            "start",
+            "",
+            {
+              "validator": "^.*Readest(.*)\\.exe$"
+            }
+          ]
         },
         {
           "name": "chmod-appimage",
           "cmd": "chmod",
-          "args": ["+x", { "validator": "^.*Readest(.*)\\.AppImage$" }]
+          "args": [
+            "+x",
+            {
+              "validator": "^.*Readest(.*)\\.AppImage$"
+            }
+          ]
         },
         {
           "name": "launch-appimage",
           "cmd": "setsid",
-          "args": [{ "validator": "^.*Readest(.*)\\.AppImage$" }]
+          "args": [
+            {
+              "validator": "^.*Readest(.*)\\.AppImage$"
+            }
+          ]
         }
       ]
     },
+    "biometric:default",
     "haptics:allow-vibrate",
     "haptics:allow-impact-feedback",
     "haptics:allow-notification-feedback",
@@ -201,6 +204,31 @@
     "device-info:default",
     "turso:default",
     "native-tts:default",
-    "native-bridge:default"
+    "native-bridge:default",
+    "sentry:default",
+    "allow-start-server",
+    "allow-download-file",
+    "allow-upload-file",
+    "allow-get-environment-variable",
+    "allow-get-executable-dir",
+    "allow-set-webview-info",
+    "allow-is-updater-disabled",
+    "allow-allow-paths-in-scopes",
+    "allow-read-dir",
+    "allow-parse-epub-metadata",
+    "allow-extract-epub-cover-full",
+    "allow-parse-epub-full",
+    "allow-parse-mobi-metadata",
+    "allow-extract-mobi-cover-full",
+    "allow-auth-with-safari",
+    "allow-start-apple-sign-in",
+    "allow-set-traffic-lights",
+    "allow-show-lookup-popover",
+    "allow-update-book-presence",
+    "allow-clear-book-presence",
+    "allow-clip-url",
+    "allow-spawn-fresh-browser",
+    "allow-verify-update-signature",
+    "allow-install-nightly-update"
   ]
 }

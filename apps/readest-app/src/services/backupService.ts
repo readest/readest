@@ -37,6 +37,7 @@ export const BACKUP_SETTINGS_BLACKLIST = [
   'localBooksDir',
   'customRootDir',
   'externalLibraryFolders',
+  'autoImportFolders',
   'savedBookCoverForLockScreenPath',
   // Per-device identity — restoring causes sync identity / HLC collisions.
   'replicaDeviceId',
@@ -48,6 +49,19 @@ export const BACKUP_SETTINGS_BLACKLIST = [
   'lastSyncedAtReplicas',
   'readwise.lastSyncedAt',
   'hardcover.lastSyncedAt',
+  'googleDrive.deviceId',
+  'googleDrive.lastSyncedAt',
+  'webdav.deviceId',
+  'webdav.lastSyncedAt',
+  'webdav.providerSelectedAt',
+  'googleDrive.providerSelectedAt',
+  'onedrive.deviceId',
+  'onedrive.lastSyncedAt',
+  'onedrive.providerSelectedAt',
+  's3.deviceId',
+  's3.lastSyncedAt',
+  's3.providerSelectedAt',
+  'readestCloud.disabledAt',
   // Transient runtime state — book keys may not exist post-restore; screen
   // brightness is live device state.
   'lastOpenBooks',
@@ -69,6 +83,10 @@ export const BACKUP_SETTINGS_CREDENTIAL_FIELDS = [
   'kosync.password',
   'readwise.accessToken',
   'hardcover.accessToken',
+  // S3 access keys are strong, long-lived cloud credentials — strip them from
+  // unencrypted backup zips unless the user opts into including credentials.
+  's3.accessKeyId',
+  's3.secretAccessKey',
   'aiSettings.aiGatewayApiKey',
   'aiSettings.openrouterApiKey',
 ] as const;
@@ -250,7 +268,7 @@ type ProgressCallback = (current: number, total: number, filename: string) => vo
 /**
  * Shared logic: add all library entries to a ZipWriter.
  */
-async function addBackupEntriesToZip(
+export async function addBackupEntriesToZip(
   writer: ZipWriter<unknown>,
   appService: AppService,
   options: BackupOptions,
@@ -288,7 +306,12 @@ async function addBackupEntriesToZip(
     try {
       const content = await appService.readFile(file.path, 'Books', 'binary');
       const data = new Uint8Array(content as ArrayBuffer);
-      await writer.add(file.path, new Uint8ArrayReader(data), { level: 0 });
+      // `readDirectory` returns host-separator paths; on Windows that is a
+      // backslash (e.g. `hash\cover.png`). Zip entry names must use forward
+      // slashes so the backup restores on every platform — restore matches a
+      // book's files by `${hash}/` (see `restoreFromBackupZip`). Issue #4703.
+      const entryName = file.path.replace(/\\/g, '/');
+      await writer.add(entryName, new Uint8ArrayReader(data), { level: 0 });
     } catch (error) {
       console.warn(`Skipping file ${file.path}:`, error);
     }

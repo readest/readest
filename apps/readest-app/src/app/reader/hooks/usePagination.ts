@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { FoliateView } from '@/types/view';
 import { ViewSettings } from '@/types/book';
@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { eventDispatcher } from '@/utils/event';
 import { resolvePageTurn, normalizeDomKeyEvent, KeyCandidate } from '@/utils/keybinding';
+import { refreshEinkScreen } from '@/utils/bridge';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
@@ -41,7 +42,7 @@ const hasHorizontalPanning = (
   return isPanningView(view, viewSettings) && view.isOverflowX();
 };
 
-const hasVerticalPanning = (
+export const hasVerticalPanning = (
   view: FoliateView | null,
   viewSettings: ViewSettings | null | undefined,
 ) => {
@@ -197,6 +198,16 @@ export const usePagination = (
   // Reactive subscription: drives the effect dependency array below. The
   // handlers themselves re-read via getState() to avoid stale closures.
   const hardwarePageTurner = useSettingsStore((s) => s.settings.hardwarePageTurner);
+  // While this book's TTS is actively playing, the volume keys must control the
+  // system volume instead of flipping pages (#4691). A paused or stopped session
+  // hands them back to the page-flip interception. Safe on iOS because the
+  // native interception never reconfigures the audio session while native TTS
+  // owns it (a .mixWithOthers flip there would vacate the Now Playing slot).
+  const [ttsPlaying, setTtsPlaying] = useState(false);
+  // handlePageFlip is registered once (see the effect below), so it can't read
+  // the ttsPlaying state directly without going stale. This ref mirrors it for
+  // the volume-key page-flip guard.
+  const ttsPlayingRef = useRef(false);
 
   const handlePageFlip = async (
     msg: MessageEvent | CustomEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
@@ -301,7 +312,14 @@ export const usePagination = (
       }
     } else if (msg instanceof CustomEvent) {
       const viewSettings = getViewSettings(bookKey);
-      if (msg.type === 'native-key-down' && viewSettings?.volumeKeysToFlip) {
+      // While TTS is playing, volume keys control the volume, not pagination.
+      // The native layer still forwards the key here (iOS via a lingering KVO,
+      // Android calls onNativeKeyDown unconditionally), so guard it here too.
+      if (
+        msg.type === 'native-key-down' &&
+        viewSettings?.volumeKeysToFlip &&
+        !ttsPlayingRef.current
+      ) {
         const { keyName } = msg.detail;
         setHoveredBookKey('');
         if (keyName === 'VolumeUp') {
@@ -355,6 +373,15 @@ export const usePagination = (
     const action = resolvePageTurn(settings, candidate);
     if (!action) return false;
 
+    // E-ink full screen refresh (Android only) — clears ghosting without
+    // turning the page. The native bridge no-ops on non-e-ink hardware.
+    if (action === 'refresh') {
+      if (appService?.isAndroidApp) {
+        refreshEinkScreen().catch(() => {});
+      }
+      return true;
+    }
+
     const viewSettings = getViewSettings(bookKey);
     const side = action === 'pagePrev' || action === 'sectionPrev' ? 'up' : 'down';
     const mode = action === 'sectionPrev' || action === 'sectionNext' ? 'section' : 'page';
@@ -407,20 +434,44 @@ export const usePagination = (
   useEffect(() => {
     if (!appService?.isMobileApp) return;
 
-    const viewSettings = getViewSettings(bookKey);
-    if (viewSettings?.volumeKeysToFlip) {
-      acquireVolumeKeyInterception();
-    } else {
-      releaseVolumeKeyInterception();
-    }
-
     eventDispatcher.on('native-key-down', handlePageFlip);
     return () => {
-      releaseVolumeKeyInterception();
       eventDispatcher.off('native-key-down', handlePageFlip);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Track this book's TTS playback so volume-key interception can step aside
+  // while audio is playing (#4691).
+  useEffect(() => {
+    const handlePlaybackState = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { bookKey?: string; state?: string };
+      if (detail?.bookKey !== bookKey) return;
+      const playing = detail.state === 'playing';
+      ttsPlayingRef.current = playing;
+      setTtsPlaying(playing);
+    };
+    eventDispatcher.on('tts-playback-state', handlePlaybackState);
+    return () => {
+      eventDispatcher.off('tts-playback-state', handlePlaybackState);
+    };
+  }, [bookKey]);
+
+  // Volume-key page-flip interception (mobile only). Acquired only while the
+  // setting is on and TTS isn't playing; the matching release on re-run/unmount
+  // keeps the reference count balanced.
+  useEffect(() => {
+    if (!appService?.isMobileApp) return;
+
+    const viewSettings = getViewSettings(bookKey);
+    if (!viewSettings?.volumeKeysToFlip || ttsPlaying) return;
+
+    acquireVolumeKeyInterception();
+    return () => {
+      releaseVolumeKeyInterception();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ttsPlaying]);
 
   // Hardware page turner: native-key + DOM-key listeners and native
   // media-key interception, re-evaluated whenever the setting changes.
@@ -429,7 +480,8 @@ export const usePagination = (
       hardwarePageTurner?.bindings.pagePrev?.source === 'native' ||
       hardwarePageTurner?.bindings.pageNext?.source === 'native' ||
       hardwarePageTurner?.bindings.sectionPrev?.source === 'native' ||
-      hardwarePageTurner?.bindings.sectionNext?.source === 'native';
+      hardwarePageTurner?.bindings.sectionNext?.source === 'native' ||
+      hardwarePageTurner?.bindings.refresh?.source === 'native';
     const needsNativeInterception =
       !!appService?.isMobileApp && !!hardwarePageTurner?.enabled && hasNativeBinding;
 
@@ -459,6 +511,7 @@ export const usePagination = (
     hardwarePageTurner?.bindings.pageNext?.source,
     hardwarePageTurner?.bindings.sectionPrev?.source,
     hardwarePageTurner?.bindings.sectionNext?.source,
+    hardwarePageTurner?.bindings.refresh?.source,
   ]);
 
   // Touch swipe page flip for fixed-layout books — registered as a touch interceptor

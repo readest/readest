@@ -68,6 +68,9 @@ msgstr "Növekvő"
 msgid "Actions"
 msgstr "Műveletek"
 
+msgid "Download all books"
+msgstr "Összes könyv letöltése"
+
 msgid "Rescan library"
 msgstr "Könyvtár újraolvasása"
 
@@ -133,6 +136,21 @@ msgstr "A borító letöltése sikertelen."
 
 msgid "Could not delete the file."
 msgstr "A fájl nem törölhető."
+
+msgid "No books to download."
+msgstr "Nincs letölthető könyv."
+
+msgid "Downloading %1 of %2…"
+msgstr "Letöltés: %1 / %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Letöltés megszakítva. %2 könyvből %1 letöltve."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 könyvből %1 letöltve (%3 kihagyva)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 könyvből %1 letöltve."
 
 msgid "Removing from cloud…"
 msgstr "Eltávolítás a felhőből…"
@@ -215,6 +233,9 @@ msgstr "Readest jegyzetek küldése erről az eszközről"
 msgid "Pull readest annotations from other devices"
 msgstr "Readest jegyzetek lekérése más eszközökről"
 
+msgid "Full sync all readest annotations"
+msgstr "Az összes Readest jegyzet teljes szinkronizálása"
+
 msgid "Add to Readest"
 msgstr "Hozzáadás a Readesthez"
 
@@ -239,6 +260,12 @@ msgstr "Már a Readest könyvtáradban van:"
 msgid "Added to Readest:"
 msgstr "Hozzáadva a Readesthez:"
 
+msgid "No book is open"
+msgstr "Nincs megnyitott könyv"
+
+msgid "Uploaded to Readest:"
+msgstr "Feltöltve a Readestbe:"
+
 msgid "Log in Readest Account"
 msgstr "Bejelentkezés Readest-fiókba"
 
@@ -251,11 +278,20 @@ msgstr "Automatikus szinkron"
 msgid "Readest library"
 msgstr "Readest könyvtár"
 
+msgid "Push stats now"
+msgstr "Statisztikák küldése most"
+
+msgid "Pull stats now"
+msgstr "Statisztikák lekérése most"
+
 msgid "Push books now"
 msgstr "Könyvek küldése most"
 
 msgid "Pull books now"
 msgstr "Könyvek letöltése most"
+
+msgid "Upload current book to Readest"
+msgstr "Az aktuális könyv feltöltése a Readestbe"
 
 msgid "Push reading progress now"
 msgstr "Olvasási haladás küldése most"
@@ -286,9 +322,6 @@ msgstr "Először jelentkezz be"
 
 msgid "Please configure Readest settings first"
 msgstr "Először állítsd be a Readest paramétereit"
-
-msgid "No book is open"
-msgstr "Nincs megnyitott könyv"
 
 msgid "(none)"
 msgstr "(nincs)"
@@ -436,3 +469,18 @@ msgstr "Olvasási haladás szinkronizálva"
 
 msgid "No saved reading progress found for this book"
 msgstr "Nem található mentett olvasási haladás ehhez a könyvhöz"
+
+msgid "Reading statistics are up to date"
+msgstr "Az olvasási statisztikák naprakészek"
+
+msgid "Reading statistics pushed"
+msgstr "Olvasási statisztikák elküldve"
+
+msgid "Failed to push reading statistics"
+msgstr "Az olvasási statisztikák küldése sikertelen"
+
+msgid "Failed to pull reading statistics"
+msgstr "Az olvasási statisztikák lekérése sikertelen"
+
+msgid "Reading statistics pulled"
+msgstr "Olvasási statisztikák lekérve"

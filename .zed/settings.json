@@ -1,0 +1,108 @@
+{
+  "languages": {
+    "Rust": {
+      "language_servers": ["rust-analyzer"]
+    },
+    "JavaScript": {
+      "language_servers": ["biome", "...", "!eslint"],
+      "formatter": {
+        "language_server": {
+          "name": "biome"
+        }
+      },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
+      }
+    },
+    "TypeScript": {
+      "language_servers": ["biome", "...", "!eslint"],
+      "formatter": {
+        "language_server": {
+          "name": "biome"
+        }
+      },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
+      }
+    },
+    "TSX": {
+      "language_servers": ["biome", "...", "!eslint"],
+      "formatter": {
+        "language_server": {
+          "name": "biome"
+        }
+      },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
+      }
+    },
+    "CSS": {
+      "language_servers": ["biome", "...", "!eslint"],
+      "formatter": {
+        "language_server": {
+          "name": "biome"
+        }
+      }
+    },
+    "JSON": {
+      "language_servers": ["biome", "..."],
+      "formatter": {
+        "language_server": {
+          "name": "biome"
+        }
+      }
+    },
+    "JSONC": {
+      "language_servers": ["biome", "..."],
+      "formatter": {
+        "language_server": {
+          "name": "biome"
+        }
+      }
+    }
+  },
+  "lsp": {
+    "rust-analyzer": {
+      "settings": {
+        "linkedProjects": ["packages/tauri/Cargo.toml", "apps/readest-app/src-tauri/Cargo.toml"]
+      }
+    },
+    "biome": {
+      "binary": {
+        "path": "node_modules/.bin/biome",
+        "arguments": ["lsp-proxy"]
+      }
+    },
+    "vtsls": {
+      "settings": {
+        "typescript": {
+          "tsserver": {
+            "experimental": {
+              "enableProjectDiagnostics": true // Disable if you don't want vtsls to scan the entire codebase
+            }
+          },
+          "inlayHints": {
+            "parameterNames": {
+              "enabled": "all"
+            },
+            "variableTypes": {
+              "enabled": true
+            },
+            "propertyDeclarationTypes": {
+              "enabled": true
+            },
+            "functionLikeReturnTypes": {
+              "enabled": true
+            },
+            "enumMemberValues": {
+              "enabled": true
+            }
+          }
+        }
+      }
+    }
+  }
+}

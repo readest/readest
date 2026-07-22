@@ -68,6 +68,9 @@ msgstr "Artan"
 msgid "Actions"
 msgstr "İşlemler"
 
+msgid "Download all books"
+msgstr "Tüm kitapları indir"
+
 msgid "Rescan library"
 msgstr "Kütüphaneyi yeniden tara"
 
@@ -133,6 +136,21 @@ msgstr "Kapak indirilemedi."
 
 msgid "Could not delete the file."
 msgstr "Dosya silinemedi."
+
+msgid "No books to download."
+msgstr "İndirilecek kitap yok."
+
+msgid "Downloading %1 of %2…"
+msgstr "%2 kitaptan %1. indiriliyor…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "İndirme iptal edildi. %2 kitaptan %1 tanesi indirildi."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 kitaptan %1 tanesi indirildi (%3 tanesi atlandı)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 kitaptan %1 tanesi indirildi."
 
 msgid "Removing from cloud…"
 msgstr "Buluttan kaldırılıyor…"
@@ -215,6 +233,9 @@ msgstr "Bu cihazdan Readest açıklamalarını gönder"
 msgid "Pull readest annotations from other devices"
 msgstr "Diğer cihazlardan Readest açıklamalarını al"
 
+msgid "Full sync all readest annotations"
+msgstr "Tüm Readest açıklamalarını tam senkronize et"
+
 msgid "Add to Readest"
 msgstr "Readest'e ekle"
 
@@ -239,6 +260,12 @@ msgstr "Zaten Readest kütüphanenizde:"
 msgid "Added to Readest:"
 msgstr "Readest'e eklendi:"
 
+msgid "No book is open"
+msgstr "Açık kitap yok"
+
+msgid "Uploaded to Readest:"
+msgstr "Readest'e yüklendi:"
+
 msgid "Log in Readest Account"
 msgstr "Readest hesabına giriş yap"
 
@@ -251,11 +278,20 @@ msgstr "Otomatik senkronizasyon"
 msgid "Readest library"
 msgstr "Readest kütüphanesi"
 
+msgid "Push stats now"
+msgstr "İstatistikleri şimdi gönder"
+
+msgid "Pull stats now"
+msgstr "İstatistikleri şimdi al"
+
 msgid "Push books now"
 msgstr "Kitapları şimdi gönder"
 
 msgid "Pull books now"
 msgstr "Kitapları şimdi al"
+
+msgid "Upload current book to Readest"
+msgstr "Geçerli kitabı Readest'e yükle"
 
 msgid "Push reading progress now"
 msgstr "Okuma ilerlemesini şimdi gönder"
@@ -286,9 +322,6 @@ msgstr "Önce giriş yapın"
 
 msgid "Please configure Readest settings first"
 msgstr "Önce Readest ayarlarını yapılandırın"
-
-msgid "No book is open"
-msgstr "Açık kitap yok"
 
 msgid "(none)"
 msgstr "(yok)"
@@ -436,3 +469,18 @@ msgstr "Okuma ilerlemesi senkronize edildi"
 
 msgid "No saved reading progress found for this book"
 msgstr "Bu kitap için kayıtlı okuma ilerlemesi bulunamadı"
+
+msgid "Reading statistics are up to date"
+msgstr "Okuma istatistikleri güncel"
+
+msgid "Reading statistics pushed"
+msgstr "Okuma istatistikleri gönderildi"
+
+msgid "Failed to push reading statistics"
+msgstr "Okuma istatistikleri gönderilemedi"
+
+msgid "Failed to pull reading statistics"
+msgstr "Okuma istatistikleri alınamadı"
+
+msgid "Reading statistics pulled"
+msgstr "Okuma istatistikleri alındı"

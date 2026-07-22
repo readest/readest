@@ -579,6 +579,12 @@ export const createMdictProvider = ({
         // surrounding chrome.
         const body = document.createElement('div');
         body.dataset['dictKind'] = dict.kind;
+        // Expose the content root as a shadow `part` (#4443). The MDict body
+        // lives inside a shadow root, so the popup's font-size rule can't
+        // reach it with an ordinary descendant selector — `::part(dict-content)`
+        // is the only hook that crosses the boundary. The matching host class
+        // (`dict-shadow-host`, set below) is the selector subject for that rule.
+        body.setAttribute('part', 'dict-content');
         body.innerHTML = result.definition;
 
         await resolveImageResources(body, mdds, ctx.signal, trackedUrls);
@@ -605,7 +611,9 @@ export const createMdictProvider = ({
         // into the app's layout. Click events still bubble naturally so the
         // `sound://` / `entry://` / external-link delegation keeps working.
         const shadowHost = document.createElement('div');
-        shadowHost.className = 'mt-2 text-sm';
+        // `dict-shadow-host` is the stable host selector the popup's
+        // `::part(dict-content)` font-size rule targets (#4443).
+        shadowHost.className = 'dict-shadow-host mt-2 text-sm';
         ctx.container.appendChild(shadowHost);
         const shadow = shadowHost.attachShadow({ mode: 'open' });
         // Baseline app-level styles first (theme-aware blend rules for

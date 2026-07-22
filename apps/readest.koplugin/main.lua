@@ -12,6 +12,7 @@ local _ = require("readest_i18n")
 local SyncAuth = require("readest_syncauth")
 local SyncConfig = require("readest_syncconfig")
 local SyncAnnotations = require("readest_syncannotations")
+local SyncStats = require("readest_syncstats")
 local SelfUpdate = require("readest_selfupdate")
 
 local ReadestSync = WidgetContainer:new{
@@ -21,6 +22,10 @@ local ReadestSync = WidgetContainer:new{
 }
 
 local API_CALL_DEBOUNCE_DELAY = 30
+-- Delay before the on-open pull runs, so the reader paints and becomes
+-- interactive first and rapid book switching coalesces to a single pull for
+-- the book you settle on, instead of stacking blocking round-trips (#5006).
+local READER_READY_PULL_DELAY = 1
 local SUPABAE_ANON_KEY_BASE64 = "ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5aaWMzbDRablZ6YW1weFpIaHJhbkZzZVhOaklpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzTXpReE1qTTJOekVzSW1WNGNDSTZNakEwT1RZNU9UWTNNWDAuM1U1VXFhb3VfMVNnclZlMWVvOXJBcGMwdUtqcWhwUWRVWGh2d1VIbVVmZw=="
 
 ReadestSync.default_settings = {
@@ -83,15 +88,28 @@ function ReadestSync:onDispatcherRegisterReaderActions()
     Dispatcher:registerAction("readest_sync_push_progress", { category="none", event="ReadestSyncPushProgress", title=_("Push readest progress from this device"), reader=true,})
     Dispatcher:registerAction("readest_sync_pull_progress", { category="none", event="ReadestSyncPullProgress", title=_("Pull readest progress from other devices"), reader=true, separator=true,})
     Dispatcher:registerAction("readest_sync_push_annotations", { category="none", event="ReadestSyncPushAnnotations", title=_("Push readest annotations from this device"), reader=true,})
-    Dispatcher:registerAction("readest_sync_pull_annotations", { category="none", event="ReadestSyncPullAnnotations", title=_("Pull readest annotations from other devices"), reader=true, separator=true,})
+    Dispatcher:registerAction("readest_sync_pull_annotations", { category="none", event="ReadestSyncPullAnnotations", title=_("Pull readest annotations from other devices"), reader=true,})
+    -- Issue #5094: reaching a full annotation sync through the menu takes
+    -- several taps. The title keeps the "readest" token because the gesture
+    -- picker pools every plugin's actions into one flat list.
+    Dispatcher:registerAction("readest_sync_full_annotations", { category="none", event="ReadestSyncFullSyncAnnotations", title=_("Full sync all readest annotations"), reader=true, separator=true,})
 end
 
 function ReadestSync:onReaderReady()
     if self.settings.auto_sync and self.settings.access_token then
-        UIManager:nextTick(function()
+        -- Defer the per-book pull so the reader is interactive first, and keep a
+        -- handle so a rapid book switch cancels it (onCloseWidget) instead of
+        -- stacking blocking round-trips on the UI thread (issue #5006).
+        if self.reader_ready_pull_task then
+            UIManager:unschedule(self.reader_ready_pull_task)
+        end
+        self.reader_ready_pull_task = function()
+            self.reader_ready_pull_task = nil
             self:pullBookConfig(false)
             self:pullBookNotes(false)
-        end)
+            self:pullBookStats(false)
+        end
+        UIManager:scheduleIn(READER_READY_PULL_DELAY, self.reader_ready_pull_task)
     end
     self:onDispatcherRegisterReaderActions()
 end
@@ -288,6 +306,147 @@ function ReadestSync:onAddToReadest(file)
     self:addToReadest(file)
 end
 
+local function refreshLibraryWidget()
+    local LibraryWidget = require("library.librarywidget")
+    if LibraryWidget._menu then LibraryWidget.refresh() end
+end
+
+-- Upload the book currently open in the reader, mirroring the Library
+-- widget's long-press "Upload to Cloud" (library/librarywidget.lua). Both
+-- routes end in syncbooks.uploadAndRecord, so the cloud + store bookkeeping
+-- stays identical between them.
+--
+-- The wrinkle the Library route doesn't have: a book you sideloaded and
+-- opened may have no LibraryStore row at all — rows only appear via "Add to
+-- Readest" or a cloud pull — and uploadBook needs one for the hash, format
+-- and file path. So we create the row first, exactly as addToReadest does.
+function ReadestSync:uploadCurrentBook()
+    if not self.settings.access_token then
+        UIManager:show(InfoMessage:new{
+            text = _("Sign in to Readest first."), timeout = 3,
+        })
+        return
+    end
+    if not self.ui.document then
+        UIManager:show(InfoMessage:new{
+            text = _("No book is open"), timeout = 2,
+        })
+        return
+    end
+
+    local file = self.ui.document.file
+    local ext = file and file:match("%.([^./\\]+)$")
+    local format = readest_format_for_ext(ext)
+    if not format then
+        UIManager:show(InfoMessage:new{
+            text = _("Unsupported book format."), timeout = 3,
+        })
+        return
+    end
+
+    local store = self:getLibraryStore()
+    if not store then
+        UIManager:show(InfoMessage:new{
+            text = _("Sign in to Readest first."), timeout = 3,
+        })
+        return
+    end
+
+    -- KOReader stamps partial_md5_checksum into the .sdr sidecar for most
+    -- books, but localscanner treats it as optional, so fall back to computing
+    -- it — same util.partialMD5 addToReadest uses.
+    local hash = self.ui.doc_settings:readSetting("partial_md5_checksum")
+    if hash and hash ~= "" then
+        self:_uploadBookRow(store, file, hash, format)
+        return
+    end
+
+    local util = require("util")
+    local progress = InfoMessage:new{
+        text = _("Hashing book…"),
+    }
+    UIManager:show(progress)
+    UIManager:nextTick(function()
+        local computed = util.partialMD5(file)
+        UIManager:close(progress)
+        if not computed then
+            UIManager:show(InfoMessage:new{
+                text = _("Could not read file."), timeout = 3,
+            })
+            return
+        end
+        self:_uploadBookRow(store, file, computed, format)
+    end)
+end
+
+function ReadestSync:_uploadBookRow(store, file, hash, format)
+    local now = math.floor(os.time() * 1000)
+    local existing = store:_getRowRaw(hash)
+
+    -- Prefer the title the library already holds: the user may have renamed
+    -- the book, or a cloud pull may carry richer metadata than the file does.
+    local title = existing and existing.title
+    if not title or title == "" then
+        local doc_props = self.ui.doc_settings:readSetting("doc_props") or {}
+        if doc_props.title and doc_props.title ~= "" then
+            title = doc_props.title
+        else
+            local basename = file:match("([^/]+)$") or file
+            title = basename:gsub("%.[^.]+$", "")
+        end
+    end
+
+    -- Same row shape addToReadest writes, so both entry points produce the
+    -- same row for the same book. _clear_fields un-tombstones a previously
+    -- deleted book: a bare deleted_at = nil would be dropped by Lua's table
+    -- semantics and then copied forward by upsertBook's preserve pass.
+    store:upsertBook({
+        hash          = hash,
+        title         = title,
+        format        = format,
+        file_path     = file,
+        local_present = 1,
+        created_at    = (existing and existing.created_at) or now,
+        updated_at    = now,
+        _clear_fields = { "deleted_at" },
+    })
+
+    local row = store:_getRowRaw(hash)
+    local progress = InfoMessage:new{
+        text = _("Uploading…") .. " " .. (row.title or ""),
+    }
+    UIManager:show(progress)
+
+    local DataStorage = require("datastorage")
+    local syncbooks = require("library.syncbooks")
+    syncbooks.uploadAndRecord(row, {
+        sync_auth  = SyncAuth,
+        sync_path  = self.path,
+        settings   = self.settings,
+        store      = store,
+        covers_dir = DataStorage:getSettingsDir() .. "/readest_covers",
+        on_pushed  = refreshLibraryWidget,
+    }, function(success, msg, status)
+        UIManager:close(progress)
+        if not success then
+            local text
+            if status == 403 and msg and msg:find("quota", 1, true) then
+                text = _("Storage quota exceeded.")
+            else
+                text = _("Upload failed.")
+                    .. " (" .. tostring(msg or status) .. ")"
+            end
+            UIManager:show(InfoMessage:new{ text = text, timeout = 4 })
+            return
+        end
+        UIManager:show(InfoMessage:new{
+            text = _("Uploaded to Readest:") .. " " .. (row.title or ""),
+            timeout = 2,
+        })
+        refreshLibraryWidget()
+    end)
+end
+
 -- ── Menu ───────────────────────────────────────────────────────────
 
 function ReadestSync:addToMainMenu(menu_items)
@@ -330,6 +489,24 @@ function ReadestSync:addToMainMenu(menu_items)
                 end,
             },
             {
+                text = _("Push stats now"),
+                enabled_func = function()
+                    return self.settings.access_token ~= nil and self.settings.user_id ~= nil
+                end,
+                callback = function()
+                    self:pushBookStats(true)
+                end,
+            },
+            {
+                text = _("Pull stats now"),
+                enabled_func = function()
+                    return self.settings.access_token ~= nil and self.settings.user_id ~= nil
+                end,
+                callback = function()
+                    self:pullBookStats(true)
+                end,
+            },
+            {
                 text = _("Push books now"),
                 enabled_func = function()
                     return self.settings.access_token ~= nil and self.settings.user_id ~= nil
@@ -345,6 +522,15 @@ function ReadestSync:addToMainMenu(menu_items)
                 end,
                 callback = function()
                     self:syncBooksLibrary("pull", true)
+                end,
+            },
+            {
+                text = _("Upload current book to Readest"),
+                enabled_func = function()
+                    return self.settings.access_token ~= nil and self.ui.document ~= nil
+                end,
+                callback = function()
+                    self:uploadCurrentBook()
                 end,
                 separator = true,
             },
@@ -533,6 +719,35 @@ function ReadestSync:pullBookConfig(interactive)
     )
 end
 
+-- ── Reading statistics sync ────────────────────────────────────────
+
+function ReadestSync:pushBookStats(interactive)
+    logger.dbg("ReadestStats pushBookStats: triggered, interactive=" .. tostring(interactive))
+    if interactive and NetworkMgr:willRerunWhenOnline(function() self:pushBookStats(interactive) end) then
+        return
+    end
+    local client = self:ensureClient(interactive)
+    if not client then
+        logger.dbg("ReadestStats pushBookStats: no client (not signed in / offline); skipping")
+        return
+    end
+    SyncStats:push(self.settings, client, interactive)
+end
+
+function ReadestSync:pullBookStats(interactive)
+    logger.dbg("ReadestStats pullBookStats: triggered, interactive=" .. tostring(interactive))
+    if NetworkMgr:willRerunWhenOnline(function() self:pullBookStats(interactive) end) then
+        return
+    end
+    local client = self:ensureClient(interactive)
+    if not client then
+        logger.dbg("ReadestStats pullBookStats: no client (not signed in / offline); skipping")
+        return
+    end
+    SyncStats:pull(self.settings, client, interactive,
+        function() SyncAuth:logout(self.settings, self.path) end, self.ui)
+end
+
 -- ── Annotation sync ────────────────────────────────────────────────
 
 function ReadestSync:pushBookNotes(interactive, full_sync)
@@ -595,6 +810,10 @@ end
 
 function ReadestSync:onReadestSyncPullAnnotations()
     self:pullBookNotes(true)
+end
+
+function ReadestSync:onReadestSyncFullSyncAnnotations()
+    self:fullSyncBookNotes()
 end
 
 function ReadestSync:openLibrary()
@@ -717,12 +936,43 @@ function ReadestSync:syncBooksLibrary(mode, interactive)
     end)
 end
 
+-- pushOpenBook(interactive) — push ONLY the currently-open book's library
+-- row. Closing a book has to persist this book's reading progress and
+-- timestamps, but it does NOT need other devices' rows, so we skip the full
+-- library pull whose ~3s blocking round-trip froze the UI on every close
+-- (issue #5006). The cross-device library pull still runs when the Library
+-- widget opens. touchOpenBook returns the row with the cloud-side uploaded_at
+-- / metadata / group_id still in place (from the last pull), so this
+-- single-book push preserves them — no explicit-null wipe (issue #4138), same
+-- as the existing interactive "push" path.
+function ReadestSync:pushOpenBook(interactive)
+    if not (self.settings.access_token and self.settings.user_id) then return end
+    local touched = self:touchOpenBook()
+    if not touched then return end
+    local syncbooks = require("library.syncbooks")
+    syncbooks.pushBook(touched, {
+        sync_auth = SyncAuth,
+        sync_path = self.path,
+        settings  = self.settings,
+    }, function(success, _msg, status)
+        logger.info("ReadestSync pushOpenBook done: success=" .. tostring(success)
+            .. " status=" .. tostring(status))
+        if interactive then
+            UIManager:show(InfoMessage:new{
+                text = success and _("Books synced") or _("Books sync failed"),
+                timeout = 2,
+            })
+        end
+    end)
+end
+
 function ReadestSync:onCloseDocument()
     if self.settings.auto_sync and self.settings.access_token then
         NetworkMgr:goOnlineToRun(function()
             self:pushBookConfig(false)
             self:pushBookNotes(false)
-            self:syncBooksLibrary("both", false)
+            self:pushBookStats(false)
+            self:pushOpenBook(false)
         end)
     end
 end
@@ -747,7 +997,42 @@ function ReadestSync:onPageUpdate(page)
     end
 end
 
-function ReadestSync:onAnnotationsModified()
+-- Waking the device with a book already open should pull like reopening
+-- the book does (issue #4924). Delayed because Wi-Fi is usually still
+-- coming back up right after wake (kosync uses the same 1s delay); the
+-- pull helpers rerun themselves when online if that isn't enough. On
+-- devices where Suspend/Resume also fire on focus changes (Android),
+-- the debounce keeps this from hammering the API.
+function ReadestSync:onResume()
+    if not (self.settings.auto_sync and self.settings.access_token and self.ui.document) then
+        return
+    end
+    local now = os.time()
+    if now - (self.last_resume_sync_timestamp or 0) <= API_CALL_DEBOUNCE_DELAY then
+        return
+    end
+    self.last_resume_sync_timestamp = now
+    if self.resume_pull_task then
+        UIManager:unschedule(self.resume_pull_task)
+    end
+    self.resume_pull_task = function()
+        self.resume_pull_task = nil
+        self:pullBookConfig(false)
+        self:pullBookNotes(false)
+        self:pullBookStats(false)
+    end
+    UIManager:scheduleIn(1, self.resume_pull_task)
+end
+
+function ReadestSync:onAnnotationsModified(items)
+    -- A removal fires AnnotationsModified with a negative index_modified and the
+    -- deleted item at items[1]. Capture a tombstone now, before the item is gone
+    -- for good — the push walk only sees live annotations, so without this the
+    -- deletion never reaches the server (issue #4119, push direction).
+    if self.settings.access_token and items and items.index_modified
+            and items.index_modified < 0 and items[1] then
+        SyncAnnotations:recordDeletion(self.ui.doc_settings, items[1])
+    end
     if self.settings.auto_sync and self.settings.access_token then
         UIManager:nextTick(function()
             self:pushBookNotes(false)
@@ -759,6 +1044,14 @@ function ReadestSync:onCloseWidget()
     if self.delayed_push_task then
         UIManager:unschedule(self.delayed_push_task)
         self.delayed_push_task = nil
+    end
+    if self.resume_pull_task then
+        UIManager:unschedule(self.resume_pull_task)
+        self.resume_pull_task = nil
+    end
+    if self.reader_ready_pull_task then
+        UIManager:unschedule(self.reader_ready_pull_task)
+        self.reader_ready_pull_task = nil
     end
 end
 

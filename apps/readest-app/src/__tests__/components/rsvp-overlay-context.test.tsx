@@ -343,6 +343,55 @@ describe('RSVPOverlay — CJK reading options', () => {
   });
 });
 
+describe('RSVPOverlay — RTL word display (#4630)', () => {
+  afterEach(() => {
+    cleanup();
+    localStorage.clear();
+  });
+
+  test('renders an Arabic word as a single RTL whole-word span, never split', () => {
+    const state = buildState({
+      words: [{ text: 'علم', orpIndex: 0, pauseMultiplier: 1 }],
+      currentIndex: 0,
+    });
+    const { container } = renderOverlay(state);
+
+    // Splitting the word into before/orp/after spans breaks Arabic shaping and
+    // reverses the visual order — RTL words must render whole instead.
+    const whole = container.querySelector('.rsvp-word-whole');
+    expect(whole).not.toBeNull();
+    expect(whole!.textContent).toBe('علم');
+    expect(whole!.getAttribute('dir')).toBe('rtl');
+    expect(container.querySelector('.rsvp-word-orp')).toBeNull();
+    expect(container.querySelector('.rsvp-word-before')).toBeNull();
+    expect(container.querySelector('.rsvp-word-after')).toBeNull();
+  });
+
+  test('renders a Hebrew word whole as well', () => {
+    const state = buildState({
+      words: [{ text: 'שלום', orpIndex: 0, pauseMultiplier: 1 }],
+      currentIndex: 0,
+    });
+    const { container } = renderOverlay(state);
+
+    const whole = container.querySelector('.rsvp-word-whole');
+    expect(whole).not.toBeNull();
+    expect(whole!.textContent).toBe('שלום');
+    expect(container.querySelector('.rsvp-word-orp')).toBeNull();
+  });
+
+  test('keeps the focus-letter split for Latin words (no spurious dir)', () => {
+    const state = buildState({
+      words: [{ text: 'hello', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+    });
+    const { container } = renderOverlay(state);
+
+    expect(container.querySelector('.rsvp-word-orp')).not.toBeNull();
+    expect(container.querySelector('.rsvp-word-whole')).toBeNull();
+  });
+});
+
 describe('RSVPOverlay — manual word stepping (#4476)', () => {
   afterEach(() => cleanup());
 
@@ -477,6 +526,75 @@ describe('RSVPOverlay — dictionary lookup (#4475)', () => {
     mockSelection('w3 w4', panel);
     fireEvent.click(container.querySelector('[data-rsvp-word-index="3"]') as HTMLElement);
     expect(controller.seekToIndex).not.toHaveBeenCalled();
+  });
+});
+
+describe('RSVPOverlay — playback control layout (#4585, regressed by #4589)', () => {
+  afterEach(() => cleanup());
+
+  // The audio (TTS) toggle and the settings gear must sit in the SAME flex row
+  // as the transport buttons, flanking the centered play button in normal flow.
+  // The earlier `absolute end-0` cluster overlaid them on top of the right end
+  // of the transport, hiding the audio button behind "skip forward 15" on narrow
+  // phones. Keeping all three as siblings of the play button is what prevents the
+  // overlap, so assert the structure here (jsdom can't measure the overlap).
+  test('audio toggle and settings flank the transport in the same flex row', () => {
+    const state = buildState({
+      words: [{ text: 'hello', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+    });
+    const { container } = renderOverlay(state);
+
+    const audioButton = container.querySelector('[aria-label="Play audio"]') as HTMLElement;
+    const settingsButton = container.querySelector('[aria-label="Settings"]') as HTMLElement;
+    const playButton = container.querySelector('[aria-label="Play"]') as HTMLElement;
+    expect(audioButton).not.toBeNull();
+    expect(settingsButton).not.toBeNull();
+    expect(playButton).not.toBeNull();
+
+    // All three share the play button's parent (the single flex row) — the audio
+    // toggle and settings are not tucked into a separate absolute cluster.
+    expect(audioButton.parentElement).toBe(playButton.parentElement);
+    expect(settingsButton.parentElement).toBe(playButton.parentElement);
+  });
+
+  // On very narrow phones (< 350px) the row has no room for every control, so
+  // the Faster/Slower speed buttons collapse to save space (speed is still
+  // adjustable from the WPM dropdown). The core transport stays put.
+  test('hides the Faster/Slower buttons below 350px to save space', () => {
+    const state = buildState({
+      words: [{ text: 'hello', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+    });
+    const { container } = renderOverlay(state);
+
+    const decrease = container.querySelector('[aria-label="Decrease speed"]') as HTMLElement;
+    const increase = container.querySelector('[aria-label="Increase speed"]') as HTMLElement;
+    const play = container.querySelector('[aria-label="Play"]') as HTMLElement;
+    const audio = container.querySelector('[aria-label="Play audio"]') as HTMLElement;
+    const settings = container.querySelector('[aria-label="Settings"]') as HTMLElement;
+
+    expect(decrease.className).toContain('max-[350px]:hidden');
+    expect(increase.className).toContain('max-[350px]:hidden');
+    // Transport, audio toggle and settings must remain visible at any width.
+    expect(play.className).not.toContain('max-[350px]:hidden');
+    expect(audio.className).not.toContain('max-[350px]:hidden');
+    expect(settings.className).not.toContain('max-[350px]:hidden');
+  });
+
+  // The previous fix relied on absolute positioning being gone; guard against it
+  // sneaking back into the row that holds the transport controls.
+  test('the playback control row is not absolutely positioned', () => {
+    const state = buildState({
+      words: [{ text: 'hello', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+    });
+    const { container } = renderOverlay(state);
+
+    const playButton = container.querySelector('[aria-label="Play"]') as HTMLElement;
+    const audioButton = container.querySelector('[aria-label="Play audio"]') as HTMLElement;
+    expect(playButton.parentElement!.className).not.toContain('absolute');
+    expect(audioButton.parentElement!.className).not.toContain('absolute');
   });
 });
 

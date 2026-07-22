@@ -1,5 +1,6 @@
 import React from 'react';
 import SettingsRow from './SettingsRow';
+import { Toggle } from '@/components/primitives/toggle';
 
 interface SettingsSwitchRowProps {
   label: React.ReactNode;
@@ -37,13 +38,7 @@ const SettingsSwitchRow: React.FC<SettingsSwitchRowProps> = ({
       disabled={disabled}
       data-setting-id={dataSettingId}
     >
-      <input
-        type='checkbox'
-        className='toggle'
-        checked={checked}
-        disabled={disabled}
-        onChange={onChange}
-      />
+      <Toggle checked={checked} disabled={disabled} onChange={onChange} />
     </SettingsRow>
   );
 };

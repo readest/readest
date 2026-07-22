@@ -17,6 +17,7 @@ import { upsertOPDSSourceMapping } from './sourceMap';
 import { isRetryEligible, DOWNLOAD_CONCURRENCY, MAX_RETRY_ATTEMPTS } from './types';
 import type { PendingItem, SyncResult, OPDSSubscriptionState, FailedEntry } from './types';
 import { runWithConcurrency } from '@/utils/concurrency';
+import { uniqueId } from '@/utils/misc';
 
 /**
  * Download a single item and import it into the library.
@@ -62,9 +63,7 @@ async function downloadAndImport(
   // Use the last non-empty path segment as the base; falling back to the
   // entry id avoids producing 200+ char filenames from deep URLs and keeps
   // us comfortably under the ~255-byte filesystem limit.
-  const lastSegment = pathname.split('/').filter(Boolean).pop() ?? '';
-  const sanitized = (lastSegment || item.entryId).replaceAll(/[/\\:*?"<>|]/g, '_').slice(0, 200);
-  const basename = sanitized || 'opds-download';
+  const basename = uniqueId();
   const filename = ext ? `${basename}.${ext}` : basename;
   let dstFilePath = await appService.resolveFilePath(filename, 'Cache');
 
@@ -76,6 +75,12 @@ async function downloadAndImport(
     url: downloadUrl,
     headers,
     singleThreaded: true,
+    // Same self-signed/private-CA workaround as the manual download path
+    // (#2871): the native downloader's rustls validation ignores the OS
+    // trust store, so without this flag auto-download fails the TLS
+    // handshake on servers where feed browsing and manual download work
+    // (#4988).
+    skipSslVerification: true,
   });
 
   const probedFilename = await probeFilename(responseHeaders);

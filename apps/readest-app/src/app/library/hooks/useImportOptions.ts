@@ -1,5 +1,6 @@
 import type { IconType } from 'react-icons';
 import { IoFileTray } from 'react-icons/io5';
+import { LuLibrary } from 'react-icons/lu';
 import { MdLink, MdRssFeed } from 'react-icons/md';
 
 import { useEnv } from '@/context/EnvContext';
@@ -9,11 +10,12 @@ export interface ImportOptionHandlers {
   onImportBooksFromFiles: () => void;
   onImportBooksFromDirectory?: () => void;
   onImportBookFromUrl?: () => void;
+  onOpenFeeds: () => void;
   onOpenCatalogManager: () => void;
 }
 
 export interface ImportOption {
-  id: 'file' | 'directory' | 'url' | 'catalog';
+  id: 'file' | 'directory' | 'url' | 'feed' | 'catalog';
   label: string;
   description: string;
   Icon: IconType;
@@ -24,6 +26,7 @@ export function useImportOptions({
   onImportBooksFromFiles,
   onImportBooksFromDirectory,
   onImportBookFromUrl,
+  onOpenFeeds,
   onOpenCatalogManager,
 }: ImportOptionHandlers): ImportOption[] {
   const _ = useTranslation();
@@ -60,10 +63,17 @@ export function useImportOptions({
         ]
       : []),
     {
+      id: 'feed',
+      label: _('From Feed URL'),
+      description: _('Paste an RSS, Atom, or JSON Feed URL to subscribe.'),
+      Icon: MdRssFeed,
+      onSelect: onOpenFeeds,
+    },
+    {
       id: 'catalog',
       label: appService?.isOnlineCatalogsAccessible ? _('Online Library') : _('OPDS Catalogs'),
       description: _('Browse and download books from online catalogs'),
-      Icon: MdRssFeed,
+      Icon: LuLibrary,
       onSelect: onOpenCatalogManager,
     },
   ];

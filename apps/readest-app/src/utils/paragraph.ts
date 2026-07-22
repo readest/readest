@@ -212,6 +212,82 @@ export class ParagraphIterator {
     return this.first();
   }
 
+  /**
+   * Synchronous, containment-based mapper for TTS-driven sync.
+   *
+   * Returns the index of the block whose range CONTAINS the target's start
+   * position. If the target start falls in a gap between blocks, returns the
+   * nearest FOLLOWING block's index. Returns -1 when the target is after the
+   * last block, unresolvable, or there are no blocks.
+   *
+   * Unlike `findByRangeAsync`, this NEVER falls back to `first()` (index 0) on
+   * a no-match — a no-match yields -1. `#blocks` are in document order, so this
+   * uses a binary search; when `hintIndex >= 0`, the hint and its immediate
+   * neighbours are checked first (forward word-by-word sync usually stays in the
+   * same or next block).
+   */
+  findIndexByRange(targetRange: Range, hintIndex = -1): number {
+    const n = this.#blocks.length;
+    if (n === 0 || !targetRange) return -1;
+
+    const point = { node: targetRange.startContainer, offset: targetRange.startOffset };
+
+    // Classify a block against the target's start point via Range.comparePoint:
+    //    1  the point is AFTER this block's end  -> block is before the target
+    //    0  the point is WITHIN this block        -> containment (a direct hit)
+    //   -1  the point is BEFORE this block's start -> block follows the target
+    // Returns null on a comparison error so callers can skip the block.
+    const classify = (index: number): number | null => {
+      const block = this.#blocks[index];
+      if (!block) return null;
+      try {
+        return block.comparePoint(point.node, point.offset);
+      } catch {
+        return null;
+      }
+    };
+
+    // Fast path: most word-by-word syncs stay in the hinted block or the next.
+    if (hintIndex >= 0 && hintIndex < n) {
+      for (const i of [hintIndex, hintIndex + 1, hintIndex - 1]) {
+        if (i < 0 || i >= n) continue;
+        if (classify(i) === 0) return i;
+      }
+    }
+
+    // Binary search over document-ordered blocks for the first block that does
+    // NOT sit entirely before the target start (i.e. classify(mid) <= 0). That
+    // block is either the container (0) or the nearest following block (-1).
+    let lo = 0;
+    let hi = n - 1;
+    let candidate = -1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const cmp = classify(mid);
+      if (cmp === null) {
+        // Comparison failed for this block; fall back to a linear scan from lo.
+        for (let i = lo; i <= hi; i++) {
+          const c = classify(i);
+          if (c !== null && c <= 0) return i;
+        }
+        return -1;
+      }
+      if (cmp > 0) {
+        // Block ends before the target start — search the right half.
+        lo = mid + 1;
+      } else {
+        // Block contains (0) or follows (-1) the target start — remember it and
+        // search the left half for an earlier match.
+        candidate = mid;
+        hi = mid - 1;
+      }
+    }
+
+    // `candidate` is the first block that contains or follows the target start;
+    // -1 means every block ended before it (target is after the last block).
+    return candidate;
+  }
+
   async findByRangeAsync(targetRange: Range | null, batchSize = 50): Promise<Range | null> {
     if (!targetRange) return this.first();
 

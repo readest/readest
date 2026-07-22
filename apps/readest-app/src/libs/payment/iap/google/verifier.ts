@@ -1,4 +1,4 @@
-import { google, androidpublisher_v3 } from 'googleapis';
+import { androidpublisher, androidpublisher_v3 } from '@googleapis/androidpublisher';
 import { GoogleAuth, GoogleAuthOptions } from 'google-auth-library';
 import { IAPStatus } from '../types';
 
@@ -84,7 +84,7 @@ export class GoogleIAPVerifier {
 
     this.auth = new GoogleAuth(authOptions);
 
-    this.androidPublisher = google.androidpublisher({
+    this.androidPublisher = androidpublisher({
       version: 'v3',
       auth: this.auth,
     });
@@ -155,7 +155,8 @@ export class GoogleIAPVerifier {
         purchaseData: purchase,
         purchaseType: 'subscription',
       };
-    } catch {
+    } catch (error) {
+      console.error('Google Play subscription verification failed:', error);
       return {
         success: false,
         error: 'Not a subscription purchase',
@@ -189,7 +190,8 @@ export class GoogleIAPVerifier {
         purchaseData: purchase,
         purchaseType: 'product',
       };
-    } catch {
+    } catch (error) {
+      console.error('Google Play product verification failed:', error);
       return {
         success: false,
         error: 'Purchase not found',

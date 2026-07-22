@@ -3,6 +3,8 @@ import { CryptoSession } from '@/libs/crypto/session';
 import { CURRENT_ALG, encryptToEnvelope } from '@/libs/crypto/envelope';
 import { derivePbkdf2Key } from '@/libs/crypto/derive';
 import { isSyncError, SyncError } from '@/libs/errors';
+import type { PassphraseStore } from '@/libs/crypto/passphrase';
+import type { CipherEnvelope } from '@/types/replica';
 import type { ReplicaKeyRow } from '@/libs/replicaSyncClient';
 
 const ITER = 1000;
@@ -47,6 +49,22 @@ class FakeClient {
   async forgetReplicaKeys(): Promise<void> {
     this.forgetCalls += 1;
     this.rows = [];
+  }
+}
+
+class FakePassphraseStore implements PassphraseStore {
+  value: string | null = null;
+  async set(passphrase: string): Promise<void> {
+    this.value = passphrase;
+  }
+  async get(): Promise<string | null> {
+    return this.value;
+  }
+  async clear(): Promise<void> {
+    this.value = null;
+  }
+  isAvailable(): boolean {
+    return true;
   }
 }
 
@@ -190,5 +208,76 @@ describe('CryptoSession', () => {
     const direct = await encryptToEnvelope('a', directKey, salt.saltId);
     const recovered = await session.decryptField(direct);
     expect(recovered).toBe('a');
+  });
+});
+
+describe('CryptoSession passphrase verification', () => {
+  let client: FakeClient;
+  let store: FakePassphraseStore;
+
+  const seedCipher = async (passphrase: string): Promise<CipherEnvelope> => {
+    const writer = new CryptoSession({ client, iterations: ITER });
+    await writer.setup(passphrase);
+    return writer.encryptField('secret');
+  };
+
+  beforeEach(() => {
+    client = new FakeClient();
+    store = new FakePassphraseStore();
+  });
+
+  test('unlock() rejects a passphrase that cannot decrypt the verification sample', async () => {
+    const cipher = await seedCipher('correct');
+    const session = new CryptoSession({ client, iterations: ITER, store });
+
+    await expect(session.unlock('wrong', { verifyWith: cipher })).rejects.toMatchObject({
+      name: 'SyncError',
+      code: 'DECRYPT',
+    });
+    // A rejected passphrase must leave no trace: the session stays locked so
+    // the gate re-prompts, and nothing lands in the keychain for
+    // tryRestoreFromStore to silently resurrect on the next launch.
+    expect(session.isUnlocked()).toBe(false);
+    expect(store.value).toBeNull();
+  });
+
+  test('unlock() accepts and persists a passphrase that decrypts the sample', async () => {
+    const cipher = await seedCipher('correct');
+    const session = new CryptoSession({ client, iterations: ITER, store });
+
+    await session.unlock('correct', { verifyWith: cipher });
+    expect(session.isUnlocked()).toBe(true);
+    expect(store.value).toBe('correct');
+    expect(await session.decryptField(cipher)).toBe('secret');
+  });
+
+  test('unlock() accepts the passphrase when the sample is unverifiable (orphan salt)', async () => {
+    const cipher = await seedCipher('correct');
+    const orphan: CipherEnvelope = { ...cipher, s: 'no-such-salt' };
+    const session = new CryptoSession({ client, iterations: ITER, store });
+
+    // SALT_NOT_FOUND means "we can't tell", not "wrong passphrase" — refusing
+    // here would lock the user out of an account whose ciphers were orphaned
+    // by an out-of-band replica_keys reset.
+    await session.unlock('correct', { verifyWith: orphan });
+    expect(session.isUnlocked()).toBe(true);
+  });
+
+  test('unlock() without a sample stays permissive (no cipher to check against)', async () => {
+    await seedCipher('correct');
+    const session = new CryptoSession({ client, iterations: ITER, store });
+
+    await session.unlock('wrong');
+    expect(session.isUnlocked()).toBe(true);
+  });
+
+  test('invalidatePassphrase() locks the session and clears the stored copy', async () => {
+    const session = new CryptoSession({ client, iterations: ITER, store });
+    await session.setup('pw');
+    expect(store.value).toBe('pw');
+
+    await session.invalidatePassphrase();
+    expect(session.isUnlocked()).toBe(false);
+    expect(store.value).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 import { isOPDSCatalog } from 'foliate-js/opds.js';
 import { replace as expandURITemplate, getVariables } from 'foliate-js/uri-template.js';
-import { OPDSBaseLink } from '@/types/opds';
+import { OPDSBaseLink, OPDSCatalog } from '@/types/opds';
 import { EXTS } from '@/libs/document';
 import { fetchWithAuth } from './opdsReq';
 
@@ -29,6 +29,11 @@ export const MIME = {
   OPENSEARCH: 'application/opensearchdescription+xml',
   OPDS2: 'application/opds+json',
 };
+
+export const getSafeDOMParserMimeType = (mimeType: string): DOMParserSupportedType =>
+  mimeType.toLowerCase().includes('xml')
+    ? (MIME.XML as DOMParserSupportedType)
+    : (mimeType as DOMParserSupportedType);
 
 export const enum VALIDATION_ERROR {
   INVALID_URL = 'Invalid URL format',
@@ -110,7 +115,7 @@ const hasXMLParseError = (doc: Document): boolean =>
  * callers fall through to their existing HTML/non-OPDS handling.
  */
 export const parseOPDSXML = (text: string): Document => {
-  const doc = new DOMParser().parseFromString(text, MIME.XML as DOMParserSupportedType);
+  const doc = new DOMParser().parseFromString(text, getSafeDOMParserMimeType(MIME.XML));
   if (!hasXMLParseError(doc)) return doc;
 
   const rootMatch = text.match(/<([A-Za-z_][\w.:-]*)/);
@@ -121,7 +126,7 @@ export const parseOPDSXML = (text: string): Document => {
     const closeIdx = text.lastIndexOf(closeTag);
     if (closeIdx > startIdx) {
       const sliced = text.slice(startIdx, closeIdx + closeTag.length);
-      const retry = new DOMParser().parseFromString(sliced, MIME.XML as DOMParserSupportedType);
+      const retry = new DOMParser().parseFromString(sliced, getSafeDOMParserMimeType(MIME.XML));
       if (!hasXMLParseError(retry)) return retry;
     }
   }
@@ -138,6 +143,13 @@ export const parseOPDSXML = (text: string): Document => {
 export const getOPDSNavLink = (
   links?: Array<{ href?: string; type?: string }>,
 ): string | undefined => links?.find((link) => link.href && isOPDSCatalog(link.type ?? ''))?.href;
+
+/**
+ * Calibre stores commas in contributor names escaped as pipes (`Doe, John` →
+ * `Doe| John`), and Calibre-Web serves that raw form in its OPDS feeds
+ * (readest issue #5183). Restore the commas for display.
+ */
+export const formatContributorName = (name: string): string => name.replace(/\|/g, ',');
 
 export const isSearchLink = (link: OPDSBaseLink): boolean => {
   const rels = Array.isArray(link.rel) ? link.rel : [link.rel || ''];
@@ -250,7 +262,7 @@ export const validateOPDSURL = async (
         // Check for HTML with OPDS link
         const contentType = res.headers.get('Content-Type') ?? MIME.HTML;
         const type = parseMediaType(contentType)?.mediaType ?? MIME.HTML;
-        const htmlDoc = new DOMParser().parseFromString(text, type as DOMParserSupportedType);
+        const htmlDoc = new DOMParser().parseFromString(text, getSafeDOMParserMimeType(type));
 
         if (!htmlDoc.head) {
           return {
@@ -317,6 +329,25 @@ export const validateOPDSURL = async (
       error: e instanceof Error ? e.message : VALIDATION_ERROR.NOT_OPDS,
     };
   }
+};
+
+/**
+ * Filter the built-in "popular" OPDS catalogs down to those the user hasn't
+ * already added to their personal list. Matching is by normalized URL (trim +
+ * lowercase), mirroring the store's `findByUrl` dedup so case/whitespace
+ * differences still hide a popular entry once it's been added. Disabled
+ * popular entries are always excluded. Without this an added popular catalog
+ * would keep rendering in the Popular section and look like a duplicate
+ * (issue #4782).
+ */
+export const getUnaddedPopularCatalogs = (
+  popularCatalogs: OPDSCatalog[],
+  addedCatalogs: OPDSCatalog[],
+): OPDSCatalog[] => {
+  const addedUrls = new Set(addedCatalogs.map((c) => c.url.trim().toLowerCase()));
+  return popularCatalogs.filter(
+    (catalog) => !catalog.disabled && !addedUrls.has(catalog.url.trim().toLowerCase()),
+  );
 };
 
 export const getFileExtFromPath = (pathname: string, delimiter = '/'): string => {

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-parse-epub-full"
+description = "Enables the parse_epub_full command without any pre-configured scope."
+commands.allow = ["parse_epub_full"]
+
+[[permission]]
+identifier = "deny-parse-epub-full"
+description = "Denies the parse_epub_full command without any pre-configured scope."
+commands.deny = ["parse_epub_full"]

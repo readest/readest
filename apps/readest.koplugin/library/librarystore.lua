@@ -13,7 +13,7 @@
 local SQ3 = require("lua-ljsqlite3/init")
 local json = require("json")
 
-local SCHEMA_VERSION = 1
+local SCHEMA_VERSION = 3
 
 local SCHEMA_SQL = [[
 CREATE TABLE IF NOT EXISTS books (
@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS books (
     uploaded_at      INTEGER,
     progress_lib     TEXT,
     reading_status   TEXT,
+    reading_status_updated_at INTEGER,
     last_read_at     INTEGER,
     created_at       INTEGER,
     updated_at       INTEGER,
@@ -62,7 +63,7 @@ local BOOK_COLS = {
     "format", "metadata_json", "series", "series_index", "group_id",
     "group_name", "cover_path", "file_path", "cloud_present",
     "local_present", "uploaded_at", "progress_lib", "reading_status",
-    "last_read_at", "created_at", "updated_at", "deleted_at",
+    "reading_status_updated_at", "last_read_at", "created_at", "updated_at", "deleted_at",
 }
 local BOOK_COL_INDEX = {}
 for i, c in ipairs(BOOK_COLS) do BOOK_COL_INDEX[c] = i end
@@ -73,8 +74,8 @@ for i, c in ipairs(BOOK_COLS) do BOOK_COL_INDEX[c] = i end
 -- well within Lua's 53-bit double mantissa.
 local NUMERIC_COLS = {
     series_index = true, cloud_present = true, local_present = true,
-    uploaded_at = true, last_read_at = true, created_at = true,
-    updated_at = true, deleted_at = true,
+    uploaded_at = true, reading_status_updated_at = true, last_read_at = true,
+    created_at = true, updated_at = true, deleted_at = true,
 }
 
 local function row_to_table(raw)
@@ -136,8 +137,41 @@ function M.new(opts)
     self.user_id = opts.user_id
     self.db_path = opts.db_path or ":memory:"
     self.db = SQ3.open(self.db_path)
+    -- Read version before creating tables; getUserVersion uses rowexec which
+    -- may leave an open iterator in some SQLite bindings, so use prepare/step.
+    local prev_stmt = self.db:prepare("PRAGMA user_version;")
+    local prev_row = prev_stmt:reset():step()
+    prev_stmt:close()
+    local prev = prev_row and tonumber(prev_row[1]) or 0
     self.db:exec(SCHEMA_SQL)
-    self.db:exec(string.format("PRAGMA user_version = %d;", SCHEMA_VERSION))
+    -- v1 -> v2: add reading_status_updated_at to existing DBs. CREATE TABLE
+    -- IF NOT EXISTS won't add a column, so ALTER it in (pcall guards a DB that
+    -- somehow already has the column).
+    if prev >= 1 and prev < 2 then
+        pcall(function()
+            self.db:exec("ALTER TABLE books ADD COLUMN reading_status_updated_at INTEGER;")
+        end)
+    end
+    -- v2 -> v3: split the shared books cursor into a pull cursor (server
+    -- synced_at) and a push watermark (local updated_at). The old shared
+    -- `last_books_pulled_at` was advanced from client updated_at, which a
+    -- device with a fast clock could push into the future, starving every
+    -- later synced_at-keyed pull so the library went stale and never
+    -- recovered (issue #4934). Seed the new push watermark from the old value
+    -- (local-change detection is unbroken), then zero the pull cursor so the
+    -- next sync re-establishes it on the server's synced_at clock.
+    if prev >= 1 and prev < 3 then
+        self.db:exec([[
+            INSERT INTO sync_state (user_id, key, value)
+                SELECT user_id, 'last_books_pushed_at', value
+                  FROM sync_state WHERE key = 'last_books_pulled_at'
+            ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value;
+            UPDATE sync_state SET value = '0' WHERE key = 'last_books_pulled_at';
+        ]])
+    end
+    if prev < SCHEMA_VERSION then
+        self.db:exec(string.format("PRAGMA user_version = %d;", SCHEMA_VERSION))
+    end
     self._groups_cache = {}
     return self
 end
@@ -169,6 +203,30 @@ function M:setLastPulledAt(ts)
         ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value
     ]])
     stmt:reset():bind(self.user_id, "last_books_pulled_at", tostring(ts)):step()
+    stmt:close()
+end
+
+-- The push watermark: max local updated_at | deleted_at we've already
+-- accounted for (pushed to the server or pulled from it). getChangedBooks
+-- keys on this so a book already on the server isn't re-pushed. It is kept
+-- SEPARATE from the pull cursor (last_books_pulled_at, server synced_at)
+-- because the two live on different clocks — mixing them starved pulls in
+-- issue #4934.
+function M:getLastPushedAt()
+    local stmt = self.db:prepare(
+        "SELECT value FROM sync_state WHERE user_id = ? AND key = ?")
+    local row = stmt:reset():bind(self.user_id, "last_books_pushed_at"):step()
+    stmt:close()
+    if not row then return nil end
+    return tonumber(row[1])
+end
+
+function M:setLastPushedAt(ts)
+    local stmt = self.db:prepare([[
+        INSERT INTO sync_state (user_id, key, value) VALUES (?, ?, ?)
+        ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value
+    ]])
+    stmt:reset():bind(self.user_id, "last_books_pushed_at", tostring(ts)):step()
     stmt:close()
 end
 
@@ -379,6 +437,38 @@ function M:listBooks(filters)
     stmt:reset()
     for i, v in ipairs(args) do stmt:bind1(i, v) end
 
+    local rows = {}
+    while true do
+        local r = stmt:step()
+        if not r then break end
+        rows[#rows + 1] = row_to_table(r)
+    end
+    stmt:close()
+    return rows
+end
+
+-- ---------------------------------------------------------------------------
+-- listCloudOnlyBooks — the bulk-download candidate set (#4751)
+-- ---------------------------------------------------------------------------
+-- Books that are in the cloud with a downloadable file but not yet on this
+-- device: cloud_present = 1, local_present = 0, not deleted, and with an
+-- uploaded_at (a phantom record without an uploaded file is unreachable, so
+-- it's excluded just like listBooks excludes it). Returns full rows so the
+-- caller can hand each straight to syncbooks.downloadBook. Ordered newest
+-- first for a sensible progress sequence; hash ASC tiebreak for determinism.
+function M:listCloudOnlyBooks()
+    local sql = string.format([[
+        SELECT %s FROM books
+        WHERE user_id = ?
+          AND deleted_at IS NULL
+          AND cloud_present = 1
+          AND local_present = 0
+          AND uploaded_at IS NOT NULL
+        ORDER BY COALESCE(updated_at, created_at) DESC, hash ASC
+    ]], table.concat(BOOK_COLS, ", "))
+    local stmt = self.db:prepare(sql)
+    stmt:reset()
+    stmt:bind1(1, self.user_id)
     local rows = {}
     while true do
         local r = stmt:step()
@@ -716,6 +806,9 @@ function M.parseSyncRow(dbRow)
         updated_at   = iso_to_ms(dbRow.updated_at),
         created_at   = iso_to_ms(dbRow.created_at),
         deleted_at   = iso_to_ms(dbRow.deleted_at),
+        -- Server-stamped pull cursor (issue #4678); transient — used only to
+        -- advance last_books_pulled_at, not persisted as a books column.
+        synced_at    = iso_to_ms(dbRow.synced_at),
     }
 
     -- Metadata: parse JSON string OR accept an already-parsed table; extract
@@ -745,6 +838,10 @@ function M.parseSyncRow(dbRow)
 
     -- Reading status passthrough (web side has 'unread'/'reading'/'finished')
     out.reading_status = dbRow.readingStatus or dbRow.reading_status
+    -- ms; server sends it as a timestamptz ISO string (iso_to_ms also passes
+    -- through a raw number when a caller already supplied ms).
+    out.reading_status_updated_at = iso_to_ms(dbRow.reading_status_updated_at)
+        or iso_to_ms(dbRow.readingStatusUpdatedAt)
 
     -- Cloud-presence flag: tombstones from the cloud arrive with deleted_at
     -- set; the row is still useful for tracking that the cloud copy is gone,

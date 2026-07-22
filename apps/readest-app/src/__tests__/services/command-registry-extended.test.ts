@@ -59,7 +59,6 @@ function createMockOptions(
     toggleFullscreen: vi.fn(),
     toggleAlwaysOnTop: vi.fn(),
     toggleScreenWakeLock: vi.fn(),
-    toggleAutoUpload: vi.fn(),
     reloadPage: vi.fn(),
     toggleOpenLastBooks: vi.fn(),
     showAbout: vi.fn(),
@@ -84,7 +83,7 @@ describe('buildCommandRegistry', () => {
     const panels = new Set(settingsItems.map((i) => i.panel));
     expect(panels.has('Font')).toBe(true);
     expect(panels.has('Layout')).toBe(true);
-    expect(panels.has('Color')).toBe(true);
+    expect(panels.has('Theme')).toBe(true);
     expect(panels.has('Control')).toBe(true);
     expect(panels.has('Language')).toBe(true);
     expect(panels.has('Custom')).toBe(true);

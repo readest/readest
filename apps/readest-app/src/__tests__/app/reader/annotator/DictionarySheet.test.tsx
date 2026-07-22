@@ -9,7 +9,14 @@
  * abort assertions).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent, waitFor, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  cleanup,
+  fireEvent,
+  waitFor as waitForWithOptions,
+  act,
+} from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 import type { DictionaryProvider, DictionaryLookupOutcome } from '@/services/dictionaries/types';
@@ -19,6 +26,9 @@ import type { BaseDir } from '@/types/system';
 import { createStarDictProvider } from '@/services/dictionaries/providers/starDictProvider';
 import { createDictProvider } from '@/services/dictionaries/providers/dictProvider';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
+
+const waitFor = <T,>(callback: () => T | Promise<T>) =>
+  waitForWithOptions(callback, { interval: 1 });
 
 import {
   IFO_FIXTURE_NAME,
@@ -67,6 +77,14 @@ vi.mock('@/components/Dialog', () => ({
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string) => s,
+}));
+
+// The word pronouncer talks to Edge/WebAudio; stub it so the sheet's speak
+// button can be exercised without real audio. (#4876)
+vi.mock('@/services/tts/wordPronouncer', () => ({
+  pronounceWord: vi.fn().mockResolvedValue(undefined),
+  warmWordAudio: vi.fn(),
+  cancelWordPronounce: vi.fn(),
 }));
 
 const mockOpenUrl = vi.fn().mockResolvedValue(undefined);
@@ -217,6 +235,7 @@ const buildExactProvider = (storedHeadword: string): DictionaryProvider => {
 // ---------------------------------------------------------------------------
 
 import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
+import { pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
 
 const renderSheet = (
   props: Partial<{
@@ -265,9 +284,27 @@ describe('DictionarySheet — header', () => {
     providersForNextRender.push(buildRealStarDictProvider());
     renderSheet({ word: 'hello', onManage: vi.fn() });
 
-    expect((await screen.findByTestId('dict-title')).textContent).toBe('hello');
+    expect((await waitFor(() => screen.getByTestId('dict-title'))).textContent).toBe('hello');
     expect(screen.getByLabelText('Manage Dictionaries')).toBeTruthy();
     expect(screen.queryByLabelText('Back')).toBeNull();
+  });
+});
+
+describe('DictionarySheet — speak button', () => {
+  it('warms audio and pronounces the current word when the speaker is tapped', async () => {
+    providersForNextRender.push(buildRealStarDictProvider());
+    renderSheet({ word: 'hello', lang: 'en' });
+
+    const speak = await waitFor(() => screen.getByLabelText('Speak'));
+    fireEvent.click(speak);
+
+    expect(warmWordAudio).toHaveBeenCalledTimes(1);
+    expect(pronounceWord).toHaveBeenCalledWith(
+      'hello',
+      'en',
+      expect.any(Object),
+      expect.any(Function),
+    );
   });
 });
 
@@ -291,7 +328,7 @@ describe('DictionarySheet — concurrent lookup', () => {
     providersForNextRender.push(buildRealStarDictProvider());
     renderSheet({ word: 'hello' });
 
-    await screen.findByText('CMU American English spelling');
+    await waitFor(() => screen.getByText('CMU American English spelling'));
   });
 
   it('hides cards from providers that return empty', async () => {
@@ -303,7 +340,7 @@ describe('DictionarySheet — concurrent lookup', () => {
     renderSheet({ word: 'hello' });
 
     // The cmudict card eventually appears.
-    await screen.findByText('CMU American English spelling');
+    await waitFor(() => screen.getByText('CMU American English spelling'));
     // The two empty providers never render a card.
     expect(screen.queryByText('Empty One')).toBeNull();
     expect(screen.queryByText('Empty Two')).toBeNull();
@@ -317,7 +354,7 @@ describe('DictionarySheet — query normalization', () => {
     providersForNextRender.push(exact);
     renderSheet({ word: 'Hello' });
 
-    await screen.findByText('Exact Match');
+    await waitFor(() => screen.getByText('Exact Match'));
     // First probe is the selection as-is; the lowercase fallback hits.
     expect(spy).toHaveBeenCalledWith('Hello', expect.any(Object));
     expect(spy).toHaveBeenCalledWith('hello', expect.any(Object));
@@ -327,14 +364,14 @@ describe('DictionarySheet — query normalization', () => {
     providersForNextRender.push(buildExactProvider('world'));
     renderSheet({ word: 'world ' });
 
-    await screen.findByText('Exact Match');
+    await waitFor(() => screen.getByText('Exact Match'));
   });
 
   it('trims trailing whitespace from the displayed title', async () => {
     providersForNextRender.push(buildExactProvider('world'));
     renderSheet({ word: 'world ' });
 
-    expect((await screen.findByTestId('dict-title')).textContent).toBe('world');
+    expect((await waitFor(() => screen.getByTestId('dict-title'))).textContent).toBe('world');
   });
 
   it('stops at the first matching variant without probing the rest', async () => {
@@ -343,7 +380,7 @@ describe('DictionarySheet — query normalization', () => {
     providersForNextRender.push(exact);
     renderSheet({ word: 'hello' });
 
-    await screen.findByText('Exact Match');
+    await waitFor(() => screen.getByText('Exact Match'));
     // 'hello' hits immediately — no title-case / upper-case probes follow.
     expect(spy).toHaveBeenCalledTimes(1);
   });
@@ -355,7 +392,7 @@ describe('DictionarySheet — expand / collapse', () => {
     renderSheet({ word: 'hello' });
 
     // Wait for the lookup to finish (source label visible).
-    await screen.findByText('CMU American English spelling');
+    await waitFor(() => screen.getByText('CMU American English spelling'));
     const card = screen.getByTestId('dict-card');
     // With ≤ 3 results the sheet defaults to expanded.
     await waitFor(() => expect(card.getAttribute('aria-expanded')).toBe('true'));
@@ -384,7 +421,7 @@ describe('DictionarySheet — expand / collapse', () => {
     providersForNextRender.push(...providers);
     renderSheet({ word: 'hello' });
 
-    await screen.findByText('Pseudo 0');
+    await waitFor(() => screen.getByText('Pseudo 0'));
     const cards = screen.getAllByTestId('dict-card');
     expect(cards).toHaveLength(4);
     for (const card of cards) {
@@ -398,10 +435,10 @@ describe('DictionarySheet — in-content navigation', () => {
     providersForNextRender.push(buildNavProvider('world'));
     renderSheet({ word: 'hello' });
 
-    expect((await screen.findByTestId('dict-title')).textContent).toBe('hello');
+    expect((await waitFor(() => screen.getByTestId('dict-title'))).textContent).toBe('hello');
     expect(screen.queryByLabelText('Back')).toBeNull();
 
-    const navLink = await screen.findByTestId('nav-link');
+    const navLink = await waitFor(() => screen.getByTestId('nav-link'));
     await act(async () => {
       fireEvent.click(navLink);
     });
@@ -416,7 +453,7 @@ describe('DictionarySheet — in-content navigation', () => {
     providersForNextRender.push(buildNavProvider('world'));
     renderSheet({ word: 'hello' });
 
-    const navLink = await screen.findByTestId('nav-link');
+    const navLink = await waitFor(() => screen.getByTestId('nav-link'));
     await act(async () => {
       fireEvent.click(navLink);
     });
@@ -456,7 +493,9 @@ describe('DictionarySheet — web search row', () => {
     // The test setup mocks `isTauriAppPlatform: () => false`, so we
     // exercise the web-build path: anchor with href + target="_blank",
     // openUrl untouched.
-    const link = (await screen.findByRole('link', { name: /Google/i })) as HTMLAnchorElement;
+    const link = (await waitFor(() =>
+      screen.getByRole('link', { name: /Google/i }),
+    )) as HTMLAnchorElement;
     expect(link.getAttribute('target')).toBe('_blank');
     expect(link.getAttribute('rel')).toContain('noopener');
     const url = link.getAttribute('href') ?? '';
@@ -468,13 +507,46 @@ describe('DictionarySheet — web search row', () => {
   });
 });
 
+describe('DictionarySheet — section order', () => {
+  // The registry hands the sheet its providers already sorted by
+  // `settings.providerOrder`, so the first entry of `providersForNextRender`
+  // is whatever the user dragged to the top in settings.
+  const buildWebEntry = (): DictionaryProvider => ({
+    id: BUILTIN_WEB_SEARCH_IDS.google,
+    kind: 'web',
+    label: 'Google',
+    async lookup() {
+      return { ok: true };
+    },
+  });
+
+  const sectionHeadings = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll('section > h3')).map((h) => h.textContent);
+
+  it('puts the web-search section first when a web entry is top of the configured order (#5083)', async () => {
+    providersForNextRender.push(buildWebEntry(), buildRealStarDictProvider());
+    const { container } = renderSheet({ word: 'hello' });
+
+    await waitFor(() => screen.getByText('CMU American English spelling'));
+    expect(sectionHeadings(container)).toEqual(['Search the web', 'Dictionaries']);
+  });
+
+  it('keeps the dictionaries section first when a dictionary is top of the configured order', async () => {
+    providersForNextRender.push(buildRealStarDictProvider(), buildWebEntry());
+    const { container } = renderSheet({ word: 'hello' });
+
+    await waitFor(() => screen.getByText('CMU American English spelling'));
+    expect(sectionHeadings(container)).toEqual(['Dictionaries', 'Search the web']);
+  });
+});
+
 describe('DictionarySheet — empty state', () => {
   it('renders "No dictionaries enabled" + manage gear when zero providers are configured', async () => {
     // providersForNextRender stays empty.
     const onManage = vi.fn();
     renderSheet({ word: 'hello', onManage });
 
-    expect(await screen.findByText('No dictionaries enabled')).toBeTruthy();
+    expect(await waitFor(() => screen.getByText('No dictionaries enabled'))).toBeTruthy();
     const gear = screen.getByLabelText('Manage Dictionaries');
     fireEvent.click(gear);
     expect(onManage).toHaveBeenCalledTimes(1);

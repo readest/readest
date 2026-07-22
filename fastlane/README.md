@@ -13,6 +13,25 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 # Available Actions
 
+### release_ios
+
+```sh
+[bundle exec] fastlane release_ios
+```
+
+Submit the uploaded iOS build for App Store review and to TestFlight
+
+### release_macos
+
+```sh
+[bundle exec] fastlane release_macos
+```
+
+Submit the uploaded macOS build for App Store review and to TestFlight
+
+----
+
+
 ## Android
 
 ### android upload_production

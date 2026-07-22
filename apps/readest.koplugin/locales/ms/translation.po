@@ -68,6 +68,9 @@ msgstr "Menaik"
 msgid "Actions"
 msgstr "Tindakan"
 
+msgid "Download all books"
+msgstr "Muat turun semua buku"
+
 msgid "Rescan library"
 msgstr "Imbas semula pustaka"
 
@@ -133,6 +136,21 @@ msgstr "Muat turun kulit gagal."
 
 msgid "Could not delete the file."
 msgstr "Tidak dapat memadam fail."
+
+msgid "No books to download."
+msgstr "Tiada buku untuk dimuat turun."
+
+msgid "Downloading %1 of %2…"
+msgstr "Memuat turun %1 daripada %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Muat turun dibatalkan. %1 daripada %2 dimuat turun."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 daripada %2 dimuat turun (%3 dilangkau)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 daripada %2 dimuat turun."
 
 msgid "Removing from cloud…"
 msgstr "Mengeluarkan daripada awan…"
@@ -215,6 +233,9 @@ msgstr "Hantar anotasi Readest dari peranti ini"
 msgid "Pull readest annotations from other devices"
 msgstr "Tarik anotasi Readest dari peranti lain"
 
+msgid "Full sync all readest annotations"
+msgstr "Penyegerakan penuh semua anotasi Readest"
+
 msgid "Add to Readest"
 msgstr "Tambah ke Readest"
 
@@ -239,6 +260,12 @@ msgstr "Sudah ada dalam Pustaka Readest anda:"
 msgid "Added to Readest:"
 msgstr "Ditambah ke Readest:"
 
+msgid "No book is open"
+msgstr "Tiada buku terbuka"
+
+msgid "Uploaded to Readest:"
+msgstr "Dimuat naik ke Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Log masuk ke akaun Readest"
 
@@ -251,11 +278,20 @@ msgstr "Penyegerakan automatik"
 msgid "Readest library"
 msgstr "Pustaka Readest"
 
+msgid "Push stats now"
+msgstr "Hantar statistik sekarang"
+
+msgid "Pull stats now"
+msgstr "Tarik statistik sekarang"
+
 msgid "Push books now"
 msgstr "Hantar buku sekarang"
 
 msgid "Pull books now"
 msgstr "Tarik buku sekarang"
+
+msgid "Upload current book to Readest"
+msgstr "Muat naik buku semasa ke Readest"
 
 msgid "Push reading progress now"
 msgstr "Hantar kemajuan bacaan sekarang"
@@ -286,9 +322,6 @@ msgstr "Sila log masuk dahulu"
 
 msgid "Please configure Readest settings first"
 msgstr "Sila konfigurasikan tetapan Readest dahulu"
-
-msgid "No book is open"
-msgstr "Tiada buku terbuka"
 
 msgid "(none)"
 msgstr "(tiada)"
@@ -436,3 +469,18 @@ msgstr "Kemajuan bacaan disegerakkan"
 
 msgid "No saved reading progress found for this book"
 msgstr "Tiada kemajuan bacaan tersimpan ditemui untuk buku ini"
+
+msgid "Reading statistics are up to date"
+msgstr "Statistik bacaan adalah terkini"
+
+msgid "Reading statistics pushed"
+msgstr "Statistik bacaan dihantar"
+
+msgid "Failed to push reading statistics"
+msgstr "Gagal menghantar statistik bacaan"
+
+msgid "Failed to pull reading statistics"
+msgstr "Gagal menarik statistik bacaan"
+
+msgid "Reading statistics pulled"
+msgstr "Statistik bacaan ditarik"

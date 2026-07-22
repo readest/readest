@@ -35,12 +35,14 @@ describe('ImportDialog', () => {
       <ImportDialog
         onClose={() => events.push('close')}
         onImportBooksFromFiles={() => events.push('file')}
+        onOpenFeeds={() => events.push('feed')}
         onOpenCatalogManager={() => events.push('catalog')}
       />,
     );
 
     expect(screen.getByRole('region', { name: 'Import Books' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /From Local File/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /From Feed URL/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /Online Library/ })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /From Directory/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /From Web URL/ })).toBeNull();
@@ -48,6 +50,10 @@ describe('ImportDialog', () => {
     fireEvent.click(screen.getByText('Choose one or more books from your device'));
 
     expect(events).toEqual(['close', 'file']);
+
+    fireEvent.click(screen.getByText('Paste an RSS, Atom, or JSON Feed URL to subscribe.'));
+
+    expect(events).toEqual(['close', 'file', 'close', 'feed']);
   });
 
   it('adds platform-dependent actions when their callbacks are available', () => {
@@ -60,6 +66,7 @@ describe('ImportDialog', () => {
         onImportBooksFromFiles={vi.fn()}
         onImportBooksFromDirectory={onImportBooksFromDirectory}
         onImportBookFromUrl={onImportBookFromUrl}
+        onOpenFeeds={vi.fn()}
         onOpenCatalogManager={vi.fn()}
       />,
     );
@@ -79,6 +86,7 @@ describe('ImportDialog', () => {
       <ImportDialog
         onClose={vi.fn()}
         onImportBooksFromFiles={vi.fn()}
+        onOpenFeeds={vi.fn()}
         onOpenCatalogManager={vi.fn()}
       />,
     );

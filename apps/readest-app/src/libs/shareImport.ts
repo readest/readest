@@ -1,7 +1,8 @@
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import type { Book } from '@/types/book';
 import type { AppService } from '@/types/system';
 import { useLibraryStore } from '@/store/libraryStore';
-import { getAPIBaseUrl } from '@/services/environment';
+import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
 import { ShareApiError, getShare, type ImportShareResponse, type ShareMetadata } from './share';
 
 interface EnsureSharedBookLocalArgs {
@@ -91,12 +92,19 @@ export const ensureSharedBookLocal = async ({
     return existing;
   }
 
-  // Book is not in the local library yet. Fetch the bytes via the public share
-  // download endpoint (302 → presigned URL; fetch follows redirects), then
-  // hand them to importBook which knows how to create the proper local Book.
+  // Book is not in the local library yet. Pull the bytes so importBook can build
+  // the proper local Book. Both platforms hit the `/download` 302 and let the
+  // client follow it to R2 — without tripping CORS:
+  //   - App: Tauri's native HTTP follows the redirect and ignores CORS.
+  //   - Web: the page's own fetch follows it; the redirect to R2 is the FIRST
+  //     cross-origin hop, so the request keeps the page's Origin (which R2's CORS
+  //     allows). This is why the app needed native HTTP but web doesn't —
+  //     tauri.localhost→web→R2 is a second hop that nulls the Origin.
   const shareMeta = meta ?? (await getShare(token));
   const downloadUrl = `${getAPIBaseUrl()}/share/${encodeURIComponent(token)}/download`;
-  const response = await fetch(downloadUrl);
+  const response = isTauriAppPlatform()
+    ? await tauriFetch(downloadUrl)
+    : await globalThis.fetch(downloadUrl);
   if (!response.ok) {
     throw new ShareApiError(
       response.status,

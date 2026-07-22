@@ -60,6 +60,13 @@ vi.mock('@/services/opds/pseStream', () => ({
   openPseStreamBook: vi.fn(),
   parsePseStreamFileName: vi.fn(),
 }));
+vi.mock('@/services/rss/feedBookUrl', () => ({
+  isFeedBookUrl: () => false,
+  parseFeedBookUrl: vi.fn(),
+}));
+vi.mock('@/services/rss/feedReader', () => ({
+  openFeedBookDoc: vi.fn(),
+}));
 
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -81,6 +88,7 @@ function seedViewState(key: string, overrides: Record<string, unknown> = {}) {
         error: null,
         ribbonVisible: false,
         ttsEnabled: false,
+        autoScrollEnabled: false,
         syncing: false,
         gridInsets: null,
         previewMode: false,

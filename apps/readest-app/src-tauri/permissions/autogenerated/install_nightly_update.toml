@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-install-nightly-update"
+description = "Enables the install_nightly_update command without any pre-configured scope."
+commands.allow = ["install_nightly_update"]
+
+[[permission]]
+identifier = "deny-install-nightly-update"
+description = "Denies the install_nightly_update command without any pre-configured scope."
+commands.deny = ["install_nightly_update"]

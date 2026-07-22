@@ -29,8 +29,35 @@ pub struct CopyURIResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct SaveImageToGalleryRequest {
+    /// Absolute path of the source image file on disk.
+    pub src_path: String,
+    /// Display name for the saved image, e.g. `image.png`.
+    pub file_name: String,
+    pub mime_type: String,
+    /// Subfolder under the system Pictures collection. Defaults to `Readest`.
+    pub album_name: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveImageToGalleryResponse {
+    pub success: bool,
+    /// MediaStore content URI of the saved image on success.
+    pub uri: Option<String>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UseBackgroundAudioRequest {
     pub enabled: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetTextSelectionSuppressedRequest {
+    pub suppressed: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -336,4 +363,99 @@ pub struct ClipUrlResponse {
 pub struct SyncKeychainAvailableResponse {
     pub available: bool,
     pub error: Option<String>,
+}
+
+// ── Keyed secure key-value store ─────────────────────────────────────────
+//
+// A generic, keyed secret store over the same OS keychain backends as the
+// sync passphrase above, so secrets that aren't the single sync passphrase
+// (the Google Drive OAuth token set, and any future cloud provider's refresh
+// token) get the same cross-launch persistence without each needing its own
+// native command.
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetSecureItemRequest {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetSecureItemRequest {
+    pub key: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SecureItemResponse {
+    pub success: bool,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetSecureItemResponse {
+    /// Present iff an item is stored under the key. Absent (and `error: None`)
+    /// means "no entry on this device".
+    pub value: Option<String>,
+    pub error: Option<String>,
+}
+
+/// Result of a deep e-ink full screen refresh. `success: false` means no
+/// known e-ink controller responded on this device (e.g. a non-e-ink
+/// Android phone) — not a hard error.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RefreshEinkScreenResponse {
+    pub success: bool,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingWidgetBook {
+    pub hash: String,
+    pub title: String,
+    pub author: String,
+    pub percent: u8,
+    pub cover_path: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingWidgetTts {
+    pub active: bool,
+    pub playing: bool,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateReadingWidgetRequest {
+    pub books: Vec<ReadingWidgetBook>,
+    pub section_title: String,
+    pub empty_title: String,
+    #[serde(default)]
+    pub tts: Option<ReadingWidgetTts>,
+}
+
+/// Region of the webview to snapshot for the mesh page-curl (#555),
+/// in CSS pixels of the webview viewport (origin top-left). The native
+/// side applies the screen scale factor.
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CaptureWebviewRegionRequest {
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
+}
+
+/// Mobile-side response: Swift/Kotlin can only resolve JSON, so the
+/// PNG crosses the plugin boundary base64-encoded; `mobile.rs` decodes
+/// it back to bytes so the JS-facing command stays binary.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CaptureWebviewRegionResponse {
+    pub data: String,
 }

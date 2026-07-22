@@ -13,7 +13,7 @@ type MockFetchResponse = {
 type MockFetch = ReturnType<typeof vi.fn<(...args: unknown[]) => Promise<MockFetchResponse>>>;
 
 type TestBookContext = {
-  editionId: number;
+  editionId: number | null;
   pages: number | null;
   bookId: number;
   bookPages: number | null;
@@ -26,6 +26,7 @@ type TestBookContext = {
 
 type HardcoverClientTestApi = {
   token: string;
+  minRequestIntervalMs: number;
   extractISBN: (book: Book) => string | null;
   request: <TVariables, TData>(query: string, variables: TVariables) => Promise<TData>;
   fetchBookContext: (book: Book) => Promise<TestBookContext | null>;
@@ -70,6 +71,8 @@ describe('HardcoverClient', () => {
 
     client = new HardcoverClient(mockSettings, mockMapStore);
     clientApi = client as unknown as HardcoverClientTestApi;
+    // Mocked API responses do not need the production request-rate throttle.
+    clientApi.minRequestIntervalMs = 0;
   });
 
   test('should normalize accessToken correctly', () => {
@@ -711,5 +714,91 @@ describe('HardcoverClient', () => {
       bookPages: 300,
       userBook: { id: 303 },
     });
+  });
+
+  test('leaves the edition id unresolved when title search lacks a featured edition and the user has none selected', async () => {
+    const book = { title: 'Crime and Punishment', author: 'Fyodor Dostoevsky' } as Book;
+
+    // authenticate
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ data: { me: { id: 1 } } }),
+    });
+    // QUERY_SEARCH_BOOK — real Typesense hit shape, no featured_edition_id present
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          data: { search: { results: { hits: [{ document: { id: 713309, pages: 311 } }] } } },
+        }),
+    });
+    // QUERY_GET_BOOK_USER_DATA — currently-reading book, but no specific edition selected
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          data: {
+            editions: [
+              {
+                book: {
+                  id: 713309,
+                  pages: 311,
+                  user_books: [
+                    {
+                      id: 303,
+                      status_id: 2,
+                      edition: null,
+                      user_book_reads: [{ id: 505, started_at: '2026-06-25', edition: null }],
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        }),
+    });
+
+    const context = await clientApi.fetchBookContext(book);
+
+    expect(context?.bookId).toBe(713309);
+    // Regression #4792: the edition id must NOT fall back to the book id. Sending
+    // a book id as edition_id makes Hardcover's Action reject the read mutation
+    // with a parse-failed error. Leave it null when no real edition is known.
+    expect(context?.editionId).toBeNull();
+  });
+
+  test('forwards a null edition id to the read mutation when no edition is resolved (#4792)', async () => {
+    const book = {
+      createdAt: 1711737600000,
+      title: 'Crime and Punishment',
+      author: 'Test',
+    } as Book;
+    const config = { progress: [3, 311] } as BookConfig;
+
+    vi.spyOn(clientApi, 'ensureBookInLibrary').mockResolvedValue({
+      editionId: null,
+      pages: 311,
+      bookId: 713309,
+      bookPages: 311,
+      userBook: {
+        id: 303,
+        status_id: 2,
+        user_book_reads: [{ id: 505, started_at: '2026-06-25' }],
+      },
+    });
+    const requestSpy = vi.spyOn(clientApi, 'request').mockResolvedValue({});
+
+    await client.pushProgress(book, config);
+
+    const requestCalls = requestSpy.mock.calls as RequestSpyCall[];
+    const updateReadCall = requestCalls.find((call) =>
+      String(call[0]).includes('mutation UpdateRead'),
+    );
+    expect(updateReadCall).toBeDefined();
+    const variables = updateReadCall?.[1] as { edition_id?: unknown };
+    expect(variables.edition_id).toBeNull();
   });
 });

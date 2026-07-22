@@ -1,4 +1,12 @@
 import { PlanInterval, PlanType, UserPlan } from '@/types/quota';
+import { IAPStatus } from './types';
+
+// Statuses that still grant the user their paid plan. Anything else (expired,
+// cancelled past its period, revoked, pending, on hold) falls back to `free`.
+export const ENTITLED_IAP_STATUSES: IAPStatus[] = ['active', 'in_grace_period'];
+
+export const isEntitledStatus = (status: IAPStatus): boolean =>
+  ENTITLED_IAP_STATUSES.includes(status);
 
 export const mapProductIdToUserPlan = (productId: string, isSubscription = false): UserPlan => {
   if (productId.includes('.plus')) return 'plus';

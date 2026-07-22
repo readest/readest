@@ -19,8 +19,8 @@ Flow that broke: import→delete writes a server tombstone (`publishReplicaDelet
 
 **Coverage matrix across collection kinds (all share the remove-wins replica):**
 - Dictionary — handles BOTH cases (gold standard): `dictionaryService.ts importDictionaries` via `findTombstonedDictionaryMatches` + `shouldMintReincarnationForLiveReimport` (helpers in `dictionaries/dictionaryDedup.ts`), mints `uuidv4()`.
-- OPDS — case 1 only: `customOPDSStore.addCatalog` (`existing?.deletedAt && !input.reincarnation`).
-- Fonts / Textures — handled NEITHER → this bug. Now fixed to dictionary-parity.
+- OPDS — see [[opds-catalog-reincarnate-restart-5180]]. WAS case 1 only (`existing?.deletedAt && !input.reincarnation`); that HOLE = #5180. `saveCustomOPDSCatalogs` STRIPS tombstones (`filter(!deletedAt)`) so after an app restart `existing` is absent → no mint → server tombstone wins → catalog vanishes on next boot pull (`softDeleteByContentId`). Fix: `addCatalog` now ALWAYS carries a token (`input.reincarnation ?? existing?.reincarnation ?? mint`) — inert without a tombstone, so fresh adds are safe and re-adds always revive regardless of local tombstone survival.
+- Fonts / Textures — handled NEITHER → this bug. Now fixed to dictionary-parity (they KEEP tombstones at save, so case-1 mint suffices post-restart; OPDS can't rely on that).
 
 Whole chain carries the token: returned font → `publishFontUpsert` upsert AND `queueReplicaBinaryUpload` → manifest publish (`replicaBinaryUpload.ts` uses `record.reincarnation`).
 

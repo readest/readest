@@ -45,11 +45,6 @@ describe('parseSSMLLang', () => {
     expect(parseSSMLLang(ssml, 'fr')).toBe('de');
   });
 
-  it('should default to en when no xml:lang and no primaryLang', () => {
-    const ssml = ssmlNoLang('<mark name="0"/>Hello');
-    expect(parseSSMLLang(ssml)).toBe('en');
-  });
-
   it('should infer CJK lang from script when lang is en', () => {
     const ssml = ssmlNoLang('<mark name="0"/>こんにちは');
     expect(parseSSMLLang(ssml)).toBe('ja');

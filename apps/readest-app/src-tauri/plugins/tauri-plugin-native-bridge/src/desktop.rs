@@ -60,7 +60,21 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn save_image_to_gallery(
+        &self,
+        _payload: SaveImageToGalleryRequest,
+    ) -> crate::Result<SaveImageToGalleryResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn use_background_audio(&self, _payload: UseBackgroundAudioRequest) -> crate::Result<()> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn set_text_selection_suppressed(
+        &self,
+        _payload: SetTextSelectionSuppressedRequest,
+    ) -> crate::Result<()> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
@@ -278,6 +292,98 @@ impl<R: Runtime> NativeBridge<R> {
                 .to_string(),
         ))
     }
+
+    // ── Keyed secure key-value store ────────────────────────────────────
+    //
+    // Same keychain backends + fail-loud/fail-soft contract as the sync
+    // passphrase above, but each item gets its own keychain entry keyed by
+    // `key` (the item's `user`/account), so many independent secrets (the
+    // Drive token set, future provider tokens) coexist under one service
+    // without colliding with the passphrase entry (user "default").
+
+    pub fn set_secure_item(
+        &self,
+        payload: SetSecureItemRequest,
+    ) -> crate::Result<SecureItemResponse> {
+        match keyring_entry_for(&payload.key).and_then(|e| e.set_password(&payload.value)) {
+            Ok(()) => Ok(SecureItemResponse {
+                success: true,
+                error: None,
+            }),
+            Err(err) => Ok(SecureItemResponse {
+                success: false,
+                error: Some(err.to_string()),
+            }),
+        }
+    }
+
+    pub fn get_secure_item(
+        &self,
+        payload: GetSecureItemRequest,
+    ) -> crate::Result<GetSecureItemResponse> {
+        match keyring_entry_for(&payload.key).and_then(|e| e.get_password()) {
+            Ok(value) => Ok(GetSecureItemResponse {
+                value: Some(value),
+                error: None,
+            }),
+            Err(keyring_core::Error::NoEntry) => Ok(GetSecureItemResponse {
+                value: None,
+                error: None,
+            }),
+            Err(err) => Ok(GetSecureItemResponse {
+                value: None,
+                error: Some(err.to_string()),
+            }),
+        }
+    }
+
+    pub fn clear_secure_item(
+        &self,
+        payload: GetSecureItemRequest,
+    ) -> crate::Result<SecureItemResponse> {
+        match keyring_entry_for(&payload.key).and_then(|e| e.delete_credential()) {
+            Ok(()) | Err(keyring_core::Error::NoEntry) => Ok(SecureItemResponse {
+                success: true,
+                error: None,
+            }),
+            Err(err) => Ok(SecureItemResponse {
+                success: false,
+                error: Some(err.to_string()),
+            }),
+        }
+    }
+
+    /// E-ink panels exist only on the mobile (Android) side. Desktop has no
+    /// e-ink controller, so this is unsupported here.
+    pub fn refresh_eink_screen(&self) -> crate::Result<RefreshEinkScreenResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn update_reading_widget(&self, _payload: UpdateReadingWidgetRequest) -> crate::Result<()> {
+        // Home-screen widgets are mobile-only; desktop is a no-op.
+        Ok(())
+    }
+
+    /// Snapshot a region of `window`'s webview as PNG bytes for the mesh
+    /// page-curl texture (#555). macOS only so far; Windows
+    /// (`ICoreWebView2::CapturePreview`) and Linux
+    /// (`webkit_web_view_get_snapshot`) reject until implemented, and the
+    /// JS side falls back to the CSS curl.
+    pub fn capture_webview_region(
+        &self,
+        window: &tauri::WebviewWindow<R>,
+        payload: CaptureWebviewRegionRequest,
+    ) -> crate::Result<Vec<u8>> {
+        #[cfg(target_os = "macos")]
+        {
+            crate::platform::macos::capture_webview_region(window, payload)
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = (window, payload);
+            Err(crate::Error::UnsupportedPlatformError)
+        }
+    }
 }
 
 const KEYRING_SERVICE: &str = "Readest Safe Storage";
@@ -285,4 +391,10 @@ const KEYRING_USER: &str = "default";
 
 fn keyring_entry() -> std::result::Result<keyring_core::Entry, keyring_core::Error> {
     keyring_core::Entry::new(KEYRING_SERVICE, KEYRING_USER)
+}
+
+/// Keychain entry for a keyed secure item — same service as the passphrase,
+/// with the caller's `key` as the per-item account so each secret is distinct.
+fn keyring_entry_for(key: &str) -> std::result::Result<keyring_core::Entry, keyring_core::Error> {
+    keyring_core::Entry::new(KEYRING_SERVICE, key)
 }

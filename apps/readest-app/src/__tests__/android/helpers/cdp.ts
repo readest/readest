@@ -116,6 +116,26 @@ export class CdpPage {
     return res.result?.result?.value as T;
   }
 
+  /**
+   * Touch double-tap through the WebView's own input pipeline (gesture
+   * recognition and click synthesis included). adb `input tap` spawns a whole
+   * Java process per tap — 300ms to 1s on a loaded CI emulator — so two adb
+   * taps cannot reliably land inside the app's 250ms double-click window.
+   * A single tapCount:2 gesture is timed inside the renderer (measured click
+   * gap ~200ms on a busy emulator); two separate synthesizeTapGesture
+   * commands are too slow, since each resolves long after its gesture.
+   * Coordinates are CSS pixels.
+   */
+  async doubleTap(cssX: number, cssY: number): Promise<void> {
+    await this.send('Input.synthesizeTapGesture', {
+      x: cssX,
+      y: cssY,
+      tapCount: 2,
+      duration: 20,
+      gestureSourceType: 'touch',
+    });
+  }
+
   close(): void {
     this.ws.close();
   }

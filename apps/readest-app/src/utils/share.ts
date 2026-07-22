@@ -99,10 +99,13 @@ export const shareSelectedText = async (
   if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
     try {
       await navigator.share({ text });
-    } catch {
-      // User dismissed or share-time error; respect the choice.
+      return;
+    } catch (err) {
+      // Only respect a user cancel (AbortError). Other failures — e.g.
+      // NotAllowedError when a quick action fires without a user gesture —
+      // fall through to the clipboard so the user still gets the text.
+      if (err instanceof Error && err.name === 'AbortError') return;
     }
-    return;
   }
 
   await writeTextToClipboard(text);

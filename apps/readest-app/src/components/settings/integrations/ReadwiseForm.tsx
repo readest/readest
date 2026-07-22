@@ -9,6 +9,7 @@ import { ReadwiseClient } from '@/services/readwise';
 import { READWISE_API_BASE_URL } from '@/services/constants';
 import SubPageHeader from '../SubPageHeader';
 import { SectionTitle, SettingLabel, Tips } from '../primitives';
+import { Toggle } from '@/components/primitives/toggle';
 
 interface ReadwiseFormProps {
   onBack: () => void;
@@ -128,9 +129,7 @@ const ReadwiseForm: React.FC<ReadwiseFormProps> = ({ onBack }) => {
             <div className='divide-base-200 divide-y'>
               <label className='flex min-h-14 items-center justify-between px-4'>
                 <SettingLabel>{_('Sync Enabled')}</SettingLabel>
-                <input
-                  type='checkbox'
-                  className='toggle'
+                <Toggle
                   checked={settings.readwise?.enabled ?? false}
                   onChange={handleToggleEnabled}
                 />

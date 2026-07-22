@@ -4,6 +4,7 @@ import {
   getExternalDragHandle,
   getHighlightColorLabel,
   removeBookNoteOverlays,
+  removeEmptyAnnotationPlaceholder,
   toParentViewportPoint,
 } from '@/app/reader/utils/annotatorUtil';
 import { Point } from '@/utils/sel';
@@ -224,6 +225,78 @@ describe('removeBookNoteOverlays', () => {
 
   it('is a no-op when view is null', () => {
     expect(() => removeBookNoteOverlays(null, baseNote({ style: 'highlight' }))).not.toThrow();
+  });
+});
+
+describe('removeEmptyAnnotationPlaceholder', () => {
+  const baseNote = (overrides: Partial<BookNote> = {}): BookNote => ({
+    id: 'ph-1',
+    type: 'annotation',
+    cfi: 'epubcfi(/6/4!/4/2)',
+    style: 'highlight',
+    color: 'yellow',
+    text: 'selected text',
+    note: '',
+    createdAt: 1,
+    updatedAt: 1,
+    ...overrides,
+  });
+
+  it('tombstones the empty placeholder by id and returns it', () => {
+    const placeholder = baseNote();
+    const booknotes = [placeholder];
+
+    const removed = removeEmptyAnnotationPlaceholder(booknotes, 'ph-1', 1234);
+
+    expect(removed).toBe(placeholder);
+    expect(booknotes[0]!.deletedAt).toBe(1234);
+  });
+
+  it('returns null and leaves booknotes untouched when the record carries note text', () => {
+    const saved = baseNote({ note: 'a real note' });
+    const booknotes = [saved];
+
+    const removed = removeEmptyAnnotationPlaceholder(booknotes, 'ph-1', 1234);
+
+    expect(removed).toBeNull();
+    expect(booknotes[0]!.deletedAt).toBeUndefined();
+  });
+
+  it('treats whitespace-only note text as empty and tombstones it', () => {
+    const placeholder = baseNote({ note: '   \n  ' });
+    const booknotes = [placeholder];
+
+    const removed = removeEmptyAnnotationPlaceholder(booknotes, 'ph-1', 1234);
+
+    expect(removed).toBe(placeholder);
+    expect(booknotes[0]!.deletedAt).toBe(1234);
+  });
+
+  it('returns null when no record matches the id', () => {
+    const booknotes = [baseNote({ id: 'other' })];
+
+    const removed = removeEmptyAnnotationPlaceholder(booknotes, 'ph-1', 1234);
+
+    expect(removed).toBeNull();
+    expect(booknotes[0]!.deletedAt).toBeUndefined();
+  });
+
+  it('returns null when the matching record is already soft-deleted', () => {
+    const booknotes = [baseNote({ deletedAt: 5 })];
+
+    const removed = removeEmptyAnnotationPlaceholder(booknotes, 'ph-1', 1234);
+
+    expect(removed).toBeNull();
+  });
+
+  it('ignores a non-annotation record with the same id', () => {
+    const bookmark = baseNote({ type: 'bookmark', style: undefined });
+    const booknotes = [bookmark];
+
+    const removed = removeEmptyAnnotationPlaceholder(booknotes, 'ph-1', 1234);
+
+    expect(removed).toBeNull();
+    expect(booknotes[0]!.deletedAt).toBeUndefined();
   });
 });
 

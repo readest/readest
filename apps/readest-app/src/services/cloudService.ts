@@ -24,28 +24,48 @@ export async function deleteBook(
   book: Book,
   deleteAction: DeleteAction,
 ): Promise<void> {
-  if (deleteAction === 'local' || deleteAction === 'both') {
+  if (deleteAction === 'local' || deleteAction === 'both' || deleteAction === 'purge') {
     const source = await resolveBookContentSource(fs, book);
-    if (source.kind === 'external') {
-      try {
-        if (await fs.exists(source.path, source.base)) {
-          await fs.removeFile(source.path, source.base);
-        }
-      } catch (error) {
-        // Best effort: a missing/permission-denied source shouldn't block
-        // the metadata-side bookkeeping that follows.
-        console.log('Failed to remove in-place source file:', error);
-      }
-    } else if (source.kind === 'managed') {
+    // Only remove files Readest itself created. A 'managed' source lives under
+    // our Books/<hash>/ dir (a copy we made on import), so it is ours to delete.
+    // An 'external' source is the user's own file at a user-controlled location
+    // (book.filePath, base 'None') — e.g. a "Read books in place" import or a
+    // transiently-opened file. Deleting a book from Readest must NEVER remove
+    // that source file; doing so silently destroyed users' originals.
+    if (source.kind === 'managed' && deleteAction !== 'purge') {
+      // Purge wipes the whole directory below, so skip the per-file removal.
       if (await fs.exists(source.path, source.base)) {
         await fs.removeFile(source.path, source.base);
+      }
+    }
+
+    // Purge erases the entire app-generated Books/<hash>/ directory — the
+    // managed book file, cover.png, and (the reason for issue #4615)
+    // config.json (reading progress, notes, bookmarks) + nav.json that the
+    // other delete actions leave behind. In-place books keep their external
+    // source file untouched; this only clears Readest's own sidecar dir.
+    if (deleteAction === 'purge') {
+      const dir = getDir(book);
+      if (await fs.exists(dir, 'Books')) {
+        await fs.removeDir(dir, 'Books', true);
+      }
+      // The per-book TTS audio cache lives under Cache (kept out of Books/
+      // so backups and sync never pick it up); purge erases every trace of
+      // the book, so drop it too. Non-purge deletes leave it: like
+      // config.json, a re-downloaded book resumes with a warm audio cache.
+      const ttsCacheDir = `tts-cache/${book.hash}`;
+      if (await fs.exists(ttsCacheDir, 'Cache')) {
+        await fs.removeDir(ttsCacheDir, 'Cache', true);
       }
     }
 
     if (deleteAction === 'both' && (await fs.exists(getCoverFilename(book), 'Books'))) {
       await fs.removeFile(getCoverFilename(book), 'Books');
     }
-    if (deleteAction === 'local') {
+    if (deleteAction === 'local' || deleteAction === 'purge') {
+      // Mirror 'local': mark not-downloaded but leave the tombstone (deletedAt)
+      // to the caller. The page's handleBookDelete sets deletedAt and queues the
+      // cloud deletion for purge, exactly as it does for the 'both' action.
       book.downloadedAt = null;
     } else {
       book.deletedAt = Date.now();
@@ -204,6 +224,25 @@ export async function uploadBook(
   book.uploadedAt = Date.now();
   book.downloadedAt = Date.now();
   book.coverDownloadedAt = Date.now();
+}
+
+// Re-upload only the cover (books/<hash>/cover.png), overwriting the cloud
+// copy. Used after a cover edit (issue #4544) so peers can re-download it.
+// Deliberately does NOT touch book.uploadedAt — that marker means "the book
+// file is in cloud as of T"; a cover-only change must not trigger a file
+// re-download on peers.
+export async function uploadBookCover(
+  fs: FileSystem,
+  resolveFilePath: (path: string, base: BaseDir) => Promise<string>,
+  book: Book,
+  onProgress?: ProgressHandler,
+): Promise<void> {
+  if (!(await fs.exists(getCoverFilename(book), 'Books'))) return;
+  const completedFiles = { count: 0 };
+  const handleProgress = createProgressHandler(1, completedFiles, onProgress);
+  const lfp = getCoverFilename(book);
+  const cfp = `${CLOUD_BOOKS_SUBDIR}/${getCoverFilename(book)}`;
+  await uploadFileToCloud(fs, resolveFilePath, lfp, cfp, 'Books', handleProgress, book.hash);
 }
 
 export async function downloadCloudFile(

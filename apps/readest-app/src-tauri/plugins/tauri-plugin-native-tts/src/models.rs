@@ -66,11 +66,15 @@ pub struct GetVoicesResponse {
 #[serde(rename_all = "camelCase")]
 pub struct SetMediaSessionActiveRequest {
     pub active: bool,
-    pub keep_app_in_foreground: bool,
     pub notification_title: Option<String>,
     pub notification_text: Option<String>,
     pub foreground_service_title: Option<String>,
     pub foreground_service_text: Option<String>,
+    // Identity of the book being read, persisted so the Android Auto browse
+    // tree can offer a "Resume last book" entry after the process is cold.
+    pub book_hash: Option<String>,
+    pub book_title: Option<String>,
+    pub book_author: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -88,4 +92,49 @@ pub struct UpdateMediaSessionMetadataRequest {
     pub artist: Option<String>,
     pub album: Option<String>,
     pub artwork: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateCarPlayStateRequest {
+    pub active: bool,
+    pub title: Option<String>,
+    pub author: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayoutEnqueueRequest {
+    pub session: i32,
+    pub index: i32,
+    pub data: String,
+    pub gap_ms: Option<f64>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayoutEnqueueResponse {
+    pub duration_ms: f64,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayoutControlRequest {
+    pub action: String,
+    pub rate: Option<f64>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayoutControlResponse {
+    pub session: Option<i32>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayoutPositionResponse {
+    pub session: i32,
+    pub index: i32,
+    pub position_ms: f64,
+    pub playing: bool,
 }

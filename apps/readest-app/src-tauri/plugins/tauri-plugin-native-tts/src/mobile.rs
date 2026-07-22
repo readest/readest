@@ -120,3 +120,41 @@ impl<R: Runtime> NativeTts<R> {
             .map_err(Into::into)
     }
 }
+
+impl<R: Runtime> NativeTts<R> {
+    pub fn update_carplay_state(&self, payload: UpdateCarPlayStateRequest) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("update_carplay_state", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeTts<R> {
+    pub fn playout_enqueue(
+        &self,
+        payload: PlayoutEnqueueRequest,
+    ) -> crate::Result<PlayoutEnqueueResponse> {
+        self.0
+            .run_mobile_plugin("playout_enqueue", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeTts<R> {
+    pub fn playout_control(
+        &self,
+        payload: PlayoutControlRequest,
+    ) -> crate::Result<PlayoutControlResponse> {
+        self.0
+            .run_mobile_plugin("playout_control", payload)
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeTts<R> {
+    pub fn playout_position(&self) -> crate::Result<PlayoutPositionResponse> {
+        self.0
+            .run_mobile_plugin("playout_position", ())
+            .map_err(Into::into)
+    }
+}

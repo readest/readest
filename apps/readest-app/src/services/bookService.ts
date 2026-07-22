@@ -1,5 +1,5 @@
 import { SystemSettings } from '@/types/settings';
-import { FileSystem, AppPlatform, BaseDir } from '@/types/system';
+import { FileSystem, AppPlatform, BaseDir, OsPlatform } from '@/types/system';
 import {
   Book,
   BookConfig,
@@ -44,9 +44,10 @@ import {
   type BookFileContentSource,
 } from './bookContent';
 
-export function buildBookLookupIndex(books: Book[]): BookLookupIndex {
+export function buildBookLookupIndex(books: Book[], osPlatform?: OsPlatform): BookLookupIndex {
   const byHash = new Map<string, Book>();
   const byMetaKey = new Map<string, Book[]>();
+  const byFilePath = new Map<string, Book>();
   for (const book of books) {
     byHash.set(book.hash, book);
     if (book.metaHash && !book.deletedAt) {
@@ -55,8 +56,92 @@ export function buildBookLookupIndex(books: Book[]): BookLookupIndex {
       if (list) list.push(book);
       else byMetaKey.set(key, [book]);
     }
+    // In-place books carry the absolute source path on `filePath` (set by
+    // importBook below). Indexing them here lets a re-import of the exact
+    // same file short-circuit before touching disk or computing partialMD5.
+    // Skip URL-backed entries (remote books) and tombstoned ones.
+    if (book.filePath && !isValidURL(book.filePath) && !book.deletedAt) {
+      const key = normalizeFilePathForIndex(book.filePath, osPlatform);
+      if (key) byFilePath.set(key, book);
+    }
   }
-  return { byHash, byMetaKey };
+  return { byHash, byMetaKey, byFilePath };
+}
+
+/**
+ * Normalize an absolute file path into a stable map key for `byFilePath`.
+ *
+ * Mirrors the same rules `ingestService.shouldImportInPlace` uses to compare
+ * paths against the user's in-place roots so both sides agree on whether a
+ * given source file matches a previously-indexed book:
+ *   - Backslashes are normalized to `/`.
+ *   - Trailing slashes are stripped.
+ *   - On case-insensitive filesystems (macOS / iOS / Windows) the key is
+ *     lowercased. Linux / Android keep the original casing.
+ *
+ * Returns an empty string for non-string / falsy input so callers can do a
+ * `if (key) map.set(key, …)` guard without an extra null check.
+ */
+export function normalizeFilePathForIndex(path: string, osPlatform?: OsPlatform): string {
+  if (!path) return '';
+  const caseInsensitive =
+    osPlatform === 'macos' || osPlatform === 'ios' || osPlatform === 'windows';
+  const n = path.replace(/\\/g, '/').replace(/\/+$/, '');
+  return caseInsensitive ? n.toLowerCase() : n;
+}
+
+export interface ScannedFileEntry {
+  /** Absolute path, already joined with the folder root. */
+  fullPath: string;
+  /** File size in bytes. */
+  size: number;
+}
+
+/**
+ * From a folder scan, keep only entries that (a) match one of `extensions`
+ * (lowercased, no leading dot), (b) are at least `minSizeBytes`, and (c) are
+ * NOT already in the library. Membership is tested against `existingPaths`,
+ * which the caller builds from `buildBookLookupIndex(...).byFilePath.keys()`
+ * (those keys are already normalized by `normalizeFilePathForIndex`, so we
+ * normalize each scanned path the same way before comparing). Pure — no I/O.
+ */
+export function selectNewImportableFiles(
+  entries: ScannedFileEntry[],
+  opts: {
+    extensions: string[];
+    minSizeBytes: number;
+    existingPaths: Set<string>;
+    osPlatform?: OsPlatform;
+  },
+): ScannedFileEntry[] {
+  const exts = new Set(opts.extensions.map((e) => e.toLowerCase()));
+  return entries.filter((entry) => {
+    const ext = entry.fullPath.split('.').pop()?.toLowerCase() ?? '';
+    if (!exts.has(ext)) return false;
+    if (opts.minSizeBytes > 0 && entry.size < opts.minSizeBytes) return false;
+    const key = normalizeFilePathForIndex(entry.fullPath, opts.osPlatform);
+    return !!key && !opts.existingPaths.has(key);
+  });
+}
+
+/**
+ * Collect all known local source paths from the library into a normalized set.
+ *
+ * Unlike `buildBookLookupIndex(...).byFilePath`, this includes soft-deleted
+ * books (`deletedAt` set) so that auto-import does not resurrect a book the
+ * user intentionally removed from their library.
+ *
+ * URL-backed entries (remote books) are excluded — only on-disk paths matter.
+ */
+export function collectKnownSourcePaths(books: Book[], osPlatform?: OsPlatform): Set<string> {
+  const paths = new Set<string>();
+  for (const book of books) {
+    if (book.filePath && !isValidURL(book.filePath)) {
+      const key = normalizeFilePathForIndex(book.filePath, osPlatform);
+      if (key) paths.add(key);
+    }
+  }
+  return paths;
 }
 
 export interface CoverContext {
@@ -136,6 +221,20 @@ export async function updateCoverImage(
     const arrayBuffer = await imageToArrayBuffer(ctx, imageUrl, imageFile);
     await ctx.fs.writeFile(getCoverFilename(book), 'Books', arrayBuffer);
   }
+}
+
+/**
+ * Partial MD5 of the local cover.png, or null when the cover is absent. This is
+ * the content-addressed cover-change signal for cross-device sync (issue
+ * #4544): keeping `book.coverHash === computeCoverHash(book)` lets a peer
+ * re-download the cover iff the synced hash differs from the local one. An
+ * identical (re-extracted / re-imported) cover yields the same hash, so there
+ * is no re-sync churn.
+ */
+export async function computeCoverHash(fs: FileSystem, book: Book): Promise<string | null> {
+  if (!(await fs.exists(getCoverFilename(book), 'Books'))) return null;
+  const coverFile = await fs.openFile(getCoverFilename(book), 'Books');
+  return partialMD5(coverFile);
 }
 
 // --- Book Merge ---
@@ -223,6 +322,14 @@ export async function mergeBooks(
 export interface ImportBookInternalOptions extends ImportBookOptions {
   saveBookConfig: (book: Book, config: BookConfig) => Promise<void>;
   generateCoverImageUrl: (book: Book) => Promise<string>;
+  /**
+   * Used by the in-place fast path to normalize the source path the same way
+   * `buildBookLookupIndex` does. Optional: when omitted the fast path falls
+   * back to a case-sensitive comparison, which is still safe (it will simply
+   * miss matches that differ only in casing on macOS / iOS / Windows and the
+   * import will proceed down the slow path as before).
+   */
+  osPlatform?: OsPlatform;
 }
 
 export async function importBook(
@@ -246,8 +353,10 @@ export async function importBook(
     transient = false,
     inPlace = false,
     lookupIndex,
+    osPlatform,
   } = options;
   const isPseStream = typeof file === 'string' && isPseStreamFileName(file);
+
   try {
     let loadedBook: BookDoc;
     let format: BookFormat;
@@ -428,9 +537,12 @@ export async function importBook(
       existingBook.downloadedAt = Date.now();
     }
 
-    if (!(await fs.exists(getDir(book), 'Books'))) {
-      await fs.createDir(getDir(book), 'Books');
-    }
+    // Idempotent create (recursive): a plain createDir defaults to
+    // non-recursive and throws if the dir already exists, and the check-then-
+    // create above races two concurrent imports of the same book — on Windows
+    // the loser fails with "Cannot create a file when that file already exists"
+    // (Sentry READEST-H). create_dir_all is a no-op when the dir exists.
+    await fs.createDir(getDir(book), 'Books', true);
     const bookFilename = getLocalBookFilename(book);
     const willWriteBookFile =
       saveBook &&
@@ -469,6 +581,12 @@ export async function importBook(
         await fs.writeFile(getCoverFilename(book), 'Books', coverBytes);
       }
     }
+    // Maintain coverHash === partialMD5(cover.png) so cross-device cover sync
+    // can detect changes (issue #4544). Read from disk regardless of whether we
+    // just wrote it — a hash-match reimport may reuse an existing cover.
+    const coverHash = await computeCoverHash(fs, book);
+    book.coverHash = coverHash;
+    if (existingBook) existingBook.coverHash = coverHash;
     // Never overwrite the config file only when it's not existed
     if (!existingBook) {
       await saveBookConfigFn(book, INIT_BOOK_CONFIG);
@@ -528,6 +646,18 @@ export async function importBook(
         // there directly instead of duplicating it under Books/<hash>/.
         book.filePath = file;
         if (existingBook) existingBook.filePath = file;
+      }
+    }
+    // Now that `filePath` is set, keep the path index in sync so later files
+    // in the same batch (and the next call into importBook) can hit the
+    // in-place fast path. Only persistent in-place imports go into the
+    // index — transient previews are short-lived and never persisted to
+    // the library so indexing them would just leak references.
+    if (lookupIndex && inPlace && !transient && typeof file === 'string') {
+      const indexedBook = existingBook || book;
+      if (indexedBook.filePath) {
+        const key = normalizeFilePathForIndex(indexedBook.filePath, osPlatform);
+        if (key) lookupIndex.byFilePath.set(key, indexedBook);
       }
     }
     book.coverImageUrl = await generateCoverImageUrlFn(book);

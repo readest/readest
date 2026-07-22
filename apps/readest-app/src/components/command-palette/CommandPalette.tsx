@@ -126,7 +126,7 @@ const CommandPalette: React.FC = () => {
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
-      className='fixed inset-0 z-[100] flex items-start justify-center bg-black/50 pt-[15vh]'
+      className='fixed inset-0 z-[120] flex items-start justify-center bg-black/50 pt-[15vh]'
       onClick={handleBackdropClick}
     >
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}

@@ -26,7 +26,7 @@ const RSVPStartDialog: React.FC<RSVPStartDialogProps> = ({ startChoice, onSelect
   return (
     <div
       role='presentation'
-      className='fixed inset-0 z-[10001] flex items-center justify-center'
+      className='fixed inset-0 z-[101] flex items-center justify-center'
       style={{ backgroundColor: backdropColor }}
       onClick={onClose}
       onKeyDown={(e) => e.key === 'Escape' && onClose()}

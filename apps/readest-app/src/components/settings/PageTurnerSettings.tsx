@@ -193,6 +193,11 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
         {renderSlot('pageNext', _('Next Page'))}
         {renderSlot('sectionPrev', _('Previous Section'))}
         {renderSlot('sectionNext', _('Next Section'))}
+        {/* Deep e-ink refresh clears ghosting; only meaningful in e-ink mode
+            on Android, where the native bridge can drive the panel. */}
+        {appService?.isAndroidApp &&
+          viewSettings.isEink &&
+          renderSlot('refresh', _('Refresh Page'))}
       </BoxedList>
     </div>
   );

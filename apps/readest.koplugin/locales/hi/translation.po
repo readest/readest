@@ -68,6 +68,9 @@ msgstr "आरोही"
 msgid "Actions"
 msgstr "क्रियाएँ"
 
+msgid "Download all books"
+msgstr "सभी पुस्तकें डाउनलोड करें"
+
 msgid "Rescan library"
 msgstr "लाइब्रेरी पुनः स्कैन करें"
 
@@ -133,6 +136,21 @@ msgstr "कवर डाउनलोड विफल।"
 
 msgid "Could not delete the file."
 msgstr "फ़ाइल हटाई नहीं जा सकी।"
+
+msgid "No books to download."
+msgstr "डाउनलोड करने के लिए कोई पुस्तक नहीं है।"
+
+msgid "Downloading %1 of %2…"
+msgstr "%2 में से %1 डाउनलोड हो रहा है…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "डाउनलोड रद्द किया गया। %2 में से %1 डाउनलोड हुई।"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%2 में से %1 डाउनलोड हुई (%3 छोड़ी गईं)।"
+
+msgid "Downloaded %1 of %2."
+msgstr "%2 में से %1 डाउनलोड हुई।"
 
 msgid "Removing from cloud…"
 msgstr "क्लाउड से हटाया जा रहा है…"
@@ -215,6 +233,9 @@ msgstr "इस डिवाइस से Readest एनोटेशन भेज
 msgid "Pull readest annotations from other devices"
 msgstr "अन्य डिवाइसों से Readest एनोटेशन प्राप्त करें"
 
+msgid "Full sync all readest annotations"
+msgstr "सभी Readest एनोटेशन का पूर्ण सिंक"
+
 msgid "Add to Readest"
 msgstr "Readest में जोड़ें"
 
@@ -239,6 +260,12 @@ msgstr "पहले से ही आपकी Readest लाइब्रेर
 msgid "Added to Readest:"
 msgstr "Readest में जोड़ा गया:"
 
+msgid "No book is open"
+msgstr "कोई पुस्तक खुली नहीं है"
+
+msgid "Uploaded to Readest:"
+msgstr "Readest पर अपलोड किया गया:"
+
 msgid "Log in Readest Account"
 msgstr "Readest खाते में लॉग इन करें"
 
@@ -251,11 +278,20 @@ msgstr "स्वतः सिंक"
 msgid "Readest library"
 msgstr "Readest लाइब्रेरी"
 
+msgid "Push stats now"
+msgstr "अभी आँकड़े पुश करें"
+
+msgid "Pull stats now"
+msgstr "अभी आँकड़े पुल करें"
+
 msgid "Push books now"
 msgstr "अभी पुस्तकें पुश करें"
 
 msgid "Pull books now"
 msgstr "अभी पुस्तकें पुल करें"
+
+msgid "Upload current book to Readest"
+msgstr "वर्तमान पुस्तक को Readest पर अपलोड करें"
 
 msgid "Push reading progress now"
 msgstr "अभी पठन प्रगति भेजें"
@@ -286,9 +322,6 @@ msgstr "कृपया पहले लॉग इन करें"
 
 msgid "Please configure Readest settings first"
 msgstr "कृपया पहले Readest सेटिंग्स कॉन्फ़िगर करें"
-
-msgid "No book is open"
-msgstr "कोई पुस्तक खुली नहीं है"
 
 msgid "(none)"
 msgstr "(कोई नहीं)"
@@ -436,3 +469,18 @@ msgstr "पठन प्रगति सिंक हो गई"
 
 msgid "No saved reading progress found for this book"
 msgstr "इस पुस्तक के लिए सहेजी गई पठन प्रगति नहीं मिली"
+
+msgid "Reading statistics are up to date"
+msgstr "पठन आँकड़े अद्यतित हैं"
+
+msgid "Reading statistics pushed"
+msgstr "पठन आँकड़े भेजे गए"
+
+msgid "Failed to push reading statistics"
+msgstr "पठन आँकड़े भेजने में विफल"
+
+msgid "Failed to pull reading statistics"
+msgstr "पठन आँकड़े प्राप्त करने में विफल"
+
+msgid "Reading statistics pulled"
+msgstr "पठन आँकड़े प्राप्त हुए"

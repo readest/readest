@@ -375,6 +375,59 @@ export const getPopupPosition = (
   return { point: popupPoint, dir: position.dir } as Position;
 };
 
+// Standard desktop text-selection shortcuts (#4728): extend the active
+// selection with the keyboard. Pure key→intent mapping so it stays testable.
+//
+// - Shift+←/→            → extend by character
+// - Ctrl/Alt+Shift+←/→   → extend by word (Ctrl on Windows/Linux, Option on macOS)
+//
+// `direction` is visual ('left'/'right') so it matches the arrow key pressed and
+// reads correctly in RTL text. Meta/Cmd is left alone so the browser's native
+// line-boundary selection (Cmd+Shift+←/→ on macOS) still works.
+export interface KeyModifiers {
+  key: string;
+  shiftKey?: boolean;
+  ctrlKey?: boolean;
+  altKey?: boolean;
+  metaKey?: boolean;
+}
+
+export interface SelectionAdjustment {
+  direction: 'left' | 'right';
+  granularity: 'character' | 'word';
+}
+
+export const getKeyboardSelectionAdjustment = (ev: KeyModifiers): SelectionAdjustment | null => {
+  if (!ev.shiftKey || ev.metaKey) return null;
+  const direction = ev.key === 'ArrowLeft' ? 'left' : ev.key === 'ArrowRight' ? 'right' : null;
+  if (!direction) return null;
+  const granularity = ev.ctrlKey || ev.altKey ? 'word' : 'character';
+  return { direction, granularity };
+};
+
+// Locate the active (non-collapsed) selection across the rendered section
+// documents (foliate's `renderer.getContents()`) and, in `extend` mode, grow or
+// shrink it per the keyboard adjustment (#4728). Returns whether a selection was
+// found, so the caller can suppress page-turn navigation. With `extend` false it
+// only reports presence — used when the iframe itself held focus and the browser
+// already extended the selection natively.
+export const extendSelectionFromContents = (
+  contents: { doc: Document }[],
+  ev: KeyModifiers,
+  extend: boolean,
+): boolean => {
+  const adjustment = getKeyboardSelectionAdjustment(ev);
+  if (!adjustment) return false;
+  for (const { doc } of contents) {
+    const sel = doc.defaultView?.getSelection();
+    if (sel && !sel.isCollapsed) {
+      if (extend) sel.modify('extend', adjustment.direction, adjustment.granularity);
+      return true;
+    }
+  }
+  return false;
+};
+
 export const snapRangeToWords = (range: Range): void => {
   if (typeof Intl === 'undefined' || !Intl.Segmenter) return;
 
@@ -420,6 +473,60 @@ export const snapRangeToWords = (range: Range): void => {
 
   snapStartToWordBoundary();
   snapEndToWordBoundary();
+};
+
+// Expand a caret position (a text node + offset) to the word-like segment that
+// contains it — the same word a native double-click would select. Returns null
+// when the position isn't inside word-like text (whitespace, punctuation, a
+// non-text node). CJK is segmented via Intl.Segmenter, matching snapRangeToWords.
+export const getWordRangeAt = (node: Node, offset: number): Range | null => {
+  if (node.nodeType !== Node.TEXT_NODE) return null;
+  if (typeof Intl === 'undefined' || !Intl.Segmenter) return null;
+  const text = node.textContent ?? '';
+  if (!text) return null;
+  const doc = node.ownerDocument;
+  if (!doc) return null;
+  const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+  for (const seg of segmenter.segment(text)) {
+    if (!seg.isWordLike) continue;
+    const start = seg.index;
+    const end = seg.index + seg.segment.length;
+    // The caret falls inside this word, or sits exactly on either edge (a
+    // caret-from-point at a word boundary should still select the adjacent word).
+    if (offset >= start && offset <= end) {
+      const range = doc.createRange();
+      try {
+        range.setStart(node, start);
+        range.setEnd(node, end);
+      } catch {
+        return null;
+      }
+      return range.collapsed ? null : range;
+    }
+  }
+  return null;
+};
+
+// The word range under a point (in `doc` viewport coordinates), like a native
+// double-click. Returns null when the point isn't on word-like text.
+export const getWordRangeFromPoint = (doc: Document, x: number, y: number): Range | null => {
+  let node: Node | null = null;
+  let offset = 0;
+  if (doc.caretPositionFromPoint) {
+    const pos = doc.caretPositionFromPoint(x, y);
+    if (pos) {
+      node = pos.offsetNode;
+      offset = pos.offset;
+    }
+  } else if (doc.caretRangeFromPoint) {
+    const range = doc.caretRangeFromPoint(x, y);
+    if (range) {
+      node = range.startContainer;
+      offset = range.startOffset;
+    }
+  }
+  if (!node) return null;
+  return getWordRangeAt(node, offset);
 };
 
 // --- Android hyphenation selection-bounds bug (issue #1553) -----------------
@@ -540,6 +647,37 @@ export const isHyphenHandleBugProneRange = (range: Range, vertical = false): boo
   return blockHasGeneratedHyphens(block, vertical);
 };
 
+// Window-coordinate position of the selection focus (caret), or null. The book
+// content lives in a (possibly very wide, multi-column) iframe translated by the
+// pagination offset, so map the caret from iframe space via the iframe element's
+// on-screen rect. Used by the corner auto page-turn (the caret is an engagement
+// signal) and the keyboard turn-on-cross check.
+export const focusCaretWindowPos = (doc: Document, sel: Selection): Point | null => {
+  const focusNode = sel.focusNode;
+  const win = doc.defaultView;
+  if (!focusNode || !win) return null;
+  let rect: DOMRect;
+  try {
+    const range = doc.createRange();
+    const offset =
+      focusNode.nodeType === Node.TEXT_NODE
+        ? Math.min(sel.focusOffset, (focusNode.textContent ?? '').length)
+        : sel.focusOffset;
+    range.setStart(focusNode, offset);
+    range.collapse(true);
+    rect = range.getBoundingClientRect();
+  } catch {
+    return null;
+  }
+  // An unmeasurable range (e.g. focus on an empty element) collapses to 0,0,0,0.
+  if (rect.top === 0 && rect.bottom === 0 && rect.left === 0 && rect.right === 0) return null;
+  const feRect = win.frameElement?.getBoundingClientRect();
+  return {
+    x: (rect.left + rect.right) / 2 + (feRect?.left ?? 0),
+    y: (rect.top + rect.bottom) / 2 + (feRect?.top ?? 0),
+  };
+};
+
 // Rebuild a selection range between a known-good anchor and the caret at a
 // point (in `doc` viewport coordinates) — used to restore the range a
 // corrupted long-press drag was meant to produce: anchored at the
@@ -651,18 +789,20 @@ export const getTextFromRange = (range: Range, rejectTags: string[] = []): strin
     },
   );
 
-  // pdf.js inserts <br role="presentation"> between text spans at line endings
-  // (see TextLayer#appendText in pdfjs). Without this, multi-line PDF
-  // selections collapse adjacent line-final and line-initial words into a
-  // single token (e.g. "lastfirst"). Treat <br> as a newline, matching how
-  // Selection.toString() handles line breaks in the browser.
+  // Preserve explicit line and paragraph boundaries. Without this, adjacent
+  // PDF lines or HTML paragraphs collapse into a single token.
   let text = '';
   let node: Node | null;
   while ((node = walker.nextNode())) {
     if (node.nodeType === Node.TEXT_NODE) {
       text += (node as Text).nodeValue ?? '';
-    } else if ((node as Element).tagName === 'BR') {
-      text += '\n';
+    } else {
+      const tagName = (node as Element).tagName.toLowerCase();
+      if (tagName === 'p' && text && !text.endsWith('\n')) {
+        text += '\n';
+      } else if (tagName === 'br') {
+        text += '\n';
+      }
     }
   }
 

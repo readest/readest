@@ -1,11 +1,11 @@
 import React from 'react';
-import { CgColorPicker } from 'react-icons/cg';
 import { MdRadioButtonUnchecked, MdRadioButtonChecked } from 'react-icons/md';
 import { PiPlus } from 'react-icons/pi';
 import { Theme } from '@/styles/themes';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { SectionTitle } from '../primitives';
+import { BiPencil } from 'react-icons/bi';
 
 interface ThemeColorSelectorProps {
   themes: Theme[];
@@ -32,7 +32,7 @@ const ThemeColorSelector: React.FC<ThemeColorSelectorProps> = ({
     <div>
       <SectionTitle className='mb-2'>{_('Theme Color')}</SectionTitle>
       <div className='grid grid-cols-3 gap-4'>
-        {themes.map(({ name, label, colors, isCustomizale }) => (
+        {themes.map(({ name, label, colors, isCustomizable }) => (
           <button
             key={name}
             tabIndex={0}
@@ -71,9 +71,9 @@ const ThemeColorSelector: React.FC<ThemeColorSelectorProps> = ({
               <MdRadioButtonUnchecked size={iconSize24} />
             )}
             <span className='max-w-full truncate'>{_(label)}</span>
-            {isCustomizale && themeColor === name && (
+            {isCustomizable && themeColor === name && (
               <button onClick={() => onEditTheme(name)}>
-                <CgColorPicker size={iconSize16} className='absolute right-2 top-2' />
+                <BiPencil size={iconSize16} className='absolute right-2 top-2' />
               </button>
             )}
           </button>

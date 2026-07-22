@@ -68,6 +68,9 @@ msgstr "تصاعدي"
 msgid "Actions"
 msgstr "إجراءات"
 
+msgid "Download all books"
+msgstr "تنزيل كل الكتب"
+
 msgid "Rescan library"
 msgstr "إعادة فحص المكتبة"
 
@@ -133,6 +136,21 @@ msgstr "فشل تنزيل الغلاف."
 
 msgid "Could not delete the file."
 msgstr "تعذّر حذف الملف."
+
+msgid "No books to download."
+msgstr "لا توجد كتب للتنزيل."
+
+msgid "Downloading %1 of %2…"
+msgstr "جارٍ تنزيل %1 من %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "أُلغي التنزيل. تم تنزيل %1 من %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "تم تنزيل %1 من %2 (تم تخطّي %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "تم تنزيل %1 من %2."
 
 msgid "Removing from cloud…"
 msgstr "جارٍ الإزالة من السحابة…"
@@ -215,6 +233,9 @@ msgstr "إرسال ملاحظات Readest من هذا الجهاز"
 msgid "Pull readest annotations from other devices"
 msgstr "جلب ملاحظات Readest من الأجهزة الأخرى"
 
+msgid "Full sync all readest annotations"
+msgstr "مزامنة كاملة لجميع ملاحظات Readest"
+
 msgid "Add to Readest"
 msgstr "إضافة إلى Readest"
 
@@ -239,6 +260,12 @@ msgstr "موجود بالفعل في مكتبة Readest الخاصة بك:"
 msgid "Added to Readest:"
 msgstr "تمت الإضافة إلى Readest:"
 
+msgid "No book is open"
+msgstr "لا يوجد كتاب مفتوح"
+
+msgid "Uploaded to Readest:"
+msgstr "تم الرفع إلى Readest:"
+
 msgid "Log in Readest Account"
 msgstr "تسجيل الدخول إلى حساب Readest"
 
@@ -251,11 +278,20 @@ msgstr "المزامنة التلقائية"
 msgid "Readest library"
 msgstr "مكتبة Readest"
 
+msgid "Push stats now"
+msgstr "إرسال الإحصائيات الآن"
+
+msgid "Pull stats now"
+msgstr "جلب الإحصائيات الآن"
+
 msgid "Push books now"
 msgstr "إرسال الكتب الآن"
 
 msgid "Pull books now"
 msgstr "جلب الكتب الآن"
+
+msgid "Upload current book to Readest"
+msgstr "رفع الكتاب الحالي إلى Readest"
 
 msgid "Push reading progress now"
 msgstr "إرسال تقدم القراءة الآن"
@@ -286,9 +322,6 @@ msgstr "يرجى تسجيل الدخول أولاً"
 
 msgid "Please configure Readest settings first"
 msgstr "يرجى تكوين إعدادات Readest أولاً"
-
-msgid "No book is open"
-msgstr "لا يوجد كتاب مفتوح"
 
 msgid "(none)"
 msgstr "(لا شيء)"
@@ -436,3 +469,18 @@ msgstr "تمت مزامنة تقدم القراءة"
 
 msgid "No saved reading progress found for this book"
 msgstr "لم يتم العثور على تقدم قراءة محفوظ لهذا الكتاب"
+
+msgid "Reading statistics are up to date"
+msgstr "إحصائيات القراءة محدّثة"
+
+msgid "Reading statistics pushed"
+msgstr "تم إرسال إحصائيات القراءة"
+
+msgid "Failed to push reading statistics"
+msgstr "فشل إرسال إحصائيات القراءة"
+
+msgid "Failed to pull reading statistics"
+msgstr "فشل جلب إحصائيات القراءة"
+
+msgid "Reading statistics pulled"
+msgstr "تم جلب إحصائيات القراءة"

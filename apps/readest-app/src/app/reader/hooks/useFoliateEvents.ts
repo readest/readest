@@ -10,6 +10,8 @@ type FoliateEventHandler = {
   onCreateOverlay?: (event: Event) => void;
   onDrawAnnotation?: (event: Event) => void;
   onShowAnnotation?: (event: Event) => void;
+  onNavigateStart?: (event: Event) => void;
+  onNavigateEnd?: (event: Event) => void;
 };
 
 export const useFoliateEvents = (view: FoliateView | null, handlers?: FoliateEventHandler) => {
@@ -21,6 +23,8 @@ export const useFoliateEvents = (view: FoliateView | null, handlers?: FoliateEve
   const onCreateOverlay = handlers?.onCreateOverlay;
   const onDrawAnnotation = handlers?.onDrawAnnotation;
   const onShowAnnotation = handlers?.onShowAnnotation;
+  const onNavigateStart = handlers?.onNavigateStart;
+  const onNavigateEnd = handlers?.onNavigateEnd;
 
   useEffect(() => {
     if (!view) return;
@@ -32,6 +36,8 @@ export const useFoliateEvents = (view: FoliateView | null, handlers?: FoliateEve
     if (onCreateOverlay) view.addEventListener('create-overlay', onCreateOverlay);
     if (onDrawAnnotation) view.addEventListener('draw-annotation', onDrawAnnotation);
     if (onShowAnnotation) view.addEventListener('show-annotation', onShowAnnotation);
+    if (onNavigateStart) view.addEventListener('navigate-start', onNavigateStart);
+    if (onNavigateEnd) view.addEventListener('navigate-end', onNavigateEnd);
 
     return () => {
       if (onLoad) view.removeEventListener('load', onLoad);
@@ -42,6 +48,8 @@ export const useFoliateEvents = (view: FoliateView | null, handlers?: FoliateEve
       if (onCreateOverlay) view.removeEventListener('create-overlay', onCreateOverlay);
       if (onDrawAnnotation) view.removeEventListener('draw-annotation', onDrawAnnotation);
       if (onShowAnnotation) view.removeEventListener('show-annotation', onShowAnnotation);
+      if (onNavigateStart) view.removeEventListener('navigate-start', onNavigateStart);
+      if (onNavigateEnd) view.removeEventListener('navigate-end', onNavigateEnd);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);

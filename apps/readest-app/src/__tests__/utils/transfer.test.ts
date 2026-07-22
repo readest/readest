@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { webDownload, type ProgressPayload } from '@/utils/transfer';
+import { createProgressThrottle, webDownload, type ProgressPayload } from '@/utils/transfer';
 
 const buildResponse = (
   body: Uint8Array,
@@ -90,5 +90,63 @@ describe('webDownload', () => {
     globalThis.fetch = vi.fn(async () => buildResponse(bytes, null)) as unknown as typeof fetch;
     const result = await webDownload('https://example.test/file');
     expect(await result.blob.arrayBuffer()).toEqual(bytes.buffer);
+  });
+});
+
+describe('createProgressThrottle', () => {
+  const p = (progress: number, transferSpeed = progress): ProgressPayload => ({
+    progress,
+    total: 100,
+    transferSpeed,
+  });
+
+  test('coalesces a burst to a leading and a single trailing emission (READEST-2)', () => {
+    vi.useFakeTimers();
+    const emit = vi.fn();
+    const throttle = createProgressThrottle(emit, 100);
+
+    // A dense synchronous burst (as buffered stream chunks produce).
+    for (let i = 1; i <= 50; i++) throttle.push(p(i));
+
+    // Leading edge fires once with the first payload; the other 49 coalesce.
+    expect(emit).toHaveBeenCalledTimes(1);
+    expect(emit).toHaveBeenLastCalledWith(p(1));
+
+    // Trailing edge fires after the interval with the latest payload only.
+    vi.advanceTimersByTime(100);
+    expect(emit).toHaveBeenCalledTimes(2);
+    expect(emit).toHaveBeenLastCalledWith(p(50));
+
+    vi.useRealTimers();
+  });
+
+  test('flush emits the pending payload immediately', () => {
+    vi.useFakeTimers();
+    const emit = vi.fn();
+    const throttle = createProgressThrottle(emit, 100);
+    throttle.push(p(1)); // leading fires
+    throttle.push(p(2)); // throttled -> pending
+    emit.mockClear();
+
+    throttle.flush();
+
+    expect(emit).toHaveBeenCalledTimes(1);
+    expect(emit).toHaveBeenLastCalledWith(p(2));
+    vi.useRealTimers();
+  });
+
+  test('cancel drops the pending payload and its trailing timer', () => {
+    vi.useFakeTimers();
+    const emit = vi.fn();
+    const throttle = createProgressThrottle(emit, 100);
+    throttle.push(p(1)); // leading fires
+    throttle.push(p(2)); // throttled -> pending
+    emit.mockClear();
+
+    throttle.cancel();
+    vi.advanceTimersByTime(500);
+
+    expect(emit).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 });

@@ -81,6 +81,16 @@ export const motionGesture = async (steps: MotionStep[]): Promise<string> => {
 export const pushFile = (local: string, remote: string): Promise<string> =>
   adb(['push', local, remote]);
 
+// App-private data files, via `run-as` — debug builds only (the package must
+// be debuggable). Paths are relative to the app's data dir root.
+export const readAppFile = (pkg: string, path: string): Promise<string> =>
+  adbShell(`run-as ${pkg} cat ${path}`);
+
+export const writeAppFile = async (pkg: string, path: string, content: string): Promise<void> => {
+  const b64 = Buffer.from(content, 'utf8').toString('base64');
+  await adbShell(`echo ${b64} | base64 -d | run-as ${pkg} sh -c 'cat > ${path}'`);
+};
+
 export const forwardTcpToLocalAbstract = async (port: number, socket: string): Promise<void> => {
   try {
     await adb(['forward', '--remove', `tcp:${port}`]);

@@ -23,6 +23,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import app.tauri.annotation.InvokeArg
 import org.json.JSONObject
+import java.lang.ref.WeakReference
 
 /**
  * Args decoded from the JS `invoke('clip_url', { ... })` payload.
@@ -67,10 +68,16 @@ sealed class ClipUrlResult {
  * the page's own hydration can't wipe).
  */
 class ClipUrlController(
-    private val activity: Activity,
+    activity: Activity,
     private val args: ClipUrlArgs,
     private val completion: (ClipUrlResult) -> Unit,
 ) {
+    // Hold the Activity weakly: the controller outlives the synchronous
+    // command call (it waits up to 30 s for the page), and a strong ref
+    // would leak the Activity (and its WebView) if it is destroyed while
+    // a clip is in flight.
+    private val activityRef = WeakReference(activity)
+
     companion object {
         private const val TAG = "ClipUrl"
 
@@ -126,27 +133,32 @@ class ClipUrlController(
             completion(ClipUrlResult.Failure("Invalid URL"))
             return
         }
-        mainHandler.post { presentDialog(urlStr) }
+        val act = activityRef.get()
+        if (act == null || act.isFinishing || act.isDestroyed) {
+            completion(ClipUrlResult.Failure("Activity is no longer available"))
+            return
+        }
+        mainHandler.post { presentDialog(act, urlStr) }
     }
 
-    private fun presentDialog(urlStr: String) {
+    private fun presentDialog(act: Activity, urlStr: String) {
         val bg = parseHexColor(args.background ?: DEFAULT_BACKGROUND) ?: Color.BLACK
         val fg = parseHexColor(args.foreground ?: DEFAULT_FOREGROUND) ?: Color.WHITE
 
         // Full-screen dialog with no chrome — we draw our own overlay
         // on top so the underlying app doesn't peek through during the
         // brief capture window.
-        val dlg = Dialog(activity, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val dlg = Dialog(act, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         dlg.setCancelable(false)
         dlg.setCanceledOnTouchOutside(false)
         dlg.window?.also { window ->
             window.setBackgroundDrawable(ColorDrawable(bg))
         }
 
-        val root = FrameLayout(activity)
+        val root = FrameLayout(act)
         root.setBackgroundColor(bg)
 
-        val wv = WebView(activity)
+        val wv = WebView(act)
         // Reserve a logical size for layout; the WebView is hidden
         // behind the opaque overlay anyway, but it still needs a
         // non-zero rect for the page to fire its viewport-based
@@ -158,7 +170,7 @@ class ClipUrlController(
         configureWebView(wv)
         root.addView(wv)
 
-        val overlay = buildOverlay(bg, fg)
+        val overlay = buildOverlay(act, bg, fg)
         overlay.layoutParams = FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -231,28 +243,28 @@ class ClipUrlController(
         }
     }
 
-    private fun buildOverlay(bg: Int, fg: Int): View {
-        val column = LinearLayout(activity)
+    private fun buildOverlay(act: Activity, bg: Int, fg: Int): View {
+        val column = LinearLayout(act)
         column.orientation = LinearLayout.VERTICAL
         column.gravity = Gravity.CENTER
         column.setBackgroundColor(bg)
-        val pad = dp(24)
+        val pad = dp(act, 24)
         column.setPadding(pad, pad, pad, pad)
 
-        val spinner = ProgressBar(activity)
+        val spinner = ProgressBar(act)
         // Tint with foreground at ~85% — same idea as the iOS overlay.
         val spinTint = Color.argb(
             (0.85f * 255).toInt(),
             Color.red(fg), Color.green(fg), Color.blue(fg),
         )
         spinner.indeterminateDrawable?.setTint(spinTint)
-        val spinSize = dp(36)
+        val spinSize = dp(act, 36)
         val spinParams = LinearLayout.LayoutParams(spinSize, spinSize)
-        spinParams.bottomMargin = dp(14)
+        spinParams.bottomMargin = dp(act, 14)
         spinner.layoutParams = spinParams
         column.addView(spinner)
 
-        val title = TextView(activity)
+        val title = TextView(act)
         title.text = args.overlayTitle ?: DEFAULT_OVERLAY_TITLE
         title.setTextColor(fg)
         title.textSize = 15f
@@ -260,7 +272,7 @@ class ClipUrlController(
         title.setTypeface(title.typeface, android.graphics.Typeface.BOLD)
         column.addView(title)
 
-        val status = TextView(activity)
+        val status = TextView(act)
         status.text = args.loadingStatus ?: DEFAULT_LOADING_STATUS
         // 70% alpha for the secondary line — matches the desktop overlay.
         status.setTextColor(
@@ -277,7 +289,7 @@ class ClipUrlController(
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT,
         )
-        statusParams.topMargin = dp(4)
+        statusParams.topMargin = dp(act, 4)
         status.layoutParams = statusParams
         column.addView(status)
         statusLabel = status
@@ -329,8 +341,8 @@ class ClipUrlController(
         completion(result)
     }
 
-    private fun dp(units: Int): Int =
-        (units * activity.resources.displayMetrics.density + 0.5f).toInt()
+    private fun dp(act: Activity, units: Int): Int =
+        (units * act.resources.displayMetrics.density + 0.5f).toInt()
 
     /** Parse `#rrggbb` into an Android ARGB int; null on malformed input. */
     private fun parseHexColor(s: String): Int? {

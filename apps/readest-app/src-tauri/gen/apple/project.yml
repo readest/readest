@@ -4,6 +4,10 @@ options:
   deploymentTarget:
     iOS: 15.0
 fileGroups: [../../src]
+packages:
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa
+    from: 8.0.0
 configs:
   debug: debug
   release: release
@@ -45,6 +49,7 @@ targets:
     # than ship a malformed one. IAP works without it.
     sources:
       - path: Sources
+      - path: SentrySupport
       - path: Assets.xcassets
       # Only reference Externals as a file group (no compile/resource
       # phases) — the actual libapp.a lookup happens via the
@@ -90,11 +95,17 @@ targets:
         # "libswiftCore.dylib: no such file".
         EMBEDDED_CONTENT_CONTAINS_SWIFT_CODE: YES
         EXCLUDED_ARCHS[sdk=iphoneos*]: x86_64
+        SWIFT_VERSION: "5.0"
       groups: [app]
     dependencies:
+      - package: Sentry
+        product: Sentry
       - framework: libapp.a
         embed: false
       - target: ShareExtension
+        embed: true
+        codeSign: true
+      - target: ReadestWidget
         embed: true
         codeSign: true
       - sdk: CoreGraphics.framework
@@ -104,6 +115,9 @@ targets:
       - sdk: Security.framework
       - sdk: UIKit.framework
       - sdk: WebKit.framework
+      - sdk: WidgetKit.framework
+      - sdk: CarPlay.framework
+      - sdk: MediaPlayer.framework
     preBuildScripts:
       - script: pnpm tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}
         name: Build Rust Code
@@ -135,9 +149,13 @@ targets:
           NSExtensionPointIdentifier: com.apple.share-services
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
           NSExtensionAttributes:
+            # Web URLs only. Do NOT add NSExtensionActivationSupportsText: a
+            # .txt file is public.plain-text (conforms to public.text), so that
+            # key makes this article-URL clipper activate for plain-text FILES
+            # it can't handle (the share sheet hangs). Book files must fall
+            # through to the main app's CFBundleDocumentTypes import path.
             NSExtensionActivationRule:
               NSExtensionActivationSupportsWebURLWithMaxCount: 1
-              NSExtensionActivationSupportsText: true
     # Entitlements referenced via CODE_SIGN_ENTITLEMENTS build setting
     # rather than xcodegen's `entitlements:` block — otherwise xcodegen
     # may overwrite the file (even with no properties declared) during
@@ -149,16 +167,16 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.bilingify.readest.ShareExtension
         DEVELOPMENT_TEAM: J5W48D69VR
         CODE_SIGN_ENTITLEMENTS: ShareExtension/ShareExtension.entitlements
-        # Permit Xcode's productPackagingUtility to write the auto-derived
-        # signing entitlements (application-identifier, team-identifier,
-        # get-task-allow) back to the source entitlements file at build
-        # time. Without this, Xcode 16+ refuses the modification it
-        # itself just performed and the build fails with:
-        #   "Entitlements file ... was modified during the build"
-        # Safe for this target because the entitlements file is empty —
-        # the only modifications Xcode performs are the team / app-id
-        # auto-population every iOS extension target needs anyway.
-        CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: YES
+        # Do NOT set CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION here. This
+        # entitlements file declares com.apple.security.application-groups
+        # (group.com.bilingify.readest). With automatic App Store signing,
+        # that flag lets `xcodebuild -exportArchive` overwrite the extension
+        # entitlements with a minimal auto-derived set that DROPS the app
+        # group — silently breaking App Group access in App Store builds
+        # (dev builds are unaffected). The main app ships the group
+        # correctly without this flag. If Xcode ever reports "Entitlements
+        # file was modified during the build", fix it by adding the
+        # auto-derived keys to the source file, not by re-enabling this flag.
         SWIFT_VERSION: "5.0"
         IPHONEOS_DEPLOYMENT_TARGET: 15.0
         ARCHS: [arm64]
@@ -167,3 +185,38 @@ targets:
         ENABLE_BITCODE: false
         ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: false
         SKIP_INSTALL: true
+
+  # WidgetKit extension that surfaces the user's current reading progress
+  # on the iOS home screen / Today view. Reads from the App Group suite
+  # written by the main app's useReadingWidget hook (Task 7).
+  ReadestWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ReadestWidget
+    info:
+      path: ReadestWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Readest
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_NAME: ReadestWidget
+        PRODUCT_BUNDLE_IDENTIFIER: com.bilingify.readest.ReadestWidget
+        DEVELOPMENT_TEAM: J5W48D69VR
+        CODE_SIGN_ENTITLEMENTS: ReadestWidget/ReadestWidget.entitlements
+        # CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION is intentionally omitted
+        # (see ShareExtension): with it, the App Store export re-sign strips
+        # com.apple.security.application-groups, so the widget reads an empty
+        # snapshot from the App Group and shows only the placeholder book icon.
+        SWIFT_VERSION: "5.0"
+        IPHONEOS_DEPLOYMENT_TARGET: 15.0
+        ARCHS: [arm64]
+        VALID_ARCHS: arm64
+        EXCLUDED_ARCHS[sdk=iphoneos*]: x86_64
+        ENABLE_BITCODE: false
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: false
+        SKIP_INSTALL: true
+    dependencies:
+      - sdk: WidgetKit.framework

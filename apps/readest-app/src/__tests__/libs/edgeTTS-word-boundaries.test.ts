@@ -78,7 +78,7 @@ const makeMetadataFrame = (text: string, offset: number, duration: number) =>
     ],
   });
 
-describe('EdgeSpeechTTS.createAudio word boundaries (browser WebSocket path)', () => {
+describe('EdgeSpeechTTS.createAudioData word boundaries (browser WebSocket path)', () => {
   beforeEach(() => {
     wsState.instances.length = 0;
     (URL as unknown as { createObjectURL?: (blob: Blob) => string }).createObjectURL = vi.fn(
@@ -97,7 +97,7 @@ describe('EdgeSpeechTTS.createAudio word boundaries (browser WebSocket path)', (
       pitch: 1.0,
     };
 
-    const promise = tts.createAudio(payload);
+    const promise = tts.createAudioData(payload);
     await vi.waitFor(() => expect(wsState.instances.length).toBe(1));
     const ws = wsState.instances[0]!;
     // In a browser (jsdom has `window`), the WebSocket constructor must be
@@ -110,8 +110,8 @@ describe('EdgeSpeechTTS.createAudio word boundaries (browser WebSocket path)', (
     ws.emit('message', { data: makeMetadataFrame('brave', 6000000, 4000000) });
     ws.emit('message', { data: 'Path:turn.end\r\n\r\n' });
 
-    const { url, boundaries } = await promise;
-    expect(url).toBe('blob:mock-object-url');
+    const { data, boundaries } = await promise;
+    expect(new Uint8Array(data)).toEqual(new Uint8Array([1, 2, 3, 4]));
     expect(boundaries).toEqual([
       { offset: 1000000, duration: 4000000, text: 'Hello' },
       { offset: 6000000, duration: 4000000, text: 'brave' },
@@ -119,9 +119,9 @@ describe('EdgeSpeechTTS.createAudio word boundaries (browser WebSocket path)', (
 
     // A second call for the same payload is served from the cache: no new
     // WebSocket connection, same boundaries.
-    const cached = await tts.createAudio(payload);
+    const cached = await tts.createAudioData(payload);
     expect(wsState.instances.length).toBe(1);
-    expect(cached.url).toBe('blob:mock-object-url');
+    expect(new Uint8Array(cached.data)).toEqual(new Uint8Array([1, 2, 3, 4]));
     expect(cached.boundaries).toEqual(boundaries);
   });
 
@@ -129,7 +129,7 @@ describe('EdgeSpeechTTS.createAudio word boundaries (browser WebSocket path)', (
     const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
     const tts = new EdgeSpeechTTS('wss');
 
-    const promise = tts.createAudio({
+    const promise = tts.createAudioData({
       lang: 'en',
       text: 'No metadata here',
       voice: 'en-US-AriaNeural',
@@ -171,7 +171,7 @@ describe('word-boundary header (de)serialization', () => {
   });
 });
 
-describe('EdgeSpeechTTS.createAudio over the HTTPS proxy (word boundaries via header)', () => {
+describe('EdgeSpeechTTS.createAudioData over the HTTPS proxy (word boundaries via header)', () => {
   beforeEach(() => {
     httpState.headers = {};
     httpState.body = new Uint8Array([1, 2, 3]);
@@ -191,7 +191,7 @@ describe('EdgeSpeechTTS.createAudio over the HTTPS proxy (word boundaries via he
     httpState.headers = { [WORD_BOUNDARIES_HEADER]: serializeWordBoundaries(boundaries) };
 
     const tts = new EdgeSpeechTTS('https');
-    const result = await tts.createAudio({
+    const result = await tts.createAudioData({
       lang: 'en',
       text: 'Hello world https',
       voice: 'en-US-AriaNeural',
@@ -204,7 +204,7 @@ describe('EdgeSpeechTTS.createAudio over the HTTPS proxy (word boundaries via he
   test('returns empty boundaries when the proxy omits the header', async () => {
     const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
     const tts = new EdgeSpeechTTS('https');
-    const result = await tts.createAudio({
+    const result = await tts.createAudioData({
       lang: 'en',
       text: 'No header https',
       voice: 'en-US-AriaNeural',

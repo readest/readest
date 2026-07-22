@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
@@ -14,6 +14,7 @@ import {
   buildRsvpExitConfigUpdate,
 } from '@/services/rsvp';
 import { eventDispatcher } from '@/utils/event';
+import { buildRsvpTtsSpeakDetail } from './rsvpTts';
 import { getBaseFontFamily } from '@/utils/style';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -28,6 +29,140 @@ interface RSVPControlProps {
   bookKey: string;
   gridInsets: Insets;
 }
+
+// Imperative handle so the later TTS-sync indicator slice (and tests) can read
+// the derived sync status without RSVPControl having a sibling to surface it to.
+export interface RSVPControlHandle {
+  ttsSyncStatus: TtsSyncStatus;
+}
+
+// ─── TTS-sync decision logic (slice 5, #3235) ──────────────────────────
+// RSVP follows the spoken position while TTS plays (TTS is the clock). The
+// pure decision below maps an incoming tts-position event to the action the
+// component should take, so the stale-sequence / decouple / section-stash
+// rules can be unit-tested without mounting the heavy component.
+
+export interface RsvpTtsPositionDetail {
+  bookKey?: string;
+  cfi?: string;
+  kind?: 'word' | 'sentence';
+  sectionIndex?: number;
+  sequence?: number;
+}
+
+// Derived sync state surfaced to RSVPOverlay for the later indicator slice.
+//   idle        — RSVP not following TTS (not playing / not engaged)
+//   following   — engaged and mapping the spoken position
+//   syncing     — a cross-section re-extract is pending
+//   decoupled   — a manual RSVP nav dropped following while TTS still plays
+//   unsupported — fixed-layout book; TTS sync can never engage (D7)
+export type TtsSyncStatus =
+  | 'idle'
+  | 'following'
+  | 'syncing'
+  | 'decoupled'
+  | 'paused'
+  | 'unsupported';
+
+export interface RsvpTtsPendingSync {
+  cfi: string;
+  sequence: number;
+  sectionIndex: number;
+}
+
+export interface RsvpTtsSyncState {
+  // Whether RSVP is currently following TTS. A manual RSVP nav decouples
+  // (sets false); the next 'playing' re-engages.
+  following: boolean;
+  // Monotonic guard: drop tts-position with sequence <= this.
+  lastSequenceSeen: number;
+  // The section RSVP currently has extracted words for.
+  currentSectionIndex: number;
+  // Latest sync stashed during a pending section re-extract.
+  pendingSync?: RsvpTtsPendingSync;
+  // True once a word-level position has arrived — i.e. the engine emits word
+  // boundaries (Edge). Word-boundary engines ALSO emit sentence marks, so once
+  // this is set we must NOT drive the estimator on sentence positions (it
+  // outruns the audio and the word positions snap RSVP back → flashing). Reset
+  // on a full stop so a later voice switch (e.g. to a sentence-only engine)
+  // re-enables the estimator.
+  hasWordPositions: boolean;
+}
+
+export interface RsvpTtsPositionDecision {
+  // sync           → Edge word-level: controller.syncToCfi(cfi)
+  // drive-estimator→ non-Edge sentence: controller.driveEstimatedFromCfi(cfi)
+  // reextract      → different section: trigger re-extract, apply stash after
+  // ignore         → drop (wrong book / stale seq / decoupled / malformed /
+  //                  fixed-layout where sync is unsupported, decision D7)
+  action: 'sync' | 'drive-estimator' | 'reextract' | 'ignore';
+  cfi?: string;
+  nextState: RsvpTtsSyncState;
+}
+
+export interface RsvpTtsDecisionOptions {
+  // Fixed-layout books can't host the synthetic word stream RSVP sync drives,
+  // so TTS sync is unsupported (decision D7). When set, every position is
+  // dropped without mapping or advancing state.
+  unsupported?: boolean;
+}
+
+export const decideRsvpTtsPosition = (
+  state: RsvpTtsSyncState,
+  detail: RsvpTtsPositionDetail,
+  bookKey: string,
+  options: RsvpTtsDecisionOptions = {},
+): RsvpTtsPositionDecision => {
+  const ignore = (next: RsvpTtsSyncState = state): RsvpTtsPositionDecision => ({
+    action: 'ignore',
+    nextState: next,
+  });
+
+  // D7: never engage on fixed-layout. Checked first so state is left untouched.
+  if (options.unsupported) return ignore();
+  if (detail.bookKey !== bookKey) return ignore();
+  if (!state.following) return ignore();
+  if (typeof detail.cfi !== 'string' || typeof detail.sectionIndex !== 'number') return ignore();
+
+  const sequence = detail.sequence ?? -Infinity;
+  if (sequence <= state.lastSequenceSeen) return ignore();
+
+  // Different section: don't map. Stash the latest sync + bump the sequence,
+  // and let the caller trigger RSVP's re-extract for the new section; the stash
+  // is applied once re-extract completes and the sequence is still current.
+  if (detail.sectionIndex !== state.currentSectionIndex) {
+    return {
+      action: 'reextract',
+      nextState: {
+        ...state,
+        lastSequenceSeen: sequence,
+        pendingSync: { cfi: detail.cfi, sequence, sectionIndex: detail.sectionIndex },
+      },
+    };
+  }
+
+  // Word-level position (Edge): the authoritative path. Mark the engine as
+  // word-capable so subsequent sentence marks don't also drive the estimator.
+  if (detail.kind === 'word') {
+    return {
+      action: 'sync',
+      cfi: detail.cfi,
+      nextState: { ...state, lastSequenceSeen: sequence, hasWordPositions: true },
+    };
+  }
+
+  // Sentence mark. Word-boundary engines emit these too — but once we've seen a
+  // word position, the words drive RSVP and the estimator must stay off (running
+  // it makes RSVP outrun the audio, then word positions snap it back → flashing).
+  if (state.hasWordPositions) {
+    return { action: 'ignore', nextState: { ...state, lastSequenceSeen: sequence } };
+  }
+  return {
+    action: 'drive-estimator',
+    cfi: detail.cfi,
+    nextState: { ...state, lastSequenceSeen: sequence },
+  };
+};
 
 // Helper to expand a range to include the full sentence
 const expandRangeToSentence = (range: Range, doc: Document): Range => {
@@ -112,7 +247,10 @@ const expandRangeToSentence = (range: Range, doc: Document): Range => {
   return range;
 };
 
-const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
+const RSVPControl = forwardRef<RSVPControlHandle, RSVPControlProps>(function RSVPControl(
+  { bookKey, gridInsets },
+  ref,
+) {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const settings = useSettingsStore((s) => s.settings);
@@ -122,6 +260,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
   const getView = useReaderStore((s) => s.getView);
   const getProgress = useReaderStore((s) => s.getProgress);
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
+  const getViewState = useReaderStore((s) => s.getViewState);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const getConfig = useBookDataStore((s) => s.getConfig);
   const setConfig = useBookDataStore((s) => s.setConfig);
@@ -131,12 +270,67 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
   const [isActive, setIsActive] = useState(false);
   const [showStartDialog, setShowStartDialog] = useState(false);
   const [startChoice, setStartChoice] = useState<RsvpStartChoice | null>(null);
+  // Derived TTS-sync status for the overlay indicator (slice 8b, #3235).
+  const [ttsSyncStatus, setTtsSyncStatus] = useState<TtsSyncStatus>('idle');
+  // True when the last accepted position was sentence-level (non-Edge), so
+  // following is paced by the estimator — the indicator appends " · estimated".
+  const [ttsEstimated, setTtsEstimated] = useState(false);
+  // Whether TTS audio is currently engaged (playing or paused) for this book,
+  // tracked from the tts-playback-state bus. Drives the overlay's audio toggle
+  // active/idle icon (slice 7, #3235).
+  const [ttsActive, setTtsActive] = useState(false);
+  // TTS currently playing (vs paused). Drives the RSVP transport button's icon
+  // when read-along is engaged so play/pause maps to the audio (slice, #3235).
+  const [ttsPlaying, setTtsPlaying] = useState(false);
+
+  useImperativeHandle(ref, () => ({ ttsSyncStatus }), [ttsSyncStatus]);
   const controllerRef = useRef<RSVPController | null>(null);
   const tempHighlightRef = useRef<BookNote | null>(null);
   // renderer.primaryIndex reverts after navigation (paginator #detectPrimaryView),
   // so track RSVP's actual section and chapter href in stable refs instead.
   const rsvpSectionRef = useRef<number>(-1);
   const rsvpChapterHrefRef = useRef<string | null>(null);
+
+  // TTS-sync follower state (slice 5, #3235). Mutated by the tts-position /
+  // tts-playback-state handlers and the manual-nav decouple listener.
+  const syncStateRef = useRef<RsvpTtsSyncState>({
+    following: false,
+    lastSequenceSeen: -Infinity,
+    currentSectionIndex: -1,
+    hasWordPositions: false,
+  });
+  // Lets the indicator's "Resume audio" action re-derive the status outside the
+  // sync effect that owns refreshSyncStatus (mirrors the paragraph hook).
+  const refreshSyncStatusRef = useRef<(() => void) | null>(null);
+
+  // Whether a TTS session exists (playing or paused), tracked independently of
+  // RSVP being active so handleStart can decide whether to reuse it (skip the
+  // start dialog + countdown, start externally driven). Mirrors the exact
+  // tts-playback-state signal useTTSControl's sync-request replay keys off, so
+  // the two never disagree — a disagreement would flash a countdown before the
+  // replay engages. Seeded from the store for sessions already live at mount.
+  const ttsSessionActiveRef = useRef(false);
+  useEffect(() => {
+    ttsSessionActiveRef.current = !!getViewState(bookKey)?.ttsEnabled;
+    const handlePlaybackState = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { bookKey?: string; state?: string };
+      if (detail?.bookKey !== bookKey) return;
+      ttsSessionActiveRef.current = detail.state === 'playing' || detail.state === 'paused';
+    };
+    eventDispatcher.on('tts-playback-state', handlePlaybackState);
+    return () => eventDispatcher.off('tts-playback-state', handlePlaybackState);
+  }, [bookKey, getViewState]);
+
+  // Re-engage TTS following after a manual nav decoupled it (indicator action).
+  // Sets following back on and re-derives the status; the next tts-position
+  // event re-syncs. No-op when the controller is gone or sync isn't running.
+  const reengageTtsFollow = useCallback(() => {
+    const sync = syncStateRef.current;
+    if (sync.following) return;
+    sync.following = true;
+    controllerRef.current?.setExternallyDriven(true);
+    refreshSyncStatusRef.current?.();
+  }, []);
 
   // Helper to remove any existing RSVP highlight
   const removeRsvpHighlight = useCallback(() => {
@@ -192,6 +386,275 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey]);
 
+  // Drop TTS following on a user-initiated manual RSVP nav (skip/seek/word-step;
+  // chapter-jump decouples in handleChapterSelect). Stays decoupled until the
+  // next 'playing' re-engages.
+  const decoupleFromTts = useCallback(() => {
+    const sync = syncStateRef.current;
+    if (!sync.following) return;
+    sync.following = false;
+    sync.pendingSync = undefined;
+    const controller = controllerRef.current;
+    controller?.stopEstimator();
+    controller?.setExternallyDriven(false);
+  }, []);
+
+  // Re-extract for the section TTS just drove the view into, then apply the
+  // stashed sync once the view settles on the target section and the stash is
+  // still the latest. Reuses the controller's section-load path
+  // (loadNextPageContent) — the same re-extract the rsvp-request-next-page flow
+  // uses — instead of navigating the view (TTS already navigated it).
+  const reextractForTtsSection = useCallback(() => {
+    const view = getView(bookKey);
+    const controller = controllerRef.current;
+    if (!view || !controller) return;
+
+    const targetSection = syncStateRef.current.pendingSync?.sectionIndex;
+    if (targetSection === undefined) return;
+
+    let cleanup: ReturnType<typeof setTimeout> | null = null;
+    const applyPending = () => {
+      rsvpSectionRef.current = view.renderer.primaryIndex;
+      syncStateRef.current.currentSectionIndex = view.renderer.primaryIndex;
+      const progress = getProgress(bookKey);
+      if (progress?.location) controller.setCurrentCfi(progress.location);
+      controller.loadNextPageContent();
+
+      // Apply the stash only if it's still the latest position and its section
+      // matches what we just extracted (a newer event may have superseded it).
+      const pending = syncStateRef.current.pendingSync;
+      if (
+        pending &&
+        pending.sequence === syncStateRef.current.lastSequenceSeen &&
+        pending.sectionIndex === view.renderer.primaryIndex
+      ) {
+        if (syncStateRef.current.pendingSync?.cfi) {
+          controller.syncToCfi(pending.cfi);
+        }
+        syncStateRef.current.pendingSync = undefined;
+      }
+    };
+
+    // If the view is already on the target section, re-extract immediately;
+    // otherwise wait for TTS's own page-follow relocate to land there.
+    if (view.renderer.primaryIndex === targetSection) {
+      applyPending();
+      return;
+    }
+
+    const onRelocate = () => {
+      if (view.renderer.primaryIndex !== targetSection) return; // keep waiting
+      view.removeEventListener('relocate', onRelocate);
+      if (cleanup) clearTimeout(cleanup);
+      applyPending();
+    };
+    view.addEventListener('relocate', onRelocate);
+    cleanup = setTimeout(() => view.removeEventListener('relocate', onRelocate), 5000);
+  }, [bookKey, getProgress, getView]);
+
+  // TTS-sync follower (slice 5, #3235). While an RSVP session is active, follow
+  // the spoken position; TTS is the clock. Filtered to this bookKey, decoupled
+  // by manual nav, re-engaged on the next 'playing'.
+  // Fixed-layout books can't host the synthetic word stream sync drives, so
+  // sync is unsupported there (decision D7): playing never engages and
+  // positions are dropped. The derived ttsSyncStatus feeds the overlay
+  // indicator (slice 8b).
+  useEffect(() => {
+    if (!isActive) return;
+    const controller = controllerRef.current;
+    if (!controller) return;
+
+    const isFixedLayout = !!getBookData(bookKey)?.isFixedLayout;
+    let isPlaying = false;
+    // A TTS session exists (playing OR paused). Distinct from isPlaying so a
+    // pause keeps the indicator + "Audio pace" present (no layout shift) — the
+    // mode is still on; only a full stop clears it.
+    let sessionActive = false;
+
+    const refreshSyncStatus = () => {
+      if (isFixedLayout) {
+        setTtsSyncStatus('unsupported');
+        return;
+      }
+      const sync = syncStateRef.current;
+      if (!sessionActive) {
+        setTtsSyncStatus('idle');
+      } else if (!isPlaying) {
+        // Engaged but paused: keep the indicator visible (mode still on).
+        setTtsSyncStatus('paused');
+      } else if (!sync.following) {
+        // Manual nav decoupled following while TTS still plays.
+        setTtsSyncStatus('decoupled');
+      } else if (sync.pendingSync) {
+        // Cross-section re-extract in flight.
+        setTtsSyncStatus('syncing');
+      } else {
+        setTtsSyncStatus('following');
+      }
+    };
+    refreshSyncStatusRef.current = refreshSyncStatus;
+    refreshSyncStatus();
+
+    const handlePlaybackState = (event: CustomEvent) => {
+      const detail = event.detail as { bookKey?: string; state?: string } | undefined;
+      if (detail?.bookKey !== bookKey) return;
+      const sync = syncStateRef.current;
+      if (detail.state === 'playing') {
+        isPlaying = true;
+        sessionActive = true;
+        setTtsActive(true);
+        setTtsPlaying(true);
+        // D7: never engage following on fixed-layout.
+        if (!isFixedLayout) {
+          // (Re-)engage following from the current section.
+          sync.following = true;
+          sync.currentSectionIndex =
+            rsvpSectionRef.current >= 0
+              ? rsvpSectionRef.current
+              : (getView(bookKey)?.renderer.primaryIndex ?? -1);
+          controller.setExternallyDriven(true);
+        }
+      } else if (detail.state === 'paused') {
+        // Paused, still engaged: keep RSVP suspended (frozen on the current
+        // word) so its own timer can't run away while audio is paused. The
+        // transport button (mapped to TTS) resumes it.
+        isPlaying = false;
+        sessionActive = true;
+        setTtsActive(true);
+        setTtsPlaying(false);
+        sync.following = false;
+        sync.pendingSync = undefined;
+        setTtsEstimated(false);
+        controller.stopEstimator();
+        // Freeze RSVP on the current word while audio is paused. In the live
+        // flow this is already true (set on 'playing'); setting it here also
+        // covers entering RSVP while TTS is paused, so its own timer never runs.
+        controller.setExternallyDriven(true);
+      } else if (detail.state === 'stopped') {
+        isPlaying = false;
+        sessionActive = false;
+        setTtsActive(false);
+        setTtsPlaying(false);
+        sync.following = false;
+        sync.pendingSync = undefined;
+        // A full stop may be followed by a voice switch; re-detect word support.
+        sync.hasWordPositions = false;
+        setTtsEstimated(false);
+        controller.stopEstimator();
+        // The driving TTS session ended: freeze RSVP on the current word instead
+        // of letting its own auto-advance resume. pause() before clearing
+        // externally-driven so setExternallyDriven(false) (which reschedules the
+        // next word when playing) leaves it paused.
+        controller.pause();
+        controller.setExternallyDriven(false);
+      }
+      refreshSyncStatus();
+    };
+
+    const handlePosition = (event: CustomEvent) => {
+      const detail = event.detail as RsvpTtsPositionDetail | undefined;
+      if (!detail) return;
+      const decision = decideRsvpTtsPosition(syncStateRef.current, detail, bookKey, {
+        unsupported: isFixedLayout,
+      });
+      syncStateRef.current = decision.nextState;
+
+      switch (decision.action) {
+        case 'sync':
+          // Word-boundary engine: words are authoritative. Kill any estimator
+          // started by the sentence mark that preceded the first word, so the
+          // two never co-run (the cause of jump-ahead-then-snap-back flashing).
+          controller.stopEstimator();
+          if (decision.cfi) controller.syncToCfi(decision.cfi);
+          setTtsEstimated(false);
+          break;
+        case 'drive-estimator': {
+          if (!decision.cfi) break;
+          const viewSettings = getViewSettings(bookKey);
+          const wpm = RSVPController.estimatedWpmFromRate(viewSettings?.ttsRate ?? 1);
+          controller.driveEstimatedFromCfi(decision.cfi, wpm);
+          setTtsEstimated(true);
+          break;
+        }
+        case 'reextract':
+          reextractForTtsSection();
+          break;
+        case 'ignore':
+        default:
+          break;
+      }
+      refreshSyncStatus();
+    };
+
+    const handleManualNav = () => {
+      decoupleFromTts();
+      refreshSyncStatus();
+    };
+
+    eventDispatcher.on('tts-playback-state', handlePlaybackState);
+    eventDispatcher.on('tts-position', handlePosition);
+    controller.addEventListener('rsvp-manual-nav', handleManualNav);
+
+    return () => {
+      eventDispatcher.off('tts-playback-state', handlePlaybackState);
+      eventDispatcher.off('tts-position', handlePosition);
+      controller.removeEventListener('rsvp-manual-nav', handleManualNav);
+      // Leaving sync: restore the controller's own pacing.
+      syncStateRef.current.following = false;
+      syncStateRef.current.pendingSync = undefined;
+      controller.stopEstimator();
+      controller.setExternallyDriven(false);
+      setTtsSyncStatus('idle');
+      setTtsEstimated(false);
+      setTtsActive(false);
+      setTtsPlaying(false);
+    };
+  }, [
+    isActive,
+    bookKey,
+    getBookData,
+    getView,
+    getViewSettings,
+    decoupleFromTts,
+    reextractForTtsSection,
+  ]);
+
+  // Entering RSVP while a TTS session already exists: engage following and ask
+  // useTTSControl to replay the current playback state + position so RSVP locks
+  // onto the spoken word immediately, instead of running its own pacing and
+  // forcing the user to stop and restart TTS inside RSVP. Declared after the
+  // sync effect so its handlers are registered (in effect-declaration order)
+  // before the replayed events fire. The request is a no-op when no session
+  // exists, so plain RSVP (own pacing) is unaffected. Resetting lastSequenceSeen
+  // lets the replayed position through past any stale sequence from a prior
+  // session.
+  useEffect(() => {
+    if (!isActive) return;
+    if (!controllerRef.current) return;
+    if (getBookData(bookKey)?.isFixedLayout) return;
+    syncStateRef.current.following = true;
+    syncStateRef.current.lastSequenceSeen = -Infinity;
+    eventDispatcher.dispatch('tts-sync-request', { bookKey });
+  }, [isActive, bookKey, getBookData]);
+
+  // One-time-per-session decouple toast: the first time following drops while
+  // TTS still plays, tell the user once. Reset when following re-engages so a
+  // later decouple notifies again.
+  const decoupleToastShownRef = useRef(false);
+  useEffect(() => {
+    if (ttsSyncStatus === 'decoupled') {
+      if (!decoupleToastShownRef.current) {
+        decoupleToastShownRef.current = true;
+        eventDispatcher.dispatch('toast', {
+          message: _('Stopped following audio'),
+          type: 'info',
+        });
+      }
+    } else if (ttsSyncStatus === 'following') {
+      decoupleToastShownRef.current = false;
+    }
+  }, [ttsSyncStatus, _]);
+
   const handleStart = useCallback(
     (selectionText?: string) => {
       // RSVP can be started from the menu or the keyboard shortcut (#4473);
@@ -236,6 +699,14 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
 
       const controller = controllerRef.current;
 
+      // Reuse a live TTS session: start externally-driven so the get-ready
+      // countdown is skipped and RSVP locks straight onto the spoken word (the
+      // engage-on-entry effect replays the current position). Set explicitly
+      // both ways so a session that ended since the last start re-enables the
+      // countdown. handleStart only runs when RSVP isn't already active.
+      const ttsSessionActive = ttsSessionActiveRef.current;
+      controller.setExternallyDriven(ttsSessionActive);
+
       // For Chinese books, preload jieba-wasm so that the synchronous word
       // extractor can use it. Done before requestStart() so the loader has
       // the dialog's interaction time to fetch ~3.8MB of WASM.
@@ -263,6 +734,16 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
       const handleStartChoice = (e: Event) => {
         const choice = (e as CustomEvent<RsvpStartChoice>).detail;
         setStartChoice(choice);
+
+        // Reusing a live TTS session: don't prompt where to start — the
+        // engage-on-entry sync overrides the start position anyway, so begin
+        // immediately (externally driven, no countdown) and let RSVP lock onto
+        // the spoken word.
+        if (ttsSessionActive) {
+          controller.startFromCurrentPosition();
+          setIsActive(true);
+          return;
+        }
 
         // If there's a saved position or selection, show dialog for user to choose
         if (choice.hasSavedPosition || choice.hasSelection) {
@@ -463,6 +944,9 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
       const view = getView(bookKey);
       if (!view) return;
 
+      // A chapter jump is a user-initiated nav: decouple from TTS following.
+      decoupleFromTts();
+
       const onRelocate = (e: Event) => {
         view.removeEventListener('relocate', onRelocate);
         const detail = (e as CustomEvent).detail as { section?: PageInfo; tocItem?: TOCItem };
@@ -480,7 +964,7 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
       view.addEventListener('relocate', onRelocate);
       view.goTo(href);
     },
-    [bookKey, getProgress, getView],
+    [bookKey, getProgress, getView, decoupleFromTts],
   );
 
   const handleRequestNextPage = useCallback(async () => {
@@ -546,10 +1030,53 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
   // Book language drives dictionary provider selection for context lookups (#4475).
   const dictionaryLang = bookData?.bookDoc?.metadata?.language as string | undefined;
   const handleManageDictionary = useCallback(() => {
+    // Open dictionary management OVER the RSVP overlay (RSVP stays open). The
+    // settings dialog is raised above the overlay's z-[100] (see SettingsDialog),
+    // and RSVP's capture-phase keyboard handler bails while it's open so the
+    // settings inputs / Escape work (see RSVPOverlay).
     setSettingsDialogBookKey(bookKey);
     setActiveSettingsItemId('settings.language.dictionaries.manage');
     setSettingsDialogOpen(true);
   }, [bookKey, setActiveSettingsItemId, setSettingsDialogBookKey, setSettingsDialogOpen]);
+
+  // Audio (TTS) toggle from the overlay (slice 7, decision 5, #3235). When TTS
+  // is engaged, stop it; otherwise start it from the displayed RSVP word with
+  // start-alignment — the word's range (validated live) + its section index — so
+  // audio begins at the same word RSVP is flashing.
+  const handleToggleTtsAudio = useCallback(() => {
+    if (ttsActive) {
+      eventDispatcher.dispatch('tts-stop', { bookKey });
+      return;
+    }
+    const controller = controllerRef.current;
+    const currentWord = controller?.currentDisplayWord ?? null;
+    const view = getView(bookKey);
+    const currentDoc =
+      typeof currentWord?.docIndex === 'number'
+        ? view?.renderer.getContents().find((c) => c.index === currentWord.docIndex)?.doc
+        : undefined;
+    const detail = buildRsvpTtsSpeakDetail(currentWord, bookKey, currentDoc);
+    eventDispatcher.dispatch('tts-speak', detail ?? { bookKey });
+  }, [bookKey, getView, ttsActive]);
+
+  // RSVP transport (center play/pause) mapped to TTS play/pause while read-along
+  // is engaged (#3235): the button should pause/resume the audio, not RSVP's own
+  // (suspended) timer. Reuses the existing tts-toggle-play bus event.
+  const handleToggleTtsPlay = useCallback(() => {
+    eventDispatcher.dispatch('tts-toggle-play', { bookKey });
+  }, [bookKey]);
+
+  // Change the TTS playback rate from the overlay's rate picker (decision 6).
+  // The TTS rate panel is unreachable behind the full-screen overlay, so dispatch
+  // a one-shot tts-set-rate the TTS hook applies via its existing rate path.
+  const handleSetTtsRate = useCallback(
+    (rate: number) => {
+      eventDispatcher.dispatch('tts-set-rate', { bookKey, rate });
+    },
+    [bookKey],
+  );
+
+  const ttsRate = viewSettings?.ttsRate ?? 1;
 
   // Use portal to render overlay at body level to avoid stacking context issues
   const portalContainer = typeof document !== 'undefined' ? document.body : null;
@@ -581,6 +1108,15 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
             currentChapterHref={currentChapterHref}
             fontFamily={fontFamily}
             lang={dictionaryLang}
+            ttsSyncStatus={ttsSyncStatus}
+            estimated={ttsEstimated}
+            ttsActive={ttsActive}
+            ttsPlaying={ttsPlaying}
+            ttsRate={ttsRate}
+            onToggleTtsAudio={handleToggleTtsAudio}
+            onToggleTtsPlay={handleToggleTtsPlay}
+            onSetTtsRate={handleSetTtsRate}
+            onResumeTtsFollow={reengageTtsFollow}
             onClose={handleClose}
             onChapterSelect={handleChapterSelect}
             onRequestNextPage={handleRequestNextPage}
@@ -590,6 +1126,6 @@ const RSVPControl: React.FC<RSVPControlProps> = ({ bookKey, gridInsets }) => {
         )}
     </>
   );
-};
+});
 
 export default RSVPControl;

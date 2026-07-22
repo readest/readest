@@ -35,6 +35,8 @@ export function sanitizeHtml(html: string): string {
       'i',
       'u',
       's',
+      'del',
+      'ins',
       'sup',
       'sub',
       'span',
@@ -54,11 +56,16 @@ export function sanitizeHtml(html: string): string {
       'img',
       'figure',
       'figcaption',
+      // Markdown footnote definitions arrive wrapped in <section class="footnotes">
+      // (see utils/mdFootnotes.ts), which must survive to be found and re-emitted.
+      'section',
     ],
     // `id` is allowed so heading anchors survive — the EPUB's nested
     // navMap uses `chapter1.xhtml#heading-id` to link the TOC sidebar to
     // each section. Without it readers see one entry per chapter only.
-    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'colspan', 'rowspan', 'id'],
+    // `class` is allowed so Markdown code fences keep their `language-*`
+    // class for theming (see utils/md.ts).
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'colspan', 'rowspan', 'id', 'class'],
     // Drop anything that would load or run remote code.
     FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input'],
     FORBID_ATTR: ['srcset'],

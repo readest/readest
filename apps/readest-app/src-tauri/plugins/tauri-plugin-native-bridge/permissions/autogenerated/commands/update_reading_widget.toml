@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-update-reading-widget"
+description = "Enables the update_reading_widget command without any pre-configured scope."
+commands.allow = ["update_reading_widget"]
+
+[[permission]]
+identifier = "deny-update-reading-widget"
+description = "Denies the update_reading_widget command without any pre-configured scope."
+commands.deny = ["update_reading_widget"]

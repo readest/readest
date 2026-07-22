@@ -133,6 +133,30 @@ describe('textureAwareBackground', () => {
     expect(textureAwareBackground('rgb(255, 255, 255)', true)).toBe('rgb(255, 255, 255)');
   });
 
+  // Regression test for a cover page that paints its image via a body
+  // `background-image` (the EPUB sets `background-color` transparent and lets the
+  // image fill the page). `getComputedStyle(body).background` serializes the
+  // transparent colour FIRST, so the shorthand starts with `rgba(0, 0, 0, 0)`
+  // even though a real image follows. Such a page must NOT be treated as
+  // transparent — a full-page cover image should occlude the texture, not be
+  // dropped so the texture shows through. Verified on a Xiaomi (Android WebView)
+  // where the parchment texture replaced the book's cover on the first page.
+  it('keeps a background that carries an image even when a texture is active', () => {
+    // The real value captured from the cover iframe on-device.
+    expect(
+      textureAwareBackground(
+        'rgba(0, 0, 0, 0) url("blob:http://x/abc") no-repeat fixed 50% 50% / 100% 100% padding-box border-box',
+        true,
+      ),
+    ).toBe(
+      'rgba(0, 0, 0, 0) url("blob:http://x/abc") no-repeat fixed 50% 50% / 100% 100% padding-box border-box',
+    );
+    // A plain relative/absolute url() background (not a blob) is kept too.
+    expect(textureAwareBackground('transparent url(cover.jpg) center / cover', true)).toBe(
+      'transparent url(cover.jpg) center / cover',
+    );
+  });
+
   it('never drops a background when no texture is active (no regression)', () => {
     expect(textureAwareBackground('rgba(0, 0, 0, 0)', false)).toBe('rgba(0, 0, 0, 0)');
     expect(textureAwareBackground('rgb(0, 0, 0)', false)).toBe('rgb(0, 0, 0)');

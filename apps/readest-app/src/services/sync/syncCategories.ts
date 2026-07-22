@@ -24,6 +24,7 @@
  * helper applies a cascade. See `CATEGORY_DEPENDENTS` below.
  */
 import { useSettingsStore } from '@/store/settingsStore';
+import { isReadestCloudEnabled } from '@/services/sync/cloudSyncProvider';
 import { SYNC_CATEGORIES, type SyncCategory } from '@/types/settings';
 
 export { SYNC_CATEGORIES };
@@ -101,9 +102,34 @@ export const isSyncCategoryLocked = (category: SyncCategory): boolean => {
   return false;
 };
 
+/**
+ * Book-data categories gated on the Readest Cloud switch (#4380). Providers
+ * are independently selectable (#5062): these categories ride the native
+ * channels whenever Readest Cloud is switched on, and any enabled file
+ * backend mirrors them in parallel through library.json + config.json. Only
+ * an unchecked Readest Cloud gates the native rows off. Account-level
+ * categories (settings, stats, dictionaries, fonts, textures, OPDS catalogs)
+ * have no file-based counterpart and always stay native.
+ */
+const PROVIDER_GATED_CATEGORIES: ReadonlySet<SyncCategory> = new Set([
+  'book',
+  'progress',
+  'note',
+] as SyncCategory[]);
+
 export const isSyncCategoryEnabled = (id: string): boolean => {
   const category = toCategory(id);
   if (!category) return true; // unknown id → always-on
+  if (
+    PROVIDER_GATED_CATEGORIES.has(category) &&
+    !isReadestCloudEnabled(useSettingsStore.getState().settings)
+  ) {
+    // Runtime override, deliberately not written into syncCategories:
+    // the user's own toggles persist untouched and govern the native
+    // channels again the moment Readest Cloud is re-selected. The
+    // Manage Sync panel surfaces this state per-row.
+    return false;
+  }
   if (isSyncCategoryLocked(category)) return true; // forced by a dependent
   return isCategoryRawEnabled(category);
 };

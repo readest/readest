@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { DocumentLoader } from '@/libs/document';
+import { DocumentLoader, getDirection } from '@/libs/document';
 
 if (typeof globalThis['CSS'] === 'undefined') {
   (globalThis as Record<string, unknown>)['CSS'] = {
@@ -70,4 +70,58 @@ describe('DocumentLoader.open', () => {
     expect(result.book).toBeTruthy();
     expect(result.format).toBe('EPUB');
   }, 15000);
+
+  const txtBody = ['Chapter 1', '', 'Hello world.'].join('\n');
+
+  it('opens a .txt whose MIME carries a charset param and whose name lacks the ext', async () => {
+    // Android can hand over a content:// URI with no .txt extension and a
+    // parameterised MIME (text/plain;charset=utf-8). Strict `=== 'text/plain'`
+    // plus a name-only ext check would both miss and yield a null book.
+    const file = new File([txtBody], 'content-12345', { type: 'text/plain;charset=utf-8' });
+
+    const result = await new DocumentLoader(file).open();
+
+    expect(result.book).toBeTruthy();
+    expect(result.format).toBe('EPUB');
+  }, 15000);
+
+  it('opens a .txt with an uppercase extension and a generic MIME', async () => {
+    const file = new File([txtBody], 'MY-BOOK.TXT', { type: 'application/octet-stream' });
+
+    const result = await new DocumentLoader(file).open();
+
+    expect(result.book).toBeTruthy();
+    expect(result.format).toBe('EPUB');
+  }, 15000);
+});
+
+describe('getDirection', () => {
+  afterEach(() => {
+    document.body.removeAttribute('style');
+    document.body.removeAttribute('dir');
+    document.documentElement.removeAttribute('dir');
+    document.body.innerHTML = '';
+  });
+
+  it('treats vertical-rl (Japanese vertical) as RTL so columns advance right-to-left', () => {
+    // vertical-rl reads top-to-bottom with columns progressing right-to-left, but
+    // its computed CSS `direction` stays `ltr`; the writing mode alone marks it RTL.
+    document.body.style.writingMode = 'vertical-rl';
+    expect(getDirection(document)).toEqual({ vertical: true, rtl: true });
+  });
+
+  it('treats vertical-lr (Mongolian) as vertical but left-to-right', () => {
+    document.body.style.writingMode = 'vertical-lr';
+    expect(getDirection(document)).toEqual({ vertical: true, rtl: false });
+  });
+
+  it('leaves horizontal-tb as neither vertical nor RTL', () => {
+    document.body.style.writingMode = 'horizontal-tb';
+    expect(getDirection(document)).toEqual({ vertical: false, rtl: false });
+  });
+
+  it('still honors an explicit rtl dir for horizontal text', () => {
+    document.body.setAttribute('dir', 'rtl');
+    expect(getDirection(document)).toEqual({ vertical: false, rtl: true });
+  });
 });

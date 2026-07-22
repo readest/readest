@@ -89,10 +89,206 @@ describe("LibraryStore", function()
             s3:close()
         end)
 
-        it("sets PRAGMA user_version = 1", function()
+        it("sets PRAGMA user_version = 3", function()
             local store = LibraryStore.new({ user_id = "alice" })
-            assert.are.equal(1, store:getUserVersion())
+            assert.are.equal(3, store:getUserVersion())
             store:close()
+        end)
+
+        -- -----------------------------------------------------------------
+        -- v1 → v2 migration: ALTER TABLE adds reading_status_updated_at
+        -- -----------------------------------------------------------------
+        describe("v1 -> v2 migration", function()
+            local db_path
+            local SQ3 = require("lua-ljsqlite3/init")
+
+            after_each(function()
+                if db_path then
+                    os.remove(db_path)
+                    db_path = nil
+                end
+            end)
+
+            it("migrates an existing v1 DB: column added, row preserved, user_version=current", function()
+                -- Build a temp file path; os.tmpname() creates the file, remove it
+                -- so sqlite.open() starts fresh instead of opening an existing file.
+                db_path = os.tmpname()
+                os.remove(db_path)
+
+                -- Create a v1 DB: books table WITHOUT reading_status_updated_at
+                -- (all other v2 columns present so SCHEMA_SQL indexes succeed),
+                -- user_version = 1, one existing row.
+                local v1db = SQ3.open(db_path)
+                v1db:exec([[
+                    CREATE TABLE books (
+                        user_id          TEXT NOT NULL,
+                        hash             TEXT NOT NULL,
+                        meta_hash        TEXT,
+                        title            TEXT NOT NULL,
+                        source_title     TEXT,
+                        author           TEXT,
+                        format           TEXT,
+                        metadata_json    TEXT,
+                        series           TEXT,
+                        series_index     REAL,
+                        group_id         TEXT,
+                        group_name       TEXT,
+                        cover_path       TEXT,
+                        file_path        TEXT,
+                        cloud_present    INTEGER NOT NULL DEFAULT 0,
+                        local_present    INTEGER NOT NULL DEFAULT 0,
+                        uploaded_at      INTEGER,
+                        progress_lib     TEXT,
+                        reading_status   TEXT,
+                        last_read_at     INTEGER,
+                        created_at       INTEGER,
+                        updated_at       INTEGER,
+                        deleted_at       INTEGER,
+                        PRIMARY KEY (user_id, hash)
+                    );
+                    CREATE INDEX IF NOT EXISTS books_user_updated  ON books(user_id, updated_at DESC);
+                    CREATE INDEX IF NOT EXISTS books_user_lastread ON books(user_id, last_read_at DESC);
+                    CREATE INDEX IF NOT EXISTS books_user_meta     ON books(user_id, meta_hash);
+                    CREATE INDEX IF NOT EXISTS books_user_group    ON books(user_id, group_name);
+                    CREATE INDEX IF NOT EXISTS books_user_author   ON books(user_id, author);
+                ]])
+                v1db:exec("PRAGMA user_version = 1;")
+                local ins = v1db:prepare(
+                    "INSERT INTO books (user_id, hash, title, cloud_present, local_present, reading_status) VALUES (?, ?, ?, ?, ?, ?)")
+                ins:reset():bind("alice", "h-v1", "OldBook", 1, 1, "reading"):step()
+                ins:close()
+                v1db:close()
+
+                -- Open the v1 file via LibraryStore; migration should run silently.
+                local store = LibraryStore.new({ user_id = "alice", db_path = db_path })
+
+                -- 1. Opening lands at the current schema (migrations are
+                -- cumulative: v1 -> v2 adds the column, v2 -> v3 splits cursors).
+                assert.are.equal(3, store:getUserVersion())
+
+                -- 2. The pre-existing row is still readable (no error, title intact)
+                local row = store:_getRowRaw("h-v1")
+                assert.is_not_nil(row)
+                assert.are.equal("OldBook", row.title)
+                assert.are.equal("reading", row.reading_status)
+
+                -- 3. reading_status_updated_at round-trips (column exists and is writable)
+                store:upsertBook({
+                    hash = "h-v1",
+                    title = "OldBook",
+                    reading_status_updated_at = 1750000000000,
+                })
+                local row2 = store:_getRowRaw("h-v1")
+                assert.are.equal(1750000000000, row2.reading_status_updated_at)
+
+                store:close()
+            end)
+        end)
+
+        -- -----------------------------------------------------------------
+        -- v2 -> v3 migration: split the shared books cursor into a pull
+        -- cursor (server synced_at) and a push watermark (local updated_at).
+        -- The old shared `last_books_pulled_at` was advanced from client
+        -- updated_at, which a fast device clock could push into the future,
+        -- starving every later pull (issue #4934). The migration seeds the
+        -- new push watermark from the old value (so push dedup is unbroken)
+        -- and resets the pull cursor to 0, forcing one full re-pull that
+        -- re-establishes it on the server's synced_at clock.
+        -- -----------------------------------------------------------------
+        describe("v2 -> v3 migration", function()
+            local db_path
+            local SQ3 = require("lua-ljsqlite3/init")
+
+            after_each(function()
+                if db_path then
+                    os.remove(db_path)
+                    db_path = nil
+                end
+            end)
+
+            it("resets the pull cursor to 0 and seeds the push watermark from it", function()
+                db_path = os.tmpname()
+                os.remove(db_path)
+
+                -- Build a DB carrying a poisoned (future) shared cursor, then
+                -- force user_version back to 2 so reopening runs the migration.
+                local seed = LibraryStore.new({ user_id = "alice", db_path = db_path })
+                seed:setLastPulledAt(4102444800000)  -- ~2100-01-01, a future value
+                seed:close()
+                local raw = SQ3.open(db_path)
+                raw:exec("PRAGMA user_version = 2;")
+                raw:close()
+
+                local store = LibraryStore.new({ user_id = "alice", db_path = db_path })
+
+                assert.are.equal(3, store:getUserVersion())
+                -- Pull cursor reset → next sync does a full re-pull.
+                assert.are.equal(0, store:getLastPulledAt())
+                -- Push watermark seeded from the old shared cursor → no re-push storm.
+                assert.are.equal(4102444800000, store:getLastPushedAt())
+                store:close()
+            end)
+
+            it("is per-user (only migrates the rows it finds)", function()
+                db_path = os.tmpname()
+                os.remove(db_path)
+
+                local a = LibraryStore.new({ user_id = "alice", db_path = db_path })
+                a:setLastPulledAt(111)
+                a:close()
+                local b = LibraryStore.new({ user_id = "bob", db_path = db_path })
+                b:setLastPulledAt(222)
+                b:close()
+                local raw = SQ3.open(db_path)
+                raw:exec("PRAGMA user_version = 2;")
+                raw:close()
+
+                local alice = LibraryStore.new({ user_id = "alice", db_path = db_path })
+                assert.are.equal(0, alice:getLastPulledAt())
+                assert.are.equal(111, alice:getLastPushedAt())
+                alice:close()
+                local bob = LibraryStore.new({ user_id = "bob", db_path = db_path })
+                assert.are.equal(0, bob:getLastPulledAt())
+                assert.are.equal(222, bob:getLastPushedAt())
+                bob:close()
+            end)
+        end)
+    end)
+
+    -- =====================================================================
+    -- reading_status_updated_at: new column added in schema v2
+    -- =====================================================================
+    describe("reading_status_updated_at", function()
+        it("round-trips reading_status_updated_at through upsert + read", function()
+            local store = LibraryStore.new({ user_id = "u1", db_path = ":memory:" })
+            store:upsertBook({ hash = "h1", title = "T", reading_status = "finished",
+                               reading_status_updated_at = 1750000000000, local_present = 1 })
+            local row = store:_getRowRaw("h1")
+            assert.are.equal("finished", row.reading_status)
+            assert.are.equal(1750000000000, row.reading_status_updated_at)
+            store:close()
+        end)
+
+        it("parseSyncRow reads reading_status_updated_at from the server ISO field", function()
+            local parsed = LibraryStore.parseSyncRow({
+                book_hash = "h2", title = "T", reading_status = "abandoned",
+                reading_status_updated_at = "2026-06-18T00:00:00+00:00", updated_at = "2026-06-18T00:00:00+00:00",
+            })
+            -- 2026-06-18T00:00:00Z = 1781740800 unix seconds = 1781740800000 ms
+            assert.are.equal(1781740800000, parsed.reading_status_updated_at)
+            assert.are.equal("abandoned", parsed.reading_status)
+        end)
+
+        it("parseSyncRow reads synced_at from the server ISO field (issue #4934)", function()
+            -- synced_at is the server-authoritative pull cursor. Even when a
+            -- book carries a future updated_at (a device with a fast clock),
+            -- synced_at reflects real server time.
+            local parsed = LibraryStore.parseSyncRow({
+                book_hash = "h3", title = "T",
+                updated_at = "2099-01-01T00:00:00+00:00",
+                synced_at  = "2026-06-18T00:00:00+00:00",
+            })
+            assert.are.equal(1781740800000, parsed.synced_at)
         end)
     end)
 
@@ -422,6 +618,73 @@ describe("LibraryStore", function()
             local rows = store:listBooks({ group_by = "author", group_filter = "Asimov" })
             assert.are.equal(1, #rows)
             assert.are.equal("Foundation", rows[1].title)
+        end)
+    end)
+
+    -- =====================================================================
+    -- listCloudOnlyBooks — the bulk-download candidate set (#4751)
+    -- =====================================================================
+    -- A cloud-only book is downloadable but not yet on this device:
+    -- cloud_present=1, local_present=0, deleted_at IS NULL, and uploaded_at
+    -- set (the file actually exists in storage — a phantom record has none).
+    describe("listCloudOnlyBooks", function()
+        local store
+        before_each(function()
+            store = LibraryStore.new({ user_id = "alice" })
+            -- cloud-only, downloadable → included
+            store:upsertBook(book({
+                hash = "h1", title = "Foundation", author = "Asimov",
+                cloud_present = 1, local_present = 0, updated_at = T_OLD,
+            }))
+            -- on device already (cloud + local) → excluded
+            store:upsertBook(book({
+                hash = "h2", title = "Dune", author = "Herbert",
+                cloud_present = 1, local_present = 1, updated_at = T_RECENT,
+            }))
+            -- local-only (never uploaded) → excluded
+            store:upsertBook(book({
+                hash = "h3", title = "Hyperion", author = "Simmons",
+                local_present = 1, updated_at = T_MID,
+            }))
+        end)
+        after_each(function() store:close() end)
+
+        it("returns only cloud-present, not-local books", function()
+            local rows = store:listCloudOnlyBooks()
+            assert.are.equal(1, #rows)
+            assert.are.equal("Foundation", rows[1].title)
+        end)
+
+        it("excludes a phantom cloud record with no uploaded file", function()
+            store:upsertBook(book({
+                hash = "h-phantom", title = "Phantom",
+                cloud_present = 1, uploaded_at = false, local_present = 0,
+            }))
+            local rows = store:listCloudOnlyBooks()
+            assert.are.equal(1, #rows)
+            assert.are.equal("Foundation", rows[1].title)
+        end)
+
+        it("excludes cloud-deleted rows even when not yet local", function()
+            store:upsertBook(book({
+                hash = "h1", title = "Foundation",
+                cloud_present = 0, local_present = 0,
+                deleted_at = T_RECENT, _force_cloud_present = true,
+            }))
+            local rows = store:listCloudOnlyBooks()
+            assert.are.equal(0, #rows)
+        end)
+
+        it("scopes to the current user", function()
+            local bob = LibraryStore.new({ user_id = "bob" })
+            assert.are.equal(0, #bob:listCloudOnlyBooks())
+            bob:close()
+        end)
+
+        it("returns rows carrying the fields downloadBook needs", function()
+            local rows = store:listCloudOnlyBooks()
+            assert.are.equal("h1", rows[1].hash)
+            assert.are.equal("EPUB", rows[1].format)
         end)
     end)
 
@@ -768,6 +1031,17 @@ describe("LibraryStore", function()
         it("setLastPulledAt round-trips", function()
             store:setLastPulledAt(T_RECENT)
             assert.are.equal(T_RECENT, store:getLastPulledAt())
+        end)
+
+        it("getLastPushedAt returns nil before any setLastPushedAt", function()
+            assert.is_nil(store:getLastPushedAt())
+        end)
+
+        it("setLastPushedAt round-trips independently of the pull cursor", function()
+            store:setLastPulledAt(T_OLD)
+            store:setLastPushedAt(T_RECENT)
+            assert.are.equal(T_OLD, store:getLastPulledAt())
+            assert.are.equal(T_RECENT, store:getLastPushedAt())
         end)
     end)
 

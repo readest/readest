@@ -17,7 +17,14 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibraryStore } from '@/store/libraryStore';
-import { TransferItem, TransferStatus, useTransferStore } from '@/store/transferStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
+import {
+  TransferItem,
+  TransferStatus,
+  isFailedLikeTransfer,
+  useTransferStore,
+} from '@/store/transferStore';
 
 const formatBytes = (bytes: number): string => {
   if (bytes === 0) return '0 B';
@@ -109,7 +116,10 @@ const TransferItemRow: React.FC<{
             <span className='text-error'>{transfer.error || _('Failed')}</span>
           )}
           {transfer.status === 'completed' && (completedLabel[transfer.type] || _('Completed'))}
-          {transfer.status === 'cancelled' && _('Cancelled')}
+          {transfer.status === 'cancelled' &&
+            (transfer.cancelReason === 'policy'
+              ? `${_('Cancelled')} · ${_('Cloud provider switched')}`
+              : _('Cancelled'))}
           {' · '}
           {formatDateTime(transfer.completedAt || transfer.startedAt || transfer.createdAt)}
         </div>
@@ -125,7 +135,7 @@ const TransferItemRow: React.FC<{
       </div>
 
       <div className='flex items-center gap-1'>
-        {(transfer.status === 'failed' || transfer.status === 'cancelled') && (
+        {isFailedLikeTransfer(transfer) && (
           <button
             onClick={() => onRetry(transfer.id)}
             className='btn btn-ghost btn-sm btn-circle'
@@ -166,6 +176,7 @@ const TransferQueuePanel: React.FC = () => {
     resumeQueue,
     clearCompleted,
     clearFailed,
+    clearPending,
     queueUpload,
     queueDownload,
   } = useTransferQueue();
@@ -175,10 +186,18 @@ const TransferQueuePanel: React.FC = () => {
   const onClose = () => setIsOpen(false);
   const divRef = useKeyDownActions({ onCancel: onClose, onConfirm: onClose });
 
+  // Both bulk actions target Readest Cloud storage; while a third-party provider
+  // is selected the queue refuses book uploads and a queued download would ask
+  // Readest storage for a file that only exists on the provider, so hide both
+  // affordances (per-book Upload / Download in the shelf are provider-routed, and
+  // replica transfers keep flowing regardless).
+  const settings = useSettingsStore((s) => s.settings);
+  const readestStorageActive = isReadestCloudStorageActive(settings);
+
   const booksToUpload = getVisibleLibrary().filter((book) => book.downloadedAt && !book.uploadedAt);
-  const booksToDownload = getVisibleLibrary().filter(
-    (book) => book.uploadedAt && !book.downloadedAt,
-  );
+  const booksToDownload = readestStorageActive
+    ? getVisibleLibrary().filter((book) => book.uploadedAt && !book.downloadedAt)
+    : [];
 
   const handleUploadAll = () => {
     booksToUpload.forEach((book) => queueUpload(book));
@@ -196,7 +215,7 @@ const TransferQueuePanel: React.FC = () => {
         case 'completed':
           return t.status === 'completed';
         case 'failed':
-          return t.status === 'failed' || t.status === 'cancelled';
+          return isFailedLikeTransfer(t) || t.status === 'cancelled';
         default:
           return true;
       }
@@ -237,7 +256,7 @@ const TransferQueuePanel: React.FC = () => {
         <div className='border-base-300 flex items-center justify-between border-b p-4'>
           <h2 className='text-lg font-semibold'>{_('Transfer Queue')}</h2>
           <div className='flex items-center gap-2'>
-            {booksToUpload.length > 0 && (
+            {readestStorageActive && booksToUpload.length > 0 && (
               <button
                 onClick={handleUploadAll}
                 className='btn btn-ghost btn-sm gap-1'
@@ -333,6 +352,12 @@ const TransferQueuePanel: React.FC = () => {
             <button onClick={retryAllFailed} className='btn btn-ghost btn-sm gap-1'>
               <MdRefresh size={iconSize - 2} />
               {_('Retry All')}
+            </button>
+          )}
+          {stats.pending > 0 && (
+            <button onClick={clearPending} className='btn btn-ghost btn-sm gap-1'>
+              <MdDeleteSweep size={iconSize - 2} />
+              {_('Clear Pending')}
             </button>
           )}
           {stats.completed > 0 && (

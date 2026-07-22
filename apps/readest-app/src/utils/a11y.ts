@@ -81,7 +81,15 @@ export const handleA11yNavigation = (
   }
   const skipNextSectionLinkId = 'readest-skip-link-next-section';
   if (document.body && !document.getElementById(skipNextSectionLinkId)) {
-    const skipLink = document.createElement('div');
+    // Use a <span>, not a <div>: this link is nested inside the section's last
+    // content element (see findSectionEndHost below). The paragraph-layout rule
+    // in getParagraphLayoutStyles() targets `div:not(:has(*:not(b,a,em,i,strong,
+    // u,span)))`, so a nested <div> would make the enclosing paragraph fail the
+    // `:has()` test and silently lose its line-spacing/indent overrides. <span>
+    // is in that allow-list, so the paragraph keeps matching. position:absolute
+    // still makes the inline span an out-of-flow 1×1px box, so layout/focus are
+    // unchanged.
+    const skipLink = document.createElement('span');
     skipLink.id = skipNextSectionLinkId;
     skipLink.setAttribute('cfi-inert', '');
     skipLink.setAttribute('tabindex', '0');

@@ -68,6 +68,9 @@ msgstr "Tăng dần"
 msgid "Actions"
 msgstr "Tác vụ"
 
+msgid "Download all books"
+msgstr "Tải xuống tất cả sách"
+
 msgid "Rescan library"
 msgstr "Quét lại thư viện"
 
@@ -133,6 +136,21 @@ msgstr "Tải bìa thất bại."
 
 msgid "Could not delete the file."
 msgstr "Không thể xóa tệp."
+
+msgid "No books to download."
+msgstr "Không có sách nào để tải xuống."
+
+msgid "Downloading %1 of %2…"
+msgstr "Đang tải xuống %1 trên %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Đã hủy tải xuống. Đã tải %1 trên %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Đã tải %1 trên %2 (bỏ qua %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Đã tải %1 trên %2."
 
 msgid "Removing from cloud…"
 msgstr "Đang xóa khỏi đám mây…"
@@ -215,6 +233,9 @@ msgstr "Đẩy ghi chú Readest từ thiết bị này"
 msgid "Pull readest annotations from other devices"
 msgstr "Lấy ghi chú Readest từ thiết bị khác"
 
+msgid "Full sync all readest annotations"
+msgstr "Đồng bộ đầy đủ tất cả ghi chú Readest"
+
 msgid "Add to Readest"
 msgstr "Thêm vào Readest"
 
@@ -239,6 +260,12 @@ msgstr "Đã có trong thư viện Readest của bạn:"
 msgid "Added to Readest:"
 msgstr "Đã thêm vào Readest:"
 
+msgid "No book is open"
+msgstr "Không có sách nào đang mở"
+
+msgid "Uploaded to Readest:"
+msgstr "Đã tải lên Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Đăng nhập tài khoản Readest"
 
@@ -251,11 +278,20 @@ msgstr "Tự động đồng bộ"
 msgid "Readest library"
 msgstr "Thư viện Readest"
 
+msgid "Push stats now"
+msgstr "Gửi thống kê ngay"
+
+msgid "Pull stats now"
+msgstr "Lấy thống kê ngay"
+
 msgid "Push books now"
 msgstr "Gửi sách ngay"
 
 msgid "Pull books now"
 msgstr "Lấy sách ngay"
+
+msgid "Upload current book to Readest"
+msgstr "Tải sách hiện tại lên Readest"
 
 msgid "Push reading progress now"
 msgstr "Đẩy tiến trình đọc ngay"
@@ -286,9 +322,6 @@ msgstr "Vui lòng đăng nhập trước"
 
 msgid "Please configure Readest settings first"
 msgstr "Vui lòng cấu hình cài đặt Readest trước"
-
-msgid "No book is open"
-msgstr "Không có sách nào đang mở"
 
 msgid "(none)"
 msgstr "(không có)"
@@ -436,3 +469,18 @@ msgstr "Tiến trình đọc đã đồng bộ"
 
 msgid "No saved reading progress found for this book"
 msgstr "Không tìm thấy tiến trình đọc đã lưu cho sách này"
+
+msgid "Reading statistics are up to date"
+msgstr "Thống kê đọc đã được cập nhật"
+
+msgid "Reading statistics pushed"
+msgstr "Đã đẩy thống kê đọc"
+
+msgid "Failed to push reading statistics"
+msgstr "Không thể đẩy thống kê đọc"
+
+msgid "Failed to pull reading statistics"
+msgstr "Không thể lấy thống kê đọc"
+
+msgid "Reading statistics pulled"
+msgstr "Đã lấy thống kê đọc"

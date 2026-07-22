@@ -175,7 +175,7 @@ describe('CurrentPositionRow', () => {
   it('indents according to depth (matching a child of the active item)', () => {
     const { container } = render(<CurrentPositionRow depth={2} page={1} />);
     const row = container.querySelector('[role="treeitem"]') as HTMLElement;
-    expect(row.style.paddingInlineStart).toBe(`${(2 + 1) * 12}px`);
+    expect(row.style.paddingInlineStart).toBe(`${2 * 12 + 8}px`);
   });
 
   it('exposes the page number in its aria-label', () => {

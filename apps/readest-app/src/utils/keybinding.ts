@@ -2,13 +2,16 @@ import { HardwarePageTurnerSettings, KeyBinding } from '@/types/settings';
 import { stubTranslation as _ } from '@/utils/misc';
 
 export type KeyCandidate = { source: 'native' | 'dom'; id: string };
-export type PageTurnAction = 'pagePrev' | 'pageNext' | 'sectionPrev' | 'sectionNext';
+// `refresh` is an e-ink-only action (full screen refresh to clear ghosting);
+// the others navigate. All share the same key-binding machinery.
+export type PageTurnAction = 'pagePrev' | 'pageNext' | 'sectionPrev' | 'sectionNext' | 'refresh';
 
 export const PAGE_TURN_ACTIONS: PageTurnAction[] = [
   'pagePrev',
   'pageNext',
   'sectionPrev',
   'sectionNext',
+  'refresh',
 ];
 
 const NATIVE_KEY_LABELS: Record<string, string> = {
@@ -53,8 +56,10 @@ export const normalizeDomKeyEvent = (event: KeyboardEvent): KeyBinding => {
 };
 
 /** True when `candidate` is the key described by `binding`. */
-export const matchesBinding = (binding: KeyBinding | null, candidate: KeyCandidate): boolean =>
-  !!binding && binding.source === candidate.source && binding.id === candidate.id;
+export const matchesBinding = (
+  binding: KeyBinding | null | undefined,
+  candidate: KeyCandidate,
+): boolean => !!binding && binding.source === candidate.source && binding.id === candidate.id;
 
 /**
  * Decide which page-turn action an incoming key triggers. Returns the

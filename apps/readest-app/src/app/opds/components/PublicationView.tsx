@@ -13,7 +13,7 @@ import { getImportErrorMessage, ImportError } from '@/services/errors';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToReader } from '@/utils/nav';
 import { CachedImage } from '@/components/CachedImage';
-import { groupByArray, getOPDSNavLink } from '../utils/opdsUtils';
+import { groupByArray, getOPDSNavLink, formatContributorName } from '../utils/opdsUtils';
 import { getOPDSDescriptionHtml } from '../utils/opdsContent';
 import Dropdown from '@/components/Dropdown';
 import MenuItem from '@/components/MenuItem';
@@ -104,7 +104,8 @@ export function PublicationView({
           ? { name: a, href: undefined as string | undefined }
           : { name: a?.name, href: getOPDSNavLink(a?.links) },
       )
-      .filter((a): a is { name: string; href: string | undefined } => Boolean(a.name));
+      .filter((a): a is { name: string; href: string | undefined } => Boolean(a.name))
+      .map((a) => ({ ...a, name: formatContributorName(a.name) }));
   }, [publication.metadata?.author]);
 
   const authorNames = useMemo(() => authors.map((a) => a.name), [authors]);
@@ -175,7 +176,14 @@ export function PublicationView({
 
   const content = publication.metadata?.[SYMBOL.CONTENT] || publication.metadata?.content;
   const description = publication.metadata?.description;
-  const descriptionHtml = useMemo(() => getOPDSDescriptionHtml(content), [content]);
+  // OPDS 2.0 JSON keeps the summary in the plain `description` string (no typed
+  // <content>), and catalogs like pglaf/Gutenberg fill it with HTML. Fall back
+  // to it so that markup renders as markup instead of literal tags; the helper
+  // sanitizes either source (readest issue #4749).
+  const descriptionHtml = useMemo(
+    () => getOPDSDescriptionHtml(content ?? description),
+    [content, description],
+  );
 
   return (
     <div className='flex w-full flex-col px-6 py-6'>
@@ -205,7 +213,7 @@ export function PublicationView({
               <p className='text-base-content/70 text-sm'>
                 {authors.map((author, index) => (
                   <span key={index}>
-                    {index > 0 && ', '}
+                    {index > 0 && ' & '}
                     {author.href ? (
                       <button
                         type='button'
@@ -222,6 +230,10 @@ export function PublicationView({
               </p>
             )}
           </div>
+
+          {!downloadedBook && acquisitionLinks.length === 0 && streamLinks.length === 0 && (
+            <p className='text-base-content/60 text-sm'>{_('No downloadable format available')}</p>
+          )}
 
           {(acquisitionLinks.length > 0 || streamLinks.length > 0) && (
             <div className='flex flex-wrap items-center gap-2'>
@@ -315,7 +327,7 @@ export function PublicationView({
                           link.href!,
                           count,
                           publication.metadata?.title || '',
-                          authorNames.join(', '),
+                          authorNames.join(' & '),
                         )
                       }
                       disabled={downloading || !!downloadedBook}

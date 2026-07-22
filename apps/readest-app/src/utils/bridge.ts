@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invoke, Channel } from '@tauri-apps/api/core';
 
 export interface CopyURIRequest {
   uri: string;
@@ -10,8 +10,25 @@ export interface CopyURIResponse {
   error?: string;
 }
 
+export interface SaveImageToGalleryRequest {
+  srcPath: string;
+  fileName: string;
+  mimeType: string;
+  albumName?: string;
+}
+
+export interface SaveImageToGalleryResponse {
+  success: boolean;
+  uri?: string;
+  error?: string;
+}
+
 export interface UseBackgroundAudioRequest {
   enabled: boolean;
+}
+
+export interface SetTextSelectionSuppressedRequest {
+  suppressed: boolean;
 }
 
 export interface InstallPackageRequest {
@@ -100,6 +117,11 @@ export interface GetStorefrontRegionCodeResponse {
   error?: string;
 }
 
+export interface RefreshEinkScreenResponse {
+  success: boolean;
+  error?: string;
+}
+
 export async function copyURIToPath(request: CopyURIRequest): Promise<CopyURIResponse> {
   const result = await invoke<CopyURIResponse>('plugin:native-bridge|copy_uri_to_path', {
     payload: request,
@@ -108,8 +130,28 @@ export async function copyURIToPath(request: CopyURIRequest): Promise<CopyURIRes
   return result;
 }
 
+export async function saveImageToGallery(
+  request: SaveImageToGalleryRequest,
+): Promise<SaveImageToGalleryResponse> {
+  return await invoke<SaveImageToGalleryResponse>('plugin:native-bridge|save_image_to_gallery', {
+    payload: request,
+  });
+}
+
 export async function invokeUseBackgroundAudio(request: UseBackgroundAudioRequest): Promise<void> {
   await invoke('plugin:native-bridge|use_background_audio', {
+    payload: request,
+  });
+}
+
+// iOS-only: suppress the system long-press text selection for non-editable
+// web content while the instant-highlight quick action owns the hold gesture.
+// JS-level suppression cannot win that race — WebKit consults selectability
+// before any touch handler runs — so the gate lives in the native plugin.
+export async function setTextSelectionSuppressed(
+  request: SetTextSelectionSuppressedRequest,
+): Promise<void> {
+  await invoke('plugin:native-bridge|set_text_selection_suppressed', {
     payload: request,
   });
 }
@@ -219,6 +261,40 @@ export async function getStorefrontRegionCode(): Promise<GetStorefrontRegionCode
   return result;
 }
 
+/**
+ * Trigger a deep e-ink full screen refresh (GC / GC16 waveform) to clear
+ * ghosting. Android-only; the native side probes several vendor mechanisms
+ * via reflection and returns `success: false` on devices with no e-ink
+ * controller. Other platforms reject with an unsupported-platform error.
+ */
+export async function refreshEinkScreen(): Promise<RefreshEinkScreenResponse> {
+  return await invoke<RefreshEinkScreenResponse>('plugin:native-bridge|refresh_eink_screen');
+}
+
+/** Webview region to snapshot, in CSS pixels of the viewport (origin top-left). */
+export interface CaptureWebviewRegionRequest {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Capture a region of the running webview as compressed image bytes for
+ * the mesh page-curl texture (#555): PNG on macOS, JPEG on iOS/Android
+ * (phone-CPU PNG encoding took ~1.5s per turn). The snapshot is taken at
+ * screen scale, capped at 2x CSS pixels on mobile. Rejects on platforms
+ * without a native capture implementation (web, Windows/Linux so far) —
+ * callers fall back to the CSS curl.
+ */
+export async function captureWebviewRegion(
+  request: CaptureWebviewRegionRequest,
+): Promise<ArrayBuffer> {
+  return await invoke<ArrayBuffer>('plugin:native-bridge|capture_webview_region', {
+    payload: request,
+  });
+}
+
 // ── Sync passphrase keychain ────────────────────────────────────────────
 // Tauri-only. Wired into the TauriPassphraseStore (src/libs/crypto/
 // passphrase.ts) so the user's sync passphrase persists across app
@@ -262,4 +338,99 @@ export async function clearSyncPassphrase(): Promise<SyncPassphraseResponse> {
 
 export async function isSyncKeychainAvailable(): Promise<SyncKeychainAvailableResponse> {
   return invoke<SyncKeychainAvailableResponse>('plugin:native-bridge|is_sync_keychain_available');
+}
+
+// ── Keyed secure key-value store ─────────────────────────────────────────
+// Tauri-only. A generic, keyed secret store over the same OS keychain backends
+// as the sync passphrase above, so secrets that aren't the single sync
+// passphrase (the Google Drive OAuth token set, and any future cloud
+// provider's refresh token) get the same XSS-free cross-launch persistence
+// without each needing its own native command. Availability is the same probe
+// as `is_sync_keychain_available`.
+
+export interface SetSecureItemRequest {
+  key: string;
+  value: string;
+}
+
+export interface GetSecureItemRequest {
+  key: string;
+}
+
+export interface SecureItemResponse {
+  success: boolean;
+  error?: string;
+}
+
+export interface GetSecureItemResponse {
+  value?: string;
+  error?: string;
+}
+
+export async function setSecureItem(request: SetSecureItemRequest): Promise<SecureItemResponse> {
+  return invoke<SecureItemResponse>('plugin:native-bridge|set_secure_item', { payload: request });
+}
+
+export async function getSecureItem(request: GetSecureItemRequest): Promise<GetSecureItemResponse> {
+  return invoke<GetSecureItemResponse>('plugin:native-bridge|get_secure_item', {
+    payload: request,
+  });
+}
+
+export async function clearSecureItem(request: GetSecureItemRequest): Promise<SecureItemResponse> {
+  return invoke<SecureItemResponse>('plugin:native-bridge|clear_secure_item', { payload: request });
+}
+
+// ── Reading widget ────────────────────────────────────────────────────────
+
+export interface ReadingWidgetBookPayload {
+  hash: string;
+  title: string;
+  author: string;
+  percent: number;
+  coverPath: string;
+}
+
+export interface ReadingWidgetTts {
+  active: boolean;
+  playing: boolean;
+}
+
+export interface UpdateReadingWidgetRequest {
+  books: ReadingWidgetBookPayload[];
+  sectionTitle: string;
+  emptyTitle: string;
+  tts?: ReadingWidgetTts;
+}
+
+export async function updateReadingWidget(request: UpdateReadingWidgetRequest): Promise<void> {
+  await invoke('plugin:native-bridge|update_reading_widget', { payload: request });
+}
+
+// ── Nightly updater (main-app commands, no native-bridge prefix) ─────────
+// `verify_update_signature` gates the custom install flows (portable /
+// AppImage / Android); `install_nightly_update` drives the Tauri updater for
+// the platform keys it natively installs (macOS / Windows-NSIS).
+
+export async function verifyUpdateSignature(
+  path: string,
+  signature: string,
+  pubKey: string,
+): Promise<boolean> {
+  return invoke<boolean>('verify_update_signature', { path, signature, pubKey });
+}
+
+export interface NightlyProgress {
+  event: 'progress' | 'finished';
+  downloaded: number;
+  contentLength: number;
+}
+
+export async function installNightlyUpdate(
+  endpoint: string,
+  onProgress?: (p: NightlyProgress) => void,
+): Promise<void> {
+  const channel = new Channel<NightlyProgress>();
+  if (onProgress) channel.onmessage = onProgress;
+  await invoke<void>('install_nightly_update', { endpoint, channel });
 }

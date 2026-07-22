@@ -45,6 +45,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
   const [replacementText, setReplacementText] = useState('');
   const [caseSensitive, setCaseSensitive] = useState(true);
   const [wholeWord, setWholeWord] = useState(!isPunctuationOnly(selection?.text || ''));
+  const [isRegex, setIsRegex] = useState(false);
   const [scope, setScope] = useState<ProofreadScope>('selection');
   const [onlyForTTS, setOnlyForTTS] = useState(false);
 
@@ -66,12 +67,14 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
     const range = selection?.range;
 
     if (range) {
+      // A regex pattern defines its own boundaries, so the whole-word
+      // validation (which inspects the literal selection) doesn't apply.
       const isValidWholeWord = isWholeWord(range, selection?.text || '');
 
-      if (wholeWord && !isValidWholeWord) {
+      if (!isRegex && wholeWord && !isValidWholeWord) {
         eventDispatcher.dispatch('toast', {
           type: 'warning',
-          message: 'Please select a whole word or uncheck the "Whole word" option.',
+          message: _('Please select a whole word or uncheck the "Whole word" option.'),
           timeout: 5000,
         });
         return;
@@ -89,10 +92,10 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
         replacement: replacementText.trim(),
         cfi: selection.cfi,
         sectionHref: progress?.sectionHref,
-        isRegex: false,
+        isRegex,
         enabled: true,
         caseSensitive,
-        wholeWord: wholeWord,
+        wholeWord: isRegex ? false : wholeWord,
         onlyForTTS: scope !== 'selection' ? onlyForTTS : undefined,
       };
       onConfirm?.(options);
@@ -196,9 +199,32 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
             />
           </label>
 
-          <label className='flex cursor-pointer items-center gap-2'>
+          <label
+            className={clsx(
+              'flex items-center gap-2',
+              isRegex ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+            )}
+          >
             <span className='line-clamp-1 text-xs' title={_('Whole word:')}>
               {_('Whole word:')}
+            </span>
+            <input
+              type='checkbox'
+              disabled={isRegex}
+              className='toggle toggle-sm bg-gray-500 checked:bg-black hover:bg-gray-500 hover:checked:bg-black'
+              style={
+                {
+                  '--tglbg': '#4B5563',
+                } as React.CSSProperties
+              }
+              checked={isRegex ? false : wholeWord}
+              onChange={(e) => setWholeWord(e.target.checked)}
+            />
+          </label>
+
+          <label className='flex cursor-pointer items-center gap-2'>
+            <span className='line-clamp-1 text-xs' title={_('Regex:')}>
+              {_('Regex:')}
             </span>
             <input
               type='checkbox'
@@ -208,8 +234,8 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
                   '--tglbg': '#4B5563',
                 } as React.CSSProperties
               }
-              checked={wholeWord}
-              onChange={(e) => setWholeWord(e.target.checked)}
+              checked={isRegex}
+              onChange={(e) => setIsRegex(e.target.checked)}
             />
           </label>
 

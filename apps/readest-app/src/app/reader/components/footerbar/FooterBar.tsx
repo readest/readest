@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { useCallback, useMemo, useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
 import { useReaderStore } from '@/store/readerStore';
@@ -28,7 +28,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const _ = useTranslation();
   const { appService } = useEnv();
   const { getConfig, setConfig, getBookData } = useBookDataStore();
-  const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
+  const { hoveredBookKey, setHoveredBookKey, bottomBarTab, setBottomBarTab } = useReaderStore();
   const { getView, getViewState, getProgress, getViewSettings } = useReaderStore();
   const { isSideBarVisible, isSideBarPinned, setSideBarVisible } = useSidebarStore();
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
@@ -40,8 +40,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const progress = getProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
-  const [userSelectedTab, setUserSelectedTab] = useState('');
-  const actionTab = hoveredBookKey === bookKey ? userSelectedTab : '';
+  const actionTab = hoveredBookKey === bookKey ? bottomBarTab : '';
   const isVisible = hoveredBookKey === bookKey;
 
   const docs = view?.renderer.getContents() ?? [];
@@ -101,7 +100,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const handleSetActionTab = useCallback(
     (tab: string) => {
-      setUserSelectedTab((prevTab) => (prevTab === tab ? '' : tab));
+      setBottomBarTab(bottomBarTab === tab ? '' : tab);
 
       if (tab === 'tts') {
         if (viewState?.ttsEnabled) {
@@ -127,8 +126,10 @@ const FooterBar: React.FC<FooterBarProps> = ({
     [
       config,
       bookKey,
+      bottomBarTab,
       viewState?.ttsEnabled,
       setConfig,
+      setBottomBarTab,
       setSideBarVisible,
       setHoveredBookKey,
       handleSpeakText,

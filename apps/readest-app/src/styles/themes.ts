@@ -27,7 +27,7 @@ export type Theme = {
     light: Palette;
     dark: Palette;
   };
-  isCustomizale?: boolean;
+  isCustomizable?: boolean;
 };
 
 export type CustomTheme = {

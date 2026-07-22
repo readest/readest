@@ -68,6 +68,9 @@ msgstr "Ascendente"
 msgid "Actions"
 msgstr "Acciones"
 
+msgid "Download all books"
+msgstr "Descargar todos los libros"
+
 msgid "Rescan library"
 msgstr "Reescanear biblioteca"
 
@@ -133,6 +136,21 @@ msgstr "Falló la descarga de la portada."
 
 msgid "Could not delete the file."
 msgstr "No se pudo eliminar el archivo."
+
+msgid "No books to download."
+msgstr "No hay libros para descargar."
+
+msgid "Downloading %1 of %2…"
+msgstr "Descargando %1 de %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Descarga cancelada. %1 de %2 descargados."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 de %2 descargados (%3 omitidos)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 de %2 descargados."
 
 msgid "Removing from cloud…"
 msgstr "Eliminando de la nube…"
@@ -215,6 +233,9 @@ msgstr "Enviar anotaciones de Readest desde este dispositivo"
 msgid "Pull readest annotations from other devices"
 msgstr "Obtener anotaciones de Readest de otros dispositivos"
 
+msgid "Full sync all readest annotations"
+msgstr "Sincronizar completamente todas las anotaciones de Readest"
+
 msgid "Add to Readest"
 msgstr "Añadir a Readest"
 
@@ -239,6 +260,12 @@ msgstr "Ya está en tu biblioteca de Readest:"
 msgid "Added to Readest:"
 msgstr "Añadido a Readest:"
 
+msgid "No book is open"
+msgstr "Ningún libro abierto"
+
+msgid "Uploaded to Readest:"
+msgstr "Subido a Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Iniciar sesión en la cuenta Readest"
 
@@ -251,11 +278,20 @@ msgstr "Sincronización automática"
 msgid "Readest library"
 msgstr "Biblioteca de Readest"
 
+msgid "Push stats now"
+msgstr "Enviar estadísticas ahora"
+
+msgid "Pull stats now"
+msgstr "Obtener estadísticas ahora"
+
 msgid "Push books now"
 msgstr "Enviar libros ahora"
 
 msgid "Pull books now"
 msgstr "Obtener libros ahora"
+
+msgid "Upload current book to Readest"
+msgstr "Subir el libro actual a Readest"
 
 msgid "Push reading progress now"
 msgstr "Enviar progreso de lectura ahora"
@@ -286,9 +322,6 @@ msgstr "Por favor inicia sesión primero"
 
 msgid "Please configure Readest settings first"
 msgstr "Configura primero los ajustes de Readest"
-
-msgid "No book is open"
-msgstr "Ningún libro abierto"
 
 msgid "(none)"
 msgstr "(ninguno)"
@@ -436,3 +469,18 @@ msgstr "Progreso de lectura sincronizado"
 
 msgid "No saved reading progress found for this book"
 msgstr "No se encontró progreso de lectura guardado para este libro"
+
+msgid "Reading statistics are up to date"
+msgstr "Las estadísticas de lectura están actualizadas"
+
+msgid "Reading statistics pushed"
+msgstr "Estadísticas de lectura enviadas"
+
+msgid "Failed to push reading statistics"
+msgstr "Error al enviar las estadísticas de lectura"
+
+msgid "Failed to pull reading statistics"
+msgstr "Error al obtener las estadísticas de lectura"
+
+msgid "Reading statistics pulled"
+msgstr "Estadísticas de lectura obtenidas"

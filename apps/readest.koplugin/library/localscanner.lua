@@ -110,11 +110,17 @@ function M.lightScan(opts)
     local lfs = require("libs/libkoreader-lfs")
     local DocSettings = require("docsettings")
     local ReadHistory = require("readhistory")
+    -- Open-path timing for issue #4954: lazily required here so the module
+    -- top stays free of live-KOReader deps and the pure-helper specs can
+    -- still `require("library.localscanner")`.
+    local time = require("ui/time")
+    local function ms(since) return math.floor(time.to_ms(time.since(since))) end
 
     local store = opts.store
     if not store then return 0, 0 end
 
     -- Step 1: sweep stale file_paths to local_present=0
+    local t_step1 = time.now()
     local stale = 0
     local rows = store:listBooks({})
     for _, row in ipairs(rows) do
@@ -129,18 +135,24 @@ function M.lightScan(opts)
             end
         end
     end
+    local step1_ms = ms(t_step1)
 
     -- Step 2: opportunistic upsert from ReadHistory.
     -- Per-iteration pcall so a single bad sidecar (corrupt Lua, file
     -- vanished mid-scan, DocSettings throwing on open) doesn't kill the
     -- whole loop and leave us with a partially-indexed library.
+    local t_step2 = time.now()
     local added, skipped = 0, 0
+    local hist_count, ds_count = 0, 0
     for _, item in ipairs(ReadHistory.hist or {}) do
+        hist_count = hist_count + 1
         local file = item.file
         if file and lfs.attributes(file, "mode") == "file" then
             local ok, err = pcall(function()
                 -- DocSettings reads the sidecar for us; we get the same
-                -- hash the sidecar walk would produce.
+                -- hash the sidecar walk would produce. This open reads +
+                -- evaluates the sidecar Lua file from flash on every pass.
+                ds_count = ds_count + 1
                 local doc_settings = DocSettings:open(file)
                 local hash = doc_settings:readSetting("partial_md5_checksum")
                 if not hash or hash == "" then
@@ -169,8 +181,12 @@ function M.lightScan(opts)
         end
     end
 
-    logger.info("ReadestLibrary lightScan: stale=" .. stale
-        .. " added/refreshed=" .. added .. " skipped=" .. skipped)
+    local step2_ms = ms(t_step2)
+    logger.info(string.format(
+        "ReadestLibrary lightScan: total=%dms | step1_sweep=%dms rows=%d stale=%d"
+        .. " | step2_history=%dms entries=%d docsettings_opens=%d added=%d skipped=%d",
+        step1_ms + step2_ms, step1_ms, #rows, stale,
+        step2_ms, hist_count, ds_count, added, skipped))
     return stale, added
 end
 

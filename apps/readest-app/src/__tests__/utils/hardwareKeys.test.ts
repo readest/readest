@@ -73,6 +73,7 @@ describe('resolvePageTurn', () => {
       pageNext: { source: 'native', id: 'MediaNext', label: 'Media Next' },
       sectionPrev: { source: 'dom', id: 'PageUp', label: 'Page Up' },
       sectionNext: { source: 'dom', id: 'PageDown', label: 'Page Down' },
+      refresh: { source: 'native', id: 'MediaPlayPause', label: 'Media Play/Pause' },
     },
   };
 
@@ -92,8 +93,12 @@ describe('resolvePageTurn', () => {
     expect(resolvePageTurn(settings, { source: 'dom', id: 'PageDown' })).toBe('sectionNext');
   });
 
+  test('returns "refresh" for the refresh binding', () => {
+    expect(resolvePageTurn(settings, { source: 'native', id: 'MediaPlayPause' })).toBe('refresh');
+  });
+
   test('returns null for an unbound key', () => {
-    expect(resolvePageTurn(settings, { source: 'native', id: 'MediaPlayPause' })).toBeNull();
+    expect(resolvePageTurn(settings, { source: 'native', id: 'MediaFastForward' })).toBeNull();
   });
 
   test('returns null when the feature is disabled', () => {

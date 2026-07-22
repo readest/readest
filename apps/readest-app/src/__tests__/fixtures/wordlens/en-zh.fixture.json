@@ -1,0 +1,9 @@
+{
+  "meta": { "source": "en", "target": "zh", "metric": "frq", "version": 1, "count": 3 },
+  "entries": {
+    "run": { "r": 312, "g": "跑；经营" },
+    "cryptic": { "r": 18000, "g": "晦涩的" },
+    "the": { "r": 1, "g": "这" }
+  },
+  "inflections": { "running": "run", "ran": "run", "runs": "run" }
+}

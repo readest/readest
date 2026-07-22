@@ -140,6 +140,7 @@ const getFontStyles = (
     }
     pre, code, kbd {
       font-family: var(--monospace);
+      font-variant-ligatures: none;
     }
     body *:not(pre, code, kbd, .code):not(pre *, code *, kbd *, .code *) {
       ${overrideFont ? 'font-family: revert !important;' : ''}
@@ -265,7 +266,8 @@ const getColorStyles = (
     }
     img {
       ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
-      ${!isDarkMode && overrideColor ? 'mix-blend-mode: multiply;' : ''}
+      ${isDarkMode && overrideColor ? 'filter: grayscale(100%) contrast(1.2) brightness(1.2);' : ''}
+      ${overrideColor ? 'mix-blend-mode: multiply;' : ''}
     }
     svg, img {
       ${overrideColor ? `background-color: transparent !important;` : ''};
@@ -371,6 +373,13 @@ const getPageLayoutStyles = (
     padding: unset;
     margin: unset;
   }
+  /* -webkit-touch-callout on html/body does not reach descendant images in
+     Android WebView, and the native image callout collides with the reader's
+     touch handlers and can freeze the app */
+  img {
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
+  }
   svg:where(:not([width])), img:where(:not([width])) {
     width: auto;
   }
@@ -470,6 +479,12 @@ const getPageLayoutStyles = (
   }
   img.has-text-siblings {
     ${vertical ? 'width: 1em;' : 'height: 1em;'}
+  }
+  /* Baseline is only Readest's default: applyImageStyle adds this class when the
+     book leaves vertical-align at its initial value, so an author-set value
+     (e.g. a CJK glyph-substitution image nudged with vertical-align: -0.15em)
+     keeps winning. See #4866. */
+  img.has-text-siblings-baseline {
     vertical-align: baseline;
   }
   :is(div) > img.has-text-siblings[style*="object-fit"] {
@@ -752,7 +767,13 @@ const getWarichuStyles = () => `
   }
 `;
 
-const getRubyStyles = () => `
+// Word Lens gloss <rt> styling is user-configurable: the font size (relative to
+// the word, in em) and the color. An empty color keeps the default muted,
+// theme-adaptive look (inherit + 0.7 opacity); a set color paints at full opacity.
+const getRubyStyles = (viewSettings: ViewSettings) => {
+  const fontSize = viewSettings.wordLensGlossFontSize || 0.5;
+  const color = viewSettings.wordLensGlossColor || '';
+  return `
   rt {
     user-select: none;
     -webkit-user-select: none;
@@ -760,7 +781,18 @@ const getRubyStyles = () => `
   rp {
     display: none !important;
   }
+  ruby.wl-gloss {
+    cursor: help;
+  }
+  ruby.wl-gloss > rt {
+    font-size: ${fontSize}em;
+    line-height: 1.1;
+    ${color ? `color: ${color};\n    opacity: 1;` : 'opacity: 0.7;'}
+    font-weight: normal;
+    text-align: center;
+  }
 `;
+};
 
 export interface ThemeCode {
   bg: string;
@@ -870,7 +902,7 @@ export const getStyles = (
   );
   const translationStyles = getTranslationStyles(viewSettings.showTranslateSource!);
   const warichuStyles = getWarichuStyles();
-  const rubyStyles = getRubyStyles();
+  const rubyStyles = getRubyStyles(viewSettings);
   const userStylesheet = viewSettings.userStylesheet!;
   // The `@namespace` declaration must lead the stylesheet: a `@namespace` rule
   // placed after any style or `@font-face` rule is invalid and silently ignored,
@@ -1129,37 +1161,60 @@ export const applyScrollbarStyle = (document: Document, hideScrollbar: boolean) 
 };
 
 export const applyImageStyle = (document: Document) => {
-  document.querySelectorAll('img').forEach((img) => {
+  const win = document.defaultView ?? window;
+  // Two-phase (read then write): reading getComputedStyle after a class/style
+  // write forces a style recalc, so gather every decision first and apply the
+  // mutations afterwards (same reasoning as keepTextAlignment's split).
+  const plans = Array.from(document.querySelectorAll('img')).map((img) => {
     const widthAttr = img.getAttribute('width');
-    if (widthAttr && (widthAttr.endsWith('%') || widthAttr.endsWith('vw'))) {
-      const percentage = parseFloat(widthAttr);
-      if (!isNaN(percentage)) {
-        img.style.width = `${(percentage / 100) * window.innerWidth}px`;
-        img.removeAttribute('width');
-      }
-    }
-
+    const percentWidth =
+      widthAttr && (widthAttr.endsWith('%') || widthAttr.endsWith('vw'))
+        ? parseFloat(widthAttr)
+        : NaN;
     const heightAttr = img.getAttribute('height');
-    if (heightAttr && (heightAttr.endsWith('%') || heightAttr.endsWith('vh'))) {
-      const percentage = parseFloat(heightAttr);
-      if (!isNaN(percentage)) {
-        img.style.height = `${(percentage / 100) * window.innerHeight}px`;
-        img.removeAttribute('height');
+    const percentHeight =
+      heightAttr && (heightAttr.endsWith('%') || heightAttr.endsWith('vh'))
+        ? parseFloat(heightAttr)
+        : NaN;
+
+    let inlineWithText = false;
+    let keepBaseline = false;
+    const parent = img.parentNode;
+    if (parent && parent.nodeType === Node.ELEMENT_NODE) {
+      const childNodes = Array.from(parent.childNodes);
+      const hasTextSiblings = childNodes.some(
+        (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+      );
+      const isInline = childNodes.every(
+        (node) => node.nodeType !== Node.ELEMENT_NODE || (node as Element).tagName !== 'BR',
+      );
+      inlineWithText = hasTextSiblings && isInline;
+      if (inlineWithText) {
+        // Only supply Readest's baseline default when the book leaves
+        // vertical-align at its initial value; an author-set value (e.g. a CJK
+        // glyph-substitution image nudged with `vertical-align: -0.15em`) must
+        // win. Empty string covers environments that report unset props as ''.
+        const valign = win.getComputedStyle(img).verticalAlign;
+        keepBaseline = valign === '' || valign === 'baseline';
       }
     }
-
-    const parent = img.parentNode;
-    if (!parent || parent.nodeType !== Node.ELEMENT_NODE) return;
-    const hasTextSiblings = Array.from(parent.childNodes).some(
-      (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
-    );
-    const isInline = Array.from(parent.childNodes).every(
-      (node) => node.nodeType !== Node.ELEMENT_NODE || (node as Element).tagName !== 'BR',
-    );
-    if (hasTextSiblings && isInline) {
-      img.classList.add('has-text-siblings');
-    }
+    return { img, percentWidth, percentHeight, inlineWithText, keepBaseline };
   });
+
+  for (const { img, percentWidth, percentHeight, inlineWithText, keepBaseline } of plans) {
+    if (!isNaN(percentWidth)) {
+      img.style.width = `${(percentWidth / 100) * window.innerWidth}px`;
+      img.removeAttribute('width');
+    }
+    if (!isNaN(percentHeight)) {
+      img.style.height = `${(percentHeight / 100) * window.innerHeight}px`;
+      img.removeAttribute('height');
+    }
+    if (inlineWithText) {
+      img.classList.add('has-text-siblings');
+      if (keepBaseline) img.classList.add('has-text-siblings-baseline');
+    }
+  }
   document.querySelectorAll('hr').forEach((hr) => {
     const computedStyle = window.getComputedStyle(hr);
     if (computedStyle.backgroundImage && computedStyle.backgroundImage !== 'none') {
@@ -1217,6 +1272,11 @@ export const applyFixedlayoutStyles = (
   const isEink = viewSettings.isEink;
   const overrideColor = viewSettings.overrideColor!;
   const invertImgColorInDark = viewSettings.invertImgColorInDark!;
+  const contrast = viewSettings.contrast ?? 100;
+  const imgFilters: string[] = [];
+  if (isDarkMode && invertImgColorInDark) imgFilters.push('invert(100%)');
+  if (contrast !== 100) imgFilters.push(`contrast(${contrast}%)`);
+  const imgFilter = imgFilters.length ? `filter: ${imgFilters.join(' ')};` : '';
   const darkMixBlendMode = bg === '#000000' ? 'luminosity' : 'overlay';
   const existingStyleId = 'fixed-layout-styles';
   let style = document.getElementById(existingStyleId) as HTMLStyleElement;
@@ -1244,7 +1304,7 @@ export const applyFixedlayoutStyles = (
       background-color: var(--theme-bg-color);
     }
     img, canvas {
-      ${isDarkMode && invertImgColorInDark ? 'filter: invert(100%);' : ''}
+      ${imgFilter}
       ${overrideColor ? `mix-blend-mode: ${isDarkMode ? darkMixBlendMode : 'multiply'};` : ''}
     }
     img.singlePage {

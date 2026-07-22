@@ -81,11 +81,6 @@ export const CommandPaletteProvider: React.FC<CommandPaletteProviderProps> = ({ 
     saveSysSettings(envConfig, 'screenWakeLock', newValue);
   }, [envConfig, settings.screenWakeLock]);
 
-  const toggleAutoUpload = useCallback(() => {
-    const newValue = !settings.autoUpload;
-    saveSysSettings(envConfig, 'autoUpload', newValue);
-  }, [envConfig, settings.autoUpload]);
-
   const reloadPage = useCallback(() => {
     window.location.reload();
   }, []);
@@ -126,13 +121,13 @@ export const CommandPaletteProvider: React.FC<CommandPaletteProviderProps> = ({ 
         toggleFullscreen,
         toggleAlwaysOnTop,
         toggleScreenWakeLock,
-        toggleAutoUpload,
         reloadPage,
         toggleOpenLastBooks,
         showAbout,
         toggleTelemetry,
         isDesktop,
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       _,
       openSettingsPanel,
@@ -140,7 +135,6 @@ export const CommandPaletteProvider: React.FC<CommandPaletteProviderProps> = ({ 
       toggleFullscreen,
       toggleAlwaysOnTop,
       toggleScreenWakeLock,
-      toggleAutoUpload,
       reloadPage,
       toggleOpenLastBooks,
       showAbout,

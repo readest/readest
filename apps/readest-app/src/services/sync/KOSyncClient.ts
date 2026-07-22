@@ -129,6 +129,13 @@ export class KOSyncClient {
       });
 
       if (authResponse.ok) {
+        // A wrong Server URL can land on the host's web UI, which answers 200
+        // with an HTML page. Only treat the response as a successful login when
+        // it's an actual KOReader Sync JSON response, otherwise the user is
+        // silently "connected" to an endpoint that can never sync.
+        if (!(await this.isKoSyncJsonResponse(authResponse))) {
+          return { success: false, message: 'Not a KOReader Sync server. Check the Server URL.' };
+        }
         return { success: true, message: 'Login successful.' };
       }
 
@@ -140,6 +147,9 @@ export class KOSyncClient {
         });
 
         if (registerResponse.ok) {
+          if (!(await this.isKoSyncJsonResponse(registerResponse))) {
+            return { success: false, message: 'Not a KOReader Sync server. Check the Server URL.' };
+          }
           return { success: true, message: 'Registration successful.' };
         }
 
@@ -182,8 +192,18 @@ export class KOSyncClient {
         return null;
       }
 
-      const data = await response.json();
-      return data.document ? data : null;
+      const data: KoSyncProgress = await response.json();
+      if (!data || typeof data !== 'object') return null;
+      // Key validity on an actual position, not on `document`: KOSync-compatible
+      // servers don't all echo the document hash back on GET (koreader-sync only
+      // returns progress/percentage/device/device_id/timestamp), and dropping
+      // those replies left the reader on its stale local position — which it
+      // then pushed back over the newer remote one.
+      const hasPosition =
+        (typeof data.progress === 'string' && data.progress.length > 0) ||
+        (typeof data.percentage === 'number' && Number.isFinite(data.percentage));
+      if (!hasPosition) return null;
+      return { ...data, document: data.document || documentHash };
     } catch (e) {
       console.error('KOSync getProgress failed', e);
       return null;
@@ -228,6 +248,17 @@ export class KOSyncClient {
       console.error('KOSync updateProgress failed', e);
       return false;
     }
+  }
+
+  /**
+   * A genuine KOReader Sync server replies with a JSON object (e.g.
+   * `{ "authorized": "OK" }`). A misconfigured Server URL that hits a static
+   * web UI returns an HTML page instead, which fails JSON parsing — use that to
+   * tell the two apart.
+   */
+  private async isKoSyncJsonResponse(response: Response): Promise<boolean> {
+    const data = await response.json().catch(() => null);
+    return typeof data === 'object' && data !== null;
   }
 
   getDocumentDigest(book: Book): string {

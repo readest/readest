@@ -1,0 +1,9 @@
+{
+  "meta": { "source": "zh", "target": "en", "metric": "hsk", "version": 1, "count": 3 },
+  "entries": {
+    "斟酌": { "r": 12000, "g": "to consider" },
+    "经济": { "r": 6000, "g": "economy" },
+    "的": { "r": 3000, "g": "(particle)" }
+  },
+  "inflections": {}
+}

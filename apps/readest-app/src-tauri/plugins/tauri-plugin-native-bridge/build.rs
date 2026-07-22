@@ -2,6 +2,7 @@ const COMMANDS: &[&str] = &[
     "auth_with_safari",
     "auth_with_custom_tab",
     "copy_uri_to_path",
+    "save_image_to_gallery",
     "use_background_audio",
     "install_package",
     "set_system_ui_visibility",
@@ -33,6 +34,13 @@ const COMMANDS: &[&str] = &[
     "checkPermissions",
     "requestPermissions",
     "clip_url",
+    "set_secure_item",
+    "get_secure_item",
+    "clear_secure_item",
+    "refresh_eink_screen",
+    "update_reading_widget",
+    "capture_webview_region",
+    "set_text_selection_suppressed",
 ];
 
 fn main() {

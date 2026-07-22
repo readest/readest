@@ -41,6 +41,23 @@ TTS tracks its own section independently from the view via `#ttsSectionIndex`:
 | #3400 | TTS highlight stops after restart | `view.tts` not nulled on shutdown | Added `this.view.tts = null` in `shutdown()` |
 | #4033 | Voice count flip-flops within one book (17↔5) | All 3 clients filtered voices by full locale (`v.lang.startsWith(locale)`); panel lang refreshes from the speaking mark (`getSpeakingLang`), and books mix region variants — Standard Ebooks boilerplate is `en-US` (17 Edge voices), body `en-GB` (5 Edge voices) | PR #4565: filter by primary lang (`isSameLang`) in Edge/Web/Native `getVoices`; new `TTSUtils.sortVoicesPreferLocaleFunc(locale)` keeps exact-locale voices first so `getVoiceIdFromLang` default stays region-aware. Also fixed `zh-Hans` → empty Edge list |
 
+## Memory Index (moved from MEMORY.md 2026-07-19)
+
+- [Android Auto TTS #3919/PR#4907](android-auto-tts-3919.md) MERGED · [CarPlay TTS](carplay-tts-support.md) device crash = tao UAF → `packages/tao`
+- [iOS TTS native media session](ios-tts-media-session-native.md) PR#5085; pause-card killer = volume-key .mixWithOthers
+- [TTS architecture refactor](tts-architecture-refactor-plan.md) SHIPPED #5126: SpeechProvider + SQLite cache
+- [Edge TTS Web Audio engine (#3851)](edge-tts-webaudio-engine.md) gapless WebAudioPlayer + WSOLA
+- [Background TTS sessions PR#4941](tts-background-session-decoupling.md) hash-keyed
+- [#5032 TTS mini player stacking](tts-miniplayer-position-stacking.md)
+- [TTS player redesign](tts-player-redesign.md) MERGED #4996; open: isPlaying glyph desync at section transitions
+- [TTS player refinements PR#5162](tts-speed-ruler-5157.md) MERGED; TickRuler for speed+pauses, scrubber preview, mini player redesign (#5101); ttsPlayerStyle full/minimal
+- [Android bg TTS media session fix](android-bg-tts-media-session-fix.md) in-process calls
+- [Edge TTS https proxy is web-only](edge-tts-https-proxy-web-only.md) Tauri never hits /api/tts/edge; gate `!isTauriAppPlatform()`
+- Native TTS: [#4676 iOS](native-ios-tts-4676.md) pause==stop; [#4613 offline halt](native-tts-offline-autoadvance-4613.md); [#4408 screen-lock](native-tts-screenlock-keepalive-4408.md) keep-alive tone
+- Edge TTS: [word highlight #4017](edge-tts-word-highlighting-4017.md); [drift](tts-word-highlight-singletextnode-drift.md)
+- TTS UX: [highlight granularity](tts-highlight-granularity-setting.md); [start-from-selection](tts-start-from-selection.md); [reuse session](tts-reuse-session-mode-entry.md)
+- Tests: [browser e2e harness](tts-browser-e2e-harness.md); [paragraph+RSVP sync #3235](tts-sync-paragraph-rsvp-3235.md) TTS-is-clock; [teardown microtask flake #5151](tts-test-teardown-microtask-flake.md) stop speak loops in afterEach
+
 ## Debugging TTS Issues
 
 1. **TTS doesn't start:** Check `#initTTSForSection()` - does `view.tts.doc === doc` shortcut early?

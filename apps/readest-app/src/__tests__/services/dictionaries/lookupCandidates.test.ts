@@ -8,8 +8,9 @@ describe('buildLookupCandidates', () => {
   });
 
   it('trims leading/trailing whitespace from a double-click selection', () => {
+    // Non-inflecting words keep this focused on trimming + case folding.
     expect(buildLookupCandidates('world ')).toEqual(['world', 'World', 'WORLD']);
-    expect(buildLookupCandidates('  spaced  ')).toEqual(['spaced', 'Spaced', 'SPACED']);
+    expect(buildLookupCandidates('  planet  ')).toEqual(['planet', 'Planet', 'PLANET']);
   });
 
   it('offers a lowercase variant for a sentence-initial capitalized word', () => {
@@ -28,5 +29,48 @@ describe('buildLookupCandidates', () => {
   it('returns an empty list for a blank selection', () => {
     expect(buildLookupCandidates('')).toEqual([]);
     expect(buildLookupCandidates('   ')).toEqual([]);
+  });
+
+  describe('lemmatization fallback', () => {
+    it('appends lemma candidates after the exact/case variants', () => {
+      const candidates = buildLookupCandidates('ran', 'en');
+      expect(candidates[0]).toBe('ran'); // exact selection tried first
+      expect(candidates).toContain('run');
+      expect(candidates.indexOf('run')).toBeGreaterThan(candidates.indexOf('ran'));
+    });
+
+    it('keeps every exact/case variant ahead of any lemma', () => {
+      const candidates = buildLookupCandidates('Mice', 'en');
+      const lastCaseVariant = Math.max(
+        candidates.indexOf('Mice'),
+        candidates.indexOf('mice'),
+        candidates.indexOf('MICE'),
+      );
+      expect(candidates.indexOf('mouse')).toBeGreaterThan(lastCaseVariant);
+    });
+
+    it('resolves the issue test cases to their expected lemma', () => {
+      const cases: Array<[string, string]> = [
+        ['ran', 'run'],
+        ['went', 'go'],
+        ['gone', 'go'],
+        ['mice', 'mouse'],
+        ['children', 'child'],
+        ['better', 'good'],
+        ['analyses', 'analysis'],
+        ['realised', 'realise'],
+      ];
+      for (const [selection, lemma] of cases) {
+        expect(buildLookupCandidates(selection, 'en')).toContain(lemma);
+      }
+    });
+
+    it('defaults to English lemmatization when no language is given', () => {
+      expect(buildLookupCandidates('ran')).toContain('run');
+    });
+
+    it('does not lemmatize for an explicit non-English language', () => {
+      expect(buildLookupCandidates('ran', 'fr')).toEqual(['ran', 'Ran', 'RAN']);
+    });
   });
 });

@@ -68,6 +68,9 @@ msgstr "遞增"
 msgid "Actions"
 msgstr "動作"
 
+msgid "Download all books"
+msgstr "下載所有書籍"
+
 msgid "Rescan library"
 msgstr "重新掃描書庫"
 
@@ -133,6 +136,21 @@ msgstr "封面下載失敗。"
 
 msgid "Could not delete the file."
 msgstr "無法刪除檔案。"
+
+msgid "No books to download."
+msgstr "沒有可下載的書籍。"
+
+msgid "Downloading %1 of %2…"
+msgstr "正在下載第 %1 / %2 本…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "下載已取消。已下載 %2 本中的 %1 本。"
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "已下載 %2 本中的 %1 本（略過 %3 本）。"
+
+msgid "Downloaded %1 of %2."
+msgstr "已下載 %2 本中的 %1 本。"
 
 msgid "Removing from cloud…"
 msgstr "正在從雲端移除…"
@@ -215,6 +233,9 @@ msgstr "從此裝置推送 Readest 註釋"
 msgid "Pull readest annotations from other devices"
 msgstr "從其他裝置拉取 Readest 註釋"
 
+msgid "Full sync all readest annotations"
+msgstr "完整同步所有 Readest 註釋"
+
 msgid "Add to Readest"
 msgstr "新增到 Readest"
 
@@ -239,6 +260,12 @@ msgstr "已在您的 Readest 書庫中："
 msgid "Added to Readest:"
 msgstr "已新增到 Readest："
 
+msgid "No book is open"
+msgstr "沒有開啟的書籍"
+
+msgid "Uploaded to Readest:"
+msgstr "已上傳到 Readest："
+
 msgid "Log in Readest Account"
 msgstr "登入 Readest 帳戶"
 
@@ -251,11 +278,20 @@ msgstr "自動同步"
 msgid "Readest library"
 msgstr "Readest 書庫"
 
+msgid "Push stats now"
+msgstr "立即推送統計"
+
+msgid "Pull stats now"
+msgstr "立即拉取統計"
+
 msgid "Push books now"
 msgstr "立即推送書籍"
 
 msgid "Pull books now"
 msgstr "立即拉取書籍"
+
+msgid "Upload current book to Readest"
+msgstr "上傳目前書籍到 Readest"
 
 msgid "Push reading progress now"
 msgstr "立即推送閱讀進度"
@@ -286,9 +322,6 @@ msgstr "請先登入"
 
 msgid "Please configure Readest settings first"
 msgstr "請先設定 Readest"
-
-msgid "No book is open"
-msgstr "沒有開啟的書籍"
 
 msgid "(none)"
 msgstr "（無）"
@@ -436,3 +469,18 @@ msgstr "閱讀進度已同步"
 
 msgid "No saved reading progress found for this book"
 msgstr "找不到此書籍的閱讀進度"
+
+msgid "Reading statistics are up to date"
+msgstr "閱讀統計已是最新"
+
+msgid "Reading statistics pushed"
+msgstr "閱讀統計已推送"
+
+msgid "Failed to push reading statistics"
+msgstr "推送閱讀統計失敗"
+
+msgid "Failed to pull reading statistics"
+msgstr "拉取閱讀統計失敗"
+
+msgid "Reading statistics pulled"
+msgstr "閱讀統計已拉取"

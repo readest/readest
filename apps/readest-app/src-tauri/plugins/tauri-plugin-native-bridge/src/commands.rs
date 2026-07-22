@@ -31,11 +31,27 @@ pub(crate) async fn copy_uri_to_path<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn save_image_to_gallery<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SaveImageToGalleryRequest,
+) -> Result<SaveImageToGalleryResponse> {
+    app.native_bridge().save_image_to_gallery(payload)
+}
+
+#[command]
 pub(crate) async fn use_background_audio<R: Runtime>(
     app: AppHandle<R>,
     payload: UseBackgroundAudioRequest,
 ) -> Result<()> {
     app.native_bridge().use_background_audio(payload)
+}
+
+#[command]
+pub(crate) async fn set_text_selection_suppressed<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SetTextSelectionSuppressedRequest,
+) -> Result<()> {
+    app.native_bridge().set_text_selection_suppressed(payload)
 }
 
 #[command]
@@ -240,4 +256,59 @@ pub(crate) async fn is_sync_keychain_available<R: Runtime>(
     app: AppHandle<R>,
 ) -> Result<SyncKeychainAvailableResponse> {
     app.native_bridge().is_sync_keychain_available()
+}
+
+#[command]
+pub(crate) async fn set_secure_item<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SetSecureItemRequest,
+) -> Result<SecureItemResponse> {
+    app.native_bridge().set_secure_item(payload)
+}
+
+#[command]
+pub(crate) async fn get_secure_item<R: Runtime>(
+    app: AppHandle<R>,
+    payload: GetSecureItemRequest,
+) -> Result<GetSecureItemResponse> {
+    app.native_bridge().get_secure_item(payload)
+}
+
+#[command]
+pub(crate) async fn clear_secure_item<R: Runtime>(
+    app: AppHandle<R>,
+    payload: GetSecureItemRequest,
+) -> Result<SecureItemResponse> {
+    app.native_bridge().clear_secure_item(payload)
+}
+
+#[command]
+pub(crate) async fn refresh_eink_screen<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<RefreshEinkScreenResponse> {
+    app.native_bridge().refresh_eink_screen()
+}
+
+#[command]
+pub(crate) async fn update_reading_widget<R: Runtime>(
+    app: AppHandle<R>,
+    payload: UpdateReadingWidgetRequest,
+) -> Result<()> {
+    app.native_bridge().update_reading_widget(payload)
+}
+
+/// Snapshot a region of the calling webview and return it as binary PNG
+/// (`tauri::ipc::Response`, no JSON encoding) for the mesh page-curl
+/// texture (#555). Platforms without a capture implementation reject,
+/// which the JS side treats as "fall back to the CSS curl".
+#[command]
+pub(crate) async fn capture_webview_region<R: Runtime>(
+    app: AppHandle<R>,
+    window: tauri::WebviewWindow<R>,
+    payload: CaptureWebviewRegionRequest,
+) -> Result<tauri::ipc::Response> {
+    let png = app
+        .native_bridge()
+        .capture_webview_region(&window, payload)?;
+    Ok(tauri::ipc::Response::new(png))
 }

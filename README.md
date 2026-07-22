@@ -121,115 +121,9 @@ Guides, tutorials, and FAQs for installing and using Readest live in the officia
 
 📖 **[https://readest.com/docs][link-docs]**
 
-## Requirements
+## Building from Source
 
-- **Node.js** and **pnpm** for Next.js development
-- **Rust** and **Cargo** for Tauri development
-
-For the best experience to build Readest for yourself, use a recent version of Node.js and Rust. Refer to the [Tauri documentation](https://v2.tauri.app/start/prerequisites/) for details on setting up the development environment prerequisites on different platforms.
-
-```bash
-nvm install v24
-nvm use v24
-npm install -g pnpm
-rustup update
-```
-
-## Getting Started
-
-To get started with Readest, follow these steps to clone and build the project.
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/readest/readest.git
-cd readest
-```
-
-### 2. Install Dependencies
-
-```bash
-# might need to rerun this when code is updated
-git submodule update --init --recursive
-pnpm install
-# copy vendors dist libs to public directory
-pnpm --filter @readest/readest-app setup-vendors
-```
-
-### 3. Verify Dependencies Installation
-
-To confirm that all dependencies are correctly installed, run the following command:
-
-```bash
-pnpm tauri info
-```
-
-This command will display information about the installed Tauri dependencies and configuration on your platform. Note that the output may vary depending on the operating system and environment setup. Please review the output specific to your platform for any potential issues.
-
-For Windows targets, “Build Tools for Visual Studio 2022” (or a higher edition of Visual Studio) and the “Desktop development with C++” workflow must be installed. For Windows ARM64 targets, the “VS 2022 C++ ARM64 build tools” and "C++ Clang Compiler for Windows" components must be installed. And make sure `clang` can be found in the path by adding `C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\Llvm\x64\bin` for example in the environment variable `Path`.
-
-### 4. Build for Development
-
-```bash
-# Start development for the Tauri app
-pnpm tauri dev
-# or start development for the Web app
-pnpm dev-web
-# preview with OpenNext build for the Web app
-pnpm preview
-```
-
-For Android:
-
-```bash
-# Initialize the Android environment (run once)
-rm apps/readest-app/src-tauri/gen/android
-pnpm tauri android init
-pnpm tauri icon ../../data/icons/readest-book.png
-git checkout apps/readest-app/src-tauri/gen/android
-
-pnpm tauri android dev
-# or if you want to dev on a real device
-pnpm tauri android dev --host
-```
-
-For iOS:
-
-```bash
-# Set up the iOS environment (run once)
-pnpm tauri ios init
-pnpm tauri icon ../../data/icons/readest-book.png
-
-pnpm tauri ios dev
-# or if you want to dev on a real device
-pnpm tauri ios dev --host
-```
-
-### 5. Build for Production
-
-```bash
-pnpm tauri build
-pnpm tauri android build
-pnpm tauri ios build
-```
-
-Please refer to our release script if you experience any issues:
-https://github.com/readest/readest/blob/main/.github/workflows/release.yml
-
-### 6. Setup dev environment with Nix
-
-If you have Nix installed, you can leverage flake to enter a development shell
-with all the necessary dependencies:
-
-```bash
-nix develop ./ops  # enter a dev shell for the web app
-nix develop ./ops#ios # enter a dev shell for the ios app
-nix develop ./ops#android # enter a dev shell for the android app
-```
-
-### 7. More information
-
-Please check the [wiki][link-gh-wiki] of this project for more information on development.
+To build Readest from the latest commit, see [Getting Started](./CONTRIBUTING.md#getting-started).
 
 ## Troubleshooting
 
@@ -302,15 +196,7 @@ Readest is open-source, and contributions are welcome! Feel free to open issues,
 
 ## Support
 
-If Readest has been useful to you, consider supporting its development. You can [become a sponsor on GitHub](https://github.com/sponsors/readest), [donate via Stripe](https://donate.stripe.com/4gMcN5aZdcE52kW3TFgjC01), or [donate with crypto](https://donate.readest.com). Your contribution helps us squash bugs faster, improve performance, and keep building great features.
-
-### Sponsors
-
-<p align="center">
-  <a title="Browser testing via TestMu AI" href="https://www.testmuai.com/?utm_medium=sponsor&utm_source=readest" target="_blank">
-    <img src="https://raw.githubusercontent.com/readest/readest/refs/heads/main/data/sponsors/testmu-ai-logo.png" style="vertical-align: middle;" width="250" />
-  </a>
-</p>
+If Readest has been useful to you, consider supporting its development at [donate.readest.com](https://donate.readest.com), where you'll find all available donation methods, including GitHub Sponsors, card payments, and crypto. Your contribution helps us fix bugs faster, improve performance, and keep building great features.
 
 ## License
 
@@ -341,8 +227,8 @@ We would also like to thank the [Web Chinese Fonts Plan](https://chinese-font.ne
 
 [badge-website]: https://img.shields.io/badge/website-readest.com-orange
 [badge-web-app]: https://img.shields.io/badge/read%20online-web.readest.com-orange
-[badge-license]: https://img.shields.io/github/license/readest/readest?color=teal
-[badge-release]: https://img.shields.io/github/release/readest/readest?color=green
+[badge-license]: https://img.shields.io/badge/license-AGPL--3.0-teal
+[badge-release]: https://img.shields.io/github/v/release/readest/readest?color=green
 [badge-platforms]: https://img.shields.io/badge/platforms-macOS%2C%20Windows%2C%20Linux%2C%20Android%2C%20iOS%2C%20Web%2C%20PWA-green
 [badge-last-commit]: https://img.shields.io/github/last-commit/readest/readest?color=blue
 [badge-commit-activity]: https://img.shields.io/github/commit-activity/m/readest/readest?color=blue

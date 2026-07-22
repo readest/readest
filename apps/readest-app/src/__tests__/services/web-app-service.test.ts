@@ -192,8 +192,7 @@ describe('WebAppService', () => {
 
   describe('setCustomRootDir', () => {
     test('is a no-op', async () => {
-      // Should not throw
-      await service.setCustomRootDir();
+      await expect(service.setCustomRootDir()).resolves.toBeUndefined();
     });
   });
 

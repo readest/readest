@@ -27,7 +27,7 @@ function makeBook(overrides: Partial<Book> = {}): Book {
 function makeDeps(
   over: {
     importResult?: Book | null;
-    autoUpload?: boolean;
+    bookSyncEnabled?: boolean;
     isLoggedIn?: boolean;
     externalLibraryFolders?: string[];
     osPlatform?: OsPlatform;
@@ -42,9 +42,11 @@ function makeDeps(
     importBook,
     osPlatform: over.osPlatform ?? ('linux' as OsPlatform),
   } as unknown as AppService;
+  // The Manage Sync "book" category defaults on; only an explicit `false`
+  // opts out of auto-upload. Leaving syncCategories unset mirrors that default.
   const settings = {
-    autoUpload: over.autoUpload ?? false,
     externalLibraryFolders: over.externalLibraryFolders,
+    syncCategories: over.bookSyncEnabled === false ? { book: false } : undefined,
   } as SystemSettings;
   return { appService, settings, isLoggedIn: over.isLoggedIn ?? false, importBook };
 }
@@ -150,9 +152,9 @@ describe('ingestFile', () => {
     expect(book?.updatedAt).toBe(2000);
   });
 
-  test('forceUpload queues an upload even when autoUpload is off', async () => {
+  test('forceUpload queues an upload even when book sync is turned off', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: false,
+      bookSyncEnabled: false,
       isLoggedIn: true,
     });
     await ingestFile(
@@ -162,18 +164,17 @@ describe('ingestFile', () => {
     expect(transferManager.queueUpload).toHaveBeenCalledTimes(1);
   });
 
-  test('autoUpload queues an upload without forceUpload', async () => {
+  test('queues an upload by default without forceUpload', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: true,
       isLoggedIn: true,
     });
     await ingestFile({ file: 'book.epub', books: [] }, { appService, settings, isLoggedIn });
     expect(transferManager.queueUpload).toHaveBeenCalledTimes(1);
   });
 
-  test('does not queue an upload when neither forceUpload nor autoUpload is set', async () => {
+  test('does not queue an upload when book sync is turned off in manage sync', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: false,
+      bookSyncEnabled: false,
       isLoggedIn: true,
     });
     await ingestFile({ file: 'book.epub', books: [] }, { appService, settings, isLoggedIn });
@@ -182,7 +183,6 @@ describe('ingestFile', () => {
 
   test('does not queue an upload when the user is not logged in', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: true,
       isLoggedIn: false,
     });
     await ingestFile(
@@ -194,7 +194,6 @@ describe('ingestFile', () => {
 
   test('never queues an upload for a transient import', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: true,
       isLoggedIn: true,
     });
     await ingestFile(
@@ -220,7 +219,6 @@ describe('ingestFile', () => {
   test('does not queue an upload when the book is already uploaded', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
       importResult: makeBook({ uploadedAt: 5000 }),
-      autoUpload: true,
       isLoggedIn: true,
     });
     await ingestFile(
@@ -543,15 +541,95 @@ describe('ingestFile', () => {
     expect(importBook.mock.calls[0]?.[2]).toMatchObject({ inPlace: false });
   });
 
+  // ------ in-place + byFilePath fast path ------
+  // ingestFile probes the byFilePath index before delegating to importBook
+  // so a re-scan of an already-imported external folder skips file I/O,
+  // parsing, hashing, AND every downstream side effect (group / tag / upload
+  // decisions). The fast path returning early is what guarantees a manual
+  // GroupingModal assignment survives a folder re-import — without it, a
+  // path-derived empty groupId would clobber the existing group.
+
+  test('byFilePath hit short-circuits importBook entirely on in-place re-import', async () => {
+    const { appService, settings, isLoggedIn, importBook } = makeDeps({
+      externalLibraryFolders: ['/Users/me/Library'],
+      osPlatform: 'macos',
+    });
+    const sourcePath = '/Users/me/Library/sample.epub';
+    const existing: Book = {
+      hash: 'previously-hashed',
+      format: 'EPUB',
+      title: 'Existing',
+      author: 'Author',
+      filePath: sourcePath,
+      createdAt: 1000,
+      updatedAt: 2000,
+      groupId: 'manual',
+      groupName: 'Manual/Group',
+    };
+    // macOS is case-insensitive, so the index key is lowercased to match
+    // what `normalizeFilePathForIndex` produces in production.
+    const lookupIndex = {
+      byHash: new Map(),
+      byMetaKey: new Map(),
+      byFilePath: new Map([[sourcePath.toLowerCase(), existing]]),
+    } as unknown as Parameters<typeof ingestFile>[0]['lookupIndex'];
+    const book = await ingestFile(
+      {
+        file: sourcePath,
+        books: [existing],
+        lookupIndex,
+        groupId: '',
+        groupName: undefined,
+      },
+      { appService, settings, isLoggedIn },
+    );
+    expect(book).toBe(existing);
+    // importBook never ran, so no file I/O, no parser, no partialMD5.
+    expect(importBook).not.toHaveBeenCalled();
+    // Existing fields are untouched: createdAt / updatedAt / group all stay.
+    expect(existing.createdAt).toBe(1000);
+    expect(existing.updatedAt).toBe(2000);
+    expect(existing.groupId).toBe('manual');
+    expect(existing.groupName).toBe('Manual/Group');
+  });
+
+  test('without inPlace the byFilePath index is ignored and importBook runs', async () => {
+    // Fast path is gated on `inPlace`. A classic copy-mode import (no
+    // external library folder configured) that happens to point at a path
+    // already in the library must still go through importBook so dedup
+    // falls back to byHash.
+    const { appService, settings, isLoggedIn, importBook } = makeDeps();
+    const sourcePath = '/Users/me/Downloads/sample.epub';
+    const existing: Book = {
+      hash: 'previously-hashed',
+      format: 'EPUB',
+      title: 'Existing',
+      author: 'Author',
+      filePath: sourcePath,
+      createdAt: 1000,
+      updatedAt: 2000,
+    };
+    const lookupIndex = {
+      byHash: new Map(),
+      byMetaKey: new Map(),
+      byFilePath: new Map([[sourcePath, existing]]),
+    } as unknown as Parameters<typeof ingestFile>[0]['lookupIndex'];
+    await ingestFile(
+      { file: sourcePath, books: [existing], lookupIndex },
+      { appService, settings, isLoggedIn },
+    );
+    expect(importBook).toHaveBeenCalledTimes(1);
+    expect(importBook.mock.calls[0]?.[2]).toMatchObject({ inPlace: false });
+  });
+
   // ------ in-place + cloud upload ------
   // In-place imports are still uploaded so the user gets backup / cross-device
   // sync. Only transient imports opt out of upload entirely. The on-the-wire
   // shape is identical to a hash-copy book; uploadBook reads from book.filePath
   // when set, which is asserted in cloud-service.test.ts.
 
-  test('autoUpload still queues an in-place book (book.filePath set)', async () => {
+  test('queues an in-place book by default (book.filePath set)', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: true,
       isLoggedIn: true,
       externalLibraryFolders: ['/Users/me/Library'],
       importResult: makeBook({ filePath: '/Users/me/Library/sample.epub' }),
@@ -563,9 +641,9 @@ describe('ingestFile', () => {
     expect(transferManager.queueUpload).toHaveBeenCalledTimes(1);
   });
 
-  test('forceUpload still queues an in-place book even when autoUpload is off', async () => {
+  test('forceUpload still queues an in-place book even when book sync is off', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: false,
+      bookSyncEnabled: false,
       isLoggedIn: true,
       externalLibraryFolders: ['/Users/me/Library'],
       importResult: makeBook({ filePath: '/Users/me/Library/sample.epub' }),
@@ -579,7 +657,6 @@ describe('ingestFile', () => {
 
   test('transient still trumps in-place — no upload even with forceUpload', async () => {
     const { appService, settings, isLoggedIn } = makeDeps({
-      autoUpload: true,
       isLoggedIn: true,
       externalLibraryFolders: ['/Users/me/Library'],
       importResult: makeBook({ filePath: '/Users/me/Library/sample.epub' }),

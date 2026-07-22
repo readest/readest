@@ -1,10 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import {
-  deleteDirectory,
-  WebDAVRequestError,
-  type WebDAVConfig,
-} from '@/services/webdav/WebDAVClient';
-import { deleteRemoteBookDir } from '@/services/webdav/WebDAVSync';
+import { deleteDirectory, type WebDAVConfig } from '@/services/sync/providers/webdav/client';
+import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVProvider';
+import { deleteRemoteBookDir } from '@/services/sync/file/engine';
+import { FileSyncError } from '@/services/sync/file/provider';
 import type { WebDAVSettings } from '@/types/settings';
 
 /**
@@ -127,15 +125,16 @@ describe('deleteDirectory', () => {
 
 describe('deleteRemoteBookDir', () => {
   const HASH = 'abc123';
+  const provider = createWebDAVProvider(settings);
 
   test('successful DELETE returns ok=true', async () => {
     fetchMock.mockResolvedValueOnce(buildResponse(204));
-    await expect(deleteRemoteBookDir(settings, HASH)).resolves.toEqual({ ok: true });
+    await expect(deleteRemoteBookDir(provider, HASH)).resolves.toEqual({ ok: true });
   });
 
   test('non-auth failure (500) returns ok=false with reason populated', async () => {
     fetchMock.mockResolvedValueOnce(buildResponse(500));
-    const result = await deleteRemoteBookDir(settings, HASH);
+    const result = await deleteRemoteBookDir(provider, HASH);
     expect(result.ok).toBe(false);
     // The reason is the underlying error message; we don't pin its
     // exact wording (could be tweaked) but it must be a non-empty
@@ -146,24 +145,23 @@ describe('deleteRemoteBookDir', () => {
 
   test('AUTH_FAILED is rethrown so callers can short-circuit batches', async () => {
     fetchMock.mockResolvedValueOnce(buildResponse(401));
-    await expect(deleteRemoteBookDir(settings, HASH)).rejects.toBeInstanceOf(WebDAVRequestError);
+    await expect(deleteRemoteBookDir(provider, HASH)).rejects.toBeInstanceOf(FileSyncError);
     // 403 walks the same code path; assert the AUTH_FAILED tag
     // independently so a regression that lets one status leak
     // through but not the other still trips a test.
     fetchMock.mockResolvedValueOnce(buildResponse(403));
-    await expect(deleteRemoteBookDir(settings, HASH)).rejects.toMatchObject({
+    await expect(deleteRemoteBookDir(provider, HASH)).rejects.toMatchObject({
       code: 'AUTH_FAILED',
     });
   });
 
   test('targets the correct per-hash directory under <rootPath>/Readest/books', async () => {
-    // The remote layout is documented in WebDAVPaths.ts; this test
-    // pins the contract so neither side can drift. A custom
-    // rootPath is used to make sure buildBookDirPath honours it
-    // (a literal '/' would mask a "join always uses leading-slash
-    // base" regression).
+    // The remote layout is documented in sync/file/layout.ts; this test
+    // pins the contract so neither side can drift. A custom rootPath is
+    // used to make sure buildBookDirPath honours it (a literal '/' would
+    // mask a "join always uses leading-slash base" regression).
     fetchMock.mockResolvedValueOnce(buildResponse(204));
-    await deleteRemoteBookDir({ ...settings, rootPath: '/MyDav' }, HASH);
+    await deleteRemoteBookDir(createWebDAVProvider({ ...settings, rootPath: '/MyDav' }), HASH);
     const [url] = fetchMock.mock.calls[0]!;
     expect(url).toBe('https://dav.example.com/MyDav/Readest/books/abc123');
   });

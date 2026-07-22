@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
-import { buildWebDAVConnectSettings } from '@/services/webdav/webdavConnectSettings';
-import type { WebDAVSettings, WebDAVSyncLogEntry } from '@/types/settings';
+import { buildWebDAVConnectSettings } from '@/services/sync/providers/webdav/connectSettings';
+import type { WebDAVSettings } from '@/types/settings';
 
 describe('buildWebDAVConnectSettings', () => {
   test('applies form fields onto a blank previous state', () => {
@@ -10,8 +10,10 @@ describe('buildWebDAVConnectSettings', () => {
       password: 'hunter2',
       rootPath: '/Readest',
     });
+    // The builder is activation-agnostic: `enabled` (and the activation
+    // side effects like the syncBooks auto-flip) belong to
+    // persistCloudProviderEnabled, which the connect flow applies on top.
     expect(result).toEqual({
-      enabled: true,
       serverUrl: 'https://dav.example.com',
       username: 'alice',
       password: 'hunter2',
@@ -21,26 +23,8 @@ describe('buildWebDAVConnectSettings', () => {
 
   test('preserves prior bookkeeping fields across reconnect', () => {
     // Simulates the disconnect → reconnect flow: the user previously
-    // synced (deviceId minted, syncBooks toggled on, history populated),
-    // disabled WebDAV, and is now reconnecting with the same credentials.
-    const log: WebDAVSyncLogEntry[] = [
-      {
-        id: 'log-1',
-        startedAt: 1_700_000_000_000,
-        finishedAt: 1_700_000_001_500,
-        status: 'success',
-        trigger: 'manual',
-        totalBooks: 3,
-        booksDownloaded: 0,
-        filesUploaded: 1,
-        filesAlreadyInSync: 2,
-        configsUploaded: 3,
-        configsDownloaded: 0,
-        coversUploaded: 0,
-        failures: 0,
-        summary: 'Sync complete',
-      },
-    ];
+    // synced (deviceId minted, syncBooks toggled on), disabled WebDAV,
+    // and is now reconnecting with the same credentials.
     const previous: WebDAVSettings = {
       enabled: false,
       serverUrl: 'https://dav.example.com',
@@ -53,7 +37,6 @@ describe('buildWebDAVConnectSettings', () => {
       strategy: 'send',
       deviceId: 'device-uuid-9f3c',
       lastSyncedAt: 1_700_000_001_500,
-      syncLog: log,
     };
 
     const next = buildWebDAVConnectSettings(previous, {
@@ -63,7 +46,10 @@ describe('buildWebDAVConnectSettings', () => {
       rootPath: '/Readest',
     });
 
-    expect(next.enabled).toBe(true);
+    // Still disabled: the connect flow activates via persistCloudProviderEnabled
+    // so the disabled -> enabled transition (and its syncBooks auto-flip)
+    // happens exactly once, in one place.
+    expect(next.enabled).toBe(false);
     // Stable per-device id MUST survive — losing it makes the next sync
     // look like a brand-new device and breaks cross-device clobber
     // detection in `RemoteBookConfig.writerDeviceId`.
@@ -73,7 +59,6 @@ describe('buildWebDAVConnectSettings', () => {
     expect(next.syncProgress).toBe(true);
     expect(next.syncNotes).toBe(true);
     expect(next.lastSyncedAt).toBe(1_700_000_001_500);
-    expect(next.syncLog).toEqual(log);
   });
 
   test('updates the credentials when the user reconnects to a different account', () => {

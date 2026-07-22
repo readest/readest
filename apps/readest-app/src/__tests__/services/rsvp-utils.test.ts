@@ -3,6 +3,7 @@ import {
   isCJK,
   containsCJK,
   isCJKPunctuation,
+  isRTLText,
   getSegmenterLocale,
   segmentCJKText,
   splitTextIntoWords,
@@ -115,6 +116,41 @@ describe('rsvp/utils', () => {
 
     test('returns false for a letter', () => {
       expect(isCJKPunctuation('A')).toBe(false);
+    });
+  });
+
+  describe('isRTLText', () => {
+    test('returns true for Arabic text', () => {
+      expect(isRTLText('علم')).toBe(true);
+      expect(isRTLText('مرحبا')).toBe(true);
+    });
+
+    test('returns true for Hebrew text', () => {
+      expect(isRTLText('שלום')).toBe(true);
+    });
+
+    test('returns true for Arabic presentation forms', () => {
+      expect(isRTLText('ﺍ')).toBe(true); // Arabic letter alef isolated form
+    });
+
+    test('returns true for text mixing Arabic and Latin', () => {
+      expect(isRTLText('Hello علم')).toBe(true);
+    });
+
+    test('returns false for pure Latin text', () => {
+      expect(isRTLText('hello')).toBe(false);
+    });
+
+    test('returns false for CJK text', () => {
+      expect(isRTLText('你好世界')).toBe(false);
+    });
+
+    test('returns false for digits and Latin punctuation', () => {
+      expect(isRTLText('123, 456.')).toBe(false);
+    });
+
+    test('returns false for empty string', () => {
+      expect(isRTLText('')).toBe(false);
     });
   });
 

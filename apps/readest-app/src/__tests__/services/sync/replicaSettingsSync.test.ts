@@ -44,6 +44,7 @@ const makeSettings = (overrides: Partial<SystemSettings> = {}): SystemSettings =
     kosync: { serverUrl: '', username: '', userkey: '', password: '' },
     readwise: { accessToken: '' },
     hardcover: { accessToken: '' },
+    webdav: { serverUrl: '', username: '', password: '', rootPath: '/' },
     ...overrides,
   }) as unknown as SystemSettings;
 
@@ -317,6 +318,96 @@ describe('publishSettingsIfChanged', () => {
       expect(patch.kosync?.password).toBe('hunter2');
     });
 
+    test('omits WebDAV credentials but keeps serverUrl/rootPath when credentials sync is OFF (issue #4810)', async () => {
+      await setCredentials(undefined); // default OFF
+      isUnlocked = false;
+      await publishSettingsIfChanged(
+        makeSettings({
+          webdav: {
+            serverUrl: 'https://dav.example.com',
+            username: 'alice',
+            password: 'hunter2',
+            rootPath: '/Books',
+          } as SystemSettings['webdav'],
+        }),
+      );
+      expect(publishMock).toHaveBeenCalledTimes(1);
+      const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+      // Plaintext connection metadata still ships.
+      expect(patch.webdav?.serverUrl).toBe('https://dav.example.com');
+      expect(patch.webdav?.rootPath).toBe('/Books');
+      // Credentials are gated off.
+      expect(patch.webdav?.username).toBeUndefined();
+      expect(patch.webdav?.password).toBeUndefined();
+    });
+
+    test('publishes WebDAV credentials when credentials sync is ON (issue #4810)', async () => {
+      await setCredentials(true);
+      isUnlocked = true;
+      await publishSettingsIfChanged(
+        makeSettings({
+          webdav: {
+            serverUrl: 'https://dav.example.com',
+            username: 'alice',
+            password: 'hunter2',
+            rootPath: '/Books',
+          } as SystemSettings['webdav'],
+        }),
+      );
+      expect(publishMock).toHaveBeenCalledTimes(1);
+      const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+      expect(patch.webdav?.serverUrl).toBe('https://dav.example.com');
+      expect(patch.webdav?.username).toBe('alice');
+      expect(patch.webdav?.password).toBe('hunter2');
+      expect(patch.webdav?.rootPath).toBe('/Books');
+    });
+
+    test('omits S3 credentials but keeps endpoint/region/bucket when credentials sync is OFF', async () => {
+      await setCredentials(undefined); // default OFF
+      isUnlocked = false;
+      await publishSettingsIfChanged(
+        makeSettings({
+          s3: {
+            endpoint: 'https://acc.r2.cloudflarestorage.com',
+            region: 'auto',
+            bucket: 'readest',
+            accessKeyId: 'AKIA',
+            secretAccessKey: 'shh',
+          } as SystemSettings['s3'],
+        }),
+      );
+      expect(publishMock).toHaveBeenCalledTimes(1);
+      const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+      // Plaintext connection metadata still ships.
+      expect(patch.s3?.endpoint).toBe('https://acc.r2.cloudflarestorage.com');
+      expect(patch.s3?.region).toBe('auto');
+      expect(patch.s3?.bucket).toBe('readest');
+      // Access keys are gated off.
+      expect(patch.s3?.accessKeyId).toBeUndefined();
+      expect(patch.s3?.secretAccessKey).toBeUndefined();
+    });
+
+    test('publishes S3 credentials when credentials sync is ON', async () => {
+      await setCredentials(true);
+      isUnlocked = true;
+      await publishSettingsIfChanged(
+        makeSettings({
+          s3: {
+            endpoint: 'https://acc.r2.cloudflarestorage.com',
+            region: 'auto',
+            bucket: 'readest',
+            accessKeyId: 'AKIA',
+            secretAccessKey: 'shh',
+          } as SystemSettings['s3'],
+        }),
+      );
+      expect(publishMock).toHaveBeenCalledTimes(1);
+      const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+      expect(patch.s3?.endpoint).toBe('https://acc.r2.cloudflarestorage.com');
+      expect(patch.s3?.accessKeyId).toBe('AKIA');
+      expect(patch.s3?.secretAccessKey).toBe('shh');
+    });
+
     test('skipping all of the only-credential changes is a clean no-op (no empty publish)', async () => {
       await setCredentials(undefined);
       isUnlocked = false;
@@ -354,35 +445,37 @@ describe('publishSettingsIfChanged', () => {
     expect(patch.hardcover?.accessToken).toBeUndefined();
   });
 
-  test('initSettingsSync(initialSettings) primes the snapshot so the first setSettings(disk_default) does not push', async () => {
+  test('initSettingsSync(initialSettings) primes the snapshot so structural disk defaults do not re-push', async () => {
     // Real-world bug: a fresh-install Device B's library boot calls
     // setSettings(disk_default) which fires publishSettingsIfChanged
-    // with an empty lastPublishedFields snapshot. Every whitelisted
-    // field looks "changed from undefined" and gets pushed to the
-    // server with a fresh HLC, overwriting the cross-device
+    // with an empty lastPublishedFields snapshot. Every structural
+    // whitelisted field looks "changed from undefined" and gets pushed
+    // to the server with a fresh HLC, overwriting the cross-device
     // authoritative values another device set. Disk-priming via
     // initSettingsSync(initialSettings) seeds the snapshot from the
-    // just-loaded disk so the same-value first publish is a no-op.
+    // just-loaded disk so the same-value first publish skips them.
+    //
+    // Credential connection metadata (webdav.rootPath, kosync.serverUrl, ...)
+    // is push-hash tracked, NOT disk-seeded, so it is intentionally exempt
+    // from this priming — that exemption is what lets a configured-but-never-
+    // published URL reach the other devices (#5141).
     const diskSettings = makeSettings({
       dictionarySettings: {
         providerOrder: ['builtin:wiktionary', 'builtin:wikipedia'],
         providerEnabled: { 'builtin:wiktionary': true, 'builtin:wikipedia': true },
         webSearches: [],
       },
-      kosync: {
-        serverUrl: 'https://sync.koreader.rocks/',
-        username: '',
-        userkey: '',
-        password: '',
-      } as SystemSettings['kosync'],
     } as Partial<SystemSettings>);
     initSettingsSync(diskSettings);
 
-    // The same disk_default replayed (typical library page initLibrary
-    // flow) — should produce no publish because every whitelisted
-    // field already matches the primed snapshot.
+    // The same disk_default replayed (typical library page initLibrary flow).
     await publishSettingsIfChanged(diskSettings);
-    expect(publishMock).not.toHaveBeenCalled();
+
+    // Structural fields primed from disk stay out of the diff — only the
+    // hash-tracked connection metadata (if any) may publish.
+    const patch = publishMock.mock.calls[0]?.[1].patch as Partial<SystemSettings> | undefined;
+    expect(patch?.dictionarySettings?.providerEnabled).toBeUndefined();
+    expect(patch?.globalReadSettings).toBeUndefined();
   });
 
   test('initSettingsSync priming does not block legitimate user changes against the seeded baseline', async () => {
@@ -410,6 +503,34 @@ describe('publishSettingsIfChanged', () => {
     expect(publishMock).toHaveBeenCalledTimes(1);
     const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
     expect(patch.kosync?.serverUrl).toBe('https://kosync.example');
+  });
+
+  test('re-publishes a disk-configured connection URL that was never synced, so it rejoins its credentials (issue #5141)', async () => {
+    enableCredentialsSync();
+    isUnlocked = true;
+    // A device that configured WebDAV before serverUrl entered the sync
+    // whitelist (#4810): the URL + credentials are on disk at boot, but were
+    // never actually published to the server.
+    const disk = makeSettings({
+      webdav: {
+        serverUrl: 'https://dav.example.com',
+        username: 'alice',
+        password: 'hunter2',
+        rootPath: '/Books',
+      } as SystemSettings['webdav'],
+    });
+    initSettingsSync(disk);
+
+    // Any settings save re-runs the publisher. The credentials (no stored
+    // push-hash) publish; the server URL and root path MUST ride along
+    // rather than stay stranded on this device.
+    await publishSettingsIfChanged(disk);
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+    expect(patch.webdav?.username).toBe('alice');
+    expect(patch.webdav?.password).toBe('hunter2');
+    expect(patch.webdav?.serverUrl).toBe('https://dav.example.com');
+    expect(patch.webdav?.rootPath).toBe('/Books');
   });
 
   test('does NOT trigger the gate when only plaintext settings change', async () => {
@@ -526,6 +647,92 @@ describe('applyRemoteSettings', () => {
 
     await publishSettingsIfChanged(useSettingsStore.getState().settings);
     expect(publishMock).not.toHaveBeenCalled();
+  });
+
+  test('deep-merges webdav credentials without clobbering local per-device fields (issue #4810)', () => {
+    const env = makeEnvConfig();
+    useSettingsStore.setState({
+      ...useSettingsStore.getState(),
+      settings: makeSettings({
+        webdav: {
+          enabled: true,
+          serverUrl: 'https://old.example.com',
+          username: 'old',
+          password: 'old-pass',
+          rootPath: '/Old',
+          deviceId: 'this-device',
+          lastSyncedAt: 999,
+          syncBooks: true,
+        } as unknown as SystemSettings['webdav'],
+      }),
+    });
+    applyRemoteSettings(env, {
+      name: 'singleton',
+      patch: {
+        webdav: {
+          serverUrl: 'https://dav.example.com',
+          username: 'alice',
+          password: 'hunter2',
+          rootPath: '/Books',
+        },
+      } as unknown as Partial<SystemSettings>,
+    });
+    const merged = useSettingsStore.getState().settings.webdav;
+    // Synced connection fields are applied.
+    expect(merged.serverUrl).toBe('https://dav.example.com');
+    expect(merged.username).toBe('alice');
+    expect(merged.password).toBe('hunter2');
+    expect(merged.rootPath).toBe('/Books');
+    // Per-device fields the remote patch omits must survive the merge.
+    expect(merged.enabled).toBe(true);
+    expect(merged.deviceId).toBe('this-device');
+    expect(merged.lastSyncedAt).toBe(999);
+    expect(merged.syncBooks).toBe(true);
+  });
+
+  test('deep-merges S3 credentials without clobbering local per-device fields', () => {
+    const env = makeEnvConfig();
+    useSettingsStore.setState({
+      ...useSettingsStore.getState(),
+      settings: makeSettings({
+        s3: {
+          enabled: true,
+          endpoint: 'https://old.r2.cloudflarestorage.com',
+          region: 'auto',
+          bucket: 'old-bucket',
+          accessKeyId: 'OLD',
+          secretAccessKey: 'old-secret',
+          deviceId: 'this-device',
+          lastSyncedAt: 999,
+          providerSelectedAt: 111,
+          syncBooks: true,
+        } as unknown as SystemSettings['s3'],
+      }),
+    });
+    applyRemoteSettings(env, {
+      name: 'singleton',
+      patch: {
+        s3: {
+          endpoint: 'https://acc.r2.cloudflarestorage.com',
+          region: 'auto',
+          bucket: 'readest',
+          accessKeyId: 'AKIA',
+          secretAccessKey: 'shh',
+        },
+      } as unknown as Partial<SystemSettings>,
+    });
+    const merged = useSettingsStore.getState().settings.s3;
+    // Synced connection fields are applied.
+    expect(merged.endpoint).toBe('https://acc.r2.cloudflarestorage.com');
+    expect(merged.bucket).toBe('readest');
+    expect(merged.accessKeyId).toBe('AKIA');
+    expect(merged.secretAccessKey).toBe('shh');
+    // Per-device fields the remote patch omits must survive the merge.
+    expect(merged.enabled).toBe(true);
+    expect(merged.deviceId).toBe('this-device');
+    expect(merged.lastSyncedAt).toBe(999);
+    expect(merged.providerSelectedAt).toBe(111);
+    expect(merged.syncBooks).toBe(true);
   });
 
   test('empty patch is a no-op', () => {

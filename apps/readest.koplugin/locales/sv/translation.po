@@ -68,6 +68,9 @@ msgstr "Stigande"
 msgid "Actions"
 msgstr "Åtgärder"
 
+msgid "Download all books"
+msgstr "Ladda ned alla böcker"
+
 msgid "Rescan library"
 msgstr "Skanna biblioteket igen"
 
@@ -133,6 +136,21 @@ msgstr "Nedladdning av omslag misslyckades."
 
 msgid "Could not delete the file."
 msgstr "Kunde inte ta bort filen."
+
+msgid "No books to download."
+msgstr "Inga böcker att ladda ned."
+
+msgid "Downloading %1 of %2…"
+msgstr "Laddar ned %1 av %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Nedladdning avbruten. %1 av %2 nedladdade."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Laddade ned %1 av %2 (hoppade över %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Laddade ned %1 av %2."
 
 msgid "Removing from cloud…"
 msgstr "Tar bort från molnet …"
@@ -215,6 +233,9 @@ msgstr "Skicka Readest-anteckningar från den här enheten"
 msgid "Pull readest annotations from other devices"
 msgstr "Hämta Readest-anteckningar från andra enheter"
 
+msgid "Full sync all readest annotations"
+msgstr "Synkronisera alla Readest-anteckningar fullständigt"
+
 msgid "Add to Readest"
 msgstr "Lägg till i Readest"
 
@@ -239,6 +260,12 @@ msgstr "Redan i ditt Readest-bibliotek:"
 msgid "Added to Readest:"
 msgstr "Tillagd i Readest:"
 
+msgid "No book is open"
+msgstr "Ingen bok är öppen"
+
+msgid "Uploaded to Readest:"
+msgstr "Uppladdad till Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Logga in på Readest-konto"
 
@@ -251,11 +278,20 @@ msgstr "Automatisk synkronisering"
 msgid "Readest library"
 msgstr "Readest-bibliotek"
 
+msgid "Push stats now"
+msgstr "Skicka statistik nu"
+
+msgid "Pull stats now"
+msgstr "Hämta statistik nu"
+
 msgid "Push books now"
 msgstr "Skicka böcker nu"
 
 msgid "Pull books now"
 msgstr "Hämta böcker nu"
+
+msgid "Upload current book to Readest"
+msgstr "Ladda upp aktuell bok till Readest"
 
 msgid "Push reading progress now"
 msgstr "Skicka läsförloppet nu"
@@ -286,9 +322,6 @@ msgstr "Logga in först"
 
 msgid "Please configure Readest settings first"
 msgstr "Konfigurera Readest-inställningarna först"
-
-msgid "No book is open"
-msgstr "Ingen bok är öppen"
 
 msgid "(none)"
 msgstr "(ingen)"
@@ -436,3 +469,18 @@ msgstr "Läsförloppet synkroniserat"
 
 msgid "No saved reading progress found for this book"
 msgstr "Inget sparat läsförlopp hittades för boken"
+
+msgid "Reading statistics are up to date"
+msgstr "Lässtatistiken är uppdaterad"
+
+msgid "Reading statistics pushed"
+msgstr "Lässtatistik skickad"
+
+msgid "Failed to push reading statistics"
+msgstr "Det gick inte att skicka lässtatistiken"
+
+msgid "Failed to pull reading statistics"
+msgstr "Det gick inte att hämta lässtatistiken"
+
+msgid "Reading statistics pulled"
+msgstr "Lässtatistik hämtad"

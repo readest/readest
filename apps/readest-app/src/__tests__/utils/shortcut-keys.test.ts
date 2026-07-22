@@ -1,5 +1,22 @@
 import { describe, it, expect } from 'vitest';
-import { formatKeyForDisplay, filterPlatformKeys } from '../../utils/shortcutKeys';
+import { formatKeyForDisplay, filterPlatformKeys, matchesShortcut } from '../../utils/shortcutKeys';
+
+const evt = (
+  key: string,
+  modifiers: Partial<{
+    ctrlKey: boolean;
+    altKey: boolean;
+    metaKey: boolean;
+    shiftKey: boolean;
+  }> = {},
+) => ({
+  key,
+  ctrlKey: false,
+  altKey: false,
+  metaKey: false,
+  shiftKey: false,
+  ...modifiers,
+});
 
 describe('formatKeyForDisplay', () => {
   describe('Mac platform', () => {
@@ -125,5 +142,42 @@ describe('filterPlatformKeys', () => {
       'shift+f',
       'ctrl+,',
     ]);
+  });
+});
+
+describe('matchesShortcut', () => {
+  it('matches a shift+letter shortcut against an uppercased key event', () => {
+    expect(matchesShortcut(evt('P', { shiftKey: true }), ['shift+p'])).toBe(true);
+  });
+
+  it('does not match when a required modifier is missing', () => {
+    expect(matchesShortcut(evt('p'), ['shift+p'])).toBe(false);
+  });
+
+  it('does not match when an extra modifier is pressed', () => {
+    expect(matchesShortcut(evt('P', { shiftKey: true, ctrlKey: true }), ['shift+p'])).toBe(false);
+  });
+
+  it('treats alt and opt as the same modifier', () => {
+    expect(matchesShortcut(evt('p', { altKey: true }), ['alt+p'])).toBe(true);
+    expect(matchesShortcut(evt('p', { altKey: true }), ['opt+p'])).toBe(true);
+  });
+
+  it('treats cmd and meta as the same modifier', () => {
+    expect(matchesShortcut(evt('p', { metaKey: true }), ['cmd+p'])).toBe(true);
+    expect(matchesShortcut(evt('p', { metaKey: true }), ['meta+p'])).toBe(true);
+  });
+
+  it('matches when any key in the list matches', () => {
+    expect(matchesShortcut(evt('p', { altKey: true }), ['ctrl+p', 'cmd+p', 'alt+p'])).toBe(true);
+  });
+
+  it('matches symbol and space base keys', () => {
+    expect(matchesShortcut(evt(']', { ctrlKey: true }), ['ctrl+]'])).toBe(true);
+    expect(matchesShortcut(evt(' ', { shiftKey: true }), ['shift+ '])).toBe(true);
+  });
+
+  it('returns false for an empty key list', () => {
+    expect(matchesShortcut(evt('p', { shiftKey: true }), [])).toBe(false);
   });
 });

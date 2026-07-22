@@ -1,0 +1,197 @@
+import clsx from 'clsx';
+import React, { useState } from 'react';
+import { useEnv } from '@/context/EnvContext';
+import { useTranslation } from '@/hooks/useTranslation';
+import { isWebAppPlatform } from '@/services/environment';
+import { useSettingsStore } from '@/store/settingsStore';
+import { eventDispatcher } from '@/utils/event';
+import {
+  runOneDriveConnect,
+  runOneDriveDisconnect,
+} from '@/services/sync/providers/onedrive/onedriveConnect';
+import { hasValidWebOneDriveToken } from '@/services/sync/providers/onedrive/webAuthCodeFlow';
+import { Tips } from '../primitives';
+import FileSyncForm from './FileSyncForm';
+import { persistCloudProviderEnabled } from './cloudSync';
+
+const disconnectButtonClass = clsx(
+  'eink-bordered',
+  'h-10 rounded-lg px-4 text-sm font-medium',
+  'text-error hover:bg-error/10',
+  'transition-colors duration-150',
+  'focus-visible:ring-error/40 focus-visible:outline-none focus-visible:ring-2',
+);
+
+const primaryButtonClass = clsx(
+  'btn btn-contrast',
+  'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
+  'focus-visible:ring-base-content/40 focus-visible:outline-none focus-visible:ring-2',
+);
+
+/**
+ * OneDrive provider panel, embedded in the Integrations OneDrive sub-page
+ * (which owns the header). Three states:
+ *
+ * - **Active** (`onedrive.enabled`): the shared {@link FileSyncForm} controls
+ *   + Disconnect (which clears the keychain token — a full teardown).
+ * - **Configured but inactive** (a token exists — `accountLabel` is set — but
+ *   OneDrive itself is switched off): "Use OneDrive" re-activates it WITHOUT
+ *   a fresh sign-in, so switching back is frictionless; Disconnect tears it down.
+ * - **Not connected**: the OAuth Connect button.
+ *
+ * Activating turns OneDrive on; every other provider is left exactly as it was
+ * (#5062).
+ */
+const OneDriveForm: React.FC = () => {
+  const _ = useTranslation();
+  const { settings, setSettings, saveSettings } = useSettingsStore();
+  const { envConfig } = useEnv();
+
+  const stored = settings.onedrive;
+  const isActive = !!stored?.enabled;
+  const isConfigured = !!stored?.accountLabel;
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  // On web the token is refreshed transparently via the shared `PersistedOAuth`
+  // (webOneDriveTokenPersistence), but the refresh token lives in
+  // sessionStorage, so an active connection can sit with an expired/absent
+  // token after the tab closes. When that happens, swap Disconnect →
+  // Reconnect and disable Sync now; the user-facing "session expired" notice
+  // is a one-time toast in the reader (see useFileSync), not a hint here.
+  const sessionExpired = isActive && isWebAppPlatform() && !hasValidWebOneDriveToken();
+
+  const persistOneDrive = async (patch: Partial<typeof stored>) => {
+    const latest = useSettingsStore.getState().settings;
+    const next = { ...latest, onedrive: { ...latest.onedrive, ...patch } };
+    setSettings(next);
+    await saveSettings(envConfig, next);
+  };
+
+  // Switch OneDrive on, optionally stamping a freshly-resolved account label.
+  // Every other provider is left untouched (#5062).
+  const activate = async (accountLabel?: string) => {
+    await persistCloudProviderEnabled(envConfig, 'onedrive', true, (s) =>
+      accountLabel === undefined ? s : { ...s, onedrive: { ...s.onedrive, accountLabel } },
+    );
+  };
+
+  const handleConnect = async () => {
+    if (isConnecting) return;
+    setIsConnecting(true);
+    try {
+      const { accountLabel } = await runOneDriveConnect();
+      // Only mark connected after the token persisted (runOneDriveConnect
+      // throws if the keychain save fails).
+      await activate(accountLabel ?? undefined);
+      eventDispatcher.dispatch('toast', { type: 'info', message: _('Connected') });
+    } catch (e) {
+      console.warn('[onedrive] connect failed', e);
+      eventDispatcher.dispatch('toast', { type: 'error', message: _('Failed to connect') });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleActivate = async () => {
+    await activate();
+    eventDispatcher.dispatch('toast', { type: 'info', message: _('Connected') });
+  };
+
+  const handleDisconnect = async () => {
+    await runOneDriveDisconnect();
+    // Switch OneDrive off and clear its account label (a full teardown).
+    // Other providers keep syncing.
+    await persistCloudProviderEnabled(envConfig, 'onedrive', false, (s) => ({
+      ...s,
+      onedrive: { ...s.onedrive, accountLabel: undefined },
+    }));
+    eventDispatcher.dispatch('toast', { type: 'info', message: _('Disconnected') });
+  };
+
+  if (isActive) {
+    return (
+      <div className='space-y-5'>
+        <FileSyncForm
+          kind='onedrive'
+          stored={stored}
+          persist={persistOneDrive}
+          syncNowDisabled={sessionExpired}
+        />
+        <div className='flex justify-end'>
+          {sessionExpired ? (
+            <button
+              type='button'
+              onClick={handleConnect}
+              disabled={isConnecting}
+              className={clsx(primaryButtonClass, isConnecting && 'opacity-60')}
+            >
+              {isConnecting ? (
+                <>
+                  <span className='loading loading-spinner loading-sm' />
+                  {_('Waiting for sign-in…')}
+                </>
+              ) : (
+                _('Reconnect')
+              )}
+            </button>
+          ) : (
+            <button type='button' onClick={handleDisconnect} className={disconnectButtonClass}>
+              {_('Disconnect')}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (isConfigured) {
+    return (
+      <div className='space-y-5'>
+        <div className='flex justify-end gap-2'>
+          <button type='button' onClick={handleDisconnect} className={disconnectButtonClass}>
+            {_('Disconnect')}
+          </button>
+          <button type='button' onClick={handleActivate} className={primaryButtonClass}>
+            {_('Use OneDrive')}
+          </button>
+        </div>
+        <Tips>
+          <li>
+            {_('Connected as {{account}}. Turn {{provider}} on to start syncing.', {
+              account: stored.accountLabel,
+              provider: 'OneDrive',
+            })}
+          </li>
+        </Tips>
+      </div>
+    );
+  }
+
+  return (
+    <div className='space-y-5'>
+      <div className='flex justify-end pt-1'>
+        <button
+          type='button'
+          onClick={handleConnect}
+          disabled={isConnecting}
+          className={clsx(primaryButtonClass, isConnecting && 'opacity-60')}
+        >
+          {isConnecting ? (
+            <>
+              <span className='loading loading-spinner loading-sm' />
+              {_('Waiting for sign-in…')}
+            </>
+          ) : (
+            _('Connect')
+          )}
+        </button>
+      </div>
+      <Tips>
+        <li>{_('Sign-in opens in your browser.')}</li>
+        <li>{_('Readest only accesses the files it creates in your OneDrive.')}</li>
+      </Tips>
+    </div>
+  );
+};
+
+export default OneDriveForm;

@@ -68,6 +68,9 @@ msgstr "Naik"
 msgid "Actions"
 msgstr "Tindakan"
 
+msgid "Download all books"
+msgstr "Unduh semua buku"
+
 msgid "Rescan library"
 msgstr "Pindai ulang pustaka"
 
@@ -133,6 +136,21 @@ msgstr "Unduhan sampul gagal."
 
 msgid "Could not delete the file."
 msgstr "Tidak dapat menghapus berkas."
+
+msgid "No books to download."
+msgstr "Tidak ada buku untuk diunduh."
+
+msgid "Downloading %1 of %2…"
+msgstr "Mengunduh %1 dari %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Unduhan dibatalkan. %1 dari %2 terunduh."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "%1 dari %2 terunduh (%3 dilewati)."
+
+msgid "Downloaded %1 of %2."
+msgstr "%1 dari %2 terunduh."
 
 msgid "Removing from cloud…"
 msgstr "Menghapus dari cloud…"
@@ -215,6 +233,9 @@ msgstr "Kirim anotasi Readest dari perangkat ini"
 msgid "Pull readest annotations from other devices"
 msgstr "Ambil anotasi Readest dari perangkat lain"
 
+msgid "Full sync all readest annotations"
+msgstr "Sinkronisasi penuh semua anotasi Readest"
+
 msgid "Add to Readest"
 msgstr "Tambahkan ke Readest"
 
@@ -239,6 +260,12 @@ msgstr "Sudah ada di Pustaka Readest Anda:"
 msgid "Added to Readest:"
 msgstr "Ditambahkan ke Readest:"
 
+msgid "No book is open"
+msgstr "Tidak ada buku terbuka"
+
+msgid "Uploaded to Readest:"
+msgstr "Diunggah ke Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Masuk ke akun Readest"
 
@@ -251,11 +278,20 @@ msgstr "Sinkronisasi otomatis"
 msgid "Readest library"
 msgstr "Pustaka Readest"
 
+msgid "Push stats now"
+msgstr "Kirim statistik sekarang"
+
+msgid "Pull stats now"
+msgstr "Tarik statistik sekarang"
+
 msgid "Push books now"
 msgstr "Kirim buku sekarang"
 
 msgid "Pull books now"
 msgstr "Tarik buku sekarang"
+
+msgid "Upload current book to Readest"
+msgstr "Unggah buku saat ini ke Readest"
 
 msgid "Push reading progress now"
 msgstr "Kirim progres baca sekarang"
@@ -286,9 +322,6 @@ msgstr "Silakan masuk terlebih dahulu"
 
 msgid "Please configure Readest settings first"
 msgstr "Konfigurasikan pengaturan Readest terlebih dahulu"
-
-msgid "No book is open"
-msgstr "Tidak ada buku terbuka"
 
 msgid "(none)"
 msgstr "(tidak ada)"
@@ -436,3 +469,18 @@ msgstr "Progres baca disinkronkan"
 
 msgid "No saved reading progress found for this book"
 msgstr "Tidak ada progres baca tersimpan untuk buku ini"
+
+msgid "Reading statistics are up to date"
+msgstr "Statistik baca sudah terbaru"
+
+msgid "Reading statistics pushed"
+msgstr "Statistik baca terkirim"
+
+msgid "Failed to push reading statistics"
+msgstr "Gagal mengirim statistik baca"
+
+msgid "Failed to pull reading statistics"
+msgstr "Gagal mengambil statistik baca"
+
+msgid "Reading statistics pulled"
+msgstr "Statistik baca diambil"

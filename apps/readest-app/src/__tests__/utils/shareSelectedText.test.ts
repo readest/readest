@@ -62,11 +62,23 @@ describe('shareSelectedText', () => {
     expect(writeClipboardMock).not.toHaveBeenCalled();
   });
 
-  test('swallows navigator.share rejection (user dismissed) without clipboard fallback', async () => {
-    const navShare = vi.fn().mockRejectedValue(new Error('AbortError'));
+  test('swallows an AbortError (user dismissed) without clipboard fallback', async () => {
+    const abortErr = new Error('user dismissed');
+    abortErr.name = 'AbortError';
+    const navShare = vi.fn().mockRejectedValue(abortErr);
     globalThis.navigator.share = navShare;
     await expect(shareSelectedText('hello', undefined, null)).resolves.toBeUndefined();
     expect(writeClipboardMock).not.toHaveBeenCalled();
+  });
+
+  test('falls back to clipboard when navigator.share fails for a non-Abort reason', async () => {
+    // e.g. NotAllowedError when a quick action fires without a user gesture.
+    const notAllowed = new Error('permission denied');
+    notAllowed.name = 'NotAllowedError';
+    const navShare = vi.fn().mockRejectedValue(notAllowed);
+    globalThis.navigator.share = navShare;
+    await shareSelectedText('hello', undefined, null);
+    expect(writeClipboardMock).toHaveBeenCalledWith('hello');
   });
 
   test('falls back to clipboard when no share method exists', async () => {

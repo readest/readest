@@ -76,6 +76,27 @@ describe('transferStore', () => {
       useTransferStore.getState().updateTransferProgress('nope', 10, 10, 100, 5);
       expect(useTransferStore.getState().transfers).toEqual(before);
     });
+
+    test('re-applying identical values keeps the same state reference (READEST-2)', () => {
+      const id = useTransferStore.getState().addTransfer('h', 'B', 'upload');
+      useTransferStore.getState().updateTransferProgress(id, 50, 500, 1000, 100);
+      const before = useTransferStore.getState().transfers;
+      // A repeated write with unchanged values must not allocate a new state,
+      // otherwise subscribers re-render and can drive an update loop.
+      useTransferStore.getState().updateTransferProgress(id, 50, 500, 1000, 100);
+      expect(useTransferStore.getState().transfers).toBe(before);
+    });
+
+    test('a speed-only change is a no-op (transferSpeed is time-derived) (READEST-2)', () => {
+      const id = useTransferStore.getState().addTransfer('h', 'B', 'upload');
+      useTransferStore.getState().updateTransferProgress(id, 50, 500, 1000, 100);
+      const before = useTransferStore.getState().transfers;
+      // transferSpeed is recomputed from wall-clock time on every emission, so it
+      // almost always differs; a speed-only delta (same progress + bytes) must
+      // not allocate a new state, or the no-op guard never fires.
+      useTransferStore.getState().updateTransferProgress(id, 50, 500, 1000, 173);
+      expect(useTransferStore.getState().transfers).toBe(before);
+    });
   });
 
   // ── setTransferStatus ────────────────────────────────────────────
@@ -223,6 +244,40 @@ describe('transferStore', () => {
       expect(transfers[id2]).toBeUndefined();
       expect(transfers[id3]).toBeDefined();
       expect(transfers[id4]).toBeDefined();
+    });
+  });
+
+  // ── clearPending ─────────────────────────────────────────────────
+  describe('clearPending', () => {
+    test('removes only pending transfers', () => {
+      const id1 = useTransferStore.getState().addTransfer('h1', 'B1', 'upload');
+      const id2 = useTransferStore.getState().addTransfer('h2', 'B2', 'download');
+      const id3 = useTransferStore.getState().addTransfer('h3', 'B3', 'upload');
+      const id4 = useTransferStore.getState().addTransfer('h4', 'B4', 'delete');
+      const id5 = useTransferStore.getState().addTransfer('h5', 'B5', 'upload');
+      useTransferStore.getState().setTransferStatus(id1, 'in_progress');
+      useTransferStore.getState().setTransferStatus(id2, 'completed');
+      useTransferStore.getState().setTransferStatus(id3, 'failed', 'err');
+      useTransferStore.getState().setTransferStatus(id4, 'cancelled');
+      // id5 remains pending
+
+      useTransferStore.getState().clearPending();
+      const transfers = useTransferStore.getState().transfers;
+      expect(transfers[id1]).toBeDefined(); // in_progress kept
+      expect(transfers[id2]).toBeDefined(); // completed kept
+      expect(transfers[id3]).toBeDefined(); // failed kept
+      expect(transfers[id4]).toBeDefined(); // cancelled kept
+      expect(transfers[id5]).toBeUndefined(); // pending removed
+    });
+
+    test('removes retry-pending transfers (status pending with an error message)', () => {
+      const id = useTransferStore.getState().addTransfer('h', 'B', 'upload');
+      // mimic the retry path: failed -> back to pending with a "Retry x/y" note
+      useTransferStore.getState().setTransferStatus(id, 'pending', 'Retry 1/3');
+      expect(useTransferStore.getState().transfers[id]!.status).toBe('pending');
+
+      useTransferStore.getState().clearPending();
+      expect(useTransferStore.getState().transfers[id]).toBeUndefined();
     });
   });
 

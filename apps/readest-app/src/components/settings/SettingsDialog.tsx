@@ -23,7 +23,7 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 import { getCommandPaletteShortcut } from '@/services/environment';
 import FontPanel from './FontPanel';
 import LayoutPanel from './LayoutPanel';
-import ColorPanel from './ColorPanel';
+import ThemePanel from './ThemePanel';
 import IntegrationsPanel from './IntegrationsPanel';
 import Dropdown from '@/components/Dropdown';
 import Dialog from '@/components/Dialog';
@@ -37,7 +37,7 @@ import TTSPanel from './TTSPanel';
 export type SettingsPanelType =
   | 'Font'
   | 'Layout'
-  | 'Color'
+  | 'Theme'
   | 'Control'
   | 'TTS'
   | 'Language'
@@ -92,9 +92,9 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       label: _('Layout'),
     },
     {
-      tab: 'Color',
+      tab: 'Theme',
       icon: VscSymbolColor,
-      label: _('Color'),
+      label: _('Theme'),
     },
     {
       tab: 'Control',
@@ -174,7 +174,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   >({
     Font: null,
     Layout: null,
-    Color: null,
+    Theme: null,
     Control: null,
     TTS: null,
     Language: null,
@@ -208,7 +208,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       const panelMap: Record<string, SettingsPanelType> = {
         font: 'Font',
         layout: 'Layout',
-        color: 'Color',
+        theme: 'Theme',
         control: 'Control',
         tts: 'TTS',
         language: 'Language',
@@ -347,7 +347,12 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     <Dialog
       isOpen={true}
       onClose={handleClose}
-      className='modal-open'
+      // Settings sits in the overlay z-index scale (see ModalPortal.tsx) above
+      // the RSVP immersive overlay (z-100) so dictionary management opened from
+      // inside RSVP shows on top instead of behind it (#3235), and below the
+      // modal layer (z-120) so a modal opened from inside Settings (e.g. Add
+      // OPDS Catalog) renders on top. !important beats the Dialog's hardcoded z-50.
+      className='modal-open !z-[110]'
       bgClassName={bookKey ? 'sm:!bg-black/20' : 'sm:!bg-black/50'}
       boxClassName={clsx(
         'sm:min-w-[520px] overflow-hidden not-eink:bg-base-200',
@@ -446,10 +451,10 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
             onRegisterReset={(fn) => registerResetFunction('Layout', fn)}
           />
         )}
-        {activePanel === 'Color' && (
-          <ColorPanel
+        {activePanel === 'Theme' && (
+          <ThemePanel
             bookKey={bookKey}
-            onRegisterReset={(fn) => registerResetFunction('Color', fn)}
+            onRegisterReset={(fn) => registerResetFunction('Theme', fn)}
           />
         )}
         {activePanel === 'Control' && (

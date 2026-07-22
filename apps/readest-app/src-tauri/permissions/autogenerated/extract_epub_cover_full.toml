@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-extract-epub-cover-full"
+description = "Enables the extract_epub_cover_full command without any pre-configured scope."
+commands.allow = ["extract_epub_cover_full"]
+
+[[permission]]
+identifier = "deny-extract-epub-cover-full"
+description = "Denies the extract_epub_cover_full command without any pre-configured scope."
+commands.deny = ["extract_epub_cover_full"]

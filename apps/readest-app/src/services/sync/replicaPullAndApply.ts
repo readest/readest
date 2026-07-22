@@ -8,8 +8,10 @@ import {
   cipherTextsChanged,
   collectDecryptSuccess,
   decryptRowFields,
+  firstCipherEnvelope,
+  type DecryptRowHooks,
 } from './replicaCryptoMiddleware';
-import { ensurePassphraseUnlocked } from './passphraseGate';
+import { ensurePassphraseUnlocked, rememberVerificationSample } from './passphraseGate';
 import { isCredentialsSyncEnabled } from './syncCategories';
 import { cryptoSession } from '@/libs/crypto/session';
 
@@ -163,18 +165,30 @@ const applyRow = async <T extends ReplicaLocalRecord>(
   const beforeDecrypt = captureCipherTexts(row.fields_jsonb, encryptedFields);
   const localLastSeen = local?.lastSeenCipher;
 
+  // Hand the gate a cipher envelope from this row so an entered passphrase
+  // can be verified before it's accepted — and so the Settings → Enter
+  // passphrase action has something to verify against later.
+  const sample = firstCipherEnvelope(row.fields_jsonb, encryptedFields);
+  if (sample) rememberVerificationSample(sample);
+
   const needsPrompt =
     !deps.silentDecrypt &&
     !cryptoSession.isUnlocked() &&
     Object.keys(beforeDecrypt).length > 0 &&
     cipherTextsChanged(beforeDecrypt, localLastSeen);
-  const onLocked = needsPrompt ? () => ensurePassphraseUnlocked() : undefined;
-  const decryptResult = await decryptRowFields(
-    row.fields_jsonb,
-    encryptedFields,
-    undefined,
-    onLocked,
-  );
+  const hooks: DecryptRowHooks = {};
+  if (needsPrompt) {
+    hooks.onLocked = (verifyWith) => ensurePassphraseUnlocked({ verifyWith, auto: true });
+  }
+  if (!deps.silentDecrypt) {
+    // A wrong passphrase must always be recoverable, fingerprint heuristic or
+    // not: the session it came from claims to be unlocked, so the locked-path
+    // prompt above never fires and the user would otherwise be stuck with an
+    // undismissable "wrong passphrase" toast and nowhere to re-enter it.
+    hooks.onWrongPassphrase = (verifyWith) =>
+      ensurePassphraseUnlocked({ verifyWith, invalidate: true, auto: true });
+  }
+  const decryptResult = await decryptRowFields(row.fields_jsonb, encryptedFields, undefined, hooks);
   if (decryptResult.saltNotFound.length > 0 && deps.onSaltNotFound) {
     deps.onSaltNotFound(decryptResult.saltNotFound);
   }

@@ -9,6 +9,11 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { saveSysSettings } from '@/helpers/settings';
 import { PIN_LENGTH, generatePinSalt, hashPin, isValidPin, verifyPin } from '@/libs/crypto/applock';
+import {
+  defaultBiometricUnlockOnPinSet,
+  getBiometricStatus,
+  isBiometricSupported,
+} from '@/services/biometric';
 import { useAppLockStore } from '@/store/appLockStore';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -23,7 +28,7 @@ const fieldLabelClass = 'text-base-content/70 text-xs font-medium tracking-wide'
  */
 export default function AppLockDialog() {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const {
     pinHash,
@@ -95,6 +100,14 @@ export default function AppLockDialog() {
         await saveSysSettings(envConfig, 'pinCodeSalt', salt);
         await saveSysSettings(envConfig, 'pinCodeHash', hash);
         await saveSysSettings(envConfig, 'pinCodeEnabled', true);
+        if (isBiometricSupported(appService)) {
+          const { available } = await getBiometricStatus();
+          await saveSysSettings(
+            envConfig,
+            'biometricUnlockEnabled',
+            defaultBiometricUnlockOnPinSet({ isMobileApp: !!appService?.isMobileApp, available }),
+          );
+        }
         setStorePin(hash, salt);
         closeDialog();
       } finally {
@@ -162,6 +175,7 @@ export default function AppLockDialog() {
       await saveSysSettings(envConfig, 'pinCodeEnabled', false);
       await saveSysSettings(envConfig, 'pinCodeHash', undefined);
       await saveSysSettings(envConfig, 'pinCodeSalt', undefined);
+      await saveSysSettings(envConfig, 'biometricUnlockEnabled', undefined);
       clearPin();
       closeDialog();
     } finally {

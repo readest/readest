@@ -846,6 +846,44 @@ describe('mdictProvider', () => {
     }
   });
 
+  it('exposes part="dict-content" on the in-shadow body so outer CSS can size it via ::part()', async () => {
+    const jsmdict = await import('js-mdict');
+    const origMDXCreate = jsmdict.MDX.create.bind(jsmdict.MDX);
+    type FakeMDX = ReturnType<typeof origMDXCreate> extends Promise<infer T> ? T : never;
+    jsmdict.MDX.create = async () =>
+      ({
+        meta: { encrypt: 0 },
+        header: {},
+        lookup: async (word: string) => ({
+          keyText: word,
+          definition: `<p>def</p>`,
+        }),
+      }) as unknown as FakeMDX;
+
+    try {
+      const provider = createMdictProvider({ dict: buildDict(false), fs: makeFs() });
+      const container = document.createElement('div');
+      await provider.lookup('hello', {
+        signal: new AbortController().signal,
+        container,
+      });
+
+      const shadow = getMdictShadow(container);
+      // The content root carries BOTH the data-dict-kind hook and the
+      // shadow `part` so the popup's `::part(dict-content)` font-size rule
+      // can reach across the shadow boundary (it otherwise can't).
+      const body = shadow.querySelector('[data-dict-kind="mdict"]');
+      expect(body).not.toBeNull();
+      expect(body!.getAttribute('part')).toBe('dict-content');
+      // The host must be selectable from the outer tree for the `::part()`
+      // rule's host selector to match.
+      const host = container.lastElementChild as HTMLElement;
+      expect(host.classList.contains('dict-shadow-host')).toBe(true);
+    } finally {
+      jsmdict.MDX.create = origMDXCreate;
+    }
+  });
+
   it('keeps the auto-prepended headword when the dict body has a different h1 text', async () => {
     const jsmdict = await import('js-mdict');
     const origMDXCreate = jsmdict.MDX.create.bind(jsmdict.MDX);

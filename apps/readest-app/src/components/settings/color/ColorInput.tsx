@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SketchPicker, ColorResult } from 'react-color';
+import { HexColorInput, HexColorPicker } from 'react-colorful';
 import { CgColorPicker } from 'react-icons/cg';
 
 type ColorInputProps = {
@@ -7,24 +7,16 @@ type ColorInputProps = {
   value: string;
   onChange: (value: string) => void;
   /**
-   * Fires when the user finishes choosing a color — i.e. the hex input loses
-   * focus (compact mode) or the picker popup closes. Useful for auto-save
-   * flows where you want to pin the chosen color when the interaction
-   * settles, not on every onChange tick.
+   * Fires when the picker popup closes. Useful for auto-save flows where you
+   * want to pin the chosen color when the interaction settles, not on every
+   * onChange tick.
    */
   onCommit?: () => void;
-  compact?: boolean;
   /**
-   * Render only the color swatch as a circular button — no hex input. Click
-   * the swatch to open the picker. Cleaner UX for casual users who don't
-   * care about the hex value.
-   */
-  swatchOnly?: boolean;
-  /**
-   * In `swatchOnly` mode, render a small palette icon button immediately
-   * after the swatch. Both the swatch and the icon open the picker; the
-   * icon adds an explicit "click to change" affordance for users who might
-   * otherwise read the swatch as a passive preview.
+   * Render a small palette icon button immediately after the swatch. Both the
+   * swatch and the icon open the picker; the icon adds an explicit "click to
+   * change" affordance for users who might otherwise read the swatch as a
+   * passive preview.
    */
   showPickerIcon?: boolean;
   pickerPosition?: 'left' | 'center' | 'right';
@@ -35,8 +27,6 @@ const ColorInput: React.FC<ColorInputProps> = ({
   value,
   onChange,
   onCommit,
-  compact = false,
-  swatchOnly = false,
   showPickerIcon = false,
   pickerPosition = 'left',
 }) => {
@@ -60,118 +50,59 @@ const ColorInput: React.FC<ColorInputProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onCommit]);
 
-  const handlePickerChange = (colorResult: ColorResult) => {
-    onChange(colorResult.hex);
+  const handlePickerChange = (colorResultHex: string) => {
+    onChange(colorResultHex);
   };
 
+  // Anchored positioning only applies from `sm` up; below that the popup is
+  // rendered as a centered floating card (see the popup container classes) so
+  // it can never overflow the panel and cause horizontal scrolling.
   const getPickerPositionClass = () => {
     if (pickerPosition === 'right') {
-      return 'end-0';
+      return 'sm:start-auto sm:end-0 sm:translate-x-0';
     } else if (pickerPosition === 'center') {
-      return 'start-1/2 -translate-x-1/2';
+      return 'sm:start-1/2';
     }
-    return 'start-0';
+    return 'sm:start-0 sm:translate-x-0';
   };
 
-  if (swatchOnly) {
-    return (
-      <div className='relative flex items-center gap-1.5'>
+  return (
+    <div className='relative flex items-center gap-1.5'>
+      <button
+        type='button'
+        onClick={() => setIsOpen(!isOpen)}
+        className='border-base-300 focus-visible:ring-base-content/20 focus-visible:ring-offset-base-100 h-7 w-7 rounded-full border-2 shadow-sm transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1'
+        style={{ backgroundColor: value }}
+        aria-label={label || 'Choose color'}
+        title={label || 'Choose color'}
+      />
+      {showPickerIcon && (
         <button
           type='button'
           onClick={() => setIsOpen(!isOpen)}
-          className='border-base-300 focus-visible:ring-base-content/20 focus-visible:ring-offset-base-100 h-7 w-7 rounded-full border-2 shadow-sm transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1'
-          style={{ backgroundColor: value }}
+          className='text-base-content/60 hover:bg-base-200 hover:text-base-content focus-visible:ring-base-content/15 inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
           aria-label={label || 'Choose color'}
           title={label || 'Choose color'}
-        />
-        {showPickerIcon && (
-          <button
-            type='button'
-            onClick={() => setIsOpen(!isOpen)}
-            className='text-base-content/60 hover:bg-base-200 hover:text-base-content focus-visible:ring-base-content/15 inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
-            aria-label={label || 'Choose color'}
-            title={label || 'Choose color'}
-          >
-            <CgColorPicker className='h-5 w-5' />
-          </button>
-        )}
-        {isOpen && (
-          <div
-            ref={pickerRef}
-            className={`absolute top-full z-50 py-1 ${getPickerPositionClass()}`}
-          >
-            <SketchPicker
-              width='200px'
-              color={value}
-              onChange={handlePickerChange}
-              disableAlpha={true}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (compact) {
-    return (
-      <div className='relative'>
-        <input
-          type='text'
-          value={value}
-          spellCheck={false}
-          onChange={(e) => onChange(e.target.value)}
-          onBlur={() => onCommit?.()}
-          onClick={() => setIsOpen(!isOpen)}
-          className='bg-base-100 text-base-content border-base-200/75 w-16 cursor-pointer rounded border px-1 py-0.5 text-center font-mono text-xs'
-        />
-
-        {isOpen && (
-          <div
-            ref={pickerRef}
-            className={`absolute top-full z-50 py-1 ${getPickerPositionClass()}`}
-          >
-            <SketchPicker
-              width='200px'
-              color={value}
-              onChange={handlePickerChange}
-              disableAlpha={true}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className='mb-3'>
-      <label className='mb-1 block text-sm font-medium'>{label}</label>
-      <div className='flex items-center'>
-        <button
-          className='border-base-200/75 relative me-2 flex h-7 w-8 cursor-pointer items-center justify-center overflow-hidden rounded border'
-          style={{ backgroundColor: value }}
-          onClick={() => setIsOpen(!isOpen)}
-        />
-
-        <input
-          type='text'
-          value={value}
-          spellCheck={false}
-          onChange={(e) => onChange(e.target.value)}
-          onBlur={() => onCommit?.()}
-          className='bg-base-100 text-base-content border-base-200/75 min-w-4 max-w-36 flex-1 rounded border p-1 font-mono text-sm'
-        />
-      </div>
-
+        >
+          <CgColorPicker className='h-5 w-5' />
+        </button>
+      )}
       {isOpen && (
-        <div ref={pickerRef} className='relative z-50 mt-2'>
-          <div className='absolute'>
-            <SketchPicker
-              width='100%'
-              color={value}
-              onChange={handlePickerChange}
-              disableAlpha={true}
-            />
-          </div>
+        <div
+          ref={pickerRef}
+          className={`fixed start-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 sm:absolute sm:top-full sm:mt-2 sm:translate-y-0 flex flex-col gap-2 rounded-lg border not-eink:border-base-300/50 bg-base-100 p-3 not-eink:shadow-xl items-center ${getPickerPositionClass()}`}
+        >
+          <HexColorPicker
+            color={value}
+            onChange={handlePickerChange}
+            className='eink-bordered rounded-lg m-2'
+          />
+          <HexColorInput
+            color={value}
+            onChange={handlePickerChange}
+            prefixed
+            className='rounded-md px-2 py-1 bg-base-300 text-base-content w-[200px] font-mono eink-bordered'
+          />
         </div>
       )}
     </div>

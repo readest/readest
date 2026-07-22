@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
 import { DatabaseService } from '@/types/database';
 import { migrate } from '@/services/database/migrate';
@@ -31,13 +31,19 @@ describe('ReedyDb', () => {
   let svc: DatabaseService;
   let reedy: ReedyDb;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     svc = await NodeDatabaseService.open(':memory:', { experimental: ['index_method'] });
     await migrate(svc, getMigrations('reedy'));
     reedy = new ReedyDb(svc);
   });
 
-  afterEach(async () => {
+  beforeEach(async () => {
+    await svc.execute('DROP TABLE IF EXISTS reedy_book_chunk_embeddings');
+    await svc.execute('DELETE FROM reedy_book_chunks');
+    await svc.execute('DELETE FROM reedy_book_meta');
+  });
+
+  afterAll(async () => {
     await svc.close();
   });
 

@@ -4,8 +4,10 @@ import {
   transformBookNoteFromDB,
   transformBookConfigToDB,
   transformBookConfigFromDB,
+  transformBookToDB,
+  transformBookFromDB,
 } from '@/utils/transform';
-import { BookConfig, BookNote } from '@/types/book';
+import { BookConfig, BookNote, Book } from '@/types/book';
 import { DBBookConfig, DBBookNote } from '@/types/records';
 
 describe('transformBookNoteToDB with xpointer fields', () => {
@@ -282,5 +284,113 @@ describe('transformBookConfigToDB / transformBookConfigFromDB rsvpPosition', () 
     const dbRecord: DBBookConfig = { ...db, updated_at: new Date(config.updatedAt).toISOString() };
     const restored = transformBookConfigFromDB(dbRecord);
     expect(restored.rsvpPosition).toEqual(config.rsvpPosition);
+  });
+});
+
+describe('transformBook readingStatus + readingStatusUpdatedAt', () => {
+  const userId = 'user-1';
+  const baseBook: Book = {
+    hash: 'h1',
+    format: 'EPUB',
+    title: 'T',
+    author: 'A',
+    createdAt: 1,
+    updatedAt: 2,
+  };
+
+  it('serializes abandoned status + timestamp to ISO in the DB record', () => {
+    const ts = Date.UTC(2026, 5, 18, 12, 0, 0);
+    const db = transformBookToDB(
+      { ...baseBook, readingStatus: 'abandoned', readingStatusUpdatedAt: ts },
+      userId,
+    );
+    expect(db.reading_status).toBe('abandoned');
+    expect(db.reading_status_updated_at).toBe(new Date(ts).toISOString());
+  });
+
+  it('leaves reading_status_updated_at null when unset', () => {
+    const db = transformBookToDB({ ...baseBook, readingStatus: 'finished' }, userId);
+    expect(db.reading_status_updated_at).toBeNull();
+  });
+
+  it('round-trips abandoned + timestamp back to the client shape', () => {
+    const ts = Date.UTC(2026, 5, 18, 12, 0, 0);
+    const db = transformBookToDB(
+      { ...baseBook, readingStatus: 'abandoned', readingStatusUpdatedAt: ts },
+      userId,
+    );
+    const back = transformBookFromDB(db);
+    expect(back.readingStatus).toBe('abandoned');
+    expect(back.readingStatusUpdatedAt).toBe(ts);
+  });
+
+  it('reads undefined readingStatusUpdatedAt when the DB column is null', () => {
+    const back = transformBookFromDB({
+      user_id: userId,
+      book_hash: 'h1',
+      format: 'EPUB',
+      title: 'T',
+      author: 'A',
+      reading_status: 'finished',
+      reading_status_updated_at: null,
+      created_at: new Date(1).toISOString(),
+      updated_at: new Date(2).toISOString(),
+    });
+    expect(back.readingStatusUpdatedAt).toBeUndefined();
+  });
+});
+
+describe('transformBook coverHash + coverUpdatedAt (issue #4544)', () => {
+  const userId = 'user-1';
+  const baseBook: Book = {
+    hash: 'h1',
+    format: 'EPUB',
+    title: 'T',
+    author: 'A',
+    createdAt: 1,
+    updatedAt: 2,
+  };
+
+  it('serializes coverHash verbatim and coverUpdatedAt to ISO', () => {
+    const ts = Date.UTC(2026, 5, 22, 12, 0, 0);
+    const db = transformBookToDB(
+      { ...baseBook, coverHash: 'abcdef0123456789', coverUpdatedAt: ts },
+      userId,
+    );
+    expect(db.cover_hash).toBe('abcdef0123456789');
+    expect(db.cover_updated_at).toBe(new Date(ts).toISOString());
+  });
+
+  it('leaves cover columns null when unset', () => {
+    const db = transformBookToDB(baseBook, userId);
+    expect(db.cover_hash).toBeNull();
+    expect(db.cover_updated_at).toBeNull();
+  });
+
+  it('round-trips coverHash + coverUpdatedAt back to the client shape', () => {
+    const ts = Date.UTC(2026, 5, 22, 12, 0, 0);
+    const db = transformBookToDB(
+      { ...baseBook, coverHash: 'deadbeef', coverUpdatedAt: ts },
+      userId,
+    );
+    const back = transformBookFromDB(db);
+    expect(back.coverHash).toBe('deadbeef');
+    expect(back.coverUpdatedAt).toBe(ts);
+  });
+
+  it('reads null cover fields when the DB columns are null', () => {
+    const back = transformBookFromDB({
+      user_id: userId,
+      book_hash: 'h1',
+      format: 'EPUB',
+      title: 'T',
+      author: 'A',
+      cover_hash: null,
+      cover_updated_at: null,
+      created_at: new Date(1).toISOString(),
+      updated_at: new Date(2).toISOString(),
+    });
+    expect(back.coverHash).toBeNull();
+    expect(back.coverUpdatedAt).toBeNull();
   });
 });

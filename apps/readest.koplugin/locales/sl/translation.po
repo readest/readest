@@ -68,6 +68,9 @@ msgstr "Naraščajoče"
 msgid "Actions"
 msgstr "Dejanja"
 
+msgid "Download all books"
+msgstr "Prenesi vse knjige"
+
 msgid "Rescan library"
 msgstr "Znova preglej knjižnico"
 
@@ -133,6 +136,21 @@ msgstr "Prenos naslovnice ni uspel."
 
 msgid "Could not delete the file."
 msgstr "Datoteke ni bilo mogoče izbrisati."
+
+msgid "No books to download."
+msgstr "Ni knjig za prenos."
+
+msgid "Downloading %1 of %2…"
+msgstr "Prenašanje %1 od %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Prenos preklican. Prenesenih %1 od %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Prenesenih %1 od %2 (preskočenih %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Prenesenih %1 od %2."
 
 msgid "Removing from cloud…"
 msgstr "Odstranjevanje iz oblaka…"
@@ -215,6 +233,9 @@ msgstr "Pošlji opombe Readest iz te naprave"
 msgid "Pull readest annotations from other devices"
 msgstr "Pridobi opombe Readest iz drugih naprav"
 
+msgid "Full sync all readest annotations"
+msgstr "Polna sinhronizacija vseh opomb Readest"
+
 msgid "Add to Readest"
 msgstr "Dodaj v Readest"
 
@@ -239,6 +260,12 @@ msgstr "Že v vaši knjižnici Readest:"
 msgid "Added to Readest:"
 msgstr "Dodano v Readest:"
 
+msgid "No book is open"
+msgstr "Nobena knjiga ni odprta"
+
+msgid "Uploaded to Readest:"
+msgstr "Naloženo v Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Prijava v račun Readest"
 
@@ -251,11 +278,20 @@ msgstr "Samodejna sinhronizacija"
 msgid "Readest library"
 msgstr "Knjižnica Readest"
 
+msgid "Push stats now"
+msgstr "Pošlji statistiko zdaj"
+
+msgid "Pull stats now"
+msgstr "Pridobi statistiko zdaj"
+
 msgid "Push books now"
 msgstr "Pošlji knjige zdaj"
 
 msgid "Pull books now"
 msgstr "Pridobi knjige zdaj"
+
+msgid "Upload current book to Readest"
+msgstr "Naloži trenutno knjigo v Readest"
 
 msgid "Push reading progress now"
 msgstr "Pošlji napredek branja zdaj"
@@ -286,9 +322,6 @@ msgstr "Najprej se prijavite"
 
 msgid "Please configure Readest settings first"
 msgstr "Najprej nastavite Readest"
-
-msgid "No book is open"
-msgstr "Nobena knjiga ni odprta"
 
 msgid "(none)"
 msgstr "(brez)"
@@ -436,3 +469,18 @@ msgstr "Napredek branja sinhroniziran"
 
 msgid "No saved reading progress found for this book"
 msgstr "Za to knjigo ni shranjenega napredka branja"
+
+msgid "Reading statistics are up to date"
+msgstr "Statistika branja je posodobljena"
+
+msgid "Reading statistics pushed"
+msgstr "Statistika branja poslana"
+
+msgid "Failed to push reading statistics"
+msgstr "Pošiljanje statistike branja ni uspelo"
+
+msgid "Failed to pull reading statistics"
+msgstr "Pridobivanje statistike branja ni uspelo"
+
+msgid "Reading statistics pulled"
+msgstr "Statistika branja pridobljena"

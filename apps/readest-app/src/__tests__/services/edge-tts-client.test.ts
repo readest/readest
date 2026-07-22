@@ -3,14 +3,13 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 // Shared mock control: tests can override createBehavior to change how create() behaves
 let createBehavior: () => Promise<undefined> = () => Promise.resolve(undefined);
 
-// Shared mock control for createAudioUrl() and parsed SSML marks
-let createAudioUrlBehavior = vi.fn<() => Promise<string>>(() => Promise.resolve('blob:mock-url'));
-type MockAudioResult = {
-  url: string;
+// Shared mock control for createAudioData() and parsed SSML marks
+type MockAudioData = {
+  data: ArrayBuffer;
   boundaries: Array<{ offset: number; duration: number; text: string }>;
 };
-let createAudioBehavior = vi.fn<() => Promise<MockAudioResult>>(() =>
-  Promise.resolve({ url: 'blob:mock-url', boundaries: [] }),
+let createAudioDataBehavior = vi.fn<() => Promise<MockAudioData>>(() =>
+  Promise.resolve({ data: new ArrayBuffer(8), boundaries: [] }),
 );
 let parsedMarks: Array<{ name: string; text: string; language: string }> = [];
 
@@ -27,8 +26,7 @@ vi.mock('@/libs/edgeTTS', () => {
     EdgeSpeechTTS: class MockEdgeSpeechTTS {
       static voices = voices;
       create = vi.fn().mockImplementation(() => createBehavior());
-      createAudioUrl = vi.fn().mockImplementation(() => createAudioUrlBehavior());
-      createAudio = vi.fn().mockImplementation(() => createAudioBehavior());
+      createAudioData = vi.fn().mockImplementation(() => createAudioDataBehavior());
     },
     EDGE_TTS_PROTOCOL: 'wss',
   };
@@ -40,6 +38,15 @@ vi.mock('@/utils/ssml', () => ({
 
 vi.mock('@/utils/misc', () => ({
   getUserLocale: vi.fn((lang: string) => (lang === 'en' ? 'en-US' : lang)),
+  // Pins the WebAudioPlayer path: iOS Tauri selects the native playout.
+  getOSPlatform: vi.fn(() => 'macos'),
+  stubTranslation: (key: string) => key,
+}));
+
+let tauriPlatform = false;
+vi.mock('@/services/environment', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/environment')>()),
+  isTauriAppPlatform: () => tauriPlatform,
 }));
 
 vi.mock('@/services/tts/TTSUtils', async (importOriginal) => {
@@ -69,16 +76,17 @@ describe('EdgeTTSClient', () => {
   let client: EdgeTTSClient;
 
   beforeEach(() => {
+    tauriPlatform = false;
     createBehavior = () => Promise.resolve(undefined);
-    createAudioUrlBehavior = vi.fn<() => Promise<string>>(() => Promise.resolve('blob:mock-url'));
-    createAudioBehavior = vi.fn<() => Promise<MockAudioResult>>(() =>
-      Promise.resolve({ url: 'blob:mock-url', boundaries: [] }),
+    createAudioDataBehavior = vi.fn<() => Promise<MockAudioData>>(() =>
+      Promise.resolve({ data: new ArrayBuffer(8), boundaries: [] }),
     );
     parsedMarks = [];
     client = new EdgeTTSClient();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -141,6 +149,27 @@ describe('EdgeTTSClient', () => {
       expect(callCount).toBe(2);
     });
 
+    test('wss failure does not fall back to https on Tauri even when authenticated', async () => {
+      tauriPlatform = true;
+      const mockController = {
+        isAuthenticated: true,
+        dispatchEvent: vi.fn(),
+      } as unknown as TTSController;
+      const c = new EdgeTTSClient(mockController);
+
+      let callCount = 0;
+      createBehavior = () => {
+        callCount++;
+        return Promise.reject(new Error('offline'));
+      };
+
+      const result = await c.init();
+      expect(result).toBe(false);
+      // Only the wss probe ran: the /api/tts/edge proxy must not be requested
+      // from the Tauri app (its native wss transport is the only Edge path).
+      expect(callCount).toBe(1);
+    });
+
     test('wss failure dispatches tts-need-auth when not authenticated', async () => {
       const dispatchEvent = vi.fn();
       const mockController = {
@@ -174,30 +203,6 @@ describe('EdgeTTSClient', () => {
     });
   });
 
-  describe('setRate', () => {
-    test('stores rate value', async () => {
-      await client.setRate(1.5);
-      // Rate is private, so we verify indirectly - no error thrown
-      await expect(client.setRate(0.5)).resolves.toBeUndefined();
-    });
-
-    test('accepts boundary values', async () => {
-      await expect(client.setRate(0.5)).resolves.toBeUndefined();
-      await expect(client.setRate(2.0)).resolves.toBeUndefined();
-    });
-  });
-
-  describe('setPitch', () => {
-    test('stores pitch value', async () => {
-      await expect(client.setPitch(1.2)).resolves.toBeUndefined();
-    });
-
-    test('accepts boundary values', async () => {
-      await expect(client.setPitch(0.5)).resolves.toBeUndefined();
-      await expect(client.setPitch(1.5)).resolves.toBeUndefined();
-    });
-  });
-
   describe('setVoice', () => {
     test('sets voice when voice id exists in voice list', async () => {
       await client.init();
@@ -211,30 +216,11 @@ describe('EdgeTTSClient', () => {
       await client.setVoice('nonexistent-voice');
       expect(client.getVoiceId()).toBe('en-US-AriaNeural');
     });
-
-    test('voice id remains empty when no voice has been set', () => {
-      expect(client.getVoiceId()).toBe('');
-    });
-  });
-
-  describe('setPrimaryLang', () => {
-    test('sets primary language', () => {
-      client.setPrimaryLang('fr');
-      // No public getter for primaryLang, but we verify no error
-      // The effect is observed when speak() uses it
-    });
-
-    test('accepts any language string', () => {
-      client.setPrimaryLang('zh-CN');
-      client.setPrimaryLang('ja');
-      client.setPrimaryLang('en');
-      // No error thrown
-    });
   });
 
   describe('supportsWordBoundaries', () => {
     test('returns true (Edge reports word-boundary timings)', () => {
-      expect(client.supportsWordBoundaries()).toBe(true);
+      expect(client.getCapabilities().wordBoundaries).toBe(true);
     });
   });
 
@@ -431,14 +417,17 @@ describe('EdgeTTSClient', () => {
       }
     };
 
-    test('retries createAudioUrl up to 3 times when preload fails', async () => {
+    test('retries createAudioData up to 3 times when preload fails', async () => {
       await client.init();
       parsedMarks = [{ name: 'mark-0', text: 'hello', language: 'en' }];
-      createAudioUrlBehavior = vi.fn(() => Promise.reject(new Error('network error')));
+      createAudioDataBehavior = vi.fn(() => Promise.reject(new Error('network error')));
 
-      await consumePreload(client, new AbortController().signal);
+      vi.useFakeTimers();
+      const preload = consumePreload(client, new AbortController().signal);
+      await vi.runAllTimersAsync();
+      await preload;
 
-      expect(createAudioUrlBehavior).toHaveBeenCalledTimes(3);
+      expect(createAudioDataBehavior).toHaveBeenCalledTimes(3);
     });
 
     test('does not retry when the first preload attempt succeeds', async () => {
@@ -447,37 +436,50 @@ describe('EdgeTTSClient', () => {
 
       await consumePreload(client, new AbortController().signal);
 
-      expect(createAudioUrlBehavior).toHaveBeenCalledTimes(1);
+      expect(createAudioDataBehavior).toHaveBeenCalledTimes(1);
     });
 
     test('stops retrying once an attempt succeeds', async () => {
       await client.init();
       parsedMarks = [{ name: 'mark-0', text: 'hello', language: 'en' }];
       let calls = 0;
-      createAudioUrlBehavior = vi.fn(() => {
+      createAudioDataBehavior = vi.fn(() => {
         calls++;
         return calls < 2
           ? Promise.reject(new Error('network error'))
-          : Promise.resolve('blob:mock-url');
+          : Promise.resolve({ data: new ArrayBuffer(8), boundaries: [] });
       });
+
+      vi.useFakeTimers();
+      const preload = consumePreload(client, new AbortController().signal);
+      await vi.runAllTimersAsync();
+      await preload;
+
+      expect(createAudioDataBehavior).toHaveBeenCalledTimes(2);
+    });
+
+    test('does not retry a permanent no-audio failure', async () => {
+      await client.init();
+      parsedMarks = [{ name: 'mark-0', text: 'hello', language: 'en' }];
+      createAudioDataBehavior = vi.fn(() => Promise.reject(new Error('No audio data received.')));
 
       await consumePreload(client, new AbortController().signal);
 
-      expect(createAudioUrlBehavior).toHaveBeenCalledTimes(2);
+      expect(createAudioDataBehavior).toHaveBeenCalledTimes(1);
     });
 
     test('stops retrying once the signal is aborted', async () => {
       await client.init();
       parsedMarks = [{ name: 'mark-0', text: 'hello', language: 'en' }];
       const controller = new AbortController();
-      createAudioUrlBehavior = vi.fn(() => {
+      createAudioDataBehavior = vi.fn(() => {
         controller.abort();
         return Promise.reject(new Error('network error'));
       });
 
       await consumePreload(client, controller.signal);
 
-      expect(createAudioUrlBehavior).toHaveBeenCalledTimes(1);
+      expect(createAudioDataBehavior).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -494,139 +496,6 @@ describe('EdgeTTSClient', () => {
 
     test('stop resolves without error when no audio element exists', async () => {
       await expect(client.stop()).resolves.toBeUndefined();
-    });
-  });
-
-  describe('word boundary tracking during playback', () => {
-    class MockAudio {
-      static instances: MockAudio[] = [];
-      src = '';
-      currentTime = 0;
-      preload = '';
-      playbackRate = 1;
-      onended: ((e?: Event) => void) | null = null;
-      onerror: ((e?: unknown) => void) | null = null;
-      constructor() {
-        MockAudio.instances.push(this);
-      }
-      setAttribute() {}
-      play() {
-        return Promise.resolve();
-      }
-      pause() {}
-    }
-
-    let rafCallbacks: Map<number, FrameRequestCallback>;
-    let rafId = 0;
-    const runRaf = () => {
-      const cbs = [...rafCallbacks.values()];
-      rafCallbacks.clear();
-      for (const cb of cbs) cb(0);
-    };
-    const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
-
-    let mockController: {
-      dispatchSpeakMark: ReturnType<typeof vi.fn>;
-      prepareSpeakWords: ReturnType<typeof vi.fn>;
-      dispatchSpeakWord: ReturnType<typeof vi.fn>;
-    };
-
-    beforeEach(() => {
-      MockAudio.instances = [];
-      rafCallbacks = new Map();
-      vi.stubGlobal('Audio', MockAudio);
-      vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
-        rafCallbacks.set(++rafId, cb);
-        return rafId;
-      });
-      vi.stubGlobal('cancelAnimationFrame', (id: number) => {
-        rafCallbacks.delete(id);
-      });
-      mockController = {
-        dispatchSpeakMark: vi.fn(),
-        prepareSpeakWords: vi.fn(),
-        dispatchSpeakWord: vi.fn(),
-      };
-      client = new EdgeTTSClient(mockController as unknown as TTSController);
-      parsedMarks = [{ name: '0', text: 'Hello brave world', language: 'en' }];
-      createAudioBehavior = vi.fn(() =>
-        Promise.resolve({
-          url: 'blob:mock-url',
-          boundaries: [
-            { offset: 1_000_000, duration: 4_000_000, text: 'Hello' },
-            { offset: 6_000_000, duration: 4_000_000, text: 'brave' },
-            { offset: 11_000_000, duration: 4_000_000, text: 'world' },
-          ],
-        }),
-      );
-    });
-
-    afterEach(() => {
-      vi.unstubAllGlobals();
-    });
-
-    const startSpeak = async () => {
-      await client.init();
-      const it = client.speak('<ssml/>', new AbortController().signal);
-      const first = await it.next();
-      expect((first.value as { code: string }).code).toBe('boundary');
-      const resultPromise = it.next();
-      await flush();
-      const audio = MockAudio.instances.at(-1)!;
-      return { it, resultPromise, audio };
-    };
-
-    test('prepares speak words and dispatches word indexes as playback advances', async () => {
-      const { resultPromise, audio } = await startSpeak();
-
-      expect(mockController.prepareSpeakWords).toHaveBeenCalledWith(['Hello', 'brave', 'world']);
-
-      audio.currentTime = 0.11;
-      runRaf();
-      expect(mockController.dispatchSpeakWord).toHaveBeenCalledWith(0);
-
-      audio.currentTime = 0.65;
-      runRaf();
-      expect(mockController.dispatchSpeakWord).toHaveBeenLastCalledWith(1);
-
-      // Same word index is not re-dispatched on subsequent frames.
-      const callCount = mockController.dispatchSpeakWord.mock.calls.length;
-      runRaf();
-      expect(mockController.dispatchSpeakWord.mock.calls.length).toBe(callCount);
-
-      audio.onended?.();
-      const result = await resultPromise;
-      expect((result.value as { code: string }).code).toBe('end');
-    });
-
-    test('stops dispatching after the chunk ends', async () => {
-      const { resultPromise, audio } = await startSpeak();
-
-      audio.currentTime = 0.11;
-      runRaf();
-      const callCount = mockController.dispatchSpeakWord.mock.calls.length;
-
-      audio.onended?.();
-      await resultPromise;
-
-      audio.currentTime = 1.2;
-      runRaf();
-      expect(mockController.dispatchSpeakWord.mock.calls.length).toBe(callCount);
-    });
-
-    test('hands empty words to the controller and does not track when no boundaries', async () => {
-      createAudioBehavior = vi.fn(() => Promise.resolve({ url: 'blob:mock-url', boundaries: [] }));
-      const { resultPromise, audio } = await startSpeak();
-
-      // Empty words are still forwarded so the controller can draw the
-      // sentence-highlight fallback; no per-word tracking is started.
-      expect(mockController.prepareSpeakWords).toHaveBeenCalledWith([]);
-      audio.currentTime = 0.5;
-      runRaf();
-      expect(mockController.dispatchSpeakWord).not.toHaveBeenCalled();
-
-      audio.onended?.();
-      await resultPromise;
     });
   });
 });

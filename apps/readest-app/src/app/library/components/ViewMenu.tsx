@@ -76,6 +76,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     { label: _('Date Read'), value: LibrarySortByType.Updated },
     { label: _('Date Added'), value: LibrarySortByType.Created },
     { label: _('Date Published'), value: LibrarySortByType.Published },
+    { label: _('Progress Read'), value: LibrarySortByType.Progress },
+    { label: _('Time Remaining'), value: LibrarySortByType.TimeRemaining },
   ];
 
   const sortBy2Options: { label: string; value: LibrarySecondarySortByType }[] = [
@@ -107,6 +109,14 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const handleToggleAutoColumns = async () => {
     const newValue = !settings.libraryAutoColumns;
     await saveSysSettings(envConfig, 'libraryAutoColumns', newValue);
+  };
+
+  const handleToggleRecentShelf = async () => {
+    await saveSysSettings(
+      envConfig,
+      'libraryRecentShelfEnabled',
+      !settings.libraryRecentShelfEnabled,
+    );
   };
 
   const handleSetColumns = async (value: number) => {
@@ -217,6 +227,16 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           transient
         />
       ))}
+
+      {/* Recently read shelf */}
+      <hr aria-hidden='true' className='border-base-200 my-1' />
+      <MenuItem
+        label={_('Show recently read')}
+        buttonClass='h-8'
+        toggled={settings.libraryRecentShelfEnabled}
+        onClick={handleToggleRecentShelf}
+        transient
+      />
 
       {/* Group By - Collapsible */}
       <hr aria-hidden='true' className='border-base-200 my-1' />

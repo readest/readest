@@ -51,13 +51,16 @@ import {
   expandOPDSSearchTemplate,
   resolveURL,
   getFileExtFromPath,
+  getSafeDOMParserMimeType,
   looksLikeXMLContent,
   parseOPDSXML,
   MIME,
   validateOPDSURL,
   getOPDSNavLink,
+  getUnaddedPopularCatalogs,
+  formatContributorName,
 } from '@/app/opds/utils/opdsUtils';
-import type { OPDSBaseLink } from '@/types/opds';
+import type { OPDSBaseLink, OPDSCatalog } from '@/types/opds';
 import { fetchWithAuth } from '@/app/opds/utils/opdsReq';
 
 const mockFetchWithAuth = vi.mocked(fetchWithAuth);
@@ -65,6 +68,18 @@ const mockFetchWithAuth = vi.mocked(fetchWithAuth);
 describe('opdsUtils', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  describe('formatContributorName', () => {
+    // Calibre stores commas in author names as `|` (e.g. `Doe| John`), and
+    // Calibre-Web OPDS feeds serve that raw form (readest issue #5183).
+    it('restores commas that Calibre escaped as pipes', () => {
+      expect(formatContributorName('Doe| John Walter')).toBe('Doe, John Walter');
+    });
+
+    it('leaves names without pipes unchanged', () => {
+      expect(formatContributorName('John Walter Doe')).toBe('John Walter Doe');
+    });
   });
 
   describe('groupByArray', () => {
@@ -450,6 +465,19 @@ describe('opdsUtils', () => {
     });
   });
 
+  describe('getSafeDOMParserMimeType', () => {
+    it('maps XML-like MIME types to application/xml', () => {
+      expect(getSafeDOMParserMimeType('application/atom+xml')).toBe('application/xml');
+      expect(getSafeDOMParserMimeType('application/atom+xml;profile=opds-catalog')).toBe(
+        'application/xml',
+      );
+    });
+
+    it('leaves HTML MIME types unchanged', () => {
+      expect(getSafeDOMParserMimeType('text/html')).toBe('text/html');
+    });
+  });
+
   // Regression for https://github.com/readest/readest/issues/4479
   // The Hungarian MEK catalog (a PHP backend) emits a valid Atom feed followed
   // by trailing junk after </feed>. Firefox's strict DOMParser replaces the
@@ -779,6 +807,46 @@ describe('opdsUtils', () => {
 
     it('ignores entries without an href', () => {
       expect(getOPDSNavLink([{ type: 'application/opds+json' }])).toBeUndefined();
+    });
+  });
+
+  describe('getUnaddedPopularCatalogs', () => {
+    const popular: OPDSCatalog[] = [
+      { id: 'gutenberg', name: 'Project Gutenberg', url: 'https://m.gutenberg.org/ebooks.opds/' },
+      {
+        id: 'standardebooks',
+        name: 'Standard Ebooks',
+        url: 'https://standardebooks.org/feeds/opds',
+      },
+    ];
+
+    it('returns all popular catalogs when none are added', () => {
+      expect(getUnaddedPopularCatalogs(popular, [])).toEqual(popular);
+    });
+
+    it('drops a popular catalog already present in the added list', () => {
+      const added: OPDSCatalog[] = [
+        { id: '1', name: 'Project Gutenberg', url: 'https://m.gutenberg.org/ebooks.opds/' },
+      ];
+      const result = getUnaddedPopularCatalogs(popular, added);
+      expect(result.map((c) => c.id)).toEqual(['standardebooks']);
+    });
+
+    it('matches by normalized URL (case and surrounding whitespace)', () => {
+      const added: OPDSCatalog[] = [
+        { id: '1', name: 'Gutenberg', url: '  HTTPS://M.GUTENBERG.ORG/EBOOKS.OPDS/  ' },
+      ];
+      const result = getUnaddedPopularCatalogs(popular, added);
+      expect(result.map((c) => c.id)).toEqual(['standardebooks']);
+    });
+
+    it('excludes disabled popular catalogs', () => {
+      const withDisabled: OPDSCatalog[] = [
+        ...popular,
+        { id: 'manybooks', name: 'ManyBooks', url: 'https://manybooks.net/opds/', disabled: true },
+      ];
+      const result = getUnaddedPopularCatalogs(withDisabled, []);
+      expect(result.map((c) => c.id)).toEqual(['gutenberg', 'standardebooks']);
     });
   });
 });

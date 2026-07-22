@@ -716,11 +716,11 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         return true;
       }
 
-      if (detail.phase === 'end') {
+      if (detail.phase === 'end' || detail.phase === 'cancel') {
         const wasConsumed = isTouchDraggingRef.current;
         if (wasConsumed) {
           isDragging.current = false;
-          throttledSave(currentPositionRef.current);
+          if (detail.phase === 'end') throttledSave(currentPositionRef.current);
         }
         touchInRulerRef.current = false;
         isTouchDraggingRef.current = false;

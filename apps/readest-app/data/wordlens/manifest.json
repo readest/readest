@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "packs": [
+    {
+      "pair": "de-en",
+      "source": "de",
+      "target": "en",
+      "file": "de-en.json",
+      "bytes": 1938011,
+      "sha256": "697c7072d7808abba08e554f47efd92d5ac5555e6d4edf14bbf8a7d65697fff1",
+      "entries": 13806
+    },
+    {
+      "pair": "en-de",
+      "source": "en",
+      "target": "de",
+      "file": "en-de.json",
+      "bytes": 1013755,
+      "sha256": "a2919c2a0ceddca92d6cdcbcdc361b17c68f7264485ebf98a52af20533139264",
+      "entries": 14926
+    },
+    {
+      "pair": "en-en",
+      "source": "en",
+      "target": "en",
+      "file": "en-en.json",
+      "bytes": 1777292,
+      "sha256": "534bf6c6d3ad23027066693f558fe1a30f01b14024ed4dda0bcd202e31cbf22e",
+      "entries": 24246
+    },
+    {
+      "pair": "en-es",
+      "source": "en",
+      "target": "es",
+      "file": "en-es.json",
+      "bytes": 997231,
+      "sha256": "407a48af3067139b2ad0cf29d9d93b4e06a56b3764544cde918255f5eec2e90a",
+      "entries": 14769
+    },
+    {
+      "pair": "en-fr",
+      "source": "en",
+      "target": "fr",
+      "file": "en-fr.json",
+      "bytes": 982646,
+      "sha256": "d067f9b4d0a9d23f08c35d3546124cdc91e7e0fed47d48c02fb812dcab10a418",
+      "entries": 15070
+    },
+    {
+      "pair": "en-pt",
+      "source": "en",
+      "target": "pt",
+      "file": "en-pt.json",
+      "bytes": 972984,
+      "sha256": "f29b738eacb4851cb2a20e95ee418d0a17e33e8aecfbafe3bbc705d9a2db6230",
+      "entries": 14656
+    },
+    {
+      "pair": "en-ru",
+      "source": "en",
+      "target": "ru",
+      "file": "en-ru.json",
+      "bytes": 1270231,
+      "sha256": "3cb82f8c167f6e5302d0164dcdff27c40b92424a09ab5fc920c3ec418565395d",
+      "entries": 14925
+    },
+    {
+      "pair": "en-zh",
+      "source": "en",
+      "target": "zh",
+      "file": "en-zh.json",
+      "bytes": 1803715,
+      "sha256": "4132a5b9262d6aaf933022be4a060fb41a7ac3fe71f2ccc82618c3215e35f60c",
+      "entries": 24446
+    },
+    {
+      "pair": "es-en",
+      "source": "es",
+      "target": "en",
+      "file": "es-en.json",
+      "bytes": 1764204,
+      "sha256": "5b4765271c693f7fe3f1f4b39beb2e2a14dc77c48ee86aac7e19fa8f6010ff64",
+      "entries": 10949
+    },
+    {
+      "pair": "fr-en",
+      "source": "fr",
+      "target": "en",
+      "file": "fr-en.json",
+      "bytes": 1898800,
+      "sha256": "6568130bd48cb6a18e18d90770dbb16ed286f0527bbeea42c4c88b97f71ea78b",
+      "entries": 12361
+    },
+    {
+      "pair": "it-en",
+      "source": "it",
+      "target": "en",
+      "file": "it-en.json",
+      "bytes": 1979183,
+      "sha256": "4536f8663ea9976b4e1e10b340989ed1d7c5a77cc5715eb705c54f9b92744f55",
+      "entries": 11657
+    },
+    {
+      "pair": "pt-en",
+      "source": "pt",
+      "target": "en",
+      "file": "pt-en.json",
+      "bytes": 2510246,
+      "sha256": "0be519b683c2c46c9c3f79a81c79d74e3e17e35c3ffdacf5fa8d9ec5c32a404e",
+      "entries": 11808
+    },
+    {
+      "pair": "ru-en",
+      "source": "ru",
+      "target": "en",
+      "file": "ru-en.json",
+      "bytes": 2200460,
+      "sha256": "edd67795bc4a30fa296ca929d8f2b6e052c024874300136c1b2b419456ee5eb8",
+      "entries": 8780
+    },
+    {
+      "pair": "zh-en",
+      "source": "zh",
+      "target": "en",
+      "file": "zh-en.json",
+      "bytes": 602685,
+      "sha256": "01804d83f5342ac877c1a7682affda7d663511dde44990bf883242522fef92fd",
+      "entries": 12000
+    }
+  ]
+}

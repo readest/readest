@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MdArrowBack, MdChevronRight, MdSettings } from 'react-icons/md';
+import { MdArrowBack, MdChevronRight, MdSettings, MdVolumeUp } from 'react-icons/md';
 import clsx from 'clsx';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
@@ -12,6 +12,7 @@ import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { getEnabledProviders } from '@/services/dictionaries/registry';
 import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates';
 import { isTauriAppPlatform } from '@/services/environment';
+import { cancelWordPronounce, pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
 import {
   getBuiltinWebSearch,
   substituteUrlTemplate,
@@ -42,6 +43,8 @@ export interface DictionaryResultsState {
   goBack: () => void;
   visibleDefinitionProviders: DictionaryProvider[];
   webSearchProviders: DictionaryProvider[];
+  /** Whether the web-search section renders above the dictionaries one (#5083). */
+  webSearchFirst: boolean;
   cards: Record<string, CardState>;
   setContainerRef: (id: string) => (el: HTMLDivElement | null) => void;
   handleContainerClick: (e: React.MouseEvent) => void;
@@ -49,6 +52,12 @@ export interface DictionaryResultsState {
   resolveWebSearchUrl: (id: string) => string | undefined;
   onWebSearchClickTauri: (e: React.MouseEvent<HTMLAnchorElement>, id: string) => void;
   noProvidersAtAll: boolean;
+  /** Dictionary popup font-size multiplier (#4443); `1` = default sizes. */
+  fontScale: number;
+  /** Whether the current word is being fetched/spoken by the TTS engine (#4876). */
+  isSpeaking: boolean;
+  /** Pronounce the current word via Edge TTS (falling back to platform speech). */
+  speakWord: () => void;
 }
 
 /**
@@ -84,6 +93,11 @@ export function useDictionaryResults({
 
   const definitionProviders = useMemo(() => providers.filter((p) => p.kind !== 'web'), [providers]);
   const webSearchProviders = useMemo(() => providers.filter((p) => p.kind === 'web'), [providers]);
+  // Web entries live in their own section, so `providerOrder` alone can't lift
+  // one above the dictionary cards (#5083). Let the top-most enabled provider
+  // decide which section leads. Derived from the full enabled list rather than
+  // the visible one so the sections don't reshuffle as lookups settle.
+  const webSearchFirst = providers[0]?.kind === 'web';
 
   const [historyStack, setHistoryStack] = useState<string[]>([word.trim()]);
   const currentWord = historyStack[historyStack.length - 1] ?? word.trim();
@@ -121,6 +135,30 @@ export function useDictionaryResults({
   const goBack = useCallback(() => {
     setHistoryStack((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
   }, []);
+
+  // Pronounce the current headword (#4876). `isSpeaking` covers both the
+  // Edge fetch and playback so the header button can show one active state.
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const langCode = typeof lang === 'string' ? lang : Array.isArray(lang) ? lang[0] : undefined;
+  const speakWord = useCallback(() => {
+    // Warm the audio context synchronously inside the click gesture; the
+    // synth/play happens after a network await, outside the gesture window.
+    warmWordAudio();
+    setIsSpeaking(true);
+    void pronounceWord(currentWord, langCode, { appService }, (status) => {
+      if (status !== 'playing') setIsSpeaking(false);
+    });
+  }, [currentWord, langCode, appService]);
+
+  // Stop any in-flight pronunciation when the word changes (in-content
+  // navigation / reopen) or the popup unmounts.
+  useEffect(() => {
+    return () => cancelWordPronounce();
+  }, []);
+  useEffect(() => {
+    cancelWordPronounce();
+    setIsSpeaking(false);
+  }, [currentWord]);
 
   const toggleExpanded = useCallback((id: string) => {
     setCards((prev) => {
@@ -211,12 +249,15 @@ export function useDictionaryResults({
           if (!container) {
             outcome = { ok: false, reason: 'error', message: 'no container' };
           } else {
-            // Try normalized query variants (trimmed, case-folded) in
-            // priority order and keep the first hit. Case-sensitive
-            // formats (mdict) otherwise miss `Hello` / `world ` style
-            // selections whose headword is stored lowercased.
+            // Try normalized query variants (trimmed, case-folded) then
+            // language-aware lemma candidates in priority order, keeping the
+            // first hit. Case-sensitive formats (mdict) otherwise miss
+            // `Hello` / `world ` style selections whose headword is stored
+            // lowercased, and dictionaries that store only base headwords
+            // (e.g. Oxford Dictionary of English) miss inflected selections
+            // like `ran` / `mice` / `analyses`.
             outcome = { ok: false, reason: 'empty' };
-            for (const candidate of buildLookupCandidates(currentWord)) {
+            for (const candidate of buildLookupCandidates(currentWord, langCode)) {
               container.replaceChildren();
               outcome = await provider.lookup(candidate, {
                 lang: langCode,
@@ -302,6 +343,7 @@ export function useDictionaryResults({
     goBack,
     visibleDefinitionProviders,
     webSearchProviders,
+    webSearchFirst,
     cards,
     setContainerRef,
     handleContainerClick,
@@ -309,6 +351,9 @@ export function useDictionaryResults({
     resolveWebSearchUrl,
     onWebSearchClickTauri,
     noProvidersAtAll,
+    fontScale: settings.fontScale ?? 1,
+    isSpeaking,
+    speakWord,
   };
 }
 
@@ -318,6 +363,10 @@ interface DictionaryResultsHeaderProps {
   canGoBack: boolean;
   goBack: () => void;
   onManage?: () => void;
+  /** Pronounce the current word (#4876); omit to hide the speaker button. */
+  onSpeak?: () => void;
+  /** Whether pronunciation is in progress, for the active button state. */
+  speaking?: boolean;
 }
 
 export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = ({
@@ -326,6 +375,8 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
   canGoBack,
   goBack,
   onManage,
+  onSpeak,
+  speaking,
 }) => {
   const _ = useTranslation();
   return (
@@ -342,9 +393,28 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
           </button>
         ) : null}
       </div>
-      <span data-testid='dict-title' className='line-clamp-1 flex-1 text-center font-bold'>
-        {currentWord}
-      </span>
+      <div className='flex min-w-0 flex-1 items-center justify-center gap-1'>
+        {onSpeak ? (
+          <button
+            type='button'
+            aria-label={_('Speak')}
+            title={_('Speak')}
+            aria-pressed={!!speaking}
+            onClick={onSpeak}
+            className={clsx(
+              'btn btn-ghost btn-square btn-xs shrink-0',
+              speaking
+                ? 'text-base-content not-eink:animate-pulse'
+                : 'text-base-content/60 hover:text-base-content not-eink:hover:bg-base-200/60',
+            )}
+          >
+            <MdVolumeUp size={18} />
+          </button>
+        ) : null}
+        <span data-testid='dict-title' className='line-clamp-1 min-w-0 font-bold'>
+          {currentWord}
+        </span>
+      </div>
       <div className='flex h-8 w-8 items-center justify-center'>
         {onManage ? (
           <button
@@ -367,6 +437,7 @@ interface DictionaryResultsBodyProps extends DictionaryResultsState {}
 export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   visibleDefinitionProviders,
   webSearchProviders,
+  webSearchFirst,
   cards,
   setContainerRef,
   handleContainerClick,
@@ -374,8 +445,115 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   resolveWebSearchUrl,
   onWebSearchClickTauri,
   noProvidersAtAll,
+  fontScale,
 }) => {
   const _ = useTranslation();
+
+  // `first:pt-2` keeps the leading section's tighter top padding whichever of
+  // the two comes first.
+  const sectionClassName = 'px-4 pt-4 first:pt-2';
+
+  const definitionsSection = visibleDefinitionProviders.length > 0 && (
+    <section className={sectionClassName}>
+      <h3 className='not-eink:opacity-60 mb-2 text-xs font-medium uppercase tracking-wide'>
+        {_('Dictionaries')}
+      </h3>
+      <ul className='flex flex-col gap-3'>
+        {visibleDefinitionProviders.map((p) => {
+          const card = cards[p.id];
+          const isLoading = !card || card.state === 'loading';
+          const expanded = card?.expanded ?? false;
+          const sourceLabel =
+            card?.outcome?.ok && card.outcome.sourceLabel ? card.outcome.sourceLabel : _(p.label);
+          return (
+            <li key={p.id}>
+              <div
+                data-testid='dict-card'
+                role='button'
+                tabIndex={0}
+                aria-expanded={expanded}
+                onClick={(e) => {
+                  const path = e.nativeEvent.composedPath();
+                  for (const node of path) {
+                    if (node === e.currentTarget) break;
+                    if (node instanceof Element) {
+                      const tag = node.tagName;
+                      if (tag === 'A' || tag === 'BUTTON' || tag === 'IMG') return;
+                    }
+                  }
+                  toggleExpanded(p.id);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleExpanded(p.id);
+                  }
+                }}
+                className={clsx('cursor-pointer rounded-lg')}
+              >
+                {isLoading && (
+                  <div
+                    data-testid='dict-card-skeleton'
+                    className='bg-base-200/50 h-12 animate-pulse rounded'
+                  />
+                )}
+                <div
+                  ref={setContainerRef(p.id)}
+                  onClick={handleContainerClick}
+                  // `data-dict-content` + `--dict-font-scale` drive the
+                  // popup font-size rules in globals.css (#4443): the
+                  // light-DOM `font-size` cascade and the MDict shadow
+                  // `::part(dict-content)` rule both read this scope.
+                  data-dict-content=''
+                  style={{ '--dict-font-scale': fontScale } as React.CSSProperties}
+                  className={clsx(
+                    'font-sans',
+                    isLoading && 'hidden',
+                    !isLoading &&
+                      !expanded &&
+                      'line-clamp-4 max-h-40 overflow-hidden [-webkit-box-orient:vertical] [display:-webkit-box]',
+                  )}
+                />
+                {!isLoading && (
+                  <div className='border-base-content/10 -me-4 mt-2 border-b pb-2'>
+                    <span className='not-eink:opacity-60 text-xs'>{sourceLabel}</span>
+                  </div>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+
+  const webSearchSection = webSearchProviders.length > 0 && (
+    <section className={sectionClassName}>
+      <h3 className='not-eink:opacity-60 mb-2 text-xs font-medium uppercase tracking-wide'>
+        {_('Search the web')}
+      </h3>
+      <ul className='flex flex-col'>
+        {webSearchProviders.map((p) => {
+          const url = resolveWebSearchUrl(p.id);
+          return (
+            <li key={p.id}>
+              <a
+                href={url ?? '#'}
+                target={isTauri ? undefined : '_blank'}
+                rel='noopener noreferrer'
+                onClick={(e) => onWebSearchClickTauri(e, p.id)}
+                className='hover:bg-base-200/40 flex w-full items-center justify-between rounded-md px-2 py-3 text-left text-sm no-underline'
+              >
+                <span>{_(p.label)}</span>
+                <MdChevronRight className='not-eink:opacity-60' size={18} />
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+
   return (
     <div className='flex h-full flex-col'>
       <div className='flex-1 overflow-y-auto'>
@@ -386,104 +564,15 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
               {_('Enable a dictionary in Settings → Language → Dictionaries.')}
             </p>
           </div>
+        ) : webSearchFirst ? (
+          <>
+            {webSearchSection}
+            {definitionsSection}
+          </>
         ) : (
           <>
-            {visibleDefinitionProviders.length > 0 && (
-              <section className='px-4 pt-2'>
-                <h3 className='not-eink:opacity-60 mb-2 text-xs font-medium uppercase tracking-wide'>
-                  {_('Dictionaries')}
-                </h3>
-                <ul className='flex flex-col gap-3'>
-                  {visibleDefinitionProviders.map((p) => {
-                    const card = cards[p.id];
-                    const isLoading = !card || card.state === 'loading';
-                    const expanded = card?.expanded ?? false;
-                    const sourceLabel =
-                      card?.outcome?.ok && card.outcome.sourceLabel
-                        ? card.outcome.sourceLabel
-                        : _(p.label);
-                    return (
-                      <li key={p.id}>
-                        <div
-                          data-testid='dict-card'
-                          role='button'
-                          tabIndex={0}
-                          aria-expanded={expanded}
-                          onClick={(e) => {
-                            const path = e.nativeEvent.composedPath();
-                            for (const node of path) {
-                              if (node === e.currentTarget) break;
-                              if (node instanceof Element) {
-                                const tag = node.tagName;
-                                if (tag === 'A' || tag === 'BUTTON' || tag === 'IMG') return;
-                              }
-                            }
-                            toggleExpanded(p.id);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              toggleExpanded(p.id);
-                            }
-                          }}
-                          className={clsx('cursor-pointer rounded-lg')}
-                        >
-                          {isLoading && (
-                            <div
-                              data-testid='dict-card-skeleton'
-                              className='bg-base-200/50 h-12 animate-pulse rounded'
-                            />
-                          )}
-                          <div
-                            ref={setContainerRef(p.id)}
-                            onClick={handleContainerClick}
-                            className={clsx(
-                              'font-sans',
-                              isLoading && 'hidden',
-                              !isLoading &&
-                                !expanded &&
-                                'line-clamp-4 max-h-40 overflow-hidden [-webkit-box-orient:vertical] [display:-webkit-box]',
-                            )}
-                          />
-                          {!isLoading && (
-                            <div className='border-base-content/10 -me-4 mt-2 border-b pb-2'>
-                              <span className='not-eink:opacity-60 text-xs'>{sourceLabel}</span>
-                            </div>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            )}
-
-            {webSearchProviders.length > 0 && (
-              <section className='px-4 pt-4'>
-                <h3 className='not-eink:opacity-60 mb-2 text-xs font-medium uppercase tracking-wide'>
-                  {_('Search the web')}
-                </h3>
-                <ul className='flex flex-col'>
-                  {webSearchProviders.map((p) => {
-                    const url = resolveWebSearchUrl(p.id);
-                    return (
-                      <li key={p.id}>
-                        <a
-                          href={url ?? '#'}
-                          target={isTauri ? undefined : '_blank'}
-                          rel='noopener noreferrer'
-                          onClick={(e) => onWebSearchClickTauri(e, p.id)}
-                          className='hover:bg-base-200/40 flex w-full items-center justify-between rounded-md px-2 py-3 text-left text-sm no-underline'
-                        >
-                          <span>{_(p.label)}</span>
-                          <MdChevronRight className='not-eink:opacity-60' size={18} />
-                        </a>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            )}
+            {definitionsSection}
+            {webSearchSection}
           </>
         )}
       </div>

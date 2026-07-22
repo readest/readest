@@ -68,6 +68,9 @@ msgstr "По возрастанию"
 msgid "Actions"
 msgstr "Действия"
 
+msgid "Download all books"
+msgstr "Загрузить все книги"
+
 msgid "Rescan library"
 msgstr "Пересканировать библиотеку"
 
@@ -133,6 +136,21 @@ msgstr "Не удалось загрузить обложку."
 
 msgid "Could not delete the file."
 msgstr "Не удалось удалить файл."
+
+msgid "No books to download."
+msgstr "Нет книг для загрузки."
+
+msgid "Downloading %1 of %2…"
+msgstr "Загрузка %1 из %2…"
+
+msgid "Download cancelled. %1 of %2 downloaded."
+msgstr "Загрузка отменена. Загружено %1 из %2."
+
+msgid "Downloaded %1 of %2 (skipped %3)."
+msgstr "Загружено %1 из %2 (пропущено %3)."
+
+msgid "Downloaded %1 of %2."
+msgstr "Загружено %1 из %2."
 
 msgid "Removing from cloud…"
 msgstr "Удаление из облака…"
@@ -215,6 +233,9 @@ msgstr "Отправить заметки Readest с этого устройст
 msgid "Pull readest annotations from other devices"
 msgstr "Получить заметки Readest с других устройств"
 
+msgid "Full sync all readest annotations"
+msgstr "Полная синхронизация всех заметок Readest"
+
 msgid "Add to Readest"
 msgstr "Добавить в Readest"
 
@@ -239,6 +260,12 @@ msgstr "Уже в вашей библиотеке Readest:"
 msgid "Added to Readest:"
 msgstr "Добавлено в Readest:"
 
+msgid "No book is open"
+msgstr "Нет открытой книги"
+
+msgid "Uploaded to Readest:"
+msgstr "Загружено в Readest:"
+
 msgid "Log in Readest Account"
 msgstr "Войти в аккаунт Readest"
 
@@ -251,11 +278,20 @@ msgstr "Автосинхронизация"
 msgid "Readest library"
 msgstr "Библиотека Readest"
 
+msgid "Push stats now"
+msgstr "Отправить статистику сейчас"
+
+msgid "Pull stats now"
+msgstr "Получить статистику сейчас"
+
 msgid "Push books now"
 msgstr "Отправить книги сейчас"
 
 msgid "Pull books now"
 msgstr "Получить книги сейчас"
+
+msgid "Upload current book to Readest"
+msgstr "Загрузить текущую книгу в Readest"
 
 msgid "Push reading progress now"
 msgstr "Отправить прогресс чтения сейчас"
@@ -286,9 +322,6 @@ msgstr "Сначала войдите в систему"
 
 msgid "Please configure Readest settings first"
 msgstr "Сначала настройте параметры Readest"
-
-msgid "No book is open"
-msgstr "Нет открытой книги"
 
 msgid "(none)"
 msgstr "(нет)"
@@ -436,3 +469,18 @@ msgstr "Прогресс чтения синхронизирован"
 
 msgid "No saved reading progress found for this book"
 msgstr "Сохранённый прогресс чтения для этой книги не найден"
+
+msgid "Reading statistics are up to date"
+msgstr "Статистика чтения актуальна"
+
+msgid "Reading statistics pushed"
+msgstr "Статистика чтения отправлена"
+
+msgid "Failed to push reading statistics"
+msgstr "Не удалось отправить статистику чтения"
+
+msgid "Failed to pull reading statistics"
+msgstr "Не удалось получить статистику чтения"
+
+msgid "Reading statistics pulled"
+msgstr "Статистика чтения получена"

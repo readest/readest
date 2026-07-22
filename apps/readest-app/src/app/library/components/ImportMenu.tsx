@@ -14,11 +14,13 @@ const ImportMenu: React.FC<ImportMenuProps> = ({
   onImportBooksFromDirectory,
   onImportBookFromUrl,
   onOpenCatalogManager,
+  onOpenFeeds,
 }) => {
   const options = useImportOptions({
     onImportBooksFromFiles,
     onImportBooksFromDirectory,
     onImportBookFromUrl,
+    onOpenFeeds,
     onOpenCatalogManager,
   });
 

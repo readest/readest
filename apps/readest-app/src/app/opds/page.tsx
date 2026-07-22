@@ -18,6 +18,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
 import { transferManager } from '@/services/transferManager';
+import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useTheme } from '@/hooks/useTheme';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -28,6 +29,7 @@ import { OPDSFeed, OPDSPublication, OPDSSearch, REL } from '@/types/opds';
 import {
   expandOPDSSearchTemplate,
   getFileExtFromPath,
+  getSafeDOMParserMimeType,
   isSearchLink,
   looksLikeXMLContent,
   MIME,
@@ -42,6 +44,7 @@ import {
   needsProxy,
   probeFilename,
 } from './utils/opdsReq';
+import { getPublicationDetailHref, parsePublicationDocument } from './utils/opdsPublication';
 import { ImportError } from '@/services/errors';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { findBookByOPDSSources, upsertOPDSSourceMapping } from '@/services/opds/sourceMap';
@@ -55,6 +58,7 @@ import { normalizeOPDSCustomHeaders } from './utils/customHeaders';
 import { closeOPDSBrowser, stashOPDSReturnTarget } from './utils/opdsClose';
 import { findExistingBookForPublication } from './utils/findExistingBook';
 import Dialog from '@/components/Dialog';
+import { uniqueId } from '@/utils/misc';
 
 type ViewMode = 'feed' | 'publication' | 'search' | 'loading' | 'error';
 
@@ -304,7 +308,7 @@ export default function BrowserPage() {
           } else {
             const contentType = res.headers.get('Content-Type') ?? MIME.HTML;
             const type = parseMediaType(contentType)?.mediaType ?? MIME.HTML;
-            const htmlDoc = new DOMParser().parseFromString(text, type as DOMParserSupportedType);
+            const htmlDoc = new DOMParser().parseFromString(text, getSafeDOMParserMimeType(type));
 
             if (!htmlDoc.head) {
               stashOPDSReturnTarget(searchParams);
@@ -329,7 +333,16 @@ export default function BrowserPage() {
             }
           }
         } else {
-          const feed = JSON.parse(text);
+          // Defense-in-depth: a non-feed response (e.g. an image returned for a
+          // link that isn't actually a feed) is neither XML nor JSON. Surface a
+          // clear message instead of letting a raw JSON.parse SyntaxError leak
+          // into the error view (readest issue #4599).
+          let feed;
+          try {
+            feed = JSON.parse(text);
+          } catch {
+            throw new Error(_('Content is neither valid XML nor JSON'));
+          }
           const newState = {
             feed,
             baseURL: responseURL,
@@ -465,12 +478,77 @@ export default function BrowserPage() {
     [_, state, handleNavigate, addToHistory],
   );
 
-  const publication =
+  const basePublication =
     selectedPublication && state.feed
       ? state.feed.groups?.[selectedPublication.groupIndex]?.publications?.[
           selectedPublication.itemIndex
         ] || state.feed.publications?.[selectedPublication.itemIndex]
       : state.publication;
+
+  const fetchPublicationDocument = useCallback(
+    async (url: string): Promise<OPDSPublication | null> => {
+      try {
+        const useProxy = isWebAppPlatform();
+        const username = usernameRef.current || '';
+        const password = passwordRef.current || '';
+        const customHeaders = customHeadersRef.current;
+        const res = await fetchWithAuth(url, username, password, useProxy, {}, customHeaders);
+        if (!res.ok) return null;
+        const text = await res.text();
+        return parsePublicationDocument(text, res.url);
+      } catch (e) {
+        console.warn('Failed to load OPDS publication document:', e);
+        return null;
+      }
+    },
+    [],
+  );
+
+  // When a publication is listed in summary form but advertises a `rel="self"`
+  // link to its full document, dereference it and show the richer metadata
+  // (description, publisher, subjects, language) — readest issue #4749, matching
+  // what Thorium does. The summary renders immediately and is upgraded in place
+  // once the document loads; `source` ties the resolved record to the exact
+  // base publication it enriches so a stale fetch can't bleed into the next one.
+  const [detailPublication, setDetailPublication] = useState<{
+    source: OPDSPublication;
+    resolved: OPDSPublication;
+  } | null>(null);
+
+  useEffect(() => {
+    // Only enrich feed-selected summaries; a directly-loaded entry document
+    // (state.publication, no selection) is already the full record.
+    const detailLink =
+      selectedPublication && basePublication
+        ? getPublicationDetailHref(basePublication)
+        : undefined;
+    if (!basePublication || !detailLink) {
+      setDetailPublication(null);
+      return;
+    }
+    let cancelled = false;
+    const url = resolveURL(detailLink.href, state.baseURL);
+    void fetchPublicationDocument(url).then((resolved) => {
+      if (!cancelled && resolved) {
+        setDetailPublication({ source: basePublication, resolved });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPublication, basePublication, state.baseURL, fetchPublicationDocument]);
+
+  const publication = useMemo(() => {
+    if (!basePublication || detailPublication?.source !== basePublication) return basePublication;
+    const { resolved } = detailPublication;
+    // Prefer the full document's metadata; keep the feed's links/cover when the
+    // document omits them so downloads and the cover never regress.
+    return {
+      metadata: resolved.metadata,
+      links: resolved.links?.length ? resolved.links : basePublication.links,
+      images: resolved.images?.length ? resolved.images : basePublication.images,
+    };
+  }, [basePublication, detailPublication]);
 
   const handleDownload = useCallback(
     async (
@@ -512,7 +590,7 @@ export default function BrowserPage() {
 
           const pathname = decodeURIComponent(new URL(url).pathname);
           const ext = getFileExtFromMimeType(parsed?.mediaType) || getFileExtFromPath(pathname);
-          const basename = pathname.replaceAll('/', '_');
+          const basename = uniqueId();
           const filename = ext ? `${basename}.${ext}` : basename;
           let dstFilePath = await appService?.resolveFilePath(filename, 'Cache');
           console.log('Downloading to:', url, dstFilePath);
@@ -550,7 +628,7 @@ export default function BrowserPage() {
                 console.error('OPDS: failed to update source map:', sourceMapError);
               }
             }
-            if (user && book && !book.uploadedAt && settings.autoUpload) {
+            if (user && book && !book.uploadedAt && isReadestCloudStorageActive(settings)) {
               setTimeout(() => {
                 transferManager.queueUpload(book);
               }, 3000);
@@ -568,7 +646,7 @@ export default function BrowserPage() {
         throw e;
       }
     },
-    [user, state.baseURL, appService, libraryLoaded, settings.autoUpload, catalogSourceId],
+    [user, state.baseURL, appService, libraryLoaded, catalogSourceId],
   );
 
   const handleStream = useCallback(

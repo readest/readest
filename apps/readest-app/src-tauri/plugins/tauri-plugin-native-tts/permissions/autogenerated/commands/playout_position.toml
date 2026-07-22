@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-playout-position"
+description = "Enables the playout_position command without any pre-configured scope."
+commands.allow = ["playout_position"]
+
+[[permission]]
+identifier = "deny-playout-position"
+description = "Denies the playout_position command without any pre-configured scope."
+commands.deny = ["playout_position"]

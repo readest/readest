@@ -1,12 +1,22 @@
 import React from 'react';
-import { IoClose, IoExpand, IoAdd, IoRemove } from 'react-icons/io5';
+import {
+  IoClose,
+  IoExpand,
+  IoAdd,
+  IoRemove,
+  IoShareOutline,
+  IoDownloadOutline,
+} from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeStore } from '@/store/themeStore';
 import { Insets } from '@/types/misc';
 
 interface ZoomControlsProps {
   gridInsets: Insets;
+  // Save/Share is image-specific; omit `onSave` (e.g. the table viewer) to hide it.
+  canShare?: boolean;
   onClose: () => void;
+  onSave?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onReset: () => void;
@@ -14,7 +24,9 @@ interface ZoomControlsProps {
 
 const ZoomControls: React.FC<ZoomControlsProps> = ({
   gridInsets,
+  canShare,
   onClose,
+  onSave,
   onZoomIn,
   onZoomOut,
   onReset,
@@ -38,6 +50,21 @@ const ZoomControls: React.FC<ZoomControlsProps> = ({
       >
         <IoClose className='h-6 w-6' />
       </button>
+
+      {onSave && (
+        <button
+          onClick={onSave}
+          className='eink-bordered flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/50 transition-colors hover:bg-black/70'
+          aria-label={canShare ? _('Share Image') : _('Save Image')}
+          title={canShare ? _('Share Image') : _('Save Image')}
+        >
+          {canShare ? (
+            <IoShareOutline className='h-6 w-6' />
+          ) : (
+            <IoDownloadOutline className='h-6 w-6' />
+          )}
+        </button>
+      )}
 
       <button
         onClick={onZoomIn}

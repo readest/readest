@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-verify-update-signature"
+description = "Enables the verify_update_signature command without any pre-configured scope."
+commands.allow = ["verify_update_signature"]
+
+[[permission]]
+identifier = "deny-verify-update-signature"
+description = "Denies the verify_update_signature command without any pre-configured scope."
+commands.deny = ["verify_update_signature"]

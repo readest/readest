@@ -14,7 +14,55 @@ vi.mock('@/utils/supabase', () => ({
   },
 }));
 
-import { handleAuthCallback } from '@/helpers/auth';
+import { handleAuthCallback, parseOAuthCallbackUrl } from '@/helpers/auth';
+
+describe('parseOAuthCallbackUrl', () => {
+  it('should extract error params from a failed deeplink callback', () => {
+    // Real-world failing callback from issue #4881
+    const url =
+      'readest://auth-callback?error=server_error&error_code=unexpected_failure&error_description=Unable+to+exchange+external+code%3A+c578' +
+      '#error=server_error&error_code=unexpected_failure&error_description=Unable+to+exchange+external+code%253A+c578&sb=';
+
+    const params = parseOAuthCallbackUrl(url);
+
+    expect(params.error).toBe('server_error');
+    expect(params.errorCode).toBe('unexpected_failure');
+    expect(params.errorDescription).toContain('Unable to exchange external code');
+    expect(params.accessToken).toBeNull();
+    expect(params.refreshToken).toBeNull();
+  });
+
+  it('should extract tokens from a successful implicit-flow callback', () => {
+    const url =
+      'readest://auth-callback#access_token=abc123&refresh_token=def456&type=magiclink&next=/user';
+
+    const params = parseOAuthCallbackUrl(url);
+
+    expect(params.accessToken).toBe('abc123');
+    expect(params.refreshToken).toBe('def456');
+    expect(params.type).toBe('magiclink');
+    expect(params.next).toBe('/user');
+    expect(params.error).toBeNull();
+  });
+
+  it('should extract error params when present only in the query string', () => {
+    const url =
+      'readest://auth-callback?error=access_denied&error_code=denied&error_description=nope';
+
+    const params = parseOAuthCallbackUrl(url);
+
+    expect(params.error).toBe('access_denied');
+    expect(params.errorCode).toBe('denied');
+    expect(params.accessToken).toBeNull();
+  });
+
+  it('should return all-null params for a callback with no data', () => {
+    const params = parseOAuthCallbackUrl('readest://auth-callback');
+
+    expect(params.accessToken).toBeNull();
+    expect(params.error).toBeNull();
+  });
+});
 
 describe('handleAuthCallback', () => {
   let mockLogin: ReturnType<typeof vi.fn<(accessToken: string, user: User) => void>>;

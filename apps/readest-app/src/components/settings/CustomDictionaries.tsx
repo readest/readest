@@ -44,7 +44,17 @@ import {
   isValidUrlTemplate,
 } from '@/services/dictionaries/webSearchTemplates';
 import SubPageHeader from './SubPageHeader';
-import { Tips } from './primitives';
+import { BoxedList, SettingsRow, SettingsSelect, Tips } from './primitives';
+
+/** Dictionary popup font-size multipliers, surfaced as percentages (#4443). */
+const FONT_SCALE_OPTIONS = [
+  { value: '0.85', label: '85%' },
+  { value: '1', label: '100%' },
+  { value: '1.15', label: '115%' },
+  { value: '1.3', label: '130%' },
+  { value: '1.5', label: '150%' },
+  { value: '1.75', label: '175%' },
+];
 
 interface CustomDictionariesProps {
   onBack: () => void;
@@ -254,6 +264,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
     updateDictionary,
     reorder,
     setEnabled,
+    setFontScale,
     addWebSearch,
     updateWebSearch,
     removeWebSearch,
@@ -284,6 +295,11 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
       cancelled = true;
     };
   }, [appService]);
+  const handleFontScaleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFontScale(Number(e.target.value));
+    await saveCustomDictionaries(envConfig);
+  };
+
   const handleResetLookupApp = async () => {
     await clearRememberedLookupApp();
     setRememberedLookupApp(null);
@@ -768,6 +784,23 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           </DndContext>
         </div>
       </div>
+
+      <BoxedList
+        className='mt-4'
+        title={_('Appearance')}
+        description={_(
+          'Sets the text size of dictionary results, independent of the reading view.',
+        )}
+      >
+        <SettingsRow label={_('Font Size')}>
+          <SettingsSelect
+            value={String(settings.fontScale ?? 1)}
+            onChange={handleFontScaleChange}
+            options={FONT_SCALE_OPTIONS}
+            ariaLabel={_('Font Size')}
+          />
+        </SettingsRow>
+      </BoxedList>
 
       <div className='mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2'>
         <button

@@ -20,6 +20,7 @@ describe('getBookContextMenuItemIds', () => {
       'select',
       'group',
       'markFinished',
+      'markAbandoned',
       'showDetails',
       'showInFinder',
       'searchGoodreads',
@@ -29,12 +30,13 @@ describe('getBookContextMenuItemIds', () => {
     ]);
   });
 
-  it('shows "Mark as Unread" + "Clear Status" for a finished book', () => {
+  it('shows markUnread + markAbandoned + clearStatus for a finished book', () => {
     const book = createBook({ downloadedAt: 1, readingStatus: 'finished' });
     expect(getBookContextMenuItemIds(book)).toEqual([
       'select',
       'group',
       'markUnread',
+      'markAbandoned',
       'clearStatus',
       'showDetails',
       'showInFinder',
@@ -47,6 +49,23 @@ describe('getBookContextMenuItemIds', () => {
 
   it('shows "Mark as Finished" + "Clear Status" for an unread book', () => {
     const book = createBook({ downloadedAt: 1, readingStatus: 'unread' });
+    expect(getBookContextMenuItemIds(book)).toEqual([
+      'select',
+      'group',
+      'markFinished',
+      'markAbandoned',
+      'clearStatus',
+      'showDetails',
+      'showInFinder',
+      'searchGoodreads',
+      'upload',
+      'share',
+      'delete',
+    ]);
+  });
+
+  it('hides markAbandoned but offers markFinished + clearStatus for an abandoned book', () => {
+    const book = createBook({ downloadedAt: 1, readingStatus: 'abandoned' });
     expect(getBookContextMenuItemIds(book)).toEqual([
       'select',
       'group',
@@ -67,6 +86,7 @@ describe('getBookContextMenuItemIds', () => {
       'select',
       'group',
       'markFinished',
+      'markAbandoned',
       'showDetails',
       'showInFinder',
       'searchGoodreads',
@@ -82,6 +102,7 @@ describe('getBookContextMenuItemIds', () => {
       'select',
       'group',
       'markFinished',
+      'markAbandoned',
       'showDetails',
       'showInFinder',
       'searchGoodreads',
