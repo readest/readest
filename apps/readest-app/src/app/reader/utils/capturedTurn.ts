@@ -39,6 +39,16 @@ export interface CapturedTurnHost {
   /** Native webview snapshot of `rect`, as compressed image bytes. */
   capture: (rect: { x: number; y: number; width: number; height: number }) => Promise<ArrayBuffer>;
   /**
+   * Temporarily remove non-interactive chrome from a native pixel capture.
+   * Returns a cleanup that restores it after the platform snapshot resolves.
+   */
+  preparePixelCapture?: () =>
+    | void
+    | (() => void | Promise<void>)
+    | Promise<void | (() => void | Promise<void>)>;
+  /** Whether a freshly captured frame is still safe to reveal and navigate. */
+  isCaptureAllowed?: () => boolean;
+  /**
    * Theme paper (background color + texture) drawn on the back of the
    * curling page. Fetched concurrently with the capture; a missing or
    * failing backdrop falls back to the renderer's plain white back.
@@ -46,8 +56,13 @@ export interface CapturedTurnHost {
   getBackdrop?: () => Promise<TexImageSource | null> | TexImageSource | null;
   /** Records live UI state before the native snapshot starts. */
   onBeforeCapture?: (style: CapturedTurnStyle) => void | Promise<void>;
-  /** Called once the flat captured frame covers the live reader. */
-  onCovered?: (style: CapturedTurnStyle) => void | Promise<void>;
+  /**
+   * Called once the flat captured frame covers the live reader. A prepared
+   * surface has already spent a painted frame in the real host, so its reveal
+   * can be synchronized with the live chrome without another conservative
+   * compositor wait.
+   */
+  onCovered?: (style: CapturedTurnStyle, surfaceAlreadyPainted: boolean) => void | Promise<void>;
   /** Called under the restored flat frame before a cancelled turn is removed. */
   onCancelled?: (style: CapturedTurnStyle) => void | Promise<void>;
   /** Instant (animation-less) page turn of the live view. */
@@ -58,9 +73,11 @@ export type CapturedTurnStyle = 'curl' | 'slide';
 
 /** What the overlay draws each frame; PageCurlRenderer and PageSlideRenderer. */
 interface TurnRenderer {
-  attach(container: HTMLElement, width: number, height: number): void;
+  attach(container: HTMLElement, width: number, height: number, dpr?: number): void;
   setTexture(source: ImageBitmap): void;
   setBackdrop?(source: TexImageSource): void;
+  /** Whether an idle GPU surface survived context eviction. */
+  isUsable?(): boolean;
   render(progress: number, grab: CurlGrab, rtl: boolean): void;
   animateSettle?(options: PageSlideSettleOptions): Animation | null;
   dispose(): void;
@@ -78,21 +95,35 @@ interface CaptureRect {
   height: number;
 }
 
-interface PreparedCapture {
-  bitmap: ImageBitmap;
-  rect: CaptureRect;
+interface CaptureTarget {
   hostElement: HTMLElement;
+  rect: CaptureRect;
   dpr: number;
-  /** `undefined` means the warm-up did not request curl paper. */
-  backdrop: TexImageSource | null | undefined;
 }
 
-interface PreparingCapture {
-  epoch: number;
+interface PreparedSurface {
+  /** Renderer initialized, texture-uploaded, and mounted in the real host. */
+  renderer: TurnRenderer;
+  /** Low-alpha layer kept in the compositor tree until a turn consumes it. */
+  overlay: HTMLDivElement;
+  style: CapturedTurnStyle;
   rect: CaptureRect;
   hostElement: HTMLElement;
   dpr: number;
-  promise: Promise<PreparedCapture | null>;
+  /** True after the low-alpha layer has survived a complete paint. */
+  surfaceAlreadyPainted: boolean;
+  /** Nested paint-tracking RAF, cancelled when the surface is consumed. */
+  paintRaf: number;
+}
+
+interface PreparingSurface {
+  captureEpoch: number;
+  preparedEpoch: number;
+  rect: CaptureRect;
+  hostElement: HTMLElement;
+  dpr: number;
+  style: CapturedTurnStyle;
+  promise: Promise<PreparedSurface | null>;
 }
 
 interface ActiveTurn {
@@ -115,6 +146,8 @@ interface ActiveTurn {
 const easeInOutQuad = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (1 - t) * (1 - t) * 2);
 const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
 const RELEASE_SETTLE_CONFIG = {
+  // Keep a visible momentum lift without compressing a half-page tail into
+  // the ~90ms range, which looks choppy even when every display frame lands.
   slide: { minSpeed: 0.2, maxSpeed: 1, maxPlaybackRate: 2 },
   curl: { minSpeed: 0.3, maxSpeed: 1.5, maxPlaybackRate: 1.5 },
 } as const satisfies Record<
@@ -142,6 +175,24 @@ const sameCaptureRect = (a: CaptureRect, b: CaptureRect) =>
 
 const currentDpr = () => globalThis.devicePixelRatio || 1;
 
+// A strictly zero-opacity layer can be skipped by mobile compositors. Keep the
+// prepared surface imperceptibly present so its canvas/WebGL backing store and
+// texture upload are promoted before the gesture reveals it.
+const PREPARED_SURFACE_WARM_OPACITY = '0.004';
+
+// A full-screen high-DPR canvas or WebGL surface can occupy tens of megabytes.
+// Several reader cells may stay mounted, so keep one speculative idle surface
+// process-wide and stop creating more while any full-screen turn is active.
+let preparedSurfaceOwner: CapturedPageTurn | null = null;
+/** One speculative idle warm-up may allocate at a time across reader cells. */
+let idlePreparingOwner: CapturedPageTurn | null = null;
+/** All controllers with prepared native capture work currently in flight. */
+const preparingSurfaceOwners = new Set<CapturedPageTurn>();
+/** A touch lease protects completed and replacement surfaces until claim/end. */
+let preparedSurfaceLeaseOwner: CapturedPageTurn | null = null;
+/** Active surfaces also consume the process-wide full-screen surface budget. */
+const activeSurfaceOwners = new Set<CapturedPageTurn>();
+
 export class CapturedPageTurn {
   #host: CapturedTurnHost;
   #duration: number;
@@ -155,12 +206,16 @@ export class CapturedPageTurn {
   #pending: Promise<unknown> = Promise.resolve();
   /** True while a programmatic `turn()` is running, gating concurrent ones. */
   #running = false;
-  /** One decoded, idle-time snapshot of the currently visible reader cell. */
-  #preparedCapture: PreparedCapture | null = null;
-  /** Native capture already in flight; a turn can reuse it instead of restarting. */
-  #preparingCapture: PreparingCapture | null = null;
-  /** Invalidates both completed and in-flight prepared captures. */
+  /** One renderer-ready, idle-time surface of the visible reader cell. */
+  #preparedSurface: PreparedSurface | null = null;
+  /** Prevents another reader cell from evicting this touch's warm surface. */
+  #preparedSurfaceRetained = false;
+  /** Native capture/surface construction already in flight. */
+  #preparingSurface: PreparingSurface | null = null;
+  /** Invalidates both completed and in-flight prepared surfaces. */
   #captureEpoch = 0;
+  /** Invalidates only speculative/touch warm-up work, never an active cold turn. */
+  #preparedEpoch = 0;
 
   constructor(host: CapturedTurnHost, options: { duration?: number } = {}) {
     this.#host = host;
@@ -172,9 +227,10 @@ export class CapturedPageTurn {
   }
 
   /**
-   * Decode the current reader cell ahead of the next turn. This intentionally
-   * stops at an ImageBitmap: keeping a full WebGL renderer resident for every
-   * open book costs considerably more GPU memory and risks context eviction.
+   * Build the current reader cell into a renderer-ready surface ahead of the
+   * next turn. Capture, decode, canvas/WebGL creation, texture upload, mounting,
+   * and the first flat draw all happen outside the gesture's critical path.
+   * A module-level one-surface budget bounds idle GPU memory across open books.
    *
    * Warm-up failures are non-fatal. A later turn simply runs the established
    * capture path and reports a real platform failure through that path.
@@ -183,25 +239,81 @@ export class CapturedPageTurn {
     if (this.#disposed || this.#active || this.#running || this.#busyDragSessions.size) {
       return false;
     }
-    const hostElement = this.#host.getHostElement();
-    const rect = this.#host.getContentRect();
-    if (!hostElement || !rect || rect.width <= 0 || rect.height <= 0) return false;
+    if (preparedSurfaceLeaseOwner && preparedSurfaceLeaseOwner !== this) {
+      return false;
+    }
+    if ([...activeSurfaceOwners].some((owner) => owner !== this)) return false;
+    const target = this.#readCaptureTarget();
+    if (!target) return false;
+    const idlePreparation = !this.#preparedSurfaceRetained;
+    if (idlePreparation) {
+      // All mounted BookCells schedule the same idle work. Serializing the
+      // speculative path prevents a burst of native snapshots and full-screen
+      // GPU uploads; a real touch lease is latency-sensitive and may bypass it.
+      if (
+        activeSurfaceOwners.size > 0 ||
+        (preparedSurfaceOwner && preparedSurfaceOwner !== this) ||
+        (idlePreparingOwner && idlePreparingOwner !== this) ||
+        [...preparingSurfaceOwners].some((owner) => owner !== this)
+      ) {
+        return false;
+      }
+      idlePreparingOwner = this;
+    } else {
+      // A real touch takes the idle budget before it allocates another
+      // full-screen surface. Late results from the previous owner stop before
+      // decode/upload, and its completed low-alpha layer is removed now.
+      for (const owner of preparingSurfaceOwners) {
+        if (owner !== this) owner.invalidatePendingPreparedCapture();
+      }
+      if (idlePreparingOwner && idlePreparingOwner !== this) {
+        idlePreparingOwner.invalidatePendingPreparedCapture();
+      }
+      if (preparedSurfaceOwner && preparedSurfaceOwner !== this) {
+        preparedSurfaceOwner.#closePreparedSurface();
+      }
+    }
     try {
-      return !!(await this.#ensurePreparedCapture(
-        hostElement,
-        captureRectFrom(rect),
-        currentDpr(),
+      return !!(await this.#ensurePreparedSurface(
+        target.hostElement,
+        target.rect,
+        target.dpr,
         style,
       ));
     } catch {
       return false;
+    } finally {
+      if (idlePreparation && idlePreparingOwner === this) idlePreparingOwner = null;
     }
+  }
+
+  /** Hold this controller's current or in-flight surface until claim/release. */
+  retainPreparedCapture() {
+    if (this.#disposed) return;
+    if (preparedSurfaceLeaseOwner && preparedSurfaceLeaseOwner !== this) {
+      preparedSurfaceLeaseOwner.#preparedSurfaceRetained = false;
+    }
+    preparedSurfaceLeaseOwner = this;
+    this.#preparedSurfaceRetained = true;
+  }
+
+  /** Release a touch that ended without consuming the prepared surface. */
+  releasePreparedCapture() {
+    this.#preparedSurfaceRetained = false;
+    if (preparedSurfaceLeaseOwner === this) preparedSurfaceLeaseOwner = null;
   }
 
   /** Drop a stale idle snapshot; an in-flight result is discarded on arrival. */
   invalidatePreparedCapture() {
+    this.releasePreparedCapture();
     this.#captureEpoch++;
-    this.#closePreparedCapture();
+    this.#preparedEpoch++;
+    this.#closePreparedSurface(false);
+  }
+
+  /** Cancel only warm-up work while preserving a clean completed surface. */
+  invalidatePendingPreparedCapture() {
+    this.#preparedEpoch++;
   }
 
   /**
@@ -227,8 +339,18 @@ export class CapturedPageTurn {
       try {
         if (this.#disposed) return false;
         this.#finishActive();
-        const active = await this.#setUp(forward, rtl, style);
-        if (!active) return false;
+        if (!this.#reserveActiveSurface()) return false;
+        let active: ActiveTurn | null;
+        try {
+          active = await this.#setUp(forward, rtl, style);
+        } catch (error) {
+          activeSurfaceOwners.delete(this);
+          throw error;
+        }
+        if (!active) {
+          activeSurfaceOwners.delete(this);
+          return false;
+        }
         try {
           await this.#playTo(active, 1);
           return true;
@@ -276,9 +398,15 @@ export class CapturedPageTurn {
         return false;
       }
       this.#finishActive();
+      if (!this.#reserveActiveSurface()) {
+        if (this.#dragSession === session) this.#dragSession = null;
+        this.#busyDragSessions.delete(session);
+        return false;
+      }
       try {
         const active = await this.#setUp(forward, rtl, style, session);
         if (!active) {
+          activeSurfaceOwners.delete(this);
           if (this.#dragSession === session) this.#dragSession = null;
           this.#busyDragSessions.delete(session);
           return false;
@@ -289,6 +417,7 @@ export class CapturedPageTurn {
         this.#applyDragSession(active, session);
         return true;
       } catch (error) {
+        activeSurfaceOwners.delete(this);
         if (this.#dragSession === session) this.#dragSession = null;
         this.#busyDragSessions.delete(session);
         throw error;
@@ -398,9 +527,18 @@ export class CapturedPageTurn {
       }
     }
     this.#finishActive();
+    preparingSurfaceOwners.delete(this);
+    if (idlePreparingOwner === this) idlePreparingOwner = null;
     this.#dragSession = null;
     this.#busyDragSessions.clear();
     this.invalidatePreparedCapture();
+  }
+
+  #readCaptureTarget(): CaptureTarget | null {
+    const hostElement = this.#host.getHostElement();
+    const rect = this.#host.getContentRect();
+    if (!hostElement?.isConnected || !rect || rect.width <= 0 || rect.height <= 0) return null;
+    return { hostElement, rect: captureRectFrom(rect), dpr: currentDpr() };
   }
 
   async #setUp(
@@ -410,114 +548,137 @@ export class CapturedPageTurn {
     dragSession: DragSession | null = null,
   ): Promise<ActiveTurn | null> {
     if (this.#disposed) return null;
-    let hostElement = this.#host.getHostElement();
-    let rect = this.#host.getContentRect();
-    if (!hostElement || !rect || rect.width <= 0 || rect.height <= 0) return null;
+    let target = this.#readCaptureTarget();
+    if (!target) {
+      this.releasePreparedCapture();
+      return null;
+    }
 
     await this.#host.onBeforeCapture?.(style);
-    if (this.#disposed) return null;
-    hostElement = this.#host.getHostElement();
-    rect = this.#host.getContentRect();
-    if (!hostElement || !rect || rect.width <= 0 || rect.height <= 0) return null;
-    let captureRect = captureRectFrom(rect);
-    let dpr = currentDpr();
-    let prepared = this.#takePreparedCapture(hostElement, captureRect, dpr);
-    if (
-      !prepared &&
-      this.#preparingCapture?.epoch === this.#captureEpoch &&
-      this.#preparingCapture.hostElement === hostElement &&
-      this.#preparingCapture.dpr === dpr &&
-      sameCaptureRect(this.#preparingCapture.rect, captureRect)
-    ) {
+    if (this.#disposed) {
+      this.releasePreparedCapture();
+      return null;
+    }
+    target = this.#readCaptureTarget();
+    if (!target) {
+      this.releasePreparedCapture();
+      return null;
+    }
+    let { hostElement, rect: captureRect, dpr } = target;
+    let surface = this.#takePreparedSurface(hostElement, captureRect, dpr, style);
+    let surfaceAlreadyPainted = surface?.surfaceAlreadyPainted ?? false;
+    const preparing = this.#preparingSurface;
+    const preparingMatches =
+      !!preparing &&
+      preparing.captureEpoch === this.#captureEpoch &&
+      preparing.preparedEpoch === this.#preparedEpoch &&
+      preparing.hostElement === hostElement &&
+      preparing.dpr === dpr &&
+      preparing.style === style &&
+      sameCaptureRect(preparing.rect, captureRect);
+    if (!surface && preparing && !preparingMatches) {
+      // Never let an old style/geometry warm-up finish after this turn and
+      // cache the outgoing page as the next page's prepared surface.
+      this.invalidatePreparedCapture();
+    }
+    if (!surface && preparing && preparingMatches) {
       try {
-        await this.#preparingCapture.promise;
+        await preparing.promise;
       } catch {
         // A speculative warm-up must never prevent the normal capture path.
       }
       if (this.#disposed) return null;
-      const currentHostElement = this.#host.getHostElement();
-      const currentRect = this.#host.getContentRect();
-      const currentCaptureRect = currentRect ? captureRectFrom(currentRect) : null;
-      const currentCaptureDpr = currentDpr();
-      if (
-        !currentHostElement ||
-        !currentRect ||
-        !currentCaptureRect ||
-        currentRect.width <= 0 ||
-        currentRect.height <= 0
-      ) {
+      const currentTarget = this.#readCaptureTarget();
+      if (!currentTarget) {
+        this.invalidatePreparedCapture();
         return null;
       }
       if (
-        currentHostElement !== hostElement ||
-        currentCaptureDpr !== dpr ||
-        !sameCaptureRect(currentCaptureRect, captureRect)
+        currentTarget.hostElement !== hostElement ||
+        currentTarget.dpr !== dpr ||
+        !sameCaptureRect(currentTarget.rect, captureRect)
       ) {
         // The prepared frame finished after a rotation or layout change. It
         // is no longer safe to position over the live reader; recapture the
-        // current target instead of using either the old bitmap or old rect.
+        // current target instead of using either the old surface or old rect.
         this.invalidatePreparedCapture();
-        hostElement = currentHostElement;
-        rect = currentRect;
-        captureRect = currentCaptureRect;
-        dpr = currentCaptureDpr;
+        hostElement = currentTarget.hostElement;
+        captureRect = currentTarget.rect;
+        dpr = currentTarget.dpr;
       } else {
-        prepared = this.#takePreparedCapture(hostElement, captureRect, dpr);
+        surface = this.#takePreparedSurface(hostElement, captureRect, dpr, style);
+        surfaceAlreadyPainted = surface?.surfaceAlreadyPainted ?? false;
       }
     }
-    if (!prepared) {
-      prepared = await this.#capturePrepared(
+    if (!surface) {
+      // No prepared surface remains to protect. A cold live capture does not
+      // participate in the global idle-surface budget.
+      this.releasePreparedCapture();
+      const coldCaptureEpoch = this.#captureEpoch;
+      surface = await this.#captureSurface(
         hostElement,
         captureRect,
         dpr,
         style,
-        this.#captureEpoch,
+        coldCaptureEpoch,
+        true,
         false,
       );
+      if (this.#disposed) {
+        if (surface) this.#disposeSurface(surface);
+        return null;
+      }
+
+      // Native capture can span a rotation, resize, or grid-cell replacement.
+      // Never mount the old pixels at new geometry: retry the current target
+      // once, then abort if layout is still moving.
+      let currentTarget = this.#readCaptureTarget();
+      if (!currentTarget) {
+        if (surface) this.#disposeSurface(surface);
+        return null;
+      }
+      if (
+        currentTarget.hostElement !== hostElement ||
+        currentTarget.dpr !== dpr ||
+        !sameCaptureRect(currentTarget.rect, captureRect)
+      ) {
+        if (surface) this.#disposeSurface(surface);
+        hostElement = currentTarget.hostElement;
+        captureRect = currentTarget.rect;
+        dpr = currentTarget.dpr;
+        surface = await this.#captureSurface(
+          hostElement,
+          captureRect,
+          dpr,
+          style,
+          this.#captureEpoch,
+          true,
+          false,
+        );
+        currentTarget = this.#readCaptureTarget();
+        if (
+          !currentTarget ||
+          currentTarget.hostElement !== hostElement ||
+          currentTarget.dpr !== dpr ||
+          !sameCaptureRect(currentTarget.rect, captureRect)
+        ) {
+          if (surface) this.#disposeSurface(surface);
+          return null;
+        }
+      }
     }
-    if (!prepared || this.#disposed) {
-      prepared?.bitmap.close();
+    if (!surface || this.#disposed) {
+      if (surface) this.#disposeSurface(surface);
       return null;
     }
-    const bitmap = prepared.bitmap;
-    const backdrop =
-      style === 'curl'
-        ? prepared.backdrop !== undefined
-          ? prepared.backdrop
-          : await this.#getBackdrop()
-        : null;
-    if (this.#disposed) {
-      bitmap.close();
+    if (this.#host.isCaptureAllowed?.() === false) {
+      this.#disposeSurface(surface);
       return null;
     }
-
-    // Position the overlay at the content box within the host element.
-    const hostRect = hostElement.getBoundingClientRect();
-    const overlay = document.createElement('div');
-    Object.assign(overlay.style, {
-      position: 'absolute',
-      left: `${rect.left - hostRect.left}px`,
-      top: `${rect.top - hostRect.top}px`,
-      width: `${rect.width}px`,
-      height: `${rect.height}px`,
-      pointerEvents: 'none',
-      zIndex: '50',
-    });
-    hostElement.appendChild(overlay);
-
-    const renderer: TurnRenderer =
-      style === 'slide' ? new PageSlideRenderer() : new PageCurlRenderer();
-    try {
-      renderer.attach(overlay, rect.width, rect.height);
-      renderer.setTexture(bitmap);
-      if (backdrop) renderer.setBackdrop?.(backdrop);
-    } catch (error) {
-      renderer.dispose();
-      overlay.remove();
-      throw error;
-    } finally {
-      bitmap.close();
-    }
+    const { overlay, renderer } = surface;
+    this.#positionOverlay(overlay, hostElement, captureRect);
+    overlay.dataset['capturedTurnPrepared'] = 'false';
+    overlay.style.opacity = '1';
 
     const active: ActiveTurn = {
       overlay,
@@ -541,8 +702,37 @@ export class CapturedPageTurn {
     // hiding the instant page swap happening underneath.
     try {
       renderer.render(0, this.#grab(active), active.rendererRtl);
-      await this.#host.onCovered?.(style);
+      if (renderer.isUsable?.() === false) {
+        throw new Error('Captured page-turn renderer became unavailable before navigation');
+      }
+      await this.#host.onCovered?.(style, surfaceAlreadyPainted);
       if (this.#disposed || this.#active !== active) return null;
+      if (this.#host.isCaptureAllowed?.() === false) {
+        try {
+          await this.#host.onCancelled?.(style);
+        } finally {
+          if (this.#active === active) this.#disposeActive();
+        }
+        return null;
+      }
+      if (renderer.isUsable?.() === false) {
+        throw new Error('Captured page-turn renderer became unavailable before navigation');
+      }
+      const currentTarget = this.#readCaptureTarget();
+      if (
+        !currentTarget ||
+        currentTarget.hostElement !== hostElement ||
+        currentTarget.dpr !== dpr ||
+        !sameCaptureRect(currentTarget.rect, captureRect)
+      ) {
+        try {
+          await this.#host.onCancelled?.(style);
+        } catch {
+          // Target loss still has to remove the stale full-screen surface.
+        }
+        if (this.#active === active) this.#disposeActive();
+        return null;
+      }
       await this.#host.navigate(forward);
       if (this.#disposed || this.#active !== active) return null;
       return active;
@@ -573,87 +763,209 @@ export class CapturedPageTurn {
     active.renderer.render(active.progress, this.#grab(active), active.rendererRtl);
   }
 
-  async #ensurePreparedCapture(
+  async #ensurePreparedSurface(
     hostElement: HTMLElement,
     rect: CaptureRect,
     dpr: number,
     style: CapturedTurnStyle,
-  ): Promise<PreparedCapture | null> {
-    const cached = this.#preparedCapture;
+  ): Promise<PreparedSurface | null> {
+    const cached = this.#preparedSurface;
     if (
       cached &&
       cached.hostElement === hostElement &&
+      cached.overlay.parentElement === hostElement &&
+      hostElement.isConnected &&
       cached.dpr === dpr &&
+      cached.style === style &&
+      cached.renderer.isUsable?.() !== false &&
       sameCaptureRect(cached.rect, rect)
     ) {
-      if (style !== 'curl' || cached.backdrop !== undefined) return cached;
-      cached.backdrop = await this.#getBackdrop();
-      return this.#preparedCapture === cached ? cached : null;
+      return cached;
     }
-    if (cached) this.#closePreparedCapture();
+    // Internal replacement must not drop the touchstart lease while the new
+    // style/geometry/context is still being prepared.
+    if (cached) this.#closePreparedSurface(false);
 
-    const epoch = this.#captureEpoch;
-    const pending = this.#preparingCapture;
+    const captureEpoch = this.#captureEpoch;
+    const preparedEpoch = this.#preparedEpoch;
+    const pending = this.#preparingSurface;
     if (pending) {
       if (
-        pending.epoch === epoch &&
+        pending.captureEpoch === captureEpoch &&
+        pending.preparedEpoch === preparedEpoch &&
         pending.hostElement === hostElement &&
         pending.dpr === dpr &&
+        pending.style === style &&
         sameCaptureRect(pending.rect, rect)
       ) {
         const result = await pending.promise;
-        if (result && style === 'curl' && result.backdrop === undefined) {
-          result.backdrop = await this.#getBackdrop();
-        }
-        return this.#preparedCapture === result ? result : null;
+        return this.#preparedSurface === result ? result : null;
       }
       try {
         await pending.promise;
       } catch {
         // Its epoch or geometry is stale; create the requested frame below.
       }
-      if (this.#disposed || epoch !== this.#captureEpoch) return null;
-    }
-
-    const promise = this.#capturePrepared(hostElement, rect, dpr, style, epoch).then((result) => {
-      if (!result) return null;
-      if (this.#disposed || epoch !== this.#captureEpoch) {
-        result.bitmap.close();
+      if (
+        this.#disposed ||
+        captureEpoch !== this.#captureEpoch ||
+        preparedEpoch !== this.#preparedEpoch
+      ) {
         return null;
       }
-      this.#closePreparedCapture();
-      this.#preparedCapture = result;
-      return result;
+      // Re-read both the cached surface and in-flight request after waiting.
+      // Multiple callers can be queued behind the same mismatched warm-up;
+      // recursion lets the first caller install the replacement and every
+      // later caller join it instead of allocating duplicate GPU surfaces.
+      return this.#ensurePreparedSurface(hostElement, rect, dpr, style);
+    }
+
+    preparingSurfaceOwners.add(this);
+    const promise = this.#captureSurface(
+      hostElement,
+      rect,
+      dpr,
+      style,
+      captureEpoch,
+      true,
+      true,
+      () => preparedEpoch === this.#preparedEpoch,
+    ).then((result) => {
+      if (!result) return null;
+      if (
+        this.#disposed ||
+        captureEpoch !== this.#captureEpoch ||
+        preparedEpoch !== this.#preparedEpoch
+      ) {
+        this.#disposeSurface(result);
+        return null;
+      }
+      return this.#storePreparedSurface(result) ? result : null;
     });
-    const preparing: PreparingCapture = { epoch, rect, hostElement, dpr, promise };
-    this.#preparingCapture = preparing;
+    const preparing: PreparingSurface = {
+      captureEpoch,
+      preparedEpoch,
+      rect,
+      hostElement,
+      dpr,
+      style,
+      promise,
+    };
+    this.#preparingSurface = preparing;
     try {
       return await promise;
     } finally {
-      if (this.#preparingCapture === preparing) this.#preparingCapture = null;
+      if (this.#preparingSurface === preparing) this.#preparingSurface = null;
+      if (!this.#preparingSurface) preparingSurfaceOwners.delete(this);
     }
   }
 
-  async #capturePrepared(
+  async #captureSurface(
     hostElement: HTMLElement,
     rect: CaptureRect,
     dpr: number,
     style: CapturedTurnStyle,
     epoch: number,
     discardWhenStale = true,
-  ): Promise<PreparedCapture | null> {
-    const backdropPromise = style === 'curl' ? this.#getBackdrop() : Promise.resolve(undefined);
-    const image = await this.#host.capture(rect);
-    if (this.#disposed || (discardWhenStale && epoch !== this.#captureEpoch)) return null;
+    preMount = true,
+    isStillValid: () => boolean = () => true,
+  ): Promise<PreparedSurface | null> {
+    const backdropPromise = style === 'curl' ? this.#getBackdrop() : Promise.resolve(null);
+    const restorePixels = await this.#host.preparePixelCapture?.();
+    if (
+      this.#disposed ||
+      this.#host.isCaptureAllowed?.() === false ||
+      !isStillValid() ||
+      (discardWhenStale && epoch !== this.#captureEpoch)
+    ) {
+      await restorePixels?.();
+      return null;
+    }
+    let image: ArrayBuffer;
+    try {
+      image = await this.#host.capture(rect);
+    } finally {
+      await restorePixels?.();
+    }
+    if (
+      this.#disposed ||
+      this.#host.isCaptureAllowed?.() === false ||
+      !isStillValid() ||
+      (discardWhenStale && epoch !== this.#captureEpoch)
+    ) {
+      return null;
+    }
     // No mime: the platforms return different formats (PNG on macOS,
     // JPEG on iOS/Android) and the decoder sniffs the bytes.
     const bitmap = await createImageBitmap(new Blob([image]));
     const backdrop = await backdropPromise;
-    if (this.#disposed || (discardWhenStale && epoch !== this.#captureEpoch)) {
+    if (
+      this.#disposed ||
+      this.#host.isCaptureAllowed?.() === false ||
+      !isStillValid() ||
+      (discardWhenStale && epoch !== this.#captureEpoch)
+    ) {
       bitmap.close();
       return null;
     }
-    return { bitmap, rect, hostElement, dpr, backdrop };
+    if (!hostElement.isConnected) {
+      bitmap.close();
+      return null;
+    }
+    const overlay = document.createElement('div');
+    const renderer: TurnRenderer =
+      style === 'slide'
+        ? new PageSlideRenderer()
+        : new PageCurlRenderer({ preserveDrawingBuffer: false });
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.dataset['capturedTurnPrepared'] = String(preMount);
+    Object.assign(overlay.style, {
+      position: 'absolute',
+      pointerEvents: 'none',
+      zIndex: '50',
+      opacity: preMount ? PREPARED_SURFACE_WARM_OPACITY : '1',
+      overflow: 'hidden',
+      transform: 'translateZ(0)',
+      willChange: 'opacity',
+    });
+    this.#positionOverlay(overlay, hostElement, rect);
+    hostElement.appendChild(overlay);
+    try {
+      renderer.attach(overlay, rect.width, rect.height, dpr);
+      renderer.setTexture(bitmap);
+      if (backdrop) renderer.setBackdrop?.(backdrop);
+      // At progress zero both directions are the same flat page. Claim redraws
+      // once with the actual spine direction without reallocating or uploading.
+      renderer.render(0, { x: 1, y: 0.5 }, false);
+    } catch (error) {
+      renderer.dispose();
+      overlay.remove();
+      throw error;
+    } finally {
+      bitmap.close();
+    }
+    if (
+      this.#disposed ||
+      this.#host.isCaptureAllowed?.() === false ||
+      !isStillValid() ||
+      (discardWhenStale && epoch !== this.#captureEpoch)
+    ) {
+      renderer.dispose();
+      overlay.remove();
+      return null;
+    }
+    const surface: PreparedSurface = {
+      renderer,
+      overlay,
+      style,
+      rect,
+      hostElement,
+      dpr,
+      surfaceAlreadyPainted: false,
+      paintRaf: 0,
+    };
+    if (preMount) this.#trackPreparedSurfacePaint(surface);
+    return surface;
   }
 
   #getBackdrop(): Promise<TexImageSource | null> {
@@ -663,28 +975,136 @@ export class CapturedPageTurn {
       .catch(() => null);
   }
 
-  #takePreparedCapture(
+  #takePreparedSurface(
     hostElement: HTMLElement,
     rect: CaptureRect,
     dpr: number,
-  ): PreparedCapture | null {
-    const prepared = this.#preparedCapture;
+    style: CapturedTurnStyle,
+  ): PreparedSurface | null {
+    const prepared = this.#preparedSurface;
     if (!prepared) return null;
     if (
       prepared.hostElement !== hostElement ||
+      prepared.overlay.parentElement !== hostElement ||
+      !hostElement.isConnected ||
       prepared.dpr !== dpr ||
+      prepared.style !== style ||
+      prepared.renderer.isUsable?.() === false ||
       !sameCaptureRect(prepared.rect, rect)
     ) {
-      this.#closePreparedCapture();
+      this.#closePreparedSurface();
       return null;
     }
-    this.#preparedCapture = null;
+    this.#preparedSurface = null;
+    if (preparedSurfaceOwner === this) preparedSurfaceOwner = null;
+    this.releasePreparedCapture();
+    this.#stopPreparedSurfacePaint(prepared);
     return prepared;
   }
 
-  #closePreparedCapture() {
-    this.#preparedCapture?.bitmap.close();
-    this.#preparedCapture = null;
+  #storePreparedSurface(surface: PreparedSurface) {
+    // Decide against current ownership, not the request's start state: a touch
+    // can release while native capture is pending, or another cell can claim
+    // the global surface budget before this result arrives.
+    if (
+      surface.renderer.isUsable?.() === false ||
+      this.#active ||
+      [...activeSurfaceOwners].some((owner) => owner !== this)
+    ) {
+      this.#disposeSurface(surface);
+      return false;
+    }
+    const currentTarget = this.#readCaptureTarget();
+    if (
+      !currentTarget ||
+      currentTarget.hostElement !== surface.hostElement ||
+      currentTarget.dpr !== surface.dpr ||
+      !sameCaptureRect(currentTarget.rect, surface.rect)
+    ) {
+      this.#disposeSurface(surface);
+      return false;
+    }
+    if (preparedSurfaceOwner && preparedSurfaceOwner !== this) {
+      if (preparedSurfaceOwner.#preparedSurfaceRetained) {
+        this.#disposeSurface(surface);
+        return false;
+      }
+      preparedSurfaceOwner.#closePreparedSurface();
+    }
+    this.#closePreparedSurface(false);
+    if (this.#disposed) {
+      this.#disposeSurface(surface);
+      return false;
+    }
+    this.#preparedSurface = surface;
+    preparedSurfaceOwner = this;
+    return true;
+  }
+
+  /** Reserve the one-full-screen-surface budget for setup and active playback. */
+  #reserveActiveSurface() {
+    if ([...activeSurfaceOwners].some((owner) => owner !== this)) return false;
+    for (const owner of preparingSurfaceOwners) {
+      if (owner !== this) owner.invalidatePreparedCapture();
+    }
+    if (idlePreparingOwner && idlePreparingOwner !== this) {
+      idlePreparingOwner.invalidatePreparedCapture();
+    }
+    if (preparedSurfaceOwner && preparedSurfaceOwner !== this) {
+      // An accepted turn takes priority over another cell's idle frame. Any
+      // in-flight frame from that cell is rejected by #storePreparedSurface.
+      preparedSurfaceOwner.#closePreparedSurface();
+    }
+    activeSurfaceOwners.add(this);
+    return true;
+  }
+
+  #trackPreparedSurfacePaint(surface: PreparedSurface) {
+    this.#stopPreparedSurfacePaint(surface);
+    surface.surfaceAlreadyPainted = false;
+    surface.paintRaf = requestAnimationFrame(() => {
+      surface.paintRaf = requestAnimationFrame(() => {
+        surface.paintRaf = 0;
+        if (
+          !this.#disposed &&
+          this.#preparedSurface === surface &&
+          surface.overlay.parentElement === surface.hostElement &&
+          surface.overlay.isConnected
+        ) {
+          surface.surfaceAlreadyPainted = true;
+        }
+      });
+    });
+  }
+
+  #stopPreparedSurfacePaint(surface: PreparedSurface) {
+    if (!surface.paintRaf) return;
+    cancelAnimationFrame(surface.paintRaf);
+    surface.paintRaf = 0;
+  }
+
+  #positionOverlay(overlay: HTMLElement, hostElement: HTMLElement, rect: CaptureRect) {
+    const hostRect = hostElement.getBoundingClientRect();
+    Object.assign(overlay.style, {
+      left: `${rect.x - hostRect.left}px`,
+      top: `${rect.y - hostRect.top}px`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
+    });
+  }
+
+  #disposeSurface(surface: PreparedSurface) {
+    this.#stopPreparedSurfacePaint(surface);
+    surface.renderer.dispose();
+    surface.overlay.remove();
+  }
+
+  #closePreparedSurface(releaseRetention = true) {
+    const surface = this.#preparedSurface;
+    this.#preparedSurface = null;
+    if (releaseRetention) this.releasePreparedCapture();
+    if (preparedSurfaceOwner === this) preparedSurfaceOwner = null;
+    if (surface) this.#disposeSurface(surface);
   }
 
   /** Animate the active turn from its current progress to `target`. */
@@ -789,8 +1209,12 @@ export class CapturedPageTurn {
   /** Tear down the current overlay, resolving any in-flight animation. */
   #finishActive() {
     const active = this.#active;
-    if (!active) return;
+    if (!active) {
+      activeSurfaceOwners.delete(this);
+      return;
+    }
     this.#active = null;
+    activeSurfaceOwners.delete(this);
     if (active.dragSession && this.#dragSession === active.dragSession) {
       this.#dragSession = null;
     }

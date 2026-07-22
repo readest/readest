@@ -458,6 +458,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     // collides with the pinch/pan handlers below and freezes the app.
     <div
       ref={containerRef}
+      data-capture-blocking-overlay='true'
       tabIndex={-1}
       role='button'
       aria-label={_('Image viewer')}

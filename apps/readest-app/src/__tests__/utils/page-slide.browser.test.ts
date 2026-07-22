@@ -46,4 +46,17 @@ describe('PageSlideRenderer (browser)', () => {
     expect(shadow.style.left).toBe('-28px');
     expect(shadow.style.background).toContain('transparent, rgba(0, 0, 0, 0.35)');
   });
+
+  it('becomes permanently unusable after its 2D backing store is lost', () => {
+    const canvas = host.querySelector('canvas')!;
+    const contextLost = new Event('contextlost', { cancelable: true });
+
+    expect(renderer.isUsable()).toBe(true);
+    canvas.dispatchEvent(contextLost);
+
+    expect(contextLost.defaultPrevented).toBe(true);
+    expect(renderer.isUsable()).toBe(false);
+    canvas.dispatchEvent(new Event('contextrestored'));
+    expect(renderer.isUsable()).toBe(false);
+  });
 });

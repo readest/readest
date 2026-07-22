@@ -12,18 +12,29 @@ import type { TouchDetail } from '@/app/reader/hooks/useTouchInterceptor';
 const h = vi.hoisted(() => ({
   controllerHost: null as null | {
     onBeforeCapture?: (style: 'curl' | 'slide') => Promise<void> | void;
-    onCovered?: (style: 'curl' | 'slide') => Promise<void> | void;
+    onCovered?: (style: 'curl' | 'slide', surfaceAlreadyPainted?: boolean) => Promise<void> | void;
     onCancelled?: (style: 'curl' | 'slide') => Promise<void> | void;
+    preparePixelCapture?: () =>
+      | void
+      | (() => void | Promise<void>)
+      | Promise<void | (() => void | Promise<void>)>;
   },
   hoveredBookKey: 'book-1' as string | null,
   setHoveredBookKey: vi.fn(),
+  settingsDialogOpen: false,
+  settingsListeners: new Set<
+    (state: { isSettingsDialogOpen: boolean }, previous: { isSettingsDialogOpen: boolean }) => void
+  >(),
   controller: {
     turn: vi.fn(async () => {}),
     beginDrag: vi.fn(async () => true),
     moveDrag: vi.fn(),
     endDrag: vi.fn(async () => {}),
     prepareCapture: vi.fn(async () => true),
+    retainPreparedCapture: vi.fn(),
+    releasePreparedCapture: vi.fn(),
     invalidatePreparedCapture: vi.fn(),
+    invalidatePendingPreparedCapture: vi.fn(),
     dispose: vi.fn(),
   },
   viewListeners: new Map<string, Set<EventListener>>(),
@@ -79,8 +90,29 @@ vi.mock('@/store/readerStore', () => {
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: () => ({ getBookData: () => ({ isFixedLayout: false }) }),
 }));
+vi.mock('@/store/settingsStore', () => {
+  const useSettingsStore = () => ({ isSettingsDialogOpen: h.settingsDialogOpen });
+  useSettingsStore.getState = () => ({ isSettingsDialogOpen: h.settingsDialogOpen });
+  useSettingsStore.subscribe = (
+    listener: (
+      state: { isSettingsDialogOpen: boolean },
+      previous: { isSettingsDialogOpen: boolean },
+    ) => void,
+  ) => {
+    h.settingsListeners.add(listener);
+    return () => h.settingsListeners.delete(listener);
+  };
+  return { useSettingsStore };
+});
 vi.mock('@/utils/bridge', () => ({ captureWebviewRegion: vi.fn() }));
 vi.mock('@/utils/viewTransition', () => ({ detectViewTransitionGroup: () => false }));
+vi.mock('@/services/environment', () => ({
+  isTauriAppPlatform: () => process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri',
+  getInitializedAppService: () => ({
+    isMobileApp: process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri',
+    isMacOSApp: false,
+  }),
+}));
 vi.mock('@/app/reader/utils/capturedTurn', () => ({
   CapturedPageTurn: class {
     constructor(host: NonNullable<typeof h.controllerHost>) {
@@ -123,6 +155,13 @@ const detail = (
   deltaT,
 });
 
+const setSettingsDialogOpen = (open: boolean) => {
+  const previous = { isSettingsDialogOpen: h.settingsDialogOpen };
+  h.settingsDialogOpen = open;
+  const state = { isSettingsDialogOpen: open };
+  for (const listener of h.settingsListeners) listener(state, previous);
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   h.controller.beginDrag.mockResolvedValue(true);
@@ -137,16 +176,290 @@ beforeEach(() => {
   h.renderer.listeners.clear();
   h.controllerHost = null;
   h.hoveredBookKey = 'book-1';
+  h.settingsDialogOpen = false;
+  h.settingsListeners.clear();
   h.viewSettings.pageTurnStyle = 'curl';
 });
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.useRealTimers();
+  document.documentElement.classList.remove('captured-turn-filter-transient-overlays');
   document.getElementById('gridcell-book-1')?.remove();
+  document.querySelectorAll('[data-capture-blocking-test]').forEach((element) => element.remove());
   cleanup();
 });
 
 describe('useCapturedTurn scroll-lock gate', () => {
+  test('starts an eligible snapshot warm-up immediately on touchstart', () => {
+    h.viewSettings.pageTurnStyle = 'slide';
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+
+    expect(h.controller.retainPreparedCapture).toHaveBeenCalledOnce();
+    expect(h.controller.prepareCapture).toHaveBeenCalledOnce();
+    expect(h.controller.prepareCapture).toHaveBeenCalledWith('slide');
+    expect(h.controller.beginDrag).not.toHaveBeenCalled();
+    expect(h.controller.releasePreparedCapture.mock.invocationCallOrder[0]).toBeLessThan(
+      h.controller.retainPreparedCapture.mock.invocationCallOrder[0]!,
+    );
+    expect(h.controller.retainPreparedCapture.mock.invocationCallOrder[0]).toBeLessThan(
+      h.controller.prepareCapture.mock.invocationCallOrder[0]!,
+    );
+  });
+
+  test('invalidates around Settings and never prepares a modal-covered snapshot', () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    setSettingsDialogOpen(true);
+    expect(h.controller.invalidatePreparedCapture).toHaveBeenCalledOnce();
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    expect(h.controller.retainPreparedCapture).not.toHaveBeenCalled();
+    expect(h.controller.prepareCapture).not.toHaveBeenCalled();
+
+    setSettingsDialogOpen(false);
+    // Opening invalidates immediately and the blocked touch defensively clears
+    // any surface that raced the overlay observer. Closing keeps the empty
+    // slot and schedules a post-paint replacement without another epoch bump.
+    expect(h.controller.invalidatePreparedCapture).toHaveBeenCalledTimes(2);
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    expect(h.controller.retainPreparedCapture).toHaveBeenCalledOnce();
+    expect(h.controller.prepareCapture).toHaveBeenCalledOnce();
+  });
+
+  test('pauses idle preparation until Settings has closed and repainted', async () => {
+    vi.useFakeTimers();
+    h.settingsDialogOpen = true;
+    const { unmount } = renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+    try {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      expect(h.controller.prepareCapture).not.toHaveBeenCalled();
+
+      act(() => setSettingsDialogOpen(false));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      expect(h.controller.prepareCapture).toHaveBeenCalledOnce();
+      expect(h.controller.prepareCapture).toHaveBeenCalledWith('curl');
+    } finally {
+      unmount();
+      vi.useRealTimers();
+    }
+  });
+
+  test('invalidates and pauses preparation for a semantic modal outside Settings', async () => {
+    vi.useFakeTimers();
+    const { unmount } = renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+    const dialog = document.createElement('div');
+    dialog.setAttribute('data-capture-blocking-test', '');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    try {
+      await act(async () => {
+        document.body.appendChild(dialog);
+        await Promise.resolve();
+      });
+      expect(h.controller.invalidatePreparedCapture).toHaveBeenCalledOnce();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      expect(h.controller.prepareCapture).not.toHaveBeenCalled();
+
+      await act(async () => {
+        dialog.remove();
+        await Promise.resolve();
+      });
+      expect(h.controller.invalidatePreparedCapture).toHaveBeenCalledOnce();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      expect(h.controller.prepareCapture).toHaveBeenCalledOnce();
+      expect(h.controller.prepareCapture).toHaveBeenCalledWith('curl');
+    } finally {
+      dialog.remove();
+      unmount();
+      vi.useRealTimers();
+    }
+  });
+
+  test('does not warm a surface while a host popup is expanded', async () => {
+    const popupTrigger = document.createElement('button');
+    popupTrigger.setAttribute('data-capture-blocking-test', '');
+    popupTrigger.setAttribute('aria-haspopup', 'menu');
+    popupTrigger.setAttribute('aria-expanded', 'true');
+    document.body.appendChild(popupTrigger);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    expect(h.controller.retainPreparedCapture).not.toHaveBeenCalled();
+    expect(h.controller.prepareCapture).not.toHaveBeenCalled();
+    expect(dispatchTouchInterceptors('book-1', detail('move', -30, 0, 16, 150))).toBe(false);
+    expect(h.controller.beginDrag).not.toHaveBeenCalled();
+
+    await act(async () => {
+      popupTrigger.setAttribute('aria-expanded', 'false');
+      await Promise.resolve();
+    });
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    expect(h.controller.retainPreparedCapture).toHaveBeenCalledOnce();
+    expect(h.controller.prepareCapture).toHaveBeenCalledOnce();
+  });
+
+  test('does not treat a closed offscreen popup container as a blocking overlay', () => {
+    const closedPopup = document.createElement('div');
+    closedPopup.setAttribute('data-capture-blocking-test', '');
+    closedPopup.className = 'popup-container';
+    closedPopup.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(closedPopup);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+
+    expect(h.controller.retainPreparedCapture).toHaveBeenCalledOnce();
+    expect(h.controller.prepareCapture).toHaveBeenCalledOnce();
+  });
+
+  test('blocks explicit capture overlays until their visible marker is removed', async () => {
+    const viewer = document.createElement('div');
+    viewer.setAttribute('data-capture-blocking-test', '');
+    viewer.setAttribute('data-capture-blocking-overlay', 'true');
+    document.body.appendChild(viewer);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    expect(h.controller.prepareCapture).not.toHaveBeenCalled();
+
+    await act(async () => {
+      viewer.removeAttribute('data-capture-blocking-overlay');
+      await Promise.resolve();
+    });
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+
+    expect(h.controller.retainPreparedCapture).toHaveBeenCalledOnce();
+    expect(h.controller.prepareCapture).toHaveBeenCalledOnce();
+  });
+
+  test('invalidates for a transient toast without swallowing the page-turn gesture', () => {
+    const toast = document.createElement('div');
+    toast.setAttribute('data-capture-blocking-test', '');
+    toast.setAttribute('data-capture-invalidating-overlay', 'true');
+    document.body.appendChild(toast);
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    expect(h.controller.invalidatePendingPreparedCapture).toHaveBeenCalledOnce();
+    expect(h.controller.invalidatePreparedCapture).not.toHaveBeenCalled();
+    expect(h.controller.retainPreparedCapture).not.toHaveBeenCalled();
+    expect(h.controller.prepareCapture).not.toHaveBeenCalled();
+
+    expect(dispatchTouchInterceptors('book-1', detail('move', -30, 0, 16, 150))).toBe(true);
+    expect(h.controller.beginDrag).toHaveBeenCalledWith(true, false, 'curl');
+  });
+
+  test('reference-counts overlapping native pixel filters', async () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    const releaseA = await h.controllerHost!.preparePixelCapture!();
+    const releaseB = await h.controllerHost!.preparePixelCapture!();
+    expect(
+      document.documentElement.classList.contains('captured-turn-filter-transient-overlays'),
+    ).toBe(true);
+
+    await releaseA?.();
+    expect(
+      document.documentElement.classList.contains('captured-turn-filter-transient-overlays'),
+    ).toBe(true);
+
+    await releaseB?.();
+    expect(
+      document.documentElement.classList.contains('captured-turn-filter-transient-overlays'),
+    ).toBe(false);
+  });
+
+  test('removes a stalled native pixel filter after its safety timeout', async () => {
+    vi.useFakeTimers();
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    await h.controllerHost!.preparePixelCapture!();
+    expect(
+      document.documentElement.classList.contains('captured-turn-filter-transient-overlays'),
+    ).toBe(true);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(
+      document.documentElement.classList.contains('captured-turn-filter-transient-overlays'),
+    ).toBe(false);
+  });
+
+  test('falls back without a captured surface for a programmatic turn under an overlay', async () => {
+    const dialog = document.createElement('dialog');
+    dialog.setAttribute('data-capture-blocking-test', '');
+    dialog.setAttribute('open', '');
+    document.body.appendChild(dialog);
+    const view = makeView();
+    const originalNext = view.next as ReturnType<typeof vi.fn>;
+    renderHook(() => useCapturedTurn('book-1', { current: view }));
+
+    await view.next();
+
+    expect(originalNext).toHaveBeenCalledOnce();
+    expect(h.controller.turn).not.toHaveBeenCalled();
+  });
+
+  test.each(['end', 'cancel'] as const)('releases an unclaimed touch lease on %s', (phase) => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    dispatchTouchInterceptors('book-1', detail(phase, 2, 0, 16, 150));
+
+    // Once before acquiring the new lease, once when the unclaimed touch
+    // ends. No drag controller lifecycle was started.
+    expect(h.controller.releasePreparedCapture).toHaveBeenCalledTimes(2);
+    expect(h.controller.beginDrag).not.toHaveBeenCalled();
+    expect(h.controller.endDrag).not.toHaveBeenCalled();
+  });
+
+  test('a replacement touch releases the previous lease before retaining the next one', () => {
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+
+    expect(h.controller.releasePreparedCapture).toHaveBeenCalledTimes(2);
+    expect(h.controller.retainPreparedCapture).toHaveBeenCalledTimes(2);
+    expect(h.controller.releasePreparedCapture.mock.invocationCallOrder[1]).toBeLessThan(
+      h.controller.retainPreparedCapture.mock.invocationCallOrder[1]!,
+    );
+  });
+
+  test('does not speculatively capture a touch reserved for the brightness strip', () => {
+    h.renderer.getAttribute.mockReturnValue('0.1');
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 10));
+
+    expect(h.controller.retainPreparedCapture).not.toHaveBeenCalled();
+    expect(h.controller.prepareCapture).not.toHaveBeenCalled();
+    expect(h.controller.invalidatePreparedCapture).toHaveBeenCalledOnce();
+  });
+
   test('claims the first inward sample from the right edge', () => {
     const cell = document.createElement('div');
     cell.id = 'gridcell-book-1';
@@ -174,6 +487,7 @@ describe('useCapturedTurn scroll-lock gate', () => {
     expect(dispatchTouchInterceptors('book-1', detail('move', 30, 0, 32, 285))).toBe(false);
 
     expect(h.controller.beginDrag).not.toHaveBeenCalled();
+    expect(h.controller.releasePreparedCapture).toHaveBeenCalledTimes(2);
   });
 
   test('claims a central drag after two coherent samples at 6px', () => {
@@ -207,6 +521,24 @@ describe('useCapturedTurn scroll-lock gate', () => {
 
     dispatchTouchInterceptors('book-1', detail('move', -36, 0, 48, 150));
     expect(h.controller.moveDrag).toHaveBeenLastCalledWith(30 / 300, 0.5);
+  });
+
+  test('keeps a short Slide flick visually flat at claim but uses its full release intent', () => {
+    h.viewSettings.pageTurnStyle = 'slide';
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+    expect(dispatchTouchInterceptors('book-1', detail('move', -30, 0, 16, 150))).toBe(true);
+
+    expect(h.controller.beginDrag).toHaveBeenCalledWith(true, false, 'slide');
+    expect(h.controller.moveDrag).toHaveBeenLastCalledWith(0, 0.5);
+
+    expect(dispatchTouchInterceptors('book-1', detail('end', -30, 0, 16, 150))).toBe(true);
+    expect(h.controller.endDrag).toHaveBeenCalledWith(true, expect.any(Number));
   });
 
   test('does not use the central fast path for an outward edge drag', () => {
@@ -528,6 +860,7 @@ describe('useCapturedTurn scroll-lock gate', () => {
 
     expect(consumed).toBe(false);
     expect(h.controller.beginDrag).not.toHaveBeenCalled();
+    expect(h.controller.invalidatePreparedCapture).toHaveBeenCalledOnce();
   });
 
   // Non-instant selection: a long-press selection (or a drag of its handles)
@@ -545,6 +878,7 @@ describe('useCapturedTurn scroll-lock gate', () => {
 
     expect(consumed).toBe(false);
     expect(h.controller.beginDrag).not.toHaveBeenCalled();
+    expect(h.controller.invalidatePreparedCapture).toHaveBeenCalledOnce();
   });
 
   test('a collapsed selection does not block the captured turn', () => {
@@ -647,6 +981,13 @@ describe('useCapturedTurn scroll-lock gate', () => {
     });
 
     expect(h.setHoveredBookKey).toHaveBeenCalledWith(null);
+    expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(true);
+    await act(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        }),
+    );
     expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(false);
   });
 
@@ -735,6 +1076,37 @@ describe('useCapturedTurn scroll-lock gate', () => {
       expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(true);
       frames.shift()?.(64);
       await covered;
+      expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(false);
+    } finally {
+      raf.mockRestore();
+    }
+  });
+
+  test('a pre-painted surface hides live chrome without another cover wait', async () => {
+    const frames: FrameRequestCallback[] = [];
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    const gridCell = document.createElement('div');
+    gridCell.id = 'gridcell-book-1';
+    document.body.appendChild(gridCell);
+    renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+
+    try {
+      await h.controllerHost?.onBeforeCapture?.('slide');
+      await h.controllerHost?.onCovered?.('slide', true);
+
+      expect(h.setHoveredBookKey).toHaveBeenCalledWith(null);
+      expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(true);
+      // Only the non-blocking transition-class cleanup is queued; there was
+      // no leading pair of cover RAFs.
+      expect(frames).toHaveLength(1);
+
+      frames.shift()?.(16);
+      await Promise.resolve();
+      frames.shift()?.(32);
+      await Promise.resolve();
       expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(false);
     } finally {
       raf.mockRestore();

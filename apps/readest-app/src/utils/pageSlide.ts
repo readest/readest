@@ -29,10 +29,19 @@ export class PageSlideRenderer {
   private edgeShadow: HTMLDivElement | null = null;
   private shadowRtl: boolean | null = null;
   private width = 0;
+  // A prepared canvas no longer has its source bitmap. Once the browser loses
+  // its 2D backing store, even a later context restoration cannot reconstruct
+  // the outgoing page, so force the controller to recapture it.
+  private usable = true;
+  private readonly handleContextLost = (event: Event) => {
+    event.preventDefault();
+    this.usable = false;
+  };
 
   /** Mount the overlay canvas covering `rect` (CSS px) inside `container`. */
   attach(container: HTMLElement, width: number, height: number, dpr = window.devicePixelRatio) {
     this.width = width;
+    this.usable = true;
     // The page slides past the container edge; clip it like the VT version
     // clips its transition group to the content box.
     container.style.overflow = 'hidden';
@@ -54,6 +63,7 @@ export class PageSlideRenderer {
     });
 
     const canvas = document.createElement('canvas');
+    canvas.addEventListener('contextlost', this.handleContextLost);
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     Object.assign(canvas.style, {
@@ -86,7 +96,10 @@ export class PageSlideRenderer {
   setTexture(source: CanvasImageSource) {
     const canvas = this.canvas;
     const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
+    if (!canvas || !ctx) {
+      this.usable = false;
+      return;
+    }
     ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
   }
 
@@ -99,6 +112,10 @@ export class PageSlideRenderer {
     if (!this.sheet) return;
     this.updateShadowDirection(rtl);
     this.sheet.style.transform = this.transformAt(progress, rtl);
+  }
+
+  isUsable() {
+    return this.usable && !!this.canvas && !!this.sheet;
   }
 
   /**
@@ -146,10 +163,12 @@ export class PageSlideRenderer {
   }
 
   dispose() {
+    this.canvas?.removeEventListener('contextlost', this.handleContextLost);
     this.sheet?.remove();
     this.canvas = null;
     this.sheet = null;
     this.edgeShadow = null;
     this.shadowRtl = null;
+    this.usable = false;
   }
 }

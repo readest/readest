@@ -685,6 +685,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   return (
     <div
       data-testid='rsvp-overlay'
+      data-capture-blocking-overlay='true'
       aria-label={_('Speed Reading')}
       className='fixed inset-0 z-[100] flex select-none flex-col'
       style={{

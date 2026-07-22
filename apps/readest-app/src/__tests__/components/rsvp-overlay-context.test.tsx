@@ -119,6 +119,20 @@ const renderOverlay = (state: RsvpState, fontFamily?: string) => {
   return { ...result, controller };
 };
 
+describe('RSVPOverlay — capture lifecycle', () => {
+  afterEach(() => cleanup());
+
+  test('marks its mounted full-screen surface as capture-blocking', () => {
+    const state = buildState({
+      words: [{ text: 'hello', orpIndex: 1, pauseMultiplier: 1 }],
+    });
+
+    const { getByTestId } = renderOverlay(state);
+
+    expect(getByTestId('rsvp-overlay').getAttribute('data-capture-blocking-overlay')).toBe('true');
+  });
+});
+
 describe('RSVPOverlay — context panel performance', () => {
   afterEach(() => cleanup());
 
