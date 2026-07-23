@@ -6,6 +6,8 @@ const h = vi.hoisted(() => ({
   swipeSetting: true,
   scrolled: false,
   screenBrightness: -1,
+  autoScreenBrightness: false,
+  lastScreenBrightness: null as number | null,
   setScreenBrightness: vi.fn(),
   getScreenBrightness: vi.fn(),
   saveSysSettings: vi.fn(),
@@ -19,18 +21,24 @@ vi.mock('@/context/EnvContext', () => ({
 }));
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({
-    settings: { swipeBrightnessGesture: h.swipeSetting, screenBrightness: h.screenBrightness },
+    settings: {
+      swipeBrightnessGesture: h.swipeSetting,
+      screenBrightness: h.screenBrightness,
+      autoScreenBrightness: h.autoScreenBrightness,
+    },
   }),
 }));
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({ getViewSettings: () => ({ scrolled: h.scrolled }) }),
 }));
-vi.mock('@/store/deviceStore', () => ({
-  useDeviceControlStore: () => ({
+vi.mock('@/store/deviceStore', () => {
+  const useDeviceControlStore = () => ({
     getScreenBrightness: h.getScreenBrightness,
     setScreenBrightness: h.setScreenBrightness,
-  }),
-}));
+  });
+  useDeviceControlStore.getState = () => ({ lastScreenBrightness: h.lastScreenBrightness });
+  return { useDeviceControlStore };
+});
 vi.mock('@/helpers/settings', () => ({ saveSysSettings: h.saveSysSettings }));
 
 import { useBrightnessGesture } from '@/app/reader/hooks/useBrightnessGesture';
@@ -89,6 +97,8 @@ describe('useBrightnessGesture (listener-level)', () => {
     h.swipeSetting = true;
     h.scrolled = false;
     h.screenBrightness = -1;
+    h.autoScreenBrightness = false;
+    h.lastScreenBrightness = null;
     h.setScreenBrightness.mockReset();
     h.saveSysSettings.mockReset();
     h.getScreenBrightness.mockReset().mockResolvedValue(0.5);
@@ -138,7 +148,7 @@ describe('useBrightnessGesture (listener-level)', () => {
     expect(stopImmediatePropagation).not.toHaveBeenCalled(); // not yet active
   });
 
-  it('persists brightness and disables auto-brightness on release', () => {
+  it('persists brightness on release in manual mode', () => {
     const { target } = setup();
     fireTouch(target, 'touchstart', 10, 800);
     fireTouch(target, 'touchmove', 10, 300); // big upward drag → brighter
@@ -147,7 +157,40 @@ describe('useBrightnessGesture (listener-level)', () => {
     const last = h.setScreenBrightness.mock.calls.at(-1)![0];
     expect(last).toBeGreaterThan(0.5);
     expect(h.saveSysSettings).toHaveBeenCalledWith({}, 'screenBrightness', expect.any(Number));
-    expect(h.saveSysSettings).toHaveBeenCalledWith({}, 'autoScreenBrightness', false);
+  });
+
+  it('keeps system brightness on: applies the swipe without persisting it', () => {
+    h.autoScreenBrightness = true;
+    const { target } = setup();
+    fireTouch(target, 'touchstart', 10, 800);
+    fireTouch(target, 'touchmove', 10, 300);
+    fireTouch(target, 'touchend', 10, 300);
+    expect(h.setScreenBrightness.mock.calls.at(-1)![0]).toBeGreaterThan(0.5);
+    expect(h.saveSysSettings).not.toHaveBeenCalled();
+  });
+
+  it('seeds from the device when system brightness is on, ignoring the stale saved value', async () => {
+    h.autoScreenBrightness = true;
+    h.screenBrightness = 100;
+    h.getScreenBrightness.mockResolvedValue(0.2);
+    const { target } = setup();
+    await act(async () => {});
+    fireTouch(target, 'touchstart', 10, 500);
+    fireTouch(target, 'touchmove', 10, 400);
+    fireTouch(target, 'touchend', 10, 400);
+    expect(h.setScreenBrightness.mock.calls.at(-1)![0]).toBeLessThan(0.5);
+  });
+
+  it('starts from the brightness the slider last applied, not the mount-time seed', async () => {
+    h.autoScreenBrightness = true;
+    h.getScreenBrightness.mockResolvedValue(0.9);
+    const { target } = setup();
+    await act(async () => {});
+    h.lastScreenBrightness = 0.1; // slider dragged down, nothing persisted
+    fireTouch(target, 'touchstart', 10, 500);
+    fireTouch(target, 'touchmove', 10, 400);
+    fireTouch(target, 'touchend', 10, 400);
+    expect(h.setScreenBrightness.mock.calls.at(-1)![0]).toBeLessThan(0.5);
   });
 
   it('is inert when the setting is disabled', () => {

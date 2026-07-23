@@ -6,6 +6,7 @@ const h = vi.hoisted(() => ({
   autoScreenBrightness: false,
   screenBrightness: -1,
   setScreenBrightness: vi.fn(),
+  syncScreenBrightness: vi.fn(),
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -20,7 +21,10 @@ vi.mock('@/store/settingsStore', () => ({
   }),
 }));
 vi.mock('@/store/deviceStore', () => ({
-  useDeviceControlStore: () => ({ setScreenBrightness: h.setScreenBrightness }),
+  useDeviceControlStore: () => ({
+    setScreenBrightness: h.setScreenBrightness,
+    syncScreenBrightness: h.syncScreenBrightness,
+  }),
 }));
 
 import { useScreenBrightness } from '@/app/reader/hooks/useScreenBrightness';
@@ -38,8 +42,28 @@ describe('useScreenBrightness', () => {
     h.autoScreenBrightness = false;
     h.screenBrightness = -1;
     h.setScreenBrightness.mockReset();
+    h.syncScreenBrightness.mockReset();
   });
   afterEach(() => cleanup());
+
+  const becomeVisible = (state: 'visible' | 'hidden') => {
+    Object.defineProperty(document, 'visibilityState', { value: state, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  };
+
+  it('re-reads the device brightness when the app returns to the foreground', () => {
+    h.autoScreenBrightness = true;
+    setup();
+    becomeVisible('visible');
+    expect(h.syncScreenBrightness).toHaveBeenCalled();
+  });
+
+  it('does not re-read while the app is going into the background', () => {
+    h.autoScreenBrightness = true;
+    setup();
+    becomeVisible('hidden');
+    expect(h.syncScreenBrightness).not.toHaveBeenCalled();
+  });
 
   it('applies the saved manual brightness when auto is off', () => {
     h.autoScreenBrightness = false;

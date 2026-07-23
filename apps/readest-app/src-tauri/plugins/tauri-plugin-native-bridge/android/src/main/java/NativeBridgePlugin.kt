@@ -2,7 +2,9 @@ package com.readest.native_bridge
 
 import android.Manifest
 import android.app.Activity
+import android.app.Application
 import android.app.PendingIntent
+import android.os.Bundle
 import android.content.ComponentName
 import android.content.ContentValues
 import android.content.Context
@@ -203,12 +205,16 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
 
     override fun onDestroy() {
         pluginScope.cancel()
+        activity.application.unregisterActivityLifecycleCallbacks(lifecycleCallbacks)
         instance = null
     }
+
+    private var systemBrightnessAtOverride: Int? = null
 
     companion object {
         private const val REQUEST_MANAGE_STORAGE = 1001
         private const val FOLDER_PICKER_REQUEST_CODE = 1002
+        private const val BRIGHTNESS_DRIFT_TOLERANCE = 26 // of 0-255
         var pendingInvoke: Invoke? = null
         var pendingFolderPickerInvoke: Invoke? = null
         private var instance: NativeBridgePlugin? = null
@@ -219,11 +225,43 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         instance = this
         webViewRef = webView
         super.load(webView)
+        activity.application.registerActivityLifecycleCallbacks(lifecycleCallbacks)
         handleIntent(activity.intent)
     }
 
     override fun onNewIntent(intent: Intent) {
         handleIntent(intent)
+    }
+
+    // Tauri declares Plugin.onResume but never registers the observer that calls it.
+    private val lifecycleCallbacks = object : Application.ActivityLifecycleCallbacks {
+        override fun onActivityResumed(resumed: Activity) {
+            if (resumed === activity) dropBrightnessOverrideIfSystemMoved()
+        }
+
+        override fun onActivityCreated(a: Activity, b: Bundle?) {}
+        override fun onActivityStarted(a: Activity) {}
+        override fun onActivityPaused(a: Activity) {}
+        override fun onActivityStopped(a: Activity) {}
+        override fun onActivitySaveInstanceState(a: Activity, b: Bundle) {}
+        override fun onActivityDestroyed(a: Activity) {}
+    }
+
+    private fun dropBrightnessOverrideIfSystemMoved() {
+        val baseline = systemBrightnessAtOverride ?: return
+        val current = readSystemBrightness() ?: return
+        if (kotlin.math.abs(current - baseline) > BRIGHTNESS_DRIFT_TOLERANCE) {
+            val layoutParams = activity.window.attributes
+            layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            activity.window.attributes = layoutParams
+            systemBrightnessAtOverride = null
+        }
+    }
+
+    private fun readSystemBrightness(): Int? = try {
+        Settings.System.getInt(activity.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
+    } catch (e: Exception) {
+        null
     }
 
     private fun handleIntent(intent: Intent?) {
@@ -811,10 +849,14 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
 
             if (brightness == null || brightness < 0.0) {
                 layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                systemBrightnessAtOverride = null
             } else {
                 if (brightness > 1.0) {
                     invoke.reject("Brightness must be between 0.0 and 1.0, or null to use system brightness")
                     return
+                }
+                if (systemBrightnessAtOverride == null) {
+                    systemBrightnessAtOverride = readSystemBrightness()
                 }
                 layoutParams.screenBrightness = brightness
             }

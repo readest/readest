@@ -21,7 +21,7 @@ const RELEASE_BRIGHTNESS = -1;
 export const useScreenBrightness = () => {
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { setScreenBrightness } = useDeviceControlStore();
+  const { setScreenBrightness, syncScreenBrightness } = useDeviceControlStore();
 
   const hasScreenBrightness = !!appService?.hasScreenBrightness;
   const { screenBrightness, autoScreenBrightness } = settings;
@@ -42,4 +42,13 @@ export const useScreenBrightness = () => {
     // and when the auto/manual mode flips.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasScreenBrightness, autoScreenBrightness, setScreenBrightness]);
+
+  useEffect(() => {
+    if (!hasScreenBrightness) return;
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') syncScreenBrightness();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [hasScreenBrightness, syncScreenBrightness]);
 };
