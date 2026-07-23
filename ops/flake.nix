@@ -4,7 +4,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    devshell.url = "github:numtide/devshell";
     android = {
       url = "github:tadfisher/android-nixpkgs/stable";
     };
@@ -14,7 +13,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, android, devshell, fenix }:
+  outputs = { self, nixpkgs, flake-utils, android, fenix }:
     {
       overlay = final: prev: {
         inherit (self.packages.${final.stdenv.hostPlatform.system}) android-sdk;
@@ -31,135 +30,89 @@
           inherit system;
           config.allowUnfree = true;
           overlays = [
-            devshell.overlays.default
             fenix.overlays.default
             self.overlay
           ];
         };
 
-        commonPackages = with pkgs; [
+        toolchain = with pkgs.fenix.complete; [
+          cargo
+          clippy
+          rust-src
+          rustc
+          rustfmt
+        ];
+
+        commonNativeBuildInupts = with pkgs; [
           pnpm
           nodejs_24
           clang
+          rust-analyzer-nightly
           pkg-config
-          pkgs.rust-analyzer-nightly
           xdg-utils
+          patchelf
+          wrapGAppsHook4
           self.formatter.${pkgs.stdenv.hostPlatform.system}
         ];
 
-        systemDeps = with pkgs; [
+        commonBuildInputs = with pkgs; [
           at-spi2-atk
           atkmm
           cairo
           fontconfig
-          fontconfig.out
           freetype
           gdk-pixbuf
           glib
           gtk3
-          gtk4
           harfbuzz
           librsvg
           libsoup_3
           openssl
           pango
           zlib
+
+          gst_all_1.gstreamer
+          gst_all_1.gst-plugins-base
+          gst_all_1.gst-plugins-good
+          gst_all_1.gst-plugins-bad
         ] ++ (optionals (!isDarwin) [
           webkitgtk_4_1
         ]) ++ (optionals isDarwin [
           darwin.libiconv
         ]);
-        getDev = pkg: if pkg ? dev then pkg.dev else pkg;
-        getLib = pkg: if pkg ? lib then pkg.lib else pkg;
-
-        # zlib stores zlib.pc in share/pkgconfig while everything else is stored in lib/pkgconfig
-        pkgConfigPath = lib.concatStringsSep ":" [
-          (lib.makeSearchPath "lib/pkgconfig" (map getDev systemDeps))
-          (lib.makeSearchPath "share/pkgconfig" (map getDev systemDeps))
-        ];
-
-        xdgPath = "${
-          lib.makeSearchPath "share/gsettings-schemas" [
-            pkgs.gsettings-desktop-schemas
-            pkgs.gtk3
-          ]
-        }:$XDG_DATA_DIRS";
-
-        libPath = lib.makeLibraryPath (map getLib systemDeps);
 
         mkCommonShell =
           { name
           , postInit ? ""
-          , extraPackages ? [ ]
+          , extraNativeBuildInputs ? [ ]
           , extraTargets ? [ ]
-          , extraEnv ? [
-              {
-                name = "PKG_CONFIG_PATH";
-                value = pkgConfigPath;
-              }
-              {
-                name = "GDK_BACKEND";
-                value = "x11";
-              }
-              {
-                name = "RUSTFLAGS";
-                value = "-C link-arg=-Wl,-rpath,${libPath}";
-              }
-              {
-                name = "LIBRARY_PATH";
-                value = libPath;
-              }
-              {
-                name = "XDG_DATA_DIRS";
-                eval = xdgPath;
-              }
-            ]
-            ++ (optionals isDarwin [
-              {
-                name = "RUSTFLAGS";
-                eval = "\"-L framework=$DEVSHELL_DIR/Library/Frameworks\"";
-              }
-              {
-                name = "RUSTDOCFLAGS";
-                eval = "\"-L framework=$DEVSHELL_DIR/Library/Frameworks\"";
-              }
-              {
-                name = "PATH";
-                prefix =
-                  let
-                    inherit (pkgs) xcbuild;
-                  in
-                  lib.makeBinPath [
-                    xcbuild
-                    "${xcbuild}/Toolchains/XcodeDefault.xctoolchain"
-                  ];
-              }
-            ])
+          , extraEnv ? { }
           }:
-          pkgs.devshell.mkShell {
+          pkgs.mkShell rec {
             inherit name;
-            packages =
-              commonPackages
-              ++ extraPackages
-              ++ [
-                (
-                  with pkgs.fenix;
-                  pkgs.fenix.combine [
-                    complete.cargo
-                    complete.clippy
-                    complete.rust-src
-                    complete.rustc
-                    complete.rustfmt
-                    extraTargets
-                  ]
-                )
-              ];
-            env = extraEnv;
-            devshell.startup.init_project.text = ''
+
+            nativeBuildInputs = commonNativeBuildInupts ++ extraNativeBuildInputs;
+            buildInputs = commonBuildInputs ++ [
+              (
+                with pkgs.fenix;
+                combine [
+                  toolchain
+                  extraTargets
+                ]
+              )
+            ];
+
+            env = {
+              GDK_BACKEND = "x11";
+              LD_LIBRARY_PATH = lib.makeLibraryPath buildInputs;
+            } // extraEnv;
+
+            shellHook = ''
               git submodule update --init --recursive
               pnpm install
-              pnpm --filter @readest/readest-app setup-vendors
-            '' + postInit;
+
+              ${postInit}
+            '';
           };
       in
       {
@@ -194,7 +147,7 @@
 
           ios = mkCommonShell {
             name = "readest-ios";
-            extraPackages = [ pkgs.cocoapods ];
+            extraNativeBuildInputs = [ pkgs.cocoapods ];
           };
 
           android = mkCommonShell rec {
@@ -219,33 +172,18 @@
               i686-linux-android.latest.rust-std
               x86_64-linux-android.latest.rust-std
             ];
-            extraPackages = [
+            extraNativeBuildInputs = [
               pkgs.android-sdk
               pkgs.gradle
               pkgs.jdk
             ];
-            extraEnv = [
-              {
-                name = "ANDROID_HOME";
-                value = "${pkgs.android-sdk}/share/android-sdk";
-              }
-              {
-                name = "ANDROID_SDK_ROOT";
-                value = "${pkgs.android-sdk}/share/android-sdk";
-              }
-              {
-                name = "NDK_HOME";
-                value = "${pkgs.android-sdk}/share/android-sdk/ndk/26.1.10909125";
-              }
-              {
-                name = "JAVA_HOME";
-                value = pkgs.jdk.home;
-              }
-              {
-                name = "ANDROID_AVD_HOME";
-                eval = "$XDG_CONFIG_HOME/.android/avd";
-              }
-            ];
+            extraEnv = {
+              ANDROID_HOME = "${pkgs.android-sdk}/share/android-sdk";
+              ANDROID_SDK_ROOT = "${pkgs.android-sdk}/share/android-sdk";
+              NDK_HOME = "${pkgs.android-sdk}/share/android-sdk/ndk/26.1.10909125";
+              JAVA_HOME = pkgs.jdk.home;
+              ANDROID_AVD_HOME = "$XDG_CONFIG_HOME/.android/avd";
+            };
           };
 
           default = self.devShells.${pkgs.stdenv.hostPlatform.system}.web;

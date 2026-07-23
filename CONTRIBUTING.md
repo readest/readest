@@ -68,6 +68,13 @@ nix develop ./ops#ios # enter a dev shell for the ios app
 nix develop ./ops#android # enter a dev shell for the android app
 ```
 
+Then, simply run:
+
+```bash
+# copy vendors dist libs to public directory
+pnpm --filter @readest/readest-app setup-vendors
+```
+
 ### 4. Build for Development
 
 ```bash
