@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BookSearchMatch, BookSearchResult, SearchExcerpt } from '@/types/book';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -79,6 +79,115 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
     </li>
   );
 };
+interface ChapterSectionProps {
+  bookKey: string;
+  label: string;
+  subitems: BookSearchMatch[];
+  nearestCfi: string | null;
+  onSelectResult: (cfi: string) => void;
+}
+
+const ChapterSection: React.FC<ChapterSectionProps> = ({
+  bookKey,
+  label,
+  subitems,
+  nearestCfi,
+  onSelectResult,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const matchCount = subitems.length;
+  const headerRef = useRef<HTMLHeadingElement>(null);
+  const wasStuckRef = useRef<boolean>(false);
+
+  const handleToggle = useCallback(() => {
+    if (isExpanded && headerRef.current) {
+      const header = headerRef.current;
+      const container = header.closest('.overflow-y-auto') as HTMLElement | null;
+      if (container) {
+        // Detect if the header is currently stuck at the top of the scroll container.
+        // Compare visual positions (getBoundingClientRect) rather than offsetTop,
+        // because sticky stacking can offset the header from the container's top.
+        const headerRect = header.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        wasStuckRef.current = headerRect.top <= containerRect.top + 1;
+      }
+    }
+    setIsExpanded((prev) => !prev);
+  }, [isExpanded]);
+
+  // useLayoutEffect runs synchronously after DOM mutations but before paint,
+  // avoiding a visible flash when we adjust scroll position.
+  useLayoutEffect(() => {
+    if (isExpanded) return;
+    if (!wasStuckRef.current) return;
+    const header = headerRef.current;
+    if (!header) return;
+    const container = header.closest('.overflow-y-auto') as HTMLElement | null;
+    if (!container) return;
+    // Recalculate the header's position after the collapse (DOM has already
+    // updated) and scroll so the collapsed header sits at the top of the viewport.
+    const headerRect = header.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const headerOffset = headerRect.top - containerRect.top + container.scrollTop;
+    container.scrollTop = headerOffset;
+  }, [isExpanded]);
+
+  return (
+    <ul>
+      <h3
+        ref={headerRef}
+        className='sticky top-0 z-10 bg-base-200 line-clamp-1 cursor-pointer select-none font-normal hover:bg-base-300 rounded px-1 py-1 flex items-center justify-between'
+        onClick={handleToggle}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleToggle();
+          }
+        }}
+        tabIndex={0}
+        role='button'
+        aria-expanded={isExpanded}
+      >
+        <span className='flex items-center gap-1.5 min-w-0'>
+          <svg
+            viewBox='0 0 8 10'
+            width='8'
+            height='10'
+            className={clsx(
+              'shrink-0 text-base-content transition-transform duration-200',
+              isExpanded ? 'rotate-90' : 'rotate-0',
+            )}
+            style={{ transformOrigin: 'center' }}
+            fill='currentColor'
+            aria-hidden='true'
+            focusable='false'
+          >
+            <polygon points='0 0, 8 5, 0 10' />
+          </svg>
+          <span className='truncate'>{label}</span>
+        </span>
+        <span className='text-xs text-base-content/60 whitespace-nowrap ml-2 shrink-0'>
+          {matchCount}
+        </span>
+      </h3>
+      {isExpanded && (
+        <ul>
+          {subitems.map((item, index) => (
+            <SearchResultItem
+              key={`${index}-${item.cfi}`}
+              bookKey={bookKey}
+              cfi={item.cfi}
+              excerpt={item.excerpt}
+              isNearest={item.cfi === nearestCfi}
+              onSelectResult={onSelectResult}
+            />
+          ))}
+        </ul>
+      )}
+    </ul>
+  );
+};
+
 interface SearchResultsProps {
   bookKey: string;
   results: BookSearchResult[] | BookSearchMatch[];
@@ -122,26 +231,19 @@ const SearchResults: React.FC<SearchResultsProps> = ({ bookKey, results, onSelec
   }
 
   return (
-    <div className='search-results overflow-y-auto p-2 font-sans text-sm font-light'>
+    <div className='search-results overflow-y-auto font-sans text-sm font-light'>
       <ul className='px-2'>
         {results.map((result, index) => {
           if ('subitems' in result) {
             return (
-              <ul key={`${index}-${result.label}`}>
-                <h3 className='line-clamp-1 font-normal'>{result.label}</h3>
-                <ul>
-                  {result.subitems.map((item, index) => (
-                    <SearchResultItem
-                      key={`${index}-${item.cfi}`}
-                      bookKey={bookKey}
-                      cfi={item.cfi}
-                      excerpt={item.excerpt}
-                      isNearest={item.cfi === nearestCfi}
-                      onSelectResult={onSelectResult}
-                    />
-                  ))}
-                </ul>
-              </ul>
+              <ChapterSection
+                key={`${index}-${result.label}`}
+                bookKey={bookKey}
+                label={result.label}
+                subitems={result.subitems}
+                nearestCfi={nearestCfi}
+                onSelectResult={onSelectResult}
+              />
             );
           } else {
             return (
