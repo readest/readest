@@ -1,15 +1,86 @@
 import { DOUBLE_CLICK_INTERVAL_THRESHOLD_MS, LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { eventDispatcher } from '@/utils/event';
 import { findGlossWord } from '@/app/reader/utils/wordlensRuby';
+import { TURN_GESTURE_LEFT_INSET_ATTRIBUTE } from './brightnessGesture';
+import {
+  createTurnGestureIntent,
+  NATIVE_CAPTURED_TURN_ATTRIBUTE,
+  NATIVE_PROGRAMMATIC_TURN_ATTRIBUTE,
+  shouldClaimTurnGesture,
+  TURN_EDGE_ZONE_RATIO,
+  type TurnGestureIntent,
+} from './turnGestureArena';
 
 let lastClickTime = 0;
 let longHoldTimeout: ReturnType<typeof setTimeout> | null = null;
 let isMouseDown = false;
-const touchGestures = new Map<string, { startX: number; startY: number; moved: boolean }>();
+interface NativeTurnHost extends HTMLElement {
+  scrollLocked?: boolean;
+}
+interface TouchGesture {
+  startX: number;
+  startY: number;
+  startTime: number;
+  moved: boolean;
+  turnHost?: NativeTurnHost;
+  turnIntent?: TurnGestureIntent;
+}
+const touchGestures = new Map<string, TouchGesture>();
 const suppressedSwipeClicks = new Map<string, { until: number; endX: number; endY: number }>();
+interface LayeredTurnTouchClaim {
+  claimed: boolean;
+  ended: boolean;
+  cleanupTimer?: ReturnType<typeof setTimeout>;
+}
+const layeredTurnTouchClaims = new Map<string, LayeredTurnTouchClaim>();
 const SYNTHESIZED_CLICK_SWIPE_DISTANCE_PX = 15;
 const SYNTHESIZED_CLICK_SUPPRESSION_MS = 750;
 const SYNTHESIZED_CLICK_POSITION_SLOP_PX = 15;
+
+const getNativeTurnHost = (event: TouchEvent): NativeTurnHost | null => {
+  const currentTarget = event.currentTarget as Document | null;
+  if (currentTarget?.nodeType !== 9) return null;
+  const frame = currentTarget.defaultView?.frameElement;
+  const root = frame?.getRootNode();
+  const host = root && 'host' in root ? (root.host as NativeTurnHost) : null;
+  if (
+    host?.localName !== 'foliate-paginator' ||
+    !host.hasAttribute(NATIVE_CAPTURED_TURN_ATTRIBUTE) ||
+    host.hasAttribute(NATIVE_PROGRAMMATIC_TURN_ATTRIBUTE)
+  ) {
+    return null;
+  }
+  return host;
+};
+
+const createNativeTurnIntent = (
+  event: TouchEvent,
+  touch: { screenX: number },
+): { host: NativeTurnHost; intent: TurnGestureIntent } | null => {
+  const host = getNativeTurnHost(event);
+  if (!host?.getBoundingClientRect) return null;
+  const currentTarget = event.currentTarget as Document;
+  const selection = currentTarget.getSelection?.();
+  if (selection && !selection.isCollapsed) return null;
+
+  const rect = host.getBoundingClientRect();
+  if (rect.width <= 0) return null;
+  const windowScreenX = Number.isFinite(window.screenX) ? window.screenX : 0;
+  const localStartX = touch.screenX - windowScreenX - rect.left;
+  const inset = Number(host.getAttribute(TURN_GESTURE_LEFT_INSET_ATTRIBUTE));
+  const reservedLeftRatio = Number.isFinite(inset) ? Math.max(0, Math.min(0.5, inset)) : 0;
+  const earlyClaimBlocked = localStartX <= rect.width * reservedLeftRatio;
+  let edgeDirection: -1 | 0 | 1 = 0;
+  if (!earlyClaimBlocked && localStartX >= 0 && localStartX <= rect.width * TURN_EDGE_ZONE_RATIO) {
+    edgeDirection = 1;
+  } else if (localStartX <= rect.width && localStartX >= rect.width * (1 - TURN_EDGE_ZONE_RATIO)) {
+    edgeDirection = -1;
+  }
+  return {
+    host,
+    intent: createTurnGestureIntent(edgeDirection, earlyClaimBlocked, 0),
+  };
+};
 
 // Middle-click autoscroll (#4951). Books where the feature is armed (desktop
 // app, scrolled mode, setting on) get the middle button's defaults suppressed,
@@ -28,6 +99,101 @@ export const setAutoscrollArmed = (bookKey: string, armed: boolean) => {
 
 export const setAutoscrollTracking = (tracking: boolean) => {
   autoscrollTracking = tracking;
+};
+
+// A layered turn can now claim below the generic 15px swipe threshold. Keep
+// synthesized-click suppression tied to the authoritative gesture claim so a
+// valid early turn cannot be replayed as a toolbar click after touchend.
+export const setLayeredTurnTouchClaimed = (bookKey: string, claimed: boolean) => {
+  if (!claimed) {
+    const previous = layeredTurnTouchClaims.get(bookKey);
+    if (previous?.cleanupTimer) clearTimeout(previous.cleanupTimer);
+    layeredTurnTouchClaims.delete(bookKey);
+    return;
+  }
+  const state = layeredTurnTouchClaims.get(bookKey) ?? { claimed: false, ended: false };
+  state.claimed = true;
+  layeredTurnTouchClaims.set(bookKey, state);
+};
+
+/** Start a fresh raw/direct touch lifetime for layered-turn ownership. */
+export const beginLayeredTurnTouch = (bookKey: string) => {
+  const previous = layeredTurnTouchClaims.get(bookKey);
+  if (previous?.cleanupTimer) clearTimeout(previous.cleanupTimer);
+  layeredTurnTouchClaims.set(bookKey, { claimed: false, ended: false });
+};
+
+/**
+ * Seal a completed touch while retaining a claimed gesture briefly enough to
+ * suppress the browser's delayed compatibility click. This is idempotent
+ * because iframe events and the parent React surface can observe the same
+ * physical release.
+ */
+export const endLayeredTurnTouch = (bookKey: string) => {
+  const state = layeredTurnTouchClaims.get(bookKey);
+  if (!state || state.ended) return;
+  state.ended = true;
+  state.cleanupTimer = setTimeout(() => {
+    if (layeredTurnTouchClaims.get(bookKey) === state) {
+      layeredTurnTouchClaims.delete(bookKey);
+    }
+  }, SYNTHESIZED_CLICK_SUPPRESSION_MS);
+};
+
+/** Cancel a touch without retaining synthesized-click suppression state. */
+export const cancelLayeredTurnTouch = (bookKey: string) => {
+  setLayeredTurnTouchClaimed(bookKey, false);
+};
+
+// The forwarded iframe lifecycle is independent of app-interceptor priority,
+// so it is more reliable than any one interceptor's local start/end state for
+// ordinary page-turn candidates. A capture-phase owner may still suppress a
+// later forwarded event; the next touchstart always replaces stale state.
+export const isLayeredTurnTouchActive = (bookKey: string) => {
+  const state = layeredTurnTouchClaims.get(bookKey);
+  return !!state && !state.ended;
+};
+
+const clearLayeredTurnTouchClaim = (bookKey: string) => {
+  cancelLayeredTurnTouch(bookKey);
+};
+
+const suppressDomClick = (event: MouseEvent) => {
+  event.preventDefault();
+  event.stopImmediatePropagation();
+};
+
+const consumeSuppressedDomClick = (bookKey: string, event: MouseEvent, now: number) => {
+  const suppressedSwipe = suppressedSwipeClicks.get(bookKey);
+  if (suppressedSwipe) {
+    if (now > suppressedSwipe.until) {
+      suppressedSwipeClicks.delete(bookKey);
+    } else {
+      const nearEnd =
+        Math.hypot(event.screenX - suppressedSwipe.endX, event.screenY - suppressedSwipe.endY) <=
+        SYNTHESIZED_CLICK_POSITION_SLOP_PX;
+      if (nearEnd) {
+        suppressedSwipeClicks.delete(bookKey);
+        clearLayeredTurnTouchClaim(bookKey);
+        suppressDomClick(event);
+        return true;
+      }
+    }
+  }
+  const layeredClaim = layeredTurnTouchClaims.get(bookKey);
+  if (layeredClaim?.claimed && layeredClaim.ended) {
+    clearLayeredTurnTouchClaim(bookKey);
+    suppressDomClick(event);
+    return true;
+  }
+  return false;
+};
+
+// Runs before Foliate's bubble-phase link handler. Only recognized swipes are
+// intercepted here; ordinary clicks retain their existing listener order and
+// link/media/footnote behavior.
+export const handleClickCapture = (bookKey: string, event: MouseEvent) => {
+  consumeSuppressedDomClick(bookKey, event, Date.now());
 };
 
 // The event's position in main-window viewport coordinates: iframe client
@@ -251,20 +417,7 @@ export const handleClick = (
   event: MouseEvent,
 ) => {
   const now = Date.now();
-  const suppressedSwipe = suppressedSwipeClicks.get(bookKey);
-  if (suppressedSwipe) {
-    if (now > suppressedSwipe.until) {
-      suppressedSwipeClicks.delete(bookKey);
-    } else {
-      const nearEnd =
-        Math.hypot(event.screenX - suppressedSwipe.endX, event.screenY - suppressedSwipe.endY) <=
-        SYNTHESIZED_CLICK_POSITION_SLOP_PX;
-      if (nearEnd) {
-        suppressedSwipeClicks.delete(bookKey);
-        return;
-      }
-    }
-  }
+  if (consumeSuppressedDomClick(bookKey, event, now)) return;
 
   if (!doubleClickDisabled.current && now - lastClickTime < DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
     lastClickTime = now;
@@ -288,6 +441,15 @@ export const handleClick = (
   lastClickTime = now;
 
   const postSingleClick = () => {
+    // Native captured-turn recognition is delivered through postMessage and
+    // can land one task after the iframe touchend/click. Re-check ownership at
+    // dispatch time so an early 1–6px claim cannot slip through that gap.
+    const lateLayeredClaim = layeredTurnTouchClaims.get(bookKey);
+    if (lateLayeredClaim?.claimed && lateLayeredClaim.ended) {
+      clearLayeredTurnTouchClaim(bookKey);
+      if (lastClickTime === now) lastClickTime = 0;
+      return;
+    }
     const element = event.target as HTMLElement | null;
     const footnoteSelector = [
       '.js_readerFooterNote',
@@ -377,7 +539,10 @@ export const handleClick = (
       }
     }, DOUBLE_CLICK_INTERVAL_THRESHOLD_MS);
   } else {
-    postSingleClick();
+    // Mouse clicks remain synchronous. A touch-synthesized click waits one
+    // task so the parent realm can publish a native captured-turn claim.
+    if (layeredTurnTouchClaims.get(bookKey)?.ended) setTimeout(postSingleClick, 0);
+    else postSingleClick();
   }
 };
 
@@ -403,9 +568,18 @@ const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
   const targetTouches = serializeTouches(event.touches);
   const changedTouches = serializeTouches(event.changedTouches);
   if (type === 'iframe-touchstart') {
+    beginLayeredTurnTouch(bookKey);
     const touch = targetTouches[0];
     if (touch) {
-      touchGestures.set(bookKey, { startX: touch.screenX, startY: touch.screenY, moved: false });
+      const nativeTurn = event.touches.length === 1 ? createNativeTurnIntent(event, touch) : null;
+      touchGestures.set(bookKey, {
+        startX: touch.screenX,
+        startY: touch.screenY,
+        startTime: event.timeStamp,
+        moved: false,
+        turnHost: nativeTurn?.host,
+        turnIntent: nativeTurn?.intent,
+      });
     }
   } else if (type === 'iframe-touchmove') {
     const gesture = touchGestures.get(bookKey);
@@ -413,6 +587,39 @@ const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
     if (gesture && touch) {
       const distance = Math.hypot(touch.screenX - gesture.startX, touch.screenY - gesture.startY);
       if (distance >= SYNTHESIZED_CLICK_SWIPE_DISTANCE_PX) gesture.moved = true;
+      const { turnHost, turnIntent } = gesture;
+      if (turnHost && turnIntent) {
+        const currentTarget = event.currentTarget as Document | null;
+        const selection = currentTarget?.getSelection?.();
+        const invalid =
+          event.touches.length !== 1 ||
+          !turnHost.hasAttribute(NATIVE_CAPTURED_TURN_ATTRIBUTE) ||
+          turnHost.hasAttribute(NATIVE_PROGRAMMATIC_TURN_ATTRIBUTE) ||
+          !!turnHost.scrollLocked ||
+          !!(selection && !selection.isCollapsed);
+        if (invalid) {
+          gesture.turnHost = undefined;
+          gesture.turnIntent = undefined;
+        } else if (
+          shouldClaimTurnGesture(
+            turnIntent,
+            {
+              deltaX: touch.screenX - gesture.startX,
+              deltaY: touch.screenY - gesture.startY,
+              deltaT: event.timeStamp - gesture.startTime,
+            },
+            SYNTHESIZED_CLICK_SWIPE_DISTANCE_PX,
+          )
+        ) {
+          gesture.turnIntent = undefined;
+          setLayeredTurnTouchClaimed(bookKey, true);
+          // Native capture recognition reaches the React interceptor through
+          // postMessage. Claim the browser gesture synchronously here as well,
+          // so a 1–6px page turn cannot generate a compatibility/link click in
+          // the gap before that message is handled.
+          event.preventDefault();
+        }
+      }
     }
   } else if (type === 'iframe-touchend' || type === 'iframe-touchcancel') {
     const gesture = touchGestures.get(bookKey);
@@ -420,7 +627,10 @@ const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
     // touchmove event. Include the released finger when deciding whether the
     // browser-generated click belongs to a swipe.
     const releasedTouch = changedTouches[0];
+    const layeredClaim = layeredTurnTouchClaims.get(bookKey);
+    if (type === 'iframe-touchend' && layeredClaim?.claimed) event.preventDefault();
     const moved =
+      layeredClaim?.claimed ||
       gesture?.moved ||
       (gesture &&
         releasedTouch &&
@@ -436,6 +646,11 @@ const handleTouchEv = (bookKey: string, event: TouchEvent, type: string) => {
       });
     }
     touchGestures.delete(bookKey);
+    if (type === 'iframe-touchcancel') {
+      cancelLayeredTurnTouch(bookKey);
+    } else {
+      endLayeredTurnTouch(bookKey);
+    }
   }
   window.postMessage(
     {

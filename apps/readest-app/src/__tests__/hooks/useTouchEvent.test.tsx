@@ -33,6 +33,14 @@ vi.mock('@/utils/event', () => ({
 
 import { useTouchEvent } from '@/app/reader/hooks/useIframeEvents';
 import {
+  beginLayeredTurnTouch,
+  cancelLayeredTurnTouch,
+  endLayeredTurnTouch,
+  handleClickCapture,
+  isLayeredTurnTouchActive,
+  setLayeredTurnTouchClaimed,
+} from '@/app/reader/utils/iframeEventHandlers';
+import {
   registerTouchInterceptor,
   setLayeredTurnGestureActive,
   type TouchDetail,
@@ -49,6 +57,10 @@ const touchEvent = (touches: Touch[], timeStamp = 0, changedTouches: Touch[] = t
   timeStamp,
   targetTouches: touches,
   changedTouches,
+});
+const directTouchEvent = (touches: Touch[], timeStamp = 0, changedTouches: Touch[] = touches) => ({
+  ...touchEvent(touches, timeStamp, changedTouches),
+  preventDefault: vi.fn(),
 });
 
 type Handlers = ReturnType<typeof useTouchEvent>;
@@ -69,6 +81,7 @@ describe('useTouchEvent pinch vs two-finger scroll', () => {
 
   beforeEach(() => {
     setLayeredTurnGestureActive('book-1', false);
+    cancelLayeredTurnTouch('book-1');
     pinchZoom = vi.fn();
     pinchEnd = vi.fn();
     mocks.hoveredBookKey = null;
@@ -79,6 +92,7 @@ describe('useTouchEvent pinch vs two-finger scroll', () => {
 
   afterEach(() => {
     setLayeredTurnGestureActive('book-1', false);
+    cancelLayeredTurnTouch('book-1');
     cleanup();
     vi.clearAllMocks();
   });
@@ -122,6 +136,47 @@ describe('useTouchEvent pinch vs two-finger scroll', () => {
 
     expect(pinchZoom).not.toHaveBeenCalled();
     expect(mocks.dispatch).not.toHaveBeenCalledWith('pinch-zoom', expect.anything());
+  });
+
+  test('cancels a claimed reflowable drag once when a second finger appears', () => {
+    mocks.getBookData.mockReturnValue({ isFixedLayout: false });
+    mocks.getViewSettings.mockReturnValue({ zoomLevel: 100, scrolled: false, vertical: false });
+    const details: TouchDetail[] = [];
+    const unregister = registerTouchInterceptor(
+      'reflowable-multitouch-test',
+      (_bookKey, detail) => {
+        details.push(detail);
+        return detail.phase === 'move' || detail.phase === 'cancel';
+      },
+    );
+
+    try {
+      const h = renderTouchHook();
+      h.current.onTouchStart(touchEvent([touch(200, 300)], 100));
+      h.current.onTouchMove(touchEvent([touch(180, 300)], 116));
+
+      // The second finger cancels the captured single-finger drag, then the
+      // remaining finger stays latched out until both fingers are up.
+      h.current.onTouchStart(touchEvent([touch(180, 300), touch(260, 300)], 132));
+      expect(details.map(({ phase }) => phase)).toEqual(['start', 'move', 'cancel']);
+
+      h.current.onTouchEnd(touchEvent([touch(260, 300)], 148, [touch(180, 300)]));
+      h.current.onTouchMove(touchEvent([touch(230, 300)], 164));
+      expect(details.map(({ phase }) => phase)).toEqual(['start', 'move', 'cancel']);
+
+      h.current.onTouchEnd(touchEvent([], 180, [touch(230, 300)]));
+      h.current.onTouchStart(touchEvent([touch(200, 300)], 196));
+      h.current.onTouchMove(touchEvent([touch(180, 300)], 212));
+      expect(details.map(({ phase }) => phase)).toEqual([
+        'start',
+        'move',
+        'cancel',
+        'start',
+        'move',
+      ]);
+    } finally {
+      unregister();
+    }
   });
 
   test.each([
@@ -295,6 +350,125 @@ describe('useTouchEvent pinch vs two-finger scroll', () => {
     h.current.onTouchCancel(touchEvent([], 132, [touch(184, 300)]));
 
     expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+  });
+
+  test('defers native captured-turn toolbar changes across the 15–24px claim gap', () => {
+    mocks.hoveredBookKey = 'book-1';
+    mocks.getBookData.mockReturnValue({ isFixedLayout: false });
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 100,
+      scrolled: false,
+      vertical: false,
+      pageTurnStyle: 'slide',
+      animated: true,
+      isEink: false,
+      disableSwipe: false,
+    });
+    mocks.getView.mockReturnValue({
+      renderer: {
+        getAttribute: (name: string) => (name === 'captured-turn-style' ? 'slide' : null),
+      },
+    });
+    const h = renderTouchHook();
+
+    h.current.onTouchStart(touchEvent([touch(10, 300)], 100));
+    h.current.onTouchMove(touchEvent([touch(26, 300)], 116));
+    expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+
+    h.current.onTouchMove(touchEvent([touch(35, 300)], 132));
+    h.current.onTouchCancel(touchEvent([], 148, [touch(35, 300)]));
+    expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    'end',
+    'cancel',
+  ] as const)('seals a directly claimed parent-surface touch on %s and suppresses compatibility clicks', (phase) => {
+    mocks.getBookData.mockReturnValue({ isFixedLayout: false });
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 100,
+      scrolled: false,
+      vertical: false,
+      pageTurnStyle: 'slide',
+    });
+    const unregister = registerTouchInterceptor(
+      'direct-parent-layered-turn-test',
+      (_bookKey, detail) => {
+        if (detail.phase === 'move') setLayeredTurnTouchClaimed('book-1', true);
+        return detail.phase !== 'start';
+      },
+      5,
+    );
+
+    try {
+      const h = renderTouchHook();
+      const start = directTouchEvent([touch(200, 300)], 100);
+      const move = directTouchEvent([touch(180, 300)], 116);
+      h.current.onTouchStart(start);
+      h.current.onTouchMove(move);
+
+      expect(isLayeredTurnTouchActive('book-1')).toBe(true);
+      expect(move.preventDefault).toHaveBeenCalledOnce();
+
+      const terminal = directTouchEvent([], 132, [touch(180, 300)]);
+      if (phase === 'end') h.current.onTouchEnd(terminal);
+      else h.current.onTouchCancel(terminal);
+
+      expect(isLayeredTurnTouchActive('book-1')).toBe(false);
+      expect(terminal.preventDefault).toHaveBeenCalledOnce();
+    } finally {
+      unregister();
+    }
+  });
+
+  test('does not let a forwarded iframe start erase an earlier raw claim', () => {
+    mocks.getBookData.mockReturnValue({ isFixedLayout: false });
+    mocks.getViewSettings.mockReturnValue({
+      zoomLevel: 100,
+      scrolled: false,
+      vertical: false,
+      pageTurnStyle: 'slide',
+    });
+    const h = renderTouchHook();
+
+    beginLayeredTurnTouch('book-1');
+    setLayeredTurnTouchClaimed('book-1', true);
+    h.current.onTouchStart(touchEvent([touch(200, 300)], 100));
+    endLayeredTurnTouch('book-1');
+
+    const click = {
+      preventDefault: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+      screenX: 200,
+      screenY: 300,
+    } as unknown as MouseEvent;
+    handleClickCapture('book-1', click);
+
+    expect(click.preventDefault).toHaveBeenCalledOnce();
+    expect(click.stopImmediatePropagation).toHaveBeenCalledOnce();
+  });
+
+  test('honors an interceptor that claims only the direct touchend', () => {
+    mocks.hoveredBookKey = 'book-1';
+    mocks.getBookData.mockReturnValue({ isFixedLayout: true });
+    mocks.getViewSettings.mockReturnValue({ zoomLevel: 100, scrolled: false, vertical: false });
+    const unregister = registerTouchInterceptor(
+      'direct-end-only-test',
+      (_bookKey, detail) => detail.phase === 'end',
+      5,
+    );
+
+    try {
+      const h = renderTouchHook();
+      h.current.onTouchStart(directTouchEvent([touch(200, 300)], 100));
+      const terminal = directTouchEvent([], 132, [touch(120, 300)]);
+      h.current.onTouchEnd(terminal);
+
+      expect(terminal.preventDefault).toHaveBeenCalledOnce();
+      expect(mocks.setHoveredBookKey).not.toHaveBeenCalled();
+    } finally {
+      unregister();
+    }
   });
 
   test.each([

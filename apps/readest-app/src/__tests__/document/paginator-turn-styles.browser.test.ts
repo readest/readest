@@ -243,15 +243,16 @@ describe('Page turn styles (browser)', () => {
   const makeTouch = (x: number, y: number) =>
     new Touch({ identifier: 1, target: paginator, screenX: x, screenY: y, clientX: x, clientY: y });
 
-  const fireTouch = (type: string, x: number, y: number) =>
-    paginator.dispatchEvent(
-      new TouchEvent(type, {
-        bubbles: true,
-        cancelable: true,
-        touches: type === 'touchend' || type === 'touchcancel' ? [] : [makeTouch(x, y)],
-        changedTouches: [makeTouch(x, y)],
-      }),
-    );
+  const fireTouch = (type: string, x: number, y: number, timeStamp?: number) => {
+    const event = new TouchEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      touches: type === 'touchend' || type === 'touchcancel' ? [] : [makeTouch(x, y)],
+      changedTouches: [makeTouch(x, y)],
+    });
+    if (timeStamp !== undefined) Object.defineProperty(event, 'timeStamp', { value: timeStamp });
+    return paginator.dispatchEvent(event);
+  };
 
   /** The scrubbed turn's paused animations, keyed for inspection. */
   const scrubbedAnimations = () =>
@@ -310,7 +311,216 @@ describe('Page turn styles (browser)', () => {
     expect(phases).toEqual(['before-capture', 'covered', 'ready', 'finished']);
   });
 
-  it('uses the named transition root width while preserving total drag distance', async () => {
+  it('claims an edge-originated turn on the first clear inward move', async () => {
+    await setup(ltrBook, 'slide');
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    // The rightmost 18% is a page-turn fast path. Two pixels toward the page
+    // interior are enough to claim without waiting for the fallback slop.
+    fireTouch('touchstart', 790, 300);
+    fireTouch('touchmove', 788, 300);
+    expect(phases[0]).toBe('before-capture');
+    await vi.waitFor(() => expect(phases).toContain('ready'));
+
+    fireTouch('touchcancel', 788, 300);
+    await vi.waitFor(() => expect(phases.at(-1)).toBe('finished'), { timeout: 2000 });
+    expect(phases).toEqual(['before-capture', 'covered', 'ready', 'cancelled', 'finished']);
+  });
+
+  it('claims an early edge gesture at a book boundary without starting a snapshot', async () => {
+    await setup(ltrBook, 'slide', 0);
+    const claims: CustomEvent[] = [];
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-gesture-claimed', ((event: CustomEvent) => {
+      claims.push(event);
+    }) as EventListener);
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    // At the first page, an inward drag from the left edge expresses a
+    // previous-page gesture. There is no page to snapshot, but the host still
+    // needs the ownership signal so the drag cannot become a synthesized tap.
+    fireTouch('touchstart', 100, 300);
+    fireTouch('touchmove', 102, 300);
+    fireTouch('touchend', 102, 300);
+    await wait(50);
+
+    expect(claims).toHaveLength(1);
+    expect(claims[0]!.detail).toMatchObject({ style: 'slide', forward: false });
+    expect(phases).toHaveLength(0);
+  });
+
+  it('reserves the outermost left strip for the vertical brightness gesture', async () => {
+    await setup(ltrBook, 'slide');
+    paginator.setAttribute('turn-gesture-left-inset', '0.1');
+    const claims: CustomEvent[] = [];
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-gesture-claimed', ((event: CustomEvent) => {
+      claims.push(event);
+    }) as EventListener);
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    fireTouch('touchstart', 40, 300);
+    fireTouch('touchmove', 42, 300);
+    fireTouch('touchmove', 46, 300);
+    fireTouch('touchmove', 46, 290);
+    fireTouch('touchmove', 20, 290);
+    fireTouch('touchend', 20, 290);
+    await wait(50);
+
+    expect(claims).toHaveLength(0);
+    expect(phases).toHaveLength(0);
+  });
+
+  it('claims a central turn after two consistent horizontal samples below 15px', async () => {
+    await setup(ltrBook, 'slide');
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    fireTouch('touchstart', 400, 300);
+    fireTouch('touchmove', 397, 300);
+    expect(phases).toHaveLength(0);
+    fireTouch('touchmove', 394, 300);
+    expect(phases[0]).toBe('before-capture');
+    await vi.waitFor(() => expect(phases).toContain('ready'));
+
+    fireTouch('touchcancel', 394, 300);
+    await vi.waitFor(() => expect(phases.at(-1)).toBe('finished'), { timeout: 2000 });
+    expect(phases).toEqual(['before-capture', 'covered', 'ready', 'cancelled', 'finished']);
+  });
+
+  it('does not combine stale central samples into an early claim', async () => {
+    await setup(ltrBook, 'slide');
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    fireTouch('touchstart', 400, 300, 1000);
+    fireTouch('touchmove', 397, 300, 1010);
+    fireTouch('touchmove', 394, 300, 1100);
+    expect(phases).toHaveLength(0);
+    fireTouch('touchmove', 391, 300, 1120);
+    expect(phases[0]).toBe('before-capture');
+
+    fireTouch('touchcancel', 391, 300, 1130);
+    await vi.waitFor(() => expect(phases.at(-1)).toBe('finished'), { timeout: 2000 });
+  });
+
+  it('permanently yields a pending gesture when scroll lock takes ownership', async () => {
+    await setup(ltrBook, 'slide');
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    paginator.scrollLocked = true;
+    fireTouch('touchstart', 400, 300);
+    fireTouch('touchmove', 397, 300);
+    paginator.scrollLocked = false;
+    fireTouch('touchmove', 360, 300);
+    fireTouch('touchend', 360, 300);
+    await wait(50);
+
+    expect(phases).toHaveLength(0);
+  });
+
+  it('cleans up lifecycle state when layered capture throws synchronously', async () => {
+    await setup(ltrBook, 'slide');
+    const before = paginator.containerPosition;
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+    const original = document.startViewTransition;
+    document.startViewTransition = (() => {
+      throw new Error('synchronous capture failure');
+    }) as typeof document.startViewTransition;
+
+    try {
+      fireTouch('touchstart', 400, 300);
+      fireTouch('touchmove', 397, 300);
+      fireTouch('touchmove', 394, 300);
+      fireTouch('touchend', 394, 300);
+      await wait(50);
+
+      expect(phases).toEqual(['before-capture', 'finished']);
+      expect(paginator.containerPosition).toBe(before);
+      expect(document.documentElement.className).not.toContain('foliate-vt');
+      expect(paginator.style.viewTransitionName).toBe('');
+    } finally {
+      document.startViewTransition = original;
+    }
+  });
+
+  it('cancels an active layered drag before accepting a replacement touch', async () => {
+    await setup(ltrBook, 'slide');
+    const page = paginator.page;
+    const before = paginator.containerPosition;
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    fireTouch('touchstart', 400, 300);
+    fireTouch('touchmove', 397, 300);
+    fireTouch('touchmove', 394, 300);
+    await vi.waitFor(() => expect(phases).toContain('ready'));
+    fireTouch('touchstart', 500, 300);
+    fireTouch('touchmove', 300, 300);
+    fireTouch('touchend', 300, 300);
+
+    await vi.waitFor(() => expect(phases.at(-1)).toBe('finished'), { timeout: 2000 });
+    expect(phases).toEqual(['before-capture', 'covered', 'ready', 'cancelled', 'finished']);
+    expect(paginator.page).toBe(page);
+    expect(paginator.containerPosition).toBe(before);
+  });
+
+  it('permanently rejects a vertical gesture after a one-frame 16px landing wobble', async () => {
+    await setup(ltrBook, 'slide');
+    const page = paginator.page;
+    const position = paginator.containerPosition;
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+    const original = document.startViewTransition.bind(document);
+    let transitionCalls = 0;
+    document.startViewTransition = ((callback: () => Promise<void> | void) => {
+      transitionCalls++;
+      return original(callback);
+    }) as typeof document.startViewTransition;
+
+    try {
+      fireTouch('touchstart', 400, 500);
+      // A single horizontal-looking sample is insufficient in the center.
+      fireTouch('touchmove', 416, 496);
+      expect(phases).toHaveLength(0);
+      // Cumulative vertical travel then wins and locks this gesture. Even a
+      // later horizontal hook cannot re-enter the page-turn arena.
+      fireTouch('touchmove', 416, 480);
+      fireTouch('touchmove', 300, 480);
+      fireTouch('touchend', 300, 480);
+      await wait(50);
+
+      expect(transitionCalls).toBe(0);
+      expect(phases).toHaveLength(0);
+      expect(paginator.page).toBe(page);
+      expect(paginator.containerPosition).toBe(position);
+    } finally {
+      document.startViewTransition = original;
+    }
+  });
+
+  it('starts Slide flat at claim and uses the named transition root width afterward', async () => {
     await setup(ltrBook, 'slide', 3, 1000);
     const phases: string[] = [];
     paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
@@ -321,8 +531,8 @@ describe('Page turn styles (browser)', () => {
     expect(transitionRoot?.getBoundingClientRect().width).toBe(1000);
 
     // This first move exceeds 24px but remains too diagonal to claim. The
-    // second becomes horizontal enough only after 80px of travel. Recognition
-    // catches the snapshot up to that cumulative displacement.
+    // second becomes horizontal enough only after 80px of travel. The
+    // recognition distance owns the gesture but is not shown as a jump.
     fireTouch('touchstart', 700, 300);
     fireTouch('touchmove', 640, 345);
     expect(scrubbedAnimations()).toHaveLength(0);
@@ -337,17 +547,185 @@ describe('Page turn styles (browser)', () => {
     }
     const animations = scrubbedAnimations();
     expect(animations.length).toBeGreaterThan(0);
-    expect(scrubProgress(animations[0]!)).toBeCloseTo(80 / 1000, 2);
+    expect(scrubProgress(animations[0]!)).toBeCloseTo(0, 5);
 
-    // Further movement remains one-to-one against the actual 1000px snapshot.
+    // Further movement is one-to-one against the actual 1000px snapshot,
+    // measured from the claim point rather than the original touch point.
     fireTouch('touchmove', 540, 330);
-    await vi.waitFor(() => expect(scrubProgress(animations[0]!)).toBeCloseTo(160 / 1000, 2));
+    await vi.waitFor(() => expect(scrubProgress(animations[0]!)).toBeCloseTo(80 / 1000, 2));
 
     // Return to the origin and cancel so no transition leaks into cleanup.
     fireTouch('touchmove', 700, 300);
     fireTouch('touchend', 700, 300);
     await vi.waitFor(() => expect(phases.at(-1)).toBe('finished'), { timeout: 2000 });
     expect(scrubbedAnimations()).toHaveLength(0);
+  });
+
+  it.each([
+    { style: 'slide', speed: 0.9, expectedRate: 1.875 },
+    { style: 'slide', speed: 1.5, expectedRate: 2 },
+    { style: 'curl', speed: 1.5, expectedRate: 1.5 },
+  ])('settles a $style release at $expectedRate× for a $speed px/ms flick', async ({
+    style,
+    speed,
+    expectedRate,
+  }) => {
+    await setup(ltrBook, style);
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    const startX = 700;
+    const startTime = 100;
+    const sampleDuration = 240;
+    const releaseX = startX - speed * sampleDuration;
+    fireTouch('touchstart', startX, 300, startTime);
+    fireTouch('touchmove', releaseX, 300, startTime + sampleDuration);
+    await vi.waitFor(() => expect(phases).toContain('ready'));
+    const animations = scrubbedAnimations();
+    expect(animations.length).toBeGreaterThan(0);
+
+    fireTouch('touchend', releaseX, 300, startTime + sampleDuration);
+    await vi.waitFor(() => {
+      for (const animation of animations) {
+        expect(Math.abs(animation.playbackRate)).toBeCloseTo(expectedRate, 5);
+      }
+    });
+    await vi.waitFor(() => expect(phases.at(-1)).toBe('finished'), { timeout: 2000 });
+    expect(phases).not.toContain('cancelled');
+  });
+
+  it('combines sub-flick speed with distance to commit a Slide', async () => {
+    await setup(ltrBook, 'slide');
+    const page = paginator.page;
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    fireTouch('touchstart', 700, 300, 100);
+    fireTouch('touchmove', 358, 300, 410);
+    await vi.waitFor(() => expect(phases).toContain('ready'));
+    fireTouch('touchmove', 358, 300, 510);
+    fireTouch('touchend', 340, 300, 600);
+    await vi.waitFor(() => expect(phases.at(-1)).toBe('finished'), { timeout: 2000 });
+
+    // 45% distance + (0.2px/ms * 240ms / 800px) = 51%.
+    expect(paginator.page).toBe(page + 1);
+    expect(phases).not.toContain('cancelled');
+  });
+
+  it('lets a sub-flick reverse release cancel a Slide beyond halfway', async () => {
+    await setup(ltrBook, 'slide');
+    const page = paginator.page;
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    fireTouch('touchstart', 700, 300, 100);
+    fireTouch('touchmove', 242, 300, 410);
+    await vi.waitFor(() => expect(phases).toContain('ready'));
+    fireTouch('touchmove', 242, 300, 510);
+    fireTouch('touchend', 260, 300, 600);
+    await vi.waitFor(() => expect(phases.at(-1)).toBe('finished'), { timeout: 2000 });
+
+    // 55% distance + (-0.2px/ms * 240ms / 800px) = 49%.
+    expect(paginator.page).toBe(page);
+    expect(phases).toContain('cancelled');
+  });
+
+  it('does not boost a release after the finger has rested', async () => {
+    await setup(ltrBook, 'slide');
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    fireTouch('touchstart', 700, 300, 100);
+    fireTouch('touchmove', 640, 300, 140);
+    await vi.waitFor(() => expect(phases).toContain('ready'));
+    const animations = scrubbedAnimations();
+    expect(animations.length).toBeGreaterThan(0);
+
+    // More than 80ms without a sample clears the otherwise-fast last velocity.
+    fireTouch('touchend', 640, 300, 241);
+    await vi.waitFor(() => expect(phases.at(-1)).toBe('finished'), { timeout: 2000 });
+    for (const animation of animations) {
+      expect(Math.abs(animation.playbackRate)).toBe(1);
+    }
+  });
+
+  it('boosts a fast reverse release toward the cancellation target', async () => {
+    await setup(ltrBook, 'slide');
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    fireTouch('touchstart', 700, 300, 100);
+    fireTouch('touchmove', 580, 300, 140);
+    await vi.waitFor(() => expect(phases).toContain('ready'));
+    const animations = scrubbedAnimations();
+
+    fireTouch('touchmove', 580, 300, 200);
+    fireTouch('touchmove', 620, 300, 220);
+    // The final 40px of the reversal arrives only in changedTouches.
+    fireTouch('touchend', 660, 300, 240);
+
+    const releaseVelocity = 80 / 90;
+    const expectedRate = 1 + ((releaseVelocity - 0.2) / (1 - 0.2)) * (2 - 1);
+    await vi.waitFor(() => {
+      for (const animation of animations) {
+        expect(animation.playbackRate).toBeLessThan(-1);
+        expect(Math.abs(animation.playbackRate)).toBeCloseTo(expectedRate, 5);
+      }
+    });
+    await vi.waitFor(() => expect(phases.at(-1)).toBe('finished'), { timeout: 2000 });
+    expect(phases).toContain('cancelled');
+  });
+
+  it('does not boost velocity moving away from the selected settle target', async () => {
+    await setup(ltrBook, 'slide');
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    fireTouch('touchstart', 700, 500, 100);
+    fireTouch('touchmove', 620, 496, 140);
+    await vi.waitFor(() => expect(phases).toContain('ready'));
+    const animations = scrubbedAnimations();
+
+    // The whole gesture becomes vertical, so it must cancel. Its final fast
+    // horizontal sample still points toward commit, away from that target.
+    fireTouch('touchmove', 580, 300, 180);
+    fireTouch('touchend', 580, 300, 181);
+    await vi.waitFor(() => expect(phases.at(-1)).toBe('finished'), { timeout: 2000 });
+    expect(phases).toContain('cancelled');
+    expect(animations.every((animation) => Math.abs(animation.playbackRate) === 1)).toBe(true);
+  });
+
+  it('cancels when the final changedTouches sample makes the whole gesture vertical', async () => {
+    await setup(ltrBook, 'slide');
+    const page = paginator.page;
+    const phases: string[] = [];
+    paginator.addEventListener('layered-turn-state', ((event: CustomEvent) => {
+      phases.push(event.detail.phase);
+    }) as EventListener);
+
+    fireTouch('touchstart', 700, 300, 100);
+    fireTouch('touchmove', 660, 300, 140);
+    await vi.waitFor(() => expect(phases).toContain('ready'));
+
+    // The final point has enough horizontal speed and projected progress to
+    // commit on its own, but the complete gesture is predominantly vertical.
+    fireTouch('touchend', 500, 600, 180);
+    await vi.waitFor(() => expect(phases.at(-1)).toBe('finished'), { timeout: 2000 });
+
+    expect(paginator.page).toBe(page);
+    expect(phases).toContain('cancelled');
   });
 
   it('tracks the finger: a mostly-returned drag reverses without turning', async () => {
@@ -397,6 +775,7 @@ describe('Page turn styles (browser)', () => {
       expect(scrubbedAnimations().length).toBeGreaterThan(0);
       expect(phases).toContain('ready');
     });
+    const animations = scrubbedAnimations();
     fireTouch('touchcancel', 620, 300);
     await vi.waitFor(
       () => {
@@ -407,6 +786,7 @@ describe('Page turn styles (browser)', () => {
 
     expect(paginator.page).toBe(page);
     expect(paginator.containerPosition).toBe(before);
+    expect(animations.every((animation) => Math.abs(animation.playbackRate) === 1)).toBe(true);
     expect(scrubbedAnimations()).toHaveLength(0);
     expect(phases).toEqual(['before-capture', 'covered', 'ready', 'cancelled', 'finished']);
     expect(document.documentElement.className).not.toContain('foliate-vt');
@@ -496,6 +876,38 @@ describe('Page turn styles (browser)', () => {
     expect(paginator.containerPosition).toBe(before);
     expect(phases).toEqual(['before-capture', 'covered', 'ready', 'cancelled', 'finished']);
     expect(document.documentElement.className).not.toContain('foliate-vt');
+  });
+
+  it('a programmatic turn permanently rejects an already-pending touch', async () => {
+    await setup(ltrBook, 'slide');
+    const page = paginator.page;
+    const claims: CustomEvent[] = [];
+    paginator.addEventListener('layered-turn-gesture-claimed', ((event: CustomEvent) => {
+      claims.push(event);
+    }) as EventListener);
+    const original = document.startViewTransition.bind(document);
+    let transitionCalls = 0;
+    document.startViewTransition = ((callback: () => Promise<void> | void) => {
+      transitionCalls++;
+      return original(callback);
+    }) as typeof document.startViewTransition;
+
+    try {
+      fireTouch('touchstart', 400, 300);
+      await paginator.next();
+      // Without the rejection, these two central samples would reuse the
+      // pre-turn origin and start a second layered transition.
+      fireTouch('touchmove', 397, 300);
+      fireTouch('touchmove', 394, 300);
+      fireTouch('touchend', 394, 300);
+      await wait(50);
+
+      expect(transitionCalls).toBe(1);
+      expect(claims).toHaveLength(0);
+      expect(paginator.page).toBe(page + 1);
+    } finally {
+      document.startViewTransition = original;
+    }
   });
 
   // Xiaomi report (Android 16, WebView 148): with the layered slide style, a

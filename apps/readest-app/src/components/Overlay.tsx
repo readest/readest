@@ -5,9 +5,15 @@ interface OverlayProps {
   onDismiss: () => void;
   dismissLabel?: string;
   className?: string;
+  /** Whether this mounted layer covers reader pixels and blocks native capture. */
+  captureBlocking?: boolean;
 }
 
-export const Overlay: React.FC<OverlayProps> = ({ onDismiss, className }) => {
+export const Overlay: React.FC<OverlayProps> = ({
+  onDismiss,
+  className,
+  captureBlocking = true,
+}) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -17,6 +23,7 @@ export const Overlay: React.FC<OverlayProps> = ({ onDismiss, className }) => {
 
   return (
     <div
+      data-capture-blocking-overlay={captureBlocking ? 'true' : undefined}
       className={clsx('overlay fixed inset-0 cursor-default', className)}
       role='none'
       tabIndex={-1}

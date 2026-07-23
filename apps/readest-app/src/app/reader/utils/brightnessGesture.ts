@@ -12,6 +12,7 @@
 
 export const BRIGHTNESS_GESTURE_EDGE_RATIO = 0.1;
 export const BRIGHTNESS_GESTURE_ACTIVATION_PX = 18;
+export const TURN_GESTURE_LEFT_INSET_ATTRIBUTE = 'turn-gesture-left-inset';
 
 const clamp01 = (v: number): number => Math.max(0, Math.min(1, v));
 

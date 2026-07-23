@@ -994,6 +994,12 @@ textarea:focus-within,
   transition: none !important;
 }
 
+/* Native snapshots must not bake transient host chrome (for example Toast)
+   into the page texture. The live element remains above the turn after capture. */
+.captured-turn-filter-transient-overlays [data-capture-invalidating-overlay='true'] {
+  visibility: hidden !important;
+}
+
 /* TTS player scrubber: the track is painted by an inline three-stop gradient
    (played / buffered / rest), so the native appearance must be blanked and
    the element itself becomes the 4px track. Thumb inherits currentColor. */

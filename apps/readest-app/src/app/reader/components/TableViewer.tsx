@@ -173,6 +173,7 @@ const TableViewer: React.FC<TableViewerProps> = ({ gridInsets, html, isDarkMode,
   return (
     <div
       ref={containerRef}
+      data-capture-blocking-overlay='true'
       tabIndex={-1}
       role='button'
       aria-label={_('Table viewer')}

@@ -9,6 +9,10 @@ const h = vi.hoisted(() => ({
   setScreenBrightness: vi.fn(),
   getScreenBrightness: vi.fn(),
   saveSysSettings: vi.fn(),
+  renderer: {
+    setAttribute: vi.fn(),
+    removeAttribute: vi.fn(),
+  },
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -23,7 +27,10 @@ vi.mock('@/store/settingsStore', () => ({
   }),
 }));
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({ getViewSettings: () => ({ scrolled: h.scrolled }) }),
+  useReaderStore: () => ({
+    getView: () => ({ renderer: h.renderer }),
+    getViewSettings: () => ({ scrolled: h.scrolled }),
+  }),
 }));
 vi.mock('@/store/deviceStore', () => ({
   useDeviceControlStore: () => ({
@@ -52,17 +59,34 @@ const makeDoc = () => {
   return d;
 };
 
-const fireTouch = (target: EventTarget, type: string, x: number, y: number) => {
+const dispatchTouch = (
+  target: EventTarget,
+  type: string,
+  touches: TouchLike[],
+  changedTouches = touches,
+) => {
   const ev = new Event(type, { bubbles: true, cancelable: true }) as FakeTouchEvent;
-  const touch = { clientX: x, clientY: y, screenX: x, screenY: y };
-  ev.touches = [touch];
-  ev.changedTouches = [touch];
+  ev.touches = touches;
+  ev.changedTouches = changedTouches;
   const preventDefault = vi.spyOn(ev, 'preventDefault');
   const stopImmediatePropagation = vi.spyOn(ev, 'stopImmediatePropagation');
   act(() => {
     target.dispatchEvent(ev);
   });
   return { preventDefault, stopImmediatePropagation };
+};
+
+const point = (x: number, y: number): TouchLike => ({
+  clientX: x,
+  clientY: y,
+  screenX: x,
+  screenY: y,
+});
+
+const fireTouch = (target: EventTarget, type: string, x: number, y: number) => {
+  const touch = point(x, y);
+  const activeTouches = type === 'touchend' || type === 'touchcancel' ? [] : [touch];
+  return dispatchTouch(target, type, activeTouches, [touch]);
 };
 
 const setup = () => {
@@ -91,9 +115,24 @@ describe('useBrightnessGesture (listener-level)', () => {
     h.screenBrightness = -1;
     h.setScreenBrightness.mockReset();
     h.saveSysSettings.mockReset();
+    h.renderer.setAttribute.mockReset();
+    h.renderer.removeAttribute.mockReset();
     h.getScreenBrightness.mockReset().mockResolvedValue(0.5);
   });
   afterEach(() => cleanup());
+
+  it('publishes the reserved left inset to the page-turn arena while enabled', () => {
+    setup();
+
+    expect(h.renderer.setAttribute).toHaveBeenCalledWith('turn-gesture-left-inset', '0.1');
+  });
+
+  it('removes the reserved left inset when the gesture is disabled', () => {
+    h.swipeSetting = false;
+    setup();
+
+    expect(h.renderer.removeAttribute).toHaveBeenCalledWith('turn-gesture-left-inset');
+  });
 
   it('activates on a left-edge upward flick and suppresses the paginator (capture phase)', () => {
     const { target, paginator } = setup();
@@ -110,6 +149,31 @@ describe('useBrightnessGesture (listener-level)', () => {
     const { stopImmediatePropagation } = fireTouch(target, 'touchmove', 60, 510); // dx=50, dy=10
     expect(stopImmediatePropagation).not.toHaveBeenCalled();
     expect(paginator).toHaveBeenCalled();
+  });
+
+  it('cannot take ownership after a horizontal page-turn trajectory wins', () => {
+    const { target, paginator } = setup();
+    fireTouch(target, 'touchstart', 10, 500);
+    fireTouch(target, 'touchmove', 40, 500); // horizontal > 18px permanently disarms
+    const { stopImmediatePropagation } = fireTouch(target, 'touchmove', 40, 450);
+
+    expect(stopImmediatePropagation).not.toHaveBeenCalled();
+    expect(paginator).toHaveBeenCalledTimes(2);
+    expect(h.setScreenBrightness).not.toHaveBeenCalled();
+  });
+
+  it('permanently yields when a second finger joins in the brightness strip', () => {
+    const { target, paginator } = setup();
+    fireTouch(target, 'touchstart', 10, 500);
+    dispatchTouch(target, 'touchstart', [point(10, 500), point(30, 500)], [point(30, 500)]);
+    const { stopImmediatePropagation } = dispatchTouch(target, 'touchmove', [
+      point(10, 450),
+      point(30, 450),
+    ]);
+
+    expect(stopImmediatePropagation).not.toHaveBeenCalled();
+    expect(paginator).toHaveBeenCalled();
+    expect(h.setScreenBrightness).not.toHaveBeenCalled();
   });
 
   it('does not arm outside the left strip', () => {

@@ -71,6 +71,16 @@ describe('PageCurlRenderer (browser)', () => {
     expect(bottomLeft[1]).toBeLessThan(100);
   });
 
+  it('uses the full device DPR for its backing store', () => {
+    renderer.dispose();
+    renderer = new PageCurlRenderer();
+    renderer.attach(host, W, H, 3);
+
+    const canvas = host.querySelector('canvas')!;
+    expect(canvas.width).toBe(W * 3);
+    expect(canvas.height).toBe(H * 3);
+  });
+
   it('curls the outer half away, folding its whitened back over the spine side', () => {
     renderer.render(0.45, { x: 1, y: 0.5 });
 
