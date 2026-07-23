@@ -87,6 +87,7 @@ const IntegrationsPanel: React.FC = () => {
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
   const { settings, requestedSubPage, setRequestedSubPage } = useSettingsStore();
+  useCustomOPDSStore.getState().loadCustomOPDSCatalogs(envConfig);
   const opdsCatalogs = useCustomOPDSStore((s) => s.catalogs);
   const opdsCount = opdsCatalogs.filter((c) => !c.deletedAt).length;
   // Surface a library-wide WebDAV sync that's mid-flight in the row's
