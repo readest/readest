@@ -528,6 +528,7 @@ class NativeBridgePlugin: Plugin {
   // foreground, and re-assert the app's value when it returns.
   private var appDesiredBrightness: CGFloat?
   private var systemBrightnessBeforeOverride: CGFloat?
+  private static let brightnessDriftTolerance: CGFloat = 0.1
 
   @objc public override func load(webview: WKWebView) {
     self.webView = webview
@@ -573,6 +574,13 @@ class NativeBridgePlugin: Plugin {
 
     NotificationCenter.default.addObserver(
       self,
+      selector: #selector(appWillResignActive),
+      name: UIApplication.willResignActiveNotification,
+      object: nil
+    )
+
+    NotificationCenter.default.addObserver(
+      self,
       selector: #selector(appWillEnterForeground),
       name: UIApplication.willEnterForegroundNotification,
       object: nil
@@ -595,14 +603,11 @@ class NativeBridgePlugin: Plugin {
 
   @objc func appWillEnterForeground() {
     logger.log("NativeBridgePlugin: App will enter foreground")
-    // Re-assert the app's brightness that was released on background (#4885).
-    if let desired = appDesiredBrightness {
-      UIScreen.main.brightness = desired
-    }
     webViewLifecycleManager?.handleAppWillEnterForeground()
   }
 
   @objc func appDidBecomeActive() {
+    reapplyBrightnessUnlessSystemMoved()
     if volumeKeyHandler != nil {
       activateVolumeKeyInterception()
     }
@@ -612,6 +617,18 @@ class NativeBridgePlugin: Plugin {
     // dark mode from Control Center.
     notifyColorSchemeChange()
     syncShareExtensionState()
+  }
+
+  private func reapplyBrightnessUnlessSystemMoved() {
+    guard let desired = appDesiredBrightness, let handedBack = systemBrightnessBeforeOverride else {
+      return
+    }
+    if abs(UIScreen.main.brightness - handedBack) <= Self.brightnessDriftTolerance {
+      UIScreen.main.brightness = desired
+    } else {
+      appDesiredBrightness = nil
+      systemBrightnessBeforeOverride = nil
+    }
   }
 
   /// JS-initiated entry point. The share-extension JS hook calls
@@ -720,15 +737,17 @@ class NativeBridgePlugin: Plugin {
     }
   }
 
+  // iOS ignores brightness writes once the app has resigned the foreground.
+  @objc func appWillResignActive() {
+    if appDesiredBrightness != nil, let original = systemBrightnessBeforeOverride {
+      UIScreen.main.brightness = original
+    }
+  }
+
   @objc func appDidEnterBackground() {
     logger.log("NativeBridgePlugin: App did enter background")
     if let handler = volumeKeyHandler, handler.isIntercepting {
       handler.stopInterception()
-    }
-    // Hand screen brightness back to iOS so ambient auto-brightness resumes
-    // while backgrounded; the override is re-applied on foreground (#4885).
-    if appDesiredBrightness != nil, let original = systemBrightnessBeforeOverride {
-      UIScreen.main.brightness = original
     }
     webViewLifecycleManager?.handleAppDidEnterBackground()
   }
