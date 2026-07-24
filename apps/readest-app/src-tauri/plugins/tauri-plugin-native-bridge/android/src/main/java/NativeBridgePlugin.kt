@@ -209,8 +209,6 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         instance = null
     }
 
-    private var systemBrightnessAtOverride: Int? = null
-
     companion object {
         private const val REQUEST_MANAGE_STORAGE = 1001
         private const val FOLDER_PICKER_REQUEST_CODE = 1002
@@ -235,7 +233,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     // Tauri declares Plugin.onResume but never registers the observer that calls it.
     private val lifecycleCallbacks = object : Application.ActivityLifecycleCallbacks {
         override fun onActivityResumed(resumed: Activity) {
-            if (resumed === activity) dropBrightnessOverrideIfSystemMoved()
+            if (resumed === activity) releaseBrightnessOverride()
         }
 
         override fun onActivityCreated(a: Activity, b: Bundle?) {}
@@ -246,21 +244,12 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         override fun onActivityDestroyed(a: Activity) {}
     }
 
-    private fun dropBrightnessOverrideIfSystemMoved() {
-        val baseline = systemBrightnessAtOverride ?: return
-        val current = readSystemBrightness() ?: return
-        if (current != baseline) {
-            val layoutParams = activity.window.attributes
-            layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
-            activity.window.attributes = layoutParams
-            systemBrightnessAtOverride = null
-        }
-    }
-
-    private fun readSystemBrightness(): Int? = try {
-        Settings.System.getInt(activity.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
-    } catch (e: Exception) {
-        null
+    // The system owns brightness across a background trip: drop our window
+    // override on resume and keep whatever brightness the system shows now.
+    private fun releaseBrightnessOverride() {
+        val layoutParams = activity.window.attributes
+        layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        activity.window.attributes = layoutParams
     }
 
     private fun handleIntent(intent: Intent?) {
@@ -848,14 +837,10 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
 
             if (brightness == null || brightness < 0.0) {
                 layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
-                systemBrightnessAtOverride = null
             } else {
                 if (brightness > 1.0) {
                     invoke.reject("Brightness must be between 0.0 and 1.0, or null to use system brightness")
                     return
-                }
-                if (systemBrightnessAtOverride == null) {
-                    systemBrightnessAtOverride = readSystemBrightness()
                 }
                 layoutParams.screenBrightness = brightness
             }

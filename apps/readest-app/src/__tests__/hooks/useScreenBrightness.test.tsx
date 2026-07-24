@@ -65,6 +65,24 @@ describe('useScreenBrightness', () => {
     expect(h.syncScreenBrightness).not.toHaveBeenCalled();
   });
 
+  it('re-applies the manual brightness on foreground', () => {
+    h.autoScreenBrightness = false;
+    h.screenBrightness = 40;
+    setup();
+    h.setScreenBrightness.mockClear();
+    becomeVisible('visible');
+    expect(h.setScreenBrightness).toHaveBeenCalledWith(0.4);
+  });
+
+  it('leaves the system value alone on foreground in system-brightness mode', () => {
+    h.autoScreenBrightness = true;
+    h.screenBrightness = 40;
+    setup();
+    h.setScreenBrightness.mockClear();
+    becomeVisible('visible');
+    expect(h.setScreenBrightness).not.toHaveBeenCalled();
+  });
+
   it('applies the saved manual brightness when auto is off', () => {
     h.autoScreenBrightness = false;
     h.screenBrightness = 40;

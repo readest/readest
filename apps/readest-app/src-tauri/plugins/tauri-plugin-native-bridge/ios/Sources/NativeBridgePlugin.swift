@@ -525,7 +525,7 @@ class NativeBridgePlugin: Plugin {
   // leaving the system stuck at the app's level until the user nudges it
   // manually (issue #4885). We remember the value that was there before the
   // first override so we can hand it back whenever the app leaves the
-  // foreground, and re-assert the app's value when it returns.
+  // foreground; on return the system value stands and the override is dropped.
   private var appDesiredBrightness: CGFloat?
   private var systemBrightnessBeforeOverride: CGFloat?
 
@@ -606,7 +606,10 @@ class NativeBridgePlugin: Plugin {
   }
 
   @objc func appDidBecomeActive() {
-    reapplyBrightnessUnlessSystemMoved()
+    // The system owns brightness across a background trip: drop our override and
+    // keep whatever brightness the system shows now.
+    appDesiredBrightness = nil
+    systemBrightnessBeforeOverride = nil
     if volumeKeyHandler != nil {
       activateVolumeKeyInterception()
     }
@@ -616,18 +619,6 @@ class NativeBridgePlugin: Plugin {
     // dark mode from Control Center.
     notifyColorSchemeChange()
     syncShareExtensionState()
-  }
-
-  private func reapplyBrightnessUnlessSystemMoved() {
-    guard let desired = appDesiredBrightness, let handedBack = systemBrightnessBeforeOverride else {
-      return
-    }
-    if UIScreen.main.brightness == handedBack {
-      UIScreen.main.brightness = desired
-    } else {
-      appDesiredBrightness = nil
-      systemBrightnessBeforeOverride = nil
-    }
   }
 
   /// JS-initiated entry point. The share-extension JS hook calls

@@ -13,10 +13,11 @@ const RELEASE_BRIGHTNESS = -1;
  * releases control back to the system when the reader closes or the user
  * switches "System Screen Brightness" back on.
  *
- * The native iOS bridge additionally restores the system brightness whenever
- * the app backgrounds (and re-applies on foreground), so ambient auto-brightness
- * never stays locked after leaving the app — the reader component does not
- * unmount when the app is merely sent to the home screen.
+ * The native bridge hands brightness back to the system on background and drops
+ * the override on foreground, so the system value always wins across a
+ * background trip; this hook re-applies the manual brightness on foreground
+ * (the reader component does not unmount when the app is sent to the home
+ * screen), while system mode is left at whatever the system now shows.
  */
 export const useScreenBrightness = () => {
   const { appService } = useEnv();
@@ -46,9 +47,21 @@ export const useScreenBrightness = () => {
   useEffect(() => {
     if (!hasScreenBrightness) return;
     const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') syncScreenBrightness();
+      if (document.visibilityState !== 'visible') return;
+      // The native bridge drops the override on foreground, so re-apply the
+      // manual brightness here; in system mode we leave it at the system value.
+      if (!autoScreenBrightness && screenBrightness >= 0) {
+        setScreenBrightness(screenBrightness / 100);
+      }
+      syncScreenBrightness();
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
-  }, [hasScreenBrightness, syncScreenBrightness]);
+  }, [
+    hasScreenBrightness,
+    autoScreenBrightness,
+    screenBrightness,
+    setScreenBrightness,
+    syncScreenBrightness,
+  ]);
 };
