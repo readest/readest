@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Local nightly-updater verification harness (Tier 2 detection + Tier 4 invoke).
 //
 // `pnpm verify:nightly` serves crafted nightly/stable manifests + a test artifact

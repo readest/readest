@@ -25,7 +25,7 @@ describe('screen wake lock scope', () => {
   const callSites = walk(SRC)
     .filter((path) => !path.endsWith('hooks/useScreenWakeLock.ts'))
     .filter((path) => /useScreenWakeLock\(/.test(readFileSync(path, 'utf8')))
-    .map((path) => relative(SRC, path));
+    .map((path) => relative(SRC, path).replace(/\\/g, '/'));
 
   it('is acquired while reading', () => {
     expect(callSites).toContain('app/reader/components/Reader.tsx');
