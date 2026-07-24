@@ -231,7 +231,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({ bookKey, results, onSelec
   }
 
   return (
-    <div className='search-results overflow-y-auto font-sans text-sm font-light'>
+    <div className='search-results overflow-y-auto px-2 font-sans text-sm font-light'>
       <ul className='px-2'>
         {results.map((result, index) => {
           if ('subitems' in result) {
