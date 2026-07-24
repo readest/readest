@@ -528,7 +528,6 @@ class NativeBridgePlugin: Plugin {
   // foreground, and re-assert the app's value when it returns.
   private var appDesiredBrightness: CGFloat?
   private var systemBrightnessBeforeOverride: CGFloat?
-  private static let brightnessDriftTolerance: CGFloat = 0.1
 
   @objc public override func load(webview: WKWebView) {
     self.webView = webview
@@ -623,7 +622,7 @@ class NativeBridgePlugin: Plugin {
     guard let desired = appDesiredBrightness, let handedBack = systemBrightnessBeforeOverride else {
       return
     }
-    if abs(UIScreen.main.brightness - handedBack) <= Self.brightnessDriftTolerance {
+    if UIScreen.main.brightness == handedBack {
       UIScreen.main.brightness = desired
     } else {
       appDesiredBrightness = nil

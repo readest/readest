@@ -214,7 +214,6 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     companion object {
         private const val REQUEST_MANAGE_STORAGE = 1001
         private const val FOLDER_PICKER_REQUEST_CODE = 1002
-        private const val BRIGHTNESS_DRIFT_TOLERANCE = 26 // of 0-255
         var pendingInvoke: Invoke? = null
         var pendingFolderPickerInvoke: Invoke? = null
         private var instance: NativeBridgePlugin? = null
@@ -250,7 +249,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     private fun dropBrightnessOverrideIfSystemMoved() {
         val baseline = systemBrightnessAtOverride ?: return
         val current = readSystemBrightness() ?: return
-        if (kotlin.math.abs(current - baseline) > BRIGHTNESS_DRIFT_TOLERANCE) {
+        if (current != baseline) {
             val layoutParams = activity.window.attributes
             layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
             activity.window.attributes = layoutParams
