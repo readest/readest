@@ -142,10 +142,6 @@ const TTSPlayerSheet = ({
   const [view, setView] = useState<SheetView>('main');
   const [voiceGroups, setVoiceGroups] = useState<TTSVoicesGroup[]>([]);
   const [rate, setRate] = useState(viewSettings?.ttsRate ?? 1.0);
-  const [gap, setGap] = useState(viewSettings?.ttsSentenceGap ?? DEFAULT_SENTENCE_GAP_SEC);
-  const [paragraphGap, setParagraphGap] = useState(
-    viewSettings?.ttsParagraphGap ?? DEFAULT_PARAGRAPH_GAP_SEC,
-  );
   const [selectedVoice, setSelectedVoice] = useState('');
   const timerLabel = useCountdownLabel(timeoutTimestamp);
   const iconSize18 = useResponsiveSize(18);
@@ -162,8 +158,6 @@ const TTSPlayerSheet = ({
     if (!isOpen) return;
     setView('main');
     setRate(getViewSettings(bookKey)?.ttsRate ?? 1.0);
-    setGap(getViewSettings(bookKey)?.ttsSentenceGap ?? DEFAULT_SENTENCE_GAP_SEC);
-    setParagraphGap(getViewSettings(bookKey)?.ttsParagraphGap ?? DEFAULT_PARAGRAPH_GAP_SEC);
     setSelectedVoice(onGetVoiceId());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -189,44 +183,32 @@ const TTSPlayerSheet = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, ttsLang]);
 
+  /* Scale a given `baseGap` based on a given `rate`. */
+  const scaleGap = (baseGap: number, rate: number) => {
+    const k = 0.6;
+    return Math.round(baseGap / Math.pow(rate, k));
+  };
+
   const handleSelectRate = (value: number) => {
     setRate(value);
     onSetRate(value);
+
+    const gap = scaleGap(DEFAULT_SENTENCE_GAP_SEC, value);
+    const paragraphGap = scaleGap(DEFAULT_PARAGRAPH_GAP_SEC, value);
+    onSetSentenceGap(gap);
+    onSetParagraphGap(paragraphGap);
+
     const vs = getViewSettings(bookKey)!;
     vs.ttsRate = value;
+    vs.ttsSentenceGap = gap;
+    vs.ttsParagraphGap = paragraphGap;
     setViewSettings(bookKey, vs);
     // Read the store fresh at call time: a `settings` captured at render goes
     // stale if anything else persisted settings since this sheet mounted.
     const { settings, setSettings, saveSettings } = useSettingsStore.getState();
     settings.globalViewSettings.ttsRate = value;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
-  };
-
-  const handleSelectGap = (value: number) => {
-    setGap(value);
-    onSetSentenceGap(value);
-    const vs = getViewSettings(bookKey)!;
-    vs.ttsSentenceGap = value;
-    setViewSettings(bookKey, vs);
-    // Read the store fresh at call time: a `settings` captured at render goes
-    // stale if anything else persisted settings since this sheet mounted.
-    const { settings, setSettings, saveSettings } = useSettingsStore.getState();
-    settings.globalViewSettings.ttsSentenceGap = value;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
-  };
-
-  const handleSelectParagraphGap = (value: number) => {
-    setParagraphGap(value);
-    onSetParagraphGap(value);
-    const vs = getViewSettings(bookKey)!;
-    vs.ttsParagraphGap = value;
-    setViewSettings(bookKey, vs);
-    // Read the store fresh at call time: a `settings` captured at render goes
-    // stale if anything else persisted settings since this sheet mounted.
-    const { settings, setSettings, saveSettings } = useSettingsStore.getState();
-    settings.globalViewSettings.ttsParagraphGap = value;
+    settings.globalViewSettings.ttsSentenceGap = gap;
+    settings.globalViewSettings.ttsParagraphGap = paragraphGap;
     setSettings(settings);
     saveSettings(envConfig, settings);
   };
