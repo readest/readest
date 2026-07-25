@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BookSearchMatch, BookSearchResult, SearchExcerpt } from '@/types/book';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -79,11 +79,14 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
     </li>
   );
 };
+
 interface ChapterSectionProps {
   bookKey: string;
   label: string;
   subitems: BookSearchMatch[];
   nearestCfi: string | null;
+  isExpanded: boolean;
+  onToggle: () => void;
   onSelectResult: (cfi: string) => void;
 }
 
@@ -92,9 +95,10 @@ const ChapterSection: React.FC<ChapterSectionProps> = ({
   label,
   subitems,
   nearestCfi,
+  isExpanded,
+  onToggle,
   onSelectResult,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
   const matchCount = subitems.length;
   const headerRef = useRef<HTMLHeadingElement>(null);
   const wasStuckRef = useRef<boolean>(false);
@@ -102,7 +106,7 @@ const ChapterSection: React.FC<ChapterSectionProps> = ({
   const handleToggle = useCallback(() => {
     if (isExpanded && headerRef.current) {
       const header = headerRef.current;
-      const container = header.closest('.overflow-y-auto') as HTMLElement | null;
+      const container = header.closest('.search-results') as HTMLElement | null;
       if (container) {
         // Detect if the header is currently stuck at the top of the scroll container.
         // Compare visual positions (getBoundingClientRect) rather than offsetTop,
@@ -112,8 +116,8 @@ const ChapterSection: React.FC<ChapterSectionProps> = ({
         wasStuckRef.current = headerRect.top <= containerRect.top + 1;
       }
     }
-    setIsExpanded((prev) => !prev);
-  }, [isExpanded]);
+    onToggle();
+  }, [isExpanded, onToggle]);
 
   // useLayoutEffect runs synchronously after DOM mutations but before paint,
   // avoiding a visible flash when we adjust scroll position.
@@ -122,7 +126,7 @@ const ChapterSection: React.FC<ChapterSectionProps> = ({
     if (!wasStuckRef.current) return;
     const header = headerRef.current;
     if (!header) return;
-    const container = header.closest('.overflow-y-auto') as HTMLElement | null;
+    const container = header.closest('.search-results') as HTMLElement | null;
     if (!container) return;
     // Recalculate the header's position after the collapse (DOM has already
     // updated) and scroll so the collapsed header sits at the top of the viewport.
@@ -134,41 +138,40 @@ const ChapterSection: React.FC<ChapterSectionProps> = ({
 
   return (
     <ul>
+      {/* The sticky band carries the surface color so results scrolling underneath
+          stay occluded; the button inside owns the hover and focus affordances. */}
       <h3
         ref={headerRef}
-        className='sticky top-0 z-10 bg-base-200 line-clamp-1 cursor-pointer select-none font-normal hover:bg-base-300 rounded px-1 py-1 flex items-center justify-between'
-        onClick={handleToggle}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleToggle();
-          }
-        }}
-        tabIndex={0}
-        role='button'
-        aria-expanded={isExpanded}
+        className='not-eink:bg-base-200 eink:bg-base-100 sticky top-0 z-10 font-normal'
       >
-        <span className='flex items-center gap-1.5 min-w-0'>
-          <svg
-            viewBox='0 0 8 10'
-            width='8'
-            height='10'
-            className={clsx(
-              'shrink-0 text-base-content transition-transform duration-200',
-              isExpanded ? 'rotate-90' : 'rotate-0',
-            )}
-            style={{ transformOrigin: 'center' }}
-            fill='currentColor'
-            aria-hidden='true'
-            focusable='false'
-          >
-            <polygon points='0 0, 8 5, 0 10' />
-          </svg>
-          <span className='truncate'>{label}</span>
-        </span>
-        <span className='text-xs text-base-content/60 whitespace-nowrap ml-2 shrink-0'>
-          {matchCount}
-        </span>
+        <button
+          type='button'
+          className='not-eink:hover:bg-base-300 focus-visible:ring-base-content/15 flex w-full select-none items-center justify-between rounded px-1 py-1 text-start focus-visible:outline-none focus-visible:ring-2'
+          onClick={handleToggle}
+          aria-expanded={isExpanded}
+        >
+          <span className='flex min-w-0 items-center gap-1.5'>
+            <svg
+              viewBox='0 0 8 10'
+              width='8'
+              height='10'
+              className={clsx(
+                'text-base-content not-eink:transition-transform shrink-0',
+                isExpanded ? 'rotate-90' : 'rotate-0',
+              )}
+              style={{ transformOrigin: 'center' }}
+              fill='currentColor'
+              aria-hidden='true'
+              focusable='false'
+            >
+              <polygon points='0 0, 8 5, 0 10' />
+            </svg>
+            <span className='truncate'>{label}</span>
+          </span>
+          <span className='text-base-content/60 ms-2 shrink-0 whitespace-nowrap text-xs'>
+            {matchCount}
+          </span>
+        </button>
       </h3>
       {isExpanded && (
         <ul>
@@ -200,6 +203,23 @@ const SearchResults: React.FC<SearchResultsProps> = ({ bookKey, results, onSelec
   const { getSearchNavState } = useSidebarStore();
   const progress = getProgress(bookKey);
   const { searchProgress, searchError } = getSearchNavState(bookKey);
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => new Set());
+
+  // Starting a search resets progress to 0 while the previous results stay
+  // mounted until the first new hit arrives. Sections are keyed by index+label,
+  // so a reused key would otherwise come back collapsed for results the reader
+  // has never seen.
+  useEffect(() => {
+    if (searchProgress === 0) setCollapsedSections(new Set());
+  }, [searchProgress]);
+
+  const toggleSection = useCallback((sectionKey: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(sectionKey)) next.add(sectionKey);
+      return next;
+    });
+  }, []);
 
   const nearestCfi = useMemo(() => {
     const allCfis: string[] = [];
@@ -235,13 +255,16 @@ const SearchResults: React.FC<SearchResultsProps> = ({ bookKey, results, onSelec
       <ul className='px-2'>
         {results.map((result, index) => {
           if ('subitems' in result) {
+            const sectionKey = `${index}-${result.label}`;
             return (
               <ChapterSection
-                key={`${index}-${result.label}`}
+                key={sectionKey}
                 bookKey={bookKey}
                 label={result.label}
                 subitems={result.subitems}
                 nearestCfi={nearestCfi}
+                isExpanded={!collapsedSections.has(sectionKey)}
+                onToggle={() => toggleSection(sectionKey)}
                 onSelectResult={onSelectResult}
               />
             );
