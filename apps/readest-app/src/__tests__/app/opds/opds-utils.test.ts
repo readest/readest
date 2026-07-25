@@ -375,6 +375,36 @@ describe('opdsUtils', () => {
       // The function strips search params for non-scheme relativeTo
       expect(result).not.toContain('page=2');
     });
+
+    // bookserver.mek.oszk.hu (readest issue #5300) serves its catalog over HTTPS
+    // but publishes absolute `http://` links to itself; its plain-HTTP vhost
+    // 301-redirects to an unrelated host that 404s, so every sub-feed failed.
+    it('should keep same-host links on https when the feed was fetched over https', () => {
+      const result = resolveURL(
+        'http://bookserver.mek.oszk.hu/abcrend.atom',
+        'https://bookserver.mek.oszk.hu/',
+      );
+      expect(result).toBe('https://bookserver.mek.oszk.hu/abcrend.atom');
+    });
+
+    it('should upgrade same-host links behind the proxy base too', () => {
+      const proxyBase = '/api/opds/proxy?url=https%3A%2F%2Fexample.com%2Fopds';
+      expect(resolveURL('http://example.com/feed/new', proxyBase)).toBe(
+        'https://example.com/feed/new',
+      );
+    });
+
+    it('should leave cross-host http links untouched', () => {
+      expect(resolveURL('http://other.com/feed', 'https://example.com/opds')).toBe(
+        'http://other.com/feed',
+      );
+    });
+
+    it('should not upgrade when the feed itself was fetched over http', () => {
+      expect(resolveURL('http://example.com/feed', 'http://example.com/opds')).toBe(
+        'http://example.com/feed',
+      );
+    });
   });
 
   describe('getFileExtFromPath', () => {

@@ -187,7 +187,25 @@ export const resolveURL = (url: string, relativeTo: string): string => {
     return resolveURL(url, proxiedURL);
   }
   try {
-    if (relativeTo.includes(':')) return new URL(url, relativeTo).toString();
+    if (relativeTo.includes(':')) {
+      const resolved = new URL(url, relativeTo);
+      const base = new URL(relativeTo);
+      // Some catalogs are only reachable over HTTPS yet publish absolute
+      // `http://` links to themselves. bookserver.mek.oszk.hu (readest issue
+      // #5300) 301-redirects every plain-HTTP request to an unrelated host that
+      // 404s, so following those links breaks navigation. When the feed itself
+      // came over HTTPS, keep same-host links on HTTPS -- the upgrade browsers
+      // already apply to mixed content. Cross-host links are left alone so this
+      // can never silently retarget a request.
+      if (
+        base.protocol === 'https:' &&
+        resolved.protocol === 'http:' &&
+        resolved.host === base.host
+      ) {
+        resolved.protocol = 'https:';
+      }
+      return resolved.toString();
+    }
     const root = 'https://invalid.invalid/';
     const obj = new URL(url, root + relativeTo);
     obj.search = '';
