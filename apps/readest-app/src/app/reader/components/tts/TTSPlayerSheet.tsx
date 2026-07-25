@@ -36,18 +36,12 @@ import { TTSPlaybackInfo } from './usePlaybackInfo';
 import { useCountdownLabel } from './useCountdownLabel';
 import TTSScrubber from './TTSScrubber';
 import SpeedRuler, { formatRate } from './SpeedRuler';
-import TickRuler from './TickRuler';
 import TTSChaptersView from './TTSChaptersView';
 import type { UseTTSDownloadsResult } from '@/app/reader/hooks/useTTSDownloads';
 
 type SheetView = 'main' | 'speed' | 'voice' | 'timer' | 'chapters';
 
 export const formatGap = (sec: number) => `${parseFloat(sec.toFixed(2))}s`;
-
-// Pause ruler configurations: 0.05s steps keep every legacy chip preset
-// reachable (sentence 0-0.6s, paragraph 0-2s).
-const SENTENCE_PAUSE_MARKS = [0, 0.2, 0.4, 0.6];
-const PARAGRAPH_PAUSE_MARKS = [0, 0.5, 1, 1.5, 2];
 
 const getTTSTimeoutOptions = (_: TranslationFunc) => {
   return [
@@ -74,7 +68,6 @@ type TTSPlayerSheetProps = {
   ttsLang: string;
   isPlaying: boolean;
   hasTimeline: boolean;
-  hasGapControl: boolean;
   timeoutOption: number;
   timeoutTimestamp: number;
   chapterRemainingSec: number | null;
@@ -105,7 +98,6 @@ const TTSPlayerSheet = ({
   ttsLang,
   isPlaying,
   hasTimeline,
-  hasGapControl,
   timeoutOption,
   timeoutTimestamp,
   chapterRemainingSec,
@@ -483,38 +475,6 @@ const TTSPlayerSheet = ({
       {view === 'speed' && (
         <div className='flex w-full flex-col items-center pb-4 pt-2'>
           <SpeedRuler rate={rate} onSelect={handleSelectRate} />
-          {hasGapControl && (
-            <>
-              <div className='text-base-content/60 w-full px-2 py-1 text-sm sm:text-xs'>
-                {_('Sentence Pause')}
-              </div>
-              <TickRuler
-                min={0}
-                max={0.6}
-                step={0.05}
-                marks={SENTENCE_PAUSE_MARKS}
-                value={gap}
-                ariaLabel={_('Sentence Pause')}
-                formatValue={formatGap}
-                formatMark={formatGap}
-                onSelect={handleSelectGap}
-              />
-            </>
-          )}
-          <div className='text-base-content/60 w-full px-2 py-1 text-sm sm:text-xs'>
-            {_('Paragraph Pause')}
-          </div>
-          <TickRuler
-            min={0}
-            max={2}
-            step={0.05}
-            marks={PARAGRAPH_PAUSE_MARKS}
-            value={paragraphGap}
-            ariaLabel={_('Paragraph Pause')}
-            formatValue={formatGap}
-            formatMark={formatGap}
-            onSelect={handleSelectParagraphGap}
-          />
         </div>
       )}
       {view === 'voice' && (
