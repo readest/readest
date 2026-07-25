@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MdChevronRight } from 'react-icons/md';
+import { SiMangaupdates } from 'react-icons/si';
 import {
   RiBookOpenLine,
   RiRssLine,
@@ -625,6 +626,12 @@ const IntegrationsPanel: React.FC = () => {
               title={_('OPDS Catalogs')}
               status={opdsStatus}
               onClick={() => setSubPage('opds')}
+            />
+            <IntegrationRow
+              icon={SiMangaupdates}
+              title={_('MangaDex')}
+              status={_('Download manga to your library')}
+              onClick={() => router.push('/mangadex')}
             />
             <IntegrationRow
               icon={RiSendPlaneLine}
