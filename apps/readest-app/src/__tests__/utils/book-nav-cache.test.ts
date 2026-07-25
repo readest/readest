@@ -6,6 +6,7 @@ import type { BookDoc, TOCItem, SectionItem } from '@/libs/document';
 import {
   computeBookNav,
   hydrateBookNav,
+  isBookNavCacheCurrent,
   updateToc,
   findTocItemBS,
   BOOK_NAV_VERSION,
@@ -289,4 +290,37 @@ describe('hierarchical fragments under a single section', () => {
       expect(foundNested).toBe(true);
     }
   }, 30000);
+});
+
+describe('isBookNavCacheCurrent — nav cache invalidation (#5308)', () => {
+  // A nav.json persisted by a pre-#5097 build stored the ampersand chapter's
+  // TOC href percent-encoded (`OEBPS/a%26b.html`). foliate's resolveHref decodes
+  // with decodeURI(), which leaves the reserved set encoded, so that href no
+  // longer matches the now-decoded manifest entry and TOC navigation silently
+  // no-ops. readerStore reuses a cache only when `isBookNavCacheCurrent` holds,
+  // so the BOOK_NAV_VERSION bump makes those stale caches recompute instead.
+  const PRE_5097_NAV_VERSION = 3;
+
+  const makeCache = (version: number): BookNav => ({
+    version,
+    toc: [
+      { label: 'Chapter 1', href: 'OEBPS/normal.html' },
+      // The still-encoded href a pre-#5097 build would have cached.
+      { label: 'Chapter 2: A&B', href: 'OEBPS/a%26b.html' },
+    ] as TOCItem[],
+    sections: {},
+  });
+
+  it('rejects a pre-#5097 (v3) cache so the reader recomputes a decoded TOC', () => {
+    expect(isBookNavCacheCurrent(makeCache(PRE_5097_NAV_VERSION))).toBe(false);
+  });
+
+  it('accepts a cache written by the current algorithm version', () => {
+    expect(isBookNavCacheCurrent(makeCache(BOOK_NAV_VERSION))).toBe(true);
+  });
+
+  it('treats a missing cache as not current', () => {
+    expect(isBookNavCacheCurrent(null)).toBe(false);
+    expect(isBookNavCacheCurrent(undefined)).toBe(false);
+  });
 });

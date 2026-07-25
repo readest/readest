@@ -61,9 +61,15 @@ export type { SectionFragment };
 //     of inherited from the TOC item (ported from foliate-js 317051e).
 // v3: nav-enrichment fallback — when toc.ncx is sparse, scan section HTMLs for
 //     embedded <nav> elements and merge their links as top-level TOC items.
+// v4: invalidate caches written before the #5097 reserved-char href fix. Those
+//     builds stored the ampersand chapter's TOC href percent-encoded
+//     (`OEBPS/a%26b.html`); foliate's resolveHref decodes with decodeURI(),
+//     which leaves the reserved set encoded, so the stale href no longer matches
+//     the now-decoded manifest entry and TOC navigation silently no-ops (#5308).
+//     Bumping forces a one-time recompute that re-derives the decoded TOC.
 // -----------------------------------------------------------------------------
 
-export const BOOK_NAV_VERSION = 3;
+export const BOOK_NAV_VERSION = 4;
 
 export interface BookNavSection {
   id: string;
@@ -75,6 +81,18 @@ export interface BookNav {
   toc: TOCItem[];
   sections: Record<string, BookNavSection>;
 }
+
+/**
+ * Whether a persisted nav cache may be reused as-is. A cache is only current
+ * when it was produced by the running BOOK_NAV_VERSION; anything older is
+ * recomputed. This is what protects readers from stale caches whose output
+ * semantics have since changed — e.g. pre-#5097 caches that stored reserved-
+ * char TOC hrefs percent-encoded, which no longer resolve against the decoded
+ * manifest (see the BOOK_NAV_VERSION docblock, #5308).
+ */
+export const isBookNavCacheCurrent = (
+  cachedNav: BookNav | null | undefined,
+): cachedNav is BookNav => cachedNav?.version === BOOK_NAV_VERSION;
 
 const convertTocLabels = (items: TOCItem[], convertChineseVariant: ConvertChineseVariant) => {
   items.forEach((item) => {

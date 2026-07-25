@@ -116,7 +116,16 @@ describe('EPUB hrefs that percent-encode reserved characters (#5097)', () => {
 
     // Tapping the TOC row hands its href to `resolveHref`; it must land on the
     // chapter's spine index instead of resolving to nothing.
+    expect(toc[1]!.href).toBe('OEBPS/a&b.html');
     expect(epub.resolveHref(toc[1]!.href)?.index).toBe(1);
+
+    // The decoded href resolves; the still-encoded form a pre-#5097 nav cache
+    // would hold does not. `resolveHref` decodes with `decodeURI`, which leaves
+    // the reserved set encoded, so `OEBPS/a%26b.html` never matches the decoded
+    // manifest entry -> `goTo` silently no-ops. A stale cache carrying that
+    // encoded href is exactly the #5308 TOC-nav failure, which is why
+    // BOOK_NAV_VERSION is bumped (see book-nav-cache.test.ts) to invalidate it.
+    expect(epub.resolveHref('OEBPS/a%26b.html')).toBeNull();
   });
 
   // Issue #346, "Pictures in book (ePub) can not be displayed": a book with a
