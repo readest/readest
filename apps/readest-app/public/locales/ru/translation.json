@@ -320,7 +320,6 @@
   "Bottom Margin (px)": "Нижний отступ (пикс)",
   "Right Margin (px)": "Правый отступ (пикс)",
   "Left Margin (px)": "Левый отступ (пикс)",
-  "Column Gap (%)": "Промежуток между колонками (%)",
   "Always Show Status Bar": "Всегда показывать панель состояния",
   "Custom Content CSS": "CSS содержимого",
   "Enter CSS for book content styling...": "Введите CSS для оформления содержимого книги...",
@@ -2007,5 +2006,6 @@
   "Show original": "Показать оригинал",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Весь мир — театр, а люди в нём — актёры; у них есть свои уходы и выходы, и каждый за свою жизнь играет множество ролей.",
   "— William Shakespeare, As You Like It": "— Уильям Шекспир, «Как вам это понравится»",
-  "Failed to download and install update": "Не удалось загрузить и установить обновление"
+  "Failed to download and install update": "Не удалось загрузить и установить обновление",
+  "Additional Margin (%)": "Дополнительное поле (%)"
 }

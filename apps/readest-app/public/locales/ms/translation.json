@@ -576,7 +576,6 @@
   "Bottom Margin (px)": "Margin Bawah (px)",
   "Left Margin (px)": "Margin Kiri (px)",
   "Right Margin (px)": "Margin Kanan (px)",
-  "Column Gap (%)": "Jurang Lajur (%)",
   "Maximum Number of Columns": "Bilangan Maksimum Lajur",
   "Maximum Column Height": "Tinggi Maksimum Lajur",
   "Maximum Column Width": "Lebar Maksimum Lajur",
@@ -1899,5 +1898,6 @@
   "Show original": "Tunjukkan asal",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Seluruh dunia ini pentas, dan semua lelaki dan wanita hanyalah pelakon; mereka ada masa keluar dan masa masuk, dan seseorang dalam hidupnya memainkan pelbagai peranan.",
   "— William Shakespeare, As You Like It": "— William Shakespeare, As You Like It",
-  "Failed to download and install update": "Gagal memuat turun dan memasang kemas kini"
+  "Failed to download and install update": "Gagal memuat turun dan memasang kemas kini",
+  "Additional Margin (%)": "Margin Tambahan (%)"
 }

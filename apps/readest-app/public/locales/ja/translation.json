@@ -311,7 +311,6 @@
   "Bottom Margin (px)": "下マージン (px)",
   "Right Margin (px)": "右マージン (px)",
   "Left Margin (px)": "左マージン (px)",
-  "Column Gap (%)": "列間の間隔 (%)",
   "Always Show Status Bar": "ステータスバーを常に表示",
   "Custom Content CSS": "コンテンツCSS",
   "Enter CSS for book content styling...": "本のコンテンツ用CSSを入力...",
@@ -1899,5 +1898,6 @@
   "Show original": "原文を表示",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "この世はすべて舞台、男も女もみな役者にすぎない。彼らには退場があり登場があり、一人の人間はその一生でいくつもの役を演じる。",
   "— William Shakespeare, As You Like It": "— ウィリアム・シェイクスピア『お気に召すまま』",
-  "Failed to download and install update": "アップデートのダウンロードとインストールに失敗しました"
+  "Failed to download and install update": "アップデートのダウンロードとインストールに失敗しました",
+  "Additional Margin (%)": "追加の余白 (%)"
 }

@@ -972,7 +972,6 @@
   "Bottom Margin (px)": "Spodnji rob (px)",
   "Left Margin (px)": "Levi rob (px)",
   "Right Margin (px)": "Desni rob (px)",
-  "Column Gap (%)": "Razmik med stolpci (%)",
   "Maximum Number of Columns": "Največje število stolpcev",
   "Maximum Column Height": "Največja višina stolpca",
   "Maximum Column Width": "Največja širina stolpca",
@@ -2007,5 +2006,6 @@
   "Show original": "Pokaži izvirnik",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Ves svet je oder, in vsi ljudje, moški in ženske, so le igralci; imajo svoje odhode in prihode, in en sam človek v svojem življenju igra mnogo vlog.",
   "— William Shakespeare, As You Like It": "— William Shakespeare, Kakor vam drago",
-  "Failed to download and install update": "Prenos in namestitev posodobitve ni uspela"
+  "Failed to download and install update": "Prenos in namestitev posodobitve ni uspela",
+  "Additional Margin (%)": "Dodatni rob (%)"
 }

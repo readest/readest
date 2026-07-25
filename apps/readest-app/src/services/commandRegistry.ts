@@ -292,8 +292,8 @@ const layoutPanelItems = [
   },
   {
     id: 'settings.layout.pageGap',
-    labelKey: _('Column Gap (%)'),
-    keywords: ['page', 'gap', 'spacing', 'gutter'],
+    labelKey: _('Additional Margin (%)'),
+    keywords: ['page', 'margin', 'additional', 'gap', 'spacing', 'gutter', 'column'],
     section: 'Page',
   },
   {

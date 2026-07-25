@@ -320,7 +320,6 @@
   "Bottom Margin (px)": "Нижній відступ (px)",
   "Right Margin (px)": "Правий відступ (px)",
   "Left Margin (px)": "Лівий відступ (px)",
-  "Column Gap (%)": "Проміжок між стовпцями (%)",
   "Always Show Status Bar": "Завжди показувати панель стану",
   "Custom Content CSS": "Користуацький CSS вмісту",
   "Enter CSS for book content styling...": "Введіть CSS для стилізації вмісту книги...",
@@ -2007,5 +2006,6 @@
   "Show original": "Показати оригінал",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Увесь світ — театр, і всі чоловіки й жінки в ньому — лише актори; вони мають свої виходи й входи, і кожна людина за своє життя грає багато ролей.",
   "— William Shakespeare, As You Like It": "— Вільям Шекспір, «Як вам це сподобається»",
-  "Failed to download and install update": "Не вдалося завантажити та встановити оновлення"
+  "Failed to download and install update": "Не вдалося завантажити та встановити оновлення",
+  "Additional Margin (%)": "Додаткове поле (%)"
 }

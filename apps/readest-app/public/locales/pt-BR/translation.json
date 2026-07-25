@@ -1158,7 +1158,6 @@
   "Bottom Margin (px)": "Margem inferior (px)",
   "Left Margin (px)": "Margem esquerda (px)",
   "Right Margin (px)": "Margem direita (px)",
-  "Column Gap (%)": "Espaço entre colunas (%)",
   "Maximum Number of Columns": "Número máximo de colunas",
   "Maximum Column Height": "Altura máxima da coluna",
   "Maximum Column Width": "Largura máxima da coluna",
@@ -1971,5 +1970,6 @@
   "Show original": "Mostrar original",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "O mundo inteiro é um palco, e todos os homens e mulheres não passam de atores; eles têm suas saídas e suas entradas, e um homem, em seu tempo, representa muitos papéis.",
   "— William Shakespeare, As You Like It": "— William Shakespeare, Como Gostais",
-  "Failed to download and install update": "Falha ao baixar e instalar a atualização"
+  "Failed to download and install update": "Falha ao baixar e instalar a atualização",
+  "Additional Margin (%)": "Margem adicional (%)"
 }

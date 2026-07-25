@@ -313,7 +313,6 @@
   "Bottom Margin (px)": "حاشیه‌ی پایین (px)",
   "Right Margin (px)": "حاشیه‌ی راست (px)",
   "Left Margin (px)": "حاشیه‌ی چپ (px)",
-  "Column Gap (%)": "فاصله‌ی ستون (%)",
   "Always Show Status Bar": "نمایش همیشگی نوار وضعیت",
   "Custom Content CSS": "CSS محتوای سفارشی",
   "Enter CSS for book content styling...": "CSS برای استایل محتوای کتاب وارد کنید...",
@@ -1935,5 +1934,6 @@
   "Show original": "نمایش متن اصلی",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "تمام دنیا یک صحنه است و همه‌ی مردان و زنان تنها بازیگرند؛ آن‌ها را خروج‌ها و ورودهایی است، و هر کس در طول عمر خود نقش‌های بسیاری بازی می‌کند.",
   "— William Shakespeare, As You Like It": "— ویلیام شکسپیر، هرطور که دوست دارید",
-  "Failed to download and install update": "دانلود و نصب به‌روزرسانی ناموفق بود"
+  "Failed to download and install update": "دانلود و نصب به‌روزرسانی ناموفق بود",
+  "Additional Margin (%)": "حاشیه‌ی اضافی (%)"
 }

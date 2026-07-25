@@ -325,7 +325,6 @@
   "Bottom Margin (px)": "الهامش السفلي (بكسل)",
   "Right Margin (px)": "الهامش الأيمن (بكسل)",
   "Left Margin (px)": "الهامش الأيسر (بكسل)",
-  "Column Gap (%)": "تباعد الأعمدة (%)",
   "Always Show Status Bar": "دائمًا إظهار شريط الحالة",
   "Custom Content CSS": "CSS مخصص للمحتوى",
   "Enter CSS for book content styling...": "أدخل CSS لتنسيق محتوى الكتاب...",
@@ -2079,5 +2078,6 @@
   "Show original": "إظهار الأصل",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "العالم كله مسرح، وكل الرجال والنساء مجرد ممثلين؛ لهم مخارجهم ومداخلهم، والمرء الواحد في زمنه يؤدي أدوارًا كثيرة.",
   "— William Shakespeare, As You Like It": "— ويليام شكسبير، كما تشاء",
-  "Failed to download and install update": "فشل تنزيل التحديث وتثبيته"
+  "Failed to download and install update": "فشل تنزيل التحديث وتثبيته",
+  "Additional Margin (%)": "هامش إضافي (%)"
 }

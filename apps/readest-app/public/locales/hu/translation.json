@@ -1008,7 +1008,6 @@
   "Bottom Margin (px)": "Alsó margó (px)",
   "Left Margin (px)": "Bal margó (px)",
   "Right Margin (px)": "Jobb margó (px)",
-  "Column Gap (%)": "Oszlopköz (%)",
   "Maximum Number of Columns": "Oszlopok maximális száma",
   "Maximum Column Height": "Maximális oszlopmagasság",
   "Maximum Column Width": "Maximális oszlopszélesség",
@@ -1935,5 +1934,6 @@
   "Show original": "Eredeti megjelenítése",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Színház az egész világ, és színész benne minden férfi és nő; megvannak a maguk kilépői és belépői, és egy ember életében sok szerepet játszik el.",
   "— William Shakespeare, As You Like It": "— William Shakespeare, Ahogy tetszik",
-  "Failed to download and install update": "A frissítés letöltése és telepítése sikertelen"
+  "Failed to download and install update": "A frissítés letöltése és telepítése sikertelen",
+  "Additional Margin (%)": "További margó (%)"
 }

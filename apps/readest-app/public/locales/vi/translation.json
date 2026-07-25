@@ -311,7 +311,6 @@
   "Bottom Margin (px)": "Lề dưới (px)",
   "Right Margin (px)": "Lề phải (px)",
   "Left Margin (px)": "Lề trái (px)",
-  "Column Gap (%)": "Khoảng cách cột (%)",
   "Always Show Status Bar": "Luôn hiển thị thanh trạng thái",
   "Custom Content CSS": "CSS nội dung",
   "Enter CSS for book content styling...": "Nhập CSS cho phần nội dung sách...",
@@ -1899,5 +1898,6 @@
   "Show original": "Hiển thị bản gốc",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Cả thế giới là một sân khấu, và tất cả đàn ông đàn bà chỉ là những diễn viên; họ có lúc ra và lúc vào, và một người trong đời mình đóng nhiều vai.",
   "— William Shakespeare, As You Like It": "— William Shakespeare, Theo Ý Thích",
-  "Failed to download and install update": "Không thể tải xuống và cài đặt bản cập nhật"
+  "Failed to download and install update": "Không thể tải xuống và cài đặt bản cập nhật",
+  "Additional Margin (%)": "Lề bổ sung (%)"
 }

@@ -311,7 +311,6 @@
   "Bottom Margin (px)": "འོག་ངོས་ཀྱི་བར་ཐག",
   "Right Margin (px)": "གཡས་ངོས་ཀྱི་བར་ཐག",
   "Left Margin (px)": "གཡོན་ངོས་ཀྱི་བར་ཐག",
-  "Column Gap (%)": "གྲལ་ཐིག་བར་གྱི་བར་ཐག",
   "Always Show Status Bar": "རྟག་ཏུ་གནས་ཚུལ་གྱི་གྲལ་ཐིག་མངོན་པ།",
   "Custom Content CSS": "རང་འགུལ་གྱི་ནང་དོན་ CSS",
   "Enter CSS for book content styling...": "དཔེ་དེབ་ཀྱི་ནང་དོན་གྱི་རྣམ་པའི་ CSS ནང་འཇུག་བྱོས།...",
@@ -1899,5 +1898,6 @@
   "Show original": "མ་ཡིག་སྟོན་པ།",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "འཇིག་རྟེན་ཧྲིལ་པོ་ནི་འཁྲབ་སྟེགས་ཤིག་ཡིན། སྐྱེས་པ་དང་བུད་མེད་ཐམས་ཅད་ནི་འཁྲབ་མཁན་ཙམ་ཡིན། ཁོ་ཚོ་ལ་ཐོན་པ་དང་འཛུལ་བ་ཡོད་ཅིང། མི་གཅིག་གིས་རང་གི་མི་ཚེའི་ནང་དུ་འཁྲབ་གཞུང་མང་པོ་འཁྲབ།",
   "— William Shakespeare, As You Like It": "— ཝི་ལི་ཡམ་ཤེགས་སི་པིར།",
-  "Failed to download and install update": "གསར་སྒྱུར་ཕབ་ལེན་དང་སྒྲིག་འཇུག་བྱེད་མ་ཐུབ།"
+  "Failed to download and install update": "གསར་སྒྱུར་ཕབ་ལེན་དང་སྒྲིག་འཇུག་བྱེད་མ་ཐུབ།",
+  "Additional Margin (%)": "ཁ་སྣོན་མཐའ་འགྲམ"
 }

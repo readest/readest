@@ -1136,7 +1136,6 @@
   "Bottom Margin (px)": "Pastki chet (px)",
   "Left Margin (px)": "Chap chet (px)",
   "Right Margin (px)": "Oʻng chet (px)",
-  "Column Gap (%)": "Ustunlar oraligʻi (%)",
   "Maximum Number of Columns": "Maksimal ustunlar soni",
   "Maximum Column Height": "Maksimal ustun balandligi",
   "Maximum Column Width": "Maksimal ustun kengligi",
@@ -1935,5 +1934,6 @@
   "Show original": "Aslini ko'rsatish",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "Butun dunyo — sahna, va barcha erkagu ayol faqat aktyorlardir; ularning o‘z chiqishlari va kirishlari bor, va inson umri davomida ko‘p rollarni o‘ynaydi.",
   "— William Shakespeare, As You Like It": "— Uilyam Shekspir, Xohishingizga ko‘ra",
-  "Failed to download and install update": "Yangilanishni yuklab olish va o'rnatishda xatolik yuz berdi"
+  "Failed to download and install update": "Yangilanishni yuklab olish va o'rnatishda xatolik yuz berdi",
+  "Additional Margin (%)": "Qoʻshimcha chet (%)"
 }

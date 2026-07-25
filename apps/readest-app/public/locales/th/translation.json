@@ -218,7 +218,6 @@
   "Bottom Margin (px)": "ขอบล่าง (px)",
   "Left Margin (px)": "ขอบซ้าย (px)",
   "Right Margin (px)": "ขอบขวา (px)",
-  "Column Gap (%)": "ช่องว่างคอลัมน์ (%)",
   "Maximum Number of Columns": "จำนวนคอลัมน์สูงสุด",
   "Maximum Column Height": "ความสูงคอลัมน์สูงสุด",
   "Maximum Column Width": "ความกว้างคอลัมน์สูงสุด",
@@ -1899,5 +1898,6 @@
   "Show original": "แสดงต้นฉบับ",
   "All the world’s a stage, and all the men and women merely players; they have their exits and their entrances, and one man in his time plays many parts.": "โลกทั้งใบคือเวที และชายหญิงทั้งปวงล้วนเป็นเพียงนักแสดง พวกเขาต่างมีวาระเข้าและออก และคนหนึ่งในชั่วชีวิตของเขาย่อมสวมบทบาทมากมาย",
   "— William Shakespeare, As You Like It": "— วิลเลียม เชกสเปียร์, As You Like It",
-  "Failed to download and install update": "ดาวน์โหลดและติดตั้งการอัปเดตไม่สำเร็จ"
+  "Failed to download and install update": "ดาวน์โหลดและติดตั้งการอัปเดตไม่สำเร็จ",
+  "Additional Margin (%)": "ระยะขอบเพิ่มเติม (%)"
 }

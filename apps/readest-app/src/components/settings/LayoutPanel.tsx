@@ -639,7 +639,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           step={4}
         />
         <NumberInput
-          label={_('Column Gap (%)')}
+          label={_('Additional Margin (%)')}
           value={gapPercent}
           onChange={setGapPercent}
           min={0}
