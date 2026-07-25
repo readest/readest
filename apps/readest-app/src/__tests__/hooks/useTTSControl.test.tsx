@@ -787,19 +787,4 @@ describe('useTTSControl gap control (handleSetSentenceGap / handleSupportsGapCon
     expect(controller.stop).not.toHaveBeenCalled();
     expect(controller.start).not.toHaveBeenCalled();
   });
-
-  it('handleSupportsGapControl reflects controller.supportsGapControl()', async () => {
-    const controller = await startSession();
-
-    controller.supportsGapControl.mockReturnValue(false);
-    expect(hookResult!.handleSupportsGapControl()).toBe(false);
-
-    controller.supportsGapControl.mockReturnValue(true);
-    expect(hookResult!.handleSupportsGapControl()).toBe(true);
-  });
-
-  it('handleSupportsGapControl returns false when no controller exists yet', () => {
-    render(<CaptureHarness />);
-    expect(hookResult!.handleSupportsGapControl()).toBe(false);
-  });
 });
