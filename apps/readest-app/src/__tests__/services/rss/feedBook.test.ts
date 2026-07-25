@@ -1,5 +1,10 @@
-import { describe, expect, it } from 'vitest';
-import { createFeedBook, feedBookHash, generateFeedCoverSvg } from '@/services/rss/feedBook';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  createFeedBook,
+  ensureFeedBookCover,
+  feedBookHash,
+  generateFeedCoverSvg,
+} from '@/services/rss/feedBook';
 import { parseFeedBookUrl } from '@/services/rss/feedBookUrl';
 
 describe('generateFeedCoverSvg', () => {
@@ -25,5 +30,33 @@ describe('createFeedBook', () => {
     expect(parseFeedBookUrl(book.url!)).toEqual({ feedUrl });
     expect(book.metadata?.feedUrl).toBe(feedUrl);
     expect(book.filePath).toBeUndefined();
+  });
+});
+
+// Issue #5307 — a feed book has no files in cloud storage, so every device that
+// receives the subscription writes the cover itself.
+describe('ensureFeedBookCover', () => {
+  const book = createFeedBook('https://www.saastr.com/feed/', { title: 'SaaStr', items: [] });
+
+  const makeAppService = (coverExists: boolean) => ({
+    exists: vi.fn(async () => coverExists),
+    createDir: vi.fn(async () => {}),
+    writeFile: vi.fn(async () => {}),
+    generateCoverImageUrl: vi.fn(async () => 'blob:cover'),
+  });
+
+  it('reuses the cover already on disk', async () => {
+    const appService = makeAppService(true);
+    const url = await ensureFeedBookCover(appService, book);
+    expect(url).toBe('blob:cover');
+    expect(appService.writeFile).not.toHaveBeenCalled();
+  });
+
+  it('falls back to no cover url when the cover cannot be written', async () => {
+    const appService = makeAppService(false);
+    // Worst case is the shelf's title-only fallback cover, never a rejection
+    // that would abort the sync pass this runs inside.
+    appService.exists.mockRejectedValue(new Error('fs unavailable'));
+    await expect(ensureFeedBookCover(appService, book)).resolves.toBeUndefined();
   });
 });

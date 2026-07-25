@@ -15,6 +15,8 @@ import {
   getActiveFileSyncBackends,
 } from '@/services/sync/cloudSyncProvider';
 import { isDemoBook } from '@/services/demoBooks';
+import { isFeedBook } from '@/services/rss/feedBookUrl';
+import { ensureFeedBookCover } from '@/services/rss/feedBook';
 import { runFileLibrarySyncPass } from '@/services/sync/file/runLibrarySync';
 import { checkMixedFleetOnce } from '@/services/sync/fleetDetection';
 import { useSyncContext } from '@/context/SyncContext';
@@ -242,13 +244,24 @@ export const useBooksSync = () => {
     appService?.saveLibraryBooks(updatedLibrary);
 
     const bookHashesInLibrary = new Set(updatedLibrary.map((book) => book.hash));
+    // `uploadedAt` gates adoption so a peer never shelves a book whose file it
+    // cannot fetch. A feed book has no file to fetch — it is rebuilt from
+    // `metadata.feedUrl` — so it would never pass that gate and the
+    // subscription stayed stuck on the device that added it (issue #5307).
     const newBooks = cloudBooks.filter(
       (newBook) =>
-        !bookHashesInLibrary.has(newBook.hash) && newBook.uploadedAt && !newBook.deletedAt,
+        !bookHashesInLibrary.has(newBook.hash) &&
+        (newBook.uploadedAt || isFeedBook(newBook)) &&
+        !newBook.deletedAt,
     );
 
     const processNewBook = async (newBook: Book) => {
-      newBook.coverImageUrl = await appService?.generateCoverImageUrl(newBook);
+      // A feed book has no cover in cloud storage; its cover is derived from the
+      // feed descriptor, so this device regenerates the same image locally.
+      newBook.coverImageUrl =
+        appService && isFeedBook(newBook)
+          ? await ensureFeedBookCover(appService, newBook)
+          : await appService?.generateCoverImageUrl(newBook);
       newBook.syncedAt = Date.now();
       updatedLibrary.push(newBook);
     };

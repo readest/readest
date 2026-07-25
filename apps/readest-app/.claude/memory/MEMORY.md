@@ -34,6 +34,7 @@
 - [#5068 sync passphrase unverified](sync-passphrase-unverified-5068.md) trial-decrypt before persist
 - [Empty-start CFI sync](empty-start-cfi-sync.md) · [Custom fonts vanish #4410](custom-fonts-reincarnation-4410.md) CRDT remove-wins
 - [#5180 OPDS catalog reincarnates](opds-catalog-reincarnate-restart-5180.md) MERGED #5191; remove-wins class; addCatalog always carries a token
+- [#5307 RSS feeds don't sync](rss-feed-books-not-syncing-5307.md) feed books are fileless; peer gate needs uploadedAt; `isFeedBook` predicate
 - koplugin: [note deletion](koplugin-note-deletion-sync.md); [#4666 stats](koplugin-stats-sync.md); [#4751 bulk download](koplugin-bulk-download-4751.md); [#4861 dup rows](koplugin-stats-duplicate-book-rows-4861.md)
 - [Statusless re-pin #4677](sync-statusless-book-rebump-4677.md) · [pull cursor synced_at #4678](sync-synced-at-cursor-4678.md)
 - [deleted_at OR cursor invariant](sync-deleted-at-cursor-invariant.md) notes/configs OR load-bearing

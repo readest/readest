@@ -15,7 +15,7 @@ import {
   selectNewImportableFiles,
 } from '@/services/bookService';
 import { navigateToLibrary, navigateToLogin, navigateToReader } from '@/utils/nav';
-import { getCoverFilename, getBookWithUpdatedMetadata, listFormater } from '@/utils/book';
+import { getBookWithUpdatedMetadata, listFormater } from '@/utils/book';
 import { getImportErrorMessage } from '@/services/errors';
 import { ingestFile } from '@/services/ingestService';
 import { eventDispatcher } from '@/utils/event';
@@ -80,7 +80,7 @@ import { CatalogDialog } from './components/OPDSDialog';
 import { FeedsView } from './components/feeds/FeedsView';
 import AddFeedModal from './components/feeds/AddFeedModal';
 import { fetchAndParseFeed } from '@/services/rss/feedClient';
-import { createFeedBook, generateFeedCoverSvg, rasterizeCoverSvg } from '@/services/rss/feedBook';
+import { createFeedBook, ensureFeedBookCover } from '@/services/rss/feedBook';
 import { MigrateDataWindow } from './components/MigrateDataWindow';
 import { BackupWindow } from './components/BackupWindow';
 import { CacheManagerWindow } from './components/CacheManagerWindow';
@@ -569,15 +569,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const parsed = await fetchAndParseFeed(url);
     const book = createFeedBook(url, parsed);
     if (appService) {
-      try {
-        const cover = generateFeedCoverSvg(url, book.title);
-        const pngBytes = await rasterizeCoverSvg(cover);
-        await appService.createDir(book.hash, 'Books', true);
-        await appService.writeFile(getCoverFilename(book), 'Books', pngBytes);
-        book.coverImageUrl = await appService.generateCoverImageUrl(book);
-      } catch (e) {
-        console.warn('Failed to generate feed book cover:', e);
-      }
+      book.coverImageUrl = await ensureFeedBookCover(appService, book);
     }
     await useLibraryStore.getState().updateBooks(envConfig, [book]);
     eventDispatcher.dispatch('toast', {

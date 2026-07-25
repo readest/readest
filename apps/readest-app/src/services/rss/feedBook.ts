@@ -1,8 +1,10 @@
 import { md5 } from '@/utils/md5';
-import { buildFeedBookUrl } from './feedBookUrl';
+import { buildFeedBookUrl, parseFeedBookUrl } from './feedBookUrl';
 import { generateCoverSvg } from '@/services/send/conversion/coverGenerator';
+import { getCoverFilename } from '@/utils/book';
 import type { ParsedFeed } from '@/types/rss';
 import type { Book } from '@/types/book';
+import type { AppService } from '@/types/system';
 import type { EpubImage } from '@/services/send/conversion/types';
 
 // The classic feed icon (Wikimedia Commons "Generic Feed-icon.svg" geometry):
@@ -62,6 +64,37 @@ export async function rasterizeCoverSvg(svg: EpubImage, scale = 2): Promise<Arra
     return await pngBlob.arrayBuffer();
   } finally {
     URL.revokeObjectURL(url);
+  }
+}
+
+type FeedCoverWriter = Pick<
+  AppService,
+  'exists' | 'createDir' | 'writeFile' | 'generateCoverImageUrl'
+>;
+
+/**
+ * Make sure Books/<hash>/cover.png holds the generated RSS cover and return its
+ * display URL. The image is derived purely from the feed URL and title, so a
+ * peer that receives the subscription over sync regenerates the identical cover
+ * locally — a feed book has no files in cloud storage to download (#5307).
+ * Best-effort: a failure leaves the shelf's title-only fallback cover.
+ */
+export async function ensureFeedBookCover(
+  appService: FeedCoverWriter,
+  book: Book,
+): Promise<string | undefined> {
+  try {
+    const feedUrl = book.metadata?.feedUrl ?? (book.url ? parseFeedBookUrl(book.url).feedUrl : '');
+    const coverFilename = getCoverFilename(book);
+    if (!(await appService.exists(coverFilename, 'Books'))) {
+      const pngBytes = await rasterizeCoverSvg(generateFeedCoverSvg(feedUrl, book.title));
+      await appService.createDir(book.hash, 'Books', true);
+      await appService.writeFile(coverFilename, 'Books', pngBytes);
+    }
+    return await appService.generateCoverImageUrl(book);
+  } catch (e) {
+    console.warn('Failed to generate feed book cover:', e);
+    return undefined;
   }
 }
 

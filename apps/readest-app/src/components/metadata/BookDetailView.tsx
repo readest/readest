@@ -26,6 +26,7 @@ import {
   formatPublisher,
   formatTitle,
 } from '@/utils/book';
+import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { saveSysSettings } from '@/helpers/settings';
 import BookCover from '@/components/BookCover';
 import Dropdown from '../Dropdown';
@@ -114,7 +115,8 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                 <MdOutlineCloudDownload className='fill-base-content' />
               </button>
             )}
-            {book.downloadedAt && onUpload && (
+            {/* A feed book is fileless — there is nothing to push (#5307). */}
+            {book.downloadedAt && !isFeedBook(book) && onUpload && (
               <button onClick={onUpload} title={_('Upload to Cloud')}>
                 <MdOutlineCloudUpload className='fill-base-content' />
               </button>

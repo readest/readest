@@ -7,6 +7,7 @@ import {
 import { formatAuthors, formatTitle, isCurrentlyReadingBook } from '@/utils/book';
 import { md5Fingerprint } from '@/utils/md5';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
+import { isFeedBook } from '@/services/rss/feedBookUrl';
 
 /** Valid sort types for the library */
 const VALID_SORT_TYPES: LibrarySortByType[] = Object.values(LibrarySortByType);
@@ -827,11 +828,15 @@ export const getBookContextMenuItemIds = (book: Book): BookContextMenuItemId[] =
     ids.push('clearStatus');
   }
   ids.push('showDetails', 'showInFinder', 'searchGoodreads');
-  if (book.uploadedAt && !book.downloadedAt) ids.push('download');
-  if (!book.uploadedAt && book.downloadedAt) ids.push('upload');
-  // Share is offered for any local-or-uploaded book; the dialog uploads first
-  // if the book hasn't been pushed yet.
-  if (book.downloadedAt || book.uploadedAt) ids.push('share');
+  // A feed book has no file to move: every transfer action would fail, and the
+  // share dialog uploads before it can hand out a link (issue #5307).
+  if (!isFeedBook(book)) {
+    if (book.uploadedAt && !book.downloadedAt) ids.push('download');
+    if (!book.uploadedAt && book.downloadedAt) ids.push('upload');
+    // Share is offered for any local-or-uploaded book; the dialog uploads first
+    // if the book hasn't been pushed yet.
+    if (book.downloadedAt || book.uploadedAt) ids.push('share');
+  }
   ids.push('delete');
   return ids;
 };

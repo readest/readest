@@ -19,6 +19,7 @@ import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
+import { isFeedBook } from '@/services/rss/feedBookUrl';
 import {
   TransferItem,
   TransferStatus,
@@ -194,7 +195,11 @@ const TransferQueuePanel: React.FC = () => {
   const settings = useSettingsStore((s) => s.settings);
   const readestStorageActive = isReadestCloudStorageActive(settings);
 
-  const booksToUpload = getVisibleLibrary().filter((book) => book.downloadedAt && !book.uploadedAt);
+  // Feed books are fileless (#5307): sweeping them into "Upload All" only fills
+  // the queue with transfers that can never resolve a source.
+  const booksToUpload = getVisibleLibrary().filter(
+    (book) => book.downloadedAt && !book.uploadedAt && !isFeedBook(book),
+  );
   const booksToDownload = readestStorageActive
     ? getVisibleLibrary().filter((book) => book.uploadedAt && !book.downloadedAt)
     : [];
