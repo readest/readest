@@ -157,7 +157,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
   const view = getView(bookKey)!;
   const config = getConfig(bookKey)!;
   const bookData = getBookData(bookKey)!;
-  const progress = getProgress(bookKey)!;
+  const progress = getProgress(bookKey);
   const primaryLang = bookData.book?.primaryLanguage || 'en';
   const searchMode = (config.searchConfig as BookSearchConfig).mode;
 
@@ -249,8 +249,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
       setSearchStatus(bookKey, 'searching');
       setSearchError(bookKey, null);
 
-      const { section } = progress;
-      const index = searchConfig.scope === 'section' ? section.current : undefined;
+      // progress is null until the book emits its first relocate event, so a
+      // search fired right after opening has no current section to scope to.
+      // Fall back to searching the whole book rather than throwing.
+      const index = searchConfig.scope === 'section' ? progress?.section.current : undefined;
       const generator = await view.search({
         ...searchConfig,
         index,
