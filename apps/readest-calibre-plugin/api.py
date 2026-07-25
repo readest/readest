@@ -29,6 +29,7 @@ DEFAULT_ANON_KEY = (
 
 TIMEOUT = 30
 UPLOAD_TIMEOUT = 600
+LIST_PAGE_SIZE = 100  # the storage/list endpoint's maximum
 
 
 class ReadestAPIError(Exception):
@@ -306,6 +307,21 @@ class ReadestClient:
     def list_files(self, book_hash):
         result = self._api('GET', '/storage/list?bookHash=' + urllib.parse.quote(book_hash))
         return (result or {}).get('files') or []
+
+    def list_all_files(self):
+        """Every stored file for the user, following the endpoint's paging.
+
+        Pagination is driven by `totalPages`, not by the batch length: the
+        endpoint pads each page with the other files of any book it touched,
+        so a batch can be larger than `pageSize`.
+        """
+        page, files = 1, []
+        while True:
+            result = self._api('GET', '/storage/list?page=%d&pageSize=%d' % (page, LIST_PAGE_SIZE))
+            files.extend((result or {}).get('files') or [])
+            if page >= ((result or {}).get('totalPages') or 0):
+                return files
+            page += 1
 
     def delete_file(self, file_key):
         return self._api(

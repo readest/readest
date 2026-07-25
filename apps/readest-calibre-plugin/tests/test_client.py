@@ -198,6 +198,31 @@ class StorageTest(unittest.TestCase):
         self.assertEqual(req['url'], f'{API_BASE}/storage/list?bookHash=h')
         self.assertEqual(files, [{'file_key': 'u/Readest/Books/h/h.epub'}])
 
+    def test_list_all_files_paginates(self):
+        transport = FakeTransport()
+        transport.queue(200, {'files': [{'file_key': 'u/a'}], 'totalPages': 2})
+        transport.queue(200, {'files': [{'file_key': 'u/b'}], 'totalPages': 2})
+        client = make_client(transport, tokens=valid_tokens())
+        files = client.list_all_files()
+
+        self.assertEqual(files, [{'file_key': 'u/a'}, {'file_key': 'u/b'}])
+        urls = [req['url'] for req in transport.requests]
+        self.assertEqual(
+            urls,
+            [
+                f'{API_BASE}/storage/list?page=1&pageSize=100',
+                f'{API_BASE}/storage/list?page=2&pageSize=100',
+            ],
+        )
+
+    def test_list_all_files_stops_on_single_page(self):
+        transport = FakeTransport()
+        transport.queue(200, {'files': [], 'totalPages': 0})
+        client = make_client(transport, tokens=valid_tokens())
+
+        self.assertEqual(client.list_all_files(), [])
+        self.assertEqual(len(transport.requests), 1)
+
     def test_delete_file(self):
         transport = FakeTransport()
         transport.queue(200, {'success': True})

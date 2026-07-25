@@ -22,9 +22,11 @@ from calibre_plugins.readest.wire import (
     EXTS,
     book_file_name,
     build_wire_book,
+    cloud_book_hashes,
     cover_file_name,
     index_rows_by_uuid,
     merge_for_push,
+    ms_to_iso,
     pick_format,
     pick_server_row,
     plan_push,
@@ -132,6 +134,14 @@ class PushWorker(QThread):
             self.done.emit(False, 'Could not reach Readest: %s' % err)
             return
 
+        try:
+            self.cloud_hashes = cloud_book_hashes(self.client.list_all_files())
+        except Exception:
+            # Without the listing we can only trust uploaded_at, which is what
+            # the plugin did before. Stale rows stay stale, but the push runs.
+            traceback.print_exc()
+            self.cloud_hashes = None
+
         counts = {}
         for index, book_id in enumerate(self.book_ids):
             if self.canceled:
@@ -187,12 +197,14 @@ class PushWorker(QThread):
             'author': record['author'],
             'tags': record.get('tags'),
             'metadata': record['metadata'],
-            'uploaded_at': 'pushed',
+            'uploaded_at': ms_to_iso(record.get('uploadedAt')),
             'cover_hash': record.get('coverHash'),
         }
         self.by_hash[record['hash']] = row
         if uuid:
             self.by_uuid[uuid] = row
+        if self.cloud_hashes is not None:
+            self.cloud_hashes.add(record['hash'])
 
     def _push_one(self, book_id):
         mi = self.db.get_metadata(book_id)
@@ -214,7 +226,10 @@ class PushWorker(QThread):
         server_row = pick_server_row(
             self.by_hash.get(source_hash), self.by_uuid.get(uuid) if uuid else None
         )
-        plan = plan_push(server_row, wire, cover_hash, source_hash)
+        blob_present = self.cloud_hashes is None or (
+            server_row is not None and server_row['book_hash'] in self.cloud_hashes
+        )
+        plan = plan_push(server_row, wire, cover_hash, source_hash, blob_present)
 
         if plan['action'] == 'skip':
             return 'skipped', ''

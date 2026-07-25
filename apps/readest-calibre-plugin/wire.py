@@ -34,6 +34,7 @@ EXTS = {
 }
 
 CLOUD_BOOKS_SUBDIR = 'Readest/Books'
+COVER_FILE_NAME = 'cover.png'
 
 
 def pick_format(available):
@@ -53,7 +54,26 @@ def book_file_name(file_hash, fmt):
 
 
 def cover_file_name(file_hash):
-    return '%s/%s/cover.png' % (CLOUD_BOOKS_SUBDIR, file_hash)
+    return '%s/%s/%s' % (CLOUD_BOOKS_SUBDIR, file_hash, COVER_FILE_NAME)
+
+
+def cloud_book_hashes(files):
+    """Book hashes that still have a book blob (not just a cover) in storage.
+
+    Read from the file key (`{user_id}/Readest/Books/{hash}/{name}`) rather
+    than the row's `book_hash`, which is only set when the uploader passed it.
+    """
+    marker = CLOUD_BOOKS_SUBDIR + '/'
+    hashes = set()
+    for record in files or []:
+        key = record.get('file_key') or ''
+        index = key.find(marker)
+        if index < 0:
+            continue
+        book_hash, _, name = key[index + len(marker) :].partition('/')
+        if book_hash and name and name != COVER_FILE_NAME:
+            hashes.add(book_hash)
+    return hashes
 
 
 def _clean(value):
@@ -144,6 +164,12 @@ def iso_to_ms(iso):
     return int(dt.timestamp() * 1000)
 
 
+def ms_to_iso(ms):
+    if ms is None:
+        return None
+    return datetime.fromtimestamp(ms / 1000, timezone.utc).isoformat()
+
+
 def _parse_row_metadata(row):
     raw = row.get('metadata')
     if isinstance(raw, dict):
@@ -218,7 +244,7 @@ def pick_server_row(hash_row, uuid_row):
     return hash_row if hash_row is not None else uuid_row
 
 
-def plan_push(server_row, wire, local_cover_hash, source_hash):
+def plan_push(server_row, wire, local_cover_hash, source_hash, blob_present=True):
     """Decide what to do for one book.
 
     Returns {'action': 'new' | 'replace' | 'update' | 'skip',
@@ -228,10 +254,20 @@ def plan_push(server_row, wire, local_cover_hash, source_hash):
                fresh embedded blob under its new hash, tombstone the old row
     - update:  file unchanged, but metadata/cover/tombstone differ — row only
     - skip:    file + metadata + cover all unchanged
+
+    `blob_present` says whether the row's book file is actually in cloud
+    storage. `uploaded_at` alone doesn't prove it: deleting files under
+    "Manage Storage" drops the object and its `files` row but never touches
+    `books.uploaded_at`, and a row-only push against a missing blob leaves a
+    book that shows up in the library but 404s on download.
     """
     if server_row is None:
         return {'action': 'new', 'upload_cover': bool(local_cover_hash)}
-    if not server_row.get('uploaded_at') or row_source_hash(server_row) != source_hash:
+    if (
+        not server_row.get('uploaded_at')
+        or not blob_present
+        or row_source_hash(server_row) != source_hash
+    ):
         # A replaced book gets a new hash namespace, so it needs its own cover.
         return {'action': 'replace', 'upload_cover': bool(local_cover_hash)}
     cover_changed = bool(local_cover_hash) and local_cover_hash != server_row.get('cover_hash')

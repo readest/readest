@@ -6,11 +6,15 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from wire import (  # noqa: E402
+    book_file_name,
     build_metadata,
     build_wire_book,
+    cloud_book_hashes,
+    cover_file_name,
     index_rows_by_uuid,
     iso_to_ms,
     merge_for_push,
+    ms_to_iso,
     pick_format,
     pick_server_row,
     plan_push,
@@ -239,6 +243,95 @@ class PlanPushTest(unittest.TestCase):
         row['book_hash'] = 'o' * 32  # raw hash of the OLD file
         plan = plan_push(row, wire_for(), 'c' * 32, SRC)
         self.assertEqual(plan['action'], 'replace')
+
+    def test_missing_blob_is_replaced_even_when_row_claims_upload(self):
+        # "Manage Storage" deletes the object and its files row but leaves
+        # books.uploaded_at set, so the row alone cannot prove the blob exists.
+        wire = wire_for()
+        plan = plan_push(synced_row(wire), wire, 'c' * 32, SRC, blob_present=False)
+        self.assertEqual(plan['action'], 'replace')
+        self.assertTrue(plan['upload_cover'])
+
+    def test_missing_blob_on_tombstoned_row_is_replaced(self):
+        # Deleting a book with the "local" option tombstones the row but keeps
+        # uploaded_at; resurrecting it row-only would leave an undownloadable book.
+        wire = wire_for()
+        row = synced_row(wire)
+        row['deleted_at'] = '2024-06-01T00:00:00.000Z'
+        plan = plan_push(row, wire, 'c' * 32, SRC, blob_present=False)
+        self.assertEqual(plan['action'], 'replace')
+
+    def test_missing_blob_does_not_affect_new_book(self):
+        plan = plan_push(None, wire_for(), 'c' * 32, SRC, blob_present=False)
+        self.assertEqual(plan['action'], 'new')
+
+
+class CloudBookHashesTest(unittest.TestCase):
+    def test_book_file_marks_hash_present(self):
+        files = [{'file_key': 'user-1/Readest/Books/%s/%s.epub' % ('a' * 32, 'a' * 32)}]
+        self.assertEqual(cloud_book_hashes(files), {'a' * 32})
+
+    def test_cover_alone_does_not_mark_hash_present(self):
+        files = [{'file_key': 'user-1/Readest/Books/%s/cover.png' % ('a' * 32)}]
+        self.assertEqual(cloud_book_hashes(files), set())
+
+    def test_app_uploaded_title_filename(self):
+        # The app stores books as {hash}/{title}.{ext}, not {hash}/{hash}.{ext}.
+        files = [{'file_key': 'user-1/Readest/Books/%s/The Test Book.epub' % ('b' * 32)}]
+        self.assertEqual(cloud_book_hashes(files), {'b' * 32})
+
+    def test_ignores_unrelated_and_malformed_keys(self):
+        files = [
+            {'file_key': 'user-1/Readest/Replicas/notes/r1/notes.db'},
+            {'file_key': 'user-1/Readest/Books/%s' % ('c' * 32)},  # no file name
+            {'file_key': ''},
+            {},
+        ]
+        self.assertEqual(cloud_book_hashes(files), set())
+
+    def test_empty_listing(self):
+        self.assertEqual(cloud_book_hashes([]), set())
+        self.assertEqual(cloud_book_hashes(None), set())
+
+    def test_agrees_with_the_keys_we_upload(self):
+        # The producer (book_file_name/cover_file_name) and this consumer must
+        # not drift; the listing returns them under a user-id prefix.
+        book_hash = 'a' * 32
+        files = [
+            {'file_key': 'user-1/' + book_file_name(book_hash, 'EPUB')},
+            {'file_key': 'user-1/' + cover_file_name(book_hash)},
+        ]
+        self.assertEqual(cloud_book_hashes(files), {book_hash})
+
+
+class PlanPushAfterStorageWipeTest(unittest.TestCase):
+    """The reported failure: files deleted, books rows left claiming uploaded_at."""
+
+    def test_wiped_storage_forces_reupload(self):
+        wire = wire_for()
+        row = synced_row(wire)
+        row['book_hash'] = 'a' * 32
+        present = cloud_book_hashes([])  # every file deleted under Manage Storage
+        plan = plan_push(row, wire, 'c' * 32, SRC, row['book_hash'] in present)
+        self.assertEqual(plan['action'], 'replace')
+
+    def test_intact_storage_still_skips(self):
+        wire = wire_for()
+        row = synced_row(wire)
+        row['book_hash'] = 'a' * 32
+        present = cloud_book_hashes(
+            [{'file_key': 'user-1/' + book_file_name(row['book_hash'], 'EPUB')}]
+        )
+        plan = plan_push(row, wire, 'c' * 32, SRC, row['book_hash'] in present)
+        self.assertEqual(plan['action'], 'skip')
+
+
+class MsToIsoTest(unittest.TestCase):
+    def test_round_trips_through_iso_to_ms(self):
+        self.assertEqual(iso_to_ms(ms_to_iso(NOW)), NOW)
+
+    def test_none(self):
+        self.assertIsNone(ms_to_iso(None))
 
 
 class ServerRowLookupTest(unittest.TestCase):
