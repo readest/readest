@@ -43,6 +43,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build universal debug APK
         run: |
+          # Tauri's frontend must be bundled for the native platform, not web.
+          echo 'NEXT_PUBLIC_APP_PLATFORM=tauri' > .env.local
           rm -rf src-tauri/gen/android
           pnpm tauri android init
           pnpm tauri icon ../../data/icons/readest-book.png
