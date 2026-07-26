@@ -44,7 +44,7 @@ jobs:
       - name: Prepare bundled vendor assets
         working-directory: .
         run: pnpm --filter @readest/readest-app setup-vendors
-      - name: Build universal debug APK
+      - name: Build universal release APK
         run: |
           # Tauri's frontend must be bundled for the native platform, not web.
           echo 'NEXT_PUBLIC_APP_PLATFORM=tauri' > .env.local
@@ -52,8 +52,19 @@ jobs:
           pnpm tauri android init
           pnpm tauri icon ../../data/icons/readest-book.png
           git checkout -- src-tauri/gen/android
-          pnpm tauri android build --debug
-          cp src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk readest-android-latest.apk
+          # This is a normal optimized release APK, signed with a temporary
+          # debug certificate so it can be sideloaded without a production key.
+          keytool -genkeypair -keystore "$RUNNER_TEMP/debug.keystore" -storepass android \
+            -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname 'CN=Android Debug,O=Android,C=US'
+          cat > src-tauri/gen/android/keystore.properties <<EOF
+          keyAlias=androiddebugkey
+          password=android
+          storeFile=$RUNNER_TEMP/debug.keystore
+          EOF
+          pnpm tauri android build
+          cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk \
+            "$GITHUB_WORKSPACE/readest-android-latest.apk"
       - uses: actions/upload-artifact@v4
         with:
           name: readest-android-apk
