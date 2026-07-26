@@ -298,18 +298,20 @@ export class BufferedTTSClient implements TTSClient {
     // background; the provider's in-flight dedup keeps this from racing
     // duplicate requests against the playback scheduler.
     const maxImmediate = 2;
-    for (let i = 0; i < Math.min(maxImmediate, marks.length); i++) {
-      if (signal.aborted) break;
-      const mark = marks[i]!;
-      const voiceId = await this.getVoiceIdFromLang(mark.language);
-      this.#currentVoiceId = voiceId;
-      try {
-        const audio = await this.#synthesizeWithRetry(mark.language, mark.text, voiceId, signal);
-        if (audio) this.#recordDurations(voiceId, mark.text, audio.boundaries);
-      } catch (err) {
-        console.warn('Error preloading mark', i, err);
-      }
-    }
+    // In parallel, not sequentially: these are independent requests and the
+    // serial awaits stacked their round trips in front of the caller.
+    await Promise.all(
+      marks.slice(0, maxImmediate).map(async (mark, i) => {
+        if (signal.aborted) return;
+        try {
+          const voiceId = await this.getVoiceIdFromLang(mark.language);
+          const audio = await this.#synthesizeWithRetry(mark.language, mark.text, voiceId, signal);
+          if (audio) this.#recordDurations(voiceId, mark.text, audio.boundaries);
+        } catch (err) {
+          console.warn('Error preloading mark', i, err);
+        }
+      }),
+    );
     if (marks.length > maxImmediate) {
       (async () => {
         for (let i = maxImmediate; i < marks.length; i++) {
@@ -352,6 +354,14 @@ export class BufferedTTSClient implements TTSClient {
     // still be scheduled in text order, but an API response for sentence N+5
     // can arrive while sentence N is audible instead of creating a dead gap.
     const preloadCount = getTTSPreloadCount();
+    // On the web path decode + silence-trim + WSOLA runs per chunk and is far
+    // from free on mid-range Android. Running it inside the ordered consume
+    // loop meant a completed fetch sat idle while the previous chunk was
+    // stretched, so prefetch hid network latency but not CPU latency. Chain
+    // preparation onto each fetch instead: it overlaps with the remaining
+    // in-flight requests and with playback, bounded by the same window.
+    const prepareAhead = !(this.#player instanceof NativeAudioPlayer);
+    const webPlayerForPrepare = this.#player instanceof WebAudioPlayer ? this.#player : null;
     const pending = new Map<
       number,
       Promise<{
@@ -359,6 +369,8 @@ export class BufferedTTSClient implements TTSClient {
         voiceId: string;
         req: SpeechSynthesisRequest;
         audio?: { data: ArrayBuffer; boundaries: TTSWordBoundary[] };
+        prepared?: { buffer: TTSAudioBuffer; trimStartSec: number; trimmedDurationSec: number };
+        prepareError?: unknown;
         error?: unknown;
       }>
     >();
@@ -384,7 +396,24 @@ export class BufferedTTSClient implements TTSClient {
               voiceId,
               signal,
             );
-            return { mark, voiceId, req, audio };
+            if (!audio || !prepareAhead || !webPlayerForPrepare) {
+              return { mark, voiceId, req, audio };
+            }
+            if (signal.aborted || this.#activeGeneration !== generation) {
+              return { mark, voiceId, req, audio };
+            }
+            try {
+              const prepared = await this.#prepareChunkBuffer(
+                webPlayerForPrepare,
+                audio.data,
+                rate,
+              );
+              return { mark, voiceId, req, audio, prepared };
+            } catch (prepareError) {
+              // Surfaced in text order by the consume loop, same as a decode
+              // failure there: skip the sentence rather than kill the session.
+              return { mark, voiceId, req, audio, prepareError };
+            }
           } catch (error) {
             return { mark, voiceId, req, error };
           }
@@ -400,7 +429,8 @@ export class BufferedTTSClient implements TTSClient {
         const result = await pending.get(markIndex)!;
         pending.delete(markIndex);
         startSynthesis(markIndex + preloadCount);
-        const { mark, voiceId, req, audio, error } = result;
+        const { mark, voiceId, req, audio, prepared: preparedAhead, prepareError } = result;
+        const { error } = result;
         this.#speakingLang = mark.language;
         this.#currentVoiceId = voiceId;
         if (error) {
@@ -461,13 +491,22 @@ export class BufferedTTSClient implements TTSClient {
           trimStartSec: number;
           trimmedDurationSec: number;
         };
-        try {
-          prepared = await this.#prepareChunkBuffer(webPlayer, audio.data, rate);
-        } catch (error) {
+        if (prepareError) {
           // Malformed MP3 must not dead-end the session: same UX as no-audio.
-          console.warn('Failed to decode TTS audio for:', mark.text, error);
+          console.warn('Failed to decode TTS audio for:', mark.text, prepareError);
           queue.push({ kind: 'chunk-skip', markName: mark.name });
           continue;
+        }
+        if (preparedAhead) {
+          prepared = preparedAhead;
+        } else {
+          try {
+            prepared = await this.#prepareChunkBuffer(webPlayer, audio.data, rate);
+          } catch (error) {
+            console.warn('Failed to decode TTS audio for:', mark.text, error);
+            queue.push({ kind: 'chunk-skip', markName: mark.name });
+            continue;
+          }
         }
         this.#recordDurations(voiceId, mark.text, audio.boundaries, prepared.trimmedDurationSec);
 

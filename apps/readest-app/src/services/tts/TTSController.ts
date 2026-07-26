@@ -123,6 +123,9 @@ export class TTSController extends EventTarget {
   // wholly-unusable engine stops instead of racing to the book end. See #4613.
   #consecutiveSpeakErrors: number = 0;
   #currentSpeakAbortController: AbortController | null = null;
+  // Background paragraph look-ahead, cancelled on stop/pause so it can never
+  // compete with live playback for a single-worker TTS endpoint.
+  #preloadAbortController: AbortController | null = null;
   #currentSpeakPromise: Promise<void> | null = null;
 
   #ttsSectionIndex: number = -1;
@@ -867,7 +870,16 @@ export class TTSController extends EventTarget {
     for await (const _ of iter);
   }
 
-  async preloadNextSSML(count: number = 4) {
+  // Background look-ahead across paragraph boundaries. Cancellable and
+  // sequential: with a user-configured endpoint (often a single-worker local
+  // server) an uncancellable Promise.all fan-out queues throwaway requests
+  // ahead of the playback-critical one, which is exactly the stall it was
+  // meant to prevent.
+  async preloadNextSSML(count: number = 2) {
+    this.#preloadAbortController?.abort();
+    const controller = new AbortController();
+    this.#preloadAbortController = controller;
+    const { signal } = controller;
     const tts = this.#getTts();
     if (!tts) return;
 
@@ -888,11 +900,20 @@ export class TTSController extends EventTarget {
 
     const ssmls: string[] = [];
     for (const raw of rawSsmls) {
+      if (signal.aborted) return;
       const ssml = await this.#preprocessSSML(raw);
       if (!ssml) break;
       ssmls.push(ssml);
     }
-    await Promise.all(ssmls.map((ssml) => this.preloadSSML(ssml, new AbortController().signal)));
+    for (const ssml of ssmls) {
+      if (signal.aborted) return;
+      try {
+        await this.preloadSSML(ssml, signal);
+      } catch {
+        // A cancelled or failed look-ahead must never surface to playback.
+        return;
+      }
+    }
   }
 
   async #preprocessSSML(ssml?: string) {
@@ -961,7 +982,12 @@ export class TTSController extends EventTarget {
           } else {
             this.dispatchSpeakMark(marks[0]);
           }
-          await this.preloadSSML(ssml, signal);
+          // Fire-and-forget: the client's own scheduler already prefetches a
+          // window of this paragraph's sentences, and the provider dedups
+          // in-flight requests, so awaiting here only added serial round trips
+          // (#preload's first two marks are sequential awaits) in front of the
+          // very first sentence.
+          void this.preloadSSML(ssml, signal).catch(() => {});
         }
         // Only the native client surfaces an offline engine failure as a
         // terminal 'error' code (Edge/Web throw, which the catch below handles).
@@ -1081,6 +1107,8 @@ export class TTSController extends EventTarget {
 
   async pause() {
     this.state = 'paused';
+    this.#preloadAbortController?.abort();
+    this.#preloadAbortController = null;
     stopAudioKeepAlive();
     if (!(await this.ttsClient.pause().catch((e) => this.error(e)))) {
       await this.stop();
@@ -1097,6 +1125,11 @@ export class TTSController extends EventTarget {
     if (this.#currentSpeakAbortController) {
       this.#currentSpeakAbortController.abort();
     }
+    // Cancels only this caller's view of the look-ahead: CachingProvider runs
+    // the underlying request to completion under its own signal, so audio
+    // already being fetched still lands in the cache for the next paragraph.
+    this.#preloadAbortController?.abort();
+    this.#preloadAbortController = null;
     await this.ttsClient.stop().catch((e) => this.error(e));
 
     if (this.#currentSpeakPromise) {

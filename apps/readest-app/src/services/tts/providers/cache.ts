@@ -94,23 +94,42 @@ export class CachingProvider implements SpeechProvider {
     const pending = this.#inflight.get(key);
     if (pending) {
       // Joiners get their own buffer: decodeAudioData detaches its input.
-      return pending.then((result) => ({ ...result, audio: result.audio.slice(0) }));
+      return this.#withAbort(pending, signal);
     }
-    const promise = this.#getOrSynthesize(key, req, signal);
+    // The shared promise must NOT be bound to the first caller's signal:
+    // background preload and live playback routinely dedup onto the same
+    // entry, and an aborted preload (page turn, pause) would otherwise cancel
+    // the fetch that playback is waiting on. The underlying request therefore
+    // runs to completion under its own signal and each caller races its own
+    // abort against the shared result.
+    const promise = this.#getOrSynthesize(key, req);
     this.#inflight.set(key, promise);
+    // The slot must be cleared even when every caller aborts, so detach the
+    // cleanup from the caller-facing promise.
+    void promise.catch(() => {}).finally(() => this.#inflight.delete(key));
+    return this.#withAbort(promise, signal);
+  }
+
+  // Give one caller an abortable view of a shared synthesis promise.
+  async #withAbort(
+    promise: Promise<SpeechSynthesisResult>,
+    signal: AbortSignal,
+  ): Promise<SpeechSynthesisResult> {
+    if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+    let onAbort: (() => void) | null = null;
     try {
-      return await promise;
+      const result = await new Promise<SpeechSynthesisResult>((resolve, reject) => {
+        onAbort = () => reject(new DOMException('Aborted', 'AbortError'));
+        signal.addEventListener('abort', onAbort, { once: true });
+        promise.then(resolve, reject);
+      });
+      return { ...result, audio: result.audio.slice(0) };
     } finally {
-      // Always cleared — a failed slot must not poison the retry path.
-      this.#inflight.delete(key);
+      if (onAbort) signal.removeEventListener('abort', onAbort);
     }
   }
 
-  async #getOrSynthesize(
-    key: string,
-    req: SpeechSynthesisRequest,
-    signal: AbortSignal,
-  ): Promise<SpeechSynthesisResult> {
+  async #getOrSynthesize(key: string, req: SpeechSynthesisRequest): Promise<SpeechSynthesisResult> {
     try {
       const cached = await this.#store.get(key);
       if (cached) {
@@ -119,7 +138,7 @@ export class CachingProvider implements SpeechProvider {
     } catch (err) {
       console.warn('TTS cache read failed; synthesizing instead', err);
     }
-    const result = await this.#inner.synthesize(req, signal);
+    const result = await this.#inner.synthesize(req, new AbortController().signal);
     try {
       await this.#store.put(
         key,
