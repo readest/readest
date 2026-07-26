@@ -1,0 +1,21 @@
+diff --git a/apps/readest-app/src/__tests__/hooks/useTTSControl.test.tsx b/apps/readest-app/src/__tests__/hooks/useTTSControl.test.tsx
+index dfcb935..b498af0 100644
+--- a/apps/readest-app/src/__tests__/hooks/useTTSControl.test.tsx
++++ b/apps/readest-app/src/__tests__/hooks/useTTSControl.test.tsx
+@@ -185,6 +185,8 @@ const { mockSessionManager } = vi.hoisted(() => ({
+     stopActive: vi.fn().mockResolvedValue(undefined),
+     setSleepTimer: vi.fn(),
+     getSleepTimer: vi.fn(() => null),
++    setStopAtChapterEnd: vi.fn(),
++    getStopAtChapterEnd: vi.fn(() => false),
+     addEventListener: vi.fn(),
+     removeEventListener: vi.fn(),
+   },
+@@ -193,6 +195,7 @@ const { mockSessionManager } = vi.hoisted(() => ({
+ vi.mock('@/services/tts/TTSSessionManager', () => ({
+   getBookHashFromKey: (key: string) => key.split('-')[0]!,
+   ttsSessionManager: mockSessionManager,
++  TTS_STOP_AT_CHAPTER_END: -1,
+ }));
+ 
+ vi.mock('@/utils/ssml', () => ({

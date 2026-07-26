@@ -185,6 +185,8 @@ const { mockSessionManager } = vi.hoisted(() => ({
     stopActive: vi.fn().mockResolvedValue(undefined),
     setSleepTimer: vi.fn(),
     getSleepTimer: vi.fn(() => null),
+    setStopAtChapterEnd: vi.fn(),
+    getStopAtChapterEnd: vi.fn(() => false),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
   },
@@ -193,6 +195,7 @@ const { mockSessionManager } = vi.hoisted(() => ({
 vi.mock('@/services/tts/TTSSessionManager', () => ({
   getBookHashFromKey: (key: string) => key.split('-')[0]!,
   ttsSessionManager: mockSessionManager,
+  TTS_STOP_AT_CHAPTER_END: -1,
 }));
 
 vi.mock('@/utils/ssml', () => ({
