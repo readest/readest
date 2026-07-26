@@ -52,6 +52,47 @@ describe('ParagraphBar', () => {
     expect(root.className).toContain('-translate-x-1/2');
   });
 
+  it('fades in and out only, with no slide, scale, or blur (#5275)', () => {
+    vi.useFakeTimers();
+    const { container } = renderBar();
+    const root = getBarRoot(container);
+
+    expect(root.className).toContain('transition-opacity');
+    expect(root.className).toContain('opacity-100');
+
+    act(() => {
+      vi.advanceTimersByTime(2600);
+    });
+
+    expect(root.className).toContain('opacity-0');
+    // The centering -translate-x-1/2 stays; the motion extras must not.
+    expect(root.className).not.toMatch(/translate-y/);
+    expect(root.className).not.toMatch(/scale-/);
+    expect(root.className).not.toMatch(/blur/);
+  });
+
+  it('wears the TTS mini player card chrome: solid surface, no backdrop blur (#5275)', () => {
+    const { container } = renderBar();
+    const card = getBarRoot(container).firstElementChild as HTMLElement;
+
+    expect(card.className).toContain('not-eink:bg-base-300');
+    expect(card.className).toContain('eink-bordered');
+    expect(card.className).toContain('rounded-2xl');
+    expect(card.className).toContain('shadow-lg');
+    expect(card.className).toContain('h-14');
+    expect(card.className).not.toContain('backdrop-blur');
+    expect(card.className).not.toMatch(/not-eink:border\b/);
+  });
+
+  it('renders the position as plain UI text without the per-digit animation (#5275)', () => {
+    const { container } = renderBar();
+
+    expect(container.textContent).toContain('1 / 10');
+    expect(container.textContent).toContain('10%');
+    expect(container.querySelector('style')).toBeNull();
+    expect(container.innerHTML).not.toContain('subtle-slide-up');
+  });
+
   describe('show-controls event', () => {
     beforeEach(() => {
       vi.useFakeTimers();

@@ -39,14 +39,9 @@ interface ParagraphBarProps {
   gridInsets: Insets;
 }
 
-const AnimatedNumber: React.FC<{ value: number | string }> = ({ value }) => (
-  <span
-    key={value}
-    className='inline-block animate-[subtle-slide-up_0.2s_ease-out] text-sm font-medium tabular-nums'
-  >
-    {value}
-  </span>
-);
+// Same glyph button as the TTS mini player's transport, plus the disabled state
+// paragraph navigation needs while a section re-extracts.
+const BAR_BUTTON = 'shrink-0 rounded-full p-1 transition-colors not-eink:hover:bg-base-content/10';
 
 const ParagraphBar: React.FC<ParagraphBarProps> = ({
   bookKey,
@@ -64,7 +59,9 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
   const _ = useTranslation();
   const { appService } = useEnv();
   const { hoveredBookKey } = useReaderStore();
-  const iconSize = useResponsiveSize(18);
+  // Mirrors the TTS mini player: 26px transport glyphs, a 20px close.
+  const iconSize20 = useResponsiveSize(20);
+  const iconSize26 = useResponsiveSize(26);
   const buttonDirections = getParagraphButtonDirections(viewSettings);
 
   const [isBarVisible, setIsBarVisible] = useState(true);
@@ -190,157 +187,115 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
         : MdChevronRight;
 
   return (
-    <>
-      <style jsx global>{`
-        @keyframes subtle-slide-up {
-          from {
-            opacity: 0;
-            transform: translateY(2px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
+    <div
+      className={clsx(
+        // `fixed` (not `absolute`) so the bar centers on the viewport like the
+        // overlay paragraph; `absolute` centered it on the gridcell, which is
+        // pushed off-center when the sidebar is pinned (#4474).
+        'fixed bottom-6 left-1/2 z-50 -translate-x-1/2',
+        // Plain fade, like the reader's other transient chrome — the slide,
+        // scale, and blur it used to animate read as a different app (#5275).
+        'transition-opacity duration-300 ease-out',
+        isVisible ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+      )}
+      style={{
+        paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.33}px` : 0,
+      }}
+      onMouseEnter={() => {
+        isInTriggerZoneRef.current = true;
+        showBar(false);
+      }}
+      onMouseLeave={() => {
+        isInTriggerZoneRef.current = false;
+        startHideTimer();
+      }}
+    >
+      {/* Same card as the TTS mini player: solid base-300 surface, 2xl radius,
+          soft shadow, 56px row. No backdrop blur, no hairline border. */}
       <div
         className={clsx(
-          // `fixed` (not `absolute`) so the bar centers on the viewport like the
-          // overlay paragraph; `absolute` centered it on the gridcell, which is
-          // pushed off-center when the sidebar is pinned (#4474).
-          'fixed bottom-6 left-1/2 z-50 -translate-x-1/2',
-          'transition-[opacity,filter,transform] duration-200 ease-out',
-          isVisible
-            ? 'pointer-events-auto translate-y-0 scale-100 opacity-100 blur-0'
-            : 'pointer-events-none translate-y-4 scale-90 opacity-0 blur-sm',
+          'not-eink:bg-base-300 eink-bordered rounded-2xl shadow-lg',
+          'text-base-content flex h-14 items-center gap-1 px-2',
         )}
-        style={{
-          paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.33}px` : 0,
-        }}
-        onMouseEnter={() => {
-          isInTriggerZoneRef.current = true;
-          showBar(false);
-        }}
-        onMouseLeave={() => {
-          isInTriggerZoneRef.current = false;
-          startHideTimer();
-        }}
       >
-        <div
-          className={clsx(
-            'text-base-content flex items-center gap-1 rounded-full px-3 py-1.5',
-            'not-eink:bg-base-300 eink-bordered',
-            'not-eink:border-base-content/10 not-eink:border',
-            'shadow-sm backdrop-blur-md',
-            'transition-all duration-200 ease-out',
-          )}
+        <button
+          type='button'
+          onClick={onPrev}
+          disabled={isLoading}
+          className={clsx(BAR_BUTTON, isLoading && 'pointer-events-none opacity-50')}
+          title={_('Previous Paragraph')}
+          aria-label={_('Previous Paragraph')}
         >
-          <button
-            onClick={onPrev}
-            disabled={isLoading}
-            className={clsx(
-              'flex items-center justify-center rounded-full p-1.5',
-              'transition-all duration-200 ease-out',
-              'not-eink:hover:bg-base-200 active:scale-90',
-              isLoading && 'pointer-events-none opacity-50',
-            )}
-            title={_('Previous Paragraph')}
-            aria-label={_('Previous Paragraph')}
-          >
-            <PrevIcon size={iconSize} />
-          </button>
+          <PrevIcon size={iconSize26} />
+        </button>
 
-          <div className='bg-base-content/10 mx-1 h-4 w-px' />
-
-          <div className='flex items-center gap-2 px-1'>
-            {isLoading ? (
-              <div className='flex min-w-[3rem] items-center justify-center gap-2'>
-                <span className='loading loading-dots loading-sm text-base-content/50' />
-                <span className='text-base-content/50 text-sm'>{_('Loading')}</span>
-              </div>
-            ) : (
-              <>
-                <div className='flex min-w-[3rem] items-center justify-center gap-1'>
-                  <AnimatedNumber value={currentIndex + 1} />
-                  <span className='text-base-content/30 text-sm'>/</span>
-                  <span className='text-sm font-medium tabular-nums'>{totalParagraphs}</span>
-                </div>
-
-                <span className='text-base-content/40 text-sm'>•</span>
-
-                <div className='flex min-w-[2.5rem] items-center justify-center gap-0.5'>
-                  <AnimatedNumber value={progress} />
-                  <span className='text-sm font-medium'>%</span>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className='bg-base-content/10 mx-1 h-4 w-px' />
-
-          <button
-            onClick={onNext}
-            disabled={isLoading}
-            className={clsx(
-              'flex items-center justify-center rounded-full p-1.5',
-              'transition-all duration-200 ease-out',
-              'not-eink:hover:bg-base-200 active:scale-90',
-              isLoading && 'pointer-events-none opacity-50',
-            )}
-            title={_('Next Paragraph')}
-            aria-label={_('Next Paragraph')}
-          >
-            <NextIcon size={iconSize} />
-          </button>
-
-          {onToggleTtsAudio && (
-            <>
-              <div className='bg-base-content/10 mx-1 h-4 w-px' />
-
-              {/* Audio (TTS) toggle — starts read-along from the focused
-                  paragraph, or stops it when engaged (#3235). Active state uses a
-                  filled glyph + eink-bordered surface so it reads in e-ink
-                  without relying on color. */}
-              <button
-                onClick={onToggleTtsAudio}
-                disabled={isLoading}
-                className={clsx(
-                  'flex items-center justify-center rounded-full p-1.5',
-                  'transition-all duration-200 ease-out active:scale-90',
-                  ttsActive
-                    ? 'text-primary eink-bordered not-eink:bg-base-200'
-                    : 'not-eink:hover:bg-base-200',
-                  isLoading && 'pointer-events-none opacity-50',
-                )}
-                title={ttsActive ? _('Pause audio') : _('Play audio')}
-                aria-label={ttsActive ? _('Pause audio') : _('Play audio')}
-              >
-                {ttsActive ? (
-                  <IoVolumeHigh size={iconSize} aria-hidden='true' />
-                ) : (
-                  <IoVolumeMediumOutline size={iconSize} aria-hidden='true' />
-                )}
-              </button>
-            </>
+        <div className='flex min-w-[6rem] items-center justify-center px-1'>
+          {isLoading ? (
+            <div className='flex items-center gap-2'>
+              <span className='loading loading-dots loading-sm text-base-content/60' />
+              <span className='text-base-content/60 text-sm'>{_('Loading')}</span>
+            </div>
+          ) : (
+            <span className='flex items-baseline gap-1 text-sm tabular-nums'>
+              <span>
+                {currentIndex + 1} / {totalParagraphs}
+              </span>
+              <span className='text-base-content/60'>· {progress}%</span>
+            </span>
           )}
+        </div>
 
+        <button
+          type='button'
+          onClick={onNext}
+          disabled={isLoading}
+          className={clsx(BAR_BUTTON, isLoading && 'pointer-events-none opacity-50')}
+          title={_('Next Paragraph')}
+          aria-label={_('Next Paragraph')}
+        >
+          <NextIcon size={iconSize26} />
+        </button>
+
+        {onToggleTtsAudio && (
+          // Audio (TTS) toggle — starts read-along from the focused paragraph,
+          // or stops it when engaged (#3235). Active state uses a filled glyph +
+          // eink-bordered surface so it reads in e-ink without relying on color.
           <button
-            onClick={onClose}
+            type='button'
+            onClick={onToggleTtsAudio}
             disabled={isLoading}
             className={clsx(
-              'flex items-center justify-center rounded-full p-1.5',
-              'transition-all duration-200 ease-out',
-              'not-eink:hover:bg-base-200 active:scale-90',
+              BAR_BUTTON,
+              ttsActive && 'text-primary eink-bordered not-eink:bg-base-200',
               isLoading && 'pointer-events-none opacity-50',
             )}
-            title={_('Exit Paragraph Mode')}
-            aria-label={_('Exit Paragraph Mode')}
+            title={ttsActive ? _('Pause audio') : _('Play audio')}
+            aria-label={ttsActive ? _('Pause audio') : _('Play audio')}
           >
-            <MdClose size={iconSize} />
+            {ttsActive ? (
+              <IoVolumeHigh size={iconSize26} aria-hidden='true' />
+            ) : (
+              <IoVolumeMediumOutline size={iconSize26} aria-hidden='true' />
+            )}
           </button>
-        </div>
+        )}
+
+        <button
+          type='button'
+          onClick={onClose}
+          disabled={isLoading}
+          className={clsx(
+            BAR_BUTTON,
+            'text-base-content/70 ms-0.5',
+            isLoading && 'pointer-events-none opacity-50',
+          )}
+          title={_('Exit Paragraph Mode')}
+          aria-label={_('Exit Paragraph Mode')}
+        >
+          <MdClose size={iconSize20} />
+        </button>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -10,8 +10,6 @@ import { useParagraphMode } from '../../hooks/useParagraphMode';
 import ParagraphBar from './ParagraphBar';
 import ParagraphOverlay from './ParagraphOverlay';
 
-const DIM_OPACITY = 0.3;
-
 interface ParagraphControlProps {
   bookKey: string;
   viewRef: React.RefObject<FoliateView | null>;
@@ -61,7 +59,6 @@ const ParagraphControl: React.FC<ParagraphControlProps> = ({ bookKey, viewRef, g
     <>
       <ParagraphOverlay
         bookKey={bookKey}
-        dimOpacity={DIM_OPACITY}
         viewSettings={viewSettings ?? undefined}
         gridInsets={gridInsets}
         ttsSyncStatus={ttsSyncStatus}
