@@ -141,7 +141,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         minHeight={popupHeight}
         maxHeight={720}
         position={position}
-        className='not-eink:text-white grid h-full select-text grid-rows-[1fr,auto,1fr] bg-gray-600'
+        className='grid h-full select-text grid-rows-[1fr,auto,1fr]'
         onDismiss={onDismiss}
       >
         <div className='overflow-y-auto p-4 font-sans'>

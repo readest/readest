@@ -125,7 +125,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
         width={popupWidth}
         minHeight={popupHeight}
         position={position}
-        className='not-eink:text-gray-400 flex flex-col justify-between rounded-lg bg-gray-700'
+        className='flex flex-col justify-between rounded-lg'
         onDismiss={onDismiss}
       >
         <div className='flex flex-col gap-6 p-4'>
