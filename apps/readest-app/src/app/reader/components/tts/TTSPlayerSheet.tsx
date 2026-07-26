@@ -37,6 +37,7 @@ import { useCountdownLabel } from './useCountdownLabel';
 import TTSScrubber from './TTSScrubber';
 import SpeedRuler, { formatRate } from './SpeedRuler';
 import TTSChaptersView from './TTSChaptersView';
+import { TTS_STOP_AT_CHAPTER_END } from '@/services/tts/TTSSessionManager';
 import type { UseTTSDownloadsResult } from '@/app/reader/hooks/useTTSDownloads';
 
 type SheetView = 'main' | 'speed' | 'voice' | 'timer' | 'chapters';
@@ -46,6 +47,7 @@ export const formatGap = (sec: number) => `${parseFloat(sec.toFixed(2))}s`;
 const getTTSTimeoutOptions = (_: TranslationFunc) => {
   return [
     { label: _('No Timeout'), value: 0 },
+    { label: _('End of Chapter'), value: TTS_STOP_AT_CHAPTER_END },
     { label: _('{{value}} minute', { value: 1 }), value: 60 },
     { label: _('{{value}} minutes', { value: 3 }), value: 180 },
     { label: _('{{value}} minutes', { value: 5 }), value: 300 },
@@ -246,9 +248,16 @@ const TTSPlayerSheet = ({
   const currentVoiceName = voiceGroups
     .flatMap((group) => group.voices)
     .find((voice) => voice.id === selectedVoice)?.name;
-  // Armed timer shows its live countdown on the button; otherwise the button
-  // just names itself (the alarm icon already carries the affordance).
-  const timerCaption = timeoutOption > 0 && timerLabel ? timerLabel : _('Sleep Timer');
+  // Armed timer shows its live countdown on the button; the chapter-end mode
+  // has no countdown so it just names itself; otherwise the button falls
+  // back to naming the feature (the alarm icon already carries the
+  // affordance).
+  const timerCaption =
+    timeoutOption === TTS_STOP_AT_CHAPTER_END
+      ? _('End of Chapter')
+      : timeoutOption > 0 && timerLabel
+        ? timerLabel
+        : _('Sleep Timer');
 
   // The main view carries no header label (the content speaks for itself and
   // vertical space is tight); sub-views keep the back button and their title.

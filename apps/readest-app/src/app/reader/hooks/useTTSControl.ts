@@ -24,7 +24,11 @@ import { isCfiInLocation } from '@/utils/cfi';
 import { getLocale } from '@/utils/misc';
 import { estimateTTSTime } from '@/utils/ttsTime';
 import { releaseUnblockAudio, ttsMediaBridge, unblockAudio } from '@/services/tts/ttsMediaBridge';
-import { getBookHashFromKey, ttsSessionManager } from '@/services/tts/TTSSessionManager';
+import {
+  getBookHashFromKey,
+  ttsSessionManager,
+  TTS_STOP_AT_CHAPTER_END,
+} from '@/services/tts/TTSSessionManager';
 
 interface UseTTSControlProps {
   bookKey: string;
@@ -260,9 +264,14 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         setIsPlaying(!paused);
         setIsPaused(paused);
         emitPlaybackState(paused ? 'paused' : 'playing');
-        const timer = ttsSessionManager.getSleepTimer();
-        setTimeoutOption(timer?.timeoutSec ?? 0);
-        setTimeoutTimestamp(timer?.firesAt ?? 0);
+        if (ttsSessionManager.getStopAtChapterEnd()) {
+          setTimeoutOption(TTS_STOP_AT_CHAPTER_END);
+          setTimeoutTimestamp(0);
+        } else {
+          const timer = ttsSessionManager.getSleepTimer();
+          setTimeoutOption(timer?.timeoutSec ?? 0);
+          setTimeoutTimestamp(timer?.firesAt ?? 0);
+        }
         const bookData = getBookData(bookKey);
         if (bookData?.book) {
           ttsSessionManager.adopt(bookKey, {
@@ -787,6 +796,19 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           metadataMode: viewSettings.ttsMediaMetadata ?? 'sentence',
           getSectionLabel: () => getProgress(bookKey)?.sectionLabel,
         });
+        // Reflect a standing "End of Chapter" preference (or an already-armed
+        // numeric timer) on the button immediately, rather than waiting for
+        // the next stop/reattach cycle to notice it.
+        if (ttsSessionManager.getStopAtChapterEnd()) {
+          setTimeoutOption(TTS_STOP_AT_CHAPTER_END);
+          setTimeoutTimestamp(0);
+        } else {
+          const timer = ttsSessionManager.getSleepTimer();
+          if (timer) {
+            setTimeoutOption(timer.timeoutSec);
+            setTimeoutTimestamp(timer.firesAt);
+          }
+        }
 
         await ttsController.init();
         await ttsController.initViewTTS(ttsFromIndex);
@@ -1003,11 +1025,20 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
   // The timer lives in the session manager so it survives reader unmount and
   // stops a background session (a hook-local timer would fire into a dead
-  // closure and orphan the audio).
+  // closure and orphan the audio). TTS_STOP_AT_CHAPTER_END is a sentinel
+  // sharing this same picker/option list - "stop when the current chapter
+  // ends" instead of a fixed duration - so it's routed to the manager's
+  // chapter-end mode instead of the numeric setSleepTimer.
   const handleSelectTimeout = (_bookKey: string, value: number) => {
     setTimeoutOption(value);
-    ttsSessionManager.setSleepTimer(value);
-    setTimeoutTimestamp(value > 0 ? Date.now() + value * 1000 : 0);
+    if (value === TTS_STOP_AT_CHAPTER_END) {
+      ttsSessionManager.setStopAtChapterEnd(true);
+      setTimeoutTimestamp(0);
+    } else {
+      ttsSessionManager.setStopAtChapterEnd(false);
+      ttsSessionManager.setSleepTimer(value);
+      setTimeoutTimestamp(value > 0 ? Date.now() + value * 1000 : 0);
+    }
   };
 
   const refreshTtsLang = useCallback(() => {
