@@ -41,6 +41,9 @@ jobs:
       - name: Install dependencies
         working-directory: .
         run: pnpm install --frozen-lockfile
+      - name: Prepare bundled vendor assets
+        working-directory: .
+        run: pnpm --filter @readest/readest-app setup-vendors
       - name: Build universal debug APK
         run: |
           # Tauri's frontend must be bundled for the native platform, not web.
