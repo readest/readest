@@ -129,19 +129,50 @@ export function selectNewImportableFiles(
  *
  * Unlike `buildBookLookupIndex(...).byFilePath`, this includes soft-deleted
  * books (`deletedAt` set) so that auto-import does not resurrect a book the
- * user intentionally removed from their library.
+ * user intentionally removed from their library. `altFilePaths` is included
+ * alongside `filePath`: several files in a watched folder can dedup into one
+ * book (same bytes under two names, or two files sharing a metaHash), and a
+ * path the importer folded away is just as "known" as the one it kept.
  *
  * URL-backed entries (remote books) are excluded — only on-disk paths matter.
  */
 export function collectKnownSourcePaths(books: Book[], osPlatform?: OsPlatform): Set<string> {
   const paths = new Set<string>();
   for (const book of books) {
-    if (book.filePath && !isValidURL(book.filePath)) {
-      const key = normalizeFilePathForIndex(book.filePath, osPlatform);
+    for (const path of [book.filePath, ...(book.altFilePaths ?? [])]) {
+      if (!path || isValidURL(path)) continue;
+      const key = normalizeFilePathForIndex(path, osPlatform);
       if (key) paths.add(key);
     }
   }
   return paths;
+}
+
+/**
+ * Move `book.filePath` into `book.altFilePaths` because `nextFilePath` is about
+ * to take its place.
+ *
+ * The newest path always wins the `filePath` slot — that is what makes a rename
+ * recoverable (the old name is gone from disk, the new one is where the bytes
+ * are). Without this the displaced path would simply be forgotten, and the
+ * auto-import scan would rediscover it as a "new" file on the next pass,
+ * re-import it, displace the current path in turn, and ping-pong forever.
+ *
+ * Idempotent: entries are deduplicated by normalized key and `nextFilePath` is
+ * never kept as its own alternative.
+ */
+function displaceSourcePath(book: Book, nextFilePath: string, osPlatform?: OsPlatform): void {
+  const nextKey = normalizeFilePathForIndex(nextFilePath, osPlatform);
+  const seen = new Set<string>();
+  const paths: string[] = [];
+  for (const path of [book.filePath, ...(book.altFilePaths ?? [])]) {
+    if (!path || isValidURL(path)) continue;
+    const key = normalizeFilePathForIndex(path, osPlatform);
+    if (!key || key === nextKey || seen.has(key)) continue;
+    seen.add(key);
+    paths.push(path);
+  }
+  book.altFilePaths = paths.length > 0 ? paths : undefined;
 }
 
 export interface CoverContext {
@@ -645,7 +676,16 @@ export async function importBook(
         // inPlace: source file is inside the user's library root and we read it
         // there directly instead of duplicating it under Books/<hash>/.
         book.filePath = file;
-        if (existingBook) existingBook.filePath = file;
+        if (existingBook) {
+          // A second on-disk file just deduped into a book we already have.
+          // Keep the path it is losing so the auto-import scan knows both
+          // files are accounted for (transient previews are never persisted,
+          // so there is nothing to remember for them).
+          if (inPlace && !transient) {
+            displaceSourcePath(existingBook, file, osPlatform);
+          }
+          existingBook.filePath = file;
+        }
       }
     }
     // Now that `filePath` is set, keep the path index in sync so later files

@@ -8,7 +8,8 @@ from calibre.gui2.actions import InterfaceAction
 
 from calibre_plugins.readest.api import ReadestClient
 from calibre_plugins.readest.config import prefs, save_tokens
-from calibre_plugins.readest.dialogs import LoginDialog, PushDialog
+from calibre_plugins.readest.dialogs import LoginDialog, PushDialog, StatusDialog
+from calibre_plugins.readest.wire import merge_marks
 
 
 def make_client():
@@ -36,6 +37,12 @@ class ReadestInterfacePlugin(InterfaceAction):
         )
         self.push_action.triggered.connect(self.push_selected)
 
+        self.check_action = self.create_action(
+            spec=('Check Readest status', None, None, None),
+            attr='Check Readest status of selected books',
+        )
+        self.check_action.triggered.connect(self.check_selected)
+
         self.login_action = self.create_action(
             spec=('Log in to Readest…', None, None, None), attr='Log in to Readest'
         )
@@ -53,6 +60,7 @@ class ReadestInterfacePlugin(InterfaceAction):
 
         self.menu = QMenu(self.gui)
         self.menu.addAction(self.push_action)
+        self.menu.addAction(self.check_action)
         self.menu.addSeparator()
         self.menu.addAction(self.login_action)
         self.menu.addAction(self.logout_action)
@@ -70,26 +78,46 @@ class ReadestInterfacePlugin(InterfaceAction):
         self.logout_action.setVisible(logged_in)
         if logged_in and email:
             self.logout_action.setText('Log out (%s)' % email)
-        self.push_action.setEnabled(len(self.selected_book_ids()) > 0)
+        selected = len(self.selected_book_ids()) > 0
+        self.push_action.setEnabled(selected)
+        self.check_action.setEnabled(selected)
 
     def selected_book_ids(self):
         return self.gui.library_view.get_selected_ids()
 
     def push_selected(self):
+        self.run_on_selection(PushDialog, 'Select the books to push to Readest.')
+
+    def check_selected(self):
+        self.run_on_selection(StatusDialog, 'Select the books to check against Readest.')
+
+    def run_on_selection(self, dialog_class, no_selection_message):
         book_ids = self.selected_book_ids()
         if not book_ids:
             return error_dialog(
-                self.gui, 'No books selected', 'Select the books to push to Readest.', show=True
+                self.gui, 'No books selected', no_selection_message, show=True
             )
         if not prefs['tokens'] and not self.login():
             return
-        PushDialog(
+        dialog = dialog_class(
             self.gui,
             self.gui.current_db.new_api,
             book_ids,
             make_client(),
             bool(prefs['include_custom_columns']),
-        ).exec()
+        )
+        dialog.exec()
+        self.apply_marks(dialog.marks)
+
+    def apply_marks(self, marks):
+        """Show the result in the book list as calibre marks (`marked:readest_*`)."""
+        if not marks:
+            return
+        view = self.gui.current_db.data
+        # Repaint the rows we are marking plus the ones we are unmarking.
+        touched = set(view.marked_ids) | set(marks)
+        view.set_marked_ids(merge_marks(view.marked_ids, marks))
+        self.gui.library_view.model().refresh_ids(sorted(touched))
 
     def login(self):
         dialog = LoginDialog(self.gui, make_client())

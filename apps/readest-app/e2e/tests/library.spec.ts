@@ -11,6 +11,16 @@ test.describe('Library page', () => {
     await expect(library.emptyState).toBeVisible();
   });
 
+  test('opens the import menu from the empty-library state', async ({ page }) => {
+    const library = new LibraryPage(page);
+    await library.goto();
+
+    await library.emptyStateImportButton.click();
+
+    await expect(library.importMenu).toBeVisible();
+    await expect(library.localFileImportItem).toBeVisible();
+  });
+
   test('search input accepts text and exposes a clear control', async ({ page }) => {
     const library = new LibraryPage(page);
     await library.goto();

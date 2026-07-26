@@ -98,6 +98,7 @@ import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
 import Bookshelf from './components/Bookshelf';
 import LibraryEmptyState from './components/LibraryEmptyState';
+import ImportMenuPopup from './components/ImportMenuPopup';
 import GroupHeader from './components/GroupHeader';
 import FailedImportsDialog, { FailedImport } from './components/FailedImportsDialog';
 import ImportFromFolderDialog, {
@@ -207,6 +208,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [showFeeds, setShowFeeds] = useState(false);
   const [showAddFeed, setShowAddFeed] = useState(false);
   const [showImportFromUrl, setShowImportFromUrl] = useState(false);
+  const [importMenuAnchor, setImportMenuAnchor] = useState<HTMLElement | null>(null);
   const [loading, setLoading] = useState(false);
   // Seed from the library store: if we already have books in memory (the
   // common reader → library return path), treat the page as loaded
@@ -1630,7 +1632,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 isSelectAll={isSelectAll}
                 isSelectNone={isSelectNone}
                 onScrollerRef={handleScrollerRef}
-                handleImportBooks={handleImportBooksFromFiles}
+                handleImportBooks={setImportMenuAnchor}
                 handleBookUpload={handleBookUpload}
                 handleBookDownload={handleBookDownload}
                 handleBookDelete={handleBookDelete('both')}
@@ -1646,9 +1648,22 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         ) : (
           <div className='hero drop-zone h-screen items-center justify-center'>
             <DropIndicator />
-            <LibraryEmptyState onImport={handleImportBooksFromFiles} />
+            <LibraryEmptyState onImport={setImportMenuAnchor} />
           </div>
         ))}
+      {importMenuAnchor && (
+        <ImportMenuPopup
+          anchor={importMenuAnchor}
+          onClose={() => setImportMenuAnchor(null)}
+          onImportBooksFromFiles={handleImportBooksFromFiles}
+          onImportBooksFromDirectory={
+            appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
+          }
+          onImportBookFromUrl={isTauriAppPlatform() ? () => setShowImportFromUrl(true) : undefined}
+          onOpenCatalogManager={handleShowOPDSDialog}
+          onOpenFeeds={handleShowFeeds}
+        />
+      )}
       <NowPlayingBar isSelectMode={isSelectMode} />
       {showDetailsBook && (
         <BookDetailModal

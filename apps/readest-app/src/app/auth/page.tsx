@@ -27,48 +27,16 @@ import { getUserProfilePlan } from '@/utils/access';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
 import WindowButtons from '@/components/WindowButtons';
-
-type OAuthProvider = 'google' | 'apple' | 'azure' | 'github' | 'discord';
+import { ProviderLogin, type OAuthProvider } from './components/ProviderLogin';
 
 interface SingleInstancePayload {
   args: string[];
   cwd: string;
 }
 
-interface ProviderLoginProp {
-  provider: OAuthProvider;
-  handleSignIn: (provider: OAuthProvider) => Promise<void>;
-  Icon: React.ElementType;
-  label: string;
-}
-
 const WEB_AUTH_CALLBACK = `${getBaseUrl()}/auth/callback`;
 const DEEPLINK_CALLBACK = 'readest://auth-callback';
 const USE_APPLE_SIGN_IN = process.env['NEXT_PUBLIC_USE_APPLE_SIGN_IN'] === 'true';
-
-export const ProviderLogin: React.FC<ProviderLoginProp> = ({
-  provider,
-  handleSignIn,
-  Icon,
-  label,
-}) => {
-  return (
-    <button
-      onClick={() => {
-        void handleSignIn(provider).catch((error) => {
-          console.warn(`Failed to sign in with ${provider}:`, error);
-        });
-      }}
-      className={clsx(
-        'mb-2 flex w-64 items-center justify-center rounded border p-2.5',
-        'bg-base-100 border-base-300 hover:bg-base-200 shadow-sm transition',
-      )}
-    >
-      <Icon />
-      <span className='text-base-content/75 px-2 text-sm'>{label}</span>
-    </button>
-  );
-};
 
 export default function AuthPage() {
   const _ = useTranslation();

@@ -322,7 +322,6 @@ describe('paragraph mode', () => {
     const { container } = render(
       <ParagraphOverlay
         bookKey={overlayBookKey}
-        dimOpacity={0.3}
         viewSettings={{ writingMode: 'horizontal-tb', vertical: false, rtl: true } as never}
       />,
     );
@@ -403,7 +402,6 @@ describe('paragraph mode', () => {
     const { container } = render(
       <ParagraphOverlay
         bookKey={overlayBookKey}
-        dimOpacity={0.3}
         viewSettings={{ writingMode: 'horizontal-tb', vertical: false, rtl: false } as never}
         onClose={onClose}
       />,
@@ -487,6 +485,15 @@ describe('paragraph mode', () => {
 
   const getDialog = (container: HTMLElement) =>
     container.querySelector('[role="dialog"]') as HTMLDivElement;
+
+  it('paints a solid backdrop instead of blurring the page behind it (#5275)', async () => {
+    const { container } = await renderVisibleOverlay(vi.fn());
+    const dialog = getDialog(container);
+
+    expect(dialog.className).toContain('bg-base-100');
+    expect(dialog.getAttribute('style') ?? '').not.toContain('blur');
+    expect(dialog.getAttribute('style') ?? '').not.toContain('background');
+  });
 
   it('focuses the dialog when it opens so it receives keys directly (#4717)', async () => {
     const { container } = await renderVisibleOverlay(vi.fn());

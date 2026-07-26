@@ -36,7 +36,6 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
 
   const isEink = getViewSettings(bookKey)?.isEink ?? false;
   const hasTimeline = tts.ttsClientsInited && tts.handleSupportsPlaybackInfo();
-  const hasGapControl = tts.ttsClientsInited && tts.handleSupportsGapControl();
 
   useEffect(() => {
     if (tts.showBackToCurrentTTSLocation) {
@@ -121,7 +120,6 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           ttsLang={tts.ttsLang}
           isPlaying={tts.isPlaying}
           hasTimeline={hasTimeline}
-          hasGapControl={hasGapControl}
           timeoutOption={tts.timeoutOption}
           timeoutTimestamp={tts.timeoutTimestamp}
           chapterRemainingSec={tts.chapterRemainingSec}

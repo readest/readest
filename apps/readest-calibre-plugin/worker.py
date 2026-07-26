@@ -9,6 +9,7 @@ import shutil
 import tempfile
 import time
 import traceback
+from collections import namedtuple
 
 from qt.core import QThread, pyqtSignal
 
@@ -20,14 +21,18 @@ from calibre_plugins.readest.api import (
 )
 from calibre_plugins.readest.wire import (
     EXTS,
+    PLAN_MARKS,
     book_file_name,
     build_wire_book,
+    cloud_book_hashes,
     cover_file_name,
     index_rows_by_uuid,
     merge_for_push,
+    ms_to_iso,
     pick_format,
     pick_server_row,
     plan_push,
+    should_bulk_list,
     tombstone_record,
 )
 
@@ -38,6 +43,30 @@ STATUS_LABELS = {
     'skipped': 'Up to date',
     'failed': 'Failed',
 }
+PUSH_ORDER = ('uploaded', 'replaced', 'updated', 'skipped', 'failed')
+
+# A status check reports plan_push's actions verbatim, so its keys are the
+# plan names rather than the past-tense push outcomes.
+CHECK_LABELS = {
+    'skip': 'In Readest',
+    'update': 'Metadata differs',
+    'replace': 'Out of date',
+    'new': 'Not in Readest',
+    'failed': 'Failed',
+}
+CHECK_ORDER = ('skip', 'update', 'replace', 'new', 'failed')
+
+# Every push outcome except a failure leaves the book present in the cloud.
+PUSHED_MARK = PLAN_MARKS['skip']
+
+_BookPlan = namedtuple(
+    '_BookPlan',
+    'mi fmt path source_hash cover_bytes cover_hash now_ms wire uuid server_row plan',
+)
+
+
+def _lower_first(text):
+    return text[:1].lower() + text[1:]
 
 
 def _jsonable(value):
@@ -104,7 +133,12 @@ def _embed_metadata_copy(path, mi, fmt):
     return tmp
 
 
-class PushWorker(QThread):
+class _CloudWorker(QThread):
+    """Pulls the cloud state once, then classifies each selected book.
+
+    `PushWorker` acts on the plan; `StatusWorker` only reports it.
+    """
+
     progress = pyqtSignal(int, int)  # done, total
     book_status = pyqtSignal(int, str, str)  # book_id, status key, detail
     done = pyqtSignal(bool, str)  # ok, message
@@ -116,20 +150,107 @@ class PushWorker(QThread):
         self.client = client
         self.include_custom_columns = include_custom_columns
         self.canceled = False
+        self.marks = {}  # book_id -> calibre mark label
+        self.cloud_hashes = None  # whole-account listing, when it is worth paging
+        self._blob_cache = {}  # book_hash -> in storage? (per-book fallback)
 
     def cancel(self):
         self.canceled = True
 
-    def run(self):
+    def _load_cloud_state(self):
+        """Server rows + storage listing. Returns an error message, or None."""
         try:
             rows = [r for r in self.client.pull_books() if r.get('book_hash')]
-            self.by_hash = {r['book_hash']: r for r in rows}
-            self.by_uuid = index_rows_by_uuid(rows)
         except AuthRequiredError as err:
-            self.done.emit(False, 'Please log in to Readest first. (%s)' % err)
-            return
+            return 'Please log in to Readest first. (%s)' % err
         except Exception as err:
-            self.done.emit(False, 'Could not reach Readest: %s' % err)
+            return 'Could not reach Readest: %s' % err
+        self.by_hash = {r['book_hash']: r for r in rows}
+        self.by_uuid = index_rows_by_uuid(rows)
+        self.cloud_hashes = self._bulk_listing()
+        return None
+
+    def _bulk_listing(self):
+        """Every book hash in storage, or None to look them up one at a time.
+
+        Paging the whole listing costs a request per page whatever the
+        selection size, so for a handful of books it is far cheaper to ask
+        about just those. Page 1 tells us how long the listing is, and we need
+        it anyway when we do go on to page the rest.
+        """
+        try:
+            files, total_pages = self.client.list_files_page(1)
+            if not should_bulk_list(total_pages, len(self.book_ids)):
+                return None
+            for page in range(2, total_pages + 1):
+                if self.canceled:
+                    return None
+                more, _ = self.client.list_files_page(page)
+                files.extend(more)
+            return cloud_book_hashes(files)
+        except Exception:
+            # Fall back to per-book lookups, which degrade on their own.
+            traceback.print_exc()
+            return None
+
+    def _blob_present(self, book_hash):
+        """Whether this book's file is really in cloud storage."""
+        if self.cloud_hashes is not None:
+            return book_hash in self.cloud_hashes
+        if book_hash not in self._blob_cache:
+            try:
+                self._blob_cache[book_hash] = book_hash in cloud_book_hashes(
+                    self.client.list_files(book_hash)
+                )
+            except Exception:
+                # Without an answer we can only trust uploaded_at, which is
+                # what the plugin did before. The run goes on.
+                traceback.print_exc()
+                self._blob_cache[book_hash] = True
+        return self._blob_cache[book_hash]
+
+    def _plan_for(self, book_id):
+        """(_BookPlan, '') for one book, or (None, reason) when it cannot be pushed."""
+        mi = self.db.get_metadata(book_id)
+        fmt = pick_format(self.db.formats(book_id))
+        if fmt is None:
+            return None, 'No Readest-supported format (EPUB, PDF, ...)'
+        path = self.db.format_abspath(book_id, fmt)
+        if not path or not os.path.exists(path):
+            return None, 'Book file is missing from the calibre library'
+
+        source_hash = partial_md5(path)
+        cover_bytes = self.db.cover(book_id)
+        cover_hash = partial_md5_bytes(cover_bytes) if cover_bytes else None
+
+        now_ms = int(time.time() * 1000)
+        book = _book_dict(mi, self.include_custom_columns, source_hash)
+        wire = build_wire_book(book, source_hash, fmt, now_ms)
+        uuid = (book.get('uuid') or '').lower()
+        server_row = pick_server_row(
+            self.by_hash.get(source_hash), self.by_uuid.get(uuid) if uuid else None
+        )
+        plan = plan_push(server_row, wire, cover_hash, source_hash, self._blob_present)
+        return (
+            _BookPlan(
+                mi, fmt, path, source_hash, cover_bytes, cover_hash,
+                now_ms, wire, uuid, server_row, plan,
+            ),
+            '',
+        )
+
+    def _summary(self, counts, labels, order, empty):
+        parts = ', '.join(
+            '%d %s' % (counts[key], _lower_first(labels[key])) for key in order if key in counts
+        )
+        return parts or empty
+
+
+class PushWorker(_CloudWorker):
+    def run(self):
+        error = self._load_cloud_state()
+        if error:
+            self.done.emit(False, error)
             return
 
         counts = {}
@@ -151,15 +272,17 @@ class PushWorker(QThread):
                 traceback.print_exc()
                 status, detail = 'failed', str(err)
             counts[status] = counts.get(status, 0) + 1
+            if status != 'failed':
+                # Whatever the outcome, the book is now in the cloud, so keep
+                # any marks a previous status check left from going stale.
+                self.marks[book_id] = PUSHED_MARK
             self.book_status.emit(book_id, status, detail)
             self.progress.emit(index + 1, len(self.book_ids))
 
-        summary = ', '.join(
-            '%d %s' % (counts[key], STATUS_LABELS[key].lower())
-            for key in ('uploaded', 'replaced', 'updated', 'skipped', 'failed')
-            if key in counts
+        self.done.emit(
+            'failed' not in counts,
+            self._summary(counts, STATUS_LABELS, PUSH_ORDER, 'Nothing to push.'),
         )
-        self.done.emit('failed' not in counts, summary or 'Nothing to push.')
 
     def _upload(self, file_name, fileobj, size, book_hash):
         upload = self.client.get_upload_url(file_name, size, book_hash)
@@ -187,34 +310,26 @@ class PushWorker(QThread):
             'author': record['author'],
             'tags': record.get('tags'),
             'metadata': record['metadata'],
-            'uploaded_at': 'pushed',
+            'uploaded_at': ms_to_iso(record.get('uploadedAt')),
             'cover_hash': record.get('coverHash'),
         }
         self.by_hash[record['hash']] = row
         if uuid:
             self.by_uuid[uuid] = row
+        # We just uploaded it, so don't go asking storage about it again.
+        self._blob_cache[record['hash']] = True
+        if self.cloud_hashes is not None:
+            self.cloud_hashes.add(record['hash'])
 
     def _push_one(self, book_id):
-        mi = self.db.get_metadata(book_id)
-        fmt = pick_format(self.db.formats(book_id))
-        if fmt is None:
-            return 'failed', 'No Readest-supported format (EPUB, PDF, ...)'
-        path = self.db.format_abspath(book_id, fmt)
-        if not path or not os.path.exists(path):
-            return 'failed', 'Book file is missing from the calibre library'
+        ctx, reason = self._plan_for(book_id)
+        if ctx is None:
+            return 'failed', reason
 
-        source_hash = partial_md5(path)
-        cover_bytes = self.db.cover(book_id)
-        cover_hash = partial_md5_bytes(cover_bytes) if cover_bytes else None
-
-        now_ms = int(time.time() * 1000)
-        book = _book_dict(mi, self.include_custom_columns, source_hash)
-        wire = build_wire_book(book, source_hash, fmt, now_ms)
-        uuid = (book.get('uuid') or '').lower()
-        server_row = pick_server_row(
-            self.by_hash.get(source_hash), self.by_uuid.get(uuid) if uuid else None
-        )
-        plan = plan_push(server_row, wire, cover_hash, source_hash)
+        mi, fmt, path = ctx.mi, ctx.fmt, ctx.path
+        cover_bytes, cover_hash = ctx.cover_bytes, ctx.cover_hash
+        now_ms, wire, uuid, server_row = ctx.now_ms, ctx.wire, ctx.uuid, ctx.server_row
+        plan = ctx.plan
 
         if plan['action'] == 'skip':
             return 'skipped', ''
@@ -265,3 +380,35 @@ class PushWorker(QThread):
         self.client.push_books([record])
         self._remember(record, uuid)
         return 'updated', ''
+
+
+class StatusWorker(_CloudWorker):
+    """Plans every selected book without uploading, and marks the results."""
+
+    def run(self):
+        error = self._load_cloud_state()
+        if error:
+            self.done.emit(False, error)
+            return
+
+        counts = {}
+        for index, book_id in enumerate(self.book_ids):
+            if self.canceled:
+                self.done.emit(False, 'Canceled.')
+                return
+            try:
+                ctx, reason = self._plan_for(book_id)
+                status, detail = (ctx.plan['action'], '') if ctx else ('failed', reason)
+            except Exception as err:
+                traceback.print_exc()
+                status, detail = 'failed', str(err)
+            if status in PLAN_MARKS:
+                self.marks[book_id] = PLAN_MARKS[status]
+            counts[status] = counts.get(status, 0) + 1
+            self.book_status.emit(book_id, status, detail)
+            self.progress.emit(index + 1, len(self.book_ids))
+
+        self.done.emit(
+            'failed' not in counts,
+            self._summary(counts, CHECK_LABELS, CHECK_ORDER, 'Nothing to check.'),
+        )

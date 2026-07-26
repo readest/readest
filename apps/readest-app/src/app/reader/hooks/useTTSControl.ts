@@ -881,10 +881,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     return ttsControllerRef.current?.supportsPlaybackInfo() ?? false;
   }, []);
 
-  const handleSupportsGapControl = useCallback(() => {
-    return ttsControllerRef.current?.supportsGapControl() ?? false;
-  }, []);
-
   // Stable handle for the download/chapters surface (reads the cache and
   // drives headless pre-synthesis off the playback path). MUST be memoized:
   // an inline arrow here changes identity every render, which would cascade
@@ -1050,7 +1046,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     handleSeekPreview,
     handleGetPlaybackInfo,
     handleSupportsPlaybackInfo,
-    handleSupportsGapControl,
     refreshTtsLang,
     getController,
   };

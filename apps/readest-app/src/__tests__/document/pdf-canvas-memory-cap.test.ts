@@ -1,7 +1,7 @@
-// Regression test for readest/readest issue #5118.
+// Regression test for readest/readest issues #5118 and #5251.
 //
 // On iOS the WKWebView content process is killed by Jetsam when it exceeds its
-// per-process memory high-water limit (~2 GB). A device crash log for this issue
+// per-process memory high-water limit (~2 GB). A device crash log for #5118
 // shows the foreground WebContent process reaching 2.10 GB with reason
 // `highwater` right before the PDF "closed". macOS WebKit has no such per-process
 // ceiling, which is why the same PDF reads fine in the desktop app; the iOS web
@@ -14,10 +14,15 @@
 // WebContent process when zooming past ~150%) nor with `zoom` (which throws off
 // getBoundingClientRect and misplaces text selection / the annotation toolbar).
 //
-// The bitmap resolution is clamped:
+// On mobile WebViews the bitmap resolution is clamped:
 //   * to MAX_RENDER_DPR (a 3x phone rasterises at 2x, still retina)
 //   * further, so the bitmap area stays within MAX_CANVAS_PIXELS (large tablet
 //     pages don't blow the budget)
+// Desktop browsers have no per-process ceiling, so they are NOT clamped: doing so
+// only cost sharpness, and a page filling a desktop window exceeds the mobile
+// pixel budget immediately, so its raster was upscaled to the screen and PDF text
+// came out visibly blurry (#5251).
+//
 // The CSS box is always the un-scaled display size, so text and annotation
 // layers stay in real display coordinates.
 
@@ -30,6 +35,20 @@ const PAGE_H = 792;
 // Must mirror the constants in foliate-js/pdf.js.
 const MAX_RENDER_DPR = 2;
 const MAX_CANVAS_PIXELS = 2048 * 1536; // 3,145,728
+
+const DESKTOP_UA =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15';
+const IPHONE_UA =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148';
+// iPadOS reports a desktop ("Macintosh") user agent, so only the touch points
+// give it away.
+const IPAD_UA = DESKTOP_UA;
+
+const stubPlatform = (userAgent: string, maxTouchPoints: number) => {
+  for (const [key, value] of Object.entries({ userAgent, maxTouchPoints })) {
+    Object.defineProperty(navigator, key, { value, configurable: true });
+  }
+};
 
 vi.mock('@pdfjs/pdf.min.mjs', () => {
   class PDFDataRangeTransport {
@@ -77,7 +96,15 @@ vi.mock('@pdfjs/pdf.min.mjs', () => {
   return {};
 });
 
-const renderPageCanvas = async (dpr: number, zoom: number) => {
+const renderPageCanvas = async (
+  dpr: number,
+  zoom: number,
+  platform: { userAgent: string; maxTouchPoints: number } = {
+    userAgent: DESKTOP_UA,
+    maxTouchPoints: 0,
+  },
+) => {
+  stubPlatform(platform.userAgent, platform.maxTouchPoints);
   vi.stubGlobal('devicePixelRatio', dpr);
   vi.stubGlobal(
     'fetch',
@@ -112,11 +139,13 @@ const renderPageCanvas = async (dpr: number, zoom: number) => {
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+  Reflect.deleteProperty(navigator, 'userAgent');
+  Reflect.deleteProperty(navigator, 'maxTouchPoints');
 });
 
 describe('PDF canvas memory cap (#5118)', () => {
   it('does not scale the DOM (no transform / zoom on the page)', async () => {
-    const { canvas } = await renderPageCanvas(3, 0.64);
+    const { canvas } = await renderPageCanvas(3, 0.64, { userAgent: IPHONE_UA, maxTouchPoints: 5 });
     const docEl = canvas.ownerDocument.documentElement;
     expect(docEl.style.transform).toBe('');
     expect(docEl.style.zoom).toBe('');
@@ -126,7 +155,10 @@ describe('PDF canvas memory cap (#5118)', () => {
     // iPhone: devicePixelRatio 3, page fit to a phone-width box.
     const dpr = 3;
     const zoom = 0.64;
-    const { canvas, renderDpr, displayW } = await renderPageCanvas(dpr, zoom);
+    const { canvas, renderDpr, displayW } = await renderPageCanvas(dpr, zoom, {
+      userAgent: IPHONE_UA,
+      maxTouchPoints: 5,
+    });
     expect(canvas).toBeTruthy();
 
     // Bitmap is over-sampled at the clamped dpr, not the full device dpr.
@@ -142,10 +174,13 @@ describe('PDF canvas memory cap (#5118)', () => {
   });
 
   it('clamps the bitmap area to MAX_CANVAS_PIXELS on a large page', async () => {
-    // Tablet: devicePixelRatio 2, page fit to a wide box -> would exceed budget.
+    // iPad: devicePixelRatio 2, page fit to a wide box -> would exceed budget.
     const dpr = 2;
     const zoom = 1.6;
-    const { canvas, renderDpr, displayW } = await renderPageCanvas(dpr, zoom);
+    const { canvas, renderDpr, displayW } = await renderPageCanvas(dpr, zoom, {
+      userAgent: IPAD_UA,
+      maxTouchPoints: 5,
+    });
     expect(canvas).toBeTruthy();
 
     // Even at dpr 2 this page is over budget, so the render dpr drops below 2.
@@ -166,5 +201,37 @@ describe('PDF canvas memory cap (#5118)', () => {
     expect(renderDpr).toBeCloseTo(dpr, 2);
     expect(canvas.width).toBeCloseTo(PAGE_W * zoom * dpr, 0);
     expect(canvas.height).toBeCloseTo(PAGE_H * zoom * dpr, 0);
+  });
+});
+
+describe('PDF raster sharpness on desktop (#5251)', () => {
+  // A page fitted to the width of a desktop window is far bigger than the mobile
+  // pixel budget: at dpr 2 this one wants a 10.9 Mpx bitmap, 3.5x the budget.
+  // Clamping it made the raster coarser than the screen, so the browser upscaled
+  // it to the CSS box and PDF glyph edges came out blurry.
+  const dpr = 2;
+  const zoom = 2.37;
+
+  it('rasterises at the full device pixel ratio, however large the page', async () => {
+    const { canvas, renderDpr, displayW } = await renderPageCanvas(dpr, zoom);
+    expect(canvas).toBeTruthy();
+
+    // The bitmap size is an integer, so the full-dpr viewport is truncated.
+    expect(renderDpr).toBeCloseTo(dpr, 2);
+    expect(canvas.width).toBe(Math.trunc(PAGE_W * zoom * dpr));
+    expect(canvas.height).toBe(Math.trunc(PAGE_H * zoom * dpr));
+    expect(canvas.width * canvas.height).toBeGreaterThan(MAX_CANVAS_PIXELS);
+
+    // Still no document scaling: the CSS box stays the display size.
+    expect(displayW).toBeCloseTo(PAGE_W * zoom, 0);
+    expect(canvas.ownerDocument.documentElement.style.transform).toBe('');
+  });
+
+  it('keeps the memory budget on a mobile WebView at the same size', async () => {
+    const { renderDpr } = await renderPageCanvas(dpr, zoom, {
+      userAgent: IPHONE_UA,
+      maxTouchPoints: 5,
+    });
+    expect(renderDpr).toBeLessThan(dpr);
   });
 });

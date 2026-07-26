@@ -156,7 +156,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       className={clsx(
         'progressinfo pointer-events-none absolute bottom-0 flex items-center justify-between font-sans',
         isEink ? 'text-sm font-normal' : 'text-xs font-extralight',
-        bookData?.isFixedLayout && !isEink
+        // The blend keeps the info legible over an unthemed fixed-layout page,
+        // but it composites the whole container as a group -- with the pills on
+        // it differences a white pill against the white page and paints it pure
+        // black (#5342). The pill backdrop already guarantees legibility, so it
+        // takes over from the blend whenever it is present.
+        bookData?.isFixedLayout && !isEink && !pillClass
           ? 'text-white/75 mix-blend-difference'
           : 'text-base-content',
         isVertical ? 'writing-vertical-rl' : 'w-full',

@@ -249,44 +249,6 @@ describe('TTSPlayerSheet', () => {
     expect(saveSettings).toHaveBeenCalled();
   });
 
-  test('gap control is absent for a non-Edge client (hasGapControl false)', () => {
-    const props = makeProps({ hasGapControl: false });
-    render(<TTSPlayerSheet {...props} />);
-    fireEvent.click(screen.getByLabelText('Speed'));
-    expect(screen.queryByText(/Sentence Pause/)).toBeNull();
-    expect(screen.queryByRole('slider', { name: 'Sentence Pause' })).toBeNull();
-  });
-
-  test('sentence pause ruler shows for an Edge client and a drag persists the gap', () => {
-    const props = makeProps({ hasGapControl: true });
-    render(<TTSPlayerSheet {...props} />);
-    fireEvent.click(screen.getByLabelText('Speed'));
-    expect(screen.getByText(/Sentence Pause/)).toBeTruthy();
-    const slider = screen.getByRole('slider', { name: 'Sentence Pause' });
-    fireEvent.change(slider, { target: { value: '0.4' } });
-    expect(props.onSetSentenceGap).not.toHaveBeenCalled();
-    fireEvent.pointerUp(slider);
-    expect(props.onSetSentenceGap).toHaveBeenCalledWith(0.4);
-    expect(viewSettings['ttsSentenceGap']).toBe(0.4);
-    expect(settings.globalViewSettings.ttsSentenceGap).toBe(0.4);
-    expect(saveSettings).toHaveBeenCalled();
-  });
-
-  test('the speed view carries the paragraph pause ruler for every client', () => {
-    const props = makeProps({ hasGapControl: false });
-    render(<TTSPlayerSheet {...props} />);
-    // No dedicated sub-view or main-row button anymore.
-    expect(screen.queryByLabelText('Paragraph Gap')).toBeNull();
-    fireEvent.click(screen.getByLabelText('Speed'));
-    expect(screen.getByText(/Paragraph Pause/)).toBeTruthy();
-    const slider = screen.getByRole('slider', { name: 'Paragraph Pause' });
-    fireEvent.change(slider, { target: { value: '0.75' } });
-    fireEvent.pointerUp(slider);
-    expect(props.onSetParagraphGap).toHaveBeenCalledWith(0.75);
-    expect(viewSettings['ttsParagraphGap']).toBe(0.75);
-    expect(saveSettings).toHaveBeenCalled();
-  });
-
   test('voice button drills into the voice list and selects a voice', async () => {
     const props = makeProps();
     render(<TTSPlayerSheet {...props} />);

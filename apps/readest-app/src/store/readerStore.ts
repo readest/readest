@@ -560,18 +560,14 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
 
   recreateViewer: (envConfig: EnvConfigType, key: string) => {
     const id = key.split('-')[0]!;
-    get()
-      .initViewState(envConfig, id, key, true, true)
-      .then(() => {
-        set((state) => ({
-          viewStates: {
-            ...state.viewStates,
-            [key]: {
-              ...state.viewStates[key]!,
-              viewerKey: `${key}-${uniqueId()}`,
-            },
-          },
-        }));
-      });
+    // `initViewState` already mints a fresh `viewerKey` when the reload lands,
+    // which is what remounts <FoliateViewer>. Minting a second one here
+    // remounted it twice: the abandoned first mount kept running its async
+    // `openBook()` and registered another `data` transform listener on the
+    // *same* reloaded bookDoc, so every resource was piped through the
+    // transform chain twice. A twice-transformed stylesheet lost all its
+    // font-family declarations, and the book fell back to the app font
+    // (readest#5277).
+    void get().initViewState(envConfig, id, key, true, true);
   },
 }));

@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@supabase/auth-ui-react', () => ({ Auth: () => null }));
 vi.mock('@supabase/auth-ui-shared', () => ({ ThemeSupa: {} }));
 
-import { ProviderLogin } from '@/app/auth/page';
+import { ProviderLogin } from '@/app/auth/components/ProviderLogin';
 
 afterEach(() => {
   cleanup();

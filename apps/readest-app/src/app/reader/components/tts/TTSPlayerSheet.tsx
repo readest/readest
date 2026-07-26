@@ -36,18 +36,12 @@ import { TTSPlaybackInfo } from './usePlaybackInfo';
 import { useCountdownLabel } from './useCountdownLabel';
 import TTSScrubber from './TTSScrubber';
 import SpeedRuler, { formatRate } from './SpeedRuler';
-import TickRuler from './TickRuler';
 import TTSChaptersView from './TTSChaptersView';
 import type { UseTTSDownloadsResult } from '@/app/reader/hooks/useTTSDownloads';
 
 type SheetView = 'main' | 'speed' | 'voice' | 'timer' | 'chapters';
 
 export const formatGap = (sec: number) => `${parseFloat(sec.toFixed(2))}s`;
-
-// Pause ruler configurations: 0.05s steps keep every legacy chip preset
-// reachable (sentence 0-0.6s, paragraph 0-2s).
-const SENTENCE_PAUSE_MARKS = [0, 0.2, 0.4, 0.6];
-const PARAGRAPH_PAUSE_MARKS = [0, 0.5, 1, 1.5, 2];
 
 const getTTSTimeoutOptions = (_: TranslationFunc) => {
   return [
@@ -74,7 +68,6 @@ type TTSPlayerSheetProps = {
   ttsLang: string;
   isPlaying: boolean;
   hasTimeline: boolean;
-  hasGapControl: boolean;
   timeoutOption: number;
   timeoutTimestamp: number;
   chapterRemainingSec: number | null;
@@ -105,7 +98,6 @@ const TTSPlayerSheet = ({
   ttsLang,
   isPlaying,
   hasTimeline,
-  hasGapControl,
   timeoutOption,
   timeoutTimestamp,
   chapterRemainingSec,
@@ -150,10 +142,6 @@ const TTSPlayerSheet = ({
   const [view, setView] = useState<SheetView>('main');
   const [voiceGroups, setVoiceGroups] = useState<TTSVoicesGroup[]>([]);
   const [rate, setRate] = useState(viewSettings?.ttsRate ?? 1.0);
-  const [gap, setGap] = useState(viewSettings?.ttsSentenceGap ?? DEFAULT_SENTENCE_GAP_SEC);
-  const [paragraphGap, setParagraphGap] = useState(
-    viewSettings?.ttsParagraphGap ?? DEFAULT_PARAGRAPH_GAP_SEC,
-  );
   const [selectedVoice, setSelectedVoice] = useState('');
   const timerLabel = useCountdownLabel(timeoutTimestamp);
   const iconSize18 = useResponsiveSize(18);
@@ -170,8 +158,6 @@ const TTSPlayerSheet = ({
     if (!isOpen) return;
     setView('main');
     setRate(getViewSettings(bookKey)?.ttsRate ?? 1.0);
-    setGap(getViewSettings(bookKey)?.ttsSentenceGap ?? DEFAULT_SENTENCE_GAP_SEC);
-    setParagraphGap(getViewSettings(bookKey)?.ttsParagraphGap ?? DEFAULT_PARAGRAPH_GAP_SEC);
     setSelectedVoice(onGetVoiceId());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -197,44 +183,32 @@ const TTSPlayerSheet = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, ttsLang]);
 
+  /* Scale a given `baseGap` based on a given `rate`. */
+  const scaleGap = (baseGap: number, rate: number) => {
+    const k = 0.6;
+    return Math.round(baseGap / Math.pow(rate, k));
+  };
+
   const handleSelectRate = (value: number) => {
     setRate(value);
     onSetRate(value);
+
+    const gap = scaleGap(DEFAULT_SENTENCE_GAP_SEC, value);
+    const paragraphGap = scaleGap(DEFAULT_PARAGRAPH_GAP_SEC, value);
+    onSetSentenceGap(gap);
+    onSetParagraphGap(paragraphGap);
+
     const vs = getViewSettings(bookKey)!;
     vs.ttsRate = value;
+    vs.ttsSentenceGap = gap;
+    vs.ttsParagraphGap = paragraphGap;
     setViewSettings(bookKey, vs);
     // Read the store fresh at call time: a `settings` captured at render goes
     // stale if anything else persisted settings since this sheet mounted.
     const { settings, setSettings, saveSettings } = useSettingsStore.getState();
     settings.globalViewSettings.ttsRate = value;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
-  };
-
-  const handleSelectGap = (value: number) => {
-    setGap(value);
-    onSetSentenceGap(value);
-    const vs = getViewSettings(bookKey)!;
-    vs.ttsSentenceGap = value;
-    setViewSettings(bookKey, vs);
-    // Read the store fresh at call time: a `settings` captured at render goes
-    // stale if anything else persisted settings since this sheet mounted.
-    const { settings, setSettings, saveSettings } = useSettingsStore.getState();
-    settings.globalViewSettings.ttsSentenceGap = value;
-    setSettings(settings);
-    saveSettings(envConfig, settings);
-  };
-
-  const handleSelectParagraphGap = (value: number) => {
-    setParagraphGap(value);
-    onSetParagraphGap(value);
-    const vs = getViewSettings(bookKey)!;
-    vs.ttsParagraphGap = value;
-    setViewSettings(bookKey, vs);
-    // Read the store fresh at call time: a `settings` captured at render goes
-    // stale if anything else persisted settings since this sheet mounted.
-    const { settings, setSettings, saveSettings } = useSettingsStore.getState();
-    settings.globalViewSettings.ttsParagraphGap = value;
+    settings.globalViewSettings.ttsSentenceGap = gap;
+    settings.globalViewSettings.ttsParagraphGap = paragraphGap;
     setSettings(settings);
     saveSettings(envConfig, settings);
   };
@@ -483,38 +457,6 @@ const TTSPlayerSheet = ({
       {view === 'speed' && (
         <div className='flex w-full flex-col items-center pb-4 pt-2'>
           <SpeedRuler rate={rate} onSelect={handleSelectRate} />
-          {hasGapControl && (
-            <>
-              <div className='text-base-content/60 w-full px-2 py-1 text-sm sm:text-xs'>
-                {_('Sentence Pause')}
-              </div>
-              <TickRuler
-                min={0}
-                max={0.6}
-                step={0.05}
-                marks={SENTENCE_PAUSE_MARKS}
-                value={gap}
-                ariaLabel={_('Sentence Pause')}
-                formatValue={formatGap}
-                formatMark={formatGap}
-                onSelect={handleSelectGap}
-              />
-            </>
-          )}
-          <div className='text-base-content/60 w-full px-2 py-1 text-sm sm:text-xs'>
-            {_('Paragraph Pause')}
-          </div>
-          <TickRuler
-            min={0}
-            max={2}
-            step={0.05}
-            marks={PARAGRAPH_PAUSE_MARKS}
-            value={paragraphGap}
-            ariaLabel={_('Paragraph Pause')}
-            formatValue={formatGap}
-            formatMark={formatGap}
-            onSelect={handleSelectParagraphGap}
-          />
         </div>
       )}
       {view === 'voice' && (

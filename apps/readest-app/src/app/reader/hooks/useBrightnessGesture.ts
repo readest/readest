@@ -20,6 +20,7 @@ const DEFAULT_BRIGHTNESS = 0.5;
 interface LatestState {
   enabled: boolean;
   scrolled: boolean;
+  autoBrightness: boolean;
 }
 
 /**
@@ -48,10 +49,11 @@ export const useBrightnessGesture = (bookKey: string) => {
   const [overlayLevel, setOverlayLevel] = useState(0);
 
   // Everything the once-attached listener must read at the latest value.
-  const latestRef = useRef<LatestState>({ enabled: false, scrolled: false });
+  const latestRef = useRef<LatestState>({ enabled: false, scrolled: false, autoBrightness: false });
   latestRef.current = {
     enabled: brightnessGestureEnabled,
     scrolled: !!viewSettings?.scrolled,
+    autoBrightness: settings.autoScreenBrightness,
   };
 
   useEffect(() => {
@@ -86,7 +88,7 @@ export const useBrightnessGesture = (bookKey: string) => {
 
   useEffect(() => {
     if (!hasScreenBrightness) return;
-    if (settings.screenBrightness >= 0) {
+    if (!settings.autoScreenBrightness && settings.screenBrightness >= 0) {
       seedRef.current = Math.max(0, Math.min(1, settings.screenBrightness / 100));
       seededRef.current = true;
       return;
@@ -100,7 +102,12 @@ export const useBrightnessGesture = (bookKey: string) => {
     return () => {
       cancelled = true;
     };
-  }, [hasScreenBrightness, settings.screenBrightness, getScreenBrightness]);
+  }, [
+    hasScreenBrightness,
+    settings.screenBrightness,
+    settings.autoScreenBrightness,
+    getScreenBrightness,
+  ]);
 
   const flushBrightness = useCallback(() => {
     rafIdRef.current = null;
@@ -168,7 +175,8 @@ export const useBrightnessGesture = (bookKey: string) => {
         startXRef.current = t.screenX;
         startYRef.current = t.screenY;
         armedRef.current = isInLeftEdge(t.screenX, viewWidth);
-        startValueRef.current = seedRef.current;
+        const applied = useDeviceControlStore.getState().lastScreenBrightness;
+        startValueRef.current = applied ?? seedRef.current;
       };
 
       const onTouchMove = (e: TouchEvent) => {
@@ -226,8 +234,9 @@ export const useBrightnessGesture = (bookKey: string) => {
         const value = levelRef.current;
         setScreenBrightness(value);
         seedRef.current = value;
-        saveSysSettings(envConfig, 'screenBrightness', Math.round(value * 100));
-        saveSysSettings(envConfig, 'autoScreenBrightness', false);
+        if (!latestRef.current.autoBrightness) {
+          saveSysSettings(envConfig, 'screenBrightness', Math.round(value * 100));
+        }
         if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
         hideTimerRef.current = setTimeout(() => {
           hideTimerRef.current = null;

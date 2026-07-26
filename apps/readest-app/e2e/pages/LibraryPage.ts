@@ -11,6 +11,9 @@ export class LibraryPage extends BasePage {
   readonly searchInput: Locator;
   readonly clearSearchButton: Locator;
   readonly emptyState: Locator;
+  readonly emptyStateImportButton: Locator;
+  readonly importMenu: Locator;
+  readonly localFileImportItem: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -20,6 +23,11 @@ export class LibraryPage extends BasePage {
     this.searchInput = page.locator('.search-input');
     this.clearSearchButton = page.locator('[aria-label="Clear Search"]');
     this.emptyState = page.getByRole('heading', { name: 'Start your library' });
+    this.emptyStateImportButton = page.locator('.hero').getByRole('button', {
+      name: 'Import Books',
+    });
+    this.importMenu = page.locator('.menu-container');
+    this.localFileImportItem = this.importMenu.getByRole('menuitem', { name: 'From Local File' });
   }
 
   async goto(): Promise<void> {
@@ -37,16 +45,19 @@ export class LibraryPage extends BasePage {
   }
 
   /**
-   * Import a book file via the empty-state "Import Books" button.
+   * Import a book file via the empty-state "Import Books" button, which opens
+   * the same import menu as the library header "+" button.
    *
    * The file `<input>` is created off-DOM (see `useFileSelector.selectFileWeb`),
    * so a `filechooser` event must be awaited rather than locating an
    * `<input type="file">`.
    */
   async importBook(filePath: string): Promise<void> {
-    const importButton = this.page.locator('.hero').getByRole('button', { name: 'Import Books' });
+    await this.emptyStateImportButton.click();
+    await this.localFileImportItem.waitFor({ state: 'visible' });
+
     const chooserPromise = this.page.waitForEvent('filechooser');
-    await importButton.click();
+    await this.localFileImportItem.click();
     const chooser = await chooserPromise;
     await chooser.setFiles(filePath);
   }
