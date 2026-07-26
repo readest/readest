@@ -32,6 +32,7 @@ from calibre_plugins.readest.wire import (
     pick_format,
     pick_server_row,
     plan_push,
+    should_bulk_list,
     tombstone_record,
 )
 
@@ -150,6 +151,8 @@ class _CloudWorker(QThread):
         self.include_custom_columns = include_custom_columns
         self.canceled = False
         self.marks = {}  # book_id -> calibre mark label
+        self.cloud_hashes = None  # whole-account listing, when it is worth paging
+        self._blob_cache = {}  # book_hash -> in storage? (per-book fallback)
 
     def cancel(self):
         self.canceled = True
@@ -164,15 +167,47 @@ class _CloudWorker(QThread):
             return 'Could not reach Readest: %s' % err
         self.by_hash = {r['book_hash']: r for r in rows}
         self.by_uuid = index_rows_by_uuid(rows)
-
-        try:
-            self.cloud_hashes = cloud_book_hashes(self.client.list_all_files())
-        except Exception:
-            # Without the listing we can only trust uploaded_at, which is what
-            # the plugin did before. Stale rows stay stale, but the run goes on.
-            traceback.print_exc()
-            self.cloud_hashes = None
+        self.cloud_hashes = self._bulk_listing()
         return None
+
+    def _bulk_listing(self):
+        """Every book hash in storage, or None to look them up one at a time.
+
+        Paging the whole listing costs a request per page whatever the
+        selection size, so for a handful of books it is far cheaper to ask
+        about just those. Page 1 tells us how long the listing is, and we need
+        it anyway when we do go on to page the rest.
+        """
+        try:
+            files, total_pages = self.client.list_files_page(1)
+            if not should_bulk_list(total_pages, len(self.book_ids)):
+                return None
+            for page in range(2, total_pages + 1):
+                if self.canceled:
+                    return None
+                more, _ = self.client.list_files_page(page)
+                files.extend(more)
+            return cloud_book_hashes(files)
+        except Exception:
+            # Fall back to per-book lookups, which degrade on their own.
+            traceback.print_exc()
+            return None
+
+    def _blob_present(self, book_hash):
+        """Whether this book's file is really in cloud storage."""
+        if self.cloud_hashes is not None:
+            return book_hash in self.cloud_hashes
+        if book_hash not in self._blob_cache:
+            try:
+                self._blob_cache[book_hash] = book_hash in cloud_book_hashes(
+                    self.client.list_files(book_hash)
+                )
+            except Exception:
+                # Without an answer we can only trust uploaded_at, which is
+                # what the plugin did before. The run goes on.
+                traceback.print_exc()
+                self._blob_cache[book_hash] = True
+        return self._blob_cache[book_hash]
 
     def _plan_for(self, book_id):
         """(_BookPlan, '') for one book, or (None, reason) when it cannot be pushed."""
@@ -195,10 +230,7 @@ class _CloudWorker(QThread):
         server_row = pick_server_row(
             self.by_hash.get(source_hash), self.by_uuid.get(uuid) if uuid else None
         )
-        blob_present = self.cloud_hashes is None or (
-            server_row is not None and server_row['book_hash'] in self.cloud_hashes
-        )
-        plan = plan_push(server_row, wire, cover_hash, source_hash, blob_present)
+        plan = plan_push(server_row, wire, cover_hash, source_hash, self._blob_present)
         return (
             _BookPlan(
                 mi, fmt, path, source_hash, cover_bytes, cover_hash,
@@ -284,6 +316,8 @@ class PushWorker(_CloudWorker):
         self.by_hash[record['hash']] = row
         if uuid:
             self.by_uuid[uuid] = row
+        # We just uploaded it, so don't go asking storage about it again.
+        self._blob_cache[record['hash']] = True
         if self.cloud_hashes is not None:
             self.cloud_hashes.add(record['hash'])
 

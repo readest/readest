@@ -21,6 +21,7 @@ from wire import (  # noqa: E402
     pick_format,
     pick_server_row,
     plan_push,
+    should_bulk_list,
     tombstone_record,
 )
 
@@ -267,6 +268,75 @@ class PlanPushTest(unittest.TestCase):
     def test_missing_blob_does_not_affect_new_book(self):
         plan = plan_push(None, wire_for(), 'c' * 32, SRC, blob_present=False)
         self.assertEqual(plan['action'], 'new')
+
+
+class BlobLookupTest(unittest.TestCase):
+    """`blob_present` may be a callable, consulted only when it can change the answer.
+
+    A storage lookup costs a request, so plan_push must not make one for a book
+    the cheaper checks have already routed to new/replace.
+    """
+
+    def setUp(self):
+        self.asked = []
+
+    def probe(self, result):
+        def lookup(book_hash):
+            self.asked.append(book_hash)
+            return result
+
+        return lookup
+
+    def test_not_consulted_for_a_new_book(self):
+        plan = plan_push(None, wire_for(), 'c' * 32, SRC, self.probe(True))
+        self.assertEqual(plan['action'], 'new')
+        self.assertEqual(self.asked, [])
+
+    def test_not_consulted_when_the_row_has_no_upload(self):
+        wire = wire_for()
+        row = synced_row(wire)
+        row['uploaded_at'] = None
+        plan = plan_push(row, wire, 'c' * 32, SRC, self.probe(True))
+        self.assertEqual(plan['action'], 'replace')
+        self.assertEqual(self.asked, [])
+
+    def test_not_consulted_when_the_source_file_changed(self):
+        wire = wire_for(dict(BOOK, source_hash='n' * 32))
+        row = synced_row(wire_for())
+        plan = plan_push(row, wire, 'c' * 32, 'n' * 32, self.probe(True))
+        self.assertEqual(plan['action'], 'replace')
+        self.assertEqual(self.asked, [])
+
+    def test_consulted_once_the_cheap_checks_pass(self):
+        wire = wire_for()
+        row = synced_row(wire)
+        row['book_hash'] = 'a' * 32
+        self.assertEqual(plan_push(row, wire, 'c' * 32, SRC, self.probe(True))['action'], 'skip')
+        self.assertEqual(self.asked, ['a' * 32])
+
+    def test_missing_blob_from_the_callable_forces_replace(self):
+        wire = wire_for()
+        row = synced_row(wire)
+        row['book_hash'] = 'a' * 32
+        plan = plan_push(row, wire, 'c' * 32, SRC, self.probe(False))
+        self.assertEqual(plan['action'], 'replace')
+        self.assertEqual(self.asked, ['a' * 32])
+
+
+class ShouldBulkListTest(unittest.TestCase):
+    def test_one_book_against_a_large_library_uses_per_book_lookups(self):
+        self.assertFalse(should_bulk_list(16, 1))
+
+    def test_a_large_selection_pays_for_the_listing(self):
+        self.assertTrue(should_bulk_list(16, 88))
+
+    def test_break_even_prefers_the_listing(self):
+        self.assertTrue(should_bulk_list(16, 16))
+
+    def test_a_single_page_is_always_worth_it(self):
+        # We have to fetch page 1 to learn the count, so it is already paid for.
+        self.assertTrue(should_bulk_list(1, 1))
+        self.assertTrue(should_bulk_list(0, 1))
 
 
 class CloudBookHashesTest(unittest.TestCase):

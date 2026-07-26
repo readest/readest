@@ -29,7 +29,10 @@ DEFAULT_ANON_KEY = (
 
 TIMEOUT = 30
 UPLOAD_TIMEOUT = 600
-LIST_PAGE_SIZE = 100  # the storage/list endpoint's maximum
+# Servers cap this (100 at the time of writing) and report the size they
+# actually served, so asking for more is free and pays off if the cap rises:
+# the listing costs about a second per request regardless of rows returned.
+LIST_PAGE_SIZE = 1000
 
 
 class ReadestAPIError(Exception):
@@ -308,6 +311,17 @@ class ReadestClient:
         result = self._api('GET', '/storage/list?bookHash=' + urllib.parse.quote(book_hash))
         return (result or {}).get('files') or []
 
+    def list_files_page(self, page):
+        """(files, total_pages) for one page of the whole-account listing.
+
+        `total_pages` reflects the page size the server actually served, so
+        paging stays correct whether or not it honoured LIST_PAGE_SIZE.
+        """
+        result = (
+            self._api('GET', '/storage/list?page=%d&pageSize=%d' % (page, LIST_PAGE_SIZE)) or {}
+        )
+        return (result.get('files') or []), (result.get('totalPages') or 0)
+
     def list_all_files(self):
         """Every stored file for the user, following the endpoint's paging.
 
@@ -315,13 +329,11 @@ class ReadestClient:
         endpoint pads each page with the other files of any book it touched,
         so a batch can be larger than `pageSize`.
         """
-        page, files = 1, []
-        while True:
-            result = self._api('GET', '/storage/list?page=%d&pageSize=%d' % (page, LIST_PAGE_SIZE))
-            files.extend((result or {}).get('files') or [])
-            if page >= ((result or {}).get('totalPages') or 0):
-                return files
-            page += 1
+        files, total_pages = self.list_files_page(1)
+        for page in range(2, total_pages + 1):
+            more, _ = self.list_files_page(page)
+            files.extend(more)
+        return files
 
     def delete_file(self, file_key):
         return self._api(

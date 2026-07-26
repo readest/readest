@@ -265,6 +265,21 @@ def pick_server_row(hash_row, uuid_row):
     return hash_row if hash_row is not None else uuid_row
 
 
+def should_bulk_list(total_pages, selected_books):
+    """Whether paging the whole storage listing beats per-book lookups.
+
+    Paging costs one request per page no matter how many books are selected;
+    a per-book lookup costs one request per book that needs checking. Measured
+    against a real account both are around a second, so compare the counts.
+    Page 1 is already paid for by the time we can ask, hence the <=.
+    """
+    return total_pages <= max(1, selected_books)
+
+
+def _resolve_blob_present(blob_present, book_hash):
+    return blob_present(book_hash) if callable(blob_present) else bool(blob_present)
+
+
 def plan_push(server_row, wire, local_cover_hash, source_hash, blob_present=True):
     """Decide what to do for one book.
 
@@ -281,13 +296,17 @@ def plan_push(server_row, wire, local_cover_hash, source_hash, blob_present=True
     "Manage Storage" drops the object and its `files` row but never touches
     `books.uploaded_at`, and a row-only push against a missing blob leaves a
     book that shows up in the library but 404s on download.
+
+    It may be a bool, or a callable(book_hash) -> bool for callers that look
+    storage up one book at a time. It is checked last, so a lookup only costs
+    a request when it can still change the answer.
     """
     if server_row is None:
         return {'action': 'new', 'upload_cover': bool(local_cover_hash)}
     if (
         not server_row.get('uploaded_at')
-        or not blob_present
         or row_source_hash(server_row) != source_hash
+        or not _resolve_blob_present(blob_present, server_row['book_hash'])
     ):
         # A replaced book gets a new hash namespace, so it needs its own cover.
         return {'action': 'replace', 'upload_cover': bool(local_cover_hash)}

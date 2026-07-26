@@ -8,6 +8,7 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from api import (  # noqa: E402
+    LIST_PAGE_SIZE,
     AuthRequiredError,
     QuotaExceededError,
     ReadestAPIError,
@@ -210,10 +211,28 @@ class StorageTest(unittest.TestCase):
         self.assertEqual(
             urls,
             [
-                f'{API_BASE}/storage/list?page=1&pageSize=100',
-                f'{API_BASE}/storage/list?page=2&pageSize=100',
+                f'{API_BASE}/storage/list?page=1&pageSize={LIST_PAGE_SIZE}',
+                f'{API_BASE}/storage/list?page=2&pageSize={LIST_PAGE_SIZE}',
             ],
         )
+
+    def test_list_all_files_follows_a_clamping_server(self):
+        # Servers cap pageSize and report totalPages for the size they served,
+        # so asking for more than they allow must not truncate the listing.
+        transport = FakeTransport()
+        for page in range(1, 4):
+            transport.queue(200, {'files': [{'file_key': 'u/%d' % page}], 'totalPages': 3})
+        client = make_client(transport, tokens=valid_tokens())
+
+        self.assertEqual(len(client.list_all_files()), 3)
+        self.assertEqual(len(transport.requests), 3)
+
+    def test_list_files_page_returns_total_pages(self):
+        transport = FakeTransport()
+        transport.queue(200, {'files': [{'file_key': 'u/a'}], 'totalPages': 7})
+        client = make_client(transport, tokens=valid_tokens())
+
+        self.assertEqual(client.list_files_page(1), ([{'file_key': 'u/a'}], 7))
 
     def test_list_all_files_stops_on_single_page(self):
         transport = FakeTransport()
