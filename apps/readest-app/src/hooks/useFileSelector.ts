@@ -82,8 +82,16 @@ const selectFileTauri = async (
   // resulting paths below. We extend the same treatment to 'generic'
   // selections because callers there typically pass arbitrary extensions
   // that SAF likewise cannot match (e.g. mrexpt, txt).
+  //
+  // Image selections are the exception on iOS: image extensions all map to
+  // real UTTypes, so passing them lets the dialog plugin open the Photos
+  // (PHPicker) UI instead of the Files browser — matching Android. Asking for
+  // no filter there also made the client-side whitelist below drop anything
+  // outside png/jpg/jpeg/gif, so picking a HEIC (the iPhone camera default)
+  // silently selected nothing at all.
+  const isImageSelection = options.type === 'covers' || options.type === 'images';
   const noFilter =
-    appService?.isIOSApp ||
+    (appService?.isIOSApp && !isImageSelection) ||
     (appService?.isAndroidApp &&
       (options.type === 'books' || options.type === 'dictionaries' || options.type === 'generic'));
   const exts = noFilter ? [] : options.extensions || [];
