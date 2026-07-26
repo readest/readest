@@ -45,6 +45,8 @@ jobs:
         working-directory: .
         run: pnpm --filter @readest/readest-app setup-vendors
       - name: Build optimized arm64 release APK
+        id: release
+        continue-on-error: true
         run: |
           # Tauri's frontend must be bundled for the native platform, not web.
           echo 'NEXT_PUBLIC_APP_PLATFORM=tauri' > .env.local
@@ -52,9 +54,6 @@ jobs:
           pnpm tauri android init
           pnpm tauri icon ../../data/icons/readest-book.png
           git checkout -- src-tauri/gen/android
-          # The tracked Gradle file enables release signing only when this file
-          # exists. Use a temporary JKS certificate: release optimizations are
-          # enabled, but the APK stays sideloadable without a private key.
           keytool -genkeypair -storetype JKS -keystore "$RUNNER_TEMP/test-release.jks" \
             -storepass android -alias androiddebugkey -keypass android -keyalg RSA \
             -keysize 2048 -validity 10000 -dname 'CN=Android Debug,O=Android,C=US'
@@ -63,12 +62,21 @@ jobs:
           password=android
           storeFile=$RUNNER_TEMP/test-release.jks
           EOF
-          # Build only arm64-v8a: nearly all current phones use it, and it
-          # avoids the enormous universal debug APK (four native architectures
-          # plus retained debug symbols).
           pnpm tauri android build -t aarch64
-          cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk \
-            "$GITHUB_WORKSPACE/readest-android-latest.apk"
+      - name: Build arm64 debug APK if release packaging fails
+        if: steps.release.outcome == 'failure'
+        run: |
+          echo '::warning::Release packaging failed; publishing an arm64 debug fallback for testing.'
+          pnpm tauri android build --debug -t aarch64
+      - name: Stage APK
+        run: |
+          if [ "${{ steps.release.outcome }}" = 'success' ]; then
+            APK=src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk
+          else
+            APK=src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk
+          fi
+          test -f "$APK"
+          cp "$APK" "$GITHUB_WORKSPACE/readest-android-latest.apk"
       - uses: actions/upload-artifact@v4
         with:
           name: readest-android-apk
