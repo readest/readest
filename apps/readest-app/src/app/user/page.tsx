@@ -7,6 +7,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/store/themeStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useUserActions } from '@/hooks/useUserActions';
@@ -89,6 +90,9 @@ const ProfilePage = () => {
   }, [mounted, user, token, appService, router]);
 
   useTheme({ systemUIVisible: false });
+
+  const { settings } = useSettingsStore();
+  const isSelfHosted = !!settings.selfHosted?.supabaseUrl;
 
   const { quotas, userProfilePlan = 'free' } = useQuotaStats();
   const { handleLogout, handleResetPassword, handleUpdateEmail, handleConfirmDelete } =
@@ -268,8 +272,11 @@ const ProfilePage = () => {
   const avatarUrl = user?.user_metadata?.['picture'] || user?.user_metadata?.['avatar_url'];
   const userFullName = user?.user_metadata?.['full_name'] || '-';
   const userEmail = user?.email || '';
-  const userPlanDetails =
-    getPlanDetails(userProfilePlan, availablePlans) || getPlanDetails('free', availablePlans);
+  const userPlanDetails = isSelfHosted
+    ? ({ name: _('Self-hosted'), color: 'bg-teal-100 text-teal-800' } as unknown as ReturnType<
+        typeof getPlanDetails
+      >)
+    : getPlanDetails(userProfilePlan, availablePlans) || getPlanDetails('free', availablePlans);
 
   return (
     <div
@@ -311,9 +318,10 @@ const ProfilePage = () => {
                     planDetails={userPlanDetails}
                   />
 
-                  {!showStorageManager && !showSharedLinksManager && !showSyncManager && (
-                    <UsageStats quotas={quotas} />
-                  )}
+                  {!isSelfHosted &&
+                    !showStorageManager &&
+                    !showSharedLinksManager &&
+                    !showSyncManager && <UsageStats quotas={quotas} />}
                 </div>
 
                 {showStorageManager ? (
@@ -331,17 +339,19 @@ const ProfilePage = () => {
                   </div>
                 ) : (
                   <>
-                    <div className='flex flex-col gap-y-8 sm:px-6'>
-                      <PlansComparison
-                        availablePlans={availablePlans}
-                        userPlan={userProfilePlan}
-                        onSubscribe={
-                          appService.hasIAP && iapAvailable
-                            ? handleIAPSubscribe
-                            : handleStripeSubscribe
-                        }
-                      />
-                    </div>
+                    {!isSelfHosted && (
+                      <div className='flex flex-col gap-y-8 sm:px-6'>
+                        <PlansComparison
+                          availablePlans={availablePlans}
+                          userPlan={userProfilePlan}
+                          onSubscribe={
+                            appService.hasIAP && iapAvailable
+                              ? handleIAPSubscribe
+                              : handleStripeSubscribe
+                          }
+                        />
+                      </div>
+                    )}
                     <div className='flex flex-col gap-y-8 px-6'>
                       <AccountActions
                         userPlan={userProfilePlan}
@@ -350,10 +360,10 @@ const ProfilePage = () => {
                         onResetPassword={handleResetPassword}
                         onUpdateEmail={handleUpdateEmail}
                         onConfirmDelete={handleDeleteWithMessage}
-                        onRestorePurchase={handleIAPRestorePurchase}
-                        onManageSubscription={handleManageSubscription}
-                        onManageStorage={handleManageStorage}
-                        onManageSharedLinks={handleManageSharedLinks}
+                        onRestorePurchase={isSelfHosted ? undefined : handleIAPRestorePurchase}
+                        onManageSubscription={isSelfHosted ? undefined : handleManageSubscription}
+                        onManageStorage={isSelfHosted ? undefined : handleManageStorage}
+                        onManageSharedLinks={isSelfHosted ? undefined : handleManageSharedLinks}
                         onManageSync={handleManageSync}
                       />
                     </div>

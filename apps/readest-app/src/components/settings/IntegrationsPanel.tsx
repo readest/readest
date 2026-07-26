@@ -14,6 +14,7 @@ import {
   RiDatabase2Line,
   RiGoogleLine,
   RiMicrosoftLine,
+  RiServerLine,
 } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -26,11 +27,12 @@ import { useFileSyncStore } from '@/store/fileSyncStore';
 import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { saveSysSettings } from '@/helpers/settings';
 import { isCloudSyncAllowed } from '@/utils/access';
-import { isWebAppPlatform } from '@/services/environment';
+import { isWebAppPlatform, isTauriAppPlatform } from '@/services/environment';
 import { getGoogleWebClientId } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { getMicrosoftClientId } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import KOSyncForm from './integrations/KOSyncForm';
+import SelfHostedForm from './integrations/SelfHostedForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
 import SendToReadestForm from './integrations/SendToReadestForm';
@@ -67,6 +69,7 @@ type SubPage =
   | 'hardcover'
   | 'opds'
   | 'send'
+  | 'selfhosted'
   | null;
 
 /**
@@ -377,6 +380,12 @@ const IntegrationsPanel: React.FC = () => {
         <SendToReadestForm onBack={() => setSubPage(null)} />
       </div>
     );
+  if (subPage === 'selfhosted')
+    return (
+      <div className='my-4 w-full'>
+        <SelfHostedForm onBack={() => setSubPage(null)} />
+      </div>
+    );
 
   const koSyncStatus = settings.kosync?.enabled
     ? settings.kosync.username
@@ -647,6 +656,26 @@ const IntegrationsPanel: React.FC = () => {
                 description={_("Display what I'm reading on Discord")}
                 checked={settings.discordRichPresenceEnabled}
                 onChange={toggleDiscordPresence}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(isTauriAppPlatform() || !!settings.selfHosted?.supabaseUrl) && (
+        <div className='w-full' data-setting-id='settings.integrations.selfhosted'>
+          <SectionTitle className='mb-2'>{_('Advanced')}</SectionTitle>
+          <div className='card eink-bordered border-base-200 bg-base-100 overflow-hidden border'>
+            <div className='divide-base-200 divide-y'>
+              <IntegrationRow
+                icon={RiServerLine}
+                title={_('Self-hosted Instance')}
+                status={
+                  settings.selfHosted?.supabaseUrl
+                    ? settings.selfHosted.supabaseUrl
+                    : _('Using Readest Cloud')
+                }
+                onClick={() => setSubPage('selfhosted')}
               />
             </div>
           </div>

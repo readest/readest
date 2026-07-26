@@ -16,6 +16,24 @@ declare global {
 export const getRuntimeConfig = () =>
   typeof window === 'undefined' ? undefined : window.__READEST_RUNTIME_CONFIG;
 
+export const SELF_HOSTED_STORAGE_KEY = 'readest_selfhosted';
+
+export interface SelfHostedLocalConfig {
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+  apiBaseUrl: string;
+}
+
+export const getSelfHostedLocalConfig = (): SelfHostedLocalConfig | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(SELF_HOSTED_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as SelfHostedLocalConfig) : null;
+  } catch {
+    return null;
+  }
+};
+
 export const getServerRuntimeConfig = (): ReadestRuntimeConfig => ({
   // Browser runtime config should prefer a public Supabase URL when provided.
   // SUPABASE_URL remains as a backward-compatible fallback for non-split setups.

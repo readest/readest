@@ -364,7 +364,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
                     : _('Library sync via {{provider}}', { provider: providerNames })
               }
             />
-            {readestEnabled ? (
+            {readestEnabled && !settings.selfHosted?.supabaseUrl ? (
               <button
                 onClick={handleUserProfile}
                 className='hover:bg-base-300 w-full rounded-md'

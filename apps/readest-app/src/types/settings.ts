@@ -72,6 +72,12 @@ export interface ReadSettings {
   customThemes: CustomTheme[];
 }
 
+export interface SelfHostedConfig {
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+  apiBaseUrl: string;
+}
+
 export interface KOSyncSettings {
   enabled: boolean;
   serverUrl: string;
@@ -411,6 +417,12 @@ export interface SystemSettings {
    * so existing PIN users are never silently switched to biometric.
    */
   biometricUnlockEnabled?: boolean;
+
+  /**
+   * Self-hosted Readest instance config. Optional — absent means the official
+   * cloud is used. Device-local (excluded from cloud settings backup).
+   */
+  selfHosted?: SelfHostedConfig;
 
   kosync: KOSyncSettings;
   readwise: ReadwiseSettings;
