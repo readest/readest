@@ -4,10 +4,26 @@ import { Toast } from '@/components/Toast';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import clsx from 'clsx';
+import { Navigation } from './components/Navigation';
+import { useRef, useState } from 'react';
+import { searchManga } from '@/services/mangadex/search';
+import { Manga } from '@/services/mangadex/types';
 
 export default function MangaDexPage() {
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
   const { appService } = useEnv();
+  const searchTermRef = useRef('');
+  const [results, setResults] = useState<Manga[]>([]);
+
+  const handleSearch = async (queryTerm: string) => {
+    searchTermRef.current = queryTerm;
+
+    try {
+      const manga = await searchManga(queryTerm);
+      setResults(manga);
+    } finally {
+    }
+  };
 
   return (
     <div
@@ -22,9 +38,14 @@ export default function MangaDexPage() {
           paddingTop: `${safeAreaInsets?.top || 0}px`,
         }}
       >
-        <Toast />
+        <Navigation searchTerm={searchTermRef.current} onSearch={handleSearch} hasSearch={true} />
       </div>
-      <h1>hello world!!!!!!!</h1>
+      <main className='flex-1 overflow-auto'>
+        {results.map((manga) => (
+          <div key={manga.id}>{manga.attributes.title['ja-ro']}</div>
+        ))}
+      </main>
+      <Toast />
     </div>
   );
 }
