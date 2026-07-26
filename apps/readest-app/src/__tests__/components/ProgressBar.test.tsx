@@ -349,4 +349,48 @@ describe('ProgressBar — contrast against the page (#4901)', () => {
     const info = container.querySelector('.progressinfo') as HTMLElement;
     expect(info.classList.contains('mix-blend-difference')).toBe(false);
   });
+
+  // #5342: scrolled mode gives every segment its own bg-base-100/85 pill, and
+  // the blend applies to the container as a group -- a white pill differenced
+  // against the white PDF page turns pure black. The pill already guarantees
+  // legibility, so the blend must stand down whenever pills are on.
+  it('drops the blend for a fixed-layout book when the pills provide the backdrop', () => {
+    currentViewSettings = {
+      ...baseSettings,
+      isEink: false,
+      scrolled: true,
+      showRemainingPages: true,
+      showRemainingTime: false,
+    } as ViewSettings;
+    currentProgress = makeProgress(2, 5);
+    currentBookData = { isFixedLayout: true };
+    currentRenderer = { page: 1, pages: 4 };
+
+    const { container } = renderProgressBar();
+
+    const info = container.querySelector('.progressinfo') as HTMLElement;
+    expect(container.querySelector('.progress-pill')).not.toBeNull();
+    expect(info.classList.contains('mix-blend-difference')).toBe(false);
+    expect(info.classList.contains('text-base-content')).toBe(true);
+  });
+
+  it('keeps the blend for a fixed-layout book in scrolled mode when the sticky bar replaces the pills', () => {
+    currentViewSettings = {
+      ...baseSettings,
+      isEink: false,
+      scrolled: true,
+      showStickyProgressBar: true,
+      showRemainingPages: true,
+      showRemainingTime: false,
+    } as ViewSettings;
+    currentProgress = makeProgress(2, 5);
+    currentBookData = { isFixedLayout: true };
+    currentRenderer = { page: 1, pages: 4 };
+
+    const { container } = renderProgressBar();
+
+    const info = container.querySelector('.progressinfo') as HTMLElement;
+    expect(container.querySelector('.progress-pill')).toBeNull();
+    expect(info.classList.contains('mix-blend-difference')).toBe(true);
+  });
 });
