@@ -1,8 +1,9 @@
 import clsx from 'clsx';
-import { Position, isPointInRect } from '@/utils/sel';
+import { Position } from '@/utils/sel';
 import { useEffect, useRef, useState } from 'react';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
+import { useThemeStore } from '@/store/themeStore';
 
 const getTriangleStyles = (
   trianglePosition: Position | undefined,
@@ -75,6 +76,7 @@ const Popup = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState(position);
   const [childrenHeight, setChildrenHeight] = useState(height || minHeight || 0);
+  const { isDarkMode } = useThemeStore();
 
   useKeyDownActions({ onCancel: onDismiss, elementRef: containerRef, enabled: isOpen });
 
@@ -132,22 +134,10 @@ const Popup = ({
   const outerTriangleStyles = getTriangleStyles(trianglePosition, 7, 0);
   const innerTriangleStyles = getTriangleStyles(trianglePosition, 7, -1);
 
-  const popupHeight = height ?? childrenHeight;
-  const triangleHidden = !!(
-    adjustedPosition &&
-    trianglePosition &&
-    isPointInRect(trianglePosition.point, {
-      left: adjustedPosition.point.x,
-      top: adjustedPosition.point.y,
-      right: adjustedPosition.point.x + width,
-      bottom: adjustedPosition.point.y + popupHeight,
-    })
-  );
-
   return (
-    <div>
+    <div className='not-eink:drop-shadow-xl'>
       <div
-        className='popup-triangle-outer text-base-300 absolute z-50'
+        className='popup-triangle-outer absolute z-50 text-base-content/20'
         style={outerTriangleStyles}
       />
       <div
@@ -156,9 +146,8 @@ const Popup = ({
         aria-hidden={!isOpen}
         data-capture-blocking-overlay={isOpen ? 'true' : undefined}
         className={clsx(
-          'popup-container bg-base-300 absolute z-50 rounded-lg font-sans',
-          'eink:border eink:border-base-content',
-          trianglePosition?.dir !== 'up' && 'not-eink:shadow-xl',
+          'popup-container absolute z-50 rounded-lg font-sans not-eink:border-base-content/20 border eink-bordered not-eink:shadow-2xl text-foreground',
+          isDarkMode ? 'bg-base-100' : 'bg-base-300',
           className,
         )}
         style={{
@@ -175,8 +164,8 @@ const Popup = ({
       </div>
       <div
         className={clsx(
-          'popup-triangle-inner text-base-300 absolute',
-          triangleHidden ? 'z-10' : 'z-50',
+          'popup-triangle-inner absolute z-50',
+          isDarkMode ? 'text-base-100' : 'text-base-300',
         )}
         style={innerTriangleStyles}
       />
