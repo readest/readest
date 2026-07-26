@@ -6,6 +6,8 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from wire import (  # noqa: E402
+    MARK_PREFIX,
+    PLAN_MARKS,
     book_file_name,
     build_metadata,
     build_wire_book,
@@ -14,6 +16,7 @@ from wire import (  # noqa: E402
     index_rows_by_uuid,
     iso_to_ms,
     merge_for_push,
+    merge_marks,
     ms_to_iso,
     pick_format,
     pick_server_row,
@@ -324,6 +327,38 @@ class PlanPushAfterStorageWipeTest(unittest.TestCase):
         )
         plan = plan_push(row, wire, 'c' * 32, SRC, row['book_hash'] in present)
         self.assertEqual(plan['action'], 'skip')
+
+
+class MarksTest(unittest.TestCase):
+    def test_every_plan_action_has_a_mark(self):
+        # plan_push's four actions must all map to a label, or a status check
+        # would silently leave books unmarked.
+        self.assertEqual(set(PLAN_MARKS), {'new', 'replace', 'update', 'skip'})
+        for label in PLAN_MARKS.values():
+            self.assertTrue(label.startswith(MARK_PREFIX))
+
+    def test_replaces_our_own_stale_marks(self):
+        existing = {1: 'readest_synced', 2: 'readest_missing'}
+        self.assertEqual(merge_marks(existing, {1: 'readest_missing'}), {1: 'readest_missing'})
+
+    def test_keeps_marks_the_user_set(self):
+        existing = {1: 'true', 2: 'readest_synced', 3: 'todo'}
+        merged = merge_marks(existing, {2: 'readest_missing'})
+        self.assertEqual(merged, {1: 'true', 3: 'todo', 2: 'readest_missing'})
+
+    def test_new_marks_win_over_a_user_mark_on_the_same_book(self):
+        self.assertEqual(merge_marks({1: 'true'}, {1: 'readest_synced'}), {1: 'readest_synced'})
+
+    def test_empty_inputs(self):
+        self.assertEqual(merge_marks(None, None), {})
+        self.assertEqual(merge_marks({1: 'readest_synced'}, {}), {})
+        self.assertEqual(merge_marks({1: 'true'}, {}), {1: 'true'})
+
+    def test_tolerates_non_string_labels(self):
+        # calibre stores whatever the marking code passed; 'true' marks can be
+        # bare booleans in older libraries.
+        merged = merge_marks({1: True}, {2: 'readest_synced'})
+        self.assertEqual(merged, {1: True, 2: 'readest_synced'})
 
 
 class MsToIsoTest(unittest.TestCase):

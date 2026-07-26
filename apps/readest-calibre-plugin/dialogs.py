@@ -22,7 +22,12 @@ from calibre.gui2 import error_dialog, open_url
 
 from calibre_plugins.readest.api import ReadestAPIError
 from calibre_plugins.readest.oauth import PROVIDERS, OAuthCallbackServer, build_authorize_url
-from calibre_plugins.readest.worker import STATUS_LABELS, PushWorker
+from calibre_plugins.readest.worker import (
+    CHECK_LABELS,
+    STATUS_LABELS,
+    PushWorker,
+    StatusWorker,
+)
 
 OAUTH_WAIT_SECONDS = 300
 
@@ -152,26 +157,27 @@ class LoginDialog(QDialog):
         QDialog.done(self, result)
 
 
-class PushDialog(QDialog):
-    """Per-book status table for a push run, modeled on BookFusion's sync log."""
+class _RunDialog(QDialog):
+    """Per-book status table for one worker run, modeled on BookFusion's sync log."""
+
+    worker_class = None
+    title = ''
+    heading = ''
+    labels = {}
+    failure_title = ''
 
     def __init__(self, parent, db, book_ids, client, include_custom_columns):
         QDialog.__init__(self, parent)
         self.db = db
-        self.worker = PushWorker(self, db, book_ids, client, include_custom_columns)
-        self.worker.progress.connect(self.on_progress)
-        self.worker.book_status.connect(self.on_book_status)
-        self.worker.done.connect(self.on_done)
+        self.marks = {}
 
-        self.setWindowTitle('Push to Readest')
+        self.setWindowTitle(self.title)
         self.setMinimumSize(520, 380)
         layout = QVBoxLayout()
         self.setLayout(layout)
 
         count = len(book_ids)
-        layout.addWidget(
-            QLabel('Pushing %d %s to your Readest library…' % (count, _plural(count)))
-        )
+        layout.addWidget(QLabel(self.heading % (count, _plural(count))))
 
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setRange(0, count)
@@ -192,6 +198,10 @@ class PushDialog(QDialog):
         self.buttons.rejected.connect(self.reject)
         layout.addWidget(self.buttons)
 
+        self.worker = self.worker_class(self, db, book_ids, client, include_custom_columns)
+        self.worker.progress.connect(self.on_progress)
+        self.worker.book_status.connect(self.on_book_status)
+        self.worker.done.connect(self.on_done)
         self.worker.start()
 
     def on_progress(self, done, total):
@@ -202,7 +212,7 @@ class PushDialog(QDialog):
         row = self.table.rowCount()
         self.table.insertRow(row)
         self.table.setItem(row, 0, QTableWidgetItem(title))
-        self.table.setItem(row, 1, QTableWidgetItem(STATUS_LABELS.get(status, status)))
+        self.table.setItem(row, 1, QTableWidgetItem(self.labels.get(status, status)))
         self.table.setItem(row, 2, QTableWidgetItem(detail))
         self.table.scrollToBottom()
 
@@ -210,8 +220,11 @@ class PushDialog(QDialog):
         self.progress_bar.setValue(self.progress_bar.maximum())
         self.summary_label.setText(message)
         self.buttons.setStandardButtons(QDialogButtonBox.StandardButton.Close)
+        # Read on the GUI thread once the worker is finished, so ui.py can
+        # apply them to the library view.
+        self.marks = dict(self.worker.marks)
         if not ok and self.table.rowCount() == 0:
-            error_dialog(self, 'Push to Readest failed', message, show=True)
+            error_dialog(self, self.failure_title, message, show=True)
 
     def reject(self):
         if self.worker.isRunning():
@@ -219,6 +232,22 @@ class PushDialog(QDialog):
             self.summary_label.setText('Canceling…')
             return
         QDialog.reject(self)
+
+
+class PushDialog(_RunDialog):
+    worker_class = PushWorker
+    title = 'Push to Readest'
+    heading = 'Pushing %d %s to your Readest library…'
+    labels = STATUS_LABELS
+    failure_title = 'Push to Readest failed'
+
+
+class StatusDialog(_RunDialog):
+    worker_class = StatusWorker
+    title = 'Readest status'
+    heading = 'Checking %d %s against your Readest library…'
+    labels = CHECK_LABELS
+    failure_title = 'Readest status check failed'
 
 
 def _plural(count):

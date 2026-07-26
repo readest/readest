@@ -36,6 +36,27 @@ EXTS = {
 CLOUD_BOOKS_SUBDIR = 'Readest/Books'
 COVER_FILE_NAME = 'cover.png'
 
+# calibre marks: in-memory labels shown in the book list and searchable as
+# `marked:<label>`. Derived from the cloud on every status check, never stored.
+MARK_PREFIX = 'readest_'
+PLAN_MARKS = {
+    'new': MARK_PREFIX + 'missing',
+    'replace': MARK_PREFIX + 'outdated',
+    'update': MARK_PREFIX + 'metadata',
+    'skip': MARK_PREFIX + 'synced',
+}
+
+
+def merge_marks(existing, new_marks):
+    """Our marks replaced wholesale, everyone else's left alone.
+
+    `existing` is calibre's `View.marked_ids` ({book_id: label}), which also
+    holds marks the user set by hand.
+    """
+    merged = {i: l for i, l in (existing or {}).items() if not str(l).startswith(MARK_PREFIX)}
+    merged.update(new_marks or {})
+    return merged
+
 
 def pick_format(available):
     """Best Readest-supported format among calibre's, or None."""
