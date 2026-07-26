@@ -33,7 +33,7 @@ const AnnotationToolButton: React.FC<AnnotationToolButtonProps> = ({
           'flex h-8 min-h-8 w-8 items-center justify-center p-0',
           disabled
             ? 'cursor-not-allowed opacity-50'
-            : 'not-eink:hover:bg-gray-500 eink:hover:border rounded-md',
+            : 'not-eink:hover:bg-base-200 eink:hover:border rounded-md',
         )}
         disabled={disabled}
       >
