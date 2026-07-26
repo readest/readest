@@ -3,14 +3,15 @@
 //! macOS 26 (Tahoe) regressed `NSWindow` ordering so that `orderOut:` —
 //! which Tauri's `WebviewWindow::hide()` maps to — can leave a focused
 //! black phantom window on screen instead of hiding it. See issue #4875.
-//! On Tahoe we minimize the window instead, a different AppKit path that
-//! still keeps the app in the dock and preserves the open book.
+//! The workaround is intentionally scoped to major version 26. A future
+//! macOS release should use the normal AppKit path unless it is independently
+//! shown to have the same regression.
 
 use objc::{class, msg_send, sel, sel_impl};
 
-/// Returns true when `major` is macOS Tahoe (26) or later.
-pub(crate) fn is_tahoe_or_later(major: i64) -> bool {
-    major >= 26
+/// Returns true when `major` is macOS Tahoe (26).
+pub(crate) fn is_tahoe(major: i64) -> bool {
+    major == 26
 }
 
 /// Reads the running macOS major version via `NSProcessInfo`.
@@ -30,24 +31,23 @@ fn macos_major_version() -> i64 {
     }
 }
 
-/// True when running on macOS Tahoe (26) or later.
-pub fn is_macos_tahoe_or_later() -> bool {
-    is_tahoe_or_later(macos_major_version())
+/// True when running on macOS Tahoe (26).
+pub fn is_macos_tahoe() -> bool {
+    is_tahoe(macos_major_version())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::is_tahoe_or_later;
+    use super::is_tahoe;
 
     #[test]
-    fn detects_tahoe_and_later() {
-        assert!(is_tahoe_or_later(26)); // Tahoe
-        assert!(is_tahoe_or_later(27));
+    fn detects_tahoe() {
+        assert!(is_tahoe(26));
     }
 
     #[test]
-    fn rejects_pre_tahoe() {
-        assert!(!is_tahoe_or_later(25)); // Sequoia
-        assert!(!is_tahoe_or_later(15)); // older numbering
+    fn rejects_other_major_versions() {
+        assert!(!is_tahoe(25));
+        assert!(!is_tahoe(27));
     }
 }

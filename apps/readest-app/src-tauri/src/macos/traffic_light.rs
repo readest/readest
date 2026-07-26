@@ -1,3 +1,4 @@
+use dispatch2::DispatchQueue;
 use objc::{msg_send, sel, sel_impl};
 use rand::{distributions::Alphanumeric, Rng};
 use tauri::{
@@ -388,6 +389,22 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: Window<R>) {
 
                 let super_del: id = *this.get_ivar("super_delegate");
                 let _: () = msg_send![super_del, windowDidExitFullScreen: notification];
+
+                // Tao restores the normal frame in its delegate callback above
+                // and can enqueue a maximize restoration. Defer the defensive
+                // hide on that same serial GCD queue so its frame mutation is
+                // ordered after Tao's style-mask and maximize work.
+                let mut main_window = None;
+                with_window_state(this, |state: &mut WindowState<R>| {
+                    if state.window.label() == "main" {
+                        main_window = Some(state.window.clone());
+                    }
+                });
+                if let Some(main_window) = main_window {
+                    DispatchQueue::main().exec_async(move || {
+                        super::window::finish_pending_fullscreen_hide(&main_window);
+                    });
+                }
             }
         }
         extern "C" fn on_window_will_exit_full_screen<R: Runtime>(
@@ -416,6 +433,17 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: Window<R>) {
                 let super_del: id = *this.get_ivar("super_delegate");
                 let _: () = msg_send![super_del, windowDidFailToEnterFullScreen: window];
             }
+        }
+        extern "C" fn on_window_did_fail_to_exit_full_screen<R: Runtime>(
+            this: &Object,
+            _cmd: Sel,
+            _window: id,
+        ) {
+            with_window_state(this, |state: &mut WindowState<R>| {
+                if state.window.label() == "main" {
+                    super::window::finish_failed_fullscreen_hide(&state.window);
+                }
+            });
         }
         extern "C" fn on_effective_appearance_did_change(
             this: &Object,
@@ -479,6 +507,7 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: Window<R>) {
             (windowDidExitFullScreen:) => on_window_did_exit_full_screen::<R> as extern "C" fn(&Object, Sel, id),
             (windowWillExitFullScreen:) => on_window_will_exit_full_screen::<R> as extern "C" fn(&Object, Sel, id),
             (windowDidFailToEnterFullScreen:) => on_window_did_fail_to_enter_full_screen as extern "C" fn(&Object, Sel, id),
+            (windowDidFailToExitFullScreen:) => on_window_did_fail_to_exit_full_screen::<R> as extern "C" fn(&Object, Sel, id),
             (effectiveAppearanceDidChange:) => on_effective_appearance_did_change as extern "C" fn(&Object, Sel, id),
             (effectiveAppearanceDidChangedOnMainThread:) => on_effective_appearance_did_changed_on_main_thread as extern "C" fn(&Object, Sel, id)
         }))
