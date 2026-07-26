@@ -9,6 +9,7 @@ import {
   expandInlineFootnotes,
   extractFootnoteDefs,
 } from './mdFootnotes';
+import { frontmatterToMetadata, parseFrontmatter } from './mdFrontmatter';
 import { sanitizeHtml } from './sanitize';
 
 // Render a standalone Markdown (.md) file into an in-memory foliate-js book at
@@ -48,28 +49,6 @@ const wrapXhtml = (inner: string): string =>
   `<html xmlns="${XHTML_NS}"><head><meta charset="utf-8"/>` +
   `<style>${MD_STYLE}</style></head><body>${inner}</body></html>`;
 
-interface Frontmatter {
-  title?: string;
-  author?: string;
-}
-
-// Strip a leading YAML frontmatter block so it does not render as a stray
-// `<hr>` + text, and lift `title` / `author` from it.
-const stripFrontmatter = (text: string): { body: string; meta: Frontmatter } => {
-  const match = text.match(/^﻿?---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*\r?\n?/);
-  if (!match) return { body: text, meta: {} };
-  const meta: Frontmatter = {};
-  for (const line of match[1]!.split(/\r?\n/)) {
-    const kv = line.match(/^([A-Za-z][\w-]*)\s*:\s*(.*)$/);
-    if (!kv) continue;
-    const key = kv[1]!.toLowerCase();
-    const value = kv[2]!.trim().replace(/^['"]|['"]$/g, '');
-    if (key === 'title') meta.title = value;
-    else if (key === 'author') meta.author = value;
-  }
-  return { body: text.slice(match[0]!.length), meta };
-};
-
 const slugify = (text: string): string =>
   text
     .toLowerCase()
@@ -90,7 +69,10 @@ type MarkdownSection = SectionItem & { load: () => string };
 
 export async function makeMarkdownBook(file: File): Promise<BookDoc> {
   const text = await file.text();
-  const { body, meta } = stripFrontmatter(text);
+  // The frontmatter block is stripped before rendering so it does not show up
+  // as a stray `<hr>` + text; its keys become the book's metadata (issue #5279).
+  const { body, fields } = parseFrontmatter(text);
+  const { metadata: frontmatter, coverBlob } = frontmatterToMetadata(fields);
   const rawHtml = await markdown.parse(body);
   const safeHtml = sanitizeHtml(rawHtml);
   const docBody = new DOMParser().parseFromString(safeHtml, 'text/html').body;
@@ -209,16 +191,21 @@ export async function makeMarkdownBook(file: File): Promise<BookDoc> {
   }));
 
   const title =
-    meta.title?.trim() ||
+    frontmatter.title ||
     (headingEls.find((h) => h.tagName === 'H1')?.textContent ?? '').trim() ||
     file.name.replace(/\.(?:md|markdown)$/i, '');
 
   const book = {
     metadata: {
-      title,
-      author: meta.author?.trim() ?? '',
+      author: '',
       language: 'en',
-      identifier: file.name,
+      ...frontmatter,
+      title,
+      // A frontmatter identifier — an explicit one, else the ISBN — makes the
+      // same book import to the same `metaHash` from any copy of the file. With
+      // neither, the filename stays the identifier, so books already in the
+      // library keep the hash they were imported under.
+      identifier: frontmatter.identifier || frontmatter.isbn || file.name,
     },
     rendition: { layout: 'reflowable' as const },
     dir: 'ltr',
@@ -239,7 +226,7 @@ export async function makeMarkdownBook(file: File): Promise<BookDoc> {
       return { index, anchor: (doc: Document) => doc.getElementById(b) };
     },
     isExternal: (uri: string): boolean => isExternalUri(uri),
-    getCover: async (): Promise<Blob | null> => null,
+    getCover: async (): Promise<Blob | null> => coverBlob,
     destroy: () => {
       for (const url of urls) if (url) URL.revokeObjectURL(url);
     },

@@ -136,6 +136,75 @@ describe('makeMarkdownBook', () => {
     expect(fn.metadata.title).toBe('My Notes');
   });
 
+  // Issue #5279: the two frontmatter shapes the reporter attached, each pairing
+  // a cover with an ISBN. The library reads both off BookDoc.metadata, and the
+  // importer writes whatever getCover() returns as the book's cover file.
+  it('carries a base64 cover and an ISBN from frontmatter into the book', async () => {
+    const gif = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    const book = await make(`---\ncover: ${gif}\nISBN: 979-8985322538\n---\n\n# YAML MD Test\n`);
+    expect(book.metadata.isbn).toBe('979-8985322538');
+    // With no explicit identifier, the ISBN becomes one, so the same book
+    // imported from another copy of the file lands on the same metaHash.
+    expect(book.metadata.identifier).toBe('979-8985322538');
+    expect(book.metadata.coverImageUrl).toBeUndefined();
+    const cover = await book.getCover();
+    expect(cover).toBeInstanceOf(Blob);
+    expect(cover!.type).toBe('image/gif');
+    expect(cover!.size).toBe(42);
+  });
+
+  it('carries an http cover URL from frontmatter without fetching it', async () => {
+    const url = 'https://m.media-amazon.com/images/I/71JB5kFNJ5L._SL1500_.jpg';
+    const book = await make(`---\ncover: ${url}\nISBN: 979-8985322538\n---\n\n# YAML MD Test\n`);
+    expect(book.metadata.coverImageUrl).toBe(url);
+    expect(await book.getCover()).toBeNull();
+  });
+
+  it('lifts the remaining book details out of frontmatter', async () => {
+    const book = await make(
+      [
+        '---',
+        'title: Moby Dick',
+        'subtitle: The Whale',
+        'author:',
+        '  - Herman Melville',
+        '  - Someone Else',
+        'language: fr',
+        'publisher: Harper',
+        'published: 1851-10-18',
+        'description: A whale of a book',
+        'tags: [fiction, classics]',
+        'series: Sea Tales',
+        'series_index: 2',
+        'identifier: urn:uuid:abcd',
+        '---',
+        '',
+        '# Chapter One',
+      ].join('\n'),
+    );
+    expect(book.metadata).toMatchObject({
+      title: 'Moby Dick',
+      subtitle: 'The Whale',
+      author: ['Herman Melville', 'Someone Else'],
+      language: 'fr',
+      publisher: 'Harper',
+      published: '1851-10-18',
+      description: 'A whale of a book',
+      subject: ['fiction', 'classics'],
+      series: 'Sea Tales',
+      seriesIndex: 2,
+      identifier: 'urn:uuid:abcd',
+    });
+  });
+
+  it('keeps the pre-frontmatter defaults when there is none, so hashes are stable', async () => {
+    const book = await make('# The Heading\n\nbody\n', 'My Notes.md');
+    expect(book.metadata.identifier).toBe('My Notes.md');
+    expect(book.metadata.language).toBe('en');
+    expect(book.metadata.author).toBe('');
+    expect(await book.getCover()).toBeNull();
+  });
+
   it('creates object URLs lazily and revokes every one on destroy', async () => {
     const url = URL as unknown as {
       createObjectURL: (b: Blob) => string;
