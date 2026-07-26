@@ -118,7 +118,8 @@ fn parse_epub_metadata_sync(file_path: &str) -> Result<ParsedEpubMetadata, Strin
         parse_opf_cover_inputs(&opf_bytes).map_err(|e| format!("parse opf cover inputs: {e}"))?;
 
     let cover_zip_path =
-        resolve_cover_path(&cover_inputs.manifest, &cover_inputs.cover_id, &opf_path);
+        resolve_cover_path(&cover_inputs.manifest, &cover_inputs.cover_id, &opf_path)
+            .or_else(|| find_undeclared_cover_entry(&zip));
 
     // Inline resize on the import hot path: at our target size (long edge
     // <= 512px, Triangle filter, JPEG q85) a release build keeps per-book
@@ -173,6 +174,7 @@ fn extract_epub_cover_full_sync(file_path: &str) -> Result<RawCoverImage, String
         parse_opf_cover_inputs(&opf_bytes).map_err(|e| format!("parse opf cover inputs: {e}"))?;
     let cover_zip_path =
         resolve_cover_path(&cover_inputs.manifest, &cover_inputs.cover_id, &opf_path)
+            .or_else(|| find_undeclared_cover_entry(&zip))
             .ok_or_else(|| "no cover image in epub".to_string())?;
     let bytes = read_zip_entry(&mut zip, &cover_zip_path)
         .map_err(|e| format!("read cover {cover_zip_path}: {e}"))?;
@@ -733,6 +735,34 @@ fn resolve_cover_path(
     chosen.map(|item| resolve_relative(opf_path, &item.href))
 }
 
+/// Whether a container entry name ends in `cover`/`couv` (the French
+/// spelling) plus an image extension, e.g. `cover.jpg`, `Images/Cover.PNG`,
+/// `couv.jpeg`. Mirrors `UNDECLARED_COVER_RE` in foliate-js's `epub.js` so
+/// both parsers surface the same image.
+fn is_undeclared_cover_name(name: &str) -> bool {
+    let lower = name.to_ascii_lowercase();
+    let Some((stem, ext)) = lower.rsplit_once('.') else {
+        return false;
+    };
+    if !matches!(ext, "jpg" | "jpeg" | "png" | "gif" | "webp" | "svg") {
+        return false;
+    }
+    stem.ends_with("cover") || stem.ends_with("couv")
+}
+
+/// Last-ditch cover lookup for EPUBs where `resolve_cover_path` came up
+/// empty: scan the container's own entry names. Some EPUBs ship the cover
+/// image without ever declaring it (no `cover-image` property, no
+/// `<meta name="cover">` target, no manifest item), which leaves every
+/// manifest-driven lookup empty even though the image is in the zip.
+/// Entries are walked in central-directory order, so the first match wins.
+fn find_undeclared_cover_entry<R: Read + Seek>(zip: &ZipArchive<R>) -> Option<String> {
+    (0..zip.len())
+        .filter_map(|i| zip.name_for_index(i))
+        .find(|name| is_undeclared_cover_name(name))
+        .map(str::to_string)
+}
+
 fn resolve_relative(opf_path: &str, href: &str) -> String {
     // Strip query/fragment that occasionally appear in manifest hrefs.
     let href = href.split(['?', '#']).next().unwrap_or(href);
@@ -1025,6 +1055,50 @@ mod tests {
         );
         let p = resolve_cover_path(&manifest, &None, "OEBPS/content.opf").unwrap();
         assert_eq!(p, "OEBPS/images/other.jpg");
+    }
+
+    #[test]
+    fn undeclared_cover_matches_cover_named_entries() {
+        // Names the JS-side `UNDECLARED_COVER_RE` matches too.
+        assert!(is_undeclared_cover_name("cover.jpg"));
+        assert!(is_undeclared_cover_name("OEBPS/images/Cover.PNG"));
+        assert!(is_undeclared_cover_name("couv.jpeg"));
+        assert!(is_undeclared_cover_name("book-cover.webp"));
+        assert!(is_undeclared_cover_name("cover.svg"));
+        // ...and names it doesn't: unrelated images, non-images, and stems
+        // that merely start with "cover".
+        assert!(!is_undeclared_cover_name("images/rat.jpg"));
+        assert!(!is_undeclared_cover_name("cover.xhtml"));
+        assert!(!is_undeclared_cover_name("covers.jpg"));
+        assert!(!is_undeclared_cover_name("cover"));
+    }
+
+    #[test]
+    fn undeclared_cover_picks_first_matching_zip_entry() {
+        use std::io::Write;
+        let build = |names: &[&str]| {
+            let mut buf = Vec::<u8>::new();
+            {
+                let mut w = zip::ZipWriter::new(Cursor::new(&mut buf));
+                let opts = zip::write::SimpleFileOptions::default()
+                    .compression_method(zip::CompressionMethod::Stored);
+                for name in names {
+                    w.start_file(*name, opts).unwrap();
+                    w.write_all(b"x").unwrap();
+                }
+                w.finish().unwrap();
+            }
+            ZipArchive::new(Cursor::new(buf)).unwrap()
+        };
+
+        let zip = build(&["mimetype", "start.xhtml", "cover.jpg", "back-cover.jpg"]);
+        assert_eq!(
+            find_undeclared_cover_entry(&zip),
+            Some("cover.jpg".to_string())
+        );
+
+        let zip = build(&["mimetype", "images/rat.jpg"]);
+        assert_eq!(find_undeclared_cover_entry(&zip), None);
     }
 
     #[test]
