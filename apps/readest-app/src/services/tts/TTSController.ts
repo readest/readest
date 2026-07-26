@@ -1174,7 +1174,11 @@ export class TTSController extends EventTarget {
 
     const ssml = byMark ? this.#getTts()?.prevMark(!isPlaying) : this.#getTts()?.prev(!isPlaying);
     if (!ssml) {
-      await this.#handleNavigationWithoutSSML(() => this.#initTTSForPrevSection(), isPlaying, false);
+      await this.#handleNavigationWithoutSSML(
+        () => this.#initTTSForPrevSection(),
+        isPlaying,
+        false,
+      );
     } else {
       await this.#handleNavigationWithSSML(ssml, isPlaying);
     }
