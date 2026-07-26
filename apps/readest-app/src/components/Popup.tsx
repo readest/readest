@@ -56,7 +56,6 @@ const Popup = ({
   trianglePosition,
   children,
   className = '',
-  triangleClassName = '',
   additionalStyle = {},
   isOpen = true,
   onDismiss,
@@ -70,7 +69,6 @@ const Popup = ({
   trianglePosition?: Position;
   children: React.ReactNode;
   className?: string;
-  triangleClassName?: string;
   additionalStyle?: React.CSSProperties;
   onDismiss?: () => void;
 }) => {
@@ -149,7 +147,7 @@ const Popup = ({
   return (
     <div>
       <div
-        className={clsx('popup-triangle-outer text-base-300 absolute z-50', triangleClassName)}
+        className='popup-triangle-outer text-base-300 absolute z-50'
         style={outerTriangleStyles}
       />
       <div
@@ -179,7 +177,6 @@ const Popup = ({
         className={clsx(
           'popup-triangle-inner text-base-300 absolute',
           triangleHidden ? 'z-10' : 'z-50',
-          triangleClassName,
         )}
         style={innerTriangleStyles}
       />
