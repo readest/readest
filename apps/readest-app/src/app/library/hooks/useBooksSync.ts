@@ -59,7 +59,9 @@ export const useBooksSync = () => {
       // got its branch order swapped (it currently checks Books/<hash>
       // before falling back to filePath; flipping that order would make
       // peers chase a non-existent path instead of downloading).
-      .map(({ filePath: _filePath, ...rest }): Book => rest);
+      // `altFilePaths` (the other on-disk names that resolve to the same book)
+      // is device-local for exactly the same reason.
+      .map(({ filePath: _filePath, altFilePaths: _altFilePaths, ...rest }): Book => rest);
     return {
       books: newBooks,
       lastSyncedAt: lastSyncedAtBooks,

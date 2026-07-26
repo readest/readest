@@ -41,6 +41,30 @@ describe('collectKnownSourcePaths', () => {
     expect(result.size).toBe(0);
   });
 
+  // A watched folder can hold the same book under several names; the importer
+  // dedups them into one entry and parks the folded-away paths on
+  // `altFilePaths`. Auto-import must treat those as known, or it re-imports the
+  // duplicate on every scan.
+  test('includes the alternative source paths of a deduped book', () => {
+    const book = makeBook({
+      filePath: '/Users/me/Books/sample.epub',
+      altFilePaths: ['/Users/me/Books/sample-copy.epub', '/Users/me/Books/sample (1).epub'],
+    });
+    const result = collectKnownSourcePaths([book]);
+    expect(result.has('/Users/me/Books/sample.epub')).toBe(true);
+    expect(result.has('/Users/me/Books/sample-copy.epub')).toBe(true);
+    expect(result.has('/Users/me/Books/sample (1).epub')).toBe(true);
+  });
+
+  test('normalizes alternative source paths on case-insensitive platforms', () => {
+    const book = makeBook({
+      filePath: '/Users/Me/Books/Sample.epub',
+      altFilePaths: ['/Users/Me/Books/Sample-Copy.EPUB'],
+    });
+    const result = collectKnownSourcePaths([book], 'macos');
+    expect(result.has('/users/me/books/sample-copy.epub')).toBe(true);
+  });
+
   test('excludes a book with no filePath', () => {
     const book = makeBook();
     const result = collectKnownSourcePaths([book]);
