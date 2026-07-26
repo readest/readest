@@ -71,7 +71,7 @@ interface BookshelfProps {
   isSelectAll: boolean;
   isSelectNone: boolean;
   onScrollerRef: (el: HTMLDivElement | null) => void;
-  handleImportBooks: () => void;
+  handleImportBooks: (anchor: HTMLElement) => void;
   handleBookDownload: (
     book: Book,
     options?: { redownload?: boolean; queued?: boolean },
@@ -794,12 +794,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           >
             <button
               aria-label={_('Import Books')}
+              aria-haspopup='menu'
               className={clsx(
                 'bookitem-main bg-base-100 hover:bg-base-300/50',
                 'flex items-center justify-center',
                 'aspect-[28/41] w-full',
               )}
-              onClick={handleImportBooks}
+              onClick={(event) => handleImportBooks(event.currentTarget)}
             >
               <div className='flex items-center justify-center'>
                 <PiPlus className='size-10' color='gray' />
