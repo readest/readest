@@ -12,7 +12,19 @@ import {
   TTSPlayerStyle,
 } from '@/services/tts/types';
 import { getTTSCacheConfig, setTTSCacheConfig } from '@/services/tts/providers/bookCacheStore';
-import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from './primitives';
+import {
+  fetchOpenAICompatibleModels,
+  getOpenAICompatibleTTSConfig,
+  setOpenAICompatibleTTSConfig,
+  type OpenAICompatibleTTSConfig,
+} from '@/services/tts/openAICompatibleTTS';
+import {
+  BoxedList,
+  SettingsInput,
+  SettingsRow,
+  SettingsSelect,
+  SettingsSwitchRow,
+} from './primitives';
 import TTSHighlightStyleEditor, { TTSHighlightStyle } from './theme/TTSHighlightStyleEditor';
 
 const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
@@ -42,6 +54,27 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
   );
 
   const [ttsCacheConfig, setTtsCacheConfigState] = useState(getTTSCacheConfig());
+  const [openAIConfig, setOpenAIConfig] = useState(getOpenAICompatibleTTSConfig());
+  const [openAIModels, setOpenAIModels] = useState<string[]>([]);
+
+  const updateOpenAIConfig = (config: OpenAICompatibleTTSConfig) => {
+    setOpenAIConfig(config);
+    setOpenAICompatibleTTSConfig(config);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchOpenAICompatibleModels(openAIConfig)
+      .then((models) => {
+        if (!cancelled) setOpenAIModels(models);
+      })
+      .catch(() => {
+        if (!cancelled) setOpenAIModels([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [openAIConfig.baseUrl, openAIConfig.apiKey]);
 
   const updateTTSCacheConfig = (config: typeof ttsCacheConfig) => {
     setTtsCacheConfigState(config);
@@ -160,6 +193,44 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
               { value: 'sentence', label: _('Every Sentence') },
               { value: 'paragraph', label: _('Every Paragraph') },
               { value: 'chapter', label: _('Every Chapter') },
+            ]}
+          />
+        </SettingsRow>
+      </BoxedList>
+
+      <BoxedList title={_('OpenAI-compatible TTS')} data-setting-id='settings.tts.openAICompatible'>
+        <SettingsRow label={_('Base URL')}>
+          <SettingsInput
+            type='url'
+            placeholder='https://api.openai.com/v1'
+            value={openAIConfig.baseUrl}
+            onChange={(event) =>
+              updateOpenAIConfig({ ...openAIConfig, baseUrl: event.target.value })
+            }
+          />
+        </SettingsRow>
+        <SettingsRow label={_('API Key')}>
+          <SettingsInput
+            type='password'
+            autoComplete='off'
+            value={openAIConfig.apiKey}
+            onChange={(event) =>
+              updateOpenAIConfig({ ...openAIConfig, apiKey: event.target.value })
+            }
+          />
+        </SettingsRow>
+        <SettingsRow label={_('Model')}>
+          <SettingsSelect
+            value={openAIConfig.model}
+            disabled={openAIModels.length === 0}
+            onChange={(event) => updateOpenAIConfig({ ...openAIConfig, model: event.target.value })}
+            ariaLabel={_('Model')}
+            options={[
+              {
+                value: '',
+                label: openAIModels.length ? _('Select a model') : _('Configure URL and key'),
+              },
+              ...openAIModels.map((model) => ({ value: model, label: model })),
             ]}
           />
         </SettingsRow>

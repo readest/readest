@@ -13,6 +13,7 @@ import { createRejectFilter } from '@/utils/node';
 import { WebSpeechClient } from './WebSpeechClient';
 import { NativeTTSClient } from './NativeTTSClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
+import { OpenAICompatibleTTSClient } from './OpenAICompatibleTTSClient';
 import { SectionTimeline, TimelineSentence } from './SectionTimeline';
 import { hydrateProvisionalDurations } from './ttsDuration';
 import { DownloadableSentence, SectionEnumerator, TTSDownloader } from './TTSDownloader';
@@ -172,9 +173,11 @@ export class TTSController extends EventTarget {
   ttsWebClient: TTSClient;
   ttsEdgeClient: EdgeTTSClient;
   ttsNativeClient: TTSClient | null = null;
+  ttsOpenAICompatibleClient: OpenAICompatibleTTSClient;
   ttsWebVoices: TTSVoice[] = [];
   ttsEdgeVoices: TTSVoice[] = [];
   ttsNativeVoices: TTSVoice[] = [];
+  ttsOpenAICompatibleVoices: TTSVoice[] = [];
   ttsTargetLang: string = '';
 
   options: TTSHighlightOptions = { style: 'highlight', color: 'gray' };
@@ -189,6 +192,7 @@ export class TTSController extends EventTarget {
     super();
     this.ttsWebClient = new WebSpeechClient(this);
     this.ttsEdgeClient = new EdgeTTSClient(this, appService);
+    this.ttsOpenAICompatibleClient = new OpenAICompatibleTTSClient(this, appService);
     // Native TTS is backed by Android TextToSpeech and iOS AVSpeechSynthesizer.
     // TODO: implement native TTS client for desktop platforms.
     if (appService?.isAndroidApp || appService?.isIOSApp) {
@@ -348,6 +352,10 @@ export class TTSController extends EventTarget {
     if (await this.ttsEdgeClient.init()) {
       availableClients.push(this.ttsEdgeClient);
     }
+    if (await this.ttsOpenAICompatibleClient.init()) {
+      availableClients.push(this.ttsOpenAICompatibleClient);
+      this.ttsOpenAICompatibleVoices = await this.ttsOpenAICompatibleClient.getAllVoices();
+    }
     if (this.ttsNativeClient && (await this.ttsNativeClient.init())) {
       availableClients.push(this.ttsNativeClient);
       this.ttsNativeVoices = await this.ttsNativeClient.getAllVoices();
@@ -367,6 +375,7 @@ export class TTSController extends EventTarget {
     }
     this.ttsWebVoices = await this.ttsWebClient.getAllVoices();
     this.ttsEdgeVoices = await this.ttsEdgeClient.getAllVoices();
+    this.ttsOpenAICompatibleVoices = await this.ttsOpenAICompatibleClient.getAllVoices();
   }
 
   #getPrimaryContent() {
@@ -1138,6 +1147,8 @@ export class TTSController extends EventTarget {
     if (this.ttsEdgeClient.initialized) this.ttsEdgeClient.setPrimaryLang(lang);
     if (this.ttsWebClient.initialized) this.ttsWebClient.setPrimaryLang(lang);
     if (this.ttsNativeClient?.initialized) this.ttsNativeClient?.setPrimaryLang(lang);
+    if (this.ttsOpenAICompatibleClient.initialized)
+      this.ttsOpenAICompatibleClient.setPrimaryLang(lang);
   }
 
   async setRate(rate: number) {
@@ -1148,11 +1159,23 @@ export class TTSController extends EventTarget {
   }
 
   async getVoices(lang: string) {
+    // Settings can be saved while a reader is already open. Re-probe here so
+    // the newly configured provider appears immediately in the usual picker.
+    if (!this.ttsOpenAICompatibleClient.initialized) {
+      await this.ttsOpenAICompatibleClient.init();
+      this.ttsOpenAICompatibleVoices = await this.ttsOpenAICompatibleClient.getAllVoices();
+    }
     const ttsWebVoices = await this.ttsWebClient.getVoices(lang);
     const ttsEdgeVoices = await this.ttsEdgeClient.getVoices(lang);
     const ttsNativeVoices = (await this.ttsNativeClient?.getVoices(lang)) ?? [];
+    const ttsOpenAICompatibleVoices = await this.ttsOpenAICompatibleClient.getVoices(lang);
 
-    const voicesGroups = [...ttsNativeVoices, ...ttsEdgeVoices, ...ttsWebVoices];
+    const voicesGroups = [
+      ...ttsNativeVoices,
+      ...ttsOpenAICompatibleVoices,
+      ...ttsEdgeVoices,
+      ...ttsWebVoices,
+    ];
     return voicesGroups;
   }
 
@@ -1161,10 +1184,16 @@ export class TTSController extends EventTarget {
     const useEdgeTTS = !!this.ttsEdgeVoices.find(
       (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
     );
+    const useOpenAICompatibleTTS = !!this.ttsOpenAICompatibleVoices.find(
+      (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
+    );
     const useNativeTTS = !!this.ttsNativeVoices.find(
       (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
     );
-    if (useEdgeTTS) {
+    if (useOpenAICompatibleTTS) {
+      this.ttsClient = this.ttsOpenAICompatibleClient;
+      await this.ttsClient.setRate(this.ttsRate);
+    } else if (useEdgeTTS) {
       this.ttsClient = this.ttsEdgeClient;
       await this.ttsClient.setRate(this.ttsRate);
     } else if (useNativeTTS) {
