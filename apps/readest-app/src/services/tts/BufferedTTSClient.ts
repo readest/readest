@@ -24,6 +24,7 @@ import {
   SpeechSynthesisRequest,
 } from './providers/types';
 import { TTSAudioBuffer, WebAudioPlayer, WebAudioPlayerEvent } from './WebAudioPlayer';
+import { getTTSPreloadCount } from './preloadConfig';
 
 // The generic buffered TTS client: one SpeechProvider synthesizes compressed
 // audio + word boundaries, and everything engine-independent lives here —
@@ -231,6 +232,9 @@ export class BufferedTTSClient implements TTSClient {
       }
     });
     this.#activeGeneration = generation;
+    if (this.#player instanceof WebAudioPlayer) {
+      this.#player.setMaxPendingChunks(getTTSPreloadCount());
+    }
     await this.#player.ensureContext();
     this.#isPlaying = true;
 
@@ -344,39 +348,67 @@ export class BufferedTTSClient implements TTSClient {
     chunkMeta: ChunkMeta[],
   ): Promise<void> {
     const rate = this.#rate;
+    // Start a bounded window of HTTP synthesis operations at once. Audio must
+    // still be scheduled in text order, but an API response for sentence N+5
+    // can arrive while sentence N is audible instead of creating a dead gap.
+    const preloadCount = getTTSPreloadCount();
+    const pending = new Map<
+      number,
+      Promise<{
+        mark: TTSMark;
+        voiceId: string;
+        req: SpeechSynthesisRequest;
+        audio?: { data: ArrayBuffer; boundaries: TTSWordBoundary[] };
+        error?: unknown;
+      }>
+    >();
+    const startSynthesis = (index: number) => {
+      const mark = marks[index];
+      if (!mark || pending.has(index)) return;
+      pending.set(
+        index,
+        (async () => {
+          let voiceId = '';
+          const req: SpeechSynthesisRequest = {
+            lang: mark.language,
+            text: mark.text,
+            voice: '',
+            pitch: this.#pitch,
+          };
+          try {
+            voiceId = await this.getVoiceIdFromLang(mark.language);
+            req.voice = voiceId;
+            const audio = await this.#synthesizeWithRetry(
+              mark.language,
+              mark.text,
+              voiceId,
+              signal,
+            );
+            return { mark, voiceId, req, audio };
+          } catch (error) {
+            return { mark, voiceId, req, error };
+          }
+        })(),
+      );
+    };
+    for (let index = 0; index < Math.min(preloadCount, marks.length); index++)
+      startSynthesis(index);
+
     try {
-      for (const mark of marks) {
+      for (let markIndex = 0; markIndex < marks.length; markIndex++) {
         if (signal.aborted || this.#activeGeneration !== generation) return;
-        // Voices resolve per mark: mixed-language sections speak (and record
-        // durations under) the voice actually used for each sentence.
-        const voiceId = await this.getVoiceIdFromLang(mark.language);
+        const result = await pending.get(markIndex)!;
+        pending.delete(markIndex);
+        startSynthesis(markIndex + preloadCount);
+        const { mark, voiceId, req, audio, error } = result;
         this.#speakingLang = mark.language;
         this.#currentVoiceId = voiceId;
-
-        const req: SpeechSynthesisRequest = {
-          lang: mark.language,
-          text: mark.text,
-          voice: voiceId,
-          pitch: this.#pitch,
-        };
-        let audio: { data: ArrayBuffer; boundaries: TTSWordBoundary[] } | undefined;
-        try {
-          audio = await this.#synthesizeWithRetry(mark.language, mark.text, voiceId, signal);
-        } catch (error) {
+        if (error) {
           if (error instanceof SpeechSynthesisPermanentError) {
-            // Genuinely unsynthesizable sentence (server returned no audio):
-            // skip it and keep going — a few bad sentences must not stop a
-            // chapter. These don't count toward the offline stop budget.
             console.warn('No audio data received for:', mark.text);
             queue.push({ kind: 'chunk-skip', markName: mark.name });
             continue;
           }
-          // A synthesis error that survived the retries: offline with this
-          // sentence uncached, or a persistent service failure. Skip it so
-          // cached neighbours still play (a cached section whose heading is
-          // uncached must not stop on the heading), but stop after a RUN of
-          // unreachable sentences rather than silently skipping to the end of
-          // the book. A later cached hit resets the budget below.
           const message = error instanceof Error ? error.message : String(error);
           this.#consecutiveSkips += 1;
           if (this.#consecutiveSkips > MAX_CONSECUTIVE_SKIPS) {

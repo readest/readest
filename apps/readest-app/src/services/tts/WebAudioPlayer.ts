@@ -96,8 +96,8 @@ interface PlayerSession {
 const SCHEDULE_SAFETY_SEC = 0.03;
 // Screen-off JS throttling must not starve the queue between onended and the
 // next schedule, so the pending budget deepens when the page is hidden.
-const MAX_PENDING_VISIBLE = 2;
-const MAX_PENDING_HIDDEN = 5;
+const DEFAULT_MAX_PENDING_VISIBLE = 2;
+const DEFAULT_MAX_PENDING_HIDDEN = 5;
 // Bounds decoded PCM at slow rates (0.2x stretches a 30s sentence to 150s).
 const MAX_AHEAD_SEC = 60;
 
@@ -185,10 +185,17 @@ export class WebAudioPlayer implements TTSAudioPlayer {
   #generation = 0;
   #session: PlayerSession | null = null;
   #userPaused = false;
+  #maxPendingChunks = DEFAULT_MAX_PENDING_VISIBLE;
 
   constructor(createContext?: () => TTSAudioContext) {
     this.#createContext = createContext ?? getSharedContext;
     this.#usesSharedContext = !createContext;
+  }
+
+  // Applies to the next and current session. Keep a separate cap for hidden
+  // pages so background playback retains the existing screen-off protection.
+  setMaxPendingChunks(count: number): void {
+    this.#maxPendingChunks = Math.max(1, Math.floor(count));
   }
 
   async ensureContext(): Promise<TTSAudioContext> {
@@ -360,8 +367,8 @@ export class WebAudioPlayer implements TTSAudioPlayer {
     const unfinished = session.chunks.reduce((n, c) => n + (c.ended ? 0 : 1), 0);
     const limit =
       typeof document !== 'undefined' && document.visibilityState === 'hidden'
-        ? MAX_PENDING_HIDDEN
-        : MAX_PENDING_VISIBLE;
+        ? Math.max(this.#maxPendingChunks, DEFAULT_MAX_PENDING_HIDDEN)
+        : this.#maxPendingChunks;
     if (unfinished >= limit) return false;
     if (this.#ctx && session.chunks.length > 0) {
       const aheadSec = session.nextStartTime - this.#ctx.currentTime;

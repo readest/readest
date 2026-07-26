@@ -690,11 +690,15 @@ export class TTSController extends EventTarget {
     return this.ttsClient.getCapabilities().gapControl;
   }
 
-  // Passthrough to the Edge client's inter-sentence gap. ttsEdgeClient is
-  // always a constructed instance, whether or not it's the currently active
-  // client (same as supportsPlaybackInfo/supportsGapControl's comparison).
+  // Buffered engines (Edge and OpenAI-compatible) own their own scheduler.
+  // Apply the UI value to the active one instead of always mutating Edge.
   setSentenceGap(sec: number): void {
-    this.ttsEdgeClient.setSentenceGap(sec);
+    if (
+      this.ttsClient instanceof EdgeTTSClient ||
+      this.ttsClient instanceof OpenAICompatibleTTSClient
+    ) {
+      this.ttsClient.setSentenceGap(sec);
+    }
   }
 
   // Universal (not Edge-only) paragraph-to-paragraph gap. See

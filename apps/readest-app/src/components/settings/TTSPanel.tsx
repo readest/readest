@@ -19,6 +19,12 @@ import {
   type OpenAICompatibleTTSConfig,
 } from '@/services/tts/openAICompatibleTTS';
 import {
+  getTTSPreloadCount,
+  setTTSPreloadCount,
+  TTS_PRELOAD_OPTIONS,
+  type TTSPreloadCount,
+} from '@/services/tts/preloadConfig';
+import {
   BoxedList,
   SettingsInput,
   SettingsRow,
@@ -56,6 +62,7 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
   const [ttsCacheConfig, setTtsCacheConfigState] = useState(getTTSCacheConfig());
   const [openAIConfig, setOpenAIConfig] = useState(getOpenAICompatibleTTSConfig());
   const [openAIModels, setOpenAIModels] = useState<string[]>([]);
+  const [ttsPreloadCount, setTtsPreloadCount] = useState(getTTSPreloadCount());
 
   const updateOpenAIConfig = (config: OpenAICompatibleTTSConfig) => {
     setOpenAIConfig(config);
@@ -217,6 +224,24 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
             onChange={(event) =>
               updateOpenAIConfig({ ...openAIConfig, apiKey: event.target.value })
             }
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={_('Pre-render Sentences')}
+          description={_('Prepare several upcoming sentences in parallel to reduce pauses')}
+        >
+          <SettingsSelect
+            value={String(ttsPreloadCount)}
+            onChange={(event) => {
+              const count = Number(event.target.value) as TTSPreloadCount;
+              setTtsPreloadCount(count);
+              setTTSPreloadCount(count);
+            }}
+            ariaLabel={_('Pre-render Sentences')}
+            options={TTS_PRELOAD_OPTIONS.map((count) => ({
+              value: String(count),
+              label: _('{{count}} sentences', { count }),
+            }))}
           />
         </SettingsRow>
         <SettingsRow label={_('Model')}>
