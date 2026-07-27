@@ -32,7 +32,7 @@ const blockTags = new Set([
 const MAX_BLOCKS = 5000;
 
 const INVISIBLE_TEXT_PATTERN =
-  /[\s\u00a0\u1680\u180e\u2000-\u200a\u202f\u205f\u3000\u200b-\u200d\u2060\ufeff]/g;
+  /[\s\u00a0\u1680\u180e\u2000-\u200a\u202f\u205f\u3000\u200b-\u200f\u2060\ufeff]/g;
 const MEDIA_SELECTOR = 'img, svg, video, audio, canvas, math, iframe, object, embed, hr';
 
 const hasMeaningfulText = (text?: string | null): boolean =>
