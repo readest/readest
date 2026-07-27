@@ -17,7 +17,7 @@ export const sanitizerTransformer: Transformer = {
     // character references, breaking Persian/Arabic text shaping. Both the
     // literal character and its numeric-entity form (produced by XMLSerializer)
     // must be restored to the literal after serialization, just like U+00A0.
-    const result = ctx.content.replaceAll('&nbsp;', '&#160;');    
+    const result = ctx.content.replaceAll('&nbsp;', '&#160;');
     
     const sanitized = DOMPurify.sanitize(result, {
       WHOLE_DOCUMENT: true,
