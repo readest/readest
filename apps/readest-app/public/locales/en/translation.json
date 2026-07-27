@@ -10,6 +10,8 @@
   "Are you sure to delete {{count}} selected book(s)?_other": "Are you sure to delete {{count}} selected books?",
   "Search in {{count}} Book(s)..._one": "Search in {{count}} book...",
   "Search in {{count}} Book(s)..._other": "Search in {{count}} books...",
+  "Search contents in {{count}} Book(s)..._one": "Search contents in {{count}} book...",
+  "Search contents in {{count}} Book(s)..._other": "Search contents in {{count}} books...",
   "{{count}} pages left in chapter_one": "<0>{{count}}</0><1> page left in chapter</1>",
   "{{count}} pages left in chapter_other": "<0>{{count}}</0><1> pages left in chapter</1>",
   "{{count}} pages left in book_one": "<0>{{count}}</0><1> page left in book</1>",

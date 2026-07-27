@@ -1,7 +1,8 @@
 import clsx from 'clsx';
-import React, { useCallback, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { FaSearch } from 'react-icons/fa';
+import { FaChevronDown } from 'react-icons/fa';
 import { PiPlus } from 'react-icons/pi';
 import { PiSelectionAll, PiSelectionAllFill } from 'react-icons/pi';
 import { PiDotsThreeCircle } from 'react-icons/pi';
@@ -21,6 +22,8 @@ import Dropdown from '@/components/Dropdown';
 import SettingsMenu from './SettingsMenu';
 import ImportMenu from './ImportMenu';
 import ViewMenu from './ViewMenu';
+import LibrarySearchMenu, { type LibrarySearchTarget } from './LibrarySearchMenu';
+import type { BookSearchConfig } from '@/types/book';
 
 interface LibraryHeaderProps {
   isSelectMode: boolean;
@@ -35,6 +38,12 @@ interface LibraryHeaderProps {
   onToggleSelectMode: () => void;
   onSelectAll: () => void;
   onDeselectAll: () => void;
+  searchQuery: string;
+  searchTarget: LibrarySearchTarget;
+  searchConfig: BookSearchConfig;
+  onSearchQueryChange: (query: string) => void;
+  onSearchTargetChange: (target: LibrarySearchTarget) => void;
+  onSearchConfigChange: (config: BookSearchConfig) => void;
 }
 
 const LibraryHeader: React.FC<LibraryHeaderProps> = ({
@@ -50,14 +59,18 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   onToggleSelectMode,
   onSelectAll,
   onDeselectAll,
+  searchQuery,
+  searchTarget,
+  searchConfig,
+  onSearchQueryChange,
+  onSearchTargetChange,
+  onSearchConfigChange,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { appService } = useEnv();
   const { systemUIVisible, statusBarHeight } = useThemeStore();
   const { currentBookshelf } = useLibraryStore();
-  const [searchQuery, setSearchQuery] = useState(searchParams?.get('q') ?? '');
 
   const headerRef = useRef<HTMLDivElement>(null);
   const { isTrafficLightVisible } = useTrafficLight(headerRef);
@@ -71,7 +84,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedUpdateQueryParam = useCallback(
     debounce((value: string) => {
-      const params = new URLSearchParams(searchParams?.toString());
+      const params = new URLSearchParams(window.location.search);
       if (value) {
         params.set('q', value);
       } else {
@@ -79,13 +92,13 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
       }
       router.push(`?${params.toString()}`);
     }, 500),
-    [searchParams],
+    [router],
   );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
-    setSearchQuery(newQuery);
-    debouncedUpdateQueryParam(newQuery);
+    onSearchQueryChange(newQuery);
+    debouncedUpdateQueryParam(newQuery.trim());
   };
 
   const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
@@ -112,23 +125,40 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
       <div className='flex w-full items-center justify-between space-x-6 sm:space-x-12'>
         <div className='exclude-title-bar-mousedown relative flex w-full items-center pl-4'>
           <div className='relative flex h-9 w-full items-center sm:h-7'>
-            <span className='text-base-content/50 absolute ps-3'>
-              <FaSearch className='h-4 w-4' />
-            </span>
+            <Dropdown
+              label={_('Search Options')}
+              className='dropdown-bottom dropdown-start'
+              buttonClassName='absolute start-1 top-1/2 z-10 flex h-8 min-h-8 -translate-y-1/2 items-center gap-0.5 px-2 sm:h-6 sm:min-h-6'
+              toggleButton={
+                <>
+                  <FaSearch className='h-4 w-4' />
+                  <FaChevronDown className='h-2.5 w-2.5' />
+                </>
+              }
+            >
+              <LibrarySearchMenu
+                target={searchTarget}
+                config={searchConfig}
+                onTargetChange={onSearchTargetChange}
+                onConfigChange={onSearchConfigChange}
+              />
+            </Dropdown>
             <input
               type='text'
               value={searchQuery}
               placeholder={
-                currentBooksCount > 1
-                  ? _('Search in {{count}} Book(s)...', {
-                      count: currentBooksCount,
-                    })
-                  : _('Search Books...')
+                searchTarget === 'contents'
+                  ? _('Search contents in {{count}} Book(s)...', { count: currentBooksCount })
+                  : currentBooksCount > 1
+                    ? _('Search in {{count}} Book(s)...', {
+                        count: currentBooksCount,
+                      })
+                    : _('Search Books...')
               }
               onChange={handleSearchChange}
               spellCheck='false'
               className={clsx(
-                'search-input input h-9 w-full rounded-full pr-[30%] ps-10 sm:h-7',
+                'search-input input h-9 w-full rounded-full pr-[30%] ps-14 sm:h-7',
                 'bg-base-300/45 border-0',
                 'font-sans text-sm font-light',
                 'placeholder:text-base-content/50 truncate',
@@ -141,7 +171,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               <button
                 type='button'
                 onClick={() => {
-                  setSearchQuery('');
+                  onSearchQueryChange('');
                   debouncedUpdateQueryParam('');
                 }}
                 className='text-base-content/40 hover:text-base-content/60 pe-1'

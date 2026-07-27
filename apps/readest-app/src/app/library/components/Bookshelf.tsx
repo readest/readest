@@ -13,7 +13,7 @@ import {
   type GridListProps,
   type ListProps,
 } from 'react-virtuoso';
-import { Book, BooksGroup, ReadingStatus } from '@/types/book';
+import { Book, BooksGroup, type BookSearchConfig, ReadingStatus } from '@/types/book';
 import {
   LibraryCoverFitType,
   LibraryGroupByType,
@@ -65,6 +65,12 @@ import GroupingModal from './GroupingModal';
 import SetStatusAlert from './SetStatusAlert';
 import RecentShelf, { RECENT_SHELF_BOOK_COUNT } from './RecentShelf';
 import { useOpenBook } from '../hooks/useOpenBook';
+import LibrarySearchResults from './LibrarySearchResults';
+
+export interface ContentSearchRequest {
+  query: string;
+  config: BookSearchConfig;
+}
 
 interface BookshelfProps {
   libraryBooks: Book[];
@@ -85,6 +91,7 @@ interface BookshelfProps {
   handleLibraryNavigation: (targetGroup: string) => void;
   handlePushLibrary: () => Promise<void>;
   booksTransferProgress: { [key: string]: number | null };
+  contentSearch: ContentSearchRequest | null;
 }
 
 /**
@@ -184,6 +191,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   handleLibraryNavigation,
   handlePushLibrary,
   booksTransferProgress,
+  contentSearch,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -877,7 +885,17 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       className='bookshelf min-h-0 flex-grow focus:outline-none'
     >
       <div ref={osRootRef} data-overlayscrollbars-initialize='' className='h-full'>
-        {hasItems && isGridMode && (
+        {contentSearch?.query.trim() && appService ? (
+          <LibrarySearchResults
+            appService={appService}
+            books={currentShelfBooks}
+            query={contentSearch.query.trim()}
+            config={contentSearch.config}
+            onSelectResult={(book, cfi) => openBook(book, cfi)}
+            onScrollerRef={onScrollerRef}
+          />
+        ) : null}
+        {!contentSearch?.query.trim() && hasItems && isGridMode && (
           <VirtuosoGrid<unknown, BookshelfListContext>
             overscan={200}
             totalCount={gridTotalCount}
@@ -888,7 +906,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             scrollerRef={handleScrollerRef}
           />
         )}
-        {hasItems && !isGridMode && (
+        {!contentSearch?.query.trim() && hasItems && !isGridMode && (
           <Virtuoso<unknown, BookshelfListContext>
             overscan={200}
             totalCount={sortedBookshelfItems.length}

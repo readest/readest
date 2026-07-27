@@ -77,7 +77,7 @@ export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptio
   );
 
   const openBook = useCallback(
-    async (book: Book) => {
+    async (book: Book, cfi?: string) => {
       // In-place books point at a file outside Books/<hash>/ that the user (or
       // another app) may have moved, renamed, or deleted between sessions. Probe
       // the source before navigating: if it's gone, drop the stale record
@@ -106,11 +106,12 @@ export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptio
       }
       const available = await makeBookAvailable(book);
       if (!available) return;
+      const queryParams = cfi ? `cfi=${encodeURIComponent(cfi)}` : undefined;
       if (appService?.hasWindow && settings.openBookInNewWindow) {
-        showReaderWindow(appService, [book.hash]);
+        showReaderWindow(appService, [book.hash], queryParams);
       } else {
         setTimeout(() => {
-          navigateToReader(router, [book.hash]);
+          navigateToReader(router, [book.hash], queryParams);
         }, 0);
       }
     },

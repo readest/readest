@@ -104,6 +104,30 @@ describe('searchLibraryBooks', () => {
     expect(events.at(-1)).toMatchObject({ skippedBooks: 1, erroredBooks: 1, searchedBooks: 1 });
   });
 
+  it('reports availability probe failures and continues with later books', async () => {
+    const failing = makeBook('failing', 'Failing Book');
+    const valid = makeBook('valid', 'Valid Book');
+    const files = new Map<string, File | null>([
+      ['failing', makeFile('broken')],
+      ['valid', makeFile('# Chapter\nneedle')],
+    ]);
+    const service = makeService(files);
+    service.getBookFileSize = vi.fn(async (book) => {
+      if (book.hash === 'failing') throw new Error('probe failed');
+      return files.get(book.hash)?.size ?? null;
+    });
+    const collected = [];
+
+    for await (const event of searchLibraryBooks(service, [failing, valid], 'needle', { config })) {
+      collected.push(event);
+    }
+
+    expect(collected).toContainEqual(
+      expect.objectContaining({ type: 'book-error', book: failing, error: 'probe failed' }),
+    );
+    expect(collected).toContainEqual(expect.objectContaining({ type: 'result', book: valid }));
+  });
+
   it('supports fuzzy section matching with segmented highlights', async () => {
     const book = makeBook('fuzzy', 'Fuzzy Book');
     const files = new Map<string, File | null>([

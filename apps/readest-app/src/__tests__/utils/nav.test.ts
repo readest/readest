@@ -324,6 +324,17 @@ describe('showReaderWindow', () => {
     expect(url).toContain('ids=book1%2Bbook2');
   });
 
+  test('preserves an exact CFI in the new reader window URL', () => {
+    const appService = makeAppService();
+    const cfi = 'epubcfi(/6/2!/4/2:1)';
+    showReaderWindow(appService as never, ['book1'], `cfi=${encodeURIComponent(cfi)}`);
+
+    const url = vi.mocked(WebviewWindow).mock.calls[0]![1]!.url as string;
+    const params = new URLSearchParams(url.split('?')[1]);
+    expect(params.get('ids')).toBe('book1');
+    expect(params.get('cfi')).toBe(cfi);
+  });
+
   test('uses macOS-specific window options', () => {
     const appService = makeAppService(true);
     showReaderWindow(appService as never, ['book1']);

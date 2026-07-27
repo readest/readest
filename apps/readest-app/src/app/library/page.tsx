@@ -6,7 +6,7 @@ import { MdChevronRight } from 'react-icons/md';
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
 
-import { Book, BooksGroup } from '@/types/book';
+import { Book, BooksGroup, type BookSearchConfig, type SearchMode } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
 import {
   buildBookLookupIndex,
@@ -96,6 +96,7 @@ import {
 } from './utils/libraryUtils';
 import Spinner from '@/components/Spinner';
 import LibraryHeader from './components/LibraryHeader';
+import type { LibrarySearchTarget } from './components/LibrarySearchMenu';
 import Bookshelf from './components/Bookshelf';
 import LibraryEmptyState from './components/LibraryEmptyState';
 import ImportMenuPopup from './components/ImportMenuPopup';
@@ -120,6 +121,25 @@ import TransferQueuePanel from './components/TransferQueuePanel';
 
 /** Skip tiny non-book artifacts during folder auto-scan (matches the manual import dialog default). */
 const AUTO_IMPORT_MIN_SIZE_BYTES = 20 * 1024;
+const LIBRARY_SEARCH_MODES: SearchMode[] = [
+  'contains',
+  'whole-words',
+  'regex',
+  'nearby-words',
+  'fuzzy',
+];
+
+const getLibrarySearchConfig = (searchParams: ReadonlyURLSearchParams | null): BookSearchConfig => {
+  const modeParam = searchParams?.get('mode') as SearchMode | null;
+  const nearbyParam = Number(searchParams?.get('nearby'));
+  return {
+    scope: 'book',
+    mode: modeParam && LIBRARY_SEARCH_MODES.includes(modeParam) ? modeParam : 'contains',
+    matchCase: searchParams?.get('matchCase') === 'true',
+    matchDiacritics: searchParams?.get('matchDiacritics') === 'true',
+    nearbyWords: Number.isFinite(nearbyParam) && nearbyParam > 0 ? nearbyParam : 10,
+  };
+};
 
 /**
  * Key used to persist the last directory the user imported books from.
@@ -219,6 +239,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isSelectAll, setIsSelectAll] = useState(false);
   const [isSelectNone, setIsSelectNone] = useState(false);
+  const [librarySearchQuery, setLibrarySearchQuery] = useState(searchParams?.get('q') ?? '');
+  const [librarySearchTarget, setLibrarySearchTarget] = useState<LibrarySearchTarget>(() =>
+    searchParams?.get('search') === 'contents' ? 'contents' : 'books',
+  );
+  const [librarySearchConfig, setLibrarySearchConfig] = useState<BookSearchConfig>(() =>
+    getLibrarySearchConfig(searchParams),
+  );
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
   const [failedImportsModal, setFailedImportsModal] = useState<FailedImport[] | null>(null);
   // "Import from folder" dialog state. Held as a small object rather
@@ -702,6 +729,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const groupName = getGroupName(group);
     setCurrentGroupPath(groupName);
   }, [libraryBooks, searchParams, getGroupName]);
+
+  useEffect(() => {
+    setLibrarySearchQuery(searchParams?.get('q') ?? '');
+    setLibrarySearchTarget(searchParams?.get('search') === 'contents' ? 'contents' : 'books');
+    setLibrarySearchConfig(getLibrarySearchConfig(searchParams));
+  }, [searchParams]);
 
   useEffect(() => {
     const group = searchParams?.get('group') || '';
@@ -1527,6 +1560,35 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setIsSelectNone(false);
   };
 
+  const updateLibrarySearchUrl = (target: LibrarySearchTarget, config: BookSearchConfig) => {
+    const params = new URLSearchParams(window.location.search);
+    if (target === 'contents') params.set('search', 'contents');
+    else params.delete('search');
+    if (config.mode !== 'contains') params.set('mode', config.mode);
+    else params.delete('mode');
+    if (config.matchCase) params.set('matchCase', 'true');
+    else params.delete('matchCase');
+    if (config.matchDiacritics) params.set('matchDiacritics', 'true');
+    else params.delete('matchDiacritics');
+    if (config.mode === 'nearby-words' && config.nearbyWords !== 10) {
+      params.set('nearby', String(config.nearbyWords));
+    } else {
+      params.delete('nearby');
+    }
+    navigateToLibrary(router, params.toString());
+  };
+
+  const handleSearchTargetChange = (target: LibrarySearchTarget) => {
+    setLibrarySearchTarget(target);
+    updateLibrarySearchUrl(target, librarySearchConfig);
+    if (target === 'contents') handleSetSelectMode(false);
+  };
+
+  const handleSearchConfigChange = (config: BookSearchConfig) => {
+    setLibrarySearchConfig(config);
+    updateLibrarySearchUrl(librarySearchTarget, config);
+  };
+
   const handleSelectAll = () => {
     setIsSelectAll(true);
     setIsSelectNone(false);
@@ -1587,6 +1649,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           onToggleSelectMode={() => handleSetSelectMode(!isSelectMode)}
           onSelectAll={handleSelectAll}
           onDeselectAll={handleDeselectAll}
+          searchQuery={librarySearchQuery}
+          searchTarget={librarySearchTarget}
+          searchConfig={librarySearchConfig}
+          onSearchQueryChange={setLibrarySearchQuery}
+          onSearchTargetChange={handleSearchTargetChange}
+          onSearchConfigChange={handleSearchConfigChange}
         />
         <progress
           aria-label={_('Library Sync Progress')}
@@ -1675,6 +1743,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
                 handleLibraryNavigation={handleLibraryNavigation}
                 booksTransferProgress={booksTransferProgress}
                 handlePushLibrary={pushLibrary}
+                contentSearch={
+                  librarySearchTarget === 'contents'
+                    ? { query: librarySearchQuery, config: librarySearchConfig }
+                    : null
+                }
               />
             </div>
           </div>

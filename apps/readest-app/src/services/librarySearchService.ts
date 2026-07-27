@@ -165,16 +165,15 @@ export async function* searchLibraryBooks(
 
   for (const [bookIndex, book] of books.entries()) {
     if (signal?.aborted) return;
-    if ((await appService.getBookFileSize(book)) == null) {
-      skippedBooks++;
-      yield { type: 'book-skipped', book, reason: 'unavailable' };
-      continue;
-    }
-
-    yield { type: 'book-started', book, bookIndex, totalBooks: books.length };
     let file: File | null = null;
     let bookDoc: SearchableBookDoc | null = null;
     try {
+      if ((await appService.getBookFileSize(book)) == null) {
+        skippedBooks++;
+        yield { type: 'book-skipped', book, reason: 'unavailable' };
+        continue;
+      }
+      yield { type: 'book-started', book, bookIndex, totalBooks: books.length };
       const [content, nativeFilePath] = await Promise.all([
         appService.loadBookContent(book),
         appService.resolveNativeBookFilePath(book),
@@ -204,30 +203,31 @@ export async function* searchLibraryBooks(
 
       for (const [sectionIndex, section] of bookDoc.sections.entries()) {
         if (signal?.aborted) return;
-        if (typeof section.createDocument !== 'function') continue;
-        const doc = await section.createDocument();
-        if (signal?.aborted) return;
-        const matches = Array.from(matcher(doc, query) as Iterable<MatcherResult>);
-        if (matches.length) {
-          const subitems = matches.map((match) => {
-            const baseCFI = section.cfi ?? CFI.fake.fromIndex(sectionIndex);
-            const toCFI = (range: Range) => CFI.joinIndir(baseCFI, CFI.fromRange(range));
-            return {
-              cfi: toCFI(match.range),
-              ...(match.subRanges?.length ? { cfis: match.subRanges.map(toCFI) } : {}),
-              excerpt: match.excerpt,
+        if (typeof section.createDocument === 'function') {
+          const doc = await section.createDocument();
+          if (signal?.aborted) return;
+          const matches = Array.from(matcher(doc, query) as Iterable<MatcherResult>);
+          if (matches.length) {
+            const subitems = matches.map((match) => {
+              const baseCFI = section.cfi ?? CFI.fake.fromIndex(sectionIndex);
+              const toCFI = (range: Range) => CFI.joinIndir(baseCFI, CFI.fromRange(range));
+              return {
+                cfi: toCFI(match.range),
+                ...(match.subRanges?.length ? { cfis: match.subRanges.map(toCFI) } : {}),
+                excerpt: match.excerpt,
+              };
+            });
+            bookMatches += subitems.length;
+            yield {
+              type: 'result',
+              book,
+              result: {
+                index: sectionIndex,
+                label: tocProgress?.getProgress(sectionIndex, matches[0]!.range)?.label ?? '',
+                subitems,
+              },
             };
-          });
-          bookMatches += subitems.length;
-          yield {
-            type: 'result',
-            book,
-            result: {
-              index: sectionIndex,
-              label: tocProgress?.getProgress(sectionIndex, matches[0]!.range)?.label ?? '',
-              subitems,
-            },
-          };
+          }
         }
         if (signal?.aborted) return;
         const sectionsCompleted = sectionIndex + 1;
