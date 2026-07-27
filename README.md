@@ -48,7 +48,7 @@
 
 | **Feature**                                | **Description**                                                                                                        | **Status** |
 | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | ---------- |
-| **Multi-Format Support**                   | Support EPUB, MOBI, KF8 (AZW3), FB2, CBZ, TXT, PDF                                                                     | ✅         |
+| **Multi-Format Support**                   | Support EPUB, PDF, MOBI, KF8 (AZW3), FB2, CBZ, TXT, MD (Markdown)                                                                      | ✅         |
 | **Scroll/Page View Modes**                 | Switch between scrolling or paginated reading modes.                                                                   | ✅         |
 | **Full-Text Search**                       | Search across the entire book to find relevant sections.                                                               | ✅         |
 | **Annotations and Highlighting**           | Add highlights, bookmarks, and notes to enhance your reading experience and use instant mode for quicker interactions. | ✅         |

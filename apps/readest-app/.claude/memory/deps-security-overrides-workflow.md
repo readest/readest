@@ -5,6 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: c61e7dd2-4033-4bd1-8f32-22056e4ef322
+  modified: 2026-07-26T06:38:41.709Z
 ---
 
 Fixing transitive npm Dependabot security alerts (manifest `pnpm-lock.yaml`).
@@ -36,6 +37,45 @@ latest matching version. Dependabot does not scan the tauri-plugins lockfile.
    confirm no vulnerable versions remain.
 4. Verify: `pnpm test` + `pnpm lint` + `pnpm build-web` (the last exercises
    esbuild in the OpenNext/Cloudflare bundle path).
+
+**2026-07-26 sweep — MERGED PR #5335 (a9e50e284):** cleared 32 of 36 open alerts.
+next 16.2.6->16.2.11, react/react-dom 19.2.5->19.2.8, react-server-dom-webpack 19.2.8,
+vitest family ^4.1.10, sharp 0.34.5->0.35.3, brace-expansion 1.1.16/2.1.2/5.0.8,
+fast-uri 3.1.4, shell-quote 1.10.0, js-yaml 4.3.0, body-parser 2.3.0, protobufjs 7.6.5,
+dompurify 3.4.12, postcss 8.5.18.
+
+**Version-keyed overrides (multi-major transitive pins):** when several majors of one
+package coexist and each has its own patched release, use pnpm's `<pkg>@<range>` selector
+keys instead of one flat pin — a flat `brace-expansion: '>=5.0.8'` would force 5.x onto
+`minimatch@3` which declares `^1.1.7`. Done 2026-07-26:
+```yaml
+  'brace-expansion@1': '>=1.1.16 <2'
+  'brace-expansion@2': '>=2.1.2 <3'
+  'brace-expansion@5': '>=5.0.8 <6'
+```
+**Always bound `>=X` overrides with `<nextMajor` when a newer major exists on npm.** The
+lockfile makes existing pins look safe (an already-locked version that still satisfies
+`>=X` is kept), but a *raised* floor forces re-resolution to the highest match — e.g.
+`js-yaml: '>=4.3.0'` would have jumped to 5.x. Bounded it to `'>=4.3.0 <5'`.
+
+**Lockstep bumps:** `react-server-dom-webpack@19.2.8` peers on `react`/`react-dom`
+`^19.2.8`, so it drags react + react-dom with it. `next` is an exact pin in
+`apps/readest-app/package.json` (not an override). The vitest family
+(`vitest`, `@vitest/browser-playwright`, `@vitest/browser-webdriverio`,
+`@vitest/coverage-v8`) still moves together.
+
+**Verify the DEPLOY build, not just `build-web`:** `pnpm build-web` is turbopack and skips
+Next's page-export type check. The Cloudflare path is
+`pnpm patch-build-webpack && NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && pnpm restore-build-original`.
+Running it on 2026-07-26 surfaced a break that predated the bump — see
+[[nextjs-page-export-webpack-only-check]].
+
+**Unfixable alerts (2026-07-26):** `@ai-sdk/provider-utils` (#236) has no patched release
+for the 3.x line and 3.0.25 is exact-pinned in `patchedDependencies`. Cargo.lock alerts
+#12 glib 0.18.5 (gtk-rs 0.18 stack under webkit2gtk/wry), #94/#95 nix 0.19.1 (via
+third-party `tauri-plugin-device-info` -> `battery`), #173 rand 0.7.3 (via
+`kuchikiki@0.8.8-speedreader` -> `selectors@0.24` -> `phf@0.8`) are all transitive through
+crates we do not control.
 
 **Override applicability:** an override forces a transitive version regardless
 of the parent's declared range ONLY when the package is a regular dep (no peer

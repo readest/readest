@@ -15,4 +15,5 @@ metadata:
 - [[opds-autodownload-subdir-crawl-4272]] — auto-download subdir crawl #4272
 - [[opds-preemptive-basic-digest-400]] — preemptive Basic auth vs Digest 400s
 - [[opds-autodownload-tls-skipssl-4988]] — auto-download TLS skip-SSL #4988
+- [[opds-http-links-on-https-feed-5300]] — HTTPS feed with absolute `http://` self-links #5300 (PR #5324)
 - Calibre pipe-escaped authors #5183 (PR #5189, MERGED): Calibre DB stores commas in author names as `|` (`Doe| John`) and Calibre-Web's `feed.xml` emits `{{author.name}}` raw (its HTML templates apply `replace('|',',')`, OPDS template doesn't — server-side, not Readest). Fix: `formatContributorName()` in `opdsUtils.ts` de-escapes `|`→`,`; PublicationCard/PublicationView join multiple authors with ` & ` (Calibre convention) instead of `, `.
