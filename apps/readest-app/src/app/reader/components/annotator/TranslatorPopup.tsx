@@ -146,9 +146,8 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
       >
         <div className='overflow-y-auto p-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
-            <h1 className='text-sm font-normal'>{_('Original Text')}</h1>
+            <h1 className='text-sm font-medium'>{_('Original Text')}</h1>
             <Select
-              className='not-eink:bg-gray-600 not-eink:text-white eink:bg-base-100'
               value={sourceLang}
               onChange={handleSourceLangChange}
               options={[
@@ -166,16 +165,15 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
               ]}
             />
           </div>
-          <p className='not-eink:text-white/90 text-base'>{text}</p>
+          <p className='text-base'>{text}</p>
         </div>
 
-        <div className='mx-4 flex-shrink-0 border-t border-gray-500/30'></div>
+        <div className='mx-4 flex-shrink-0 border-t border-base-content/20'></div>
 
         <div className='overflow-y-auto px-4 pb-8 pt-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
-            <h2 className='text-sm font-normal'>{_('Translated Text')}</h2>
+            <h2 className='text-sm font-medium'>{_('Translated Text')}</h2>
             <Select
-              className='not-eink:bg-gray-600 not-eink:text-white eink:bg-base-100'
               value={targetLang}
               onChange={handleTargetLangChange}
               options={[
@@ -187,21 +185,19 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
             />
           </div>
           {loading ? (
-            <p className='text-base italic text-gray-500'>{_('Loading...')}</p>
+            <p className='text-base-content/80 italic'>{_('Loading...')}</p>
           ) : (
             <div>
               {error ? (
                 <p className='text-base text-red-600'>{error}</p>
               ) : (
-                <p className='not-eink:text-white/90 text-base'>
-                  {translation || _('No translation available.')}
-                </p>
+                <p className='text-base'>{translation || _('No translation available.')}</p>
               )}
             </div>
           )}
         </div>
-        <div className='absolute bottom-0 flex h-8 w-full items-center justify-between px-4'>
-          <div className='line-clamp-1 text-xs opacity-60'>
+        <div className='flex items-center justify-between gap-2 border-t border-base-200/80 px-4 py-2 bg-base-200/40 rounded-b-xl shrink-0'>
+          <div className='line-clamp-1 text-xs text-base-content/60'>
             {provider &&
               !loading &&
               !error &&
@@ -210,7 +206,6 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
               })}
           </div>
           <Select
-            className='not-eink:bg-gray-600 not-eink:text-white eink:bg-base-100'
             value={provider}
             onChange={handleProviderChange}
             options={providers.map(({ name: value, label, disabled }) => ({
