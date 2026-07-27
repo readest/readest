@@ -96,7 +96,9 @@ export async function makeMarkdownBook(file: File): Promise<BookDoc> {
     usedIds.add(id);
     return id;
   };
-  const headingEls = Array.from(docBody.querySelectorAll('h1, h2, h3'));
+  // All six Markdown heading levels, so the TOC mirrors the document outline in
+  // full and deep headings stay linkable by anchor (issue #5357).
+  const headingEls = Array.from(docBody.querySelectorAll('h1, h2, h3, h4, h5, h6'));
   for (const h of headingEls) {
     if (!h.id) h.id = uniqueId(slugify(h.textContent ?? ''));
   }

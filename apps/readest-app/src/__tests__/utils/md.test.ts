@@ -51,6 +51,42 @@ describe('makeMarkdownBook', () => {
     expect(book.toc[1]!.href).toBe('1#two');
   });
 
+  it('nests every heading level down to H6 in the TOC (issue #5357)', async () => {
+    const book = await make(
+      '# L1\n\na\n\n## L2\n\nb\n\n### L3\n\nc\n\n#### L4\n\nd\n\n##### L5\n\ne\n\n###### L6\n\nf\n',
+    );
+    const chain: string[] = [];
+    let level: BookDoc['toc'] = book.toc;
+    while (level?.length) {
+      chain.push(level[0]!.label!);
+      level = level[0]!.subitems;
+    }
+    expect(chain).toEqual(['L1', 'L2', 'L3', 'L4', 'L5', 'L6']);
+    // Deep headings must also carry the anchor id their TOC href points at.
+    const doc = await book.sections[0]!.createDocument();
+    for (const item of flattenToc(book.toc)) {
+      expect(doc.getElementById(item.href.split('#')[1]!)).not.toBeNull();
+    }
+  });
+
+  it('deepens the TOC without changing the rendered markup', async () => {
+    // Deeper TOC nesting must stay a TOC-only change: the chapter split still
+    // happens at H1 only, and every heading keeps the tag, order and text
+    // `marked` produced. The lone addition is the anchor id the TOC href needs.
+    const book = await make('# L1\n\na\n\n## L2\n\nb\n\n#### L4\n\nc\n');
+    expect(book.sections.length).toBe(1);
+    const html = (await book.sections[0]!.loadText!())!;
+    const body = html.slice(html.indexOf('<body>') + '<body>'.length, html.lastIndexOf('</body>'));
+    const markup = body.replace(/ xmlns="[^"]*"/g, '').replace(/ id="[^"]*"/g, '');
+    expect(markup).toBe('<h1>L1</h1>\n<p>a</p>\n<h2>L2</h2>\n<p>b</p>\n<h4>L4</h4>\n<p>c</p>\n');
+  });
+
+  it('nests a skipped heading level under its nearest ancestor', async () => {
+    const book = await make('# L1\n\na\n\n#### L4\n\nb\n\n## L2\n\nc\n');
+    expect(book.toc.length).toBe(1);
+    expect(book.toc[0]!.subitems!.map((i) => i.label)).toEqual(['L4', 'L2']);
+  });
+
   it('treats content before the first H1 as a leading preamble section', async () => {
     const book = await make('Intro text.\n\n# Only\n\nbody\n');
     expect(book.sections.length).toBe(2);
