@@ -37,6 +37,7 @@ class FakeController extends EventTarget {
   state = 'playing';
   terminated = false;
   isViewAttached = true;
+  stopAtChapterEnd = false;
   shutdown = vi.fn().mockResolvedValue(undefined);
   detachView = vi.fn().mockImplementation(() => {
     this.isViewAttached = false;
@@ -174,6 +175,29 @@ describe('TTSSessionManager', () => {
     await flush();
     expect(manager.getActiveSession()).toBeNull();
     expect(manager.getSleepTimer()).toBeNull();
+  });
+
+  test('chapter-end mode reaches the live controller and every controller claimed after', () => {
+    claim();
+    manager.setStopAtChapterEnd(true);
+    expect(controller.stopAtChapterEnd).toBe(true);
+    // Each restart after a stop builds a fresh controller; the mode is a
+    // standing preference, so the new one must inherit it on claim.
+    const restarted = new FakeController();
+    claim('hashA-r2', restarted);
+    expect(restarted.stopAtChapterEnd).toBe(true);
+  });
+
+  test('chapter-end mode and the numeric sleep timer are mutually exclusive', () => {
+    claim();
+    manager.setStopAtChapterEnd(true);
+    manager.setSleepTimer(60);
+    expect(manager.getStopAtChapterEnd()).toBe(false);
+    expect(controller.stopAtChapterEnd).toBe(false);
+
+    manager.setStopAtChapterEnd(true);
+    expect(manager.getSleepTimer()).toBeNull();
+    expect(manager.getStopAtChapterEnd()).toBe(true);
   });
 
   test('headless persistence writes through setConfig and flushes to disk on stop', async () => {

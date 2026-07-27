@@ -1070,6 +1070,127 @@ describe('TTSController', () => {
     });
   });
 
+  // "End of Chapter" sleep-timer mode. The distinction under test is auto
+  // continuation vs. a deliberate user skip: both land on the same
+  // cross-section path in forward(), but only the former may stop there.
+  describe('stopAtChapterEnd', () => {
+    // Park on the last paragraph of the section: both cursors run dry, so
+    // forward() falls through to the cross-section branch.
+    const arriveAtSectionEnd = async (fromSection = 0) => {
+      await controller.init();
+      await controller.initViewTTS(fromSection);
+      const tts = mockView.tts as unknown as Record<string, ReturnType<typeof vi.fn>>;
+      tts['next'] = vi.fn().mockReturnValue(undefined);
+      tts['nextMark'] = vi.fn().mockReturnValue(undefined);
+      controller.state = 'playing';
+      speakingControllers.push(controller);
+    };
+
+    const sectionOpened = (index: number) => {
+      const { sections } = mockView.book as unknown as {
+        sections: { createDocument: ReturnType<typeof vi.fn> }[];
+      };
+      return sections[index]!.createDocument.mock.calls.length > 0;
+    };
+
+    // Crossing a boundary hands off to a detached #speak(), which only settles
+    // on 'playing' after its own stop() cycle — so the resumed cases must let
+    // the microtask queue drain before asserting.
+    const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+    test('auto-advance stops at the boundary, parked on the next section', async () => {
+      await arriveAtSectionEnd();
+      controller.stopAtChapterEnd = true;
+
+      await controller.forward(false, true);
+
+      expect(sectionOpened(1)).toBe(true);
+      // 'forward-paused', not 'paused': the play/pause toggle routes plain
+      // 'paused' to the lightweight ttsClient.resume(), which would be a no-op
+      // here since nothing was ever spoken for the new section.
+      expect(controller.state).toBe('forward-paused');
+      expect(stopKeepAlive).toHaveBeenCalled();
+    });
+
+    test('auto-advance crosses the boundary normally when the mode is off', async () => {
+      await arriveAtSectionEnd();
+
+      await controller.forward(false, true);
+      await flush();
+
+      expect(sectionOpened(1)).toBe(true);
+      expect(controller.state).toBe('playing');
+    });
+
+    test('a user skip still crosses the boundary while the mode is armed', async () => {
+      await arriveAtSectionEnd();
+      controller.stopAtChapterEnd = true;
+
+      // The player sheet / mini player next button, and the lock-screen and
+      // CarPlay 'nexttrack' handler.
+      await controller.forward(false);
+      await flush();
+
+      expect(sectionOpened(1)).toBe(true);
+      expect(controller.state).toBe('playing');
+    });
+
+    test('a user next-sentence skip still crosses the boundary', async () => {
+      await arriveAtSectionEnd();
+      controller.stopAtChapterEnd = true;
+
+      // The next-sentence button, and the media session's 'seekforward'.
+      await controller.forward(true);
+      await flush();
+
+      expect(controller.state).toBe('playing');
+    });
+
+    test('backward is never gated by the mode', async () => {
+      await controller.init();
+      await controller.initViewTTS(1);
+      const tts = mockView.tts as unknown as Record<string, ReturnType<typeof vi.fn>>;
+      tts['prev'] = vi.fn().mockReturnValue(undefined);
+      controller.stopAtChapterEnd = true;
+      controller.state = 'playing';
+      speakingControllers.push(controller);
+
+      await controller.backward();
+      await flush();
+
+      // Reaching section 0 resumes rather than terminating (which is what a
+      // failed #initTTSForPrevSection would do).
+      expect(controller.terminated).toBe(false);
+      expect(controller.state).toBe('playing');
+    });
+
+    test('the last chapter still terminates instead of parking', async () => {
+      const ended = vi.fn();
+      await arriveAtSectionEnd(2); // final section of the mock book
+      controller.addEventListener('tts-session-ended', ended);
+      controller.stopAtChapterEnd = true;
+
+      await controller.forward(false, true);
+
+      expect(ended).toHaveBeenCalledTimes(1);
+      expect(controller.terminated).toBe(true);
+      expect(controller.state).toBe('stopped');
+    });
+
+    test('the speak loop advances with the auto flag set', async () => {
+      await controller.init();
+      await controller.initViewTTS(0);
+      controller.setParagraphGap(0);
+      const forwardSpy = vi.spyOn(controller, 'forward').mockResolvedValue();
+      speakingControllers.push(controller);
+
+      await controller.speak('<speak>hello</speak>');
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(forwardSpy).toHaveBeenCalledWith(false, true);
+    });
+  });
+
   describe('shutdown', () => {
     test('stops playback and clears tts', async () => {
       const stopSpy = vi.spyOn(controller, 'stop').mockResolvedValue();

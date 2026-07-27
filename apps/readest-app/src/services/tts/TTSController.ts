@@ -115,9 +115,10 @@ export class TTSController extends EventTarget {
   isAuthenticated: boolean = false;
   preprocessCallback?: (ssml: string) => Promise<string>;
   onSectionChange?: (sectionIndex: number) => Promise<void>;
-  // When true, #speak() terminates the session at the end of the current
-  // chapter/section instead of auto-advancing into the next one - driven by
-  // TTSSessionManager's "stop at end of chapter" sleep-timer mode.
+  // When true, the speak loop pauses at the end of the current chapter/section
+  // instead of auto-advancing into the next one - driven by TTSSessionManager's
+  // "stop at end of chapter" sleep-timer mode. Gates only the loop's own
+  // continuation (see forward()'s isAutoAdvance), never user navigation.
   stopAtChapterEnd: boolean = false;
   #paragraphGapSec: number = DEFAULT_PARAGRAPH_GAP_SEC;
   #nossmlCnt: number = 0;
@@ -837,42 +838,25 @@ export class TTSController extends EventTarget {
     }
   }
 
-  // "Stop at end of chapter" mode: advance the reading position into the
-  // next section and mark the session paused - unlike the duration-based
-  // sleep timer (which really does mean "I'm done for now" and tears the
-  // whole player down), this mode is meant for repeated chapter-by-chapter
-  // listening, so the player panel should stay right there and pressing
-  // Play should just continue into the next chapter.
+  // "Stop at end of chapter" mode: advance into the next section but leave it
+  // unspoken. Unlike the duration timer (which means "I'm done" and tears the
+  // player down), this mode is for chapter-by-chapter listening, so the panel
+  // stays put and Play continues into the chapter now queued up.
   //
-  // Deliberately does NOT call this.#getTts()?.start() here, and does NOT
-  // go through the normal pause() (which calls ttsClient.pause()/stop()):
-  //   - #initTTSForNextSection() already creates a brand-new TTS instance
-  //     for the next section (see #initTTSForSection), so its internal
-  //     position is fresh with nothing "current" yet - no stale pointer
-  //     back at the chapter that just ended.
-  //   - Calling .start() here anyway would prime that fresh instance's
-  //     first mark immediately, which then conflicts with tts.resume()
-  //     (called later from the public start() when the user actually
-  //     presses Play): resume() reads back whatever .start() already
-  //     consumed, and in practice that produced a "Play looks active but no
-  //     audio comes out" state on some later chapters. Leaving the fresh
-  //     instance untouched lets resume()'s own "nothing current -> next()"
-  //     fallback correctly bootstrap the first paragraph on actual resume.
-  //   - There is nothing actively speaking at this exact moment either (the
-  //     previous chunk already finished), so pause()'s ttsClient.stop()
-  //     fallback isn't needed - just set the paused state directly.
-  //   - Uses 'forward-paused' rather than plain 'paused': the play/pause
-  //     toggle (useTTSControl's handleTogglePlay) calls the lightweight
-  //     ttsClient.resume() for exact state 'paused' (meant for an utterance
-  //     that's genuinely mid-speech and suspended), but calls start() for
-  //     any other paused-ish state - and start() is what actually calls
-  //     #speak() again. Since nothing was ever spoken for the new section,
-  //     'paused' would make Play a no-op (icon flips, nothing is ever
-  //     spoken); 'forward-paused' is the same state forward() itself sets
-  //     when auto-advancing across a section boundary while not playing.
+  // Two deliberate omissions:
+  //   - No tts.start(). #initTTSForNextSection() built a fresh TTS instance
+  //     with nothing current yet; priming its first mark here would be
+  //     re-read by the tts.resume() that the public start() issues on Play,
+  //     leaving the controls "playing" with no audio. Untouched, resume()'s
+  //     own nothing-current -> next() fallback bootstraps the first paragraph.
+  //   - No pause(). Nothing is speaking at this instant (the previous chunk
+  //     finished), so its ttsClient.pause()/stop() fallback is dead weight.
+  //     'forward-paused' rather than plain 'paused' because handleTogglePlay
+  //     routes exact 'paused' to the lightweight ttsClient.resume() — a no-op
+  //     when nothing was ever spoken — and everything else to start().
   //
-  // Falls back to a full stop only at genuine end-of-book, where there's
-  // nothing left to pause on.
+  // Falls back to a full stop only at end of book, where there is nothing
+  // left to pause on.
   async #stopAtChapterBoundary() {
     if (await this.#initTTSForNextSection()) {
       stopAudioKeepAlive();
@@ -883,17 +867,7 @@ export class TTSController extends EventTarget {
     }
   }
 
-  async #handleNavigationWithoutSSML(
-    initSection: () => Promise<boolean>,
-    isPlaying: boolean,
-    isForward = false,
-  ) {
-    // Manual navigation while paused (isPlaying === false) is never gated -
-    // that's an explicit user action, not auto-continuation.
-    if (isForward && isPlaying && this.stopAtChapterEnd) {
-      await this.#stopAtChapterBoundary();
-      return;
-    }
+  async #handleNavigationWithoutSSML(initSection: () => Promise<boolean>, isPlaying: boolean) {
     if (await initSection()) {
       if (isPlaying) {
         this.#speak(this.#getTts()?.start());
@@ -987,14 +961,16 @@ export class TTSController extends EventTarget {
           if (this.#nossmlCnt < 10 && this.state === 'playing' && !oneTime) {
             resolve();
             if (this.stopAtChapterEnd) {
-              // "Stop at end of chapter" sleep-timer mode: behave exactly
-              // like the duration-based timer firing - stop for good instead
-              // of continuing into the next section.
+              // This branch means the section has nothing (more) to say, so
+              // the advance below would cross a chapter boundary on its own -
+              // exactly what the mode exists to stop. Reached when Play is
+              // pressed on an already-exhausted section (tts.resume() dry),
+              // since a natural advance is gated earlier, in forward().
               await this.#stopAtChapterBoundary();
               return;
             }
             if (await this.#initTTSForNextSection()) {
-              await this.forward();
+              await this.forward(false, true);
             } else {
               // End of book: nothing left to speak.
               this.#terminate('ended');
@@ -1011,7 +987,7 @@ export class TTSController extends EventTarget {
         if (!oneTime) {
           if (!plainText || marks.length === 0) {
             resolve();
-            return await this.forward();
+            return await this.forward(false, true);
           } else {
             this.dispatchSpeakMark(marks[0]);
           }
@@ -1035,7 +1011,7 @@ export class TTSController extends EventTarget {
           resolve();
           await this.#delayParagraphGap(signal);
           if (signal.aborted) return;
-          await this.forward();
+          await this.forward(false, true);
         } else if (
           lastCode === 'error' &&
           canSkipOnError &&
@@ -1055,7 +1031,7 @@ export class TTSController extends EventTarget {
           this.#consecutiveSpeakErrors++;
           resolve();
           if (this.#consecutiveSpeakErrors <= TTS_NATIVE_SPEAK_MAX_CONSECUTIVE_ERRORS) {
-            await this.forward();
+            await this.forward(false, true);
           } else {
             this.#consecutiveSpeakErrors = 0;
             this.#terminate('error');
@@ -1174,18 +1150,19 @@ export class TTSController extends EventTarget {
 
     const ssml = byMark ? this.#getTts()?.prevMark(!isPlaying) : this.#getTts()?.prev(!isPlaying);
     if (!ssml) {
-      await this.#handleNavigationWithoutSSML(
-        () => this.#initTTSForPrevSection(),
-        isPlaying,
-        false,
-      );
+      await this.#handleNavigationWithoutSSML(() => this.#initTTSForPrevSection(), isPlaying);
     } else {
       await this.#handleNavigationWithSSML(ssml, isPlaying);
     }
   }
 
-  // goto next mark/paragraph
-  async forward(byMark = false) {
+  // goto next mark/paragraph. `isAutoAdvance` marks the calls the speak loop
+  // makes to continue on its own — the only ones "stop at end of chapter" may
+  // gate. A user skip (the next buttons, and the media session's nexttrack /
+  // seekforward) lands here too and must always cross the boundary: asking to
+  // skip ahead and getting playback stopped instead is the opposite of the
+  // request, and on the lock screen there is no obvious way to recover.
+  async forward(byMark = false, isAutoAdvance = false) {
     await this.initViewTTS();
     const isPlaying = this.state === 'playing';
     await this.stop();
@@ -1193,7 +1170,10 @@ export class TTSController extends EventTarget {
 
     const ssml = byMark ? this.#getTts()?.nextMark(!isPlaying) : this.#getTts()?.next(!isPlaying);
     if (!ssml) {
-      await this.#handleNavigationWithoutSSML(() => this.#initTTSForNextSection(), isPlaying, true);
+      if (isAutoAdvance && isPlaying && this.stopAtChapterEnd) {
+        return await this.#stopAtChapterBoundary();
+      }
+      await this.#handleNavigationWithoutSSML(() => this.#initTTSForNextSection(), isPlaying);
     } else {
       await this.#handleNavigationWithSSML(ssml, isPlaying);
     }
