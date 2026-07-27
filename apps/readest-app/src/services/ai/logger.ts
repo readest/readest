@@ -1,4 +1,4 @@
-const DEBUG = true;
+const DEBUG = false;
 const PREFIX = '[AI]';
 
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
