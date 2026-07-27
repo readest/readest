@@ -1,13 +1,26 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
+
+const validateUserAndTokenMock = vi.hoisted(() => vi.fn());
+vi.mock('@/utils/access', () => ({
+  validateUserAndToken: (...args: unknown[]) => validateUserAndTokenMock(...args),
+}));
+
 import { POST } from '@/app/api/yandex-translate/route';
 
 const makeReq = (
   query = 'endpoint=session',
-  init: { body?: string; origin?: string | null; contentLength?: string | null } = {},
+  init: {
+    body?: string;
+    origin?: string | null;
+    contentLength?: string | null;
+    authorization?: string;
+  } = {},
 ) => {
   const body = init.body ?? 'options=0&text=Hello';
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    authorization: init.authorization ?? 'Bearer test-token',
+  };
   if (init.origin !== null) headers['origin'] = init.origin ?? 'https://web.readest.com';
   if (init.contentLength !== null) {
     headers['content-length'] = init.contentLength ?? String(new TextEncoder().encode(body).length);
@@ -22,6 +35,10 @@ const makeReq = (
 let fetchSpy: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
+  validateUserAndTokenMock.mockReset().mockImplementation(async (authorization: string | null) => ({
+    user: authorization ? { id: authorization } : null,
+    token: authorization,
+  }));
   fetchSpy = vi.fn().mockResolvedValue(
     new Response('{"code":200,"text":["Bonjour"]}', {
       status: 200,
@@ -38,6 +55,19 @@ afterEach(() => {
 });
 
 describe('yandex-translate proxy route', () => {
+  it('returns 403 before reading the body or fetching when unauthenticated', async () => {
+    validateUserAndTokenMock.mockResolvedValue({ user: null, token: null });
+    const request = makeReq();
+    const textSpy = vi.spyOn(request, 'text');
+
+    const res = await POST(request);
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'Not authenticated' });
+    expect(textSpy).not.toHaveBeenCalled();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
   it('returns 400 for an unknown endpoint without fetching', async () => {
     const res = await POST(makeReq('endpoint=nope'));
     expect(res.status).toBe(400);
@@ -123,6 +153,7 @@ describe('yandex-translate proxy route', () => {
           origin: 'https://web.readest.com',
           contentLength: '0',
           body: '',
+          authorization: 'Bearer user-a',
         }),
       ),
     );
@@ -132,6 +163,7 @@ describe('yandex-translate proxy route', () => {
       origin: 'https://web.readest.com',
       contentLength: '0',
       body: '',
+      authorization: 'Bearer user-a',
     });
     const textSpy = vi.spyOn(rejectedRequest, 'text');
     const rejected = await POST(rejectedRequest);
@@ -139,7 +171,17 @@ describe('yandex-translate proxy route', () => {
     expect(rejected.status).toBe(429);
     expect(textSpy).not.toHaveBeenCalled();
 
+    const otherUser = POST(
+      makeReq('endpoint=session', {
+        contentLength: '0',
+        body: '',
+        authorization: 'Bearer user-b',
+      }),
+    );
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(4));
+
     releaseFetches.forEach((release) => release());
+    await expect(otherUser).resolves.toMatchObject({ status: 200 });
     await Promise.all(pending);
   });
 

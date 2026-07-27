@@ -189,7 +189,7 @@ describe('yandexProvider', () => {
     expect(mockTauriFetch).not.toHaveBeenCalled();
   });
 
-  it('translates text via the direct yandex API', async () => {
+  it('translates without a Readest token via the direct yandex API', async () => {
     mockYandexFlow(() => ({ code: 200, lang: 'en-fr', text: ['Bonjour'] }));
 
     const { yandexProvider } = await import('@/services/translators/providers/yandex');
@@ -208,6 +208,7 @@ describe('yandexProvider', () => {
     expect(query.get('target_lang')).toBe('fr');
     expect(query.get('sid')).toBe('test-session-id-5-0');
     expect(opts?.method).toBe('POST');
+    expect((opts?.headers as Record<string, string>)['Authorization']).toBeUndefined();
     const body = new URLSearchParams(opts?.body as string);
     expect(body.get('text')).toBe('Hello');
     expect(opts?.signal).toBeInstanceOf(AbortSignal);
@@ -224,15 +225,29 @@ describe('yandexProvider', () => {
     });
 
     const { yandexProvider } = await import('@/services/translators/providers/yandex');
-    const result = await yandexProvider.translate(['Hello'], 'en', 'fr');
+    const result = await yandexProvider.translate(['Hello'], 'en', 'fr', 'readest-access-token');
     expect(result).toEqual(['<Hello>']);
 
+    for (const [, init] of mockFetch.mock.calls) {
+      expect(init.headers['Authorization']).toBe('Bearer readest-access-token');
+    }
     const urls = mockFetch.mock.calls.map(([url]) => String(url));
     expect(urls[0]).toContain('/api/yandex-translate?endpoint=session');
     expect(urls[1]).toContain('/api/yandex-translate?endpoint=translate');
     expect(urls[1]).toContain('source_lang=en');
     expect(urls[1]).toContain('target_lang=fr');
     // the browser must not try to set the Referer — the proxy attaches it
+    expect(mockTauriFetch).not.toHaveBeenCalled();
+  });
+
+  it('rejects web requests without a Readest token before fetching', async () => {
+    vi.mocked(isTauriAppPlatform).mockReturnValue(false);
+
+    const { yandexProvider } = await import('@/services/translators/providers/yandex');
+    await expect(yandexProvider.translate(['Hello'], 'en', 'fr')).rejects.toThrow(
+      'yandex translate requires authentication in web builds',
+    );
+    expect(mockFetch).not.toHaveBeenCalled();
     expect(mockTauriFetch).not.toHaveBeenCalled();
   });
 
@@ -325,9 +340,9 @@ describe('yandexProvider', () => {
     });
 
     const { yandexProvider } = await import('@/services/translators/providers/yandex');
-    await expect(yandexProvider.translate(['Hello'], 'en', 'fr')).rejects.toThrow(
-      'yandex translate failed with status 403: Forbidden',
-    );
+    await expect(
+      yandexProvider.translate(['Hello'], 'en', 'fr', 'readest-access-token'),
+    ).rejects.toThrow('yandex translate failed with status 403: Forbidden');
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
@@ -644,14 +659,18 @@ describe('provider registry availability handling', () => {
     expect(names).toContain('yandex');
   });
 
-  it('exposes yandex as available', async () => {
+  it('requires authentication for yandex only in web builds', async () => {
     const { getTranslator, isTranslatorAvailable } = await import(
       '@/services/translators/providers'
     );
-    const yandex = getTranslator('yandex');
-    expect(yandex).toBeDefined();
-    expect(yandex!.disabled).toBeFalsy();
-    expect(isTranslatorAvailable(yandex!, false)).toBe(true);
+    const yandex = getTranslator('yandex')!;
+
+    vi.mocked(isTauriAppPlatform).mockReturnValue(false);
+    expect(isTranslatorAvailable(yandex, false)).toBe(false);
+    expect(isTranslatorAvailable(yandex, true)).toBe(true);
+
+    vi.mocked(isTauriAppPlatform).mockReturnValue(true);
+    expect(isTranslatorAvailable(yandex, false)).toBe(true);
   });
 
   it('isTranslatorAvailable returns false for disabled providers', async () => {
