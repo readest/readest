@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
@@ -22,6 +22,9 @@ const MIN_SCALE = 0.5;
 const MAX_SCALE = 8;
 const ZOOM_STEP = 1.2;
 const WHEEL_SENSITIVITY = 0.001;
+// Double-click magnification used when 1:1 is not a zoom in (see
+// `doubleClickScale`), which is what double-click always did before.
+const FALLBACK_DOUBLE_CLICK_SCALE = 2;
 
 const ImageViewer: React.FC<ImageViewerProps> = ({
   src,
@@ -38,6 +41,13 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   const saveToGallery = appService?.isAndroidApp ?? false;
   const canShare = !saveToGallery && canShareText(appService);
   const [scale, setScale] = useState(1);
+  // `scale` is relative to the fit-to-screen size, which says nothing about how
+  // much of the image's own resolution is on screen: fitting a 1600px
+  // illustration into an 800-device-pixel box paints it at half its detail.
+  // `pixelPerfectScale` is the `scale` at which one image pixel covers exactly
+  // one device pixel, so the zoom badge can report true resolution instead of a
+  // fit-relative number that meant something different on every device (#5362).
+  const [pixelPerfectScale, setPixelPerfectScale] = useState<number | null>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isWheelZooming, setIsWheelZooming] = useState(false);
@@ -52,6 +62,36 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
 
   // Escape (desktop) and Android Back key → close the viewer.
   useKeyDownActions({ onCancel: onClose });
+
+  const measurePixelPerfectScale = useCallback(() => {
+    const img = imageRef.current;
+    // `offsetWidth` is the laid-out width, which ignores the zoom transform, so
+    // it stays the fit-to-screen size at any zoom level.
+    if (!img?.naturalWidth || !img.offsetWidth) return;
+    const dpr = window.devicePixelRatio || 1;
+    setPixelPerfectScale(img.naturalWidth / (img.offsetWidth * dpr));
+  }, []);
+
+  // A cached image can already be decoded before the load event would fire, and
+  // rotating the device or resizing the window changes the fit size.
+  useEffect(() => {
+    setPixelPerfectScale(null);
+    measurePixelPerfectScale();
+    window.addEventListener('resize', measurePixelPerfectScale);
+    return () => window.removeEventListener('resize', measurePixelPerfectScale);
+  }, [src, measurePixelPerfectScale]);
+
+  // Percentage of the image's own resolution: 100% means one image pixel per
+  // device pixel, so it reads the same on every device and matches what an
+  // external image viewer shows for the extracted file.
+  const zoomPercent = Math.round((scale / (pixelPerfectScale ?? 1)) * 100);
+  // A large illustration in a small window can need more than MAX_SCALE just to
+  // reach its own resolution; never cap zoom below 1:1.
+  const maxScale = pixelPerfectScale ? Math.max(MAX_SCALE, pixelPerfectScale * 2) : MAX_SCALE;
+  // Jump straight to 1:1, unless the image is small enough that fitting already
+  // oversamples it (`pixelPerfectScale` < 1), where 1:1 would zoom *out*.
+  const doubleClickScale =
+    pixelPerfectScale && pixelPerfectScale > 1 ? pixelPerfectScale : FALLBACK_DOUBLE_CLICK_SCALE;
 
   // A macOS trackpad pinch arrives as a rapid stream of ctrl+wheel events.
   // Flag the gesture as active so the transform transition is suppressed while
@@ -78,7 +118,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   };
 
   const handleZoomIn = () => {
-    const newScale = Math.min(scale * ZOOM_STEP, MAX_SCALE);
+    const newScale = Math.min(scale * ZOOM_STEP, maxScale);
     setScale(newScale);
     hideZoomLabelAfterDelay();
   };
@@ -195,7 +235,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     const delta = e.deltaY;
     const newScale = Math.min(
       Math.max(scale * Math.exp(-delta * WHEEL_SENSITIVITY), MIN_SCALE),
-      MAX_SCALE,
+      maxScale,
     );
 
     if (newScale <= 1) {
@@ -310,7 +350,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
       const distanceChange = currentDistance / lastTouchDistance.current;
 
       requestAnimationFrame(() => {
-        const newScale = Math.min(Math.max(scale * distanceChange, MIN_SCALE), MAX_SCALE);
+        const newScale = Math.min(Math.max(scale * distanceChange, MIN_SCALE), maxScale);
 
         if (newScale <= 1) {
           setPosition({ x: 0, y: 0 });
@@ -415,7 +455,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     if (scale === 1) {
       const mouseX = e.clientX - rect.left - rect.width / 2;
       const mouseY = e.clientY - rect.top - rect.height / 2;
-      const newScale = 2;
+      const newScale = doubleClickScale;
 
       setPosition((prevPos) => {
         return getZoomedOffset(mouseX, mouseY, scale, newScale, prevPos);
@@ -532,6 +572,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
           width={0}
           height={0}
           sizes='100vw'
+          onLoad={measurePixelPerfectScale}
           onClick={handleImageClick}
           onMouseDown={handleImageMouseDown}
           onDoubleClick={onDoubleClick}
@@ -561,7 +602,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
           aria-label={_('Zoom level')}
           className='zoom-level-label eink-bordered not-eink:text-white not-eink:bg-black/50 pointer-events-none absolute left-1/2 top-12 -translate-x-1/2 rounded-full px-3 py-1 text-sm transition-opacity duration-300'
         >
-          {Math.round((scale * 100) / 5) * 5}%
+          {zoomPercent}%
         </div>
       )}
     </div>

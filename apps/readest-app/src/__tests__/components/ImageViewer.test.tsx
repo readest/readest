@@ -84,6 +84,78 @@ describe('ImageViewer', () => {
     expect(img.style.transition).not.toBe('none');
   });
 
+  // Zoom percentage is relative to the image's own resolution (#5362).
+  //
+  // `scale` is relative to the fit-to-screen size, so on its own it says
+  // nothing about how much of the image's detail is actually on screen: fitting
+  // a 1600px illustration into an 800-device-pixel box paints it at half its
+  // resolution while the badge claimed "100%". Because the fit size and the
+  // device pixel ratio differ per device, the same book showed a different
+  // amount of detail on every device at the same reported zoom, and always less
+  // than the extracted file in an external viewer. 100% now means one image
+  // pixel per device pixel — no interpolation, identical detail everywhere.
+  const measuredViewer = ({
+    naturalWidth,
+    offsetWidth,
+    dpr,
+  }: {
+    naturalWidth: number;
+    offsetWidth: number;
+    dpr: number;
+  }) => {
+    Object.defineProperty(window, 'devicePixelRatio', { value: dpr, configurable: true });
+    const { container } = render(
+      <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+    );
+    const img = container.querySelector('img')!;
+    Object.defineProperty(img, 'naturalWidth', { value: naturalWidth, configurable: true });
+    Object.defineProperty(img, 'naturalHeight', { value: naturalWidth, configurable: true });
+    // `offsetWidth` is the laid-out (untransformed) width, so it stays the
+    // fit-to-screen size at any zoom level.
+    Object.defineProperty(img, 'offsetWidth', { value: offsetWidth, configurable: true });
+    act(() => {
+      fireEvent.load(img);
+    });
+    return { container, img };
+  };
+
+  const zoomPercent = (container: HTMLElement) =>
+    Number(container.querySelector('[aria-label="Zoom level"]')!.textContent!.replace('%', ''));
+
+  it('reports the fraction of the image resolution actually shown when fit to screen', () => {
+    // 1600 image px painted across 400 CSS px * dpr 2 = 800 device px: half the
+    // image's detail is on screen, so the badge must not claim 100%.
+    const { container } = measuredViewer({ naturalWidth: 1600, offsetWidth: 400, dpr: 2 });
+
+    expect(zoomPercent(container)).toBe(50);
+  });
+
+  it('double-click zooms to exactly 1:1 (100% = one image pixel per device pixel)', () => {
+    // Pixel-perfect needs scale 1200 / (400 * 1) = 3, which the old fixed 2x
+    // double-click could never land on.
+    const { container, img } = measuredViewer({ naturalWidth: 1200, offsetWidth: 400, dpr: 1 });
+
+    act(() => {
+      fireEvent.doubleClick(img);
+    });
+
+    expect(img.style.transform).toContain('scale(3)');
+    expect(zoomPercent(container)).toBe(100);
+  });
+
+  it('keeps 1:1 reachable for images larger than the old zoom ceiling', () => {
+    // 1:1 needs scale 50 here, far past the old MAX_SCALE of 8 — the full
+    // resolution of a large illustration was simply unreachable.
+    const { img } = measuredViewer({ naturalWidth: 20000, offsetWidth: 400, dpr: 1 });
+
+    act(() => {
+      fireEvent.wheel(img, { deltaY: -20000, ctrlKey: true, clientX: 100, clientY: 100 });
+    });
+
+    const reachedScale = Number(/scale\(([\d.]+)\)/.exec(img.style.transform)![1]);
+    expect(reachedScale).toBeGreaterThanOrEqual(50);
+  });
+
   // Trackpad pinch flicker (#4742): on macOS a trackpad pinch-to-zoom arrives
   // as a rapid stream of ctrl+wheel events. With the 0.05s transition left on,
   // each event restarts the in-flight transition from its interpolated
