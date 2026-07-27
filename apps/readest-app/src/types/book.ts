@@ -447,7 +447,7 @@ export interface BookProgress {
   page: number;
 }
 
-export type SearchMode = 'contains' | 'whole-words' | 'regex' | 'nearby-words';
+export type SearchMode = 'contains' | 'whole-words' | 'regex' | 'nearby-words' | 'fuzzy';
 
 export interface BookSearchConfig {
   scope: 'book' | 'section';
