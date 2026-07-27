@@ -55,3 +55,17 @@ benchmark should:
   SIMD-accelerated and fast enough for Reedy MVP corpus sizes (sub-millisecond
   at 400 chunks × 768 dim, ~14 ms at 10K chunks × 768 dim). Established the
   decision in plan §M1.5 to skip ANN indexes (which Turso doesn't ship anyway).
+- **`library-search`** — measures the production text and fuzzy matchers over a
+  deterministic synthetic library. A reference Linux/x64 run on an AMD Ryzen 7
+  4800H measured 0.73–1.39 s for a 500 KB/10-book shelf, 7.23–8.06 s for a
+  5 MB/100-book absent-query scan, ~0.09 ms to the first early result, and
+  1.42–1.45 s for fuzzy search over a 100 KB/10-book shelf. These numbers
+  exclude file loading and EPUB/PDF parsing.
+
+  **Decision:** keep the progressive, one-book-at-a-time full scan for scoped
+  search. Do not add a persistent index in the same change: the benchmark shows
+  a large-library optimization is worth a separate investigation, but does not
+  measure format parsing, index build/update cost, or low-end mobile storage.
+  Any future cache must use a neutral `search.db`, never an AI-feature database,
+  and must retain the exact full scan as a fallback because an n-gram candidate
+  set is not guaranteed to include every regex, nearby-word, or fuzzy match.
