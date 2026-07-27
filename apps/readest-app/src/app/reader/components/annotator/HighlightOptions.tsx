@@ -80,7 +80,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const suppressTapRef = useRef(false);
   const colorStripRef = useRef<HTMLDivElement | null>(null);
   const size16 = useResponsiveSize(16);
-  const size28 = useResponsiveSize(28);
+  const size36 = useResponsiveSize(36);
   const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
   const highlightOptionsPaddingPx = useResponsiveSize(OPTIONS_PADDING_PIX);
 
@@ -203,15 +203,18 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
     >
       <div
         className={clsx('flex gap-2', isVertical ? 'flex-col' : 'flex-row')}
-        style={isVertical ? { width: size28 } : { height: size28 }}
+        style={isVertical ? { width: size36 } : { height: size36 }}
       >
         {styles.map((style) => (
           <button
             key={style}
             aria-label={_('Select {{style}} style', { style: _(style) })}
             onClick={() => handleSelectStyle(style)}
-            className='not-eink:bg-gray-700 eink-bordered flex items-center justify-center rounded-full p-0'
-            style={{ width: size28, height: size28, minHeight: size28 }}
+            className={clsx(
+              'not-eink:border-base-content/20 border eink-bordered not-eink:shadow-2xl flex items-center justify-center rounded-full p-0',
+              isDarkMode ? 'bg-base-100' : 'bg-base-300',
+            )}
+            style={{ width: size36, height: size36, minHeight: size36 }}
           >
             <div
               style={{
@@ -259,12 +262,13 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
           title={_('Apply to every occurrence in the book')}
           onClick={() => onToggleGlobal?.()}
           className={clsx(
-            'not-eink:bg-gray-700 eink-bordered flex items-center justify-center rounded-full p-0 transition-colors',
+            'not-eink:border-base-content/20 border eink-bordered not-eink:shadow-2xl flex items-center justify-center rounded-full p-0 transition-colors',
+            isDarkMode ? 'bg-base-100' : 'bg-base-300',
             globalToggleActive
-              ? 'not-eink:text-blue-400'
-              : 'not-eink:text-gray-400 hover:not-eink:text-gray-200',
+              ? 'not-eink:text-primary'
+              : 'not-eink:text-base-content/80 hover:not-eink:text-base-content',
           )}
-          style={{ width: size28, height: size28, minHeight: size28 }}
+          style={{ width: size36, height: size36, minHeight: size36 }}
         >
           <MdLibraryAddCheck size={size16} />
         </button>
@@ -274,13 +278,14 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
         ref={colorStripRef}
         {...stripPointerHandlers}
         className={clsx(
-          'not-eink:bg-gray-700 eink-bordered flex items-center gap-2 rounded-3xl',
+          'not-eink:border-base-content/20 border eink-bordered not-eink:shadow-2xl eink-bordered flex items-center gap-2 rounded-3xl',
+          isDarkMode ? 'bg-base-100' : 'bg-base-300',
           isVertical ? 'flex-col overflow-y-auto py-2' : 'min-w-0 flex-row overflow-x-auto px-2',
           !isVertical && 'cursor-grab',
           !isVertical && isDraggingColorStrip && 'cursor-grabbing',
         )}
         style={{
-          ...(isVertical ? { width: size28 } : { height: size28 }),
+          ...(isVertical ? { width: size36 } : { height: size36 }),
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           WebkitUserSelect: isDraggingColorStrip ? 'none' : undefined,
