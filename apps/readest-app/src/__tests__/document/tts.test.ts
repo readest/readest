@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { textWalker } from 'foliate-js/text-walker.js';
 import { TTS } from 'foliate-js/tts.js';
 import { createRejectFilter } from '@/utils/node';
+import { filterSSMLWithLang, parseSSMLMarks } from '@/utils/ssml';
 
 const createHTMLDoc = (bodyHTML: string, attrs: Record<string, string> = {}): Document => {
   const parser = new DOMParser();
@@ -409,6 +410,41 @@ describe('TTS', () => {
       const text = stripTags(ssml!);
       expect(text.startsWith('Last one')).toBe(true);
       expect(text).not.toContain('immortals');
+    });
+  });
+
+  describe('translations added during playback', () => {
+    it('keeps a mark for the first translated sentence after filtering out source text', () => {
+      const doc = createHTMLDoc(
+        '<p>Source sentence.<font lang="fr">Phrase traduite une. Phrase traduite deux.</font></p>',
+        { lang: 'en' },
+      );
+      const tts = new TTS(doc, textWalker, undefined, highlight, 'sentence');
+
+      const translatedSSML = filterSSMLWithLang(tts.start()!, 'fr');
+      const { plainText, marks } = parseSSMLMarks(translatedSSML);
+
+      expect(plainText).toContain('Phrase traduite une');
+      expect(marks).not.toHaveLength(0);
+      expect(marks[0]?.offset).toBe(0);
+    });
+
+    it('keeps the first sentence when a translated paragraph contains multiple sentences', () => {
+      const doc = createHTMLDoc(
+        '<p>Source sentence.<font lang="ru">О все воинство небесное! О земля! Что дальше?</font></p>',
+        { lang: 'en' },
+      );
+      const tts = new TTS(doc, textWalker, undefined, highlight, 'sentence');
+
+      const translatedSSML = filterSSMLWithLang(tts.start()!, 'ru');
+      const { marks } = parseSSMLMarks(translatedSSML);
+
+      expect(marks.map(({ text }) => text)).toEqual([
+        'О все воинство небесное! ',
+        'О земля! ',
+        'Что дальше?',
+      ]);
+      expect(marks[0]?.offset).toBe(0);
     });
   });
 
