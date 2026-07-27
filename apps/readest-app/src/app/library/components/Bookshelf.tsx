@@ -43,6 +43,7 @@ import {
   compareSortValues,
   resolveEffectivePrimarySort,
   resolveEffectiveSecondarySort,
+  resolveCurrentShelfBooks,
   selectRecentShelfBooks,
   withReadingStatus,
   withTimeRemainingLast,
@@ -262,42 +263,37 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     return queryTerm ? libraryBooks.filter((book) => bookFilter(book)) : libraryBooks;
   }, [libraryBooks, queryTerm]);
 
+  const manualGroupName = groupBy === LibraryGroupByType.Group ? getGroupName(groupId) : undefined;
+  const currentShelfBooks = useMemo(
+    () => resolveCurrentShelfBooks(libraryBooks, groupBy, groupId, manualGroupName),
+    [libraryBooks, groupBy, groupId, manualGroupName],
+  );
+  const filteredShelfBooks = useMemo(() => {
+    const bookFilter = createBookFilter(queryTerm);
+    return queryTerm ? currentShelfBooks.filter(bookFilter) : currentShelfBooks;
+  }, [currentShelfBooks, queryTerm]);
+
   const currentBookshelfItems = useMemo(() => {
     if (groupBy === LibraryGroupByType.Group) {
       // Use existing generateBookshelfItems for group mode
-      const groupName = getGroupName(groupId) || '';
-      if (groupId && !groupName) {
+      const groupName = manualGroupName || '';
+      if (groupId && !manualGroupName) {
         return [];
       }
-      return generateBookshelfItems(filteredBooks, groupName);
+      return generateBookshelfItems(filteredShelfBooks, groupName);
     } else {
-      // Use new createBookGroups for series/author/none modes
-      const allItems = createBookGroups(filteredBooks, groupBy);
-
-      // If navigating into a specific group, show only that group's books
-      if (groupId) {
-        const targetGroup = allItems.find(
-          (item): item is BooksGroup => 'books' in item && item.id === groupId,
-        );
-        if (targetGroup) {
-          // Return the books from the target group as individual items
-          return targetGroup.books;
-        }
-        // Group not found, return empty
-        return [];
-      }
-
-      return allItems;
+      if (groupId) return filteredShelfBooks;
+      return createBookGroups(filteredShelfBooks, groupBy);
     }
-  }, [filteredBooks, groupBy, groupId, getGroupName]);
+  }, [filteredShelfBooks, groupBy, groupId, manualGroupName]);
 
   useEffect(() => {
-    if (groupId && currentBookshelfItems.length === 0) {
+    if (groupId && currentShelfBooks.length === 0) {
       updateUrlParams({ group: null });
     } else {
       updateUrlParams({});
     }
-  }, [searchParams, groupId, currentBookshelfItems.length, updateUrlParams]);
+  }, [searchParams, groupId, currentShelfBooks.length, updateUrlParams]);
 
   const sortedBookshelfItems = useMemo(() => {
     const sortOrderMultiplier = sortOrder === 'asc' ? 1 : -1;
@@ -387,8 +383,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   }, [importBookUrl, appService]);
 
   useEffect(() => {
-    setCurrentBookshelf(currentBookshelfItems);
-  }, [currentBookshelfItems, setCurrentBookshelf]);
+    setCurrentBookshelf(currentShelfBooks);
+  }, [currentShelfBooks, setCurrentBookshelf]);
 
   const toggleSelection = useCallback(
     (id: string) => {

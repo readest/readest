@@ -138,6 +138,25 @@ describe('BookDetailModal cover refresh after save', () => {
     });
     expect(screen.getByTestId('cover').getAttribute('src')).toBe('_blank');
   });
+
+  it('adds multiple user tags and includes them in the save callback', async () => {
+    const book = { ...makeBook(), tags: ['Existing'] };
+    const onUpdate = vi.fn();
+    render(
+      <BookDetailModal book={book} isOpen onClose={vi.fn()} handleBookMetadataUpdate={onUpdate} />,
+    );
+
+    await waitFor(() => expect(screen.getByTitle('Edit Metadata')).toBeTruthy());
+    fireEvent.click(screen.getByTitle('Edit Metadata'));
+    const input = await screen.findByLabelText('Tags');
+    fireEvent.change(input, { target: { value: 'Reference' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    fireEvent.change(input, { target: { value: 'Favorite,' } });
+    fireEvent.click(screen.getByText('Save'));
+
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    expect(onUpdate.mock.calls[0]![2]).toEqual(['Existing', 'Reference', 'Favorite']);
+  });
 });
 
 describe('BookDetailModal purge-on-delete routing', () => {

@@ -92,4 +92,17 @@ describe('getBookWithUpdatedMetadata', () => {
 
     expect(updated.coverImageUrl).toBe('old-cover-url');
   });
+
+  it('immutably applies and clears user tags', () => {
+    const book = { ...makeBook(), tags: ['Old'] };
+    const tags = ['Favorite', 'Reference'];
+
+    const updated = getBookWithUpdatedMetadata(book, book.metadata!, tags);
+    const cleared = getBookWithUpdatedMetadata(book, book.metadata!, []);
+
+    expect(updated.tags).toEqual(tags);
+    expect(updated.tags).not.toBe(tags);
+    expect(cleared.tags).toEqual([]);
+    expect(book.tags).toEqual(['Old']);
+  });
 });

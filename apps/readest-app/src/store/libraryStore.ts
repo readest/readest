@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Book, BookGroupType, BooksGroup, ReadingStatus } from '@/types/book';
+import { Book, BookGroupType, ReadingStatus } from '@/types/book';
 import { EnvConfigType, isTauriAppPlatform } from '@/services/environment';
 import { BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { md5Fingerprint } from '@/utils/md5';
@@ -11,7 +11,7 @@ interface LibraryState {
   syncProgress: number;
   checkOpenWithBooks: boolean;
   checkLastOpenBooks: boolean;
-  currentBookshelf: (Book | BooksGroup)[];
+  currentBookshelf: Book[];
   selectedBooks: Set<string>; // hashes for books, ids for groups
   groups: Record<string, string>;
   hashIndex: Map<string, number>; // hash -> array index for O(1) lookup
@@ -41,7 +41,7 @@ interface LibraryState {
     books: Book[],
     options?: { skipSave?: boolean },
   ) => Promise<void>;
-  setCurrentBookshelf: (bookshelf: (Book | BooksGroup)[]) => void;
+  setCurrentBookshelf: (bookshelf: Book[]) => void;
   refreshGroups: () => void;
   rebuildHashIndex: () => void;
   addGroup: (name: string) => BookGroupType;
@@ -82,7 +82,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     return idx !== undefined ? library[idx] : undefined;
   },
 
-  setCurrentBookshelf: (bookshelf: (Book | BooksGroup)[]) => {
+  setCurrentBookshelf: (bookshelf: Book[]) => {
     set({ currentBookshelf: bookshelf });
   },
 

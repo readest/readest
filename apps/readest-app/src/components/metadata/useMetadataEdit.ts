@@ -11,8 +11,9 @@ import { MetadataSource } from './SourceSelector';
 import { searchMetadata } from '@/libs/metadata';
 import { formatAuthors, formatTitle, getPrimaryLanguage } from '@/utils/book';
 
-export const useMetadataEdit = (metadata: BookMetadata | null) => {
+export const useMetadataEdit = (metadata: BookMetadata | null, tags: string[]) => {
   const [editedMeta, setEditedMeta] = useState<BookMetadata>({} as BookMetadata);
+  const [editedTags, setEditedTags] = useState<string[]>(tags);
   const [fieldSources, setFieldSources] = useState<Record<string, string>>({});
   const [lockedFields, setLockedFields] = useState<Record<string, boolean>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -43,6 +44,10 @@ export const useMetadataEdit = (metadata: BookMetadata | null) => {
       setEditedMeta({ ...metadata });
     }
   }, [metadata]);
+
+  useEffect(() => {
+    setEditedTags([...tags]);
+  }, [tags]);
 
   useEffect(() => {
     const initialLockedFields: Record<string, boolean> = {};
@@ -160,6 +165,10 @@ export const useMetadataEdit = (metadata: BookMetadata | null) => {
     }));
   };
 
+  const handleTagsChange = (values: string[]) => {
+    setEditedTags([...new Set(values.map((value) => value.trim()).filter(Boolean))]);
+  };
+
   const handleLockAll = () => {
     const allLocked: Record<string, boolean> = {};
     lockableFields.forEach((field) => {
@@ -241,13 +250,16 @@ export const useMetadataEdit = (metadata: BookMetadata | null) => {
     if (metadata) {
       setEditedMeta({ ...metadata });
     }
+    setEditedTags([...tags]);
     setFieldSources({});
+    setFieldErrors({});
     setShowSourceSelection(false);
     handleUnlockAll();
   };
 
   return {
     editedMeta,
+    editedTags,
     fieldSources,
     lockedFields,
     fieldErrors,
@@ -255,6 +267,7 @@ export const useMetadataEdit = (metadata: BookMetadata | null) => {
     showSourceSelection,
     availableSources,
     handleFieldChange,
+    handleTagsChange,
     handleFieldValidation,
     handleToggleFieldLock,
     handleLockAll,

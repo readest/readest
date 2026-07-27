@@ -66,6 +66,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     { label: _('Books'), value: LibraryGroupByType.None },
     { label: _('Groups'), value: LibraryGroupByType.Group },
     { label: _('Series'), value: LibraryGroupByType.Series },
+    { label: _('Tags'), value: LibraryGroupByType.Tag },
+    { label: _('Subjects'), value: LibraryGroupByType.Subject },
   ];
 
   const sortByOptions = [

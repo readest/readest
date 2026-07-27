@@ -6,7 +6,7 @@ import { MdChevronRight } from 'react-icons/md';
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
 
-import { Book } from '@/types/book';
+import { Book, BooksGroup } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
 import {
   buildBookLookupIndex,
@@ -234,8 +234,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     initialAutoImport?: boolean;
   } | null>(null);
   const [currentGroupPath, setCurrentGroupPath] = useState<string | undefined>(undefined);
-  const [currentSeriesAuthorGroup, setCurrentSeriesAuthorGroup] = useState<{
-    groupBy: typeof LibraryGroupByType.Series | typeof LibraryGroupByType.Author;
+  const [currentVirtualGroup, setCurrentVirtualGroup] = useState<{
+    groupBy:
+      | typeof LibraryGroupByType.Series
+      | typeof LibraryGroupByType.Author
+      | typeof LibraryGroupByType.Tag
+      | typeof LibraryGroupByType.Subject;
     groupName: string;
   } | null>(null);
   const [booksTransferProgress, setBooksTransferProgress] = useState<{
@@ -704,7 +708,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     restoreScrollPosition(group);
   }, [searchParams, restoreScrollPosition]);
 
-  // Track current series/author group for navigation header
+  // Track the current virtual group for the navigation header.
   useEffect(() => {
     const groupId = searchParams?.get('group') || '';
     const groupByParam = searchParams?.get('groupBy');
@@ -712,7 +716,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
     if (
       groupId &&
-      (groupBy === LibraryGroupByType.Series || groupBy === LibraryGroupByType.Author)
+      (groupBy === LibraryGroupByType.Series ||
+        groupBy === LibraryGroupByType.Author ||
+        groupBy === LibraryGroupByType.Tag ||
+        groupBy === LibraryGroupByType.Subject)
     ) {
       // Find the group to get its name
       const allGroups = createBookGroups(
@@ -722,15 +729,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       const targetGroup = findGroupById(allGroups, groupId);
 
       if (targetGroup) {
-        setCurrentSeriesAuthorGroup({
+        setCurrentVirtualGroup({
           groupBy,
           groupName: targetGroup.displayName || targetGroup.name,
         });
       } else {
-        setCurrentSeriesAuthorGroup(null);
+        setCurrentVirtualGroup(null);
       }
     } else {
-      setCurrentSeriesAuthorGroup(null);
+      setCurrentVirtualGroup(null);
     }
   }, [libraryBooks, searchParams, settings.libraryGroupBy]);
 
@@ -1042,12 +1049,12 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     };
   };
 
-  const handleUpdateMetadata = async (book: Book, metadata: BookMetadata) => {
+  const handleUpdateMetadata = async (book: Book, metadata: BookMetadata, tags: string[]) => {
     // Build a NEW book object instead of mutating `book` in place. <BookCover>
     // is memoized and compares fields off the book, so mutating the existing
     // object (which React holds as the previous snapshot) makes the comparator
     // see no change and the library cover only refreshes after a full reload.
-    const updatedBook = getBookWithUpdatedMetadata(book, metadata);
+    const updatedBook = getBookWithUpdatedMetadata(book, metadata, tags);
     if (metadata.coverImageBlobUrl || metadata.coverImageUrl || metadata.coverImageFile) {
       try {
         await appService?.updateCoverImage(
@@ -1098,12 +1105,30 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     await updateBook(envConfig, updatedBook);
   };
 
+  const handleMetadataValueClick = (type: 'tag' | 'subject', value: string) => {
+    const groupBy = type === 'tag' ? LibraryGroupByType.Tag : LibraryGroupByType.Subject;
+    const targetGroup = createBookGroups(libraryBooks, groupBy).find(
+      (item): item is BooksGroup => 'books' in item && item.name === value,
+    );
+    if (!targetGroup) return;
+    const params = new URLSearchParams(searchParams?.toString());
+    params.set('groupBy', groupBy);
+    params.set('group', targetGroup.id);
+    params.delete('q');
+    setShowDetailsBook(null);
+    navigateToLibrary(router, params.toString());
+  };
+
   const handleImportBooksFromFiles = async () => {
     setIsSelectMode(false);
     console.log('Importing books from files...');
     selectFiles({ type: 'books', multiple: true }).then((result) => {
       if (result.files.length === 0 || result.error) return;
-      const groupId = searchParams?.get('group') || '';
+      const groupBy = ensureLibraryGroupByType(
+        searchParams?.get('groupBy'),
+        settings.libraryGroupBy,
+      );
+      const groupId = groupBy === LibraryGroupByType.Group ? searchParams?.get('group') || '' : '';
       importBooks(result.files, groupId);
     });
   };
@@ -1613,10 +1638,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           </div>
         </div>
       )}
-      {currentSeriesAuthorGroup && (
+      {currentVirtualGroup && (
         <GroupHeader
-          groupBy={currentSeriesAuthorGroup.groupBy}
-          groupName={currentSeriesAuthorGroup.groupName}
+          groupBy={currentVirtualGroup.groupBy}
+          groupName={currentVirtualGroup.groupName}
         />
       )}
       {showBookshelf &&
@@ -1693,6 +1718,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           handleBookDeleteLocalCopy={handleBookDelete('local')}
           handleBookPurge={handleBookDelete('purge')}
           handleBookMetadataUpdate={handleUpdateMetadata}
+          onMetadataValueClick={handleMetadataValueClick}
         />
       )}
       {isTransferQueueOpen && (

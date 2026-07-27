@@ -6,6 +6,9 @@ import { SelectedFile } from '@/hooks/useFileSelector';
 import { isTauriAppPlatform } from '@/services/environment';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSettingsStore } from '@/store/settingsStore';
+import { LibraryGroupByType } from '@/types/settings';
+import { ensureLibraryGroupByType } from '../utils/libraryUtils';
 import { BOOK_ACCEPT_FORMATS, SUPPORTED_BOOK_EXTS } from '@/services/constants';
 import { useSearchParams } from 'next/navigation';
 
@@ -17,7 +20,9 @@ const hasSupportedBookExt = (name: string) => {
 export const useDragDropImport = () => {
   const _ = useTranslation();
   const searchParams = useSearchParams();
-  const group = searchParams?.get('group') || '';
+  const { settings } = useSettingsStore();
+  const groupBy = ensureLibraryGroupByType(searchParams?.get('groupBy'), settings.libraryGroupBy);
+  const group = groupBy === LibraryGroupByType.Group ? searchParams?.get('group') || '' : '';
 
   const { appService } = useEnv();
   const [isDragging, setIsDragging] = useState(false);

@@ -89,10 +89,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   };
 
   const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
-  const currentBooksCount = currentBookshelf.reduce(
-    (acc, item) => acc + ('books' in item ? item.books.length : 1),
-    0,
-  );
+  const currentBooksCount = currentBookshelf.length;
 
   if (!insets) return null;
 

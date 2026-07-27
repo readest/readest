@@ -12,7 +12,7 @@ interface GroupHeaderProps {
 }
 
 /**
- * Header component displayed when viewing books inside a series or author group.
+ * Header component displayed when viewing books inside a virtual group.
  * Shows the group type, group name, and a back button to return to the main bookshelf.
  */
 const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName }) => {
@@ -43,6 +43,10 @@ const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName }) => {
         return _('Series');
       case LibraryGroupByType.Author:
         return _('Author');
+      case LibraryGroupByType.Tag:
+        return _('Tag');
+      case LibraryGroupByType.Subject:
+        return _('Subject');
       default:
         return _('Group');
     }

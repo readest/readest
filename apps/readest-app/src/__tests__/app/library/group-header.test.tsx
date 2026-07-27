@@ -63,4 +63,14 @@ describe('GroupHeader back button', () => {
     expect(params.get('sort')).toBe('title');
     expect(params.get('group')).toBe('');
   });
+
+  it.each([
+    [LibraryGroupByType.Tag, 'Tag'],
+    [LibraryGroupByType.Subject, 'Subject'],
+  ])('labels %s shelves', (groupBy, label) => {
+    currentSearch = `groupBy=${groupBy}&group=abc123`;
+    render(<GroupHeader groupBy={groupBy} groupName='Shelf name' />);
+
+    expect(screen.getByText(`${label}:`)).toBeTruthy();
+  });
 });

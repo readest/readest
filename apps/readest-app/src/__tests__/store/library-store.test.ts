@@ -9,7 +9,7 @@ vi.mock('@/utils/md5', () => ({
 }));
 
 import { useLibraryStore } from '@/store/libraryStore';
-import type { Book, BooksGroup } from '@/types/book';
+import type { Book } from '@/types/book';
 import type { EnvConfigType } from '@/services/environment';
 import type { AppService } from '@/types/system';
 
@@ -508,20 +508,6 @@ describe('libraryStore', () => {
     test('sets the current bookshelf with books', () => {
       const books: Book[] = [makeBook({ hash: 'a' }), makeBook({ hash: 'b' })];
       useLibraryStore.getState().setCurrentBookshelf(books);
-
-      expect(useLibraryStore.getState().currentBookshelf).toHaveLength(2);
-    });
-
-    test('sets the current bookshelf with mixed books and groups', () => {
-      const book = makeBook({ hash: 'a' });
-      const group: BooksGroup = {
-        id: 'g1',
-        name: 'Fiction',
-        displayName: 'Fiction',
-        books: [],
-        updatedAt: 1000,
-      };
-      useLibraryStore.getState().setCurrentBookshelf([book, group]);
 
       expect(useLibraryStore.getState().currentBookshelf).toHaveLength(2);
     });

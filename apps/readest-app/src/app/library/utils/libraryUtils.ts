@@ -4,7 +4,12 @@ import {
   LibrarySecondarySortByType,
   LibrarySortByType,
 } from '@/types/settings';
-import { formatAuthors, formatTitle, isCurrentlyReadingBook } from '@/utils/book';
+import {
+  formatAuthors,
+  formatTitle,
+  getContributorNames,
+  isCurrentlyReadingBook,
+} from '@/utils/book';
 import { md5Fingerprint } from '@/utils/md5';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
@@ -156,6 +161,19 @@ const getCalibreColumnsText = (item: Book) =>
     .map(({ name, value }) => `${name} ${Array.isArray(value) ? value.join(' ') : value}`)
     .join(' ');
 
+const normalizeValues = (values: string[]): string[] => [
+  ...new Set(values.map((value) => value.trim()).filter(Boolean)),
+];
+
+export const getBookSubjects = (book: Book): string[] => {
+  return getContributorNames(book.metadata?.subject);
+};
+
+const getBookTags = (book: Book): string[] => normalizeValues(book.tags ?? []);
+
+const getBookValuesText = (book: Book): string =>
+  [...getBookTags(book), ...getBookSubjects(book)].join(' ');
+
 export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
   if (!queryTerm) return true;
   if (item.deletedAt) return false;
@@ -174,6 +192,7 @@ export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
       (item.groupName && item.groupName.toLowerCase().includes(lowerQuery)) ||
       (item.metadata?.description &&
         item.metadata.description.toLowerCase().includes(lowerQuery)) ||
+      getBookValuesText(item).toLowerCase().includes(lowerQuery) ||
       getCalibreColumnsText(item).toLowerCase().includes(lowerQuery)
     );
   }
@@ -185,6 +204,7 @@ export const createBookFilter = (queryTerm: string | null) => (item: Book) => {
     searchTerm.test(item.format) ||
     (item.groupName && searchTerm.test(item.groupName)) ||
     (item.metadata?.description && searchTerm.test(item.metadata?.description)) ||
+    searchTerm.test(getBookValuesText(item)) ||
     searchTerm.test(getCalibreColumnsText(item))
   );
 };
@@ -432,6 +452,14 @@ export const createBookGroups = (
     return createAuthorGroups(activeBooks);
   }
 
+  if (groupBy === LibraryGroupByType.Tag) {
+    return createValueGroups(activeBooks, 'tag', getBookTags);
+  }
+
+  if (groupBy === LibraryGroupByType.Subject) {
+    return createValueGroups(activeBooks, 'subject', getBookSubjects);
+  }
+
   // 'group' mode is handled separately by generateBookshelfItems
   return activeBooks;
 };
@@ -514,6 +542,58 @@ const createAuthorGroups = (books: Book[]): (Book | BooksGroup)[] => {
   }));
 
   return [...groups, ...ungroupedBooks];
+};
+
+const createValueGroups = (
+  books: Book[],
+  namespace: 'tag' | 'subject',
+  getValues: (book: Book) => string[],
+): (Book | BooksGroup)[] => {
+  const valueMap = new Map<string, Book[]>();
+  const ungroupedBooks: Book[] = [];
+  for (const book of books) {
+    const values = getValues(book);
+    if (!values.length) {
+      ungroupedBooks.push(book);
+      continue;
+    }
+    for (const value of values) {
+      const existing = valueMap.get(value);
+      if (existing) existing.push(book);
+      else valueMap.set(value, [book]);
+    }
+  }
+
+  const groups = Array.from(
+    valueMap,
+    ([name, groupBooks]): BooksGroup => ({
+      id: md5Fingerprint(`${namespace}:${name}`),
+      name,
+      displayName: name,
+      books: groupBooks,
+      updatedAt: Math.max(...groupBooks.map(({ updatedAt }) => updatedAt)),
+    }),
+  );
+  return [...groups, ...ungroupedBooks];
+};
+
+export const resolveCurrentShelfBooks = (
+  books: Book[],
+  groupBy: LibraryGroupByType,
+  groupId = '',
+  manualGroupName?: string,
+): Book[] => {
+  const activeBooks = books.filter((book) => !book.deletedAt);
+  if (!groupId) return activeBooks;
+  if (groupBy === LibraryGroupByType.None) return [];
+  if (groupBy === LibraryGroupByType.Group) {
+    if (!manualGroupName) return [];
+    const descendantPrefix = `${manualGroupName}/`;
+    return activeBooks.filter(
+      ({ groupName }) => groupName === manualGroupName || groupName?.startsWith(descendantPrefix),
+    );
+  }
+  return findGroupById(createBookGroups(activeBooks, groupBy), groupId)?.books ?? [];
 };
 
 /**

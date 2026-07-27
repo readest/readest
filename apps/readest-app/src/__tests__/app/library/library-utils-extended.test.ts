@@ -78,6 +78,22 @@ describe('createBookFilter', () => {
     expect(filter(book)).toBe(true);
   });
 
+  it('should match user tags and publication subjects', () => {
+    expect(createBookFilter('favorite')(createMockBook({ tags: ['Favorite'] }))).toBe(true);
+    expect(
+      createBookFilter('science')(
+        createMockBook({ metadata: { subject: [{ name: { en: 'Science Fiction' } }] } }),
+      ),
+    ).toBe(true);
+  });
+
+  it('should match tags and subjects through the invalid-regex fallback', () => {
+    expect(createBookFilter('[favorite')(createMockBook({ tags: ['[Favorite'] }))).toBe(true);
+    expect(
+      createBookFilter('[history')(createMockBook({ metadata: { subject: ['[History'] } })),
+    ).toBe(true);
+  });
+
   it('should be case-insensitive', () => {
     const filter = createBookFilter('moby');
     const book = createMockBook({ title: 'MOBY DICK' });
