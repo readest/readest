@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import unittest
+from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
@@ -140,6 +141,17 @@ class TokenRefreshTest(unittest.TestCase):
             client.pull_books()
 
 
+def _iso_ms(ms):
+    return datetime.fromtimestamp(ms / 1000, timezone.utc).isoformat()
+
+
+def _rows(start, count):
+    """`count` book rows h<start>.. with synced_at at ms start+1, start+2, ..."""
+    return [
+        {'book_hash': 'h%d' % i, 'synced_at': _iso_ms(i + 1)} for i in range(start, start + count)
+    ]
+
+
 class SyncTest(unittest.TestCase):
     def test_pull_books(self):
         transport = FakeTransport()
@@ -149,9 +161,70 @@ class SyncTest(unittest.TestCase):
 
         req = transport.requests[0]
         self.assertEqual(req['method'], 'GET')
-        self.assertEqual(req['url'], f'{API_BASE}/sync?type=books&since=0')
+        self.assertEqual(req['url'], f'{API_BASE}/sync?type=books&since=0&limit=1000')
         self.assertEqual(req['headers']['authorization'], 'Bearer at')
         self.assertEqual(books, [{'book_hash': 'h1'}])
+
+    # A 10k-book cloud library cannot come back in one response (the server
+    # exceeded Cloudflare Worker limits serializing it — error 1102), so
+    # pull_books walks synced_at-ascending pages, advancing `since` to the
+    # newest row seen until a page comes back shorter than the limit.
+    def test_pull_books_pages_until_short_page(self):
+        transport = FakeTransport()
+        transport.queue(200, {'books': _rows(0, 1000)})  # ms 1..1000
+        transport.queue(200, {'books': _rows(1000, 500)})  # ms 1001..1500
+        client = make_client(transport, tokens=valid_tokens())
+        books = client.pull_books()
+
+        self.assertEqual(len(books), 1500)
+        self.assertEqual(len(transport.requests), 2)
+        self.assertEqual(
+            transport.requests[0]['url'], f'{API_BASE}/sync?type=books&since=0&limit=1000'
+        )
+        self.assertEqual(
+            transport.requests[1]['url'], f'{API_BASE}/sync?type=books&since=1000&limit=1000'
+        )
+
+    def test_pull_books_dedupes_rows_reread_at_the_cursor_boundary(self):
+        # The millisecond-truncated cursor re-includes rows whose synced_at
+        # shares the boundary timestamp; they must not appear twice.
+        transport = FakeTransport()
+        page1 = _rows(0, 1000)
+        page2 = [dict(page1[-1]), {'book_hash': 'h1000', 'synced_at': _iso_ms(2000)}]
+        transport.queue(200, {'books': page1})
+        transport.queue(200, {'books': page2})
+        client = make_client(transport, tokens=valid_tokens())
+        books = client.pull_books()
+
+        hashes = [b['book_hash'] for b in books]
+        self.assertEqual(len(hashes), len(set(hashes)))
+        self.assertEqual(len(books), 1001)
+
+    def test_pull_books_terminates_when_the_cursor_cannot_advance(self):
+        # A full page whose rows all share the cursor timestamp is already
+        # complete (the server tie-completes pages); asking again with the
+        # same cursor would loop forever.
+        transport = FakeTransport()
+        same_ms = [{'book_hash': 'h%d' % i, 'synced_at': _iso_ms(500)} for i in range(1000)]
+        transport.queue(200, {'books': same_ms})
+        client = make_client(transport, tokens=valid_tokens())
+        books = client.pull_books(since=500)
+
+        self.assertIn('limit=1000', transport.requests[0]['url'])
+        self.assertEqual(len(books), 1000)
+        self.assertEqual(len(transport.requests), 1)
+
+    def test_pull_books_handles_a_server_that_ignores_limit(self):
+        # Old servers return the full delta in one response; the follow-up
+        # request from the advanced cursor comes back empty and ends the walk.
+        transport = FakeTransport()
+        transport.queue(200, {'books': _rows(0, 1200)})
+        transport.queue(200, {'books': []})
+        client = make_client(transport, tokens=valid_tokens())
+        books = client.pull_books()
+
+        self.assertEqual(len(books), 1200)
+        self.assertEqual(len(transport.requests), 2)
 
     def test_push_books(self):
         transport = FakeTransport()

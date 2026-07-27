@@ -141,10 +141,10 @@ export async function GET(req: NextRequest) {
   const typeParam = searchParams.get('type') as SyncType | undefined;
   const bookParam = searchParams.get('book');
   const metaHashParam = searchParams.get('meta_hash');
-  // Optional page size for `type=stats` (client-driven paged pull). Absent for
-  // the koplugin, which keeps the full-delta response.
-  const statsLimitParam = searchParams.get('limit');
-  const statsLimit = statsLimitParam ? Math.max(1, Math.floor(Number(statsLimitParam))) : 0;
+  // Optional page size for `type=stats` and `type=books` (client-driven paged
+  // pull). Absent for old clients, which keep the full-delta response.
+  const limitParam = searchParams.get('limit');
+  const limit = limitParam ? Math.max(1, Math.floor(Number(limitParam))) : 0;
 
   if (!sinceParam) {
     return NextResponse.json({ error: '"since" query parameter is required' }, { status: 400 });
@@ -233,8 +233,59 @@ export async function GET(req: NextRequest) {
       (results as unknown as Record<string, SyncRecord[]>)[DBSyncTypeMap[table]] = records || [];
     };
 
+    // One bounded page of books for the app's and the calibre plugin's
+    // client-driven paged pull: a 10k-book delta accumulated into a single
+    // response exceeds the Worker's resource limits (CF error 1102). Rows come
+    // back ordered by synced_at ASCENDING, completed to the trailing synced_at
+    // millisecond — batch upserts stamp one now() per statement, so rows share
+    // boundary timestamps and a strict `> cursor` re-pull would otherwise skip
+    // the rest of a batch split by the page boundary. A page shorter than
+    // `limit` tells the client the delta is exhausted.
+    const fetchPagedBooks = async () => {
+      const bookFilters = <T extends { or: (f: string) => T; eq: (c: string, v: string) => T }>(
+        q: T,
+      ): T => {
+        if (bookParam && metaHashParam) {
+          return q.or(`book_hash.eq.${bookParam},meta_hash.eq.${metaHashParam}`);
+        } else if (bookParam) {
+          return q.eq('book_hash', bookParam);
+        } else if (metaHashParam) {
+          return q.eq('meta_hash', metaHashParam);
+        }
+        return q;
+      };
+      const { data, error } = await bookFilters(
+        supabase
+          .from('books')
+          .select('*')
+          .eq('user_id', user.id)
+          .gt('synced_at', sinceIso)
+          .order('synced_at', { ascending: true })
+          .range(0, limit - 1),
+      );
+      if (error) throw { table: 'books', error } as DBError;
+      const rows = (data ?? []) as SyncRecord[];
+      if (rows.length === limit) {
+        const lastSynced = (rows[rows.length - 1] as unknown as { synced_at: string }).synced_at;
+        const { data: extra, error: extraError } = await bookFilters(
+          supabase.from('books').select('*').eq('user_id', user.id).eq('synced_at', lastSynced),
+        );
+        if (extraError) throw { table: 'books', error: extraError } as DBError;
+        const seen = new Set(rows.map((r) => r.book_hash));
+        for (const r of (extra ?? []) as SyncRecord[]) {
+          if (!seen.has(r.book_hash)) {
+            seen.add(r.book_hash);
+            rows.push(r);
+          }
+        }
+      }
+      results.books = rows;
+    };
+
     if (!typeParam || typeParam === 'books') {
-      await queryTables('books').catch((err) => (errors['books'] = err));
+      const booksQuery =
+        limit > 0 && typeParam === 'books' ? fetchPagedBooks : () => queryTables('books');
+      await booksQuery().catch((err) => (errors['books'] = err));
       // TODO: Remove this hotfix for the initial race condition for books sync
       if (results.books?.length === 0 && since.getTime() < 1000) {
         const dummyHash = '00000000000000000000000000000000';
@@ -308,12 +359,12 @@ export async function GET(req: NextRequest) {
           .eq('user_id', user.id)
           .gt('updated_at', sinceIso)
           .order('updated_at', { ascending: true })
-          .range(0, statsLimit - 1);
+          .range(0, limit - 1);
         if (bookParam) q = q.eq('book_hash', bookParam);
         const { data, error } = await q;
         if (error) return { error };
         const rows = (data ?? []) as Record<string, unknown>[];
-        if (rows.length === statsLimit) {
+        if (rows.length === limit) {
           const lastUpdated = rows[rows.length - 1]!['updated_at'] as string;
           let eq = supabase
             .from('stat_pages')
@@ -339,7 +390,7 @@ export async function GET(req: NextRequest) {
       // stat_books is always returned in full (one row per book, small); only
       // stat_pages pages when the client asks (the koplugin omits `limit`).
       const sb = await fetchAll('stat_books', false);
-      const sp = statsLimit > 0 ? await fetchPagedPages() : await fetchAll('stat_pages', true);
+      const sp = limit > 0 ? await fetchPagedPages() : await fetchAll('stat_pages', true);
       if (sb.error)
         return NextResponse.json(
           { error: `stat_books: ${sb.error.message || 'Unknown error'}` },

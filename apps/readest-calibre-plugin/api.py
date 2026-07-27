@@ -16,6 +16,7 @@ import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 
 DEFAULT_API_BASE = 'https://web.readest.com/api'
 DEFAULT_SUPABASE_URL = 'https://readest.supabase.co'
@@ -33,6 +34,24 @@ UPLOAD_TIMEOUT = 600
 # actually served, so asking for more is free and pays off if the cap rises:
 # the listing costs about a second per request regardless of rows returned.
 LIST_PAGE_SIZE = 1000
+# Page size for the books pull. A 10k-book library cannot come back in one
+# response — serializing it exceeded the server's per-request resource limits
+# (Cloudflare error 1102) — so pull_books walks bounded pages instead.
+PULL_PAGE_SIZE = 1000
+
+
+def _synced_at_ms(row):
+    """Epoch ms of a row's synced_at (fallback updated_at); 0 when absent."""
+    value = row.get('synced_at') or row.get('updated_at')
+    if not isinstance(value, str) or not value:
+        return 0
+    try:
+        dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+    except ValueError:
+        return 0
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return int(dt.timestamp() * 1000)
 
 
 class ReadestAPIError(Exception):
@@ -294,8 +313,31 @@ class ReadestClient:
         return parsed
 
     def pull_books(self, since=0):
-        result = self._api('GET', '/sync?type=books&since=%d' % since)
-        return (result or {}).get('books') or []
+        """All book rows changed since `since` (epoch ms), pulled in pages.
+
+        The server returns each page ordered by synced_at ascending and
+        completed to the trailing timestamp, so advancing the cursor to the
+        newest row seen and re-asking never skips rows; the millisecond-
+        truncated cursor can re-return boundary rows, deduped here with
+        last-wins. A page shorter than the limit — or a cursor that cannot
+        advance — means the delta is exhausted. A server that ignores `limit`
+        returns everything at once and the follow-up page comes back empty.
+        """
+        by_key = {}
+        cursor = since
+        while True:
+            result = self._api(
+                'GET', '/sync?type=books&since=%d&limit=%d' % (cursor, PULL_PAGE_SIZE)
+            )
+            rows = (result or {}).get('books') or []
+            max_ms = cursor
+            for row in rows:
+                by_key[row.get('book_hash') or row.get('id')] = row
+                max_ms = max(max_ms, _synced_at_ms(row))
+            if len(rows) < PULL_PAGE_SIZE or max_ms <= cursor:
+                break
+            cursor = max_ms
+        return list(by_key.values())
 
     def push_books(self, records):
         return self._api('POST', '/sync', body={'books': records, 'notes': [], 'configs': []})
