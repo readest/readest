@@ -241,7 +241,6 @@ async function translateChunk(
   const params = new URLSearchParams({
     ...baseParams(),
     sid: `${sid}-5-0`,
-    source_lang: sourceLang,
     target_lang: targetLang,
     reason: 'paste',
     format: 'text',
@@ -249,6 +248,7 @@ async function translateChunk(
     disable_cache: 'false',
     ajax: '1',
   });
+  if (sourceLang) params.set('source_lang', sourceLang);
   const body = new URLSearchParams([
     ['options', '0'],
     ['text', text],
@@ -309,7 +309,9 @@ export const yandexProvider: TranslationProvider = {
       const normalized = normalizeToShortLang(lang).toLowerCase();
       return normalized === 'zh' || normalized.startsWith('zh-') ? 'zh' : normalized;
     };
-    const source_lang = sourceLang === 'AUTO' ? 'auto' : normalizeLang(sourceLang);
+    // The classic Yandex endpoint auto-detects only when source_lang is absent;
+    // passing source_lang=auto is rejected as "Invalid parameter: source_lang".
+    const source_lang = sourceLang === 'AUTO' ? '' : normalizeLang(sourceLang);
     const target_lang = normalizeLang(targetLang);
     const chunkedTexts = texts.map((text) => splitTextIntoChunks(text, MAX_CHARS_PER_REQUEST));
     const chunkCount = chunkedTexts.reduce((total, chunks) => total + chunks.length, 0);

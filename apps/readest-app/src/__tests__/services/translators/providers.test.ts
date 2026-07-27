@@ -251,14 +251,14 @@ describe('yandexProvider', () => {
     expect(mockTauriFetch).not.toHaveBeenCalled();
   });
 
-  it('uses automatic detection when source language is AUTO', async () => {
+  it('omits source_lang for automatic detection when source language is AUTO', async () => {
     mockYandexFlow(() => ({ code: 200, lang: 'en-fr', text: ['Bonjour'] }));
 
     const { yandexProvider } = await import('@/services/translators/providers/yandex');
     await yandexProvider.translate(['Hello'], 'AUTO', 'fr');
 
     const query = new URLSearchParams(String(translateCalls()[0]![0]).split('?')[1]);
-    expect(query.get('source_lang')).toBe('auto');
+    expect(query.has('source_lang')).toBe(false);
   });
 
   it.each(['zh-Hans', 'zh-Hant'])('normalizes Chinese locale %s to zh', async (targetLang) => {
