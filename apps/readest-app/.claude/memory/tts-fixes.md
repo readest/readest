@@ -56,6 +56,7 @@ TTS tracks its own section independently from the view via `#ttsSectionIndex`:
 - Native TTS: [#4676 iOS](native-ios-tts-4676.md) pause==stop; [#4613 offline halt](native-tts-offline-autoadvance-4613.md); [#4408 screen-lock](native-tts-screenlock-keepalive-4408.md) keep-alive tone
 - Edge TTS: [word highlight #4017](edge-tts-word-highlighting-4017.md); [drift](tts-word-highlight-singletextnode-drift.md)
 - TTS UX: [highlight granularity](tts-highlight-granularity-setting.md); [start-from-selection](tts-start-from-selection.md); [reuse session](tts-reuse-session-mode-entry.md)
+- [#5355 forward() auto-advance vs user skip](tts-forward-autoadvance-vs-user-skip-5355.md) one funnel, two callers; gates there also eat lock-screen nexttrack
 - Tests: [browser e2e harness](tts-browser-e2e-harness.md); [paragraph+RSVP sync #3235](tts-sync-paragraph-rsvp-3235.md) TTS-is-clock; [teardown microtask flake #5151](tts-test-teardown-microtask-flake.md) stop speak loops in afterEach
 
 ## Debugging TTS Issues
