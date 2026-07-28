@@ -125,3 +125,61 @@ describe('createAppLocalStore — library hydration (data-loss guard)', () => {
     expect(savedLibrary!.find((b) => b.hash === 'a')!.uploadedAt).toBe(900);
   });
 });
+
+/**
+ * #5265 — the residue of #5084. Devices that synced on a pre-#5087 build hold
+ * library rows carrying a PEER's absolute `filePath`, adopted from the shared
+ * library.json. The upload source resolvers preferred that path blindly, so a
+ * book whose managed copy `Books/<hash>/…` was sitting right there resolved to
+ * 'no-source': the engine never confirmed the file, never stamped
+ * `uploadedAt`, and the row stayed classified as a purely-local book — which is
+ * what lets "Remove from Device Only" end in a cloud-and-device delete that GCs
+ * the book off Google Drive.
+ *
+ * `resolveBookContentSource` already documents the right precedence ("prefer the
+ * managed copy when it exists; book.filePath is device-local and can outlive a
+ * prior in-place/import mode"); these resolvers must follow it.
+ */
+describe('createAppLocalStore — a stale filePath must not mask the managed copy (#5265)', () => {
+  const STALE = 'C:\\Users\\other-device\\Books\\Book h1.epub';
+
+  beforeEach(() => {
+    appService.exists = vi.fn(async (path: string) => path !== STALE);
+    appService.openFile = vi.fn(async () => new File([new Uint8Array(4)], 'h1.epub'));
+    appService.resolveFilePath = vi.fn(async (path: string) => `/root/Books/${path}`);
+  });
+
+  test('loadBookFile reads the managed copy when filePath points nowhere', async () => {
+    const bytes = await makeStore().loadBookFile(makeBook('h1', { filePath: STALE }));
+
+    expect(bytes).not.toBeNull();
+    expect(bytes!.size).toBe(4);
+    expect(appService.openFile).toHaveBeenCalledWith('h1/Book h1.epub', 'Books');
+  });
+
+  test('resolveLocalBookPath resolves the managed copy when filePath points nowhere', async () => {
+    const src = await makeStore().resolveLocalBookPath(makeBook('h1', { filePath: STALE }));
+
+    expect(src).not.toBeNull();
+    expect(src!.path).toBe('/root/Books/h1/Book h1.epub');
+    expect(appService.resolveFilePath).toHaveBeenCalledWith('h1/Book h1.epub', 'Books');
+  });
+
+  test('an in-place book still uploads from its external source', async () => {
+    const inPlace = '/home/reader/Calibre/Book h1.epub';
+    // No managed copy — only the user's own file at an external location.
+    appService.exists = vi.fn(async (path: string) => path === inPlace);
+
+    const src = await makeStore().resolveLocalBookPath(makeBook('h1', { filePath: inPlace }));
+
+    expect(src!.path).toBe('/root/Books/' + inPlace);
+    expect(appService.resolveFilePath).toHaveBeenCalledWith(inPlace, 'None');
+  });
+
+  test('a book on no device at all is still reported as having no source', async () => {
+    appService.exists = vi.fn(async () => false);
+
+    expect(await makeStore().loadBookFile(makeBook('h1', { filePath: STALE }))).toBeNull();
+    expect(await makeStore().resolveLocalBookPath(makeBook('h1', { filePath: STALE }))).toBeNull();
+  });
+});

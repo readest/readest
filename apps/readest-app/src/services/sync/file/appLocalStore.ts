@@ -1,4 +1,5 @@
-import { AppService } from '@/types/system';
+import { Book } from '@/types/book';
+import { AppService, BaseDir } from '@/types/system';
 import { SystemSettings } from '@/types/settings';
 import { EnvConfigType } from '@/services/environment';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -6,15 +7,36 @@ import { getCoverFilename, getLocalBookFilename } from '@/utils/book';
 import { LocalStore } from './localStore';
 
 /**
+ * Where this device's copy of the book actually is, or null when it holds none
+ * (the engine's `no-source` verdict). In-place imports keep their bytes outside
+ * `Books/<hash>/`, so `book.filePath` is a valid fallback — but only a fallback.
+ * The managed copy wins, exactly as `resolveBookContentSource` puts it:
+ * "book.filePath is device-local and can outlive a prior in-place/import mode".
+ *
+ * Preferring `filePath` blindly is what kept #5084 alive into #5265. A row
+ * poisoned by a pre-#5087 client carries a PEER's absolute path; probing only
+ * that path reports `no-source` for a book whose managed copy is sitting right
+ * there, so the engine never confirms the file on the remote and never stamps
+ * `uploadedAt` — leaving the row classified as a purely-local book, the state
+ * that turns "Remove from Device Only" into a cloud-and-device delete.
+ */
+const resolveLocalSource = async (
+  appService: AppService,
+  book: Book,
+): Promise<{ path: string; base: BaseDir } | null> => {
+  const managed = getLocalBookFilename(book);
+  if (await appService.exists(managed, 'Books')) return { path: managed, base: 'Books' };
+  if (book.filePath && (await appService.exists(book.filePath, 'None'))) {
+    return { path: book.filePath, base: 'None' };
+  }
+  return null;
+};
+
+/**
  * The app-backed {@link LocalStore} used by every file-sync consumer (the
  * reader hook and the library "Sync now" form). Consolidating the buffered +
  * streaming book/cover loaders here is the whole reason the bridge exists:
  * the logic used to be copy-pasted across both consumers.
- *
- * In-place imports keep their bytes outside `Books/<hash>/`, so the book-file
- * helpers resolve to `(book.filePath, 'None')` when `filePath` is set and fall
- * through to the hash-copy `Books`-relative path otherwise — mirroring
- * `cloudService.uploadBook` so sync treats in-place books as first-class.
  */
 export const createAppLocalStore = ({
   appService,
@@ -29,18 +51,17 @@ export const createAppLocalStore = ({
   saveBookConfig: (book, config) => appService.saveBookConfig(book, config, settings),
 
   loadBookFile: async (book) => {
-    const fp = book.filePath ?? getLocalBookFilename(book);
-    const base = book.filePath ? 'None' : 'Books';
-    if (!(await appService.exists(fp, base))) return null;
-    const file = await appService.openFile(fp, base);
+    const source = await resolveLocalSource(appService, book);
+    if (!source) return null;
+    const file = await appService.openFile(source.path, source.base);
     const bytes = await file.arrayBuffer();
     return { bytes, size: bytes.byteLength };
   },
 
   resolveLocalBookPath: async (book) => {
-    const fp = book.filePath ?? getLocalBookFilename(book);
-    const base = book.filePath ? 'None' : 'Books';
-    if (!(await appService.exists(fp, base))) return null;
+    const source = await resolveLocalSource(appService, book);
+    if (!source) return null;
+    const { path: fp, base } = source;
     const file = await appService.openFile(fp, base);
     const size = file.size;
     // Release the FD before streaming so the Tauri side can re-open the path

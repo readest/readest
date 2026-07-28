@@ -7,6 +7,16 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToReader, showReaderWindow } from '@/utils/nav';
+import { getActiveFileSyncBackends } from '@/services/sync/cloudSyncProvider';
+
+/**
+ * Whether a third-party file mirror (WebDAV / Google Drive / S3 / OneDrive) is
+ * switched on. Read straight off the store: the callbacks below are memoized
+ * without `settings` in their dependency list, so a captured copy would go
+ * stale the moment the user toggles a provider.
+ */
+const hasFileSyncMirror = (): boolean =>
+  getActiveFileSyncBackends(useSettingsStore.getState().settings).length > 0;
 
 interface UseOpenBookOptions {
   setLoading: Dispatch<SetStateAction<boolean>>;
@@ -33,8 +43,12 @@ export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptio
   const makeBookAvailable = useCallback(
     async (book: Book) => {
       // A book with no cloud copy has nothing to fetch; `openBook` below already
-      // handles the case where such a book's local file is gone.
-      if (!book.uploadedAt) return true;
+      // handles the case where such a book's local file is gone. `uploadedAt` is
+      // not the whole story for a file backend: it is stamped by the sync engine,
+      // so a row it has not reconciled yet (or one poisoned by a pre-#5087
+      // client, #5265) can be sitting on the mirror without carrying the stamp.
+      // Ask the mirror before giving up on it.
+      if (!book.uploadedAt && !hasFileSyncMirror()) return true;
       // The row's `downloadedAt` is not proof that the file is still here: a
       // "Remove from Device Only" evicts the file, and an in-place original can
       // be moved or deleted behind our back. Probe, and re-fetch from the cloud
@@ -70,7 +84,14 @@ export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptio
       // instead of opening the reader only to fail and bounce back. Restricted
       // to purely-local in-place books — cloud-synced books (`uploadedAt`) still
       // go through `makeBookAvailable`'s on-demand download path.
-      if (book.filePath && !book.uploadedAt && !book.deletedAt) {
+      //
+      // This dispatch is the only automatic route into `handleBookDelete('both')`,
+      // which tombstones the book and lets the file sync GC its directory off the
+      // remote — so a device with a file mirror must never take it (#5265). A
+      // missing LOCAL file is not evidence that the user wants the REMOTE copy
+      // destroyed, and there the book is very likely still on the mirror;
+      // `makeBookAvailable` below fetches it back instead.
+      if (book.filePath && !book.uploadedAt && !book.deletedAt && !hasFileSyncMirror()) {
         const available = await appService?.isBookAvailable(book);
         if (!available) {
           eventDispatcher.dispatch('toast', {
