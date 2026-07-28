@@ -1914,5 +1914,7 @@
   "Fetch Chapters": "ལེའུ་རྣམས་ལེན་པ།",
   "{{count}} chapters_other": "ལེའུ་ {{count}}",
   "Downloading chapters…": "ལེའུ་རྣམས་ཕབ་ལེན་བྱེད་བཞིན་པ…",
-  "This chapter could not be downloaded.": "ལེའུ་འདི་ཕབ་ལེན་བྱེད་མ་ཐུབ།"
+  "This chapter could not be downloaded.": "ལེའུ་འདི་ཕབ་ལེན་བྱེད་མ་ཐུབ།",
+  "Auto-hide Cursor": "འོད་རྟགས་རང་འགུལ་སྦས་པ།",
+  "After a moment of inactivity": "སྐར་ཆ་འགའ་ལས་ཀ་མེད་རྗེས།"
 }

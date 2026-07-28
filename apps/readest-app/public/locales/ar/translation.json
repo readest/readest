@@ -2104,5 +2104,7 @@
   "{{count}} chapters_many": "{{count}} فصلًا",
   "{{count}} chapters_other": "{{count}} فصل",
   "Downloading chapters…": "جارٍ تنزيل الفصول…",
-  "This chapter could not be downloaded.": "تعذر تنزيل هذا الفصل."
+  "This chapter could not be downloaded.": "تعذر تنزيل هذا الفصل.",
+  "Auto-hide Cursor": "إخفاء المؤشر تلقائيًا",
+  "After a moment of inactivity": "بعد لحظة من عدم النشاط"
 }

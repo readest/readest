@@ -1952,5 +1952,7 @@
   "{{count}} chapters_one": "{{count}} bölüm",
   "{{count}} chapters_other": "{{count}} bölüm",
   "Downloading chapters…": "Bölümler indiriliyor…",
-  "This chapter could not be downloaded.": "Bu bölüm indirilemedi."
+  "This chapter could not be downloaded.": "Bu bölüm indirilemedi.",
+  "Auto-hide Cursor": "İmleci otomatik gizle",
+  "After a moment of inactivity": "Kısa bir hareketsizlikten sonra"
 }

@@ -1952,5 +1952,7 @@
   "{{count}} chapters_one": "{{count}} فصل",
   "{{count}} chapters_other": "{{count}} فصل",
   "Downloading chapters…": "در حال دانلود فصل‌ها…",
-  "This chapter could not be downloaded.": "این فصل دانلود نشد."
+  "This chapter could not be downloaded.": "این فصل دانلود نشد.",
+  "Auto-hide Cursor": "پنهان‌سازی خودکار نشانگر",
+  "After a moment of inactivity": "پس از مدتی بی‌حرکتی"
 }

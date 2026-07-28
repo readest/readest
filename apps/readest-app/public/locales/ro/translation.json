@@ -1990,5 +1990,7 @@
   "{{count}} chapters_few": "{{count}} capitole",
   "{{count}} chapters_other": "{{count}} de capitole",
   "Downloading chapters…": "Se descarcă capitolele…",
-  "This chapter could not be downloaded.": "Acest capitol nu a putut fi descărcat."
+  "This chapter could not be downloaded.": "Acest capitol nu a putut fi descărcat.",
+  "Auto-hide Cursor": "Ascunde automat cursorul",
+  "After a moment of inactivity": "După un moment de inactivitate"
 }

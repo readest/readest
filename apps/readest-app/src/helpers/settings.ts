@@ -1,5 +1,5 @@
 import { ViewSettings } from '@/types/book';
-import { SystemSettings } from '@/types/settings';
+import { ReadSettings, SystemSettings } from '@/types/settings';
 import { EnvConfigType } from '@/services/environment';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -93,4 +93,21 @@ export const saveSysSettings = async <K extends keyof SystemSettings>(
     setSettings(settings);
     await saveSettings(envConfig, settings);
   }
+};
+
+export const saveReadSettings = async <K extends keyof ReadSettings>(
+  envConfig: EnvConfigType,
+  key: K,
+  value: ReadSettings[K],
+) => {
+  const { settings, setSettings, saveSettings } = useSettingsStore.getState();
+  if (settings.globalReadSettings[key] === value) return;
+  // New references for the same reason as the global write in saveViewSettings:
+  // the replica-push subscriber compares settings identity.
+  const nextSettings: SystemSettings = {
+    ...settings,
+    globalReadSettings: { ...settings.globalReadSettings, [key]: value },
+  };
+  setSettings(nextSettings);
+  await saveSettings(envConfig, nextSettings);
 };

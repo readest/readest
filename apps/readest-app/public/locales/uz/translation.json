@@ -1952,5 +1952,7 @@
   "{{count}} chapters_one": "{{count}} bob",
   "{{count}} chapters_other": "{{count}} bob",
   "Downloading chapters…": "Boblar yuklab olinmoqda…",
-  "This chapter could not be downloaded.": "Bu bob yuklab olinmadi."
+  "This chapter could not be downloaded.": "Bu bob yuklab olinmadi.",
+  "Auto-hide Cursor": "Kursorni avtomatik yashirish",
+  "After a moment of inactivity": "Bir oz harakatsizlikdan keyin"
 }

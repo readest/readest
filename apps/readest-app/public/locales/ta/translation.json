@@ -1952,5 +1952,7 @@
   "{{count}} chapters_one": "{{count}} அத்தியாயம்",
   "{{count}} chapters_other": "{{count}} அத்தியாயங்கள்",
   "Downloading chapters…": "அத்தியாயங்கள் பதிவிறக்கப்படுகின்றன…",
-  "This chapter could not be downloaded.": "இந்த அத்தியாயத்தைப் பதிவிறக்க முடியவில்லை."
+  "This chapter could not be downloaded.": "இந்த அத்தியாயத்தைப் பதிவிறக்க முடியவில்லை.",
+  "Auto-hide Cursor": "கர்சரைத் தானாக மறை",
+  "After a moment of inactivity": "சிறிது நேரம் செயலற்ற பிறகு"
 }

@@ -1914,5 +1914,7 @@
   "Fetch Chapters": "챕터 불러오기",
   "{{count}} chapters_other": "{{count}}개 챕터",
   "Downloading chapters…": "챕터 다운로드 중…",
-  "This chapter could not be downloaded.": "이 챕터를 다운로드하지 못했습니다."
+  "This chapter could not be downloaded.": "이 챕터를 다운로드하지 못했습니다.",
+  "Auto-hide Cursor": "커서 자동 숨기기",
+  "After a moment of inactivity": "잠시 동작이 없을 때"
 }

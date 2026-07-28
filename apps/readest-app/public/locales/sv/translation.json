@@ -1952,5 +1952,7 @@
   "{{count}} chapters_one": "{{count}} kapitel",
   "{{count}} chapters_other": "{{count}} kapitel",
   "Downloading chapters…": "Laddar ner kapitel…",
-  "This chapter could not be downloaded.": "Det här kapitlet kunde inte laddas ner."
+  "This chapter could not be downloaded.": "Det här kapitlet kunde inte laddas ner.",
+  "Auto-hide Cursor": "Dölj muspekaren automatiskt",
+  "After a moment of inactivity": "Efter en stunds inaktivitet"
 }

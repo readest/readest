@@ -759,6 +759,14 @@ const FoliateViewer: React.FC<{
       } else {
         view.renderer.removeAttribute('animated');
       }
+      // Arms the foliate CursorAutohider — goes on the view element itself,
+      // not the renderer, and is re-checked on every mousemove so the
+      // ControlPanel toggle takes effect without recreating the view.
+      view.toggleAttribute(
+        'autohide-cursor',
+        !appService?.isMobile &&
+          !!useSettingsStore.getState().settings.globalReadSettings?.autohideCursor,
+      );
       applyPageTurnAttributes(view, viewSettings, bookDoc.rendition?.layout === 'pre-paginated');
       // iOS WebKit composites large/persistent page layers without the Android
       // high-DPR Blink freeze, so opt this renderer into the GPU-accelerated

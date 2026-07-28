@@ -497,6 +497,12 @@ const controlPanelItems = [
     section: 'Device',
   },
   {
+    id: 'settings.control.autohideCursor',
+    labelKey: _('Auto-hide Cursor'),
+    keywords: ['cursor', 'mouse', 'pointer', 'hide', 'autohide', 'idle'],
+    section: 'Device',
+  },
+  {
     id: 'settings.control.allowJavascript',
     labelKey: _('Allow JavaScript'),
     keywords: ['javascript', 'js', 'script', 'security', 'allow'],

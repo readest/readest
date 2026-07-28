@@ -1952,5 +1952,7 @@
   "{{count}} chapters_one": "{{count}} fejezet",
   "{{count}} chapters_other": "{{count}} fejezet",
   "Downloading chapters…": "Fejezetek letöltése…",
-  "This chapter could not be downloaded.": "Ezt a fejezetet nem sikerült letölteni."
+  "This chapter could not be downloaded.": "Ezt a fejezetet nem sikerült letölteni.",
+  "Auto-hide Cursor": "Kurzor automatikus elrejtése",
+  "After a moment of inactivity": "Rövid tétlenség után"
 }

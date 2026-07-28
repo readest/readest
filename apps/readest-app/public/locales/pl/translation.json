@@ -2028,5 +2028,7 @@
   "{{count}} chapters_many": "{{count}} rozdziałów",
   "{{count}} chapters_other": "{{count}} rozdziału",
   "Downloading chapters…": "Pobieranie rozdziałów…",
-  "This chapter could not be downloaded.": "Nie udało się pobrać tego rozdziału."
+  "This chapter could not be downloaded.": "Nie udało się pobrać tego rozdziału.",
+  "Auto-hide Cursor": "Automatycznie ukrywaj kursor",
+  "After a moment of inactivity": "Po chwili bezczynności"
 }

@@ -2028,5 +2028,7 @@
   "{{count}} chapters_many": "{{count}} розділів",
   "{{count}} chapters_other": "{{count}} розділу",
   "Downloading chapters…": "Завантаження розділів…",
-  "This chapter could not be downloaded.": "Не вдалося завантажити цей розділ."
+  "This chapter could not be downloaded.": "Не вдалося завантажити цей розділ.",
+  "Auto-hide Cursor": "Автоматично ховати курсор",
+  "After a moment of inactivity": "Після короткої бездіяльності"
 }

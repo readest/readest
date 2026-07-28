@@ -1914,5 +1914,7 @@
   "Fetch Chapters": "Ambil Bab",
   "{{count}} chapters_other": "{{count}} bab",
   "Downloading chapters…": "Mengunduh bab…",
-  "This chapter could not be downloaded.": "Bab ini tidak dapat diunduh."
+  "This chapter could not be downloaded.": "Bab ini tidak dapat diunduh.",
+  "Auto-hide Cursor": "Sembunyikan kursor otomatis",
+  "After a moment of inactivity": "Setelah beberapa saat tidak aktif"
 }

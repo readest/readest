@@ -1914,5 +1914,7 @@
   "Fetch Chapters": "取得章節",
   "{{count}} chapters_other": "{{count}} 章",
   "Downloading chapters…": "正在下載章節…",
-  "This chapter could not be downloaded.": "本章下載失敗。"
+  "This chapter could not be downloaded.": "本章下載失敗。",
+  "Auto-hide Cursor": "自動隱藏游標",
+  "After a moment of inactivity": "靜止片刻後隱藏"
 }

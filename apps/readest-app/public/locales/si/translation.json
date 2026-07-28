@@ -1952,5 +1952,7 @@
   "{{count}} chapters_one": "පරිච්ඡේද {{count}}",
   "{{count}} chapters_other": "පරිච්ඡේද {{count}}",
   "Downloading chapters…": "පරිච්ඡේද බාගනිමින්…",
-  "This chapter could not be downloaded.": "මෙම පරිච්ඡේදය බාගත නොහැකි විය."
+  "This chapter could not be downloaded.": "මෙම පරිච්ඡේදය බාගත නොහැකි විය.",
+  "Auto-hide Cursor": "කර්සරය ස්වයංක්‍රීයව සඟවන්න",
+  "After a moment of inactivity": "මොහොතක් අක්‍රියව සිටි පසු"
 }

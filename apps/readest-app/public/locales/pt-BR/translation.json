@@ -1990,5 +1990,7 @@
   "{{count}} chapters_many": "{{count}} capítulos",
   "{{count}} chapters_other": "{{count}} capítulos",
   "Downloading chapters…": "Baixando capítulos…",
-  "This chapter could not be downloaded.": "Este capítulo não pôde ser baixado."
+  "This chapter could not be downloaded.": "Este capítulo não pôde ser baixado.",
+  "Auto-hide Cursor": "Ocultar o cursor automaticamente",
+  "After a moment of inactivity": "Após um momento de inatividade"
 }

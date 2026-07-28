@@ -2028,5 +2028,7 @@
   "{{count}} chapters_few": "{{count}} poglavja",
   "{{count}} chapters_other": "{{count}} poglavij",
   "Downloading chapters…": "Prenašanje poglavij…",
-  "This chapter could not be downloaded.": "Tega poglavja ni bilo mogoče prenesti."
+  "This chapter could not be downloaded.": "Tega poglavja ni bilo mogoče prenesti.",
+  "Auto-hide Cursor": "Samodejno skrij kazalec",
+  "After a moment of inactivity": "Po trenutku nedejavnosti"
 }

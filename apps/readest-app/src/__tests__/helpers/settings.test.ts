@@ -32,7 +32,7 @@ vi.mock('@/utils/style', () => ({
   getStyles: vi.fn(() => ''),
 }));
 
-import { getLibraryViewSettings, saveViewSettings } from '@/helpers/settings';
+import { getLibraryViewSettings, saveReadSettings, saveViewSettings } from '@/helpers/settings';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { EnvConfigType } from '@/services/environment';
 import type { SystemSettings } from '@/types/settings';
@@ -42,6 +42,7 @@ const envConfig = {} as EnvConfigType;
 const makeSettings = (): SystemSettings =>
   ({
     globalViewSettings: { userStylesheet: '', userUIStylesheet: '' },
+    globalReadSettings: { autohideCursor: true },
   }) as unknown as SystemSettings;
 
 beforeEach(() => {
@@ -170,6 +171,55 @@ describe('saveViewSettings', () => {
     // must NOT publish global settings, otherwise per-book overrides would leak
     // into the cross-device globals.
     expect(referenceChanges).toHaveLength(0);
+    expect(useSettingsStore.getState().settings).toBe(initial);
+  });
+});
+
+describe('saveReadSettings', () => {
+  test('write swaps the settings reference so replicaSettingsSync subscribers fire', async () => {
+    const referenceChanges: SystemSettings[] = [];
+    const unsubscribe = useSettingsStore.subscribe((state, prev) => {
+      if (state.settings && state.settings !== prev?.settings) {
+        referenceChanges.push(state.settings);
+      }
+    });
+
+    try {
+      await saveReadSettings(envConfig, 'autohideCursor', false);
+    } finally {
+      unsubscribe();
+    }
+
+    expect(referenceChanges).toHaveLength(1);
+    expect(referenceChanges[0]!.globalReadSettings.autohideCursor).toBe(false);
+  });
+
+  test('persists with the same new reference passed to setSettings', async () => {
+    let savedSettings: SystemSettings | null = null;
+    const saveSettingsMock = vi.fn(async (_env: EnvConfigType, s: SystemSettings) => {
+      savedSettings = s;
+    });
+    useSettingsStore.setState({
+      saveSettings: saveSettingsMock,
+    } as unknown as ReturnType<typeof useSettingsStore.getState>);
+
+    await saveReadSettings(envConfig, 'autohideCursor', false);
+
+    expect(saveSettingsMock).toHaveBeenCalledTimes(1);
+    expect(savedSettings!.globalReadSettings.autohideCursor).toBe(false);
+    expect(savedSettings).toBe(useSettingsStore.getState().settings);
+  });
+
+  test('no-op when the value is unchanged', async () => {
+    const initial = useSettingsStore.getState().settings;
+    const saveSettingsMock = vi.fn(async () => {});
+    useSettingsStore.setState({
+      saveSettings: saveSettingsMock,
+    } as unknown as ReturnType<typeof useSettingsStore.getState>);
+
+    await saveReadSettings(envConfig, 'autohideCursor', true);
+
+    expect(saveSettingsMock).not.toHaveBeenCalled();
     expect(useSettingsStore.getState().settings).toBe(initial);
   });
 });

@@ -1914,5 +1914,7 @@
   "Fetch Chapters": "获取章节",
   "{{count}} chapters_other": "{{count}} 章",
   "Downloading chapters…": "正在下载章节…",
-  "This chapter could not be downloaded.": "本章下载失败。"
+  "This chapter could not be downloaded.": "本章下载失败。",
+  "Auto-hide Cursor": "自动隐藏光标",
+  "After a moment of inactivity": "静止片刻后隐藏"
 }

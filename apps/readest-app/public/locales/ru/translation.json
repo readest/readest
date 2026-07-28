@@ -2028,5 +2028,7 @@
   "{{count}} chapters_many": "{{count}} глав",
   "{{count}} chapters_other": "{{count}} главы",
   "Downloading chapters…": "Скачивание глав…",
-  "This chapter could not be downloaded.": "Не удалось скачать эту главу."
+  "This chapter could not be downloaded.": "Не удалось скачать эту главу.",
+  "Auto-hide Cursor": "Автоматически скрывать курсор",
+  "After a moment of inactivity": "После короткого бездействия"
 }
