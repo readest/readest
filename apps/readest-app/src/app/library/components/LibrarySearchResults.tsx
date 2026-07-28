@@ -147,19 +147,19 @@ const LibrarySearchResults = ({
       className='search-results h-full overflow-y-auto px-3 py-2 font-sans sm:px-6'
       style={{ paddingBottom: 'calc(var(--now-playing-inset, 0px) + 0.5rem)' }}
     >
-      <div className='sticky top-0 z-20 bg-base-200 eink:bg-base-100 mb-2 flex items-center gap-3 py-2'>
-        <progress
-          aria-label={_('Library Search Progress')}
-          className='progress progress-success h-1 flex-1'
-          value={progress}
-          max={100}
-        />
-        {phase === 'searching' && (
+      {phase === 'searching' && (
+        <div className='mb-2 flex items-center gap-3 py-1'>
+          <progress
+            aria-label={_('Library Search Progress')}
+            className='progress h-0.5 max-w-32 flex-1'
+            value={progress}
+            max={100}
+          />
           <button type='button' className='btn btn-ghost btn-sm eink-bordered' onClick={cancel}>
             {_('Cancel')}
           </button>
-        )}
-      </div>
+        </div>
+      )}
       {phase === 'searching' && activeBook && (
         <p className='text-base-content/60 mb-2 truncate text-xs' role='status' aria-live='polite'>
           {_('Searching {{title}}', { title: activeBook })}

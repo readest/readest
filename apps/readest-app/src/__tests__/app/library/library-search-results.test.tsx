@@ -79,7 +79,7 @@ describe('LibrarySearchResults', () => {
     fireEvent.click(screen.getByText('needle'));
 
     expect(onSelectResult).toHaveBeenCalledWith(book, 'epubcfi(/6/2!/4/2:1)');
-    expect(screen.getByRole('progressbar', { name: 'Library Search Progress' })).toBeTruthy();
+    expect(screen.queryByRole('progressbar', { name: 'Library Search Progress' })).toBeNull();
     expect(screen.getByText('needle').classList.contains('text-bold-in-eink')).toBe(true);
     expect(screen.getByText('1 results')).toBeTruthy();
   });
