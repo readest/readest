@@ -1976,5 +1976,19 @@
   "Open Page": "Deschide pagina",
   "Skeuomorphic Book Covers": "Coperți skeuomorfe",
   "Sign in if needed, then capture": "Autentificați-vă dacă e nevoie, apoi capturați",
-  "Capture": "Capturează"
+  "Capture": "Capturează",
+  "From Web Novel": "Din roman web",
+  "No chapters could be downloaded.": "Nu s-a putut descărca niciun capitol.",
+  "{{count}} chapters could not be downloaded._one": "Nu s-a putut descărca {{count}} capitol.",
+  "{{count}} chapters could not be downloaded._few": "Nu s-au putut descărca {{count}} capitole.",
+  "{{count}} chapters could not be downloaded._other": "Nu s-au putut descărca {{count}} de capitole.",
+  "Imported “{{title}}”": "„{{title}}” a fost importat",
+  "Import Web Novel": "Importă roman web",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Lipește linkul listei de capitole a unui roman web. Readest descarcă capitolele și le salvează ca o carte.",
+  "Fetch Chapters": "Preia capitolele",
+  "{{count}} chapters_one": "{{count}} capitol",
+  "{{count}} chapters_few": "{{count}} capitole",
+  "{{count}} chapters_other": "{{count}} de capitole",
+  "Downloading chapters…": "Se descarcă capitolele…",
+  "This chapter could not be downloaded.": "Acest capitol nu a putut fi descărcat."
 }

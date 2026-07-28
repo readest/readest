@@ -1940,5 +1940,17 @@
   "Open Page": "Sayfayı Aç",
   "Skeuomorphic Book Covers": "Skeuomorfik Kitap Kapakları",
   "Sign in if needed, then capture": "Gerekirse oturum açın, sonra yakalayın",
-  "Capture": "Yakala"
+  "Capture": "Yakala",
+  "From Web Novel": "Web romanından",
+  "No chapters could be downloaded.": "Hiçbir bölüm indirilemedi.",
+  "{{count}} chapters could not be downloaded._one": "{{count}} bölüm indirilemedi.",
+  "{{count}} chapters could not be downloaded._other": "{{count}} bölüm indirilemedi.",
+  "Imported “{{title}}”": "“{{title}}” içe aktarıldı",
+  "Import Web Novel": "Web Romanı İçe Aktar",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Bir web romanının bölüm listesinin bağlantısını yapıştırın. Readest bölümleri indirir ve kitap olarak kaydeder.",
+  "Fetch Chapters": "Bölümleri Getir",
+  "{{count}} chapters_one": "{{count}} bölüm",
+  "{{count}} chapters_other": "{{count}} bölüm",
+  "Downloading chapters…": "Bölümler indiriliyor…",
+  "This chapter could not be downloaded.": "Bu bölüm indirilemedi."
 }

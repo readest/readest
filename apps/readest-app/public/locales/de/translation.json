@@ -1940,5 +1940,17 @@
   "Open Page": "Seite öffnen",
   "Skeuomorphic Book Covers": "Skeuomorphe Buchcover",
   "Sign in if needed, then capture": "Bei Bedarf anmelden, dann erfassen",
-  "Capture": "Erfassen"
+  "Capture": "Erfassen",
+  "From Web Novel": "Von Webnovel",
+  "No chapters could be downloaded.": "Es konnten keine Kapitel heruntergeladen werden.",
+  "{{count}} chapters could not be downloaded._one": "{{count}} Kapitel konnte nicht heruntergeladen werden.",
+  "{{count}} chapters could not be downloaded._other": "{{count}} Kapitel konnten nicht heruntergeladen werden.",
+  "Imported “{{title}}”": "„{{title}}“ importiert",
+  "Import Web Novel": "Webnovel importieren",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Fügen Sie den Link zur Kapitelliste eines Webnovels ein. Readest lädt die Kapitel herunter und speichert sie als Buch.",
+  "Fetch Chapters": "Kapitel abrufen",
+  "{{count}} chapters_one": "{{count}} Kapitel",
+  "{{count}} chapters_other": "{{count}} Kapitel",
+  "Downloading chapters…": "Kapitel werden heruntergeladen…",
+  "This chapter could not be downloaded.": "Dieses Kapitel konnte nicht heruntergeladen werden."
 }

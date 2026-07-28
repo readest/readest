@@ -1940,5 +1940,17 @@
   "Open Page": "Pagina openen",
   "Skeuomorphic Book Covers": "Skeuomorfe boekomslagen",
   "Sign in if needed, then capture": "Log zo nodig in en leg daarna vast",
-  "Capture": "Vastleggen"
+  "Capture": "Vastleggen",
+  "From Web Novel": "Van webnovel",
+  "No chapters could be downloaded.": "Er konden geen hoofdstukken worden gedownload.",
+  "{{count}} chapters could not be downloaded._one": "{{count}} hoofdstuk kon niet worden gedownload.",
+  "{{count}} chapters could not be downloaded._other": "{{count}} hoofdstukken konden niet worden gedownload.",
+  "Imported “{{title}}”": "“{{title}}” geïmporteerd",
+  "Import Web Novel": "Webnovel importeren",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Plak de link naar de hoofdstukkenlijst van een webnovel. Readest downloadt de hoofdstukken en slaat ze op als boek.",
+  "Fetch Chapters": "Hoofdstukken ophalen",
+  "{{count}} chapters_one": "{{count}} hoofdstuk",
+  "{{count}} chapters_other": "{{count}} hoofdstukken",
+  "Downloading chapters…": "Hoofdstukken downloaden…",
+  "This chapter could not be downloaded.": "Dit hoofdstuk kon niet worden gedownload."
 }

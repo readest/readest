@@ -1940,5 +1940,17 @@
   "Open Page": "பக்கத்தைத் திற",
   "Skeuomorphic Book Covers": "ஸ்கியூமார்ஃபிக் புத்தக அட்டைகள்",
   "Sign in if needed, then capture": "தேவைப்பட்டால் உள்நுழைந்து, பிறகு பெறவும்",
-  "Capture": "பெறு"
+  "Capture": "பெறு",
+  "From Web Novel": "இணைய நாவலிலிருந்து",
+  "No chapters could be downloaded.": "எந்த அத்தியாயத்தையும் பதிவிறக்க முடியவில்லை.",
+  "{{count}} chapters could not be downloaded._one": "{{count}} அத்தியாயத்தைப் பதிவிறக்க முடியவில்லை.",
+  "{{count}} chapters could not be downloaded._other": "{{count}} அத்தியாயங்களைப் பதிவிறக்க முடியவில்லை.",
+  "Imported “{{title}}”": "“{{title}}” இறக்குமதி செய்யப்பட்டது",
+  "Import Web Novel": "இணைய நாவலை இறக்குமதி செய்",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "இணைய நாவலின் அத்தியாயப் பட்டியல் இணைப்பை ஒட்டவும். Readest அத்தியாயங்களைப் பதிவிறக்கி புத்தகமாகச் சேமிக்கும்.",
+  "Fetch Chapters": "அத்தியாயங்களைப் பெறு",
+  "{{count}} chapters_one": "{{count}} அத்தியாயம்",
+  "{{count}} chapters_other": "{{count}} அத்தியாயங்கள்",
+  "Downloading chapters…": "அத்தியாயங்கள் பதிவிறக்கப்படுகின்றன…",
+  "This chapter could not be downloaded.": "இந்த அத்தியாயத்தைப் பதிவிறக்க முடியவில்லை."
 }

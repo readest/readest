@@ -1940,5 +1940,17 @@
   "Open Page": "Öppna sidan",
   "Skeuomorphic Book Covers": "Skeuomorfa bokomslag",
   "Sign in if needed, then capture": "Logga in vid behov och fånga sedan",
-  "Capture": "Fånga"
+  "Capture": "Fånga",
+  "From Web Novel": "Från webbroman",
+  "No chapters could be downloaded.": "Inga kapitel kunde laddas ner.",
+  "{{count}} chapters could not be downloaded._one": "{{count}} kapitel kunde inte laddas ner.",
+  "{{count}} chapters could not be downloaded._other": "{{count}} kapitel kunde inte laddas ner.",
+  "Imported “{{title}}”": "”{{title}}” importerad",
+  "Import Web Novel": "Importera webbroman",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Klistra in länken till en webbromans kapitellista. Readest laddar ner kapitlen och sparar dem som en bok.",
+  "Fetch Chapters": "Hämta kapitel",
+  "{{count}} chapters_one": "{{count}} kapitel",
+  "{{count}} chapters_other": "{{count}} kapitel",
+  "Downloading chapters…": "Laddar ner kapitel…",
+  "This chapter could not be downloaded.": "Det här kapitlet kunde inte laddas ner."
 }

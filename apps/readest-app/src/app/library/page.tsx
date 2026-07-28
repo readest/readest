@@ -105,6 +105,7 @@ import ImportFromFolderDialog, {
   ImportFromFolderResult,
 } from './components/ImportFromFolderDialog';
 import ImportFromUrlDialog from './components/ImportFromUrlDialog';
+import ImportNovelDialog from './components/ImportNovelDialog';
 import NowPlayingBar from './components/NowPlayingBar';
 import { ttsSessionManager } from '@/services/tts';
 import { clipPageWithSignInFallback } from '@/services/send/clipSignIn';
@@ -207,6 +208,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [showFeeds, setShowFeeds] = useState(false);
   const [showAddFeed, setShowAddFeed] = useState(false);
   const [showImportFromUrl, setShowImportFromUrl] = useState(false);
+  const [showImportNovel, setShowImportNovel] = useState(false);
   const [importMenuAnchor, setImportMenuAnchor] = useState<HTMLElement | null>(null);
   const [loading, setLoading] = useState(false);
   // Seed from the library store: if we already have books in memory (the
@@ -1132,6 +1134,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     console.log('[clip] done');
   };
 
+  // The dialog fetches the chapter list and assembles the EPUB itself
+  // (with its own progress/cancel UI) — from here on the built file takes
+  // exactly the local-file import path, same as a clipped page.
+  const handleImportNovelFile = async (file: File) => {
+    setIsSelectMode(false);
+    const groupId = searchParams?.get('group') || '';
+    await importBooks([{ file }], groupId);
+  };
+
   const handleImportBooksFromDirectory = async (dirPath?: string) => {
     if (!appService || !isTauriAppPlatform()) return;
 
@@ -1543,6 +1554,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
           }
           onImportBookFromUrl={isTauriAppPlatform() ? () => setShowImportFromUrl(true) : undefined}
+          onImportBookFromNovelUrl={
+            isTauriAppPlatform() ? () => setShowImportNovel(true) : undefined
+          }
           onOpenCatalogManager={handleShowOPDSDialog}
           onOpenFeeds={handleShowFeeds}
           onToggleSelectMode={() => handleSetSelectMode(!isSelectMode)}
@@ -1654,6 +1668,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
             appService?.canReadExternalDir ? handleImportBooksFromDirectory : undefined
           }
           onImportBookFromUrl={isTauriAppPlatform() ? () => setShowImportFromUrl(true) : undefined}
+          onImportBookFromNovelUrl={
+            isTauriAppPlatform() ? () => setShowImportNovel(true) : undefined
+          }
           onOpenCatalogManager={handleShowOPDSDialog}
           onOpenFeeds={handleShowFeeds}
         />
@@ -1751,6 +1768,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         isOpen={showImportFromUrl}
         onClose={() => setShowImportFromUrl(false)}
         onSubmit={handleImportBookFromUrl}
+      />
+      <ImportNovelDialog
+        isOpen={showImportNovel}
+        onClose={() => setShowImportNovel(false)}
+        onImport={handleImportNovelFile}
       />
       <ClipSignInAlert />
       <Toast />

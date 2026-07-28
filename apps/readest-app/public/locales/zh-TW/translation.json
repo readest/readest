@@ -1904,5 +1904,15 @@
   "Open Page": "開啟頁面",
   "Skeuomorphic Book Covers": "擬物化書籍封面",
   "Sign in if needed, then capture": "如有需要請先登入，再擷取",
-  "Capture": "擷取"
+  "Capture": "擷取",
+  "From Web Novel": "從網路小說",
+  "No chapters could be downloaded.": "未能下載任何章節。",
+  "{{count}} chapters could not be downloaded._other": "{{count}} 個章節下載失敗。",
+  "Imported “{{title}}”": "已匯入《{{title}}》",
+  "Import Web Novel": "匯入網路小說",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "貼上網路小說目錄頁的連結，Readest 會下載所有章節並儲存為一本書。",
+  "Fetch Chapters": "取得章節",
+  "{{count}} chapters_other": "{{count}} 章",
+  "Downloading chapters…": "正在下載章節…",
+  "This chapter could not be downloaded.": "本章下載失敗。"
 }

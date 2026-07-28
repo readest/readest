@@ -1904,5 +1904,15 @@
   "Open Page": "Mở trang",
   "Skeuomorphic Book Covers": "Bìa sách kiểu skeuomorphic",
   "Sign in if needed, then capture": "Đăng nhập nếu cần, sau đó chụp",
-  "Capture": "Chụp"
+  "Capture": "Chụp",
+  "From Web Novel": "Từ truyện mạng",
+  "No chapters could be downloaded.": "Không thể tải chương nào.",
+  "{{count}} chapters could not be downloaded._other": "Không thể tải {{count}} chương.",
+  "Imported “{{title}}”": "Đã nhập “{{title}}”",
+  "Import Web Novel": "Nhập truyện mạng",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Dán liên kết danh sách chương của một truyện mạng. Readest sẽ tải các chương và lưu thành sách.",
+  "Fetch Chapters": "Lấy danh sách chương",
+  "{{count}} chapters_other": "{{count}} chương",
+  "Downloading chapters…": "Đang tải các chương…",
+  "This chapter could not be downloaded.": "Không thể tải chương này."
 }

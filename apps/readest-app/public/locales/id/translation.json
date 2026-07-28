@@ -1904,5 +1904,15 @@
   "Open Page": "Buka Halaman",
   "Skeuomorphic Book Covers": "Sampul Buku Skeuomorfik",
   "Sign in if needed, then capture": "Masuk jika perlu, lalu tangkap",
-  "Capture": "Tangkap"
+  "Capture": "Tangkap",
+  "From Web Novel": "Dari novel web",
+  "No chapters could be downloaded.": "Tidak ada bab yang dapat diunduh.",
+  "{{count}} chapters could not be downloaded._other": "{{count}} bab tidak dapat diunduh.",
+  "Imported “{{title}}”": "“{{title}}” berhasil diimpor",
+  "Import Web Novel": "Impor Novel Web",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Tempel tautan daftar bab novel web. Readest mengunduh bab-babnya dan menyimpannya sebagai buku.",
+  "Fetch Chapters": "Ambil Bab",
+  "{{count}} chapters_other": "{{count}} bab",
+  "Downloading chapters…": "Mengunduh bab…",
+  "This chapter could not be downloaded.": "Bab ini tidak dapat diunduh."
 }

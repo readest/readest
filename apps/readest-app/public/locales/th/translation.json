@@ -1904,5 +1904,15 @@
   "Open Page": "เปิดหน้า",
   "Skeuomorphic Book Covers": "ปกหนังสือแบบเหมือนจริง",
   "Sign in if needed, then capture": "เข้าสู่ระบบหากจำเป็น แล้วจึงจับภาพ",
-  "Capture": "จับภาพ"
+  "Capture": "จับภาพ",
+  "From Web Novel": "จากนิยายเว็บ",
+  "No chapters could be downloaded.": "ไม่สามารถดาวน์โหลดตอนใดได้",
+  "{{count}} chapters could not be downloaded._other": "ไม่สามารถดาวน์โหลด {{count}} ตอนได้",
+  "Imported “{{title}}”": "นำเข้า “{{title}}” แล้ว",
+  "Import Web Novel": "นำเข้านิยายเว็บ",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "วางลิงก์รายการตอนของนิยายเว็บ Readest จะดาวน์โหลดตอนทั้งหมดและบันทึกเป็นหนังสือ",
+  "Fetch Chapters": "ดึงรายการตอน",
+  "{{count}} chapters_other": "{{count}} ตอน",
+  "Downloading chapters…": "กำลังดาวน์โหลดตอน…",
+  "This chapter could not be downloaded.": "ไม่สามารถดาวน์โหลดตอนนี้ได้"
 }

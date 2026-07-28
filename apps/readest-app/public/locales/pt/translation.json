@@ -1976,5 +1976,19 @@
   "Open Page": "Abrir página",
   "Skeuomorphic Book Covers": "Capas esqueumórficas",
   "Sign in if needed, then capture": "Inicie sessão se necessário e depois capture",
-  "Capture": "Capturar"
+  "Capture": "Capturar",
+  "From Web Novel": "De webnovel",
+  "No chapters could be downloaded.": "Não foi possível transferir nenhum capítulo.",
+  "{{count}} chapters could not be downloaded._one": "Não foi possível transferir {{count}} capítulo.",
+  "{{count}} chapters could not be downloaded._many": "Não foi possível transferir {{count}} capítulos.",
+  "{{count}} chapters could not be downloaded._other": "Não foi possível transferir {{count}} capítulos.",
+  "Imported “{{title}}”": "“{{title}}” importado",
+  "Import Web Novel": "Importar webnovel",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Cole a ligação da lista de capítulos de uma webnovel. O Readest transfere os capítulos e guarda-os como um livro.",
+  "Fetch Chapters": "Obter capítulos",
+  "{{count}} chapters_one": "{{count}} capítulo",
+  "{{count}} chapters_many": "{{count}} capítulos",
+  "{{count}} chapters_other": "{{count}} capítulos",
+  "Downloading chapters…": "A transferir capítulos…",
+  "This chapter could not be downloaded.": "Não foi possível transferir este capítulo."
 }

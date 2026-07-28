@@ -1940,5 +1940,17 @@
   "Open Page": "Sahifani ochish",
   "Skeuomorphic Book Covers": "Skeuomorf kitob muqovalari",
   "Sign in if needed, then capture": "Kerak bo‘lsa tizimga kiring, so‘ng oling",
-  "Capture": "Olish"
+  "Capture": "Olish",
+  "From Web Novel": "Veb-romandan",
+  "No chapters could be downloaded.": "Hech qanday bob yuklab olinmadi.",
+  "{{count}} chapters could not be downloaded._one": "{{count}} bob yuklab olinmadi.",
+  "{{count}} chapters could not be downloaded._other": "{{count}} bob yuklab olinmadi.",
+  "Imported “{{title}}”": "“{{title}}” import qilindi",
+  "Import Web Novel": "Veb-romanni import qilish",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Veb-roman boblari roʻyxati havolasini joylashtiring. Readest boblarni yuklab olib, kitob sifatida saqlaydi.",
+  "Fetch Chapters": "Boblarni olish",
+  "{{count}} chapters_one": "{{count}} bob",
+  "{{count}} chapters_other": "{{count}} bob",
+  "Downloading chapters…": "Boblar yuklab olinmoqda…",
+  "This chapter could not be downloaded.": "Bu bob yuklab olinmadi."
 }

@@ -2012,5 +2012,21 @@
   "Open Page": "Odpri stran",
   "Skeuomorphic Book Covers": "Skevomorfne naslovnice",
   "Sign in if needed, then capture": "Po potrebi se prijavite, nato zajemite",
-  "Capture": "Zajemi"
+  "Capture": "Zajemi",
+  "From Web Novel": "Iz spletnega romana",
+  "No chapters could be downloaded.": "Nobenega poglavja ni bilo mogoče prenesti.",
+  "{{count}} chapters could not be downloaded._one": "{{count}} poglavja ni bilo mogoče prenesti.",
+  "{{count}} chapters could not be downloaded._two": "{{count}} poglavij ni bilo mogoče prenesti.",
+  "{{count}} chapters could not be downloaded._few": "{{count}} poglavij ni bilo mogoče prenesti.",
+  "{{count}} chapters could not be downloaded._other": "{{count}} poglavij ni bilo mogoče prenesti.",
+  "Imported “{{title}}”": "»{{title}}« uvožen",
+  "Import Web Novel": "Uvozi spletni roman",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Prilepite povezavo do seznama poglavij spletnega romana. Readest prenese poglavja in jih shrani kot knjigo.",
+  "Fetch Chapters": "Pridobi poglavja",
+  "{{count}} chapters_one": "{{count}} poglavje",
+  "{{count}} chapters_two": "{{count}} poglavji",
+  "{{count}} chapters_few": "{{count}} poglavja",
+  "{{count}} chapters_other": "{{count}} poglavij",
+  "Downloading chapters…": "Prenašanje poglavij…",
+  "This chapter could not be downloaded.": "Tega poglavja ni bilo mogoče prenesti."
 }

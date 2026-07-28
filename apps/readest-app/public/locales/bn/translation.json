@@ -1940,5 +1940,17 @@
   "Open Page": "পৃষ্ঠা খুলুন",
   "Skeuomorphic Book Covers": "স্কিউমরফিক বইয়ের প্রচ্ছদ",
   "Sign in if needed, then capture": "প্রয়োজনে সাইন ইন করুন, তারপর ক্যাপচার করুন",
-  "Capture": "ক্যাপচার"
+  "Capture": "ক্যাপচার",
+  "From Web Novel": "ওয়েব উপন্যাস থেকে",
+  "No chapters could be downloaded.": "কোনো অধ্যায় ডাউনলোড করা যায়নি।",
+  "{{count}} chapters could not be downloaded._one": "{{count}}টি অধ্যায় ডাউনলোড করা যায়নি।",
+  "{{count}} chapters could not be downloaded._other": "{{count}}টি অধ্যায় ডাউনলোড করা যায়নি।",
+  "Imported “{{title}}”": "“{{title}}” আমদানি করা হয়েছে",
+  "Import Web Novel": "ওয়েব উপন্যাস আমদানি করুন",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "ওয়েব উপন্যাসের অধ্যায় তালিকার লিঙ্ক পেস্ট করুন। Readest অধ্যায়গুলি ডাউনলোড করে বই হিসেবে সংরক্ষণ করবে।",
+  "Fetch Chapters": "অধ্যায় আনুন",
+  "{{count}} chapters_one": "{{count}}টি অধ্যায়",
+  "{{count}} chapters_other": "{{count}}টি অধ্যায়",
+  "Downloading chapters…": "অধ্যায় ডাউনলোড হচ্ছে…",
+  "This chapter could not be downloaded.": "এই অধ্যায়টি ডাউনলোড করা যায়নি।"
 }

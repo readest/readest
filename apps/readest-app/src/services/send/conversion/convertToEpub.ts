@@ -49,7 +49,7 @@ export function mimeToKind(mime: ConvertibleMime): ConvertInput['kind'] {
 
 // djb2 — a deterministic content hash so re-converting the same source yields
 // the same EPUB identifier (and, with zeroed zip timestamps, identical bytes).
-function stableIdentifier(content: string): string {
+export function stableIdentifier(content: string): string {
   let h = 5381;
   for (let i = 0; i < content.length; i++) {
     h = ((h << 5) + h + content.charCodeAt(i)) >>> 0;
@@ -57,7 +57,7 @@ function stableIdentifier(content: string): string {
   return `readest:${h.toString(16)}`;
 }
 
-function stripTags(html: string): string {
+export function stripTags(html: string): string {
   return html
     .replace(/<[^>]+>/g, ' ')
     .replace(/&[a-z]+;/gi, ' ')
@@ -65,7 +65,7 @@ function stripTags(html: string): string {
     .trim();
 }
 
-function safeFileName(title: string): string {
+export function safeFileName(title: string): string {
   const base = title.replace(/[\\/:*?"<>|]+/g, '_').trim() || 'document';
   return base.slice(0, 120);
 }

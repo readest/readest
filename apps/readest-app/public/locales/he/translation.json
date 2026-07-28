@@ -1976,5 +1976,19 @@
   "Open Page": "פתיחת הדף",
   "Skeuomorphic Book Covers": "כריכות ספרים סקיאומורפיות",
   "Sign in if needed, then capture": "התחברו אם צריך, ואז לכדו",
-  "Capture": "לכידה"
+  "Capture": "לכידה",
+  "From Web Novel": "מרומן רשת",
+  "No chapters could be downloaded.": "לא ניתן היה להוריד אף פרק.",
+  "{{count}} chapters could not be downloaded._one": "לא ניתן היה להוריד פרק אחד.",
+  "{{count}} chapters could not be downloaded._two": "לא ניתן היה להוריד {{count}} פרקים.",
+  "{{count}} chapters could not be downloaded._other": "לא ניתן היה להוריד {{count}} פרקים.",
+  "Imported “{{title}}”": "“{{title}}” יובא",
+  "Import Web Novel": "ייבוא רומן רשת",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "הדביקו קישור לרשימת הפרקים של רומן רשת. Readest יוריד את הפרקים וישמור אותם כספר.",
+  "Fetch Chapters": "אחזור פרקים",
+  "{{count}} chapters_one": "פרק אחד",
+  "{{count}} chapters_two": "{{count}} פרקים",
+  "{{count}} chapters_other": "{{count}} פרקים",
+  "Downloading chapters…": "מוריד פרקים…",
+  "This chapter could not be downloaded.": "לא ניתן היה להוריד את הפרק הזה."
 }

@@ -76,5 +76,9 @@
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}} upload failed: insufficient storage quota",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}} uploads failed: insufficient storage quota",
   "Library sync via {{count}} providers_one": "Library sync via {{count}} provider",
-  "Library sync via {{count}} providers_other": "Library sync via {{count}} providers"
+  "Library sync via {{count}} providers_other": "Library sync via {{count}} providers",
+  "{{count}} chapters could not be downloaded._one": "{{count}} chapter could not be downloaded.",
+  "{{count}} chapters could not be downloaded._other": "{{count}} chapters could not be downloaded.",
+  "{{count}} chapters_one": "{{count}} chapter",
+  "{{count}} chapters_other": "{{count}} chapters"
 }

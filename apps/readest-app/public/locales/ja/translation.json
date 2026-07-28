@@ -1904,5 +1904,15 @@
   "Open Page": "ページを開く",
   "Skeuomorphic Book Covers": "スキューモーフィックな表紙",
   "Sign in if needed, then capture": "必要ならサインインしてから取得してください",
-  "Capture": "取得"
+  "Capture": "取得",
+  "From Web Novel": "ウェブ小説から",
+  "No chapters could be downloaded.": "章をダウンロードできませんでした。",
+  "{{count}} chapters could not be downloaded._other": "{{count}} 章をダウンロードできませんでした。",
+  "Imported “{{title}}”": "「{{title}}」をインポートしました",
+  "Import Web Novel": "ウェブ小説をインポート",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "ウェブ小説の目次ページのリンクを貼り付けてください。Readest が各章をダウンロードして本として保存します。",
+  "Fetch Chapters": "章を取得",
+  "{{count}} chapters_other": "{{count}} 章",
+  "Downloading chapters…": "章をダウンロード中…",
+  "This chapter could not be downloaded.": "この章はダウンロードできませんでした。"
 }

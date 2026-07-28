@@ -2012,5 +2012,21 @@
   "Open Page": "Відкрити сторінку",
   "Skeuomorphic Book Covers": "Скевоморфні обкладинки",
   "Sign in if needed, then capture": "За потреби увійдіть, потім захопіть",
-  "Capture": "Захопити"
+  "Capture": "Захопити",
+  "From Web Novel": "З вебновели",
+  "No chapters could be downloaded.": "Не вдалося завантажити жодного розділу.",
+  "{{count}} chapters could not be downloaded._one": "Не вдалося завантажити {{count}} розділ.",
+  "{{count}} chapters could not be downloaded._few": "Не вдалося завантажити {{count}} розділи.",
+  "{{count}} chapters could not be downloaded._many": "Не вдалося завантажити {{count}} розділів.",
+  "{{count}} chapters could not be downloaded._other": "Не вдалося завантажити {{count}} розділу.",
+  "Imported “{{title}}”": "«{{title}}» імпортовано",
+  "Import Web Novel": "Імпорт вебновели",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Вставте посилання на список розділів вебновели. Readest завантажить розділи та збереже їх як книгу.",
+  "Fetch Chapters": "Отримати розділи",
+  "{{count}} chapters_one": "{{count}} розділ",
+  "{{count}} chapters_few": "{{count}} розділи",
+  "{{count}} chapters_many": "{{count}} розділів",
+  "{{count}} chapters_other": "{{count}} розділу",
+  "Downloading chapters…": "Завантаження розділів…",
+  "This chapter could not be downloaded.": "Не вдалося завантажити цей розділ."
 }

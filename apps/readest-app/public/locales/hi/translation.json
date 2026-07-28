@@ -1940,5 +1940,17 @@
   "Open Page": "पेज खोलें",
   "Skeuomorphic Book Covers": "स्क्यूओमॉर्फिक बुक कवर",
   "Sign in if needed, then capture": "ज़रूरत हो तो साइन इन करें, फिर कैप्चर करें",
-  "Capture": "कैप्चर करें"
+  "Capture": "कैप्चर करें",
+  "From Web Novel": "वेब उपन्यास से",
+  "No chapters could be downloaded.": "कोई अध्याय डाउनलोड नहीं हो सका।",
+  "{{count}} chapters could not be downloaded._one": "{{count}} अध्याय डाउनलोड नहीं हो सका।",
+  "{{count}} chapters could not be downloaded._other": "{{count}} अध्याय डाउनलोड नहीं हो सके।",
+  "Imported “{{title}}”": "“{{title}}” आयात किया गया",
+  "Import Web Novel": "वेब उपन्यास आयात करें",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "वेब उपन्यास की अध्याय सूची का लिंक पेस्ट करें। Readest अध्याय डाउनलोड करके उन्हें पुस्तक के रूप में सहेजता है।",
+  "Fetch Chapters": "अध्याय प्राप्त करें",
+  "{{count}} chapters_one": "{{count}} अध्याय",
+  "{{count}} chapters_other": "{{count}} अध्याय",
+  "Downloading chapters…": "अध्याय डाउनलोड हो रहे हैं…",
+  "This chapter could not be downloaded.": "यह अध्याय डाउनलोड नहीं हो सका।"
 }

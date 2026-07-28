@@ -1940,5 +1940,17 @@
   "Open Page": "පිටුව විවෘත කරන්න",
   "Skeuomorphic Book Covers": "ත්‍රිමාණ පෙනුමැති පොත් කවර",
   "Sign in if needed, then capture": "අවශ්‍ය නම් පුරනය වී, පසුව ලබා ගන්න",
-  "Capture": "ලබා ගන්න"
+  "Capture": "ලබා ගන්න",
+  "From Web Novel": "වෙබ් නවකතාවකින්",
+  "No chapters could be downloaded.": "කිසිදු පරිච්ඡේදයක් බාගත නොහැකි විය.",
+  "{{count}} chapters could not be downloaded._one": "පරිච්ඡේද {{count}}ක් බාගත නොහැකි විය.",
+  "{{count}} chapters could not be downloaded._other": "පරිච්ඡේද {{count}}ක් බාගත නොහැකි විය.",
+  "Imported “{{title}}”": "“{{title}}” ආයාත කරන ලදී",
+  "Import Web Novel": "වෙබ් නවකතාව ආයාත කරන්න",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "වෙබ් නවකතාවක පරිච්ඡේද ලැයිස්තුවේ සබැඳිය අලවන්න. Readest පරිච්ඡේද බාගෙන පොතක් ලෙස සුරකියි.",
+  "Fetch Chapters": "පරිච්ඡේද ලබාගන්න",
+  "{{count}} chapters_one": "පරිච්ඡේද {{count}}",
+  "{{count}} chapters_other": "පරිච්ඡේද {{count}}",
+  "Downloading chapters…": "පරිච්ඡේද බාගනිමින්…",
+  "This chapter could not be downloaded.": "මෙම පරිච්ඡේදය බාගත නොහැකි විය."
 }

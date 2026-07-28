@@ -2012,5 +2012,21 @@
   "Open Page": "Открыть страницу",
   "Skeuomorphic Book Covers": "Скевоморфные обложки",
   "Sign in if needed, then capture": "При необходимости войдите, затем захватите",
-  "Capture": "Захватить"
+  "Capture": "Захватить",
+  "From Web Novel": "Из веб-новеллы",
+  "No chapters could be downloaded.": "Не удалось скачать ни одной главы.",
+  "{{count}} chapters could not be downloaded._one": "Не удалось скачать {{count}} главу.",
+  "{{count}} chapters could not be downloaded._few": "Не удалось скачать {{count}} главы.",
+  "{{count}} chapters could not be downloaded._many": "Не удалось скачать {{count}} глав.",
+  "{{count}} chapters could not be downloaded._other": "Не удалось скачать {{count}} главы.",
+  "Imported “{{title}}”": "Импортировано: «{{title}}»",
+  "Import Web Novel": "Импорт веб-новеллы",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Вставьте ссылку на список глав веб-новеллы. Readest скачает главы и сохранит их как книгу.",
+  "Fetch Chapters": "Получить главы",
+  "{{count}} chapters_one": "{{count}} глава",
+  "{{count}} chapters_few": "{{count}} главы",
+  "{{count}} chapters_many": "{{count}} глав",
+  "{{count}} chapters_other": "{{count}} главы",
+  "Downloading chapters…": "Скачивание глав…",
+  "This chapter could not be downloaded.": "Не удалось скачать эту главу."
 }

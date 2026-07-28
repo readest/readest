@@ -2012,5 +2012,21 @@
   "Open Page": "Otwórz stronę",
   "Skeuomorphic Book Covers": "Skeuomorficzne okładki książek",
   "Sign in if needed, then capture": "W razie potrzeby zaloguj się, potem pobierz",
-  "Capture": "Pobierz"
+  "Capture": "Pobierz",
+  "From Web Novel": "Z powieści internetowej",
+  "No chapters could be downloaded.": "Nie udało się pobrać żadnego rozdziału.",
+  "{{count}} chapters could not be downloaded._one": "Nie udało się pobrać {{count}} rozdziału.",
+  "{{count}} chapters could not be downloaded._few": "Nie udało się pobrać {{count}} rozdziałów.",
+  "{{count}} chapters could not be downloaded._many": "Nie udało się pobrać {{count}} rozdziałów.",
+  "{{count}} chapters could not be downloaded._other": "Nie udało się pobrać {{count}} rozdziału.",
+  "Imported “{{title}}”": "Zaimportowano „{{title}}”",
+  "Import Web Novel": "Importuj powieść internetową",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Wklej link do listy rozdziałów powieści internetowej. Readest pobierze rozdziały i zapisze je jako książkę.",
+  "Fetch Chapters": "Pobierz rozdziały",
+  "{{count}} chapters_one": "{{count}} rozdział",
+  "{{count}} chapters_few": "{{count}} rozdziały",
+  "{{count}} chapters_many": "{{count}} rozdziałów",
+  "{{count}} chapters_other": "{{count}} rozdziału",
+  "Downloading chapters…": "Pobieranie rozdziałów…",
+  "This chapter could not be downloaded.": "Nie udało się pobrać tego rozdziału."
 }

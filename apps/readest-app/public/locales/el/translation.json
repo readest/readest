@@ -1940,5 +1940,17 @@
   "Open Page": "Άνοιγμα σελίδας",
   "Skeuomorphic Book Covers": "Σκευομορφικά εξώφυλλα",
   "Sign in if needed, then capture": "Συνδεθείτε αν χρειάζεται και μετά κάντε λήψη",
-  "Capture": "Λήψη"
+  "Capture": "Λήψη",
+  "From Web Novel": "Από διαδικτυακό μυθιστόρημα",
+  "No chapters could be downloaded.": "Δεν ήταν δυνατή η λήψη κανενός κεφαλαίου.",
+  "{{count}} chapters could not be downloaded._one": "Δεν ήταν δυνατή η λήψη {{count}} κεφαλαίου.",
+  "{{count}} chapters could not be downloaded._other": "Δεν ήταν δυνατή η λήψη {{count}} κεφαλαίων.",
+  "Imported “{{title}}”": "Έγινε εισαγωγή του “{{title}}”",
+  "Import Web Novel": "Εισαγωγή διαδικτυακού μυθιστορήματος",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Επικολλήστε τον σύνδεσμο της λίστας κεφαλαίων ενός διαδικτυακού μυθιστορήματος. Το Readest κατεβάζει τα κεφάλαια και τα αποθηκεύει ως βιβλίο.",
+  "Fetch Chapters": "Ανάκτηση κεφαλαίων",
+  "{{count}} chapters_one": "{{count}} κεφάλαιο",
+  "{{count}} chapters_other": "{{count}} κεφάλαια",
+  "Downloading chapters…": "Λήψη κεφαλαίων…",
+  "This chapter could not be downloaded.": "Δεν ήταν δυνατή η λήψη αυτού του κεφαλαίου."
 }

@@ -1940,5 +1940,17 @@
   "Open Page": "باز کردن صفحه",
   "Skeuomorphic Book Covers": "جلدهای اسکیومورفیک",
   "Sign in if needed, then capture": "در صورت نیاز وارد شوید، سپس دریافت کنید",
-  "Capture": "دریافت"
+  "Capture": "دریافت",
+  "From Web Novel": "از رمان وب",
+  "No chapters could be downloaded.": "هیچ فصلی دانلود نشد.",
+  "{{count}} chapters could not be downloaded._one": "{{count}} فصل دانلود نشد.",
+  "{{count}} chapters could not be downloaded._other": "{{count}} فصل دانلود نشد.",
+  "Imported “{{title}}”": "«{{title}}» وارد شد",
+  "Import Web Novel": "وارد کردن رمان وب",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "پیوند فهرست فصل‌های یک رمان وب را جای‌گذاری کنید. Readest فصل‌ها را دانلود کرده و به‌صورت کتاب ذخیره می‌کند.",
+  "Fetch Chapters": "دریافت فصل‌ها",
+  "{{count}} chapters_one": "{{count}} فصل",
+  "{{count}} chapters_other": "{{count}} فصل",
+  "Downloading chapters…": "در حال دانلود فصل‌ها…",
+  "This chapter could not be downloaded.": "این فصل دانلود نشد."
 }

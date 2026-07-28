@@ -1904,5 +1904,15 @@
   "Open Page": "ཤོག་ངོས་ཁ་ཕྱེ།",
   "Skeuomorphic Book Covers": "དངོས་འདྲའི་དེབ་ཤུན།",
   "Sign in if needed, then capture": "དགོས་ན་ནང་འཛུལ་བྱས་རྗེས་འཛིན་རོགས།",
-  "Capture": "འཛིན་པ།"
+  "Capture": "འཛིན་པ།",
+  "From Web Novel": "དྲ་ཐོག་སྒྲུང་དེབ་ནས།",
+  "No chapters could be downloaded.": "ལེའུ་གཅིག་ཀྱང་ཕབ་ལེན་བྱེད་མ་ཐུབ།",
+  "{{count}} chapters could not be downloaded._other": "ལེའུ་ {{count}} ཕབ་ལེན་བྱེད་མ་ཐུབ།",
+  "Imported “{{title}}”": "“{{title}}” ནང་འདྲེན་བྱས་ཟིན།",
+  "Import Web Novel": "དྲ་ཐོག་སྒྲུང་དེབ་ནང་འདྲེན།",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "དྲ་ཐོག་སྒྲུང་དེབ་ཀྱི་ལེའུ་ཐོའི་སྦྲེལ་ཐག་སྦྱར་རོགས། Readest ཀྱིས་ལེའུ་རྣམས་ཕབ་ལེན་བྱས་ནས་དེབ་ཅིག་ཏུ་ཉར་ཚགས་བྱེད།",
+  "Fetch Chapters": "ལེའུ་རྣམས་ལེན་པ།",
+  "{{count}} chapters_other": "ལེའུ་ {{count}}",
+  "Downloading chapters…": "ལེའུ་རྣམས་ཕབ་ལེན་བྱེད་བཞིན་པ…",
+  "This chapter could not be downloaded.": "ལེའུ་འདི་ཕབ་ལེན་བྱེད་མ་ཐུབ།"
 }

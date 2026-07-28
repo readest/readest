@@ -1904,5 +1904,15 @@
   "Open Page": "打开页面",
   "Skeuomorphic Book Covers": "拟物化书籍封面",
   "Sign in if needed, then capture": "如有需要请先登录，再抓取",
-  "Capture": "抓取"
+  "Capture": "抓取",
+  "From Web Novel": "从网络小说",
+  "No chapters could be downloaded.": "未能下载任何章节。",
+  "{{count}} chapters could not be downloaded._other": "{{count}} 个章节下载失败。",
+  "Imported “{{title}}”": "已导入《{{title}}》",
+  "Import Web Novel": "导入网络小说",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "粘贴网络小说目录页的链接，Readest 会下载所有章节并保存为一本书。",
+  "Fetch Chapters": "获取章节",
+  "{{count}} chapters_other": "{{count}} 章",
+  "Downloading chapters…": "正在下载章节…",
+  "This chapter could not be downloaded.": "本章下载失败。"
 }

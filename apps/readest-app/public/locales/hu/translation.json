@@ -1940,5 +1940,17 @@
   "Open Page": "Oldal megnyitása",
   "Skeuomorphic Book Covers": "Szkeuomorf könyvborítók",
   "Sign in if needed, then capture": "Szükség esetén jelentkezzen be, majd rögzítsen",
-  "Capture": "Rögzítés"
+  "Capture": "Rögzítés",
+  "From Web Novel": "Webregényből",
+  "No chapters could be downloaded.": "Egy fejezetet sem sikerült letölteni.",
+  "{{count}} chapters could not be downloaded._one": "{{count}} fejezetet nem sikerült letölteni.",
+  "{{count}} chapters could not be downloaded._other": "{{count}} fejezetet nem sikerült letölteni.",
+  "Imported “{{title}}”": "„{{title}}” importálva",
+  "Import Web Novel": "Webregény importálása",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "Illeszd be egy webregény fejezetlistájának hivatkozását. A Readest letölti a fejezeteket, és könyvként menti őket.",
+  "Fetch Chapters": "Fejezetek lekérése",
+  "{{count}} chapters_one": "{{count}} fejezet",
+  "{{count}} chapters_other": "{{count}} fejezet",
+  "Downloading chapters…": "Fejezetek letöltése…",
+  "This chapter could not be downloaded.": "Ezt a fejezetet nem sikerült letölteni."
 }

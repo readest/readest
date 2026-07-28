@@ -1904,5 +1904,15 @@
   "Open Page": "페이지 열기",
   "Skeuomorphic Book Covers": "스큐어모픽 표지",
   "Sign in if needed, then capture": "필요하면 로그인한 뒤 캡처하세요",
-  "Capture": "캡처"
+  "Capture": "캡처",
+  "From Web Novel": "웹소설에서",
+  "No chapters could be downloaded.": "챕터를 다운로드할 수 없습니다.",
+  "{{count}} chapters could not be downloaded._other": "{{count}}개 챕터를 다운로드하지 못했습니다.",
+  "Imported “{{title}}”": "“{{title}}” 가져오기 완료",
+  "Import Web Novel": "웹소설 가져오기",
+  "Paste the link to a web novel’s chapter list. Readest downloads the chapters and saves them as a book.": "웹소설의 챕터 목록 링크를 붙여넣으세요. Readest가 챕터를 다운로드하여 책으로 저장합니다.",
+  "Fetch Chapters": "챕터 불러오기",
+  "{{count}} chapters_other": "{{count}}개 챕터",
+  "Downloading chapters…": "챕터 다운로드 중…",
+  "This chapter could not be downloaded.": "이 챕터를 다운로드하지 못했습니다."
 }
