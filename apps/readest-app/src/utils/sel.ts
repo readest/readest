@@ -78,6 +78,15 @@ const constrainPointWithinRect = (point: Point, rect: Rect, padding: number) => 
   };
 };
 
+export const isPointInRect = (point: Point, rect: Rect, padding: number = 1): boolean => {
+  return (
+    point.x >= rect.left + padding &&
+    point.x <= rect.right - padding &&
+    point.y >= rect.top + padding &&
+    point.y <= rect.bottom - padding
+  );
+};
+
 /**
  * Resolve the bounding rect of a {@link Range} in the OUTER webview's
  * viewport coordinate system (CSS pixels, top-down).

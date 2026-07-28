@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Position } from '@/utils/sel';
+import { Position, isPointInRect } from '@/utils/sel';
 import { useEffect, useRef, useState } from 'react';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
@@ -131,13 +131,43 @@ const Popup = ({
     setAdjustedPosition(newPosition);
   }, [position, trianglePosition, popupPadding, childrenHeight]);
 
-  const outerTriangleStyles = getTriangleStyles(trianglePosition, 7, 0);
-  const innerTriangleStyles = getTriangleStyles(trianglePosition, 7, -1);
+  const triangleSize = 7;
+  const outerTriangleStyles = getTriangleStyles(trianglePosition, triangleSize, 0);
+  const innerTriangleStyles = getTriangleStyles(trianglePosition, triangleSize, -1);
+
+  const popupHeight = height ?? childrenHeight;
+  const triangleHidden = !!(
+    adjustedPosition &&
+    trianglePosition &&
+    isPointInRect(
+      trianglePosition.point,
+      {
+        left: adjustedPosition.point.x,
+        top: adjustedPosition.point.y,
+        right: adjustedPosition.point.x + width,
+        bottom: adjustedPosition.point.y + popupHeight,
+      },
+      triangleSize,
+    )
+  );
+
+  useEffect(() => {
+    console.log({
+      triangle: trianglePosition,
+      popup: adjustedPosition?.point,
+      popupHeight,
+      width,
+      hidden: triangleHidden,
+    });
+  }, [trianglePosition, adjustedPosition, triangleHidden]);
 
   return (
     <div className='not-eink:drop-shadow-xl'>
       <div
-        className='popup-triangle-outer absolute z-50 text-base-content/20'
+        className={clsx(
+          'popup-triangle-outer absolute text-base-content/20 z-50',
+          triangleHidden ? 'invisible' : 'visible',
+        )}
         style={outerTriangleStyles}
       />
       <div
@@ -165,6 +195,7 @@ const Popup = ({
       <div
         className={clsx(
           'popup-triangle-inner absolute z-50',
+          triangleHidden ? 'invisible' : 'visible',
           isDarkMode ? 'text-base-100' : 'text-base-300',
         )}
         style={innerTriangleStyles}
