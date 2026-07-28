@@ -6,23 +6,43 @@ import { isWebAppPlatform } from '@/services/environment';
 import { getDailyUsage } from '@/services/translators/utils';
 import { getRuntimeConfig } from '@/services/runtimeConfig';
 
-interface Token {
-  plan: UserPlan;
-  storage_usage_bytes: number;
-  storage_purchased_bytes: number;
-  [key: string]: string | number;
+interface TokenMetadata {
+  plan?: UserPlan;
+  role?: string;
+  storage_usage_bytes?: number;
+  storage_purchased_bytes?: number;
 }
 
-export const getSubscriptionPlan = (token: string): UserPlan => {
+interface Token extends TokenMetadata {
+  app_metadata?: TokenMetadata;
+  [key: string]: unknown;
+}
+
+const getTokenMetadata = (token: string): TokenMetadata => {
   const data = jwtDecode<Token>(token) || {};
-  return data['plan'] || 'free';
+  const metadata = data.app_metadata || {};
+  return {
+    plan: data.plan || metadata.plan,
+    role: data.role || metadata.role,
+    storage_usage_bytes: data.storage_usage_bytes ?? metadata.storage_usage_bytes,
+    storage_purchased_bytes: data.storage_purchased_bytes ?? metadata.storage_purchased_bytes,
+  };
+};
+
+const getTokenPlan = (token: string): UserPlan => {
+  const metadata = getTokenMetadata(token);
+  return metadata.role === 'superadmin' ? 'purchase' : metadata.plan || 'free';
+};
+
+export const getSubscriptionPlan = (token: string): UserPlan => {
+  return getTokenPlan(token);
 };
 
 export const getUserProfilePlan = (token: string): UserPlan => {
-  const data = jwtDecode<Token>(token) || {};
-  let plan = data['plan'] || 'free';
+  const data = getTokenMetadata(token);
+  let plan = getTokenPlan(token);
   if (plan === 'free') {
-    const purchasedQuota = data['storage_purchased_bytes'] || 0;
+    const purchasedQuota = data.storage_purchased_bytes || 0;
     if (purchasedQuota > 0) {
       plan = 'purchase';
     }
@@ -101,10 +121,10 @@ export const isTTSCacheAllowed = (plan: UserPlan): boolean =>
 export const STORAGE_QUOTA_GRACE_BYTES = 10 * 1024 * 1024; // 10 MB grace
 
 export const getStoragePlanData = (token: string) => {
-  const data = jwtDecode<Token>(token) || {};
-  const plan = data['plan'] || 'free';
-  const usage = data['storage_usage_bytes'] || 0;
-  const purchasedQuota = data['storage_purchased_bytes'] || 0;
+  const data = getTokenMetadata(token);
+  const plan = getTokenPlan(token);
+  const usage = data.storage_usage_bytes || 0;
+  const purchasedQuota = data.storage_purchased_bytes || 0;
   const runtimeConfig = getRuntimeConfig();
   const fixedQuota =
     runtimeConfig?.storageFixedQuota ?? parseInt(process.env['STORAGE_FIXED_QUOTA'] ?? '0');
@@ -128,8 +148,7 @@ export const getTranslationQuota = (plan: UserPlan): number => {
 };
 
 export const getTranslationPlanData = (token: string) => {
-  const data = jwtDecode<Token>(token) || {};
-  const plan: UserPlan = data['plan'] || 'free';
+  const plan = getTokenPlan(token);
   const usage = getDailyUsage() || 0;
   const quota = getTranslationQuota(plan);
 
@@ -141,8 +160,7 @@ export const getTranslationPlanData = (token: string) => {
 };
 
 export const getDailyTranslationPlanData = (token: string) => {
-  const data = jwtDecode<Token>(token) || {};
-  const plan = data['plan'] || 'free';
+  const plan = getTokenPlan(token);
   const quota = getTranslationQuota(plan);
 
   return {

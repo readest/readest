@@ -111,8 +111,12 @@ const StorageManager = () => {
     return parts[parts.length - 1] || fileKey;
   };
 
+  const getDisplayFileName = (file: FileRecord): string => {
+    return file.display_name || getFileName(file.file_key);
+  };
+
   const isCoverFile = (file: FileRecord): boolean => {
-    return getFileName(file.file_key).toLowerCase() === 'cover.png';
+    return getDisplayFileName(file).toLowerCase() === 'cover.png';
   };
 
   // Pick the file whose name labels the group:
@@ -475,7 +479,7 @@ const StorageManager = () => {
                           <div className='flex flex-col'>
                             <div className='flex items-center gap-2'>
                               <span className='text-base-content block max-w-full truncate font-medium'>
-                                {getFileName(mainFile.file_key)}
+                                {getDisplayFileName(mainFile)}
                               </span>
                               {hasMultipleFiles && (
                                 <span className='text-base-content/60 flex-shrink-0 whitespace-nowrap text-xs'>
@@ -517,7 +521,7 @@ const StorageManager = () => {
                             <td className='max-w-0 !ps-0 sm:w-[80%]'>
                               <div className='flex flex-col'>
                                 <span className='text-base-content/80 text-xs'>
-                                  {getFileName(file.file_key)}
+                                  {getDisplayFileName(file)}
                                 </span>
                               </div>
                             </td>

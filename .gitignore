@@ -54,3 +54,7 @@ result*
 .claude/worktrees
 .claude/settings.local.json
 
+# local runtime backups and secrets
+backups/
+docker/compose.local.yaml
+docker/compose.local.yaml.bak*

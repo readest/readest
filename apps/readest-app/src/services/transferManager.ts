@@ -470,8 +470,11 @@ class TransferManager {
         currentTransfer &&
         currentTransfer.retryCount < currentTransfer.maxRetries
       ) {
-        // Schedule retry with exponential backoff
+        // Schedule retry with exponential backoff. Reset stale progress so a
+        // failed PUT that reached 100% locally does not jump back to a later
+        // phase (for example cover upload at 50%) on the retry attempt.
         const delay = RETRY_DELAY_BASE_MS * Math.pow(2, currentTransfer.retryCount);
+        currentStore.updateTransferProgress(transfer.id, 0, 0, currentTransfer.totalBytes, 0);
         currentStore.incrementRetryCount(transfer.id);
         currentStore.setTransferStatus(
           transfer.id,

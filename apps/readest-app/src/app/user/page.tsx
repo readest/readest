@@ -11,45 +11,29 @@ import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useUserActions } from '@/hooks/useUserActions';
 import { useAvailablePlans } from '@/hooks/useAvailablePlans';
-import type { PlanType } from '@/types/quota';
 import { navigateToLibrary } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
-import { isTauriAppPlatform } from '@/services/environment';
 import { getPlanDetails } from './utils/plan';
 import { Toast } from '@/components/Toast';
 import {
-  purchaseIAPProduct,
   restoreIAPPurchases,
   getSubscriptionSuccessUrl as getIAPSubscriptionSuccessUrl,
 } from '@/libs/payment/iap/client';
 import { isPurchaseProduct } from '@/libs/payment/iap/utils';
 import {
-  createStripeCheckoutSession,
-  redirectToStripeCheckout,
   createStripePortalSession,
   redirectToStripePortal,
-  handleStripeCheckoutError,
-  getSubscriptionSuccessUrl as getStripeSubscriptionSuccessUrl,
-  type StripeAvailablePlan,
 } from '@/libs/payment/stripe/client';
 import LegalLinks from '@/components/LegalLinks';
 import Spinner from '@/components/Spinner';
 import ProfileHeader from './components/Header';
 import UserInfo from './components/UserInfo';
 import UsageStats from './components/UsageStats';
-import PlansComparison from './components/PlansComparison';
 import AccountActions from './components/AccountActions';
 import StorageManager from './components/StorageManager';
 import SharedLinksSection from './components/SharedLinksSection';
 import { SyncPassphraseSection } from './components/SyncPassphraseSection';
 import { SyncCategoriesSection } from './components/SyncCategoriesSection';
-import Checkout from './components/Checkout';
-
-type CheckoutState = {
-  clientSecret: string;
-  sessionId: string;
-  planName: string;
-};
 
 const ProfilePage = () => {
   const _ = useTranslation();
@@ -59,19 +43,12 @@ const ProfilePage = () => {
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
 
   const [loading, setLoading] = useState(false);
-  const [showEmbeddedCheckout, setShowEmbeddedCheckout] = useState(false);
   const [showStorageManager, setShowStorageManager] = useState(false);
   const [showSharedLinksManager, setShowSharedLinksManager] = useState(false);
   const searchParams = useSearchParams();
   const [showSyncManager, setShowSyncManager] = useState(
     () => searchParams?.get('section') === 'sync',
   );
-  const [checkoutState, setCheckoutState] = useState<CheckoutState>({
-    clientSecret: '',
-    sessionId: '',
-    planName: '',
-  });
-
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -108,9 +85,7 @@ const ProfilePage = () => {
   });
 
   const handleGoBack = () => {
-    if (showEmbeddedCheckout) {
-      setShowEmbeddedCheckout(false);
-    } else if (showStorageManager) {
+    if (showStorageManager) {
       setShowStorageManager(false);
       refresh();
     } else if (showSharedLinksManager) {
@@ -119,72 +94,6 @@ const ProfilePage = () => {
       setShowSyncManager(false);
     } else {
       navigateToLibrary(router);
-    }
-  };
-
-  const handleStripeSubscribe = async (productId?: string, planType: PlanType = 'subscription') => {
-    if (!productId) return;
-
-    setLoading(true);
-    try {
-      const { sessionId, clientSecret, url } = await createStripeCheckoutSession(
-        productId,
-        planType,
-      );
-
-      const foundPlan = availablePlans.find((plan) => plan.productId === productId);
-
-      if (!foundPlan) {
-        throw new Error(`Plan not found for product ID: ${productId}`);
-      }
-
-      const selectedPlan = foundPlan as StripeAvailablePlan;
-      const planName = selectedPlan.product?.name || selectedPlan.productName;
-
-      const isEmbeddedCheckout = isTauriAppPlatform();
-      if (isEmbeddedCheckout && sessionId && clientSecret) {
-        setShowEmbeddedCheckout(true);
-        setCheckoutState({
-          planName,
-          clientSecret,
-          sessionId,
-        });
-      } else {
-        await redirectToStripeCheckout(url);
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      handleStripeCheckoutError(errorMessage);
-      eventDispatcher.dispatch('toast', {
-        type: 'info',
-        message: _('Failed to create checkout session'),
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCheckoutSuccess = useCallback(
-    (sessionId: string) => {
-      setShowEmbeddedCheckout(false);
-      router.push(getStripeSubscriptionSuccessUrl(sessionId));
-    },
-    [router],
-  );
-
-  const handleIAPSubscribe = async (productId?: string) => {
-    if (!productId) return;
-
-    setLoading(true);
-    try {
-      const purchase = await purchaseIAPProduct(productId);
-      if (purchase) {
-        router.push(getIAPSubscriptionSuccessUrl(purchase));
-      }
-    } catch (error) {
-      console.error('IAP purchase error:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -291,17 +200,7 @@ const ProfilePage = () => {
               <Spinner loading className='text-gray-900' />
             </div>
           )}
-          {showEmbeddedCheckout ? (
-            <div className='bg-base-100 rounded-lg p-4'>
-              <Checkout
-                clientSecret={checkoutState.clientSecret}
-                sessionId={checkoutState.sessionId}
-                planName={checkoutState.planName}
-                onSuccess={handleCheckoutSuccess}
-              />
-            </div>
-          ) : (
-            <div className='sm:bg-base-200 overflow-hidden rounded-lg sm:p-6 sm:shadow-md'>
+          <div className='sm:bg-base-200 overflow-hidden rounded-lg sm:p-6 sm:shadow-md'>
               <div className='flex flex-col gap-y-8'>
                 <div className='flex flex-col gap-y-8 px-6'>
                   <UserInfo
@@ -331,17 +230,6 @@ const ProfilePage = () => {
                   </div>
                 ) : (
                   <>
-                    <div className='flex flex-col gap-y-8 sm:px-6'>
-                      <PlansComparison
-                        availablePlans={availablePlans}
-                        userPlan={userProfilePlan}
-                        onSubscribe={
-                          appService.hasIAP && iapAvailable
-                            ? handleIAPSubscribe
-                            : handleStripeSubscribe
-                        }
-                      />
-                    </div>
                     <div className='flex flex-col gap-y-8 px-6'>
                       <AccountActions
                         userPlan={userProfilePlan}
@@ -363,7 +251,6 @@ const ProfilePage = () => {
                 <LegalLinks />
               </div>
             </div>
-          )}
         </div>
         <Toast />
       </div>

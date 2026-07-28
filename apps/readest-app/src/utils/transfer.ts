@@ -98,11 +98,15 @@ export const webUpload = (file: File, uploadUrl: string, onProgress?: ProgressHa
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve();
       } else {
-        reject(new Error(`Upload failed with status ${xhr.status}`));
+        const detail = xhr.responseText ? `: ${xhr.responseText.slice(0, 1000)}` : '';
+        reject(new Error(`Upload failed with status ${xhr.status}${detail}`));
       }
     };
 
-    xhr.onerror = () => reject(new Error('Upload failed'));
+    xhr.onerror = () => {
+      const detail = xhr.status ? ` with status ${xhr.status}` : '';
+      reject(new Error(`Upload failed${detail}`));
+    };
 
     xhr.send(file);
   });

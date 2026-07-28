@@ -48,6 +48,7 @@ import { cryptoSession } from '@/libs/crypto/session';
 import { ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
 import { isCredentialsSyncEnabled } from '@/services/sync/syncCategories';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
+import { useThemeStore } from '@/store/themeStore';
 
 const ENCRYPTED_PATHS: ReadonlySet<string> = new Set(SETTINGS_ENCRYPTED_FIELDS);
 
@@ -361,6 +362,19 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
 };
 
 /**
+ * Seed an empty remote settings singleton from this device. Boot priming
+ * deliberately suppresses ordinary first-save pushes to protect populated
+ * cloud state from fresh-device defaults. Once a full pull proves the remote
+ * singleton is absent, clearing the local publish snapshots is safe. The
+ * normal publisher still enforces credential-sync opt-in and encryption.
+ */
+export const publishInitialSettingsSnapshot = async (settings: SystemSettings): Promise<void> => {
+  lastPublishedFields.clear();
+  clearStoredEncryptedHashes([...ENCRYPTED_PATHS, ...CONNECTION_PATHS]);
+  await publishSettingsIfChanged(settings);
+};
+
+/**
  * Merge a remote settings patch into the local store, persist it to
  * disk, and update both the in-memory plaintext snapshot AND the
  * persisted encrypted-hash snapshot so the post-save publish hook
@@ -372,7 +386,7 @@ export const applyRemoteSettings = (
   envConfig: EnvConfigType,
   record: SettingsRemoteRecord,
 ): void => {
-  const { settings, setSettings, saveSettings } = useSettingsStore.getState();
+  const { settings, setSettings, saveSettings, applyUILanguage } = useSettingsStore.getState();
 
   // Persist cipher fingerprint regardless of patch content — the
   // orchestrator may attach a fingerprint update for fields that
@@ -409,6 +423,16 @@ export const applyRemoteSettings = (
     useCustomDictionaryStore
       .getState()
       .applyRemoteDictionarySettings(record.patch.dictionarySettings);
+  }
+
+  if (record.patch.appThemeMode) {
+    useThemeStore.getState().setThemeMode(record.patch.appThemeMode);
+  }
+  if (record.patch.appThemeColor) {
+    useThemeStore.getState().setThemeColor(record.patch.appThemeColor);
+  }
+  if (record.patch.globalViewSettings?.uiLanguage !== undefined) {
+    applyUILanguage(record.patch.globalViewSettings.uiLanguage);
   }
 };
 
@@ -447,6 +471,18 @@ const mergeSettings = (current: SystemSettings, patch: Partial<SystemSettings>):
     // Spread-with-current preserves them when the remote updates the synced
     // connection fields.
     out.s3 = { ...current.s3, ...patch.s3 };
+  }
+  if (patch.googleDrive) {
+    out.googleDrive = { ...current.googleDrive, ...patch.googleDrive };
+  }
+  if (patch.onedrive) {
+    out.onedrive = { ...current.onedrive, ...patch.onedrive };
+  }
+  if (patch.syncCategories) {
+    out.syncCategories = { ...current.syncCategories, ...patch.syncCategories };
+  }
+  if (patch.aiSettings) {
+    out.aiSettings = { ...current.aiSettings, ...patch.aiSettings };
   }
   if (patch.dictionarySettings) {
     // `defaultProviderId` (last-used tab) is per-device — not in the

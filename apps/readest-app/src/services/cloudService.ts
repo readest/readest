@@ -12,6 +12,7 @@ import {
   uploadReplicaFile,
   deleteFile as deleteCloudFile,
   createProgressHandler,
+  createByteWeightedProgressHandler,
   batchGetDownloadUrls,
 } from '@/libs/storage';
 import { ClosableFile } from '@/utils/file';
@@ -96,16 +97,19 @@ export async function uploadFileToCloud(
   handleProgress: ProgressHandler,
   hash: string,
   temp: boolean = false,
+  openedFile?: File,
 ): Promise<string | undefined> {
   console.log('Uploading file:', lfp, 'to', cfp);
-  const file = await fs.openFile(lfp, base, cfp);
-  const localFullpath = await resolveFilePath(lfp, base);
-  const downloadUrl = await uploadFile(file, localFullpath, handleProgress, hash, temp);
-  const f = file as ClosableFile;
-  if (f && f.close) {
-    await f.close();
+  const file = openedFile ?? (await fs.openFile(lfp, base, cfp));
+  try {
+    const localFullpath = await resolveFilePath(lfp, base);
+    return await uploadFile(file, localFullpath, handleProgress, hash, temp, cfp);
+  } finally {
+    const f = file as ClosableFile;
+    if (f && f.close) {
+      await f.close();
+    }
   }
-  return downloadUrl;
 }
 
 // Upload a single replica binary to the cloud under
@@ -179,7 +183,6 @@ export async function uploadBook(
   book: Book,
   onProgress?: ProgressHandler,
 ): Promise<void> {
-  const completedFiles = { count: 0 };
   const coverExist = await fs.exists(getCoverFilename(book), 'Books');
 
   let bookSource = await resolveBookContentSource(fs, book);
@@ -197,27 +200,55 @@ export async function uploadBook(
     throw new Error('Book file not uploaded');
   }
 
-  const toUploadFpCount = coverExist ? 2 : 1;
-  const handleProgress = createProgressHandler(toUploadFpCount, completedFiles, onProgress);
+  const coverLfp = getCoverFilename(book);
+  let coverFile = coverExist ? await fs.openFile(coverLfp, 'Books') : null;
+  let bookFile: File | null = await fs.openFile(bookSource.path, bookSource.base);
+  const completedBytes = { count: 0 };
+  const totalBytes = (coverFile?.size ?? 0) + bookFile.size;
+  const handleProgress = createByteWeightedProgressHandler(completedBytes, totalBytes, onProgress);
 
-  if (coverExist) {
-    const lfp = getCoverFilename(book);
-    const cfp = `${CLOUD_BOOKS_SUBDIR}/${getCoverFilename(book)}`;
-    await uploadFileToCloud(fs, resolveFilePath, lfp, cfp, 'Books', handleProgress, book.hash);
-    completedFiles.count++;
+  try {
+    if (coverExist && coverFile) {
+      const uploadingCoverFile = coverFile;
+      coverFile = null;
+      const cfp = `${CLOUD_BOOKS_SUBDIR}/${coverLfp}`;
+      await uploadFileToCloud(
+        fs,
+        resolveFilePath,
+        coverLfp,
+        cfp,
+        'Books',
+        handleProgress,
+        book.hash,
+        false,
+        uploadingCoverFile,
+      );
+      completedBytes.count += uploadingCoverFile.size;
+    }
+
+    const uploadingBookFile = bookFile;
+    bookFile = null;
+    const cfp = `${CLOUD_BOOKS_SUBDIR}/${getRemoteBookFilename(book)}`;
+    await uploadFileToCloud(
+      fs,
+      resolveFilePath,
+      bookSource.path,
+      cfp,
+      bookSource.base,
+      handleProgress,
+      book.hash,
+      false,
+      uploadingBookFile,
+    );
+    completedBytes.count += uploadingBookFile.size;
+  } finally {
+    for (const file of [coverFile, bookFile]) {
+      const f = file as ClosableFile | null;
+      if (f && f.close) {
+        await f.close();
+      }
+    }
   }
-
-  const cfp = `${CLOUD_BOOKS_SUBDIR}/${getRemoteBookFilename(book)}`;
-  await uploadFileToCloud(
-    fs,
-    resolveFilePath,
-    bookSource.path,
-    cfp,
-    bookSource.base,
-    handleProgress,
-    book.hash,
-  );
-  completedFiles.count++;
 
   book.deletedAt = null;
   book.updatedAt = Date.now();

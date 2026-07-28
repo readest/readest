@@ -2,6 +2,20 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { validateUserAndToken } from '@/utils/access';
+import { makeSafeFilename } from '@/utils/misc';
+
+const BOOK_EXTS: Record<string, string> = {
+  EPUB: 'epub',
+  PDF: 'pdf',
+  MOBI: 'mobi',
+  AZW: 'azw',
+  AZW3: 'azw3',
+  CBZ: 'cbz',
+  FB2: 'fb2',
+  FBZ: 'fbz',
+  TXT: 'txt',
+  MD: 'md',
+};
 
 interface FileRecord {
   file_key: string;
@@ -11,6 +25,14 @@ interface FileRecord {
   replica_id: string | null;
   created_at: string;
   updated_at: string | null;
+  display_name?: string;
+}
+
+interface BookDisplayRecord {
+  book_hash: string;
+  title: string | null;
+  source_title: string | null;
+  format: string | null;
 }
 
 interface ListFilesResponse {
@@ -118,8 +140,54 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       allRelatedFiles = Array.from(fileMap.values());
     }
 
+    const displayBookHashes = Array.from(
+      new Set(allRelatedFiles.map((f) => f.book_hash).filter((hash): hash is string => !!hash)),
+    );
+    const bookDisplayByHash = new Map<string, BookDisplayRecord>();
+    if (displayBookHashes.length > 0) {
+      const { data: books, error: booksError } = await supabase
+        .from('books')
+        .select('book_hash, title, source_title, format')
+        .eq('user_id', user.id)
+        .in('book_hash', displayBookHashes);
+      if (booksError) {
+        console.warn('Could not fetch book display names:', booksError);
+      } else {
+        (books || []).forEach((book) => bookDisplayByHash.set(book.book_hash, book as BookDisplayRecord));
+      }
+    }
+
+    const normalizeDisplayTitle = (value: string | null | undefined) => {
+      const title = value?.trim();
+      if (!title) return undefined;
+      const lowered = title.toLowerCase();
+      if (lowered === 'undefined' || lowered === 'null') return undefined;
+      return title;
+    };
+
+    const filesWithDisplayNames = allRelatedFiles.map((file) => {
+      if (!file.book_hash) return file;
+      const book = bookDisplayByHash.get(file.book_hash);
+      if (!book) return file;
+
+      const fileName = file.file_key.split('/').pop() || file.file_key;
+      const fileNameLower = fileName.toLowerCase();
+      if (fileNameLower === 'cover.png') {
+        return { ...file, display_name: 'cover.png' };
+      }
+      if (fileNameLower.endsWith('.mdd')) {
+        return file;
+      }
+
+      const title = normalizeDisplayTitle(book.title) || normalizeDisplayTitle(book.source_title);
+      const ext = book.format ? BOOK_EXTS[book.format] : undefined;
+      if (!title || !ext) return file;
+
+      return { ...file, display_name: `${makeSafeFilename(title)}.${ext}` };
+    });
+
     const response: ListFilesResponse = {
-      files: allRelatedFiles,
+      files: filesWithDisplayNames,
       total,
       page,
       pageSize,

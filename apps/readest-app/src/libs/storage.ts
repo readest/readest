@@ -26,7 +26,7 @@ export const createProgressHandler = (
   onProgress?: ProgressHandler,
 ) => {
   return (progress: ProgressPayload) => {
-    const fileProgress = progress.progress / progress.total;
+    const fileProgress = progress.total > 0 ? progress.progress / progress.total : 0;
     const overallProgress = ((completedFilesRef.count + fileProgress) / totalFiles) * 100;
 
     if (onProgress) {
@@ -39,12 +39,32 @@ export const createProgressHandler = (
   };
 };
 
+export const createByteWeightedProgressHandler = (
+  completedBytesRef: { count: number },
+  totalBytes: number,
+  onProgress?: ProgressHandler,
+) => {
+  return (progress: ProgressPayload) => {
+    if (!onProgress) return;
+
+    const boundedFileProgress = Math.min(progress.progress, progress.total);
+    const transferredBytes = Math.min(completedBytesRef.count + boundedFileProgress, totalBytes);
+
+    onProgress({
+      progress: totalBytes > 0 ? (transferredBytes / totalBytes) * 100 : 100,
+      total: 100,
+      transferSpeed: progress.transferSpeed,
+    });
+  };
+};
+
 export const uploadFile = async (
   file: File,
   fileFullPath: string,
   onProgress?: ProgressHandler,
   bookHash?: string,
   temp = false,
+  cloudFileName?: string,
 ) => {
   try {
     const response = await fetchWithAuth(API_ENDPOINTS.upload, {
@@ -53,7 +73,7 @@ export const uploadFile = async (
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        fileName: file.name,
+        fileName: cloudFileName ?? file.name,
         fileSize: file.size,
         bookHash,
         temp,
@@ -271,6 +291,7 @@ export interface FileRecord {
   replica_id: string | null;
   created_at: string;
   updated_at: string | null;
+  display_name?: string;
 }
 
 export interface ListFilesParams {

@@ -31,54 +31,174 @@ export const SETTINGS_REPLICA_ID = 'singleton';
  *     here — see entries below.
  */
 export const SETTINGS_WHITELIST = [
-  'globalViewSettings.userStylesheet',
-  'globalViewSettings.userUIStylesheet',
-  // Library-scope proofread (find/replace) rules. Whole-field LWW like the
-  // other arrays here. Book- and selection-scope rules already ride along the
-  // book config sync; only these global rules were stranded on one device.
-  'globalViewSettings.proofreadRules',
-  'globalReadSettings.customThemes',
+  // Account-level application preferences. Device paths, identities,
+  // cursors, and live device state are intentionally excluded.
+  'keepLogin',
+  'autoUpload',
+  'alwaysOnTop',
+  'openBookInNewWindow',
+  'autoCheckUpdates',
+  'updateChannel',
+  'screenWakeLock',
+  'autoScreenBrightness',
+  'swipeBrightnessGesture',
+  'alwaysShowStatusBar',
+  'openLastBooks',
+  'autoImportBooksOnOpen',
+  'telemetryEnabled',
+  'discordRichPresenceEnabled',
+  'libraryViewMode',
+  'librarySortBy',
+  'librarySortAscending',
+  'librarySortByAuto',
+  'librarySortBy2',
+  'libraryGroupBy',
+  'libraryCoverFit',
+  'libraryAutoColumns',
+  'libraryColumns',
+  'libraryRecentShelfEnabled',
+  'metadataSeriesCollapsed',
+  'metadataOthersCollapsed',
+  'metadataDescriptionCollapsed',
+  'appThemeMode',
+  'appThemeColor',
+
+  // Every user-facing global reader preference. Individual fields preserve
+  // per-field LWW so unrelated edits on different devices do not clobber.
+  'globalReadSettings.sideBarWidth',
+  'globalReadSettings.isSideBarPinned',
+  'globalReadSettings.notebookWidth',
+  'globalReadSettings.isNotebookPinned',
+  'globalReadSettings.notebookActiveTab',
+  'globalReadSettings.autohideCursor',
+  'globalReadSettings.translationProvider',
+  'globalReadSettings.translateTargetLang',
+  'globalReadSettings.wordLensAutoDownload',
+  'globalReadSettings.highlightStyle',
+  'globalReadSettings.highlightStyles',
   'globalReadSettings.customHighlightColors',
   'globalReadSettings.userHighlightColors',
   'globalReadSettings.defaultHighlightLabels',
   'globalReadSettings.customTtsHighlightColors',
-  // Dictionary preferences. Whole-field LWW — concurrent edits on
-  // different devices may lose one side, but in practice users don't
-  // edit these on two devices at once. `defaultProviderId` is
-  // deliberately excluded: it's the last-used tab, per-device state.
+  'globalReadSettings.customThemes',
+
+  // Global layout, style, font, language, display, TTS, translation,
+  // annotation, Word Lens, proofread, and orientation preferences.
+  ...([
+    'marginTopPx', 'marginBottomPx', 'marginLeftPx', 'marginRightPx',
+    'marginPx', 'compactMarginTopPx', 'compactMarginBottomPx',
+    'compactMarginLeftPx', 'compactMarginRightPx', 'compactMarginPx',
+    'gapPercent', 'scrolled', 'webtoonMode', 'noContinuousScroll',
+    'disableClick', 'disableSwipe', 'fullscreenClickArea', 'swapClickArea',
+    'disableDoubleClick', 'volumeKeysToFlip', 'maxColumnCount',
+    'maxInlineSize', 'maxBlockSize', 'writingMode', 'vertical', 'rtl',
+    'scrollingOverlap', 'allowScript', 'hideScrollbar', 'autoScrollSpeed',
+    'zoomLevel', 'paragraphMargin', 'lineHeight', 'wordSpacing',
+    'letterSpacing', 'textIndent', 'fullJustification', 'hyphenation',
+    'theme', 'backgroundTextureId', 'backgroundOpacity', 'backgroundSize',
+    'highlightOpacity', 'codeHighlighting', 'codeLanguage', 'userStylesheet',
+    'userUIStylesheet', 'overrideFont', 'overrideLayout', 'overrideColor',
+    'useBookLayout', 'zoomMode', 'spreadMode', 'keepCoverSpread',
+    'invertImgColorInDark', 'applyThemeToPDF', 'contrast', 'serifFont',
+    'sansSerifFont', 'monospaceFont', 'defaultFont', 'defaultCJKFont',
+    'defaultFontSize', 'minimumFontSize', 'fontWeight',
+    'replaceQuotationMarks', 'convertChineseVariant', 'sideBarTab',
+    'uiLanguage', 'sortedTOC', 'doubleBorder', 'borderColor', 'showHeader',
+    'showFooter', 'showRemainingTime', 'showRemainingPages',
+    'showProgressInfo', 'showStickyProgressBar', 'showCurrentTime',
+    'use24HourClock', 'showCurrentBatteryStatus', 'showBatteryPercentage',
+    'showPaginationButtons', 'progressStyle', 'referencePageCount',
+    'animated', 'pageTurnStyle', 'isEink', 'isColorEink', 'paragraphMode',
+    'readingRulerEnabled', 'readingRulerLines', 'readingRulerPosition',
+    'readingRulerOpacity', 'readingRulerColor', 'ttsRate', 'ttsSentenceGap',
+    'ttsParagraphGap', 'ttsVoice', 'ttsLocation', 'ttsHighlightOptions',
+    'ttsHighlightGranularity', 'ttsMediaMetadata', 'ttsPlayerStyle',
+    'translationEnabled', 'translationProvider', 'translateTargetLang',
+    'showTranslateSource', 'ttsReadAloudText', 'screenOrientation',
+    'proofreadRules', 'enableAnnotationQuickActions', 'annotationQuickAction',
+    'annotationToolbarItems', 'copyToNotebook', 'noteExportConfig',
+    'wordLensEnabled', 'wordLensLevel', 'wordLensHintLang',
+    'wordLensGlossFontSize', 'wordLensGlossColor', 'isGlobal',
+  ] as const).map((key) => `globalViewSettings.${key}`),
+
+  // AI assistant configuration. API keys are encrypted below.
+  'aiSettings.enabled',
+  'aiSettings.provider',
+  'aiSettings.ollamaBaseUrl',
+  'aiSettings.ollamaModel',
+  'aiSettings.ollamaEmbeddingModel',
+  'aiSettings.aiGatewayApiKey',
+  'aiSettings.aiGatewayModel',
+  'aiSettings.aiGatewayCustomModel',
+  'aiSettings.aiGatewayEmbeddingModel',
+  'aiSettings.openrouterApiKey',
+  'aiSettings.openrouterBaseUrl',
+  'aiSettings.openrouterModel',
+  'aiSettings.openrouterEmbeddingModel',
+  'aiSettings.spoilerProtection',
+  'aiSettings.maxContextChunks',
+  'aiSettings.indexingMode',
+  'aiSettings.reedy',
+
   'dictionarySettings.providerOrder',
   'dictionarySettings.providerEnabled',
   'dictionarySettings.webSearches',
   'dictionarySettings.fontScale',
-  // External integrations. Server URL + identifiers sync as plaintext;
-  // the credential fields are listed in `encryptedFields` below so the
-  // publish/pull middleware wraps them in cipher envelopes.
+
+  // Integration preferences. Device IDs, cursors, provider selection, and
+  // OAuth-enabled state remain local; reusable credentials stay encrypted.
   'kosync.serverUrl',
   'kosync.username',
   'kosync.userkey',
   'kosync.password',
+  'kosync.checksumMethod',
+  'kosync.strategy',
   'readwise.baseUrl',
   'readwise.accessToken',
   'hardcover.accessToken',
-  // WebDAV connection. serverUrl + rootPath sync as plaintext so a fresh
-  // device pre-fills the connect form; username / password are listed in
-  // `encryptedFields` below. Per-device bookkeeping (enabled, deviceId,
-  // lastSyncedAt, sync sub-toggles) is deliberately excluded — see KOSync,
-  // which likewise syncs credentials but not its `enabled` flag.
   'webdav.serverUrl',
   'webdav.username',
   'webdav.password',
   'webdav.rootPath',
-  // S3-compatible object store. endpoint / region / bucket sync as plaintext so
-  // a fresh device pre-fills the connect form; accessKeyId / secretAccessKey are
-  // listed in `encryptedFields` below. Per-device bookkeeping (enabled,
-  // deviceId, lastSyncedAt, providerSelectedAt, sync sub-toggles) is
-  // deliberately excluded — mirrors WebDAV.
+  'webdav.browseSortBy',
+  'webdav.browseSortAscending',
+  'webdav.syncProgress',
+  'webdav.syncNotes',
+  'webdav.syncBooks',
+  'webdav.fullSync',
+  'webdav.strategy',
+  'googleDrive.syncProgress',
+  'googleDrive.syncNotes',
+  'googleDrive.syncBooks',
+  'googleDrive.fullSync',
+  'googleDrive.strategy',
   's3.endpoint',
   's3.region',
   's3.bucket',
   's3.accessKeyId',
   's3.secretAccessKey',
+  's3.syncProgress',
+  's3.syncNotes',
+  's3.syncBooks',
+  's3.fullSync',
+  's3.strategy',
+  'onedrive.syncProgress',
+  'onedrive.syncNotes',
+  'onedrive.syncBooks',
+  'onedrive.fullSync',
+  'onedrive.strategy',
+
+  // Account sync category choices (except device-local cursors/identity).
+  'syncCategories.book',
+  'syncCategories.progress',
+  'syncCategories.note',
+  'syncCategories.dictionary',
+  'syncCategories.font',
+  'syncCategories.texture',
+  'syncCategories.opds_catalog',
+  'syncCategories.settings',
+  'syncCategories.credentials',
+  'syncCategories.stats',
 ] as const;
 
 /**
@@ -95,6 +215,8 @@ export const SETTINGS_WHITELIST = [
  * unlock; the rest of the bundled settings keep syncing quietly.
  */
 export const SETTINGS_ENCRYPTED_FIELDS = [
+  'aiSettings.aiGatewayApiKey',
+  'aiSettings.openrouterApiKey',
   'kosync.username',
   'kosync.userkey',
   'kosync.password',

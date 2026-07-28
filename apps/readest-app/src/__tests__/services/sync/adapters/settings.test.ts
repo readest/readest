@@ -50,15 +50,15 @@ describe('settingsAdapter', () => {
       name: 'singleton',
       patch: {
         globalReadSettings: { userHighlightColors: userColors },
-        // not in whitelist:
         telemetryEnabled: true,
+        // device-local, not in whitelist:
         screenBrightness: 0.5,
         localBooksDir: '/should/not/sync',
       } as unknown as Partial<SystemSettings>,
     };
     const fields = settingsAdapter.pack(record);
     expect(fields['globalReadSettings.userHighlightColors']).toEqual(userColors);
-    expect(fields['telemetryEnabled']).toBeUndefined();
+    expect(fields['telemetryEnabled']).toBe(true);
     expect(fields['screenBrightness']).toBeUndefined();
     expect(fields['localBooksDir']).toBeUndefined();
   });
@@ -72,6 +72,54 @@ describe('settingsAdapter', () => {
     };
     const fields = settingsAdapter.pack(record);
     expect(fields['kosync.serverUrl']).toBe('https://kosync.example');
+  });
+
+
+  test('pack and unpack all common library and global reader preferences', () => {
+    const record: SettingsRemoteRecord = {
+      name: 'singleton',
+      patch: {
+        libraryViewMode: 'list',
+        librarySortBy: 'author',
+        libraryColumns: 5,
+        globalReadSettings: {
+          isSideBarPinned: true,
+          translateTargetLang: 'zh-CN',
+        },
+        globalViewSettings: {
+          defaultFontSize: 22,
+          lineHeight: 1.8,
+          marginLeftPx: 36,
+          showHeader: false,
+          pageTurnStyle: 'slide',
+          ttsRate: 1.25,
+          annotationQuickAction: 'highlight',
+          wordLensEnabled: true,
+        },
+      } as unknown as Partial<SystemSettings>,
+    };
+
+    const fields = settingsAdapter.pack(record);
+    expect(fields['libraryViewMode']).toBe('list');
+    expect(fields['librarySortBy']).toBe('author');
+    expect(fields['libraryColumns']).toBe(5);
+    expect(fields['globalReadSettings.isSideBarPinned']).toBe(true);
+    expect(fields['globalReadSettings.translateTargetLang']).toBe('zh-CN');
+    expect(fields['globalViewSettings.defaultFontSize']).toBe(22);
+    expect(fields['globalViewSettings.lineHeight']).toBe(1.8);
+    expect(fields['globalViewSettings.marginLeftPx']).toBe(36);
+    expect(fields['globalViewSettings.showHeader']).toBe(false);
+    expect(fields['globalViewSettings.pageTurnStyle']).toBe('slide');
+    expect(fields['globalViewSettings.ttsRate']).toBe(1.25);
+    expect(fields['globalViewSettings.annotationQuickAction']).toBe('highlight');
+    expect(fields['globalViewSettings.wordLensEnabled']).toBe(true);
+
+    const out = settingsAdapter.unpack(fields);
+    expect(out.patch.libraryViewMode).toBe('list');
+    expect(out.patch.libraryColumns).toBe(5);
+    expect(out.patch.globalReadSettings?.translateTargetLang).toBe('zh-CN');
+    expect(out.patch.globalViewSettings?.defaultFontSize).toBe(22);
+    expect(out.patch.globalViewSettings?.wordLensEnabled).toBe(true);
   });
 
   test('pack ∘ unpack round-trips WebDAV connection fields, dropping per-device state', () => {
@@ -163,6 +211,8 @@ describe('settingsAdapter', () => {
 
   test('declares encryptedFields covering kosync / readwise / hardcover / webdav / s3 credentials only (not serverUrl / endpoint)', () => {
     expect(settingsAdapter.encryptedFields).toEqual([
+      'aiSettings.aiGatewayApiKey',
+      'aiSettings.openrouterApiKey',
       'kosync.username',
       'kosync.userkey',
       'kosync.password',

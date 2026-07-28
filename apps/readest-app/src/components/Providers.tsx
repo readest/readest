@@ -143,6 +143,10 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
       const hadSettingsFilePromise = appService.exists(SETTINGS_FILENAME, 'Settings');
       appService.loadSettings().then(async (settings) => {
         const globalViewSettings = settings.globalViewSettings;
+        const storedThemeMode = localStorage.getItem('themeMode');
+        settings.appThemeMode ??=
+          storedThemeMode === 'light' || storedThemeMode === 'dark' ? storedThemeMode : 'auto';
+        settings.appThemeColor ??= localStorage.getItem('themeColor') ?? 'default';
         const hadSettingsFile = await hadSettingsFilePromise.catch(() => false);
         finalizeTelemetryDecision({
           appService,

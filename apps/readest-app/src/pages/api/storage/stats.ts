@@ -62,8 +62,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const totalFiles = allFileStats.length;
     const totalSize = allFileStats.reduce((sum, file) => sum + (file.file_size || 0), 0);
 
-    // Get storage plan data
-    const { usage, quota } = getStoragePlanData(token);
+    // Get storage plan data. The JWT may contain stale storage_usage_bytes,
+    // so report actual DB usage here; this keeps account quota UI in sync with
+    // Storage Manager, which is also based on the files table.
+    const { quota } = getStoragePlanData(token);
+    const usage = totalSize;
     const usagePercentage = quota > 0 ? Math.round((usage / quota) * 100) : 0;
 
     // Get stats grouped by book_hash

@@ -6,6 +6,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { CustomTheme, Palette, ThemeMode } from '@/styles/themes';
 import { EnvConfigType, isWebAppPlatform } from '@/services/environment';
 import { SystemSettings } from '@/types/settings';
+import { useSettingsStore } from '@/store/settingsStore';
 import { Insets } from '@/types/misc';
 
 declare global {
@@ -95,6 +96,10 @@ export const useThemeStore = create<ThemeState>((set, get) => {
       );
       set({ themeMode: mode, isDarkMode });
       set({ themeCode: getThemeCode() });
+      const current = useSettingsStore.getState().settings;
+      if (current?.version && current.appThemeMode !== mode) {
+        useSettingsStore.getState().setSettings({ ...current, appThemeMode: mode });
+      }
     },
     setThemeColor: (color) => {
       if (typeof window !== 'undefined' && localStorage) {
@@ -106,6 +111,10 @@ export const useThemeStore = create<ThemeState>((set, get) => {
       );
       set({ themeColor: color });
       set({ themeCode: getThemeCode() });
+      const current = useSettingsStore.getState().settings;
+      if (current?.version && current.appThemeColor !== color) {
+        useSettingsStore.getState().setSettings({ ...current, appThemeColor: color });
+      }
     },
     updateAppTheme: (color) => {
       if (isWebAppPlatform()) {

@@ -25,6 +25,7 @@ import {
   clearStoredEncryptedHashes,
   getStoredLastSeenCipher,
   publishSettingsIfChanged,
+  publishInitialSettingsSnapshot,
 } from '@/services/sync/replicaSettingsSync';
 import { useSettingsStore } from '@/store/settingsStore';
 import { queueReplicaBinaryUpload } from '@/services/sync/replicaBinaryUpload';
@@ -474,7 +475,18 @@ const ensureSettingsBootPulled = (service: AppService, envConfig: EnvConfigType)
   registeredKinds.add('settings');
   pulledKinds.add('settings');
   pullInFlight.add('settings');
-  settingsBootPullPromise = runPullForKind('settings', service, envConfig, { since: null })
+  settingsBootPullPromise = (async () => {
+    if (!isSyncCategoryEnabled('settings')) return;
+    if (!(await getAccessToken())) return;
+    const ctx = getReplicaSync();
+    if (!ctx) return;
+    const rows = await ctx.manager.pull('settings', { since: null });
+    await runPullForKind('settings', service, envConfig, { since: null }, async () => rows);
+    if (rows.length === 0) {
+      const current = useSettingsStore.getState().settings;
+      if (current?.version) await publishInitialSettingsSnapshot(current);
+    }
+  })()
     .catch((err) => {
       console.warn('replica settings pull failed', err);
       pulledKinds.delete('settings');

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { getStorageStats } from '@/libs/storage';
 import { QuotaType, UserPlan } from '@/types/quota';
 import { getStoragePlanData, getTranslationPlanData, getUserProfilePlan } from '@/utils/access';
 import { setCachedUserPlan } from '@/services/sync/cloudSyncProvider';
@@ -14,17 +15,8 @@ export const useQuotaStats = (briefName = false) => {
   useEffect(() => {
     if (!user || !token) return;
 
-    const storagPlan = getStoragePlanData(token);
-    const inGB = storagPlan.quota > 1e9;
-    const storageQuota: QuotaType = {
-      name: briefName ? _('Storage') : _('Cloud Sync Storage'),
-      tooltip: _('{{percentage}}% of Cloud Sync Space Used.', {
-        percentage: Math.round((storagPlan.usage / storagPlan.quota) * 100),
-      }),
-      used: parseFloat((storagPlan.usage / 1024 / 1024 / (inGB ? 1024 : 1)).toFixed(2)),
-      total: Math.round((storagPlan.quota / 1024 / 1024 / (inGB ? 1024 : 1)) * 10) / 10,
-      unit: inGB ? 'GB' : 'MB',
-    };
+    let cancelled = false;
+    const storagePlan = getStoragePlanData(token);
     const translationPlan = getTranslationPlanData(token);
     const now = new Date();
     const translationResetAt = Date.UTC(
@@ -32,23 +24,59 @@ export const useQuotaStats = (briefName = false) => {
       now.getUTCMonth(),
       now.getUTCDate() + 1,
     );
+
+    const buildStorageQuota = (usage: number, quota: number): QuotaType => {
+      const inGB = quota > 1e9;
+      return {
+        name: briefName ? _('Storage') : _('Cloud Sync Storage'),
+        tooltip: _('{{percentage}}% of Cloud Sync Space Used.', {
+          percentage: quota > 0 ? Math.round((usage / quota) * 100) : 0,
+        }),
+        used: parseFloat((usage / 1024 / 1024 / (inGB ? 1024 : 1)).toFixed(2)),
+        total: Math.round((quota / 1024 / 1024 / (inGB ? 1024 : 1)) * 10) / 10,
+        unit: inGB ? 'GB' : 'MB',
+      };
+    };
+
     const translationQuota: QuotaType = {
       name: briefName ? _('Translation') : _('Translation Characters'),
       tooltip: _('{{percentage}}% of Daily Translation Characters Used.', {
-        percentage: Math.round((translationPlan.usage / translationPlan.quota) * 100),
+        percentage:
+          translationPlan.quota > 0 ? Math.round((translationPlan.usage / translationPlan.quota) * 100) : 0,
       }),
       used: Math.round(translationPlan.usage / 1024),
       total: Math.round(translationPlan.quota / 1024),
       unit: 'K',
       resetAt: translationResetAt,
     };
+
+    const setQuotaState = (storageUsage: number, storageQuota: number) => {
+      if (cancelled) return;
+      setQuotas([buildStorageQuota(storageUsage, storageQuota), translationQuota]);
+    };
+
     const profilePlan = getUserProfilePlan(token);
     setUserProfilePlan(profilePlan);
     // Non-React modules (transferManager, syncCategories) need the plan
     // synchronously for the cloud-sync provider gate; cache it here, the
     // one place the plan is resolved from the JWT.
     setCachedUserPlan(profilePlan);
-    setQuotas([storageQuota, translationQuota]);
+
+    // Use the token data immediately, then refresh with authoritative server
+    // stats. The JWT can lag behind uploads, while /api/storage/stats reads the
+    // files table used by Storage Manager.
+    setQuotaState(storagePlan.usage, storagePlan.quota);
+    getStorageStats()
+      .then((stats) => {
+        setQuotaState(stats.usage ?? stats.totalSize, stats.quota || storagePlan.quota);
+      })
+      .catch((error) => {
+        console.warn('Failed to refresh storage quota stats:', error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 

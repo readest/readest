@@ -423,6 +423,11 @@ export interface SystemSettings {
   onedrive: OneDriveSettings;
 
   aiSettings: AISettings;
+
+  /** Account-level application appearance restored after sign-in. */
+  appThemeMode?: ThemeType;
+  appThemeColor?: string;
+
   /**
    * Per-device id used as the deviceId portion of every HLC this device
    * mints. Lazy-generated on first sync init via uuidv4 (mirrors
