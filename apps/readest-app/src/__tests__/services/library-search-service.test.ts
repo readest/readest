@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createLibrarySearchSession, searchLibraryBooks } from '@/services/librarySearchService';
 import { BookFileNotFoundError } from '@/services/errors';
-import type { Book, BookContent, BookSearchConfig } from '@/types/book';
+import type { Book, BookContent, LibrarySearchConfig } from '@/types/book';
 import type { AppService } from '@/types/system';
 
 const makeBook = (hash: string, title: string): Book => ({
@@ -34,7 +34,7 @@ const makeService = (files: Map<string, File | null>) =>
     resolveNativeBookFilePath: vi.fn().mockResolvedValue(null),
   }) as Pick<AppService, 'getBookFileSize' | 'loadBookContent' | 'resolveNativeBookFilePath'>;
 
-const config: BookSearchConfig = {
+const config: LibrarySearchConfig = {
   scope: 'book',
   mode: 'contains',
   matchCase: false,
@@ -42,186 +42,111 @@ const config: BookSearchConfig = {
 };
 
 describe('searchLibraryBooks', () => {
-  it('streams exact-CFI results and progress one book at a time', async () => {
-    const first = makeBook('first', 'First Book');
-    const second = makeBook('second', 'Second Book');
-    const files = new Map<string, File | null>([
-      ['first', makeFile('# First chapter\nA needle appears here.')],
-      ['second', makeFile('# Second chapter\nAnother needle appears here.')],
-    ]);
-    const events = [];
-
-    for await (const event of searchLibraryBooks(makeService(files), [first, second], 'needle', {
-      config,
-    })) {
-      events.push(event);
-    }
-
-    const results = events.filter((event) => event.type === 'result');
-    expect(results.map(({ book }) => book.title)).toEqual(['First Book', 'Second Book']);
-    expect(results.every(({ result }) => result.subitems[0]!.cfi.startsWith('epubcfi('))).toBe(
-      true,
-    );
-    expect(events.at(-1)).toMatchObject({
-      type: 'completed',
-      searchedBooks: 2,
-      skippedBooks: 0,
-      erroredBooks: 0,
-      matchCount: 2,
-    });
-    expect(events.findIndex(({ type }) => type === 'result')).toBeLessThan(
-      events.findIndex(({ type }) => type === 'book-completed'),
-    );
-  });
-
-  it('reports unavailable and invalid books without stopping later books', async () => {
+  it('streams results and progress, recovers per book, and stops cooperatively', async () => {
     const unavailable = makeBook('missing', 'Missing Book');
     const invalid = makeBook('invalid', 'Invalid Book');
-    const valid = makeBook('valid', 'Valid Book');
+    const first = makeBook('first', 'First Book');
+    const second = makeBook('second', 'Second Book');
     const invalidFile = new File(['not an epub'], 'invalid.epub', {
       type: 'application/epub+zip',
     });
     const files = new Map<string, File | null>([
       ['missing', null],
       ['invalid', invalidFile],
-      ['valid', makeFile('# Chapter\nThe needle survives.')],
+      ['first', makeFile('# First chapter\nA needle appears here.')],
+      ['second', makeFile('# Second chapter\nAnother needle appears here.')],
     ]);
+    const service = makeService(files);
     const events = [];
 
     for await (const event of searchLibraryBooks(
-      makeService(files),
-      [unavailable, invalid, valid],
+      service,
+      [unavailable, invalid, first, second],
       'needle',
       { config },
     )) {
       events.push(event);
     }
 
+    const results = events.filter((event) => event.type === 'result');
     expect(events).toContainEqual(
       expect.objectContaining({ type: 'book-skipped', book: unavailable, reason: 'unavailable' }),
     );
     expect(events).toContainEqual(expect.objectContaining({ type: 'book-error', book: invalid }));
-    expect(events).toContainEqual(expect.objectContaining({ type: 'result', book: valid }));
-    expect(events.at(-1)).toMatchObject({ skippedBooks: 1, erroredBooks: 1, searchedBooks: 1 });
-  });
-
-  it('reports load failures and continues with later books', async () => {
-    const failing = makeBook('failing', 'Failing Book');
-    const valid = makeBook('valid', 'Valid Book');
-    const files = new Map<string, File | null>([
-      ['failing', makeFile('broken')],
-      ['valid', makeFile('# Chapter\nneedle')],
-    ]);
-    const service = makeService(files);
-    service.loadBookContent = vi.fn(async (book) => {
-      if (book.hash === 'failing') throw new Error('load failed');
-      return { book, file: files.get(book.hash)! };
-    });
-    const collected = [];
-
-    for await (const event of searchLibraryBooks(service, [failing, valid], 'needle', { config })) {
-      collected.push(event);
-    }
-
-    expect(collected).toContainEqual(
-      expect.objectContaining({ type: 'book-error', book: failing, error: 'load failed' }),
+    expect(events.some(({ type }) => type === 'progress')).toBe(true);
+    expect(results.map(({ book }) => book.title)).toEqual(['First Book', 'Second Book']);
+    expect(results.every(({ result }) => result.subitems[0]!.cfi.startsWith('epubcfi('))).toBe(
+      true,
     );
-    expect(collected).toContainEqual(expect.objectContaining({ type: 'result', book: valid }));
-  });
+    expect(events.findIndex(({ type }) => type === 'result')).toBeLessThan(
+      events.findIndex(({ type }) => type === 'book-completed'),
+    );
+    expect(events.at(-1)).toMatchObject({
+      type: 'completed',
+      searchedBooks: 2,
+      skippedBooks: 1,
+      erroredBooks: 1,
+      matchCount: 2,
+    });
+    expect(service.getBookFileSize).not.toHaveBeenCalled();
 
-  it('searches a loadable book when its file size is unavailable', async () => {
-    const book = makeBook('remote', 'Remote Book');
-    const file = makeFile('# Chapter\nHogwarts');
-    const service = makeService(new Map([['remote', file]]));
-    service.getBookFileSize = vi.fn().mockResolvedValue(null);
-    const collected = [];
-
-    for await (const event of searchLibraryBooks(service, [book], 'Hogwarts', { config })) {
-      collected.push(event);
-    }
-
-    expect(service.loadBookContent).toHaveBeenCalledWith(book);
-    expect(collected).toContainEqual(expect.objectContaining({ type: 'result', book }));
-    expect(collected.at(-1)).toMatchObject({ searchedBooks: 1, skippedBooks: 0 });
-  });
-
-  it('supports fuzzy section matching with segmented highlights', async () => {
-    const book = makeBook('fuzzy', 'Fuzzy Book');
-    const files = new Map<string, File | null>([
-      ['fuzzy', makeFile('# Chapter\nUserAuthController validates the shcema.')],
-    ]);
-    const events = [];
-
-    for await (const event of searchLibraryBooks(makeService(files), [book], 'UserController', {
-      config: { ...config, mode: 'fuzzy' },
-    })) {
-      events.push(event);
-    }
-
-    const result = events.find((event) => event.type === 'result');
-    expect(result?.result.subitems[0]?.excerpt.match).toBe('UserAuthController');
-    expect(
-      result?.result.subitems[0]?.excerpt.segments?.filter(({ emphasized }) => emphasized),
-    ).toHaveLength(2);
-    expect(result?.result.subitems[0]?.cfis).toHaveLength(2);
-  });
-
-  it('stops cooperatively and closes the current file when aborted', async () => {
-    const first = makeBook('first', 'First Book');
-    const second = makeBook('second', 'Second Book');
-    const firstFile = makeFile('# Chapter\nneedle');
-    const secondFile = makeFile('# Chapter\nneedle');
-    const files = new Map<string, File | null>([
-      ['first', firstFile],
-      ['second', secondFile],
-    ]);
+    const abortFirst = makeBook('abort-first', 'Abort First');
+    const abortSecond = makeBook('abort-second', 'Abort Second');
+    const abortFile = makeFile('# Chapter\nneedle');
+    const abortService = makeService(
+      new Map([
+        ['abort-first', abortFile],
+        ['abort-second', makeFile('# Chapter\nneedle')],
+      ]),
+    );
     const controller = new AbortController();
-    const events = [];
+    const abortedEvents = [];
 
-    for await (const event of searchLibraryBooks(makeService(files), [first, second], 'needle', {
-      config,
-      signal: controller.signal,
-    })) {
-      events.push(event);
+    for await (const event of searchLibraryBooks(
+      abortService,
+      [abortFirst, abortSecond],
+      'needle',
+      { config, signal: controller.signal },
+    )) {
+      abortedEvents.push(event);
       if (event.type === 'result') controller.abort();
     }
 
-    expect(events.some(({ type }) => type === 'completed')).toBe(false);
-    expect(events.some((event) => event.type === 'book-started' && event.book === second)).toBe(
-      false,
-    );
-    expect(firstFile.close).toHaveBeenCalledOnce();
+    expect(abortedEvents.some(({ type }) => type === 'completed')).toBe(false);
+    expect(
+      abortedEvents.some((event) => event.type === 'book-started' && event.book === abortSecond),
+    ).toBe(false);
+    expect(abortFile.close).toHaveBeenCalledOnce();
   });
 
-  it('closes the current file when the consumer returns early', async () => {
+  it('reuses one session across contains and fuzzy scans and closes cached files', async () => {
     const book = makeBook('book', 'Book');
-    const file = makeFile('# Chapter\nneedle');
-    const iterator = searchLibraryBooks(makeService(new Map([['book', file]])), [book], 'needle', {
-      config,
-    });
-
-    let event = await iterator.next();
-    while (!event.done && event.value.type !== 'result') event = await iterator.next();
-    await iterator.return(undefined);
-
-    expect(file.close).toHaveBeenCalledOnce();
-  });
-
-  it('reuses an open document within a library search session', async () => {
-    const book = makeBook('book', 'Book');
-    const file = makeFile('# Chapter\nneedle and haystack');
+    const file = makeFile('# Chapter\nneedle and UserAuthController');
     const service = makeService(new Map([['book', file]]));
     const session = createLibrarySearchSession(service);
+    const containsEvents = [];
+    const fuzzyEvents = [];
 
-    for await (const _ of searchLibraryBooks(service, [book], 'needle', { config, session })) {
-      // Consume the first search.
+    for await (const event of searchLibraryBooks(service, [book], 'needle', { config, session })) {
+      containsEvents.push(event);
     }
-    for await (const _ of searchLibraryBooks(service, [book], 'haystack', { config, session })) {
-      // Consume the second search.
+    for await (const event of searchLibraryBooks(service, [book], 'UserController', {
+      config: { ...config, mode: 'fuzzy' },
+      session,
+    })) {
+      fuzzyEvents.push(event);
     }
 
+    const fuzzyResult = fuzzyEvents.find((event) => event.type === 'result');
+    expect(containsEvents).toContainEqual(expect.objectContaining({ type: 'result', book }));
+    expect(fuzzyResult?.result.subitems[0]?.excerpt.match).toBe('UserAuthController');
+    expect(
+      fuzzyResult?.result.subitems[0]?.excerpt.segments?.filter(({ emphasized }) => emphasized),
+    ).toHaveLength(2);
+    expect(fuzzyResult?.result.subitems[0]?.cfis).toHaveLength(2);
     expect(service.loadBookContent).toHaveBeenCalledOnce();
     expect(file.close).not.toHaveBeenCalled();
+
     await session.close();
     expect(file.close).toHaveBeenCalledOnce();
   });

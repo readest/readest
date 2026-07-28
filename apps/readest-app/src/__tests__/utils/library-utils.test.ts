@@ -253,22 +253,20 @@ describe('createBookGroups', () => {
   });
 
   describe('groupBy: tag and subject', () => {
-    it('places multi-value books in each normalized tag group without duplicates', () => {
+    it('groups normalized tags and every supported subject metadata shape', () => {
       const tagged = createMockBook({ hash: 'tagged', tags: [' Fiction ', 'Favorite', 'Fiction'] });
       const untagged = createMockBook({ hash: 'untagged', tags: ['  '] });
 
-      const result = createBookGroups([tagged, untagged], LibraryGroupByType.Tag);
-      const groups = result.filter((item): item is BooksGroup => 'books' in item);
-      const standalone = result.filter((item): item is Book => 'format' in item);
+      const tagResult = createBookGroups([tagged, untagged], LibraryGroupByType.Tag);
+      const tagGroups = tagResult.filter((item): item is BooksGroup => 'books' in item);
+      const standalone = tagResult.filter((item): item is Book => 'format' in item);
 
-      expect(groups.map(({ name }) => name)).toEqual(['Fiction', 'Favorite']);
-      expect(groups.every(({ books }) => books.map(({ hash }) => hash).join() === 'tagged')).toBe(
-        true,
-      );
+      expect(tagGroups.map(({ name }) => name)).toEqual(['Fiction', 'Favorite']);
+      expect(
+        tagGroups.every(({ books }) => books.map(({ hash }) => hash).join() === 'tagged'),
+      ).toBe(true);
       expect(standalone.map(({ hash }) => hash)).toEqual(['untagged']);
-    });
 
-    it('groups scalar, array, and contributor subjects', () => {
       const scalar = createMockBook({ hash: 'scalar', metadata: { subject: 'History' } });
       const array = createMockBook({
         hash: 'array',
@@ -281,12 +279,14 @@ describe('createBookGroups', () => {
         },
       });
 
-      const result = createBookGroups([scalar, array, contributors], LibraryGroupByType.Subject);
-      const groups = result.filter((item): item is BooksGroup => 'books' in item);
+      const subjectGroups = createBookGroups(
+        [scalar, array, contributors],
+        LibraryGroupByType.Subject,
+      ).filter((item): item is BooksGroup => 'books' in item);
 
-      expect(groups.find(({ name }) => name === 'History')?.books).toHaveLength(2);
-      expect(groups.find(({ name }) => name === 'Science')?.books).toHaveLength(2);
-      expect(groups.find(({ name }) => name === 'Biography')?.books).toHaveLength(1);
+      expect(subjectGroups.find(({ name }) => name === 'History')?.books).toHaveLength(2);
+      expect(subjectGroups.find(({ name }) => name === 'Science')?.books).toHaveLength(2);
+      expect(subjectGroups.find(({ name }) => name === 'Biography')?.books).toHaveLength(1);
     });
   });
 });
@@ -299,13 +299,10 @@ describe('resolveCurrentShelfBooks', () => {
     createMockBook({ hash: 'deleted', deletedAt: 1, tags: ['Favorite'] }),
   ];
 
-  it('returns every active root book exactly once for multi-value grouping modes', () => {
+  it('scopes root, virtual, manual, and invalid shelves without duplicates', () => {
     expect(resolveCurrentShelfBooks(books, LibraryGroupByType.Tag).map(({ hash }) => hash)).toEqual(
       ['one', 'two', 'three'],
     );
-  });
-
-  it('resolves virtual tag and subject shelves', () => {
     const favorite = createBookGroups(books, LibraryGroupByType.Tag).find(
       (item): item is BooksGroup => 'books' in item && item.name === 'Favorite',
     )!;
@@ -321,17 +318,11 @@ describe('resolveCurrentShelfBooks', () => {
         ({ hash }) => hash,
       ),
     ).toEqual(['three']);
-  });
-
-  it('includes direct and descendant books in a manual shelf without prefix siblings', () => {
     expect(
       resolveCurrentShelfBooks(books, LibraryGroupByType.Group, 'group-id', 'Fiction').map(
         ({ hash }) => hash,
       ),
     ).toEqual(['one', 'two']);
-  });
-
-  it('returns an empty scope for invalid groups', () => {
     expect(resolveCurrentShelfBooks(books, LibraryGroupByType.Tag, 'missing')).toEqual([]);
     expect(resolveCurrentShelfBooks(books, LibraryGroupByType.None, 'stray')).toEqual([]);
   });

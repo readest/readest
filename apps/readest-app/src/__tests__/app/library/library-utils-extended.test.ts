@@ -78,16 +78,13 @@ describe('createBookFilter', () => {
     expect(filter(book)).toBe(true);
   });
 
-  it('should match user tags and publication subjects', () => {
+  it('should match tags and subjects through regex and invalid-regex paths', () => {
     expect(createBookFilter('favorite')(createMockBook({ tags: ['Favorite'] }))).toBe(true);
     expect(
       createBookFilter('science')(
         createMockBook({ metadata: { subject: [{ name: { en: 'Science Fiction' } }] } }),
       ),
     ).toBe(true);
-  });
-
-  it('should match tags and subjects through the invalid-regex fallback', () => {
     expect(createBookFilter('[favorite')(createMockBook({ tags: ['[Favorite'] }))).toBe(true);
     expect(
       createBookFilter('[history')(createMockBook({ metadata: { subject: ['[History'] } })),

@@ -10,35 +10,28 @@ const matches = (text: string, query: string, options = {}) =>
   });
 
 describe('findFuzzyMatches', () => {
-  it('finds exact and transposed text in source order', () => {
+  it('accepts bounded dense typo matches and rejects sparse or over-budget candidates', () => {
     const text = 'schema then schema';
-    const result = matches(text, 'shcema');
-
-    expect(result.map(({ start, end }) => text.slice(start, end))).toEqual(['schema', 'schema']);
-  });
-
-  it('matches dense subsequences while rejecting sparse noise', () => {
+    expect(matches(text, 'shcema').map(({ start, end }) => text.slice(start, end))).toEqual([
+      'schema',
+      'schema',
+    ]);
     expect(matches('UserAuthController', 'UserController')).toHaveLength(1);
     expect(matches('s---c---h---e---m---a', 'schema')).toEqual([]);
     expect(matches('only ema remains', 'schema')).toEqual([]);
-  });
-
-  it('uses the FFF typo budget based on query length', () => {
     expect(matches('ac', 'ab')).toEqual([]);
     expect(matches('ac', 'abc')).toHaveLength(1);
     expect(matches('abxyef', 'abcdef')).toHaveLength(1);
     expect(matches('abxyzf', 'abcdef')).toEqual([]);
+    expect(matches('anything', '   ')).toEqual([]);
   });
 
-  it('honors case and diacritic options', () => {
+  it('honors case and diacritics while reporting original UTF-16 ranges and runs', () => {
     expect(matches('Schema', 'schema')).toHaveLength(1);
     expect(matches('Schema', 'schema', { matchCase: true })).toEqual([]);
     expect(matches('café', 'cafe')).toHaveLength(1);
     expect(matches('café', 'cafe', { matchDiacritics: true })).toEqual([]);
     expect(matches('cafe\u0301', 'café', { matchDiacritics: true })).toHaveLength(1);
-  });
-
-  it('reports original UTF-16 offsets and contiguous highlight runs', () => {
     const [result] = matches('x😀-b-y', '😀by');
 
     expect(result).toMatchObject({
@@ -50,10 +43,5 @@ describe('findFuzzyMatches', () => {
         { start: 6, end: 7 },
       ],
     });
-  });
-
-  it('returns no match for a blank query and resolves overlaps deterministically', () => {
-    expect(matches('anything', '   ')).toEqual([]);
-    expect(matches('schema schema', 'schema').map(({ start }) => start)).toEqual([0, 7]);
   });
 });

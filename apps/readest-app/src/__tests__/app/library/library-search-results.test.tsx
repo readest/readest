@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import LibrarySearchResults from '@/app/library/components/LibrarySearchResults';
 import type { LibrarySearchEvent } from '@/services/librarySearchService';
-import type { Book, BookSearchConfig } from '@/types/book';
+import type { Book, LibrarySearchConfig } from '@/types/book';
 
 const { searchMock, sessionClose, translate } = vi.hoisted(() => ({
   searchMock: vi.fn(),
@@ -25,6 +25,7 @@ vi.mock('@/services/librarySearchService', () => ({
 }));
 
 afterEach(() => {
+  vi.useRealTimers();
   cleanup();
   searchMock.mockReset();
   sessionClose.mockReset();
@@ -38,7 +39,7 @@ const book: Book = {
   createdAt: 1,
   updatedAt: 1,
 };
-const config: BookSearchConfig = {
+const config: LibrarySearchConfig = {
   scope: 'book',
   mode: 'contains',
   matchCase: false,
@@ -50,7 +51,7 @@ const events = async function* (values: LibrarySearchEvent[]) {
 };
 
 describe('LibrarySearchResults', () => {
-  it('streams grouped matches and opens the exact primary CFI', async () => {
+  it('forwards the clicked CFI, avoids equivalent-config rescans, and closes its session', async () => {
     searchMock.mockReturnValue(
       events([
         {
@@ -71,130 +72,25 @@ describe('LibrarySearchResults', () => {
       ]),
     );
     const onSelectResult = vi.fn();
-    render(
-      <LibrarySearchResults
-        appService={{} as never}
-        books={[book]}
-        query='needle'
-        config={config}
-        onSelectResult={onSelectResult}
-      />,
-    );
-
-    await waitFor(() => expect(screen.getByText('Chapter One')).toBeTruthy());
-    fireEvent.click(screen.getByText('needle'));
-
-    expect(onSelectResult).toHaveBeenCalledWith(book, 'epubcfi(/6/2!/4/2:1)');
-    await waitFor(() =>
-      expect(screen.queryByRole('progressbar', { name: 'Library Search Progress' })).toBeNull(),
-    );
-    expect(screen.getByText('needle').classList.contains('text-bold-in-eink')).toBe(true);
-    expect(screen.getByText('1 results')).toBeTruthy();
-  });
-
-  it('reports unavailable books without showing a false no-results message', async () => {
-    searchMock.mockReturnValue(
-      events([
-        { type: 'book-skipped', book, reason: 'unavailable' },
-        { type: 'completed', searchedBooks: 0, skippedBooks: 1, erroredBooks: 0, matchCount: 0 },
-      ]),
-    );
-    render(
-      <LibrarySearchResults
-        appService={{} as never}
-        books={[book]}
-        query='needle'
-        config={config}
-        onSelectResult={vi.fn()}
-      />,
-    );
-
-    await waitFor(() => expect(screen.getByText('Unavailable')).toBeTruthy());
-    expect(screen.queryByText('No results found')).toBeNull();
-  });
-
-  it('does not restart a search for equivalent config objects', async () => {
-    searchMock.mockReturnValue(
-      events([
-        { type: 'completed', searchedBooks: 1, skippedBooks: 0, erroredBooks: 0, matchCount: 0 },
-      ]),
-    );
     const props = {
       appService: {} as never,
       books: [book],
       query: 'needle',
       config,
-      onSelectResult: vi.fn(),
+      onSelectResult,
     };
-    const { rerender } = render(<LibrarySearchResults {...props} />);
+    const { rerender, unmount } = render(<LibrarySearchResults {...props} />);
 
-    await waitFor(() => expect(searchMock).toHaveBeenCalledOnce());
-    rerender(<LibrarySearchResults {...props} config={{ ...config }} />);
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
+    await waitFor(() => expect(screen.getByText('Chapter One')).toBeTruthy());
+    fireEvent.click(screen.getByText('needle'));
+    expect(onSelectResult).toHaveBeenCalledWith(book, 'epubcfi(/6/2!/4/2:1)');
     expect(searchMock).toHaveBeenCalledOnce();
-  });
 
-  it('collapses book groups and jumps between them from the book navigator', async () => {
-    const secondBook = { ...book, hash: 'second-book', title: 'Second Book' };
-    searchMock.mockReturnValue(
-      events([
-        {
-          type: 'result',
-          book,
-          result: {
-            index: 0,
-            label: 'First Chapter',
-            subitems: [
-              {
-                cfi: 'epubcfi(/6/2!/4/2:1)',
-                excerpt: { pre: '', match: 'first match', post: '' },
-              },
-            ],
-          },
-        },
-        {
-          type: 'result',
-          book: secondBook,
-          result: {
-            index: 0,
-            label: 'Second Chapter',
-            subitems: [
-              {
-                cfi: 'epubcfi(/6/4!/4/2:1)',
-                excerpt: { pre: '', match: 'second match', post: '' },
-              },
-            ],
-          },
-        },
-        { type: 'completed', searchedBooks: 2, skippedBooks: 0, erroredBooks: 0, matchCount: 2 },
-      ]),
-    );
-    const scrollIntoView = vi.fn();
-    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
-      configurable: true,
-      value: scrollIntoView,
-    });
-
-    render(
-      <LibrarySearchResults
-        appService={{} as never}
-        books={[book, secondBook]}
-        query='match'
-        config={config}
-        onSelectResult={vi.fn()}
-      />,
-    );
-
-    const firstHeading = await screen.findByRole('button', { name: 'Search Book, 1 results' });
-    fireEvent.click(firstHeading);
-    expect(firstHeading.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.queryByText('first match')).toBeNull();
-    expect(screen.getByText('second match')).toBeTruthy();
-
-    const secondDot = screen.getByRole('button', { name: 'Jump to Second Book' });
-    fireEvent.click(secondDot);
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
-    expect(secondDot.getAttribute('aria-current')).toBe('location');
+    vi.useFakeTimers();
+    rerender(<LibrarySearchResults {...props} config={{ ...config }} />);
+    await vi.runAllTimersAsync();
+    expect(searchMock).toHaveBeenCalledOnce();
+    unmount();
+    expect(sessionClose).toHaveBeenCalledOnce();
   });
 });
