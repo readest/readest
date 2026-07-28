@@ -13,7 +13,7 @@ import {
   type GridListProps,
   type ListProps,
 } from 'react-virtuoso';
-import { Book, BooksGroup, type BookSearchConfig, ReadingStatus } from '@/types/book';
+import { Book, BooksGroup, type LibrarySearchConfig, ReadingStatus } from '@/types/book';
 import {
   LibraryCoverFitType,
   LibraryGroupByType,
@@ -69,7 +69,7 @@ import LibrarySearchResults from './LibrarySearchResults';
 
 export interface ContentSearchRequest {
   query: string;
-  config: BookSearchConfig;
+  config: LibrarySearchConfig;
 }
 
 interface BookshelfProps {

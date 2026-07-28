@@ -3,14 +3,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { createLibrarySearchSession, searchLibraryBooks } from '@/services/librarySearchService';
-import type { Book, BookSearchConfig, BookSearchResult, SearchExcerpt } from '@/types/book';
+import type { Book, BookSearchResult, LibrarySearchConfig, SearchExcerpt } from '@/types/book';
 import type { AppService } from '@/types/system';
 
 interface LibrarySearchResultsProps {
   appService: AppService;
   books: Book[];
   query: string;
-  config: BookSearchConfig;
+  config: LibrarySearchConfig;
   onSelectResult: (book: Book, cfi: string) => void;
   onScrollerRef?: (element: HTMLDivElement | null) => void;
 }

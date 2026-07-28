@@ -447,7 +447,7 @@ export interface BookProgress {
   page: number;
 }
 
-export type SearchMode = 'contains' | 'whole-words' | 'regex' | 'nearby-words' | 'fuzzy';
+export type SearchMode = 'contains' | 'whole-words' | 'regex' | 'nearby-words';
 
 export interface BookSearchConfig {
   scope: 'book' | 'section';
@@ -465,6 +465,10 @@ export interface BookSearchConfig {
   // pre-cached search results
   results?: BookSearchResult[] | BookSearchMatch[] | null;
 }
+
+export type LibrarySearchConfig = Omit<BookSearchConfig, 'mode'> & {
+  mode: SearchMode | 'fuzzy';
+};
 
 export interface SearchExcerpt {
   pre: string;

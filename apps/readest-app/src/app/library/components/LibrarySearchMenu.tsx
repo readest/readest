@@ -2,18 +2,18 @@ import clsx from 'clsx';
 import { MdCheck } from 'react-icons/md';
 
 import { useTranslation } from '@/hooks/useTranslation';
-import type { BookSearchConfig, SearchMode } from '@/types/book';
-import { DEFAULT_NEARBY_WORDS, modeToWholeWords } from '@/utils/searchConfig';
+import type { LibrarySearchConfig } from '@/types/book';
+import { DEFAULT_NEARBY_WORDS } from '@/utils/searchConfig';
 
 export type LibrarySearchTarget = 'books' | 'contents';
 
 interface LibrarySearchMenuProps {
   target: LibrarySearchTarget;
-  config: BookSearchConfig;
+  config: LibrarySearchConfig;
   menuClassName?: string;
   setIsDropdownOpen?: (open: boolean) => void;
   onTargetChange: (target: LibrarySearchTarget) => void;
-  onConfigChange: (config: BookSearchConfig) => void;
+  onConfigChange: (config: LibrarySearchConfig) => void;
 }
 
 const NEARBY_PRESETS = [5, 10, 20, 50];
@@ -32,8 +32,8 @@ const LibrarySearchMenu = ({
     onTargetChange(value);
     close();
   };
-  const chooseMode = (mode: SearchMode) => {
-    onConfigChange({ ...config, mode, matchWholeWords: modeToWholeWords(mode) });
+  const chooseMode = (mode: LibrarySearchConfig['mode']) => {
+    onConfigChange({ ...config, mode, matchWholeWords: mode === 'whole-words' });
     if (mode !== 'nearby-words') close();
   };
   const update = (

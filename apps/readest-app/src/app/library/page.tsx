@@ -6,7 +6,7 @@ import { MdChevronRight } from 'react-icons/md';
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
 
-import { Book, BooksGroup, type BookSearchConfig, type SearchMode } from '@/types/book';
+import { Book, BooksGroup, type LibrarySearchConfig } from '@/types/book';
 import { AppService, DeleteAction } from '@/types/system';
 import {
   buildBookLookupIndex,
@@ -121,7 +121,7 @@ import TransferQueuePanel from './components/TransferQueuePanel';
 
 /** Skip tiny non-book artifacts during folder auto-scan (matches the manual import dialog default). */
 const AUTO_IMPORT_MIN_SIZE_BYTES = 20 * 1024;
-const LIBRARY_SEARCH_MODES: SearchMode[] = [
+const LIBRARY_SEARCH_MODES: LibrarySearchConfig['mode'][] = [
   'contains',
   'whole-words',
   'regex',
@@ -129,8 +129,10 @@ const LIBRARY_SEARCH_MODES: SearchMode[] = [
   'fuzzy',
 ];
 
-const getLibrarySearchConfig = (searchParams: ReadonlyURLSearchParams | null): BookSearchConfig => {
-  const modeParam = searchParams?.get('mode') as SearchMode | null;
+const getLibrarySearchConfig = (
+  searchParams: ReadonlyURLSearchParams | null,
+): LibrarySearchConfig => {
+  const modeParam = searchParams?.get('mode') as LibrarySearchConfig['mode'] | null;
   const nearbyParam = Number(searchParams?.get('nearby'));
   return {
     scope: 'book',
@@ -243,7 +245,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   const [librarySearchTarget, setLibrarySearchTarget] = useState<LibrarySearchTarget>(() =>
     searchParams?.get('search') === 'contents' ? 'contents' : 'books',
   );
-  const [librarySearchConfig, setLibrarySearchConfig] = useState<BookSearchConfig>(() =>
+  const [librarySearchConfig, setLibrarySearchConfig] = useState<LibrarySearchConfig>(() =>
     getLibrarySearchConfig(searchParams),
   );
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
@@ -1560,7 +1562,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     setIsSelectNone(false);
   };
 
-  const updateLibrarySearchUrl = (target: LibrarySearchTarget, config: BookSearchConfig) => {
+  const updateLibrarySearchUrl = (target: LibrarySearchTarget, config: LibrarySearchConfig) => {
     const params = new URLSearchParams(window.location.search);
     if (target === 'contents') params.set('search', 'contents');
     else params.delete('search');
@@ -1584,7 +1586,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     if (target === 'contents') handleSetSelectMode(false);
   };
 
-  const handleSearchConfigChange = (config: BookSearchConfig) => {
+  const handleSearchConfigChange = (config: LibrarySearchConfig) => {
     setLibrarySearchConfig(config);
     updateLibrarySearchUrl(librarySearchTarget, config);
   };

@@ -1,5 +1,5 @@
 import { DocumentLoader, type BookDoc } from '@/libs/document';
-import type { Book, BookSearchConfig, BookSearchResult, SearchExcerpt } from '@/types/book';
+import type { Book, BookSearchResult, LibrarySearchConfig, SearchExcerpt } from '@/types/book';
 import type { AppService } from '@/types/system';
 import type { ClosableFile } from '@/utils/file';
 import { findContainsMatches } from '@/utils/containsSearch';
@@ -41,7 +41,7 @@ export type LibrarySearchEvent =
     };
 
 export interface LibrarySearchOptions {
-  config?: Partial<BookSearchConfig>;
+  config?: Partial<LibrarySearchConfig>;
   signal?: AbortSignal;
   session?: LibrarySearchSession;
 }
@@ -52,7 +52,7 @@ interface MatcherResult {
   excerpt: SearchExcerpt;
 }
 
-const DEFAULT_CONFIG: BookSearchConfig = {
+const DEFAULT_CONFIG: LibrarySearchConfig = {
   scope: 'book',
   mode: 'contains',
   matchCase: false,
@@ -109,7 +109,7 @@ const makeFuzzyExcerpt = (
   };
 };
 
-const createFuzzyMatcher = (config: BookSearchConfig, acceptNode: (node: Node) => number) => {
+const createFuzzyMatcher = (config: LibrarySearchConfig, acceptNode: (node: Node) => number) => {
   return function* (doc: Document, query: string): Generator<MatcherResult> {
     const iterator = textWalker(
       doc,
@@ -140,7 +140,7 @@ const createFuzzyMatcher = (config: BookSearchConfig, acceptNode: (node: Node) =
 };
 
 const createContainsMatcher = (
-  config: BookSearchConfig,
+  config: LibrarySearchConfig,
   acceptNode: (node: Node) => number,
   defaultLocale?: string,
 ) => {
@@ -279,7 +279,7 @@ export async function* searchLibraryBooks(
   query: string,
   options: LibrarySearchOptions = {},
 ): AsyncGenerator<LibrarySearchEvent> {
-  const config: BookSearchConfig = { ...DEFAULT_CONFIG, ...options.config, scope: 'book' };
+  const config: LibrarySearchConfig = { ...DEFAULT_CONFIG, ...options.config, scope: 'book' };
   const { signal } = options;
   let searchedBooks = 0;
   let skippedBooks = 0;

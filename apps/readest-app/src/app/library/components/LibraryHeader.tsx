@@ -23,7 +23,7 @@ import SettingsMenu from './SettingsMenu';
 import ImportMenu from './ImportMenu';
 import ViewMenu from './ViewMenu';
 import LibrarySearchMenu, { type LibrarySearchTarget } from './LibrarySearchMenu';
-import type { BookSearchConfig } from '@/types/book';
+import type { LibrarySearchConfig } from '@/types/book';
 
 interface LibraryHeaderProps {
   isSelectMode: boolean;
@@ -40,10 +40,10 @@ interface LibraryHeaderProps {
   onDeselectAll: () => void;
   searchQuery: string;
   searchTarget: LibrarySearchTarget;
-  searchConfig: BookSearchConfig;
+  searchConfig: LibrarySearchConfig;
   onSearchQueryChange: (query: string) => void;
   onSearchTargetChange: (target: LibrarySearchTarget) => void;
-  onSearchConfigChange: (config: BookSearchConfig) => void;
+  onSearchConfigChange: (config: LibrarySearchConfig) => void;
 }
 
 const LibraryHeader: React.FC<LibraryHeaderProps> = ({
