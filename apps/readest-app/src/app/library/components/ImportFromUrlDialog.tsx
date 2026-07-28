@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { MdLink } from 'react-icons/md';
 import Dialog from '@/components/Dialog';
+import { isClipCancelled } from '@/services/send/clipSignIn';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface ImportFromUrlDialogProps {
@@ -43,6 +44,12 @@ const ImportFromUrlDialog: React.FC<ImportFromUrlDialogProps> = ({ isOpen, onClo
       await onSubmit(target);
       onClose();
     } catch (e) {
+      // Closing the interactive sign-in capture is a deliberate user
+      // action — return to the form without an error message.
+      if (isClipCancelled(e)) {
+        setSubmitting(false);
+        return;
+      }
       // Tauri's `invoke` rejects with the raw Err string from Rust (not
       // wrapped in Error), and our pipeline also throws Error objects —
       // surface either shape directly so the user sees the real cause.

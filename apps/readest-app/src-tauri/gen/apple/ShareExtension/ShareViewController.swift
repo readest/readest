@@ -3,6 +3,13 @@
 // that lets the user pick a target library group, then queues the save
 // into the App Group container and best-effort launches Readest.
 //
+// Safari shares additionally run `GetPageContent.js` inside the page
+// (NSExtensionJavaScriptPreprocessingFile) and deliver the rendered DOM
+// here — captured with the user's session, so login-walled articles come
+// through whole (#5262). The HTML is stashed in the App Group
+// `SharedClips/` directory and referenced from the pending save via
+// `htmlFile`; the host converts it directly instead of re-fetching.
+//
 // Two delivery paths to the host app, in order of preference:
 //
 //   1. App Group queue + responder-chain launch.
@@ -35,8 +42,15 @@ import UniformTypeIdentifiers
 
 final class ShareViewController: UIViewController {
 
+  // Anything larger risks blowing the extension's tight memory budget and
+  // is almost certainly not an article. Falls back to the URL-only save.
+  private static let maxSharedHtmlBytes = 10 * 1024 * 1024
+
   // Single-shot: avoid double-firing if iOS re-presents the extension.
   private var didCompleteOnce = false
+
+  // Page DOM delivered by GetPageContent.js when sharing from Safari.
+  private var capturedHtml: String?
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -55,9 +69,13 @@ final class ShareViewController: UIViewController {
     let items = context.inputItems.compactMap { $0 as? NSExtensionItem }
     NSLog("[ReadestShare] inputItems count=\(items.count)")
 
-    let url = await firstShareableURL(from: items)
+    // Safari web-page shares deliver the JS-preprocessed DOM; every other
+    // source falls through to the plain URL/text extraction.
+    let pageContent = await firstPageContent(from: items)
+    let url = pageContent?.url ?? (await firstShareableURL(from: items))
     let pageTitle =
-      items
+      pageContent?.title
+      ?? items
       .compactMap { $0.attributedTitle?.string ?? $0.attributedContentText?.string }
       .first { !$0.isEmpty }
 
@@ -67,7 +85,10 @@ final class ShareViewController: UIViewController {
         self.cancelRequest()
         return
       }
-      NSLog("[ReadestShare] presenting picker for URL: %@", url.absoluteString)
+      self.capturedHtml = pageContent?.html
+      NSLog(
+        "[ReadestShare] presenting picker for URL: %@ (captured HTML: %d chars)",
+        url.absoluteString, pageContent?.html?.count ?? 0)
       self.presentPicker(url: url, pageTitle: pageTitle)
     }
   }
@@ -101,14 +122,21 @@ final class ShareViewController: UIViewController {
   // MARK: - Save / Cancel
 
   private func handleSave(url: URL, group: AppGroupBridge.LibraryGroup?) {
+    var htmlFile: String?
+    if let html = capturedHtml, !html.isEmpty {
+      htmlFile = AppGroupBridge.writeSharedClipHtml(html)
+    }
     let save = AppGroupBridge.PendingSave(
       url: url.absoluteString,
       groupId: group?.id,
       groupName: group?.name,
-      addedAt: AppGroupBridge.nowIso8601()
+      addedAt: AppGroupBridge.nowIso8601(),
+      htmlFile: htmlFile
     )
     AppGroupBridge.appendPendingSave(save)
-    NSLog("[ReadestShare] queued save for %@ group=%@", url.absoluteString, group?.name ?? "<none>")
+    NSLog(
+      "[ReadestShare] queued save for %@ group=%@ htmlFile=%@",
+      url.absoluteString, group?.name ?? "<none>", htmlFile ?? "<none>")
 
     if let target = buildTargetURL(scheme: "readest", host: "clip", inner: url) {
       let opened = openViaResponderChain(target)
@@ -128,6 +156,40 @@ final class ShareViewController: UIViewController {
     guard !didCompleteOnce else { return }
     didCompleteOnce = true
     extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
+  }
+
+  // MARK: - Safari page-content extraction (GetPageContent.js results)
+
+  /// Pull the JS-preprocessed page out of a Safari share: a property-list
+  /// attachment whose `NSExtensionJavaScriptPreprocessingResultsKey` dict
+  /// carries `{url, title, html}` as returned by GetPageContent.js. `html`
+  /// is nil when it's missing, empty, or over the size cap — the caller
+  /// still uses the URL and falls back to the in-app clip path.
+  private func firstPageContent(
+    from items: [NSExtensionItem]
+  ) async -> (url: URL, title: String?, html: String?)? {
+    for item in items {
+      guard let attachments = item.attachments else { continue }
+      for attachment in attachments
+      where attachment.hasItemConformingToTypeIdentifier(UTType.propertyList.identifier) {
+        guard
+          let raw = try? await attachment.loadItem(
+            forTypeIdentifier: UTType.propertyList.identifier, options: nil),
+          let plist = raw as? [String: Any],
+          let results = plist[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any],
+          let urlString = results["url"] as? String,
+          let url = URL(string: urlString), Self.isHttp(url)
+        else { continue }
+        var html = results["html"] as? String
+        if let candidate = html, candidate.isEmpty || candidate.utf8.count > Self.maxSharedHtmlBytes {
+          NSLog("[ReadestShare] dropping captured HTML (%d bytes)", candidate.utf8.count)
+          html = nil
+        }
+        let title = (results["title"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+        return (url, title, html)
+      }
+    }
+    return nil
   }
 
   // MARK: - URL extraction

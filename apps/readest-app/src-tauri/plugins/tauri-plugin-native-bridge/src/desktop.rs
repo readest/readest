@@ -293,6 +293,15 @@ impl<R: Runtime> NativeBridge<R> {
         ))
     }
 
+    /// Share-Extension clip files only exist in the iOS App Group
+    /// container — desktop has no share extension.
+    pub fn read_share_clip_html(
+        &self,
+        _payload: ReadShareClipHtmlRequest,
+    ) -> crate::Result<ReadShareClipHtmlResponse> {
+        Ok(ReadShareClipHtmlResponse { html: None })
+    }
+
     // ── Keyed secure key-value store ────────────────────────────────────
     //
     // Same keychain backends + fail-loud/fail-soft contract as the sync

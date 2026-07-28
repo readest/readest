@@ -7,7 +7,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { ingestFile } from '@/services/ingestService';
 import { convertToEpubWithWorker } from '@/services/send/conversion/conversionWorker';
-import { getClipOptions } from '@/services/send/clipOptions';
+import { clipPageWithSignInFallback, isClipCancelled } from '@/services/send/clipSignIn';
+import type { ConvertedBook } from '@/services/send/conversion/types';
 import { eventDispatcher } from '@/utils/event';
 import { parseAnnotationDeepLink } from '@/utils/deeplink';
 import { parseShareDeepLink } from '@/utils/share';
@@ -16,13 +17,31 @@ import { useTranslation } from './useTranslation';
 interface ClipOptions {
   groupId?: string;
   groupName?: string;
+  htmlFile?: string;
 }
 
 interface PendingShareSave {
   url: string;
   groupId?: string | null;
   groupName?: string | null;
+  htmlFile?: string | null;
   addedAt?: string;
+}
+
+/**
+ * Convert page HTML the iOS Share Extension captured from the user's
+ * signed-in Safari tab (App Group file, referenced by `htmlFile`). The
+ * native command reads and deletes the file, so this is single-shot.
+ */
+async function convertSharedHtml(url: string, htmlFile: string): Promise<ConvertedBook> {
+  const { html } = await invoke<{ html?: string | null }>(
+    'plugin:native-bridge|read_share_clip_html',
+    { payload: { fileName: htmlFile } },
+  );
+  if (!html) {
+    throw new Error('Shared page HTML unavailable');
+  }
+  return await convertToEpubWithWorker({ kind: 'page', html, url });
 }
 
 /**
@@ -34,11 +53,14 @@ interface PendingShareSave {
  *      and runs them through the clip → EPUB → import pipeline.
  *
  *   2. iOS Share-Extension App Group queue — the extension writes
- *      `{url, groupId?, groupName?}` payloads into the shared
+ *      `{url, groupId?, groupName?, htmlFile?}` payloads into the shared
  *      NSUserDefaults at `group.com.bilingify.readest`, and the host
  *      plugin (NativeBridgePlugin) drains them on foreground by calling
  *      `window.__readestOnShareExtensionPending(saves)`. Same ingest
- *      pipeline, but the chosen library group is preserved.
+ *      pipeline, but the chosen library group is preserved. When the
+ *      share came from Safari, `htmlFile` points at the page DOM the
+ *      extension captured from the signed-in tab (App Group container);
+ *      it converts directly, skipping the `clip_url` re-fetch.
  *
  * On iOS we also expose `window.__readestGetGroups()` so the
  * Share-Extension picker can show up-to-date library groups, and we
@@ -72,11 +94,19 @@ export function useClipUrlIngress() {
       });
 
       try {
-        const html = await invoke<string>('clip_url', {
-          url,
-          options: getClipOptions(_),
-        });
-        const book = await convertToEpubWithWorker({ kind: 'page', html, url });
+        let book: ConvertedBook | null = null;
+        // Prefer the DOM the Share Extension already captured from the
+        // user's signed-in browser tab — no re-fetch, no login wall.
+        if (options.htmlFile) {
+          try {
+            book = await convertSharedHtml(url, options.htmlFile);
+          } catch (err) {
+            console.warn('[clip] shared HTML conversion failed, refetching via clip_url', err);
+          }
+        }
+        if (!book) {
+          book = await clipPageWithSignInFallback(url, _, appService);
+        }
         const { library } = useLibraryStore.getState();
         const { settings } = useSettingsStore.getState();
         const ingested = await ingestFile(
@@ -97,17 +127,21 @@ export function useClipUrlIngress() {
           timeout: 3000,
         });
       } catch (err) {
-        const detail =
-          err instanceof Error
-            ? err.message
-            : typeof err === 'string'
-              ? err
-              : _('Could not fetch this page');
-        eventDispatcher.dispatch('toast', {
-          type: 'error',
-          message: detail,
-          timeout: 3500,
-        });
+        // The user closed the interactive sign-in capture — their call,
+        // not an error worth toasting about.
+        if (!isClipCancelled(err)) {
+          const detail =
+            err instanceof Error
+              ? err.message
+              : typeof err === 'string'
+                ? err
+                : _('Could not fetch this page');
+          eventDispatcher.dispatch('toast', {
+            type: 'error',
+            message: detail,
+            timeout: 3500,
+          });
+        }
       } finally {
         inflight.current.delete(url);
       }
@@ -209,6 +243,7 @@ export function useClipUrlIngress() {
         void clipAndImport(save.url, {
           groupId: save.groupId ?? undefined,
           groupName: save.groupName ?? undefined,
+          htmlFile: save.htmlFile ?? undefined,
         });
       }
       return true;

@@ -348,6 +348,16 @@ pub struct ClipUrlRequest {
     pub background: Option<String>,
     #[serde(default)]
     pub foreground: Option<String>,
+    /// Interactive mode: show the page with a Cancel/Capture bar instead
+    /// of the opaque overlay so the user can sign in before capturing.
+    #[serde(default)]
+    pub interactive: Option<bool>,
+    #[serde(default)]
+    pub sign_in_hint: Option<String>,
+    #[serde(default)]
+    pub capture_label: Option<String>,
+    #[serde(default)]
+    pub cancel_label: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -356,6 +366,22 @@ pub struct ClipUrlResponse {
     /// Rendered `document.documentElement.outerHTML` captured from the
     /// hidden WKWebView / WebView once load+settle completed.
     pub html: String,
+}
+
+/// Read (and delete) a page-HTML file the iOS Share Extension captured
+/// from the user's signed-in Safari tab into the App Group container.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadShareClipHtmlRequest {
+    /// Bare file name inside the App Group `SharedClips/` directory —
+    /// never a path; the native side rejects anything with a separator.
+    pub file_name: String,
+}
+
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadShareClipHtmlResponse {
+    pub html: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

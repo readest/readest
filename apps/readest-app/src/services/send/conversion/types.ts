@@ -55,7 +55,12 @@ export interface TocEntry {
 export class ConversionError extends Error {
   constructor(
     message: string,
-    readonly code: 'unsupported_type' | 'empty_input' | 'parse_failed' | 'fetch_failed',
+    readonly code:
+      | 'unsupported_type'
+      | 'empty_input'
+      | 'parse_failed'
+      | 'fetch_failed'
+      | 'login_wall',
   ) {
     super(message);
     this.name = 'ConversionError';

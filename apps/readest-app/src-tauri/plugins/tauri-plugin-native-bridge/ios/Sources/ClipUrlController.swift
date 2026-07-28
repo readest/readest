@@ -18,6 +18,12 @@ class ClipUrlArgs: Decodable {
   let savedTitle: String?
   let background: String?
   let foreground: String?
+  // Interactive mode: show the page with a Cancel/Capture bar instead of
+  // the opaque overlay so the user can sign in before capturing.
+  let interactive: Bool?
+  let signInHint: String?
+  let captureLabel: String?
+  let cancelLabel: String?
 
   // Resolved getters with the same fallbacks the Rust impl uses.
   var resolvedOverlayTitle: String { overlayTitle ?? "Saving to Readest" }
@@ -25,6 +31,9 @@ class ClipUrlArgs: Decodable {
   var resolvedCapturingStatus: String { capturingStatus ?? "Capturing article…" }
   var resolvedBackground: String { background ?? "#1f2024" }
   var resolvedForeground: String { foreground ?? "#f5f5f7" }
+  var resolvedSignInHint: String { signInHint ?? "Sign in if needed, then capture" }
+  var resolvedCaptureLabel: String { captureLabel ?? "Capture" }
+  var resolvedCancelLabel: String { cancelLabel ?? "Cancel" }
 }
 
 /// Errors surfaced to the JS caller through `invoke.reject`. Strings
@@ -34,12 +43,17 @@ enum ClipUrlError: Error {
   case invalidUrl
   case loadFailed(String)
   case timedOut
+  // User closed the interactive sign-in capture. Shared cancel vocabulary
+  // with `ClipUrlController.kt` — the JS side matches this string to stay
+  // quiet on user-initiated cancels.
+  case cancelled
 
   var message: String {
     switch self {
     case .invalidUrl: return "Invalid URL"
     case .loadFailed(let detail): return "Could not fetch this page: \(detail)"
     case .timedOut: return "Page took too long to load"
+    case .cancelled: return "Capture cancelled"
     }
   }
 }
@@ -95,16 +109,28 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
     fatalError("init(coder:) is not supported for ClipUrlController")
   }
 
+  private var interactiveMode: Bool { args.interactive == true }
+
   override func viewDidLoad() {
     super.viewDidLoad()
-    setUpWebView()
-    setUpOverlay()
+    view.backgroundColor = UIColor(hexString: args.resolvedBackground) ?? .black
+    if interactiveMode {
+      // Interactive: the page is visible under a Cancel/Capture bar so
+      // the user can sign in first. The WKWebsiteDataStore is the app's
+      // default (persistent) store, so the session survives for every
+      // later headless clip.
+      let bar = setUpActionBar()
+      setUpWebView(below: bar)
+    } else {
+      setUpWebView(below: nil)
+      setUpOverlay()
+    }
     startCapture()
   }
 
   // MARK: - Setup
 
-  private func setUpWebView() {
+  private func setUpWebView(below bar: UIView?) {
     let config = WKWebViewConfiguration()
     // Inject the same fingerprint-mask script the desktop flow uses,
     // before any page script runs, so `navigator.webdriver` and the
@@ -133,12 +159,80 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
     wv.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(wv)
     NSLayoutConstraint.activate([
-      wv.topAnchor.constraint(equalTo: view.topAnchor),
+      wv.topAnchor.constraint(equalTo: bar?.bottomAnchor ?? view.topAnchor),
       wv.leadingAnchor.constraint(equalTo: view.leadingAnchor),
       wv.trailingAnchor.constraint(equalTo: view.trailingAnchor),
       wv.bottomAnchor.constraint(equalTo: view.bottomAnchor),
     ])
     self.webView = wv
+  }
+
+  /// Interactive-mode top bar: hint text + Cancel + a solid Capture
+  /// button, drawn with the caller's theme colours and extending under
+  /// the status bar (content laid out inside the safe area).
+  private func setUpActionBar() -> UIView {
+    let bg = UIColor(hexString: args.resolvedBackground) ?? .black
+    let fg = UIColor(hexString: args.resolvedForeground) ?? .white
+
+    let bar = UIView()
+    bar.backgroundColor = bg
+    bar.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(bar)
+
+    let hint = UILabel()
+    hint.text = args.resolvedSignInHint
+    hint.textColor = fg.withAlphaComponent(0.7)
+    hint.font = UIFont.systemFont(ofSize: 13)
+    hint.numberOfLines = 2
+    hint.lineBreakMode = .byTruncatingTail
+    hint.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    hint.translatesAutoresizingMaskIntoConstraints = false
+    bar.addSubview(hint)
+
+    let cancel = UIButton(type: .system)
+    cancel.setTitle(args.resolvedCancelLabel, for: .normal)
+    cancel.setTitleColor(fg, for: .normal)
+    cancel.titleLabel?.font = UIFont.systemFont(ofSize: 15)
+    cancel.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
+    cancel.translatesAutoresizingMaskIntoConstraints = false
+    bar.addSubview(cancel)
+
+    let capture = UIButton(type: .system)
+    capture.setTitle(args.resolvedCaptureLabel, for: .normal)
+    capture.setTitleColor(bg, for: .normal)
+    capture.titleLabel?.font = UIFont.systemFont(ofSize: 15, weight: .semibold)
+    capture.backgroundColor = fg
+    capture.layer.cornerRadius = 16
+    capture.contentEdgeInsets = UIEdgeInsets(top: 6, left: 16, bottom: 6, right: 16)
+    capture.addTarget(self, action: #selector(captureTapped), for: .touchUpInside)
+    capture.translatesAutoresizingMaskIntoConstraints = false
+    bar.addSubview(capture)
+
+    NSLayoutConstraint.activate([
+      bar.topAnchor.constraint(equalTo: view.topAnchor),
+      bar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      bar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+
+      hint.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 16),
+      hint.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+      hint.bottomAnchor.constraint(equalTo: bar.bottomAnchor, constant: -8),
+      hint.centerYAnchor.constraint(equalTo: capture.centerYAnchor),
+
+      cancel.leadingAnchor.constraint(greaterThanOrEqualTo: hint.trailingAnchor, constant: 12),
+      cancel.centerYAnchor.constraint(equalTo: capture.centerYAnchor),
+
+      capture.leadingAnchor.constraint(equalTo: cancel.trailingAnchor, constant: 12),
+      capture.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -12),
+    ])
+    return bar
+  }
+
+  @objc private func cancelTapped() {
+    finish(.failure(.cancelled))
+  }
+
+  @objc private func captureTapped() {
+    captureOuterHtml()
   }
 
   private func setUpOverlay() {
@@ -212,6 +306,9 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
     req.setValue(ClipUrlController.browserUserAgent, forHTTPHeaderField: "User-Agent")
     webView.load(req)
 
+    // Interactive capture waits for the user's tap — no deadline.
+    if interactiveMode { return }
+
     // Hard timeout — fires even if `didFinish` never does (SPA, redirect
     // chain, JS challenge that never resolves). Same 30 s budget as the
     // desktop flow.
@@ -226,6 +323,9 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
   }
 
   func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+    // Interactive capture is user-driven: the page keeps navigating
+    // (login redirects) until Capture is tapped.
+    guard !interactiveMode else { return }
     guard !didFinishOrFail else { return }
     didFinishOrFail = true
     statusLabel.text = args.resolvedCapturingStatus
@@ -241,6 +341,9 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
   func webView(
     _ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error
   ) {
+    // A failed hop mid-sign-in shouldn't tear the flow down — the page
+    // renders its own error and the user can retry or cancel.
+    if interactiveMode { return }
     if didFinishOrFail { return }
     didFinishOrFail = true
     finish(.failure(.loadFailed(error.localizedDescription)))
@@ -250,6 +353,7 @@ final class ClipUrlController: UIViewController, WKNavigationDelegate {
     _ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!,
     withError error: Error
   ) {
+    if interactiveMode { return }
     if didFinishOrFail { return }
     didFinishOrFail = true
     finish(.failure(.loadFailed(error.localizedDescription)))

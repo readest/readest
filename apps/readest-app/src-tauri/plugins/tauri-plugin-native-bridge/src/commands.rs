@@ -55,6 +55,14 @@ pub(crate) async fn set_text_selection_suppressed<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn read_share_clip_html<R: Runtime>(
+    app: AppHandle<R>,
+    payload: ReadShareClipHtmlRequest,
+) -> Result<ReadShareClipHtmlResponse> {
+    app.native_bridge().read_share_clip_html(payload)
+}
+
+#[command]
 pub(crate) async fn install_package<R: Runtime>(
     app: AppHandle<R>,
     payload: InstallPackageRequest,

@@ -65,6 +65,13 @@ pub struct ClipOptions {
     pub background: Option<String>,
     /// `#rrggbb` — matches `themeCode.fg` (base-content) in the renderer.
     pub foreground: Option<String>,
+    /// Interactive mode (mobile only): show the page with a
+    /// Cancel/Capture bar instead of the opaque overlay so the user can
+    /// sign in before capturing. Desktop ignores it.
+    pub interactive: Option<bool>,
+    pub sign_in_hint: Option<String>,
+    pub capture_label: Option<String>,
+    pub cancel_label: Option<String>,
 }
 
 impl ClipOptions {
@@ -689,6 +696,10 @@ pub async fn clip_url(
         saved_title: options.saved_title,
         background: options.background,
         foreground: options.foreground,
+        interactive: options.interactive,
+        sign_in_hint: options.sign_in_hint,
+        capture_label: options.capture_label,
+        cancel_label: options.cancel_label,
     };
     app.native_bridge()
         .clip_url(request)

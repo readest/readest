@@ -23,6 +23,13 @@ export interface ClipOptions {
   savedTitle: string;
   background: string;
   foreground: string;
+  /** Interactive mode: show the page with a Cancel/Capture bar instead of
+   *  the opaque overlay, so the user can sign in before capturing. Mobile
+   *  only — the desktop flow ignores it. */
+  interactive?: boolean;
+  signInHint: string;
+  captureLabel: string;
+  cancelLabel: string;
 }
 
 export function getClipOptions(_: Translate): ClipOptions {
@@ -35,5 +42,8 @@ export function getClipOptions(_: Translate): ClipOptions {
     savedTitle: _('Saved to Readest'),
     background: bg,
     foreground: fg,
+    signInHint: _('Sign in if needed, then capture'),
+    captureLabel: _('Capture'),
+    cancelLabel: _('Cancel'),
   };
 }

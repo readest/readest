@@ -49,6 +49,7 @@ Default permissions for the plugin
 - `allow-update-reading-widget`
 - `allow-capture-webview-region`
 - `allow-set-text-selection-suppressed`
+- `allow-read-share-clip-html`
 
 ## Permission Table
 
@@ -861,6 +862,32 @@ Enables the open_external_url command without any pre-configured scope.
 <td>
 
 Denies the open_external_url command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-read-share-clip-html`
+
+</td>
+<td>
+
+Enables the read_share_clip_html command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-read-share-clip-html`
+
+</td>
+<td>
+
+Denies the read_share_clip_html command without any pre-configured scope.
 
 </td>
 </tr>

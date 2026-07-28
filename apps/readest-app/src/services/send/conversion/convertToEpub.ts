@@ -519,7 +519,7 @@ export async function convertPageToEpub(html: string, url: string): Promise<Conv
   if (contentText.length < QUALITY_FLOOR) {
     throw new ConversionError(
       'Could not read this page — it looks like a verification screen or a login wall. Open it in a browser first.',
-      'parse_failed',
+      'login_wall',
     );
   }
   // Readability gives us content reliably but byline misses on sites with

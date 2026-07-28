@@ -69,6 +69,10 @@ class CopyUriToPathRequestArgs: Decodable {
   let dst: String?
 }
 
+class ReadShareClipHtmlArgs: Decodable {
+  let fileName: String
+}
+
 struct InitializeRequest: Decodable {
   let publicKey: String?
 }
@@ -674,6 +678,7 @@ class NativeBridgePlugin: Plugin {
           "url": save.url,
           "groupId": save.groupId,
           "groupName": save.groupName,
+          "htmlFile": save.htmlFile,
           "addedAt": save.addedAt,
         ]
       }
@@ -1550,6 +1555,25 @@ class NativeBridgePlugin: Plugin {
         }
       }
       presenter.present(controller, animated: true)
+    }
+  }
+
+  /// Read + delete a page-HTML file the Share Extension captured from
+  /// the user's signed-in Safari tab (App Group `SharedClips/`). Resolves
+  /// `{ html }`, or `{}` when the file is missing/unreadable — the JS
+  /// caller falls back to the `clip_url` re-fetch.
+  @objc public func read_share_clip_html(_ invoke: Invoke) {
+    let args: ReadShareClipHtmlArgs
+    do {
+      args = try invoke.parseArgs(ReadShareClipHtmlArgs.self)
+    } catch {
+      invoke.reject(error.localizedDescription)
+      return
+    }
+    if let html = AppGroupBridge.takeSharedClipHtml(fileName: args.fileName) {
+      invoke.resolve(["html": html])
+    } else {
+      invoke.resolve([:])
     }
   }
 

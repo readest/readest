@@ -141,6 +141,12 @@ targets:
     # to wire up.
     sources:
       - path: ShareExtension
+        excludes:
+          - GetPageContent.js
+      # The JS preprocessor must ship as a bundle resource — never let it
+      # land in Compile Sources.
+      - path: ShareExtension/GetPageContent.js
+        buildPhase: resources
     info:
       path: ShareExtension/Info.plist
       properties:
@@ -149,13 +155,20 @@ targets:
           NSExtensionPointIdentifier: com.apple.share-services
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
           NSExtensionAttributes:
-            # Web URLs only. Do NOT add NSExtensionActivationSupportsText: a
-            # .txt file is public.plain-text (conforms to public.text), so that
-            # key makes this article-URL clipper activate for plain-text FILES
-            # it can't handle (the share sheet hangs). Book files must fall
+            # Web URLs + Safari web pages only. Do NOT add
+            # NSExtensionActivationSupportsText: a .txt file is
+            # public.plain-text (conforms to public.text), so that key makes
+            # this article-URL clipper activate for plain-text FILES it
+            # can't handle (the share sheet hangs). Book files must fall
             # through to the main app's CFBundleDocumentTypes import path.
             NSExtensionActivationRule:
               NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsWebPageWithMaxCount: 1
+            # Runs GetPageContent.js inside the shared Safari page (with
+            # the user's session) and hands the rendered DOM to
+            # ShareViewController — the only way to capture login-walled
+            # articles on iOS (#5262).
+            NSExtensionJavaScriptPreprocessingFile: GetPageContent
     # Entitlements referenced via CODE_SIGN_ENTITLEMENTS build setting
     # rather than xcodegen's `entitlements:` block — otherwise xcodegen
     # may overwrite the file (even with no properties declared) during
