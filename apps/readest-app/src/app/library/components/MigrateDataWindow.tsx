@@ -17,7 +17,7 @@ import { FileItem } from '@/types/system';
 import { getDirPath } from '@/utils/path';
 import { formatBytes } from '@/utils/book';
 import { getOSPlatform } from '@/utils/misc';
-import { getExternalSDCardPath } from '@/utils/bridge';
+import { getExternalSDCardPath, selectDirectory } from '@/utils/bridge';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
 import { requestStoragePermission } from '@/utils/permission';
 import Dialog from '@/components/Dialog';
@@ -119,8 +119,7 @@ export const MigrateDataWindow = () => {
         }
         const localDocumentDir = await documentDir();
         setAndroidNewDirs([
-          // For Google Play version we won't request permission to access root of /sdcard
-          ...(appService?.distChannel === 'playstore' ? [] : sdcardDirs),
+          ...sdcardDirs,
           { path: localDocumentDir, label: '/sdcard/APPDATA/Documents' },
         ]);
       }
@@ -162,6 +161,22 @@ export const MigrateDataWindow = () => {
       await appService?.createDir(newDataDir, 'None', true);
       setNewDataDir(newDataDir);
       setMigrationStatus('idle');
+    } catch (error) {
+      console.error('Error selecting directory:', error);
+      setErrorMessage(_('Failed to select directory'));
+      setMigrationStatus('error');
+    }
+  };
+
+  // The preset shortcuts only cover the well-known shared-storage folders. Open
+  // the system folder picker so any folder can become the data location (#2862);
+  // it hands back an absolute path that All Files Access makes writable.
+  const handleBrowseNewDir = async () => {
+    try {
+      const response = await selectDirectory();
+      if (response.path) {
+        await handleSelectedNewDir(response.path);
+      }
     } catch (error) {
       console.error('Error selecting directory:', error);
       setErrorMessage(_('Failed to select directory'));
@@ -340,6 +355,7 @@ export const MigrateDataWindow = () => {
                       onClick={() => handleSelectedNewDir(dir.path)}
                     />
                   ))}
+                  <MenuItem transient label={_('Choose a folder')} onClick={handleBrowseNewDir} />
                 </div>
               </Dropdown>
             ) : (
