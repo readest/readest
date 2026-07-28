@@ -68,6 +68,10 @@ export const tauriHandleOnCloseWindow = async (callback: () => void) => {
   });
 };
 
+// Whether the window was maximized when it last entered fullscreen, so the
+// maximized state survives a fullscreen round-trip on Windows.
+let wasMaximizedBeforeFullscreen = false;
+
 export const tauriHandleToggleFullScreen = async () => {
   const currentWindow = getCurrentWindow();
   const isFullscreen = await currentWindow.isFullscreen();
@@ -75,7 +79,26 @@ export const tauriHandleToggleFullScreen = async () => {
   // window was only unmaximized here, so the fullscreen button did nothing when
   // the window was maximized, which is always the case on mobile shells like
   // Phosh and common on Windows (issue #4034).
-  await currentWindow.setFullscreen(!isFullscreen);
+  if (isFullscreen) {
+    await currentWindow.setFullscreen(false);
+    if (wasMaximizedBeforeFullscreen) {
+      wasMaximizedBeforeFullscreen = false;
+      await currentWindow.maximize();
+    }
+  } else {
+    // On Windows, tao keeps the WS_MAXIMIZE style when a maximized window
+    // enters borderless fullscreen, so Windows clamps the window to the work
+    // area and the taskbar stays visible but unclickable (issue #5295).
+    // Unmaximize first and restore the maximized state on exit. Other
+    // platforms must keep entering fullscreen straight from the maximized
+    // state (Phosh windows are always maximized).
+    wasMaximizedBeforeFullscreen =
+      (await osType()) === 'windows' && (await currentWindow.isMaximized());
+    if (wasMaximizedBeforeFullscreen) {
+      await currentWindow.unmaximize();
+    }
+    await currentWindow.setFullscreen(true);
+  }
   if ((await osType()) === 'linux') {
     linuxWindowRestoreTransparentBg();
   }
