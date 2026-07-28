@@ -11,7 +11,7 @@ interface LibrarySearchResultsProps {
   books: Book[];
   query: string;
   config: BookSearchConfig;
-  onSelectResult: (book: Book, cfi: string) => void;
+  onSelectResult: (book: Book, cfi: string, highlightCfi: string) => void;
   onScrollerRef?: (element: HTMLDivElement | null) => void;
 }
 
@@ -293,7 +293,13 @@ const LibrarySearchResults = ({
                               key={match.cfi}
                               type='button'
                               className='hover:bg-base-200 focus-visible:ring-base-content/20 touch-target w-full rounded-md px-2 py-2 text-start text-sm focus-visible:outline-none focus-visible:ring-2'
-                              onClick={() => onSelectResult(group.book, match.cfi)}
+                              onClick={() =>
+                                onSelectResult(
+                                  group.book,
+                                  match.cfi,
+                                  match.highlightCfi ?? match.cfi,
+                                )
+                              }
                             >
                               <span className='line-clamp-3'>
                                 <Excerpt excerpt={match.excerpt} />

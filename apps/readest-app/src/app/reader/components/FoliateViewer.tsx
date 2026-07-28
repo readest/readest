@@ -73,6 +73,7 @@ import { useDiscordPresence } from '@/hooks/useDiscordPresence';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { getViewInsets } from '@/utils/insets';
 import { footerReservesBand } from '../utils/footerBand';
+import { showTransientSearchHighlight } from '../utils/searchHighlight';
 import { handleA11yNavigation } from '@/utils/a11y';
 import { isCJKLang } from '@/utils/lang';
 import { getLocale } from '@/utils/misc';
@@ -144,6 +145,7 @@ const FoliateViewer: React.FC<{
   const [loading, setLoading] = useState(false);
   const [navigating, setNavigating] = useState(false);
   const navSpinnerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const librarySearchHighlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
 
@@ -155,6 +157,9 @@ const FoliateViewer: React.FC<{
   useEffect(() => {
     return () => {
       if (navSpinnerTimerRef.current) clearTimeout(navSpinnerTimerRef.current);
+      if (librarySearchHighlightTimerRef.current) {
+        clearTimeout(librarySearchHighlightTimerRef.current);
+      }
     };
   }, []);
 
@@ -821,6 +826,13 @@ const FoliateViewer: React.FC<{
       // docRelocateHandler below.
       if (overrideLocation) {
         setPreviewMode(bookKey, true);
+      }
+      const highlightCfi = searchParams?.get('highlight');
+      if (overrideLocation && highlightCfi) {
+        librarySearchHighlightTimerRef.current = await showTransientSearchHighlight(
+          view,
+          highlightCfi,
+        );
       }
     };
 

@@ -81,7 +81,11 @@ describe('LibrarySearchResults', () => {
     await waitFor(() => expect(screen.getByText('Chapter One')).toBeTruthy());
     fireEvent.click(screen.getByText('needle'));
 
-    expect(onSelectResult).toHaveBeenCalledWith(book, 'epubcfi(/6/2!/4/2:1)');
+    expect(onSelectResult).toHaveBeenCalledWith(
+      book,
+      'epubcfi(/6/2!/4/2:1)',
+      'epubcfi(/6/2!/4/2:1)',
+    );
     expect(screen.queryByRole('progressbar', { name: 'Library Search Progress' })).toBeNull();
     expect(screen.getByText('needle').classList.contains('text-bold-in-eink')).toBe(true);
     expect(screen.getByText('1 results')).toBeTruthy();

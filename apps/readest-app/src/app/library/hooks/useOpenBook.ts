@@ -77,7 +77,7 @@ export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptio
   );
 
   const openBook = useCallback(
-    async (book: Book, cfi?: string) => {
+    async (book: Book, cfi?: string, options?: { highlightCfi?: string }) => {
       // In-place books point at a file outside Books/<hash>/ that the user (or
       // another app) may have moved, renamed, or deleted between sessions. Probe
       // the source before navigating: if it's gone, drop the stale record
@@ -106,7 +106,10 @@ export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptio
       }
       const available = await makeBookAvailable(book);
       if (!available) return;
-      const queryParams = cfi ? `cfi=${encodeURIComponent(cfi)}` : undefined;
+      const params = new URLSearchParams();
+      if (cfi) params.set('cfi', cfi);
+      if (options?.highlightCfi) params.set('highlight', options.highlightCfi);
+      const queryParams = params.size ? params.toString() : undefined;
       if (appService?.hasWindow && settings.openBookInNewWindow) {
         showReaderWindow(appService, [book.hash], queryParams);
       } else {

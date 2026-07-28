@@ -476,6 +476,7 @@ export interface SearchExcerpt {
 
 export interface BookSearchMatch {
   cfi: string;
+  highlightCfi?: string;
   // nearby-words: per-word CFIs to highlight (>= 2); absent for single-span matches
   cfis?: string[];
   excerpt: SearchExcerpt;

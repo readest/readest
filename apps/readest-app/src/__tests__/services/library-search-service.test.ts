@@ -62,6 +62,9 @@ describe('searchLibraryBooks', () => {
     expect(results.every(({ result }) => result.subitems[0]!.cfi.startsWith('epubcfi('))).toBe(
       true,
     );
+    expect(results[0]!.result.subitems[0]!.highlightCfi).not.toBe(
+      results[0]!.result.subitems[0]!.cfi,
+    );
     expect(events.at(-1)).toMatchObject({
       type: 'completed',
       searchedBooks: 2,

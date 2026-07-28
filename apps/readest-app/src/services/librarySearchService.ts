@@ -59,7 +59,63 @@ const DEFAULT_CONFIG: BookSearchConfig = {
 };
 
 const CONTEXT_LENGTH = 50;
+const SENTENCE_CONTAINER = 'p, li, blockquote, dd, dt, h1, h2, h3, h4, h5, h6';
 const normalizeWhitespace = (value: string) => value.replace(/\s+/g, ' ');
+
+const getTextPosition = (root: Element, offset: number) => {
+  const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node = walker.nextNode();
+  let consumed = 0;
+  while (node) {
+    const length = node.textContent?.length ?? 0;
+    if (offset <= consumed + length) return { node, offset: offset - consumed };
+    consumed += length;
+    node = walker.nextNode();
+  }
+  return null;
+};
+
+const expandToSentence = (range: Range, locale?: string) => {
+  try {
+    const startElement =
+      range.startContainer.nodeType === Node.ELEMENT_NODE
+        ? (range.startContainer as Element)
+        : range.startContainer.parentElement;
+    const root = startElement?.closest(SENTENCE_CONTAINER) ?? startElement;
+    if (!root?.contains(range.endContainer)) return range;
+
+    const before = root.ownerDocument.createRange();
+    before.selectNodeContents(root);
+    before.setEnd(range.startContainer, range.startOffset);
+    const matchStart = before.toString().length;
+    const matchEnd = matchStart + range.toString().length;
+    const text = root.textContent ?? '';
+    const segments = Array.from(
+      new Intl.Segmenter(locale, { granularity: 'sentence' }).segment(text),
+    );
+    const startSegment = segments.find(
+      ({ index, segment }) => index <= matchStart && matchStart < index + segment.length,
+    );
+    const endOffset = Math.max(matchStart, matchEnd - 1);
+    const endSegment = segments.find(
+      ({ index, segment }) => index <= endOffset && endOffset < index + segment.length,
+    );
+    if (!startSegment || !endSegment) return range;
+
+    const sentenceStart = startSegment.index;
+    const sentenceEnd = endSegment.index + endSegment.segment.length;
+    const start = getTextPosition(root, sentenceStart);
+    const end = getTextPosition(root, sentenceEnd);
+    if (!start || !end) return range;
+
+    const sentence = root.ownerDocument.createRange();
+    sentence.setStart(start.node, start.offset);
+    sentence.setEnd(end.node, end.offset);
+    return sentence;
+  } catch {
+    return range;
+  }
+};
 
 const findNodeOffset = (cumulative: number[], offset: number) => {
   let low = 0;
@@ -206,6 +262,7 @@ export async function* searchLibraryBooks(
               const toCFI = (range: Range) => CFI.joinIndir(baseCFI, CFI.fromRange(range));
               return {
                 cfi: toCFI(match.range),
+                highlightCfi: toCFI(expandToSentence(match.range, book.primaryLanguage)),
                 ...(match.subRanges?.length ? { cfis: match.subRanges.map(toCFI) } : {}),
                 excerpt: match.excerpt,
               };
