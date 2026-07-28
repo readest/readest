@@ -1847,7 +1847,6 @@
   "Use OneDrive": "OneDrive を使用",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ライブラリ、読書進捗、ハイライトを Microsoft OneDrive と同期します。",
   "Readest only accesses the files it creates in your OneDrive.": "Readest がアクセスするのは、OneDrive 内に自身が作成したファイルのみです。",
-  "Sentence Pause": "文間のポーズ",
   "{{minutes}}m left": "残り{{minutes}}分",
   "{{hours}}h left": "残り{{hours}}時間",
   "Time Remaining": "残り時間",
@@ -1889,7 +1888,6 @@
   "Share section audio between your devices through your file sync service": "ファイル同期サービスを通じてセクションの音声をデバイス間で共有",
   "Storage Limit": "ストレージ上限",
   "Playback settings": "再生設定",
-  "Paragraph Pause": "段落間のポーズ",
   "Player Style": "プレーヤーのスタイル",
   "Full": "フル",
   "Minimal": "ミニマル",
@@ -1900,5 +1898,11 @@
   "— William Shakespeare, As You Like It": "— ウィリアム・シェイクスピア『お気に召すまま』",
   "Failed to download and install update": "アップデートのダウンロードとインストールに失敗しました",
   "Additional Margin (%)": "追加の余白 (%)",
-  "End of Chapter": "章の終わり"
+  "End of Chapter": "章の終わり",
+  "Sign in to capture?": "サインインして取得しますか？",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "{{host}} のこのページはログインまたは認証画面のようです。ページを開いてサインインし、記事を手動で取得してください。",
+  "Open Page": "ページを開く",
+  "Skeuomorphic Book Covers": "スキューモーフィックな表紙",
+  "Sign in if needed, then capture": "必要ならサインインしてから取得してください",
+  "Capture": "取得"
 }

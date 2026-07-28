@@ -1917,7 +1917,6 @@
   "Use OneDrive": "Usar OneDrive",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Sincroniza tu biblioteca, progreso de lectura y resaltados con tu Microsoft OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest solo accede a los archivos que crea en tu OneDrive.",
-  "Sentence Pause": "Pausa entre frases",
   "Time Remaining": "Tiempo restante",
   "{{minutes}}m left": "{{minutes}} min restantes",
   "{{hours}}h left": "{{hours}} h restantes",
@@ -1961,7 +1960,6 @@
   "Share section audio between your devices through your file sync service": "Compartir el audio de las secciones entre sus dispositivos mediante su servicio de sincronización de archivos",
   "Storage Limit": "Límite de almacenamiento",
   "Playback settings": "Configuración de reproducción",
-  "Paragraph Pause": "Pausa entre párrafos",
   "Player Style": "Estilo del reproductor",
   "Full": "Completo",
   "Minimal": "Minimalista",
@@ -1972,5 +1970,11 @@
   "— William Shakespeare, As You Like It": "— William Shakespeare, Como gustéis",
   "Failed to download and install update": "Error al descargar e instalar la actualización",
   "Additional Margin (%)": "Margen adicional (%)",
-  "End of Chapter": "Fin del capítulo"
+  "End of Chapter": "Fin del capítulo",
+  "Sign in to capture?": "¿Iniciar sesión para capturar?",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "Esta página de {{host}} parece una pantalla de inicio de sesión o verificación. Ábrela para iniciar sesión y luego captura el artículo manualmente.",
+  "Open Page": "Abrir página",
+  "Skeuomorphic Book Covers": "Portadas esqueuomórficas",
+  "Sign in if needed, then capture": "Inicia sesión si es necesario y luego captura",
+  "Capture": "Capturar"
 }

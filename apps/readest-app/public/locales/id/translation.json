@@ -1847,7 +1847,6 @@
   "Use OneDrive": "Gunakan OneDrive",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Sinkronkan perpustakaan, progres membaca, dan sorotan Anda dengan Microsoft OneDrive Anda.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest hanya mengakses file yang dibuatnya di OneDrive Anda.",
-  "Sentence Pause": "Jeda Antar Kalimat",
   "{{minutes}}m left": "{{minutes}} mnt tersisa",
   "{{hours}}h left": "{{hours}} jam tersisa",
   "Time Remaining": "Sisa waktu",
@@ -1889,7 +1888,6 @@
   "Share section audio between your devices through your file sync service": "Bagikan audio bagian antar perangkat melalui layanan sinkronisasi file Anda",
   "Storage Limit": "Batas penyimpanan",
   "Playback settings": "Pengaturan pemutaran",
-  "Paragraph Pause": "Jeda antarparagraf",
   "Player Style": "Gaya Pemutar",
   "Full": "Lengkap",
   "Minimal": "Minimal",
@@ -1900,5 +1898,11 @@
   "— William Shakespeare, As You Like It": "— William Shakespeare, As You Like It",
   "Failed to download and install update": "Gagal mengunduh dan memasang pembaruan",
   "Additional Margin (%)": "Margin Tambahan (%)",
-  "End of Chapter": "Akhir bab"
+  "End of Chapter": "Akhir bab",
+  "Sign in to capture?": "Masuk untuk menangkap artikel?",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "Halaman di {{host}} ini tampak seperti layar masuk atau verifikasi. Buka halaman untuk masuk, lalu tangkap artikel secara manual.",
+  "Open Page": "Buka Halaman",
+  "Skeuomorphic Book Covers": "Sampul Buku Skeuomorfik",
+  "Sign in if needed, then capture": "Masuk jika perlu, lalu tangkap",
+  "Capture": "Tangkap"
 }

@@ -1917,7 +1917,6 @@
   "Use OneDrive": "Folosește OneDrive",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Sincronizează-ți biblioteca, progresul citirii și evidențierile cu Microsoft OneDrive-ul tău.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest accesează doar fișierele pe care le creează în OneDrive-ul tău.",
-  "Sentence Pause": "Pauză între propoziții",
   "{{minutes}}m left": "Au rămas {{minutes}} min",
   "{{hours}}h left": "Au rămas {{hours}} h",
   "Time Remaining": "Timp rămas",
@@ -1961,7 +1960,6 @@
   "Share section audio between your devices through your file sync service": "Partajați audio-ul secțiunilor între dispozitive prin serviciul de sincronizare a fișierelor",
   "Storage Limit": "Limită de stocare",
   "Playback settings": "Setări de redare",
-  "Paragraph Pause": "Pauză între paragrafe",
   "Player Style": "Stilul playerului",
   "Full": "Complet",
   "Minimal": "Minimal",
@@ -1972,5 +1970,11 @@
   "— William Shakespeare, As You Like It": "— William Shakespeare, Cum vă place",
   "Failed to download and install update": "Descărcarea și instalarea actualizării au eșuat",
   "Additional Margin (%)": "Margine suplimentară (%)",
-  "End of Chapter": "Sfârșitul capitolului"
+  "End of Chapter": "Sfârșitul capitolului",
+  "Sign in to capture?": "Vă autentificați pentru a captura?",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "Această pagină de pe {{host}} pare un ecran de autentificare sau verificare. Deschideți-o pentru a vă autentifica, apoi capturați articolul manual.",
+  "Open Page": "Deschide pagina",
+  "Skeuomorphic Book Covers": "Coperți skeuomorfe",
+  "Sign in if needed, then capture": "Autentificați-vă dacă e nevoie, apoi capturați",
+  "Capture": "Capturează"
 }

@@ -1847,7 +1847,6 @@
   "Use OneDrive": "ใช้ OneDrive",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ซิงค์คลังหนังสือ ความคืบหน้าการอ่าน และไฮไลต์ของคุณกับ Microsoft OneDrive ของคุณ",
   "Readest only accesses the files it creates in your OneDrive.": "Readest จะเข้าถึงเฉพาะไฟล์ที่สร้างขึ้นเองใน OneDrive ของคุณเท่านั้น",
-  "Sentence Pause": "หยุดระหว่างประโยค",
   "{{minutes}}m left": "เหลือ {{minutes}} นาที",
   "{{hours}}h left": "เหลือ {{hours}} ชม.",
   "Time Remaining": "เวลาที่เหลือ",
@@ -1889,7 +1888,6 @@
   "Share section audio between your devices through your file sync service": "แชร์เสียงของแต่ละส่วนระหว่างอุปกรณ์ผ่านบริการซิงค์ไฟล์ของคุณ",
   "Storage Limit": "ขีดจำกัดพื้นที่จัดเก็บ",
   "Playback settings": "การตั้งค่าการเล่น",
-  "Paragraph Pause": "หยุดชั่วคราวระหว่างย่อหน้า",
   "Player Style": "รูปแบบตัวเล่น",
   "Full": "เต็มรูปแบบ",
   "Minimal": "มินิมอล",
@@ -1900,5 +1898,11 @@
   "— William Shakespeare, As You Like It": "— วิลเลียม เชกสเปียร์, As You Like It",
   "Failed to download and install update": "ดาวน์โหลดและติดตั้งการอัปเดตไม่สำเร็จ",
   "Additional Margin (%)": "ระยะขอบเพิ่มเติม (%)",
-  "End of Chapter": "จบบท"
+  "End of Chapter": "จบบท",
+  "Sign in to capture?": "เข้าสู่ระบบเพื่อจับภาพบทความ?",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "หน้านี้บน {{host}} ดูเหมือนหน้าจอเข้าสู่ระบบหรือยืนยันตัวตน เปิดหน้าเพื่อเข้าสู่ระบบ แล้วจับภาพบทความด้วยตนเอง",
+  "Open Page": "เปิดหน้า",
+  "Skeuomorphic Book Covers": "ปกหนังสือแบบเหมือนจริง",
+  "Sign in if needed, then capture": "เข้าสู่ระบบหากจำเป็น แล้วจึงจับภาพ",
+  "Capture": "จับภาพ"
 }

@@ -1882,7 +1882,6 @@
   "Use OneDrive": "Χρήση OneDrive",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Συγχρονίστε τη βιβλιοθήκη, την πρόοδο ανάγνωσης και τις επισημάνσεις σας με το Microsoft OneDrive σας.",
   "Readest only accesses the files it creates in your OneDrive.": "Το Readest έχει πρόσβαση μόνο στα αρχεία που δημιουργεί στο OneDrive σας.",
-  "Sentence Pause": "Παύση μεταξύ προτάσεων",
   "{{minutes}}m left": "απομένουν {{minutes}} λεπτά",
   "{{hours}}h left": "απομένουν {{hours}} ώρες",
   "Time Remaining": "Υπολειπόμενος χρόνος",
@@ -1925,7 +1924,6 @@
   "Share section audio between your devices through your file sync service": "Κοινή χρήση του ήχου ενοτήτων μεταξύ των συσκευών σας μέσω της υπηρεσίας συγχρονισμού αρχείων",
   "Storage Limit": "Όριο αποθήκευσης",
   "Playback settings": "Ρυθμίσεις αναπαραγωγής",
-  "Paragraph Pause": "Παύση παραγράφου",
   "Player Style": "Στυλ αναπαραγωγής",
   "Full": "Πλήρες",
   "Minimal": "Μινιμαλιστικό",
@@ -1936,5 +1934,11 @@
   "— William Shakespeare, As You Like It": "— Ουίλιαμ Σαίξπηρ, Όπως Αγαπάτε",
   "Failed to download and install update": "Αποτυχία λήψης και εγκατάστασης της ενημέρωσης",
   "Additional Margin (%)": "Πρόσθετο περιθώριο (%)",
-  "End of Chapter": "Τέλος κεφαλαίου"
+  "End of Chapter": "Τέλος κεφαλαίου",
+  "Sign in to capture?": "Σύνδεση για λήψη;",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "Αυτή η σελίδα στο {{host}} μοιάζει με οθόνη σύνδεσης ή επαλήθευσης. Ανοίξτε την για να συνδεθείτε και έπειτα κάντε λήψη του άρθρου χειροκίνητα.",
+  "Open Page": "Άνοιγμα σελίδας",
+  "Skeuomorphic Book Covers": "Σκευομορφικά εξώφυλλα",
+  "Sign in if needed, then capture": "Συνδεθείτε αν χρειάζεται και μετά κάντε λήψη",
+  "Capture": "Λήψη"
 }

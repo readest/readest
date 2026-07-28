@@ -1952,7 +1952,6 @@
   "Use OneDrive": "Использовать OneDrive",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Синхронизируйте свою библиотеку, прогресс чтения и выделения с вашим Microsoft OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest получает доступ только к тем файлам, которые сам создаёт на вашем OneDrive.",
-  "Sentence Pause": "Пауза между предложениями",
   "{{minutes}}m left": "Осталось {{minutes}} мин",
   "{{hours}}h left": "Осталось {{hours}} ч",
   "Time Remaining": "Оставшееся время",
@@ -1997,7 +1996,6 @@
   "Share section audio between your devices through your file sync service": "Делитесь аудио разделов между устройствами через сервис синхронизации файлов",
   "Storage Limit": "Лимит хранилища",
   "Playback settings": "Настройки воспроизведения",
-  "Paragraph Pause": "Пауза между абзацами",
   "Player Style": "Стиль плеера",
   "Full": "Полный",
   "Minimal": "Минимальный",
@@ -2008,5 +2006,11 @@
   "— William Shakespeare, As You Like It": "— Уильям Шекспир, «Как вам это понравится»",
   "Failed to download and install update": "Не удалось загрузить и установить обновление",
   "Additional Margin (%)": "Дополнительное поле (%)",
-  "End of Chapter": "Конец главы"
+  "End of Chapter": "Конец главы",
+  "Sign in to capture?": "Войти, чтобы захватить статью?",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "Эта страница на {{host}} похожа на экран входа или проверки. Откройте её, войдите, а затем захватите статью вручную.",
+  "Open Page": "Открыть страницу",
+  "Skeuomorphic Book Covers": "Скевоморфные обложки",
+  "Sign in if needed, then capture": "При необходимости войдите, затем захватите",
+  "Capture": "Захватить"
 }

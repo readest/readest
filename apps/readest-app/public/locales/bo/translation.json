@@ -1847,7 +1847,6 @@
   "Use OneDrive": "OneDrive བེད་སྤྱོད།",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ཁྱེད་ཀྱི་དཔེ་མཛོད་དང་། ཀློག་པའི་ཡར་འཕེལ། གཙོ་གནད་བཅས་ཁྱེད་ཀྱི་ Microsoft OneDrive དང་མཉམ་སྒྲིག་བྱེད།",
   "Readest only accesses the files it creates in your OneDrive.": "Readest ཀྱིས་ཁྱེད་ཀྱི་ OneDrive ནང་རང་ཉིད་ཀྱིས་བཟོས་པའི་ཡིག་ཆ་ཁོ་ནར་ལྟ་སྤྱོད་བྱེད།",
-  "Sentence Pause": "ཚིག་གྲུབ་བར་གསེང་",
   "{{minutes}}m left": "ད་དུང་ {{minutes}} སྐར་མ་ལྷག་ཡོད།",
   "{{hours}}h left": "ད་དུང་ {{hours}} ཆུ་ཚོད་ལྷག་ཡོད།",
   "Time Remaining": "ལྷག་ཡོད་པའི་དུས་ཚོད།",
@@ -1889,7 +1888,6 @@
   "Share section audio between your devices through your file sync service": "ཡིག་ཆ་མཉམ་འགྲིག་ཞབས་ཞུ་བརྒྱུད་སྒྲིག་ཆས་བར་ས་བཅད་ཀྱི་སྒྲ་མཉམ་སྤྱོད།",
   "Storage Limit": "གསོག་ཉར་ཚད་བཀག",
   "Playback settings": "གཏོང་བའི་སྒྲིག་སྟངས།",
-  "Paragraph Pause": "དོན་ཚན་བར་གསེང་",
   "Player Style": "གཏོང་ཆས་ཀྱི་བཟོ་དབྱིབས།",
   "Full": "ཆ་ཚང་།",
   "Minimal": "སྟབས་བདེ།",
@@ -1900,5 +1898,11 @@
   "— William Shakespeare, As You Like It": "— ཝི་ལི་ཡམ་ཤེགས་སི་པིར།",
   "Failed to download and install update": "གསར་སྒྱུར་ཕབ་ལེན་དང་སྒྲིག་འཇུག་བྱེད་མ་ཐུབ།",
   "Additional Margin (%)": "ཁ་སྣོན་མཐའ་འགྲམ",
-  "End of Chapter": "ལེའུའི་མཇུག"
+  "End of Chapter": "ལེའུའི་མཇུག",
+  "Sign in to capture?": "ནང་འཛུལ་བྱས་ནས་རྩོམ་ཡིག་འཛིན་ནམ།",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "{{host}} སྟེང་གི་ཤོག་ངོས་འདི་ནང་འཛུལ་ལམ་ར་སྤྲོད་ཤོག་ངོས་ཤིག་ཡིན་པ་འདྲ། ཤོག་ངོས་ཁ་ཕྱེ་ནས་ནང་འཛུལ་བྱོས། དེ་ནས་རྩོམ་ཡིག་ལག་ཐོག་ནས་འཛིན་རོགས།",
+  "Open Page": "ཤོག་ངོས་ཁ་ཕྱེ།",
+  "Skeuomorphic Book Covers": "དངོས་འདྲའི་དེབ་ཤུན།",
+  "Sign in if needed, then capture": "དགོས་ན་ནང་འཛུལ་བྱས་རྗེས་འཛིན་རོགས།",
+  "Capture": "འཛིན་པ།"
 }

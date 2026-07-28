@@ -1882,7 +1882,6 @@
   "Use OneDrive": "OneDrive ব্যবহার করুন",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "আপনার লাইব্রেরি, পড়ার অগ্রগতি এবং হাইলাইটগুলি আপনার Microsoft OneDrive-এর সাথে সিঙ্ক করুন।",
   "Readest only accesses the files it creates in your OneDrive.": "Readest শুধুমাত্র আপনার OneDrive-এ নিজে তৈরি করা ফাইলগুলিতেই প্রবেশ করে।",
-  "Sentence Pause": "বাক্যের মধ্যে বিরতি",
   "{{minutes}}m left": "{{minutes}} মিনিট বাকি",
   "{{hours}}h left": "{{hours}} ঘণ্টা বাকি",
   "Time Remaining": "অবশিষ্ট সময়",
@@ -1925,7 +1924,6 @@
   "Share section audio between your devices through your file sync service": "আপনার ফাইল সিঙ্ক পরিষেবার মাধ্যমে ডিভাইসগুলির মধ্যে অংশের অডিও ভাগ করুন",
   "Storage Limit": "স্টোরেজ সীমা",
   "Playback settings": "প্লেব্যাক সেটিংস",
-  "Paragraph Pause": "অনুচ্ছেদের মধ্যে বিরতি",
   "Player Style": "প্লেয়ার শৈলী",
   "Full": "পূর্ণ",
   "Minimal": "ন্যূনতম",
@@ -1936,5 +1934,11 @@
   "— William Shakespeare, As You Like It": "— উইলিয়াম শেক্সপিয়ার, অ্যাজ ইউ লাইক ইট",
   "Failed to download and install update": "আপডেট ডাউনলোড এবং ইনস্টল করতে ব্যর্থ হয়েছে",
   "Additional Margin (%)": "অতিরিক্ত মার্জিন (%)",
-  "End of Chapter": "অধ্যায়ের শেষে"
+  "End of Chapter": "অধ্যায়ের শেষে",
+  "Sign in to capture?": "ক্যাপচার করতে সাইন ইন করবেন?",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "{{host}}-এর এই পৃষ্ঠাটি লগইন বা যাচাইকরণ স্ক্রিনের মতো দেখাচ্ছে। পৃষ্ঠাটি খুলে সাইন ইন করুন, তারপর নিবন্ধটি নিজে ক্যাপচার করুন।",
+  "Open Page": "পৃষ্ঠা খুলুন",
+  "Skeuomorphic Book Covers": "স্কিউমরফিক বইয়ের প্রচ্ছদ",
+  "Sign in if needed, then capture": "প্রয়োজনে সাইন ইন করুন, তারপর ক্যাপচার করুন",
+  "Capture": "ক্যাপচার"
 }

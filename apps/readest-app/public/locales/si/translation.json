@@ -1882,7 +1882,6 @@
   "Use OneDrive": "OneDrive භාවිතා කරන්න",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "ඔබේ පුස්තකාලය, කියවීමේ ප්‍රගතිය සහ ඉස්මතු කිරීම් ඔබේ Microsoft OneDrive සමඟ සමමුහුර්ත කරන්න.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest ප්‍රවේශ වන්නේ ඔබේ OneDrive හි එය සාදන ගොනුවලට පමණි.",
-  "Sentence Pause": "වාක්‍ය අතර විරාමය",
   "{{minutes}}m left": "මිනිත්තු {{minutes}} ක් ඉතිරි",
   "{{hours}}h left": "පැය {{hours}} ක් ඉතිරි",
   "Time Remaining": "ඉතිරි කාලය",
@@ -1925,7 +1924,6 @@
   "Share section audio between your devices through your file sync service": "ඔබගේ ගොනු සමමුහුර්ත සේවාව හරහා උපාංග අතර කොටස් ශ්‍රව්‍ය බෙදාගන්න",
   "Storage Limit": "ගබඩා සීමාව",
   "Playback settings": "වාදන සැකසුම්",
-  "Paragraph Pause": "ඡේද අතර විරාමය",
   "Player Style": "වාදක විලාසය",
   "Full": "සම්පූර්ණ",
   "Minimal": "අවම",
@@ -1936,5 +1934,11 @@
   "— William Shakespeare, As You Like It": "— විලියම් ෂේක්ස්පියර්, As You Like It",
   "Failed to download and install update": "යාවත්කාලීනය බාගත කර ස්ථාපනය කිරීමට අසමත් විය",
   "Additional Margin (%)": "අමතර මායිම (%)",
-  "End of Chapter": "පරිච්ඡේදයේ අවසානය"
+  "End of Chapter": "පරිච්ඡේදයේ අවසානය",
+  "Sign in to capture?": "ලබා ගැනීමට පුරනය වන්නද?",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "{{host}} හි මෙම පිටුව පිවිසුම් හෝ සත්‍යාපන තිරයක් ලෙස පෙනේ. පිටුව විවෘත කර පුරනය වී, පසුව ලිපිය අතින් ලබා ගන්න.",
+  "Open Page": "පිටුව විවෘත කරන්න",
+  "Skeuomorphic Book Covers": "ත්‍රිමාණ පෙනුමැති පොත් කවර",
+  "Sign in if needed, then capture": "අවශ්‍ය නම් පුරනය වී, පසුව ලබා ගන්න",
+  "Capture": "ලබා ගන්න"
 }

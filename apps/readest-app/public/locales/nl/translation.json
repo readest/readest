@@ -1882,7 +1882,6 @@
   "Use OneDrive": "OneDrive gebruiken",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Synchroniseer je bibliotheek, leesvoortgang en markeringen met je Microsoft OneDrive.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest heeft alleen toegang tot de bestanden die het zelf in je OneDrive aanmaakt.",
-  "Sentence Pause": "Zinspauze",
   "{{minutes}}m left": "Nog {{minutes}} min",
   "{{hours}}h left": "Nog {{hours}} u",
   "Time Remaining": "Resterende tijd",
@@ -1925,7 +1924,6 @@
   "Share section audio between your devices through your file sync service": "Sectie-audio delen tussen je apparaten via je bestandssynchronisatiedienst",
   "Storage Limit": "Opslaglimiet",
   "Playback settings": "Afspeelinstellingen",
-  "Paragraph Pause": "Alineapauze",
   "Player Style": "Spelerstijl",
   "Full": "Volledig",
   "Minimal": "Minimaal",
@@ -1936,5 +1934,11 @@
   "— William Shakespeare, As You Like It": "— William Shakespeare, Zoals u het wilt",
   "Failed to download and install update": "Kan de update niet downloaden en installeren",
   "Additional Margin (%)": "Extra marge (%)",
-  "End of Chapter": "Einde hoofdstuk"
+  "End of Chapter": "Einde hoofdstuk",
+  "Sign in to capture?": "Inloggen om vast te leggen?",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "Deze pagina op {{host}} lijkt op een inlog- of verificatiescherm. Open de pagina om in te loggen en leg het artikel daarna handmatig vast.",
+  "Open Page": "Pagina openen",
+  "Skeuomorphic Book Covers": "Skeuomorfe boekomslagen",
+  "Sign in if needed, then capture": "Log zo nodig in en leg daarna vast",
+  "Capture": "Vastleggen"
 }

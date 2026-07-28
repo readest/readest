@@ -1917,7 +1917,6 @@
   "Use OneDrive": "השתמש ב-OneDrive",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "סנכרן את הספרייה, התקדמות הקריאה וההדגשות שלך עם Microsoft OneDrive שלך.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest ניגש רק לקבצים שהוא יוצר ב-OneDrive שלך.",
-  "Sentence Pause": "השהיה בין משפטים",
   "{{minutes}}m left": "נותרו {{minutes}} דקות",
   "{{hours}}h left": "נותרו {{hours}} שעות",
   "Time Remaining": "זמן שנותר",
@@ -1961,7 +1960,6 @@
   "Share section audio between your devices through your file sync service": "שתף שמע של קטעים בין המכשירים שלך דרך שירות סנכרון הקבצים",
   "Storage Limit": "מגבלת אחסון",
   "Playback settings": "הגדרות השמעה",
-  "Paragraph Pause": "הפסקה בין פסקאות",
   "Player Style": "סגנון הנגן",
   "Full": "מלא",
   "Minimal": "מינימלי",
@@ -1972,5 +1970,11 @@
   "— William Shakespeare, As You Like It": "— ויליאם שייקספיר, כטוב בעיניכם",
   "Failed to download and install update": "הורדת העדכון והתקנתו נכשלו",
   "Additional Margin (%)": "שוליים נוספים (%)",
-  "End of Chapter": "סוף הפרק"
+  "End of Chapter": "סוף הפרק",
+  "Sign in to capture?": "להתחבר כדי ללכוד?",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "הדף הזה ב-{{host}} נראה כמו מסך התחברות או אימות. פתחו אותו כדי להתחבר, ואז לכדו את המאמר ידנית.",
+  "Open Page": "פתיחת הדף",
+  "Skeuomorphic Book Covers": "כריכות ספרים סקיאומורפיות",
+  "Sign in if needed, then capture": "התחברו אם צריך, ואז לכדו",
+  "Capture": "לכידה"
 }

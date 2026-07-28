@@ -1882,7 +1882,6 @@
   "Use OneDrive": "OneDrive का उपयोग करें",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "अपनी लाइब्रेरी, पढ़ने की प्रगति और हाइलाइट्स को अपनी Microsoft OneDrive से सिंक करें।",
   "Readest only accesses the files it creates in your OneDrive.": "Readest केवल उन्हीं फ़ाइलों तक पहुँचता है जिन्हें वह आपकी OneDrive में बनाता है।",
-  "Sentence Pause": "वाक्यों के बीच विराम",
   "{{minutes}}m left": "{{minutes}} मिनट शेष",
   "{{hours}}h left": "{{hours}} घंटे शेष",
   "Time Remaining": "शेष समय",
@@ -1925,7 +1924,6 @@
   "Share section audio between your devices through your file sync service": "अपनी फ़ाइल सिंक सेवा के ज़रिये अपने डिवाइसों के बीच खंड ऑडियो साझा करें",
   "Storage Limit": "संग्रहण सीमा",
   "Playback settings": "प्लेबैक सेटिंग्स",
-  "Paragraph Pause": "अनुच्छेदों के बीच विराम",
   "Player Style": "प्लेयर शैली",
   "Full": "पूर्ण",
   "Minimal": "न्यूनतम",
@@ -1936,5 +1934,11 @@
   "— William Shakespeare, As You Like It": "— विलियम शेक्सपियर, एज़ यू लाइक इट",
   "Failed to download and install update": "अपडेट डाउनलोड और इंस्टॉल करने में विफल",
   "Additional Margin (%)": "अतिरिक्त हाशिया (%)",
-  "End of Chapter": "अध्याय का अंत"
+  "End of Chapter": "अध्याय का अंत",
+  "Sign in to capture?": "कैप्चर करने के लिए साइन इन करें?",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "{{host}} का यह पेज लॉगिन या सत्यापन स्क्रीन जैसा लगता है। इसे खोलकर साइन इन करें, फिर लेख को मैन्युअल रूप से कैप्चर करें।",
+  "Open Page": "पेज खोलें",
+  "Skeuomorphic Book Covers": "स्क्यूओमॉर्फिक बुक कवर",
+  "Sign in if needed, then capture": "ज़रूरत हो तो साइन इन करें, फिर कैप्चर करें",
+  "Capture": "कैप्चर करें"
 }

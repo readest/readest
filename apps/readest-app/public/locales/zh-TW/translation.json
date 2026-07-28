@@ -1847,7 +1847,6 @@
   "Use OneDrive": "使用 OneDrive",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "將您的書庫、閱讀進度和高亮與您的 Microsoft OneDrive 同步。",
   "Readest only accesses the files it creates in your OneDrive.": "Readest 只會存取它在您的 OneDrive 中建立的檔案。",
-  "Sentence Pause": "句間停頓",
   "{{minutes}}m left": "{{minutes}}分鐘",
   "{{hours}}h left": "{{hours}}小時",
   "Time Remaining": "剩餘時間",
@@ -1889,7 +1888,6 @@
   "Share section audio between your devices through your file sync service": "透過您的檔案同步服務在裝置間共享章節音訊",
   "Storage Limit": "儲存空間上限",
   "Playback settings": "播放設定",
-  "Paragraph Pause": "段落間隔",
   "Player Style": "播放器樣式",
   "Full": "完整",
   "Minimal": "簡約",
@@ -1900,5 +1898,11 @@
   "— William Shakespeare, As You Like It": "— 威廉·莎士比亞，《皆大歡喜》",
   "Failed to download and install update": "下載並安裝更新失敗",
   "Additional Margin (%)": "額外邊距",
-  "End of Chapter": "本章結束"
+  "End of Chapter": "本章結束",
+  "Sign in to capture?": "登入後再擷取？",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "{{host}} 上的這個頁面看起來是登入或驗證頁面。請開啟頁面登入，然後手動擷取文章。",
+  "Open Page": "開啟頁面",
+  "Skeuomorphic Book Covers": "擬物化書籍封面",
+  "Sign in if needed, then capture": "如有需要請先登入，再擷取",
+  "Capture": "擷取"
 }

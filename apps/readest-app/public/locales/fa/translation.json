@@ -1882,7 +1882,6 @@
   "Use OneDrive": "استفاده از OneDrive",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "کتابخانه، وضعیت مطالعه و هایلایت‌های خود را با Microsoft OneDrive خود همگام‌سازی کنید.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest فقط به فایل‌هایی دسترسی دارد که خودش در OneDrive شما ایجاد می‌کند.",
-  "Sentence Pause": "مکث بین جملات",
   "{{minutes}}m left": "{{minutes}} دقیقه باقی‌مانده",
   "{{hours}}h left": "{{hours}} ساعت باقی‌مانده",
   "Time Remaining": "زمان باقی‌مانده",
@@ -1925,7 +1924,6 @@
   "Share section audio between your devices through your file sync service": "اشتراک‌گذاری صدای بخش‌ها بین دستگاه‌های شما از طریق سرویس همگام‌سازی فایل",
   "Storage Limit": "محدودیت فضای ذخیره‌سازی",
   "Playback settings": "تنظیمات پخش",
-  "Paragraph Pause": "وقفه بین پاراگراف‌ها",
   "Player Style": "سبک پخش‌کننده",
   "Full": "کامل",
   "Minimal": "ساده",
@@ -1936,5 +1934,11 @@
   "— William Shakespeare, As You Like It": "— ویلیام شکسپیر، هرطور که دوست دارید",
   "Failed to download and install update": "دانلود و نصب به‌روزرسانی ناموفق بود",
   "Additional Margin (%)": "حاشیه‌ی اضافی (%)",
-  "End of Chapter": "پایان فصل"
+  "End of Chapter": "پایان فصل",
+  "Sign in to capture?": "برای دریافت مقاله وارد شوید؟",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "این صفحه در {{host}} شبیه صفحه ورود یا تأیید است. آن را باز کنید، وارد شوید و سپس مقاله را به‌صورت دستی دریافت کنید.",
+  "Open Page": "باز کردن صفحه",
+  "Skeuomorphic Book Covers": "جلدهای اسکیومورفیک",
+  "Sign in if needed, then capture": "در صورت نیاز وارد شوید، سپس دریافت کنید",
+  "Capture": "دریافت"
 }

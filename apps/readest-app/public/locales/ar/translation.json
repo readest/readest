@@ -2022,7 +2022,6 @@
   "Use OneDrive": "استخدام OneDrive",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "زامن مكتبتك وتقدم القراءة والتمييزات مع Microsoft OneDrive الخاص بك.",
   "Readest only accesses the files it creates in your OneDrive.": "لا يصل Readest إلا إلى الملفات التي ينشئها في OneDrive الخاص بك.",
-  "Sentence Pause": "وقفة بين الجمل",
   "{{minutes}}m left": "بقيت {{minutes}} دقيقة",
   "{{hours}}h left": "بقيت {{hours}} ساعة",
   "Time Remaining": "الوقت المتبقي",
@@ -2069,7 +2068,6 @@
   "Share section audio between your devices through your file sync service": "مشاركة صوت المقاطع بين أجهزتك عبر خدمة مزامنة الملفات",
   "Storage Limit": "حد التخزين",
   "Playback settings": "إعدادات التشغيل",
-  "Paragraph Pause": "وقفة بين الفقرات",
   "Player Style": "نمط المشغل",
   "Full": "كامل",
   "Minimal": "مبسط",
@@ -2080,5 +2078,11 @@
   "— William Shakespeare, As You Like It": "— ويليام شكسبير، كما تشاء",
   "Failed to download and install update": "فشل تنزيل التحديث وتثبيته",
   "Additional Margin (%)": "هامش إضافي (%)",
-  "End of Chapter": "نهاية الفصل"
+  "End of Chapter": "نهاية الفصل",
+  "Sign in to capture?": "تسجيل الدخول لالتقاط المقالة؟",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "تبدو هذه الصفحة على {{host}} كشاشة تسجيل دخول أو تحقق. افتحها لتسجيل الدخول، ثم التقط المقالة يدويًا.",
+  "Open Page": "فتح الصفحة",
+  "Skeuomorphic Book Covers": "أغلفة كتب مجسّمة",
+  "Sign in if needed, then capture": "سجّل الدخول إذا لزم الأمر، ثم التقط",
+  "Capture": "التقاط"
 }

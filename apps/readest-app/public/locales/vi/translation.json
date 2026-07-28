@@ -1847,7 +1847,6 @@
   "Use OneDrive": "Dùng OneDrive",
   "Sync your library, reading progress, and highlights with your Microsoft OneDrive.": "Đồng bộ thư viện, tiến trình đọc và điểm nổi bật của bạn với Microsoft OneDrive của bạn.",
   "Readest only accesses the files it creates in your OneDrive.": "Readest chỉ truy cập các tệp do chính nó tạo trong OneDrive của bạn.",
-  "Sentence Pause": "Khoảng dừng giữa các câu",
   "{{minutes}}m left": "Còn {{minutes}} phút",
   "{{hours}}h left": "Còn {{hours}} giờ",
   "Time Remaining": "Thời gian còn lại",
@@ -1889,7 +1888,6 @@
   "Share section audio between your devices through your file sync service": "Chia sẻ âm thanh của các phần giữa các thiết bị qua dịch vụ đồng bộ tệp của bạn",
   "Storage Limit": "Giới hạn lưu trữ",
   "Playback settings": "Cài đặt phát",
-  "Paragraph Pause": "Khoảng dừng giữa đoạn văn",
   "Player Style": "Kiểu trình phát",
   "Full": "Đầy đủ",
   "Minimal": "Tối giản",
@@ -1900,5 +1898,11 @@
   "— William Shakespeare, As You Like It": "— William Shakespeare, Theo Ý Thích",
   "Failed to download and install update": "Không thể tải xuống và cài đặt bản cập nhật",
   "Additional Margin (%)": "Lề bổ sung (%)",
-  "End of Chapter": "Hết chương"
+  "End of Chapter": "Hết chương",
+  "Sign in to capture?": "Đăng nhập để chụp bài viết?",
+  "This page on {{host}} looks like a login or verification screen. Open it to sign in, then capture the article manually.": "Trang này trên {{host}} có vẻ là màn hình đăng nhập hoặc xác minh. Hãy mở trang để đăng nhập, sau đó chụp bài viết theo cách thủ công.",
+  "Open Page": "Mở trang",
+  "Skeuomorphic Book Covers": "Bìa sách kiểu skeuomorphic",
+  "Sign in if needed, then capture": "Đăng nhập nếu cần, sau đó chụp",
+  "Capture": "Chụp"
 }
