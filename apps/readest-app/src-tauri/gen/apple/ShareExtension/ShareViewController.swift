@@ -72,7 +72,13 @@ final class ShareViewController: UIViewController {
     // Safari web-page shares deliver the JS-preprocessed DOM; every other
     // source falls through to the plain URL/text extraction.
     let pageContent = await firstPageContent(from: items)
-    let url = pageContent?.url ?? (await firstShareableURL(from: items))
+    // `??` takes a non-async autoclosure, so the fallback can't be inlined.
+    let url: URL?
+    if let pageURL = pageContent?.url {
+      url = pageURL
+    } else {
+      url = await firstShareableURL(from: items)
+    }
     let pageTitle =
       pageContent?.title
       ?? items
