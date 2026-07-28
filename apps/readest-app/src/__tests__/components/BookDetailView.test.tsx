@@ -205,7 +205,7 @@ describe('BookDetailView tags and subjects', () => {
   it('renders separate chips and expands long subject lists', () => {
     const onMetadataValueClick = vi.fn();
     const { getByText, queryByText, getByRole } = renderView({
-      book: makeBook({ tags: ['Favorite'] }),
+      book: makeBook({ tags: [' Favorite '] }),
       metadata: {
         title: 'Test Book',
         author: 'Test Author',

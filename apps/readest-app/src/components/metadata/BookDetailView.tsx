@@ -78,7 +78,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
         key={value}
         type='button'
         className={`${className} hover:bg-base-200`}
-        onClick={() => onMetadataValueClick(type, value)}
+        onClick={() => onMetadataValueClick(type, value.trim())}
       >
         {value}
       </button>
