@@ -9,6 +9,8 @@ interface FoldedText {
   ends?: number[];
 }
 
+const endsBeforeCombiningMark = (text: string, end: number) => /^\p{M}/u.test(text.slice(end));
+
 const foldValue = (
   value: string,
   { matchCase, matchDiacritics }: ContainsSearchOptions,
@@ -39,6 +41,11 @@ const foldText = (value: string, options: ContainsSearchOptions, locale?: string
       starts.push(start);
       ends.push(sourceOffset);
     }
+    if (!transformed && ends.length) {
+      for (let index = ends.length - 1; index >= 0 && ends[index] === start; index--) {
+        ends[index] = sourceOffset;
+      }
+    }
   }
   return { value: folded, starts, ends };
 };
@@ -53,7 +60,8 @@ export function* findContainsMatches(
   if (options.matchCase && options.matchDiacritics) {
     let index = text.indexOf(query);
     while (index >= 0) {
-      yield { start: index, end: index + query.length };
+      const end = index + query.length;
+      if (!endsBeforeCombiningMark(text, end)) yield { start: index, end };
       index = text.indexOf(query, index + 1);
     }
     return;
@@ -64,10 +72,10 @@ export function* findContainsMatches(
   if (!needle) return;
   let index = haystack.value.indexOf(needle);
   while (index >= 0) {
-    yield {
-      start: haystack.starts?.[index] ?? index,
-      end: haystack.ends?.[index + needle.length - 1] ?? index + needle.length,
-    };
+    const end = haystack.ends?.[index + needle.length - 1] ?? index + needle.length;
+    if (!options.matchDiacritics || !endsBeforeCombiningMark(text, end)) {
+      yield { start: haystack.starts?.[index] ?? index, end };
+    }
     index = haystack.value.indexOf(needle, index + 1);
   }
 }

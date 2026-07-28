@@ -3,26 +3,27 @@ import { describe, expect, it } from 'vitest';
 import { findContainsMatches } from '@/utils/containsSearch';
 
 describe('findContainsMatches', () => {
-  it('matches case and diacritic variants while preserving source offsets', () => {
-    const text = 'Café cafe CAFÉ';
+  it('preserves UTF-16 source offsets while applying case and diacritic options independently', () => {
+    const text = 'Cafe\u0301 cafe CAFÉ';
 
     expect([
       ...findContainsMatches(text, 'cafe', { matchCase: false, matchDiacritics: false }, 'en'),
     ]).toEqual([
-      { start: 0, end: 4 },
-      { start: 5, end: 9 },
-      { start: 10, end: 14 },
+      { start: 0, end: 5 },
+      { start: 6, end: 10 },
+      { start: 11, end: 15 },
     ]);
-  });
-
-  it('respects case and diacritic options independently', () => {
-    const text = 'Café cafe CAFÉ';
-
     expect([
       ...findContainsMatches(text, 'cafe', { matchCase: false, matchDiacritics: true }, 'en'),
-    ]).toEqual([{ start: 5, end: 9 }]);
+    ]).toEqual([{ start: 6, end: 10 }]);
     expect([
       ...findContainsMatches(text, 'Cafe', { matchCase: true, matchDiacritics: false }, 'en'),
-    ]).toEqual([{ start: 0, end: 4 }]);
+    ]).toEqual([{ start: 0, end: 5 }]);
+    expect([
+      ...findContainsMatches(text, 'Cafe', { matchCase: true, matchDiacritics: true }, 'en'),
+    ]).toEqual([]);
+    expect([
+      ...findContainsMatches(text, 'Cafe\u0301', { matchCase: true, matchDiacritics: true }, 'en'),
+    ]).toEqual([{ start: 0, end: 5 }]);
   });
 });
