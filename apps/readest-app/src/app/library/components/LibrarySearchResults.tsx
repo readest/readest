@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useTranslation } from '@/hooks/useTranslation';
-import { searchLibraryBooks } from '@/services/librarySearchService';
+import { createLibrarySearchSession, searchLibraryBooks } from '@/services/librarySearchService';
 import type { Book, BookSearchConfig, BookSearchResult, SearchExcerpt } from '@/types/book';
 import type { AppService } from '@/types/system';
 
@@ -11,7 +11,7 @@ interface LibrarySearchResultsProps {
   books: Book[];
   query: string;
   config: BookSearchConfig;
-  onSelectResult: (book: Book, cfi: string, highlightCfi: string) => void;
+  onSelectResult: (book: Book, cfi: string) => void;
   onScrollerRef?: (element: HTMLDivElement | null) => void;
 }
 
@@ -56,6 +56,11 @@ const LibrarySearchResults = ({
 }: LibrarySearchResultsProps) => {
   const _ = useTranslation();
   const controllerRef = useRef<AbortController | null>(null);
+  const [session] = useState(() => createLibrarySearchSession(appService));
+  const lastQueryRef = useRef<string | null>(null);
+  const booksRef = useRef(books);
+  const configRef = useRef(config);
+  const translateRef = useRef(_);
   const [groups, setGroups] = useState<ResultGroup[]>([]);
   const [issues, setIssues] = useState<SearchIssue[]>([]);
   const [phase, setPhase] = useState<'searching' | 'completed' | 'cancelled'>('searching');
@@ -64,6 +69,16 @@ const LibrarySearchResults = ({
   const [activeBookHash, setActiveBookHash] = useState('');
   const [collapsedBooks, setCollapsedBooks] = useState<Set<string>>(() => new Set());
   const groupRefs = useRef(new Map<string, HTMLElement>());
+  booksRef.current = books;
+  configRef.current = config;
+  translateRef.current = _;
+  const booksKey = books.map((book) => `${book.hash}:${book.updatedAt}`).join('|');
+  const configKey = [
+    config.mode,
+    config.matchCase,
+    config.matchDiacritics,
+    config.nearbyWords,
+  ].join(':');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -77,10 +92,12 @@ const LibrarySearchResults = ({
     setActiveBookHash('');
     setCollapsedBooks(new Set());
 
+    const delay = lastQueryRef.current === query ? 0 : 250;
     const timeout = setTimeout(async () => {
-      for await (const event of searchLibraryBooks(appService, books, query, {
-        config,
+      for await (const event of searchLibraryBooks(appService, booksRef.current, query, {
+        config: configRef.current,
         signal: controller.signal,
+        session,
       })) {
         if (controller.signal.aborted) return;
         if (event.type === 'book-started') setActiveBook(event.book.title);
@@ -108,14 +125,18 @@ const LibrarySearchResults = ({
                 : group,
             );
           });
+          await new Promise((resolve) => setTimeout(resolve, 0));
         } else if (event.type === 'book-skipped') {
-          setIssues((current) => [...current, { book: event.book, message: _('Unavailable') }]);
+          setIssues((current) => [
+            ...current,
+            { book: event.book, message: translateRef.current('Unavailable') },
+          ]);
         } else if (event.type === 'book-error') {
           const message =
             event.code === 'INVALID_REGEX'
-              ? _('Invalid regular expression')
+              ? translateRef.current('Invalid regular expression')
               : event.code === 'NEARBY_NEEDS_TWO_WORDS'
-                ? _('Enter at least two words')
+                ? translateRef.current('Enter at least two words')
                 : event.error;
           setIssues((current) => [...current, { book: event.book, message }]);
           if (event.code === 'INVALID_REGEX' || event.code === 'NEARBY_NEEDS_TWO_WORDS') {
@@ -128,13 +149,21 @@ const LibrarySearchResults = ({
           setPhase('completed');
         }
       }
-    }, 500);
+    }, delay);
+    lastQueryRef.current = query;
 
     return () => {
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [appService, books, config, query, _]);
+  }, [appService, booksKey, configKey, query, session]);
+
+  useEffect(
+    () => () => {
+      void session.close();
+    },
+    [session],
+  );
 
   const totalMatches = useMemo(
     () => groups.reduce((total, group) => total + group.matchCount, 0),
@@ -293,13 +322,7 @@ const LibrarySearchResults = ({
                               key={match.cfi}
                               type='button'
                               className='hover:bg-base-200 focus-visible:ring-base-content/20 touch-target w-full rounded-md px-2 py-2 text-start text-sm focus-visible:outline-none focus-visible:ring-2'
-                              onClick={() =>
-                                onSelectResult(
-                                  group.book,
-                                  match.cfi,
-                                  match.highlightCfi ?? match.cfi,
-                                )
-                              }
+                              onClick={() => onSelectResult(group.book, match.cfi)}
                             >
                               <span className='line-clamp-3'>
                                 <Excerpt excerpt={match.excerpt} />

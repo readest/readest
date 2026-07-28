@@ -5,8 +5,9 @@ import LibrarySearchResults from '@/app/library/components/LibrarySearchResults'
 import type { LibrarySearchEvent } from '@/services/librarySearchService';
 import type { Book, BookSearchConfig } from '@/types/book';
 
-const { searchMock, translate } = vi.hoisted(() => ({
+const { searchMock, sessionClose, translate } = vi.hoisted(() => ({
   searchMock: vi.fn(),
+  sessionClose: vi.fn(),
   translate: (key: string, values?: Record<string, string | number>) =>
     Object.entries(values ?? {}).reduce(
       (value, [name, replacement]) => value.replace(`{{${name}}}`, String(replacement)),
@@ -19,12 +20,14 @@ vi.mock('@/hooks/useTranslation', () => ({
 }));
 
 vi.mock('@/services/librarySearchService', () => ({
+  createLibrarySearchSession: () => ({ close: sessionClose }),
   searchLibraryBooks: (...args: unknown[]) => searchMock(...args),
 }));
 
 afterEach(() => {
   cleanup();
   searchMock.mockReset();
+  sessionClose.mockReset();
 });
 
 const book: Book = {
@@ -81,12 +84,10 @@ describe('LibrarySearchResults', () => {
     await waitFor(() => expect(screen.getByText('Chapter One')).toBeTruthy());
     fireEvent.click(screen.getByText('needle'));
 
-    expect(onSelectResult).toHaveBeenCalledWith(
-      book,
-      'epubcfi(/6/2!/4/2:1)',
-      'epubcfi(/6/2!/4/2:1)',
+    expect(onSelectResult).toHaveBeenCalledWith(book, 'epubcfi(/6/2!/4/2:1)');
+    await waitFor(() =>
+      expect(screen.queryByRole('progressbar', { name: 'Library Search Progress' })).toBeNull(),
     );
-    expect(screen.queryByRole('progressbar', { name: 'Library Search Progress' })).toBeNull();
     expect(screen.getByText('needle').classList.contains('text-bold-in-eink')).toBe(true);
     expect(screen.getByText('1 results')).toBeTruthy();
   });
@@ -110,6 +111,28 @@ describe('LibrarySearchResults', () => {
 
     await waitFor(() => expect(screen.getByText('Unavailable')).toBeTruthy());
     expect(screen.queryByText('No results found')).toBeNull();
+  });
+
+  it('does not restart a search for equivalent config objects', async () => {
+    searchMock.mockReturnValue(
+      events([
+        { type: 'completed', searchedBooks: 1, skippedBooks: 0, erroredBooks: 0, matchCount: 0 },
+      ]),
+    );
+    const props = {
+      appService: {} as never,
+      books: [book],
+      query: 'needle',
+      config,
+      onSelectResult: vi.fn(),
+    };
+    const { rerender } = render(<LibrarySearchResults {...props} />);
+
+    await waitFor(() => expect(searchMock).toHaveBeenCalledOnce());
+    rerender(<LibrarySearchResults {...props} config={{ ...config }} />);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(searchMock).toHaveBeenCalledOnce();
   });
 
   it('collapses book groups and jumps between them from the book navigator', async () => {

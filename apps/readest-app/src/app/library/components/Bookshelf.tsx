@@ -891,7 +891,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             books={currentShelfBooks}
             query={contentSearch.query.trim()}
             config={contentSearch.config}
-            onSelectResult={(book, cfi, highlightCfi) => openBook(book, cfi, { highlightCfi })}
+            onSelectResult={(book, cfi) => openBook(book, cfi, { highlightSearchResult: true })}
             onScrollerRef={onScrollerRef}
           />
         ) : null}

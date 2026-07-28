@@ -1,5 +1,5 @@
 import { avg, type Bench, type BenchResult } from './lib.ts';
-import { search } from 'foliate-js/search.js';
+import { findContainsMatches } from '../src/utils/containsSearch.ts';
 import { findFuzzyMatches } from '../src/utils/fuzzySearch.ts';
 
 type Corpus = string[][];
@@ -26,13 +26,15 @@ const scanContains = (corpus: Corpus, query: string, stopAfterFirst = false) => 
   let matchCount = 0;
   for (const sections of corpus) {
     for (const section of sections) {
-      for (const _match of search([section], query, {
-        mode: 'contains',
-        matchCase: false,
-        locales: 'en',
-        granularity: 'grapheme',
-        sensitivity: 'base',
-      })) {
+      for (const _match of findContainsMatches(
+        section,
+        query,
+        {
+          matchCase: false,
+          matchDiacritics: false,
+        },
+        'en',
+      )) {
         matchCount++;
         if (stopAfterFirst) return matchCount;
       }

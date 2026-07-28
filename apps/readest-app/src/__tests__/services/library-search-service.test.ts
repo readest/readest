@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { searchLibraryBooks } from '@/services/librarySearchService';
+import { createLibrarySearchSession, searchLibraryBooks } from '@/services/librarySearchService';
 import { BookFileNotFoundError } from '@/services/errors';
 import type { Book, BookContent, BookSearchConfig } from '@/types/book';
 import type { AppService } from '@/types/system';
@@ -61,9 +61,6 @@ describe('searchLibraryBooks', () => {
     expect(results.map(({ book }) => book.title)).toEqual(['First Book', 'Second Book']);
     expect(results.every(({ result }) => result.subitems[0]!.cfi.startsWith('epubcfi('))).toBe(
       true,
-    );
-    expect(results[0]!.result.subitems[0]!.highlightCfi).not.toBe(
-      results[0]!.result.subitems[0]!.cfi,
     );
     expect(events.at(-1)).toMatchObject({
       type: 'completed',
@@ -207,6 +204,25 @@ describe('searchLibraryBooks', () => {
     while (!event.done && event.value.type !== 'result') event = await iterator.next();
     await iterator.return(undefined);
 
+    expect(file.close).toHaveBeenCalledOnce();
+  });
+
+  it('reuses an open document within a library search session', async () => {
+    const book = makeBook('book', 'Book');
+    const file = makeFile('# Chapter\nneedle and haystack');
+    const service = makeService(new Map([['book', file]]));
+    const session = createLibrarySearchSession(service);
+
+    for await (const _ of searchLibraryBooks(service, [book], 'needle', { config, session })) {
+      // Consume the first search.
+    }
+    for await (const _ of searchLibraryBooks(service, [book], 'haystack', { config, session })) {
+      // Consume the second search.
+    }
+
+    expect(service.loadBookContent).toHaveBeenCalledOnce();
+    expect(file.close).not.toHaveBeenCalled();
+    await session.close();
     expect(file.close).toHaveBeenCalledOnce();
   });
 });

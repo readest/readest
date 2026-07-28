@@ -827,11 +827,10 @@ const FoliateViewer: React.FC<{
       if (overrideLocation) {
         setPreviewMode(bookKey, true);
       }
-      const highlightCfi = searchParams?.get('highlight');
-      if (overrideLocation && highlightCfi) {
+      if (overrideLocation && searchParams?.get('highlight') === 'search') {
         librarySearchHighlightTimerRef.current = await showTransientSearchHighlight(
           view,
-          highlightCfi,
+          overrideLocation,
         );
       }
     };
