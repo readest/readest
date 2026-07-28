@@ -7,8 +7,11 @@ import type { Book, BookSearchConfig } from '@/types/book';
 
 const { searchMock, translate } = vi.hoisted(() => ({
   searchMock: vi.fn(),
-  translate: (key: string, values?: { count?: number }) =>
-    values?.count === undefined ? key : key.replace('{{count}}', String(values.count)),
+  translate: (key: string, values?: Record<string, string | number>) =>
+    Object.entries(values ?? {}).reduce(
+      (value, [name, replacement]) => value.replace(`{{${name}}}`, String(replacement)),
+      key,
+    ),
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -103,5 +106,68 @@ describe('LibrarySearchResults', () => {
 
     await waitFor(() => expect(screen.getByText('Unavailable')).toBeTruthy());
     expect(screen.queryByText('No results found')).toBeNull();
+  });
+
+  it('collapses book groups and jumps between them from the book navigator', async () => {
+    const secondBook = { ...book, hash: 'second-book', title: 'Second Book' };
+    searchMock.mockReturnValue(
+      events([
+        {
+          type: 'result',
+          book,
+          result: {
+            index: 0,
+            label: 'First Chapter',
+            subitems: [
+              {
+                cfi: 'epubcfi(/6/2!/4/2:1)',
+                excerpt: { pre: '', match: 'first match', post: '' },
+              },
+            ],
+          },
+        },
+        {
+          type: 'result',
+          book: secondBook,
+          result: {
+            index: 0,
+            label: 'Second Chapter',
+            subitems: [
+              {
+                cfi: 'epubcfi(/6/4!/4/2:1)',
+                excerpt: { pre: '', match: 'second match', post: '' },
+              },
+            ],
+          },
+        },
+        { type: 'completed', searchedBooks: 2, skippedBooks: 0, erroredBooks: 0, matchCount: 2 },
+      ]),
+    );
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
+    });
+
+    render(
+      <LibrarySearchResults
+        appService={{} as never}
+        books={[book, secondBook]}
+        query='match'
+        config={config}
+        onSelectResult={vi.fn()}
+      />,
+    );
+
+    const firstHeading = await screen.findByRole('button', { name: 'Search Book, 1 results' });
+    fireEvent.click(firstHeading);
+    expect(firstHeading.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByText('first match')).toBeNull();
+    expect(screen.getByText('second match')).toBeTruthy();
+
+    const secondDot = screen.getByRole('button', { name: 'Jump to Second Book' });
+    fireEvent.click(secondDot);
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
+    expect(secondDot.getAttribute('aria-current')).toBe('location');
   });
 });
