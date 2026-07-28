@@ -15,6 +15,7 @@ import { navigateToLibrary } from '@/utils/nav';
 import NumberInput from '@/components/settings/NumberInput';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
+import { ensureLibraryGroupByType } from '../utils/libraryUtils';
 
 interface ViewMenuProps {
   setIsDropdownOpen?: (isOpen: boolean) => void;
@@ -31,7 +32,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const coverFit = settings.libraryCoverFit;
   const autoColumns = settings.libraryAutoColumns;
   const columns = settings.libraryColumns;
-  const groupBy = settings.libraryGroupBy;
+  const groupBy = ensureLibraryGroupByType(searchParams?.get('groupBy'), settings.libraryGroupBy);
   const sortBy = settings.librarySortBy;
   const isAscending = settings.librarySortAscending;
   const sortByAuto = settings.librarySortByAuto ?? true;
