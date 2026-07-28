@@ -128,7 +128,8 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             <Dropdown
               label={_('Search Options')}
               className='dropdown-bottom dropdown-start'
-              buttonClassName='absolute start-1 top-1/2 z-10 flex h-8 min-h-8 -translate-y-1/2 items-center gap-0.5 px-2 sm:h-6 sm:min-h-6'
+              containerClassName='absolute inset-y-0 start-0 z-10 items-center'
+              buttonClassName='text-base-content/50 flex h-9 min-h-9 items-center gap-0.5 bg-transparent ps-3 pe-1 sm:h-7 sm:min-h-7'
               toggleButton={
                 <>
                   <FaSearch className='h-4 w-4' />
@@ -158,7 +159,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
               onChange={handleSearchChange}
               spellCheck='false'
               className={clsx(
-                'search-input input h-9 w-full rounded-full pr-[30%] ps-14 sm:h-7',
+                'search-input input h-9 w-full rounded-full pr-[30%] ps-12 sm:h-7',
                 'bg-base-300/45 border-0',
                 'font-sans text-sm font-light',
                 'placeholder:text-base-content/50 truncate',
