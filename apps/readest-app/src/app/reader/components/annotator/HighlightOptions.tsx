@@ -64,7 +64,6 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const isEink = settings.globalViewSettings.isEink;
   const isColorEink = settings.globalViewSettings.isColorEink;
   const isBwEink = isEink && !isColorEink;
-  const einkBgColor = isDarkMode ? '#000000' : '#ffffff';
   const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
   const customColors = globalReadSettings.customHighlightColors;
   const userColors = globalReadSettings.userHighlightColors ?? [];
@@ -211,8 +210,11 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
             aria-label={_('Select {{style}} style', { style: _(style) })}
             onClick={() => handleSelectStyle(style)}
             className={clsx(
-              'not-eink:border-base-content/20 border eink-bordered not-eink:shadow-2xl flex items-center justify-center rounded-full p-0',
+              'not-eink:shadow-2xl flex items-center justify-center rounded-full p-0',
               isDarkMode ? 'bg-base-100' : 'bg-base-300',
+              selectedStyle === style
+                ? 'border-current border-2'
+                : 'not-eink:border-base-content/20 border',
             )}
             style={{ width: size36, height: size36, minHeight: size36 }}
           >
@@ -220,35 +222,19 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
               style={{
                 width: size16,
                 height: size16,
-                ...(style === 'highlight' &&
-                  selectedStyle === 'highlight' && {
-                    backgroundColor: isBwEink
-                      ? einkFgColor
-                      : getColorHex(customColors, selectedColor),
-                    color: isBwEink ? einkBgColor : '#d1d5db',
-                    paddingTop: '2px',
-                  }),
-                ...(style === 'highlight' &&
-                  selectedStyle !== 'highlight' && {
-                    backgroundColor: '#d1d5db',
-                    paddingTop: '2px',
-                  }),
-                ...((style === 'underline' || style === 'squiggly') && {
-                  color: isBwEink ? einkFgColor : '#d1d5db',
+                ...(style === 'highlight' && {
                   textDecoration: 'underline',
-                  textDecorationThickness: '2px',
-                  textDecorationColor:
-                    selectedStyle === style
-                      ? isBwEink
-                        ? einkFgColor
-                        : getColorHex(customColors, selectedColor)
-                      : '#d1d5db',
-                  ...(style === 'squiggly' && { textDecorationStyle: 'wavy' }),
+                  textDecorationThickness: '3px',
+                  textDecorationColor: isBwEink
+                    ? einkFgColor
+                    : getColorHex(customColors, selectedColor),
+                  textUnderlineOffset: '3px',
                 }),
+                ...(style === 'squiggly' && { textDecorationStyle: 'wavy' }),
               }}
-              className='w-4 p-0 text-center leading-none'
+              className='p-0 text-center leading-none text-foreground underline decoration-2'
             >
-              A
+              {style === 'underline' || style === 'squiggly' ? 'U' : 'A'}
             </div>
           </button>
         ))}
