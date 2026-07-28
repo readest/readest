@@ -1564,6 +1564,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
   const updateLibrarySearchUrl = (target: LibrarySearchTarget, config: LibrarySearchConfig) => {
     const params = new URLSearchParams(window.location.search);
+    if (librarySearchQuery) params.set('q', librarySearchQuery);
+    else params.delete('q');
     if (target === 'contents') params.set('search', 'contents');
     else params.delete('search');
     if (config.mode !== 'contains') params.set('mode', config.mode);

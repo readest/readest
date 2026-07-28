@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useCallback, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaSearch } from 'react-icons/fa';
 import { FaChevronDown } from 'react-icons/fa';
@@ -81,24 +81,30 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     onToggleSelectMode,
   });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedUpdateQueryParam = useCallback(
-    debounce((value: string) => {
-      const params = new URLSearchParams(window.location.search);
-      if (value) {
-        params.set('q', value);
-      } else {
-        params.delete('q');
-      }
-      router.push(`?${params.toString()}`);
-    }, 500),
+  const debouncedUpdateQueryParam = useMemo(
+    () =>
+      debounce((value: string) => {
+        const params = new URLSearchParams(window.location.search);
+        if (value) {
+          params.set('q', value);
+        } else {
+          params.delete('q');
+        }
+        router.replace(`?${params.toString()}`);
+      }, 500),
     [router],
+  );
+  useEffect(
+    () => () => {
+      debouncedUpdateQueryParam.cancel();
+    },
+    [debouncedUpdateQueryParam],
   );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
     onSearchQueryChange(newQuery);
-    debouncedUpdateQueryParam(newQuery.trim());
+    debouncedUpdateQueryParam(newQuery);
   };
 
   const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;

@@ -33,6 +33,7 @@ describe('LibrarySearchMenu', () => {
     const contents = screen.getByRole('menuitemradio', { name: 'Contents' });
     fireEvent.click(contents);
     expect(onTargetChange).toHaveBeenCalledWith('contents');
+    expect(close).not.toHaveBeenCalled();
 
     rerender(
       <LibrarySearchMenu

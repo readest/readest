@@ -29,8 +29,8 @@ const LibrarySearchMenu = ({
   const _ = useTranslation();
   const close = () => setIsDropdownOpen?.(false);
   const chooseTarget = (value: LibrarySearchTarget) => {
-    onTargetChange(value);
-    close();
+    if (value !== target) onTargetChange(value);
+    if (value === 'books') close();
   };
   const chooseMode = (mode: LibrarySearchConfig['mode']) => {
     onConfigChange({ ...config, mode, matchWholeWords: mode === 'whole-words' });

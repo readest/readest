@@ -201,7 +201,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const { safeAreaInsets } = useThemeStore();
 
   const groupId = searchParams?.get('group') || '';
-  const queryTerm = searchParams?.get('q') || null;
+  const queryTerm = searchParams?.get('q')?.trim() || null;
   const viewMode = searchParams?.get('view') || settings.libraryViewMode;
   const storedSortBy = ensureLibrarySortByType(searchParams?.get('sort'), settings.librarySortBy);
   const sortOrder = searchParams?.get('order') || (settings.librarySortAscending ? 'asc' : 'desc');
