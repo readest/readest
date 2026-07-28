@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { searchLibraryBooks } from '@/services/librarySearchService';
+import { BookFileNotFoundError } from '@/services/errors';
 import type { Book, BookContent, BookSearchConfig } from '@/types/book';
 import type { AppService } from '@/types/system';
 
@@ -27,7 +28,7 @@ const makeService = (files: Map<string, File | null>) =>
     getBookFileSize: vi.fn(async (book: Book) => files.get(book.hash)?.size ?? null),
     loadBookContent: vi.fn(async (book: Book): Promise<BookContent> => {
       const file = files.get(book.hash);
-      if (!file) throw new Error('missing file');
+      if (!file) throw new BookFileNotFoundError();
       return { book, file };
     }),
     resolveNativeBookFilePath: vi.fn().mockResolvedValue(null),
@@ -104,7 +105,7 @@ describe('searchLibraryBooks', () => {
     expect(events.at(-1)).toMatchObject({ skippedBooks: 1, erroredBooks: 1, searchedBooks: 1 });
   });
 
-  it('reports availability probe failures and continues with later books', async () => {
+  it('reports load failures and continues with later books', async () => {
     const failing = makeBook('failing', 'Failing Book');
     const valid = makeBook('valid', 'Valid Book');
     const files = new Map<string, File | null>([
@@ -112,9 +113,9 @@ describe('searchLibraryBooks', () => {
       ['valid', makeFile('# Chapter\nneedle')],
     ]);
     const service = makeService(files);
-    service.getBookFileSize = vi.fn(async (book) => {
-      if (book.hash === 'failing') throw new Error('probe failed');
-      return files.get(book.hash)?.size ?? null;
+    service.loadBookContent = vi.fn(async (book) => {
+      if (book.hash === 'failing') throw new Error('load failed');
+      return { book, file: files.get(book.hash)! };
     });
     const collected = [];
 
@@ -123,9 +124,25 @@ describe('searchLibraryBooks', () => {
     }
 
     expect(collected).toContainEqual(
-      expect.objectContaining({ type: 'book-error', book: failing, error: 'probe failed' }),
+      expect.objectContaining({ type: 'book-error', book: failing, error: 'load failed' }),
     );
     expect(collected).toContainEqual(expect.objectContaining({ type: 'result', book: valid }));
+  });
+
+  it('searches a loadable book when its file size is unavailable', async () => {
+    const book = makeBook('remote', 'Remote Book');
+    const file = makeFile('# Chapter\nHogwarts');
+    const service = makeService(new Map([['remote', file]]));
+    service.getBookFileSize = vi.fn().mockResolvedValue(null);
+    const collected = [];
+
+    for await (const event of searchLibraryBooks(service, [book], 'Hogwarts', { config })) {
+      collected.push(event);
+    }
+
+    expect(service.loadBookContent).toHaveBeenCalledWith(book);
+    expect(collected).toContainEqual(expect.objectContaining({ type: 'result', book }));
+    expect(collected.at(-1)).toMatchObject({ searchedBooks: 1, skippedBooks: 0 });
   });
 
   it('supports fuzzy section matching with segmented highlights', async () => {

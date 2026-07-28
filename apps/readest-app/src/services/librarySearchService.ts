@@ -4,15 +4,13 @@ import type { AppService } from '@/types/system';
 import type { ClosableFile } from '@/utils/file';
 import { findFuzzyMatches } from '@/utils/fuzzySearch';
 import { createRejectFilter } from '@/utils/node';
+import { BookFileNotFoundError } from './errors';
 import * as CFI from 'foliate-js/epubcfi.js';
 import { TOCProgress } from 'foliate-js/progress.js';
 import { searchMatcher } from 'foliate-js/search.js';
 import { textWalker } from 'foliate-js/text-walker.js';
 
-type LibrarySearchAppService = Pick<
-  AppService,
-  'getBookFileSize' | 'loadBookContent' | 'resolveNativeBookFilePath'
->;
+type LibrarySearchAppService = Pick<AppService, 'loadBookContent' | 'resolveNativeBookFilePath'>;
 
 type SearchableBookDoc = BookDoc & {
   destroy?: () => void | Promise<void>;
@@ -168,11 +166,6 @@ export async function* searchLibraryBooks(
     let file: File | null = null;
     let bookDoc: SearchableBookDoc | null = null;
     try {
-      if ((await appService.getBookFileSize(book)) == null) {
-        skippedBooks++;
-        yield { type: 'book-skipped', book, reason: 'unavailable' };
-        continue;
-      }
       yield { type: 'book-started', book, bookIndex, totalBooks: books.length };
       const [content, nativeFilePath] = await Promise.all([
         appService.loadBookContent(book),
@@ -247,6 +240,11 @@ export async function* searchLibraryBooks(
       yield { type: 'book-completed', book, matchCount: bookMatches };
     } catch (error) {
       if (signal?.aborted) return;
+      if (error instanceof BookFileNotFoundError) {
+        skippedBooks++;
+        yield { type: 'book-skipped', book, reason: 'unavailable' };
+        continue;
+      }
       erroredBooks++;
       yield {
         type: 'book-error',
