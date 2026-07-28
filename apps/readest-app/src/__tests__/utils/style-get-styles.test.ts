@@ -504,6 +504,52 @@ describe('getColorStyles branches (via getStyles)', () => {
     expect(css).not.toMatch(/^\s*img\s*\{[^}]*mix-blend-mode: multiply/m);
   });
 
+  // #5250: with overrideColor also on, a second filter declaration in the same
+  // img rule silently discarded invert(100%) (last declaration wins), and
+  // mix-blend-mode: multiply erased images against dark page backgrounds
+  // (multiply with black is always black).
+  describe('invert image in dark mode combined with overrideColor (#5250)', () => {
+    // Concatenate every plain `img { ... }` rule in document order: they all
+    // share the same specificity, so this mirrors the cascade the browser
+    // applies (last declaration wins).
+    const getImgBlock = (css: string) => {
+      const blocks = [...css.matchAll(/^\s*img\s*\{([^}]*)\}/gm)].map((m) => m[1]!);
+      expect(blocks.length).toBeGreaterThan(0);
+      return blocks.join('\n');
+    };
+
+    it('keeps invert(100%) as the only filter declaration when overrideColor is on', () => {
+      const vs = makeViewSettings({ invertImgColorInDark: true, overrideColor: true });
+      const theme = makeThemeCode({ isDarkMode: true, bg: '#000000', fg: '#e0e0e0' });
+      const imgBlock = getImgBlock(getStyles(vs, theme));
+      const filters = [...imgBlock.matchAll(/filter:[^;]*;/g)].map((m) => m[0]);
+      expect(filters).toEqual(['filter: invert(100%);']);
+    });
+
+    it('does not multiply-blend inverted images into the dark background', () => {
+      const vs = makeViewSettings({ invertImgColorInDark: true, overrideColor: true });
+      const theme = makeThemeCode({ isDarkMode: true, bg: '#000000', fg: '#e0e0e0' });
+      const imgBlock = getImgBlock(getStyles(vs, theme));
+      expect(imgBlock).not.toContain('mix-blend-mode: multiply');
+    });
+
+    it('keeps the grayscale + multiply treatment when invert is off in dark mode', () => {
+      const vs = makeViewSettings({ invertImgColorInDark: false, overrideColor: true });
+      const theme = makeThemeCode({ isDarkMode: true, bg: '#1a1a1a', fg: '#e0e0e0' });
+      const imgBlock = getImgBlock(getStyles(vs, theme));
+      expect(imgBlock).toContain('filter: grayscale(100%) contrast(1.2) brightness(1.2);');
+      expect(imgBlock).toContain('mix-blend-mode: multiply;');
+    });
+
+    it('keeps multiply in light mode when overrideColor is on regardless of invert', () => {
+      const vs = makeViewSettings({ invertImgColorInDark: true, overrideColor: true });
+      const theme = makeThemeCode({ isDarkMode: false });
+      const imgBlock = getImgBlock(getStyles(vs, theme));
+      expect(imgBlock).toContain('mix-blend-mode: multiply;');
+      expect(imgBlock).not.toContain('filter: invert(100%)');
+    });
+  });
+
   it('sets bg-texture-id CSS variable', () => {
     const vs = makeViewSettings({ backgroundTextureId: 'paper' });
     const theme = makeThemeCode();
