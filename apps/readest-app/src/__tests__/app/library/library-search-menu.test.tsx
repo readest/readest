@@ -64,4 +64,37 @@ describe('LibrarySearchMenu', () => {
       expect.objectContaining({ mode: 'whole-words', matchWholeWords: true }),
     );
   });
+
+  it('keeps nearby mode open until a distance is selected', () => {
+    const close = vi.fn();
+    const onConfigChange = vi.fn();
+    const { rerender } = render(
+      <LibrarySearchMenu
+        target='contents'
+        config={config}
+        onTargetChange={vi.fn()}
+        onConfigChange={onConfigChange}
+        setIsDropdownOpen={close}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Nearby Words'));
+    expect(onConfigChange).toHaveBeenCalledWith(expect.objectContaining({ mode: 'nearby-words' }));
+    expect(close).not.toHaveBeenCalled();
+
+    rerender(
+      <LibrarySearchMenu
+        target='contents'
+        config={{ ...config, mode: 'nearby-words', nearbyWords: 10 }}
+        onTargetChange={vi.fn()}
+        onConfigChange={onConfigChange}
+        setIsDropdownOpen={close}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '20' }));
+    expect(onConfigChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ mode: 'nearby-words', nearbyWords: 20 }),
+    );
+    expect(close).toHaveBeenCalledWith(false);
+  });
 });

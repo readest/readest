@@ -34,7 +34,7 @@ const LibrarySearchMenu = ({
   };
   const chooseMode = (mode: SearchMode) => {
     onConfigChange({ ...config, mode, matchWholeWords: modeToWholeWords(mode) });
-    close();
+    if (mode !== 'nearby-words') close();
   };
   const update = (
     key: 'matchCase' | 'matchDiacritics' | 'nearbyWords',
