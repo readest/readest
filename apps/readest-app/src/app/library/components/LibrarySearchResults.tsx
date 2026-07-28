@@ -268,7 +268,7 @@ const LibrarySearchResults = ({
                   else groupRefs.current.delete(group.book.hash);
                 }}
                 className={clsx(
-                  'bg-base-100 eink-bordered rounded-lg border p-3',
+                  'bg-base-100 eink-bordered rounded-lg border p-2 sm:p-3',
                   isActive ? 'border-base-content/60' : 'border-base-300',
                 )}
               >
@@ -280,29 +280,35 @@ const LibrarySearchResults = ({
                       title: group.book.title,
                       count: group.matchCount,
                     })}
-                    className='hover:bg-base-200 focus-visible:ring-base-content/20 flex w-full items-center gap-2 rounded-md text-start focus-visible:outline-none focus-visible:ring-2'
+                    className='group hover:bg-base-200 focus-visible:ring-base-content/20 not-eink:transition-colors flex min-h-12 w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-start duration-150 focus-visible:outline-none focus-visible:ring-2 sm:gap-3 sm:px-2.5'
                     onClick={() => toggleBook(group.book.hash)}
                   >
-                    <svg
-                      viewBox='0 0 8 10'
-                      width='8'
-                      height='10'
-                      className={clsx(
-                        'text-base-content not-eink:transition-transform shrink-0',
-                        isExpanded ? 'rotate-90' : 'rotate-0',
-                      )}
-                      fill='currentColor'
+                    <span
                       aria-hidden='true'
+                      className='bg-base-200 group-hover:bg-base-300 eink-bordered not-eink:transition-colors flex size-7 shrink-0 items-center justify-center rounded-full duration-150'
                     >
-                      <polygon points='0 0, 8 5, 0 10' />
-                    </svg>
-                    <span className='min-w-0 flex-1'>
-                      <span className='block truncate font-semibold'>{group.book.title}</span>
-                      <span className='text-base-content/60 block truncate text-xs'>
+                      <svg
+                        viewBox='0 0 8 10'
+                        width='8'
+                        height='10'
+                        className={clsx(
+                          'text-base-content not-eink:transition-transform shrink-0',
+                          isExpanded ? 'rotate-90' : 'rotate-0',
+                        )}
+                        fill='currentColor'
+                      >
+                        <polygon points='0 0, 8 5, 0 10' />
+                      </svg>
+                    </span>
+                    <span className='min-w-0 flex-1 leading-tight'>
+                      <span className='block truncate font-semibold leading-5'>
+                        {group.book.title}
+                      </span>
+                      <span className='text-base-content/60 mt-0.5 block truncate text-xs leading-4'>
                         {group.book.author}
                       </span>
                     </span>
-                    <span className='text-base-content/60 shrink-0 text-xs'>
+                    <span className='bg-base-200 group-hover:bg-base-300 text-base-content/70 eink-bordered not-eink:transition-colors min-w-7 shrink-0 rounded-full px-2 py-1 text-center text-xs tabular-nums duration-150'>
                       {group.matchCount}
                     </span>
                   </button>
@@ -312,7 +318,7 @@ const LibrarySearchResults = ({
                     {group.sections.map((section, sectionIndex) => (
                       <div key={`${section.index}-${sectionIndex}`} className='mb-2 last:mb-0'>
                         {section.label && (
-                          <h3 className='text-base-content/60 mb-1 truncate text-xs font-medium'>
+                          <h3 className='text-base-content/60 mb-1 truncate px-3 text-xs font-medium'>
                             {section.label}
                           </h3>
                         )}
@@ -321,7 +327,7 @@ const LibrarySearchResults = ({
                             <button
                               key={match.cfi}
                               type='button'
-                              className='hover:bg-base-200 focus-visible:ring-base-content/20 touch-target w-full rounded-md px-2 py-2 text-start text-sm focus-visible:outline-none focus-visible:ring-2'
+                              className='hover:bg-base-200 focus-visible:ring-base-content/20 touch-target not-eink:transition-colors min-h-11 w-full rounded-md px-3 py-2.5 text-start text-sm leading-5 duration-150 focus-visible:outline-none focus-visible:ring-2'
                               onClick={() => onSelectResult(group.book, match.cfi)}
                             >
                               <span className='line-clamp-3'>
