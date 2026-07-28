@@ -4,7 +4,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useAppRouter } from '@/hooks/useAppRouter';
+import { useRouter } from 'next/navigation';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToReader, showReaderWindow } from '@/utils/nav';
 import { getActiveFileSyncBackends } from '@/services/sync/cloudSyncProvider';
@@ -35,7 +35,7 @@ interface UseOpenBookOptions {
  */
 export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptions) => {
   const _ = useTranslation();
-  const router = useAppRouter();
+  const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { updateBook } = useLibraryStore();
