@@ -29,19 +29,19 @@ const LibrarySearchMenu = ({
   const _ = useTranslation();
   const close = () => setIsDropdownOpen?.(false);
   const chooseTarget = (value: LibrarySearchTarget) => {
-    if (value !== target) onTargetChange(value);
     if (value === 'books') close();
+    if (value !== target) onTargetChange(value);
   };
   const chooseMode = (mode: LibrarySearchConfig['mode']) => {
-    onConfigChange({ ...config, mode, matchWholeWords: mode === 'whole-words' });
     if (mode !== 'nearby-words') close();
+    onConfigChange({ ...config, mode, matchWholeWords: mode === 'whole-words' });
   };
   const update = (
     key: 'matchCase' | 'matchDiacritics' | 'nearbyWords',
     value: boolean | number,
   ) => {
-    onConfigChange({ ...config, [key]: value });
     close();
+    onConfigChange({ ...config, [key]: value });
   };
   const option = (
     label: string,

@@ -1589,8 +1589,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   const handleSearchConfigChange = (config: LibrarySearchConfig) => {
-    setLibrarySearchConfig(config);
-    updateLibrarySearchUrl(librarySearchTarget, config);
+    requestAnimationFrame(() => {
+      // Let the dropdown dismissal paint before replacing a large result tree.
+      setTimeout(() => {
+        React.startTransition(() => {
+          setLibrarySearchConfig(config);
+          updateLibrarySearchUrl(librarySearchTarget, config);
+        });
+      }, 0);
+    });
   };
 
   const handleSelectAll = () => {

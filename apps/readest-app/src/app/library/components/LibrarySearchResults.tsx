@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { createLibrarySearchSession, searchLibraryBooks } from '@/services/librarySearchService';
@@ -79,8 +79,11 @@ const LibrarySearchResults = ({
     config.matchDiacritics,
     config.nearbyWords,
   ].join(':');
+  const searchKey = `${booksKey}\0${configKey}\0${query}`;
+  const activeSearchKeyRef = useRef(searchKey);
 
   useEffect(() => {
+    activeSearchKeyRef.current = searchKey;
     const controller = new AbortController();
     controllerRef.current?.abort();
     controllerRef.current = controller;
@@ -156,7 +159,7 @@ const LibrarySearchResults = ({
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [appService, booksKey, configKey, query, session]);
+  }, [appService, searchKey, session]);
 
   useEffect(
     () => () => {
@@ -165,10 +168,13 @@ const LibrarySearchResults = ({
     [session],
   );
 
-  const totalMatches = useMemo(
-    () => groups.reduce((total, group) => total + group.matchCount, 0),
-    [groups],
-  );
+  const isCurrentSearch = activeSearchKeyRef.current === searchKey;
+  const displayedGroups = isCurrentSearch ? groups : [];
+  const displayedIssues = isCurrentSearch ? issues : [];
+  const displayedPhase = isCurrentSearch ? phase : 'searching';
+  const displayedProgress = isCurrentSearch ? progress : 0;
+  const displayedActiveBook = isCurrentSearch ? activeBook : '';
+  const totalMatches = displayedGroups.reduce((total, group) => total + group.matchCount, 0);
   useEffect(() => {
     setActiveBookHash((current) =>
       groups.some(({ book }) => book.hash === current) ? current : (groups[0]?.book.hash ?? ''),
@@ -191,13 +197,13 @@ const LibrarySearchResults = ({
   return (
     <div
       ref={onScrollerRef}
-      aria-busy={phase === 'searching'}
+      aria-busy={displayedPhase === 'searching'}
       className='search-results h-full overflow-y-auto px-3 py-2 font-sans sm:px-6'
       style={{ paddingBottom: 'calc(var(--now-playing-inset, 0px) + 0.5rem)' }}
       onScroll={(event) => {
         const containerTop = event.currentTarget.getBoundingClientRect().top;
-        let currentHash = groups[0]?.book.hash ?? '';
-        for (const group of groups) {
+        let currentHash = displayedGroups[0]?.book.hash ?? '';
+        for (const group of displayedGroups) {
           const element = groupRefs.current.get(group.book.hash);
           if (!element || element.getBoundingClientRect().top > containerTop + 16) break;
           currentHash = group.book.hash;
@@ -205,12 +211,12 @@ const LibrarySearchResults = ({
         setActiveBookHash(currentHash);
       }}
     >
-      {phase === 'searching' && (
+      {displayedPhase === 'searching' && (
         <div className='mb-2 flex items-center gap-3 py-1'>
           <progress
             aria-label={_('Library Search Progress')}
             className='progress h-0.5 max-w-32 flex-1'
-            value={progress}
+            value={displayedProgress}
             max={100}
           />
           <button type='button' className='btn btn-ghost btn-sm eink-bordered' onClick={cancel}>
@@ -218,19 +224,19 @@ const LibrarySearchResults = ({
           </button>
         </div>
       )}
-      {phase === 'searching' && activeBook && (
+      {displayedPhase === 'searching' && displayedActiveBook && (
         <p className='text-base-content/60 mb-2 truncate text-xs' role='status' aria-live='polite'>
-          {_('Searching {{title}}', { title: activeBook })}
+          {_('Searching {{title}}', { title: displayedActiveBook })}
         </p>
       )}
       <div className='flex items-start gap-1 sm:gap-2'>
-        {groups.length > 1 && (
+        {displayedGroups.length > 1 && (
           <nav
             aria-label={_('Book results')}
             className='sticky top-2 flex w-5 shrink-0 flex-col items-center py-1'
           >
             <span aria-hidden='true' className='bg-base-content/25 absolute top-4 bottom-4 w-px' />
-            {groups.map((group) => {
+            {displayedGroups.map((group) => {
               const isActive = group.book.hash === activeBookHash;
               return (
                 <button
@@ -257,7 +263,7 @@ const LibrarySearchResults = ({
           </nav>
         )}
         <div className='min-w-0 flex-1 space-y-3'>
-          {groups.map((group) => {
+          {displayedGroups.map((group) => {
             const isActive = group.book.hash === activeBookHash;
             const isExpanded = !collapsedBooks.has(group.book.hash);
             return (
@@ -345,26 +351,26 @@ const LibrarySearchResults = ({
           })}
         </div>
       </div>
-      {issues.length > 0 && (
+      {displayedIssues.length > 0 && (
         <div className='eink-bordered border-base-300 mt-3 rounded-lg border p-3 text-xs'>
-          {issues.map(({ book, message }) => (
+          {displayedIssues.map(({ book, message }) => (
             <p key={`${book.hash}-${message}`}>
               <span className='font-medium'>{book.title}:</span> {message}
             </p>
           ))}
         </div>
       )}
-      {phase === 'completed' && totalMatches === 0 && issues.length === 0 && (
+      {displayedPhase === 'completed' && totalMatches === 0 && displayedIssues.length === 0 && (
         <p className='text-base-content/60 p-6 text-center text-sm' role='status'>
           {_('No results found')}
         </p>
       )}
-      {phase === 'cancelled' && (
+      {displayedPhase === 'cancelled' && (
         <p className='text-base-content/60 p-4 text-center text-sm' role='status'>
           {_('Search stopped')}
         </p>
       )}
-      {phase === 'completed' && totalMatches > 0 && (
+      {displayedPhase === 'completed' && totalMatches > 0 && (
         <p className='text-base-content/60 p-3 text-center text-xs' role='status'>
           {_('{{count}} results', { count: totalMatches })}
         </p>

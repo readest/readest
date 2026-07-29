@@ -46,6 +46,9 @@ describe('LibrarySearchMenu', () => {
     );
 
     fireEvent.click(screen.getByText('Fuzzy'));
+    expect(close.mock.invocationCallOrder.at(-1)).toBeLessThan(
+      onConfigChange.mock.invocationCallOrder.at(-1)!,
+    );
     expect(onConfigChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ mode: 'fuzzy', matchWholeWords: false }),
     );
