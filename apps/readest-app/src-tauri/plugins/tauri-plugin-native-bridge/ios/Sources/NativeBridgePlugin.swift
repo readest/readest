@@ -1178,6 +1178,19 @@ class NativeBridgePlugin: Plugin {
     invoke.resolve(["success": true])
   }
 
+  /// No public ambient-light API on iOS; Match Surroundings is Android-only.
+  @objc public func has_ambient_light_sensor(_ invoke: Invoke) {
+    invoke.resolve(["available": false])
+  }
+
+  @objc public func start_ambient_light_updates(_ invoke: Invoke) {
+    invoke.resolve(["success": false, "error": "unsupported"])
+  }
+
+  @objc public func stop_ambient_light_updates(_ invoke: Invoke) {
+    invoke.resolve(["success": true])
+  }
+
   /// Restore the brightness captured before the app first overrode it so iOS
   /// resumes ambient auto-brightness, then forget our managed state. Must run
   /// on the main thread.

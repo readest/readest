@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { PiSun, PiMoon } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
+import { MdOutlineSensors } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -10,6 +11,7 @@ import { useDeviceControlStore } from '@/store/deviceStore';
 import { saveSysSettings } from '@/helpers/settings';
 import { themes } from '@/styles/themes';
 import { debounce } from '@/utils/debounce';
+import { nextThemeMode } from '@/utils/ambientLight';
 import Slider from '@/components/Slider';
 
 const SCREEN_BRIGHTNESS_LIMITS = {
@@ -73,8 +75,7 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
   );
 
   const cycleThemeMode = () => {
-    const nextMode = themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
-    setThemeMode(nextMode);
+    setThemeMode(nextThemeMode(themeMode, !!appService?.hasAmbientLightSensor));
   };
 
   const classes = clsx(
@@ -176,6 +177,8 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
               <PiSun size={20} />
             ) : themeMode === 'dark' ? (
               <PiMoon size={20} />
+            ) : themeMode === 'surroundings' ? (
+              <MdOutlineSensors size={20} />
             ) : (
               <TbSunMoon size={20} />
             )}

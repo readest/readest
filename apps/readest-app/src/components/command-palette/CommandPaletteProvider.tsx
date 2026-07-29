@@ -7,6 +7,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useEnv } from '@/context/EnvContext';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/window';
+import { nextThemeMode } from '@/utils/ambientLight';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
 import { saveSysSettings } from '@/helpers/settings';
 import { SettingsPanelType } from '@/components/settings/SettingsDialog';
@@ -62,9 +63,8 @@ export const CommandPaletteProvider: React.FC<CommandPaletteProviderProps> = ({ 
 
   // action handlers
   const toggleTheme = useCallback(() => {
-    const nextMode = themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
-    setThemeMode(nextMode);
-  }, [themeMode, setThemeMode]);
+    setThemeMode(nextThemeMode(themeMode, !!appService?.hasAmbientLightSensor));
+  }, [themeMode, setThemeMode, appService?.hasAmbientLightSensor]);
 
   const toggleFullscreen = useCallback(() => {
     tauriHandleToggleFullScreen();

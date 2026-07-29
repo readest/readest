@@ -6,7 +6,8 @@ export type BaseColor = {
   primary: string;
 };
 
-export type ThemeMode = 'auto' | 'light' | 'dark';
+/** `surroundings` = Match Surroundings (ambient lux → light/dark), Android-first. */
+export type ThemeMode = 'auto' | 'light' | 'dark' | 'surroundings';
 
 export type Palette = {
   'base-100': string;

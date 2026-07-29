@@ -1,17 +1,24 @@
 import clsx from 'clsx';
 import React from 'react';
-import { MdOutlineLightMode, MdOutlineDarkMode } from 'react-icons/md';
+import { MdOutlineLightMode, MdOutlineDarkMode, MdOutlineSensors } from 'react-icons/md';
 import { TbSunMoon } from 'react-icons/tb';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAtmosphereStore } from '@/store/atmosphereStore';
+import { ThemeMode } from '@/styles/themes';
 import { SettingLabel } from '../primitives';
 
 interface ThemeModeSelectorProps {
-  themeMode: 'auto' | 'light' | 'dark';
-  onThemeModeChange: (mode: 'auto' | 'light' | 'dark') => void;
+  themeMode: ThemeMode;
+  onThemeModeChange: (mode: ThemeMode) => void;
+  /** When true, shows Match Surroundings (ambient lux) as a fourth segment. */
+  hasAmbientLightSensor?: boolean;
 }
 
-const ThemeModeSelector: React.FC<ThemeModeSelectorProps> = ({ themeMode, onThemeModeChange }) => {
+const ThemeModeSelector: React.FC<ThemeModeSelectorProps> = ({
+  themeMode,
+  onThemeModeChange,
+  hasAmbientLightSensor = false,
+}) => {
   const _ = useTranslation();
   const { spinDirection, shaking, toggle, toggleWithShake, deactivate } = useAtmosphereStore();
 
@@ -38,10 +45,20 @@ const ThemeModeSelector: React.FC<ThemeModeSelectorProps> = ({ themeMode, onThem
     }
   };
 
-  const segments = [
-    { mode: 'auto' as const, title: _('Auto Mode'), onClick: handleAutoClick, icon: <TbSunMoon /> },
+  const handleSurroundingsClick = () => {
+    deactivate();
+    onThemeModeChange('surroundings');
+  };
+
+  const segments: {
+    mode: ThemeMode;
+    title: string;
+    onClick: () => void;
+    icon: React.ReactNode;
+  }[] = [
+    { mode: 'auto', title: _('Auto Mode'), onClick: handleAutoClick, icon: <TbSunMoon /> },
     {
-      mode: 'light' as const,
+      mode: 'light',
       title: _('Light Mode'),
       onClick: handleLightClick,
       icon: (
@@ -59,7 +76,7 @@ const ThemeModeSelector: React.FC<ThemeModeSelectorProps> = ({ themeMode, onThem
       ),
     },
     {
-      mode: 'dark' as const,
+      mode: 'dark',
       title: _('Dark Mode'),
       onClick: handleDarkClick,
       icon: (
@@ -70,10 +87,19 @@ const ThemeModeSelector: React.FC<ThemeModeSelectorProps> = ({ themeMode, onThem
     },
   ];
 
+  if (hasAmbientLightSensor) {
+    segments.push({
+      mode: 'surroundings',
+      title: _('Match Surroundings'),
+      onClick: handleSurroundingsClick,
+      icon: <MdOutlineSensors />,
+    });
+  }
+
   return (
     <div className='flex items-center justify-between px-4'>
       <SettingLabel>{_('Theme Mode')}</SettingLabel>
-      {/* Segmented control: three adjacent, equally sized radio segments share
+      {/* Segmented control: adjacent, equally sized radio segments share
           a single track. No `gap` between them, so there is no dead space to
           mis-tap, and each segment is a full-height rectangle instead of a
           32px icon — far easier to hit on touch screens (issue #4831). */}

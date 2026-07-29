@@ -176,6 +176,27 @@ pub(crate) async fn set_screen_brightness<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn has_ambient_light_sensor<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<HasAmbientLightSensorResponse> {
+    app.native_bridge().has_ambient_light_sensor()
+}
+
+#[command]
+pub(crate) async fn start_ambient_light_updates<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<AmbientLightUpdatesResponse> {
+    app.native_bridge().start_ambient_light_updates()
+}
+
+#[command]
+pub(crate) async fn stop_ambient_light_updates<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<AmbientLightUpdatesResponse> {
+    app.native_bridge().stop_ambient_light_updates()
+}
+
+#[command]
 pub(crate) async fn get_external_sdcard_path<R: Runtime>(
     app: AppHandle<R>,
 ) -> Result<GetExternalSDCardPathResponse> {

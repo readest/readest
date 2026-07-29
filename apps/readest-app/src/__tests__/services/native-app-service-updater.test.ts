@@ -57,6 +57,7 @@ vi.mock('@/utils/bridge', () => ({
   copyURIToPath: vi.fn().mockResolvedValue({ path: '' }),
   getStorefrontRegionCode: vi.fn().mockResolvedValue({ regionCode: null }),
   saveImageToGallery: vi.fn().mockResolvedValue(undefined),
+  hasAmbientLightSensor: vi.fn().mockResolvedValue({ available: false }),
 }));
 
 vi.mock('@/utils/file', () => ({

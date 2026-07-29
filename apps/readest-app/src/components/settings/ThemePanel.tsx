@@ -359,6 +359,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
           <ThemeModeSelector
             themeMode={themeMode}
             onThemeModeChange={setThemeMode}
+            hasAmbientLightSensor={!!appService?.hasAmbientLightSensor}
             data-setting-id='settings.color.themeMode'
           />
 

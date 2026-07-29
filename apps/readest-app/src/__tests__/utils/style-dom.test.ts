@@ -245,6 +245,16 @@ describe('getThemeCode', () => {
     expect(code.isDarkMode).toBe(false);
   });
 
+  it('uses ambientIsDarkMode when themeMode is surroundings', () => {
+    localStorage.setItem('themeMode', 'surroundings');
+    localStorage.setItem('ambientIsDarkMode', 'true');
+    localStorage.setItem('systemIsDarkMode', 'false');
+    expect(getThemeCode().isDarkMode).toBe(true);
+
+    localStorage.setItem('ambientIsDarkMode', 'false');
+    expect(getThemeCode().isDarkMode).toBe(false);
+  });
+
   it('falls back to default theme when custom themeColor not found', () => {
     localStorage.setItem('themeColor', 'nonexistent-theme-xyz');
     localStorage.setItem('themeMode', 'light');

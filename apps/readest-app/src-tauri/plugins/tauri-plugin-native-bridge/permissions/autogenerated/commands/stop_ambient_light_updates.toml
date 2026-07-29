@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-stop-ambient-light-updates"
+description = "Enables the stop_ambient_light_updates command without any pre-configured scope."
+commands.allow = ["stop_ambient_light_updates"]
+
+[[permission]]
+identifier = "deny-stop-ambient-light-updates"
+description = "Denies the stop_ambient_light_updates command without any pre-configured scope."
+commands.deny = ["stop_ambient_light_updates"]

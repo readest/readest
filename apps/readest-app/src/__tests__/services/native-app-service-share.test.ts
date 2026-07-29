@@ -53,6 +53,7 @@ vi.mock('@choochmeque/tauri-plugin-sharekit-api', () => ({
 vi.mock('@/utils/bridge', () => ({
   copyURIToPath: vi.fn().mockResolvedValue({ path: '' }),
   getStorefrontRegionCode: vi.fn().mockResolvedValue({ regionCode: null }),
+  hasAmbientLightSensor: vi.fn().mockResolvedValue({ available: false }),
 }));
 
 vi.mock('@/utils/file', () => ({

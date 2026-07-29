@@ -38,6 +38,35 @@ describe('ThemeModeSelector segmented control', () => {
     expect(segments).toHaveLength(3);
   });
 
+  it('adds Match Surroundings when an ambient light sensor is available', () => {
+    render(
+      <ThemeModeSelector
+        themeMode='surroundings'
+        onThemeModeChange={() => {}}
+        hasAmbientLightSensor
+      />,
+    );
+
+    expect(screen.getAllByRole('radio')).toHaveLength(4);
+    expect(
+      screen.getByRole('radio', { name: 'Match Surroundings' }).getAttribute('aria-checked'),
+    ).toBe('true');
+  });
+
+  it('switches to surroundings when that segment is clicked', () => {
+    const onThemeModeChange = vi.fn();
+    render(
+      <ThemeModeSelector
+        themeMode='auto'
+        onThemeModeChange={onThemeModeChange}
+        hasAmbientLightSensor
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Match Surroundings' }));
+    expect(onThemeModeChange).toHaveBeenCalledWith('surroundings');
+  });
+
   it('marks the active segment via aria-checked', () => {
     render(<ThemeModeSelector themeMode='dark' onThemeModeChange={() => {}} />);
 

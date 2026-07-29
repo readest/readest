@@ -12,6 +12,13 @@ vi.mock('@/utils/style', () => ({
 
 vi.mock('@/utils/bridge', () => ({
   getSystemColorScheme: vi.fn(() => Promise.resolve({ colorScheme: 'light' })),
+  hasAmbientLightSensor: vi.fn(() => Promise.resolve({ available: false })),
+  startAmbientLightUpdates: vi.fn(() => Promise.resolve({ success: true })),
+  stopAmbientLightUpdates: vi.fn(() => Promise.resolve({ success: true })),
+}));
+
+vi.mock('@tauri-apps/api/core', () => ({
+  addPluginListener: vi.fn(() => Promise.resolve({ unregister: vi.fn() })),
 }));
 
 vi.mock('@tauri-apps/api/window', () => ({
@@ -37,6 +44,7 @@ describe('themeStore', () => {
       themeMode: 'auto',
       themeColor: 'default',
       systemIsDarkMode: false,
+      ambientIsDarkMode: false,
       isDarkMode: false,
       systemUIVisible: false,
       statusBarHeight: 24,
@@ -44,6 +52,9 @@ describe('themeStore', () => {
       safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 },
       isRoundedWindow: true,
     });
+    // Drop any ambient-light subscription leftover from prior tests.
+    useThemeStore.getState().setThemeMode('auto');
+    localStorage.clear();
   });
 
   describe('initial state', () => {
@@ -88,6 +99,18 @@ describe('themeStore', () => {
       useThemeStore.setState({ systemIsDarkMode: true });
       useThemeStore.getState().setThemeMode('auto');
       expect(useThemeStore.getState().isDarkMode).toBe(true);
+    });
+
+    test('in surroundings mode, uses ambientIsDarkMode to compute isDarkMode', () => {
+      useThemeStore.setState({ ambientIsDarkMode: true, systemIsDarkMode: false });
+      useThemeStore.getState().setThemeMode('surroundings');
+      expect(useThemeStore.getState().themeMode).toBe('surroundings');
+      expect(useThemeStore.getState().isDarkMode).toBe(true);
+      expect(localStorage.getItem('themeMode')).toBe('surroundings');
+
+      useThemeStore.setState({ ambientIsDarkMode: false });
+      useThemeStore.getState().setThemeMode('surroundings');
+      expect(useThemeStore.getState().isDarkMode).toBe(false);
     });
 
     test('sets data-theme attribute on documentElement', () => {
@@ -190,6 +213,50 @@ describe('themeStore', () => {
     });
   });
 
+  describe('handleAmbientLightChange', () => {
+    test('updates isDarkMode from lux when in surroundings mode', () => {
+      useThemeStore.setState({
+        themeMode: 'surroundings',
+        ambientIsDarkMode: false,
+        isDarkMode: false,
+        themeColor: 'default',
+      });
+      useThemeStore.getState().handleAmbientLightChange(5);
+      expect(useThemeStore.getState().ambientIsDarkMode).toBe(true);
+      expect(useThemeStore.getState().isDarkMode).toBe(true);
+      expect(localStorage.getItem('ambientIsDarkMode')).toBe('true');
+      expect(document.documentElement.getAttribute('data-theme')).toBe('default-dark');
+    });
+
+    test('ignores lux updates when not in surroundings mode', () => {
+      useThemeStore.setState({
+        themeMode: 'light',
+        ambientIsDarkMode: false,
+        isDarkMode: false,
+      });
+      useThemeStore.getState().handleAmbientLightChange(5);
+      expect(useThemeStore.getState().isDarkMode).toBe(false);
+      expect(useThemeStore.getState().ambientIsDarkMode).toBe(false);
+    });
+
+    test('holds state inside the hysteresis band after first reading', () => {
+      useThemeStore.setState({
+        themeMode: 'surroundings',
+        ambientIsDarkMode: true,
+        isDarkMode: true,
+        themeColor: 'default',
+      });
+      // First reading establishes dark (low lux)
+      useThemeStore.getState().handleAmbientLightChange(5);
+      // Mid-band should hold dark
+      useThemeStore.getState().handleAmbientLightChange(35);
+      expect(useThemeStore.getState().isDarkMode).toBe(true);
+      // High lux switches to light
+      useThemeStore.getState().handleAmbientLightChange(80);
+      expect(useThemeStore.getState().isDarkMode).toBe(false);
+    });
+  });
+
   describe('showSystemUI / dismissSystemUI', () => {
     test('showSystemUI sets systemUIVisible to true', () => {
       useThemeStore.getState().showSystemUI();
@@ -261,7 +328,14 @@ describe('themeStore', () => {
 
   describe('initSystemThemeListener', () => {
     const makeAppService = (overrides: Partial<AppService> = {}) =>
-      ({ isIOSApp: false, hasWindow: false, isLinuxApp: false, ...overrides }) as AppService;
+      ({
+        isIOSApp: false,
+        isAndroidApp: false,
+        hasWindow: false,
+        isLinuxApp: false,
+        hasAmbientLightSensor: false,
+        ...overrides,
+      }) as AppService;
 
     test('registers window.onNativeColorSchemeChange on iOS', () => {
       initSystemThemeListener(makeAppService({ isIOSApp: true }));

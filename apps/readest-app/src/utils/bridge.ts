@@ -242,6 +242,32 @@ export async function setScreenBrightness(
   return result;
 }
 
+export interface HasAmbientLightSensorResponse {
+  available: boolean;
+  error?: string;
+}
+
+export interface AmbientLightUpdatesResponse {
+  success: boolean;
+  error?: string;
+}
+
+export interface AmbientLightPayload {
+  lux: number;
+}
+
+export async function hasAmbientLightSensor(): Promise<HasAmbientLightSensorResponse> {
+  return invoke<HasAmbientLightSensorResponse>('plugin:native-bridge|has_ambient_light_sensor');
+}
+
+export async function startAmbientLightUpdates(): Promise<AmbientLightUpdatesResponse> {
+  return invoke<AmbientLightUpdatesResponse>('plugin:native-bridge|start_ambient_light_updates');
+}
+
+export async function stopAmbientLightUpdates(): Promise<AmbientLightUpdatesResponse> {
+  return invoke<AmbientLightUpdatesResponse>('plugin:native-bridge|stop_ambient_light_updates');
+}
+
 export async function getExternalSDCardPath(): Promise<GetExternalSDCardPathResponse> {
   const result = await invoke<GetExternalSDCardPathResponse>(
     'plugin:native-bridge|get_external_sdcard_path',

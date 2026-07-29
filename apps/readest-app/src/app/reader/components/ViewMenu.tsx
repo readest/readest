@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BiMoon, BiSun } from 'react-icons/bi';
 import { TbSunMoon } from 'react-icons/tb';
-import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline } from 'react-icons/md';
+import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline, MdOutlineSensors } from 'react-icons/md';
 import { MdRemove, MdAdd, MdContrast } from 'react-icons/md';
 import { MdSync, MdSyncProblem } from 'react-icons/md';
 import { IoMdExpand } from 'react-icons/io';
@@ -32,6 +32,7 @@ import { navigateToLogin } from '@/utils/nav';
 import { getScrollGapAttr } from '@/utils/webtoon';
 import { eventDispatcher } from '@/utils/event';
 import { getMaxInlineSize } from '@/utils/config';
+import { nextThemeMode } from '@/utils/ambientLight';
 import dayjs from 'dayjs';
 import { saveViewSettings } from '@/helpers/settings';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
@@ -100,8 +101,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   };
 
   const cycleThemeMode = () => {
-    const nextMode = themeMode === 'auto' ? 'light' : themeMode === 'light' ? 'dark' : 'auto';
-    setThemeMode(nextMode);
+    setThemeMode(nextThemeMode(themeMode, !!appService?.hasAmbientLightSensor));
   };
 
   const handleFullScreen = () => {
@@ -447,9 +447,19 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
             ? _('Dark Mode')
             : themeMode === 'light'
               ? _('Light Mode')
-              : _('Auto Mode')
+              : themeMode === 'surroundings'
+                ? _('Match Surroundings')
+                : _('Auto Mode')
         }
-        Icon={themeMode === 'dark' ? BiMoon : themeMode === 'light' ? BiSun : TbSunMoon}
+        Icon={
+          themeMode === 'dark'
+            ? BiMoon
+            : themeMode === 'light'
+              ? BiSun
+              : themeMode === 'surroundings'
+                ? MdOutlineSensors
+                : TbSunMoon
+        }
         onClick={cycleThemeMode}
       />
       {bookData.book?.format === 'PDF' && appService?.supportsCanvasContext2DFilter && (

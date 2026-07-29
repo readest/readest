@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-has-ambient-light-sensor"
+description = "Enables the has_ambient_light_sensor command without any pre-configured scope."
+commands.allow = ["has_ambient_light_sensor"]
+
+[[permission]]
+identifier = "deny-has-ambient-light-sensor"
+description = "Denies the has_ambient_light_sensor command without any pre-configured scope."
+commands.deny = ["has_ambient_light_sensor"]

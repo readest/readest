@@ -38,7 +38,12 @@ import {
 import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
-import { copyURIToPath, getStorefrontRegionCode, saveImageToGallery } from '@/utils/bridge';
+import {
+  copyURIToPath,
+  getStorefrontRegionCode,
+  hasAmbientLightSensor,
+  saveImageToGallery,
+} from '@/utils/bridge';
 import { galleryFileName } from '@/utils/image';
 import { copyFiles } from '@/utils/files';
 import { detectViewTransitionGroup, detectViewTransitionsAPI } from '@/utils/viewTransition';
@@ -573,6 +578,7 @@ export class NativeAppService extends BaseAppService {
   override hasOrientationLock =
     (OS_TYPE === 'ios' && getOSPlatform() === 'ios') || OS_TYPE === 'android';
   override hasScreenBrightness = OS_TYPE === 'ios' || OS_TYPE === 'android';
+  override hasAmbientLightSensor = false;
   override hasIAP = OS_TYPE === 'ios' || (OS_TYPE === 'android' && DIST_CHANNEL === 'playstore');
   // CustomizeRootDir has a blocker on macOS App Store builds due to Security Scoped Resource restrictions.
   // See: https://github.com/tauri-apps/tauri/issues/3716
@@ -657,6 +663,15 @@ export class NativeAppService extends BaseAppService {
         // storefrontRegionCode as null and let downstream features that
         // depend on region degrade gracefully.
         console.warn('[nativeAppService] getStorefrontRegionCode failed:', err);
+      }
+    }
+    if (this.isAndroidApp) {
+      try {
+        const res = await hasAmbientLightSensor();
+        this.hasAmbientLightSensor = !!res.available;
+      } catch (err) {
+        console.warn('[nativeAppService] hasAmbientLightSensor failed:', err);
+        this.hasAmbientLightSensor = false;
       }
     }
     await this.prepareBooksDir();
