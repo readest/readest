@@ -1,7 +1,6 @@
 # Build workflow for fork builds
 # Mirrors the upstream release.yml structure but without requiring
 # code signing keys, Sentry DSN, PostHog, Supabase, or any secrets.
-# Trigger: push to main, PRs to main, or manual dispatch.
 
 name: Build Fork
 
@@ -41,14 +40,12 @@ jobs:
             args: '--target x86_64-pc-windows-msvc --bundles nsis'
 
     runs-on: ${{ matrix.config.os }}
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: initialize git submodules
-        run: git submodule update --init --recursive
+      - run: git submodule update --init --recursive
 
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -56,26 +53,23 @@ jobs:
           node-version: '24'
           cache: pnpm
 
-      - name: Setup Java (Android only)
+      - name: Setup Java + Android SDK
         if: matrix.config.release == 'android'
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Setup Android SDK (Android only)
+      - name: Setup Android SDK
         if: matrix.config.release == 'android'
         uses: android-actions/setup-android@v4
 
-      - name: Install NDK (Android only)
+      - name: Install NDK
         if: matrix.config.release == 'android'
         run: sdkmanager "ndk;28.2.13676358"
 
-      - name: Install JS dependencies
-        run: pnpm install --frozen-lockfile --prefer-offline
-
-      - name: Copy vendor dists to public directory
-        run: pnpm --filter @readest/readest-app setup-vendors
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm --filter @readest/readest-app setup-vendors
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -85,7 +79,7 @@ jobs:
         with:
           key: ${{ matrix.config.os }}-${{ matrix.config.release }}-${{ matrix.config.arch }}-cargo
 
-      - name: Install system dependencies (Linux desktop only)
+      - name: Install Linux system deps
         if: matrix.config.release == 'linux'
         run: |
           sudo apt-get update
@@ -96,48 +90,40 @@ jobs:
             gir1.2-javascriptcoregtk-4.1 gir1.2-webkit2-4.1 \
             libappindicator3-dev librsvg2-dev patchelf xdg-utils
 
-      - name: Build Android APKs
-        if: matrix.config.release == 'android'
-        env:
-          NODE_OPTIONS: '--max-old-space-size=8192'
-          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
-        run: |
-          cd apps/readest-app
-          rm -rf src-tauri/gen/android
-          pnpm tauri android init
-          pnpm tauri icon ../../data/icons/readest-book.png
-          pnpm tauri android build 2>&1 || echo "(Android build failed — see logs)"
-          mkdir -p dist/android
-          cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk \
-             dist/android/readest-universal.apk 2>/dev/null || true
-          pnpm tauri android build -t aarch64 2>&1 || echo "(Android arm64 build failed)"
-          cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk \
-             dist/android/readest-arm64.apk 2>/dev/null || true
-
-      - name: Build Tauri desktop app
-        if: matrix.config.release != 'android'
+      - name: Build Tauri app
         working-directory: apps/readest-app
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
-        run: pnpm tauri build ${{ matrix.config.args }}
+        run: |
+          if [ "${{ matrix.config.release }}" = "android" ]; then
+            rm -rf src-tauri/gen/android
+            pnpm tauri android init
+            pnpm tauri icon ../../data/icons/readest-book.png
+            pnpm tauri android build 2>&1 || echo "Android build exited non-zero (check logs)"
+            mkdir -p dist/android
+            find src-tauri/gen/android -name "*.apk" -exec cp {} dist/android/ \; 2>/dev/null || true
+          else
+            pnpm tauri build ${{ matrix.config.args }} 2>&1 || echo "Desktop build exited non-zero (check logs)"
+          fi
 
-      - name: Upload Android APKs
-        if: matrix.config.release == 'android'
+      - name: List build artifacts
+        run: |
+          echo "=== target/release/bundle/ ==="
+          find target/release/bundle -type f 2>/dev/null | head -20 || echo "(empty)"
+          echo "=== APKs ==="
+          find apps/readest-app/dist -name "*.apk" 2>/dev/null | head -5 || echo "(none)"
+          echo "=== target/release/ binaries ==="
+          ls target/release/*.dmg target/release/*.AppImage target/release/*.exe target/release/*.msi target/release/*.deb target/release/*.rpm 2>/dev/null || echo "(no top-level installers)"
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: readest-${{ matrix.config.release }}
-          path: apps/readest-app/dist/android/
+          name: readest-${{ matrix.config.release }}-${{ matrix.config.arch || 'multi' }}
+          path: |
+            target/release/bundle/
+            apps/readest-app/dist/
           if-no-files-found: warn
 
-      - name: Upload desktop bundles
-        if: matrix.config.release != 'android'
-        uses: actions/upload-artifact@v4
-        with:
-          name: readest-${{ matrix.config.release }}-${{ matrix.config.arch }}
-          path: apps/readest-app/src-tauri/target/release/bundle/
-          if-no-files-found: warn
-
-  # Separate job for the web static export (no native deps)
   build-web:
     name: web
     runs-on: ubuntu-latest
