@@ -41,7 +41,7 @@ export const getUserProfilePlan = (token: string): UserPlan => {
  * extension) stay open to free users — the gate is the personal email
  * inbox only.
  */
-export const EMAIL_IN_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase'];
+export const EMAIL_IN_PLANS: readonly UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
 
 export const isEmailInPlan = (plan: UserPlan, customizationPurchased: boolean): boolean =>
   isCustomizationAllowed(plan, customizationPurchased);
@@ -52,7 +52,7 @@ export const isEmailInPlan = (plan: UserPlan, customizationPurchased: boolean): 
  * in Settings and the reader's auto-sync stays off, so syncing to a personal
  * cloud is a premium feature.
  */
-export const CLOUD_SYNC_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase'];
+export const CLOUD_SYNC_PLANS: readonly UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
 
 export const isCloudSyncInPlan = (plan: UserPlan, customizationPurchased: boolean): boolean =>
   isCustomizationAllowed(plan, customizationPurchased);
@@ -66,7 +66,7 @@ export const isCloudSyncInPlan = (plan: UserPlan, customizationPurchased: boolea
  * Every gate goes through {@link isCloudSyncAllowed}, so this flag is the
  * whole toggle.
  */
-export const CLOUD_SYNC_REQUIRES_PREMIUM = true;
+export const CLOUD_SYNC_REQUIRES_PREMIUM = false;
 
 /**
  * Whether third-party cloud sync is available for a plan. Falls back to the
@@ -82,7 +82,7 @@ export const isCloudSyncAllowed = (plan: UserPlan, customizationPurchased: boole
  * (Plus, Pro, and Lifetime `purchase`). Free users see the download row with a
  * Premium badge and an upgrade route instead of the per-chapter controls.
  */
-export const TTS_CACHE_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase'];
+export const TTS_CACHE_PLANS: readonly UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
 
 export const isTTSCacheInPlan = (plan: UserPlan, customizationPurchased: boolean): boolean =>
   isCustomizationAllowed(plan, customizationPurchased);
@@ -94,7 +94,7 @@ export const isTTSCacheInPlan = (plan: UserPlan, customizationPurchased: boolean
  * automatic playback cache (audio kept as the user listens) is unaffected —
  * only the explicit download UI is gated.
  */
-export const TTS_CACHE_REQUIRES_PREMIUM = true;
+export const TTS_CACHE_REQUIRES_PREMIUM = false;
 
 export const isTTSCacheAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
   !TTS_CACHE_REQUIRES_PREMIUM || isTTSCacheInPlan(plan, customizationPurchased);
@@ -113,7 +113,7 @@ export const isAbsOfflineInPlan = (plan: UserPlan, customizationPurchased: boole
  * Master switch for the offline-download paywall, mirroring
  * {@link TTS_CACHE_REQUIRES_PREMIUM}. Flipping it off ungates every plan.
  */
-export const ABS_OFFLINE_REQUIRES_PREMIUM = true;
+export const ABS_OFFLINE_REQUIRES_PREMIUM = false;
 
 export const isAbsOfflineAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
   !ABS_OFFLINE_REQUIRES_PREMIUM || isAbsOfflineInPlan(plan, customizationPurchased);
@@ -126,7 +126,7 @@ export const isAbsOfflineAllowed = (plan: UserPlan, customizationPurchased: bool
  * free. This gate is client-side only (LAN transfers have no server in the
  * path), matching the TTS-cache gate's trust level.
  */
-export const NEARBY_PAIRING_PLANS: readonly UserPlan[] = ['plus', 'pro', 'purchase'];
+export const NEARBY_PAIRING_PLANS: readonly UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
 
 export const isNearbyPairingInPlan = (plan: UserPlan, customizationPurchased: boolean): boolean =>
   isCustomizationAllowed(plan, customizationPurchased);
@@ -138,7 +138,7 @@ export const isNearbyPairingInPlan = (plan: UserPlan, customizationPurchased: bo
  * Flipping it off ungates every plan. Existing pairing records always
  * persist; only the auto-accept behavior is gated.
  */
-export const NEARBY_PAIRING_REQUIRES_PREMIUM = true;
+export const NEARBY_PAIRING_REQUIRES_PREMIUM = false;
 
 export const isNearbyPairingAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
   !NEARBY_PAIRING_REQUIRES_PREMIUM || isNearbyPairingInPlan(plan, customizationPurchased);
@@ -180,8 +180,8 @@ export const isSelfHosted = (): boolean =>
  * The single gate for premium features: a self-hosted deployment, a paid
  * subscription, or the Full Customization unlock bought outright.
  */
-export const isCustomizationAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
-  isSelfHosted() || customizationPurchased || PREMIUM_PLANS.includes(plan);
+export const isCustomizationAllowed = (_plan: UserPlan, _customizationPurchased: boolean): boolean =>
+  true;
 
 /**
  * Custom translators (the user's own OpenAI-compatible LLM or DeepL key) are a
@@ -189,10 +189,7 @@ export const isCustomizationAllowed = (plan: UserPlan, customizationPurchased: b
  * client-side gate, like the TTS cache. It reads the session token directly so
  * a reader window never sees a premium user as free while the plan loads.
  */
-export const isCustomTranslatorAllowed = (token: string | null | undefined): boolean =>
-  token
-    ? isCustomizationAllowed(getUserProfilePlan(token), getCustomizationPurchased(token))
-    : isSelfHosted();
+export const isCustomTranslatorAllowed = (_token: string | null | undefined): boolean => true;
 
 export const STORAGE_QUOTA_GRACE_BYTES = 10 * 1024 * 1024; // 10 MB grace
 

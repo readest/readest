@@ -10,15 +10,7 @@ fn main() {
     if target_os == "windows" {
         build_windows_thumbnail();
     }
-    if target_os == "android" {
-        // The APK ships the library stripped (see gen/android/app/build.gradle.kts),
-        // so Sentry symbolicates Rust panics from the debug files CI uploads. It
-        // matches them to the crashing library by build id, and the NDK linker
-        // emits none by default.
-        println!("cargo:rustc-link-arg=-Wl,--build-id=sha1");
-    }
 
-    propagate_sentry_dsn();
     propagate_app_version();
 
     // Declare the app's own (non-plugin) commands in the ACL app manifest.
@@ -87,11 +79,10 @@ fn main() {
 }
 
 /// Bake the app version from `package.json` into the crate as `READEST_APP_VERSION`
-/// (read back via `option_env!`). Sentry keys its release/environment off this
-/// rather than `CARGO_PKG_VERSION`, because the crate version in `Cargo.toml` is
-/// not kept in sync with the app version (and only `package.json` carries the
-/// nightly `-YYYYMMDDHH` stamp). Absent/unparseable => unset, so the Rust code
-/// falls back to the crate version.
+/// (read back via `option_env!`) rather than `CARGO_PKG_VERSION`, because the
+/// crate version in `Cargo.toml` is not kept in sync with the app version (and
+/// only `package.json` carries the nightly `-YYYYMMDDHH` stamp).
+/// Absent/unparseable => unset, so the Rust code falls back to the crate version.
 fn propagate_app_version() {
     let package_json = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap())
         .join("..")
@@ -122,69 +113,6 @@ fn read_json_string_field(path: &Path, key: &str) -> Option<String> {
             .trim_matches('"');
         if !value.is_empty() {
             return Some(value.to_string());
-        }
-    }
-    None
-}
-
-/// Bake the Sentry DSN into the crate at build time via `cargo:rustc-env`, so
-/// `option_env!("SENTRY_DSN")` (and, on iOS, the `readest_sentry_dsn` FFI) sees
-/// it. Precedence: an existing `SENTRY_DSN` in the environment (CI secret / shell
-/// export) wins; otherwise fall back to the gitignored `.env.local`, then `.env`,
-/// at the app root. Absent everywhere => unset, so reporting stays disabled for
-/// local and fork builds. `rerun-if-*` makes cargo recompile when the value or
-/// the dotenv files change (avoiding a stale baked-in value).
-///
-/// Debug builds never bake a DSN, whatever the environment or the dotenv files
-/// say. `tauri dev` and `tauri ios dev` serve the app from the dev server, which
-/// puts the page on a different origin than Tauri's IPC custom protocol, so every
-/// report the injected `@sentry/browser` sends over that bridge fails -- and each
-/// failure logs an error that Sentry turns into another report, which spins until
-/// the WebView is too busy to render. The DSN is cleared rather than merely left
-/// unset because `option_env!` would otherwise still see a `SENTRY_DSN` exported
-/// in the developer's shell.
-fn propagate_sentry_dsn() {
-    println!("cargo:rerun-if-env-changed=SENTRY_DSN");
-    let app_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("..");
-    let env_local = app_dir.join(".env.local");
-    let env_file = app_dir.join(".env");
-    println!("cargo:rerun-if-changed={}", env_local.display());
-    println!("cargo:rerun-if-changed={}", env_file.display());
-
-    if env::var("PROFILE").as_deref() != Ok("release") {
-        println!("cargo:rustc-env=SENTRY_DSN=");
-        return;
-    }
-
-    let dsn = env::var("SENTRY_DSN")
-        .ok()
-        .filter(|v| !v.is_empty())
-        .or_else(|| read_env_value(&env_local, "SENTRY_DSN"))
-        .or_else(|| read_env_value(&env_file, "SENTRY_DSN"));
-
-    if let Some(dsn) = dsn {
-        println!("cargo:rustc-env=SENTRY_DSN={dsn}");
-    }
-}
-
-/// Read a single `KEY=value` from a dotenv-style file, skipping blank lines and
-/// `#` comments and stripping surrounding quotes. `None` if the file/key is
-/// absent or the value is empty.
-fn read_env_value(path: &Path, key: &str) -> Option<String> {
-    let contents = fs::read_to_string(path).ok()?;
-    for line in contents.lines() {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        if let Some(value) = line
-            .strip_prefix(key)
-            .and_then(|rest| rest.trim_start().strip_prefix('='))
-        {
-            let value = value.trim().trim_matches(|c| c == '"' || c == '\'');
-            if !value.is_empty() {
-                return Some(value.to_string());
-            }
         }
     }
     None

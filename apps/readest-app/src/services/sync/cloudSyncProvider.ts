@@ -1,6 +1,5 @@
 import type { SystemSettings } from '@/types/settings';
 import type { UserPlan } from '@/types/quota';
-import { isCloudSyncAllowed } from '@/utils/access';
 import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry';
 
 /**
@@ -129,14 +128,15 @@ export interface CloudSyncGate {
 
 export const resolveCloudSyncGate = (
   settings: SystemSettings | null | undefined,
-  plan: UserPlan = cachedUserPlan,
-  customizationPurchased: boolean = cachedCustomizationPurchased,
+  _plan: UserPlan = cachedUserPlan,
+  _customizationPurchased: boolean = cachedCustomizationPurchased,
 ): CloudSyncGate => {
   const backends = getEnabledFileSyncBackends(settings);
   return {
     readest: isReadestCloudEnabled(settings),
     backends,
-    paused: backends.length > 0 && !isCloudSyncAllowed(plan, customizationPurchased),
+    // Cloud sync is ungated for fork builds — never paused.
+    paused: false,
   };
 };
 

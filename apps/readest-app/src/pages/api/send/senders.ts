@@ -1,13 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
-import {
-  EMAIL_IN_PLANS,
-  getCustomizationPurchased,
-  getUserProfilePlan,
-  isEmailInPlan,
-  validateUserAndToken,
-} from '@/utils/access';
+import { validateUserAndToken } from '@/utils/access';
 import { normalizeSenderEmail } from '@/services/send/sendAddress';
 import type { DBSendAllowedSender } from '@/types/sendRecords';
 
@@ -31,16 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(403).json({ error: 'Not authenticated' });
   }
 
-  // Sender allowlist only matters for the email-in channel — gate it too.
-  const plan = getUserProfilePlan(token);
-  if (!isEmailInPlan(plan, getCustomizationPurchased(token))) {
-    return res.status(403).json({
-      error: 'Email-in is available on the Plus, Pro, and Lifetime plans',
-      code: 'plan_required',
-      plan,
-      requiredPlans: EMAIL_IN_PLANS,
-    });
-  }
+  // Sender allowlist is available to all users — no premium gating.
 
   const supabase = createSupabaseAdminClient();
 

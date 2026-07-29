@@ -153,10 +153,9 @@ const IntegrationsPanel: React.FC = () => {
       .then((s) => setICloudAvailable(!!s.available && !!s.documentsPath))
       .catch(() => setICloudAvailable(false));
   }, []);
-  // Third-party cloud sync will be a premium feature (any paid plan), but it is
-  // temporarily UNGATED while the feature stabilises — `isCloudSyncAllowed`
-  // returns true for every plan until `CLOUD_SYNC_REQUIRES_PREMIUM` is flipped
-  // back on. The `?? 'free'` keeps the (re-gated) loading state non-premium.
+  // Third-party cloud sync is ungated for fork builds: `isCloudSyncAllowed`
+  // returns true for every plan. The badge helper is kept so the loading state
+  // still behaves, but it now resolves to no badge.
   const { userProfilePlan, customizationPurchased } = useQuotaStats();
   const isCloudSyncPremium = isCloudSyncAllowed(userProfilePlan ?? 'free', customizationPurchased);
   const premiumBadge = shouldShowCloudProviderBadge({
@@ -219,8 +218,7 @@ const IntegrationsPanel: React.FC = () => {
       requestedSubPage === 'onedrive' ||
       requestedSubPage === 'icloud' ||
       requestedSubPage === 'cloudsync';
-    // Cloud-sync sub-pages are premium-gated. If the plan is still loading, wait
-    // (don't consume the request); once known, only honor it for paid plans.
+    // Cloud-sync sub-pages are always accessible.
     if (isCloudRequest && !isCloudSyncPremium) {
       if (userProfilePlan === undefined) return;
       setRequestedSubPage(null);
@@ -249,7 +247,7 @@ const IntegrationsPanel: React.FC = () => {
       setSubPage('gdrive');
     }
     setRequestedSubPage(null);
-  }, [requestedSubPage, setRequestedSubPage, isCloudSyncPremium, userProfilePlan]);
+  }, [requestedSubPage, setRequestedSubPage]);
 
   // Sub-page wrapper matches the list-view's `my-4 w-full` so the
   // SubPageHeader's "Integrations" label lands at the exact same Y position
@@ -721,9 +719,7 @@ const IntegrationsPanel: React.FC = () => {
               onOpen={() => (user ? setSubPage('readest-cloud') : navigateToLogin(router))}
               toggleLabel={_('Sync with Readest Cloud')}
             />
-            {/* Third-party providers are premium: every row carries the tier
-                badge; on a free plan the checkbox is disabled and opening a
-                row routes to the upgrade page instead of the config sub-page. */}
+            {/* Third-party providers: every row is accessible to all users. */}
             {(appService?.isDesktopApp ||
               appService?.isAndroidApp ||
               appService?.isIOSApp ||
@@ -733,17 +729,14 @@ const IntegrationsPanel: React.FC = () => {
                 icon={RiGoogleLine}
                 title={_('Google Drive')}
                 status={gdriveStatus}
-                badge={premiumBadge}
                 checked={!!settings.googleDrive?.enabled}
                 canToggle={canToggleCloudProvider({
-                  isPremium: isCloudSyncPremium,
+                  isPremium: true,
                   isConfigured: gdriveConfigured,
                   isEnabled: !!settings.googleDrive?.enabled,
                 })}
                 onToggle={(next) => toggleCloudProvider('gdrive', next)}
-                onOpen={() =>
-                  isCloudSyncPremium ? setSubPage('gdrive') : navigateToProfile(router)
-                }
+                onOpen={() => setSubPage('gdrive')}
                 toggleLabel={_('Sync with Google Drive')}
               />
             )}
@@ -751,30 +744,28 @@ const IntegrationsPanel: React.FC = () => {
               icon={RiCloudLine}
               title={_('WebDAV')}
               status={webdavStatus}
-              badge={premiumBadge}
               checked={!!settings.webdav?.enabled}
               canToggle={canToggleCloudProvider({
-                isPremium: isCloudSyncPremium,
+                isPremium: true,
                 isConfigured: webdavConfigured,
                 isEnabled: !!settings.webdav?.enabled,
               })}
               onToggle={(next) => toggleCloudProvider('webdav', next)}
-              onOpen={() => (isCloudSyncPremium ? setSubPage('webdav') : navigateToProfile(router))}
+              onOpen={() => setSubPage('webdav')}
               toggleLabel={_('Sync with WebDAV')}
             />
             <CloudProviderRow
               icon={RiDatabase2Line}
               title={_('S3 Storage')}
               status={s3Status}
-              badge={premiumBadge}
               checked={!!settings.s3?.enabled}
               canToggle={canToggleCloudProvider({
-                isPremium: isCloudSyncPremium,
+                isPremium: true,
                 isConfigured: s3Configured,
                 isEnabled: !!settings.s3?.enabled,
               })}
               onToggle={(next) => toggleCloudProvider('s3', next)}
-              onOpen={() => (isCloudSyncPremium ? setSubPage('s3') : navigateToProfile(router))}
+              onOpen={() => setSubPage('s3')}
               toggleLabel={_('Sync with S3')}
             />
             {(appService?.isDesktopApp ||
@@ -786,17 +777,14 @@ const IntegrationsPanel: React.FC = () => {
                 icon={RiMicrosoftLine}
                 title={_('OneDrive')}
                 status={onedriveStatus}
-                badge={premiumBadge}
                 checked={!!settings.onedrive?.enabled}
                 canToggle={canToggleCloudProvider({
-                  isPremium: isCloudSyncPremium,
+                  isPremium: true,
                   isConfigured: onedriveConfigured,
                   isEnabled: !!settings.onedrive?.enabled,
                 })}
                 onToggle={(next) => toggleCloudProvider('onedrive', next)}
-                onOpen={() =>
-                  isCloudSyncPremium ? setSubPage('onedrive') : navigateToProfile(router)
-                }
+                onOpen={() => setSubPage('onedrive')}
                 toggleLabel={_('Sync with OneDrive')}
               />
             )}

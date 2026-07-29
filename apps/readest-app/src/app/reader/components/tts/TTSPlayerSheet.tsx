@@ -23,16 +23,12 @@ import { MEDIA_OVERLAY_VOICE_ID } from '@/services/tts/mediaOverlay';
 import type { TTSLoopState } from '@/services/tts/TTSController';
 import { saveViewSettings } from '@/helpers/settings';
 import { useEnv } from '@/context/EnvContext';
-import { useAuth } from '@/context/AuthContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { TranslationFunc, useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { useQuotaStats } from '@/hooks/useQuotaStats';
-import { isTTSCacheAllowed } from '@/utils/access';
-import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { getLanguageName } from '@/utils/lang';
 import { formatPlaybackTime } from '@/utils/time';
 import Dialog from '@/components/Dialog';
@@ -153,16 +149,14 @@ const TTSPlayerSheet = ({
   const _ = useTranslation();
   const router = useAppRouter();
   const { envConfig } = useEnv();
-  const { user } = useAuth();
   const { getViewSettings, setViewSettings } = useReaderStore();
   const { getBookData } = useBookDataStore();
   const progress = useBookProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
-  // Offline audio (pre-downloading Read Aloud audio per chapter) is a premium
-  // feature: any paid plan can use it; free / signed-out users see the row with
-  // a Premium badge that routes to the upgrade page instead of the per-chapter
-  // download controls. Mirrors the cloud-sync paywall in IntegrationsPanel.
+  // Offline audio (pre-downloading Read Aloud audio per chapter) is ungated for
+  // fork builds: `isTTSCacheAllowed` returns true for every plan, so no badge
+  // ever renders. The gating plumbing is kept so the download UI behaves.
   const { userProfilePlan, customizationPurchased } = useQuotaStats();
   const isDownloadPremium = isTTSCacheAllowed(userProfilePlan ?? 'free', customizationPurchased);
   // Only badge users who can't use it yet: signed out (known at once), or a
@@ -300,19 +294,9 @@ const TTSPlayerSheet = ({
     setView('main');
   };
 
-  // Entitled users drill into the per-chapter download view; everyone else is
-  // routed to the upgrade page (or sign-in), the sheet closing first so the
-  // navigation isn't hidden behind it.
+  // All users can access the per-chapter download view.
   const handleOpenDownloads = () => {
-    if (isDownloadPremium) {
-      setView('chapters');
-    } else if (user) {
-      onClose();
-      navigateToProfile(router);
-    } else {
-      onClose();
-      navigateToLogin(router);
-    }
+    setView('chapters');
   };
 
   const timeoutOptions = getTTSTimeoutOptions(_);
@@ -632,18 +616,13 @@ const TTSPlayerSheet = ({
               <div className='flex min-w-0 flex-1 flex-col items-start'>
                 <span className='text-sm font-semibold'>{_('Offline Audio')}</span>
                 <span className='text-base-content/60 line-clamp-1 text-start text-xs'>
-                  {premiumBadge
-                    ? _('Download chapters for offline playback')
-                    : _('{{done}} of {{total}} downloaded', {
-                        done: downloads.chapters.filter((c) => downloads.statusOf(c) === 'complete')
-                          .length,
-                        total: downloads.chapters.length,
-                      })}
+                  {_('{{done}} of {{total}} downloaded', {
+                    done: downloads.chapters.filter((c) => downloads.statusOf(c) === 'complete')
+                      .length,
+                    total: downloads.chapters.length,
+                  })}
                 </span>
               </div>
-              {premiumBadge && (
-                <span className='badge badge-sm badge-ghost shrink-0'>{premiumBadge}</span>
-              )}
               <MdChevronRight size={iconSize24} className='shrink-0 rtl:rotate-180' />
             </button>
           )}

@@ -1,0 +1,207 @@
+# Build workflow for fork builds
+# Builds the web app and Tauri apps (Linux, macOS, Windows, Android)
+# without requiring code signing keys, Sentry DSN, or upstream secrets.
+#
+# Trigger: push to main, PRs to main, or manual dispatch.
+
+name: Build Fork
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Web app — no native dependencies
+  build-web:
+    name: Web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm --filter @readest/readest-app setup-vendors
+      - working-directory: apps/readest-app
+        run: echo "NEXT_PUBLIC_APP_PLATFORM=web" > .env.local
+      - run: pnpm --filter @readest/readest-app build-web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: readest-web
+          path: apps/readest-app/out/
+          if-no-files-found: error
+
+  # Android — cross-compiled from Linux
+  build-android:
+    name: Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+      - run: sdkmanager "ndk;28.2.13676358"
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm --filter @readest/readest-app setup-vendors
+      - working-directory: apps/readest-app
+        run: echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > .env.local
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: android-cargo
+      - working-directory: apps/readest-app
+        run: |
+          rm -rf src-tauri/gen/android
+          pnpm tauri android init
+          pnpm tauri icon ../../data/icons/readest-book.png
+      - working-directory: apps/readest-app
+        env:
+          NODE_OPTIONS: '--max-old-space-size=8192'
+        run: |
+          pnpm tauri android build
+          mkdir -p dist/android
+          cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk \
+             dist/android/readest-universal.apk 2>/dev/null || true
+          pnpm tauri android build -t aarch64
+          cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk \
+             dist/android/readest-arm64.apk 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: readest-android
+          path: apps/readest-app/dist/android/
+          if-no-files-found: warn
+
+  # Linux desktop (x86_64)
+  build-linux:
+    name: Linux (x86_64)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm --filter @readest/readest-app setup-vendors
+      - working-directory: apps/readest-app
+        run: |
+          echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > .env.local
+          echo "DBUS_ID=com.bilingify.readest" >> .env.local
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: linux-x86_64-cargo
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config libfontconfig-dev libgtk-3-dev \
+            libwebkit2gtk-4.1 libwebkit2gtk-4.1-dev \
+            libjavascriptcoregtk-4.1 libjavascriptcoregtk-4.1-dev \
+            gir1.2-javascriptcoregtk-4.1 gir1.2-webkit2-4.1 \
+            libappindicator3-dev librsvg2-dev patchelf xdg-utils
+      - working-directory: apps/readest-app
+        env:
+          NODE_OPTIONS: '--max-old-space-size=8192'
+        run: pnpm tauri build --target x86_64-unknown-linux-gnu
+      - uses: actions/upload-artifact@v4
+        with:
+          name: readest-linux-x86_64
+          path: apps/readest-app/src-tauri/target/release/bundle/
+          if-no-files-found: warn
+
+  # macOS (universal: x86_64 + aarch64)
+  build-macos:
+    name: macOS (universal)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm --filter @readest/readest-app setup-vendors
+      - working-directory: apps/readest-app
+        run: |
+          echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > .env.local
+          echo "DBUS_ID=com.bilingify.readest" >> .env.local
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: macos-universal-cargo
+      - working-directory: apps/readest-app
+        env:
+          NODE_OPTIONS: '--max-old-space-size=8192'
+        run: pnpm tauri build --target universal-apple-darwin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: readest-macos-universal
+          path: apps/readest-app/src-tauri/target/release/bundle/
+          if-no-files-found: warn
+
+  # Windows (x86_64)
+  build-windows:
+    name: Windows (x86_64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm --filter @readest/readest-app setup-vendors
+      - working-directory: apps/readest-app
+        shell: pwsh
+        run: |
+          "NEXT_PUBLIC_APP_PLATFORM=tauri" | Out-File -FilePath .env.local -Encoding utf8
+          "DBUS_ID=com.bilingify.readest" | Out-File -FilePath .env.local -Encoding utf8 -Append
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: windows-x86_64-cargo
+      - working-directory: apps/readest-app
+        env:
+          NODE_OPTIONS: '--max-old-space-size=8192'
+        run: pnpm tauri build --target x86_64-pc-windows-msvc --bundles nsis
+      - uses: actions/upload-artifact@v4
+        with:
+          name: readest-windows-x86_64
+          path: apps/readest-app/src-tauri/target/release/bundle/
+          if-no-files-found: warn

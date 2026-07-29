@@ -49,13 +49,12 @@ describe('resolveCloudSyncGate', () => {
     });
   });
 
-  test('third-party provider stays enabled but paused when disallowed (no silent readest fallback)', () => {
-    vi.mocked(isCloudSyncAllowed).mockReturnValue(false);
+  test('third-party provider is never paused (premium gating removed)', () => {
     const settings = makeSettings({ webdav: { enabled: true } } as Partial<SystemSettings>);
     expect(resolveCloudSyncGate(settings, 'free')).toEqual({
       readest: false,
       backends: ['webdav'],
-      paused: true,
+      paused: false,
     });
   });
 
@@ -68,22 +67,17 @@ describe('resolveCloudSyncGate', () => {
     });
   });
 
-  test('falls back to the cached user plan when no plan argument is given', () => {
-    vi.mocked(isCloudSyncAllowed).mockImplementation((plan) => plan !== 'free');
+  test('paused is always false regardless of plan', () => {
     const settings = makeSettings({ webdav: { enabled: true } } as Partial<SystemSettings>);
 
     setCachedUserPlan('free');
-    expect(resolveCloudSyncGate(settings).paused).toBe(true);
+    expect(resolveCloudSyncGate(settings).paused).toBe(false);
 
     setCachedUserPlan('pro');
     expect(resolveCloudSyncGate(settings).paused).toBe(false);
-  });
 
-  test('undefined cached plan is treated as free', () => {
-    vi.mocked(isCloudSyncAllowed).mockImplementation((plan) => plan !== 'free');
-    const settings = makeSettings({ webdav: { enabled: true } } as Partial<SystemSettings>);
     setCachedUserPlan(undefined);
-    expect(resolveCloudSyncGate(settings).paused).toBe(true);
+    expect(resolveCloudSyncGate(settings).paused).toBe(false);
   });
 });
 
@@ -242,19 +236,17 @@ describe('resolveCloudSyncGate (readest + backends together)', () => {
     expect(gate).toEqual({ readest: true, backends: ['gdrive'], paused: false });
   });
 
-  test('pauses every backend at once on a plan without cloud sync', () => {
-    vi.mocked(isCloudSyncAllowed).mockReturnValue(false);
+  test('never pauses backends (premium gating removed)', () => {
     const settings = s({
       readestCloud: { enabled: true },
       googleDrive: { enabled: true } as never,
       webdav: { enabled: true } as never,
     });
     const gate = resolveCloudSyncGate(settings, 'free');
-    // Readest Cloud keeps running because the user asked for it, not as a fallback.
     expect(gate.readest).toBe(true);
     expect(gate.backends).toEqual(['webdav', 'gdrive']);
-    expect(gate.paused).toBe(true);
-    expect(getActiveFileSyncBackends(settings, 'free')).toEqual([]);
+    expect(gate.paused).toBe(false);
+    expect(getActiveFileSyncBackends(settings, 'free')).toEqual(['webdav', 'gdrive']);
   });
 });
 
