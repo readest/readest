@@ -44,4 +44,32 @@ describe('findFuzzyMatches', () => {
       ],
     });
   });
+
+  it('bounds result collection and rejects pathological query lengths', () => {
+    expect(
+      findFuzzyMatches(
+        'a'.repeat(1_000),
+        'a',
+        {
+          matchCase: false,
+          matchDiacritics: false,
+        },
+        25,
+      ),
+    ).toHaveLength(25);
+    const state: { truncated?: boolean } = {};
+    expect(
+      findFuzzyMatches(
+        'a'.repeat(100_000),
+        'aaa',
+        { matchCase: false, matchDiacritics: false },
+        500,
+        state,
+      ),
+    ).toHaveLength(500);
+    expect(state.truncated).toBe(true);
+    expect(() => matches('text', 'a'.repeat(257))).toThrowError(
+      'Fuzzy search query cannot exceed 256 characters',
+    );
+  });
 });

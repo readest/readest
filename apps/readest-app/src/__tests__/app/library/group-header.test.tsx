@@ -13,10 +13,8 @@ vi.mock('@/hooks/useResponsiveSize', () => ({
 }));
 
 const routerStub = { push: vi.fn(), replace: vi.fn(), back: vi.fn() };
-let currentSearch = '';
 vi.mock('next/navigation', () => ({
   useRouter: () => routerStub,
-  useSearchParams: () => new URLSearchParams(currentSearch),
 }));
 
 const navigateToLibraryMock = vi.fn();
@@ -27,6 +25,7 @@ vi.mock('@/utils/nav', () => ({
 afterEach(() => {
   cleanup();
   navigateToLibraryMock.mockReset();
+  window.history.replaceState(null, '', '/');
 });
 
 describe('GroupHeader back button', () => {
@@ -38,7 +37,7 @@ describe('GroupHeader back button', () => {
   // button must keep the query non-empty via the `group=` workaround so the
   // navigation actually commits.
   it('keeps a non-empty query when group is the only param', () => {
-    currentSearch = 'group=abc123';
+    window.history.replaceState(null, '', '?group=abc123');
     render(<GroupHeader groupBy={LibraryGroupByType.Series} groupName='My Series' />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to library' }));
@@ -52,7 +51,7 @@ describe('GroupHeader back button', () => {
   });
 
   it('preserves other params while clearing the group', () => {
-    currentSearch = 'groupBy=author&sort=title&group=abc123';
+    window.history.replaceState(null, '', '?groupBy=author&sort=title&group=abc123');
     render(<GroupHeader groupBy={LibraryGroupByType.Author} groupName='Jane Doe' />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to library' }));

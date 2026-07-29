@@ -96,7 +96,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const handleSetViewMode = async (value: LibraryViewModeType) => {
     await saveSysSettings(envConfig, 'libraryViewMode', value);
 
-    const params = new URLSearchParams(searchParams?.toString());
+    const params = new URLSearchParams(window.location.search);
     params.set('view', value);
     navigateToLibrary(router, `${params.toString()}`);
   };
@@ -104,7 +104,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const handleToggleCropCovers = async (value: LibraryCoverFitType) => {
     await saveSysSettings(envConfig, 'libraryCoverFit', value);
 
-    const params = new URLSearchParams(searchParams?.toString());
+    const params = new URLSearchParams(window.location.search);
     params.set('cover', value);
     navigateToLibrary(router, `${params.toString()}`);
   };
@@ -130,7 +130,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const handleSetGroupBy = async (value: LibraryGroupByType) => {
     await saveSysSettings(envConfig, 'libraryGroupBy', value);
 
-    const params = new URLSearchParams(searchParams?.toString());
+    const params = new URLSearchParams(window.location.search);
     if (value === LibraryGroupByType.Group) {
       params.delete('groupBy');
     } else {
@@ -147,7 +147,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     // smart-default so future groupBy changes don't override the user.
     await saveSysSettings(envConfig, 'librarySortByAuto', false);
 
-    const params = new URLSearchParams(searchParams?.toString());
+    const params = new URLSearchParams(window.location.search);
     params.set('sort', value);
     navigateToLibrary(router, `${params.toString()}`);
   };
@@ -155,7 +155,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const handleSetSortAscending = async (value: boolean) => {
     await saveSysSettings(envConfig, 'librarySortAscending', value);
 
-    const params = new URLSearchParams(searchParams?.toString());
+    const params = new URLSearchParams(window.location.search);
     params.set('order', value ? 'asc' : 'desc');
     navigateToLibrary(router, `${params.toString()}`);
   };
@@ -163,7 +163,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const handleSetSortBy2 = async (value: LibrarySecondarySortByType) => {
     await saveSysSettings(envConfig, 'librarySortBy2', value);
 
-    const params = new URLSearchParams(searchParams?.toString());
+    const params = new URLSearchParams(window.location.search);
     if (value === 'none') {
       params.delete('sort2');
     } else {

@@ -158,4 +158,45 @@ describe('LibrarySearchResults', () => {
     fireEvent.scroll(scroller);
     await waitFor(() => expect(thirdDot.getAttribute('aria-current')).toBe('location'));
   });
+
+  it('labels a capped result set as partial', async () => {
+    searchMock.mockReturnValue(
+      events([
+        {
+          type: 'result',
+          book,
+          result: {
+            index: 0,
+            label: 'Chapter One',
+            subitems: [
+              {
+                cfi: 'epubcfi(/6/2!/4/2:1)',
+                excerpt: { pre: '', match: 'needle', post: '' },
+              },
+            ],
+          },
+        },
+        {
+          type: 'completed',
+          searchedBooks: 1,
+          skippedBooks: 0,
+          erroredBooks: 0,
+          matchCount: 1,
+          truncated: true,
+        },
+      ]),
+    );
+
+    render(
+      <LibrarySearchResults
+        appService={{} as never}
+        books={[book]}
+        query='needle'
+        config={config}
+        onSelectResult={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText('Showing first 1 results')).toBeTruthy();
+  });
 });

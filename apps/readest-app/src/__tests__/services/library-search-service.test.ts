@@ -23,6 +23,12 @@ const makeFile = (text: string) => {
   return file;
 };
 
+const makeDocument = (text: string) => {
+  const doc = document.implementation.createHTMLDocument();
+  doc.body.textContent = text;
+  return doc;
+};
+
 const makeService = (files: Map<string, File | null>) =>
   ({
     getBookFileSize: vi.fn(async (book: Book) => files.get(book.hash)?.size ?? null),
@@ -119,13 +125,14 @@ describe('searchLibraryBooks', () => {
     expect(abortFile.close).toHaveBeenCalledOnce();
   });
 
-  it('reuses one session across contains and fuzzy scans and closes cached files', async () => {
+  it('reuses one session across content modes and closes cached files', async () => {
     const book = makeBook('book', 'Book');
-    const file = makeFile('# Chapter\nneedle and UserAuthController');
+    const file = makeFile('# Chapter\nneedle and UserAuthController near one words');
     const service = makeService(new Map([['book', file]]));
     const session = createLibrarySearchSession(service);
     const containsEvents = [];
     const fuzzyEvents = [];
+    const nearbyEvents = [];
 
     for await (const event of searchLibraryBooks(service, [book], 'needle', { config, session })) {
       containsEvents.push(event);
@@ -136,18 +143,140 @@ describe('searchLibraryBooks', () => {
     })) {
       fuzzyEvents.push(event);
     }
+    for await (const event of searchLibraryBooks(service, [book], 'near words', {
+      config: { ...config, mode: 'nearby-words', nearbyWords: 5 },
+      session,
+    })) {
+      nearbyEvents.push(event);
+    }
 
     const fuzzyResult = fuzzyEvents.find((event) => event.type === 'result');
+    const nearbyResult = nearbyEvents.find((event) => event.type === 'result');
     expect(containsEvents).toContainEqual(expect.objectContaining({ type: 'result', book }));
     expect(fuzzyResult?.result.subitems[0]?.excerpt.match).toBe('UserAuthController');
     expect(
       fuzzyResult?.result.subitems[0]?.excerpt.segments?.filter(({ emphasized }) => emphasized),
     ).toHaveLength(2);
     expect(fuzzyResult?.result.subitems[0]?.cfis).toHaveLength(2);
+    expect(
+      nearbyResult?.result.subitems[0]?.excerpt.segments?.filter(({ emphasized }) => emphasized),
+    ).toHaveLength(2);
+    expect(nearbyResult?.result.subitems[0]?.cfis).toHaveLength(2);
     expect(service.loadBookContent).toHaveBeenCalledOnce();
     expect(file.close).not.toHaveBeenCalled();
 
     await session.close();
     expect(file.close).toHaveBeenCalledOnce();
+  });
+
+  it('keeps excerpt context across long whitespace runs', async () => {
+    const book = makeBook('context', 'Context');
+    const whitespace = ' '.repeat(300);
+    const service = makeService(
+      new Map([['context', makeFile(`# Chapter\nlead🙂${whitespace}needle${whitespace}🙂trail`)]]),
+    );
+    const events = [];
+
+    for await (const event of searchLibraryBooks(service, [book], 'needle', { config })) {
+      events.push(event);
+    }
+
+    const result = events.find((event) => event.type === 'result');
+    expect(result).toBeDefined();
+    expect(result?.result.subitems[0]?.excerpt.pre).toContain('lead🙂 ');
+    expect(result?.result.subitems[0]?.excerpt.post).toContain(' 🙂trail');
+  });
+
+  it('bounds cached section documents', async () => {
+    const book = makeBook('sections', 'Sections');
+    const file = makeFile('# Chapter\ntext');
+    const service = makeService(new Map([['sections', file]]));
+    const session = createLibrarySearchSession(service);
+    const cached = await session.open(book);
+    const createDocuments = Array.from({ length: 257 }, (_, index) =>
+      vi.fn(async () => makeDocument(String(index))),
+    );
+    Object.assign(cached.bookDoc, {
+      sections: createDocuments.map((createDocument, index) => ({
+        id: String(index),
+        createDocument,
+      })),
+    });
+
+    for (let index = 0; index < createDocuments.length; index++) {
+      await session.getSectionDocument(book, index);
+    }
+    await session.getSectionDocument(book, 0);
+
+    expect(createDocuments[0]).toHaveBeenCalledTimes(2);
+    await session.close();
+  });
+
+  it('stops worker-backed searches at the result limit', async () => {
+    const book = makeBook('limit', 'Limit');
+    const file = makeFile('# Chapter\ntext');
+    const service = makeService(new Map([['limit', file]]));
+    const session = createLibrarySearchSession(service);
+    const cached = await session.open(book);
+    Object.assign(cached.bookDoc, {
+      sections: [{ id: '0', createDocument: async () => makeDocument('a'.repeat(600)) }],
+    });
+    const events = [];
+
+    for await (const event of searchLibraryBooks(service, [book], 'a', {
+      config: { ...config, mode: 'fuzzy' },
+      session,
+    })) {
+      events.push(event);
+    }
+
+    const result = events.find((event) => event.type === 'result');
+    const completed = events.find((event) => event.type === 'completed');
+    expect(result?.result.subitems).toHaveLength(500);
+    expect(completed).toMatchObject({ matchCount: 500, truncated: true });
+    await session.close();
+  });
+
+  it('counts results emitted before a later section error toward the limit', async () => {
+    const first = makeBook('partial', 'Partial');
+    const second = makeBook('remainder', 'Remainder');
+    const service = makeService(
+      new Map([
+        ['partial', makeFile('# Partial\ntext')],
+        ['remainder', makeFile('# Remainder\ntext')],
+      ]),
+    );
+    const session = createLibrarySearchSession(service);
+    const [firstCached, secondCached] = await Promise.all([
+      session.open(first),
+      session.open(second),
+    ]);
+    Object.assign(firstCached.bookDoc, {
+      sections: [
+        { id: '0', createDocument: async () => makeDocument('a'.repeat(300)) },
+        { id: '1', createDocument: async () => Promise.reject(new Error('broken section')) },
+      ],
+    });
+    Object.assign(secondCached.bookDoc, {
+      sections: [{ id: '0', createDocument: async () => makeDocument('a'.repeat(300)) }],
+    });
+    const events = [];
+
+    for await (const event of searchLibraryBooks(service, [first, second], 'a', {
+      config: { ...config, mode: 'fuzzy' },
+      session,
+    })) {
+      events.push(event);
+    }
+
+    const emittedMatches = events
+      .filter((event) => event.type === 'result')
+      .reduce((total, event) => total + event.result.subitems.length, 0);
+    expect(emittedMatches).toBe(500);
+    expect(events.find((event) => event.type === 'completed')).toMatchObject({
+      matchCount: 500,
+      truncated: true,
+    });
+    await session.close();
   });
 });

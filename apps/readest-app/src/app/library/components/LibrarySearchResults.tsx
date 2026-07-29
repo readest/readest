@@ -117,6 +117,7 @@ const LibrarySearchResults = ({
   const [groups, setGroups] = useState<ResultGroup[]>([]);
   const [issues, setIssues] = useState<SearchIssue[]>([]);
   const [phase, setPhase] = useState<'searching' | 'completed' | 'cancelled'>('searching');
+  const [truncated, setTruncated] = useState(false);
   const [progress, setProgress] = useState(0);
   const [activeBook, setActiveBook] = useState('');
   const [activeBookHash, setActiveBookHash] = useState('');
@@ -202,6 +203,7 @@ const LibrarySearchResults = ({
     setIssues([]);
     setProgress(0);
     setPhase('searching');
+    setTruncated(false);
     setActiveBook('');
     setActiveBookHash('');
     setCollapsedBooks(new Set());
@@ -251,9 +253,15 @@ const LibrarySearchResults = ({
               ? translateRef.current('Invalid regular expression')
               : event.code === 'NEARBY_NEEDS_TWO_WORDS'
                 ? translateRef.current('Enter at least two words')
-                : event.error;
+                : event.code === 'FUZZY_QUERY_TOO_LONG'
+                  ? translateRef.current('Search query is too long')
+                  : event.error;
           setIssues((current) => [...current, { book: event.book, message }]);
-          if (event.code === 'INVALID_REGEX' || event.code === 'NEARBY_NEEDS_TWO_WORDS') {
+          if (
+            event.code === 'INVALID_REGEX' ||
+            event.code === 'NEARBY_NEEDS_TWO_WORDS' ||
+            event.code === 'FUZZY_QUERY_TOO_LONG'
+          ) {
             controller.abort();
             setPhase('completed');
           }
@@ -261,6 +269,7 @@ const LibrarySearchResults = ({
           setProgress(100);
           setActiveBook('');
           setPhase('completed');
+          setTruncated(Boolean(event.truncated));
         }
       }
     }, delay);
@@ -301,6 +310,7 @@ const LibrarySearchResults = ({
   const displayedPhase = isCurrentSearch ? phase : 'searching';
   const displayedProgress = isCurrentSearch ? progress : 0;
   const displayedActiveBook = isCurrentSearch ? activeBook : '';
+  const displayedTruncated = isCurrentSearch && truncated;
   const totalMatches = displayedGroups.reduce((total, group) => total + group.matchCount, 0);
   useEffect(() => {
     setActiveBookHash((current) =>
@@ -535,7 +545,9 @@ const LibrarySearchResults = ({
       )}
       {displayedPhase === 'completed' && totalMatches > 0 && (
         <p className='text-base-content/60 p-3 text-center text-xs' role='status'>
-          {_('{{count}} results', { count: totalMatches })}
+          {displayedTruncated
+            ? _('Showing first {{count}} results', { count: totalMatches })
+            : _('{{count}} results', { count: totalMatches })}
         </p>
       )}
     </div>

@@ -1,6 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useMemo, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useRef } from 'react';
 import { FaSearch } from 'react-icons/fa';
 import { FaChevronDown } from 'react-icons/fa';
 import { PiPlus } from 'react-icons/pi';
@@ -15,7 +14,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useTrafficLight } from '@/hooks/useTrafficLight';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { debounce } from '@/utils/debounce';
 import useShortcuts from '@/hooks/useShortcuts';
 import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
@@ -67,7 +65,6 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
   onSearchConfigChange,
 }) => {
   const _ = useTranslation();
-  const router = useRouter();
   const { appService } = useEnv();
   const { systemUIVisible, statusBarHeight } = useThemeStore();
   const { currentBookshelf } = useLibraryStore();
@@ -81,30 +78,8 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     onToggleSelectMode,
   });
 
-  const debouncedUpdateQueryParam = useMemo(
-    () =>
-      debounce((value: string) => {
-        const params = new URLSearchParams(window.location.search);
-        if (value) {
-          params.set('q', value);
-        } else {
-          params.delete('q');
-        }
-        router.replace(`?${params.toString()}`);
-      }, 500),
-    [router],
-  );
-  useEffect(
-    () => () => {
-      debouncedUpdateQueryParam.cancel();
-    },
-    [debouncedUpdateQueryParam],
-  );
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newQuery = e.target.value;
-    onSearchQueryChange(newQuery);
-    debouncedUpdateQueryParam(newQuery);
+    onSearchQueryChange(e.target.value);
   };
 
   const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
@@ -177,10 +152,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
             {searchQuery && (
               <button
                 type='button'
-                onClick={() => {
-                  onSearchQueryChange('');
-                  debouncedUpdateQueryParam('');
-                }}
+                onClick={() => onSearchQueryChange('')}
                 className='text-base-content/40 hover:text-base-content/60 pe-1'
                 aria-label={_('Clear Search')}
               >

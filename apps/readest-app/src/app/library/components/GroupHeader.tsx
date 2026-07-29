@@ -1,5 +1,5 @@
 import React from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { MdArrowBack } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -18,11 +18,10 @@ interface GroupHeaderProps {
 const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName }) => {
   const _ = useTranslation();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const iconSize = useResponsiveSize(20);
 
   const handleBack = () => {
-    const params = new URLSearchParams(searchParams?.toString());
+    const params = new URLSearchParams(window.location.search);
     // Set `group` to an empty string instead of deleting it. After a cold start
     // the URL inside a series/author folder is just `?group=X` (groupBy comes
     // from settings, not the URL), so deleting `group` would leave an empty

@@ -240,7 +240,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   const updateUrlParams = useCallback(
     (updates: Record<string, string | null>) => {
-      const params = new URLSearchParams(searchParams?.toString());
+      const params = new URLSearchParams(window.location.search);
 
       Object.entries(updates).forEach(([key, value]) => {
         if (value === null || value === '') {
@@ -257,7 +257,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       if (params.get('view') === 'grid') params.delete('view');
 
       const newParamString = params.toString();
-      const currentParamString = searchParams?.toString() || '';
+      const currentParamString = window.location.search.slice(1);
 
       if (newParamString !== currentParamString) {
         navigateToLibrary(router, newParamString);

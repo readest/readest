@@ -1,6 +1,7 @@
 import { avg, type Bench, type BenchResult } from './lib.ts';
 import { findContainsMatches } from '../src/utils/containsSearch.ts';
 import { findFuzzyMatches } from '../src/utils/fuzzySearch.ts';
+import { findNearbyMatches, segmentNearbyWords } from '../src/utils/nearbySearch.ts';
 
 type Corpus = string[][];
 
@@ -56,6 +57,31 @@ const scanFuzzy = (corpus: Corpus, query: string) => {
   return matchCount;
 };
 
+const nearbyOptions = {
+  locale: 'en',
+  matchCase: false,
+  matchDiacritics: false,
+  nearbyWords: 5,
+};
+
+const prepareNearby = (corpus: Corpus) =>
+  corpus.map((sections) => sections.map((text) => segmentNearbyWords(text, nearbyOptions.locale)));
+
+const scanNearby = (corpus: Corpus, query: string, prepared?: ReturnType<typeof prepareNearby>) => {
+  let matchCount = 0;
+  for (const [bookIndex, sections] of corpus.entries()) {
+    for (const [sectionIndex, text] of sections.entries()) {
+      matchCount += findNearbyMatches(
+        text,
+        query,
+        nearbyOptions,
+        prepared?.[bookIndex]?.[sectionIndex],
+      ).length;
+    }
+  }
+  return matchCount;
+};
+
 const assertCount = (actual: number, expected: number, scenario: string) => {
   if (actual !== expected) {
     throw new Error(`${scenario}: expected ${expected} matches, received ${actual}`);
@@ -76,11 +102,18 @@ export default {
         bookIndex === 0 && sectionIndex === 0 ? `SearchableController ${section}` : section,
       ),
     );
+    const nearbyShelf = makeCorpus(10, 2).map((sections) =>
+      sections.map((section) => `alpha filler beta ${section}`),
+    );
+    const preparedNearbyShelf = prepareNearby(nearbyShelf);
 
     let shelfMatches = -1;
     let libraryMatches = -1;
     let firstResultMatches = -1;
     let fuzzyMatches = -1;
+    let cappedFuzzyMatches = -1;
+    let coldNearbyMatches = -1;
+    let warmNearbyMatches = -1;
     const shelfMs = await avg(
       async () => {
         shelfMatches = scanContains(shelf, 'term-not-present');
@@ -109,11 +142,40 @@ export default {
       2,
       1,
     );
+    const cappedFuzzyMs = await avg(
+      async () => {
+        cappedFuzzyMatches = findFuzzyMatches(
+          'a'.repeat(100_000),
+          'aaa',
+          { matchCase: false, matchDiacritics: false },
+          500,
+        ).length;
+      },
+      3,
+      1,
+    );
+    const coldNearbyMs = await avg(
+      async () => {
+        coldNearbyMatches = scanNearby(nearbyShelf, 'alpha beta');
+      },
+      3,
+      1,
+    );
+    const warmNearbyMs = await avg(
+      async () => {
+        warmNearbyMatches = scanNearby(nearbyShelf, 'alpha beta', preparedNearbyShelf);
+      },
+      3,
+      1,
+    );
 
     assertCount(shelfMatches, 0, 'current shelf absent query');
     assertCount(libraryMatches, 0, 'whole library absent query');
     assertCount(firstResultMatches, 1, 'first streamed result');
     assertCount(fuzzyMatches, 1, 'current shelf fuzzy query');
+    assertCount(cappedFuzzyMatches, 500, 'capped single-character fuzzy query');
+    assertCount(coldNearbyMatches, 20, 'current shelf cold nearby query');
+    assertCount(warmNearbyMatches, 20, 'current shelf warm nearby query');
 
     return [
       {
@@ -155,6 +217,38 @@ export default {
           sections: fuzzyShelf.reduce((sum, sections) => sum + sections.length, 0),
           chars: totalChars(fuzzyShelf),
           matches: 1,
+        },
+      },
+      {
+        scenario: '100k repeated chars, capped fuzzy query',
+        unit: 'ms',
+        value: cappedFuzzyMs,
+        meta: {
+          chars: 100_000,
+          limit: 500,
+          matches: cappedFuzzyMatches,
+        },
+      },
+      {
+        scenario: '10-book shelf, cold nearby query',
+        unit: 'ms',
+        value: coldNearbyMs,
+        meta: {
+          books: nearbyShelf.length,
+          sections: nearbyShelf.reduce((sum, sections) => sum + sections.length, 0),
+          chars: totalChars(nearbyShelf),
+          matches: coldNearbyMatches,
+        },
+      },
+      {
+        scenario: '10-book shelf, pre-segmented nearby matcher',
+        unit: 'ms',
+        value: warmNearbyMs,
+        meta: {
+          books: nearbyShelf.length,
+          sections: nearbyShelf.reduce((sum, sections) => sum + sections.length, 0),
+          chars: totalChars(nearbyShelf),
+          matches: warmNearbyMatches,
         },
       },
     ];

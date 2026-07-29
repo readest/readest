@@ -3,9 +3,12 @@ import type { Book, BookSearchResult, LibrarySearchConfig, SearchExcerpt } from 
 import type { AppService } from '@/types/system';
 import type { ClosableFile } from '@/utils/file';
 import { findContainsMatches } from '@/utils/containsSearch';
-import { findFuzzyMatches } from '@/utils/fuzzySearch';
+import { findFuzzyMatches, MAX_FUZZY_QUERY_LENGTH } from '@/utils/fuzzySearch';
+import type { LibrarySearchWorkerMatch } from '@/utils/librarySearchWorkerProtocol';
+import { findNearbyMatches } from '@/utils/nearbySearch';
 import { createRejectFilter } from '@/utils/node';
 import { BookFileNotFoundError } from './errors';
+import { createLibrarySearchWorker } from './librarySearchWorker';
 import * as CFI from 'foliate-js/epubcfi.js';
 import { TOCProgress } from 'foliate-js/progress.js';
 import { searchMatcher } from 'foliate-js/search.js';
@@ -38,6 +41,7 @@ export type LibrarySearchEvent =
       skippedBooks: number;
       erroredBooks: number;
       matchCount: number;
+      truncated?: boolean;
     };
 
 export interface LibrarySearchOptions {
@@ -61,9 +65,66 @@ const DEFAULT_CONFIG: LibrarySearchConfig = {
 };
 
 const CONTEXT_LENGTH = 50;
+const CONTEXT_SCAN_CHUNK = 2048;
+const MAX_LIBRARY_SEARCH_RESULTS = 500;
 const normalizeWhitespace = (value: string) => value.replace(/\s+/g, ' ');
 
-const findNodeOffset = (cumulative: number[], offset: number) => {
+const contextStart = (value: string) => {
+  let end = Math.min(CONTEXT_LENGTH, value.length);
+  const last = value.charCodeAt(end - 1);
+  const next = value.charCodeAt(end);
+  if (last >= 0xd800 && last <= 0xdbff && next >= 0xdc00 && next <= 0xdfff) end--;
+  return value.slice(0, end);
+};
+
+const contextEnd = (value: string) => {
+  let start = Math.max(0, value.length - CONTEXT_LENGTH);
+  const first = value.charCodeAt(start);
+  const previous = value.charCodeAt(start - 1);
+  if (first >= 0xdc00 && first <= 0xdfff && previous >= 0xd800 && previous <= 0xdbff) start++;
+  return value.slice(start);
+};
+
+const makeContext = (text: string, offset: number, direction: 'before' | 'after') => {
+  if (direction === 'before') {
+    let cursor = offset;
+    let normalized = '';
+    while (cursor > 0 && normalized.trimStart().length < CONTEXT_LENGTH) {
+      let start = Math.max(0, cursor - CONTEXT_SCAN_CHUNK);
+      const first = text.charCodeAt(start);
+      const previous = text.charCodeAt(start - 1);
+      if (
+        start > 0 &&
+        first >= 0xdc00 &&
+        first <= 0xdfff &&
+        previous >= 0xd800 &&
+        previous <= 0xdbff
+      ) {
+        start--;
+      }
+      normalized = normalizeWhitespace(text.slice(start, cursor) + normalized);
+      cursor = start;
+    }
+    const value = normalized.trimStart();
+    return `${cursor > 0 || value.length >= CONTEXT_LENGTH ? '…' : ''}${contextEnd(value)}`;
+  }
+  let cursor = offset;
+  let normalized = '';
+  while (cursor < text.length && normalized.trimEnd().length < CONTEXT_LENGTH) {
+    let end = Math.min(text.length, cursor + CONTEXT_SCAN_CHUNK);
+    const last = text.charCodeAt(end - 1);
+    const next = text.charCodeAt(end);
+    if (end < text.length && last >= 0xd800 && last <= 0xdbff && next >= 0xdc00 && next <= 0xdfff) {
+      end++;
+    }
+    normalized = normalizeWhitespace(normalized + text.slice(cursor, end));
+    cursor = end;
+  }
+  const value = normalized.trimEnd();
+  return `${contextStart(value)}${cursor < text.length || value.length >= CONTEXT_LENGTH ? '…' : ''}`;
+};
+
+const findNodeOffset = (cumulative: number[], offset: number, bias: 'left' | 'right') => {
   let low = 0;
   let high = cumulative.length - 2;
   while (low < high) {
@@ -71,16 +132,17 @@ const findNodeOffset = (cumulative: number[], offset: number) => {
     if (cumulative[middle]! <= offset) low = middle;
     else high = middle - 1;
   }
+  if (bias === 'left') {
+    while (low > 0 && cumulative[low] === offset) low--;
+  }
   return { index: low, offset: offset - cumulative[low]! };
 };
 
 const makeExcerpt = (text: string, start: number, end: number): SearchExcerpt => {
-  const before = normalizeWhitespace(text.slice(0, start)).trimStart();
-  const after = normalizeWhitespace(text.slice(end)).trimEnd();
   return {
-    pre: `${before.length < CONTEXT_LENGTH ? '' : '…'}${before.slice(-CONTEXT_LENGTH)}`,
+    pre: makeContext(text, start, 'before'),
     match: text.slice(start, end),
-    post: `${after.slice(0, CONTEXT_LENGTH)}${after.length < CONTEXT_LENGTH ? '' : '…'}`,
+    post: makeContext(text, end, 'after'),
   };
 };
 
@@ -90,8 +152,6 @@ const makeFuzzyExcerpt = (
   end: number,
   runs: Array<{ start: number; end: number }>,
 ): SearchExcerpt => {
-  const before = normalizeWhitespace(text.slice(0, start)).trimStart();
-  const after = normalizeWhitespace(text.slice(end)).trimEnd();
   const segments: NonNullable<SearchExcerpt['segments']> = [];
   let cursor = start;
   for (const run of runs) {
@@ -102,42 +162,76 @@ const makeFuzzyExcerpt = (
     cursor = run.end;
   }
   return {
-    pre: `${before.length < CONTEXT_LENGTH ? '' : '…'}${before.slice(-CONTEXT_LENGTH)}`,
+    pre: makeContext(text, start, 'before'),
     match: text.slice(start, end),
-    post: `${after.slice(0, CONTEXT_LENGTH)}${after.length < CONTEXT_LENGTH ? '' : '…'}`,
+    post: makeContext(text, end, 'after'),
     segments,
   };
 };
 
-const createFuzzyMatcher = (config: LibrarySearchConfig, acceptNode: (node: Node) => number) => {
-  return function* (doc: Document, query: string): Generator<MatcherResult> {
-    const iterator = textWalker(
+interface PreparedSearchSection {
+  key: string;
+  text: string;
+  cumulative: number[];
+  makeRange: (...args: number[]) => Range;
+  bytes: number;
+}
+
+const prepareSearchSection = (
+  key: string,
+  doc: Document,
+  acceptNode: (node: Node) => number,
+): PreparedSearchSection => {
+  let prepared: PreparedSearchSection | null = null;
+  Array.from(
+    textWalker(
       doc,
-      function* (strings: string[], makeRange: (...args: number[]) => Range) {
+      (strings: string[], makeRange: (...args: number[]) => Range) => {
         const text = strings.join('');
         const cumulative = [0];
         for (const value of strings) cumulative.push(cumulative.at(-1)! + value.length);
-        for (const match of findFuzzyMatches(text, query, config)) {
-          const start = findNodeOffset(cumulative, match.start);
-          const end = findNodeOffset(cumulative, match.end);
-          const range = makeRange(start.index, start.offset, end.index, end.offset);
-          const subRanges = match.runs.map((run) => {
-            const runStart = findNodeOffset(cumulative, run.start);
-            const runEnd = findNodeOffset(cumulative, run.end);
-            return makeRange(runStart.index, runStart.offset, runEnd.index, runEnd.offset);
-          });
-          yield {
-            range,
-            subRanges,
-            excerpt: makeFuzzyExcerpt(text, match.start, match.end, match.runs),
-          };
-        }
+        prepared = {
+          key,
+          text,
+          cumulative,
+          makeRange,
+          bytes: text.length * 2 + cumulative.length * 8,
+        };
+        return [];
       },
       acceptNode,
-    );
-    yield* iterator as Generator<MatcherResult>;
-  };
+    ),
+  );
+  if (!prepared) throw new Error('Unable to prepare book section for search');
+  return prepared;
 };
+
+const makeWorkerMatches = (
+  section: PreparedSearchSection,
+  matches: LibrarySearchWorkerMatch[],
+  mode: 'fuzzy' | 'nearby-words',
+): MatcherResult[] =>
+  matches.map((match) => {
+    const start = findNodeOffset(section.cumulative, match.start, 'right');
+    const end = findNodeOffset(section.cumulative, match.end, 'left');
+    const subRanges = match.runs.map((run) => {
+      const runStart = findNodeOffset(section.cumulative, run.start, 'right');
+      const runEnd = findNodeOffset(section.cumulative, run.end, 'left');
+      return section.makeRange(runStart.index, runStart.offset, runEnd.index, runEnd.offset);
+    });
+    const excerpt = makeFuzzyExcerpt(section.text, match.start, match.end, match.runs);
+    if (mode === 'nearby-words' && excerpt.segments) {
+      excerpt.match = normalizeWhitespace(excerpt.match);
+      excerpt.segments = excerpt.segments
+        .map((segment) => ({ ...segment, text: normalizeWhitespace(segment.text) }))
+        .filter(({ text }) => text.length > 0);
+    }
+    return {
+      range: section.makeRange(start.index, start.offset, end.index, end.offset),
+      subRanges,
+      excerpt,
+    };
+  });
 
 const createContainsMatcher = (
   config: LibrarySearchConfig,
@@ -153,8 +247,8 @@ const createContainsMatcher = (
         const cumulative = [0];
         for (const value of strings) cumulative.push(cumulative.at(-1)! + value.length);
         for (const match of findContainsMatches(text, query, config, locale)) {
-          const start = findNodeOffset(cumulative, match.start);
-          const end = findNodeOffset(cumulative, match.end);
+          const start = findNodeOffset(cumulative, match.start, 'right');
+          const end = findNodeOffset(cumulative, match.end, 'left');
           yield {
             range: makeRange(start.index, start.offset, end.index, end.offset),
             excerpt: makeExcerpt(text, match.start, match.end),
@@ -191,12 +285,37 @@ const closeBook = async (book: SearchableBookDoc | null, file: File | null) => {
 interface CachedSearchBook {
   file: File;
   bookDoc: SearchableBookDoc;
-  sectionDocuments: Map<number, Promise<Document | null>>;
 }
+
+const MAX_PREPARED_SECTION_BYTES = 16 * 1024 * 1024;
+const MAX_CACHED_SECTIONS = 256;
 
 export const createLibrarySearchSession = (appService: LibrarySearchAppService) => {
   const documents = new Map<string, { updatedAt: number; pending: Promise<CachedSearchBook> }>();
-  const dispose = ({ pending }: { pending: Promise<CachedSearchBook> }) => {
+  const sectionDocuments = new Map<
+    string,
+    { bookHash: string; pending: Promise<Document | null> }
+  >();
+  const preparedSections = new Map<string, { bookHash: string; section: PreparedSearchSection }>();
+  const searchWorker = createLibrarySearchWorker();
+  let preparedBytes = 0;
+  const removePreparedSection = (key: string) => {
+    const entry = preparedSections.get(key);
+    if (!entry) return;
+    preparedBytes -= entry.section.bytes;
+    preparedSections.delete(key);
+  };
+  const removeCachedBookSections = (bookHash: string) => {
+    for (const [key, entry] of sectionDocuments) {
+      if (entry.bookHash === bookHash) sectionDocuments.delete(key);
+    }
+    for (const [key, entry] of preparedSections) {
+      if (entry.bookHash !== bookHash) continue;
+      removePreparedSection(key);
+    }
+  };
+  const dispose = (bookHash: string, { pending }: { pending: Promise<CachedSearchBook> }) => {
+    removeCachedBookSections(bookHash);
     void pending.then(
       ({ bookDoc, file }) => closeBook(bookDoc, file),
       () => {},
@@ -210,7 +329,7 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
       documents.set(book.hash, existing);
       return existing.pending;
     }
-    if (existing) dispose(existing);
+    if (existing) dispose(book.hash, existing);
 
     const pending = (async () => {
       const [content, nativeFilePath] = await Promise.all([
@@ -223,7 +342,7 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
             nativeFilePath: nativeFilePath ?? undefined,
           }).open()
         ).book as SearchableBookDoc;
-        return { file: content.file, bookDoc, sectionDocuments: new Map() };
+        return { file: content.file, bookDoc };
       } catch (error) {
         await closeBook(null, content.file);
         throw error;
@@ -239,26 +358,81 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
       const oldestHash = documents.keys().next().value!;
       const oldest = documents.get(oldestHash)!;
       documents.delete(oldestHash);
-      dispose(oldest);
+      dispose(oldestHash, oldest);
+    }
+    return pending;
+  };
+
+  const getSectionDocument = async (book: Book, index: number) => {
+    const cached = await open(book);
+    const key = `${book.hash}:${book.updatedAt}:${index}`;
+    const existing = sectionDocuments.get(key);
+    if (existing) {
+      sectionDocuments.delete(key);
+      sectionDocuments.set(key, existing);
+      return existing.pending;
+    }
+    const createDocument = cached.bookDoc.sections[index]?.createDocument;
+    const pending = createDocument ? createDocument() : Promise.resolve(null);
+    const entry = { bookHash: book.hash, pending };
+    sectionDocuments.set(key, entry);
+    void pending.catch(() => {
+      if (sectionDocuments.get(key) === entry) sectionDocuments.delete(key);
+    });
+    while (sectionDocuments.size > MAX_CACHED_SECTIONS) {
+      const oldestKey = sectionDocuments.keys().next().value!;
+      sectionDocuments.delete(oldestKey);
+      removePreparedSection(oldestKey);
     }
     return pending;
   };
 
   return {
     open,
-    async getSectionDocument(book: Book, index: number) {
-      const cached = await open(book);
-      const existing = cached.sectionDocuments.get(index);
-      if (existing) return existing;
-      const createDocument = cached.bookDoc.sections[index]?.createDocument;
-      const pending = createDocument ? createDocument() : Promise.resolve(null);
-      cached.sectionDocuments.set(index, pending);
-      void pending.catch(() => cached.sectionDocuments.delete(index));
-      return pending;
+    getSectionDocument,
+    async getPreparedSection(book: Book, index: number, acceptNode: (node: Node) => number) {
+      const key = `${book.hash}:${book.updatedAt}:${index}`;
+      const existing = preparedSections.get(key);
+      if (existing) {
+        const document = sectionDocuments.get(key);
+        if (document) {
+          sectionDocuments.delete(key);
+          sectionDocuments.set(key, document);
+        }
+        preparedSections.delete(key);
+        preparedSections.set(key, existing);
+        return existing.section;
+      }
+      const doc = await getSectionDocument(book, index);
+      if (!doc) return null;
+      const prepared = preparedSections.get(key);
+      if (prepared) {
+        preparedSections.delete(key);
+        preparedSections.set(key, prepared);
+        return prepared.section;
+      }
+      const section = prepareSearchSection(key, doc, acceptNode);
+      if (section.bytes <= MAX_PREPARED_SECTION_BYTES) {
+        while (
+          preparedSections.size >= MAX_CACHED_SECTIONS ||
+          (preparedSections.size > 0 && preparedBytes + section.bytes > MAX_PREPARED_SECTION_BYTES)
+        ) {
+          const oldestKey = preparedSections.keys().next().value!;
+          removePreparedSection(oldestKey);
+        }
+        preparedSections.set(key, { bookHash: book.hash, section });
+        preparedBytes += section.bytes;
+      }
+      return section;
     },
+    searchWorker,
     async close() {
       const cached = [...documents.values()];
       documents.clear();
+      sectionDocuments.clear();
+      preparedSections.clear();
+      preparedBytes = 0;
+      searchWorker.close();
       await Promise.all(
         cached.map(({ pending }) =>
           pending.then(
@@ -285,6 +459,39 @@ export async function* searchLibraryBooks(
   let skippedBooks = 0;
   let erroredBooks = 0;
   let totalMatches = 0;
+  let truncated = false;
+  let sliceStarted = performance.now();
+
+  if (
+    books.length > 0 &&
+    config.mode === 'nearby-words' &&
+    query.trim().split(/\s+/).filter(Boolean).length < 2
+  ) {
+    const book = books[0];
+    if (book) {
+      yield {
+        type: 'book-error',
+        book,
+        error: 'Nearby words search needs at least two words',
+        code: 'NEARBY_NEEDS_TWO_WORDS',
+      };
+    }
+    return;
+  }
+  if (
+    books.length > 0 &&
+    config.mode === 'fuzzy' &&
+    Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(query.trim()))
+      .length > MAX_FUZZY_QUERY_LENGTH
+  ) {
+    yield {
+      type: 'book-error',
+      book: books[0]!,
+      error: `Fuzzy search query cannot exceed ${MAX_FUZZY_QUERY_LENGTH} characters`,
+      code: 'FUZZY_QUERY_TOO_LONG',
+    };
+    return;
+  }
 
   for (const [bookIndex, book] of books.entries()) {
     if (signal?.aborted) return;
@@ -312,16 +519,16 @@ export async function* searchLibraryBooks(
         tags: book.primaryLanguage?.startsWith('ja') ? ['rt'] : [],
         attributes: ['cfi-inert'],
       });
-      const matcher =
-        config.mode === 'fuzzy'
-          ? createFuzzyMatcher(config, acceptNode)
-          : config.mode === 'contains'
-            ? createContainsMatcher(config, acceptNode, book.primaryLanguage)
-            : searchMatcher(textWalker, {
-                ...config,
-                defaultLocale: book.primaryLanguage,
-                acceptNode,
-              });
+      const usesSearchWorker = config.mode === 'fuzzy' || config.mode === 'nearby-words';
+      const matcher = usesSearchWorker
+        ? null
+        : config.mode === 'contains'
+          ? createContainsMatcher(config, acceptNode, book.primaryLanguage)
+          : searchMatcher(textWalker, {
+              ...config,
+              defaultLocale: book.primaryLanguage,
+              acceptNode,
+            });
       const tocProgress = await createTOCProgress(bookDoc);
       const totalSections = bookDoc.sections.length;
       let bookMatches = 0;
@@ -334,7 +541,69 @@ export async function* searchLibraryBooks(
             : await section.createDocument();
           if (!doc) continue;
           if (signal?.aborted) return;
-          const matches = Array.from(matcher(doc, query) as Iterable<MatcherResult>);
+          let matches: MatcherResult[];
+          if (usesSearchWorker) {
+            const prepared = options.session
+              ? await options.session.getPreparedSection(book, sectionIndex, acceptNode)
+              : prepareSearchSection(
+                  `${book.hash}:${book.updatedAt}:${sectionIndex}`,
+                  doc,
+                  acceptNode,
+                );
+            if (!prepared || signal?.aborted) return;
+            const locale =
+              doc.body.lang || doc.documentElement.lang || book.primaryLanguage || 'en';
+            const remainingResults = MAX_LIBRARY_SEARCH_RESULTS - totalMatches;
+            const payload = {
+              sectionKey: prepared.key,
+              text: prepared.text,
+              query,
+              mode: config.mode as 'fuzzy' | 'nearby-words',
+              fuzzyOptions: {
+                matchCase: config.matchCase,
+                matchDiacritics: config.matchDiacritics,
+              },
+              nearbyOptions: {
+                locale,
+                matchCase: config.matchCase,
+                matchDiacritics: config.matchDiacritics,
+                nearbyWords: config.nearbyWords ?? DEFAULT_CONFIG.nearbyWords!,
+              },
+              limit: remainingResults,
+            };
+            let numericMatches: LibrarySearchWorkerMatch[];
+            let sectionTruncated: boolean;
+            if (options.session) {
+              const result = await options.session.searchWorker.search(payload, signal);
+              numericMatches = result.matches;
+              sectionTruncated = result.truncated;
+            } else {
+              const state: { truncated?: boolean } = {};
+              numericMatches =
+                config.mode === 'fuzzy'
+                  ? findFuzzyMatches(
+                      prepared.text,
+                      query,
+                      payload.fuzzyOptions,
+                      payload.limit,
+                      state,
+                    )
+                  : findNearbyMatches(
+                      prepared.text,
+                      query,
+                      payload.nearbyOptions,
+                      undefined,
+                      payload.limit,
+                      state,
+                    );
+              sectionTruncated = Boolean(state.truncated);
+            }
+            if (signal?.aborted) return;
+            if (sectionTruncated || numericMatches.length >= remainingResults) truncated = true;
+            matches = makeWorkerMatches(prepared, numericMatches, payload.mode);
+          } else {
+            matches = Array.from(matcher!(doc, query) as Iterable<MatcherResult>);
+          }
           if (matches.length) {
             const subitems = matches.map((match) => {
               const baseCFI = section.cfi ?? CFI.fake.fromIndex(sectionIndex);
@@ -346,6 +615,7 @@ export async function* searchLibraryBooks(
               };
             });
             bookMatches += subitems.length;
+            totalMatches += subitems.length;
             yield {
               type: 'result',
               book,
@@ -356,6 +626,7 @@ export async function* searchLibraryBooks(
               },
             };
           }
+          if (truncated) break;
         }
         if (signal?.aborted) return;
         const sectionsCompleted = sectionIndex + 1;
@@ -368,10 +639,13 @@ export async function* searchLibraryBooks(
           sectionsCompleted,
           totalSections,
         };
+        if (performance.now() - sliceStarted >= 8) {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          sliceStarted = performance.now();
+        }
       }
 
       searchedBooks++;
-      totalMatches += bookMatches;
       yield { type: 'book-completed', book, matchCount: bookMatches };
     } catch (error) {
       if (signal?.aborted) return;
@@ -390,6 +664,7 @@ export async function* searchLibraryBooks(
     } finally {
       if (!options.session) await closeBook(bookDoc, file);
     }
+    if (truncated) break;
   }
 
   if (!signal?.aborted) {
@@ -399,6 +674,7 @@ export async function* searchLibraryBooks(
       skippedBooks,
       erroredBooks,
       matchCount: totalMatches,
+      truncated,
     };
   }
 }
