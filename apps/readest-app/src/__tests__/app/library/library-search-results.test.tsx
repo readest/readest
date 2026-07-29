@@ -93,4 +93,69 @@ describe('LibrarySearchResults', () => {
     unmount();
     expect(sessionClose).toHaveBeenCalledOnce();
   });
+
+  it('keeps a clicked navigator dot active through its scroll and releases it for user scrolling', async () => {
+    const books = [
+      book,
+      { ...book, hash: 'book-two', title: 'Second Book' },
+      { ...book, hash: 'book-three', title: 'Third Book' },
+    ];
+    searchMock.mockReturnValue(
+      events([
+        ...books.map((currentBook, index) => ({
+          type: 'result' as const,
+          book: currentBook,
+          result: {
+            index,
+            label: `Chapter ${index + 1}`,
+            subitems: [
+              {
+                cfi: `epubcfi(/6/${index + 2}!/4/2:1)`,
+                excerpt: { pre: '', match: 'needle', post: '' },
+              },
+            ],
+          },
+        })),
+        { type: 'completed', searchedBooks: 3, skippedBooks: 0, erroredBooks: 0, matchCount: 3 },
+      ]),
+    );
+    const { container } = render(
+      <LibrarySearchResults
+        appService={{} as never}
+        books={books}
+        query='needle'
+        config={config}
+        onSelectResult={vi.fn()}
+      />,
+    );
+
+    const secondDot = await screen.findByRole('button', { name: 'Jump to Second Book' });
+    const thirdDot = screen.getByRole('button', { name: 'Jump to Third Book' });
+    const navigator = screen.getByRole('navigation', { name: 'Book results' });
+    expect(navigator.className).toContain('overflow-y-auto');
+    expect(secondDot.className).toContain('size-11');
+    expect(secondDot.className).not.toContain('touch-target');
+    const scroller = container.querySelector<HTMLElement>('.search-results')!;
+    const sections = container.querySelectorAll<HTMLElement>('.search-results section');
+    scroller.scrollTop = 500;
+    vi.spyOn(scroller, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 100));
+    vi.spyOn(sections[0]!, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, -100));
+    vi.spyOn(sections[1]!, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, -50));
+    vi.spyOn(sections[2]!, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 110));
+
+    fireEvent.click(secondDot);
+    expect(scroller.scrollTop).toBe(342);
+    expect(secondDot.getAttribute('aria-current')).toBe('location');
+    fireEvent.scroll(scroller);
+    expect(secondDot.getAttribute('aria-current')).toBe('location');
+
+    fireEvent.focus(thirdDot);
+    fireEvent.scroll(scroller);
+    await waitFor(() => expect(thirdDot.getAttribute('aria-current')).toBe('location'));
+
+    fireEvent.click(secondDot);
+    fireEvent.wheel(scroller);
+    fireEvent.scroll(scroller);
+    await waitFor(() => expect(thirdDot.getAttribute('aria-current')).toBe('location'));
+  });
 });

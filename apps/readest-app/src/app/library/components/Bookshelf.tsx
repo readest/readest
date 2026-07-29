@@ -712,6 +712,10 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   // -> `listContext` identities stable (no full-grid re-render churn).
   const { openBook } = useOpenBook({ setLoading, handleBookDownload });
   const openRecentBook = useCallback((book: Book) => openBook(book), [openBook]);
+  const openSearchResult = useCallback(
+    (book: Book, cfi: string) => openBook(book, cfi, { highlightSearchResult: true }),
+    [openBook],
+  );
 
   // Flat recency slice of the whole library, independent of the main shelf's
   // sort/grouping. Built from `libraryBooks` (not the sorted/filtered items).
@@ -891,7 +895,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             books={currentShelfBooks}
             query={contentSearch.query.trim()}
             config={contentSearch.config}
-            onSelectResult={(book, cfi) => openBook(book, cfi, { highlightSearchResult: true })}
+            onSelectResult={openSearchResult}
             onScrollerRef={onScrollerRef}
           />
         ) : null}

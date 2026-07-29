@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { createLibrarySearchSession, searchLibraryBooks } from '@/services/librarySearchService';
@@ -26,6 +26,20 @@ interface SearchIssue {
   message: string;
 }
 
+const NAVIGATION_TOP_OFFSET = 8;
+const ACTIVE_HEADER_OFFSET = 16;
+const SCROLL_KEYS = new Set(['ArrowDown', 'ArrowUp', 'End', 'Home', 'PageDown', 'PageUp']);
+
+const revealElement = (container: HTMLElement, element: HTMLElement) => {
+  const containerRect = container.getBoundingClientRect();
+  const elementRect = element.getBoundingClientRect();
+  if (elementRect.top < containerRect.top) {
+    container.scrollTop -= containerRect.top - elementRect.top;
+  } else if (elementRect.bottom > containerRect.bottom) {
+    container.scrollTop += elementRect.bottom - containerRect.bottom;
+  }
+};
+
 const Excerpt = ({ excerpt }: { excerpt: SearchExcerpt }) => (
   <span>
     {excerpt.pre}
@@ -45,6 +59,45 @@ const Excerpt = ({ excerpt }: { excerpt: SearchExcerpt }) => (
     {excerpt.post}
   </span>
 );
+
+const ResultGroupMatches = memo(
+  ({
+    book,
+    sections,
+    onSelectResult,
+  }: {
+    book: Book;
+    sections: BookSearchResult[];
+    onSelectResult: (book: Book, cfi: string) => void;
+  }) => (
+    <div>
+      {sections.map((section, sectionIndex) => (
+        <div key={`${section.index}-${sectionIndex}`} className='mb-2 last:mb-0'>
+          {section.label && (
+            <h3 className='text-base-content/60 mb-1 truncate px-3 text-xs font-medium'>
+              {section.label}
+            </h3>
+          )}
+          <div className='space-y-1'>
+            {section.subitems.map((match) => (
+              <button
+                key={match.cfi}
+                type='button'
+                className='hover:bg-base-200 focus-visible:ring-base-content/20 touch-target not-eink:transition-colors min-h-11 w-full rounded-md px-3 py-2.5 text-start text-sm leading-5 duration-150 focus-visible:outline-none focus-visible:ring-2'
+                onClick={() => onSelectResult(book, match.cfi)}
+              >
+                <span className='line-clamp-3'>
+                  <Excerpt excerpt={match.excerpt} />
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  ),
+);
+ResultGroupMatches.displayName = 'ResultGroupMatches';
 
 const LibrarySearchResults = ({
   appService,
@@ -68,7 +121,60 @@ const LibrarySearchResults = ({
   const [activeBook, setActiveBook] = useState('');
   const [activeBookHash, setActiveBookHash] = useState('');
   const [collapsedBooks, setCollapsedBooks] = useState<Set<string>>(() => new Set());
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const navigatorRef = useRef<HTMLElement | null>(null);
   const groupRefs = useRef(new Map<string, HTMLElement>());
+  const dotRefs = useRef(new Map<string, HTMLButtonElement>());
+  // Programmatic scroll events must not overrule the dot the user just chose.
+  const navigationTargetRef = useRef<string | null>(null);
+  const navigationReleaseFrameRef = useRef<number | null>(null);
+  const scrollFrameRef = useRef<number | null>(null);
+  const releaseNavigationTarget = useCallback(() => {
+    navigationTargetRef.current = null;
+    if (navigationReleaseFrameRef.current !== null) {
+      cancelAnimationFrame(navigationReleaseFrameRef.current);
+      navigationReleaseFrameRef.current = null;
+    }
+  }, []);
+  const updateNavigatorHeight = useCallback(() => {
+    const scroller = scrollerRef.current;
+    const navigator = navigatorRef.current;
+    if (scroller && navigator) {
+      const nowPlayingInset =
+        Number.parseFloat(getComputedStyle(scroller).getPropertyValue('--now-playing-inset')) || 0;
+      navigator.style.maxHeight = `${Math.max(44, scroller.clientHeight - 16 - nowPlayingInset)}px`;
+      const focusedDot = navigator.contains(document.activeElement)
+        ? (document.activeElement as HTMLElement)
+        : null;
+      const activeDot = navigator.querySelector<HTMLElement>('[aria-current="location"]');
+      const visibleDot = focusedDot ?? activeDot;
+      if (visibleDot) revealElement(navigator, visibleDot);
+    }
+  }, []);
+  const setScrollerRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      scrollerRef.current = element;
+      onScrollerRef?.(element);
+      updateNavigatorHeight();
+    },
+    [onScrollerRef, updateNavigatorHeight],
+  );
+  const setNavigatorRef = useCallback(
+    (element: HTMLElement | null) => {
+      navigatorRef.current = element;
+      updateNavigatorHeight();
+    },
+    [updateNavigatorHeight],
+  );
+  const revealNavigatorDot = useCallback((bookHash: string) => {
+    const navigator = navigatorRef.current;
+    const dot = dotRefs.current.get(bookHash);
+    if (!navigator || !dot) return;
+    const focusedDot = navigator.contains(document.activeElement)
+      ? (document.activeElement as HTMLElement)
+      : null;
+    revealElement(navigator, focusedDot ?? dot);
+  }, []);
   booksRef.current = books;
   configRef.current = config;
   translateRef.current = _;
@@ -84,6 +190,11 @@ const LibrarySearchResults = ({
 
   useEffect(() => {
     activeSearchKeyRef.current = searchKey;
+    releaseNavigationTarget();
+    if (scrollFrameRef.current !== null) {
+      cancelAnimationFrame(scrollFrameRef.current);
+      scrollFrameRef.current = null;
+    }
     const controller = new AbortController();
     controllerRef.current?.abort();
     controllerRef.current = controller;
@@ -159,14 +270,30 @@ const LibrarySearchResults = ({
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [appService, searchKey, session]);
+  }, [appService, releaseNavigationTarget, searchKey, session]);
 
   useEffect(
     () => () => {
+      releaseNavigationTarget();
+      if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
       void session.close();
     },
-    [session],
+    [releaseNavigationTarget, session],
   );
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    updateNavigatorHeight();
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateNavigatorHeight);
+    resizeObserver?.observe(scroller);
+    const insetObserver = new MutationObserver(updateNavigatorHeight);
+    insetObserver.observe(document.body, { attributes: true, attributeFilter: ['style'] });
+    return () => {
+      resizeObserver?.disconnect();
+      insetObserver.disconnect();
+    };
+  }, [updateNavigatorHeight]);
 
   const isCurrentSearch = activeSearchKeyRef.current === searchKey;
   const displayedGroups = isCurrentSearch ? groups : [];
@@ -180,6 +307,9 @@ const LibrarySearchResults = ({
       groups.some(({ book }) => book.hash === current) ? current : (groups[0]?.book.hash ?? ''),
     );
   }, [groups]);
+  useEffect(() => {
+    if (activeBookHash) revealNavigatorDot(activeBookHash);
+  }, [activeBookHash, revealNavigatorDot]);
 
   const toggleBook = (bookHash: string) => {
     setCollapsedBooks((current) => {
@@ -193,23 +323,68 @@ const LibrarySearchResults = ({
     setPhase('cancelled');
     setActiveBook('');
   };
+  const scheduleActiveBookUpdate = (scroller: HTMLDivElement) => {
+    if (navigationTargetRef.current || scrollFrameRef.current !== null) return;
+    scrollFrameRef.current = requestAnimationFrame(() => {
+      scrollFrameRef.current = null;
+      if (navigationTargetRef.current || displayedGroups.length === 0) return;
+
+      let currentHash = displayedGroups[0]!.book.hash;
+      const isAtBottom =
+        scroller.scrollHeight > scroller.clientHeight &&
+        scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+      if (isAtBottom) {
+        currentHash = displayedGroups.at(-1)!.book.hash;
+      } else {
+        const activeLine = scroller.getBoundingClientRect().top + ACTIVE_HEADER_OFFSET;
+        for (const group of displayedGroups) {
+          const element = groupRefs.current.get(group.book.hash);
+          if (!element) continue;
+          if (element.getBoundingClientRect().top > activeLine) break;
+          currentHash = group.book.hash;
+        }
+      }
+      setActiveBookHash((current) => (current === currentHash ? current : currentHash));
+    });
+  };
+  const navigateToBook = (bookHash: string) => {
+    const scroller = scrollerRef.current;
+    const element = groupRefs.current.get(bookHash);
+    if (!scroller || !element) return;
+
+    navigationTargetRef.current = bookHash;
+    setActiveBookHash(bookHash);
+    scroller.scrollTop = Math.max(
+      0,
+      scroller.scrollTop +
+        element.getBoundingClientRect().top -
+        scroller.getBoundingClientRect().top -
+        NAVIGATION_TOP_OFFSET,
+    );
+    if (navigationReleaseFrameRef.current !== null) {
+      cancelAnimationFrame(navigationReleaseFrameRef.current);
+    }
+    navigationReleaseFrameRef.current = requestAnimationFrame(() => {
+      navigationReleaseFrameRef.current = requestAnimationFrame(() => {
+        navigationReleaseFrameRef.current = null;
+        if (navigationTargetRef.current === bookHash) navigationTargetRef.current = null;
+      });
+    });
+  };
 
   return (
     <div
-      ref={onScrollerRef}
+      ref={setScrollerRef}
       aria-busy={displayedPhase === 'searching'}
       className='search-results h-full overflow-y-auto px-3 py-2 font-sans sm:px-6'
       style={{ paddingBottom: 'calc(var(--now-playing-inset, 0px) + 0.5rem)' }}
-      onScroll={(event) => {
-        const containerTop = event.currentTarget.getBoundingClientRect().top;
-        let currentHash = displayedGroups[0]?.book.hash ?? '';
-        for (const group of displayedGroups) {
-          const element = groupRefs.current.get(group.book.hash);
-          if (!element || element.getBoundingClientRect().top > containerTop + 16) break;
-          currentHash = group.book.hash;
-        }
-        setActiveBookHash(currentHash);
+      onPointerDownCapture={releaseNavigationTarget}
+      onWheelCapture={releaseNavigationTarget}
+      onFocusCapture={releaseNavigationTarget}
+      onKeyDownCapture={(event) => {
+        if (SCROLL_KEYS.has(event.key)) releaseNavigationTarget();
       }}
+      onScroll={(event) => scheduleActiveBookUpdate(event.currentTarget)}
     >
       {displayedPhase === 'searching' && (
         <div className='mb-2 flex items-center gap-3 py-1'>
@@ -232,34 +407,42 @@ const LibrarySearchResults = ({
       <div className='flex items-start gap-1 sm:gap-2'>
         {displayedGroups.length > 1 && (
           <nav
+            ref={setNavigatorRef}
             aria-label={_('Book results')}
-            className='sticky top-2 flex w-5 shrink-0 flex-col items-center py-1'
+            className='no-scrollbar sticky top-2 w-11 shrink-0 overflow-y-auto py-1'
           >
-            <span aria-hidden='true' className='bg-base-content/25 absolute top-4 bottom-4 w-px' />
-            {displayedGroups.map((group) => {
-              const isActive = group.book.hash === activeBookHash;
-              return (
-                <button
-                  key={group.book.hash}
-                  type='button'
-                  aria-label={_('Jump to {{title}}', { title: group.book.title })}
-                  aria-current={isActive ? 'location' : undefined}
-                  className='touch-target relative z-10 flex h-7 w-5 items-center justify-center'
-                  onClick={() => {
-                    groupRefs.current.get(group.book.hash)?.scrollIntoView({ block: 'start' });
-                    setActiveBookHash(group.book.hash);
-                  }}
-                >
-                  <span
-                    aria-hidden='true'
-                    className={clsx(
-                      'border-base-content/60 bg-base-100 rounded-full border',
-                      isActive ? 'bg-base-content h-2.5 w-2.5' : 'h-2 w-2',
-                    )}
-                  />
-                </button>
-              );
-            })}
+            <div className='relative flex min-h-full w-full flex-col items-center'>
+              <span
+                aria-hidden='true'
+                className='bg-base-content/25 absolute top-4 bottom-4 w-px'
+              />
+              {displayedGroups.map((group) => {
+                const isActive = group.book.hash === activeBookHash;
+                return (
+                  <button
+                    key={group.book.hash}
+                    type='button'
+                    aria-label={_('Jump to {{title}}', { title: group.book.title })}
+                    aria-current={isActive ? 'location' : undefined}
+                    className='focus-visible:ring-base-content/15 relative z-10 flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2'
+                    ref={(element) => {
+                      if (element) dotRefs.current.set(group.book.hash, element);
+                      else dotRefs.current.delete(group.book.hash);
+                    }}
+                    onFocus={() => revealNavigatorDot(group.book.hash)}
+                    onClick={() => navigateToBook(group.book.hash)}
+                  >
+                    <span
+                      aria-hidden='true'
+                      className={clsx(
+                        'border-base-content/60 bg-base-100 rounded-full border',
+                        isActive ? 'bg-base-content h-2.5 w-2.5' : 'h-2 w-2',
+                      )}
+                    />
+                  </button>
+                );
+              })}
+            </div>
           </nav>
         )}
         <div className='min-w-0 flex-1 space-y-3'>
@@ -320,31 +503,11 @@ const LibrarySearchResults = ({
                   </button>
                 </header>
                 {isExpanded && (
-                  <div>
-                    {group.sections.map((section, sectionIndex) => (
-                      <div key={`${section.index}-${sectionIndex}`} className='mb-2 last:mb-0'>
-                        {section.label && (
-                          <h3 className='text-base-content/60 mb-1 truncate px-3 text-xs font-medium'>
-                            {section.label}
-                          </h3>
-                        )}
-                        <div className='space-y-1'>
-                          {section.subitems.map((match) => (
-                            <button
-                              key={match.cfi}
-                              type='button'
-                              className='hover:bg-base-200 focus-visible:ring-base-content/20 touch-target not-eink:transition-colors min-h-11 w-full rounded-md px-3 py-2.5 text-start text-sm leading-5 duration-150 focus-visible:outline-none focus-visible:ring-2'
-                              onClick={() => onSelectResult(group.book, match.cfi)}
-                            >
-                              <span className='line-clamp-3'>
-                                <Excerpt excerpt={match.excerpt} />
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <ResultGroupMatches
+                    book={group.book}
+                    sections={group.sections}
+                    onSelectResult={onSelectResult}
+                  />
                 )}
               </section>
             );
