@@ -1,11 +1,8 @@
 name: Upload Release Assets to R2
 
 on:
-  workflow_call:
-    inputs:
-      tag:
-        required: true
-        type: string
+  # Disabled for fork — upstream R2 upload
+  workflow_dispatch:
 
   workflow_dispatch:
     inputs:

@@ -1,9 +1,8 @@
 name: Release Readest
 
 on:
+  # Disabled for fork — upstream release workflow
   workflow_dispatch:
-  release:
-    types: [published]
 
 permissions: read-all
 

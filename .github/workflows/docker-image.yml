@@ -1,13 +1,8 @@
 name: Publish Docker image
 
 on:
+  # Disabled for fork — upstream Docker build
   workflow_dispatch:
-  push:
-    branches:
-      - main
-  release:
-    types:
-      - published
 
 concurrency:
   group: publish-docker-image-${{ github.event.release.tag_name || github.ref }}

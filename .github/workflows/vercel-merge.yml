@@ -1,8 +1,7 @@
 name: Deploy to vercel on merge
 on:
-  push:
-    branches:
-      - main
+  # Disabled for fork — upstream Vercel deploy
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
