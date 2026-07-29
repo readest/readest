@@ -71,8 +71,12 @@ jobs:
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm --filter @readest/readest-app setup-vendors
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
+          toolchain: stable
+          override: true
+          profile: minimal
           targets: ${{ matrix.config.rust_target }}
 
       - uses: Swatinem/rust-cache@v2
