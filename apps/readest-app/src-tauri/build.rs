@@ -97,6 +97,51 @@ fn propagate_app_version() {
 /// Read a top-level `"key": "value"` string from a JSON file without pulling in a
 /// JSON parser. Returns the first match; `None` if the file/key is absent or the
 /// value is empty. `package.json`'s own `"version"` is the first `"version"` key.
+fn build_windows_thumbnail() {
+    let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+    let dll_crate_dir = manifest_dir
+        .join("..")
+        .join("extensions")
+        .join("windows-thumbnail");
+    let dll_crate_manifest = dll_crate_dir.join("Cargo.toml");
+    let profile = env::var("PROFILE").unwrap_or_else(|_| "debug".into());
+
+    let mut cmd = Command::new(env::var("CARGO").unwrap_or("cargo".into()));
+    cmd.arg("build")
+        .arg("--manifest-path")
+        .arg(&dll_crate_manifest);
+
+    if profile == "release" {
+        cmd.arg("--release");
+    }
+
+    let status = cmd
+        .status()
+        .expect("Failed to run cargo build for windows_thumbnail");
+    if !status.success() {
+        panic!("Failed to build windows_thumbnail DLL");
+    }
+
+    let dll_name = "windows_thumbnail.dll";
+    let candidate_paths = [
+        dll_crate_dir.join("target").join(&profile).join(dll_name),
+        dll_crate_dir
+            .join("target")
+            .join(&profile)
+            .join(dll_name),
+    ];
+
+    let dll_src = candidate_paths
+        .iter()
+        .find(|p| p.exists())
+        .expect("Failed to find built windows_thumbnail DLL");
+
+    let dll_dest = &dll_crate_dir.join("target").join(dll_name);
+
+    fs::copy(dll_src, dll_dest).expect("Failed to copy windows_thumbnail DLL");
+    println!("cargo:rerun-if-changed={}", dll_dest.display());
+}
+
 fn read_json_string_field(path: &Path, key: &str) -> Option<String> {
     let contents = fs::read_to_string(path).ok()?;
     let needle = format!("\"{key}\"");
