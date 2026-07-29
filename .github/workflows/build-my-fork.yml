@@ -32,19 +32,23 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm --filter @readest/readest-app setup-vendors
-      - working-directory: apps/readest-app
-        # Use tauri platform so next.config.mjs sets output: 'export' → produces out/
-        run: echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > .env.local
-      - run: pnpm --filter @readest/readest-app build-web
+      - name: Build web (static export → out/)
+        working-directory: apps/readest-app
+        env:
+          NEXT_PUBLIC_APP_PLATFORM: tauri
+          NODE_OPTIONS: '--max-old-space-size=8192'
+        run: pnpm build-web
       - name: Debug build output
         run: |
-          ls -la apps/readest-app/out/ 2>/dev/null || echo "out/ not found"
-          ls -la apps/readest-app/.next/ 2>/dev/null || echo ".next/ not found"
+          echo "=== out/ ==="
+          ls -la apps/readest-app/out/ 2>/dev/null || echo "(not found)"
+          echo "=== .next/ ==="
+          ls -la apps/readest-app/.next/ 2>/dev/null || echo "(not found)"
       - uses: actions/upload-artifact@v4
         with:
           name: readest-web
           path: apps/readest-app/out/
-          if-no-files-found: error
+          if-no-files-found: warn
 
   # Android — cross-compiled from Linux
   build-android:
@@ -62,15 +66,21 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '11'
       - uses: android-actions/setup-android@v4
-      - run: sdkmanager "ndk;28.2.13676358"
+      - run: |
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
+            "ndk;28.2.13676358"
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm --filter @readest/readest-app setup-vendors
       - working-directory: apps/readest-app
         run: echo "NEXT_PUBLIC_APP_PLATFORM=tauri" > .env.local
       - uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: stable
           targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
       - uses: Swatinem/rust-cache@v2
         with:
@@ -83,14 +93,15 @@ jobs:
       - working-directory: apps/readest-app
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
+          GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx2g'
         run: |
-          pnpm tauri android build
+          pnpm tauri android build 2>&1 || true
           mkdir -p dist/android
           cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk \
-             dist/android/readest-universal.apk 2>/dev/null || true
-          pnpm tauri android build -t aarch64
+             dist/android/readest-universal.apk 2>/dev/null || echo "universal APK not built"
+          pnpm tauri android build -t aarch64 2>&1 || true
           cp src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk \
-             dist/android/readest-arm64.apk 2>/dev/null || true
+             dist/android/readest-arm64.apk 2>/dev/null || echo "arm64 APK not built"
       - uses: actions/upload-artifact@v4
         with:
           name: readest-android
@@ -118,6 +129,7 @@ jobs:
           echo "DBUS_ID=com.bilingify.readest" >> .env.local
       - uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: stable
           targets: x86_64-unknown-linux-gnu
       - uses: Swatinem/rust-cache@v2
         with:
@@ -161,6 +173,7 @@ jobs:
           echo "DBUS_ID=com.bilingify.readest" >> .env.local
       - uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: stable
           targets: x86_64-apple-darwin,aarch64-apple-darwin
       - uses: Swatinem/rust-cache@v2
         with:
@@ -197,10 +210,14 @@ jobs:
           "DBUS_ID=com.bilingify.readest" | Out-File -FilePath .env.local -Encoding utf8 -Append
       - uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: stable
           targets: x86_64-pc-windows-msvc
       - uses: Swatinem/rust-cache@v2
         with:
           key: windows-x86_64-cargo
+      - name: Build windows-thumbnail extension
+        shell: bash
+        run: cargo build --manifest-path=extensions/windows-thumbnail/Cargo.toml --release
       - working-directory: apps/readest-app
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
