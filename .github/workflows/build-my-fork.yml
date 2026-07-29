@@ -96,11 +96,6 @@ jobs:
             gir1.2-javascriptcoregtk-4.1 gir1.2-webkit2-4.1 \
             libappindicator3-dev librsvg2-dev patchelf xdg-utils
 
-      - name: Build windows-thumbnail extension (Windows only)
-        if: matrix.config.release == 'windows'
-        shell: bash
-        run: cargo build --manifest-path=extensions/windows-thumbnail/Cargo.toml --release
-
       - name: Build Android APKs
         if: matrix.config.release == 'android'
         env:
