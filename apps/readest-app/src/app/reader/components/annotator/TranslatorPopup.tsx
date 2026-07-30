@@ -65,6 +65,12 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
     targetLang,
   } as UseTranslatorOptions);
 
+  const viewportWidth = typeof window === 'undefined' ? popupWidth : window.innerWidth;
+  const viewportHeight = typeof window === 'undefined' ? 760 : window.innerHeight;
+  const preferredPopupWidth = Math.min(Math.max(popupWidth, 560), Math.max(320, viewportWidth - 32));
+  const preferredPopupMinHeight = Math.min(Math.max(popupHeight, 420), Math.max(360, viewportHeight - 32));
+  const preferredPopupMaxHeight = Math.min(820, Math.max(420, viewportHeight - 32));
+
   const handleSourceLangChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSourceLang(event.target.value);
   };
@@ -137,19 +143,19 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
     <div>
       <Popup
         trianglePosition={trianglePosition}
-        width={popupWidth}
-        minHeight={popupHeight}
-        maxHeight={720}
+        width={preferredPopupWidth}
+        minHeight={preferredPopupMinHeight}
+        maxHeight={preferredPopupMaxHeight}
         position={position}
-        className='not-eink:text-white grid h-full select-text grid-rows-[1fr,auto,1fr] bg-gray-600'
-        triangleClassName='text-gray-600'
+        className='not-eink:text-white grid h-full select-text grid-rows-[auto,auto,minmax(0,1fr),auto] overflow-hidden rounded-2xl bg-gray-700 shadow-2xl ring-1 ring-white/10'
+        triangleClassName='text-gray-700'
         onDismiss={onDismiss}
       >
-        <div className='overflow-y-auto p-4 font-sans'>
-          <div className='mb-2 flex items-center justify-between'>
-            <h1 className='text-sm font-normal'>{_('Original Text')}</h1>
+        <div className='px-5 pb-4 pt-5 font-sans sm:px-6'>
+          <div className='mb-3 flex flex-wrap items-center justify-between gap-3'>
+            <h1 className='text-sm font-semibold tracking-wide text-white/85'>{_('Original Text')}</h1>
             <Select
-              className='not-eink:bg-gray-600 not-eink:text-white eink:bg-base-100'
+              className='not-eink:bg-gray-600 not-eink:text-white eink:bg-base-100 max-w-[60%] rounded-lg'
               value={sourceLang}
               onChange={handleSourceLangChange}
               options={[
@@ -167,16 +173,18 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
               ]}
             />
           </div>
-          <p className='not-eink:text-white/90 text-base'>{text}</p>
+          <p className='not-eink:text-white/80 line-clamp-5 whitespace-pre-wrap text-base leading-relaxed'>
+            {text}
+          </p>
         </div>
 
-        <div className='mx-4 flex-shrink-0 border-t border-gray-500/30'></div>
+        <div className='mx-5 border-t border-white/10 sm:mx-6'></div>
 
-        <div className='overflow-y-auto px-4 pb-8 pt-4 font-sans'>
-          <div className='mb-2 flex items-center justify-between'>
-            <h2 className='text-sm font-normal'>{_('Translated Text')}</h2>
+        <div className='min-h-0 px-5 py-4 font-sans sm:px-6'>
+          <div className='mb-3 flex flex-wrap items-center justify-between gap-3'>
+            <h2 className='text-sm font-semibold tracking-wide text-white/85'>{_('Translated Text')}</h2>
             <Select
-              className='not-eink:bg-gray-600 not-eink:text-white eink:bg-base-100'
+              className='not-eink:bg-gray-600 not-eink:text-white eink:bg-base-100 max-w-[60%] rounded-lg'
               value={targetLang}
               onChange={handleTargetLangChange}
               options={[
@@ -187,22 +195,21 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
               ]}
             />
           </div>
-          {loading ? (
-            <p className='text-base italic text-gray-500'>{_('Loading...')}</p>
-          ) : (
-            <div>
-              {error ? (
-                <p className='text-base text-red-600'>{error}</p>
-              ) : (
-                <p className='not-eink:text-white/90 text-base'>
-                  {translation || _('No translation available.')}
-                </p>
-              )}
-            </div>
-          )}
+          <div className='min-h-[6rem] rounded-xl bg-black/10 p-4 ring-1 ring-white/10'>
+            {loading ? (
+              <p className='text-base italic leading-relaxed text-white/55'>{_('Loading...')}</p>
+            ) : error ? (
+              <p className='text-base leading-relaxed text-red-300'>{error}</p>
+            ) : (
+              <p className='not-eink:text-white/90 whitespace-pre-wrap text-base leading-relaxed'>
+                {translation || _('No translation available.')}
+              </p>
+            )}
+          </div>
         </div>
-        <div className='absolute bottom-0 flex h-8 w-full items-center justify-between px-4'>
-          <div className='line-clamp-1 text-xs opacity-60'>
+
+        <div className='flex items-center justify-between gap-3 border-t border-white/10 px-5 py-3 font-sans sm:px-6'>
+          <div className='line-clamp-1 min-w-0 flex-1 text-xs text-white/50'>
             {provider &&
               !loading &&
               !error &&
@@ -211,7 +218,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
               })}
           </div>
           <Select
-            className='not-eink:bg-gray-600 not-eink:text-white eink:bg-base-100'
+            className='not-eink:bg-gray-600 not-eink:text-white eink:bg-base-100 max-w-[50%] rounded-lg'
             value={provider}
             onChange={handleProviderChange}
             options={providers.map(({ name: value, label, disabled }) => ({

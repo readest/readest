@@ -6,6 +6,8 @@ import { getStoragePlanData, getTranslationPlanData, getUserProfilePlan } from '
 import { setCachedUserPlan } from '@/services/sync/cloudSyncProvider';
 import { useTranslation } from './useTranslation';
 
+const DAILY_TRANSLATION_QUOTA = 10 * 1024 * 1024;
+
 export const useQuotaStats = (briefName = false) => {
   const _ = useTranslation();
   const { token, user } = useAuth();
@@ -41,12 +43,11 @@ export const useQuotaStats = (briefName = false) => {
     const translationQuota: QuotaType = {
       name: briefName ? _('Translation') : _('Translation Characters'),
       tooltip: _('{{percentage}}% of Daily Translation Characters Used.', {
-        percentage:
-          translationPlan.quota > 0 ? Math.round((translationPlan.usage / translationPlan.quota) * 100) : 0,
+        percentage: Math.round((translationPlan.usage / DAILY_TRANSLATION_QUOTA) * 100),
       }),
-      used: Math.round(translationPlan.usage / 1024),
-      total: Math.round(translationPlan.quota / 1024),
-      unit: 'K',
+      used: parseFloat((translationPlan.usage / 1024 / 1024).toFixed(2)),
+      total: 10,
+      unit: 'M',
       resetAt: translationResetAt,
     };
 
