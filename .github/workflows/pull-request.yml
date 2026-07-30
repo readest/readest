@@ -35,7 +35,7 @@ jobs:
               - 'apps/readest-app/src-tauri/**'
       - name: setup sccache
         if: steps.changes.outputs.tauri == 'true'
-        uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+        uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
       - name: Install minimal stable with clippy and rustfmt
         if: steps.changes.outputs.tauri == 'true'
         uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
@@ -302,7 +302,7 @@ jobs:
           pnpm install --frozen-lockfile --prefer-offline && pnpm setup-vendors
 
       - name: setup sccache
-        uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
+        uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
 
       - name: install Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
