@@ -15,6 +15,7 @@ import {
   generateDarkPalette,
 } from '@/styles/themes';
 import { createFontCSS, CustomFont } from '@/styles/fonts';
+import { readStoredAmbientIsDarkMode } from './ambientLight';
 import { getOSPlatform } from './misc';
 import { SCROLL_WRAPPER_CLASS, SCROLL_WRAPPER_FIT_CLASS } from './scrollable';
 
@@ -815,7 +816,10 @@ export const getThemeCode = () => {
     themeColor = localStorage.getItem('themeColor') || 'default';
     themeMode = localStorage.getItem('themeMode') || 'auto';
     systemIsDarkMode = localStorage.getItem('systemIsDarkMode') === 'true';
-    ambientIsDarkMode = localStorage.getItem('ambientIsDarkMode') === 'true';
+    ambientIsDarkMode = readStoredAmbientIsDarkMode(
+      localStorage.getItem('ambientIsDarkMode'),
+      systemIsDarkMode,
+    );
     customThemes = JSON.parse(localStorage.getItem('customThemes') || '[]');
   }
   const isDarkMode =

@@ -177,7 +177,10 @@ impl<R: Runtime> NativeBridge<R> {
     }
 
     pub fn start_ambient_light_updates(&self) -> crate::Result<AmbientLightUpdatesResponse> {
-        Err(crate::Error::UnsupportedPlatformError)
+        Ok(AmbientLightUpdatesResponse {
+            success: false,
+            error: Some("unsupported".to_string()),
+        })
     }
 
     pub fn stop_ambient_light_updates(&self) -> crate::Result<AmbientLightUpdatesResponse> {

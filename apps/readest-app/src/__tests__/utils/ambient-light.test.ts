@@ -4,9 +4,23 @@ import {
   AMBIENT_LIGHT_LUX_THRESHOLD,
   isValidThemeMode,
   nextThemeMode,
+  readStoredAmbientIsDarkMode,
   resolveAmbientIsDarkMode,
   resolveThemeIsDarkMode,
 } from '@/utils/ambientLight';
+
+describe('readStoredAmbientIsDarkMode', () => {
+  it('reads back a persisted flag', () => {
+    expect(readStoredAmbientIsDarkMode('true', false)).toBe(true);
+    expect(readStoredAmbientIsDarkMode('false', true)).toBe(false);
+  });
+
+  it('falls back to system appearance when nothing was persisted', () => {
+    expect(readStoredAmbientIsDarkMode(null, true)).toBe(true);
+    expect(readStoredAmbientIsDarkMode(null, false)).toBe(false);
+    expect(readStoredAmbientIsDarkMode('garbage', true)).toBe(true);
+  });
+});
 
 describe('resolveAmbientIsDarkMode', () => {
   it('uses the midpoint on the first reading', () => {

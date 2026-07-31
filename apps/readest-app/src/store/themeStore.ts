@@ -4,13 +4,13 @@ import { AppService } from '@/types/system';
 import { getThemeCode, ThemeCode } from '@/utils/style';
 import {
   getSystemColorScheme,
-  hasAmbientLightSensor,
   startAmbientLightUpdates,
   stopAmbientLightUpdates,
   type AmbientLightPayload,
 } from '@/utils/bridge';
 import {
   isValidThemeMode,
+  readStoredAmbientIsDarkMode,
   resolveAmbientIsDarkMode,
   resolveThemeIsDarkMode,
 } from '@/utils/ambientLight';
@@ -76,9 +76,7 @@ const getInitialThemeColor = (): string => {
 
 const getInitialAmbientIsDarkMode = (systemIsDarkMode: boolean): boolean => {
   if (typeof window !== 'undefined' && localStorage) {
-    const stored = localStorage.getItem('ambientIsDarkMode');
-    if (stored === 'true') return true;
-    if (stored === 'false') return false;
+    return readStoredAmbientIsDarkMode(localStorage.getItem('ambientIsDarkMode'), systemIsDarkMode);
   }
   return systemIsDarkMode;
 };
@@ -143,12 +141,16 @@ const startAmbientLightListening = async () => {
   }
 };
 
+// Start and stop both span several awaits, so overlapping calls could
+// interleave: a stop landing after a start leaves the sensor off while we
+// still believe we are listening, and two starts leak the first listener.
+// Chaining every transition keeps the sensor in step with the last mode set.
+let ambientLightSync: Promise<void> = Promise.resolve();
+
 const syncAmbientLightSubscription = (mode: ThemeMode) => {
-  if (mode === 'ambient') {
-    void startAmbientLightListening();
-  } else {
-    void stopAmbientLightListening();
-  }
+  ambientLightSync = ambientLightSync.then(() =>
+    mode === 'ambient' ? startAmbientLightListening() : stopAmbientLightListening(),
+  );
 };
 
 export const useThemeStore = create<ThemeState>((set, get) => {
@@ -321,24 +323,12 @@ export const initSystemThemeListener = (appService: AppService) => {
 
   updateColorTheme();
 
-  // Probe ambient light; fall back if Ambient Mode was persisted without a sensor.
-  void (async () => {
-    if (appService.hasAmbientLightSensor) {
-      syncAmbientLightSubscription(useThemeStore.getState().themeMode);
-      return;
-    }
-    if (appService.isAndroidApp) {
-      try {
-        const res = await hasAmbientLightSensor();
-        appService.hasAmbientLightSensor = !!res.available;
-      } catch {
-        appService.hasAmbientLightSensor = false;
-      }
-    }
-    if (!appService.hasAmbientLightSensor && useThemeStore.getState().themeMode === 'ambient') {
-      useThemeStore.getState().setThemeMode('auto');
-      return;
-    }
-    syncAmbientLightSubscription(useThemeStore.getState().themeMode);
-  })();
+  // appService.init() has already probed the sensor by the time this runs, so
+  // fall back when Ambient Mode was persisted on a device that lacks one.
+  const themeMode = useThemeStore.getState().themeMode;
+  if (themeMode === 'ambient' && !appService.hasAmbientLightSensor) {
+    useThemeStore.getState().setThemeMode('auto');
+  } else {
+    syncAmbientLightSubscription(themeMode);
+  }
 };

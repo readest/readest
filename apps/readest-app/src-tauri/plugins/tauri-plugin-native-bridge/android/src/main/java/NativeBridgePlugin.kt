@@ -209,7 +209,6 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     private val pluginScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private var sensorManager: SensorManager? = null
-    private var lightSensor: Sensor? = null
     private var ambientLightListening = false
     private var lastEmittedLux: Float = Float.NaN
     private val ambientLightListener = object : SensorEventListener {
@@ -222,7 +221,12 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             lastEmittedLux = lux
             val payload = JSObject()
             payload.put("lux", lux.toDouble())
-            emitOrQueue("ambient-light", payload)
+            // Deliberately NOT emitOrQueue: that queue is for one-shot events
+            // like shared-intent that must survive until JS registers. This is
+            // a continuous stream, so a sample nobody is listening for is
+            // worthless and queueing it would grow without bound whenever the
+            // sensor outlives the listener (e.g. the WebView renderer dies).
+            triggerEvent("ambient-light", payload)
         }
     }
 
@@ -910,7 +914,6 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 return
             }
             sensorManager = sm
-            lightSensor = sensor
             lastEmittedLux = Float.NaN
             sm.registerListener(ambientLightListener, sensor, SensorManager.SENSOR_DELAY_NORMAL)
             ambientLightListening = true
@@ -943,7 +946,6 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         }
         ambientLightListening = false
         sensorManager = null
-        lightSensor = null
         lastEmittedLux = Float.NaN
     }
 

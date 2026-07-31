@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('@/utils/style', () => ({
   getThemeCode: vi.fn(() => ({
@@ -32,6 +32,8 @@ vi.mock('@/services/environment', () => ({
   isWebAppPlatform: vi.fn(() => false),
 }));
 
+import { addPluginListener } from '@tauri-apps/api/core';
+import { startAmbientLightUpdates, stopAmbientLightUpdates } from '@/utils/bridge';
 import { useThemeStore, loadDataTheme, initSystemThemeListener } from '@/store/themeStore';
 import type { AppService } from '@/types/system';
 
@@ -254,6 +256,84 @@ describe('themeStore', () => {
       // High lux switches to light
       useThemeStore.getState().handleAmbientLightChange(80);
       expect(useThemeStore.getState().isDarkMode).toBe(false);
+    });
+  });
+
+  describe('ambient light subscription', () => {
+    // The bridge calls are async, so the store has to serialize them. Drain
+    // enough macrotasks that any settled chain has run to completion.
+    const settle = async () => {
+      for (let i = 0; i < 10; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    };
+
+    let calls: string[] = [];
+
+    const resolveImmediately = () => {
+      vi.mocked(startAmbientLightUpdates).mockImplementation(async () => {
+        calls.push('start');
+        return { success: true };
+      });
+      vi.mocked(stopAmbientLightUpdates).mockImplementation(async () => {
+        calls.push('stop');
+        return { success: true };
+      });
+    };
+
+    // The outer beforeEach also drives setThemeMode, so a deferred mock left
+    // installed by one test would block the next test's subscription chain.
+    afterEach(resolveImmediately);
+
+    beforeEach(async () => {
+      calls = [];
+      resolveImmediately();
+      vi.mocked(addPluginListener).mockImplementation(async () =>
+        Promise.resolve({ unregister: vi.fn(() => Promise.resolve()) } as never),
+      );
+      useThemeStore.getState().setThemeMode('auto');
+      await settle();
+      calls = [];
+      vi.mocked(addPluginListener).mockClear();
+    });
+
+    test('re-enabling while a stop is still in flight leaves the sensor running', async () => {
+      useThemeStore.getState().setThemeMode('ambient');
+      await settle();
+      calls = [];
+
+      // Hold the stop open so the ambient -> auto -> ambient toggle overlaps.
+      let releaseStop = () => {};
+      vi.mocked(stopAmbientLightUpdates).mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            releaseStop = () => {
+              calls.push('stop');
+              resolve({ success: true });
+            };
+          }),
+      );
+
+      useThemeStore.getState().setThemeMode('auto');
+      useThemeStore.getState().setThemeMode('ambient');
+      await settle();
+      releaseStop();
+      await settle();
+
+      // The start must land after the stop resolves, otherwise the native
+      // sensor ends up off while the store still thinks it is listening.
+      expect(calls).toEqual(['stop', 'start']);
+    });
+
+    test('does not start the sensor twice when toggled before the first start settles', async () => {
+      useThemeStore.getState().setThemeMode('ambient');
+      useThemeStore.getState().setThemeMode('auto');
+      useThemeStore.getState().setThemeMode('ambient');
+      await settle();
+
+      expect(calls).toEqual(['start', 'stop', 'start']);
+      // One live listener: each start registers one, each stop unregisters one.
+      expect(vi.mocked(addPluginListener).mock.calls).toHaveLength(2);
     });
   });
 

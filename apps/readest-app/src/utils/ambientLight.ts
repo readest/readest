@@ -70,6 +70,20 @@ export function nextThemeMode(current: ThemeMode, hasAmbient: boolean): ThemeMod
   return modes[nextIdx] ?? 'auto';
 }
 
+/**
+ * Read the persisted ambient dark flag, falling back to the system appearance
+ * until the first lux reading has been stored. Shared by the theme store and
+ * `getThemeCode` so the app chrome and the book content cannot disagree.
+ */
+export function readStoredAmbientIsDarkMode(
+  stored: string | null,
+  systemIsDarkMode: boolean,
+): boolean {
+  if (stored === 'true') return true;
+  if (stored === 'false') return false;
+  return systemIsDarkMode;
+}
+
 export function isValidThemeMode(value: string | null): value is ThemeMode {
   return value === 'auto' || value === 'light' || value === 'dark' || value === 'ambient';
 }
