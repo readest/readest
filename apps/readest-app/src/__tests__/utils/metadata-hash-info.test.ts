@@ -49,4 +49,32 @@ describe('getMetadataHashInfo', () => {
     const info = getMetadataHashInfo(null as unknown as BookMetadata);
     expect(info).toBeUndefined();
   });
+
+  describe('with a filename salt (issue #5411)', () => {
+    const metadata: BookMetadata = {
+      title: 'PowerPoint Presentation',
+      author: 'Alice Author',
+      language: 'en',
+    };
+
+    it('produces different hashes for the same metadata under different filenames', () => {
+      expect(getMetadataHash(metadata, 'lecture-01')).not.toBe(
+        getMetadataHash(metadata, 'lecture-02'),
+      );
+    });
+
+    it('produces the same hash for the same metadata and filename', () => {
+      expect(getMetadataHash(metadata, 'lecture-01')).toBe(getMetadataHash(metadata, 'lecture-01'));
+    });
+
+    it('appends the filename to the hash source', () => {
+      const info = getMetadataHashInfo(metadata, 'lecture-01');
+      expect(info!.hashSource).toBe('PowerPoint Presentation|Alice Author||lecture-01');
+    });
+
+    it('leaves the hash unchanged when no filename is given', () => {
+      const info = getMetadataHashInfo(metadata);
+      expect(info!.hashSource).toBe('PowerPoint Presentation|Alice Author|');
+    });
+  });
 });

@@ -482,7 +482,14 @@ export async function importBook(
         ? nativeHash!
         : await partialMD5(fileobj!);
 
-    const metaHash = getMetadataHash(loadedBook.metadata);
+    // PDF metadata is often generic boilerplate (e.g. every PowerPoint export
+    // is titled "PowerPoint Presentation" by the same author), so metadata
+    // alone wrongly collapses distinct files into one book (issue #5411).
+    // Salt the hash with the original filename so only same-named PDFs dedupe.
+    const metaHash = getMetadataHash(
+      loadedBook.metadata,
+      format === 'PDF' ? getBaseFilename(filename) : undefined,
+    );
     let existingBook = lookupIndex
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);
@@ -862,7 +869,11 @@ export async function refreshBookMetadata(fs: FileSystem, book: Book): Promise<b
   if (!bookDoc) return false;
 
   book.metadata = bookDoc.metadata;
-  book.metaHash = getMetadataHash(bookDoc.metadata);
+  // PDF metaHash is salted with the original import filename (issue #5411),
+  // which is lost after import — keep the value stamped at import time.
+  if (book.format !== 'PDF' || !book.metaHash) {
+    book.metaHash = getMetadataHash(bookDoc.metadata);
+  }
   const primaryLanguage = getPrimaryLanguage(bookDoc.metadata.language);
   if (primaryLanguage) {
     book.primaryLanguage = primaryLanguage;

@@ -394,13 +394,17 @@ export interface MetadataHashInfo {
   metaHash: string;
 }
 
-export const getMetadataHashInfo = (metadata: BookMetadata): MetadataHashInfo | undefined => {
+export const getMetadataHashInfo = (
+  metadata: BookMetadata,
+  filename?: string,
+): MetadataHashInfo | undefined => {
   if (!metadata) return;
   try {
     const title = getTitleForHash(metadata.title);
     const authors = getAuthorsList(metadata.author);
     const identifiers = getIdentifiersList(metadata.altIdentifier || metadata.identifier);
-    const hashSource = `${title}|${authors.join(',')}|${identifiers.join(',')}`;
+    let hashSource = `${title}|${authors.join(',')}|${identifiers.join(',')}`;
+    if (filename) hashSource += `|${filename}`;
     const metaHash = md5(hashSource.normalize('NFC'));
     return { title, authors, identifiers, hashSource, metaHash };
   } catch (error) {
@@ -409,6 +413,6 @@ export const getMetadataHashInfo = (metadata: BookMetadata): MetadataHashInfo | 
   return;
 };
 
-export const getMetadataHash = (metadata: BookMetadata) => {
-  return getMetadataHashInfo(metadata)?.metaHash;
+export const getMetadataHash = (metadata: BookMetadata, filename?: string) => {
+  return getMetadataHashInfo(metadata, filename)?.metaHash;
 };

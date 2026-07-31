@@ -291,7 +291,11 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
       }
       // TODO: uncomment this when we can ensure metaHash is correctly generated for all books
       // book.metaHash = book.metaHash ?? getMetadataHash(bookDoc.metadata);
-      book.metaHash = getMetadataHash(bookDoc.metadata);
+      // PDF metaHash is salted with the original import filename (issue #5411),
+      // which is lost after import — keep the value stamped at import time.
+      if (book.format !== 'PDF' || !book.metaHash) {
+        book.metaHash = getMetadataHash(bookDoc.metadata);
+      }
 
       const isFixedLayout =
         bookDoc.rendition?.layout === 'pre-paginated' || FIXED_LAYOUT_FORMATS.has(book.format);

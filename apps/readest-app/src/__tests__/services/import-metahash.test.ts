@@ -32,7 +32,7 @@ vi.mock('@/libs/storage', () => ({
 }));
 
 import { BaseAppService } from '@/services/appService';
-import { buildBookLookupIndex } from '@/services/bookService';
+import { buildBookLookupIndex, refreshBookMetadata } from '@/services/bookService';
 
 // Concrete test subclass of BaseAppService with mocked fs
 class TestAppService extends BaseAppService {
@@ -620,6 +620,106 @@ describe('importBook metaHash aggregation', () => {
     expect(writtenConfig.bookHash).toBe('exact-hash');
     // Merged booknotes from both
     expect(writtenConfig.booknotes).toHaveLength(2);
+  });
+});
+
+// PDF metadata is often generic (e.g. every PowerPoint export is titled
+// "PowerPoint Presentation" with the same author), so metaHash alone wrongly
+// collapses distinct PDFs into one book (issue #5411). PDF metaHash is salted
+// with the original filename so only same-named files dedupe.
+describe('importBook PDF filename-aware dedup', () => {
+  let service: TestAppService;
+
+  const PDF_METADATA = {
+    title: 'PowerPoint Presentation',
+    author: 'Alice Author',
+    language: 'en',
+  };
+
+  function setupMockPdfDoc() {
+    const bookDoc = {
+      metadata: { ...PDF_METADATA },
+      getCover: vi.fn().mockResolvedValue(null),
+    };
+    mockOpen.mockResolvedValue({ book: bookDoc, format: 'PDF' });
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new TestAppService();
+    const fs = service.getFs();
+    fs.exists.mockResolvedValue(false);
+    fs.createDir.mockResolvedValue(undefined);
+    fs.writeFile.mockResolvedValue(undefined);
+    fs.removeDir.mockResolvedValue(undefined);
+    fs.readFile.mockResolvedValue('{}');
+  });
+
+  it('imports PDFs with identical metadata but different filenames as separate books', async () => {
+    const books: Book[] = [];
+
+    mockPartialMD5.mockResolvedValue('pdf-hash-1');
+    setupMockPdfDoc();
+    const book1 = await service.importBook(
+      new File(['slides 1'], 'lecture-01.pdf', { type: 'application/pdf' }),
+      books,
+    );
+
+    mockPartialMD5.mockResolvedValue('pdf-hash-2');
+    setupMockPdfDoc();
+    const book2 = await service.importBook(
+      new File(['slides 2'], 'lecture-02.pdf', { type: 'application/pdf' }),
+      books,
+    );
+
+    expect(book2).not.toBe(book1);
+    expect(books.filter((b) => !b.deletedAt)).toHaveLength(2);
+  });
+
+  it('still dedupes a PDF re-imported with the same filename and metadata', async () => {
+    const books: Book[] = [];
+
+    mockPartialMD5.mockResolvedValue('pdf-hash-1');
+    setupMockPdfDoc();
+    const book1 = await service.importBook(
+      new File(['v1'], 'deck.pdf', { type: 'application/pdf' }),
+      books,
+    );
+
+    mockPartialMD5.mockResolvedValue('pdf-hash-2');
+    setupMockPdfDoc();
+    const book2 = await service.importBook(
+      new File(['v2'], 'deck.pdf', { type: 'application/pdf' }),
+      books,
+    );
+
+    expect(book2).toBe(book1);
+    expect(books.filter((b) => !b.deletedAt)).toHaveLength(1);
+    expect(book1!.hash).toBe('pdf-hash-2');
+  });
+
+  it('refreshBookMetadata preserves the salted metaHash for PDFs', async () => {
+    // The original filename is lost after import (files are stored under the
+    // metadata title), so re-parsing the file cannot reproduce the salt and
+    // must keep the metaHash stamped at import time.
+    const book = makeBook({
+      hash: 'pdf-hash-1',
+      format: 'PDF' as Book['format'],
+      metaHash: 'salted-import-hash',
+    });
+
+    const fs = service.getFs();
+    fs.exists.mockResolvedValue(true);
+    fs.openFile.mockResolvedValue(new File(['pdf'], 'Test Book.pdf'));
+    setupMockPdfDoc();
+
+    const refreshed = await refreshBookMetadata(
+      fs as unknown as Parameters<typeof refreshBookMetadata>[0],
+      book,
+    );
+
+    expect(refreshed).toBe(true);
+    expect(book.metaHash).toBe('salted-import-hash');
   });
 });
 
