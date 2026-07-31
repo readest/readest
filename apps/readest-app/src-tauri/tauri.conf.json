@@ -125,6 +125,20 @@
         "description": "PDF file",
         "mimeType": "application/pdf",
         "role": "Viewer"
+      },
+      {
+        "name": "txt",
+        "ext": ["txt"],
+        "description": "TXT file",
+        "mimeType": "text/plain",
+        "role": "Viewer"
+      },
+      {
+        "name": "md",
+        "ext": ["md"],
+        "description": "Markdown file",
+        "mimeType": "text/markdown",
+        "role": "Viewer"
       }
     ],
     "createUpdaterArtifacts": true
