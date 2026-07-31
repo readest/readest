@@ -1,5 +1,7 @@
 import { FoliateView } from '@/types/view';
 import { AppService } from '@/types/system';
+import { SectionItem } from '@/libs/document';
+import { transformTTSSectionDocument } from './transformDoc';
 import { filterSSMLWithLang, parseSSMLMarks } from '@/utils/ssml';
 import { Overlayer } from 'foliate-js/overlayer.js';
 import {
@@ -299,7 +301,9 @@ export class TTSController extends EventTarget {
     let doc = primary && (primary.index ?? 0) === sectionIndex ? primary.doc : undefined;
     if (!doc) {
       const section = view.book.sections?.[sectionIndex];
-      doc = section?.createDocument ? await section.createDocument() : undefined;
+      doc = section?.createDocument
+        ? await transformTTSSectionDocument(view.book, section.id, await section.createDocument())
+        : undefined;
     }
     if (!doc) {
       console.warn('[TTS] attachView: no document for section', sectionIndex);
@@ -387,6 +391,28 @@ export class TTSController extends EventTarget {
       | undefined;
   }
 
+  // The rendered document for a section from ANY live view (the multiview
+  // paginator keeps preloaded adjacent sections alive), not just the primary.
+  #getLiveSectionDoc(sectionIndex: number): Document | undefined {
+    if (!this.#attached) return undefined;
+    const contents = this.view.renderer.getContents() as { doc?: Document; index?: number }[];
+    return contents.find((x) => x.index === sectionIndex && x.doc)?.doc;
+  }
+
+  // A fresh section document replayed through the display transform pipeline
+  // (see transformTTSSectionDocument), with the lang fixup TTS voices need.
+  async #createSectionDoc(section: SectionItem): Promise<Document> {
+    const raw = await section.createDocument();
+    const doc = await transformTTSSectionDocument(this.view.book, section.id, raw);
+    const html = doc.querySelector('html');
+    const lang = html?.getAttribute('lang') || html?.getAttribute('xml:lang') || '';
+    if (html && !isValidLang(lang) && this.ttsLang) {
+      html.setAttribute('lang', this.ttsLang);
+      html.setAttribute('xml:lang', this.ttsLang);
+    }
+    return doc;
+  }
+
   #getHighlighter() {
     return (range: Range) => {
       // Suppress the sentence highlight that foliate's setMark draws when the
@@ -467,18 +493,13 @@ export class TTSController extends EventTarget {
       await this.onSectionChange?.(sectionIndex);
     }
 
-    let doc: Document;
-    if (currentSection?.index === sectionIndex && currentSection?.doc) {
-      doc = currentSection.doc;
-    } else {
-      doc = await section.createDocument();
-      const html = doc.querySelector('html');
-      const lang = html?.getAttribute('lang') || html?.getAttribute('xml:lang') || '';
-      if (html && !isValidLang(lang) && this.ttsLang) {
-        html.setAttribute('lang', this.ttsLang);
-        html.setAttribute('xml:lang', this.ttsLang);
-      }
-    }
+    // Prefer a live rendered document for the section, re-queried AFTER the
+    // navigation above (auto-advance lands here with the pre-navigation
+    // primary captured, so checking only `currentSection` always missed it):
+    // it carries the display transforms and highlights anchor into it by
+    // identity. Otherwise replay a fresh document through the same transform
+    // pipeline so speech and highlight offsets match the displayed text.
+    const doc = this.#getLiveSectionDoc(sectionIndex) ?? (await this.#createSectionDoc(section));
 
     // The section changed (or is initializing): any previous timeline maps a
     // dead document.
@@ -601,13 +622,9 @@ export class TTSController extends EventTarget {
         const section = sections?.[sectionIndex];
         if (!section?.createDocument) return null;
         try {
-          const doc = await section.createDocument();
-          const html = doc.querySelector('html');
-          const lang = html?.getAttribute('lang') || html?.getAttribute('xml:lang') || '';
-          if (html && !isValidLang(lang) && this.ttsLang) {
-            html.setAttribute('lang', this.ttsLang);
-            html.setAttribute('xml:lang', this.ttsLang);
-          }
+          // Same transformed document as live playback, or the synthesized
+          // text (and its cache keys) would diverge from what gets spoken.
+          const doc = await this.#createSectionDoc(section);
           const { TTS, getSentences } = await import('foliate-js/tts.js');
           const { textWalker } = await import('foliate-js/text-walker.js');
           const nodeFilter = createTTSNodeFilter();
