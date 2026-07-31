@@ -71,12 +71,11 @@ jobs:
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm --filter @readest/readest-app setup-vendors
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+      # dtolnay/rust-toolchain accepts a comma-separated `targets` input.
+      # (actions-rs/toolchain@v1 is deprecated and only knows `target`, so the
+      # requested targets silently never got installed.)
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          override: true
-          profile: minimal
           targets: ${{ matrix.config.rust_target }}
 
       - uses: Swatinem/rust-cache@v2
@@ -95,6 +94,9 @@ jobs:
             libappindicator3-dev librsvg2-dev patchelf xdg-utils
 
       - name: Build Tauri app
+        # This script is bash. Windows runners default to PowerShell, which
+        # cannot parse `if [ ... ]; then` and fails instantly (exit 1 in <1s).
+        shell: bash
         working-directory: apps/readest-app
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
@@ -103,28 +105,27 @@ jobs:
             rm -rf src-tauri/gen/android
             pnpm tauri android init
             pnpm tauri icon ../../data/icons/readest-book.png
-            pnpm tauri android build 2>&1 || echo "Android build exited non-zero (check logs)"
+            pnpm tauri android build
             mkdir -p dist/android
-            find src-tauri/gen/android -name "*.apk" -exec cp {} dist/android/ \; 2>/dev/null || true
+            find src-tauri/gen/android -name "*.apk" -exec cp {} dist/android/ \;
           else
-            pnpm tauri build ${{ matrix.config.args }} 2>&1 || echo "Desktop build exited non-zero (check logs)"
+            pnpm tauri build ${{ matrix.config.args }}
           fi
 
       - name: List build artifacts
+        shell: bash
         run: |
-          echo "=== target/release/bundle/ ==="
-          find target/release/bundle -type f 2>/dev/null | head -20 || echo "(empty)"
+          echo "=== Tauri release bundles (apps/readest-app/src-tauri/target/release/bundle/) ==="
+          find apps/readest-app/src-tauri/target/release/bundle -type f 2>/dev/null | head -20 || echo "(empty)"
           echo "=== APKs ==="
           find apps/readest-app/dist -name "*.apk" 2>/dev/null | head -5 || echo "(none)"
-          echo "=== target/release/ binaries ==="
-          ls target/release/*.dmg target/release/*.AppImage target/release/*.exe target/release/*.msi target/release/*.deb target/release/*.rpm 2>/dev/null || echo "(no top-level installers)"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: readest-${{ matrix.config.release }}-${{ matrix.config.arch || 'multi' }}
           path: |
-            target/release/bundle/
+            apps/readest-app/src-tauri/target/release/bundle/
             apps/readest-app/dist/
           if-no-files-found: warn
 
