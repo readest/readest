@@ -1,9 +1,9 @@
 import type { ThemeMode } from '@/styles/themes';
 
-/** Lux below this → dark page theme (Match Surroundings). */
+/** Lux below this → dark page theme (Ambient Mode). */
 export const AMBIENT_DARK_LUX_THRESHOLD = 20;
 
-/** Lux above this → light page theme (Match Surroundings). */
+/** Lux above this → light page theme (Ambient Mode). */
 export const AMBIENT_LIGHT_LUX_THRESHOLD = 50;
 
 /**
@@ -31,9 +31,9 @@ export function resolveAmbientIsDarkMode(lux: number, previousIsDark: boolean | 
  * Resolve effective dark mode from theme mode and system/ambient flags.
  *
  * Receives:
- * - mode: ThemeMode including surroundings.
+ * - mode: ThemeMode including ambient.
  * - systemIsDarkMode: OS appearance when mode is auto.
- * - ambientIsDarkMode: lux-derived flag when mode is surroundings.
+ * - ambientIsDarkMode: lux-derived flag when mode is ambient.
  *
  * Returns:
  * - whether the UI and reader should render as dark.
@@ -45,31 +45,31 @@ export function resolveThemeIsDarkMode(
 ): boolean {
   if (mode === 'dark') return true;
   if (mode === 'light') return false;
-  if (mode === 'surroundings') return ambientIsDarkMode;
+  if (mode === 'ambient') return ambientIsDarkMode;
   return systemIsDarkMode;
 }
 
 const THEME_MODES_BASE: ThemeMode[] = ['auto', 'light', 'dark'];
-const THEME_MODES_WITH_SURROUNDINGS: ThemeMode[] = ['auto', 'light', 'dark', 'surroundings'];
+const THEME_MODES_WITH_AMBIENT: ThemeMode[] = ['auto', 'light', 'dark', 'ambient'];
 
 /**
- * Cycle Auto → Light → Dark → (Match Surroundings) → Auto.
+ * Cycle Auto → Light → Dark → (Ambient Mode) → Auto.
  *
  * Receives:
  * - current: active ThemeMode.
- * - hasSurroundings: whether Match Surroundings is offered on this device.
+ * - hasAmbient: whether Ambient Mode is offered on this device.
  *
  * Returns:
  * - the next ThemeMode in the cycle.
  */
-export function nextThemeMode(current: ThemeMode, hasSurroundings: boolean): ThemeMode {
-  const modes = hasSurroundings ? THEME_MODES_WITH_SURROUNDINGS : THEME_MODES_BASE;
-  const effective: ThemeMode = current === 'surroundings' && !hasSurroundings ? 'auto' : current;
+export function nextThemeMode(current: ThemeMode, hasAmbient: boolean): ThemeMode {
+  const modes = hasAmbient ? THEME_MODES_WITH_AMBIENT : THEME_MODES_BASE;
+  const effective: ThemeMode = current === 'ambient' && !hasAmbient ? 'auto' : current;
   const idx = modes.indexOf(effective);
   const nextIdx = idx < 0 ? 0 : (idx + 1) % modes.length;
   return modes[nextIdx] ?? 'auto';
 }
 
 export function isValidThemeMode(value: string | null): value is ThemeMode {
-  return value === 'auto' || value === 'light' || value === 'dark' || value === 'surroundings';
+  return value === 'auto' || value === 'light' || value === 'dark' || value === 'ambient';
 }

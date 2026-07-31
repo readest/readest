@@ -38,22 +38,18 @@ describe('ThemeModeSelector segmented control', () => {
     expect(segments).toHaveLength(3);
   });
 
-  it('adds Match Surroundings when an ambient light sensor is available', () => {
+  it('adds Ambient Mode when an ambient light sensor is available', () => {
     render(
-      <ThemeModeSelector
-        themeMode='surroundings'
-        onThemeModeChange={() => {}}
-        hasAmbientLightSensor
-      />,
+      <ThemeModeSelector themeMode='ambient' onThemeModeChange={() => {}} hasAmbientLightSensor />,
     );
 
     expect(screen.getAllByRole('radio')).toHaveLength(4);
-    expect(
-      screen.getByRole('radio', { name: 'Match Surroundings' }).getAttribute('aria-checked'),
-    ).toBe('true');
+    expect(screen.getByRole('radio', { name: 'Ambient Mode' }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
   });
 
-  it('switches to surroundings when that segment is clicked', () => {
+  it('switches to ambient when that segment is clicked', () => {
     const onThemeModeChange = vi.fn();
     render(
       <ThemeModeSelector
@@ -63,8 +59,8 @@ describe('ThemeModeSelector segmented control', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('radio', { name: 'Match Surroundings' }));
-    expect(onThemeModeChange).toHaveBeenCalledWith('surroundings');
+    fireEvent.click(screen.getByRole('radio', { name: 'Ambient Mode' }));
+    expect(onThemeModeChange).toHaveBeenCalledWith('ambient');
   });
 
   it('marks the active segment via aria-checked', () => {

@@ -1916,5 +1916,6 @@
   "Downloading chapters…": "章をダウンロード中…",
   "This chapter could not be downloaded.": "この章はダウンロードできませんでした。",
   "Auto-hide Cursor": "カーソルを自動的に隠す",
-  "After a moment of inactivity": "しばらく操作がないとき"
+  "After a moment of inactivity": "しばらく操作がないとき",
+  "Ambient Mode": "環境光モード"
 }

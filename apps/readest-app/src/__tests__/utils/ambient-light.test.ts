@@ -43,37 +43,37 @@ describe('resolveThemeIsDarkMode', () => {
     expect(resolveThemeIsDarkMode('auto', false, true)).toBe(false);
   });
 
-  it('uses ambient flag in surroundings mode', () => {
-    expect(resolveThemeIsDarkMode('surroundings', false, true)).toBe(true);
-    expect(resolveThemeIsDarkMode('surroundings', true, false)).toBe(false);
+  it('uses ambient flag in ambient mode', () => {
+    expect(resolveThemeIsDarkMode('ambient', false, true)).toBe(true);
+    expect(resolveThemeIsDarkMode('ambient', true, false)).toBe(false);
   });
 });
 
 describe('nextThemeMode', () => {
-  it('cycles Auto → Light → Dark → Auto without surroundings', () => {
+  it('cycles Auto → Light → Dark → Auto without ambient', () => {
     expect(nextThemeMode('auto', false)).toBe('light');
     expect(nextThemeMode('light', false)).toBe('dark');
     expect(nextThemeMode('dark', false)).toBe('auto');
   });
 
-  it('includes Match Surroundings when the sensor is available', () => {
+  it('includes Ambient Mode when the sensor is available', () => {
     expect(nextThemeMode('auto', true)).toBe('light');
     expect(nextThemeMode('light', true)).toBe('dark');
-    expect(nextThemeMode('dark', true)).toBe('surroundings');
-    expect(nextThemeMode('surroundings', true)).toBe('auto');
+    expect(nextThemeMode('dark', true)).toBe('ambient');
+    expect(nextThemeMode('ambient', true)).toBe('auto');
   });
 
-  it('treats surroundings as auto when the sensor is unavailable', () => {
-    expect(nextThemeMode('surroundings', false)).toBe('light');
+  it('treats ambient as auto when the sensor is unavailable', () => {
+    expect(nextThemeMode('ambient', false)).toBe('light');
   });
 });
 
 describe('isValidThemeMode', () => {
-  it('accepts known modes including surroundings', () => {
+  it('accepts known modes including ambient', () => {
     expect(isValidThemeMode('auto')).toBe(true);
     expect(isValidThemeMode('light')).toBe(true);
     expect(isValidThemeMode('dark')).toBe(true);
-    expect(isValidThemeMode('surroundings')).toBe(true);
+    expect(isValidThemeMode('ambient')).toBe(true);
     expect(isValidThemeMode('night')).toBe(false);
     expect(isValidThemeMode(null)).toBe(false);
   });

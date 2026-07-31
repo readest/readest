@@ -447,8 +447,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
             ? _('Dark Mode')
             : themeMode === 'light'
               ? _('Light Mode')
-              : themeMode === 'surroundings'
-                ? _('Match Surroundings')
+              : themeMode === 'ambient'
+                ? _('Ambient Mode')
                 : _('Auto Mode')
         }
         Icon={
@@ -456,7 +456,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
             ? BiMoon
             : themeMode === 'light'
               ? BiSun
-              : themeMode === 'surroundings'
+              : themeMode === 'ambient'
                 ? MdOutlineSensors
                 : TbSunMoon
         }

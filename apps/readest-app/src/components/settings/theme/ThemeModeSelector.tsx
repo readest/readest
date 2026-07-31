@@ -10,7 +10,7 @@ import { SettingLabel } from '../primitives';
 interface ThemeModeSelectorProps {
   themeMode: ThemeMode;
   onThemeModeChange: (mode: ThemeMode) => void;
-  /** When true, shows Match Surroundings (ambient lux) as a fourth segment. */
+  /** When true, shows Ambient Mode (driven by the light sensor) as a fourth segment. */
   hasAmbientLightSensor?: boolean;
 }
 
@@ -45,9 +45,9 @@ const ThemeModeSelector: React.FC<ThemeModeSelectorProps> = ({
     }
   };
 
-  const handleSurroundingsClick = () => {
+  const handleAmbientClick = () => {
     deactivate();
-    onThemeModeChange('surroundings');
+    onThemeModeChange('ambient');
   };
 
   const segments: {
@@ -89,9 +89,9 @@ const ThemeModeSelector: React.FC<ThemeModeSelectorProps> = ({
 
   if (hasAmbientLightSensor) {
     segments.push({
-      mode: 'surroundings',
-      title: _('Match Surroundings'),
-      onClick: handleSurroundingsClick,
+      mode: 'ambient',
+      title: _('Ambient Mode'),
+      onClick: handleAmbientClick,
       icon: <MdOutlineSensors />,
     });
   }

@@ -263,8 +263,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       ? _('Dark Mode')
       : themeMode === 'light'
         ? _('Light Mode')
-        : themeMode === 'surroundings'
-          ? _('Match Surroundings')
+        : themeMode === 'ambient'
+          ? _('Ambient Mode')
           : _('Auto Mode');
 
   const savedBookCoverPath = settings.savedBookCoverForLockScreenPath;
@@ -424,7 +424,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
             ? PiMoon
             : themeMode === 'light'
               ? PiSun
-              : themeMode === 'surroundings'
+              : themeMode === 'ambient'
                 ? MdOutlineSensors
                 : TbSunMoon
         }

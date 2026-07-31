@@ -821,7 +821,7 @@ export const getThemeCode = () => {
   const isDarkMode =
     themeMode === 'dark' ||
     (themeMode === 'auto' && systemIsDarkMode) ||
-    (themeMode === 'surroundings' && ambientIsDarkMode);
+    (themeMode === 'ambient' && ambientIsDarkMode);
   let currentTheme = themes.find((theme) => theme.name === themeColor);
   if (!currentTheme) {
     const customTheme = customThemes.find((theme) => theme.name === themeColor);

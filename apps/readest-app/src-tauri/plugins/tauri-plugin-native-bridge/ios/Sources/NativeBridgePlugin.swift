@@ -1178,7 +1178,7 @@ class NativeBridgePlugin: Plugin {
     invoke.resolve(["success": true])
   }
 
-  /// No public ambient-light API on iOS; Match Surroundings is Android-only.
+  /// No public ambient-light API on iOS; Ambient Mode is Android-only.
   @objc public func has_ambient_light_sensor(_ invoke: Invoke) {
     invoke.resolve(["available": false])
   }

@@ -144,7 +144,7 @@ const startAmbientLightListening = async () => {
 };
 
 const syncAmbientLightSubscription = (mode: ThemeMode) => {
-  if (mode === 'surroundings') {
+  if (mode === 'ambient') {
     void startAmbientLightListening();
   } else {
     void stopAmbientLightListening();
@@ -232,7 +232,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
       set({ themeCode: getThemeCode() });
     },
     handleAmbientLightChange: (lux) => {
-      if (get().themeMode !== 'surroundings') return;
+      if (get().themeMode !== 'ambient') return;
       const previous = ambientHasLuxReading ? get().ambientIsDarkMode : null;
       ambientHasLuxReading = true;
       const nextAmbientIsDark = resolveAmbientIsDarkMode(lux, previous);
@@ -321,7 +321,7 @@ export const initSystemThemeListener = (appService: AppService) => {
 
   updateColorTheme();
 
-  // Probe ambient light; fall back if Match Surroundings was persisted without a sensor.
+  // Probe ambient light; fall back if Ambient Mode was persisted without a sensor.
   void (async () => {
     if (appService.hasAmbientLightSensor) {
       syncAmbientLightSubscription(useThemeStore.getState().themeMode);
@@ -335,10 +335,7 @@ export const initSystemThemeListener = (appService: AppService) => {
         appService.hasAmbientLightSensor = false;
       }
     }
-    if (
-      !appService.hasAmbientLightSensor &&
-      useThemeStore.getState().themeMode === 'surroundings'
-    ) {
+    if (!appService.hasAmbientLightSensor && useThemeStore.getState().themeMode === 'ambient') {
       useThemeStore.getState().setThemeMode('auto');
       return;
     }

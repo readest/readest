@@ -92,7 +92,7 @@ export interface AppService {
   hasUpdater: boolean;
   hasOrientationLock: boolean;
   hasScreenBrightness: boolean;
-  /** True when a hardware ambient light sensor can drive Match Surroundings. */
+  /** True when a hardware ambient light sensor can drive Ambient Mode. */
   hasAmbientLightSensor: boolean;
   hasIAP: boolean;
   isMobile: boolean;

@@ -101,15 +101,15 @@ describe('themeStore', () => {
       expect(useThemeStore.getState().isDarkMode).toBe(true);
     });
 
-    test('in surroundings mode, uses ambientIsDarkMode to compute isDarkMode', () => {
+    test('in ambient mode, uses ambientIsDarkMode to compute isDarkMode', () => {
       useThemeStore.setState({ ambientIsDarkMode: true, systemIsDarkMode: false });
-      useThemeStore.getState().setThemeMode('surroundings');
-      expect(useThemeStore.getState().themeMode).toBe('surroundings');
+      useThemeStore.getState().setThemeMode('ambient');
+      expect(useThemeStore.getState().themeMode).toBe('ambient');
       expect(useThemeStore.getState().isDarkMode).toBe(true);
-      expect(localStorage.getItem('themeMode')).toBe('surroundings');
+      expect(localStorage.getItem('themeMode')).toBe('ambient');
 
       useThemeStore.setState({ ambientIsDarkMode: false });
-      useThemeStore.getState().setThemeMode('surroundings');
+      useThemeStore.getState().setThemeMode('ambient');
       expect(useThemeStore.getState().isDarkMode).toBe(false);
     });
 
@@ -214,9 +214,9 @@ describe('themeStore', () => {
   });
 
   describe('handleAmbientLightChange', () => {
-    test('updates isDarkMode from lux when in surroundings mode', () => {
+    test('updates isDarkMode from lux when in ambient mode', () => {
       useThemeStore.setState({
-        themeMode: 'surroundings',
+        themeMode: 'ambient',
         ambientIsDarkMode: false,
         isDarkMode: false,
         themeColor: 'default',
@@ -228,7 +228,7 @@ describe('themeStore', () => {
       expect(document.documentElement.getAttribute('data-theme')).toBe('default-dark');
     });
 
-    test('ignores lux updates when not in surroundings mode', () => {
+    test('ignores lux updates when not in ambient mode', () => {
       useThemeStore.setState({
         themeMode: 'light',
         ambientIsDarkMode: false,
@@ -241,7 +241,7 @@ describe('themeStore', () => {
 
     test('holds state inside the hysteresis band after first reading', () => {
       useThemeStore.setState({
-        themeMode: 'surroundings',
+        themeMode: 'ambient',
         ambientIsDarkMode: true,
         isDarkMode: true,
         themeColor: 'default',

@@ -245,8 +245,8 @@ describe('getThemeCode', () => {
     expect(code.isDarkMode).toBe(false);
   });
 
-  it('uses ambientIsDarkMode when themeMode is surroundings', () => {
-    localStorage.setItem('themeMode', 'surroundings');
+  it('uses ambientIsDarkMode when themeMode is ambient', () => {
+    localStorage.setItem('themeMode', 'ambient');
     localStorage.setItem('ambientIsDarkMode', 'true');
     localStorage.setItem('systemIsDarkMode', 'false');
     expect(getThemeCode().isDarkMode).toBe(true);

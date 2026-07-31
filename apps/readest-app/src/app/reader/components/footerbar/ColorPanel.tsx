@@ -177,7 +177,7 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
               <PiSun size={20} />
             ) : themeMode === 'dark' ? (
               <PiMoon size={20} />
-            ) : themeMode === 'surroundings' ? (
+            ) : themeMode === 'ambient' ? (
               <MdOutlineSensors size={20} />
             ) : (
               <TbSunMoon size={20} />
