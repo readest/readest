@@ -764,8 +764,7 @@ const FoliateViewer: React.FC<{
       // ControlPanel toggle takes effect without recreating the view.
       view.toggleAttribute(
         'autohide-cursor',
-        !appService?.isMobile &&
-          !!useSettingsStore.getState().settings.globalReadSettings?.autohideCursor,
+        !appService?.isMobile && !!useSettingsStore.getState().settings.autohideCursor,
       );
       applyPageTurnAttributes(view, viewSettings, bookDoc.rendition?.layout === 'pre-paginated');
       // iOS WebKit composites large/persistent page layers without the Android

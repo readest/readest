@@ -53,7 +53,6 @@ export interface ReadSettings {
   notebookWidth: string;
   isNotebookPinned: boolean;
   notebookActiveTab: NotebookTab;
-  autohideCursor: boolean;
   translationProvider: string;
   translateTargetLang: string;
   /**
@@ -338,6 +337,7 @@ export interface SystemSettings {
   autoCheckUpdates: boolean;
   updateChannel: 'stable' | 'nightly';
   screenWakeLock: boolean;
+  autohideCursor: boolean;
   screenBrightness: number;
   autoScreenBrightness: boolean;
   swipeBrightnessGesture: boolean;

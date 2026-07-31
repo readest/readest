@@ -8,7 +8,7 @@ import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { useEinkMode } from '@/hooks/useEinkMode';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
-import { saveReadSettings, saveSysSettings, saveViewSettings } from '@/helpers/settings';
+import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
 import { PageTurnStyle } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { annotationToolQuickActions } from '@/app/reader/components/annotator/AnnotationTools';
@@ -67,7 +67,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     settings.swipeBrightnessGesture,
   );
   const [screenWakeLock, setScreenWakeLock] = useState(settings.screenWakeLock);
-  const [autohideCursor, setAutohideCursor] = useState(settings.globalReadSettings.autohideCursor);
+  const [autohideCursor, setAutohideCursor] = useState(settings.autohideCursor);
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
   const [isAutoCheckUpdates, setIsAutoCheckUpdates] = useState(settings.autoCheckUpdates);
   const [isNightlyChannel, setIsNightlyChannel] = useState(settings.updateChannel === 'nightly');
@@ -260,8 +260,8 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   }, [screenWakeLock]);
 
   useEffect(() => {
-    if (autohideCursor === settings.globalReadSettings.autohideCursor) return;
-    saveReadSettings(envConfig, 'autohideCursor', autohideCursor);
+    if (autohideCursor === settings.autohideCursor) return;
+    saveSysSettings(envConfig, 'autohideCursor', autohideCursor);
     getViews().forEach((view) => view?.toggleAttribute('autohide-cursor', autohideCursor));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autohideCursor]);
