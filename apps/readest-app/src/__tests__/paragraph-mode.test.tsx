@@ -543,6 +543,75 @@ describe('paragraph mode', () => {
   });
 });
 
+describe('paragraph mode display settings (#5246)', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  const fontViewSettings = {
+    writingMode: 'horizontal-tb',
+    vertical: false,
+    rtl: false,
+    defaultFont: 'Serif',
+    serifFont: 'Bitter',
+    sansSerifFont: 'Roboto',
+    monospaceFont: 'Fira Code',
+    defaultCJKFont: 'LXGW WenKai',
+    defaultFontSize: 20,
+    lineHeight: 1.6,
+    fontWeight: 400,
+  } as never;
+
+  const renderOverlayWithFonts = async (fontScale?: number) => {
+    const overlayBookKey = 'overlay-book';
+    const doc = createDoc('<p>你好，世界</p>');
+    const range = doc.createRange();
+    range.selectNodeContents(doc.querySelector('p')!);
+
+    const { container } = render(
+      <ParagraphOverlay
+        bookKey={overlayBookKey}
+        viewSettings={fontViewSettings}
+        fontScale={fontScale}
+      />,
+    );
+
+    await act(async () => {
+      await eventDispatcher.dispatch('paragraph-focus', {
+        bookKey: overlayBookKey,
+        range,
+        presentation: { dir: 'ltr', writingMode: 'horizontal-tb', vertical: false, rtl: false },
+      });
+    });
+
+    return waitFor(() => {
+      const node = container.querySelector('.paragraph-content') as HTMLDivElement | null;
+      expect(node).not.toBeNull();
+      return node!;
+    });
+  };
+
+  it('applies the reader font chain including the CJK/custom font', async () => {
+    const paragraphContent = await renderOverlayWithFonts();
+
+    // The bare `"Bitter", serif` pair dropped the user's CJK/custom font, so
+    // CJK text fell back to the system font (#5246). The overlay must resolve
+    // the same chain as the RSVP overlay (getBaseFontFamily).
+    expect(paragraphContent.style.fontFamily).toContain('Bitter');
+    expect(paragraphContent.style.fontFamily).toContain('LXGW WenKai');
+  });
+
+  it('scales the paragraph text and its frame by the font scale', async () => {
+    const paragraphContent = await renderOverlayWithFonts(1.5);
+
+    expect(paragraphContent.style.fontSize).toBe('30px');
+    // The frame must carry the scaled font too, so its ch-based width cap
+    // grows with the text instead of squeezing bigger text into the same box.
+    const frame = paragraphContent.parentElement as HTMLDivElement;
+    expect(frame.style.fontSize).toBe('30px');
+  });
+});
+
 describe('paragraph mode TTS sync', () => {
   beforeEach(() => {
     vi.clearAllMocks();

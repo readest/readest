@@ -1,11 +1,16 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FoliateView } from '@/types/view';
 import { Insets } from '@/types/misc';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
+import {
+  loadParagraphFontScaleIndex,
+  PARAGRAPH_FONT_SCALE_OPTIONS,
+  saveParagraphFontScaleIndex,
+} from '@/utils/paragraphPresentation';
 import { useParagraphMode } from '../../hooks/useParagraphMode';
 import ParagraphBar from './ParagraphBar';
 import ParagraphOverlay from './ParagraphOverlay';
@@ -32,6 +37,13 @@ const ParagraphControl: React.FC<ParagraphControlProps> = ({ bookKey, viewRef, g
     toggleTtsAudio,
     reengageTtsFollow,
   } = useParagraphMode({ bookKey, viewRef });
+
+  // Device-level display scale for the paragraph text (#5246), persisted like
+  // the RSVP overlay's display settings.
+  const [fontScaleIndex, setFontScaleIndex] = useState(loadParagraphFontScaleIndex);
+  const handleFontScaleIndexChange = useCallback((index: number) => {
+    setFontScaleIndex(saveParagraphFontScaleIndex(index));
+  }, []);
 
   // One-time-per-session decouple toast: the first time following drops while
   // TTS still plays, tell the user once. Reset when following re-engages so a
@@ -60,6 +72,7 @@ const ParagraphControl: React.FC<ParagraphControlProps> = ({ bookKey, viewRef, g
       <ParagraphOverlay
         bookKey={bookKey}
         viewSettings={viewSettings ?? undefined}
+        fontScale={PARAGRAPH_FONT_SCALE_OPTIONS[fontScaleIndex] ?? 1}
         gridInsets={gridInsets}
         ttsSyncStatus={ttsSyncStatus}
         onResumeTtsFollow={reengageTtsFollow}
@@ -75,6 +88,8 @@ const ParagraphControl: React.FC<ParagraphControlProps> = ({ bookKey, viewRef, g
         onClose={toggleParagraphMode}
         ttsActive={ttsActive}
         onToggleTtsAudio={toggleTtsAudio}
+        fontScaleIndex={fontScaleIndex}
+        onFontScaleIndexChange={handleFontScaleIndexChange}
         viewSettings={viewSettings ?? undefined}
         gridInsets={gridInsets}
       />

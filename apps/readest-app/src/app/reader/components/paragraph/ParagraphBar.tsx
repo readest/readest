@@ -9,7 +9,13 @@ import {
   MdKeyboardArrowDown,
   MdKeyboardArrowUp,
 } from 'react-icons/md';
-import { IoVolumeHigh, IoVolumeMediumOutline } from 'react-icons/io5';
+import {
+  IoAdd,
+  IoRemove,
+  IoSettingsSharp,
+  IoVolumeHigh,
+  IoVolumeMediumOutline,
+} from 'react-icons/io5';
 import { ViewSettings } from '@/types/book';
 import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
@@ -17,7 +23,10 @@ import { useReaderStore } from '@/store/readerStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
-import { getParagraphButtonDirections } from '@/utils/paragraphPresentation';
+import {
+  getParagraphButtonDirections,
+  PARAGRAPH_FONT_SCALE_OPTIONS,
+} from '@/utils/paragraphPresentation';
 
 const INITIAL_SHOW_DURATION = 2500;
 const HIDE_DELAY = 2000;
@@ -35,6 +44,9 @@ interface ParagraphBarProps {
   ttsActive?: boolean;
   /** Toggle read-along: start TTS from the focused paragraph, or stop it. */
   onToggleTtsAudio?: () => void;
+  /** Index into PARAGRAPH_FONT_SCALE_OPTIONS for the display settings (#5246). */
+  fontScaleIndex: number;
+  onFontScaleIndexChange: (index: number) => void;
   viewSettings?: ViewSettings;
   gridInsets: Insets;
 }
@@ -53,6 +65,8 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
   onClose,
   ttsActive = false,
   onToggleTtsAudio,
+  fontScaleIndex,
+  onFontScaleIndexChange,
   viewSettings,
   gridInsets,
 }) => {
@@ -65,9 +79,13 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
   const buttonDirections = getParagraphButtonDirections(viewSettings);
 
   const [isBarVisible, setIsBarVisible] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInTriggerZoneRef = useRef(false);
   const isMountedRef = useRef(true);
+  // Ref mirror so the hide timer sees the live value without re-arming.
+  const showSettingsRef = useRef(showSettings);
+  showSettingsRef.current = showSettings;
 
   const clearHideTimer = useCallback(() => {
     if (hideTimerRef.current) {
@@ -80,7 +98,9 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
     (delay: number = HIDE_DELAY) => {
       clearHideTimer();
       hideTimerRef.current = setTimeout(() => {
-        if (isMountedRef.current && !isInTriggerZoneRef.current) {
+        // Never auto-hide while the display settings panel is open — hiding
+        // would take the panel (and its stepper) away mid-interaction (#5246).
+        if (isMountedRef.current && !isInTriggerZoneRef.current && !showSettingsRef.current) {
           setIsBarVisible(false);
         }
       }, delay);
@@ -169,8 +189,21 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
     return () => eventDispatcher.off('paragraph-show-controls', handleShowControls);
   }, [bookKey, showBar]);
 
+  const toggleSettings = useCallback(() => {
+    setShowSettings((prev) => {
+      const next = !prev;
+      if (next) {
+        clearHideTimer();
+      } else {
+        startHideTimer();
+      }
+      return next;
+    });
+  }, [clearHideTimer, startHideTimer]);
+
   const isHiddenByHover = hoveredBookKey === bookKey;
   const isVisible = isBarVisible && !isHiddenByHover;
+  const fontScale = PARAGRAPH_FONT_SCALE_OPTIONS[fontScaleIndex] ?? 1;
   const progress =
     totalParagraphs > 0 ? Math.round(((currentIndex + 1) / totalParagraphs) * 100) : 0;
   const PrevIcon =
@@ -210,6 +243,48 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
         startHideTimer();
       }}
     >
+      {/* Display settings (#5246) — same chrome as the bar card, floating just
+          above it. Font size here is a scale on the reader's own font size, so
+          the paragraph can be larger than the book text on big screens. */}
+      {showSettings && (
+        <div
+          className={clsx(
+            'absolute bottom-full left-1/2 mb-2 -translate-x-1/2',
+            'not-eink:bg-base-300 eink-bordered rounded-2xl shadow-lg',
+            'text-base-content flex items-center gap-1 whitespace-nowrap px-4 py-2 text-sm',
+          )}
+        >
+          <span className='text-base-content/60 me-1 font-medium'>{_('Font Size')}</span>
+          <button
+            type='button'
+            onClick={() => onFontScaleIndexChange(fontScaleIndex - 1)}
+            disabled={fontScaleIndex <= 0}
+            className={clsx(BAR_BUTTON, fontScaleIndex <= 0 && 'pointer-events-none opacity-50')}
+            title={_('Decrease font size')}
+            aria-label={_('Decrease font size')}
+          >
+            <IoRemove size={iconSize20} />
+          </button>
+          <span className='min-w-12 text-center font-medium tabular-nums'>
+            {Math.round(fontScale * 100)}%
+          </span>
+          <button
+            type='button'
+            onClick={() => onFontScaleIndexChange(fontScaleIndex + 1)}
+            disabled={fontScaleIndex >= PARAGRAPH_FONT_SCALE_OPTIONS.length - 1}
+            className={clsx(
+              BAR_BUTTON,
+              fontScaleIndex >= PARAGRAPH_FONT_SCALE_OPTIONS.length - 1 &&
+                'pointer-events-none opacity-50',
+            )}
+            title={_('Increase font size')}
+            aria-label={_('Increase font size')}
+          >
+            <IoAdd size={iconSize20} />
+          </button>
+        </div>
+      )}
+
       {/* Same card as the TTS mini player: solid base-300 surface, 2xl radius,
           soft shadow, 56px row. No backdrop blur, no hairline border. */}
       <div
@@ -279,6 +354,16 @@ const ParagraphBar: React.FC<ParagraphBarProps> = ({
             )}
           </button>
         )}
+
+        <button
+          type='button'
+          onClick={toggleSettings}
+          className={clsx(BAR_BUTTON, showSettings && 'eink-bordered not-eink:bg-base-200')}
+          title={_('Settings')}
+          aria-label={_('Settings')}
+        >
+          <IoSettingsSharp size={iconSize20} />
+        </button>
 
         <button
           type='button'
