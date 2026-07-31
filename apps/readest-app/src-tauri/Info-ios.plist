@@ -43,6 +43,13 @@
     </array>
     <key>LSSupportsOpeningDocumentsInPlace</key>
     <true/>
+    <!-- Add-only Photos access. Readest never reads the library, but the
+         WebView's "Add to Photos" image callout and the share sheet's
+         "Save Image" activity both write through PHPhotoLibrary in-process;
+         without this key TCC terminates the app on the first attempt (#5397)
+         and iOS hides "Save Image" from the share sheet entirely. -->
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Readest needs access to save images from your books to your photo library.</string>
     <key>CFBundleURLTypes</key>
     <array>
       <dict>
