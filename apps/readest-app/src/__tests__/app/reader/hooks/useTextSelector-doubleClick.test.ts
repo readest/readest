@@ -73,9 +73,9 @@ const setup = (setSelection: (s: TextSelection | null) => void) => {
 
 // A jsdom document carrying a real text node and a caretRangeFromPoint that
 // resolves to a caret inside "world".
-const makeDoc = (caretOffset: number | null) => {
+const makeDoc = (caretOffset: number | null, text = 'Hello world test') => {
   const container = document.createElement('div');
-  const node = document.createTextNode('Hello world test');
+  const node = document.createTextNode(text);
   container.appendChild(node);
   document.body.appendChild(container);
   Object.assign(document, {
@@ -88,6 +88,23 @@ const makeDoc = (caretOffset: number | null) => {
     },
   });
   return { container, node, doc: document as Document };
+};
+
+const mouseDown = (detail: number, x = 50, y = 50) =>
+  ({ detail, button: 0, clientX: x, clientY: y }) as MouseEvent;
+
+const mousePointer = (x = 50, y = 50) =>
+  ({ pointerType: 'mouse', clientX: x, clientY: y }) as PointerEvent;
+
+const makeRangeVisibleAt = (range: Range, x = 50, y = 50) => {
+  Object.assign(range, {
+    getClientRects: () =>
+      ({
+        0: { left: x - 5, right: x + 5, top: y - 5, bottom: y + 5 },
+        length: 1,
+        item: () => null,
+      }) as unknown as DOMRectList,
+  });
 };
 
 beforeEach(() => {
@@ -152,6 +169,111 @@ describe('useTextSelector double-click word selection', () => {
     // The existing pointerup path owns this; the double-click handler must not
     // double-fire the selection.
     expect(setSelection).not.toHaveBeenCalled();
+    document.body.removeChild(container);
+  });
+
+  test('normalizes a native double-click before publishing the selection', async () => {
+    const setSelection = vi.fn();
+    const { result } = setup(setSelection);
+    const { container, node, doc } = makeDoc(8);
+
+    // Chromium can include the separator after a word in its native selection.
+    const pre = document.createRange();
+    pre.setStart(node, 6);
+    pre.setEnd(node, 12);
+    const sel = document.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(pre);
+    makeRangeVisibleAt(pre);
+    expect(sel.toString()).toBe('world ');
+
+    result.current.handleMouseDown(mouseDown(2));
+    await result.current.handlePointerUp(doc, 0, mousePointer());
+    // The later click-derived double-click message must not publish a second,
+    // competing TextSelection.
+    await result.current.handleDoubleClick(doc, 0, 50, 50);
+
+    // Keep the browser's live selection untouched. Only the Range captured by
+    // Readest is normalized, avoiding native touch-handle rewrites (#1553).
+    expect(sel.toString()).toBe('world ');
+    expect(setSelection).toHaveBeenCalledTimes(1);
+    const arg = setSelection.mock.calls[0]![0] as TextSelection;
+    expect(arg.text).toBe('world');
+    expect(arg.range.toString()).toBe('world');
+    expect(arg.range).not.toBe(sel.getRangeAt(0));
+
+    document.body.removeChild(container);
+  });
+
+  test('keeps only the clicked word when native selection spans Unicode whitespace', async () => {
+    const setSelection = vi.fn();
+    const { result } = setup(setSelection);
+    const { container, node, doc } = makeDoc(2, 'space\u202fbetween');
+    const pre = document.createRange();
+    pre.selectNodeContents(node);
+    const sel = document.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(pre);
+    makeRangeVisibleAt(pre);
+
+    result.current.handleMouseDown(mouseDown(2));
+    await result.current.handlePointerUp(doc, 0, mousePointer());
+
+    expect(sel.toString()).toBe('space\u202fbetween');
+    expect(setSelection).toHaveBeenCalledTimes(1);
+    const arg = setSelection.mock.calls[0]![0] as TextSelection;
+    expect(arg.text).toBe('space');
+    expect(arg.range.toString()).toBe('space');
+    expect(arg.range).not.toBe(sel.getRangeAt(0));
+
+    document.body.removeChild(container);
+  });
+
+  test('preserves a native double-click selection deliberately extended into whitespace', async () => {
+    const setSelection = vi.fn();
+    const { result } = setup(setSelection);
+    const { container, node, doc } = makeDoc(8);
+
+    // A double-click then drag can intentionally select only the separator,
+    // without reaching the next word.
+    const pre = document.createRange();
+    pre.setStart(node, 6);
+    pre.setEnd(node, 12);
+    const sel = document.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(pre);
+    makeRangeVisibleAt(pre, 60, 50);
+
+    result.current.handleMouseDown(mouseDown(2));
+    result.current.handlePointerMove(doc, 0, mousePointer(60, 50));
+    await result.current.handlePointerUp(doc, 0, mousePointer(60, 50));
+    await result.current.handleDoubleClick(doc, 0, 50, 50);
+
+    expect(sel.toString()).toBe('world ');
+    expect(setSelection).toHaveBeenCalledTimes(1);
+    expect((setSelection.mock.calls[0]![0] as TextSelection).text).toBe('world ');
+
+    document.body.removeChild(container);
+  });
+
+  test('does not normalize a stale selection outside the double-click target', async () => {
+    const setSelection = vi.fn();
+    const { result } = setup(setSelection);
+    const { container, node, doc } = makeDoc(8);
+    const pre = document.createRange();
+    pre.setStart(node, 6);
+    pre.setEnd(node, 12);
+    const sel = document.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(pre);
+    makeRangeVisibleAt(pre, 200, 200);
+
+    result.current.handleMouseDown(mouseDown(2));
+    await result.current.handlePointerUp(doc, 0, mousePointer());
+
+    expect(sel.toString()).toBe('world ');
+    expect(setSelection).not.toHaveBeenCalled();
+
     document.body.removeChild(container);
   });
 });

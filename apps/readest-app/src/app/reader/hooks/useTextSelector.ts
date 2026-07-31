@@ -8,6 +8,7 @@ import { getOSPlatform } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import {
   focusCaretWindowPos,
+  getCaretPointFromPoint,
   getWordRangeFromPoint,
   isHyphenHandleBugProneRange,
   isPointerInsideSelection,
@@ -15,6 +16,7 @@ import {
   rangeFromAnchorToPoint,
   repairJumpedSelectionRange,
   TextSelection,
+  trimRangeWhitespaceAroundPoint,
 } from '@/utils/sel';
 import { Corner, useAutoPageTurn } from './useAutoPageTurn';
 import { useInstantAnnotation } from './useInstantAnnotation';
@@ -29,6 +31,9 @@ const INSTANT_HOLD_MS = 300;
 // Movement past this many CSS px during the hold means the user is swiping, not
 // settling in to highlight, so the pending engagement is cancelled.
 const INSTANT_HOLD_MOVE_PX = 10;
+// Ignore tiny pointer jitter, but preserve a deliberate double-click-drag even
+// when it only extends the selection into adjacent whitespace.
+const DOUBLE_CLICK_DRAG_MOVE_PX = 3;
 
 export const useTextSelector = (
   bookKey: string,
@@ -94,6 +99,7 @@ export const useTextSelector = (
   // native touchmove): an auto-turn engagement signal alongside the caret, and
   // the finger position the Android hyphen repair rebuilds from.
   const pointerPos = useRef<{ x: number; y: number } | null>(null);
+  const mouseDoubleClickRef = useRef<{ x: number; y: number; moved: boolean } | null>(null);
 
   // Android hyphen selection-bounds bug (#1553): the selection anchor captured
   // at the first selectionchange of a touch gesture, plus whether that initial
@@ -144,13 +150,19 @@ export const useTextSelector = (
     index: number,
     rebuildRange = false,
     handlesSuppressed = false,
+    trimPoint?: { node: Node; offset: number } | null,
   ) => {
     isTextSelected.current = true;
-    const range = sel.getRangeAt(0);
+    const liveRange = sel.getRangeAt(0);
     if (rebuildRange) {
       sel.removeAllRanges();
-      sel.addRange(range);
+      sel.addRange(liveRange);
     }
+    // Selection.getRangeAt() returns the live, associated Range by reference.
+    // Clone only for double-click normalization so native touch paths retain
+    // their established Range behavior and browser handles stay untouched.
+    const range = trimPoint ? liveRange.cloneRange() : liveRange;
+    if (trimPoint) trimRangeWhitespaceAroundPoint(range, trimPoint.node, trimPoint.offset);
     const progress = getProgress(bookKey);
     setSelection({
       key: bookKey,
@@ -268,7 +280,27 @@ export const useTextSelector = (
     }
   };
 
+  // UI Events exposes the current click count on mousedown (`detail`). Record
+  // the second primary-button press before pointerup publishes the native word
+  // selection, so any browser-added separator can be removed exactly once.
+  const handleMouseDown = (ev: MouseEvent) => {
+    const doubleClickEnabled = !getViewSettings(bookKey)?.disableDoubleClick;
+    mouseDoubleClickRef.current =
+      doubleClickEnabled && ev.button === 0 && ev.detail === 2
+        ? { x: ev.clientX, y: ev.clientY, moved: false }
+        : null;
+  };
+
   const handlePointerMove = (doc: Document, index: number, ev: PointerEvent) => {
+    const doubleClick = mouseDoubleClickRef.current;
+    if (
+      doubleClick &&
+      ev.pointerType === 'mouse' &&
+      Math.hypot(ev.clientX - doubleClick.x, ev.clientY - doubleClick.y) >=
+        DOUBLE_CLICK_DRAG_MOVE_PX
+    ) {
+      doubleClick.moved = true;
+    }
     // The listener lives on the book iframe's document, so ev.clientX/Y are in
     // the (very wide, multi-column) iframe viewport. Map to window coordinates
     // via the iframe element's on-screen rect, like the selection caret.
@@ -340,6 +372,7 @@ export const useTextSelector = (
 
   const handlePointerCancel = (_doc: Document, _index: number, _ev: PointerEvent) => {
     isPointerDown.current = false;
+    mouseDoubleClickRef.current = null;
     // A pending still-hold that never engaged: drop it so a swipe-takeover
     // (Android fires pointercancel when the browser starts scrolling) keeps its
     // native page-turn instead of being swallowed.
@@ -436,11 +469,9 @@ export const useTextSelector = (
 
   // A double-click / touch double-tap on a word: select the word (like a
   // long-press selection) and route it through the same selection state that
-  // drives the quick action / annotation toolbar. On desktop the browser already
-  // selects the word natively on a real double-click, and that selection flows
-  // through handlePointerUp; so we only synthesize the selection when nothing is
-  // selected yet — the touch double-tap case (Android has no native word-select
-  // gesture), where the dblclick is detected from two quick taps.
+  // drives the quick action / annotation toolbar. Desktop native selection is
+  // finalized in handlePointerUp; touch double-tap still needs this synthesized
+  // range when the platform has no native word-select gesture.
   const handleDoubleClick = async (doc: Document, index: number, x: number, y: number) => {
     if (isInstantAnnotating.current) return;
     const sel = doc.getSelection();
@@ -462,6 +493,8 @@ export const useTextSelector = (
 
   const handlePointerUp = async (doc: Document, index: number, ev?: PointerEvent) => {
     isPointerDown.current = false;
+    const mouseDoubleClick = mouseDoubleClickRef.current;
+    mouseDoubleClickRef.current = null;
     // A tap (or a long-press shorter than the hold) that never engaged: drop the
     // pending still-hold so the tap falls through to a page turn.
     if (instantHoldTimer.current) cancelInstantHold();
@@ -500,13 +533,22 @@ export const useTextSelector = (
     const sel = doc.getSelection() as Selection;
     if (isValidSelection(sel)) {
       const isPointerInside = ev && isPointerInsideSelection(sel, ev);
+      let trimPoint: { node: Node; offset: number } | null = null;
+      if (
+        isPointerInside &&
+        ev.pointerType === 'mouse' &&
+        mouseDoubleClick &&
+        !mouseDoubleClick.moved
+      ) {
+        trimPoint = getCaretPointFromPoint(doc, mouseDoubleClick.x, mouseDoubleClick.y);
+      }
 
       // iOS no longer needs a special path: the native plugin
       // (ContextMenuSuppressor) suppresses the system selection menu, so
       // iOS selections go through the same path as desktop.
       if (isPointerInside) {
         isUpToPopup.current = true;
-        makeSelection(sel, index, true);
+        makeSelection(sel, index, true, false, trimPoint);
       } else if (appService?.isAndroidApp) {
         isUpToPopup.current = false;
       }
@@ -721,6 +763,7 @@ export const useTextSelector = (
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
+    handleMouseDown,
     handlePointerDown,
     handlePointerMove,
     handleNativeTouchMove,

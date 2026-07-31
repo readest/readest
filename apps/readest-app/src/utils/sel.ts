@@ -509,7 +509,11 @@ export const getWordRangeAt = (node: Node, offset: number): Range | null => {
 
 // The word range under a point (in `doc` viewport coordinates), like a native
 // double-click. Returns null when the point isn't on word-like text.
-export const getWordRangeFromPoint = (doc: Document, x: number, y: number): Range | null => {
+export const getCaretPointFromPoint = (
+  doc: Document,
+  x: number,
+  y: number,
+): { node: Node; offset: number } | null => {
   let node: Node | null = null;
   let offset = 0;
   if (doc.caretPositionFromPoint) {
@@ -526,7 +530,105 @@ export const getWordRangeFromPoint = (doc: Document, x: number, y: number): Rang
     }
   }
   if (!node) return null;
-  return getWordRangeAt(node, offset);
+  return { node, offset };
+};
+
+export const getWordRangeFromPoint = (doc: Document, x: number, y: number): Range | null => {
+  const point = getCaretPointFromPoint(doc, x, y);
+  return point ? getWordRangeAt(point.node, point.offset) : null;
+};
+
+interface SelectedTextSlice {
+  node: Text;
+  start: number;
+  end: number;
+}
+
+const getSelectedTextSlices = (range: Range): SelectedTextSlice[] => {
+  const root = range.commonAncestorContainer;
+  const textNodes: Text[] = [];
+  if (root.nodeType === Node.TEXT_NODE) {
+    textNodes.push(root as Text);
+  } else {
+    const walker = root.ownerDocument?.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    if (!walker) return [];
+    let node: Node | null;
+    while ((node = walker.nextNode())) {
+      if (range.intersectsNode(node)) textNodes.push(node as Text);
+    }
+  }
+
+  return textNodes
+    .map((node) => ({
+      node,
+      start: node === range.startContainer ? range.startOffset : 0,
+      end: node === range.endContainer ? range.endOffset : node.data.length,
+    }))
+    .filter(({ start, end }) => end > start);
+};
+
+// Restrict a captured Range snapshot to the non-whitespace segment under the
+// click. This corrects engines that treat NBSP-like separators as part of one
+// word while preserving their punctuation, hyphen, and language rules. Do not
+// pass the live Range associated with Selection: changing it rewrites the
+// browser selection and can disturb native touch handles. The selected segment
+// may span inline DOM nodes.
+export const trimRangeWhitespaceAroundPoint = (
+  range: Range,
+  pointNode: Node,
+  pointOffset: number,
+): boolean => {
+  const slices = getSelectedTextSlices(range);
+  const text = slices.map(({ node, start, end }) => node.data.slice(start, end)).join('');
+  if (!text || text !== range.toString() || !/\s/u.test(text)) return false;
+
+  let caretOffset: number | null = null;
+  let consumed = 0;
+  for (const slice of slices) {
+    const length = slice.end - slice.start;
+    if (slice.node === pointNode && pointOffset >= slice.start && pointOffset <= slice.end) {
+      caretOffset = consumed + pointOffset - slice.start;
+      break;
+    }
+    consumed += length;
+  }
+  if (caretOffset === null) return false;
+
+  const isWhitespace = (char: string): boolean => /\s/u.test(char);
+  let pivot: number;
+  if (caretOffset < text.length && !isWhitespace(text[caretOffset]!)) {
+    pivot = caretOffset;
+  } else if (caretOffset > 0 && !isWhitespace(text[caretOffset - 1]!)) {
+    pivot = caretOffset - 1;
+  } else {
+    return false;
+  }
+
+  let segmentStart = pivot;
+  while (segmentStart > 0 && !isWhitespace(text[segmentStart - 1]!)) segmentStart--;
+  let segmentEnd = pivot + 1;
+  while (segmentEnd < text.length && !isWhitespace(text[segmentEnd]!)) segmentEnd++;
+  if (segmentStart === 0 && segmentEnd === text.length) return false;
+
+  const boundaryAt = (target: number, side: 'start' | 'end') => {
+    let offset = 0;
+    for (const slice of slices) {
+      const length = slice.end - slice.start;
+      const nextOffset = offset + length;
+      if (target < nextOffset || (side === 'end' && target === nextOffset)) {
+        return { node: slice.node, offset: slice.start + target - offset };
+      }
+      offset = nextOffset;
+    }
+    return null;
+  };
+
+  const start = boundaryAt(segmentStart, 'start');
+  const end = boundaryAt(segmentEnd, 'end');
+  if (!start || !end) return false;
+  range.setStart(start.node, start.offset);
+  range.setEnd(end.node, end.offset);
+  return true;
 };
 
 // --- Android hyphenation selection-bounds bug (issue #1553) -----------------

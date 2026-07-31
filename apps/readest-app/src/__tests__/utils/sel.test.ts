@@ -637,4 +637,103 @@ describe('sel utilities', () => {
       delete (doc as { caretRangeFromPoint?: unknown }).caretRangeFromPoint;
     });
   });
+
+  describe('trimRangeWhitespaceAroundPoint', () => {
+    it.each([
+      ['world\u00a0', 'world'],
+      ['日本語\u3000', '日本語'],
+      ['שלום\u00a0', 'שלום'],
+    ])('trims Unicode trailing whitespace from %j', async (source, expected) => {
+      const container = document.createElement('div');
+      const node = document.createTextNode(source);
+      container.appendChild(node);
+      document.body.appendChild(container);
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const { trimRangeWhitespaceAroundPoint } = await import('@/utils/sel');
+
+      expect(trimRangeWhitespaceAroundPoint(range, node, 2)).toBe(true);
+      expect(range.toString()).toBe(expected);
+      expect(range.endContainer).toBe(node);
+      expect(range.endOffset).toBe(expected.length);
+
+      document.body.removeChild(container);
+    });
+
+    it('trims across inline text nodes while preserving the native word range', async () => {
+      const container = document.createElement('div');
+      container.innerHTML = 'Hello wor<em>ld</em><span> \u00a0</span>test';
+      document.body.appendChild(container);
+      const first = container.firstChild!;
+      const emphasized = container.querySelector('em')!.firstChild!;
+      const whitespace = container.querySelector('span')!.firstChild!;
+      const range = document.createRange();
+      range.setStart(first, 6);
+      range.setEnd(whitespace, 2);
+      const { trimRangeWhitespaceAroundPoint } = await import('@/utils/sel');
+
+      expect(range.toString()).toBe('world \u00a0');
+      expect(trimRangeWhitespaceAroundPoint(range, emphasized, 1)).toBe(true);
+      expect(range.toString()).toBe('world');
+      expect(range.endContainer).toBe(emphasized);
+      expect(range.endOffset).toBe(2);
+
+      document.body.removeChild(container);
+    });
+
+    it('preserves a whitespace-only range', async () => {
+      const container = document.createElement('div');
+      const node = document.createTextNode(' \u00a0');
+      container.appendChild(node);
+      document.body.appendChild(container);
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const { trimRangeWhitespaceAroundPoint } = await import('@/utils/sel');
+
+      expect(trimRangeWhitespaceAroundPoint(range, node, 1)).toBe(false);
+      expect(range.toString()).toBe(' \u00a0');
+
+      document.body.removeChild(container);
+    });
+
+    it.each([
+      ['\u00a0', 'non-breaking space'],
+      ['\u2009', 'thin space'],
+      ['\u202f', 'narrow no-break space'],
+      ['\u3000', 'ideographic space'],
+    ])('selects only the clicked side of a %s separator', async (separator) => {
+      const container = document.createElement('div');
+      const node = document.createTextNode(`space${separator}between`);
+      container.appendChild(node);
+      document.body.appendChild(container);
+      const { trimRangeWhitespaceAroundPoint } = await import('@/utils/sel');
+
+      const left = document.createRange();
+      left.selectNodeContents(node);
+      expect(trimRangeWhitespaceAroundPoint(left, node, 2)).toBe(true);
+      expect(left.toString()).toBe('space');
+
+      const right = document.createRange();
+      right.selectNodeContents(node);
+      expect(trimRangeWhitespaceAroundPoint(right, node, 8)).toBe(true);
+      expect(right.toString()).toBe('between');
+
+      document.body.removeChild(container);
+    });
+
+    it('does not reinterpret a hyphenated native selection', async () => {
+      const container = document.createElement('div');
+      const node = document.createTextNode('mother-in-law');
+      container.appendChild(node);
+      document.body.appendChild(container);
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const { trimRangeWhitespaceAroundPoint } = await import('@/utils/sel');
+
+      expect(trimRangeWhitespaceAroundPoint(range, node, 8)).toBe(false);
+      expect(range.toString()).toBe('mother-in-law');
+
+      document.body.removeChild(container);
+    });
+  });
 });
