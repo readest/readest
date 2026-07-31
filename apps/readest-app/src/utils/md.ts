@@ -65,7 +65,11 @@ interface TocNode {
   subitems?: TocNode[];
 }
 
-type MarkdownSection = SectionItem & { load: () => string };
+type MarkdownSection = SectionItem & {
+  load: () => string;
+  loadContent: () => Promise<string>;
+  unload: () => void;
+};
 
 export async function makeMarkdownBook(file: File): Promise<BookDoc> {
   const text = await file.text();
@@ -171,6 +175,42 @@ export async function makeMarkdownBook(file: File): Promise<BookDoc> {
     }));
   const toc = prune(root);
 
+  // The same transform pipeline EPUB/MOBI content goes through: the reader
+  // attaches its content transformers (proofread, simplecc, punctuation, ...)
+  // to `book.transformTarget`, and the paginator renders `loadContent()` via
+  // srcdoc when it is defined. Transformed content is cached per section and
+  // invalidated by unload() (the paginator unloads a section whenever its view
+  // is destroyed, e.g. on the viewer recreation a proofread rule change
+  // triggers), so rule changes show up on the next load. createDocument()
+  // stays raw, mirroring EPUB: TTS replays this same pipeline itself, and a
+  // pre-transformed document would double-apply the transformers.
+  const transformTarget = new EventTarget();
+  const transformed: (string | undefined)[] = new Array(xhtml.length).fill(undefined);
+  const transformSection = async (index: number): Promise<string> => {
+    const cached = transformed[index];
+    if (cached !== undefined) return cached;
+    const str = xhtml[index]!;
+    let result = str;
+    try {
+      const detail: { data: string | Promise<string>; type: string } = {
+        data: str,
+        type: 'application/xhtml+xml',
+      };
+      // Readonly, mirroring foliate's Loader.createURL dispatch. Selection
+      // scoped proofread rules compare their TOC-style sectionHref
+      // ("<index>#<anchor>") against this name via split('#')[0].
+      Object.defineProperty(detail, 'name', { value: String(index) });
+      transformTarget.dispatchEvent(new CustomEvent('data', { detail }));
+      const out = await detail.data;
+      // '' is the reader transform handler's error fallback.
+      if (typeof out === 'string' && out) result = out;
+    } catch {
+      // Keep the raw section on any transform failure.
+    }
+    transformed[index] = result;
+    return result;
+  };
+
   const urls: (string | undefined)[] = new Array(xhtml.length).fill(undefined);
   const sections: MarkdownSection[] = xhtml.map((str, index) => ({
     id: String(index),
@@ -187,6 +227,10 @@ export async function makeMarkdownBook(file: File): Promise<BookDoc> {
         urls[index] = URL.createObjectURL(new Blob([str], { type: 'application/xhtml+xml' }));
       }
       return urls[index]!;
+    },
+    loadContent: () => transformSection(index),
+    unload: () => {
+      transformed[index] = undefined;
     },
     loadText: async () => str,
     createDocument: async () => new DOMParser().parseFromString(str, 'application/xhtml+xml'),
@@ -213,6 +257,7 @@ export async function makeMarkdownBook(file: File): Promise<BookDoc> {
     dir: 'ltr',
     toc,
     sections,
+    transformTarget,
     splitTOCHref: (href: string): string[] => (href ? href.split('#') : []),
     getTOCFragment: (doc: Document, id: string): Element | null => doc.getElementById(id),
     resolveHref: (href: string) => {
