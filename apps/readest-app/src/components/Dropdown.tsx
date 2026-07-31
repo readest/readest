@@ -1,5 +1,13 @@
 import clsx from 'clsx';
-import React, { useState, isValidElement, ReactElement, ReactNode, useRef, useId } from 'react';
+import React, {
+  useState,
+  isValidElement,
+  ReactElement,
+  ReactNode,
+  useLayoutEffect,
+  useRef,
+  useId,
+} from 'react';
 import { useDropdownContext } from '@/context/DropdownContext';
 import { Overlay } from './Overlay';
 import MenuItem from './MenuItem';
@@ -24,6 +32,8 @@ interface DropdownProps {
 type MenuItemProps = {
   setIsDropdownOpen?: (open: boolean) => void;
 };
+
+const MENU_VIEWPORT_PADDING = 16;
 
 const enhanceMenuItems = (
   children: ReactNode,
@@ -75,7 +85,40 @@ const Dropdown: React.FC<DropdownProps> = ({
   const context = useDropdownContext();
   const isOpen = context ? context.openDropdownId === dropdownId : false;
   const containerRef = useRef<HTMLDivElement>(null);
+  const detailsRef = useRef<HTMLDetailsElement>(null);
   const [isFocused, setIsFocused] = useState(false);
+
+  // The menu stays CSS-anchored next to its toggle (screen readers and Tab
+  // traverse it in DOM order), so a menu near a screen edge can stick out of
+  // the viewport (#5259). Measure the open menu and shift it back inside.
+  useLayoutEffect(() => {
+    if (!isOpen) return undefined;
+    const content = detailsRef.current?.querySelector<HTMLElement>(':scope > :not(summary)');
+    if (!content) return undefined;
+    const clamp = () => {
+      content.style.transform = '';
+      const rect = content.getBoundingClientRect();
+      let dx = 0;
+      if (rect.right > window.innerWidth - MENU_VIEWPORT_PADDING) {
+        dx = window.innerWidth - MENU_VIEWPORT_PADDING - rect.right;
+      }
+      if (rect.left + dx < MENU_VIEWPORT_PADDING) {
+        dx = MENU_VIEWPORT_PADDING - rect.left;
+      }
+      if (dx !== 0) {
+        content.style.transform = `translateX(${dx}px)`;
+      }
+    };
+    clamp();
+    window.addEventListener('resize', clamp);
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(clamp) : null;
+    observer?.observe(content);
+    return () => {
+      window.removeEventListener('resize', clamp);
+      observer?.disconnect();
+      content.style.transform = '';
+    };
+  }, [isOpen]);
 
   const setIsDropdownOpen = (open: boolean) => {
     if (disabled) return;
@@ -139,11 +182,12 @@ const Dropdown: React.FC<DropdownProps> = ({
           {toggleButton}
         </button>
         <details
+          ref={detailsRef}
           open={isOpen}
           role='none'
           className={clsx('dropdown flex items-center justify-center', className)}
         >
-          <summary aria-hidden='true' className='list-none' />
+          <summary aria-hidden='true' tabIndex={-1} className='list-none' />
           {isOpen && childrenWithToggle}
         </details>
       </div>

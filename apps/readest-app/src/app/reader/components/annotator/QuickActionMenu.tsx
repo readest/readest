@@ -52,9 +52,6 @@ const QuickActionMenu: React.FC<QuickActionMenuProps> = ({
         'bgcolor-base-200 shadow-2xl',
         menuClassName,
       )}
-      style={{
-        maxWidth: `${window.innerWidth - 40}px`,
-      }}
       onCancel={() => setIsDropdownOpen?.(false)}
     >
       {annotationToolQuickActions.map((button) => (

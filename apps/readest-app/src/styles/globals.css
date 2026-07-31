@@ -168,6 +168,16 @@ foliate-fxl {
   border-radius: 14px;
 }
 
+/* Menu labels wrap (no nowrap), so the anchor-positioned shrink-to-fit box
+   would collapse toward its longest word; keep the natural content width but
+   cap it to the viewport so long translations wrap instead of overflowing the
+   screen (#5259 — Dropdown shifts the box back inside). Zero specificity so
+   explicit utility widths (w-44, max-w-[90vw]) still win. */
+:where(.dropdown-content) {
+  width: max-content;
+  max-width: calc(100vw - 32px);
+}
+
 .dropdown-content::before,
 .dropdown-content::after {
   content: '';
