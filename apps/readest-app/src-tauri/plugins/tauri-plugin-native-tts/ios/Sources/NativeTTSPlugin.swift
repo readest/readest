@@ -66,6 +66,8 @@ struct PlayoutControlArgs: Decodable {
 }
 
 struct PlayoutEnqueueResponse: Encodable {
+  // Audible duration, i.e. up to where playback stops after the trailing
+  // silence is cut, not the whole file.
   let durationMs: Double
 }
 
@@ -950,7 +952,25 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
     let index: Int
     let url: URL
     let gapSec: Double
+    // Where speech ends; playback stops there instead of at the file end.
+    // 0 means "play the whole file" (bounds could not be determined).
+    let endSec: Double
   }
+
+  // Edge bakes silence into every utterance MP3 - measured at ~0.18s leading
+  // and ~0.8s trailing, so ~1s of dead air between sentences if the file is
+  // played whole. That swamps the configured inter-sentence gap and cannot be
+  // turned off from the settings, which is exactly what #5414 reported. Only
+  // the trailing silence is cut here: leaving the head intact keeps the item
+  // clock in the same frame as the word boundaries, with no offset to plumb
+  // back. Threshold and pad mirror pcm.ts (findSpeechBounds) - keep in sync.
+  private static let speechSilenceThreshold: Float = 0.005
+  private static let speechTailPadSec = 0.05
+
+  // Decoding + scanning runs off the main thread (a few ms per sentence, but
+  // it would land mid-playback). Serial, so queue order still follows enqueue
+  // order even if the caller ever stops awaiting each chunk in turn.
+  private let playoutAnalysisQueue = DispatchQueue(label: "com.bilingify.readest.tts.playout")
 
   private var playoutSession = 0
   private var playoutQueue: [PlayoutItem] = []
@@ -1025,24 +1045,40 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
           invoke.resolve(PlayoutEnqueueResponse(durationMs: 0))
           return
         }
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(
-          "tts-playout-\(args.session)-\(args.index).mp3")
-        do {
-          try data.write(to: url)
-        } catch {
-          invoke.reject("Failed to write audio file: \(error.localizedDescription)")
-          return
+        self.playoutAnalysisQueue.async {
+          let url = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "tts-playout-\(args.session)-\(args.index).mp3")
+          do {
+            try data.write(to: url)
+          } catch {
+            invoke.reject("Failed to write audio file: \(error.localizedDescription)")
+            return
+          }
+          // Local file; the synchronous duration load is effectively instant.
+          let asset = AVURLAsset(url: url)
+          let total = CMTimeGetSeconds(asset.duration)
+          let fullEnd = total.isFinite ? total : 0
+          let endSec = self.speechEndSec(of: asset) ?? fullEnd
+          DispatchQueue.main.async {
+            // The session can turn over while the decode runs; drop the file
+            // rather than leaving it in the temp dir for a dead session.
+            guard args.session == self.playoutSession else {
+              try? FileManager.default.removeItem(at: url)
+              invoke.resolve(PlayoutEnqueueResponse(durationMs: 0))
+              return
+            }
+            self.playoutQueue.append(
+              PlayoutItem(
+                index: args.index, url: url, gapSec: (args.gapMs ?? 0) / 1000.0,
+                endSec: endSec))
+            if self.playoutPlaying && self.playoutCurrentIndex == -1
+              && self.playoutGapTimer == nil
+            {
+              self.playoutAdvance()
+            }
+            invoke.resolve(PlayoutEnqueueResponse(durationMs: endSec * 1000.0))
+          }
         }
-        // Local file; the synchronous duration load is effectively instant.
-        let asset = AVURLAsset(url: url)
-        let durationSec = CMTimeGetSeconds(asset.duration)
-        self.playoutQueue.append(
-          PlayoutItem(index: args.index, url: url, gapSec: (args.gapMs ?? 0) / 1000.0))
-        if self.playoutPlaying && self.playoutCurrentIndex == -1 && self.playoutGapTimer == nil {
-          self.playoutAdvance()
-        }
-        invoke.resolve(
-          PlayoutEnqueueResponse(durationMs: durationSec.isFinite ? durationSec * 1000.0 : 0))
       }
     } catch {
       invoke.reject("Failed to parse playout enqueue: \(error.localizedDescription)")
@@ -1061,6 +1097,68 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
           playing: (self.playoutPlayer?.rate ?? 0) != 0
         ))
     }
+  }
+
+  // End of the last sample above the speech threshold, plus a pad for a natural
+  // release. Decoded silence is dithered ringing rather than zeros, so this is
+  // an amplitude test, not an exact-zero one. Returns nil when the asset can't
+  // be read or holds no speech at all - callers then play it whole rather than
+  // cutting it to nothing.
+  private func speechEndSec(of asset: AVAsset) -> Double? {
+    guard let track = asset.tracks(withMediaType: .audio).first,
+      let reader = try? AVAssetReader(asset: asset)
+    else { return nil }
+    let output = AVAssetReaderTrackOutput(
+      track: track,
+      outputSettings: [
+        AVFormatIDKey: kAudioFormatLinearPCM,
+        AVLinearPCMBitDepthKey: 32,
+        AVLinearPCMIsFloatKey: true,
+        AVLinearPCMIsBigEndianKey: false,
+        AVLinearPCMIsNonInterleaved: false,
+      ])
+    output.alwaysCopiesSampleData = false
+    guard reader.canAdd(output) else { return nil }
+    reader.add(output)
+    guard reader.startReading() else { return nil }
+
+    var sampleRate = 0.0
+    var channels = 1
+    var frames = 0
+    var lastFrame = -1
+
+    while let buffer = output.copyNextSampleBuffer() {
+      if sampleRate == 0,
+        let desc = CMSampleBufferGetFormatDescription(buffer),
+        let asbd = CMAudioFormatDescriptionGetStreamBasicDescription(desc)?.pointee
+      {
+        sampleRate = asbd.mSampleRate
+        channels = max(1, Int(asbd.mChannelsPerFrame))
+      }
+      guard let block = CMSampleBufferGetDataBuffer(buffer) else { continue }
+      var length = 0
+      var pointer: UnsafeMutablePointer<Int8>?
+      guard
+        CMBlockBufferGetDataPointer(
+          block, atOffset: 0, lengthAtOffsetOut: nil, totalLengthOut: &length,
+          dataPointerOut: &pointer) == kCMBlockBufferNoErr,
+        let raw = pointer
+      else { continue }
+      let count = length / MemoryLayout<Float>.size
+      raw.withMemoryRebound(to: Float.self, capacity: count) { samples in
+        for i in 0..<count where abs(samples[i]) > Self.speechSilenceThreshold {
+          lastFrame = frames + i / channels
+        }
+      }
+      frames += count / channels
+      CMSampleBufferInvalidate(buffer)
+    }
+    reader.cancelReading()
+
+    guard sampleRate > 0, lastFrame >= 0 else { return nil }
+    let total = Double(frames) / sampleRate
+    let end = min(total, Double(lastFrame + 1) / sampleRate + Self.speechTailPadSec)
+    return end > 0 ? end : nil
   }
 
   private func playoutAdvance() {
@@ -1084,6 +1182,13 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
     let playerItem = AVPlayerItem(url: item.url)
     // Pitch-preserving time stretch tuned for voice.
     playerItem.audioTimePitchAlgorithm = .timeDomain
+    // Stop at the end of speech rather than the end of the file, which cuts
+    // Edge's ~0.8s of baked-in trailing silence. The item still posts
+    // AVPlayerItemDidPlayToEndTime here, so the gap timer and advance below
+    // are unchanged, and item time stays the untrimmed original.
+    if item.endSec > 0 {
+      playerItem.forwardPlaybackEndTime = CMTime(seconds: item.endSec, preferredTimescale: 600)
+    }
     if let observer = playoutItemEndObserver {
       NotificationCenter.default.removeObserver(observer)
     }

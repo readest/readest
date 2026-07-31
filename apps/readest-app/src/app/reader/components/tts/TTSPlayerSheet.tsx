@@ -185,10 +185,13 @@ const TTSPlayerSheet = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, ttsLang]);
 
-  /* Scale a given `baseGap` based on a given `rate`. */
+  /* Scale a given `baseGap` based on a given `rate`. Gaps are sub-second
+   * (0.15s / 0.3s), so they have to keep two decimals — rounding to a whole
+   * number floors every one of them to 0 and silently removes the pauses
+   * along with any way to get them back (#5414). */
   const scaleGap = (baseGap: number, rate: number) => {
     const k = 0.6;
-    return Math.round(baseGap / Math.pow(rate, k));
+    return Math.round((baseGap / Math.pow(rate, k)) * 100) / 100;
   };
 
   const handleSelectRate = (value: number) => {
