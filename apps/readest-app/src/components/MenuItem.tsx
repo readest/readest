@@ -73,7 +73,10 @@ const MenuItem: React.FC<MenuItemProps> = ({
             </span>
           )}
           <span
-            className={clsx('mx-2 flex-1 truncate text-base sm:text-sm', labelClass)}
+            className={clsx(
+              'mx-2 flex-1 break-words text-pretty text-start text-base sm:text-sm',
+              labelClass,
+            )}
             style={{ minWidth: 0 }}
           >
             {label}
