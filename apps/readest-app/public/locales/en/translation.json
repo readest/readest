@@ -82,5 +82,13 @@
   "{{count}} chapters could not be downloaded._one": "{{count}} chapter could not be downloaded.",
   "{{count}} chapters could not be downloaded._other": "{{count}} chapters could not be downloaded.",
   "{{count}} chapters_one": "{{count}} chapter",
-  "{{count}} chapters_other": "{{count}} chapters"
+  "{{count}} chapters_other": "{{count}} chapters",
+  "{{title}}, {{count}} results_one": "{{title}}, {{count}} result",
+  "{{title}}, {{count}} results_other": "{{title}}, {{count}} results",
+  "Within {{count}} words_one": "Within {{count}} word",
+  "Within {{count}} words_other": "Within {{count}} words",
+  "{{count}} books unavailable_one": "{{count}} book unavailable",
+  "{{count}} books unavailable_other": "{{count}} books unavailable",
+  "{{count}}+ results_one": "{{count}}+ result",
+  "{{count}}+ results_other": "{{count}}+ results"
 }

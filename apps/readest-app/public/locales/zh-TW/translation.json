@@ -1917,5 +1917,19 @@
   "This chapter could not be downloaded.": "本章下載失敗。",
   "Auto-hide Cursor": "自動隱藏游標",
   "After a moment of inactivity": "靜止片刻後隱藏",
-  "Ambient Mode": "環境光主題"
+  "Ambient Mode": "環境光主題",
+  "Search in book contents": "搜尋書籍內容",
+  "Full Text Search": "全文搜尋",
+  "Search Books": "搜尋書籍",
+  "Search contents in {{count}} Book(s)..._other": "搜尋 {{count}} 本書的內容...",
+  "Fuzzy": "模糊",
+  "Searching {{title}}": "正在搜尋 {{title}}",
+  "Searching...": "正在搜尋...",
+  "{{count}}+ results_other": "{{count}}+ 筆結果",
+  "Search stopped": "搜尋已停止",
+  "{{title}}, {{count}} results_other": "{{title}}，{{count}} 筆結果",
+  "{{count}} books unavailable_other": "{{count}} 本書無法使用",
+  "Try a different term or search mode": "嘗試其他關鍵字或搜尋模式",
+  "Library Search Progress": "書庫搜尋進度",
+  "Search query is too long": "搜尋字詞過長"
 }

@@ -15,15 +15,24 @@ interface SearchResultItemProps {
   onSelectResult: (cfi: string) => void;
 }
 
+// The excerpt stores ~50 chars of context per side, but the sidebar row clamps
+// to three lines — clip the displayed lead-in so the match itself can never be
+// pushed past the clamp.
+const PRE_DISPLAY_LIMIT = 20;
+const clipPre = (pre: string) => {
+  const points = Array.from(pre);
+  return points.length > PRE_DISPLAY_LIMIT ? `…${points.slice(-PRE_DISPLAY_LIMIT).join('')}` : pre;
+};
+
 // nearby-words excerpts emphasize each matched word; other modes bold the single match span.
 const ExcerptBody: React.FC<{ excerpt: SearchExcerpt }> = ({ excerpt }) => {
   if (excerpt.segments) {
     return (
       <>
-        <span>{excerpt.pre}</span>
+        <span>{clipPre(excerpt.pre)}</span>
         {excerpt.segments.map((seg, i) =>
           seg.emphasized ? (
-            <span key={i} className='font-bold text-red-500'>
+            <span key={i} className='search-term-highlight'>
               {seg.text}
             </span>
           ) : (
@@ -36,8 +45,8 @@ const ExcerptBody: React.FC<{ excerpt: SearchExcerpt }> = ({ excerpt }) => {
   }
   return (
     <>
-      <span>{excerpt.pre}</span>
-      <span className='font-bold text-red-500'>{excerpt.match}</span>
+      <span>{clipPre(excerpt.pre)}</span>
+      <span className='search-term-highlight'>{excerpt.match}</span>
       <span>{excerpt.post}</span>
     </>
   );

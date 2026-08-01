@@ -1917,5 +1917,19 @@
   "This chapter could not be downloaded.": "ལེའུ་འདི་ཕབ་ལེན་བྱེད་མ་ཐུབ།",
   "Auto-hide Cursor": "འོད་རྟགས་རང་འགུལ་སྦས་པ།",
   "After a moment of inactivity": "སྐར་ཆ་འགའ་ལས་ཀ་མེད་རྗེས།",
-  "Ambient Mode": "ཁོར་ཡུག་འོད་ཀྱི་བརྗོད་བྱ།"
+  "Ambient Mode": "ཁོར་ཡུག་འོད་ཀྱི་བརྗོད་བྱ།",
+  "Search in book contents": "དཔེ་ཆའི་ནང་དོན་འཚོལ་བ།",
+  "Full Text Search": "ཡིག་ཆ་ཡོངས་འཚོལ་བཤེར།",
+  "Search Books": "དཔེ་ཆ་འཚོལ་བ།",
+  "Search contents in {{count}} Book(s)..._other": "དཔེ་ཆ་{{count}}ཡི་ནང་དོན་འཚོལ་བ...",
+  "Fuzzy": "རགས་འཚོལ།",
+  "Searching {{title}}": "{{title}} འཚོལ་བཞིན་པ།",
+  "Searching...": "འཚོལ་བཞིན་པ...",
+  "{{count}}+ results_other": "འཚོལ་འབྲས་{{count}}+",
+  "Search stopped": "འཚོལ་བཤེར་མཚམས་བཞག",
+  "{{title}}, {{count}} results_other": "{{title}}། འཚོལ་འབྲས་{{count}}",
+  "{{count}} books unavailable_other": "དཔེ་ཆ་{{count}} སྤྱོད་མི་ཐུབ།",
+  "Try a different term or search mode": "ཚིག་གཞན་ནམ་འཚོལ་སྟངས་གཞན་ཞིག་ཚོད་ལྟ་བྱོས།",
+  "Library Search Progress": "དཔེ་མཛོད་འཚོལ་བཤེར་གྱི་འཕེལ་རིམ།",
+  "Search query is too long": "འཚོལ་ཚིག་རིང་དྲགས་པ།"
 }

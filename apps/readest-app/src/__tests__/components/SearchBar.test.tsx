@@ -6,11 +6,23 @@ import SearchBar from '@/app/reader/components/sidebar/SearchBar';
 const mocks = vi.hoisted(() => ({
   // getProgress returns null until the book emits its first relocate event.
   progress: null as { section: { current: number } } | null,
-  search: vi.fn(),
+  searchLibraryBooks: vi.fn(),
+  viewSearch: vi.fn(),
+  // Stable like the real context value; a fresh object per render would
+  // re-fire the [appService, isVisible] effect and double the search.
+  appService: { deleteDir: vi.fn().mockResolvedValue(undefined) },
+}));
+
+// Reader search runs on the shared per-book search.db service; the view only
+// replays resolved results for highlighting.
+vi.mock('@/services/librarySearchService', () => ({
+  createLibrarySearchSession: () => ({ close: vi.fn().mockResolvedValue(undefined) }),
+  resolveSearchResultCfis: vi.fn(async () => []),
+  searchLibraryBooks: mocks.searchLibraryBooks,
 }));
 
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {}, appService: null }),
+  useEnv: () => ({ envConfig: {}, appService: mocks.appService }),
 }));
 
 vi.mock('@/store/settingsStore', () => ({
@@ -19,8 +31,8 @@ vi.mock('@/store/settingsStore', () => ({
 
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: () => ({
-    getBookData: () => ({ book: { primaryLanguage: 'en' } }),
-    getConfig: () => ({ searchConfig: { scope: 'section', mode: 'text' } }),
+    getBookData: () => ({ book: { hash: 'book-hash', primaryLanguage: 'en' } }),
+    getConfig: () => ({ searchConfig: { scope: 'section', mode: 'contains' } }),
     setConfig: vi.fn(),
     saveConfig: vi.fn(),
   }),
@@ -28,7 +40,7 @@ vi.mock('@/store/bookDataStore', () => ({
 
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
-    getView: () => ({ search: mocks.search, clearSearch: vi.fn() }),
+    getView: () => ({ search: mocks.viewSearch, clearSearch: vi.fn() }),
     getProgress: () => mocks.progress,
     getViewSettings: () => ({}),
   }),
@@ -57,10 +69,11 @@ vi.mock('@/hooks/useResponsiveSize', () => ({
 describe('SearchBar', () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    mocks.search.mockReset();
-    mocks.search.mockImplementation(async function* () {
-      yield 'done';
+    mocks.searchLibraryBooks.mockReset();
+    mocks.searchLibraryBooks.mockImplementation(async function* () {
+      yield { type: 'book-completed', book: { hash: 'book-hash' }, matchCount: 0 };
     });
+    mocks.viewSearch.mockReset();
   });
 
   afterEach(() => {
@@ -78,20 +91,23 @@ describe('SearchBar', () => {
 
   // A section-scoped search fired before the first relocate event used to
   // destructure `section` off a null progress and throw, so the search never
-  // reached the view.
+  // reached the service.
   it('searches the whole book when progress is not available yet', async () => {
     mocks.progress = null;
     await renderBar();
 
-    expect(mocks.search).toHaveBeenCalledTimes(1);
-    expect(mocks.search.mock.calls[0]![0]).toMatchObject({ query: 'alice', index: undefined });
+    expect(mocks.searchLibraryBooks).toHaveBeenCalledTimes(1);
+    const [, books, query, options] = mocks.searchLibraryBooks.mock.calls[0]!;
+    expect(books).toMatchObject([{ hash: 'book-hash' }]);
+    expect(query).toBe('alice');
+    expect(options.sectionIndex).toBeUndefined();
   });
 
   it('scopes the search to the current section once progress is available', async () => {
     mocks.progress = { section: { current: 4 } };
     await renderBar();
 
-    expect(mocks.search).toHaveBeenCalledTimes(1);
-    expect(mocks.search.mock.calls[0]![0]).toMatchObject({ query: 'alice', index: 4 });
+    expect(mocks.searchLibraryBooks).toHaveBeenCalledTimes(1);
+    expect(mocks.searchLibraryBooks.mock.calls[0]![3].sectionIndex).toBe(4);
   });
 });

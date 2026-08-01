@@ -1917,5 +1917,19 @@
   "This chapter could not be downloaded.": "ไม่สามารถดาวน์โหลดตอนนี้ได้",
   "Auto-hide Cursor": "ซ่อนเคอร์เซอร์อัตโนมัติ",
   "After a moment of inactivity": "หลังจากไม่มีการใช้งานครู่หนึ่ง",
-  "Ambient Mode": "โหมดแสงรอบข้าง"
+  "Ambient Mode": "โหมดแสงรอบข้าง",
+  "Search in book contents": "ค้นหาในเนื้อหาหนังสือ",
+  "Full Text Search": "ค้นหาข้อความเต็ม",
+  "Search Books": "ค้นหาหนังสือ",
+  "Search contents in {{count}} Book(s)..._other": "ค้นหาเนื้อหาในหนังสือ {{count}} เล่ม...",
+  "Fuzzy": "คลุมเครือ",
+  "Searching {{title}}": "กำลังค้นหา {{title}}",
+  "Searching...": "กำลังค้นหา...",
+  "{{count}}+ results_other": "{{count}}+ ผลลัพธ์",
+  "Search stopped": "หยุดการค้นหาแล้ว",
+  "{{title}}, {{count}} results_other": "{{title}}, {{count}} ผลลัพธ์",
+  "{{count}} books unavailable_other": "หนังสือ {{count}} เล่มไม่พร้อมใช้งาน",
+  "Try a different term or search mode": "ลองใช้คำหรือโหมดการค้นหาอื่น",
+  "Library Search Progress": "ความคืบหน้าการค้นหาในคลังหนังสือ",
+  "Search query is too long": "คำค้นหายาวเกินไป"
 }

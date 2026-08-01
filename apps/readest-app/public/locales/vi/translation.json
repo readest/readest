@@ -1917,5 +1917,19 @@
   "This chapter could not be downloaded.": "Không thể tải chương này.",
   "Auto-hide Cursor": "Tự động ẩn con trỏ",
   "After a moment of inactivity": "Sau một lúc không hoạt động",
-  "Ambient Mode": "Chế độ ánh sáng môi trường"
+  "Ambient Mode": "Chế độ ánh sáng môi trường",
+  "Search in book contents": "Tìm trong nội dung sách",
+  "Full Text Search": "Tìm kiếm toàn văn",
+  "Search Books": "Tìm sách",
+  "Search contents in {{count}} Book(s)..._other": "Tìm nội dung trong {{count}} sách...",
+  "Fuzzy": "Mờ",
+  "Searching {{title}}": "Đang tìm trong {{title}}",
+  "Searching...": "Đang tìm kiếm...",
+  "{{count}}+ results_other": "{{count}}+ kết quả",
+  "Search stopped": "Đã dừng tìm kiếm",
+  "{{title}}, {{count}} results_other": "{{title}}, {{count}} kết quả",
+  "{{count}} books unavailable_other": "{{count}} sách không khả dụng",
+  "Try a different term or search mode": "Thử từ khóa hoặc chế độ tìm kiếm khác",
+  "Library Search Progress": "Tiến trình tìm kiếm thư viện",
+  "Search query is too long": "Từ khóa tìm kiếm quá dài"
 }

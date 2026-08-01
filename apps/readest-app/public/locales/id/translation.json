@@ -1917,5 +1917,19 @@
   "This chapter could not be downloaded.": "Bab ini tidak dapat diunduh.",
   "Auto-hide Cursor": "Sembunyikan kursor otomatis",
   "After a moment of inactivity": "Setelah beberapa saat tidak aktif",
-  "Ambient Mode": "Mode Cahaya Sekitar"
+  "Ambient Mode": "Mode Cahaya Sekitar",
+  "Search in book contents": "Cari di konten buku",
+  "Full Text Search": "Pencarian teks lengkap",
+  "Search Books": "Cari buku",
+  "Search contents in {{count}} Book(s)..._other": "Cari konten di {{count}} buku...",
+  "Fuzzy": "Fuzzy",
+  "Searching {{title}}": "Mencari {{title}}",
+  "Searching...": "Mencari...",
+  "{{count}}+ results_other": "{{count}}+ hasil",
+  "Search stopped": "Pencarian dihentikan",
+  "{{title}}, {{count}} results_other": "{{title}}, {{count}} hasil",
+  "{{count}} books unavailable_other": "{{count}} buku tidak tersedia",
+  "Try a different term or search mode": "Coba kata atau mode pencarian lain",
+  "Library Search Progress": "Progres pencarian pustaka",
+  "Search query is too long": "Kata pencarian terlalu panjang"
 }
