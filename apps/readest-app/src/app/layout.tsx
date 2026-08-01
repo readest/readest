@@ -4,13 +4,20 @@ import Script from 'next/script';
 import { ViewTransitions } from '@/components/ViewTransitions';
 import { EnvProvider } from '@/context/EnvContext';
 import Providers from '@/components/Providers';
+import { Poppins } from 'next/font/google';
 
 import '../styles/globals.css';
 
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-poppins',
+});
+
 const url = 'https://web.readest.com/';
-const title = 'Readest — Where You Read, Digest and Get Insight';
+const title = 'Biblophile — Where You Read, Digest and Get Insight';
 const description =
-  'Discover Readest, the ultimate online ebook reader for immersive and organized reading. ' +
+  'Discover Biblophile, the ultimate online ebook reader for immersive and organized reading. ' +
   'Enjoy seamless access to your digital library, powerful tools for highlighting, bookmarking, ' +
   'and note-taking, and support for multiple book views. ' +
   'Perfect for deep reading, analysis, and understanding. Explore now!';
@@ -20,15 +27,15 @@ export const metadata: Metadata = {
   metadataBase: new URL(url),
   title: {
     default: title,
-    template: '%s | Readest',
+    template: '%s | Biblophile',
   },
   description,
   generator: 'Next.js',
   manifest: '/manifest.json',
-  keywords: ['epub', 'pdf', 'ebook', 'reader', 'readest', 'pwa'],
+  keywords: ['epub', 'pdf', 'ebook', 'reader', 'biblophile', 'pwa'],
   authors: [
     {
-      name: 'readest',
+      name: 'biblophile',
       url: 'https://github.com/readest/readest',
     },
   ],
@@ -38,7 +45,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: 'Readest',
+    title: 'Biblophile',
     statusBarStyle: 'default',
   },
   openGraph: {
@@ -136,7 +143,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang='en'
       suppressHydrationWarning
-      className={process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri' ? 'edge-to-edge' : ''}
+      className={`${poppins.variable} ${process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri' ? 'edge-to-edge' : ''}`}
     >
       <head>
         {shouldInjectRuntimeConfig ? (

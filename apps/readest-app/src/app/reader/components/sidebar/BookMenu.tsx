@@ -268,8 +268,10 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       />
       <MenuItem label={_('Reload Page')} shortcut='Shift+R' onClick={handleReloadPage} />
       <hr aria-hidden='true' className='border-base-200 my-1' />
-      {isWebAppPlatform() && <MenuItem label={_('Download Readest')} onClick={downloadReadest} />}
-      <MenuItem label={_('About Readest')} onClick={showAboutReadest} />
+      {isWebAppPlatform() && (
+        <MenuItem label={_('Download Biblophile')} onClick={downloadReadest} />
+      )}
+      <MenuItem label={_('About Biblophile')} onClick={showAboutReadest} />
     </Menu>
   );
 };
