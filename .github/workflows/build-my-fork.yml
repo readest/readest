@@ -28,16 +28,21 @@ jobs:
             release: linux
             arch: x86_64
             rust_target: x86_64-unknown-linux-gnu
+            # No --target flag => cargo outputs to the workspace root target/
+            bundle_path: target/release/bundle
           - os: macos-latest
             release: macos
             arch: aarch64
             rust_target: x86_64-apple-darwin,aarch64-apple-darwin
             args: '--target universal-apple-darwin'
+            # cargo --target universal-apple-darwin outputs under that triple
+            bundle_path: target/universal-apple-darwin/release/bundle
           - os: windows-latest
             release: windows
             arch: x86_64
             rust_target: x86_64-pc-windows-msvc
             args: '--target x86_64-pc-windows-msvc --bundles nsis'
+            bundle_path: target/x86_64-pc-windows-msvc/release/bundle
 
     runs-on: ${{ matrix.config.os }}
     timeout-minutes: 120
@@ -122,20 +127,31 @@ jobs:
 
       - name: List build artifacts
         shell: bash
+        env:
+          BUNDLE_PATH: ${{ matrix.config.bundle_path || '' }}
         run: |
-          echo "=== Tauri release bundles (repo-root target/, workspace member) ==="
-          find target/release/bundle -type f 2>/dev/null | head -20 || echo "(empty)"
+          if [ -n "$BUNDLE_PATH" ]; then
+            echo "=== Tauri bundles: $BUNDLE_PATH ==="
+            find "$BUNDLE_PATH" -type f 2>/dev/null | head -20 || echo "(empty)"
+          fi
           echo "=== APKs ==="
           find apps/readest-app/dist -name "*.apk" 2>/dev/null | head -5 || echo "(none)"
 
-      - name: Upload artifacts
+      - name: Upload desktop bundles
+        if: matrix.config.release != 'android'
         uses: actions/upload-artifact@v4
         with:
-          name: readest-${{ matrix.config.release }}-${{ matrix.config.arch || 'multi' }}
-          path: |
-            target/release/bundle/
-            apps/readest-app/dist/
-          if-no-files-found: warn
+          name: readest-${{ matrix.config.release }}-${{ matrix.config.arch }}
+          path: ${{ matrix.config.bundle_path }}/
+          if-no-files-found: error
+
+      - name: Upload Android APKs
+        if: matrix.config.release == 'android'
+        uses: actions/upload-artifact@v4
+        with:
+          name: readest-android-multi
+          path: apps/readest-app/dist/
+          if-no-files-found: error
 
   build-web:
     name: web
