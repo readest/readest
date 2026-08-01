@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { MdManageSearch } from 'react-icons/md';
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -92,6 +93,8 @@ interface BookshelfProps {
   handlePushLibrary: () => Promise<void>;
   booksTransferProgress: { [key: string]: number | null };
   contentSearch: ContentSearchRequest | null;
+  onSearchContents: () => void;
+  onSearchProgress?: (value: number | null) => void;
 }
 
 /**
@@ -192,6 +195,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   handlePushLibrary,
   booksTransferProgress,
   contentSearch,
+  onSearchContents,
+  onSearchProgress,
 }) => {
   const _ = useTranslation();
   const router = useRouter();
@@ -886,42 +891,64 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       tabIndex={-1}
       role='main'
       aria-label={_('Bookshelf')}
-      className='bookshelf min-h-0 flex-grow focus:outline-none'
+      className='bookshelf flex min-h-0 flex-grow flex-col focus:outline-none'
     >
-      <div ref={osRootRef} data-overlayscrollbars-initialize='' className='h-full'>
-        {contentSearch?.query.trim() && appService ? (
-          <LibrarySearchResults
-            appService={appService}
-            books={currentShelfBooks}
-            query={contentSearch.query.trim()}
-            config={contentSearch.config}
-            onSelectResult={openSearchResult}
-            onScrollerRef={onScrollerRef}
-          />
-        ) : null}
-        {!contentSearch?.query.trim() && hasItems && isGridMode && (
-          <VirtuosoGrid<unknown, BookshelfListContext>
-            overscan={200}
-            totalCount={gridTotalCount}
-            components={GRID_VIRTUOSO_COMPONENTS}
-            context={listContext}
-            computeItemKey={computeItemKey}
-            itemContent={renderBookshelfItem}
-            scrollerRef={handleScrollerRef}
-          />
-        )}
-        {!contentSearch?.query.trim() && hasItems && !isGridMode && (
-          <Virtuoso<unknown, BookshelfListContext>
-            overscan={200}
-            totalCount={sortedBookshelfItems.length}
-            components={LIST_VIRTUOSO_COMPONENTS}
-            context={listContext}
-            computeItemKey={computeItemKey}
-            itemContent={renderBookshelfItem}
-            scrollerRef={handleScrollerRef}
-          />
-        )}
-      </div>
+      {!contentSearch?.query.trim() && queryTerm && (
+        <div className='flex shrink-0 justify-center px-4 pb-2'>
+          <button
+            type='button'
+            onClick={onSearchContents}
+            className={clsx(
+              'eink-bordered border-base-200 bg-base-100 hover:border-base-300 hover:bg-base-300/40',
+              'text-base-content/80 hover:text-base-content not-eink:transition-colors',
+              'flex h-9 items-center gap-2 rounded-lg border px-4 text-sm font-medium duration-150',
+              'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+            )}
+          >
+            <MdManageSearch aria-hidden='true' className='h-5 w-5' />
+            {_('Search in book contents')}
+          </button>
+        </div>
+      )}
+      {contentSearch?.query.trim() && appService ? (
+        <LibrarySearchResults
+          appService={appService}
+          books={currentShelfBooks}
+          query={contentSearch.query.trim()}
+          config={contentSearch.config}
+          onSelectResult={openSearchResult}
+          onProgress={onSearchProgress}
+        />
+      ) : (
+        // The OverlayScrollbars root and the search results are siblings on
+        // purpose: OS decorates this subtree with its own DOM, and letting
+        // React swap children inside it caused NotFoundError crashes on
+        // WebKit when a search was cleared.
+        <div ref={osRootRef} data-overlayscrollbars-initialize='' className='min-h-0 flex-1'>
+          {!contentSearch?.query.trim() && hasItems && isGridMode && (
+            <VirtuosoGrid<unknown, BookshelfListContext>
+              overscan={200}
+              totalCount={gridTotalCount}
+              components={GRID_VIRTUOSO_COMPONENTS}
+              context={listContext}
+              computeItemKey={computeItemKey}
+              itemContent={renderBookshelfItem}
+              scrollerRef={handleScrollerRef}
+            />
+          )}
+          {!contentSearch?.query.trim() && hasItems && !isGridMode && (
+            <Virtuoso<unknown, BookshelfListContext>
+              overscan={200}
+              totalCount={sortedBookshelfItems.length}
+              components={LIST_VIRTUOSO_COMPONENTS}
+              context={listContext}
+              computeItemKey={computeItemKey}
+              itemContent={renderBookshelfItem}
+              scrollerRef={handleScrollerRef}
+            />
+          )}
+        </div>
+      )}
       {loading && (
         <div className='fixed inset-0 z-50 flex items-center justify-center'>
           <Spinner loading />

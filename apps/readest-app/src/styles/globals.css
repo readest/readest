@@ -546,6 +546,18 @@ input[type='range'].slider-input {
   font-weight: bold;
 }
 
+/* Emphasized query term inside search result excerpts — shared by the library
+   results and the reader sidebar so custom CSS can restyle both at once. */
+.search-term-highlight {
+  color: theme('colors.red.500');
+  font-weight: 600;
+}
+
+[data-eink='true'] .search-term-highlight {
+  color: theme('colors.base-content') !important;
+  font-weight: bold;
+}
+
 [data-eink='true'] .eink-bordered {
   border-width: 1px !important;
   border-color: theme('colors.base-content') !important;
@@ -607,7 +619,8 @@ input[type='range'].slider-input {
 
 [data-eink='true'] .btn-primary,
 [data-eink='true'] .btn-outline,
-[data-eink='true'] .btn-contrast {
+[data-eink='true'] .btn-contrast,
+[data-eink='true'] .eink-contrast {
   background-color: theme('colors.base-content') !important;
   border: 1px solid theme('colors.base-content') !important;
   color: theme('colors.base-100') !important;

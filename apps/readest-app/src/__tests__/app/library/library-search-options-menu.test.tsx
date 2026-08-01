@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import LibrarySearchMenu from '@/app/library/components/LibrarySearchMenu';
+import LibrarySearchOptionsMenu from '@/app/library/components/LibrarySearchOptionsMenu';
 import type { LibrarySearchConfig } from '@/types/book';
 
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (key: string) => key }));
@@ -15,47 +15,23 @@ const config: LibrarySearchConfig = {
   matchDiacritics: false,
 };
 
-describe('LibrarySearchMenu', () => {
-  it('switches targets and emits the selected content-mode configuration', () => {
-    const onTargetChange = vi.fn();
+describe('LibrarySearchOptionsMenu', () => {
+  it('emits mode and option changes and closes appropriately', () => {
     const onConfigChange = vi.fn();
     const close = vi.fn();
     const { rerender } = render(
-      <LibrarySearchMenu
-        target='books'
+      <LibrarySearchOptionsMenu
         config={config}
-        onTargetChange={onTargetChange}
-        onConfigChange={vi.fn()}
-        setIsDropdownOpen={close}
-      />,
-    );
-
-    const contents = screen.getByRole('menuitemradio', { name: 'Contents' });
-    fireEvent.click(contents);
-    expect(onTargetChange).toHaveBeenCalledWith('contents');
-    expect(close).not.toHaveBeenCalled();
-
-    rerender(
-      <LibrarySearchMenu
-        target='contents'
-        config={config}
-        onTargetChange={onTargetChange}
         onConfigChange={onConfigChange}
         setIsDropdownOpen={close}
       />,
     );
 
-    fireEvent.click(screen.getByText('Fuzzy'));
-    expect(close.mock.invocationCallOrder.at(-1)).toBeLessThan(
-      onConfigChange.mock.invocationCallOrder.at(-1)!,
-    );
-    expect(onConfigChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ mode: 'fuzzy', matchWholeWords: false }),
-    );
     fireEvent.click(screen.getByText('Whole Words'));
     expect(onConfigChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ mode: 'whole-words', matchWholeWords: true }),
     );
+    expect(close).toHaveBeenCalledWith(false);
 
     close.mockClear();
     fireEvent.click(screen.getByText('Nearby Words'));
@@ -65,18 +41,27 @@ describe('LibrarySearchMenu', () => {
     expect(close).not.toHaveBeenCalled();
 
     rerender(
-      <LibrarySearchMenu
-        target='contents'
+      <LibrarySearchOptionsMenu
         config={{ ...config, mode: 'nearby-words', nearbyWords: 10 }}
-        onTargetChange={vi.fn()}
         onConfigChange={onConfigChange}
         setIsDropdownOpen={close}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: '20' }));
-    expect(onConfigChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ mode: 'nearby-words', nearbyWords: 20 }),
-    );
+    expect(onConfigChange).toHaveBeenLastCalledWith(expect.objectContaining({ nearbyWords: 20 }));
     expect(close).toHaveBeenCalledWith(false);
+
+    rerender(
+      <LibrarySearchOptionsMenu
+        config={{ ...config, mode: 'regex' }}
+        onConfigChange={onConfigChange}
+        setIsDropdownOpen={close}
+      />,
+    );
+    onConfigChange.mockClear();
+    fireEvent.click(screen.getByText('Match Diacritics'));
+    expect(onConfigChange).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText('Match Case'));
+    expect(onConfigChange).toHaveBeenLastCalledWith(expect.objectContaining({ matchCase: true }));
   });
 });

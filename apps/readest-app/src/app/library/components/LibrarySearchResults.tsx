@@ -2,9 +2,20 @@ import clsx from 'clsx';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 import { useTranslation } from '@/hooks/useTranslation';
-import { createLibrarySearchSession, searchLibraryBooks } from '@/services/librarySearchService';
-import type { Book, BookSearchResult, LibrarySearchConfig, SearchExcerpt } from '@/types/book';
+import {
+  createLibrarySearchSession,
+  resolveSearchResultCfi,
+  searchLibraryBooks,
+} from '@/services/librarySearchService';
+import type {
+  Book,
+  LibrarySearchConfig,
+  LibrarySearchMatch,
+  LibrarySearchSectionResult,
+  SearchExcerpt,
+} from '@/types/book';
 import type { AppService } from '@/types/system';
+import { addLibrarySearchHistory } from '../utils/searchHistory';
 
 interface LibrarySearchResultsProps {
   appService: AppService;
@@ -12,13 +23,14 @@ interface LibrarySearchResultsProps {
   query: string;
   config: LibrarySearchConfig;
   onSelectResult: (book: Book, cfi: string) => void;
-  onScrollerRef?: (element: HTMLDivElement | null) => void;
+  onProgress?: (value: number | null) => void;
 }
 
 interface ResultGroup {
   book: Book;
-  sections: BookSearchResult[];
+  sections: LibrarySearchSectionResult[];
   matchCount: number;
+  truncated?: boolean;
 }
 
 interface SearchIssue {
@@ -26,19 +38,30 @@ interface SearchIssue {
   message: string;
 }
 
-const NAVIGATION_TOP_OFFSET = 8;
-const ACTIVE_HEADER_OFFSET = 16;
-const SCROLL_KEYS = new Set(['ArrowDown', 'ArrowUp', 'End', 'Home', 'PageDown', 'PageUp']);
+// Errors about the query itself (not any particular book); rendered as a
+// banner without book attribution.
+const QUERY_LEVEL_CODES = new Set([
+  'INVALID_REGEX',
+  'NEARBY_NEEDS_TWO_WORDS',
+  'FUZZY_QUERY_TOO_LONG',
+]);
 
-const revealElement = (container: HTMLElement, element: HTMLElement) => {
-  const containerRect = container.getBoundingClientRect();
-  const elementRect = element.getBoundingClientRect();
-  if (elementRect.top < containerRect.top) {
-    container.scrollTop -= containerRect.top - elementRect.top;
-  } else if (elementRect.bottom > containerRect.bottom) {
-    container.scrollTop += elementRect.bottom - containerRect.bottom;
-  }
-};
+// Snapshot of the last completed scan, module-scoped so that opening a result
+// in the reader and navigating back restores the results (and which groups
+// were expanded) instead of rescanning the library.
+interface CompletedSearchSnapshot {
+  searchKey: string;
+  groups: ResultGroup[];
+  issues: SearchIssue[];
+  skipped: number;
+  truncated: boolean;
+  expandedBooks: string[];
+}
+let completedSearchSnapshot: CompletedSearchSnapshot | null = null;
+
+const Emphasis = ({ children }: { children: React.ReactNode }) => (
+  <strong className='search-term-highlight'>{children}</strong>
+);
 
 const Excerpt = ({ excerpt }: { excerpt: SearchExcerpt }) => (
   <span>
@@ -46,17 +69,40 @@ const Excerpt = ({ excerpt }: { excerpt: SearchExcerpt }) => (
     {excerpt.segments ? (
       excerpt.segments.map((segment, index) =>
         segment.emphasized ? (
-          <strong key={index} className='text-bold-in-eink text-red-500'>
-            {segment.text}
-          </strong>
+          <Emphasis key={index}>{segment.text}</Emphasis>
         ) : (
           <span key={index}>{segment.text}</span>
         ),
       )
     ) : (
-      <strong className='text-bold-in-eink text-red-500'>{excerpt.match}</strong>
+      <Emphasis>{excerpt.match}</Emphasis>
     )}
     {excerpt.post}
+  </span>
+);
+
+// Small cover thumbnail with a lettered placeholder underneath; the image
+// hides itself on error so the placeholder shows through.
+const ResultCover = ({ book }: { book: Book }) => (
+  <span
+    aria-hidden='true'
+    className='bg-base-200 eink-bordered relative flex h-10 w-7 shrink-0 items-center justify-center overflow-hidden rounded'
+  >
+    <span className='text-base-content/50 text-[10px] font-semibold'>
+      {(book.title ?? '').trim().charAt(0)}
+    </span>
+    {book.coverImageUrl && (
+      /* eslint-disable-next-line @next/next/no-img-element */
+      <img
+        src={book.coverImageUrl}
+        alt=''
+        loading='lazy'
+        className='absolute inset-0 h-full w-full object-cover'
+        onError={(event) => {
+          event.currentTarget.style.display = 'none';
+        }}
+      />
+    )}
   </span>
 );
 
@@ -67,31 +113,33 @@ const ResultGroupMatches = memo(
     onSelectResult,
   }: {
     book: Book;
-    sections: BookSearchResult[];
-    onSelectResult: (book: Book, cfi: string) => void;
+    sections: LibrarySearchSectionResult[];
+    onSelectResult: (book: Book, match: LibrarySearchMatch) => void;
   }) => (
-    <div>
+    <div className='pb-1.5'>
       {sections.map((section, sectionIndex) => (
-        <div key={`${section.index}-${sectionIndex}`} className='mb-2 last:mb-0'>
+        <div key={`${section.index}-${sectionIndex}`}>
           {section.label && (
-            <h3 className='text-base-content/60 mb-1 truncate px-3 text-xs font-medium'>
+            <h3 className='text-base-content/45 truncate px-4 pb-1 pt-2.5 text-[11px] font-medium uppercase tracking-wider'>
               {section.label}
             </h3>
           )}
-          <div className='space-y-1'>
-            {section.subitems.map((match) => (
-              <button
-                key={match.cfi}
-                type='button'
-                className='hover:bg-base-200 focus-visible:ring-base-content/20 touch-target not-eink:transition-colors min-h-11 w-full rounded-md px-3 py-2.5 text-start text-sm leading-5 duration-150 focus-visible:outline-none focus-visible:ring-2'
-                onClick={() => onSelectResult(book, match.cfi)}
-              >
-                <span className='line-clamp-3'>
-                  <Excerpt excerpt={match.excerpt} />
-                </span>
-              </button>
-            ))}
-          </div>
+          {section.subitems.map((match) => (
+            <button
+              key={`${match.locator.section}:${match.locator.start}:${match.locator.end}`}
+              type='button'
+              className={clsx(
+                'not-eink:transition-colors mx-1.5 block w-[calc(100%-0.75rem)] rounded-lg px-2.5 py-2 text-start duration-150',
+                'hover:bg-base-200/60 focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
+                'eink:border-base-content/25 eink:border-t eink:first:border-t-0 eink:rounded-none',
+              )}
+              onClick={() => onSelectResult(book, match)}
+            >
+              <span className='text-base-content/75 line-clamp-3 text-sm leading-relaxed'>
+                <Excerpt excerpt={match.excerpt} />
+              </span>
+            </button>
+          ))}
         </div>
       ))}
     </div>
@@ -105,7 +153,7 @@ const LibrarySearchResults = ({
   query,
   config,
   onSelectResult,
-  onScrollerRef,
+  onProgress,
 }: LibrarySearchResultsProps) => {
   const _ = useTranslation();
   const controllerRef = useRef<AbortController | null>(null);
@@ -116,70 +164,26 @@ const LibrarySearchResults = ({
   const translateRef = useRef(_);
   const [groups, setGroups] = useState<ResultGroup[]>([]);
   const [issues, setIssues] = useState<SearchIssue[]>([]);
+  const [skipped, setSkipped] = useState(0);
+  // Mirrors of the accumulating states, captured into the snapshot on completion.
+  const groupsRef = useRef<ResultGroup[]>([]);
+  const issuesRef = useRef<SearchIssue[]>([]);
+  const skippedRef = useRef(0);
+  const [queryIssue, setQueryIssue] = useState('');
   const [phase, setPhase] = useState<'searching' | 'completed' | 'cancelled'>('searching');
   const [truncated, setTruncated] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [activeBook, setActiveBook] = useState('');
-  const [activeBookHash, setActiveBookHash] = useState('');
-  const [collapsedBooks, setCollapsedBooks] = useState<Set<string>>(() => new Set());
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
-  const navigatorRef = useRef<HTMLElement | null>(null);
-  const groupRefs = useRef(new Map<string, HTMLElement>());
-  const dotRefs = useRef(new Map<string, HTMLButtonElement>());
-  // Programmatic scroll events must not overrule the dot the user just chose.
-  const navigationTargetRef = useRef<string | null>(null);
-  const navigationReleaseFrameRef = useRef<number | null>(null);
-  const scrollFrameRef = useRef<number | null>(null);
-  const releaseNavigationTarget = useCallback(() => {
-    navigationTargetRef.current = null;
-    if (navigationReleaseFrameRef.current !== null) {
-      cancelAnimationFrame(navigationReleaseFrameRef.current);
-      navigationReleaseFrameRef.current = null;
-    }
-  }, []);
-  const updateNavigatorHeight = useCallback(() => {
-    const scroller = scrollerRef.current;
-    const navigator = navigatorRef.current;
-    if (scroller && navigator) {
-      const nowPlayingInset =
-        Number.parseFloat(getComputedStyle(scroller).getPropertyValue('--now-playing-inset')) || 0;
-      navigator.style.maxHeight = `${Math.max(44, scroller.clientHeight - 16 - nowPlayingInset)}px`;
-      const focusedDot = navigator.contains(document.activeElement)
-        ? (document.activeElement as HTMLElement)
-        : null;
-      const activeDot = navigator.querySelector<HTMLElement>('[aria-current="location"]');
-      const visibleDot = focusedDot ?? activeDot;
-      if (visibleDot) revealElement(navigator, visibleDot);
-    }
-  }, []);
-  const setScrollerRef = useCallback(
-    (element: HTMLDivElement | null) => {
-      scrollerRef.current = element;
-      onScrollerRef?.(element);
-      updateNavigatorHeight();
-    },
-    [onScrollerRef, updateNavigatorHeight],
-  );
-  const setNavigatorRef = useCallback(
-    (element: HTMLElement | null) => {
-      navigatorRef.current = element;
-      updateNavigatorHeight();
-    },
-    [updateNavigatorHeight],
-  );
-  const revealNavigatorDot = useCallback((bookHash: string) => {
-    const navigator = navigatorRef.current;
-    const dot = dotRefs.current.get(bookHash);
-    if (!navigator || !dot) return;
-    const focusedDot = navigator.contains(document.activeElement)
-      ? (document.activeElement as HTMLElement)
-      : null;
-    revealElement(navigator, focusedDot ?? dot);
-  }, []);
+  const [expandedBooks, setExpandedBooks] = useState<Set<string>>(() => new Set());
   booksRef.current = books;
   configRef.current = config;
   translateRef.current = _;
-  const booksKey = books.map((book) => `${book.hash}:${book.updatedAt}`).join('|');
+  // Key on content identity only: opening a result bumps the book's progress
+  // timestamp and its recency-sort position, and neither changes what a
+  // rescan would find — index staleness is handled per book at search time.
+  const booksKey = books
+    .map((book) => book.hash)
+    .sort()
+    .join('|');
   const configKey = [
     config.mode,
     config.matchCase,
@@ -191,22 +195,38 @@ const LibrarySearchResults = ({
 
   useEffect(() => {
     activeSearchKeyRef.current = searchKey;
-    releaseNavigationTarget();
-    if (scrollFrameRef.current !== null) {
-      cancelAnimationFrame(scrollFrameRef.current);
-      scrollFrameRef.current = null;
+    controllerRef.current?.abort();
+    const snapshot = completedSearchSnapshot;
+    if (snapshot && snapshot.searchKey === searchKey) {
+      groupsRef.current = snapshot.groups;
+      issuesRef.current = snapshot.issues;
+      skippedRef.current = snapshot.skipped;
+      setGroups(snapshot.groups);
+      setIssues(snapshot.issues);
+      setSkipped(snapshot.skipped);
+      setQueryIssue('');
+      setPhase('completed');
+      setTruncated(snapshot.truncated);
+      setActiveBook('');
+      setExpandedBooks(new Set(snapshot.expandedBooks));
+      onProgressRef.current?.(null);
+      lastQueryRef.current = query;
+      return;
     }
     const controller = new AbortController();
-    controllerRef.current?.abort();
     controllerRef.current = controller;
+    groupsRef.current = [];
+    issuesRef.current = [];
+    skippedRef.current = 0;
     setGroups([]);
     setIssues([]);
-    setProgress(0);
+    setSkipped(0);
+    setQueryIssue('');
+    onProgressRef.current?.(0);
     setPhase('searching');
     setTruncated(false);
     setActiveBook('');
-    setActiveBookHash('');
-    setCollapsedBooks(new Set());
+    setExpandedBooks(new Set());
 
     const delay = lastQueryRef.current === query ? 0 : 250;
     const timeout = setTimeout(async () => {
@@ -217,59 +237,74 @@ const LibrarySearchResults = ({
       })) {
         if (controller.signal.aborted) return;
         if (event.type === 'book-started') setActiveBook(event.book.title);
-        else if (event.type === 'progress') setProgress(Math.round(event.progress * 100));
-        else if (event.type === 'result') {
+        else if (event.type === 'progress') {
+          onProgressRef.current?.(Math.round(event.progress * 100));
+        } else if (event.type === 'result') {
           setGroups((current) => {
             const existing = current.find(({ book }) => book.hash === event.book.hash);
-            if (!existing) {
-              return [
-                ...current,
-                {
-                  book: event.book,
-                  sections: [event.result],
-                  matchCount: event.result.subitems.length,
-                },
-              ];
-            }
-            return current.map((group) =>
-              group.book.hash === event.book.hash
-                ? {
-                    ...group,
-                    sections: [...group.sections, event.result],
-                    matchCount: group.matchCount + event.result.subitems.length,
-                  }
-                : group,
-            );
+            const next = !existing
+              ? [
+                  ...current,
+                  {
+                    book: event.book,
+                    sections: [event.result],
+                    matchCount: event.result.subitems.length,
+                  },
+                ]
+              : current.map((group) =>
+                  group.book.hash === event.book.hash
+                    ? {
+                        ...group,
+                        sections: [...group.sections, event.result],
+                        matchCount: group.matchCount + event.result.subitems.length,
+                      }
+                    : group,
+                );
+            groupsRef.current = next;
+            return next;
           });
           await new Promise((resolve) => setTimeout(resolve, 0));
         } else if (event.type === 'book-skipped') {
-          setIssues((current) => [
-            ...current,
-            { book: event.book, message: translateRef.current('Unavailable') },
-          ]);
+          skippedRef.current += 1;
+          setSkipped(skippedRef.current);
+        } else if (event.type === 'book-completed' && event.truncated) {
+          setGroups((current) => {
+            const next = current.map((group) =>
+              group.book.hash === event.book.hash ? { ...group, truncated: true } : group,
+            );
+            groupsRef.current = next;
+            return next;
+          });
         } else if (event.type === 'book-error') {
-          const message =
-            event.code === 'INVALID_REGEX'
-              ? translateRef.current('Invalid regular expression')
-              : event.code === 'NEARBY_NEEDS_TWO_WORDS'
-                ? translateRef.current('Enter at least two words')
-                : event.code === 'FUZZY_QUERY_TOO_LONG'
-                  ? translateRef.current('Search query is too long')
-                  : event.error;
-          setIssues((current) => [...current, { book: event.book, message }]);
-          if (
-            event.code === 'INVALID_REGEX' ||
-            event.code === 'NEARBY_NEEDS_TWO_WORDS' ||
-            event.code === 'FUZZY_QUERY_TOO_LONG'
-          ) {
+          if (event.code && QUERY_LEVEL_CODES.has(event.code)) {
+            setQueryIssue(
+              event.code === 'INVALID_REGEX'
+                ? translateRef.current('Invalid regular expression')
+                : event.code === 'NEARBY_NEEDS_TWO_WORDS'
+                  ? translateRef.current('Enter at least two words')
+                  : translateRef.current('Search query is too long'),
+            );
             controller.abort();
             setPhase('completed');
+            onProgressRef.current?.(null);
+          } else {
+            issuesRef.current = [...issuesRef.current, { book: event.book, message: event.error }];
+            setIssues(issuesRef.current);
           }
         } else if (event.type === 'completed') {
-          setProgress(100);
+          onProgressRef.current?.(null);
           setActiveBook('');
           setPhase('completed');
           setTruncated(Boolean(event.truncated));
+          completedSearchSnapshot = {
+            searchKey,
+            groups: groupsRef.current,
+            issues: issuesRef.current,
+            skipped: skippedRef.current,
+            truncated: Boolean(event.truncated),
+            expandedBooks: [],
+          };
+          if (event.matchCount > 0) addLibrarySearchHistory(query);
         }
       }
     }, delay);
@@ -279,52 +314,35 @@ const LibrarySearchResults = ({
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [appService, releaseNavigationTarget, searchKey, session]);
+  }, [appService, searchKey, session]);
 
+  const onProgressRef = useRef(onProgress);
+  onProgressRef.current = onProgress;
   useEffect(
     () => () => {
-      releaseNavigationTarget();
-      if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
+      onProgressRef.current?.(null);
       void session.close();
     },
-    [releaseNavigationTarget, session],
+    [session],
   );
-  useEffect(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
-    updateNavigatorHeight();
-    const resizeObserver =
-      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateNavigatorHeight);
-    resizeObserver?.observe(scroller);
-    const insetObserver = new MutationObserver(updateNavigatorHeight);
-    insetObserver.observe(document.body, { attributes: true, attributeFilter: ['style'] });
-    return () => {
-      resizeObserver?.disconnect();
-      insetObserver.disconnect();
-    };
-  }, [updateNavigatorHeight]);
 
   const isCurrentSearch = activeSearchKeyRef.current === searchKey;
   const displayedGroups = isCurrentSearch ? groups : [];
   const displayedIssues = isCurrentSearch ? issues : [];
+  const displayedSkipped = isCurrentSearch ? skipped : 0;
+  const displayedQueryIssue = isCurrentSearch ? queryIssue : '';
   const displayedPhase = isCurrentSearch ? phase : 'searching';
-  const displayedProgress = isCurrentSearch ? progress : 0;
   const displayedActiveBook = isCurrentSearch ? activeBook : '';
   const displayedTruncated = isCurrentSearch && truncated;
   const totalMatches = displayedGroups.reduce((total, group) => total + group.matchCount, 0);
-  useEffect(() => {
-    setActiveBookHash((current) =>
-      groups.some(({ book }) => book.hash === current) ? current : (groups[0]?.book.hash ?? ''),
-    );
-  }, [groups]);
-  useEffect(() => {
-    if (activeBookHash) revealNavigatorDot(activeBookHash);
-  }, [activeBookHash, revealNavigatorDot]);
 
   const toggleBook = (bookHash: string) => {
-    setCollapsedBooks((current) => {
+    setExpandedBooks((current) => {
       const next = new Set(current);
       if (!next.delete(bookHash)) next.add(bookHash);
+      if (completedSearchSnapshot?.searchKey === activeSearchKeyRef.current) {
+        completedSearchSnapshot.expandedBooks = [...next];
+      }
       return next;
     });
   };
@@ -332,224 +350,170 @@ const LibrarySearchResults = ({
     controllerRef.current?.abort();
     setPhase('cancelled');
     setActiveBook('');
+    onProgressRef.current?.(null);
   };
-  const scheduleActiveBookUpdate = (scroller: HTMLDivElement) => {
-    if (navigationTargetRef.current || scrollFrameRef.current !== null) return;
-    scrollFrameRef.current = requestAnimationFrame(() => {
-      scrollFrameRef.current = null;
-      if (navigationTargetRef.current || displayedGroups.length === 0) return;
 
-      let currentHash = displayedGroups[0]!.book.hash;
-      const isAtBottom =
-        scroller.scrollHeight > scroller.clientHeight &&
-        scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
-      if (isAtBottom) {
-        currentHash = displayedGroups.at(-1)!.book.hash;
-      } else {
-        const activeLine = scroller.getBoundingClientRect().top + ACTIVE_HEADER_OFFSET;
-        for (const group of displayedGroups) {
-          const element = groupRefs.current.get(group.book.hash);
-          if (!element) continue;
-          if (element.getBoundingClientRect().top > activeLine) break;
-          currentHash = group.book.hash;
-        }
-      }
-      setActiveBookHash((current) => (current === currentHash ? current : currentHash));
-    });
-  };
-  const navigateToBook = (bookHash: string) => {
-    const scroller = scrollerRef.current;
-    const element = groupRefs.current.get(bookHash);
-    if (!scroller || !element) return;
-
-    navigationTargetRef.current = bookHash;
-    setActiveBookHash(bookHash);
-    scroller.scrollTop = Math.max(
-      0,
-      scroller.scrollTop +
-        element.getBoundingClientRect().top -
-        scroller.getBoundingClientRect().top -
-        NAVIGATION_TOP_OFFSET,
-    );
-    if (navigationReleaseFrameRef.current !== null) {
-      cancelAnimationFrame(navigationReleaseFrameRef.current);
-    }
-    navigationReleaseFrameRef.current = requestAnimationFrame(() => {
-      navigationReleaseFrameRef.current = requestAnimationFrame(() => {
-        navigationReleaseFrameRef.current = null;
-        if (navigationTargetRef.current === bookHash) navigationTargetRef.current = null;
-      });
-    });
-  };
+  // Results carry text-offset locators; the CFI is resolved lazily here so
+  // searching itself never has to keep section DOMs alive.
+  const handleSelectResult = useCallback(
+    async (book: Book, match: LibrarySearchMatch) => {
+      const cfi = await resolveSearchResultCfi(session, book, match.locator);
+      onSelectResult(book, cfi ?? '');
+    },
+    [onSelectResult, session],
+  );
 
   return (
-    <div
-      ref={setScrollerRef}
-      aria-busy={displayedPhase === 'searching'}
-      className='search-results h-full overflow-y-auto px-3 py-2 font-sans sm:px-6'
-      style={{ paddingBottom: 'calc(var(--now-playing-inset, 0px) + 0.5rem)' }}
-      onPointerDownCapture={releaseNavigationTarget}
-      onWheelCapture={releaseNavigationTarget}
-      onFocusCapture={releaseNavigationTarget}
-      onKeyDownCapture={(event) => {
-        if (SCROLL_KEYS.has(event.key)) releaseNavigationTarget();
-      }}
-      onScroll={(event) => scheduleActiveBookUpdate(event.currentTarget)}
-    >
-      {displayedPhase === 'searching' && (
-        <div className='mb-2 flex items-center gap-3 py-1'>
-          <progress
-            aria-label={_('Library Search Progress')}
-            className='progress h-0.5 max-w-32 flex-1'
-            value={displayedProgress}
-            max={100}
-          />
-          <button type='button' className='btn btn-ghost btn-sm eink-bordered' onClick={cancel}>
-            {_('Cancel')}
-          </button>
-        </div>
-      )}
-      {displayedPhase === 'searching' && displayedActiveBook && (
-        <p className='text-base-content/60 mb-2 truncate text-xs' role='status' aria-live='polite'>
-          {_('Searching {{title}}', { title: displayedActiveBook })}
-        </p>
-      )}
-      <div className='flex items-start gap-1 sm:gap-2'>
-        {displayedGroups.length > 1 && (
-          <nav
-            ref={setNavigatorRef}
-            aria-label={_('Book results')}
-            className='no-scrollbar sticky top-2 w-11 shrink-0 overflow-y-auto py-1'
-          >
-            <div className='relative flex min-h-full w-full flex-col items-center'>
-              <span
-                aria-hidden='true'
-                className='bg-base-content/25 absolute top-4 bottom-4 w-px'
-              />
-              {displayedGroups.map((group) => {
-                const isActive = group.book.hash === activeBookHash;
-                return (
-                  <button
-                    key={group.book.hash}
-                    type='button'
-                    aria-label={_('Jump to {{title}}', { title: group.book.title })}
-                    aria-current={isActive ? 'location' : undefined}
-                    className='focus-visible:ring-base-content/15 relative z-10 flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2'
-                    ref={(element) => {
-                      if (element) dotRefs.current.set(group.book.hash, element);
-                      else dotRefs.current.delete(group.book.hash);
-                    }}
-                    onFocus={() => revealNavigatorDot(group.book.hash)}
-                    onClick={() => navigateToBook(group.book.hash)}
-                  >
-                    <span
-                      aria-hidden='true'
-                      className={clsx(
-                        'border-base-content/60 bg-base-100 rounded-full border',
-                        isActive ? 'bg-base-content h-2.5 w-2.5' : 'h-2 w-2',
-                      )}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-          </nav>
-        )}
-        <div className='min-w-0 flex-1 space-y-3'>
-          {displayedGroups.map((group) => {
-            const isActive = group.book.hash === activeBookHash;
-            const isExpanded = !collapsedBooks.has(group.book.hash);
-            return (
-              <section
-                key={group.book.hash}
-                ref={(element) => {
-                  if (element) groupRefs.current.set(group.book.hash, element);
-                  else groupRefs.current.delete(group.book.hash);
-                }}
-                className={clsx(
-                  'bg-base-100 eink-bordered rounded-lg border p-2 sm:p-3',
-                  isActive ? 'border-base-content/60' : 'border-base-300',
-                )}
+    <div className='search-results flex h-full min-h-0 flex-col font-sans'>
+      <div className='px-4 pb-3 pt-1 sm:px-6'>
+        <div
+          className='text-base-content/60 flex h-6 items-center gap-2 text-xs'
+          role='status'
+          aria-live='polite'
+        >
+          {displayedPhase === 'searching' && (
+            <>
+              <span className='min-w-0 flex-1 truncate'>
+                {displayedActiveBook
+                  ? _('Searching {{title}}', { title: displayedActiveBook })
+                  : _('Searching...')}
+              </span>
+              <button
+                type='button'
+                className='hover:text-base-content not-eink:transition-colors shrink-0 font-medium duration-150'
+                onClick={cancel}
               >
-                <header className={clsx(isExpanded && 'mb-2')}>
-                  <button
-                    type='button'
-                    aria-expanded={isExpanded}
-                    aria-label={_('{{title}}, {{count}} results', {
-                      title: group.book.title,
-                      count: group.matchCount,
-                    })}
-                    className='group hover:bg-base-200 focus-visible:ring-base-content/20 not-eink:transition-colors flex min-h-12 w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-start duration-150 focus-visible:outline-none focus-visible:ring-2 sm:gap-3 sm:px-2.5'
-                    onClick={() => toggleBook(group.book.hash)}
+                {_('Cancel')}
+              </button>
+            </>
+          )}
+          {displayedPhase === 'completed' && totalMatches > 0 && (
+            <span className='truncate'>
+              {displayedTruncated
+                ? _('{{count}}+ results', { count: totalMatches })
+                : _('{{count}} results', { count: totalMatches })}
+            </span>
+          )}
+          {displayedPhase === 'cancelled' && <span>{_('Search stopped')}</span>}
+        </div>
+      </div>
+      <div
+        aria-busy={displayedPhase === 'searching'}
+        className='min-h-0 flex-1 overflow-y-auto px-4 sm:px-6'
+        style={{
+          paddingBottom:
+            'calc(var(--now-playing-inset, 0px) + var(--safe-area-inset-bottom, 0px) + 0.75rem)',
+        }}
+      >
+        {displayedQueryIssue && (
+          <div className='bg-base-200/50 text-base-content/80 eink-bordered mb-3 rounded-lg px-4 py-3 text-sm'>
+            {displayedQueryIssue}
+          </div>
+        )}
+        <div className='space-y-3'>
+          {displayedGroups.map((group) => {
+            const isExpanded = expandedBooks.has(group.book.hash);
+            return (
+              <section key={group.book.hash}>
+                {/* The sticky element is a square strip painted with the page
+                    backdrop (bg-base-200, bg-base-100 in eink, matching the
+                    library page), so content scrolling beneath cannot show
+                    through the rounded corner notches of the card frame inside. */}
+                <header className='eink:bg-base-100 bg-base-200 sticky top-0 z-[1]'>
+                  <div
+                    className={clsx(
+                      'border-base-200 eink:border-base-content bg-base-100 rounded-t-xl border',
+                      isExpanded ? 'border-b-0' : 'rounded-b-xl',
+                    )}
                   >
-                    <span
-                      aria-hidden='true'
-                      className='bg-base-200 group-hover:bg-base-300 eink-bordered not-eink:transition-colors flex size-7 shrink-0 items-center justify-center rounded-full duration-150'
+                    <button
+                      type='button'
+                      aria-expanded={isExpanded}
+                      aria-label={_('{{title}}, {{count}} results', {
+                        title: group.book.title,
+                        count: group.matchCount,
+                      })}
+                      className={clsx(
+                        'not-eink:transition-colors flex min-h-14 w-full items-center gap-3 rounded-t-xl px-3 py-2 text-start duration-150',
+                        'hover:bg-base-200/60 focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
+                        !isExpanded && 'rounded-b-xl',
+                      )}
+                      onClick={() => toggleBook(group.book.hash)}
                     >
+                      <ResultCover book={group.book} />
+                      <span className='min-w-0 flex-1 leading-tight'>
+                        <span className='text-base-content block truncate text-sm font-medium leading-5'>
+                          {group.book.title}
+                        </span>
+                        <span className='text-base-content/55 mt-0.5 block truncate text-xs leading-4'>
+                          {group.book.author}
+                        </span>
+                      </span>
+                      <span className='bg-base-200 text-base-content/60 eink-bordered shrink-0 rounded-full px-2 py-0.5 text-xs tabular-nums'>
+                        {group.matchCount}
+                        {group.truncated && '+'}
+                      </span>
                       <svg
-                        viewBox='0 0 8 10'
-                        width='8'
-                        height='10'
+                        viewBox='0 0 10 6'
+                        width='10'
+                        height='6'
+                        aria-hidden='true'
                         className={clsx(
-                          'text-base-content not-eink:transition-transform shrink-0',
-                          isExpanded ? 'rotate-90' : 'rotate-0',
+                          'text-base-content/40 not-eink:transition-transform shrink-0 duration-150',
+                          isExpanded ? 'rotate-180' : 'rotate-0',
                         )}
-                        fill='currentColor'
+                        fill='none'
+                        stroke='currentColor'
+                        strokeWidth='1.5'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
                       >
-                        <polygon points='0 0, 8 5, 0 10' />
+                        <polyline points='1 1, 5 5, 9 1' />
                       </svg>
-                    </span>
-                    <span className='min-w-0 flex-1 leading-tight'>
-                      <span className='block truncate font-semibold leading-5'>
-                        {group.book.title}
-                      </span>
-                      <span className='text-base-content/60 mt-0.5 block truncate text-xs leading-4'>
-                        {group.book.author}
-                      </span>
-                    </span>
-                    <span className='bg-base-200 group-hover:bg-base-300 text-base-content/70 eink-bordered not-eink:transition-colors min-w-7 shrink-0 rounded-full px-2 py-1 text-center text-xs tabular-nums duration-150'>
-                      {group.matchCount}
-                    </span>
-                  </button>
+                    </button>
+                  </div>
                 </header>
                 {isExpanded && (
-                  <ResultGroupMatches
-                    book={group.book}
-                    sections={group.sections}
-                    onSelectResult={onSelectResult}
-                  />
+                  <div className='border-base-200 eink:border-base-content bg-base-100 rounded-b-xl border border-t-0'>
+                    <ResultGroupMatches
+                      book={group.book}
+                      sections={group.sections}
+                      onSelectResult={handleSelectResult}
+                    />
+                  </div>
                 )}
               </section>
             );
           })}
         </div>
+        {displayedSkipped > 0 && (
+          <p className='text-base-content/50 mt-4 text-center text-xs' role='status'>
+            {_('{{count}} books unavailable', { count: displayedSkipped })}
+          </p>
+        )}
+        {displayedIssues.length > 0 && (
+          <div className='text-base-content/50 mt-3 space-y-1 px-1 text-xs'>
+            {displayedIssues.map(({ book, message }) => (
+              <p key={`${book.hash}-${message}`} className='truncate'>
+                <span className='font-medium'>{book.title}</span>
+                {' · '}
+                {message}
+              </p>
+            ))}
+          </div>
+        )}
+        {displayedPhase === 'completed' &&
+          totalMatches === 0 &&
+          displayedIssues.length === 0 &&
+          !displayedQueryIssue && (
+            <div className='flex flex-col items-center gap-1 py-16 text-center' role='status'>
+              <p className='text-base-content/70 text-sm font-medium'>{_('No results found')}</p>
+              <p className='text-base-content/50 text-xs'>
+                {_('Try a different term or search mode')}
+              </p>
+            </div>
+          )}
       </div>
-      {displayedIssues.length > 0 && (
-        <div className='eink-bordered border-base-300 mt-3 rounded-lg border p-3 text-xs'>
-          {displayedIssues.map(({ book, message }) => (
-            <p key={`${book.hash}-${message}`}>
-              <span className='font-medium'>{book.title}:</span> {message}
-            </p>
-          ))}
-        </div>
-      )}
-      {displayedPhase === 'completed' && totalMatches === 0 && displayedIssues.length === 0 && (
-        <p className='text-base-content/60 p-6 text-center text-sm' role='status'>
-          {_('No results found')}
-        </p>
-      )}
-      {displayedPhase === 'cancelled' && (
-        <p className='text-base-content/60 p-4 text-center text-sm' role='status'>
-          {_('Search stopped')}
-        </p>
-      )}
-      {displayedPhase === 'completed' && totalMatches > 0 && (
-        <p className='text-base-content/60 p-3 text-center text-xs' role='status'>
-          {displayedTruncated
-            ? _('Showing first {{count}} results', { count: totalMatches })
-            : _('{{count}} results', { count: totalMatches })}
-        </p>
-      )}
     </div>
   );
 };
