@@ -30,7 +30,6 @@ import { useFileSync } from '../hooks/useFileSync';
 import {
   applyFixedlayoutStyles,
   applyImageStyle,
-  applyRenditionLayoutClass,
   applyScrollbarStyle,
   applyScrollModeClass,
   applyThemeModeClass,
@@ -382,7 +381,6 @@ const FoliateViewer: React.FC<{
       applyImageStyle(detail.doc);
       applyScrollableStyle(detail.doc);
       applyTableTouchScroll(detail.doc);
-      applyRenditionLayoutClass(detail.doc, bookData.isFixedLayout);
       applyThemeModeClass(detail.doc, isDarkMode);
       applyScrollModeClass(detail.doc, viewSettings.scrolled || false);
       applyScrollbarStyle(document, viewSettings.hideScrollbar || false);
@@ -940,7 +938,6 @@ const FoliateViewer: React.FC<{
         if (bookDoc.rendition?.layout === 'pre-paginated') {
           applyFixedlayoutStyles(doc, viewSettings);
         }
-        applyRenditionLayoutClass(doc, !!bookData?.isFixedLayout);
         applyThemeModeClass(doc, isDarkMode);
         applyScrollModeClass(doc, viewSettings.scrolled || false);
         applyScrollbarStyle(document, viewSettings.hideScrollbar || false);

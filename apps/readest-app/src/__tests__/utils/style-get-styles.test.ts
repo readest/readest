@@ -85,8 +85,6 @@ describe('getFontStyles branches (via getStyles)', () => {
     expect(css).toContain('font-family: var(--serif) !important');
     // The body block should also have the font-family !important
     expect(css).toContain('font-family: revert !important');
-    expect(css).toContain('body.readest-reflowable p');
-    expect(css).toContain('font-size: max(1rem, var(--min-font-size, 8px)) !important');
   });
 
   it('does not add !important when overrideFont is false', () => {
@@ -96,8 +94,6 @@ describe('getFontStyles branches (via getStyles)', () => {
     expect(css).toMatch(/font-family: var\(--serif\)\s*[^!]/);
     // And body block should not have font-family at all
     expect(css).not.toContain('font-family: revert !important');
-    // Font-size override is independent from the font-family preference (#267).
-    expect(css).toContain('body.readest-reflowable p');
   });
 
   it('sets font-size according to defaultFontSize', () => {

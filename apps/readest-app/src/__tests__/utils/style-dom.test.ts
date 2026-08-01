@@ -20,7 +20,6 @@ import type { ThemeCode } from '@/utils/style';
 import {
   applyThemeModeClass,
   applyScrollModeClass,
-  applyRenditionLayoutClass,
   applyScrollbarStyle,
   applyTranslationStyle,
   getThemeCode,
@@ -106,27 +105,6 @@ describe('applyScrollModeClass', () => {
     document.body.className = '';
     applyScrollModeClass(document, false);
     expect(document.body.classList.contains('paginated-mode')).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// applyRenditionLayoutClass
-// ---------------------------------------------------------------------------
-describe('applyRenditionLayoutClass', () => {
-  it('marks reflowable documents without removing unrelated classes', () => {
-    document.body.className = 'readest-fixed-layout other-class';
-    applyRenditionLayoutClass(document, false);
-    expect(document.body.classList.contains('readest-reflowable')).toBe(true);
-    expect(document.body.classList.contains('readest-fixed-layout')).toBe(false);
-    expect(document.body.classList.contains('other-class')).toBe(true);
-  });
-
-  it('marks fixed-layout documents and removes the reflowable marker', () => {
-    document.body.className = 'readest-reflowable other-class';
-    applyRenditionLayoutClass(document, true);
-    expect(document.body.classList.contains('readest-fixed-layout')).toBe(true);
-    expect(document.body.classList.contains('readest-reflowable')).toBe(false);
-    expect(document.body.classList.contains('other-class')).toBe(true);
   });
 });
 
