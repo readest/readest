@@ -431,11 +431,11 @@ fn is_updater_disabled() -> bool {
     updater_disabled()
 }
 
-// Record the WebView engine/version so Sentry events can be correlated with
-// the WebView build. Chromium's UA-Reduction freezes the User-Agent to a stub
+// Record the WebView engine/version so it can be correlated with the WebView
+// build. Chromium's UA-Reduction freezes the User-Agent to a stub
 // on Windows WebView2 (e.g. "152.0.0.0"), so prefer the version reported by
 // the runtime itself and keep the engine from the User-Agent parse. Called
-// once from `NativeAppService.init()`; no-op when Sentry is disabled.
+// once from `NativeAppService.init()`.
 #[tauri::command]
 fn set_webview_info(user_agent: String) {
     let parsed = webview_info::parse_webview_info(&user_agent);
