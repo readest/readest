@@ -100,11 +100,19 @@ jobs:
         working-directory: apps/readest-app
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
         run: |
           if [ "${{ matrix.config.release }}" = "android" ]; then
             rm -rf src-tauri/gen/android
             pnpm tauri android init
             pnpm tauri icon ../../data/icons/readest-book.png
+            # Restore the committed (patched) gen/android files that init/icon
+            # overwrote — most importantly app/build.gradle.kts, which carries
+            # `missingDimensionStrategy("store", "foss")` so gradle can resolve
+            # the native-bridge plugin's foss/googleplay flavors. Without this
+            # the APK build fails variant resolution (mirrors upstream
+            # release.yml's `git checkout .`).
+            git checkout .
             pnpm tauri android build
             mkdir -p dist/android
             find src-tauri/gen/android -name "*.apk" -exec cp {} dist/android/ \;
@@ -115,8 +123,8 @@ jobs:
       - name: List build artifacts
         shell: bash
         run: |
-          echo "=== Tauri release bundles (apps/readest-app/src-tauri/target/release/bundle/) ==="
-          find apps/readest-app/src-tauri/target/release/bundle -type f 2>/dev/null | head -20 || echo "(empty)"
+          echo "=== Tauri release bundles (repo-root target/, workspace member) ==="
+          find target/release/bundle -type f 2>/dev/null | head -20 || echo "(empty)"
           echo "=== APKs ==="
           find apps/readest-app/dist -name "*.apk" 2>/dev/null | head -5 || echo "(none)"
 
@@ -125,7 +133,7 @@ jobs:
         with:
           name: readest-${{ matrix.config.release }}-${{ matrix.config.arch || 'multi' }}
           path: |
-            apps/readest-app/src-tauri/target/release/bundle/
+            target/release/bundle/
             apps/readest-app/dist/
           if-no-files-found: warn
 
