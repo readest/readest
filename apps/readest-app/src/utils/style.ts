@@ -91,6 +91,18 @@ const getFontStyles = (
 ) => {
   const families = buildFontFamilyLists(serif, sansSerif, monospace, defaultCJKFont);
   const defaultFontFamily = defaultFont.toLowerCase() === 'serif' ? '--serif' : '--sans-serif';
+  // Font size is always user-controlled (#267); overrideFont only controls the
+  // family. Readium CSS uses this element set to normalize publisher body-copy
+  // sizes. Scope it to reflowable documents so fixed layouts remain untouched.
+  const bodyFontSizeOverride = `
+    body.readest-reflowable p,
+    body.readest-reflowable li,
+    body.readest-reflowable div,
+    body.readest-reflowable pre,
+    body.readest-reflowable dd {
+      font-size: max(1rem, var(--min-font-size, 8px)) !important;
+    }
+  `;
   const fontStyles = `
     html {
       --serif: ${families.serif};
@@ -146,6 +158,7 @@ const getFontStyles = (
     body *:not(pre, code, kbd, .code):not(pre *, code *, kbd *, .code *) {
       ${overrideFont ? 'font-family: revert !important;' : ''}
     }
+    ${bodyFontSizeOverride}
   `;
   return fontStyles;
 };
@@ -1156,6 +1169,11 @@ export const applyThemeModeClass = (document: Document, isDarkMode: boolean) => 
 export const applyScrollModeClass = (document: Document, isScrollMode: boolean) => {
   document.body.classList.remove('scroll-mode', 'paginated-mode');
   document.body.classList.add(isScrollMode ? 'scroll-mode' : 'paginated-mode');
+};
+
+export const applyRenditionLayoutClass = (document: Document, isFixedLayout: boolean) => {
+  document.body.classList.remove('readest-reflowable', 'readest-fixed-layout');
+  document.body.classList.add(isFixedLayout ? 'readest-fixed-layout' : 'readest-reflowable');
 };
 
 /**
