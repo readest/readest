@@ -2057,5 +2057,6 @@
   "{{count}} books unavailable_other": "{{count}} книги недоступно",
   "Try a different term or search mode": "Спробуйте інший запит або режим пошуку",
   "Library Search Progress": "Хід пошуку в бібліотеці",
-  "Search query is too long": "Пошуковий запит задовгий"
+  "Search query is too long": "Пошуковий запит задовгий",
+  "Favorites, To Read": "Улюблене, До прочитання"
 }

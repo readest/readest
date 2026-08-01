@@ -2015,5 +2015,6 @@
   "{{count}} books unavailable_other": "{{count}} ספרים אינם זמינים",
   "Try a different term or search mode": "נסו מונח אחר או מצב חיפוש אחר",
   "Library Search Progress": "התקדמות חיפוש בספרייה",
-  "Search query is too long": "שאילתת החיפוש ארוכה מדי"
+  "Search query is too long": "שאילתת החיפוש ארוכה מדי",
+  "Favorites, To Read": "מועדפים, לקריאה"
 }

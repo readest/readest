@@ -1973,5 +1973,6 @@
   "{{count}} books unavailable_other": "{{count}} ta kitob mavjud emas",
   "Try a different term or search mode": "Boshqa soʻz yoki qidiruv rejimini sinab koʻring",
   "Library Search Progress": "Kutubxona qidiruvi jarayoni",
-  "Search query is too long": "Qidiruv soʻrovi juda uzun"
+  "Search query is too long": "Qidiruv soʻrovi juda uzun",
+  "Favorites, To Read": "Sevimlilar, Oʻqish uchun"
 }

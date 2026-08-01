@@ -1931,5 +1931,6 @@
   "{{count}} books unavailable_other": "དཔེ་ཆ་{{count}} སྤྱོད་མི་ཐུབ།",
   "Try a different term or search mode": "ཚིག་གཞན་ནམ་འཚོལ་སྟངས་གཞན་ཞིག་ཚོད་ལྟ་བྱོས།",
   "Library Search Progress": "དཔེ་མཛོད་འཚོལ་བཤེར་གྱི་འཕེལ་རིམ།",
-  "Search query is too long": "འཚོལ་ཚིག་རིང་དྲགས་པ།"
+  "Search query is too long": "འཚོལ་ཚིག་རིང་དྲགས་པ།",
+  "Favorites, To Read": "དགའ་པོ། ཀློག་རྒྱུ།"
 }

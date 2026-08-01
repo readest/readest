@@ -2057,5 +2057,6 @@
   "{{count}} books unavailable_other": "{{count}} knjig ni na voljo",
   "Try a different term or search mode": "Poskusite drug izraz ali način iskanja",
   "Library Search Progress": "Napredek iskanja po knjižnici",
-  "Search query is too long": "Iskalni niz je predolg"
+  "Search query is too long": "Iskalni niz je predolg",
+  "Favorites, To Read": "Priljubljene, Za branje"
 }

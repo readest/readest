@@ -1973,5 +1973,6 @@
   "{{count}} books unavailable_other": "{{count}} کتاب در دسترس نیست",
   "Try a different term or search mode": "عبارت یا حالت جستجوی دیگری را امتحان کنید",
   "Library Search Progress": "پیشرفت جستجوی کتابخانه",
-  "Search query is too long": "عبارت جستجو بسیار طولانی است"
+  "Search query is too long": "عبارت جستجو بسیار طولانی است",
+  "Favorites, To Read": "علاقه‌مندی‌ها، برای خواندن"
 }

@@ -1931,5 +1931,6 @@
   "{{count}} books unavailable_other": "{{count}} 本書無法使用",
   "Try a different term or search mode": "嘗試其他關鍵字或搜尋模式",
   "Library Search Progress": "書庫搜尋進度",
-  "Search query is too long": "搜尋字詞過長"
+  "Search query is too long": "搜尋字詞過長",
+  "Favorites, To Read": "我的最愛、待讀"
 }

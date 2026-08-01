@@ -1973,5 +1973,6 @@
   "{{count}} books unavailable_other": "{{count}} βιβλία μη διαθέσιμα",
   "Try a different term or search mode": "Δοκιμάστε άλλον όρο ή λειτουργία αναζήτησης",
   "Library Search Progress": "Πρόοδος αναζήτησης βιβλιοθήκης",
-  "Search query is too long": "Το ερώτημα αναζήτησης είναι πολύ μεγάλο"
+  "Search query is too long": "Το ερώτημα αναζήτησης είναι πολύ μεγάλο",
+  "Favorites, To Read": "Αγαπημένα, Για διάβασμα"
 }

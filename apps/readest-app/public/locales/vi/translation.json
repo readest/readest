@@ -1931,5 +1931,6 @@
   "{{count}} books unavailable_other": "{{count}} sách không khả dụng",
   "Try a different term or search mode": "Thử từ khóa hoặc chế độ tìm kiếm khác",
   "Library Search Progress": "Tiến trình tìm kiếm thư viện",
-  "Search query is too long": "Từ khóa tìm kiếm quá dài"
+  "Search query is too long": "Từ khóa tìm kiếm quá dài",
+  "Favorites, To Read": "Yêu thích, Sẽ đọc"
 }

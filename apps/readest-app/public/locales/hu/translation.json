@@ -1973,5 +1973,6 @@
   "{{count}} books unavailable_other": "{{count}} könyv nem érhető el",
   "Try a different term or search mode": "Próbáljon másik kifejezést vagy keresési módot",
   "Library Search Progress": "Könyvtári keresés folyamata",
-  "Search query is too long": "A keresési kifejezés túl hosszú"
+  "Search query is too long": "A keresési kifejezés túl hosszú",
+  "Favorites, To Read": "Kedvencek, Olvasandó"
 }

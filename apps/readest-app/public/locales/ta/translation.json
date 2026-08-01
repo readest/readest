@@ -1973,5 +1973,6 @@
   "{{count}} books unavailable_other": "{{count}} புத்தகங்கள் கிடைக்கவில்லை",
   "Try a different term or search mode": "வேறு சொல் அல்லது தேடல் முறையை முயற்சிக்கவும்",
   "Library Search Progress": "நூலக தேடல் முன்னேற்றம்",
-  "Search query is too long": "தேடல் சொற்றொடர் மிக நீளமாக உள்ளது"
+  "Search query is too long": "தேடல் சொற்றொடர் மிக நீளமாக உள்ளது",
+  "Favorites, To Read": "பிடித்தவை, படிக்க வேண்டியவை"
 }

@@ -1931,5 +1931,6 @@
   "{{count}} books unavailable_other": "{{count}} 本书不可用",
   "Try a different term or search mode": "尝试其他关键词或搜索模式",
   "Library Search Progress": "书库搜索进度",
-  "Search query is too long": "搜索词过长"
+  "Search query is too long": "搜索词过长",
+  "Favorites, To Read": "我的最爱、待读"
 }

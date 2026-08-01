@@ -1931,5 +1931,6 @@
   "{{count}} books unavailable_other": "{{count}} 冊の本が利用できません",
   "Try a different term or search mode": "別のキーワードや検索モードをお試しください",
   "Library Search Progress": "ライブラリ検索の進行状況",
-  "Search query is too long": "検索語が長すぎます"
+  "Search query is too long": "検索語が長すぎます",
+  "Favorites, To Read": "お気に入り、あとで読む"
 }

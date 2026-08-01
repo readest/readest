@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React, { useState } from 'react';
-import { MdEdit, MdDelete, MdLock, MdLockOpen, MdOutlineSearch, MdClose } from 'react-icons/md';
+import { MdEdit, MdDelete, MdLock, MdLockOpen, MdOutlineSearch } from 'react-icons/md';
 
 import { Book } from '@/types/book';
 import { BookMetadata } from '@/libs/document';
@@ -21,7 +21,6 @@ interface BookDetailEditProps {
   fieldErrors: Record<string, string>;
   searchLoading: boolean;
   onFieldChange: (field: string, value: string | undefined) => void;
-  onTagsChange: (tags: string[]) => void;
   onToggleFieldLock: (field: string) => void;
   onAutoRetrieve: () => void;
   onLockAll: () => void;
@@ -42,7 +41,6 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
   fieldErrors,
   searchLoading,
   onFieldChange,
-  onTagsChange,
   onToggleFieldLock,
   onAutoRetrieve,
   onLockAll,
@@ -61,16 +59,6 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
   const isCoverLocked = lockedFields['coverImageUrl'] || false;
   const coverImageUrl = metadata.coverImageUrl || null;
   const [newCoverImageUrl, setNewCoverImageUrl] = useState<string | null>(coverImageUrl);
-  const [tagInput, setTagInput] = useState('');
-
-  const addTags = (value: string) => {
-    const additions = value
-      .split(/[,;]/)
-      .map((tag) => tag.trim())
-      .filter(Boolean);
-    if (additions.length) onTagsChange([...tags, ...additions]);
-    setTagInput('');
-  };
 
   const titleAuthorFields = [
     {
@@ -156,6 +144,12 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
       label: _('Subjects'),
       value: flattenContributors(metadata.subject || []),
       placeholder: _('Fiction, Science, History'),
+    },
+    {
+      field: 'tags',
+      label: _('Tags'),
+      value: tags.join(', '),
+      placeholder: _('Favorites, To Read'),
     },
     {
       field: 'description',
@@ -300,53 +294,6 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
               placeholder={placeholder}
             />
           ))}
-        </div>
-
-        <div className='flex flex-col gap-1'>
-          <label htmlFor='book-tags' className='text-base-content text-sm font-medium'>
-            {_('Tags')}
-          </label>
-          <div className='eink-bordered bg-base-200/50 flex min-h-10 flex-wrap items-center gap-2 rounded-md px-2 py-1'>
-            {tags.map((tag) => (
-              <span key={tag} className='badge badge-outline gap-1'>
-                {tag}
-                <button
-                  type='button'
-                  onClick={() => onTagsChange(tags.filter((value) => value !== tag))}
-                  aria-label={`${_('Remove')} ${tag}`}
-                >
-                  <MdClose className='h-3 w-3' />
-                </button>
-              </span>
-            ))}
-            <input
-              id='book-tags'
-              value={tagInput}
-              onChange={(event) => {
-                const value = event.target.value;
-                if (/[,;]$/.test(value)) addTags(value);
-                else setTagInput(value);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  addTags(tagInput);
-                } else if (event.key === 'Backspace' && !tagInput && tags.length) {
-                  onTagsChange(tags.slice(0, -1));
-                }
-              }}
-              placeholder={_('Tags')}
-              className='min-w-24 flex-1 bg-transparent py-1 text-sm outline-none'
-            />
-            <button
-              type='button'
-              onClick={() => addTags(tagInput)}
-              disabled={!tagInput.trim()}
-              className='btn btn-ghost btn-sm h-7 min-h-7'
-            >
-              {_('Add')}
-            </button>
-          </div>
         </div>
 
         {metadataFullwidthFields.map(

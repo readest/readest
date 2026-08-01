@@ -2015,5 +2015,6 @@
   "{{count}} books unavailable_other": "{{count}} de cărți indisponibile",
   "Try a different term or search mode": "Încercați alt termen sau alt mod de căutare",
   "Library Search Progress": "Progresul căutării în bibliotecă",
-  "Search query is too long": "Interogarea de căutare este prea lungă"
+  "Search query is too long": "Interogarea de căutare este prea lungă",
+  "Favorites, To Read": "Favorite, De citit"
 }

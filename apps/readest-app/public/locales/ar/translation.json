@@ -2141,5 +2141,6 @@
   "{{count}} books unavailable_other": "{{count}} كتاب غير متاح",
   "Try a different term or search mode": "جرّب كلمة أو وضع بحث مختلف",
   "Library Search Progress": "تقدم البحث في المكتبة",
-  "Search query is too long": "استعلام البحث طويل جدًا"
+  "Search query is too long": "استعلام البحث طويل جدًا",
+  "Favorites, To Read": "المفضلة، للقراءة لاحقًا"
 }

@@ -31,6 +31,7 @@ export const useMetadataEdit = (metadata: BookMetadata | null, tags: string[]) =
     'language',
     'identifier',
     'subject',
+    'tags',
     'description',
     'subtitle',
     'series',
@@ -60,6 +61,15 @@ export const useMetadataEdit = (metadata: BookMetadata | null, tags: string[]) =
 
   const handleFieldChange = (field: string, value: string | undefined) => {
     if (lockedFields[field]) {
+      return;
+    }
+
+    // Tags live on the book, not in the metadata document; they still edit
+    // like Subjects — a separator-split string. Empty segments survive so a
+    // just-typed comma is not swallowed by the value round-trip; they are
+    // dropped at save time.
+    if (field === 'tags') {
+      setEditedTags(value ? value.split(/,|;|，|、/).map((tag) => tag.trim()) : []);
       return;
     }
 
@@ -165,10 +175,6 @@ export const useMetadataEdit = (metadata: BookMetadata | null, tags: string[]) =
     }));
   };
 
-  const handleTagsChange = (values: string[]) => {
-    setEditedTags([...new Set(values.map((value) => value.trim()).filter(Boolean))]);
-  };
-
   const handleLockAll = () => {
     const allLocked: Record<string, boolean> = {};
     lockableFields.forEach((field) => {
@@ -267,7 +273,6 @@ export const useMetadataEdit = (metadata: BookMetadata | null, tags: string[]) =
     showSourceSelection,
     availableSources,
     handleFieldChange,
-    handleTagsChange,
     handleFieldValidation,
     handleToggleFieldLock,
     handleLockAll,

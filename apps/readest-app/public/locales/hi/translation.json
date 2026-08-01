@@ -1973,5 +1973,6 @@
   "{{count}} books unavailable_other": "{{count}} पुस्तकें अनुपलब्ध",
   "Try a different term or search mode": "कोई और शब्द या खोज मोड आज़माएँ",
   "Library Search Progress": "लाइब्रेरी खोज प्रगति",
-  "Search query is too long": "खोज क्वेरी बहुत लंबी है"
+  "Search query is too long": "खोज क्वेरी बहुत लंबी है",
+  "Favorites, To Read": "पसंदीदा, पढ़ने के लिए"
 }

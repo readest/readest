@@ -2057,5 +2057,6 @@
   "{{count}} books unavailable_other": "{{count}} książki niedostępnej",
   "Try a different term or search mode": "Wypróbuj inne hasło lub tryb wyszukiwania",
   "Library Search Progress": "Postęp wyszukiwania w bibliotece",
-  "Search query is too long": "Zapytanie jest zbyt długie"
+  "Search query is too long": "Zapytanie jest zbyt długie",
+  "Favorites, To Read": "Ulubione, Do przeczytania"
 }

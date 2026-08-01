@@ -2057,5 +2057,6 @@
   "{{count}} books unavailable_other": "{{count}} книги недоступно",
   "Try a different term or search mode": "Попробуйте другой запрос или режим поиска",
   "Library Search Progress": "Ход поиска по библиотеке",
-  "Search query is too long": "Поисковый запрос слишком длинный"
+  "Search query is too long": "Поисковый запрос слишком длинный",
+  "Favorites, To Read": "Избранное, К прочтению"
 }

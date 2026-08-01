@@ -83,7 +83,6 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
     showSourceSelection,
     availableSources,
     handleFieldChange,
-    handleTagsChange,
     handleToggleFieldLock,
     handleLockAll,
     handleUnlockAll,
@@ -153,12 +152,15 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
 
   const handleSaveMetadata = () => {
     if (editedMeta && handleBookMetadataUpdate) {
+      // The edit field keeps empty segments while typing; drop them and
+      // dedupe on save.
+      const savedTags = [...new Set(editedTags.map((tag) => tag.trim()).filter(Boolean))];
       setBookMeta({ ...editedMeta });
-      setBookTags([...editedTags]);
+      setBookTags(savedTags);
       // Capture the updated book before handleBookMetadataUpdate clears the
       // temporary cover fields on editedMeta, so the view refreshes its cover.
-      setDisplayBook(getBookWithUpdatedMetadata(book, editedMeta, editedTags));
-      handleBookMetadataUpdate(book, editedMeta, editedTags);
+      setDisplayBook(getBookWithUpdatedMetadata(book, editedMeta, savedTags));
+      handleBookMetadataUpdate(book, editedMeta, savedTags);
       setEditMode(false);
     }
   };
@@ -258,7 +260,6 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 fieldErrors={fieldErrors}
                 searchLoading={searchLoading}
                 onFieldChange={handleFieldChange}
-                onTagsChange={handleTagsChange}
                 onToggleFieldLock={handleToggleFieldLock}
                 onAutoRetrieve={handleAutoRetrieve}
                 onLockAll={handleLockAll}

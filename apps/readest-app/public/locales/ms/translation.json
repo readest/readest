@@ -1931,5 +1931,6 @@
   "{{count}} books unavailable_other": "{{count}} buku tidak tersedia",
   "Try a different term or search mode": "Cuba istilah atau mod carian lain",
   "Library Search Progress": "Kemajuan carian perpustakaan",
-  "Search query is too long": "Pertanyaan carian terlalu panjang"
+  "Search query is too long": "Pertanyaan carian terlalu panjang",
+  "Favorites, To Read": "Kegemaran, Untuk Dibaca"
 }

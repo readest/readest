@@ -1973,5 +1973,6 @@
   "{{count}} books unavailable_other": "{{count}} böcker otillgängliga",
   "Try a different term or search mode": "Prova en annan term eller ett annat sökläge",
   "Library Search Progress": "Förlopp för bibliotekssökning",
-  "Search query is too long": "Sökfrågan är för lång"
+  "Search query is too long": "Sökfrågan är för lång",
+  "Favorites, To Read": "Favoriter, Att läsa"
 }

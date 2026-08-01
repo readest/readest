@@ -2015,5 +2015,6 @@
   "{{count}} books unavailable_other": "{{count}} livros indisponíveis",
   "Try a different term or search mode": "Tente outro termo ou modo de pesquisa",
   "Library Search Progress": "Progresso da pesquisa na biblioteca",
-  "Search query is too long": "A consulta de pesquisa é muito longa"
+  "Search query is too long": "A consulta de pesquisa é muito longa",
+  "Favorites, To Read": "Favoritos, Para ler"
 }
