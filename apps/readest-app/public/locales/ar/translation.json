@@ -2142,5 +2142,7 @@
   "Try a different term or search mode": "جرّب كلمة أو وضع بحث مختلف",
   "Library Search Progress": "تقدم البحث في المكتبة",
   "Search query is too long": "استعلام البحث طويل جدًا",
-  "Favorites, To Read": "المفضلة، للقراءة لاحقًا"
+  "Favorites, To Read": "المفضلة، للقراءة لاحقًا",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "قواميس Babylon هي ملفات ‎.bgl‎ مفردة."
 }

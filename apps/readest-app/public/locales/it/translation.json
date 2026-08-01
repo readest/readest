@@ -2016,5 +2016,7 @@
   "Try a different term or search mode": "Prova un altro termine o modalità di ricerca",
   "Library Search Progress": "Avanzamento ricerca libreria",
   "Search query is too long": "La query di ricerca è troppo lunga",
-  "Favorites, To Read": "Preferiti, Da leggere"
+  "Favorites, To Read": "Preferiti, Da leggere",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "I dizionari Babylon sono singoli file .bgl."
 }

@@ -1974,5 +1974,7 @@
   "Try a different term or search mode": "Anderen Begriff oder Suchmodus ausprobieren",
   "Library Search Progress": "Fortschritt der Bibliothekssuche",
   "Search query is too long": "Suchanfrage ist zu lang",
-  "Favorites, To Read": "Favoriten, Leseliste"
+  "Favorites, To Read": "Favoriten, Leseliste",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "Babylon-Wörterbücher sind einzelne .bgl-Dateien."
 }

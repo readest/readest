@@ -2016,5 +2016,7 @@
   "Try a different term or search mode": "נסו מונח אחר או מצב חיפוש אחר",
   "Library Search Progress": "התקדמות חיפוש בספרייה",
   "Search query is too long": "שאילתת החיפוש ארוכה מדי",
-  "Favorites, To Read": "מועדפים, לקריאה"
+  "Favorites, To Read": "מועדפים, לקריאה",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "מילוני Babylon הם קבצי ‎.bgl‎ בודדים."
 }

@@ -1974,5 +1974,7 @@
   "Try a different term or search mode": "Probeer een andere term of zoekmodus",
   "Library Search Progress": "Voortgang bibliotheekzoekopdracht",
   "Search query is too long": "Zoekopdracht is te lang",
-  "Favorites, To Read": "Favorieten, Nog te lezen"
+  "Favorites, To Read": "Favorieten, Nog te lezen",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "Babylon-woordenboeken zijn losse .bgl-bestanden."
 }

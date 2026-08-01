@@ -1974,5 +1974,7 @@
   "Try a different term or search mode": "වෙනත් වචනයක් හෝ සෙවුම් ක්‍රමයක් උත්සාහ කරන්න",
   "Library Search Progress": "පුස්තකාල සෙවීමේ ප්‍රගතිය",
   "Search query is too long": "සෙවුම් වචනය දිග වැඩියි",
-  "Favorites, To Read": "ප්‍රියතම, කියවීමට"
+  "Favorites, To Read": "ප්‍රියතම, කියවීමට",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "Babylon ශබ්දකෝෂ තනි .bgl ගොනු වේ."
 }

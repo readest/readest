@@ -1932,5 +1932,7 @@
   "Try a different term or search mode": "ลองใช้คำหรือโหมดการค้นหาอื่น",
   "Library Search Progress": "ความคืบหน้าการค้นหาในคลังหนังสือ",
   "Search query is too long": "คำค้นหายาวเกินไป",
-  "Favorites, To Read": "รายการโปรด, จะอ่าน"
+  "Favorites, To Read": "รายการโปรด, จะอ่าน",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "พจนานุกรม Babylon เป็นไฟล์ .bgl ไฟล์เดียว"
 }

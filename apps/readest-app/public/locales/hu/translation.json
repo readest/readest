@@ -1974,5 +1974,7 @@
   "Try a different term or search mode": "Próbáljon másik kifejezést vagy keresési módot",
   "Library Search Progress": "Könyvtári keresés folyamata",
   "Search query is too long": "A keresési kifejezés túl hosszú",
-  "Favorites, To Read": "Kedvencek, Olvasandó"
+  "Favorites, To Read": "Kedvencek, Olvasandó",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "A Babylon szótárak önálló .bgl fájlok."
 }

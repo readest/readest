@@ -30,7 +30,11 @@ export const unwrapDictionaryFields = (fields: FieldsObject): UnwrappedDictionar
   return {
     name: typeof name === 'string' ? name : undefined,
     kind:
-      kind === 'mdict' || kind === 'stardict' || kind === 'dict' || kind === 'slob'
+      kind === 'mdict' ||
+      kind === 'stardict' ||
+      kind === 'dict' ||
+      kind === 'slob' ||
+      kind === 'bgl'
         ? kind
         : undefined,
     lang: typeof lang === 'string' ? lang : undefined,
@@ -74,6 +78,8 @@ export const filesFromManifest = (
       else if (lower.endsWith('.dict.dz') || lower.endsWith('.dict')) out.dict = f.filename;
     } else if (kind === 'slob') {
       if (lower.endsWith('.slob')) out.slob = f.filename;
+    } else if (kind === 'bgl') {
+      if (lower.endsWith('.bgl')) out.bgl = f.filename;
     }
   }
 

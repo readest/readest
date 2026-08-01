@@ -107,6 +107,10 @@ describe('primaryDictionaryFile', () => {
     );
   });
 
+  test('bgl → .bgl', () => {
+    expect(primaryDictionaryFile(baseDict({ kind: 'bgl', files: { bgl: 'w.bgl' } }))).toBe('w.bgl');
+  });
+
   test('returns null when no primary file is recorded', () => {
     expect(primaryDictionaryFile(baseDict({ kind: 'mdict', files: {} }))).toBe(null);
   });
@@ -164,6 +168,12 @@ describe('enumerateDictionaryFiles', () => {
     const d = baseDict({ kind: 'slob', bundleDir: 'sl', files: { slob: 'w.slob' } });
     const files = enumerateDictionaryFiles(d);
     expect(files.map((f) => f.logical)).toEqual(['w.slob']);
+  });
+
+  test('bgl bundle: single .bgl file', () => {
+    const d = baseDict({ kind: 'bgl', bundleDir: 'bg', files: { bgl: 'w.bgl' } });
+    const files = enumerateDictionaryFiles(d);
+    expect(files.map((f) => f.logical)).toEqual(['w.bgl']);
   });
 
   test('absent files are skipped', () => {

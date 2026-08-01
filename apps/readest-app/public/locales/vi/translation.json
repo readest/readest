@@ -1932,5 +1932,7 @@
   "Try a different term or search mode": "Thử từ khóa hoặc chế độ tìm kiếm khác",
   "Library Search Progress": "Tiến trình tìm kiếm thư viện",
   "Search query is too long": "Từ khóa tìm kiếm quá dài",
-  "Favorites, To Read": "Yêu thích, Sẽ đọc"
+  "Favorites, To Read": "Yêu thích, Sẽ đọc",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "Từ điển Babylon là các tệp .bgl đơn lẻ."
 }

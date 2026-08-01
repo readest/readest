@@ -1974,5 +1974,7 @@
   "Try a different term or search mode": "Boshqa soʻz yoki qidiruv rejimini sinab koʻring",
   "Library Search Progress": "Kutubxona qidiruvi jarayoni",
   "Search query is too long": "Qidiruv soʻrovi juda uzun",
-  "Favorites, To Read": "Sevimlilar, Oʻqish uchun"
+  "Favorites, To Read": "Sevimlilar, Oʻqish uchun",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "Babylon lugʻatlari yakka .bgl fayllardan iborat."
 }

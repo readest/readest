@@ -26,6 +26,8 @@ export const primaryDictionaryFile = (d: ImportedDictionary): string | null => {
       return d.files.dict ?? null;
     case 'slob':
       return d.files.slob ?? null;
+    case 'bgl':
+      return d.files.bgl ?? null;
     default:
       return null;
   }
@@ -61,6 +63,9 @@ export const enumerateDictionaryFiles = (
       break;
     case 'slob':
       push(d.files.slob);
+      break;
+    case 'bgl':
+      push(d.files.bgl);
       break;
   }
   return out;

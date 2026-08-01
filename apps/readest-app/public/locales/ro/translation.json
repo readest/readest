@@ -2016,5 +2016,7 @@
   "Try a different term or search mode": "Încercați alt termen sau alt mod de căutare",
   "Library Search Progress": "Progresul căutării în bibliotecă",
   "Search query is too long": "Interogarea de căutare este prea lungă",
-  "Favorites, To Read": "Favorite, De citit"
+  "Favorites, To Read": "Favorite, De citit",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "Dicționarele Babylon sunt fișiere .bgl individuale."
 }

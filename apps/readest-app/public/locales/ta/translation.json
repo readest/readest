@@ -1974,5 +1974,7 @@
   "Try a different term or search mode": "வேறு சொல் அல்லது தேடல் முறையை முயற்சிக்கவும்",
   "Library Search Progress": "நூலக தேடல் முன்னேற்றம்",
   "Search query is too long": "தேடல் சொற்றொடர் மிக நீளமாக உள்ளது",
-  "Favorites, To Read": "பிடித்தவை, படிக்க வேண்டியவை"
+  "Favorites, To Read": "பிடித்தவை, படிக்க வேண்டியவை",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "Babylon அகராதிகள் தனி .bgl கோப்புகள் ஆகும்."
 }

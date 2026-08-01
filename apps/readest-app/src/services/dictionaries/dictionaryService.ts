@@ -73,7 +73,13 @@ interface SlobGroup {
   slob: SourceFile;
 }
 
-type Bundle = StarDictGroup | MDictGroup | DictGroup | SlobGroup;
+interface BglGroup {
+  kind: 'bgl';
+  stem: string;
+  bgl: SourceFile;
+}
+
+type Bundle = StarDictGroup | MDictGroup | DictGroup | SlobGroup | BglGroup;
 
 interface GroupResult {
   bundles: Bundle[];
@@ -173,6 +179,7 @@ export function groupBundlesByStem(files: SelectedFile[]): GroupResult {
     const mdx = group.find((f) => f.ext === 'mdx');
     const mdd = group.filter((f) => f.ext === 'mdd');
     const slob = group.find((f) => f.ext === 'slob');
+    const bgl = group.find((f) => f.ext === 'bgl');
 
     if (ifo && idx && dict) {
       bundles.push({ kind: 'stardict', stem, ifo, idx, dict, syn });
@@ -183,6 +190,8 @@ export function groupBundlesByStem(files: SelectedFile[]): GroupResult {
       bundles.push({ kind: 'mdict', stem, mdx, mdd, css: [] });
     } else if (slob) {
       bundles.push({ kind: 'slob', stem, slob });
+    } else if (bgl) {
+      bundles.push({ kind: 'bgl', stem, bgl });
     } else {
       orphans.push(...group);
     }
@@ -572,6 +581,43 @@ async function importSlobBundle(fs: FileSystem, group: SlobGroup): Promise<Impor
   };
 }
 
+async function importBglBundle(fs: FileSystem, group: BglGroup): Promise<ImportedDictionary> {
+  const bundleDir = await createBundleDir(fs);
+  const bglFile = await readSource(fs, group.bgl.source);
+  await writeBundleFile(fs, bundleDir, group.bgl.name, bglFile);
+
+  // Parse the glossary properties for the friendly name; a parse failure
+  // flags the bundle unsupported (the import itself still succeeds).
+  let name = group.stem;
+  let unsupported = false;
+  let unsupportedReason: string | undefined;
+  try {
+    const { BglReader } = await import('./bglReader');
+    const reader = new BglReader();
+    await reader.load({ bgl: bglFile });
+    if (reader.metadata.title) name = reader.metadata.title;
+  } catch (err) {
+    const message = (err as Error).message ?? String(err);
+    unsupported = true;
+    unsupportedReason = /Babylon/i.test(message) ? message : `Failed to parse BGL: ${message}`;
+  }
+
+  // BGL primary = .bgl (single-file bundle).
+  const contentId = await computeDictionaryContentId(bglFile, [group.bgl.name]);
+
+  return {
+    id: contentId,
+    contentId,
+    kind: 'bgl',
+    name,
+    bundleDir,
+    files: { bgl: group.bgl.name },
+    addedAt: Date.now(),
+    unsupported: unsupported || undefined,
+    unsupportedReason,
+  };
+}
+
 export interface ImportDictionariesResult {
   imported: ImportedDictionary[];
   /**
@@ -622,8 +668,10 @@ export async function importDictionaries(
       dict = await importMdictBundle(fs, bundle);
     } else if (bundle.kind === 'dict') {
       dict = await importDictBundle(fs, bundle);
-    } else {
+    } else if (bundle.kind === 'slob') {
       dict = await importSlobBundle(fs, bundle);
+    } else {
+      dict = await importBglBundle(fs, bundle);
     }
 
     const intraCallKey = dict.contentId ?? `__name:${dict.name}`;

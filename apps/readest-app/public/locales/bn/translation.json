@@ -1974,5 +1974,7 @@
   "Try a different term or search mode": "অন্য শব্দ বা অনুসন্ধান মোড চেষ্টা করুন",
   "Library Search Progress": "লাইব্রেরি অনুসন্ধানের অগ্রগতি",
   "Search query is too long": "অনুসন্ধান শব্দটি খুব দীর্ঘ",
-  "Favorites, To Read": "প্রিয়, পরে পড়ব"
+  "Favorites, To Read": "প্রিয়, পরে পড়ব",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "Babylon অভিধান হল একক .bgl ফাইল।"
 }

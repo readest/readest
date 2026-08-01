@@ -113,6 +113,11 @@ describe('filesFromManifest', () => {
     expect(filesFromManifest(m, 'slob')).toEqual({ slob: 'w.slob' });
   });
 
+  test('bgl manifest: classifies single .bgl', () => {
+    const m = manifest([{ filename: 'w.bgl' }]);
+    expect(filesFromManifest(m, 'bgl')).toEqual({ bgl: 'w.bgl' });
+  });
+
   test('null manifest returns empty files object', () => {
     expect(filesFromManifest(null, 'mdict')).toEqual({});
   });

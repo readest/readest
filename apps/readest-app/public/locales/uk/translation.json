@@ -2058,5 +2058,7 @@
   "Try a different term or search mode": "Спробуйте інший запит або режим пошуку",
   "Library Search Progress": "Хід пошуку в бібліотеці",
   "Search query is too long": "Пошуковий запит задовгий",
-  "Favorites, To Read": "Улюблене, До прочитання"
+  "Favorites, To Read": "Улюблене, До прочитання",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "Словники Babylon — це окремі файли .bgl."
 }

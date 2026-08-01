@@ -1932,5 +1932,7 @@
   "Try a different term or search mode": "ཚིག་གཞན་ནམ་འཚོལ་སྟངས་གཞན་ཞིག་ཚོད་ལྟ་བྱོས།",
   "Library Search Progress": "དཔེ་མཛོད་འཚོལ་བཤེར་གྱི་འཕེལ་རིམ།",
   "Search query is too long": "འཚོལ་ཚིག་རིང་དྲགས་པ།",
-  "Favorites, To Read": "དགའ་པོ། ཀློག་རྒྱུ།"
+  "Favorites, To Read": "དགའ་པོ། ཀློག་རྒྱུ།",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "Babylon ཚིག་མཛོད་ནི་ .bgl ཡིག་ཆ་རྐྱང་པ་རེད།"
 }

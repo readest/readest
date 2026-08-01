@@ -1974,5 +1974,7 @@
   "Try a different term or search mode": "Farklı bir terim veya arama modu deneyin",
   "Library Search Progress": "Kitaplık arama ilerlemesi",
   "Search query is too long": "Arama sorgusu çok uzun",
-  "Favorites, To Read": "Favoriler, Okunacaklar"
+  "Favorites, To Read": "Favoriler, Okunacaklar",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "Babylon sözlükleri tek bir .bgl dosyasından oluşur."
 }

@@ -1974,5 +1974,7 @@
   "Try a different term or search mode": "Δοκιμάστε άλλον όρο ή λειτουργία αναζήτησης",
   "Library Search Progress": "Πρόοδος αναζήτησης βιβλιοθήκης",
   "Search query is too long": "Το ερώτημα αναζήτησης είναι πολύ μεγάλο",
-  "Favorites, To Read": "Αγαπημένα, Για διάβασμα"
+  "Favorites, To Read": "Αγαπημένα, Για διάβασμα",
+  "Babylon": "Babylon",
+  "Babylon dictionaries are single .bgl files.": "Τα λεξικά Babylon είναι μεμονωμένα αρχεία .bgl."
 }
