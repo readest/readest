@@ -109,6 +109,18 @@ export abstract class BaseAppService implements AppService {
     opts?: DatabaseOpts,
   ): Promise<DatabaseService>;
 
+  // Databases live at the resolved fs path on native and node; the web app
+  // overrides both because its databases live in OPFS under flattened names,
+  // invisible to the IndexedDB-backed fs layer.
+  async databaseExists(path: string, base: BaseDir): Promise<boolean> {
+    return this.fs.exists(path, base);
+  }
+
+  async deleteDatabase(path: string, base: BaseDir): Promise<void> {
+    await this.fs.removeFile(path, base).catch(() => {});
+    await this.fs.removeFile(`${path}-wal`, base).catch(() => {});
+  }
+
   protected async runMigrations(
     lastMigrationVersion: number,
     settings?: SystemSettings,

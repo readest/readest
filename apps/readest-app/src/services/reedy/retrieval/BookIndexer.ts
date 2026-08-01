@@ -58,6 +58,8 @@ export class BookIndexer {
       if (this.inflight.get(bookHash) === promise) {
         this.inflight.delete(bookHash);
       }
+      // Fold the ingest burst out of the WAL; reedy.db never closes.
+      void this.reedy.checkpoint().catch(() => {});
     }
   }
 

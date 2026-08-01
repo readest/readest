@@ -1,5 +1,13 @@
 import { DocumentLoader, type BookDoc } from '@/libs/document';
-import type { Book, BookSearchResult, LibrarySearchConfig, SearchExcerpt } from '@/types/book';
+import type {
+  Book,
+  LibrarySearchConfig,
+  LibrarySearchMatch,
+  LibrarySearchSectionResult,
+  SearchExcerpt,
+  SearchResultLocator,
+} from '@/types/book';
+import type { DatabaseService } from '@/types/database';
 import type { AppService } from '@/types/system';
 import type { ClosableFile } from '@/utils/file';
 import { findContainsMatches } from '@/utils/containsSearch';
@@ -7,14 +15,52 @@ import { findFuzzyMatches, MAX_FUZZY_QUERY_LENGTH } from '@/utils/fuzzySearch';
 import type { LibrarySearchWorkerMatch } from '@/utils/librarySearchWorkerProtocol';
 import { findNearbyMatches } from '@/utils/nearbySearch';
 import { createRejectFilter } from '@/utils/node';
+import { compileSearchRegex, filterWholeWordMatches, findRegexMatches } from '@/utils/textSearch';
 import { BookFileNotFoundError } from './errors';
+import {
+  beginSearchIndex,
+  buildSearchIndexNodes,
+  checkpointSearchIndex,
+  completeSearchIndex,
+  hashSearchToc,
+  isSearchIndexFresh,
+  loadSearchIndexCandidates,
+  loadSearchIndexSections,
+  openLibrarySearchDb,
+  readSearchIndexMeta,
+  writeSearchIndexNodes,
+  writeSearchIndexSection,
+  type SearchIndexSection,
+} from './librarySearchIndex';
+import { hydrateBookNav, isBookNavCacheCurrent, type BookNav } from './nav';
 import { createLibrarySearchWorker } from './librarySearchWorker';
 import * as CFI from 'foliate-js/epubcfi.js';
 import { TOCProgress } from 'foliate-js/progress.js';
-import { searchMatcher } from 'foliate-js/search.js';
-import { textWalker } from 'foliate-js/text-walker.js';
 
-type LibrarySearchAppService = Pick<AppService, 'loadBookContent' | 'resolveNativeBookFilePath'>;
+type LibrarySearchAppService = Pick<
+  AppService,
+  | 'databaseExists'
+  | 'deleteDatabase'
+  | 'getBookFileSize'
+  | 'loadBookContent'
+  | 'resolveNativeBookFilePath'
+  | 'loadBookNav'
+  | 'openDatabase'
+>;
+
+// The nav the reader shows (nav.json enrichment applied via hydrateBookNav),
+// or null when no current cached nav exists for the book.
+const loadCurrentNav = async (
+  appService: LibrarySearchAppService,
+  book: Book,
+): Promise<BookNav | null> => {
+  try {
+    const nav = await appService.loadBookNav(book);
+    return isBookNavCacheCurrent(nav) ? nav : null;
+  } catch {
+    return null;
+  }
+};
 
 type SearchableBookDoc = BookDoc & {
   destroy?: () => void | Promise<void>;
@@ -31,8 +77,8 @@ export type LibrarySearchEvent =
       sectionsCompleted: number;
       totalSections: number;
     }
-  | { type: 'result'; book: Book; result: BookSearchResult }
-  | { type: 'book-completed'; book: Book; matchCount: number }
+  | { type: 'result'; book: Book; result: LibrarySearchSectionResult }
+  | { type: 'book-completed'; book: Book; matchCount: number; truncated?: boolean }
   | { type: 'book-skipped'; book: Book; reason: 'unavailable' }
   | { type: 'book-error'; book: Book; error: string; code?: string }
   | {
@@ -48,12 +94,9 @@ export interface LibrarySearchOptions {
   config?: Partial<LibrarySearchConfig>;
   signal?: AbortSignal;
   session?: LibrarySearchSession;
-}
-
-interface MatcherResult {
-  range: Range;
-  subRanges?: Range[];
-  excerpt: SearchExcerpt;
+  // Restrict matching to one section (reader "current chapter" scope). Index
+  // population is never restricted: a live scan still writes every section.
+  sectionIndex?: number;
 }
 
 const DEFAULT_CONFIG: LibrarySearchConfig = {
@@ -66,7 +109,7 @@ const DEFAULT_CONFIG: LibrarySearchConfig = {
 
 const CONTEXT_LENGTH = 50;
 const CONTEXT_SCAN_CHUNK = 2048;
-const MAX_LIBRARY_SEARCH_RESULTS = 500;
+const MAX_BOOK_SEARCH_RESULTS = 500;
 const normalizeWhitespace = (value: string) => value.replace(/\s+/g, ' ');
 
 const contextStart = (value: string) => {
@@ -169,12 +212,21 @@ const makeFuzzyExcerpt = (
   };
 };
 
+// foliate's text-walker reads NodeFilter at module scope, which only exists
+// in browsers; the reader and library pages import this service statically,
+// so Next.js would evaluate that global while collecting page data on the
+// server. Load the walker lazily instead — every caller of
+// prepareSearchSection awaits loadTextWalker() first.
+type TextWalker = typeof import('foliate-js/text-walker.js')['textWalker'];
+let textWalker: TextWalker | null = null;
+const loadTextWalker = async (): Promise<TextWalker> =>
+  (textWalker ??= (await import('foliate-js/text-walker.js')).textWalker);
+
 interface PreparedSearchSection {
   key: string;
   text: string;
   cumulative: number[];
   makeRange: (...args: number[]) => Range;
-  bytes: number;
 }
 
 const prepareSearchSection = (
@@ -183,6 +235,7 @@ const prepareSearchSection = (
   acceptNode: (node: Node) => number,
 ): PreparedSearchSection => {
   let prepared: PreparedSearchSection | null = null;
+  if (!textWalker) throw new Error('text walker not loaded');
   Array.from(
     textWalker(
       doc,
@@ -190,13 +243,7 @@ const prepareSearchSection = (
         const text = strings.join('');
         const cumulative = [0];
         for (const value of strings) cumulative.push(cumulative.at(-1)! + value.length);
-        prepared = {
-          key,
-          text,
-          cumulative,
-          makeRange,
-          bytes: text.length * 2 + cumulative.length * 8,
-        };
+        prepared = { key, text, cumulative, makeRange };
         return [];
       },
       acceptNode,
@@ -204,61 +251,6 @@ const prepareSearchSection = (
   );
   if (!prepared) throw new Error('Unable to prepare book section for search');
   return prepared;
-};
-
-const makeWorkerMatches = (
-  section: PreparedSearchSection,
-  matches: LibrarySearchWorkerMatch[],
-  mode: 'fuzzy' | 'nearby-words',
-): MatcherResult[] =>
-  matches.map((match) => {
-    const start = findNodeOffset(section.cumulative, match.start, 'right');
-    const end = findNodeOffset(section.cumulative, match.end, 'left');
-    const subRanges = match.runs.map((run) => {
-      const runStart = findNodeOffset(section.cumulative, run.start, 'right');
-      const runEnd = findNodeOffset(section.cumulative, run.end, 'left');
-      return section.makeRange(runStart.index, runStart.offset, runEnd.index, runEnd.offset);
-    });
-    const excerpt = makeFuzzyExcerpt(section.text, match.start, match.end, match.runs);
-    if (mode === 'nearby-words' && excerpt.segments) {
-      excerpt.match = normalizeWhitespace(excerpt.match);
-      excerpt.segments = excerpt.segments
-        .map((segment) => ({ ...segment, text: normalizeWhitespace(segment.text) }))
-        .filter(({ text }) => text.length > 0);
-    }
-    return {
-      range: section.makeRange(start.index, start.offset, end.index, end.offset),
-      subRanges,
-      excerpt,
-    };
-  });
-
-const createContainsMatcher = (
-  config: LibrarySearchConfig,
-  acceptNode: (node: Node) => number,
-  defaultLocale?: string,
-) => {
-  return function* (doc: Document, query: string): Generator<MatcherResult> {
-    const locale = doc.body.lang || doc.documentElement.lang || defaultLocale;
-    const iterator = textWalker(
-      doc,
-      function* (strings: string[], makeRange: (...args: number[]) => Range) {
-        const text = strings.join('');
-        const cumulative = [0];
-        for (const value of strings) cumulative.push(cumulative.at(-1)! + value.length);
-        for (const match of findContainsMatches(text, query, config, locale)) {
-          const start = findNodeOffset(cumulative, match.start, 'right');
-          const end = findNodeOffset(cumulative, match.end, 'left');
-          yield {
-            range: makeRange(start.index, start.offset, end.index, end.offset),
-            excerpt: makeExcerpt(text, match.start, match.end),
-          };
-        }
-      },
-      acceptNode,
-    );
-    yield* iterator as Generator<MatcherResult>;
-  };
 };
 
 const createTOCProgress = async (book: SearchableBookDoc) => {
@@ -282,40 +274,32 @@ const closeBook = async (book: SearchableBookDoc | null, file: File | null) => {
   }
 };
 
+const makeAcceptNode = (book: Book) =>
+  createRejectFilter({
+    tags: book.primaryLanguage?.startsWith('ja') ? ['rt'] : [],
+    attributes: ['cfi-inert'],
+  });
+
 interface CachedSearchBook {
   file: File;
   bookDoc: SearchableBookDoc;
 }
 
-const MAX_PREPARED_SECTION_BYTES = 16 * 1024 * 1024;
-const MAX_CACHED_SECTIONS = 256;
+const MAX_CACHED_BOOKS = 10;
+const MAX_OPEN_INDEX_DBS = 16;
 
 export const createLibrarySearchSession = (appService: LibrarySearchAppService) => {
   const documents = new Map<string, { updatedAt: number; pending: Promise<CachedSearchBook> }>();
-  const sectionDocuments = new Map<
-    string,
-    { bookHash: string; pending: Promise<Document | null> }
-  >();
-  const preparedSections = new Map<string, { bookHash: string; section: PreparedSearchSection }>();
+  // One handle per search.db within the session: OPFS permits a single access
+  // handle per file per origin, so concurrent opens of the same DB would throw.
+  const indexDbs = new Map<string, Promise<DatabaseService | null>>();
+  // Memoized per session: the hash of each book's current cached nav toc
+  // (null when no current nav exists), used to detect stale node trees
+  // without re-reading nav.json on every query.
+  const navHashes = new Map<string, Promise<string | null>>();
   const searchWorker = createLibrarySearchWorker();
-  let preparedBytes = 0;
-  const removePreparedSection = (key: string) => {
-    const entry = preparedSections.get(key);
-    if (!entry) return;
-    preparedBytes -= entry.section.bytes;
-    preparedSections.delete(key);
-  };
-  const removeCachedBookSections = (bookHash: string) => {
-    for (const [key, entry] of sectionDocuments) {
-      if (entry.bookHash === bookHash) sectionDocuments.delete(key);
-    }
-    for (const [key, entry] of preparedSections) {
-      if (entry.bookHash !== bookHash) continue;
-      removePreparedSection(key);
-    }
-  };
-  const dispose = (bookHash: string, { pending }: { pending: Promise<CachedSearchBook> }) => {
-    removeCachedBookSections(bookHash);
+
+  const dispose = ({ pending }: { pending: Promise<CachedSearchBook> }) => {
     void pending.then(
       ({ bookDoc, file }) => closeBook(bookDoc, file),
       () => {},
@@ -329,7 +313,7 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
       documents.set(book.hash, existing);
       return existing.pending;
     }
-    if (existing) dispose(book.hash, existing);
+    if (existing) dispose(existing);
 
     const pending = (async () => {
       const [content, nativeFilePath] = await Promise.all([
@@ -354,98 +338,118 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
       if (documents.get(book.hash) === entry) documents.delete(book.hash);
     });
 
-    if (documents.size > 10) {
+    if (documents.size > MAX_CACHED_BOOKS) {
       const oldestHash = documents.keys().next().value!;
       const oldest = documents.get(oldestHash)!;
       documents.delete(oldestHash);
-      dispose(oldestHash, oldest);
+      dispose(oldest);
     }
     return pending;
   };
 
-  const getSectionDocument = async (book: Book, index: number) => {
-    const cached = await open(book);
-    const key = `${book.hash}:${book.updatedAt}:${index}`;
-    const existing = sectionDocuments.get(key);
+  const getIndexDb = (book: Book): Promise<DatabaseService | null> => {
+    const existing = indexDbs.get(book.hash);
     if (existing) {
-      sectionDocuments.delete(key);
-      sectionDocuments.set(key, existing);
-      return existing.pending;
+      indexDbs.delete(book.hash);
+      indexDbs.set(book.hash, existing);
+      return existing;
     }
-    const createDocument = cached.bookDoc.sections[index]?.createDocument;
-    const pending = createDocument ? createDocument() : Promise.resolve(null);
-    const entry = { bookHash: book.hash, pending };
-    sectionDocuments.set(key, entry);
-    void pending.catch(() => {
-      if (sectionDocuments.get(key) === entry) sectionDocuments.delete(key);
-    });
-    while (sectionDocuments.size > MAX_CACHED_SECTIONS) {
-      const oldestKey = sectionDocuments.keys().next().value!;
-      sectionDocuments.delete(oldestKey);
-      removePreparedSection(oldestKey);
+    const pending = openLibrarySearchDb(appService, book).catch(() => null);
+    indexDbs.set(book.hash, pending);
+    while (indexDbs.size > MAX_OPEN_INDEX_DBS) {
+      const oldestHash = indexDbs.keys().next().value!;
+      const oldest = indexDbs.get(oldestHash)!;
+      indexDbs.delete(oldestHash);
+      void oldest.then((db) => db?.close()).catch(() => {});
     }
     return pending;
+  };
+
+  const getNavHash = (book: Book): Promise<string | null> => {
+    const existing = navHashes.get(book.hash);
+    if (existing) return existing;
+    const pending = loadCurrentNav(appService, book).then((nav) =>
+      nav ? hashSearchToc(nav.toc) : null,
+    );
+    navHashes.set(book.hash, pending);
+    return pending;
+  };
+
+  const dropIndexDb = (book: Book) => {
+    const pending = indexDbs.get(book.hash);
+    if (!pending) return;
+    indexDbs.delete(book.hash);
+    void pending.then((db) => db?.close()).catch(() => {});
   };
 
   return {
     open,
-    getSectionDocument,
-    async getPreparedSection(book: Book, index: number, acceptNode: (node: Node) => number) {
-      const key = `${book.hash}:${book.updatedAt}:${index}`;
-      const existing = preparedSections.get(key);
-      if (existing) {
-        const document = sectionDocuments.get(key);
-        if (document) {
-          sectionDocuments.delete(key);
-          sectionDocuments.set(key, document);
-        }
-        preparedSections.delete(key);
-        preparedSections.set(key, existing);
-        return existing.section;
-      }
-      const doc = await getSectionDocument(book, index);
-      if (!doc) return null;
-      const prepared = preparedSections.get(key);
-      if (prepared) {
-        preparedSections.delete(key);
-        preparedSections.set(key, prepared);
-        return prepared.section;
-      }
-      const section = prepareSearchSection(key, doc, acceptNode);
-      if (section.bytes <= MAX_PREPARED_SECTION_BYTES) {
-        while (
-          preparedSections.size >= MAX_CACHED_SECTIONS ||
-          (preparedSections.size > 0 && preparedBytes + section.bytes > MAX_PREPARED_SECTION_BYTES)
-        ) {
-          const oldestKey = preparedSections.keys().next().value!;
-          removePreparedSection(oldestKey);
-        }
-        preparedSections.set(key, { bookHash: book.hash, section });
-        preparedBytes += section.bytes;
-      }
-      return section;
-    },
+    getIndexDb,
+    dropIndexDb,
+    getNavHash,
     searchWorker,
     async close() {
-      const cached = [...documents.values()];
+      const cachedBooks = [...documents.values()];
+      const cachedDbs = [...indexDbs.values()];
       documents.clear();
-      sectionDocuments.clear();
-      preparedSections.clear();
-      preparedBytes = 0;
+      indexDbs.clear();
       searchWorker.close();
-      await Promise.all(
-        cached.map(({ pending }) =>
+      await Promise.all([
+        ...cachedBooks.map(({ pending }) =>
           pending.then(
             ({ bookDoc, file }) => closeBook(bookDoc, file),
             () => {},
           ),
         ),
-      );
+        // Checkpoint before close so aborted or failed builds don't leave
+        // their writes stranded in the wal (completeSearchIndex handles the
+        // successful-build case).
+        ...cachedDbs.map((pending) =>
+          pending
+            .then(async (db) => {
+              if (!db) return;
+              await checkpointSearchIndex(db);
+              await db.close();
+            })
+            .catch(() => {}),
+        ),
+      ]);
     },
   };
 };
 
 export type LibrarySearchSession = ReturnType<typeof createLibrarySearchSession>;
+
+interface SectionMatchOutcome {
+  matches: LibrarySearchWorkerMatch[];
+  truncated: boolean;
+}
+
+const toSubitems = (
+  mode: LibrarySearchConfig['mode'],
+  sectionIndex: number,
+  text: string,
+  matches: LibrarySearchWorkerMatch[],
+): LibrarySearchMatch[] =>
+  matches.map((match) => {
+    const locator: SearchResultLocator = {
+      section: sectionIndex,
+      start: match.start,
+      end: match.end,
+      ...(match.runs.length ? { runs: match.runs } : {}),
+    };
+    if (!match.runs.length) {
+      return { locator, excerpt: makeExcerpt(text, match.start, match.end) };
+    }
+    const excerpt = makeFuzzyExcerpt(text, match.start, match.end, match.runs);
+    if (mode === 'nearby-words' && excerpt.segments) {
+      excerpt.match = normalizeWhitespace(excerpt.match);
+      excerpt.segments = excerpt.segments
+        .map((segment) => ({ ...segment, text: normalizeWhitespace(segment.text) }))
+        .filter(({ text: segmentText }) => segmentText.length > 0);
+    }
+    return { locator, excerpt };
+  });
 
 export async function* searchLibraryBooks(
   appService: LibrarySearchAppService,
@@ -462,24 +466,27 @@ export async function* searchLibraryBooks(
   let truncated = false;
   let sliceStarted = performance.now();
 
-  if (
-    books.length > 0 &&
-    config.mode === 'nearby-words' &&
-    query.trim().split(/\s+/).filter(Boolean).length < 2
-  ) {
-    const book = books[0];
-    if (book) {
-      yield {
-        type: 'book-error',
-        book,
-        error: 'Nearby words search needs at least two words',
-        code: 'NEARBY_NEEDS_TWO_WORDS',
-      };
-    }
+  if (books.length === 0) {
+    yield {
+      type: 'completed',
+      searchedBooks: 0,
+      skippedBooks: 0,
+      erroredBooks: 0,
+      matchCount: 0,
+    };
+    return;
+  }
+
+  if (config.mode === 'nearby-words' && query.trim().split(/\s+/).filter(Boolean).length < 2) {
+    yield {
+      type: 'book-error',
+      book: books[0]!,
+      error: 'Nearby words search needs at least two words',
+      code: 'NEARBY_NEEDS_TWO_WORDS',
+    };
     return;
   }
   if (
-    books.length > 0 &&
     config.mode === 'fuzzy' &&
     Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(query.trim()))
       .length > MAX_FUZZY_QUERY_LENGTH
@@ -492,161 +499,329 @@ export async function* searchLibraryBooks(
     };
     return;
   }
+  let searchRegex: RegExp | null = null;
+  if (config.mode === 'regex') {
+    try {
+      searchRegex = compileSearchRegex(query, config.matchCase);
+    } catch (error) {
+      yield {
+        type: 'book-error',
+        book: books[0]!,
+        error: error instanceof Error ? error.message : String(error),
+        code: 'INVALID_REGEX',
+      };
+      return;
+    }
+  }
+
+  const usesSearchWorker = config.mode === 'fuzzy' || config.mode === 'nearby-words';
+
+  const matchSectionText = async (
+    book: Book,
+    sectionIndex: number,
+    text: string,
+    locale: string,
+    limit: number,
+  ): Promise<SectionMatchOutcome> => {
+    if (usesSearchWorker) {
+      const payload = {
+        sectionKey: `${book.hash}:${book.updatedAt}:${sectionIndex}`,
+        text,
+        query,
+        mode: config.mode as 'fuzzy' | 'nearby-words',
+        fuzzyOptions: {
+          matchCase: config.matchCase,
+          matchDiacritics: config.matchDiacritics,
+        },
+        nearbyOptions: {
+          locale,
+          matchCase: config.matchCase,
+          matchDiacritics: config.matchDiacritics,
+          nearbyWords: config.nearbyWords ?? DEFAULT_CONFIG.nearbyWords!,
+        },
+        limit,
+      };
+      if (options.session) {
+        return await options.session.searchWorker.search(payload, signal);
+      }
+      const state: { truncated?: boolean } = {};
+      const matches =
+        config.mode === 'fuzzy'
+          ? findFuzzyMatches(text, query, payload.fuzzyOptions, limit, state)
+          : findNearbyMatches(text, query, payload.nearbyOptions, undefined, limit, state);
+      return { matches, truncated: Boolean(state.truncated) };
+    }
+
+    let spans: Array<{ start: number; end: number }>;
+    if (config.mode === 'regex') {
+      spans = findRegexMatches(text, searchRegex!, limit);
+    } else {
+      spans = [];
+      for (const match of findContainsMatches(text, query, config, locale)) {
+        spans.push(match);
+        // Whole-words filters after collection, so don't stop at the raw cap.
+        if (config.mode !== 'whole-words' && spans.length >= limit) break;
+      }
+      if (config.mode === 'whole-words') {
+        spans = filterWholeWordMatches(text, spans, locale).slice(0, limit);
+      }
+    }
+    return {
+      matches: spans.map(({ start, end }) => ({ start, end, runs: [] })),
+      truncated: spans.length >= limit,
+    };
+  };
+
+  const yieldSlice = async () => {
+    if (performance.now() - sliceStarted >= 8) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      sliceStarted = performance.now();
+    }
+  };
 
   for (const [bookIndex, book] of books.entries()) {
     if (signal?.aborted) return;
     let file: File | null = null;
     let bookDoc: SearchableBookDoc | null = null;
+    let indexDb: DatabaseService | null = null;
+    const ownsIndexDb = !options.session;
     try {
       yield { type: 'book-started', book, bookIndex, totalBooks: books.length };
-      if (options.session) {
-        const cached = await options.session.open(book);
-        file = cached.file;
-        bookDoc = cached.bookDoc;
-      } else {
-        const [content, nativeFilePath] = await Promise.all([
-          appService.loadBookContent(book),
-          appService.resolveNativeBookFilePath(book),
-        ]);
-        file = content.file;
-        bookDoc = (
-          await new DocumentLoader(file, { nativeFilePath: nativeFilePath ?? undefined }).open()
-        ).book as SearchableBookDoc;
+      const locale = book.primaryLanguage || 'en';
+
+      // Opening (and thereby creating) a search.db is not free, so probe
+      // cheaply first: a book with neither a local file nor an existing index
+      // is skipped without touching the database layer at all.
+      const localSize = await appService.getBookFileSize(book).catch(() => null);
+      if (localSize == null) {
+        const hasIndex = await appService
+          .databaseExists(`${book.hash}/search.db`, 'Books')
+          .catch(() => false);
+        if (!hasIndex) {
+          skippedBooks++;
+          yield { type: 'book-skipped', book, reason: 'unavailable' };
+          continue;
+        }
       }
-      if (signal?.aborted) return;
 
-      const acceptNode = createRejectFilter({
-        tags: book.primaryLanguage?.startsWith('ja') ? ['rt'] : [],
-        attributes: ['cfi-inert'],
-      });
-      const usesSearchWorker = config.mode === 'fuzzy' || config.mode === 'nearby-words';
-      const matcher = usesSearchWorker
-        ? null
-        : config.mode === 'contains'
-          ? createContainsMatcher(config, acceptNode, book.primaryLanguage)
-          : searchMatcher(textWalker, {
-              ...config,
-              defaultLocale: book.primaryLanguage,
-              acceptNode,
-            });
-      const tocProgress = await createTOCProgress(bookDoc);
-      const totalSections = bookDoc.sections.length;
+      indexDb = options.session
+        ? await options.session.getIndexDb(book)
+        : await openLibrarySearchDb(appService, book).catch(() => null);
+      const meta = indexDb ? await readSearchIndexMeta(indexDb).catch(() => null) : null;
+
+      // Node trees follow the nav the reader shows (hydrateBookNav), which
+      // can change without touching the book file — manual TOC edits or
+      // recomputed nav.json enrichment. A nav hash mismatch invalidates the
+      // index like a book update does; with no current nav the TOC can only
+      // change with the file, so the stored tree stands.
+      const currentNavHash = options.session
+        ? await options.session.getNavHash(book)
+        : await loadCurrentNav(appService, book).then((nav) =>
+            nav ? hashSearchToc(nav.toc) : null,
+          );
+      const nodesFresh = currentNavHash == null || currentNavHash === meta?.navHash;
+
       let bookMatches = 0;
+      let bookTruncated = false;
 
-      for (const [sectionIndex, section] of bookDoc.sections.entries()) {
+      if (indexDb && isSearchIndexFresh(meta, book) && nodesFresh) {
+        // Indexed path: search cached text; the book file is never opened.
+        const usePrefilter = config.mode === 'contains' || config.mode === 'whole-words';
+        let sections: SearchIndexSection[] = usePrefilter
+          ? await loadSearchIndexCandidates(indexDb, query)
+          : await loadSearchIndexSections(indexDb);
+        if (options.sectionIndex != null) {
+          sections = sections.filter((section) => section.idx === options.sectionIndex);
+        }
         if (signal?.aborted) return;
-        if (typeof section.createDocument === 'function') {
-          const doc = options.session
-            ? await options.session.getSectionDocument(book, sectionIndex)
-            : await section.createDocument();
-          if (!doc) continue;
+        const totalSections = meta!.totalSections;
+        for (const section of sections) {
           if (signal?.aborted) return;
-          let matches: MatcherResult[];
-          if (usesSearchWorker) {
-            const prepared = options.session
-              ? await options.session.getPreparedSection(book, sectionIndex, acceptNode)
-              : prepareSearchSection(
-                  `${book.hash}:${book.updatedAt}:${sectionIndex}`,
-                  doc,
-                  acceptNode,
-                );
-            if (!prepared || signal?.aborted) return;
-            const locale =
-              doc.body.lang || doc.documentElement.lang || book.primaryLanguage || 'en';
-            const remainingResults = MAX_LIBRARY_SEARCH_RESULTS - totalMatches;
-            const payload = {
-              sectionKey: prepared.key,
-              text: prepared.text,
-              query,
-              mode: config.mode as 'fuzzy' | 'nearby-words',
-              fuzzyOptions: {
-                matchCase: config.matchCase,
-                matchDiacritics: config.matchDiacritics,
-              },
-              nearbyOptions: {
-                locale,
-                matchCase: config.matchCase,
-                matchDiacritics: config.matchDiacritics,
-                nearbyWords: config.nearbyWords ?? DEFAULT_CONFIG.nearbyWords!,
-              },
-              limit: remainingResults,
-            };
-            let numericMatches: LibrarySearchWorkerMatch[];
-            let sectionTruncated: boolean;
-            if (options.session) {
-              const result = await options.session.searchWorker.search(payload, signal);
-              numericMatches = result.matches;
-              sectionTruncated = result.truncated;
-            } else {
-              const state: { truncated?: boolean } = {};
-              numericMatches =
-                config.mode === 'fuzzy'
-                  ? findFuzzyMatches(
-                      prepared.text,
-                      query,
-                      payload.fuzzyOptions,
-                      payload.limit,
-                      state,
-                    )
-                  : findNearbyMatches(
-                      prepared.text,
-                      query,
-                      payload.nearbyOptions,
-                      undefined,
-                      payload.limit,
-                      state,
-                    );
-              sectionTruncated = Boolean(state.truncated);
-            }
-            if (signal?.aborted) return;
-            if (sectionTruncated || numericMatches.length >= remainingResults) truncated = true;
-            matches = makeWorkerMatches(prepared, numericMatches, payload.mode);
-          } else {
-            matches = Array.from(matcher!(doc, query) as Iterable<MatcherResult>);
+          const remaining = MAX_BOOK_SEARCH_RESULTS - bookMatches;
+          if (remaining <= 0) {
+            bookTruncated = true;
+            break;
           }
-          if (matches.length) {
-            const subitems = matches.map((match) => {
-              const baseCFI = section.cfi ?? CFI.fake.fromIndex(sectionIndex);
-              const toCFI = (range: Range) => CFI.joinIndir(baseCFI, CFI.fromRange(range));
-              return {
-                cfi: toCFI(match.range),
-                ...(match.subRanges?.length ? { cfis: match.subRanges.map(toCFI) } : {}),
-                excerpt: match.excerpt,
-              };
-            });
+          const outcome = await matchSectionText(
+            book,
+            section.idx,
+            section.text,
+            locale,
+            remaining,
+          );
+          if (signal?.aborted) return;
+          if (outcome.truncated) bookTruncated = true;
+          if (outcome.matches.length) {
+            const subitems = toSubitems(config.mode, section.idx, section.text, outcome.matches);
             bookMatches += subitems.length;
             totalMatches += subitems.length;
             yield {
               type: 'result',
               book,
-              result: {
-                index: sectionIndex,
-                label: tocProgress?.getProgress(sectionIndex, matches[0]!.range)?.label ?? '',
-                subitems,
-              },
+              result: { index: section.idx, label: section.label, subitems },
             };
           }
-          if (truncated) break;
+          if (bookTruncated) break;
+          await yieldSlice();
         }
-        if (signal?.aborted) return;
-        const sectionsCompleted = sectionIndex + 1;
-        const bookProgress = totalSections ? sectionsCompleted / totalSections : 1;
         yield {
           type: 'progress',
           book,
-          bookProgress,
-          progress: (bookIndex + bookProgress) / books.length,
-          sectionsCompleted,
+          bookProgress: 1,
+          progress: (bookIndex + 1) / books.length,
+          sectionsCompleted: totalSections,
           totalSections,
         };
-        if (performance.now() - sliceStarted >= 8) {
-          await new Promise((resolve) => setTimeout(resolve, 0));
-          sliceStarted = performance.now();
+      } else if (localSize == null) {
+        // A stale or incomplete index and no local file to rescan from: the
+        // db is a useless artifact that would cost a full database open on
+        // every future search, so delete it and skip.
+        if (indexDb) {
+          if (options.session) options.session.dropIndexDb(book);
+          else {
+            await indexDb.close().catch(() => {});
+            indexDb = null;
+          }
+          await appService.deleteDatabase(`${book.hash}/search.db`, 'Books').catch(() => {});
+        }
+        skippedBooks++;
+        yield { type: 'book-skipped', book, reason: 'unavailable' };
+        continue;
+      } else {
+        // Live path: extract text section by section, persist it to the
+        // per-book index, and match the same extracted text.
+        if (options.session) {
+          const cached = await options.session.open(book);
+          file = cached.file;
+          bookDoc = cached.bookDoc;
+        } else {
+          const [content, nativeFilePath] = await Promise.all([
+            appService.loadBookContent(book),
+            appService.resolveNativeBookFilePath(book),
+          ]);
+          file = content.file;
+          bookDoc = (
+            await new DocumentLoader(file, { nativeFilePath: nativeFilePath ?? undefined }).open()
+          ).book as SearchableBookDoc;
+        }
+        if (signal?.aborted) return;
+
+        const nav = await loadCurrentNav(appService, book);
+        if (nav) {
+          try {
+            hydrateBookNav(bookDoc, nav);
+          } catch {
+            // Keep the raw toc when hydration fails.
+          }
+        }
+        const usedNavHash = nav ? hashSearchToc(nav.toc) : '';
+        await loadTextWalker();
+        const acceptNode = makeAcceptNode(book);
+        const tocProgress = await createTOCProgress(bookDoc);
+        const totalSections = bookDoc.sections.length;
+        if (indexDb) {
+          await beginSearchIndex(indexDb, book, totalSections, usedNavHash).catch(() => {
+            indexDb = null;
+          });
+        }
+        let indexComplete = true;
+        if (indexDb) {
+          const doc = bookDoc;
+          const idToIndex = new Map(
+            doc.sections.map((section, index) => [String(section.id), index]),
+          );
+          const resolveSection = (href: string) => {
+            const id = doc.splitTOCHref?.(href)?.[0];
+            return id == null ? undefined : idToIndex.get(String(id));
+          };
+          const nodes = buildSearchIndexNodes(doc.toc, resolveSection, totalSections);
+          await writeSearchIndexNodes(indexDb, nodes).catch(() => {
+            indexComplete = false;
+          });
+        }
+
+        for (const [sectionIndex, section] of bookDoc.sections.entries()) {
+          if (signal?.aborted) return;
+          if (typeof section.createDocument === 'function') {
+            const doc = await section.createDocument();
+            if (signal?.aborted) return;
+            if (doc) {
+              const prepared = prepareSearchSection(
+                `${book.hash}:${book.updatedAt}:${sectionIndex}`,
+                doc,
+                acceptNode,
+              );
+              const sectionLocale = doc.body?.lang || doc.documentElement?.lang || locale;
+              const label = tocProgress?.getProgress(sectionIndex, null)?.label ?? '';
+              if (indexDb) {
+                await writeSearchIndexSection(indexDb, sectionIndex, label, prepared.text).catch(
+                  () => {
+                    indexComplete = false;
+                  },
+                );
+              }
+              const remaining = MAX_BOOK_SEARCH_RESULTS - bookMatches;
+              if (options.sectionIndex != null && options.sectionIndex !== sectionIndex) {
+                // Scoped search: this section is only extracted for the index.
+              } else if (remaining <= 0) {
+                bookTruncated = true;
+              } else {
+                const outcome = await matchSectionText(
+                  book,
+                  sectionIndex,
+                  prepared.text,
+                  sectionLocale,
+                  remaining,
+                );
+                if (signal?.aborted) return;
+                if (outcome.truncated) bookTruncated = true;
+                if (outcome.matches.length) {
+                  const subitems = toSubitems(
+                    config.mode,
+                    sectionIndex,
+                    prepared.text,
+                    outcome.matches,
+                  );
+                  bookMatches += subitems.length;
+                  totalMatches += subitems.length;
+                  yield {
+                    type: 'result',
+                    book,
+                    result: { index: sectionIndex, label, subitems },
+                  };
+                }
+              }
+            }
+          }
+          if (signal?.aborted) return;
+          const sectionsCompleted = sectionIndex + 1;
+          const bookProgress = totalSections ? sectionsCompleted / totalSections : 1;
+          yield {
+            type: 'progress',
+            book,
+            bookProgress,
+            progress: (bookIndex + bookProgress) / books.length,
+            sectionsCompleted,
+            totalSections,
+          };
+          // Keep indexing the remaining sections even after the result cap so
+          // the cache ends complete; only the matcher work is skipped.
+          await yieldSlice();
+        }
+
+        if (indexDb && indexComplete) {
+          await completeSearchIndex(indexDb).catch(() => {});
         }
       }
 
       searchedBooks++;
-      yield { type: 'book-completed', book, matchCount: bookMatches };
+      if (bookTruncated) truncated = true;
+      yield {
+        type: 'book-completed',
+        book,
+        matchCount: bookMatches,
+        ...(bookTruncated ? { truncated: true } : {}),
+      };
     } catch (error) {
       if (signal?.aborted) return;
       if (error instanceof BookFileNotFoundError) {
@@ -663,8 +838,11 @@ export async function* searchLibraryBooks(
       };
     } finally {
       if (!options.session) await closeBook(bookDoc, file);
+      if (ownsIndexDb && indexDb) {
+        await checkpointSearchIndex(indexDb);
+        await indexDb.close().catch(() => {});
+      }
     }
-    if (truncated) break;
   }
 
   if (!signal?.aborted) {
@@ -678,3 +856,76 @@ export async function* searchLibraryBooks(
     };
   }
 }
+
+/**
+ * Resolve a text-offset locator to a CFI by re-extracting the section with the
+ * same walker/filter the index was built with. Called lazily when the user
+ * opens a search result — searching itself never materializes Ranges.
+ * Falls back to the section CFI when the section text has drifted.
+ */
+export interface ResolvedSearchResultCfi {
+  cfi: string;
+  // nearby-words: one CFI per matched word run (>= 2); absent otherwise
+  cfis?: string[];
+}
+
+export const resolveSearchResultCfis = async (
+  session: LibrarySearchSession,
+  book: Book,
+  locators: SearchResultLocator[],
+): Promise<Array<ResolvedSearchResultCfi | null>> => {
+  const resolved: Array<ResolvedSearchResultCfi | null> = new Array(locators.length).fill(null);
+  let bookDoc: SearchableBookDoc;
+  try {
+    ({ bookDoc } = await session.open(book));
+    await loadTextWalker();
+  } catch {
+    return resolved;
+  }
+  const bySection = new Map<number, number[]>();
+  locators.forEach((locator, position) => {
+    const group = bySection.get(locator.section);
+    if (group) group.push(position);
+    else bySection.set(locator.section, [position]);
+  });
+  for (const [sectionIndex, positions] of bySection) {
+    try {
+      const section = bookDoc.sections?.[sectionIndex];
+      const baseCFI = section?.cfi ?? CFI.fake.fromIndex(sectionIndex);
+      const doc =
+        section && typeof section.createDocument === 'function'
+          ? await section.createDocument()
+          : null;
+      if (!doc) {
+        for (const position of positions) resolved[position] = { cfi: baseCFI };
+        continue;
+      }
+      const prepared = prepareSearchSection('resolve', doc, makeAcceptNode(book));
+      const rangeCfi = (start: number, end: number): string | null => {
+        if (end > prepared.text.length || start >= end) return null;
+        const from = findNodeOffset(prepared.cumulative, start, 'right');
+        const to = findNodeOffset(prepared.cumulative, end, 'left');
+        const range = prepared.makeRange(from.index, from.offset, to.index, to.offset);
+        return CFI.joinIndir(baseCFI, CFI.fromRange(range));
+      };
+      for (const position of positions) {
+        const locator = locators[position]!;
+        const cfi = rangeCfi(locator.start, locator.end) ?? baseCFI;
+        const runCfis = locator.runs
+          ?.map((run) => rangeCfi(run.start, run.end))
+          .filter((value): value is string => value != null);
+        resolved[position] = runCfis && runCfis.length >= 2 ? { cfi, cfis: runCfis } : { cfi };
+      }
+    } catch {
+      // Leave this section's entries null.
+    }
+  }
+  return resolved;
+};
+
+export const resolveSearchResultCfi = async (
+  session: LibrarySearchSession,
+  book: Book,
+  locator: SearchResultLocator,
+): Promise<string | null> =>
+  (await resolveSearchResultCfis(session, book, [locator]))[0]?.cfi ?? null;

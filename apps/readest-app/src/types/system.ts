@@ -239,4 +239,6 @@ export interface AppService {
     base: BaseDir,
     opts?: DatabaseOpts,
   ): Promise<DatabaseService>;
+  databaseExists(path: string, base: BaseDir): Promise<boolean>;
+  deleteDatabase(path: string, base: BaseDir): Promise<void>;
 }

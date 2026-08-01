@@ -65,6 +65,11 @@ export class WebDatabaseService implements DatabaseService {
   }
 
   async close(): Promise<void> {
+    // Turso is WAL-only with no auto-checkpoint and does not fold the WAL on
+    // close by itself; without this the main file never grows past its header
+    // and every written byte sits in the -wal sidecar, which file-level copy
+    // or sync of the containing directory can miss.
+    await this.execute('PRAGMA wal_checkpoint(TRUNCATE)').catch(() => {});
     await this.db.close();
   }
 }

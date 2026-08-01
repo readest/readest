@@ -44,6 +44,18 @@ export class ReedyDb {
     return next;
   }
 
+  /**
+   * Fold the WAL into reedy.db after ingest bursts. Turso is WAL-only with no
+   * auto-checkpoint, and this connection is long-lived (never closed), so
+   * without explicit checkpoints every written byte stays in reedy.db-wal.
+   * Enqueued so it lands after any in-flight writes.
+   */
+  checkpoint(): Promise<void> {
+    return this.enqueue(async () => {
+      await this.db.execute('PRAGMA wal_checkpoint(TRUNCATE)').catch(() => {});
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // book meta
   // ---------------------------------------------------------------------------

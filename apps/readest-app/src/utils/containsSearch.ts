@@ -11,7 +11,7 @@ interface FoldedText {
 
 const endsBeforeCombiningMark = (text: string, end: number) => /^\p{M}/u.test(text.slice(end));
 
-const foldValue = (
+export const foldValue = (
   value: string,
   { matchCase, matchDiacritics }: ContainsSearchOptions,
   locale?: string,

@@ -470,6 +470,8 @@ export type LibrarySearchConfig = Omit<BookSearchConfig, 'mode'> & {
   mode: SearchMode | 'fuzzy';
 };
 
+export type LibrarySearchTarget = 'books' | 'text';
+
 export interface SearchExcerpt {
   pre: string;
   match: string;
@@ -483,6 +485,28 @@ export interface BookSearchMatch {
   // nearby-words: per-word CFIs to highlight (>= 2); absent for single-span matches
   cfis?: string[];
   excerpt: SearchExcerpt;
+}
+
+// Text-offset locator into a section's extracted text. Library search results
+// carry locators instead of CFIs; the CFI is resolved lazily on click so
+// searching never needs live DOM Ranges (see librarySearchService).
+export interface SearchResultLocator {
+  section: number;
+  start: number;
+  end: number;
+  // fuzzy/nearby: matched sub-spans within [start, end)
+  runs?: { start: number; end: number }[];
+}
+
+export interface LibrarySearchMatch {
+  locator: SearchResultLocator;
+  excerpt: SearchExcerpt;
+}
+
+export interface LibrarySearchSectionResult {
+  index: number;
+  label: string;
+  subitems: LibrarySearchMatch[];
 }
 
 export interface BookSearchResult {

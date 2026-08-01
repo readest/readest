@@ -234,18 +234,24 @@ const createCollator = (locale, sensitivity) => {
   }
 };
 
+const CJK_SEGMENT_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+
 export const segmentNearbyWords = (text, locale) => {
   const words = [];
-  let wordIndex = 0;
+  let unitIndex = 0;
   for (const segment of createSegmenter(locale).segment(text)) {
     if (!segment.isWordLike) continue;
     words.push({
       text: segment.segment,
-      wordIndex,
+      wordIndex: unitIndex,
       start: segment.index,
       end: segment.index + segment.segment.length,
     });
-    wordIndex++;
+    // CJK tokenization is dictionary-dependent and mostly per-character, so
+    // token-counted distance is erratic. Count CJK segments by grapheme
+    // cluster instead: nearbyWords reads as characters for CJK text and
+    // stays one-per-word for other scripts.
+    unitIndex += CJK_SEGMENT_RE.test(segment.segment) ? Array.from(segment.segment).length : 1;
   }
   return words;
 };
@@ -273,11 +279,52 @@ export const findNearbyMatches = (
   if (limit <= 0) return [];
 
   const occurrences = [];
+  const termHasWordMatch = new Uint8Array(queryWords.length);
   for (const word of words) {
     const queryIndex = queryWords.findIndex(
       (queryWord) => collator.compare(queryWord, word.text) === 0,
     );
-    if (queryIndex >= 0) occurrences.push({ ...word, queryIndex });
+    if (queryIndex >= 0) {
+      termHasWordMatch[queryIndex] = 1;
+      occurrences.push({ ...word, queryIndex });
+    }
+  }
+  // Word segmenters split names and compounds (CJK especially: 黄仁勋 ->
+  // 黄/仁/勋, 训练芯片 -> ... 芯/片), so collator equality against segmented
+  // words can miss a term entirely. For terms with zero word-equality
+  // occurrences, fall back to substring positions mapped onto word indices,
+  // keeping the word-distance semantics of the sliding window.
+  if (words.length && termHasWordMatch.includes(0)) {
+    const fold = (value) =>
+      options.matchCase ? value : value.toLocaleLowerCase(options.locale ?? undefined);
+    const haystack = fold(text);
+    const wordIndexAt = (position) => {
+      let low = 0;
+      let high = words.length - 1;
+      while (low < high) {
+        const middle = (low + high + 1) >> 1;
+        if (words[middle].start <= position) low = middle;
+        else high = middle - 1;
+      }
+      return low;
+    };
+    for (const [queryIndex, queryWord] of queryWords.entries()) {
+      if (termHasWordMatch[queryIndex]) continue;
+      const needle = fold(queryWord);
+      if (!needle) continue;
+      let index = haystack.indexOf(needle);
+      while (index >= 0) {
+        occurrences.push({
+          text: queryWord,
+          wordIndex: words[wordIndexAt(index)].wordIndex,
+          start: index,
+          end: index + queryWord.length,
+          queryIndex,
+        });
+        index = haystack.indexOf(needle, index + 1);
+      }
+    }
+    occurrences.sort((a, b) => a.start - b.start || a.end - b.end);
   }
 
   const counts = new Uint32Array(queryWords.length);

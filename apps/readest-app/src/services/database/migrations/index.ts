@@ -51,6 +51,13 @@ const migrations: Record<SchemaType, MigrationEntry[]> = {
   // rows rather than UPDATE — Tantivy 0.25→0.26 has a known WASM-only
   // UPDATE regression (see fts-tests.ts:306 FIXME). MVP indexing is
   // write-once per book so this is naturally satisfied.
+  //
+  // AMENDED DIRECTION (2026-08-01, see
+  // .agents/plans/2026-08-01-reedy-book-context-foundation.md): chunk FTS is
+  // to be dropped — live-Tantivy inserts measured at ~5.3 s/book at ingest,
+  // and text search now comes from the per-book library-search schema below.
+  // Future Reedy schema keeps embeddings only, with chunks defined as
+  // locator ranges into search_sections.
   statistics: [
     {
       name: '2026061501_statistics_koreader_schema',
@@ -112,6 +119,48 @@ const migrations: Record<SchemaType, MigrationEntry[]> = {
 
         CREATE TABLE IF NOT EXISTS readest_stat_sync_state (
           key text PRIMARY KEY, value integer NOT NULL DEFAULT 0
+        );
+      `,
+    },
+  ],
+  // Per-book search index/cache: one search.db in each book's directory
+  // (beside cover.png), holding extracted section text so library full-text
+  // search never has to open the book file, unzip it, or parse section DOMs.
+  // `folded` is the case/diacritic-folded text used as a LIKE prefilter; NULL
+  // when folding leaves the text unchanged (typical for CJK) to halve storage.
+  // No Tantivy FTS index: benchmarked (bench/library-search-turso.bench.ts),
+  // at per-book granularity fan-out cost is dominated by DB open, so the
+  // index cannot beat LIKE (~2-3 ms vs ~1.6 ms per book) while costing 2.3x
+  // disk and 7x build time, token semantics cannot serve substring
+  // `contains`, and the ngram variant costs ~10x the text in disk.
+  'library-search': [
+    {
+      name: '2026080101_library_search_sections',
+      sql: `
+        CREATE TABLE IF NOT EXISTS search_meta (
+          id INTEGER PRIMARY KEY CHECK (id = 1),
+          updated_at INTEGER NOT NULL,
+          version INTEGER NOT NULL,
+          total_sections INTEGER NOT NULL,
+          complete INTEGER NOT NULL DEFAULT 0,
+          nav_hash TEXT NOT NULL DEFAULT ''
+        );
+
+        CREATE TABLE IF NOT EXISTS search_sections (
+          idx INTEGER PRIMARY KEY,
+          label TEXT NOT NULL DEFAULT '',
+          text TEXT NOT NULL,
+          folded TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS search_nodes (
+          node_id INTEGER PRIMARY KEY,
+          parent_id INTEGER,
+          ord INTEGER NOT NULL,
+          depth INTEGER NOT NULL,
+          label TEXT NOT NULL DEFAULT '',
+          section_start INTEGER NOT NULL,
+          section_end INTEGER NOT NULL
         );
       `,
     },
