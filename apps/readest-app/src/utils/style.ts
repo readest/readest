@@ -91,10 +91,11 @@ const getFontStyles = (
 ) => {
   const families = buildFontFamilyLists(serif, sansSerif, monospace, defaultCJKFont);
   const defaultFontFamily = defaultFont.toLowerCase() === 'serif' ? '--serif' : '--sans-serif';
-  // Font size is always user-controlled (#267); overrideFont only controls the
-  // family. Readium CSS uses this element set to normalize publisher body-copy
-  // sizes. Fixed layouts are unaffected: their renderer has no setStyles, so
-  // these styles are only ever injected into reflowable documents.
+  // Normalize publisher body-copy sizes (the Readium CSS element set) so the
+  // configured font size applies even when the book sets explicit sizes on its
+  // paragraphs (#5420). Opt-in via "Override Book Font" since it also flattens
+  // intentional sizing on these elements. Fixed layouts are unaffected: their
+  // renderer has no setStyles, so this is only injected into reflowable docs.
   const bodyFontSizeOverride = `
     p, li, div, pre, dd {
       font-size: max(1rem, var(--min-font-size, 8px)) !important;
@@ -155,7 +156,7 @@ const getFontStyles = (
     body *:not(pre, code, kbd, .code):not(pre *, code *, kbd *, .code *) {
       ${overrideFont ? 'font-family: revert !important;' : ''}
     }
-    ${bodyFontSizeOverride}
+    ${overrideFont ? bodyFontSizeOverride : ''}
   `;
   return fontStyles;
 };
