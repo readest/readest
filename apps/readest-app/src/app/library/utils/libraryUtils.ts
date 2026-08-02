@@ -155,6 +155,29 @@ export const expandBookshelfSelection = (ids: string[], items: (Book | BooksGrou
   return [...hashes];
 };
 
+/**
+ * The books a bulk Download should actually fetch (#5244): the selection
+ * expanded through {@link expandBookshelfSelection}, narrowed to the books that
+ * live in the cloud but not on this device. The predicate matches the per-book
+ * "Download Book" affordance — a feed book has no file to fetch (#5307), and a
+ * book that was never uploaded or is already local has nothing to pull down.
+ */
+export const selectDownloadableBooks = (
+  ids: string[],
+  items: (Book | BooksGroup)[],
+  books: Book[],
+): Book[] => {
+  const hashes = new Set(expandBookshelfSelection(ids, items));
+  return books.filter(
+    (book) =>
+      hashes.has(book.hash) &&
+      !book.deletedAt &&
+      !isFeedBook(book) &&
+      !!book.uploadedAt &&
+      !book.downloadedAt,
+  );
+};
+
 // Calibre custom column names and values, flattened for searching (#4811).
 const getCalibreColumnsText = (item: Book) =>
   (item.metadata?.calibreColumns ?? [])

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string) => key,
@@ -41,10 +41,13 @@ const baseProps = {
   onGroup: noop,
   onDetails: noop,
   onStatus: noop,
+  onDownload: noop,
   onSend: noop,
   onDelete: noop,
   onCancel: noop,
 };
+
+const getAction = (label: string) => screen.getByText(label).closest('button') as HTMLButtonElement;
 
 describe('SelectModeActions height reporting', () => {
   // Regression for #5175: the fixed bottom popup overlaps the last book in list
@@ -90,5 +93,43 @@ describe('SelectModeActions height reporting', () => {
     resizeCallback?.([], {} as ResizeObserver);
 
     expect(onHeightChange).toHaveBeenCalledWith(176);
+  });
+});
+
+// Bulk download (#5244): selecting a group is the only practical way to pull a
+// few hundred books onto a new device.
+describe('SelectModeActions download', () => {
+  it('queues the selection when the download action is tapped', () => {
+    const onDownload = vi.fn();
+    render(<SelectModeActions {...baseProps} canDownload onDownload={onDownload} />);
+
+    fireEvent.click(getAction('Download'));
+
+    expect(onDownload).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables the download action when nothing in the selection is uploaded', () => {
+    render(<SelectModeActions {...baseProps} canDownload={false} />);
+
+    expect(getAction('Download').className).toContain('btn-disabled');
+  });
+
+  it('places download right after details so it heads the wrapped row', () => {
+    render(<SelectModeActions {...baseProps} canDownload />);
+
+    const labels = Array.from(document.querySelectorAll('button')).map((button) =>
+      button.textContent?.trim(),
+    );
+    expect(labels).toEqual([
+      'Open',
+      'Group',
+      'Status',
+      'Details',
+      'Download',
+      'Send',
+      'Delete',
+      'Cancel',
+    ]);
+    expect(getAction('Download').className).toContain('max-[500px]:col-start-1');
   });
 });

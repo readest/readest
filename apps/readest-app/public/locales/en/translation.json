@@ -94,5 +94,9 @@
   "{{count}} books unavailable_one": "{{count}} book unavailable",
   "{{count}} books unavailable_other": "{{count}} books unavailable",
   "{{count}}+ results_one": "{{count}}+ result",
-  "{{count}}+ results_other": "{{count}}+ results"
+  "{{count}}+ results_other": "{{count}}+ results",
+  "Downloading {{count}} book(s)_one": "Downloading {{count}} book",
+  "Downloading {{count}} book(s)_other": "Downloading {{count}} books",
+  "Failed to download {{count}} book(s)_one": "Failed to download {{count}} book",
+  "Failed to download {{count}} book(s)_other": "Failed to download {{count}} books"
 }

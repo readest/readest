@@ -1951,5 +1951,7 @@
   "A machine-readable file that Readest can import back into any book.": "Readest がどの本にも再インポートできる機械可読ファイルです。",
   "Import highlights and notes exported from Readest or another reading app.": "Readest または他の読書アプリからエクスポートしたハイライトとメモをインポートします。",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Readest の注釈ファイル (.json)"
+  "Readest annotations file (.json)": "Readest の注釈ファイル (.json)",
+  "Downloading {{count}} book(s)_other": "{{count}} 冊の書籍をダウンロードしています",
+  "Failed to download {{count}} book(s)_other": "{{count}} 冊の書籍のダウンロードに失敗しました"
 }

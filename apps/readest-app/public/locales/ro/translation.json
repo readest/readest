@@ -2039,5 +2039,11 @@
   "A machine-readable file that Readest can import back into any book.": "Un fișier care poate fi citit de mașină și pe care Readest îl poate importa înapoi în orice carte.",
   "Import highlights and notes exported from Readest or another reading app.": "Importă evidențierile și notele exportate din Readest sau din altă aplicație de citit.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Fișier de adnotări Readest (.json)"
+  "Readest annotations file (.json)": "Fișier de adnotări Readest (.json)",
+  "Downloading {{count}} book(s)_one": "Se descarcă {{count}} carte",
+  "Downloading {{count}} book(s)_few": "Se descarcă {{count}} cărți",
+  "Downloading {{count}} book(s)_other": "Se descarcă {{count}} de cărți",
+  "Failed to download {{count}} book(s)_one": "Nu s-a putut descărca {{count}} carte",
+  "Failed to download {{count}} book(s)_few": "Nu s-au putut descărca {{count}} cărți",
+  "Failed to download {{count}} book(s)_other": "Nu s-au putut descărca {{count}} de cărți"
 }

@@ -2039,5 +2039,11 @@
   "A machine-readable file that Readest can import back into any book.": "Un archivo legible por máquina que Readest puede volver a importar en cualquier libro.",
   "Import highlights and notes exported from Readest or another reading app.": "Importa subrayados y notas exportados desde Readest u otra aplicación de lectura.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Archivo de anotaciones de Readest (.json)"
+  "Readest annotations file (.json)": "Archivo de anotaciones de Readest (.json)",
+  "Downloading {{count}} book(s)_one": "Descargando {{count}} libro",
+  "Downloading {{count}} book(s)_other": "Descargando {{count}} libros",
+  "Downloading {{count}} book(s)_many": "Descargando {{count}} libros",
+  "Failed to download {{count}} book(s)_one": "Error al descargar {{count}} libro",
+  "Failed to download {{count}} book(s)_other": "Error al descargar {{count}} libros",
+  "Failed to download {{count}} book(s)_many": "Error al descargar {{count}} libros"
 }

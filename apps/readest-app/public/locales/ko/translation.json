@@ -1951,5 +1951,7 @@
   "A machine-readable file that Readest can import back into any book.": "Readest가 어떤 책으로도 다시 가져올 수 있는 기계 판독형 파일입니다.",
   "Import highlights and notes exported from Readest or another reading app.": "Readest 또는 다른 읽기 앱에서 내보낸 하이라이트와 메모를 가져옵니다.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Readest 주석 파일 (.json)"
+  "Readest annotations file (.json)": "Readest 주석 파일 (.json)",
+  "Downloading {{count}} book(s)_other": "책 {{count}}권 다운로드 중",
+  "Failed to download {{count}} book(s)_other": "책 {{count}}권 다운로드 실패"
 }

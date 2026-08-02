@@ -1995,5 +1995,9 @@
   "A machine-readable file that Readest can import back into any book.": "En maskinläsbar fil som Readest kan importera tillbaka till vilken bok som helst.",
   "Import highlights and notes exported from Readest or another reading app.": "Importera markeringar och anteckningar som exporterats från Readest eller en annan läsapp.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Readest-anteckningsfil (.json)"
+  "Readest annotations file (.json)": "Readest-anteckningsfil (.json)",
+  "Downloading {{count}} book(s)_one": "Laddar ner {{count}} bok",
+  "Downloading {{count}} book(s)_other": "Laddar ner {{count}} böcker",
+  "Failed to download {{count}} book(s)_one": "Kunde inte ladda ner {{count}} bok",
+  "Failed to download {{count}} book(s)_other": "Kunde inte ladda ner {{count}} böcker"
 }

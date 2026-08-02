@@ -1951,5 +1951,7 @@
   "A machine-readable file that Readest can import back into any book.": "一种机器可读的文件，Readest 可以将其重新导入任意书籍。",
   "Import highlights and notes exported from Readest or another reading app.": "导入从 Readest 或其他阅读应用导出的高亮和笔记。",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Readest 标注文件 (.json)"
+  "Readest annotations file (.json)": "Readest 标注文件 (.json)",
+  "Downloading {{count}} book(s)_other": "正在下载 {{count}} 本书籍",
+  "Failed to download {{count}} book(s)_other": "{{count}} 本书籍下载失败"
 }

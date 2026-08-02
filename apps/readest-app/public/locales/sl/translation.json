@@ -2083,5 +2083,13 @@
   "A machine-readable file that Readest can import back into any book.": "Strojno berljiva datoteka, ki jo lahko Readest znova uvozi v katero koli knjigo.",
   "Import highlights and notes exported from Readest or another reading app.": "Uvozite označbe in opombe, izvožene iz Readesta ali druge bralne aplikacije.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Datoteka opomb Readest (.json)"
+  "Readest annotations file (.json)": "Datoteka opomb Readest (.json)",
+  "Downloading {{count}} book(s)_one": "Prenašanje {{count}} knjige",
+  "Downloading {{count}} book(s)_two": "Prenašanje {{count}} knjig",
+  "Downloading {{count}} book(s)_few": "Prenašanje {{count}} knjig",
+  "Downloading {{count}} book(s)_other": "Prenašanje {{count}} knjig",
+  "Failed to download {{count}} book(s)_one": "Prenos {{count}} knjige ni uspel",
+  "Failed to download {{count}} book(s)_two": "Prenos {{count}} knjig ni uspel",
+  "Failed to download {{count}} book(s)_few": "Prenos {{count}} knjig ni uspel",
+  "Failed to download {{count}} book(s)_other": "Prenos {{count}} knjig ni uspel"
 }

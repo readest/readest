@@ -2171,5 +2171,17 @@
   "A machine-readable file that Readest can import back into any book.": "ملف قابل للقراءة آليًا يمكن لريديست استيراده مرة أخرى إلى أي كتاب.",
   "Import highlights and notes exported from Readest or another reading app.": "استورد التظليلات والملاحظات المصدَّرة من ريديست أو من تطبيق قراءة آخر.",
   "Readest": "ريديست",
-  "Readest annotations file (.json)": "ملف تعليقات ريديست (.json)"
+  "Readest annotations file (.json)": "ملف تعليقات ريديست (.json)",
+  "Downloading {{count}} book(s)_one": "جارٍ تنزيل كتاب واحد",
+  "Downloading {{count}} book(s)_other": "جارٍ تنزيل {{count}} كتب",
+  "Downloading {{count}} book(s)_zero": "جارٍ تنزيل الكتب",
+  "Downloading {{count}} book(s)_two": "جارٍ تنزيل كتابين",
+  "Downloading {{count}} book(s)_few": "جارٍ تنزيل {{count}} كتب",
+  "Downloading {{count}} book(s)_many": "جارٍ تنزيل {{count}} كتاباً",
+  "Failed to download {{count}} book(s)_one": "فشل تنزيل كتاب واحد",
+  "Failed to download {{count}} book(s)_other": "فشل تنزيل {{count}} كتب",
+  "Failed to download {{count}} book(s)_zero": "فشل تنزيل الكتب",
+  "Failed to download {{count}} book(s)_two": "فشل تنزيل كتابين",
+  "Failed to download {{count}} book(s)_few": "فشل تنزيل {{count}} كتب",
+  "Failed to download {{count}} book(s)_many": "فشل تنزيل {{count}} كتاباً"
 }

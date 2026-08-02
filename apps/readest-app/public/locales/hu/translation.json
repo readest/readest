@@ -1995,5 +1995,9 @@
   "A machine-readable file that Readest can import back into any book.": "Géppel olvasható fájl, amelyet a Readest bármelyik könyvbe visszaimportálhat.",
   "Import highlights and notes exported from Readest or another reading app.": "Importálja a Readestből vagy másik olvasóalkalmazásból exportált kiemeléseket és jegyzeteket.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Readest jegyzetfájl (.json)"
+  "Readest annotations file (.json)": "Readest jegyzetfájl (.json)",
+  "Downloading {{count}} book(s)_one": "{{count}} könyv letöltése",
+  "Downloading {{count}} book(s)_other": "{{count}} könyv letöltése",
+  "Failed to download {{count}} book(s)_one": "{{count}} könyv letöltése sikertelen",
+  "Failed to download {{count}} book(s)_other": "{{count}} könyv letöltése sikertelen"
 }

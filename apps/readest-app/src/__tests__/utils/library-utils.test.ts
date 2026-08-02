@@ -14,6 +14,7 @@ import {
   findGroupById,
   getGroupDisplayName,
   expandBookshelfSelection,
+  selectDownloadableBooks,
   buildGroupNameUpdatedAt,
   resolveCurrentShelfBooks,
   withTimeRemainingLast,
@@ -1198,6 +1199,84 @@ describe('expandBookshelfSelection', () => {
     // it was a hash from another view), the helper leaves it alone rather
     // than silently dropping it.
     expect(expandBookshelfSelection(['ghost-hash'], [])).toEqual(['ghost-hash']);
+  });
+});
+
+describe('selectDownloadableBooks', () => {
+  const createMockGroup = (overrides: Partial<BooksGroup> = {}): BooksGroup => ({
+    id: 'test-group',
+    name: 'Test Group',
+    displayName: 'Test Display Name',
+    books: [],
+    updatedAt: Date.now(),
+    ...overrides,
+  });
+
+  // Bulk download (#5244): a selected group stands in for every book it shows,
+  // so a 300-book folder can be pulled down in one action.
+  it('expands a group id into its cloud-only books', () => {
+    const cloudOnly = createMockBook({ hash: 'cloud-only', uploadedAt: 100 });
+    const nested = createMockBook({ hash: 'nested', groupName: 'MyDir/sub', uploadedAt: 100 });
+    const items: (Book | BooksGroup)[] = [
+      createMockGroup({ id: 'group-mydir', name: 'MyDir', books: [cloudOnly, nested] }),
+    ];
+
+    expect(selectDownloadableBooks(['group-mydir'], items, [cloudOnly, nested])).toEqual([
+      cloudOnly,
+      nested,
+    ]);
+  });
+
+  it('skips books that are already on this device', () => {
+    const local = createMockBook({ hash: 'local', uploadedAt: 100, downloadedAt: 200 });
+    const cloudOnly = createMockBook({ hash: 'cloud-only', uploadedAt: 100 });
+    const items: (Book | BooksGroup)[] = [local, cloudOnly];
+
+    expect(selectDownloadableBooks(['local', 'cloud-only'], items, [local, cloudOnly])).toEqual([
+      cloudOnly,
+    ]);
+  });
+
+  it('skips books that were never uploaded', () => {
+    const localOnly = createMockBook({ hash: 'local-only', downloadedAt: 200 });
+    const items: (Book | BooksGroup)[] = [localOnly];
+
+    expect(selectDownloadableBooks(['local-only'], items, [localOnly])).toEqual([]);
+  });
+
+  it('skips feed books, which have no file to fetch', () => {
+    const feed = createMockBook({
+      hash: 'feed',
+      uploadedAt: 100,
+      url: 'feed://%7B%22feedUrl%22%3A%22https%3A%2F%2Fexample.com%2Frss%22%7D',
+    });
+    const items: (Book | BooksGroup)[] = [feed];
+
+    expect(selectDownloadableBooks(['feed'], items, [feed])).toEqual([]);
+  });
+
+  it('skips soft-deleted books', () => {
+    const gone = createMockBook({ hash: 'gone', uploadedAt: 100, deletedAt: 300 });
+    const items: (Book | BooksGroup)[] = [gone];
+
+    expect(selectDownloadableBooks(['gone'], items, [gone])).toEqual([]);
+  });
+
+  it('deduplicates when a book and its parent group are both selected', () => {
+    const bookA = createMockBook({ hash: 'book-a', uploadedAt: 100 });
+    const bookB = createMockBook({ hash: 'book-b', uploadedAt: 100 });
+    const items: (Book | BooksGroup)[] = [
+      createMockGroup({ id: 'group-1', books: [bookA, bookB] }),
+    ];
+
+    expect(selectDownloadableBooks(['book-a', 'group-1'], items, [bookA, bookB])).toEqual([
+      bookA,
+      bookB,
+    ]);
+  });
+
+  it('returns an empty array when nothing is selected', () => {
+    expect(selectDownloadableBooks([], [], [])).toEqual([]);
   });
 });
 

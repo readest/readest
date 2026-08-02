@@ -1995,5 +1995,9 @@
   "A machine-readable file that Readest can import back into any book.": "Readest எந்தப் புத்தகத்திற்கும் மீண்டும் இறக்குமதி செய்யக்கூடிய இயந்திரம் படிக்கக்கூடிய கோப்பு.",
   "Import highlights and notes exported from Readest or another reading app.": "Readest அல்லது வேறு வாசிப்பு செயலியிலிருந்து ஏற்றுமதி செய்யப்பட்ட சிறப்பிப்புகளையும் குறிப்புகளையும் இறக்குமதி செய்யவும்.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Readest குறிப்புக் கோப்பு (.json)"
+  "Readest annotations file (.json)": "Readest குறிப்புக் கோப்பு (.json)",
+  "Downloading {{count}} book(s)_one": "{{count}} புத்தகம் பதிவிறக்கப்படுகிறது",
+  "Downloading {{count}} book(s)_other": "{{count}} புத்தகங்கள் பதிவிறக்கப்படுகின்றன",
+  "Failed to download {{count}} book(s)_one": "{{count}} புத்தகத்தை பதிவிறக்க முடியவில்லை",
+  "Failed to download {{count}} book(s)_other": "{{count}} புத்தகங்களை பதிவிறக்க முடியவில்லை"
 }

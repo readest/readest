@@ -1951,5 +1951,7 @@
   "A machine-readable file that Readest can import back into any book.": "ไฟล์ที่เครื่องอ่านได้ ซึ่ง Readest สามารถนำเข้ากลับไปยังหนังสือเล่มใดก็ได้",
   "Import highlights and notes exported from Readest or another reading app.": "นำเข้าไฮไลต์และบันทึกที่ส่งออกจาก Readest หรือแอปอ่านหนังสืออื่น",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "ไฟล์คำอธิบายประกอบของ Readest (.json)"
+  "Readest annotations file (.json)": "ไฟล์คำอธิบายประกอบของ Readest (.json)",
+  "Downloading {{count}} book(s)_other": "กำลังดาวน์โหลดหนังสือ {{count}} เล่ม",
+  "Failed to download {{count}} book(s)_other": "ดาวน์โหลดหนังสือ {{count}} เล่มไม่สำเร็จ"
 }

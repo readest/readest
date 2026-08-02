@@ -1995,5 +1995,9 @@
   "A machine-readable file that Readest can import back into any book.": "Ένα αρχείο αναγνώσιμο από μηχανή, το οποίο το Readest μπορεί να εισαγάγει ξανά σε οποιοδήποτε βιβλίο.",
   "Import highlights and notes exported from Readest or another reading app.": "Εισαγωγή επισημάνσεων και σημειώσεων που εξήχθησαν από το Readest ή από άλλη εφαρμογή ανάγνωσης.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Αρχείο σχολίων Readest (.json)"
+  "Readest annotations file (.json)": "Αρχείο σχολίων Readest (.json)",
+  "Downloading {{count}} book(s)_one": "Λήψη {{count}} βιβλίου",
+  "Downloading {{count}} book(s)_other": "Λήψη {{count}} βιβλίων",
+  "Failed to download {{count}} book(s)_one": "Αποτυχία λήψης {{count}} βιβλίου",
+  "Failed to download {{count}} book(s)_other": "Αποτυχία λήψης {{count}} βιβλίων"
 }

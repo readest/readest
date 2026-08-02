@@ -1995,5 +1995,9 @@
   "A machine-readable file that Readest can import back into any book.": "একটি মেশিন-পঠনযোগ্য ফাইল যা রিডেস্ট যেকোনো বইয়ে আবার ইম্পোর্ট করতে পারে।",
   "Import highlights and notes exported from Readest or another reading app.": "রিডেস্ট বা অন্য কোনো পড়ার অ্যাপ থেকে এক্সপোর্ট করা হাইলাইট ও নোট ইম্পোর্ট করুন।",
   "Readest": "রিডেস্ট",
-  "Readest annotations file (.json)": "রিডেস্ট টীকা ফাইল (.json)"
+  "Readest annotations file (.json)": "রিডেস্ট টীকা ফাইল (.json)",
+  "Downloading {{count}} book(s)_one": "{{count}} টি বই ডাউনলোড হচ্ছে",
+  "Downloading {{count}} book(s)_other": "{{count}} টি বই ডাউনলোড হচ্ছে",
+  "Failed to download {{count}} book(s)_one": "{{count}} টি বই ডাউনলোড ব্যর্থ",
+  "Failed to download {{count}} book(s)_other": "{{count}} টি বই ডাউনলোড ব্যর্থ"
 }

@@ -16,6 +16,10 @@ import { runFileBookDownload, runFileBookUpload } from '@/services/sync/file/run
 interface BookDownloadOptions {
   redownload?: boolean;
   queued?: boolean;
+  // Bulk callers (the select-mode Download action, #5244) report one summary
+  // toast for the whole batch instead of one per book — a group can hold
+  // hundreds.
+  silent?: boolean;
 }
 
 /**
@@ -80,7 +84,7 @@ export const useBookTransferActions = (
 
   const handleBookDownload = useCallback(
     async (book: Book, downloadOptions: BookDownloadOptions = {}) => {
-      const { redownload = false, queued = false } = downloadOptions;
+      const { redownload = false, queued = false, silent = false } = downloadOptions;
       const settingsNow = useSettingsStore.getState().settings;
       const backends = getActiveFileSyncBackends(settingsNow);
       const readest = isReadestCloudEnabled(settingsNow);
@@ -90,13 +94,15 @@ export const useBookTransferActions = (
       if (useFileBackend) {
         const ok = await runFileBookDownload(envConfig, book);
         if (ok) await updateBook(envConfig, book);
-        eventDispatcher.dispatch('toast', {
-          type: ok ? 'info' : 'error',
-          timeout: 2000,
-          message: ok
-            ? _('Book downloaded: {{title}}', { title: book.title })
-            : _('Failed to download book: {{title}}', { title: book.title }),
-        });
+        if (!silent) {
+          eventDispatcher.dispatch('toast', {
+            type: ok ? 'info' : 'error',
+            timeout: 2000,
+            message: ok
+              ? _('Book downloaded: {{title}}', { title: book.title })
+              : _('Failed to download book: {{title}}', { title: book.title }),
+          });
+        }
         return ok;
       }
 
@@ -106,21 +112,25 @@ export const useBookTransferActions = (
             updateBookTransferProgress(book.hash, progress);
           });
           await updateBook(envConfig, book);
-          eventDispatcher.dispatch('toast', {
-            type: 'info',
-            timeout: 2000,
-            message: _('Book downloaded: {{title}}', {
-              title: book.title,
-            }),
-          });
+          if (!silent) {
+            eventDispatcher.dispatch('toast', {
+              type: 'info',
+              timeout: 2000,
+              message: _('Book downloaded: {{title}}', {
+                title: book.title,
+              }),
+            });
+          }
           return true;
         } catch {
-          eventDispatcher.dispatch('toast', {
-            message: _('Failed to download book: {{title}}', {
-              title: book.title,
-            }),
-            type: 'error',
-          });
+          if (!silent) {
+            eventDispatcher.dispatch('toast', {
+              message: _('Failed to download book: {{title}}', {
+                title: book.title,
+              }),
+              type: 'error',
+            });
+          }
           return false;
         }
       }
@@ -128,13 +138,15 @@ export const useBookTransferActions = (
       // Use transfer queue for normal downloads - priority 1 for manual downloads
       const transferId = transferManager.queueDownload(book, 1);
       if (transferId) {
-        eventDispatcher.dispatch('toast', {
-          type: 'info',
-          timeout: 2000,
-          message: _('Download queued: {{title}}', {
-            title: book.title,
-          }),
-        });
+        if (!silent) {
+          eventDispatcher.dispatch('toast', {
+            type: 'info',
+            timeout: 2000,
+            message: _('Download queued: {{title}}', {
+              title: book.title,
+            }),
+          });
+        }
         return true;
       }
       return false;

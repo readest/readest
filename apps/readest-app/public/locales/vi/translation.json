@@ -1951,5 +1951,7 @@
   "A machine-readable file that Readest can import back into any book.": "Tệp máy đọc được mà Readest có thể nhập lại vào bất kỳ cuốn sách nào.",
   "Import highlights and notes exported from Readest or another reading app.": "Nhập các đoạn tô sáng và ghi chú đã xuất từ Readest hoặc ứng dụng đọc khác.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Tệp chú thích của Readest (.json)"
+  "Readest annotations file (.json)": "Tệp chú thích của Readest (.json)",
+  "Downloading {{count}} book(s)_other": "Đang tải xuống {{count}} cuốn sách",
+  "Failed to download {{count}} book(s)_other": "Không thể tải xuống {{count}} cuốn sách"
 }

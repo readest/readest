@@ -1995,5 +1995,9 @@
   "A machine-readable file that Readest can import back into any book.": "فایلی ماشین‌خوان که Readest می‌تواند دوباره در هر کتابی وارد کند.",
   "Import highlights and notes exported from Readest or another reading app.": "هایلایت‌ها و یادداشت‌های خروجی‌گرفته‌شده از Readest یا برنامهٔ مطالعهٔ دیگر را وارد کنید.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "فایل یادداشت‌های Readest ‏(.json)"
+  "Readest annotations file (.json)": "فایل یادداشت‌های Readest ‏(.json)",
+  "Downloading {{count}} book(s)_one": "در حال دانلود {{count}} کتاب",
+  "Downloading {{count}} book(s)_other": "در حال دانلود {{count}} کتاب",
+  "Failed to download {{count}} book(s)_one": "دانلود {{count}} کتاب ناموفق بود",
+  "Failed to download {{count}} book(s)_other": "دانلود {{count}} کتاب ناموفق بود"
 }

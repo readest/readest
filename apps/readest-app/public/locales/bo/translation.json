@@ -1951,5 +1951,7 @@
   "A machine-readable file that Readest can import back into any book.": "Readest ཡིས་དེབ་གང་རུང་ནང་ཡང་བསྐྱར་ནང་འདྲེན་བྱེད་ཐུབ་པའི་འཕྲུལ་ཆས་ཀློག་རུང་བའི་ཡིག་ཆ་ཞིག",
   "Import highlights and notes exported from Readest or another reading app.": "Readest སམ་ཀློག་པའི་མཉེན་ཆས་གཞན་ནས་ཕྱིར་འདོན་བྱས་པའི་གསལ་སྟོན་དང་མཆན་འགྲེལ་ནང་འདྲེན་བྱེད།",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Readest མཆན་འགྲེལ་ཡིག་ཆ (.json)"
+  "Readest annotations file (.json)": "Readest མཆན་འགྲེལ་ཡིག་ཆ (.json)",
+  "Downloading {{count}} book(s)_other": "དཔེ་དེབ་ {{count}} ཕབ་ལེན་བྱེད་བཞིན་པ།",
+  "Failed to download {{count}} book(s)_other": "དཔེ་དེབ་ {{count}} ཕབ་ལེན་བྱས་མ་ཐུབ།"
 }

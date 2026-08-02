@@ -1995,5 +1995,9 @@
   "A machine-readable file that Readest can import back into any book.": "Readest හට ඕනෑම පොතකට නැවත ආයාත කළ හැකි යන්ත්‍ර-කියවිය හැකි ගොනුවකි.",
   "Import highlights and notes exported from Readest or another reading app.": "Readest වෙතින් හෝ වෙනත් කියවීමේ යෙදුමකින් නිර්යාත කළ උද්දීපන සහ සටහන් ආයාත කරන්න.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Readest සටහන් ගොනුව (.json)"
+  "Readest annotations file (.json)": "Readest සටහන් ගොනුව (.json)",
+  "Downloading {{count}} book(s)_one": "{{count}} පොත බාගනිමින්",
+  "Downloading {{count}} book(s)_other": "{{count}} පොත් බාගනිමින්",
+  "Failed to download {{count}} book(s)_one": "{{count}} පොත බාගැනීමට අසමත්",
+  "Failed to download {{count}} book(s)_other": "{{count}} පොත් බාගැනීමට අසමත්"
 }

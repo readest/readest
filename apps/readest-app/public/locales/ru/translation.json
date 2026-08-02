@@ -2083,5 +2083,13 @@
   "A machine-readable file that Readest can import back into any book.": "Машиночитаемый файл, который Readest может импортировать обратно в любую книгу.",
   "Import highlights and notes exported from Readest or another reading app.": "Импортируйте выделения и заметки, экспортированные из Readest или другого приложения для чтения.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Файл аннотаций Readest (.json)"
+  "Readest annotations file (.json)": "Файл аннотаций Readest (.json)",
+  "Downloading {{count}} book(s)_one": "Скачивание {{count}} книги",
+  "Downloading {{count}} book(s)_other": "Скачивание {{count}} книг",
+  "Downloading {{count}} book(s)_few": "Скачивание {{count}} книг",
+  "Downloading {{count}} book(s)_many": "Скачивание {{count}} книг",
+  "Failed to download {{count}} book(s)_one": "Не удалось скачать {{count}} книгу",
+  "Failed to download {{count}} book(s)_other": "Не удалось скачать {{count}} книг",
+  "Failed to download {{count}} book(s)_few": "Не удалось скачать {{count}} книг",
+  "Failed to download {{count}} book(s)_many": "Не удалось скачать {{count}} книг"
 }

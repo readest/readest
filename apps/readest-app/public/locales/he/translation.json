@@ -2039,5 +2039,11 @@
   "A machine-readable file that Readest can import back into any book.": "קובץ קריא למכונה ש-Readest יכולה לייבא בחזרה לכל ספר.",
   "Import highlights and notes exported from Readest or another reading app.": "ייבא הדגשות והערות שיוצאו מ-Readest או מאפליקציית קריאה אחרת.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "קובץ הערות של Readest ‏(.json)"
+  "Readest annotations file (.json)": "קובץ הערות של Readest ‏(.json)",
+  "Downloading {{count}} book(s)_one": "מוריד ספר אחד",
+  "Downloading {{count}} book(s)_two": "מוריד {{count}} ספרים",
+  "Downloading {{count}} book(s)_other": "מוריד {{count}} ספרים",
+  "Failed to download {{count}} book(s)_one": "הורדת ספר אחד נכשלה",
+  "Failed to download {{count}} book(s)_two": "הורדת {{count}} ספרים נכשלה",
+  "Failed to download {{count}} book(s)_other": "הורדת {{count}} ספרים נכשלה"
 }

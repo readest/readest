@@ -1995,5 +1995,9 @@
   "A machine-readable file that Readest can import back into any book.": "Readest istalgan kitobga qayta import qila oladigan mashina oʻqiy oladigan fayl.",
   "Import highlights and notes exported from Readest or another reading app.": "Readest yoki boshqa oʻqish ilovasidan eksport qilingan ajratmalar va eslatmalarni import qiling.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Readest izohlar fayli (.json)"
+  "Readest annotations file (.json)": "Readest izohlar fayli (.json)",
+  "Downloading {{count}} book(s)_one": "{{count}} ta kitob yuklab olinmoqda",
+  "Downloading {{count}} book(s)_other": "{{count}} ta kitob yuklab olinmoqda",
+  "Failed to download {{count}} book(s)_one": "{{count}} ta kitobni yuklab boʻlmadi",
+  "Failed to download {{count}} book(s)_other": "{{count}} ta kitobni yuklab boʻlmadi"
 }

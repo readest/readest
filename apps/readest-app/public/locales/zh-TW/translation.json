@@ -1951,5 +1951,7 @@
   "A machine-readable file that Readest can import back into any book.": "一種機器可讀的檔案，Readest 可將其重新匯入任何書籍。",
   "Import highlights and notes exported from Readest or another reading app.": "匯入從 Readest 或其他閱讀應用程式匯出的螢光標記與筆記。",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Readest 註解檔案 (.json)"
+  "Readest annotations file (.json)": "Readest 註解檔案 (.json)",
+  "Downloading {{count}} book(s)_other": "正在下載 {{count}} 本書籍",
+  "Failed to download {{count}} book(s)_other": "{{count}} 本書籍下載失敗"
 }

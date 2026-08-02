@@ -1951,5 +1951,7 @@
   "A machine-readable file that Readest can import back into any book.": "Fail boleh baca mesin yang boleh diimport semula oleh Readest ke dalam mana-mana buku.",
   "Import highlights and notes exported from Readest or another reading app.": "Import sorotan dan nota yang dieksport daripada Readest atau apl bacaan lain.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Fail anotasi Readest (.json)"
+  "Readest annotations file (.json)": "Fail anotasi Readest (.json)",
+  "Downloading {{count}} book(s)_other": "Memuat turun {{count}} buku",
+  "Failed to download {{count}} book(s)_other": "Gagal memuat turun {{count}} buku"
 }

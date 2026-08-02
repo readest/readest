@@ -1995,5 +1995,9 @@
   "A machine-readable file that Readest can import back into any book.": "Readest'in herhangi bir kitaba geri aktarabileceği, makine tarafından okunabilir bir dosya.",
   "Import highlights and notes exported from Readest or another reading app.": "Readest'ten veya başka bir okuma uygulamasından dışa aktarılan vurguları ve notları içe aktarın.",
   "Readest": "Readest",
-  "Readest annotations file (.json)": "Readest açıklama dosyası (.json)"
+  "Readest annotations file (.json)": "Readest açıklama dosyası (.json)",
+  "Downloading {{count}} book(s)_one": "{{count}} kitap indiriliyor",
+  "Downloading {{count}} book(s)_other": "{{count}} kitap indiriliyor",
+  "Failed to download {{count}} book(s)_one": "{{count}} kitap indirilemedi",
+  "Failed to download {{count}} book(s)_other": "{{count}} kitap indirilemedi"
 }

@@ -45,6 +45,7 @@ import {
   resolveEffectivePrimarySort,
   resolveEffectiveSecondarySort,
   resolveCurrentShelfBooks,
+  selectDownloadableBooks,
   selectRecentShelfBooks,
   withReadingStatus,
   withTimeRemainingLast,
@@ -82,7 +83,7 @@ interface BookshelfProps {
   handleImportBooks: (anchor: HTMLElement) => void;
   handleBookDownload: (
     book: Book,
-    options?: { redownload?: boolean; queued?: boolean },
+    options?: { redownload?: boolean; queued?: boolean; silent?: boolean },
   ) => Promise<boolean>;
   handleBookUpload: (book: Book, syncBooks?: boolean) => Promise<boolean>;
   handleBookDelete: (book: Book, syncBooks?: boolean) => Promise<boolean>;
@@ -704,6 +705,46 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   );
 
   const selectedBooks = getSelectedBooks();
+
+  // Bulk download (#5244): a selected group stands in for every book it shows,
+  // which is how a 300-book folder gets onto a new device in one action. Only
+  // worth computing while the select-mode bar is up.
+  const downloadableBooks = isSelectMode
+    ? selectDownloadableBooks(selectedBooks, sortedBookshelfItems, filteredBooks)
+    : [];
+
+  const downloadSelectedBooks = async () => {
+    const books = downloadableBooks;
+    if (books.length === 0) return;
+    handleSetSelectMode(false);
+    // One summary up front rather than a toast per book: the Readest Cloud
+    // path returns as soon as each book is queued, but a file backend
+    // actually fetches them, and either way the user needs immediate feedback
+    // that the batch started.
+    eventDispatcher.dispatch('toast', {
+      type: 'info',
+      timeout: 2000,
+      message: _('Downloading {{count}} book(s)', { count: books.length }),
+    });
+    // Batched like the bulk delete path so a file backend isn't hit with
+    // hundreds of simultaneous fetches.
+    const concurrency = 20;
+    let failed = 0;
+    for (let i = 0; i < books.length; i += concurrency) {
+      const batch = books.slice(i, i + concurrency);
+      const results = await Promise.all(
+        batch.map((book) => handleBookDownload(book, { queued: true, silent: true })),
+      );
+      failed += results.filter((ok) => !ok).length;
+    }
+    if (failed > 0) {
+      eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Failed to download {{count}} book(s)', { count: failed }),
+      });
+    }
+  };
+
   const isGridMode = viewMode === 'grid';
   const hasItems = sortedBookshelfItems.length > 0;
   // In grid mode the Import-Books "+" tile is rendered as an extra grid cell
@@ -970,10 +1011,12 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             !!appService &&
             (appService.isIOSApp || appService.isAndroidApp || appService.isMacOSApp)
           }
+          canDownload={downloadableBooks.length > 0}
           onOpen={openSelectedBooks}
           onGroup={groupSelectedBooks}
           onDetails={openBookDetails}
           onStatus={showStatusSelection}
+          onDownload={downloadSelectedBooks}
           onSend={sendSelectedBook}
           onDelete={deleteSelectedBooks}
           onCancel={() => handleSetSelectMode(false)}
