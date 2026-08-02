@@ -36,6 +36,8 @@
 - [koplugin local_present sweep](koplugin-local-present-sweep-noop.md) UNFIXED; OR-merge defeats stale sweep; fix = rm readest_library.sqlite3
 - [10k library breaks /sync pull](sync-pull-10k-worker-1102.md) MERGED #5364; CF 1102; paged books pull synced_at ASC + tie-completion; old clients wedge till app update
 ## Build, Testing & CI
+- [Turbopack dev stale chunk phantom](turbopack-dev-stale-chunk-phantom.md) reload does NOT help; fiber String(f.type) to verify; rm -rf .next + restart
+- [Screenshot baselines unregenerable](vitest-screenshot-baseline-relative-path.md) FIXED in #5351; relative resolveScreenshotPath -> server.fs denies write; `--update` was a silent no-op; allowWrite is NOT it
 - #4906 nightly sharun hang pre-seed + timeouts
 - [format:check gate](verify-format-check-gate.md) · [Worktree rebase submodule drift](worktree-rebase-submodule-drift.md)
 - Android CDP: [e2e lane](android-cdp-e2e-lane.md); [profiling](cdp-android-webview-profiling.md); [double-tap](android-e2e-doubletap-cdp-gesture.md)
@@ -65,6 +67,9 @@
 - [0.11.20 iOS .txt/.md share sheet lost](ios-txt-share-sheet-tauri211-fileassoc.md) MERGED #5415; tauri-cli 2.11 fileAssociations clobber hand-tuned CFBundleDocumentTypes; device-verify pending
 - [#5397 Photos save crash](ios-photos-add-usage-description-5397.md) MERGED #5405, device-verify pending; missing `NSPhotoLibraryAddUsageDescription`; "Save to Photos" is WebKit's menu not our code; key also un-hides "Save Image" in our share sheet
 ## Reader Features & UI
+- [TTS listening counts as reading stats](tts-listening-counts-as-reading-stats.md) committed bc1d8d5e5 on feat/tts-reading-stats, NOT pushed; TtsStatsRecorder in TTSSessionManager; background/CarPlay device-verify PENDING
+- [#5398/#3870 annotations hub](annotations-hub-5398-3870.md) MERGED #5448; shared filterBooknotes/facets; toolbar = icon row + filter dropdown (must merge injected menuClassName); header search icon is per-tab contextual
+- [Mobile sheet virtuoso first-paint blank](mobile-sheet-virtuoso-first-paint-blank.md) PRE-EXISTING, no issue filed; blank until first touch
 - [PR #5389 library full-text search review](pr-5389-library-search-review.md) uncapped contains mode blocks; real-text bench 130MB/s; plan in .agents/plans
 - Resolved/stable feature memories → [Reader Feature Fixes](reader-feature-fixes.md) (PDF viewer, selection, dict, toolbar, RSVP, widgets, misc)
 - [#5406 TTS vs proofread doc sync](tts-proofread-doc-sync-5406.md) MERGED #5416; createDocument bypasses transformTarget 'data' transforms so auto-advanced sections spoke raw text; TTS docs now replay the display pipeline; same PR gives MD books a transformTarget + loadContent srcdoc path (createDocument stays raw or TTS double-transforms)
@@ -81,6 +86,8 @@
 - [#5414 Edge silence untrimmed on iOS](edge-tts-baked-silence-ios-native-5414.md) MERGED #5417, device-verify pending; Edge MP3s = ~1s baked silence (0.18 head + 0.8 tail), native AVPlayer path never trimmed it; TAIL-only fix via `forwardPlaybackEndTime`; macOS NOT affected; also fixed #5326 `scaleGap` Math.round zeroing both gaps
 - [#5178 auto-hide cursor](autohide-cursor-5178.md) MERGED #5404; dormant foliate CursorAutohider + attr on view NOT renderer; `autohideCursor` top-level SystemSettings (not whitelisted = per-device); shipped default-on
 - [#5342 footer pills go black](footer-pill-vs-blend-5342.md) MERGED #5347; blend composites the container as a group; pill bg and `mix-blend-difference` cannot coexist
+- [#5351 popup restyle](popup-filter-containing-block-5351.md) MERGED; ancestor `filter` = containing block + stacking context; new `theme-dark:` variant; `text-foreground` is an undefined token
+- [#5303 negative top margin lifts header into notch](header-notch-negative-margin-5303.md) MERGED #5447, VERIFIED Xiaomi 13; band bottom==content top, 16px floor; z-10 ONLY when lifted else it covers desktop toolbar (CI e2e)
 - [#5394 Ambient Mode (light sensor)](ambient-mode-light-sensor-5394.md) MERGED; `emitOrQueue` is one-shot-only (streams = unbounded queue), chain `void` async subscription toggles, themeStore vs `getThemeCode` defaults must match
 - Proofread: [#4700](proofread-enhancements-4700.md); [#4781 CRDT](proofread-per-book-crdt-sync.md); #4859 edit toggle; [#5277 fonts lost](proofread-rule-change-font-loss-5277.md) MERGED #5345; recreateViewer double-mount + non-idempotent transformStylesheet
 - [OPDS fixes](opds-fixes.md) #4479 #4502 #4503 #4749 #4782 #4272 Basic-400s TLS#4988 Calibre-authors#5183 http-selflinks#5300
