@@ -7,6 +7,36 @@ const coep = (path: string) =>
     'Cross-Origin-Embedder-Policy',
   );
 
+describe('middleware CORS preflight', () => {
+  const preflight = (requestedHeaders?: string) =>
+    middleware(
+      new NextRequest('https://web.readest.com/api/sync', {
+        method: 'OPTIONS',
+        headers: {
+          origin: 'http://tauri.localhost',
+          'access-control-request-method': 'POST',
+          ...(requestedHeaders && { 'access-control-request-headers': requestedHeaders }),
+        },
+      }),
+    );
+
+  it('echoes the requested headers instead of a wildcard so the preflight cache covers Authorization', () => {
+    // The Fetch spec excludes Authorization from wildcard matching in the
+    // preflight cache, so `Allow-Headers: *` forces a fresh OPTIONS round trip
+    // before every authenticated API call despite Max-Age (readest-web was
+    // serving ~4M preflights/day because of this).
+    const res = preflight('authorization,content-type');
+    expect(res.headers.get('Access-Control-Allow-Headers')).toBe('authorization,content-type');
+    expect(res.headers.get('Vary')).toContain('Access-Control-Request-Headers');
+    expect(res.headers.get('Access-Control-Max-Age')).toBe('86400');
+  });
+
+  it('allows Authorization and Content-Type when the preflight requests no headers', () => {
+    const res = preflight();
+    expect(res.headers.get('Access-Control-Allow-Headers')).toBe('Authorization, Content-Type');
+  });
+});
+
 describe('middleware cross-origin isolation headers', () => {
   it('serves COEP credentialless on the /s share landing so the R2 cover <img> loads', () => {
     // The cover redirects to a cross-origin R2 URL that can't carry a CORP

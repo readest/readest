@@ -11,7 +11,6 @@ const allowedOrigins = [
 
 const corsOptions = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': '*',
   'Access-Control-Max-Age': '86400',
 };
 
@@ -23,8 +22,15 @@ export function middleware(request: NextRequest) {
     const isAllowedOrigin = allowedOrigins.includes(origin);
 
     if (request.method === 'OPTIONS') {
+      // Echo the requested headers rather than answering `*`: the Fetch spec
+      // excludes `Authorization` from wildcard matching in the browser's
+      // preflight cache, so a wildcard answer forces a fresh OPTIONS round
+      // trip before every authenticated API call despite Max-Age.
+      const requestedHeaders = request.headers.get('access-control-request-headers');
       const preflightHeaders = new Headers({
         ...corsOptions,
+        'Access-Control-Allow-Headers': requestedHeaders || 'Authorization, Content-Type',
+        Vary: 'Origin, Access-Control-Request-Headers',
         ...(isAllowedOrigin && { 'Access-Control-Allow-Origin': origin }),
       });
 
