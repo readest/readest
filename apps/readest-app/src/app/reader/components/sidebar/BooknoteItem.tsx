@@ -151,8 +151,9 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     );
     if (existingIndex === -1) return;
     const existing = booknotes[existingIndex]!;
-    const transition = decideNoteBubbleTransition(existing.note, editorDraft);
-    const updated: BookNote = { ...existing, note: editorDraft, updatedAt: Date.now() };
+    const nextNote = editorDraft.trim() ? editorDraft : '';
+    const transition = decideNoteBubbleTransition(existing.note, nextNote);
+    const updated: BookNote = { ...existing, note: nextNote, updatedAt: Date.now() };
     booknotes[existingIndex] = updated;
     applyNoteBubbleTransition(getViewsById(bookKey.split('-')[0]!), updated, transition);
     const updatedConfig = updateBooknotes(bookKey, booknotes);

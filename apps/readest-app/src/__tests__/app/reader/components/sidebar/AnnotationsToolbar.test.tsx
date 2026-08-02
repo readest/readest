@@ -1,3 +1,4 @@
+import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -15,12 +16,18 @@ vi.mock('@/hooks/useResponsiveSize', () => ({
 
 vi.mock('@/components/Dropdown', () => ({
   __esModule: true,
-  default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  default: ({ children }: { children: React.ReactElement<{ menuClassName?: string }> }) => (
+    <div>{React.cloneElement(children, { menuClassName: 'injected-menu-class' })}</div>
+  ),
 }));
 
 vi.mock('@/components/Menu', () => ({
   __esModule: true,
-  default: ({ children }: { children: React.ReactNode }) => <div role='menu'>{children}</div>,
+  default: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <div role='menu' className={className}>
+      {children}
+    </div>
+  ),
 }));
 
 vi.mock('@/components/MenuItem', () => ({
@@ -169,5 +176,12 @@ describe('AnnotationsToolbar', () => {
     expect((screen.getByRole('button', { name: 'Reset' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
+  });
+
+  it('merges the Dropdown-injected menuClassName into the menu and the filter panel', () => {
+    const { container } = render(<AnnotationsToolbar {...defaultProps} />);
+    expect(screen.getByRole('menu').className).toContain('injected-menu-class');
+    const filterPanel = container.querySelector('.annotations-filter-panel');
+    expect(filterPanel?.className).toContain('injected-menu-class');
   });
 });

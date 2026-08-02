@@ -121,6 +121,22 @@ describe('BooknoteItem', () => {
     );
   });
 
+  it('whitespace-only draft saves an empty note', () => {
+    const item = makeItem();
+    mocks.state.booknotes = [item];
+    renderItem(item, true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add Note' }));
+    const editor = screen.getByRole('textbox');
+    fireEvent.change(editor, { target: { value: '   ' } });
+    fireEvent.click(screen.getByText('Save'));
+
+    expect(mocks.updateBooknotes).toHaveBeenCalledTimes(1);
+    const saved = mocks.state.booknotes[0] as BookNote;
+    expect(saved.note).toBe('');
+    expect(mocks.addAnnotation).not.toHaveBeenCalled();
+  });
+
   it('clearing a note inline keeps the highlight and removes the bubble', () => {
     const item = makeItem({ note: 'old note' });
     mocks.state.booknotes = [item];

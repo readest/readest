@@ -21,6 +21,7 @@ import MenuItem from '@/components/MenuItem';
 interface AnnotationsMenuProps {
   bookKey: string;
   canClear: boolean;
+  menuClassName?: string;
   setIsDropdownOpen?: (isOpen: boolean) => void;
 }
 
@@ -29,6 +30,7 @@ interface AnnotationsMenuProps {
 const AnnotationsMenu: React.FC<AnnotationsMenuProps> = ({
   bookKey,
   canClear,
+  menuClassName,
   setIsDropdownOpen,
 }) => {
   const _ = useTranslation();
@@ -38,7 +40,7 @@ const AnnotationsMenu: React.FC<AnnotationsMenuProps> = ({
   };
   return (
     <Menu
-      className='annotations-menu dropdown-content z-20 shadow-2xl'
+      className={clsx('annotations-menu dropdown-content z-20 shadow-2xl', menuClassName)}
       onCancel={() => setIsDropdownOpen?.(false)}
     >
       <MenuItem
@@ -71,6 +73,7 @@ interface AnnotationsFilterPanelProps {
   onToggleColor: (color: HighlightColor) => void;
   onToggleStyle: (style: HighlightStyle) => void;
   onResetFilters: () => void;
+  menuClassName?: string;
   setIsDropdownOpen?: (isOpen: boolean) => void;
 }
 
@@ -85,6 +88,7 @@ const AnnotationsFilterPanel: React.FC<AnnotationsFilterPanelProps> = ({
   onToggleColor,
   onToggleStyle,
   onResetFilters,
+  menuClassName,
 }) => {
   const _ = useTranslation();
   const { settings } = useSettingsStore();
@@ -103,7 +107,10 @@ const AnnotationsFilterPanel: React.FC<AnnotationsFilterPanelProps> = ({
 
   return (
     <div
-      className='annotations-filter-panel dropdown-content eink-bordered bg-base-100 z-20 min-w-56 max-w-72 rounded-lg p-3 shadow-2xl'
+      className={clsx(
+        'annotations-filter-panel dropdown-content eink-bordered bg-base-100 z-20 min-w-56 max-w-72 rounded-lg p-3 shadow-2xl',
+        menuClassName,
+      )}
       role='group'
       aria-label={_('Filter Annotations')}
     >
