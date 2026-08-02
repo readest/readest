@@ -426,3 +426,35 @@ export function collectAnnotationFacets(notes: BookNote[]): AnnotationFacets {
   const styles = ALL_HIGHLIGHT_STYLES.filter((style) => stylesSeen.has(style));
   return { colors, styles };
 }
+
+export type NoteBubbleTransition = 'add' | 'remove' | 'none';
+
+/**
+ * Decide how an inline note edit changes the note-bubble overlay. The bubble
+ * exists iff the note body is non-empty (trim-based, matching
+ * removeBookNoteOverlays): appearing text adds it, cleared text removes it
+ * (the highlight itself stays, per the unified-annotation rule), and a pure
+ * content change needs no redraw because the bubble renders no text.
+ */
+export function decideNoteBubbleTransition(before: string, after: string): NoteBubbleTransition {
+  const had = before.trim().length > 0;
+  const has = after.trim().length > 0;
+  if (!had && has) return 'add';
+  if (had && !has) return 'remove';
+  return 'none';
+}
+
+/**
+ * Apply a note-bubble transition to every rendered view of the book,
+ * mirroring the overlay calls in Notebook.handleSaveNote.
+ */
+export function applyNoteBubbleTransition(
+  views: FoliateView[],
+  note: BookNote,
+  transition: NoteBubbleTransition,
+): void {
+  if (transition === 'none') return;
+  for (const view of views) {
+    view.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` }, transition === 'remove');
+  }
+}

@@ -1,7 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { collectAnnotationFacets, filterBooknotes } from '@/app/reader/utils/annotatorUtil';
+import {
+  applyNoteBubbleTransition,
+  collectAnnotationFacets,
+  decideNoteBubbleTransition,
+  filterBooknotes,
+} from '@/app/reader/utils/annotatorUtil';
 import { BookNote } from '@/types/book';
+import { FoliateView, NOTE_PREFIX } from '@/types/view';
 
 let seq = 0;
 const makeNote = (overrides: Partial<BookNote> = {}): BookNote => ({
@@ -139,5 +145,58 @@ describe('collectAnnotationFacets', () => {
       makeNote({ color: undefined, style: undefined }),
     ];
     expect(collectAnnotationFacets(notes)).toEqual({ colors: [], styles: [] });
+  });
+});
+
+describe('decideNoteBubbleTransition', () => {
+  it('adds the bubble when a note appears', () => {
+    expect(decideNoteBubbleTransition('', 'new note')).toBe('add');
+  });
+
+  it('removes the bubble when the note is cleared', () => {
+    expect(decideNoteBubbleTransition('old note', '')).toBe('remove');
+    expect(decideNoteBubbleTransition('old note', '   ')).toBe('remove');
+  });
+
+  it('does nothing when the note text merely changes', () => {
+    expect(decideNoteBubbleTransition('old', 'new')).toBe('none');
+  });
+
+  it('does nothing when there is still no note', () => {
+    expect(decideNoteBubbleTransition('', '')).toBe('none');
+    expect(decideNoteBubbleTransition('  ', '')).toBe('none');
+  });
+});
+
+describe('applyNoteBubbleTransition', () => {
+  const note = makeNote({ note: 'hello' });
+  const makeView = () => ({ addAnnotation: vi.fn() }) as unknown as FoliateView;
+
+  it('draws the bubble overlay on every view for add', () => {
+    const views = [makeView(), makeView()];
+    applyNoteBubbleTransition(views, note, 'add');
+    for (const view of views) {
+      expect(view.addAnnotation).toHaveBeenCalledTimes(1);
+      expect(view.addAnnotation).toHaveBeenCalledWith(
+        { ...note, value: `${NOTE_PREFIX}${note.cfi}` },
+        false,
+      );
+    }
+  });
+
+  it('removes the bubble overlay on every view for remove', () => {
+    const view = makeView();
+    applyNoteBubbleTransition([view], note, 'remove');
+    expect(view.addAnnotation).toHaveBeenCalledTimes(1);
+    expect(view.addAnnotation).toHaveBeenCalledWith(
+      { ...note, value: `${NOTE_PREFIX}${note.cfi}` },
+      true,
+    );
+  });
+
+  it('does not touch the views for none', () => {
+    const view = makeView();
+    applyNoteBubbleTransition([view], note, 'none');
+    expect(view.addAnnotation).not.toHaveBeenCalled();
   });
 });
