@@ -1979,5 +1979,10 @@
   "Babylon dictionaries are single .bgl files.": "A Babylon szótárak önálló .bgl fájlok.",
   "Cover Image": "Borítókép",
   "Public cover image URL (empty if unavailable)": "Nyilvános borítókép-URL (üres, ha nem érhető el)",
-  "Include Book Cover": "Könyvborító hozzáadása"
+  "Include Book Cover": "Könyvborító hozzáadása",
+  "Watched Folders": "Figyelt mappák",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "A Readest indításkor vagy előtérbe kerüléskor újra átvizsgálja ezeket a mappákat, és importálja az új könyveket. Minden mappa megtartja azt a szerkezetet, amellyel importálták.",
+  "No folders are watched.": "Nincs figyelt mappa.",
+  "Flat": "Csoportok nélkül",
+  "Stop watching": "Figyelés leállítása"
 }

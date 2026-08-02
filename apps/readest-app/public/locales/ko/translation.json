@@ -1937,5 +1937,10 @@
   "Babylon dictionaries are single .bgl files.": "Babylon 사전은 단일 .bgl 파일입니다.",
   "Cover Image": "표지 이미지",
   "Public cover image URL (empty if unavailable)": "공개 표지 이미지 URL (사용할 수 없으면 비어 있음)",
-  "Include Book Cover": "책 표지 포함"
+  "Include Book Cover": "책 표지 포함",
+  "Watched Folders": "감시 중인 폴더",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest는 열리거나 포그라운드로 돌아올 때 이 폴더들을 다시 검색하여 새 책을 가져옵니다. 각 폴더는 가져올 때의 구조를 유지합니다.",
+  "No folders are watched.": "감시 중인 폴더가 없습니다.",
+  "Flat": "그룹 없음",
+  "Stop watching": "감시 중지"
 }

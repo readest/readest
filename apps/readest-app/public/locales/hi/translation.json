@@ -1979,5 +1979,10 @@
   "Babylon dictionaries are single .bgl files.": "Babylon शब्दकोश एकल .bgl फ़ाइलें होती हैं।",
   "Cover Image": "कवर छवि",
   "Public cover image URL (empty if unavailable)": "सार्वजनिक कवर छवि URL (अनुपलब्ध होने पर खाली)",
-  "Include Book Cover": "पुस्तक कवर शामिल करें"
+  "Include Book Cover": "पुस्तक कवर शामिल करें",
+  "Watched Folders": "निगरानी वाले फ़ोल्डर",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest खुलने पर या अग्रभूमि में लौटने पर इन फ़ोल्डरों को दोबारा स्कैन करता है और नई किताबें आयात करता है। हर फ़ोल्डर वही संरचना बनाए रखता है जिसके साथ उसे आयात किया गया था।",
+  "No folders are watched.": "कोई फ़ोल्डर निगरानी में नहीं है।",
+  "Flat": "बिना समूह",
+  "Stop watching": "निगरानी बंद करें"
 }

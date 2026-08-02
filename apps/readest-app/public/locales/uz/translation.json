@@ -1979,5 +1979,10 @@
   "Babylon dictionaries are single .bgl files.": "Babylon lugʻatlari yakka .bgl fayllardan iborat.",
   "Cover Image": "Muqova rasmi",
   "Public cover image URL (empty if unavailable)": "Muqova rasmining ochiq URL manzili (mavjud bo'lmasa bo'sh)",
-  "Include Book Cover": "Kitob muqovasini qo'shish"
+  "Include Book Cover": "Kitob muqovasini qo'shish",
+  "Watched Folders": "Kuzatilayotgan papkalar",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest ochilganda yoki old planga qaytganda bu papkalarni qayta skanerlaydi va yangi kitoblarni import qiladi. Har bir papka import qilingan tuzilmasini saqlab qoladi.",
+  "No folders are watched.": "Kuzatilayotgan papkalar yo'q.",
+  "Flat": "Guruhsiz",
+  "Stop watching": "Kuzatishni to'xtatish"
 }

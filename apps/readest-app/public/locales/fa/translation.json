@@ -1979,5 +1979,10 @@
   "Babylon dictionaries are single .bgl files.": "واژه‌نامه‌های Babylon فایل‌های ‎.bgl‎ منفرد هستند.",
   "Cover Image": "تصویر جلد",
   "Public cover image URL (empty if unavailable)": "نشانی اینترنتی عمومی تصویر جلد (در صورت در دسترس نبودن، خالی)",
-  "Include Book Cover": "گنجاندن جلد کتاب"
+  "Include Book Cover": "گنجاندن جلد کتاب",
+  "Watched Folders": "پوشه‌های زیر نظر",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest هنگام باز شدن یا بازگشت به پیش‌زمینه این پوشه‌ها را دوباره بررسی می‌کند و کتاب‌های جدید را وارد می‌کند. هر پوشه ساختاری را که با آن وارد شده است حفظ می‌کند.",
+  "No folders are watched.": "هیچ پوشه‌ای زیر نظر نیست.",
+  "Flat": "بدون گروه",
+  "Stop watching": "توقف پایش"
 }

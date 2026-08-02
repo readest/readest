@@ -1432,6 +1432,18 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
    * watched before this list existed isn't in it and therefore keeps the
    * dialog's default, "Create groups from subfolders".
    */
+  /**
+   * The watched folders as the Import-from-Folder dialog's management sub-page
+   * wants them. Derived from `settings` (not the store snapshot) so removing or
+   * re-pointing a folder re-renders the list immediately.
+   */
+  const watchedFolders = (settings.autoImportFolders ?? []).map((path) => ({
+    path,
+    flatten: (settings.autoImportFlattenFolders ?? []).some(
+      (r) => normalizeRoot(r) === normalizeRoot(path),
+    ),
+  }));
+
   const isFlattenedAutoImportFolder = (directory: string): boolean => {
     const target = normalizeRoot(directory);
     if (!target) return false;
@@ -1490,10 +1502,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const flattenPresent = existingFlatten.some((r) => normalizeRoot(r) === target);
     const flattenWanted = enabled && flatten;
     if (enabled === present && flattenWanted === flattenPresent) return;
+    // Append only when the folder isn't listed yet: re-adding an existing entry
+    // would move it to the end and shuffle the Watched Folders list under the
+    // user's finger every time they flip a row's structure.
     const without = (roots: string[]) => roots.filter((r) => normalizeRoot(r) !== target);
-    const next = enabled ? [...without(existing), directory] : without(existing);
+    const next = enabled ? (present ? existing : [...existing, directory]) : without(existing);
     const nextFlatten = flattenWanted
-      ? [...without(existingFlatten), directory]
+      ? flattenPresent
+        ? existingFlatten
+        : [...existingFlatten, directory]
       : without(existingFlatten);
     const nextSettings = {
       ...liveSettings,
@@ -2003,6 +2020,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           initialReadInPlace={importFromFolderState.initialReadInPlace}
           initialAutoImport={importFromFolderState.initialAutoImport}
           isRegisteredExternalRoot={isRegisteredExternalRoot}
+          watchedFolders={watchedFolders}
+          onUnwatchFolder={(path) => void setAutoImportFolder(path, false, false)}
+          onSetWatchedFolderFlatten={(path, flatten) =>
+            void setAutoImportFolder(path, true, flatten)
+          }
           onPickDirectory={pickImportDirectory}
           onCancel={() => setImportFromFolderState(null)}
           onConfirm={(result) => {

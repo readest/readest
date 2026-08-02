@@ -1937,5 +1937,10 @@
   "Babylon dictionaries are single .bgl files.": "พจนานุกรม Babylon เป็นไฟล์ .bgl ไฟล์เดียว",
   "Cover Image": "ภาพปก",
   "Public cover image URL (empty if unavailable)": "URL สาธารณะของภาพปก (ว่างหากไม่พร้อมใช้งาน)",
-  "Include Book Cover": "รวมปกหนังสือ"
+  "Include Book Cover": "รวมปกหนังสือ",
+  "Watched Folders": "โฟลเดอร์ที่เฝ้าดู",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest จะสแกนโฟลเดอร์เหล่านี้อีกครั้งเมื่อเปิดหรือกลับมาทำงานเบื้องหน้า และนำเข้าหนังสือใหม่ทั้งหมด แต่ละโฟลเดอร์จะคงโครงสร้างที่ใช้ตอนนำเข้าไว้",
+  "No folders are watched.": "ไม่มีโฟลเดอร์ที่เฝ้าดู",
+  "Flat": "ไม่จัดกลุ่ม",
+  "Stop watching": "หยุดเฝ้าดู"
 }

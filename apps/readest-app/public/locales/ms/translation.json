@@ -1937,5 +1937,10 @@
   "Babylon dictionaries are single .bgl files.": "Kamus Babylon ialah fail .bgl tunggal.",
   "Cover Image": "Imej Kulit",
   "Public cover image URL (empty if unavailable)": "URL awam imej kulit (kosong jika tiada)",
-  "Include Book Cover": "Sertakan Kulit Buku"
+  "Include Book Cover": "Sertakan Kulit Buku",
+  "Watched Folders": "Folder yang dipantau",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest mengimbas semula folder ini apabila dibuka atau kembali ke latar depan dan mengimport buku baharu. Setiap folder mengekalkan struktur semasa ia diimport.",
+  "No folders are watched.": "Tiada folder dipantau.",
+  "Flat": "Rata",
+  "Stop watching": "Berhenti memantau"
 }

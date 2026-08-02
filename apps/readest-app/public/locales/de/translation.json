@@ -1979,5 +1979,10 @@
   "Babylon dictionaries are single .bgl files.": "Babylon-Wörterbücher sind einzelne .bgl-Dateien.",
   "Cover Image": "Coverbild",
   "Public cover image URL (empty if unavailable)": "Öffentliche Cover-Bild-URL (leer, falls nicht verfügbar)",
-  "Include Book Cover": "Buchcover einschließen"
+  "Include Book Cover": "Buchcover einschließen",
+  "Watched Folders": "Überwachte Ordner",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest durchsucht diese Ordner erneut, wenn es geöffnet wird oder in den Vordergrund zurückkehrt, und importiert alle neuen Bücher. Jeder Ordner behält die Struktur, mit der er importiert wurde.",
+  "No folders are watched.": "Es werden keine Ordner überwacht.",
+  "Flat": "Flach",
+  "Stop watching": "Nicht mehr überwachen"
 }

@@ -1979,5 +1979,10 @@
   "Babylon dictionaries are single .bgl files.": "Babylon sözlükleri tek bir .bgl dosyasından oluşur.",
   "Cover Image": "Kapak Görseli",
   "Public cover image URL (empty if unavailable)": "Herkese açık kapak görseli URL'si (kullanılamıyorsa boş)",
-  "Include Book Cover": "Kitap Kapağını Dahil Et"
+  "Include Book Cover": "Kitap Kapağını Dahil Et",
+  "Watched Folders": "İzlenen klasörler",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest açıldığında veya ön plana döndüğünde bu klasörleri yeniden tarar ve yeni kitapları içe aktarır. Her klasör, içe aktarıldığı yapıyı korur.",
+  "No folders are watched.": "İzlenen klasör yok.",
+  "Flat": "Düz",
+  "Stop watching": "İzlemeyi bırak"
 }

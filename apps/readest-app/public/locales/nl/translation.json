@@ -1979,5 +1979,10 @@
   "Babylon dictionaries are single .bgl files.": "Babylon-woordenboeken zijn losse .bgl-bestanden.",
   "Cover Image": "Omslagafbeelding",
   "Public cover image URL (empty if unavailable)": "Openbare URL van omslagafbeelding (leeg indien niet beschikbaar)",
-  "Include Book Cover": "Boekomslag opnemen"
+  "Include Book Cover": "Boekomslag opnemen",
+  "Watched Folders": "Bewaakte mappen",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest scant deze mappen opnieuw wanneer het wordt geopend of terugkeert naar de voorgrond en importeert nieuwe boeken. Elke map behoudt de structuur waarmee deze is geïmporteerd.",
+  "No folders are watched.": "Er worden geen mappen bewaakt.",
+  "Flat": "Plat",
+  "Stop watching": "Niet meer bewaken"
 }

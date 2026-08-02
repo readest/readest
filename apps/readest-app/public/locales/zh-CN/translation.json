@@ -1937,5 +1937,10 @@
   "Babylon dictionaries are single .bgl files.": "Babylon 词典是单个 .bgl 文件。",
   "Cover Image": "封面图片",
   "Public cover image URL (empty if unavailable)": "公开封面图片 URL（不可用时为空）",
-  "Include Book Cover": "包含书籍封面"
+  "Include Book Cover": "包含书籍封面",
+  "Watched Folders": "监视的文件夹",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest 在打开或返回前台时会重新扫描这些文件夹并导入新书。每个文件夹保持导入时选择的结构。",
+  "No folders are watched.": "没有监视的文件夹。",
+  "Flat": "平铺",
+  "Stop watching": "停止监视"
 }

@@ -1979,5 +1979,10 @@
   "Babylon dictionaries are single .bgl files.": "Babylon-ordböcker är enskilda .bgl-filer.",
   "Cover Image": "Omslagsbild",
   "Public cover image URL (empty if unavailable)": "Offentlig URL till omslagsbild (tom om otillgänglig)",
-  "Include Book Cover": "Inkludera bokomslag"
+  "Include Book Cover": "Inkludera bokomslag",
+  "Watched Folders": "Bevakade mappar",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest genomsöker dessa mappar igen när appen öppnas eller återgår till förgrunden och importerar nya böcker. Varje mapp behåller strukturen den importerades med.",
+  "No folders are watched.": "Inga mappar bevakas.",
+  "Flat": "Platt",
+  "Stop watching": "Sluta bevaka"
 }

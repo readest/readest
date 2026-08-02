@@ -1937,5 +1937,10 @@
   "Babylon dictionaries are single .bgl files.": "Kamus Babylon berupa berkas .bgl tunggal.",
   "Cover Image": "Gambar Sampul",
   "Public cover image URL (empty if unavailable)": "URL publik gambar sampul (kosong jika tidak tersedia)",
-  "Include Book Cover": "Sertakan Sampul Buku"
+  "Include Book Cover": "Sertakan Sampul Buku",
+  "Watched Folders": "Folder yang dipantau",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest memindai ulang folder ini saat dibuka atau kembali ke latar depan dan mengimpor buku baru. Setiap folder mempertahankan struktur saat diimpor.",
+  "No folders are watched.": "Tidak ada folder yang dipantau.",
+  "Flat": "Datar",
+  "Stop watching": "Berhenti memantau"
 }

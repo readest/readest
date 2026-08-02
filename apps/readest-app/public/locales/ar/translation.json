@@ -2147,5 +2147,10 @@
   "Babylon dictionaries are single .bgl files.": "قواميس Babylon هي ملفات ‎.bgl‎ مفردة.",
   "Cover Image": "صورة الغلاف",
   "Public cover image URL (empty if unavailable)": "رابط عام لصورة الغلاف (فارغ إذا لم يكن متاحًا)",
-  "Include Book Cover": "تضمين غلاف الكتاب"
+  "Include Book Cover": "تضمين غلاف الكتاب",
+  "Watched Folders": "المجلدات المراقَبة",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "يعيد Readest فحص هذه المجلدات عند فتحه أو عودته إلى المقدمة ويستورد أي كتب جديدة. يحتفظ كل مجلد بالبنية التي استُورد بها.",
+  "No folders are watched.": "لا توجد مجلدات مراقَبة.",
+  "Flat": "بدون مجموعات",
+  "Stop watching": "إيقاف المراقبة"
 }

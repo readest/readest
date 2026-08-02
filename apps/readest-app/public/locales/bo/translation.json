@@ -1937,5 +1937,10 @@
   "Babylon dictionaries are single .bgl files.": "Babylon ཚིག་མཛོད་ནི་ .bgl ཡིག་ཆ་རྐྱང་པ་རེད།",
   "Cover Image": "མདུན་ཤོག་པར་རིས།",
   "Public cover image URL (empty if unavailable)": "སྤྱི་ཡོངས་མདུན་ཤོག་པར་རིས་ཀྱི་ URL （མེད་ན་སྟོང་པ།）",
-  "Include Book Cover": "དཔེ་དེབ་ཀྱི་མདུན་ཤོག་ཚུད་པ།"
+  "Include Book Cover": "དཔེ་དེབ་ཀྱི་མདུན་ཤོག་ཚུད་པ།",
+  "Watched Folders": "ལྟ་རྟོག་བྱེད་བཞིན་པའི་ཡིག་སྣོད།",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest ཁ་ཕྱེ་བའམ་མདུན་ངོས་སུ་ལོག་སྐབས་ཡིག་སྣོད་འདི་དག་བསྐྱར་དུ་ཞིབ་བཤེར་བྱས་ཏེ་དེབ་གསར་པ་རྣམས་ནང་འདྲེན་བྱེད། ཡིག་སྣོད་རེ་རེས་ནང་འདྲེན་སྐབས་ཀྱི་སྒྲོམ་གཞི་འཛིན།",
+  "No folders are watched.": "ལྟ་རྟོག་བྱེད་བཞིན་པའི་ཡིག་སྣོད་མེད།",
+  "Flat": "ཚོགས་པ་མེད་པ།",
+  "Stop watching": "ལྟ་རྟོག་མཚམས་འཇོག"
 }

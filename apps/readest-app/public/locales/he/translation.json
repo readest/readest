@@ -2021,5 +2021,10 @@
   "Babylon dictionaries are single .bgl files.": "מילוני Babylon הם קבצי ‎.bgl‎ בודדים.",
   "Cover Image": "תמונת כריכה",
   "Public cover image URL (empty if unavailable)": "כתובת URL ציבורית של תמונת הכריכה (ריק אם אינה זמינה)",
-  "Include Book Cover": "כלול כריכת ספר"
+  "Include Book Cover": "כלול כריכת ספר",
+  "Watched Folders": "תיקיות במעקב",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest סורק מחדש את התיקיות האלה כשהוא נפתח או חוזר לחזית ומייבא ספרים חדשים. כל תיקייה שומרת על המבנה שאיתו יובאה.",
+  "No folders are watched.": "אין תיקיות במעקב.",
+  "Flat": "ללא קבוצות",
+  "Stop watching": "הפסק מעקב"
 }

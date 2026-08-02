@@ -1937,5 +1937,10 @@
   "Babylon dictionaries are single .bgl files.": "Babylon 辞書は単一の .bgl ファイルです。",
   "Cover Image": "カバー画像",
   "Public cover image URL (empty if unavailable)": "公開カバー画像URL（利用できない場合は空）",
-  "Include Book Cover": "ブックカバーを含める"
+  "Include Book Cover": "ブックカバーを含める",
+  "Watched Folders": "監視中のフォルダ",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest は開いたときやフォアグラウンドに戻ったときにこれらのフォルダを再スキャンし、新しい本をインポートします。各フォルダはインポート時の構造を保ちます。",
+  "No folders are watched.": "監視中のフォルダはありません。",
+  "Flat": "フラット",
+  "Stop watching": "監視を解除"
 }

@@ -2021,5 +2021,10 @@
   "Babylon dictionaries are single .bgl files.": "Dicționarele Babylon sunt fișiere .bgl individuale.",
   "Cover Image": "Imagine copertă",
   "Public cover image URL (empty if unavailable)": "URL public al imaginii copertei (gol dacă nu este disponibil)",
-  "Include Book Cover": "Include coperta cărții"
+  "Include Book Cover": "Include coperta cărții",
+  "Watched Folders": "Foldere monitorizate",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest scanează din nou aceste foldere la deschidere sau la revenirea în prim-plan și importă cărțile noi. Fiecare folder păstrează structura cu care a fost importat.",
+  "No folders are watched.": "Niciun folder nu este monitorizat.",
+  "Flat": "Plat",
+  "Stop watching": "Oprește monitorizarea"
 }

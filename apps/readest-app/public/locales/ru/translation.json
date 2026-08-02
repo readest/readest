@@ -2063,5 +2063,10 @@
   "Babylon dictionaries are single .bgl files.": "Словари Babylon — это отдельные файлы .bgl.",
   "Cover Image": "Изображение обложки",
   "Public cover image URL (empty if unavailable)": "Публичный URL изображения обложки (пусто, если недоступно)",
-  "Include Book Cover": "Включить обложку книги"
+  "Include Book Cover": "Включить обложку книги",
+  "Watched Folders": "Отслеживаемые папки",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest повторно сканирует эти папки при запуске или возвращении на передний план и импортирует новые книги. Каждая папка сохраняет структуру, с которой была импортирована.",
+  "No folders are watched.": "Нет отслеживаемых папок.",
+  "Flat": "Без групп",
+  "Stop watching": "Прекратить отслеживание"
 }

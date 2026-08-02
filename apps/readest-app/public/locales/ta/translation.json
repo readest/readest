@@ -1979,5 +1979,10 @@
   "Babylon dictionaries are single .bgl files.": "Babylon அகராதிகள் தனி .bgl கோப்புகள் ஆகும்.",
   "Cover Image": "அட்டைப் படம்",
   "Public cover image URL (empty if unavailable)": "பொது அட்டைப் பட URL (கிடைக்கவில்லை எனில் காலி)",
-  "Include Book Cover": "புத்தக அட்டையைச் சேர்க்கவும்"
+  "Include Book Cover": "புத்தக அட்டையைச் சேர்க்கவும்",
+  "Watched Folders": "கண்காணிக்கப்படும் கோப்புறைகள்",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest திறக்கும்போது அல்லது முன்னணிக்குத் திரும்பும்போது இந்தக் கோப்புறைகளை மீண்டும் வருடி புதிய புத்தகங்களை இறக்குமதி செய்யும். ஒவ்வொரு கோப்புறையும் இறக்குமதி செய்யப்பட்ட அமைப்பைத் தக்கவைக்கும்.",
+  "No folders are watched.": "கண்காணிக்கப்படும் கோப்புறைகள் இல்லை.",
+  "Flat": "குழுக்கள் இல்லை",
+  "Stop watching": "கண்காணிப்பை நிறுத்து"
 }

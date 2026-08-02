@@ -2021,5 +2021,10 @@
   "Babylon dictionaries are single .bgl files.": "I dizionari Babylon sono singoli file .bgl.",
   "Cover Image": "Immagine di copertina",
   "Public cover image URL (empty if unavailable)": "URL pubblico dell'immagine di copertina (vuoto se non disponibile)",
-  "Include Book Cover": "Includi copertina del libro"
+  "Include Book Cover": "Includi copertina del libro",
+  "Watched Folders": "Cartelle monitorate",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest riesamina queste cartelle all'apertura o al ritorno in primo piano e importa i nuovi libri. Ogni cartella mantiene la struttura con cui è stata importata.",
+  "No folders are watched.": "Nessuna cartella è monitorata.",
+  "Flat": "Piatto",
+  "Stop watching": "Non monitorare più"
 }

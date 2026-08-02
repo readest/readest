@@ -1937,5 +1937,10 @@
   "Babylon dictionaries are single .bgl files.": "Từ điển Babylon là các tệp .bgl đơn lẻ.",
   "Cover Image": "Ảnh bìa",
   "Public cover image URL (empty if unavailable)": "URL ảnh bìa công khai (trống nếu không có)",
-  "Include Book Cover": "Bao gồm bìa sách"
+  "Include Book Cover": "Bao gồm bìa sách",
+  "Watched Folders": "Thư mục được theo dõi",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest quét lại các thư mục này khi mở hoặc quay lại nền trước và nhập mọi sách mới. Mỗi thư mục giữ nguyên cấu trúc khi được nhập.",
+  "No folders are watched.": "Không có thư mục nào được theo dõi.",
+  "Flat": "Phẳng",
+  "Stop watching": "Ngừng theo dõi"
 }

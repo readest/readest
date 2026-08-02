@@ -1979,5 +1979,10 @@
   "Babylon dictionaries are single .bgl files.": "Τα λεξικά Babylon είναι μεμονωμένα αρχεία .bgl.",
   "Cover Image": "Εικόνα εξωφύλλου",
   "Public cover image URL (empty if unavailable)": "Δημόσιο URL εικόνας εξωφύλλου (κενό αν δεν είναι διαθέσιμο)",
-  "Include Book Cover": "Συμπερίληψη εξωφύλλου βιβλίου"
+  "Include Book Cover": "Συμπερίληψη εξωφύλλου βιβλίου",
+  "Watched Folders": "Παρακολουθούμενοι φάκελοι",
+  "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Το Readest σαρώνει ξανά αυτούς τους φακέλους όταν ανοίγει ή επιστρέφει στο προσκήνιο και εισάγει τα νέα βιβλία. Κάθε φάκελος διατηρεί τη δομή με την οποία εισήχθη.",
+  "No folders are watched.": "Δεν παρακολουθείται κανένας φάκελος.",
+  "Flat": "Επίπεδο",
+  "Stop watching": "Διακοπή παρακολούθησης"
 }
