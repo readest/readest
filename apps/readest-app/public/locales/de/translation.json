@@ -1999,5 +1999,10 @@
   "Downloading {{count}} book(s)_one": "{{count}} Buch wird heruntergeladen",
   "Downloading {{count}} book(s)_other": "{{count}} Bücher werden heruntergeladen",
   "Failed to download {{count}} book(s)_one": "Fehler beim Herunterladen von {{count}} Buch",
-  "Failed to download {{count}} book(s)_other": "Fehler beim Herunterladen von {{count}} Büchern"
+  "Failed to download {{count}} book(s)_other": "Fehler beim Herunterladen von {{count}} Büchern",
+  "Search annotations...": "Anmerkungen suchen...",
+  "Annotations Menu": "Anmerkungsmenü",
+  "Filter by Color or Style": "Nach Farbe oder Stil filtern",
+  "Add Note": "Notiz hinzufügen",
+  "No Matching Annotations": "Keine passenden Anmerkungen"
 }

@@ -1953,5 +1953,10 @@
   "Readest": "Readest",
   "Readest annotations file (.json)": "Readest の注釈ファイル (.json)",
   "Downloading {{count}} book(s)_other": "{{count}} 冊の書籍をダウンロードしています",
-  "Failed to download {{count}} book(s)_other": "{{count}} 冊の書籍のダウンロードに失敗しました"
+  "Failed to download {{count}} book(s)_other": "{{count}} 冊の書籍のダウンロードに失敗しました",
+  "Search annotations...": "注釈を検索...",
+  "Annotations Menu": "注釈メニュー",
+  "Filter by Color or Style": "色またはスタイルでフィルター",
+  "Add Note": "メモを追加",
+  "No Matching Annotations": "一致する注釈がありません"
 }

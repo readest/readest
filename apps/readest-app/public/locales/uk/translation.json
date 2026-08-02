@@ -2091,5 +2091,10 @@
   "Failed to download {{count}} book(s)_one": "Не вдалося завантажити {{count}} книгу",
   "Failed to download {{count}} book(s)_other": "Не вдалося завантажити {{count}} книг",
   "Failed to download {{count}} book(s)_few": "Не вдалося завантажити {{count}} книг",
-  "Failed to download {{count}} book(s)_many": "Не вдалося завантажити {{count}} книг"
+  "Failed to download {{count}} book(s)_many": "Не вдалося завантажити {{count}} книг",
+  "Search annotations...": "Шукати анотації...",
+  "Annotations Menu": "Меню анотацій",
+  "Filter by Color or Style": "Фільтрувати за кольором або стилем",
+  "Add Note": "Додати нотатку",
+  "No Matching Annotations": "Немає відповідних анотацій"
 }

@@ -1953,5 +1953,10 @@
   "Readest": "Readest",
   "Readest annotations file (.json)": "ไฟล์คำอธิบายประกอบของ Readest (.json)",
   "Downloading {{count}} book(s)_other": "กำลังดาวน์โหลดหนังสือ {{count}} เล่ม",
-  "Failed to download {{count}} book(s)_other": "ดาวน์โหลดหนังสือ {{count}} เล่มไม่สำเร็จ"
+  "Failed to download {{count}} book(s)_other": "ดาวน์โหลดหนังสือ {{count}} เล่มไม่สำเร็จ",
+  "Search annotations...": "ค้นหาคำอธิบายประกอบ...",
+  "Annotations Menu": "เมนูคำอธิบายประกอบ",
+  "Filter by Color or Style": "กรองตามสีหรือสไตล์",
+  "Add Note": "เพิ่มบันทึก",
+  "No Matching Annotations": "ไม่พบคำอธิบายประกอบที่ตรงกัน"
 }

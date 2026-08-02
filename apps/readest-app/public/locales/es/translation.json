@@ -2045,5 +2045,10 @@
   "Downloading {{count}} book(s)_many": "Descargando {{count}} libros",
   "Failed to download {{count}} book(s)_one": "Error al descargar {{count}} libro",
   "Failed to download {{count}} book(s)_other": "Error al descargar {{count}} libros",
-  "Failed to download {{count}} book(s)_many": "Error al descargar {{count}} libros"
+  "Failed to download {{count}} book(s)_many": "Error al descargar {{count}} libros",
+  "Search annotations...": "Buscar anotaciones...",
+  "Annotations Menu": "Menú de Anotaciones",
+  "Filter by Color or Style": "Filtrar por color o estilo",
+  "Add Note": "Agregar Nota",
+  "No Matching Annotations": "Sin anotaciones coincidentes"
 }

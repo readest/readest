@@ -1999,5 +1999,10 @@
   "Downloading {{count}} book(s)_one": "{{count}} புத்தகம் பதிவிறக்கப்படுகிறது",
   "Downloading {{count}} book(s)_other": "{{count}} புத்தகங்கள் பதிவிறக்கப்படுகின்றன",
   "Failed to download {{count}} book(s)_one": "{{count}} புத்தகத்தை பதிவிறக்க முடியவில்லை",
-  "Failed to download {{count}} book(s)_other": "{{count}} புத்தகங்களை பதிவிறக்க முடியவில்லை"
+  "Failed to download {{count}} book(s)_other": "{{count}} புத்தகங்களை பதிவிறக்க முடியவில்லை",
+  "Search annotations...": "சிறுகுறிப்புகளைத் தேடவும்...",
+  "Annotations Menu": "சிறுகுறிப்புகள் மெனு",
+  "Filter by Color or Style": "நிறம் அல்லது பாணி அடிப்படையில் வடிகட்டு",
+  "Add Note": "குறிப்பு சேர்க்கவும்",
+  "No Matching Annotations": "பொருந்தும் சிறுகுறிப்புகள் இல்லை"
 }

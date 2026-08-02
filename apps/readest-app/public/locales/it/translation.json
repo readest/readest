@@ -2045,5 +2045,10 @@
   "Downloading {{count}} book(s)_many": "Download di {{count}} libri in corso",
   "Failed to download {{count}} book(s)_one": "Download di {{count}} libro non riuscito",
   "Failed to download {{count}} book(s)_other": "Download di {{count}} libri non riuscito",
-  "Failed to download {{count}} book(s)_many": "Download di {{count}} libri non riuscito"
+  "Failed to download {{count}} book(s)_many": "Download di {{count}} libri non riuscito",
+  "Search annotations...": "Cerca nelle annotazioni...",
+  "Annotations Menu": "Menu annotazioni",
+  "Filter by Color or Style": "Filtra per colore o stile",
+  "Add Note": "Aggiungi Nota",
+  "No Matching Annotations": "Nessuna annotazione corrispondente"
 }

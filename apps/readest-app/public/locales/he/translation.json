@@ -2045,5 +2045,10 @@
   "Downloading {{count}} book(s)_other": "מוריד {{count}} ספרים",
   "Failed to download {{count}} book(s)_one": "הורדת ספר אחד נכשלה",
   "Failed to download {{count}} book(s)_two": "הורדת {{count}} ספרים נכשלה",
-  "Failed to download {{count}} book(s)_other": "הורדת {{count}} ספרים נכשלה"
+  "Failed to download {{count}} book(s)_other": "הורדת {{count}} ספרים נכשלה",
+  "Search annotations...": "חפש הערות...",
+  "Annotations Menu": "תפריט הערות",
+  "Filter by Color or Style": "סנן לפי צבע או סגנון",
+  "Add Note": "הוסף הערה",
+  "No Matching Annotations": "אין הערות תואמות"
 }

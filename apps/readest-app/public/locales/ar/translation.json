@@ -2183,5 +2183,10 @@
   "Failed to download {{count}} book(s)_zero": "فشل تنزيل الكتب",
   "Failed to download {{count}} book(s)_two": "فشل تنزيل كتابين",
   "Failed to download {{count}} book(s)_few": "فشل تنزيل {{count}} كتب",
-  "Failed to download {{count}} book(s)_many": "فشل تنزيل {{count}} كتاباً"
+  "Failed to download {{count}} book(s)_many": "فشل تنزيل {{count}} كتاباً",
+  "Search annotations...": "بحث في التعليقات التوضيحية...",
+  "Annotations Menu": "قائمة التعليقات التوضيحية",
+  "Filter by Color or Style": "تصفية حسب اللون أو النمط",
+  "Add Note": "إضافة ملاحظة",
+  "No Matching Annotations": "لا توجد تعليقات توضيحية مطابقة"
 }

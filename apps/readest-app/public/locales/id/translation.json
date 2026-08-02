@@ -1953,5 +1953,10 @@
   "Readest": "Readest",
   "Readest annotations file (.json)": "File anotasi Readest (.json)",
   "Downloading {{count}} book(s)_other": "Mengunduh {{count}} buku",
-  "Failed to download {{count}} book(s)_other": "Gagal mengunduh {{count}} buku"
+  "Failed to download {{count}} book(s)_other": "Gagal mengunduh {{count}} buku",
+  "Search annotations...": "Cari anotasi...",
+  "Annotations Menu": "Menu Anotasi",
+  "Filter by Color or Style": "Filter berdasarkan Warna atau Gaya",
+  "Add Note": "Tambahkan Catatan",
+  "No Matching Annotations": "Tidak ada anotasi yang cocok"
 }

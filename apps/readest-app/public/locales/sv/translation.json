@@ -1999,5 +1999,10 @@
   "Downloading {{count}} book(s)_one": "Laddar ner {{count}} bok",
   "Downloading {{count}} book(s)_other": "Laddar ner {{count}} böcker",
   "Failed to download {{count}} book(s)_one": "Kunde inte ladda ner {{count}} bok",
-  "Failed to download {{count}} book(s)_other": "Kunde inte ladda ner {{count}} böcker"
+  "Failed to download {{count}} book(s)_other": "Kunde inte ladda ner {{count}} böcker",
+  "Search annotations...": "Sök anteckningar...",
+  "Annotations Menu": "Anteckningsmeny",
+  "Filter by Color or Style": "Filtrera efter färg eller stil",
+  "Add Note": "Lägg till anteckning",
+  "No Matching Annotations": "Inga matchande kommentarer"
 }

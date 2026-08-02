@@ -1999,5 +1999,10 @@
   "Downloading {{count}} book(s)_one": "در حال دانلود {{count}} کتاب",
   "Downloading {{count}} book(s)_other": "در حال دانلود {{count}} کتاب",
   "Failed to download {{count}} book(s)_one": "دانلود {{count}} کتاب ناموفق بود",
-  "Failed to download {{count}} book(s)_other": "دانلود {{count}} کتاب ناموفق بود"
+  "Failed to download {{count}} book(s)_other": "دانلود {{count}} کتاب ناموفق بود",
+  "Search annotations...": "جستجوی یادداشت‌ها...",
+  "Annotations Menu": "منوی یادداشت‌ها",
+  "Filter by Color or Style": "فیلتر بر اساس رنگ یا سبک",
+  "Add Note": "افزودن یادداشت",
+  "No Matching Annotations": "هیچ حاشیه‌نویسی مطابقی نیست"
 }
