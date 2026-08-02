@@ -80,20 +80,9 @@ export function filterExportGroups(
   groups: BooknoteGroup[],
   { excludedColors, excludedStyles }: ExportFilter,
 ): FilteredExportGroups {
-  const colorsSeen = new Set<HighlightColor>();
-  const stylesSeen = new Set<HighlightStyle>();
-  for (const group of groups) {
-    for (const note of group.booknotes) {
-      if (note.color) colorsSeen.add(note.color);
-      if (note.style) stylesSeen.add(note.style);
-    }
-  }
-
-  const distinctColors = [
-    ...DEFAULT_HIGHLIGHT_COLORS.filter((color) => colorsSeen.has(color)),
-    ...[...colorsSeen].filter((color) => !isDefaultHighlightColor(color)),
-  ];
-  const distinctStyles = ALL_HIGHLIGHT_STYLES.filter((style) => stylesSeen.has(style));
+  const { colors: distinctColors, styles: distinctStyles } = collectAnnotationFacets(
+    groups.flatMap((group) => group.booknotes),
+  );
 
   const applyColorFilter = distinctColors.length >= 2;
   const applyStyleFilter = distinctStyles.length >= 2;
@@ -372,4 +361,68 @@ export function mergeRestyledAnnotation(existing: BookNote, restyled: BookNote):
     text: existing.text ?? restyled.text,
     global: existing.global || restyled.global,
   };
+}
+
+export type AnnotationFilterKind = 'all' | 'highlights' | 'notes';
+
+export interface BooknoteFilter {
+  kind: AnnotationFilterKind;
+  query: string;
+  excludedColors?: HighlightColor[];
+  excludedStyles?: HighlightStyle[];
+}
+
+/**
+ * Filter booknotes for the annotations hub and the Notebook search.
+ *
+ * Tombstones are always excluded. `kind` partitions on the note body:
+ * a unified annotation is a "note" when `note` is non-empty and a plain
+ * "highlight" otherwise (#5398's All/Highlights/Notes chips). An empty or
+ * whitespace query matches everything; otherwise the query is matched
+ * case-insensitively against the highlighted text and the note body
+ * (same semantics the Notebook SearchBar has always used). Excluded
+ * colors/styles drop matching notes; a note without the attribute always
+ * passes (the same keep rule as filterExportGroups).
+ */
+export function filterBooknotes(notes: BookNote[], filter: BooknoteFilter): BookNote[] {
+  const { kind, excludedColors, excludedStyles } = filter;
+  const lowercaseQuery = filter.query.trim().toLowerCase();
+  return notes.filter((note) => {
+    if (note.deletedAt) return false;
+    if (kind === 'notes' && !note.note) return false;
+    if (kind === 'highlights' && note.note) return false;
+    if (note.color && excludedColors?.includes(note.color)) return false;
+    if (note.style && excludedStyles?.includes(note.style)) return false;
+    if (!lowercaseQuery) return true;
+    const textMatch = note.text?.toLowerCase().includes(lowercaseQuery) || false;
+    const noteMatch = note.note?.toLowerCase().includes(lowercaseQuery) || false;
+    return textMatch || noteMatch;
+  });
+}
+
+export interface AnnotationFacets {
+  colors: HighlightColor[];
+  styles: HighlightStyle[];
+}
+
+/**
+ * Distinct colors and styles present among live notes: default palette
+ * colors first (palette order), then custom colors in first-seen order;
+ * styles in canonical highlight/underline/squiggly order. Drives the hub
+ * toolbar's facet row and filterExportGroups' filter UI.
+ */
+export function collectAnnotationFacets(notes: BookNote[]): AnnotationFacets {
+  const colorsSeen = new Set<HighlightColor>();
+  const stylesSeen = new Set<HighlightStyle>();
+  for (const note of notes) {
+    if (note.deletedAt) continue;
+    if (note.color) colorsSeen.add(note.color);
+    if (note.style) stylesSeen.add(note.style);
+  }
+  const colors = [
+    ...DEFAULT_HIGHLIGHT_COLORS.filter((color) => colorsSeen.has(color)),
+    ...[...colorsSeen].filter((color) => !isDefaultHighlightColor(color)),
+  ];
+  const styles = ALL_HIGHLIGHT_STYLES.filter((style) => stylesSeen.has(style));
+  return { colors, styles };
 }
