@@ -2002,7 +2002,6 @@
   "Failed to download {{count}} book(s)_other": "{{count}} könyv letöltése sikertelen",
   "Search annotations...": "Jegyzetek keresése...",
   "Annotations Menu": "Jegyzetek menü",
-  "Filter by Color or Style": "Szűrés szín vagy stílus szerint",
   "Add Note": "Jegyzet hozzáadása",
   "No Matching Annotations": "Nincsenek megfelelő megjegyzések"
 }

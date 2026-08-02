@@ -1956,7 +1956,6 @@
   "Failed to download {{count}} book(s)_other": "དཔེ་དེབ་ {{count}} ཕབ་ལེན་བྱས་མ་ཐུབ།",
   "Search annotations...": "མཆན་འཚོལ་བཤེར།...",
   "Annotations Menu": "མཆན་གྱི་མ་ལག",
-  "Filter by Color or Style": "ཚོན་མདོག་ཡང་ན་བཟོ་ལྟས་འདེམས་སྒྲིག",
   "Add Note": "ཟིན་བྲིས་སྣོན་པ།",
   "No Matching Annotations": "མཐུན་པའི་མཆན་མེད།"
 }

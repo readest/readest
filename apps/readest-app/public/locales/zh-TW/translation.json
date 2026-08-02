@@ -1956,7 +1956,6 @@
   "Failed to download {{count}} book(s)_other": "{{count}} 本書籍下載失敗",
   "Search annotations...": "搜尋筆記...",
   "Annotations Menu": "筆記選單",
-  "Filter by Color or Style": "依顏色或樣式篩選",
   "Add Note": "添加筆記",
   "No Matching Annotations": "找不到符合的註解"
 }

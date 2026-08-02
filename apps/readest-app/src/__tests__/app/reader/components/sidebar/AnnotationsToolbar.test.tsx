@@ -65,6 +65,7 @@ const defaultProps = {
   onSearchInputChange: vi.fn(),
   onToggleColor: vi.fn(),
   onToggleStyle: vi.fn(),
+  onResetFilters: vi.fn(),
 };
 
 beforeEach(() => {
@@ -90,14 +91,21 @@ describe('AnnotationsToolbar', () => {
     expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('reports search input changes and clears them', () => {
-    const { rerender } = render(<AnnotationsToolbar {...defaultProps} />);
+  it('search input is hidden until the search icon is tapped', () => {
+    render(<AnnotationsToolbar {...defaultProps} />);
+    expect(screen.queryByRole('textbox')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'rabbit' } });
     expect(defaultProps.onSearchInputChange).toHaveBeenCalledWith('rabbit');
+  });
 
-    rerender(<AnnotationsToolbar {...defaultProps} searchInput='rabbit' />);
+  it('closing search collapses and clears', () => {
+    render(<AnnotationsToolbar {...defaultProps} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    expect(screen.getByRole('textbox')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
     expect(defaultProps.onSearchInputChange).toHaveBeenCalledWith('');
+    expect(screen.queryByRole('textbox')).toBeNull();
   });
 
   it('dispatches the annotation actions with the bookKey', () => {
@@ -135,7 +143,7 @@ describe('AnnotationsToolbar', () => {
     expect(defaultProps.onToggleColor).toHaveBeenCalledWith('yellow');
   });
 
-  it('renders style chips and reports exclusion toggles', () => {
+  it('renders style toggles and reports exclusion toggles', () => {
     render(
       <AnnotationsToolbar
         {...defaultProps}
@@ -150,5 +158,16 @@ describe('AnnotationsToolbar', () => {
     expect(underline.getAttribute('aria-pressed')).toBe('false');
     fireEvent.click(underline);
     expect(defaultProps.onToggleStyle).toHaveBeenCalledWith('underline');
+  });
+
+  it('Reset calls onResetFilters and is disabled when nothing is active', () => {
+    const { rerender } = render(<AnnotationsToolbar {...defaultProps} filterKind='notes' />);
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    expect(defaultProps.onResetFilters).toHaveBeenCalledTimes(1);
+
+    rerender(<AnnotationsToolbar {...defaultProps} />);
+    expect((screen.getByRole('button', { name: 'Reset' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
   });
 });

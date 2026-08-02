@@ -2002,7 +2002,6 @@
   "Failed to download {{count}} book(s)_other": "Fehler beim Herunterladen von {{count}} Büchern",
   "Search annotations...": "Anmerkungen suchen...",
   "Annotations Menu": "Anmerkungsmenü",
-  "Filter by Color or Style": "Nach Farbe oder Stil filtern",
   "Add Note": "Notiz hinzufügen",
   "No Matching Annotations": "Keine passenden Anmerkungen"
 }

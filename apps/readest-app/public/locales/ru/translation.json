@@ -2094,7 +2094,6 @@
   "Failed to download {{count}} book(s)_many": "Не удалось скачать {{count}} книг",
   "Search annotations...": "Искать аннотации...",
   "Annotations Menu": "Меню аннотаций",
-  "Filter by Color or Style": "Фильтровать по цвету или стилю",
   "Add Note": "Добавить заметку",
   "No Matching Annotations": "Нет подходящих аннотаций"
 }

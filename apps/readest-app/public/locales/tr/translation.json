@@ -2002,7 +2002,6 @@
   "Failed to download {{count}} book(s)_other": "{{count}} kitap indirilemedi",
   "Search annotations...": "Açıklamalarda ara...",
   "Annotations Menu": "Açıklamalar Menüsü",
-  "Filter by Color or Style": "Renge veya Stile Göre Filtrele",
   "Add Note": "Not Ekle",
   "No Matching Annotations": "Eşleşen açıklama yok"
 }

@@ -2048,7 +2048,6 @@
   "Failed to download {{count}} book(s)_many": "Falha ao baixar {{count}} livros",
   "Search annotations...": "Buscar anotações...",
   "Annotations Menu": "Menu de Anotações",
-  "Filter by Color or Style": "Filtrar por cor ou estilo",
   "Add Note": "Adicionar Nota",
   "No Matching Annotations": "Sem anotações correspondentes"
 }

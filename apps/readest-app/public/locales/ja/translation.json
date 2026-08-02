@@ -1956,7 +1956,6 @@
   "Failed to download {{count}} book(s)_other": "{{count}} 冊の書籍のダウンロードに失敗しました",
   "Search annotations...": "注釈を検索...",
   "Annotations Menu": "注釈メニュー",
-  "Filter by Color or Style": "色またはスタイルでフィルター",
   "Add Note": "メモを追加",
   "No Matching Annotations": "一致する注釈がありません"
 }

@@ -85,6 +85,12 @@ const BooknoteView: React.FC<{
     );
   }, []);
 
+  const resetFilters = useCallback(() => {
+    setFilterKind('all');
+    setExcludedColors([]);
+    setExcludedStyles([]);
+  }, []);
+
   // Live annotations drive both the facet row (distinct colors/styles) and
   // the greyed-out state of "Clear Annotations" (mirrors BookMenu).
   const liveAnnotations = useMemo(
@@ -368,6 +374,7 @@ const BooknoteView: React.FC<{
           onSearchInputChange={setSearchInput}
           onToggleColor={toggleColor}
           onToggleStyle={toggleStyle}
+          onResetFilters={resetFilters}
         />
       )}
       <div ref={listHostRef}>

@@ -2002,7 +2002,6 @@
   "Failed to download {{count}} book(s)_other": "Kunde inte ladda ner {{count}} böcker",
   "Search annotations...": "Sök anteckningar...",
   "Annotations Menu": "Anteckningsmeny",
-  "Filter by Color or Style": "Filtrera efter färg eller stil",
   "Add Note": "Lägg till anteckning",
   "No Matching Annotations": "Inga matchande kommentarer"
 }

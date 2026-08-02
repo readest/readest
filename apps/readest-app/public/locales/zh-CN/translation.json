@@ -1956,7 +1956,6 @@
   "Failed to download {{count}} book(s)_other": "{{count}} 本书籍下载失败",
   "Search annotations...": "搜索笔记...",
   "Annotations Menu": "笔记菜单",
-  "Filter by Color or Style": "按颜色或样式筛选",
   "Add Note": "添加笔记",
   "No Matching Annotations": "没有匹配的注释"
 }
