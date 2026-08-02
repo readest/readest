@@ -10,6 +10,7 @@ import { Insets } from '@/types/misc';
 import { eventDispatcher } from '@/utils/event';
 import TTSMiniPlayer from './TTSMiniPlayer';
 import TTSPlayerSheet from './TTSPlayerSheet';
+import { useMiniPlayerAutoHide } from './useMiniPlayerAutoHide';
 
 interface TTSControlProps {
   bookKey: string;
@@ -34,8 +35,12 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   const downloads = useTTSDownloads(bookKey, tts.getController, showPlayerSheet);
   const activeSectionIndex = useBookProgress(bookKey)?.index ?? null;
 
-  const isEink = getViewSettings(bookKey)?.isEink ?? false;
+  const viewSettings = getViewSettings(bookKey);
+  const isEink = viewSettings?.isEink ?? false;
+  const playerStyle = viewSettings?.ttsPlayerStyle ?? 'full';
   const hasTimeline = tts.ttsClientsInited && tts.handleSupportsPlaybackInfo();
+  const miniPlayerMounted = tts.showIndicator && !showPlayerSheet;
+  const miniPlayerVisible = useMiniPlayerAutoHide(bookKey, playerStyle, miniPlayerMounted);
 
   useEffect(() => {
     if (tts.showBackToCurrentTTSLocation) {
@@ -96,11 +101,12 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       {/* One surface at a time: the sheet replaces the mini player while open.
           Mounts on showIndicator alone so the card appears the moment the
           session starts, before the TTS clients finish initializing. */}
-      {tts.showIndicator && !showPlayerSheet && (
+      {miniPlayerMounted && (
         <TTSMiniPlayer
           bookKey={bookKey}
           isPlaying={tts.isPlaying}
           isEink={isEink}
+          visible={miniPlayerVisible}
           hasTimeline={hasTimeline}
           timeoutTimestamp={tts.timeoutTimestamp}
           chapterRemainingSec={tts.chapterRemainingSec}

@@ -1,9 +1,8 @@
 import type { ViewSettings } from '@/types/book';
 import { footerInfoVisible } from './footerBand';
 
-// Card height of the TTS mini player (h-14). Reader text reserves this plus
-// the bottom offset below as clearance while a session is active;
-// FoliateViewer consumes it via applyMarginAndGap.
+// Card height of the TTS mini player (h-14). See getTTSMiniPlayerClearance for
+// when the reader text reserves a band of this height.
 export const TTS_MINI_PLAYER_HEIGHT = 56;
 
 // 64px mobile nav bar / 52px desktop footer bar, plus an 8px gap.
@@ -14,8 +13,8 @@ const BASE_OFFSET = 16;
 
 /**
  * Bottom offset (px) of the TTS mini player, excluding the safe-area inset
- * (applied separately as margin-bottom). The card stays visible for the whole
- * session and stacks above whatever occupies the bottom edge:
+ * (applied separately as margin-bottom). The card stacks above whatever
+ * occupies the bottom edge:
  *   - the bottom bar while it is shown (hoveredBookKey === bookKey), or the
  *     expanded action panel above it (panelTopOffset: measured distance from
  *     the bottom edge to the open panel's top, safe-area margin excluded)
@@ -35,4 +34,22 @@ export const getTTSMiniPlayerBottomOffset = (
     !viewSettings.vertical &&
     (footerInfoVisible(viewSettings) || viewSettings.showStickyProgressBar);
   return footerAtBottom ? Math.max(viewSettings.marginBottomPx, BASE_OFFSET) : BASE_OFFSET;
+};
+
+/**
+ * Band of book text (px) kept clear for the mini player while a TTS session is
+ * active, measured at the card's resting position (bottom bar dismissed).
+ * FoliateViewer consumes it via applyMarginAndGap.
+ *
+ * Only the 'minimal' card earns one. The 'full' card follows the toolbar and
+ * auto-hides with it (#5310), so a permanent reservation would cost a line of
+ * text for a card that is off screen most of the session; it overlaps the text
+ * during its brief visible window instead, exactly as the toolbars do.
+ */
+export const getTTSMiniPlayerClearance = (
+  viewSettings: ViewSettings,
+  safeAreaBottom: number,
+): number => {
+  if (viewSettings.ttsPlayerStyle !== 'minimal') return 0;
+  return getTTSMiniPlayerBottomOffset(viewSettings) + TTS_MINI_PLAYER_HEIGHT + safeAreaBottom;
 };

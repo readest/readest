@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { getTTSMiniPlayerBottomOffset } from '@/app/reader/utils/ttsMiniPlayerPosition';
+import {
+  TTS_MINI_PLAYER_HEIGHT,
+  getTTSMiniPlayerBottomOffset,
+  getTTSMiniPlayerClearance,
+} from '@/app/reader/utils/ttsMiniPlayerPosition';
 import { DEFAULT_BOOK_LAYOUT, DEFAULT_VIEW_CONFIG } from '@/services/constants';
 import type { ViewSettings } from '@/types/book';
 
@@ -112,5 +116,31 @@ describe('getTTSMiniPlayerBottomOffset', () => {
     expect(
       getTTSMiniPlayerBottomOffset(settings({ marginBottomPx: 8 }), { barVisible: false }),
     ).toBe(16);
+  });
+});
+
+// Clearance is the band of book text the player is allowed to cover. Only the
+// persistent 'minimal' card earns one: the 'full' card is tied to the toolbar
+// and auto-hides with it (#5310), so reserving a band for it would permanently
+// steal a line of text for a card that is usually not on screen.
+describe('getTTSMiniPlayerClearance', () => {
+  it('reserves offset + card height + safe area for the minimal player', () => {
+    expect(getTTSMiniPlayerClearance(settings({ ttsPlayerStyle: 'minimal' }), 12)).toBe(
+      DEFAULT_BOOK_LAYOUT.marginBottomPx + TTS_MINI_PLAYER_HEIGHT + 12,
+    );
+  });
+
+  it('reserves nothing for the full player', () => {
+    expect(getTTSMiniPlayerClearance(settings({ ttsPlayerStyle: 'full' }), 12)).toBe(0);
+  });
+
+  it('treats an unset player style as full, matching the setting default', () => {
+    expect(getTTSMiniPlayerClearance(settings({ ttsPlayerStyle: undefined }), 12)).toBe(0);
+  });
+
+  it('tracks the resting offset when the footer band is off', () => {
+    expect(
+      getTTSMiniPlayerClearance(settings({ ttsPlayerStyle: 'minimal', showFooter: false }), 0),
+    ).toBe(16 + TTS_MINI_PLAYER_HEIGHT);
   });
 });

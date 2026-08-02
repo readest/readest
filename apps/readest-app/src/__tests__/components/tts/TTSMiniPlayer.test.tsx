@@ -51,6 +51,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   bookKey: 'b1',
   isPlaying: true,
   isEink: false,
+  visible: true,
   hasTimeline: true,
   timeoutTimestamp: 0,
   chapterRemainingSec: null as number | null,
@@ -80,7 +81,10 @@ describe('TTSMiniPlayer', () => {
     vi.clearAllMocks();
   });
 
-  test('minimal style shows only the time info, dropping chapter, title and cover', () => {
+  // #5310: the minimal card is down to one time. Elapsed is the half nobody
+  // listens by, and carrying both got the pair chopped off at any UI font size
+  // above 13px.
+  test('minimal style shows only the remaining time, dropping elapsed, chapter, title and cover', () => {
     viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
     getBookData.mockReturnValue({
       book: { title: 'Alice in Wonderland', coverImageUrl: 'blob:cover' },
@@ -89,8 +93,22 @@ describe('TTSMiniPlayer', () => {
     expect(screen.queryByText('Chapter 5')).toBeNull();
     expect(screen.queryByText('Alice in Wonderland')).toBeNull();
     expect(container.querySelector('img')).toBeNull();
-    expect(screen.getByText(/0:10/)).toBeTruthy();
-    expect(screen.getByText(/-1:30/)).toBeTruthy();
+    expect(screen.queryByText(/0:10/)).toBeNull();
+    expect(screen.getByText('-1:30')).toBeTruthy();
+  });
+
+  test('minimal style drops the seconds from the remaining time above an hour', () => {
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
+    // 2h01m30s left: the compact form keeps the row five columns wide.
+    const info = { position: 100, duration: 7390, measuredFraction: 0.1 };
+    render(<TTSMiniPlayer {...makeProps({ onGetPlaybackInfo: vi.fn().mockReturnValue(info) })} />);
+    expect(screen.getByText('-2:01')).toBeTruthy();
+  });
+
+  test('full style keeps the elapsed and the long-form remaining time', () => {
+    const info = { position: 100, duration: 7390, measuredFraction: 0.1 };
+    render(<TTSMiniPlayer {...makeProps({ onGetPlaybackInfo: vi.fn().mockReturnValue(info) })} />);
+    expect(screen.getByText('Chapter 5 · 0:01:40 · -2:01:30')).toBeTruthy();
   });
 
   test('minimal style stacks the sleep timer on a second line below the time', () => {
@@ -100,22 +118,22 @@ describe('TTSMiniPlayer', () => {
     const body = screen.getByLabelText('Open Read Aloud player');
     expect(body.className).toContain('flex-col');
     // Time row and timer chip are separate stacked children, so the timer
-    // cannot squeeze the elapsed time into truncation.
+    // cannot squeeze the remaining time into truncation.
     const timer = screen.getByText(/^1:(2\d|30)$/);
-    const elapsed = screen.getByText('0:10');
+    const remaining = screen.getByText('-1:30');
     expect(timer.parentElement).toBe(body);
-    expect(elapsed.parentElement?.parentElement).toBe(body);
+    expect(remaining.parentElement).toBe(body);
     vi.useRealTimers();
   });
 
-  test('minimal style centers the time and emphasizes elapsed over remaining', () => {
+  test('minimal style centers the remaining time at full weight', () => {
     viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
     render(<TTSMiniPlayer {...makeProps()} />);
     const body = screen.getByLabelText('Open Read Aloud player');
     expect(body.className).toContain('justify-center');
-    const elapsed = screen.getByText('0:10');
-    expect(elapsed.className).toContain('font-medium');
-    expect(screen.getByText(/-1:30/).className).toContain('text-base-content/60');
+    const remaining = screen.getByText('-1:30');
+    expect(remaining.className).toContain('font-medium');
+    expect(remaining.className).not.toContain('text-base-content/60');
   });
 
   test('sentence and paragraph skips and play/pause drive the transport callbacks', () => {
@@ -152,6 +170,64 @@ describe('TTSMiniPlayer', () => {
     fireEvent.click(screen.getByLabelText('Stop reading aloud'));
     expect(props.onStop).toHaveBeenCalled();
     expect(props.onExpand).not.toHaveBeenCalled();
+  });
+
+  // #5310: an accidental hit on a sixth crowded glyph ends the session, and
+  // stopping already lives on the toolbar TTS button that started it.
+  test('minimal style has no stop button, leaving five transport glyphs', () => {
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
+    render(<TTSMiniPlayer {...makeProps()} />);
+    expect(screen.queryByLabelText('Stop reading aloud')).toBeNull();
+    const transport = screen.getByLabelText('Next Sentence').closest('[dir="ltr"]');
+    expect(transport?.querySelectorAll('button')).toHaveLength(5);
+  });
+
+  // The transport, not the time, takes the row's slack -- otherwise the glyphs
+  // stay crammed against the right edge while the middle sits empty (#5310).
+  test('minimal style spreads the transport across the row', () => {
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
+    render(<TTSMiniPlayer {...makeProps()} />);
+    const transport = screen.getByLabelText('Next Sentence').closest('[dir="ltr"]');
+    expect(transport?.className).toContain('flex-1');
+    expect(transport?.className).toContain('justify-between');
+  });
+
+  // A content-sized box would re-center every glyph as the label narrows on
+  // "-10:00" -> "-9:59", so the time gets a fixed one.
+  test('minimal style gives the time a fixed box so the glyphs never shift', () => {
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
+    const width = (seconds: number) => {
+      const info = { position: 0, duration: seconds, measuredFraction: 0 };
+      render(
+        <TTSMiniPlayer {...makeProps({ onGetPlaybackInfo: vi.fn().mockReturnValue(info) })} />,
+      );
+      const time = screen.getByLabelText('Open Read Aloud player');
+      expect(time.className).not.toContain('flex-1');
+      const cls = time.className;
+      cleanup();
+      return cls;
+    };
+    // Same box class for a short and a long label; nothing is content-sized.
+    expect(width(83)).toContain('w-14');
+    expect(width(3599)).toContain('w-14');
+  });
+
+  test('minimal style shows a bare countdown when there is no playback timeline', () => {
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
+    render(
+      <TTSMiniPlayer
+        {...makeProps({
+          hasTimeline: false,
+          chapterRemainingSec: 300,
+          onGetPlaybackInfo: vi.fn().mockReturnValue(null),
+        })}
+      />,
+    );
+    // The wordy full-style phrasing does not fit the one slot the minimal card
+    // has, and the sign keeps it reading as the same quantity as the timeline
+    // case rather than a different one.
+    expect(screen.queryByText(/left in chapter/)).toBeNull();
+    expect(screen.getByText('-5:00')).toBeTruthy();
   });
 
   test('tapping the body expands the player sheet', () => {
@@ -205,6 +281,16 @@ describe('TTSMiniPlayer', () => {
   test('rests above the footer info band once the bar is dismissed', () => {
     render(<TTSMiniPlayer {...makeProps()} />);
     expect(screen.getByRole('status').style.bottom).toBe(`${DEFAULT_BOOK_LAYOUT.marginBottomPx}px`);
+  });
+
+  // The full card fades out with the reader chrome (#5310); it stays mounted so
+  // the opacity transition can run, hence the pointer-events lockout.
+  test('fades out and stops taking taps once hidden', () => {
+    render(<TTSMiniPlayer {...makeProps({ visible: false })} />);
+    const card = screen.getByRole('status');
+    expect(card.className).toContain('opacity-0');
+    expect(card.className).toContain('pointer-events-none');
+    expect(card.className).not.toContain('opacity-100');
   });
 
   test('without a timeline shows the estimated chapter remaining instead', () => {

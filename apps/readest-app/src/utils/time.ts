@@ -50,6 +50,21 @@ export const formatPlaybackTime = (seconds: number, forceHours = false): string 
   return `${minutes}:${String(secs).padStart(2, '0')}`;
 };
 
+// Compact playback time for the minimal TTS mini player (#5310), which shows
+// the remaining time alone: m:ss below one hour, h:mm above. The seconds go
+// past the hour mark rather than letting a three-part clock get chopped off in
+// the narrow row -- at that range the seconds are noise anyway. Both forms fit
+// five columns of tabular-nums, so the row never re-layouts as time runs down.
+export const formatCompactTime = (seconds: number): string => {
+  const total = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}`;
+  }
+  return `${minutes}:${String(total % 60).padStart(2, '0')}`;
+};
+
 // Countdown label for TTS sleep-timer chips: total minutes : seconds
 // (a 90-minute timer reads 90:00, matching the lock-screen convention).
 export const formatCountdown = (msLeft: number): string => {
