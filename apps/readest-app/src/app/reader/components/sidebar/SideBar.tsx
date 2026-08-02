@@ -35,7 +35,7 @@ const SideBar = ({}) => {
   const { isSearchBarVisible, setSearchBarVisible } = useSidebarStore();
   const searchNavState = sideBarBookKey ? getSearchNavState(sideBarBookKey) : null;
   const { searchTerm = '', searchResults = null } = searchNavState || {};
-  const { getBookData } = useBookDataStore();
+  const { getBookData, getConfig } = useBookDataStore();
   const { getView, getViewSettings } = useReaderStore();
   const searchTermRef = useRef(searchTerm);
   const isMobile = window.innerWidth < 640;
@@ -173,6 +173,9 @@ const SideBar = ({}) => {
   }
   const { book, bookDoc } = bookData;
   const languageDir = getBookDirFromLanguage(bookDoc.metadata.language);
+  // On the annotations tab the header search icon drives the annotation
+  // search in the toolbar instead of the in-book text search.
+  const isAnnotationsTab = getConfig(sideBarBookKey)?.viewSettings?.sideBarTab === 'annotations';
 
   return isSideBarVisible ? (
     <>
@@ -258,11 +261,11 @@ const SideBar = ({}) => {
           />
           <div
             className={clsx('search-bar', {
-              'search-bar-visible': isSearchBarVisible,
+              'search-bar-visible': isSearchBarVisible && !isAnnotationsTab,
             })}
           >
             <SearchBar
-              isVisible={isSearchBarVisible}
+              isVisible={isSearchBarVisible && !isAnnotationsTab}
               bookKey={sideBarBookKey!}
               onHideSearchBar={handleHideSearchBar}
             />
@@ -271,7 +274,7 @@ const SideBar = ({}) => {
             <BookCard book={book} />
           </div>
         </div>
-        {isSearchBarVisible && searchResults ? (
+        {isSearchBarVisible && !isAnnotationsTab && searchResults ? (
           <SearchResults
             bookKey={sideBarBookKey!}
             results={searchResults}

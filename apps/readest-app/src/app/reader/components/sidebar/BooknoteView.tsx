@@ -48,7 +48,8 @@ const BooknoteView: React.FC<{
   const _ = useTranslation();
   const { getConfig } = useBookDataStore();
   const { getProgress } = useReaderStore();
-  const { setActiveBooknoteType, setBooknoteResults } = useSidebarStore();
+  const { setActiveBooknoteType, setBooknoteResults, isSearchBarVisible, setSearchBarVisible } =
+    useSidebarStore();
   const config = getConfig(bookKey)!;
   const progress = getProgress(bookKey);
   const allNotes = config.booknotes ?? [];
@@ -65,6 +66,15 @@ const BooknoteView: React.FC<{
     const timeout = setTimeout(() => setQuery(searchInput), 300);
     return () => clearTimeout(timeout);
   }, [searchInput]);
+
+  // The sidebar header's search icon owns the annotation search visibility;
+  // whenever the search closes (icon toggle, Escape, tab switch), the query
+  // is cleared so a hidden filter can't keep narrowing the list.
+  useEffect(() => {
+    if (!isSearchBarVisible) {
+      setSearchInput('');
+    }
+  }, [isSearchBarVisible]);
 
   const isFiltering =
     type === 'annotation' &&
@@ -364,6 +374,8 @@ const BooknoteView: React.FC<{
         <AnnotationsToolbar
           filterKind={filterKind}
           searchInput={searchInput}
+          isSearchVisible={isSearchBarVisible}
+          onCloseSearch={() => setSearchBarVisible(false)}
           colors={facets.colors}
           styles={facets.styles}
           excludedColors={excludedColors}

@@ -35,12 +35,14 @@ vi.mock('@/store/settingsStore', () => ({
 const defaultProps = {
   filterKind: 'all' as const,
   searchInput: '',
+  isSearchVisible: false,
   colors: [] as HighlightColor[],
   styles: [] as HighlightStyle[],
   excludedColors: [] as HighlightColor[],
   excludedStyles: [] as HighlightStyle[],
   onFilterKindChange: vi.fn(),
   onSearchInputChange: vi.fn(),
+  onCloseSearch: vi.fn(),
   onToggleColor: vi.fn(),
   onToggleStyle: vi.fn(),
   onResetFilters: vi.fn(),
@@ -69,21 +71,20 @@ describe('AnnotationsToolbar', () => {
     expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('search input is hidden until the search icon is tapped', () => {
-    render(<AnnotationsToolbar {...defaultProps} />);
+  it('renders the search input only while isSearchVisible', () => {
+    const { rerender } = render(<AnnotationsToolbar {...defaultProps} />);
     expect(screen.queryByRole('textbox')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    rerender(<AnnotationsToolbar {...defaultProps} isSearchVisible />);
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'rabbit' } });
     expect(defaultProps.onSearchInputChange).toHaveBeenCalledWith('rabbit');
   });
 
-  it('closing search collapses and clears', () => {
-    render(<AnnotationsToolbar {...defaultProps} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
-    expect(screen.getByRole('textbox')).toBeTruthy();
+  it('the clear button and Escape request closing the search', () => {
+    render(<AnnotationsToolbar {...defaultProps} isSearchVisible />);
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
-    expect(defaultProps.onSearchInputChange).toHaveBeenCalledWith('');
-    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(defaultProps.onCloseSearch).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
+    expect(defaultProps.onCloseSearch).toHaveBeenCalledTimes(2);
   });
 
   it('hides facet toggles for dimensions with fewer than two distinct values', () => {

@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FaSearch, FaTimes } from 'react-icons/fa';
 import { MdFilterList } from 'react-icons/md';
 
@@ -175,12 +175,14 @@ const AnnotationsFilterPanel: React.FC<AnnotationsFilterPanelProps> = ({
 interface AnnotationsToolbarProps {
   filterKind: AnnotationFilterKind;
   searchInput: string;
+  isSearchVisible: boolean;
   colors: HighlightColor[];
   styles: HighlightStyle[];
   excludedColors: HighlightColor[];
   excludedStyles: HighlightStyle[];
   onFilterKindChange: (kind: AnnotationFilterKind) => void;
   onSearchInputChange: (value: string) => void;
+  onCloseSearch: () => void;
   onToggleColor: (color: HighlightColor) => void;
   onToggleStyle: (style: HighlightStyle) => void;
   onResetFilters: () => void;
@@ -189,12 +191,14 @@ interface AnnotationsToolbarProps {
 const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
   filterKind,
   searchInput,
+  isSearchVisible,
   colors,
   styles,
   excludedColors,
   excludedStyles,
   onFilterKindChange,
   onSearchInputChange,
+  onCloseSearch,
   onToggleColor,
   onToggleStyle,
   onResetFilters,
@@ -202,7 +206,6 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
   const _ = useTranslation();
   const iconSize14 = useResponsiveSize(14);
   const iconSize12 = useResponsiveSize(12);
-  const [isSearchVisible, setIsSearchVisible] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -214,14 +217,9 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
   const hasActiveFilters =
     filterKind !== 'all' || excludedColors.length > 0 || excludedStyles.length > 0;
 
-  const handleCloseSearch = () => {
-    setIsSearchVisible(false);
-    onSearchInputChange('');
-  };
-
   return (
     <div className='annotations-toolbar flex items-center justify-end gap-1 ps-3 pe-2 pb-2 pt-1'>
-      {isSearchVisible ? (
+      {isSearchVisible && (
         <div className='eink-bordered bg-base-100 flex h-8 min-w-0 flex-1 items-center rounded-lg'>
           <div className='ps-3'>
             <FaSearch size={iconSize14} className='text-base-content/50' />
@@ -234,28 +232,19 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
             dir='auto'
             onChange={(e) => onSearchInputChange(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Escape') handleCloseSearch();
+              if (e.key === 'Escape') onCloseSearch();
             }}
             placeholder={_('Search annotations...')}
             className='w-full min-w-0 bg-transparent p-2 font-sans text-sm font-light focus:outline-none'
           />
           <button
-            onClick={handleCloseSearch}
+            onClick={onCloseSearch}
             aria-label={_('Clear')}
             className='btn btn-ghost h-8 min-h-8 w-8 rounded-e-lg rounded-s-none p-0'
           >
             <FaTimes size={iconSize12} className='text-base-content/50' />
           </button>
         </div>
-      ) : (
-        <button
-          type='button'
-          aria-label={_('Search')}
-          onClick={() => setIsSearchVisible(true)}
-          className='btn btn-ghost btn-circle h-8 min-h-8 w-8 p-0'
-        >
-          <FaSearch size={iconSize14} className='fill-base-content' />
-        </button>
       )}
       <Dropdown
         label={_('Filter Annotations')}

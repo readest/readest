@@ -19,7 +19,7 @@ const SidebarContent: React.FC<{
   sideBarBookKey: string;
 }> = ({ bookDoc, sideBarBookKey }) => {
   const { setHoveredBookKey } = useReaderStore();
-  const { setSideBarVisible } = useSidebarStore();
+  const { setSideBarVisible, setSearchBarVisible } = useSidebarStore();
   const { getConfig, setConfig } = useBookDataStore();
   const { settings } = useSettingsStore();
   const config = getConfig(sideBarBookKey);
@@ -53,6 +53,9 @@ const SidebarContent: React.FC<{
       return;
     }
 
+    // The header search icon is contextual (annotation search vs in-book
+    // search), so an open search bar never survives a tab switch.
+    setSearchBarVisible(false);
     setFade(true);
     const timeout = setTimeout(() => {
       setTargetTab(tab);
@@ -80,6 +83,10 @@ const SidebarContent: React.FC<{
           <OverlayScrollbarsComponent
             className='min-h-0 flex-1'
             options={{
+              // The tab content is width-bound; x stays hidden so oversized
+              // touch-target halos (e.g. the toolbar's dropdown toggle) can't
+              // turn into a horizontal scrollbar.
+              overflow: { x: 'hidden' },
               scrollbars: { autoHide: 'scroll', clickScroll: true },
               showNativeOverlaidScrollbars: false,
             }}
