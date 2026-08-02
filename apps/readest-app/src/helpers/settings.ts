@@ -29,6 +29,30 @@ export const getLibraryViewSettings = (settings: SystemSettings): ViewSettings =
   };
 };
 
+export type BackgroundTextureScope = 'library' | 'reader';
+
+/**
+ * Resolve the three background-texture fields for one scope of the Settings →
+ * Theme picker (issue #5306). 'library' resolves exactly like the library page
+ * (per-field inheritance, see getLibraryViewSettings); 'reader' reads the open
+ * book's view settings when provided, else the global defaults.
+ */
+export const getBackgroundTextureSettings = (
+  scope: BackgroundTextureScope,
+  settings: SystemSettings,
+  readerViewSettings?: ViewSettings,
+): Pick<ViewSettings, 'backgroundTextureId' | 'backgroundOpacity' | 'backgroundSize'> => {
+  const source =
+    scope === 'library'
+      ? getLibraryViewSettings(settings)
+      : (readerViewSettings ?? settings.globalViewSettings);
+  return {
+    backgroundTextureId: source?.backgroundTextureId ?? 'none',
+    backgroundOpacity: source?.backgroundOpacity ?? 0.6,
+    backgroundSize: source?.backgroundSize ?? 'cover',
+  };
+};
+
 export const saveViewSettings = async <K extends keyof ViewSettings>(
   envConfig: EnvConfigType,
   bookKey: string,

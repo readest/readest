@@ -32,16 +32,31 @@ vi.mock('@/utils/style', () => ({
   getStyles: vi.fn(() => ''),
 }));
 
-import { getLibraryViewSettings, saveViewSettings } from '@/helpers/settings';
+import {
+  getBackgroundTextureSettings,
+  getLibraryViewSettings,
+  saveViewSettings,
+} from '@/helpers/settings';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { EnvConfigType } from '@/services/environment';
 import type { SystemSettings } from '@/types/settings';
+import type { ViewSettings } from '@/types/book';
 
 const envConfig = {} as EnvConfigType;
 
 const makeSettings = (): SystemSettings =>
   ({
     globalViewSettings: { userStylesheet: '', userUIStylesheet: '' },
+  }) as unknown as SystemSettings;
+
+const makeTextureSettings = (overrides: Partial<SystemSettings> = {}): SystemSettings =>
+  ({
+    globalViewSettings: {
+      backgroundTextureId: 'paper',
+      backgroundOpacity: 0.6,
+      backgroundSize: 'cover',
+    },
+    ...overrides,
   }) as unknown as SystemSettings;
 
 beforeEach(() => {
@@ -56,16 +71,6 @@ beforeEach(() => {
 });
 
 describe('getLibraryViewSettings', () => {
-  const makeTextureSettings = (overrides: Partial<SystemSettings> = {}): SystemSettings =>
-    ({
-      globalViewSettings: {
-        backgroundTextureId: 'paper',
-        backgroundOpacity: 0.6,
-        backgroundSize: 'cover',
-      },
-      ...overrides,
-    }) as unknown as SystemSettings;
-
   test('inherits the reader/global texture when no library override is set', () => {
     const result = getLibraryViewSettings(makeTextureSettings());
 
@@ -107,6 +112,54 @@ describe('getLibraryViewSettings', () => {
     expect(result.backgroundTextureId).toBe('sand');
     expect(result.backgroundOpacity).toBe(0.6);
     expect(result.backgroundSize).toBe('cover');
+  });
+});
+
+describe('getBackgroundTextureSettings', () => {
+  test('library scope resolves like the library page, inheriting until decoupled', () => {
+    expect(getBackgroundTextureSettings('library', makeTextureSettings())).toEqual({
+      backgroundTextureId: 'paper',
+      backgroundOpacity: 0.6,
+      backgroundSize: 'cover',
+    });
+    expect(
+      getBackgroundTextureSettings(
+        'library',
+        makeTextureSettings({ libraryBackgroundTextureId: 'sand' }),
+      ).backgroundTextureId,
+    ).toBe('sand');
+  });
+
+  test('reader scope uses the open book view settings when provided', () => {
+    const readerViewSettings = {
+      backgroundTextureId: 'moon',
+      backgroundOpacity: 0.4,
+      backgroundSize: 'auto',
+    } as unknown as ViewSettings;
+
+    expect(
+      getBackgroundTextureSettings('reader', makeTextureSettings(), readerViewSettings),
+    ).toEqual({
+      backgroundTextureId: 'moon',
+      backgroundOpacity: 0.4,
+      backgroundSize: 'auto',
+    });
+  });
+
+  test('reader scope falls back to global view settings when no book is open', () => {
+    expect(getBackgroundTextureSettings('reader', makeTextureSettings())).toEqual({
+      backgroundTextureId: 'paper',
+      backgroundOpacity: 0.6,
+      backgroundSize: 'cover',
+    });
+  });
+
+  test('reader scope tolerates the initial empty settings', () => {
+    expect(getBackgroundTextureSettings('reader', {} as SystemSettings)).toEqual({
+      backgroundTextureId: 'none',
+      backgroundOpacity: 0.6,
+      backgroundSize: 'cover',
+    });
   });
 });
 
