@@ -18,7 +18,11 @@ import { buildAnnotationUrl } from '@/utils/deeplink';
 import { buildAnnotationCopyMarkdown } from '@/utils/note';
 import { writeTextToClipboard } from '@/utils/clipboard';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
-import { removeBookNoteOverlays } from '../../utils/annotatorUtil';
+import {
+  applyNoteBubbleTransition,
+  decideNoteBubbleTransition,
+  removeBookNoteOverlays,
+} from '../../utils/annotatorUtil';
 import TextButton from '@/components/TextButton';
 import TextEditor, { TextEditorRef } from '@/components/TextEditor';
 
@@ -27,9 +31,16 @@ interface BooknoteItemProps {
   item: BookNote;
   isNearest?: boolean;
   onClick?: () => void;
+  inlineNoteEditing?: boolean;
 }
 
-const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, onClick }) => {
+const BooknoteItem: React.FC<BooknoteItemProps> = ({
+  bookKey,
+  item,
+  isNearest,
+  onClick,
+  inlineNoteEditing,
+}) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
@@ -71,9 +82,6 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
 
     onClick?.();
     getView(bookKey)?.goTo(cfi);
-    if (note) {
-      setNotebookVisible(true);
-    }
   };
 
   const deleteNote = (note: BookNote) => {
@@ -128,6 +136,31 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
     setInlineEditMode(true);
   };
 
+  const editNoteInline = () => {
+    setEditorDraft(item.note || '');
+    setInlineEditMode(true);
+  };
+
+  const handleSaveInlineNote = () => {
+    setInlineEditMode(false);
+    const config = getConfig(bookKey);
+    if (!config) return;
+    const { booknotes = [] } = config;
+    const existingIndex = booknotes.findIndex(
+      (annotation) => annotation.id === item.id && !annotation.deletedAt,
+    );
+    if (existingIndex === -1) return;
+    const existing = booknotes[existingIndex]!;
+    const transition = decideNoteBubbleTransition(existing.note, editorDraft);
+    const updated: BookNote = { ...existing, note: editorDraft, updatedAt: Date.now() };
+    booknotes[existingIndex] = updated;
+    applyNoteBubbleTransition(getViewsById(bookKey.split('-')[0]!), updated, transition);
+    const updatedConfig = updateBooknotes(bookKey, booknotes);
+    if (updatedConfig) {
+      saveConfig(envConfig, bookKey, updatedConfig, settings);
+    }
+  };
+
   const handleSaveBookmark = () => {
     setInlineEditMode(false);
     const config = getConfig(bookKey);
@@ -145,6 +178,8 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
   };
 
   if (inlineEditMode) {
+    const isBookmark = item.type === 'bookmark';
+    const handleSave = isBookmark ? handleSaveBookmark : handleSaveInlineNote;
     return (
       <div
         className={clsx(
@@ -159,14 +194,15 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
             ref={editorRef}
             value={editorDraft}
             onChange={setEditorDraft}
-            onSave={handleSaveBookmark}
+            onSave={handleSave}
             onEscape={() => setInlineEditMode(false)}
             spellCheck={false}
+            autoFocus
           />
         </div>
         <div className='flex justify-end space-x-3 p-2' dir='ltr'>
           <TextButton onClick={() => setInlineEditMode(false)}>{_('Cancel')}</TextButton>
-          <TextButton onClick={handleSaveBookmark} disabled={!editorDraft}>
+          <TextButton onClick={handleSave} disabled={isBookmark && !editorDraft}>
             {_('Save')}
           </TextButton>
         </div>
@@ -174,7 +210,8 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
     );
   }
 
-  const isEditable = item.note || item.type === 'bookmark';
+  const isEditable =
+    !!item.note || item.type === 'bookmark' || (!!inlineNoteEditing && item.type === 'annotation');
 
   return (
     <li
@@ -305,9 +342,15 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({ bookKey, item, isNearest, o
 
             {isEditable && (
               <button
-                onClick={item.type === 'bookmark' ? editBookmark : editNote.bind(null, item)}
+                onClick={
+                  item.type === 'bookmark'
+                    ? editBookmark
+                    : inlineNoteEditing
+                      ? editNoteInline
+                      : editNote.bind(null, item)
+                }
                 className='btn btn-ghost btn-xs p-0 text-blue-500 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
-                aria-label={_('Edit')}
+                aria-label={item.note || item.type === 'bookmark' ? _('Edit') : _('Add Note')}
               >
                 <MdEdit size={size18} />
               </button>
