@@ -234,7 +234,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
               }}
               className='p-0 text-center leading-none text-foreground underline decoration-2'
             >
-              {style === 'underline' || style === 'squiggly' ? 'U' : 'A'}
+              A
             </div>
           </button>
         ))}
