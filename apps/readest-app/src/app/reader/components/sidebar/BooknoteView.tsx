@@ -280,7 +280,13 @@ const BooknoteView: React.FC<{
     // While the user is filtering/searching, the list is a result set, not a
     // mirror of the reading position; jumping to the nearest note would yank
     // their scroll position on every keystroke.
-    if (isFiltering) return;
+    if (isFiltering) {
+      // Forget the last auto-scroll target while filtering so that clearing
+      // the filter re-centers on the reading position instead of being
+      // skipped by the ref-equality guard below.
+      lastScrolledCfiRef.current = null;
+      return;
+    }
     if (nearestIndex < 0) return;
     if (nearestCfi === lastScrolledCfiRef.current) return;
     lastScrolledCfiRef.current = nearestCfi;
