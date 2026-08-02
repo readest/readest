@@ -72,7 +72,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const suppressTapRef = useRef(false);
   const colorStripRef = useRef<HTMLDivElement | null>(null);
   const size16 = useResponsiveSize(16);
-  const size36 = useResponsiveSize(36);
+  const size30 = useResponsiveSize(30);
   const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
   const highlightOptionsPaddingPx = useResponsiveSize(OPTIONS_PADDING_PIX);
 
@@ -195,7 +195,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
     >
       <div
         className={clsx('flex gap-2', isVertical ? 'flex-col' : 'flex-row')}
-        style={isVertical ? { width: size36 } : { height: size36 }}
+        style={isVertical ? { width: size30 } : { height: size30 }}
       >
         {styles.map((style) => (
           <button
@@ -209,7 +209,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                 ? 'border-current border-2'
                 : 'not-eink:border-base-content/20 border',
             )}
-            style={{ width: size36, height: size36, minHeight: size36 }}
+            style={{ width: size30, height: size30, minHeight: size30 }}
           >
             <div
               style={{
@@ -225,13 +225,24 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                 ...((style === 'underline' || style === 'squiggly') && {
                   textDecoration: 'underline',
                   textDecorationThickness: '2px',
-                  textUnderlineOffset: '3px',
+                  textUnderlineOffset: style === 'squiggly' ? '1px' : '3px',
                 }),
                 ...(style === 'squiggly' && { textDecorationStyle: 'wavy' }),
               }}
-              className='text-base-content decoration-inherit rounded-sm p-0 text-center leading-none'
+              className={clsx(
+                'text-base-content decoration-inherit rounded-sm p-0 leading-none',
+                style === 'highlight' ? 'flex items-center justify-center' : 'text-center',
+                style === 'underline' || style === 'squiggly' ? 'sm:mt-[-2px]' : '',
+              )}
             >
-              A
+              {style === 'highlight' ? (
+                // text-box trims the em box to cap height / baseline so the
+                // flex centering centers the glyph ink, not the em box (which
+                // has empty descender space below a capital A).
+                <span style={{ textBox: 'trim-both cap alphabetic' }}>A</span>
+              ) : (
+                'A'
+              )}
             </div>
           </button>
         ))}
@@ -251,7 +262,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
               ? 'not-eink:text-primary'
               : 'not-eink:text-base-content/80 hover:not-eink:text-base-content',
           )}
-          style={{ width: size36, height: size36 }}
+          style={{ width: size30, height: size30 }}
         >
           <MdLibraryAddCheck size={size16} />
         </button>
@@ -268,7 +279,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
           !isVertical && isDraggingColorStrip && 'cursor-grabbing',
         )}
         style={{
-          ...(isVertical ? { width: size36 } : { height: size36 }),
+          ...(isVertical ? { width: size30 } : { height: size30 }),
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           WebkitUserSelect: isDraggingColorStrip ? 'none' : undefined,
