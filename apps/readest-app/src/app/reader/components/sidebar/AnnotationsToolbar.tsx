@@ -218,7 +218,7 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
     filterKind !== 'all' || excludedColors.length > 0 || excludedStyles.length > 0;
 
   return (
-    <div className='annotations-toolbar flex items-center justify-end gap-1 ps-3 pe-3 pb-2 pt-2'>
+    <div className='annotations-toolbar flex items-center justify-end gap-2 ps-3 pe-3 pb-2 pt-2'>
       {isSearchVisible && (
         <div className='eink-bordered bg-base-100 flex h-8 min-w-0 flex-1 items-center rounded-lg'>
           <div className='ps-3'>
@@ -255,7 +255,7 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
           'btn btn-ghost btn-circle h-6 min-h-6 w-6 p-0',
           hasActiveFilters && 'bg-base-300',
         )}
-        containerClassName='h-6'
+        containerClassName='h-8 pt-1'
         toggleButton={
           <span className='relative inline-flex'>
             <MdFilterList className='fill-base-content' />
