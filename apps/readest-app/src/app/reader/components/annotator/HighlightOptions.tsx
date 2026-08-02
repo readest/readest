@@ -10,7 +10,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useDragScroll } from '@/hooks/useDragScroll';
 import { saveSysSettings } from '@/helpers/settings';
-import { LONG_HOLD_THRESHOLD } from '@/services/constants';
+import { HIGHLIGHT_COLOR_HEX, LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { getHighlightColorLabel } from '../../utils/annotatorUtil';
 import { stubTranslation as _ } from '@/utils/misc';
 
@@ -18,14 +18,6 @@ import { stubTranslation as _ } from '@/utils/misc';
 // component via `useTranslation` below.
 const styles = [_('highlight'), _('underline'), _('squiggly')] as HighlightStyle[];
 void [_('red'), _('yellow'), _('green'), _('blue'), _('violet')];
-
-const getColorHex = (
-  customColors: Record<HighlightColor, string>,
-  color: HighlightColor,
-): string => {
-  if (color.startsWith('#')) return color;
-  return customColors[color] ?? color;
-};
 
 interface HighlightOptionsProps {
   isVertical: boolean;
@@ -223,16 +215,16 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                 width: size16,
                 height: size16,
                 ...(style === 'highlight' && {
+                  backgroundColor: HIGHLIGHT_COLOR_HEX['yellow'],
+                }),
+                ...((style === 'underline' || style === 'squiggly') && {
                   textDecoration: 'underline',
-                  textDecorationThickness: '3px',
-                  textDecorationColor: isBwEink
-                    ? einkFgColor
-                    : getColorHex(customColors, selectedColor),
+                  textDecorationThickness: '2px',
                   textUnderlineOffset: '3px',
                 }),
                 ...(style === 'squiggly' && { textDecorationStyle: 'wavy' }),
               }}
-              className='p-0 text-center leading-none text-foreground underline decoration-2'
+              className='p-0 text-center leading-none text-foreground decoration-inherit rounded-sm'
             >
               A
             </div>
