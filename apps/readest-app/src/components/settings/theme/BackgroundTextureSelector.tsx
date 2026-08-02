@@ -78,7 +78,9 @@ const BackgroundTextureSelector: React.FC<BackgroundTextureSelectorProps> = ({
                 aria-checked={active}
                 onClick={() => onScopeChange(segScope)}
                 className={clsx(
-                  'flex h-9 items-center justify-center rounded-full px-3 text-sm font-medium transition-colors',
+                  // em-based like SectionTitle, not rem-based text-sm — the
+                  // settings-content wrapper scales 14/16px (DESIGN.md §5).
+                  'flex h-9 items-center justify-center rounded-full px-3 text-[0.85em] font-medium transition-colors',
                   'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
                   active
                     ? 'bg-base-300 text-base-content eink-inverted shadow-sm'
