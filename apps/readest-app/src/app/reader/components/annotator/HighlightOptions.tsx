@@ -240,13 +240,13 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
           title={_('Apply to every occurrence in the book')}
           onClick={() => onToggleGlobal?.()}
           className={clsx(
-            'not-eink:border-base-content/20 border eink-bordered not-eink:shadow-2xl flex items-center justify-center rounded-full p-0 transition-colors',
+            'not-eink:border-base-content/20 border eink-bordered not-eink:shadow-2xl flex flex-shrink-0 items-center justify-center rounded-full p-0 transition-colors',
             isDarkMode ? 'bg-base-100' : 'bg-base-300',
             globalToggleActive
               ? 'not-eink:text-primary'
               : 'not-eink:text-base-content/80 hover:not-eink:text-base-content',
           )}
-          style={{ width: size36, height: size36, minHeight: size36 }}
+          style={{ width: size36, height: size36 }}
         >
           <MdLibraryAddCheck size={size16} />
         </button>
