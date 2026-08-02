@@ -52,6 +52,7 @@
           xdg-utils
           patchelf
           wrapGAppsHook4
+          playwright-driver.browsers
           self.formatter.${pkgs.stdenv.hostPlatform.system}
         ];
 
@@ -105,6 +106,10 @@
             env = {
               GDK_BACKEND = "x11";
               LD_LIBRARY_PATH = lib.makeLibraryPath buildInputs;
+
+              PLAYWRIGHT_BROWSERS_PATH = pkgs.playwright-driver.browsers;
+              PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = 1;
+              PLAYWRIGHT_HOST_PLATFORM_OVERRIDE = "ubuntu-24.04";
             } // extraEnv;
 
             shellHook = ''
