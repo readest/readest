@@ -64,4 +64,26 @@ describe('LibrarySearchOptionsMenu', () => {
     fireEvent.click(screen.getByText('Match Case'));
     expect(onConfigChange).toHaveBeenLastCalledWith(expect.objectContaining({ matchCase: true }));
   });
+
+  // A device text scale of 1.25 (Android system font size) multiplies every
+  // declared font-size, but a hard-coded `w-56` box does not grow with it, so
+  // labels wrapped onto a second line and the menu grew past the landscape
+  // viewport with no way to scroll.
+  it('sizes to its content and stays scrollable so options never wrap', () => {
+    const { container } = render(
+      <LibrarySearchOptionsMenu config={config} onConfigChange={vi.fn()} />,
+    );
+
+    const menu = container.querySelector('.search-options') as HTMLElement;
+    expect(menu).toBeTruthy();
+    // No fixed width: the box tracks its content so scaled-up text still fits.
+    expect(menu.className).not.toMatch(/(^|\s)!?w-\d/);
+    // Overlong content scrolls instead of overflowing the screen.
+    expect(menu.className).toMatch(/overflow-y-auto/);
+    expect(menu.className).toMatch(/max-h-/);
+
+    for (const label of ['Contains', 'Whole Words', 'Regular Expression', 'Match Diacritics']) {
+      expect(screen.getByText(label).className).toMatch(/whitespace-nowrap/);
+    }
+  });
 });

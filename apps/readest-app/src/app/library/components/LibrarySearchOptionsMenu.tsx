@@ -28,7 +28,7 @@ const Option: React.FC<OptionProps> = ({ label, isActive, onClick, disabled }) =
         <span style={{ minWidth: `${iconSize}px` }}>
           {isActive && <MdCheck className='text-base-content' />}
         </span>
-        <span className='ml-2'>{label}</span>
+        <span className='ml-2 whitespace-nowrap'>{label}</span>
       </div>
     </button>
   );
@@ -72,7 +72,13 @@ const LibrarySearchOptionsMenu: React.FC<LibrarySearchOptionsMenuProps> = ({
     <div
       role='menu'
       className={clsx(
-        'search-options dropdown-content border-base-200 bg-base-100 eink-bordered z-20 w-56 rounded-lg border p-1 shadow-2xl',
+        'search-options dropdown-content border-base-200 bg-base-100 eink-bordered z-20 rounded-lg border p-1 shadow-2xl',
+        // No fixed width: a device text scale (Android system font size) scales
+        // every font-size but not a `w-56` box, so labels wrapped and the menu
+        // outgrew the landscape viewport. `.dropdown-content` already sizes the
+        // box to its content and caps it at the viewport. Same scroll contract
+        // as the shared Menu component behind the view and settings menus.
+        'max-h-[calc(100vh-96px)] overflow-y-auto',
         menuClassName,
       )}
     >
