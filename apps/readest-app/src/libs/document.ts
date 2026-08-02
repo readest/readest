@@ -104,6 +104,10 @@ export interface BookDoc {
   transformTarget?: EventTarget;
   splitTOCHref(href: string): Array<string | number>;
   getCover(): Promise<Blob | null>;
+  // Formats backed by live parser state must be released explicitly: a PDF
+  // book holds a pdf.js document whose dedicated worker survives GC, so
+  // dropping the reference leaks the whole parsed file (#5387).
+  destroy?(): void | Promise<void>;
 }
 
 export const EXTS: Record<BookFormat, string> = {

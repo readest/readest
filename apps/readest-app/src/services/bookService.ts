@@ -409,11 +409,11 @@ export async function importBook(
   } = options;
   const isPseStream = typeof file === 'string' && isPseStreamFileName(file);
 
+  let loadedBook: BookDoc | undefined;
+  let fileobj: File | undefined;
   try {
-    let loadedBook: BookDoc;
     let format: BookFormat;
     let filename: string;
-    let fileobj: File | undefined;
     // When the Rust EPUB parser succeeds it gives us the partialMD5 for free,
     // so we can short-circuit the JS hashing pass below.
     let nativeHash: string | undefined;
@@ -729,15 +729,25 @@ export async function importBook(
       }
     }
     book.coverImageUrl = await generateCoverImageUrlFn(book);
-    const f = file as ClosableFile;
-    if (f && f.close) {
-      await f.close();
-    }
 
     return existingBook || book;
   } catch (error) {
     console.error('Error importing book:', error);
     throw error;
+  } finally {
+    // Release the parsed document (a PDF leaks its pdf.js worker otherwise,
+    // ~60 MB per imported file — #5387) and the opened file handle.
+    try {
+      await loadedBook?.destroy?.();
+    } catch (error) {
+      console.warn('Error destroying book document:', error);
+    }
+    const f = fileobj as ClosableFile | undefined;
+    if (f?.close) {
+      try {
+        await f.close();
+      } catch {}
+    }
   }
 }
 
@@ -870,12 +880,19 @@ export async function fetchBookDetails(
     await downloadBookFn(book);
   }
   const { file } = await loadBookContent(fs, book);
-  const bookDoc = (await new DocumentLoader(file).open()).book;
-  const f = file as ClosableFile;
-  if (f && f.close) {
-    await f.close();
+  let bookDoc: BookDoc | undefined;
+  try {
+    bookDoc = (await new DocumentLoader(file).open()).book;
+    return bookDoc.metadata;
+  } finally {
+    try {
+      await bookDoc?.destroy?.();
+    } catch {}
+    const f = file as ClosableFile;
+    if (f && f.close) {
+      await f.close();
+    }
   }
-  return bookDoc.metadata;
 }
 
 /**
@@ -886,32 +903,43 @@ export async function fetchBookDetails(
  */
 export async function refreshBookMetadata(fs: FileSystem, book: Book): Promise<boolean> {
   const { file } = await loadBookContent(fs, book);
-  const { book: bookDoc } = await new DocumentLoader(file).open();
-  if (!bookDoc) return false;
+  let bookDoc: BookDoc | undefined;
+  try {
+    ({ book: bookDoc } = await new DocumentLoader(file).open());
+    if (!bookDoc) return false;
 
-  book.metadata = bookDoc.metadata;
-  // PDF metaHash is salted with the original import filename (issue #5411),
-  // which is lost after import — keep the value stamped at import time.
-  if (book.format !== 'PDF' || !book.metaHash) {
-    book.metaHash = getMetadataHash(bookDoc.metadata);
-  }
-  const primaryLanguage = getPrimaryLanguage(bookDoc.metadata.language);
-  if (primaryLanguage) {
-    book.primaryLanguage = primaryLanguage;
-  }
+    book.metadata = bookDoc.metadata;
+    // PDF metaHash is salted with the original import filename (issue #5411),
+    // which is lost after import — keep the value stamped at import time.
+    if (book.format !== 'PDF' || !book.metaHash) {
+      book.metaHash = getMetadataHash(bookDoc.metadata);
+    }
+    const primaryLanguage = getPrimaryLanguage(bookDoc.metadata.language);
+    if (primaryLanguage) {
+      book.primaryLanguage = primaryLanguage;
+    }
 
-  // Update series info from metadata
-  if (book.metadata?.belongsTo?.series) {
-    const belongsTo = book.metadata.belongsTo.series;
-    const series = Array.isArray(belongsTo) ? belongsTo[0] : belongsTo;
-    if (series) {
-      book.metadata.series = formatTitle(series.name);
-      book.metadata.seriesIndex = parseFloat(series.position || '0');
-      if (series.total) book.metadata.seriesTotal = parseInt(series.total, 10);
+    // Update series info from metadata
+    if (book.metadata?.belongsTo?.series) {
+      const belongsTo = book.metadata.belongsTo.series;
+      const series = Array.isArray(belongsTo) ? belongsTo[0] : belongsTo;
+      if (series) {
+        book.metadata.series = formatTitle(series.name);
+        book.metadata.seriesIndex = parseFloat(series.position || '0');
+        if (series.total) book.metadata.seriesTotal = parseInt(series.total, 10);
+      }
+    }
+
+    return true;
+  } finally {
+    try {
+      await bookDoc?.destroy?.();
+    } catch {}
+    const f = file as ClosableFile;
+    if (f && f.close) {
+      await f.close();
     }
   }
-
-  return true;
 }
 
 export async function exportBook(
