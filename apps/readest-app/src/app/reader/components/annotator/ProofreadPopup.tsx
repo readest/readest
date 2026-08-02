@@ -15,6 +15,14 @@ import Popup from '@/components/Popup';
 import { Toggle } from '@/components/primitives/toggle';
 import { useThemeStore } from '@/store/themeStore';
 
+// Light themes need the knob track inverted against the popup's base-300
+// surface; dark themes already read correctly with the primitive's defaults.
+const toggleClassName = (isDarkMode: boolean) =>
+  clsx(
+    'toggle-sm',
+    !isDarkMode && 'checked:![--tglbg:theme(colors.base-100)] [--tglbg:theme(colors.base-300)]',
+  );
+
 interface ProofreadPopupProps {
   bookKey: string;
   selection?: TextSelection;
@@ -168,7 +176,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
                 }
               }}
               placeholder={_('Enter text...')}
-              className='w-full flex-1 rounded-md px-2 py-2 text-sm bg-base-200 text-base-content placeholder:text-base-content/40 border border-base-300 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all'
+              className='bg-base-200 text-base-content placeholder:text-base-content/40 border-base-300 focus:border-primary focus:ring-primary eink-bordered w-full flex-1 rounded-md border p-2 text-sm transition-all focus:outline-none focus:ring-1'
             />
             <button
               onClick={handleApply}
@@ -188,11 +196,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
             <Toggle
               checked={caseSensitive}
               onChange={(e) => setCaseSensitive(e.target.checked)}
-              className={clsx(
-                'toggle-sm',
-                !isDarkMode &&
-                  'checked:![--tglbg:theme(colors.base-100)] [--tglbg:theme(colors.base-300)]',
-              )}
+              className={toggleClassName(isDarkMode)}
             />
           </label>
 
@@ -206,11 +210,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
               {_('Whole word:')}
             </span>
             <Toggle
-              className={clsx(
-                'toggle-sm',
-                !isDarkMode &&
-                  'checked:![--tglbg:theme(colors.base-100)] [--tglbg:theme(colors.base-300)]',
-              )}
+              className={toggleClassName(isDarkMode)}
               disabled={isRegex}
               checked={isRegex ? false : wholeWord}
               onChange={(e) => setWholeWord(e.target.checked)}
@@ -223,11 +223,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
             </span>
 
             <Toggle
-              className={clsx(
-                'toggle-sm',
-                !isDarkMode &&
-                  'checked:![--tglbg:theme(colors.base-100)] [--tglbg:theme(colors.base-300)]',
-              )}
+              className={toggleClassName(isDarkMode)}
               checked={isRegex}
               onChange={(e) => setIsRegex(e.target.checked)}
             />
@@ -238,11 +234,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
               {_('Only for TTS:')}
             </span>
             <Toggle
-              className={clsx(
-                'toggle-sm',
-                !isDarkMode &&
-                  'checked:![--tglbg:theme(colors.base-100)] [--tglbg:theme(colors.base-300)]',
-              )}
+              className={toggleClassName(isDarkMode)}
               disabled={scope === 'selection'}
               checked={onlyForTTS}
               onChange={(e) => setOnlyForTTS(e.target.checked)}

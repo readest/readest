@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
@@ -68,9 +69,12 @@ export default defineConfig({
             allowedMismatchedPixelRatio: 0.02,
           },
           // Strip platform from the path so one baseline works on macOS and Linux.
-          // The path is relative to the project root (not the test file).
-          resolveScreenshotPath: ({ arg, browserName, ext, testFileDirectory, testFileName }) =>
-            `${testFileDirectory}/__screenshots__/${testFileName}/${arg}-${browserName}${ext}`,
+          // Must be absolute: vitest runs the path through Vite's `server.fs`
+          // access check before writing, and a relative path is always denied,
+          // which surfaces as "Couldn't write file to fs" when generating
+          // baselines (reads still worked because they resolve against cwd).
+          resolveScreenshotPath: ({ arg, browserName, ext, root, testFileDirectory, testFileName }) =>
+            resolve(root, testFileDirectory, '__screenshots__', testFileName, `${arg}-${browserName}${ext}`),
         },
       },
     },

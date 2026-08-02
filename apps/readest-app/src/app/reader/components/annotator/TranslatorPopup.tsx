@@ -141,7 +141,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
         minHeight={popupHeight}
         maxHeight={720}
         position={position}
-        className='grid h-full select-text grid-rows-[1fr,auto,1fr]'
+        className='grid h-full select-text grid-rows-[1fr,auto,1fr,auto]'
         onDismiss={onDismiss}
       >
         <div className='overflow-y-auto p-4 font-sans'>
@@ -170,7 +170,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
 
         <div className='mx-4 flex-shrink-0 border-t border-base-content/20'></div>
 
-        <div className='overflow-y-auto px-4 pb-8 pt-4 font-sans'>
+        <div className='overflow-y-auto p-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>
             <h2 className='text-sm font-medium'>{_('Translated Text')}</h2>
             <Select
@@ -196,7 +196,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
             </div>
           )}
         </div>
-        <div className='flex items-center justify-between gap-2 border-t border-base-200/80 px-4 py-2 bg-base-200/40 rounded-b-xl shrink-0'>
+        <div className='border-base-content/20 bg-base-200/40 flex shrink-0 items-center justify-between gap-2 rounded-b-lg border-t px-4 py-2'>
           <div className='line-clamp-1 text-xs text-base-content/60'>
             {provider &&
               !loading &&

@@ -72,9 +72,13 @@ describe('Popup e-ink triangle (popup above selection)', () => {
     expect(popupEl.style.top).toBe('516px');
 
     // The white inner triangle must stay above the black outer one, or e-ink
-    // renders a solid black triangle.
+    // renders a solid black triangle. `triangleHidden` now hides both triangles
+    // outright instead of demoting the inner one, so assert on visibility too --
+    // a z-index-only check passes vacuously once the demotion is gone.
     const inner = container.querySelector('.popup-triangle-inner')!;
     expect(inner.className).toContain('z-50');
     expect(inner.className).not.toContain('z-10');
+    expect(inner.className).not.toContain('invisible');
+    expect(container.querySelector('.popup-triangle-outer')!.className).not.toContain('invisible');
   });
 });

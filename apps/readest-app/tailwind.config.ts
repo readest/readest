@@ -34,6 +34,10 @@ const config: Config = {
     plugin(function ({ addVariant }) {
       addVariant('eink', 'html[data-eink="true"] &');
       addVariant('not-eink', 'html:not([data-eink="true"]) &');
+      // Theme names are `${color}-light` / `${color}-dark` (see themeStore
+      // applyDataTheme). Tailwind's built-in `dark:` follows prefers-color-scheme,
+      // which does not track the in-app theme, so branch on the attribute.
+      addVariant('theme-dark', 'html[data-theme$="-dark"] &');
     }),
   ],
   daisyui: {

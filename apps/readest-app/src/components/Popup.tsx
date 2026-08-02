@@ -3,7 +3,6 @@ import { Position, isPointInRect } from '@/utils/sel';
 import { useEffect, useRef, useState } from 'react';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
-import { useThemeStore } from '@/store/themeStore';
 
 const getTriangleStyles = (
   trianglePosition: Position | undefined,
@@ -76,7 +75,6 @@ const Popup = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState(position);
   const [childrenHeight, setChildrenHeight] = useState(height || minHeight || 0);
-  const { isDarkMode } = useThemeStore();
 
   useKeyDownActions({ onCancel: onDismiss, elementRef: containerRef, enabled: isOpen });
 
@@ -139,33 +137,23 @@ const Popup = ({
   const triangleHidden = !!(
     adjustedPosition &&
     trianglePosition &&
-    isPointInRect(
-      trianglePosition.point,
-      {
-        left: adjustedPosition.point.x,
-        top: adjustedPosition.point.y,
-        right: adjustedPosition.point.x + width,
-        bottom: adjustedPosition.point.y + popupHeight,
-      },
-      triangleSize,
-    )
+    isPointInRect(trianglePosition.point, {
+      left: adjustedPosition.point.x,
+      top: adjustedPosition.point.y,
+      right: adjustedPosition.point.x + width,
+      bottom: adjustedPosition.point.y + popupHeight,
+    })
   );
 
-  useEffect(() => {
-    console.log({
-      triangle: trianglePosition,
-      popup: adjustedPosition?.point,
-      popupHeight,
-      width,
-      hidden: triangleHidden,
-    });
-  }, [trianglePosition, adjustedPosition, triangleHidden]);
-
   return (
-    <div className='not-eink:drop-shadow-xl'>
+    // No `filter` (drop-shadow) on this wrapper: it would become the containing
+    // block and stacking context for the absolutely positioned popup below,
+    // re-anchoring it off the viewport and demoting its z-50 under later reader
+    // chrome. The triangle shadow lives on the triangle itself.
+    <div>
       <div
         className={clsx(
-          'popup-triangle-outer absolute text-base-content/20 z-50',
+          'popup-triangle-outer text-base-content/20 not-eink:drop-shadow-xl absolute z-50',
           triangleHidden ? 'invisible' : 'visible',
         )}
         style={outerTriangleStyles}
@@ -175,9 +163,12 @@ const Popup = ({
         ref={containerRef}
         aria-hidden={!isOpen}
         data-capture-blocking-overlay={isOpen ? 'true' : undefined}
+        // `[data-eink] .popup-container` in globals.css already forces the 1px
+        // base-content border and base-100 background, so no eink-bordered here.
         className={clsx(
-          'popup-container absolute z-50 rounded-lg font-sans not-eink:border-base-content/20 border eink-bordered not-eink:shadow-2xl text-foreground',
-          isDarkMode ? 'bg-base-100' : 'bg-base-300',
+          'popup-container text-base-content absolute z-50 rounded-lg border font-sans',
+          'not-eink:border-base-content/20 not-eink:shadow-2xl',
+          'bg-base-300 theme-dark:bg-base-100',
           className,
         )}
         style={{
@@ -194,9 +185,8 @@ const Popup = ({
       </div>
       <div
         className={clsx(
-          'popup-triangle-inner absolute z-50',
+          'popup-triangle-inner text-base-300 theme-dark:text-base-100 absolute z-50',
           triangleHidden ? 'invisible' : 'visible',
-          isDarkMode ? 'text-base-100' : 'text-base-300',
         )}
         style={innerTriangleStyles}
       />

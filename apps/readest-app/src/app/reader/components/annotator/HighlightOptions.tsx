@@ -56,6 +56,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const isEink = settings.globalViewSettings.isEink;
   const isColorEink = settings.globalViewSettings.isColorEink;
   const isBwEink = isEink && !isColorEink;
+  const einkBgColor = isDarkMode ? '#000000' : '#ffffff';
   const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
   const customColors = globalReadSettings.customHighlightColors;
   const userColors = globalReadSettings.userHighlightColors ?? [];
@@ -202,8 +203,8 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
             aria-label={_('Select {{style}} style', { style: _(style) })}
             onClick={() => handleSelectStyle(style)}
             className={clsx(
-              'not-eink:shadow-2xl flex items-center justify-center rounded-full p-0',
-              isDarkMode ? 'bg-base-100' : 'bg-base-300',
+              'eink-bordered not-eink:shadow-sm flex items-center justify-center rounded-full p-0',
+              'bg-base-300 theme-dark:bg-base-100',
               selectedStyle === style
                 ? 'border-current border-2'
                 : 'not-eink:border-base-content/20 border',
@@ -214,8 +215,12 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
               style={{
                 width: size16,
                 height: size16,
+                // The marker swatch is always the yellow highlighter, so its
+                // glyph needs a fixed dark ink -- base-content would be white on
+                // yellow in dark themes. B&W e-ink has no yellow to show.
                 ...(style === 'highlight' && {
-                  backgroundColor: HIGHLIGHT_COLOR_HEX['yellow'],
+                  backgroundColor: isBwEink ? einkFgColor : HIGHLIGHT_COLOR_HEX['yellow'],
+                  color: isBwEink ? einkBgColor : '#1f2937',
                 }),
                 ...((style === 'underline' || style === 'squiggly') && {
                   textDecoration: 'underline',
@@ -224,7 +229,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                 }),
                 ...(style === 'squiggly' && { textDecorationStyle: 'wavy' }),
               }}
-              className='p-0 text-center leading-none text-foreground decoration-inherit rounded-sm'
+              className='text-base-content decoration-inherit rounded-sm p-0 text-center leading-none'
             >
               A
             </div>
@@ -240,8 +245,8 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
           title={_('Apply to every occurrence in the book')}
           onClick={() => onToggleGlobal?.()}
           className={clsx(
-            'not-eink:border-base-content/20 border eink-bordered not-eink:shadow-2xl flex flex-shrink-0 items-center justify-center rounded-full p-0 transition-colors',
-            isDarkMode ? 'bg-base-100' : 'bg-base-300',
+            'not-eink:border-base-content/20 eink-bordered not-eink:shadow-sm flex flex-shrink-0 items-center justify-center rounded-full border p-0 transition-colors',
+            'bg-base-300 theme-dark:bg-base-100',
             globalToggleActive
               ? 'not-eink:text-primary'
               : 'not-eink:text-base-content/80 hover:not-eink:text-base-content',
@@ -256,8 +261,8 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
         ref={colorStripRef}
         {...stripPointerHandlers}
         className={clsx(
-          'not-eink:border-base-content/20 border eink-bordered not-eink:shadow-2xl eink-bordered flex items-center gap-2 rounded-3xl',
-          isDarkMode ? 'bg-base-100' : 'bg-base-300',
+          'not-eink:border-base-content/20 eink-bordered not-eink:shadow-sm flex items-center gap-2 rounded-3xl border',
+          'bg-base-300 theme-dark:bg-base-100',
           isVertical ? 'flex-col overflow-y-auto py-2' : 'min-w-0 flex-row overflow-x-auto px-2',
           !isVertical && 'cursor-grab',
           !isVertical && isDraggingColorStrip && 'cursor-grabbing',
