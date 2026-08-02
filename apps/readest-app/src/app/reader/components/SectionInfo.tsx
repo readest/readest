@@ -6,6 +6,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
+import { getHeaderBandGeometry } from '@/utils/insets';
 import { useBookDataStore } from '@/store/bookDataStore';
 
 interface SectionInfoProps {
@@ -42,6 +43,10 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
     gridInsets.top,
     appService?.isAndroidApp && systemUIVisible ? statusBarHeight / 2 : 0,
   );
+  // Negative top margins lift the band (and the scrolled-mode notch mask)
+  // into the notch instead of collapsing it (#5303).
+  const band = getHeaderBandGeometry(topInset, viewSettings.marginTopPx);
+  const maskHeight = Math.min(topInset, band.bottom);
 
   const handleNotchClick = () => {
     if (eventDispatcher.dispatchSync('iframe-single-click')) return;
@@ -72,12 +77,14 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
         tabIndex={-1}
         onClick={handleNotchClick}
         style={{
-          clipPath: `inset(0 0 calc(100% - ${topInset}px) 0)`,
+          clipPath: `inset(0 0 calc(100% - ${maskHeight}px) 0)`,
         }}
       />
       <div
         className={clsx(
-          'sectioninfo absolute flex items-center overflow-hidden font-sans',
+          // z-10: the lifted band overlaps the notch mask (also z-10) at small
+          // margins; as the later sibling it must win, and z-auto would lose.
+          'sectioninfo absolute z-10 flex items-center overflow-hidden font-sans',
           isEink
             ? 'text-sm font-normal'
             : bookData?.isFixedLayout
@@ -99,10 +106,10 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
                 width: showDoubleBorder ? '32px' : `${contentInsets.right}px`,
               }
             : {
-                top: `${topInset}px`,
+                top: `${band.top}px`,
                 paddingInline: `calc(${horizontalGap / 2}% + ${contentInsets.left / 2}px)`,
                 width: '100%',
-                height: `${viewSettings.marginTopPx}px`,
+                height: `${band.height}px`,
               }
         }
       >

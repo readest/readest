@@ -880,7 +880,10 @@ const FoliateViewer: React.FC<{
       const footerVisible = showBottomFooter;
       const safeBottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
       const footerBarHeight = safeBottomPadding + viewSettings.marginBottomPx;
-      const scrollTop = headerVisible ? gridInsets.top + viewSettings.marginTopPx : 0;
+      // topMargin, not the raw margin sum: it carries the 16px moreTopInset
+      // floor, so a negative top margin keeps the scroll viewport glued to the
+      // lifted header band instead of running under it (#5303).
+      const scrollTop = headerVisible ? topMargin : 0;
       const scrollBottom = footerVisible
         ? Math.max(footerBarHeight, miniPlayerClearance)
         : miniPlayerClearance;

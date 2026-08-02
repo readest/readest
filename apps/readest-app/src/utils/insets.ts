@@ -23,6 +23,23 @@ export const getViewInsets = (viewSettings: ViewSettings) => {
 };
 
 /**
+ * Geometry of the header title band (SectionInfo, non-vertical).
+ *
+ * The band bottom is glued to the content top — max(topInset + marginTopPx, 16),
+ * the same 16px floor the renderer keeps via moreTopInset in FoliateViewer — so
+ * the title never overlaps the book text. At margins of 16px and up the band is
+ * the classic [topInset, topInset + margin] strip below the safe area; below
+ * that it keeps a 16px readable height and lifts into the notch, reaching the
+ * screen top at the negative-margin limit (#5303).
+ */
+export const getHeaderBandGeometry = (topInset: number, marginTopPx: number) => {
+  const minHeight = 16;
+  const height = Math.max(marginTopPx, minHeight);
+  const top = Math.max(0, topInset + Math.min(marginTopPx, minHeight) - minHeight);
+  return { top, height, bottom: top + height };
+};
+
+/**
  * Top padding (px) for a slide-in panel (sidebar / notebook) so its toolbar
  * clears the device status bar, mirroring the reader header.
  *
