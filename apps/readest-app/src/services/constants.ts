@@ -457,6 +457,7 @@ export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {
   useCustomTemplate: false,
   customTemplate: '',
   exportAsPlainText: false,
+  exportFormat: 'markdown',
   excludedColors: [],
   excludedStyles: [],
 };

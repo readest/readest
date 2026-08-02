@@ -4,7 +4,13 @@ import { RiDeleteBinLine } from 'react-icons/ri';
 import * as CFI from 'foliate-js/epubcfi.js';
 import { Overlayer } from 'foliate-js/overlayer.js';
 import { useEnv } from '@/context/EnvContext';
-import { BookNote, BooknoteGroup, HighlightColor, HighlightStyle } from '@/types/book';
+import {
+  BookNote,
+  BooknoteGroup,
+  HighlightColor,
+  HighlightStyle,
+  NoteExportFormat,
+} from '@/types/book';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { NativeTouchEventType } from '@/types/system';
 import { getLocale, getOSPlatform, makeSafeFilename, uniqueId } from '@/utils/misc';
@@ -84,12 +90,16 @@ import ExportMarkdownDialog from './ExportMarkdownDialog';
 import ImportAnnotationsDialog from './ImportAnnotationsDialog';
 import Alert from '@/components/Alert';
 import ModalPortal from '@/components/ModalPortal';
-import { useFileSelector } from '@/hooks/useFileSelector';
+import { SelectedFile, useFileSelector } from '@/hooks/useFileSelector';
 import { parseMrexpt } from '@/utils/mrexpt';
 import {
   convertMrexptEntriesToBookNotes,
   mergeImportedBookNotes,
 } from '@/services/annotation/providers/mrexpt';
+import {
+  convertAnnotationExportToBookNotes,
+  parseAnnotationExport,
+} from '@/services/annotation/providers/readest';
 
 const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   bookKey,
@@ -103,6 +113,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // Per-field selectors — see store/readerProgressStore.ts header for the
   // "destructure-subscribes-the-whole-store" rationale.
   const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
   const saveConfig = useBookDataStore((s) => s.saveConfig);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const updateBooknotes = useBookDataStore((s) => s.updateBooknotes);
@@ -158,7 +169,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const [externalDragPoint, setExternalDragPoint] = useState<Point | null>(null);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
-  const [importingMrexpt, setImportingMrexpt] = useState(false);
+  const [importingAnnotations, setImportingAnnotations] = useState(false);
   // "Clear Annotations" confirm dialog. Hosted here (and not in BookMenu)
   // because the menu unmounts the moment the user picks the entry, which
   // would otherwise tear down the dialog state immediately.
@@ -1387,6 +1398,19 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setShowImportDialog(true);
   };
 
+  /** Read the picked file as text on both Web (File) and Tauri (path). */
+  const readSelectedFileText = async (selectedFile: SelectedFile): Promise<string> => {
+    try {
+      if (selectedFile.file) return await selectedFile.file.text();
+      if (selectedFile.path) {
+        return (await appService?.readFile(selectedFile.path, 'None', 'text')) as string;
+      }
+    } catch (e) {
+      console.warn('Failed to read the selected annotations file:', e);
+    }
+    return '';
+  };
+
   const importFromMoonReader = async () => {
     setShowImportDialog(false);
 
@@ -1409,20 +1433,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       dialogTitle: _('Select Moon+ Reader Export File'),
     });
     if (result.error || result.files.length === 0) return;
-    const selectedFile = result.files[0]!;
 
-    // Read the file content as text on both Web (File) and Tauri (path).
-    let content = '';
-    try {
-      if (selectedFile.file) {
-        content = await selectedFile.file.text();
-      } else if (selectedFile.path) {
-        content = (await appService?.readFile(selectedFile.path, 'None', 'text')) as string;
-      }
-    } catch (e) {
-      console.warn('Failed to read mrexpt file:', e);
-    }
-
+    const content = await readSelectedFileText(result.files[0]!);
     if (!content) {
       eventDispatcher.dispatch('toast', {
         type: 'warning',
@@ -1442,7 +1454,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       return;
     }
 
-    setImportingMrexpt(true);
+    setImportingAnnotations(true);
     try {
       let conversion;
       try {
@@ -1507,7 +1519,124 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         timeout: 2500,
       });
     } finally {
-      setImportingMrexpt(false);
+      setImportingAnnotations(false);
+    }
+  };
+
+  const importFromReadest = async () => {
+    setShowImportDialog(false);
+
+    const { bookDoc, book } = bookData;
+    if (!bookDoc || !book) {
+      eventDispatcher.dispatch('toast', {
+        type: 'warning',
+        message: _('Book is not ready yet, please try again.'),
+        timeout: 2000,
+      });
+      return;
+    }
+
+    const result = await selectFiles({
+      type: 'generic',
+      accept: '.json,application/json',
+      extensions: ['json'],
+      multiple: false,
+      dialogTitle: _('Select Readest Annotations File'),
+    });
+    if (result.error || result.files.length === 0) return;
+
+    const content = await readSelectedFileText(result.files[0]!);
+    if (!content) {
+      eventDispatcher.dispatch('toast', {
+        type: 'warning',
+        message: _('Failed to read the selected file.'),
+        timeout: 2000,
+      });
+      return;
+    }
+
+    const payload = parseAnnotationExport(content);
+    if (!payload) {
+      eventDispatcher.dispatch('toast', {
+        type: 'warning',
+        message: _('This is not a Readest annotations file.'),
+        timeout: 3000,
+      });
+      return;
+    }
+    if (payload.annotations.length === 0) {
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        message: _('No annotations found in the file.'),
+        timeout: 2000,
+      });
+      return;
+    }
+
+    setImportingAnnotations(true);
+    try {
+      let conversion;
+      try {
+        conversion = await convertAnnotationExportToBookNotes(payload, bookDoc);
+      } catch (e) {
+        console.warn('Failed to convert Readest annotations:', e);
+        eventDispatcher.dispatch('toast', {
+          type: 'warning',
+          message: _('Failed to import annotations.'),
+          timeout: 3000,
+        });
+        return;
+      }
+
+      const config = getConfig(bookKey)!;
+      const { merged, applied, added, updated } = mergeImportedBookNotes(
+        config.booknotes ?? [],
+        conversion.notes,
+      );
+      let updatedConfig = updateBooknotes(bookKey, merged);
+      // Only adopt the exported reading position when this book has none of
+      // its own, so importing into a book you are midway through never moves
+      // you. A freshly re-downloaded copy does pick its position back up.
+      if (updatedConfig && payload.location && !config.location) {
+        const position = {
+          location: payload.location,
+          ...(payload.progress ? { progress: payload.progress } : {}),
+        };
+        setConfig(bookKey, position);
+        updatedConfig = { ...updatedConfig, ...position };
+      }
+      if (updatedConfig) {
+        saveConfig(envConfig, bookKey, updatedConfig, settings);
+      }
+
+      const views = getViewsById(bookKey.split('-')[0]!);
+      for (const note of applied) {
+        try {
+          views.forEach((v) => v?.addAnnotation(note));
+        } catch (err) {
+          console.warn('Failed to add imported annotation', { note, err });
+        }
+      }
+
+      const imported = added + updated;
+      const parts: string[] = [
+        imported > 0
+          ? _('Imported {{count}} annotations', { count: imported })
+          : _('No new annotations to import'),
+      ];
+      if (conversion.reanchored > 0) {
+        parts.push(_('{{count}} relocated', { count: conversion.reanchored }));
+      }
+      if (conversion.unmatched > 0) {
+        parts.push(_('{{count}} not found in this book', { count: conversion.unmatched }));
+      }
+      eventDispatcher.dispatch('toast', {
+        type: conversion.unmatched > 0 ? 'warning' : 'info',
+        message: parts.join(' · '),
+        timeout: 3500,
+      });
+    } finally {
+      setImportingAnnotations(false);
     }
   };
 
@@ -1556,20 +1685,26 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
   const handleConfirmExport = async (
     content: string,
-    isPlainText: boolean,
+    format: NoteExportFormat,
     sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' },
   ) => {
     const { book } = bookData;
     if (!book) return;
 
-    setTimeout(() => {
-      // Delay to ensure it won't be overridden by system clipboard actions
-      void writeTextToClipboard(content);
-    }, 100);
+    // The JSON file is meant to be re-imported, not pasted somewhere, so it
+    // doesn't hijack the clipboard the way the prose formats do.
+    if (format !== 'json') {
+      setTimeout(() => {
+        // Delay to ensure it won't be overridden by system clipboard actions
+        void writeTextToClipboard(content);
+      }, 100);
+    }
 
-    const ext = isPlainText ? 'txt' : 'md';
-    const mimeType = isPlainText ? 'text/plain' : 'text/markdown';
-    const filename = `${makeSafeFilename(book.title)}.${ext}`;
+    const ext = format === 'json' ? 'json' : format === 'text' ? 'txt' : 'md';
+    const mimeType =
+      format === 'json' ? 'application/json' : format === 'text' ? 'text/plain' : 'text/markdown';
+    const safeTitle = makeSafeFilename(book.title);
+    const filename = format === 'json' ? `${safeTitle}-annotations.json` : `${safeTitle}.${ext}`;
     const saved = await appService?.saveFile(filename, content, {
       mimeType,
       share: true,
@@ -1577,9 +1712,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     });
 
     if (appService?.isMacOSApp) return;
+    // Without the clipboard fallback there is nothing to fall back to, so a
+    // failed JSON save has to be reported as a failure.
+    const failedJson = format === 'json' && !saved;
     eventDispatcher.dispatch('toast', {
-      type: 'info',
-      message: saved ? _('Exported successfully') : _('Copied to clipboard'),
+      type: failedJson ? 'warning' : 'info',
+      message: failedJson
+        ? _('Failed to export annotations.')
+        : saved
+          ? _('Exported successfully')
+          : _('Copied to clipboard'),
       timeout: 2000,
     });
   };
@@ -1824,8 +1966,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           bookKey={bookKey}
           isOpen={showExportDialog}
           bookHash={bookData.book.hash}
+          bookMetaHash={bookData.book.metaHash}
           bookTitle={bookData.book.title}
           bookAuthor={bookData.book.author || ''}
+          bookFormat={bookData.book.format}
+          progress={getConfig(bookKey)?.progress}
+          location={getConfig(bookKey)?.location}
           booknoteGroups={exportData.booknoteGroups}
           onCancel={handleCancelExport}
           onExport={handleConfirmExport}
@@ -1836,6 +1982,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           isOpen={showImportDialog}
           onClose={() => setShowImportDialog(false)}
           onImportMoonReader={importFromMoonReader}
+          onImportReadest={importFromReadest}
         />
       )}
       {clearAnnotationsCount > 0 && (
@@ -1853,7 +2000,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           />
         </ModalPortal>
       )}
-      {importingMrexpt && (
+      {importingAnnotations && (
         <div
           data-capture-blocking-overlay='true'
           className='fixed inset-0 z-50 flex items-center justify-center bg-black/30'

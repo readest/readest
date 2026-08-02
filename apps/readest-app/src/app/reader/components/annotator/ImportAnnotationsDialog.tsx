@@ -1,5 +1,5 @@
 import React from 'react';
-import { MdNightlightRound } from 'react-icons/md';
+import { MdDataObject, MdNightlightRound } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { BoxedList, NavigationRow } from '@/components/settings/primitives';
 import Dialog from '@/components/Dialog';
@@ -8,6 +8,7 @@ interface ImportAnnotationsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onImportMoonReader: () => void;
+  onImportReadest: () => void;
 }
 
 /**
@@ -19,6 +20,7 @@ const ImportAnnotationsDialog: React.FC<ImportAnnotationsDialogProps> = ({
   isOpen,
   onClose,
   onImportMoonReader,
+  onImportReadest,
 }) => {
   const _ = useTranslation();
 
@@ -32,8 +34,14 @@ const ImportAnnotationsDialog: React.FC<ImportAnnotationsDialogProps> = ({
     >
       <BoxedList
         title={_('Import From')}
-        description={_('Import highlights and notes exported from another reading app.')}
+        description={_('Import highlights and notes exported from Readest or another reading app.')}
       >
+        <NavigationRow
+          icon={MdDataObject}
+          title={_('Readest')}
+          status={_('Readest annotations file (.json)')}
+          onClick={onImportReadest}
+        />
         <NavigationRow
           icon={MdNightlightRound}
           title={_('Moon+ Reader')}

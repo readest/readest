@@ -6,7 +6,15 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { BooknoteGroup, HighlightColor, HighlightStyle, NoteExportConfig } from '@/types/book';
+import {
+  BookFormat,
+  BooknoteGroup,
+  HighlightColor,
+  HighlightStyle,
+  NoteExportConfig,
+  NoteExportFormat,
+} from '@/types/book';
+import { buildAnnotationExport } from '@/services/annotation/providers/readest';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { saveViewSettings } from '@/helpers/settings';
 import {
@@ -23,19 +31,24 @@ import {
   buildAnnotationWebUrl,
 } from '@/utils/deeplink';
 import Dialog from '@/components/Dialog';
-import { Toggle } from '@/components/primitives/toggle';
 
 interface ExportMarkdownDialogProps {
   bookKey: string;
   isOpen: boolean;
   bookHash: string;
+  bookMetaHash?: string;
   bookTitle: string;
   bookAuthor: string;
+  bookFormat: BookFormat;
+  // Carried in the JSON export so a re-downloaded copy of the book can pick
+  // the reading position back up (#5400).
+  progress?: [number, number];
+  location?: string;
   booknoteGroups: { [href: string]: BooknoteGroup };
   onCancel: () => void;
   onExport: (
-    markdown: string,
-    isPlainText: boolean,
+    content: string,
+    format: NoteExportFormat,
     sharePosition?: { x: number; y: number; preferredEdge?: 'top' | 'bottom' | 'left' | 'right' },
   ) => void;
 }
@@ -44,8 +57,12 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
   bookKey,
   isOpen,
   bookHash,
+  bookMetaHash,
   bookTitle,
   bookAuthor,
+  bookFormat,
+  progress,
+  location,
   booknoteGroups,
   onCancel,
   onExport,
@@ -107,8 +124,15 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
       excludedStyles: noteExportConfig.excludedStyles ?? [],
       // Configs persisted before the cover option existed.
       includeCoverImage: noteExportConfig.includeCoverImage ?? false,
+      // Configs persisted before the format select existed only recorded the
+      // markdown/plain-text toggle.
+      exportFormat:
+        noteExportConfig.exportFormat ?? (noteExportConfig.exportAsPlainText ? 'text' : 'markdown'),
     };
   });
+
+  const isJson = exportConfig.exportFormat === 'json';
+  const isPlainText = exportConfig.exportFormat === 'text';
 
   const [showSource, setShowSource] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -139,6 +163,9 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
     const newExportConfig = {
       ...exportConfig,
       customTemplate: customTemplate === defaultTemplate ? '' : customTemplate,
+      // Mirror the format back onto the legacy flag so a downgrade still
+      // lands on markdown or plain text rather than an unknown value.
+      exportAsPlainText: exportConfig.exportFormat === 'text',
     };
     saveViewSettings(envConfig, bookKey, 'noteExportConfig', newExportConfig, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -212,6 +239,26 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
   // Generate markdown preview based on current format settings
   const markdownPreview = useMemo(() => {
     let output = '';
+
+    if (exportConfig.exportFormat === 'json') {
+      return JSON.stringify(
+        buildAnnotationExport({
+          book: {
+            title: bookTitle,
+            author: bookAuthor,
+            hash: bookHash,
+            metaHash: bookMetaHash,
+            format: bookFormat,
+          },
+          groups: filteredGroups,
+          progress,
+          location,
+          exportedAt: Date.now(),
+        }),
+        null,
+        2,
+      );
+    }
 
     if (exportConfig.useCustomTemplate) {
       // Prepare data for template rendering
@@ -341,16 +388,29 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
     }
 
     // Strip markdown if plain text export is enabled
-    if (exportConfig.exportAsPlainText) {
+    if (isPlainText) {
       output = stripMarkdown(output);
     }
 
     return output;
-  }, [exportConfig, filteredGroups, bookTitle, bookAuthor, bookHash, coverImageUrl, _]);
+  }, [
+    exportConfig,
+    isPlainText,
+    filteredGroups,
+    bookTitle,
+    bookAuthor,
+    bookHash,
+    bookMetaHash,
+    bookFormat,
+    progress,
+    location,
+    coverImageUrl,
+    _,
+  ]);
 
   // Convert markdown to HTML for preview
   const htmlPreview = useMemo(() => {
-    if (!markdownPreview) return '';
+    if (!markdownPreview || isJson) return '';
     const html = marked.parse(markdownPreview) as string;
     return (
       html
@@ -361,7 +421,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
         // COEP: the bucket allowlists the app origins for GET.
         .replace(/<img /g, '<img crossorigin="anonymous" ')
     );
-  }, [markdownPreview]);
+  }, [markdownPreview, isJson]);
 
   const handleToggle = (field: keyof NoteExportConfig) => {
     setExportConfig((prev) => ({
@@ -382,7 +442,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
       y: rect.top,
       preferredEdge: 'bottom' as const,
     };
-    onExport(markdownPreview, !!exportConfig.exportAsPlainText, sharePosition);
+    onExport(markdownPreview, exportConfig.exportFormat, sharePosition);
   };
 
   return (
@@ -394,144 +454,171 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
       contentClassName='sm:!px-8 sm:!py-2'
     >
       <div className='flex flex-col gap-4'>
-        {/* Format Options */}
-        <div className='space-y-3'>
-          <h3 className='font-bold'>{_('Format Options')}</h3>
-
-          <div
-            className={clsx(
-              'grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3',
-              exportConfig.useCustomTemplate && 'pointer-events-none opacity-50',
-            )}
+        {/* Export Format */}
+        <div className='flex items-center justify-between gap-3'>
+          <h3 className='font-bold'>{_('Format')}</h3>
+          <select
+            value={exportConfig.exportFormat}
+            onChange={(e) =>
+              setExportConfig((prev) => ({
+                ...prev,
+                exportFormat: e.target.value as NoteExportFormat,
+              }))
+            }
+            className='select select-bordered select-sm eink-bordered'
           >
-            <label className='flex cursor-pointer items-center gap-2'>
-              <input
-                type='checkbox'
-                checked={exportConfig.includeTitle}
-                onChange={() => handleToggle('includeTitle')}
-                className='checkbox checkbox-sm'
-                disabled={exportConfig.useCustomTemplate}
-              />
-              <span className='text-sm'>{_('Title')}</span>
-            </label>
-
-            <label className='flex cursor-pointer items-center gap-2'>
-              <input
-                type='checkbox'
-                checked={exportConfig.includeAuthor}
-                onChange={() => handleToggle('includeAuthor')}
-                className='checkbox checkbox-sm'
-                disabled={exportConfig.useCustomTemplate}
-              />
-              <span className='text-sm'>{_('Author')}</span>
-            </label>
-
-            <label className='flex cursor-pointer items-center gap-2'>
-              <input
-                type='checkbox'
-                checked={exportConfig.includeDate}
-                onChange={() => handleToggle('includeDate')}
-                className='checkbox checkbox-sm'
-                disabled={exportConfig.useCustomTemplate}
-              />
-              <span className='text-sm'>{_('Export Date')}</span>
-            </label>
-
-            <label className='flex cursor-pointer items-center gap-2'>
-              <input
-                type='checkbox'
-                checked={exportConfig.includeCoverImage}
-                onChange={() => handleToggle('includeCoverImage')}
-                className='checkbox checkbox-sm'
-                disabled={exportConfig.useCustomTemplate}
-              />
-              <span className='text-sm'>{_('Cover Image')}</span>
-            </label>
-
-            <label className='flex cursor-pointer items-center gap-2'>
-              <input
-                type='checkbox'
-                checked={exportConfig.includeChapterTitles}
-                onChange={() => handleToggle('includeChapterTitles')}
-                className='checkbox checkbox-sm'
-                disabled={exportConfig.useCustomTemplate}
-              />
-              <span className='text-sm'>{_('Chapter Titles')}</span>
-            </label>
-
-            <label className='flex cursor-pointer items-center gap-2'>
-              <input
-                type='checkbox'
-                checked={exportConfig.includeChapterSeparator}
-                onChange={() => handleToggle('includeChapterSeparator')}
-                className='checkbox checkbox-sm'
-                disabled={exportConfig.useCustomTemplate}
-              />
-              <span className='text-sm'>{_('Chapter Separator')}</span>
-            </label>
-
-            <label className='flex cursor-pointer items-center gap-2'>
-              <input
-                type='checkbox'
-                checked={exportConfig.includeQuotes}
-                onChange={() => handleToggle('includeQuotes')}
-                className='checkbox checkbox-sm'
-                disabled={exportConfig.useCustomTemplate}
-              />
-              <span className='text-sm'>{_('Highlights')}</span>
-            </label>
-
-            <label className='flex cursor-pointer items-center gap-2'>
-              <input
-                type='checkbox'
-                checked={exportConfig.includeNotes}
-                onChange={() => handleToggle('includeNotes')}
-                className='checkbox checkbox-sm'
-                disabled={exportConfig.useCustomTemplate}
-              />
-              <span className='text-sm'>{_('Notes')}</span>
-            </label>
-
-            <label className='flex cursor-pointer items-center gap-2'>
-              <input
-                type='checkbox'
-                checked={exportConfig.includePageNumber}
-                onChange={() => handleToggle('includePageNumber')}
-                className='checkbox checkbox-sm'
-                disabled={exportConfig.useCustomTemplate}
-              />
-              <span className='text-sm'>{_('Page Number')}</span>
-            </label>
-
-            <label className='flex cursor-pointer items-center gap-2'>
-              <input
-                type='checkbox'
-                checked={exportConfig.includeTimestamp}
-                onChange={() => handleToggle('includeTimestamp')}
-                className='checkbox checkbox-sm'
-                disabled={exportConfig.useCustomTemplate}
-              />
-              <span className='text-sm'>{_('Note Date')}</span>
-            </label>
-          </div>
-
-          <div className='flex items-center justify-between gap-3'>
-            <span className='text-sm'>{_('Annotation Link')}</span>
-            <select
-              value={exportConfig.linkType}
-              onChange={(e) =>
-                setExportConfig((prev) => ({
-                  ...prev,
-                  linkType: e.target.value as AnnotationLinkType,
-                }))
-              }
-              className='select select-bordered select-sm eink-bordered'
-            >
-              <option value='app'>{_('App Link')}</option>
-              <option value='web'>{_('Web Link')}</option>
-            </select>
-          </div>
+            <option value='markdown'>{_('Markdown')}</option>
+            <option value='text'>{_('Plain Text')}</option>
+            <option value='json'>{_('JSON (Readest)')}</option>
+          </select>
         </div>
+
+        {isJson && (
+          <p className='text-base-content/70 text-xs'>
+            {_('A machine-readable file that Readest can import back into any book.')}
+          </p>
+        )}
+
+        {/* Format Options */}
+        {!isJson && (
+          <div className='space-y-3'>
+            <h3 className='font-bold'>{_('Format Options')}</h3>
+
+            <div
+              className={clsx(
+                'grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3',
+                exportConfig.useCustomTemplate && 'pointer-events-none opacity-50',
+              )}
+            >
+              <label className='flex cursor-pointer items-center gap-2'>
+                <input
+                  type='checkbox'
+                  checked={exportConfig.includeTitle}
+                  onChange={() => handleToggle('includeTitle')}
+                  className='checkbox checkbox-sm'
+                  disabled={exportConfig.useCustomTemplate}
+                />
+                <span className='text-sm'>{_('Title')}</span>
+              </label>
+
+              <label className='flex cursor-pointer items-center gap-2'>
+                <input
+                  type='checkbox'
+                  checked={exportConfig.includeAuthor}
+                  onChange={() => handleToggle('includeAuthor')}
+                  className='checkbox checkbox-sm'
+                  disabled={exportConfig.useCustomTemplate}
+                />
+                <span className='text-sm'>{_('Author')}</span>
+              </label>
+
+              <label className='flex cursor-pointer items-center gap-2'>
+                <input
+                  type='checkbox'
+                  checked={exportConfig.includeDate}
+                  onChange={() => handleToggle('includeDate')}
+                  className='checkbox checkbox-sm'
+                  disabled={exportConfig.useCustomTemplate}
+                />
+                <span className='text-sm'>{_('Export Date')}</span>
+              </label>
+
+              <label className='flex cursor-pointer items-center gap-2'>
+                <input
+                  type='checkbox'
+                  checked={exportConfig.includeCoverImage}
+                  onChange={() => handleToggle('includeCoverImage')}
+                  className='checkbox checkbox-sm'
+                  disabled={exportConfig.useCustomTemplate}
+                />
+                <span className='text-sm'>{_('Cover Image')}</span>
+              </label>
+
+              <label className='flex cursor-pointer items-center gap-2'>
+                <input
+                  type='checkbox'
+                  checked={exportConfig.includeChapterTitles}
+                  onChange={() => handleToggle('includeChapterTitles')}
+                  className='checkbox checkbox-sm'
+                  disabled={exportConfig.useCustomTemplate}
+                />
+                <span className='text-sm'>{_('Chapter Titles')}</span>
+              </label>
+
+              <label className='flex cursor-pointer items-center gap-2'>
+                <input
+                  type='checkbox'
+                  checked={exportConfig.includeChapterSeparator}
+                  onChange={() => handleToggle('includeChapterSeparator')}
+                  className='checkbox checkbox-sm'
+                  disabled={exportConfig.useCustomTemplate}
+                />
+                <span className='text-sm'>{_('Chapter Separator')}</span>
+              </label>
+
+              <label className='flex cursor-pointer items-center gap-2'>
+                <input
+                  type='checkbox'
+                  checked={exportConfig.includeQuotes}
+                  onChange={() => handleToggle('includeQuotes')}
+                  className='checkbox checkbox-sm'
+                  disabled={exportConfig.useCustomTemplate}
+                />
+                <span className='text-sm'>{_('Highlights')}</span>
+              </label>
+
+              <label className='flex cursor-pointer items-center gap-2'>
+                <input
+                  type='checkbox'
+                  checked={exportConfig.includeNotes}
+                  onChange={() => handleToggle('includeNotes')}
+                  className='checkbox checkbox-sm'
+                  disabled={exportConfig.useCustomTemplate}
+                />
+                <span className='text-sm'>{_('Notes')}</span>
+              </label>
+
+              <label className='flex cursor-pointer items-center gap-2'>
+                <input
+                  type='checkbox'
+                  checked={exportConfig.includePageNumber}
+                  onChange={() => handleToggle('includePageNumber')}
+                  className='checkbox checkbox-sm'
+                  disabled={exportConfig.useCustomTemplate}
+                />
+                <span className='text-sm'>{_('Page Number')}</span>
+              </label>
+
+              <label className='flex cursor-pointer items-center gap-2'>
+                <input
+                  type='checkbox'
+                  checked={exportConfig.includeTimestamp}
+                  onChange={() => handleToggle('includeTimestamp')}
+                  className='checkbox checkbox-sm'
+                  disabled={exportConfig.useCustomTemplate}
+                />
+                <span className='text-sm'>{_('Note Date')}</span>
+              </label>
+            </div>
+
+            <div className='flex items-center justify-between gap-3'>
+              <span className='text-sm'>{_('Annotation Link')}</span>
+              <select
+                value={exportConfig.linkType}
+                onChange={(e) =>
+                  setExportConfig((prev) => ({
+                    ...prev,
+                    linkType: e.target.value as AnnotationLinkType,
+                  }))
+                }
+                className='select select-bordered select-sm eink-bordered'
+              >
+                <option value='app'>{_('App Link')}</option>
+                <option value='web'>{_('Web Link')}</option>
+              </select>
+            </div>
+          </div>
+        )}
 
         {/* Filter by color / style */}
         {(applyColorFilter || applyStyleFilter) && (
@@ -591,265 +678,271 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
         )}
 
         {/* Advanced Options */}
-        <div className='space-y-3'>
-          <div className='flex items-center justify-between'>
-            <h3 className='font-bold'>{_('Advanced')}</h3>
-            <button
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className='text-sm text-blue-500 hover:underline'
-            >
-              {showAdvanced ? _('Hide') : _('Show')}
-            </button>
-          </div>
-
-          {showAdvanced && (
-            <div className='space-y-3'>
-              <label className='flex cursor-pointer items-center gap-2'>
-                <input
-                  type='checkbox'
-                  checked={exportConfig.useCustomTemplate}
-                  onChange={() => handleToggle('useCustomTemplate')}
-                  className='checkbox checkbox-sm'
-                />
-                <span className='text-sm font-medium'>{_('Use Custom Template')}</span>
-              </label>
-
-              {exportConfig.useCustomTemplate && (
-                <>
-                  <div className='space-y-2'>
-                    <div className='flex items-center justify-between'>
-                      <label className='text-sm font-medium'>{_('Export Template')}</label>
-                      <button
-                        onClick={() =>
-                          setExportConfig({ ...exportConfig, customTemplate: defaultTemplate })
-                        }
-                        className='text-sm text-blue-500 hover:underline'
-                      >
-                        {_('Reset Template')}
-                      </button>
-                    </div>
-                    <textarea
-                      value={exportConfig.customTemplate}
-                      onChange={(e) =>
-                        setExportConfig({ ...exportConfig, customTemplate: e.target.value })
-                      }
-                      className='textarea textarea-bordered w-full font-mono text-xs'
-                      rows={12}
-                      placeholder={defaultTemplate}
-                    />
-                  </div>
-
-                  <div className='bg-base-200 space-y-3 rounded-lg p-3 text-xs'>
-                    <div>
-                      <p className='mb-2 font-bold'>{_('Template Syntax:')}</p>
-                      <ul className='space-y-1 font-mono'>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>{'{{ variable }}'}</code> -{' '}
-                          {_('Insert value')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>
-                            {'{{ variable | date }}'}
-                          </code>{' '}
-                          - {_('Format date (locale)')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>
-                            {"{{ variable | date('%Y-%m-%d') }}"}
-                          </code>{' '}
-                          - {_('Format date (custom)')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>
-                            {'{% if variable %}...{% endif %}'}
-                          </code>{' '}
-                          - {_('Conditional')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>
-                            {'{% for item in list %}...{% endfor %}'}
-                          </code>{' '}
-                          - {_('Loop')}
-                        </li>
-                      </ul>
-                    </div>
-                    <div>
-                      <p className='mb-2 font-bold'>{_('Available Variables:')}</p>
-                      <ul className='space-y-1'>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>title</code> -{' '}
-                          {_('Book title')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>author</code> -{' '}
-                          {_('Book author')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>exportDate</code> -{' '}
-                          {_('Export date')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>coverImageUrl</code> -{' '}
-                          {_('Public cover image URL (empty if unavailable)')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>chapters</code> -{' '}
-                          {_('Array of chapters')}
-                        </li>
-                        <li className='ml-4'>
-                          <code className='bg-base-300 rounded px-1'>chapter.title</code> -{' '}
-                          {_('Chapter title')}
-                        </li>
-                        <li className='ml-4'>
-                          <code className='bg-base-300 rounded px-1'>chapter.annotations</code> -{' '}
-                          {_('Array of annotations')}
-                        </li>
-                        <li className='ml-8'>
-                          <code className='bg-base-300 rounded px-1'>annotation.text</code> -{' '}
-                          {_('Highlighted text')}
-                        </li>
-                        <li className='ml-8'>
-                          <code className='bg-base-300 rounded px-1'>annotation.note</code> -{' '}
-                          {_('Annotation note')}
-                        </li>
-                        <li className='ml-8'>
-                          <code className='bg-base-300 rounded px-1'>annotation.style</code> -{' '}
-                          {_('Annotation style')}: underline | highlight | squiggly
-                        </li>
-                        <li className='ml-8'>
-                          <code className='bg-base-300 rounded px-1'>annotation.color</code> -{' '}
-                          {_('Annotation color')}: yellow | red | green | blue | violet
-                        </li>
-                        <li className='ml-8'>
-                          <code className='bg-base-300 rounded px-1'>annotation.page</code> -{' '}
-                          {_('Annotation page number')}
-                        </li>
-                        <li className='ml-8'>
-                          <code className='bg-base-300 rounded px-1'>annotation.timestamp</code> -{' '}
-                          {_('Annotation time')}
-                        </li>
-                        <li className='ml-8'>
-                          <code className='bg-base-300 rounded px-1'>annotation.link</code> -{' '}
-                          {_('Annotation link (follows the selected Link Type)')}
-                        </li>
-                        <li className='ml-8'>
-                          <code className='bg-base-300 rounded px-1'>annotation.appLink</code> -{' '}
-                          {_('App deeplink (readest://)')}
-                        </li>
-                        <li className='ml-8'>
-                          <code className='bg-base-300 rounded px-1'>annotation.webLink</code> -{' '}
-                          {_('Universal web link (https://)')}
-                        </li>
-                      </ul>
-                    </div>
-                    <div>
-                      <p className='mb-2 font-bold'>{_('Available Formatters:')}</p>
-                      <ul className='space-y-1 font-mono'>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>date</code> /{' '}
-                          <code className='bg-base-300 rounded px-1'>{"date('%Y-%m-%d')"}</code> -{' '}
-                          {_('Format date')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>blockquote</code> -{' '}
-                          {_('Markdown block quote (> per line)')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>nl2br</code> -{' '}
-                          {_('Newlines to <br>')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>upper</code> /{' '}
-                          <code className='bg-base-300 rounded px-1'>lower</code> /{' '}
-                          <code className='bg-base-300 rounded px-1'>capitalize</code> /{' '}
-                          <code className='bg-base-300 rounded px-1'>title</code> -{' '}
-                          {_('Change case')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>trim</code> -{' '}
-                          {_('Trim whitespace')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>truncate(n)</code> -{' '}
-                          {_('Truncate to n characters')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>{"replace('a', 'b')"}</code> -{' '}
-                          {_('Replace text')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>default(val)</code> -{' '}
-                          {_('Fallback value')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>length</code> -{' '}
-                          {_('Get length')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>first</code> /{' '}
-                          <code className='bg-base-300 rounded px-1'>last</code> -{' '}
-                          {_('First/last element')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>{"join(', ')"}</code> -{' '}
-                          {_('Join array')}
-                        </li>
-                      </ul>
-                    </div>
-                    <div>
-                      <p className='mb-2 font-bold'>{_('Date Format Tokens:')}</p>
-                      <ul className='space-y-1 font-mono'>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>%Y</code> -{' '}
-                          {_('Year (4 digits)')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>%m</code> -{' '}
-                          {_('Month (01-12)')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>%d</code> - {_('Day (01-31)')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>%H</code> - {_('Hour (00-23)')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>%M</code> -{' '}
-                          {_('Minute (00-59)')}
-                        </li>
-                        <li>
-                          <code className='bg-base-300 rounded px-1'>%S</code> -{' '}
-                          {_('Second (00-59)')}
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </>
-              )}
+        {!isJson && (
+          <div className='space-y-3'>
+            <div className='flex items-center justify-between'>
+              <h3 className='font-bold'>{_('Advanced')}</h3>
+              <button
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className='text-sm text-blue-500 hover:underline'
+              >
+                {showAdvanced ? _('Hide') : _('Show')}
+              </button>
             </div>
-          )}
-        </div>
+
+            {showAdvanced && (
+              <div className='space-y-3'>
+                <label className='flex cursor-pointer items-center gap-2'>
+                  <input
+                    type='checkbox'
+                    checked={exportConfig.useCustomTemplate}
+                    onChange={() => handleToggle('useCustomTemplate')}
+                    className='checkbox checkbox-sm'
+                  />
+                  <span className='text-sm font-medium'>{_('Use Custom Template')}</span>
+                </label>
+
+                {exportConfig.useCustomTemplate && (
+                  <>
+                    <div className='space-y-2'>
+                      <div className='flex items-center justify-between'>
+                        <label className='text-sm font-medium'>{_('Export Template')}</label>
+                        <button
+                          onClick={() =>
+                            setExportConfig({ ...exportConfig, customTemplate: defaultTemplate })
+                          }
+                          className='text-sm text-blue-500 hover:underline'
+                        >
+                          {_('Reset Template')}
+                        </button>
+                      </div>
+                      <textarea
+                        value={exportConfig.customTemplate}
+                        onChange={(e) =>
+                          setExportConfig({ ...exportConfig, customTemplate: e.target.value })
+                        }
+                        className='textarea textarea-bordered w-full font-mono text-xs'
+                        rows={12}
+                        placeholder={defaultTemplate}
+                      />
+                    </div>
+
+                    <div className='bg-base-200 space-y-3 rounded-lg p-3 text-xs'>
+                      <div>
+                        <p className='mb-2 font-bold'>{_('Template Syntax:')}</p>
+                        <ul className='space-y-1 font-mono'>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>{'{{ variable }}'}</code> -{' '}
+                            {_('Insert value')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>
+                              {'{{ variable | date }}'}
+                            </code>{' '}
+                            - {_('Format date (locale)')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>
+                              {"{{ variable | date('%Y-%m-%d') }}"}
+                            </code>{' '}
+                            - {_('Format date (custom)')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>
+                              {'{% if variable %}...{% endif %}'}
+                            </code>{' '}
+                            - {_('Conditional')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>
+                              {'{% for item in list %}...{% endfor %}'}
+                            </code>{' '}
+                            - {_('Loop')}
+                          </li>
+                        </ul>
+                      </div>
+                      <div>
+                        <p className='mb-2 font-bold'>{_('Available Variables:')}</p>
+                        <ul className='space-y-1'>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>title</code> -{' '}
+                            {_('Book title')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>author</code> -{' '}
+                            {_('Book author')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>exportDate</code> -{' '}
+                            {_('Export date')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>coverImageUrl</code> -{' '}
+                            {_('Public cover image URL (empty if unavailable)')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>chapters</code> -{' '}
+                            {_('Array of chapters')}
+                          </li>
+                          <li className='ml-4'>
+                            <code className='bg-base-300 rounded px-1'>chapter.title</code> -{' '}
+                            {_('Chapter title')}
+                          </li>
+                          <li className='ml-4'>
+                            <code className='bg-base-300 rounded px-1'>chapter.annotations</code> -{' '}
+                            {_('Array of annotations')}
+                          </li>
+                          <li className='ml-8'>
+                            <code className='bg-base-300 rounded px-1'>annotation.text</code> -{' '}
+                            {_('Highlighted text')}
+                          </li>
+                          <li className='ml-8'>
+                            <code className='bg-base-300 rounded px-1'>annotation.note</code> -{' '}
+                            {_('Annotation note')}
+                          </li>
+                          <li className='ml-8'>
+                            <code className='bg-base-300 rounded px-1'>annotation.style</code> -{' '}
+                            {_('Annotation style')}: underline | highlight | squiggly
+                          </li>
+                          <li className='ml-8'>
+                            <code className='bg-base-300 rounded px-1'>annotation.color</code> -{' '}
+                            {_('Annotation color')}: yellow | red | green | blue | violet
+                          </li>
+                          <li className='ml-8'>
+                            <code className='bg-base-300 rounded px-1'>annotation.page</code> -{' '}
+                            {_('Annotation page number')}
+                          </li>
+                          <li className='ml-8'>
+                            <code className='bg-base-300 rounded px-1'>annotation.timestamp</code> -{' '}
+                            {_('Annotation time')}
+                          </li>
+                          <li className='ml-8'>
+                            <code className='bg-base-300 rounded px-1'>annotation.link</code> -{' '}
+                            {_('Annotation link (follows the selected Link Type)')}
+                          </li>
+                          <li className='ml-8'>
+                            <code className='bg-base-300 rounded px-1'>annotation.appLink</code> -{' '}
+                            {_('App deeplink (readest://)')}
+                          </li>
+                          <li className='ml-8'>
+                            <code className='bg-base-300 rounded px-1'>annotation.webLink</code> -{' '}
+                            {_('Universal web link (https://)')}
+                          </li>
+                        </ul>
+                      </div>
+                      <div>
+                        <p className='mb-2 font-bold'>{_('Available Formatters:')}</p>
+                        <ul className='space-y-1 font-mono'>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>date</code> /{' '}
+                            <code className='bg-base-300 rounded px-1'>{"date('%Y-%m-%d')"}</code> -{' '}
+                            {_('Format date')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>blockquote</code> -{' '}
+                            {_('Markdown block quote (> per line)')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>nl2br</code> -{' '}
+                            {_('Newlines to <br>')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>upper</code> /{' '}
+                            <code className='bg-base-300 rounded px-1'>lower</code> /{' '}
+                            <code className='bg-base-300 rounded px-1'>capitalize</code> /{' '}
+                            <code className='bg-base-300 rounded px-1'>title</code> -{' '}
+                            {_('Change case')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>trim</code> -{' '}
+                            {_('Trim whitespace')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>truncate(n)</code> -{' '}
+                            {_('Truncate to n characters')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>{"replace('a', 'b')"}</code>{' '}
+                            - {_('Replace text')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>default(val)</code> -{' '}
+                            {_('Fallback value')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>length</code> -{' '}
+                            {_('Get length')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>first</code> /{' '}
+                            <code className='bg-base-300 rounded px-1'>last</code> -{' '}
+                            {_('First/last element')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>{"join(', ')"}</code> -{' '}
+                            {_('Join array')}
+                          </li>
+                        </ul>
+                      </div>
+                      <div>
+                        <p className='mb-2 font-bold'>{_('Date Format Tokens:')}</p>
+                        <ul className='space-y-1 font-mono'>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>%Y</code> -{' '}
+                            {_('Year (4 digits)')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>%m</code> -{' '}
+                            {_('Month (01-12)')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>%d</code> -{' '}
+                            {_('Day (01-31)')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>%H</code> -{' '}
+                            {_('Hour (00-23)')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>%M</code> -{' '}
+                            {_('Minute (00-59)')}
+                          </li>
+                          <li>
+                            <code className='bg-base-300 rounded px-1'>%S</code> -{' '}
+                            {_('Second (00-59)')}
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Preview */}
         <div className='space-y-2'>
           <div className='flex items-center justify-between'>
             <h3 className='font-bold'>{_('Preview')}</h3>
-            <label className='flex cursor-pointer items-center gap-2'>
-              <input
-                type='checkbox'
-                checked={showSource}
-                onChange={() => setShowSource(!showSource)}
-                className='checkbox checkbox-sm'
-              />
-              <span className='text-sm'>{_('Show Source')}</span>
-            </label>
+            {!isJson && (
+              <label className='flex cursor-pointer items-center gap-2'>
+                <input
+                  type='checkbox'
+                  checked={showSource}
+                  onChange={() => setShowSource(!showSource)}
+                  className='checkbox checkbox-sm'
+                />
+                <span className='text-sm'>{_('Show Source')}</span>
+              </label>
+            )}
           </div>
-          {showSource || exportConfig.exportAsPlainText ? (
+          {isJson || showSource || isPlainText ? (
             <div
               className={clsx(
                 'bg-base-200 max-h-[40vh] overflow-y-auto rounded-lg p-4 text-xs',
                 'select-text whitespace-pre-wrap break-words',
-                showSource ? 'font-mono' : 'font-sans',
+                isJson || showSource ? 'font-mono' : 'font-sans',
               )}
             >
               {markdownPreview || _('No content to preview')}
@@ -870,21 +963,8 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className='mt-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
-          <div className='flex items-center gap-3'>
-            <label className='flex cursor-pointer items-center gap-2'>
-              <Toggle
-                checked={exportConfig.exportAsPlainText}
-                onChange={() => handleToggle('exportAsPlainText')}
-              />
-              <span className='line-clamp-2 text-xs'>
-                {exportConfig.exportAsPlainText
-                  ? _('Export as Plain Text')
-                  : _('Export as Markdown')}
-              </span>
-            </label>
-          </div>
-          <div className='flex gap-4 self-end sm:self-auto'>
+        <div className='mt-4 flex items-center justify-end'>
+          <div className='flex gap-4'>
             <button onClick={onCancel} className='btn btn-ghost btn-sm'>
               {_('Cancel')}
             </button>

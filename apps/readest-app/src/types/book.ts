@@ -339,6 +339,10 @@ export interface TranslatorConfig {
   ttsReadAloudText: string;
 }
 
+// Markdown and plain text render the note template; JSON emits the
+// machine-readable file that Readest itself can import back (#5400).
+export type NoteExportFormat = 'markdown' | 'text' | 'json';
+
 export interface NoteExportConfig {
   includeTitle: boolean;
   includeAuthor: boolean;
@@ -356,7 +360,10 @@ export interface NoteExportConfig {
   noteSeparator: string;
   useCustomTemplate: boolean;
   customTemplate: string;
+  // Superseded by `exportFormat`; kept so configs written before the JSON
+  // option existed still pick the right format on load.
   exportAsPlainText: boolean;
+  exportFormat: NoteExportFormat;
   // Highlight colors/styles to omit from the export. Empty arrays export
   // everything; storing exclusions keeps colors/styles added later included
   // by default (#4801).

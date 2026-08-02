@@ -104,6 +104,9 @@ export interface BookDoc {
   transformTarget?: EventTarget;
   splitTOCHref(href: string): Array<string | number>;
   getCover(): Promise<Blob | null>;
+  // Present on formats that carry a real spine (EPUB); absent for the ones
+  // foliate-js gives synthetic per-index CFIs. Mirrors `view.resolveCFI`.
+  resolveCFI?(cfi: string): { index: number; anchor?: (doc: Document) => Range | number } | null;
   // Formats backed by live parser state must be released explicitly: a PDF
   // book holds a pdf.js document whose dedicated worker survives GC, so
   // dropping the reference leaks the whole parsed file (#5387).
