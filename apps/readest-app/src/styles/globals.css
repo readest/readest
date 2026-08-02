@@ -478,6 +478,15 @@ foliate-fxl {
   inset: -8px;
 }
 
+/* The desktop trio sits 8px apart, so -8px is the widest halo that still tiles
+   exactly — any more and a button would swallow its neighbor's edge. When
+   close is rendered alone (the reader header on mobile: minimize and maximize
+   need a window bar) there is no neighbor, so it takes the full 44px target
+   the tap deserves (#5401). */
+.window-button:only-child::before {
+  inset: -10px;
+}
+
 input[type='range'].slider-input {
   -webkit-appearance: none;
   appearance: none;

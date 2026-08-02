@@ -215,8 +215,11 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         }}
       >
         <div className='header-tools-start bg-base-100 sidebar-bookmark-toggler z-20 flex h-full min-w-0 items-center gap-x-4 pe-2 max-[350px]:gap-x-2'>
+          {/* h-full so this scroller spans the whole bar: `overflow-x-auto`
+              also clips vertically, and shrink-wrapped to the 32px icons it
+              cut the buttons' touch halos back down to 32px (#5401). */}
           <div
-            className='flex min-w-0 items-center gap-x-4 overflow-x-auto max-[350px]:gap-x-2'
+            className='flex h-full min-w-0 items-center gap-x-4 overflow-x-auto max-[350px]:gap-x-2'
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {!isSideBarVisible && (
