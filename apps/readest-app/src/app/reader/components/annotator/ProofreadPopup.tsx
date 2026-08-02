@@ -13,6 +13,7 @@ import { isPunctuationOnly, isWholeWord } from '@/utils/word';
 import Select from '@/components/Select';
 import Popup from '@/components/Popup';
 import { Toggle } from '@/components/primitives/toggle';
+import { useThemeStore } from '@/store/themeStore';
 
 interface ProofreadPopupProps {
   bookKey: string;
@@ -42,6 +43,7 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
   const { getProgress, getView, recreateViewer } = useReaderStore();
   const { addRule } = useProofreadStore();
   const progress = getProgress(bookKey)!;
+  const { isDarkMode } = useThemeStore();
 
   const [replacementText, setReplacementText] = useState('');
   const [caseSensitive, setCaseSensitive] = useState(true);
@@ -186,7 +188,11 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
             <Toggle
               checked={caseSensitive}
               onChange={(e) => setCaseSensitive(e.target.checked)}
-              className='toggle-sm'
+              className={clsx(
+                'toggle-sm',
+                !isDarkMode &&
+                  'checked:![--tglbg:theme(colors.base-100)] [--tglbg:theme(colors.base-300)]',
+              )}
             />
           </label>
 
@@ -200,7 +206,11 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
               {_('Whole word:')}
             </span>
             <Toggle
-              className='toggle-sm'
+              className={clsx(
+                'toggle-sm',
+                !isDarkMode &&
+                  'checked:![--tglbg:theme(colors.base-100)] [--tglbg:theme(colors.base-300)]',
+              )}
               disabled={isRegex}
               checked={isRegex ? false : wholeWord}
               onChange={(e) => setWholeWord(e.target.checked)}
@@ -213,7 +223,11 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
             </span>
 
             <Toggle
-              className='toggle-sm'
+              className={clsx(
+                'toggle-sm',
+                !isDarkMode &&
+                  'checked:![--tglbg:theme(colors.base-100)] [--tglbg:theme(colors.base-300)]',
+              )}
               checked={isRegex}
               onChange={(e) => setIsRegex(e.target.checked)}
             />
@@ -224,7 +238,11 @@ const ProofreadPopup: React.FC<ProofreadPopupProps> = ({
               {_('Only for TTS:')}
             </span>
             <Toggle
-              className='toggle-sm'
+              className={clsx(
+                'toggle-sm',
+                !isDarkMode &&
+                  'checked:![--tglbg:theme(colors.base-100)] [--tglbg:theme(colors.base-300)]',
+              )}
               disabled={scope === 'selection'}
               checked={onlyForTTS}
               onChange={(e) => setOnlyForTTS(e.target.checked)}
