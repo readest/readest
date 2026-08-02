@@ -86,7 +86,7 @@ function SupabaseAuthClient:sign_in_password(email, password)
         return res.status == 200, res.body
     else
         logger.dbg("SupabaseAuthClient:sign_in_password failure:", res)
-        return false, res.body
+        return false, { msg = tostring(res) }
     end
 end
 
@@ -135,7 +135,7 @@ function SupabaseAuthClient:verify_otp(email, token, type)
         return res.status == 200, res.body
     else
         logger.dbg("SupabaseAuthClient:verify_otp failure:", res)
-        return false, res.body
+        return false, { msg = tostring(res) }
     end
 end
 

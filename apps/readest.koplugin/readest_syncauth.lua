@@ -185,7 +185,7 @@ function SyncAuth:doLogin(settings, path, email, password, menu)
         })
     else
         UIManager:show(InfoMessage:new{
-            text = T(_("Login failed: %1"), response.msg or _("unknown error")),
+            text = T(_("Login failed: %1"), response and response.msg or _("unknown error")),
             timeout = 3,
         })
     end
