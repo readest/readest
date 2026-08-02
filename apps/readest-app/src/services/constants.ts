@@ -84,6 +84,7 @@ export const DEFAULT_READWISE_SETTINGS = {
   enabled: false,
   accessToken: '',
   lastSyncedAt: 0,
+  includeCoverImage: true,
 } as ReadwiseSettings;
 
 export const DEFAULT_HARDCOVER_SETTINGS = {
@@ -440,6 +441,8 @@ export const DEFAULT_NOTE_EXPORT_CONFIG: NoteExportConfig = {
   includeTitle: true,
   includeAuthor: true,
   includeDate: true,
+  // Off by default: including a cover publishes it to public storage.
+  includeCoverImage: false,
   includeChapterTitles: true,
   includeQuotes: true,
   includeNotes: true,
@@ -882,6 +885,9 @@ export const READEST_UPDATER_PUBKEY =
   'dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJFMEQ1QjE2OEU1NEIzNTEKUldSUnMxU09GbHNOdmpEaWFMT1crRFpEV2VORzQ2MklxaFc0M1R0ci9xY2c1bENXS0xhM1R1L2sK';
 
 export const READEST_PUBLIC_STORAGE_BASE_URL = 'https://storage.readest.com';
+// Custom domain serving the readest-public bucket; durable media assets
+// (e.g. published book covers) are linked through this host.
+export const READEST_PUBLIC_ASSETS_BASE_URL = 'https://assets.readest.com';
 
 export const READEST_OPDS_USER_AGENT = 'Readest/1.0 (OPDS Browser)';
 

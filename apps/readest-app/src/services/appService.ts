@@ -343,6 +343,7 @@ export abstract class BaseAppService implements AppService {
     handleProgress: ProgressHandler,
     hash: string,
     temp: boolean = false,
+    media?: string,
   ) {
     return CloudSvc.uploadFileToCloud(
       this.fs,
@@ -353,6 +354,7 @@ export abstract class BaseAppService implements AppService {
       handleProgress,
       hash,
       temp,
+      media,
     );
   }
 

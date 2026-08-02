@@ -1934,5 +1934,8 @@
   "Search query is too long": "検索語が長すぎます",
   "Favorites, To Read": "お気に入り、あとで読む",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Babylon 辞書は単一の .bgl ファイルです。"
+  "Babylon dictionaries are single .bgl files.": "Babylon 辞書は単一の .bgl ファイルです。",
+  "Cover Image": "カバー画像",
+  "Public cover image URL (empty if unavailable)": "公開カバー画像URL（利用できない場合は空）",
+  "Include Book Cover": "ブックカバーを含める"
 }

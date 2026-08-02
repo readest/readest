@@ -5,13 +5,14 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { debounce } from '@/utils/debounce';
+import { getPublicCoverUrl } from '@/utils/cover';
 import { ReadwiseClient } from '@/services/readwise';
 
 const READWISE_SYNC_DEBOUNCE_MS = 5000;
 
 export const useReadwiseSync = (bookKey: string) => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
 
   // Read settings from store at call time to avoid stale closures
@@ -45,14 +46,18 @@ export const useReadwiseSync = (bookKey: string) => {
         );
         if (newNotes.length === 0) return;
 
-        const result = await client.pushHighlights(newNotes, book);
+        const coverImageUrl =
+          (settings.readwise.includeCoverImage ?? true)
+            ? await getPublicCoverUrl(book, appService)
+            : undefined;
+        const result = await client.pushHighlights(newNotes, book, coverImageUrl);
         if (result.success) {
           await updateLastSyncedAt(Date.now());
         } else if (!result.isNetworkError) {
           console.error('Readwise sync failed:', result.message);
         }
       }, READWISE_SYNC_DEBOUNCE_MS),
-    [bookKey, getBookData, getConfig, updateLastSyncedAt],
+    [bookKey, getBookData, getConfig, updateLastSyncedAt, appService],
   );
 
   // Manual "Push All": sends every annotation/excerpt regardless of sync timestamp
@@ -64,7 +69,11 @@ export const useReadwiseSync = (bookKey: string) => {
     const config = getConfig(bookKey);
     if (!book || !config?.booknotes) return;
 
-    const result = await client.pushHighlights(config.booknotes, book);
+    const coverImageUrl =
+      (settings.readwise.includeCoverImage ?? true)
+        ? await getPublicCoverUrl(book, appService)
+        : undefined;
+    const result = await client.pushHighlights(config.booknotes, book, coverImageUrl);
     if (result.success) {
       await updateLastSyncedAt(Date.now());
       eventDispatcher.dispatch('toast', {
@@ -78,7 +87,7 @@ export const useReadwiseSync = (bookKey: string) => {
       eventDispatcher.dispatch('toast', { message, type: 'error' });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookKey, getBookData, getConfig, updateLastSyncedAt]);
+  }, [bookKey, getBookData, getConfig, updateLastSyncedAt, appService]);
 
   // Cancel any pending debounced sync on unmount to avoid background network requests
   useEffect(() => {

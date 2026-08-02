@@ -2060,5 +2060,8 @@
   "Search query is too long": "Zapytanie jest zbyt długie",
   "Favorites, To Read": "Ulubione, Do przeczytania",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Słowniki Babylon to pojedyncze pliki .bgl."
+  "Babylon dictionaries are single .bgl files.": "Słowniki Babylon to pojedyncze pliki .bgl.",
+  "Cover Image": "Obraz okładki",
+  "Public cover image URL (empty if unavailable)": "Publiczny adres URL obrazu okładki (pusty, jeśli niedostępny)",
+  "Include Book Cover": "Dołącz okładkę książki"
 }

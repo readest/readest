@@ -1934,5 +1934,8 @@
   "Search query is too long": "搜索词过长",
   "Favorites, To Read": "我的最爱、待读",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Babylon 词典是单个 .bgl 文件。"
+  "Babylon dictionaries are single .bgl files.": "Babylon 词典是单个 .bgl 文件。",
+  "Cover Image": "封面图片",
+  "Public cover image URL (empty if unavailable)": "公开封面图片 URL（不可用时为空）",
+  "Include Book Cover": "包含书籍封面"
 }

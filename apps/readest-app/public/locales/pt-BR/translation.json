@@ -2018,5 +2018,8 @@
   "Search query is too long": "A consulta de pesquisa é muito longa",
   "Favorites, To Read": "Favoritos, Para ler",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Dicionários Babylon são arquivos .bgl individuais."
+  "Babylon dictionaries are single .bgl files.": "Dicionários Babylon são arquivos .bgl individuais.",
+  "Cover Image": "Imagem da capa",
+  "Public cover image URL (empty if unavailable)": "URL pública da imagem da capa (vazio se indisponível)",
+  "Include Book Cover": "Incluir capa do livro"
 }

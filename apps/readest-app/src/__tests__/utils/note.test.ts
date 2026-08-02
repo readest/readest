@@ -47,6 +47,31 @@ describe('renderNoteTemplate', () => {
     ],
   };
 
+  describe('Cover image line (issue #5424)', () => {
+    // The exact snippet the default export template uses: `|300` is Obsidian's
+    // image-width syntax (mirroring Readwise's rw-book-cover templates); other
+    // renderers treat it as part of the alt text and ignore it. The line and
+    // its trailing blank line must appear only when a cover URL was resolved,
+    // without leaving a stray blank line before the title.
+    const template =
+      '{% if coverImageUrl %}![cover|300]({{ coverImageUrl }})\n\n{% endif %}## {{ title }}';
+
+    it('renders the cover image before the title when a URL is present', () => {
+      const result = renderNoteTemplate(template, {
+        ...sampleData,
+        coverImageUrl: 'https://assets.readest.com/media/book_covers/abcdef12/c0ffee.png',
+      });
+      expect(result).toBe(
+        '![cover|300](https://assets.readest.com/media/book_covers/abcdef12/c0ffee.png)\n\n## The Great Gatsby',
+      );
+    });
+
+    it('omits the cover line entirely when no URL is present', () => {
+      const result = renderNoteTemplate(template, sampleData);
+      expect(result).toBe('## The Great Gatsby');
+    });
+  });
+
   describe('Variable substitution', () => {
     it('should substitute simple variables', () => {
       const template = 'Book: {{ title }} by {{ author }}';

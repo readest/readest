@@ -1976,5 +1976,8 @@
   "Search query is too long": "தேடல் சொற்றொடர் மிக நீளமாக உள்ளது",
   "Favorites, To Read": "பிடித்தவை, படிக்க வேண்டியவை",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Babylon அகராதிகள் தனி .bgl கோப்புகள் ஆகும்."
+  "Babylon dictionaries are single .bgl files.": "Babylon அகராதிகள் தனி .bgl கோப்புகள் ஆகும்.",
+  "Cover Image": "அட்டைப் படம்",
+  "Public cover image URL (empty if unavailable)": "பொது அட்டைப் பட URL (கிடைக்கவில்லை எனில் காலி)",
+  "Include Book Cover": "புத்தக அட்டையைச் சேர்க்கவும்"
 }

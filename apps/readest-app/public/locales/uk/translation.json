@@ -2060,5 +2060,8 @@
   "Search query is too long": "Пошуковий запит задовгий",
   "Favorites, To Read": "Улюблене, До прочитання",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Словники Babylon — це окремі файли .bgl."
+  "Babylon dictionaries are single .bgl files.": "Словники Babylon — це окремі файли .bgl.",
+  "Cover Image": "Зображення обкладинки",
+  "Public cover image URL (empty if unavailable)": "Публічна URL-адреса зображення обкладинки (порожня, якщо недоступна)",
+  "Include Book Cover": "Включити обкладинку книги"
 }

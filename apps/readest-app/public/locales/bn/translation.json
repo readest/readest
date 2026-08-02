@@ -1976,5 +1976,8 @@
   "Search query is too long": "অনুসন্ধান শব্দটি খুব দীর্ঘ",
   "Favorites, To Read": "প্রিয়, পরে পড়ব",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Babylon অভিধান হল একক .bgl ফাইল।"
+  "Babylon dictionaries are single .bgl files.": "Babylon অভিধান হল একক .bgl ফাইল।",
+  "Cover Image": "প্রচ্ছদ ছবি",
+  "Public cover image URL (empty if unavailable)": "প্রকাশ্য প্রচ্ছদ ছবির URL (অনুপলব্ধ হলে খালি)",
+  "Include Book Cover": "বইয়ের প্রচ্ছদ অন্তর্ভুক্ত করুন"
 }

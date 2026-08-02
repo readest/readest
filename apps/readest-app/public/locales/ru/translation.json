@@ -2060,5 +2060,8 @@
   "Search query is too long": "Поисковый запрос слишком длинный",
   "Favorites, To Read": "Избранное, К прочтению",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Словари Babylon — это отдельные файлы .bgl."
+  "Babylon dictionaries are single .bgl files.": "Словари Babylon — это отдельные файлы .bgl.",
+  "Cover Image": "Изображение обложки",
+  "Public cover image URL (empty if unavailable)": "Публичный URL изображения обложки (пусто, если недоступно)",
+  "Include Book Cover": "Включить обложку книги"
 }

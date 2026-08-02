@@ -1934,5 +1934,8 @@
   "Search query is too long": "Từ khóa tìm kiếm quá dài",
   "Favorites, To Read": "Yêu thích, Sẽ đọc",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Từ điển Babylon là các tệp .bgl đơn lẻ."
+  "Babylon dictionaries are single .bgl files.": "Từ điển Babylon là các tệp .bgl đơn lẻ.",
+  "Cover Image": "Ảnh bìa",
+  "Public cover image URL (empty if unavailable)": "URL ảnh bìa công khai (trống nếu không có)",
+  "Include Book Cover": "Bao gồm bìa sách"
 }

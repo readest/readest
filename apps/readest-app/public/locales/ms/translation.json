@@ -1934,5 +1934,8 @@
   "Search query is too long": "Pertanyaan carian terlalu panjang",
   "Favorites, To Read": "Kegemaran, Untuk Dibaca",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Kamus Babylon ialah fail .bgl tunggal."
+  "Babylon dictionaries are single .bgl files.": "Kamus Babylon ialah fail .bgl tunggal.",
+  "Cover Image": "Imej Kulit",
+  "Public cover image URL (empty if unavailable)": "URL awam imej kulit (kosong jika tiada)",
+  "Include Book Cover": "Sertakan Kulit Buku"
 }

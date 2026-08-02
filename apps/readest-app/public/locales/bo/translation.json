@@ -1934,5 +1934,8 @@
   "Search query is too long": "འཚོལ་ཚིག་རིང་དྲགས་པ།",
   "Favorites, To Read": "དགའ་པོ། ཀློག་རྒྱུ།",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Babylon ཚིག་མཛོད་ནི་ .bgl ཡིག་ཆ་རྐྱང་པ་རེད།"
+  "Babylon dictionaries are single .bgl files.": "Babylon ཚིག་མཛོད་ནི་ .bgl ཡིག་ཆ་རྐྱང་པ་རེད།",
+  "Cover Image": "མདུན་ཤོག་པར་རིས།",
+  "Public cover image URL (empty if unavailable)": "སྤྱི་ཡོངས་མདུན་ཤོག་པར་རིས་ཀྱི་ URL （མེད་ན་སྟོང་པ།）",
+  "Include Book Cover": "དཔེ་དེབ་ཀྱི་མདུན་ཤོག་ཚུད་པ།"
 }

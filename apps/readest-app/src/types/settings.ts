@@ -90,6 +90,11 @@ export interface ReadwiseSettings {
   accessToken: string;
   lastSyncedAt: number;
   /**
+   * Send the book cover with pushed highlights (image_url). Optional so
+   * settings persisted before this option existed default to enabled.
+   */
+  includeCoverImage?: boolean;
+  /**
    * Advanced: override the Readwise API base URL (e.g. for a self-hosted,
    * Readwise-compatible receiver). When unset or blank, the official
    * `READWISE_API_BASE_URL` is used.

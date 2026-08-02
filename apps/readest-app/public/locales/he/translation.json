@@ -2018,5 +2018,8 @@
   "Search query is too long": "שאילתת החיפוש ארוכה מדי",
   "Favorites, To Read": "מועדפים, לקריאה",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "מילוני Babylon הם קבצי ‎.bgl‎ בודדים."
+  "Babylon dictionaries are single .bgl files.": "מילוני Babylon הם קבצי ‎.bgl‎ בודדים.",
+  "Cover Image": "תמונת כריכה",
+  "Public cover image URL (empty if unavailable)": "כתובת URL ציבורית של תמונת הכריכה (ריק אם אינה זמינה)",
+  "Include Book Cover": "כלול כריכת ספר"
 }

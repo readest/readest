@@ -194,6 +194,7 @@ export interface AppService {
     handleProgress: ProgressHandler,
     hash: string,
     temp?: boolean,
+    media?: string,
   ): Promise<string | undefined>;
   uploadReplicaFile(
     kind: string,

@@ -1976,5 +1976,8 @@
   "Search query is too long": "Qidiruv soʻrovi juda uzun",
   "Favorites, To Read": "Sevimlilar, Oʻqish uchun",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Babylon lugʻatlari yakka .bgl fayllardan iborat."
+  "Babylon dictionaries are single .bgl files.": "Babylon lugʻatlari yakka .bgl fayllardan iborat.",
+  "Cover Image": "Muqova rasmi",
+  "Public cover image URL (empty if unavailable)": "Muqova rasmining ochiq URL manzili (mavjud bo'lmasa bo'sh)",
+  "Include Book Cover": "Kitob muqovasini qo'shish"
 }

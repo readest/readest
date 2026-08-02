@@ -2060,5 +2060,8 @@
   "Search query is too long": "Iskalni niz je predolg",
   "Favorites, To Read": "Priljubljene, Za branje",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Slovarji Babylon so posamezne datoteke .bgl."
+  "Babylon dictionaries are single .bgl files.": "Slovarji Babylon so posamezne datoteke .bgl.",
+  "Cover Image": "Slika naslovnice",
+  "Public cover image URL (empty if unavailable)": "Javni URL slike naslovnice (prazno, če ni na voljo)",
+  "Include Book Cover": "Vključi naslovnico knjige"
 }

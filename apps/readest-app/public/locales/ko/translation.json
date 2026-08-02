@@ -1934,5 +1934,8 @@
   "Search query is too long": "검색어가 너무 깁니다",
   "Favorites, To Read": "즐겨찾기, 읽을 책",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Babylon 사전은 단일 .bgl 파일입니다."
+  "Babylon dictionaries are single .bgl files.": "Babylon 사전은 단일 .bgl 파일입니다.",
+  "Cover Image": "표지 이미지",
+  "Public cover image URL (empty if unavailable)": "공개 표지 이미지 URL (사용할 수 없으면 비어 있음)",
+  "Include Book Cover": "책 표지 포함"
 }

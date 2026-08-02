@@ -1976,5 +1976,8 @@
   "Search query is too long": "සෙවුම් වචනය දිග වැඩියි",
   "Favorites, To Read": "ප්‍රියතම, කියවීමට",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Babylon ශබ්දකෝෂ තනි .bgl ගොනු වේ."
+  "Babylon dictionaries are single .bgl files.": "Babylon ශබ්දකෝෂ තනි .bgl ගොනු වේ.",
+  "Cover Image": "ආවරණ රූපය",
+  "Public cover image URL (empty if unavailable)": "පොදු ආවරණ රූප URL (නොමැති නම් හිස්)",
+  "Include Book Cover": "පොත් ආවරණය ඇතුළත් කරන්න"
 }

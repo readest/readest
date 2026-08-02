@@ -1976,5 +1976,8 @@
   "Search query is too long": "Arama sorgusu çok uzun",
   "Favorites, To Read": "Favoriler, Okunacaklar",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Babylon sözlükleri tek bir .bgl dosyasından oluşur."
+  "Babylon dictionaries are single .bgl files.": "Babylon sözlükleri tek bir .bgl dosyasından oluşur.",
+  "Cover Image": "Kapak Görseli",
+  "Public cover image URL (empty if unavailable)": "Herkese açık kapak görseli URL'si (kullanılamıyorsa boş)",
+  "Include Book Cover": "Kitap Kapağını Dahil Et"
 }

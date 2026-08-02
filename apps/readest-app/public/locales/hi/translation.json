@@ -1976,5 +1976,8 @@
   "Search query is too long": "खोज क्वेरी बहुत लंबी है",
   "Favorites, To Read": "पसंदीदा, पढ़ने के लिए",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Babylon शब्दकोश एकल .bgl फ़ाइलें होती हैं।"
+  "Babylon dictionaries are single .bgl files.": "Babylon शब्दकोश एकल .bgl फ़ाइलें होती हैं।",
+  "Cover Image": "कवर छवि",
+  "Public cover image URL (empty if unavailable)": "सार्वजनिक कवर छवि URL (अनुपलब्ध होने पर खाली)",
+  "Include Book Cover": "पुस्तक कवर शामिल करें"
 }

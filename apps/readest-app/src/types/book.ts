@@ -343,6 +343,9 @@ export interface NoteExportConfig {
   includeTitle: boolean;
   includeAuthor: boolean;
   includeDate: boolean;
+  // Include a public cover image link; requires publishing the cover to the
+  // public bucket (sign-in) unless the book already has a public cover URL.
+  includeCoverImage: boolean;
   includeChapterTitles: boolean;
   includeQuotes: boolean;
   includeNotes: boolean;

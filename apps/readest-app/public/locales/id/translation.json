@@ -1934,5 +1934,8 @@
   "Search query is too long": "Kata pencarian terlalu panjang",
   "Favorites, To Read": "Favorit, Akan Dibaca",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Kamus Babylon berupa berkas .bgl tunggal."
+  "Babylon dictionaries are single .bgl files.": "Kamus Babylon berupa berkas .bgl tunggal.",
+  "Cover Image": "Gambar Sampul",
+  "Public cover image URL (empty if unavailable)": "URL publik gambar sampul (kosong jika tidak tersedia)",
+  "Include Book Cover": "Sertakan Sampul Buku"
 }

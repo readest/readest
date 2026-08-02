@@ -1976,5 +1976,8 @@
   "Search query is too long": "عبارت جستجو بسیار طولانی است",
   "Favorites, To Read": "علاقه‌مندی‌ها، برای خواندن",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "واژه‌نامه‌های Babylon فایل‌های ‎.bgl‎ منفرد هستند."
+  "Babylon dictionaries are single .bgl files.": "واژه‌نامه‌های Babylon فایل‌های ‎.bgl‎ منفرد هستند.",
+  "Cover Image": "تصویر جلد",
+  "Public cover image URL (empty if unavailable)": "نشانی اینترنتی عمومی تصویر جلد (در صورت در دسترس نبودن، خالی)",
+  "Include Book Cover": "گنجاندن جلد کتاب"
 }

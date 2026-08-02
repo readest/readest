@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { marked } from 'marked';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { BooknoteGroup, HighlightColor, HighlightStyle, NoteExportConfig } from '@/types/book';
@@ -14,6 +15,7 @@ import {
   getHighlightColorLabel,
 } from '@/app/reader/utils/annotatorUtil';
 import { renderNoteTemplate, formatBlockQuote } from '@/utils/note';
+import { getPublicCoverUrl } from '@/utils/cover';
 import {
   AnnotationLinkType,
   buildAnnotationAppUrl,
@@ -49,12 +51,15 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
   onExport,
 }) => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
+  const { getBookData } = useBookDataStore();
   const { getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
 
-  const defaultTemplate = `## {{ title }}
+  const defaultTemplate = `{% if coverImageUrl %}![cover|300]({{ coverImageUrl }})
+
+{% endif %}## {{ title }}
 **${_('Author')}**: {{ author }}
 
 **${_('Exported from Readest')}**: {{ exportDate | date('%Y-%m-%d') }}
@@ -100,11 +105,34 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
       // exclusion arrays; default to exporting everything.
       excludedColors: noteExportConfig.excludedColors ?? [],
       excludedStyles: noteExportConfig.excludedStyles ?? [],
+      // Configs persisted before the cover option existed.
+      includeCoverImage: noteExportConfig.includeCoverImage ?? false,
     };
   });
 
   const [showSource, setShowSource] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Resolving a cover URL may publish the local cover to public storage, so it
+  // runs only when the export actually references one: the checkbox in simple
+  // mode, the coverImageUrl variable in template mode.
+  const wantsCoverImage = exportConfig.useCustomTemplate
+    ? exportConfig.customTemplate.includes('coverImageUrl')
+    : exportConfig.includeCoverImage;
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isOpen || !wantsCoverImage || coverImageUrl) return;
+    const book = getBookData(bookKey)?.book;
+    if (!book) return;
+    let cancelled = false;
+    getPublicCoverUrl(book, appService).then((url) => {
+      if (!cancelled) setCoverImageUrl(url ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, wantsCoverImage, bookKey, appService]);
 
   useEffect(() => {
     const customTemplate = exportConfig.customTemplate;
@@ -119,6 +147,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
   // Helper function to strip markdown formatting
   const stripMarkdown = (text: string): string => {
     return text
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // Remove image embeds (cover)
       .replace(/^#{1,6}\s+/gm, '') // Remove headers
       .replace(/\*\*(.+?)\*\*/g, '$1') // Remove bold
       .replace(/\*(.+?)\*/g, '$1') // Remove italic
@@ -192,6 +221,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
         title: bookTitle,
         author: bookAuthor,
         exportDate: Date.now(),
+        coverImageUrl: coverImageUrl ?? '',
         chapters: sortedGroups.map((group) => ({
           title: group.label || _('Untitled'),
           annotations: group.booknotes.map((note) => ({
@@ -221,6 +251,14 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
       const sortedGroups = filteredGroups;
 
       const lines: string[] = [];
+
+      // Add cover image (placed first, mirroring Readwise's own exports).
+      // `|300` is Obsidian's image-width syntax; other renderers treat it as
+      // alt text and ignore it.
+      if (exportConfig.includeCoverImage && coverImageUrl) {
+        lines.push(`![cover|300](${coverImageUrl})`);
+        lines.push('');
+      }
 
       // Add title
       if (exportConfig.includeTitle) {
@@ -308,13 +346,21 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
     }
 
     return output;
-  }, [exportConfig, filteredGroups, bookTitle, bookAuthor, bookHash, _]);
+  }, [exportConfig, filteredGroups, bookTitle, bookAuthor, bookHash, coverImageUrl, _]);
 
   // Convert markdown to HTML for preview
   const htmlPreview = useMemo(() => {
     if (!markdownPreview) return '';
     const html = marked.parse(markdownPreview) as string;
-    return html.replace(/<a href=/g, '<a target="_blank" rel="noopener noreferrer" href=');
+    return (
+      html
+        .replace(/<a href=/g, '<a target="_blank" rel="noopener noreferrer" href=')
+        // The web app is cross-origin isolated (COEP: require-corp, see
+        // middleware.ts) and R2 attaches no CORP header, so a plain <img> to
+        // assets.readest.com is blocked. Requesting it with CORS satisfies
+        // COEP: the bucket allowlists the app origins for GET.
+        .replace(/<img /g, '<img crossorigin="anonymous" ')
+    );
   }, [markdownPreview]);
 
   const handleToggle = (field: keyof NoteExportConfig) => {
@@ -389,6 +435,17 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
                 disabled={exportConfig.useCustomTemplate}
               />
               <span className='text-sm'>{_('Export Date')}</span>
+            </label>
+
+            <label className='flex cursor-pointer items-center gap-2'>
+              <input
+                type='checkbox'
+                checked={exportConfig.includeCoverImage}
+                onChange={() => handleToggle('includeCoverImage')}
+                className='checkbox checkbox-sm'
+                disabled={exportConfig.useCustomTemplate}
+              />
+              <span className='text-sm'>{_('Cover Image')}</span>
             </label>
 
             <label className='flex cursor-pointer items-center gap-2'>
@@ -630,6 +687,10 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
                         <li>
                           <code className='bg-base-300 rounded px-1'>exportDate</code> -{' '}
                           {_('Export date')}
+                        </li>
+                        <li>
+                          <code className='bg-base-300 rounded px-1'>coverImageUrl</code> -{' '}
+                          {_('Public cover image URL (empty if unavailable)')}
                         </li>
                         <li>
                           <code className='bg-base-300 rounded px-1'>chapters</code> -{' '}

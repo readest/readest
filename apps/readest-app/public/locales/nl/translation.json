@@ -1976,5 +1976,8 @@
   "Search query is too long": "Zoekopdracht is te lang",
   "Favorites, To Read": "Favorieten, Nog te lezen",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Babylon-woordenboeken zijn losse .bgl-bestanden."
+  "Babylon dictionaries are single .bgl files.": "Babylon-woordenboeken zijn losse .bgl-bestanden.",
+  "Cover Image": "Omslagafbeelding",
+  "Public cover image URL (empty if unavailable)": "Openbare URL van omslagafbeelding (leeg indien niet beschikbaar)",
+  "Include Book Cover": "Boekomslag opnemen"
 }

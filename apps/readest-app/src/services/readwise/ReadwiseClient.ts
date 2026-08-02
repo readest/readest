@@ -2,6 +2,7 @@ import { Book, BookNote, HighlightColor } from '@/types/book';
 import { ReadwiseSettings } from '@/types/settings';
 import { READWISE_API_BASE_URL } from '@/services/constants';
 import { isTauriAppPlatform } from '@/services/environment';
+import { isPublicImageUrl } from '@/utils/cover';
 import { buildAnnotationWebUrl } from '@/utils/deeplink';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 
@@ -59,20 +60,24 @@ export class ReadwiseClient {
   async pushHighlights(
     notes: BookNote[],
     book: Book,
+    coverImageUrl?: string,
   ): Promise<{ success: boolean; message?: string; isNetworkError?: boolean }> {
     const syncable = notes.filter(
       (n) => (n.type === 'annotation' || n.type === 'excerpt') && !n.deletedAt && n.text,
     );
     if (syncable.length === 0) return { success: true };
 
-    const isPublicUrl = (url?: string | null) =>
-      !!url && /^https?:\/\/(?!localhost|127\.|asset\.localhost)/.test(url);
+    // Readwise only accepts a fetchable image_url (max 2047 chars), never
+    // image bytes; the caller resolves/publishes a public URL (issue #5424)
+    // and the book's own metadata URL is the fallback.
+    const includeCover = this.config.includeCoverImage ?? true;
+    const coverUrl = includeCover ? (coverImageUrl ?? book.coverImageUrl) : undefined;
 
     const highlights = syncable.map((note) => ({
       text: note.text!,
       title: book.title,
       author: book.author,
-      ...(isPublicUrl(book.coverImageUrl) ? { image_url: book.coverImageUrl } : {}),
+      ...(isPublicImageUrl(coverUrl) ? { image_url: coverUrl } : {}),
       source_type: 'readest',
       category: 'books',
       note: note.note || undefined,

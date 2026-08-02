@@ -2018,5 +2018,8 @@
   "Search query is too long": "Interogarea de căutare este prea lungă",
   "Favorites, To Read": "Favorite, De citit",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "Dicționarele Babylon sunt fișiere .bgl individuale."
+  "Babylon dictionaries are single .bgl files.": "Dicționarele Babylon sunt fișiere .bgl individuale.",
+  "Cover Image": "Imagine copertă",
+  "Public cover image URL (empty if unavailable)": "URL public al imaginii copertei (gol dacă nu este disponibil)",
+  "Include Book Cover": "Include coperta cărții"
 }

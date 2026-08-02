@@ -1976,5 +1976,8 @@
   "Search query is too long": "A keresési kifejezés túl hosszú",
   "Favorites, To Read": "Kedvencek, Olvasandó",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "A Babylon szótárak önálló .bgl fájlok."
+  "Babylon dictionaries are single .bgl files.": "A Babylon szótárak önálló .bgl fájlok.",
+  "Cover Image": "Borítókép",
+  "Public cover image URL (empty if unavailable)": "Nyilvános borítókép-URL (üres, ha nem érhető el)",
+  "Include Book Cover": "Könyvborító hozzáadása"
 }

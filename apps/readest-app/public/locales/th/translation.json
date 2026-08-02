@@ -1934,5 +1934,8 @@
   "Search query is too long": "คำค้นหายาวเกินไป",
   "Favorites, To Read": "รายการโปรด, จะอ่าน",
   "Babylon": "Babylon",
-  "Babylon dictionaries are single .bgl files.": "พจนานุกรม Babylon เป็นไฟล์ .bgl ไฟล์เดียว"
+  "Babylon dictionaries are single .bgl files.": "พจนานุกรม Babylon เป็นไฟล์ .bgl ไฟล์เดียว",
+  "Cover Image": "ภาพปก",
+  "Public cover image URL (empty if unavailable)": "URL สาธารณะของภาพปก (ว่างหากไม่พร้อมใช้งาน)",
+  "Include Book Cover": "รวมปกหนังสือ"
 }

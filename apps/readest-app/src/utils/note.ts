@@ -4,6 +4,8 @@ export type NoteTemplateData = {
   title: string;
   author: string;
   exportDate: number | string;
+  /** Public cover image URL; empty/absent when no cover could be resolved. */
+  coverImageUrl?: string;
   chapters: {
     title: string;
     annotations: {
