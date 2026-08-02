@@ -363,7 +363,7 @@ const colorPanelItems = [
   {
     id: 'settings.color.backgroundTexture',
     labelKey: _('Background Image'),
-    keywords: ['background', 'texture', 'image', 'paper', 'pattern'],
+    keywords: ['background', 'texture', 'image', 'paper', 'pattern', 'library', 'reader'],
     section: 'Theme',
   },
   {

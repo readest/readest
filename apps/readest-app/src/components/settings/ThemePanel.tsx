@@ -15,7 +15,14 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { useCustomTextureStore } from '@/store/customTextureStore';
 import { queueReplicaBinaryUpload } from '@/services/sync/replicaBinaryUpload';
-import { saveSysSettings, saveViewSettings } from '@/helpers/settings';
+import {
+  BackgroundTextureScope,
+  getBackgroundTextureSettings,
+  getLibraryViewSettings,
+  saveSysSettings,
+  saveViewSettings,
+} from '@/helpers/settings';
+import { useBackgroundTexture } from '@/hooks/useBackgroundTexture';
 import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { SettingsPanelPanelProp } from './SettingsDialog';
 import { useFileSelector } from '@/hooks/useFileSelector';
@@ -44,20 +51,22 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
   const { getView, getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
-  // The Background Image picker is context-aware (issue #4743): opened from the
-  // library (no bookKey) it edits the library's own texture, which falls back
-  // to the reader/global value per-field until decoupled; opened while reading
-  // it edits the reader texture exactly as before.
+  // The Background Image picker edits one of two scopes (issue #5306): the
+  // library's own texture (#4743 fields, per-field fallback to reader/global)
+  // or the reader's. The scope defaults to the page the dialog was opened
+  // from but is switchable in place, so either can be edited from anywhere.
   const isLibraryContext = !bookKey;
-  const currentTextureId = isLibraryContext
-    ? (settings.libraryBackgroundTextureId ?? viewSettings.backgroundTextureId)
-    : viewSettings.backgroundTextureId;
-  const currentBackgroundOpacity = isLibraryContext
-    ? (settings.libraryBackgroundOpacity ?? viewSettings.backgroundOpacity)
-    : viewSettings.backgroundOpacity;
-  const currentBackgroundSize = isLibraryContext
-    ? (settings.libraryBackgroundSize ?? viewSettings.backgroundSize)
-    : viewSettings.backgroundSize;
+  const [textureScope, setTextureScope] = useState<BackgroundTextureScope>(
+    isLibraryContext ? 'library' : 'reader',
+  );
+  const currentBackground = getBackgroundTextureSettings(
+    textureScope,
+    settings,
+    bookKey ? viewSettings : undefined,
+  );
+  const currentTextureId = currentBackground.backgroundTextureId;
+  const currentBackgroundOpacity = currentBackground.backgroundOpacity;
+  const currentBackgroundSize = currentBackground.backgroundSize;
 
   const [invertImgColorInDark, setInvertImgColorInDark] = useState(
     viewSettings.invertImgColorInDark,
@@ -93,13 +102,13 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     textures: customTextures,
     addTexture,
     loadTexture,
-    applyTexture,
     removeTexture,
     loadCustomTextures,
     saveCustomTextures,
   } = useCustomTextureStore();
   const resetToDefaults = useResetViewSettings();
   const { selectFiles } = useFileSelector(appService, _);
+  const { applyBackgroundTexture } = useBackgroundTexture();
   const { activate: activateAtmosphere, deactivate: deactivateAtmosphere } = useAtmosphereStore();
 
   const handleReset = () => {
@@ -132,6 +141,19 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     } else {
       deactivateAtmosphere();
     }
+  };
+
+  const handleScopeChange = (scope: BackgroundTextureScope) => {
+    if (scope === textureScope) return;
+    // Re-seed the editing state from the new scope's stored values; the
+    // equality guards in the save effects keep this from writing anything,
+    // and bypassing handleTextureSelect keeps atmosphere activation a
+    // click-only side effect.
+    const next = getBackgroundTextureSettings(scope, settings, bookKey ? viewSettings : undefined);
+    setTextureScope(scope);
+    setSelectedTextureId(next.backgroundTextureId);
+    setBackgroundOpacity(next.backgroundOpacity);
+    setBackgroundSize(next.backgroundSize);
   };
 
   useEffect(() => {
@@ -181,34 +203,34 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
 
   useEffect(() => {
     if (selectedTextureId === currentTextureId) return;
-    if (isLibraryContext) {
+    if (textureScope === 'library') {
       saveSysSettings(envConfig, 'libraryBackgroundTextureId', selectedTextureId);
     } else {
       saveViewSettings(envConfig, bookKey, 'backgroundTextureId', selectedTextureId);
     }
-    applyBackgroundTexture();
+    applyPageBackgroundTexture();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTextureId]);
 
   useEffect(() => {
     if (backgroundOpacity === currentBackgroundOpacity) return;
-    if (isLibraryContext) {
+    if (textureScope === 'library') {
       saveSysSettings(envConfig, 'libraryBackgroundOpacity', backgroundOpacity);
     } else {
       saveViewSettings(envConfig, bookKey, 'backgroundOpacity', backgroundOpacity);
     }
-    applyBackgroundTexture();
+    applyPageBackgroundTexture();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backgroundOpacity]);
 
   useEffect(() => {
     if (backgroundSize === currentBackgroundSize) return;
-    if (isLibraryContext) {
+    if (textureScope === 'library') {
       saveSysSettings(envConfig, 'libraryBackgroundSize', backgroundSize);
     } else {
       saveViewSettings(envConfig, bookKey, 'backgroundSize', backgroundSize);
     }
-    applyBackgroundTexture();
+    applyPageBackgroundTexture();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backgroundSize]);
 
@@ -232,10 +254,25 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [readingRulerColor]);
 
-  const applyBackgroundTexture = () => {
-    applyTexture(envConfig, selectedTextureId);
-    document.documentElement.style.setProperty('--bg-texture-opacity', `${backgroundOpacity}`);
-    document.documentElement.style.setProperty('--bg-texture-size', backgroundSize);
+  // Re-apply the CURRENT page's resolved texture rather than the edited
+  // values: editing the other page's scope must not repaint this page (the
+  // shared #background-texture style element belongs to the mounted page,
+  // #4743). When the library still inherits the reader value, its resolved
+  // look follows reader edits live, which getLibraryViewSettings captures.
+  const applyPageBackgroundTexture = () => {
+    if (isLibraryContext) {
+      applyBackgroundTexture(
+        envConfig,
+        getLibraryViewSettings(useSettingsStore.getState().settings),
+      );
+    } else if (textureScope === 'reader') {
+      applyBackgroundTexture(envConfig, {
+        ...viewSettings,
+        backgroundTextureId: selectedTextureId,
+        backgroundOpacity,
+        backgroundSize,
+      });
+    }
   };
 
   useEffect(() => {
@@ -400,9 +437,8 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
           <BackgroundTextureSelector
             predefinedTextures={PREDEFINED_TEXTURES}
             customTextures={customTextures.filter((t) => !t.deletedAt)}
-            title={
-              isLibraryContext ? _('Background Image (Library)') : _('Background Image (Reader)')
-            }
+            scope={textureScope}
+            onScopeChange={handleScopeChange}
             selectedTextureId={selectedTextureId}
             backgroundOpacity={backgroundOpacity}
             backgroundSize={backgroundSize}
