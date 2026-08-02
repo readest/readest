@@ -122,7 +122,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
   const { setNotebookVisible, setNotebookNewAnnotation, setNotebookNewHighlightId } =
     useNotebookStore();
-  const { clearBooknotesNav } = useSidebarStore();
+  const { clearBooknotesNav, isSideBarVisible } = useSidebarStore();
   const { listenToNativeTouchEvents } = useDeviceControlStore();
   const { loadCustomDictionaries } = useCustomDictionaryStore();
   const { selectFiles } = useFileSelector(appService, _);
@@ -313,6 +313,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     throttle(() => {
       setSelection(null);
       setShowAnnotPopup(false);
+      setShowAnnotationNotes(false);
+      setAnnotationNotes([]);
       setShowDictionaryPopup(false);
       setShowDeepLPopup(false);
       setShowProofreadPopup(false);
@@ -591,7 +593,40 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     handleUpToPopup();
   };
 
-  useFoliateEvents(view, { onLoad, onCreateOverlay, onDrawAnnotation, onShowAnnotation });
+  // On mobile the sidebar is a bottom sheet that would otherwise be covered
+  // by the in-reader popups (popup z-50 vs sheet z-45); on any platform an
+  // opening sidebar means the user has left the annotation context, so close
+  // whatever popup is showing instead of letting it float above the sheet.
+  useEffect(() => {
+    if (isSideBarVisible) {
+      handleDismissPopup();
+    }
+  }, [isSideBarVisible, handleDismissPopup]);
+
+  const lastRelocateCfiRef = useRef<string | null>(null);
+  const onRelocate = (event: Event) => {
+    // A page turn or scroll moves the anchor out from under any open popup
+    // (including the note popup), so dismiss instead of leaving it floating
+    // over unrelated text. Same-position settle relocates (e.g. fractional
+    // DPR snap adjustments after a tap) must not close a just-opened popup,
+    // so only a real location change dismisses. Skip while a selection drag
+    // is in flight so cross page auto turns keep their popup flow intact.
+    const detail = (event as CustomEvent).detail;
+    const cfi: string | null = detail?.cfi ?? null;
+    const moved = lastRelocateCfiRef.current !== null && cfi !== lastRelocateCfiRef.current;
+    lastRelocateCfiRef.current = cfi;
+    if (!moved) return;
+    if (isTextSelected.current || isInstantAnnotating.current) return;
+    handleDismissPopup();
+  };
+
+  useFoliateEvents(view, {
+    onLoad,
+    onCreateOverlay,
+    onDrawAnnotation,
+    onShowAnnotation,
+    onRelocate,
+  });
 
   // Android native-touch handler (the per-gesture engagement signal bridged from
   // MainActivity.kt). Registered once per view by useRendererInputListeners; it
