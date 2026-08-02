@@ -272,11 +272,27 @@ export class ReaderPage extends BasePage {
   }
 
   /**
+   * Close the notebook pane if it is open. An unpinned notebook renders a
+   * full-screen capture overlay that would swallow clicks aimed at the
+   * sidebar, so tests must close it before driving other panels.
+   */
+  async closeNotebook(): Promise<void> {
+    if (await this.notebook.isVisible().catch(() => false)) {
+      await this.page
+        .locator('.overlay[data-capture-blocking-overlay]')
+        .last()
+        .click({ position: { x: 8, y: 200 } });
+      await this.notebook.waitFor({ state: 'hidden' }).catch(() => {});
+    }
+  }
+
+  /**
    * Open the sidebar's "Annotate" tab, which lists the book's annotations
    * (assert against {@link annotationItems} afterwards).
    */
   async openAnnotationsTab(): Promise<void> {
     await this.dismissPopup();
+    await this.closeNotebook();
     await this.openSidebar();
     await this.sidebar.locator('[aria-label="Annotate"]').click();
   }

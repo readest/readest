@@ -38,7 +38,8 @@ test.describe('Annotation', () => {
     await reader.selectText();
     await reader.addNote(noteText);
 
-    await expect(reader.notebook.getByText(noteText)).toBeVisible();
+    await reader.openAnnotationsTab();
+    await expect(reader.annotationItems.getByText(noteText)).toBeVisible();
   });
 
   test('deletes an annotation', async ({ openBook }) => {
