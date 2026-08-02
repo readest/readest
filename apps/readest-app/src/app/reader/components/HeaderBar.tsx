@@ -141,6 +141,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const isHeaderCompact = headerWidth > 0 && headerWidth < 350;
   const insets = window.innerWidth < 640 ? screenInsets : gridInsets;
   const isHeaderVisible = hoveredBookKey === bookKey || isDropdownOpen;
+  const isMobile = appService?.isMobile || window.innerWidth < 640;
 
   useSpatialNavigation(headerRef, isHeaderVisible);
   const trafficLightInHeader =
@@ -159,10 +160,20 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         paddingTop: appService?.hasSafeAreaInset ? `${insets.top}px` : '0px',
       }}
     >
+      {/*
+        Hover trigger area. Mobile has no hover and toggles the bars by tapping
+        the page (usePagination), so this must not take pointer events there —
+        it is 44px tall, the same as the page-header margin, so with the page
+        header off (compact 16px margin) it covered the first line of text and
+        swallowed long presses on it (#5429). Mirrors the footer's trigger.
+      */}
       <div
         role='none'
         tabIndex={-1}
-        className={clsx('absolute top-0 z-10 h-11 w-full', pointerInDoc && 'pointer-events-none')}
+        className={clsx(
+          'absolute top-0 z-10 h-11 w-full',
+          (isMobile || pointerInDoc) && 'pointer-events-none',
+        )}
         onClick={() => setHoveredBookKey(bookKey)}
         onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
