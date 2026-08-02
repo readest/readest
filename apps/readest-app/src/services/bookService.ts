@@ -125,6 +125,27 @@ export function selectNewImportableFiles(
 }
 
 /**
+ * Turn the newly-found entries of one watched folder into importer inputs.
+ *
+ * `flatten` mirrors the Import-from-Folder dialog's "Folder Structure" choice
+ * for that folder. In the default "Create groups from subfolders" mode every
+ * file carries the watched folder as `basePath` — that hint is what makes
+ * `importBooks` derive a group from the subfolder the file lives in. Without it
+ * auto-imported books piled up in the library root while the same folder's
+ * initial import stayed grouped (issue #5423). Flattened folders ("Import all
+ * into library") omit the hint so their books keep landing in the root.
+ */
+export function toWatchedFolderImports(
+  folder: string,
+  entries: ScannedFileEntry[],
+  flatten: boolean,
+): Array<{ path: string; basePath?: string }> {
+  return entries.map(({ fullPath }) =>
+    flatten ? { path: fullPath } : { path: fullPath, basePath: folder },
+  );
+}
+
+/**
  * Collect all known local source paths from the library into a normalized set.
  *
  * Unlike `buildBookLookupIndex(...).byFilePath`, this includes soft-deleted

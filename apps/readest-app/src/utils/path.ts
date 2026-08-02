@@ -30,6 +30,18 @@ export const getDirPath = (filePath: string) => {
   return parts.join('/');
 };
 
+/**
+ * Group name a book imported from a folder belongs to: its directory made
+ * relative to the *parent* of `basePath`, so the imported folder itself
+ * becomes the top-level group ("Books") and every subfolder nests under it
+ * ("Books/SciFi"). Books sitting loose in `basePath` get the folder's own
+ * group. Backslashes are normalized, so Windows paths derive the same names.
+ */
+export const getFolderImportGroupName = (filePath: string, basePath: string) => {
+  const rootPath = getDirPath(basePath);
+  return getDirPath(filePath).replace(rootPath, '').replace(/^\//, '');
+};
+
 export const joinPaths = async (...paths: string[]) => {
   return await join(...paths);
 };
