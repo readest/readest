@@ -82,9 +82,13 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
       />
       <div
         className={clsx(
-          // z-10: the lifted band overlaps the notch mask (also z-10) at small
-          // margins; as the later sibling it must win, and z-auto would lose.
-          'sectioninfo absolute z-10 flex items-center overflow-hidden font-sans',
+          'sectioninfo absolute flex items-center overflow-hidden font-sans',
+          // A lifted band overlaps the notch mask (z-10) and must win as the
+          // later sibling — z-auto would lose to any positive z. Only when
+          // lifted: an unconditional z-10 also covers the desktop HeaderBar
+          // (z-auto wrapper, so even its z-20 button groups stay below) and
+          // makes the toolbar unclickable.
+          !isVertical && band.top < topInset && 'z-10',
           isEink
             ? 'text-sm font-normal'
             : bookData?.isFixedLayout

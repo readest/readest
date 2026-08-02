@@ -136,6 +136,18 @@ describe('SectionInfo title band on negative top margins (#5303)', () => {
 
     expect(info.classList.contains('z-10')).toBe(true);
   });
+
+  it('stays below the header toolbar when the band is not lifted', () => {
+    // The desktop HeaderBar wrapper is z-auto, so its z-10 bar (and the z-20
+    // button groups confined inside that stacking context) lose to a later
+    // z-10 sibling. An unconditional z-10 here put the band over the toolbar
+    // and its hover trigger, making the buttons unclickable (PR #5447 CI).
+    currentMarginTopPx = 44;
+    const { container } = render(<SectionInfo {...baseProps} />);
+    const info = container.querySelector('.sectioninfo') as HTMLElement;
+
+    expect(info.classList.contains('z-10')).toBe(false);
+  });
 });
 
 describe('SectionInfo contrast against the page (#4901)', () => {
