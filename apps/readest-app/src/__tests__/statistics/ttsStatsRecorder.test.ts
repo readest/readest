@@ -2,13 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BookConfig, BookProgress } from '@/types/book';
 import type { TTSSession } from '@/services/tts/TTSSessionManager';
 
-type CFIProgress = {
-  fraction: number;
-  section: { current: number; total: number };
-  location: { current: number; next: number; total: number };
-  time: { section: number; total: number };
-};
-
 const mocks = vi.hoisted(() => ({
   progress: null as BookProgress | null,
   config: null as BookConfig | null,
@@ -59,13 +52,44 @@ const insertedEvents = (): RecordedEvent[] =>
 
 const totalDuration = () => insertedEvents().reduce((sum, e) => sum + e.duration, 0);
 
-const makeSession = (opts: {
-  isViewAttached: boolean;
-  getCFIProgress?: (cfi: string) => Promise<CFIProgress | null>;
-}): TTSSession => {
+const makeDoc = (text: string) =>
+  new DOMParser().parseFromString(`<html><body><p>${text}</p></body></html>`, 'text/html');
+
+// Halfway through a 100-character third section. With sizes [1000, 1000, 2000]
+// that is 3000/4000 = 0.75 of the way through the book.
+const SECTION_TEXT_LENGTH = 100;
+const sectionDocs = [makeDoc('a'), makeDoc('b'), makeDoc('x'.repeat(SECTION_TEXT_LENGTH))];
+
+const makeBook = () => ({
+  sections: sectionDocs.map((doc, i) => ({
+    size: i === 2 ? 2000 : 1000,
+    linear: 'yes',
+    createDocument: async () => doc,
+  })),
+});
+
+const resolveCFIToSectionMidpoint = () => ({
+  index: 2,
+  anchor: (doc: Document) => {
+    const textNode = doc.body.firstChild!.firstChild!;
+    const range = doc.createRange();
+    range.setStart(textNode, SECTION_TEXT_LENGTH / 2);
+    range.collapse(true);
+    return range;
+  },
+});
+
+/**
+ * `view.close()` nulls the view's own progress helpers, so a headless session
+ * only ever has the book and resolveCFI to work with. Model exactly that.
+ */
+const makeSession = (opts: { isViewAttached: boolean; hasBook?: boolean }): TTSSession => {
   const controller = {
     isViewAttached: opts.isViewAttached,
-    view: { getCFIProgress: opts.getCFIProgress ?? (async () => null) },
+    view: {
+      book: opts.hasBook === false ? undefined : makeBook(),
+      resolveCFI: resolveCFIToSectionMidpoint,
+    },
   };
   return {
     bookHash: 'hash-1',
@@ -77,13 +101,6 @@ const makeSession = (opts: {
 const setViewPage = (current: number, total: number) => {
   mocks.progress = { pageinfo: { current, next: current + 1, total } } as unknown as BookProgress;
 };
-
-const cfiProgressAt = (fraction: number, location: number, locationTotal: number) => async () => ({
-  fraction,
-  section: { current: 2, total: 10 },
-  location: { current: location, next: location + 1, total: locationTotal },
-  time: { section: 0, total: 0 },
-});
 
 describe('pageFromFraction', () => {
   it('maps a fraction onto a 1-based page within the layout', () => {
@@ -170,43 +187,61 @@ describe('TtsStatsRecorder', () => {
     expect(totalDuration()).toBe(afterPause);
   });
 
-  it('derives the page from the TTS position when no view is attached', async () => {
-    const getCFIProgress = vi.fn(cfiProgressAt(0.25, 40, 160));
-    const recorder = new TtsStatsRecorder(makeSession({ isViewAttached: false, getCFIProgress }));
+  // Regression: the first implementation resolved the headless page through
+  // view.getCFIProgress, but view.close() nulls the helpers that method depends
+  // on - so closing the book (the only way to reach this path) guaranteed it
+  // returned null and nothing was ever recorded.
+  it('derives the page from the book itself once the view has been closed', async () => {
+    const recorder = new TtsStatsRecorder(makeSession({ isViewAttached: false }));
 
     recorder.onMark('epubcfi(/6/8!/4/2)');
     recorder.onPlaybackState('playing');
     await vi.advanceTimersByTimeAsync(90_000);
     await recorder.stop();
 
-    // 0.25 through a book the layout last measured at 200 pages -> page 51,
+    // 0.75 through a book the layout last measured at 200 pages -> page 151,
     // on the same scale the reading tracker writes.
-    expect(insertedEvents()[0]).toMatchObject({ page: 51, totalPages: 200 });
+    expect(insertedEvents()[0]).toMatchObject({ page: 151, totalPages: 200 });
   });
 
   it('falls back to foliate locations when the book has no laid-out page count', async () => {
     mocks.config = { updatedAt: 0 } as BookConfig;
-    const getCFIProgress = vi.fn(cfiProgressAt(0.25, 40, 160));
-    const recorder = new TtsStatsRecorder(makeSession({ isViewAttached: false, getCFIProgress }));
+    const recorder = new TtsStatsRecorder(makeSession({ isViewAttached: false }));
 
     recorder.onMark('epubcfi(/6/8!/4/2)');
     recorder.onPlaybackState('playing');
     await vi.advanceTimersByTimeAsync(90_000);
     await recorder.stop();
 
-    expect(insertedEvents()[0]).toMatchObject({ page: 41, totalPages: 160 });
+    // size 3000 of 4000 at 1500 bytes per location -> location 2 (0-based).
+    expect(insertedEvents()[0]).toMatchObject({ page: 3, totalPages: 3 });
   });
 
   it('resolves the headless page at most once per unchanged CFI', async () => {
-    const getCFIProgress = vi.fn(cfiProgressAt(0.25, 40, 160));
-    const recorder = new TtsStatsRecorder(makeSession({ isViewAttached: false, getCFIProgress }));
+    const session = makeSession({ isViewAttached: false });
+    const resolveCFI = vi.fn(resolveCFIToSectionMidpoint);
+    (session.controller.view as unknown as { resolveCFI: unknown }).resolveCFI = resolveCFI;
+    const recorder = new TtsStatsRecorder(session);
 
     recorder.onMark('epubcfi(/6/8!/4/2)');
     recorder.onPlaybackState('playing');
     await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
     await recorder.stop();
 
-    expect(getCFIProgress).toHaveBeenCalledTimes(1);
+    expect(resolveCFI).toHaveBeenCalledTimes(1);
+  });
+
+  it('records nothing when the book is gone rather than guessing a page', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const recorder = new TtsStatsRecorder(makeSession({ isViewAttached: false, hasBook: false }));
+
+    recorder.onMark('epubcfi(/6/8!/4/2)');
+    recorder.onPlaybackState('playing');
+    await vi.advanceTimersByTimeAsync(90_000);
+    await recorder.stop();
+
+    expect(mocks.db.insertPageEvent).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it('records nothing when the book identity is unavailable', async () => {
@@ -223,10 +258,11 @@ describe('TtsStatsRecorder', () => {
 
   it('keeps a failing CFI resolve from tearing down the session', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const getCFIProgress = vi.fn(async () => {
+    const session = makeSession({ isViewAttached: false });
+    (session.controller.view as unknown as { resolveCFI: unknown }).resolveCFI = () => {
       throw new Error('synthetic resolve failure');
-    });
-    const recorder = new TtsStatsRecorder(makeSession({ isViewAttached: false, getCFIProgress }));
+    };
+    const recorder = new TtsStatsRecorder(session);
 
     recorder.onMark('epubcfi(/6/8!/4/2)');
     recorder.onPlaybackState('playing');

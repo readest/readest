@@ -15,6 +15,7 @@
 // ReadingStatsTracker's tts-playback-state handler); exactly one of the two
 // owns the clock at any moment.
 
+import * as foliateProgress from 'foliate-js/progress.js';
 import env from '@/services/environment';
 import { SyncClient } from '@/libs/sync';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
@@ -22,6 +23,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { getBookProgress } from '@/store/readerProgressStore';
 import { DEFAULT_STATS_TRACKING_CONFIG, type StatBook } from '@/types/statistics';
 import type { TTSSession } from '@/services/tts/TTSSessionManager';
+import type { FoliateView } from '@/types/view';
 import { getAccessToken } from '@/utils/access';
 import { StatisticsDb } from './statisticsDb';
 import { pushStats } from './statsSync';
@@ -37,6 +39,40 @@ export const TTS_STATS_HEARTBEAT_MS = 30_000;
 const RENEW_AFTER_SEC = 60;
 
 const PUSH_DEBOUNCE_MS = 10_000;
+
+// The same constants foliate's view passes to its own SectionProgress
+// (view.js: `new SectionProgress(book.sections, 1500, 1600)`). Reusing them
+// keeps a headless fraction on exactly the scale an attached view would report.
+const SIZE_PER_LOC = 1500;
+const SIZE_PER_TIME_UNIT = 1600;
+
+interface SectionPosition {
+  index: number;
+  fraction: number;
+}
+
+interface BookPosition {
+  fraction: number;
+  location: { current: number; total: number };
+}
+
+// foliate/progress.js is untyped JS; these are the two constructors we use.
+interface ProgressModule {
+  PageProgress: new (
+    book: FoliateView['book'],
+    resolveNavigation: FoliateView['resolveCFI'],
+  ) => { getProgress(cfi: string): Promise<SectionPosition | null> };
+  SectionProgress: new (
+    sections: FoliateView['book']['sections'],
+    sizePerLoc: number,
+    sizePerTimeUnit: number,
+  ) => { getProgress(index: number, fractionInSection: number): BookPosition };
+}
+
+interface HeadlessResolver {
+  toSectionPosition(cfi: string): Promise<SectionPosition | null>;
+  toBookPosition(index: number, fractionInSection: number): BookPosition;
+}
 
 const nowSec = () => Math.floor(Date.now() / 1000);
 
@@ -76,6 +112,8 @@ export class TtsStatsRecorder {
   #lastCfi: string | null = null;
   #resolvedCfi: string | null = null;
   #resolvedPage: ResolvedPage | null = null;
+  #headless: HeadlessResolver | null = null;
+  #headlessUnavailable = false;
 
   constructor(session: TTSSession) {
     this.#session = session;
@@ -103,8 +141,8 @@ export class TtsStatsRecorder {
     if (!cfi || this.#lastCfi === cfi) return;
     this.#lastCfi = cfi;
     // Credit a page turn as it happens rather than up to a heartbeat late - but
-    // only where the page is free to read. Headless it costs a getCFIProgress
-    // (which loads the section document), so there it waits for the heartbeat.
+    // only where the page is free to read. Headless it costs a section document
+    // load, so there it waits for the heartbeat.
     if (this.#playing && this.#session.controller.isViewAttached) void this.#tick();
   }
 
@@ -173,24 +211,64 @@ export class TtsStatsRecorder {
     if (!cfi) return null;
     if (this.#resolvedCfi === cfi) return this.#resolvedPage;
 
-    let progress: Awaited<ReturnType<typeof controller.view.getCFIProgress>> = null;
+    const resolver = this.#getHeadlessResolver();
+    if (!resolver) return null;
+
+    let position: SectionPosition | null = null;
     try {
-      progress = await controller.view.getCFIProgress(cfi);
+      position = await resolver.toSectionPosition(cfi);
     } catch (err) {
       console.warn('[stats] failed to resolve the TTS position to a page:', err);
       return null;
     }
-    if (!progress) return null;
+    if (!position || position.index < 0) {
+      console.warn('[stats] could not place the TTS position in the book:', cfi);
+      return null;
+    }
 
-    const resolved = this.#pageFromProgress(progress);
+    const resolved = this.#pageFromProgress(
+      resolver.toBookPosition(position.index, position.fraction),
+    );
     this.#resolvedCfi = cfi;
     this.#resolvedPage = resolved;
     return resolved;
   }
 
-  #pageFromProgress(
-    progress: NonNullable<Awaited<ReturnType<TTSSession['controller']['view']['getCFIProgress']>>>,
-  ): ResolvedPage | null {
+  /**
+   * Build a progress resolver that survives the book being closed.
+   *
+   * `view.getCFIProgress` is not usable here: `view.close()` nulls the
+   * `#sectionProgress`/`#cfiProgress` helpers it reads (foliate view.js), so it
+   * returns null exactly when a headless session needs it. The book itself and
+   * `resolveCFI` (which delegates to `book.resolveCFI`) both survive, and they
+   * are all foliate's own progress classes require - so rebuild the same
+   * computation on top of those.
+   */
+  #getHeadlessResolver(): HeadlessResolver | null {
+    if (this.#headless || this.#headlessUnavailable) return this.#headless;
+    const view = this.#session.controller.view;
+    const book = view?.book;
+    if (!book?.sections?.length) {
+      console.warn('[stats] no book available to place the TTS position');
+      this.#headlessUnavailable = true;
+      return null;
+    }
+    try {
+      const { PageProgress, SectionProgress } = foliateProgress as unknown as ProgressModule;
+      const cfiProgress = new PageProgress(book, (cfi: string) => view.resolveCFI(cfi));
+      const sectionProgress = new SectionProgress(book.sections, SIZE_PER_LOC, SIZE_PER_TIME_UNIT);
+      this.#headless = {
+        toSectionPosition: (cfi) => cfiProgress.getProgress(cfi),
+        toBookPosition: (index, fraction) => sectionProgress.getProgress(index, fraction),
+      };
+    } catch (err) {
+      console.warn('[stats] failed to build the headless progress resolver:', err);
+      this.#headlessUnavailable = true;
+    }
+    return this.#headless;
+  }
+
+  #pageFromProgress(progress: BookPosition): ResolvedPage | null {
     // Stay on the layout's own scale so listening rows and reading rows remain
     // comparable, which is what makes COUNT(DISTINCT page) meaningful.
     const layoutPages = useBookDataStore.getState().getConfig(this.#session.bookKey)?.progress?.[1];
