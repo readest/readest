@@ -24,9 +24,34 @@ vi.mock('@/store/bookDataStore', () => ({
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: { getState: () => ({ settings: { fake: true } }) },
 }));
-vi.mock('@/services/environment', () => ({ default: { env: 'test' } }));
+// getAPIBaseUrl is reached through TtsStatsRecorder -> @/libs/sync.
+vi.mock('@/services/environment', () => ({
+  default: { env: 'test' },
+  getAPIBaseUrl: () => 'https://example.invalid',
+}));
 vi.mock('@/utils/bridge', () => ({
   invokeUseBackgroundAudio: vi.fn().mockResolvedValue(undefined),
+}));
+
+const statsMocks = vi.hoisted(() => ({
+  instances: [] as Array<{
+    session: { bookKey: string };
+    onPlaybackState: ReturnType<typeof vi.fn>;
+    onMark: ReturnType<typeof vi.fn>;
+    stop: ReturnType<typeof vi.fn>;
+  }>,
+}));
+vi.mock('@/services/statistics/ttsStatsRecorder', () => ({
+  TtsStatsRecorder: class {
+    session: { bookKey: string };
+    onPlaybackState = vi.fn();
+    onMark = vi.fn();
+    stop = vi.fn(async () => {});
+    constructor(session: { bookKey: string }) {
+      this.session = session;
+      statsMocks.instances.push(this);
+    }
+  },
 }));
 
 import { TTSSessionManager, getBookHashFromKey } from '@/services/tts/TTSSessionManager';
@@ -86,6 +111,7 @@ describe('TTSSessionManager', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    statsMocks.instances.length = 0;
     manager = new TTSSessionManager();
     controller = new FakeController();
     playbackStates = [];
@@ -228,5 +254,40 @@ describe('TTSSessionManager', () => {
     expect(controller.shutdown).not.toHaveBeenCalled();
     expect(manager.getActiveSession()).toBeNull();
     expect(sessionEvents.at(-1)?.reason).toBe('released');
+  });
+
+  test('feeds playback transitions and position marks to the stats recorder', () => {
+    claim();
+    const recorder = statsMocks.instances[0]!;
+    expect(recorder.session.bookKey).toBe('hashA-r1');
+
+    controller.emitState('playing');
+    controller.emitMark('epubcfi(/6/8!/4/4)');
+    controller.emitState('paused');
+
+    expect(recorder.onPlaybackState.mock.calls.flat()).toEqual(['playing', 'paused']);
+    expect(recorder.onMark).toHaveBeenCalledWith('epubcfi(/6/8!/4/4)');
+  });
+
+  test('exposes the relayed playback state for listeners that mount mid-session', () => {
+    claim();
+    expect(manager.getPlaybackState()).toBeNull();
+    controller.emitState('playing');
+    expect(manager.getPlaybackState()).toBe('playing');
+  });
+
+  test('flushes the stats recorder when the session stops', async () => {
+    claim();
+    controller.emitState('playing');
+    await manager.stopActive('user');
+    expect(statsMocks.instances[0]!.stop).toHaveBeenCalled();
+  });
+
+  test('never orphans a stats recorder when the same session is re-claimed', () => {
+    claim();
+    // The recorder owns a heartbeat interval; an orphan would keep writing.
+    claim();
+    expect(statsMocks.instances).toHaveLength(2);
+    expect(statsMocks.instances[0]!.stop).toHaveBeenCalled();
   });
 });

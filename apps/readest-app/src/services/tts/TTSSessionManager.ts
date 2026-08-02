@@ -4,11 +4,12 @@
 // bookKey is `${hash}-${uniqueId()}` — so sessions key by book HASH and treat
 // bookKey as ephemeral. The manager owns everything that must outlive the
 // reader's React hooks: the media bridge binding, the silent keep-alive, the
-// sleep timer, headless progress persistence, and the app-level playback
-// state relay. It is a per-webview singleton by design (multi-window desktop
-// keeps its current per-window behavior).
+// sleep timer, headless progress persistence, reading-statistics capture, and
+// the app-level playback state relay. It is a per-webview singleton by design
+// (multi-window desktop keeps its current per-window behavior).
 
 import env from '@/services/environment';
+import { TtsStatsRecorder } from '@/services/statistics/ttsStatsRecorder';
 import { stubTranslation as _ } from '@/utils/misc';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -53,6 +54,7 @@ export class TTSSessionManager extends EventTarget {
   #onSessionEnded: ((e: Event) => void) | null = null;
   #onHighlightMark: ((e: Event) => void) | null = null;
   #lastRelayedState: 'playing' | 'paused' | null = null;
+  #statsRecorder: TtsStatsRecorder | null = null;
   #sleepTimer: ReturnType<typeof setTimeout> | null = null;
   #sleepTimeoutSec = 0;
   #sleepFiresAt = 0;
@@ -98,6 +100,13 @@ export class TTSSessionManager extends EventTarget {
 
   getActiveSession(): TTSSession | null {
     return this.#session;
+  }
+
+  // The last state relayed on the tts-playback-state bus. Lets a listener that
+  // mounts mid-session (opening the reader from the mini player) seed itself
+  // instead of waiting for a transition that already happened.
+  getPlaybackState(): 'playing' | 'paused' | null {
+    return this.#lastRelayedState;
   }
 
   // The session survives; only the view goes away. The bridge stays bound so
@@ -239,7 +248,21 @@ export class TTSSessionManager extends EventTarget {
     this.#sleepFiresAt = 0;
   }
 
+  // Flush and drop the recorder. It owns a heartbeat interval, so it must never
+  // be replaced without going through here or the orphan keeps writing.
+  #releaseStatsRecorder(): void {
+    const recorder = this.#statsRecorder;
+    this.#statsRecorder = null;
+    if (!recorder) return;
+    void recorder.stop().catch((err) => console.warn('[stats] TTS stats flush failed:', err));
+  }
+
   #subscribe(controller: TTSController): void {
+    // Listening is reading, so it feeds the same page_stat_data table. The
+    // recorder lives here rather than in the reader because a headless session
+    // (library mini player, lock screen, CarPlay) has no React tree left.
+    this.#releaseStatsRecorder();
+    this.#statsRecorder = this.#session ? new TtsStatsRecorder(this.#session) : null;
     this.#onStateChange = (e: Event) => {
       const { state } = (e as CustomEvent<{ state: string }>).detail;
       const session = this.#session;
@@ -252,6 +275,9 @@ export class TTSSessionManager extends EventTarget {
       else if (state.includes('paused')) mapped = 'paused';
       if (!mapped || mapped === this.#lastRelayedState) return;
       this.#lastRelayedState = mapped;
+      // Before the relay: the reading tracker stands down on this same event,
+      // and the two must never bill the same wall-clock twice.
+      this.#statsRecorder?.onPlaybackState(mapped);
       eventDispatcher.dispatch('tts-playback-state', { bookKey: session.bookKey, state: mapped });
     };
     this.#onSessionEnded = (e: Event) => {
@@ -260,6 +286,7 @@ export class TTSSessionManager extends EventTarget {
     };
     this.#onHighlightMark = (e: Event) => {
       const { cfi } = (e as CustomEvent<{ cfi: string }>).detail;
+      this.#statsRecorder?.onMark(cfi);
       this.#persistLocation(cfi);
     };
     controller.addEventListener('tts-state-change', this.#onStateChange);
@@ -268,6 +295,10 @@ export class TTSSessionManager extends EventTarget {
   }
 
   #unsubscribe(controller: TTSController): void {
+    // Flush against the session the recorder was built for — every unbind path
+    // (stop, release, same-book controller swap) runs through here, and
+    // stopActive has already cleared #session by this point.
+    this.#releaseStatsRecorder();
     if (this.#onStateChange) {
       controller.removeEventListener('tts-state-change', this.#onStateChange);
     }

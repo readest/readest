@@ -1,16 +1,18 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useBookProgress } from '@/store/readerProgressStore';
+import { getBookProgress, useBookProgress } from '@/store/readerProgressStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { StatisticsDb } from '@/services/statistics/statisticsDb';
 import { TrackerCore, type FlushedEvent } from '@/services/statistics/trackerCore';
+import { getBookHashFromKey, ttsSessionManager } from '@/services/tts/TTSSessionManager';
 import { DEFAULT_STATS_TRACKING_CONFIG } from '@/types/statistics';
 import { SyncClient } from '@/libs/sync';
 import { pushStats, pullStats } from '@/services/statistics/statsSync';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
+import { eventDispatcher } from '@/utils/event';
 
 const nowSec = () => Math.floor(Date.now() / 1000);
 
@@ -32,6 +34,15 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
   const dbRef = useRef<StatisticsDb | null>(null);
   const idleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // While this book is being read aloud, TtsStatsRecorder owns the clock and
+  // this tracker stands down — otherwise TTS auto-follow's relocations would
+  // bill the same wall-clock a second time. Seeded from the manager rather than
+  // the event bus alone, so opening the reader from the mini player mid-session
+  // doesn't miss the transition that already happened.
+  const ttsPlayingRef = useRef(
+    ttsSessionManager.getPlaybackState() === 'playing' &&
+      ttsSessionManager.getActiveSession()?.bookHash === getBookHashFromKey(bookKey),
+  );
 
   const bookData = getBookData(bookKey);
   const book = bookData?.book;
@@ -93,16 +104,42 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
     );
   };
 
+  const openPageAt = (info: { current?: number; total: number } | undefined) => {
+    if (!info) return;
+    void persist(coreRef.current.onPage((info.current ?? 0) + 1, info.total || 1, nowSec()));
+    armIdle();
+  };
+
   // Page changes drive the tracker.
   useEffect(() => {
-    const info = progress?.pageinfo;
-    if (!info) return;
-    const page = (info.current ?? 0) + 1;
-    const total = info.total || 1;
-    void persist(coreRef.current.onPage(page, total, nowSec()));
-    armIdle();
+    if (ttsPlayingRef.current) return;
+    openPageAt(progress?.pageinfo);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress?.pageinfo]);
+
+  // Hand the clock to TtsStatsRecorder while this book is read aloud, and take
+  // it back afterwards. TTS turns pages to follow the narration, so without
+  // this the same minutes would be recorded by both.
+  useEffect(() => {
+    const bookHash = getBookHashFromKey(bookKey);
+    const onPlaybackState = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { bookKey?: string; state?: string };
+      // Another book can be playing while this one is read manually.
+      if (!detail?.bookKey || getBookHashFromKey(detail.bookKey) !== bookHash) return;
+      const playing = detail.state === 'playing';
+      if (playing === ttsPlayingRef.current) return;
+      ttsPlayingRef.current = playing;
+      if (playing) {
+        if (idleRef.current) clearTimeout(idleRef.current);
+        void persist(coreRef.current.onIdle(nowSec()));
+      } else {
+        openPageAt(getBookProgress(bookKey)?.pageinfo);
+      }
+    };
+    eventDispatcher.on('tts-playback-state', onPlaybackState);
+    return () => eventDispatcher.off('tts-playback-state', onPlaybackState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey]);
 
   // Tab/window visibility.
   useEffect(() => {
