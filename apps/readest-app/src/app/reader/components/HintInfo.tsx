@@ -62,15 +62,20 @@ const HintInfo: React.FC<SectionInfoProps> = ({
 
   return (
     <>
+      {/* Display-only: without pointer-events-none the invisible inset strip
+          swallows presses on text rendered inside the safe area (#5429). */}
       <div
-        className={clsx('absolute left-0 right-0 top-0 z-10', hintMessage ? '' : 'bg-transparent')}
+        className={clsx(
+          'pointer-events-none absolute left-0 right-0 top-0 z-10',
+          hintMessage ? '' : 'bg-transparent',
+        )}
         style={{
           height: `${topInset}px`,
         }}
       />
       <div
         className={clsx(
-          'hintinfo absolute flex items-center justify-end overflow-hidden ps-2',
+          'hintinfo pointer-events-none absolute flex items-center justify-end overflow-hidden ps-2',
           hintMessage ? '' : 'bg-transparent',
           isVertical ? 'writing-vertical-rl' : 'top-0 h-[44px]',
           isScrolled

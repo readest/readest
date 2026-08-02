@@ -27,6 +27,12 @@ export const detectAndroidEnv = async (): Promise<AndroidEnv | null> => {
   const serials = await listDeviceSerials();
   if (serials.length === 0) return null;
   if (!(await isPackageInstalled(APP_PKG))) return null;
+  // Pre-confirm the one-time "Viewing full screen" prompt. On a fresh device
+  // it pops over the top half of the screen the first time the reader hides
+  // the system bars and silently swallows every touch injected there — presses
+  // land in the app only below the prompt, which reads as unexplainable
+  // gesture flakiness rather than a visible failure.
+  await adbShell('settings put secure immersive_mode_confirmations confirmed').catch(() => {});
   return { serial: process.env['ANDROID_SERIAL'] ?? serials[0]! };
 };
 
@@ -88,6 +94,14 @@ export const patchGlobalViewSettings = async (
  */
 export const openFixtureBook = async (fixtureFile: string): Promise<CdpPage> => {
   const remote = `${REMOTE_FIXTURE_DIR}/${path.basename(fixtureFile)}`;
+  // Cold-start every time. When a previous test file left the reader open on
+  // this fixture, the VIEW intent re-imports the book and remounts
+  // foliate-view a beat AFTER the old, fully rendered reader has satisfied
+  // the readiness probes below — the caller's first evaluate then lands in
+  // the remount window and finds no foliate-view (nightly: "Cannot read
+  // properties of null (reading 'renderer')").
+  await adbShell(`am force-stop ${APP_PKG}`);
+  await sleep(1_000);
   await pushFile(fixtureFile, remote);
 
   // Register the file with MediaStore so a content:// URI exists — receivers

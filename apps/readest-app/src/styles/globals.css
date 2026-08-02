@@ -418,10 +418,18 @@ foliate-fxl {
   position: relative;
 }
 
+/* Grow the hit area to the 44px mobile target (DESIGN.md) instead of bleeding
+   a fixed 12px past the icon: on narrow screens the reader header packs 32px
+   controls with 8px gaps, and a 12px bleed reached 4px into the neighboring
+   icon, so a tap on one icon fired the other. */
 .touch-target::before {
   content: '';
   position: absolute;
-  inset: -12px;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
 }
 
 .no-context-menu {

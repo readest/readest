@@ -152,7 +152,11 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   return (
     <div
       className={clsx(
-        'left-0 top-0 w-full',
+        // pointer-events-none: the wrapper is as tall as its safe-area
+        // padding, so on notch devices its box covers the top inset strip and
+        // swallowed long presses on text rendered there (#5429) — children
+        // that take input restore pointer-events themselves.
+        'pointer-events-none left-0 top-0 w-full',
         isHeaderVisible && 'bg-base-100',
         window.innerWidth < 640 ? 'fixed z-20' : 'absolute',
       )}
@@ -172,7 +176,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         tabIndex={-1}
         className={clsx(
           'absolute top-0 z-10 h-11 w-full',
-          (isMobile || pointerInDoc) && 'pointer-events-none',
+          isMobile || pointerInDoc ? 'pointer-events-none' : 'pointer-events-auto',
         )}
         onClick={() => setHoveredBookKey(bookKey)}
         onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
@@ -218,10 +222,11 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           {/* h-full so this scroller spans the whole bar: `overflow-x-auto`
               also clips vertically, and shrink-wrapped to the 32px icons it
               cut the buttons' touch halos back down to 32px (#5401). */}
-          <div
-            className='flex h-full min-w-0 items-center gap-x-4 overflow-x-auto max-[350px]:gap-x-2'
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
+          {/* no-scrollbar: the overlay scrollbar of `overflow-x-auto` owns a
+              hit-test strip at the scroller's bottom edge on Android, which
+              cut the touch halos short of the 44px target (#5401) —
+              `scrollbar-width: none` alone does not remove that strip. */}
+          <div className='no-scrollbar flex h-full min-w-0 items-center gap-x-4 overflow-x-auto max-[350px]:gap-x-2'>
             {!isSideBarVisible && (
               <div className='hidden sm:flex'>
                 <SidebarToggler bookKey={bookKey} />

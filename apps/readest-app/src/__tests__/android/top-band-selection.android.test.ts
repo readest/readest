@@ -9,6 +9,7 @@ import {
   getSelectionState,
   gotoChapter,
   openFixtureBook,
+  patchGlobalViewSettings,
   waitFor,
 } from './helpers/reader';
 
@@ -21,9 +22,20 @@ import {
 // selected nothing and no annotation popup appeared.
 //
 // The lane drives the installed app, so it exercises the WebView's real hit
-// testing — the part jsdom cannot model. Page-header-off geometry is forced by
-// overriding the renderer's `margin-top` instead of patching settings, so the
-// test runs against any build (release included) and leaves settings alone.
+// testing — the part jsdom cannot model. The page header is turned off by
+// seeding settings (debug build, run-as — like the rest of the lane), and the
+// compact margin is then forced by overriding the renderer's `margin-top` so
+// the text lands inside the band regardless of the device's safe-area inset.
+//
+// The band case asserts hit-test transparency with elementFromPoint rather
+// than a real long press: while the app is immersive, SystemUI captures any
+// injected touch that starts inside the hidden status bar's frame for its
+// swipe-down reveal, so gestures cannot be delivered up there on emulators.
+// elementFromPoint runs the same WebView hit test the touch pipeline uses,
+// and it is what both regressions actually broke (the trigger band in #5429
+// and the header wrapper's safe-area padding box after it). The control case
+// keeps the full gesture -> selection -> popup path, pressed below the inset
+// where injection is deliverable.
 
 const FIXTURE = path.resolve(__dirname, '../fixtures/data/sample-alice.epub');
 /** Height of the header hover trigger (`h-11` in HeaderBar). */
@@ -32,6 +44,7 @@ const TRIGGER_BAND_PX = 44;
 const COMPACT_MARGIN_TOP_PX = 16;
 
 interface LineTarget {
+  cssX: number;
   cssY: number;
   deviceX: number;
   deviceY: number;
@@ -126,6 +139,7 @@ const locateLine = (page: CdpPage, index: number) =>
     const cssX = line.x + Math.min(line.width, 160) / 2;
     const cssY = line.y + line.height / 2;
     return {
+      cssX,
       cssY,
       deviceX: Math.round(cssX * dpr),
       deviceY: Math.round(cssY * dpr),
@@ -140,11 +154,22 @@ if (!env) {
 
 describe.runIf(env)('Android selection under the header trigger band (#5429)', () => {
   let page: CdpPage;
+  let savedViewSettings: Record<string, unknown>;
 
   beforeAll(async () => {
+    // Page header OFF, like the reporter's setup. With the header on, the
+    // SectionInfo band owns the top strip; its geometry tracks
+    // viewSettings.marginTopPx, so overriding only the renderer margin below
+    // desyncs the two and the strip swallows the presses this test sends.
+    // Header off unmounts SectionInfo entirely. Patching settings needs the
+    // debug build, which the lane already requires elsewhere (run-as).
+    savedViewSettings = await patchGlobalViewSettings({ showHeader: false });
     page = await openFixtureBook(FIXTURE);
     await gotoChapter(page, 'chapter\\s*4');
-    // Page-header-off geometry: body text now renders inside the band.
+    // Compact page-header-off top margin. The raw renderer override (rather
+    // than the settings value) makes the geometry inset-agnostic: text starts
+    // 16px from the screen top even on devices whose safe-area inset would
+    // push the app-computed margin below the 44px trigger band.
     await setTopMargin(page, COMPACT_MARGIN_TOP_PX);
     // A chapter's opening page starts with a heading well below the band, so
     // page forward until one starts with body text (discover, don't assume —
@@ -160,44 +185,62 @@ describe.runIf(env)('Android selection under the header trigger band (#5429)', (
     );
   }, 180_000);
 
-  afterAll(() => {
+  afterAll(async () => {
     page?.close();
-  });
+    if (savedViewSettings) await patchGlobalViewSettings(savedViewSettings);
+  }, 60_000);
 
   beforeEach(async () => {
     // Each case asserts that the popup appears, so it must start with none.
     await dismissPopup(page);
     const sel = await getSelectionState(page);
-    if (sel.exists && !sel.collapsed) await dismissSelection(page);
-    else await clearDomSelection(page);
+    // Tap-dismiss even a collapsed caret: clearing only the DOM ranges leaves
+    // the WebView's touch-selection controller armed, and the next long-press
+    // then places a caret instead of selecting a word.
+    if (sel.exists) await dismissSelection(page);
+    await clearDomSelection(page);
     await hideHeaderBar(page);
     expect(await hasAnnotationPopup(page)).toBe(false);
   }, 60_000);
 
-  it('opens the annotation popup for the first line, which renders inside the band', async () => {
+  it('keeps the band transparent so a press reaches the first line', async () => {
     const line = await waitFor(() => locateLine(page, 0), { label: 'first line of the page' });
-    // Guard the premise: without this the test would silently pass by pressing
+    // Guard the premise: without this the test would silently pass by probing
     // a line the trigger never covered.
     expect(line.cssY).toBeLessThan(TRIGGER_BAND_PX);
 
-    await longPress(line.deviceX, line.deviceY);
-
-    // Assert the popup rather than a DOM selection: with the instant-highlight
-    // quick action on (the reporter's setup) the hold annotates instead of
-    // selecting, and the popup is what the user is denied either way.
-    const popup = await waitFor(() => hasAnnotationPopup(page), {
-      label: 'annotation popup for the first line',
-    });
-    expect(popup).toBe(true);
+    // Whatever owns this point receives the finger. Before the #5429 fix the
+    // hover trigger resolved here; after it, the header wrapper's safe-area
+    // padding box did. Both swallowed the long press that should have opened
+    // the annotation popup.
+    const owner = await page.evaluate<string>(`
+      const el = document.elementFromPoint(${line.cssX}, ${line.cssY});
+      if (!el) return 'none';
+      const view = document.querySelector('foliate-view');
+      if (view && (el === view || view.contains(el))) return 'reader';
+      return el.tagName + '.' + String(el.className);
+    `);
+    expect(owner).toBe('reader');
   });
 
   it('opens the annotation popup for a line below the trigger band', async () => {
     // Control: the same gesture on a line the trigger never covered always
     // worked, so a failure here means the harness, not the fix, is broken.
+    // Press mid-screen: adb injection cannot start inside the hidden status
+    // bar's frame (SystemUI captures it for its swipe-down reveal), and
+    // emulator WebViews place a caret instead of selecting a word for presses
+    // in the top region — neither is the overlay regression this control
+    // anchors, so keep the gesture well clear of both.
+    const { height } = await viewportMetrics(page);
+    const minY = Math.max(TRIGGER_BAND_PX * 2, height * 0.3);
     const line = await waitFor(
       async () => {
-        const l = await locateLine(page, 2);
-        return l && l.cssY > TRIGGER_BAND_PX ? l : null;
+        for (let i = 0; i < 16; i++) {
+          const l = await locateLine(page, i);
+          if (!l) return null;
+          if (l.cssY > minY) return l;
+        }
+        return null;
       },
       { label: 'a line below the trigger band' },
     );
