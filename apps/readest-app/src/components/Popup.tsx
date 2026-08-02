@@ -93,7 +93,13 @@ const Popup = ({
     if (!containerRef.current) return;
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const newHeight = entry.contentRect.height;
+        // Measure the border box: contentRect is the content box, which
+        // under-reports by 2px when e-ink mode adds the 1px container border.
+        // The height positions the popup against the triangle attachment
+        // point, so a short measurement drops the popup onto the triangle and
+        // flips triangleHidden, hiding the white inner triangle behind the
+        // black outer one (solid black triangle on e-ink).
+        const newHeight = entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height;
         if (newHeight !== childrenHeight) {
           setChildrenHeight(newHeight);
           return;
