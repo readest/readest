@@ -1706,8 +1706,6 @@
   "Purge all reading data": "ล้างข้อมูลการอ่านทั้งหมด",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "การดำเนินการนี้จะลบความคืบหน้าในการอ่าน บันทึก และบุ๊กมาร์กอย่างถาวร ไม่สามารถเลิกทำได้",
   "Also erase reading progress, notes, and bookmarks.": "ลบความคืบหน้าในการอ่าน บันทึก และบุ๊กมาร์กด้วย",
-  "Background Image (Library)": "ภาพพื้นหลัง (คลังหนังสือ)",
-  "Background Image (Reader)": "ภาพพื้นหลัง (มุมมองการอ่าน)",
   "Filter": "กรอง",
   "Sort by": "เรียงตาม",
   "Date modified": "วันที่แก้ไข",
@@ -1956,5 +1954,6 @@
   "Failed to download {{count}} book(s)_other": "ดาวน์โหลดหนังสือ {{count}} เล่มไม่สำเร็จ",
   "Search annotations...": "ค้นหาคำอธิบายประกอบ...",
   "Add Note": "เพิ่มบันทึก",
-  "No Matching Annotations": "ไม่พบคำอธิบายประกอบที่ตรงกัน"
+  "No Matching Annotations": "ไม่พบคำอธิบายประกอบที่ตรงกัน",
+  "Reader": "\u0e21\u0e38\u0e21\u0e21\u0e2d\u0e07\u0e01\u0e32\u0e23\u0e2d\u0e48\u0e32\u0e19"
 }

@@ -1805,8 +1805,6 @@
   "Purge all reading data": "Počisti vse podatke o branju",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "To trajno izbriše napredek branja, opombe in zaznamke. Tega ni mogoče razveljaviti.",
   "Also erase reading progress, notes, and bookmarks.": "Izbriše tudi napredek branja, opombe in zaznamke.",
-  "Background Image (Library)": "Slikovno ozadje (Knjižnica)",
-  "Background Image (Reader)": "Slikovno ozadje (Bralni pogled)",
   "Filter": "Filtriraj",
   "Sort by": "Razvrsti po",
   "Date modified": "Datum spremembe",
@@ -2094,5 +2092,6 @@
   "Failed to download {{count}} book(s)_other": "Prenos {{count}} knjig ni uspel",
   "Search annotations...": "Išči opombe...",
   "Add Note": "Dodaj opombo",
-  "No Matching Annotations": "Ni ujemajočih se opomb"
+  "No Matching Annotations": "Ni ujemajočih se opomb",
+  "Reader": "Bralni pogled"
 }

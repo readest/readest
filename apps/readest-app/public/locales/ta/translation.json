@@ -1739,8 +1739,6 @@
   "Purge all reading data": "அனைத்து வாசிப்புத் தரவையும் அழி",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "இது வாசிப்பு முன்னேற்றம், குறிப்புகள் மற்றும் புக்மார்க்குகளை நிரந்தரமாக அழிக்கும். இதை மீட்டெடுக்க முடியாது.",
   "Also erase reading progress, notes, and bookmarks.": "வாசிப்பு முன்னேற்றம், குறிப்புகள் மற்றும் புக்மார்க்குகளையும் அழிக்கும்.",
-  "Background Image (Library)": "பின்னணி படம் (நூலகம்)",
-  "Background Image (Reader)": "பின்னணி படம் (வாசிப்புப் பக்கம்)",
   "Filter": "வடிகட்டு",
   "Sort by": "வரிசைப்படுத்து",
   "Date modified": "மாற்றிய தேதி",
@@ -2002,5 +2000,6 @@
   "Failed to download {{count}} book(s)_other": "{{count}} புத்தகங்களை பதிவிறக்க முடியவில்லை",
   "Search annotations...": "சிறுகுறிப்புகளைத் தேடவும்...",
   "Add Note": "குறிப்பு சேர்க்கவும்",
-  "No Matching Annotations": "பொருந்தும் சிறுகுறிப்புகள் இல்லை"
+  "No Matching Annotations": "பொருந்தும் சிறுகுறிப்புகள் இல்லை",
+  "Reader": "\u0bb5\u0bbe\u0b9a\u0bbf\u0baa\u0bcd\u0baa\u0bc1\u0baa\u0bcd \u0baa\u0b95\u0bcd\u0b95\u0bae\u0bcd"
 }

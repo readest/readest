@@ -1739,8 +1739,6 @@
   "Purge all reading data": "সমস্ত পড়ার ডেটা পরিষ্কার করুন",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "এটি স্থায়ীভাবে পড়ার অগ্রগতি, নোট এবং বুকমার্ক মুছে ফেলে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
   "Also erase reading progress, notes, and bookmarks.": "পড়ার অগ্রগতি, নোট এবং বুকমার্কও মুছে ফেলে।",
-  "Background Image (Library)": "ব্যাকগ্রাউন্ড ছবি (লাইব্রেরি)",
-  "Background Image (Reader)": "ব্যাকগ্রাউন্ড ছবি (রিডার)",
   "Filter": "ফিল্টার",
   "Sort by": "অনুসারে সাজান",
   "Date modified": "পরিবর্তনের তারিখ",
@@ -2002,5 +2000,6 @@
   "Failed to download {{count}} book(s)_other": "{{count}} টি বই ডাউনলোড ব্যর্থ",
   "Search annotations...": "টীকা খুঁজুন...",
   "Add Note": "নোট যোগ করুন",
-  "No Matching Annotations": "কোনো মিলিত টীকা নেই"
+  "No Matching Annotations": "কোনো মিলিত টীকা নেই",
+  "Reader": "\u09b0\u09bf\u09a1\u09be\u09b0"
 }

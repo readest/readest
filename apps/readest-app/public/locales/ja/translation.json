@@ -1706,8 +1706,6 @@
   "Purge all reading data": "すべての読書データを消去",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "読書進捗、メモ、ブックマークが完全に消去されます。この操作は元に戻せません。",
   "Also erase reading progress, notes, and bookmarks.": "読書進捗、メモ、ブックマークも消去します。",
-  "Background Image (Library)": "背景画像（ライブラリ）",
-  "Background Image (Reader)": "背景画像（リーダー）",
   "Filter": "フィルター",
   "Sort by": "並べ替え",
   "Date modified": "更新日",
@@ -1956,5 +1954,6 @@
   "Failed to download {{count}} book(s)_other": "{{count}} 冊の書籍のダウンロードに失敗しました",
   "Search annotations...": "注釈を検索...",
   "Add Note": "メモを追加",
-  "No Matching Annotations": "一致する注釈がありません"
+  "No Matching Annotations": "一致する注釈がありません",
+  "Reader": "\u30ea\u30fc\u30c0\u30fc"
 }

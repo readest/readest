@@ -1805,8 +1805,6 @@
   "Purge all reading data": "Очистити всі дані читання",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Це назавжди видалить проґрес читання, нотатки та закладки. Цю дію не можна скасувати.",
   "Also erase reading progress, notes, and bookmarks.": "Також видаляє проґрес читання, нотатки та закладки.",
-  "Background Image (Library)": "Фонове зображення (Бібліотека)",
-  "Background Image (Reader)": "Фонове зображення (Режим читання)",
   "Filter": "Фільтр",
   "Sort by": "Сортувати за",
   "Date modified": "Дата зміни",
@@ -2094,5 +2092,6 @@
   "Failed to download {{count}} book(s)_many": "Не вдалося завантажити {{count}} книг",
   "Search annotations...": "Шукати анотації...",
   "Add Note": "Додати нотатку",
-  "No Matching Annotations": "Немає відповідних анотацій"
+  "No Matching Annotations": "Немає відповідних анотацій",
+  "Reader": "\u0420\u0435\u0436\u0438\u043c \u0447\u0438\u0442\u0430\u043d\u043d\u044f"
 }

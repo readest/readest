@@ -1772,8 +1772,6 @@
   "Purge all reading data": "Elimina tutti i dati di lettura",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Questa operazione cancella definitivamente il progresso di lettura, le note e i segnalibri. Non può essere annullata.",
   "Also erase reading progress, notes, and bookmarks.": "Cancella anche il progresso di lettura, le note e i segnalibri.",
-  "Background Image (Library)": "Immagine di sfondo (Libreria)",
-  "Background Image (Reader)": "Immagine di sfondo (Vista di lettura)",
   "Filter": "Filtra",
   "Sort by": "Ordina per",
   "Date modified": "Data di modifica",
@@ -2048,5 +2046,6 @@
   "Failed to download {{count}} book(s)_many": "Download di {{count}} libri non riuscito",
   "Search annotations...": "Cerca nelle annotazioni...",
   "Add Note": "Aggiungi Nota",
-  "No Matching Annotations": "Nessuna annotazione corrispondente"
+  "No Matching Annotations": "Nessuna annotazione corrispondente",
+  "Reader": "Vista di lettura"
 }

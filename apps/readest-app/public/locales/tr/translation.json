@@ -1739,8 +1739,6 @@
   "Purge all reading data": "Tüm okuma verilerini temizle",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Bu, okuma ilerlemesini, notları ve yer işaretlerini kalıcı olarak siler. Bu işlem geri alınamaz.",
   "Also erase reading progress, notes, and bookmarks.": "Okuma ilerlemesi, notlar ve yer işaretlerini de siler.",
-  "Background Image (Library)": "Arka Plan Görüntüsü (Kütüphane)",
-  "Background Image (Reader)": "Arka Plan Görüntüsü (Okuma Görünümü)",
   "Filter": "Filtrele",
   "Sort by": "Sıralama ölçütü",
   "Date modified": "Değiştirilme tarihi",
@@ -2002,5 +2000,6 @@
   "Failed to download {{count}} book(s)_other": "{{count}} kitap indirilemedi",
   "Search annotations...": "Açıklamalarda ara...",
   "Add Note": "Not Ekle",
-  "No Matching Annotations": "Eşleşen açıklama yok"
+  "No Matching Annotations": "Eşleşen açıklama yok",
+  "Reader": "Okuma G\u00f6r\u00fcn\u00fcm\u00fc"
 }

@@ -1706,8 +1706,6 @@
   "Purge all reading data": "ཀློག་པའི་གཞི་གྲངས་ཡོངས་གཙང་སེལ།",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "འདིས་ཀློག་པའི་ཡར་འཕེལ་དང་། ཟིན་བྲིས། དཔེ་རྟགས་བཅས་གཏན་དུ་སུབ་ངེས་ཡིན། ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
   "Also erase reading progress, notes, and bookmarks.": "ཀློག་པའི་ཡར་འཕེལ་དང་། ཟིན་བྲིས། དཔེ་རྟགས་བཅས་ཀྱང་སུབ་པ།",
-  "Background Image (Library)": "གནས་སྟངས་ཀྱི་རི་མོ། (དེབ་མཛོད།)",
-  "Background Image (Reader)": "གནས་སྟངས་ཀྱི་རི་མོ། (ཀློག་ངོས།)",
   "Filter Annotations": "མཆན་འདེམས་སྒྲིག",
   "Colors": "ཁ་དོག",
   "Styles": "རྣམ་པ",
@@ -1956,5 +1954,6 @@
   "Failed to download {{count}} book(s)_other": "དཔེ་དེབ་ {{count}} ཕབ་ལེན་བྱས་མ་ཐུབ།",
   "Search annotations...": "མཆན་འཚོལ་བཤེར།...",
   "Add Note": "ཟིན་བྲིས་སྣོན་པ།",
-  "No Matching Annotations": "མཐུན་པའི་མཆན་མེད།"
+  "No Matching Annotations": "མཐུན་པའི་མཆན་མེད།",
+  "Reader": "\u0f40\u0fb3\u0f7c\u0f42\u0f0b\u0f44\u0f7c\u0f66\u0f0d"
 }

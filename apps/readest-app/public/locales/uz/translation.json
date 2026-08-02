@@ -1739,8 +1739,6 @@
   "Purge all reading data": "Barcha oʻqish maʼlumotlarini tozalash",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Bu oʻqish jarayoni, eslatmalar va xatchoʻplarni butunlay oʻchiradi. Buni qaytarib boʻlmaydi.",
   "Also erase reading progress, notes, and bookmarks.": "Shuningdek, oʻqish jarayoni, eslatmalar va xatchoʻplarni ham oʻchiradi.",
-  "Background Image (Library)": "Fon rasmi (Kutubxona)",
-  "Background Image (Reader)": "Fon rasmi (Oʻqish koʻrinishi)",
   "Filter": "Filtr",
   "Sort by": "Saralash tartibi",
   "Date modified": "Oʻzgartirilgan sana",
@@ -2002,5 +2000,6 @@
   "Failed to download {{count}} book(s)_other": "{{count}} ta kitobni yuklab boʻlmadi",
   "Search annotations...": "Izohlarni qidirish...",
   "Add Note": "Eslatma qoʻshish",
-  "No Matching Annotations": "Mos izohlar yoʻq"
+  "No Matching Annotations": "Mos izohlar yoʻq",
+  "Reader": "O\u02bbqish ko\u02bbrinishi"
 }

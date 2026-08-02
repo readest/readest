@@ -1772,8 +1772,6 @@
   "Purge all reading data": "נקה את כל נתוני הקריאה",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "פעולה זו מוחקת לצמיתות את התקדמות הקריאה, ההערות והסימניות. לא ניתן לבטל פעולה זו.",
   "Also erase reading progress, notes, and bookmarks.": "מוחק גם את התקדמות הקריאה, ההערות והסימניות.",
-  "Background Image (Library)": "תמונת רקע (ספרייה)",
-  "Background Image (Reader)": "תמונת רקע (מצב קריאה)",
   "Filter": "סינון",
   "Sort by": "מיין לפי",
   "Date modified": "תאריך שינוי",
@@ -2048,5 +2046,6 @@
   "Failed to download {{count}} book(s)_other": "הורדת {{count}} ספרים נכשלה",
   "Search annotations...": "חפש הערות...",
   "Add Note": "הוסף הערה",
-  "No Matching Annotations": "אין הערות תואמות"
+  "No Matching Annotations": "אין הערות תואמות",
+  "Reader": "\u05de\u05e6\u05d1 \u05e7\u05e8\u05d9\u05d0\u05d4"
 }

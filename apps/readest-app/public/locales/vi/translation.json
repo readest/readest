@@ -1706,8 +1706,6 @@
   "Purge all reading data": "Xóa toàn bộ dữ liệu đọc",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Thao tác này xóa vĩnh viễn tiến độ đọc, ghi chú và dấu trang. Không thể hoàn tác.",
   "Also erase reading progress, notes, and bookmarks.": "Đồng thời xóa tiến độ đọc, ghi chú và dấu trang.",
-  "Background Image (Library)": "Ảnh nền (Thư viện)",
-  "Background Image (Reader)": "Ảnh nền (Trình đọc)",
   "Filter": "Lọc",
   "Sort by": "Sắp xếp theo",
   "Date modified": "Ngày sửa đổi",
@@ -1956,5 +1954,6 @@
   "Failed to download {{count}} book(s)_other": "Không thể tải xuống {{count}} cuốn sách",
   "Search annotations...": "Tìm chú thích...",
   "Add Note": "Thêm ghi chú",
-  "No Matching Annotations": "Không có chú thích phù hợp"
+  "No Matching Annotations": "Không có chú thích phù hợp",
+  "Reader": "Tr\u00ecnh \u0111\u1ecdc"
 }

@@ -1739,8 +1739,6 @@
   "Purge all reading data": "Alle leesgegevens wissen",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Hiermee worden leesvoortgang, notities en bladwijzers permanent gewist. Dit kan niet ongedaan worden gemaakt.",
   "Also erase reading progress, notes, and bookmarks.": "Wist ook leesvoortgang, notities en bladwijzers.",
-  "Background Image (Library)": "Achtergrondafbeelding (Bibliotheek)",
-  "Background Image (Reader)": "Achtergrondafbeelding (Leesweergave)",
   "Filter": "Filteren",
   "Sort by": "Sorteren op",
   "Date modified": "Wijzigingsdatum",
@@ -2002,5 +2000,6 @@
   "Failed to download {{count}} book(s)_other": "Downloaden van {{count}} boeken mislukt",
   "Search annotations...": "Aantekeningen zoeken...",
   "Add Note": "Notitie toevoegen",
-  "No Matching Annotations": "Geen overeenkomende aantekeningen"
+  "No Matching Annotations": "Geen overeenkomende aantekeningen",
+  "Reader": "Leesweergave"
 }

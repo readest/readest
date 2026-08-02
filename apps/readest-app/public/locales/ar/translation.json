@@ -1871,8 +1871,6 @@
   "Purge all reading data": "مسح جميع بيانات القراءة",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "يؤدي هذا إلى مسح تقدم القراءة والملاحظات والإشارات المرجعية نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
   "Also erase reading progress, notes, and bookmarks.": "يمسح أيضًا تقدم القراءة والملاحظات والإشارات المرجعية.",
-  "Background Image (Library)": "صورة الخلفية (المكتبة)",
-  "Background Image (Reader)": "صورة الخلفية (واجهة القراءة)",
   "Filter": "تصفية",
   "Sort by": "ترتيب حسب",
   "Date modified": "تاريخ التعديل",
@@ -2186,5 +2184,6 @@
   "Failed to download {{count}} book(s)_many": "فشل تنزيل {{count}} كتاباً",
   "Search annotations...": "بحث في التعليقات التوضيحية...",
   "Add Note": "إضافة ملاحظة",
-  "No Matching Annotations": "لا توجد تعليقات توضيحية مطابقة"
+  "No Matching Annotations": "لا توجد تعليقات توضيحية مطابقة",
+  "Reader": "\u0648\u0627\u062c\u0647\u0629 \u0627\u0644\u0642\u0631\u0627\u0621\u0629"
 }

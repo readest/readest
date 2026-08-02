@@ -1739,8 +1739,6 @@
   "Purge all reading data": "پاک‌سازی همه داده‌های مطالعه",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "این کار وضعیت مطالعه، یادداشت‌ها و نشانک‌ها را برای همیشه پاک می‌کند. این عمل قابل بازگشت نیست.",
   "Also erase reading progress, notes, and bookmarks.": "همچنین وضعیت مطالعه، یادداشت‌ها و نشانک‌ها را پاک می‌کند.",
-  "Background Image (Library)": "تصویر پس‌زمینه (کتابخانه)",
-  "Background Image (Reader)": "تصویر پس‌زمینه (صفحه مطالعه)",
   "Filter": "فیلتر",
   "Sort by": "مرتب‌سازی بر اساس",
   "Date modified": "تاریخ تغییر",
@@ -2002,5 +2000,6 @@
   "Failed to download {{count}} book(s)_other": "دانلود {{count}} کتاب ناموفق بود",
   "Search annotations...": "جستجوی یادداشت‌ها...",
   "Add Note": "افزودن یادداشت",
-  "No Matching Annotations": "هیچ حاشیه‌نویسی مطابقی نیست"
+  "No Matching Annotations": "هیچ حاشیه‌نویسی مطابقی نیست",
+  "Reader": "\u0635\u0641\u062d\u0647 \u0645\u0637\u0627\u0644\u0639\u0647"
 }

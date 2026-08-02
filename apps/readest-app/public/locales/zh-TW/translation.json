@@ -1706,8 +1706,6 @@
   "Purge all reading data": "清除所有閱讀資料",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "這將永久清除閱讀進度、筆記和書籤，且無法復原。",
   "Also erase reading progress, notes, and bookmarks.": "同時清除閱讀進度、筆記和書籤。",
-  "Background Image (Library)": "背景圖片（書庫）",
-  "Background Image (Reader)": "背景圖片（閱讀介面）",
   "Filter": "篩選",
   "Sort by": "排序方式",
   "Date modified": "修改日期",
@@ -1956,5 +1954,6 @@
   "Failed to download {{count}} book(s)_other": "{{count}} 本書籍下載失敗",
   "Search annotations...": "搜尋筆記...",
   "Add Note": "添加筆記",
-  "No Matching Annotations": "找不到符合的註解"
+  "No Matching Annotations": "找不到符合的註解",
+  "Reader": "\u95b1\u8b80\u4ecb\u9762"
 }

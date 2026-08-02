@@ -1706,8 +1706,6 @@
   "Purge all reading data": "Bersihkan semua data bacaan",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Ini memadam kemajuan membaca, nota dan penanda buku secara kekal. Tindakan ini tidak boleh dibatalkan.",
   "Also erase reading progress, notes, and bookmarks.": "Turut memadam kemajuan membaca, nota dan penanda buku.",
-  "Background Image (Library)": "Imej Latar Belakang (Perpustakaan)",
-  "Background Image (Reader)": "Imej Latar Belakang (Paparan Bacaan)",
   "Filter": "Tapis",
   "Sort by": "Isih mengikut",
   "Date modified": "Tarikh diubah suai",
@@ -1956,5 +1954,6 @@
   "Failed to download {{count}} book(s)_other": "Gagal memuat turun {{count}} buku",
   "Search annotations...": "Cari anotasi...",
   "Add Note": "Tambah Nota",
-  "No Matching Annotations": "Tiada anotasi sepadan"
+  "No Matching Annotations": "Tiada anotasi sepadan",
+  "Reader": "Paparan Bacaan"
 }

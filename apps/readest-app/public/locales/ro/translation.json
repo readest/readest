@@ -1772,8 +1772,6 @@
   "Purge all reading data": "Curăță toate datele de citire",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "Aceasta șterge definitiv progresul citirii, notele și marcajele. Această acțiune nu poate fi anulată.",
   "Also erase reading progress, notes, and bookmarks.": "Șterge de asemenea progresul citirii, notele și marcajele.",
-  "Background Image (Library)": "Imagine de fundal (Bibliotecă)",
-  "Background Image (Reader)": "Imagine de fundal (Vizualizare de lectură)",
   "Filter": "Filtrează",
   "Sort by": "Sortează după",
   "Date modified": "Data modificării",
@@ -2048,5 +2046,6 @@
   "Failed to download {{count}} book(s)_other": "Nu s-au putut descărca {{count}} de cărți",
   "Search annotations...": "Căutați adnotări...",
   "Add Note": "Adăugați notă",
-  "No Matching Annotations": "Nicio adnotare potrivită"
+  "No Matching Annotations": "Nicio adnotare potrivită",
+  "Reader": "Vizualizare de lectur\u0103"
 }

@@ -1706,8 +1706,6 @@
   "Purge all reading data": "모든 읽기 데이터 지우기",
   "This permanently erases reading progress, notes, and bookmarks. This cannot be undone.": "읽기 진행 상황, 메모, 북마크가 영구적으로 지워집니다. 이 작업은 되돌릴 수 없습니다.",
   "Also erase reading progress, notes, and bookmarks.": "읽기 진행 상황, 메모, 북마크도 함께 지웁니다.",
-  "Background Image (Library)": "배경 이미지 (라이브러리)",
-  "Background Image (Reader)": "배경 이미지 (리더)",
   "Filter": "필터",
   "Sort by": "정렬 기준",
   "Date modified": "수정한 날짜",
@@ -1956,5 +1954,6 @@
   "Failed to download {{count}} book(s)_other": "책 {{count}}권 다운로드 실패",
   "Search annotations...": "주석 검색...",
   "Add Note": "메모 추가",
-  "No Matching Annotations": "일치하는 주석 없음"
+  "No Matching Annotations": "일치하는 주석 없음",
+  "Reader": "\ub9ac\ub354"
 }
