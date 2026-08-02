@@ -379,16 +379,21 @@ jobs:
           echo "Uploading updated latest.json to GitHub release"
           gh release upload ${{ needs.get-release.outputs.release_tag }} latest.json --clobber
 
+      # PINNED to a rev, not the branch tip: on 2026-07-31 the fork rewrote the
+      # sharun bundler to re-download quick-sharun.sh on EVERY build instead of
+      # only when it is missing from the cache, which defeats the cache seed
+      # below and hangs the Linux legs under Xvfb (#4906). This rev is the last
+      # one that keeps the cache check. Keep in sync with nightly.yml.
       - name: Override tauri-cli with custom AppImage format (Linux)
         if: matrix.config.release == 'linux'
-        run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --branch feat/truly-portable-appimage --force
+        run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --rev 162626969b382d52faebdf6c7264460bd9a47d1f --force
 
-      # The truly-portable AppImage bundler downloads quick-sharun.sh from
-      # Anylinux-AppImages@main ONLY when it is not already in the tauri tools
-      # cache. An upstream strace-mode change (2026-06-29) made bundling launch
-      # the app under Xvfb and hang forever (#4906). Seed the cache with the
-      # last known-good revision so the bundler never fetches the moving
-      # main-branch script. Keep in sync with nightly.yml.
+      # The truly-portable AppImage bundler at the rev pinned above downloads
+      # quick-sharun.sh from Anylinux-AppImages@main ONLY when it is not already
+      # in the tauri tools cache. An upstream strace-mode change (2026-06-29)
+      # made bundling launch the app under Xvfb and hang forever (#4906). Seed
+      # the cache with the last known-good revision so the bundler never fetches
+      # the moving main-branch script. Keep in sync with nightly.yml.
       - name: pin quick-sharun.sh for AppImage bundling (Linux)
         if: matrix.config.release == 'linux'
         run: |
