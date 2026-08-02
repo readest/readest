@@ -539,6 +539,29 @@ class MergeForPushTest(unittest.TestCase):
         self.assertEqual(rec['coverHash'], 'f' * 32)
         self.assertEqual(rec['coverUpdatedAt'], NOW)
 
+    # The server resolves title/author/tags/metadata by metadata_updated_at
+    # (field-level LWW, readest#5438). A push that changes the group must stamp
+    # it or a stale stamped edit on the server would win the merge.
+    def test_metadata_change_stamps_metadata_updated_at(self):
+        wire = wire_for(dict(BOOK, title='Renamed'))
+        row = server_row(metadata=json.dumps(build_metadata(BOOK)))
+        rec = merge_for_push(wire, row, NOW)
+        self.assertEqual(rec['metadataUpdatedAt'], NOW)
+
+    def test_new_book_stamps_metadata_updated_at(self):
+        rec = merge_for_push(wire_for(), None, NOW, uploaded_at_ms=NOW)
+        self.assertEqual(rec['metadataUpdatedAt'], NOW)
+
+    def test_unchanged_metadata_carries_server_stamp(self):
+        # Cover-only update: the group is untouched, so the row's stamp is
+        # carried over — advancing it would let this push beat a genuinely
+        # newer Readest edit racing with it.
+        wire = wire_for()
+        row = synced_row(wire)
+        row['metadata_updated_at'] = '2024-01-03T00:00:00.000Z'
+        rec = merge_for_push(wire, row, NOW, cover_hash='f' * 32)
+        self.assertEqual(rec['metadataUpdatedAt'], iso_to_ms('2024-01-03T00:00:00.000Z'))
+
 
 if __name__ == '__main__':
     unittest.main()

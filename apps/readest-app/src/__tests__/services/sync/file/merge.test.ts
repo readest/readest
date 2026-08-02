@@ -342,3 +342,83 @@ describe('isRemoteBookMetadataNewer', () => {
     ).toBe(false);
   });
 });
+
+describe('mergeBookMetadata metadataUpdatedAt clock (issue #5438)', () => {
+  test('adopts remote metadata group when its stamp is fresher even though local row is newer', () => {
+    // This device read the book (page turns bump updatedAt) after a peer
+    // edited the metadata. Whole-row LWW keeps the local row, but the edit
+    // must still land.
+    const local = {
+      hash: 'h',
+      title: 'Stale',
+      author: 'A',
+      tags: ['old'],
+      metadata: { title: 'Stale', author: 'A', language: '' },
+      updatedAt: 50,
+    } as Book;
+    const remote = {
+      hash: 'h',
+      title: 'Edited',
+      author: 'B',
+      tags: ['news'],
+      metadata: { title: 'Edited', author: 'B', language: 'sv' },
+      primaryLanguage: 'sv',
+      metadataUpdatedAt: 40,
+      updatedAt: 40,
+    } as Book;
+    const m = mergeBookMetadata(local, remote);
+    expect(m.title).toBe('Edited');
+    expect(m.author).toBe('B');
+    expect(m.tags).toEqual(['news']);
+    expect(m.metadata?.language).toBe('sv');
+    expect(m.primaryLanguage).toBe('sv');
+    expect(m.metadataUpdatedAt).toBe(40);
+    expect(m.updatedAt).toBe(50);
+  });
+
+  test('keeps the local metadata group when its stamp is fresher and remote row is newer', () => {
+    // Reverse race: this device edited after the peer's last page turn.
+    const local = {
+      hash: 'h',
+      title: 'Edited here',
+      author: 'B',
+      metadata: { title: 'Edited here', author: 'B', language: 'sv' },
+      primaryLanguage: 'sv',
+      metadataUpdatedAt: 60,
+      updatedAt: 60,
+    } as Book;
+    const remote = {
+      hash: 'h',
+      title: 'Stale',
+      author: 'A',
+      metadata: { title: 'Stale', author: 'A', language: '' },
+      updatedAt: 90,
+    } as Book;
+    const m = mergeBookMetadata(local, remote);
+    expect(m.title).toBe('Edited here');
+    expect(m.metadata?.language).toBe('sv');
+    expect(m.primaryLanguage).toBe('sv');
+    expect(m.metadataUpdatedAt).toBe(60);
+    expect(m.updatedAt).toBe(90);
+  });
+
+  test('unstamped sides keep whole-row semantics (legacy rows)', () => {
+    const local = { hash: 'h', title: 'L', author: 'A', updatedAt: 9 } as Book;
+    const remote = { hash: 'h', title: 'R', author: 'A', updatedAt: 1 } as Book;
+    expect(mergeBookMetadata(local, remote).title).toBe('L');
+  });
+});
+
+describe('shouldApplyRemoteBookMetadata metadataUpdatedAt clause (issue #5438)', () => {
+  test('triggers when only the remote metadata stamp is newer', () => {
+    const local = { hash: 'h', title: 'L', author: 'A', updatedAt: 90 } as Book;
+    const remote = {
+      hash: 'h',
+      title: 'R',
+      author: 'A',
+      updatedAt: 40,
+      metadataUpdatedAt: 40,
+    } as Book;
+    expect(shouldApplyRemoteBookMetadata(local, remote)).toBe(true);
+  });
+});

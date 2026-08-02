@@ -207,6 +207,7 @@ export const getBookWithUpdatedMetadata = (
   metadata: BookMetadata,
   tags?: string[],
 ): Book => {
+  const now = Date.now();
   const updatedBook: Book = {
     ...book,
     metadata,
@@ -214,7 +215,10 @@ export const getBookWithUpdatedMetadata = (
     title: formatTitle(metadata.title),
     author: formatAuthors(metadata.author),
     primaryLanguage: getPrimaryLanguage(metadata.language),
-    updatedAt: Date.now(),
+    updatedAt: now,
+    // The metadata group merges on its own clock so a page turn elsewhere
+    // (which dominates updatedAt) cannot clobber this edit (issue #5438).
+    metadataUpdatedAt: now,
   };
   const newCoverImageUrl = metadata.coverImageBlobUrl || metadata.coverImageUrl;
   if (newCoverImageUrl) {

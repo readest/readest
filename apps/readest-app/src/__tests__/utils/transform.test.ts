@@ -394,3 +394,30 @@ describe('transformBook coverHash + coverUpdatedAt (issue #4544)', () => {
     expect(back.coverUpdatedAt).toBeNull();
   });
 });
+
+describe('transformBook metadataUpdatedAt (issue #5438)', () => {
+  const userId = 'user-1';
+  const baseBook: Book = {
+    hash: 'h1',
+    format: 'EPUB',
+    title: 'T',
+    author: 'A',
+    createdAt: 1,
+    updatedAt: 2,
+  };
+
+  it('round-trips metadataUpdatedAt through the DB shape', () => {
+    const ts = Date.UTC(2026, 7, 1, 12, 0, 0);
+    const db = transformBookToDB({ ...baseBook, metadataUpdatedAt: ts }, userId);
+    expect(db.metadata_updated_at).toBe(new Date(ts).toISOString());
+    const back = transformBookFromDB(db);
+    expect(back.metadataUpdatedAt).toBe(ts);
+  });
+
+  it('leaves the column null when unset (legacy rows)', () => {
+    const db = transformBookToDB(baseBook, userId);
+    expect(db.metadata_updated_at).toBeNull();
+    const back = transformBookFromDB(db);
+    expect(back.metadataUpdatedAt).toBeNull();
+  });
+});

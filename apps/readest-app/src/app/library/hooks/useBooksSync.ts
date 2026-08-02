@@ -24,7 +24,9 @@ import {
   pickFresherReadingStatus,
   needsCoverRefresh,
   pickFresherCover,
+  pickFresherMetadata,
 } from '@/app/library/utils/libraryUtils';
+import { getPrimaryLanguage } from '@/utils/book';
 
 export const useBooksSync = () => {
   const _ = useTranslation();
@@ -230,6 +232,23 @@ export const useBooksSync = () => {
         const cover = pickFresherCover(oldBook, matchingBook);
         mergedBook.coverHash = cover.coverHash;
         mergedBook.coverUpdatedAt = cover.coverUpdatedAt;
+        // The metadata group merges on its own metadataUpdatedAt clock so a
+        // metadata edit survives losing whole-row LWW to page-turn progress
+        // (issue #5438). Null means neither side is fresher — the row-level
+        // winner already in mergedBook stands.
+        const meta = pickFresherMetadata(oldBook, matchingBook);
+        if (meta) {
+          mergedBook.title = meta.title;
+          mergedBook.author = meta.author;
+          mergedBook.tags = meta.tags;
+          mergedBook.metadata = meta.metadata;
+          mergedBook.metadataUpdatedAt = meta.metadataUpdatedAt;
+          // TTS reads primaryLanguage (not metadata.language); recompute it the
+          // same way the editing device did so the edit is effective here too.
+          if (meta.metadata) {
+            mergedBook.primaryLanguage = getPrimaryLanguage(meta.metadata.language);
+          }
+        }
         return mergedBook;
       }
       return oldBook;
@@ -264,6 +283,12 @@ export const useBooksSync = () => {
         appService && isFeedBook(newBook)
           ? await ensureFeedBookCover(appService, newBook)
           : await appService?.generateCoverImageUrl(newBook);
+      // primaryLanguage is not a cloud column; without this the reader later
+      // guesses it from the parsed document, ignoring a language the user set
+      // in the synced metadata — TTS reads primaryLanguage (issue #5438).
+      if (newBook.metadata?.language) {
+        newBook.primaryLanguage = getPrimaryLanguage(newBook.metadata.language);
+      }
       newBook.syncedAt = Date.now();
       updatedLibrary.push(newBook);
     };

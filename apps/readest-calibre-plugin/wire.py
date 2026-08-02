@@ -365,4 +365,12 @@ def merge_for_push(wire, server_row, now_ms, uploaded_at_ms=None, cover_hash=Non
     elif row.get('cover_hash'):
         record['coverHash'] = row['cover_hash']
         record['coverUpdatedAt'] = iso_to_ms(row.get('cover_updated_at'))
+    # The server resolves title/author/tags/metadata by metadata_updated_at
+    # (field-level LWW, readest#5438). Stamp it when this push changes the
+    # group; carry the row's stamp otherwise, so a cover-only push can't win
+    # the group over a newer Readest edit racing with it.
+    if server_row is None or not _row_matches_wire(server_row, wire):
+        record['metadataUpdatedAt'] = now_ms
+    else:
+        record['metadataUpdatedAt'] = iso_to_ms(row.get('metadata_updated_at'))
     return record

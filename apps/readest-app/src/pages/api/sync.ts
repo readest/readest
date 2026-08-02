@@ -113,6 +113,56 @@ export function resolveCoverMerge(
     : { cover_hash: server.cover_hash, cover_updated_at: server.cover_updated_at };
 }
 
+type BookMetadataFields = Pick<
+  DBBook,
+  'title' | 'author' | 'tags' | 'metadata' | 'metadata_updated_at'
+>;
+
+const pickMetadataFields = (b: BookMetadataFields): BookMetadataFields => ({
+  title: b.title,
+  author: b.author,
+  tags: b.tags,
+  metadata: b.metadata,
+  metadata_updated_at: b.metadata_updated_at,
+});
+
+/**
+ * Field-level last-writer-wins for a books row's metadata group (title,
+ * author, tags, metadata): return the side with the newer
+ * metadata_updated_at. A metadata edit shares the row with page-turn progress
+ * (which dominates updated_at), so the group must resolve on its own clock or
+ * a device that read the book after the edit clobbers it — the same #4634 /
+ * #4544 hazard, issue #5438. Unlike status/cover, a tie — notably the
+ * unstamped legacy 0/0 case — follows the ROW winner: legacy rows keep their
+ * historical whole-row behavior instead of letting any stale push graft its
+ * metadata onto a newer server row.
+ */
+export function resolveMetadataMerge(
+  client: BookMetadataFields,
+  server: BookMetadataFields,
+  clientRowWins: boolean,
+): BookMetadataFields {
+  const ms = (s?: string | null) => (s ? new Date(s).getTime() : 0);
+  const clientMs = ms(client.metadata_updated_at);
+  const serverMs = ms(server.metadata_updated_at);
+  const clientWins = clientMs === serverMs ? clientRowWins : clientMs > serverMs;
+  return pickMetadataFields(clientWins ? client : server);
+}
+
+/**
+ * Value-level change check for the propagation no-op guard: a timestamp-only
+ * difference on identical values must not rewrite the server row (mirrors
+ * readingStatusChanged / the cover_hash comparison).
+ */
+export const bookMetadataChanged = (
+  a: Omit<BookMetadataFields, 'metadata_updated_at'>,
+  b: Omit<BookMetadataFields, 'metadata_updated_at'>,
+): boolean =>
+  a.title !== b.title ||
+  a.author !== b.author ||
+  (a.metadata ?? null) !== (b.metadata ?? null) ||
+  JSON.stringify(a.tags ?? null) !== JSON.stringify(b.tags ?? null);
+
 const transformsToDB = {
   books: transformBookToDB,
   book_notes: transformBookNoteToDB,
@@ -534,20 +584,34 @@ export async function POST(req: NextRequest) {
               Partial<
                 Pick<
                   DBBook,
-                  'reading_status' | 'reading_status_updated_at' | 'cover_hash' | 'cover_updated_at'
+                  | 'reading_status'
+                  | 'reading_status_updated_at'
+                  | 'cover_hash'
+                  | 'cover_updated_at'
+                  | 'metadata'
+                  | 'metadata_updated_at'
                 >
-              >;
+              > &
+              Pick<DBBook, 'title' | 'author' | 'tags'>;
             const status = resolveReadingStatusMerge(clientBook, serverBook);
             // Cover has its own field-level LWW so a page-turn can't clobber a
             // cover edit (issue #4544; mirrors reading_status / #4634).
             const cover = resolveCoverMerge(clientBook, serverBook);
+            // The metadata group likewise merges on its own clock (issue #5438).
+            const meta = resolveMetadataMerge(clientBook, serverBook, clientIsNewer);
             if (clientIsNewer) {
-              // Client wins the row; graft the fresher status + cover onto it
-              // (server's may be the newer one even though the row is older).
+              // Client wins the row; graft the fresher status + cover +
+              // metadata onto it (server's may be the newer one even though
+              // the row is older).
               clientBook.reading_status = status.reading_status;
               clientBook.reading_status_updated_at = status.reading_status_updated_at;
               clientBook.cover_hash = cover.cover_hash;
               clientBook.cover_updated_at = cover.cover_updated_at;
+              clientBook.title = meta.title;
+              clientBook.author = meta.author;
+              clientBook.tags = meta.tags;
+              clientBook.metadata = meta.metadata;
+              clientBook.metadata_updated_at = meta.metadata_updated_at;
               toUpdate.push(clientBook);
             } else {
               // Only rewrite when a resolved field VALUE differs from the
@@ -558,12 +622,14 @@ export async function POST(req: NextRequest) {
                 serverBook.reading_status,
               );
               const coverChanged = (cover.cover_hash ?? null) !== (serverBook.cover_hash ?? null);
-              if (statusChanged || coverChanged) {
-                // Server wins the row, but the client's status and/or cover is
-                // the fresher one. Graft the fresher fields onto the server row
-                // and leave updated_at untouched; the books_set_synced_at
-                // trigger advances synced_at so peers re-pull via the synced_at
-                // cursor without reordering the date-read library (#4678, #4544).
+              const metadataChanged = bookMetadataChanged(meta, serverBook);
+              if (statusChanged || coverChanged || metadataChanged) {
+                // Server wins the row, but the client's status, cover and/or
+                // metadata is the fresher one. Graft the fresher fields onto
+                // the server row and leave updated_at untouched; the
+                // books_set_synced_at trigger advances synced_at so peers
+                // re-pull via the synced_at cursor without reordering the
+                // date-read library (#4678, #4544, #5438).
                 // The runtime DB row carries all DBBook columns; the static type
                 // of `serverBook` is a narrower intersection so `unknown` is
                 // required to bridge the gap at this one construction site.
@@ -573,6 +639,11 @@ export async function POST(req: NextRequest) {
                 );
                 propagated.cover_hash = cover.cover_hash;
                 propagated.cover_updated_at = cover.cover_updated_at;
+                propagated.title = meta.title;
+                propagated.author = meta.author;
+                propagated.tags = meta.tags;
+                propagated.metadata = meta.metadata;
+                propagated.metadata_updated_at = meta.metadata_updated_at;
                 toUpdate.push(propagated);
               } else {
                 batchAuthoritativeRecords.push(serverData);

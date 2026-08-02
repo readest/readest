@@ -133,11 +133,31 @@ export const mergeBookMetadata = (local: Book, remote: Book): Book => {
         tags: remote.tags,
         progress: remote.progress ?? local.progress,
         updatedAt: remote.updatedAt,
+        metadataUpdatedAt: remote.metadataUpdatedAt,
       }
     : { ...local };
   if ((remote.readingStatusUpdatedAt ?? 0) > (local.readingStatusUpdatedAt ?? 0)) {
     merged.readingStatus = remote.readingStatus;
     merged.readingStatusUpdatedAt = remote.readingStatusUpdatedAt;
+  }
+  // The metadata group (title, author, tags, metadata) additionally merges on
+  // its own metadataUpdatedAt clock — the client-side mirror of the native
+  // server merge (issue #5438, same shape as the readingStatus clause above).
+  // The row's updatedAt is dominated by page-turn progress, so without this a
+  // device that read the book after a peer's metadata edit keeps (and
+  // re-publishes) its stale copy. An unstamped-vs-unstamped tie keeps the
+  // row-level result above (legacy behavior). Group membership and progress
+  // stay on the row clock (#4942, #5067).
+  const localMetaMs = local.metadataUpdatedAt ?? 0;
+  const remoteMetaMs = remote.metadataUpdatedAt ?? 0;
+  if (localMetaMs !== remoteMetaMs) {
+    const winner = remoteMetaMs > localMetaMs ? remote : local;
+    merged.title = winner.title;
+    merged.author = winner.author;
+    merged.tags = winner.tags;
+    merged.metadata = winner.metadata ?? merged.metadata;
+    merged.primaryLanguage = winner.primaryLanguage ?? merged.primaryLanguage;
+    merged.metadataUpdatedAt = winner.metadataUpdatedAt;
   }
   return merged;
 };
@@ -153,13 +173,15 @@ export const isRemoteBookMetadataNewer = (local: Book, remote: Book): boolean =>
 
 /**
  * Reconciliation trigger: apply `mergeBookMetadata` when the remote copy is
- * newer on EITHER clock — book metadata (`updatedAt`) or reading status
- * (`readingStatusUpdatedAt`). Checking only `updatedAt` would skip the
- * status-only-newer case entirely, so a peer's Finished mark could never
- * reach a device that edited the book's metadata afterwards.
+ * newer on ANY clock — book row (`updatedAt`), reading status
+ * (`readingStatusUpdatedAt`), or the metadata group (`metadataUpdatedAt`,
+ * #5438). Checking only `updatedAt` would skip the field-only-newer cases
+ * entirely, so a peer's Finished mark or metadata edit could never reach a
+ * device that touched the book row afterwards.
  */
 export const shouldApplyRemoteBookMetadata = (local: Book, remote: Book): boolean =>
   !remote.deletedAt &&
   !local.deletedAt &&
   ((remote.updatedAt ?? 0) > (local.updatedAt ?? 0) ||
-    (remote.readingStatusUpdatedAt ?? 0) > (local.readingStatusUpdatedAt ?? 0));
+    (remote.readingStatusUpdatedAt ?? 0) > (local.readingStatusUpdatedAt ?? 0) ||
+    (remote.metadataUpdatedAt ?? 0) > (local.metadataUpdatedAt ?? 0));

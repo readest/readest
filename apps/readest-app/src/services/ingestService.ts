@@ -226,6 +226,9 @@ export async function ingestFile(
     if (!tags.includes(tag)) {
       book.tags = [...tags, tag];
       book.updatedAt = Date.now();
+      // Tags merge on the metadata clock (#5438); stamp it or a peer's older
+      // stamped metadata edit would win the group and drop this tag.
+      book.metadataUpdatedAt = book.updatedAt;
     }
   }
 
