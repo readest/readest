@@ -294,7 +294,6 @@
   "Search in {{count}} Book(s)..._many": "Шукати в {{count}} книгах...",
   "Search in {{count}} Book(s)..._other": "Шукати в {{count}} книгах...",
   "No notes match your search": "Нотаток не знайдено",
-  "Search notes and excerpts...": "Шукати нотатки...",
   "Sign in to Sync": "Увійти",
   "Never synced": "Ніколи не синхр.",
   "Show Remaining Time": "Показати залишок часу",
@@ -2093,5 +2092,6 @@
   "Search annotations...": "Шукати анотації...",
   "Add Note": "Додати нотатку",
   "No Matching Annotations": "Немає відповідних анотацій",
-  "Reader": "Режим читання"
+  "Reader": "Режим читання",
+  "Search excerpts...": "Шукати уривки..."
 }

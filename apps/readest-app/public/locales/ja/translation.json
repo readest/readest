@@ -288,7 +288,6 @@
   "Sort TOC by Page": "目次をページで並べ替え",
   "Search in {{count}} Book(s)..._other": "{{count}}冊の本を検索...",
   "No notes match your search": "ノートが見つかりません",
-  "Search notes and excerpts...": "ノートを検索...",
   "Sign in to Sync": "同期するにはサインイン",
   "Never synced": "まだ同期されていません",
   "Show Remaining Time": "残り時間を表示",
@@ -1955,5 +1954,6 @@
   "Search annotations...": "注釈を検索...",
   "Add Note": "メモを追加",
   "No Matching Annotations": "一致する注釈がありません",
-  "Reader": "リーダー"
+  "Reader": "リーダー",
+  "Search excerpts...": "抜粋を検索..."
 }

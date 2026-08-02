@@ -288,7 +288,6 @@
   "Sort TOC by Page": "ཤོག་ཨང་ལྟར་དཀར་ཆག་རིམ་སྒྲིག་བྱེད་པ།",
   "Search in {{count}} Book(s)..._other": "དཔེ་དེབ་ {{count}} ནང་འཚོལ་བཤེར་བྱེད་པ།...",
   "No notes match your search": "མཐུན་པའི་ཟིན་བྲིས་མ་རྙེད།",
-  "Search notes and excerpts...": "ཟིན་བྲིས་འཚོལ་བཤེར།...",
   "Sign in to Sync": "ནང་བསྐྱོད་བྱས་རྗེས་སྐད་མཉམ་བྱེད་པ།",
   "Never synced": "ནམ་ཡང་སྐད་མཉམ་བྱས་མ་མྱོང་།",
   "Show Remaining Time": "ལྷག་མའི་དུས་ཚོད་མངོན་པ།",
@@ -1955,5 +1954,6 @@
   "Search annotations...": "མཆན་འཚོལ་བཤེར།...",
   "Add Note": "ཟིན་བྲིས་སྣོན་པ།",
   "No Matching Annotations": "མཐུན་པའི་མཆན་མེད།",
-  "Reader": "ཀློག་ངོས།"
+  "Reader": "ཀློག་ངོས།",
+  "Search excerpts...": "དྲངས་བཏུས་འཚོལ་བཤེར།..."
 }

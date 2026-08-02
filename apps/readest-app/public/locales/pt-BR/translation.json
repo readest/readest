@@ -555,7 +555,6 @@
   "Excerpts": "Trechos",
   "AI": "IA",
   "Add your notes here...": "Adicione suas notas aqui...",
-  "Search notes and excerpts...": "Pesquisar notas e trechos...",
   "Page {{number}}": "Página {{number}}",
   "Previous Paragraph": "Parágrafo anterior",
   "Loading": "Carregando...",
@@ -2047,5 +2046,6 @@
   "Search annotations...": "Pesquisar anotações...",
   "Add Note": "Adicionar nota",
   "No Matching Annotations": "Nenhuma anotação correspondente",
-  "Reader": "Vista de leitura"
+  "Reader": "Vista de leitura",
+  "Search excerpts...": "Pesquisar trechos..."
 }

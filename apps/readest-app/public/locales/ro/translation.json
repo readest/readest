@@ -484,7 +484,6 @@
   "Excerpts": "Extrase",
   "AI": "AI",
   "Add your notes here...": "Adaugă notele tale aici...",
-  "Search notes and excerpts...": "Căutați note și extrase...",
   "Page {{number}}": "Pagina {{number}}",
   "Previous Paragraph": "Paragraful precedent",
   "Loading": "Se încarcă",
@@ -2047,5 +2046,6 @@
   "Search annotations...": "Căutați adnotări...",
   "Add Note": "Adăugați notă",
   "No Matching Annotations": "Nicio adnotare potrivită",
-  "Reader": "Vizualizare de lectură"
+  "Reader": "Vizualizare de lectură",
+  "Search excerpts...": "Căutați extrase..."
 }

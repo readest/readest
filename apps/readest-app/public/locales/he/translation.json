@@ -446,7 +446,6 @@
   "Excerpts": "קטעים (Excerpts)",
   "AI": "AI",
   "Add your notes here...": "הוסף את ההערות שלך כאן...",
-  "Search notes and excerpts...": "חפש הערות וקטעים...",
   "Page {{number}}": "דף {{number}}",
   "Previous Paragraph": "פסקה קודמת",
   "Loading": "טוען",
@@ -2047,5 +2046,6 @@
   "Search annotations...": "חפש הערות...",
   "Add Note": "הוסף הערה",
   "No Matching Annotations": "אין הערות תואמות",
-  "Reader": "מצב קריאה"
+  "Reader": "מצב קריאה",
+  "Search excerpts...": "חפש קטעים..."
 }

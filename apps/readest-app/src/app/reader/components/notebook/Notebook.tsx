@@ -28,7 +28,6 @@ import {
   removeBookNoteOverlays,
   removeEmptyAnnotationPlaceholder,
 } from '../../utils/annotatorUtil';
-import BooknoteItem from '../sidebar/BooknoteItem';
 import AIAssistant from './AIAssistant';
 import NotebookHeader from './Header';
 import NoteEditor from './NoteEditor';
@@ -292,9 +291,6 @@ const Notebook: React.FC = ({}) => {
 
   const config = getConfig(sideBarBookKey);
   const { booknotes: allNotes = [] } = config || {};
-  const annotationNotes = allNotes
-    .filter((note) => note.type === 'annotation' && note.note && !note.deletedAt)
-    .sort((a, b) => b.createdAt - a.createdAt);
   const excerptNotes = allNotes
     .filter((note) => note.type === 'excerpt' && note.text && !note.deletedAt)
     .sort((a, b) => a.createdAt - b.createdAt);
@@ -306,14 +302,6 @@ const Notebook: React.FC = ({}) => {
       setSearchTerm('');
     }
   };
-
-  const filteredAnnotationNotes = useMemo(
-    () =>
-      isSearchBarVisible && searchResults
-        ? searchResults.filter((note) => note.type === 'annotation' && note.note && !note.deletedAt)
-        : annotationNotes,
-    [annotationNotes, searchResults, isSearchBarVisible],
-  );
 
   const filteredExcerptNotes = useMemo(
     () =>
@@ -333,8 +321,8 @@ const Notebook: React.FC = ({}) => {
   const { bookDoc } = bookData;
   const languageDir = getBookDirFromLanguage(bookDoc.metadata.language);
 
-  const hasSearchResults = filteredAnnotationNotes.length > 0 || filteredExcerptNotes.length > 0;
-  const hasAnyNotes = annotationNotes.length > 0 || excerptNotes.length > 0;
+  const hasSearchResults = filteredExcerptNotes.length > 0;
+  const hasAnyNotes = excerptNotes.length > 0;
   const isNotesTabEmpty =
     !notebookNewAnnotation && !notebookEditAnnotation && !isSearchBarVisible && !hasAnyNotes;
 
@@ -511,25 +499,13 @@ const Notebook: React.FC = ({}) => {
               ))}
             </ul>
             <div dir='ltr'>
-              {(notebookNewAnnotation || filteredAnnotationNotes.length > 0) && (
-                <p className='content font-size-base'>
-                  {_('Notes')}
-                  {isSearchBarVisible && searchResults && filteredAnnotationNotes.length > 0 && (
-                    <span className='font-size-xs ml-2 text-gray-500'>
-                      ({filteredAnnotationNotes.length})
-                    </span>
-                  )}
-                </p>
+              {(notebookNewAnnotation || notebookEditAnnotation) && !isSearchBarVisible && (
+                <p className='content font-size-base'>{_('Notes')}</p>
               )}
             </div>
             {(notebookNewAnnotation || notebookEditAnnotation) && !isSearchBarVisible && (
               <NoteEditor onSave={handleSaveNote} onEdit={(item) => handleEditNote(item, false)} />
             )}
-            <ul>
-              {filteredAnnotationNotes.map((item, index) => (
-                <BooknoteItem key={`${index}-${item.cfi}`} bookKey={sideBarBookKey} item={item} />
-              ))}
-            </ul>
           </div>
         )}
         <div

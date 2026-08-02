@@ -151,7 +151,6 @@
   "Excerpts": "ข้อความที่เลือก",
   "Notes": "บันทึก",
   "Add your notes here...": "เพิ่มบันทึกที่นี่...",
-  "Search notes and excerpts...": "ค้นหาบันทึกและข้อความ...",
   "{{time}} min left in chapter": "เหลือ {{time}} นาทีในบท",
   "{{count}} pages left in chapter_other": "<1>เหลือ </1><0>{{count}}</0><1> หน้าในบท</1>",
   "Theme Mode": "โหมดธีม",
@@ -1955,5 +1954,6 @@
   "Search annotations...": "ค้นหาคำอธิบายประกอบ...",
   "Add Note": "เพิ่มบันทึก",
   "No Matching Annotations": "ไม่พบคำอธิบายประกอบที่ตรงกัน",
-  "Reader": "มุมมองการอ่าน"
+  "Reader": "มุมมองการอ่าน",
+  "Search excerpts...": "ค้นหาข้อความที่เลือก..."
 }

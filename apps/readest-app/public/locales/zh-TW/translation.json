@@ -288,7 +288,6 @@
   "Sort TOC by Page": "依頁碼排序目錄",
   "Search in {{count}} Book(s)..._other": "在 {{count}} 本書中搜索...",
   "No notes match your search": "找不到符合的筆記",
-  "Search notes and excerpts...": "搜尋筆記...",
   "Sign in to Sync": "登入以同步",
   "Never synced": "從未同步",
   "Show Remaining Time": "顯示剩餘時間",
@@ -1955,5 +1954,6 @@
   "Search annotations...": "搜尋筆記...",
   "Add Note": "添加筆記",
   "No Matching Annotations": "找不到符合的註解",
-  "Reader": "閱讀介面"
+  "Reader": "閱讀介面",
+  "Search excerpts...": "搜尋摘錄..."
 }

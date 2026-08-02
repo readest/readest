@@ -491,7 +491,6 @@
   "Excerpts": "Kivonatok",
   "AI": "AI",
   "Add your notes here...": "Adja hozzá jegyzeteit itt...",
-  "Search notes and excerpts...": "Keresés jegyzetek és kivonatok között...",
   "Page {{number}}": "{{number}}. oldal",
   "Previous Paragraph": "Előző bekezdés",
   "Loading": "Betöltés",
@@ -2001,5 +2000,6 @@
   "Search annotations...": "Jegyzetek keresése...",
   "Add Note": "Jegyzet hozzáadása",
   "No Matching Annotations": "Nincsenek megfelelő megjegyzések",
-  "Reader": "Olvasónézet"
+  "Reader": "Olvasónézet",
+  "Search excerpts...": "Kivonatok keresése..."
 }

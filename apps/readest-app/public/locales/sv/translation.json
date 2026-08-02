@@ -227,7 +227,6 @@
   "No notes match your search": "Inga anteckningar matchar din sökning",
   "Excerpts": "Utdrag",
   "Add your notes here...": "Lägg till dina anteckningar här...",
-  "Search notes and excerpts...": "Sök anteckningar och utdrag...",
   "{{time}} min left in chapter": "{{time}} min kvar i kapitlet",
   "{{count}} pages left in chapter_one": "<0>{{count}}</0><1> sida kvar i kapitlet</1>",
   "{{count}} pages left in chapter_other": "<0>{{count}}</0><1> sidor kvar i kapitlet</1>",
@@ -2001,5 +2000,6 @@
   "Search annotations...": "Sök anteckningar...",
   "Add Note": "Lägg till anteckning",
   "No Matching Annotations": "Inga matchande kommentarer",
-  "Reader": "Läsvy"
+  "Reader": "Läsvy",
+  "Search excerpts...": "Sök utdrag..."
 }

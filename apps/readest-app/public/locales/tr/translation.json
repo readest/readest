@@ -290,7 +290,6 @@
   "Search in {{count}} Book(s)..._one": "{{count}} kitapta ara...",
   "Search in {{count}} Book(s)..._other": "{{count}} kitapta ara...",
   "No notes match your search": "Eşleşen not bulunamadı",
-  "Search notes and excerpts...": "Notlarda ara...",
   "Sign in to Sync": "Giriş yap",
   "Never synced": "Hiç eşzlenmedi",
   "Show Remaining Time": "Kalan Süreyi Göster",
@@ -2001,5 +2000,6 @@
   "Search annotations...": "Açıklamalarda ara...",
   "Add Note": "Not Ekle",
   "No Matching Annotations": "Eşleşen açıklama yok",
-  "Reader": "Okuma Görünümü"
+  "Reader": "Okuma Görünümü",
+  "Search excerpts...": "Alıntılarda ara..."
 }

@@ -289,7 +289,6 @@
   "Search in {{count}} Book(s)..._one": "جستجو در {{count}} کتاب...",
   "Search in {{count}} Book(s)..._other": "جستجو در {{count}} کتاب...",
   "No notes match your search": "هیچ یادداشتی با جستجوی شما مطابقت ندارد",
-  "Search notes and excerpts...": "جستجوی یادداشت‌ها و گزیده‌ها...",
   "Sign in to Sync": "برای همگام‌سازی وارد شوید",
   "Never synced": "هرگز همگام‌سازی نشده",
   "Show Remaining Time": "نمایش زمان باقی‌مانده",
@@ -2001,5 +2000,6 @@
   "Search annotations...": "جستجوی یادداشت‌ها...",
   "Add Note": "افزودن یادداشت",
   "No Matching Annotations": "هیچ حاشیه‌نویسی مطابقی نیست",
-  "Reader": "صفحه مطالعه"
+  "Reader": "صفحه مطالعه",
+  "Search excerpts...": "جستجوی گزیده‌ها..."
 }

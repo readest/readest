@@ -180,7 +180,6 @@
   "Excerpts": "উদ্ধৃতি",
   "Notes": "নোট",
   "Add your notes here...": "এখানে আপনার নোট যোগ করুন...",
-  "Search notes and excerpts...": "নোট ও উদ্ধৃতি খুঁজুন...",
   "{{time}} min left in chapter": "অধ্যায়ে {{time}} মিনিট বাকি",
   "{{count}} pages left in chapter_one": "<1>অধ্যায়ে ১ পৃষ্ঠা বাকি</1>",
   "{{count}} pages left in chapter_other": "<1>অধ্যায়ে </1><0>{{count}}</0><1> পৃষ্ঠা বাকি</1>",
@@ -2001,5 +2000,6 @@
   "Search annotations...": "টীকা খুঁজুন...",
   "Add Note": "নোট যোগ করুন",
   "No Matching Annotations": "কোনো মিলিত টীকা নেই",
-  "Reader": "রিডার"
+  "Reader": "রিডার",
+  "Search excerpts...": "উদ্ধৃতি খুঁজুন..."
 }

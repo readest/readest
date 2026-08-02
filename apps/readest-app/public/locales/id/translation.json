@@ -288,7 +288,6 @@
   "Sort TOC by Page": "Urutkan TOC berdasarkan Halaman",
   "Search in {{count}} Book(s)..._other": "Cari di {{count}} Buku...",
   "No notes match your search": "Tidak ada catatan ditemukan",
-  "Search notes and excerpts...": "Cari catatan...",
   "Sign in to Sync": "Masuk untuk Sinkronisasi",
   "Never synced": "Belum pernah disinkronkan",
   "Show Remaining Time": "Perlihatkan Waktu Tersisa",
@@ -1955,5 +1954,6 @@
   "Search annotations...": "Cari anotasi...",
   "Add Note": "Tambahkan Catatan",
   "No Matching Annotations": "Tidak ada anotasi yang cocok",
-  "Reader": "Tampilan Baca"
+  "Reader": "Tampilan Baca",
+  "Search excerpts...": "Cari kutipan..."
 }

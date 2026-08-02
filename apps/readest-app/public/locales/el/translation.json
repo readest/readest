@@ -290,7 +290,6 @@
   "Search in {{count}} Book(s)..._one": "Αναζήτηση σε {{count}} Βιβλίο...",
   "Search in {{count}} Book(s)..._other": "Αναζήτηση σε {{count}} Βιβλία...",
   "No notes match your search": "Καμία σημείωση δεν βρέθηκε",
-  "Search notes and excerpts...": "Αναζήτηση σημειώσεων...",
   "Sign in to Sync": "Σύνδεση για συγχρονισμό",
   "Never synced": "Ποτέ δεν συγχρονίστηκε",
   "Show Remaining Time": "Εμφάνιση υπολειπόμενου χρόνου",
@@ -2001,5 +2000,6 @@
   "Search annotations...": "Αναζήτηση σχολιασμών...",
   "Add Note": "Προσθήκη σημείωσης",
   "No Matching Annotations": "Κανένας αντίστοιχος σχολιασμός",
-  "Reader": "Προβολή ανάγνωσης"
+  "Reader": "Προβολή ανάγνωσης",
+  "Search excerpts...": "Αναζήτηση αποσπασμάτων..."
 }

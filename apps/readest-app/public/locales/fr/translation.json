@@ -291,7 +291,6 @@
   "Search in {{count}} Book(s)..._many": "Rechercher dans {{count}} Livres...",
   "Search in {{count}} Book(s)..._other": "Rechercher dans {{count}} Livres...",
   "No notes match your search": "Aucune note trouvée",
-  "Search notes and excerpts...": "Rechercher des notes...",
   "Sign in to Sync": "Connectez-vous pour synchroniser",
   "Never synced": "Jamais synchronisé",
   "Show Remaining Time": "Afficher le temps restant",
@@ -2047,5 +2046,6 @@
   "Search annotations...": "Rechercher des annotations...",
   "Add Note": "Ajouter une note",
   "No Matching Annotations": "Aucune annotation correspondante",
-  "Reader": "Vue de lecture"
+  "Reader": "Vue de lecture",
+  "Search excerpts...": "Rechercher des extraits..."
 }

@@ -180,7 +180,6 @@
   "Excerpts": "උදාහරණ",
   "Notes": "සටහන්",
   "Add your notes here...": "මෙහි ඔබේ සටහන් එක් කරන්න...",
-  "Search notes and excerpts...": "සටහන් සහ උදාහරණ සොයන්න...",
   "{{time}} min left in chapter": "පරිච්ඡේදයේ මිනිත්තු {{time}} ක් ඉතිරි",
   "{{count}} pages left in chapter_one": "<1>පරිච්ඡේදයේ පිටුව 1 ක් ඉතිරි</1>",
   "{{count}} pages left in chapter_other": "<1>පරිච්ඡේදයේ පිටු </1><0>{{count}}</0><1> ක් ඉතිරි</1>",
@@ -2001,5 +2000,6 @@
   "Search annotations...": "සටහන් සොයන්න...",
   "Add Note": "සටහනක් එකතු කරන්න",
   "No Matching Annotations": "ගැලපෙන අනුසටහන් නැත",
-  "Reader": "කියවීමේ දසුන"
+  "Reader": "කියවීමේ දසුන",
+  "Search excerpts...": "උදාහරණ සොයන්න..."
 }

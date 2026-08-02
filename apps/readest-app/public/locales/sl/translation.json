@@ -462,7 +462,6 @@
   "Excerpts": "Izvlečki",
   "AI": "AI",
   "Add your notes here...": "Tukaj dodajte svoje opombe...",
-  "Search notes and excerpts...": "Išči opombe in izvlečke...",
   "Page {{number}}": "Stran {{number}}",
   "Previous Paragraph": "Prejšnji odstavek",
   "Loading": "Nalaganje",
@@ -2093,5 +2092,6 @@
   "Search annotations...": "Išči opombe...",
   "Add Note": "Dodaj opombo",
   "No Matching Annotations": "Ni ujemajočih se opomb",
-  "Reader": "Bralni pogled"
+  "Reader": "Bralni pogled",
+  "Search excerpts...": "Išči izvlečke..."
 }

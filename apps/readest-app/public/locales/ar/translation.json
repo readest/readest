@@ -297,7 +297,6 @@
   "Search in {{count}} Book(s)..._many": "بحث في {{count}} كتابًا...",
   "Search in {{count}} Book(s)..._other": "بحث في {{count}} من الكتب...",
   "No notes match your search": "لا توجد ملاحظات تطابق بحثك",
-  "Search notes and excerpts...": "بحث في الملاحظات والمقتطفات...",
   "Sign in to Sync": "قم بتسجيل الدخول للمزامنة",
   "Never synced": "لم تتم المزامنة بعد",
   "Show Remaining Time": "إظهار الوقت المتبقي",
@@ -2185,5 +2184,6 @@
   "Search annotations...": "بحث في التعليقات التوضيحية...",
   "Add Note": "إضافة ملاحظة",
   "No Matching Annotations": "لا توجد تعليقات توضيحية مطابقة",
-  "Reader": "واجهة القراءة"
+  "Reader": "واجهة القراءة",
+  "Search excerpts...": "بحث في المقتطفات..."
 }

@@ -241,7 +241,6 @@
   "Excerpts": "Petikan",
   "Notes": "Nota",
   "Add your notes here...": "Tambah nota anda di sini...",
-  "Search notes and excerpts...": "Cari nota dan petikan...",
   "{{time}} min left in chapter": "{{time}} min lagi dalam bab",
   "{{number}} pages left in chapter": "<0>{{number}}</0><1> halaman lagi dalam bab</1>",
   "{{count}} pages left in chapter_other": "<0>{{count}}</0><1> halaman lagi dalam bab</1>",
@@ -1955,5 +1954,6 @@
   "Search annotations...": "Cari anotasi...",
   "Add Note": "Tambah Nota",
   "No Matching Annotations": "Tiada anotasi sepadan",
-  "Reader": "Paparan Bacaan"
+  "Reader": "Paparan Bacaan",
+  "Search excerpts...": "Cari petikan..."
 }

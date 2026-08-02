@@ -545,7 +545,6 @@
   "Excerpts": "Parchalar",
   "AI": "AI",
   "Add your notes here...": "Eslatmalaringizni shu yerga qoʻshing...",
-  "Search notes and excerpts...": "Eslatmalar va parchalarni qidirish...",
   "Page {{number}}": "Sahifa {{number}}",
   "Previous Paragraph": "Oldingi xatboshi",
   "Loading": "Yuklanmoqda",
@@ -2001,5 +2000,6 @@
   "Search annotations...": "Izohlarni qidirish...",
   "Add Note": "Eslatma qoʻshish",
   "No Matching Annotations": "Mos izohlar yoʻq",
-  "Reader": "Oʻqish koʻrinishi"
+  "Reader": "Oʻqish koʻrinishi",
+  "Search excerpts...": "Parchalarni qidirish..."
 }
