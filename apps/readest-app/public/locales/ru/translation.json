@@ -2093,7 +2093,6 @@
   "Failed to download {{count}} book(s)_few": "Не удалось скачать {{count}} книг",
   "Failed to download {{count}} book(s)_many": "Не удалось скачать {{count}} книг",
   "Search annotations...": "Искать аннотации...",
-  "Annotations Menu": "Меню аннотаций",
   "Add Note": "Добавить заметку",
   "No Matching Annotations": "Нет подходящих аннотаций"
 }

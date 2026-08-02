@@ -2001,7 +2001,6 @@
   "Failed to download {{count}} book(s)_one": "{{count}} किताब डाउनलोड करने में विफल",
   "Failed to download {{count}} book(s)_other": "{{count}} किताबें डाउनलोड करने में विफल",
   "Search annotations...": "टिप्पणियाँ खोजें...",
-  "Annotations Menu": "टिप्पणियाँ मेनू",
   "Add Note": "नोट जोड़ें",
   "No Matching Annotations": "कोई मेल खाती टिप्पणी नहीं"
 }

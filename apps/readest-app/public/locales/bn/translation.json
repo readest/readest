@@ -2001,7 +2001,6 @@
   "Failed to download {{count}} book(s)_one": "{{count}} টি বই ডাউনলোড ব্যর্থ",
   "Failed to download {{count}} book(s)_other": "{{count}} টি বই ডাউনলোড ব্যর্থ",
   "Search annotations...": "টীকা খুঁজুন...",
-  "Annotations Menu": "টীকার মেনু",
   "Add Note": "নোট যোগ করুন",
   "No Matching Annotations": "কোনো মিলিত টীকা নেই"
 }

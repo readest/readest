@@ -1955,7 +1955,6 @@
   "Downloading {{count}} book(s)_other": "Memuat turun {{count}} buku",
   "Failed to download {{count}} book(s)_other": "Gagal memuat turun {{count}} buku",
   "Search annotations...": "Cari anotasi...",
-  "Annotations Menu": "Menu Anotasi",
   "Add Note": "Tambah Nota",
   "No Matching Annotations": "Tiada anotasi sepadan"
 }

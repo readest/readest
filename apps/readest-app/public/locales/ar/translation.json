@@ -2185,7 +2185,6 @@
   "Failed to download {{count}} book(s)_few": "فشل تنزيل {{count}} كتب",
   "Failed to download {{count}} book(s)_many": "فشل تنزيل {{count}} كتاباً",
   "Search annotations...": "بحث في التعليقات التوضيحية...",
-  "Annotations Menu": "قائمة التعليقات التوضيحية",
   "Add Note": "إضافة ملاحظة",
   "No Matching Annotations": "لا توجد تعليقات توضيحية مطابقة"
 }

@@ -2001,7 +2001,6 @@
   "Failed to download {{count}} book(s)_one": "{{count}} ta kitobni yuklab boʻlmadi",
   "Failed to download {{count}} book(s)_other": "{{count}} ta kitobni yuklab boʻlmadi",
   "Search annotations...": "Izohlarni qidirish...",
-  "Annotations Menu": "Izohlar menyusi",
   "Add Note": "Eslatma qoʻshish",
   "No Matching Annotations": "Mos izohlar yoʻq"
 }

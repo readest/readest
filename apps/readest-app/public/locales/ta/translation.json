@@ -2001,7 +2001,6 @@
   "Failed to download {{count}} book(s)_one": "{{count}} புத்தகத்தை பதிவிறக்க முடியவில்லை",
   "Failed to download {{count}} book(s)_other": "{{count}} புத்தகங்களை பதிவிறக்க முடியவில்லை",
   "Search annotations...": "சிறுகுறிப்புகளைத் தேடவும்...",
-  "Annotations Menu": "சிறுகுறிப்புகள் மெனு",
   "Add Note": "குறிப்பு சேர்க்கவும்",
   "No Matching Annotations": "பொருந்தும் சிறுகுறிப்புகள் இல்லை"
 }

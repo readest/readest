@@ -2001,7 +2001,6 @@
   "Failed to download {{count}} book(s)_one": "دانلود {{count}} کتاب ناموفق بود",
   "Failed to download {{count}} book(s)_other": "دانلود {{count}} کتاب ناموفق بود",
   "Search annotations...": "جستجوی یادداشت‌ها...",
-  "Annotations Menu": "منوی یادداشت‌ها",
   "Add Note": "افزودن یادداشت",
   "No Matching Annotations": "هیچ حاشیه‌نویسی مطابقی نیست"
 }

@@ -1955,7 +1955,6 @@
   "Downloading {{count}} book(s)_other": "དཔེ་དེབ་ {{count}} ཕབ་ལེན་བྱེད་བཞིན་པ།",
   "Failed to download {{count}} book(s)_other": "དཔེ་དེབ་ {{count}} ཕབ་ལེན་བྱས་མ་ཐུབ།",
   "Search annotations...": "མཆན་འཚོལ་བཤེར།...",
-  "Annotations Menu": "མཆན་གྱི་མ་ལག",
   "Add Note": "ཟིན་བྲིས་སྣོན་པ།",
   "No Matching Annotations": "མཐུན་པའི་མཆན་མེད།"
 }

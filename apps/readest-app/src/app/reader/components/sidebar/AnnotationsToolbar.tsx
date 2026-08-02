@@ -1,13 +1,12 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { FaSearch, FaTimes } from 'react-icons/fa';
-import { MdFilterList, MdMoreVert } from 'react-icons/md';
+import { MdFilterList } from 'react-icons/md';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useSettingsStore } from '@/store/settingsStore';
 import { HighlightColor, HighlightStyle } from '@/types/book';
-import { eventDispatcher } from '@/utils/event';
 import {
   AnnotationFilterKind,
   getHighlightColorHex,
@@ -15,50 +14,6 @@ import {
   isDefaultHighlightColor,
 } from '../../utils/annotatorUtil';
 import Dropdown from '@/components/Dropdown';
-import Menu from '@/components/Menu';
-import MenuItem from '@/components/MenuItem';
-
-interface AnnotationsMenuProps {
-  bookKey: string;
-  canClear: boolean;
-  menuClassName?: string;
-  setIsDropdownOpen?: (isOpen: boolean) => void;
-}
-
-// Same events BookMenu dispatches; the dialogs live in Annotator, which
-// outlives this dropdown, so they are not unmounted with the menu.
-const AnnotationsMenu: React.FC<AnnotationsMenuProps> = ({
-  bookKey,
-  canClear,
-  menuClassName,
-  setIsDropdownOpen,
-}) => {
-  const _ = useTranslation();
-  const dispatchAndClose = (event: string) => {
-    eventDispatcher.dispatch(event, { bookKey });
-    setIsDropdownOpen?.(false);
-  };
-  return (
-    <Menu
-      className={clsx('annotations-menu dropdown-content z-20 shadow-2xl', menuClassName)}
-      onCancel={() => setIsDropdownOpen?.(false)}
-    >
-      <MenuItem
-        label={_('Export Annotations')}
-        onClick={() => dispatchAndClose('export-annotations')}
-      />
-      <MenuItem
-        label={_('Import Annotations')}
-        onClick={() => dispatchAndClose('import-annotations')}
-      />
-      <MenuItem
-        label={_('Clear Annotations')}
-        disabled={!canClear}
-        onClick={() => dispatchAndClose('clear-annotations')}
-      />
-    </Menu>
-  );
-};
 
 const FILTER_KINDS: AnnotationFilterKind[] = ['all', 'highlights', 'notes'];
 
@@ -218,10 +173,8 @@ const AnnotationsFilterPanel: React.FC<AnnotationsFilterPanelProps> = ({
 };
 
 interface AnnotationsToolbarProps {
-  bookKey: string;
   filterKind: AnnotationFilterKind;
   searchInput: string;
-  canClear: boolean;
   colors: HighlightColor[];
   styles: HighlightStyle[];
   excludedColors: HighlightColor[];
@@ -234,10 +187,8 @@ interface AnnotationsToolbarProps {
 }
 
 const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
-  bookKey,
   filterKind,
   searchInput,
-  canClear,
   colors,
   styles,
   excludedColors,
@@ -269,7 +220,7 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
   };
 
   return (
-    <div className='annotations-toolbar flex items-center justify-end gap-1 px-3 pt-1'>
+    <div className='annotations-toolbar flex items-center justify-end gap-1 ps-3 pe-2 pb-2 pt-1'>
       {isSearchVisible ? (
         <div className='eink-bordered bg-base-100 flex h-8 min-w-0 flex-1 items-center rounded-lg'>
           <div className='ps-3'>
@@ -337,17 +288,6 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
           onToggleStyle={onToggleStyle}
           onResetFilters={onResetFilters}
         />
-      </Dropdown>
-      <Dropdown
-        label={_('Annotations Menu')}
-        showTooltip={false}
-        className='dropdown-bottom dropdown-end'
-        menuClassName='no-triangle mt-1'
-        buttonClassName='btn btn-ghost btn-circle h-8 min-h-8 w-8 p-0'
-        containerClassName='h-8'
-        toggleButton={<MdMoreVert className='fill-base-content' />}
-      >
-        <AnnotationsMenu bookKey={bookKey} canClear={canClear} />
       </Dropdown>
     </div>
   );

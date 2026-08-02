@@ -2093,7 +2093,6 @@
   "Failed to download {{count}} book(s)_few": "Nie udało się pobrać {{count}} książek",
   "Failed to download {{count}} book(s)_many": "Nie udało się pobrać {{count}} książek",
   "Search annotations...": "Szukaj adnotacji...",
-  "Annotations Menu": "Menu adnotacji",
   "Add Note": "Dodaj notatkę",
   "No Matching Annotations": "Brak pasujących adnotacji"
 }

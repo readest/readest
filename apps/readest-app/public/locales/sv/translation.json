@@ -2001,7 +2001,6 @@
   "Failed to download {{count}} book(s)_one": "Kunde inte ladda ner {{count}} bok",
   "Failed to download {{count}} book(s)_other": "Kunde inte ladda ner {{count}} böcker",
   "Search annotations...": "Sök anteckningar...",
-  "Annotations Menu": "Anteckningsmeny",
   "Add Note": "Lägg till anteckning",
   "No Matching Annotations": "Inga matchande kommentarer"
 }

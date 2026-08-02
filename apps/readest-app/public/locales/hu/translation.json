@@ -2001,7 +2001,6 @@
   "Failed to download {{count}} book(s)_one": "{{count}} könyv letöltése sikertelen",
   "Failed to download {{count}} book(s)_other": "{{count}} könyv letöltése sikertelen",
   "Search annotations...": "Jegyzetek keresése...",
-  "Annotations Menu": "Jegyzetek menü",
   "Add Note": "Jegyzet hozzáadása",
   "No Matching Annotations": "Nincsenek megfelelő megjegyzések"
 }

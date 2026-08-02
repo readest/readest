@@ -2001,7 +2001,6 @@
   "Failed to download {{count}} book(s)_one": "{{count}} kitap indirilemedi",
   "Failed to download {{count}} book(s)_other": "{{count}} kitap indirilemedi",
   "Search annotations...": "Açıklamalarda ara...",
-  "Annotations Menu": "Açıklamalar Menüsü",
   "Add Note": "Not Ekle",
   "No Matching Annotations": "Eşleşen açıklama yok"
 }

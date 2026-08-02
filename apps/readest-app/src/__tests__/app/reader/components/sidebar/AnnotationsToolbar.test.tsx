@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import AnnotationsToolbar from '@/app/reader/components/sidebar/AnnotationsToolbar';
 import { HighlightColor, HighlightStyle } from '@/types/book';
-import { eventDispatcher } from '@/utils/event';
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string) => key,
@@ -21,32 +20,6 @@ vi.mock('@/components/Dropdown', () => ({
   ),
 }));
 
-vi.mock('@/components/Menu', () => ({
-  __esModule: true,
-  default: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div role='menu' className={className}>
-      {children}
-    </div>
-  ),
-}));
-
-vi.mock('@/components/MenuItem', () => ({
-  __esModule: true,
-  default: ({
-    label,
-    onClick,
-    disabled,
-  }: {
-    label: string;
-    onClick?: () => void;
-    disabled?: boolean;
-  }) => (
-    <button disabled={disabled} onClick={onClick}>
-      {label}
-    </button>
-  ),
-}));
-
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({
     settings: {
@@ -60,10 +33,8 @@ vi.mock('@/store/settingsStore', () => ({
 }));
 
 const defaultProps = {
-  bookKey: 'hash1-primary',
   filterKind: 'all' as const,
   searchInput: '',
-  canClear: true,
   colors: [] as HighlightColor[],
   styles: [] as HighlightStyle[],
   excludedColors: [] as HighlightColor[],
@@ -115,23 +86,6 @@ describe('AnnotationsToolbar', () => {
     expect(screen.queryByRole('textbox')).toBeNull();
   });
 
-  it('dispatches the annotation actions with the bookKey', () => {
-    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
-    render(<AnnotationsToolbar {...defaultProps} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Export Annotations' }));
-    expect(dispatchSpy).toHaveBeenCalledWith('export-annotations', { bookKey: 'hash1-primary' });
-    fireEvent.click(screen.getByRole('button', { name: 'Import Annotations' }));
-    expect(dispatchSpy).toHaveBeenCalledWith('import-annotations', { bookKey: 'hash1-primary' });
-    fireEvent.click(screen.getByRole('button', { name: 'Clear Annotations' }));
-    expect(dispatchSpy).toHaveBeenCalledWith('clear-annotations', { bookKey: 'hash1-primary' });
-  });
-
-  it('disables Clear Annotations when there is nothing to clear', () => {
-    render(<AnnotationsToolbar {...defaultProps} canClear={false} />);
-    const clearButton = screen.getByRole('button', { name: 'Clear Annotations' });
-    expect((clearButton as HTMLButtonElement).disabled).toBe(true);
-  });
-
   it('hides facet toggles for dimensions with fewer than two distinct values', () => {
     render(<AnnotationsToolbar {...defaultProps} colors={['yellow']} styles={['highlight']} />);
     expect(screen.queryByRole('button', { name: 'yellow' })).toBeNull();
@@ -178,9 +132,8 @@ describe('AnnotationsToolbar', () => {
     );
   });
 
-  it('merges the Dropdown-injected menuClassName into the menu and the filter panel', () => {
+  it('merges the Dropdown-injected menuClassName into the filter panel', () => {
     const { container } = render(<AnnotationsToolbar {...defaultProps} />);
-    expect(screen.getByRole('menu').className).toContain('injected-menu-class');
     const filterPanel = container.querySelector('.annotations-filter-panel');
     expect(filterPanel?.className).toContain('injected-menu-class');
   });

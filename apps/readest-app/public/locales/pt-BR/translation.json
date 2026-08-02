@@ -2047,7 +2047,6 @@
   "Failed to download {{count}} book(s)_many": "Falha ao baixar {{count}} livros",
   "Failed to download {{count}} book(s)_other": "Falha ao baixar {{count}} livros",
   "Search annotations...": "Pesquisar anotações...",
-  "Annotations Menu": "Menu de anotações",
   "Add Note": "Adicionar nota",
   "No Matching Annotations": "Nenhuma anotação correspondente"
 }

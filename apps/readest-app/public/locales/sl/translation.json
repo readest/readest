@@ -2093,7 +2093,6 @@
   "Failed to download {{count}} book(s)_few": "Prenos {{count}} knjig ni uspel",
   "Failed to download {{count}} book(s)_other": "Prenos {{count}} knjig ni uspel",
   "Search annotations...": "Išči opombe...",
-  "Annotations Menu": "Meni opomb",
   "Add Note": "Dodaj opombo",
   "No Matching Annotations": "Ni ujemajočih se opomb"
 }

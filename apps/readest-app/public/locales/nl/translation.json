@@ -2001,7 +2001,6 @@
   "Failed to download {{count}} book(s)_one": "Downloaden van {{count}} boek mislukt",
   "Failed to download {{count}} book(s)_other": "Downloaden van {{count}} boeken mislukt",
   "Search annotations...": "Aantekeningen zoeken...",
-  "Annotations Menu": "Aantekeningenmenu",
   "Add Note": "Notitie toevoegen",
   "No Matching Annotations": "Geen overeenkomende aantekeningen"
 }

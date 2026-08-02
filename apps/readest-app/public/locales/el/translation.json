@@ -2001,7 +2001,6 @@
   "Failed to download {{count}} book(s)_one": "Αποτυχία λήψης {{count}} βιβλίου",
   "Failed to download {{count}} book(s)_other": "Αποτυχία λήψης {{count}} βιβλίων",
   "Search annotations...": "Αναζήτηση σχολιασμών...",
-  "Annotations Menu": "Μενού σχολιασμών",
   "Add Note": "Προσθήκη σημείωσης",
   "No Matching Annotations": "Κανένας αντίστοιχος σχολιασμός"
 }

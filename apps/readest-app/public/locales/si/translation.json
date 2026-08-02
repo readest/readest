@@ -2001,7 +2001,6 @@
   "Failed to download {{count}} book(s)_one": "{{count}} පොත බාගැනීමට අසමත්",
   "Failed to download {{count}} book(s)_other": "{{count}} පොත් බාගැනීමට අසමත්",
   "Search annotations...": "සටහන් සොයන්න...",
-  "Annotations Menu": "සටහන් මෙනුව",
   "Add Note": "සටහනක් එකතු කරන්න",
   "No Matching Annotations": "ගැලපෙන අනුසටහන් නැත"
 }

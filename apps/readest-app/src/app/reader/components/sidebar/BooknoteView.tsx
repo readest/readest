@@ -362,10 +362,8 @@ const BooknoteView: React.FC<{
     <div className='booknote-list rounded pt-2' role='tree'>
       {type === 'annotation' && (
         <AnnotationsToolbar
-          bookKey={bookKey}
           filterKind={filterKind}
           searchInput={searchInput}
-          canClear={liveAnnotations.length > 0}
           colors={facets.colors}
           styles={facets.styles}
           excludedColors={excludedColors}

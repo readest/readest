@@ -2001,7 +2001,6 @@
   "Failed to download {{count}} book(s)_one": "Fehler beim Herunterladen von {{count}} Buch",
   "Failed to download {{count}} book(s)_other": "Fehler beim Herunterladen von {{count}} Büchern",
   "Search annotations...": "Anmerkungen suchen...",
-  "Annotations Menu": "Anmerkungsmenü",
   "Add Note": "Notiz hinzufügen",
   "No Matching Annotations": "Keine passenden Anmerkungen"
 }

@@ -1955,7 +1955,6 @@
   "Downloading {{count}} book(s)_other": "Đang tải xuống {{count}} cuốn sách",
   "Failed to download {{count}} book(s)_other": "Không thể tải xuống {{count}} cuốn sách",
   "Search annotations...": "Tìm chú thích...",
-  "Annotations Menu": "Menu chú thích",
   "Add Note": "Thêm ghi chú",
   "No Matching Annotations": "Không có chú thích phù hợp"
 }
