@@ -935,7 +935,7 @@ describe('custom @font-face inlining (via getStyles)', () => {
 // `caretRangeFromPoint` (returns null on non-selectable content), killing the
 // instant highlight itself. The system selection is suppressed natively
 // instead (TextSelectionSuppressor in the native-bridge iOS plugin, driven by
-// setTextSelectionSuppressed from FoliateViewer); getStyles must stay free of
+// setSelectionSuppressed from FoliateViewer); getStyles must stay free of
 // user-select suppression so caret positioning keeps working.
 describe('instant-highlight selection suppression stays out of getStyles', () => {
   const theme = makeThemeCode();

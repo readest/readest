@@ -6,6 +6,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { getOSPlatform } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
+import { setSelectionSuppressed } from '@/utils/bridge';
 import {
   focusCaretWindowPos,
   getCaretPointFromPoint,
@@ -112,6 +113,23 @@ export const useTextSelector = (
   // selectionchange dispatches a task after the mutation.
   const programmaticSelectionRef = useRef(false);
   const programmaticClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // #5427: whether the native layer is currently refusing the system
+  // selection toolbar (MainActivity hands out a no-op ActionMode while set).
+  const selectionMenuSuppressedRef = useRef(false);
+
+  // Chromium can (re)show the floating selection ActionMode through paths
+  // that never fire a cancelable contextmenu event (handle-drag release,
+  // window focus regain, TextClassifier callbacks), so handleContextmenu's
+  // preventDefault alone cannot keep it off Readest's own toolbar. Keep the
+  // native gate set exactly while reader text is selected — with no reader
+  // selection the flag is off, so system Cut/Copy/Paste menus in editable
+  // fields keep working.
+  const syncSelectionMenuSuppression = (suppressed: boolean) => {
+    if (selectionMenuSuppressedRef.current === suppressed) return;
+    selectionMenuSuppressedRef.current = suppressed;
+    setSelectionSuppressed({ target: 'menu', suppressed }).catch(() => {});
+  };
 
   const guardProgrammaticSelection = () => {
     if (programmaticClearTimer.current) clearTimeout(programmaticClearTimer.current);
@@ -621,6 +639,8 @@ export const useTextSelector = (
     const isTouchInput = lastPointerType.current === 'touch' || lastPointerType.current === 'pen';
     const sel = doc.getSelection() as Selection;
     const viewSettings = getViewSettings(bookKey);
+
+    if (isAndroid) syncSelectionMenuSuppression(isValidSelection(sel));
 
     // First selection of an Android touch gesture: remember the anchor and
     // whether it is prone to the hyphen bounds bug (#1553), before any

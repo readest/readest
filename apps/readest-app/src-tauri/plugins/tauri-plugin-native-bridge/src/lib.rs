@@ -94,7 +94,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::refresh_eink_screen,
             commands::update_reading_widget,
             commands::capture_webview_region,
-            commands::set_text_selection_suppressed,
+            commands::set_selection_suppressed,
             commands::read_share_clip_html,
         ])
         .setup(|app, api| {

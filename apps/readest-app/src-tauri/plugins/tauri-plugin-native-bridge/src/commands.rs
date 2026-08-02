@@ -47,11 +47,11 @@ pub(crate) async fn use_background_audio<R: Runtime>(
 }
 
 #[command]
-pub(crate) async fn set_text_selection_suppressed<R: Runtime>(
+pub(crate) async fn set_selection_suppressed<R: Runtime>(
     app: AppHandle<R>,
-    payload: SetTextSelectionSuppressedRequest,
+    payload: SetSelectionSuppressedRequest,
 ) -> Result<()> {
-    app.native_bridge().set_text_selection_suppressed(payload)
+    app.native_bridge().set_selection_suppressed(payload)
 }
 
 #[command]

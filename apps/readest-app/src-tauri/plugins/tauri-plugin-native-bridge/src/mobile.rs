@@ -68,12 +68,12 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
-    pub fn set_text_selection_suppressed(
+    pub fn set_selection_suppressed(
         &self,
-        payload: SetTextSelectionSuppressedRequest,
+        payload: SetSelectionSuppressedRequest,
     ) -> crate::Result<()> {
         self.0
-            .run_mobile_plugin("set_text_selection_suppressed", payload)
+            .run_mobile_plugin("set_selection_suppressed", payload)
             .map_err(Into::into)
     }
 }

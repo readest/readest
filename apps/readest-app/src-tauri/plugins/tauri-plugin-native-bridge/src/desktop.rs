@@ -71,9 +71,9 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
-    pub fn set_text_selection_suppressed(
+    pub fn set_selection_suppressed(
         &self,
-        _payload: SetTextSelectionSuppressedRequest,
+        _payload: SetSelectionSuppressedRequest,
     ) -> crate::Result<()> {
         Err(crate::Error::UnsupportedPlatformError)
     }

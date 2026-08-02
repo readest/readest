@@ -27,7 +27,8 @@ export interface UseBackgroundAudioRequest {
   enabled: boolean;
 }
 
-export interface SetTextSelectionSuppressedRequest {
+export interface SetSelectionSuppressedRequest {
+  target: 'gesture' | 'menu';
   suppressed: boolean;
 }
 
@@ -144,14 +145,21 @@ export async function invokeUseBackgroundAudio(request: UseBackgroundAudioReques
   });
 }
 
-// iOS-only: suppress the system long-press text selection for non-editable
-// web content while the instant-highlight quick action owns the hold gesture.
-// JS-level suppression cannot win that race — WebKit consults selectability
-// before any touch handler runs — so the gate lives in the native plugin.
-export async function setTextSelectionSuppressed(
-  request: SetTextSelectionSuppressedRequest,
+// Suppress a piece of the OS text-selection UI that would fight the reader's
+// own selection UX:
+//  - target 'gesture' (iOS): the system long-press selection for non-editable
+//    content, while the instant-highlight quick action owns the hold. WebKit
+//    consults selectability before any touch handler runs, so JS-level
+//    suppression cannot win that race.
+//  - target 'menu' (Android, #5427): the floating selection ActionMode
+//    (Copy / Share / Select all), so it can't cover Readest's annotation
+//    toolbar. Chromium shows it through paths that never fire a cancelable
+//    `contextmenu` event, so DOM-level preventDefault can't stop it;
+//    MainActivity refuses floating action modes while this flag is set.
+export async function setSelectionSuppressed(
+  request: SetSelectionSuppressedRequest,
 ): Promise<void> {
-  await invoke('plugin:native-bridge|set_text_selection_suppressed', {
+  await invoke('plugin:native-bridge|set_selection_suppressed', {
     payload: request,
   });
 }

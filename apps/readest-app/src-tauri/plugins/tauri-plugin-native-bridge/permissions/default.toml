@@ -48,6 +48,6 @@ permissions = [
   "allow-refresh-eink-screen",
   "allow-update-reading-widget",
   "allow-capture-webview-region",
-  "allow-set-text-selection-suppressed",
+  "allow-set-selection-suppressed",
   "allow-read-share-clip-html",
 ]

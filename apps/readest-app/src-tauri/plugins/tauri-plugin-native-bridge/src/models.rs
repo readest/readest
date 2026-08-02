@@ -54,9 +54,13 @@ pub struct UseBackgroundAudioRequest {
     pub enabled: bool,
 }
 
+/// Which piece of the OS selection UI to gate: "gesture" suppresses the
+/// long-press text-selection gesture (iOS, instant highlight), "menu"
+/// suppresses the floating selection toolbar (Android, #5427).
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SetTextSelectionSuppressedRequest {
+pub struct SetSelectionSuppressedRequest {
+    pub target: String,
     pub suppressed: bool,
 }
 

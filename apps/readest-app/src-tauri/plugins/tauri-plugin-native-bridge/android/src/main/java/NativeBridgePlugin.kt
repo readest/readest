@@ -98,6 +98,12 @@ class InterceptKeysRequestArgs {
 }
 
 @InvokeArg
+class SetSelectionSuppressedArgs {
+    var target: String? = null
+    var suppressed: Boolean = false
+}
+
+@InvokeArg
 class LockScreenOrientationRequestArgs {
     var orientation: String? = null
 }
@@ -779,6 +785,20 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             args.learnMode?.let { interceptor.setKeyLearnMode(it) }
         } else {
             Log.e("NativeBridgePlugin", "Activity does not implement KeyDownInterceptor")
+        }
+        invoke.resolve()
+    }
+
+    // Suppress a piece of the OS selection UI. target "menu" (#5427): gate for
+    // the system text-selection floating toolbar — MainActivity consults this
+    // flag in onWindowStartingActionMode; see SelectionMenuSuppressor. target
+    // "gesture" is a no-op here: Android needs no native selection-gesture
+    // gate (native-touch forwarding covers instant highlight).
+    @Command
+    fun set_selection_suppressed(invoke: Invoke) {
+        val args = invoke.parseArgs(SetSelectionSuppressedArgs::class.java)
+        if (args.target == "menu") {
+            SelectionMenuSuppressor.suppressed = args.suppressed
         }
         invoke.resolve()
     }

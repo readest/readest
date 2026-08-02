@@ -40,7 +40,8 @@ class UseBackgroundAudioRequestArgs: Decodable {
   let enabled: Bool
 }
 
-class SetTextSelectionSuppressedRequestArgs: Decodable {
+class SetSelectionSuppressedRequestArgs: Decodable {
+  let target: String
   let suppressed: Bool
 }
 
@@ -857,13 +858,17 @@ class NativeBridgePlugin: Plugin {
     }
   }
 
-  // Instant-highlight mode owns the touch long-press: suppress the system
-  // text selection for non-editable content so it can never race the app's
-  // hold-to-highlight gesture. See TextSelectionSuppressor.
-  @objc public func set_text_selection_suppressed(_ invoke: Invoke) throws {
-    let args = try invoke.parseArgs(SetTextSelectionSuppressedRequestArgs.self)
-    DispatchQueue.main.async {
-      TextSelectionSuppressor.setSuppressed(args.suppressed)
+  // Suppress a piece of the OS selection UI. target "gesture": the long-press
+  // text selection for non-editable content, while instant-highlight owns the
+  // hold (see TextSelectionSuppressor). target "menu" is a no-op here — the
+  // iOS selection menu is suppressed unconditionally by ContextMenuSuppressor,
+  // which probes editability natively at menu-build time.
+  @objc public func set_selection_suppressed(_ invoke: Invoke) throws {
+    let args = try invoke.parseArgs(SetSelectionSuppressedRequestArgs.self)
+    if args.target == "gesture" {
+      DispatchQueue.main.async {
+        TextSelectionSuppressor.setSuppressed(args.suppressed)
+      }
     }
     invoke.resolve()
   }

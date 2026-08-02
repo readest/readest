@@ -2,6 +2,7 @@ package com.bilingify.readest
 
 import android.os.Build
 import android.os.Bundle
+import android.view.ActionMode
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.webkit.WebView
@@ -22,6 +23,7 @@ import app.tauri.plugin.JSArray
 import app.tauri.plugin.JSObject
 import com.readest.native_bridge.KeyDownInterceptor
 import com.readest.native_bridge.NativeBridgePlugin
+import com.readest.native_bridge.SelectionMenuSuppressor
 
 class MainActivity : TauriActivity(), KeyDownInterceptor {
     private var wv: WebView? = null
@@ -102,6 +104,20 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     override fun setKeyLearnMode(enabled: Boolean) {
         Log.d("MainActivity", "Key learn mode: $enabled")
         keyLearnModeEnabled = enabled
+    }
+
+    // #5427: Chromium presents the system text-selection toolbar
+    // (Copy / Share / Select all) through paths that never fire a cancelable
+    // contextmenu event, so it can cover Readest's own annotation toolbar.
+    // While the JS side keeps the flag set (reader text is selected), hand
+    // the framework a no-op ActionMode so the floating toolbar is never
+    // built; selection and drag handles are unaffected.
+    override fun onWindowStartingActionMode(
+        callback: ActionMode.Callback?,
+        type: Int
+    ): ActionMode? {
+        return SelectionMenuSuppressor.onWindowStartingActionMode(window?.decorView, callback, type)
+            ?: super.onWindowStartingActionMode(callback, type)
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {

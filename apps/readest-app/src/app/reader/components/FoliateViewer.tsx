@@ -66,7 +66,7 @@ import { getDirFromUILanguage } from '@/utils/rtl';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
-import { lockScreenOrientation, setTextSelectionSuppressed } from '@/utils/bridge';
+import { lockScreenOrientation, setSelectionSuppressed } from '@/utils/bridge';
 import { useTextTranslation } from '../hooks/useTextTranslation';
 import { useBookCoverAutoSave } from '../hooks/useAutoSaveBookCover';
 import { useDiscordPresence } from '@/hooks/useDiscordPresence';
@@ -915,10 +915,10 @@ const FoliateViewer: React.FC<{
     const suppressed =
       !!viewSettings?.enableAnnotationQuickActions &&
       viewSettings?.annotationQuickAction === 'highlight';
-    setTextSelectionSuppressed({ suppressed }).catch(() => {});
+    setSelectionSuppressed({ target: 'gesture', suppressed }).catch(() => {});
     return () => {
       if (suppressed) {
-        setTextSelectionSuppressed({ suppressed: false }).catch(() => {});
+        setSelectionSuppressed({ target: 'gesture', suppressed: false }).catch(() => {});
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -927,6 +927,17 @@ const FoliateViewer: React.FC<{
     viewSettings?.enableAnnotationQuickActions,
     viewSettings?.annotationQuickAction,
   ]);
+
+  // Android (#5427): useTextSelector keeps the system selection toolbar
+  // natively suppressed while reader text is selected. If the reader closes
+  // with a live selection, no selectionchange fires to lift the flag — reset
+  // it here so selection menus elsewhere in the app are not muted.
+  useEffect(() => {
+    if (!appService?.isAndroidApp) return;
+    return () => {
+      setSelectionSuppressed({ target: 'menu', suppressed: false }).catch(() => {});
+    };
+  }, [appService?.isAndroidApp]);
 
   useEffect(() => {
     if (viewRef.current && viewRef.current.renderer) {
