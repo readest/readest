@@ -29,6 +29,12 @@ const CLOCK_POLL_MS = 50;
 
 type WaitOutcome = 'reached' | 'ended' | 'aborted' | 'error';
 
+// How far the playhead may sit from a clip's start and still count as "already
+// rolling into it" rather than needing a seek. Covers the few milliseconds that
+// polling overshoots a clip end by, plus pause/resume latency, while staying
+// under the length of even a word-level clip.
+const CLIP_CONTINUITY_TOLERANCE_SEC = 0.3;
+
 // Container blobs come out of the zip with no MIME type, and a media element
 // given a typeless blob URL refuses to decode it ("Format error"), so the type
 // has to be supplied from the file name. Covers the formats EPUB Media Overlays
@@ -236,7 +242,20 @@ export class MediaOverlayClient implements TTSClient {
       if (signal.aborted) return;
 
       audio.playbackRate = this.#rate;
-      audio.currentTime = run.pars[0]!.clipBegin;
+      // Sequential narration needs no seeking: Media Overlay clips are contiguous
+      // and in document order, so the element can simply keep rolling while
+      // boundaries are reported as the clock passes each clip. Seeking to
+      // clipBegin on every paragraph replayed the milliseconds that clip-end
+      // detection had already overshot into the next clip — heard as a stutter on
+      // the paragraph's first word ("me me"). Move the playhead only for a real
+      // discontinuity: session start, a sentence skip, a scrub, a new audio file.
+      const first = run.pars[0]!;
+      const drift = audio.currentTime - first.clipBegin;
+      const clipDuration = first.clipEnd - first.clipBegin;
+      const alreadyRolling =
+        drift >= -CLIP_CONTINUITY_TOLERANCE_SEC &&
+        drift < Math.min(CLIP_CONTINUITY_TOLERANCE_SEC, clipDuration);
+      if (!alreadyRolling) audio.currentTime = first.clipBegin;
       try {
         await audio.play();
       } catch (e) {
@@ -280,8 +299,7 @@ export class MediaOverlayClient implements TTSClient {
 
     // Stop at the block's last clip. Media Overlay clips are contiguous, so an
     // element left running plays straight into the NEXT paragraph during the
-    // controller's inter-paragraph gap — and the speak() that follows seeks back
-    // to that paragraph's clipBegin, so its opening words are heard twice.
+    // controller's inter-paragraph gap.
     this.#audio?.pause();
     yield { code: 'end', message: 'Narration finished' };
   }
@@ -353,6 +371,7 @@ export class MediaOverlayClient implements TTSClient {
       mediaClock: true,
       gapControl: false,
       liveRateChange: true,
+      continuousTimeline: true,
     };
   }
 

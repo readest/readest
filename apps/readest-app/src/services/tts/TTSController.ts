@@ -851,7 +851,12 @@ export class TTSController extends EventTarget {
   // Scales with rate like the sentence gap so pauses shrink with speed.
   // Races against `signal` so a stop()/pause() during the gap resolves
   // immediately instead of leaving a stray forward() to fire afterward.
+  //
+  // Skipped entirely for a continuous timeline (recorded narration): the audio
+  // for the next paragraph is the same recording playing on, so padding it adds
+  // silence the narrator did not leave and pushes the highlight behind the voice.
   async #delayParagraphGap(signal: AbortSignal): Promise<void> {
+    if (this.ttsClient.getCapabilities().continuousTimeline) return;
     const ms = (this.#paragraphGapSec / this.ttsRate) * 1000;
     if (ms <= 0 || signal.aborted) return;
     await new Promise<void>((resolve) => {

@@ -143,6 +143,7 @@ describe('MediaOverlayClient capabilities', () => {
       mediaClock: true,
       gapControl: false,
       liveRateChange: true,
+      continuousTimeline: true,
     });
   });
 
@@ -223,7 +224,7 @@ describe('MediaOverlayClient playback', () => {
     expect(audio().paused).toBe(true);
   });
 
-  test('plays the block as one continuous span, seeking only at its start', async () => {
+  test('plays the block as one continuous span with no seeking at all', async () => {
     await setup();
     const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
     await iter.next();
@@ -233,8 +234,19 @@ describe('MediaOverlayClient playback', () => {
       await pending;
     }
 
-    expect(audio().seeks).toEqual([0]);
+    // Block 0 starts at 0s and a fresh element is already there, so not one
+    // seek is needed: the pars inside a block are contiguous audio.
+    expect(audio().seeks).toEqual([]);
     expect(audio().playCalls).toBe(1);
+  });
+
+  test('seeks in when the block does not start at the top of the file', async () => {
+    await setup();
+    const iter = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
+    await iter.next();
+
+    expect(audio().seeks).toEqual([3]);
+    expect(audio().currentTime).toBe(3);
   });
 
   test('resumes mid-block from the requested mark', async () => {
@@ -334,6 +346,57 @@ describe('MediaOverlayClient playback', () => {
     await play(1, 6);
 
     expect(book.loadBlob).toHaveBeenCalledTimes(1);
+  });
+
+  // Media Overlay clips are contiguous, so sequential playback needs no seeking.
+  // Detecting clipEnd by polling always lands a few ms PAST it, so the opening
+  // milliseconds of the NEXT clip have already been heard. Seeking back to that
+  // clip's clipBegin replays them, which is audible as a stutter on the first
+  // word of every paragraph ("me me"). The client must keep rolling instead.
+  test('does not seek when the playhead is already rolling into the clip', async () => {
+    await setup();
+    const signal = new AbortController().signal;
+
+    // Play block 0 to its end; the clock overshoots past par w3's clipEnd of 3s.
+    const first = client.speak(section.ssmlForBlock(0)!, signal);
+    await first.next();
+    for (const t of [1, 2, 3.04]) {
+      const pending = first.next();
+      audio().advanceTo(t);
+      await pending;
+    }
+    const el = audio();
+    expect(el.paused).toBe(true);
+    const seeksAfterBlock0 = [...el.seeks];
+
+    // Block 1 begins at 3s — behind where we stopped (3.04s).
+    const second = client.speak(section.ssmlForBlock(1)!, signal);
+    await second.next();
+
+    expect(el.seeks).toEqual(seeksAfterBlock0);
+    expect(el.currentTime).toBeCloseTo(3.04, 5);
+  });
+
+  test('still seeks when the playhead is somewhere unrelated', async () => {
+    await setup();
+    const signal = new AbortController().signal;
+
+    const first = client.speak(section.ssmlForBlock(0)!, signal);
+    await first.next();
+    for (const t of [1, 2, 3.04]) {
+      const pending = first.next();
+      audio().advanceTo(t);
+      await pending;
+    }
+    const el = audio();
+    // The reader scrubs somewhere unrelated before the next block plays.
+    el.advanceTo(120);
+
+    const second = client.speak(section.ssmlForBlock(1)!, signal);
+    await second.next();
+
+    expect(el.seeks.at(-1)).toBe(3);
+    expect(el.currentTime).toBe(3);
   });
 
   test('preloading warms the audio file without starting playback', async () => {

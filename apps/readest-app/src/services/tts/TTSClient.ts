@@ -21,6 +21,10 @@ export interface TTSCapabilities {
   gapControl: boolean;
   // Rate changes apply to in-flight audio without restarting the session.
   liveRateChange: boolean;
+  // Consecutive blocks are one continuous recording rather than separate
+  // utterances, so the controller must not insert its own pauses between them —
+  // the recording already contains the pauses its narrator made.
+  continuousTimeline?: boolean;
 }
 
 export interface TTSClient {
