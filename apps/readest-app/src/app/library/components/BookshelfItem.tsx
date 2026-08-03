@@ -6,7 +6,6 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useLongPress } from '@/hooks/useLongPress';
 import { Menu } from '@tauri-apps/api/menu';
 import { LogicalPosition } from '@tauri-apps/api/dpi';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { eventDispatcher } from '@/utils/event';
 import { openExternalUrl } from '@/utils/open';
@@ -375,22 +374,12 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         return;
       }
       const menu = await ensureMenu();
-      // Pop up at an explicit window position: a positionless popup is
-      // anchored to the X11 root window, which doesn't exist on Wayland, so
-      // the menu fails to map and disappears immediately (issue #5181).
-      // CSS px are not window-logical px when the webview carries a page
-      // zoom (WebKitGTK folds the desktop text-scaling factor into one
-      // without reflecting it in devicePixelRatio), so map the click's
-      // fraction of the CSS viewport onto the window's logical size — any
-      // uniform zoom cancels out of the ratio.
-      const win = getCurrentWindow();
-      const [innerSize, scale] = await Promise.all([win.innerSize(), win.scaleFactor()]);
-      await menu.popup(
-        new LogicalPosition(
-          (position.x / window.innerWidth) * (innerSize.width / scale),
-          (position.y / window.innerHeight) * (innerSize.height / scale),
-        ),
-      );
+      // Pop up at an explicit position so keyboard invocation (ContextMenu /
+      // Shift+F10) anchors the menu to the item instead of wherever the mouse
+      // happens to sit. On macOS and Windows — the only platforms still on the
+      // native menu — CSS px are window-logical px, so the client coordinates
+      // pass through unchanged.
+      await menu.popup(new LogicalPosition(position.x, position.y));
     }, 100),
     [item, itemSelected, isSelectMode, settings.localBooksDir],
   );
