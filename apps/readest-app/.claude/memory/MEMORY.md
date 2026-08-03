@@ -35,6 +35,7 @@
 - #5067 shelf progress never pulled `mergeBookMetadata` subset = what travels
 - [koplugin local_present sweep](koplugin-local-present-sweep-noop.md) UNFIXED; OR-merge defeats stale sweep; fix = rm readest_library.sqlite3
 - [10k library breaks /sync pull](sync-pull-10k-worker-1102.md) MERGED #5364; CF 1102; paged books pull synced_at ASC + tie-completion; old clients wedge till app update
+- [#5444 CORS preflight cache fix](cors-preflight-cache-fix-5444.md) VERIFIED in prod: OPTIONS -83% in minutes; wrangler OAuth token works for CF GraphQL analytics (1d max range)
 ## Build, Testing & CI
 - [Turbopack dev stale chunk phantom](turbopack-dev-stale-chunk-phantom.md) reload does NOT help; fiber String(f.type) to verify; rm -rf .next + restart
 - [Screenshot baselines unregenerable](vitest-screenshot-baseline-relative-path.md) FIXED in #5351; relative resolveScreenshotPath -> server.fs denies write; `--update` was a silent no-op; allowWrite is NOT it
@@ -42,6 +43,7 @@
 - [format:check gate](verify-format-check-gate.md) · [Worktree rebase submodule drift](worktree-rebase-submodule-drift.md)
 - Android CDP: [e2e lane](android-cdp-e2e-lane.md); [profiling](cdp-android-webview-profiling.md); [double-tap](android-e2e-doubletap-cdp-gesture.md)
 - [Android e2e local repro](android-e2e-local-repro-workflow.md) dev-android vs debug run-as
+- [Nightly e2e fix](android-e2e-nightly-fix-5453.md) PR #5453; immersive prompt eats touches (screencap first!); openFixtureBook cold-start; halo max(100%,44px); wrapper/HintInfo pointer-none
 - [iOS sim drive via dev-server relay](ios-sim-drive-via-dev-server-relay.md)
 - [iOS sim build+drive workflow](ios-sim-build-and-drive-workflow.md) `--target aarch64-sim`; CLI rename fails so take the app from the **xcarchive**, not `build/arm64-sim`
 - [Tauri Rust↔JS parser parity](tauri-parser-parity-tests.md)
@@ -67,7 +69,7 @@
 - [0.11.20 iOS .txt/.md share sheet lost](ios-txt-share-sheet-tauri211-fileassoc.md) MERGED #5415; tauri-cli 2.11 fileAssociations clobber hand-tuned CFBundleDocumentTypes; device-verify pending
 - [#5397 Photos save crash](ios-photos-add-usage-description-5397.md) MERGED #5405, device-verify pending; missing `NSPhotoLibraryAddUsageDescription`; "Save to Photos" is WebKit's menu not our code; key also un-hides "Save Image" in our share sheet
 ## Reader Features & UI
-- [TTS listening counts as reading stats](tts-listening-counts-as-reading-stats.md) committed bc1d8d5e5 on feat/tts-reading-stats, NOT pushed; TtsStatsRecorder in TTSSessionManager; background/CarPlay device-verify PENDING
+- [TTS listening counts as reading stats](tts-listening-counts-as-reading-stats.md) MERGED #5450; `view.getCFIProgress` is DEAD after `view.close()`, rebuild from book+resolveCFI; Android/iOS/CarPlay device verify PENDING
 - [#5398/#3870 annotations hub](annotations-hub-5398-3870.md) MERGED #5448; shared filterBooknotes/facets; toolbar = icon row + filter dropdown (must merge injected menuClassName); header search icon is per-tab contextual
 - [Mobile sheet virtuoso first-paint blank](mobile-sheet-virtuoso-first-paint-blank.md) PRE-EXISTING, no issue filed; blank until first touch
 - [PR #5389 library full-text search review](pr-5389-library-search-review.md) uncapped contains mode blocks; real-text bench 130MB/s; plan in .agents/plans

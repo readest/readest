@@ -1,39 +1,46 @@
 ---
 name: tts-listening-counts-as-reading-stats
-description: "TTS playback now writes reading stats via TtsStatsRecorder; committed on feat/tts-reading-stats, device verification for background/CarPlay still pending"
+description: "TTS playback writes reading stats via TtsStatsRecorder; browser-verified with reader open, headless path fixed but not yet re-verified in a browser"
 metadata: 
   node_type: memory
   type: project
   originSessionId: 4e4bd750-d778-4598-bc3a-9f609af23449
-  modified: 2026-08-02T18:36:12.157Z
+  modified: 2026-08-02T20:18:01.771Z
 ---
 
-TTS listening now records reading statistics. Committed 2026-08-03 as
-`bc1d8d5e5` on branch `feat/tts-reading-stats` (worktree
-`/Users/chrox/dev/readest-feat-tts-reading-stats`, based on origin/main
-`4f44b79ec`). Not pushed, no PR yet.
+TTS listening now records reading statistics. **MERGED 2026-08-03 as PR #5450**
+(merge commit `c1b0a4ecd`). Worktree and branch removed.
 
 **Why it was broken:** the stats tracker's only input is `progress.pageinfo`
 changes. TTS reached it purely by accident, via the relocations auto-follow
-produces. With follow suppressed (`useTTSControl.ts` `followingTTSLocationRef`)
-or the reader closed, zero stats.
+produces. With follow suppressed or the reader closed, zero stats.
 
-**Shape of the fix:** `TtsStatsRecorder` (non-React) owned by
-`TTSSessionManager`, because that is the only thing alive during headless
-playback. Writes the same KOReader `page_stat_data` rows, no schema change.
-`ReadingStatsTracker` goes dormant on `tts-playback-state` = playing for its
-own book hash, so the two never double-count.
+**Shape:** `TtsStatsRecorder` (non-React) owned by `TTSSessionManager`, the only
+thing alive during headless playback. Same KOReader `page_stat_data` rows, no
+schema change. `ReadingStatsTracker` goes dormant on `tts-playback-state` =
+playing for its own book hash, so the two never double-count.
 
-**Known limitation, accepted deliberately:** when auto-follow is suppressed and
-the user paged away, the credited page is the DISPLAYED one, not the narrated
-one. Rationale: they are looking at it.
+**`view.getCFIProgress` is USELESS for anything headless.** `view.close()` nulls
+`#sectionProgress` and `#cfiProgress` (foliate `view.js:299-311`) and
+`getCFIProgress` optional-chains off them, so it returns null from the moment
+the book closes. Cost a full Chrome debugging round. What survives close(), and
+is enough to rebuild the same computation: `view.book`, `view.resolveCFI` (it
+delegates to `book.resolveCFI`), and foliate's `PageProgress` /
+`SectionProgress` constructed directly with view.js's own `1500, 1600`.
 
-**Still unverified (cannot be unit tested, see
-[[feedback-no-mock-only-platform-tests]]):** background/screen-off listening on
-Android, iOS lock screen, and CarPlay. The headless page number is derived from
-`view.getCFIProgress(cfi).fraction` x `BookConfig.progress[1]`; that whole path
-has only ever run under vitest. Also unverified: that `getBookData` really
-survives `clearViewState` in a real headless session (inferred from
-`#saveToDisk` reading `getConfig` successfully, not observed).
+**Verified in Chrome (web, localhost dev), both paths:**
+- Reader open: `READING wrote p1/17 19s` at TTS start, then
+  `TTS wrote p1/17 60s` exactly 60s later, no READING writes in between.
+- Book closed (headless): `p9 63s` -> `p11 30s` -> `p12 60s` (full renewal) ->
+  `p14 13s` (final flush on stop), pages advancing on the layout's own 17-page
+  scale.
 
-Related: [[tts-fixes]], [[tts-mini-player-tuning-5310]].
+**NOT verified:** Android screen-off, iOS lock screen, CarPlay. Untouched by
+any of this.
+
+**Two browser gotchas worth remembering:** two tabs on the same origin fight
+over the OPFS handle and the second renders blank (see the `sharedDb` comment
+in `statisticsDb.ts`); and `await import()` inside code under vitest fake timers
+never resolves on first load, so prefer a static import.
+
+Related: [[tts-fixes]], [[feedback-no-mock-only-platform-tests]].
