@@ -6,6 +6,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
 import { parseWebViewInfo } from '@/utils/ua';
 import { getAppVersion } from '@/utils/version';
+import { writeTextToClipboard } from '@/utils/clipboard';
+import { eventDispatcher } from '@/utils/event';
 import SupportLinks from './SupportLinks';
 import LegalLinks from './LegalLinks';
 import Dialog from './Dialog';
@@ -80,6 +82,21 @@ export const AboutWindow = () => {
     setUpdateStatus(null);
   };
 
+  const versionInfo = `${_('Version {{version}}', { version: getAppVersion() })} (${browserInfo})`;
+
+  // Mobile users can't select the version string to paste it into a bug
+  // report, so the label itself copies it.
+  const handleCopyVersion = async () => {
+    const copied = await writeTextToClipboard(versionInfo);
+    if (!copied) return;
+    eventDispatcher.dispatch('toast', {
+      type: 'info',
+      message: _('Copied to clipboard'),
+      className: 'whitespace-nowrap',
+      timeout: 2000,
+    });
+  };
+
   return (
     <Dialog
       id='about_window'
@@ -96,9 +113,14 @@ export const AboutWindow = () => {
             </div>
             <div className='flex select-text flex-col items-center'>
               <h2 className='mb-2 text-2xl font-bold'>Readest</h2>
-              <p className='text-neutral-content text-center text-sm'>
-                {_('Version {{version}}', { version: getAppVersion() })} {`(${browserInfo})`}
-              </p>
+              <button
+                type='button'
+                title={_('Copy')}
+                className='text-neutral-content text-center text-sm'
+                onClick={handleCopyVersion}
+              >
+                {versionInfo}
+              </button>
             </div>
             <div className='my-1 h-5'>
               {!updateStatus && (
