@@ -34,6 +34,10 @@ vi.mock('@/services/opds/sourceMap', () => ({
   upsertOPDSSourceMapping: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('@/services/opds/cover', () => ({
+  applyOPDSCover: vi.fn().mockResolvedValue(true),
+}));
+
 vi.mock('@/services/opds/subscriptionState', () => ({
   loadSubscriptionState: vi.fn().mockResolvedValue({
     catalogId: 'cat-1',
@@ -55,6 +59,7 @@ import { syncSubscribedCatalogs } from '@/services/opds/autoDownload';
 import { checkFeedForNewItems } from '@/services/opds/feedChecker';
 import { saveSubscriptionState, loadSubscriptionState } from '@/services/opds/subscriptionState';
 import { upsertOPDSSourceMapping } from '@/services/opds/sourceMap';
+import { applyOPDSCover } from '@/services/opds/cover';
 import { downloadFile } from '@/libs/storage';
 
 const createMockAppService = () =>
@@ -165,6 +170,80 @@ describe('OPDS auto-download orchestrator', () => {
     expect(vi.mocked(downloadFile).mock.calls[0]![0]).toMatchObject({
       skipSslVerification: true,
     });
+  });
+
+  it('applies the feed-provided cover to the imported book (issue #5270)', async () => {
+    const catalogs: OPDSCatalog[] = [
+      {
+        id: 'cat-1',
+        name: 'Shelf',
+        url: 'https://shelf.example.com/opds',
+        autoDownload: true,
+        username: 'user',
+        password: 'pass',
+      },
+    ];
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([
+      {
+        entryId: 'urn:shelf:1',
+        title: 'Issue 1',
+        acquisitionHref: '/dl/1.epub',
+        coverHref: '/cwa/opds/cover/572',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      },
+    ]);
+
+    const result = await syncSubscribedCatalogs(catalogs, appService, []);
+
+    expect(applyOPDSCover).toHaveBeenCalledWith(
+      expect.objectContaining({
+        appService,
+        book: result.newBooks[0],
+        coverUrl: 'https://shelf.example.com/cwa/opds/cover/572',
+        username: 'user',
+        password: 'pass',
+      }),
+    );
+  });
+
+  it('skips the cover step for entries without artwork', async () => {
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([
+      {
+        entryId: 'urn:shelf:1',
+        title: 'Issue 1',
+        acquisitionHref: '/dl/1.epub',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      },
+    ]);
+
+    const result = await syncSubscribedCatalogs(catalogs, appService, []);
+    expect(result.totalNewBooks).toBe(1);
+    expect(applyOPDSCover).not.toHaveBeenCalled();
+  });
+
+  it('still imports the book when the feed cover cannot be fetched', async () => {
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([
+      {
+        entryId: 'urn:shelf:1',
+        title: 'Issue 1',
+        acquisitionHref: '/dl/1.epub',
+        coverHref: '/cwa/opds/cover/572',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      },
+    ]);
+    vi.mocked(applyOPDSCover).mockRejectedValueOnce(new Error('cover server down'));
+
+    const result = await syncSubscribedCatalogs(catalogs, appService, []);
+    expect(result.totalNewBooks).toBe(1);
   });
 
   it('handles import failure by adding to failedEntries', async () => {

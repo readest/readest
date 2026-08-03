@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { IoPricetag } from 'react-icons/io5';
 import { Book } from '@/types/book';
 import { OPDSPublication, REL, SYMBOL, OPDSAcquisitionLink, OPDSStreamLink } from '@/types/opds';
+import { getOPDSCoverHref } from '@/services/opds/cover';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getFileExtFromMimeType } from '@/libs/document';
 import { formatDate, formatLanguage } from '@/utils/book';
@@ -83,14 +84,11 @@ export function PublicationView({
     [publication.links],
   );
 
-  const coverImage = useMemo(() => {
-    const covers = publication.images?.filter((img) =>
-      REL.COVER.some((rel: string) => img.rel?.includes(rel)),
-    );
-    return covers?.[0] || publication.images?.[0];
-  }, [publication.images]);
+  // Same pick the download path stores as the book cover, so the detail view
+  // never previews artwork the library won't end up showing (issue #5270).
+  const coverHref = useMemo(() => getOPDSCoverHref(publication), [publication]);
 
-  const imageUrl = coverImage?.href ? resolveURL(coverImage.href, baseURL) : null;
+  const imageUrl = coverHref ? resolveURL(coverHref, baseURL) : null;
 
   const authors = useMemo(() => {
     const author = publication.metadata?.author;

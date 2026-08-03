@@ -20,6 +20,7 @@ import {
   parseOPDSXML,
 } from '@/app/opds/utils/opdsUtils';
 import { normalizeOPDSCustomHeaders } from '@/app/opds/utils/customHeaders';
+import { getOPDSCoverHref } from './cover';
 import type { OPDSSubscriptionState, PendingItem } from './types';
 import { MAX_CRAWL_DEPTH, MAX_FEEDS_PER_CRAWL, MAX_PAGES_PER_FEED } from './types';
 
@@ -200,6 +201,7 @@ export function collectNewEntries(
       entryId,
       title: pub.metadata.title || acqLink.title || 'Untitled',
       acquisitionHref: acqLink.href,
+      coverHref: getOPDSCoverHref(pub),
       mimeType: acqLink.type ?? 'application/octet-stream',
       updated: pub.metadata.updated,
       baseURL,

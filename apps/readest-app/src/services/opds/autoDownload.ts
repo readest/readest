@@ -7,6 +7,7 @@ import { needsProxy, getProxiedURL, probeAuth, probeFilename } from '@/app/opds/
 import { resolveURL, parseMediaType, getFileExtFromPath } from '@/app/opds/utils/opdsUtils';
 import { normalizeOPDSCustomHeaders } from '@/app/opds/utils/customHeaders';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
+import { applyOPDSCover } from './cover';
 import { checkFeedForNewItems } from './feedChecker';
 import {
   loadSubscriptionState,
@@ -93,6 +94,22 @@ async function downloadAndImport(
 
   const book = await appService.importBook(dstFilePath, books);
   if (!book) throw new Error(`importBook returned null for ${item.title}`);
+  // The catalog's own artwork wins over the one embedded in the file (#5270).
+  // Best effort: a failure here must not fail an otherwise good import.
+  if (item.coverHref) {
+    try {
+      await applyOPDSCover({
+        appService,
+        book,
+        coverUrl: resolveURL(item.coverHref, item.baseURL),
+        username,
+        password,
+        customHeaders,
+      });
+    } catch (error) {
+      console.warn(`[OPDS] failed to apply the feed cover for "${item.title}":`, error);
+    }
+  }
   try {
     await upsertOPDSSourceMapping(appService, {
       catalogId: catalog.contentId || catalog.id,

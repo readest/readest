@@ -23,6 +23,8 @@ export interface PendingItem {
   entryId: string;
   title: string;
   acquisitionHref: string;
+  /** Cover advertised by the entry, preferred over the one inside the file (#5270). */
+  coverHref?: string;
   mimeType: string;
   updated?: string;
   baseURL: string;
