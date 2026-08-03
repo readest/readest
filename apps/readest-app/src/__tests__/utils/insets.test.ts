@@ -1,7 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { getHeaderBandGeometry, getPanelTopInset } from '@/utils/insets';
+import { ViewSettings } from '@/types/book';
+import { getHeaderBandGeometry, getHeaderTriggerHeight, getPanelTopInset } from '@/utils/insets';
 
 const insets = (top: number) => ({ top, right: 0, bottom: 0, left: 0 });
+
+const viewSettings = (overrides: Partial<ViewSettings>) =>
+  ({
+    showHeader: true,
+    showFooter: true,
+    vertical: false,
+    writingMode: 'auto',
+    marginTopPx: 44,
+    marginBottomPx: 44,
+    marginLeftPx: 16,
+    marginRightPx: 16,
+    compactMarginTopPx: 16,
+    compactMarginBottomPx: 16,
+    compactMarginLeftPx: 16,
+    compactMarginRightPx: 16,
+    ...overrides,
+  }) as ViewSettings;
 
 describe('getHeaderBandGeometry (#5303)', () => {
   it('keeps the classic band below the safe area for margins of 16px and up', () => {
@@ -28,6 +46,46 @@ describe('getHeaderBandGeometry (#5303)', () => {
     // bottom must not go below 16 either — the two edges stay glued.
     expect(getHeaderBandGeometry(39, -23)).toEqual({ top: 0, height: 16, bottom: 16 });
     expect(getHeaderBandGeometry(39, -39)).toEqual({ top: 0, height: 16, bottom: 16 });
+  });
+});
+
+describe('getHeaderTriggerHeight (#4977)', () => {
+  // The trigger is a lid: whatever it covers cannot be selected or long
+  // pressed. It must stop where the book text starts, which is the renderer's
+  // top margin (FoliateViewer.applyMarginAndGap), never the fixed 44px of the
+  // toolbar it reveals.
+  it('keeps the full toolbar-height strip when the page header reserves it', () => {
+    expect(getHeaderTriggerHeight(0, viewSettings({}))).toBe(44);
+    // A notch pushes the text further down; the strip stays toolbar-sized.
+    expect(getHeaderTriggerHeight(39, viewSettings({}))).toBe(44);
+  });
+
+  it('shrinks to the compact margin when the page header is off', () => {
+    // The regression: text starts 16px from the top, under a 44px strip.
+    expect(getHeaderTriggerHeight(0, viewSettings({ showHeader: false }))).toBe(16);
+    expect(getHeaderTriggerHeight(39, viewSettings({ showHeader: false }))).toBe(16);
+    expect(
+      getHeaderTriggerHeight(0, viewSettings({ showHeader: false, compactMarginTopPx: 8 })),
+    ).toBe(8);
+  });
+
+  it('follows a reduced top margin while the page header is on', () => {
+    // The renderer floors the content top at 16px (moreTopInset), like the
+    // title band does.
+    expect(getHeaderTriggerHeight(0, viewSettings({ marginTopPx: 24 }))).toBe(24);
+    expect(getHeaderTriggerHeight(0, viewSettings({ marginTopPx: 8 }))).toBe(16);
+    expect(getHeaderTriggerHeight(39, viewSettings({ marginTopPx: -20 }))).toBe(19);
+  });
+
+  it('uses the compact margin in vertical writing mode, where the band is sideways', () => {
+    expect(getHeaderTriggerHeight(0, viewSettings({ vertical: true }))).toBe(16);
+    expect(getHeaderTriggerHeight(0, viewSettings({ writingMode: 'vertical-rl' }))).toBe(16);
+  });
+
+  it('collapses instead of going negative when the text starts above the cell', () => {
+    expect(
+      getHeaderTriggerHeight(0, viewSettings({ showHeader: false, compactMarginTopPx: -20 })),
+    ).toBe(0);
   });
 });
 

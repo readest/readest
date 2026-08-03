@@ -14,12 +14,15 @@ import {
 } from './helpers/reader';
 
 // End-to-end coverage for issue #5429: the header bar renders an invisible
-// 44px-tall hover trigger across the top of the reader. Its height matches the
-// page-header margin (marginTopPx = 44), so with the page header ON the text
-// starts right below it — but with the page header OFF the top margin shrinks
-// to compactMarginTopPx = 16 and the first line renders *underneath* the
-// trigger, which swallowed the touch on mobile: long-pressing the first line
-// selected nothing and no annotation popup appeared.
+// hover trigger across the top of the reader. It used to be a fixed 44px tall,
+// matching the default page-header margin (marginTopPx = 44), so with the page
+// header ON the text starts right below it — but with the page header OFF the
+// top margin shrinks to compactMarginTopPx = 16 and the first line rendered
+// *underneath* the trigger, which swallowed the touch on mobile: long-pressing
+// the first line selected nothing and no annotation popup appeared. The trigger
+// is inert on mobile since #5429 and no taller than the content top since
+// #4977; 44px stays the widest band it can ever cover, so it is still the
+// bound this lane probes under.
 //
 // The lane drives the installed app, so it exercises the WebView's real hit
 // testing — the part jsdom cannot model. The page header is turned off by
@@ -38,7 +41,7 @@ import {
 // where injection is deliverable.
 
 const FIXTURE = path.resolve(__dirname, '../fixtures/data/sample-alice.epub');
-/** Height of the header hover trigger (`h-11` in HeaderBar). */
+/** Tallest the header hover trigger can get (getHeaderTriggerHeight). */
 const TRIGGER_BAND_PX = 44;
 /** `compactMarginTopPx` — the top margin when the page header is off. */
 const COMPACT_MARGIN_TOP_PX = 16;

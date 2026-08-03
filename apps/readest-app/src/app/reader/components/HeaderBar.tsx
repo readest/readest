@@ -19,6 +19,7 @@ import { getHighlightColorHex } from '../utils/annotatorUtil';
 import { annotationToolQuickActions } from './annotator/AnnotationTools';
 import { AnnotationToolType } from '@/types/annotator';
 import { saveViewSettings } from '@/helpers/settings';
+import { getHeaderTriggerHeight } from '@/utils/insets';
 import { HighlighterIcon } from '@/components/HighlighterIcon';
 import Dropdown from '@/components/Dropdown';
 import ModalPortal from '@/components/ModalPortal';
@@ -142,6 +143,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const insets = window.innerWidth < 640 ? screenInsets : gridInsets;
   const isHeaderVisible = hoveredBookKey === bookKey || isDropdownOpen;
   const isMobile = appService?.isMobile || window.innerWidth < 640;
+  const triggerHeight = viewSettings ? getHeaderTriggerHeight(gridInsets.top, viewSettings) : 0;
 
   useSpatialNavigation(headerRef, isHeaderVisible);
   const trafficLightInHeader =
@@ -167,17 +169,21 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
       {/*
         Hover trigger area. Mobile has no hover and toggles the bars by tapping
         the page (usePagination), so this must not take pointer events there —
-        it is 44px tall, the same as the page-header margin, so with the page
-        header off (compact 16px margin) it covered the first line of text and
-        swallowed long presses on it (#5429). Mirrors the footer's trigger.
+        it used to be a fixed 44px tall, the same as the default page-header
+        margin, so with the page header off (compact 16px margin) it covered the
+        first line of text and swallowed long presses on it (#5429). Mirrors the
+        footer's trigger. Its height now tracks the content top on every
+        platform, so the strip can never reach past where the text starts and
+        block a selection (#4977).
       */}
       <div
         role='none'
         tabIndex={-1}
         className={clsx(
-          'absolute top-0 z-10 h-11 w-full',
+          'absolute top-0 z-10 w-full',
           isMobile || pointerInDoc ? 'pointer-events-none' : 'pointer-events-auto',
         )}
+        style={{ height: `${triggerHeight}px` }}
         onClick={() => setHoveredBookKey(bookKey)}
         onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}

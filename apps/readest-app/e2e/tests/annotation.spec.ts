@@ -64,6 +64,26 @@ test.describe('Annotation', () => {
     expect(copied).toMatch(/\/o\/book\/[^/]+\/annotation\/[^?]+\?cfi=/);
   });
 
+  test('leaves the first line of text hittable when the page header is off', async ({
+    openBook,
+  }) => {
+    // #4977: the header bar's hover strip was a fixed 44px, the default page
+    // header margin. With the page header off the text moves up to the 16px
+    // compact margin and rendered under the strip, which took the press that
+    // should have started a selection. Desktop Chrome is the platform that
+    // still arms the strip (mobile keeps it inert since #5429).
+    const TRIGGER_BAND_PX = 44;
+    const reader = await openBook();
+    await reader.openTocChapter(3);
+    await reader.setPageHeaderVisible(false);
+
+    const hit = await reader.firstLineHitTestNearTop(TRIGGER_BAND_PX);
+
+    // Guard the premise: a line the strip never reached proves nothing.
+    expect(hit?.top).toBeLessThan(TRIGGER_BAND_PX);
+    expect(hit?.owner).toBe('reader');
+  });
+
   test('deletes an annotation', async ({ openBook }) => {
     const reader = await openBook();
 

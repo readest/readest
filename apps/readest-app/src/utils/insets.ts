@@ -40,6 +40,28 @@ export const getHeaderBandGeometry = (topInset: number, marginTopPx: number) => 
 };
 
 /**
+ * Height (px) of the header bar's hover trigger — the invisible strip along the
+ * top of the book cell that reveals the toolbar.
+ *
+ * The strip is a lid: whatever it covers cannot be selected, long pressed or
+ * clicked. Sized to the toolbar it reveals (44px) it matched the default top
+ * margin and nothing else, so any smaller margin — the page header off, a
+ * reduced margin, vertical writing mode — left it hanging over the first line
+ * of text and swallowing presses on it (#4977, #5429). So it stops at the
+ * content top instead: the renderer's `margin-top`, see
+ * FoliateViewer.applyMarginAndGap, which floors at 16px via moreTopInset while
+ * the page header is on and drops the safe-area inset when it is off.
+ */
+export const getHeaderTriggerHeight = (topInset: number, viewSettings: ViewSettings) => {
+  const maxHeight = 44;
+  const isVertical = viewSettings.vertical || viewSettings.writingMode.includes('vertical');
+  const marginTopPx = getViewInsets(viewSettings).top;
+  const contentTop =
+    viewSettings.showHeader && !isVertical ? Math.max(topInset + marginTopPx, 16) : marginTopPx;
+  return Math.min(maxHeight, Math.max(0, contentTop));
+};
+
+/**
  * Top padding (px) for a slide-in panel (sidebar / notebook) so its toolbar
  * clears the device status bar, mirroring the reader header.
  *
