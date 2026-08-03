@@ -1328,7 +1328,7 @@
   "Data Sync": "数据同步",
   "Manage Fonts": "管理字体",
   "App settings": "应用设置",
-  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "主题、高亮颜色、第三方集成（KOSync、Readwise、Hardcover）以及词典顺序",
+  "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "主题、高亮颜色以及第三方集成（KOSync、Readwise、Hardcover）",
   "Required while Dictionaries sync is enabled": "启用词典同步时必需",
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} 小时 {{minutes}} 分钟后重置",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "请设置一个 4 位数字 PIN 码。每次打开 Readest 时都需要输入。忘记的 PIN 码无法找回，清除应用数据是重置它的唯一方法。",

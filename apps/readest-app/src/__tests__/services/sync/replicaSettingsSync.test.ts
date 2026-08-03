@@ -63,6 +63,22 @@ const enableCredentialsSync = (): void => {
   } as never);
 };
 
+/**
+ * Flip the 'dictionary' sync category for the current test. Dictionary
+ * preferences (providerOrder / providerEnabled / webSearches / fontScale)
+ * ride the bundled settings row but belong to the user-facing
+ * "Dictionaries" toggle, not "App settings" — see issue #5465.
+ */
+const setDictionarySync = (enabled: boolean): void => {
+  const current = useSettingsStore.getState().settings;
+  useSettingsStore.setState({
+    settings: {
+      ...current,
+      syncCategories: { ...current?.syncCategories, dictionary: enabled },
+    } as never,
+  } as never);
+};
+
 beforeEach(() => {
   publishMock.mockReset();
   ensurePassphraseMock.mockReset();
@@ -215,6 +231,47 @@ describe('publishSettingsIfChanged', () => {
     const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
     expect(patch.dictionarySettings?.providerOrder).toBeUndefined();
     expect(patch.dictionarySettings?.providerEnabled).toEqual({ a: true, b: true });
+  });
+
+  test('does NOT publish dictionarySettings when the dictionary category is OFF (issue #5465)', async () => {
+    setDictionarySync(false);
+    await publishSettingsIfChanged(
+      makeSettings({
+        dictionarySettings: {
+          providerOrder: ['imp-new'],
+          providerEnabled: { 'imp-new': true, 'builtin:systemDictionary': false },
+          webSearches: [{ id: 'web:y', name: 'Y', urlTemplate: 'https://y/?q=%WORD%' }],
+          fontScale: 1.2,
+        },
+      } as Partial<SystemSettings>),
+    );
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+    expect(patch.dictionarySettings).toBeUndefined();
+    // Unrelated whitelisted settings ride the same row and still publish.
+    expect(patch.globalReadSettings?.customHighlightColors).toEqual(
+      baseHighlight.customHighlightColors,
+    );
+  });
+
+  test('markExplicitProviderOrderPublish does not override the OFF gate', async () => {
+    const { markExplicitProviderOrderPublish } = await import(
+      '@/services/sync/replicaSettingsSync'
+    );
+    setDictionarySync(false);
+    markExplicitProviderOrderPublish();
+    await publishSettingsIfChanged(
+      makeSettings({
+        dictionarySettings: {
+          providerOrder: ['imp-new', 'builtin:wiktionary'],
+          providerEnabled: { 'imp-new': true },
+          webSearches: [],
+        },
+      } as Partial<SystemSettings>),
+    );
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    const patch = publishMock.mock.calls[0]![1].patch as Partial<SystemSettings>;
+    expect(patch.dictionarySettings).toBeUndefined();
   });
 
   test('triggers the passphrase gate when an encrypted field gets meaningful content while locked', async () => {
@@ -772,6 +829,75 @@ describe('applyRemoteSettings', () => {
       { id: 'web:remote-y', name: 'Y', urlTemplate: 'https://y/?q=%WORD%' },
     ]);
     expect(dictMirror.defaultProviderId).toBe('local-x');
+  });
+
+  test('does NOT apply remote dictionarySettings when the dictionary category is OFF (issue #5465)', async () => {
+    const { useCustomDictionaryStore } = await import('@/store/customDictionaryStore');
+    const localDict = {
+      providerOrder: ['local-x'],
+      providerEnabled: { 'local-x': true },
+      defaultProviderId: 'local-x',
+      webSearches: [],
+    };
+    useSettingsStore.setState({
+      ...useSettingsStore.getState(),
+      settings: makeSettings({ dictionarySettings: localDict } as Partial<SystemSettings>),
+    });
+    setDictionarySync(false);
+    useCustomDictionaryStore.setState({
+      ...useCustomDictionaryStore.getState(),
+      settings: { ...localDict },
+    });
+
+    applyRemoteSettings(makeEnvConfig(), {
+      name: 'singleton',
+      patch: {
+        dictionarySettings: {
+          providerOrder: ['remote-y'],
+          providerEnabled: { 'remote-y': true },
+          webSearches: [{ id: 'web:remote-y', name: 'Y', urlTemplate: 'https://y/?q=%WORD%' }],
+        },
+        globalReadSettings: { userHighlightColors: [{ name: 'mint', color: '#a8e6cf' }] },
+      } as unknown as Partial<SystemSettings>,
+    });
+
+    const merged = useSettingsStore.getState().settings;
+    expect(merged.dictionarySettings.providerOrder).toEqual(['local-x']);
+    expect(merged.dictionarySettings.providerEnabled).toEqual({ 'local-x': true });
+    expect(merged.dictionarySettings.webSearches).toEqual([]);
+    // Non-dictionary fields on the same row still apply.
+    expect(merged.globalReadSettings.userHighlightColors).toEqual([
+      { name: 'mint', color: '#a8e6cf' },
+    ]);
+    // The dictionary panel / reader popup mirror stays on the local values.
+    expect(useCustomDictionaryStore.getState().settings.providerOrder).toEqual(['local-x']);
+  });
+
+  test('a dictionary-only remote patch is a no-op when the category is OFF', () => {
+    useSettingsStore.setState({
+      ...useSettingsStore.getState(),
+      settings: makeSettings({
+        dictionarySettings: {
+          providerOrder: ['local-x'],
+          providerEnabled: { 'local-x': true },
+          webSearches: [],
+        },
+      } as Partial<SystemSettings>),
+    });
+    setDictionarySync(false);
+    const before = useSettingsStore.getState().settings;
+    applyRemoteSettings(makeEnvConfig(), {
+      name: 'singleton',
+      patch: {
+        dictionarySettings: {
+          providerOrder: ['remote-y'],
+          providerEnabled: { 'remote-y': true },
+          webSearches: [],
+        },
+      } as unknown as Partial<SystemSettings>,
+    });
+    expect(useSettingsStore.getState().settings).toBe(before);
+    expect(useSettingsStore.getState().saveSettings).not.toHaveBeenCalled();
   });
 
   test('deep-merges dictionarySettings without clobbering local fields', () => {

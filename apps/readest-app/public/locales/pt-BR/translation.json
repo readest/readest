@@ -1374,7 +1374,7 @@
   "OPDS catalogs": "Catálogos OPDS",
   "Saved catalog URLs and (encrypted) credentials": "URLs de catálogos salvos e credenciais (criptografadas)",
   "App settings": "Configurações do aplicativo",
-  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, cores de destaque, integrações (KOSync, Readwise, Hardcover) e ordem dos dicionários",
+  "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Tema, cores de destaque e integrações (KOSync, Readwise, Hardcover)",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Escolha o que sincronizar entre seus dispositivos. Desativar uma categoria impede este dispositivo de enviar ou receber dados desse tipo. O que já está no servidor não é alterado; ao reativar, a sincronização retoma de onde parou.",
   "Required while Dictionaries sync is enabled": "Obrigatório enquanto a sincronização de Dicionários estiver ativada",
   "Manage Fonts": "Gerenciar fontes",

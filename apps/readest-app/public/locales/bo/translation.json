@@ -1328,7 +1328,7 @@
   "Data Sync": "གཞི་གྲངས་མཉམ་འགྲོ།",
   "Manage Fonts": "ཡིག་གཟུགས་སྟངས་འཛིན།",
   "App settings": "མཉེན་ཆས་སྒྲིག་འགོད།",
-  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "བརྗོད་གཞི། གསལ་རྟགས་ཁ་དོག ཟུང་འབྲེལ་ (KOSync, Readwise, Hardcover) དང་ཚིག་མཛོད་ཀྱི་གོ་རིམ།",
+  "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "བརྗོད་གཞི། གསལ་རྟགས་ཁ་དོག དང་ཟུང་འབྲེལ་ (KOSync, Readwise, Hardcover)",
   "Required while Dictionaries sync is enabled": "ཚིག་མཛོད་ཁག་མཉམ་འགྲོ་སྤྱོད་སྐབས་དགོས་མཁོ་ཡོད།",
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} ཆུ་ཚོད་ {{minutes}} སྐར་མ་ནང་སླར་གསོ་བྱེད།",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "ཨང་གྲངས་བཞི་ཅན་གྱི་ PIN ཞིག་འདེམས་རོགས། Readest ཕྱེ་རུས་ཐེངས་རེར་ཁྱེད་ཀྱིས་དེ་ནང་འཇུག་དགོས། བརྗེད་སོང་བའི་ PIN ཞིག་སླར་གསོ་བྱེད་ཐབས་མེད། ཉེར་སྤྱོད་ཀྱི་གཞི་གྲངས་གཙང་སེལ་བྱེད་པ་ནི་སླར་སྒྲིག་བྱེད་ཐབས་གཅིག་པོ་ཡིན།",

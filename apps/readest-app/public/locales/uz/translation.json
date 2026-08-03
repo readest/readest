@@ -1349,7 +1349,7 @@
   "OPDS catalogs": "OPDS kataloglari",
   "Saved catalog URLs and (encrypted) credentials": "Saqlangan katalog URL manzillari va (shifrlangan) hisob maʼlumotlari",
   "App settings": "Ilova sozlamalari",
-  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Mavzu, belgilash ranglari, integratsiyalar (KOSync, Readwise, Hardcover) va lugʻatlar tartibi",
+  "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Mavzu, belgilash ranglari va integratsiyalar (KOSync, Readwise, Hardcover)",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Qurilmalaringiz oʻrtasida nimani sinxronlashni tanlang. Toifani oʻchirib qoʻyish bu qurilmaning shu turdagi maʼlumotlarni yuborish yoki qabul qilishini toʻxtatadi. Serverdagi mavjud maʼlumotlar oʻzgarmaydi; qaytadan yoqilganda toʻxtagan joydan davom etadi.",
   "Required while Dictionaries sync is enabled": "Lugʻatlar sinxronlashi yoqilgan ekan, talab qilinadi",
   "Manage Fonts": "Shriftlarni boshqarish",

@@ -53,10 +53,10 @@ const useCategoryCopy = (): Record<SyncCategory, CategoryCopy> => {
       description: _('Saved catalog URLs and (encrypted) credentials'),
     },
     settings: {
+      // Dictionary preferences ride this row too, but they're gated by the
+      // Dictionaries toggle above, so they're deliberately not listed here.
       title: _('App settings'),
-      description: _(
-        'Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order',
-      ),
+      description: _('Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)'),
     },
     credentials: {
       title: _('Credentials'),

@@ -34,9 +34,13 @@ export type { SyncCategory };
  * "If <key> is enabled, every value in the array must also be enabled."
  *
  * - `dictionary` requires `settings`: dictionary's `providerOrder`,
- *   `providerEnabled`, and `webSearches` live inside the bundled
- *   settings replica. Turning settings off while dictionary is on
- *   would silently break dictionary cross-device sync.
+ *   `providerEnabled`, `webSearches`, and `fontScale` live inside the
+ *   bundled settings replica. Turning settings off while dictionary is
+ *   on would silently break dictionary cross-device sync. The reverse
+ *   is NOT a dependency: those fields ride the settings row but are
+ *   gated by the `dictionary` category, so turning Dictionaries off
+ *   keeps them local while the rest of the bundle keeps syncing
+ *   (#5465, see `SETTINGS_DICTIONARY_FIELDS`).
  *
  * Add new edges here as we ship features that span replica kinds.
  */

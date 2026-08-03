@@ -1453,7 +1453,7 @@
   "Data Sync": "مزامنة البيانات",
   "Manage Fonts": "إدارة الخطوط",
   "App settings": "إعدادات التطبيق",
-  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "السمة وألوان التظليل والتكاملات (KOSync وReadwise وHardcover) وترتيب القواميس",
+  "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "السمة وألوان التظليل والتكاملات (KOSync وReadwise وHardcover)",
   "Required while Dictionaries sync is enabled": "مطلوب أثناء تفعيل مزامنة القواميس",
   "Resets in {{hours}} hr {{minutes}} min": "يُعاد الضبط خلال {{hours}} س {{minutes}} د",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "اختر رمز PIN مكوّنًا من 4 أرقام. ستحتاج إلى إدخاله في كل مرة تفتح فيها Readest. لا توجد طريقة لاستعادة رمز PIN المنسي. مسح بيانات التطبيق هو الطريقة الوحيدة لإعادة ضبطه.",

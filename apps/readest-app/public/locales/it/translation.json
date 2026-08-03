@@ -1378,7 +1378,7 @@
   "Data Sync": "Sincronizzazione dati",
   "Manage Fonts": "Gestisci caratteri",
   "App settings": "Impostazioni app",
-  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, colori delle evidenziazioni, integrazioni (KOSync, Readwise, Hardcover) e ordine dei dizionari",
+  "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Tema, colori delle evidenziazioni e integrazioni (KOSync, Readwise, Hardcover)",
   "Required while Dictionaries sync is enabled": "Necessario mentre la sincronizzazione dei Dizionari è attiva",
   "Resets in {{hours}} hr {{minutes}} min": "Si reimposta tra {{hours}} h {{minutes}} min",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Scegli un PIN di 4 cifre. Dovrai inserirlo ogni volta che apri Readest. Non c'è modo di recuperare un PIN dimenticato. Cancellare i dati dell'app è l'unico modo per reimpostarlo.",

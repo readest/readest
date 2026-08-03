@@ -36,6 +36,7 @@ import type { EnvConfigType } from '@/services/environment';
 import { useSettingsStore } from '@/store/settingsStore';
 import { publishReplicaUpsert } from '@/services/sync/replicaPublish';
 import {
+  SETTINGS_DICTIONARY_FIELDS,
   SETTINGS_ENCRYPTED_FIELDS,
   SETTINGS_KIND,
   SETTINGS_REPLICA_ID,
@@ -46,10 +47,11 @@ import {
 } from '@/services/sync/adapters/settings';
 import { cryptoSession } from '@/libs/crypto/session';
 import { ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
-import { isCredentialsSyncEnabled } from '@/services/sync/syncCategories';
+import { isCredentialsSyncEnabled, isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 
 const ENCRYPTED_PATHS: ReadonlySet<string> = new Set(SETTINGS_ENCRYPTED_FIELDS);
+const DICTIONARY_PATHS: ReadonlySet<string> = new Set(SETTINGS_DICTIONARY_FIELDS);
 
 /**
  * Plaintext connection metadata that belongs to a credential-bearing group
@@ -249,10 +251,16 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
   // belt-and-braces filter in `publishReplicaUpsert` would still drop
   // the field at the wire, but doing it here also avoids the prompt.
   const credentialsSync = isCredentialsSyncEnabled();
+  // Dictionaries toggle (default ON). Dictionary preferences ride this
+  // row for transport but belong to the 'dictionary' category, so a user
+  // who turned Dictionaries off keeps provider order / enable flags /
+  // web searches local while the rest of the bundle keeps syncing (#5465).
+  const dictionarySync = isSyncCategoryEnabled('dictionary');
 
   for (const path of SETTINGS_WHITELIST) {
     const current = readPath(settings, path);
     if (current === undefined) continue;
+    if (!dictionarySync && DICTIONARY_PATHS.has(path)) continue;
 
     if (ENCRYPTED_PATHS.has(path)) {
       if (!credentialsSync) continue;
@@ -381,12 +389,20 @@ export const applyRemoteSettings = (
     setStoredLastSeenCipher(record.lastSeenCipher);
   }
 
-  if (!settings || Object.keys(record.patch).length === 0) return;
+  // Dictionaries toggle (default ON): strip the dictionary-category
+  // paths from an incoming patch when the user turned Dictionaries off.
+  // The local plaintext copy survives untouched, and the paths are also
+  // left out of the snapshot loop below so nothing echoes back (#5465).
+  const patch = isSyncCategoryEnabled('dictionary')
+    ? record.patch
+    : stripDictionaryPaths(record.patch);
+
+  if (!settings || Object.keys(patch).length === 0) return;
 
   // Mark the incoming values as "already published" so the
   // post-save publish hook sees no diff and stays quiet.
   for (const path of SETTINGS_WHITELIST) {
-    const v = readPath(record.patch, path);
+    const v = readPath(patch, path);
     if (v === undefined) continue;
     if (ENCRYPTED_PATHS.has(path) || CONNECTION_PATHS.has(path)) {
       // Both are push-hash tracked; the stored hash mirrors the just-applied
@@ -397,7 +413,7 @@ export const applyRemoteSettings = (
     }
   }
 
-  const merged: SystemSettings = mergeSettings(settings, record.patch);
+  const merged: SystemSettings = mergeSettings(settings, patch);
   setSettings(merged);
   saveSettings(envConfig, merged);
 
@@ -405,11 +421,28 @@ export const applyRemoteSettings = (
   // dictionary panel + reader popup re-render with the remote values
   // immediately. Without this, those views read from the store's own
   // cache (only refreshed on `loadCustomDictionaries` mount).
-  if (record.patch.dictionarySettings) {
-    useCustomDictionaryStore
-      .getState()
-      .applyRemoteDictionarySettings(record.patch.dictionarySettings);
+  if (patch.dictionarySettings) {
+    useCustomDictionaryStore.getState().applyRemoteDictionarySettings(patch.dictionarySettings);
   }
+};
+
+/**
+ * Rebuild a remote patch without the dictionary-category paths. The
+ * patch only ever carries whitelisted paths (the adapter builds it from
+ * SETTINGS_WHITELIST), so walking the whitelist reproduces it exactly
+ * minus the skipped entries — and drops now-empty parent groups so the
+ * `Object.keys(patch).length === 0` early return still fires for a
+ * dictionary-only row.
+ */
+const stripDictionaryPaths = (patch: Partial<SystemSettings>): Partial<SystemSettings> => {
+  const out: Record<string, unknown> = {};
+  for (const path of SETTINGS_WHITELIST) {
+    if (DICTIONARY_PATHS.has(path)) continue;
+    const v = readPath(patch, path);
+    if (v === undefined) continue;
+    writePath(out, path, v);
+  }
+  return out as Partial<SystemSettings>;
 };
 
 const mergeSettings = (current: SystemSettings, patch: Partial<SystemSettings>): SystemSettings => {

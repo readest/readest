@@ -1353,7 +1353,7 @@
   "Data Sync": "همگام‌سازی داده‌ها",
   "Manage Fonts": "مدیریت قلم‌ها",
   "App settings": "تنظیمات برنامه",
-  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "پوسته، رنگ‌های هایلایت، یکپارچه‌سازی‌ها (KOSync، Readwise، Hardcover) و ترتیب فرهنگ‌لغت‌ها",
+  "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "پوسته، رنگ‌های هایلایت و یکپارچه‌سازی‌ها (KOSync، Readwise، Hardcover)",
   "Required while Dictionaries sync is enabled": "هنگام فعال‌بودن همگام‌سازی فرهنگ‌لغت‌ها لازم است",
   "Resets in {{hours}} hr {{minutes}} min": "تنظیم مجدد در {{hours}} ساعت {{minutes}} دقیقه",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "یک پین ۴ رقمی انتخاب کنید. هر بار که Readest را باز می‌کنید باید آن را وارد کنید. راهی برای بازیابی پین فراموش‌شده وجود ندارد. پاک کردن داده‌های برنامه تنها راه بازنشانی آن است.",

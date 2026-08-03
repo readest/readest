@@ -1353,7 +1353,7 @@
   "Data Sync": "Datasynkronisering",
   "Manage Fonts": "Hantera teckensnitt",
   "App settings": "Appinställningar",
-  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, markeringsfärger, integrationer (KOSync, Readwise, Hardcover) och ordbokens ordning",
+  "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Tema, markeringsfärger och integrationer (KOSync, Readwise, Hardcover)",
   "Required while Dictionaries sync is enabled": "Krävs så länge synkronisering av Ordböcker är aktiverad",
   "Resets in {{hours}} hr {{minutes}} min": "Återställs om {{hours}} tim {{minutes}} min",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "Välj en 4-siffrig PIN-kod. Du kommer att behöva ange den varje gång du öppnar Readest. Det finns inget sätt att återställa en glömd PIN-kod. Att rensa appdata är det enda sättet att återställa den.",

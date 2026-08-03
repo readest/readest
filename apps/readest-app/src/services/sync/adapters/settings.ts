@@ -28,7 +28,9 @@ export const SETTINGS_REPLICA_ID = 'singleton';
  *     (`customFonts`, `customTextures`, `customDictionaries`,
  *     `opdsCatalogs`). Note: `dictionarySettings` sub-fields
  *     (providerOrder / providerEnabled / webSearches) ARE bundled
- *     here — see entries below.
+ *     here — see entries below. They ride this row for transport but
+ *     are gated by the 'dictionary' sync category, not 'settings'
+ *     (see `SETTINGS_DICTIONARY_FIELDS`).
  */
 export const SETTINGS_WHITELIST = [
   'globalViewSettings.userStylesheet',
@@ -79,6 +81,36 @@ export const SETTINGS_WHITELIST = [
   's3.bucket',
   's3.accessKeyId',
   's3.secretAccessKey',
+] as const;
+
+/**
+ * Whitelisted paths that belong to the user-facing "Dictionaries" sync
+ * category rather than "App settings". They ride the bundled settings
+ * row because that's where the values live in SystemSettings, but the
+ * user reads the Manage Sync panel by category, not by transport: with
+ * Dictionaries off, provider order / enable flags / web searches must
+ * neither leave nor enter the device (#5465).
+ *
+ * `publishSettingsIfChanged` drops these from the push and
+ * `applyRemoteSettings` strips them from an incoming patch whenever
+ * `isSyncCategoryEnabled('dictionary')` is false.
+ *
+ * The dependency edge in `syncCategories.ts` (dictionary requires
+ * settings) still holds in the other direction: these can only travel
+ * while the settings row itself syncs.
+ *
+ * Re-enable semantics differ slightly from a whole-kind category: the
+ * settings row keeps pulling while Dictionaries is off, so its cursor
+ * advances past the discarded values and re-enabling doesn't backfill
+ * them. The local side does resume immediately — the push snapshot was
+ * never updated for these paths, so the next save publishes the local
+ * values — and any later remote edit lands normally under per-field LWW.
+ */
+export const SETTINGS_DICTIONARY_FIELDS = [
+  'dictionarySettings.providerOrder',
+  'dictionarySettings.providerEnabled',
+  'dictionarySettings.webSearches',
+  'dictionarySettings.fontScale',
 ] as const;
 
 /**

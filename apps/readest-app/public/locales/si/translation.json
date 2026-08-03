@@ -1353,7 +1353,7 @@
   "Data Sync": "දත්ත සමමුහූර්තය",
   "Manage Fonts": "අකුරු කළමනාකරණය",
   "App settings": "යෙදුමේ සැකසුම්",
-  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "තේමාව, උද්දීපන වර්ණ, ඒකාබද්ධතා (KOSync, Readwise, Hardcover) සහ ශබ්දකෝෂ අනුපිළිවෙල",
+  "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "තේමාව, උද්දීපන වර්ණ සහ ඒකාබද්ධතා (KOSync, Readwise, Hardcover)",
   "Required while Dictionaries sync is enabled": "ශබ්දකෝෂ සමමුහූර්තය සක්‍රිය වී ඇති විට අවශ්‍යයි",
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} පැ {{minutes}} මි කින් යළි පිහිටුවයි",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "අංක 4ක PIN එකක් තෝරන්න. ඔබ Readest විවෘත කරන සෑම විටම ඔබට එය ඇතුළත් කිරීමට අවශ්‍ය වේ. අමතක වූ PIN එකක් ලබා ගැනීමට ක්‍රමයක් නැත. එය යළි පිහිටුවීමට ඇති එකම ක්‍රමය යෙදුම් දත්ත මකා දැමීමයි.",

@@ -1353,7 +1353,7 @@
   "Data Sync": "Veri eşitleme",
   "Manage Fonts": "Yazı tiplerini yönet",
   "App settings": "Uygulama ayarları",
-  "Theme, highlight colours, integrations (KOSync, Readwise, Hardcover), and dictionary order": "Tema, vurgu renkleri, entegrasyonlar (KOSync, Readwise, Hardcover) ve sözlük sırası",
+  "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Tema, vurgu renkleri ve entegrasyonlar (KOSync, Readwise, Hardcover)",
   "Required while Dictionaries sync is enabled": "Sözlük eşitlemesi etkinken gereklidir",
   "Resets in {{hours}} hr {{minutes}} min": "{{hours}} sa {{minutes}} dk içinde sıfırlanır",
   "Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.": "4 haneli bir PIN seçin. Readest'i her açtığınızda bunu girmeniz gerekecek. Unutulan bir PIN'i kurtarmanın yolu yoktur. Uygulama verilerini temizlemek, sıfırlamanın tek yoludur.",
