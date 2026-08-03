@@ -348,6 +348,11 @@ fn locate_toc_sources(opf_bytes: &[u8]) -> Result<LocatedTocSources, String> {
     let normalized = strip_xml_bom(opf_bytes);
     let mut reader = Reader::from_reader(normalized.as_ref());
     reader.config_mut().trim_text(true);
+    // `<item ... />` and `<item ...></item>` are equivalent XML, but quick-xml
+    // reports the first as Empty and the second as Start + End. Expanding
+    // empty elements collapses both onto the Start/End path so publishers who
+    // serialise with explicit closing tags aren't silently skipped (#5455).
+    reader.config_mut().expand_empty_elements = true;
     let mut buf = Vec::new();
 
     #[derive(Default, Clone)]
@@ -411,20 +416,13 @@ fn locate_toc_sources(opf_bytes: &[u8]) -> Result<LocatedTocSources, String> {
                         .map(|a| (a.key.as_ref().to_vec(), a.value.into_owned()))
                         .collect();
                     process_spine(&attrs, &mut spine_toc_id);
-                }
-            }
-            Ok(Event::Empty(e)) => {
-                let name = local_name(e.name().as_ref()).to_vec();
-                let attrs: Vec<(Vec<u8>, Vec<u8>)> = e
-                    .attributes()
-                    .flatten()
-                    .map(|a| (a.key.as_ref().to_vec(), a.value.into_owned()))
-                    .collect();
-                if in_manifest && name == b"item" {
+                } else if in_manifest && name == b"item" {
+                    let attrs: Vec<(Vec<u8>, Vec<u8>)> = e
+                        .attributes()
+                        .flatten()
+                        .map(|a| (a.key.as_ref().to_vec(), a.value.into_owned()))
+                        .collect();
                     process_item(&attrs, &mut manifest, &mut nav_href);
-                } else if name == b"spine" {
-                    // Self-closing <spine/> — unlikely but handle gracefully.
-                    process_spine(&attrs, &mut spine_toc_id);
                 }
             }
             Ok(Event::End(e)) => {
@@ -583,6 +581,9 @@ fn parse_opf_cover_inputs(bytes: &[u8]) -> Result<OpfCoverInputs, String> {
     let normalized = strip_xml_bom(bytes);
     let mut reader = Reader::from_reader(normalized.as_ref());
     reader.config_mut().trim_text(true);
+    // See `locate_toc_sources`: expand `<item/>` / `<meta/>` into Start + End
+    // so publishers that emit explicit closing tags parse identically (#5455).
+    reader.config_mut().expand_empty_elements = true;
     let mut out = OpfCoverInputs::default();
     let mut buf = Vec::new();
 
@@ -636,19 +637,17 @@ fn parse_opf_cover_inputs(bytes: &[u8]) -> Result<OpfCoverInputs, String> {
                     in_metadata = true;
                 } else if name == b"manifest" {
                     in_manifest = true;
-                }
-            }
-            Ok(Event::Empty(e)) => {
-                let name = local_name(e.name().as_ref()).to_vec();
-                let attrs: Vec<(Vec<u8>, Vec<u8>)> = e
-                    .attributes()
-                    .flatten()
-                    .map(|a| (a.key.as_ref().to_vec(), a.value.into_owned()))
-                    .collect();
-                if in_manifest && name == b"item" {
-                    process_manifest_item(&attrs, &mut out.manifest);
-                } else if in_metadata && name == b"meta" {
-                    process_meta_cover(&attrs, &mut out.cover_id);
+                } else if (in_manifest && name == b"item") || (in_metadata && name == b"meta") {
+                    let attrs: Vec<(Vec<u8>, Vec<u8>)> = e
+                        .attributes()
+                        .flatten()
+                        .map(|a| (a.key.as_ref().to_vec(), a.value.into_owned()))
+                        .collect();
+                    if name == b"item" {
+                        process_manifest_item(&attrs, &mut out.manifest);
+                    } else {
+                        process_meta_cover(&attrs, &mut out.cover_id);
+                    }
                 }
             }
             Ok(Event::End(e)) => {
@@ -931,6 +930,72 @@ mod tests {
         let inputs = parse_opf_cover_inputs(xml).expect("opf parses");
         assert!(inputs.cover_id.is_none());
         assert_eq!(inputs.manifest.len(), 1);
+    }
+
+    #[test]
+    fn parse_opf_cover_inputs_handles_expanded_item_and_meta_tags() {
+        // Issue #5455: some OPDS servers serialise the OPF with explicit
+        // closing tags (`<item ...></item>`, `<meta ...></meta>`) instead of
+        // self-closing ones. quick-xml reports those as Start + End rather
+        // than Empty, and the cover-input scan must treat both forms alike.
+        let xml = br#"<?xml version="1.0"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>Expanded Tags</dc:title>
+    <meta content="cover-image" name="cover"></meta>
+  </metadata>
+  <manifest>
+    <item id="cover-image" href="images/cover.jpg" media-type="image/jpeg" properties="cover-image">
+    </item>
+    <item id="ch1" href="text/ch1.xhtml" media-type="application/xhtml+xml"></item>
+  </manifest>
+</package>"#;
+        let inputs = parse_opf_cover_inputs(xml).expect("opf parses");
+        assert_eq!(inputs.cover_id.as_deref(), Some("cover-image"));
+        assert_eq!(inputs.manifest.len(), 2);
+        let cover = inputs.manifest.get("cover-image").expect("cover entry");
+        assert_eq!(cover.href, "images/cover.jpg");
+        assert_eq!(cover.media_type, "image/jpeg");
+        assert_eq!(cover.properties, "cover-image");
+        let p = resolve_cover_path(&inputs.manifest, &inputs.cover_id, "OEBPS/content.opf")
+            .expect("cover resolves");
+        assert_eq!(p, "OEBPS/images/cover.jpg");
+    }
+
+    #[test]
+    fn locate_toc_sources_handles_expanded_item_tags() {
+        // Same serialisation quirk as #5455 on the open hot path: nav / ncx
+        // discovery walks the manifest too, so expanded `<item></item>`
+        // entries must still yield the nav document and the NCX.
+        let xml = br#"<?xml version="1.0"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
+  <manifest>
+    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"></item>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"></item>
+    <item id="ch1" href="text/ch1.xhtml" media-type="application/xhtml+xml"></item>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="ch1"></itemref>
+  </spine>
+</package>"#;
+        let located = locate_toc_sources(xml).expect("opf parses");
+        assert_eq!(located.nav_href.as_deref(), Some("nav.xhtml"));
+        assert_eq!(located.ncx_href.as_deref(), Some("toc.ncx"));
+    }
+
+    #[test]
+    fn locate_toc_sources_handles_self_closing_manifest() {
+        // Degenerate but valid: an empty self-closing `<manifest/>` must not
+        // leave the scan believing it is still inside a manifest (which would
+        // let later stray `<item>` elements leak in).
+        let xml = br#"<?xml version="1.0"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0">
+  <manifest/>
+  <spine/>
+</package>"#;
+        let located = locate_toc_sources(xml).expect("opf parses");
+        assert!(located.nav_href.is_none());
+        assert!(located.ncx_href.is_none());
     }
 
     #[test]
