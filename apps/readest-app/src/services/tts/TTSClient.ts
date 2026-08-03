@@ -61,4 +61,8 @@ export interface TTSClient {
   // when capabilities.mediaClock is true; the section timeline treats absence
   // as sentence-granularity positions.
   getChunkPosition?(): number | null;
+  // How far through the chunk now sounding, 0..1. Reported as a single value
+  // rather than position/duration so it cannot skew between two calls, and so a
+  // playback rate change cannot be applied to one but not the other.
+  getChunkProgress?(): number | null;
 }

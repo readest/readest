@@ -1472,6 +1472,13 @@ export class TTSController extends EventTarget {
   // Returns where the mark landed on the section timeline (section index +
   // sentence ordinal) when a timeline exists, so the buffered client can
   // record the sentence's cache key against the section manifest.
+  // How far through the sentence now sounding, 0..1, or null when the engine
+  // has no clock to say. The view uses it to follow the reading position across
+  // a page break inside a single sentence.
+  getSentenceProgress(): number | null {
+    return this.ttsClient.getChunkProgress?.() ?? null;
+  }
+
   dispatchSpeakMark(mark?: TTSMark): { sectionIndex: number; sentenceIndex: number } | null {
     let located: { sectionIndex: number; sentenceIndex: number } | null = null;
     this.#resetSpeakWords();

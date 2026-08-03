@@ -131,6 +131,20 @@ Consequences of that shape:
   (`NativeTTSClient`, `WebSpeechClient`, `BufferedTTSClient`) ignore them and
   behave exactly as before.
 
+- **Page-following inside one sentence.** A sentence laid out across a page
+  break gets one mark, on the page it starts on, and a phrase-timed recording
+  reports no words in between — so the view used to sit still while the voice
+  read the tail on the next page. `getChunkProgress()` says how far through the
+  phrase the audio is; where the page stops showing the sentence is *measured*,
+  not assumed, since the same sentence breaks at a different word on another
+  screen or font size. `pageBreakFraction` (`utils/ttsPageFollow.ts`) bisects the
+  live layout — probing characters through `getTextSubRange`, because each probe
+  forces a reflow — and returns the break as a fraction of the sentence's text.
+  The page turns once audio progress passes it, re-measuring after each turn so a
+  sentence spanning three pages advances one page at a time. No word position is
+  invented, so the highlight still follows the recording exactly. Paginated
+  layout only; scrolled layout keeps its at-mark behaviour.
+
 Selection is the existing Voice picker: `TTSController.getVoices` prepends a
 narration group for books that have overlays, and `setVoice` routes
 `MEDIA_OVERLAY_VOICE_ID` to the narration client, rebuilding the section's mark
@@ -157,6 +171,9 @@ reader's own highlight style.
   highlight style and colour win.
 - **Chapter pre-download (Offline Audio) is Edge-only** and hidden during
   narration: the audio already ships inside the book.
+- **Sub-sentence page-following needs a clock.** It is driven by
+  `getChunkProgress()`, so engines without one (Web Speech) keep the old
+  behaviour: a sentence straddling a page break waits for the next mark.
 - **iOS Tauri is unverified.** The client uses a plain `HTMLMediaElement`, which
   is better placed there than WebAudio (see the header comment in
   `TTSAudioPlayer.ts` on audio-session ownership), but Now Playing may not

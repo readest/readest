@@ -415,6 +415,15 @@ export class MediaOverlayClient implements TTSClient {
     return Math.min(Math.max(position, 0), clipEnd - clipBegin);
   }
 
+  getChunkProgress(): number | null {
+    if (!this.#audio || !this.#currentPar) return null;
+    const { clipBegin, clipEnd } = this.#currentPar;
+    const duration = clipEnd - clipBegin;
+    if (duration <= 0) return null;
+    const elapsed = this.#audio.currentTime - clipBegin;
+    return Math.min(Math.max(elapsed / duration, 0), 1);
+  }
+
   getVoiceId(): string {
     return MEDIA_OVERLAY_VOICE_ID;
   }

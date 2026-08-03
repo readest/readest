@@ -29,6 +29,7 @@ const mockView = {
     start: 0,
     end: 0,
     sideProp: 'height',
+    next: vi.fn(),
     goTo: vi.fn(),
   },
   resolveCFI: vi.fn().mockReturnValue({ index: 0, anchor: () => new Range() }),
@@ -158,6 +159,7 @@ vi.mock('@/services/tts', () => ({
       detachView: vi.fn(),
       attachView: vi.fn().mockResolvedValue(undefined),
       getSpeakingLang: vi.fn().mockReturnValue('en'),
+      getSentenceProgress: vi.fn().mockReturnValue(null),
       terminated: false,
       isViewAttached: true,
       narrationActive: narrationState.active,
@@ -169,6 +171,18 @@ vi.mock('@/services/tts', () => ({
     ttsControllerInstances.push(this);
   }),
   ensureSharedAudioContext: vi.fn().mockResolvedValue(undefined),
+}));
+
+// jsdom reports every rect as zero, so the layout probe cannot answer here.
+// What this suite covers is the follow loop; where the page break falls is
+// covered by src/__tests__/utils/ttsPageFollow.test.ts.
+vi.mock('@/utils/ttsPageFollow', () => ({
+  pageBreakFraction: vi.fn(() => null),
+}));
+
+vi.mock('@/services/tts/wordHighlight', () => ({
+  rangeTextExcludingInert: vi.fn(() => 'a sentence long enough to straddle a page break'),
+  getTextSubRange: vi.fn(() => null),
 }));
 
 vi.mock('@/libs/mediaSession', () => ({
@@ -246,6 +260,7 @@ vi.mock('@/utils/ttsTime', () => ({
 import { useTTSControl } from '@/app/reader/hooks/useTTSControl';
 import { ttsMediaBridge } from '@/services/tts/ttsMediaBridge';
 import { eventDispatcher } from '@/utils/event';
+import { pageBreakFraction } from '@/utils/ttsPageFollow';
 import { useReaderStore } from '@/store/readerStore';
 
 const getSetTTSEnabledMock = () =>
@@ -510,6 +525,7 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
     mockView.renderer.scrolled = false;
     mockProgress.range = null;
     mockViewSettings.ttsLocation = null;
+    vi.mocked(pageBreakFraction).mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -567,6 +583,110 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
 
     expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledTimes(1);
     expect(mockView.goTo).not.toHaveBeenCalled();
+  });
+
+  // A sentence laid out across a page break: its mark fires once, on the page it
+  // starts on, and a phrase-timed recording reports no words in between. Without
+  // following the audio clock the reader is left on the first page while the
+  // voice reads the tail rendered on the next one.
+  it('turns the page when the voice reads past the visible part of a sentence', async () => {
+    vi.useFakeTimers();
+    try {
+      const handler = await setupAndCaptureHighlightHandler();
+      const controller = ttsControllerInstances[0] as unknown as {
+        getSentenceProgress: ReturnType<typeof vi.fn>;
+        state: string;
+      };
+      controller.state = 'playing';
+
+      // Three quarters of the sentence is readable on this page; the tail is
+      // laid out past its edge.
+      vi.mocked(pageBreakFraction).mockReturnValue(0.75);
+      mockView.renderer.end = 528;
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => new Range() });
+      controller.getSentenceProgress.mockReturnValue(0);
+
+      await act(async () => {
+        handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+      });
+
+      // Still reading the visible part.
+      controller.getSentenceProgress.mockReturnValue(0.5);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(400);
+      });
+      expect(mockView.renderer.next).not.toHaveBeenCalled();
+
+      // Past it: the page must follow.
+      controller.getSentenceProgress.mockReturnValue(0.8);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(400);
+      });
+      expect(mockView.renderer.next).toHaveBeenCalled();
+    } finally {
+      mockView.renderer.end = 0;
+      mockView.renderer.next = vi.fn();
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not follow a sentence that fits on the page', async () => {
+    vi.useFakeTimers();
+    try {
+      const handler = await setupAndCaptureHighlightHandler();
+      const controller = ttsControllerInstances[0] as unknown as {
+        getSentenceProgress: ReturnType<typeof vi.fn>;
+        state: string;
+      };
+      controller.state = 'playing';
+      controller.getSentenceProgress.mockReturnValue(0.99);
+      // The whole sentence fits: no break to follow.
+      vi.mocked(pageBreakFraction).mockReturnValue(null);
+      mockView.renderer.end = 528;
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => new Range() });
+
+      await act(async () => {
+        handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+
+      expect(mockView.renderer.next).not.toHaveBeenCalled();
+    } finally {
+      mockView.renderer.end = 0;
+      mockView.renderer.next = vi.fn();
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not follow when the engine reports no clock', async () => {
+    vi.useFakeTimers();
+    try {
+      const handler = await setupAndCaptureHighlightHandler();
+      const controller = ttsControllerInstances[0] as unknown as {
+        getSentenceProgress: ReturnType<typeof vi.fn>;
+        state: string;
+      };
+      controller.state = 'playing';
+      controller.getSentenceProgress.mockReturnValue(null);
+      vi.mocked(pageBreakFraction).mockReturnValue(0.1);
+      mockView.renderer.end = 528;
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => new Range() });
+
+      await act(async () => {
+        handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+
+      expect(mockView.renderer.next).not.toHaveBeenCalled();
+    } finally {
+      mockView.renderer.end = 0;
+      mockView.renderer.next = vi.fn();
+      vi.useRealTimers();
+    }
   });
 
   it('does not throw when the renderer has no loaded contents (READEST-19)', async () => {

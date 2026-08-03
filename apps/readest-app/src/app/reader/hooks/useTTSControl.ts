@@ -23,6 +23,8 @@ import { throttle } from '@/utils/throttle';
 import { isCfiInLocation } from '@/utils/cfi';
 import { getLocale } from '@/utils/misc';
 import { estimateTTSTime } from '@/utils/ttsTime';
+import { pageBreakFraction } from '@/utils/ttsPageFollow';
+import { getTextSubRange, rangeTextExcludingInert } from '@/services/tts/wordHighlight';
 import { releaseUnblockAudio, ttsMediaBridge, unblockAudio } from '@/services/tts/ttsMediaBridge';
 import {
   getBookHashFromKey,
@@ -34,6 +36,11 @@ interface UseTTSControlProps {
   bookKey: string;
   onRequestHidePanel?: () => void;
 }
+
+// How often to re-check whether the voice has read past the visible page while
+// one sentence is sounding. Fine enough that the turn is not noticeably late,
+// coarse enough to cost nothing next to the audio clock it reads.
+const PAGE_FOLLOW_INTERVAL_MS = 200;
 
 export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProps) => {
   const _ = useTranslation();
@@ -59,6 +66,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
   const followingTTSLocationRef = useRef(true);
   const sectionChangingTimestampRef = useRef(0);
+  const pageFollowTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const previousSectionLabelRef = useRef<string | undefined>(undefined);
   const ttsControllerRef = useRef<TTSController | null>(null);
   const isStartingTTSRef = useRef(false);
@@ -324,6 +332,81 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       });
     };
 
+    const stopPageFollow = () => {
+      if (pageFollowTimerRef.current === null) return;
+      clearInterval(pageFollowTimerRef.current);
+      pageFollowTimerRef.current = null;
+    };
+
+    // A sentence can be laid out across a page break, and its mark fires only
+    // once, at the start. Word-reporting engines follow each word onto the next
+    // page; a recorded narration is timed per phrase, so between two marks there
+    // was nothing to follow and the reader sat on the first page while the voice
+    // read the rest.
+    //
+    // Where the page stops showing the sentence is measured from the live layout
+    // for this screen, font size and column width, then expressed as a fraction
+    // of the sentence's text and compared against how far through its audio we
+    // are. Nothing invents a word position, so the highlight still follows the
+    // recording exactly.
+    const followSentenceAcrossPages = (sentenceRange: Range) => {
+      stopPageFollow();
+      const ttsController = ttsControllerRef.current;
+      if (!ttsController || ttsController.getSentenceProgress() === null) return;
+
+      const view = getView(bookKey);
+      if (!view || view.renderer.scrolled) return;
+
+      const axis = view.renderer.sideProp === 'height' ? 'y' : 'x';
+      const text = rangeTextExcludingInert(sentenceRange);
+
+      // Is the character at `offset` laid out past the trailing edge of the
+      // page now showing? An offset that cannot be mapped or measured counts as
+      // still on the page, so an unreadable probe can never turn the page early.
+      const isBeyondPage = (offset: number) => {
+        const charRange = getTextSubRange(sentenceRange, offset, offset + 1);
+        const rect = charRange?.getBoundingClientRect();
+        if (!rect || (rect.width === 0 && rect.height === 0)) return false;
+        return rect[axis] >= view.renderer.end;
+      };
+
+      const breakAt = () => pageBreakFraction(text.length, isBeyondPage);
+      // Nothing of this sentence is off the page: no follow needed.
+      if (breakAt() === null) return;
+
+      pageFollowTimerRef.current = setInterval(() => {
+        const controller = ttsControllerRef.current;
+        const currentView = getView(bookKey);
+        if (!controller || !currentView || controller.state !== 'playing') {
+          stopPageFollow();
+          return;
+        }
+        // The user paging away or selecting text owns the view, exactly as in
+        // the mark and word handlers.
+        if (!followingTTSLocationRef.current) {
+          stopPageFollow();
+          return;
+        }
+        const contents = currentView.renderer.getContents();
+        if (contents.some(({ doc }) => (doc.getSelection()?.toString().length ?? 0) > 0)) return;
+
+        const progress = controller.getSentenceProgress();
+        if (progress === null) {
+          stopPageFollow();
+          return;
+        }
+        // Re-measured rather than cached: a page turn moves the break, and so
+        // does anything that reflows the section mid-sentence.
+        const breakFraction = breakAt();
+        if (breakFraction === null) {
+          // The rest of the sentence is on this page now.
+          stopPageFollow();
+          return;
+        }
+        if (progress >= breakFraction) currentView.renderer.next();
+      }, PAGE_FOLLOW_INTERVAL_MS);
+    };
+
     const handleHighlightMark = (e: Event) => {
       const { cfi, preview } = (e as CustomEvent<{ cfi: string; preview?: boolean }>).detail;
       const view = getView(bookKey);
@@ -331,6 +414,8 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       const viewSettings = getViewSettings(bookKey);
       const { location } = progress || {};
       if (!cfi || !view || !location || !viewSettings) return;
+      // This mark supersedes any follow still running for the previous sentence.
+      stopPageFollow();
 
       // A scrubber-drag preview navigates the view but must not move the
       // session's saved location — only a committed seek (which fires a
@@ -387,6 +472,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       if (!range) return;
       if (!view.renderer.scrolled) {
         view.renderer.scrollToAnchor?.(range);
+        followSentenceAcrossPages(range);
       } else {
         const rect = range.getBoundingClientRect();
         const { start, end, sideProp } = view.renderer;
@@ -483,6 +569,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     ttsController.addEventListener('tts-position', handlePosition);
     ttsController.addEventListener('tts-state-change', handleStateChange);
     return () => {
+      stopPageFollow();
       ttsController.removeEventListener('tts-need-auth', handleNeedAuth);
       ttsController.removeEventListener('tts-highlight-mark', handleHighlightMark);
       ttsController.removeEventListener('tts-highlight-word', handleHighlightWord);
