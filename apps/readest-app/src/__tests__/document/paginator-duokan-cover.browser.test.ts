@@ -9,13 +9,17 @@ import type { Renderer } from '@/types/view';
 // the fixed-height page in paginated mode but collapses to zero against the
 // auto-height scroll container in scrolled mode (the cover disappears).
 const EPUB_URL = new URL('../fixtures/data/repro-4379.epub', import.meta.url).href;
+// repro-5263: same cover, but the wrapper div is positioned (as Readest's
+// duokan-bleed handling makes it). The pinned image must not resolve its
+// height:100% against the zero-height wrapper, or the cover renders blank.
+const EPUB_5263_URL = new URL('../fixtures/data/repro-5263.epub', import.meta.url).href;
 
 let book: BookDoc;
 
-const loadEPUB = async () => {
-  const resp = await fetch(EPUB_URL);
+const loadEPUB = async (url: string = EPUB_URL) => {
+  const resp = await fetch(url);
   const buffer = await resp.arrayBuffer();
-  const file = new File([buffer], 'repro-4379.epub', { type: 'application/epub+zip' });
+  const file = new File([buffer], 'repro.epub', { type: 'application/epub+zip' });
   const loader = new DocumentLoader(file);
   const { book } = await loader.open();
   return book;
@@ -104,7 +108,7 @@ describe('Paginator Duokan fullscreen cover (#4379)', () => {
     expect(img!.offsetHeight).toBeGreaterThan(0);
   });
 
-  it('stretches the fullscreen cover to fill the page (object-fit: fill)', async () => {
+  it('letterboxes the fullscreen cover, preserving its aspect ratio (#5263)', async () => {
     paginator = createPaginator();
     paginator.open(book);
 
@@ -117,10 +121,35 @@ describe('Paginator Duokan fullscreen cover (#4379)', () => {
     await waitForImgLoaded(img!);
     await waitForVisibleHeight(img!);
 
-    // The fullscreen treatment stretches the cover edge-to-edge, ignoring the
-    // image's aspect ratio, to match Duokan's native full-page rendering.
+    // The fullscreen treatment fits the cover to the page while keeping its
+    // aspect ratio, filling the leftover space with black bars like Duokan's
+    // native full-page rendering — not stretching it edge-to-edge.
     const cs = img!.ownerDocument.defaultView!.getComputedStyle(img!);
-    expect(cs.objectFit).toBe('fill');
+    expect(cs.objectFit).toBe('contain');
+    expect(cs.backgroundColor).toBe('rgb(0, 0, 0)');
+    // The element box still spans the whole page so the bars cover it.
+    expect(img!.getBoundingClientRect().height).toBeGreaterThanOrEqual(599);
+  });
+
+  it('shows the cover pinned to the page when the wrapper is positioned (#5263)', async () => {
+    const positionedBook = await loadEPUB(EPUB_5263_URL);
+    paginator = createPaginator();
+    paginator.open(positionedBook);
+
+    const stabilized = waitForStabilized(paginator);
+    await paginator.goTo({ index: 0 });
+    await stabilized;
+
+    const img = getCoverImg(paginator);
+    expect(img).toBeTruthy();
+    await waitForImgLoaded(img!);
+    await waitForVisibleHeight(img!);
+
+    // A positioned wrapper (as produced by duokan-bleed handling) must not
+    // become the containing block of the pinned cover: its height:100% would
+    // resolve against the wrapper's zero height and the page renders blank.
+    expect(img!.offsetHeight).toBeGreaterThan(0);
+    expect(img!.getBoundingClientRect().height).toBeGreaterThanOrEqual(599);
   });
 
   it('shows the cover image in scrolled mode', async () => {
@@ -165,5 +194,8 @@ describe('Paginator Duokan fullscreen cover (#4379)', () => {
     // the paginated render must not leave it collapsed in scrolled mode.
     await waitForVisibleHeight(img!);
     expect(img!.offsetHeight).toBeGreaterThan(0);
+    // The letterbox background is tied to the pinned fullscreen treatment and
+    // must not stick to the normally flowing image in scrolled mode.
+    expect(img!.style.getPropertyValue('background-color')).toBe('');
   });
 });
