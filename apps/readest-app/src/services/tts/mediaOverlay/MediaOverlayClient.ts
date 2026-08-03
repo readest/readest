@@ -35,6 +35,11 @@ type WaitOutcome = 'reached' | 'ended' | 'aborted' | 'error';
 // under the length of even a word-level clip.
 const CLIP_CONTINUITY_TOLERANCE_SEC = 0.3;
 
+// How long the element may keep playing after a block ends while waiting for the
+// next block to claim it. Long enough that a normal handover is never cut short,
+// short enough that narration can never be left running unattended.
+const HANDOVER_GRACE_MS = 1000;
+
 // Container blobs come out of the zip with no MIME type, and a media element
 // given a typeless blob URL refuses to decode it ("Format error"), so the type
 // has to be supplied from the file name. Covers the formats EPUB Media Overlays
@@ -88,6 +93,7 @@ export class MediaOverlayClient implements TTSClient {
   #objectUrl: string | null = null;
   #audioLoad: { href: string; promise: Promise<HTMLAudioElement> } | null = null;
   #currentPar: NarrationPar | null = null;
+  #handoverTimer: ReturnType<typeof setTimeout> | null = null;
   #rate = 1;
   #lang = 'en';
 
@@ -151,7 +157,25 @@ export class MediaOverlayClient implements TTSClient {
     return audio;
   }
 
+  // Leave the element playing for the next block to pick up, but never
+  // unattended: if nothing claims it — a one-off selection read, a session torn
+  // down without stopping — silence it.
+  #armHandover(audio: HTMLAudioElement): void {
+    this.#cancelHandover();
+    this.#handoverTimer = setTimeout(() => {
+      this.#handoverTimer = null;
+      audio.pause();
+    }, HANDOVER_GRACE_MS);
+  }
+
+  #cancelHandover(): void {
+    if (this.#handoverTimer === null) return;
+    clearTimeout(this.#handoverTimer);
+    this.#handoverTimer = null;
+  }
+
   #releaseAudio(): void {
+    this.#cancelHandover();
     this.#audio?.pause();
     if (this.#objectUrl) URL.revokeObjectURL(this.#objectUrl);
     this.#audio = null;
@@ -241,6 +265,7 @@ export class MediaOverlayClient implements TTSClient {
       }
       if (signal.aborted) return;
 
+      this.#cancelHandover();
       audio.playbackRate = this.#rate;
       // Sequential narration needs no seeking: Media Overlay clips are contiguous
       // and in document order, so the element can simply keep rolling while
@@ -250,11 +275,9 @@ export class MediaOverlayClient implements TTSClient {
       // the paragraph's first word ("me me"). Move the playhead only for a real
       // discontinuity: session start, a sentence skip, a scrub, a new audio file.
       const first = run.pars[0]!;
-      const drift = audio.currentTime - first.clipBegin;
-      const clipDuration = first.clipEnd - first.clipBegin;
       const alreadyRolling =
-        drift >= -CLIP_CONTINUITY_TOLERANCE_SEC &&
-        drift < Math.min(CLIP_CONTINUITY_TOLERANCE_SEC, clipDuration);
+        audio.currentTime >= first.clipBegin - CLIP_CONTINUITY_TOLERANCE_SEC &&
+        audio.currentTime < first.clipEnd;
       if (!alreadyRolling) audio.currentTime = first.clipBegin;
       try {
         await audio.play();
@@ -297,14 +320,17 @@ export class MediaOverlayClient implements TTSClient {
       }
     }
 
-    // Stop at the block's last clip. Media Overlay clips are contiguous, so an
-    // element left running plays straight into the NEXT paragraph during the
-    // controller's inter-paragraph gap.
-    this.#audio?.pause();
+    // The block's clips are done, but the recording continues into the next
+    // paragraph, so the element keeps playing and the next block joins it in
+    // progress. Pausing here — and again in the controller's pre-speak stop —
+    // was putting a gap at every paragraph boundary, which on Android also costs
+    // a buffer flush. The watchdog covers the case where no next block comes.
+    if (this.#audio) this.#armHandover(this.#audio);
     yield { code: 'end', message: 'Narration finished' };
   }
 
   async pause(): Promise<boolean> {
+    this.#cancelHandover();
     this.#audio?.pause();
     return true;
   }
@@ -314,11 +340,18 @@ export class MediaOverlayClient implements TTSClient {
     return true;
   }
 
-  async stop(): Promise<void> {
-    this.#audio?.pause();
+  async stop(handover = false): Promise<void> {
     this.#currentPar = null;
     // The element and its blob URL are kept: every paragraph advance calls
     // stop(), and re-fetching the chapter's audio each time would be absurd.
+    if (handover && this.#audio && !this.#audio.paused) {
+      // Handing over to the next utterance of the same recording: silencing the
+      // element here is what the listener hears as a gap between paragraphs.
+      this.#armHandover(this.#audio);
+      return;
+    }
+    this.#cancelHandover();
+    this.#audio?.pause();
   }
 
   setPrimaryLang(lang: string): void {

@@ -35,7 +35,11 @@ export interface TTSClient {
   speak(ssml: string, signal: AbortSignal, preload?: boolean): AsyncIterable<TTSMessageEvent>;
   pause(): Promise<boolean>;
   resume(): Promise<boolean>;
-  stop(): Promise<void>;
+  // `handover` marks the stop the controller performs between two consecutive
+  // utterances of the same session, as opposed to a real stop. An engine whose
+  // timeline is continuous uses it to stay rolling instead of silencing itself;
+  // engines that synthesize per utterance must stop either way and ignore it.
+  stop(handover?: boolean): Promise<void>;
   setPrimaryLang(lang: string): void;
   setRate(rate: number): Promise<void>;
   setPitch(pitch: number): Promise<void>;

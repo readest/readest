@@ -193,11 +193,9 @@ describe('MediaOverlayClient playback', () => {
     expect(controller.dispatchSpeakMark.mock.calls.map((c) => c[0].name)).toEqual(['0', '1', '2']);
   });
 
-  // Media Overlay clips are contiguous, so the element must be stopped at the
-  // block's last clipEnd. Left running, it plays on through the controller's
-  // inter-paragraph gap and the next speak() seeks BACK to that paragraph's
-  // clipBegin — so its opening words are heard twice.
-  test('stops at the end of a block so the next paragraph is not replayed', async () => {
+  // The utterance covers exactly the block's clips: 'end' arrives when its last
+  // clipEnd is reached, which is what makes the controller advance a paragraph.
+  test('ends the utterance at the last clip of the block', async () => {
     await setup();
     const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
     await iter.next();
@@ -209,7 +207,6 @@ describe('MediaOverlayClient playback', () => {
     }
 
     expect(step!.value).toMatchObject({ code: 'end' });
-    expect(audio().paused).toBe(true);
   });
 
   test('stops when the audio file itself runs out', async () => {
@@ -238,6 +235,54 @@ describe('MediaOverlayClient playback', () => {
     // seek is needed: the pars inside a block are contiguous audio.
     expect(audio().seeks).toEqual([]);
     expect(audio().playCalls).toBe(1);
+  });
+
+  // The listener's complaint that started this: a gap at every paragraph. The
+  // recording runs on into the next paragraph, so a block ending must leave the
+  // element playing, and the controller's pre-speak stop() is a handover.
+  test('leaves the element playing when a block ends', async () => {
+    await setup();
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+    for (const time of [1, 2, 3.04]) {
+      const pending = iter.next();
+      audio().advanceTo(time);
+      await pending;
+    }
+
+    expect(audio().paused).toBe(false);
+  });
+
+  test('a handover stop keeps playing; a real stop silences', async () => {
+    await setup();
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+
+    await client.stop(true);
+    expect(audio().paused).toBe(false);
+
+    await client.stop();
+    expect(audio().paused).toBe(true);
+  });
+
+  test('a block that nothing takes over is silenced rather than left running', async () => {
+    vi.useFakeTimers();
+    try {
+      await setup();
+      const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+      await iter.next();
+      for (const time of [1, 2, 3.04]) {
+        const pending = iter.next();
+        audio().advanceTo(time);
+        await pending;
+      }
+      expect(audio().paused).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(1500);
+      expect(audio().paused).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   test('seeks in when the block does not start at the top of the file', async () => {
@@ -366,7 +411,6 @@ describe('MediaOverlayClient playback', () => {
       await pending;
     }
     const el = audio();
-    expect(el.paused).toBe(true);
     const seeksAfterBlock0 = [...el.seeks];
 
     // Block 1 begins at 3s — behind where we stopped (3.04s).

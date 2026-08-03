@@ -949,7 +949,9 @@ export class TTSController extends EventTarget {
     const target = timeline.sentenceAtTime(seconds);
     if (!target) return;
     const isPlaying = this.state === 'playing';
-    await this.stop();
+    // While playing, this is a handover to the utterance about to be spoken
+    // below; only a stopped session should actually be silenced here.
+    await this.stop(isPlaying);
     if (!isPlaying) this.state = 'forward-paused';
     this.#currentSentenceIndex = target.index;
     const ssml = this.#getTts()?.from(target.sentence.range);
@@ -1092,7 +1094,10 @@ export class TTSController extends EventTarget {
   }
 
   async #speak(ssml: string | undefined | Promise<string>, oneTime = false) {
-    await this.stop();
+    // A handover, not a stop: this clears the previous utterance so the next one
+    // can start. Recorded narration stays rolling through it, because the next
+    // utterance is the same recording playing on.
+    await this.stop(true);
     this.#terminated = false;
     this.#currentSpeakAbortController = new AbortController();
     const { signal } = this.#currentSpeakAbortController;
@@ -1276,11 +1281,11 @@ export class TTSController extends EventTarget {
     await this.ttsClient.resume().catch((e) => this.error(e));
   }
 
-  async stop() {
+  async stop(handover = false) {
     if (this.#currentSpeakAbortController) {
       this.#currentSpeakAbortController.abort();
     }
-    await this.ttsClient.stop().catch((e) => this.error(e));
+    await this.ttsClient.stop(handover).catch((e) => this.error(e));
 
     if (this.#currentSpeakPromise) {
       const timeout = new Promise((_, reject) =>
@@ -1298,7 +1303,9 @@ export class TTSController extends EventTarget {
   async backward(byMark = false) {
     await this.initViewTTS();
     const isPlaying = this.state === 'playing';
-    await this.stop();
+    // While playing, this is a handover to the utterance about to be spoken
+    // below; only a stopped session should actually be silenced here.
+    await this.stop(isPlaying);
     if (!isPlaying) this.state = 'backward-paused';
 
     const ssml = byMark ? this.#getTts()?.prevMark(!isPlaying) : this.#getTts()?.prev(!isPlaying);
@@ -1318,7 +1325,11 @@ export class TTSController extends EventTarget {
   async forward(byMark = false, isAutoAdvance = false) {
     await this.initViewTTS();
     const isPlaying = this.state === 'playing';
-    await this.stop();
+    // While playing, this is a handover to the utterance about to be spoken
+    // below; only a stopped session should actually be silenced here. This is
+    // the auto-advance path, so for recorded narration it is what decides
+    // whether every paragraph boundary gets a gap.
+    await this.stop(isPlaying);
     if (!isPlaying) this.state = 'forward-paused';
 
     const ssml = byMark ? this.#getTts()?.nextMark(!isPlaying) : this.#getTts()?.next(!isPlaying);
