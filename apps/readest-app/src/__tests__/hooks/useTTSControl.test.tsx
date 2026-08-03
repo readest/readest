@@ -137,6 +137,7 @@ vi.mock('@/services/tts', () => ({
       setLang: vi.fn(),
       setRate: vi.fn(),
       setSentenceGap: vi.fn(),
+      setParagraphGap: vi.fn(),
       supportsGapControl: vi.fn().mockReturnValue(false),
       setVoice: vi.fn(),
       setTargetLang: vi.fn(),
@@ -159,6 +160,7 @@ vi.mock('@/services/tts', () => ({
       getSpeakingLang: vi.fn().mockReturnValue('en'),
       terminated: false,
       isViewAttached: true,
+      narrationActive: narrationState.active,
       state: 'idle',
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
@@ -173,6 +175,8 @@ vi.mock('@/libs/mediaSession', () => ({
   TauriMediaSession: class {},
   getMediaSession: vi.fn(() => null),
 }));
+
+const { narrationState } = vi.hoisted(() => ({ narrationState: { active: false } }));
 
 const { mockSessionManager } = vi.hoisted(() => ({
   mockSessionManager: {
@@ -290,6 +294,57 @@ describe('useTTSControl concurrent tts-speak events', () => {
       while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
       await Promise.all([p1, p2]);
     });
+  });
+});
+
+// Reading a selection aloud has to mean different things for the two kinds of
+// engine: a synthesizer can render the selected words, a recording only has the
+// clips the publisher timed. Handing raw text to the narration client ended the
+// utterance at once, which fired the one-shot callback and killed the session —
+// the button appeared to play for a moment and stop.
+describe('useTTSControl reading a selection aloud', () => {
+  beforeEach(() => {
+    ttsControllerInstances.length = 0;
+    pendingInitResolvers.length = 0;
+    narrationState.active = false;
+    mockView.tts.from.mockClear();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  const speakSelection = async () => {
+    render(<Harness />);
+    const range = new Range();
+    await act(async () => {
+      const p = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1', range, oneTime: true });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await p;
+    });
+    const controller = ttsControllerInstances[0] as unknown as {
+      speak: ReturnType<typeof vi.fn>;
+    };
+    return { range, controller };
+  };
+
+  it('starts the recording at the selection when the book is narrated', async () => {
+    narrationState.active = true;
+
+    const { range, controller } = await speakSelection();
+
+    expect(mockView.tts.from).toHaveBeenCalledWith(range);
+    // Not a one-shot: the session goes on from that passage rather than being
+    // stopped by the one-time callback as soon as the first clip ends.
+    expect(controller.speak).toHaveBeenCalledWith(expect.anything(), false, expect.any(Function));
+  });
+
+  it('synthesizes the selected text when the book is not narrated', async () => {
+    const { controller } = await speakSelection();
+
+    expect(mockView.tts.from).not.toHaveBeenCalled();
+    expect(controller.speak).toHaveBeenCalledWith(expect.anything(), true, expect.any(Function));
   });
 });
 

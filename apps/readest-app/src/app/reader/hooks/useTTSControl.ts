@@ -819,12 +819,21 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           getTTSHighlightOptions(viewSettings.ttsHighlightOptions, viewSettings.isEink),
         );
         ttsController.setHighlightGranularity(viewSettings.ttsHighlightGranularity ?? 'word');
+        // A recording has no audio for arbitrary text: it only exists as the
+        // clips the publisher timed. Reading a selection aloud from one
+        // therefore means starting the narration where that passage is
+        // narrated, rather than handing it text it cannot synthesize — which
+        // ended the utterance immediately and killed the session.
+        const speakSelection = oneTime && !!ttsSpeakRange;
+        const narrateSelection = speakSelection && ttsController.narrationActive;
         const ssml =
-          oneTime && ttsSpeakRange
-            ? genSSMLRaw(ttsSpeakRange.toString().trim())
-            : ttsFromRange
-              ? view.tts?.from(ttsFromRange)
-              : view.tts?.start();
+          speakSelection && !narrateSelection
+            ? genSSMLRaw(ttsSpeakRange!.toString().trim())
+            : narrateSelection
+              ? view.tts?.from(ttsSpeakRange!)
+              : ttsFromRange
+                ? view.tts?.from(ttsFromRange)
+                : view.tts?.start();
         if (ssml) {
           const lang = parseSSMLLang(ssml, primaryLang) || 'en';
           setIsPlaying(true);
@@ -835,7 +844,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           ttsController.setRate(viewSettings.ttsRate);
           ttsController.setSentenceGap(viewSettings.ttsSentenceGap ?? DEFAULT_SENTENCE_GAP_SEC);
           ttsController.setParagraphGap(viewSettings.ttsParagraphGap ?? DEFAULT_PARAGRAPH_GAP_SEC);
-          ttsController.speak(ssml, oneTime, () => handleStop(bookKey));
+          // Narrating a selection is an ordinary session started at that point,
+          // so it must not be treated as a one-shot utterance that stops the
+          // session the moment the first clip ends.
+          ttsController.speak(ssml, oneTime && !narrateSelection, () => handleStop(bookKey));
           ttsController.setTargetLang(getTTSTargetLang() || '');
         } else {
           // Nothing to speak: roll back the optimistic playing state.
