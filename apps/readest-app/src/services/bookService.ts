@@ -26,6 +26,7 @@ import type { BookNav } from '@/services/nav';
 import { partialMD5, md5 } from '@/utils/md5';
 import { getBaseFilename, getFilename } from '@/utils/path';
 import { BookDoc, DocumentLoader } from '@/libs/document';
+import { hasMediaOverlays } from '@/services/tts/mediaOverlay';
 import { tryNativeParseEpub } from '@/utils/tauriEpubBridge';
 import { tryNativeParseMobi } from '@/utils/tauriMobiBridge';
 import { isPseStreamFileName, openPseStreamBook, parsePseStreamFileName } from './opds/pseStream';
@@ -554,6 +555,10 @@ export async function importBook(
       sourceTitle: formatTitle(loadedBook.metadata.title),
       primaryLanguage,
       author: formatAuthors(loadedBook.metadata.author, primaryLanguage),
+      // Cached here because the library list never opens the book: it is a
+      // property of the file, so it is re-derived on every (re)import rather
+      // than synced as user data.
+      hasNarration: hasMediaOverlays(loadedBook) || undefined,
       metadata: loadedBook.metadata,
       createdAt: existingBook ? existingBook.createdAt : Date.now(),
       uploadedAt: existingBook ? existingBook.uploadedAt : null,

@@ -1,4 +1,4 @@
-import { FoliateView } from '@/types/view';
+import { FoliateView, ViewTTS } from '@/types/view';
 import { AppService } from '@/types/system';
 import { SectionItem } from '@/libs/document';
 import { transformTTSSectionDocument } from './transformDoc';
@@ -28,6 +28,15 @@ import {
   rangeTextExcludingInert,
   TTSWordOffset,
 } from './wordHighlight';
+import {
+  findNarratedSection,
+  hasMediaOverlays,
+  loadMediaOverlaySection,
+  MediaOverlayClient,
+  MediaOverlaySection,
+  MediaOverlayTTS,
+  MEDIA_OVERLAY_VOICE_ID,
+} from './mediaOverlay';
 
 // App-wide monotonic sequence for 'tts-position' events. A fresh TTSController
 // is constructed per `tts-speak`, so a per-instance counter would restart at 0
@@ -172,6 +181,10 @@ export class TTSController extends EventTarget {
   // so the controller keeps its own handle (mirrored to view.tts while a view
   // is attached, for external consumers).
   #tts: FoliateView['tts'] = null;
+  // Narration index for the current section, present only while playing the
+  // book's own recording.
+  #mediaOverlaySection: MediaOverlaySection | null = null;
+  #useNarration = true;
 
   ttsLang: string = '';
   ttsRate: number = 1.0;
@@ -179,6 +192,7 @@ export class TTSController extends EventTarget {
   ttsWebClient: TTSClient;
   ttsEdgeClient: EdgeTTSClient;
   ttsNativeClient: TTSClient | null = null;
+  ttsMediaOverlayClient: MediaOverlayClient;
   ttsWebVoices: TTSVoice[] = [];
   ttsEdgeVoices: TTSVoice[] = [];
   ttsNativeVoices: TTSVoice[] = [];
@@ -201,6 +215,7 @@ export class TTSController extends EventTarget {
     if (appService?.isAndroidApp || appService?.isIOSApp) {
       this.ttsNativeClient = new NativeTTSClient(this);
     }
+    this.ttsMediaOverlayClient = new MediaOverlayClient(this);
     this.ttsClient = this.ttsWebClient;
     this.appService = appService;
     this.view = view;
@@ -309,15 +324,27 @@ export class TTSController extends EventTarget {
       console.warn('[TTS] attachView: no document for section', sectionIndex);
       return;
     }
-    const { TTS } = await import('foliate-js/tts.js');
-    const { textWalker } = await import('foliate-js/text-walker.js');
-    const newTts = new TTS(
-      doc,
-      textWalker,
-      createTTSNodeFilter(),
-      this.#getHighlighter(),
-      this.#ttsGranularity,
-    );
+    // Narration segments by SMIL par, so a re-attach during background
+    // narration has to rebuild the same kind of source or its marks would name
+    // sentences the client cannot resolve to clips.
+    let newTts: ViewTTS;
+    let narration: MediaOverlaySection | null = null;
+    if (this.narrationActive) {
+      narration = await loadMediaOverlaySection(view.book, sectionIndex, doc, this.ttsLang);
+    }
+    if (narration) {
+      newTts = new MediaOverlayTTS(doc, narration, this.#getHighlighter());
+    } else {
+      const { TTS } = await import('foliate-js/tts.js');
+      const { textWalker } = await import('foliate-js/text-walker.js');
+      newTts = new TTS(
+        doc,
+        textWalker,
+        createTTSNodeFilter(),
+        this.#getHighlighter(),
+        this.#ttsGranularity,
+      );
+    }
 
     // A detach (new view closed) or a newer attach superseded this one.
     if (epoch !== this.#attachEpoch) return;
@@ -344,6 +371,11 @@ export class TTSController extends EventTarget {
     this.#tts = newTts;
     this.view.tts = newTts;
     this.#ttsDoc = doc;
+    if (narration) {
+      this.#mediaOverlaySection = narration;
+      this.ttsMediaOverlayClient.attachBook(view.book);
+      this.ttsMediaOverlayClient.setSection(narration);
+    }
     // The timeline maps the old document's ranges; rebuild lazily.
     this.#sectionTimeline = null;
     this.#timelineSectionIndex = -1;
@@ -376,6 +408,36 @@ export class TTSController extends EventTarget {
     }
     this.ttsWebVoices = await this.ttsWebClient.getAllVoices();
     this.ttsEdgeVoices = await this.ttsEdgeClient.getAllVoices();
+
+    // A book that ships its own narration should be read by its narrator, not
+    // synthesized — that is the whole point of having the recording. The
+    // per-book `ttsUseNarration` opt-out (set when the reader picks a synthetic
+    // voice for this book) is what overrides it. Deliberately last, so it wins
+    // over the globally remembered preferred client.
+    if (this.narrationAvailable) {
+      this.ttsMediaOverlayClient.attachBook(this.view.book);
+      if (this.useNarration && (await this.ttsMediaOverlayClient.init())) {
+        this.ttsClient = this.ttsMediaOverlayClient;
+      }
+    }
+  }
+
+  get narrationAvailable(): boolean {
+    return this.#attached && hasMediaOverlays(this.view?.book);
+  }
+
+  get narrationActive(): boolean {
+    return this.ttsClient === this.ttsMediaOverlayClient;
+  }
+
+  // Per-book opt-in, defaulting on: only an explicit synthetic-voice choice for
+  // this book turns narration off.
+  set useNarration(value: boolean) {
+    this.#useNarration = value;
+  }
+
+  get useNarration(): boolean {
+    return this.#useNarration;
   }
 
   #getPrimaryContent() {
@@ -477,6 +539,19 @@ export class TTSController extends EventTarget {
       return false;
     }
 
+    // Captured before #ttsSectionIndex is reassigned below, so the narration
+    // retry at the end of this method still knows which way playback is going.
+    const direction: 1 | -1 = sectionIndex < this.#ttsSectionIndex ? -1 : 1;
+
+    // Narration exists only where the publisher recorded it; front matter,
+    // indexes and notes are routinely left out. Step over those sections in
+    // whichever direction playback is moving instead of stalling on silence.
+    if (this.narrationActive) {
+      const narrated = findNarratedSection(this.view.book, sectionIndex, direction);
+      if (narrated === -1) return false;
+      sectionIndex = narrated;
+    }
+
     const section = sections[sectionIndex];
     if (!section?.createDocument) {
       return false;
@@ -515,6 +590,31 @@ export class TTSController extends EventTarget {
       return true;
     }
 
+    if (this.narrationActive) {
+      const narration = await loadMediaOverlaySection(
+        this.view.book,
+        sectionIndex,
+        doc,
+        this.ttsLang || this.view.language?.canonical || 'en',
+      );
+      if (narration) {
+        this.#mediaOverlaySection = narration;
+        this.ttsMediaOverlayClient.setSection(narration);
+        this.#ttsGranularity = 'sentence';
+        this.#tts = new MediaOverlayTTS(doc, narration, this.#getHighlighter());
+        this.view.tts = this.#tts;
+        console.log(`[TTS] Initialized narration for section ${sectionIndex}`);
+        return true;
+      }
+      // The section advertised an overlay whose SMIL yielded nothing usable
+      // (malformed, or every par pointing at absent ids). Treat it as
+      // unnarrated and keep looking; the scan above moves monotonically toward
+      // the spine edge, so this terminates.
+      console.warn(`[TTS] no usable narration in section ${sectionIndex}`);
+      return await this.#initTTSForSection(sectionIndex + direction);
+    }
+
+    this.#mediaOverlaySection = null;
     const { TTS } = await import('foliate-js/tts.js');
     const { textWalker } = await import('foliate-js/text-walker.js');
     let granularity: TTSGranularity = this.view.language.isCJK ? 'sentence' : 'word';
@@ -537,26 +637,57 @@ export class TTSController extends EventTarget {
     return true;
   }
 
+  // Rebuild the current section's mark source after switching between the
+  // book's narration and synthesized speech — the two segment the section
+  // differently, so the instance itself has to be replaced. The reading
+  // position is carried across when the range still anchors in the new source's
+  // document.
+  async #rebuildTextSource(): Promise<void> {
+    const sectionIndex = this.#ttsSectionIndex;
+    if (sectionIndex < 0) return;
+    const lastRange = this.#getTts()?.getLastRange();
+    this.#tts = null;
+    if (this.#attached) this.view.tts = null;
+    this.#ttsSectionIndex = -1;
+    this.#sectionTimeline = null;
+    this.#timelineSectionIndex = -1;
+    this.#currentSentenceIndex = -1;
+    if (!(await this.#initTTSForSection(sectionIndex))) return;
+    if (!lastRange) return;
+    try {
+      this.#getTts()?.from(lastRange);
+    } catch (err) {
+      console.warn('[TTS] could not carry position across the voice change', err);
+    }
+  }
+
   // Build (or return) the virtual timeline for the current section. Edge-only:
   // it is the only client with measurable audio durations and a chunk clock.
   // Callers invoke this off the playback path (panel poll, media session).
   async ensureTimeline(): Promise<SectionTimeline | null> {
-    if (this.ttsClient !== this.ttsEdgeClient) return null;
+    if (!this.ttsClient.getCapabilities().mediaClock) return null;
     if (this.#sectionTimeline && this.#timelineSectionIndex === this.#ttsSectionIndex) {
       return this.#sectionTimeline;
     }
     const doc = this.#ttsDoc;
     if (!doc || this.#ttsSectionIndex < 0) return null;
-    const { getSentences } = await import('foliate-js/tts.js');
-    const { textWalker } = await import('foliate-js/text-walker.js');
     const sentences: TimelineSentence[] = [];
-    for (const entry of getSentences(
-      doc,
-      textWalker,
-      createTTSNodeFilter(),
-      this.#ttsGranularity,
-    )) {
-      sentences.push({ ...entry, text: entry.range.toString() });
+    if (this.narrationActive) {
+      // The recording's own clip boundaries — exact durations, so the scrubber
+      // needs no estimation tier at all.
+      if (!this.#mediaOverlaySection) return null;
+      sentences.push(...this.#mediaOverlaySection.timelineSentences());
+    } else {
+      const { getSentences } = await import('foliate-js/tts.js');
+      const { textWalker } = await import('foliate-js/text-walker.js');
+      for (const entry of getSentences(
+        doc,
+        textWalker,
+        createTTSNodeFilter(),
+        this.#ttsGranularity,
+      )) {
+        sentences.push({ ...entry, text: entry.range.toString() });
+      }
     }
     const timeline = new SectionTimeline(
       sentences,
@@ -691,11 +822,11 @@ export class TTSController extends EventTarget {
     return this.ttsEdgeClient.getCacheBytes();
   }
 
-  // Whether the active client can ever produce a timeline (Edge only). The
-  // scrubber renders a reserved disabled slot while true and info is still
-  // null, and hides entirely while false.
+  // Whether the active client can ever produce a timeline — it needs a real
+  // audio clock. The scrubber renders a reserved disabled slot while true and
+  // info is still null, and hides entirely while false.
   supportsPlaybackInfo(): boolean {
-    return this.ttsClient === this.ttsEdgeClient;
+    return this.ttsClient.getCapabilities().mediaClock;
   }
 
   // Whether the active client supports the inter-sentence gap control.
@@ -740,7 +871,7 @@ export class TTSController extends EventTarget {
   // Null while no timeline exists (non-Edge client, timeline not yet built,
   // or nothing located yet) — the UI reserves a disabled slot for that state.
   getPlaybackInfo(): { position: number; duration: number; measuredFraction: number } | null {
-    if (this.ttsClient !== this.ttsEdgeClient) return null;
+    if (!this.ttsClient.getCapabilities().mediaClock) return null;
     const timeline = this.#sectionTimeline;
     if (!timeline || this.#timelineSectionIndex !== this.#ttsSectionIndex) return null;
     const duration = timeline.getDuration();
@@ -1206,6 +1337,7 @@ export class TTSController extends EventTarget {
     if (this.ttsEdgeClient.initialized) this.ttsEdgeClient.setPrimaryLang(lang);
     if (this.ttsWebClient.initialized) this.ttsWebClient.setPrimaryLang(lang);
     if (this.ttsNativeClient?.initialized) this.ttsNativeClient?.setPrimaryLang(lang);
+    if (this.ttsMediaOverlayClient.initialized) this.ttsMediaOverlayClient.setPrimaryLang(lang);
   }
 
   async setRate(rate: number) {
@@ -1219,13 +1351,40 @@ export class TTSController extends EventTarget {
     const ttsWebVoices = await this.ttsWebClient.getVoices(lang);
     const ttsEdgeVoices = await this.ttsEdgeClient.getVoices(lang);
     const ttsNativeVoices = (await this.ttsNativeClient?.getVoices(lang)) ?? [];
+    // The book's own narrator leads the list when there is one: it is the best
+    // voice available for that book by a wide margin.
+    const narrationVoices = this.narrationAvailable
+      ? await this.ttsMediaOverlayClient.getVoices(lang)
+      : [];
 
-    const voicesGroups = [...ttsNativeVoices, ...ttsEdgeVoices, ...ttsWebVoices];
+    const voicesGroups = [
+      ...narrationVoices,
+      ...ttsNativeVoices,
+      ...ttsEdgeVoices,
+      ...ttsWebVoices,
+    ];
     return voicesGroups;
   }
 
   async setVoice(voiceId: string, lang: string) {
     this.state = 'setvoice-paused';
+
+    // Switching into or out of narration changes the mark source, not just the
+    // engine: the current section's TTS instance has to be rebuilt.
+    const wantsNarration = voiceId === MEDIA_OVERLAY_VOICE_ID && this.narrationAvailable;
+    if (wantsNarration !== this.narrationActive) {
+      this.#useNarration = wantsNarration;
+      if (wantsNarration) await this.ttsMediaOverlayClient.init();
+      this.ttsClient = wantsNarration ? this.ttsMediaOverlayClient : this.ttsWebClient;
+      await this.#rebuildTextSource();
+    }
+    if (wantsNarration) {
+      await this.ttsMediaOverlayClient.setRate(this.ttsRate);
+      TTSUtils.setPreferredVoice(this.ttsMediaOverlayClient.name, lang, voiceId);
+      this.#sectionTimeline?.setVoice(this.ttsMediaOverlayClient.getVoiceId());
+      return;
+    }
+
     const useEdgeTTS = !!this.ttsEdgeVoices.find(
       (voice) => (voiceId === '' || voice.id === voiceId) && !voice.disabled,
     );
@@ -1493,6 +1652,7 @@ export class TTSController extends EventTarget {
     this.#currentSentenceIndex = -1;
     this.#ttsDoc = null;
     this.#tts = null;
+    this.#mediaOverlaySection = null;
     this.view.tts = null;
     if (this.ttsWebClient.initialized) {
       await this.ttsWebClient.shutdown();
@@ -1502,6 +1662,9 @@ export class TTSController extends EventTarget {
     }
     if (this.ttsNativeClient?.initialized) {
       await this.ttsNativeClient.shutdown();
+    }
+    if (this.ttsMediaOverlayClient.initialized) {
+      await this.ttsMediaOverlayClient.shutdown();
     }
   }
 }

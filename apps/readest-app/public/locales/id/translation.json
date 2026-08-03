@@ -1957,5 +1957,8 @@
   "Current Time": "Waktu Sekarang",
   "Battery Status": "Status Baterai",
   "Battery Percentage": "Persentase Baterai",
-  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Pemilih berkas sistem tidak tersedia dalam Mode Gaming. Silakan beralih ke Mode Desktop untuk memilih berkas."
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Pemilih berkas sistem tidak tersedia dalam Mode Gaming. Silakan beralih ke Mode Desktop untuk memilih berkas.",
+  "Book narration": "Narasi buku",
+  "Narration": "Narasi",
+  "Includes narration": "Menyertakan narasi"
 }

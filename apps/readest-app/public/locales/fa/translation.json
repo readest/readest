@@ -2003,5 +2003,8 @@
   "Current Time": "زمان فعلی",
   "Battery Status": "وضعیت باتری",
   "Battery Percentage": "درصد باتری",
-  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "انتخابگر پروندهٔ سیستم در حالت بازی در دسترس نیست. لطفاً برای انتخاب پرونده‌ها به حالت دسکتاپ بروید."
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "انتخابگر پروندهٔ سیستم در حالت بازی در دسترس نیست. لطفاً برای انتخاب پرونده‌ها به حالت دسکتاپ بروید.",
+  "Book narration": "روایت کتاب",
+  "Narration": "روایت",
+  "Includes narration": "شامل روایت صوتی"
 }

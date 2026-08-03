@@ -2,7 +2,13 @@ import { BookDoc } from '@/libs/document';
 import { BookNote, BookSearchConfig, BookSearchResult } from '@/types/book';
 import { TTSGranularity } from '@/services/tts';
 import { TTS } from 'foliate-js/tts.js';
+import type { MediaOverlayTTS } from '@/services/tts/mediaOverlay/MediaOverlayTTS';
 import { LocaleWithTextInfo } from './misc';
+
+// The mark source driving Read Aloud: foliate's text segmentation for
+// synthesized speech, or the book's own Media Overlay pars when playing its
+// recorded narration. Both expose the same navigation surface.
+export type ViewTTS = TTS | MediaOverlayTTS;
 
 export const NOTE_PREFIX = 'foliate-note:';
 
@@ -102,7 +108,7 @@ export interface FoliateView extends HTMLElement {
     highlight?: (range: Range) => void,
   ) => Promise<void>;
   book: BookDoc;
-  tts: TTS | null;
+  tts: ViewTTS | null;
   // The most recent relocate location, set synchronously by foliate on every
   // relocate — fresher than the rAF-debounced readerStore progress.
   lastLocation?: { cfi?: string; range?: Range | null };

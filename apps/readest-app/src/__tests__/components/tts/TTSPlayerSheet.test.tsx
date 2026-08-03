@@ -150,6 +150,10 @@ describe('TTSPlayerSheet', () => {
     viewSettings['ttsRate'] = 1.0;
     viewSettings['ttsSentenceGap'] = 0.15;
     viewSettings['isEink'] = false;
+    // Shared fixture object: clear what individual tests write, or a value set
+    // by one test leaks into the next.
+    delete viewSettings['ttsVoice'];
+    delete viewSettings['ttsUseNarration'];
     getBookData.mockReturnValue({
       book: { title: 'Alice in Wonderland', coverImageUrl: null },
     });
@@ -332,6 +336,59 @@ describe('TTSPlayerSheet', () => {
     fireEvent.click(screen.getByLabelText('Offline Audio'));
     expect(routerPush).toHaveBeenCalledWith(expect.stringContaining('/auth?redirect='));
     expect(screen.queryByText('chapters-view')).toBeNull();
+  });
+
+  // Books with recorded narration (EPUB 3 Media Overlays) surface the narrator
+  // as a voice; there is nothing to pre-download while it is selected.
+  const narrationGroups = [
+    {
+      id: 'media-overlay',
+      name: 'Narration',
+      voices: [{ id: 'media-overlay', name: 'Jane Reader', lang: 'en' }],
+    },
+    ...voiceGroups,
+  ];
+
+  test('offline audio row is hidden while the book own narration is playing', async () => {
+    const props = makeProps({
+      downloads: makeDownloads(),
+      onGetVoices: vi.fn().mockResolvedValue(narrationGroups),
+      onGetVoiceId: vi.fn().mockReturnValue('media-overlay'),
+    });
+    render(<TTSPlayerSheet {...props} />);
+    expect(await waitFor(() => screen.getByText('Jane Reader'))).toBeTruthy();
+    expect(screen.queryByLabelText('Offline Audio')).toBeNull();
+  });
+
+  test('choosing the narrator records the per-book narration preference', async () => {
+    const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(narrationGroups) });
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    fireEvent.click(await waitFor(() => screen.getByText('Jane Reader')));
+
+    expect(props.onSetVoice).toHaveBeenCalledWith('media-overlay', 'en');
+    expect(viewSettings['ttsVoice']).toBe('media-overlay');
+    expect(viewSettings['ttsUseNarration']).toBe(true);
+  });
+
+  test('choosing a synthetic voice opts this book out of its narration', async () => {
+    const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(narrationGroups) });
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    fireEvent.click(await waitFor(() => screen.getByText('Guy')));
+
+    expect(viewSettings['ttsVoice']).toBe('guy');
+    expect(viewSettings['ttsUseNarration']).toBe(false);
+  });
+
+  test('a book without narration never writes the narration preference', async () => {
+    const props = makeProps();
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    fireEvent.click(await waitFor(() => screen.getByText('Guy')));
+
+    expect(viewSettings['ttsVoice']).toBe('guy');
+    expect(viewSettings['ttsUseNarration']).toBeUndefined();
   });
 
   test('reopening the sheet returns to the main view', async () => {

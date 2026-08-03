@@ -1957,5 +1957,8 @@
   "Current Time": "Thời gian hiện tại",
   "Battery Status": "Trạng thái pin",
   "Battery Percentage": "Phần trăm pin",
-  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Trình chọn tệp của hệ thống không khả dụng trong Chế độ chơi game. Vui lòng chuyển sang Chế độ máy tính để chọn tệp."
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Trình chọn tệp của hệ thống không khả dụng trong Chế độ chơi game. Vui lòng chuyển sang Chế độ máy tính để chọn tệp.",
+  "Book narration": "Lời kể của sách",
+  "Narration": "Lời kể",
+  "Includes narration": "Có lời kể"
 }

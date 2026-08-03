@@ -810,6 +810,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           }
         }
 
+        // Must precede init(): it decides whether this session plays the book's
+        // own narration or a synthesized voice.
+        ttsController.useNarration = viewSettings.ttsUseNarration ?? true;
         await ttsController.init();
         await ttsController.initViewTTS(ttsFromIndex);
         ttsController.updateHighlightOptions(

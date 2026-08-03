@@ -96,6 +96,10 @@ See [docs/i18n.md](docs/i18n.md) for the key-as-content translation approach, `s
 
 See [docs/safe-area-insets.md](docs/safe-area-insets.md) for rules on handling top/bottom insets for UI elements near screen edges.
 
+### Read Aloud
+
+Four engines sit behind `TTSClient`, including recorded-narration playback from EPUB 3 Media Overlays (a Kindle Immersion Reading equivalent). Gate behaviour on `TTSCapabilities`, never on client identity. See [docs/read-along-narration.md](docs/read-along-narration.md).
+
 ### Design System
 
 UI/UX rules — surface tiers, action vocabulary, settings primitives (`BoxedList`, `SettingsRow`, `SettingsSwitchRow`, `SettingsSelect`, `NavigationRow`, `Tips`, etc.), boxed-list anatomy, RTL conventions, e-ink overlay, and anti-patterns — live in [DESIGN.md](DESIGN.md). Codify recurring decisions there so they persist for the team and future contributors. Reach for the primitives in `src/components/settings/primitives/` instead of inlining chassis classes.

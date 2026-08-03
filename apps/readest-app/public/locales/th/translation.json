@@ -1957,5 +1957,8 @@
   "Current Time": "เวลาปัจจุบัน",
   "Battery Status": "สถานะแบตเตอรี่",
   "Battery Percentage": "เปอร์เซ็นต์แบตเตอรี่",
-  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "ตัวเลือกไฟล์ของระบบไม่พร้อมใช้งานในโหมดเกม โปรดสลับไปยังโหมดเดสก์ท็อปเพื่อเลือกไฟล์"
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "ตัวเลือกไฟล์ของระบบไม่พร้อมใช้งานในโหมดเกม โปรดสลับไปยังโหมดเดสก์ท็อปเพื่อเลือกไฟล์",
+  "Book narration": "การบรรยายของหนังสือ",
+  "Narration": "การบรรยาย",
+  "Includes narration": "มีการบรรยายเสียง"
 }

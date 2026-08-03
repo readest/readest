@@ -285,11 +285,14 @@ Mixed integration code. Some providers are used via server APIs to avoid exposin
 
 ### `src/services/tts`
 
-Text-to-speech abstraction and implementations.
+Read Aloud abstraction and implementations.
 
 - `WebSpeechClient.ts`: browser TTS
 - `NativeTTSClient.ts`: native/Tauri TTS
 - `EdgeTTSClient.ts`: remote/provider-backed TTS
+- `mediaOverlay/`: a book's own recorded narration (EPUB 3 Media Overlays)
+  played in place of synthesis — see
+  [read-along-narration.md](read-along-narration.md)
 - controller/data/types/utilities
 
 Mixed runtime code, mostly used by the reader frontend.

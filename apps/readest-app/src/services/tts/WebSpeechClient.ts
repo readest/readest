@@ -76,6 +76,11 @@ type WebSpeechVoice = SpeechSynthesisVoice & {
   id: string;
 };
 
+// How long to wait for 'voiceschanged' before giving up on the voice list.
+// Chrome populates it asynchronously on first call, so some wait is required;
+// a platform with no voices at all never fires the event.
+const WEB_SPEECH_VOICES_TIMEOUT_MS = 2000;
+
 export class WebSpeechClient implements TTSClient {
   name = 'web-speech';
   initialized = false;
@@ -100,7 +105,11 @@ export class WebSpeechClient implements TTSClient {
       return this.initialized;
     }
     await new Promise<void>((resolve) => {
+      let settled = false;
       const populateVoices = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
         this.#voices = this.#synth.getVoices().map((voice) => {
           const webSpeechVoice = voice as WebSpeechVoice;
           webSpeechVoice.id = voice.voiceURI || voice.name;
@@ -110,13 +119,24 @@ export class WebSpeechClient implements TTSClient {
         resolve();
       };
 
+      // A platform with no speech voices installed (a bare Linux desktop with
+      // no speech-dispatcher, headless Chromium) reports an empty voice list
+      // and never fires 'voiceschanged'. Waiting forever wedges the whole of
+      // TTSController.init(), which takes every other engine down with it —
+      // including recorded narration, which needs no system voice at all.
+      const timer = setTimeout(() => {
+        if (settled) return;
+        console.warn('[TTS] no Web Speech voices reported; continuing without them');
+        populateVoices();
+      }, WEB_SPEECH_VOICES_TIMEOUT_MS);
+
       if (this.#synth.getVoices().length > 0) {
         populateVoices();
       } else if (this.#synth.onvoiceschanged !== undefined) {
         this.#synth.onvoiceschanged = populateVoices;
       } else {
         console.warn('Voiceschanged event not supported.');
-        resolve();
+        populateVoices();
       }
     });
     this.initialized = true;

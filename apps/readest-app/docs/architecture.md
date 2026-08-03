@@ -420,12 +420,22 @@ the others can hit the providers directly from the client.
 
 ### 6.5 TTS
 
-Three TTS backends behind one interface (`src/services/tts`):
+Four Read Aloud backends behind one interface (`src/services/tts`):
 
 - `WebSpeechClient` for browsers,
 - `NativeTTSClient` for Tauri via `tauri-plugin-native-tts`,
 - `EdgeTTSClient` going through `src/app/api/tts/edge` for streaming Microsoft
-  Edge voices.
+  Edge voices,
+- `MediaOverlayClient` (`tts/mediaOverlay/`), which plays a book's own recorded
+  narration from EPUB 3 Media Overlays instead of synthesizing — a Kindle
+  Immersion Reading equivalent. It also replaces foliate's text segmentation
+  with the SMIL par list, so marks and audio clips are 1:1 and the rest of the
+  stack (timeline, scrubber, media session, highlighting) is untouched. See
+  [read-along-narration.md](read-along-narration.md).
+
+`TTSCapabilities` (`wordBoundaries`, `mediaClock`, `gapControl`,
+`liveRateChange`) is how the controller and UI degrade per engine; gate on it
+rather than comparing client identities.
 
 ### 6.6 Dictionaries
 

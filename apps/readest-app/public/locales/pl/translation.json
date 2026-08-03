@@ -2095,5 +2095,8 @@
   "Current Time": "Aktualny czas",
   "Battery Status": "Stan baterii",
   "Battery Percentage": "Procent baterii",
-  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Systemowy selektor plików jest niedostępny w trybie gier. Aby wybrać pliki, przełącz się na tryb pulpitu."
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Systemowy selektor plików jest niedostępny w trybie gier. Aby wybrać pliki, przełącz się na tryb pulpitu.",
+  "Book narration": "Narracja książki",
+  "Narration": "Narracja",
+  "Includes narration": "Zawiera narrację"
 }

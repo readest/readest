@@ -4,6 +4,7 @@ import { MdCheckCircle, MdCheckCircleOutline } from 'react-icons/md';
 import {
   LiaCloudUploadAltSolid,
   LiaCloudDownloadAltSolid,
+  LiaHeadphonesSolid,
   LiaInfoCircleSolid,
 } from 'react-icons/lia';
 
@@ -175,6 +176,15 @@ const BookItem: React.FC<BookItemProps> = ({
                   <LiaInfoCircleSolid size={iconSize15} />
                 </div>
               </button>
+            )}
+            {book.hasNarration && (
+              <div
+                className='pt-[2px] sm:pt-[1px]'
+                title={_('Includes narration')}
+                aria-label={_('Includes narration')}
+              >
+                <LiaHeadphonesSolid size={iconSize15} />
+              </div>
             )}
             {transferProgress !== null ? (
               transferProgress === 100 ? null : (

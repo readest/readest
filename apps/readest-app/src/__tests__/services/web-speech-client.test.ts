@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { afterEach, describe, test, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/utils/misc', () => ({
   getUserLocale: vi.fn((lang: string) => (lang === 'en' ? 'en-US' : lang)),
@@ -67,5 +67,71 @@ describe('WebSpeechClient getVoices', () => {
 
   test('does not support word boundaries (sentence highlight only)', () => {
     expect(client.getCapabilities().wordBoundaries).toBe(false);
+  });
+});
+
+// A platform with no speech voices reports an empty list and never fires
+// 'voiceschanged'. init() used to await that event forever, which wedged
+// TTSController.init() and so took down every other engine with it —
+// including recorded narration, which needs no system voice.
+describe('WebSpeechClient init with no voices available', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test('resolves instead of hanging when voiceschanged never fires', async () => {
+    Object.defineProperty(window, 'speechSynthesis', {
+      value: {
+        getVoices: () => [],
+        onvoiceschanged: null,
+        cancel: vi.fn(),
+        pause: vi.fn(),
+        resume: vi.fn(),
+        speak: vi.fn(),
+      },
+      configurable: true,
+    });
+    const client = new WebSpeechClient();
+
+    const init = client.init();
+    let settled = false;
+    void init.then(() => {
+      settled = true;
+    });
+
+    await vi.advanceTimersByTimeAsync(0);
+    expect(settled).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(2000);
+    await expect(init).resolves.toBe(true);
+    expect(await client.getAllVoices()).toEqual([]);
+  });
+
+  test('a late voiceschanged still populates the list, and only once', async () => {
+    const synth: Record<string, unknown> = {
+      getVoices: () => [],
+      onvoiceschanged: null,
+      cancel: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      speak: vi.fn(),
+    };
+    Object.defineProperty(window, 'speechSynthesis', { value: synth, configurable: true });
+    const client = new WebSpeechClient();
+    const init = client.init();
+
+    await vi.advanceTimersByTimeAsync(100);
+    synth['getVoices'] = () => voices;
+    (synth['onvoiceschanged'] as () => void)();
+    await expect(init).resolves.toBe(true);
+    expect((await client.getAllVoices()).length).toBe(voices.length);
+
+    // The timeout must not re-run population after the event already did.
+    await vi.advanceTimersByTimeAsync(5000);
+    expect((await client.getAllVoices()).length).toBe(voices.length);
   });
 });

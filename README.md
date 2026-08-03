@@ -61,6 +61,7 @@
 | **OPDS/Calibre Integration**               | Integrate OPDS/Calibre to access online libraries and catalogs.                                                        | ✅         |
 | **Translate with DeepL and Yandex**        | From a single sentence to the entire book—translate instantly.                                                         | ✅         |
 | **Text-to-Speech (TTS) Support**           | Enjoy smooth, multilingual narration—even within a single book.                                                        | ✅         |
+| [**Read-Along Narration**][link-readalong] | Play a book's own recorded narration with the text highlighted in step — Kindle Immersion Reading / Audible Read & Listen, on the open EPUB standard. Reads EPUB 3 Media Overlays; pair an ebook with its audiobook using [Storyteller][link-storyteller]. | ✅         |
 | **Sync across Platforms**                  | Synchronize book files, reading progress, notes, and bookmarks across all supported platforms.                         | ✅         |
 | [**Sync with Koreader**][link-kosync-wiki] | Synchronize reading progress, notes, and bookmarks with [Koreader][link-koreader] devices.                             | ✅         |
 | **Accessibility**                          | Provides full keyboard navigation and support for screen readers such as VoiceOver, TalkBack, NVDA, and Orca.         | ✅         |
@@ -254,4 +255,6 @@ We would also like to thank the [Web Chinese Fonts Plan](https://chinese-font.ne
 [link-deepwiki]: https://deepwiki.com/readest/readest
 [link-locales]: https://github.com/readest/readest/tree/main/apps/readest-app/public/locales
 [link-kosync-wiki]: https://github.com/readest/readest/wiki/Sync-with-Koreader-devices
+[link-readalong]: https://github.com/readest/readest/blob/main/apps/readest-app/docs/read-along-narration.md
+[link-storyteller]: https://storyteller-platform.dev/
 [link-reddit]: https://reddit.com/r/readest/

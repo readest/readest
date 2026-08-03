@@ -2003,5 +2003,8 @@
   "Current Time": "Şu Anki Saat",
   "Battery Status": "Pil Durumu",
   "Battery Percentage": "Pil Yüzdesi",
-  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Sistem dosya seçici Oyun Modunda kullanılamıyor. Dosyaları seçmek için lütfen Masaüstü Moduna geçin."
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Sistem dosya seçici Oyun Modunda kullanılamıyor. Dosyaları seçmek için lütfen Masaüstü Moduna geçin.",
+  "Book narration": "Kitap anlatımı",
+  "Narration": "Anlatım",
+  "Includes narration": "Anlatım içerir"
 }

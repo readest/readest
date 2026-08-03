@@ -423,6 +423,7 @@ export const DEFAULT_TTS_CONFIG: TTSConfig = {
   ttsSentenceGap: DEFAULT_SENTENCE_GAP_SEC,
   ttsParagraphGap: DEFAULT_PARAGRAPH_GAP_SEC,
   ttsVoice: '',
+  ttsUseNarration: true,
   ttsLocation: '',
   ttsHighlightOptions: { style: 'highlight', color: '#808080' },
   ttsHighlightGranularity: 'word',

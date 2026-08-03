@@ -45,6 +45,11 @@ export interface SectionItem {
 
   loadText?: () => Promise<string | null>;
   createDocument: () => Promise<Document>;
+
+  // EPUB 3 Media Overlays: the manifest item of this section's SMIL file, or
+  // null when the section has no recorded narration. Populated by foliate's
+  // EPUB parser from the spine item's `media-overlay` attribute.
+  mediaOverlay?: { href: string; id: string } | null;
 }
 
 // A Calibre custom column embedded in the OPF as "user metadata"; parsed by
@@ -111,6 +116,14 @@ export interface BookDoc {
   // book holds a pdf.js document whose dedicated worker survives GC, so
   // dropping the reference leaks the whole parsed file (#5387).
   destroy?(): void | Promise<void>;
+
+  // Container access, present on EPUB. Recorded narration needs both: the SMIL
+  // files as text, the audio as blobs. Hrefs are zip paths, as resolved on
+  // manifest items.
+  loadText?(href: string): Promise<string | null>;
+  loadBlob?(href: string): Promise<Blob>;
+  // EPUB 3 `media:*` package metadata, used to name the narrator.
+  media?: { narrator?: string; duration?: number };
 }
 
 export const EXTS: Record<BookFormat, string> = {

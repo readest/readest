@@ -1957,5 +1957,8 @@
   "Current Time": "現在時刻",
   "Battery Status": "バッテリー状態",
   "Battery Percentage": "バッテリー残量（％）",
-  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "ゲーミングモードではシステムのファイル選択ダイアログを利用できません。ファイルを選択するにはデスクトップモードに切り替えてください。"
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "ゲーミングモードではシステムのファイル選択ダイアログを利用できません。ファイルを選択するにはデスクトップモードに切り替えてください。",
+  "Book narration": "書籍のナレーション",
+  "Narration": "ナレーション",
+  "Includes narration": "ナレーション付き"
 }

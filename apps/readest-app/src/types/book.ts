@@ -129,6 +129,10 @@ export interface Book {
   readingStatus?: ReadingStatus;
   readingStatusUpdatedAt?: number; // ms; bumped only when readingStatus changes
   primaryLanguage?: string;
+  // The book carries its own recorded narration (EPUB 3 Media Overlays), so the
+  // library can badge it without opening the file. Derived from the file on
+  // every import, like `format` — not user data, so it needs no LWW timestamp.
+  hasNarration?: boolean;
 
   metadata?: BookMetadata;
   // Field-level LWW timestamp for the metadata group (title, author, tags,
@@ -328,6 +332,12 @@ export interface TTSConfig {
   ttsSentenceGap: number;
   ttsParagraphGap: number;
   ttsVoice: string;
+  // Prefer the book's own recorded narration (EPUB 3 Media Overlays) over
+  // synthesized speech. Defaults on, so a read-along book is read by its
+  // narrator; picking a synthetic voice while that book is open clears it.
+  // Distinct from ttsVoice because ttsVoice inherits the global default and so
+  // cannot tell "never chose" from "chose a synthetic voice for this book".
+  ttsUseNarration: boolean;
   ttsLocation: string;
   ttsHighlightOptions: TTSHighlightOptions;
   ttsHighlightGranularity: TTSHighlightGranularity;
