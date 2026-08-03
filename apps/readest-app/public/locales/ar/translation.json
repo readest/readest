@@ -1052,7 +1052,6 @@
   "Authors": "المؤلفون",
   "Books": "الكتب",
   "Groups": "المجموعات",
-  "Back to TTS Location": "العودة إلى موقع القراءة الآلية",
   "Metadata": "بيانات وصفية",
   "Image viewer": "عارض الصور",
   "Previous Image": "الصورة السابقة",
@@ -2190,5 +2189,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "منتقي الملفات في النظام غير متاح في وضع الألعاب. يرجى التبديل إلى وضع سطح المكتب لاختيار الملفات.",
   "Book narration": "سرد الكتاب",
   "Narration": "السرد",
-  "Includes narration": "يتضمّن سردًا صوتيًا"
+  "Includes narration": "يتضمّن سردًا صوتيًا",
+  "Back to Read Aloud": "العودة إلى القراءة بصوت عالٍ"
 }

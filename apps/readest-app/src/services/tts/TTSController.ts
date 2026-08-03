@@ -1557,6 +1557,32 @@ export class TTSController extends EventTarget {
   // spans a page break, the word can be on a different page than the sentence's
   // ttsLocation, so the word position is the accurate reference. Returns null
   // outside word mode, where the sentence-level ttsLocation is correct.
+  // Whether any part of the sentence now sounding is still on the visible page.
+  //
+  // A sentence can be laid out across a page break, and once the view has
+  // followed the voice onto the next page, the sentence's *start* — which is
+  // what ttsLocation records — is behind it. Judging by that alone reads as
+  // "the reader navigated away" and raises the back-to-position prompt while
+  // the reader is in fact looking at the words being spoken. Engines that
+  // report words dodge this because their highlight cfi moves with the voice;
+  // a phrase-timed recording has no such cfi, so ask the layout instead.
+  isSoundingSentenceOnScreen(): boolean {
+    if (!this.#attached) return false;
+    const range = this.#getTts()?.getLastRange();
+    if (!range) return false;
+    try {
+      const { renderer } = this.view;
+      const axis = renderer.sideProp === 'height' ? 'y' : 'x';
+      const sizeProp = renderer.sideProp === 'height' ? 'height' : 'width';
+      const { start, end } = renderer;
+      return [...range.getClientRects()].some(
+        (rect) => rect[axis] < end && rect[axis] + rect[sizeProp] > start,
+      );
+    } catch {
+      return false;
+    }
+  }
+
   getCurrentHighlightCfi(): string | null {
     if (!this.#attached) return null;
     if (!this.#wordHighlightActive || !this.#lastSpeakWordRange || this.#ttsSectionIndex < 0) {

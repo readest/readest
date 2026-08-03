@@ -1026,7 +1026,6 @@
   "Authors": "Авторы",
   "Books": "Книги",
   "Groups": "Группы",
-  "Back to TTS Location": "Вернуться к местоположению TTS",
   "Metadata": "Метаданные",
   "Image viewer": "Просмотрщик изображений",
   "Previous Image": "Предыдущее изображение",
@@ -2098,5 +2097,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Системный диалог выбора файлов недоступен в игровом режиме. Чтобы выбрать файлы, переключитесь в режим рабочего стола.",
   "Book narration": "Озвучка книги",
   "Narration": "Озвучка",
-  "Includes narration": "Есть озвучка"
+  "Includes narration": "Есть озвучка",
+  "Back to Read Aloud": "Вернуться к чтению вслух"
 }

@@ -987,7 +987,6 @@
   "Authors": "Penulis",
   "Books": "Buku",
   "Groups": "Grup",
-  "Back to TTS Location": "Kembali ke Lokasi TTS",
   "Metadata": "Metadata",
   "Image viewer": "Penampil gambar",
   "Previous Image": "Gambar Sebelumnya",
@@ -1960,5 +1959,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Pemilih berkas sistem tidak tersedia dalam Mode Gaming. Silakan beralih ke Mode Desktop untuk memilih berkas.",
   "Book narration": "Narasi buku",
   "Narration": "Narasi",
-  "Includes narration": "Menyertakan narasi"
+  "Includes narration": "Menyertakan narasi",
+  "Back to Read Aloud": "Kembali ke Baca Nyaring"
 }

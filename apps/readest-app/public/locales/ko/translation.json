@@ -987,7 +987,6 @@
   "Authors": "저자",
   "Books": "도서",
   "Groups": "그룹",
-  "Back to TTS Location": "TTS 위치로 돌아가기",
   "Metadata": "메타데이터",
   "Image viewer": "이미지 뷰어",
   "Previous Image": "이전 이미지",
@@ -1960,5 +1959,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "게이밍 모드에서는 시스템 파일 선택기를 사용할 수 없습니다. 파일을 선택하려면 데스크톱 모드로 전환하세요.",
   "Book narration": "책 낭독",
   "Narration": "낭독",
-  "Includes narration": "낭독 포함"
+  "Includes narration": "낭독 포함",
+  "Back to Read Aloud": "소리 내어 읽기로 돌아가기"
 }

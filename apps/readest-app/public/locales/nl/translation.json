@@ -1000,7 +1000,6 @@
   "Authors": "Auteurs",
   "Books": "Boeken",
   "Groups": "Groepen",
-  "Back to TTS Location": "Terug naar TTS-locatie",
   "Metadata": "Metadata",
   "Image viewer": "Afbeeldingenviewer",
   "Previous Image": "Vorige afbeelding",
@@ -2006,5 +2005,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "De systeembestandskiezer is niet beschikbaar in de gamingmodus. Schakel over naar de desktopmodus om bestanden te selecteren.",
   "Book narration": "Vertelstem van het boek",
   "Narration": "Vertelstem",
-  "Includes narration": "Met vertelstem"
+  "Includes narration": "Met vertelstem",
+  "Back to Read Aloud": "Terug naar Voorlezen"
 }

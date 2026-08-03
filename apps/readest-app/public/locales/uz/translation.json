@@ -678,7 +678,6 @@
   "Translation Disabled": "Tarjima oʻchirilgan",
   "Previous Sentence": "Oldingi gap",
   "Next Sentence": "Keyingi gap",
-  "Back to TTS Location": "TTS joyiga qaytish",
   "No Timeout": "Vaqt cheklovi yoʻq",
   "{{value}} minute": "{{value}} daqiqa",
   "{{value}} minutes": "{{value}} daqiqa",
@@ -2006,5 +2005,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Tizim fayl tanlagichi o'yin rejimida mavjud emas. Fayllarni tanlash uchun ish stoli rejimiga o'ting.",
   "Book narration": "Kitobning ovozli oʻqishi",
   "Narration": "Ovozli oʻqish",
-  "Includes narration": "Ovozli oʻqish mavjud"
+  "Includes narration": "Ovozli oʻqish mavjud",
+  "Back to Read Aloud": "Ovoz chiqarib oʻqishga qaytish"
 }

@@ -1000,7 +1000,6 @@
   "Authors": "Författare",
   "Books": "Böcker",
   "Groups": "Grupper",
-  "Back to TTS Location": "Tillbaka till TTS-plats",
   "Metadata": "Metadata",
   "Image viewer": "Bildvisare",
   "Previous Image": "Föregående bild",
@@ -2006,5 +2005,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Systemets filväljare är inte tillgänglig i spelläge. Byt till skrivbordsläge för att välja filer.",
   "Book narration": "Bokens berättarröst",
   "Narration": "Berättarröst",
-  "Includes narration": "Med berättarröst"
+  "Includes narration": "Med berättarröst",
+  "Back to Read Aloud": "Tillbaka till uppläsningen"
 }

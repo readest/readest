@@ -987,7 +987,6 @@
   "Authors": "ผู้เขียน",
   "Books": "หนังสือ",
   "Groups": "กลุ่ม",
-  "Back to TTS Location": "กลับไปยังตำแหน่ง TTS",
   "Metadata": "เมทาดาตา",
   "Image viewer": "ตัวดูรูปภาพ",
   "Previous Image": "รูปภาพก่อนหน้า",
@@ -1960,5 +1959,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "ตัวเลือกไฟล์ของระบบไม่พร้อมใช้งานในโหมดเกม โปรดสลับไปยังโหมดเดสก์ท็อปเพื่อเลือกไฟล์",
   "Book narration": "การบรรยายของหนังสือ",
   "Narration": "การบรรยาย",
-  "Includes narration": "มีการบรรยายเสียง"
+  "Includes narration": "มีการบรรยายเสียง",
+  "Back to Read Aloud": "กลับไปที่การอ่านออกเสียง"
 }

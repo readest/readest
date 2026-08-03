@@ -619,7 +619,6 @@
   "Translation Disabled": "Fordítás letiltva",
   "Previous Sentence": "Előző mondat",
   "Next Sentence": "Következő mondat",
-  "Back to TTS Location": "Vissza a TTS pozícióhoz",
   "No Timeout": "Nincs időkorlát",
   "{{value}} minute": "{{value}} perc",
   "{{value}} minutes": "{{value}} perc",
@@ -2006,5 +2005,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "A rendszer fájlválasztója nem érhető el játék módban. A fájlok kiválasztásához váltson asztali módba.",
   "Book narration": "A könyv narrációja",
   "Narration": "Narráció",
-  "Includes narration": "Narrációt tartalmaz"
+  "Includes narration": "Narrációt tartalmaz",
+  "Back to Read Aloud": "Vissza a felolvasáshoz"
 }

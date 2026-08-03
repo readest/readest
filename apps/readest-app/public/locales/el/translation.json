@@ -1000,7 +1000,6 @@
   "Authors": "Συγγραφείς",
   "Books": "Βιβλία",
   "Groups": "Ομάδες",
-  "Back to TTS Location": "Επιστροφή στην τοποθεσία TTS",
   "Metadata": "Μεταδεδομένα",
   "Image viewer": "Πρόγραμμα προβολής εικόνων",
   "Previous Image": "Προηγούμενη εικόνα",
@@ -2006,5 +2005,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Ο επιλογέας αρχείων συστήματος δεν είναι διαθέσιμος στη λειτουργία παιχνιδιού. Μεταβείτε στη λειτουργία επιφάνειας εργασίας για να επιλέξετε αρχεία.",
   "Book narration": "Αφήγηση βιβλίου",
   "Narration": "Αφήγηση",
-  "Includes narration": "Περιλαμβάνει αφήγηση"
+  "Includes narration": "Περιλαμβάνει αφήγηση",
+  "Back to Read Aloud": "Επιστροφή στην Εκφώνηση"
 }

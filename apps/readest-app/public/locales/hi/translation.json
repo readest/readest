@@ -1000,7 +1000,6 @@
   "Authors": "लेखक",
   "Books": "पुस्तकें",
   "Groups": "समूह",
-  "Back to TTS Location": "टीटीएस स्थान पर वापस जाएं",
   "Metadata": "मेटाडाटा",
   "Image viewer": "छवि दर्शक",
   "Previous Image": "पिछली छवि",
@@ -2006,5 +2005,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "गेमिंग मोड में सिस्टम फ़ाइल चयनकर्ता उपलब्ध नहीं है। फ़ाइलें चुनने के लिए कृपया डेस्कटॉप मोड में जाएँ।",
   "Book narration": "पुस्तक का वाचन",
   "Narration": "वाचन",
-  "Includes narration": "वाचन शामिल है"
+  "Includes narration": "वाचन शामिल है",
+  "Back to Read Aloud": "ज़ोर से पढ़ने पर लौटें"
 }

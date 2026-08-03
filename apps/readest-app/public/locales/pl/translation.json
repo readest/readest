@@ -1026,7 +1026,6 @@
   "Authors": "Autorzy",
   "Books": "Książki",
   "Groups": "Grupy",
-  "Back to TTS Location": "Powrót do lokalizacji TTS",
   "Metadata": "Metadane",
   "Image viewer": "Przeglądarka obrazów",
   "Previous Image": "Poprzedni obraz",
@@ -2098,5 +2097,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Systemowy selektor plików jest niedostępny w trybie gier. Aby wybrać pliki, przełącz się na tryb pulpitu.",
   "Book narration": "Narracja książki",
   "Narration": "Narracja",
-  "Includes narration": "Zawiera narrację"
+  "Includes narration": "Zawiera narrację",
+  "Back to Read Aloud": "Powrót do czytania na głos"
 }

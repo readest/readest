@@ -598,7 +598,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     // position is the correct reference — otherwise the back-to-TTS button
     // wrongly appears after the view follows the word onto the next page.
     const highlightCfi = ttsController.getCurrentHighlightCfi() ?? ttsLocation;
-    if (isCfiInLocation(highlightCfi, location)) {
+    // ...and a sentence that straddles a page break keeps its start cfi on the
+    // page behind once the view follows the voice, so a recording — which has no
+    // word cfi to fall back on — needs the layout asked directly.
+    if (isCfiInLocation(highlightCfi, location) || ttsController.isSoundingSentenceOnScreen()) {
       setShowBackToCurrentTTSLocation(false);
       // Word-aware re-apply: re-draws the current word during word-by-word
       // playback instead of redrawing the whole sentence over it.

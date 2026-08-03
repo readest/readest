@@ -1000,7 +1000,6 @@
   "Authors": "نویسندگان",
   "Books": "کتاب‌ها",
   "Groups": "گروه‌ها",
-  "Back to TTS Location": "بازگشت به مکان TTS",
   "Metadata": "فراداده",
   "Image viewer": "نمایشگر تصویر",
   "Previous Image": "تصویر قبلی",
@@ -2006,5 +2005,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "انتخابگر پروندهٔ سیستم در حالت بازی در دسترس نیست. لطفاً برای انتخاب پرونده‌ها به حالت دسکتاپ بروید.",
   "Book narration": "روایت کتاب",
   "Narration": "روایت",
-  "Includes narration": "شامل روایت صوتی"
+  "Includes narration": "شامل روایت صوتی",
+  "Back to Read Aloud": "بازگشت به خواندن با صدای بلند"
 }

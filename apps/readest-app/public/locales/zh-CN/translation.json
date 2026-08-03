@@ -988,7 +988,6 @@
   "Authors": "作者",
   "Books": "书籍",
   "Groups": "分组",
-  "Back to TTS Location": "回到朗读位置",
   "Metadata": "元数据",
   "Image viewer": "图片查看器",
   "Previous Image": "上一张图片",
@@ -1960,5 +1959,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "游戏模式下无法使用系统文件选择器。请切换到桌面模式以选择文件。",
   "Book narration": "书籍朗读",
   "Narration": "有声朗读",
-  "Includes narration": "含有声朗读"
+  "Includes narration": "含有声朗读",
+  "Back to Read Aloud": "回到朗读位置"
 }

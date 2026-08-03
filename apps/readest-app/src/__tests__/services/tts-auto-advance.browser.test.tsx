@@ -22,7 +22,7 @@ import { useParagraphMode } from '@/app/reader/hooks/useParagraphMode';
 // <foliate-view> renders Alice and lays out pages, the real TTSController
 // walks the real `view.tts` over the real document, and the real
 // `useTTSControl` hook (with the real Zustand stores) drives the page turn
-// and the "Back to TTS Location" badge. The client is the single seam — the
+// and the "Back to Read Aloud" badge. The client is the single seam — the
 // thing that would otherwise talk to a speech engine / network.
 //
 // The controller's #speak() loop only inspects the event `code`: when the
@@ -266,7 +266,7 @@ afterEach(async () => {
 });
 
 describe('TTS auto-advance across a chapter boundary (browser e2e)', () => {
-  it('reads from the last paragraph of Ch4 into Ch5, turns the page, and shows no "Back to TTS Location" badge', async () => {
+  it('reads from the last paragraph of Ch4 into Ch5, turns the page, and shows no "Back to Read Aloud" badge', async () => {
     const viewSettings: ViewSettings = {
       ...getDefaultViewSettings({
         fs: {} as FileSystem,
@@ -334,7 +334,7 @@ describe('TTS auto-advance across a chapter boundary (browser e2e)', () => {
     expect(ttsLocation).toBeTruthy();
     expect(view.resolveCFI(ttsLocation!).index).toBe(CH5_SECTION_INDEX);
 
-    // 3. No "Back to TTS Location" badge — the TTS location is already in view,
+    // 3. No "Back to Read Aloud" badge — the TTS location is already in view,
     //    so the gating flag is false now and never flipped true while crossing.
     expect(result.current.showBackToCurrentTTSLocation).toBe(false);
     expect(badgeEverAppeared).toBe(false);

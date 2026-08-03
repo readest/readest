@@ -690,7 +690,6 @@
   "Translation Disabled": "Tradução desativada",
   "Previous Sentence": "Frase anterior",
   "Next Sentence": "Próxima frase",
-  "Back to TTS Location": "Voltar para a localização do TTS",
   "No Timeout": "Sem tempo limite",
   "{{value}} minute": "{{value}} minuto",
   "{{value}} minutes": "{{value}} minutos",
@@ -2052,5 +2051,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "O seletor de arquivos do sistema não está disponível no Modo Jogo. Mude para o Modo Desktop para selecionar arquivos.",
   "Book narration": "Narração do livro",
   "Narration": "Narração",
-  "Includes narration": "Inclui narração"
+  "Includes narration": "Inclui narração",
+  "Back to Read Aloud": "Voltar à leitura em voz alta"
 }

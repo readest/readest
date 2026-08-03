@@ -1000,7 +1000,6 @@
   "Authors": "Yazarlar",
   "Books": "Kitaplar",
   "Groups": "Gruplar",
-  "Back to TTS Location": "TTS Konumuna Geri Dön",
   "Metadata": "Meta veriler",
   "Image viewer": "Resim görüntüleyici",
   "Previous Image": "Önceki Resim",
@@ -2006,5 +2005,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Sistem dosya seçici Oyun Modunda kullanılamıyor. Dosyaları seçmek için lütfen Masaüstü Moduna geçin.",
   "Book narration": "Kitap anlatımı",
   "Narration": "Anlatım",
-  "Includes narration": "Anlatım içerir"
+  "Includes narration": "Anlatım içerir",
+  "Back to Read Aloud": "Sesli Okumaya Dön"
 }

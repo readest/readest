@@ -94,7 +94,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
               safeAreaInsets?.top ? 'h-11' : 'h-9',
             )}
           >
-            {_('Back to TTS Location')}
+            {_('Back to Read Aloud')}
           </button>
         </div>
       )}

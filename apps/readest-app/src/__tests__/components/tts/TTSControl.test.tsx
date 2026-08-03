@@ -126,6 +126,6 @@ describe('TTSControl', () => {
   test('shows the back-to-TTS-location pill when reading has drifted', () => {
     Object.assign(ttsState, { showBackToCurrentTTSLocation: true });
     render(<TTSControl bookKey='b1' gridInsets={gridInsets} />);
-    expect(screen.getByText('Back to TTS Location')).toBeTruthy();
+    expect(screen.getByText('Back to Read Aloud')).toBeTruthy();
   });
 });

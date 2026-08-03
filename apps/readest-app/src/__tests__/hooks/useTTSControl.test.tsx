@@ -1,4 +1,4 @@
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // --- Dependency mocks (must be set up before importing the hook) ---
@@ -46,7 +46,7 @@ const mockView = {
   },
 };
 
-const mockProgress = {
+let mockProgress = {
   location: { start: { cfi: '' }, end: { cfi: '' } },
   index: 0,
   range: null as Range | null,
@@ -160,6 +160,9 @@ vi.mock('@/services/tts', () => ({
       attachView: vi.fn().mockResolvedValue(undefined),
       getSpeakingLang: vi.fn().mockReturnValue('en'),
       getSentenceProgress: vi.fn().mockReturnValue(null),
+      isSoundingSentenceOnScreen: vi.fn().mockReturnValue(false),
+      getCurrentHighlightCfi: vi.fn().mockReturnValue(null),
+      reapplyCurrentHighlight: vi.fn(),
       terminated: false,
       isViewAttached: true,
       narrationActive: narrationState.active,
@@ -360,6 +363,69 @@ describe('useTTSControl reading a selection aloud', () => {
 
     expect(mockView.tts.from).not.toHaveBeenCalled();
     expect(controller.speak).toHaveBeenCalledWith(expect.anything(), true, expect.any(Function));
+  });
+});
+
+// Following the voice onto the next page moves the view past the *start* of the
+// sentence being read, which is what ttsLocation records. Judged on that alone
+// the reader looks like they navigated away, so the back-to-position prompt
+// appeared on every page turn — while they were in fact looking at the words
+// being spoken. isCfiInLocation is mocked false throughout this suite, so these
+// two tests turn entirely on whether the sentence is still on screen.
+describe('useTTSControl back-to-position prompt', () => {
+  const BannerHarness = () => {
+    const tts = useTTSControl({ bookKey: 'book-1' });
+    return <div data-testid='banner'>{String(tts.showBackToCurrentTTSLocation)}</div>;
+  };
+
+  beforeEach(() => {
+    ttsControllerInstances.length = 0;
+    pendingInitResolvers.length = 0;
+    mockViewSettings.ttsLocation = 'epubcfi(/6/4!/4/2)';
+  });
+
+  afterEach(() => {
+    cleanup();
+    mockViewSettings.ttsLocation = null;
+  });
+
+  const startSessionThenRelocate = async (sentenceOnScreen: boolean) => {
+    const view = render(<BannerHarness />);
+    await act(async () => {
+      const p = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await p;
+    });
+    const controller = ttsControllerInstances[0] as unknown as {
+      isSoundingSentenceOnScreen: ReturnType<typeof vi.fn>;
+    };
+    controller.isSoundingSentenceOnScreen.mockReturnValue(sentenceOnScreen);
+
+    // Past the suppression window that hides the prompt right after a section
+    // change, so this asserts the on-screen test rather than that grace period.
+    vi.useFakeTimers();
+    vi.setSystemTime(Date.now() + 5000);
+    try {
+      // A page turn republishes the location as a new object; the re-render is
+      // what a store update would do, and is what re-runs the location effect.
+      await act(async () => {
+        mockProgress = { ...mockProgress, location: { start: { cfi: 'a' }, end: { cfi: 'b' } } };
+        view.rerender(<BannerHarness />);
+        for (let i = 0; i < 5; i++) await Promise.resolve();
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+    return screen.getByTestId('banner').textContent;
+  };
+
+  it('stays hidden when the sentence being read is still on the page', async () => {
+    expect(await startSessionThenRelocate(true)).toBe('false');
+  });
+
+  it('appears when the reader has paged away from the sentence entirely', async () => {
+    expect(await startSessionThenRelocate(false)).toBe('true');
   });
 });
 
@@ -877,6 +943,7 @@ describe('useTTSControl background session lifecycle', () => {
       attachView: vi.fn().mockResolvedValue(undefined),
       getSpeakingLang: vi.fn().mockReturnValue('en'),
       getCurrentHighlightCfi: vi.fn().mockReturnValue(null),
+      isSoundingSentenceOnScreen: vi.fn().mockReturnValue(false),
       getSpokenSentence: vi.fn().mockReturnValue(null),
       updateHighlightOptions: vi.fn(),
       setHighlightGranularity: vi.fn(),

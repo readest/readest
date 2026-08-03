@@ -987,7 +987,6 @@
   "Authors": "著者",
   "Books": "書籍",
   "Groups": "グループ",
-  "Back to TTS Location": "TTSの位置に戻る",
   "Metadata": "メタデータ",
   "Image viewer": "画像ビューア",
   "Previous Image": "前の画像",
@@ -1960,5 +1959,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "ゲーミングモードではシステムのファイル選択ダイアログを利用できません。ファイルを選択するにはデスクトップモードに切り替えてください。",
   "Book narration": "書籍のナレーション",
   "Narration": "ナレーション",
-  "Includes narration": "ナレーション付き"
+  "Includes narration": "ナレーション付き",
+  "Back to Read Aloud": "読み上げに戻る"
 }

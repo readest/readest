@@ -585,7 +585,6 @@
   "Translation Disabled": "Prevod onemogočen",
   "Previous Sentence": "Prejšnji stavek",
   "Next Sentence": "Naslednji stavek",
-  "Back to TTS Location": "Nazaj na TTS lokacijo",
   "No Timeout": "Brez časovne omejitve",
   "{{value}} minute": "{{value}} minuta",
   "{{value}} minutes": "{{value}} minut",
@@ -2098,5 +2097,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Sistemski izbirnik datotek v igralnem načinu ni na voljo. Za izbiro datotek preklopite v namizni način.",
   "Book narration": "Pripovedovanje knjige",
   "Narration": "Pripovedovanje",
-  "Includes narration": "Vsebuje pripovedovanje"
+  "Includes narration": "Vsebuje pripovedovanje",
+  "Back to Read Aloud": "Nazaj na glasno branje"
 }

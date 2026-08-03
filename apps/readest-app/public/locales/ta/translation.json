@@ -1000,7 +1000,6 @@
   "Authors": "ஆசிரியர்கள்",
   "Books": "புத்தகங்கள்",
   "Groups": "குழுக்கள்",
-  "Back to TTS Location": "TTS இடத்திற்குத் திரும்பு",
   "Metadata": "மெட்டாடேட்டா",
   "Image viewer": "படக் காட்சிப்பவர்",
   "Previous Image": "முந்தைய படம்",
@@ -2006,5 +2005,6 @@
   "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "கேமிங் பயன்முறையில் கணினி கோப்புத் தேர்வி கிடைக்காது. கோப்புகளைத் தேர்ந்தெடுக்க டெஸ்க்டாப் பயன்முறைக்கு மாறவும்.",
   "Book narration": "புத்தகத்தின் விவரிப்பு",
   "Narration": "விவரிப்பு",
-  "Includes narration": "விவரிப்பு உள்ளடங்கும்"
+  "Includes narration": "விவரிப்பு உள்ளடங்கும்",
+  "Back to Read Aloud": "உரக்க வாசித்தலுக்குத் திரும்பு"
 }
