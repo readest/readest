@@ -8,6 +8,7 @@ import { resolveURL, parseMediaType, getFileExtFromPath } from '@/app/opds/utils
 import { normalizeOPDSCustomHeaders } from '@/app/opds/utils/customHeaders';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { applyOPDSCover } from './cover';
+import { applyOPDSMetadata } from './metadata';
 import { checkFeedForNewItems } from './feedChecker';
 import {
   loadSubscriptionState,
@@ -94,6 +95,11 @@ async function downloadAndImport(
 
   const book = await appService.importBook(dstFilePath, books);
   if (!book) throw new Error(`importBook returned null for ${item.title}`);
+  // The catalog's curated metadata wins over the file's embedded record
+  // (#5270). Retry items rebuilt from FailedEntry carry none and skip.
+  if (item.metadata) {
+    applyOPDSMetadata(book, item.metadata);
+  }
   // The catalog's own artwork wins over the one embedded in the file (#5270).
   // Best effort: a failure here must not fail an otherwise good import.
   if (item.coverHref) {

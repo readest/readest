@@ -115,12 +115,12 @@ export interface OPDSBaseLink {
   templated?: boolean;
 }
 
-interface OPDSPerson {
+export interface OPDSPerson {
   name?: string;
   links: Array<{ href: string; type?: string }>;
 }
 
-interface OPDSSubject {
+export interface OPDSSubject {
   name?: string;
   code?: string;
   scheme?: string;

@@ -21,6 +21,7 @@ import {
 } from '@/app/opds/utils/opdsUtils';
 import { normalizeOPDSCustomHeaders } from '@/app/opds/utils/customHeaders';
 import { getOPDSCoverHref } from './cover';
+import { getOPDSBookMetadata } from './metadata';
 import type { OPDSSubscriptionState, PendingItem } from './types';
 import { MAX_CRAWL_DEPTH, MAX_FEEDS_PER_CRAWL, MAX_PAGES_PER_FEED } from './types';
 
@@ -197,11 +198,13 @@ export function collectNewEntries(
     if (!acqLink) continue;
 
     seenInBatch.add(entryId);
+    const metadata = getOPDSBookMetadata(pub);
     items.push({
       entryId,
       title: pub.metadata.title || acqLink.title || 'Untitled',
       acquisitionHref: acqLink.href,
       coverHref: getOPDSCoverHref(pub),
+      metadata: Object.keys(metadata).length ? metadata : undefined,
       mimeType: acqLink.type ?? 'application/octet-stream',
       updated: pub.metadata.updated,
       baseURL,

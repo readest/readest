@@ -49,6 +49,7 @@ import { ImportError } from '@/services/errors';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { findBookByOPDSSources, upsertOPDSSourceMapping } from '@/services/opds/sourceMap';
 import { applyOPDSCover, getOPDSCoverHref } from '@/services/opds/cover';
+import { applyOPDSMetadata, getOPDSBookMetadata } from '@/services/opds/metadata';
 import { buildPseStreamFileName } from '@/services/opds/pseStream';
 import type { Book } from '@/types/book';
 import { FeedView } from './components/FeedView';
@@ -620,6 +621,13 @@ export default function BrowserPage() {
           const { library, setLibrary } = useLibraryStore.getState();
           try {
             const book = await appService.importBook(dstFilePath, library);
+            // The catalog's curated metadata wins over the file's embedded
+            // record (#5270) — applied before the cloud upload is queued so
+            // peers get the same fields. `publication` already carries the
+            // detail-document merge (#4749), so this is the fullest record.
+            if (book && publication) {
+              applyOPDSMetadata(book, getOPDSBookMetadata(publication));
+            }
             // The catalog's own artwork wins over the one embedded in the file
             // (#5270) — applied before the cloud upload is queued so peers get
             // the same cover. Best effort: never fail the import over it.
@@ -666,7 +674,15 @@ export default function BrowserPage() {
         throw e;
       }
     },
-    [user, state.baseURL, appService, libraryLoaded, catalogSourceId, publicationCoverHref],
+    [
+      user,
+      state.baseURL,
+      appService,
+      libraryLoaded,
+      catalogSourceId,
+      publication,
+      publicationCoverHref,
+    ],
   );
 
   const handleStream = useCallback(
