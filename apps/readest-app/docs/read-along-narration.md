@@ -142,20 +142,31 @@ Consequences of that shape:
 - **Marks are 1:1 with clips by construction.** Mark names are section-global par
   ordinals, so the client resolves a mark straight to its clip and there is no
   text↔audio matching anywhere in the feature.
-- **Blocks play as one continuous span.** Consecutive pars in a paragraph are
-  contiguous audio; the client seeks once at the block start and fires
-  boundaries at par thresholds, so a narrated sentence has no seam mid-way.
-  It re-seeks only where the publisher split a paragraph across audio files.
+- **The whole section plays as one continuous span.** Media Overlay clips are
+  contiguous and in document order, so sequential playback needs no seeking at
+  all: the element keeps rolling while boundaries are fired at par thresholds,
+  and a narrated sentence or paragraph has no seam mid-way. The playhead moves
+  only for a genuine discontinuity - session start, a sentence skip, a scrub, or
+  a new audio file where the publisher split the recording - decided from the
+  element's own position rather than from bookkeeping.
 - **The scrubber is exact.** `TimelineSentence.duration` carries
   `clipEnd - clipBegin` and outranks the measured/estimated duration tiers in
   `SectionTimeline`, so a narrated chapter reports the recording's real length
   with no `~`. It is deliberately not routed through the text-keyed duration
   cache in `ttsDuration.ts`, where two identical sentences would collide.
 - **Capabilities, not identity checks.** The client reports
-  `{ wordBoundaries: false, mediaClock: true, gapControl: false, liveRateChange: true }`,
+  `{ wordBoundaries: false, mediaClock: true, gapControl: false, liveRateChange: true, continuousTimeline: true }`,
   and `ensureTimeline`/`supportsPlaybackInfo`/`getPlaybackInfo` gate on
   `mediaClock` rather than comparing against the Edge client — which is what
   `TTSCapabilities` in `TTSClient.ts` existed for.
+- **A continuous timeline is handed over, not stopped.** `continuousTimeline`
+  tells the controller that consecutive blocks are one recording, so it neither
+  pads paragraph transitions with its own delay nor treats the stop between two
+  utterances of a session as a real stop. That stop passes `handover` to
+  `TTSClient.stop()`, and the narration client stays rolling through it. Both
+  additions to `TTSClient.ts` are optional, so the synthesizing clients
+  (`NativeTTSClient`, `WebSpeechClient`, `BufferedTTSClient`) ignore them and
+  behave exactly as before.
 
 Selection is the existing Voice picker: `TTSController.getVoices` prepends a
 narration group for books that have overlays, and `setVoice` routes
@@ -233,9 +244,10 @@ Verified end to end against two very different real books:
 
 ### Bugs the unit tests could not have found
 
-Four defects surfaced only when the feature was driven end to end in a browser
-against those books. They are worth knowing about, because each is invisible to a
-jsdom test:
+Six defects surfaced only when the feature was driven end to end in a browser
+against those books — the last two only by *listening*, which is worth saying
+plainly: they passed every test and looked correct in every log. Each is
+invisible to a jsdom test:
 
 1. **The highlight never painted.** Par ranges were built with
    `selectNodeContents(el)`, which puts both boundaries on the *element*.
@@ -260,7 +272,37 @@ jsdom test:
    fired on a book whose first sections are unnarrated — which the W3C sample is
    not, and every Storyteller output is.
 
-A fourth, pre-existing, turned up alongside them: `WebSpeechClient.init()` waited
+5. **Every paragraph's first word was spoken twice** — most audibly on the short
+   "Me?" that opens a paragraph early in *The Player of Games*. The client drove
+   playback one block per `speak()` and seeked to the block's `clipBegin` each
+   time. Detecting a clip's end by polling the media clock always lands a few
+   milliseconds *past* `clipEnd`, so those milliseconds of the next clip had
+   already been heard; seeking back replayed them. Measured rewinds were tiny —
+   22 ms and 46 ms — which is exactly long enough to replay the attack of a
+   consonant and be heard as a stutter. Media Overlay clips are contiguous and in
+   document order, so sequential playback needs no seeking at all: the playhead
+   now moves only for a genuine discontinuity, decided from the element's own
+   position.
+6. **Every paragraph boundary was a hiccup.** With the replay gone, each boundary
+   still silenced and restarted the recording: the client paused at its block's
+   last clip and the controller's pre-speak `stop()` paused again, ~50 ms before
+   the next block called `play()`. On Android that also costs a buffer flush.
+   Silencing the engine between utterances is right for synthesis, where each
+   utterance is separately rendered audio, and wrong for one continuous
+   recording, where the next utterance is the same audio playing on — hence
+   `TTSCapabilities.continuousTimeline` and the `handover` flag on `stop()`. The
+   narration client now leaves the element playing when a block ends and lets the
+   next block join it in progress, with a watchdog so audio can never be left
+   running unattended. Verified over 80 s and sixteen sentences: no seeks, no
+   pauses, no stall in the media clock.
+
+Reading a selection aloud was broken in a related way: that path builds SSML from
+the raw selected text, which no clip matches, so the utterance ended at once and
+the one-shot callback stopped the session — it played for about a second and
+died. A recording has no audio for arbitrary text, so a narrated book now starts
+the narration where the passage is narrated instead.
+
+A pre-existing defect turned up alongside them: `WebSpeechClient.init()` waited
 forever for a `voiceschanged` event on a platform reporting zero speech voices,
 which wedged `TTSController.init()` and so blocked *every* engine — including
 narration, which needs no system voice at all. It now gives up after a timeout.
