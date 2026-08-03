@@ -2094,5 +2094,6 @@
   "Progress Bar": "Pasek postępu",
   "Current Time": "Aktualny czas",
   "Battery Status": "Stan baterii",
-  "Battery Percentage": "Procent baterii"
+  "Battery Percentage": "Procent baterii",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Systemowy selektor plików jest niedostępny w trybie gier. Aby wybrać pliki, przełącz się na tryb pulpitu."
 }

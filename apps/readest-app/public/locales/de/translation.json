@@ -2002,5 +2002,6 @@
   "Progress Bar": "Fortschrittsleiste",
   "Current Time": "Aktuelle Uhrzeit",
   "Battery Status": "Akkustand",
-  "Battery Percentage": "Akkustand in Prozent"
+  "Battery Percentage": "Akkustand in Prozent",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Die Systemdateiauswahl ist im Gaming-Modus nicht verfügbar. Bitte wechseln Sie in den Desktop-Modus, um Dateien auszuwählen."
 }

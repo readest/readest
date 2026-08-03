@@ -2002,5 +2002,6 @@
   "Progress Bar": "অগ্রগতি বার",
   "Current Time": "বর্তমান সময়",
   "Battery Status": "ব্যাটারি অবস্থা",
-  "Battery Percentage": "ব্যাটারি শতাংশ"
+  "Battery Percentage": "ব্যাটারি শতাংশ",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "গেমিং মোডে সিস্টেম ফাইল নির্বাচক উপলব্ধ নয়। ফাইল নির্বাচন করতে অনুগ্রহ করে ডেস্কটপ মোডে যান।"
 }

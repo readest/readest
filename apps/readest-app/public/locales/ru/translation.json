@@ -2094,5 +2094,6 @@
   "Progress Bar": "Полоса прогресса",
   "Current Time": "Текущее время",
   "Battery Status": "Состояние батареи",
-  "Battery Percentage": "Процент заряда батареи"
+  "Battery Percentage": "Процент заряда батареи",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Системный диалог выбора файлов недоступен в игровом режиме. Чтобы выбрать файлы, переключитесь в режим рабочего стола."
 }

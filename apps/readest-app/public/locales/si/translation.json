@@ -2002,5 +2002,6 @@
   "Progress Bar": "ප්‍රගති තීරුව",
   "Current Time": "වත්මන් වේලාව",
   "Battery Status": "බැටරි තත්ත්වය",
-  "Battery Percentage": "බැටරි ප්‍රතිශතය"
+  "Battery Percentage": "බැටරි ප්‍රතිශතය",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "ක්‍රීඩා ප්‍රකාරයේදී පද්ධති ගොනු තෝරකය නොමැත. ගොනු තේරීමට කරුණාකර ඩෙස්ක්ටොප් ප්‍රකාරයට මාරු වන්න."
 }

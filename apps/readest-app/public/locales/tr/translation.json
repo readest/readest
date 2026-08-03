@@ -2002,5 +2002,6 @@
   "Progress Bar": "İlerleme Çubuğu",
   "Current Time": "Şu Anki Saat",
   "Battery Status": "Pil Durumu",
-  "Battery Percentage": "Pil Yüzdesi"
+  "Battery Percentage": "Pil Yüzdesi",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Sistem dosya seçici Oyun Modunda kullanılamıyor. Dosyaları seçmek için lütfen Masaüstü Moduna geçin."
 }

@@ -1956,5 +1956,6 @@
   "Progress Bar": "Bar Kemajuan",
   "Current Time": "Waktu Sekarang",
   "Battery Status": "Status Bateri",
-  "Battery Percentage": "Peratusan Bateri"
+  "Battery Percentage": "Peratusan Bateri",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Pemilih fail sistem tidak tersedia dalam Mod Permainan. Sila tukar ke Mod Desktop untuk memilih fail."
 }

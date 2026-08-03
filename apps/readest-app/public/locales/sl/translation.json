@@ -2094,5 +2094,6 @@
   "Progress Bar": "Vrstica napredka",
   "Current Time": "Trenutni čas",
   "Battery Status": "Stanje baterije",
-  "Battery Percentage": "Odstotek baterije"
+  "Battery Percentage": "Odstotek baterije",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Sistemski izbirnik datotek v igralnem načinu ni na voljo. Za izbiro datotek preklopite v namizni način."
 }

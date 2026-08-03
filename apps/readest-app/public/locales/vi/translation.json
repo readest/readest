@@ -1956,5 +1956,6 @@
   "Progress Bar": "Thanh tiến độ",
   "Current Time": "Thời gian hiện tại",
   "Battery Status": "Trạng thái pin",
-  "Battery Percentage": "Phần trăm pin"
+  "Battery Percentage": "Phần trăm pin",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Trình chọn tệp của hệ thống không khả dụng trong Chế độ chơi game. Vui lòng chuyển sang Chế độ máy tính để chọn tệp."
 }

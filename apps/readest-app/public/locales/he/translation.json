@@ -2048,5 +2048,6 @@
   "Progress Bar": "סרגל התקדמות",
   "Current Time": "השעה הנוכחית",
   "Battery Status": "מצב סוללה",
-  "Battery Percentage": "אחוזי סוללה"
+  "Battery Percentage": "אחוזי סוללה",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "בוחר הקבצים של המערכת אינו זמין במצב משחק. יש לעבור למצב שולחן עבודה כדי לבחור קבצים."
 }

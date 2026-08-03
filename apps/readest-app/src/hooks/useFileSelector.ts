@@ -1,8 +1,10 @@
 import { AppService } from '@/types/system';
 import { isTauriAppPlatform } from '@/services/environment';
+import { invoke } from '@tauri-apps/api/core';
 import { basename } from '@tauri-apps/api/path';
 import { isContentURI, isFileURI, stubTranslation as _ } from '@/utils/misc';
 import { getFilename } from '@/utils/path';
+import { eventDispatcher } from '@/utils/event';
 import { BOOK_ACCEPT_FORMATS, SUPPORTED_BOOK_EXTS } from '@/services/constants';
 
 export interface FileSelectorOptions {
@@ -70,11 +72,37 @@ const resolveTauriFileName = async (path: string, appService: AppService): Promi
   return getFilename(path);
 };
 
+const isGamescopeSession = async (): Promise<boolean> => {
+  try {
+    const [gamescopeDisplay, currentDesktop] = await Promise.all([
+      invoke<string>('get_environment_variable', { name: 'GAMESCOPE_WAYLAND_DISPLAY' }),
+      invoke<string>('get_environment_variable', { name: 'XDG_CURRENT_DESKTOP' }),
+    ]);
+    return !!gamescopeDisplay || currentDesktop.toLowerCase().includes('gamescope');
+  } catch {
+    return false;
+  }
+};
+
 const selectFileTauri = async (
   options: FileSelectorOptions,
   appService: AppService,
   _: (key: string) => string,
 ): Promise<SelectedFile[]> => {
+  // A gamescope session (SteamOS Gaming Mode) runs no XDG portal backend, so
+  // the FileChooser dialog can never appear, and the sandboxed Flatpak relies
+  // on that dialog to grant file access — there is no in-app fallback. The
+  // failed dialog resolves to null, indistinguishable from a user cancel, so
+  // explain up front instead of silently no-oping (#3049).
+  if (appService.isLinuxApp && (await isGamescopeSession())) {
+    eventDispatcher.dispatch('toast', {
+      type: 'info',
+      message: _(
+        'The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.',
+      ),
+      timeout: 5000,
+    });
+  }
   // Android's SAF picker filters by MIME type. Niche/custom extensions
   // (e.g. ".mrexpt" from Moon+ Reader) have no registered MIME and would
   // appear greyed-out, so for those cases we ask the native side for an

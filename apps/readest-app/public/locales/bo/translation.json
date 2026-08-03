@@ -1956,5 +1956,6 @@
   "Progress Bar": "ཡར་འཕེལ་ཕྲ་རིང་།",
   "Current Time": "ད་ལྟའི་དུས་ཚོད།",
   "Battery Status": "གློག་རྫས་གནས་བབ།",
-  "Battery Percentage": "གློག་རྫས་བརྒྱ་ཆ།"
+  "Battery Percentage": "གློག་རྫས་བརྒྱ་ཆ།",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "རྩེད་མོའི་རྣམ་པའི་ནང་དུ་མ་ལག་གི་ཡིག་ཆ་འདེམས་ཆས་སྤྱོད་མི་ཐུབ། ཡིག་ཆ་འདེམས་པའི་ཆེད་དུ་ཅོག་ངོས་རྣམ་པར་བརྗེ་རོགས།"
 }

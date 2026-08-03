@@ -2048,5 +2048,6 @@
   "Progress Bar": "Bară de progres",
   "Current Time": "Ora curentă",
   "Battery Status": "Starea bateriei",
-  "Battery Percentage": "Procentul bateriei"
+  "Battery Percentage": "Procentul bateriei",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Selectorul de fișiere al sistemului nu este disponibil în modul de joc. Treceți la modul desktop pentru a selecta fișiere."
 }

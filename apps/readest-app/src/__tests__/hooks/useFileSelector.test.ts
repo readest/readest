@@ -11,18 +11,30 @@ vi.mock('@/services/environment', () => ({
   isTauriAppPlatform: () => true,
 }));
 
+const envMock: Record<string, string> = {};
+const invokeMock = vi.fn(async (cmd: string, args?: { name?: string }) => {
+  if (cmd === 'get_environment_variable') return envMock[args?.name ?? ''] ?? '';
+  return '';
+});
+
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: (cmd: string, args?: { name?: string }) => invokeMock(cmd, args),
+}));
+
 import { useFileSelector } from '@/hooks/useFileSelector';
+import { eventDispatcher } from '@/utils/event';
 
 const _ = (key: string) => key;
 
 const makeAppService = (
-  platform: 'ios' | 'android',
+  platform: 'ios' | 'android' | 'linux',
   picked: string[],
 ): { appService: AppService; selectFiles: ReturnType<typeof vi.fn> } => {
   const selectFiles = vi.fn(async () => picked);
   const appService = {
     isIOSApp: platform === 'ios',
     isAndroidApp: platform === 'android',
+    isLinuxApp: platform === 'linux',
     selectFiles,
   } as unknown as AppService;
   return { appService, selectFiles };
@@ -30,6 +42,8 @@ const makeAppService = (
 
 beforeEach(() => {
   basenameMock.mockClear();
+  invokeMock.mockClear();
+  for (const key of Object.keys(envMock)) delete envMock[key];
 });
 
 describe('useFileSelector cover selection', () => {
@@ -70,5 +84,50 @@ describe('useFileSelector cover selection', () => {
 
     expect(selectFiles).toHaveBeenCalledWith(expect.any(String), ['png', 'jpg', 'jpeg', 'gif']);
     expect(result.files).toHaveLength(1);
+  });
+});
+
+describe('useFileSelector under gamescope (SteamOS Gaming Mode, #3049)', () => {
+  test('Linux in a gamescope session: explains that the file dialog cannot appear', async () => {
+    envMock['GAMESCOPE_WAYLAND_DISPLAY'] = 'gamescope-0';
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch').mockResolvedValue();
+    const { appService } = makeAppService('linux', []);
+    const { selectFiles: select } = useFileSelector(appService, _);
+
+    const result = await select({ type: 'books', multiple: true });
+
+    // The gamescope session runs no XDG portal backend, so the FileChooser
+    // dialog never opens and the empty result looks exactly like a user
+    // cancel. Without a toast the import button is a silent no-op.
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      'toast',
+      expect.objectContaining({
+        type: 'info',
+        message: expect.stringContaining('Gaming Mode'),
+      }),
+    );
+    expect(result.files).toHaveLength(0);
+    dispatchSpy.mockRestore();
+  });
+
+  test('Linux on a regular desktop: no toast, dialog result is untouched', async () => {
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch').mockResolvedValue();
+    const { appService } = makeAppService('linux', ['/home/user/books/book.epub']);
+    const { selectFiles: select } = useFileSelector(appService, _);
+
+    const result = await select({ type: 'books', multiple: true });
+
+    expect(dispatchSpy).not.toHaveBeenCalled();
+    expect(result.files).toHaveLength(1);
+    dispatchSpy.mockRestore();
+  });
+
+  test('non-Linux platforms never probe the environment', async () => {
+    const { appService } = makeAppService('android', ['content://media/external/file/42']);
+    const { selectFiles: select } = useFileSelector(appService, _);
+
+    await select({ type: 'books', multiple: true });
+
+    expect(invokeMock).not.toHaveBeenCalled();
   });
 });

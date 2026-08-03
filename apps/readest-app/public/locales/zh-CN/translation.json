@@ -1956,5 +1956,6 @@
   "Progress Bar": "进度条",
   "Current Time": "当前时间",
   "Battery Status": "电量",
-  "Battery Percentage": "电量百分比"
+  "Battery Percentage": "电量百分比",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "游戏模式下无法使用系统文件选择器。请切换到桌面模式以选择文件。"
 }

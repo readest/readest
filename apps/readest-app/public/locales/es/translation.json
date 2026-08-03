@@ -2048,5 +2048,6 @@
   "Progress Bar": "Barra de progreso",
   "Current Time": "Hora actual",
   "Battery Status": "Estado de la batería",
-  "Battery Percentage": "Porcentaje de batería"
+  "Battery Percentage": "Porcentaje de batería",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "El selector de archivos del sistema no está disponible en el modo de juego. Cambia al modo de escritorio para seleccionar archivos."
 }

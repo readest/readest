@@ -2002,5 +2002,6 @@
   "Progress Bar": "Voortgangsbalk",
   "Current Time": "Huidige tijd",
   "Battery Status": "Batterijstatus",
-  "Battery Percentage": "Batterijpercentage"
+  "Battery Percentage": "Batterijpercentage",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "De systeembestandskiezer is niet beschikbaar in de gamingmodus. Schakel over naar de desktopmodus om bestanden te selecteren."
 }

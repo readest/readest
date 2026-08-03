@@ -2002,5 +2002,6 @@
   "Progress Bar": "Förloppsindikator",
   "Current Time": "Aktuell tid",
   "Battery Status": "Batteristatus",
-  "Battery Percentage": "Batteriprocent"
+  "Battery Percentage": "Batteriprocent",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Systemets filväljare är inte tillgänglig i spelläge. Byt till skrivbordsläge för att välja filer."
 }

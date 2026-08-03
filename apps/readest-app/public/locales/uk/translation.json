@@ -2094,5 +2094,6 @@
   "Progress Bar": "Смуга прогресу",
   "Current Time": "Поточний час",
   "Battery Status": "Стан батареї",
-  "Battery Percentage": "Відсоток заряду батареї"
+  "Battery Percentage": "Відсоток заряду батареї",
+  "The system file picker is not available in Gaming Mode. Please switch to Desktop Mode to select files.": "Системний діалог вибору файлів недоступний в ігровому режимі. Щоб вибрати файли, перейдіть у режим робочого столу."
 }
