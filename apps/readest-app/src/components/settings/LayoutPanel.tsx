@@ -689,7 +689,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           data-setting-id='settings.layout.showFooter'
         />
         <SettingsSwitchRow
-          label={_('Show Remaining Time')}
+          label={_('Remaining Time')}
           checked={showRemainingTime}
           disabled={!showFooter}
           onChange={() => {
@@ -702,7 +702,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           }}
         />
         <SettingsSwitchRow
-          label={_('Show Remaining Pages')}
+          label={_('Remaining Pages')}
           checked={showRemainingPages}
           disabled={!showFooter}
           onChange={() => {
@@ -715,7 +715,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           }}
         />
         <SettingsSwitchRow
-          label={_('Show Reading Progress')}
+          label={_('Reading Progress')}
           checked={showProgressInfo}
           disabled={!showFooter}
           onChange={() => setShowProgressInfo(!showProgressInfo)}
@@ -748,14 +748,14 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           />
         )}
         <SettingsSwitchRow
-          label={_('Show Progress Bar')}
+          label={_('Progress Bar')}
           checked={showStickyProgressBar}
           disabled={!showFooter}
           onChange={() => setShowStickyProgressBar(!showStickyProgressBar)}
           data-setting-id='settings.layout.showStickyProgressBar'
         />
         <SettingsSwitchRow
-          label={_('Show Current Time')}
+          label={_('Current Time')}
           checked={showCurrentTime}
           disabled={!showFooter}
           onChange={() => setShowCurrentTime(!showCurrentTime)}
@@ -769,13 +769,13 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           />
         )}
         <SettingsSwitchRow
-          label={_('Show Current Battery Status')}
+          label={_('Battery Status')}
           checked={showCurrentBatteryStatus}
           disabled={!showFooter}
           onChange={() => setShowCurrentBatteryStatus(!showCurrentBatteryStatus)}
         />
         <SettingsSwitchRow
-          label={_('Show Battery Percentage')}
+          label={_('Battery Percentage')}
           checked={showBatteryPercentage}
           disabled={!showFooter || !showCurrentBatteryStatus}
           onChange={() => setShowBatteryPercentage(!showBatteryPercentage)}
