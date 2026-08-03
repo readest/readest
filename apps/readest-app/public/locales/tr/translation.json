@@ -2001,5 +2001,7 @@
   "Add Note": "Not Ekle",
   "No Matching Annotations": "Eşleşen açıklama yok",
   "Reader": "Okuma Görünümü",
-  "Search excerpts...": "Alıntılarda ara..."
+  "Search excerpts...": "Alıntılarda ara...",
+  "Copy Link": "Bağlantıyı kopyala",
+  "Copy link to text after selection": "Seçimden sonra metnin bağlantısını kopyala"
 }

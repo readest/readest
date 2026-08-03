@@ -1955,5 +1955,7 @@
   "Add Note": "添加筆記",
   "No Matching Annotations": "找不到符合的註解",
   "Reader": "閱讀介面",
-  "Search excerpts...": "搜尋摘錄..."
+  "Search excerpts...": "搜尋摘錄...",
+  "Copy Link": "複製連結",
+  "Copy link to text after selection": "複製選取後文字的連結"
 }

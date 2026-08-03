@@ -2093,5 +2093,7 @@
   "Add Note": "Добавить заметку",
   "No Matching Annotations": "Нет подходящих аннотаций",
   "Reader": "Режим чтения",
-  "Search excerpts...": "Искать отрывки..."
+  "Search excerpts...": "Искать отрывки...",
+  "Copy Link": "Копировать ссылку",
+  "Copy link to text after selection": "Копировать ссылку на текст после выделения"
 }

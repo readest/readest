@@ -2001,5 +2001,7 @@
   "Add Note": "Notiz hinzufügen",
   "No Matching Annotations": "Keine passenden Anmerkungen",
   "Reader": "Leseansicht",
-  "Search excerpts...": "Auszüge suchen..."
+  "Search excerpts...": "Auszüge suchen...",
+  "Copy Link": "Link kopieren",
+  "Copy link to text after selection": "Link zum Text nach Auswahl kopieren"
 }

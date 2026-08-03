@@ -2001,5 +2001,7 @@
   "Add Note": "নোট যোগ করুন",
   "No Matching Annotations": "কোনো মিলিত টীকা নেই",
   "Reader": "রিডার",
-  "Search excerpts...": "উদ্ধৃতি খুঁজুন..."
+  "Search excerpts...": "উদ্ধৃতি খুঁজুন...",
+  "Copy Link": "লিঙ্ক কপি করুন",
+  "Copy link to text after selection": "নির্বাচনের পরে টেক্সটের লিঙ্ক কপি করুন"
 }

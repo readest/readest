@@ -2093,5 +2093,7 @@
   "Add Note": "Додати нотатку",
   "No Matching Annotations": "Немає відповідних анотацій",
   "Reader": "Режим читання",
-  "Search excerpts...": "Шукати уривки..."
+  "Search excerpts...": "Шукати уривки...",
+  "Copy Link": "Копіювати посилання",
+  "Copy link to text after selection": "Копіювати посилання на текст після виділення"
 }

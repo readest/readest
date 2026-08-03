@@ -139,6 +139,19 @@ export class ReaderPage extends BasePage {
     return { before, after };
   }
 
+  /**
+   * Add an annotation tool to the selection toolbar via
+   * Settings -> Behavior -> Customize Toolbar, by its chip label.
+   */
+  async enableAnnotationTool(name: string): Promise<void> {
+    await this.revealHeader();
+    await this.headerBar.locator('button[aria-label="Font & Layout"]').click();
+    await this.page.locator('[data-tab="Control"]').click();
+    await this.page.locator('[data-setting-id="settings.control.customizeToolbar"]').click();
+    await this.page.getByRole('button', { name, exact: true }).click();
+    await this.page.keyboard.press('Escape');
+  }
+
   // --- bookmarks ---
 
   get addBookmarkButton(): Locator {
@@ -261,6 +274,11 @@ export class ReaderPage extends BasePage {
     await this.noteEditor.waitFor({ state: 'visible' });
     await this.noteEditor.getByRole('textbox').fill(text);
     await this.notebook.getByRole('button', { name: 'Save' }).click();
+  }
+
+  /** Read the system clipboard (the context must grant `clipboard-read`). */
+  async readClipboard(): Promise<string> {
+    return this.page.evaluate(() => navigator.clipboard.readText());
   }
 
   /** Dismiss the annotation popup if it is open. */

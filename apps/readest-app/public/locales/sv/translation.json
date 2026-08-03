@@ -2001,5 +2001,7 @@
   "Add Note": "Lägg till anteckning",
   "No Matching Annotations": "Inga matchande kommentarer",
   "Reader": "Läsvy",
-  "Search excerpts...": "Sök utdrag..."
+  "Search excerpts...": "Sök utdrag...",
+  "Copy Link": "Kopiera länk",
+  "Copy link to text after selection": "Kopiera länk till text efter markering"
 }

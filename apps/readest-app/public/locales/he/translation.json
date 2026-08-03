@@ -2047,5 +2047,7 @@
   "Add Note": "הוסף הערה",
   "No Matching Annotations": "אין הערות תואמות",
   "Reader": "מצב קריאה",
-  "Search excerpts...": "חפש קטעים..."
+  "Search excerpts...": "חפש קטעים...",
+  "Copy Link": "העתק קישור",
+  "Copy link to text after selection": "העתק קישור לטקסט לאחר הבחירה"
 }

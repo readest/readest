@@ -2001,5 +2001,7 @@
   "Add Note": "Jegyzet hozzáadása",
   "No Matching Annotations": "Nincsenek megfelelő megjegyzések",
   "Reader": "Olvasónézet",
-  "Search excerpts...": "Kivonatok keresése..."
+  "Search excerpts...": "Kivonatok keresése...",
+  "Copy Link": "Hivatkozás másolása",
+  "Copy link to text after selection": "Hivatkozás másolása a szöveghez kijelölés után"
 }

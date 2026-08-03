@@ -1955,5 +1955,7 @@
   "Add Note": "메모 추가",
   "No Matching Annotations": "일치하는 주석 없음",
   "Reader": "리더",
-  "Search excerpts...": "발췌 검색..."
+  "Search excerpts...": "발췌 검색...",
+  "Copy Link": "링크 복사",
+  "Copy link to text after selection": "선택 후 텍스트 링크 복사"
 }

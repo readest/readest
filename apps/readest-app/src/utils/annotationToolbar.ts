@@ -4,6 +4,7 @@ import type { AnnotationToolType } from '@/types/annotator';
 // `annotationToolButtons` in AnnotationTools.tsx (asserted by a unit test).
 export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
   'copy',
+  'copylink',
   'highlight',
   'annotate',
   'search',
@@ -15,7 +16,9 @@ export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
 ];
 
 // Default toolbar: the eight pre-existing tools in their original order.
-// 'share' starts hidden in the Available tray per the #4014 design.
+// 'share' starts hidden in the Available tray per the #4014 design, and
+// 'copylink' is opt-in the same way (#5452) — a niche action most readers
+// never need, reachable by adding it in Customize Toolbar.
 export const DEFAULT_ANNOTATION_TOOLBAR_ITEMS: AnnotationToolType[] = [
   'copy',
   'highlight',

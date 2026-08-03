@@ -2047,5 +2047,7 @@
   "Add Note": "Ajouter une note",
   "No Matching Annotations": "Aucune annotation correspondante",
   "Reader": "Vue de lecture",
-  "Search excerpts...": "Rechercher des extraits..."
+  "Search excerpts...": "Rechercher des extraits...",
+  "Copy Link": "Copier le lien",
+  "Copy link to text after selection": "Copier le lien vers le texte après la sélection"
 }

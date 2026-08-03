@@ -1955,5 +1955,7 @@
   "Add Note": "เพิ่มบันทึก",
   "No Matching Annotations": "ไม่พบคำอธิบายประกอบที่ตรงกัน",
   "Reader": "มุมมองการอ่าน",
-  "Search excerpts...": "ค้นหาข้อความที่เลือก..."
+  "Search excerpts...": "ค้นหาข้อความที่เลือก...",
+  "Copy Link": "คัดลอกลิงก์",
+  "Copy link to text after selection": "คัดลอกลิงก์ไปยังข้อความหลังการเลือก"
 }

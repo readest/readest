@@ -2047,5 +2047,7 @@
   "Add Note": "Adăugați notă",
   "No Matching Annotations": "Nicio adnotare potrivită",
   "Reader": "Vizualizare de lectură",
-  "Search excerpts...": "Căutați extrase..."
+  "Search excerpts...": "Căutați extrase...",
+  "Copy Link": "Copiază linkul",
+  "Copy link to text after selection": "Copiază linkul către text după selecție"
 }

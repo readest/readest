@@ -42,6 +42,28 @@ test.describe('Annotation', () => {
     await expect(reader.annotationItems.getByText(noteText)).toBeVisible();
   });
 
+  test('copies a link to the highlight once Copy Link is enabled', async ({
+    openBook,
+    context,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    const reader = await openBook();
+
+    // Opt-in only: the tool is absent from the default toolbar.
+    await reader.selectText();
+    await expect(reader.popupTool('Copy Link')).toHaveCount(0);
+    await reader.dismissPopup();
+
+    await reader.enableAnnotationTool('Copy Link');
+
+    await reader.selectText();
+    await reader.highlightSelection();
+    await reader.popupTool('Copy Link').click();
+
+    const copied = await reader.readClipboard();
+    expect(copied).toMatch(/\/o\/book\/[^/]+\/annotation\/[^?]+\?cfi=/);
+  });
+
   test('deletes an annotation', async ({ openBook }) => {
     const reader = await openBook();
 

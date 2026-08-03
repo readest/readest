@@ -2185,5 +2185,7 @@
   "Add Note": "إضافة ملاحظة",
   "No Matching Annotations": "لا توجد تعليقات توضيحية مطابقة",
   "Reader": "واجهة القراءة",
-  "Search excerpts...": "بحث في المقتطفات..."
+  "Search excerpts...": "بحث في المقتطفات...",
+  "Copy Link": "نسخ الرابط",
+  "Copy link to text after selection": "نسخ رابط النص بعد التحديد"
 }

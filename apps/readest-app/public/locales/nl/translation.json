@@ -2001,5 +2001,7 @@
   "Add Note": "Notitie toevoegen",
   "No Matching Annotations": "Geen overeenkomende aantekeningen",
   "Reader": "Leesweergave",
-  "Search excerpts...": "Fragmenten zoeken..."
+  "Search excerpts...": "Fragmenten zoeken...",
+  "Copy Link": "Link kopiëren",
+  "Copy link to text after selection": "Kopieer link naar tekst na selectie"
 }

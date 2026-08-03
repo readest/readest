@@ -2001,5 +2001,7 @@
   "Add Note": "नोट जोड़ें",
   "No Matching Annotations": "कोई मेल खाती टिप्पणी नहीं",
   "Reader": "रीडर",
-  "Search excerpts...": "अंश खोजें..."
+  "Search excerpts...": "अंश खोजें...",
+  "Copy Link": "लिंक कॉपी करें",
+  "Copy link to text after selection": "चयन के बाद पाठ का लिंक कॉपी करें"
 }

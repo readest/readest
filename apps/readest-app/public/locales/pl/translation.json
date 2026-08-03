@@ -2093,5 +2093,7 @@
   "Add Note": "Dodaj notatkę",
   "No Matching Annotations": "Brak pasujących adnotacji",
   "Reader": "Widok czytania",
-  "Search excerpts...": "Szukaj fragmentów..."
+  "Search excerpts...": "Szukaj fragmentów...",
+  "Copy Link": "Kopiuj link",
+  "Copy link to text after selection": "Kopiuj link do zaznaczonego tekstu"
 }

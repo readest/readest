@@ -29,6 +29,16 @@ describe('annotationToolbar helpers', () => {
     expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).not.toContain('share');
   });
 
+  test('copylink is opt-in: off the default toolbar, offered in the available tray', () => {
+    expect(ALL_ANNOTATION_TOOL_TYPES).toContain('copylink');
+    expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).not.toContain('copylink');
+    expect(getToolbarToolTypes(undefined, true)).not.toContain('copylink');
+    expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, true)).toContain('copylink');
+    expect(getToolbarToolTypes([...DEFAULT_ANNOTATION_TOOLBAR_ITEMS, 'copylink'], true)).toContain(
+      'copylink',
+    );
+  });
+
   test('getToolbarToolTypes preserves order and falls back to default when undefined', () => {
     expect(getToolbarToolTypes(undefined, true)).toEqual(DEFAULT_ANNOTATION_TOOLBAR_ITEMS);
     expect(getToolbarToolTypes(['search', 'copy'], true)).toEqual(['search', 'copy']);
@@ -45,6 +55,7 @@ describe('annotationToolbar helpers', () => {
 
   test('getAvailableToolTypes returns canonical-order complement', () => {
     expect(getAvailableToolTypes(['copy'], true)).toEqual([
+      'copylink',
       'highlight',
       'annotate',
       'search',

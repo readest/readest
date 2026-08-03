@@ -1955,5 +1955,7 @@
   "Add Note": "ཟིན་བྲིས་སྣོན་པ།",
   "No Matching Annotations": "མཐུན་པའི་མཆན་མེད།",
   "Reader": "ཀློག་ངོས།",
-  "Search excerpts...": "དྲངས་བཏུས་འཚོལ་བཤེར།..."
+  "Search excerpts...": "དྲངས་བཏུས་འཚོལ་བཤེར།...",
+  "Copy Link": "སྦྲེལ་ཐག་འདྲ་བཤུས།",
+  "Copy link to text after selection": "འདེམས་རྗེས་ཡིག་ཆའི་སྦྲེལ་ཐག་འདྲ་བཤུས།"
 }

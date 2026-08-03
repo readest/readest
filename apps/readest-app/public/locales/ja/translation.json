@@ -1955,5 +1955,7 @@
   "Add Note": "メモを追加",
   "No Matching Annotations": "一致する注釈がありません",
   "Reader": "リーダー",
-  "Search excerpts...": "抜粋を検索..."
+  "Search excerpts...": "抜粋を検索...",
+  "Copy Link": "リンクをコピー",
+  "Copy link to text after selection": "選択後のテキストへのリンクをコピー"
 }

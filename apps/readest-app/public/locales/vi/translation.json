@@ -1955,5 +1955,7 @@
   "Add Note": "Thêm ghi chú",
   "No Matching Annotations": "Không có chú thích phù hợp",
   "Reader": "Trình đọc",
-  "Search excerpts...": "Tìm trích dẫn..."
+  "Search excerpts...": "Tìm trích dẫn...",
+  "Copy Link": "Sao chép liên kết",
+  "Copy link to text after selection": "Sao chép liên kết đến văn bản sau khi chọn"
 }

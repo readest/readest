@@ -1955,5 +1955,7 @@
   "Add Note": "添加笔记",
   "No Matching Annotations": "没有匹配的注释",
   "Reader": "阅读界面",
-  "Search excerpts...": "搜索摘录..."
+  "Search excerpts...": "搜索摘录...",
+  "Copy Link": "复制链接",
+  "Copy link to text after selection": "复制选中文本的链接"
 }
