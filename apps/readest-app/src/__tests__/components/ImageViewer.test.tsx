@@ -156,6 +156,73 @@ describe('ImageViewer', () => {
     expect(reachedScale).toBeGreaterThanOrEqual(50);
   });
 
+  // #5232: EPUBs often keep the caption or table description of an
+  // illustration in the image's `alt` attribute, which was invisible once the
+  // image was opened full screen.
+  describe('image description caption', () => {
+    const caption = 'Tabella di come creare una buona abitudine';
+
+    it('shows the image description over the zoomed image', () => {
+      const { container } = render(
+        <ImageViewer
+          src='blob:test-image'
+          caption={caption}
+          onClose={vi.fn()}
+          gridInsets={gridInsets}
+        />,
+      );
+
+      expect(container.querySelector('.image-caption')?.textContent).toBe(caption);
+      // The zoomed image carries the book's own description too, instead of the
+      // placeholder used when the book provides none.
+      expect(container.querySelector('img')!.getAttribute('alt')).toBe(caption);
+    });
+
+    it('renders nothing when the image has no description', () => {
+      const { container } = render(
+        <ImageViewer src='blob:test-image' onClose={vi.fn()} gridInsets={gridInsets} />,
+      );
+
+      expect(container.querySelector('.image-caption')).toBeNull();
+    });
+
+    // The caption sits over the bottom of the image, so tapping the image must
+    // get it out of the way (and bring it back).
+    it('toggles the caption when the image is tapped', () => {
+      const { container } = render(
+        <ImageViewer
+          src='blob:test-image'
+          caption={caption}
+          onClose={vi.fn()}
+          gridInsets={gridInsets}
+        />,
+      );
+      const img = container.querySelector('img')!;
+
+      fireEvent.click(img);
+      expect(container.querySelector('.image-caption')).toBeNull();
+
+      fireEvent.click(img);
+      expect(container.querySelector('.image-caption')?.textContent).toBe(caption);
+    });
+
+    it('does not close the viewer when the caption itself is tapped', () => {
+      const onClose = vi.fn();
+      const { container } = render(
+        <ImageViewer
+          src='blob:test-image'
+          caption={caption}
+          onClose={onClose}
+          gridInsets={gridInsets}
+        />,
+      );
+
+      fireEvent.click(container.querySelector('.image-caption')!);
+
+      expect(onClose).not.toHaveBeenCalled();
+    });
+  });
+
   // Trackpad pinch flicker (#4742): on macOS a trackpad pinch-to-zoom arrives
   // as a rapid stream of ctrl+wheel events. With the 0.05s transition left on,
   // each event restarts the in-flight transition from its interpolated
