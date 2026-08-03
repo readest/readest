@@ -42,15 +42,16 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const primaryEffective: LibrarySortByType =
     sortByAuto && groupBy === LibraryGroupByType.Series ? LibrarySortByType.Series : sortBy;
   const primaryIsImplicit = sortByAuto && primaryEffective !== sortBy;
-  const sortBy2: LibrarySecondarySortByType = settings.librarySortBy2 ?? 'none';
+  const thenSortBy: LibrarySecondarySortByType = settings.libraryThenSortBy ?? 'none';
   // Smart default: when grouping by Author and the user hasn't picked an explicit
   // secondary, Series is implied. Surface this in the menu so the highlighted row
   // matches the actual sort behavior.
   const secondaryEffective: LibrarySecondarySortByType =
-    sortBy2 === 'none' && groupBy === LibraryGroupByType.Author
+    thenSortBy === 'none' && groupBy === LibraryGroupByType.Author
       ? LibrarySortByType.Series
-      : sortBy2;
-  const secondaryIsImplicit = sortBy2 === 'none' && secondaryEffective !== 'none';
+      : thenSortBy;
+  const secondaryIsImplicit = thenSortBy === 'none' && secondaryEffective !== 'none';
+  const isThenAscending = settings.libraryThenSortAscending ?? true;
 
   const viewOptions = [
     { label: _('List'), value: 'list' },
@@ -83,7 +84,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     { label: _('Time Remaining'), value: LibrarySortByType.TimeRemaining },
   ];
 
-  const sortBy2Options: { label: string; value: LibrarySecondarySortByType }[] = [
+  const thenSortByOptions: { label: string; value: LibrarySecondarySortByType }[] = [
     { label: _('None'), value: 'none' },
     ...sortByOptions,
   ];
@@ -160,15 +161,23 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     navigateToLibrary(router, `${params.toString()}`);
   };
 
-  const handleSetSortBy2 = async (value: LibrarySecondarySortByType) => {
-    await saveSysSettings(envConfig, 'librarySortBy2', value);
+  const handleSetThenSortBy = async (value: LibrarySecondarySortByType) => {
+    await saveSysSettings(envConfig, 'libraryThenSortBy', value);
 
     const params = new URLSearchParams(window.location.search);
     if (value === 'none') {
-      params.delete('sort2');
+      params.delete('thenSort');
     } else {
-      params.set('sort2', value);
+      params.set('thenSort', value);
     }
+    navigateToLibrary(router, `${params.toString()}`);
+  };
+
+  const handleSetThenSortAscending = async (value: boolean) => {
+    await saveSysSettings(envConfig, 'libraryThenSortAscending', value);
+
+    const params = new URLSearchParams(window.location.search);
+    params.set('thenOrder', value ? 'asc' : 'desc');
     navigateToLibrary(router, `${params.toString()}`);
   };
 
@@ -299,20 +308,35 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem label={_('Then by...')} detailsOpen={false} buttonClass='py-[4px]'>
         <ul className='ms-0 flex flex-col ps-0 before:hidden'>
-          {sortBy2Options.map((option) => {
+          {thenSortByOptions.map((option) => {
             const isImplicit = secondaryIsImplicit && option.value === secondaryEffective;
-            const isExplicit = sortBy2 === option.value;
+            const isExplicit = thenSortBy === option.value;
             return (
               <MenuItem
                 key={option.value}
                 label={isImplicit ? `${option.label} (${_('Auto')})` : option.label}
                 buttonClass='min-h-8 !py-1'
                 toggled={isExplicit || isImplicit}
-                onClick={() => handleSetSortBy2(option.value)}
+                onClick={() => handleSetThenSortBy(option.value)}
                 transient
               />
             );
           })}
+          {secondaryEffective !== 'none' && (
+            <>
+              <hr aria-hidden='true' className='border-base-200 my-1' />
+              {sortingOptions.map((option) => (
+                <MenuItem
+                  key={option.value.toString()}
+                  label={option.label}
+                  buttonClass='min-h-8 !py-1'
+                  toggled={isThenAscending === option.value}
+                  onClick={() => handleSetThenSortAscending(option.value)}
+                  transient
+                />
+              ))}
+            </>
+          )}
         </ul>
       </MenuItem>
     </Menu>

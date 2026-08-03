@@ -378,7 +378,9 @@ export interface SystemSettings {
    * `false` the moment the user picks any primary sort in the menu.
    */
   librarySortByAuto: boolean;
-  librarySortBy2: LibrarySecondarySortByType;
+  libraryThenSortBy: LibrarySecondarySortByType;
+  /** Sort order of the secondary ("Then by") key, independent of `librarySortAscending` (#5119). */
+  libraryThenSortAscending: boolean;
   libraryGroupBy: LibraryGroupByType;
   libraryCoverFit: LibraryCoverFitType;
   libraryAutoColumns: boolean;

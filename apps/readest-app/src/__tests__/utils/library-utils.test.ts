@@ -851,6 +851,83 @@ describe('createBookSorter', () => {
   });
 });
 
+// Issue #5119: the primary and the secondary ("Then by") key each carry their
+// own sort order, so "authors Z->A, then titles A->Z" is expressible.
+describe('createBookSorter - independent sort orders', () => {
+  const books = [
+    createMockBook({ hash: '1', author: 'Beta Author', title: 'Zebra' }),
+    createMockBook({ hash: '2', author: 'Beta Author', title: 'Apple' }),
+    createMockBook({ hash: '3', author: 'Alpha Author', title: 'Mango' }),
+  ];
+
+  it('should keep the secondary ascending when the primary is descending', () => {
+    const sorter = createBookSorter(
+      LibrarySortByType.Author,
+      'en',
+      LibrarySortByType.Title,
+      false, // primary descending
+      true, // secondary ascending
+    );
+    const sorted = [...books].sort(sorter);
+
+    expect(sorted.map((book) => book.title)).toEqual(['Apple', 'Zebra', 'Mango']);
+  });
+
+  it('should apply a descending secondary while the primary stays ascending', () => {
+    const sorter = createBookSorter(
+      LibrarySortByType.Author,
+      'en',
+      LibrarySortByType.Title,
+      true, // primary ascending
+      false, // secondary descending
+    );
+    const sorted = [...books].sort(sorter);
+
+    expect(sorted.map((book) => book.title)).toEqual(['Mango', 'Zebra', 'Apple']);
+  });
+
+  it('should default both orders to ascending', () => {
+    const sorter = createBookSorter(LibrarySortByType.Author, 'en', LibrarySortByType.Title);
+    const sorted = [...books].sort(sorter);
+
+    expect(sorted.map((book) => book.title)).toEqual(['Mango', 'Apple', 'Zebra']);
+  });
+});
+
+describe('createWithinGroupSorter - secondary sort order', () => {
+  const books = [
+    createMockBook({ hash: '1', title: 'Apple', author: 'Author A', updatedAt: 1000 }),
+    createMockBook({ hash: '2', title: 'Zebra', author: 'Author A', updatedAt: 2000 }),
+  ];
+
+  it('should order the within-group secondary key descending when asked', () => {
+    const sorter = createWithinGroupSorter(
+      LibraryGroupByType.Author,
+      LibrarySortByType.Updated,
+      'en',
+      true,
+      LibrarySortByType.Title,
+      false, // secondary descending
+    );
+    const sorted = [...books].sort(sorter);
+
+    expect(sorted.map((book) => book.title)).toEqual(['Zebra', 'Apple']);
+  });
+
+  it('should keep the within-group secondary ascending by default', () => {
+    const sorter = createWithinGroupSorter(
+      LibraryGroupByType.Author,
+      LibrarySortByType.Updated,
+      'en',
+      true,
+      LibrarySortByType.Title,
+    );
+    const sorted = [...books].sort(sorter);
+
+    expect(sorted.map((book) => book.title)).toEqual(['Apple', 'Zebra']);
+  });
+});
+
 describe('grouping and sorting integration', () => {
   it('should correctly group by series and sort groups by date read', () => {
     const books = [

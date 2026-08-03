@@ -376,13 +376,24 @@ const compareBookByKey = (a: Book, b: Book, sortBy: string, uiLanguage: string):
  * @param secondarySortBy - Optional tiebreaker key applied when the primary
  *   comparison returns 0. Pass `'none'` (or omit) to disable. A Series secondary
  *   orders by series name then index; ties on both fall through to the primary tie.
+ * @param sortAscending - Direction of the primary key (default ascending).
+ * @param secondaryAscending - Direction of the secondary key (default ascending).
+ *   Independent of the primary direction (issue #5119), so callers must NOT apply
+ *   their own direction multiplier on top of this comparator.
  */
 export const createBookSorter =
-  (sortBy: string, uiLanguage: string, secondarySortBy: LibrarySecondarySortByType = 'none') =>
+  (
+    sortBy: string,
+    uiLanguage: string,
+    secondarySortBy: LibrarySecondarySortByType = 'none',
+    sortAscending: boolean = true,
+    secondaryAscending: boolean = true,
+  ) =>
   (a: Book, b: Book): number => {
     const primary = compareBookByKey(a, b, sortBy, uiLanguage);
-    if (primary !== 0 || secondarySortBy === 'none') return primary;
-    return compareBookByKey(a, b, secondarySortBy, uiLanguage);
+    if (primary !== 0) return primary * (sortAscending ? 1 : -1);
+    if (secondarySortBy === 'none') return 0;
+    return compareBookByKey(a, b, secondarySortBy, uiLanguage) * (secondaryAscending ? 1 : -1);
   };
 
 /**
@@ -622,14 +633,15 @@ export const resolveCurrentShelfBooks = (
 /**
  * Create a sorter for books within a group.
  * For series groups: sort by seriesIndex first (always ascending), then by global sort for items without index.
- * For other groupings: when a secondary key is supplied, sort by secondary key first (always ascending),
- *   with the primary global sort as tiebreaker. Without secondary, follow global sort setting.
- * @param sortAscending - When true (default), sort direction is ascending. Series index and the
- *   secondary key are always ascending regardless of this flag; the flag affects the fallback /
- *   primary tiebreaker only.
+ * For other groupings: when a secondary key is supplied, sort by secondary key first (in its own
+ *   direction), with the primary global sort as tiebreaker. Without secondary, follow global sort setting.
+ * @param sortAscending - When true (default), sort direction is ascending. Series index is always
+ *   ascending regardless of this flag; the flag affects the fallback / primary tiebreaker only.
  * @param secondarySortBy - When non-'none', acts as the *primary* within-group ordering for
  *   non-series groupings (matches the user's mental model: "group by author, then sort by series"
  *   should land series order inside each author).
+ * @param secondaryAscending - Direction of the secondary key, independent of `sortAscending`
+ *   (issue #5119).
  */
 export const createWithinGroupSorter =
   (
@@ -638,6 +650,7 @@ export const createWithinGroupSorter =
     uiLanguage: string,
     sortAscending: boolean = true,
     secondarySortBy: LibrarySecondarySortByType = 'none',
+    secondaryAscending: boolean = true,
   ) =>
   (a: Book, b: Book): number => {
     const sortDirection = sortAscending ? 1 : -1;
@@ -663,7 +676,7 @@ export const createWithinGroupSorter =
     // use it as the within-group primary order with the global key as tiebreaker.
     if (secondarySortBy !== 'none') {
       const bySecondary = compareBookByKey(a, b, secondarySortBy, uiLanguage);
-      if (bySecondary !== 0) return bySecondary;
+      if (bySecondary !== 0) return bySecondary * (secondaryAscending ? 1 : -1);
       return createBookSorter(sortBy, uiLanguage)(a, b) * sortDirection;
     }
 
