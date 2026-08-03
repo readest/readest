@@ -12,6 +12,11 @@ export interface AuthRequest {
   callbackScheme?: string;
 }
 
+export interface CustomTabAuthRequest extends AuthRequest {
+  /** Exact custom-scheme URI Android must accept for this authorization attempt. */
+  callbackUrl: string;
+}
+
 export interface AuthResponse {
   redirectUrl: string;
 }
@@ -46,7 +51,7 @@ export async function authWithSafari(request: AuthRequest): Promise<AuthResponse
   }
 }
 
-export async function authWithCustomTab(request: AuthRequest): Promise<AuthResponse> {
+export async function authWithCustomTab(request: CustomTabAuthRequest): Promise<AuthResponse> {
   const result = await invoke<AuthResponse>('plugin:native-bridge|auth_with_custom_tab', {
     payload: request,
   });

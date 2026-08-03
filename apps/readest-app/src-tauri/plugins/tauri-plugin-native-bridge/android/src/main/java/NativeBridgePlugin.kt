@@ -62,6 +62,7 @@ import kotlinx.coroutines.*
 @InvokeArg
 class AuthRequestArgs {
     var authUrl: String? = null
+    var callbackUrl: String? = null
 }
 
 @InvokeArg
@@ -202,8 +203,6 @@ interface KeyDownInterceptor {
 )
 class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     private val implementation = NativeBridge()
-    private var redirectScheme = "readest"
-    private var redirectHost = "auth-callback"
     private var webViewRef: WebView? = null
     private val billingManager by lazy {
         BillingManager(activity)
@@ -247,6 +246,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         private const val REQUEST_MANAGE_STORAGE = 1001
         private const val FOLDER_PICKER_REQUEST_CODE = 1002
         var pendingInvoke: Invoke? = null
+        private var pendingAuthCallbackTarget: OAuthCallbackTarget? = null
         var pendingFolderPickerInvoke: Invoke? = null
         private var instance: NativeBridgePlugin? = null
         fun getInstance(): NativeBridgePlugin? = instance
@@ -293,19 +293,13 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         // OAuth callback uses a custom scheme on intent.data and is handled
         // separately from any user-shared content.
         intent.data?.let { uri ->
-            val scheme = uri.scheme ?: ""
-            val isReadestAuth = scheme == "readest" && uri.host == "auth-callback"
-            // Google Drive sign-in uses the reverse-DNS "iOS URL scheme"
-            // (com.googleusercontent.apps.<id>:/oauthredirect) registered as a
-            // BROWSABLE deep link; resolve it through the same pending invoke as
-            // the Supabase readest://auth-callback flow.
-            val isGoogleOAuth = scheme.startsWith("com.googleusercontent.apps.")
-            if (isReadestAuth || isGoogleOAuth) {
+            if (pendingAuthCallbackTarget?.matches(uri.toString()) == true) {
                 val result = JSObject().apply {
                     put("redirectUrl", uri.toString())
                 }
                 pendingInvoke?.resolve(result)
                 pendingInvoke = null
+                pendingAuthCallbackTarget = null
                 return
             }
         }
@@ -447,15 +441,20 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     @Command
     fun auth_with_custom_tab(invoke: Invoke) {
         val args = invoke.parseArgs(AuthRequestArgs::class.java)
+        val callbackTarget = args.callbackUrl?.let(OAuthCallbackTarget::parse)
+        if (callbackTarget == null) {
+            invoke.reject("Invalid OAuth callback URL")
+            return
+        }
         val uri = Uri.parse(args.authUrl)
 
         val customTabsIntent = CustomTabsIntent.Builder().build()
         customTabsIntent.intent.flags = Intent.FLAG_ACTIVITY_NO_HISTORY
 
         Log.d("NativeBridgePlugin", "Launching OAuth URL: ${args.authUrl}")
-        customTabsIntent.launchUrl(activity, uri)
-
         pendingInvoke = invoke
+        pendingAuthCallbackTarget = callbackTarget
+        customTabsIntent.launchUrl(activity, uri)
     }
 
     @Command

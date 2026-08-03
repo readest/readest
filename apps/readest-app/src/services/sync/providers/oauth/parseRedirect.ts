@@ -1,5 +1,5 @@
 /**
- * Parse the OAuth redirect Google sends back after the consent screen and pull
+ * Parse the OAuth redirect a provider sends back after the consent screen and pull
  * out the authorization `code`, with redirect-target and CSRF protection.
  *
  * The authorization-code flow returns its result as query parameters on a
@@ -17,7 +17,7 @@
  * used with the author's explicit permission.
  */
 
-/** Redirect query-parameter names Google returns. */
+/** Redirect query-parameter names OAuth providers return. */
 const REDIRECT_PARAM = {
   code: 'code',
   state: 'state',
@@ -38,9 +38,10 @@ export interface RedirectResult {
  * @param redirectUrl - the full redirect URL captured from the deep-link intent.
  * @param expectedState - the `state` we generated for this authorization attempt
  *   (see `buildAuthUrl`); the redirect's `state` must equal it.
- * @param expectedRedirectUri - the exact reverse-DNS redirect URI we requested;
- *   the redirect's scheme + path must match it. Defense-in-depth on top of the
- *   ingress scheme filter so a scheme-prefix-but-wrong-path URL cannot slip in.
+ * @param expectedRedirectUri - the exact redirect URI we requested; the
+ *   redirect's scheme, authority, and path must match it. A missing path and
+ *   root path are equivalent because providers may canonicalize the former to
+ *   `/` when returning a custom-scheme callback.
  * @returns the authorization `code` on success.
  * @throws if the URL is not our redirect target, the provider reported an error,
  *   the `state` fails the CSRF check, or no `code` is present — each with a
@@ -54,14 +55,23 @@ export const parseRedirect = (
   const url = new URL(redirectUrl);
   const expected = new URL(expectedRedirectUri);
 
-  // Target guard: the redirect must be aimed at the exact scheme + path we
-  // registered. A custom-scheme URL parses with `protocol` = the scheme (incl.
-  // trailing ':') and `pathname` = the part after it. Anything else is not our
-  // redirect, so reject before reading any of its params.
-  if (url.protocol !== expected.protocol || url.pathname !== expected.pathname) {
+  const normalizeRootPath = (pathname: string) => (pathname === '/' ? '' : pathname);
+  const describeTarget = (target: URL) =>
+    `${target.protocol}${target.host ? `//${target.host}` : ''}${target.pathname}`;
+
+  // Target guard: compare every routing component before reading parameters.
+  // Microsoft may return `scheme://host/` for a registered `scheme://host`, so
+  // only that empty-path/root-path distinction is normalized.
+  if (
+    url.protocol !== expected.protocol ||
+    url.username !== expected.username ||
+    url.password !== expected.password ||
+    url.host !== expected.host ||
+    normalizeRootPath(url.pathname) !== normalizeRootPath(expected.pathname)
+  ) {
     throw new Error(
-      `OAuth redirect target mismatch: expected "${expected.protocol}${expected.pathname}", ` +
-        `got "${url.protocol}${url.pathname}"`,
+      `OAuth redirect target mismatch: expected "${describeTarget(expected)}", ` +
+        `got "${describeTarget(url)}"`,
     );
   }
 

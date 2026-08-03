@@ -16,8 +16,8 @@
  * Custom Tab renders inside the host task and keeps the process at foreground
  * importance; the redirect resolves through a native field that survives a WebView
  * reload. The native command opens consent AND resolves with the redirect URL in
- * one round trip, recognising it by the reverse-DNS scheme parsed from the auth
- * URL's `redirect_uri`.
+ * one round trip, matching it against the exact redirect URI supplied for the
+ * current authorization attempt.
  *
  * The iOS-type client has NO secret and needs NO Android SHA-1 — Google validates
  * the redirect by string-matching the client-id-derived scheme, and PKCE is the
@@ -45,8 +45,8 @@ export const runAndroidOAuth = (config: OAuthClientConfig, fetchFn: FetchFn): Pr
   // single native round-trip — so it needs the auth URL, which `runOAuthFlow`
   // only hands to `openUrl`. Bridge the two with a deferred: `openUrl` supplies
   // the URL, and `awaitRedirect` (invoked first) waits for it before driving the
-  // Custom Tab. The native side recognises the redirect by its reverse-DNS
-  // scheme, so only the auth URL needs to cross over.
+  // Custom Tab. The native side matches the exact callback target, so both the
+  // auth URL and callback URL cross the bridge.
   let provideAuthUrl!: (url: string) => void;
   const authUrlReady = new Promise<string>((resolve) => {
     provideAuthUrl = resolve;
@@ -61,7 +61,7 @@ export const runAndroidOAuth = (config: OAuthClientConfig, fetchFn: FetchFn): Pr
     },
     awaitRedirect: async () => {
       const authUrl = await authUrlReady;
-      const { redirectUrl } = await authWithCustomTab({ authUrl });
+      const { redirectUrl } = await authWithCustomTab({ authUrl, callbackUrl: redirectUri });
       return redirectUrl;
     },
     redirectUri,

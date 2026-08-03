@@ -44,6 +44,7 @@ describe('runAndroidOAuth', () => {
     const authUrl = vi.mocked(authWithCustomTab).mock.calls[0]![0].authUrl;
     expect(authUrl).toContain('code_challenge=');
     expect(authUrl).toContain('accounts.google.com');
+    expect(vi.mocked(authWithCustomTab).mock.calls[0]![0].callbackUrl).toBe(CONFIG.redirectUri);
     expect(tokens.accessToken).toBe('AT');
     expect(tokens.refreshToken).toBe('RT');
     expect(fetchFn).toHaveBeenCalledTimes(1);
