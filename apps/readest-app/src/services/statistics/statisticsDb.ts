@@ -13,7 +13,7 @@ interface BookRow extends DatabaseRow {
   pages: number;
 }
 
-type CursorKey = 'push' | 'pull';
+type CursorKey = 'push' | 'pull' | 'bookorbit-push';
 
 /**
  * Per-tab singleton open promise. OPFS permits only ONE access handle per file
