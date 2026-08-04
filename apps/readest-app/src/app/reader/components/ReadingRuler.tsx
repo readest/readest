@@ -119,6 +119,44 @@ const filterVisibleColumns = (
     }))
     .filter((c) => c.lines.length > 0);
 
+// A paginated spread can join the final page of one section with the first page
+// of the next. Foliate's relocate range belongs to only one document, so include
+// the other on-screen documents or the ruler will treat the section boundary as
+// the end of the whole spread and turn past the adjacent page.
+const buildPaginatedColumns = (
+  view: FoliateView | null,
+  primaryRange: Range,
+  containerRect: DOMRect,
+  columnCount: number,
+  rtl: boolean,
+): ReadingRulerColumn[] => {
+  const primaryDoc = primaryRange.startContainer?.ownerDocument;
+  const mappedRects = mapRangeRectsToOverlay(primaryRange, containerRect);
+
+  for (const { doc } of view?.renderer.getContents() ?? []) {
+    if (doc === primaryDoc || !doc.body) continue;
+    const frame = doc.defaultView?.frameElement?.getBoundingClientRect();
+    if (!frame || frame.right <= containerRect.left || frame.left >= containerRect.right) continue;
+
+    try {
+      const range = doc.createRange();
+      range.selectNodeContents(doc.body);
+      mappedRects.push(...mapRangeRectsToOverlay(range, containerRect));
+    } catch {
+      // A renderer view can disappear while a page turn is settling.
+    }
+  }
+
+  const visibleRects = mappedRects.filter((rect) => {
+    const centerX = (rect.left + rect.right) / 2;
+    return centerX >= 0 && centerX <= containerRect.width;
+  });
+  return filterVisibleColumns(
+    buildReadingRulerColumns(visibleRects, columnCount, containerRect.width, rtl),
+    containerRect.height,
+  );
+};
+
 interface ReadingRulerProps {
   bookKey: string;
   isVertical: boolean;
@@ -301,10 +339,12 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       const halfBlock = Math.max(0, (bandSizeRef.current || fallbackRulerSize) / 2 - padding);
       const anchor = center - halfBlock;
       if (isMultiColumn) {
-        const mapped = mapRangeRectsToOverlay(range, containerRect);
-        const cols = filterVisibleColumns(
-          buildReadingRulerColumns(mapped, columnCount, containerRect.width, rtl),
-          dimension,
+        const cols = buildPaginatedColumns(
+          getView(bookKey),
+          range,
+          containerRect,
+          columnCount,
+          rtl,
         );
         columnsRef.current = cols;
         lineBoxesRef.current = [];
@@ -476,14 +516,9 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       // lands on the last line (so reading continues from where it left off).
       const forward = direction === 'forward';
 
-      if (isMultiColumn && range) {
+      if (isMultiColumn) {
         try {
-          const mapped = mapRangeRectsToOverlay(range, containerRect);
-          const columns = filterVisibleColumns(
-            buildReadingRulerColumns(mapped, columnCount, containerRect.width, rtl),
-            containerDimension,
-          );
-          columnsRef.current = columns;
+          const columns = columnsRef.current;
           // Forward: first line group of the first column. Backward: last line
           // group of the last column.
           const block = forward
