@@ -147,7 +147,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     viewSettings.scrolledDirection = scrolledDirection;
     getView(bookKey)?.renderer.setAttribute('scroll-direction', scrolledDirection);
     setViewSettings(bookKey, viewSettings);
-    saveViewSettings(envConfig, bookKey, 'scrolledDirection', scrolledDirection, false, false);
+    saveViewSettings(envConfig, bookKey, 'scrolledDirection', scrolledDirection, true, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scrolledDirection]);
 
