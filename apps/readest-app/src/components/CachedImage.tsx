@@ -11,12 +11,23 @@ interface CachedImageProps {
   sizes?: string;
   width?: number;
   height?: number;
-  onGenerateCachedImageUrl: (url: string) => Promise<string>;
+  /**
+   * Optional version tag for the image behind `src` (e.g. an OPDS entry's
+   * Atom `<updated>` value). Caching is keyed by URL + version, so a server
+   * that replaces the image at an unchanged URL and bumps the version gets a
+   * fresh fetch instead of the stale cached copy (issue #5492).
+   */
+  cacheVersion?: string;
+  onGenerateCachedImageUrl: (url: string, cacheVersion?: string) => Promise<string>;
   fallback?: React.ReactNode;
 }
 
 const imageUrlCache = new Map<string, string>();
 const loadingPromises = new Map<string, Promise<string>>();
+
+// '\n' cannot appear in a URL, so the key never collides with a plain URL key.
+const toCacheKey = (src: string, cacheVersion?: string) =>
+  cacheVersion ? `${src}\n${cacheVersion}` : src;
 
 const CachedImageComponent = ({
   src,
@@ -26,13 +37,16 @@ const CachedImageComponent = ({
   sizes,
   width,
   height,
+  cacheVersion,
   onGenerateCachedImageUrl,
   fallback,
 }: CachedImageProps) => {
   const [cachedUrl, setCachedUrl] = useState<string | null>(() => {
-    return src ? imageUrlCache.get(src) || null : null;
+    return src ? imageUrlCache.get(toCacheKey(src, cacheVersion)) || null : null;
   });
-  const [loading, setLoading] = useState(() => !src || !imageUrlCache.has(src));
+  const [loading, setLoading] = useState(
+    () => !src || !imageUrlCache.has(toCacheKey(src, cacheVersion)),
+  );
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
@@ -43,7 +57,8 @@ const CachedImageComponent = ({
       return;
     }
 
-    const cached = imageUrlCache.get(src);
+    const cacheKey = toCacheKey(src, cacheVersion);
+    const cached = imageUrlCache.get(cacheKey);
     if (cached) {
       setTimeout(() => {
         setCachedUrl(cached);
@@ -59,20 +74,20 @@ const CachedImageComponent = ({
         setLoading(true);
         setError(null);
 
-        let loadPromise = loadingPromises.get(src);
+        let loadPromise = loadingPromises.get(cacheKey);
 
         if (!loadPromise) {
-          loadPromise = onGenerateCachedImageUrl(src);
-          loadingPromises.set(src, loadPromise);
+          loadPromise = onGenerateCachedImageUrl(src, cacheVersion);
+          loadingPromises.set(cacheKey, loadPromise);
           loadPromise.finally(() => {
-            loadingPromises.delete(src);
+            loadingPromises.delete(cacheKey);
           });
         }
 
         const url = await loadPromise;
 
         if (!cancelled) {
-          imageUrlCache.set(src, url);
+          imageUrlCache.set(cacheKey, url);
           setCachedUrl(url);
           setLoading(false);
         }
@@ -89,7 +104,7 @@ const CachedImageComponent = ({
     return () => {
       cancelled = true;
     };
-  }, [src, onGenerateCachedImageUrl]);
+  }, [src, cacheVersion, onGenerateCachedImageUrl]);
 
   if (loading) {
     return (
@@ -143,7 +158,8 @@ const arePropsEqual = (prevProps: CachedImageProps, nextProps: CachedImageProps)
     prevProps.className === nextProps.className &&
     prevProps.sizes === nextProps.sizes &&
     prevProps.width === nextProps.width &&
-    prevProps.height === nextProps.height
+    prevProps.height === nextProps.height &&
+    prevProps.cacheVersion === nextProps.cacheVersion
   );
 };
 

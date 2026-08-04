@@ -20,7 +20,8 @@ vi.mock('@/app/opds/utils/opdsReq', () => ({
   getProxiedURL: vi.fn((url: string) => url),
 }));
 
-import { applyOPDSCover, getOPDSCoverHref } from '@/services/opds/cover';
+import { md5 } from 'js-md5';
+import { applyOPDSCover, getOPDSCoverHref, getOPDSImageCacheFilename } from '@/services/opds/cover';
 import { downloadFile } from '@/libs/storage';
 import { probeAuth, getProxiedURL, needsProxy } from '@/app/opds/utils/opdsReq';
 
@@ -176,5 +177,27 @@ describe('applyOPDSCover', () => {
     expect(applied).toBe(false);
     expect(appService.writeFile).not.toHaveBeenCalled();
     expect(book.coverHash).toBe('embedded-cover-hash');
+  });
+});
+
+describe('getOPDSImageCacheFilename', () => {
+  const url = 'https://catalog.example.com/covers/1.jpg';
+
+  it('keeps the historical URL-only key when the entry has no updated value', () => {
+    // Existing caches for catalogs without <updated> must stay valid.
+    expect(getOPDSImageCacheFilename(url)).toBe(`img_${md5(url)}.png`);
+  });
+
+  it('changes the key when the updated value changes (issue #5492)', () => {
+    const before = getOPDSImageCacheFilename(url, '2024-01-01T00:00:00Z');
+    const after = getOPDSImageCacheFilename(url, '2025-06-01T00:00:00Z');
+    expect(before).not.toBe(after);
+    expect(before).not.toBe(getOPDSImageCacheFilename(url));
+  });
+
+  it('is stable for the same URL and updated value', () => {
+    expect(getOPDSImageCacheFilename(url, '2025-06-01T00:00:00Z')).toBe(
+      getOPDSImageCacheFilename(url, '2025-06-01T00:00:00Z'),
+    );
   });
 });

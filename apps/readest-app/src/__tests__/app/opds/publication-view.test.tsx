@@ -17,7 +17,9 @@ vi.mock('@/hooks/useTranslation', () => ({
 }));
 
 vi.mock('@/components/CachedImage', () => ({
-  CachedImage: () => <div data-testid='cached-image' />,
+  CachedImage: ({ cacheVersion }: { cacheVersion?: string }) => (
+    <div data-testid='cached-image' data-cache-version={cacheVersion ?? ''} />
+  ),
 }));
 
 vi.mock('@/utils/nav', () => ({
@@ -290,5 +292,33 @@ describe('PublicationView', () => {
 
     expect(screen.queryByRole('button', { name: 'Plain Tag' })).toBeNull();
     expect(screen.getByText('Plain Tag')).toBeTruthy();
+  });
+
+  it("passes the entry's Atom updated value to the cover so a replaced cover refreshes (issue #5492)", () => {
+    const updatedPublication: OPDSPublication = {
+      metadata: {
+        title: 'Replaced Cover Entry',
+        updated: '2025-06-01T00:00:00Z',
+      },
+      links: [],
+      images: [{ rel: 'http://opds-spec.org/image', href: '/covers/1.jpg' }],
+    };
+
+    render(
+      <DropdownProvider>
+        <PublicationView
+          publication={updatedPublication}
+          baseURL='https://catalog.example.com/opds'
+          resolveURL={(href, base) => new URL(href, base).toString()}
+          onDownload={vi.fn(async () => null)}
+          onNavigate={vi.fn()}
+          onGenerateCachedImageUrl={vi.fn(async (url: string) => url)}
+        />
+      </DropdownProvider>,
+    );
+
+    expect(screen.getByTestId('cached-image').getAttribute('data-cache-version')).toBe(
+      '2025-06-01T00:00:00Z',
+    );
   });
 });

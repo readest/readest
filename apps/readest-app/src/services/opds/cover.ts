@@ -1,3 +1,4 @@
+import { md5 } from 'js-md5';
 import type { Book } from '@/types/book';
 import type { AppService } from '@/types/system';
 import type { OPDSGenericLink } from '@/types/opds';
@@ -41,6 +42,17 @@ export const getOPDSCoverHref = (publication: {
     images.find((img) => img.href);
   return cover?.href;
 };
+
+/**
+ * Cache filename for a downloaded OPDS image. Some catalogs replace the cover
+ * bytes at an unchanged URL and only advance the entry's Atom `<updated>`
+ * value, so when the entry carries one it participates in the key and the
+ * replacement invalidates the cached file (issue #5492). Entries without
+ * `<updated>` keep the historical URL-only key, so their existing cache files
+ * stay valid.
+ */
+export const getOPDSImageCacheFilename = (url: string, updated?: string): string =>
+  `img_${md5(updated ? `${url}\n${updated}` : url)}.png`;
 
 interface ApplyOPDSCoverParams {
   appService: AppService;

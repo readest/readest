@@ -16,7 +16,7 @@ interface FeedViewProps {
   resolveURL: (url: string, base: string) => string;
   onNavigate: (url: string) => void;
   onPublicationSelect: (groupIndex: number, itemIndex: number) => void;
-  onGenerateCachedImageUrl: (url: string) => Promise<string>;
+  onGenerateCachedImageUrl: (url: string, cacheVersion?: string) => Promise<string>;
   isOPDSCatalog: (type?: string) => boolean;
   onAddCatalog?: () => void;
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import clsx from 'clsx';
-import { md5 } from 'js-md5';
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { isOPDSCatalog, getPublication, getFeed, getOpenSearch } from 'foliate-js/opds.js';
@@ -48,7 +47,7 @@ import { getPublicationDetailHref, parsePublicationDocument } from './utils/opds
 import { ImportError } from '@/services/errors';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { findBookByOPDSSources, upsertOPDSSourceMapping } from '@/services/opds/sourceMap';
-import { applyOPDSCover, getOPDSCoverHref } from '@/services/opds/cover';
+import { applyOPDSCover, getOPDSCoverHref, getOPDSImageCacheFilename } from '@/services/opds/cover';
 import { applyOPDSMetadata, getOPDSBookMetadata } from '@/services/opds/metadata';
 import { buildPseStreamFileName } from '@/services/opds/pseStream';
 import type { Book } from '@/types/book';
@@ -709,7 +708,7 @@ export default function BrowserPage() {
   );
 
   const handleGenerateCachedImageUrl = useCallback(
-    async (url: string) => {
+    async (url: string, cacheVersion?: string) => {
       if (!appService) return url;
       const username = usernameRef.current || '';
       const password = passwordRef.current || '';
@@ -718,7 +717,7 @@ export default function BrowserPage() {
         return needsProxy(url) ? getProxiedURL(url, '', true) : url;
       }
 
-      const cachedKey = `img_${md5(url)}.png`;
+      const cachedKey = getOPDSImageCacheFilename(url, cacheVersion);
       const cachePrefix = await appService.resolveFilePath('', 'Cache');
       const cachedPath = `${cachePrefix}/${cachedKey}`;
       if (await appService.exists(cachedPath, 'None')) {
