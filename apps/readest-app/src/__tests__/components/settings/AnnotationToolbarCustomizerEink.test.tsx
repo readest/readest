@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 
 /**
  * Regression guard for issue #4839 (display error under e-ink mode).
@@ -54,5 +54,18 @@ describe('AnnotationToolbarCustomizer e-ink toolbar preview', () => {
     const toolbarPreview = container.querySelector('.selection-popup') as HTMLElement;
     expect(toolbarPreview).not.toBeNull();
     expect(toolbarPreview.classList.contains('eink-bordered')).toBe(true);
+  });
+
+  /**
+   * The preview surface mirrors the real popup's theme-aware fill
+   * (`bg-base-300`, `base-100` under dark themes), so it is *light* on light
+   * themes. A hardcoded white empty-state hint only worked against the old
+   * fixed dark `bg-gray-600` fill and would be unreadable now.
+   */
+  it('keeps the empty-toolbar hint readable against the theme-aware preview surface', () => {
+    const { getByText } = render(<AnnotationToolbarCustomizer bookKey='test' onBack={() => {}} />);
+    fireEvent.click(getByText('Clear all'));
+    const hint = getByText('No tools, drag one here');
+    expect(hint.className).not.toMatch(/text-white/);
   });
 });
