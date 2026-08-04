@@ -2192,5 +2192,13 @@
   "Includes narration": "يتضمّن سردًا صوتيًا",
   "Back to Read Aloud": "العودة إلى القراءة بصوت عالٍ",
   "Vertical Scrolling": "التمرير العمودي",
-  "Horizontal Scrolling": "التمرير الأفقي"
+  "Horizontal Scrolling": "التمرير الأفقي",
+  "Book not found in the BookOrbit library": "لم يتم العثور على الكتاب في مكتبة BookOrbit",
+  "Connect to your BookOrbit server.": "اتصل بخادم BookOrbit الخاص بك.",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "مزامنة تقدم القراءة",
+  "Sync Highlights and Bookmarks": "مزامنة التظليلات والعلامات المرجعية",
+  "Sync Reading Statistics": "مزامنة إحصائيات القراءة",
+  "Sync Reading Status": "مزامنة حالة القراءة",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "أنشئ بيانات اعتماد KOReader في BookOrbit ضمن الإعدادات > التكاملات > KOReader، ثم أدخلها هنا مع عنوان الخادم الخاص بك."
 }

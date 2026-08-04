@@ -2054,5 +2054,13 @@
   "Includes narration": "Include narațiune",
   "Back to Read Aloud": "Înapoi la citirea cu voce tare",
   "Vertical Scrolling": "Derulare verticală",
-  "Horizontal Scrolling": "Derulare orizontală"
+  "Horizontal Scrolling": "Derulare orizontală",
+  "Book not found in the BookOrbit library": "Cartea nu a fost găsită în biblioteca BookOrbit",
+  "Connect to your BookOrbit server.": "Conectați-vă la serverul BookOrbit.",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "Sincronizează progresul de lectură",
+  "Sync Highlights and Bookmarks": "Sincronizează evidențierile și semnele de carte",
+  "Sync Reading Statistics": "Sincronizează statisticile de lectură",
+  "Sync Reading Status": "Sincronizează starea lecturii",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Creați date de autentificare KOReader în BookOrbit din Setări > Integrări > KOReader, apoi introduceți-le aici împreună cu adresa serverului."
 }

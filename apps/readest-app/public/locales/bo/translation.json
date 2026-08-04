@@ -1962,5 +1962,13 @@
   "Includes narration": "ཀློག་སྒྲ་ཡོད།",
   "Back to Read Aloud": "སྐད་སྒྲས་ཀློག་སར་ཕྱིར་ལོག་པ།",
   "Vertical Scrolling": "འཕྱང་ཐིག་འཁོར་རྒྱུག",
-  "Horizontal Scrolling": "ཐད་ཐིག་འཁོར་རྒྱུག"
+  "Horizontal Scrolling": "ཐད་ཐིག་འཁོར་རྒྱུག",
+  "Book not found in the BookOrbit library": "BookOrbit དཔེ་མཛོད་ནང་དཔེ་ཆ་རྙེད་མ་སོང་།",
+  "Connect to your BookOrbit server.": "ཁྱེད་ཀྱི་ BookOrbit ཞབས་ཞུ་བར་སྦྲེལ་མཐུད་བྱོས།",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "ཀློག་པའི་བགྲོད་རིམ་མཉམ་འགྲིག",
+  "Sync Highlights and Bookmarks": "གསལ་མདངས་དང་དཔེ་རྟགས་མཉམ་འགྲིག",
+  "Sync Reading Statistics": "ཀློག་པའི་གྲངས་ཐོ་མཉམ་འགྲིག",
+  "Sync Reading Status": "ཀློག་པའི་གནས་སྟངས་མཉམ་འགྲིག",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit ནང་ སྒྲིག་འགོད > མཉམ་སྦྲེལ > KOReader ནང་ KOReader ཐོབ་ཐང་བཟོས་རྗེས་ ཞབས་ཞུ་བའི་ཁ་བྱང་དང་མཉམ་དུ་འདིར་བྲིས།"
 }

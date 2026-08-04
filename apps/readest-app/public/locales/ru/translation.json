@@ -2100,5 +2100,13 @@
   "Includes narration": "Есть озвучка",
   "Back to Read Aloud": "Вернуться к чтению вслух",
   "Vertical Scrolling": "Вертикальная прокрутка",
-  "Horizontal Scrolling": "Горизонтальная прокрутка"
+  "Horizontal Scrolling": "Горизонтальная прокрутка",
+  "Book not found in the BookOrbit library": "Книга не найдена в библиотеке BookOrbit",
+  "Connect to your BookOrbit server.": "Подключитесь к своему серверу BookOrbit.",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "Синхронизировать прогресс чтения",
+  "Sync Highlights and Bookmarks": "Синхронизировать выделения и закладки",
+  "Sync Reading Statistics": "Синхронизировать статистику чтения",
+  "Sync Reading Status": "Синхронизировать статус чтения",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Создайте учётные данные KOReader в BookOrbit в разделе Настройки > Интеграции > KOReader, затем введите их здесь вместе с адресом сервера."
 }

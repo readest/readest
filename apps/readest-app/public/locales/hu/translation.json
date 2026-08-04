@@ -2008,5 +2008,13 @@
   "Includes narration": "Narrációt tartalmaz",
   "Back to Read Aloud": "Vissza a felolvasáshoz",
   "Vertical Scrolling": "Függőleges görgetés",
-  "Horizontal Scrolling": "Vízszintes görgetés"
+  "Horizontal Scrolling": "Vízszintes görgetés",
+  "Book not found in the BookOrbit library": "A könyv nem található a BookOrbit könyvtárban",
+  "Connect to your BookOrbit server.": "Csatlakozzon BookOrbit szerveréhez.",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "Olvasási előrehaladás szinkronizálása",
+  "Sync Highlights and Bookmarks": "Kiemelések és könyvjelzők szinkronizálása",
+  "Sync Reading Statistics": "Olvasási statisztikák szinkronizálása",
+  "Sync Reading Status": "Olvasási állapot szinkronizálása",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Hozzon létre KOReader hitelesítő adatokat a BookOrbitban a Beállítások > Integrációk > KOReader menüpontban, majd adja meg őket itt a szerver címével együtt."
 }

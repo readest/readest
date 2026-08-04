@@ -1962,5 +1962,13 @@
   "Includes narration": "มีการบรรยายเสียง",
   "Back to Read Aloud": "กลับไปที่การอ่านออกเสียง",
   "Vertical Scrolling": "เลื่อนแนวตั้ง",
-  "Horizontal Scrolling": "เลื่อนแนวนอน"
+  "Horizontal Scrolling": "เลื่อนแนวนอน",
+  "Book not found in the BookOrbit library": "ไม่พบหนังสือในคลัง BookOrbit",
+  "Connect to your BookOrbit server.": "เชื่อมต่อกับเซิร์ฟเวอร์ BookOrbit ของคุณ",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "ซิงค์ความคืบหน้าการอ่าน",
+  "Sync Highlights and Bookmarks": "ซิงค์ไฮไลต์และที่คั่นหนังสือ",
+  "Sync Reading Statistics": "ซิงค์สถิติการอ่าน",
+  "Sync Reading Status": "ซิงค์สถานะการอ่าน",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "สร้างข้อมูลรับรอง KOReader ใน BookOrbit ที่ การตั้งค่า > การเชื่อมต่อ > KOReader แล้วกรอกที่นี่พร้อมกับที่อยู่เซิร์ฟเวอร์ของคุณ"
 }

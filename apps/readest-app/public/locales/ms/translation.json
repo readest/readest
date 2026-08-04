@@ -1962,5 +1962,13 @@
   "Includes narration": "Menyertakan narasi",
   "Back to Read Aloud": "Kembali ke Baca Lantang",
   "Vertical Scrolling": "Tatal Menegak",
-  "Horizontal Scrolling": "Tatal Mengufuk"
+  "Horizontal Scrolling": "Tatal Mengufuk",
+  "Book not found in the BookOrbit library": "Buku tidak ditemui dalam perpustakaan BookOrbit",
+  "Connect to your BookOrbit server.": "Sambung ke pelayan BookOrbit anda.",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "Segerakkan Kemajuan Pembacaan",
+  "Sync Highlights and Bookmarks": "Segerakkan Sorotan dan Penanda Buku",
+  "Sync Reading Statistics": "Segerakkan Statistik Pembacaan",
+  "Sync Reading Status": "Segerakkan Status Pembacaan",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Cipta kelayakan KOReader dalam BookOrbit di Tetapan > Integrasi > KOReader, kemudian masukkannya di sini bersama alamat pelayan anda."
 }

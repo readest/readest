@@ -1962,5 +1962,13 @@
   "Includes narration": "낭독 포함",
   "Back to Read Aloud": "소리 내어 읽기로 돌아가기",
   "Vertical Scrolling": "세로 스크롤",
-  "Horizontal Scrolling": "가로 스크롤"
+  "Horizontal Scrolling": "가로 스크롤",
+  "Book not found in the BookOrbit library": "BookOrbit 라이브러리에서 책을 찾을 수 없습니다",
+  "Connect to your BookOrbit server.": "BookOrbit 서버에 연결하세요.",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "읽기 진행률 동기화",
+  "Sync Highlights and Bookmarks": "하이라이트 및 북마크 동기화",
+  "Sync Reading Statistics": "읽기 통계 동기화",
+  "Sync Reading Status": "읽기 상태 동기화",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit의 설정 > 통합 > KOReader에서 KOReader 자격 증명을 만든 다음 서버 주소와 함께 여기에 입력하세요."
 }

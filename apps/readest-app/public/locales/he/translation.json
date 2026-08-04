@@ -2054,5 +2054,13 @@
   "Includes narration": "כולל קריינות",
   "Back to Read Aloud": "חזרה להקראה",
   "Vertical Scrolling": "גלילה אנכית",
-  "Horizontal Scrolling": "גלילה אופקית"
+  "Horizontal Scrolling": "גלילה אופקית",
+  "Book not found in the BookOrbit library": "הספר לא נמצא בספריית BookOrbit",
+  "Connect to your BookOrbit server.": "התחבר לשרת BookOrbit שלך.",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "סנכרון התקדמות הקריאה",
+  "Sync Highlights and Bookmarks": "סנכרון הדגשות וסימניות",
+  "Sync Reading Statistics": "סנכרון סטטיסטיקות קריאה",
+  "Sync Reading Status": "סנכרון סטטוס קריאה",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "צור פרטי התחברות של KOReader ב-BookOrbit תחת הגדרות > אינטגרציות > KOReader, ולאחר מכן הזן אותם כאן יחד עם כתובת השרת שלך."
 }

@@ -2008,5 +2008,13 @@
   "Includes narration": "Ovozli oʻqish mavjud",
   "Back to Read Aloud": "Ovoz chiqarib oʻqishga qaytish",
   "Vertical Scrolling": "Vertikal aylantirish",
-  "Horizontal Scrolling": "Gorizontal aylantirish"
+  "Horizontal Scrolling": "Gorizontal aylantirish",
+  "Book not found in the BookOrbit library": "Kitob BookOrbit kutubxonasida topilmadi",
+  "Connect to your BookOrbit server.": "BookOrbit serveringizga ulaning.",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "O‘qish jarayonini sinxronlash",
+  "Sync Highlights and Bookmarks": "Ajratishlar va xatcho‘plarni sinxronlash",
+  "Sync Reading Statistics": "O‘qish statistikasini sinxronlash",
+  "Sync Reading Status": "O‘qish holatini sinxronlash",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit’da Sozlamalar > Integratsiyalar > KOReader bo‘limida KOReader hisob ma’lumotlarini yarating, so‘ng ularni server manzili bilan birga shu yerga kiriting."
 }

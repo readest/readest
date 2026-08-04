@@ -2008,5 +2008,13 @@
   "Includes narration": "ආඛ්‍යානය ඇතුළත්",
   "Back to Read Aloud": "ශබ්ද නඟා කියවීමට ආපසු යන්න",
   "Vertical Scrolling": "සිරස් අනුචලනය",
-  "Horizontal Scrolling": "තිරස් අනුචලනය"
+  "Horizontal Scrolling": "තිරස් අනුචලනය",
+  "Book not found in the BookOrbit library": "BookOrbit පුස්තකාලයේ පොත හමු නොවීය",
+  "Connect to your BookOrbit server.": "ඔබගේ BookOrbit සේවාදායකයට සම්බන්ධ වන්න.",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "කියවීමේ ප්‍රගතිය සමමුහුර්ත කරන්න",
+  "Sync Highlights and Bookmarks": "උද්දීපන සහ පිටු සලකුණු සමමුහුර්ත කරන්න",
+  "Sync Reading Statistics": "කියවීමේ සංඛ්‍යාලේඛන සමමුහුර්ත කරන්න",
+  "Sync Reading Status": "කියවීමේ තත්ත්වය සමමුහුර්ත කරන්න",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit හි සැකසුම් > ඒකාබද්ධතා > KOReader යටතේ KOReader අක්තපත්‍ර සාදා, ඉන්පසු ඒවා ඔබගේ සේවාදායක ලිපිනය සමඟ මෙහි ඇතුළත් කරන්න."
 }

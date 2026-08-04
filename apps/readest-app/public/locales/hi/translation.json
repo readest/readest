@@ -2008,5 +2008,13 @@
   "Includes narration": "वाचन शामिल है",
   "Back to Read Aloud": "ज़ोर से पढ़ने पर लौटें",
   "Vertical Scrolling": "ऊर्ध्वाधर स्क्रॉलिंग",
-  "Horizontal Scrolling": "क्षैतिज स्क्रॉलिंग"
+  "Horizontal Scrolling": "क्षैतिज स्क्रॉलिंग",
+  "Book not found in the BookOrbit library": "BookOrbit लाइब्रेरी में पुस्तक नहीं मिली",
+  "Connect to your BookOrbit server.": "अपने BookOrbit सर्वर से कनेक्ट करें।",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "पठन प्रगति सिंक करें",
+  "Sync Highlights and Bookmarks": "हाइलाइट और बुकमार्क सिंक करें",
+  "Sync Reading Statistics": "पठन आँकड़े सिंक करें",
+  "Sync Reading Status": "पठन स्थिति सिंक करें",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit में सेटिंग्स > इंटीग्रेशन > KOReader में KOReader क्रेडेंशियल बनाएँ, फिर उन्हें अपने सर्वर पते के साथ यहाँ दर्ज करें।"
 }

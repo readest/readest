@@ -1962,5 +1962,13 @@
   "Includes narration": "ナレーション付き",
   "Back to Read Aloud": "読み上げに戻る",
   "Vertical Scrolling": "縦スクロール",
-  "Horizontal Scrolling": "横スクロール"
+  "Horizontal Scrolling": "横スクロール",
+  "Book not found in the BookOrbit library": "BookOrbitライブラリに本が見つかりません",
+  "Connect to your BookOrbit server.": "BookOrbitサーバーに接続します。",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "読書進捗を同期",
+  "Sync Highlights and Bookmarks": "ハイライトとブックマークを同期",
+  "Sync Reading Statistics": "読書統計を同期",
+  "Sync Reading Status": "読書ステータスを同期",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbitの「設定 > 連携 > KOReader」でKOReaderの認証情報を作成し、サーバーアドレスと一緒にここに入力してください。"
 }

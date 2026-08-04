@@ -2054,5 +2054,13 @@
   "Includes narration": "Inclui narração",
   "Back to Read Aloud": "Voltar à leitura em voz alta",
   "Vertical Scrolling": "Rolagem Vertical",
-  "Horizontal Scrolling": "Rolagem Horizontal"
+  "Horizontal Scrolling": "Rolagem Horizontal",
+  "Book not found in the BookOrbit library": "Livro não encontrado na biblioteca BookOrbit",
+  "Connect to your BookOrbit server.": "Ligue-se ao seu servidor BookOrbit.",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "Sincronizar progresso de leitura",
+  "Sync Highlights and Bookmarks": "Sincronizar destaques e marcadores",
+  "Sync Reading Statistics": "Sincronizar estatísticas de leitura",
+  "Sync Reading Status": "Sincronizar estado de leitura",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Crie credenciais KOReader no BookOrbit em Definições > Integrações > KOReader e introduza-as aqui juntamente com o endereço do seu servidor."
 }

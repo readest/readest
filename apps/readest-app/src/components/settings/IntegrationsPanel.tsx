@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { MdChevronRight } from 'react-icons/md';
 import {
   RiBookOpenLine,
+  RiPlanetLine,
   RiRssLine,
   RiBookReadLine,
   RiBook3Line,
@@ -30,6 +31,7 @@ import { isWebAppPlatform } from '@/services/environment';
 import { getGoogleWebClientId } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { getMicrosoftClientId } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
+import BookOrbitForm from './integrations/BookOrbitForm';
 import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
 import HardcoverForm from './integrations/HardcoverForm';
@@ -58,6 +60,7 @@ import { BoxedList, NavigationRow, SectionTitle, SettingLabel, Tips } from './pr
 
 type SubPage =
   | 'kosync'
+  | 'bookorbit'
   | 'webdav'
   | 'gdrive'
   | 's3'
@@ -168,6 +171,7 @@ const IntegrationsPanel: React.FC = () => {
     }
     if (
       requestedSubPage === 'kosync' ||
+      requestedSubPage === 'bookorbit' ||
       requestedSubPage === 'webdav' ||
       requestedSubPage === 'gdrive' ||
       requestedSubPage === 's3' ||
@@ -193,6 +197,12 @@ const IntegrationsPanel: React.FC = () => {
     return (
       <div className='my-4 w-full'>
         <KOSyncForm onBack={() => setSubPage(null)} />
+      </div>
+    );
+  if (subPage === 'bookorbit')
+    return (
+      <div className='my-4 w-full'>
+        <BookOrbitForm onBack={() => setSubPage(null)} />
       </div>
     );
   if (subPage === 'webdav')
@@ -384,6 +394,12 @@ const IntegrationsPanel: React.FC = () => {
       : _('Connected')
     : _('Not connected');
 
+  const bookOrbitStatus = settings.bookorbit?.enabled
+    ? settings.bookorbit.username
+      ? _('Connected as {{user}}', { user: settings.bookorbit.username })
+      : _('Connected')
+    : _('Not connected');
+
   const readwiseStatus = settings.readwise?.enabled ? _('Connected') : _('Not connected');
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
 
@@ -482,6 +498,12 @@ const IntegrationsPanel: React.FC = () => {
               title={_('KOReader')}
               status={koSyncStatus}
               onClick={() => setSubPage('kosync')}
+            />
+            <IntegrationRow
+              icon={RiPlanetLine}
+              title={_('BookOrbit')}
+              status={bookOrbitStatus}
+              onClick={() => setSubPage('bookorbit')}
             />
             <IntegrationRow
               icon={RiBookReadLine}

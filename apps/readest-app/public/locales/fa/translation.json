@@ -2008,5 +2008,13 @@
   "Includes narration": "شامل روایت صوتی",
   "Back to Read Aloud": "بازگشت به خواندن با صدای بلند",
   "Vertical Scrolling": "پیمایش عمودی",
-  "Horizontal Scrolling": "پیمایش افقی"
+  "Horizontal Scrolling": "پیمایش افقی",
+  "Book not found in the BookOrbit library": "کتاب در کتابخانه BookOrbit پیدا نشد",
+  "Connect to your BookOrbit server.": "به سرور BookOrbit خود متصل شوید.",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "همگام‌سازی پیشرفت مطالعه",
+  "Sync Highlights and Bookmarks": "همگام‌سازی هایلایت‌ها و نشانک‌ها",
+  "Sync Reading Statistics": "همگام‌سازی آمار مطالعه",
+  "Sync Reading Status": "همگام‌سازی وضعیت مطالعه",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "در BookOrbit از مسیر تنظیمات > یکپارچه‌سازی‌ها > KOReader اطلاعات ورود KOReader بسازید و سپس آن‌ها را همراه با نشانی سرور خود اینجا وارد کنید."
 }

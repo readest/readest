@@ -1962,5 +1962,13 @@
   "Includes narration": "Có lời kể",
   "Back to Read Aloud": "Quay lại đọc to",
   "Vertical Scrolling": "Cuộn dọc",
-  "Horizontal Scrolling": "Cuộn ngang"
+  "Horizontal Scrolling": "Cuộn ngang",
+  "Book not found in the BookOrbit library": "Không tìm thấy sách trong thư viện BookOrbit",
+  "Connect to your BookOrbit server.": "Kết nối với máy chủ BookOrbit của bạn.",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "Đồng bộ tiến độ đọc",
+  "Sync Highlights and Bookmarks": "Đồng bộ phần tô sáng và dấu trang",
+  "Sync Reading Statistics": "Đồng bộ thống kê đọc",
+  "Sync Reading Status": "Đồng bộ trạng thái đọc",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Tạo thông tin đăng nhập KOReader trong BookOrbit tại Cài đặt > Tích hợp > KOReader, sau đó nhập chúng vào đây cùng với địa chỉ máy chủ của bạn."
 }

@@ -2008,5 +2008,13 @@
   "Includes narration": "Anlatım içerir",
   "Back to Read Aloud": "Sesli Okumaya Dön",
   "Vertical Scrolling": "Dikey Kaydırma",
-  "Horizontal Scrolling": "Yatay Kaydırma"
+  "Horizontal Scrolling": "Yatay Kaydırma",
+  "Book not found in the BookOrbit library": "Kitap BookOrbit kitaplığında bulunamadı",
+  "Connect to your BookOrbit server.": "BookOrbit sunucunuza bağlanın.",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "Okuma İlerlemesini Eşitle",
+  "Sync Highlights and Bookmarks": "Vurguları ve Yer İmlerini Eşitle",
+  "Sync Reading Statistics": "Okuma İstatistiklerini Eşitle",
+  "Sync Reading Status": "Okuma Durumunu Eşitle",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit'te Ayarlar > Entegrasyonlar > KOReader altında KOReader kimlik bilgileri oluşturun, ardından bunları sunucu adresinizle birlikte buraya girin."
 }

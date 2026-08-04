@@ -1962,5 +1962,13 @@
   "Includes narration": "含有聲朗讀",
   "Back to Read Aloud": "回到朗讀位置",
   "Vertical Scrolling": "垂直滾動",
-  "Horizontal Scrolling": "水平滾動"
+  "Horizontal Scrolling": "水平滾動",
+  "Book not found in the BookOrbit library": "在 BookOrbit 書庫中找不到該書",
+  "Connect to your BookOrbit server.": "連線到你的 BookOrbit 伺服器。",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "同步閱讀進度",
+  "Sync Highlights and Bookmarks": "同步標記與書籤",
+  "Sync Reading Statistics": "同步閱讀統計",
+  "Sync Reading Status": "同步閱讀狀態",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "在 BookOrbit 的「設定 > 整合 > KOReader」中建立 KOReader 憑證，然後連同伺服器位址一併填寫在這裡。"
 }

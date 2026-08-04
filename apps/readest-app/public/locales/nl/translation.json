@@ -2008,5 +2008,13 @@
   "Includes narration": "Met vertelstem",
   "Back to Read Aloud": "Terug naar Voorlezen",
   "Vertical Scrolling": "Verticaal scrollen",
-  "Horizontal Scrolling": "Horizontaal scrollen"
+  "Horizontal Scrolling": "Horizontaal scrollen",
+  "Book not found in the BookOrbit library": "Boek niet gevonden in de BookOrbit-bibliotheek",
+  "Connect to your BookOrbit server.": "Maak verbinding met je BookOrbit-server.",
+  "BookOrbit": "BookOrbit",
+  "Sync Reading Progress": "Leesvoortgang synchroniseren",
+  "Sync Highlights and Bookmarks": "Markeringen en bladwijzers synchroniseren",
+  "Sync Reading Statistics": "Leesstatistieken synchroniseren",
+  "Sync Reading Status": "Leesstatus synchroniseren",
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Maak KOReader-inloggegevens aan in BookOrbit onder Instellingen > Integraties > KOReader en voer ze hier in samen met je serveradres."
 }
