@@ -164,7 +164,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     <div
       role='presentation'
       className={clsx(
-        'progressinfo pointer-events-none absolute bottom-0 flex items-center justify-between font-sans',
+        'progressinfo pointer-events-none absolute bottom-0 z-10 flex items-center justify-between font-sans',
         isEink ? 'text-sm font-normal' : 'text-xs font-extralight',
         // The blend keeps the info legible over an unthemed fixed-layout page,
         // but it composites the whole container as a group -- with the pills on

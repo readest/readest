@@ -17,7 +17,12 @@ type RulerTestRect = {
 
 // Mutable doubles read lazily by the store mock so individual tests can drive
 // the progress range and the scrolled-mode visible contents.
-let mockProgress: { range: unknown; pageinfo: { current: number } } | null = null;
+let mockProgress: {
+  range: unknown;
+  location: string;
+  fraction: number;
+  pageinfo: { current: number };
+} | null = null;
 let mockContents: Array<{ doc: unknown }> = [];
 
 vi.mock('@/context/EnvContext', () => {
@@ -278,12 +283,52 @@ describe('ReadingRuler', () => {
     expect(saveViewSettings).not.toHaveBeenCalled();
   });
 
+  it('resets on a new visible location within the same estimated page', async () => {
+    mockProgress = {
+      range: null,
+      location: 'epubcfi(/6/2!/4/2)',
+      fraction: 0.1,
+      pageinfo: { current: 4 },
+    };
+    const props = {
+      bookKey: 'book-1',
+      isVertical: false,
+      rtl: false,
+      lines: 2,
+      position: 96.9,
+      opacity: 0.5,
+      color: 'transparent' as const,
+      bookFormat: 'EPUB' as BookFormat,
+      viewSettings,
+      gridInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+    };
+
+    const { container, rerender } = render(<ReadingRuler {...props} />);
+    const rulerTop = () =>
+      parseFloat((container.querySelector('.ruler') as HTMLDivElement).style.top);
+    expect(rulerTop()).toBeCloseTo(96.9, 5);
+
+    // Foliate's pageinfo is a coarse estimated reading location, so adjacent
+    // visual pages can share it. The visible CFI still changes on the real turn.
+    mockProgress = {
+      range: null,
+      location: 'epubcfi(/6/2!/4/18)',
+      fraction: 0.11,
+      pageinfo: { current: 4 },
+    };
+    rerender(<ReadingRuler {...props} />);
+
+    await waitFor(() => {
+      expect(rulerTop()).toBeLessThan(20);
+    });
+  });
+
   // Regression: issue #4386 — in scrolled mode the ruler used to re-snap on every
   // relocate fired while scrolling, so its position crept down the page. It must
   // stay fixed on screen while scrolling; snapping only happens on click.
   it('keeps the ruler fixed on screen while scrolling in scrolled mode', () => {
     const lineRects = makeLineRects(50, 100, 40);
-    mockProgress = { range: {}, pageinfo: { current: 0 } };
+    mockProgress = { range: {}, location: 'page-1', fraction: 0.1, pageinfo: { current: 0 } };
     mockContents = makeScrolledContents(0, lineRects);
     const scrolledSettings = { ...viewSettings, scrolled: true } as ViewSettings;
 
@@ -310,7 +355,7 @@ describe('ReadingRuler', () => {
 
     // Simulate scrolling: a new relocate range arrives with the content shifted
     // up, but the section/page is unchanged.
-    mockProgress = { range: {}, pageinfo: { current: 0 } };
+    mockProgress = { range: {}, location: 'page-1', fraction: 0.1, pageinfo: { current: 0 } };
     mockContents = makeScrolledContents(-130, lineRects);
     rerender(<ReadingRuler {...props} />);
 
@@ -322,7 +367,12 @@ describe('ReadingRuler', () => {
   // progress right-to-left, so advancing the ruler forward must move the band to
   // the LEFT. It used to run backwards because rtl was false for vertical-rl.
   it('advances the vertical-rl ruler band to the left on a forward move', async () => {
-    mockProgress = { range: makeVerticalColumnsRange(), pageinfo: { current: 0 } };
+    mockProgress = {
+      range: makeVerticalColumnsRange(),
+      location: 'page-1',
+      fraction: 0.1,
+      pageinfo: { current: 0 },
+    };
     const verticalSettings = { ...viewSettings } as ViewSettings;
 
     const { container } = render(
@@ -363,7 +413,12 @@ describe('ReadingRuler', () => {
 
   // The vertical-lr (Mongolian) counterpart moves the other way: forward => right.
   it('advances the vertical-lr ruler band to the right on a forward move', async () => {
-    mockProgress = { range: makeVerticalColumnsRange(), pageinfo: { current: 0 } };
+    mockProgress = {
+      range: makeVerticalColumnsRange(),
+      location: 'page-1',
+      fraction: 0.1,
+      pageinfo: { current: 0 },
+    };
     const verticalSettings = { ...viewSettings } as ViewSettings;
 
     const { container } = render(
@@ -403,7 +458,7 @@ describe('ReadingRuler', () => {
 
   it('still snaps the ruler to lines when advancing by click in scrolled mode', async () => {
     const lineRects = makeLineRects(50, 100, 40);
-    mockProgress = { range: {}, pageinfo: { current: 0 } };
+    mockProgress = { range: {}, location: 'page-1', fraction: 0.1, pageinfo: { current: 0 } };
     mockContents = makeScrolledContents(0, lineRects);
     const scrolledSettings = { ...viewSettings, scrolled: true } as ViewSettings;
 

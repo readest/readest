@@ -168,6 +168,21 @@ describe('ProgressBar — decorative footer is not focusable', () => {
     expect(progressInfo).not.toBeNull();
     expect(progressInfo!.hasAttribute('tabindex')).toBe(false);
   });
+
+  it('stays above the reading ruler filter layer', () => {
+    currentViewSettings = {
+      ...baseSettings,
+    } as ViewSettings;
+    currentProgress = makeProgress(2, 5);
+    currentBookData = { isFixedLayout: false };
+    currentRenderer = { page: 1, pages: 4 };
+
+    const { container } = renderProgressBar();
+
+    // ReadingRuler uses z-[5]. Reader chrome must paint above it so the
+    // backdrop filter cannot blur the footer when the ruler reaches the bottom.
+    expect(container.querySelector('.progressinfo')?.classList.contains('z-10')).toBe(true);
+  });
 });
 
 describe('ProgressBar — sticky progress bar', () => {

@@ -165,14 +165,15 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
 
   const isDragging = useRef(false);
   const dragPointerOffsetRef = useRef(0);
-  const lastPageRef = useRef<number | null>(null);
+  const lastLocationRef = useRef<string | null>(null);
+  const lastFractionRef = useRef<number | null>(null);
   const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentPositionRef = useRef(position);
   const lineBoxesRef = useRef<ReadingRulerLineBox[]>([]);
   const columnsRef = useRef<ReadingRulerColumn[]>([]);
   const activeColumnIndexRef = useRef(0);
   const bandSizeRef = useRef(0);
-  const cachePageRef = useRef<number | null>(null);
+  const cacheLocationRef = useRef<string | null>(null);
   // In scrolled mode, set when a tap advances past the view edge and scrolls the
   // view; the next relocate realigns the band to the start/end of the new view.
   const pendingScrollAlignRef = useRef<'forward' | 'backward' | null>(null);
@@ -277,11 +278,12 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   useEffect(() => {
     const range = progress?.range ?? null;
     const containerRect = containerRef.current?.getBoundingClientRect();
-    const page = progress?.pageinfo?.current ?? null;
+    const location = progress?.location ?? null;
     // Page changes are handled by the auto-move effect; here we only (re)derive
     // the band on initial mount and on resize/relayout.
-    const pageChanged = cachePageRef.current !== null && cachePageRef.current !== page;
-    cachePageRef.current = page;
+    const locationChanged =
+      cacheLocationRef.current !== null && cacheLocationRef.current !== location;
+    cacheLocationRef.current = location;
 
     if (!supportsLineSnap || !range || !containerRect) {
       lineBoxesRef.current = [];
@@ -309,7 +311,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         const idx = Math.max(0, Math.min(activeColumnIndexRef.current, cols.length - 1));
         const col = cols[idx];
         setActiveColumnRect(col ? { left: col.left, right: col.right } : null);
-        if (!pageChanged) {
+        if (!locationChanged) {
           const block = snapReadingRulerColumns(idx, anchor, anchor, lines, 'forward', cols);
           if (block) {
             activeColumnIndexRef.current = block.columnIndex;
@@ -344,7 +346,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
             scrolledPlacedRef.current = true;
             scrolledPlacedDimensionRef.current = dimension;
           }
-        } else if (!pageChanged) {
+        } else if (!locationChanged) {
           // In scrolled mode, only snap the band on the initial mount or after the
           // viewport dimension changes (resize/relayout). A plain scroll fires a
           // relocate without changing the dimension; re-snapping then would walk
@@ -375,7 +377,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     progress?.range,
-    progress?.pageinfo?.current,
+    progress?.location,
     containerSize.width,
     containerSize.height,
     isVertical,
@@ -542,15 +544,20 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       setRulerPosition(targetPosition, true);
     };
 
-    const currentPage = progress.pageinfo.current;
+    const currentLocation = progress.location;
+    const currentFraction = progress.fraction;
     const range = progress.range;
 
     // Only auto-move if page actually changed (not on initial load)
-    if (lastPageRef.current !== null && lastPageRef.current !== currentPage) {
-      const direction = currentPage > lastPageRef.current ? 'forward' : 'backward';
+    if (lastLocationRef.current !== null && lastLocationRef.current !== currentLocation) {
+      const direction =
+        lastFractionRef.current !== null && currentFraction < lastFractionRef.current
+          ? 'backward'
+          : 'forward';
       requestAnimationFrame(() => performAutoMove(range, direction));
     }
-    lastPageRef.current = currentPage;
+    lastLocationRef.current = currentLocation;
+    lastFractionRef.current = currentFraction;
 
     return () => {
       if (animationTimeoutRef.current) {
@@ -559,7 +566,8 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    progress?.pageinfo?.current,
+    progress?.location,
+    progress?.fraction,
     viewSettings.scrolled,
     isVertical,
     rtl,
