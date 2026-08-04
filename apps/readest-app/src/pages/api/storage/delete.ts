@@ -46,6 +46,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Now delete S3/R2 object
       await deleteObject(fileKey);
 
+      // Soft delete in Supabase
+      try {
+        const supabase = createSupabaseAdminClient();
+        const { error: supabaseError } = await supabase
+          .from('files')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('user_id', user.id)
+          .eq('file_key', fileKey);
+
+        if (supabaseError) {
+          console.error('Error soft-deleting file metadata in Supabase:', supabaseError);
+        }
+      } catch (subError) {
+        console.error('Exception soft-deleting file metadata in Supabase:', subError);
+      }
+
       res.status(200).json({ message: 'File deleted successfully' });
     } catch (error: any) {
       console.error('Error deleting file metadata or object:', error);

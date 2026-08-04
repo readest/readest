@@ -99,6 +99,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (fileMetadata && fileMetadata.size) {
         objSize = fileMetadata.size;
       }
+
+      // Sync file metadata to Supabase so sharing/stats query features can find it
+      try {
+        const supabase = createSupabaseAdminClient();
+        const { error: supabaseError } = await supabase.from('files').upsert(
+          {
+            id: fileMetadata.id || `file_${Date.now()}`,
+            user_id: user.id,
+            file_key: fileKey,
+            book_hash: bookHash || '',
+            file_size: objSize,
+            mime_type: fileMetadata.mimeType || 'application/octet-stream',
+            storage_path: fileMetadata.storagePath || fileKey,
+            created_at: fileMetadata.createdAt || new Date().toISOString(),
+            updated_at: fileMetadata.updatedAt || new Date().toISOString(),
+            deleted_at: null,
+          },
+          {
+            onConflict: 'file_key',
+          },
+        );
+
+        if (supabaseError) {
+          console.error('Error syncing file metadata to Supabase:', supabaseError);
+        } else {
+          console.log('Synced file metadata to Supabase successfully for fileKey:', fileKey);
+        }
+      } catch (subError) {
+        console.error('Exception syncing file metadata to Supabase:', subError);
+      }
     } catch (error: any) {
       console.error('Error saving file metadata to backend:', error);
       return res.status(500).json({ error: 'Could not connect to storage metadata server' });
