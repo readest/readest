@@ -1,4 +1,4 @@
-package com.readest.native-tts
+package com.readest.native_tts
 
 import org.junit.Test
 
