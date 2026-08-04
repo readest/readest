@@ -9,7 +9,9 @@ describe('TrackerCore', () => {
     const t = new TrackerCore(cfg);
     expect(t.onPage(5, 100, 1000)).toEqual([]); // first page, nothing to flush yet
     const out = t.onPage(6, 100, 1030); // moved off page 5 after 30s
-    expect(out).toEqual([{ page: 5, startTime: 1000, duration: 30, totalPages: 100 }]);
+    expect(out).toEqual([
+      { page: 5, startTime: 1000, duration: 30, totalPages: 100, wordsRead: 0 },
+    ]);
   });
 
   it('caps duration at maxEventSeconds', () => {
@@ -28,18 +30,31 @@ describe('TrackerCore', () => {
   it('flushes and pauses on idle, then resumes with a new start_time', () => {
     const t = new TrackerCore(cfg);
     t.onPage(1, 10, 0);
-    expect(t.onIdle(50)).toEqual([{ page: 1, startTime: 0, duration: 50, totalPages: 10 }]);
+    expect(t.onIdle(50)).toEqual([
+      { page: 1, startTime: 0, duration: 50, totalPages: 10, wordsRead: 0 },
+    ]);
     // After idle, the same page resumes as a fresh event.
     expect(t.onPage(1, 10, 200)).toEqual([]); // resume marker, no flush
     expect(t.onPage(2, 10, 230)).toEqual([
-      { page: 1, startTime: 200, duration: 30, totalPages: 10 },
+      { page: 1, startTime: 200, duration: 30, totalPages: 10, wordsRead: 0 },
     ]);
   });
 
   it('flushes on hide and on close without double-counting', () => {
     const t = new TrackerCore(cfg);
     t.onPage(7, 10, 0);
-    expect(t.onHide(40)).toEqual([{ page: 7, startTime: 0, duration: 40, totalPages: 10 }]);
+    expect(t.onHide(40)).toEqual([
+      { page: 7, startTime: 0, duration: 40, totalPages: 10, wordsRead: 0 },
+    ]);
     expect(t.onClose(99)).toEqual([]); // already flushed + paused by hide
+  });
+
+  it('tracks custom wordsRead values', () => {
+    const t = new TrackerCore(cfg);
+    t.onPage(1, 100, 1000, 250);
+    const out = t.onPage(2, 100, 1030, 300);
+    expect(out).toEqual([
+      { page: 1, startTime: 1000, duration: 30, totalPages: 100, wordsRead: 250 },
+    ]);
   });
 });

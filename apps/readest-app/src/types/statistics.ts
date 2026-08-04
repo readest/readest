@@ -11,6 +11,7 @@ export interface PageStatEvent {
   startTime: number; // Unix seconds
   duration: number; // seconds
   totalPages: number;
+  wordsRead?: number;
 }
 
 /** KOReader book identity — the only book metadata that syncs. */

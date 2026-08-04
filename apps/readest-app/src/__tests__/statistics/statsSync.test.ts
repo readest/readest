@@ -88,4 +88,20 @@ describe('statsSync', () => {
     expect(book!.total_read_pages).toBe(3); // pages 1, 2, 3 all applied across pages
     expect(await stats.getCursor('pull')).toBe(2000);
   });
+
+  it('correctly maps and pushes words_read in sync payloads', async () => {
+    const stats = await db();
+    const id = await stats.upsertBook({ bookMd5: 'm_words', title: 'T', authors: 'A' });
+    await stats.insertPageEvent(id, {
+      page: 1,
+      startTime: 100,
+      duration: 5,
+      totalPages: 9,
+      wordsRead: 250,
+    });
+    const client = { pushChanges: vi.fn().mockResolvedValue({}) };
+    await pushStats(stats, client as never);
+    const sent = client.pushChanges.mock.calls[0]![0];
+    expect(sent.statPages[0].words_read).toBe(250);
+  });
 });

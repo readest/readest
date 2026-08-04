@@ -168,6 +168,12 @@ const migrations: Record<SchemaType, MigrationEntry[]> = {
         );
       `,
     },
+    {
+      name: '2026080401_add_words_read_to_page_stat_data',
+      sql: `
+        ALTER TABLE page_stat_data ADD COLUMN words_read INTEGER DEFAULT 0;
+      `,
+    },
   ],
   // Per-book search index/cache: one search.db in each book's directory
   // (beside cover.png), holding extracted section text so library full-text

@@ -123,14 +123,20 @@ export class StatisticsDb {
 
   async insertPageEvent(
     idBook: number,
-    e: { page: number; startTime: number; duration: number; totalPages: number },
+    e: {
+      page: number;
+      startTime: number;
+      duration: number;
+      totalPages: number;
+      wordsRead?: number;
+    },
   ): Promise<void> {
     await this.db.execute(
-      `INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages)
-       VALUES (?, ?, ?, ?, ?)
+      `INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages, words_read)
+       VALUES (?, ?, ?, ?, ?, ?)
        ON CONFLICT(id_book, page, start_time)
-       DO UPDATE SET duration = max(duration, excluded.duration), total_pages = excluded.total_pages`,
-      [idBook, e.page, e.startTime, e.duration, e.totalPages],
+       DO UPDATE SET duration = max(duration, excluded.duration), total_pages = excluded.total_pages, words_read = max(words_read, excluded.words_read)`,
+      [idBook, e.page, e.startTime, e.duration, e.totalPages, e.wordsRead ?? 0],
     );
   }
 
@@ -201,7 +207,7 @@ export class StatisticsDb {
   ): Promise<{ events: PageStatEvent[]; books: StatBook[] }> {
     const rows = await this.db.select<DatabaseRow>(
       `SELECT b.md5 AS bookMd5, b.title AS title, b.authors AS authors,
-              p.page AS page, p.start_time AS startTime, p.duration AS duration, p.total_pages AS totalPages
+              p.page AS page, p.start_time AS startTime, p.duration AS duration, p.total_pages AS totalPages, p.words_read AS wordsRead
        FROM page_stat_data p JOIN book b ON b.id = p.id_book
        WHERE p.start_time > ?
        ORDER BY p.start_time ASC`,
@@ -213,6 +219,7 @@ export class StatisticsDb {
       startTime: Number(r['startTime']),
       duration: Number(r['duration']),
       totalPages: Number(r['totalPages']),
+      wordsRead: Number(r['wordsRead'] || 0),
     }));
     const bookMap = new Map<string, StatBook>();
     for (const r of rows) {

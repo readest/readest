@@ -29,6 +29,7 @@ export interface StatPageRecord {
   start_time: number;
   duration: number;
   total_pages: number;
+  words_read?: number;
   ext?: unknown;
   updated_at?: string;
   updated_at_ms?: number; // epoch ms, attached by the GET response for cursor math

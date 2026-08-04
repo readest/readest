@@ -11,6 +11,7 @@ const toWirePage = (e: PageStatEvent): StatPageRecord => ({
   start_time: e.startTime,
   duration: e.duration,
   total_pages: e.totalPages,
+  words_read: e.wordsRead ?? 0,
 });
 
 const toWireBook = (b: StatBook): StatBookRecord => ({

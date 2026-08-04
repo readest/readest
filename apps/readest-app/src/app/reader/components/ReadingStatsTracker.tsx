@@ -16,6 +16,18 @@ import { pushStats, pullStats } from '@/services/statistics/statsSync';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
+import { getWordCount } from '@/utils/word';
+
+const getWordsFromRange = (range: any): number => {
+  if (!range) return 0;
+  try {
+    const text = typeof range.toString === 'function' ? range.toString() : '';
+    return getWordCount(text);
+  } catch (e) {
+    console.warn('[stats] failed to get word count from range:', e);
+    return 0;
+  }
+};
 
 const nowSec = () => Math.floor(Date.now() / 1000);
 
@@ -128,18 +140,21 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
     );
   };
 
-  const openPageAt = (info: { current?: number; total: number } | undefined) => {
+  const openPageAt = (info: { current?: number; total: number } | undefined, range: any) => {
     if (!info) return;
-    void persist(coreRef.current.onPage((info.current ?? 0) + 1, info.total || 1, nowSec()));
+    const wordsRead = getWordsFromRange(range);
+    void persist(
+      coreRef.current.onPage((info.current ?? 0) + 1, info.total || 1, nowSec(), wordsRead),
+    );
     armIdle();
   };
 
   // Page changes drive the tracker.
   useEffect(() => {
     if (ttsPlayingRef.current) return;
-    openPageAt(progress?.pageinfo);
+    openPageAt(progress?.pageinfo, progress?.range);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress?.pageinfo]);
+  }, [progress?.pageinfo, progress?.range]);
 
   // Hand the clock to TtsStatsRecorder while this book is read aloud, and take
   // it back afterwards. TTS turns pages to follow the narration, so without
@@ -157,7 +172,8 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
         if (idleRef.current) clearTimeout(idleRef.current);
         void persist(coreRef.current.onIdle(nowSec()));
       } else {
-        openPageAt(getBookProgress(bookKey)?.pageinfo);
+        const bp = getBookProgress(bookKey);
+        openPageAt(bp?.pageinfo, bp?.range);
       }
     };
     eventDispatcher.on('tts-playback-state', onPlaybackState);

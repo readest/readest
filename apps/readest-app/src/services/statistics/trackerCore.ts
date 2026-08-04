@@ -4,6 +4,7 @@ interface PendingEvent {
   page: number;
   startTime: number; // Unix seconds
   totalPages: number;
+  wordsRead: number;
 }
 
 export interface FlushedEvent {
@@ -11,6 +12,7 @@ export interface FlushedEvent {
   startTime: number;
   duration: number;
   totalPages: number;
+  wordsRead?: number;
 }
 
 /**
@@ -26,13 +28,13 @@ export class TrackerCore {
   constructor(private readonly cfg: StatsTrackingConfig) {}
 
   /** Notify the current page at `now`. Returns events flushed by leaving the prior page. */
-  onPage(page: number, totalPages: number, now: number): FlushedEvent[] {
+  onPage(page: number, totalPages: number, now: number, wordsRead: number = 0): FlushedEvent[] {
     if (this.pending && this.pending.page === page) {
       // Same page (e.g. resume after idle, or a no-op relocate): keep dwelling.
       return [];
     }
     const flushed = this.flush(now);
-    this.pending = { page, startTime: now, totalPages };
+    this.pending = { page, startTime: now, totalPages, wordsRead };
     return flushed;
   }
 
@@ -55,6 +57,14 @@ export class TrackerCore {
     const raw = now - p.startTime;
     const duration = Math.min(Math.max(raw, 0), this.cfg.maxEventSeconds);
     if (duration < this.cfg.minEventSeconds) return [];
-    return [{ page: p.page, startTime: p.startTime, duration, totalPages: p.totalPages }];
+    return [
+      {
+        page: p.page,
+        startTime: p.startTime,
+        duration,
+        totalPages: p.totalPages,
+        wordsRead: p.wordsRead,
+      },
+    ];
   }
 }
