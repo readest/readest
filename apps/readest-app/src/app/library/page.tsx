@@ -1828,26 +1828,18 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         !librarySearchQuery.trim() &&
         librarySearchHistory.length > 0 && (
           <div className='relative my-1 flex shrink-0 items-center px-4 sm:px-6'>
-            <div
-              aria-hidden='true'
-              className='from-base-200 eink:hidden sm:start-6 pointer-events-none absolute start-4 top-0 z-[1] h-full w-3 bg-gradient-to-r to-transparent'
-            />
-            <div className='no-scrollbar flex flex-1 gap-1.5 overflow-x-auto'>
+            <div className='no-scrollbar not-eink:[mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%_-_12px),transparent)] flex flex-1 gap-1.5 overflow-x-auto'>
               {librarySearchHistory.map((term) => (
                 <button
                   key={term}
                   type='button'
                   onClick={() => handleSearchQueryApply(term)}
-                  className='hover:bg-base-300/50 text-base-content/70 bg-base-100 max-w-[60%] flex-shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-xs'
+                  className='bg-base-300/45 hover:bg-base-300/70 text-base-content/70 max-w-[60%] flex-shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-xs'
                 >
                   <p className='truncate'>{term}</p>
                 </button>
               ))}
             </div>
-            <div
-              aria-hidden='true'
-              className='from-base-200 eink:hidden sm:end-14 pointer-events-none absolute end-12 top-0 z-[1] h-full w-6 bg-gradient-to-l to-transparent'
-            />
             <button
               type='button'
               onClick={() => {
