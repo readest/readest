@@ -7,6 +7,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { KOSyncClient, KoSyncProgress } from '@/services/sync/KOSyncClient';
 import { Book, BookProgress, FIXED_LAYOUT_FORMATS } from '@/types/book';
+import type { KOSyncSettings, SystemSettings } from '@/types/settings';
 import { BookDoc } from '@/libs/document';
 import { debounce } from '@/utils/debounce';
 import { eventDispatcher } from '@/utils/event';
@@ -29,6 +30,23 @@ import { useWindowActiveChanged } from './useWindowActiveChanged';
 
 type SyncState = 'idle' | 'checking' | 'conflict' | 'synced' | 'error';
 
+/**
+ * Source of the KOSync-protocol config this hook instance syncs against.
+ * selectConfig returns null when the provider is not configured; the hook
+ * then idles. The kosync provider preserves the original semantics: a client
+ * exists once credentials are set, `enabled` is checked at pull/push time.
+ */
+export interface KosyncProgressProvider {
+  name: 'kosync' | 'bookorbit';
+  selectConfig: (settings: SystemSettings) => KOSyncSettings | null;
+}
+
+export const kosyncProvider: KosyncProgressProvider = {
+  name: 'kosync',
+  selectConfig: (settings) =>
+    settings.kosync.username && settings.kosync.userkey ? settings.kosync : null,
+};
+
 export interface SyncDetails {
   book: Book;
   bookDoc: BookDoc;
@@ -42,7 +60,7 @@ export interface SyncDetails {
   };
 }
 
-export const useKOSync = (bookKey: string) => {
+export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = kosyncProvider) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
@@ -64,13 +82,15 @@ export const useKOSync = (bookKey: string) => {
   const progress = useBookProgress(bookKey);
 
   useEffect(() => {
-    if (!settings.kosync.username || !settings.kosync.userkey) {
+    const config = provider.selectConfig(settings);
+    if (!config) {
       setKOSyncClient(null);
       return;
     }
-    const client = new KOSyncClient(settings.kosync);
+    const client = new KOSyncClient({ ...config });
     setKOSyncClient(client);
-  }, [settings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings, provider]);
 
   const generateKOProgress = useCallback(async () => {
     const progress = getProgress(bookKey);
@@ -191,7 +211,8 @@ export const useKOSync = (bookKey: string) => {
     // Progress last pushed from this same device is just our own earlier
     // position; only treat a sizeable jump (≥1%) as a conflict so we don't
     // prompt on the sub-page drift between a push and the next pull.
-    const isSameDevice = !!remote.device_id && remote.device_id === settings.kosync.deviceId;
+    const isSameDevice =
+      !!remote.device_id && remote.device_id === provider.selectConfig(settings)?.deviceId;
     const conflictProgressDiffThreshold = isSameDevice ? 0.01 : 0.0001;
     // The remote progress as a percentage to compare against the local one;
     // refined to a locally-resolved fraction for reflowable books below.
@@ -274,7 +295,8 @@ export const useKOSync = (bookKey: string) => {
       debounce(async () => {
         if (!bookKey || !appService || !kosyncClient || !hasPulledOnce.current) return;
         const { settings } = useSettingsStore.getState();
-        if (['receive', 'disable'].includes(settings.kosync.strategy)) return;
+        const config = provider.selectConfig(settings);
+        if (!config || ['receive', 'disable'].includes(config.strategy)) return;
 
         const currentBook = getBookData(bookKey)?.book;
         const progress = await generateKOProgress();
@@ -296,8 +318,9 @@ export const useKOSync = (bookKey: string) => {
       const bookDoc = bookData?.bookDoc;
       if (!book || !bookDoc) return;
 
-      const { strategy, enabled } = settings.kosync;
-      if (!enabled) return;
+      const config = provider.selectConfig(settings);
+      if (!config?.enabled) return;
+      const { strategy } = config;
 
       hasPulledOnce.current = true;
       if (strategy === 'send') {
@@ -331,7 +354,7 @@ export const useKOSync = (bookKey: string) => {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [bookKey, appService, kosyncClient, settings.kosync, progress],
+    [bookKey, appService, kosyncClient, settings, progress],
   );
 
   // use a ref to track the current push/pull functions so they can change without triggering effects
@@ -388,12 +411,13 @@ export const useKOSync = (bookKey: string) => {
       // Skip auto-pushes while previewing a deep-link target. Manual pushes
       // via the 'push-kosync' event are still respected (explicit user intent).
       if (useReaderStore.getState().getViewState(bookKey)?.previewMode) return;
-      const { strategy, enabled } = settings.kosync;
-      if (strategy !== 'receive' && enabled) {
+      const config = provider.selectConfig(settings);
+      if (config?.enabled && config.strategy !== 'receive') {
         syncRefs.current.pushProgress();
       }
     }
-  }, [progress, syncState, settings.kosync, bookKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progress, syncState, settings, bookKey]);
 
   useWindowActiveChanged((isActive) => {
     const { pushProgress, pullProgress } = syncRefs.current;
