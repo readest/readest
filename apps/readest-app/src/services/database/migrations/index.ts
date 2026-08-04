@@ -26,6 +26,27 @@ const migrations: Record<SchemaType, MigrationEntry[]> = {
       `,
     },
   ],
+  'bookorbit-sync': [
+    {
+      name: '2026080401_bookorbit_sync',
+      sql: `
+        CREATE TABLE IF NOT EXISTS bookorbit_note_mappings (
+          book_hash TEXT NOT NULL,
+          note_id TEXT NOT NULL,
+          server_id INTEGER,
+          ko_datetime TEXT NOT NULL,
+          synced_at INTEGER NOT NULL,
+          PRIMARY KEY (book_hash, note_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS bookorbit_book_sync (
+          book_hash TEXT PRIMARY KEY,
+          annotations_synced_at INTEGER NOT NULL DEFAULT 0,
+          bookmarks_synced_at INTEGER NOT NULL DEFAULT 0
+        );
+      `,
+    },
+  ],
   'hardcover-sync': [
     {
       name: '2026032901_hardcover_note_mappings',
