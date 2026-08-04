@@ -2016,5 +2016,9 @@
   "Sync Highlights and Bookmarks": "උද්දීපන සහ පිටු සලකුණු සමමුහුර්ත කරන්න",
   "Sync Reading Statistics": "කියවීමේ සංඛ්‍යාලේඛන සමමුහුර්ත කරන්න",
   "Sync Reading Status": "කියවීමේ තත්ත්වය සමමුහුර්ත කරන්න",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit හි සැකසුම් > ඒකාබද්ධතා > KOReader යටතේ KOReader අක්තපත්‍ර සාදා, ඉන්පසු ඒවා ඔබගේ සේවාදායක ලිපිනය සමඟ මෙහි ඇතුළත් කරන්න."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit හි සැකසුම් > ඒකාබද්ධතා > KOReader යටතේ KOReader අක්තපත්‍ර සාදා, ඉන්පසු ඒවා ඔබගේ සේවාදායක ලිපිනය සමඟ මෙහි ඇතුළත් කරන්න.",
+  "Release to remove bookmark": "සටහන් ඉවත් කිරීමට අත හරින්න",
+  "Pull down to remove bookmark": "සටහන් ඉවත් කිරීමට පහළට අදින්න",
+  "Release to add bookmark": "සටහන් එකතු කිරීමට අත හරින්න",
+  "Pull down to add bookmark": "සටහන් එකතු කිරීමට පහළට අදින්න"
 }

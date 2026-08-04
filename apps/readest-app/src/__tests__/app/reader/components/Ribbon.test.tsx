@@ -11,7 +11,7 @@ describe('Ribbon', () => {
     // In scrolled mode SectionInfo paints a `bg-base-100` `notch-area` mask over the
     // top safe-area strip at z-10. The ribbon renders earlier in the DOM, so it must
     // sit on a higher layer than z-10 or its upper (unsafe-area) half gets covered.
-    const { container } = render(<Ribbon width='5%' />);
+    const { container } = render(<Ribbon />);
     const ribbon = container.querySelector('.ribbon') as HTMLElement;
 
     expect(ribbon).not.toBeNull();
@@ -21,8 +21,18 @@ describe('Ribbon', () => {
     expect(ribbon.classList.contains('pointer-events-none')).toBe(true);
   });
 
+  it('hangs at the top-right corner (#1359)', () => {
+    const { container } = render(<Ribbon />);
+    const ribbon = container.querySelector('.ribbon') as HTMLElement;
+
+    expect(ribbon.classList.contains('right-0')).toBe(true);
+    expect(ribbon.classList.contains('top-0')).toBe(true);
+    // `inset-0` anchored it to the left edge; the ribbon lives on the right now.
+    expect(ribbon.classList.contains('inset-0')).toBe(false);
+  });
+
   it('spans the safe-area inset plus the header bar height', () => {
-    const { container } = render(<Ribbon width='5%' />);
+    const { container } = render(<Ribbon />);
     const ribbon = container.querySelector('.ribbon') as HTMLElement;
 
     expect(ribbon.style.height).toBe('92px'); // 48px safe-area top + 44px header bar

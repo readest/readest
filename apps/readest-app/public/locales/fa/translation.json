@@ -2016,5 +2016,9 @@
   "Sync Highlights and Bookmarks": "همگام‌سازی هایلایت‌ها و نشانک‌ها",
   "Sync Reading Statistics": "همگام‌سازی آمار مطالعه",
   "Sync Reading Status": "همگام‌سازی وضعیت مطالعه",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "در BookOrbit از مسیر تنظیمات > یکپارچه‌سازی‌ها > KOReader اطلاعات ورود KOReader بسازید و سپس آن‌ها را همراه با نشانی سرور خود اینجا وارد کنید."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "در BookOrbit از مسیر تنظیمات > یکپارچه‌سازی‌ها > KOReader اطلاعات ورود KOReader بسازید و سپس آن‌ها را همراه با نشانی سرور خود اینجا وارد کنید.",
+  "Release to remove bookmark": "برای حذف نشانک رها کنید",
+  "Pull down to remove bookmark": "برای حذف نشانک به پایین بکشید",
+  "Release to add bookmark": "برای افزودن نشانک رها کنید",
+  "Pull down to add bookmark": "برای افزودن نشانک به پایین بکشید"
 }

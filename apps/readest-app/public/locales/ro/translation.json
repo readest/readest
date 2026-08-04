@@ -2062,5 +2062,9 @@
   "Sync Highlights and Bookmarks": "Sincronizează evidențierile și semnele de carte",
   "Sync Reading Statistics": "Sincronizează statisticile de lectură",
   "Sync Reading Status": "Sincronizează starea lecturii",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Creați date de autentificare KOReader în BookOrbit din Setări > Integrări > KOReader, apoi introduceți-le aici împreună cu adresa serverului."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Creați date de autentificare KOReader în BookOrbit din Setări > Integrări > KOReader, apoi introduceți-le aici împreună cu adresa serverului.",
+  "Release to remove bookmark": "Eliberați pentru a elimina marcajul",
+  "Pull down to remove bookmark": "Trageți în jos pentru a elimina marcajul",
+  "Release to add bookmark": "Eliberați pentru a adăuga marcajul",
+  "Pull down to add bookmark": "Trageți în jos pentru a adăuga marcajul"
 }

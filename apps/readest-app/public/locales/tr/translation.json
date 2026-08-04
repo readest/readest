@@ -2016,5 +2016,9 @@
   "Sync Highlights and Bookmarks": "Vurguları ve Yer İmlerini Eşitle",
   "Sync Reading Statistics": "Okuma İstatistiklerini Eşitle",
   "Sync Reading Status": "Okuma Durumunu Eşitle",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit'te Ayarlar > Entegrasyonlar > KOReader altında KOReader kimlik bilgileri oluşturun, ardından bunları sunucu adresinizle birlikte buraya girin."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit'te Ayarlar > Entegrasyonlar > KOReader altında KOReader kimlik bilgileri oluşturun, ardından bunları sunucu adresinizle birlikte buraya girin.",
+  "Release to remove bookmark": "Yer işaretini kaldırmak için bırakın",
+  "Pull down to remove bookmark": "Yer işaretini kaldırmak için aşağı çekin",
+  "Release to add bookmark": "Yer işareti eklemek için bırakın",
+  "Pull down to add bookmark": "Yer işareti eklemek için aşağı çekin"
 }

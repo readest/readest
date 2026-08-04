@@ -1970,5 +1970,9 @@
   "Sync Highlights and Bookmarks": "Đồng bộ phần tô sáng và dấu trang",
   "Sync Reading Statistics": "Đồng bộ thống kê đọc",
   "Sync Reading Status": "Đồng bộ trạng thái đọc",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Tạo thông tin đăng nhập KOReader trong BookOrbit tại Cài đặt > Tích hợp > KOReader, sau đó nhập chúng vào đây cùng với địa chỉ máy chủ của bạn."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Tạo thông tin đăng nhập KOReader trong BookOrbit tại Cài đặt > Tích hợp > KOReader, sau đó nhập chúng vào đây cùng với địa chỉ máy chủ của bạn.",
+  "Release to remove bookmark": "Thả ra để xóa đánh dấu",
+  "Pull down to remove bookmark": "Kéo xuống để xóa đánh dấu",
+  "Release to add bookmark": "Thả ra để thêm đánh dấu",
+  "Pull down to add bookmark": "Kéo xuống để thêm đánh dấu"
 }

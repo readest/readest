@@ -2200,5 +2200,9 @@
   "Sync Highlights and Bookmarks": "مزامنة التظليلات والعلامات المرجعية",
   "Sync Reading Statistics": "مزامنة إحصائيات القراءة",
   "Sync Reading Status": "مزامنة حالة القراءة",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "أنشئ بيانات اعتماد KOReader في BookOrbit ضمن الإعدادات > التكاملات > KOReader، ثم أدخلها هنا مع عنوان الخادم الخاص بك."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "أنشئ بيانات اعتماد KOReader في BookOrbit ضمن الإعدادات > التكاملات > KOReader، ثم أدخلها هنا مع عنوان الخادم الخاص بك.",
+  "Release to remove bookmark": "أفلت لإزالة العلامة",
+  "Pull down to remove bookmark": "اسحب لأسفل لإزالة العلامة",
+  "Release to add bookmark": "أفلت لإضافة علامة",
+  "Pull down to add bookmark": "اسحب لأسفل لإضافة علامة"
 }

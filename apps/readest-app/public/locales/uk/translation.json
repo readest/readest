@@ -2108,5 +2108,9 @@
   "Sync Highlights and Bookmarks": "Синхронізувати виділення та закладки",
   "Sync Reading Statistics": "Синхронізувати статистику читання",
   "Sync Reading Status": "Синхронізувати статус читання",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Створіть облікові дані KOReader у BookOrbit у розділі Налаштування > Інтеграції > KOReader, а потім введіть їх тут разом з адресою сервера."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Створіть облікові дані KOReader у BookOrbit у розділі Налаштування > Інтеграції > KOReader, а потім введіть їх тут разом з адресою сервера.",
+  "Release to remove bookmark": "Відпустіть, щоб видалити закладку",
+  "Pull down to remove bookmark": "Потягніть вниз, щоб видалити закладку",
+  "Release to add bookmark": "Відпустіть, щоб додати закладку",
+  "Pull down to add bookmark": "Потягніть вниз, щоб додати закладку"
 }

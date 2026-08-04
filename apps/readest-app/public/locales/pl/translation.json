@@ -2108,5 +2108,9 @@
   "Sync Highlights and Bookmarks": "Synchronizuj zakreślenia i zakładki",
   "Sync Reading Statistics": "Synchronizuj statystyki czytania",
   "Sync Reading Status": "Synchronizuj status czytania",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Utwórz dane logowania KOReader w BookOrbit w Ustawienia > Integracje > KOReader, a następnie wprowadź je tutaj wraz z adresem serwera."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Utwórz dane logowania KOReader w BookOrbit w Ustawienia > Integracje > KOReader, a następnie wprowadź je tutaj wraz z adresem serwera.",
+  "Release to remove bookmark": "Puść, aby usunąć zakładkę",
+  "Pull down to remove bookmark": "Pociągnij w dół, aby usunąć zakładkę",
+  "Release to add bookmark": "Puść, aby dodać zakładkę",
+  "Pull down to add bookmark": "Pociągnij w dół, aby dodać zakładkę"
 }

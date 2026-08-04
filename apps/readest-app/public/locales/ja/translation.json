@@ -1970,5 +1970,9 @@
   "Sync Highlights and Bookmarks": "ハイライトとブックマークを同期",
   "Sync Reading Statistics": "読書統計を同期",
   "Sync Reading Status": "読書ステータスを同期",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbitの「設定 > 連携 > KOReader」でKOReaderの認証情報を作成し、サーバーアドレスと一緒にここに入力してください。"
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbitの「設定 > 連携 > KOReader」でKOReaderの認証情報を作成し、サーバーアドレスと一緒にここに入力してください。",
+  "Release to remove bookmark": "指を離してブックマークを削除",
+  "Pull down to remove bookmark": "下に引いてブックマークを削除",
+  "Release to add bookmark": "指を離してブックマークを追加",
+  "Pull down to add bookmark": "下に引いてブックマークを追加"
 }

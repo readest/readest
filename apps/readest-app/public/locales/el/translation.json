@@ -2016,5 +2016,9 @@
   "Sync Highlights and Bookmarks": "Συγχρονισμός επισημάνσεων και σελιδοδεικτών",
   "Sync Reading Statistics": "Συγχρονισμός στατιστικών ανάγνωσης",
   "Sync Reading Status": "Συγχρονισμός κατάστασης ανάγνωσης",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Δημιουργήστε διαπιστευτήρια KOReader στο BookOrbit από Ρυθμίσεις > Ενσωματώσεις > KOReader και εισαγάγετέ τα εδώ μαζί με τη διεύθυνση του διακομιστή σας."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Δημιουργήστε διαπιστευτήρια KOReader στο BookOrbit από Ρυθμίσεις > Ενσωματώσεις > KOReader και εισαγάγετέ τα εδώ μαζί με τη διεύθυνση του διακομιστή σας.",
+  "Release to remove bookmark": "Αφήστε για αφαίρεση σελιδοδείκτη",
+  "Pull down to remove bookmark": "Τραβήξτε προς τα κάτω για αφαίρεση σελιδοδείκτη",
+  "Release to add bookmark": "Αφήστε για προσθήκη σελιδοδείκτη",
+  "Pull down to add bookmark": "Τραβήξτε προς τα κάτω για προσθήκη σελιδοδείκτη"
 }

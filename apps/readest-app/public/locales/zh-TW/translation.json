@@ -1970,5 +1970,9 @@
   "Sync Highlights and Bookmarks": "同步標記與書籤",
   "Sync Reading Statistics": "同步閱讀統計",
   "Sync Reading Status": "同步閱讀狀態",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "在 BookOrbit 的「設定 > 整合 > KOReader」中建立 KOReader 憑證，然後連同伺服器位址一併填寫在這裡。"
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "在 BookOrbit 的「設定 > 整合 > KOReader」中建立 KOReader 憑證，然後連同伺服器位址一併填寫在這裡。",
+  "Release to remove bookmark": "鬆手移除書籤",
+  "Pull down to remove bookmark": "下拉移除書籤",
+  "Release to add bookmark": "鬆手添加書籤",
+  "Pull down to add bookmark": "下拉添加書籤"
 }

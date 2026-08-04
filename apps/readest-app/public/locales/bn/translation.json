@@ -2016,5 +2016,9 @@
   "Sync Highlights and Bookmarks": "হাইলাইট ও বুকমার্ক সিঙ্ক করুন",
   "Sync Reading Statistics": "পড়ার পরিসংখ্যান সিঙ্ক করুন",
   "Sync Reading Status": "পড়ার অবস্থা সিঙ্ক করুন",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit-এ সেটিংস > ইন্টিগ্রেশন > KOReader-এ KOReader শংসাপত্র তৈরি করুন, তারপর সেগুলি আপনার সার্ভারের ঠিকানাসহ এখানে লিখুন।"
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit-এ সেটিংস > ইন্টিগ্রেশন > KOReader-এ KOReader শংসাপত্র তৈরি করুন, তারপর সেগুলি আপনার সার্ভারের ঠিকানাসহ এখানে লিখুন।",
+  "Release to remove bookmark": "বুকমার্ক সরাতে ছেড়ে দিন",
+  "Pull down to remove bookmark": "বুকমার্ক সরাতে নিচে টানুন",
+  "Release to add bookmark": "বুকমার্ক যোগ করতে ছেড়ে দিন",
+  "Pull down to add bookmark": "বুকমার্ক যোগ করতে নিচে টানুন"
 }

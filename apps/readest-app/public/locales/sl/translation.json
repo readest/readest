@@ -2108,5 +2108,9 @@
   "Sync Highlights and Bookmarks": "Sinhroniziraj poudarke in zaznamke",
   "Sync Reading Statistics": "Sinhroniziraj bralno statistiko",
   "Sync Reading Status": "Sinhroniziraj bralni status",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "V BookOrbitu ustvarite poverilnice KOReader v Nastavitve > Integracije > KOReader, nato jih vnesite tukaj skupaj z naslovom strežnika."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "V BookOrbitu ustvarite poverilnice KOReader v Nastavitve > Integracije > KOReader, nato jih vnesite tukaj skupaj z naslovom strežnika.",
+  "Release to remove bookmark": "Spustite za odstranitev zaznamka",
+  "Pull down to remove bookmark": "Povlecite navzdol za odstranitev zaznamka",
+  "Release to add bookmark": "Spustite za dodajanje zaznamka",
+  "Pull down to add bookmark": "Povlecite navzdol za dodajanje zaznamka"
 }

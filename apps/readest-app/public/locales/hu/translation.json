@@ -2016,5 +2016,9 @@
   "Sync Highlights and Bookmarks": "Kiemelések és könyvjelzők szinkronizálása",
   "Sync Reading Statistics": "Olvasási statisztikák szinkronizálása",
   "Sync Reading Status": "Olvasási állapot szinkronizálása",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Hozzon létre KOReader hitelesítő adatokat a BookOrbitban a Beállítások > Integrációk > KOReader menüpontban, majd adja meg őket itt a szerver címével együtt."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Hozzon létre KOReader hitelesítő adatokat a BookOrbitban a Beállítások > Integrációk > KOReader menüpontban, majd adja meg őket itt a szerver címével együtt.",
+  "Release to remove bookmark": "Engedje el a könyvjelző eltávolításához",
+  "Pull down to remove bookmark": "Húzza le a könyvjelző eltávolításához",
+  "Release to add bookmark": "Engedje el könyvjelző hozzáadásához",
+  "Pull down to add bookmark": "Húzza le könyvjelző hozzáadásához"
 }

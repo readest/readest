@@ -2016,5 +2016,9 @@
   "Sync Highlights and Bookmarks": "Markeringen en bladwijzers synchroniseren",
   "Sync Reading Statistics": "Leesstatistieken synchroniseren",
   "Sync Reading Status": "Leesstatus synchroniseren",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Maak KOReader-inloggegevens aan in BookOrbit onder Instellingen > Integraties > KOReader en voer ze hier in samen met je serveradres."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Maak KOReader-inloggegevens aan in BookOrbit onder Instellingen > Integraties > KOReader en voer ze hier in samen met je serveradres.",
+  "Release to remove bookmark": "Laat los om bladwijzer te verwijderen",
+  "Pull down to remove bookmark": "Trek omlaag om bladwijzer te verwijderen",
+  "Release to add bookmark": "Laat los om bladwijzer toe te voegen",
+  "Pull down to add bookmark": "Trek omlaag om bladwijzer toe te voegen"
 }

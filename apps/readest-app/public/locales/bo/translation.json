@@ -1970,5 +1970,9 @@
   "Sync Highlights and Bookmarks": "གསལ་མདངས་དང་དཔེ་རྟགས་མཉམ་འགྲིག",
   "Sync Reading Statistics": "ཀློག་པའི་གྲངས་ཐོ་མཉམ་འགྲིག",
   "Sync Reading Status": "ཀློག་པའི་གནས་སྟངས་མཉམ་འགྲིག",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit ནང་ སྒྲིག་འགོད > མཉམ་སྦྲེལ > KOReader ནང་ KOReader ཐོབ་ཐང་བཟོས་རྗེས་ ཞབས་ཞུ་བའི་ཁ་བྱང་དང་མཉམ་དུ་འདིར་བྲིས།"
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit ནང་ སྒྲིག་འགོད > མཉམ་སྦྲེལ > KOReader ནང་ KOReader ཐོབ་ཐང་བཟོས་རྗེས་ ཞབས་ཞུ་བའི་ཁ་བྱང་དང་མཉམ་དུ་འདིར་བྲིས།",
+  "Release to remove bookmark": "དེབ་གྲངས་འདོར་བར་ལག་པ་གློད།",
+  "Pull down to remove bookmark": "དེབ་གྲངས་འདོར་བར་མར་འཐེན།",
+  "Release to add bookmark": "དེབ་གྲངས་སྣོན་པར་ལག་པ་གློད།",
+  "Pull down to add bookmark": "དེབ་གྲངས་སྣོན་པར་མར་འཐེན།"
 }

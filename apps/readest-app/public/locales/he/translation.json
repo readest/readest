@@ -2062,5 +2062,9 @@
   "Sync Highlights and Bookmarks": "סנכרון הדגשות וסימניות",
   "Sync Reading Statistics": "סנכרון סטטיסטיקות קריאה",
   "Sync Reading Status": "סנכרון סטטוס קריאה",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "צור פרטי התחברות של KOReader ב-BookOrbit תחת הגדרות > אינטגרציות > KOReader, ולאחר מכן הזן אותם כאן יחד עם כתובת השרת שלך."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "צור פרטי התחברות של KOReader ב-BookOrbit תחת הגדרות > אינטגרציות > KOReader, ולאחר מכן הזן אותם כאן יחד עם כתובת השרת שלך.",
+  "Release to remove bookmark": "שחרר להסרת הסימנייה",
+  "Pull down to remove bookmark": "משוך למטה להסרת הסימנייה",
+  "Release to add bookmark": "שחרר להוספת סימנייה",
+  "Pull down to add bookmark": "משוך למטה להוספת סימנייה"
 }

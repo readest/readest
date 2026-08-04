@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
@@ -19,7 +19,7 @@ import HeaderBar from './HeaderBar';
 import PageNavigationButtons from './PageNavigationButtons';
 import FooterBar from './footerbar/FooterBar';
 import ProgressBar from './ProgressBar';
-import Ribbon from './Ribbon';
+import BookmarkPullDown from './BookmarkPullDown';
 import Annotator from './annotator/Annotator';
 import FootnotePopup from './FootnotePopup';
 import HintInfo from './HintInfo';
@@ -123,6 +123,10 @@ const BookCellInner: React.FC<BookCellProps> = ({
   // though saveViewSettings mutates viewSettings in place (#4898).
   const { viewInsets, contentInsets } = useContentInsets(viewSettings, gridInsets);
 
+  // The page content (viewer + its header/footer chrome) that the pull-down
+  // bookmark gesture slides as one block.
+  const slideRef = useRef<HTMLDivElement | null>(null);
+
   // Stable callback so HeaderBar doesn't see a new prop reference per
   // BooksGrid render.
   const onDropdownOpenChange = useCallback(
@@ -133,7 +137,6 @@ const BookCellInner: React.FC<BookCellProps> = ({
   if (!book || !config || !bookDoc || !viewSettings || !viewState) return null;
 
   const { section, pageinfo, sectionLabel } = progress || {};
-  const isBookmarked = viewState.ribbonVisible;
   const viewerKey = viewState.viewerKey;
   const horizontalGapPercent = viewSettings.gapPercent;
   const showHeader = viewSettings.showHeader;
@@ -151,7 +154,6 @@ const BookCellInner: React.FC<BookCellProps> = ({
         appServiceHasRoundedWindow && 'rounded-window',
       )}
     >
-      {isBookmarked && !hoveredBookKey && <Ribbon width={`${horizontalGapPercent}%`} />}
       <HeaderBar
         bookKey={bookKey}
         gridInsets={gridInsets}
@@ -163,49 +165,69 @@ const BookCellInner: React.FC<BookCellProps> = ({
         onGoToLibrary={onGoToLibrary}
         onDropdownOpenChange={onDropdownOpenChange}
       />
-      <FoliateViewer
-        key={viewerKey}
-        bookKey={bookKey}
-        bookDoc={bookDoc}
-        config={config}
-        gridInsets={gridInsets}
-        contentInsets={contentInsets}
-      />
-      {viewSettings.vertical && viewSettings.scrolled && (
-        <>
-          {(showFooter || viewSettings.doubleBorder) && (
-            <div
-              className='bg-base-100 absolute left-0 top-0 h-full'
-              style={{
-                width: `calc(${contentInsets.left + (viewSettings.doubleBorder ? 32 : 0)}px)`,
-                height: `calc(100%)`,
-              }}
-            />
-          )}
-          {(showHeader || viewSettings.doubleBorder) && (
-            <div
-              className='bg-base-100 absolute right-0 top-0 h-full'
-              style={{
-                width: `calc(${contentInsets.right + (viewSettings.doubleBorder ? 32 : 0)}px)`,
-                height: `calc(100%)`,
-              }}
-            />
-          )}
-        </>
-      )}
-      {viewSettings.vertical && viewSettings.doubleBorder && (
-        <DoubleBorder
-          showHeader={showHeader}
-          showFooter={showFooter}
-          borderColor={viewSettings.borderColor}
-          horizontalGap={horizontalGapPercent}
-          insets={viewInsets}
-        />
-      )}
-      {showHeader && (
-        <SectionInfo
+      {/*
+        bg-base-100: while the pull-down bookmark gesture translates this
+        wrapper, the transform makes it a stacking context, which isolates the
+        texture's mix-blend-mode (.foliate-viewer::before) from any backdrop
+        outside it — the page visibly brightens for the duration of the drag.
+        An opaque background inside the wrapper keeps the blend backdrop with
+        the transformed group, so the drag is luminance-invariant.
+      */}
+      <div ref={slideRef} className='bg-base-100 absolute inset-0'>
+        <FoliateViewer
+          key={viewerKey}
           bookKey={bookKey}
-          section={sectionLabel}
+          bookDoc={bookDoc}
+          config={config}
+          gridInsets={gridInsets}
+          contentInsets={contentInsets}
+        />
+        {viewSettings.vertical && viewSettings.scrolled && (
+          <>
+            {(showFooter || viewSettings.doubleBorder) && (
+              <div
+                className='bg-base-100 absolute left-0 top-0 h-full'
+                style={{
+                  width: `calc(${contentInsets.left + (viewSettings.doubleBorder ? 32 : 0)}px)`,
+                  height: `calc(100%)`,
+                }}
+              />
+            )}
+            {(showHeader || viewSettings.doubleBorder) && (
+              <div
+                className='bg-base-100 absolute right-0 top-0 h-full'
+                style={{
+                  width: `calc(${contentInsets.right + (viewSettings.doubleBorder ? 32 : 0)}px)`,
+                  height: `calc(100%)`,
+                }}
+              />
+            )}
+          </>
+        )}
+        {viewSettings.vertical && viewSettings.doubleBorder && (
+          <DoubleBorder
+            showHeader={showHeader}
+            showFooter={showFooter}
+            borderColor={viewSettings.borderColor}
+            horizontalGap={horizontalGapPercent}
+            insets={viewInsets}
+          />
+        )}
+        {showHeader && (
+          <SectionInfo
+            bookKey={bookKey}
+            section={sectionLabel}
+            showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
+            isScrolled={viewSettings.scrolled}
+            isVertical={viewSettings.vertical}
+            isEink={viewSettings.isEink}
+            horizontalGap={horizontalGapPercent}
+            contentInsets={contentInsets}
+            gridInsets={gridInsets}
+          />
+        )}
+        <HintInfo
+          bookKey={bookKey}
           showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
           isScrolled={viewSettings.scrolled}
           isVertical={viewSettings.vertical}
@@ -214,39 +236,30 @@ const BookCellInner: React.FC<BookCellProps> = ({
           contentInsets={contentInsets}
           gridInsets={gridInsets}
         />
-      )}
-      <HintInfo
-        bookKey={bookKey}
-        showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
-        isScrolled={viewSettings.scrolled}
-        isVertical={viewSettings.vertical}
-        isEink={viewSettings.isEink}
-        horizontalGap={horizontalGapPercent}
-        contentInsets={contentInsets}
-        gridInsets={gridInsets}
-      />
-      {viewSettings.readingRulerEnabled && viewState?.inited && (
-        <ReadingRuler
-          bookKey={bookKey}
-          isVertical={viewSettings.vertical}
-          rtl={viewSettings.rtl}
-          lines={viewSettings.readingRulerLines}
-          position={viewSettings.readingRulerPosition}
-          opacity={viewSettings.readingRulerOpacity}
-          color={viewSettings.readingRulerColor}
-          bookFormat={book.format}
-          viewSettings={viewSettings}
-          gridInsets={gridInsets}
-        />
-      )}
-      {showFooter && (
-        <ProgressBar
-          bookKey={bookKey}
-          horizontalGap={horizontalGapPercent}
-          contentInsets={contentInsets}
-          gridInsets={gridInsets}
-        />
-      )}
+        {viewSettings.readingRulerEnabled && viewState?.inited && (
+          <ReadingRuler
+            bookKey={bookKey}
+            isVertical={viewSettings.vertical}
+            rtl={viewSettings.rtl}
+            lines={viewSettings.readingRulerLines}
+            position={viewSettings.readingRulerPosition}
+            opacity={viewSettings.readingRulerOpacity}
+            color={viewSettings.readingRulerColor}
+            bookFormat={book.format}
+            viewSettings={viewSettings}
+            gridInsets={gridInsets}
+          />
+        )}
+        {showFooter && (
+          <ProgressBar
+            bookKey={bookKey}
+            horizontalGap={horizontalGapPercent}
+            contentInsets={contentInsets}
+            gridInsets={gridInsets}
+          />
+        )}
+      </div>
+      <BookmarkPullDown bookKey={bookKey} ribbonHidden={!!hoveredBookKey} slideRef={slideRef} />
       <PageNavigationButtons bookKey={bookKey} isDropdownOpen={isDropdownOpen} />
       <Annotator bookKey={bookKey} contentInsets={contentInsets} />
       <SearchResultsNav bookKey={bookKey} gridInsets={gridInsets} />

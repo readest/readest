@@ -2016,5 +2016,9 @@
   "Sync Highlights and Bookmarks": "Markierungen und Lesezeichen synchronisieren",
   "Sync Reading Statistics": "Lesestatistiken synchronisieren",
   "Sync Reading Status": "Lesestatus synchronisieren",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Erstellen Sie KOReader-Zugangsdaten in BookOrbit unter Einstellungen > Integrationen > KOReader und geben Sie sie hier zusammen mit Ihrer Serveradresse ein."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Erstellen Sie KOReader-Zugangsdaten in BookOrbit unter Einstellungen > Integrationen > KOReader und geben Sie sie hier zusammen mit Ihrer Serveradresse ein.",
+  "Release to remove bookmark": "Loslassen, um Lesezeichen zu entfernen",
+  "Pull down to remove bookmark": "Herunterziehen, um Lesezeichen zu entfernen",
+  "Release to add bookmark": "Loslassen, um Lesezeichen hinzuzufügen",
+  "Pull down to add bookmark": "Herunterziehen, um Lesezeichen hinzuzufügen"
 }

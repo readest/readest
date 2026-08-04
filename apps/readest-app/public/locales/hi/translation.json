@@ -2016,5 +2016,9 @@
   "Sync Highlights and Bookmarks": "हाइलाइट और बुकमार्क सिंक करें",
   "Sync Reading Statistics": "पठन आँकड़े सिंक करें",
   "Sync Reading Status": "पठन स्थिति सिंक करें",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit में सेटिंग्स > इंटीग्रेशन > KOReader में KOReader क्रेडेंशियल बनाएँ, फिर उन्हें अपने सर्वर पते के साथ यहाँ दर्ज करें।"
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "BookOrbit में सेटिंग्स > इंटीग्रेशन > KOReader में KOReader क्रेडेंशियल बनाएँ, फिर उन्हें अपने सर्वर पते के साथ यहाँ दर्ज करें।",
+  "Release to remove bookmark": "मार्कर हटाने के लिए छोड़ें",
+  "Pull down to remove bookmark": "मार्कर हटाने के लिए नीचे खींचें",
+  "Release to add bookmark": "मार्कर जोड़ने के लिए छोड़ें",
+  "Pull down to add bookmark": "मार्कर जोड़ने के लिए नीचे खींचें"
 }

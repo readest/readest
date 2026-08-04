@@ -1970,5 +1970,9 @@
   "Sync Highlights and Bookmarks": "ซิงค์ไฮไลต์และที่คั่นหนังสือ",
   "Sync Reading Statistics": "ซิงค์สถิติการอ่าน",
   "Sync Reading Status": "ซิงค์สถานะการอ่าน",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "สร้างข้อมูลรับรอง KOReader ใน BookOrbit ที่ การตั้งค่า > การเชื่อมต่อ > KOReader แล้วกรอกที่นี่พร้อมกับที่อยู่เซิร์ฟเวอร์ของคุณ"
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "สร้างข้อมูลรับรอง KOReader ใน BookOrbit ที่ การตั้งค่า > การเชื่อมต่อ > KOReader แล้วกรอกที่นี่พร้อมกับที่อยู่เซิร์ฟเวอร์ของคุณ",
+  "Release to remove bookmark": "ปล่อยเพื่อลบบุ๊กมาร์ก",
+  "Pull down to remove bookmark": "ดึงลงเพื่อลบบุ๊กมาร์ก",
+  "Release to add bookmark": "ปล่อยเพื่อเพิ่มบุ๊กมาร์ก",
+  "Pull down to add bookmark": "ดึงลงเพื่อเพิ่มบุ๊กมาร์ก"
 }

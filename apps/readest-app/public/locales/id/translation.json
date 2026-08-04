@@ -1970,5 +1970,9 @@
   "Sync Highlights and Bookmarks": "Sinkronkan Sorotan dan Markah",
   "Sync Reading Statistics": "Sinkronkan Statistik Membaca",
   "Sync Reading Status": "Sinkronkan Status Membaca",
-  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Buat kredensial KOReader di BookOrbit melalui Pengaturan > Integrasi > KOReader, lalu masukkan di sini bersama alamat server Anda."
+  "Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.": "Buat kredensial KOReader di BookOrbit melalui Pengaturan > Integrasi > KOReader, lalu masukkan di sini bersama alamat server Anda.",
+  "Release to remove bookmark": "Lepaskan untuk menghapus penanda",
+  "Pull down to remove bookmark": "Tarik ke bawah untuk menghapus penanda",
+  "Release to add bookmark": "Lepaskan untuk menambahkan penanda",
+  "Pull down to add bookmark": "Tarik ke bawah untuk menambahkan penanda"
 }
