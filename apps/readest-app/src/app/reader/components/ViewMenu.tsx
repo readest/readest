@@ -64,6 +64,9 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
   const { themeMode, isDarkMode, setThemeMode } = useThemeStore();
   const [isScrolledMode, setScrolledMode] = useState(viewSettings!.scrolled);
+  const [scrolledDirection, setScrolledDirection] = useState(
+    viewSettings!.scrolledDirection ?? 'vertical',
+  );
   const [webtoonMode, setWebtoonMode] = useState(viewSettings!.webtoonMode ?? false);
   const [isParagraphMode, setParagraphMode] = useState(
     viewSettings?.paragraphMode?.enabled ?? false,
@@ -139,6 +142,15 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   };
 
   useEffect(() => {
+    if (scrolledDirection === (viewSettings.scrolledDirection ?? 'vertical')) return;
+    viewSettings.scrolledDirection = scrolledDirection;
+    getView(bookKey)?.renderer.setAttribute('scroll-direction', scrolledDirection);
+    setViewSettings(bookKey, viewSettings);
+    saveViewSettings(envConfig, bookKey, 'scrolledDirection', scrolledDirection, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrolledDirection]);
+
+  useEffect(() => {
     if (isScrolledMode === viewSettings!.scrolled) return;
     viewSettings!.scrolled = isScrolledMode;
     if (!isScrolledMode && webtoonMode) setWebtoonMode(false);
@@ -162,6 +174,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
       // scrolled / zoomLevel effects rather than duplicating their renderer wiring.
       if (!isScrolledMode) setScrolledMode(true);
       if (zoomLevel !== 100) setZoomLevel(100);
+      if (scrolledDirection !== 'vertical') setScrolledDirection('vertical');
       saveViewSettings(envConfig, bookKey, 'scrolled', true, false, false);
     }
     setViewSettings(bookKey, viewSettings);
@@ -376,12 +389,39 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
       <MenuItem label={_('Font & Layout')} shortcut='Shift+F' onClick={openFontLayoutMenu} />
 
-      <MenuItem
-        label={_('Scrolled Mode')}
-        shortcut='Shift+J'
-        Icon={isScrolledMode ? MdCheck : undefined}
-        onClick={toggleScrolledMode}
-      />
+      {bookData.isFixedLayout ? (
+        <>
+          <MenuItem
+            label={_('Paginated')}
+            Icon={!isScrolledMode ? MdCheck : undefined}
+            onClick={() => setScrolledMode(false)}
+          />
+          <MenuItem
+            label={_('Vertical Scrolling')}
+            Icon={isScrolledMode && scrolledDirection === 'vertical' ? MdCheck : undefined}
+            onClick={() => {
+              setScrolledDirection('vertical');
+              setScrolledMode(true);
+            }}
+          />
+          <MenuItem
+            label={_('Horizontal Scrolling')}
+            Icon={isScrolledMode && scrolledDirection === 'horizontal' ? MdCheck : undefined}
+            onClick={() => {
+              if (webtoonMode) setWebtoonMode(false);
+              setScrolledDirection('horizontal');
+              setScrolledMode(true);
+            }}
+          />
+        </>
+      ) : (
+        <MenuItem
+          label={_('Scrolled Mode')}
+          shortcut='Shift+J'
+          Icon={isScrolledMode ? MdCheck : undefined}
+          onClick={toggleScrolledMode}
+        />
+      )}
 
       <MenuItem
         label={_('Auto Scroll')}

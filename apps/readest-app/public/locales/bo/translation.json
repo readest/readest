@@ -1960,5 +1960,8 @@
   "Book narration": "དཔེ་དེབ་ཀྱི་ཀློག་སྒྲ།",
   "Narration": "ཀློག་སྒྲ།",
   "Includes narration": "ཀློག་སྒྲ་ཡོད།",
-  "Back to Read Aloud": "སྐད་སྒྲས་ཀློག་སར་ཕྱིར་ལོག་པ།"
+  "Back to Read Aloud": "སྐད་སྒྲས་ཀློག་སར་ཕྱིར་ལོག་པ།",
+  "Paginated": "ཤོག་ངོས་རིམ་པ།",
+  "Vertical Scrolling": "འཕྱང་ཐིག་འཁོར་རྒྱུག",
+  "Horizontal Scrolling": "ཐད་ཐིག་འཁོར་རྒྱུག"
 }

@@ -1960,5 +1960,8 @@
   "Book narration": "書籍朗讀",
   "Narration": "有聲朗讀",
   "Includes narration": "含有聲朗讀",
-  "Back to Read Aloud": "回到朗讀位置"
+  "Back to Read Aloud": "回到朗讀位置",
+  "Paginated": "分頁",
+  "Vertical Scrolling": "垂直滾動",
+  "Horizontal Scrolling": "水平滾動"
 }

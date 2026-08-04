@@ -1960,5 +1960,8 @@
   "Book narration": "การบรรยายของหนังสือ",
   "Narration": "การบรรยาย",
   "Includes narration": "มีการบรรยายเสียง",
-  "Back to Read Aloud": "กลับไปที่การอ่านออกเสียง"
+  "Back to Read Aloud": "กลับไปที่การอ่านออกเสียง",
+  "Paginated": "แบ่งหน้า",
+  "Vertical Scrolling": "เลื่อนแนวตั้ง",
+  "Horizontal Scrolling": "เลื่อนแนวนอน"
 }

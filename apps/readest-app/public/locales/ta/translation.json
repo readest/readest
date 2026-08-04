@@ -2006,5 +2006,8 @@
   "Book narration": "புத்தகத்தின் விவரிப்பு",
   "Narration": "விவரிப்பு",
   "Includes narration": "விவரிப்பு உள்ளடங்கும்",
-  "Back to Read Aloud": "உரக்க வாசித்தலுக்குத் திரும்பு"
+  "Back to Read Aloud": "உரக்க வாசித்தலுக்குத் திரும்பு",
+  "Paginated": "பக்கங்களாக",
+  "Vertical Scrolling": "செங்குத்து உருட்டல்",
+  "Horizontal Scrolling": "கிடைமட்ட உருட்டல்"
 }

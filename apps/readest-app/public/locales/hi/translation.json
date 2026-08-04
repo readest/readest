@@ -2006,5 +2006,8 @@
   "Book narration": "पुस्तक का वाचन",
   "Narration": "वाचन",
   "Includes narration": "वाचन शामिल है",
-  "Back to Read Aloud": "ज़ोर से पढ़ने पर लौटें"
+  "Back to Read Aloud": "ज़ोर से पढ़ने पर लौटें",
+  "Paginated": "पृष्ठांकित",
+  "Vertical Scrolling": "ऊर्ध्वाधर स्क्रॉलिंग",
+  "Horizontal Scrolling": "क्षैतिज स्क्रॉलिंग"
 }

@@ -2098,5 +2098,8 @@
   "Book narration": "Narracja książki",
   "Narration": "Narracja",
   "Includes narration": "Zawiera narrację",
-  "Back to Read Aloud": "Powrót do czytania na głos"
+  "Back to Read Aloud": "Powrót do czytania na głos",
+  "Paginated": "Stronicowanie",
+  "Vertical Scrolling": "Przewijanie pionowe",
+  "Horizontal Scrolling": "Przewijanie poziome"
 }
