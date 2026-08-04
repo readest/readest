@@ -65,6 +65,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Content-Type': 'application/json',
       },
       body: clientBody ? JSON.stringify(clientBody) : null,
+      // Never follow redirects: a public server answering 3xx could steer the
+      // proxy onto a private address that the isLanAddress gate above already
+      // rejected (redirect-based SSRF).
+      redirect: 'error',
     });
 
     const data = await response.text();
