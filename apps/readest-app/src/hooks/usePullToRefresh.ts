@@ -24,6 +24,10 @@ function createApprFunction(MAX: number, k: number) {
   return (x: number) => MAX * (1 - Math.exp((-k * x) / MAX));
 }
 
+function getWrappers(el: HTMLElement): HTMLElement[] {
+  return Array.from(el.querySelectorAll<HTMLElement>('.transform-wrapper'));
+}
+
 export const usePullToRefresh = (
   ref: React.RefObject<HTMLDivElement | null>,
   onTriggerStage1: () => Promise<void> | void,
@@ -79,8 +83,10 @@ export const usePullToRefresh = (
         // Update loading spinner position and opacity with parallax if it exists
         updateLoadingSpinnerPosition(parentEl, transformValue, dy);
 
-        const wrapper = el.querySelector('.transform-wrapper') as HTMLElement;
-        if (wrapper) {
+        // The scroller can hold several transform targets (e.g. the recently
+        // read shelf in the Virtuoso Header plus the book list) — drag them
+        // all in lockstep so the whole shelf follows the pull.
+        for (const wrapper of getWrappers(el)) {
           wrapper.style.transform = `translate3d(0, ${transformValue}px, 0)`;
         }
       }
@@ -124,7 +130,7 @@ export const usePullToRefresh = (
         const el = ref.current;
         if (!el) return;
 
-        const wrapper = el.querySelector('.transform-wrapper') as HTMLElement;
+        const wrappers = getWrappers(el);
         const parentEl = el.parentNode as HTMLDivElement;
 
         const y = endEvent.changedTouches[0]!.clientY;
@@ -143,7 +149,7 @@ export const usePullToRefresh = (
           const transformValue = appr(dy);
           const targetPosition = Math.min(transformValue, MAX_LOADING_POSITION);
 
-          if (wrapper) {
+          for (const wrapper of wrappers) {
             wrapper.style.transition = 'transform 0.2s ease-out';
             wrapper.style.transform = `translateY(${targetPosition}px)`;
           }
@@ -177,7 +183,7 @@ export const usePullToRefresh = (
             // Update both wrapper and spinner position to maintain parallax consistency
             const newTransform = targetPosition + pullDelta;
             if (newTransform > 0) {
-              if (wrapper) {
+              for (const wrapper of wrappers) {
                 wrapper.style.transform = `translateY(${newTransform}px)`;
               }
 
@@ -194,7 +200,7 @@ export const usePullToRefresh = (
 
             // User pulled up significantly, reset
             if (pullDelta < -30) {
-              if (wrapper) {
+              for (const wrapper of wrappers) {
                 wrapper.style.transition = 'transform 0.3s ease-out';
                 wrapper.style.transform = 'translateY(0)';
               }
@@ -215,19 +221,21 @@ export const usePullToRefresh = (
           } finally {
             isLoading = false;
             hideLoadingSpinner(parentEl);
-            if (wrapper) {
+            for (const wrapper of wrappers) {
               wrapper.style.transition = 'transform 0.3s ease-out';
               wrapper.style.transform = 'translateY(0)';
-              setTimeout(() => {
-                if (wrapper) wrapper.style.transition = '';
-              }, 300);
             }
+            setTimeout(() => {
+              for (const wrapper of wrappers) {
+                wrapper.style.transition = '';
+              }
+            }, 300);
             el.removeEventListener('touchstart', handleLoadingTouchStart);
             el.removeEventListener('touchmove', handleLoadingTouchMove);
           }
         } else {
           hideLoadingSpinner(parentEl);
-          if (wrapper) {
+          for (const wrapper of wrappers) {
             wrapper.style.transition = 'transform 0.2s';
             wrapper.style.transform = 'translateY(0)';
           }

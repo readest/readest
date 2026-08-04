@@ -243,6 +243,10 @@ const Bookshelf: React.FC<BookshelfProps> = ({
 
   const { setCurrentBookshelf, setLibrary, updateBooks } = useLibraryStore();
   const { setSelectedBooks, getSelectedBooks, toggleSelectedBook } = useLibraryStore();
+  // The raw Set from the store: its identity only changes when the selection
+  // does, so memos keyed on it stay stable across unrelated re-renders
+  // (getSelectedBooks() allocates a fresh array per call).
+  const { selectedBooks: selectedBookSet } = useLibraryStore();
   const { getGroupName } = useLibraryStore();
 
   const uiLanguage = localStorage?.getItem('i18nextLng') || '';
@@ -797,14 +801,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     [libraryBooks],
   );
 
-  // A top-level quick-resume strip: hidden while searching, inside a group,
-  // selecting, or when nothing has been read yet.
+  // A top-level quick-resume strip: hidden while searching, inside a group, or
+  // when nothing has been read yet. It stays up in select mode so shelf books
+  // can be selected in place, just like the grid.
   const showRecentShelf =
-    settings.libraryRecentShelfEnabled &&
-    !queryTerm &&
-    !groupId &&
-    !isSelectMode &&
-    recentBooks.length > 0;
+    settings.libraryRecentShelfEnabled && !queryTerm && !groupId && recentBooks.length > 0;
 
   const recentShelfHeader = useMemo(
     () =>
@@ -814,7 +815,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           coverFit={coverFit as LibraryCoverFitType}
           autoColumns={settings.libraryAutoColumns}
           fixedColumns={settings.libraryColumns}
+          isSelectMode={isSelectMode}
+          selectedBooks={selectedBookSet}
           onOpenBook={openRecentBook}
+          toggleSelection={toggleSelection}
+          handleSetSelectMode={handleSetSelectMode}
           handleBookUpload={handleBookUpload}
           handleBookDownload={handleBookDownload}
           showBookDetailsModal={handleShowDetailsBook}
@@ -827,7 +832,11 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       coverFit,
       settings.libraryAutoColumns,
       settings.libraryColumns,
+      isSelectMode,
+      selectedBookSet,
       openRecentBook,
+      toggleSelection,
+      handleSetSelectMode,
       handleBookUpload,
       handleBookDownload,
       handleShowDetailsBook,

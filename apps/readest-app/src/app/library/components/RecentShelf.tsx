@@ -19,7 +19,11 @@ interface RecentShelfProps {
   // Mirror the bookshelf grid's column model so covers are the same size.
   autoColumns: boolean;
   fixedColumns: number;
+  isSelectMode: boolean;
+  selectedBooks: ReadonlySet<string>;
   onOpenBook: (book: Book) => void;
+  toggleSelection: (hash: string) => void;
+  handleSetSelectMode: (selectMode: boolean) => void;
   handleBookUpload: (book: Book) => void;
   handleBookDownload: (book: Book, options?: { redownload?: boolean; queued?: boolean }) => void;
   showBookDetailsModal: (book: Book) => void;
@@ -39,34 +43,57 @@ const RECENT_SLIDE_WIDTH =
 type RecentSlideProps = Pick<
   RecentShelfProps,
   | 'coverFit'
+  | 'isSelectMode'
   | 'onOpenBook'
+  | 'toggleSelection'
+  | 'handleSetSelectMode'
   | 'handleBookUpload'
   | 'handleBookDownload'
   | 'showBookDetailsModal'
   | 'showTimeRemaining'
-> & { book: Book };
+> & { book: Book; bookSelected: boolean };
 
 const RecentSlide: React.FC<RecentSlideProps> = ({
   book,
   coverFit,
+  isSelectMode,
+  bookSelected,
   onOpenBook,
+  toggleSelection,
+  handleSetSelectMode,
   handleBookUpload,
   handleBookDownload,
   showBookDetailsModal,
   showTimeRemaining,
 }) => {
+  // Same select vocabulary as the grid (`BookshelfItem`): long-press enters
+  // select mode and selects; while in select mode a tap toggles instead of
+  // opening the book.
+  const handleSelect = () => {
+    if (!isSelectMode) handleSetSelectMode(true);
+    toggleSelection(book.hash);
+  };
+
+  const handleActivate = () => {
+    if (isSelectMode) {
+      handleSelect();
+    } else {
+      onOpenBook(book);
+    }
+  };
+
   // Pointer-based tap, exactly like the grid (`BookItem` stops click
   // propagation). A swipe-to-scroll moves past useLongPress's moveThreshold and
   // cancels the tap, so horizontal scrolling never opens a book.
-  const { pressing, handlers } = useLongPress({ onTap: () => onOpenBook(book) }, [
-    book,
-    onOpenBook,
-  ]);
+  const { pressing, handlers } = useLongPress(
+    { onTap: handleActivate, onLongPress: handleSelect },
+    [book, isSelectMode, onOpenBook, toggleSelection, handleSetSelectMode],
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onOpenBook(book);
+      handleActivate();
     }
   };
 
@@ -92,8 +119,8 @@ const RecentSlide: React.FC<RecentSlideProps> = ({
             mode='grid'
             book={book}
             coverFit={coverFit}
-            isSelectMode={false}
-            bookSelected={false}
+            isSelectMode={isSelectMode}
+            bookSelected={bookSelected}
             transferProgress={null}
             handleBookUpload={handleBookUpload}
             handleBookDownload={handleBookDownload}
@@ -118,7 +145,11 @@ const RecentShelf: React.FC<RecentShelfProps> = ({
   coverFit,
   autoColumns,
   fixedColumns,
+  isSelectMode,
+  selectedBooks,
   onOpenBook,
+  toggleSelection,
+  handleSetSelectMode,
   handleBookUpload,
   handleBookDownload,
   showBookDetailsModal,
@@ -180,7 +211,10 @@ const RecentShelf: React.FC<RecentShelfProps> = ({
   };
 
   return (
-    <div className='recent-shelf select-none pt-3'>
+    // `transform-wrapper` opts the shelf into the pull-to-refresh drag: the
+    // pull translates every wrapper in the scroller, and the shelf lives in the
+    // Virtuoso Header — a sibling of the book list, not a descendant.
+    <div className='recent-shelf transform-wrapper select-none pt-3'>
       <h3 className='text-base-content/60 mb-1 ps-4 text-xs font-medium sm:ps-6'>
         {_('Recently read')}
       </h3>
@@ -200,7 +234,11 @@ const RecentShelf: React.FC<RecentShelfProps> = ({
                 key={book.hash}
                 book={book}
                 coverFit={coverFit}
+                isSelectMode={isSelectMode}
+                bookSelected={selectedBooks.has(book.hash)}
                 onOpenBook={onOpenBook}
+                toggleSelection={toggleSelection}
+                handleSetSelectMode={handleSetSelectMode}
                 handleBookUpload={handleBookUpload}
                 handleBookDownload={handleBookDownload}
                 showBookDetailsModal={showBookDetailsModal}
