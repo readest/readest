@@ -58,7 +58,7 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
 
   return (
     <div
-      className={clsx('annotation-notes absolute flex rounded-lg text-white')}
+      className={clsx('annotation-notes text-base-content absolute flex rounded-lg')}
       style={{
         ...(isVertical
           ? {
@@ -98,8 +98,12 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
             role='none'
             key={note.id || index}
             onClick={() => handleShowAnnotation?.(note)}
+            // Popup surface tokens, but no border of its own: the enclosing
+            // Popup already draws the bubble outline that the triangle is
+            // aligned to, and a second one doubles it along the triangle side.
             className={clsx(
-              'popup-container cursor-pointer rounded-lg bg-gray-600 shadow-lg transition-colors',
+              'popup-container cursor-pointer rounded-lg transition-colors',
+              'not-eink:shadow-lg bg-base-300 theme-dark:bg-base-100',
             )}
             style={
               isVertical
@@ -116,7 +120,6 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
                 dir='auto'
                 className={clsx(
                   'm-4 hyphens-auto text-justify font-sans text-sm',
-                  'not-eink:text-white eink:text-base-content',
                   isVertical && 'writing-vertical-rl',
                 )}
                 style={
@@ -130,7 +133,7 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
               >
                 <div className={clsx('flex flex-col justify-between gap-2')}>
                   {note.note}
-                  <span className='not-eink:text-white/50 eink:text-base-content/50 text-sm sm:text-xs'>
+                  <span className='text-base-content/50 text-sm sm:text-xs'>
                     {dayjs(note.createdAt).fromNow()}
                   </span>
                 </div>
