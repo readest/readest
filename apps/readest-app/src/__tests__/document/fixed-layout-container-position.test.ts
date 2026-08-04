@@ -18,4 +18,10 @@ describe('fixed-layout containerPosition (READEST-11)', () => {
     // fixed-EPUB books in scrolled mode (READEST-11); the setter must exist.
     expect(typeof descriptor?.set).toBe('function');
   });
+
+  it('observes scroll-direction for horizontal scroll mode (readest#4995)', () => {
+    const observed = (FixedLayout as unknown as { observedAttributes: string[] })
+      .observedAttributes;
+    expect(observed).toContain('scroll-direction');
+  });
 });
