@@ -41,6 +41,19 @@ const mount = (dir: 'ltr' | 'rtl' = 'ltr', pages = 5): Renderer => {
 const pageEls = (renderer: HTMLElement): HTMLElement[] =>
   Array.from(renderer.shadowRoot!.querySelectorAll<HTMLElement>('.scroll-page'));
 
+// Index of the .scroll-page whose rect contains the viewport's horizontal
+// center, i.e. the page a reader would call "the current page".
+const visiblePageIndex = (renderer: HTMLElement): number => {
+  const host = renderer.getBoundingClientRect();
+  const centerX = host.left + host.width / 2;
+  return pageEls(renderer).findIndex((el) => {
+    const rect = el.getBoundingClientRect();
+    return rect.left <= centerX && rect.right >= centerX;
+  });
+};
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 let renderer: Renderer | null = null;
 
 afterEach(() => {
@@ -86,5 +99,47 @@ describe('fixed-layout horizontal scroll mode (readest#4995)', () => {
     const first = pages[0]!.getBoundingClientRect();
     const second = pages[1]!.getBoundingClientRect();
     expect(second.top).toBeGreaterThan(first.bottom - 1);
+  });
+
+  // RTL horizontal scroll must use the browser's negative-scrollLeft
+  // convention, which is keyed off the SCROLLING element's own computed
+  // `direction`, not a descendant's. Regression coverage for a bug where
+  // `direction: rtl` was set on a non-scrolling child container instead of
+  // the host: the host stayed 'ltr', scrollLeft never went negative
+  // (assignments clamped to 0), and every anchor round trip teleported the
+  // reader (readest#4995 review finding).
+  it('puts the RTL host in the negative-scrollLeft convention', () => {
+    renderer = mount('rtl');
+    expect(getComputedStyle(renderer).direction).toBe('rtl');
+    renderer.scrollLeft = -100;
+    expect(renderer.scrollLeft).toBeLessThan(0);
+  });
+
+  it('preserves the visible page across a scroll-gap change in RTL horizontal mode', async () => {
+    renderer = mount('rtl');
+    const pages = pageEls(renderer);
+    // Center page 2 in the viewport (scrolling deeper into the RTL strip,
+    // i.e. further negative scrollLeft).
+    const host = renderer.getBoundingClientRect();
+    const centerX = host.left + host.width / 2;
+    const target = pages[2]!.getBoundingClientRect();
+    const delta = target.left + target.width / 2 - centerX;
+    renderer.scrollLeft += delta;
+    // let the scroll settle (handleScrollEvent's idle debounce).
+    await wait(200);
+
+    const before = visiblePageIndex(renderer);
+    expect(before).toBe(2);
+
+    renderer.setAttribute('scroll-gap', '8');
+
+    expect(visiblePageIndex(renderer)).toBe(before);
+  });
+
+  it('clears the host direction when an RTL book switches back to vertical', () => {
+    renderer = mount('rtl');
+    expect(getComputedStyle(renderer).direction).toBe('rtl');
+    renderer.setAttribute('scroll-direction', 'vertical');
+    expect(getComputedStyle(renderer).direction).toBe('ltr');
   });
 });
