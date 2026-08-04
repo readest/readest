@@ -7,15 +7,7 @@ import {
   STORAGE_QUOTA_GRACE_BYTES,
 } from '@/utils/access';
 import { getDownloadSignedUrl, getUploadSignedUrl, isSafeObjectKeyName } from '@/utils/object';
-import {
-  READEST_PUBLIC_ASSETS_BASE_URL,
-  READEST_PUBLIC_STORAGE_BASE_URL,
-} from '@/services/constants';
-
-// Public media prefixes that may be uploaded into the public bucket. Keys are
-// content-addressed by the caller (media/<kind>/<user-seg>/<hash>.<ext>), so
-// unlike `temp/` objects they are durable and their URLs never rotate.
-const PUBLIC_MEDIA_KINDS = ['book_covers'];
+import { READEST_PUBLIC_STORAGE_BASE_URL } from '@/services/constants';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await runMiddleware(req, res, corsAllMethods);
@@ -29,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(403).json({ error: 'Not authenticated' });
   }
 
-  const { fileName, fileSize, bookHash, replicaKind, replicaId, temp = false, media } = req.body;
+  const { fileName, fileSize, bookHash, replicaKind, replicaId, temp = false } = req.body;
 
   // Reject object-key path traversal before building any key. `fileName` is
   // fully client-controlled and is interpolated into `${user.id}/${fileName}`;
@@ -37,25 +29,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // namespace (GHSA-mfmj-2frf-vhgw).
   if (!isSafeObjectKeyName(fileName)) {
     return res.status(400).json({ error: 'Invalid fileName' });
-  }
-
-  if (media) {
-    if (!PUBLIC_MEDIA_KINDS.includes(media)) {
-      return res.status(400).json({ error: 'Invalid media' });
-    }
-    try {
-      const userStr = user.id.split('-')[0];
-      const fileKey = `media/${media}/${userStr}/${fileName}`;
-      const bucketName = process.env['TEMP_STORAGE_PUBLIC_BUCKET_NAME'] || '';
-      const uploadUrl = await getUploadSignedUrl(fileKey, fileSize, 1800, bucketName);
-      return res.status(200).json({
-        uploadUrl,
-        downloadUrl: `${READEST_PUBLIC_ASSETS_BASE_URL}/${fileKey}`,
-      });
-    } catch (error) {
-      console.error('Error creating presigned post for media file:', error);
-      return res.status(500).json({ error: 'Could not create presigned post' });
-    }
   }
 
   if (temp) {
@@ -90,58 +63,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Missing file info' });
     }
 
-    // `quota` is an entitlement — it only moves on purchase or refund, so
-    // reading it from the token is fine. `usage` is a live counter: the claim
-    // is frozen when the access token is minted, so authorising against it
-    // measured every upload in that window against the same stale baseline
-    // and let an account keep uploading past its quota until the token
-    // refreshed. Read the counter the trigger maintains instead, and fall
-    // back to the claim rather than to zero if the row can't be read.
-    const { usage: claimUsage, quota } = getStoragePlanData(token);
-    const supabase = createSupabaseAdminClient();
-    const { data: planRow } = await supabase
-      .from('plans')
-      .select('storage_usage_bytes')
-      .eq('id', user.id)
-      .single();
-    const usage = planRow?.storage_usage_bytes ?? claimUsage;
-
+    const { usage, quota } = getStoragePlanData(token);
     if (usage + fileSize > quota + STORAGE_QUOTA_GRACE_BYTES) {
       return res.status(403).json({ error: 'Insufficient storage quota', usage });
     }
 
     const fileKey = `${user.id}/${fileName}`;
-    const { data: existingRecord, error: fetchError } = await supabase
-      .from('files')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('file_key', fileKey)
-      .limit(1)
-      .single();
+    const apiUrl = process.env.NEXT_PUBLIC_BIBLO_API_URL || 'http://localhost:3001/api/v0';
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      return res.status(500).json({ error: fetchError.message });
-    }
     let objSize = fileSize;
-    if (existingRecord) {
-      objSize = existingRecord.file_size;
-    } else {
-      const { data: inserted, error: insertError } = await supabase
-        .from('files')
-        .insert([
-          {
-            user_id: user.id,
-            book_hash: bookHash ?? null,
-            replica_kind: replicaKind ?? null,
-            replica_id: replicaId ?? null,
-            file_key: fileKey,
-            file_size: fileSize,
-          },
-        ])
-        .select()
-        .single();
-      console.log('Inserted record:', inserted);
-      if (insertError) return res.status(500).json({ error: insertError.message });
+    try {
+      const response = await fetch(`${apiUrl}/storage/upload`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: req.headers.authorization || `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          fileName,
+          fileSize,
+          bookHash,
+          replicaKind,
+          replicaId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        return res
+          .status(response.status)
+          .json({ error: errData.error || 'Failed to save metadata' });
+      }
+
+      const fileMetadata = await response.json();
+      if (fileMetadata && fileMetadata.size) {
+        objSize = fileMetadata.size;
+      }
+    } catch (error: any) {
+      console.error('Error saving file metadata to backend:', error);
+      return res.status(500).json({ error: 'Could not connect to storage metadata server' });
     }
 
     try {

@@ -241,11 +241,29 @@ export const validateUserAndToken = async (authHeader: string | null | undefined
   if (!authHeader) return {};
 
   const token = authHeader.replace('Bearer ', '');
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser(token);
+  try {
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return {};
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join(''),
+    );
+    const decoded = JSON.parse(jsonPayload);
+    if (!decoded || !decoded.userId) return {};
 
-  if (error || !user) return {};
-  return { user, token };
+    const user = {
+      id: String(decoded.userId),
+      email: decoded.email || '',
+      user_metadata: {
+        name: decoded.name || '',
+      },
+    };
+    return { user, token };
+  } catch (e) {
+    console.error('Failed to decode JWT token in validateUserAndToken:', e);
+    return {};
+  }
 };

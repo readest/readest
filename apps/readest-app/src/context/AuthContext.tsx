@@ -9,9 +9,16 @@ import {
   ReactNode,
   useEffect,
 } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '@/utils/supabase';
 import posthog from 'posthog-js';
+
+export interface User {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    full_name?: string;
+    name?: string;
+  };
+}
 
 interface AuthContextType {
   token: string | null;
@@ -38,66 +45,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return null;
   });
 
-  useEffect(() => {
-    const syncSession = (
-      session: { access_token: string; refresh_token: string; user: User } | null,
-    ) => {
-      if (session) {
-        console.log('Syncing session');
-        const { access_token, refresh_token, user } = session;
-        localStorage.setItem('token', access_token);
-        localStorage.setItem('refresh_token', refresh_token);
-        localStorage.setItem('user', JSON.stringify(user));
-        posthog.identify(user.id);
-        setToken(access_token);
-        setUser(user);
-      } else {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
-        setToken(null);
-        setUser(null);
-      }
-    };
-    const refreshSession = async () => {
-      try {
-        await supabase.auth.refreshSession();
-      } catch {
-        syncSession(null);
-      }
-    };
-
-    const { data: subscription } = supabase.auth.onAuthStateChange((_, session) => {
-      syncSession(session);
-    });
-
-    refreshSession();
-    return () => {
-      subscription?.subscription.unsubscribe();
-    };
-  }, []);
-
-  // setToken / setUser from useState are stable across renders, so the empty
-  // deps array is correct. Wrapping in useCallback (and only including stable
-  // refs in the deps) is what makes the useMemo below actually memoize the
-  // context value — without this, login/logout/refresh would be recreated on
-  // every render and the memo would always invalidate.
   const login = useCallback((newToken: string, newUser: User) => {
-    console.log('Logging in');
+    console.log('Logging in to Biblophile account');
     setToken(newToken);
     setUser(newUser);
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(newUser));
+    if (newUser.id) {
+      posthog.identify(newUser.id);
+    }
   }, []);
 
   const logout = useCallback(async () => {
-    console.log('Logging out');
+    console.log('Logging out from Biblophile account');
+    const refreshToken = localStorage.getItem('refresh_token');
+    const apiUrl = process.env.NEXT_PUBLIC_BIBLO_API_URL || '1/v0';
+
     try {
-      await supabase.auth.refreshSession();
-    } catch {
+      if (refreshToken) {
+        await fetch(`${apiUrl}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ refreshToken }),
+        });
+      }
+    } catch (e) {
+      console.warn('Logout API call failed:', e);
     } finally {
-      await supabase.auth.signOut();
       localStorage.removeItem('token');
+      localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
       setToken(null);
       setUser(null);
@@ -105,15 +83,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const refresh = useCallback(async () => {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) return;
+
+    const apiUrl = process.env.NEXT_PUBLIC_BIBLO_API_URL || 'http://localhost:3001/api/v0';
     try {
-      await supabase.auth.refreshSession();
-    } catch {}
+      const response = await fetch(`${apiUrl}/auth/refresh-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.status === 'success' && result.data?.accessToken) {
+          localStorage.setItem('token', result.data.accessToken);
+          setToken(result.data.accessToken);
+        }
+      } else {
+        await logout();
+      }
+    } catch (e) {
+      console.error('Refresh token call failed:', e);
+    }
+  }, [logout]);
+
+  useEffect(() => {
+    // Attempt initial token refresh on mount
+    refresh();
   }, []);
 
   const value = useMemo(
     () => ({ token, user, login, logout, refresh }),
     [token, user, login, logout, refresh],
   );
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 

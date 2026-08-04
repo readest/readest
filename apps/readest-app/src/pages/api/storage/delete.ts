@@ -23,36 +23,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Missing or invalid fileKey' });
     }
 
-    const supabase = createSupabaseAdminClient();
-    const { data: fileRecord, error: fileError } = await supabase
-      .from('files')
-      .select('user_id, id')
-      .eq('user_id', user.id)
-      .eq('file_key', fileKey)
-      .limit(1)
-      .single();
-
-    if (fileError || !fileRecord) {
-      return res.status(404).json({ error: 'File not found' });
-    }
-
-    if (fileRecord.user_id !== user.id) {
-      return res.status(403).json({ error: 'Unauthorized access to the file' });
-    }
+    const apiUrl = process.env.NEXT_PUBLIC_BIBLO_API_URL || 'http://localhost:3001/api/v0';
 
     try {
-      await deleteObject(fileKey);
-      const { error: deleteError } = await supabase.from('files').delete().eq('id', fileRecord.id);
+      const response = await fetch(
+        `${apiUrl}/storage/delete?fileKey=${encodeURIComponent(fileKey)}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: req.headers.authorization || `Bearer ${token}`,
+          },
+        },
+      );
 
-      if (deleteError) {
-        console.error('Error updating file record:', deleteError);
-        return res.status(500).json({ error: 'Could not update file record' });
+      if (!response.ok) {
+        const errData = await response.json();
+        return res
+          .status(response.status)
+          .json({ error: errData.error || 'Failed to delete metadata' });
       }
 
+      // Now delete S3/R2 object
+      await deleteObject(fileKey);
+
       res.status(200).json({ message: 'File deleted successfully' });
-    } catch (error) {
-      console.error('Error deleting file from S3:', error);
-      res.status(500).json({ error: 'Could not delete file from storage' });
+    } catch (error: any) {
+      console.error('Error deleting file metadata or object:', error);
+      res.status(500).json({ error: 'Could not delete file from storage backend' });
     }
   } catch (error) {
     console.error(error);
