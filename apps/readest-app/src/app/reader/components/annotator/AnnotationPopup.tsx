@@ -47,6 +47,8 @@ interface AnnotationPopupProps {
   onToggleGlobal?: () => void;
   onHighlight: (update?: boolean) => void;
   onDismiss: () => void;
+  reaction?: string;
+  onSelectReaction?: (emoji: string | null) => void;
 }
 
 const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
@@ -69,6 +71,8 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
   onToggleGlobal,
   onHighlight,
   onDismiss,
+  reaction,
+  onSelectReaction,
 }) => {
   // Tall enough for a few lines plus the Cancel/Save row, so the editor opens
   // at a usable size instead of the 44px toolbar height it replaces.
@@ -191,6 +195,8 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
                 globalToggleActive={globalToggleActive}
                 onToggleGlobal={onToggleGlobal}
                 onHandleHighlight={onHighlight}
+                reaction={reaction}
+                onSelectReaction={onSelectReaction}
               />
             )
           )}

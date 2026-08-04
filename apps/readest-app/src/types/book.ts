@@ -212,6 +212,7 @@ export interface BookNote {
   createdAt: number;
   updatedAt: number;
   deletedAt?: number | null;
+  reaction?: string;
 }
 
 export interface BooknoteGroup {
