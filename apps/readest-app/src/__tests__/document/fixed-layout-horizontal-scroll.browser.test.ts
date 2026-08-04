@@ -166,6 +166,27 @@ describe('fixed-layout horizontal scroll mode (readest#4995)', () => {
     expect(renderer.scrollLeft).toBe(zoomed);
   });
 
+  // Regression coverage for readest#4727 in horizontal mode: the iframe wheel
+  // listener installed by #loadScrollPage must translate the tick itself here,
+  // unlike vertical mode. In vertical mode the native scroll chain already
+  // consumes the tick, so JS must stay hands off. In horizontal mode the host
+  // only overflows horizontally, so a vertical wheel tick has nothing for the
+  // native chain to consume, and without a manual translation the first tick
+  // of every gesture over a page is silently swallowed.
+  it('translates a wheel landing on a page iframe into horizontal scroll', async () => {
+    renderer = mount('ltr');
+    await waitFor(() => {
+      const f = renderer!.shadowRoot?.querySelector<HTMLIFrameElement>('.scroll-page iframe');
+      return !!(f && f.style.display && f.style.display !== 'none' && f.contentDocument);
+    });
+    const iframe = renderer.shadowRoot!.querySelector<HTMLIFrameElement>('.scroll-page iframe')!;
+    const before = renderer.scrollLeft;
+    iframe.contentDocument!.dispatchEvent(
+      new WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true }),
+    );
+    expect(renderer.scrollLeft).toBeCloseTo(before + 120, 0);
+  });
+
   it('scrolls RTL books leftward (negative scrollLeft) on wheel down', () => {
     renderer = mount('rtl');
     renderer.dispatchEvent(
