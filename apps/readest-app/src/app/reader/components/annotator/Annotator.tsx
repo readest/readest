@@ -29,6 +29,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { useFoliateEvents } from '../../hooks/useFoliateEvents';
 import { useRendererInputListeners } from '../../hooks/useRendererInputListeners';
+import { useBookOrbitNotesSync } from '../../hooks/useBookOrbitNotesSync';
 import { useNotesSync } from '../../hooks/useNotesSync';
 import { useReadwiseSync } from '../../hooks/useReadwiseSync';
 import { useHardcoverSync } from '../../hooks/useHardcoverSync';
@@ -130,6 +131,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const { selectFiles } = useFileSelector(appService, _);
 
   useNotesSync(bookKey);
+  useBookOrbitNotesSync(bookKey);
   useReadwiseSync(bookKey);
   useHardcoverSync(bookKey);
 
