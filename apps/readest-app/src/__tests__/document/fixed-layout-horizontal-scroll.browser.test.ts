@@ -142,4 +142,56 @@ describe('fixed-layout horizontal scroll mode (readest#4995)', () => {
     renderer.setAttribute('scroll-direction', 'vertical');
     expect(getComputedStyle(renderer).direction).toBe('ltr');
   });
+
+  const waitFor = async (fn: () => boolean, timeout = 4000): Promise<void> => {
+    const start = performance.now();
+    while (!fn()) {
+      if (performance.now() - start > timeout) throw new Error('waitFor timed out');
+      await new Promise((r) => setTimeout(r, 30));
+    }
+  };
+
+  it('translates vertical wheel ticks into horizontal scrolling', () => {
+    renderer = mount('ltr');
+    const before = renderer.scrollLeft;
+    renderer.dispatchEvent(
+      new WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true }),
+    );
+    expect(renderer.scrollLeft).toBeGreaterThan(before);
+    // ctrl+wheel is pinch zoom, never scrolling.
+    const zoomed = renderer.scrollLeft;
+    renderer.dispatchEvent(
+      new WheelEvent('wheel', { deltaY: 120, ctrlKey: true, bubbles: true, cancelable: true }),
+    );
+    expect(renderer.scrollLeft).toBe(zoomed);
+  });
+
+  it('scrolls RTL books leftward (negative scrollLeft) on wheel down', () => {
+    renderer = mount('rtl');
+    renderer.dispatchEvent(
+      new WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true }),
+    );
+    expect(renderer.scrollLeft).toBeLessThan(0);
+  });
+
+  it('advances one viewport width on next()', async () => {
+    renderer = mount('ltr');
+    const before = renderer.scrollLeft;
+    await renderer.next();
+    // scrollBy uses smooth behavior; poll until it lands.
+    await waitFor(() => renderer!.scrollLeft >= before + renderer!.clientWidth - 1);
+  });
+
+  it('exposes containerPosition as reading progression on both directions', () => {
+    renderer = mount('ltr');
+    renderer.containerPosition = 100;
+    expect(renderer.scrollLeft).toBeCloseTo(100, 0);
+    expect(renderer.containerPosition).toBeCloseTo(100, 0);
+    renderer.remove();
+
+    renderer = mount('rtl');
+    renderer.containerPosition = 100;
+    expect(renderer.scrollLeft).toBeCloseTo(-100, 0);
+    expect(renderer.containerPosition).toBeCloseTo(100, 0);
+  });
 });
