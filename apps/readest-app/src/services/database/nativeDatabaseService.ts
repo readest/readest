@@ -49,6 +49,9 @@ export class NativeDatabaseService implements DatabaseService {
     // and every written byte sits in the -wal sidecar, which file-level copy
     // or sync of the containing directory can miss.
     await this.execute('PRAGMA wal_checkpoint(TRUNCATE)').catch(() => {});
-    await this.db.close();
+    // The plugin's arg-less close() drains EVERY open connection app-wide;
+    // pass our path so closing this database cannot tear down the others
+    // (statistics.db etc. dying with "database ... not loaded", READEST-6).
+    await this.db.close(this.db.path);
   }
 }
