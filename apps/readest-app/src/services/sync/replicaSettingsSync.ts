@@ -460,6 +460,9 @@ const mergeSettings = (current: SystemSettings, patch: Partial<SystemSettings>):
   if (patch.kosync) {
     out.kosync = { ...current.kosync, ...patch.kosync };
   }
+  if (patch.bookorbit) {
+    out.bookorbit = { ...current.bookorbit, ...patch.bookorbit };
+  }
   if (patch.readwise) {
     out.readwise = { ...current.readwise, ...patch.readwise };
   }

@@ -179,11 +179,14 @@ describe('settingsAdapter', () => {
     expect(out.patch.s3?.enabled).toBeUndefined();
   });
 
-  test('declares encryptedFields covering kosync / readwise / hardcover / webdav / s3 credentials only (not serverUrl / endpoint)', () => {
+  test('declares encryptedFields covering kosync / bookorbit / readwise / hardcover / webdav / s3 credentials only (not serverUrl / endpoint)', () => {
     expect(settingsAdapter.encryptedFields).toEqual([
       'kosync.username',
       'kosync.userkey',
       'kosync.password',
+      'bookorbit.username',
+      'bookorbit.userkey',
+      'bookorbit.password',
       'readwise.accessToken',
       'hardcover.accessToken',
       'webdav.username',

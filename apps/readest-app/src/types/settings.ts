@@ -85,6 +85,23 @@ export interface KOSyncSettings {
   strategy: KOSyncStrategy;
 }
 
+export interface BookOrbitSettings {
+  enabled: boolean;
+  /** Base server origin, e.g. https://books.example.com (no /api/v1/koreader suffix). */
+  serverUrl: string;
+  username: string;
+  userkey: string;
+  password?: string;
+  deviceId: string;
+  deviceName: string;
+  strategy: KOSyncStrategy;
+  syncProgress: boolean;
+  /** Annotations and bookmarks. */
+  syncNotes: boolean;
+  syncStats: boolean;
+  syncBookStates: boolean;
+}
+
 export interface ReadwiseSettings {
   enabled: boolean;
   accessToken: string;
@@ -432,6 +449,7 @@ export interface SystemSettings {
   biometricUnlockEnabled?: boolean;
 
   kosync: KOSyncSettings;
+  bookorbit: BookOrbitSettings;
   readwise: ReadwiseSettings;
   hardcover: HardcoverSettings;
   /** Optional by design — see {@link ReadestCloudSettings}. Never defaulted. */
