@@ -207,6 +207,7 @@ export interface BookLayout {
   compactMarginPx?: number; // deprecated
   gapPercent: number;
   scrolled: boolean;
+  scrolledDirection: 'vertical' | 'horizontal';
   webtoonMode: boolean;
   noContinuousScroll: boolean;
   disableClick: boolean;
