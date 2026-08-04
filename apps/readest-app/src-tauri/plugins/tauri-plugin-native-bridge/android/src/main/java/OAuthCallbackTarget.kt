@@ -14,18 +14,20 @@ internal data class OAuthCallbackTarget(
     fun matches(callbackUrl: String): Boolean = parse(callbackUrl) == this
 
     companion object {
-        fun parse(url: String): OAuthCallbackTarget? = try {
-            val uri = URI(url)
-            val scheme = uri.scheme ?: return null
-            OAuthCallbackTarget(
-                scheme = scheme.lowercase(Locale.ROOT),
-                userInfo = uri.rawUserInfo,
-                host = uri.host?.lowercase(Locale.ROOT),
-                port = uri.port,
-                path = normalizeRootPath(uri.rawPath),
-            )
-        } catch (_: URISyntaxException) {
-            null
+        fun parse(url: String): OAuthCallbackTarget? {
+            return try {
+                val uri = URI(url)
+                val scheme = uri.scheme ?: return null
+                OAuthCallbackTarget(
+                    scheme = scheme.lowercase(Locale.ROOT),
+                    userInfo = uri.rawUserInfo,
+                    host = uri.host?.lowercase(Locale.ROOT),
+                    port = uri.port,
+                    path = normalizeRootPath(uri.rawPath),
+                )
+            } catch (_: URISyntaxException) {
+                null
+            }
         }
 
         private fun normalizeRootPath(path: String?): String = when (path) {
