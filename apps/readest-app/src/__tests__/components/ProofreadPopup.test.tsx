@@ -275,6 +275,36 @@ describe('ProofreadPopup Component', () => {
     });
   });
 
+  /**
+   * `Popup` caps the popup at the space available above the selection. When the
+   * selection sits near the top of the viewport that cap can be shorter than the
+   * form, and with `overflow: visible` the excess simply painted outside the
+   * rounded box: the scope row (the last child) hung past the bottom edge.
+   *
+   * Invariant: the scope row is pinned outside the scrollable region, so the
+   * upper content absorbs any shortfall and the scope select stays reachable.
+   */
+  describe('Constrained Popup Height', () => {
+    it('pins the scope row outside the scrollable region so it cannot overflow', () => {
+      const { container } = renderWithProviders(<ProofreadPopup {...defaultProps} />);
+
+      const select = container.querySelector('select') as HTMLSelectElement;
+      const scopeRow = select.closest('div') as HTMLElement;
+      expect(scopeRow.className).toContain('shrink-0');
+
+      const scrollArea = container.querySelector('.overflow-y-auto');
+      expect(scrollArea).not.toBeNull();
+      expect(scrollArea!.contains(select)).toBe(false);
+    });
+
+    it('clips the popup surface so no child paints past the rounded box', () => {
+      const { container } = renderWithProviders(<ProofreadPopup {...defaultProps} />);
+
+      const popup = container.querySelector('.popup-container') as HTMLElement;
+      expect(popup.className).toContain('overflow-hidden');
+    });
+  });
+
   describe('Click Outside Behavior', () => {
     it('should not call onClose when clicking inside the menu', () => {
       renderWithProviders(<ProofreadPopup {...defaultProps} />);
