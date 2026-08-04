@@ -87,6 +87,13 @@ describe('StatisticsDb', () => {
     expect(id1).toBe(id2);
   });
 
+  it('handles undefined/empty bookMd5 gracefully', async () => {
+    await expect(
+      stats.upsertBook({ bookMd5: undefined as any, title: 'T1', authors: 'A1' }),
+    ).rejects.toThrow();
+    await expect(stats.upsertBook({ bookMd5: '', title: 'T1', authors: 'A1' })).rejects.toThrow();
+  });
+
   it('inserts page events and keeps the longer duration on re-flush', async () => {
     const id = await stats.upsertBook({ bookMd5: 'm1', title: 'T1', authors: 'A1' });
     await stats.insertPageEvent(id, { page: 3, startTime: 100, duration: 10, totalPages: 50 });

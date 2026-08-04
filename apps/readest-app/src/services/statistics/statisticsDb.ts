@@ -91,6 +91,9 @@ export class StatisticsDb {
   }
 
   async upsertBook(book: StatBook): Promise<number> {
+    if (!book.bookMd5) {
+      throw new Error('Cannot upsert book: bookMd5 is required');
+    }
     const existing = await this.db.select<BookRow>(`SELECT id FROM book WHERE md5 = ? LIMIT 1`, [
       book.bookMd5,
     ]);
@@ -112,7 +115,10 @@ export class StatisticsDb {
     const rows = await this.db.select<BookRow>(`SELECT id FROM book WHERE md5 = ? LIMIT 1`, [
       book.bookMd5,
     ]);
-    return rows[0]!.id;
+    if (!rows[0]) {
+      throw new Error(`Failed to upsert book: row not found after insert for md5 ${book.bookMd5}`);
+    }
+    return rows[0].id;
   }
 
   async insertPageEvent(
@@ -167,6 +173,7 @@ export class StatisticsDb {
   }
 
   async getBookByMd5(md5: string): Promise<BookRow | null> {
+    if (!md5) return null;
     const rows = await this.db.select<BookRow>(`SELECT * FROM book WHERE md5 = ? LIMIT 1`, [md5]);
     return rows[0] ?? null;
   }
@@ -178,6 +185,9 @@ export class StatisticsDb {
    * with the hash placeholder — the real record, arriving in any page, wins.
    */
   private async ensureBookId(bookMd5: string): Promise<number> {
+    if (!bookMd5) {
+      throw new Error('Cannot ensure book ID: bookMd5 is required');
+    }
     const existing = await this.db.select<BookRow>(`SELECT id FROM book WHERE md5 = ? LIMIT 1`, [
       bookMd5,
     ]);
@@ -236,10 +246,20 @@ export class StatisticsDb {
       await this.db.execute('BEGIN');
       try {
         const idByMd5 = new Map<string, number>();
-        for (const b of books) idByMd5.set(b.bookMd5, await this.upsertBook(b));
+        for (const b of books) {
+          if (!b.bookMd5) {
+            console.warn('[stats] skipping remote book with missing md5:', b);
+            continue;
+          }
+          idByMd5.set(b.bookMd5, await this.upsertBook(b));
+        }
         // Books referenced only by events (no metadata record) get a placeholder row.
         const touched = new Set<number>();
         for (const e of events) {
+          if (!e.bookMd5) {
+            console.warn('[stats] skipping page event with missing bookMd5:', e);
+            continue;
+          }
           let id = idByMd5.get(e.bookMd5);
           if (id === undefined) {
             id = await this.ensureBookId(e.bookMd5);
