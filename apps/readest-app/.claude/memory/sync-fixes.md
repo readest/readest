@@ -28,3 +28,4 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - Google Drive: [research](gdrive-sync-provider-research.md); [multi-PR status](gdrive-provider-multipr-status.md); [full walk every sync](gdrive-fullwalk-every-sync-no-source-cursor.md)
 - [S3/R2 provider](s3-r2-sync-provider.md) MERGED #5051 · [OneDrive provider](onedrive-sync-provider.md) MERGED #5048
 - [Hardcover edition_id #4792](hardcover-progress-edition-id-4792.md)
+- [#5444 CORS preflight cache fix](cors-preflight-cache-fix-5444.md) VERIFIED prod: OPTIONS -83%; wrangler OAuth token works for CF GraphQL analytics (1d max range)

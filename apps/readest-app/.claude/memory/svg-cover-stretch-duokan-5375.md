@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 032f04ee-bbd2-4726-9c37-47e99c910fca
-  modified: 2026-07-28T14:50:16.046Z
+  modified: 2026-08-03T16:07:01.774Z
 ---
 
 Issue #5375 (2026-07-28): cover.xhtml wraps cover.jpg in `<svg viewBox="0 0 1000 1333" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">`; reporter (Windows 10, Readest 0.11.20) says the cover is stretched.
@@ -18,6 +18,8 @@ Verification on Chrome (web dev build, same code as the v0.11.20 tag for this pa
 **Conclusion:** the reported markup alone is fine; the reporter's real book is almost certainly a Duokan/DangDang-flavored EPUB whose html root carries `data-duokan-page-fullscreen` (that ecosystem uses exactly this SVG cover structure). The "bug" is the feature's aspect-ratio-ignoring stretch on viewports whose aspect differs from the cover. Need the reporter's file to confirm. A fix would be scaling+cropping (cover-style) or honoring `meet` instead of `fill` in the fullscreen path — but note the stretch was chosen deliberately to match Duokan's native render.
 
 Attribute origin found: `paginator.js` ~3303/~3391 stamps EVERY spine itemref property as `data-<prop>=""` on the content document root, so `<itemref properties="duokan-page-fullscreen"/>` in the OPF spine is the usual trigger (a literal attribute on the book's `<html>` also works since the check is `hasAttribute`). Early greps missed it because the mapping is generic (`'data-' + prop`).
+
+**SUPERSEDED (2026-08-04):** the stretch behavior was REMOVED for #5263 — fullscreen covers now letterbox (contain + black bars), see [[duokan-fullscreen-cover-letterbox-5263]]. Historical resolution below.
 
 **Resolution (2026-07-28):** replied on #5375 (comment 5105708791) that the stretch is the intended Duokan full-screen page behavior, aspect ratio deliberately not preserved. Reference chain: #3424 + #3914 (requests to render duokan-page-fullscreen truly full screen like Duokan Reader), #4643 (led to `object-fit: fill` instead of `contain`), #4961 (chrox: by design, no extra option, book maker's trade-off), #5263 (OPEN, same symptom; its two attached books verified to declare `duokan-page-fullscreen` on the cover itemref; also complains swipe doesn't turn pages on that page + Android-only sideways illustrations, both unverified).
 

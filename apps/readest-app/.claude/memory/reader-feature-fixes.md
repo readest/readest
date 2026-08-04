@@ -39,3 +39,16 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - [Android image callout freeze](android-image-callout-freeze.md) `.no-context-menu` ANCESTOR
 - Inline-img vertical-align (#4866) · [Table dark-mode tint #4419](table-dark-mode-tint-4419.md) · [footnote aside border #4438](footnote-aside-namespace-order-4438.md)
 - [Russian NBSP #4769](russian-hanging-prepositions-nbsp-4769.md)
+- [#5398/#3870 annotations hub](annotations-hub-5398-3870.md) MERGED #5448; shared filterBooknotes/facets; toolbar = icon row + filter dropdown (merge injected menuClassName); header search icon per-tab
+- [#5406 TTS vs proofread doc sync](tts-proofread-doc-sync-5406.md) MERGED #5416; createDocument bypassed transformTarget 'data' transforms; TTS docs replay display pipeline; MD books get transformTarget + srcdoc path
+- [#5262 clip sign-in capture](clip-signin-interactive-capture-5262.md) MERGED #5377; interactive clip mode + Safari share-ext DOM capture; xcodegen-in-worktree symlink trick
+- [#5294 web-novel URL import](webnovel-url-import-5294.md) MERGED #5381; buildEpub not feed-book; re-import in place via metaHash, exact-URL-keyed; clip pickMetaContent dead code UNFIXED
+- [#5352 Discord cover -> book icon](discord-cover-fallback-5352.md) MERGED #5382; content-addressed temp key; negative cache split missing vs transient; no Content-Type + no log still open
+- [#5216 Persian RLM half-space](rlm-bidi-mark-shaping-5216.md) PR #5361 MERGED; sanitizer half dead code; real cause = font-fallback shaping
+- [#5362 image zoom % was fit-relative](image-viewer-fit-relative-zoom-5362.md) MERGED #5365; `will-change` does NOT pin raster scale; dataUrl byte-exact
+- Paragraph mode: [toggle/resume #4717](paragraph-mode-toggle-resume-4717.md); [exit #4474](paragraph-mode-accidental-exit-4474.md); [#5275 styling](paragraph-mode-styling-5275.md) MERGED #5338 solid backdrop or ghosting; [#5246 display settings](paragraph-mode-display-settings-5246.md) MERGED #5403 font on frame or 66ch won't scale
+- [#5178 auto-hide cursor](autohide-cursor-5178.md) MERGED #5404; dormant foliate CursorAutohider; attr on view NOT renderer; top-level SystemSettings, default-on
+- [#5342 footer pills go black](footer-pill-vs-blend-5342.md) MERGED #5347; pill bg and `mix-blend-difference` cannot coexist
+- [#5351 popup restyle](popup-filter-containing-block-5351.md) MERGED; ancestor `filter` = containing block + stacking context; `theme-dark:` variant; `text-foreground` undefined token
+- [#5303 header notch negative margin](header-notch-negative-margin-5303.md) MERGED #5447, VERIFIED Xiaomi 13; z-10 ONLY when lifted else covers desktop toolbar
+- [#5394 Ambient Mode (light sensor)](ambient-mode-light-sensor-5394.md) MERGED; `emitOrQueue` one-shot-only; themeStore vs `getThemeCode` defaults must match
