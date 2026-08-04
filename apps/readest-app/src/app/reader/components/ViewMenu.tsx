@@ -11,6 +11,7 @@ import { IoMdExpand } from 'react-icons/io';
 import { IoShareOutline } from 'react-icons/io5';
 import { TbArrowAutofitWidth } from 'react-icons/tb';
 import { TbColumns1, TbColumns2 } from 'react-icons/tb';
+import { TbCarouselVertical, TbCarouselHorizontal } from 'react-icons/tb';
 
 import {
   MAX_ZOOM_LEVEL,
@@ -334,23 +335,56 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
             >
               <button
                 title={_('Single Page')}
-                onClick={setSpreadMode.bind(null, 'none')}
+                onClick={() => {
+                  setSpreadMode('none');
+                  if (isScrolledMode) setScrolledMode(false);
+                }}
                 className={clsx(
                   'hover:bg-base-300 text-base-content rounded-full p-2',
-                  spreadMode === 'none' && 'bg-base-300/75',
+                  !isScrolledMode && spreadMode === 'none' && 'bg-base-300/75',
                 )}
               >
                 <TbColumns1 />
               </button>
               <button
                 title={_('Auto Spread')}
-                onClick={setSpreadMode.bind(null, 'auto')}
+                onClick={() => {
+                  setSpreadMode('auto');
+                  if (isScrolledMode) setScrolledMode(false);
+                }}
                 className={clsx(
                   'hover:bg-base-300 text-base-content rounded-full p-2',
-                  spreadMode === 'auto' && 'bg-base-300/75',
+                  !isScrolledMode && spreadMode === 'auto' && 'bg-base-300/75',
                 )}
               >
                 <TbColumns2 />
+              </button>
+              <button
+                title={_('Vertical Scrolling')}
+                onClick={() => {
+                  setScrolledDirection('vertical');
+                  if (!isScrolledMode) setScrolledMode(true);
+                }}
+                className={clsx(
+                  'hover:bg-base-300 text-base-content rounded-full p-2',
+                  isScrolledMode && scrolledDirection === 'vertical' && 'bg-base-300/75',
+                )}
+              >
+                <TbCarouselVertical />
+              </button>
+              <button
+                title={_('Horizontal Scrolling')}
+                onClick={() => {
+                  if (webtoonMode) setWebtoonMode(false);
+                  setScrolledDirection('horizontal');
+                  if (!isScrolledMode) setScrolledMode(true);
+                }}
+                className={clsx(
+                  'hover:bg-base-300 text-base-content rounded-full p-2',
+                  isScrolledMode && scrolledDirection === 'horizontal' && 'bg-base-300/75',
+                )}
+              >
+                <TbCarouselHorizontal />
               </button>
               <div className='bg-base-300 mx-2 h-6 w-[1px]' />
               <button
@@ -389,32 +423,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
 
       <MenuItem label={_('Font & Layout')} shortcut='Shift+F' onClick={openFontLayoutMenu} />
 
-      {bookData.isFixedLayout ? (
-        <>
-          <MenuItem
-            label={_('Paginated')}
-            Icon={!isScrolledMode ? MdCheck : undefined}
-            onClick={() => setScrolledMode(false)}
-          />
-          <MenuItem
-            label={_('Vertical Scrolling')}
-            Icon={isScrolledMode && scrolledDirection === 'vertical' ? MdCheck : undefined}
-            onClick={() => {
-              setScrolledDirection('vertical');
-              setScrolledMode(true);
-            }}
-          />
-          <MenuItem
-            label={_('Horizontal Scrolling')}
-            Icon={isScrolledMode && scrolledDirection === 'horizontal' ? MdCheck : undefined}
-            onClick={() => {
-              if (webtoonMode) setWebtoonMode(false);
-              setScrolledDirection('horizontal');
-              setScrolledMode(true);
-            }}
-          />
-        </>
-      ) : (
+      {!bookData.isFixedLayout && (
         <MenuItem
           label={_('Scrolled Mode')}
           shortcut='Shift+J'
