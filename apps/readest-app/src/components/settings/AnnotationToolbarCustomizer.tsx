@@ -81,7 +81,7 @@ const ToolChip: React.FC<ToolChipProps> = ({ type, label, variant, onActivate })
         'flex cursor-grab touch-none select-none items-center active:cursor-grabbing',
         isToolbar
           ? // Mirror the live toolbar's AnnotationToolButton: icon-only 32×32.
-            'h-8 min-h-8 w-8 justify-center rounded-md p-0 not-eink:hover:bg-gray-500 eink:hover:border'
+            'h-8 min-h-8 w-8 justify-center rounded-md p-0 not-eink:hover:bg-base-200 eink:hover:border'
           : // Available tools are labeled so they're identifiable off the bar.
             'eink-bordered border-base-300 bg-base-100 gap-1.5 rounded-md border px-2.5 py-1.5 text-sm',
         isDragging && 'shadow-lg',
@@ -118,7 +118,7 @@ const Zone: React.FC<{
               // `eink-bordered` renders it as the popup's e-ink chrome instead
               // (.popup-container): a base-100 surface with a 1px base-content
               // border, so it doesn't paint as a solid black bar (#4839).
-              'selection-popup eink-bordered w-fit max-w-full not-eink:bg-gray-600 not-eink:text-white'
+              'selection-popup text-base-content rounded-lg border font-sans not-eink:border-base-content/20 not-eink:shadow-2xl bg-base-300 theme-dark:bg-base-100 w-fit max-w-full'
             : 'bg-base-200/60',
         )}
       >
