@@ -8,7 +8,12 @@ import { useDeviceControlStore } from '@/store/deviceStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { eventDispatcher } from '@/utils/event';
-import { resolvePageTurn, normalizeDomKeyEvent, KeyCandidate } from '@/utils/keybinding';
+import {
+  resolvePageTurn,
+  normalizeDomKeyEvent,
+  isPencilNativeKey,
+  KeyCandidate,
+} from '@/utils/keybinding';
 import { refreshEinkScreen } from '@/utils/bridge';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriGetWindowLogicalPosition } from '@/utils/window';
@@ -197,6 +202,7 @@ export const usePagination = (
     releaseVolumeKeyInterception,
     acquirePageTurnerKeyInterception,
     releasePageTurnerKeyInterception,
+    ensureKeyForwarding,
   } = useDeviceControlStore();
   // Reactive subscription: drives the effect dependency array below. The
   // handlers themselves re-read via getState() to avoid stale closures.
@@ -478,20 +484,29 @@ export const usePagination = (
 
   // Hardware page turner: native-key + DOM-key listeners and native
   // media-key interception, re-evaluated whenever the setting changes.
+  // Pencil gestures are forwarded unconditionally by the iOS bridge, so they
+  // only need the JS forwarding handler — acquiring media-key interception
+  // for them would claim MPRemoteCommandCenter next/prev-track and drag the
+  // app into the Now Playing eligibility rules (#4691).
   useEffect(() => {
-    const hasNativeBinding =
-      hardwarePageTurner?.bindings.pagePrev?.source === 'native' ||
-      hardwarePageTurner?.bindings.pageNext?.source === 'native' ||
-      hardwarePageTurner?.bindings.sectionPrev?.source === 'native' ||
-      hardwarePageTurner?.bindings.sectionNext?.source === 'native' ||
-      hardwarePageTurner?.bindings.refresh?.source === 'native';
+    const bindings = hardwarePageTurner?.bindings;
+    const nativeBindings = [
+      bindings?.pagePrev,
+      bindings?.pageNext,
+      bindings?.sectionPrev,
+      bindings?.sectionNext,
+      bindings?.refresh,
+    ].filter((b) => b?.source === 'native');
+    const hasNativeBinding = nativeBindings.length > 0;
+    const hasMediaKeyBinding = nativeBindings.some((b) => b && !isPencilNativeKey(b.id));
     const needsNativeInterception =
-      !!appService?.isMobileApp && !!hardwarePageTurner?.enabled && hasNativeBinding;
+      !!appService?.isMobileApp && !!hardwarePageTurner?.enabled && hasMediaKeyBinding;
 
     if (needsNativeInterception) {
       acquirePageTurnerKeyInterception();
     }
     if (hasNativeBinding) {
+      if (appService?.isMobileApp) ensureKeyForwarding();
       eventDispatcher.on('native-key-down', handleHardwareNativeKey);
     }
     window.addEventListener('keydown', handleHardwareDomKey, true);
@@ -507,15 +522,12 @@ export const usePagination = (
       window.removeEventListener('keydown', handleHardwareDomKey, true);
       window.removeEventListener('message', handleHardwareDomKey);
     };
+    // The media-vs-pencil decision depends on binding ids, not just sources,
+    // and every persist creates a fresh settings object — key the effect on
+    // object identity. Re-running acquire/release on any change is safe
+    // because interception is reference-counted.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    hardwarePageTurner?.enabled,
-    hardwarePageTurner?.bindings.pagePrev?.source,
-    hardwarePageTurner?.bindings.pageNext?.source,
-    hardwarePageTurner?.bindings.sectionPrev?.source,
-    hardwarePageTurner?.bindings.sectionNext?.source,
-    hardwarePageTurner?.bindings.refresh?.source,
-  ]);
+  }, [hardwarePageTurner]);
 
   // Touch swipe page flip for fixed-layout books — registered as a touch interceptor
   // so it participates in the priority-based consumption chain.
