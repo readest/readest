@@ -22,7 +22,16 @@ const NATIVE_KEY_LABELS: Record<string, string> = {
   MediaRewind: _('Media Rewind'),
   VolumeUp: _('Volume Up'),
   VolumeDown: _('Volume Down'),
+  PencilDoubleTap: _('Pencil Double Tap'),
+  PencilSqueeze: _('Pencil Squeeze'),
 };
+
+// Apple Pencil gestures forwarded by the iOS native bridge (#5501). They ride
+// the native-key channel but must not trigger media-key interception, which
+// claims MPRemoteCommandCenter and affects Now Playing (see usePagination).
+const PENCIL_NATIVE_KEYS = new Set(['PencilDoubleTap', 'PencilSqueeze']);
+
+export const isPencilNativeKey = (id: string): boolean => PENCIL_NATIVE_KEYS.has(id);
 
 const DOM_KEY_LABELS: Record<string, string> = {
   ArrowLeft: _('Arrow Left'),

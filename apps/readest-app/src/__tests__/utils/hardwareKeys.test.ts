@@ -4,6 +4,7 @@ import {
   normalizeDomKeyEvent,
   matchesBinding,
   resolvePageTurn,
+  isPencilNativeKey,
 } from '@/utils/keybinding';
 import { HardwarePageTurnerSettings } from '@/types/settings';
 
@@ -104,5 +105,46 @@ describe('resolvePageTurn', () => {
   test('returns null when the feature is disabled', () => {
     const disabled = { ...settings, enabled: false };
     expect(resolvePageTurn(disabled, { source: 'native', id: 'MediaNext' })).toBeNull();
+  });
+});
+
+describe('Apple Pencil native keys (#5501)', () => {
+  test('maps pencil gesture ids to friendly labels', () => {
+    expect(normalizeNativeKey('PencilDoubleTap')).toEqual({
+      source: 'native',
+      id: 'PencilDoubleTap',
+      label: 'Pencil Double Tap',
+    });
+    expect(normalizeNativeKey('PencilSqueeze')).toEqual({
+      source: 'native',
+      id: 'PencilSqueeze',
+      label: 'Pencil Squeeze',
+    });
+  });
+
+  test('isPencilNativeKey identifies pencil ids only', () => {
+    expect(isPencilNativeKey('PencilDoubleTap')).toBe(true);
+    expect(isPencilNativeKey('PencilSqueeze')).toBe(true);
+    expect(isPencilNativeKey('MediaNext')).toBe(false);
+    expect(isPencilNativeKey('VolumeUp')).toBe(false);
+  });
+
+  test('resolvePageTurn resolves bound pencil gestures', () => {
+    const pencilSettings: HardwarePageTurnerSettings = {
+      enabled: true,
+      bindings: {
+        pagePrev: { source: 'native', id: 'PencilSqueeze', label: 'Pencil Squeeze' },
+        pageNext: { source: 'native', id: 'PencilDoubleTap', label: 'Pencil Double Tap' },
+        sectionPrev: null,
+        sectionNext: null,
+        refresh: null,
+      },
+    };
+    expect(resolvePageTurn(pencilSettings, { source: 'native', id: 'PencilDoubleTap' })).toBe(
+      'pageNext',
+    );
+    expect(resolvePageTurn(pencilSettings, { source: 'native', id: 'PencilSqueeze' })).toBe(
+      'pagePrev',
+    );
   });
 });
