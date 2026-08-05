@@ -336,6 +336,77 @@ export const snapReadingRulerColumns = (
 };
 
 /**
+ * Block of `lines` real text lines starting at the line containing `anchorPos`
+ * (px along the ruler axis), or null when no line is within half a line height
+ * of the anchor. Used to re-attach the band to the same text after the page is
+ * repaginated (issue #5491): the caller resolves the anchored text's new
+ * position and rebuilds the band around it.
+ */
+export const snapReadingRulerToAnchor = (
+  anchorPos: number,
+  lines: number,
+  lineBoxes: ReadingRulerLineBox[],
+): ReadingRulerLineBox | null => {
+  if (lineBoxes.length === 0) return null;
+
+  let idx = lineBoxes.findIndex((b) => anchorPos >= b.start && anchorPos <= b.end);
+  if (idx === -1) {
+    const heights = lineBoxes
+      .map((b) => b.end - b.start)
+      .filter((h) => h > 0)
+      .sort((a, b) => a - b);
+    const medianHeight = heights[Math.floor(heights.length / 2)] ?? 0;
+    let bestDist = Infinity;
+    lineBoxes.forEach((b, i) => {
+      const dist = anchorPos < b.start ? b.start - anchorPos : anchorPos - b.end;
+      if (dist < bestDist) {
+        bestDist = dist;
+        idx = i;
+      }
+    });
+    if (idx === -1 || bestDist > medianHeight * 0.5) return null;
+  }
+
+  const count = Math.max(1, Math.floor(lines));
+  const startBox = lineBoxes[idx];
+  const endBox = lineBoxes[Math.min(idx + count - 1, lineBoxes.length - 1)];
+  if (!startBox || !endBox) return null;
+  return { start: startBox.start, end: endBox.end };
+};
+
+/**
+ * Column-aware anchor snap: pick the column containing `anchorCross` (px along
+ * the cross axis; nearest column when the point falls in the gutter), then the
+ * line block containing `anchorMain` within it.
+ */
+export const snapReadingRulerColumnsToAnchor = (
+  anchorMain: number,
+  anchorCross: number,
+  lines: number,
+  columns: ReadingRulerColumn[],
+): { columnIndex: number; start: number; end: number } | null => {
+  let columnIndex = -1;
+  let bestDist = Infinity;
+  columns.forEach((c, i) => {
+    const dist =
+      anchorCross < c.left
+        ? c.left - anchorCross
+        : anchorCross > c.right
+          ? anchorCross - c.right
+          : 0;
+    if (dist < bestDist) {
+      bestDist = dist;
+      columnIndex = i;
+    }
+  });
+
+  const col = columns[columnIndex];
+  if (!col) return null;
+  const block = snapReadingRulerToAnchor(anchorMain, lines, col.lines);
+  return block ? { columnIndex, start: block.start, end: block.end } : null;
+};
+
+/**
  * Whether an arrow-key side should move the reading ruler in the current layout.
  * In vertical writing mode only Up/Down move the ruler (Left/Right turn pages);
  * in horizontal mode all four sides move the ruler. Applies to keyboard nav only

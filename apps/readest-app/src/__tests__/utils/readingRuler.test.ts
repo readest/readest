@@ -10,6 +10,8 @@ import {
   getReadingRulerMoveDirection,
   isReadingRulerMoveKey,
   snapReadingRulerColumns,
+  snapReadingRulerColumnsToAnchor,
+  snapReadingRulerToAnchor,
   snapReadingRulerToLines,
   stepReadingRulerPosition,
 } from '@/app/reader/utils/readingRuler';
@@ -371,5 +373,85 @@ describe('snapReadingRulerColumns', () => {
 
   it('returns null when there are no columns', () => {
     expect(snapReadingRulerColumns(0, 0, 36, 2, 'forward', [])).toBeNull();
+  });
+});
+
+// Anchor-based re-snapping (issue #5491): after a resize/reflow the band is
+// re-attached to the line containing the anchored text's new position, instead
+// of drifting to whatever text now sits at the band's old screen position.
+describe('snapReadingRulerToAnchor', () => {
+  const boxes = [
+    { start: 100, end: 140 },
+    { start: 200, end: 240 },
+    { start: 300, end: 340 },
+    { start: 400, end: 440 },
+  ];
+
+  it('returns the block of N lines starting at the line containing the anchor', () => {
+    expect(snapReadingRulerToAnchor(220, 2, boxes)).toEqual({ start: 200, end: 340 });
+  });
+
+  it('clamps the block at the last line', () => {
+    expect(snapReadingRulerToAnchor(420, 2, boxes)).toEqual({ start: 400, end: 440 });
+  });
+
+  it('snaps to the nearest line when the anchor sits just outside it', () => {
+    // 10px above the 100..140 line: within half a line height (20) of it.
+    expect(snapReadingRulerToAnchor(150, 1, boxes)).toEqual({ start: 100, end: 140 });
+  });
+
+  it('returns null when the anchor is far from any line', () => {
+    // 170 is 30px away from both surrounding lines, beyond the 20px tolerance.
+    expect(snapReadingRulerToAnchor(170, 1, boxes)).toBeNull();
+    expect(snapReadingRulerToAnchor(600, 1, boxes)).toBeNull();
+  });
+
+  it('returns null when there are no lines', () => {
+    expect(snapReadingRulerToAnchor(100, 1, [])).toBeNull();
+  });
+});
+
+describe('snapReadingRulerColumnsToAnchor', () => {
+  const columns = [
+    {
+      left: 40,
+      right: 360,
+      lines: [
+        { start: 100, end: 140 },
+        { start: 200, end: 240 },
+      ],
+    },
+    {
+      left: 440,
+      right: 760,
+      lines: [
+        { start: 100, end: 140 },
+        { start: 200, end: 240 },
+      ],
+    },
+  ];
+
+  it('snaps within the column that contains the anchor point', () => {
+    expect(snapReadingRulerColumnsToAnchor(120, 500, 1, columns)).toEqual({
+      columnIndex: 1,
+      start: 100,
+      end: 140,
+    });
+  });
+
+  it('falls back to the nearest column when the anchor is in the gutter', () => {
+    expect(snapReadingRulerColumnsToAnchor(220, 380, 1, columns)).toEqual({
+      columnIndex: 0,
+      start: 200,
+      end: 240,
+    });
+  });
+
+  it('returns null when there are no columns', () => {
+    expect(snapReadingRulerColumnsToAnchor(120, 500, 1, [])).toBeNull();
+  });
+
+  it('returns null when the anchor misses every line in the column', () => {
+    expect(snapReadingRulerColumnsToAnchor(600, 500, 1, columns)).toBeNull();
   });
 });

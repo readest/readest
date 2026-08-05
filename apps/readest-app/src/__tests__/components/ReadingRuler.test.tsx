@@ -561,6 +561,73 @@ describe('ReadingRuler', () => {
     });
   });
 
+  // Regression: issue #5491 — resizing repaginates the book and fires a relocate
+  // with a new location; the ruler used to treat that as a page turn and snap to
+  // the first/last line group of the page. It must instead re-attach to the same
+  // text via the anchor captured when the band was placed.
+  it('re-anchors the band to the same text after a resize reflow', async () => {
+    // The anchored text's line: at 300 before the reflow, at 600 after.
+    const anchorRect = { top: 300, bottom: 340, left: 50, right: 750, width: 700, height: 40 };
+    const doc: Record<string, unknown> = {};
+    const anchorRange = {
+      startContainer: { nodeType: 3, length: 20, ownerDocument: doc },
+      startOffset: 0,
+      setStart: () => {},
+      setEnd: () => {},
+      getClientRects: () => [anchorRect],
+    };
+    Object.assign(doc, {
+      defaultView: {},
+      caretRangeFromPoint: () => anchorRange,
+    });
+    const makeRange = (rects: RulerTestRect[]) => ({
+      startContainer: { ownerDocument: doc },
+      getClientRects: () => rects,
+    });
+
+    mockProgress = {
+      range: makeRange(makeLineRects(9, 100, 40)),
+      location: 'epubcfi(/6/2!/4/2)',
+      fraction: 0.1,
+      pageinfo: { current: 4 },
+    };
+    const props = {
+      bookKey: 'book-1',
+      isVertical: false,
+      rtl: false,
+      lines: 2,
+      position: 33,
+      opacity: 0.5,
+      color: 'transparent' as const,
+      bookFormat: 'EPUB' as BookFormat,
+      viewSettings,
+      gridInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+    };
+
+    const { container, rerender } = render(<ReadingRuler {...props} />);
+    const rulerTop = () =>
+      parseFloat((container.querySelector('.ruler') as HTMLDivElement).style.top);
+    // Mount snaps to the line at 300 -> block 300..440 -> centered at 37%.
+    expect(rulerTop()).toBeCloseTo(37, 1);
+
+    // Reflow: the same text now lives at 600. The location CFI changes and the
+    // fraction drifts down, which the old code read as a backward page turn.
+    anchorRect.top = 600;
+    anchorRect.bottom = 640;
+    mockProgress = {
+      range: makeRange(makeLineRects(9, 100, 40)),
+      location: 'epubcfi(/6/2!/4/18)',
+      fraction: 0.09,
+      pageinfo: { current: 4 },
+    };
+    rerender(<ReadingRuler {...props} />);
+
+    await waitFor(() => {
+      // Band re-attaches to the anchored text: block 600..740 -> 67%.
+      expect(rulerTop()).toBeCloseTo(67, 1);
+    });
+  });
+
   it('still snaps the ruler to lines when advancing by click in scrolled mode', async () => {
     const lineRects = makeLineRects(50, 100, 40);
     mockProgress = { range: {}, location: 'page-1', fraction: 0.1, pageinfo: { current: 0 } };

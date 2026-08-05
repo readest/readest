@@ -20,6 +20,8 @@ import {
   ReadingRulerColumn,
   ReadingRulerLineBox,
   snapReadingRulerColumns,
+  snapReadingRulerColumnsToAnchor,
+  snapReadingRulerToAnchor,
   snapReadingRulerToLines,
   stepReadingRulerPosition,
 } from '../utils/readingRuler';
@@ -49,6 +51,47 @@ const mapRangeRectsToOverlay = (range: Range, containerRect: DOMRect): OverlayRe
     width: r.width,
     height: r.height,
   }));
+};
+
+type CaretDoc = Document & {
+  caretRangeFromPoint?: (x: number, y: number) => Range | null;
+  caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
+};
+
+// Hit-test a top-document point against each content document and return a
+// one-character Range on the text there, or null when the point hits no text.
+// Coordinates are converted into each iframe's own space via its frame offset.
+const caretRangeAtPoint = (docs: Document[], x: number, y: number): Range | null => {
+  for (const doc of docs) {
+    const frame = doc.defaultView?.frameElement?.getBoundingClientRect();
+    if (frame && (x < frame.left || x > frame.right || y < frame.top || y > frame.bottom)) continue;
+    try {
+      const caretDoc = doc as CaretDoc;
+      const docX = x - (frame?.left ?? 0);
+      const docY = y - (frame?.top ?? 0);
+      let range: Range | null = null;
+      if (caretDoc.caretRangeFromPoint) {
+        range = caretDoc.caretRangeFromPoint(docX, docY);
+      } else if (caretDoc.caretPositionFromPoint) {
+        const pos = caretDoc.caretPositionFromPoint(docX, docY);
+        if (pos) {
+          range = doc.createRange();
+          range.setStart(pos.offsetNode, pos.offset);
+        }
+      }
+      const node = range?.startContainer;
+      if (!range || !node || node.nodeType !== Node.TEXT_NODE) continue;
+      // Expand to one character so the range keeps a real client rect.
+      const length = (node as Text).length;
+      const offset = Math.min(range.startOffset, Math.max(0, length - 1));
+      range.setStart(node, offset);
+      range.setEnd(node, Math.min(length, offset + 1));
+      return range;
+    } catch {
+      /* try the next document */
+    }
+  }
+  return null;
 };
 
 // Visible line boxes for the single-column / vertical path. Rects are mapped to
@@ -210,6 +253,11 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
   const lineBoxesRef = useRef<ReadingRulerLineBox[]>([]);
   const columnsRef = useRef<ReadingRulerColumn[]>([]);
   const activeColumnIndexRef = useRef(0);
+  // Range on the text at the band's block start. The section DOM survives
+  // repagination, so this keeps identifying the same passage across reflows
+  // (issue #5491): resize re-snaps re-attach the band to it, and the auto-move
+  // effect only treats a relocate as a page turn once this text left the screen.
+  const anchorRangeRef = useRef<Range | null>(null);
   const bandSizeRef = useRef(0);
   const cacheLocationRef = useRef<string | null>(null);
   // In scrolled mode, set when a tap advances past the view edge and scrolls the
@@ -271,6 +319,73 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     [throttledSave],
   );
 
+  // Capture a Range on the text at the band's block start so the band can be
+  // re-attached to the same passage after a repagination. Clears the anchor when
+  // no text is found at the band position (so a stale anchor can't yank the
+  // band back to an old passage later).
+  const captureAnchor = useCallback(
+    (blockStart: number, blockEnd: number) => {
+      if (!supportsLineSnap) return;
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      if (!containerRect) {
+        anchorRangeRef.current = null;
+        return;
+      }
+      // Probe a few px into the first line of the block.
+      const main = blockStart + Math.min(10, Math.max(1, (blockEnd - blockStart) / 2));
+      const col = isMultiColumn ? columnsRef.current[activeColumnIndexRef.current] : null;
+      const crossStart = col?.left ?? 0;
+      const crossEnd = col?.right ?? (isVertical ? containerRect.height : containerRect.width);
+      const docs: Document[] = [];
+      for (const { doc } of getView(bookKey)?.renderer?.getContents?.() ?? []) {
+        if (doc) docs.push(doc);
+      }
+      const primaryDoc = getProgress(bookKey)?.range?.startContainer?.ownerDocument;
+      if (primaryDoc && !docs.includes(primaryDoc)) docs.push(primaryDoc);
+      // Sample across the line: the column/container centre first, then
+      // off-centre in case the anchor line is short.
+      for (const frac of [0.5, 0.3, 0.7]) {
+        const cross = crossStart + (crossEnd - crossStart) * frac;
+        const ox = isVertical ? (rtl ? containerRect.width - main : main) : cross;
+        const oy = isVertical ? cross : main;
+        const range = caretRangeAtPoint(docs, ox + containerRect.left, oy + containerRect.top);
+        if (range) {
+          anchorRangeRef.current = range;
+          return;
+        }
+      }
+      anchorRangeRef.current = null;
+    },
+    [supportsLineSnap, isMultiColumn, isVertical, rtl, getView, getProgress, bookKey],
+  );
+
+  // Resolve the anchored text's current position and rebuild the band's block
+  // around it. Returns null when the anchor is missing, detached, or off-screen
+  // (a real page turn) so the caller falls back to page-relative placement.
+  const resolveAnchorBlock = useCallback(
+    (containerRect: DOMRect): { start: number; end: number; columnIndex?: number } | null => {
+      const range = anchorRangeRef.current;
+      const doc = range?.startContainer?.ownerDocument;
+      if (!range || !doc?.defaultView) return null;
+      try {
+        const rects = mapRangeRectsToOverlay(range, containerRect);
+        const rect = rects.find((r) => r.width > 0 && r.height > 0) ?? rects[0];
+        if (!rect) return null;
+        const cx = (rect.left + rect.right) / 2;
+        const cy = (rect.top + rect.bottom) / 2;
+        if (cx < 0 || cx > containerRect.width || cy < 0 || cy > containerRect.height) return null;
+        const main = isVertical ? (rtl ? containerRect.width - cx : cx) : cy;
+        if (isMultiColumn) {
+          return snapReadingRulerColumnsToAnchor(main, cx, lines, columnsRef.current);
+        }
+        return snapReadingRulerToAnchor(main, lines, lineBoxesRef.current);
+      } catch {
+        return null;
+      }
+    },
+    [isVertical, rtl, lines, isMultiColumn],
+  );
+
   // Size the band to the real text block plus symmetric padding, centered on
   // the block so the breathing room is equal on both sides.
   const applyBlock = useCallback(
@@ -286,8 +401,9 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       const centerPct =
         dimension > 0 ? ((start + end) / 2 / dimension) * 100 : currentPositionRef.current;
       setRulerPosition(centerPct, animate);
+      captureAnchor(start, end);
     },
-    [padding, maxBandSize, setRulerPosition],
+    [padding, maxBandSize, setRulerPosition, captureAnchor],
   );
 
   // Track container size for overlay calculations
@@ -352,13 +468,18 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         const col = cols[idx];
         setActiveColumnRect(col ? { left: col.left, right: col.right } : null);
         if (!locationChanged) {
-          const block = snapReadingRulerColumns(idx, anchor, anchor, lines, 'forward', cols);
-          if (block) {
+          // A resize/relayout keeps the anchored text on screen: re-attach the
+          // band to it. Fall back to the screen-position snap when no anchor
+          // resolves (initial mount, or the text reflowed off the page).
+          const block =
+            resolveAnchorBlock(containerRect) ??
+            snapReadingRulerColumns(idx, anchor, anchor, lines, 'forward', cols);
+          if (block && 'columnIndex' in block && block.columnIndex !== undefined) {
             activeColumnIndexRef.current = block.columnIndex;
             const target = cols[block.columnIndex];
             if (target) setActiveColumnRect({ left: target.left, right: target.right });
-            applyBlock(block.start, block.end, dimension, false);
           }
+          if (block) applyBlock(block.start, block.end, dimension, false);
         }
       } else {
         const scrolled = !!viewSettings.scrolled;
@@ -396,7 +517,10 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
             scrolledPlacedRef.current &&
             scrolledPlacedDimensionRef.current === dimension;
           if (!alreadyPlaced) {
+            // Paginated resize/relayout: prefer re-attaching the band to the
+            // anchored text over snapping at the band's old screen position.
             const block =
+              (!scrolled ? resolveAnchorBlock(containerRect) : null) ??
               snapReadingRulerToLines(anchor, anchor, lines, 'forward', derivBoxes) ??
               snapReadingRulerToLines(Infinity, Infinity, lines, 'backward', derivBoxes);
             if (block) {
@@ -430,6 +554,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     bookKey,
     getView,
     applyBlock,
+    resolveAnchorBlock,
   ]);
 
   // Fade in on mount (delayed to prevent flash before content loads)
@@ -576,6 +701,9 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         containerDimension,
       );
 
+      // No line geometry to re-capture from; drop the old anchor so it can't
+      // yank the band back to a stale passage on a later reflow.
+      anchorRangeRef.current = null;
       setRulerPosition(targetPosition, true);
     };
 
@@ -589,7 +717,31 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         lastFractionRef.current !== null && currentFraction < lastFractionRef.current
           ? 'backward'
           : 'forward';
-      requestAnimationFrame(() => performAutoMove(range, direction));
+      requestAnimationFrame(() => {
+        // A resize/reflow relocate keeps the anchored text on screen; re-attach
+        // the band to it instead of treating the relocate as a page turn
+        // (issue #5491). A real page turn replaces the page contents, so the
+        // anchor resolves off-screen and falls through to the auto-move.
+        const containerRect = containerRef.current?.getBoundingClientRect();
+        const dimension = containerRect
+          ? isVertical
+            ? containerRect.width
+            : containerRect.height
+          : 0;
+        if (containerRect && dimension > 0) {
+          const block = resolveAnchorBlock(containerRect);
+          if (block) {
+            if (block.columnIndex !== undefined) {
+              activeColumnIndexRef.current = block.columnIndex;
+              const col = columnsRef.current[block.columnIndex];
+              if (col) setActiveColumnRect({ left: col.left, right: col.right });
+            }
+            applyBlock(block.start, block.end, dimension, true);
+            return;
+          }
+        }
+        performAutoMove(range, direction);
+      });
     }
     lastLocationRef.current = currentLocation;
     lastFractionRef.current = currentFraction;
@@ -617,6 +769,7 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     applyBlock,
     clampPosition,
     setRulerPosition,
+    resolveAnchorBlock,
   ]);
 
   const handlePointerDown = useCallback(
@@ -671,6 +824,27 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
     [isVertical, rtl, clampPosition],
   );
 
+  // Re-anchor to whatever text the dragged band landed on, so a later reflow
+  // keeps it there instead of restoring the pre-drag passage. A dragged band is
+  // not line-aligned, so refine to the first cached line it covers before
+  // probing (a probe at the band edge could hit the paragraph gap above).
+  const captureAnchorAtCurrent = useCallback(() => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const dimension = isVertical ? rect.width : rect.height;
+    if (dimension <= 0) return;
+    const center = (currentPositionRef.current / 100) * dimension;
+    const halfBlock = Math.max(0, (bandSizeRef.current || fallbackRulerSize) / 2 - padding);
+    const blockStart = center - halfBlock;
+    const blockEnd = center + halfBlock;
+    const boxes = isMultiColumn
+      ? (columnsRef.current[activeColumnIndexRef.current]?.lines ?? [])
+      : lineBoxesRef.current;
+    const firstLine = boxes.find((b) => b.end > blockStart && b.start < blockEnd);
+    if (firstLine) captureAnchor(firstLine.start, firstLine.end);
+    else captureAnchor(blockStart, blockEnd);
+  }, [isVertical, isMultiColumn, fallbackRulerSize, padding, captureAnchor]);
+
   const handlePointerUp = useCallback(
     (e: React.PointerEvent) => {
       if (!isDragging.current) return;
@@ -678,8 +852,9 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       dragPointerOffsetRef.current = 0;
       e.currentTarget.releasePointerCapture(e.pointerId);
       throttledSave(currentPositionRef.current);
+      captureAnchorAtCurrent();
     },
-    [throttledSave],
+    [throttledSave, captureAnchorAtCurrent],
   );
 
   useEffect(() => {
@@ -763,7 +938,10 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
         const wasConsumed = isTouchDraggingRef.current;
         if (wasConsumed) {
           isDragging.current = false;
-          if (detail.phase === 'end') throttledSave(currentPositionRef.current);
+          if (detail.phase === 'end') {
+            throttledSave(currentPositionRef.current);
+            captureAnchorAtCurrent();
+          }
         }
         touchInRulerRef.current = false;
         isTouchDraggingRef.current = false;
@@ -858,6 +1036,9 @@ const ReadingRuler: React.FC<ReadingRulerProps> = ({
       }
       bandSizeRef.current = fallbackRulerSize;
       setBandSize(fallbackRulerSize);
+      // Fixed stepping has no line geometry; drop the anchor so it can't yank
+      // the band back to a stale passage on a later reflow.
+      anchorRangeRef.current = null;
       setRulerPosition(nextPosition, true);
       return true;
     };
