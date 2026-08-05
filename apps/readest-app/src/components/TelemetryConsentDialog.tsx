@@ -1,6 +1,7 @@
 'use client';
 
 import { LuCheck, LuChartLine, LuX } from 'react-icons/lu';
+import { BRAND_NAME } from '@/services/branding';
 
 import ModalPortal from '@/components/ModalPortal';
 import { useEnv } from '@/context/EnvContext';
@@ -66,11 +67,12 @@ export default function TelemetryConsentDialog({ open, onClose }: TelemetryConse
               <LuChartLine size={22} strokeWidth={1.75} />
             </div>
             <h3 className='text-base-content text-base font-semibold tracking-tight'>
-              {_('Help improve Readest')}
+              {_('Help improve {{brand}}', { brand: BRAND_NAME })}
             </h3>
             <p className='text-base-content/65 text-[13px] leading-relaxed'>
               {_(
-                'Share anonymous usage data so we can understand how Readest is used and make it better.',
+                'Share anonymous usage data so we can understand how {{brand}} is used and make it better.',
+                { brand: BRAND_NAME },
               )}
             </p>
           </div>

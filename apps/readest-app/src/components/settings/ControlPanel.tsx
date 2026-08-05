@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { BRAND_NAME } from '@/services/branding';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -590,7 +591,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
 
       <BoxedList title={_('Privacy')} data-setting-id='settings.control.telemetry'>
         <SettingsSwitchRow
-          label={_('Help improve Readest')}
+          label={_('Help improve {{brand}}', { brand: BRAND_NAME })}
           description={isTelemetryEnabled ? _('Sharing anonymized statistics') : ''}
           checked={isTelemetryEnabled}
           onChange={toggleTelemetry}

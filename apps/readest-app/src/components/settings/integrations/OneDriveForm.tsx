@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { BRAND_NAME } from '@/services/branding';
 import React, { useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -188,7 +189,11 @@ const OneDriveForm: React.FC = () => {
       </div>
       <Tips>
         <li>{_('Sign-in opens in your browser.')}</li>
-        <li>{_('Readest only accesses the files it creates in your OneDrive.')}</li>
+        <li>
+          {_('{{brand}} only accesses the files it creates in your OneDrive.', {
+            brand: BRAND_NAME,
+          })}
+        </li>
       </Tips>
     </div>
   );

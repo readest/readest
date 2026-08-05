@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { BRAND_NAME } from '@/services/branding';
 import React, { useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -187,7 +188,9 @@ const GoogleDriveForm: React.FC = () => {
       </div>
       <Tips>
         <li>{_('Sign-in opens in your browser.')}</li>
-        <li>{_('Readest only accesses the files it creates in your Drive.')}</li>
+        <li>
+          {_('{{brand}} only accesses the files it creates in your Drive.', { brand: BRAND_NAME })}
+        </li>
       </Tips>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { BRAND_NAME } from '@/services/branding';
 import { useRouter } from 'next/navigation';
 import { MdContentCopy, MdRefresh, MdCheck, MdClose, MdAdd } from 'react-icons/md';
 import { RiSendPlaneLine } from 'react-icons/ri';
@@ -98,7 +99,7 @@ const SendToReadestForm: React.FC<SendToReadestFormProps> = ({ onBack }) => {
       setSenders(sendersData.senders);
       setActivity(inboxData.items);
     } catch {
-      toast(_('Could not load Send to Readest settings'), 'error');
+      toast(_('Could not load Send to {{brand}} settings', { brand: BRAND_NAME }), 'error');
     } finally {
       setLoading(false);
     }
@@ -197,7 +198,7 @@ const SendToReadestForm: React.FC<SendToReadestFormProps> = ({ onBack }) => {
     <div className='my-4 w-full'>
       <SubPageHeader
         parentLabel={_('Integrations')}
-        currentLabel={_('Send to Readest')}
+        currentLabel={_('Send to {{brand}}', { brand: BRAND_NAME })}
         description={_('Email books and articles straight into your library.')}
         onBack={onBack}
       />

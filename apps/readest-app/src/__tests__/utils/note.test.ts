@@ -712,10 +712,10 @@ describe('buildAnnotationCopyMarkdown', () => {
       text: 'line one\nline two',
       noteLabel: 'Note',
       url,
-      linkLabel: 'Open in Readest',
+      linkLabel: 'Open in Leaf',
     });
     expect(result).toBe(
-      '> line one\n> line two\n\n*[Open in Readest](readest://book/abc/annotation/n1?cfi=/6/4)*',
+      '> line one\n> line two\n\n*[Open in Leaf](readest://book/abc/annotation/n1?cfi=/6/4)*',
     );
   });
 
@@ -723,9 +723,9 @@ describe('buildAnnotationCopyMarkdown', () => {
     const result = buildAnnotationCopyMarkdown({
       noteLabel: 'Note',
       url,
-      linkLabel: 'Open in Readest',
+      linkLabel: 'Open in Leaf',
     });
-    expect(result).toBe('*[Open in Readest](readest://book/abc/annotation/n1?cfi=/6/4)*');
+    expect(result).toBe('*[Open in Leaf](readest://book/abc/annotation/n1?cfi=/6/4)*');
   });
 
   it('should translate the note label', () => {

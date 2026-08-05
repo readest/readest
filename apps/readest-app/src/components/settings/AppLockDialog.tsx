@@ -1,6 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
+import { BRAND_NAME } from '@/services/branding';
 import { useEffect, useRef, useState } from 'react';
 
 import ModalPortal from '@/components/ModalPortal';
@@ -197,7 +198,10 @@ export default function AppLockDialog() {
   const description =
     mode === 'set'
       ? _(
-          'Pick a 4-digit PIN. You will need to enter it every time you open Readest. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.',
+          _(
+            'Pick a 4-digit PIN. You will need to enter it every time you open {{brand}}. There is no way to recover a forgotten PIN. Clearing the app data is the only way to reset it.',
+            { brand: BRAND_NAME },
+          ),
         )
       : mode === 'change'
         ? _('Enter your current PIN, then choose a new 4-digit PIN.')

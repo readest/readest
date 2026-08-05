@@ -8,6 +8,7 @@ import { parseWebViewInfo } from '@/utils/ua';
 import { getAppVersion } from '@/utils/version';
 import { writeTextToClipboard } from '@/utils/clipboard';
 import { eventDispatcher } from '@/utils/event';
+import { BRAND_NAME, BRAND_FULL_NAME } from '@/services/branding';
 import SupportLinks from './SupportLinks';
 import LegalLinks from './LegalLinks';
 import Dialog from './Dialog';
@@ -101,9 +102,9 @@ export const AboutWindow = () => {
     <Dialog
       id='about_window'
       isOpen={isOpen}
-      title={_('About Biblophile')}
+      title={_('About {{brand}}', { brand: BRAND_NAME })}
       onClose={handleClose}
-      boxClassName='sm:w-[480px]! sm:max-w-(--breakpoint-sm)! sm:h-auto'
+      boxClassName='sm:!w-[480px] sm:!max-w-screen-sm sm:h-auto'
     >
       {isOpen && (
         <div className='about-content flex flex-col items-center justify-center gap-4 pb-10 sm:pb-0'>
@@ -112,12 +113,11 @@ export const AboutWindow = () => {
               <Image src='/icon.png' alt='App Logo' className='h-20 w-20' width={64} height={64} />
             </div>
             <div className='flex select-text flex-col items-center'>
-              <h2 className='mb-2 text-2xl font-bold'>Biblophile</h2>
+              <h2 className='mb-2 text-2xl font-bold'>{BRAND_FULL_NAME}</h2>
               <button
-                type='button'
-                title={_('Copy')}
-                className='text-neutral-content text-center text-sm'
+                className='text-neutral-content text-center text-sm bg-transparent border-none p-0 cursor-pointer outline-none'
                 onClick={handleCopyVersion}
+                title={_('Copy')}
               >
                 {versionInfo}
               </button>

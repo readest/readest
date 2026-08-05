@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { IoAlertCircleOutline, IoBookOutline, IoOpenOutline } from 'react-icons/io5';
 import { DOWNLOAD_READEST_URL, READEST_WEB_BASE_URL } from '@/services/constants';
+import { BRAND_NAME } from '@/services/branding';
 import { useTranslation } from '@/hooks/useTranslation';
 import { buildAnnotationAppUrl } from '@/utils/deeplink';
 import { BrandHeader } from '@/components/landing/BrandHeader';
@@ -130,7 +131,7 @@ const OpenAnnotationLanding = () => {
               )}
             </p>
             <a href='https://readest.com' className='btn btn-ghost btn-block mt-6' rel='noopener'>
-              {_('Go to Readest')}
+              {_('Go to {{brand}}', { brand: BRAND_NAME })}
             </a>
           </div>
         </Card>
@@ -146,13 +147,15 @@ const OpenAnnotationLanding = () => {
     <main className='bg-base-200 flex min-h-dvh flex-col items-center justify-center p-4 sm:p-8'>
       <Card>
         <BrandHeader
-          title={_('Open in Readest')}
+          title={_('Open in {{brand}}', { brand: BRAND_NAME })}
           subtitle={
             showManualOpen
-              ? _("If Readest didn't open automatically, choose an option below:")
+              ? _("If {{brand}} didn't open automatically, choose an option below:", {
+                  brand: BRAND_NAME,
+                })
               : _('Continue reading where you left off.')
           }
-          alt={_('Readest logo')}
+          alt={_('{{brand}} logo', { brand: BRAND_NAME })}
         />
 
         {/* Loading state — visible until the desktop timeout fires (or always
@@ -164,7 +167,9 @@ const OpenAnnotationLanding = () => {
             aria-live='polite'
           >
             <span className='loading loading-dots loading-md text-primary' aria-hidden='true' />
-            <span className='text-base-content/70 text-sm'>{_('Opening Readest...')}</span>
+            <span className='text-base-content/70 text-sm'>
+              {_('Opening {{brand}}...', { brand: BRAND_NAME })}
+            </span>
           </div>
         )}
 
@@ -177,14 +182,14 @@ const OpenAnnotationLanding = () => {
         >
           <a href={appUrl} className='btn btn-primary btn-block' rel='noopener'>
             <IoBookOutline className='h-5 w-5' aria-hidden='true' />
-            {_('Open in Readest app')}
+            {_('Open in {{brand}} app', { brand: BRAND_NAME })}
           </a>
           <a href={webReaderHref} className='btn btn-ghost btn-block' rel='noopener'>
             <IoOpenOutline className='h-5 w-5' aria-hidden='true' />
             {_('Continue in browser')}
           </a>
           <p className='text-base-content/60 mt-3 text-center text-xs'>
-            {_("Don't have Readest?")}{' '}
+            {_("Don't have {{brand}}?", { brand: BRAND_NAME })}{' '}
             <a
               href={DOWNLOAD_READEST_URL}
               target='_blank'

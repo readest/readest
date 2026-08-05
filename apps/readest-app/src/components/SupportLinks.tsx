@@ -1,4 +1,5 @@
 import { FaGithub, FaDiscord, FaReddit } from 'react-icons/fa';
+import { BRAND_NAME } from '@/services/branding';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import Link from './Link';
@@ -9,7 +10,9 @@ const SupportLinks = () => {
 
   return (
     <div className='my-2 flex flex-col items-center gap-2'>
-      <p className='text-neutral-content text-sm'>{_('Get Help from the Readest Community')}</p>
+      <p className='text-neutral-content text-sm'>
+        {_('Get Help from the {{brand}} Community', { brand: BRAND_NAME })}
+      </p>
       <div className='flex gap-4'>
         <Link
           href='https://github.com/readest/readest'

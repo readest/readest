@@ -1,10 +1,10 @@
 {
-  "name": "Readest",
-  "short_name": "Readest",
+  "name": "Leaf",
+  "short_name": "Leaf",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "description": "Readest is an open-source eBook reader supporting EPUB, PDF, and sync across devices.",
+  "description": "Leaf is an open-source eBook reader supporting EPUB, PDF, and sync across devices.",
   "icons": [
     {
       "src": "/icon.png",

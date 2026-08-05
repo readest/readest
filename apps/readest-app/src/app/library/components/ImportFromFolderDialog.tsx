@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { BRAND_NAME } from '@/services/branding';
 import React, { useState } from 'react';
 import { MdFolderOpen } from 'react-icons/md';
 
@@ -500,7 +501,10 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
                 <span className='block'>{_('Auto-import new books from this folder')}</span>
                 <span className='text-base-content/60 block text-xs'>
                   {_(
-                    'When new books are added to this folder, import them automatically the next time Readest opens or returns to the foreground.',
+                    _(
+                      'When new books are added to this folder, import them automatically the next time {{brand}} opens or returns to the foreground.',
+                      { brand: BRAND_NAME },
+                    ),
                   )}
                 </span>
               </span>

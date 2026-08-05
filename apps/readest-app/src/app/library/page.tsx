@@ -1,6 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
+import { BRAND_NAME } from '@/services/branding';
 import * as React from 'react';
 import { MdChevronRight, MdClose } from 'react-icons/md';
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
@@ -1482,7 +1483,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         type: 'warning',
         timeout: 6000,
         message: _(
-          'iOS doesn\'t allow importing the "On My iPhone" root. Open it and pick a specific subfolder (e.g. Readest, Downloads), then try again.',
+          _(
+            'iOS doesn\'t allow importing the "On My iPhone" root. Open it and pick a specific subfolder (e.g. {{brand}}, Downloads), then try again.',
+            { brand: BRAND_NAME },
+          ),
         ),
       });
       return false;

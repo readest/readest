@@ -1,4 +1,5 @@
 import React from 'react';
+import { BRAND_NAME } from '@/services/branding';
 import { IoMdCloseCircleOutline } from 'react-icons/io';
 import { MdArrowBackIosNew, MdArrowForwardIos } from 'react-icons/md';
 
@@ -64,7 +65,10 @@ const WatchedFoldersPane: React.FC<WatchedFoldersPaneProps> = ({
         </div>
         <span className='text-base-content/65 text-[0.85em] leading-relaxed'>
           {_(
-            'Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.',
+            _(
+              '{{brand}} re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.',
+              { brand: BRAND_NAME },
+            ),
           )}
         </span>
       </div>

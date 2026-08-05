@@ -10,6 +10,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { restoreFromBackupZip, saveBackupFile } from '@/services/backupService';
+import { BRAND_NAME } from '@/services/branding';
 import { useLibraryStore } from '@/store/libraryStore';
 import Dialog from '@/components/Dialog';
 
@@ -91,7 +92,7 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
 
     try {
       const timestamp = new Date().toISOString().slice(0, 10);
-      const filename = `readest-backup-${timestamp}.zip`;
+      const filename = `${BRAND_NAME.toLowerCase()}-backup-${timestamp}.zip`;
       const saved = await saveBackupFile(
         appService,
         filename,

@@ -1,6 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
+import { BRAND_NAME } from '@/services/branding';
 import { useEffect, useRef, useState } from 'react';
 
 import PinInput from '@/components/PinInput';
@@ -42,7 +43,7 @@ export default function AppLockScreen() {
     biometricInFlightRef.current = true;
     setBiometricBusy(true);
     try {
-      const ok = await authenticateWithBiometrics(_('Unlock Readest'));
+      const ok = await authenticateWithBiometrics(_('Unlock {{brand}}', { brand: BRAND_NAME }));
       if (ok) unlock();
     } finally {
       biometricInFlightRef.current = false;
@@ -145,7 +146,7 @@ export default function AppLockScreen() {
             {_('Enter your PIN')}
           </h1>
           <p className='text-base-content/60 mb-8 text-sm leading-relaxed'>
-            {_('Readest is locked. Enter your 4-digit PIN to continue.')}
+            {_('{{brand}} is locked. Enter your 4-digit PIN to continue.', { brand: BRAND_NAME })}
           </p>
 
           <PinInput

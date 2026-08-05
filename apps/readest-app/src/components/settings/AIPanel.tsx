@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { BRAND_NAME } from '@/services/branding';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { PiCheckCircle, PiWarningCircle, PiArrowsClockwise, PiSpinner } from 'react-icons/pi';
 
@@ -750,7 +751,9 @@ const AIPanel: React.FC = () => {
             ? _(
                 'Uses Turso vector search + CFI-anchored citations. The model decides when to look up passages instead of getting them stuffed into the system prompt.',
               )
-            : _('Reedy is desktop-only in this beta. Use the Readest desktop app to try it.')
+            : _('Reedy is desktop-only in this beta. Use the {{brand}} desktop app to try it.', {
+                brand: BRAND_NAME,
+              })
         }
       >
         <SettingsSwitchRow

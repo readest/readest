@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { BRAND_NAME } from '@/services/branding';
 import semver from 'semver';
 import Image from 'next/image';
 import { useEnv } from '@/context/EnvContext';
@@ -139,7 +140,7 @@ export const UpdaterContent = ({
         const arch = OS_ARCH === 'aarch64' ? 'arm64' : 'universal';
         const downloadUrl = data.platforms[platformKey]?.url as string;
         const apkFilePath = await appService.resolveFilePath(
-          `Readest_${data.version}_${arch}.apk`,
+          `${BRAND_NAME}_${data.version}_${arch}.apk`,
           'Cache',
         );
         setUpdate({
@@ -230,7 +231,7 @@ export const UpdaterContent = ({
         const arch = OS_ARCH === 'x86_64' ? 'x64' : 'arm64';
         const downloadUrl = data.platforms[platformKey]?.url as string;
         const execDir = await invoke<string>('get_executable_dir');
-        const exeFileName = `Readest_${data.version}_${arch}-portable.exe`;
+        const exeFileName = `${BRAND_NAME}_${data.version}_${arch}-portable.exe`;
         const exeFilePath = await join(execDir, exeFileName);
         setUpdate({
           currentVersion,
@@ -265,7 +266,7 @@ export const UpdaterContent = ({
           OS_ARCH === 'x86_64' ? 'linux-x86_64-appimage' : 'linux-aarch64-appimage';
         const arch = OS_ARCH === 'x86_64' ? 'x86_64' : 'aarch64';
         const downloadUrl = data.platforms[platformKey]?.url as string;
-        const appImageFileName = `Readest_${data.version}_${arch}.AppImage`;
+        const appImageFileName = `${BRAND_NAME}_${data.version}_${arch}.AppImage`;
         const appImageFilePath = await join(await desktopDir(), appImageFileName);
         setUpdate({
           currentVersion,
@@ -328,7 +329,7 @@ export const UpdaterContent = ({
           return;
         }
         // Windows-portable / Linux-AppImage / Android: download, verify, install.
-        const fileName = n.url.split('/').pop() || `Readest_${n.version}`;
+        const fileName = n.url.split('/').pop() || `${BRAND_NAME}_${n.version}`;
         let filePath: string;
         if (n.platformKey.includes('portable')) {
           // Windows portable: write into the executable dir so the new exe
@@ -548,13 +549,13 @@ export const UpdaterContent = ({
           {checkUpdate ? (
             <div className='text-base-content grow text-sm'>
               <h2 className='mb-4 text-center font-bold sm:text-start'>
-                {_('A new version of Readest is available!')}
+                {_('A new version of {{brand}} is available!', { brand: BRAND_NAME })}
               </h2>
               <p className='mb-2'>
-                {_('Readest {{newVersion}} is available (installed version {{currentVersion}}).', {
-                  newVersion,
-                  currentVersion,
-                })}
+                {_(
+                  '{{brand}} {{newVersion}} is available (installed version {{currentVersion}}).',
+                  { brand: BRAND_NAME, newVersion, currentVersion },
+                )}
               </p>
               <p className='mb-2'>{_('Download and install now?')}</p>
 
@@ -730,7 +731,9 @@ export const UpdaterWindow = () => {
     <Dialog
       id='updater_window'
       isOpen={isOpen}
-      title={checkUpdate ? _('Software Update') : _("What's New in Readest")}
+      title={
+        checkUpdate ? _('Software Update') : _("What's New in {{brand}}", { brand: BRAND_NAME })
+      }
       onClose={() => setIsOpen(false)}
       boxClassName='sm:w-[75%]! sm:h-auto sm:max-h-[85vh]! sm:max-w-2xl!'
     >

@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { BRAND_NAME } from '@/services/branding';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MdChevronRight } from 'react-icons/md';
@@ -278,7 +279,8 @@ const IntegrationsPanel: React.FC = () => {
               </li>
               <li>
                 {_(
-                  'App settings, reading statistics, and dictionaries still sync through your Readest account while signed in.',
+                  'App settings, reading statistics, and dictionaries still sync through your {{brand}} account while signed in.',
+                  { brand: BRAND_NAME },
                 )}
               </li>
             </Tips>
@@ -308,7 +310,8 @@ const IntegrationsPanel: React.FC = () => {
               </li>
               <li>
                 {_(
-                  'App settings, reading statistics, and dictionaries still sync through your Readest account while signed in.',
+                  'App settings, reading statistics, and dictionaries still sync through your {{brand}} account while signed in.',
+                  { brand: BRAND_NAME },
                 )}
               </li>
             </Tips>
@@ -340,7 +343,8 @@ const IntegrationsPanel: React.FC = () => {
             {
               <li>
                 {_(
-                  'App settings, reading statistics, and dictionaries still sync through your Readest account while signed in.',
+                  'App settings, reading statistics, and dictionaries still sync through your {{brand}} account while signed in.',
+                  { brand: BRAND_NAME },
                 )}
               </li>
             }
@@ -382,7 +386,8 @@ const IntegrationsPanel: React.FC = () => {
               </li>
               <li>
                 {_(
-                  'App settings, reading statistics, and dictionaries still sync through your Readest account while signed in.',
+                  'App settings, reading statistics, and dictionaries still sync through your {{brand}} account while signed in.',
+                  { brand: BRAND_NAME },
                 )}
               </li>
             </Tips>
@@ -425,8 +430,11 @@ const IntegrationsPanel: React.FC = () => {
       <div className='my-4 w-full'>
         <SubPageHeader
           parentLabel={_('Integrations')}
-          currentLabel={_('Readest Cloud')}
-          description={_('Sync your library, reading progress, and highlights with Readest Cloud.')}
+          currentLabel={_('{{brand}} Cloud', { brand: BRAND_NAME })}
+          description={_(
+            'Sync your library, reading progress, and highlights with {{brand}} Cloud.',
+            { brand: BRAND_NAME },
+          )}
           onBack={() => setSubPage(null)}
         />
         <BoxedList>
@@ -597,7 +605,9 @@ const IntegrationsPanel: React.FC = () => {
       <div className='w-full px-4'>
         <h2 className='mb-1.5 text-lg font-semibold tracking-tight'>{_('Integrations')}</h2>
         <p className='text-base-content/70 text-sm leading-relaxed'>
-          {_('Connect Readest to external services for sync, highlights, and catalogs.')}
+          {_('Connect {{brand}} to external services for sync, highlights, and catalogs.', {
+            brand: BRAND_NAME,
+          })}
         </p>
       </div>
 
@@ -655,7 +665,7 @@ const IntegrationsPanel: React.FC = () => {
               canToggle={!!user}
               onToggle={(next) => toggleCloudProvider('readest', next)}
               onOpen={() => (user ? setSubPage('readest-cloud') : navigateToLogin(router))}
-              toggleLabel={_('Sync with Readest Cloud')}
+              toggleLabel={_('Sync with {{brand}} Cloud', { brand: BRAND_NAME })}
             />
             {/* Third-party providers are premium: every row carries the tier
                 badge; on a free plan the checkbox is disabled and opening a
@@ -767,7 +777,8 @@ const IntegrationsPanel: React.FC = () => {
               </li>
               <li>
                 {_(
-                  'App settings, reading statistics, and dictionaries still sync through your Readest account while signed in.',
+                  'App settings, reading statistics, and dictionaries still sync through your {{brand}} account while signed in.',
+                  { brand: BRAND_NAME },
                 )}
               </li>
             </Tips>
@@ -793,7 +804,7 @@ const IntegrationsPanel: React.FC = () => {
             />
             <IntegrationRow
               icon={RiSendPlaneLine}
-              title={_('Send to Readest')}
+              title={_('Send to {{brand}}', { brand: BRAND_NAME })}
               status={_('Email books to your library')}
               onClick={() => setSubPage('send')}
             />

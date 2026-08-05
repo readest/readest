@@ -24,6 +24,7 @@ import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { tauriHandleSetAlwaysOnTop, tauriHandleToggleFullScreen } from '@/utils/window';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
+import { BRAND_NAME } from '@/services/branding';
 import { setMigrateDataDirDialogVisible } from '@/app/library/components/MigrateDataWindow';
 import { requestStoragePermission } from '@/utils/permission';
 import { saveSysSettings } from '@/helpers/settings';
@@ -468,12 +469,18 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
       </MenuItem>
       <hr aria-hidden='true' className='border-base-200 my-1' />
       {user && userProfilePlan === 'free' && (
-        <MenuItem label={_('Upgrade to Biblophile Premium')} onClick={handleUpgrade} />
+        <MenuItem
+          label={_('Upgrade to {{brand}} Premium', { brand: BRAND_NAME })}
+          onClick={handleUpgrade}
+        />
       )}
       {isWebAppPlatform() && (
-        <MenuItem label={_('Download Biblophile')} onClick={downloadReadest} />
+        <MenuItem
+          label={_('Download {{brand}}', { brand: BRAND_NAME })}
+          onClick={downloadReadest}
+        />
       )}
-      <MenuItem label={_('About Biblophile')} onClick={showAboutReadest} />
+      <MenuItem label={_('About {{brand}}', { brand: BRAND_NAME })} onClick={showAboutReadest} />
     </Menu>
   );
 };
