@@ -2020,5 +2020,8 @@
   "Release to remove bookmark": "Engedje el a könyvjelző eltávolításához",
   "Pull down to remove bookmark": "Húzza le a könyvjelző eltávolításához",
   "Release to add bookmark": "Engedje el könyvjelző hozzáadásához",
-  "Pull down to add bookmark": "Húzza le könyvjelző hozzáadásához"
+  "Pull down to add bookmark": "Húzza le könyvjelző hozzáadásához",
+  "Sign in to Readest": "Jelentkezzen be a Readestbe",
+  "Sync your library, reading progress, and highlights across your devices.": "Szinkronizálja könyvtárát, olvasási haladását és kiemeléseit az összes eszközén.",
+  "or continue with email": "vagy folytassa e-maillel"
 }

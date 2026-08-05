@@ -1974,5 +1974,8 @@
   "Release to remove bookmark": "ปล่อยเพื่อลบบุ๊กมาร์ก",
   "Pull down to remove bookmark": "ดึงลงเพื่อลบบุ๊กมาร์ก",
   "Release to add bookmark": "ปล่อยเพื่อเพิ่มบุ๊กมาร์ก",
-  "Pull down to add bookmark": "ดึงลงเพื่อเพิ่มบุ๊กมาร์ก"
+  "Pull down to add bookmark": "ดึงลงเพื่อเพิ่มบุ๊กมาร์ก",
+  "Sign in to Readest": "ลงชื่อเข้าใช้ Readest",
+  "Sync your library, reading progress, and highlights across your devices.": "ซิงค์คลังหนังสือ ความคืบหน้าการอ่าน และไฮไลต์ของคุณในทุกอุปกรณ์ของคุณ",
+  "or continue with email": "หรือดำเนินการต่อด้วยอีเมล"
 }

@@ -3,10 +3,6 @@ import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { FcGoogle } from 'react-icons/fc';
-import { FaApple, FaGithub, FaDiscord } from 'react-icons/fa';
 import { IoArrowBack } from 'react-icons/io5';
 
 import { useAuth } from '@/context/AuthContext';
@@ -27,8 +23,8 @@ import { getUserProfilePlan } from '@/utils/access';
 import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
 import WindowButtons from '@/components/WindowButtons';
-import { ProviderLogin, type OAuthProvider } from './components/ProviderLogin';
-import EmailPasswordAuth from './components/EmailPasswordAuth';
+import type { OAuthProvider } from './components/ProviderLogin';
+import AuthPanel from './components/AuthPanel';
 
 interface SingleInstancePayload {
   args: string[];
@@ -44,7 +40,7 @@ export default function AuthPage() {
   const router = useRouter();
   const { login } = useAuth();
   const { envConfig, appService } = useEnv();
-  const { isDarkMode, safeAreaInsets, isRoundedWindow } = useThemeStore();
+  const { safeAreaInsets, isRoundedWindow } = useThemeStore();
   const { isTrafficLightVisible } = useTrafficLightStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [port, setPort] = useState<number | null>(null);
@@ -140,6 +136,26 @@ export default function AuthPage() {
     }
   };
 
+  const tauriProviderSignIn = async (provider: OAuthProvider) => {
+    if (provider === 'apple' && (appService?.isIOSApp || USE_APPLE_SIGN_IN)) {
+      return tauriSignInApple();
+    }
+    return tauriSignIn(provider);
+  };
+
+  const webProviderSignIn = async (provider: OAuthProvider) => {
+    if (!supabase) {
+      throw new Error('No backend connected');
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: getWebRedirectTo() },
+    });
+    if (error) {
+      console.error('Authentication error:', error);
+    }
+  };
+
   const handleOAuthUrl = async (url: string) => {
     console.log('Handle OAuth URL:', url);
     const { accessToken, refreshToken, type, next, error, errorCode, errorDescription } =
@@ -222,61 +238,6 @@ export default function AuthPage() {
     } else {
       router.back();
     }
-  };
-
-  const getAuthLocalization = () => {
-    return {
-      variables: {
-        sign_in: {
-          email_label: _('Email address'),
-          password_label: _('Your Password'),
-          email_input_placeholder: _('Your email address'),
-          password_input_placeholder: _('Your password'),
-          button_label: _('Sign in'),
-          loading_button_label: _('Signing in...'),
-          social_provider_text: _('Sign in with {{provider}}'),
-          link_text: _('Already have an account? Sign in'),
-        },
-        sign_up: {
-          email_label: _('Email address'),
-          password_label: _('Create a Password'),
-          email_input_placeholder: _('Your email address'),
-          password_input_placeholder: _('Your password'),
-          button_label: _('Sign up'),
-          loading_button_label: _('Signing up...'),
-          social_provider_text: _('Sign in with {{provider}}'),
-          link_text: _("Don't have an account? Sign up"),
-          confirmation_text: _('Check your email for the confirmation link'),
-        },
-        magic_link: {
-          email_input_label: _('Email address'),
-          email_input_placeholder: _('Your email address'),
-          button_label: _('Sign in'),
-          loading_button_label: _('Signing in ...'),
-          link_text: _('Send a magic link email'),
-          confirmation_text: _('Check your email for the magic link'),
-        },
-        forgotten_password: {
-          email_label: _('Email address'),
-          password_label: _('Your Password'),
-          email_input_placeholder: _('Your email address'),
-          button_label: _('Send reset password instructions'),
-          loading_button_label: _('Sending reset instructions ...'),
-          link_text: _('Forgot your password?'),
-          confirmation_text: _('Check your email for the password reset link'),
-        },
-        verify_otp: {
-          email_input_label: _('Email address'),
-          email_input_placeholder: _('Your email address'),
-          phone_input_label: _('Phone number'),
-          phone_input_placeholder: _('Your phone number'),
-          token_input_label: _('Token'),
-          token_input_placeholder: _('Your OTP token'),
-          button_label: _('Verify token'),
-          loading_button_label: _('Signing in ...'),
-        },
-      },
-    };
   };
 
   useEffect(() => {
@@ -370,64 +331,33 @@ export default function AuthPage() {
         </div>
         <div
           className={clsx(
-            'z-20 flex flex-col items-center pb-8',
-            appService?.hasTrafficLight ? 'mt-24' : 'mt-12',
+            'z-20 flex w-full flex-col items-center px-6 pb-12',
+            appService?.hasTrafficLight ? 'mt-24' : 'mt-16',
           )}
-          style={{ maxWidth: '420px' }}
         >
-          <ProviderLogin
-            provider='google'
-            handleSignIn={tauriSignIn}
-            Icon={FcGoogle}
-            label={_('Sign in with {{provider}}', { provider: 'Google' })}
+          <AuthPanel
+            supabaseClient={supabase}
+            magicLink={true}
+            redirectTo={getTauriRedirectTo(false)}
+            onProviderSignIn={tauriProviderSignIn}
           />
-          <ProviderLogin
-            provider='apple'
-            handleSignIn={
-              appService?.isIOSApp || USE_APPLE_SIGN_IN ? tauriSignInApple : tauriSignIn
-            }
-            Icon={FaApple}
-            label={_('Sign in with {{provider}}', { provider: 'Apple' })}
-          />
-          <ProviderLogin
-            provider='github'
-            handleSignIn={tauriSignIn}
-            Icon={FaGithub}
-            label={_('Sign in with {{provider}}', { provider: 'GitHub' })}
-          />
-          <ProviderLogin
-            provider='discord'
-            handleSignIn={tauriSignIn}
-            Icon={FaDiscord}
-            label={_('Sign in with {{provider}}', { provider: 'Discord' })}
-          />
-          <hr aria-hidden='true' className='border-base-300 my-3 mt-6 w-64 border-t' />
-          <div className='w-full'>
-            <EmailPasswordAuth
-              supabaseClient={supabase}
-              magicLink={true}
-              redirectTo={getTauriRedirectTo(false)}
-            />
-          </div>
         </div>
       </div>
     </div>
   ) : (
-    <div style={{ maxWidth: '420px', margin: 'auto', padding: '2rem', paddingTop: '4rem' }}>
+    <div className='bg-base-100 flex min-h-screen flex-col items-center overflow-y-auto px-6 pb-12 pt-20'>
       <button
+        aria-label={_('Go Back')}
         onClick={handleGoBack}
-        className='btn btn-ghost fixed left-6 top-6 h-8 min-h-8 w-8 p-0'
+        className='btn btn-ghost fixed start-6 top-6 h-8 min-h-8 w-8 p-0'
       >
         <IoArrowBack className='text-base-content' />
       </button>
-      <Auth
+      <AuthPanel
         supabaseClient={supabase}
-        appearance={{ theme: ThemeSupa }}
-        theme={isDarkMode ? 'dark' : 'light'}
         magicLink={true}
-        providers={['google', 'apple', 'github', 'discord']}
         redirectTo={getWebRedirectTo()}
-        localization={getAuthLocalization()}
+        onProviderSignIn={webProviderSignIn}
       />
     </div>
   );

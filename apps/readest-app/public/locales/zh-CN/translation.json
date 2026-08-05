@@ -1974,5 +1974,8 @@
   "Release to remove bookmark": "松手移除书签",
   "Pull down to remove bookmark": "下拉移除书签",
   "Release to add bookmark": "松手添加书签",
-  "Pull down to add bookmark": "下拉添加书签"
+  "Pull down to add bookmark": "下拉添加书签",
+  "Sign in to Readest": "登录 Readest",
+  "Sync your library, reading progress, and highlights across your devices.": "将您的书库、阅读进度和高亮在您的所有设备间同步。",
+  "or continue with email": "或使用邮箱继续"
 }

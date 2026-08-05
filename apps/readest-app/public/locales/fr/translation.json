@@ -2066,5 +2066,8 @@
   "Release to remove bookmark": "Relâchez pour supprimer le marque-page",
   "Pull down to remove bookmark": "Tirez vers le bas pour supprimer le marque-page",
   "Release to add bookmark": "Relâchez pour ajouter un marque-page",
-  "Pull down to add bookmark": "Tirez vers le bas pour ajouter un marque-page"
+  "Pull down to add bookmark": "Tirez vers le bas pour ajouter un marque-page",
+  "Sign in to Readest": "Connectez-vous à Readest",
+  "Sync your library, reading progress, and highlights across your devices.": "Synchronisez votre bibliothèque, votre progression de lecture et vos surlignages sur tous vos appareils.",
+  "or continue with email": "ou continuer par e-mail"
 }

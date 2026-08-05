@@ -17,18 +17,24 @@ export const ProviderLogin: React.FC<ProviderLoginProp> = ({
 }) => {
   return (
     <button
+      type='button'
       onClick={() => {
         void handleSignIn(provider).catch((error) => {
           console.warn(`Failed to sign in with ${provider}:`, error);
         });
       }}
       className={clsx(
-        'mb-2 flex w-64 items-center justify-center rounded border p-2.5',
-        'bg-base-100 border-base-300 hover:bg-base-200 shadow-sm transition',
+        'eink-bordered flex h-11 w-full items-center justify-center gap-2.5',
+        'border-base-200 bg-base-100 rounded-lg border px-4',
+        'text-base-content text-sm font-medium',
+        'transition-colors duration-150',
+        'hover:border-base-300 hover:bg-base-200/60',
+        'active:bg-base-200/80',
+        'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
       )}
     >
-      <Icon />
-      <span className='text-base-content/75 px-2 text-sm'>{label}</span>
+      <Icon className='h-5 w-5' aria-hidden='true' />
+      <span className='line-clamp-1'>{label}</span>
     </button>
   );
 };

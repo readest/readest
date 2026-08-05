@@ -2020,5 +2020,8 @@
   "Release to remove bookmark": "বুকমার্ক সরাতে ছেড়ে দিন",
   "Pull down to remove bookmark": "বুকমার্ক সরাতে নিচে টানুন",
   "Release to add bookmark": "বুকমার্ক যোগ করতে ছেড়ে দিন",
-  "Pull down to add bookmark": "বুকমার্ক যোগ করতে নিচে টানুন"
+  "Pull down to add bookmark": "বুকমার্ক যোগ করতে নিচে টানুন",
+  "Sign in to Readest": "Readest-এ সাইন ইন করুন",
+  "Sync your library, reading progress, and highlights across your devices.": "আপনার লাইব্রেরি, পড়ার অগ্রগতি এবং হাইলাইটগুলি আপনার সব ডিভাইসে সিঙ্ক করুন।",
+  "or continue with email": "অথবা ইমেইল দিয়ে চালিয়ে যান"
 }

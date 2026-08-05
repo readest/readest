@@ -2020,5 +2020,8 @@
   "Release to remove bookmark": "Släpp för att ta bort bokmärke",
   "Pull down to remove bookmark": "Dra nedåt för att ta bort bokmärke",
   "Release to add bookmark": "Släpp för att lägga till bokmärke",
-  "Pull down to add bookmark": "Dra nedåt för att lägga till bokmärke"
+  "Pull down to add bookmark": "Dra nedåt för att lägga till bokmärke",
+  "Sign in to Readest": "Logga in på Readest",
+  "Sync your library, reading progress, and highlights across your devices.": "Synka ditt bibliotek, dina läsframsteg och markeringar på alla dina enheter.",
+  "or continue with email": "eller fortsätt med e-post"
 }

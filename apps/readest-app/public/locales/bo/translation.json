@@ -1974,5 +1974,8 @@
   "Release to remove bookmark": "དེབ་གྲངས་འདོར་བར་ལག་པ་གློད།",
   "Pull down to remove bookmark": "དེབ་གྲངས་འདོར་བར་མར་འཐེན།",
   "Release to add bookmark": "དེབ་གྲངས་སྣོན་པར་ལག་པ་གློད།",
-  "Pull down to add bookmark": "དེབ་གྲངས་སྣོན་པར་མར་འཐེན།"
+  "Pull down to add bookmark": "དེབ་གྲངས་སྣོན་པར་མར་འཐེན།",
+  "Sign in to Readest": "Readest ལ་ཐོ་འཇུག་བྱེད།",
+  "Sync your library, reading progress, and highlights across your devices.": "ཁྱེད་ཀྱི་དཔེ་མཛོད་དང་། ཀློག་པའི་ཡར་འཕེལ། གཙོ་གནད་བཅས་ཁྱེད་ཀྱི་སྒྲིག་ཆས་ཡོངས་ལ་མཉམ་སྒྲིག་བྱེད།",
+  "or continue with email": "ཡང་ན་གློག་འཕྲིན་བརྒྱུད་ནས་མུ་མཐུད།"
 }

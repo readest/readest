@@ -17,6 +17,9 @@ const FORM_IDS: Record<AuthView, string> = {
   forgotten_password: 'auth-forgot-password',
 };
 
+const LINK_CLASS =
+  'text-base-content/70 hover:text-base-content underline underline-offset-2 transition-colors duration-150';
+
 export default function EmailPasswordAuth({
   supabaseClient,
   redirectTo,
@@ -115,7 +118,7 @@ export default function EmailPasswordAuth({
           defaultValue={defaultEmail}
           placeholder={_('Your email address')}
           autoComplete={hasPassword ? 'username' : 'email'}
-          className='input input-bordered eink-bordered w-full placeholder:text-sm'
+          className='input input-bordered eink-bordered w-full rounded-lg placeholder:text-sm'
           disabled={loading}
         />
       </div>
@@ -133,38 +136,47 @@ export default function EmailPasswordAuth({
             required
             placeholder={_('Your password')}
             autoComplete={view === 'sign_in' ? 'current-password' : 'new-password'}
-            className='input input-bordered eink-bordered w-full placeholder:text-sm'
+            className='input input-bordered eink-bordered w-full rounded-lg placeholder:text-sm'
             disabled={loading}
           />
         </div>
       )}
-      <button type='submit' className='btn btn-contrast w-full' disabled={loading}>
+      <button type='submit' className='btn btn-primary w-full rounded-lg' disabled={loading}>
+        {loading && <span className='loading loading-spinner loading-sm' aria-hidden='true' />}
         {buttonLabel}
       </button>
-      <div className='flex flex-col items-center gap-2 text-sm'>
+      {message && (
+        <div className='eink-bordered border-base-200 bg-base-200/40 text-base-content/80 rounded-lg border px-3 py-2.5 text-center text-sm leading-relaxed'>
+          {message}
+        </div>
+      )}
+      {error && (
+        <div className='eink-bordered border-error/30 bg-error/5 text-error rounded-lg border px-3 py-2.5 text-center text-sm leading-relaxed'>
+          {error}
+        </div>
+      )}
+      <div className='flex flex-col items-center gap-2.5 pt-1 text-sm'>
         {view === 'sign_in' && (
           <>
             {magicLink && (
-              <button type='button' className='link' onClick={switchView('magic_link')}>
+              <button type='button' className={LINK_CLASS} onClick={switchView('magic_link')}>
                 {_('Send a magic link email')}
               </button>
             )}
-            <button type='button' className='link' onClick={switchView('forgotten_password')}>
+            <button type='button' className={LINK_CLASS} onClick={switchView('forgotten_password')}>
               {_('Forgot your password?')}
             </button>
-            <button type='button' className='link' onClick={switchView('sign_up')}>
+            <button type='button' className={LINK_CLASS} onClick={switchView('sign_up')}>
               {_("Don't have an account? Sign up")}
             </button>
           </>
         )}
         {view !== 'sign_in' && (
-          <button type='button' className='link' onClick={switchView('sign_in')}>
+          <button type='button' className={LINK_CLASS} onClick={switchView('sign_in')}>
             {_('Already have an account? Sign in')}
           </button>
         )}
       </div>
-      {message && <p className='text-base-content/75 text-center text-sm'>{message}</p>}
-      {error && <p className='text-error text-center text-sm'>{error}</p>}
     </form>
   );
 }

@@ -1974,5 +1974,8 @@
   "Release to remove bookmark": "손을 떼면 북마크 제거",
   "Pull down to remove bookmark": "아래로 당겨 북마크 제거",
   "Release to add bookmark": "손을 떼면 북마크 추가",
-  "Pull down to add bookmark": "아래로 당겨 북마크 추가"
+  "Pull down to add bookmark": "아래로 당겨 북마크 추가",
+  "Sign in to Readest": "Readest에 로그인",
+  "Sync your library, reading progress, and highlights across your devices.": "라이브러리, 읽기 진행 상황, 하이라이트를 모든 기기에서 동기화합니다.",
+  "or continue with email": "또는 이메일로 계속"
 }

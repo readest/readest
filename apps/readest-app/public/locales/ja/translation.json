@@ -1974,5 +1974,8 @@
   "Release to remove bookmark": "指を離してブックマークを削除",
   "Pull down to remove bookmark": "下に引いてブックマークを削除",
   "Release to add bookmark": "指を離してブックマークを追加",
-  "Pull down to add bookmark": "下に引いてブックマークを追加"
+  "Pull down to add bookmark": "下に引いてブックマークを追加",
+  "Sign in to Readest": "Readest にサインイン",
+  "Sync your library, reading progress, and highlights across your devices.": "ライブラリ、読書進捗、ハイライトをすべてのデバイスで同期します。",
+  "or continue with email": "またはメールで続行"
 }
