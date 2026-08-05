@@ -1096,6 +1096,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setShowAnnotPopup(true);
     setShowDeepLPopup(false);
     setShowDictionaryPopup(false);
+    setShowProofreadPopup(false);
   };
 
   const handleCopy = (dismissPopup = true) => {
@@ -1905,13 +1906,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     .map(buildToolButton)
     .filter((button): button is NonNullable<typeof button> => button !== null);
 
-  // The in-app dictionary never deselects (handleDictionary), so a genuine
-  // selection is still live when the popup closes — return to its toolbar
-  // instead of discarding it (#5213). Word Lens gloss taps and taps on an
-  // existing highlight synthesize their selection with isTextSelected left
-  // false, and an empty toolbar has nothing to return to: both keep the
-  // full dismiss.
-  const handleDismissDictionaryPopup = () => {
+  // The lookup popups never deselect (handleDictionary / handleTranslation /
+  // handleProofread only flip popup flags), so a genuine selection is still
+  // live when one closes — return to its toolbar instead of discarding it
+  // (#5213). Word Lens gloss taps and taps on an existing highlight
+  // synthesize their selection with isTextSelected left false, and an empty
+  // toolbar has nothing to return to: those keep the full dismiss. The
+  // consuming actions are a different class by design — copy, share, search,
+  // and TTS spend the selection (TTS deselects deliberately), and highlight /
+  // annotate replace it with the created annotation — so they are not here.
+  const handleDismissPopupShowToolbar = () => {
     if (isTextSelected.current && toolButtons.length > 0) {
       handleShowAnnotPopup();
     } else {
@@ -1941,7 +1945,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
               <DictionarySheet
                 word={selection?.text as string}
                 lang={bookData.bookDoc?.metadata.language as string}
-                onDismiss={handleDismissDictionaryPopup}
+                onDismiss={handleDismissPopupShowToolbar}
                 onManage={onManage}
               />
             );
@@ -1955,7 +1959,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
               trianglePosition={trianglePosition}
               popupWidth={dictPopupWidth}
               popupHeight={dictPopupHeight}
-              onDismiss={handleDismissDictionaryPopup}
+              onDismiss={handleDismissPopupShowToolbar}
               onManage={onManage}
             />
           );
@@ -1967,7 +1971,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           trianglePosition={trianglePosition}
           popupWidth={transPopupWidth}
           popupHeight={transPopupHeight}
-          onDismiss={handleDismissPopupAndSelection}
+          onDismiss={handleDismissPopupShowToolbar}
         />
       )}
       {showAnnotPopup &&
@@ -2005,7 +2009,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           trianglePosition={trianglePosition}
           popupWidth={proofreadPopupWidth}
           popupHeight={proofreadPopupHeight}
-          onDismiss={handleDismissPopupAndSelection}
+          onDismiss={handleDismissPopupShowToolbar}
           onManage={() => {
             handleDismissPopupAndSelection();
             setProofreadRulesVisibility(true);
