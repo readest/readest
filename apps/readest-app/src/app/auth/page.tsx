@@ -194,12 +194,18 @@ export default function AuthPage() {
             type='submit'
             className={clsx(
               'btn btn-primary w-full h-11 min-h-11 mt-4 text-sm font-semibold tracking-wide text-white uppercase rounded-lg shadow-lg hover:shadow-primary/30 transition-all duration-300',
-              loading && 'loading',
             )}
             style={{ backgroundColor: '#D17842', borderColor: '#D17842' }}
             disabled={loading}
           >
-            {loading ? _('Signing in...') : _('Sign In')}
+            {loading ? (
+              <span className='flex items-center gap-2'>
+                <span className='loading loading-spinner loading-sm'></span>
+                {_('Signing in...')}
+              </span>
+            ) : (
+              _('Sign In')
+            )}
           </button>
         </form>
       </div>
