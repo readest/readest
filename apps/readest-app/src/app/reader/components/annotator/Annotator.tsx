@@ -1905,6 +1905,20 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     .map(buildToolButton)
     .filter((button): button is NonNullable<typeof button> => button !== null);
 
+  // The in-app dictionary never deselects (handleDictionary), so a genuine
+  // selection is still live when the popup closes — return to its toolbar
+  // instead of discarding it (#5213). Word Lens gloss taps and taps on an
+  // existing highlight synthesize their selection with isTextSelected left
+  // false, and an empty toolbar has nothing to return to: both keep the
+  // full dismiss.
+  const handleDismissDictionaryPopup = () => {
+    if (isTextSelected.current && toolButtons.length > 0) {
+      handleShowAnnotPopup();
+    } else {
+      handleDismissPopupAndSelection();
+    }
+  };
+
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
       {showDictionaryPopup &&
@@ -1927,7 +1941,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
               <DictionarySheet
                 word={selection?.text as string}
                 lang={bookData.bookDoc?.metadata.language as string}
-                onDismiss={handleDismissPopupAndSelection}
+                onDismiss={handleDismissDictionaryPopup}
                 onManage={onManage}
               />
             );
@@ -1941,7 +1955,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
               trianglePosition={trianglePosition}
               popupWidth={dictPopupWidth}
               popupHeight={dictPopupHeight}
-              onDismiss={handleDismissPopupAndSelection}
+              onDismiss={handleDismissDictionaryPopup}
               onManage={onManage}
             />
           );

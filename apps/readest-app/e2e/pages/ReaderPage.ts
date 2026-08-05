@@ -21,6 +21,7 @@ export class ReaderPage extends BasePage {
   readonly tocItems: Locator;
   readonly searchResults: Locator;
   readonly annotationPopup: Locator;
+  readonly dictionaryPopup: Locator;
   readonly noteEditor: Locator;
   readonly annotationItems: Locator;
 
@@ -35,6 +36,9 @@ export class ReaderPage extends BasePage {
     this.tocItems = page.locator('.toc-list [role="treeitem"]');
     this.searchResults = page.locator('.search-results li[role="button"]');
     this.annotationPopup = page.locator('.selection-popup');
+    // The dictionary shares Popup's `.popup-container` chrome with the
+    // translator, so key off its results header test id instead.
+    this.dictionaryPopup = page.locator('.popup-container:has([data-testid="dict-title"])');
     this.noteEditor = page.locator('.note-editor-container');
     this.annotationItems = page.locator('li.booknote-item[role="button"]');
   }

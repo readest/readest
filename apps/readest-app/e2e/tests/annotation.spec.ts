@@ -20,6 +20,25 @@ test.describe('Annotation', () => {
     await expect(reader.annotationItems).toHaveCount(1);
   });
 
+  test('closing the dictionary popup returns to the selection toolbar (#5213)', async ({
+    openBook,
+  }) => {
+    const reader = await openBook();
+
+    await reader.selectText();
+    await reader.popupTool('Dictionary').click();
+    await expect(reader.dictionaryPopup).toBeVisible();
+    await expect(reader.annotationPopup).toBeHidden();
+
+    await reader.page.keyboard.press('Escape');
+
+    await expect(reader.dictionaryPopup).toBeHidden();
+    // The selection survives the lookup, so its toolbar must come back with
+    // it — before the fix the dismiss discarded both.
+    await expect(reader.annotationPopup).toBeVisible();
+    await expect(reader.popupTool('Highlight')).toBeVisible();
+  });
+
   test('changes the highlight color', async ({ openBook }) => {
     const reader = await openBook();
 
