@@ -13,6 +13,7 @@ import TOCView from './TOCView';
 import BooknoteView from './BooknoteView';
 import TabNavigation from './TabNavigation';
 import ChatHistoryView from './ChatHistoryView';
+import BuddyReadView from './BuddyReadView';
 
 const SidebarContent: React.FC<{
   bookDoc: BookDoc;
@@ -122,6 +123,7 @@ const SidebarContent: React.FC<{
               {targetTab === 'bookmarks' && (
                 <BooknoteView type='bookmark' toc={bookDoc.toc ?? []} bookKey={sideBarBookKey} />
               )}
+              {targetTab === 'buddyRead' && <BuddyReadView bookKey={sideBarBookKey} />}
             </div>
           </OverlayScrollbarsComponent>
         )}

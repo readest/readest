@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_BIBLO_API_URL || 'http://localhost:3000/api/v0';
+  const apiUrl = process.env.NEXT_PUBLIC_BIBLO_API_URL || 'http://localhost:3001/api/v0';
   const queryStr = req.url?.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
   const targetUrl = `${apiUrl}/sync${queryStr}`;
 

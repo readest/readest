@@ -152,9 +152,11 @@ export async function POST(request: Request, { params }: RouteParams) {
   // Insert destination row first (to grab a stable id), then copy bytes,
   // then mark the row clean. On copy failure we soft-delete the row so the
   // user's library doesn't show a phantom book.
+  const newBookId = `file_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
   const { data: insertedBook, error: insertBookError } = await supabase
     .from('files')
     .insert({
+      id: newBookId,
       user_id: user.id,
       book_hash: share.bookHash,
       file_key: destBookKey,
@@ -195,7 +197,9 @@ export async function POST(request: Request, { params }: RouteParams) {
         const coverExists = await objectExists(share.coverFileKey);
         if (coverExists) {
           await copyObject(share.coverFileKey, destCoverKey);
+          const newCoverId = `file_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
           await supabase.from('files').insert({
+            id: newCoverId,
             user_id: user.id,
             book_hash: share.bookHash,
             file_key: destCoverKey,

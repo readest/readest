@@ -22,6 +22,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
+import { useBuddyReadStore } from '@/store/buddyReadStore';
 import { isSystemDictionaryEnabled } from '@/services/dictionaries/registry';
 import { invokeSystemDictionary } from '@/services/dictionaries/systemDictionary';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -460,7 +461,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
   const onCreateOverlay = (event: Event) => {
     const detail = (event as CustomEvent).detail;
-    const { booknotes = [] } = getConfig(bookKey)!;
+    const { booknotes: localBooknotes = [] } = getConfig(bookKey)!;
+    const buddyReadAnnotations = useBuddyReadStore.getState().annotations || [];
+    const booknotes = [...localBooknotes, ...buddyReadAnnotations];
     // Resolve the live (doc, overlayer) pair for this section so we can
     // fan out global annotations across every text-occurrence in it.
     const sectionContent = view?.renderer?.getContents().find((c) => c.index === detail.index) as
@@ -593,7 +596,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const onShowAnnotation = (event: Event) => {
     const detail = (event as CustomEvent).detail;
     const { value, index, range } = detail;
-    const { booknotes = [] } = getConfig(bookKey)!;
+    const { booknotes: localBooknotes = [] } = getConfig(bookKey)!;
+    const buddyReadAnnotations = useBuddyReadStore.getState().annotations || [];
+    const booknotes = [...localBooknotes, ...buddyReadAnnotations];
     const isNote = value.startsWith(NOTE_PREFIX);
     const rawValue = isNote ? value.replace(NOTE_PREFIX, '') : value;
     // A click on a fan-out copy of a global annotation reports a
@@ -1093,10 +1098,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // array so we don't re-walk N items each turn just to find the same few
   // global ones. The index is recomputed only when `booknotes` itself
   // changes (add/remove/edit) — not on every page turn.
-  const annotationIndex = useMemo(
-    () => buildAnnotationIndex(config.booknotes ?? []),
-    [config.booknotes],
-  );
+  const buddyReadAnnotations = useBuddyReadStore((s) => s.annotations);
+  const combinedNotes = useMemo(() => {
+    const localNotes = config.booknotes ?? [];
+    return [...localNotes, ...buddyReadAnnotations];
+  }, [config.booknotes, buddyReadAnnotations]);
+
+  const annotationIndex = useMemo(() => buildAnnotationIndex(combinedNotes), [combinedNotes]);
 
   useEffect(() => {
     if (!progress) return;

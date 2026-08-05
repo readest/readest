@@ -40,6 +40,9 @@ import {
   flushNotebookDocument,
 } from '../hooks/useNotebookDocumentCoordinator';
 import { writeTextToClipboard } from '@/utils/clipboard';
+import { useBuddyReadStore } from '@/store/buddyReadStore';
+import { getAPIBaseUrl } from '@/services/environment';
+import { fetchWithAuth } from '@/utils/fetch';
 
 import useBooksManager from '../hooks/useBooksManager';
 import useBookShortcuts from '../hooks/useBookShortcuts';
@@ -202,6 +205,41 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       eventDispatcher.off('show-share-dialog', handleShareIntent);
     };
   }, [user, _]);
+
+  const { setBuddyReadId } = useBuddyReadStore();
+
+  useEffect(() => {
+    if (!sideBarBookKey || !user) return;
+    const bookData = getBookData(sideBarBookKey);
+    const title = bookData?.book?.title;
+
+    const checkBuddyReads = async () => {
+      try {
+        const url = `${getAPIBaseUrl()}/social/buddy-reads/my-reads`;
+        const response = await fetchWithAuth(url, { method: 'GET' });
+        const resData = await response.json();
+        const myBuddyReads = resData.data?.buddyReads || [];
+
+        const match = myBuddyReads.find(
+          (br: any) => br.title?.toLowerCase() === title?.toLowerCase(),
+        );
+
+        if (match) {
+          setBuddyReadId(match.buddyReadId);
+          const store = useBuddyReadStore.getState();
+          store.fetchBuddyReadDetails(match.buddyReadId);
+          store.fetchComments(match.buddyReadId);
+          store.fetchAnnotations(match.buddyReadId);
+        } else {
+          setBuddyReadId(null);
+        }
+      } catch (err) {
+        console.error('Failed to check buddy reads for active book:', err);
+      }
+    };
+
+    checkBuddyReads();
+  }, [sideBarBookKey, user, setBuddyReadId, getBookData]);
 
   useEffect(() => {
     if (bookKeys && bookKeys.length > 0) {

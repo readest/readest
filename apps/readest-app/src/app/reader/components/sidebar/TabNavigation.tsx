@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React from 'react';
-import { MdBookmarkBorder } from 'react-icons/md';
+import { MdBookmarkBorder, MdPeopleOutline } from 'react-icons/md';
 import { IoIosList } from 'react-icons/io';
 import { PiNotePencil } from 'react-icons/pi';
 import { LuMessageSquare } from 'react-icons/lu';
@@ -21,7 +21,7 @@ const TabNavigation: React.FC<{
 
   const forceMobileLayout = isForcedMobileLayout(appService?.isMobile);
   const isMobile = forceMobileLayout || window.innerWidth < 640 || window.innerHeight < 640;
-  const tabs = ['toc', 'annotations', 'bookmarks', ...(aiEnabled ? ['history'] : [])];
+  const tabs = ['toc', 'annotations', 'bookmarks', 'buddyRead', ...(aiEnabled ? ['history'] : [])];
 
   const getTabLabel = (tab: string) => {
     switch (tab) {
@@ -31,6 +31,8 @@ const TabNavigation: React.FC<{
         return _('Annotate');
       case 'bookmarks':
         return _('Bookmark');
+      case 'buddyRead':
+        return _('Buddy');
       case 'history':
         return _('Chat');
       default:
@@ -74,6 +76,8 @@ const TabNavigation: React.FC<{
               <PiNotePencil className='mx-auto' />
             ) : tab === 'bookmarks' ? (
               <MdBookmarkBorder className='mx-auto' />
+            ) : tab === 'buddyRead' ? (
+              <MdPeopleOutline className='mx-auto' />
             ) : (
               <LuMessageSquare className='mx-auto' />
             )}
