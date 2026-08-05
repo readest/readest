@@ -71,7 +71,10 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
           // mis-tile at the seam (#4486). clip-path also clips hit-testing,
           // keeping the click target the inset strip only.
           'notch-area absolute inset-0 z-10',
-          isScrolled && !isVertical && 'notch-masked bg-base-100',
+          // Fixed-layout pages fill the screen edge to edge and their chrome
+          // overlays the page (mix-blend-difference title, #4901); the opaque
+          // mask would clip the document at the camera hole / status bar.
+          isScrolled && !isVertical && !bookData?.isFixedLayout && 'notch-masked bg-base-100',
         )}
         role='none'
         tabIndex={-1}

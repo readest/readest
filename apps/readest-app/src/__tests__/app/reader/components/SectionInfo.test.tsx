@@ -78,6 +78,20 @@ describe('SectionInfo notch mask', () => {
     expect(notch.classList.contains('notch-masked')).toBe(false);
     expect(notch.classList.contains('bg-base-100')).toBe(false);
   });
+
+  it('keeps the notch transparent for fixed-layout documents so they render edge to edge', () => {
+    // FXL pages in scrolled mode fill the screen and their chrome overlays the
+    // page (mix-blend-difference title, #4901) instead of reserving bands. The
+    // reflowable notch mask would paint an opaque strip over the page at the
+    // camera hole / status bar, clipping the document.
+    currentBookData = { isFixedLayout: true };
+    const { container } = render(<SectionInfo {...baseProps} />);
+    const notch = container.querySelector('.notch-area') as HTMLElement;
+
+    expect(notch.classList.contains('notch-masked')).toBe(false);
+    expect(notch.classList.contains('bg-base-100')).toBe(false);
+    currentBookData = undefined;
+  });
 });
 
 describe('SectionInfo title band on negative top margins (#5303)', () => {
