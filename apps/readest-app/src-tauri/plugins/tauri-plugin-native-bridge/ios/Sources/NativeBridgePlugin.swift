@@ -291,6 +291,52 @@ class MediaKeyHandler {
   }
 }
 
+// Forwards Apple Pencil gestures to JS as native page-turner keys (#5501).
+// Double tap: Pencil 2 / Pro; squeeze: Pencil Pro on iPadOS 17.5+. The
+// system-level pencil preference is honored when set to Off (.ignore); any
+// other preferred action fires the user's in-app binding, since Readest has
+// no drawing tools the system actions could apply to. Unlike MediaKeyHandler
+// this is passive (no MPRemoteCommandCenter claim, never fires on iPhone),
+// so it stays attached for the app's lifetime.
+class PencilGestureHandler: NSObject, UIPencilInteractionDelegate {
+  private weak var webView: WKWebView?
+
+  init(webView: WKWebView) {
+    self.webView = webView
+  }
+
+  // iOS 15.0-17.4 double tap; on 17.5+ the system calls didReceiveTap instead.
+  @available(iOS, deprecated: 17.5)
+  func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
+    guard UIPencilInteraction.preferredTapAction != .ignore else { return }
+    forward("PencilDoubleTap")
+  }
+
+  @available(iOS 17.5, *)
+  func pencilInteraction(
+    _ interaction: UIPencilInteraction, didReceiveTap tap: UIPencilInteraction.Tap
+  ) {
+    guard UIPencilInteraction.preferredTapAction != .ignore else { return }
+    forward("PencilDoubleTap")
+  }
+
+  @available(iOS 17.5, *)
+  func pencilInteraction(
+    _ interaction: UIPencilInteraction, didReceiveSqueeze squeeze: UIPencilInteraction.Squeeze
+  ) {
+    guard squeeze.phase == .ended else { return }
+    guard UIPencilInteraction.preferredSqueezeAction != .ignore else { return }
+    forward("PencilSqueeze")
+  }
+
+  private func forward(_ name: String) {
+    DispatchQueue.main.async { [weak self] in
+      self?.webView?.evaluateJavaScript(
+        "try { window.onNativeKeyDown('\(name)', 0); } catch (_) {}", completionHandler: nil)
+    }
+  }
+}
+
 class WebViewLifecycleManager: NSObject {
   private weak var webView: WKWebView?
   private var originalNavigationDelegate: WKNavigationDelegate?
@@ -522,6 +568,7 @@ class NativeBridgePlugin: Plugin {
   private var currentOrientationMask: UIInterfaceOrientationMask = .all
   private var originalDelegate: UIApplicationDelegate?
   private var webViewLifecycleManager: WebViewLifecycleManager?
+  private var pencilGestureHandler: PencilGestureHandler?
   private var traitChangeRegistered = false
 
   // Screen-brightness management. `UIScreen.main.brightness` is a *global*
@@ -553,6 +600,14 @@ class NativeBridgePlugin: Plugin {
     webViewLifecycleManager = WebViewLifecycleManager()
     webViewLifecycleManager?.startMonitoring(webView: webview)
     logger.log("NativeBridgePlugin: WebView lifecycle monitoring activated")
+
+    // Forward Apple Pencil double-tap / squeeze gestures as native keys for
+    // the hardware page turner (#5501).
+    let pencilHandler = PencilGestureHandler(webView: webview)
+    pencilGestureHandler = pencilHandler
+    let pencilInteraction = UIPencilInteraction()
+    pencilInteraction.delegate = pencilHandler
+    webview.addInteraction(pencilInteraction)
 
     // The WKWebView never fires the `prefers-color-scheme` media query
     // `change` event while the app stays foregrounded, so observe the
