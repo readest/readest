@@ -1977,5 +1977,8 @@
   "Pull down to add bookmark": "ดึงลงเพื่อเพิ่มบุ๊กมาร์ก",
   "Sign in to Readest": "ลงชื่อเข้าใช้ Readest",
   "Sync your library, reading progress, and highlights across your devices.": "ซิงค์คลังหนังสือ ความคืบหน้าการอ่าน และไฮไลต์ของคุณในทุกอุปกรณ์ของคุณ",
-  "or continue with email": "หรือดำเนินการต่อด้วยอีเมล"
+  "or continue with email": "หรือดำเนินการต่อด้วยอีเมล",
+  "Press a button on your remote controller or keyboard, or use an Apple Pencil gesture, after tapping \"Set key\".": "กดปุ่มบนรีโมทคอนโทรลหรือคีย์บอร์ด หรือใช้ท่าทาง Apple Pencil หลังจากแตะ \"ตั้งปุ่ม\"",
+  "Pencil Double Tap": "แตะสองครั้งบน Apple Pencil",
+  "Pencil Squeeze": "บีบ Apple Pencil"
 }

@@ -173,9 +173,13 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
       <BoxedList
         title={_('Page Turner')}
         data-setting-id='settings.control.pageTurner'
-        description={_(
-          'Press a button on your remote controller or keyboard after tapping "Set key".',
-        )}
+        description={
+          appService?.isIOSApp
+            ? _(
+                'Press a button on your remote controller or keyboard, or use an Apple Pencil gesture, after tapping "Set key".',
+              )
+            : _('Press a button on your remote controller or keyboard after tapping "Set key".')
+        }
       >
         {appService?.isMobileApp && (
           <SettingsSwitchRow

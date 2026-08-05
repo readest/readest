@@ -1977,5 +1977,8 @@
   "Pull down to add bookmark": "དེབ་གྲངས་སྣོན་པར་མར་འཐེན།",
   "Sign in to Readest": "Readest ལ་ཐོ་འཇུག་བྱེད།",
   "Sync your library, reading progress, and highlights across your devices.": "ཁྱེད་ཀྱི་དཔེ་མཛོད་དང་། ཀློག་པའི་ཡར་འཕེལ། གཙོ་གནད་བཅས་ཁྱེད་ཀྱི་སྒྲིག་ཆས་ཡོངས་ལ་མཉམ་སྒྲིག་བྱེད།",
-  "or continue with email": "ཡང་ན་གློག་འཕྲིན་བརྒྱུད་ནས་མུ་མཐུད།"
+  "or continue with email": "ཡང་ན་གློག་འཕྲིན་བརྒྱུད་ནས་མུ་མཐུད།",
+  "Press a button on your remote controller or keyboard, or use an Apple Pencil gesture, after tapping \"Set key\".": "\"མཐེབ་གཞི་གཏན་འཁེལ།\" ལ་རེག་རྗེས། ཁྱེད་ཀྱི་རྒྱང་འཐེན་སྒྲིག་ཆས་སམ་མཐེབ་གཞི་གང་རུང་གི་ཐོག་མཐེབ་གཅིག་གནོན་པའམ། ཡང་ན་ Apple Pencil གྱི་ལག་བརྡ་བེད་སྤྱོད་བྱོས།",
+  "Pencil Double Tap": "Apple Pencil ཐེངས་གཉིས་རེག་པ།",
+  "Pencil Squeeze": "Apple Pencil བཙིར་བ།"
 }
