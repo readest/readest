@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: c1097233-8b53-422a-98ec-3f0146f32f6b
-  modified: 2026-07-25T05:27:40.754Z
+  modified: 2026-08-05T03:25:56.637Z
 ---
 
 How CI/config PRs get delivered in this repo when `dev` has unrelated uncommitted WIP, and the push gotcha.
@@ -38,4 +38,16 @@ Push to `git@github.com:<user>/readest.git` instead — SSH isn't subject to the
 Pin the lease to the SHA actually fetched from the fork rather than bare `--force`, so a commit the contributor pushed meanwhile aborts the push instead of being clobbered:
 `git push --force-with-lease=<branch>:<fetched-sha> git@github.com:<user>/readest.git HEAD:<branch>`
 
-Confirmed on PR #5282 (2026-07-25).
+**Better: avoid the rewrite entirely with a fast-forward.** The force is only needed because `worktree:new` rebased the PR onto current `origin/main`. Nothing requires pushing *that* version. Instead branch from the fork's actual tip and cherry-pick your commit onto it:
+
+```
+git fetch <user> <branch>                    # note the tip SHA
+git branch -f tmp-ff <fork-tip>; git checkout tmp-ff
+git cherry-pick <your-commit>
+git diff <your-commit> tmp-ff -- <files you touched>   # must be empty
+git push --force-with-lease=<branch>:<fork-tip> git@github.com:<user>/readest.git HEAD:<branch>
+```
+
+The push is then a fast-forward (`<fork-tip>..<new>`), the contributor's commit SHA and PR timeline stay intact, and GitHub still tests the merge with main. Note `git diff <yours> <cherry-picked>` over the *whole tree* is expected to show whatever main gained since the PR branched — diff only your touched paths. Keep `--force-with-lease` anyway as the race guard, then `git checkout <pr-branch>; git branch -D tmp-ff`. Repeat per follow-up commit (the lease SHA becomes your previous push). Used four times on PR #5496 (2026-08-05).
+
+The husky pre-push hook runs the full suite on the exact pushed tree, so its output doubles as final verification of the pushed commit.

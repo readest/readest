@@ -1,0 +1,21 @@
+---
+name: android-signin-autofill-formdata-5499
+description: "#5499 Android password managers didn't populate sign-in: auth-ui submits React state, WebView autofill fires no events; fix = first-party EmailPasswordAuth reading FormData (PR #5505)"
+metadata: 
+  node_type: memory
+  type: project
+  originSessionId: 3ea98657-cea4-439e-b4de-ca8e675bfc79
+  modified: 2026-08-05T06:26:05.007Z
+---
+
+Issue #5499 / PR #5505 MERGED 2026-08-05: on Android, selecting stored credentials from the system password manager did not populate the sign-in form. The PR also reworked the whole login page (first-party AuthPanel) and fixed notch overlap + keyboard-hidden password. Full end-to-end password-manager pick (biometric unlock → select credential) was never machine-verified — it needs a human finger; the FormData submit path and autofill popup engagement were verified on the Xiaomi 13.
+
+**Root cause:** `@supabase/auth-ui-react`'s EmailAuth keeps email/password in React state updated only by `onChange`, and `signInWithPassword` submits that state. Android's autofill framework writes values into WebView inputs without firing input events React can observe, so the form submitted empty strings. Its email input also used `autocomplete="email"` (not `username`), weakening password-manager field matching.
+
+**Fix:** first-party `src/app/auth/components/EmailPasswordAuth.tsx`. Four views mirror auth-ui's supabase calls exactly. Key points: stable `email`/`password` ids+names, `autocomplete="username"` / `current-password` / `new-password`, and submit reads `new FormData(event.currentTarget)` — the live DOM — never React state. A follow-up commit reworked the WHOLE /auth page (both Tauri and web) around a shared `AuthPanel` (logo + title/description + full-width ProviderLogin buttons + email divider + email form, per DESIGN.md: submit = `btn-primary` CTA, inline banners, eink-bordered everywhere); web got a direct `signInWithOAuth` handler. auth-ui (archived upstream) now remains ONLY on `/auth/recovery` (`update_password` view) — same autofill bug class there if ever reported; dropping it is the last step to remove the dep. The old localization's never-rendered verify_otp strings keep their translations via `stubTranslation` in `src/app/auth/utils/reservedAuthKeys.ts` (scanner has `removeUnusedKeys: true`; only `_()` calls count).
+
+**Verification recipe (Xiaomi 13):** the Xiaomi had NO autofill service enabled — enable Google's with `adb shell settings put secure autofill_service com.google.android.gms/com.google.android.gms.autofill.service.AutofillService` (revert: put `null`). Then CDP into the WebView (forward `webview_devtools_remote_<pid>`), set input `.value` directly with NO events (= autofill), wrap `window.fetch` to capture the `/auth/v1/token` body, submit: body carried the DOM values. The autofill popup ("Unlock passwords") anchors to the email field but tapping it needs biometrics — full credential-pick flow needs a human.
+
+**Keyboard/notch follow-ups (device-verified):** (1) fixed-position headers ignore a scroll container's safe-area paddingTop — give them `top: safeAreaInsets.top` explicitly. (2) Android WebView does NOT resize on keyboard open (edge-to-edge); Chromium pans the visual viewport to reveal a TAPPED editable, but the IME "Next" action advances focus AND resets the pan to 0 WITHOUT re-scrolling — the new field stays hidden behind the keyboard, and programmatic `scrollIntoView` can't move the visual viewport. Fix pattern (from AppLockScreen): visualViewport resize/scroll listener → keyboard inset = clientHeight - vv.height - vv.offsetTop → render a spacer of that height so the page scroller gains range, plus onFocus → setTimeout 300ms → `scrollIntoView({block:'center'})` if still focused. Also: screencap returns a BLACK frame while a password field is focused (secure IME) — verify via CDP geometry, not screenshots.
+
+**Gotchas:** a stale persisted Supabase session makes /auth instantly redirect to /library (onAuthStateChange) — session is NOT in localStorage on Tauri (native store), so clear by signing out, not by localStorage. Concurrent `tauri android build` from main checkout + worktree both `adb install -r` at the end — always reinstall the intended APK and confirm via UI/CDP before testing.

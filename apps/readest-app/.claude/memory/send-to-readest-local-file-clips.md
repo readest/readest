@@ -1,0 +1,39 @@
+---
+name: send-to-readest-local-file-clips
+description: "Browser extension clipping of local file:// html/xhtml pages — what blocked it, plus the Readability base-URI bug it exposed"
+metadata: 
+  node_type: memory
+  type: project
+  originSessionId: 2f4c8c79-c32d-421c-843c-bf83acfc1acb
+  modified: 2026-08-05T07:18:59.459Z
+---
+
+Making the Send-to-Readest **browser extension** (`apps/readest-app/extensions/send-to-readest/`) clip locally opened `file:///…/page.html` and `.xhtml` tabs (2026-08-05, dev branch, not yet PR'd).
+
+**Why:** "Send to Readest" spans four surfaces — the `/send` page drop zone, the email inbox, the OS share sheet, and the extension. The extension was the one asked about. The `/send` page and inbox already convert `.html` via `convertFileIfNeeded`; `.xhtml` is still missing from `CONVERTIBLE_EXT` there (`application/xhtml+xml` IS in `MIME_TO_KIND`, only the extension map lacks it), and `processOpenWithFiles` never calls `convertFileIfNeeded` at all — both still open if the other surfaces ever come up.
+
+**How to apply:**
+
+**The base-URI bug this exposed (the important one).** `new DOMParser().parseFromString(...)` gives the new document the *calling realm's* base URI, and Readability's `_fixRelativeUris` rewrites every relative `href`/`src` against it. So the same article clipped from the extension resolved relative images to `chrome-extension://<id>/…`, from the Tauri webview to `tauri://localhost/…`, from jsdom to `http://localhost:3000/…` — all unfetchable, and all *different*, quietly violating the byte-identical-across-channels invariant `convertPageToEpub` documents. Fixed by `parsePageDocument(html, pageUrl)` in `convertToEpub.ts`, which injects `<base href={pageUrl}>` before Readability runs. `sanitizeForParsing` (DOMPurify `WHOLE_DOCUMENT`) strips any `<base>` the page shipped, so there is never an author one to preserve. Verify with a probe test, not by reading the code — this is invisible when fixtures use absolute image URLs, which every pre-existing fixture did.
+
+**What a local page keeps.** CORRECTED after measuring (see [[extension-file-url-fetch-capability]]): an extension page CAN `fetch()` a `file://` URL, so `<name>_files/` siblings ARE recoverable and are now embedded, fenced by page-must-be-local + asset-under-page-directory. `data:` images (single-file saves) and absolute `http(s)` images (HTML-only saves) survive as before. `isFetchableAssetUrl(url, pageUrl)` in `assetBundler.ts` allows `http(s):`/`data:` always and `file:` only under the two fences, counting anything else as `missing` rather than attempting it; `fetchBestFavicon` still drops non-`http(s)` candidates (cover art is cosmetic, so it was left alone) and skips the well-known-path fallbacks (`new URL('file:///x').origin` is the *string* `"null"`, so guard on `protocol`, not on emptiness).
+
+**Clip determinism is a stated product requirement** (user, 2026-08-05): "a single url or offline page should always generate the same EPUB file with the same hash." Two code-level violations found and fixed; audit against this whenever touching the clip pipeline:
+- The base-URI bug above (same page, different channel, different bytes).
+- `bundleAssets` applied the 30 MB total-size budget in **fetch-completion order**, so which images survived an overrun depended on which download won the race. Now results are parked by index and the budget is applied strictly in document order (overrun truncates the tail); dispatch still stops early once the *settled document prefix* has spent the budget, keeping the bandwidth guard without reintroducing the race. A race test must force the adverse ordering (make image 0 resolve 250 ms after the rest) - a naive staggered-delay test passes by scheduling luck.
+- What is left is input non-determinism, not code: a transient fetch failure, or the page's own HTML differing between loads (ads, tokens, relative timestamps). Byte equality across time is therefore not achievable for remote URLs, which is exactly why identity rests on the URL-derived `dc:identifier`.
+
+**Re-clipping does NOT duplicate library entries** - I asserted it might in a PR note and it was wrong. `metaHash = md5(title|authors|identifiers)` (`utils/book.ts::getMetadataHashInfo`; the filename salt is PDF-only), and for a clip the identifier is `stableIdentifier(url)`, so changing the EPUB bytes leaves metaHash intact. `importBook` misses `byHash`, hits `byMetaKey`, and mutates the existing entry (`existingBook.hash = hash`, config migrated to the new dir, old dir removed); `books.push` runs only under `if (!existingBook)`. The real user-visible effect of that path: `uploadedAt` is cleared (re-upload) and title/author are refreshed from the file, so a manual rename is overwritten.
+
+**Chrome's file-access toggle.** `host_permissions: ["<all_urls>"]` already matches `file://` (URLPattern `SCHEME_ALL` includes it) — do NOT add `file:///*`, it would be redundant and risks a permission-increase re-approval for installed users. The real gate is the per-extension **"Allow access to file URLs"** toggle on `chrome://extensions`; without it `chrome.scripting.executeScript` dies with an opaque host-permission error. `lib/localPage.ts` centralizes the scheme test + `chrome.extension.isAllowedFileSchemeAccess()`; the popup offers a button to `chrome://extensions/?id=${chrome.runtime.id}`. The check fails OPEN (treating "can't tell" as "denied" would block clips where the toggle is already on) — though real-Chrome probing showed `chrome.extension.isAllowedFileSchemeAccess` **is** a function in the MV3 service worker and returns a real boolean, so the fail-open is belt-and-braces rather than load-bearing.
+
+**Server gate.** `pages/api/send/inbox/file.ts` 400s when `X-Readest-Url` is not `http(s)`. `uploadEpub` now sends the header only for `http(s)` — which doubles as privacy, since the alternative was uploading an absolute path out of the user's home directory. Same reasoning drives `titleFallback()`: an untitled local page is titled after its file name, not its path.
+
+**Playwright recipe for driving this extension in real Chrome** (worked; reusable for any MV3 extension here):
+- `chromium.launchPersistentContext(profile, { headless: false, args: ['--disable-extensions-except=<dist>', '--load-extension=<dist>'] })`, then `context.serviceWorkers()[0]` (or `waitForEvent('serviceworker')`); extension id = `new URL(sw.url()).host`. `sw.evaluate()` runs inside the real MV3 worker.
+- **A service worker cannot `chrome.runtime.sendMessage` to its own listener** ("Receiving end does not exist"). Route the trigger through another extension context — open `chrome-extension://<id>/popup/popup.html` in a tab and `page.evaluate` the sendMessage. Do **not** use `offscreen.html` as the driver: it registers the real conversion listener, so the clip would convert and upload twice.
+- Point the upload at a local `http.createServer` via `chrome.storage.local.set({ readestApiBase, readestAccessToken, readestTokenAt })` — no real auth needed, the SW only reads the token.
+- **You cannot reproduce the file-access-denied state.** Chrome re-installs `--load-extension` extensions with the ALLOW_FILE_ACCESS creation flag on *every* launch and overwrites edits to the pref. (The pref does live at `Default/Secure Preferences` → `extensions.settings.<id>.newAllowFileAccess`, not `Default/Preferences`, in current Chrome — but editing it is futile here.) Instead stub it in the live worker: `sw.evaluate(() => { chrome.extension.isAllowedFileSchemeAccess = async () => false })`, which exercises our guard since `hasFileSchemeAccess()` reads the API at call time.
+- Zip entry names sit uncompressed in local file headers, so `buffer.includes('OEBPS/images/')` is enough to assert an image got embedded without unzipping.
+
+Related: [[opds-fixes]], [[feedback-commit-message-english-only]].

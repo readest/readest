@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: c61e7dd2-4033-4bd1-8f32-22056e4ef322
-  modified: 2026-07-26T06:38:41.709Z
+  modified: 2026-08-05T15:27:02.648Z
 ---
 
 Fixing transitive npm Dependabot security alerts (manifest `pnpm-lock.yaml`).
@@ -44,6 +44,14 @@ vitest family ^4.1.10, sharp 0.34.5->0.35.3, brace-expansion 1.1.16/2.1.2/5.0.8,
 fast-uri 3.1.4, shell-quote 1.10.0, js-yaml 4.3.0, body-parser 2.3.0, protobufjs 7.6.5,
 dompurify 3.4.12, postcss 8.5.18.
 
+**2026-08-05 sweep — MERGED PR #5518 (e9ee43e88):** cleared all 13 open npm alerts. undici 7.28.0->7.29.0,
+brace-expansion 1.1.18/2.1.4/5.0.9, fast-uri 3.1.5, postcss 8.5.18->8.5.25 (exact pin ->
+`'>=8.5.23 <9'`), and a NEW `ip-address: '>=10.3.1 <11'` (10.2.0->10.4.0). `ip-address`
+enters via `socks@2.8.9` (`^10.1.1`) under the wdio/puppeteer proxy-agent chain, so the
+override lands inside the parent's own range. Whole sweep is lockfile+workspace only, no
+source changes; only extra churn was `nanoid` 3.3.12->3.3.17 (postcss's own dep) plus
+peer-hash rewrites of postcss consumers.
+
 **Version-keyed overrides (multi-major transitive pins):** when several majors of one
 package coexist and each has its own patched release, use pnpm's `<pkg>@<range>` selector
 keys instead of one flat pin — a flat `brace-expansion: '>=5.0.8'` would force 5.x onto
@@ -70,12 +78,17 @@ Next's page-export type check. The Cloudflare path is
 Running it on 2026-07-26 surfaced a break that predated the bump — see
 [[nextjs-page-export-webpack-only-check]].
 
-**Unfixable alerts (2026-07-26):** `@ai-sdk/provider-utils` (#236) has no patched release
-for the 3.x line and 3.0.25 is exact-pinned in `patchedDependencies`. Cargo.lock alerts
-#12 glib 0.18.5 (gtk-rs 0.18 stack under webkit2gtk/wry), #94/#95 nix 0.19.1 (via
-third-party `tauri-plugin-device-info` -> `battery`), #173 rand 0.7.3 (via
-`kuchikiki@0.8.8-speedreader` -> `selectors@0.24` -> `phf@0.8`) are all transitive through
-crates we do not control.
+**Unfixable alerts (still true 2026-08-05):** `@ai-sdk/provider-utils` (#236) has no patched
+release for the 3.x line and 3.0.25 is exact-pinned in `patchedDependencies`. The 3.x copy
+enters via `@assistant-ui/react-ai-sdk@1.1.21` (exact pin) -> `@ai-sdk/react@2` -> `ai@5`;
+killing it needs `@assistant-ui/react-ai-sdk@1.4.x`, which requires `ai@^7` +
+`@ai-sdk/react@^4` while the app depends directly on `@ai-sdk/react ^3.0.49` — a framework
+migration, not a security bump. Cargo.lock alerts #12 glib 0.18.5 (gtk-rs 0.18 stack under
+webkit2gtk/wry), #94/#95 nix 0.19.1 (via third-party `tauri-plugin-device-info` ->
+`battery`), #173 rand 0.7.3 (via `kuchikiki@0.8.8-speedreader` -> `selectors@0.24` ->
+`phf_generator@0.8`) are all transitive through crates we do not control. Verify dependents
+by parsing `[[package]]` blocks in the root `Cargo.lock` (NOT `src-tauri/Cargo.lock` — the
+workspace lockfile lives at the monorepo root).
 
 **Override applicability:** an override forces a transitive version regardless
 of the parent's declared range ONLY when the package is a regular dep (no peer

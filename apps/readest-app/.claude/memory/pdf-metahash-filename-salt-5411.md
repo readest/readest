@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 6888d094-29f2-4e4e-aa4d-b30f8ccef872
-  modified: 2026-07-31T15:16:17.794Z
+  modified: 2026-08-05T06:46:05.780Z
 ---
 
 Issue #5411: importing 8 PowerPoint-exported PDFs showed only 4 — PDF exports share
@@ -26,6 +26,10 @@ recomputes metaHash from a parsed bookDoc must do the same or PDF hashes flip-fl
 
 Empty-title PDFs were never affected: title falls back to base filename at import, so
 the filename was already in the hash. SyncInfoDialog is safe (prefers storedMetaHash).
-koplugin/Rust never compute metaHash — only read it from sync rows.
+Rust never computes metaHash. The koplugin DOES compute it (`readest_syncconfig.lua`
+getMetadataHashInfo, cached as `meta_hash_v1` in the sidecar) — kept consistent by
+[[koplugin-metahash-parity]] (2026-08-05): salt ported, library-store row preferred,
+upload paths stamp meta_hash.
 
 Related: [[auto-import-duplicate-files-reimport]] [[webnovel-url-import-5294]]
+[[koplugin-metahash-parity]]
