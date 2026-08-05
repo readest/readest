@@ -23,9 +23,13 @@ export class ReaderPage extends BasePage {
   readonly annotationPopup: Locator;
   readonly noteEditor: Locator;
   readonly annotationItems: Locator;
+  readonly pageJumpInput: Locator;
 
   constructor(page: Page) {
     super(page);
+    // Both the desktop footer bar and the mobile navigation panel render a
+    // page-jump input; pick whichever one the current layout displays.
+    this.pageJumpInput = page.locator('input[aria-label="Go to Page"]:visible').first();
     this.viewer = page.locator('.foliate-viewer').first();
     this.foliateView = page.locator('foliate-view').first();
     this.headerBar = page.locator('.header-bar').first();
@@ -94,18 +98,23 @@ export class ReaderPage extends BasePage {
   }
 
   /**
-   * Current reading position as a number parsed from the footer's
-   * "Reading Progress" label. The label is in the DOM regardless of whether
-   * the footer is visually revealed, so no reveal is needed.
+   * Current reading position as a number parsed from the footer's page-jump
+   * label ("94 / 251" with the default fraction progress style). The label is
+   * in the DOM regardless of whether the footer is visually revealed, so no
+   * reveal is needed.
    */
   async readingProgress(): Promise<number> {
-    const label =
-      (await this.page
-        .locator('span[title="Reading Progress"]')
-        .first()
-        .getAttribute('aria-label')) ?? '';
-    const match = label.match(/(\d+(?:\.\d+)?)/);
+    const value = await this.pageJumpInput.inputValue();
+    const match = value.match(/(\d+(?:\.\d+)?)/);
     return match ? Number(match[1]) : Number.NaN;
+  }
+
+  /** Jump to a page by typing into the footer's page-jump input. */
+  async goToPage(page: number): Promise<void> {
+    await this.revealFooter();
+    await this.pageJumpInput.click();
+    await this.pageJumpInput.fill(String(page));
+    await this.pageJumpInput.press('Enter');
   }
 
   // --- sidebar / table of contents ---

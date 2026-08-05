@@ -10,6 +10,7 @@ import { NavigationHandlers } from './types';
 import { getNavigationIcon } from './utils';
 import Button from '@/components/Button';
 import Slider from '@/components/Slider';
+import PageJumpInput from './PageJumpInput';
 
 interface NavigationPanelProps {
   bookKey: string;
@@ -79,14 +80,21 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
           : bottomOffset,
       }}
     >
-      <div className='flex w-full items-center justify-between gap-x-6'>
-        <Slider
-          label={_('Reading Progress')}
-          heightPx={sliderHeight}
-          bubbleLabel={`${Math.round(progressValue)}%`}
-          initialValue={progressValue}
-          onChange={handleProgressChange}
-        />
+      <div className='flex w-full flex-col items-center gap-y-4'>
+        {progressValid && (
+          <div className='eink-bordered bg-base-100 rounded-full px-2 py-1'>
+            <PageJumpInput bookKey={bookKey} showFraction className='text-base' />
+          </div>
+        )}
+        <div className='flex w-full items-center justify-between gap-x-6'>
+          <Slider
+            label={_('Reading Progress')}
+            heightPx={sliderHeight}
+            bubbleLabel={`${Math.round(progressValue)}%`}
+            initialValue={progressValue}
+            onChange={handleProgressChange}
+          />
+        </div>
       </div>
       <div className='flex w-full items-center justify-between gap-x-6'>
         <Button

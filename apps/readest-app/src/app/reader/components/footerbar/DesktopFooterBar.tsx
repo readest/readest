@@ -6,11 +6,10 @@ import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
 import { RiArrowLeftDoubleLine, RiArrowRightDoubleLine } from 'react-icons/ri';
 import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useBookDataStore } from '@/store/bookDataStore';
-import { formatProgress, getReferencePageInfo } from '@/utils/progress';
 import type { FooterBarChildProps } from './types';
 import { getNavigationIcon } from './utils';
 import Button from '@/components/Button';
+import PageJumpInput from './PageJumpInput';
 
 const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   bookKey,
@@ -22,34 +21,14 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   onSpeakText,
 }) => {
   const _ = useTranslation();
-  const { hoveredBookKey, getView, getViewState, getProgress, getViewSettings } = useReaderStore();
-  const { getBookData } = useBookDataStore();
+  const { hoveredBookKey, getView, getViewState, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
-  const bookData = getBookData(bookKey);
-  const progress = getProgress(bookKey);
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
-  const progressStyle = viewSettings?.progressStyle || 'percentage';
 
   const [progressValue, setProgressValue] = React.useState(
     progressValid ? progressFraction * 100 : 0,
   );
-
-  const { section, pageinfo } = progress || {};
-  const template = progressStyle === 'fraction' ? '{current} / {total}' : '{percent}%';
-  const pageInfo = bookData?.isFixedLayout ? section : pageinfo;
-  const referenceInfo =
-    progressStyle === 'reference'
-      ? getReferencePageInfo({
-          pageList: bookData?.bookDoc?.pageList,
-          pageItem: progress?.pageItem,
-          fraction: progressFraction,
-          referencePageCount: viewSettings?.referencePageCount,
-        })
-      : null;
-  const progressInfo = referenceInfo
-    ? `${referenceInfo.current} / ${referenceInfo.total}`
-    : formatProgress(pageInfo?.current, pageInfo?.total, template, false, 'en', 0);
 
   const rangeInputRef = useRef<HTMLInputElement>(null);
 
@@ -120,15 +99,7 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
         label={_('Go Forward')}
         disabled={!view?.history.canGoForward}
       />
-      {progressValid && (
-        <span
-          title={_('Reading Progress')}
-          aria-label={`${_('Reading Progress')}: ${Math.round(progressFraction * 100)}%`}
-          className='mx-2 text-nowrap text-center text-sm'
-        >
-          <span aria-hidden='true'>{progressInfo}</span>
-        </span>
-      )}
+      {progressValid && <PageJumpInput bookKey={bookKey} className='mx-2 text-sm' />}
       <input
         ref={rangeInputRef}
         type='range'

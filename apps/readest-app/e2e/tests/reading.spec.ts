@@ -21,6 +21,22 @@ test.describe('Reading', () => {
     await expect.poll(() => reader.readingProgress()).toBeGreaterThan(startProgress);
   });
 
+  test('jumps to an entered page number', async ({ openBook }) => {
+    const reader = await openBook();
+    const startProgress = await reader.readingProgress();
+    const total = Number((await reader.pageJumpInput.inputValue()).split('/')[1]);
+    const target = Math.max(2, Math.round(total / 2));
+
+    await reader.goToPage(target);
+
+    // The jump aims at the middle of the target page, so the reported start
+    // of the landed page may be off by one.
+    await expect
+      .poll(async () => Math.abs((await reader.readingProgress()) - target))
+      .toBeLessThanOrEqual(1);
+    expect(await reader.readingProgress()).not.toBe(startProgress);
+  });
+
   test('finds matches with in-book search', async ({ openBook }) => {
     const reader = await openBook();
 
