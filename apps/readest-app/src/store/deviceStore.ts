@@ -38,6 +38,7 @@ type DeviceControlState = {
   acquirePageTurnerKeyInterception: () => void;
   releasePageTurnerKeyInterception: () => void;
   setKeyLearnMode: (enabled: boolean) => void;
+  ensureKeyForwarding: () => void;
   listenToNativeTouchEvents: () => void;
 };
 
@@ -115,6 +116,13 @@ export const useDeviceControlStore = create<DeviceControlState>((set, get) => ({
   setKeyLearnMode: (enabled: boolean) => {
     window.onNativeKeyDown = handleNativeKeyDown;
     interceptKeys({ learnMode: enabled });
+  },
+
+  // Apple Pencil gestures are forwarded by the iOS bridge without any
+  // interception being acquired (#5501), so the JS-side forwarding handler
+  // must be installable on its own.
+  ensureKeyForwarding: () => {
+    window.onNativeKeyDown = handleNativeKeyDown;
   },
 
   listenToNativeTouchEvents: () => {

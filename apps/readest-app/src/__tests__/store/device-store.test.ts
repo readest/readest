@@ -313,4 +313,15 @@ describe('deviceStore', () => {
       });
     });
   });
+
+  // ── Pencil gesture forwarding (#5501) ──────────────────────────
+  describe('ensureKeyForwarding', () => {
+    test('installs the native key handler without touching interception', async () => {
+      const { interceptKeys } = await import('@/utils/bridge');
+      useDeviceControlStore.getState().ensureKeyForwarding();
+
+      expect(window.onNativeKeyDown).toBeDefined();
+      expect(interceptKeys).not.toHaveBeenCalled();
+    });
+  });
 });
