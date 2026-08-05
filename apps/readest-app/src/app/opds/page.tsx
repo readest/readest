@@ -32,6 +32,7 @@ import {
   isSearchLink,
   looksLikeXMLContent,
   MIME,
+  normalizeOpenSearchTemplates,
   parseMediaType,
   parseOPDSXML,
   resolveURL,
@@ -289,7 +290,7 @@ export default function BrowserPage() {
               addToHistory(url, newState, 'publication', null);
             }
           } else if (localName === 'OpenSearchDescription') {
-            const search = getOpenSearch(doc) as OPDSSearch;
+            const search = getOpenSearch(normalizeOpenSearchTemplates(doc)) as OPDSSearch;
             const newState = {
               search,
               baseURL: responseURL,

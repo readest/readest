@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock dependencies before importing the module under test
-vi.mock('foliate-js/opds.js', () => ({
+vi.mock('foliate-js/opds.js', async (importOriginal) => ({
+  ...((await importOriginal()) as object),
   isOPDSCatalog: vi.fn((type: string) => {
     return (
       type.includes('application/opds+json') ||
@@ -44,11 +45,13 @@ vi.mock('@/app/opds/utils/opdsReq', () => ({
   fetchWithAuth: vi.fn(),
 }));
 
+import { getOpenSearch } from 'foliate-js/opds.js';
 import {
   groupByArray,
   parseMediaType,
   isSearchLink,
   expandOPDSSearchTemplate,
+  normalizeOpenSearchTemplates,
   resolveURL,
   getFileExtFromPath,
   getSafeDOMParserMimeType,
@@ -60,7 +63,7 @@ import {
   getUnaddedPopularCatalogs,
   formatContributorName,
 } from '@/app/opds/utils/opdsUtils';
-import type { OPDSBaseLink, OPDSCatalog } from '@/types/opds';
+import type { OPDSBaseLink, OPDSCatalog, OPDSSearch } from '@/types/opds';
 import { fetchWithAuth } from '@/app/opds/utils/opdsReq';
 
 const mockFetchWithAuth = vi.mocked(fetchWithAuth);
@@ -325,6 +328,61 @@ describe('opdsUtils', () => {
 
     it('returns the href unchanged when there are no template variables', () => {
       expect(expandOPDSSearchTemplate('/search', 'foo')).toBe('/search');
+    });
+  });
+
+  describe('normalizeOpenSearchTemplates', () => {
+    const openSearchDoc = (template: string): Document =>
+      new DOMParser().parseFromString(
+        `<?xml version="1.0" encoding="UTF-8"?>
+         <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+           <ShortName>Calibre</ShortName>
+           <Url type="application/atom+xml;profile=opds-catalog" template="${template}"/>
+         </OpenSearchDescription>`,
+        'application/xml',
+      );
+
+    const searchFor = (template: string, term: string) => {
+      const search = getOpenSearch(normalizeOpenSearchTemplates(openSearchDoc(template))) as
+        | OPDSSearch
+        | undefined;
+      return {
+        params: search?.params.map((param) => param.name) ?? [],
+        url: search?.search(new Map([[undefined, new Map([['searchTerms', term]])]])),
+      };
+    };
+
+    // readest issue #5500: a Nextcloud-hosted Calibre2OPDS catalog publishes its
+    // OpenSearch template with the placeholder braces percent-encoded, so the
+    // literal `{searchTerms}` reached the server instead of the typed term.
+    it('substitutes a percent-encoded {searchTerms} placeholder', () => {
+      expect(searchFor('https://cal/opds/search?query=%7BsearchTerms%7D', 'Prime')).toEqual({
+        params: ['searchTerms'],
+        url: 'https://cal/opds/search?query=Prime',
+      });
+    });
+
+    it('substitutes lowercase percent-encoded braces', () => {
+      expect(searchFor('https://cal/opds/search?query=%7bsearchTerms%7d', 'Prime')).toEqual({
+        params: ['searchTerms'],
+        url: 'https://cal/opds/search?query=Prime',
+      });
+    });
+
+    it('leaves a template with literal braces working', () => {
+      expect(searchFor('https://cal/opds/search?query={searchTerms}', 'Prime')).toEqual({
+        params: ['searchTerms'],
+        url: 'https://cal/opds/search?query=Prime',
+      });
+    });
+
+    it('keeps percent escapes other than braces intact', () => {
+      expect(
+        searchFor('https://cal/opds/search?path=a%2Fb&amp;query=%7BsearchTerms%7D', 'Prime'),
+      ).toEqual({
+        params: ['searchTerms'],
+        url: 'https://cal/opds/search?path=a%2Fb&query=Prime',
+      });
     });
   });
 
