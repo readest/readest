@@ -28,7 +28,7 @@ import { ProgressPayload } from '@/utils/transfer';
 import { throttle } from '@/utils/throttle';
 import { transferManager } from '@/services/transferManager';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
-import { getFilename, getFolderImportGroupName, joinPaths } from '@/utils/path';
+import { getFilename, getFolderImportGroupName, joinScannedPath } from '@/utils/path';
 import { parseOpenWithFiles } from '@/helpers/openWith';
 import { isTauriAppPlatform, isWebAppPlatform } from '@/services/environment';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
@@ -304,6 +304,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   // Tracks paths that failed to import in this session so auto-import does not
   // re-attempt (and re-toast) them on every subsequent folder scan.
   const autoImportFailedPathsRef = useRef<Set<string>>(new Set());
+  // Folders whose fs/asset scopes were already granted this session. Each
+  // `allowPathsInScopes` call makes tauri-plugin-persisted-scope rewrite its
+  // whole state file on the main thread, so grant once, not on every focus
+  // scan (issue #5494).
+  const autoImportGrantedFoldersRef = useRef<Set<string>>(new Set());
 
   const getScrollKey = (group: string) => `library-scroll-${group || 'all'}`;
 
@@ -988,14 +993,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const newFiles: SelectedFile[] = [];
     for (const folder of folders) {
       try {
-        await appService.allowPathsInScopes?.([folder], true);
-        const items = await appService.readDirectory(folder, 'None');
-        const entries = await Promise.all(
-          items.map(async (item) => ({
-            fullPath: await joinPaths(folder, item.path),
-            size: item.size,
-          })),
-        );
+        if (!autoImportGrantedFoldersRef.current.has(folder)) {
+          await appService.allowPathsInScopes?.([folder], true);
+          autoImportGrantedFoldersRef.current.add(folder);
+        }
+        const items = await appService.readDirectory(folder, 'None', SUPPORTED_BOOK_EXTS);
+        const entries = items.map((item) => ({
+          fullPath: joinScannedPath(folder, item.path),
+          size: item.size,
+        }));
         const fresh = selectNewImportableFiles(entries, {
           extensions: SUPPORTED_BOOK_EXTS,
           minSizeBytes: AUTO_IMPORT_MIN_SIZE_BYTES,
@@ -1589,7 +1595,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     const minSizeBytes = Math.max(0, Math.floor(result.minSizeKB)) * 1024;
     let files;
     try {
-      files = await appService.readDirectory(result.directory, 'None');
+      files = await appService.readDirectory(result.directory, 'None', exts);
     } catch (e) {
       // readDirectory can reject for a few related reasons:
       //   - iOS handed us a virtual / file-provider path that the OS
@@ -1619,18 +1625,18 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       });
       return;
     }
+    // Re-filter by extension because the JS fallback of readDirectory ignores
+    // the extensions argument (only the native Rust walk filters in-scan).
     const filtered = files.filter((file) => {
       const ext = file.path.split('.').pop()?.toLowerCase() || '';
       if (!exts.includes(ext)) return false;
       if (minSizeBytes > 0 && file.size < minSizeBytes) return false;
       return true;
     });
-    const entries = await Promise.all(
-      filtered.map(async (file) => ({
-        fullPath: await joinPaths(result.directory, file.path),
-        size: file.size,
-      })),
-    );
+    const entries = filtered.map((file) => ({
+      fullPath: joinScannedPath(result.directory, file.path),
+      size: file.size,
+    }));
     // Same mapping the auto-import scan uses, so a folder's later scans group
     // newly-found books exactly like this import does.
     const toImportFiles = toWatchedFolderImports(result.directory, entries, result.flatten);

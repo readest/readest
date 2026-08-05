@@ -220,8 +220,8 @@ export abstract class BaseAppService implements AppService {
     return prefix ? `${prefix}/${path}` : path;
   }
 
-  async readDirectory(path: string, base: BaseDir): Promise<FileItem[]> {
-    return await this.fs.readDir(path, base);
+  async readDirectory(path: string, base: BaseDir, extensions?: string[]): Promise<FileItem[]> {
+    return await this.fs.readDir(path, base, extensions);
   }
 
   async exists(path: string, base: BaseDir): Promise<boolean> {

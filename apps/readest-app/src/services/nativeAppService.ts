@@ -459,7 +459,7 @@ export const nativeFileSystem: FileSystem = {
       }
     }
   },
-  async readDir(path: string, base: BaseDir) {
+  async readDir(path: string, base: BaseDir, extensions?: string[]) {
     const { fp, baseDir } = this.resolvePath(path, base);
 
     const getRelativePath = (filePath: string, basePath: string): string => {
@@ -473,13 +473,17 @@ export const nativeFileSystem: FileSystem = {
       return relativePath;
     };
 
-    // Use Rust WalkDir for massive performance gain on absolute paths
+    // Use Rust WalkDir for massive performance gain on absolute paths.
+    // `extensions` filters inside the walk, so non-matching files (e.g. the
+    // covers and metadata sidecars of a Calibre-style folder) are neither
+    // stat'ed nor serialized over IPC. The JS fallback below ignores the
+    // filter — callers that pass it must still tolerate extra entries.
     if (!baseDir || baseDir === 0) {
       try {
         const files = await invoke<{ path: string; size: number }[]>('read_dir', {
           path: fp,
           recursive: true,
-          extensions: ['*'],
+          extensions: extensions?.length ? extensions : ['*'],
         });
 
         return files.map((file) => ({

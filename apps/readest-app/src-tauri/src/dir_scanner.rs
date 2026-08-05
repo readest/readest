@@ -10,7 +10,7 @@ pub struct ScannedFile {
 }
 
 #[tauri::command]
-pub fn read_dir(
+pub async fn read_dir(
     app: AppHandle,
     path: String,
     recursive: bool,
@@ -23,13 +23,28 @@ pub fn read_dir(
         return Err("Permission denied: Path not in filesystem scope".to_string());
     }
 
+    // The walk stats every matching file; on a large watched folder that is
+    // thousands of syscalls. A sync command would run them inline on the IPC
+    // dispatch thread and freeze the UI on every focus-triggered scan
+    // (issue #5494) — offload to the blocking pool like the parsers do.
+    tauri::async_runtime::spawn_blocking(move || read_dir_sync(&path, recursive, &extensions))
+        .await
+        .map_err(|e| format!("join error: {e}"))?
+}
+
+fn read_dir_sync(
+    path: &str,
+    recursive: bool,
+    extensions: &[String],
+) -> Result<Vec<ScannedFile>, String> {
+    let path_buf = std::path::PathBuf::from(path);
     let mut files = Vec::new();
 
     let normalized_extensions: Vec<String> =
         extensions.iter().map(|ext| ext.to_lowercase()).collect();
 
     if recursive {
-        for entry_result in WalkDir::new(&path).into_iter() {
+        for entry_result in WalkDir::new(path).into_iter() {
             match entry_result {
                 Ok(entry) => {
                     if entry.file_type().is_file() {

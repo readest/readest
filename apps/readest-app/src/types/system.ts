@@ -61,7 +61,7 @@ export interface FileSystem {
   readFile(path: string, base: BaseDir, mode: 'text' | 'binary'): Promise<string | ArrayBuffer>;
   writeFile(path: string, base: BaseDir, content: string | ArrayBuffer | File): Promise<void>;
   removeFile(path: string, base: BaseDir): Promise<void>;
-  readDir(path: string, base: BaseDir): Promise<FileItem[]>;
+  readDir(path: string, base: BaseDir, extensions?: string[]): Promise<FileItem[]>;
   createDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
   removeDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
   exists(path: string, base: BaseDir): Promise<boolean>;
@@ -133,7 +133,7 @@ export interface AppService {
   getCachedImageUrl(pathOrUrl: string): Promise<string>;
   selectDirectory(mode: SelectDirectoryMode): Promise<string>;
   selectFiles(name: string, extensions: string[]): Promise<string[]>;
-  readDirectory(path: string, base: BaseDir): Promise<FileItem[]>;
+  readDirectory(path: string, base: BaseDir, extensions?: string[]): Promise<FileItem[]>;
   /**
    * Best-effort: extend the Tauri `fs_scope` and `asset_protocol_scope`
    * to cover the given paths. No-op on web. Used after a directory or

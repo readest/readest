@@ -323,8 +323,13 @@ describe('BaseAppService', () => {
 
     test('readDirectory delegates to fs.readDir', async () => {
       const result = await service.readDirectory('dir', 'Books');
-      expect(mockFs.readDir).toHaveBeenCalledWith('dir', 'Books');
+      expect(mockFs.readDir).toHaveBeenCalledWith('dir', 'Books', undefined);
       expect(result).toEqual([{ path: 'a.txt', size: 10 }]);
+    });
+
+    test('readDirectory forwards the extensions filter to fs.readDir', async () => {
+      await service.readDirectory('dir', 'Books', ['epub', 'mobi']);
+      expect(mockFs.readDir).toHaveBeenCalledWith('dir', 'Books', ['epub', 'mobi']);
     });
 
     test('getImageURL delegates to fs', async () => {

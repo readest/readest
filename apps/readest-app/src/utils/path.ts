@@ -45,3 +45,16 @@ export const getFolderImportGroupName = (filePath: string, basePath: string) => 
 export const joinPaths = async (...paths: string[]) => {
   return await join(...paths);
 };
+
+/**
+ * Join a folder root with a relative path returned by a directory scan, using
+ * the root's own separator style. Equivalent to {@link joinPaths} for these
+ * inputs (native-form root from the folder picker, host-separator relative
+ * path from the scan) but pure string work — no IPC round-trip. That matters
+ * when the watched-folder scan joins hundreds of paths on every window focus
+ * (issue #5494).
+ */
+export const joinScannedPath = (root: string, relativePath: string) => {
+  const sep = root.includes('\\') ? '\\' : '/';
+  return root.replace(/[\\/]+$/, '') + sep + relativePath;
+};
