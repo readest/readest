@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -31,8 +31,40 @@ export default function EmailPasswordAuth({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [keyboardInset, setKeyboardInset] = useState(0);
 
   const hasPassword = view === 'sign_in' || view === 'sign_up';
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const layoutH = document.documentElement.clientHeight;
+      const offset = layoutH - vv.height - vv.offsetTop;
+      setKeyboardInset(offset > 1 ? offset : 0);
+    };
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    update();
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
+
+  // The Android WebView does not resize with the keyboard, and Chromium
+  // resets the visual-viewport pan when the IME advances focus (keyboard
+  // Next) without re-scrolling the newly focused editable. The keyboard
+  // spacer gives the page scroller enough range, and the focus handler
+  // scrolls the input back into the visible area above the keyboard.
+  const keepAboveKeyboard = (event: React.FocusEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    setTimeout(() => {
+      if (document.activeElement === input) {
+        input.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }, 300);
+  };
 
   const switchView = (next: AuthView) => (event: React.MouseEvent<HTMLButtonElement>) => {
     const form = event.currentTarget.form;
@@ -120,6 +152,7 @@ export default function EmailPasswordAuth({
           autoComplete={hasPassword ? 'username' : 'email'}
           className='input input-bordered eink-bordered w-full rounded-lg placeholder:text-sm'
           disabled={loading}
+          onFocus={keepAboveKeyboard}
         />
       </div>
       {hasPassword && (
@@ -138,6 +171,7 @@ export default function EmailPasswordAuth({
             autoComplete={view === 'sign_in' ? 'current-password' : 'new-password'}
             className='input input-bordered eink-bordered w-full rounded-lg placeholder:text-sm'
             disabled={loading}
+            onFocus={keepAboveKeyboard}
           />
         </div>
       )}
@@ -177,6 +211,9 @@ export default function EmailPasswordAuth({
           </button>
         )}
       </div>
+      {keyboardInset > 0 && (
+        <div data-keyboard-spacer='' aria-hidden='true' style={{ height: `${keyboardInset}px` }} />
+      )}
     </form>
   );
 }
