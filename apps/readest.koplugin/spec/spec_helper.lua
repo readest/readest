@@ -201,6 +201,7 @@ fakes.DataStorage = {
 fakes.Device = {
     canUseWAL = function() return true end,
     screen    = { getWidth = function() return 600 end, getHeight = function() return 800 end },
+    setIgnoreInput = function() end,
 }
 
 function M.reset()

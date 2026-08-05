@@ -12,6 +12,19 @@ local SupabaseAuthClient = {
     api_key = nil,
 }
 
+-- Normalize the outcome of a Spore call so every endpoint hands callers a
+-- table they can read `.msg` off unconditionally. When the request raises (no
+-- network, TLS failure, timeout, unexpected status) pcall returns an error
+-- string, and indexing a string with `.body` silently yields nil rather than
+-- erroring - which is how a failed login used to reach the UI as nil.
+local function unwrap(name, expected_status, ok, res)
+    if not ok then
+        logger.dbg("SupabaseAuthClient:" .. name .. " failure:", res)
+        return false, { msg = tostring(res) }
+    end
+    return res.status == expected_status, res.body or {}
+end
+
 function SupabaseAuthClient:new(o)
     if o == nil then o = {} end
     setmetatable(o, self)
@@ -82,12 +95,7 @@ function SupabaseAuthClient:sign_in_password(email, password)
         })
     end)
     socketutil:reset_timeout()
-    if ok then
-        return res.status == 200, res.body
-    else
-        logger.dbg("SupabaseAuthClient:sign_in_password failure:", res)
-        return false, { msg = tostring(res) }
-    end
+    return unwrap("sign_in_password", 200, ok, res)
 end
 
 function SupabaseAuthClient:sign_in_otp(email, callback)
@@ -103,12 +111,7 @@ function SupabaseAuthClient:sign_in_otp(email, callback)
                 email = email,
             })
         end)
-        if ok then
-            callback(res.status == 200, res.body)
-        else
-            logger.dbg("SupabaseAuthClient:sign_in_otp failure:", res)
-            callback(false, res.body)
-        end
+        callback(unwrap("sign_in_otp", 200, ok, res))
     end)
     self.client:enable("AsyncHTTP", {thread = co})
     coroutine.resume(co)
@@ -131,12 +134,7 @@ function SupabaseAuthClient:verify_otp(email, token, type)
         })
     end)
     socketutil:reset_timeout()
-    if ok then
-        return res.status == 200, res.body
-    else
-        logger.dbg("SupabaseAuthClient:verify_otp failure:", res)
-        return false, { msg = tostring(res) }
-    end
+    return unwrap("verify_otp", 200, ok, res)
 end
 
 function SupabaseAuthClient:refresh_token(refresh_token, callback)
@@ -152,12 +150,7 @@ function SupabaseAuthClient:refresh_token(refresh_token, callback)
                 refresh_token = refresh_token,
             })
         end)
-        if ok then
-            callback(res.status == 200, res.body)
-        else
-            logger.dbg("SupabaseAuthClient:refresh_token failure:", res)
-            callback(false, res.body)
-        end
+        callback(unwrap("refresh_token", 200, ok, res))
     end)
     self.client:enable("AsyncHTTP", {thread = co})
     coroutine.resume(co)
@@ -179,12 +172,7 @@ function SupabaseAuthClient:sign_out(access_token, callback)
         local ok, res = pcall(function()
             return self.client:sign_out()
         end)
-        if ok then
-            callback(res.status == 204, res.body)
-        else
-            logger.dbg("SupabaseAuthClient:sign_out failure:", res)
-            callback(false, res.body)
-        end
+        callback(unwrap("sign_out", 204, ok, res))
     end)
     self.client:enable("AsyncHTTP", {thread = co})
     coroutine.resume(co)
@@ -206,12 +194,7 @@ function SupabaseAuthClient:get_user(access_token, callback)
         local ok, res = pcall(function()
             return self.client:get_user()
         end)
-        if ok then
-            callback(res.status == 200, res.body)
-        else
-            logger.dbg("SupabaseAuthClient:get_user failure:", res)
-            callback(false, res.body)
-        end
+        callback(unwrap("get_user", 200, ok, res))
     end)
     self.client:enable("AsyncHTTP", {thread = co})
     coroutine.resume(co)
