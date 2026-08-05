@@ -8,7 +8,9 @@ import { eventDispatcher } from '@/utils/event';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { formatAuthors, formatTitle } from '@/utils/book';
 import BookCover from '@/components/BookCover';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useSidebarStore } from '@/store/sidebarStore';
 
 const BookCard = ({ book }: { book: Book }) => {
   const { title, author } = book;
@@ -19,7 +21,12 @@ const BookCard = ({ book }: { book: Book }) => {
   const bookCoverRef = useRef<HTMLDivElement | null>(null);
 
   const showBookDetails = () => {
-    eventDispatcher.dispatchSync('show-book-details', book);
+    // `book` is the snapshot taken when the reader opened it, so its page count
+    // is the previous session's — and missing altogether on a first read. The
+    // live config carries the count for the layout on screen now (#5516).
+    const { sideBarBookKey } = useSidebarStore.getState();
+    const progress = useBookDataStore.getState().getConfig(sideBarBookKey)?.progress;
+    eventDispatcher.dispatchSync('show-book-details', progress ? { ...book, progress } : book);
   };
 
   return (
