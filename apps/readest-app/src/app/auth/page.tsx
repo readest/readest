@@ -28,6 +28,7 @@ import { getAppleIdAuth, Scope } from './utils/appleIdAuth';
 import { authWithCustomTab, authWithSafari } from './utils/nativeAuth';
 import WindowButtons from '@/components/WindowButtons';
 import { ProviderLogin, type OAuthProvider } from './components/ProviderLogin';
+import EmailPasswordAuth from './components/EmailPasswordAuth';
 
 interface SingleInstancePayload {
   args: string[];
@@ -402,14 +403,10 @@ export default function AuthPage() {
           />
           <hr aria-hidden='true' className='border-base-300 my-3 mt-6 w-64 border-t' />
           <div className='w-full'>
-            <Auth
+            <EmailPasswordAuth
               supabaseClient={supabase}
-              appearance={{ theme: ThemeSupa }}
-              theme={isDarkMode ? 'dark' : 'light'}
               magicLink={true}
-              providers={[]}
               redirectTo={getTauriRedirectTo(false)}
-              localization={getAuthLocalization()}
             />
           </div>
         </div>
