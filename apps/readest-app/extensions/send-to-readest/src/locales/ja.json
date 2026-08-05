@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "ファイルの URL へのアクセスを許可する",
   "Article is too large to send": "記事のサイズが大きすぎて送信できません",
   "Building EPUB…": "EPUB を作成中…",
   "Capture script could not start on this page": "このページで取得スクリプトを開始できませんでした",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "オフスクリーンページの起動に失敗しました",
   "Open web.readest.com": "web.readest.com を開く",
   "Page took too long to read": "ページの読み込みに時間がかかりすぎました",
+  "Readest needs permission to read local files.": "ローカル ファイルを読み取るには Readest に権限が必要です。",
   "Reading page…": "ページを読み取り中…",
   "Saved to your library.": "ライブラリに保存しました。",
   "Send to Readest": "Readest に送信",

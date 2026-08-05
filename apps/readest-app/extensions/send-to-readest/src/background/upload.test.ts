@@ -93,6 +93,21 @@ describe('uploadEpub', () => {
     expect(init?.body).toBe(sampleEpub);
   });
 
+  test('omits X-Readest-Url for a local page', async () => {
+    // The inbox endpoint 400s on a non-http(s) source URL, and an absolute
+    // path off the user's disk has no business leaving the machine.
+    fetchSpy.mockResolvedValueOnce(blobOk({ id: 'inbox-local' }));
+    const result = await uploadEpub({
+      ...sampleArgs,
+      sourceUrl: 'file:///Users/me/Documents/Saved%20Page.html',
+    });
+
+    expect(result).toEqual({ ok: true, id: 'inbox-local' });
+    const headers = fetchSpy.mock.calls[0]![1]?.headers as Record<string, string>;
+    expect(headers['X-Readest-Url']).toBeUndefined();
+    expect(headers['X-Readest-Title']).toBe("UTF-8''Hello%2C%20World");
+  });
+
   test('encodes non-ASCII titles correctly', async () => {
     fetchSpy.mockResolvedValueOnce(blobOk({ id: 'inbox-2' }));
     await uploadEpub({ ...sampleArgs, title: '机器学习 ✅' });

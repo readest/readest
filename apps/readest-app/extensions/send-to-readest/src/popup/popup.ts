@@ -9,6 +9,12 @@
 
 import type { ClipProgress, ClipRequest, StatusRequest, StatusResponse } from '../lib/messages';
 import { localizeDom, translate as _ } from '../lib/i18n';
+import {
+  extensionSettingsUrl,
+  hasFileSchemeAccess,
+  isClippableUrl,
+  isLocalFileUrl,
+} from '../lib/localPage';
 
 const LOGIN_URL = 'https://web.readest.com/';
 
@@ -27,6 +33,7 @@ const pageTitle = $('page-title');
 const pageUrl = $('page-url');
 const sendBtn = $<HTMLButtonElement>('send');
 const openReadestBtn = $<HTMLButtonElement>('open-readest');
+const enableFileAccessBtn = $<HTMLButtonElement>('enable-file-access');
 const progressEl = $('progress');
 const progressLabel = $('progress-label');
 const progressBar = progressEl.querySelector('.progress-bar') as HTMLDivElement;
@@ -115,15 +122,16 @@ async function init(): Promise<void> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab) currentTabId = tab.id ?? null;
 
-  if (!tab || !tab.url || !/^https?:/i.test(tab.url)) {
+  if (!tab || !isClippableUrl(tab.url)) {
     pageTitle.textContent = _('This page cannot be clipped');
     pageUrl.textContent = '';
     sendBtn.disabled = true;
     return;
   }
 
-  pageTitle.textContent = tab.title || tab.url;
-  pageUrl.textContent = tab.url;
+  const url = tab.url;
+  pageTitle.textContent = tab.title || url;
+  pageUrl.textContent = url;
 
   const status = await chrome.runtime.sendMessage<StatusRequest, StatusResponse>({
     type: 'send-to-readest:status',
@@ -135,6 +143,16 @@ async function init(): Promise<void> {
   }
 
   showSignedIn();
+
+  // A local page needs "Allow access to file URLs" on top of the extension's
+  // host permissions. Ask for it up front — otherwise the clip dies deep in
+  // `chrome.scripting.executeScript` with an unreadable permission error.
+  if (isLocalFileUrl(url) && !(await hasFileSchemeAccess())) {
+    sendBtn.disabled = true;
+    enableFileAccessBtn.classList.remove('hidden');
+    setStatus(_('Readest needs permission to read local files.'));
+    return;
+  }
 
   if (status.inFlight || status.lastProgress) {
     render(status.lastProgress);
@@ -153,6 +171,10 @@ sendBtn.addEventListener('click', async () => {
 
 openReadestBtn.addEventListener('click', () => {
   chrome.tabs.create({ url: LOGIN_URL });
+});
+
+enableFileAccessBtn.addEventListener('click', () => {
+  chrome.tabs.create({ url: extensionSettingsUrl() });
 });
 
 chrome.runtime.onMessage.addListener((message: unknown): void => {

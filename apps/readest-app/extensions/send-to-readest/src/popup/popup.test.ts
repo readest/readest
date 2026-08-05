@@ -28,6 +28,7 @@ const POPUP_DOM = `
       <div class="progress-label" id="progress-label">Preparing…</div>
       <div class="progress-bar indeterminate"><div class="progress-bar-fill"></div></div>
     </div>
+    <button id="enable-file-access" class="secondary hidden">Allow access to file URLs</button>
     <p id="status" class="status"></p>
   </section>
   <section id="signed-out-view" class="sign-in hidden">
@@ -112,6 +113,46 @@ describe('popup — initial render', () => {
     await loadPopup();
     expect(document.getElementById('page-title')?.textContent).toBe('This page cannot be clipped');
     expect((document.getElementById('send') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  test('clips a locally opened file:// page when file access is granted', async () => {
+    chromeMock.tabs.query.mockResolvedValue([
+      { id: 3, url: 'file:///Users/me/Saved%20Page.html', title: 'Saved Page' },
+    ] as unknown as chrome.tabs.Tab[]);
+    await loadPopup();
+
+    expect(document.getElementById('page-title')?.textContent).toBe('Saved Page');
+    expect((document.getElementById('send') as HTMLButtonElement).disabled).toBe(false);
+    expect(document.getElementById('enable-file-access')?.classList.contains('hidden')).toBe(true);
+  });
+
+  test('prompts for the file-access toggle instead of failing opaquely', async () => {
+    // Without "Allow access to file URLs" the capture-script inject dies
+    // with an unreadable host-permission error — tell the user what to do.
+    chromeMock.extension.isAllowedFileSchemeAccess.mockResolvedValue(false);
+    chromeMock.tabs.query.mockResolvedValue([
+      { id: 3, url: 'file:///Users/me/Saved%20Page.html', title: 'Saved Page' },
+    ] as unknown as chrome.tabs.Tab[]);
+    await loadPopup();
+
+    expect((document.getElementById('send') as HTMLButtonElement).disabled).toBe(true);
+    expect(document.getElementById('enable-file-access')?.classList.contains('hidden')).toBe(false);
+    expect(document.getElementById('status')?.textContent).toContain('local files');
+  });
+
+  test('the file-access button opens this extension own settings page', async () => {
+    chromeMock.extension.isAllowedFileSchemeAccess.mockResolvedValue(false);
+    chromeMock.tabs.query.mockResolvedValue([
+      { id: 3, url: 'file:///Users/me/Saved%20Page.html', title: 'Saved Page' },
+    ] as unknown as chrome.tabs.Tab[]);
+    await loadPopup();
+
+    document
+      .getElementById('enable-file-access')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(chromeMock.tabs.create).toHaveBeenCalledWith({
+      url: 'chrome://extensions/?id=test-extension-id',
+    });
   });
 });
 

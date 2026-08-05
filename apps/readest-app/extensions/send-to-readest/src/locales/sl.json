@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "Dovoli dostop do URL-jev datotek",
   "Article is too large to send": "Članek je prevelik za pošiljanje",
   "Building EPUB…": "Ustvarjanje EPUB…",
   "Capture script could not start on this page": "Skripta za zajem ni mogla začeti na tej strani",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "Strani pretvornika ni bilo mogoče zagnati",
   "Open web.readest.com": "Odpri web.readest.com",
   "Page took too long to read": "Branje strani je trajalo predolgo",
+  "Readest needs permission to read local files.": "Readest potrebuje dovoljenje za branje lokalnih datotek.",
   "Reading page…": "Branje strani…",
   "Saved to your library.": "Shranjeno v vašo knjižnico.",
   "Send to Readest": "Pošlji v Readest",

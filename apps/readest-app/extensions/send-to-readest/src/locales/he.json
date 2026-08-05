@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "אפשר גישה לכתובות של קבצים",
   "Article is too large to send": "המאמר גדול מדי לשליחה",
   "Building EPUB…": "יצירת EPUB…",
   "Capture script could not start on this page": "הסקריפט ללכידה לא הצליח להתחיל בדף זה",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "דף הממיר לא הצליח להתחיל",
   "Open web.readest.com": "פתח את web.readest.com",
   "Page took too long to read": "קריאת הדף ארכה זמן רב מדי",
+  "Readest needs permission to read local files.": "Readest זקוק להרשאה כדי לקרוא קבצים מקומיים.",
   "Reading page…": "קורא את הדף…",
   "Saved to your library.": "נשמר בספרייה שלך.",
   "Send to Readest": "שלח ל-Readest",

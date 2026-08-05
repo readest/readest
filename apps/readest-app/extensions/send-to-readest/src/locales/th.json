@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "อนุญาตให้เข้าถึง URL ของไฟล์",
   "Article is too large to send": "บทความมีขนาดใหญ่เกินกว่าจะส่ง",
   "Building EPUB…": "กำลังสร้าง EPUB…",
   "Capture script could not start on this page": "สคริปต์การจับไม่สามารถเริ่มทำงานบนหน้านี้",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "หน้าตัวแปลงเริ่มทำงานไม่สำเร็จ",
   "Open web.readest.com": "เปิด web.readest.com",
   "Page took too long to read": "การอ่านหน้าใช้เวลานานเกินไป",
+  "Readest needs permission to read local files.": "Readest ต้องได้รับสิทธิ์ในการอ่านไฟล์ในเครื่อง",
   "Reading page…": "กำลังอ่านหน้า…",
   "Saved to your library.": "บันทึกลงในคลังของคุณแล้ว",
   "Send to Readest": "ส่งไปยัง Readest",

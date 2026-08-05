@@ -70,16 +70,23 @@ export async function uploadEpub(opts: {
   sourceUrl: string;
 }): Promise<UploadResult | UploadError> {
   const target = opts.endpoint;
+  // Only a real web address travels. A page clipped off the user's disk has
+  // a `file://` source the inbox endpoint rejects outright (400), and an
+  // absolute path from someone's home directory has no business leaving the
+  // machine — the EPUB itself already carries everything the import needs.
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${opts.token}`,
+    'Content-Type': 'application/epub+zip',
+    'X-Readest-Title': encodeHeaderValue(opts.title || 'Page clip'),
+  };
+  if (/^https?:\/\//i.test(opts.sourceUrl)) {
+    headers['X-Readest-Url'] = encodeHeaderValue(opts.sourceUrl);
+  }
   let res: Response;
   try {
     res = await fetch(target, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${opts.token}`,
-        'Content-Type': 'application/epub+zip',
-        'X-Readest-Title': encodeHeaderValue(opts.title || 'Page clip'),
-        'X-Readest-Url': encodeHeaderValue(opts.sourceUrl),
-      },
+      headers,
       body: opts.epub,
     });
   } catch (err) {

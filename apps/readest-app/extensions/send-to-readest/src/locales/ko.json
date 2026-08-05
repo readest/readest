@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "파일 URL에 대한 액세스 허용",
   "Article is too large to send": "문서가 너무 커서 보낼 수 없습니다",
   "Building EPUB…": "EPUB 생성 중…",
   "Capture script could not start on this page": "이 페이지에서 캡처 스크립트를 시작할 수 없습니다",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "오프스크린 페이지를 시작하지 못했습니다",
   "Open web.readest.com": "web.readest.com 열기",
   "Page took too long to read": "페이지 읽기에 시간이 너무 오래 걸렸습니다",
+  "Readest needs permission to read local files.": "로컬 파일을 읽으려면 Readest에 권한이 필요합니다.",
   "Reading page…": "페이지 읽는 중…",
   "Saved to your library.": "라이브러리에 저장되었습니다.",
   "Send to Readest": "Readest로 보내기",

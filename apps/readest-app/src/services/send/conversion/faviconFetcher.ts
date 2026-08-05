@@ -167,10 +167,13 @@ export async function fetchBestFavicon(
   const candidates = extractIconCandidates(doc, pageUrl);
 
   // Always check the well-known fallback paths last — some sites omit the
-  // <link> tag but still host /apple-touch-icon.png.
+  // <link> tag but still host /apple-touch-icon.png. A `file://` page has
+  // no real origin (`new URL(...).origin` is the string "null"), so guard
+  // on the scheme rather than on emptiness.
   let origin: string;
   try {
-    origin = new URL(pageUrl).origin;
+    const parsed = new URL(pageUrl);
+    origin = /^https?:$/i.test(parsed.protocol) ? parsed.origin : '';
   } catch {
     origin = '';
   }
@@ -181,10 +184,12 @@ export async function fetchBestFavicon(
   }
 
   // De-dupe so a `<link rel="apple-touch-icon" href="/apple-touch-icon.png">`
-  // doesn't compete with the same URL added as a hosted fallback.
+  // doesn't compete with the same URL added as a hosted fallback. Drop any
+  // candidate we can't actually fetch — a page opened from disk declares
+  // its icon as a `file://` sibling, which no browser lets us read.
   const seen = new Set<string>();
   const ordered = candidates.filter((c) => {
-    if (seen.has(c.url)) return false;
+    if (!/^https?:/i.test(c.url) || seen.has(c.url)) return false;
     seen.add(c.url);
     return true;
   });

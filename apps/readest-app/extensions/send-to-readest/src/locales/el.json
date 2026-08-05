@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "Να επιτρέπεται η πρόσβαση σε URL αρχείων",
   "Article is too large to send": "Το άρθρο είναι πολύ μεγάλο για να σταλεί",
   "Building EPUB…": "Δημιουργία EPUB…",
   "Capture script could not start on this page": "Το σενάριο λήψης δεν μπόρεσε να ξεκινήσει σε αυτή τη σελίδα",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "Η σελίδα μετατροπής δεν μπόρεσε να ξεκινήσει",
   "Open web.readest.com": "Άνοιγμα του web.readest.com",
   "Page took too long to read": "Η σελίδα χρειάστηκε πολύ χρόνο για να διαβαστεί",
+  "Readest needs permission to read local files.": "Το Readest χρειάζεται άδεια για να διαβάζει τοπικά αρχεία.",
   "Reading page…": "Ανάγνωση σελίδας…",
   "Saved to your library.": "Αποθηκεύτηκε στη βιβλιοθήκη σας.",
   "Send to Readest": "Αποστολή στο Readest",

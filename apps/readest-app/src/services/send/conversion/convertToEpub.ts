@@ -156,6 +156,29 @@ async function htmlToBook(
   return { file, title, author };
 }
 
+/**
+ * Parse a captured page into a document Readability can extract from.
+ *
+ * `DOMParser` gives the new document the *calling realm's* base URI —
+ * `chrome-extension://<id>/offscreen.html` in the extension, `tauri://…`
+ * in the desktop webview — and Readability rewrites every relative
+ * `href`/`src` against it. Injecting the page's own URL as `<base>` makes
+ * those resolve to where the assets actually live: identical absolute URLs
+ * on every clip channel (which is what keeps the EPUBs byte-identical),
+ * and `file://` siblings for a page opened from disk, which the asset
+ * bundler then skips instead of fetching from the extension's origin.
+ *
+ * `sanitizeForParsing` strips any `<base>` the page itself shipped, so
+ * there is never an author-supplied one to preserve.
+ */
+function parsePageDocument(html: string, pageUrl: string): Document {
+  const doc = new DOMParser().parseFromString(sanitizeForParsing(html), 'text/html');
+  const base = doc.createElement('base');
+  base.setAttribute('href', pageUrl);
+  doc.head.insertBefore(base, doc.head.firstChild);
+  return doc;
+}
+
 interface RuleExtracted {
   content: string;
   title?: string;
@@ -294,11 +317,32 @@ function extractSiteName(doc: Document, pageUrl: string): string {
     const value = doc.querySelector(sel)?.getAttribute('content')?.trim();
     if (value) return value;
   }
+  return hostnameFallback(pageUrl);
+}
+
+/** Decoded file name (no extension) of a `file://` URL — what stands in for
+ *  the hostname when the "page" came off the user's own disk. */
+function fileNameFromUrl(pageUrl: string): string {
   try {
-    return new URL(pageUrl).hostname.replace(/^www\./, '');
+    const last = new URL(pageUrl).pathname.split('/').pop() ?? '';
+    return decodeURIComponent(last)
+      .replace(/\.[^.]+$/, '')
+      .trim();
   } catch {
     return '';
   }
+}
+
+/** Last-resort title for a page that declares none. A remote page has only
+ *  its URL to offer; a local one has a file name, which beats putting the
+ *  user's absolute path in the library (and in the upload headers). */
+function titleFallback(pageUrl: string): string {
+  try {
+    if (new URL(pageUrl).protocol === 'file:') return fileNameFromUrl(pageUrl) || pageUrl;
+  } catch {
+    /* unparseable — the raw string is all we have */
+  }
+  return pageUrl;
 }
 
 /**
@@ -340,7 +384,9 @@ async function buildArticleCover(
   const metaImageUrl = ruleImageUrl
     ? null
     : resolveMetaImage(doc, META_FALLBACK.authorImage, pageUrl);
-  const candidateImageUrl = ruleImageUrl || metaImageUrl;
+  // Only http(s) is reachable — on a page clipped from disk both of these
+  // resolve to unfetchable `file://` siblings.
+  const candidateImageUrl = [ruleImageUrl, metaImageUrl].find((u) => u && /^https?:/i.test(u));
   if (candidateImageUrl) {
     authorImage =
       (await fetchAuthorImage(candidateImageUrl, pageUrl).catch(() => null)) ?? undefined;
@@ -383,7 +429,11 @@ function pickImageUrlFromSelector(doc: Document, selector: string, pageUrl: stri
 
 function hostnameFallback(pageUrl: string): string {
   try {
-    return new URL(pageUrl).hostname.replace(/^www\./, '');
+    const parsed = new URL(pageUrl);
+    // A page opened from disk has no hostname — label the cover with the
+    // file name instead, or the avatar degrades to a "·" placeholder.
+    if (parsed.protocol === 'file:') return fileNameFromUrl(pageUrl);
+    return parsed.hostname.replace(/^www\./, '');
   } catch {
     return '';
   }
@@ -461,7 +511,7 @@ export async function convertPageToEpub(html: string, url: string): Promise<Conv
       title: ruleResult?.title || null,
     });
     if (ruleResult && ruleText.length >= 400) {
-      const title = ruleResult.title || extractHtmlTitle(html, url);
+      const title = ruleResult.title || extractHtmlTitle(html, titleFallback(url));
       const byline = ruleResult.byline || '';
       const bundle = await bundleAssets(ruleResult.content, url);
       const cover = await buildArticleCover(html, url, title, byline, rule);
@@ -478,8 +528,7 @@ export async function convertPageToEpub(html: string, url: string): Promise<Conv
 
   let parsed: { title?: string | null; content?: string | null; byline?: string | null } | null;
   try {
-    const doc = new DOMParser().parseFromString(sanitizeForParsing(html), 'text/html');
-    parsed = new Readability(doc).parse();
+    parsed = new Readability(parsePageDocument(html, url)).parse();
   } catch (err) {
     console.warn('[clip/page] readability threw', {
       error: err instanceof Error ? err.message : String(err),
@@ -534,7 +583,7 @@ export async function convertPageToEpub(html: string, url: string): Promise<Conv
   const title =
     parsed.title?.trim() ||
     (metaDoc ? pickMetaContent(metaDoc, META_FALLBACK.title) : null) ||
-    extractHtmlTitle(html, url);
+    extractHtmlTitle(html, titleFallback(url));
   const byline =
     parsed.byline?.trim() ||
     (metaDoc ? pickMetaContent(metaDoc, META_FALLBACK.byline) : null) ||
@@ -598,8 +647,7 @@ export async function convertToEpub(input: ConvertInput): Promise<ConvertedBook>
     case 'article': {
       let parsed: { title?: string | null; content?: string | null; byline?: string | null } | null;
       try {
-        const doc = new DOMParser().parseFromString(sanitizeForParsing(input.html), 'text/html');
-        parsed = new Readability(doc).parse();
+        parsed = new Readability(parsePageDocument(input.html, input.url)).parse();
       } catch (err) {
         throw new ConversionError(`Could not extract article: ${String(err)}`, 'parse_failed');
       }

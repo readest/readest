@@ -119,6 +119,21 @@ describe('convertPageToEpub — clipping channel unification', () => {
     await reader.close();
   });
 
+  test('resolves relative image URLs against the page, not the calling realm', async () => {
+    // Readability rewrites relative refs against the parsed document's base
+    // URI, which `DOMParser` inherits from whoever called it — the
+    // extension's `chrome-extension://` offscreen page, the Tauri webview's
+    // `tauri://localhost`, jsdom's `http://localhost:3000`. Left alone, the
+    // same article clipped from two channels resolves its images to two
+    // different (and unfetchable) origins.
+    const html = HTML.replace('https://example.com/hero.png', 'img/hero.png');
+    await convertPageToEpub(html, URL_STR);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://example.com/articles/img/hero.png',
+      expect.objectContaining({ redirect: 'follow' }),
+    );
+  });
+
   test('re-converting the same (html, url) yields a byte-identical EPUB', async () => {
     const first = new Uint8Array(await (await convertPageToEpub(HTML, URL_STR)).file.arrayBuffer());
     const second = new Uint8Array(
@@ -126,5 +141,60 @@ describe('convertPageToEpub — clipping channel unification', () => {
     );
     expect(first.byteLength).toBe(second.byteLength);
     expect(Array.from(first.subarray(0, 256))).toEqual(Array.from(second.subarray(0, 256)));
+  });
+});
+
+/**
+ * Changing which images a clip can fetch changes the EPUB bytes, and so the
+ * import-time file hash. That is only safe because library dedup falls back
+ * to `metaHash`, which is derived from title + authors + identifier, and the
+ * identifier is `stableIdentifier(url)` rather than anything content-shaped.
+ * If that ever stops holding, a re-clip starts duplicating library entries.
+ */
+describe('convertPageToEpub — re-clip identity', () => {
+  const RELATIVE = HTML.replace('https://example.com/hero.png', 'img/hero.png');
+  let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => pngResponse());
+  });
+  afterEach(() => {
+    fetchSpy.mockRestore();
+  });
+
+  async function opfMetadata(file: File) {
+    const { BlobReader, TextWriter, ZipReader } = await import('@zip.js/zip.js');
+    const reader = new ZipReader(new BlobReader(file));
+    const entry = (await reader.getEntries()).find((e) => e.filename === 'content.opf');
+    if (!entry || !('getData' in entry) || !entry.getData) throw new Error('content.opf missing');
+    const opf = await entry.getData(new TextWriter());
+    await reader.close();
+    const pick = (tag: string) => opf.match(new RegExp(`<${tag}[^>]*>([^<]*)</${tag}>`))?.[1] ?? '';
+    return {
+      title: pick('dc:title'),
+      author: pick('dc:creator'),
+      identifier: pick('dc:identifier'),
+      language: pick('dc:language'),
+    };
+  }
+
+  test('a clip whose images newly resolve keeps its metadata hash, so it dedups instead of duplicating', async () => {
+    const { getMetadataHash } = await import('@/utils/book');
+
+    // Before: the image could not be fetched, so it was dropped.
+    fetchSpy.mockImplementation(async () => new Response('nope', { status: 404 }));
+    const dropped = await convertPageToEpub(RELATIVE, URL_STR);
+    // After: the same page, same URL, but the image now resolves and embeds.
+    fetchSpy.mockImplementation(async () => pngResponse());
+    const embedded = await convertPageToEpub(RELATIVE, URL_STR);
+
+    const a = new Uint8Array(await dropped.file.arrayBuffer());
+    const b = new Uint8Array(await embedded.file.arrayBuffer());
+    expect(a.byteLength).not.toBe(b.byteLength);
+
+    const [ma, mb] = [await opfMetadata(dropped.file), await opfMetadata(embedded.file)];
+    expect(ma).toEqual(mb);
+    expect(ma.identifier).toMatch(/^readest:/);
+    expect(getMetadataHash(ma)).toBe(getMetadataHash(mb));
   });
 });

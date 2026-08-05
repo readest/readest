@@ -181,6 +181,40 @@ function mimeFromContentType(contentType: string | null, url: string): string {
   return 'application/octet-stream';
 }
 
+/**
+ * Whether an asset URL is worth a fetch.
+ *
+ * `http(s):` and `data:` always are. `file:` is the interesting case: an
+ * extension page holding "Allow access to file URLs" *can* read local
+ * files, which is what lets a page saved with a `<name>_files/` folder keep
+ * its images instead of degrading to alt text. That capability is also a
+ * disclosure risk, since the EPUB we build gets uploaded, so it is fenced
+ * twice:
+ *
+ *   1. The page being clipped must itself be local. A remote page pointing
+ *      an `<img>` at `file:///…` must never cause a disk read.
+ *   2. The asset must live under the page's own directory. `new URL` has
+ *      already normalized away any `..`, so a prefix test is sufficient to
+ *      keep a crafted local page from harvesting the rest of the disk. A
+ *      page sitting at the filesystem root gets nothing — its "directory"
+ *      is `/`, which would otherwise mean everything.
+ */
+function isFetchableAssetUrl(url: string, pageUrl: string): boolean {
+  if (/^(https?|data):/i.test(url)) return true;
+  if (!/^file:/i.test(url)) return false;
+  let page: URL;
+  let asset: URL;
+  try {
+    page = new URL(pageUrl);
+    asset = new URL(url);
+  } catch {
+    return false;
+  }
+  if (page.protocol !== 'file:' || asset.protocol !== 'file:') return false;
+  const dir = page.pathname.slice(0, page.pathname.lastIndexOf('/') + 1);
+  return dir.length > 1 && asset.pathname.startsWith(dir);
+}
+
 interface FetchedAsset {
   url: string;
   path: string;
@@ -313,33 +347,60 @@ export async function bundleAssets(
   // Bounded-concurrency fetch loop. `MAX_CONCURRENCY` workers pull from a
   // shared cursor so we never hammer a single origin with N requests. Each
   // fetch owns its own timeout — see `fetchAsset`.
+  //
+  // Results are parked by index rather than committed as they land, because
+  // the size budget below has to decide which images to drop and that
+  // decision must not depend on which fetch happened to win the race. A
+  // clip has to be reproducible: the same page with the same assets must
+  // produce the same EPUB bytes on every device, every time.
+  const settled = new Array<FetchedAsset | null>(uniqueUrls.length).fill(null);
+  const resolved = new Array<boolean>(uniqueUrls.length).fill(false);
+
+  // Bytes owned by the unbroken run of assets already resolved from the front
+  // of the document. Consulted only to stop dispatching once the budget is
+  // provably spent, so an image-heavy page does not download megabytes it is
+  // going to discard. The authoritative accounting is the in-order pass below,
+  // so this staying approximate cannot affect the output.
+  let prefixCursor = 0;
+  let prefixBytes = 0;
+  const settledPrefixBytes = (): number => {
+    while (prefixCursor < resolved.length && resolved[prefixCursor]) {
+      prefixBytes += settled[prefixCursor]?.bytes.byteLength ?? 0;
+      prefixCursor++;
+    }
+    return prefixBytes;
+  };
+
   let cursor = 0;
   const worker = async () => {
     while (cursor < uniqueUrls.length) {
       const i = cursor++;
       const url = uniqueUrls[i]!;
-      if (totalBytes >= MAX_TOTAL_ASSET_BYTES) {
-        missing++;
-        continue;
-      }
-      try {
-        const asset = await fetchAsset(url, pageUrl);
-        if (asset && totalBytes + asset.bytes.byteLength <= MAX_TOTAL_ASSET_BYTES) {
-          fetched.set(url, asset);
-          totalBytes += asset.bytes.byteLength;
-        } else {
-          missing++;
+      if (isFetchableAssetUrl(url, pageUrl) && settledPrefixBytes() < MAX_TOTAL_ASSET_BYTES) {
+        try {
+          settled[i] = await fetchAsset(url, pageUrl);
+        } catch (err) {
+          console.warn('[clip/bundle] image fetch failed', {
+            url,
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
-      } catch (err) {
-        missing++;
-        console.warn('[clip/bundle] image fetch failed', {
-          url,
-          error: err instanceof Error ? err.message : String(err),
-        });
       }
+      resolved[i] = true;
     }
   };
   await Promise.all(Array.from({ length: MAX_CONCURRENCY }, worker));
+
+  // Apply the budget strictly in document order.
+  for (let i = 0; i < uniqueUrls.length; i++) {
+    const asset = settled[i];
+    if (!asset || totalBytes + asset.bytes.byteLength > MAX_TOTAL_ASSET_BYTES) {
+      missing++;
+      continue;
+    }
+    fetched.set(uniqueUrls[i]!, asset);
+    totalBytes += asset.bytes.byteLength;
+  }
   console.log('[clip/bundle] done', {
     fetched: fetched.size,
     missing,

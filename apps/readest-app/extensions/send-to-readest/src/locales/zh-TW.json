@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "允許存取檔案網址",
   "Article is too large to send": "文章過大，無法傳送",
   "Building EPUB…": "正在建立 EPUB…",
   "Capture script could not start on this page": "擷取指令碼無法在此頁面啟動",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "轉換器頁面啟動失敗",
   "Open web.readest.com": "開啟 web.readest.com",
   "Page took too long to read": "頁面讀取耗時過長",
+  "Readest needs permission to read local files.": "Readest 需要讀取本機檔案的權限。",
   "Reading page…": "正在讀取頁面…",
   "Saved to your library.": "已儲存到您的書庫。",
   "Send to Readest": "傳送至 Readest",

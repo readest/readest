@@ -30,6 +30,36 @@ server writes the bytes to R2 and inserts a `send_inbox` row; the next
 Readest client to open drains the inbox and imports the EPUB as-is — no
 further server-side conversion.
 
+### Locally opened pages (`file://`)
+
+A saved web page, an exported HTML report, a loose `.xhtml` chapter — if
+the user can open it in a tab, the extension clips it through the exact
+same converter. Three things differ:
+
+- **Chrome requires "Allow access to file URLs"** on the extension's own
+  row in `chrome://extensions`; `host_permissions` alone does not grant it.
+  The popup checks `chrome.extension.isAllowedFileSchemeAccess()` first and
+  offers a button straight to that page, because without the toggle the
+  capture-script inject dies with an opaque host-permission error.
+- **Images survive, including local siblings.** An extension page holding
+  file access *can* read `file://` URLs (a content script in the page
+  cannot, and the rendered `<img>` taints a canvas, so the bundler is the
+  only route). A "Save Page As, Complete" therefore keeps its
+  `<name>_files/` images, a single-file save keeps its inlined `data:`
+  images, and an HTML-only save keeps whatever it still points at on the
+  original CDN.
+
+  Reading local files is fenced twice, because the EPUB we build is
+  uploaded: the clipped page must itself be `file://` (so a remote page
+  pointing an `<img>` at the disk reads nothing), and the asset must sit
+  under that page's own directory (so a crafted local page can't harvest
+  the rest of the disk). A page at the filesystem root gets nothing.
+- **The source URL never leaves the machine.** `X-Readest-Url` is sent only
+  for `http(s)` pages — the inbox endpoint rejects anything else anyway, and
+  an absolute path out of someone's home directory isn't ours to upload. The
+  file name stands in for the site name on the generated cover and, when the
+  page declares no `<title>`, as the book title.
+
 ## Why client-side conversion
 
 The previous version (`0.1.0`) sent only the page URL — the server then
@@ -133,7 +163,7 @@ toolbar badge updates, the lazy-load scroll dance (incl.
 phase. From the `apps/readest-app` workspace root:
 
 ```bash
-pnpm test:extension      # 47 shell tests, ~1 s
+pnpm test:extension      # 54 shell tests, ~1 s
 pnpm build-browser-ext   # production webpack build (catches alias / stub regressions)
 pnpm test                # full suite — also runs the extension tests via vitest's default glob
 ```
@@ -166,7 +196,7 @@ Two parallel translation surfaces:
 
 | Folder | Scope | When it's read |
 |---|---|---|
-| `src/locales/<lang>.json` | 29 runtime UI strings — popup, errors, status, badges. `{ "<english source>": "<translation>" }`. | At runtime by the `_(...)` helper. Falls through to the English key when an entry is missing or set to the `__STRING_NOT_TRANSLATED__` sentinel. |
+| `src/locales/<lang>.json` | 31 runtime UI strings — popup, errors, status, badges. `{ "<english source>": "<translation>" }`. | At runtime by the `_(...)` helper. Falls through to the English key when an entry is missing or set to the `__STRING_NOT_TRANSLATED__` sentinel. |
 | `_locales/<lang>/messages.json` | Three manifest fields — `app_name`, `app_description`, `action_title` — referenced as `__MSG_*__` in `manifest.json`. | At install time + by the Chrome Web Store listing. Chrome falls back to `default_locale` (en) automatically, so a locale file is only needed when you want to override the toolbar tooltip / store copy. |
 
 The full set of supported locales lives in

@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "Izinkan akses ke URL file",
   "Article is too large to send": "Artikel terlalu besar untuk dikirim",
   "Building EPUB…": "Membangun EPUB…",
   "Capture script could not start on this page": "Skrip pengambilan tidak dapat dimulai di halaman ini",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "Halaman pengonversi gagal dimulai",
   "Open web.readest.com": "Buka web.readest.com",
   "Page took too long to read": "Pembacaan halaman memakan waktu terlalu lama",
+  "Readest needs permission to read local files.": "Readest memerlukan izin untuk membaca file lokal.",
   "Reading page…": "Membaca halaman…",
   "Saved to your library.": "Disimpan ke perpustakaan Anda.",
   "Send to Readest": "Kirim ke Readest",

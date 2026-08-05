@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "Permitir acesso a URLs de ficheiros",
   "Article is too large to send": "O artigo é demasiado grande para enviar",
   "Building EPUB…": "A criar EPUB…",
   "Capture script could not start on this page": "O script de captura não conseguiu iniciar nesta página",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "A página do conversor não iniciou",
   "Open web.readest.com": "Abrir web.readest.com",
   "Page took too long to read": "A leitura da página demorou demasiado",
+  "Readest needs permission to read local files.": "O Readest precisa de permissão para ler ficheiros locais.",
   "Reading page…": "A ler a página…",
   "Saved to your library.": "Guardado na sua biblioteca.",
   "Send to Readest": "Enviar para Readest",

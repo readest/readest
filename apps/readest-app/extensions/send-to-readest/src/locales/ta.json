@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "கோப்பு URL-களுக்கான அணுகலை அனுமதி",
   "Article is too large to send": "கட்டுரை அனுப்ப மிக பெரியது",
   "Building EPUB…": "EPUB உருவாக்கப்படுகிறது…",
   "Capture script could not start on this page": "இந்த பக்கத்தில் கைப்பற்றும் ஸ்கிரிப்ட் தொடங்க முடியவில்லை",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "மாற்றியின் பக்கம் தொடங்க முடியவில்லை",
   "Open web.readest.com": "web.readest.com திற",
   "Page took too long to read": "பக்கம் வாசிக்க அதிக நேரம் ஆனது",
+  "Readest needs permission to read local files.": "உள்ளூர் கோப்புகளைப் படிக்க Readest-க்கு அனுமதி தேவை.",
   "Reading page…": "பக்கம் வாசிக்கப்படுகிறது…",
   "Saved to your library.": "உங்கள் நூலகத்தில் சேமிக்கப்பட்டது.",
   "Send to Readest": "Readest-க்கு அனுப்பு",

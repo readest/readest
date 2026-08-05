@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "ཡིག་ཆའི་URL ལ་འཛུལ་ཞུགས་ཆོག་པ།",
   "Article is too large to send": "རྩོམ་ཡིག་འདི་ནི་གཏོང་ཐུབ་པ་ལས་ཆེ་དྲགས་འདུག",
   "Building EPUB…": "EPUB བཟོ་བཞིན་པ…",
   "Capture script could not start on this page": "ཤོག་འདིའི་ནང་འཛིན་སྐུལ་འདྲེན་འགོ་འཛུགས་མ་ཐུབ།",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "བསྒྱུར་བྱེད་ཤོག་འགོ་འཛུགས་མ་ཐུབ།",
   "Open web.readest.com": "web.readest.com ཁ་ཕྱེ།",
   "Page took too long to read": "ཤོག་ཀློག་པར་དུས་ཚོད་མང་དྲགས་སོང་།",
+  "Readest needs permission to read local files.": "Readest ལ་ས་གནས་ཡིག་ཆ་ཀློག་པའི་ཆོག་མཆན་དགོས།",
   "Reading page…": "ཤོག་ཀློག་བཞིན་པ…",
   "Saved to your library.": "ཁྱེད་ཀྱི་དཔེ་མཛོད་དུ་ཉར་ཟིན།",
   "Send to Readest": "Readest ལ་གཏོང་།",

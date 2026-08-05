@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "Cho phép truy cập URL tệp",
   "Article is too large to send": "Bài viết quá lớn để gửi",
   "Building EPUB…": "Đang tạo EPUB…",
   "Capture script could not start on this page": "Tập lệnh chụp không thể khởi động trên trang này",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "Trang chuyển đổi không khởi động được",
   "Open web.readest.com": "Mở web.readest.com",
   "Page took too long to read": "Trang đọc mất quá nhiều thời gian",
+  "Readest needs permission to read local files.": "Readest cần quyền để đọc tệp cục bộ.",
   "Reading page…": "Đang đọc trang…",
   "Saved to your library.": "Đã lưu vào thư viện của bạn.",
   "Send to Readest": "Gửi đến Readest",

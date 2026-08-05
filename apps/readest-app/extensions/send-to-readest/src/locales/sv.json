@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "Tillåt åtkomst till fil-URL:er",
   "Article is too large to send": "Artikeln är för stor för att skickas",
   "Building EPUB…": "Skapar EPUB…",
   "Capture script could not start on this page": "Insamlingsskriptet kunde inte starta på den här sidan",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "Konverteringssidan kunde inte starta",
   "Open web.readest.com": "Öppna web.readest.com",
   "Page took too long to read": "Sidan tog för lång tid att läsa",
+  "Readest needs permission to read local files.": "Readest behöver behörighet för att läsa lokala filer.",
   "Reading page…": "Läser sidan…",
   "Saved to your library.": "Sparad i ditt bibliotek.",
   "Send to Readest": "Skicka till Readest",

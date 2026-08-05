@@ -163,4 +163,111 @@ describe('bundleAssets', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(result.images).toHaveLength(0);
   });
+
+  // A page clipped from a `file://` tab (a saved web page opened from disk)
+  // resolves its relative images to `file://` siblings. An extension page
+  // holding file access CAN read those, so a "Save Page As, Complete" keeps
+  // its `<name>_files/` images instead of degrading to alt text.
+  test('embeds a file:// sibling image when the page itself came off disk', async () => {
+    const html = `<img src="Saved%20Page_files/hero.png" alt="hero">`;
+    const result = await bundleAssets(html, 'file:///Users/me/Saved%20Page.html');
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'file:///Users/me/Saved%20Page_files/hero.png',
+      expect.objectContaining({ redirect: 'follow' }),
+    );
+    expect(result.images).toHaveLength(1);
+    expect(result.missing).toBe(0);
+    expect(result.html).toContain('src="images/');
+  });
+
+  // Exfiltration guard. Reading local files is only ever appropriate for a
+  // page that is itself local; a remote page pointing an <img> at the disk
+  // would otherwise have us bundle private files into an EPUB and upload it.
+  test('never reads a file:// asset referenced by a remote page', async () => {
+    const html = `<img src="file:///Users/me/.ssh/id_rsa.png" alt="nope">`;
+    const result = await bundleAssets(html, 'https://evil.example.com/post');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.images).toHaveLength(0);
+    expect(result.missing).toBe(1);
+    expect(result.html).not.toContain('src=');
+  });
+
+  // Same concern one step down: a local page may only reach its own folder,
+  // so a crafted .html can't harvest images from elsewhere on the disk.
+  test('never reads a file:// asset outside the local page own directory', async () => {
+    const html = `<img src="../../Pictures/private.png" alt="nope">`;
+    const result = await bundleAssets(html, 'file:///Users/me/clips/Saved%20Page.html');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.images).toHaveLength(0);
+    expect(result.missing).toBe(1);
+  });
+
+  test('does not treat a filesystem-root page as licence to read the whole disk', async () => {
+    const html = `<img src="/etc/secret.png" alt="nope">`;
+    const result = await bundleAssets(html, 'file:///page.html');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.images).toHaveLength(0);
+  });
+
+  test('still inlines data: images on a local page (single-file saved pages)', async () => {
+    const dataUrl = 'data:image/png;base64,iVBORw0KGgo=';
+    const html = `<img src="${dataUrl}">`;
+    const result = await bundleAssets(html, 'file:///Users/me/Saved%20Page.html');
+    expect(fetchSpy).toHaveBeenCalledWith(dataUrl, expect.objectContaining({ redirect: 'follow' }));
+    expect(result.images).toHaveLength(1);
+    expect(result.missing).toBe(0);
+  });
+});
+
+/**
+ * Clipping must be deterministic: the same page with the same assets has to
+ * produce the same EPUB every time, or two devices clipping one URL disagree
+ * on the bytes. The total-size budget is the one place where that can slip,
+ * because it has to decide *which* images to drop.
+ */
+describe('bundleAssets — determinism under the size budget', () => {
+  // Just under the 5 MB per-asset cap, so seven of them overrun the 30 MB
+  // total and the bundler has to leave one out.
+  const CHUNK = 4.5 * 1024 * 1024;
+  const COUNT = 7;
+
+  function chunk(seed: number): ArrayBuffer {
+    const bytes = new Uint8Array(CHUNK);
+    // Distinct content per image, or identical sha256 paths would collapse
+    // them into a single entry and the budget would never be reached.
+    bytes[0] = seed;
+    bytes[1] = seed >> 8;
+    return bytes.buffer as ArrayBuffer;
+  }
+
+  test('drops the last image in document order, not whichever fetch finished last', async () => {
+    const urls = Array.from({ length: COUNT }, (_, i) => `https://cdn.example.com/${i}.png`);
+    const html = urls.map((u) => `<img src="${u}">`).join('');
+
+    // Invert completion order: the first image in the document resolves last.
+    // Under a completion-ordered budget that is exactly the one that gets
+    // dropped, which is the bug.
+    const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      const index = urls.indexOf(url);
+      // Image 0 lands long after every other one has been accounted for.
+      await new Promise((r) => setTimeout(r, index === 0 ? 250 : 5));
+      return new Response(chunk(index), {
+        status: 200,
+        headers: { 'content-type': 'image/png' },
+      });
+    });
+
+    try {
+      const result = await bundleAssets(html, 'https://example.com/article');
+
+      expect(result.images).toHaveLength(COUNT - 1);
+      expect(result.missing).toBe(1);
+      // The surviving set is the document-order prefix, every time.
+      const survivingSeeds = result.images.map((img) => new Uint8Array(img.bytes)[0]);
+      expect(survivingSeeds.sort((a, b) => a! - b!)).toEqual([0, 1, 2, 3, 4, 5]);
+    } finally {
+      spy.mockRestore();
+    }
+  }, 30_000);
 });

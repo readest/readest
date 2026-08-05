@@ -35,11 +35,15 @@ export interface ChromeMock {
     executeScript: Mock;
   };
   runtime: {
+    id: string;
     sendMessage: Mock;
     connect: Mock;
     onMessage: { addListener: Mock };
     onConnect: { addListener: Mock };
     lastError: chrome.runtime.LastError | undefined;
+  };
+  extension: {
+    isAllowedFileSchemeAccess: Mock;
   };
   i18n: {
     getUILanguage: Mock;
@@ -91,6 +95,7 @@ export function installChromeMock(): ChromeMock {
       executeScript: vi.fn(async () => [{ frameId: 0, documentId: 'x' }]),
     },
     runtime: {
+      id: 'test-extension-id',
       sendMessage: vi.fn(async () => undefined),
       connect: vi.fn(() => ({
         name: '',
@@ -102,6 +107,11 @@ export function installChromeMock(): ChromeMock {
       onMessage: { addListener: vi.fn() },
       onConnect: { addListener: vi.fn() },
       lastError: undefined,
+    },
+    extension: {
+      // Chrome gates `file://` access behind a per-extension user toggle.
+      // Default to granted so existing tests stay unaffected.
+      isAllowedFileSchemeAccess: vi.fn(async () => true),
     },
     i18n: {
       getUILanguage: vi.fn(() => 'en'),

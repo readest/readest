@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "Toegang tot bestands-URL's toestaan",
   "Article is too large to send": "Artikel is te groot om te versturen",
   "Building EPUB…": "EPUB wordt opgebouwd…",
   "Capture script could not start on this page": "Het opnamescript kon niet starten op deze pagina",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "Converter-pagina kon niet starten",
   "Open web.readest.com": "web.readest.com openen",
   "Page took too long to read": "Het lezen van de pagina duurde te lang",
+  "Readest needs permission to read local files.": "Readest heeft toestemming nodig om lokale bestanden te lezen.",
   "Reading page…": "Pagina lezen…",
   "Saved to your library.": "Opgeslagen in je bibliotheek.",
   "Send to Readest": "Naar Readest sturen",

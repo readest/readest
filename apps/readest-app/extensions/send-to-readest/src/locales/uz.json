@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "Fayl URL manzillariga ruxsat berish",
   "Article is too large to send": "Maqola yuborish uchun juda katta",
   "Building EPUB…": "EPUB yaratilmoqda…",
   "Capture script could not start on this page": "Saqlash skripti ushbu sahifada ishga tushmadi",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "Aylantirgich sahifasi ishga tushmadi",
   "Open web.readest.com": "web.readest.com sahifasini ochish",
   "Page took too long to read": "Sahifani o‘qish juda uzoq vaqt oldi",
+  "Readest needs permission to read local files.": "Readest mahalliy fayllarni oʻqish uchun ruxsat talab qiladi.",
   "Reading page…": "Sahifa o‘qilmoqda…",
   "Saved to your library.": "Kutubxonangizga saqlandi.",
   "Send to Readest": "Readest'ga yuborish",

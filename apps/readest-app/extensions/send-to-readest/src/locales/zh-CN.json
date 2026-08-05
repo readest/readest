@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "允许访问文件网址",
   "Article is too large to send": "文章过大,无法发送",
   "Building EPUB…": "正在构建 EPUB…",
   "Capture script could not start on this page": "抓取脚本无法在此页面启动",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "转换器页面启动失败",
   "Open web.readest.com": "打开 web.readest.com",
   "Page took too long to read": "页面读取耗时过长",
+  "Readest needs permission to read local files.": "Readest 需要读取本地文件的权限。",
   "Reading page…": "正在读取页面…",
   "Saved to your library.": "已保存到你的书库。",
   "Send to Readest": "发送到 Readest",

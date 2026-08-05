@@ -28,6 +28,7 @@ import type {
 } from '../lib/messages';
 import { readToken } from '../lib/auth';
 import { translate as _ } from '../lib/i18n';
+import { hasFileSchemeAccess, isClippableUrl, isLocalFileUrl } from '../lib/localPage';
 import { setBadge } from './badge';
 import { clipAndUploadViaOffscreen } from './offscreen';
 
@@ -140,8 +141,14 @@ async function runClip(tabId: number): Promise<void> {
   try {
     const tab = await chrome.tabs.get(tabId).catch(() => null);
     if (!tab || !tab.url) return emitError('no-active-tab', _('No active tab'));
-    if (!/^https?:/i.test(tab.url)) {
+    if (!isClippableUrl(tab.url)) {
       return emitError('restricted-page', _('This page cannot be clipped'));
+    }
+    // The popup already surfaces this with a button to the toggle; re-check
+    // here because the SW also serves clips the popup never gated (a stale
+    // popup, a keyboard-invoked clip).
+    if (isLocalFileUrl(tab.url) && !(await hasFileSchemeAccess())) {
+      return emitError('restricted-page', _('Readest needs permission to read local files.'));
     }
 
     const stored = await readToken();

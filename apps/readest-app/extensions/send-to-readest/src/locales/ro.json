@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "Permite accesul la adresele URL ale fișierelor",
   "Article is too large to send": "Articolul este prea mare pentru a fi trimis",
   "Building EPUB…": "Se construiește EPUB…",
   "Capture script could not start on this page": "Scriptul de captură nu a putut porni pe această pagină",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "Pagina convertorului nu a putut porni",
   "Open web.readest.com": "Deschide web.readest.com",
   "Page took too long to read": "Citirea paginii a durat prea mult",
+  "Readest needs permission to read local files.": "Readest are nevoie de permisiune pentru a citi fișiere locale.",
   "Reading page…": "Se citește pagina…",
   "Saved to your library.": "Salvat în biblioteca dvs.",
   "Send to Readest": "Trimite la Readest",

@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "फ़ाइल URL तक पहुंच की अनुमति दें",
   "Article is too large to send": "लेख भेजने के लिए बहुत बड़ा है",
   "Building EPUB…": "EPUB बनाया जा रहा है…",
   "Capture script could not start on this page": "इस पृष्ठ पर कैप्चर स्क्रिप्ट प्रारंभ नहीं हो सकी",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "कनवर्टर पृष्ठ प्रारंभ नहीं हो सका",
   "Open web.readest.com": "web.readest.com खोलें",
   "Page took too long to read": "पृष्ठ पढ़ने में बहुत समय लगा",
+  "Readest needs permission to read local files.": "स्थानीय फ़ाइलें पढ़ने के लिए Readest को अनुमति चाहिए।",
   "Reading page…": "पृष्ठ पढ़ा जा रहा है…",
   "Saved to your library.": "आपकी लाइब्रेरी में सहेजा गया।",
   "Send to Readest": "Readest पर भेजें",

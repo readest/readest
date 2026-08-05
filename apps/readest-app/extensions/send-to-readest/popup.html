@@ -102,6 +102,18 @@
         opacity: 0.5;
         cursor: default;
       }
+      button.secondary {
+        width: 100%;
+        margin-top: 8px;
+        padding: 9px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--fg);
+        background: var(--raised);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        cursor: pointer;
+      }
       button.link {
         background: transparent;
         border: 0;
@@ -188,6 +200,11 @@
         <p id="page-url" class="page-url"></p>
       </div>
       <button id="send" class="primary" disabled data-i18n="Send to Readest"></button>
+      <button
+        id="enable-file-access"
+        class="secondary hidden"
+        data-i18n="Allow access to file URLs"
+      ></button>
       <div id="progress" class="progress">
         <div class="progress-label" id="progress-label"></div>
         <div class="progress-bar indeterminate"><div class="progress-bar-fill"></div></div>

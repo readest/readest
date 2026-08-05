@@ -1,4 +1,5 @@
 {
+  "Allow access to file URLs": "Дозволити доступ до URL файлів",
   "Article is too large to send": "Стаття занадто велика для надсилання",
   "Building EPUB…": "Створення EPUB…",
   "Capture script could not start on this page": "Скрипт захоплення не зміг запуститися на цій сторінці",
@@ -13,6 +14,7 @@
   "Offscreen page failed to start": "Не вдалося запустити сторінку конвертера",
   "Open web.readest.com": "Відкрити web.readest.com",
   "Page took too long to read": "Сторінка читалася занадто довго",
+  "Readest needs permission to read local files.": "Readest потрібен дозвіл на читання локальних файлів.",
   "Reading page…": "Читання сторінки…",
   "Saved to your library.": "Збережено у вашій бібліотеці.",
   "Send to Readest": "Надіслати до Readest",
