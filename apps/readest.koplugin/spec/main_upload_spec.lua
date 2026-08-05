@@ -12,6 +12,7 @@ require("spec_helper")
 local stubs = require("spec.koreader_stubs")
 
 local ReadestSync = require("main")
+local sha2 = require("ffi/sha2")
 
 local uploads
 
@@ -51,8 +52,10 @@ local function makePlugin(o)
         _values = {
             partial_md5_checksum = o.checksum,
             doc_props = o.doc_props or { title = "Dune" },
+            doc_path = o.file,
         },
         readSetting = function(self, k) return self._values[k] end,
+        saveSetting = function(self, k, v) self._values[k] = v end,
     }
     local plugin = setmetatable({
         path = "/plugins/readest.koplugin",
@@ -179,6 +182,38 @@ describe("ReadestSync:uploadCurrentBook", function()
 
         assert.are.equal(1, #uploads)
         assert.are.equal("computed-hash", uploads[1].book.hash)
+    end)
+
+    it("stamps the Readest meta hash on the row it uploads", function()
+        -- The uploading device introduces the book to the fleet, so it must
+        -- stamp the same fingerprint Readest's importBook would: metadata
+        -- hash, salted with the base filename for PDFs (issue #5411). Peers
+        -- preserve whatever is stamped here.
+        local plugin = makePlugin({
+            file = "/books/lecture-01.pdf",
+            checksum = "h1",
+            doc_props = { title = "PowerPoint Presentation", authors = "Alice Author" },
+        })
+
+        plugin:uploadCurrentBook()
+
+        local expected = sha2.md5("PowerPoint Presentation|Alice Author||lecture-01")
+        assert.are.equal(expected, plugin.store.upserts[1].meta_hash)
+        assert.are.equal(expected, uploads[1].book.meta_hash)
+    end)
+
+    it("keeps the fleet meta hash when the library row already has one", function()
+        local store = fakeStore({
+            h1 = { hash = "h1", title = "Dune", format = "PDF", meta_hash = "stamped",
+                   file_path = "/books/dune.pdf", local_present = 1 },
+        })
+        local plugin = makePlugin({
+            file = "/books/dune.pdf", checksum = "h1", store = store,
+        })
+
+        plugin:uploadCurrentBook()
+
+        assert.are.equal("stamped", store.upserts[1].meta_hash)
     end)
 
     it("passes the covers dir so the cover uploads alongside the book", function()

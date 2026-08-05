@@ -71,8 +71,27 @@ function M.UIManager:drain()
 end
 
 -- `util.partialMD5` is swapped per-spec; default returns a deterministic hash.
+-- The split helpers mirror KOReader's frontend/util.lua so hash-source
+-- assertions exercise the same filename handling production sees.
 M.util = {
     partialMD5 = function(_file) return "stub-md5" end,
+    splitFilePathName = function(file)
+        if file == nil or file == "" then return "", "" end
+        if string.find(file, "/") == nil then return "", file end
+        return file:match("(.*/)(.*)")
+    end,
+    splitFileNameSuffix = function(file)
+        if file == nil or file == "" then return "", "" end
+        if string.find(file, "%.") == nil then return file, "" end
+        return file:match("(.*)%.(.*)")
+    end,
+    splitToArray = function(str, sep)
+        local result = {}
+        for piece in (str .. sep):gmatch("(.-)" .. sep) do
+            if piece ~= "" then table.insert(result, piece) end
+        end
+        return result
+    end,
 }
 
 -- The Library widget is a heavy KOReader UI module (menus, painters, FFI
@@ -133,10 +152,21 @@ package.preload["ui/network/manager"] = function()
     }
 end
 package.preload["ffi/sha2"] = function()
-    return { base64_to_bin = function(s) return s end }
+    return {
+        base64_to_bin = function(s) return s end,
+        -- Marker instead of real md5: hash-source parity specs assert the
+        -- exact input string, which is what must match Readest's TS side —
+        -- md5 itself is the same everywhere.
+        md5 = function(s) return "md5:" .. s end,
+    }
 end
 package.preload["ffi/util"] = function()
     return { template = function(s) return s end }
+end
+-- KOReader bundles its own lfs build; specs run against the host's
+-- luafilesystem, which speaks the same API surface we use (attributes).
+package.preload["libs/libkoreader-lfs"] = function()
+    return require("lfs")
 end
 package.preload["readest_i18n"] = function()
     return function(s) return s end

@@ -270,6 +270,19 @@ function ReadestSync:_addLocalRow(file, hash, format, _size)
         return
     end
 
+    -- A sidecar from a previous read is the only metadata available without
+    -- opening the book. When one exists, stamp the fingerprint Readest's
+    -- importBook would (PDF-salted, issue #5411) so peers preserve it; with
+    -- no sidecar, leave meta_hash unset and Readest stamps it on first open.
+    local meta_hash
+    local ok, DocSettings = pcall(require, "docsettings")
+    if ok and DocSettings and DocSettings:hasSidecarFile(file) then
+        local doc_props = DocSettings:open(file):readSetting("doc_props")
+        if doc_props then
+            meta_hash = SyncConfig:computeMetadataHashInfo(doc_props, file).meta_hash
+        end
+    end
+
     -- Add as a local-only row (cloud_present defaults to 0). Stamp
     -- created_at + updated_at explicitly so the row sorts under "Date
     -- Added" / "Last Updated" right away, and so the next pushChangedBooks
@@ -282,6 +295,7 @@ function ReadestSync:_addLocalRow(file, hash, format, _size)
         hash          = hash,
         title         = title,
         format        = format,
+        meta_hash     = meta_hash,
         file_path     = file,
         local_present = 1,
         created_at    = now,
@@ -396,6 +410,12 @@ function ReadestSync:_uploadBookRow(store, file, hash, format)
         end
     end
 
+    -- Uploading introduces the book to the fleet, so stamp the same
+    -- fingerprint Readest's importBook would; peers preserve whatever is
+    -- stamped here. getMetaHash keeps an existing fleet value if the row
+    -- already carries one.
+    local meta_hash = SyncConfig:getMetaHash(self.ui, store)
+
     -- Same row shape addToReadest writes, so both entry points produce the
     -- same row for the same book. _clear_fields un-tombstones a previously
     -- deleted book: a bare deleted_at = nil would be dropped by Lua's table
@@ -404,6 +424,7 @@ function ReadestSync:_uploadBookRow(store, file, hash, format)
         hash          = hash,
         title         = title,
         format        = format,
+        meta_hash     = meta_hash,
         file_path     = file,
         local_present = 1,
         created_at    = (existing and existing.created_at) or now,
@@ -636,7 +657,9 @@ end
 
 function ReadestSync:getBookIdentifiers()
     local book_hash = SyncConfig:getDocumentIdentifier(self.ui)
-    local meta_hash = SyncConfig:getMetaHash(self.ui)
+    -- The library store may hold the fleet-stamped meta_hash for this book
+    -- (pulled from the cloud); getMetaHash prefers it over local computation.
+    local meta_hash = SyncConfig:getMetaHash(self.ui, self:getLibraryStore())
     return book_hash, meta_hash
 end
 

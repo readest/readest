@@ -8,6 +8,14 @@ local _ = require("readest_i18n")
 
 local SyncConfig = {}
 
+-- Readest md5s the NFC-normalized hash source (book.ts getMetadataHashInfo);
+-- utf8proc ships with KOReader but not with the spec harness, so fall back
+-- to identity when it is unavailable.
+local ok_utf8proc, Utf8Proc = pcall(require, "ffi/utf8proc")
+local normalize_nfc = (ok_utf8proc and type(Utf8Proc.normalize_NFC) == "function")
+    and Utf8Proc.normalize_NFC
+    or function(s) return s end
+
 local function normalizeIdentifier(identifier)
     if identifier:match("urn:") then
         return identifier:match("([^:]+)$")
@@ -22,12 +30,17 @@ local function normalizeAuthor(author)
     return author
 end
 
-function SyncConfig:getMetadataHashInfo(ui)
-    local doc_props = ui.doc_settings:readSetting("doc_props") or {}
+-- Builds the cross-device book fingerprint from sidecar metadata. MUST stay
+-- consistent with getMetadataHashInfo in apps/readest-app/src/utils/book.ts:
+-- the md5 of hash_source is the identity that book rows, configs and notes
+-- sync under, so any divergence forks a book's progress across devices.
+function SyncConfig:computeMetadataHashInfo(doc_props, doc_path)
+    doc_props = doc_props or {}
+    local _dir, filename = util.splitFilePathName(doc_path or '')
+    local basename, suffix = util.splitFileNameSuffix(filename)
+
     local title = doc_props.title or ''
     if title == '' then
-        local _doc_path, filename = util.splitFilePathName(ui.doc_settings:readSetting("doc_path") or '')
-        local basename, _suffix = util.splitFileNameSuffix(filename)
         title = basename or ''
     end
 
@@ -47,17 +60,20 @@ function SyncConfig:getMetadataHashInfo(ui)
     if identifiers_raw:find("\n") then
         local list = util.splitToArray(identifiers_raw, "\n")
         local normalized = {}
-        local priorities = { "uuid", "calibre", "isbn" }
-        local preferred = nil
         for i, id in ipairs(list) do
             normalized[i] = normalizeIdentifier(id)
-            local candidate = id:lower()
-            for _, p in ipairs(priorities) do
-                if candidate:find(p, 1, true) then
+        end
+        -- Scheme priority mirrors Readest's getPreferredIdentifier: uuid
+        -- beats calibre beats isbn, regardless of listing order.
+        local preferred = nil
+        for _, scheme in ipairs({ "uuid", "calibre", "isbn" }) do
+            for i, id in ipairs(list) do
+                if id:lower():find(scheme, 1, true) then
                     preferred = normalized[i]
                     break
                 end
             end
+            if preferred then break end
         end
         if preferred then
             identifiers_list = { preferred }
@@ -69,24 +85,53 @@ function SyncConfig:getMetadataHashInfo(ui)
     end
 
     local hash_source = title .. "|" .. table.concat(authors_list, ",") .. "|" .. table.concat(identifiers_list, ",")
+    -- PDF metadata is often generic boilerplate (every PowerPoint export is
+    -- titled "PowerPoint Presentation"), so Readest salts PDF hashes with the
+    -- import filename (issue #5411). Salt with ours the same way.
+    if suffix and suffix:lower() == "pdf" then
+        hash_source = hash_source .. "|" .. basename
+    end
     return {
         title = title,
         authors = authors_list,
         identifiers = identifiers_list,
         hash_source = hash_source,
-        meta_hash = sha2.md5(hash_source),
+        meta_hash = sha2.md5(normalize_nfc(hash_source)),
     }
+end
+
+function SyncConfig:getMetadataHashInfo(ui)
+    return self:computeMetadataHashInfo(
+        ui.doc_settings:readSetting("doc_props"),
+        ui.doc_settings:readSetting("doc_path")
+    )
 end
 
 function SyncConfig:generateMetadataHash(ui)
     return self:getMetadataHashInfo(ui).meta_hash
 end
 
-function SyncConfig:getMetaHash(ui)
+function SyncConfig:getMetaHash(ui, store)
     local doc_readest_sync = ui.doc_settings:readSetting("readest_sync") or {}
-    local meta_hash = doc_readest_sync.meta_hash_v1
+    -- The value stamped when the book first entered the fleet is the
+    -- authoritative one: Readest never recomputes a PDF's metaHash after
+    -- import (the filename salt is unrecoverable there), so a synced library
+    -- row must beat anything computed or cached locally.
+    local meta_hash
+    if store then
+        local book_hash = self:getDocumentIdentifier(ui)
+        local row = book_hash and store:_getRowRaw(book_hash)
+        if row and row.meta_hash and row.meta_hash ~= "" then
+            meta_hash = row.meta_hash
+        end
+    end
+    meta_hash = meta_hash or doc_readest_sync.meta_hash_v1
     if not meta_hash then
         meta_hash = self:generateMetadataHash(ui)
+    end
+    -- Annotation flows read meta_hash_v1 straight from the sidecar, so the
+    -- resolved value must land there whichever branch produced it.
+    if meta_hash and doc_readest_sync.meta_hash_v1 ~= meta_hash then
         doc_readest_sync.meta_hash_v1 = meta_hash
         ui.doc_settings:saveSetting("readest_sync", doc_readest_sync)
     end
