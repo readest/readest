@@ -393,15 +393,18 @@ describe('DictionarySheet — expand / collapse', () => {
 
     // Wait for the lookup to finish (source label visible).
     await waitFor(() => screen.getByText('CMU American English spelling'));
-    const card = screen.getByTestId('dict-card');
+    // Re-query the card and poll on every step: asserting synchronously on a
+    // captured node flaked on slow CI runners, where a late async re-render
+    // could race the click (stale node → the toggle never reaches React).
+    const expanded = () => screen.getByTestId('dict-card').getAttribute('aria-expanded');
     // With ≤ 3 results the sheet defaults to expanded.
-    await waitFor(() => expect(card.getAttribute('aria-expanded')).toBe('true'));
+    await waitFor(() => expect(expanded()).toBe('true'));
 
-    fireEvent.click(card);
-    expect(card.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(screen.getByTestId('dict-card'));
+    await waitFor(() => expect(expanded()).toBe('false'));
 
-    fireEvent.click(card);
-    expect(card.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(screen.getByTestId('dict-card'));
+    await waitFor(() => expect(expanded()).toBe('true'));
   });
 
   it('defaults to collapsed when more than 3 providers have results', async () => {
