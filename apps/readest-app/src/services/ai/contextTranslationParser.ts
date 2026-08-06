@@ -39,7 +39,7 @@ export const parseContextTranslationResult = (
   }
 
   if (!isRecord(parsed)) throw new Error('AI provider returned invalid JSON');
-  if (parsed.mode !== detailLevel) {
+  if (parsed['mode'] !== detailLevel) {
     throw new Error('AI provider returned a result for the wrong detail level');
   }
 
@@ -64,11 +64,11 @@ export const parseContextTranslationResult = (
     definition: readString(parsed, 'definition'),
     translation: readString(parsed, 'translation') || undefined,
     explanation: readString(parsed, 'explanation'),
-    examples: readObjectArray(parsed.examples, (item) => ({
+    examples: readObjectArray(parsed['examples'], (item) => ({
       sentence: readString(item, 'sentence'),
       explanation: readString(item, 'explanation'),
     })).filter((item) => item.sentence && item.explanation),
-    synonyms: readObjectArray(parsed.synonyms, (item) => ({
+    synonyms: readObjectArray(parsed['synonyms'], (item) => ({
       phrase: readString(item, 'phrase'),
       example: readString(item, 'example'),
       nuance: readString(item, 'nuance'),

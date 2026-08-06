@@ -41,7 +41,7 @@ const getRangeTextAfter = (range: Range): string => {
 
 const getParagraph = (range: Range): string | undefined => {
   const node = range.commonAncestorContainer;
-  const element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+  const element = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
   const paragraph = element?.closest('p, li, blockquote, div');
   return paragraph?.textContent ? normalizeWhitespace(paragraph.textContent) : undefined;
 };
