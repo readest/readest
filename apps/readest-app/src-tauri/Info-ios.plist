@@ -104,5 +104,17 @@
         </array>
       </dict>
     </dict>
+    <key>NSUbiquitousContainers</key>
+    <dict>
+      <key>iCloud.com.bilingify.readest</key>
+      <dict>
+        <key>NSUbiquitousContainerIsDocumentScopePublic</key>
+        <true/>
+        <key>NSUbiquitousContainerName</key>
+        <string>Readest</string>
+        <key>NSUbiquitousContainerSupportedFolderLevels</key>
+        <string>Any</string>
+      </dict>
+    </dict>
   </dict>
 </plist>
