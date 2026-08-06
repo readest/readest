@@ -78,6 +78,7 @@ import {
   sourceCfiFromSyntheticValue,
 } from '../../utils/globalAnnotations';
 import { DEFAULT_AI_SETTINGS } from '@/services/ai/constants';
+import { buildContextTranslationContext } from '@/services/ai/contextTranslationContext';
 import { annotationToolButtons } from './AnnotationTools';
 import AnnotationRangeEditor from './AnnotationRangeEditor';
 import SelectionRangeEditor from './SelectionRangeEditor';
@@ -230,6 +231,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     [settings.aiSettings?.contextTranslation],
   );
   const contextTranslateEnabled = contextTranslationSettings.enabled;
+  const contextTranslationContext = useMemo(
+    () =>
+      selection
+        ? buildContextTranslationContext(selection, contextTranslationSettings.maxContextChars)
+        : undefined,
+    [selection, contextTranslationSettings.maxContextChars],
+  );
   // The toolbar is now customizable, so size the selection popup to the number
   // of visible tools (responsive) up to a max — otherwise a 2-tool toolbar
   // renders a sparse, full-width bar. Annotated selections keep the max width
@@ -2151,6 +2159,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
                 lang={bookData.bookDoc?.metadata.language as string}
                 mode={dictionaryPopupMode}
                 contextTranslationSettings={contextTranslationSettings}
+                contextTranslationContext={contextTranslationContext}
                 onDismiss={handleDismissPopupShowToolbar}
                 onManage={onManage}
                 onOpenAISettings={onOpenAISettings}
@@ -2164,6 +2173,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
               lang={bookData.bookDoc?.metadata.language as string}
               mode={dictionaryPopupMode}
               contextTranslationSettings={contextTranslationSettings}
+              contextTranslationContext={contextTranslationContext}
               position={dictPopupPosition}
               trianglePosition={trianglePosition}
               popupWidth={dictPopupWidth}

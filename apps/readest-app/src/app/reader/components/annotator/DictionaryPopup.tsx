@@ -3,6 +3,7 @@
 import React from 'react';
 
 import Popup from '@/components/Popup';
+import type { ContextTranslationContext } from '@/services/ai/contextTranslationContext';
 import type { ContextTranslationSettings } from '@/services/ai/contextTranslationTypes';
 import { Position } from '@/utils/sel';
 import {
@@ -28,6 +29,7 @@ interface DictionaryPopupProps {
   onManage?: () => void;
   mode?: 'dictionary' | 'contextTranslate';
   contextTranslationSettings?: ContextTranslationSettings;
+  contextTranslationContext?: ContextTranslationContext;
   onOpenAISettings?: () => void;
 }
 
@@ -63,11 +65,13 @@ const ContextTranslationPopupContent = ({
   word,
   lang,
   settings,
+  context,
   onOpenSettings,
 }: {
   word: string;
   lang?: string;
   settings: ContextTranslationSettings;
+  context?: ContextTranslationContext;
   onOpenSettings: () => void;
 }) => (
   <>
@@ -83,6 +87,10 @@ const ContextTranslationPopupContent = ({
         selectedText={word}
         settings={settings}
         sourceLanguage={lang}
+        beforeContext={context?.beforeContext}
+        afterContext={context?.afterContext}
+        sentence={context?.sentence}
+        paragraph={context?.paragraph}
         onOpenSettings={onOpenSettings}
       />
     </div>
@@ -100,6 +108,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   onManage,
   mode = 'dictionary',
   contextTranslationSettings,
+  contextTranslationContext,
   onOpenAISettings,
 }) => (
   <Popup
@@ -118,6 +127,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
           word={word}
           lang={lang}
           settings={contextTranslationSettings}
+          context={contextTranslationContext}
           onOpenSettings={onOpenAISettings ?? (() => {})}
         />
       ) : (

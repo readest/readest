@@ -3,6 +3,7 @@
 import React from 'react';
 
 import Dialog from '@/components/Dialog';
+import type { ContextTranslationContext } from '@/services/ai/contextTranslationContext';
 import type { ContextTranslationSettings } from '@/services/ai/contextTranslationTypes';
 import {
   useDictionaryResults,
@@ -18,6 +19,7 @@ interface DictionarySheetProps {
   onManage?: () => void;
   mode?: 'dictionary' | 'contextTranslate';
   contextTranslationSettings?: ContextTranslationSettings;
+  contextTranslationContext?: ContextTranslationContext;
   onOpenAISettings?: () => void;
 }
 
@@ -28,6 +30,7 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({
   onManage,
   mode = 'dictionary',
   contextTranslationSettings,
+  contextTranslationContext,
   onOpenAISettings,
 }) => {
   const state = useDictionaryResults({ word, lang });
@@ -61,6 +64,10 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({
           selectedText={word}
           settings={contextTranslationSettings}
           sourceLanguage={lang}
+          beforeContext={contextTranslationContext?.beforeContext}
+          afterContext={contextTranslationContext?.afterContext}
+          sentence={contextTranslationContext?.sentence}
+          paragraph={contextTranslationContext?.paragraph}
           onOpenSettings={openSettings}
         />
       ) : (
