@@ -15,6 +15,7 @@ import type { S3Settings, WebDAVSettings } from '@/types/settings';
 import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVProvider';
 import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { buildOneDriveProvider } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
+import { buildICloudProvider } from '@/services/sync/providers/icloud/buildICloudProvider';
 import { createS3Provider } from '@/services/sync/providers/s3/S3Provider';
 
 export type FileSyncBackendKind = 'webdav' | 'gdrive' | 's3' | 'onedrive' | 'icloud';
@@ -91,7 +92,7 @@ export const createFileSyncProvider = async (
         : kind === 'onedrive'
           ? await buildOneDriveProvider()
           : kind === 'icloud'
-            ? null // wired to buildICloudProvider in the provider commit
+            ? await buildICloudProvider()
             : await buildGoogleDriveProvider();
   if (provider) providerCache.set(kind, { key, provider });
   return provider;

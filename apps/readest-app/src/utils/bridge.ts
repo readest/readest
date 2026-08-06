@@ -476,3 +476,29 @@ export async function installNightlyUpdate(
   if (onProgress) channel.onmessage = onProgress;
   await invoke<void>('install_nightly_update', { endpoint, channel });
 }
+
+export interface ICloudContainerStatusResponse {
+  available: boolean;
+  documentsPath?: string;
+}
+
+export interface ICloudEnsureDownloadedRequest {
+  path: string;
+  timeoutMs?: number;
+}
+
+export interface ICloudEnsureDownloadedResponse {
+  status: 'ready' | 'notFound' | 'timeout';
+}
+
+export async function getICloudContainerStatus(): Promise<ICloudContainerStatusResponse> {
+  return invoke<ICloudContainerStatusResponse>('plugin:native-bridge|icloud_container_status');
+}
+
+export async function icloudEnsureDownloaded(
+  request: ICloudEnsureDownloadedRequest,
+): Promise<ICloudEnsureDownloadedResponse> {
+  return invoke<ICloudEnsureDownloadedResponse>('plugin:native-bridge|icloud_ensure_downloaded', {
+    payload: request,
+  });
+}

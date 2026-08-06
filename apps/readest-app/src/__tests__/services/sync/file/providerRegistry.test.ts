@@ -8,8 +8,13 @@ vi.mock('@/services/sync/providers/onedrive/buildOneDriveProvider', () => ({
   buildOneDriveProvider: vi.fn(),
 }));
 
+vi.mock('@/services/sync/providers/icloud/buildICloudProvider', () => ({
+  buildICloudProvider: vi.fn(),
+}));
+
 import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { buildOneDriveProvider } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
+import { buildICloudProvider } from '@/services/sync/providers/icloud/buildICloudProvider';
 import {
   createFileSyncProvider,
   resetFileSyncProviderCache,
@@ -174,7 +179,18 @@ describe('per-backend provider cache', () => {
     expect(await createFileSyncProvider('s3', edited)).toBe(s3First);
   });
 
-  test('returns null for icloud until its builder is wired', async () => {
+  test('builds the icloud provider through its builder and memoises it', async () => {
+    const fake = { rootPath: '/' } as FileSyncProvider;
+    vi.mocked(buildICloudProvider).mockResolvedValue(fake);
+    const first = await createFileSyncProvider('icloud', {});
+    expect(first).toBe(fake);
+    const second = await createFileSyncProvider('icloud', {});
+    expect(second).toBe(fake);
+    expect(buildICloudProvider).toHaveBeenCalledTimes(1);
+  });
+
+  test('returns null when the icloud builder reports unavailable', async () => {
+    vi.mocked(buildICloudProvider).mockResolvedValue(null);
     expect(await createFileSyncProvider('icloud', {})).toBeNull();
   });
 

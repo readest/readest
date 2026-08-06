@@ -9,6 +9,7 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
 import { isWebAppPlatform } from '@/services/environment';
 import { hasValidWebDriveToken } from '@/services/sync/providers/gdrive/auth/webTokenStore';
+import { isICloudSupportedPlatform } from '@/services/sync/providers/icloud/buildICloudProvider';
 import {
   getActiveFileSyncBackends,
   settingsKeyForBackend,
@@ -29,9 +30,16 @@ import { FileSyncEngine, type SyncLibraryResult } from '@/services/sync/file/eng
  *
  * This lives in the runner, not the hooks, so the manual "Sync now", the library
  * auto-sync, and the reader's per-book sync all honour it.
+ *
+ * iCloud is additionally platform-gated: its `enabled` flag can reach a
+ * Windows/Android/web device via a settings backup restore, and only the
+ * iOS/macOS Tauri apps can reach a ubiquity container.
  */
-export const canBackendRun = (kind: FileSyncBackendKind): boolean =>
-  !(kind === 'gdrive' && isWebAppPlatform() && !hasValidWebDriveToken());
+export const canBackendRun = (kind: FileSyncBackendKind): boolean => {
+  if (kind === 'gdrive' && isWebAppPlatform() && !hasValidWebDriveToken()) return false;
+  if (kind === 'icloud' && !isICloudSupportedPlatform()) return false;
+  return true;
+};
 
 /**
  * The enabled backends that can ACTUALLY sync right now — {@link
