@@ -69,6 +69,9 @@ const h = vi.hoisted(() => {
     getProgressMock: vi.fn(),
     updateProgressMock: vi.fn(async (..._args: unknown[]) => {}),
     eventListeners: new Map<string, Set<(e: CustomEvent) => void>>(),
+    // Captured useWindowActiveChanged callback — lets tests simulate the
+    // window losing/regaining visibility (e.g. a system dictionary popup).
+    activeCallback: null as ((isActive: boolean) => void) | null,
   };
 });
 
@@ -80,8 +83,10 @@ vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string) => s,
 }));
 
-vi.mock('./useWindowActiveChanged', () => ({
-  useWindowActiveChanged: () => {},
+vi.mock('@/app/reader/hooks/useWindowActiveChanged', () => ({
+  useWindowActiveChanged: (cb: (isActive: boolean) => void) => {
+    h.activeCallback = cb;
+  },
 }));
 
 vi.mock('@/store/settingsStore', () => ({
@@ -195,6 +200,7 @@ beforeEach(() => {
   h.goTo.mockClear();
   h.goToFraction.mockClear();
   h.eventListeners.clear();
+  h.activeCallback = null;
 });
 
 afterEach(() => {
@@ -254,5 +260,87 @@ describe('useKOSync — no clobbering when the pull is unresolved (#5065)', () =
     expect(h.updateProgressMock).toHaveBeenCalled();
     // Restore for other tests.
     h.view.getCFIProgress = vi.fn(async () => ({ fraction: 0.6 }));
+  });
+});
+
+describe('useKOSync — no phantom re-prompt after resolving (#5527)', () => {
+  test('a report echoed from this same device never prompts, even when its XPointer cannot be resolved', async () => {
+    // The server holds what THIS device pushed. Its percentage was computed
+    // with the same formula as the local one, so they compare directly; the
+    // XPointer round-trip (which can fail or mis-anchor) must not force a
+    // conflict the way it does for other-device reports (#5065).
+    h.remote = {
+      progress: h.XPOINTER,
+      percentage: 0.14,
+      timestamp: Math.floor(Date.now() / 1000) + 10_000,
+      device_id: 'this-device',
+    };
+    h.getProgressMock.mockResolvedValue(h.remote);
+    h.cfiResolves = false;
+
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+
+    expect(result.current.syncState).toBe('synced');
+    expect(result.current.conflictDetails).toBeNull();
+  });
+
+  test('an already-resolved unchanged remote report does not re-prompt on window re-activation', async () => {
+    // Genuine conflict on open: remote resolves to 0.6 vs local 0.14.
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    expect(result.current.syncState).toBe('conflict');
+
+    await act(async () => {
+      result.current.resolveWithLocal();
+      await flushMicrotasks();
+    });
+    expect(result.current.syncState).toBe('synced');
+
+    // System dictionary popup: window hidden, then visible again. The re-pull
+    // still returns the exact report the user just resolved (the resolve-time
+    // push may not have landed on the server yet).
+    await act(async () => {
+      h.activeCallback?.(false);
+      await flushMicrotasks();
+    });
+    await act(async () => {
+      h.activeCallback?.(true);
+      await flushMicrotasks();
+    });
+
+    expect(result.current.syncState).toBe('synced');
+    expect(result.current.conflictDetails).toBeNull();
+  });
+
+  test('a NEW remote report after resolution still prompts', async () => {
+    const { result } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    expect(result.current.syncState).toBe('conflict');
+
+    await act(async () => {
+      result.current.resolveWithLocal();
+      await flushMicrotasks();
+    });
+    expect(result.current.syncState).toBe('synced');
+
+    // KOReader pushed a genuinely new position while we were away.
+    h.getProgressMock.mockResolvedValue({
+      progress: '/body/DocFragment[326]/body/div/p[9]/text().0',
+      percentage: 0.2,
+      timestamp: Math.floor(Date.now() / 1000) + 20_000,
+      device_id: 'other-device',
+    });
+
+    await act(async () => {
+      h.activeCallback?.(false);
+      await flushMicrotasks();
+    });
+    await act(async () => {
+      h.activeCallback?.(true);
+      await flushMicrotasks();
+    });
+
+    expect(result.current.syncState).toBe('conflict');
   });
 });

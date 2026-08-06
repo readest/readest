@@ -76,6 +76,11 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
   const [conflictDetails, setConflictDetails] = useState<SyncDetails | null>(null);
   const [errorMessage] = useState<string | null>(null);
   const hasPulledOnce = useRef(false);
+  // The remote report the user last settled via the conflict dialog. A re-pull
+  // (window re-activation, e.g. returning from a system dictionary popup) that
+  // returns this exact unchanged report must not re-open the dialog — only a
+  // report that changed since is a new conflict (#5527).
+  const resolvedRemoteRef = useRef<KoSyncProgress | null>(null);
 
   // Reactive subscription: drives the auto-push effect and the initial
   // pull-on-open effect below. Reads from readerProgressStore.
@@ -251,6 +256,19 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
           percentage: formatProgressPercentage(remotePercentage),
         });
       }
+    } else if (isSameDevice) {
+      // A report this device pushed carries a percentage computed with the
+      // same formula as localPercentage, so the two compare directly. Don't
+      // round-trip our own XPointer through the CREngine drift correction:
+      // it can mis-anchor or fail to resolve, and an 'unresolved' failure
+      // would force a phantom conflict on every window re-activation (#5527).
+      // The #5065 protection exists for OTHER devices' positions; overwriting
+      // this device's own stale echo is fine.
+      showConflictDetails =
+        Math.abs(localPercentage - remotePercentage) > conflictProgressDiffThreshold;
+      remotePreview = _('Approximately {{percentage}}%', {
+        percentage: formatProgressPercentage(remotePercentage),
+      });
     } else {
       // KOReader's reported percentage comes from its own pagination, so it's
       // not directly comparable to Readest's progress. Resolve the remote
@@ -345,6 +363,16 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
         applyRemoteProgress(book, bookDoc, remoteProgress);
         setSyncState('synced');
       } else if (strategy === 'prompt') {
+        const resolved = resolvedRemoteRef.current;
+        const isAlreadyResolved =
+          !!resolved &&
+          resolved.progress === remoteProgress.progress &&
+          resolved.timestamp === remoteProgress.timestamp &&
+          resolved.device_id === remoteProgress.device_id;
+        if (isAlreadyResolved) {
+          setSyncState('synced');
+          return;
+        }
         // Only stay in the conflict state when there's an actual conflict to
         // resolve; otherwise return to 'synced' so auto-push keeps working.
         const hasConflict = await promptedSync(book, bookDoc, progress, remoteProgress);
@@ -432,6 +460,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
   });
 
   const resolveWithLocal = () => {
+    resolvedRemoteRef.current = conflictDetails?.remote ?? null;
     pushProgress();
     pushProgress.flush();
     setSyncState('synced');
@@ -447,6 +476,7 @@ export const useKOSync = (bookKey: string, provider: KosyncProgressProvider = ko
     if (!book || !bookDoc || !remote || !view) return;
     if (!remote.progress && getRemoteFraction(remote) === undefined) return;
 
+    resolvedRemoteRef.current = remote;
     applyRemoteProgress(book, bookDoc, remote);
     setSyncState('synced');
     setConflictDetails(null);
