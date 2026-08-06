@@ -54,7 +54,7 @@ import {
 } from '../../utils/deferredAction';
 import { Insets } from '@/types/misc';
 import { runSimpleCC } from '@/utils/simplecc';
-import { getWordCount } from '@/utils/word';
+import { getWordCount, isSingleLookupTerm } from '@/utils/word';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { writeTextToClipboard } from '@/utils/clipboard';
 import { buildAnnotationUrl } from '@/utils/deeplink';
@@ -939,7 +939,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           handleSearch();
           break;
         case 'dictionary':
-          handleDictionary();
+          // A dictionary lookup only makes sense for a single word (or a short
+          // CJK term); on a longer selection fall back to the annotation
+          // toolbar so highlighting and copying stay reachable (#5213).
+          if (selection && isSingleLookupTerm(selection.text)) {
+            handleDictionary();
+          } else {
+            handleShowAnnotPopup();
+          }
           break;
         case 'translate':
           handleTranslation();
