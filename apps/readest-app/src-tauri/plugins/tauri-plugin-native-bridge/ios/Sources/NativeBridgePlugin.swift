@@ -74,6 +74,11 @@ class ReadShareClipHtmlArgs: Decodable {
   let fileName: String
 }
 
+struct ICloudEnsureDownloadedArgs: Decodable {
+  let path: String
+  let timeoutMs: Int?
+}
+
 struct InitializeRequest: Decodable {
   let publicKey: String?
 }
@@ -1647,6 +1652,64 @@ class NativeBridgePlugin: Plugin {
       invoke.resolve(["html": html])
     } else {
       invoke.resolve([:])
+    }
+  }
+
+  /// Resolve the default ubiquity container (nil = the first container in the
+  /// entitlements, iCloud.com.bilingify.readest) and ensure Documents/ exists.
+  /// url(forUbiquityContainerIdentifier:) may block, so hop off the main
+  /// thread before touching it.
+  @objc public func icloud_container_status(_ invoke: Invoke) {
+    DispatchQueue.global(qos: .userInitiated).async {
+      guard let container = FileManager.default.url(forUbiquityContainerIdentifier: nil) else {
+        invoke.resolve(["available": false])
+        return
+      }
+      let documents = container.appendingPathComponent("Documents", isDirectory: true)
+      do {
+        try FileManager.default.createDirectory(at: documents, withIntermediateDirectories: true)
+      } catch {
+        invoke.reject("Failed to create iCloud Documents: \(error.localizedDescription)")
+        return
+      }
+      invoke.resolve(["available": true, "documentsPath": documents.path])
+    }
+  }
+
+  /// Materialise an evicted item (`.name.icloud` placeholder), then poll for
+  /// the real file. "notFound" = neither file nor placeholder exists; the JS
+  /// provider maps that to the engine's 404-null contract.
+  @objc public func icloud_ensure_downloaded(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(ICloudEnsureDownloadedArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    DispatchQueue.global(qos: .userInitiated).async {
+      let fm = FileManager.default
+      if fm.fileExists(atPath: args.path) {
+        invoke.resolve(["status": "ready"])
+        return
+      }
+      let url = URL(fileURLWithPath: args.path)
+      let placeholder = url.deletingLastPathComponent()
+        .appendingPathComponent(".\(url.lastPathComponent).icloud")
+      guard fm.fileExists(atPath: placeholder.path) else {
+        invoke.resolve(["status": "notFound"])
+        return
+      }
+      // Either URL form is accepted by the daemon; try the logical path
+      // first, then the placeholder, and let the poll loop below decide.
+      if (try? fm.startDownloadingUbiquitousItem(at: url)) == nil {
+        try? fm.startDownloadingUbiquitousItem(at: placeholder)
+      }
+      let deadline = Date().addingTimeInterval(Double(args.timeoutMs ?? 60000) / 1000)
+      while Date() < deadline {
+        if fm.fileExists(atPath: args.path) {
+          invoke.resolve(["status": "ready"])
+          return
+        }
+        Thread.sleep(forTimeInterval: 0.25)
+      }
+      invoke.resolve(["status": "timeout"])
     }
   }
 
