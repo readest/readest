@@ -112,6 +112,34 @@ describe('requestContextTranslation', () => {
     });
   });
 
+  it('maps fetch rejection to retryable network error without leaking API key', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('connect ECONNREFUSED sk-secret-key'));
+
+    await expect(requestContextTranslation(input, settings)).rejects.toSatisfy((error: unknown) => {
+      expect(error).toMatchObject({ code: 'network-error', retryable: true });
+      expect(error instanceof Error ? error.message : String(error)).toBe(
+        'Could not reach the AI provider. Check the Base URL and connection.',
+      );
+      expect(error instanceof Error ? error.message : String(error)).not.toContain('sk-secret-key');
+      return true;
+    });
+  });
+
+  it('maps invalid response JSON to retryable invalid-response error', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response('<html>not json</html>', {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' },
+      }),
+    );
+
+    await expect(requestContextTranslation(input, settings)).rejects.toMatchObject({
+      code: 'invalid-response',
+      retryable: true,
+      message: 'AI provider returned invalid JSON.',
+    });
+  });
+
   it('throws not-configured when required settings are missing', async () => {
     await expect(
       requestContextTranslation(input, { ...settings, apiKey: '  ' }),

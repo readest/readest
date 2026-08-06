@@ -90,6 +90,57 @@ const readCompletionContent = (json: unknown): string => {
   return content;
 };
 
+const readResponseJson = async (response: Response): Promise<unknown> => {
+  try {
+    return await response.json();
+  } catch {
+    throw new ContextTranslationError(
+      'invalid-response',
+      'AI provider returned invalid JSON.',
+      true,
+    );
+  }
+};
+
+const isAbortError = (error: unknown): boolean =>
+  error instanceof DOMException && error.name === 'AbortError';
+
+const requestChatCompletion = async (
+  input: ContextTranslationInput,
+  settings: ContextTranslationSettings,
+): Promise<Response> => {
+  try {
+    return await getAIFetch()(normalizeChatCompletionsUrl(settings.baseUrl), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${settings.apiKey.trim()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: settings.modelId.trim(),
+        temperature: 0.2,
+        messages: [
+          {
+            role: 'system',
+            content: buildContextTranslationSystemPrompt(input.detailLevel),
+          },
+          {
+            role: 'user',
+            content: buildContextTranslationUserPayload(input),
+          },
+        ],
+      }),
+    });
+  } catch (error) {
+    if (isAbortError(error)) throw error;
+    throw new ContextTranslationError(
+      'network-error',
+      'Could not reach the AI provider. Check the Base URL and connection.',
+      true,
+    );
+  }
+};
+
 export const requestContextTranslation = async (
   input: ContextTranslationInput,
   settings: ContextTranslationSettings,
@@ -100,33 +151,13 @@ export const requestContextTranslation = async (
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
-  const response = await getAIFetch()(normalizeChatCompletionsUrl(settings.baseUrl), {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${settings.apiKey.trim()}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: settings.modelId.trim(),
-      temperature: 0.2,
-      messages: [
-        {
-          role: 'system',
-          content: buildContextTranslationSystemPrompt(input.detailLevel),
-        },
-        {
-          role: 'user',
-          content: buildContextTranslationUserPayload(input),
-        },
-      ],
-    }),
-  });
+  const response = await requestChatCompletion(input, settings);
 
   if (!response.ok) throw mapStatusToError(response.status);
 
   try {
     const result = parseContextTranslationResult(
-      readCompletionContent(await response.json()),
+      readCompletionContent(await readResponseJson(response)),
       input.detailLevel,
     );
     cache.set(cacheKey, result);
