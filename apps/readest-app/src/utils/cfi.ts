@@ -79,15 +79,23 @@ export function findNearestCfi(
   sortedCfis: string[],
   location: string | null | undefined,
 ): string | null {
-  if (!location || sortedCfis.length === 0) return null;
+  if (!location) return null;
+
+  // `CFI.compare` dereferences both arguments, so a hole in the array throws.
+  // A booknote whose stored `cfi` is NULL round-trips through sync as a literal
+  // null despite BookNote.cfi being typed `string`, and this runs inside a
+  // render-phase useMemo — an unguarded throw here reaches the app error
+  // boundary and replaces the whole reader with the crash screen.
+  const cfis = sortedCfis.filter((cfi) => typeof cfi === 'string' && cfi.length > 0);
+  if (cfis.length === 0) return null;
 
   const target = CFI.collapse(location);
   let lo = 0;
-  let hi = sortedCfis.length;
+  let hi = cfis.length;
 
   while (lo < hi) {
     const mid = (lo + hi) >>> 1;
-    if (CFI.compare(sortedCfis[mid]!, target) <= 0) {
+    if (CFI.compare(cfis[mid]!, target) <= 0) {
       lo = mid + 1;
     } else {
       hi = mid;
@@ -96,9 +104,9 @@ export function findNearestCfi(
 
   // lo is the first index where cfi > target
   // The nearest item at or before target is lo - 1
-  if (lo === 0) return sortedCfis[0]!;
-  if (lo >= sortedCfis.length) return sortedCfis[sortedCfis.length - 1]!;
-  return sortedCfis[lo - 1]!;
+  if (lo === 0) return cfis[0]!;
+  if (lo >= cfis.length) return cfis[cfis.length - 1]!;
+  return cfis[lo - 1]!;
 }
 
 /**

@@ -70,6 +70,27 @@ describe('findNearestCfi', () => {
     expect(findNearestCfi(sortedCfis, null)).toBeNull();
     expect(findNearestCfi(sortedCfis, undefined)).toBeNull();
   });
+
+  // A booknote synced from a row whose `cfi` column is SQL NULL arrives as a
+  // literal `null` despite BookNote.cfi being typed `string`. It reaches here
+  // through BooknoteView's `nearestCfi` useMemo, so an unguarded CFI.compare
+  // throws during render and takes the whole app down to the error boundary.
+  it('should skip null/empty entries instead of throwing', () => {
+    const withHoles = [
+      'epubcfi(/6/4!/4/2:0)',
+      null as unknown as string,
+      'epubcfi(/6/6!/4/4:0)',
+      undefined as unknown as string,
+      'epubcfi(/6/10!/4/6:0)',
+    ];
+    expect(() => findNearestCfi(withHoles, 'epubcfi(/6/6!/4/6:0)')).not.toThrow();
+    expect(findNearestCfi(withHoles, 'epubcfi(/6/6!/4/6:0)')).toBe('epubcfi(/6/6!/4/4:0)');
+  });
+
+  it('should return null when every entry is invalid', () => {
+    const allNull = [null, null] as unknown as string[];
+    expect(findNearestCfi(allNull, 'epubcfi(/6/6!/4/4:0)')).toBeNull();
+  });
 });
 
 describe('createCfiLocationMatcher', () => {
