@@ -1,4 +1,5 @@
 import type { LanguageModel, EmbeddingModel } from 'ai';
+import type { ContextTranslationSettings } from './contextTranslationTypes';
 
 export type AIProviderName = 'ollama' | 'ai-gateway' | 'openrouter';
 
@@ -37,6 +38,8 @@ export interface AISettings {
   spoilerProtection: boolean;
   maxContextChunks: number;
   indexingMode: 'on-demand' | 'background';
+
+  contextTranslation: ContextTranslationSettings;
 
   /**
    * Reedy MVP retrieval (Turso vector + Tantivy FTS + CFI citations).

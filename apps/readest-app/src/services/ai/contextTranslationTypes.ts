@@ -14,6 +14,7 @@ export interface ContextTranslationInput {
 }
 
 export interface ContextTranslationSettings {
+  enabled: boolean;
   baseUrl: string;
   apiKey: string;
   modelId: string;

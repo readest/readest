@@ -12,6 +12,7 @@ import {
 } from '@/services/ai/providers/OpenRouterProvider';
 import { DEFAULT_AI_SETTINGS, GATEWAY_MODELS, MODEL_PRICING } from '@/services/ai/constants';
 import type { AISettings, AIProviderName } from '@/services/ai/types';
+import type { ContextTranslationSettings } from '@/services/ai/contextTranslationTypes';
 import { exportReedyMetricsBundle } from '@/services/reedy/instrumentation';
 import { isTauriAppPlatform } from '@/services/environment';
 import { BoxedList, SettingLabel, SettingsRow, SettingsSwitchRow } from './primitives';
@@ -20,6 +21,13 @@ type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
 type CustomModelStatus = 'idle' | 'validating' | 'valid' | 'invalid';
 
 const CUSTOM_MODEL_VALUE = '__custom__';
+
+const getContextTranslationSettings = (
+  settings?: Partial<ContextTranslationSettings>,
+): ContextTranslationSettings => ({
+  ...DEFAULT_AI_SETTINGS.contextTranslation,
+  ...settings,
+});
 
 interface ModelOption {
   id: string;
@@ -72,7 +80,14 @@ const AIPanel: React.FC = () => {
   const { envConfig, appService } = useEnv();
   const { settings, setSettings, saveSettings } = useSettingsStore();
 
-  const aiSettings: AISettings = settings?.aiSettings ?? DEFAULT_AI_SETTINGS;
+  const aiSettings: AISettings = {
+    ...DEFAULT_AI_SETTINGS,
+    ...(settings?.aiSettings ?? {}),
+    contextTranslation: getContextTranslationSettings(
+      settings?.aiSettings?.contextTranslation as Partial<ContextTranslationSettings> | undefined,
+    ),
+  };
+  const contextTranslationSettings = aiSettings.contextTranslation;
 
   const [enabled, setEnabled] = useState(aiSettings.enabled);
   const [reedyEnabled, setReedyEnabled] = useState(aiSettings.reedy?.enabled ?? false);
@@ -99,6 +114,10 @@ const AIPanel: React.FC = () => {
   const [openrouterModels, setOpenrouterModels] = useState<OpenRouterModelInfo[]>([]);
   const [openrouterFetchingModels, setOpenrouterFetchingModels] = useState(false);
   const [openrouterModelsError, setOpenrouterModelsError] = useState('');
+
+  const [contextTranslation, setContextTranslation] = useState<ContextTranslationSettings>(
+    contextTranslationSettings,
+  );
 
   const savedCustomModel = aiSettings.aiGatewayCustomModel ?? '';
   const savedModel = aiSettings.aiGatewayModel ?? DEFAULT_AI_SETTINGS.aiGatewayModel ?? '';
@@ -132,7 +151,13 @@ const AIPanel: React.FC = () => {
     async (key: keyof AISettings, value: AISettings[keyof AISettings]) => {
       const currentSettings = settingsRef.current;
       if (!currentSettings) return;
-      const currentAiSettings: AISettings = currentSettings.aiSettings ?? DEFAULT_AI_SETTINGS;
+      const currentAiSettings: AISettings = {
+        ...DEFAULT_AI_SETTINGS,
+        ...(currentSettings.aiSettings ?? {}),
+        contextTranslation: getContextTranslationSettings(
+          currentSettings.aiSettings?.contextTranslation as Partial<ContextTranslationSettings> | undefined,
+        ),
+      };
       const newAiSettings: AISettings = { ...currentAiSettings, [key]: value };
       const newSettings = { ...currentSettings, aiSettings: newAiSettings };
 
@@ -287,6 +312,15 @@ const AIPanel: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openrouterEmbeddingModel]);
+
+  const saveContextTranslationSetting = useCallback(
+    <K extends keyof ContextTranslationSettings>(key: K, value: ContextTranslationSettings[K]) => {
+      const next = { ...contextTranslation, [key]: value };
+      setContextTranslation(next);
+      saveAiSetting('contextTranslation', next);
+    },
+    [contextTranslation, saveAiSetting],
+  );
 
   // Get the effective model ID to use (either selected or custom)
   const getEffectiveModelId = useCallback(() => {
@@ -741,6 +775,77 @@ const AIPanel: React.FC = () => {
           </div>
         </BoxedList>
       )}
+
+      <BoxedList
+        title={_('Context Translate')}
+        description={_(
+          'Selected text and surrounding context will be sent to your configured AI provider.',
+        )}
+      >
+        <SettingsSwitchRow
+          label={_('Enable Context Translate')}
+          checked={contextTranslation.enabled}
+          onChange={() => saveContextTranslationSetting('enabled', !contextTranslation.enabled)}
+        />
+        <div className='flex flex-col gap-2 pe-4 py-3'>
+          <SettingLabel>{_('Base URL')}</SettingLabel>
+          <input
+            type='text'
+            className='input input-bordered input-sm w-full'
+            value={contextTranslation.baseUrl}
+            onChange={(e) => saveContextTranslationSetting('baseUrl', e.target.value)}
+            placeholder='https://api.openai.com/v1'
+            disabled={!contextTranslation.enabled}
+          />
+        </div>
+        <div className='flex flex-col gap-2 pe-4 py-3'>
+          <SettingLabel>{_('API Key')}</SettingLabel>
+          <input
+            type='password'
+            className='input input-bordered input-sm w-full'
+            value={contextTranslation.apiKey}
+            onChange={(e) => saveContextTranslationSetting('apiKey', e.target.value)}
+            placeholder='sk-...'
+            disabled={!contextTranslation.enabled}
+            autoComplete='off'
+          />
+        </div>
+        <div className='flex flex-col gap-2 pe-4 py-3'>
+          <SettingLabel>{_('Model ID')}</SettingLabel>
+          <input
+            type='text'
+            className='input input-bordered input-sm w-full'
+            value={contextTranslation.modelId}
+            onChange={(e) => saveContextTranslationSetting('modelId', e.target.value)}
+            placeholder='gpt-4o-mini'
+            disabled={!contextTranslation.enabled}
+          />
+        </div>
+        <div className='flex flex-col gap-2 pe-4 py-3'>
+          <SettingLabel>{_('Target Language')}</SettingLabel>
+          <input
+            type='text'
+            className='input input-bordered input-sm w-full'
+            value={contextTranslation.targetLanguage}
+            onChange={(e) => saveContextTranslationSetting('targetLanguage', e.target.value)}
+            disabled={!contextTranslation.enabled}
+          />
+        </div>
+        <div className='flex flex-col gap-2 pe-4 py-3'>
+          <SettingLabel>{_('Max Context Length')}</SettingLabel>
+          <input
+            type='number'
+            min={0}
+            step={100}
+            className='input input-bordered input-sm w-full'
+            value={contextTranslation.maxContextChars}
+            onChange={(e) =>
+              saveContextTranslationSetting('maxContextChars', e.target.valueAsNumber || 0)
+            }
+            disabled={!contextTranslation.enabled}
+          />
+        </div>
+      </BoxedList>
 
       <BoxedList
         title={_('Reedy Retrieval (Beta)')}
