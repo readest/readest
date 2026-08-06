@@ -1,5 +1,6 @@
 import { md5 } from 'js-md5';
 import WebSocket from 'isomorphic-ws';
+import type TauriWebSocketConnection from '@tauri-apps/plugin-websocket';
 import { randomMd5 } from '@/utils/misc';
 import { LRUCache } from '@/utils/lru';
 import { genSSML } from '@/utils/ssml';
@@ -350,6 +351,11 @@ export const hashTTSPayload = (payload: EdgeTTSPayload): string => {
 
 export type EDGE_TTS_PROTOCOL = 'wss' | 'https';
 
+// Inactivity budget for the Tauri WebSocket transport. Synthesis frames
+// stream continuously once the request is sent; a socket silent this long is
+// dead and would otherwise hang playback forever (#5230).
+const WS_INACTIVITY_TIMEOUT_MS = 30_000;
+
 export class EdgeSpeechTTS {
   static voices = genVoiceList(EDGE_TTS_VOICES);
   private static audioCache = new LRUCache<string, Blob>(200);
@@ -474,24 +480,61 @@ export class EdgeSpeechTTS {
     const config = genSendContent(configHeaders, configContent);
 
     if (isTauriAppPlatform()) {
+      // Every exit path must settle this promise (#5230): the plugin's channel
+      // delivers a server close as a `Close` message and a connection read
+      // error as a bare string (no `type` field) — ignoring them left the
+      // promise pending forever, wedging the whole speak pipeline (and the
+      // static inflight map poisoned that sentence until app restart).
       return new Promise(async (resolve, reject) => {
+        let ws: TauriWebSocketConnection | null = null;
+        let settled = false;
+        let unlisten: (() => void) | null = null;
+        let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+        const cleanup = () => {
+          if (inactivityTimer !== null) clearTimeout(inactivityTimer);
+          inactivityTimer = null;
+          unlisten?.();
+          unlisten = null;
+          void ws?.disconnect().catch(() => {});
+        };
+        const settle = (complete: () => void) => {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          complete();
+        };
+        // Frames stream steadily during synthesis, so prolonged silence means
+        // a half-open socket (e.g. a mobile network handover) that will never
+        // error or close on its own. Reject so the caller's retry can open a
+        // fresh connection.
+        const armInactivityTimer = () => {
+          if (inactivityTimer !== null) clearTimeout(inactivityTimer);
+          inactivityTimer = setTimeout(() => {
+            settle(() => reject(new Error('WebSocket timed out waiting for audio.')));
+          }, WS_INACTIVITY_TIMEOUT_MS);
+        };
         try {
           const TauriWebSocket = (await import('@tauri-apps/plugin-websocket')).default;
-          const ws = await TauriWebSocket.connect(url, { headers: baseHeaders });
+          ws = await TauriWebSocket.connect(url, { headers: baseHeaders });
           let audioData = new ArrayBuffer(0);
           const boundaries: TTSWordBoundary[] = [];
-          const messageUnlisten = await ws.addListener((msg) => {
+          unlisten = ws.addListener((msg) => {
+            if (settled) return;
+            armInactivityTimer();
+            if (typeof msg === 'string') {
+              return settle(() => reject(new Error(`WebSocket error occurred: ${msg}`)));
+            }
             if (msg.type === 'Text') {
               const { headers, body } = getHeadersAndData(msg.data as string);
               if (headers['Path'] === 'audio.metadata') {
                 boundaries.push(...parseAudioMetadataBody(body.trim()));
               } else if (headers['Path'] === 'turn.end') {
-                ws.disconnect();
-                messageUnlisten();
-                if (!audioData.byteLength) {
-                  return reject(new Error('No audio data received.'));
-                }
-                resolve({ response: new Response(audioData), boundaries });
+                settle(() => {
+                  if (!audioData.byteLength) {
+                    return reject(new Error('No audio data received.'));
+                  }
+                  resolve({ response: new Response(audioData), boundaries });
+                });
               }
             } else if (msg.type === 'Binary') {
               let buffer: ArrayBufferLike;
@@ -509,12 +552,16 @@ export class EdgeSpeechTTS {
                 merged.set(new Uint8Array(newBody), audioData.byteLength);
                 audioData = merged.buffer;
               }
+            } else if (msg.type === 'Close') {
+              settle(() => reject(new Error('WebSocket closed before audio completed.')));
             }
+            // Ping/Pong frames only refresh the inactivity timer.
           });
+          armInactivityTimer();
           await ws.send(config);
           await ws.send(content);
         } catch (error) {
-          reject(new Error(`WebSocket error occurred: ${error}`));
+          settle(() => reject(new Error(`WebSocket error occurred: ${error}`)));
         }
       });
     } else if (isCloudflareWorkers()) {
