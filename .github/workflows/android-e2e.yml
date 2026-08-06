@@ -127,5 +127,6 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
+            adb uninstall com.bilingify.readest || true
             adb install -r "$APK"
             cd apps/readest-app && pnpm test:android
