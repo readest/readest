@@ -98,6 +98,7 @@ export const BACKUP_SETTINGS_CREDENTIAL_FIELDS = [
   's3.secretAccessKey',
   'aiSettings.aiGatewayApiKey',
   'aiSettings.openrouterApiKey',
+  'aiSettings.contextTranslation.apiKey',
 ] as const;
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
