@@ -54,6 +54,15 @@ describe('WindowButtons', () => {
     expect(startDragging).not.toHaveBeenCalled();
   });
 
+  it('keeps a caller-provided close action available when the platform has no window bar', () => {
+    const onClose = vi.fn();
+    render(<WindowButtons onClose={onClose} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it('keeps title-bar dragging enabled on desktop platforms', async () => {
     hasWindowBar = true;
     render(<WindowButtonsHarness />);
