@@ -17,7 +17,7 @@ import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/build
 import { buildOneDriveProvider } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import { createS3Provider } from '@/services/sync/providers/s3/S3Provider';
 
-export type FileSyncBackendKind = 'webdav' | 'gdrive' | 's3' | 'onedrive';
+export type FileSyncBackendKind = 'webdav' | 'gdrive' | 's3' | 'onedrive' | 'icloud';
 
 /** Minimal settings the registry reads to pick + build backends. */
 export interface FileSyncBackendsSettings {
@@ -25,6 +25,7 @@ export interface FileSyncBackendsSettings {
   googleDrive?: { enabled?: boolean };
   s3?: S3Settings;
   onedrive?: { enabled?: boolean };
+  icloud?: { enabled?: boolean };
 }
 
 /**
@@ -58,6 +59,7 @@ const providerCacheKey = (
     return `s3:${c?.enabled}:${c?.endpoint}:${c?.region}:${c?.bucket}:${c?.accessKeyId}:${c?.secretAccessKey}`;
   }
   if (kind === 'onedrive') return 'onedrive';
+  if (kind === 'icloud') return 'icloud';
   return 'gdrive';
 };
 
@@ -88,7 +90,9 @@ export const createFileSyncProvider = async (
           : null
         : kind === 'onedrive'
           ? await buildOneDriveProvider()
-          : await buildGoogleDriveProvider();
+          : kind === 'icloud'
+            ? null // wired to buildICloudProvider in the provider commit
+            : await buildGoogleDriveProvider();
   if (provider) providerCache.set(kind, { key, provider });
   return provider;
 };

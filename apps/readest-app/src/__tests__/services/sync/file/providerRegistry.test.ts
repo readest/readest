@@ -174,6 +174,10 @@ describe('per-backend provider cache', () => {
     expect(await createFileSyncProvider('s3', edited)).toBe(s3First);
   });
 
+  test('returns null for icloud until its builder is wired', async () => {
+    expect(await createFileSyncProvider('icloud', {})).toBeNull();
+  });
+
   test('reset clears every backend', async () => {
     resetFileSyncProviderCache();
     const settings = {

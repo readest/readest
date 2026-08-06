@@ -271,3 +271,27 @@ describe('cloudProvidersDisplayName', () => {
     expect(cloudProvidersDisplayName(['readest', 'gdrive'])).toBe('Readest Cloud, Google Drive');
   });
 });
+
+describe('icloud backend kind', () => {
+  test('getEnabledFileSyncBackends appends icloud last', () => {
+    expect(
+      getEnabledFileSyncBackends(
+        s({ webdav: { enabled: true }, icloud: { enabled: true } } as never),
+      ),
+    ).toEqual(['webdav', 'icloud']);
+  });
+
+  test('settingsKeyForBackend maps icloud to its own slice', () => {
+    expect(settingsKeyForBackend('icloud')).toBe('icloud');
+  });
+
+  test('cloudProviderDisplayName names iCloud', () => {
+    expect(cloudProviderDisplayName('icloud')).toBe('iCloud');
+  });
+
+  test('applySyncBooksAutoEnable flips syncBooks on for an enabled icloud', () => {
+    const settings = s({ icloud: { enabled: true, syncBooks: false } } as never);
+    expect(applySyncBooksAutoEnable(settings)).toBe(true);
+    expect(settings.icloud?.syncBooks).toBe(true);
+  });
+});

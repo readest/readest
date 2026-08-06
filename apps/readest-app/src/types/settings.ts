@@ -248,6 +248,25 @@ export interface OneDriveSettings {
 }
 
 /**
+ * iCloud Drive file-sync settings. Available only in the iOS/macOS Tauri
+ * apps: the backend is the app's ubiquity container, synced by the OS. No
+ * credentials and no OAuth — the device's iCloud session is the account.
+ * `deviceId`/`lastSyncedAt`/`providerSelectedAt` are device-local.
+ */
+export interface ICloudSettings {
+  enabled: boolean;
+  syncProgress?: boolean;
+  syncNotes?: boolean;
+  syncBooks?: boolean;
+  fullSync?: boolean;
+  strategy?: KOSyncStrategy;
+  deviceId?: string;
+  lastSyncedAt?: number;
+  /** See {@link WebDAVSettings.providerSelectedAt}. */
+  providerSelectedAt?: number;
+}
+
+/**
  * Readest Cloud's own library-sync switch. Readest Cloud used to be the
  * derived fallback — "on" whenever no third-party provider was enabled —
  * because exactly one provider could own the library channels. Providers are
@@ -458,6 +477,7 @@ export interface SystemSettings {
   googleDrive: GoogleDriveSettings;
   s3: S3Settings;
   onedrive: OneDriveSettings;
+  icloud: ICloudSettings;
 
   aiSettings: AISettings;
   /**
