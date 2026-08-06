@@ -2074,5 +2074,13 @@
   "Pencil Double Tap": "Double toucher Apple Pencil",
   "Pencil Squeeze": "Pression Apple Pencil",
   "Pages": "Pages",
-  "Go to Page": "Aller à la page"
+  "Go to Page": "Aller à la page",
+  "Turn Off": "Désactiver",
+  "iCloud is not available on this device.": "iCloud n'est pas disponible sur cet appareil.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "Connectez-vous à iCloud dans Réglages Système et vérifiez que iCloud Drive est activé.",
+  "Use iCloud": "Utiliser iCloud",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "Votre bibliothèque est stockée dans votre iCloud Drive et compte dans son espace de stockage.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "Synchronisez votre bibliothèque, votre progression de lecture et vos surlignages avec votre iCloud Drive.",
+  "Sync with iCloud": "Synchroniser avec iCloud"
 }

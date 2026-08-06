@@ -2074,5 +2074,13 @@
   "Pencil Double Tap": "Atingere dublă Apple Pencil",
   "Pencil Squeeze": "Strângere Apple Pencil",
   "Pages": "Pagini",
-  "Go to Page": "Mergi la pagina"
+  "Go to Page": "Mergi la pagina",
+  "Turn Off": "Dezactivează",
+  "iCloud is not available on this device.": "iCloud nu este disponibil pe acest dispozitiv.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "Conectează-te la iCloud din Setări sistem și asigură-te că iCloud Drive este activat.",
+  "Use iCloud": "Folosește iCloud",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "Biblioteca ta este stocată în iCloud Drive și ocupă din spațiul său de stocare.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "Sincronizează-ți biblioteca, progresul citirii și evidențierile cu iCloud Drive-ul tău.",
+  "Sync with iCloud": "Sincronizare cu iCloud"
 }

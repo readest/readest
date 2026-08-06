@@ -2212,5 +2212,13 @@
   "Pencil Double Tap": "نقر مزدوج على Apple Pencil",
   "Pencil Squeeze": "ضغط Apple Pencil",
   "Pages": "الصفحات",
-  "Go to Page": "الانتقال إلى الصفحة"
+  "Go to Page": "الانتقال إلى الصفحة",
+  "Turn Off": "إيقاف",
+  "iCloud is not available on this device.": "iCloud غير متوفر على هذا الجهاز.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "سجّل الدخول إلى iCloud في إعدادات النظام وتأكد من تفعيل iCloud Drive.",
+  "Use iCloud": "استخدام iCloud",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "تُخزَّن مكتبتك في iCloud Drive الخاص بك وتُحتسب ضمن مساحة تخزينه.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "زامن مكتبتك وتقدم القراءة والتمييزات مع iCloud Drive الخاص بك.",
+  "Sync with iCloud": "المزامنة مع iCloud"
 }

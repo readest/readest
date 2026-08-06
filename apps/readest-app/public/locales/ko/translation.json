@@ -1982,5 +1982,13 @@
   "Pencil Double Tap": "Apple Pencil 이중 탭",
   "Pencil Squeeze": "Apple Pencil 스퀴즈",
   "Pages": "페이지 수",
-  "Go to Page": "페이지로 이동"
+  "Go to Page": "페이지로 이동",
+  "Turn Off": "끄기",
+  "iCloud is not available on this device.": "이 기기에서는 iCloud를 사용할 수 없습니다.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "시스템 설정에서 iCloud에 로그인하고 iCloud Drive가 켜져 있는지 확인하세요.",
+  "Use iCloud": "iCloud 사용",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "라이브러리는 iCloud Drive에 저장되며 해당 저장 공간을 사용합니다.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "라이브러리, 읽기 진행 상황, 하이라이트를 iCloud Drive와 동기화합니다.",
+  "Sync with iCloud": "iCloud와 동기화"
 }

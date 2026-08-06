@@ -1982,5 +1982,13 @@
   "Pencil Double Tap": "Apple Pencilのダブルタップ",
   "Pencil Squeeze": "Apple Pencilのスクイーズ",
   "Pages": "ページ数",
-  "Go to Page": "ページにジャンプ"
+  "Go to Page": "ページにジャンプ",
+  "Turn Off": "オフにする",
+  "iCloud is not available on this device.": "このデバイスでは iCloud を利用できません。",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "システム設定で iCloud にサインインし、iCloud Drive がオンになっていることを確認してください。",
+  "Use iCloud": "iCloud を使用",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "ライブラリは iCloud Drive に保存され、その容量を消費します。",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "ライブラリ、読書進捗、ハイライトを iCloud Drive と同期します。",
+  "Sync with iCloud": "iCloud と同期"
 }

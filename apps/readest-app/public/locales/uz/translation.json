@@ -2028,5 +2028,13 @@
   "Pencil Double Tap": "Apple Pencil ikki marta bosish",
   "Pencil Squeeze": "Apple Pencil qisish",
   "Pages": "Sahifalar",
-  "Go to Page": "Sahifaga o'tish"
+  "Go to Page": "Sahifaga o'tish",
+  "Turn Off": "Oʻchirish",
+  "iCloud is not available on this device.": "Bu qurilmada iCloud mavjud emas.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "Tizim sozlamalarida iCloud hisobiga kiring va iCloud Drive yoqilganiga ishonch hosil qiling.",
+  "Use iCloud": "iCloud’dan foydalanish",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "Kutubxonangiz iCloud Drive’da saqlanadi va uning xotirasidan hisoblanadi.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "Kutubxonangiz, oʻqish jarayoni va belgilashlaringizni iCloud Drive bilan sinxronlang.",
+  "Sync with iCloud": "iCloud bilan sinxronlash"
 }

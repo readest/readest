@@ -1982,5 +1982,13 @@
   "Pencil Double Tap": "Apple Pencil 轻点两下",
   "Pencil Squeeze": "Apple Pencil 轻捏",
   "Pages": "页数",
-  "Go to Page": "跳转到页码"
+  "Go to Page": "跳转到页码",
+  "Turn Off": "关闭",
+  "iCloud is not available on this device.": "此设备上无法使用 iCloud。",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "请在系统设置中登录 iCloud，并确保已开启 iCloud 云盘。",
+  "Use iCloud": "使用 iCloud",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "您的书库存储在您的 iCloud 云盘中，并占用其存储空间。",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "将您的书库、阅读进度和高亮与您的 iCloud 云盘同步。",
+  "Sync with iCloud": "与 iCloud 同步"
 }

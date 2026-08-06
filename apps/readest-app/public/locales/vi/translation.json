@@ -1982,5 +1982,13 @@
   "Pencil Double Tap": "Chạm hai lần Apple Pencil",
   "Pencil Squeeze": "Bóp Apple Pencil",
   "Pages": "Số trang",
-  "Go to Page": "Đi đến trang"
+  "Go to Page": "Đi đến trang",
+  "Turn Off": "Tắt",
+  "iCloud is not available on this device.": "iCloud không khả dụng trên thiết bị này.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "Đăng nhập iCloud trong Cài đặt Hệ thống và đảm bảo iCloud Drive đã được bật.",
+  "Use iCloud": "Dùng iCloud",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "Thư viện của bạn được lưu trong iCloud Drive và tính vào dung lượng lưu trữ của nó.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "Đồng bộ thư viện, tiến trình đọc và điểm nổi bật của bạn với iCloud Drive của bạn.",
+  "Sync with iCloud": "Đồng bộ với iCloud"
 }

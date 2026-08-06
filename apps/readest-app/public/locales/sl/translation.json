@@ -2120,5 +2120,13 @@
   "Pencil Double Tap": "Dvojni dotik Apple Pencil",
   "Pencil Squeeze": "Stisk Apple Pencil",
   "Pages": "Strani",
-  "Go to Page": "Pojdi na stran"
+  "Go to Page": "Pojdi na stran",
+  "Turn Off": "Izklopi",
+  "iCloud is not available on this device.": "iCloud v tej napravi ni na voljo.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "V Sistemskih nastavitvah se prijavite v iCloud in preverite, ali je iCloud Drive vklopljen.",
+  "Use iCloud": "Uporabi iCloud",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "Vaša knjižnica je shranjena v iCloud Drive in šteje v njegov prostor za shranjevanje.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "Sinhronizirajte knjižnico, napredek branja in označbe s svojim iCloud Drive.",
+  "Sync with iCloud": "Sinhroniziraj z iCloud"
 }

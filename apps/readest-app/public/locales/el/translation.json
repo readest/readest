@@ -2028,5 +2028,13 @@
   "Pencil Double Tap": "Διπλό άγγιγμα Apple Pencil",
   "Pencil Squeeze": "Πίεση Apple Pencil",
   "Pages": "Σελίδες",
-  "Go to Page": "Μετάβαση σε σελίδα"
+  "Go to Page": "Μετάβαση σε σελίδα",
+  "Turn Off": "Απενεργοποίηση",
+  "iCloud is not available on this device.": "Το iCloud δεν είναι διαθέσιμο σε αυτήν τη συσκευή.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "Συνδεθείτε στο iCloud στις Ρυθμίσεις συστήματος και βεβαιωθείτε ότι το iCloud Drive είναι ενεργοποιημένο.",
+  "Use iCloud": "Χρήση iCloud",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "Η βιβλιοθήκη σας αποθηκεύεται στο iCloud Drive σας και προσμετράται στον αποθηκευτικό του χώρο.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "Συγχρονίστε τη βιβλιοθήκη, την πρόοδο ανάγνωσης και τις επισημάνσεις σας με το iCloud Drive σας.",
+  "Sync with iCloud": "Συγχρονισμός με iCloud"
 }

@@ -2028,5 +2028,13 @@
   "Pencil Double Tap": "Apple Pencil දෙවරක් තට්ටු කිරීම",
   "Pencil Squeeze": "Apple Pencil තද කිරීම",
   "Pages": "පිටු ගණන",
-  "Go to Page": "පිටුවට යන්න"
+  "Go to Page": "පිටුවට යන්න",
+  "Turn Off": "අක්‍රිය කරන්න",
+  "iCloud is not available on this device.": "මෙම උපාංගයේ iCloud ලබා ගත නොහැක.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "පද්ධති සැකසුම් තුළ iCloud වෙත පිවිසෙන්න සහ iCloud Drive සක්‍රිය කර ඇති බව තහවුරු කරන්න.",
+  "Use iCloud": "iCloud භාවිතා කරන්න",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "ඔබේ පුස්තකාලය ඔබේ iCloud Drive හි ගබඩා වන අතර එහි ආචයනයට ගණන් ගැනේ.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "ඔබේ පුස්තකාලය, කියවීමේ ප්‍රගතිය සහ ඉස්මතු කිරීම් ඔබේ iCloud Drive සමඟ සමමුහුර්ත කරන්න.",
+  "Sync with iCloud": "iCloud සමඟ සමමුහුර්ත කරන්න"
 }

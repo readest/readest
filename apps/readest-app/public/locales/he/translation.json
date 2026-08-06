@@ -2074,5 +2074,13 @@
   "Pencil Double Tap": "הקשה כפולה על Apple Pencil",
   "Pencil Squeeze": "לחיצה על Apple Pencil",
   "Pages": "דפים",
-  "Go to Page": "עבור לעמוד"
+  "Go to Page": "עבור לעמוד",
+  "Turn Off": "כיבוי",
+  "iCloud is not available on this device.": "iCloud אינו זמין במכשיר זה.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "התחבר ל-iCloud בהגדרות המערכת וודא ש-iCloud Drive מופעל.",
+  "Use iCloud": "השתמש ב-iCloud",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "הספרייה שלך מאוחסנת ב-iCloud Drive שלך ונספרת בשטח האחסון שלו.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "סנכרן את הספרייה, התקדמות הקריאה וההדגשות שלך עם iCloud Drive שלך.",
+  "Sync with iCloud": "סנכרון עם iCloud"
 }

@@ -2028,5 +2028,13 @@
   "Pencil Double Tap": "Apple Pencil dupla koppintás",
   "Pencil Squeeze": "Apple Pencil összenyomás",
   "Pages": "Oldalak",
-  "Go to Page": "Ugrás oldalra"
+  "Go to Page": "Ugrás oldalra",
+  "Turn Off": "Kikapcsolás",
+  "iCloud is not available on this device.": "Az iCloud nem érhető el ezen az eszközön.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "Jelentkezzen be az iCloudba a Rendszerbeállításokban, és győződjön meg róla, hogy az iCloud Drive be van kapcsolva.",
+  "Use iCloud": "iCloud használata",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "Könyvtára az iCloud Drive-on tárolódik, és beleszámít annak tárhelyébe.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "Szinkronizálja könyvtárát, olvasási haladását és kiemeléseit a iCloud Drive-jával.",
+  "Sync with iCloud": "iCloud szinkronizálása"
 }

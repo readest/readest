@@ -2120,5 +2120,13 @@
   "Pencil Double Tap": "Двойное касание Apple Pencil",
   "Pencil Squeeze": "Сжатие Apple Pencil",
   "Pages": "Страницы",
-  "Go to Page": "Перейти к странице"
+  "Go to Page": "Перейти к странице",
+  "Turn Off": "Отключить",
+  "iCloud is not available on this device.": "iCloud недоступен на этом устройстве.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "Войдите в iCloud в Системных настройках и убедитесь, что iCloud Drive включён.",
+  "Use iCloud": "Использовать iCloud",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "Ваша библиотека хранится в iCloud Drive и учитывается в его хранилище.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "Синхронизируйте свою библиотеку, прогресс чтения и выделения с вашим iCloud Drive.",
+  "Sync with iCloud": "Синхронизировать с iCloud"
 }

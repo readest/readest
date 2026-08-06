@@ -2120,5 +2120,13 @@
   "Pencil Double Tap": "Подвійний дотик Apple Pencil",
   "Pencil Squeeze": "Стискання Apple Pencil",
   "Pages": "Сторінки",
-  "Go to Page": "Перейти до сторінки"
+  "Go to Page": "Перейти до сторінки",
+  "Turn Off": "Вимкнути",
+  "iCloud is not available on this device.": "iCloud недоступний на цьому пристрої.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "Увійдіть в iCloud у Системних параметрах і переконайтеся, що iCloud Drive увімкнено.",
+  "Use iCloud": "Використовувати iCloud",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "Ваша бібліотека зберігається в iCloud Drive і враховується в його сховищі.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "Синхронізуйте свою бібліотеку, проґрес читання та виділення з вашим iCloud Drive.",
+  "Sync with iCloud": "Синхронізувати з iCloud"
 }

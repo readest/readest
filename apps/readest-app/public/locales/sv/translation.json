@@ -2028,5 +2028,13 @@
   "Pencil Double Tap": "Apple Pencil dubbeltryck",
   "Pencil Squeeze": "Apple Pencil klämning",
   "Pages": "Sidor",
-  "Go to Page": "Gå till sida"
+  "Go to Page": "Gå till sida",
+  "Turn Off": "Stäng av",
+  "iCloud is not available on this device.": "iCloud är inte tillgängligt på den här enheten.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "Logga in på iCloud i Systeminställningar och se till att iCloud Drive är aktiverat.",
+  "Use iCloud": "Använd iCloud",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "Ditt bibliotek lagras i din iCloud Drive och räknas mot dess lagringsutrymme.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "Synka ditt bibliotek, dina läsframsteg och markeringar med din iCloud Drive.",
+  "Sync with iCloud": "Synka med iCloud"
 }

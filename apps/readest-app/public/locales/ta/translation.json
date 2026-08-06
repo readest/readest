@@ -2028,5 +2028,13 @@
   "Pencil Double Tap": "Apple Pencil இரட்டைத் தட்டு",
   "Pencil Squeeze": "Apple Pencil அழுத்துதல்",
   "Pages": "பக்கங்கள்",
-  "Go to Page": "பக்கத்திற்குச் செல்"
+  "Go to Page": "பக்கத்திற்குச் செல்",
+  "Turn Off": "முடக்கு",
+  "iCloud is not available on this device.": "இந்த சாதனத்தில் iCloud கிடைக்கவில்லை.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "கணினி அமைப்புகளில் iCloud-இல் உள்நுழைந்து iCloud Drive இயக்கத்தில் உள்ளதா என உறுதிப்படுத்தவும்.",
+  "Use iCloud": "iCloud-ஐப் பயன்படுத்து",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "உங்கள் நூலகம் உங்கள் iCloud Drive-இல் சேமிக்கப்படுகிறது மற்றும் அதன் சேமிப்பகத்தில் கணக்கிடப்படுகிறது.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "உங்கள் நூலகம், வாசிப்பு முன்னேற்றம் மற்றும் சிறப்பம்சங்களை உங்கள் iCloud Drive உடன் ஒத்திசைக்கவும்.",
+  "Sync with iCloud": "iCloud உடன் ஒத்திசைக்கவும்"
 }

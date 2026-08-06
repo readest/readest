@@ -2028,5 +2028,13 @@
   "Pencil Double Tap": "Apple Pencil ডাবল ট্যাপ",
   "Pencil Squeeze": "Apple Pencil স্কুইজ",
   "Pages": "পৃষ্ঠা সংখ্যা",
-  "Go to Page": "পৃষ্ঠায় যান"
+  "Go to Page": "পৃষ্ঠায় যান",
+  "Turn Off": "বন্ধ করুন",
+  "iCloud is not available on this device.": "এই ডিভাইসে iCloud উপলব্ধ নয়।",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "সিস্টেম সেটিংসে iCloud-এ সাইন ইন করুন এবং iCloud Drive চালু আছে কিনা নিশ্চিত করুন।",
+  "Use iCloud": "iCloud ব্যবহার করুন",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "আপনার লাইব্রেরি আপনার iCloud Drive-এ সংরক্ষিত হয় এবং এর স্টোরেজে গণনা করা হয়।",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "আপনার লাইব্রেরি, পড়ার অগ্রগতি এবং হাইলাইটগুলি আপনার iCloud Drive-এর সাথে সিঙ্ক করুন।",
+  "Sync with iCloud": "iCloud-এর সাথে সিঙ্ক করুন"
 }

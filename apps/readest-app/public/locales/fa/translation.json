@@ -2028,5 +2028,13 @@
   "Pencil Double Tap": "دو ضربه روی Apple Pencil",
   "Pencil Squeeze": "فشردن Apple Pencil",
   "Pages": "صفحات",
-  "Go to Page": "رفتن به صفحه"
+  "Go to Page": "رفتن به صفحه",
+  "Turn Off": "خاموش کردن",
+  "iCloud is not available on this device.": "iCloud در این دستگاه در دسترس نیست.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "در تنظیمات سیستم وارد iCloud شوید و مطمئن شوید iCloud Drive روشن است.",
+  "Use iCloud": "استفاده از iCloud",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "کتابخانه شما در iCloud Drive ذخیره می‌شود و در فضای ذخیره‌سازی آن محاسبه می‌شود.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "کتابخانه، وضعیت مطالعه و هایلایت‌های خود را با iCloud Drive خود همگام‌سازی کنید.",
+  "Sync with iCloud": "همگام‌سازی با iCloud"
 }

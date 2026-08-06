@@ -1982,5 +1982,13 @@
   "Pencil Double Tap": "Ketik Dua Kali Apple Pencil",
   "Pencil Squeeze": "Picit Apple Pencil",
   "Pages": "Jumlah Halaman",
-  "Go to Page": "Pergi ke Halaman"
+  "Go to Page": "Pergi ke Halaman",
+  "Turn Off": "Matikan",
+  "iCloud is not available on this device.": "iCloud tidak tersedia pada peranti ini.",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "Log masuk ke iCloud dalam Tetapan Sistem dan pastikan iCloud Drive dihidupkan.",
+  "Use iCloud": "Guna iCloud",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "Perpustakaan anda disimpan dalam iCloud Drive anda dan dikira dalam storannya.",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "Segerakkan perpustakaan, kemajuan bacaan dan penonjolan anda dengan iCloud Drive anda.",
+  "Sync with iCloud": "Segerakkan dengan iCloud"
 }

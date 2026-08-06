@@ -2028,5 +2028,13 @@
   "Pencil Double Tap": "Apple Pencil डबल टैप",
   "Pencil Squeeze": "Apple Pencil स्क्वीज़",
   "Pages": "कुल पृष्ठ",
-  "Go to Page": "पृष्ठ पर जाएँ"
+  "Go to Page": "पृष्ठ पर जाएँ",
+  "Turn Off": "बंद करें",
+  "iCloud is not available on this device.": "इस डिवाइस पर iCloud उपलब्ध नहीं है।",
+  "Sign in to iCloud in System Settings and make sure iCloud Drive is turned on.": "सिस्टम सेटिंग्स में iCloud में साइन इन करें और सुनिश्चित करें कि iCloud Drive चालू है।",
+  "Use iCloud": "iCloud का उपयोग करें",
+  "Your library is stored in your iCloud Drive and counts against its storage.": "आपकी लाइब्रेरी आपकी iCloud Drive में संग्रहीत होती है और उसके स्टोरेज में गिनी जाती है।",
+  "iCloud": "iCloud",
+  "Sync your library, reading progress, and highlights with your iCloud Drive.": "अपनी लाइब्रेरी, पढ़ने की प्रगति और हाइलाइट्स को अपनी iCloud Drive से सिंक करें।",
+  "Sync with iCloud": "iCloud के साथ सिंक करें"
 }
