@@ -30,6 +30,7 @@ permissions = [
   "allow-get-lookup-dictionary",
   "allow-clear-lookup-dictionary",
   "allow-select-directory",
+  "allow-show-file-picker",
   "allow-get-storefront-region-code",
   "allow-request-manage-storage-permission",
   "allow-register-listener",

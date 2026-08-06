@@ -288,6 +288,14 @@ export async function selectDirectory(): Promise<SelectDirectoryResponse> {
   return result;
 }
 
+// Android only. Opens the system document picker fire-and-forget; the picked
+// URIs come back as a `file-picker-result` plugin event (see
+// useAndroidPickedBooks) so they survive the activity/process being torn down
+// while the picker is in the foreground (#1217).
+export async function showFilePicker(): Promise<void> {
+  await invoke('plugin:native-bridge|show_file_picker');
+}
+
 export async function getStorefrontRegionCode(): Promise<GetStorefrontRegionCodeResponse> {
   const result = await invoke<GetStorefrontRegionCodeResponse>(
     'plugin:native-bridge|get_storefront_region_code',

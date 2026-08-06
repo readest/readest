@@ -61,7 +61,10 @@ const selectFileWeb = (options: FileSelectorOptions): Promise<File[]> => {
  * `AppService.openFile` uses). Plain filesystem paths parse fine with
  * `getFilename`.
  */
-const resolveTauriFileName = async (path: string, appService: AppService): Promise<string> => {
+export const resolveTauriFileName = async (
+  path: string,
+  appService: AppService,
+): Promise<string> => {
   if (isContentURI(path) || (isFileURI(path) && appService.isIOSApp)) {
     try {
       return await basename(path);

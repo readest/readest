@@ -282,6 +282,17 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
+    // Android only. Fire-and-forget: the picked URIs are delivered via the
+    // `file-picker-result` plugin event so they survive activity/process
+    // recreation behind the system picker (#1217).
+    pub fn show_file_picker(&self) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("show_file_picker", ())
+            .map_err(Into::into)
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
     pub fn get_storefront_region_code(&self) -> crate::Result<GetStorefrontRegionCodeResponse> {
         self.0
             .run_mobile_plugin("get_storefront_region_code", ())

@@ -65,7 +65,8 @@ import { useOpenShareLink } from '@/hooks/useOpenShareLink';
 import { useClipUrlIngress } from '@/hooks/useClipUrlIngress';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { SelectedFile, useFileSelector } from '@/hooks/useFileSelector';
-import { lockScreenOrientation, selectDirectory } from '@/utils/bridge';
+import { lockScreenOrientation, selectDirectory, showFilePicker } from '@/utils/bridge';
+import { useAndroidPickedBooks } from '@/hooks/useAndroidFilePicker';
 import { requestStoragePermission } from '@/utils/permission';
 import { SUPPORTED_BOOK_EXTS } from '@/services/constants';
 import {
@@ -1205,19 +1206,31 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     navigateToLibrary(router, params.toString());
   };
 
+  const getImportTargetGroupId = () => {
+    const groupBy = ensureLibraryGroupByType(searchParams?.get('groupBy'), settings.libraryGroupBy);
+    return groupBy === LibraryGroupByType.Group ? searchParams?.get('group') || '' : '';
+  };
+
   const handleImportBooksFromFiles = async () => {
     setIsSelectMode(false);
     console.log('Importing books from files...');
+    if (appService?.isAndroidApp) {
+      // The dialog plugin's promise dies when Android tears down the activity
+      // or process while the picker is in the foreground (#1217). Open the
+      // native-bridge picker fire-and-forget instead; results arrive through
+      // the replayable `file-picker-result` event consumed below.
+      showFilePicker().catch((err) => console.error('Failed to open file picker:', err));
+      return;
+    }
     selectFiles({ type: 'books', multiple: true }).then((result) => {
       if (result.files.length === 0 || result.error) return;
-      const groupBy = ensureLibraryGroupByType(
-        searchParams?.get('groupBy'),
-        settings.libraryGroupBy,
-      );
-      const groupId = groupBy === LibraryGroupByType.Group ? searchParams?.get('group') || '' : '';
-      importBooks(result.files, groupId);
+      importBooks(result.files, getImportTargetGroupId());
     });
   };
+
+  useAndroidPickedBooks(appService, (files) => {
+    importBooks(files, getImportTargetGroupId());
+  });
 
   const handleImportBookFromUrl = async (url: string) => {
     // Tauri-only. Routes through the Rust `clip_url` command which spawns

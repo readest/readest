@@ -33,6 +33,7 @@ Default permissions for the plugin
 - `allow-get-lookup-dictionary`
 - `allow-clear-lookup-dictionary`
 - `allow-select-directory`
+- `allow-show-file-picker`
 - `allow-get-storefront-region-code`
 - `allow-request-manage-storage-permission`
 - `allow-register-listener`
@@ -1281,6 +1282,32 @@ Enables the set_system_ui_visibility command without any pre-configured scope.
 <td>
 
 Denies the set_system_ui_visibility command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-show-file-picker`
+
+</td>
+<td>
+
+Enables the show_file_picker command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-show-file-picker`
+
+</td>
+<td>
+
+Denies the show_file_picker command without any pre-configured scope.
 
 </td>
 </tr>

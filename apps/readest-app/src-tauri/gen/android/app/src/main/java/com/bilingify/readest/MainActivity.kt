@@ -300,7 +300,11 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        NativeBridgePlugin.getInstance()?.handleActivityResult(requestCode, resultCode, data)
+        // Routed through the companion so a file-picker result that arrives
+        // before Tauri has instantiated the plugin (activity recreated after
+        // a process death behind the picker, #1217) is stashed and replayed
+        // from load() instead of being dropped.
+        NativeBridgePlugin.deliverActivityResult(requestCode, resultCode, data)
     }
 
     override fun onNewIntent(intent: Intent) {

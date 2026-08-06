@@ -245,11 +245,27 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     companion object {
         private const val REQUEST_MANAGE_STORAGE = 1001
         private const val FOLDER_PICKER_REQUEST_CODE = 1002
+        private const val FILE_PICKER_REQUEST_CODE = 1003
         var pendingInvoke: Invoke? = null
         private var pendingAuthCallbackTarget: OAuthCallbackTarget? = null
         var pendingFolderPickerInvoke: Invoke? = null
+        // A file-picker result can be delivered to a MainActivity that was
+        // recreated after the process died behind the system picker (#1217).
+        // onActivityResult then fires before Tauri has instantiated this
+        // plugin, so the raw Intent is stashed here and drained in load().
+        private var pendingFilePickerData: Intent? = null
         private var instance: NativeBridgePlugin? = null
         fun getInstance(): NativeBridgePlugin? = instance
+
+        fun deliverActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+            val plugin = instance
+            if (plugin != null) {
+                plugin.handleActivityResult(requestCode, resultCode, data)
+            } else if (requestCode == FILE_PICKER_REQUEST_CODE &&
+                resultCode == Activity.RESULT_OK && data != null) {
+                pendingFilePickerData = data
+            }
+        }
     }
 
     override fun load(webView: WebView) {
@@ -258,6 +274,10 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         super.load(webView)
         activity.application.registerActivityLifecycleCallbacks(lifecycleCallbacks)
         handleIntent(activity.intent)
+        pendingFilePickerData?.let { data ->
+            pendingFilePickerData = null
+            emitFilePickerResult(data)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -1156,6 +1176,52 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         }
     }
 
+    // Book-import file picker. Unlike the Tauri dialog plugin this resolves
+    // the invoke immediately and delivers the picked URIs as a
+    // `file-picker-result` event through the pending-event queue: a promise
+    // held across the picker round-trip dies whenever Android tears down the
+    // activity or process while the picker is in the foreground (low-RAM
+    // devices, FireOS — #1217), but a queued event survives until the JS
+    // listener re-registers after any WebView reload.
+    @Command
+    fun show_file_picker(invoke: Invoke) {
+        try {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                // Book extensions have no reliable MIME mapping in SAF; the
+                // JS side re-applies the extension whitelist on the result.
+                type = "*/*"
+                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            }
+            activity.startActivityForResult(intent, FILE_PICKER_REQUEST_CODE)
+            invoke.resolve()
+        } catch (e: Exception) {
+            invoke.reject("Failed to open file picker: ${e.message}")
+        }
+    }
+
+    private fun emitFilePickerResult(data: Intent) {
+        val uris = mutableListOf<Uri>()
+        data.clipData?.let { clip ->
+            for (i in 0 until clip.itemCount) {
+                clip.getItemAt(i)?.uri?.let { uris.add(it) }
+            }
+        }
+        if (uris.isEmpty()) {
+            data.data?.let { uris.add(it) }
+        }
+        if (uris.isEmpty()) return
+        // ACTION_OPEN_DOCUMENT grants are persistable; keep them so the copy
+        // into the library can happen after a process restart.
+        uris.forEach { tryTakePersistableReadPermission(it) }
+        val payload = JSObject().apply {
+            val arr = JSArray()
+            uris.forEach { arr.put(it.toString()) }
+            put("uris", arr)
+        }
+        emitOrQueue("file-picker-result", payload)
+    }
+
     @Command
     fun select_directory(invoke: Invoke) {
         pendingFolderPickerInvoke = invoke
@@ -1180,6 +1246,10 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             if (invoke != null) {
                 handleDirectorySelected(data?.data, invoke)
                 pendingFolderPickerInvoke = null
+            }
+        } else if (requestCode == FILE_PICKER_REQUEST_CODE) {
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                emitFilePickerResult(data)
             }
         }
     }

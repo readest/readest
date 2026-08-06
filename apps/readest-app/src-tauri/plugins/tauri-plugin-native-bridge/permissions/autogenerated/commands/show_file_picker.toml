@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-show-file-picker"
+description = "Enables the show_file_picker command without any pre-configured scope."
+commands.allow = ["show_file_picker"]
+
+[[permission]]
+identifier = "deny-show-file-picker"
+description = "Denies the show_file_picker command without any pre-configured scope."
+commands.deny = ["show_file_picker"]
