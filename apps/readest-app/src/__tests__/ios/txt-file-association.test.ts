@@ -3,8 +3,8 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 /**
- * Regression guard: iOS Files preview/share sheet lost Readest for `.txt`
- * in 0.11.20 (worked in 0.11.18), while EPUB/PDF kept working.
+ * Regression guard: iOS Files preview/share sheet lost Readest for supported
+ * document types in 0.11.20 (worked in 0.11.18).
  *
  * The app's plain-text claim used to come from the hand-tuned
  * `CFBundleDocumentTypes` in `src-tauri/Info.plist` (`Text File` /
@@ -12,21 +12,24 @@ import { resolve } from 'path';
  * time. tauri-cli 2.11.0 (bumped in #5085) added mobile file associations:
  * it now generates `CFBundleDocumentTypes` from `bundle.fileAssociations`
  * and inserts the key AFTER the custom-plist merge, replacing the
- * hand-tuned array. `fileAssociations` listed every supported format
- * except txt, so the `public.plain-text` claim silently disappeared and
- * iOS stopped offering Readest as a `.txt` handler.
+ * hand-tuned array. The generated entries omitted `LSItemContentTypes` for
+ * every format Tauri could not infer from a short built-in mapping, including
+ * EPUB, MOBI, AZW, FB2, and CBZ. iOS therefore stopped offering Readest for
+ * those files even though their extensions still appeared in the plist.
  *
- * The durable fix is declaring txt in `bundle.fileAssociations`:
- * tauri-utils maps `text/plain`/`txt` to the `public.plain-text` UTI, so
- * the generated entry restores the claim. The hand-tuned array in
- * `src-tauri/Info.plist` is dead on iOS as long as the CLI generates this
- * key, so it must not be relied on for any format.
+ * The durable fix is declaring `contentTypes` in `bundle.fileAssociations` so
+ * the generated entries carry the exact Uniform Type Identifiers expected by
+ * iOS. The hand-tuned array in `src-tauri/Info.plist` is dead on iOS as long
+ * as the CLI generates this key, so it must not be relied on for any format.
  */
 
 interface FileAssociation {
   name?: string;
   ext: string[];
+  contentTypes?: string[];
   mimeType?: string;
+  role?: string;
+  rank?: string;
 }
 
 const tauriConf = JSON.parse(
@@ -35,7 +38,7 @@ const tauriConf = JSON.parse(
 
 const associations = tauriConf.bundle.fileAssociations;
 
-describe('txt file association (iOS share sheet lost Readest for .txt)', () => {
+describe('iOS file associations', () => {
   it('declares txt in bundle.fileAssociations', () => {
     const txt = associations.find((a) => a.ext.includes('txt'));
     expect(txt).toBeDefined();
@@ -52,9 +55,42 @@ describe('txt file association (iOS share sheet lost Readest for .txt)', () => {
     expect(md?.mimeType).toBe('text/markdown');
   });
 
-  it('keeps the formats that were never affected', () => {
-    for (const ext of ['epub', 'mobi', 'azw', 'azw3', 'fb2', 'cbz', 'pdf']) {
-      expect(associations.some((a) => a.ext.includes(ext))).toBe(true);
+  it('declares an iOS content type for every supported format', () => {
+    const expectedAssociations = {
+      epub: {
+        name: 'EPUB Document',
+        contentTypes: ['org.idpf.epub-container'],
+      },
+      mobi: {
+        name: 'MOBI Document',
+        contentTypes: ['org.mobipocket.mobi'],
+      },
+      azw: {
+        name: 'AZW Document',
+        contentTypes: ['com.amazon.azw', 'com.amazon.azw3'],
+      },
+      azw3: {
+        name: 'AZW Document',
+        contentTypes: ['com.amazon.azw', 'com.amazon.azw3'],
+      },
+      fb2: { name: 'FB2 Document', contentTypes: ['com.readest.fb2'] },
+      cbz: { name: 'CBZ Archive', contentTypes: ['com.readest.cbz'] },
+      pdf: { name: 'PDF Document', contentTypes: ['com.adobe.pdf'] },
+      txt: { name: 'Text File', contentTypes: ['public.plain-text'] },
+      md: {
+        name: 'Markdown Document',
+        contentTypes: ['net.daringfireball.markdown'],
+      },
+    };
+
+    for (const [ext, expected] of Object.entries(expectedAssociations)) {
+      const association = associations.find((a) => a.ext.includes(ext));
+      expect(association, `missing file association for .${ext}`).toBeDefined();
+      expect(association).toMatchObject({
+        ...expected,
+        role: 'Viewer',
+        rank: 'Alternate',
+      });
     }
   });
 });

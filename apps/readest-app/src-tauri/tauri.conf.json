@@ -78,67 +78,85 @@
     },
     "fileAssociations": [
       {
-        "name": "epub",
+        "name": "EPUB Document",
         "ext": ["epub"],
+        "contentTypes": ["org.idpf.epub-container"],
         "description": "EPUB file",
         "mimeType": "application/epub+zip",
-        "role": "Viewer"
+        "role": "Viewer",
+        "rank": "Alternate"
       },
       {
-        "name": "mobi",
+        "name": "MOBI Document",
         "ext": ["mobi"],
+        "contentTypes": ["org.mobipocket.mobi"],
         "description": "MOBI file",
         "mimeType": "application/x-mobipocket-ebook",
-        "role": "Viewer"
+        "role": "Viewer",
+        "rank": "Alternate"
       },
       {
-        "name": "azw",
+        "name": "AZW Document",
         "ext": ["azw"],
+        "contentTypes": ["com.amazon.azw", "com.amazon.azw3"],
         "description": "AZW file",
         "mimeType": "application/vnd.amazon.ebook",
-        "role": "Viewer"
+        "role": "Viewer",
+        "rank": "Alternate"
       },
       {
-        "name": "azw3",
+        "name": "AZW Document",
         "ext": ["azw3"],
+        "contentTypes": ["com.amazon.azw", "com.amazon.azw3"],
         "description": "AZW3 file",
         "mimeType": "application/vnd.amazon.mobi8-ebook",
-        "role": "Viewer"
+        "role": "Viewer",
+        "rank": "Alternate"
       },
       {
-        "name": "fb2",
+        "name": "FB2 Document",
         "ext": ["fb2"],
+        "contentTypes": ["com.readest.fb2"],
         "description": "FB2 file",
         "mimeType": "application/x-fictionbook+xml",
-        "role": "Viewer"
+        "role": "Viewer",
+        "rank": "Alternate"
       },
       {
-        "name": "cbz",
+        "name": "CBZ Archive",
         "ext": ["cbz"],
+        "contentTypes": ["com.readest.cbz"],
         "description": "CBZ file",
         "mimeType": "application/vnd.comicbook+zip",
-        "role": "Viewer"
+        "role": "Viewer",
+        "rank": "Alternate"
       },
       {
-        "name": "pdf",
+        "name": "PDF Document",
         "ext": ["pdf"],
+        "contentTypes": ["com.adobe.pdf"],
         "description": "PDF file",
         "mimeType": "application/pdf",
-        "role": "Viewer"
+        "role": "Viewer",
+        "rank": "Alternate"
       },
       {
-        "name": "txt",
+        "name": "Text File",
         "ext": ["txt"],
+        "contentTypes": ["public.plain-text"],
         "description": "TXT file",
         "mimeType": "text/plain",
-        "role": "Viewer"
+        "role": "Viewer",
+        "rank": "Alternate"
       },
       {
-        "name": "md",
+        "name": "Markdown Document",
         "ext": ["md"],
+        "contentTypes": ["net.daringfireball.markdown"],
         "description": "Markdown file",
         "mimeType": "text/markdown",
-        "role": "Viewer"
+        "role": "Viewer",
+        "rank": "Alternate"
       }
     ],
     "createUpdaterArtifacts": true
