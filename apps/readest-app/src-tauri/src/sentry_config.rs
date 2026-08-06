@@ -219,6 +219,73 @@ mod tests {
     }
 
     #[test]
+    fn windows_panic_events_are_symbolicated() {
+        let manifest = include_str!("../Cargo.toml");
+        assert!(
+            manifest.contains("\"debug-images\""),
+            "Sentry must attach loaded-image metadata so server-side PDB symbolication can match panic addresses"
+        );
+
+        for (name, workflow, portable_step) in [
+            (
+                "release",
+                include_str!("../../../../.github/workflows/release.yml"),
+                "- name: build and upload portable binaries (Windows only)\n        if: matrix.config.os == 'windows-latest'",
+            ),
+            (
+                "nightly",
+                include_str!("../../../../.github/workflows/nightly.yml"),
+                "- name: build and sign portable binaries (Windows only)\n        if: matrix.config.os == 'windows-latest'",
+            ),
+        ] {
+            assert!(
+                workflow.contains("CARGO_PROFILE_RELEASE_DEBUG=line-tables-only"),
+                "{name} Windows builds must emit line-table PDBs"
+            );
+            let upload_positions = workflow
+                .match_indices("sentry-cli debug-files upload")
+                .map(|(position, _)| position)
+                .collect::<Vec<_>>();
+            assert_eq!(upload_positions.len(), 2, "{name} must upload the installer and portable-build PDBs");
+            assert_eq!(
+                workflow
+                    .matches("target/${{ matrix.config.rust_target }}/release/readest.pdb")
+                    .count(),
+                2,
+                "{name} must upload each Readest PDB before it can be overwritten"
+            );
+            assert_eq!(
+                workflow.matches("--include-sources --wait").count(),
+                2,
+                "{name} PDB uploads must include source context and finish processing"
+            );
+            assert_eq!(
+                workflow
+                    .matches(r#"if [ -n "${SENTRY_AUTH_TOKEN:-}" ]; then"#)
+                    .count(),
+                2,
+                "{name} must not fail builds that do not have Sentry credentials"
+            );
+            assert!(
+                workflow.contains("- name: upload Windows debug files to Sentry\n        if: matrix.config.release == 'windows'"),
+                "{name} installer PDB upload must be limited to Windows"
+            );
+            let portable_step_position = workflow
+                .find(portable_step)
+                .unwrap_or_else(|| panic!("{name} portable build must be limited to Windows"));
+            let portable_build_position = workflow[portable_step_position..]
+                .find("pnpm tauri build ${{ matrix.config.args }}")
+                .map(|position| portable_step_position + position)
+                .unwrap_or_else(|| panic!("{name} portable build command must exist"));
+            assert!(
+                upload_positions[0] < portable_build_position
+                    && portable_build_position < upload_positions[1],
+                "{name} must upload the installer PDB before the portable rebuild and the portable PDB after it"
+            );
+        }
+    }
+
+    #[test]
     fn dsn_is_none_when_unset_or_blank() {
         assert_eq!(dsn_from_env(None), None);
         assert_eq!(dsn_from_env(Some("")), None);

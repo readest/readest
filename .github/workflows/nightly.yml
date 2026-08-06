@@ -128,6 +128,11 @@ jobs:
         with:
           targets: ${{ matrix.config.rust_target }}
 
+      - name: configure Windows debug symbols
+        if: matrix.config.release == 'windows'
+        shell: bash
+        run: echo "CARGO_PROFILE_RELEASE_DEBUG=line-tables-only" >> "$GITHUB_ENV"
+
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           key: nightly-${{ matrix.config.os }}-${{ matrix.config.release }}-${{ matrix.config.arch }}-cargo
@@ -278,6 +283,22 @@ jobs:
             pnpm tauri build ${{ matrix.config.args }}
           fi
 
+      - name: upload Windows debug files to Sentry
+        if: matrix.config.release == 'windows'
+        shell: bash
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: readest
+          SENTRY_PROJECT: readest
+        run: |
+          if [ -n "${SENTRY_AUTH_TOKEN:-}" ]; then
+            pnpm --filter @readest/readest-app exec sentry-cli debug-files upload \
+              --include-sources --wait \
+              target/${{ matrix.config.rust_target }}/release/readest.pdb
+          else
+            echo "Skipping Sentry debug-file upload: SENTRY_AUTH_TOKEN is not configured"
+          fi
+
       # Portable Windows build: rebuild with NEXT_PUBLIC_PORTABLE_APP=true and
       # ship the raw exe (mirrors release.yml). Runs after the NSIS build above.
       - name: build and sign portable binaries (Windows only)
@@ -289,6 +310,9 @@ jobs:
           TAURI_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: readest
+          SENTRY_PROJECT: readest
         run: |
           set -euo pipefail
           version="${{ needs.compute-version.outputs.nightly_version }}"
@@ -315,6 +339,14 @@ jobs:
           echo "NEXT_PUBLIC_PORTABLE_APP=true" >> .env.local
           pnpm tauri build ${{ matrix.config.args }}
           popd
+
+          if [ -n "${SENTRY_AUTH_TOKEN:-}" ]; then
+            pnpm --filter @readest/readest-app exec sentry-cli debug-files upload \
+              --include-sources --wait \
+              target/${{ matrix.config.rust_target }}/release/readest.pdb
+          else
+            echo "Skipping Sentry debug-file upload: SENTRY_AUTH_TOKEN is not configured"
+          fi
 
           if [ "$arch" = "x86_64" ]; then
             bin_file="Readest_${version}_x64-portable.exe"

@@ -116,6 +116,7 @@ mobi = "0.8"
 sentry = { version = "0.42", default-features = false, features = [
   "backtrace",
   "contexts",
+  "debug-images",
   "panic",
   "reqwest",
   "rustls",

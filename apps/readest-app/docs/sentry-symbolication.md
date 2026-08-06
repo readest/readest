@@ -37,12 +37,20 @@ Covers every `platform: javascript` issue (the reader/TTS crashes on
 Validate on the next nightly: open a symbolicated JS issue and confirm real
 file:line frames appear.
 
-## Native debug files (not yet enabled — follow-up)
+## Native debug files (partially implemented)
 
-The credentials + env are already wired for these jobs; each still needs a small,
-build-touching change that must be validated on a real native build (the Android
-and iOS builds are fragile — see the build gotchas in project memory), so they
-are intentionally left as a focused follow-up rather than shipped unverified.
+### Windows (implemented)
+
+- Sentry's `debug-images` integration attaches loaded-module identifiers to
+  native panic events.
+- Release and nightly Windows builds emit line-table PDBs and upload them with
+  source context. The installer PDB is uploaded before the portable rebuild
+  overwrites it, then the portable PDB is uploaded after that rebuild.
+- Uploads are skipped when `SENTRY_AUTH_TOKEN` is unavailable, so fork builds
+  continue normally.
+
+Validate on the next Windows release: open a native panic and confirm the stack
+contains Readest source file and line information.
 
 ### Android
 - **Kotlin/Java stacks + ANRs** (e.g. `RustWebViewClient in shouldOverride`)
