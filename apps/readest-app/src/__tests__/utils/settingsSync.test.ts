@@ -69,6 +69,33 @@ describe('mergeSyncedGlobalSettings: readestCloud', () => {
   });
 });
 
+describe('mergeSyncedGlobalSettings: icloud', () => {
+  test('applies broadcast icloud provider flags', () => {
+    const merged = mergeSyncedGlobalSettings(local, {
+      ...globals,
+      cloudSyncProviders: {
+        webdav: { enabled: false },
+        googleDrive: { enabled: false },
+        icloud: { enabled: true, providerSelectedAt: 123 },
+      },
+    });
+    expect(merged.icloud?.enabled).toBe(true);
+    expect(merged.icloud?.providerSelectedAt).toBe(123);
+  });
+
+  test('a payload without icloud leaves the local value untouched', () => {
+    const withICloud = { ...local, icloud: { enabled: true } } as SystemSettings;
+    const merged = mergeSyncedGlobalSettings(withICloud, {
+      ...globals,
+      cloudSyncProviders: {
+        webdav: { enabled: false },
+        googleDrive: { enabled: false },
+      },
+    });
+    expect(merged.icloud?.enabled).toBe(true);
+  });
+});
+
 // Real SystemSettings fixture built from the app's own default-settings
 // factories (the same ones `loadSettings` uses), so this exercises the real
 // `broadcastGlobalSettings` end to end instead of mocking the whole module.

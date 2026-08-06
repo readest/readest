@@ -207,6 +207,9 @@ export const useFileSync = (bookKey: string) => {
           case 'onedrive':
             next = { ...next, onedrive: { ...next.onedrive, lastSyncedAt: ts } };
             break;
+          case 'icloud':
+            next = { ...next, icloud: { ...next.icloud, lastSyncedAt: ts } };
+            break;
         }
       }
       setSettings(next);

@@ -177,6 +177,12 @@ describe('sanitizeSettingsForBackup - blacklist', () => {
   it('every blacklisted path is a string', () => {
     expect(BACKUP_SETTINGS_BLACKLIST.every((p) => typeof p === 'string')).toBe(true);
   });
+
+  it('blacklists icloud device-local fields', () => {
+    expect(BACKUP_SETTINGS_BLACKLIST).toContain('icloud.deviceId');
+    expect(BACKUP_SETTINGS_BLACKLIST).toContain('icloud.lastSyncedAt');
+    expect(BACKUP_SETTINGS_BLACKLIST).toContain('icloud.providerSelectedAt');
+  });
 });
 
 describe('sanitizeSettingsForBackup - credentials', () => {
