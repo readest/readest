@@ -144,12 +144,13 @@ const requestChatCompletion = async (
 export const requestContextTranslation = async (
   input: ContextTranslationInput,
   settings: ContextTranslationSettings,
+  options: { forceRefresh?: boolean } = {},
 ): Promise<ContextTranslationResult> => {
   assertConfigured(settings);
 
   const cacheKey = buildCacheKey(input, settings);
   const cached = cache.get(cacheKey);
-  if (cached) return cached;
+  if (cached && !options.forceRefresh) return cached;
 
   const response = await requestChatCompletion(input, settings);
 

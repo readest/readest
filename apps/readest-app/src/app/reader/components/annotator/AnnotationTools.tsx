@@ -78,6 +78,13 @@ export const annotationToolButtons = createAnnotationToolButtons([
     quickAction: true,
   },
   {
+    type: 'contextTranslate',
+    label: _('Context Translate'),
+    tooltip: _('Translate selected text with surrounding context'),
+    Icon: BsTranslate,
+    quickAction: true,
+  },
+  {
     type: 'translate',
     label: _('Translate'),
     tooltip: _('Translate text after selection'),

@@ -77,6 +77,7 @@ import {
   removeGlobalAnnotationOverlays,
   sourceCfiFromSyntheticValue,
 } from '../../utils/globalAnnotations';
+import { DEFAULT_AI_SETTINGS } from '@/services/ai/constants';
 import { annotationToolButtons } from './AnnotationTools';
 import AnnotationRangeEditor from './AnnotationRangeEditor';
 import SelectionRangeEditor from './SelectionRangeEditor';
@@ -158,6 +159,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const [translationEpoch, setTranslationEpoch] = useState(0);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
+  const [dictionaryPopupMode, setDictionaryPopupMode] = useState<'dictionary' | 'contextTranslate'>(
+    'dictionary',
+  );
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
@@ -218,6 +222,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const proofreadPopupWidth = Math.min(440, maxWidth);
   const proofreadPopupHeight = Math.min(200, maxHeight);
   const canShare = canShareText(appService);
+  const contextTranslationSettings = useMemo(
+    () => ({
+      ...DEFAULT_AI_SETTINGS.contextTranslation,
+      ...(settings.aiSettings?.contextTranslation ?? {}),
+    }),
+    [settings.aiSettings?.contextTranslation],
+  );
+  const contextTranslateEnabled = contextTranslationSettings.enabled;
   // The toolbar is now customizable, so size the selection popup to the number
   // of visible tools (responsive) up to a max — otherwise a 2-tool toolbar
   // renders a sparse, full-width bar. Annotated selections keep the max width
@@ -319,6 +331,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       setShowAnnotationNotes(false);
       setAnnotationNotes([]);
       setShowDictionaryPopup(false);
+      setDictionaryPopupMode('dictionary');
       setShowDeepLPopup(false);
       setShowProofreadPopup(false);
       setEditingAnnotation(null);
@@ -1021,6 +1034,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             handleShowAnnotPopup();
           }
           break;
+        case 'contextTranslate':
+          handleContextTranslate();
+          break;
         case 'translate':
           handleTranslation();
           break;
@@ -1487,6 +1503,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     eventDispatcher.dispatch('search-term', { term, bookKey });
   };
 
+  const handleContextTranslate = () => {
+    if (!selection || !selection.text) return;
+    setShowAnnotPopup(false);
+    setDictionaryPopupMode('contextTranslate');
+    setShowDictionaryPopup(true);
+  };
+
   const handleDictionary = () => {
     if (!selection || !selection.text) return;
     // System-dictionary path: when the user has opted in via Settings →
@@ -1511,6 +1534,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       return;
     }
     setShowAnnotPopup(false);
+    setDictionaryPopupMode('dictionary');
     setShowDictionaryPopup(true);
   };
 
@@ -2043,6 +2067,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         return { tooltipText: _(label), Icon, onClick: handleSearch };
       case 'dictionary':
         return { tooltipText: _(label), Icon, onClick: handleDictionary };
+      case 'contextTranslate':
+        return contextTranslateEnabled
+          ? { tooltipText: _(label), Icon, onClick: handleContextTranslate }
+          : null;
       case 'translate':
         return { tooltipText: _(label), Icon, onClick: handleTranslation };
       case 'tts':
@@ -2110,13 +2138,22 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             setActiveSettingsItemId('settings.language.dictionaries.manage');
             setSettingsDialogOpen(true);
           };
+          const onOpenAISettings = () => {
+            handleDismissPopupAndSelection();
+            setSettingsDialogBookKey(bookKey);
+            setActiveSettingsItemId('settings.ai.enableAssistant');
+            setSettingsDialogOpen(true);
+          };
           if (useSheet) {
             return (
               <DictionarySheet
                 word={selection?.text as string}
                 lang={bookData.bookDoc?.metadata.language as string}
+                mode={dictionaryPopupMode}
+                contextTranslationSettings={contextTranslationSettings}
                 onDismiss={handleDismissPopupShowToolbar}
                 onManage={onManage}
+                onOpenAISettings={onOpenAISettings}
               />
             );
           }
@@ -2125,12 +2162,15 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             <DictionaryPopup
               word={selection?.text as string}
               lang={bookData.bookDoc?.metadata.language as string}
+              mode={dictionaryPopupMode}
+              contextTranslationSettings={contextTranslationSettings}
               position={dictPopupPosition}
               trianglePosition={trianglePosition}
               popupWidth={dictPopupWidth}
               popupHeight={dictPopupHeight}
               onDismiss={handleDismissPopupShowToolbar}
               onManage={onManage}
+              onOpenAISettings={onOpenAISettings}
             />
           );
         })()}
