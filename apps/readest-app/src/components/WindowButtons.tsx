@@ -146,7 +146,7 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
   };
 
   useEffect(() => {
-    if (!isTauriAppPlatform()) return;
+    if (!isTauriAppPlatform() || !appService?.hasWindowBar) return;
     const headerElement = headerRef?.current;
     if (!headerElement) return;
 
@@ -164,7 +164,7 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
       headerElement.removeEventListener('pointercancel', handlePointerUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [appService?.hasWindowBar, headerRef]);
 
   const handleMinimize = async () => {
     if (onMinimize) {

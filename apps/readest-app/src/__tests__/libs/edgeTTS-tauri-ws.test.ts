@@ -30,6 +30,7 @@ class FakeTauriWs {
   listeners: Array<(msg: FakeMessage) => void> = [];
   sent: unknown[] = [];
   disconnected = false;
+  disconnectShouldReject = false;
 
   addListener(cb: (msg: FakeMessage) => void) {
     this.listeners.push(cb);
@@ -44,6 +45,7 @@ class FakeTauriWs {
 
   async disconnect() {
     this.disconnected = true;
+    if (this.disconnectShouldReject) throw new Error('socket already closed');
   }
 
   emit(msg: FakeMessage) {
@@ -146,6 +148,20 @@ describe('EdgeSpeechTTS Tauri WebSocket transport (#5230)', () => {
     const { data, boundaries } = await promise;
     expect(new Uint8Array(data)).toEqual(new Uint8Array([9, 8, 7, 6]));
     expect(boundaries).toEqual([{ offset: 1000000, duration: 2000000, text: 'happy' }]);
+    expect(ws.disconnected).toBe(true);
+  });
+
+  test('absorbs a cleanup disconnect race after synthesis completes', async () => {
+    const { promise } = await startRequest('disconnect race sentence');
+    ws.disconnectShouldReject = true;
+    ws.emit({ type: 'Binary', data: [0, 0, 9, 8, 7, 6] });
+    ws.emit({ type: 'Text', data: 'Path: turn.end\r\n\r\n' });
+
+    await expect(promise).resolves.toEqual({
+      data: new Uint8Array([9, 8, 7, 6]).buffer,
+      boundaries: [],
+    });
+    await flushTasks();
     expect(ws.disconnected).toBe(true);
   });
 
