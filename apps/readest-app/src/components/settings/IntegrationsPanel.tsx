@@ -15,6 +15,7 @@ import {
   RiDatabase2Line,
   RiGoogleLine,
   RiMicrosoftLine,
+  RiAppleLine,
 } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -30,6 +31,8 @@ import { isCloudSyncAllowed } from '@/utils/access';
 import { isWebAppPlatform } from '@/services/environment';
 import { getGoogleWebClientId } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { getMicrosoftClientId } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
+import { isICloudSupportedPlatform } from '@/services/sync/providers/icloud/buildICloudProvider';
+import { getICloudContainerStatus } from '@/utils/bridge';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import BookOrbitForm from './integrations/BookOrbitForm';
 import KOSyncForm from './integrations/KOSyncForm';
@@ -39,6 +42,7 @@ import SendToReadestForm from './integrations/SendToReadestForm';
 import WebDAVForm from './integrations/WebDAVForm';
 import GoogleDriveForm from './integrations/GoogleDriveForm';
 import OneDriveForm from './integrations/OneDriveForm';
+import ICloudForm from './integrations/ICloudForm';
 import S3Form from './integrations/S3Form';
 import { persistCloudProviderEnabled } from './integrations/cloudSync';
 import {
@@ -65,6 +69,7 @@ type SubPage =
   | 'gdrive'
   | 's3'
   | 'onedrive'
+  | 'icloud'
   | 'readest-cloud'
   | 'readwise'
   | 'hardcover'
@@ -103,6 +108,17 @@ const IntegrationsPanel: React.FC = () => {
   const gdriveLastError = useFileSyncStore((s) => s.lastErrorByKind.gdrive);
   const s3LastError = useFileSyncStore((s) => s.lastErrorByKind.s3);
   const onedriveLastError = useFileSyncStore((s) => s.lastErrorByKind.onedrive);
+  const isICloudSyncing = useFileSyncStore((s) => s.byKind.icloud?.isSyncing ?? false);
+  const icloudLastError = useFileSyncStore((s) => s.lastErrorByKind.icloud);
+  // "Configured" for iCloud = the container is reachable (an entitled build
+  // with an iCloud session). Probed once; Apple Tauri platforms only.
+  const [icloudAvailable, setICloudAvailable] = useState(false);
+  useEffect(() => {
+    if (!isICloudSupportedPlatform()) return;
+    getICloudContainerStatus()
+      .then((s) => setICloudAvailable(!!s.available && !!s.documentsPath))
+      .catch(() => setICloudAvailable(false));
+  }, []);
   // Third-party cloud sync will be a premium feature (any paid plan), but it is
   // temporarily UNGATED while the feature stabilises — `isCloudSyncAllowed`
   // returns true for every plan until `CLOUD_SYNC_REQUIRES_PREMIUM` is flipped
@@ -161,6 +177,7 @@ const IntegrationsPanel: React.FC = () => {
       requestedSubPage === 'gdrive' ||
       requestedSubPage === 's3' ||
       requestedSubPage === 'onedrive' ||
+      requestedSubPage === 'icloud' ||
       requestedSubPage === 'cloudsync';
     // Cloud-sync sub-pages are premium-gated. If the plan is still loading, wait
     // (don't consume the request); once known, only honor it for paid plans.
@@ -176,6 +193,7 @@ const IntegrationsPanel: React.FC = () => {
       requestedSubPage === 'gdrive' ||
       requestedSubPage === 's3' ||
       requestedSubPage === 'onedrive' ||
+      requestedSubPage === 'icloud' ||
       requestedSubPage === 'readwise' ||
       requestedSubPage === 'hardcover' ||
       requestedSubPage === 'opds' ||
@@ -339,6 +357,36 @@ const IntegrationsPanel: React.FC = () => {
         )}
       </div>
     );
+  if (subPage === 'icloud')
+    return (
+      <div className='my-4 w-full'>
+        <SubPageHeader
+          parentLabel={_('Integrations')}
+          currentLabel={_('iCloud')}
+          description={_(
+            'Sync your library, reading progress, and highlights with your iCloud Drive.',
+          )}
+          onBack={() => setSubPage(null)}
+        />
+        <ICloudForm />
+        {settings.icloud?.enabled && (
+          <div className='mt-5'>
+            <Tips>
+              <li>
+                {_('{{provider}} keeps a full copy of your books, progress, and annotations.', {
+                  provider: _('iCloud'),
+                })}
+              </li>
+              <li>
+                {_(
+                  'App settings, reading statistics, and dictionaries still sync through your Readest account while signed in.',
+                )}
+              </li>
+            </Tips>
+          </div>
+        )}
+      </div>
+    );
   if (subPage === 'readest-cloud')
     return (
       <div className='my-4 w-full'>
@@ -404,8 +452,8 @@ const IntegrationsPanel: React.FC = () => {
   const hardcoverStatus = settings.hardcover?.enabled ? _('Connected') : _('Not connected');
 
   // Cloud sync providers are independently selectable (#5062): any subset of
-  // {Readest Cloud, WebDAV, Google Drive, S3, OneDrive} can sync the library
-  // at once. A "configured" third-party provider (WebDAV creds / a Drive
+  // {Readest Cloud, WebDAV, Google Drive, S3, OneDrive, iCloud} can sync the
+  // library at once. A "configured" third-party provider (WebDAV creds / a Drive
   // token) can be switched on inline; an unconfigured one must be opened to
   // connect.
   const providers = getCloudSyncProviders(settings);
@@ -466,6 +514,15 @@ const IntegrationsPanel: React.FC = () => {
     lastError: onedriveLastError,
     syncBooks: settings.onedrive?.syncBooks ?? false,
     booksBackedUpElsewhere: booksBackedUpBy('onedrive'),
+  });
+  const icloudStatus = getThirdPartyRowStatus(_, {
+    enabled: !!settings.icloud?.enabled,
+    configured: icloudAvailable,
+    syncing: isICloudSyncing,
+    paused: cloudGate.paused,
+    lastError: icloudLastError,
+    syncBooks: settings.icloud?.syncBooks ?? false,
+    booksBackedUpElsewhere: booksBackedUpBy('icloud'),
   });
   const readestStatus = getReadestCloudRowStatus(_, {
     signedIn: !!user,
@@ -616,6 +673,25 @@ const IntegrationsPanel: React.FC = () => {
                   isCloudSyncPremium ? setSubPage('onedrive') : navigateToProfile(router)
                 }
                 toggleLabel={_('Sync with OneDrive')}
+              />
+            )}
+            {(appService?.isIOSApp || appService?.isMacOSApp) && (
+              <CloudProviderRow
+                icon={RiAppleLine}
+                title={_('iCloud')}
+                status={icloudStatus}
+                badge={premiumBadge}
+                checked={!!settings.icloud?.enabled}
+                canToggle={canToggleCloudProvider({
+                  isPremium: isCloudSyncPremium,
+                  isConfigured: icloudAvailable,
+                  isEnabled: !!settings.icloud?.enabled,
+                })}
+                onToggle={(next) => toggleCloudProvider('icloud', next)}
+                onOpen={() =>
+                  isCloudSyncPremium ? setSubPage('icloud') : navigateToProfile(router)
+                }
+                toggleLabel={_('Sync with iCloud')}
               />
             )}
           </div>
