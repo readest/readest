@@ -507,3 +507,31 @@ pub struct CaptureWebviewRegionRequest {
 pub struct CaptureWebviewRegionResponse {
     pub data: String,
 }
+
+/// iCloud ubiquity-container probe result. `documents_path` is the absolute
+/// path of the container's Documents folder (created on first probe);
+/// `available: false` covers no-iCloud-session, missing entitlement, and
+/// unsupported platforms alike.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ICloudContainerStatusResponse {
+    pub available: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub documents_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ICloudEnsureDownloadedRequest {
+    /// Absolute path inside the ubiquity container.
+    pub path: String,
+    #[serde(default)]
+    pub timeout_ms: Option<u64>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ICloudEnsureDownloadedResponse {
+    /// "ready" | "notFound" | "timeout"
+    pub status: String,
+}

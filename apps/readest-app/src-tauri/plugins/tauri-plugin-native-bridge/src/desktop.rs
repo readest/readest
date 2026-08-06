@@ -418,6 +418,39 @@ impl<R: Runtime> NativeBridge<R> {
             Err(crate::Error::UnsupportedPlatformError)
         }
     }
+
+    /// Probe the iCloud ubiquity container. Non-macOS desktops report
+    /// unavailable rather than erroring: the JS side treats `available:
+    /// false` as "this backend cannot run here", the same shape as a Mac
+    /// without an iCloud session.
+    pub fn icloud_container_status(&self) -> crate::Result<ICloudContainerStatusResponse> {
+        #[cfg(target_os = "macos")]
+        {
+            crate::platform::macos::icloud_container_status()
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            Ok(ICloudContainerStatusResponse {
+                available: false,
+                documents_path: None,
+            })
+        }
+    }
+
+    pub fn icloud_ensure_downloaded(
+        &self,
+        payload: ICloudEnsureDownloadedRequest,
+    ) -> crate::Result<ICloudEnsureDownloadedResponse> {
+        #[cfg(target_os = "macos")]
+        {
+            crate::platform::macos::icloud_ensure_downloaded(payload)
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = payload;
+            Err(crate::Error::UnsupportedPlatformError)
+        }
+    }
 }
 
 const KEYRING_SERVICE: &str = "Readest Safe Storage";

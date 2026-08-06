@@ -51,4 +51,6 @@ permissions = [
   "allow-capture-webview-region",
   "allow-set-selection-suppressed",
   "allow-read-share-clip-html",
+  "allow-icloud-container-status",
+  "allow-icloud-ensure-downloaded",
 ]

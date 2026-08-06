@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-icloud-ensure-downloaded"
+description = "Enables the icloud_ensure_downloaded command without any pre-configured scope."
+commands.allow = ["icloud_ensure_downloaded"]
+
+[[permission]]
+identifier = "deny-icloud-ensure-downloaded"
+description = "Denies the icloud_ensure_downloaded command without any pre-configured scope."
+commands.deny = ["icloud_ensure_downloaded"]

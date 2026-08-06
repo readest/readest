@@ -127,3 +127,86 @@ unsafe fn describe_nserror(error: id) -> String {
         .to_string_lossy()
         .into_owned()
 }
+
+use crate::models::{
+    ICloudContainerStatusResponse, ICloudEnsureDownloadedRequest, ICloudEnsureDownloadedResponse,
+};
+
+/// Resolve the app's default ubiquity container (nil identifier = the first
+/// container in the entitlements, iCloud.com.bilingify.readest) and make sure
+/// its Documents/ folder exists. `URLForUbiquityContainerIdentifier:` may
+/// block and must not run on the main thread; the async command handler runs
+/// on the Tauri async runtime, which satisfies that.
+pub fn icloud_container_status() -> crate::Result<ICloudContainerStatusResponse> {
+    use cocoa::foundation::NSString;
+    let container_path = unsafe {
+        let fm: id = msg_send![class!(NSFileManager), defaultManager];
+        let url: id = msg_send![fm, URLForUbiquityContainerIdentifier: nil];
+        if url == nil {
+            return Ok(ICloudContainerStatusResponse {
+                available: false,
+                documents_path: None,
+            });
+        }
+        let ns_path: id = msg_send![url, path];
+        let c_str = NSString::UTF8String(ns_path);
+        std::ffi::CStr::from_ptr(c_str)
+            .to_string_lossy()
+            .into_owned()
+    };
+    let documents = std::path::Path::new(&container_path).join("Documents");
+    std::fs::create_dir_all(&documents)
+        .map_err(|e| crate::Error::NativeBridgeError(format!("create Documents failed: {e}")))?;
+    Ok(ICloudContainerStatusResponse {
+        available: true,
+        documents_path: Some(documents.to_string_lossy().into_owned()),
+    })
+}
+
+/// Materialise an evicted/undownloaded item, then poll for the real file.
+/// "notFound" means neither the file nor its `.name.icloud` placeholder
+/// exists; the JS provider maps that to the engine's 404-null contract.
+pub fn icloud_ensure_downloaded(
+    payload: ICloudEnsureDownloadedRequest,
+) -> crate::Result<ICloudEnsureDownloadedResponse> {
+    let done = |status: &str| {
+        Ok(ICloudEnsureDownloadedResponse {
+            status: status.to_string(),
+        })
+    };
+    let target = std::path::PathBuf::from(&payload.path);
+    if target.exists() {
+        return done("ready");
+    }
+    let name = target
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let placeholder = target.with_file_name(format!(".{name}.icloud"));
+    if !placeholder.exists() {
+        return done("notFound");
+    }
+    start_downloading_ubiquitous_item(&payload.path);
+    let deadline = std::time::Instant::now()
+        + std::time::Duration::from_millis(payload.timeout_ms.unwrap_or(60_000));
+    while std::time::Instant::now() < deadline {
+        if target.exists() {
+            return done("ready");
+        }
+        std::thread::sleep(Duration::from_millis(250));
+    }
+    done("timeout")
+}
+
+/// Best-effort kick to the iCloud daemon; the caller's poll loop decides
+/// between ready and timeout, so errors here are deliberately ignored.
+fn start_downloading_ubiquitous_item(path: &str) {
+    use cocoa::foundation::NSString;
+    unsafe {
+        let fm: id = msg_send![class!(NSFileManager), defaultManager];
+        let ns_path: id = NSString::alloc(nil).init_str(path);
+        let url: id = msg_send![class!(NSURL), fileURLWithPath: ns_path];
+        let _: objc::runtime::BOOL =
+            msg_send![fm, startDownloadingUbiquitousItemAtURL: url error: nil];
+    }
+}
