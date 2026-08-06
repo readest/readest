@@ -30,8 +30,8 @@ describe('AITranslationResultView', () => {
   it('renders the loading state', () => {
     renderView({ status: 'loading', detailLevel: 'normal' });
 
-    expect(screen.getByText('Context Translate')).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('Translating to English...');
+    expect(screen.getByText('Context Translate')).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toBe('Translating to English...');
   });
 
   it('renders an error and wires action buttons', () => {
@@ -41,7 +41,7 @@ describe('AITranslationResultView', () => {
       retryable: true,
     });
 
-    expect(screen.getByText('AI translation is not configured.')).toBeInTheDocument();
+    expect(screen.getByText('AI translation is not configured.')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     fireEvent.click(screen.getByRole('button', { name: /Open Settings/ }));
@@ -50,21 +50,20 @@ describe('AITranslationResultView', () => {
     expect(onOpenSettings).toHaveBeenCalledTimes(1);
   });
 
-  it('renders normal translation results', () => {
+  it('renders normal explanation results without translation or synonyms', () => {
     renderView({
       status: 'success',
       result: {
         mode: 'normal',
         headword: 'bonjour',
-        translation: 'hello',
         explanation: 'A greeting used during the day.',
       },
     });
 
-    expect(screen.getByText('Translation')).toBeInTheDocument();
-    expect(screen.getByText('hello')).toBeInTheDocument();
-    expect(screen.getByText('Explanation')).toBeInTheDocument();
-    expect(screen.getByText('A greeting used during the day.')).toBeInTheDocument();
+    expect(screen.queryByText('Translation')).toBeNull();
+    expect(screen.queryByText('Synonyms')).toBeNull();
+    expect(screen.getByText('Explanation')).toBeTruthy();
+    expect(screen.getByText('A greeting used during the day.')).toBeTruthy();
   });
 
   it('renders detailed translation results', () => {
@@ -76,7 +75,6 @@ describe('AITranslationResultView', () => {
         grammarPattern: 'prendre soin de + noun',
         pronunciation: 'pʁɑ̃dʁ swɛ̃ də',
         definition: 'To take care of someone or something.',
-        translation: 'take care of',
         explanation: 'The phrase expresses care or responsibility.',
         examples: [
           {
@@ -94,15 +92,15 @@ describe('AITranslationResultView', () => {
       },
     });
 
-    expect(screen.getByText('Grammar pattern')).toBeInTheDocument();
-    expect(screen.getByText('prendre soin de + noun')).toBeInTheDocument();
-    expect(screen.getByText('Pronunciation')).toBeInTheDocument();
-    expect(screen.getByText('pʁɑ̃dʁ swɛ̃ də')).toBeInTheDocument();
-    expect(screen.getByText('Definition')).toBeInTheDocument();
-    expect(screen.getByText('To take care of someone or something.')).toBeInTheDocument();
-    expect(screen.getByText('Examples')).toBeInTheDocument();
-    expect(screen.getByText('Elle prend soin de son frère.')).toBeInTheDocument();
-    expect(screen.getByText('Synonyms')).toBeInTheDocument();
-    expect(screen.getByText("s'occuper de")).toBeInTheDocument();
+    expect(screen.getByText('Grammar pattern')).toBeTruthy();
+    expect(screen.getByText('prendre soin de + noun')).toBeTruthy();
+    expect(screen.getByText('Pronunciation')).toBeTruthy();
+    expect(screen.getByText('pʁɑ̃dʁ swɛ̃ də')).toBeTruthy();
+    expect(screen.getByText('Definition')).toBeTruthy();
+    expect(screen.getByText('To take care of someone or something.')).toBeTruthy();
+    expect(screen.getByText('Examples')).toBeTruthy();
+    expect(screen.getByText('Elle prend soin de son frère.')).toBeTruthy();
+    expect(screen.getByText('Synonyms')).toBeTruthy();
+    expect(screen.getByText("s'occuper de")).toBeTruthy();
   });
 });

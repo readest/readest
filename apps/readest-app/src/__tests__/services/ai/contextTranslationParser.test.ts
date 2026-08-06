@@ -8,7 +8,6 @@ describe('parseContextTranslationResult', () => {
       JSON.stringify({
         mode: 'normal',
         headword: 'requires',
-        translation: 'cần / đòi hỏi',
         explanation: 'Nghĩa theo ngữ cảnh.',
       }),
       'normal',
@@ -17,14 +16,13 @@ describe('parseContextTranslationResult', () => {
     expect(result).toEqual({
       mode: 'normal',
       headword: 'requires',
-      translation: 'cần / đòi hỏi',
       explanation: 'Nghĩa theo ngữ cảnh.',
     });
   });
 
   it('parses JSON wrapped in a markdown code fence', () => {
     const result = parseContextTranslationResult(
-      '```json\n{"mode":"normal","headword":"requires","translation":"cần","explanation":"nghĩa"}\n```',
+      '```json\n{"mode":"normal","headword":"requires","explanation":"nghĩa"}\n```',
       'normal',
     );
 
@@ -40,7 +38,6 @@ describe('parseContextTranslationResult', () => {
         grammarPattern: 'noun + adverb + verb phrase',
         pronunciation: '/tɛkst ˈɔː.fən rɪˈkwaɪərz/',
         definition: 'To frequently make something necessary.',
-        translation: 'văn bản thường đòi hỏi',
         explanation: 'Detailed explanation.',
         examples: [{ sentence: 'Navigation often requires a map.', explanation: 'Similar use.' }],
         synonyms: [
@@ -65,7 +62,7 @@ describe('parseContextTranslationResult', () => {
   it('throws when the mode does not match the requested detail level', () => {
     expect(() =>
       parseContextTranslationResult(
-        '{"mode":"normal","headword":"x","translation":"y","explanation":"z"}',
+        '{"mode":"normal","headword":"x","explanation":"z"}',
         'detailed',
       ),
     ).toThrow('AI provider returned a result for the wrong detail level');

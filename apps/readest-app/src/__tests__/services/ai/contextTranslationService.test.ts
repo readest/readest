@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ContextTranslationError } from '@/services/ai/contextTranslationTypes';
+import {
+  ContextTranslationError,
+  type ContextTranslationSettings,
+} from '@/services/ai/contextTranslationTypes';
 import {
   clearContextTranslationCache,
   requestContextTranslation,
@@ -23,7 +26,8 @@ const input = {
   detailLevel: 'normal' as const,
 };
 
-const settings = {
+const settings: ContextTranslationSettings = {
+  enabled: true,
   baseUrl: 'https://example.test/v1/',
   apiKey: 'sk-secret-key',
   modelId: 'gpt-test',
@@ -45,7 +49,6 @@ const completionBody = {
         content: JSON.stringify({
           mode: 'normal',
           headword: 'requires',
-          translation: 'đòi hỏi',
           explanation: 'Nghĩa theo ngữ cảnh.',
         }),
       },
@@ -67,20 +70,21 @@ describe('requestContextTranslation', () => {
     expect(result).toEqual({
       mode: 'normal',
       headword: 'requires',
-      translation: 'đòi hỏi',
       explanation: 'Nghĩa theo ngữ cảnh.',
     });
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    const [url, init] = mockFetch.mock.calls[0];
+    const call = mockFetch.mock.calls[0];
+    if (!call) throw new Error('Expected fetch call');
+    const [url, init] = call as [string, RequestInit];
     expect(url).toBe('https://example.test/v1/chat/completions');
-    expect(init?.method).toBe('POST');
-    expect(init?.headers).toEqual(
+    expect(init.method).toBe('POST');
+    expect(init.headers).toEqual(
       expect.objectContaining({
         Authorization: 'Bearer sk-secret-key',
         'Content-Type': 'application/json',
       }),
     );
-    expect(JSON.parse(init?.body as string)).toEqual(
+    expect(JSON.parse(init.body as string)).toEqual(
       expect.objectContaining({
         model: 'gpt-test',
         temperature: 0.2,
@@ -90,6 +94,58 @@ describe('requestContextTranslation', () => {
         ]),
       }),
     );
+  });
+
+  it('retries detailed results that leak CJK text for a non-CJK target language', async () => {
+    const detailedInput = {
+      ...input,
+      selectedText: 'building blocks and patterns',
+      targetLanguage: 'Vietnamese',
+      detailLevel: 'detailed' as const,
+    };
+    const chineseResponse = {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              mode: 'detailed',
+              headword: 'building blocks and patterns',
+              definition: 'các thành phần cơ bản',
+              explanation: '在句子中, cụm này nói về các khái niệm nền tảng.',
+              examples: [],
+              synonyms: [],
+            }),
+          },
+        },
+      ],
+    };
+    const vietnameseResponse = {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              mode: 'detailed',
+              headword: 'building blocks and patterns',
+              definition: 'các thành phần và khuôn mẫu nền tảng',
+              explanation: 'Trong ngữ cảnh này, cụm từ chỉ các thành phần cơ bản và mẫu lặp lại.',
+              examples: [],
+              synonyms: [],
+            }),
+          },
+        },
+      ],
+    };
+    mockFetch
+      .mockResolvedValueOnce(jsonResponse(chineseResponse))
+      .mockResolvedValueOnce(jsonResponse(vietnameseResponse));
+
+    const result = await requestContextTranslation(detailedInput, settings);
+
+    expect(result).toMatchObject({
+      mode: 'detailed',
+      explanation: 'Trong ngữ cảnh này, cụm từ chỉ các thành phần cơ bản và mẫu lặp lại.',
+    });
+    expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
   it('returns cached results for the same request', async () => {

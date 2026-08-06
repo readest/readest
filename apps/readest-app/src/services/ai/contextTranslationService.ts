@@ -44,6 +44,7 @@ const assertConfigured = (settings: ContextTranslationSettings): void => {
 const buildCacheKey = (input: ContextTranslationInput, settings: ContextTranslationSettings): string =>
   JSON.stringify({
     input,
+    prompt: buildContextTranslationSystemPrompt(input.detailLevel),
     baseUrl: normalizeChatCompletionsUrl(settings.baseUrl),
     modelId: settings.modelId.trim(),
   });
@@ -105,6 +106,29 @@ const readResponseJson = async (response: Response): Promise<unknown> => {
 const isAbortError = (error: unknown): boolean =>
   error instanceof DOMException && error.name === 'AbortError';
 
+const CJK_TEXT_PATTERN = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+const CJK_TARGET_LANGUAGE_PATTERN = /chinese|mandarin|cantonese|japanese|korean|中文|汉语|漢語|日本語|한국어|조선말/i;
+
+const allowsCjkText = (targetLanguage: string): boolean =>
+  CJK_TARGET_LANGUAGE_PATTERN.test(targetLanguage);
+
+const collectResultText = (result: ContextTranslationResult): string[] => {
+  if (result.mode === 'normal') return [result.explanation];
+  return [
+    result.grammarPattern ?? '',
+    result.definition,
+    result.explanation,
+    ...result.examples.flatMap((example) => [example.sentence, example.explanation]),
+    ...result.synonyms.flatMap((synonym) => [synonym.phrase, synonym.example, synonym.nuance]),
+  ];
+};
+
+const hasUnexpectedCjkText = (
+  result: ContextTranslationResult,
+  targetLanguage: string,
+): boolean =>
+  !allowsCjkText(targetLanguage) && collectResultText(result).some((text) => CJK_TEXT_PATTERN.test(text));
+
 const requestChatCompletion = async (
   input: ContextTranslationInput,
   settings: ContextTranslationSettings,
@@ -152,15 +176,23 @@ export const requestContextTranslation = async (
   const cached = cache.get(cacheKey);
   if (cached && !options.forceRefresh) return cached;
 
-  const response = await requestChatCompletion(input, settings);
-
-  if (!response.ok) throw mapStatusToError(response.status);
-
-  try {
-    const result = parseContextTranslationResult(
+  const requestAndParse = async (): Promise<ContextTranslationResult> => {
+    const response = await requestChatCompletion(input, settings);
+    if (!response.ok) throw mapStatusToError(response.status);
+    return parseContextTranslationResult(
       readCompletionContent(await readResponseJson(response)),
       input.detailLevel,
     );
+  };
+
+  try {
+    let result = await requestAndParse();
+    if (hasUnexpectedCjkText(result, input.targetLanguage)) {
+      result = await requestAndParse();
+      if (hasUnexpectedCjkText(result, input.targetLanguage)) {
+        throw new Error('AI provider returned text in the wrong language.');
+      }
+    }
     cache.set(cacheKey, result);
     return result;
   } catch (error) {

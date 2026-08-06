@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { requestContextTranslation } from '@/services/ai/contextTranslationService';
@@ -24,6 +24,8 @@ type ContextTranslationPanelProps = {
   paragraph?: string;
   onOpenSettings: () => void;
 };
+
+let lastContextTranslationDetailLevel: ContextTranslationDetailLevel = 'normal';
 
 const isConfigured = (settings: ContextTranslationSettings) =>
   settings.enabled && !!settings.baseUrl.trim() && !!settings.apiKey.trim() && !!settings.modelId.trim();
@@ -51,7 +53,9 @@ export const ContextTranslationPanel = ({
   onOpenSettings,
 }: ContextTranslationPanelProps) => {
   const _ = useTranslation();
-  const [detailLevel, setDetailLevel] = useState<ContextTranslationDetailLevel>('normal');
+  const [detailLevel, setDetailLevel] = useState<ContextTranslationDetailLevel>(
+    lastContextTranslationDetailLevel,
+  );
   const [state, setState] = useState<AITranslationState>({ status: 'idle' });
 
   const input = useMemo<ContextTranslationInput>(
@@ -115,7 +119,11 @@ export const ContextTranslationPanel = ({
             type='checkbox'
             className='toggle toggle-xs'
             checked={detailLevel === 'detailed'}
-            onChange={(event) => setDetailLevel(event.target.checked ? 'detailed' : 'normal')}
+            onChange={(event) => {
+              const next = event.target.checked ? 'detailed' : 'normal';
+              lastContextTranslationDetailLevel = next;
+              setDetailLevel(next);
+            }}
           />
         </label>
       </div>

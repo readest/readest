@@ -47,10 +47,9 @@ export const parseContextTranslationResult = (
     const result: ContextTranslationNormalResult = {
       mode: 'normal',
       headword: readString(parsed, 'headword'),
-      translation: readString(parsed, 'translation'),
       explanation: readString(parsed, 'explanation'),
     };
-    if (!result.headword || !result.translation || !result.explanation) {
+    if (!result.headword || !result.explanation) {
       throw new Error('AI provider returned an incomplete normal result');
     }
     return result;
@@ -62,7 +61,6 @@ export const parseContextTranslationResult = (
     grammarPattern: readString(parsed, 'grammarPattern') || undefined,
     pronunciation: readString(parsed, 'pronunciation') || undefined,
     definition: readString(parsed, 'definition'),
-    translation: readString(parsed, 'translation') || undefined,
     explanation: readString(parsed, 'explanation'),
     examples: readObjectArray(parsed['examples'], (item) => ({
       sentence: readString(item, 'sentence'),

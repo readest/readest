@@ -69,9 +69,6 @@ const ErrorView = ({
 
 const NormalResultView = ({ result }: { result: Extract<ContextTranslationResult, { mode: 'normal' }> }) => (
   <div className='space-y-3'>
-    <Section title='Translation'>
-      <p>{result.translation}</p>
-    </Section>
     <Section title='Explanation'>
       <p>{result.explanation}</p>
     </Section>
@@ -97,11 +94,6 @@ const DetailedResultView = ({
     <Section title='Definition'>
       <p>{result.definition}</p>
     </Section>
-    {result.translation ? (
-      <Section title='Translation'>
-        <p>{result.translation}</p>
-      </Section>
-    ) : null}
     <Section title='Explanation'>
       <p>{result.explanation}</p>
     </Section>

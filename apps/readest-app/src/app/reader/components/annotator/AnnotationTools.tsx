@@ -7,6 +7,7 @@ import { PiHighlighterFill } from 'react-icons/pi';
 import { LuBookA } from 'react-icons/lu';
 import { BsPencilSquare } from 'react-icons/bs';
 import { BsTranslate } from 'react-icons/bs';
+import { MdAutoAwesome } from 'react-icons/md';
 import { FaHeadphones } from 'react-icons/fa6';
 import { IoIosBuild } from 'react-icons/io';
 import { AnnotationToolType } from '@/types/annotator';
@@ -81,7 +82,7 @@ export const annotationToolButtons = createAnnotationToolButtons([
     type: 'contextTranslate',
     label: _('Context Translate'),
     tooltip: _('Translate selected text with surrounding context'),
-    Icon: BsTranslate,
+    Icon: MdAutoAwesome,
     quickAction: true,
   },
   {

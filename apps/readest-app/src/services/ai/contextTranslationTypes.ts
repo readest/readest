@@ -25,7 +25,6 @@ export interface ContextTranslationSettings {
 export interface ContextTranslationNormalResult {
   mode: 'normal';
   headword: string;
-  translation: string;
   explanation: string;
 }
 
@@ -35,7 +34,6 @@ export interface ContextTranslationDetailedResult {
   grammarPattern?: string;
   pronunciation?: string;
   definition: string;
-  translation?: string;
   explanation: string;
   examples: Array<{
     sentence: string;
