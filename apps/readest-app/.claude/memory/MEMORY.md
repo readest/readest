@@ -4,6 +4,7 @@
 - [Bug Patterns](bug-patterns.md) · [CSS & Style](css-style-fixes.md) · [TTS](tts-fixes.md)
 - [Layout & UI](layout-ui-fixes.md) · [Platform Compat](platform-compat-fixes.md) · [Annotator & Reader](annotator-reader-fixes.md)
 - [Sync Fixes](sync-fixes.md) · [Reader Feature Fixes](reader-feature-fixes.md)
+- [Paginator & Scroll Fixes](paginator-scroll-fixes.md) · [Build & CI Recipes](build-ci-recipes.md)
 ## Safety & Security
 - [Google RTDN verify downgrade](google-rtdn-worker-verify-downgrade-incident.md) googleapis dead on workerd
 - [In-place delete wiped originals](in-place-delete-wiped-originals.md) never `fs.removeFile` `external`
@@ -13,25 +14,15 @@
 - [Security advisories 2026-06](security-advisories-web-2026-06.md)
 - [#5118 iOS PDF WebContent OOM](pdf-ios-webcontent-oom-zoom-5118.md) clamp renderDpr; [#5251 blurry on desktop](pdf-blurry-desktop-dpr-clamp-5251.md) budget mobile-only
 ## Paginator & Scroll
-- Reading ruler: [line-aware](reading-ruler-line-aware.md); #4865 vertical-rl; [#5491 resize anchor](reading-ruler-resize-anchor-5491.md) MERGED #5519; DOM Range anchor, reflow vs turn = anchor visibility
-- [#555 slide/curl turns](page-turn-styles-viewtransitions-555.md) · [captured turn swipe gates](captured-turn-instant-highlight-scrolllock.md)
-- [captured turn void promise](captured-turn-void-promise-autoturn-revert.md) MERGED #5159; wrappers of view.next must return it
+- Resolved/stable → [Paginator & Scroll Fixes](paginator-scroll-fixes.md)
 - [#5179 layered-turn toolbar sync](pr-5179-layered-turn-toolbar-sync.md) MERGED; review defects UNFIXED
-- [layered vertical-swipe random turn](layered-snap-vertical-swipe-random-turn.md) MERGED #5185
-- [system selection menu one-off](android-system-selection-menu-one-off.md) likely false positive
-- TOC: [expand+autoscroll](toc-expand-and-autoscroll.md); [current row](toc-current-position-row.md); [#4439 clip](toc-table-heading-clip-4439.md); [#4352 booknote](booknote-view-autoscroll-4352.md)
-- Paginated bg: [swipe flash](paginator-swipe-bg-flash.md); [#4399 texture](paginated-texture-occlusion-4399.md); [#4394 gutter](paginator-gutter-bleed-asymmetry-4394.md); [#4785 reflow](pageturn-bg-replace-reflow-4785.md)
-- [Inline-block column overflow](inline-block-column-overflow.md) `#demoteUnfragmentableBoxes`
-- FXL/PDF: [#4683 scroll reset](fixed-layout-paginated-scroll-reset-4683.md); [#4587 spread seam](pdf-spread-canvas-seam-4587.md); #4857 spine seam; [#4984 auto-spread](fxl-portrait-autospread-offcenter-4984.md)
-- Scrolled: [#4727 wheel](pdf-scroll-mode-wheel-double-4727.md); [#4436 header center](scrolled-header-title-center-4436.md); [Duokan cover](duokan-fullscreen-cover-scroll.md)
-- [#5375 SVG cover stretch](svg-cover-stretch-duokan-5375.md) SUPERSEDED by #5263
-- [#5263 Duokan fullscreen cover letterbox](duokan-fullscreen-cover-letterbox-5263.md) ALL MERGED; letterbox + blank cover + unseeded scrollBounds dead swipe; adb gestures deliver NO touchmove
 ## Critical Files (Most Bug-Prone)
 - `src/utils/style.ts` EPUB CSS hub · `packages/foliate-js/paginator.js` · `src/services/tts/TTSController.ts`
 - `src/hooks/useSafeAreaInsets.ts` · `src/app/reader/components/FoliateViewer.tsx` · `.../annotator/Annotator.tsx`
 ## Sync Notes
 - Resolved/stable sync memories → [Sync Fixes](sync-fixes.md)
 - [#5426 BookOrbit integration](bookorbit-integration-5426.md) MERGED #5487; live-server smoke pending
+- [iCloud sync provider](icloud-sync-provider.md) SHIPPED #5532+#5537 all channels; smoke-verified macOS+iOS; Dev ID profile recommit due 2027-02; MAS sandbox-blank open
 - [#5062 multi-provider cloud sync](multi-provider-cloud-sync-5062.md) MERGED #5122; native verify pending
 - [#5253 OneDrive OAuth trailing slash](onedrive-oauth-callback-slash-5253.md) MERGED #5479; Rust AuthRequest drops unknown TS fields; device verify pending
 - [deleted_at OR cursor invariant](sync-deleted-at-cursor-invariant.md) notes/configs OR load-bearing
@@ -40,54 +31,27 @@
 - [koplugin local_present sweep](koplugin-local-present-sweep-noop.md) UNFIXED; fix = rm readest_library.sqlite3
 - [10k library breaks /sync pull](sync-pull-10k-worker-1102.md) MERGED #5364; old clients wedge till app update
 ## Build, Testing & CI
+- Stable recipes → [Build & CI Recipes](build-ci-recipes.md)
 - [Turbopack dev stale chunk phantom](turbopack-dev-stale-chunk-phantom.md) rm -rf .next before EVERY dev start; reload/restart do NOT help
-- [Screenshot baselines unregenerable](vitest-screenshot-baseline-relative-path.md) FIXED #5351
-- #4906 nightly sharun hang pre-seed + timeouts
 - [format:check gate](verify-format-check-gate.md) · [Worktree rebase submodule drift](worktree-rebase-submodule-drift.md)
-- [#5498 dangling sourceMappingURL comments](tauri-dangling-sourcemap-comments-5498.md) MERGED; KEEP_SOURCEMAPS=1 for dev-ios/android/macos; biome skips .mjs; cargo target = workspace root; `dotenv -v` for script env vars
-- Android CDP: [e2e lane](android-cdp-e2e-lane.md); [profiling](cdp-android-webview-profiling.md); [double-tap](android-e2e-doubletap-cdp-gesture.md)
-- [Android e2e local repro](android-e2e-local-repro-workflow.md) dev-android vs debug run-as
-- [Nightly e2e fix](android-e2e-nightly-fix-5453.md) PR #5453; immersive prompt eats touches (screencap first!)
+- [Shared-target stale plugin cache](worktree-shared-target-stale-plugin-cache.md) deleted worktree poisons tauri-build in ALL worktrees; cargo clean -p, never full clean
 - [Web e2e local flake](web-e2e-local-devserver-cold-compile-flake.md) cold compile, NOT your change; warm dev-web first
-- [Chrome clipboard paste probe](chrome-clipboard-paste-probe.md) real cmd+V into injected input, never `clipboard.readText()`
-- [Settings panel screenshot](settings-panel-screenshot-via-playwright.md) throwaway spec + `openBook`; `.modal-box` -> `.first()`
-- [iOS sim drive via dev-server relay](ios-sim-drive-via-dev-server-relay.md)
-- [iOS sim build+drive workflow](ios-sim-build-and-drive-workflow.md) take the app from the **xcarchive**
-- [Tauri Rust↔JS parser parity](tauri-parser-parity-tests.md)
-- [fastlane App Store](fastlane-apple-appstore-submission.md) `APPLE_API_KEY_PATH` out of build env
-- [Turbopack cache OOM #4619](turbopack-build-cache-oom-docker-standalone.md) · [pdfjs vendor wasm](pdfjs-vendor-wasm-decoders.md) copy `wasm/*`
-- [CF Worker 64 MiB deploy fail](cf-worker-64mb-turbopack-regression.md) split build + stubs
-- pnpm version mismatch use `npx pnpm@11.1.1`
-- [Xcode 26.2 broke iOS builds](xcode26-swiftrs-ios-build-broken.md) vendored `packages/swift-rs`
-- [iOS SPM Sentry proxy hang](ios-spm-sentry-proxy-tls-download.md)
+- [Chrome verify recipe for reader fixes](browser-verify-readest-web-recipe.md) config in IndexedDB `AppFileSystem`; synthetic PointerEvents for handle drags; count overlayer `<g>`s
 - [CI/PR delivery + push keepalive](ci-pr-delivery-and-push.md) fork pushes need SSH
-- [tauri 2.11 remote ACL app commands](tauri-211-remote-acl-app-commands.md) webdriver = remote origin
-- [Kotlin never compiled in CI](android-kotlin-unit-test-gradle-recipe.md) compile plugin Kotlin locally via gen/android gradlew
 ## Platform Compat
-- Sentry #5112/#5053/#5070: native dumps = SEPARATE helper, never re-exec
-- [#5227 drop sentry NDK](sentry-crash-reporting-4914.md) READEST-P = WebView renderer death
-- Android: [hyphen selection #1553](android-hyphen-selection-bounds-1553.md); [NativeFile vs RemoteFile I/O](android-nativefile-remotefile-io.md)
+- Resolved/stable → pointer index at end of [Platform Compat](platform-compat-fixes.md)
+- [#1217 FireOS import no-op](fireos-import-activity-recreation-1217.md) MERGED #5531; native-bridge picker + file-picker-result replay; Xiaomi-13-verified via am-kill-behind-picker ("Don't keep activities" DEAD on Xiaomi); FireOS-hardware verify pending — ask reporters to retest on next release
 - [#5372/#2862 Play keeps All Files Access](play-all-files-access-restored-5372.md) MERGED #5378; NEXT Play submission must fill the form
-- [Window-state sanitizer #4398](window-state-sanitize-4398.md) · [Android themed icon #4733](android-themed-icon-4733.md)
-- [Open-with intent #4521](android-open-with-intent-flow.md) · [dict lookup hijack #4559](dict-lookup-browser-hijack-4559.md)
-- [Large-PDF OOM range flood #3470](pdf-oom-range-flood-3470.md) MAX_CONCURRENT_RANGES=6
-- macOS 26 Tahoe close→black window (#4875) `minimize()` not `hide()`
-- [#5295 Win fullscreen vs maximized](win-fullscreen-maximized-taskbar-5295.md) MERGED #5380; unmaximize-first on Windows
-- #4885 iOS brightness lock · [#4917 iOS share .txt stuck](ios-share-txt-stuck-supportstext.md)
 - [0.11.20 iOS .txt/.md share sheet lost](ios-txt-share-sheet-tauri211-fileassoc.md) MERGED #5415; device-verify pending
 - [#5397 Photos save crash](ios-photos-add-usage-description-5397.md) MERGED #5405, device-verify pending
-- [#3049 SteamOS Gaming Mode import dead](steamos-gamescope-file-dialog-3049.md) MERGED #5475; no FileChooser portal in gamescope; toast BEFORE dialog
 ## Reader Features & UI
 - [#3392 footer page-number jump](page-number-jump-3392.md) MERGED #5524; type-over "94 / 251" label + sizer span; e2e readingProgress reads the input; never i18n:extract mid-rebase; device IME check pending
 - [#5516 Pages in Book Details](book-details-page-count-5516.md) MERGED #5523; `book.progress[1]` = foliate `ceil(spine bytes/1500)` locations, NOT laid-out pages; reader `bookData.book` = stale open-time snapshot, live count is in `bookData.config`
 - [#5499 Android autofill sign-in + login rework](android-signin-autofill-formdata-5499.md) MERGED #5505; FormData at submit; IME Next resets viewport pan; auth-ui only on /auth/recovery now
+- [#5538 highlight resize orphan note bubble](highlight-resize-orphan-note-bubble-5538.md) MERGED #5541; record never duplicated, the note-bubble OVERLAY was; both overlays keyed by cfi; drag-race stale highlight overlay UNFIXED
 - [#5496 popup chrome family](popup-chrome-family-5496.md) MERGED; `.popup-container` class load-bearing for eink, nested cards add NO border, Popup caps height but never clips
-- [FXL scrolled clipped at camera hole](fxl-scrolled-notch-mask-edge-to-edge.md) MERGED #5503; SectionInfo notch mask skips isFixedLayout; CDP elementsFromPoint + live classList.remove repro
-- [#4995 FXL horizontal scrolling](fxl-horizontal-scroll-4995.md) MERGED foliate#65+readest#5485; CDP scroll gestures CANNOT test it
-- [#5452 Copy Link annotation tool](annotation-toolbar-copylink-5452.md) MERGED #5464; opt-in = ALL_ minus DEFAULT_
-- [#5232 image viewer alt caption](image-viewer-alt-caption-5232.md) MERGED #5472
+- [#5213 dictionary quick action single-word gate](quick-action-dictionary-single-word-5213.md) MERGED #5529; isSingleLookupTerm 8-char CJK cap; Chrome-verified
 - [#4977 top bar blocks text selection](header-trigger-overlaps-text-4977.md) strip sized to content top; iPad web gap
-- [#5293 tap-to-toggle progress bar](tap-toggle-progress-bar-5293.md) MERGED #5466; verify with trusted clicks
 - [TTS listening counts as reading stats](tts-listening-counts-as-reading-stats.md) MERGED #5450; device verify PENDING
 - [#5480 Media Overlays narration](media-overlay-narration-5480.md) MERGED; 3 review findings UNFIXED
 - [#1359 pull-down bookmark gesture](pull-down-bookmark-gesture-1359.md) MERGED #5493; ribbon moved top-right; preview fill = post-release state; wrapper transform isolates texture blend = luminance jump, fixed with wrapper bg-base-100; pull dismisses visible toolbars; Xiaomi-verified
@@ -100,14 +64,14 @@
 - [#5353 italic last glyph clipped](italic-synthetic-oblique-clip-5353.md) WebView >=~148 regression, not Readest code
 - [#5250 invert img dead w/ overrideColor](invert-img-dark-override-5250.md) PR #5383 open, VERIFIED on Xiaomi 13
 - [#5414 Edge silence untrimmed on iOS](edge-tts-baked-silence-ios-native-5414.md) MERGED #5417, device-verify pending
+- [#5230 Edge TTS mid-book stall](edge-tts-tauri-ws-hang-5230.md) MERGED #5534; Tauri WS never settled on Close/error/silence; static inflight poisoned sentence; Xiaomi-verified incl offline fault injection; ask reporters to retest on release
 - Proofread: [#4700](proofread-enhancements-4700.md); [#4781 CRDT](proofread-per-book-crdt-sync.md); #4859 edit toggle; [#5277 fonts lost](proofread-rule-change-font-loss-5277.md) MERGED #5345
 - [Send-to-Readest local file:// clips](send-to-readest-local-file-clips.md) clip determinism is a requirement; re-clip dedups via metaHash, never duplicates
 - [Extension file:// fetch capability](extension-file-url-fetch-capability.md) SW + extension pages CAN read local files; content scripts and canvas CANNOT
 - [OPDS fixes](opds-fixes.md) #4479 #4502 #4503 #4749 #4782 #4272 Basic-400s TLS#4988 Calibre-authors#5183 http-selflinks#5300 encoded-searchTerms#5500
-- [#5270 OPDS feed cover+metadata](opds-feed-cover-5270.md) BOTH MERGED #5471+#5477; feed-wins per-field merge
-- [#5492 stale OPDS cover after server update](opds-cover-updated-cache-5492.md) MERGED #5495; `<updated>` in cache keys
 - koplugin: [#4374 cover upload](koplugin-cover-upload.md); #5094 gesture + upload current; [#4954 slow open](koplugin-library-open-mosaic-cache-4954.md)
 - [#5507 auth nil response](koplugin-auth-nil-response-5507.md) MERGED; Lua `("err").body` = nil not an error; busted = ONE state so patch require'd tables, never assume which preload won; upvalue-captured `T` must be set BEFORE require
+- [#5527 conflict re-prompt on refocus](kosync-conflict-reprompt-5527.md) MERGED #5528; resolved-report memory + same-device % compare; #5065 rule = other devices only; Android device verify pending
 - Calibre: [plugin push #4863](calibre-plugin-push-4863.md); `uploaded_at` != blob #5325; status marks #5332; [custom columns #4811](calibre-custom-columns-4811.md)
 ## Library Fixes
 - [Search history chips over textures](library-search-history-mask-fade-5488.md) MERGED #5488; edge fades = `mask-image`, never painted overlays
@@ -127,6 +91,8 @@
 - [#5222 bookshelf import menu](bookshelf-import-menu-popup-5247.md) MERGED #5247; Virtuoso clips dropdown-content
 - [#5360 Wayland tap kills native menu](wayland-tap-context-menu-5360.md) MERGED #5467; Linux = in-app menu; device verify pending
 ## Architecture & Patterns
+- [CFI.compare null = whole-app crash](cfi-compare-null-crash-findnearestcfi.md) MERGED #5533 discard in bookDataStore; `''` cfi is SAFE so cloud sync is NOT the source (file sync/backup/foliate import are); error.tsx reports to PostHog NOT Sentry; koplugin round-trip NULLs good cfis (unfixed)
+- [Minified `Module.<letter>` frames](minified-stack-module-namespace-frames.md) = `import * as` namespace; in Readest that means epubcfi; null vs undefined in message = sync data vs missing key
 - [Native DB close() closes ALL turso connections](native-db-close-all-not-loaded.md) MERGED #5497; "not loaded" = READEST-6
 - foliate-js submodule `packages/foliate-js/`; multiview paginator preloads adjacent sections
 - [#5097/#5308 encoded href](epub-encoded-href-reserved-chars-5097.md) `decodeURI` keeps reserved chars; MERGED #5311

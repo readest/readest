@@ -89,3 +89,15 @@ className="not-eink:text-primary not-eink:opacity-60"
 4. Linux (WebKitGTK)
 5. E-ink devices (contrast, colors)
 6. Web (CloudFlare Workers deployment)
+
+## Pointer index (moved from MEMORY.md)
+- Sentry #5112/#5053/#5070: native dumps = SEPARATE helper, never re-exec
+- [#5227 drop sentry NDK](sentry-crash-reporting-4914.md) READEST-P = WebView renderer death
+- Android: [hyphen selection #1553](android-hyphen-selection-bounds-1553.md); [NativeFile vs RemoteFile I/O](android-nativefile-remotefile-io.md)
+- [Window-state sanitizer #4398](window-state-sanitize-4398.md) · [Android themed icon #4733](android-themed-icon-4733.md)
+- [Open-with intent #4521](android-open-with-intent-flow.md) · [dict lookup hijack #4559](dict-lookup-browser-hijack-4559.md)
+- [Large-PDF OOM range flood #3470](pdf-oom-range-flood-3470.md) MAX_CONCURRENT_RANGES=6
+- macOS 26 Tahoe close→black window (#4875) `minimize()` not `hide()`
+- [#5295 Win fullscreen vs maximized](win-fullscreen-maximized-taskbar-5295.md) MERGED #5380; unmaximize-first on Windows
+- #4885 iOS brightness lock · [#4917 iOS share .txt stuck](ios-share-txt-stuck-supportstext.md)
+- [#3049 SteamOS Gaming Mode import dead](steamos-gamescope-file-dialog-3049.md) MERGED #5475; no FileChooser portal in gamescope; toast BEFORE dialog

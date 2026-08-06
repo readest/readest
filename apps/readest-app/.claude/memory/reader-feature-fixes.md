@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 4af4f927-b772-4650-bb93-26ccd73ba1cb
-  modified: 2026-07-28T14:48:25.479Z
+  modified: 2026-08-06T03:23:22.515Z
 ---
 
 Moved from MEMORY.md to keep the index small. One line per memory; open the linked file for detail.
@@ -52,3 +52,10 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - [#5351 popup restyle](popup-filter-containing-block-5351.md) MERGED; ancestor `filter` = containing block + stacking context; `theme-dark:` variant; `text-foreground` undefined token
 - [#5303 header notch negative margin](header-notch-negative-margin-5303.md) MERGED #5447, VERIFIED Xiaomi 13; z-10 ONLY when lifted else covers desktop toolbar
 - [#5394 Ambient Mode (light sensor)](ambient-mode-light-sensor-5394.md) MERGED; `emitOrQueue` one-shot-only; themeStore vs `getThemeCode` defaults must match
+- [#5452 Copy Link annotation tool](annotation-toolbar-copylink-5452.md) MERGED #5464; opt-in = ALL_ minus DEFAULT_
+- [#5232 image viewer alt caption](image-viewer-alt-caption-5232.md) MERGED #5472
+- [#5293 tap-to-toggle progress bar](tap-toggle-progress-bar-5293.md) MERGED #5466; verify with trusted clicks
+- [#4995 FXL horizontal scrolling](fxl-horizontal-scroll-4995.md) MERGED foliate#65+readest#5485; CDP scroll gestures CANNOT test it
+- [FXL scrolled clipped at camera hole](fxl-scrolled-notch-mask-edge-to-edge.md) MERGED #5503; SectionInfo notch mask skips isFixedLayout; CDP elementsFromPoint + live classList.remove repro
+- [#5270 OPDS feed cover+metadata](opds-feed-cover-5270.md) BOTH MERGED #5471+#5477; feed-wins per-field merge
+- [#5492 stale OPDS cover after server update](opds-cover-updated-cache-5492.md) MERGED #5495; `<updated>` in cache keys
