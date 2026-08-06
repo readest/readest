@@ -107,8 +107,7 @@ describe('EdgeSpeechTTS Tauri WebSocket transport (#5230)', () => {
     const promise = tts.createAudioData(makePayload(text));
     // Swallow rejection so an unawaited failure can't nuke the test run.
     promise.catch(() => {});
-    await flushTasks();
-    expect(ws.sent.length).toBe(2); // config + ssml content sent
+    await vi.waitFor(() => expect(ws.sent).toHaveLength(2)); // config + ssml content sent
     return { promise };
   };
 
