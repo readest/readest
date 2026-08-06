@@ -204,7 +204,10 @@ jobs:
             release: macos
             arch: aarch64
             rust_target: x86_64-apple-darwin,aarch64-apple-darwin
-            args: '--target universal-apple-darwin'
+            # --config layers the iCloud overlay (Developer ID provisioning
+            # profile + entitlements) onto the direct-distribution build; see
+            # src-tauri/tauri.macos-nonestore.conf.json.
+            args: '--target universal-apple-darwin --config src-tauri/tauri.macos-nonestore.conf.json'
           - os: windows-latest
             release: windows
             arch: x86_64
