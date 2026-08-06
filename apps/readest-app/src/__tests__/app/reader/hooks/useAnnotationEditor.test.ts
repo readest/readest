@@ -30,10 +30,14 @@ vi.mock('@/store/readerStore', () => ({
     getProgress: () => ({ page: 3 }),
   }),
 }));
-vi.mock('@/app/reader/utils/annotatorUtil', () => ({
-  getHandlePositionsFromRange: () => null,
-}));
+vi.mock('@/app/reader/utils/annotatorUtil', async () => {
+  const actual = await vi.importActual<typeof import('@/app/reader/utils/annotatorUtil')>(
+    '@/app/reader/utils/annotatorUtil',
+  );
+  return { ...actual, getHandlePositionsFromRange: () => null };
+});
 
+import { NOTE_PREFIX } from '@/types/view';
 import { useAnnotationEditor } from '@/app/reader/hooks/useAnnotationEditor';
 
 const annotation = {
@@ -46,12 +50,12 @@ const annotation = {
   note: '',
 } as unknown as BookNote;
 
-const setup = () => {
+const setup = (edited: BookNote = annotation) => {
   const setSelection = vi.fn();
   const hook = renderHook(() =>
     useAnnotationEditor({
       bookKey: 'book-1',
-      annotation,
+      annotation: edited,
       getAnnotationText: vi.fn(async () => 'edited text'),
       setSelection: setSelection as never,
     }),
@@ -91,5 +95,29 @@ describe('useAnnotationEditor applyAnnotationRange', () => {
     expect(h.updateBooknotes).not.toHaveBeenCalled();
     expect(h.saveConfig).not.toHaveBeenCalled();
     expect(setSelection).not.toHaveBeenCalled();
+  });
+
+  // Adjusting the boundaries of a highlight that carries a note moves the record
+  // to a new CFI, and both of its overlays are keyed by that CFI. Tearing down
+  // only the highlight overlay left the note bubble stranded at the old anchor
+  // while a fresh one was drawn at the new one, so a single highlight ended up
+  // showing several note markers — and the stale ones resolved to no record at
+  // all when clicked (#5538).
+  test('re-anchors the note bubble overlay instead of stranding it at the old cfi', async () => {
+    const noted = { ...annotation, note: 'my note' } as BookNote;
+    h.annotations = [{ ...noted }];
+    const { result } = setup(noted);
+
+    await result.current.applyAnnotationRange(range, 2, false, false);
+
+    const calls = h.view.addAnnotation.mock.calls as [BookNote & { value?: string }, boolean?][];
+    const bubbleCalls = calls.filter(([note]) => note.value?.startsWith(NOTE_PREFIX));
+    expect(bubbleCalls).toContainEqual([
+      expect.objectContaining({ value: `${NOTE_PREFIX}old-cfi` }),
+      true,
+    ]);
+    expect(bubbleCalls).toContainEqual([
+      expect.objectContaining({ value: `${NOTE_PREFIX}new-cfi` }),
+    ]);
   });
 });

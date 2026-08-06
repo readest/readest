@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { BookNote } from '@/types/book';
+import { NOTE_PREFIX } from '@/types/view';
 import { TextSelection } from '@/utils/sel';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
@@ -8,6 +9,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import {
   getHandlePositionsFromRange as getHandlePositionsForBook,
   HandlePositions,
+  removeBookNoteOverlays,
 } from '../utils/annotatorUtil';
 
 interface UseAnnotationEditorProps {
@@ -69,9 +71,19 @@ export const useAnnotationEditor = ({
             updatedAt: Date.now(),
           };
 
+          // Both overlays of a unified record are keyed by its cfi, so a moved
+          // range must tear down *both* — dropping only the highlight left the
+          // note bubble stranded at the old anchor while a new one was drawn at
+          // the new one, so one highlight showed several note markers (#5538).
           const views = getViewsById(bookKey.split('-')[0]!);
-          views.forEach((v) => v?.addAnnotation(editingAnnotationRef.current, true));
+          const hasNote = !!existingAnnotation.note?.trim();
+          views.forEach((v) => removeBookNoteOverlays(v, editingAnnotationRef.current));
           views.forEach((v) => v?.addAnnotation(updatedAnnotation));
+          if (hasNote) {
+            views.forEach((v) =>
+              v?.addAnnotation({ ...updatedAnnotation, value: `${NOTE_PREFIX}${newCfi}` }),
+            );
+          }
           editingAnnotationRef.current = updatedAnnotation;
 
           if (!isDragging) {
