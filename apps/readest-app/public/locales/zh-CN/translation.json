@@ -1990,5 +1990,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "您的书库存储在您的 iCloud 云盘中，并占用其存储空间。",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "将您的书库、阅读进度和高亮与您的 iCloud 云盘同步。",
-  "Sync with iCloud": "与 iCloud 同步"
+  "Sync with iCloud": "与 iCloud 同步",
+  "Delete All Books?": "删除所有图书？",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "此操作无法撤销。所有图书将连同阅读进度、书签和批注一起从本设备和您的 Readest 云端书库中删除。就地导入的图书会保留其原始文件，已上传到云存储的图书会一直保留，直到您在「管理存储」中将其移除。其他已登录设备仍保留各自的副本。",
+  "Danger Zone": "危险区域",
+  "Delete All Books": "删除所有图书",
+  "All books deleted.": "已删除所有图书。",
+  "Failed to delete books. Please try again later.": "删除图书失败。请稍后重试。"
 }

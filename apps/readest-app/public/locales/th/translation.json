@@ -1990,5 +1990,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "คลังหนังสือของคุณถูกจัดเก็บใน iCloud Drive และนับรวมในพื้นที่จัดเก็บของมัน",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "ซิงค์คลังหนังสือ ความคืบหน้าการอ่าน และไฮไลต์ของคุณกับ iCloud Drive ของคุณ",
-  "Sync with iCloud": "ซิงค์กับ iCloud"
+  "Sync with iCloud": "ซิงค์กับ iCloud",
+  "Delete All Books?": "ลบหนังสือทั้งหมดหรือไม่",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "การกระทำนี้ไม่สามารถย้อนกลับได้ หนังสือทุกเล่มจะถูกลบออกจากอุปกรณ์นี้และจากคลังหนังสือบนคลาวด์ Readest ของคุณ พร้อมกับความคืบหน้าการอ่าน บุ๊กมาร์ก และคำอธิบายประกอบ หนังสือที่คุณนำเข้าในตำแหน่งเดิมจะยังคงไฟล์ต้นฉบับไว้ และหนังสือที่อัปโหลดไปยังพื้นที่เก็บข้อมูลบนคลาวด์จะยังคงอยู่จนกว่าคุณจะลบออกใน «จัดการพื้นที่เก็บข้อมูล» อุปกรณ์อื่นที่ลงชื่อเข้าใช้จะยังคงเก็บสำเนาของตนเองไว้",
+  "Danger Zone": "โซนอันตราย",
+  "Delete All Books": "ลบหนังสือทั้งหมด",
+  "All books deleted.": "ลบหนังสือทั้งหมดแล้ว",
+  "Failed to delete books. Please try again later.": "ลบหนังสือไม่สำเร็จ โปรดลองอีกครั้งในภายหลัง"
 }

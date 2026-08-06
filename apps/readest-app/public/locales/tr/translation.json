@@ -2036,5 +2036,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "Kütüphaneniz iCloud Drive'ınızda saklanır ve depolama alanından düşülür.",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "Kütüphanenizi, okuma ilerlemenizi ve vurgularınızı iCloud Drive'ınızla senkronize edin.",
-  "Sync with iCloud": "iCloud ile senkronize et"
+  "Sync with iCloud": "iCloud ile senkronize et",
+  "Delete All Books?": "Tüm kitaplar silinsin mi?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "Bu işlem geri alınamaz. Tüm kitaplar; okuma ilerlemesi, yer imleri ve notlarla birlikte bu cihazdan ve Readest bulut kitaplığınızdan kaldırılacak. Yerinde içe aktardığınız kitapların özgün dosyaları korunur ve bulut depolamaya yüklenen kitaplar, «Depolamayı Yönet» bölümünden kaldırana kadar orada kalır. Oturum açılmış diğer cihazlar kendi kopyalarını korur.",
+  "Danger Zone": "Tehlikeli Bölge",
+  "Delete All Books": "Tüm Kitapları Sil",
+  "All books deleted.": "Tüm kitaplar silindi.",
+  "Failed to delete books. Please try again later.": "Kitaplar silinemedi. Lütfen daha sonra tekrar deneyin."
 }

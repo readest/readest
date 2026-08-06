@@ -1990,5 +1990,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "Thư viện của bạn được lưu trong iCloud Drive và tính vào dung lượng lưu trữ của nó.",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "Đồng bộ thư viện, tiến trình đọc và điểm nổi bật của bạn với iCloud Drive của bạn.",
-  "Sync with iCloud": "Đồng bộ với iCloud"
+  "Sync with iCloud": "Đồng bộ với iCloud",
+  "Delete All Books?": "Xóa tất cả sách?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "Không thể hoàn tác thao tác này. Mọi cuốn sách sẽ bị xóa khỏi thiết bị này và khỏi thư viện đám mây Readest của bạn, cùng với tiến độ đọc, dấu trang và chú thích. Những sách bạn nhập tại chỗ vẫn giữ nguyên tệp gốc, còn sách đã tải lên bộ nhớ đám mây vẫn ở đó cho đến khi bạn xóa chúng trong «Quản lý bộ nhớ». Các thiết bị khác đã đăng nhập vẫn giữ bản sao riêng.",
+  "Danger Zone": "Vùng nguy hiểm",
+  "Delete All Books": "Xóa tất cả sách",
+  "All books deleted.": "Đã xóa tất cả sách.",
+  "Failed to delete books. Please try again later.": "Không xóa được sách. Vui lòng thử lại sau."
 }

@@ -2036,5 +2036,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "உங்கள் நூலகம் உங்கள் iCloud Drive-இல் சேமிக்கப்படுகிறது மற்றும் அதன் சேமிப்பகத்தில் கணக்கிடப்படுகிறது.",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "உங்கள் நூலகம், வாசிப்பு முன்னேற்றம் மற்றும் சிறப்பம்சங்களை உங்கள் iCloud Drive உடன் ஒத்திசைக்கவும்.",
-  "Sync with iCloud": "iCloud உடன் ஒத்திசைக்கவும்"
+  "Sync with iCloud": "iCloud உடன் ஒத்திசைக்கவும்",
+  "Delete All Books?": "எல்லா புத்தகங்களையும் நீக்கவா?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "இந்தச் செயலைத் திரும்பப் பெற முடியாது. வாசிப்பு முன்னேற்றம், புத்தகக்குறிகள் மற்றும் குறிப்புகளுடன் ஒவ்வொரு புத்தகமும் இந்தச் சாதனத்திலிருந்தும் உங்கள் Readest கிளவுட் நூலகத்திலிருந்தும் அகற்றப்படும். நீங்கள் அவ்விடத்திலேயே இறக்குமதி செய்த புத்தகங்களின் அசல் கோப்புகள் அப்படியே இருக்கும், கிளவுட் சேமிப்பில் பதிவேற்றப்பட்ட புத்தகங்கள் «சேமிப்பை நிர்வகி» பகுதியில் நீங்கள் அகற்றும் வரை அங்கேயே இருக்கும். உள்நுழைந்துள்ள மற்ற சாதனங்கள் தங்கள் சொந்த நகல்களை வைத்திருக்கும்.",
+  "Danger Zone": "அபாய மண்டலம்",
+  "Delete All Books": "எல்லா புத்தகங்களையும் நீக்கு",
+  "All books deleted.": "எல்லா புத்தகங்களும் நீக்கப்பட்டன.",
+  "Failed to delete books. Please try again later.": "புத்தகங்களை நீக்க முடியவில்லை. பிறகு மீண்டும் முயற்சிக்கவும்."
 }

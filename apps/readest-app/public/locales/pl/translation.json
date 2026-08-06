@@ -2128,5 +2128,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "Twoja biblioteka jest przechowywana w iCloud Drive i wlicza się do jego miejsca.",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "Synchronizuj bibliotekę, postęp czytania i zaznaczenia ze swoim iCloud Drive.",
-  "Sync with iCloud": "Synchronizuj z iCloud"
+  "Sync with iCloud": "Synchronizuj z iCloud",
+  "Delete All Books?": "Usunąć wszystkie książki?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "Tej operacji nie można cofnąć. Wszystkie książki zostaną usunięte z tego urządzenia oraz z Twojej biblioteki w chmurze Readest, wraz z postępem czytania, zakładkami i adnotacjami. Książki zaimportowane w miejscu zachowują swoje oryginalne pliki, a książki przesłane do pamięci w chmurze pozostaną tam, dopóki nie usuniesz ich w sekcji „Zarządzaj pamięcią”. Inne zalogowane urządzenia zachowują własne kopie.",
+  "Danger Zone": "Strefa zagrożenia",
+  "Delete All Books": "Usuń wszystkie książki",
+  "All books deleted.": "Usunięto wszystkie książki.",
+  "Failed to delete books. Please try again later.": "Nie udało się usunąć książek. Spróbuj ponownie później."
 }

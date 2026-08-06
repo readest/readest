@@ -2036,5 +2036,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "Ditt bibliotek lagras i din iCloud Drive och räknas mot dess lagringsutrymme.",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "Synka ditt bibliotek, dina läsframsteg och markeringar med din iCloud Drive.",
-  "Sync with iCloud": "Synka med iCloud"
+  "Sync with iCloud": "Synka med iCloud",
+  "Delete All Books?": "Radera alla böcker?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "Den här åtgärden kan inte ångras. Alla böcker tas bort från den här enheten och från ditt Readest-molnbibliotek, tillsammans med läsförlopp, bokmärken och anteckningar. Böcker som du importerat på plats behåller sina originalfiler, och böcker som laddats upp till molnlagringen ligger kvar tills du tar bort dem under ”Hantera lagring”. Andra inloggade enheter behåller sina egna kopior.",
+  "Danger Zone": "Farozon",
+  "Delete All Books": "Radera alla böcker",
+  "All books deleted.": "Alla böcker har raderats.",
+  "Failed to delete books. Please try again later.": "Det gick inte att radera böckerna. Försök igen senare."
 }

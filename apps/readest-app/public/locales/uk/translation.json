@@ -2128,5 +2128,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "Ваша бібліотека зберігається в iCloud Drive і враховується в його сховищі.",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "Синхронізуйте свою бібліотеку, проґрес читання та виділення з вашим iCloud Drive.",
-  "Sync with iCloud": "Синхронізувати з iCloud"
+  "Sync with iCloud": "Синхронізувати з iCloud",
+  "Delete All Books?": "Видалити всі книги?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "Цю дію неможливо скасувати. Усі книги буде вилучено з цього пристрою та з вашої хмарної бібліотеки Readest разом із прогресом читання, закладками й примітками. Книги, імпортовані на місці, зберігають свої вихідні файли, а книги, вивантажені у хмарне сховище, залишаються там, доки ви не видалите їх у розділі «Керування сховищем». Інші пристрої, до яких ви увійшли, зберігають власні копії.",
+  "Danger Zone": "Небезпечна зона",
+  "Delete All Books": "Видалити всі книги",
+  "All books deleted.": "Усі книги видалено.",
+  "Failed to delete books. Please try again later.": "Не вдалося видалити книги. Спробуйте пізніше."
 }

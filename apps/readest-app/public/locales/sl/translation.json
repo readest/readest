@@ -2128,5 +2128,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "Vaša knjižnica je shranjena v iCloud Drive in šteje v njegov prostor za shranjevanje.",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "Sinhronizirajte knjižnico, napredek branja in označbe s svojim iCloud Drive.",
-  "Sync with iCloud": "Sinhroniziraj z iCloud"
+  "Sync with iCloud": "Sinhroniziraj z iCloud",
+  "Delete All Books?": "Izbrišem vse knjige?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "Tega dejanja ni mogoče razveljaviti. Vse knjige bodo odstranjene iz te naprave in iz vaše knjižnice v oblaku Readest, skupaj z napredkom branja, zaznamki in opombami. Knjige, ki ste jih uvozili na mestu, ohranijo svoje izvirne datoteke, knjige, naložene v shrambo v oblaku, pa ostanejo tam, dokler jih ne odstranite v razdelku »Upravljaj shrambo«. Druge prijavljene naprave obdržijo svoje kopije.",
+  "Danger Zone": "Nevarno območje",
+  "Delete All Books": "Izbriši vse knjige",
+  "All books deleted.": "Vse knjige so izbrisane.",
+  "Failed to delete books. Please try again later.": "Knjig ni bilo mogoče izbrisati. Poskusite znova pozneje."
 }

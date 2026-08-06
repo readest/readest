@@ -2036,5 +2036,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "Kutubxonangiz iCloud Drive’da saqlanadi va uning xotirasidan hisoblanadi.",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "Kutubxonangiz, oʻqish jarayoni va belgilashlaringizni iCloud Drive bilan sinxronlang.",
-  "Sync with iCloud": "iCloud bilan sinxronlash"
+  "Sync with iCloud": "iCloud bilan sinxronlash",
+  "Delete All Books?": "Barcha kitoblar oʻchirilsinmi?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "Bu amalni bekor qilib boʻlmaydi. Har bir kitob oʻqish jarayoni, xatchoʻplar va izohlar bilan birga ushbu qurilmadan va Readest bulutli kutubxonangizdan olib tashlanadi. Joyida import qilingan kitoblarning asl fayllari saqlanib qoladi, bulutli xotiraga yuklangan kitoblar esa siz ularni «Xotirani boshqarish» boʻlimidan oʻchirmaguningizcha oʻsha yerda qoladi. Tizimga kirgan boshqa qurilmalar oʻz nusxalarini saqlab qoladi.",
+  "Danger Zone": "Xavfli hudud",
+  "Delete All Books": "Barcha kitoblarni oʻchirish",
+  "All books deleted.": "Barcha kitoblar oʻchirildi.",
+  "Failed to delete books. Please try again later.": "Kitoblarni oʻchirib boʻlmadi. Keyinroq qayta urinib koʻring."
 }

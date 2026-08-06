@@ -91,8 +91,13 @@ const ProfilePage = () => {
   useTheme({ systemUIVisible: false });
 
   const { quotas, userProfilePlan = 'free' } = useQuotaStats();
-  const { handleLogout, handleResetPassword, handleUpdateEmail, handleConfirmDelete } =
-    useUserActions();
+  const {
+    handleLogout,
+    handleResetPassword,
+    handleUpdateEmail,
+    handleConfirmDelete,
+    handleDeleteAllBooks,
+  } = useUserActions();
 
   const { availablePlans, iapAvailable } = useAvailablePlans({
     hasIAP: appService?.hasIAP || false,
@@ -238,6 +243,13 @@ const ProfilePage = () => {
     handleConfirmDelete(_('Failed to delete user. Please try again later.'));
   };
 
+  const handleDeleteAllBooksWithMessage = () => {
+    handleDeleteAllBooks(
+      _('All books deleted.'),
+      _('Failed to delete books. Please try again later.'),
+    );
+  };
+
   const handleManageStorage = () => {
     setShowStorageManager(true);
   };
@@ -350,6 +362,7 @@ const ProfilePage = () => {
                         onResetPassword={handleResetPassword}
                         onUpdateEmail={handleUpdateEmail}
                         onConfirmDelete={handleDeleteWithMessage}
+                        onConfirmDeleteAllBooks={handleDeleteAllBooksWithMessage}
                         onRestorePurchase={handleIAPRestorePurchase}
                         onManageSubscription={handleManageSubscription}
                         onManageStorage={handleManageStorage}

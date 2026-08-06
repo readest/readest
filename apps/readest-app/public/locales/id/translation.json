@@ -1990,5 +1990,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "Perpustakaan Anda disimpan di iCloud Drive Anda dan dihitung dalam penyimpanannya.",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "Sinkronkan perpustakaan, progres membaca, dan sorotan Anda dengan iCloud Drive Anda.",
-  "Sync with iCloud": "Sinkronkan dengan iCloud"
+  "Sync with iCloud": "Sinkronkan dengan iCloud",
+  "Delete All Books?": "Hapus semua buku?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "Tindakan ini tidak dapat dibatalkan. Setiap buku akan dihapus dari perangkat ini dan dari pustaka cloud Readest Anda, beserta kemajuan baca, markah, dan anotasi. Buku yang Anda impor di tempat tetap menyimpan berkas aslinya, dan buku yang diunggah ke penyimpanan cloud tetap ada di sana sampai Anda menghapusnya di «Kelola Penyimpanan». Perangkat lain yang masuk tetap menyimpan salinannya sendiri.",
+  "Danger Zone": "Zona Berbahaya",
+  "Delete All Books": "Hapus Semua Buku",
+  "All books deleted.": "Semua buku telah dihapus.",
+  "Failed to delete books. Please try again later.": "Gagal menghapus buku. Silakan coba lagi nanti."
 }

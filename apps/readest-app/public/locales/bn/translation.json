@@ -2036,5 +2036,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "আপনার লাইব্রেরি আপনার iCloud Drive-এ সংরক্ষিত হয় এবং এর স্টোরেজে গণনা করা হয়।",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "আপনার লাইব্রেরি, পড়ার অগ্রগতি এবং হাইলাইটগুলি আপনার iCloud Drive-এর সাথে সিঙ্ক করুন।",
-  "Sync with iCloud": "iCloud-এর সাথে সিঙ্ক করুন"
+  "Sync with iCloud": "iCloud-এর সাথে সিঙ্ক করুন",
+  "Delete All Books?": "সমস্ত বই মুছে ফেলবেন?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "এই ক্রিয়াটি পূর্বাবস্থায় ফেরানো যাবে না। পড়ার অগ্রগতি, বুকমার্ক এবং টীকা সহ প্রতিটি বই এই ডিভাইস এবং আপনার Readest ক্লাউড লাইব্রেরি থেকে সরিয়ে ফেলা হবে। যে বইগুলি আপনি নিজ স্থানে আমদানি করেছেন সেগুলির মূল ফাইল অক্ষত থাকে, এবং ক্লাউড স্টোরেজে আপলোড করা বইগুলি «স্টোরেজ ম্যানেজমেন্ট» থেকে না সরানো পর্যন্ত সেখানেই থাকে। সাইন ইন করা অন্যান্য ডিভাইসে নিজস্ব অনুলিপি থেকে যায়।",
+  "Danger Zone": "বিপজ্জনক অঞ্চল",
+  "Delete All Books": "সমস্ত বই মুছুন",
+  "All books deleted.": "সমস্ত বই মুছে ফেলা হয়েছে।",
+  "Failed to delete books. Please try again later.": "বই মুছতে ব্যর্থ হয়েছে। পরে আবার চেষ্টা করুন।"
 }

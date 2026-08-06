@@ -2036,5 +2036,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "Η βιβλιοθήκη σας αποθηκεύεται στο iCloud Drive σας και προσμετράται στον αποθηκευτικό του χώρο.",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "Συγχρονίστε τη βιβλιοθήκη, την πρόοδο ανάγνωσης και τις επισημάνσεις σας με το iCloud Drive σας.",
-  "Sync with iCloud": "Συγχρονισμός με iCloud"
+  "Sync with iCloud": "Συγχρονισμός με iCloud",
+  "Delete All Books?": "Διαγραφή όλων των βιβλίων;",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "Αυτή η ενέργεια δεν μπορεί να αναιρεθεί. Κάθε βιβλίο θα αφαιρεθεί από αυτή τη συσκευή και από τη βιβλιοθήκη σας στο cloud του Readest, μαζί με την πρόοδο ανάγνωσης, τους σελιδοδείκτες και τις σημειώσεις. Τα βιβλία που εισαγάγατε επιτόπου διατηρούν τα αρχικά τους αρχεία και τα βιβλία που ανεβάσατε στον αποθηκευτικό χώρο cloud παραμένουν εκεί μέχρι να τα αφαιρέσετε από τη «Διαχείριση αποθήκευσης». Οι άλλες συνδεδεμένες συσκευές διατηρούν τα δικά τους αντίγραφα.",
+  "Danger Zone": "Ζώνη κινδύνου",
+  "Delete All Books": "Διαγραφή όλων των βιβλίων",
+  "All books deleted.": "Όλα τα βιβλία διαγράφηκαν.",
+  "Failed to delete books. Please try again later.": "Αποτυχία διαγραφής βιβλίων. Δοκιμάστε ξανά αργότερα."
 }

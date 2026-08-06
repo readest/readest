@@ -2036,5 +2036,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "Könyvtára az iCloud Drive-on tárolódik, és beleszámít annak tárhelyébe.",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "Szinkronizálja könyvtárát, olvasási haladását és kiemeléseit a iCloud Drive-jával.",
-  "Sync with iCloud": "iCloud szinkronizálása"
+  "Sync with iCloud": "iCloud szinkronizálása",
+  "Delete All Books?": "Törli az összes könyvet?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "Ez a művelet nem vonható vissza. Minden könyv törlődik erről az eszközről és a Readest felhőkönyvtárából, az olvasási előrehaladással, a könyvjelzőkkel és a jegyzetekkel együtt. A helyben importált könyvek megtartják az eredeti fájljaikat, a felhőtárhelyre feltöltött könyvek pedig ott maradnak, amíg el nem távolítja őket a «Tárhely kezelése» részben. A többi bejelentkezett eszköz megtartja a saját másolatát.",
+  "Danger Zone": "Veszélyzóna",
+  "Delete All Books": "Összes könyv törlése",
+  "All books deleted.": "Az összes könyv törölve.",
+  "Failed to delete books. Please try again later.": "Nem sikerült törölni a könyveket. Kérjük, próbálja újra később."
 }

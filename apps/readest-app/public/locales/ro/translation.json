@@ -2082,5 +2082,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "Biblioteca ta este stocată în iCloud Drive și ocupă din spațiul său de stocare.",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "Sincronizează-ți biblioteca, progresul citirii și evidențierile cu iCloud Drive-ul tău.",
-  "Sync with iCloud": "Sincronizare cu iCloud"
+  "Sync with iCloud": "Sincronizare cu iCloud",
+  "Delete All Books?": "Ștergeți toate cărțile?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "Această acțiune nu poate fi anulată. Toate cărțile vor fi eliminate de pe acest dispozitiv și din biblioteca dvs. din cloud Readest, împreună cu progresul lecturii, marcajele și adnotările. Cărțile importate pe loc își păstrează fișierele originale, iar cărțile încărcate în stocarea din cloud rămân acolo până când le eliminați din «Gestionați stocarea». Celelalte dispozitive conectate își păstrează propriile copii.",
+  "Danger Zone": "Zonă periculoasă",
+  "Delete All Books": "Ștergeți toate cărțile",
+  "All books deleted.": "Toate cărțile au fost șterse.",
+  "Failed to delete books. Please try again later.": "Ștergerea cărților a eșuat. Încercați din nou mai târziu."
 }

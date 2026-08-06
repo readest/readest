@@ -1990,5 +1990,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "라이브러리는 iCloud Drive에 저장되며 해당 저장 공간을 사용합니다.",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "라이브러리, 읽기 진행 상황, 하이라이트를 iCloud Drive와 동기화합니다.",
-  "Sync with iCloud": "iCloud와 동기화"
+  "Sync with iCloud": "iCloud와 동기화",
+  "Delete All Books?": "모든 책을 삭제하시겠습니까?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "이 작업은 되돌릴 수 없습니다. 모든 책이 읽기 진행률, 북마크, 주석과 함께 이 기기와 Readest 클라우드 서재에서 삭제됩니다. 원래 위치에서 가져온 책은 원본 파일이 유지되며, 클라우드 저장소에 업로드된 책은 「저장소 관리」에서 삭제할 때까지 남아 있습니다. 로그인된 다른 기기에는 각자의 사본이 남아 있습니다.",
+  "Danger Zone": "위험 구역",
+  "Delete All Books": "모든 책 삭제",
+  "All books deleted.": "모든 책이 삭제되었습니다.",
+  "Failed to delete books. Please try again later.": "책을 삭제하지 못했습니다. 나중에 다시 시도해 주세요."
 }

@@ -1990,5 +1990,11 @@
   "Your library is stored in your iCloud Drive and counts against its storage.": "ライブラリは iCloud Drive に保存され、その容量を消費します。",
   "iCloud": "iCloud",
   "Sync your library, reading progress, and highlights with your iCloud Drive.": "ライブラリ、読書進捗、ハイライトを iCloud Drive と同期します。",
-  "Sync with iCloud": "iCloud と同期"
+  "Sync with iCloud": "iCloud と同期",
+  "Delete All Books?": "すべての本を削除しますか？",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "この操作は取り消せません。すべての本が、読書の進捗、ブックマーク、注釈とともに、このデバイスと Readest クラウドライブラリから削除されます。その場で読み込んだ本は元のファイルが保持され、クラウドストレージにアップロードされた本は「ストレージ管理」から削除するまで残ります。サインイン済みの他のデバイスにはそれぞれのコピーが残ります。",
+  "Danger Zone": "危険な操作",
+  "Delete All Books": "すべての本を削除",
+  "All books deleted.": "すべての本を削除しました。",
+  "Failed to delete books. Please try again later.": "本の削除に失敗しました。しばらくしてからもう一度お試しください。"
 }
