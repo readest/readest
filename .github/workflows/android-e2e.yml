@@ -7,8 +7,8 @@ name: Android E2E (CDP)
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '30 19 * * *'
+ # schedule:
+ #   - cron: '30 19 * * *'
   pull_request:
     types: [labeled, synchronize]
 
