@@ -303,11 +303,12 @@ const ProfilePage = () => {
     );
   }
 
-  const avatarUrl = user?.user_metadata?.['picture'] || user?.user_metadata?.['avatar_url'];
+  const avatarUrl = user?.user_metadata?.['profilePic'] || user?.user_metadata?.['avatar_url'];
   const userFullName = user?.user_metadata?.['full_name'] || '-';
   const userEmail = user?.email || '';
-  const userPlanDetails =
-    getPlanDetails(userProfilePlan, availablePlans) || getPlanDetails('free', availablePlans);
+  // const userPlanDetails =
+  //   getPlanDetails(userProfilePlan, availablePlans) || getPlanDetails('free', availablePlans);
+  const userPlanDetails = '';
 
   return (
     <div
@@ -349,11 +350,10 @@ const ProfilePage = () => {
                     planDetails={userPlanDetails}
                   />
 
-                  {!showStorageManager && !showSharedLinksManager && !showSyncManager && (
+                  {/* {!showStorageManager && !showSharedLinksManager && !showSyncManager && (
                     <UsageStats quotas={quotas} />
-                  )}
+                  )} */}
                 </div>
-
                 {showStorageManager ? (
                   <div className='flex flex-col gap-y-8 px-6'>
                     <StorageManager />
@@ -369,7 +369,7 @@ const ProfilePage = () => {
                   </div>
                 ) : (
                   <>
-                    <div className='flex flex-col gap-y-8 px-2 sm:px-6'>
+                    {/* <div className='flex flex-col gap-y-8 sm:px-6'>
                       <PlansComparison
                         availablePlans={availablePlans}
                         userPlan={userProfilePlan}
@@ -380,7 +380,7 @@ const ProfilePage = () => {
                             : handleStripeSubscribe
                         }
                       />
-                    </div>
+                    </div> */}
                     <div className='flex flex-col gap-y-8 px-6'>
                       <AccountActions
                         userPlan={userProfilePlan}
@@ -399,8 +399,8 @@ const ProfilePage = () => {
                     </div>
                   </>
                 )}
-
-                <LegalLinks />
+                {/* <LegalLinks /> */}
+                TOC, privacy, source-code
               </div>
             </div>
           )}

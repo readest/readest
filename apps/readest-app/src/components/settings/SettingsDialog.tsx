@@ -106,11 +106,11 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       icon: RiTranslate,
       label: _('Language'),
     },
-    {
-      tab: 'Integrations',
-      icon: RiShareLine,
-      label: _('Integrations'),
-    },
+    // {
+    //   tab: 'Integrations',
+    //   icon: RiShareLine,
+    //   label: _('Integrations'),
+    // },
     {
       tab: 'AI',
       icon: PiRobot,

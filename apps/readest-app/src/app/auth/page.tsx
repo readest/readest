@@ -77,6 +77,7 @@ export default function AuthPage() {
           user_metadata: {
             full_name: data.fullName,
             name: data.name,
+            profilePic: data.profilePic,
           },
         };
         login(data.accessToken, user);

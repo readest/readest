@@ -474,12 +474,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
           onClick={handleUpgrade}
         />
       )}
-      {isWebAppPlatform() && (
+      {/* {isWebAppPlatform() && (
         <MenuItem
           label={_('Download {{brand}}', { brand: BRAND_NAME })}
           onClick={downloadReadest}
         />
-      )}
+      )} */}
       <MenuItem label={_('About {{brand}}', { brand: BRAND_NAME })} onClick={showAboutReadest} />
     </Menu>
   );

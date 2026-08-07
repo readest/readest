@@ -83,7 +83,8 @@ export const AboutWindow = () => {
     setUpdateStatus(null);
   };
 
-  const versionInfo = `${_('Version {{version}}', { version: getAppVersion() })} (${browserInfo})`;
+  // const versionInfo = `${_('Version {{version}}', { version: getAppVersion() })} (${browserInfo})`;
+  const versionInfo = '0.0.0';
 
   // Mobile users can't select the version string to paste it into a bug
   // report, so the label itself copies it.
@@ -144,39 +145,26 @@ export const AboutWindow = () => {
               )}
             </div>
           </div>
-
           <hr aria-hidden='true' className='border-base-300 my-12 w-full sm:my-4' />
-
           <div
             className='flex flex-1 flex-col items-center justify-start gap-2 px-4 text-center'
             dir='ltr'
           >
             <p className='text-neutral-content text-sm'>
-              © {new Date().getFullYear()} Bilingify LLC. All rights reserved.
+              © {new Date().getFullYear()} Biblophile. All rights reserved.
             </p>
-
-            <p className='text-neutral-content text-xs'>
-              This software is licensed under the{' '}
-              <Link
-                href='https://www.gnu.org/licenses/agpl-3.0.html'
-                className='text-blue-500 underline'
-              >
-                GNU Affero General Public License v3.0
-              </Link>
-              . You are free to use, modify, and distribute this software under the terms of the
-              AGPL v3 license. Please see the license for more details.
-            </p>
-            <p className='text-neutral-content text-xs'>
+            {/* <p className='text-neutral-content text-xs'>
               Source code is available at{' '}
-              <Link href='https://github.com/readest/readest' className='text-blue-500 underline'>
+              <Link href='https://github.com/debarshit/readest' className='text-blue-500 underline'>
                 GitHub
               </Link>
               .
-            </p>
-
-            <LegalLinks />
+            </p> */}
+            {/* <LegalLinks /> */}
+            TOC, Privacy, etc etc
           </div>
-          <SupportLinks />
+          {/* <SupportLinks /> */}
+          insta, threads, reddit, etc
         </div>
       )}
     </Dialog>
