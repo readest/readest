@@ -691,6 +691,11 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       style={{
         paddingTop: `${gridInsets.top}px`,
         paddingBottom: `${gridInsets.bottom * 0.33}px`,
+        // Physical (not logical) padding: in landscape the notch and rounded
+        // corners sit on a fixed side of the device, so these must not flip
+        // with the book's reading direction.
+        paddingLeft: `${gridInsets.left}px`,
+        paddingRight: `${gridInsets.right}px`,
         backgroundColor: bgColor,
         color: fgColor,
         backdropFilter: 'none',

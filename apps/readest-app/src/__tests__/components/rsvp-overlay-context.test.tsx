@@ -5,6 +5,7 @@ import { afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 
 import RSVPOverlay from '@/app/reader/components/rsvp/RSVPOverlay';
 import type { RSVPController, RsvpState } from '@/services/rsvp';
+import type { Insets } from '@/types/misc';
 
 beforeAll(() => {
   if (!Element.prototype.scrollIntoView) {
@@ -102,11 +103,15 @@ const buildController = (state: RsvpState) => {
   return controller;
 };
 
-const renderOverlay = (state: RsvpState, fontFamily?: string) => {
+const renderOverlay = (
+  state: RsvpState,
+  fontFamily?: string,
+  gridInsets: Insets = { top: 0, bottom: 0, left: 0, right: 0 },
+) => {
   const controller = buildController(state);
   const result = render(
     <RSVPOverlay
-      gridInsets={{ top: 0, bottom: 0, left: 0, right: 0 }}
+      gridInsets={gridInsets}
       controller={controller as unknown as RSVPController}
       chapters={[]}
       currentChapterHref={null}
@@ -130,6 +135,40 @@ describe('RSVPOverlay — capture lifecycle', () => {
     const { getByTestId } = renderOverlay(state);
 
     expect(getByTestId('rsvp-overlay').getAttribute('data-capture-blocking-overlay')).toBe('true');
+  });
+});
+
+describe('RSVPOverlay — safe area insets', () => {
+  afterEach(() => cleanup());
+
+  const wordState = () =>
+    buildState({ words: [{ text: 'hello', orpIndex: 1, pauseMultiplier: 1 }], currentIndex: 0 });
+
+  test('pads the full-screen surface horizontally so landscape notches never clip it', () => {
+    const { getByTestId } = renderOverlay(wordState(), undefined, {
+      top: 0,
+      right: 44,
+      bottom: 21,
+      left: 59,
+    });
+
+    const overlay = getByTestId('rsvp-overlay');
+    expect(overlay.style.paddingLeft).toBe('59px');
+    expect(overlay.style.paddingRight).toBe('44px');
+  });
+
+  test('keeps the existing vertical inset treatment', () => {
+    const { getByTestId } = renderOverlay(wordState(), undefined, {
+      top: 47,
+      right: 0,
+      bottom: 34,
+      left: 0,
+    });
+
+    const overlay = getByTestId('rsvp-overlay');
+    expect(overlay.style.paddingTop).toBe('47px');
+    // Bottom bars only need a fraction of the home-indicator inset.
+    expect(overlay.style.paddingBottom).toBe(`${34 * 0.33}px`);
   });
 });
 
