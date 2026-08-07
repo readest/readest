@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
-import { FaCheckCircle } from 'react-icons/fa';
+import { FaCheck } from 'react-icons/fa';
 import { MdLibraryAddCheck } from 'react-icons/md';
 import { DEFAULT_HIGHLIGHT_COLORS, HighlightColor, HighlightStyle } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
@@ -71,6 +71,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressTapRef = useRef(false);
   const colorStripRef = useRef<HTMLDivElement | null>(null);
+  const size10 = useResponsiveSize(10);
   const size16 = useResponsiveSize(16);
   const size30 = useResponsiveSize(30);
   const highlightOptionsHeightPx = useResponsiveSize(OPTIONS_HEIGHT_PIX);
@@ -312,14 +313,15 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                   style={{
                     width: size16,
                     height: size16,
-                    backgroundColor: selectedColor !== color ? swatchColor : 'transparent',
+                    backgroundColor: isBwEink ? einkFgColor : swatchColor,
                   }}
-                  className='rounded-full p-0'
+                  className='flex items-center justify-center rounded-full p-0'
                 >
                   {selectedColor === color && (
-                    <FaCheckCircle
-                      size={size16}
-                      style={{ fill: isBwEink ? einkFgColor : swatchColor }}
+                    <FaCheck
+                      size={size10}
+                      className='text-base-content'
+                      style={isBwEink ? { color: einkBgColor } : undefined}
                     />
                   )}
                 </button>
