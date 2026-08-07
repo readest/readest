@@ -12,6 +12,16 @@ export const deeplProvider: TranslationProvider = {
   name: 'deepl',
   label: _('DeepL'),
   authRequired: true,
+  // No `preservesMarkup`: round-tripping inline markup through this endpoint
+  // corrupts it, silently and inconsistently. Measured against the live API —
+  // `<b>` and `<i>` alone survive, but `<em>` is dropped outright, and when a
+  // sentence carries both bold and italic the bold content is moved outside
+  // its own tag, leaving an empty `<b></b>` so nothing renders bold. Losing
+  // the formatting while keeping the text (the plain-text path) is better than
+  // emitting markup that lies about it.
+  // DeepL proper supports `tag_handling=html`, but that would have to be set
+  // by the /deepl/translate service, which lives outside this repo; passing the
+  // field from here is ignored.
   quotaExceeded: false,
   translate: async (
     text: string[],

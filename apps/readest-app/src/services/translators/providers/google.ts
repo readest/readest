@@ -7,6 +7,12 @@ import { TranslationProvider } from '../types';
 export const googleProvider: TranslationProvider = {
   name: 'google',
   label: _('Google Translate'),
+  // Verified against the live endpoint with the exact request built below:
+  // inline tags come back on the semantically matching words even when the
+  // sentence reorders, including nested tags, class and href attributes, and
+  // non-Latin targets. Note this needs no extra parameter — adding
+  // `format=html` makes the endpoint strip the tags instead of keeping them.
+  preservesMarkup: true,
   translate: async (text: string[], sourceLang: string, targetLang: string): Promise<string[]> => {
     if (!text.length) return [];
 
