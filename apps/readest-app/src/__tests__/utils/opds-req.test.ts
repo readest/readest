@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { deserializeOPDSCustomHeaders } from '@/app/opds/utils/customHeaders';
+import { deserializeCustomHeaders } from '@/utils/customHeaders';
 
 // Mock environment for web platform
 vi.mock('@/services/environment', () => ({
@@ -99,7 +99,7 @@ describe('opdsReq', () => {
       });
       const params = new URL(proxied, 'https://web.readest.com').searchParams;
 
-      expect(deserializeOPDSCustomHeaders(params.get('headers'))).toEqual({
+      expect(deserializeCustomHeaders(params.get('headers'))).toEqual({
         'CF-Access-Client-Id': 'client-id',
         'CF-Access-Client-Secret': 'secret',
       });

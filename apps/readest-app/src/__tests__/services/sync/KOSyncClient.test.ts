@@ -164,3 +164,43 @@ describe('KOSyncClient.connect – server validation', () => {
     expect(mock).toHaveBeenCalled();
   });
 });
+
+describe('KOSyncClient – custom headers', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('sends configured custom headers on requests', async () => {
+    const mock = setFetch(() => jsonResponse(200, { authorized: 'OK' }));
+
+    const client = new KOSyncClient(
+      makeConfig({ customHeaders: { 'CF-Access-Client-Id': 'client-id' } }),
+    );
+    await client.connect('alice', 'secret');
+
+    const [, init] = mock.mock.calls[0] as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    // Headers.entries() lowercases header names, so the merged plain object
+    // built off it does too.
+    expect(headers['cf-access-client-id']).toBe('client-id');
+  });
+
+  it('does not let custom headers override KOSync auth headers', async () => {
+    const mock = setFetch(() => jsonResponse(200, { authorized: 'OK' }));
+
+    const client = new KOSyncClient(
+      makeConfig({
+        userkey: 'real-key',
+        customHeaders: { 'X-Auth-Key': 'attacker-supplied' },
+      }),
+    );
+    await client.getProgress(makeBook());
+
+    const [, init] = mock.mock.calls[0] as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers['x-auth-key']).toBe('real-key');
+  });
+});

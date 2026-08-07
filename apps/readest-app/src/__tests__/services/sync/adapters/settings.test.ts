@@ -179,11 +179,60 @@ describe('settingsAdapter', () => {
     expect(out.patch.s3?.enabled).toBeUndefined();
   });
 
+  test('pack ∘ unpack round-trips kosync.customHeaders, serialized to a JSON string across the boundary', () => {
+    // encryptPackedFields / decryptRowFields only handle string-valued
+    // fields (String(value) on encrypt, a decrypted string back on
+    // decrypt) — every other entry in SETTINGS_ENCRYPTED_FIELDS is a
+    // plain string. customHeaders is the first object-valued encrypted
+    // field, so pack must serialize it to JSON before it reaches the
+    // crypto middleware, and unpack must parse it back.
+    const record: SettingsRemoteRecord = {
+      name: 'singleton',
+      patch: {
+        kosync: {
+          customHeaders: { 'CF-Access-Client-Id': 'client-id' },
+        },
+      } as unknown as Partial<SystemSettings>,
+    };
+    const fields = settingsAdapter.pack(record);
+    expect(fields['kosync.customHeaders']).toBe(
+      JSON.stringify({ 'CF-Access-Client-Id': 'client-id' }),
+    );
+
+    const out = settingsAdapter.unpack(fields);
+    expect(out.patch.kosync?.customHeaders).toEqual({ 'CF-Access-Client-Id': 'client-id' });
+  });
+
+  test('unpackRow parses kosync.customHeaders back from its JSON string envelope', () => {
+    const row = makeRow({
+      'kosync.customHeaders': env(JSON.stringify({ 'CF-Access-Client-Id': 'client-id' })),
+    });
+    const out = settingsAdapter.unpackRow(row, '');
+    expect(out).not.toBeNull();
+    expect(out!.patch.kosync?.customHeaders).toEqual({ 'CF-Access-Client-Id': 'client-id' });
+  });
+
+  test('pack drops empty/blank kosync.customHeaders instead of shipping an empty object', () => {
+    const record: SettingsRemoteRecord = {
+      name: 'singleton',
+      patch: {
+        kosync: { customHeaders: {} },
+      } as unknown as Partial<SystemSettings>,
+    };
+    const fields = settingsAdapter.pack(record);
+    expect(fields['kosync.customHeaders']).toBeUndefined();
+  });
+
+  test('kosync.customHeaders is encrypted, like the other kosync credential fields', () => {
+    expect(settingsAdapter.encryptedFields).toContain('kosync.customHeaders');
+  });
+
   test('declares encryptedFields covering kosync / bookorbit / readwise / hardcover / webdav / s3 credentials only (not serverUrl / endpoint)', () => {
     expect(settingsAdapter.encryptedFields).toEqual([
       'kosync.username',
       'kosync.userkey',
       'kosync.password',
+      'kosync.customHeaders',
       'bookorbit.username',
       'bookorbit.userkey',
       'bookorbit.password',

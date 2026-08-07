@@ -56,7 +56,7 @@ import { FeedView } from './components/FeedView';
 import { PublicationView } from './components/PublicationView';
 import { SearchView } from './components/SearchView';
 import { Navigation } from './components/Navigation';
-import { normalizeOPDSCustomHeaders } from './utils/customHeaders';
+import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import { closeOPDSBrowser, stashOPDSReturnTarget } from './utils/opdsClose';
 import { findExistingBookForPublication } from './utils/findExistingBook';
 import Dialog from '@/components/Dialog';
@@ -390,7 +390,7 @@ export default function BrowserPage() {
         usernameRef.current = null;
         passwordRef.current = null;
       }
-      customHeadersRef.current = normalizeOPDSCustomHeaders(catalog?.customHeaders);
+      customHeadersRef.current = normalizeCustomHeaders(catalog?.customHeaders);
       if (libraryLoaded) {
         lastLoadedKeyRef.current = loadKey;
         loadOPDS(url);

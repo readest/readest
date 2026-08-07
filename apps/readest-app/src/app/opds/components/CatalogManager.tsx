@@ -32,10 +32,10 @@ import type { OPDSSubscriptionState } from '@/services/opds/types';
 import { getUnaddedPopularCatalogs, validateOPDSURL } from '../utils/opdsUtils';
 import { FailedDownloadsDialog } from './FailedDownloadsDialog';
 import {
-  formatOPDSCustomHeadersInput,
-  hasOPDSCustomHeaders,
-  parseOPDSCustomHeadersInput,
-} from '../utils/customHeaders';
+  formatCustomHeadersInput,
+  hasCustomHeaders,
+  parseCustomHeadersInput,
+} from '@/utils/customHeaders';
 import ModalPortal from '@/components/ModalPortal';
 
 const POPULAR_CATALOGS: OPDSCatalog[] = [
@@ -187,7 +187,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
   const handleAddCatalog = async () => {
     if (!newCatalog.name || !newCatalog.url) return;
 
-    const parsedHeaders = parseOPDSCustomHeadersInput(newCatalog.customHeadersInput);
+    const parsedHeaders = parseCustomHeadersInput(newCatalog.customHeadersInput);
     if (parsedHeaders.error) {
       setHeaderError(parsedHeaders.error);
       return;
@@ -235,7 +235,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
       return;
     }
 
-    const customHeaders = hasOPDSCustomHeaders(parsedHeaders.headers)
+    const customHeaders = hasCustomHeaders(parsedHeaders.headers)
       ? parsedHeaders.headers
       : undefined;
 
@@ -305,7 +305,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
       description: catalog.description || '',
       username: catalog.username || '',
       password: catalog.password || '',
-      customHeadersInput: formatOPDSCustomHeadersInput(catalog.customHeaders),
+      customHeadersInput: formatCustomHeadersInput(catalog.customHeaders),
       proxyConsent: false,
       autoDownload: catalog.autoDownload || false,
     });
@@ -754,7 +754,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                       setHeaderError('');
                       setProxyConsentError('');
                     }}
-                    placeholder={formatOPDSCustomHeadersInput({
+                    placeholder={formatCustomHeadersInput({
                       'CF-Access-Client-Id': 'your-client-id',
                       'CF-Access-Client-Secret': 'your-client-secret',
                     })}

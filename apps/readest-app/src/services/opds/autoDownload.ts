@@ -5,7 +5,7 @@ import { downloadFile } from '@/libs/storage';
 import { getFileExtFromMimeType } from '@/libs/document';
 import { needsProxy, getProxiedURL, probeAuth, probeFilename } from '@/app/opds/utils/opdsReq';
 import { resolveURL, parseMediaType, getFileExtFromPath } from '@/app/opds/utils/opdsUtils';
-import { normalizeOPDSCustomHeaders } from '@/app/opds/utils/customHeaders';
+import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { applyOPDSCover } from './cover';
 import { applyOPDSMetadata } from './metadata';
@@ -33,7 +33,7 @@ async function downloadAndImport(
   const url = resolveURL(item.acquisitionHref, item.baseURL);
   const username = catalog.username ?? '';
   const password = catalog.password ?? '';
-  const customHeaders = normalizeOPDSCustomHeaders(catalog.customHeaders);
+  const customHeaders = normalizeCustomHeaders(catalog.customHeaders);
   const useProxy = needsProxy(url);
 
   let downloadUrl = useProxy ? getProxiedURL(url, '', true, customHeaders) : url;

@@ -1,8 +1,6 @@
-export type OPDSCustomHeaders = Record<string, string>;
+export type CustomHeaders = Record<string, string>;
 
-export const normalizeOPDSCustomHeaders = (
-  headers?: OPDSCustomHeaders | null,
-): OPDSCustomHeaders => {
+export const normalizeCustomHeaders = (headers?: CustomHeaders | null): CustomHeaders => {
   return Object.fromEntries(
     Object.entries(headers ?? {})
       .map(([key, value]) => [key.trim(), String(value).trim()] as const)
@@ -10,14 +8,14 @@ export const normalizeOPDSCustomHeaders = (
   );
 };
 
-export const hasOPDSCustomHeaders = (headers?: OPDSCustomHeaders | null): boolean => {
-  return Object.keys(normalizeOPDSCustomHeaders(headers)).length > 0;
+export const hasCustomHeaders = (headers?: CustomHeaders | null): boolean => {
+  return Object.keys(normalizeCustomHeaders(headers)).length > 0;
 };
 
-export const parseOPDSCustomHeadersInput = (
+export const parseCustomHeadersInput = (
   input: string,
-): { headers: OPDSCustomHeaders; error?: string } => {
-  const headers: OPDSCustomHeaders = {};
+): { headers: CustomHeaders; error?: string } => {
+  const headers: CustomHeaders = {};
 
   for (const [index, rawLine] of input.split('\n').entries()) {
     const line = rawLine.trim();
@@ -47,14 +45,14 @@ export const parseOPDSCustomHeadersInput = (
   return { headers };
 };
 
-export const formatOPDSCustomHeadersInput = (headers?: OPDSCustomHeaders | null): string => {
-  return Object.entries(normalizeOPDSCustomHeaders(headers))
+export const formatCustomHeadersInput = (headers?: CustomHeaders | null): string => {
+  return Object.entries(normalizeCustomHeaders(headers))
     .map(([key, value]) => `${key}: ${value}`)
     .join('\n');
 };
 
-export const serializeOPDSCustomHeaders = (headers?: OPDSCustomHeaders | null): string | null => {
-  const normalizedHeaders = normalizeOPDSCustomHeaders(headers);
+export const serializeCustomHeaders = (headers?: CustomHeaders | null): string | null => {
+  const normalizedHeaders = normalizeCustomHeaders(headers);
   if (Object.keys(normalizedHeaders).length === 0) {
     return null;
   }
@@ -62,7 +60,7 @@ export const serializeOPDSCustomHeaders = (headers?: OPDSCustomHeaders | null): 
   return JSON.stringify(normalizedHeaders);
 };
 
-export const deserializeOPDSCustomHeaders = (value?: string | null): OPDSCustomHeaders => {
+export const deserializeCustomHeaders = (value?: string | null): CustomHeaders => {
   if (!value) {
     return {};
   }
@@ -73,7 +71,7 @@ export const deserializeOPDSCustomHeaders = (value?: string | null): OPDSCustomH
       return {};
     }
 
-    return normalizeOPDSCustomHeaders(parsed as OPDSCustomHeaders);
+    return normalizeCustomHeaders(parsed as CustomHeaders);
   } catch {
     return {};
   }

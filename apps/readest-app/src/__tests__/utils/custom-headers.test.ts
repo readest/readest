@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  deserializeOPDSCustomHeaders,
-  formatOPDSCustomHeadersInput,
-  parseOPDSCustomHeadersInput,
-  serializeOPDSCustomHeaders,
-} from '@/app/opds/utils/customHeaders';
+  deserializeCustomHeaders,
+  formatCustomHeadersInput,
+  parseCustomHeadersInput,
+  serializeCustomHeaders,
+} from '@/utils/customHeaders';
 
-describe('OPDS custom headers', () => {
+describe('custom headers', () => {
   it('parses multiline header input', () => {
-    const result = parseOPDSCustomHeadersInput(`
+    const result = parseCustomHeadersInput(`
       CF-Access-Client-Id: client-id
       CF-Access-Client-Secret: secret:value
     `);
@@ -21,20 +21,20 @@ describe('OPDS custom headers', () => {
   });
 
   it('reports malformed header lines', () => {
-    const result = parseOPDSCustomHeadersInput('missing separator');
+    const result = parseCustomHeadersInput('missing separator');
 
     expect(result.headers).toEqual({});
     expect(result.error).toContain('line 1');
   });
 
   it('serializes and restores stored custom headers', () => {
-    const serialized = serializeOPDSCustomHeaders({
+    const serialized = serializeCustomHeaders({
       'CF-Access-Client-Id': 'client-id',
       'CF-Access-Client-Secret': 'secret',
     });
 
     expect(serialized).toBeTypeOf('string');
-    expect(deserializeOPDSCustomHeaders(serialized)).toEqual({
+    expect(deserializeCustomHeaders(serialized)).toEqual({
       'CF-Access-Client-Id': 'client-id',
       'CF-Access-Client-Secret': 'secret',
     });
@@ -42,7 +42,7 @@ describe('OPDS custom headers', () => {
 
   it('formats saved headers for textarea editing', () => {
     expect(
-      formatOPDSCustomHeadersInput({
+      formatCustomHeadersInput({
         'CF-Access-Client-Id': 'client-id',
         'CF-Access-Client-Secret': 'secret',
       }),

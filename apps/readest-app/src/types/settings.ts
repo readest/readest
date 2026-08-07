@@ -83,6 +83,7 @@ export interface KOSyncSettings {
   deviceName: string;
   checksumMethod: KOSyncChecksumMethod;
   strategy: KOSyncStrategy;
+  customHeaders?: Record<string, string>;
 }
 
 export interface BookOrbitSettings {

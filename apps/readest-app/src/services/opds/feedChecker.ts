@@ -19,7 +19,7 @@ import {
   looksLikeXMLContent,
   parseOPDSXML,
 } from '@/app/opds/utils/opdsUtils';
-import { normalizeOPDSCustomHeaders } from '@/app/opds/utils/customHeaders';
+import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import { getOPDSCoverHref } from './cover';
 import { getOPDSBookMetadata } from './metadata';
 import type { OPDSSubscriptionState, PendingItem } from './types';
@@ -428,7 +428,7 @@ export async function checkFeedForNewItems(
   state: OPDSSubscriptionState,
 ): Promise<PendingItem[]> {
   const knownIds = new Set(state.knownEntryIds);
-  const customHeaders = normalizeOPDSCustomHeaders(catalog.customHeaders);
+  const customHeaders = normalizeCustomHeaders(catalog.customHeaders);
   const username = catalog.username ?? '';
   const password = catalog.password ?? '';
   const visited = new Set<string>([catalog.url]);

@@ -1,6 +1,6 @@
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { NextRequest, NextResponse } from 'next/server';
-import { deserializeOPDSCustomHeaders } from '@/app/opds/utils/customHeaders';
+import { deserializeCustomHeaders } from '@/utils/customHeaders';
 import { isBlockedHost } from '@/utils/network';
 
 // Cap redirect hops so the SSRF host check below can re-run on every one.
@@ -98,7 +98,7 @@ async function handleRequest(request: NextRequest, method: 'GET' | 'HEAD') {
   const url = decodeURIComponent(encodedUrl);
   const auth = request.nextUrl.searchParams.get('auth');
   const stream = request.nextUrl.searchParams.get('stream');
-  const customHeaders = deserializeOPDSCustomHeaders(request.nextUrl.searchParams.get('headers'));
+  const customHeaders = deserializeCustomHeaders(request.nextUrl.searchParams.get('headers'));
 
   if (!url) {
     return NextResponse.json(

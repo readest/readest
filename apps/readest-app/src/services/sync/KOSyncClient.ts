@@ -4,6 +4,7 @@ import { KOSyncSettings } from '@/types/settings';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { KoSyncProxyPayload } from '@/types/kosync';
 import { isLanAddress } from '@/utils/network';
+import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import { getAPIBaseUrl, isTauriAppPlatform } from '../environment';
 
 /**
@@ -41,7 +42,8 @@ export class KOSyncClient {
     const { method = 'GET', body, headers: additionalHeaders, useAuth = true } = options;
 
     const buildHeaders = (): Headers => {
-      const headers = new Headers(additionalHeaders || {});
+      const headers = new Headers(normalizeCustomHeaders(this.config.customHeaders));
+      new Headers(additionalHeaders || {}).forEach((value, key) => headers.set(key, value));
       if (useAuth) {
         if (this.usesHttpAuth && this.config.password) {
           const credentials = btoa(`${this.config.username}:${this.config.password}`);

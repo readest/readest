@@ -1,6 +1,7 @@
 import type { SystemSettings } from '@/types/settings';
 import type { ReplicaAdapter } from '@/services/sync/replicaRegistry';
 import type { FieldsObject, ReplicaRow } from '@/types/replica';
+import { serializeCustomHeaders, deserializeCustomHeaders } from '@/utils/customHeaders';
 import { unwrap } from './helpers';
 
 export const SETTINGS_KIND = 'settings';
@@ -59,6 +60,7 @@ export const SETTINGS_WHITELIST = [
   'kosync.username',
   'kosync.userkey',
   'kosync.password',
+  'kosync.customHeaders',
   'bookorbit.serverUrl',
   'bookorbit.username',
   'bookorbit.userkey',
@@ -134,6 +136,7 @@ export const SETTINGS_ENCRYPTED_FIELDS = [
   'kosync.username',
   'kosync.userkey',
   'kosync.password',
+  'kosync.customHeaders',
   'bookorbit.username',
   'bookorbit.userkey',
   'bookorbit.password',
@@ -146,6 +149,16 @@ export const SETTINGS_ENCRYPTED_FIELDS = [
 ] as const;
 
 export type SettingsWhitelistKey = (typeof SETTINGS_WHITELIST)[number];
+
+/**
+ * `encryptPackedFields` / `decryptRowFields` only handle string-valued
+ * fields (`String(value)` on encrypt, a decrypted string back on
+ * decrypt) — every other entry in `SETTINGS_ENCRYPTED_FIELDS` is a plain
+ * string. `kosync.customHeaders` is object-valued, so pack/unpack
+ * serialize it to/from a JSON string at this boundary so the crypto
+ * middleware only ever sees a string.
+ */
+const KOSYNC_CUSTOM_HEADERS_PATH = 'kosync.customHeaders';
 
 // In practice every path comes from the compile-time SETTINGS_WHITELIST so
 // these never appear, but readPath/writePath are exported helpers and the
@@ -205,6 +218,14 @@ export interface SettingsRemoteRecord {
   lastSeenCipher?: Record<string, string>;
 }
 
+/** Parse `kosync.customHeaders` back from its JSON-string wire form, in place. */
+const deserializeCustomHeadersPath = (patch: Record<string, unknown>): void => {
+  const raw = readPath(patch, KOSYNC_CUSTOM_HEADERS_PATH);
+  if (typeof raw === 'string') {
+    writePath(patch, KOSYNC_CUSTOM_HEADERS_PATH, deserializeCustomHeaders(raw));
+  }
+};
+
 const unwrapSettingsFields = (fields: FieldsObject): Record<string, unknown> => {
   const out: Record<string, unknown> = {};
   for (const path of SETTINGS_WHITELIST) {
@@ -225,6 +246,16 @@ export const settingsAdapter: ReplicaAdapter<SettingsRemoteRecord> = {
       const value = readPath(record.patch, path);
       if (value !== undefined) fields[path] = value;
     }
+    if (KOSYNC_CUSTOM_HEADERS_PATH in fields) {
+      const serialized = serializeCustomHeaders(
+        fields[KOSYNC_CUSTOM_HEADERS_PATH] as Record<string, string>,
+      );
+      if (serialized === null) {
+        delete fields[KOSYNC_CUSTOM_HEADERS_PATH];
+      } else {
+        fields[KOSYNC_CUSTOM_HEADERS_PATH] = serialized;
+      }
+    }
     return fields;
   },
 
@@ -234,6 +265,7 @@ export const settingsAdapter: ReplicaAdapter<SettingsRemoteRecord> = {
       const v = fields[path];
       if (v !== undefined) writePath(patch, path, v);
     }
+    deserializeCustomHeadersPath(patch);
     return { name: 'singleton', patch: patch as Partial<SystemSettings> };
   },
 
@@ -251,6 +283,7 @@ export const settingsAdapter: ReplicaAdapter<SettingsRemoteRecord> = {
     for (const [path, v] of Object.entries(flat)) {
       writePath(patch, path, v);
     }
+    deserializeCustomHeadersPath(patch);
     return { name: 'singleton', patch: patch as Partial<SystemSettings> };
   },
 

@@ -3,7 +3,7 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { useSettingsStore } from '@/store/settingsStore';
 import { needsProxy, getProxiedURL, probeAuth } from '@/app/opds/utils/opdsReq';
-import { normalizeOPDSCustomHeaders } from '@/app/opds/utils/customHeaders';
+import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import type { BookFormat } from '@/types/book';
 import type { BookDoc, BookMetadata } from '@/libs/document';
 
@@ -34,7 +34,7 @@ export const createPseStreamPageLoader = (data: PseStreamData) => {
   const catalog = settings.opdsCatalogs?.find((c) => c.id === data.catalogId);
   const username = catalog?.username || '';
   const password = catalog?.password || '';
-  const customHeaders = normalizeOPDSCustomHeaders(catalog?.customHeaders);
+  const customHeaders = normalizeCustomHeaders(catalog?.customHeaders);
   let authHeaderPromise: Promise<string | null> | null = null;
 
   return async (pageIndex: number): Promise<Blob> => {
