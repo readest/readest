@@ -152,18 +152,12 @@ describe('TTSMediaBridge', () => {
   });
 
   test('speak-mark events update metadata and clamped position state headless', async () => {
-    await bridge.bind(controller as unknown as TTSController, {
-      ...meta(),
-      getSectionLabel: () => 'Chapter 1',
-    });
+    await bind();
     controller.getPlaybackInfo.mockReturnValue({ position: 90, duration: 60, measuredFraction: 1 });
     controller.emitMark('Hello there, reader.', '0');
     await new Promise((r) => setTimeout(r, 0));
     expect(fake.metadata).toBeTruthy();
-    const md = fake.metadata as FakeMediaMetadata;
-    // Lock-screen card is book + chapter, not the spoken sentence.
-    expect(md.title).toBe('Alice — Chapter 1');
-    expect(md.artist).toBe('Carroll');
+    expect((fake.metadata as FakeMediaMetadata).artist).toContain('Alice');
     expect(fake.setPositionState).toHaveBeenCalledWith({
       duration: 60,
       position: 60, // clamped, never skipped
@@ -361,17 +355,28 @@ describe('TTSMediaBridge', () => {
     expect(bridge.isBound).toBe(true);
   });
 
-  test('Now Playing uses the book title with chapter for any TTS voice', async () => {
+  // The Update Frequency setting is the only thing choosing what the lock
+  // screen names. Hardcoding one shape here is how it silently went dead.
+  test('metadataMode drives what Now Playing names', async () => {
     await bridge.bind(controller as unknown as TTSController, {
       ...meta(),
       getSectionLabel: () => 'Chapter I',
     });
     controller.emitMark('The queen without love walked on.', '0');
     await new Promise((r) => setTimeout(r, 0));
-    const md = fake.metadata as FakeMediaMetadata;
-    expect(md.title).toBe('Alice — Chapter I');
-    expect(md.artist).toBe('Carroll');
-    expect(md.album).toBe('Alice');
+    const sentence = fake.metadata as FakeMediaMetadata;
+    expect(sentence.title).toBe('The queen without love walked on.');
+    expect(sentence.artist).toBe('Chapter I');
+
+    await bridge.bind(controller as unknown as TTSController, {
+      ...meta({ metadataMode: 'chapter' as const }),
+      getSectionLabel: () => 'Chapter I',
+    });
+    controller.emitMark('The queen without love walked on.', '0');
+    await new Promise((r) => setTimeout(r, 0));
+    const chapter = fake.metadata as FakeMediaMetadata;
+    expect(chapter.title).toBe('Chapter I');
+    expect(chapter.artist).toBe('Carroll');
   });
 
   test('bind reports an active CarPlay state', async () => {

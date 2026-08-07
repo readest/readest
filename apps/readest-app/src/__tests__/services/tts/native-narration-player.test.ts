@@ -23,11 +23,13 @@ import { NativeNarrationPlayer } from '@/services/tts/mediaOverlay/NativeNarrati
 describe('NativeNarrationPlayer', () => {
   let playoutEvents: ((payload: unknown) => void) | null;
   let controlCalls: Array<Record<string, unknown>>;
+  let position: { session: number; index: number; positionMs: number; playing: boolean };
 
   beforeEach(() => {
     vi.clearAllMocks();
     playoutEvents = null;
     controlCalls = [];
+    position = { session: 3, index: 0, positionMs: 1500, playing: true };
     vi.mocked(addPluginListener).mockImplementation((async (
       _plugin: string,
       event: string,
@@ -44,7 +46,7 @@ describe('NativeNarrationPlayer', () => {
         return { session: null } as unknown;
       }
       if (cmd === 'plugin:native-tts|playout_position') {
-        return { session: 3, index: 0, positionMs: 1500, playing: true } as unknown;
+        return position as unknown;
       }
       return undefined as unknown;
     });
@@ -81,6 +83,31 @@ describe('NativeNarrationPlayer', () => {
     player.addEventListener('ended', ended);
     playoutEvents!({ type: 'ended', session: 3, index: 0 });
     expect(ended).toHaveBeenCalledOnce();
+    await player.shutdown();
+  });
+
+  // Without this the JS side has no failure channel at all: a native load that
+  // never produces audio would leave speak() waiting on a clock that is never
+  // going to move, with no error yielded and no auto-advance.
+  test('native error events surface to error listeners', async () => {
+    const player = new NativeNarrationPlayer();
+    await player.ensureReady();
+    const onError = vi.fn();
+    player.addEventListener('error', onError);
+    playoutEvents!({ type: 'error', session: 3, index: 0 });
+    expect(onError).toHaveBeenCalledOnce();
+    expect(player.paused).toBe(true);
+    await player.shutdown();
+  });
+
+  test('freezes the clock when the native player reports no current item', async () => {
+    const player = new NativeNarrationPlayer();
+    await player.load('ch1.mp3', new Blob([new Uint8Array(4)]), 0);
+    await player.play();
+    expect(player.paused).toBe(false);
+
+    position = { session: 3, index: -1, positionMs: 0, playing: false };
+    await vi.waitFor(() => expect(player.paused).toBe(true));
     await player.shutdown();
   });
 

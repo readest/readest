@@ -11,6 +11,7 @@
 // playing HTMLMediaElement is required (iOS lock screen, desktop Chromium
 // media keys), and must survive hook unmount for a detached session.
 
+import { buildTTSMediaMetadata } from '@/utils/ttsMetadata';
 import { fetchImageAsBase64 } from '@/utils/image';
 import { getMediaSession, TauriMediaSession } from '@/libs/mediaSession';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -96,13 +97,17 @@ export class TTSMediaBridge {
   // Cover fetched once per bind as a data URL. iOS navigator.mediaSession only
   // renders lock-screen / CarPlay artwork from a fetchable URL, and the book
   // cover is often a blob/tauri URL the media session can't load; a data URL
-  // always resolves. Re-sent on every metadata update (each is a full replace).
+  // always resolves. The web path re-sends it on every update (each is a full
+  // replace); the native path pushes it once — see #pushArtwork.
   #coverArtwork = '/icon.png';
-  // Push artwork on the next metadata write (bind, or after a cover refresh).
-  // Subsequent mark updates omit it so Swift does not re-decode a multi-MB
-  // base64 cover on every sentence.
+  // Push artwork on the first native metadata write after a bind. Later mark
+  // updates omit it: Swift merges into the existing nowPlayingInfo, so the
+  // cover survives, and re-decoding a multi-MB base64 image per sentence does
+  // not. Sending artwork: '' instead is what used to wipe the cover — empty
+  // string is truthy for the WebKit mirror and non-nil for Swift's optional.
   #pushArtwork = true;
   #lastSectionLabel: string | undefined;
+  #previousSectionLabel: string | undefined;
   #onSpeakMark: ((e: Event) => void) | null = null;
   #onStateChange: ((e: Event) => void) | null = null;
   // A nexttrack/previoustrack from the car (or lock screen) makes the
@@ -249,6 +254,7 @@ export class TTSMediaBridge {
     this.#onSpeakMark = null;
     this.#onStateChange = null;
     this.#lastSectionLabel = undefined;
+    this.#previousSectionLabel = undefined;
     this.#pushArtwork = true;
   }
 
@@ -318,24 +324,25 @@ export class TTSMediaBridge {
     }
   }
 
-  async #updateMetadata(_mark: TTSMark | undefined): Promise<void> {
+  async #updateMetadata(mark: TTSMark | undefined): Promise<void> {
     const mediaSession = this.#mediaSession;
     const meta = this.#meta;
     if (!mediaSession || !meta) return;
     const liveLabel = meta.getSectionLabel?.();
     if (liveLabel) this.#lastSectionLabel = liveLabel;
 
-    // Now Playing / Control Center / Watch always name the book and chapter —
-    // never the highlighted sentence — for narration, Edge, and system voices.
-    // (The in-app TTS setting still exists for other surfaces; the lock-screen
-    // card is audiobook-style.)
-    const section = this.#lastSectionLabel || '';
-    const metadata = {
-      title: section ? `${meta.title} — ${section}` : meta.title,
-      artist: meta.author,
-      album: meta.title,
-      shouldUpdate: true,
-    };
+    const metadata = buildTTSMediaMetadata({
+      markText: mark?.text || '',
+      markName: mark?.name || '',
+      sectionLabel: this.#lastSectionLabel || '',
+      title: meta.title,
+      author: meta.author,
+      ttsMediaMetadata: meta.metadataMode,
+      previousSectionLabel: this.#previousSectionLabel,
+    });
+    if (meta.metadataMode === 'chapter') {
+      this.#previousSectionLabel = this.#lastSectionLabel;
+    }
     if (!metadata.shouldUpdate) return;
 
     if (mediaSession instanceof TauriMediaSession) {

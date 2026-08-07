@@ -568,4 +568,24 @@ describe('MediaOverlayClient transport', () => {
 
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:audio');
   });
+
+  // invalidatePlayback drops the cached element AND cancels the handover timer
+  // that would have silenced it. A voice switch landing inside the handover
+  // grace would otherwise leave the recording playing with nothing holding it.
+  test('invalidatePlayback silences an element still rolling under the handover', async () => {
+    await setup();
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+    for (const time of [1, 2, 3]) {
+      const pending = iter.next();
+      audio().advanceTo(time);
+      await pending;
+    }
+    // Handed over: the recording keeps rolling for the next block to join.
+    expect(audio().paused).toBe(false);
+
+    client.invalidatePlayback();
+    expect(audio().paused).toBe(true);
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:audio');
+  });
 });

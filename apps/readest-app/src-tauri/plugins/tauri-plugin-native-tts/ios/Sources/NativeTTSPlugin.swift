@@ -997,7 +997,8 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
   private var playoutItemEndObserver: NSObjectProtocol?
   // Path of the continuous file currently loaded via "load" (Media Overlay).
   private var playoutLoadedPath: String?
-  private var playoutContinuous = false
+  private var playoutItemFailedObserver: NSObjectProtocol?
+  private var playoutItemStatusObserver: NSKeyValueObservation?
 
   @objc public func playout_control(_ invoke: Invoke) {
     do {
@@ -1126,7 +1127,6 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
       try? FileManager.default.removeItem(at: item.url)
     }
     playoutQueue.removeAll()
-    playoutContinuous = true
     playoutSessionEnded = false
 
     // Same path already loaded: seek in place so paragraph handovers and
@@ -1152,10 +1152,24 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
     if let observer = playoutItemEndObserver {
       NotificationCenter.default.removeObserver(observer)
     }
+    clearContinuousObservers()
     playoutItemEndObserver = NotificationCenter.default.addObserver(
       forName: .AVPlayerItemDidPlayToEndTime, object: playerItem, queue: .main
     ) { [weak self] _ in
       self?.playoutContinuousEnded()
+    }
+    // A staged file that cannot be decoded (or has gone missing) never moves
+    // the clock, and JS has no other way to learn: without this its waitUntil
+    // sits on a dead item forever instead of surfacing a playback error.
+    playoutItemFailedObserver = NotificationCenter.default.addObserver(
+      forName: .AVPlayerItemFailedToPlayToEndTime, object: playerItem, queue: .main
+    ) { [weak self] _ in
+      self?.playoutContinuousFailed()
+    }
+    playoutItemStatusObserver = playerItem.observe(\.status, options: [.new]) {
+      [weak self] item, _ in
+      guard item.status == .failed else { return }
+      DispatchQueue.main.async { self?.playoutContinuousFailed() }
     }
     playoutCurrentIndex = 0
     playoutPlayer?.replaceCurrentItem(with: playerItem)
@@ -1180,6 +1194,25 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
     playoutCurrentIndex = -1
     // File exhausted; JS's waitUntil maps this to the 'ended' outcome.
     emitPlayoutEvent("ended", index: 0)
+  }
+
+  private func playoutContinuousFailed() {
+    guard playoutLoadedPath != nil else { return }
+    playoutCurrentIndex = -1
+    playoutPlayer?.pause()
+    emitPlayoutEvent("error", index: 0)
+  }
+
+  // The continuous item's failure observers. Torn down whenever the current
+  // item is replaced — including by an Edge advance, which brings its own end
+  // observer but must not inherit these.
+  private func clearContinuousObservers() {
+    if let observer = playoutItemFailedObserver {
+      NotificationCenter.default.removeObserver(observer)
+      playoutItemFailedObserver = nil
+    }
+    playoutItemStatusObserver?.invalidate()
+    playoutItemStatusObserver = nil
   }
 
   @objc public func playout_position(_ invoke: Invoke) {
@@ -1289,6 +1322,8 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
     if let observer = playoutItemEndObserver {
       NotificationCenter.default.removeObserver(observer)
     }
+    clearContinuousObservers()
+    playoutLoadedPath = nil
     playoutItemEndObserver = NotificationCenter.default.addObserver(
       forName: .AVPlayerItemDidPlayToEndTime, object: playerItem, queue: .main
     ) { [weak self] _ in
@@ -1333,6 +1368,7 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
       NotificationCenter.default.removeObserver(observer)
       playoutItemEndObserver = nil
     }
+    clearContinuousObservers()
     playoutPlayer?.pause()
     playoutPlayer?.replaceCurrentItem(with: nil)
     for item in playoutQueue where item.owned {
@@ -1343,7 +1379,6 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
     playoutSessionEnded = false
     playoutPendingAdvance = false
     playoutPlaying = false
-    playoutContinuous = false
     playoutLoadedPath = nil
   }
 

@@ -236,6 +236,10 @@ export class MediaOverlayClient implements TTSClient {
   // speak() reuses a dead session and plays silence after switching back.
   invalidatePlayback(): void {
     this.#cancelHandover();
+    // #cancelHandover just killed the timer that would have silenced a rolling
+    // element, and the reference is dropped below — silence it here or the
+    // recording plays on under the engine that took over.
+    this.#audio?.pause();
     this.#currentPar = null;
     this.#audioLoad = null;
     this.#audio = null;

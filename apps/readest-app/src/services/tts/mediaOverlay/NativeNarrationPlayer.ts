@@ -26,7 +26,9 @@ interface PlayoutEvent {
   index?: number;
 }
 
-const POLL_INTERVAL_MS = 100;
+// Matches NativeAudioPlayer: the JS clock is extrapolated between polls, so
+// this only corrects drift and does not need to run at the boundary-check rate.
+const POLL_INTERVAL_MS = 250;
 
 const hashHref = (href: string): string => {
   let h = 0;
@@ -96,7 +98,12 @@ export class NativeNarrationPlayer {
 
   async ensureReady(): Promise<void> {
     await this.#ensureListener();
-    if (this.#nativeSession) return;
+    // Await an in-flight start-session too: returning early would let a
+    // concurrent load/resume invoke race ahead of the session it belongs to.
+    if (this.#nativeSession) {
+      await this.#nativeSession;
+      return;
+    }
     this.#ended = false;
     this.#nativeSession = invoke<{ session: number }>('plugin:native-tts|playout_control', {
       payload: { action: 'start-session' },
@@ -243,6 +250,12 @@ export class NativeNarrationPlayer {
       this.#ended = true;
       this.#cache.playing = false;
       for (const fn of [...this.#endedListeners]) fn();
+    } else if (event.type === 'error') {
+      // The item failed to load or play. Nothing will ever move the clock, so
+      // this is the only thing that can unstick a waiting speak().
+      this.#ended = true;
+      this.#cache.playing = false;
+      for (const fn of [...this.#errorListeners]) fn();
     } else if (event.type === 'chunk-start') {
       this.#ended = false;
       this.#cache.playing = !this.#userPaused;
@@ -275,6 +288,10 @@ export class NativeNarrationPlayer {
           playing: pos.playing && !this.#userPaused,
           at: performance.now(),
         };
+      } else {
+        // No current item: freeze the extrapolated clock on the last known
+        // position rather than letting it run away past the end of the file.
+        this.#cache.playing = false;
       }
     } catch {
       // Transient invoke failures must not kill the poll loop.
