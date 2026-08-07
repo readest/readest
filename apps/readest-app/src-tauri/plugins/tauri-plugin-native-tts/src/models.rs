@@ -122,6 +122,10 @@ pub struct PlayoutEnqueueResponse {
 pub struct PlayoutControlRequest {
     pub action: String,
     pub rate: Option<f64>,
+    // Absolute file path for action "load" (Media Overlay continuous playout).
+    pub path: Option<String>,
+    // Seek target for actions "load" and "seek", in milliseconds.
+    pub position_ms: Option<f64>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -193,13 +193,19 @@ describe('narration selection', () => {
     await controller.initViewTTS(0);
     expect(controller.narrationActive).toBe(true);
 
+    const invalidate = vi.spyOn(controller.ttsMediaOverlayClient, 'invalidatePlayback');
+
     await controller.setVoice('edge-tts', 'en');
     expect(controller.narrationActive).toBe(false);
     expect(controller.useNarration).toBe(false);
+    expect(invalidate).toHaveBeenCalled();
 
+    invalidate.mockClear();
     await controller.setVoice(MEDIA_OVERLAY_VOICE_ID, 'en');
     expect(controller.narrationActive).toBe(true);
     expect(controller.useNarration).toBe(true);
+    // Returning must invalidate again: Edge may have aborted the shared player.
+    expect(invalidate).toHaveBeenCalled();
   });
 });
 

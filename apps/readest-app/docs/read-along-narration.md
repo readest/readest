@@ -174,10 +174,11 @@ reader's own highlight style.
 - **Sub-sentence page-following needs a clock.** It is driven by
   `getChunkProgress()`, so engines without one (Web Speech) keep the old
   behaviour: a sentence straddling a page break waits for the next mark.
-- **iOS Tauri is unverified.** The client uses a plain `HTMLMediaElement`, which
-  is better placed there than WebAudio (see the header comment in
-  `TTSAudioPlayer.ts` on audio-session ownership), but Now Playing may not
-  surface correctly. A native-player path would be a follow-up.
+- **iOS Tauri** plays narration through the same in-process AVPlayer as Edge
+  TTS (`NativeNarrationPlayer` → native-tts `playout` load/seek). A plain
+  `HTMLMediaElement` is interrupted when the media session claims the app's
+  non-mixable `.playback` session; web / Android / desktop keep using
+  `HTMLAudioElement`.
 
 ### The library badge
 

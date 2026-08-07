@@ -436,7 +436,7 @@ const TTSPlayerSheet = ({
             >
               <RiVoiceAiFill size={iconSize18} />
               <span className='text-base-content/60 max-w-full truncate px-1 text-xs'>
-                {currentVoiceName ?? _('Voice')}
+                {currentVoiceName ? _(currentVoiceName) : _('Voice')}
               </span>
             </button>
             <button

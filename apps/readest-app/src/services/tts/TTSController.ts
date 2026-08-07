@@ -1333,7 +1333,9 @@ export class TTSController extends EventTarget {
   }
 
   async setRate(rate: number) {
-    this.state = 'setrate-paused';
+    // Live rate changes (Edge/MO native AVPlayer) must not flip the state
+    // machine to paused — audio keeps rolling and the UI would desync.
+    if (this.state !== 'playing') this.state = 'setrate-paused';
     this.ttsRate = rate;
     this.#sectionTimeline?.setRate(rate);
     await this.ttsClient.setRate(this.ttsRate);
@@ -1365,6 +1367,10 @@ export class TTSController extends EventTarget {
     // engine: the current section's TTS instance has to be rebuilt.
     const wantsNarration = voiceId === MEDIA_OVERLAY_VOICE_ID && this.narrationAvailable;
     if (wantsNarration !== this.narrationActive) {
+      // Edge/native share the iOS playout AVPlayer with Media Overlay. Leaving
+      // narration (or returning after Edge aborted it) must drop the cached
+      // clock, or speak() resumes a dead session and the reader hears silence.
+      this.ttsMediaOverlayClient.invalidatePlayback();
       this.#useNarration = wantsNarration;
       if (wantsNarration) await this.ttsMediaOverlayClient.init();
       this.ttsClient = wantsNarration ? this.ttsMediaOverlayClient : this.ttsWebClient;

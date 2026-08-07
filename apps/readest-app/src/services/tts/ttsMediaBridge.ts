@@ -11,7 +11,6 @@
 // playing HTMLMediaElement is required (iOS lock screen, desktop Chromium
 // media keys), and must survive hook unmount for a detached session.
 
-import { buildTTSMediaMetadata } from '@/utils/ttsMetadata';
 import { fetchImageAsBase64 } from '@/utils/image';
 import { getMediaSession, TauriMediaSession } from '@/libs/mediaSession';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -99,8 +98,11 @@ export class TTSMediaBridge {
   // cover is often a blob/tauri URL the media session can't load; a data URL
   // always resolves. Re-sent on every metadata update (each is a full replace).
   #coverArtwork = '/icon.png';
+  // Push artwork on the next metadata write (bind, or after a cover refresh).
+  // Subsequent mark updates omit it so Swift does not re-decode a multi-MB
+  // base64 cover on every sentence.
+  #pushArtwork = true;
   #lastSectionLabel: string | undefined;
-  #previousSectionLabel: string | undefined;
   #onSpeakMark: ((e: Event) => void) | null = null;
   #onStateChange: ((e: Event) => void) | null = null;
   // A nexttrack/previoustrack from the car (or lock screen) makes the
@@ -150,6 +152,7 @@ export class TTSMediaBridge {
         this.#coverArtwork = '';
       }
     }
+    this.#pushArtwork = true;
 
     if (mediaSession instanceof TauriMediaSession) {
       await mediaSession.setActive({
@@ -166,6 +169,7 @@ export class TTSMediaBridge {
         album: meta.title,
         artwork: this.#coverArtwork,
       });
+      this.#pushArtwork = false;
     }
 
     if (this.#mediaSession !== mediaSession) return;
@@ -245,7 +249,7 @@ export class TTSMediaBridge {
     this.#onSpeakMark = null;
     this.#onStateChange = null;
     this.#lastSectionLabel = undefined;
-    this.#previousSectionLabel = undefined;
+    this.#pushArtwork = true;
   }
 
   #registerActionHandlers(): void {
@@ -314,34 +318,45 @@ export class TTSMediaBridge {
     }
   }
 
-  async #updateMetadata(mark: TTSMark | undefined): Promise<void> {
+  async #updateMetadata(_mark: TTSMark | undefined): Promise<void> {
     const mediaSession = this.#mediaSession;
     const meta = this.#meta;
     if (!mediaSession || !meta) return;
     const liveLabel = meta.getSectionLabel?.();
     if (liveLabel) this.#lastSectionLabel = liveLabel;
 
-    const metadata = buildTTSMediaMetadata({
-      markText: mark?.text || '',
-      markName: mark?.name || '',
-      sectionLabel: this.#lastSectionLabel || '',
-      title: meta.title,
-      author: meta.author,
-      ttsMediaMetadata: meta.metadataMode,
-      previousSectionLabel: this.#previousSectionLabel,
-    });
-    if (meta.metadataMode === 'chapter') {
-      this.#previousSectionLabel = this.#lastSectionLabel;
-    }
+    // Now Playing / Control Center / Watch always name the book and chapter —
+    // never the highlighted sentence — for narration, Edge, and system voices.
+    // (The in-app TTS setting still exists for other surfaces; the lock-screen
+    // card is audiobook-style.)
+    const section = this.#lastSectionLabel || '';
+    const metadata = {
+      title: section ? `${meta.title} — ${section}` : meta.title,
+      artist: meta.author,
+      album: meta.title,
+      shouldUpdate: true,
+    };
     if (!metadata.shouldUpdate) return;
 
     if (mediaSession instanceof TauriMediaSession) {
-      await mediaSession.updateMetadata({
+      // Never send artwork: '' — that wiped the cover on every speak-mark
+      // (empty string is truthy for the web mirror and for Swift's optional).
+      // Push the cover once after bind; later updates keep title/artist only.
+      const payload: {
+        title: string;
+        artist: string;
+        album: string;
+        artwork?: string;
+      } = {
         title: metadata.title,
         artist: metadata.artist,
         album: metadata.album,
-        artwork: '',
-      });
+      };
+      if (this.#pushArtwork && this.#coverArtwork) {
+        payload.artwork = this.#coverArtwork;
+        this.#pushArtwork = false;
+      }
+      await mediaSession.updateMetadata(payload);
     } else {
       // Declare the artwork's REAL mime type: fetchImageAsBase64 emits a JPEG
       // data URL by default, and WebKit silently drops mediaSession artwork

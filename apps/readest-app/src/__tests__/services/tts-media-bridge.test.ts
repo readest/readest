@@ -152,12 +152,18 @@ describe('TTSMediaBridge', () => {
   });
 
   test('speak-mark events update metadata and clamped position state headless', async () => {
-    await bind();
+    await bridge.bind(controller as unknown as TTSController, {
+      ...meta(),
+      getSectionLabel: () => 'Chapter 1',
+    });
     controller.getPlaybackInfo.mockReturnValue({ position: 90, duration: 60, measuredFraction: 1 });
     controller.emitMark('Hello there, reader.', '0');
     await new Promise((r) => setTimeout(r, 0));
     expect(fake.metadata).toBeTruthy();
-    expect((fake.metadata as FakeMediaMetadata).artist).toContain('Alice');
+    const md = fake.metadata as FakeMediaMetadata;
+    // Lock-screen card is book + chapter, not the spoken sentence.
+    expect(md.title).toBe('Alice — Chapter 1');
+    expect(md.artist).toBe('Carroll');
     expect(fake.setPositionState).toHaveBeenCalledWith({
       duration: 60,
       position: 60, // clamped, never skipped
@@ -353,6 +359,19 @@ describe('TTSMediaBridge', () => {
     // Metadata still reflects the last known chapter, no crash, no blanking.
     expect(first).toBeTruthy();
     expect(bridge.isBound).toBe(true);
+  });
+
+  test('Now Playing uses the book title with chapter for any TTS voice', async () => {
+    await bridge.bind(controller as unknown as TTSController, {
+      ...meta(),
+      getSectionLabel: () => 'Chapter I',
+    });
+    controller.emitMark('The queen without love walked on.', '0');
+    await new Promise((r) => setTimeout(r, 0));
+    const md = fake.metadata as FakeMediaMetadata;
+    expect(md.title).toBe('Alice — Chapter I');
+    expect(md.artist).toBe('Carroll');
+    expect(md.album).toBe('Alice');
   });
 
   test('bind reports an active CarPlay state', async () => {
