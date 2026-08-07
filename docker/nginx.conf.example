@@ -1,0 +1,64 @@
+# Example nginx site config for serving the compose stack from one HTTPS origin.
+#
+# Copy to your nginx sites directory, replace your-domain.com and the certificate
+# paths, then set the matching values in docker/.env (see README).
+#
+# Everything lives on a single origin, so the browser never makes a cross-origin
+# request and none of the CORS configuration below the proxy has to change.
+# The upstream ports are the compose defaults; consider binding them to loopback
+# (127.0.0.1:3000:3000 and so on) so only nginx can reach them.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name your-domain.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    # nginx < 1.25.1 wants `listen 443 ssl http2;` above instead of this line.
+    http2 on;
+    server_name your-domain.com;
+
+    ssl_certificate     /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+
+    # Readest web client. Only small JSON bodies pass through here: book uploads
+    # go straight to MinIO with a presigned URL, not through this location.
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Supabase through kong. supabase-js appends /auth/v1 and /rest/v1 to
+    # SUPABASE_PUBLIC_URL, and kong declares routes on exactly those prefixes.
+    location ~ ^/(auth|rest)/v1/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # MinIO. The presigned URLs are path-style, so the bucket name is the first
+    # path segment: this must match S3_BUCKET_NAME. Host has to be forwarded
+    # unchanged or the presigned signature will not verify, and the body limit
+    # has to be lifted or large books are truncated on upload.
+    location /readest-files/ {
+        proxy_pass http://127.0.0.1:9000;
+        proxy_set_header Host $host;
+        client_max_body_size 0;
+        proxy_request_buffering off;
+    }
+
+    # Optional: serve mirrored CJK webfont bundles yourself and point the client
+    # at them with FONT_BASE_URL=https://your-domain.com/fonts (see README).
+    # location /fonts/ {
+    #     alias /srv/readest-fonts/;
+    # }
+}

@@ -179,9 +179,11 @@ SUPABASE_PUBLIC_URL=https://your-domain.com
 S3_PUBLIC_ENDPOINT=https://your-domain.com
 ```
 
-if a proxy sits in front, forward the `Host` header unchanged to minio or the
-presigned signatures will not match, and lift the request body size limit so book
-uploads are not truncated.
+`nginx.conf.example` is a working starting point for terminating TLS in front of
+the stack. two things it gets right that are easy to miss: the `Host` header has
+to reach minio unchanged or the presigned signatures will not verify, and the
+request body limit has to be lifted on the bucket location or large book uploads
+are truncated.
 
 ### CJK fonts on a custom domain
 
