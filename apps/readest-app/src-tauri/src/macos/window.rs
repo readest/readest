@@ -22,12 +22,13 @@
 //! calls are sound. The `Mutex` around the saved frame exists only to
 //! make the `static` safe, mirroring the statics in `traffic_light.rs`.
 
-use cocoa::appkit::NSWindowStyleMask;
+use cocoa::appkit::{NSWindow, NSWindowStyleMask, NSWindowTitleVisibility};
 use cocoa::base::{id, nil, NO, YES};
 use cocoa::foundation::NSUInteger;
 use cocoa::foundation::{NSPoint, NSRect, NSSize};
 use objc::{msg_send, sel, sel_impl};
 use std::sync::Mutex;
+use tauri::plugin::{Builder, TauriPlugin};
 
 /// The main window's real frame, captured immediately before the Tahoe
 /// defensive hide zeroes it. `None` while no defensive hide is pending.
@@ -217,6 +218,31 @@ pub fn restore_main_window_frame(window: &tauri::WebviewWindow) {
         let _: () = msg_send![ns_window as id, setFrame: frame display: YES];
     }
     saved_frame.take();
+}
+
+/// Hides the title text of every window so each one can carry a real title.
+///
+/// `TitleBarStyle::Overlay` only makes the title bar transparent and extends
+/// the content view underneath it — AppKit still draws the title string
+/// centered on top of Readest's own header. The windows therefore shipped with
+/// an empty title, which left window switchers, the Window menu and VoiceOver
+/// with nothing to announce. Hiding the text instead lets the frontend put the
+/// open book's name in the title (see `tauriSetWindowTitle`) without any of it
+/// being painted over the header.
+///
+/// Runs on window ready so it also covers the reader windows the frontend
+/// creates at runtime (`src/utils/nav.ts`).
+pub fn init<R: tauri::Runtime>() -> TauriPlugin<R> {
+    Builder::new("window_title")
+        .on_window_ready(|window| {
+            let Ok(ns_window) = window.ns_window() else {
+                return;
+            };
+            unsafe {
+                (ns_window as id).setTitleVisibility_(NSWindowTitleVisibility::NSWindowTitleHidden);
+            }
+        })
+        .build()
 }
 
 #[cfg(test)]

@@ -74,6 +74,7 @@ import {
   tauriHandleSetAlwaysOnTop,
   tauriHandleToggleFullScreen,
   tauriQuitApp,
+  tauriSetWindowTitle,
 } from '@/utils/window';
 
 import { LibraryGroupByType } from '@/types/settings';
@@ -503,6 +504,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       lockScreenOrientation({ orientation: 'auto' });
     }
   }, [appService]);
+
+  // Drop the book name the reader put in the window title, so a window back on
+  // the library does not keep announcing a book that is no longer open.
+  useEffect(() => {
+    if (appService?.hasWindow) {
+      tauriSetWindowTitle();
+    }
+  }, [appService?.hasWindow]);
 
   useEffect(() => {
     if (appService?.hasWindow) {

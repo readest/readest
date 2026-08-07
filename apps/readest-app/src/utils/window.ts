@@ -4,6 +4,23 @@ import { exit } from '@tauri-apps/plugin-process';
 import { type as osType } from '@tauri-apps/plugin-os';
 import { eventDispatcher } from './event';
 
+const APP_NAME = 'Readest';
+
+/**
+ * The OS window title, e.g. `Readest - The Hobbit`. It is never drawn in the
+ * UI — desktop windows are either decorationless (Windows/Linux) or hide their
+ * title text (the macOS overlay title bar) — but window switchers and screen
+ * readers announce it, so it has to name the open book to tell windows apart.
+ */
+export const formatAppWindowTitle = (bookTitle?: string) => {
+  const title = bookTitle?.trim();
+  return title ? `${APP_NAME} - ${title}` : APP_NAME;
+};
+
+export const tauriSetWindowTitle = async (bookTitle?: string) => {
+  await getCurrentWindow().setTitle(formatAppWindowTitle(bookTitle));
+};
+
 export const tauriGetWindowLogicalPosition = async () => {
   const currentWindow = getCurrentWindow();
   const factor = await currentWindow.scaleFactor();

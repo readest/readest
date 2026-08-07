@@ -10,6 +10,7 @@ import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getGridTemplate, getInsetEdges } from '@/utils/grid';
+import { tauriSetWindowTitle } from '@/utils/window';
 import { useContentInsets } from '../hooks/useContentInsets';
 import SearchResultsNav from './sidebar/SearchResultsNav';
 import BooknotesNav from './sidebar/BooknotesNav';
@@ -301,8 +302,14 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
     const bookData = getBookData(sideBarBookKey);
     if (!bookData || !bookData.book) return;
     document.title = bookData.book.title;
+    // The OS window title is invisible but is what Alt+Tab and screen readers
+    // announce, so name the book there too — otherwise every window is just
+    // "Readest" and blind users cannot tell them apart.
+    if (appService?.hasWindow) {
+      tauriSetWindowTitle(bookData.book.title);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sideBarBookKey]);
+  }, [sideBarBookKey, appService?.hasWindow]);
 
   // Memoize the per-book grid insets array — its identity is the input
   // to BookCell.gridInsets, and BookCell is React.memo'd. As long as

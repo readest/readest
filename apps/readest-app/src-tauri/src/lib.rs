@@ -492,6 +492,9 @@ pub fn run() {
     let builder = builder.plugin(macos::traffic_light::init());
 
     #[cfg(target_os = "macos")]
+    let builder = builder.plugin(macos::window::init());
+
+    #[cfg(target_os = "macos")]
     let builder = builder.plugin(macos::safari_auth::init());
 
     #[cfg(target_os = "ios")]
@@ -663,11 +666,14 @@ pub fn run() {
             #[cfg(all(not(target_os = "macos"), desktop))]
             let win_builder = win_builder.inner_size(800.0, 600.0).resizable(true);
 
+            // The overlay title bar draws its title over the app's own header,
+            // so `macos::window::init()` hides the title text and the window
+            // can carry a real name for the Window menu and VoiceOver.
             #[cfg(target_os = "macos")]
             let win_builder = win_builder
                 .decorations(true)
                 .title_bar_style(TitleBarStyle::Overlay)
-                .title("");
+                .title("Readest");
 
             #[cfg(all(not(target_os = "macos"), desktop))]
             let win_builder = {

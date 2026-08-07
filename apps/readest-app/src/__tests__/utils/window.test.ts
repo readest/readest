@@ -24,7 +24,12 @@ vi.mock('@/utils/event', () => ({
 
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { type as osType } from '@tauri-apps/plugin-os';
-import { tauriHandleOnCloseWindow, tauriHandleToggleFullScreen } from '@/utils/window';
+import {
+  formatAppWindowTitle,
+  tauriHandleOnCloseWindow,
+  tauriHandleToggleFullScreen,
+  tauriSetWindowTitle,
+} from '@/utils/window';
 
 type CloseHandler = (event: { preventDefault: () => void }) => Promise<void> | void;
 
@@ -170,5 +175,50 @@ describe('tauriHandleToggleFullScreen', () => {
     await tauriHandleToggleFullScreen();
 
     expect(win.setFullscreen).toHaveBeenCalledWith(true);
+  });
+});
+
+describe('formatAppWindowTitle', () => {
+  test('names the open book so windows are distinguishable in Alt+Tab', () => {
+    expect(formatAppWindowTitle('The Hobbit')).toBe('Readest - The Hobbit');
+  });
+
+  test('falls back to the app name when no book is open', () => {
+    expect(formatAppWindowTitle()).toBe('Readest');
+    expect(formatAppWindowTitle('')).toBe('Readest');
+  });
+
+  test('ignores a blank book title', () => {
+    expect(formatAppWindowTitle('   ')).toBe('Readest');
+  });
+
+  test('trims the book title', () => {
+    expect(formatAppWindowTitle('  The Hobbit \n')).toBe('Readest - The Hobbit');
+  });
+});
+
+describe('tauriSetWindowTitle', () => {
+  function makeTitledWindow() {
+    const win = { setTitle: vi.fn().mockResolvedValue(undefined) };
+    vi.mocked(getCurrentWindow).mockReturnValue(
+      win as unknown as ReturnType<typeof getCurrentWindow>,
+    );
+    return win;
+  }
+
+  test('titles the calling window after the open book', async () => {
+    const win = makeTitledWindow();
+
+    await tauriSetWindowTitle('The Hobbit');
+
+    expect(win.setTitle).toHaveBeenCalledWith('Readest - The Hobbit');
+  });
+
+  test('resets to the app name when no book is open', async () => {
+    const win = makeTitledWindow();
+
+    await tauriSetWindowTitle();
+
+    expect(win.setTitle).toHaveBeenCalledWith('Readest');
   });
 });

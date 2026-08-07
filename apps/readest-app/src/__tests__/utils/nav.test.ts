@@ -346,7 +346,9 @@ describe('showReaderWindow', () => {
 
     const constructorCall = vi.mocked(WebviewWindow).mock.calls[0]!;
     const options = constructorCall[1]!;
-    expect(options.title).toBe('');
+    // The overlay title bar hides its title text natively, so the window is
+    // named like every other platform's.
+    expect(options.title).toBe('Readest');
     expect(options.decorations).toBe(true);
     expect(options.titleBarStyle).toBe('overlay');
   });
