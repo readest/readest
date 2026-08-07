@@ -1179,6 +1179,46 @@ describe('useCapturedTurn scroll-lock gate', () => {
     act(() => dispatch('finished'));
     expect(gridCell.classList.contains('captured-turn-sync-chrome')).toBe(false);
   });
+
+  // A warm surface is a photo of one page. Scrolled mode makes the pipeline
+  // ineligible (getCapturedTurnStyle returns null), so nothing prepares a new
+  // one -- but nothing dropped the old one either, and it outlived the whole
+  // scrolled session. The first turn after returning to paginated then
+  // animated a snapshot of wherever the reader had been before scrolling, over
+  // the page they are on now: two different pages of the same book composited
+  // with an offset, which reads as torn text spliced mid-word.
+  //
+  // Device-traced on a Xiaomi 13: that turn reused a cached surface 24,958 ms
+  // old, from before the mode switch; every later turn reused a ~1,075 ms one.
+  test('drops the warm surface when scrolled mode makes the pipeline ineligible', async () => {
+    vi.useFakeTimers();
+    const { unmount } = renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+    try {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      expect(h.controller.prepareCapture).toHaveBeenCalledOnce();
+      h.controller.invalidatePreparedCapture.mockClear();
+
+      h.viewSettings.scrolled = true;
+      // Schedule an idle run WITHOUT invalidating first (the Settings close
+      // path only schedules), so the assertion below can only be satisfied by
+      // the run itself dropping the now-ineligible surface.
+      act(() => setSettingsDialogOpen(true));
+      act(() => setSettingsDialogOpen(false));
+      h.controller.invalidatePreparedCapture.mockClear();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+
+      expect(h.controller.prepareCapture).toHaveBeenCalledOnce();
+      expect(h.controller.invalidatePreparedCapture).toHaveBeenCalled();
+    } finally {
+      h.viewSettings.scrolled = false;
+      unmount();
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('useCapturedTurn view.next replacement', () => {

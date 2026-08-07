@@ -473,7 +473,16 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           const style = currentSettings
             ? getCapturedTurnStyle(currentSettings, isFixedLayout())
             : null;
-          if (style) void controller.prepareCapture(style);
+          // A warm surface is a photo of one page, and nothing refreshes it
+          // while the pipeline is ineligible. Scrolled mode is the case that
+          // bites: the surface outlives the whole scrolled session, and the
+          // first turn after returning to paginated animates that stale page
+          // over the current one. Drop it as soon as the pipeline turns off.
+          if (!style) {
+            controller.invalidatePreparedCapture();
+            return;
+          }
+          void controller.prepareCapture(style);
         });
       });
     }
