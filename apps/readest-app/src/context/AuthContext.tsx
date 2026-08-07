@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     console.log('Logging out from Biblophile account');
     const refreshToken = localStorage.getItem('refresh_token');
-    const apiUrl = process.env.NEXT_PUBLIC_BIBLO_API_URL || '1/v0';
+    const apiUrl = process.env['NEXT_PUBLIC_BIBLO_API_URL'] || '1/v0';
 
     try {
       if (refreshToken) {
@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const refreshToken = localStorage.getItem('refresh_token');
     if (!refreshToken) return;
 
-    const apiUrl = process.env.NEXT_PUBLIC_BIBLO_API_URL || 'http://localhost:3001/api/v0';
+    const apiUrl = process.env['NEXT_PUBLIC_BIBLO_API_URL'] || 'http://localhost:3001/api/v0';
     try {
       const response = await fetch(`${apiUrl}/auth/refresh-token`, {
         method: 'POST',

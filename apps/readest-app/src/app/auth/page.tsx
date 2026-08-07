@@ -55,7 +55,7 @@ export default function AuthPage() {
     setLoading(true);
     setError(null);
 
-    const apiUrl = process.env.NEXT_PUBLIC_BIBLO_API_URL || 'http://localhost:3001/api/v0';
+    const apiUrl = process.env['NEXT_PUBLIC_BIBLO_API_URL'] || 'http://localhost:3001/api/v0';
 
     try {
       const response = await fetch(`${apiUrl}/auth/login`, {
