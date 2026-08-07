@@ -965,3 +965,21 @@ describe('provider registry availability handling', () => {
     expect(getTranslatorDisplayLabel(google, true, (s) => s)).toBe('Google Translate');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Inline-markup capability (#1582)
+// ---------------------------------------------------------------------------
+describe('preservesMarkup capability', () => {
+  it('is enabled only for providers verified against their live API', async () => {
+    const { getTranslators } = await import('@/services/translators');
+    const capable = getTranslators()
+      .filter((translator) => translator.preservesMarkup)
+      .map((translator) => translator.name)
+      .sort();
+    // Bing/Azure and Google both reposition inline tags onto the matching
+    // words. DeepL must stay out: it drops <em> outright and empties <b> when a
+    // sentence also carries <i>, so markup would claim formatting that is not
+    // there. Yandex is simply unverified.
+    expect(capable).toEqual(['azure', 'google']);
+  });
+});
