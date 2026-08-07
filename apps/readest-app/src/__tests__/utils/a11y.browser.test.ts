@@ -7,7 +7,8 @@ import { handleA11yNavigation } from '@/utils/a11y';
 // descendants are all inline formatting tags — so nesting any other element
 // (e.g. the next-section skip link) inside such a paragraph drops the match.
 // This needs the real :has() engine, so it runs as a browser test.
-const PARAGRAPH_SELECTOR = 'p, blockquote, dd, div:not(:has(*:not(b, a, em, i, strong, u, span)))';
+const PARAGRAPH_SELECTOR =
+  'p, blockquote, dd, div:not(:has(*:not(b, a, em, i, strong, u, span, font)))';
 
 const NEXT_SECTION_ID = 'readest-skip-link-next-section';
 

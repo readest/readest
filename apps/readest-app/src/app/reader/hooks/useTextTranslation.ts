@@ -10,22 +10,58 @@ import { walkTextNodes } from '@/utils/walk';
 import { debounce } from '@/utils/debounce';
 import { getLocale } from '@/utils/misc';
 import { getDirFromLanguage } from '@/utils/rtl';
+import { getTranslators } from '@/services/translators';
+import {
+  extractSourcePayload,
+  sanitizeTranslatedMarkup,
+  splitMarkupIntoChunks,
+} from '@/app/reader/utils/translationMarkup';
+import { splitTextIntoChunks } from '@/services/translators/utils';
 
+/**
+ * Markup inflates the payload and the provider's length cap counts the tags,
+ * while the chunker splits on sentence boundaries and would cut through a tag.
+ * Rather than build markup-aware chunking, longer formatted paragraphs fall
+ * back to the plain-text path (losing formatting, exactly as before).
+ *
+ * Set to the verified hard limit of the only provider that currently opts in:
+ * Bing accepts exactly 1000 UTF-16 code units and answers `statusCode: 400` at
+ * 1001. Anything lower needlessly gives up formatting on paragraphs that would
+ * have fit.
+ */
+const MAX_MARKUP_PAYLOAD_CHARS = 1000;
+
+/**
+ * Builds the node appended to a source paragraph to carry its translation.
+ *
+ * A single <font> rather than nested wrappers: it keeps the CFI path into
+ * translated text two levels shallower, and puts `display: block` on the
+ * element itself instead of on a block nested inside an inline parent. <font>
+ * specifically because book CSS never targets it (so the wrapper picks up no
+ * styling from the book) and because it is on INLINE_FORMATTING_TAGS, so the
+ * enclosing source div keeps its paragraph layout.
+ *
+ * `content` may be a plain string or a sanitized fragment carrying the source's
+ * inline formatting — the markup inside is *meant* to inherit the book's rules
+ * so the translation matches the original's styling.
+ */
 export const createTranslationTargetNode = ({
   translatedText,
+  content,
   lang,
   targetBlockClassName,
   hidden,
   widthLineBreak,
 }: {
-  translatedText: string;
+  translatedText?: string;
+  content?: DocumentFragment;
   lang: string;
   targetBlockClassName: string;
   hidden: boolean;
   widthLineBreak: boolean;
 }) => {
   const wrapper = document.createElement('font');
-  wrapper.className = `translation-target ${hidden ? 'hidden' : ''}`;
+  wrapper.className = `translation-target ${targetBlockClassName} ${hidden ? 'hidden' : ''}`.trim();
   wrapper.setAttribute('translation-element-mark', '1');
   wrapper.setAttribute('lang', lang);
   // Set the base direction from the target language so justified RTL text
@@ -36,16 +72,44 @@ export const createTranslationTargetNode = ({
     wrapper.appendChild(document.createElement('br'));
   }
 
-  const blockWrapper = document.createElement('font');
-  blockWrapper.className = `translation-target ${targetBlockClassName}`;
-
-  const inner = document.createElement('font');
-  inner.className = 'translation-target target-inner target-inner-theme-none';
-  inner.textContent = translatedText;
-
-  blockWrapper.appendChild(inner);
-  wrapper.appendChild(blockWrapper);
+  if (content) {
+    wrapper.appendChild(content);
+  } else {
+    wrapper.appendChild(document.createTextNode(translatedText ?? ''));
+  }
   return wrapper;
+};
+
+const SOURCE_HIDDEN_CLASS = 'translation-source-hidden';
+
+/**
+ * Hides or restores a paragraph's original text.
+ *
+ * The original is wrapped in a `cfi-skip` element rather than having its text
+ * erased. cfi-skip hoists the wrapper's children for indexing, so every source
+ * text node keeps the exact index and offset it had unwrapped — a highlight on
+ * the original still resolves whether or not the original is on screen. Erasing
+ * the text (the previous approach) destroyed that anchor.
+ */
+export const setSourceVisibility = (el: HTMLElement, visible: boolean) => {
+  const existing = el.querySelector(`:scope > .${SOURCE_HIDDEN_CLASS}`);
+  if (visible) {
+    if (existing) existing.replaceWith(...Array.from(existing.childNodes));
+    return;
+  }
+  if (existing) return;
+
+  const sourceNodes = Array.from(el.childNodes).filter(
+    (node) =>
+      !(node.nodeType === Node.ELEMENT_NODE && (node as Element).closest('.translation-target')),
+  );
+  if (!sourceNodes.length) return;
+
+  const hider = document.createElement('font');
+  hider.className = SOURCE_HIDDEN_CLASS;
+  hider.setAttribute('cfi-skip', '');
+  el.insertBefore(hider, sourceNodes[0]!);
+  sourceNodes.forEach((node) => hider.appendChild(node));
 };
 
 export function useTextTranslation(
@@ -74,6 +138,11 @@ export function useTextTranslation(
   } as UseTranslatorOptions);
 
   const translateRef = useRef(translate);
+  // `translationProvider` is a loose string in settings, so match by name
+  // rather than narrowing to TranslatorName.
+  const translatorPreservesMarkup = !!getTranslators().find(
+    (translator) => translator.name === provider,
+  )?.preservesMarkup;
   const observerRef = useRef<IntersectionObserver | null>(null);
   const translatedElements = useRef<HTMLElement[]>([]);
   const allTextNodes = useRef<HTMLElement[]>([]);
@@ -247,59 +316,43 @@ export function useTextTranslation(
     }
 
     const updateSourceNodes = (element: HTMLElement) => {
-      const hasDirectText = Array.from(element.childNodes).some(
-        (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '',
-      );
-      if (hasDirectText) {
-        element.classList.add('translation-source');
-
-        const textNodes = Array.from(element.childNodes).filter(
-          (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '',
-        );
-
-        if (!element.hasAttribute('original-text-stored')) {
-          element.setAttribute(
-            'original-text-nodes',
-            JSON.stringify(textNodes.map((node) => node.textContent)),
-          );
-          element.setAttribute('original-text-stored', 'true');
-        }
-      }
-      const isSource = element.classList.contains('translation-source');
-      if (isSource) {
-        const textNodes = Array.from(element.childNodes).filter(
-          (node) => node.nodeType === Node.TEXT_NODE,
-        ) as Text[];
-
-        if (showTranslateSourceRef.current) {
-          const originalTexts = JSON.parse(element.getAttribute('original-text-nodes') || '[]');
-          textNodes.forEach((textNode, index) => {
-            if (originalTexts[index] !== undefined) {
-              textNode.textContent = originalTexts[index];
-            }
-          });
-        } else {
-          textNodes.forEach((textNode) => {
-            textNode.textContent = '';
-          });
-        }
-      }
-      for (const child of Array.from(element.childNodes)) {
-        if (child.nodeType !== Node.ELEMENT_NODE) continue;
-        const node = child as HTMLElement;
-        if (!node.classList.contains('translation-target')) {
-          updateSourceNodes(node);
-        }
-      }
+      element.classList.add('translation-source');
+      setSourceVisibility(element, !!showTranslateSourceRef.current);
     };
 
     try {
-      const translated = await translateRef.current([text]);
-      const translatedText = translated[0];
+      // Round-trip the paragraph's inline markup when the provider repositions
+      // tags for us; otherwise send bare text. Markup is split at run
+      // boundaries so a long formatted paragraph still keeps its formatting
+      // instead of falling back — each chunk is well-formed on its own.
+      const payload = extractSourcePayload(el);
+      const markupChunks =
+        translatorPreservesMarkup && payload.hasMarkup
+          ? splitMarkupIntoChunks(payload.html, MAX_MARKUP_PAYLOAD_CHARS, splitTextIntoChunks)
+          : [];
+      const useMarkup = markupChunks.length > 0;
+
+      const translated = await translateRef.current(useMarkup ? markupChunks : [text]);
+      const translatedText = translated.join('');
       if (!translatedText || text === translatedText) return;
 
+      let content: DocumentFragment | undefined;
+      if (useMarkup) {
+        // Sanitize per chunk: each was translated independently, and a chunk
+        // that loses everything must not discard its siblings.
+        const combined = el.ownerDocument.createDocumentFragment();
+        for (const chunk of translated) {
+          const part = sanitizeTranslatedMarkup(chunk, payload.allowedAttrs, el.ownerDocument);
+          if (part) combined.appendChild(part);
+        }
+        content = combined.childNodes.length ? combined : undefined;
+      }
+
       const wrapper = createTranslationTargetNode({
+        // Falls back to the raw string when markup was not used or did not
+        // survive sanitizing, which is exactly the previous behaviour.
         translatedText,
+        content,
         lang: targetLang || getLocale(),
         targetBlockClassName,
         hidden: !enabled.current,
@@ -314,6 +367,9 @@ export function useTextTranslation(
         updateSourceNodes(el);
         el.appendChild(wrapper);
         translatedElements.current.push(el);
+        // Translations land long after the section's annotations were drawn, so
+        // any highlight anchored inside this paragraph has to be re-attached.
+        eventDispatcher.dispatch('translation-inserted', { bookKey, element: el });
       });
     } catch (err) {
       console.warn('Translation failed:', err);

@@ -39,7 +39,7 @@ describe('createTranslationTargetNode', () => {
     expect(wrapper.getAttribute('dir')).toBe('auto');
   });
 
-  it('builds the expected nested structure with the translated text', () => {
+  it('builds a single flat wrapper carrying the translated text', () => {
     const wrapper = createTranslationTargetNode({
       translatedText: 'مرحبا بالعالم',
       lang: 'ar',
@@ -49,11 +49,43 @@ describe('createTranslationTargetNode', () => {
     });
 
     expect(wrapper.classList.contains('translation-target')).toBe(true);
+    expect(wrapper.classList.contains('translation-target-toc')).toBe(true);
     expect(wrapper.getAttribute('translation-element-mark')).toBe('1');
-    const block = wrapper.querySelector('.translation-target-toc');
-    expect(block).not.toBeNull();
-    const inner = wrapper.querySelector('.target-inner');
-    expect(inner?.textContent).toBe('مرحبا بالعالم');
+    expect(wrapper.textContent).toBe('مرحبا بالعالم');
+    // Flattened from three nested <font>s: the CFI path into translated text
+    // is two levels shallower, and no element nests inside the wrapper.
+    expect(wrapper.children.length).toBe(0);
+  });
+
+  it('is a <font>, the one tag book CSS never styles and layout tolerates', () => {
+    const wrapper = createTranslationTargetNode({
+      translatedText: 'hi',
+      lang: 'en',
+      targetBlockClassName: 'translation-target-block',
+      hidden: false,
+      widthLineBreak: false,
+    });
+    expect(wrapper.tagName).toBe('FONT');
+  });
+
+  it('carries sanitized inline markup when given a content fragment', () => {
+    const fragment = document.createDocumentFragment();
+    fragment.appendChild(document.createTextNode('那只'));
+    const bold = document.createElement('b');
+    bold.textContent = '敏捷';
+    fragment.appendChild(bold);
+    fragment.appendChild(document.createTextNode('的狐狸'));
+
+    const wrapper = createTranslationTargetNode({
+      content: fragment,
+      lang: 'zh',
+      targetBlockClassName: 'translation-target-block',
+      hidden: false,
+      widthLineBreak: false,
+    });
+
+    expect(wrapper.textContent).toBe('那只敏捷的狐狸');
+    expect(wrapper.querySelector('b')?.textContent).toBe('敏捷');
   });
 
   it('marks the wrapper hidden when hidden is true', () => {

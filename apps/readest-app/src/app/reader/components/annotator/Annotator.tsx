@@ -157,6 +157,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   const [selection, setSelection] = useState<TextSelection | null>(null);
+  const [translationEpoch, setTranslationEpoch] = useState(0);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
@@ -1084,7 +1085,29 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       console.warn(e);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress, annotationIndex]);
+  }, [progress, annotationIndex, translationEpoch]);
+
+  // Translations are appended long after a section's annotations were drawn, so
+  // a highlight anchored inside translated text has nothing to attach to at
+  // draw time. Bumping this re-runs the draw effect above once the inserts
+  // settle; they arrive in bursts, hence the debounce.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const handleTranslationInserted = (event: CustomEvent) => {
+      const detail = event.detail as { bookKey: string } | undefined;
+      if (!detail || detail.bookKey !== bookKey) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        setTranslationEpoch((epoch) => epoch + 1);
+      }, 150);
+    };
+    eventDispatcher.on('translation-inserted', handleTranslationInserted);
+    return () => {
+      if (timer) clearTimeout(timer);
+      eventDispatcher.off('translation-inserted', handleTranslationInserted);
+    };
+  }, [bookKey]);
 
   useEffect(() => {
     if (!config.booknotes || !selection?.cfi || !showAnnotationNotes) return;
