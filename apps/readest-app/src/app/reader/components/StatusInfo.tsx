@@ -72,7 +72,12 @@ const StatusInfo: React.FC<StatusInfoProps> = ({
           {showBatteryPercentage && batteryLevel !== null && (
             <span
               className={clsx(
-                'absolute text-[8px] font-medium leading-none invert',
+                'battery-percentage absolute text-[8px] font-medium leading-none',
+                // The fill behind the number is currentColor at 30% opacity --
+                // a mid tone in any theme, which themed text reads against. In
+                // eink the fill is opaque base-content, so the number is
+                // knocked out of it in the page color instead.
+                isEink ? 'text-base-100' : 'text-base-content',
                 isVertical && '[writing-mode:horizontal-tb]',
               )}
               style={{ left: '11px', transform: 'translateX(-50%)' }}
