@@ -132,6 +132,11 @@ const TTSMiniPlayer = ({
   // platform. The panels' paddings are constant and the slide is
   // transform-only, so subtracting the in-flight translate yields the settled
   // top edge even mid-animation.
+  // A book can carry a coverImageUrl that no longer resolves (cover never
+  // extracted, file pruned). Showing the browser's broken-image glyph in the
+  // card is worse than showing no cover at all.
+  const [coverFailed, setCoverFailed] = useState(false);
+
   const [panelTopOffset, setPanelTopOffset] = useState(0);
   useLayoutEffect(() => {
     const cell = document.getElementById(`gridcell-${bookKey}`);
@@ -232,12 +237,13 @@ const TTSMiniPlayer = ({
               aria-label={_('Open Read Aloud player')}
               className='flex min-w-0 flex-1 cursor-pointer items-center gap-2'
             >
-              {book?.coverImageUrl ? (
+              {book?.coverImageUrl && !coverFailed ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={book.coverImageUrl}
                   alt=''
                   className='h-10 w-10 shrink-0 rounded-lg object-cover'
+                  onError={() => setCoverFailed(true)}
                 />
               ) : null}
               <div className='flex min-w-0 flex-col'>

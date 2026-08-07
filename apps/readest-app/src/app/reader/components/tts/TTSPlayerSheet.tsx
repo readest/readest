@@ -142,6 +142,11 @@ const TTSPlayerSheet = ({
   const premiumBadge =
     !user || (userProfilePlan !== undefined && !isDownloadPremium) ? _('Premium') : undefined;
 
+  // A book can carry a coverImageUrl that no longer resolves (cover never
+  // extracted, file pruned). A broken <img> still occupies its h-32 box, so
+  // drop it from the layout entirely rather than leaving a blank band above
+  // the title.
+  const [coverFailed, setCoverFailed] = useState(false);
   const [view, setView] = useState<SheetView>('main');
   const [voiceGroups, setVoiceGroups] = useState<TTSVoicesGroup[]>([]);
   const [rate, setRate] = useState(viewSettings?.ttsRate ?? 1.0);
@@ -335,12 +340,13 @@ const TTSPlayerSheet = ({
         // desktop, where the mobile drag handle (and its clearance) is
         // hidden; on mobile the handle already provides the gap.
         <div className='flex w-full flex-col items-center gap-4 pb-4 sm:pt-4'>
-          {book?.coverImageUrl ? (
+          {book?.coverImageUrl && !coverFailed ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={book.coverImageUrl}
               alt=''
               className='not-eink:shadow-lg eink-bordered h-32 w-auto rounded-xl object-cover'
+              onError={() => setCoverFailed(true)}
             />
           ) : null}
           <div className='flex w-full flex-col items-center gap-0.5 text-center'>
