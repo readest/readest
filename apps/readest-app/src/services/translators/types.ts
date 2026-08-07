@@ -6,6 +6,15 @@ export interface TranslationProvider {
   authRequired?: boolean;
   quotaExceeded?: boolean;
   /**
+   * The upstream API carries inline HTML through translation, repositioning
+   * tags onto the semantically matching words in the target language. When set,
+   * the reader sends a paragraph's inline markup instead of its bare text so
+   * italics/bold/font-size runs survive (#1582); otherwise it sends plain text.
+   * Set this only for providers actually verified against the live API — a
+   * provider that echoes tags positionally would scramble the formatting.
+   */
+  preservesMarkup?: boolean;
+  /**
    * Marks a provider as temporarily unavailable. Disabled providers are
    * filtered out of `getTranslators()` / `getTranslator()`, so the UI never
    * lists them and the fallback logic in `useTranslator` skips over them.

@@ -3,6 +3,7 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
 import { normalizeToShortLang } from '@/utils/lang';
 import { TranslationProvider } from '../types';
+import { splitTextIntoChunks } from '../utils';
 import { YANDEX_REQUEST_HEADERS, YANDEX_SESSION_URL, YANDEX_TRANSLATE_URL } from './yandexShared';
 
 /**
@@ -179,53 +180,6 @@ async function getSession(token?: string | null, signal?: AbortSignal): Promise<
       signal.removeEventListener('abort', abort);
     });
   });
-}
-
-/**
- * Splits a long text into chunks of at most `maxLength` UTF-16 code units,
- * breaking on sentence ends, newlines or spaces whenever possible without
- * splitting a Unicode grapheme cluster.
- */
-function splitTextIntoChunks(text: string, maxLength: number): string[] {
-  if (text.length <= maxLength) return [text];
-
-  const boundaries = Array.from(
-    new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text),
-    ({ index }) => index,
-  );
-  boundaries.push(text.length);
-
-  const chunks: string[] = [];
-  let start = 0;
-  while (start < text.length) {
-    let end = start;
-    for (const boundary of boundaries) {
-      if (boundary <= start) continue;
-      if (boundary - start > maxLength) break;
-      end = boundary;
-    }
-    if (end === start) {
-      throw new Error('yandex translate cannot fit a grapheme cluster within the request limit');
-    }
-
-    const window = text.slice(start, end);
-    let cut = end;
-    const sentenceEnd = Math.max(
-      window.lastIndexOf('. '),
-      window.lastIndexOf('! '),
-      window.lastIndexOf('? '),
-      window.lastIndexOf('\n'),
-    );
-    if (sentenceEnd > maxLength / 2) {
-      cut = start + sentenceEnd + 1;
-    } else {
-      const space = window.lastIndexOf(' ');
-      if (space > maxLength / 2) cut = start + space + 1;
-    }
-    chunks.push(text.slice(start, cut));
-    start = cut;
-  }
-  return chunks;
 }
 
 async function translateChunk(
