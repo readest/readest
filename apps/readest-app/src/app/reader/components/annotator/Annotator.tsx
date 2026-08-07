@@ -60,7 +60,7 @@ import { writeTextToClipboard } from '@/utils/clipboard';
 import { buildAnnotationUrl } from '@/utils/deeplink';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { canShareText, shareSelectedText } from '@/utils/share';
-import { getToolbarToolTypes } from '@/utils/annotationToolbar';
+import { getToolbarToolTypes, supportsProofread } from '@/utils/annotationToolbar';
 import { AnnotationToolType } from '@/types/annotator';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
@@ -1900,7 +1900,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           tooltipText: _(label),
           Icon,
           onClick: handleProofread,
-          disabled: bookData.book?.format !== 'EPUB',
+          disabled: !supportsProofread(bookData.book?.format),
         };
       case 'share':
         return { tooltipText: _(label), Icon, onClick: handleShare };

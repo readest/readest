@@ -8,6 +8,7 @@ import {
   addToolToToolbar,
   removeToolFromToolbar,
   reorderToolbar,
+  supportsProofread,
 } from '@/utils/annotationToolbar';
 
 describe('annotationToolbar helpers', () => {
@@ -92,5 +93,25 @@ describe('annotationToolbar helpers', () => {
       'highlight',
     ]);
     expect(reorderToolbar(['copy', 'search'], 'copy', 'copy')).toEqual(['copy', 'search']);
+  });
+});
+
+describe('supportsProofread', () => {
+  // Proofread rewrites the rendered text through the content transformers, so
+  // it works on every reflowable format -- not just EPUB, which is all the
+  // original feature (#2725) shipped with and all the toolbar button allowed.
+  test('enables every reflowable format', () => {
+    for (const format of ['EPUB', 'MD', 'MOBI', 'AZW', 'AZW3', 'FB2', 'FBZ', 'TXT'] as const) {
+      expect(supportsProofread(format)).toBe(true);
+    }
+  });
+
+  test('excludes the fixed-layout formats, which have no text to transform', () => {
+    expect(supportsProofread('PDF')).toBe(false);
+    expect(supportsProofread('CBZ')).toBe(false);
+  });
+
+  test('excludes a book whose format is not known yet', () => {
+    expect(supportsProofread(undefined)).toBe(false);
   });
 });
