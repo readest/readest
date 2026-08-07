@@ -206,14 +206,14 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                   'border-base-300 bg-base-200! z-20 mt-1 max-w-[90vw] shadow-2xl',
                 )}
               >
-                <MenuItem
+                {/* <MenuItem
                   noIcon
                   transient
                   label={_('Search on Goodreads')}
                   onClick={() =>
                     openExternalUrl(getGoodreadsSearchUrl(getBookGoodreadsQuery(book)))
                   }
-                />
+                /> */}
                 {onShare && (
                   <MenuItem
                     noIcon
