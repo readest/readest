@@ -2,6 +2,7 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import type { BookOrbitProxyPayload } from '@/types/bookorbit';
 import type { BookOrbitSettings } from '@/types/settings';
 import { isLanAddress } from '@/utils/network';
+import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import { getAppVersion } from '@/utils/version';
 import { getAPIBaseUrl, isTauriAppPlatform } from '../environment';
 import { formatKoDatetime } from './noteMapping';
@@ -65,6 +66,7 @@ export class BookOrbitClient {
   ): Promise<Response> {
     const { method = 'GET', body } = options;
     const headers: Record<string, string> = {
+      ...normalizeCustomHeaders(this.config.customHeaders),
       Accept: 'application/json',
       'X-Auth-User': this.config.username,
       'X-Auth-Key': this.config.userkey,

@@ -106,4 +106,28 @@ describe('BookOrbitClient', () => {
     await client.getVersion();
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it('sends configured custom headers on requests', async () => {
+    const fetchMock = setFetch(async () => jsonResponse(200, { results: [], unmatched: [] }));
+    const client = new BookOrbitClient(
+      makeConfig({ customHeaders: { 'CF-Access-Client-Id': 'client-id' } }),
+    );
+    await client.exchangeAnnotations([]);
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers['CF-Access-Client-Id']).toBe('client-id');
+  });
+
+  it('does not let custom headers override BookOrbit auth headers', async () => {
+    const fetchMock = setFetch(async () => jsonResponse(200, { results: [], unmatched: [] }));
+    const client = new BookOrbitClient(
+      makeConfig({ customHeaders: { 'X-Auth-Key': 'attacker-supplied' } }),
+    );
+    await client.exchangeAnnotations([]);
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers['X-Auth-Key']).toBe('a'.repeat(32));
+  });
 });

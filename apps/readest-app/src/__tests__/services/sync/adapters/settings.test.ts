@@ -227,6 +227,48 @@ describe('settingsAdapter', () => {
     expect(settingsAdapter.encryptedFields).toContain('kosync.customHeaders');
   });
 
+  test('pack ∘ unpack round-trips bookorbit.customHeaders, serialized to a JSON string across the boundary', () => {
+    const record: SettingsRemoteRecord = {
+      name: 'singleton',
+      patch: {
+        bookorbit: {
+          customHeaders: { 'CF-Access-Client-Id': 'client-id' },
+        },
+      } as unknown as Partial<SystemSettings>,
+    };
+    const fields = settingsAdapter.pack(record);
+    expect(fields['bookorbit.customHeaders']).toBe(
+      JSON.stringify({ 'CF-Access-Client-Id': 'client-id' }),
+    );
+
+    const out = settingsAdapter.unpack(fields);
+    expect(out.patch.bookorbit?.customHeaders).toEqual({ 'CF-Access-Client-Id': 'client-id' });
+  });
+
+  test('unpackRow parses bookorbit.customHeaders back from its JSON string envelope', () => {
+    const row = makeRow({
+      'bookorbit.customHeaders': env(JSON.stringify({ 'CF-Access-Client-Id': 'client-id' })),
+    });
+    const out = settingsAdapter.unpackRow(row, '');
+    expect(out).not.toBeNull();
+    expect(out!.patch.bookorbit?.customHeaders).toEqual({ 'CF-Access-Client-Id': 'client-id' });
+  });
+
+  test('pack drops empty/blank bookorbit.customHeaders instead of shipping an empty object', () => {
+    const record: SettingsRemoteRecord = {
+      name: 'singleton',
+      patch: {
+        bookorbit: { customHeaders: {} },
+      } as unknown as Partial<SystemSettings>,
+    };
+    const fields = settingsAdapter.pack(record);
+    expect(fields['bookorbit.customHeaders']).toBeUndefined();
+  });
+
+  test('bookorbit.customHeaders is encrypted, like the other bookorbit credential fields', () => {
+    expect(settingsAdapter.encryptedFields).toContain('bookorbit.customHeaders');
+  });
+
   test('declares encryptedFields covering kosync / bookorbit / readwise / hardcover / webdav / s3 credentials only (not serverUrl / endpoint)', () => {
     expect(settingsAdapter.encryptedFields).toEqual([
       'kosync.username',
@@ -236,6 +278,7 @@ describe('settingsAdapter', () => {
       'bookorbit.username',
       'bookorbit.userkey',
       'bookorbit.password',
+      'bookorbit.customHeaders',
       'readwise.accessToken',
       'hardcover.accessToken',
       'webdav.username',

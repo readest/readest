@@ -101,6 +101,7 @@ export interface BookOrbitSettings {
   syncNotes: boolean;
   syncStats: boolean;
   syncBookStates: boolean;
+  customHeaders?: Record<string, string>;
 }
 
 export interface ReadwiseSettings {
