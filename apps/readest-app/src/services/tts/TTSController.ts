@@ -239,17 +239,25 @@ export class TTSController extends EventTarget {
     });
   }
 
-  // A direct-speak engine (Android system TTS) renders its audio in the OS, not
-  // the WebView, and advances sentence-to-sentence from JS timers here. With the
-  // screen locked the hidden WebView would be throttled/frozen and that loop
-  // stalls — so keep an inaudible tone playing to hold the page "audible" and
-  // its timers alive, exactly the exemption Edge/WebAudio playback earns for
-  // free. Android-only (iOS drives playout through its own native audio
-  // session); a no-op for buffered engines that already emit audible output.
-  // See #4408.
-  #syncNativeAudioKeepAlive() {
+  // Keep the hidden WebView schedulable, in the two cases where it would
+  // otherwise fall silent and get frozen by Chromium. Android-only (iOS drives
+  // playout through its own native audio session).
+  //
+  //   - Playing a direct-speak engine (Android system TTS): its audio renders
+  //     in the OS, not the WebView, and the sentence-to-sentence advance runs
+  //     on JS timers here, so the loop stalls once the page is throttled. See
+  //     #4408. Buffered engines earn the exemption for free while speaking.
+  //
+  //   - Paused, whatever the engine: no engine emits audio while paused, and
+  //     the media-session play/pause/next handlers live in this page. Let it
+  //     freeze and Play from a Bluetooth headset only flips the notification —
+  //     the native foreground service answers, the reader never wakes to speak,
+  //     and the in-app player drifts out of sync until the app is foregrounded.
+  //     See #5561.
+  #syncAudioKeepAlive() {
+    const directSpeak = this.ttsClient.getCapabilities().mediaClock === false;
     const needsKeepAlive =
-      !!this.appService?.isAndroidApp && this.ttsClient.getCapabilities().mediaClock === false;
+      !!this.appService?.isAndroidApp && (directSpeak || this.state.includes('paused'));
     if (needsKeepAlive) {
       startAudioKeepAlive();
     } else {
@@ -990,8 +998,8 @@ export class TTSController extends EventTarget {
   // left to pause on.
   async #stopAtChapterBoundary() {
     if (await this.#initTTSForNextSection()) {
-      stopAudioKeepAlive();
       this.state = 'forward-paused';
+      this.#syncAudioKeepAlive();
     } else {
       this.#terminate('ended');
       await this.stop();
@@ -1082,7 +1090,7 @@ export class TTSController extends EventTarget {
       try {
         console.log('[TTS] speak');
         this.state = 'playing';
-        this.#syncNativeAudioKeepAlive();
+        this.#syncAudioKeepAlive();
 
         signal.addEventListener('abort', () => {
           resolve();
@@ -1245,7 +1253,7 @@ export class TTSController extends EventTarget {
 
   async pause() {
     this.state = 'paused';
-    stopAudioKeepAlive();
+    this.#syncAudioKeepAlive();
     if (!(await this.ttsClient.pause().catch((e) => this.error(e)))) {
       await this.stop();
       this.state = 'stop-paused';

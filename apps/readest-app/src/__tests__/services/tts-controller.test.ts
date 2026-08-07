@@ -1442,14 +1442,50 @@ describe('TTSController', () => {
       expect(startKeepAlive).not.toHaveBeenCalled();
     });
 
-    test('stops the keep-alive when playback is paused', async () => {
+    // A paused session is still a live session: its lock-screen / Bluetooth
+    // transport handlers run in the WebView. Dropping the keep-alive at pause
+    // let Android freeze the hidden page, after which Play from a headset only
+    // flipped the notification (the media session lives in the app process)
+    // while the reader never woke up to speak. See #5561.
+    test('keeps the keep-alive running while paused so transport still reaches the page', async () => {
       const c = await makeAndroidNativeController();
       vi.spyOn(c, 'forward').mockResolvedValue();
       c.speak('<speak>hello</speak>');
       await vi.waitFor(() => expect(startKeepAlive).toHaveBeenCalled(), { timeout: 5000 });
+      startKeepAlive.mockClear();
+      stopKeepAlive.mockClear();
 
       await c.pause();
 
+      expect(startKeepAlive).toHaveBeenCalled();
+      expect(stopKeepAlive).not.toHaveBeenCalled();
+    });
+
+    // Buffered engines earn the exemption for free only while they are actually
+    // speaking; a paused WebAudio session emits nothing either, so it needs the
+    // tone exactly as the direct-speak engines do.
+    test('starts the keep-alive when a buffered (Edge) session is paused', async () => {
+      const c = await makeAndroidNativeController();
+      c.ttsClient = c.ttsEdgeClient; // mediaClock === true
+      vi.spyOn(c, 'forward').mockResolvedValue();
+      c.speak('<speak>hello</speak>');
+      await vi.waitFor(() => expect(c.state).toBe('playing'), { timeout: 5000 });
+      expect(startKeepAlive).not.toHaveBeenCalled();
+
+      await c.pause();
+
+      expect(startKeepAlive).toHaveBeenCalled();
+    });
+
+    test('does not keep the page awake while paused off Android', async () => {
+      await controller.initViewTTS(0);
+      vi.spyOn(controller, 'forward').mockResolvedValue();
+      controller.speak('<speak>hello</speak>');
+      await vi.waitFor(() => expect(controller.state).toBe('playing'), { timeout: 5000 });
+
+      await controller.pause();
+
+      expect(startKeepAlive).not.toHaveBeenCalled();
       expect(stopKeepAlive).toHaveBeenCalled();
     });
 
