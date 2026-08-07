@@ -6,19 +6,19 @@ const REAL_TEST_DATA = {
   validSubscription: {
     transactionId: '2000000976418990',
     originalTransactionId: '2000000968585424',
-    productId: 'com.bilingify.readest.monthly.plus',
+    productId: 'com.biblophile.readest.monthly.plus',
   },
 
   expiredSubscription: {
     transactionId: '2000000969189989',
     originalTransactionId: '2000000969189989',
-    productId: 'com.bilingify.readest.monthly.plus',
+    productId: 'com.biblophile.readest.monthly.plus',
   },
 
   refundedTransaction: {
     transactionId: '1000000555666777',
     originalTransactionId: '1000000555666777',
-    productId: 'com.bilingify.readest.monthly.plus',
+    productId: 'com.biblophile.readest.monthly.plus',
   },
 };
 

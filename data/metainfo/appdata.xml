@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>com.bilingify.readest</id>
+  <id>com.biblophile.readest</id>
 
   <name>Readest</name>
   <summary>Modern, feature-rich ebook reader</summary>
@@ -57,7 +57,7 @@
   <url type="donation">https://github.com/sponsors/readest</url>
   <url type="vcs-browser">https://github.com/readest/readest</url>
 
-  <launchable type="desktop-id">com.bilingify.readest.desktop</launchable>
+  <launchable type="desktop-id">com.biblophile.readest.desktop</launchable>
 
   <requires>
     <display_length compare="ge">360</display_length>

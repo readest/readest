@@ -7,7 +7,7 @@ metadata:
   originSessionId: 7f7f8218-4656-4863-972e-ea6204c130fa
 ---
 
-Mobile home-screen reading widgets (issue #1602, merged PR #4842). Code lives in the **native-bridge plugin**: `src-tauri/plugins/tauri-plugin-native-bridge/{android,ios}/` (Android `ReadingWidgetProvider.kt` + `res/`; iOS writer `ReadingWidgetWriter.swift`) and the iOS WidgetKit extension at `src-tauri/gen/apple/ReadestWidget/`. App publishes a snapshot + downsized cover thumbnails via the `update_reading_widget` command to iOS App Group `group.com.bilingify.readest` / Android `SharedPreferences`. Widget hook: `src/hooks/useReadingWidget.ts`; payload builder `src/services/widget/readingWidget.ts`; tap opens `readest://book/{hash}` via `useOpenBookLink.ts`.
+Mobile home-screen reading widgets (issue #1602, merged PR #4842). Code lives in the **native-bridge plugin**: `src-tauri/plugins/tauri-plugin-native-bridge/{android,ios}/` (Android `ReadingWidgetProvider.kt` + `res/`; iOS writer `ReadingWidgetWriter.swift`) and the iOS WidgetKit extension at `src-tauri/gen/apple/ReadestWidget/`. App publishes a snapshot + downsized cover thumbnails via the `update_reading_widget` command to iOS App Group `group.com.biblophile.readest` / Android `SharedPreferences`. Widget hook: `src/hooks/useReadingWidget.ts`; payload builder `src/services/widget/readingWidget.ts`; tap opens `readest://book/{hash}` via `useOpenBookLink.ts`.
 
 Durable, non-obvious gotchas (each cost a debugging round):
 

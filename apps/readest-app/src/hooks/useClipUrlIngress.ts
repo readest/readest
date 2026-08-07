@@ -54,7 +54,7 @@ async function convertSharedHtml(url: string, htmlFile: string): Promise<Convert
  *
  *   2. iOS Share-Extension App Group queue — the extension writes
  *      `{url, groupId?, groupName?, htmlFile?}` payloads into the shared
- *      NSUserDefaults at `group.com.bilingify.readest`, and the host
+ *      NSUserDefaults at `group.com.biblophile.readest`, and the host
  *      plugin (NativeBridgePlugin) drains them on foreground by calling
  *      `window.__readestOnShareExtensionPending(saves)`. Same ingest
  *      pipeline, but the chosen library group is preserved. When the

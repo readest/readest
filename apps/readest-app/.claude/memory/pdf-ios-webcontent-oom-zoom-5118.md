@@ -68,7 +68,7 @@ rendering correctness on the sim; verify the crash/memory on device.
   `per-process-limit`; GB = `rpages * memoryStatus.pageSize (16384)`.
 - `sudo /usr/bin/log collect --device --last 3m --output x.logarchive` right
   after repro; `/usr/bin/log show x.logarchive --predicate 'subsystem ==
-  "com.bilingify.readest"'` shows the WebViewLifecycleManager reload. NOTE: the
+  "com.biblophile.readest"'` shows the WebViewLifecycleManager reload. NOTE: the
   shell has a `log` alias -> use `/usr/bin/log`. `--last Nm` captures the last N
   min from WHEN YOU RUN IT, so reproduce then collect immediately.
 - Installed dev-build app loads from the Mac dev server (`localhost:3000`), so
@@ -76,7 +76,7 @@ rendering correctness on the sim; verify the crash/memory on device.
   reaches the app by temporarily setting `MAX_RENDER_DPR = 0.5` (page goes
   visibly blurry). WebKit does NOT forward webview `console.log` to os_log.
 - Inject a book without the import UI: library.json at `.../Library/Application
-  Support/com.bilingify.readest/Readest/Books/`; book hash = `partialMD5(file)`
+  Support/com.biblophile.readest/Readest/Books/`; book hash = `partialMD5(file)`
   (src/utils/md5.ts); dir `<hash>/`, file `<hash>/<makeSafeFilename(title)>.pdf`,
   minimal `config.json`.
 

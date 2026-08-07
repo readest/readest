@@ -128,7 +128,7 @@ const shouldInjectDevHmrPatch =
   process.env['NODE_ENV'] === 'development' && process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri';
 const devHmrPatchScript = `(${patchTauriHmrWebSocket.toString()})(${JSON.stringify(
   process.env['TAURI_DEV_HOST'],
-)});`;
+)});\nwindow.__TAURI_DEV_HOST__ = ${JSON.stringify(process.env['TAURI_DEV_HOST'])};`;
 
 // `/runtime-config.js` is a dynamic route handler that only exists in the
 // web/Docker build. The Tauri build is statically exported (`output:

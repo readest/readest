@@ -16,10 +16,16 @@ const corsOptions = {
 
 export function middleware(request: NextRequest) {
   const isApi = request.nextUrl.pathname.startsWith('/api/');
+  const isLocales = request.nextUrl.pathname.startsWith('/locales/');
 
-  if (isApi) {
+  if (isApi || isLocales) {
     const origin = request.headers.get('origin') ?? '';
-    const isAllowedOrigin = allowedOrigins.includes(origin);
+    let isAllowedOrigin = allowedOrigins.includes(origin);
+
+    const isDev = process.env.NODE_ENV === 'development';
+    if (isDev && (origin === 'null' || origin === '')) {
+      isAllowedOrigin = true;
+    }
 
     if (request.method === 'OPTIONS') {
       // Echo the requested headers rather than answering `*`: the Fetch spec
@@ -31,7 +37,9 @@ export function middleware(request: NextRequest) {
         ...corsOptions,
         'Access-Control-Allow-Headers': requestedHeaders || 'Authorization, Content-Type',
         Vary: 'Origin, Access-Control-Request-Headers',
-        ...(isAllowedOrigin && { 'Access-Control-Allow-Origin': origin }),
+        ...(isAllowedOrigin && {
+          'Access-Control-Allow-Origin': origin === 'null' || origin === '' ? '*' : origin,
+        }),
       });
 
       return new NextResponse(null, {
@@ -43,7 +51,10 @@ export function middleware(request: NextRequest) {
     const response = NextResponse.next();
 
     if (isAllowedOrigin) {
-      response.headers.set('Access-Control-Allow-Origin', origin);
+      response.headers.set(
+        'Access-Control-Allow-Origin',
+        origin === 'null' || origin === '' ? '*' : origin,
+      );
     }
 
     Object.entries(corsOptions).forEach(([key, value]) => {

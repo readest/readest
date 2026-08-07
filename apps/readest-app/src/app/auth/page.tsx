@@ -12,7 +12,6 @@ import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
-import { isTauriAppPlatform } from '@/services/environment';
 import WindowButtons from '@/components/WindowButtons';
 
 export default function AuthPage() {

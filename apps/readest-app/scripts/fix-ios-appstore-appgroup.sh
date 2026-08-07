@@ -25,7 +25,7 @@
 set -euo pipefail
 
 IPA="${1:?usage: fix-ios-appstore-appgroup.sh <path-to-ipa>}"
-GROUP="group.com.bilingify.readest"
+GROUP="group.com.biblophile.readest"
 EXTS=(ReadestWidget ShareExtension)
 
 if [ ! -f "$IPA" ]; then

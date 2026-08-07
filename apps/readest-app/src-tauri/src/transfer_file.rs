@@ -391,20 +391,20 @@ mod tests {
 
     #[test]
     fn app_storage_fallback_accepts_app_paths() {
-        let id = "com.bilingify.readest";
+        let id = "com.biblophile.readest";
         // Covers, dictionaries, books, gloss packs — under the `Readest` data dir.
         assert!(is_within_app_storage(
-            "/data/user/0/com.bilingify.readest/Readest/Books/abc/cover.png",
+            "/data/user/0/com.biblophile.readest/Readest/Books/abc/cover.png",
             id
         ));
         assert!(is_within_app_storage(
-            "/data/user/0/com.bilingify.readest/Readest/Dictionaries/x/d.mdx",
+            "/data/user/0/com.biblophile.readest/Readest/Dictionaries/x/d.mdx",
             id
         ));
         // Cache-dir downloads (e.g. OPDS) carry no `Readest` segment but are still
         // inside the app sandbox, matched via the bundle identifier.
         assert!(is_within_app_storage(
-            "/data/user/0/com.bilingify.readest/cache/opds-book.epub",
+            "/data/user/0/com.biblophile.readest/cache/opds-book.epub",
             id
         ));
         // Foreign targets carry neither segment and stay blocked.

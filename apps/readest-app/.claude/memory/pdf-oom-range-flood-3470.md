@@ -40,7 +40,7 @@ Release Readest 0.11.10 ships a debuggable WebView (socket
 - Push file where asset scope allows: `/sdcard/Readest/Books/` matches scope glob `**/Readest/**/*`; app has MANAGE_EXTERNAL_STORAGE → readable. Canonical path `/storage/emulated/0/Readest/Books/x.pdf`.
 - rangefile URL: `http://rangefile.localhost/?path=<encodeURIComponent(abs)>&start=&end=` (end **inclusive**, omit=EOF, 8 MB cap, returns 200 + `X-Total-Size`).
 - Faithfully replicate `makePDF`: `await import('http://tauri.localhost/vendor/pdfjs/pdf.min.mjs')` (sets `globalThis.pdfjsLib`, same vendored 5.7.284), a file-like `{size, slice(b,e)→{arrayBuffer:()=>fetchRangePart(b,e-1)}}`, `new pdfjsLib.PDFDataRangeTransport(size,[])`, instrument `requestDataRange`, `getDocument({range,wasmUrl:'/vendor/pdfjs/',cMapUrl,standardFontDataUrl,isEvalSupported:false})` then `getPage(1)/getViewport/getMetadata`.
-- Java heap via `adb shell dumpsys meminfo com.bilingify.readest` (Dalvik Heap line).
+- Java heap via `adb shell dumpsys meminfo com.biblophile.readest` (Dalvik Heap line).
 
 **Verified on Xiaomi 13 (fuxi) / Android 16 / WebView 147 / 8 GB:** this device does NOT OOM (newer WebView; Dalvik only +9 MB) but the flood reproduces: **753 → 6** concurrent, open time **1446 → 1479 ms** (no penalty), 970 pages/title/viewport identical. Gotcha: package installs (`installPackageLI` in logcat) kill the app mid-session → re-discover the devtools socket PID. The makePDF flood alone did NOT crash this device — can't get a live OOM here; rely on the user's WebView-145 log + the bounded-concurrency proof.
 

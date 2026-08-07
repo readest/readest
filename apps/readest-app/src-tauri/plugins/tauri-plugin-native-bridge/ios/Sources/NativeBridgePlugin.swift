@@ -396,11 +396,13 @@ class WebViewLifecycleManager: NSObject {
     }
 
     lastBackgroundTime = nil
+    #endif
   }
 
   func handleAppWillResignActive() {
     logger.log("WebViewLifecycleManager: App will resign active")
     guard let webView = webView else { return }
+    #if !DEBUG
     webView.evaluateJavaScript("window.location.href") { result, error in
       if let error = error {
         logger.error("WebViewLifecycleManager: Failed to capture URL on background: \(error)")
@@ -414,6 +416,7 @@ class WebViewLifecycleManager: NSObject {
         }
       }
     }
+    #endif
   }
 
   func handleAppDidEnterBackground() {
@@ -469,6 +472,7 @@ class WebViewLifecycleManager: NSObject {
       logger.log("WebViewLifecycleManager: No saved URL, performing standard reload")
       webView.reload()
     }
+    #endif
   }
 }
 
@@ -490,10 +494,16 @@ extension WebViewLifecycleManager: WKNavigationDelegate {
     if let url = webView.url {
       let urlString = url.absoluteString
 
+      #if !DEBUG
+      // Only persist the URL in release builds. In debug/dev mode the dev
+      // server URL changes across sessions and saving it causes stale reloads.
       if urlString.hasPrefix("http") || urlString.hasPrefix("tauri") {
         UserDefaults.standard.set(urlString, forKey: "tauri_last_valid_url")
         logger.log("WebViewLifecycleManager: Saved valid URL")
       }
+      #else
+      logger.log("WebViewLifecycleManager: Debug build — skipping URL persistence for \(urlString)")
+      #endif
     }
 
     if let original = originalNavigationDelegate,
@@ -707,7 +717,7 @@ class NativeBridgePlugin: Plugin {
 
   /// Bridge between the Readest Share Extension (separate process) and
   /// the host app's JS, via the App Group container at
-  /// `group.com.bilingify.readest`. Two directions on every activation:
+  /// `group.com.biblophile.readest`. Two directions on every activation:
   ///
   ///   1. Groups (host → extension). Read the current library group list
   ///      from JS (`window.__readestGetGroups`) and persist it so the
@@ -1380,7 +1390,7 @@ class NativeBridgePlugin: Plugin {
   // CryptoSession reads/writes via these commands so the user's sync
   // passphrase persists across app launches.
 
-  private static let syncKeychainService = "com.bilingify.readest.sync-passphrase"
+  private static let syncKeychainService = "com.biblophile.readest.sync-passphrase"
   private static let syncKeychainAccount = "default"
 
   private func syncKeychainBaseQuery() -> [String: Any] {
@@ -1458,7 +1468,7 @@ class NativeBridgePlugin: Plugin {
   // store: one service, the caller's `key` as the account, so secrets
   // like the Google Drive token set persist the same way.
 
-  private static let secureItemsService = "com.bilingify.readest.secure-items"
+  private static let secureItemsService = "com.biblophile.readest.secure-items"
 
   private func secureItemBaseQuery(_ key: String) -> [String: Any] {
     return [

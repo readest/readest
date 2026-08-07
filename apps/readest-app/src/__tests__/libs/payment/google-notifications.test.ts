@@ -86,8 +86,8 @@ function createSupabaseMock(state: {
   return { client, captures };
 }
 
-const PLUS_PRODUCT = 'com.bilingify.readest.plus.monthly';
-const PACKAGE = 'com.bilingify.readest';
+const PLUS_PRODUCT = 'com.biblophile.readest.plus.monthly';
+const PACKAGE = 'com.biblophile.readest';
 const TOKEN = 'purchase-token-1';
 
 const subRow = {

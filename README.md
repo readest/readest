@@ -105,7 +105,7 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 <div align="center">
   <a href="https://apps.apple.com/app/id6738622779">
     <img alt="Download on the App Store" src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" style="height: 50px;" /></a>&nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://play.google.com/store/apps/details?id=com.bilingify.readest">
+  <a href="https://play.google.com/store/apps/details?id=com.biblophile.readest">
     <img alt="Get it on Google Play" src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" style="height: 50px;" /></a>
 </div>
 
@@ -294,7 +294,7 @@ We would also like to thank the [Web Chinese Fonts Plan](https://chinese-font.ne
 [link-donate]: https://donate.readest.com/?tickers=btc%2Ceth%2Csol%2Cusdc
 [link-appstore]: https://apps.apple.com/app/apple-store/id6738622779?pt=127463130&ct=github&mt=8
 [link-website]: https://readest.com?utm_source=github&utm_medium=referral&utm_campaign=readme
-[link-flathub]: https://flathub.org/en/apps/com.bilingify.readest
+[link-flathub]: https://flathub.org/en/apps/com.biblophile.readest
 [link-web-readest]: https://web.readest.com
 [link-docs]: https://readest.com/docs
 [link-gh-releases]: https://github.com/readest/readest/releases

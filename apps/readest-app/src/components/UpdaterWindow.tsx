@@ -617,7 +617,7 @@ export const UpdaterContent = ({
 
                     {appService?.isAndroidApp && (
                       <Link
-                        href='https://play.google.com/store/apps/details?id=com.bilingify.readest'
+                        href='https://play.google.com/store/apps/details?id=com.biblophile.readest'
                         target='_blank'
                         rel='noopener noreferrer'
                         className='btn btn-primary btn-sm'

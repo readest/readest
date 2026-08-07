@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Verify the App Store IPA's app extensions carry the App Group entitlement.
 #
-# group.com.bilingify.readest is how the main app hands the reading-widget
+# group.com.biblophile.readest is how the main app hands the reading-widget
 # snapshot (and the share extension its shared state) to its extensions via the
 # shared App Group container. Automatic App Store signing re-signs embedded
 # extensions during `xcodebuild -exportArchive`; if a target sets
@@ -14,7 +14,7 @@
 set -euo pipefail
 
 IPA="${1:-src-tauri/gen/apple/build/arm64/Readest.ipa}"
-GROUP="group.com.bilingify.readest"
+GROUP="group.com.biblophile.readest"
 EXTS=(ReadestWidget ShareExtension)
 
 if [ ! -f "$IPA" ]; then

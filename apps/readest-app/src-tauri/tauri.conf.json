@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Leaf",
   "mainBinaryName": "readest",
-  "identifier": "com.bilingify.readest",
+  "identifier": "com.biblophile.readest",
   "version": "../package.json",
   "build": {
     "frontendDist": "../out",
@@ -82,7 +82,7 @@
       "minSdkVersion": 26
     },
     "iOS": {
-      "developmentTeam": "J5W48D69VR",
+      "developmentTeam": "9W7R4BWG7X",
       "infoPlist": "./Info-ios.plist",
       "minimumSystemVersion": "16.4"
     },

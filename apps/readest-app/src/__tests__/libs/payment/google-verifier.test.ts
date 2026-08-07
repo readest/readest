@@ -29,8 +29,8 @@ import { GoogleIAPVerifier } from '@/libs/payment/iap/google/verifier';
 const params = {
   orderId: 'order-1',
   purchaseToken: 'token-1',
-  productId: 'com.bilingify.readest.plus.monthly',
-  packageName: 'com.bilingify.readest',
+  productId: 'com.biblophile.readest.plus.monthly',
+  packageName: 'com.biblophile.readest',
 };
 
 describe('GoogleIAPVerifier.verifyPurchase', () => {

@@ -6,7 +6,7 @@ import { RemoteFile } from '@/utils/file';
 // than a `Range` header — because Android's WebView re-applies a `Range`
 // header's offset to intercepted bodies and corrupts non-zero-start reads.
 describe('RemoteFile.fromNativePath (rangefile query-range scheme)', () => {
-  const path = '/data/user/0/com.bilingify.readest/cache/堂吉诃德（译文名著典藏）.mobi';
+  const path = '/data/user/0/com.biblophile.readest/cache/堂吉诃德（译文名著典藏）.mobi';
   const TOTAL = 10371956;
   let calls: Array<{ url: string; init?: RequestInit }>;
   let data: Uint8Array;

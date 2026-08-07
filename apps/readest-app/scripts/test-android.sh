@@ -6,7 +6,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-PKG="com.bilingify.readest"
+PKG="com.biblophile.readest"
 
 if ! command -v adb >/dev/null 2>&1; then
   echo "[test:android] adb not found — skipping Android e2e lane"

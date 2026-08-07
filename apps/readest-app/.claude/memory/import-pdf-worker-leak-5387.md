@@ -43,7 +43,7 @@ import-metahash harness). PSE-stream / native-bridge docs have no destroy → no
 - websocket-client needs `suppress_origin=True` — Chrome 111+ 403s the default
   `Origin: http://127.0.0.1:9222` on the devtools WS.
 - `rangefile` 403 on a valid path = app lacks All Files Access → scope
-  canonicalize fails. `adb shell appops set com.bilingify.readest
+  canonicalize fails. `adb shell appops set com.biblophile.readest
   MANAGE_EXTERNAL_STORAGE allow`, then force-stop + relaunch (new pid → new
   `webview_devtools_remote_<pid>`).
 - Set `pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.mjs'`

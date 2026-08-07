@@ -7,7 +7,7 @@ metadata:
   originSessionId: 40a168fd-c90e-4f00-9fbc-7effe7c0c45f
 ---
 
-Issue #4398 (PR #4401) — Windows app fails to launch ("WebView2 error 0x80070057 / The parameter is incorrect") when `%APPDATA%\com.bilingify.readest\.window-state.json` holds the minimized sentinel (`x/y = -32000`) or `0×0` size.
+Issue #4398 (PR #4401) — Windows app fails to launch ("WebView2 error 0x80070057 / The parameter is incorrect") when `%APPDATA%\com.biblophile.readest\.window-state.json` holds the minimized sentinel (`x/y = -32000`) or `0×0` size.
 
 Non-obvious facts:
 - Our `tauri-plugin-window-state` (2.4.1, and every shipped 2.2.1+) ALREADY contains the upstream fix for [tauri-apps/plugins-workspace#253](https://github.com/tauri-apps/plugins-workspace/issues/253): `update_state` + the Moved/Resized handlers skip saving while `is_minimized()`, and restore only re-applies position if it `intersects()` a monitor. So current builds shouldn't generate bad state — a bad file is almost certainly stale from an old build. The version-inquiry comment is on the issue.

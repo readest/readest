@@ -20,7 +20,7 @@ Issue #5455 (reported on iOS, OPDS-downloaded book has no library cover). **MERG
 - Presumably the same on iOS for a Files/iCloud pick (security-scoped URL → raw `File::open` fails → JS fallback), which is why the reporter's manual import kept the cover.
 
 **Device-probe recipe (Xiaomi 13, no library pollution)** — see [[cdp-android-webview-profiling]] for the CDP setup:
-- `adb shell appops set com.bilingify.readest MANAGE_EXTERNAL_STORAGE allow` + restart the app, then CDP-`invoke('parse_epub_metadata', {filePath:'/storage/emulated/0/Download/x.epub'})`. Without the appop it's `partial_md5 failed: Permission denied`. Reset to `default` when done.
+- `adb shell appops set com.biblophile.readest MANAGE_EXTERNAL_STORAGE allow` + restart the app, then CDP-`invoke('parse_epub_metadata', {filePath:'/storage/emulated/0/Download/x.epub'})`. Without the appop it's `partial_md5 failed: Permission denied`. Reset to `default` when done.
 - The Tauri **fs plugin scope is separate**: importing that same `/sdcard` path through the app fails with `forbidden path`, and `invoke('allow_paths_in_scopes', …)` did **not** lift it. So `location.href = '/library?file=<sdcard path>'` (a real ingress route, `helpers/openWith.ts` reads `?file=`) can't be used to drive an end-to-end import from `/sdcard`.
 - Hooking `window.__TAURI_INTERNALS__.invoke` (even via `Page.addScriptToEvaluateOnNewDocument`) records **zero** of the app's invokes — the bundled `@tauri-apps/api` doesn't route through that property at call time. Don't waste time on it; probe the command directly instead.
 

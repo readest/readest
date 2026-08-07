@@ -56,7 +56,7 @@
     <array>
       <dict>
         <key>CFBundleURLName</key>
-        <string>com.bilingify.readest</string>
+        <string>com.biblophile.readest</string>
         <key>CFBundleURLSchemes</key>
         <array>
           <string>readest</string>
@@ -80,7 +80,7 @@
            tauri.conf.json. -->
       <dict>
         <key>CFBundleURLName</key>
-        <string>com.bilingify.readest.onedrive-oauth</string>
+        <string>com.biblophile.readest.onedrive-oauth</string>
         <key>CFBundleURLSchemes</key>
         <array>
           <string>readest-onedrive</string>

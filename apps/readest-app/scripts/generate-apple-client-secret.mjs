@@ -10,8 +10,8 @@
 //
 // Usage (flags override env; env vars mirror the CI naming):
 //   node scripts/generate-apple-client-secret.mjs \
-//     --team-id J5W48D69VR \
-//     --client-id com.bilingify.readest.signin \  # the Services ID, NOT the app bundle id
+//     --team-id 9W7R4BWG7X \
+//     --client-id com.biblophile.readest.signin \  # the Services ID, NOT the app bundle id
 //     --key-id ABCDE12345 \
 //     --key-path ../private_keys/AuthKey_ABCDE12345.p8 \
 //     [--days 180]
