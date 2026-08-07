@@ -321,6 +321,9 @@ importers:
       jwt-decode:
         specifier: ^4.0.0
         version: 4.0.0
+      katex:
+        specifier: ^0.16.45
+        version: 0.16.45
       lucide-react:
         specifier: ^0.562.0
         version: 0.562.0(react@19.2.8)
@@ -336,6 +339,9 @@ importers:
       marked-footnote:
         specifier: ^1.4.0
         version: 1.4.0(marked@15.0.12)
+      marked-katex-extension:
+        specifier: ^5.1.10
+        version: 5.1.10(katex@0.16.45)(marked@15.0.12)
       nanoid:
         specifier: ^5.1.6
         version: 5.1.11
@@ -6347,6 +6353,12 @@ packages:
     resolution: {integrity: sha512-fZTxAhI1TcLEs5UOjCfYfTHpyKGaWQevbxaGTEA68B51l7i87SctPFtHETYqPkEN0ka5opvy4Dy1l/yXVC+hmg==}
     peerDependencies:
       marked: '>=7.0.0'
+
+  marked-katex-extension@5.1.10:
+    resolution: {integrity: sha512-TuqrzguLeXXm6iBaf16leL3+dVmMj8KrBdunMVVzxMS/bwcjtQ0YG0sNytl1j7uUo8yClsXJqBbVjH1yOPurwQ==}
+    peerDependencies:
+      katex: '>=0.16 <0.18'
+      marked: '>=4 <19'
 
   marked@15.0.12:
     resolution: {integrity: sha512-8dD6FusOQSrpv9Z1rdNMdlSgQOIP880DHqnohobOmYLElGEqAL/JvxvuxZO16r4HtjTlfPRDC1hbvxC9dPN2nA==}
@@ -15169,6 +15181,11 @@ snapshots:
 
   marked-footnote@1.4.0(marked@15.0.12):
     dependencies:
+      marked: 15.0.12
+
+  marked-katex-extension@5.1.10(katex@0.16.45)(marked@15.0.12):
+    dependencies:
+      katex: 0.16.45
       marked: 15.0.12
 
   marked@15.0.12: {}
