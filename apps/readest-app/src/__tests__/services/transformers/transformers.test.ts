@@ -237,6 +237,54 @@ describe('whitespaceTransformer', () => {
       );
       expect(result).toBe('');
     });
+
+    test('preserves indentation inside <pre>', async () => {
+      const html = '<pre><code>&lt;div&gt;\n    &lt;a/&gt;\n        &lt;b/&gt;\n</code></pre>';
+      const result = await whitespaceTransformer.transform(
+        makeCtx({ content: html, viewSettings: settings }),
+      );
+      expect(result).toBe(html);
+    });
+
+    test('preserves spaces inside inline <code>', async () => {
+      const html = '<p>run <code>a    b</code> now</p>';
+      const result = await whitespaceTransformer.transform(
+        makeCtx({ content: html, viewSettings: settings }),
+      );
+      expect(result).toBe(html);
+    });
+
+    test('still collapses spaces outside <pre>', async () => {
+      const html = '<p>hello   world</p><pre>  keep  me  </pre><p>a   b</p>';
+      const result = await whitespaceTransformer.transform(
+        makeCtx({ content: html, viewSettings: settings }),
+      );
+      expect(result).toBe('<p>hello world</p><pre>  keep  me  </pre><p>a b</p>');
+    });
+
+    test('preserves nbsp entities inside <pre>', async () => {
+      const html = '<pre>a&nbsp;&nbsp;b</pre>';
+      const result = await whitespaceTransformer.transform(
+        makeCtx({ content: html, viewSettings: settings }),
+      );
+      expect(result).toBe(html);
+    });
+
+    test('handles <pre> with attributes and uppercase tags', async () => {
+      const html = '<PRE class="x">a    b</PRE>';
+      const result = await whitespaceTransformer.transform(
+        makeCtx({ content: html, viewSettings: settings }),
+      );
+      expect(result).toBe(html);
+    });
+
+    test('collapses spaces in text between two <pre> blocks', async () => {
+      const html = '<pre>a    b</pre>x   y<pre>c    d</pre>';
+      const result = await whitespaceTransformer.transform(
+        makeCtx({ content: html, viewSettings: settings }),
+      );
+      expect(result).toBe('<pre>a    b</pre>x y<pre>c    d</pre>');
+    });
   });
 
   describe('when overrideLayout is false', () => {
