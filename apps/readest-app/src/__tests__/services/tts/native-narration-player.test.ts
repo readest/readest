@@ -55,19 +55,21 @@ describe('NativeNarrationPlayer', () => {
     await player.load('Audio/ch1.mp4', new Blob([new Uint8Array(4)]), 12.5);
 
     expect(writeFile).toHaveBeenCalledOnce();
-    expect(controlCalls.some((c) => c.action === 'start-session')).toBe(true);
-    const load = controlCalls.find((c) => c.action === 'load');
-    expect(load?.path).toMatch(/mo-narration-.*\.mp4$/);
-    expect(load?.positionMs).toBe(12500);
+    expect(controlCalls.some((c) => c['action'] === 'start-session')).toBe(true);
+    const load = controlCalls.find((c) => c['action'] === 'load');
+    expect(load?.['path']).toMatch(/mo-narration-.*\.mp4$/);
+    expect(load?.['positionMs']).toBe(12500);
 
     await player.play();
-    expect(controlCalls.some((c) => c.action === 'resume')).toBe(true);
+    expect(controlCalls.some((c) => c['action'] === 'resume')).toBe(true);
 
     player.pause();
-    expect(controlCalls.some((c) => c.action === 'pause')).toBe(true);
+    expect(controlCalls.some((c) => c['action'] === 'pause')).toBe(true);
 
     await player.seek(30);
-    expect(controlCalls.some((c) => c.action === 'seek' && c.positionMs === 30000)).toBe(true);
+    expect(controlCalls.some((c) => c['action'] === 'seek' && c['positionMs'] === 30000)).toBe(
+      true,
+    );
 
     await player.shutdown();
   });
@@ -85,12 +87,12 @@ describe('NativeNarrationPlayer', () => {
   test('invalidateSession forces a fresh native session on next load', async () => {
     const player = new NativeNarrationPlayer();
     await player.load('ch1.mp3', new Blob([new Uint8Array(4)]), 0);
-    const sessionsBefore = controlCalls.filter((c) => c.action === 'start-session').length;
+    const sessionsBefore = controlCalls.filter((c) => c['action'] === 'start-session').length;
     expect(sessionsBefore).toBe(1);
 
     player.invalidateSession();
     await player.load('ch1.mp3', new Blob([new Uint8Array(4)]), 0);
-    expect(controlCalls.filter((c) => c.action === 'start-session').length).toBe(2);
+    expect(controlCalls.filter((c) => c['action'] === 'start-session').length).toBe(2);
     await player.shutdown();
   });
 });
