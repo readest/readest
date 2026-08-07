@@ -1,3 +1,4 @@
+import { getRuntimeConfig } from '@/services/runtimeConfig';
 import { isCJKEnv } from '@/utils/misc';
 import { getFilename } from '@/utils/path';
 import { md5Fingerprint } from '@/utils/md5';
@@ -35,13 +36,32 @@ const getAdditionalBasicFontLinks = () => `
     .join('&')}&display=swap" crossorigin="anonymous">
 `;
 
-const getAdditionalCJKFontLinks = () => `
+// CJK bundles Readest serves itself. The default CDN only answers CORS for
+// readest.com origins, so a self-hosted deployment on a custom domain gets each
+// of these blocked unless it points FONT_BASE_URL at a host it controls (#5550).
+const hostedCJKFonts = [
+  'Huiwen-MinchoGBK',
+  'KingHwa_OldSong',
+  'Source Han Serif CN',
+  'GuanKiapTsingKhai-T',
+];
+
+const DEFAULT_FONT_BASE_URL = 'https://storage.readest.com/public/font/dist';
+
+const getFontBaseUrl = () =>
+  (getRuntimeConfig()?.fontBaseUrl || DEFAULT_FONT_BASE_URL).replace(/\/+$/, '');
+
+const getAdditionalCJKFontLinks = () => {
+  const fontBaseUrl = getFontBaseUrl();
+  return `
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans-webfont@1.0.4/misans-l3/misans-l3/result.min.css" crossorigin="anonymous" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lxgw-wenkai-screen-web/1.520.0/lxgwwenkaigbscreen/result.css" crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://storage.readest.com/public/font/dist/Huiwen-MinchoGBK/result.css' crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://storage.readest.com/public/font/dist/KingHwa_OldSong/result.css' crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://storage.readest.com/public/font/dist/Source%20Han%20Serif%20CN/result.css' crossorigin="anonymous" />
-  <link rel='stylesheet' href='https://storage.readest.com/public/font/dist/GuanKiapTsingKhai-T/result.css' crossorigin="anonymous" />
+  ${hostedCJKFonts
+    .map(
+      (family) =>
+        `<link rel='stylesheet' href='${fontBaseUrl}/${encodeURIComponent(family)}/result.css' crossorigin="anonymous" />`,
+    )
+    .join('\n  ')}
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?${cjkGoogleFonts
     .map(
       ({ family, weights }) =>
@@ -49,6 +69,7 @@ const getAdditionalCJKFontLinks = () => `
     )
     .join('&')}&display=swap" crossorigin="anonymous" />
 `;
+};
 
 const getAdditionalCJKFontFaces = () => `
   @font-face {
