@@ -48,7 +48,7 @@ const HANDOVER_GRACE_MS = 1000;
 
 // Inline of isTauriAppPlatform(): importing @/services/environment pulls the
 // app-service graph into unit tests that only need the platform bit.
-const useNativeNarration = (): boolean =>
+const isNativeNarrationPlatform = (): boolean =>
   getOSPlatform() === 'ios' && process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri';
 
 // Container blobs come out of the zip with no MIME type, and a media element
@@ -110,7 +110,7 @@ export class MediaOverlayClient implements TTSClient {
 
   #book: BookDoc | null = null;
   #section: MediaOverlaySection | null = null;
-  #native = useNativeNarration();
+  #native = isNativeNarrationPlatform();
   #player: NativeNarrationPlayer | null = null;
   #audio: NarrationClock | null = null;
   #audioHref: string | null = null;
