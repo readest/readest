@@ -4,6 +4,8 @@
 // TTS-only proofread rule) is skipped without advancing the search cursor so
 // later words still align.
 
+import { isMutedRubyNode } from '@/utils/ruby';
+
 export interface TTSWordOffset {
   start: number;
   end: number;
@@ -12,18 +14,16 @@ export interface TTSWordOffset {
 // Edge TTS word-boundary offsets are in 100-nanosecond ticks.
 const TICKS_PER_SECOND = 10_000_000;
 
-// Gloss markup (<rt cfi-inert>) and any cfi-inert subtree is injected, non-book
-// content — invisible to CFI and to spoken text (the TTS node filter rejects
-// <rt>). Word-offset matching must ignore it too, or boundary words (gloss-free)
-// won't align with the walked text.
+// Any cfi-inert subtree is injected, non-book content — invisible to CFI and to
+// spoken text. Word-offset matching must ignore it too, or boundary words
+// (gloss-free) won't align with the walked text. Ruby follows the same rule the
+// TTS node filter applies, so whichever side of a ruby pair is muted there is
+// muted here: for a kana reading that is the base, otherwise the annotation.
 const isInertText = (node: Node): boolean => {
+  if (isMutedRubyNode(node)) return true;
   let p: Node | null = node.parentNode;
   while (p) {
-    if (p.nodeType === Node.ELEMENT_NODE) {
-      const el = p as Element;
-      const tag = el.tagName.toLowerCase();
-      if (tag === 'rt' || tag === 'rp' || el.hasAttribute('cfi-inert')) return true;
-    }
+    if (p.nodeType === Node.ELEMENT_NODE && (p as Element).hasAttribute('cfi-inert')) return true;
     p = p.parentNode;
   }
   return false;

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { textWalker } from 'foliate-js/text-walker.js';
 import { TTS } from 'foliate-js/tts.js';
-import { createRejectFilter } from '@/utils/node';
+import { createTTSNodeFilter } from '@/services/tts/nodeFilter';
 import { filterSSMLWithLang, parseSSMLMarks } from '@/utils/ssml';
 
 const createHTMLDoc = (bodyHTML: string, attrs: Record<string, string> = {}): Document => {
@@ -34,20 +34,8 @@ const stripTags = (ssml: string): string => ssml.replace(/<[^>]+\/?>/g, '').trim
 
 const highlight = vi.fn();
 
-/** Node filter mirroring the footnote rules TTSController passes to TTS. */
-const ttsNodeFilter = createRejectFilter({
-  tags: ['rt', 'canvas', 'br'],
-  classes: [
-    'annotationLayer',
-    'epubtype-footnote',
-    'duokan-footnote-content',
-    'duokan-footnote-item',
-  ],
-  attributeTokens: [
-    { tag: 'aside', attribute: 'epub:type', tokens: ['footnote', 'endnote', 'note', 'rearnote'] },
-  ],
-  contents: [{ tag: 'a', content: /^[\[\(]?[\*\d]+[\)\]]?$/ }],
-});
+/** The exact filter TTSController passes to TTS. */
+const ttsNodeFilter = createTTSNodeFilter();
 
 describe('TTS', () => {
   describe('plain HTML document', () => {
@@ -357,6 +345,70 @@ describe('TTS', () => {
     it('should not reject an element missing the attribute', () => {
       const aside = document.createElement('aside');
       expect(ttsNodeFilter(aside)).toBe(NodeFilter.FILTER_SKIP);
+    });
+  });
+
+  describe('ruby (furigana) readings', () => {
+    const speak = (bodyHTML: string): string => {
+      const doc = createHTMLDoc(bodyHTML, { lang: 'ja' });
+      const tts = new TTS(doc, textWalker, ttsNodeFilter, highlight, 'sentence');
+      return stripTags(tts.start()!);
+    };
+
+    it('speaks a kana reading instead of the bare-text ruby base', () => {
+      expect(speak('<p><ruby>数多<rt>あまた</rt></ruby>の星</p>')).toBe('あまたの星');
+    });
+
+    it('speaks a kana reading instead of an <rb> ruby base', () => {
+      expect(speak('<p><ruby><rb>数多</rb><rt>あまた</rt></ruby>の星</p>')).toBe('あまたの星');
+    });
+
+    it('speaks an author-assigned katakana reading', () => {
+      expect(speak('<p><ruby>神聖文字<rt>ヒエログリフ</rt></ruby>を読む</p>')).toBe(
+        'ヒエログリフを読む',
+      );
+    });
+
+    it('speaks a gaiji image base through its reading', () => {
+      expect(
+        speak(
+          '<p><ruby><rb><img class="gaiji" src="00007.gif" alt="喰"/></rb><rt>く</rt></ruby>い殺され</p>',
+        ),
+      ).toBe('くい殺され');
+    });
+
+    it('keeps <rp> fallback parentheses out of the speech', () => {
+      expect(speak('<p><ruby>数多<rp>(</rp><rt>あまた</rt><rp>)</rp></ruby>の星</p>')).toBe(
+        'あまたの星',
+      );
+    });
+
+    it('keeps speaking the base when the ruby is an emphasis dot', () => {
+      expect(speak('<p><ruby>本当<rt>・・</rt></ruby>に読む</p>')).toBe('本当に読む');
+    });
+
+    it('keeps speaking the base for a pinyin ruby', () => {
+      expect(speak('<p><ruby>学生<rt>xuéshēng</rt></ruby></p>')).toBe('学生');
+    });
+
+    it('keeps speaking the base under an injected WordLens gloss', () => {
+      expect(
+        speak(
+          '<p><ruby class="wl-gloss" cfi-skip="">辞書<rt cfi-inert="">じしょ</rt></ruby>を引く</p>',
+        ),
+      ).toBe('辞書を引く');
+    });
+
+    it('anchors the highlight range on the spoken reading', () => {
+      const doc = createHTMLDoc('<p><ruby>数多<rt>あまた</rt></ruby>の星</p>', { lang: 'ja' });
+      const tts = new TTS(doc, textWalker, ttsNodeFilter, highlight, 'sentence');
+      tts.start();
+      // The single sentence mark spans the reading through the trailing text,
+      // never the muted kanji base.
+      const range = tts.getLastRange() ?? tts.setMark('0');
+      expect(range).toBeTruthy();
+      expect(range!.toString()).not.toContain('数多');
+      expect(range!.startContainer.parentElement?.tagName.toLowerCase()).toBe('rt');
     });
   });
 

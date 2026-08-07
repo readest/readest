@@ -11,7 +11,8 @@ import {
   TTSMark,
   TTSVoice,
 } from './types';
-import { createRejectFilter } from '@/utils/node';
+import { createTTSNodeFilter } from './nodeFilter';
+import { expandRangeOverRuby } from '@/utils/ruby';
 import { WebSpeechClient } from './WebSpeechClient';
 import { NativeTTSClient } from './NativeTTSClient';
 import { EdgeTTSClient } from './EdgeTTSClient';
@@ -83,31 +84,6 @@ export interface TTSViewBindings {
   preprocessCallback?: (ssml: string) => Promise<string>;
   onSectionChange?: (sectionIndex: number) => Promise<void>;
 }
-
-// Node filter shared by the live TTS instance and the timeline enumeration —
-// the two MUST segment identically or timeline sentences drift from marks.
-const createTTSNodeFilter = () =>
-  createRejectFilter({
-    tags: ['rt', 'canvas', 'br'],
-    // Footnotes/endnotes are hidden in the rendered page (see the
-    // `.epubtype-footnote`/`aside[epub|type]` rules in getPageLayoutStyles);
-    // skip them in TTS too, including for background sections whose
-    // documents are loaded without those styles.
-    classes: [
-      'annotationLayer',
-      'epubtype-footnote',
-      'duokan-footnote-content',
-      'duokan-footnote-item',
-    ],
-    attributeTokens: [
-      {
-        tag: 'aside',
-        attribute: 'epub:type',
-        tokens: ['footnote', 'endnote', 'note', 'rearnote'],
-      },
-    ],
-    contents: [{ tag: 'a', content: /^[\[\(]?[\*\d]+[\)\]]?$/ }],
-  });
 
 // Silence inserted between paragraphs when auto-advancing during continuous
 // playback. Unlike the Edge-only inter-sentence gap, this applies to every
@@ -489,7 +465,7 @@ export class TTSController extends EventTarget {
         return;
       }
       try {
-        const cfi = this.view.getCFI(index, range);
+        const cfi = this.view.getCFI(index, expandRangeOverRuby(range));
         const visibleRange = this.view.resolveCFI(cfi).anchor(doc);
         // A stale range (re-applied after a relocate that changed the section
         // content) resolves to nothing in the current doc; overlayer.add would
