@@ -264,24 +264,37 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
     }
 
     private fun handlePurchase(purchase: Purchase) {
-        // Acknowledge the purchase
         if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-            if (!purchase.isAcknowledged) {
+            // Only subscriptions are acknowledged here. One-time products are
+            // consumables that the server consumes after verification (consume
+            // implies acknowledge); an unverified purchase must stay
+            // unacknowledged so Google Play auto-refunds it after 3 days.
+            if (isSubscriptionPurchase(purchase) && !purchase.isAcknowledged) {
                 val acknowledgePurchaseParams = AcknowledgePurchaseParams.newBuilder()
                     .setPurchaseToken(purchase.purchaseToken)
                     .build()
-                    
+
                 billingClient.acknowledgePurchase(acknowledgePurchaseParams) { billingResult ->
                     if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
                         Log.d(TAG, "Purchase acknowledged")
                     }
                 }
             }
-            
+
             val purchaseData = convertToPurchaseData(purchase, "purchased")
             purchaseCallback?.invoke(purchaseData)
             purchaseCallback = null
         }
+    }
+
+    private fun isSubscriptionPurchase(purchase: Purchase): Boolean {
+        val productId = purchase.products.firstOrNull() ?: return false
+        val cached = productsCache[productId]
+        if (cached != null) {
+            return cached.productType == BillingClient.ProductType.SUBS
+        }
+        return productId.contains("monthly") || productId.contains("yearly") ||
+            productId.contains("subscription")
     }
 
     private fun convertToPurchaseData(purchase: Purchase, state: String): PurchaseData {

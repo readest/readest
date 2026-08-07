@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { validateUserAndToken } from '@/utils/access';
-import { getGoogleIAPVerifier, VerifyPurchaseParams } from '@/libs/payment/iap/google/verifier';
+import {
+  getGoogleIAPVerifier,
+  ProductPurchase,
+  VerifyPurchaseParams,
+} from '@/libs/payment/iap/google/verifier';
 import { processPurchaseData, VerifiedPurchase } from '@/libs/payment/iap/google/server';
 import { IAPError } from '@/libs/payment/iap/types';
 
@@ -60,7 +64,19 @@ export async function POST(request: Request) {
     let purchase: VerifiedPurchase;
     try {
       purchase = await processPurchaseData(user, verifyParams, verificationResult);
-      if (verificationResult.purchaseData?.acknowledgementState === 0) {
+      if (verificationResult.purchaseType === 'product') {
+        // One-time products (storage add-ons) are consumables: consuming
+        // (which implicitly acknowledges) lets the user repurchase the SKU.
+        const productData = verificationResult.purchaseData as ProductPurchase;
+        if (productData.purchaseState === 0 && productData.consumptionState === 0) {
+          try {
+            await googleIAPVerifier.consumeProductPurchase(verifyParams);
+            purchase.acknowledgementState = 1;
+          } catch (consumeError) {
+            console.error('Failed to consume purchase:', consumeError);
+          }
+        }
+      } else if (verificationResult.purchaseData?.acknowledgementState === 0) {
         try {
           await googleIAPVerifier.acknowledgePurchase(verifyParams);
           purchase.acknowledgementState = 1;

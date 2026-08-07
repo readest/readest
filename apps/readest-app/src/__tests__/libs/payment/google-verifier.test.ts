@@ -8,13 +8,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const apiMocks = vi.hoisted(() => ({
   subscriptionsGet: vi.fn(),
   productsGet: vi.fn(),
+  productsConsume: vi.fn(),
 }));
 
 vi.mock('@googleapis/androidpublisher', () => ({
   androidpublisher: () => ({
     purchases: {
       subscriptions: { get: apiMocks.subscriptionsGet },
-      products: { get: apiMocks.productsGet },
+      products: { get: apiMocks.productsGet, consume: apiMocks.productsConsume },
     },
   }),
 }));
@@ -74,5 +75,43 @@ describe('GoogleIAPVerifier.verifyPurchase', () => {
 
     expect(result.success).toBe(true);
     expect(result.status).toBe('active');
+  });
+});
+
+// One-time products (storage add-ons) are consumables: Google Play only allows
+// repurchasing a SKU after the previous purchase has been consumed.
+describe('GoogleIAPVerifier.consumeProductPurchase', () => {
+  beforeEach(() => {
+    vi.stubEnv('GOOGLE_IAP_SERVICE_ACCOUNT_KEY', '{"client_email":"t@t","private_key":"k"}');
+    apiMocks.productsConsume.mockReset();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it('consumes a one-time product purchase via the Play API', async () => {
+    apiMocks.productsConsume.mockResolvedValue({});
+
+    await new GoogleIAPVerifier().consumeProductPurchase({
+      ...params,
+      productId: 'com.bilingify.readest.purchase.storage.1gb',
+    });
+
+    expect(apiMocks.productsConsume).toHaveBeenCalledWith({
+      packageName: 'com.bilingify.readest',
+      productId: 'com.bilingify.readest.purchase.storage.1gb',
+      token: 'token-1',
+    });
+  });
+
+  it('propagates consume failures to the caller', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    apiMocks.productsConsume.mockRejectedValue(new Error('consume failed'));
+
+    await expect(new GoogleIAPVerifier().consumeProductPurchase(params)).rejects.toThrow(
+      'consume failed',
+    );
   });
 });

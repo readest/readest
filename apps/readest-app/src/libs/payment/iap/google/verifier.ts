@@ -223,6 +223,24 @@ export class GoogleIAPVerifier {
     }
   }
 
+  // One-time products (storage add-ons) are consumables: Google Play only
+  // allows repurchasing a SKU after the previous purchase has been consumed.
+  // Consuming also implicitly acknowledges the purchase.
+  async consumeProductPurchase(params: VerifyPurchaseParams): Promise<void> {
+    const { purchaseToken, productId, packageName } = params;
+
+    try {
+      await this.androidPublisher.purchases.products.consume({
+        packageName,
+        productId,
+        token: purchaseToken,
+      });
+    } catch (error) {
+      console.error('Failed to consume product purchase:', error);
+      throw error;
+    }
+  }
+
   async cancelSubscription(params: VerifyPurchaseParams): Promise<void> {
     const { purchaseToken, productId, packageName } = params;
 
