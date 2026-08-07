@@ -133,6 +133,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       `${getMaxInlineSize(viewSettings)}px`,
     );
     getView(bookKey)?.renderer.setStyles?.(getStyles(viewSettings!));
+    // `scrolled` decides which engine owns a swipe, so it has to push the turn
+    // attributes through like every other input to that decision. Left stale,
+    // the paginator keeps `turn-style`/no `no-swipe` from scroll flow and
+    // animates the swipe itself while the interceptor — which recomputes
+    // eligibility live — runs a captured turn over the top: three pages slide.
+    applyTurnAttributes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isScrolledMode]);
 
@@ -350,7 +356,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         <SettingsSwitchRow
           label={_('Scrolled Mode')}
           checked={isScrolledMode}
-          disabled={bookData?.isFixedLayout}
           onChange={() => setScrolledMode(!isScrolledMode)}
         />
         <SettingsSwitchRow
