@@ -103,6 +103,15 @@ fn read_json_string_field(path: &Path, key: &str) -> Option<String> {
 /// at the app root. Absent everywhere => unset, so reporting stays disabled for
 /// local and fork builds. `rerun-if-*` makes cargo recompile when the value or
 /// the dotenv files change (avoiding a stale baked-in value).
+///
+/// Debug builds never bake a DSN, whatever the environment or the dotenv files
+/// say. `tauri dev` and `tauri ios dev` serve the app from the dev server, which
+/// puts the page on a different origin than Tauri's IPC custom protocol, so every
+/// report the injected `@sentry/browser` sends over that bridge fails -- and each
+/// failure logs an error that Sentry turns into another report, which spins until
+/// the WebView is too busy to render. The DSN is cleared rather than merely left
+/// unset because `option_env!` would otherwise still see a `SENTRY_DSN` exported
+/// in the developer's shell.
 fn propagate_sentry_dsn() {
     println!("cargo:rerun-if-env-changed=SENTRY_DSN");
     let app_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("..");
@@ -110,6 +119,11 @@ fn propagate_sentry_dsn() {
     let env_file = app_dir.join(".env");
     println!("cargo:rerun-if-changed={}", env_local.display());
     println!("cargo:rerun-if-changed={}", env_file.display());
+
+    if env::var("PROFILE").as_deref() != Ok("release") {
+        println!("cargo:rustc-env=SENTRY_DSN=");
+        return;
+    }
 
     let dsn = env::var("SENTRY_DSN")
         .ok()
