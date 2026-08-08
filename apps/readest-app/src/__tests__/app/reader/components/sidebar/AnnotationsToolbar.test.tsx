@@ -5,8 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AnnotationsToolbar from '@/app/reader/components/sidebar/AnnotationsToolbar';
 import { HighlightColor, HighlightStyle } from '@/types/book';
 
+// Keys are the English content, so interpolating them mirrors what i18next
+// renders; plural selection is i18next's job and is not exercised here.
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (key: string) => key,
+  useTranslation: () => (key: string, options?: Record<string, string | number>) =>
+    options ? key.replace(/\{\{(\w+)\}\}/g, (_m, name: string) => String(options[name])) : key,
 }));
 
 vi.mock('@/hooks/useResponsiveSize', () => ({
@@ -36,6 +39,10 @@ const defaultProps = {
   filterKind: 'all' as const,
   searchInput: '',
   isSearchVisible: false,
+  highlightCount: 9,
+  noteCount: 3,
+  matchCount: 12,
+  isFiltering: false,
   colors: [] as HighlightColor[],
   styles: [] as HighlightStyle[],
   excludedColors: [] as HighlightColor[],
@@ -131,6 +138,33 @@ describe('AnnotationsToolbar', () => {
     expect((screen.getByRole('button', { name: 'Reset' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
+  });
+
+  it('summarizes the annotation mix', () => {
+    render(<AnnotationsToolbar {...defaultProps} />);
+    expect(screen.getByTestId('annotations-summary').textContent).toBe('9 Highlights · 3 Notes');
+  });
+
+  it('names only the kind that is present', () => {
+    const { rerender } = render(<AnnotationsToolbar {...defaultProps} noteCount={0} />);
+    expect(screen.getByTestId('annotations-summary').textContent).toBe('9 Highlights');
+    rerender(<AnnotationsToolbar {...defaultProps} highlightCount={0} />);
+    expect(screen.getByTestId('annotations-summary').textContent).toBe('3 Notes');
+  });
+
+  it('reports matches against the total while filtering', () => {
+    render(<AnnotationsToolbar {...defaultProps} isFiltering matchCount={5} />);
+    expect(screen.getByTestId('annotations-summary').textContent).toBe('5 of 12');
+  });
+
+  it('stays silent when there is nothing to count', () => {
+    render(<AnnotationsToolbar {...defaultProps} highlightCount={0} noteCount={0} />);
+    expect(screen.queryByTestId('annotations-summary')).toBeNull();
+  });
+
+  it('yields the row to the search input', () => {
+    render(<AnnotationsToolbar {...defaultProps} isSearchVisible />);
+    expect(screen.queryByTestId('annotations-summary')).toBeNull();
   });
 
   it('merges the Dropdown-injected menuClassName into the filter panel', () => {

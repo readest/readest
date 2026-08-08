@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   decideAnnotationDraw,
+  filterBooknotes,
   filterExportGroups,
   findAnnotationAtCfi,
   mergeRestyledAnnotation,
+  summarizeAnnotations,
 } from '@/app/reader/utils/annotatorUtil';
 import { BookNote, BooknoteGroup } from '@/types/book';
 import { NOTE_PREFIX } from '@/types/view';
@@ -181,5 +183,37 @@ describe('filterExportGroups', () => {
     const result = filterExportGroups(groups, { excludedColors: [], excludedStyles: [] });
     expect(result.distinctColors).toEqual(['red', 'blue', '#abcdef']);
     expect(result.distinctStyles).toEqual(['highlight', 'underline', 'squiggly']);
+  });
+});
+
+describe('summarizeAnnotations', () => {
+  it('splits live annotations into highlights and notes', () => {
+    const counts = summarizeAnnotations([
+      makeNote({ id: 'a' }),
+      makeNote({ id: 'b', note: 'thought' }),
+      makeNote({ id: 'c' }),
+    ]);
+    expect(counts).toEqual({ highlights: 2, notes: 1 });
+  });
+
+  it('ignores tombstoned annotations', () => {
+    const counts = summarizeAnnotations([
+      makeNote({ id: 'a' }),
+      makeNote({ id: 'b', deletedAt: 2 }),
+      makeNote({ id: 'c', note: 'thought', deletedAt: 3 }),
+    ]);
+    expect(counts).toEqual({ highlights: 1, notes: 0 });
+  });
+
+  it('splits on body truthiness so the counts agree with the Notes filter chip', () => {
+    // filterBooknotes partitions on `note.note` without trimming, so a
+    // whitespace-only body lands in the Notes bucket on both sides.
+    const notes = [makeNote({ note: '   ' })];
+    expect(summarizeAnnotations(notes)).toEqual({ highlights: 0, notes: 1 });
+    expect(filterBooknotes(notes, { kind: 'notes', query: '' }).length).toBe(1);
+  });
+
+  it('returns zeroes for an empty list', () => {
+    expect(summarizeAnnotations([])).toEqual({ highlights: 0, notes: 0 });
   });
 });

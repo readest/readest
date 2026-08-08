@@ -176,6 +176,10 @@ interface AnnotationsToolbarProps {
   filterKind: AnnotationFilterKind;
   searchInput: string;
   isSearchVisible: boolean;
+  highlightCount: number;
+  noteCount: number;
+  matchCount: number;
+  isFiltering: boolean;
   colors: HighlightColor[];
   styles: HighlightStyle[];
   excludedColors: HighlightColor[];
@@ -192,6 +196,10 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
   filterKind,
   searchInput,
   isSearchVisible,
+  highlightCount,
+  noteCount,
+  matchCount,
+  isFiltering,
   colors,
   styles,
   excludedColors,
@@ -217,8 +225,31 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
   const hasActiveFilters =
     filterKind !== 'all' || excludedColors.length > 0 || excludedStyles.length > 0;
 
+  // The search field takes the whole row when it is open, so the summary only
+  // speaks while it is closed: the mix of the book's annotations at rest, and
+  // how much of it survives the filters once any are on.
+  const total = highlightCount + noteCount;
+  const kindLabels = [
+    highlightCount > 0 && _('{{count}} Highlights', { count: highlightCount }),
+    noteCount > 0 && _('{{count}} Notes', { count: noteCount }),
+  ].filter(Boolean);
+  const summary = isFiltering
+    ? _('{{matched}} of {{total}}', { matched: matchCount, total })
+    : null;
+
   return (
+    // justify-end, not justify-between: with no annotations yet the filter
+    // button is the only child and must still sit at the trailing edge.
     <div className='annotations-toolbar flex items-center justify-end gap-2 ps-3 pe-3 pb-2 pt-2'>
+      {!isSearchVisible && total > 0 && (
+        <div
+          data-testid='annotations-summary'
+          aria-live='polite'
+          className='text-base-content/60 flex h-8 min-w-0 flex-1 items-center truncate text-xs tabular-nums'
+        >
+          {summary ?? kindLabels.join(' · ')}
+        </div>
+      )}
       {isSearchVisible && (
         <div className='eink-bordered bg-base-100 flex h-8 min-w-0 flex-1 items-center rounded-lg'>
           <div className='ps-3'>

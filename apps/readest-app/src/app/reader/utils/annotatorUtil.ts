@@ -427,6 +427,28 @@ export function collectAnnotationFacets(notes: BookNote[]): AnnotationFacets {
   return { colors, styles };
 }
 
+export interface AnnotationCounts {
+  highlights: number;
+  notes: number;
+}
+
+/**
+ * How many live annotations are plain highlights and how many carry a note
+ * body, for the hub toolbar's summary line. Partitions on `note.note`
+ * truthiness — the same untrimmed rule filterBooknotes applies — so the
+ * summary always agrees with what the Highlights/Notes chips select.
+ */
+export function summarizeAnnotations(notes: BookNote[]): AnnotationCounts {
+  let highlights = 0;
+  let noteCount = 0;
+  for (const note of notes) {
+    if (note.deletedAt) continue;
+    if (note.note) noteCount += 1;
+    else highlights += 1;
+  }
+  return { highlights, notes: noteCount };
+}
+
 export type NoteBubbleTransition = 'add' | 'remove' | 'none';
 
 /**
