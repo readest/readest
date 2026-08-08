@@ -72,7 +72,9 @@ const book: Book = {
   downloadedAt: 1,
 };
 
-const renderItem = (overrides: { itemSelected?: boolean } = {}) => {
+type ItemOverrides = { itemSelected?: boolean; item?: Book };
+
+const renderItem = (overrides: ItemOverrides = {}) => {
   const props = {
     mode: 'grid' as const,
     item: book,
@@ -94,7 +96,7 @@ const renderItem = (overrides: { itemSelected?: boolean } = {}) => {
     ...overrides,
   };
   const utils = render(<BookshelfItem {...props} />);
-  const rerenderItem = (nextOverrides: { itemSelected?: boolean }) =>
+  const rerenderItem = (nextOverrides: ItemOverrides) =>
     utils.rerender(<BookshelfItem {...props} {...nextOverrides} />);
   return { ...utils, rerenderItem };
 };
@@ -155,5 +157,64 @@ describe('library context menu caching (issue #5181)', () => {
     openContextMenu();
     await waitFor(() => expect(popupSpy).toHaveBeenCalledTimes(2));
     expect(menuNew).toHaveBeenCalledTimes(2);
+  });
+});
+
+/**
+ * The native popup blocks Tauri's main thread until the menu is dismissed and
+ * holds the webview resources table lock for that whole time, while
+ * menu.close() destroys the resource through a *synchronous* command that runs
+ * on that same main thread. Releasing a menu while a popup is on screen
+ * therefore deadlocks the app: the main thread waits for a lock only the
+ * dismissal can release, and the blocked main thread can no longer dismiss.
+ * A re-render during the library's startup churn used to do exactly that.
+ */
+describe('library context menu release while a popup is on screen', () => {
+  let resolvePopup: () => void;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    popupSpy.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolvePopup = resolve;
+        }),
+    );
+  });
+
+  afterEach(() => {
+    cleanup();
+    popupSpy.mockImplementation(async () => {});
+  });
+
+  it('defers releasing the menu until the popup is dismissed', async () => {
+    const { rerenderItem } = renderItem();
+
+    openContextMenu();
+    await waitFor(() => expect(popupSpy).toHaveBeenCalledTimes(1));
+
+    rerenderItem({ itemSelected: true });
+    await waitFor(() => expect(menuNew).toHaveBeenCalledTimes(1));
+    expect(closeSpy).not.toHaveBeenCalled();
+
+    resolvePopup();
+    await waitFor(() => expect(closeSpy).toHaveBeenCalledTimes(1));
+  });
+
+  it('defers a release queued by another item while a popup is on screen', async () => {
+    const other = renderItem({ item: { ...book, hash: 'hash-2', title: 'Other Book' } });
+    fireEvent.pointerOver(screen.getByRole('button', { name: 'Other Book' }));
+    await waitFor(() => expect(menuNew).toHaveBeenCalledTimes(1));
+
+    renderItem();
+    openContextMenu();
+    await waitFor(() => expect(popupSpy).toHaveBeenCalledTimes(1));
+
+    other.unmount();
+    await waitFor(() => expect(menuNew).toHaveBeenCalledTimes(2));
+    expect(closeSpy).not.toHaveBeenCalled();
+
+    resolvePopup();
+    await waitFor(() => expect(closeSpy).toHaveBeenCalledTimes(1));
   });
 });
