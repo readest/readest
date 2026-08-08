@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: c1097233-8b53-422a-98ec-3f0146f32f6b
-  modified: 2026-08-05T03:25:56.637Z
+  modified: 2026-08-08T09:09:11.218Z
 ---
 
 How CI/config PRs get delivered in this repo when `dev` has unrelated uncommitted WIP, and the push gotcha.
@@ -49,5 +49,30 @@ git push --force-with-lease=<branch>:<fork-tip> git@github.com:<user>/readest.gi
 ```
 
 The push is then a fast-forward (`<fork-tip>..<new>`), the contributor's commit SHA and PR timeline stay intact, and GitHub still tests the merge with main. Note `git diff <yours> <cherry-picked>` over the *whole tree* is expected to show whatever main gained since the PR branched — diff only your touched paths. Keep `--force-with-lease` anyway as the race guard, then `git checkout <pr-branch>; git branch -D tmp-ff`. Repeat per follow-up commit (the lease SHA becomes your previous push). Used four times on PR #5496 (2026-08-05).
+
+**Offer the fast-forward FIRST, not as an afterthought.** On #5562 (2026-08-08) the options put
+to the user were stash/commit/apply and then force-push-the-rebase, and the fast-forward above
+was never mentioned — so the contributor's three SHAs got rewritten for no reason. Read this
+memory before proposing how to deliver a review fix to someone else's PR.
+
+**`maintainerCanModify` flips to `false` the moment the PR merges**, and the push then fails
+with a bare `! [remote rejected] (permission denied)` that looks like an SSH/key problem and is
+not. Before debugging a denied fork push, check `gh pr view <n> --json state,maintainerCanModify`
+— `state: MERGED` means there is nothing left to push.
+
+**A squash-merged PR makes your local copy of it un-rebasable.** GitHub squashes N commits into
+one, so patch IDs no longer match and `git rebase origin/main` replays all N against the squash
+and conflicts on every file. Do NOT resolve those conflicts. Abort, confirm the squash captured
+everything (`git diff <your-last-local-commit> origin/main -- <the PR's paths>` must be empty),
+then drop them wholesale by replaying only what came after:
+`git rebase --onto origin/main <your-last-commit-of-that-PR> <branch>`. Hit on #5562 (2026-08-08),
+where `dev` carried four local commits of a PR that landed as one squash plus one unrelated commit
+on top; the `--onto` form left `dev` as exactly `origin/main` + that one commit.
+
+**Recovering from a rewrite already pushed:** the fork's original commits usually still exist
+locally (they were fetched before the rebase — `git cat-file -e <sha>` to confirm). Branch from
+the original tip, cherry-pick your commit onto it, and force-push once more; the end state has
+the contributor's SHAs intact with your fix on top, and their clone pulls it as a fast-forward
+with no `reset --hard` needed.
 
 The husky pre-push hook runs the full suite on the exact pushed tree, so its output doubles as final verification of the pushed commit.
