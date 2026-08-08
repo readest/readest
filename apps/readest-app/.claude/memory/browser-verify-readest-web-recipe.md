@@ -5,11 +5,19 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 0dba721b-b7cb-42d4-8240-34a5f3afd221
-  modified: 2026-08-06T14:17:54.585Z
+  modified: 2026-08-08T06:51:35.812Z
 ---
 
 Recipe for verifying reader/annotator changes in Chrome against `pnpm dev-web` (run it from
 the worktree so the fix is live; `rm -rf .next` first — see [[turbopack-dev-stale-chunk-phantom]]).
+
+**Never conclude "the dev server is wedged" from a bare `curl`.** This shell has
+`http_proxy=http://127.0.0.1:8118` (and `https_proxy`) exported with no `no_proxy` for
+localhost, so `curl http://localhost:3000` routes through the proxy and dies with **exit 52,
+empty reply** while the server is perfectly healthy. Chrome hits the same proxy, so its tabs
+can bounce to `chrome://newtab` too. Always probe with `curl --noproxy '*'` before touching
+the server — a running `pnpm dev-web` may well be the user's, started in their own terminal,
+and killing it costs them the process.
 
 **Read the persisted book config** (web app stores files in IndexedDB, not localStorage):
 db `AppFileSystem`, store `files`, key `Readest/Books/<bookHash>/config.json`. Value may be a

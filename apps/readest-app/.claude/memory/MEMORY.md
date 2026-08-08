@@ -61,11 +61,11 @@
 - [#5499 Android autofill sign-in](android-signin-autofill-formdata-5499.md) MERGED #5505; FormData at submit
 - [Hint band align + battery `invert`](hint-band-align-and-battery-invert-contrast.md) contrast = base-content, NEVER invert()
 - [Autohide cursor blanked mid-selection](cursor-autohide-blanked-during-selection.md) MERGED foliate-js#68 + #5557; guard in `hide()`
-- [Window title names the book](window-title-book-name-a11y-5547.md) MERGED #5547; macOS Overlay DRAWS the title; shipped w/o the set-title ACL grant (`core:window:default` = getters only)
+- [Window title names the book](window-title-book-name-a11y-5547.md) MERGED #5547; macOS Overlay DRAWS the title; shipped w/o the set-title ACL grant (`core:window:default` = getters only), fixed #5578
 - [#5538 highlight resize orphan bubble](highlight-resize-orphan-note-bubble-5538.md) MERGED #5541; drag-race overlay UNFIXED
 - [#5539 TTS speaks ruby furigana](tts-ruby-furigana-readings-5539.md) MERGED #5546 + foliate-js#67; real-book verify pending
 - [Annotations toolbar count summary](annotations-toolbar-count-summary-5576.md) MERGED #5576; note split is UNTRIMMED; one flag = two search bars
-- [Highlight style buttons preview colors](highlight-style-buttons-preview-colors.md) per-style bindings; resolve `customColors[c] || c`
+- [Highlight style buttons preview colors](highlight-style-buttons-preview-colors.md) MERGED #5578; per-style bindings; resolve `customColors[c] || c`
 - [#5496 popup chrome family](popup-chrome-family-5496.md) MERGED; `.popup-container` load-bearing for eink
 - [#5213 dictionary single-word gate](quick-action-dictionary-single-word-5213.md) MERGED #5529; 8-char CJK cap
 - [#4977 top bar blocks text selection](header-trigger-overlaps-text-4977.md) strip sized to content top; iPad web gap
