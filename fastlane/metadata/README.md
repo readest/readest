@@ -78,7 +78,10 @@ correctly on both Play and F-Droid.
 Editing these files now changes the live listings on the next release run.
 
 - **Play** — `upload_production` uploads metadata, images, screenshots and
-  changelogs from `metadata-play`. The `upload_internal` and `upload_beta` lanes
+  changelogs from `metadata-play`, with `sync_image_upload: true` so the upload
+  REPLACES the live imagery instead of adding to it. This directory is therefore
+  authoritative: anything added by hand in Play Console and not mirrored here
+  gets deleted on the next release. The `upload_internal` and `upload_beta` lanes
   still skip all of it on purpose: Play's listing text and imagery are
   store-level, not track-level, so uploading from a test track would rewrite the
   live production listing.

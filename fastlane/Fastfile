@@ -24,7 +24,12 @@ platform :android do
       skip_upload_metadata: false,
       skip_upload_images: false,
       skip_upload_screenshots: false,
-      skip_upload_changelogs: false
+      skip_upload_changelogs: false,
+      # Without this supply ADDS images instead of replacing them, so a release
+      # would leave the previous set on the listing alongside the new one and
+      # push the phone screenshots past Play's limit of 8. With it, whatever is
+      # in metadata-play is exactly what the listing ends up with.
+      sync_image_upload: true
     )
   end
   
