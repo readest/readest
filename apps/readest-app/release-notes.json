@@ -1,5 +1,20 @@
 {
   "releases": {
+    "0.12.1": {
+      "date": "2026-08-08",
+      "notes": [
+        "Text-to-Speech: Books that come with recorded narration now play their own audio in step with the text, and you can set the sleep timer to stop at the end of a chapter",
+        "Library: Added full text search across your books with fuzzy and nearby-word matching, importing web novels from a link, bulk downloading from the shelf, and page counts in book details",
+        "Annotations: Your notes and highlights now live in one hub, where you can export and import them as a file, copy a link back to any highlight, and write math formulas in your notes",
+        "Reading: You can now pull down to add a bookmark, tap the page label to jump to any page, tap the footer to bring up the progress bar, and turn pages with an Apple Pencil double tap or squeeze",
+        "Reading: Fixed layout books can now scroll horizontally, image descriptions show in the image viewer, search results group by chapter, and the mouse cursor gets out of the way while you read",
+        "Sync: Added iCloud sync on iPhone, iPad and Mac, plus a BookOrbit integration that keeps your annotations, bookmarks, stats and reading status in step",
+        "Translation: Translated text now keeps its bold, italic and other inline formatting, and the Azure and Yandex translators work again",
+        "Styling: Added Ambient Mode on Android, a refreshed theme and background picker with separate looks for your library and reader, and cleaner popups throughout",
+        "PDF: Sharper text on desktop and a readable footer in scrolled mode",
+        "More: Markdown books now pick up their title and author automatically and show every heading in the contents, plus fixes for some crashes"
+      ]
+    },
     "0.11.20": {
       "date": "2026-07-20",
       "notes": [
