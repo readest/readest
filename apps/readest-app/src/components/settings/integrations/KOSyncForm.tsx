@@ -248,11 +248,12 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
             </div>
           </div>
 
-          <div className='form-control'>
-            <div className='label'>
-              <span className='label-text'>{_('Custom Headers (optional)')}</span>
-            </div>
+          <div className='space-y-1.5'>
+            <SectionTitle as='label' htmlFor='kosync-custom-headers' className='block'>
+              {_('Custom Headers (optional)')}
+            </SectionTitle>
             <textarea
+              id='kosync-custom-headers'
               value={customHeadersInput}
               onChange={handleCustomHeadersChange}
               placeholder={formatCustomHeadersInput({
@@ -263,13 +264,11 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
               rows={4}
               spellCheck={false}
             />
-            <div className='label'>
-              <span className='label-text-alt text-base-content/60'>
-                {_('Add one header per line using "Header-Name: value".')}
-              </span>
-            </div>
+            <span className='label-text-alt text-base-content/60'>
+              {_('Add one header per line using "Header-Name: value".')}
+            </span>
             {headerError && (
-              <div className='label pt-0'>
+              <div className='pt-0.5'>
                 <span className='label-text-alt text-error'>{headerError}</span>
               </div>
             )}

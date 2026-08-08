@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   deserializeCustomHeaders,
   formatCustomHeadersInput,
+  normalizeCustomHeaders,
   parseCustomHeadersInput,
   serializeCustomHeaders,
 } from '@/utils/customHeaders';
@@ -25,6 +26,30 @@ describe('custom headers', () => {
 
     expect(result.headers).toEqual({});
     expect(result.error).toContain('line 1');
+  });
+
+  it('rejects header names that are not valid HTTP tokens', () => {
+    // `new Headers()` / fetch throw a TypeError on these. Catching it at
+    // parse time turns an invalid name into an actionable form error
+    // instead of a request that dies inside the sync loop.
+    const result = parseCustomHeadersInput('My Header: value');
+
+    expect(result.headers).toEqual({});
+    expect(result.error).toContain('line 1');
+  });
+
+  it('drops invalid header names on normalize so requests never throw', () => {
+    // Second line of defense for values that never went through the parser:
+    // settings written by an older build, hand-edited settings.json, or a
+    // value pulled from another device. A dropped header beats a TypeError
+    // that KOSyncClient swallows into a silent sync failure.
+    const normalized = normalizeCustomHeaders({
+      'My Header': 'value',
+      'CF-Access-Client-Id': 'client-id',
+    });
+
+    expect(normalized).toEqual({ 'CF-Access-Client-Id': 'client-id' });
+    expect(() => new Headers(normalized)).not.toThrow();
   });
 
   it('serializes and restores stored custom headers', () => {
