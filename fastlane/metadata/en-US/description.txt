@@ -1,0 +1,41 @@
+Readest is an ebook reader for people who read a lot, and who want their books, notes and reading position on whatever device is nearest.
+
+Open EPUB, PDF, MOBI, AZW3, FB2, CBZ, TXT and Markdown in one library. Pull books from OPDS catalogs or from your own Calibre server. Read, annotate, listen, translate.
+
+Made for iPhone and iPad
+• CarPlay, so you can keep listening on the road with playback controls on the dashboard
+• Download read-aloud voices per book and listen with no connection at all
+• Add books from Files, Mail or any share sheet, and read them in place instead of copying them into a second library
+• Open up to four books at once on iPad and arrange them how you like
+
+Reading
+• Paginated or scrolling, with custom fonts, themes, spacing and margins
+• Vertical text for CJK books
+• Contrast and refresh tuned for e-ink screens
+• Full-text search inside a book
+
+Your library
+• Browse, search and download from OPDS catalogs and public libraries
+• Connect to Calibre or Calibre-Web, covers and metadata included
+• Organize with bookshelf groups you can rename
+
+Notes
+• Highlights, bookmarks and structured notes
+• Copy a highlight together with a deep link back to the passage
+• Export your annotations
+
+Listening and languages
+• Text-to-speech with downloadable offline voices
+• Translate a sentence, a page, or an entire book
+• Wikipedia and dictionary lookup without leaving the page
+
+Sync
+• Readest Cloud, or bring your own: iCloud, Google Drive, OneDrive, WebDAV, S3
+• KOReader sync keeps your progress in step with your e-reader
+• iPhone, iPad, Mac, all other platforms and the web
+
+Readest is open source.
+
+Support: support@readest.com
+Privacy Policy: https://readest.com/privacy-policy
+Terms of Service: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

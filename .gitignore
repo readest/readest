@@ -54,3 +54,5 @@ result*
 .claude/worktrees
 .claude/settings.local.json
 
+fastlane/staging/
+fastlane/metadata-play/android/en-US/changelogs

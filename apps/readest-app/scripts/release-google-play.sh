@@ -59,7 +59,9 @@ if [[ -z "$GOOGLE_PLAY_JSON_KEY_FILE" ]]; then
 fi
 
 # --- GENERATE CHANGELOG FOR GOOGLE PLAY ---
-CHANGELOG_DIR="../../fastlane/metadata/android/en-US/changelogs"
+# Play reads from fastlane/metadata-play (see metadata_path in Fastfile);
+# fastlane/metadata/android is F-Droid's tree.
+CHANGELOG_DIR="../../fastlane/metadata-play/android/en-US/changelogs"
 mkdir -p "$CHANGELOG_DIR"
 
 NOTES=$(jq -r --arg ver "$VERSION" '.releases[$ver].notes // empty | map("• " + .) | join("\n")' release-notes.json)

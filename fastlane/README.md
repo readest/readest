@@ -29,6 +29,14 @@ Submit the uploaded iOS build for App Store review and to TestFlight
 
 Submit the uploaded macOS build for App Store review and to TestFlight
 
+### download_store_screenshots
+
+```sh
+[bundle exec] fastlane download_store_screenshots
+```
+
+Download the live App Store screenshots for a platform (read-only)
+
 ----
 
 

@@ -5,19 +5,34 @@ default_platform(:android)
 platform :android do
   aab_file = "./apps/readest-app/src-tauri/gen/android/app/build/outputs/bundle/universalRelease/app-universal-release.aab"
 
+  # Listing text and imagery live in fastlane/metadata-play, NOT fastlane/metadata:
+  # metadata/android is F-Droid's (plain screenshots, app name "Readest"), while
+  # Play gets the captioned composites and the keyword title.
+  # NB: supply's metadata_path is the directory that CONTAINS the locale folders
+  # (its default is ./fastlane/metadata/android), so the "android" level belongs
+  # in the path. Pointing at metadata-play alone makes supply read "android" as a
+  # locale and Google rejects the edit with "Invalid request".
+  play_metadata_path = "./fastlane/metadata-play/android"
+
   desc "Upload AAB to Google Play Production"
   lane :upload_production do
     upload_to_play_store(
       aab: aab_file,
       track: "production",
+      metadata_path: play_metadata_path,
       skip_upload_apk: true,
-      skip_upload_metadata: true,
-      skip_upload_images: true,
-      skip_upload_screenshots: true,
+      skip_upload_metadata: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
       skip_upload_changelogs: false
     )
   end
   
+  # The internal and beta lanes deliberately keep skip_upload_metadata/images/
+  # screenshots on. Play's listing text and imagery are store-level, not
+  # track-level, so uploading them from a test track would rewrite the live
+  # production listing. Only upload_production may touch the listing.
+
   desc "Upload AAB to Google Play Internal Testing"
   lane :upload_internal do
     upload_to_play_store(
@@ -53,6 +68,13 @@ end
 
 def asc_api_key
   key_id = ENV["APPLE_API_KEY"]
+  # Every Apple lane is normally invoked through a dotenv wrapper (see the
+  # submit-appstore-* scripts). Called bare, key_id is nil and the derived path
+  # becomes "AuthKey_.p8", which fails with a confusing missing-file error.
+  if key_id.to_s.empty? || ENV["APPLE_API_ISSUER"].to_s.empty?
+    UI.user_error!("APPLE_API_KEY / APPLE_API_ISSUER are not set. Load them first:\n" \
+                   "  set -a && source apps/readest-app/.env.apple-appstore.local && set +a")
+  end
   # APPLE_API_KEY_PATH is deliberately kept OUT of the App Store build env: with the
   # full key_id/issuer/path trio present, `tauri build` notarizes the App Store binary,
   # which fails (App Store apps use an Apple Distribution cert, not Developer ID).
@@ -77,9 +99,10 @@ def release_notes_text
     .join("\n")
 end
 
-# App Store "Promotional Text". All other metadata fields keep their
-# existing App Store Connect values.
+# App Store "Promotional Text" (editable without a review). Passed inline, so it
+# wins over any promotional_text.txt in the metadata folder.
 PROMOTIONAL_TEXT = "Experience the Ultimate Ebook Reader Across All Your Devices for Avid Readers"
+PROMOTIONAL_TEXT_MACOS = "Every Book You Own, Open on Your Mac. Read, Annotate, Listen and Sync Across Devices"
 
 # iOS and macOS are one App Store Connect app (com.bilingify.readest), built from
 # separate binaries and submitted independently. Each lane acts only on a build
@@ -98,8 +121,18 @@ def submit_apple_build(deliver_opts, testflight_opts)
     submit_for_review: true,
     automatic_release: true,
     force: true,              # skip the HTML metadata preview prompt
+    # App Store screenshots (iOS and macOS) are uploaded by hand in App Store
+    # Connect, so no lane touches them. The masters live in fastlane/screenshots
+    # for reference only. Note if this is ever automated: iOS and macOS share one
+    # App Store Connect record but NOT one screenshot set, and deliver types a
+    # screenshot purely by pixel size — so a single screenshots_path would try to
+    # attach iPhone images to the Mac listing.
     skip_screenshots: true,
-    skip_metadata: false,     # upload What's New + Promotional Text; other fields stay as-is
+    # Uploads everything in the lane's metadata folder — name, subtitle, keywords
+    # and description — plus the inline What's New and Promotional Text below.
+    # (Before fastlane/metadata/en-US existed this only sent the two inline
+    # fields and left the rest of App Store Connect untouched.)
+    skip_metadata: false,
     release_notes: { "en-US" => release_notes_text },
     promotional_text: { "en-US" => PROMOTIONAL_TEXT },
     precheck_include_in_app_purchases: false,
@@ -126,7 +159,32 @@ end
 desc "Submit the uploaded macOS build for App Store review and to TestFlight"
 lane :release_macos do
   submit_apple_build(
-    { platform: "osx", pkg: repo_path("target/universal-apple-darwin/release/bundle/macos/Readest.pkg") },
+    {
+      platform: "osx",
+      pkg: repo_path("target/universal-apple-darwin/release/bundle/macos/Readest.pkg"),
+      # deliver's metadata_path has no platform dimension, so iOS and macOS would
+      # otherwise receive identical text. The Mac listing leads with what only the
+      # Mac has: multiple windows, keyboard shortcuts, the system dictionary.
+      metadata_path: "./fastlane/metadata-macos",
+      promotional_text: { "en-US" => PROMOTIONAL_TEXT_MACOS },
+    },
     { app_platform: "osx" }
   )
+end
+
+# Read-only: pull the CURRENTLY LIVE App Store screenshots into
+# fastlane/screenshots/<platform>. Nothing is uploaded. App Store screenshots are
+# managed by hand in App Store Connect, so this exists to compare the local
+# masters against what is actually published.
+#   fastlane download_store_screenshots platform:osx
+#   fastlane download_store_screenshots platform:ios
+desc "Download the live App Store screenshots for a platform (read-only)"
+lane :download_store_screenshots do |options|
+  require "deliver"
+  platform = (options[:platform] || "osx").to_s
+  asc_api_key # also sets Spaceship::ConnectAPI.token
+  Deliver.cache[:app] = Spaceship::ConnectAPI::App.find("com.bilingify.readest")
+  dest = repo_path("fastlane/screenshots/#{platform}")
+  FileUtils.mkdir_p(dest)
+  Deliver::DownloadScreenshots.run({ platform: platform, use_live_version: true }, dest)
 end

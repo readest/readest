@@ -1,0 +1,42 @@
+Readest is an ebook reader for people who read a lot, and who want their books, notes and reading position on whatever device is nearest.
+
+On the Mac you get room to spread out. Open several books in their own windows, keep the text and your notes in view at once, and drive the whole thing from the keyboard.
+
+Made for the Mac
+• Open books in separate windows and arrange them side by side
+• Turn pages, search, annotate and move through your library without reaching for the mouse
+• Look up any word with the macOS dictionaries you already have installed
+• Open up to four books at once with dynamic layouts
+
+Reading
+• Paginated or scrolling, with custom fonts, themes, spacing and margins
+• Vertical text for CJK books
+• Contrast and refresh tuned for e-ink screens
+• Full-text search inside a book
+
+Your library
+• Open EPUB, PDF, MOBI, AZW3, FB2, CBZ, TXT and Markdown
+• Browse, search and download from OPDS catalogs and public libraries
+• Connect to Calibre or Calibre-Web, covers and metadata included
+• Organize with bookshelf groups you can rename
+
+Notes
+• Highlights, bookmarks and structured notes
+• Copy a highlight together with a deep link back to the passage
+• Export your annotations
+
+Listening and languages
+• Text-to-speech with downloadable offline voices
+• Translate a sentence, a page, or an entire book
+• Wikipedia and dictionary lookup without leaving the page
+
+Sync
+• Readest Cloud, or bring your own: iCloud, Google Drive, OneDrive, WebDAV, S3
+• KOReader sync keeps your progress in step with your e-reader
+• Mac, iPhone, iPad, all other platforms and the web
+
+Readest is open source.
+
+Support: support@readest.com
+Privacy Policy: https://readest.com/privacy-policy
+Terms of Service: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

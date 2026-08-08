@@ -1,12 +1,34 @@
-<p>b>Readest</b> is a modern, feature-rich ebook reader designed for avid readers offering seamless cross-platform access, powerful tools, and an intuitive interface to elevate your reading experience.</p>
-<p>Whether you're a casual reader, a student, or a researcher, Readest is packed with thoughtful features to enhance your reading experience. From flexible reading modes to powerful annotation tools and cloud sync, it’s designed to make reading smarter, smoother, and more enjoyable.</p>
-<ul>
-<li><b>Support for Multiple eBook Formats:</b> Compatible with EPUB, MOBI, AZW3, TXT, PDF, and more.</li>
-<li><b>Paging/Scrolling Reading Modes:</b> Freely switch between modes to suit different reading preferences.</li>
-<li><b>Efficient Annotation & Marking:</b> Supports highlights, bookmarks, and notes—easily organize key information.</li>
-<li><b>Full-Text Search & Translation:</b> Includes full-text search, built-in DeepL translation tool, and Wikipedia lookup.</li>
-<li><b>Dual-Screen Parallel Reading:</b> Read two books at the same time—ideal for academic research and text comparison.</li>
-<li><b>Personalized Layout Settings:</b> Customize fonts, themes, and colors for a tailored reading experience.</li>
-<li><b>Built-in Sync Server:</b> Each user gets 500 MB of cloud storage; unlimited devices supported. Log in to sync eBooks, reading progress, highlights, and notes across devices.</li>
-<li><b>TTS Voice Reading:</b> Unlimited text-to-speech with Edge TTS; multiple voice options available.</li>
-</ul>
+<b>Readest</b> is a modern, open-source ebook reader for people who read a lot, and want their books, notes and progress to follow them everywhere.
+
+Open EPUB, PDF, MOBI, AZW3, FB2, CBZ, TXT and Markdown, and tune the reading experience down to the last detail.
+
+<b>Read your way</b>
+• Paginated or scrolling modes with smooth page-turn animations
+• Custom fonts, themes, spacing, margins and columns
+• Vertical text for CJK books
+• Built for e-ink, with contrast tuned for slow-refresh screens
+• Open up to four books side by side for research and comparison
+
+<b>Your whole library</b>
+• Browse and download from OPDS catalogs and public libraries
+• Connect to Calibre and Calibre-Web, covers and metadata included
+• Organize with custom bookshelf groups
+• Full-text search inside a book
+
+<b>Notes that last</b>
+• Highlights, bookmarks and structured notes
+• Copy a highlight together with a deep link back to the passage
+• Export your annotations
+
+<b>Listen and understand</b>
+• Text-to-speech with downloadable offline voices and Android Auto support
+• Translate a sentence, a page, or an entire book
+• Wikipedia and dictionary lookup without leaving the page
+
+<b>Sync everywhere</b>
+• Readest Cloud, or bring your own: Google Drive, OneDrive, WebDAV, S3
+• KOReader sync keeps your progress in step with your e-reader
+• Android, iOS, macOS, Windows, Linux and the web
+
+Readest is open source. Questions or ideas: support@readest.com
+Privacy policy: https://readest.com/privacy-policy

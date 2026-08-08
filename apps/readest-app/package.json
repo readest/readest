@@ -76,6 +76,7 @@
     "submit-appstore-ios": "dotenv -e .env.apple-appstore.local -- bash -c 'cd ../.. && fastlane release_ios'",
     "submit-appstore-macos": "dotenv -e .env.apple-appstore.local -- bash -c 'cd ../.. && fastlane release_macos'",
     "release-google-play": "dotenv -e .env.google-play.local -- bash scripts/release-google-play.sh",
+    "validate-google-play": "dotenv -e .env.google-play.local -- bash scripts/validate-google-play-listing.sh",
     "config-wrangler": "sed -i \"s/\\${TRANSLATIONS_KV_ID}/$TRANSLATIONS_KV_ID/g\" wrangler.toml",
     "preview": "pnpm patch-build-webpack && NEXT_PUBLIC_APP_PLATFORM=web opennextjs-cloudflare build && pnpm restore-build-original && opennextjs-cloudflare preview --ip 0.0.0.0 --port 3001",
     "strip-web-sourcemaps": "find .open-next/assets -name '*.js.map' -type f -delete",
