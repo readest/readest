@@ -7,6 +7,7 @@ import {
   MdInfoOutline,
   MdCheckCircleOutline,
   MdOutlineCloudDownload,
+  MdWifiTethering,
 } from 'react-icons/md';
 import { IoShareSocialOutline } from 'react-icons/io5';
 import { LuFolderPlus } from 'react-icons/lu';
@@ -37,6 +38,11 @@ interface SelectModeActionsProps {
   // button — the user's visual focus is on the cover they just tapped.
   // On iOS / Android the share sheet is modal and ignores position.
   onSend: () => void;
+  // Hidden unless the LocalSend integration is enabled on this device.
+  // Sends the selected books to a nearby LocalSend peer; unlike onSend it
+  // works on every Tauri platform (no OS share sheet involved).
+  sendNearbyEnabled?: boolean;
+  onSendNearby?: () => void;
   onDelete: () => void;
   onCancel: () => void;
   // Reports the popup's rendered height (including its safe-area padding) so the
@@ -56,6 +62,8 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
   onStatus,
   onDownload,
   onSend,
+  sendNearbyEnabled = false,
+  onSendNearby,
   onDelete,
   onCancel,
   onHeightChange,
@@ -165,6 +173,18 @@ const SelectModeActions: React.FC<SelectModeActionsProps> = ({
           >
             <IoShareSocialOutline />
             <div>{_('Send')}</div>
+          </button>
+        )}
+        {sendNearbyEnabled && (
+          <button
+            onClick={onSendNearby}
+            className={clsx(
+              'flex flex-col items-center justify-center gap-1',
+              (!hasSelection || !hasValidBooks) && 'btn-disabled opacity-50',
+            )}
+          >
+            <MdWifiTethering />
+            <div>{_('Nearby')}</div>
           </button>
         )}
         <button

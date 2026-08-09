@@ -27,6 +27,8 @@ import {
   type LocalSendDevice,
 } from '@/services/localsend/types';
 import { eventDispatcher } from '@/utils/event';
+import { resolveBookSendFile } from '@/services/localsend/bookFile';
+import type { Book } from '@/types/book';
 import DevicePickerDialog from './DevicePickerDialog';
 import ReceiveRequestDialog from './ReceiveRequestDialog';
 
@@ -115,16 +117,35 @@ const LocalSendManager: React.FC = () => {
     return () => eventDispatcher.off('localsend-alias-changed', onAliasChanged);
   }, [syncServiceState]);
 
-  // Send entry point: the library dispatches the resolved files and this
-  // manager opens the device picker.
+  // Send entry point: the library dispatches the selected books; resolve
+  // their on-disk files here and open the device picker.
   useEffect(() => {
-    const onSendBooks = (event: CustomEvent) => {
-      const { files } = event.detail as { files: SendFileInput[] };
-      if (files?.length) setSendFiles(files);
+    const onSendBooks = async (event: CustomEvent) => {
+      if (!appService) return;
+      const { books } = event.detail as { books: Book[] };
+      if (!books?.length) return;
+      const resolved: SendFileInput[] = [];
+      for (const book of books) {
+        const file = await resolveBookSendFile(book, appService);
+        if (file) resolved.push(file);
+      }
+      if (resolved.length === 0) {
+        toast(_('Book file is not available locally'), 'warning');
+        return;
+      }
+      if (resolved.length < books.length) {
+        toast(
+          _('{{count}} book(s) skipped (not on this device)', {
+            count: books.length - resolved.length,
+          }),
+          'warning',
+        );
+      }
+      setSendFiles(resolved);
     };
     eventDispatcher.on('localsend-send-books', onSendBooks);
     return () => eventDispatcher.off('localsend-send-books', onSendBooks);
-  }, []);
+  }, [appService, toast, _]);
 
   const onFileDone = useCallback(
     async (payload: ReceiveFileDone) => {

@@ -849,6 +849,7 @@ export type BookContextMenuItemId =
   | 'download'
   | 'upload'
   | 'share'
+  | 'sendNearby'
   | 'delete';
 
 /**
@@ -960,7 +961,10 @@ export const pickFresherMetadata = (
  * races on the Tauri IPC boundary, so the items land in a non-deterministic
  * order and the menu appears to shuffle on every open (issue #4389).
  */
-export const getBookContextMenuItemIds = (book: Book): BookContextMenuItemId[] => {
+export const getBookContextMenuItemIds = (
+  book: Book,
+  opts?: { localSend?: boolean },
+): BookContextMenuItemId[] => {
   const ids: BookContextMenuItemId[] = ['select', 'group'];
   ids.push(book.readingStatus === 'finished' ? 'markUnread' : 'markFinished');
   if (book.readingStatus !== 'abandoned') ids.push('markAbandoned');
@@ -981,6 +985,8 @@ export const getBookContextMenuItemIds = (book: Book): BookContextMenuItemId[] =
     // Share is offered for any local-or-uploaded book; the dialog uploads first
     // if the book hasn't been pushed yet.
     if (book.downloadedAt || book.uploadedAt) ids.push('share');
+    // LocalSend needs the file on this device; cloud-only books are excluded.
+    if (opts?.localSend && (book.downloadedAt || book.filePath)) ids.push('sendNearby');
   }
   ids.push('delete');
   return ids;

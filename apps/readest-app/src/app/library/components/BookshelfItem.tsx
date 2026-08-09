@@ -21,6 +21,8 @@ import {
   type BookContextMenuItemId,
 } from '@/app/library/utils/libraryUtils';
 import { md5Fingerprint } from '@/utils/md5';
+import { isTauriAppPlatform } from '@/services/environment';
+import { isLocalSendEnabled } from '@/services/localsend/devicePrefs';
 import BookItem from './BookItem';
 import GroupItem from './GroupItem';
 import BookContextMenuPopup, { type BookContextMenuItem } from './BookContextMenuPopup';
@@ -280,6 +282,13 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
           eventDispatcher.dispatch('show-share-dialog', { book });
         },
       },
+      sendNearby: {
+        text: _('Send to Nearby Device'),
+        action: async () => {
+          // LocalSendManager hosts the device picker and resolves the file.
+          eventDispatcher.dispatch('localsend-send-books', { books: [book] });
+        },
+      },
       delete: {
         text: _('Delete'),
         action: async () => {
@@ -287,7 +296,9 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         },
       },
     };
-    return getBookContextMenuItemIds(book).map((id) => itemOptions[id]);
+    return getBookContextMenuItemIds(book, {
+      localSend: isTauriAppPlatform() && isLocalSendEnabled(),
+    }).map((id) => itemOptions[id]);
   };
 
   const buildGroupMenuItems = (group: BooksGroup): BookContextMenuItem[] => {

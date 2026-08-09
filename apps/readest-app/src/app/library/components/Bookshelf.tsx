@@ -54,6 +54,8 @@ import { eventDispatcher } from '@/utils/event';
 import { getLocalBookFilename } from '@/utils/book';
 import { MIMETYPES, EXTS } from '@/libs/document';
 import { makeSafeFilename } from '@/utils/misc';
+import { isTauriAppPlatform } from '@/services/environment';
+import { isLocalSendEnabled } from '@/services/localsend/devicePrefs';
 
 import { useSpatialNavigation } from '../hooks/useSpatialNavigation';
 import DeleteConfirmAlert from '@/components/DeleteConfirmAlert';
@@ -617,6 +619,19 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     }
   };
 
+  const sendSelectedNearby = () => {
+    // Group ids in the selection simply don't match any book hash and drop
+    // out; LocalSendManager resolves the files and reports unavailable books.
+    const ids = getSelectedBooks();
+    const books = ids
+      .map((id) => filteredBooks.find((book) => book.hash === id))
+      .filter((book): book is Book => !!book);
+    if (books.length === 0) return;
+    setShowSelectModeActions(false);
+    handleSetSelectMode(false);
+    eventDispatcher.dispatch('localsend-send-books', { books });
+  };
+
   const updateBooksStatus = async (status: ReadingStatus | undefined) => {
     const selectedIds = getSelectedBooks();
     const booksToUpdate: Book[] = [];
@@ -1047,6 +1062,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             !!appService &&
             (appService.isIOSApp || appService.isAndroidApp || appService.isMacOSApp)
           }
+          sendNearbyEnabled={isTauriAppPlatform() && isLocalSendEnabled()}
+          onSendNearby={sendSelectedNearby}
           canDownload={downloadableBooks.length > 0}
           onOpen={openSelectedBooks}
           onGroup={groupSelectedBooks}

@@ -31,6 +31,15 @@ describe('getBookContextMenuItemIds', () => {
     ]);
   });
 
+  it('offers sendNearby for a local book only when LocalSend is enabled', () => {
+    const local = createBook({ downloadedAt: 1 });
+    expect(getBookContextMenuItemIds(local, { localSend: true })).toContain('sendNearby');
+    expect(getBookContextMenuItemIds(local)).not.toContain('sendNearby');
+    // Cloud-only books have no local file to send.
+    const cloudOnly = createBook({ uploadedAt: 1 });
+    expect(getBookContextMenuItemIds(cloudOnly, { localSend: true })).not.toContain('sendNearby');
+  });
+
   it('shows markUnread + markAbandoned + clearStatus for a finished book', () => {
     const book = createBook({ downloadedAt: 1, readingStatus: 'finished' });
     expect(getBookContextMenuItemIds(book)).toEqual([
