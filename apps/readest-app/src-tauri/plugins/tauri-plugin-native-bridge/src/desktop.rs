@@ -71,6 +71,10 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn set_multicast_lock(&self, _payload: MulticastLockRequest) -> crate::Result<()> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn set_selection_suppressed(
         &self,
         _payload: SetSelectionSuppressedRequest,

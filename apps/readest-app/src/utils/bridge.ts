@@ -145,6 +145,17 @@ export async function invokeUseBackgroundAudio(request: UseBackgroundAudioReques
   });
 }
 
+/**
+ * Acquire or release the Android WifiManager MulticastLock so LocalSend
+ * discovery announcements are delivered. Android only; a no-op elsewhere
+ * (callers gate on isAndroidApp).
+ */
+export async function setMulticastLock(acquire: boolean): Promise<void> {
+  await invoke('plugin:native-bridge|set_multicast_lock', {
+    payload: { acquire },
+  });
+}
+
 // Suppress a piece of the OS text-selection UI that would fight the reader's
 // own selection UX:
 //  - target 'gesture' (iOS): the system long-press selection for non-editable

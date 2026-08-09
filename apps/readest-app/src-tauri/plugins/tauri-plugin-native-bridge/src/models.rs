@@ -58,6 +58,14 @@ pub struct UseBackgroundAudioRequest {
     pub enabled: bool,
 }
 
+/// Acquire/release the Android WifiManager MulticastLock so LocalSend
+/// discovery announcements are delivered while the service runs.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MulticastLockRequest {
+    pub acquire: bool,
+}
+
 /// Which piece of the OS selection UI to gate: "gesture" suppresses the
 /// long-press text-selection gesture (iOS, instant highlight), "menu"
 /// suppresses the floating selection toolbar (Android, #5427).

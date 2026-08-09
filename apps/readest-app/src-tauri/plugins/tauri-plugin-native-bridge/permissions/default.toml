@@ -6,6 +6,7 @@ permissions = [
   "allow-copy-uri-to-path",
   "allow-save-image-to-gallery",
   "allow-use-background-audio",
+  "allow-set-multicast-lock",
   "allow-install-package",
   "allow-set-system-ui-visibility",
   "allow-get-status-bar-height",

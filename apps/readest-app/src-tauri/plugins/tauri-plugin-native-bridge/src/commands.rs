@@ -47,6 +47,14 @@ pub(crate) async fn use_background_audio<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn set_multicast_lock<R: Runtime>(
+    app: AppHandle<R>,
+    payload: MulticastLockRequest,
+) -> Result<()> {
+    app.native_bridge().set_multicast_lock(payload)
+}
+
+#[command]
 pub(crate) async fn set_selection_suppressed<R: Runtime>(
     app: AppHandle<R>,
     payload: SetSelectionSuppressedRequest,

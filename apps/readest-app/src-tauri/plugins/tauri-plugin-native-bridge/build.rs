@@ -45,6 +45,7 @@ const COMMANDS: &[&str] = &[
     "update_reading_widget",
     "capture_webview_region",
     "set_selection_suppressed",
+    "set_multicast_lock",
     "read_share_clip_html",
     "icloud_container_status",
     "icloud_ensure_downloaded",

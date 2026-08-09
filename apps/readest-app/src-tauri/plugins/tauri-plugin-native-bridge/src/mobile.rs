@@ -68,6 +68,24 @@ impl<R: Runtime> NativeBridge<R> {
 }
 
 impl<R: Runtime> NativeBridge<R> {
+    /// The MulticastLock is an Android concept; iOS delivers multicast
+    /// without one (entitlements permitting), so this is a no-op there.
+    pub fn set_multicast_lock(&self, payload: MulticastLockRequest) -> crate::Result<()> {
+        #[cfg(target_os = "android")]
+        {
+            self.0
+                .run_mobile_plugin("set_multicast_lock", payload)
+                .map_err(Into::into)
+        }
+        #[cfg(not(target_os = "android"))]
+        {
+            let _ = payload;
+            Ok(())
+        }
+    }
+}
+
+impl<R: Runtime> NativeBridge<R> {
     pub fn set_selection_suppressed(
         &self,
         payload: SetSelectionSuppressedRequest,

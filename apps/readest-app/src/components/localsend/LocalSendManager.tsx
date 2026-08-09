@@ -27,6 +27,7 @@ import {
   type LocalSendDevice,
 } from '@/services/localsend/types';
 import { eventDispatcher } from '@/utils/event';
+import { setMulticastLock } from '@/utils/bridge';
 import { resolveBookSendFile } from '@/services/localsend/bookFile';
 import type { Book } from '@/types/book';
 import DevicePickerDialog from './DevicePickerDialog';
@@ -82,11 +83,13 @@ const LocalSendManager: React.FC = () => {
     if (!isTauriAppPlatform() || !appService) return;
     try {
       if (isLocalSendEnabled()) {
+        if (appService.isAndroidApp) await setMulticastLock(true).catch(() => {});
         const alias = getLocalSendAlias() || (await defaultAlias());
         const status = await startLocalSend(alias);
         useLocalSendStore.getState().setStatus(status);
       } else {
         await stopLocalSend();
+        if (appService.isAndroidApp) await setMulticastLock(false).catch(() => {});
         useLocalSendStore.getState().setStatus(null);
       }
     } catch (err) {

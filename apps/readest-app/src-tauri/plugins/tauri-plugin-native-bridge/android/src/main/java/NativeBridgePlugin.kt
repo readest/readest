@@ -72,6 +72,11 @@ class CopyURIRequestArgs {
 }
 
 @InvokeArg
+class MulticastLockArgs {
+    var acquire: Boolean = false
+}
+
+@InvokeArg
 class SaveImageToGalleryRequestArgs {
     var srcPath: String? = null
     var fileName: String? = null
@@ -213,6 +218,11 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     // a dead Activity.
     private val pluginScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
+    // Held while the LocalSend service runs so multicast discovery
+    // announcements are delivered; most Android devices filter multicast
+    // packets without it. Released in onDestroy.
+    private var multicastLock: android.net.wifi.WifiManager.MulticastLock? = null
+
     private var sensorManager: SensorManager? = null
     private var ambientLightListening = false
     private var lastEmittedLux: Float = Float.NaN
@@ -237,6 +247,12 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
 
     override fun onDestroy() {
         stopAmbientLightUpdatesInternal()
+        try {
+            multicastLock?.takeIf { it.isHeld }?.release()
+        } catch (_: Exception) {
+            // Releasing an unheld lock throws on some OEM builds; ignore.
+        }
+        multicastLock = null
         pluginScope.cancel()
         activity.application.unregisterActivityLifecycleCallbacks(lifecycleCallbacks)
         instance = null
@@ -475,6 +491,28 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         pendingInvoke = invoke
         pendingAuthCallbackTarget = callbackTarget
         customTabsIntent.launchUrl(activity, uri)
+    }
+
+    @Command
+    fun set_multicast_lock(invoke: Invoke) {
+        val args = invoke.parseArgs(MulticastLockArgs::class.java)
+        try {
+            if (args.acquire) {
+                if (multicastLock == null) {
+                    val wifi = activity.applicationContext
+                        .getSystemService(Context.WIFI_SERVICE) as android.net.wifi.WifiManager
+                    multicastLock = wifi.createMulticastLock("readest-localsend").apply {
+                        setReferenceCounted(false)
+                    }
+                }
+                multicastLock?.acquire()
+            } else {
+                multicastLock?.release()
+            }
+            invoke.resolve()
+        } catch (e: Exception) {
+            invoke.reject(e.message ?: "multicast lock failed")
+        }
     }
 
     @Command
