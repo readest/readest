@@ -27,6 +27,7 @@ mod dir_scanner;
 #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 mod discord_rpc;
 mod epub_parser;
+mod localsend;
 #[cfg(target_os = "macos")]
 mod macos;
 mod mobi_parser;
@@ -430,6 +431,15 @@ pub fn run() {
             #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
             discord_rpc::clear_book_presence,
             clip_url::clip_url,
+            localsend::commands::localsend_start,
+            localsend::commands::localsend_stop,
+            localsend::commands::localsend_get_status,
+            localsend::commands::localsend_list_devices,
+            localsend::commands::localsend_announce,
+            localsend::commands::localsend_respond,
+            localsend::commands::localsend_cancel_receive,
+            localsend::commands::localsend_send_files,
+            localsend::commands::localsend_cancel_send,
             #[cfg(desktop)]
             spawn_fresh_browser::spawn_fresh_browser,
             nightly_update::verify_update_signature,
@@ -530,6 +540,7 @@ pub fn run() {
                 let discord_client = Arc::new(Mutex::new(discord_rpc::DiscordRpcClient::new()));
                 app.manage(discord_client);
             }
+            app.manage(localsend::LocalSendState::default());
 
             #[cfg(desktop)]
             {

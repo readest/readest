@@ -34,7 +34,7 @@ log = "0.4"
 thiserror = "2"
 walkdir = "2"
 tokio = { version = "1", features = ["fs"] }
-tokio-util = { version = "0.7", features = ["codec"] }
+tokio-util = { version = "0.7", features = ["codec", "rt"] }
 futures-util = "0.3"
 futures = "0.3.31"
 read-progress-stream = "1.0.0"
@@ -74,6 +74,17 @@ tauri-plugin-clipboard-manager = "2"
 tauri-plugin-device-info = "1.0.1"
 tauri-plugin-turso = { path = "./plugins/tauri-plugin-turso" }
 tauri-plugin-webdriver = { version = "0.2", optional = true }
+
+# LocalSend protocol v2.2 (discovery + HTTPS transfer). Upstream's own
+# protocol core, pinned by rev; `discovery` pulls `http`+`crypto`+`multicast`,
+# WebRTC/v3 stays off.
+localsend = { git = "https://github.com/localsend/localsend", rev = "ff2995c9523c5fae407f7d444d0986b2c6ae568e", default-features = false, features = ["discovery"] }
+uuid = { version = "1", features = ["v4"] }
+pem = "4"
+anyhow = "1"
+bytes = "1"
+tokio-stream = "0.1"
+if-addrs = "0.15"
 
 # Native EPUB import path (Q1): zip + quick-xml + md5.
 # Used by `epub_parser::parse_epub_metadata` (partialMD5 + downscaled
