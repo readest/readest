@@ -234,6 +234,15 @@
     "allow-clip-url",
     "allow-spawn-fresh-browser",
     "allow-verify-update-signature",
-    "allow-install-nightly-update"
+    "allow-install-nightly-update",
+    "allow-localsend-start",
+    "allow-localsend-stop",
+    "allow-localsend-get-status",
+    "allow-localsend-list-devices",
+    "allow-localsend-announce",
+    "allow-localsend-respond",
+    "allow-localsend-cancel-receive",
+    "allow-localsend-send-files",
+    "allow-localsend-cancel-send"
   ]
 }
