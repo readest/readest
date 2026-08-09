@@ -115,6 +115,28 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 - Linux users can also install [Readest on Flathub][link-flathub].
 - Web: Visit and use **Readest for Web** at [https://web.readest.com][link-web-readest].
 
+#### Nix
+
+To try the app out first:
+
+```sh
+nix run github:readest/readest
+```
+
+To get the latest version of Readest for your system, add the following input to `flake.nix`:
+
+```nix
+inputs.readest.url = "github:readest/readest";
+```
+
+Then add the following to `configuration.nix`:
+
+```nix
+environment.systemPackages = [
+    inputs.readest.packages.${pkgs.stdenv.hostPlatform.system}.default
+];
+```
+
 ## Documentation
 
 Guides, tutorials, and FAQs for installing and using Readest live in the official documentation:
