@@ -48,7 +48,14 @@ tauri-plugin-log = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-os = "2"
-tauri-plugin-http = { version = "2", features = ["dangerous-settings"] }
+# `unsafe-headers` lets callers pass fetch-spec "forbidden" headers (Origin,
+# Referer, Cookie, ...) instead of having the plugin silently drop them. Needed
+# so the OAuth token exchange can opt out of the webview Origin the plugin would
+# otherwise stamp on it, which Microsoft rejects with AADSTS90023.
+tauri-plugin-http = { version = "2", features = [
+  "dangerous-settings",
+  "unsafe-headers",
+] }
 tauri-plugin-shell = "2"
 tauri-plugin-process = "2"
 tauri-plugin-oauth = "2"

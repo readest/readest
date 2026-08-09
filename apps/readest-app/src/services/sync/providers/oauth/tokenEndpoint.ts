@@ -49,6 +49,21 @@ const CONTENT_TYPE_HEADER = 'Content-Type';
 const HTTP_POST = 'POST';
 
 /**
+ * An empty `Origin` is `@tauri-apps/plugin-http`'s opt-out from the header:
+ * without it the plugin stamps every native request with the webview origin
+ * (`tauri://localhost` on macOS/iOS/Linux, `http://tauri.localhost` elsewhere).
+ * Microsoft reads any `Origin` on a token request as a browser cross-origin
+ * redemption and refuses it for our native custom-scheme redirect — `AADSTS90023:
+ * Cross-origin token redemption is permitted only for the 'Single-Page
+ * Application' client-type`. A native OAuth client is not a browser, so no
+ * `Origin` belongs here for any provider. The opt-out needs the `unsafe-headers`
+ * feature on `tauri-plugin-http` (see `src-tauri/Cargo.toml`); on web the header
+ * is a no-op, since browsers drop it and send the real page origin.
+ */
+const ORIGIN_HEADER = 'Origin';
+const NO_ORIGIN = '';
+
+/**
  * Injected fetch implementation. Typed narrowly to exactly what this module
  * needs so callers can pass the platform's `fetch` (or a stub in tests).
  */
@@ -132,7 +147,7 @@ const requestTokens = async (
 ): Promise<TokenSet> => {
   const res = await fetchFn(tokenEndpoint, {
     method: HTTP_POST,
-    headers: { [CONTENT_TYPE_HEADER]: FORM_CONTENT_TYPE },
+    headers: { [CONTENT_TYPE_HEADER]: FORM_CONTENT_TYPE, [ORIGIN_HEADER]: NO_ORIGIN },
     body: params.toString(),
   });
 

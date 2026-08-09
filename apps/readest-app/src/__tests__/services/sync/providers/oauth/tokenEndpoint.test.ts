@@ -96,6 +96,26 @@ describe('tokenEndpoint', () => {
     ).rejects.toThrow(/HTTP 400: invalid_grant — bad code/);
   });
 
+  test('sends an empty Origin so the native HTTP client omits the header', async () => {
+    const captured: RequestInit[] = [];
+    const fetchFn = (async (_url: string, init: RequestInit) => {
+      captured.push(init);
+      return jsonResponse({ access_token: 'AT', expires_in: 3600 });
+    }) as unknown as FetchFn;
+    const tokenEndpoint = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
+    await exchangeCode(
+      { code: 'C', verifier: 'V', clientId: 'cid', redirectUri: 'R', tokenEndpoint },
+      fetchFn,
+    );
+    await refreshAccessToken({ refreshToken: 'RT', clientId: 'cid', tokenEndpoint }, fetchFn);
+    // Microsoft rejects a token redemption that carries any Origin (AADSTS90023);
+    // both the exchange and the hourly refresh must drop it.
+    expect(captured).toHaveLength(2);
+    for (const init of captured) {
+      expect((init.headers as Record<string, string>)['Origin']).toBe('');
+    }
+  });
+
   test('exchangeCode posts to the given tokenEndpoint', async () => {
     let seenUrl = '';
     const fetchFn = (async (url: string) => {
