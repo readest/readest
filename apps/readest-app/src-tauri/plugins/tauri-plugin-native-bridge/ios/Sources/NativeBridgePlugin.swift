@@ -2122,7 +2122,26 @@ private final class ShareBridgeMessageHandler: NSObject, WKScriptMessageHandler 
 @available(iOS 13.0, *)
 extension NativeBridgePlugin: ASWebAuthenticationPresentationContextProviding {
   func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-    return UIApplication.shared.windows.first ?? UIWindow()
+    // `UIApplication.shared.windows` is deprecated since iOS 15 and returns
+    // every window of every scene in an arbitrary order, so it can hand back a
+    // system-owned window: UIRemoteKeyboardWindow and UITextEffectsWindow are
+    // both alive whenever the keyboard is up, which is exactly the state the
+    // sign-in screen is in when the user taps an OAuth provider. Anchoring the
+    // auth sheet to one of those leaves UIKit's remote view controller hosting
+    // without a process handle and it aborts the app
+    // ("Invalid condition not satisfying: processHandle"). The old
+    // `?? UIWindow()` fallback was worse still - a window with no scene can
+    // never host a remote view controller. Keyboard and text-effects windows
+    // sit above `.normal`, so the window level filters them out.
+    let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+    let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+    let windows = (scene?.windows ?? []).filter { $0.windowLevel == .normal }
+    if let anchor = windows.first(where: { $0.isKeyWindow }) ?? windows.first {
+      return anchor
+    }
+    // Unreachable while the WebView is on screen; still keep the fallback
+    // attached to a scene so remote view hosting has one.
+    return scene.map { UIWindow(windowScene: $0) } ?? UIWindow()
   }
 }
 
