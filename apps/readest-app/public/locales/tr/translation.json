@@ -2042,5 +2042,7 @@
   "Danger Zone": "Tehlikeli Bölge",
   "Delete All Books": "Tüm Kitapları Sil",
   "All books deleted.": "Tüm kitaplar silindi.",
-  "Failed to delete books. Please try again later.": "Kitaplar silinemedi. Lütfen daha sonra tekrar deneyin."
+  "Failed to delete books. Please try again later.": "Kitaplar silinemedi. Lütfen daha sonra tekrar deneyin.",
+  "Download {{format}}": "{{format}} indir",
+  "More formats": "Diğer biçimler"
 }

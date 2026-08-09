@@ -441,6 +441,51 @@ describe('OPDS feed checker', () => {
       expect(getAcquisitionLink(pub)!.href).toBe('/dl/book.cbz');
     });
 
+    // readest issue #5583: a Calibre entry that also carries KFX must not have
+    // that picked over the EPUB sitting next to it.
+    it('prefers EPUB over a format Readest cannot import', () => {
+      const pub: OPDSPublication = {
+        metadata: { id: 'urn:test:kfx-epub', title: 'KFX vs EPUB' },
+        links: [
+          {
+            href: '/get/kfx/56/Calibre_Library',
+            rel: 'http://opds-spec.org/acquisition',
+            properties: {},
+          },
+          {
+            href: '/get/epub/56/Calibre_Library',
+            type: 'application/epub+zip',
+            rel: 'http://opds-spec.org/acquisition',
+            properties: {},
+          },
+        ],
+        images: [],
+      };
+      expect(getAcquisitionLink(pub)!.href).toBe('/get/epub/56/Calibre_Library');
+    });
+
+    // Downloading it would only fail at import, leaving a failed-download entry
+    // behind, so the entry is skipped outright.
+    it('skips an entry whose only formats are ones Readest cannot import', () => {
+      const pub: OPDSPublication = {
+        metadata: { id: 'urn:test:kfx-only', title: 'KFX only' },
+        links: [
+          {
+            href: '/get/kfx/56/Calibre_Library',
+            rel: 'http://opds-spec.org/acquisition',
+            properties: {},
+          },
+          {
+            href: '/get/lit/56/Calibre_Library',
+            rel: 'http://opds-spec.org/acquisition',
+            properties: {},
+          },
+        ],
+        images: [],
+      };
+      expect(getAcquisitionLink(pub)).toBeUndefined();
+    });
+
     it('treats PDF and CBZ as the same tier (uses feed order to break ties)', () => {
       const pub: OPDSPublication = {
         metadata: { id: 'urn:test:pdf-cbz', title: 'PDF vs CBZ' },

@@ -1996,5 +1996,7 @@
   "Danger Zone": "危险区域",
   "Delete All Books": "删除所有图书",
   "All books deleted.": "已删除所有图书。",
-  "Failed to delete books. Please try again later.": "删除图书失败。请稍后重试。"
+  "Failed to delete books. Please try again later.": "删除图书失败。请稍后重试。",
+  "Download {{format}}": "下载 {{format}}",
+  "More formats": "更多格式"
 }

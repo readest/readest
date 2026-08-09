@@ -1996,5 +1996,7 @@
   "Danger Zone": "危險區域",
   "Delete All Books": "刪除所有書籍",
   "All books deleted.": "已刪除所有書籍。",
-  "Failed to delete books. Please try again later.": "刪除書籍失敗。請稍後再試。"
+  "Failed to delete books. Please try again later.": "刪除書籍失敗。請稍後再試。",
+  "Download {{format}}": "下載 {{format}}",
+  "More formats": "更多格式"
 }

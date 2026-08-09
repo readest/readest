@@ -2042,5 +2042,7 @@
   "Danger Zone": "Veszélyzóna",
   "Delete All Books": "Összes könyv törlése",
   "All books deleted.": "Az összes könyv törölve.",
-  "Failed to delete books. Please try again later.": "Nem sikerült törölni a könyveket. Kérjük, próbálja újra később."
+  "Failed to delete books. Please try again later.": "Nem sikerült törölni a könyveket. Kérjük, próbálja újra később.",
+  "Download {{format}}": "{{format}} letöltése",
+  "More formats": "További formátumok"
 }

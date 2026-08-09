@@ -1996,5 +1996,7 @@
   "Danger Zone": "Vùng nguy hiểm",
   "Delete All Books": "Xóa tất cả sách",
   "All books deleted.": "Đã xóa tất cả sách.",
-  "Failed to delete books. Please try again later.": "Không xóa được sách. Vui lòng thử lại sau."
+  "Failed to delete books. Please try again later.": "Không xóa được sách. Vui lòng thử lại sau.",
+  "Download {{format}}": "Tải xuống {{format}}",
+  "More formats": "Định dạng khác"
 }

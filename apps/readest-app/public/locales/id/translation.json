@@ -1996,5 +1996,7 @@
   "Danger Zone": "Zona Berbahaya",
   "Delete All Books": "Hapus Semua Buku",
   "All books deleted.": "Semua buku telah dihapus.",
-  "Failed to delete books. Please try again later.": "Gagal menghapus buku. Silakan coba lagi nanti."
+  "Failed to delete books. Please try again later.": "Gagal menghapus buku. Silakan coba lagi nanti.",
+  "Download {{format}}": "Unduh {{format}}",
+  "More formats": "Format lainnya"
 }

@@ -1996,5 +1996,7 @@
   "Danger Zone": "危険な操作",
   "Delete All Books": "すべての本を削除",
   "All books deleted.": "すべての本を削除しました。",
-  "Failed to delete books. Please try again later.": "本の削除に失敗しました。しばらくしてからもう一度お試しください。"
+  "Failed to delete books. Please try again later.": "本の削除に失敗しました。しばらくしてからもう一度お試しください。",
+  "Download {{format}}": "{{format}} をダウンロード",
+  "More formats": "他の形式"
 }

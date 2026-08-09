@@ -2042,5 +2042,7 @@
   "Danger Zone": "අනතුරුදායක කලාපය",
   "Delete All Books": "සියලු පොත් මකන්න",
   "All books deleted.": "සියලු පොත් මකා දමන ලදී.",
-  "Failed to delete books. Please try again later.": "පොත් මැකීමට අසමත් විය. පසුව නැවත උත්සාහ කරන්න."
+  "Failed to delete books. Please try again later.": "පොත් මැකීමට අසමත් විය. පසුව නැවත උත්සාහ කරන්න.",
+  "Download {{format}}": "{{format}} බාගන්න",
+  "More formats": "තවත් ආකෘති"
 }

@@ -2042,5 +2042,7 @@
   "Danger Zone": "खतरनाक क्षेत्र",
   "Delete All Books": "सभी पुस्तकें हटाएँ",
   "All books deleted.": "सभी पुस्तकें हटा दी गईं।",
-  "Failed to delete books. Please try again later.": "पुस्तकें हटाने में विफल। कृपया बाद में पुनः प्रयास करें।"
+  "Failed to delete books. Please try again later.": "पुस्तकें हटाने में विफल। कृपया बाद में पुनः प्रयास करें।",
+  "Download {{format}}": "{{format}} डाउनलोड करें",
+  "More formats": "अन्य प्रारूप"
 }

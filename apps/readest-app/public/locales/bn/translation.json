@@ -2042,5 +2042,7 @@
   "Danger Zone": "বিপজ্জনক অঞ্চল",
   "Delete All Books": "সমস্ত বই মুছুন",
   "All books deleted.": "সমস্ত বই মুছে ফেলা হয়েছে।",
-  "Failed to delete books. Please try again later.": "বই মুছতে ব্যর্থ হয়েছে। পরে আবার চেষ্টা করুন।"
+  "Failed to delete books. Please try again later.": "বই মুছতে ব্যর্থ হয়েছে। পরে আবার চেষ্টা করুন।",
+  "Download {{format}}": "{{format}} ডাউনলোড করুন",
+  "More formats": "আরও ফরম্যাট"
 }

@@ -2042,5 +2042,7 @@
   "Danger Zone": "Farozon",
   "Delete All Books": "Radera alla böcker",
   "All books deleted.": "Alla böcker har raderats.",
-  "Failed to delete books. Please try again later.": "Det gick inte att radera böckerna. Försök igen senare."
+  "Failed to delete books. Please try again later.": "Det gick inte att radera böckerna. Försök igen senare.",
+  "Download {{format}}": "Ladda ner {{format}}",
+  "More formats": "Fler format"
 }

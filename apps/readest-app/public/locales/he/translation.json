@@ -2088,5 +2088,7 @@
   "Danger Zone": "אזור מסוכן",
   "Delete All Books": "מחק את כל הספרים",
   "All books deleted.": "כל הספרים נמחקו.",
-  "Failed to delete books. Please try again later.": "מחיקת הספרים נכשלה. נסה שוב מאוחר יותר."
+  "Failed to delete books. Please try again later.": "מחיקת הספרים נכשלה. נסה שוב מאוחר יותר.",
+  "Download {{format}}": "הורדת {{format}}",
+  "More formats": "תבניות נוספות"
 }

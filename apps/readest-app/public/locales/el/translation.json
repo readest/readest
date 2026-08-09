@@ -2042,5 +2042,7 @@
   "Danger Zone": "Ζώνη κινδύνου",
   "Delete All Books": "Διαγραφή όλων των βιβλίων",
   "All books deleted.": "Όλα τα βιβλία διαγράφηκαν.",
-  "Failed to delete books. Please try again later.": "Αποτυχία διαγραφής βιβλίων. Δοκιμάστε ξανά αργότερα."
+  "Failed to delete books. Please try again later.": "Αποτυχία διαγραφής βιβλίων. Δοκιμάστε ξανά αργότερα.",
+  "Download {{format}}": "Λήψη {{format}}",
+  "More formats": "Περισσότερες μορφές"
 }

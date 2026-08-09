@@ -10,17 +10,12 @@ import type {
   OPDSStreamLink,
 } from '@/types/opds';
 import { REL } from '@/types/opds';
-import { MIMETYPES } from '@/libs/document';
 import { isWebAppPlatform } from '@/services/environment';
 import { fetchWithAuth } from '@/app/opds/utils/opdsReq';
-import {
-  resolveURL,
-  parseMediaType,
-  looksLikeXMLContent,
-  parseOPDSXML,
-} from '@/app/opds/utils/opdsUtils';
+import { resolveURL, looksLikeXMLContent, parseOPDSXML } from '@/app/opds/utils/opdsUtils';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import { getOPDSCoverHref } from './cover';
+import { classifyAcquisitionLink, pickPreferredLink } from './formats';
 import { getOPDSBookMetadata } from './metadata';
 import type { OPDSSubscriptionState, PendingItem } from './types';
 import { MAX_CRAWL_DEPTH, MAX_FEEDS_PER_CRAWL, MAX_PAGES_PER_FEED } from './types';
@@ -51,84 +46,24 @@ function isSafeAcquisitionLink(link: AnyAcqLink): link is ValidAcqLink {
   return rels.some((r) => SAFE_ACQ_RELS.includes(r));
 }
 
-// Tier 0 (best) → 4 (worst). See getAcquisitionLink for the policy.
-type FormatTier = 0 | 1 | 2 | 3 | 4;
-
-// When a feed omits the link `type` (or returns the uninformative
-// application/octet-stream), fall back to inferring the format from the
-// href extension and the human-readable link title. Order matters here:
-// AZW3 must match before AZW, EPUB 3 before plain EPUB.
-const INFERENCE_RULES: ReadonlyArray<{ mime: string; href: RegExp; title: RegExp }> = [
-  { mime: 'application/epub+zip', href: /\.epub3(?:[?#]|$)/i, title: /\bepub\s*3\b|\bepub3\b/i },
-  { mime: 'application/epub+zip', href: /\.epub(?:[?#]|$)/i, title: /\bepub\b/i },
-  { mime: 'application/x-mobi8-ebook', href: /\.azw3(?:[?#]|$)/i, title: /\bazw\s*3\b|\bazw3\b/i },
-  { mime: 'application/vnd.amazon.ebook', href: /\.azw(?:[?#]|$)/i, title: /\bazw\b/i },
-  { mime: 'application/x-mobipocket-ebook', href: /\.mobi(?:[?#]|$)/i, title: /\bmobi\b/i },
-  { mime: 'application/pdf', href: /\.pdf(?:[?#]|$)/i, title: /\bpdf\b/i },
-  { mime: 'application/vnd.comicbook+zip', href: /\.cbz(?:[?#]|$)/i, title: /\bcbz\b/i },
-  { mime: 'application/x-fictionbook+xml', href: /\.fb2(?:[?#]|$)/i, title: /\bfb2\b/i },
-];
-
-function inferMediaType(link: ValidAcqLink): string {
-  const title = link.title ?? '';
-  for (const rule of INFERENCE_RULES) {
-    if (rule.href.test(link.href) || rule.title.test(title)) return rule.mime;
-  }
-  return '';
-}
-
-function getEffectiveMediaType(link: ValidAcqLink): string {
-  const declared = parseMediaType(link.type)?.mediaType ?? '';
-  // Treat octet-stream as "the server didn't actually tell us" — most
-  // OPDS feeds emit a real media type for known formats, and falling back
-  // to href/title inference recovers from servers that don't.
-  if (declared && declared !== 'application/octet-stream') return declared;
-  return inferMediaType(link);
-}
-
-function isAdvancedEpub(link: ValidAcqLink, mediaType: string): boolean {
-  if (mediaType !== 'application/epub+zip') return false;
-  const version = parseMediaType(link.type)?.parameters?.['version'];
-  if (version && /^3(\.|$)/.test(version)) return true;
-  const title = link.title?.toLowerCase() ?? '';
-  if (title.includes('advanced')) return true;
-  if (title.includes('epub3') || title.includes('epub 3')) return true;
-  if (/\.epub3(?:[?#.]|$)/i.test(link.href)) return true;
-  return false;
-}
-
-function getFormatTier(link: ValidAcqLink): FormatTier {
-  const mediaType = getEffectiveMediaType(link);
-  if (MIMETYPES.EPUB.includes(mediaType)) {
-    return isAdvancedEpub(link, mediaType) ? 0 : 1;
-  }
-  if (
-    MIMETYPES.MOBI.includes(mediaType) ||
-    MIMETYPES.AZW.includes(mediaType) ||
-    MIMETYPES.AZW3.includes(mediaType)
-  ) {
-    return 2;
-  }
-  if (MIMETYPES.PDF.includes(mediaType) || MIMETYPES.CBZ.includes(mediaType)) {
-    return 3;
-  }
-  return 4;
-}
-
 /**
  * Pick the best acquisition link on a publication for unattended download.
  *
  * 1. Filter to safe rels (acquisition / acquisition/open-access), drop
  *    indirect links — leaves entries we can fetch directly.
- * 2. Prefer open-access over plain acquisition.
- * 3. Within those, rank by format tier:
+ * 2. Drop formats Readest cannot import — downloading them only to fail at
+ *    import wastes the transfer and leaves a failed entry behind (#5583).
+ * 3. Prefer open-access over plain acquisition.
+ * 4. Within those, rank by format tier:
  *    Advanced EPUB / EPUB3 > EPUB > MOBI/AZW/AZW3 > PDF/CBZ > other.
  *    Ties resolve by feed order.
  *
- * Returns undefined when no safe link exists — the entry is skipped.
+ * Returns undefined when no usable link exists — the entry is skipped.
  */
 export function getAcquisitionLink(pub: OPDSPublication): ValidAcqLink | undefined {
-  const acqLinks = pub.links.filter(isSafeAcquisitionLink);
+  const acqLinks = pub.links
+    .filter(isSafeAcquisitionLink)
+    .filter((link) => classifyAcquisitionLink(link) !== 'unsupported');
   if (acqLinks.length === 0) return undefined;
 
   const openAccess = acqLinks.filter((link) => {
@@ -137,16 +72,7 @@ export function getAcquisitionLink(pub: OPDSPublication): ValidAcqLink | undefin
   });
   const candidates = openAccess.length > 0 ? openAccess : acqLinks;
 
-  let best = candidates[0]!;
-  let bestTier = getFormatTier(best);
-  for (let i = 1; i < candidates.length && bestTier > 0; i++) {
-    const tier = getFormatTier(candidates[i]!);
-    if (tier < bestTier) {
-      best = candidates[i]!;
-      bestTier = tier;
-    }
-  }
-  return best;
+  return pickPreferredLink(candidates);
 }
 
 /**

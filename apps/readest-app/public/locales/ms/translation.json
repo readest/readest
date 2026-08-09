@@ -1996,5 +1996,7 @@
   "Danger Zone": "Zon Bahaya",
   "Delete All Books": "Padam Semua Buku",
   "All books deleted.": "Semua buku telah dipadam.",
-  "Failed to delete books. Please try again later.": "Gagal memadam buku. Sila cuba lagi kemudian."
+  "Failed to delete books. Please try again later.": "Gagal memadam buku. Sila cuba lagi kemudian.",
+  "Download {{format}}": "Muat turun {{format}}",
+  "More formats": "Format lain"
 }

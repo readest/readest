@@ -2042,5 +2042,7 @@
   "Danger Zone": "அபாய மண்டலம்",
   "Delete All Books": "எல்லா புத்தகங்களையும் நீக்கு",
   "All books deleted.": "எல்லா புத்தகங்களும் நீக்கப்பட்டன.",
-  "Failed to delete books. Please try again later.": "புத்தகங்களை நீக்க முடியவில்லை. பிறகு மீண்டும் முயற்சிக்கவும்."
+  "Failed to delete books. Please try again later.": "புத்தகங்களை நீக்க முடியவில்லை. பிறகு மீண்டும் முயற்சிக்கவும்.",
+  "Download {{format}}": "{{format}} பதிவிறக்கு",
+  "More formats": "மேலும் வடிவங்கள்"
 }

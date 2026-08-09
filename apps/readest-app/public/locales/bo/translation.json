@@ -1996,5 +1996,7 @@
   "Danger Zone": "ཉེན་ཁའི་ས་ཁུལ།",
   "Delete All Books": "དེབ་ཡོངས་རྫོགས་བསུབ།",
   "All books deleted.": "དེབ་ཡོངས་རྫོགས་བསུབས་ཟིན།",
-  "Failed to delete books. Please try again later.": "དེབ་བསུབ་མ་ཐུབ། རྗེས་སུ་ཡང་བསྐྱར་ཚོད་ལྟ་གནང་།"
+  "Failed to delete books. Please try again later.": "དེབ་བསུབ་མ་ཐུབ། རྗེས་སུ་ཡང་བསྐྱར་ཚོད་ལྟ་གནང་།",
+  "Download {{format}}": "{{format}} ཕབ་ལེན།",
+  "More formats": "རྣམ་པ་གཞན།"
 }

@@ -2088,5 +2088,7 @@
   "Danger Zone": "Zona de peligro",
   "Delete All Books": "Eliminar todos los libros",
   "All books deleted.": "Todos los libros eliminados.",
-  "Failed to delete books. Please try again later.": "No se pudieron eliminar los libros. Inténtalo de nuevo más tarde."
+  "Failed to delete books. Please try again later.": "No se pudieron eliminar los libros. Inténtalo de nuevo más tarde.",
+  "Download {{format}}": "Descargar {{format}}",
+  "More formats": "Más formatos"
 }

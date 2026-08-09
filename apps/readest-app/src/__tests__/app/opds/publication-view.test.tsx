@@ -13,7 +13,10 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (s: string) => s,
+  // Mirrors i18next interpolation so `Download {{format}}` renders like it does
+  // in the app instead of leaking the placeholder into assertions.
+  useTranslation: () => (s: string, opts?: Record<string, string>) =>
+    opts ? s.replace(/\{\{(\w+)\}\}/g, (_m, key) => String(opts[key] ?? '')) : s,
 }));
 
 vi.mock('@/components/CachedImage', () => ({
@@ -320,5 +323,113 @@ describe('PublicationView', () => {
     expect(screen.getByTestId('cached-image').getAttribute('data-cache-version')).toBe(
       '2025-06-01T00:00:00Z',
     );
+  });
+
+  // readest issue #5583
+  describe('download format selection', () => {
+    const acq = (href: string, type?: string, title?: string) => ({
+      rel: REL.ACQ,
+      href,
+      ...(type ? { type } : {}),
+      ...(title ? { title } : {}),
+    });
+
+    const renderWith = (links: OPDSPublication['links'], onDownload = vi.fn(async () => null)) => {
+      render(
+        <DropdownProvider>
+          <PublicationView
+            publication={{ metadata: { title: 'Formats' }, links, images: [] }}
+            baseURL='https://calibre.example.com/opds'
+            resolveURL={(href, base) => new URL(href, base).toString()}
+            onDownload={onDownload}
+            onNavigate={vi.fn()}
+            onGenerateCachedImageUrl={vi.fn(async (url: string) => url)}
+          />
+        </DropdownProvider>,
+      );
+      return onDownload;
+    };
+
+    it('hides formats Readest cannot import, collapsing to a one-click download', () => {
+      const onDownload = renderWith([
+        acq('/get/kfx/56/Calibre_Library'),
+        acq('/get/epub/56/Calibre_Library', 'application/epub+zip'),
+      ]);
+
+      const button = screen.getByRole('button', { name: 'Download EPUB' });
+      fireEvent.click(button);
+
+      expect(onDownload).toHaveBeenCalledWith(
+        '/get/epub/56/Calibre_Library',
+        'application/epub+zip',
+        expect.any(Function),
+      );
+      expect(screen.queryByText('KFX')).toBeNull();
+    });
+
+    const mixedFormats = [
+      acq('/get/pdf/1/lib', 'application/pdf'),
+      acq('/get/epub/1/lib', 'application/epub+zip'),
+      acq('/get/mobi/1/lib', 'application/x-mobipocket-ebook'),
+    ];
+
+    it('downloads the EPUB on the primary click even when it is not first in the feed', () => {
+      const onDownload = renderWith(mixedFormats);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Download EPUB' }));
+
+      expect(onDownload).toHaveBeenCalledWith(
+        '/get/epub/1/lib',
+        'application/epub+zip',
+        expect.any(Function),
+      );
+    });
+
+    it('keeps every format reachable behind the caret, best first', () => {
+      renderWith(mixedFormats);
+
+      fireEvent.click(screen.getByRole('button', { name: 'More formats' }));
+
+      const entries = screen.getAllByText(/^(EPUB|MOBI|PDF)$/).map((el) => el.textContent);
+      expect(entries).toEqual(['EPUB', 'MOBI', 'PDF']);
+    });
+
+    // The issue explicitly asks not to fall back to the next available format,
+    // so with no EPUB the button has no default action.
+    it('offers no default action when the preferred format is absent', () => {
+      const onDownload = renderWith([
+        acq('/get/pdf/1/lib', 'application/pdf'),
+        acq('/get/mobi/1/lib', 'application/x-mobipocket-ebook'),
+      ]);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Download' }));
+
+      expect(onDownload).not.toHaveBeenCalled();
+      expect(screen.getByText('PDF')).toBeTruthy();
+      expect(screen.getByText('MOBI')).toBeTruthy();
+    });
+
+    // Filtering must never strip a book's only path to a file.
+    it('still lists the links when every format is incompatible', () => {
+      renderWith([acq('/get/kfx/1/lib'), acq('/get/lit/1/lib')]);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Download' }));
+      expect(screen.getByText('KFX')).toBeTruthy();
+      expect(screen.getByText('LIT')).toBeTruthy();
+    });
+
+    it('names a single non-preferred format instead of a bare Download', () => {
+      renderWith([acq('/get/pdf/1/lib', 'application/pdf')]);
+      expect(screen.getByRole('button', { name: 'Download PDF' })).toBeTruthy();
+    });
+
+    // Was `idx.toString()`, so an unrecognised format rendered as "0"/"1".
+    it('never labels a menu entry with its array index', () => {
+      renderWith([acq('/download/1'), acq('/download/2')]);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Download' }));
+      expect(screen.queryByText('0')).toBeNull();
+      expect(screen.queryByText('1')).toBeNull();
+    });
   });
 });

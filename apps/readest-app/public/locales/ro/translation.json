@@ -2088,5 +2088,7 @@
   "Danger Zone": "Zonă periculoasă",
   "Delete All Books": "Ștergeți toate cărțile",
   "All books deleted.": "Toate cărțile au fost șterse.",
-  "Failed to delete books. Please try again later.": "Ștergerea cărților a eșuat. Încercați din nou mai târziu."
+  "Failed to delete books. Please try again later.": "Ștergerea cărților a eșuat. Încercați din nou mai târziu.",
+  "Download {{format}}": "Descarcă {{format}}",
+  "More formats": "Mai multe formate"
 }

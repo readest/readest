@@ -2042,5 +2042,7 @@
   "Danger Zone": "Gevarenzone",
   "Delete All Books": "Alle boeken verwijderen",
   "All books deleted.": "Alle boeken verwijderd.",
-  "Failed to delete books. Please try again later.": "Kan boeken niet verwijderen. Probeer het later opnieuw."
+  "Failed to delete books. Please try again later.": "Kan boeken niet verwijderen. Probeer het later opnieuw.",
+  "Download {{format}}": "{{format}} downloaden",
+  "More formats": "Meer formaten"
 }

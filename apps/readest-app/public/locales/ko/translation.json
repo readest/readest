@@ -1996,5 +1996,7 @@
   "Danger Zone": "위험 구역",
   "Delete All Books": "모든 책 삭제",
   "All books deleted.": "모든 책이 삭제되었습니다.",
-  "Failed to delete books. Please try again later.": "책을 삭제하지 못했습니다. 나중에 다시 시도해 주세요."
+  "Failed to delete books. Please try again later.": "책을 삭제하지 못했습니다. 나중에 다시 시도해 주세요.",
+  "Download {{format}}": "{{format}} 다운로드",
+  "More formats": "다른 형식"
 }

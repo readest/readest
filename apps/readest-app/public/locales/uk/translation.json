@@ -2134,5 +2134,7 @@
   "Danger Zone": "Небезпечна зона",
   "Delete All Books": "Видалити всі книги",
   "All books deleted.": "Усі книги видалено.",
-  "Failed to delete books. Please try again later.": "Не вдалося видалити книги. Спробуйте пізніше."
+  "Failed to delete books. Please try again later.": "Не вдалося видалити книги. Спробуйте пізніше.",
+  "Download {{format}}": "Завантажити {{format}}",
+  "More formats": "Інші формати"
 }

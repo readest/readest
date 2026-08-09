@@ -2042,5 +2042,7 @@
   "Danger Zone": "منطقه خطر",
   "Delete All Books": "حذف همه کتاب‌ها",
   "All books deleted.": "همه کتاب‌ها حذف شدند.",
-  "Failed to delete books. Please try again later.": "حذف کتاب‌ها انجام نشد. لطفاً بعداً دوباره تلاش کنید."
+  "Failed to delete books. Please try again later.": "حذف کتاب‌ها انجام نشد. لطفاً بعداً دوباره تلاش کنید.",
+  "Download {{format}}": "دانلود {{format}}",
+  "More formats": "قالب‌های دیگر"
 }

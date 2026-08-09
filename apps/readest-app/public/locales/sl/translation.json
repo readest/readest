@@ -2134,5 +2134,7 @@
   "Danger Zone": "Nevarno območje",
   "Delete All Books": "Izbriši vse knjige",
   "All books deleted.": "Vse knjige so izbrisane.",
-  "Failed to delete books. Please try again later.": "Knjig ni bilo mogoče izbrisati. Poskusite znova pozneje."
+  "Failed to delete books. Please try again later.": "Knjig ni bilo mogoče izbrisati. Poskusite znova pozneje.",
+  "Download {{format}}": "Prenesi {{format}}",
+  "More formats": "Več formatov"
 }

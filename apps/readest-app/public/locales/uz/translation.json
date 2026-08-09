@@ -2042,5 +2042,7 @@
   "Danger Zone": "Xavfli hudud",
   "Delete All Books": "Barcha kitoblarni oʻchirish",
   "All books deleted.": "Barcha kitoblar oʻchirildi.",
-  "Failed to delete books. Please try again later.": "Kitoblarni oʻchirib boʻlmadi. Keyinroq qayta urinib koʻring."
+  "Failed to delete books. Please try again later.": "Kitoblarni oʻchirib boʻlmadi. Keyinroq qayta urinib koʻring.",
+  "Download {{format}}": "{{format}} yuklab olish",
+  "More formats": "Boshqa formatlar"
 }

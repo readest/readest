@@ -1996,5 +1996,7 @@
   "Danger Zone": "โซนอันตราย",
   "Delete All Books": "ลบหนังสือทั้งหมด",
   "All books deleted.": "ลบหนังสือทั้งหมดแล้ว",
-  "Failed to delete books. Please try again later.": "ลบหนังสือไม่สำเร็จ โปรดลองอีกครั้งในภายหลัง"
+  "Failed to delete books. Please try again later.": "ลบหนังสือไม่สำเร็จ โปรดลองอีกครั้งในภายหลัง",
+  "Download {{format}}": "ดาวน์โหลด {{format}}",
+  "More formats": "รูปแบบอื่น"
 }

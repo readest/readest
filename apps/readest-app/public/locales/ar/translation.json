@@ -2226,5 +2226,7 @@
   "Danger Zone": "منطقة الخطر",
   "Delete All Books": "حذف جميع الكتب",
   "All books deleted.": "تم حذف جميع الكتب.",
-  "Failed to delete books. Please try again later.": "تعذّر حذف الكتب. يرجى المحاولة مرة أخرى لاحقًا."
+  "Failed to delete books. Please try again later.": "تعذّر حذف الكتب. يرجى المحاولة مرة أخرى لاحقًا.",
+  "Download {{format}}": "تنزيل {{format}}",
+  "More formats": "صيغ أخرى"
 }
