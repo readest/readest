@@ -412,6 +412,10 @@ export async function importBook(
 
   let loadedBook: BookDoc | undefined;
   let fileobj: File | undefined;
+  // TXT conversion replaces `fileobj` with a plain in-memory EPUB File. Keep
+  // the opened source separately so `finally` can still close RemoteFile /
+  // NativeFile handles (folder import opens one ClosableFile per book).
+  let openedSource: ClosableFile | undefined;
   try {
     let format: BookFormat;
     let filename: string;
@@ -436,6 +440,10 @@ export async function importBook(
         } else {
           fileobj = file;
           filename = file.name;
+        }
+        const maybeClosable = fileobj as ClosableFile;
+        if (typeof maybeClosable.close === 'function') {
+          openedSource = maybeClosable;
         }
         if (/\.txt$/i.test(filename)) {
           const txt2epub = new TxtToEpubConverter();
@@ -747,10 +755,14 @@ export async function importBook(
     } catch (error) {
       console.warn('Error destroying book document:', error);
     }
-    const f = fileobj as ClosableFile | undefined;
-    if (f?.close) {
+    // TXT conversion replaces `fileobj` with an in-memory EPUB File that has
+    // no `close`. Always prefer `openedSource` so the RemoteFile/NativeFile
+    // from `openFile` is released; fall back to `fileobj` for non-TXT paths
+    // where they are the same object.
+    const toClose = openedSource ?? (fileobj as ClosableFile | undefined);
+    if (toClose?.close) {
       try {
-        await f.close();
+        await toClose.close();
       } catch {}
     }
   }
