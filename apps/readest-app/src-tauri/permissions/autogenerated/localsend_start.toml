@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-localsend-start"
+description = "Enables the localsend_start command without any pre-configured scope."
+commands.allow = ["localsend_start"]
+
+[[permission]]
+identifier = "deny-localsend-start"
+description = "Denies the localsend_start command without any pre-configured scope."
+commands.deny = ["localsend_start"]

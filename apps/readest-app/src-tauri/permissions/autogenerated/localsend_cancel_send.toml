@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-localsend-cancel-send"
+description = "Enables the localsend_cancel_send command without any pre-configured scope."
+commands.allow = ["localsend_cancel_send"]
+
+[[permission]]
+identifier = "deny-localsend-cancel-send"
+description = "Denies the localsend_cancel_send command without any pre-configured scope."
+commands.deny = ["localsend_cancel_send"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-localsend-announce"
+description = "Enables the localsend_announce command without any pre-configured scope."
+commands.allow = ["localsend_announce"]
+
+[[permission]]
+identifier = "deny-localsend-announce"
+description = "Denies the localsend_announce command without any pre-configured scope."
+commands.deny = ["localsend_announce"]

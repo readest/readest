@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-localsend-stop"
+description = "Enables the localsend_stop command without any pre-configured scope."
+commands.allow = ["localsend_stop"]
+
+[[permission]]
+identifier = "deny-localsend-stop"
+description = "Denies the localsend_stop command without any pre-configured scope."
+commands.deny = ["localsend_stop"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-localsend-get-status"
+description = "Enables the localsend_get_status command without any pre-configured scope."
+commands.allow = ["localsend_get_status"]
+
+[[permission]]
+identifier = "deny-localsend-get-status"
+description = "Denies the localsend_get_status command without any pre-configured scope."
+commands.deny = ["localsend_get_status"]
