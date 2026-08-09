@@ -9,6 +9,7 @@ use localsend::discovery::{
 };
 use localsend::http::server::common::save::FileUploadTarget;
 use localsend::http::server::v2::{PrepareUploadDecisionV2, ServerEventV2, SessionEndReasonV2};
+use localsend::http::server::web::{WebConfig, WebI18n};
 use localsend::http::server::{start_with_port, ServerConfigV2, ServerHandle};
 use localsend::model::discovery::ProtocolType;
 use localsend::model::transfer::FileDto;
@@ -113,7 +114,17 @@ pub async fn start<R: Runtime>(app: AppHandle<R>, alias: String) -> Result<Runni
                 verify_checksums: true,
                 event_tx: server_tx.clone(),
             }),
-            None,
+            // A WebConfig with no pages makes TLS client certificates
+            // optional (see upstream `mandatory_client_auth`): the stable
+            // LocalSend app sends without a client certificate, and with
+            // mandatory auth its connections are reset during the handshake.
+            // Cert-less senders fall back to the body fingerprint, exactly
+            // like classic protocol v2.1.
+            Some(WebConfig {
+                send: None,
+                upload: false,
+                i18n: WebI18n::default(),
+            }),
             stop_rx,
         )
         .await

@@ -42,8 +42,13 @@ const DevicePickerDialog: React.FC<DevicePickerDialogProps> = ({ files, onClose 
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      // iOS has no multicast entitlement; fall back to an HTTP subnet scan.
-      await announceLocalSend(appService?.isIOSApp === true);
+      // The HTTP subnet scan covers peers multicast cannot reach: iOS has no
+      // multicast entitlement, and another LocalSend instance on this host
+      // can hold the multicast port exclusively. Scan whenever multicast is
+      // not proven to work (empty list) rather than only on iOS.
+      const scan =
+        appService?.isIOSApp === true || useLocalSendStore.getState().devices.length === 0;
+      await announceLocalSend(scan);
       const listed = await listLocalSendDevices();
       useLocalSendStore.getState().setDevices(listed);
     } catch (err) {
