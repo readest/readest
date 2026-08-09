@@ -2,6 +2,7 @@
   description = "Readest development environment";
 
   inputs = {
+    self.submodules = true;
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     android = {
@@ -122,6 +123,7 @@
       in
       {
         packages = {
+          default = pkgs.callPackage ./nix/package.nix { };
           android-sdk = android.sdk.${pkgs.stdenv.hostPlatform.system} (sdkPkgs: with sdkPkgs; [
             # Useful packages for building and testing.
             build-tools-36-0-0
