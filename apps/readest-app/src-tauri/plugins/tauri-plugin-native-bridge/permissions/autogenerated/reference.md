@@ -9,6 +9,7 @@ Default permissions for the plugin
 - `allow-copy-uri-to-path`
 - `allow-save-image-to-gallery`
 - `allow-use-background-audio`
+- `allow-set-multicast-lock`
 - `allow-install-package`
 - `allow-set-system-ui-visibility`
 - `allow-get-status-bar-height`
@@ -1206,6 +1207,32 @@ Enables the select_directory command without any pre-configured scope.
 <td>
 
 Denies the select_directory command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:allow-set-multicast-lock`
+
+</td>
+<td>
+
+Enables the set_multicast_lock command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-set-multicast-lock`
+
+</td>
+<td>
+
+Denies the set_multicast_lock command without any pre-configured scope.
 
 </td>
 </tr>
