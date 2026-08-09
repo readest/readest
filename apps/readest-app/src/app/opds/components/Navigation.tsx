@@ -143,7 +143,7 @@ export function Navigation({
       </div>
 
       <div className='flex-grow px-3 sm:px-5'>
-        <div className='relative flex w-full items-center'>
+        <div className='exclude-title-bar-mousedown relative flex w-full items-center'>
           <span className='text-base-content/50 absolute left-3'>
             <FaSearch className='h-4 w-4' />
           </span>
@@ -258,6 +258,7 @@ export function Navigation({
 
         <WindowButtons
           className='window-buttons flex h-full items-center'
+          headerRef={headerRef}
           onClose={() => {
             handleGoLibrary();
           }}

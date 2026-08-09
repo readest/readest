@@ -8,7 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 interface WindowButtonsProps {
   className?: string;
-  headerRef?: React.RefObject<HTMLDivElement | null>;
+  headerRef?: React.RefObject<HTMLElement | null>;
   showMinimize?: boolean;
   showMaximize?: boolean;
   showClose?: boolean;
