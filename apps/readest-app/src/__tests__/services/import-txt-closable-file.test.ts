@@ -160,6 +160,26 @@ describe('importBook TXT ClosableFile lifecycle', () => {
     expect(mockClose).toHaveBeenCalledTimes(1);
   });
 
+  it('closes the source ClosableFile before DocumentLoader.open runs', async () => {
+    const source = makeSourceTxt();
+    service.getFs().openFile.mockResolvedValue(source);
+    mockOpen.mockImplementation(async () => {
+      expect(mockClose).toHaveBeenCalledTimes(1);
+      return {
+        book: {
+          metadata: TEST_METADATA,
+          getCover: vi.fn().mockResolvedValue(null),
+          destroy: vi.fn(),
+        },
+        format: 'EPUB',
+      };
+    });
+
+    await service.importBook('/library/novel.txt', []);
+    expect(mockOpen).toHaveBeenCalledTimes(1);
+    expect(mockClose).toHaveBeenCalledTimes(1);
+  });
+
   it('closes the source ClosableFile when TXT conversion fails', async () => {
     const source = makeSourceTxt();
     service.getFs().openFile.mockResolvedValue(source);
