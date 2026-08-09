@@ -84,9 +84,19 @@ pub fn handle<R: Runtime>(
     request: Request<Vec<u8>>,
     responder: UriSchemeResponder,
 ) {
-    // The handler runs off the UI thread (Android `shouldInterceptRequest` is
-    // called on a WebView worker thread), so blocking file I/O here is fine.
-    responder.respond(build_response(ctx.app_handle(), &request));
+    // Only Android calls this off the UI thread (`shouldInterceptRequest` runs
+    // on a WebView worker). On iOS/macOS WKWebView invokes the scheme handler
+    // on the MAIN thread, so responding inline blocked the UI for the whole
+    // scope check + file read: `is_allowed` canonicalizes (realpath/getattrlist
+    // on every component) and the range read follows, which on a large book or
+    // a not-yet-materialized iCloud file is easily past the 2s hang threshold.
+    // The scheme is registered asynchronously precisely so the responder can
+    // outlive this call, so hand the blocking work to the runtime's blocking
+    // pool and return immediately.
+    let app = ctx.app_handle().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        responder.respond(build_response(&app, &request));
+    });
 }
 
 fn cors_origin(request: &Request<Vec<u8>>) -> String {
