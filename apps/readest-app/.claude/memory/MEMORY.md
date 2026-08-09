@@ -6,6 +6,7 @@
 - [Sync Fixes](sync-fixes.md) · [Reader Feature Fixes](reader-feature-fixes.md)
 - [Paginator & Scroll Fixes](paginator-scroll-fixes.md) · [Build & CI Recipes](build-ci-recipes.md)
 ## Safety & Security
+- [0.12.1 App Review crash](appstore-review-crash-0121-aswebauth-anchor.md) UNFIXED; `presentationAnchor` = `windows.first ?? UIWindow()`; find the reviewer in Sentry by `xnu_development` kernel
 - [Google RTDN verify downgrade](google-rtdn-worker-verify-downgrade-incident.md) googleapis dead on workerd
 - [Play storage add-ons never consumed](google-iap-consume-storage-purchases.md) MERGED #5545; device verify pending
 - [In-place delete wiped originals](in-place-delete-wiped-originals.md) never `fs.removeFile` `external`
