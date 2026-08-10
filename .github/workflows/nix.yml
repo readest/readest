@@ -1,14 +1,27 @@
-name: Test Nix
+name: Build with Nix
+
 on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 19 * * *'
   pull_request:
-  push:
+    types: [labeled, synchronize]
+
+concurrency:
+  group: nix-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   tests:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'nix')
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v5
     - uses: cachix/install-nix-action@v31
       with:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
-    - run: nix build
-    - run: nix flake check
+    - name: build with nix
+      run: nix build

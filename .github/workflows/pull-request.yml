@@ -7,6 +7,18 @@ on:
 permissions:
   contents: read
 jobs:
+  nix_flake_check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: check flake
+        run: nix flake check
   # The Rust format/clippy/test steps only run when src-tauri changed, so the
   # ~45s toolchain + system-dep install (and the compile itself) is skipped on
   # PRs that don't touch the Rust backend. The job still runs and reports
