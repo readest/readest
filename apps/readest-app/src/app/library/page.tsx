@@ -16,6 +16,8 @@ import {
   toWatchedFolderImports,
 } from '@/services/bookService';
 import { debounce } from '@/utils/debounce';
+import { createSerialRunner, runWithConcurrency } from '@/utils/concurrency';
+import { createThrottledCheckpoint } from '@/utils/checkpoint';
 import { DEFAULT_NEARBY_WORDS } from '@/utils/searchConfig';
 import { clearLibrarySearchHistory, loadLibrarySearchHistory } from './utils/searchHistory';
 import type { LibrarySearchTarget } from '@/types/book';
@@ -128,6 +130,18 @@ import TransferQueuePanel from './components/TransferQueuePanel';
 
 /** Skip tiny non-book artifacts during folder auto-scan (matches the manual import dialog default). */
 const AUTO_IMPORT_MIN_SIZE_BYTES = 20 * 1024;
+
+const IMPORT_CONCURRENCY = 4;
+// How often the library index is persisted during a long import (#5601). A
+// crash/kill mid-run loses at most this much work instead of the entire run;
+// keep it long enough that the full-library serialization stays a rounding
+// error next to the per-file parse/copy work.
+const IMPORT_CHECKPOINT_INTERVAL_MS = 15 * 1000;
+// One import run at a time, app-wide: the manual Import-from-Folder flow and
+// the watched-folder auto-scan must not interleave — each builds a lookup
+// index over the same live library array, so overlapping runs re-import the
+// same files as duplicate rows (#5601).
+const enqueueImportRun = createSerialRunner();
 const LIBRARY_SEARCH_MODES: LibrarySearchConfig['mode'][] = [
   'contains',
   'whole-words',
@@ -849,7 +863,17 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoBooks, libraryLoaded]);
 
-  const importBooks = async (
+  const importBooks = (
+    files: SelectedFile[],
+    groupId?: string,
+    options: { silent?: boolean } = {},
+  ): Promise<{ failedPaths: string[] }> =>
+    // Whole runs are serialized (see enqueueImportRun); the lookup index is
+    // built inside the run so a queued run sees everything the previous one
+    // imported.
+    enqueueImportRun(() => importBooksRun(files, groupId, options));
+
+  const importBooksRun = async (
     files: SelectedFile[],
     groupId?: string,
     options: { silent?: boolean } = {},
@@ -934,22 +958,33 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       }
     };
 
-    const concurrency = 4;
-    for (let i = 0; i < files.length; i += concurrency) {
-      const batch = files.slice(i, i + concurrency);
-      const importedBooks = (await Promise.all(batch.map(processFile))).filter((book) => !!book);
-      // Update store state per batch (so the UI can render imported books
-      // incrementally) but defer disk persistence until the entire batch is
-      // done — saving library.json once per batch of 4 books was the dominant
-      // cost for large imports.
-      await updateBooks(envConfig, importedBooks, { skipSave: true });
-    }
+    // Periodically persist the library index while the run is in flight so a
+    // crash/kill mid-import (#5601: WebKit resource exhaustion during bulk
+    // TXT folder import) loses at most one interval of work instead of the
+    // whole run — the book dirs are written per file, and index rows that
+    // never reach disk are what re-imports and duplicate rows are made of.
+    // Saving per book would bring back the "library.json save dominates large
+    // imports" cost, hence the throttle.
+    const checkpoint = createThrottledCheckpoint(async () => {
+      const currentLibrary = useLibraryStore.getState().library;
+      const currentAppService = await envConfig.getAppService();
+      await currentAppService.saveLibraryBooks(currentLibrary);
+    }, IMPORT_CHECKPOINT_INTERVAL_MS);
 
-    // Persist the full library once after every file in the batch is done.
+    // A true worker pool (not the old barrier batches of 4): a slow file no
+    // longer stalls three finished siblings, and each completed book streams
+    // into the store immediately so the shelf renders incrementally.
+    await runWithConcurrency(files, IMPORT_CONCURRENCY, async (selectedFile) => {
+      const book = await processFile(selectedFile);
+      if (book) {
+        await updateBooks(envConfig, [book], { skipSave: true });
+        checkpoint.touch();
+      }
+    });
+
+    // Persist whatever the last checkpoint hasn't covered.
     if (successfulImports.length > 0) {
-      const finalLibrary = useLibraryStore.getState().library;
-      const finalAppService = await envConfig.getAppService();
-      await finalAppService.saveLibraryBooks(finalLibrary);
+      await checkpoint.flush();
     }
 
     pushLibrary();

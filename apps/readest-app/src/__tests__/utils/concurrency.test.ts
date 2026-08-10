@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { runWithConcurrency } from '@/utils/concurrency';
+import { createSerialRunner, runWithConcurrency } from '@/utils/concurrency';
 
 /**
  * Tests for the shared bounded-concurrency runner used by nav build,
@@ -98,5 +98,54 @@ describe('runWithConcurrency', () => {
       active -= 1;
     });
     expect(peak).toBe(1);
+  });
+});
+
+/**
+ * Serializer for whole import runs (#5601): the manual Import-from-Folder
+ * flow and the watched-folder auto-scan can otherwise overlap, each building
+ * its own lookup index over the same library and double-importing the same
+ * files. Runs must execute strictly one after another, and one run's failure
+ * must not wedge the queue.
+ */
+describe('createSerialRunner', () => {
+  test('runs tasks strictly in submission order, one at a time', async () => {
+    const enqueue = createSerialRunner();
+    const events: string[] = [];
+    let releaseFirst!: () => void;
+    const firstGate = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+
+    const first = enqueue(async () => {
+      events.push('first:start');
+      await firstGate;
+      events.push('first:end');
+      return 1;
+    });
+    const second = enqueue(async () => {
+      events.push('second:start');
+      return 2;
+    });
+
+    await wait(2);
+    expect(events).toEqual(['first:start']);
+
+    releaseFirst();
+    await expect(first).resolves.toBe(1);
+    await expect(second).resolves.toBe(2);
+    expect(events).toEqual(['first:start', 'first:end', 'second:start']);
+  });
+
+  test('a rejected run propagates to its caller without blocking later runs', async () => {
+    const enqueue = createSerialRunner();
+
+    const failing = enqueue(async () => {
+      throw new Error('import exploded');
+    });
+    const following = enqueue(async () => 'ok');
+
+    await expect(failing).rejects.toThrow('import exploded');
+    await expect(following).resolves.toBe('ok');
   });
 });

@@ -37,6 +37,25 @@ export interface ConcurrencyTaskFailure<T> {
 
 export type ConcurrencyTaskOutcome<T, R> = ConcurrencyTaskSuccess<T, R> | ConcurrencyTaskFailure<T>;
 
+/**
+ * Serializer for whole async runs. Each enqueued run starts only after every
+ * previously enqueued run has settled; a run's rejection propagates to its
+ * own caller but never blocks the queue.
+ *
+ * Used to single-flight library imports (#5601): the manual Import-from-Folder
+ * flow and the watched-folder auto-scan would otherwise interleave, each
+ * building its own lookup index over the same library array and pushing
+ * duplicate rows for the same files.
+ */
+export function createSerialRunner(): <T>(run: () => Promise<T>) => Promise<T> {
+  let tail: Promise<unknown> = Promise.resolve();
+  return <T>(run: () => Promise<T>): Promise<T> => {
+    const next = tail.then(run, run);
+    tail = next.catch(() => undefined);
+    return next;
+  };
+}
+
 export async function runWithConcurrency<T, R>(
   items: T[],
   concurrency: number,

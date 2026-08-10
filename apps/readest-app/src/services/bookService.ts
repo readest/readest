@@ -674,14 +674,27 @@ export async function importBook(
     // Never overwrite the config file only when it's not existed
     if (!existingBook) {
       await saveBookConfigFn(book, INIT_BOOK_CONFIG);
-      books.push(book);
-      if (lookupIndex) {
-        lookupIndex.byHash.set(book.hash, book);
-        if (book.metaHash) {
-          const key = `${book.metaHash}:${book.format}`;
-          const list = lookupIndex.byMetaKey.get(key);
-          if (list) list.push(book);
-          else lookupIndex.byMetaKey.set(key, [book]);
+      // Concurrent imports of identical bytes (the folder-import pool) both
+      // read `byHash` right after hashing but only write it here, after the
+      // createDir/writeFile/cover awaits — so both miss and both would push a
+      // row (#5601). Re-check synchronously after the last await and adopt
+      // the winner's row instead; the winner already wrote the same
+      // Books/<hash>/ files, ours were idempotent rewrites.
+      const raced = lookupIndex
+        ? lookupIndex.byHash.get(book.hash)
+        : books.find((b) => b.hash === book.hash);
+      if (raced) {
+        existingBook = raced;
+      } else {
+        books.push(book);
+        if (lookupIndex) {
+          lookupIndex.byHash.set(book.hash, book);
+          if (book.metaHash) {
+            const key = `${book.metaHash}:${book.format}`;
+            const list = lookupIndex.byMetaKey.get(key);
+            if (list) list.push(book);
+            else lookupIndex.byMetaKey.set(key, [book]);
+          }
         }
       }
     } else if (metaHashMatch && oldBookDir && oldBookDir !== getDir(book)) {
