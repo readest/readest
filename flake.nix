@@ -152,44 +152,45 @@
             name = "readest-dev";
           };
 
-          ios = mkCommonShell {
-            name = "readest-ios";
-            extraNativeBuildInputs = [ pkgs.cocoapods ];
-          };
+          android = mkCommonShell
+            rec {
+              name = "readest-android";
+              postInit = ''
+                rm -rf apps/readest-app/src-tauri/gen/android
+                pnpm tauri android init
+                git checkout apps/readest-app/src-tauri/gen/android
+                pnpm tauri icon ../../data/icons/readest-book.png
 
-          android = mkCommonShell rec {
-            name = "readest-android";
-            postInit = ''
-              rm -rf apps/readest-app/src-tauri/gen/android
-              pnpm tauri android init
-              git checkout apps/readest-app/src-tauri/gen/android
-              pnpm tauri icon ../../data/icons/readest-book.png
-
-              if [ ! -d "$ANDROID_AVD_HOME/${name}.avd" ]; then
-                  avdmanager create avd \
-                    -n ${name} \
-                    -k "system-images;android-34;google_apis;x86_64" \
-                    -d "pixel" \
-                    --force
-                fi
-            '';
-            extraTargets = with pkgs.fenix.targets; [
-              aarch64-linux-android.latest.rust-std
-              armv7-linux-androideabi.latest.rust-std
-              i686-linux-android.latest.rust-std
-              x86_64-linux-android.latest.rust-std
-            ];
-            extraNativeBuildInputs = [
-              pkgs.android-sdk
-              pkgs.gradle
-              pkgs.jdk
-            ];
-            extraEnv = {
-              ANDROID_HOME = "${pkgs.android-sdk}/share/android-sdk";
-              ANDROID_SDK_ROOT = "${pkgs.android-sdk}/share/android-sdk";
-              NDK_HOME = "${pkgs.android-sdk}/share/android-sdk/ndk/26.1.10909125";
-              JAVA_HOME = pkgs.jdk.home;
-              ANDROID_AVD_HOME = "$XDG_CONFIG_HOME/.android/avd";
+                if [ ! -d "$ANDROID_AVD_HOME/${name}.avd" ]; then
+                    avdmanager create avd \
+                      -n ${name} \
+                      -k "system-images;android-34;google_apis;x86_64" \
+                      -d "pixel" \
+                      --force
+                  fi
+              '';
+              extraTargets = with pkgs.fenix.targets; [
+                aarch64-linux-android.latest.rust-std
+                armv7-linux-androideabi.latest.rust-std
+                i686-linux-android.latest.rust-std
+                x86_64-linux-android.latest.rust-std
+              ];
+              extraNativeBuildInputs = [
+                pkgs.android-sdk
+                pkgs.gradle
+                pkgs.jdk
+              ];
+              extraEnv = {
+                ANDROID_HOME = "${pkgs.android-sdk}/share/android-sdk";
+                ANDROID_SDK_ROOT = "${pkgs.android-sdk}/share/android-sdk";
+                NDK_HOME = "${pkgs.android-sdk}/share/android-sdk/ndk/26.1.10909125";
+                JAVA_HOME = pkgs.jdk.home;
+                ANDROID_AVD_HOME = "$XDG_CONFIG_HOME/.android/avd";
+              };
+            } // lib.optionalAttrs isDarwin {
+            ios = mkCommonShell {
+              name = "readest-ios";
+              extraNativeBuildInputs = [ pkgs.cocoapods ];
             };
           };
 
