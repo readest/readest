@@ -69,9 +69,7 @@
                 <data android:mimeType="application/vnd.amazon.mobi8-ebook" />
                 <data android:mimeType="application/vnd.comicbook+zip" />
                 <data android:mimeType="application/x-cbz" />
-                <data android:mimeType="application/zip" />
                 <data android:mimeType="text/plain" />
-                <data android:mimeType="application/octet-stream"/>
                 <data android:mimeType="application/x-font-ttf"/>
                 <data android:mimeType="application/x-font-otf"/>
             </intent-filter>
@@ -83,17 +81,28 @@
 
                 <data android:scheme="content" />
                 <data android:scheme="file" />
+                <data android:host="*" />
                 <data android:mimeType="*/*" />
                 <data android:pathPattern=".*\\.epub" />
+                <data android:pathSuffix=".epub" />
                 <data android:pathPattern=".*\\.pdf" />
+                <data android:pathSuffix=".pdf" />
                 <data android:pathPattern=".*\\.fb2" />
+                <data android:pathSuffix=".fb2" />
                 <data android:pathPattern=".*\\.fb2.zip" />
+                <data android:pathSuffix=".fb2.zip" />
                 <data android:pathPattern=".*\\.mobi" />
+                <data android:pathSuffix=".mobi" />
                 <data android:pathPattern=".*\\.azw" />
+                <data android:pathSuffix=".azw" />
                 <data android:pathPattern=".*\\.azw3" />
+                <data android:pathSuffix=".azw3" />
                 <data android:pathPattern=".*\\.cbz" />
+                <data android:pathSuffix=".cbz" />
                 <data android:pathPattern=".*\\.zip" />
+                <data android:pathSuffix=".zip" />
                 <data android:pathPattern=".*\\.txt" />
+                <data android:pathSuffix=".txt" />
             </intent-filter>
 
             <intent-filter>
