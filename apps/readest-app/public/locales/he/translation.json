@@ -2147,5 +2147,6 @@
   "Incoming books are added to your library after you accept each transfer request.": "ספרים נכנסים מתווספים לספרייה לאחר אישור כל בקשת העברה.",
   "Only book files are accepted; other file types are declined automatically.": "רק קובצי ספרים מתקבלים; סוגי קבצים אחרים נדחים אוטומטית.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "גילוי מכשירים באמצעות multicast אינו זמין; ייתכן שיידרש רענון ידני.",
-  "On": "פעיל"
+  "On": "פעיל",
+  "Not available for this book.": "לא זמין עבור ספר זה."
 }

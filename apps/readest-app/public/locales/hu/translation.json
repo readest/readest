@@ -2091,5 +2091,6 @@
   "Incoming books are added to your library after you accept each transfer request.": "A beérkező könyvek az egyes átviteli kérések elfogadása után kerülnek a könyvtárába.",
   "Only book files are accepted; other file types are declined automatically.": "Csak könyvfájlok fogadhatók; a többi fájltípus automatikusan elutasításra kerül.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "A multicast alapú eszközkeresés nem érhető el; kézi frissítésre lehet szükség.",
-  "On": "Be"
+  "On": "Be",
+  "Not available for this book.": "Ehhez a könyvhöz nem érhető el."
 }

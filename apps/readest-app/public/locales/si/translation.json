@@ -2091,5 +2091,6 @@
   "Incoming books are added to your library after you accept each transfer request.": "එක් එක් හුවමාරු ඉල්ලීම පිළිගත් පසු ලැබෙන පොත් ඔබගේ පුස්තකාලයට එකතු වේ.",
   "Only book files are accepted; other file types are declined automatically.": "පොත් ගොනු පමණක් පිළිගැනේ; වෙනත් ගොනු වර්ග ස්වයංක්‍රීයව ප්‍රතික්ෂේප වේ.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "Multicast හරහා උපාංග සොයාගැනීම නොමැත; අතින් නැවුම් කිරීමට සිදු විය හැක.",
-  "On": "සක්‍රියයි"
+  "On": "සක්‍රියයි",
+  "Not available for this book.": "මෙම පොත සඳහා නොමැත."
 }

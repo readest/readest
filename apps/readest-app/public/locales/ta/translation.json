@@ -2091,5 +2091,6 @@
   "Incoming books are added to your library after you accept each transfer request.": "ஒவ்வொரு பரிமாற்றக் கோரிக்கையையும் ஏற்றபின் பெறப்படும் புத்தகங்கள் உங்கள் நூலகத்தில் சேர்க்கப்படும்.",
   "Only book files are accepted; other file types are declined automatically.": "புத்தகக் கோப்புகள் மட்டுமே ஏற்கப்படும்; பிற வகைக் கோப்புகள் தானாக நிராகரிக்கப்படும்.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "மல்டிகாஸ்ட் வழியாக சாதனங்களைக் கண்டறிய முடியவில்லை; கைமுறையாகப் புதுப்பிக்க வேண்டியிருக்கலாம்.",
-  "On": "இயக்கத்தில்"
+  "On": "இயக்கத்தில்",
+  "Not available for this book.": "இந்தப் புத்தகத்திற்குக் கிடைக்கவில்லை."
 }

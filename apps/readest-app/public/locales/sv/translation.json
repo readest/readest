@@ -2091,5 +2091,6 @@
   "Incoming books are added to your library after you accept each transfer request.": "Inkommande böcker läggs till i ditt bibliotek efter att du accepterat varje överföringsförfrågan.",
   "Only book files are accepted; other file types are declined automatically.": "Endast bokfiler accepteras; andra filtyper avböjs automatiskt.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "Enhetsidentifiering via multicast är inte tillgänglig; enheter kan behöva uppdateras manuellt.",
-  "On": "På"
+  "On": "På",
+  "Not available for this book.": "Inte tillgängligt för den här boken."
 }

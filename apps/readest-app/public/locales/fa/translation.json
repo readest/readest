@@ -2091,5 +2091,6 @@
   "Incoming books are added to your library after you accept each transfer request.": "کتاب‌های دریافتی پس از پذیرش هر درخواست انتقال به کتابخانه شما افزوده می‌شوند.",
   "Only book files are accepted; other file types are declined automatically.": "فقط فایل‌های کتاب پذیرفته می‌شوند؛ سایر انواع فایل به‌طور خودکار رد می‌شوند.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "یافتن دستگاه‌ها از طریق مالتی‌کست در دسترس نیست؛ ممکن است نیاز به به‌روزرسانی دستی باشد.",
-  "On": "روشن"
+  "On": "روشن",
+  "Not available for this book.": "برای این کتاب در دسترس نیست."
 }

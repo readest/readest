@@ -2147,5 +2147,6 @@
   "Incoming books are added to your library after you accept each transfer request.": "Cărțile primite sunt adăugate în bibliotecă după ce acceptați fiecare cerere de transfer.",
   "Only book files are accepted; other file types are declined automatically.": "Sunt acceptate doar fișierele de cărți; celelalte tipuri de fișiere sunt refuzate automat.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "Descoperirea dispozitivelor prin multicast nu este disponibilă; poate fi necesară o reîmprospătare manuală.",
-  "On": "Activat"
+  "On": "Activat",
+  "Not available for this book.": "Indisponibil pentru această carte."
 }
