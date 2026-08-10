@@ -14,6 +14,10 @@ use std::path::Path;
 
 pub struct Identity {
     pub alias: String,
+    /// Shown as the device tag by other LocalSend clients — the OS name
+    /// ("macOS", "iOS", "Android", ...) resolved by the frontend. Not
+    /// persisted; supplied on every start.
+    pub device_model: String,
     pub cert_pem: String,
     pub key_pem: String,
     pub fingerprint: String,
@@ -30,15 +34,20 @@ impl Identity {
     /// Loads the identity from `identity.pem` in `dir`, generating and saving
     /// a fresh one when the file does not exist yet. The certificate is what
     /// peers pin, so it must survive restarts.
-    pub fn load_or_generate(dir: &Path, alias: String) -> anyhow::Result<Self> {
+    pub fn load_or_generate(
+        dir: &Path,
+        alias: String,
+        device_model: String,
+    ) -> anyhow::Result<Self> {
         let path = dir.join("identity.pem");
         match std::fs::read_to_string(&path) {
-            Ok(text) => Self::from_pem(&text, alias)
+            Ok(text) => Self::from_pem(&text, alias, device_model)
                 .with_context(|| format!("invalid identity file: {}", path.display())),
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
                 let cert = localsend::crypto::cert::generate_self_signed()?;
                 let identity = Self {
                     alias,
+                    device_model,
                     fingerprint: cert.fingerprint,
                     cert_pem: cert.certificate_pem,
                     key_pem: cert.private_key_pem,
@@ -52,7 +61,7 @@ impl Identity {
         }
     }
 
-    fn from_pem(text: &str, alias: String) -> anyhow::Result<Self> {
+    fn from_pem(text: &str, alias: String, device_model: String) -> anyhow::Result<Self> {
         let blocks = pem::parse_many(text)?;
         let cert = blocks
             .iter()
@@ -64,6 +73,7 @@ impl Identity {
             .context("missing PRIVATE KEY block")?;
         Ok(Self {
             alias,
+            device_model,
             fingerprint: fingerprint_from_cert_der(cert.contents()),
             cert_pem: pem::encode(cert),
             key_pem: pem::encode(key),
@@ -106,7 +116,7 @@ impl Identity {
         ClientInfo {
             alias: self.alias.clone(),
             version: PROTOCOL_VERSION_V2.to_string(),
-            device_model: Some("Readest".to_string()),
+            device_model: Some(self.device_model.clone()),
             device_type: Some(device_type()),
             token: self.fingerprint.clone(),
         }
@@ -116,7 +126,7 @@ impl Identity {
         RegisterDtoV2 {
             alias: self.alias.clone(),
             version: PROTOCOL_VERSION_V2.to_string(),
-            device_model: Some("Readest".to_string()),
+            device_model: Some(self.device_model.clone()),
             device_type: Some(device_type()),
             fingerprint: self.fingerprint.clone(),
             port,
@@ -129,7 +139,7 @@ impl Identity {
         MulticastDevice {
             alias: self.alias.clone(),
             version: PROTOCOL_VERSION_V2.to_string(),
-            device_model: Some("Readest".to_string()),
+            device_model: Some(self.device_model.clone()),
             device_type: Some(device_type()),
             fingerprint: self.fingerprint.clone(),
             port,
@@ -148,11 +158,29 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("ls-id-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let _ = std::fs::remove_file(dir.join("identity.pem"));
-        let a = Identity::load_or_generate(&dir, "Readest".into()).unwrap();
-        let b = Identity::load_or_generate(&dir, "Readest".into()).unwrap();
+        let a = Identity::load_or_generate(&dir, "Readest".into(), "macOS".into()).unwrap();
+        let b = Identity::load_or_generate(&dir, "Readest".into(), "macOS".into()).unwrap();
         assert_eq!(a.fingerprint, b.fingerprint);
         assert!(!a.fingerprint.is_empty());
         assert!(a.cert_pem.contains("BEGIN CERTIFICATE"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn device_model_reaches_dtos() {
+        let dir = std::env::temp_dir().join(format!("ls-dm-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_file(dir.join("identity.pem"));
+        let id = Identity::load_or_generate(&dir, "Readest".into(), "iPadOS".into()).unwrap();
+        assert_eq!(
+            id.register_dto(53318).device_model.as_deref(),
+            Some("iPadOS")
+        );
+        assert_eq!(
+            id.multicast_device(53318).device_model.as_deref(),
+            Some("iPadOS")
+        );
+        assert_eq!(id.client_info().device_model.as_deref(), Some("iPadOS"));
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

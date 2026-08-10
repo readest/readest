@@ -15,6 +15,7 @@ import {
   stopLocalSend,
 } from '@/services/localsend/service';
 import { partitionSupportedFiles } from '@/services/localsend/formats';
+import { localSendDeviceModel } from '@/services/localsend/deviceModel';
 import {
   LOCALSEND_EVENTS,
   type LocalSendStatus,
@@ -85,7 +86,12 @@ const LocalSendManager: React.FC = () => {
       if (isLocalSendEnabled()) {
         if (appService.isAndroidApp) await setMulticastLock(true).catch(() => {});
         const alias = getLocalSendAlias() || (await defaultAlias());
-        const status = await startLocalSend(alias);
+        // Tauri reports iPad and iPhone both as `ios`; split on the shorter
+        // screen edge (iPads are >= 600pt, all iPhones are narrower).
+        const isTablet =
+          typeof screen !== 'undefined' && Math.min(screen.width, screen.height) >= 600;
+        const deviceModel = localSendDeviceModel(appService.osPlatform, isTablet);
+        const status = await startLocalSend(alias, deviceModel);
         useLocalSendStore.getState().setStatus(status);
       } else {
         await stopLocalSend();

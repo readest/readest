@@ -23,9 +23,12 @@ use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 
-/// 53317 is the protocol default; the fallbacks keep Readest usable when the
-/// LocalSend app itself owns the default port on the same machine.
-pub const PORT_RANGE: std::ops::RangeInclusive<u16> = 53317..=53327;
+/// Readest deliberately skips the LocalSend default HTTP port 53317 and binds
+/// the next port up. The LocalSend app has no port fallback, so leaving 53317
+/// free lets both run on one device. Discovery still works: the multicast
+/// socket shares UDP 53317 (SO_REUSEPORT) and every announce carries Readest's
+/// real HTTP port, so peers reach it on whatever port it bound.
+pub const PORT_RANGE: std::ops::RangeInclusive<u16> = 53318..=53327;
 
 pub type PendingMap = Arc<StdMutex<HashMap<String, PendingReceive>>>;
 pub type ReceivingMap = Arc<StdMutex<HashMap<String, ReceiveSession>>>;
@@ -88,17 +91,23 @@ pub struct RunningService {
     pub multicast_error: Option<String>,
 }
 
-pub async fn start<R: Runtime>(app: AppHandle<R>, alias: String) -> Result<RunningService, String> {
+pub async fn start<R: Runtime>(
+    app: AppHandle<R>,
+    alias: String,
+    device_model: String,
+) -> Result<RunningService, String> {
     let dir = app
         .path()
         .app_data_dir()
         .map_err(|e| e.to_string())?
         .join("localsend");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let identity = Arc::new(Identity::load_or_generate(&dir, alias).map_err(|e| format!("{e:#}"))?);
+    let identity = Arc::new(
+        Identity::load_or_generate(&dir, alias, device_model).map_err(|e| format!("{e:#}"))?,
+    );
 
-    // Bind the HTTPS server, walking the port range when 53317 is taken
-    // (e.g. the LocalSend app running on the same machine).
+    // Bind the HTTPS server on Readest's own port range (see PORT_RANGE:
+    // 53317 is left to the LocalSend app), walking it for the first free port.
     let (server_tx, server_rx) = mpsc::channel::<ServerEventV2>(16);
     let mut bound: Option<(ServerHandle, oneshot::Sender<()>, u16)> = None;
     let mut last_err = String::new();
@@ -140,7 +149,7 @@ pub async fn start<R: Runtime>(app: AppHandle<R>, alias: String) -> Result<Runni
         }
     }
     let (server, server_stop, port) =
-        bound.ok_or(format!("no free port in 53317-53327: {last_err}"))?;
+        bound.ok_or(format!("no free port in 53318-53327: {last_err}"))?;
 
     // Discovery: multicast plus the register answers to other devices'
     // announcements. Multicast failure is not fatal; the store still
@@ -753,8 +762,10 @@ mod tests {
     }
 
     #[test]
-    fn port_range_starts_at_protocol_default() {
-        assert_eq!(*PORT_RANGE.start(), 53317);
+    fn port_range_avoids_localsend_default() {
+        // 53317 is left free for the LocalSend app, which has no fallback.
+        assert!(!PORT_RANGE.contains(&53317));
+        assert_eq!(*PORT_RANGE.start(), 53318);
         assert_eq!(*PORT_RANGE.end(), 53327);
     }
 }

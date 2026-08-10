@@ -29,12 +29,13 @@ pub async fn localsend_start<R: Runtime>(
     app: AppHandle<R>,
     state: State<'_, LocalSendState>,
     alias: String,
+    device_model: String,
 ) -> Result<LocalSendStatus, String> {
     let mut guard = state.0.lock().await;
     if let Some(service) = guard.as_ref() {
         return Ok(status_of(service));
     }
-    match service::start(app.clone(), alias).await {
+    match service::start(app.clone(), alias, device_model).await {
         Ok(service) => {
             let status = status_of(&service);
             let _ = app.emit(
