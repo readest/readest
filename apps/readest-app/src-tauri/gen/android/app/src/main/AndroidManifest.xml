@@ -70,6 +70,7 @@
                 <data android:mimeType="application/vnd.comicbook+zip" />
                 <data android:mimeType="application/x-cbz" />
                 <data android:mimeType="text/plain" />
+                <data android:mimeType="text/markdown" />
                 <data android:mimeType="application/x-font-ttf"/>
                 <data android:mimeType="application/x-font-otf"/>
             </intent-filter>
@@ -103,6 +104,8 @@
                 <data android:pathSuffix=".zip" />
                 <data android:pathPattern=".*\\.txt" />
                 <data android:pathSuffix=".txt" />
+                <data android:pathPattern=".*\\.md" />
+                <data android:pathSuffix=".md" />
             </intent-filter>
 
             <intent-filter>
