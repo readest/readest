@@ -152,6 +152,11 @@ const BookCellInner: React.FC<BookCellProps> = ({
       data-view-transition-root=''
       className={clsx(
         'relative h-full w-full overflow-hidden',
+        // On fixed-layout books SectionInfo and ProgressBar paint with
+        // mix-blend-difference. Without a local backdrop root the blend resolves
+        // against the document, promoting <html> to a composited layer whose
+        // backing WebKitGTK leaves partly unpainted - a black corner on Linux (#5609).
+        'isolate',
         appServiceHasRoundedWindow && 'rounded-window',
       )}
     >
