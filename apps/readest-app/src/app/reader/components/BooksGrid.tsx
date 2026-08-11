@@ -152,16 +152,6 @@ const BookCellInner: React.FC<BookCellProps> = ({
       data-view-transition-root=''
       className={clsx(
         'relative h-full w-full overflow-hidden',
-        // WebKitGTK stops repainting an ~80x124 device-px rect at the window
-        // origin while the reader mounts, freezing whatever painted there
-        // first — a stale base-100 square over the sidebar, black on dark
-        // themes (#5609; upstream engine defect, blends and view transitions
-        // ruled out — it reproduces on reflowable books with no active
-        // blend). `isolate` gives the cell its own stacking context, which
-        // re-layerizes the corner so the frozen region only ever captures
-        // already-correct pixels — the same masking the resting Ribbon's
-        // top-left layer provided before #5493 moved it top-right.
-        'isolate',
         appServiceHasRoundedWindow && 'rounded-window',
       )}
     >
