@@ -5,8 +5,10 @@
 use crate::localsend::events::*;
 use crate::localsend::identity::Identity;
 use localsend::discovery::{
-    DiscoveryConfig, DiscoveryEvent, DiscoveryHandle, DEFAULT_DISCOVERY_TIMEOUT,
+    DeviceChannel, DiscoveredDevice, DiscoveryConfig, DiscoveryEvent, DiscoveryHandle, HttpChannel,
+    DEFAULT_DISCOVERY_TIMEOUT,
 };
+use localsend::http::dto_v2::RegisterDtoV2;
 use localsend::http::server::common::save::FileUploadTarget;
 use localsend::http::server::v2::{PrepareUploadDecisionV2, ServerEventV2, SessionEndReasonV2};
 use localsend::http::server::web::{WebConfig, WebI18n};
@@ -28,7 +30,8 @@ use tokio_util::sync::CancellationToken;
 /// free lets both run on one device. Discovery still works: the multicast
 /// socket shares UDP 53317 (SO_REUSEPORT) and every announce carries Readest's
 /// real HTTP port, so peers reach it on whatever port it bound.
-pub const PORT_RANGE: std::ops::RangeInclusive<u16> = 53318..=53327;
+pub const FIRST_PORT: u16 = 53318;
+pub const PORT_RANGE: std::ops::RangeInclusive<u16> = FIRST_PORT..=53327;
 
 pub type PendingMap = Arc<StdMutex<HashMap<String, PendingReceive>>>;
 pub type ReceivingMap = Arc<StdMutex<HashMap<String, ReceiveSession>>>;
@@ -217,10 +220,27 @@ fn spawn_event_pump<R: Runtime>(
     let pending = service.pending.clone();
     let receiving = service.receiving.clone();
     let send_cancel = service.send_cancel.clone();
+    let self_fingerprint = service.identity.fingerprint.clone();
     tauri::async_runtime::spawn(async move {
         loop {
             tokio::select! {
                 event = server_rx.recv() => match event {
+                    Some(ServerEventV2::Register { ip, info }) => {
+                        // A peer answering this device's announcement (or
+                        // probing it during a scan) registers with the HTTP
+                        // server; feed it into the discovery store, as the
+                        // discovery crate documents. Without this, the
+                        // announcing side never learns who answered.
+                        let host = match ip.scope_id {
+                            Some(scope_id) => format!("{}%{scope_id}", ip.ip),
+                            None => ip.ip.to_string(),
+                        };
+                        let discovery = discovery.clone();
+                        let self_fingerprint = self_fingerprint.clone();
+                        tauri::async_runtime::spawn(async move {
+                            register_peer(&discovery, &self_fingerprint, host, info).await;
+                        });
+                    }
                     Some(event) => {
                         handle_server_event(&app, &pending, &receiving, &send_cancel, event)
                     }
@@ -235,12 +255,50 @@ fn spawn_event_pump<R: Runtime>(
     });
 }
 
+/// Puts a peer that registered with this device's HTTP server into the
+/// discovery store. Its own registrations (multicast loopback of a scan
+/// probing this host) are ignored.
+pub async fn register_peer(
+    discovery: &DiscoveryHandle,
+    self_fingerprint: &str,
+    host: String,
+    info: RegisterDtoV2,
+) {
+    if info.fingerprint == self_fingerprint {
+        return;
+    }
+    let device = DiscoveredDevice {
+        alias: info.alias,
+        version: info.version,
+        device_model: info.device_model,
+        device_type: info.device_type,
+        fingerprint: info.fingerprint,
+        channel: DeviceChannel::Http(HttpChannel {
+            host,
+            port: info.port,
+            protocol: info.protocol,
+        }),
+        download: info.download,
+    };
+    discovery.add_device(device).await;
+}
+
 pub fn device_payloads(discovery: &DiscoveryHandle) -> Vec<DevicePayload> {
     discovery
         .devices()
         .into_iter()
         .filter_map(|stateful| {
             let http = stateful.get_best_channel().and_then(|c| c.http())?;
+            // The best channel may be IPv6; a multi-homed device usually also
+            // has an IPv4 channel, whose last octet is the "#<n>" tag shown
+            // in the UI.
+            let ipv4_host = stateful
+                .get_ranked_channels()
+                .into_iter()
+                .filter_map(|channel| channel.http())
+                .map(|http| http.host.as_str())
+                .find(|host| host.parse::<std::net::Ipv4Addr>().is_ok())
+                .map(str::to_string);
             Some(DevicePayload {
                 alias: stateful.device.alias.clone(),
                 device_model: stateful.device.device_model.clone(),
@@ -249,6 +307,7 @@ pub fn device_payloads(discovery: &DiscoveryHandle) -> Vec<DevicePayload> {
                 host: http.host.clone(),
                 port: http.port,
                 protocol: http.protocol.as_str().to_string(),
+                ipv4_host,
             })
         })
         .collect()
@@ -271,6 +330,7 @@ fn handle_server_event<R: Runtime>(
     event: ServerEventV2,
 ) {
     match event {
+        // Register events are consumed by the event pump before this point.
         ServerEventV2::Register { .. } => {}
         ServerEventV2::PrepareUpload {
             session_id,
@@ -301,6 +361,7 @@ fn handle_server_event<R: Runtime>(
                         file_name: f.file_name.clone(),
                         size: f.size,
                         file_type: f.file_type.clone(),
+                        preview: f.preview.clone(),
                     })
                     .collect(),
             };
@@ -765,7 +826,113 @@ mod tests {
     fn port_range_avoids_localsend_default() {
         // 53317 is left free for the LocalSend app, which has no fallback.
         assert!(!PORT_RANGE.contains(&53317));
-        assert_eq!(*PORT_RANGE.start(), 53318);
+        assert_eq!(*PORT_RANGE.start(), FIRST_PORT);
         assert_eq!(*PORT_RANGE.end(), 53327);
+    }
+
+    fn test_discovery(identity: &Identity) -> Arc<DiscoveryHandle> {
+        // Port 0 keeps the test off the real LocalSend multicast group; the
+        // handle works without multicast either way.
+        let (_stop_tx, stop_rx) = oneshot::channel::<()>();
+        tauri::async_runtime::block_on(localsend::discovery::start(
+            DiscoveryConfig {
+                group: DEFAULT_MULTICAST_GROUP,
+                group_v6: None,
+                port: 0,
+                interface_filter: InterfaceFilter::default(),
+                device: identity.multicast_device(FIRST_PORT),
+                identity: identity.device_identity(),
+                timeout: DEFAULT_DISCOVERY_TIMEOUT,
+                event_tx: None,
+            },
+            stop_rx,
+        ))
+        .into()
+    }
+
+    fn register_dto(fingerprint: &str) -> RegisterDtoV2 {
+        RegisterDtoV2 {
+            alias: "Phone".into(),
+            version: "2.1".into(),
+            device_model: Some("Android".into()),
+            device_type: None,
+            fingerprint: fingerprint.into(),
+            port: FIRST_PORT,
+            protocol: ProtocolType::Https,
+            download: false,
+        }
+    }
+
+    #[test]
+    fn register_peer_adds_answering_device() {
+        let dir = std::env::temp_dir().join(format!("ls-rp-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_file(dir.join("identity.pem"));
+        let identity = Identity::load_or_generate(&dir, "Readest".into(), "macOS".into()).unwrap();
+        let discovery = test_discovery(&identity);
+
+        tauri::async_runtime::block_on(register_peer(
+            &discovery,
+            &identity.fingerprint,
+            "192.168.2.135".into(),
+            register_dto("peer-fp"),
+        ));
+
+        let devices = device_payloads(&discovery);
+        assert_eq!(devices.len(), 1);
+        assert_eq!(devices[0].fingerprint, "peer-fp");
+        assert_eq!(devices[0].host, "192.168.2.135");
+        assert_eq!(devices[0].port, FIRST_PORT);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn device_payload_carries_ipv4_host_for_multi_homed_device() {
+        let dir = std::env::temp_dir().join(format!("ls-v4-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_file(dir.join("identity.pem"));
+        let identity = Identity::load_or_generate(&dir, "Readest".into(), "macOS".into()).unwrap();
+        let discovery = test_discovery(&identity);
+
+        tauri::async_runtime::block_on(async {
+            register_peer(
+                &discovery,
+                &identity.fingerprint,
+                "fe80::5442:82ff:febd:e7eb%3".into(),
+                register_dto("peer-fp"),
+            )
+            .await;
+            register_peer(
+                &discovery,
+                &identity.fingerprint,
+                "192.168.2.135".into(),
+                register_dto("peer-fp"),
+            )
+            .await;
+        });
+
+        let devices = device_payloads(&discovery);
+        assert_eq!(devices.len(), 1);
+        assert_eq!(devices[0].ipv4_host.as_deref(), Some("192.168.2.135"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn register_peer_ignores_own_fingerprint() {
+        let dir = std::env::temp_dir().join(format!("ls-rs-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let _ = std::fs::remove_file(dir.join("identity.pem"));
+        let identity = Identity::load_or_generate(&dir, "Readest".into(), "macOS".into()).unwrap();
+        let discovery = test_discovery(&identity);
+
+        tauri::async_runtime::block_on(register_peer(
+            &discovery,
+            &identity.fingerprint,
+            "192.168.2.120".into(),
+            register_dto(&identity.fingerprint.clone()),
+        ));
+
+        assert!(device_payloads(&discovery).is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

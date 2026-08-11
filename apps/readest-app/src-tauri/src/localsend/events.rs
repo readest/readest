@@ -21,6 +21,11 @@ pub struct LocalSendStatus {
     pub alias: String,
     pub port: u16,
     pub fingerprint: String,
+    /// OS name announced to peers ("macOS", "Android", ...).
+    pub device_model: String,
+    /// Non-loopback IPv4 addresses of this host; the UI derives the
+    /// "#<last-octet>" device tag from them.
+    pub local_ips: Vec<String>,
     pub multicast_error: Option<String>,
 }
 
@@ -42,6 +47,9 @@ pub struct DevicePayload {
     pub host: String,
     pub port: u16,
     pub protocol: String,
+    /// An IPv4 address of the device when one is known; the UI derives the
+    /// "#<last-octet>" tag from it (`host` may be IPv6).
+    pub ipv4_host: Option<String>,
 }
 
 #[derive(Clone, Serialize)]
@@ -57,6 +65,8 @@ pub struct FilePayload {
     pub file_name: String,
     pub size: u64,
     pub file_type: String,
+    /// Base64 thumbnail from the sender, passed through for the accept dialog.
+    pub preview: Option<String>,
 }
 
 #[derive(Clone, Serialize)]
@@ -129,6 +139,9 @@ pub struct SendFileInput {
     pub path: String,
     pub file_name: String,
     pub mime_type: String,
+    /// Base64 thumbnail shown by the receiver (LocalSend `preview` field).
+    #[serde(default)]
+    pub preview: Option<String>,
 }
 
 pub fn device_type_str(t: &Option<localsend::model::discovery::DeviceType>) -> Option<String> {
@@ -168,10 +181,23 @@ mod tests {
             host: "192.168.1.2".into(),
             port: 53317,
             protocol: "https".into(),
+            ipv4_host: Some("192.168.1.2".into()),
         })
         .unwrap();
         assert_eq!(json["deviceModel"], "Readest");
         assert_eq!(json["deviceType"], "desktop");
+        assert_eq!(json["ipv4Host"], "192.168.1.2");
+
+        let json = serde_json::to_value(FilePayload {
+            id: "f".into(),
+            file_name: "b.epub".into(),
+            size: 1,
+            file_type: "application/epub+zip".into(),
+            preview: Some("aGk=".into()),
+        })
+        .unwrap();
+        assert_eq!(json["fileName"], "b.epub");
+        assert_eq!(json["preview"], "aGk=");
 
         let json = serde_json::to_value(ReceiveFileDonePayload {
             session_id: "s".into(),

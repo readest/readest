@@ -8,9 +8,21 @@ import {
   setLocalSendEnabled,
 } from '@/services/localsend/devicePrefs';
 import { getLocalSendStatus } from '@/services/localsend/service';
+import { ipTag } from '@/services/localsend/deviceModel';
+import type { LocalSendStatus } from '@/services/localsend/types';
 import { eventDispatcher } from '@/utils/event';
 import SubPageHeader from '../SubPageHeader';
 import { BoxedList, SettingsInput, SettingsRow, SettingsSwitchRow, Tips } from '../primitives';
+
+/**
+ * "#120 macOS"-style tag: the last octet of this host's IPv4 address plus
+ * the announced OS name, so the user can tell peers which device to pick
+ * when aliases collide.
+ */
+const deviceTag = (status: LocalSendStatus): string => {
+  const tags = status.localIps.map(ipTag).filter(Boolean);
+  return [...new Set(tags), status.deviceModel].filter(Boolean).join(' ');
+};
 
 interface LocalSendFormProps {
   onBack: () => void;
@@ -86,7 +98,11 @@ const LocalSendForm: React.FC<LocalSendFormProps> = ({ onBack }) => {
 
       {enabled && status?.running && (
         <BoxedList>
-          <SettingsRow label={_('Visible as')} description={status.alias} asLabel={false}>
+          <SettingsRow
+            label={_('Visible as')}
+            description={[status.alias, deviceTag(status)].filter(Boolean).join(' · ')}
+            asLabel={false}
+          >
             <span className='text-base-content/70 text-sm'>
               {_('Port {{port}}', { port: status.port })}
             </span>

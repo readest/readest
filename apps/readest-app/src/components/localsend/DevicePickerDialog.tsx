@@ -12,6 +12,7 @@ import {
   listLocalSendDevices,
   sendLocalSendFiles,
 } from '@/services/localsend/service';
+import { ipTag } from '@/services/localsend/deviceModel';
 import type { LocalSendDevice, SendFileInput } from '@/services/localsend/types';
 
 interface DevicePickerDialogProps {
@@ -173,7 +174,9 @@ const DevicePickerDialog: React.FC<DevicePickerDialogProps> = ({ files, onClose 
                   <div className='flex min-w-0 flex-col'>
                     <span className='truncate text-sm'>{device.alias}</span>
                     <span className='text-base-content/60 truncate text-xs'>
-                      {device.deviceModel || device.host}
+                      {[ipTag(device.ipv4Host ?? device.host), device.deviceModel]
+                        .filter(Boolean)
+                        .join(' ') || device.host}
                     </span>
                   </div>
                 </button>

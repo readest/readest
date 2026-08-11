@@ -7,6 +7,7 @@ const file = (id: string, fileName: string): LocalSendFile => ({
   fileName,
   size: 1,
   fileType: 'application/octet-stream',
+  preview: null,
 });
 
 describe('partitionSupportedFiles', () => {

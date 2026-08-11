@@ -5,7 +5,9 @@ import type { ReceiveRequest, TransferProgress } from '@/services/localsend/type
 const request: ReceiveRequest = {
   sessionId: 's1',
   sender: { alias: 'Phone', deviceModel: null, deviceType: 'mobile', fingerprint: 'F' },
-  files: [{ id: 'f1', fileName: 'a.epub', size: 10, fileType: 'application/epub+zip' }],
+  files: [
+    { id: 'f1', fileName: 'a.epub', size: 10, fileType: 'application/epub+zip', preview: null },
+  ],
 };
 const progress: TransferProgress = {
   sessionId: 's1',

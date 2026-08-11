@@ -200,6 +200,8 @@ const LocalSendManager: React.FC = () => {
             port: event.payload.port,
             alias: current?.alias ?? '',
             fingerprint: current?.fingerprint ?? '',
+            deviceModel: current?.deviceModel ?? '',
+            localIps: current?.localIps ?? [],
             multicastError: current?.multicastError ?? null,
             ...(event.payload.error ? { multicastError: event.payload.error } : {}),
           } as LocalSendStatus);

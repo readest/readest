@@ -4,12 +4,33 @@ use super::LocalSendState;
 use std::collections::{HashMap, HashSet};
 use tauri::{AppHandle, Emitter, Runtime, State};
 
+fn local_ips() -> Vec<String> {
+    if_addrs::get_if_addrs()
+        .unwrap_or_default()
+        .iter()
+        // VPN tunnels (tun0/utun4/ppp0/wg0) carry addresses peers on the LAN
+        // never see; including them would add misleading "#<n>" device tags.
+        .filter(|iface| {
+            let name = iface.name.as_str();
+            !["tun", "utun", "ppp", "wg"]
+                .iter()
+                .any(|prefix| name.starts_with(prefix))
+        })
+        .filter_map(|iface| match iface.ip() {
+            std::net::IpAddr::V4(ip) if !ip.is_loopback() => Some(ip.to_string()),
+            _ => None,
+        })
+        .collect()
+}
+
 fn status_of(service: &RunningService) -> LocalSendStatus {
     LocalSendStatus {
         running: true,
         alias: service.identity.alias.clone(),
         port: service.port,
         fingerprint: service.identity.fingerprint.clone(),
+        device_model: service.identity.device_model.clone(),
+        local_ips: local_ips(),
         multicast_error: service.multicast_error.clone(),
     }
 }
@@ -20,6 +41,8 @@ fn stopped_status() -> LocalSendStatus {
         alias: String::new(),
         port: 0,
         fingerprint: String::new(),
+        device_model: String::new(),
+        local_ips: Vec::new(),
         multicast_error: None,
     }
 }
@@ -117,20 +140,26 @@ pub async fn localsend_announce(
     discovery.announce().await;
     if scan {
         // HTTP fallback for networks/platforms without multicast (iOS):
-        // probe every host on each local /24 at the protocol default port.
+        // probe every host on each local /24. LocalSend apps sit on the
+        // protocol default port, Readest peers on the first port of their
+        // own range, so both are probed.
         use localsend::model::discovery::ProtocolType;
         for iface in if_addrs::get_if_addrs().unwrap_or_default() {
             if let std::net::IpAddr::V4(ip) = iface.ip() {
                 if !ip.is_loopback() {
-                    let _ = discovery
-                        .scan_subnet(ip, localsend::multicast::DEFAULT_PORT, ProtocolType::Https)
-                        .await;
+                    for port in SCAN_PORTS {
+                        let _ = discovery.scan_subnet(ip, port, ProtocolType::Https).await;
+                    }
                 }
             }
         }
     }
     Ok(())
 }
+
+/// The ports a subnet scan probes: the LocalSend app's fixed port and the
+/// first port of Readest's own range (see [`service::PORT_RANGE`]).
+const SCAN_PORTS: [u16; 2] = [localsend::multicast::DEFAULT_PORT, service::FIRST_PORT];
 
 #[tauri::command]
 pub async fn localsend_respond<R: Runtime>(
@@ -268,7 +297,7 @@ pub async fn localsend_send_files<R: Runtime>(
                 size,
                 file_type: input.mime_type,
                 sha256: None,
-                preview: None,
+                preview: input.preview,
                 metadata: None,
             },
             path,
@@ -300,4 +329,17 @@ pub async fn localsend_cancel_send(state: State<'_, LocalSendState>) -> Result<(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn scan_covers_localsend_and_readest_ports() {
+        // The scan must find LocalSend apps (protocol default port) and
+        // Readest peers, which bind the first free port of their own range.
+        assert_eq!(SCAN_PORTS[0], localsend::multicast::DEFAULT_PORT);
+        assert_eq!(SCAN_PORTS[1], *service::PORT_RANGE.start());
+    }
 }

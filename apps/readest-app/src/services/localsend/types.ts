@@ -3,6 +3,10 @@ export interface LocalSendStatus {
   alias: string;
   port: number;
   fingerprint: string;
+  /** OS name announced to peers ("macOS", "Android", ...). */
+  deviceModel: string;
+  /** Non-loopback IPv4 addresses; source of the "#<last-octet>" device tag. */
+  localIps: string[];
   multicastError: string | null;
 }
 
@@ -14,6 +18,8 @@ export interface LocalSendDevice {
   host: string;
   port: number;
   protocol: string;
+  /** An IPv4 address when known; source of the "#<last-octet>" tag (`host` may be IPv6). */
+  ipv4Host: string | null;
 }
 
 export interface LocalSendFile {
@@ -21,6 +27,8 @@ export interface LocalSendFile {
   fileName: string;
   size: number;
   fileType: string;
+  /** Base64 thumbnail from the sender (LocalSend `preview` wire field). */
+  preview: string | null;
 }
 
 export interface ReceiveRequest {
@@ -68,6 +76,8 @@ export interface SendFileInput {
   path: string;
   fileName: string;
   mimeType: string;
+  /** Base64 thumbnail shown by the receiver (LocalSend `preview` wire field). */
+  preview?: string;
 }
 
 export const LOCALSEND_EVENTS = {
