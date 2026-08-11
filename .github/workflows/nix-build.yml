@@ -16,12 +16,15 @@ permissions:
 
 jobs:
   tests:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'nix')
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v5
     - uses: cachix/install-nix-action@v31
       with:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
+    - uses: cachix/cachix-action@v14
+      with:
+        name: readest
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - name: build with nix
       run: nix build
