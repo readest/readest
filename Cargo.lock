@@ -4239,7 +4239,7 @@ dependencies = [
 [[package]]
 name = "localsend"
 version = "0.1.0"
-source = "git+https://github.com/localsend/localsend?rev=ff2995c9523c5fae407f7d444d0986b2c6ae568e#ff2995c9523c5fae407f7d444d0986b2c6ae568e"
+source = "git+https://github.com/readest/localsend?rev=8802cb037fc38a92bc932681d18e7a79e813b688#8802cb037fc38a92bc932681d18e7a79e813b688"
 dependencies = [
  "anyhow",
  "base64 0.23.1",

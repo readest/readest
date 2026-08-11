@@ -78,7 +78,13 @@ tauri-plugin-webdriver = { version = "0.2", optional = true }
 # LocalSend protocol v2.2 (discovery + HTTPS transfer). Upstream's own
 # protocol core, pinned by rev; `discovery` pulls `http`+`crypto`+`multicast`,
 # WebRTC/v3 stays off.
-localsend = { git = "https://github.com/localsend/localsend", rev = "ff2995c9523c5fae407f7d444d0986b2c6ae568e", default-features = false, features = ["discovery"] }
+#
+# Sourced from our fork, which only adds `update = none` to upstream's flutter
+# submodule. Cargo updates every submodule of a git dependency, so upstream
+# pulls the whole Flutter SDK (552 MB checked out) and blows past MAX_PATH on
+# Windows. The fork's `readest` branch tracks the same upstream rev
+# (ff2995c9523c5fae407f7d444d0986b2c6ae568e); rebase it when bumping.
+localsend = { git = "https://github.com/readest/localsend", rev = "8802cb037fc38a92bc932681d18e7a79e813b688", default-features = false, features = ["discovery"] }
 uuid = { version = "1", features = ["v4"] }
 pem = "4"
 anyhow = "1"
