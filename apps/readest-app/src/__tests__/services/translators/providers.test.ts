@@ -12,32 +12,10 @@ vi.mock('@/utils/misc', () => ({
   stubTranslation: (s: string) => s,
 }));
 
-vi.mock('@/utils/lang', () => ({
-  normalizeToShortLang: vi.fn((lang: string) => {
-    const map: Record<string, string> = {
-      'en-US': 'en',
-      'fr-FR': 'fr',
-      'zh-CN': 'zh',
-      AUTO: 'auto',
-      en: 'en',
-      fr: 'fr',
-      de: 'de',
-      zh: 'zh',
-      auto: 'auto',
-    };
-    return map[lang] ?? lang;
-  }),
-  normalizeToFullLang: vi.fn((lang: string) => {
-    const map: Record<string, string> = {
-      en: 'en',
-      fr: 'fr',
-      de: 'de',
-      zh: 'zh-Hans',
-      auto: 'auto',
-    };
-    return map[lang] ?? lang;
-  }),
-}));
+// @/utils/lang is deliberately NOT mocked: the providers' language-code
+// handling against the real normalizers is part of what these tests verify.
+// A hand-rolled lang mock previously hid that normalizeToFullLang maximizes
+// bare subtags ('en' -> 'en-US'), which Bing rejects with statusCode 400.
 
 // Mock Tauri HTTP plugin
 vi.mock('@tauri-apps/plugin-http', () => ({
@@ -756,6 +734,33 @@ describe('azureProvider', () => {
     expect(urls[1]).toContain('IG=01CE353230DE4BFD8A44466FDD91401A');
     expect(urls[1]).toContain('IID=translator.5025');
     expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('sends Bing language codes rather than maximized culture codes', async () => {
+    // Bing's ttranslatev3 answers `statusCode: 400` for region-maximized
+    // codes like en-US or de-DE (verified live 2026-08-11); it only accepts
+    // its own list — bare subtags plus script variants like zh-Hans. The
+    // retired api-edge endpoint tolerated full culture codes, so the
+    // migration must not keep maximizing.
+    vi.mocked(isTauriAppPlatform).mockReturnValue(true);
+    const sentBodies: URLSearchParams[] = [];
+    vi.mocked(tauriFetch).mockImplementation(async (url, init) => {
+      if (String(url).includes('/translator')) {
+        return { ok: true, status: 200, text: async () => BING_PAGE } as Response;
+      }
+      sentBodies.push(new URLSearchParams(String(init?.body ?? '')));
+      return translationBody('translated') as unknown as Response;
+    });
+
+    const { azureProvider } = await import('@/services/translators/providers/azure');
+    await azureProvider.translate(['Hello'], 'AUTO', 'en');
+    await azureProvider.translate(['Hello'], 'en', 'zh-CN');
+
+    expect(sentBodies[0]!.get('fromLang')).toBe('auto-detect');
+    expect(sentBodies[0]!.get('to')).toBe('en');
+    expect(sentBodies[1]!.get('fromLang')).toBe('en');
+    // Bing spells simplified Chinese zh-Hans, never zh-CN.
+    expect(sentBodies[1]!.get('to')).toBe('zh-Hans');
   });
 
   it('reuses cached auth params across calls', async () => {

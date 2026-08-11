@@ -3,7 +3,7 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
 import { TranslationProvider } from '../types';
 import { splitTextIntoChunks } from '../utils';
-import { normalizeToFullLang } from '@/utils/lang';
+import { normalizeToShortLang } from '@/utils/lang';
 import {
   BING_REQUEST_HEADERS,
   BING_TRANSLATE_URL,
@@ -207,12 +207,16 @@ export const azureProvider: TranslationProvider = {
     if (!text.length) return [];
     if (!isTauriAppPlatform()) requireWebToken(token);
 
-    const normalized = sourceLang ? normalizeToFullLang(sourceLang) : '';
+    // Bing only accepts its own language list — bare subtags plus script
+    // variants like zh-Hans — and answers `statusCode: 400` for maximized
+    // culture codes such as en-US or de-DE (the retired api-edge endpoint
+    // tolerated them, so this must not go back to normalizeToFullLang).
+    const normalized = sourceLang ? normalizeToShortLang(sourceLang) : '';
     // Bing spells auto-detection `auto-detect`; an empty or `auto` source
     // language means the same thing here.
     const fromLang =
       !normalized || normalized.toLowerCase() === 'auto' ? 'auto-detect' : normalized;
-    const toLang = normalizeToFullLang(targetLang);
+    const toLang = normalizeToShortLang(targetLang);
 
     const results: string[] = [];
     await Promise.all(
