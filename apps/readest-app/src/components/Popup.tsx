@@ -151,13 +151,21 @@ const Popup = ({
     // re-anchoring it off the viewport and demoting its z-50 under later reader
     // chrome. The triangle shadow lives on the triangle itself.
     <div>
-      <div
-        className={clsx(
-          'popup-triangle-outer text-base-content/20 not-eink:drop-shadow-xl absolute z-50',
-          triangleHidden ? 'invisible' : 'visible',
-        )}
-        style={outerTriangleStyles}
-      />
+      {/* Never mount the triangles without a position, and never combine
+          `invisible` with the drop-shadow: FootnotePopup keeps a closed Popup
+          mounted in every book cell, and an always-mounted filtered element at
+          the cell origin makes WebKitGTK stop presenting an ~80x124 device-px
+          rect there — the Linux stale/black corner square (#5609, bisected to
+          #5351's triangle filter). */}
+      {trianglePosition && (
+        <div
+          className={clsx(
+            'popup-triangle-outer text-base-content/20 absolute z-50',
+            triangleHidden ? 'invisible' : 'not-eink:drop-shadow-xl visible',
+          )}
+          style={outerTriangleStyles}
+        />
+      )}
       <div
         id='popup-container'
         ref={containerRef}
@@ -183,13 +191,15 @@ const Popup = ({
       >
         {children}
       </div>
-      <div
-        className={clsx(
-          'popup-triangle-inner text-base-300 theme-dark:text-base-100 absolute z-50',
-          triangleHidden ? 'invisible' : 'visible',
-        )}
-        style={innerTriangleStyles}
-      />
+      {trianglePosition && (
+        <div
+          className={clsx(
+            'popup-triangle-inner text-base-300 theme-dark:text-base-100 absolute z-50',
+            triangleHidden ? 'invisible' : 'visible',
+          )}
+          style={innerTriangleStyles}
+        />
+      )}
     </div>
   );
 };
