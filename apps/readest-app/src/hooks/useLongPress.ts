@@ -145,12 +145,21 @@ export const useLongPress = (
 
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
+      // A touch long press produces two independent signals: our own timer and
+      // the WebView's native `contextmenu`. Callers wire both to the same
+      // action, so only the first one to arrive may run it. `contextmenu`
+      // arriving first cancels the timer through reset() below; when the timer
+      // won the race it has already fired for this press, and running
+      // onContextMenu too would toggle the item twice (issue #5596).
+      const handledByTimer = isLongPressTriggered.current;
       if (onContextMenu) {
         e.preventDefault();
         e.stopPropagation();
-        setTimeout(() => {
-          onContextMenu(e);
-        }, 100);
+        if (!handledByTimer) {
+          setTimeout(() => {
+            onContextMenu(e);
+          }, 100);
+        }
       }
       reset();
     },
