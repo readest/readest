@@ -96,11 +96,11 @@ describe('ImageViewer', () => {
   // pixel per device pixel — no interpolation, identical detail everywhere.
   const measuredViewer = ({
     naturalWidth,
-    offsetWidth,
+    fitWidth,
     dpr,
   }: {
     naturalWidth: number;
-    offsetWidth: number;
+    fitWidth: number;
     dpr: number;
   }) => {
     Object.defineProperty(window, 'devicePixelRatio', { value: dpr, configurable: true });
@@ -110,9 +110,21 @@ describe('ImageViewer', () => {
     const img = container.querySelector('img')!;
     Object.defineProperty(img, 'naturalWidth', { value: naturalWidth, configurable: true });
     Object.defineProperty(img, 'naturalHeight', { value: naturalWidth, configurable: true });
-    // `offsetWidth` is the laid-out (untransformed) width, so it stays the
-    // fit-to-screen size at any zoom level.
-    Object.defineProperty(img, 'offsetWidth', { value: offsetWidth, configurable: true });
+    // jsdom has no layout; give the viewer container a square viewport so the
+    // (square) image's computed fit size equals `fitWidth`.
+    const viewer = container.querySelector('[aria-label="Image viewer"]') as HTMLElement;
+    viewer.getBoundingClientRect = () =>
+      ({
+        width: fitWidth,
+        height: fitWidth,
+        top: 0,
+        left: 0,
+        right: fitWidth,
+        bottom: fitWidth,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
     act(() => {
       fireEvent.load(img);
     });
@@ -125,7 +137,7 @@ describe('ImageViewer', () => {
   it('reports the fraction of the image resolution actually shown when fit to screen', () => {
     // 1600 image px painted across 400 CSS px * dpr 2 = 800 device px: half the
     // image's detail is on screen, so the badge must not claim 100%.
-    const { container } = measuredViewer({ naturalWidth: 1600, offsetWidth: 400, dpr: 2 });
+    const { container } = measuredViewer({ naturalWidth: 1600, fitWidth: 400, dpr: 2 });
 
     expect(zoomPercent(container)).toBe(50);
   });
@@ -133,7 +145,7 @@ describe('ImageViewer', () => {
   it('double-click zooms to exactly 1:1 (100% = one image pixel per device pixel)', () => {
     // Pixel-perfect needs scale 1200 / (400 * 1) = 3, which the old fixed 2x
     // double-click could never land on.
-    const { container, img } = measuredViewer({ naturalWidth: 1200, offsetWidth: 400, dpr: 1 });
+    const { container, img } = measuredViewer({ naturalWidth: 1200, fitWidth: 400, dpr: 1 });
 
     act(() => {
       fireEvent.doubleClick(img);
@@ -146,7 +158,7 @@ describe('ImageViewer', () => {
   it('keeps 1:1 reachable for images larger than the old zoom ceiling', () => {
     // 1:1 needs scale 50 here, far past the old MAX_SCALE of 8 — the full
     // resolution of a large illustration was simply unreachable.
-    const { img } = measuredViewer({ naturalWidth: 20000, offsetWidth: 400, dpr: 1 });
+    const { img } = measuredViewer({ naturalWidth: 20000, fitWidth: 400, dpr: 1 });
 
     act(() => {
       fireEvent.wheel(img, { deltaY: -20000, ctrlKey: true, clientX: 100, clientY: 100 });
@@ -154,6 +166,96 @@ describe('ImageViewer', () => {
 
     const reachedScale = Number(/scale\(([\d.]+)\)/.exec(img.style.transform)![1]);
     expect(reachedScale).toBeGreaterThanOrEqual(50);
+  });
+
+  // iOS WebKit rasterizes the image at its *layout* size and only stretches
+  // that raster for `transform: scale`, so zooming in showed a fit-to-screen
+  // resolution image no matter how much detail the source had (#5633).
+  // Chromium re-rasterizes at the transformed scale, which is why the same
+  // code was sharp on Android. The viewer must commit a settled zoom into the
+  // image's layout size so WebKit repaints it with enough pixels, and keep the
+  // transform only for the in-flight gesture.
+  describe('committing zoom into the layout size (#5633)', () => {
+    it('commits a settled discrete zoom into the layout size', () => {
+      vi.useFakeTimers();
+      try {
+        // pixelPerfectScale = 1600 / (400 * 2) = 2, which is also what
+        // double-click zooms to.
+        const { img } = measuredViewer({ naturalWidth: 1600, fitWidth: 400, dpr: 2 });
+
+        expect(img.style.width).toBe('400px');
+
+        act(() => {
+          fireEvent.doubleClick(img);
+        });
+        // The gesture itself rides on the transform.
+        expect(img.style.transform).toContain('scale(2)');
+
+        act(() => {
+          vi.advanceTimersByTime(1000);
+        });
+        // Settled: the zoom lives in the layout size, the transform is unity.
+        expect(img.style.width).toBe('800px');
+        expect(img.style.transform).toContain('scale(1)');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('keeps a streaming wheel pinch on the transform, then commits up to 1:1', () => {
+      vi.useFakeTimers();
+      try {
+        const { img } = measuredViewer({ naturalWidth: 1600, fitWidth: 400, dpr: 2 });
+
+        act(() => {
+          // Far past pixel-perfect (2): caps at maxScale 8.
+          fireEvent.wheel(img, { deltaY: -20000, ctrlKey: true, clientX: 200, clientY: 200 });
+        });
+        // Mid-gesture: layout still at fit size, zoom entirely on the transform.
+        expect(img.style.width).toBe('400px');
+        expect(img.style.transform).toContain('scale(8)');
+
+        // Two steps: the wheel gesture first settles (200ms), which is what
+        // arms the commit timer; then the commit fires.
+        act(() => {
+          vi.advanceTimersByTime(500);
+        });
+        act(() => {
+          vi.advanceTimersByTime(500);
+        });
+        // Committed layout is clamped to the image's own resolution (1:1);
+        // beyond that the transform magnifies, as extra raster pixels would
+        // add memory but no detail.
+        expect(img.style.width).toBe('800px');
+        expect(img.style.transform).toContain('scale(4)');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('caps the committed raster size for huge images', () => {
+      vi.useFakeTimers();
+      try {
+        // 1:1 would need a 20000px-wide layout; committing that would OOM the
+        // iOS WebContent process (cf. #5118), so the layout caps at 4096
+        // device px on the long side.
+        const { img } = measuredViewer({ naturalWidth: 20000, fitWidth: 400, dpr: 1 });
+
+        act(() => {
+          fireEvent.wheel(img, { deltaY: -20000, ctrlKey: true, clientX: 200, clientY: 200 });
+        });
+
+        act(() => {
+          vi.advanceTimersByTime(500);
+        });
+        act(() => {
+          vi.advanceTimersByTime(500);
+        });
+        expect(img.style.width).toBe('4096px');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 
   // #5232: EPUBs often keep the caption or table description of an

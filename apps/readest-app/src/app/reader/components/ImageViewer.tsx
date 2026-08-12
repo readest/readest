@@ -28,6 +28,13 @@ const WHEEL_SENSITIVITY = 0.001;
 // Double-click magnification used when 1:1 is not a zoom in (see
 // `doubleClickScale`), which is what double-click always did before.
 const FALLBACK_DOUBLE_CLICK_SCALE = 2;
+// How long after the last scale change (and past the 0.05s discrete-zoom
+// transition) a settled zoom is committed into the layout size.
+const COMMIT_ZOOM_DELAY_MS = 100;
+// Committed layout cap in device pixels on the long side: enough for full
+// detail on any book illustration, while a huge scan can't balloon the layer
+// backing store and OOM the iOS WebContent process (cf. #5118).
+const MAX_COMMIT_RASTER_DIM = 4096;
 
 const ImageViewer: React.FC<ImageViewerProps> = ({
   src,
@@ -52,6 +59,17 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   // one device pixel, so the zoom badge can report true resolution instead of a
   // fit-relative number that meant something different on every device (#5362).
   const [pixelPerfectScale, setPixelPerfectScale] = useState<number | null>(null);
+  // The image's fit-to-screen size in CSS px, and the zoom factor committed
+  // into its layout size. iOS WebKit rasterizes the image at its layout size
+  // and only stretches that raster for `transform: scale`, so zooming in
+  // showed a fit-to-screen resolution image no matter how much detail the
+  // source had (#5633); Chromium re-rasterizes at the transformed scale, which
+  // is why the same code was sharp on Android. Settled zoom is therefore
+  // committed into the layout size (fit × renderScale) so WebKit repaints the
+  // image with enough pixels, and the transform carries only the in-flight
+  // gesture (scale / renderScale).
+  const [fitSize, setFitSize] = useState<{ width: number; height: number } | null>(null);
+  const [renderScale, setRenderScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isWheelZooming, setIsWheelZooming] = useState(false);
@@ -66,27 +84,70 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   const imageRef = useRef<HTMLImageElement>(null);
   const zoomLabelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wheelZoomEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Suppresses the transform transition for the render that commits a zoom
+  // into the layout size: that render swaps layout size and transform in the
+  // same frame, and animating the transform part would wobble the image.
+  const commitJustApplied = useRef(false);
 
   // Escape (desktop) and Android Back key → close the viewer.
   useKeyDownActions({ onCancel: onClose });
 
-  const measurePixelPerfectScale = useCallback(() => {
+  const measureFit = useCallback(() => {
     const img = imageRef.current;
-    // `offsetWidth` is the laid-out width, which ignores the zoom transform, so
-    // it stays the fit-to-screen size at any zoom level.
-    if (!img?.naturalWidth || !img.offsetWidth) return;
+    // Computed from the container rect instead of `offsetWidth` because once a
+    // zoom is committed the laid-out size is no longer the fit size. Replicates
+    // the pre-measure CSS fit (`width/height: auto` capped by `maxWidth/
+    // maxHeight: 100%`): shrink to the container, never upscale.
+    const containerRect = containerRef.current?.getBoundingClientRect();
+    if (!img?.naturalWidth || !img.naturalHeight) return;
+    if (!containerRect?.width || !containerRect.height) return;
+    const fitRatio = Math.min(
+      1,
+      containerRect.width / img.naturalWidth,
+      containerRect.height / img.naturalHeight,
+    );
+    const fitWidth = img.naturalWidth * fitRatio;
     const dpr = window.devicePixelRatio || 1;
-    setPixelPerfectScale(img.naturalWidth / (img.offsetWidth * dpr));
+    setFitSize({ width: fitWidth, height: img.naturalHeight * fitRatio });
+    setPixelPerfectScale(img.naturalWidth / (fitWidth * dpr));
   }, []);
 
   // A cached image can already be decoded before the load event would fire, and
   // rotating the device or resizing the window changes the fit size.
   useEffect(() => {
     setPixelPerfectScale(null);
-    measurePixelPerfectScale();
-    window.addEventListener('resize', measurePixelPerfectScale);
-    return () => window.removeEventListener('resize', measurePixelPerfectScale);
-  }, [src, measurePixelPerfectScale]);
+    setFitSize(null);
+    setRenderScale(1);
+    measureFit();
+    window.addEventListener('resize', measureFit);
+    return () => window.removeEventListener('resize', measureFit);
+  }, [src, measureFit]);
+
+  // Commit a settled zoom into the layout size (see the `fitSize` note). The
+  // commit is clamped to 1:1 with the image's resolution — beyond that the
+  // transform magnifies, as extra raster pixels would add memory but no
+  // detail — and to the raster budget for huge images.
+  useEffect(() => {
+    if (isDragging || isWheelZooming || !fitSize || !pixelPerfectScale) return;
+    const dpr = window.devicePixelRatio || 1;
+    const budgetScale = MAX_COMMIT_RASTER_DIM / (Math.max(fitSize.width, fitSize.height) * dpr);
+    const target = Math.min(
+      Math.max(scale, 1),
+      Math.max(1, Math.min(pixelPerfectScale, budgetScale)),
+    );
+    if (target === renderScale) return;
+    const timer = setTimeout(() => {
+      commitJustApplied.current = true;
+      setRenderScale(target);
+    }, COMMIT_ZOOM_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [scale, isDragging, isWheelZooming, fitSize, pixelPerfectScale, renderScale]);
+
+  // Clear after the committing render: the next transform-changing render
+  // recomputes the transition with the flag down, restoring the smoothing.
+  useEffect(() => {
+    commitJustApplied.current = false;
+  }, [renderScale]);
 
   // Percentage of the image's own resolution: 100% means one image pixel per
   // device pixel, so it reads the same on every device and matches what an
@@ -580,22 +641,34 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
           width={0}
           height={0}
           sizes='100vw'
-          onLoad={measurePixelPerfectScale}
+          onLoad={measureFit}
           onClick={handleImageClick}
           onMouseDown={handleImageMouseDown}
           onDoubleClick={onDoubleClick}
           style={{
-            width: 'auto',
-            height: 'auto',
-            maxWidth: '100%',
-            maxHeight: '100%',
-            transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
+            // Once measured, the layout size is explicit so committed zoom can
+            // grow it past the container (`flexShrink` keeps the centering
+            // flexbox from clamping it back to the container size).
+            ...(fitSize
+              ? {
+                  width: `${fitSize.width * renderScale}px`,
+                  height: `${fitSize.height * renderScale}px`,
+                  maxWidth: 'none',
+                  maxHeight: 'none',
+                }
+              : { width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '100%' }),
+            flexShrink: 0,
+            transform: `scale(${scale / renderScale}) translate(${(position.x * renderScale) / scale}px, ${(position.y * renderScale) / scale}px)`,
             // No transition during continuous gestures: the 0.05s ease made the
             // image lag behind a moving pointer, which flickered on desktop
             // (#4451). The same lag flickered a trackpad pinch (a rapid
             // ctrl+wheel stream) on macOS (#4742). Keep the smoothing only for
-            // discrete zoom (buttons, double-click, keyboard).
-            transition: isDragging || isWheelZooming ? 'none' : 'transform 0.05s ease-out',
+            // discrete zoom (buttons, double-click, keyboard) and suppress it
+            // for the render that commits a zoom into the layout size.
+            transition:
+              isDragging || isWheelZooming || commitJustApplied.current
+                ? 'none'
+                : 'transform 0.05s ease-out',
             // Promote to a GPU layer so transform changes don't repaint the
             // page (the `transform-gpu` class is overridden by this inline
             // transform, so its hint is lost).
