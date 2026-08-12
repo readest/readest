@@ -18,7 +18,7 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - name: check flake
-        run: nix flake check
+        run: nix flake check --all-systems
   # The Rust format/clippy/test steps only run when src-tauri changed, so the
   # ~45s toolchain + system-dep install (and the compile itself) is skipped on
   # PRs that don't touch the Rust backend. The job still runs and reports
