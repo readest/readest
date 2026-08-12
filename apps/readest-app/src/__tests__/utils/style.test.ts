@@ -234,6 +234,26 @@ describe('transformStylesheet', () => {
     });
   });
 
+  describe('fixed-layout documents', () => {
+    it('leaves authored colors alone so the page renders as authored (#5649)', () => {
+      const css = '.text { color: #000000; } .named { color: black; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL, true);
+      expect(result).toBe(css);
+    });
+
+    it('leaves authored font sizes and viewport units alone', () => {
+      const css = '.text { font-size: 24px; width: 50vw; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL, true);
+      expect(result).toBe(css);
+    });
+
+    it('still transforms reflowable stylesheets', () => {
+      const css = '.text { color: #000000; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL, false);
+      expect(result).toContain('color: var(--theme-fg-color)');
+    });
+  });
+
   describe('font-weight normal to var(--font-weight)', () => {
     it('replaces font-weight: normal with var(--font-weight)', () => {
       const css = '.text { font-weight: normal; }';
