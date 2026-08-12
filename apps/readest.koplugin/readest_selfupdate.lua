@@ -104,6 +104,33 @@ function SelfUpdate:checkForUpdate(plugin_path, installed_version)
     end
 end
 
+-- KOReader v2026.07 dropped Device:unpackArchive in favor of the ffi/archiver
+-- module, so calling it on current releases crashes (readest/readest#5645).
+-- Older releases (< v2025.08) only have Device:unpackArchive, so try it first.
+function SelfUpdate:unpackArchive(archive, extract_to)
+    if Device.unpackArchive then
+        return Device:unpackArchive(archive, extract_to)
+    end
+    local has_archiver, Archiver = pcall(require, "ffi/archiver")
+    if not has_archiver then
+        return false, "no archive extraction API available"
+    end
+    local dest_root = extract_to:gsub("/+$", "")
+    local arc = Archiver.Reader:new()
+    local ok = arc:open(archive)
+    if ok then
+        for entry in arc:iterate() do
+            if not arc:extractToPath(entry.path, dest_root .. "/" .. entry.path) then
+                break
+            end
+        end
+        ok = not arc.err
+    end
+    local err = arc.err
+    arc:close()
+    return ok, err
+end
+
 function SelfUpdate:downloadAndInstall(plugin_path, version)
     local ConfirmBox = require("ui/widget/confirmbox")
     local DataStorage = require("datastorage")
@@ -159,7 +186,7 @@ function SelfUpdate:downloadAndInstall(plugin_path, version)
 
     local parent_dir = plugin_path:match("(.*/)")
 
-    local ok, err = Device:unpackArchive(tmp_path, parent_dir)
+    local ok, err = self:unpackArchive(tmp_path, parent_dir)
     os.remove(tmp_path)
 
     if ok then
