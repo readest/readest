@@ -1350,6 +1350,10 @@ export const applyFixedlayoutStyles = (
       --theme-fg-color: ${fg};
       --theme-primary-color: ${primary};
       color-scheme: ${appRendered && isDarkMode ? 'dark' : 'light'};
+      /* Chrome for Android's text autosizing rescales line metrics and shifts
+         absolutely positioned per-letter text in fixed-layout books (#5641). */
+      -webkit-text-size-adjust: none;
+      text-size-adjust: none;
     }
     body {
       position: relative;

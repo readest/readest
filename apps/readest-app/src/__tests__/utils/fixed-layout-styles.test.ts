@@ -129,3 +129,11 @@ describe('applyFixedlayoutStyles page colors', () => {
     }
   });
 });
+
+describe('applyFixedlayoutStyles text autosizing', () => {
+  it('disables Chrome-for-Android text autosizing that misplaces per-letter positioned text (#5641)', () => {
+    const css = fixedLayoutCss(makeViewSettings(), makeThemeCode(), 'EPUB');
+    expect(css).toContain('-webkit-text-size-adjust: none');
+    expect(css).toMatch(/[^-]text-size-adjust: none/);
+  });
+});
