@@ -59,6 +59,23 @@ export const sanitizerTransformer: Transformer = {
       .replaceAll('&#8206;', '\u200E')
       .replaceAll('&#x200f;', '\u200F')
       .replaceAll('&#8207;', '\u200F');
+    // Legacy Persian/Arabic ebooks misuse the RLM (U+200F) as a half-space
+    // between the parts of a compound word (e.g. mi-ravam, ketab-ha). RLM is an
+    // invisible bidi control that does NOT break the cursive join, so those
+    // words render wrong. The correct half-space is the ZWNJ (U+200C). Swap
+    // RLM -> ZWNJ ONLY when it sits between two Arabic-script letters, so any
+    // RLM used as a genuine direction hint (next to digits/Latin, or at a
+    // boundary) is left intact. Both marks are single UTF-16 code units, so the
+    // text length is unchanged and CFIs / annotations stay valid.
+    const halfSpace = new RegExp(
+      '([\u0600-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF])\u200F(?=[\u0600-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF])',
+      'gu',
+    );
+    let prevSerialized;
+    do {
+      prevSerialized = serialized;
+      serialized = serialized.replace(halfSpace, '$1\u200C');
+    } while (serialized !== prevSerialized);
     serialized = '<?xml version="1.0" encoding="utf-8"?>' + DOCTYPE_XHTML11 + serialized;
     serialized = serialized.replace(/(<head[^>]*>)/i, '\n$1');
     serialized = serialized.replace(/(<\/body>)(<\/html>)/i, '$1\n$2');
