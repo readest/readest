@@ -40,20 +40,27 @@ export function useOPDSSubscriptions() {
         if (totalNewBooks > 0) {
           const currentLibrary = useLibraryStore.getState().library;
           const existingHashes = new Set(currentLibrary.map((b) => b.hash));
-          const uniqueNewBooks = newBooks.filter((b) => !existingHashes.has(b.hash));
-          if (uniqueNewBooks.length > 0) {
-            const merged = [...uniqueNewBooks, ...currentLibrary];
-            useLibraryStore.getState().setLibrary(merged);
-            appService.saveLibraryBooks(merged);
-          }
+          // Two feed entries can resolve to the same file; importBook returns
+          // the same row for both, so dedupe by hash before merging.
+          const importedBooks = [...new Map(newBooks.map((b) => [b.hash, b])).values()];
+          const uniqueNewBooks = importedBooks.filter((b) => !existingHashes.has(b.hash));
+          // Save even when uniqueNewBooks is empty: a re-downloaded book that
+          // was previously deleted is already in currentLibrary as a tombstoned
+          // row that importBook resurrected in place (cleared its `deletedAt`).
+          // The feed entry is already persisted in knownEntryIds by this point,
+          // so skipping the save would leave the book tombstoned on disk after
+          // a restart and never downloaded again (#5658).
+          const merged = [...uniqueNewBooks, ...currentLibrary];
+          useLibraryStore.getState().setLibrary(merged);
+          appService.saveLibraryBooks(merged);
 
           // Mirror the manual OPDS download path: queue cloud upload for each
           // newly imported book when the user is logged in and Readest Cloud
           // storage is active. Delay so the transfer manager has a chance
           // to finish initializing if this fires right after libraryLoaded.
           const { settings: currentSettings } = useSettingsStore.getState();
-          if (user && isReadestCloudStorageActive(currentSettings) && uniqueNewBooks.length > 0) {
-            const booksToUpload = uniqueNewBooks.filter((b) => !b.uploadedAt);
+          if (user && isReadestCloudStorageActive(currentSettings)) {
+            const booksToUpload = importedBooks.filter((b) => !b.uploadedAt);
             if (booksToUpload.length > 0) {
               setTimeout(() => {
                 for (const book of booksToUpload) {
