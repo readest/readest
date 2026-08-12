@@ -117,6 +117,10 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 
 #### Nix
 
+> [!NOTE]
+> The nix package for Readest currently only supports Linux. nix-darwin is not
+> supported currently.
+
 To try the app out first:
 
 ```sh

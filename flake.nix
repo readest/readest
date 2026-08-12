@@ -123,7 +123,6 @@
       in
       {
         packages = {
-          default = pkgs.callPackage ./nix/package.nix { };
           android-sdk = android.sdk.${pkgs.stdenv.hostPlatform.system} (sdkPkgs: with sdkPkgs; [
             # Useful packages for building and testing.
             build-tools-36-0-0
@@ -145,6 +144,8 @@
             system-images-android-34-google-apis-x86-64
             system-images-android-34-google-apis-playstore-x86-64
           ]);
+        } // lib.optionalAttrs (!isDarwin) {
+          default = pkgs.callPackage ./nix/package.nix { };
         };
 
         devShells = {
