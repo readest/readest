@@ -30,7 +30,7 @@ jobs:
         name: readest
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - name: build with nix
-      run: nix build
+      run: nix build 'github:${{ github.repository }}?ref=${{ github.ref }}' -L  --extra-substituters "https://readest.cachix.org"
     - name: Fix hash mismatches
       if: failure() && github.event_name == 'pull_request'
       id: fix-hashes
