@@ -236,10 +236,12 @@ export async function makeMarkdownBook(file: File): Promise<BookDoc> {
     createDocument: async () => new DOMParser().parseFromString(str, 'application/xhtml+xml'),
   }));
 
-  const title =
-    frontmatter.title ||
-    (headingEls.find((h) => h.tagName === 'H1')?.textContent ?? '').trim() ||
-    file.name.replace(/\.(?:md|markdown)$/i, '');
+  // The filename is the title unless frontmatter — an explicit metadata block —
+  // says otherwise. A heading is body content: preferring the first <h1> made
+  // every note whose first line is a heading import under that heading instead
+  // of its own name, and the <h1> was matched by tag name rather than position,
+  // so one buried mid-document could win even when the file opened with an <h2>.
+  const title = frontmatter.title || file.name.replace(/\.(?:md|markdown)$/i, '');
 
   const book = {
     metadata: {

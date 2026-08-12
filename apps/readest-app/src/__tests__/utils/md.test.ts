@@ -168,14 +168,25 @@ describe('makeMarkdownBook', () => {
     expect(doc.querySelector('h1')?.getAttribute('id')).toBeTruthy();
   });
 
-  it('resolves the title from frontmatter, then first H1, then filename', async () => {
+  it('resolves the title from frontmatter, then the filename', async () => {
     const fm = await make('---\ntitle: From Front\nauthor: Jane Doe\n---\n\n# Ignored\n');
     expect(fm.metadata.title).toBe('From Front');
     expect(fm.metadata.author).toBe('Jane Doe');
-    const h1 = await make('# The Heading\n\nbody\n');
-    expect(h1.metadata.title).toBe('The Heading');
     const fn = await make('just text\n', 'My Notes.md');
     expect(fn.metadata.title).toBe('My Notes');
+  });
+
+  // A heading is body content, not metadata: only frontmatter — an explicit
+  // metadata block — may override the name the user gave the file. Taking the
+  // first H1 instead made `demo.md` import as "按顺序总结", and every note whose
+  // first line is a heading landed in the library under that heading.
+  it('titles the book after the file, not the first heading', async () => {
+    const h1 = await make('# The Heading\n\nbody\n', 'demo.md');
+    expect(h1.metadata.title).toBe('demo');
+    // The H1 is picked by tag name, not position, so a later one hijacked the
+    // title even when the document opened with an H2.
+    const laterH1 = await make('## Intro\n\n# Buried Heading\n\nbody\n', 'Reading Notes.markdown');
+    expect(laterH1.metadata.title).toBe('Reading Notes');
   });
 
   // Issue #5279: the two frontmatter shapes the reporter attached, each pairing
