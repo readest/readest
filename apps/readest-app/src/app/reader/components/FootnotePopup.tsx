@@ -14,6 +14,7 @@ import { FootnoteHandler } from 'foliate-js/footnotes.js';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { eventDispatcher } from '@/utils/event';
 import { shouldCheckAsFootnote } from '../utils/footnoteHeuristics';
+import { showTransientHighlight } from '../utils/transientHighlight';
 import { FoliateView } from '@/types/view';
 import { isCJKLang } from '@/utils/lang';
 import { Overlay } from '@/components/Overlay';
@@ -49,6 +50,17 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   });
   const [canGoBack, setCanGoBack] = useState(false);
   const canGoBackRef = useRef(canGoBack);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // A link that jumps in-page instead of opening a popup (undetected or
+  // unextractable footnotes, note backlinks) lands without any visual cue;
+  // briefly highlight the target like a library search hit does (#5647).
+  const flashLinkTarget = async (href: string) => {
+    const view = getView(bookKey);
+    if (!view) return;
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = await showTransientHighlight(view, href);
+  };
 
   const [gridRect, setGridRect] = useState<DOMRect | null>(null);
   const [responsiveWidth, setResponsiveWidth] = useState(popupWidth);
@@ -119,6 +131,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         footnoteHandler.handle(bookDoc, e)?.catch((err) => {
           console.warn(err);
           getView(bookKey)?.goTo(popupLinkDetail.href);
+          flashLinkTarget(popupLinkDetail.href);
           setShowPopup(false);
         });
       });
@@ -253,11 +266,19 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     historyRef.current = { items: [detail], index: 0 };
     setCanGoBack(false);
     canGoBackRef.current = false;
-    footnoteHandler.handle(bookDoc, event)?.catch((err) => {
-      console.warn(err);
-      const detail = (event as CustomEvent).detail;
-      view?.goTo(detail.href);
-    });
+    const popupPromise = footnoteHandler.handle(bookDoc, event);
+    if (popupPromise) {
+      popupPromise.catch((err: unknown) => {
+        console.warn(err);
+        const detail = (event as CustomEvent).detail;
+        view?.goTo(detail.href);
+        flashLinkTarget(detail.href);
+      });
+    } else if (!event.defaultPrevented) {
+      // Not handled as a footnote: foliate's default link handling will
+      // navigate in-page.
+      flashLinkTarget(detail.href);
+    }
   };
 
   const handleBack = () => {
@@ -342,6 +363,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     return () => {
       window.removeEventListener('resize', handleDismissPopup);
       eventDispatcher.off('footnote-popup', handleFootnotePopupEvent);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -76,7 +76,7 @@ import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { getViewInsets } from '@/utils/insets';
 import { collectDocumentImages, DocumentImage } from '../utils/documentImages';
 import { footerReservesBand } from '../utils/footerBand';
-import { showTransientSearchHighlight } from '../utils/searchHighlight';
+import { showTransientHighlight } from '../utils/transientHighlight';
 import { handleA11yNavigation } from '@/utils/a11y';
 import { isCJKLang } from '@/utils/lang';
 import { getLocale } from '@/utils/misc';
@@ -811,7 +811,7 @@ const FoliateViewer: React.FC<{
         setPreviewMode(bookKey, true);
       }
       if (overrideLocation && searchParams?.get('highlight') === 'search') {
-        librarySearchHighlightTimerRef.current = await showTransientSearchHighlight(
+        librarySearchHighlightTimerRef.current = await showTransientHighlight(
           view,
           overrideLocation,
         );
