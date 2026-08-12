@@ -10,11 +10,15 @@ import {
   stableIdentifier,
   stripTags,
 } from '@/services/send/conversion/convertToEpub';
-import { isLikelyBotBlock, pageNavigateHeaders } from '@/services/send/conversion/httpHeaders';
+import {
+  isLikelyBotBlock,
+  isTransientUpstreamError,
+  pageNavigateHeaders,
+} from '@/services/send/conversion/httpHeaders';
 import { ConversionError } from '@/services/send/conversion/types';
 import type { ConvertedBook, EpubChapter, EpubImage } from '@/services/send/conversion/types';
-import { parseChapterList } from './chapterList';
-import type { NovelToc } from './chapterList';
+import { parseChapterList, parseWorkMetadata } from './chapterList';
+import type { NovelChapterLink, NovelToc, WorkMetadata } from './chapterList';
 
 /** Hard cap — a runaway TOC heuristic must not schedule tens of thousands of
  *  requests. Real novels top out around this size. */
@@ -59,6 +63,63 @@ export function isNovelImportCancelled(err: unknown): boolean {
   return err instanceof DOMException && err.name === 'AbortError';
 }
 
+const isTransientFetchError = (err: unknown): boolean =>
+  err instanceof ConversionError && err.code === 'fetch_transient';
+
+/** Extra attempts for an origin that is briefly unreachable, and the base
+ *  delay between them (linear backoff: 1s, then 2s). */
+const TRANSIENT_RETRIES = 2;
+const TRANSIENT_BACKOFF_MS = 1000;
+
+/**
+ * Wrap a fetcher with the per-request deadline and a backoff retry, so a
+ * briefly-unreachable origin doesn't fail the import outright. A site fronted
+ * by Cloudflare can 52x — or simply hang — on most requests for minutes at a
+ * time while staying perfectly readable in between, which otherwise leaves the
+ * user hammering the button by hand.
+ */
+const withTransientRetry =
+  (fetchPage: FetchPage): FetchPage =>
+  async (url, signal) => {
+    for (let attempt = 0; ; attempt++) {
+      const deadline = new AbortController();
+      const onAbort = () => deadline.abort();
+      signal?.addEventListener('abort', onAbort, { once: true });
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      let failure: unknown;
+      try {
+        const page = fetchPage(url, deadline.signal);
+        // Race rather than trusting the fetcher to observe the abort, so a
+        // hung origin can never wedge the import. The deadline expiring is a
+        // retryable failure, not the user cancelling.
+        page.catch(() => {});
+        return await Promise.race([
+          page,
+          new Promise<never>((_, reject) => {
+            timer = setTimeout(() => {
+              deadline.abort();
+              reject(
+                new ConversionError(
+                  'The site took too long to respond. Try again in a moment.',
+                  'fetch_transient',
+                ),
+              );
+            }, PAGE_FETCH_TIMEOUT_MS);
+          }),
+        ]);
+      } catch (err) {
+        failure = err;
+      } finally {
+        clearTimeout(timer);
+        signal?.removeEventListener('abort', onAbort);
+      }
+      if (attempt >= TRANSIENT_RETRIES || !isTransientFetchError(failure)) throw failure;
+      if (signal?.aborted) throw abortError();
+      await new Promise((resolve) => setTimeout(resolve, TRANSIENT_BACKOFF_MS * (attempt + 1)));
+      if (signal?.aborted) throw abortError();
+    }
+  };
+
 /**
  * Fetch a page over the Tauri HTTP client with browser-shaped headers.
  * Novel-site chapter pages are server-rendered, so plain HTTP is enough —
@@ -67,29 +128,26 @@ export function isNovelImportCancelled(err: unknown): boolean {
  */
 const defaultFetchPage: FetchPage = async (url, signal) => {
   const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
-  const ac = new AbortController();
-  const timer = setTimeout(() => ac.abort(), PAGE_FETCH_TIMEOUT_MS);
-  const onAbort = () => ac.abort();
-  signal?.addEventListener('abort', onAbort, { once: true });
-  try {
-    const res = await tauriFetch(url, {
-      headers: pageNavigateHeaders(),
-      signal: ac.signal,
-      redirect: 'follow',
-    });
-    if (!res.ok) {
+  const res = await tauriFetch(url, {
+    headers: pageNavigateHeaders(),
+    signal,
+    redirect: 'follow',
+  });
+  if (!res.ok) {
+    if (isTransientUpstreamError(res.status)) {
       throw new ConversionError(
-        isLikelyBotBlock(res.status)
-          ? `The site blocked the request (HTTP ${res.status}). Try again later.`
-          : `Could not fetch the page (HTTP ${res.status}).`,
-        'fetch_failed',
+        `The site is temporarily unavailable (HTTP ${res.status}). Try again in a moment.`,
+        'fetch_transient',
       );
     }
-    return { html: await res.text(), finalUrl: res.url || url };
-  } finally {
-    clearTimeout(timer);
-    signal?.removeEventListener('abort', onAbort);
+    throw new ConversionError(
+      isLikelyBotBlock(res.status)
+        ? `The site blocked the request (HTTP ${res.status}). Try again later.`
+        : `Could not fetch the page (HTTP ${res.status}).`,
+      'fetch_failed',
+    );
   }
+  return { html: await res.text(), finalUrl: res.url || url };
 };
 
 const defaultFetchCover: FetchCover = (url, referer) =>
@@ -105,7 +163,7 @@ export async function fetchNovelToc(
   url: string,
   options: FetchNovelTocOptions = {},
 ): Promise<NovelToc> {
-  const fetchPage = options.fetchPage ?? defaultFetchPage;
+  const fetchPage = withTransientRetry(options.fetchPage ?? defaultFetchPage);
   const { html, finalUrl } = await fetchPage(url, options.signal);
   const toc = parseChapterList(html, finalUrl);
   if (!toc) {
@@ -114,7 +172,40 @@ export async function fetchNovelToc(
       'parse_failed',
     );
   }
-  return { ...toc, chapters: toc.chapters.slice(0, MAX_NOVEL_CHAPTERS) };
+  const chapters = toc.chapters.slice(0, MAX_NOVEL_CHAPTERS);
+  return {
+    ...toc,
+    ...(await backfillMetadata(toc, chapters, fetchPage, options.signal)),
+    chapters,
+  };
+}
+
+/**
+ * A chapter-index page is often just a list of links, with the work's real
+ * title and author only on the chapter pages. When the index could offer no
+ * more than a page-level guess, ask the first chapter instead. Best-effort:
+ * the guess stands if that fetch or parse comes up empty.
+ */
+async function backfillMetadata(
+  toc: NovelToc,
+  chapters: NovelChapterLink[],
+  fetchPage: FetchPage,
+  signal?: AbortSignal,
+): Promise<Partial<NovelToc>> {
+  const first = chapters[0];
+  if (!first || (!toc.weak.title && !toc.weak.author)) return {};
+  let found: WorkMetadata;
+  try {
+    const { html } = await fetchPage(first.url, signal);
+    found = parseWorkMetadata(html);
+  } catch (err) {
+    if (isNovelImportCancelled(err) || signal?.aborted) throw abortError();
+    return {};
+  }
+  return {
+    ...(toc.weak.title && found.title ? { title: found.title } : {}),
+    ...(toc.weak.author && found.author ? { author: found.author } : {}),
+  };
 }
 
 const escapeHtml = (s: string): string =>
@@ -189,7 +280,7 @@ export async function downloadNovel(
   sourceUrl: string,
   options: NovelDownloadOptions = {},
 ): Promise<NovelBook> {
-  const fetchPage = options.fetchPage ?? defaultFetchPage;
+  const fetchPage = withTransientRetry(options.fetchPage ?? defaultFetchPage);
   const fetchCover = options.fetchCover ?? defaultFetchCover;
   const translate = options.translate ?? ((key: string) => key);
   const { onProgress, signal } = options;
@@ -207,6 +298,8 @@ export async function downloadNovel(
     } catch (err) {
       // One retry on transient network errors; user cancellation propagates.
       if (isNovelImportCancelled(err) || signal?.aborted) throw abortError();
+      // A 52x has already been retried with backoff — don't double up.
+      if (isTransientFetchError(err)) throw err;
       return await fetchPage(url, signal);
     }
   };

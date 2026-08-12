@@ -62,3 +62,13 @@ export function imageFetchHeaders(referer: string | null): Record<string, string
 export function isLikelyBotBlock(status: number): boolean {
   return status === 401 || status === 403 || status === 429 || status === 503;
 }
+
+/**
+ * True if the status says the origin behind a CDN was briefly unreachable
+ * rather than the request being wrong — Cloudflare's 52x family (525 is an
+ * edge-to-origin TLS handshake failure) plus the standard gateway errors.
+ * These are worth retrying; a 404 or a bot block is not.
+ */
+export function isTransientUpstreamError(status: number): boolean {
+  return status === 502 || status === 504 || (status >= 520 && status <= 527);
+}

@@ -55,6 +55,7 @@ const toc = (over: Partial<NovelToc> = {}): NovelToc => ({
   title: 'My Novel',
   author: 'Author X',
   coverUrl: null,
+  weak: { title: false, author: false },
   chapters: Array.from({ length: 6 }, (_, i) => ({
     title: `Chapter ${i + 1}: Part ${i + 1}`,
     url: `${BASE}/novel/7/${i + 1}`,
@@ -175,5 +176,178 @@ describe('downloadNovel', () => {
     });
     const files = await unzipEpub(book.file);
     expect(files.has('OEBPS/cover.svg')).toBe(true);
+  });
+});
+
+describe('chapter-page metadata fallback', () => {
+  // A chapter index that names the page, not the work, and credits the site
+  // operator instead of the writer.
+  const bareTocPage = `<!DOCTYPE html><html><head>
+<title>Navigate Work | Example Archive</title>
+<meta name="author" content="Example Archive Foundation"/>
+</head><body><ol>
+${Array.from({ length: 6 }, (_, i) => `<li><a href="/novel/7/${i + 1}">${i + 1}. part ${i + 1}</a></li>`).join('\n')}
+</ol></body></html>`;
+
+  const richChapterPage = (n: number) => `<!DOCTYPE html><html><head>
+<title>A Work - Chapter ${n} - Ann Author - Fandom [Example Archive]</title>
+<meta name="author" content="Example Archive Foundation"/>
+</head><body>
+<h2 class="title heading">A Work</h2>
+<h3 class="byline heading">Ann Author</h3>
+<div id="content">
+${Array.from({ length: 10 }, (_, i) => `<p>Chapter ${n} paragraph ${i} with plenty of narrative text to satisfy extraction quality floors.</p>`).join('\n')}
+</div>
+</body></html>`;
+
+  const fetchPage = async (url: string) => {
+    if (url === TOC_URL) return { html: bareTocPage, finalUrl: url };
+    const m = url.match(/\/novel\/7\/([0-9]+)$/);
+    if (m) return { html: richChapterPage(parseInt(m[1]!, 10)), finalUrl: url };
+    throw new Error(`unexpected fetch: ${url}`);
+  };
+
+  it('fills weak title and author from the first chapter page', async () => {
+    const toc = await fetchNovelToc(TOC_URL, { fetchPage });
+    expect(toc.title).toBe('A Work');
+    expect(toc.author).toBe('Ann Author');
+    expect(toc.chapters).toHaveLength(6);
+  });
+
+  it('keeps the chapter-index metadata when the page already knows the work', async () => {
+    const strong = bareTocPage.replace(
+      '<title>Navigate Work | Example Archive</title>',
+      '<title>Navigate Work | Example Archive</title><meta property="og:novel:book_name" content="Indexed Title"/><meta property="og:novel:author" content="Indexed Author"/>',
+    );
+    const toc = await fetchNovelToc(TOC_URL, {
+      fetchPage: async (url: string) =>
+        url === TOC_URL ? { html: strong, finalUrl: url } : fetchPage(url),
+    });
+    expect(toc.title).toBe('Indexed Title');
+    expect(toc.author).toBe('Indexed Author');
+  });
+
+  it('does not fetch a chapter when the index metadata is strong', async () => {
+    const strong = bareTocPage.replace(
+      '<meta name="author" content="Example Archive Foundation"/>',
+      '<meta property="og:novel:book_name" content="Indexed Title"/><meta property="og:novel:author" content="Indexed Author"/>',
+    );
+    const seen: string[] = [];
+    await fetchNovelToc(TOC_URL, {
+      fetchPage: async (url: string) => {
+        seen.push(url);
+        return url === TOC_URL ? { html: strong, finalUrl: url } : fetchPage(url);
+      },
+    });
+    expect(seen).toEqual([TOC_URL]);
+  });
+
+  it('keeps the weak metadata when the chapter page cannot be fetched', async () => {
+    const toc = await fetchNovelToc(TOC_URL, {
+      fetchPage: async (url: string) => {
+        if (url === TOC_URL) return { html: bareTocPage, finalUrl: url };
+        throw new ConversionError('nope', 'fetch_failed');
+      },
+    });
+    expect(toc.title).toBe('Navigate Work');
+    expect(toc.chapters).toHaveLength(6);
+  });
+});
+
+describe('transient upstream failures', () => {
+  // What a Cloudflare-fronted origin (AO3 and friends) returns while it is
+  // briefly unreachable — the URL is fine, the site just isn't answering yet.
+  const transient = () =>
+    new ConversionError('The site is temporarily unavailable (HTTP 525).', 'fetch_transient');
+
+  // Counts attempts at the flapping URL only: an unrelated backfill fetch of
+  // the first chapter must not be mistaken for a retry.
+  const flaky = (failures: number, failUrl: string = TOC_URL) => {
+    const calls = { count: 0 };
+    const inner = makeFetchPage();
+    const fetchPage = async (url: string) => {
+      if (url === failUrl) {
+        calls.count += 1;
+        if (calls.count <= failures) throw transient();
+      }
+      return inner(url);
+    };
+    return { fetchPage, calls };
+  };
+
+  it('retries the chapter-list fetch until the origin answers', async () => {
+    vi.useFakeTimers();
+    try {
+      const { fetchPage, calls } = flaky(2);
+      const pending = fetchNovelToc(TOC_URL, { fetchPage });
+      await vi.advanceTimersByTimeAsync(30_000);
+      await expect(pending).resolves.toMatchObject({ title: 'My Novel' });
+      expect(calls.count).toBe(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('surfaces the transient error once the retry budget is spent', async () => {
+    vi.useFakeTimers();
+    try {
+      const { fetchPage, calls } = flaky(99);
+      const pending = fetchNovelToc(TOC_URL, { fetchPage });
+      const assertion = expect(pending).rejects.toThrow(/temporarily unavailable/);
+      await vi.advanceTimersByTimeAsync(30_000);
+      await assertion;
+      expect(calls.count).toBe(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('treats a hung origin as transient and retries it', async () => {
+    vi.useFakeTimers();
+    try {
+      let calls = 0;
+      const inner = makeFetchPage();
+      // A struggling origin usually hangs rather than answering 52x, so the
+      // per-request deadline has to be retryable too.
+      const fetchPage = async (url: string) => {
+        if (url !== TOC_URL) return inner(url);
+        calls += 1;
+        if (calls <= 2) return new Promise<never>(() => {});
+        return inner(url);
+      };
+      const pending = fetchNovelToc(TOC_URL, { fetchPage });
+      await vi.advanceTimersByTimeAsync(120_000);
+      await expect(pending).resolves.toMatchObject({ title: 'My Novel' });
+      expect(calls).toBe(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('reports a hung origin as a timeout, not as a cancellation', async () => {
+    vi.useFakeTimers();
+    try {
+      const pending = fetchNovelToc(TOC_URL, { fetchPage: () => new Promise<never>(() => {}) });
+      const assertion = expect(pending).rejects.toThrow(/took too long/);
+      await vi.advanceTimersByTimeAsync(120_000);
+      await assertion;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('retries a flapping chapter instead of writing a placeholder', async () => {
+    vi.useFakeTimers();
+    try {
+      const { fetchPage } = flaky(2, `${BASE}/novel/7/3`);
+      const pending = downloadNovel(toc(), TOC_URL, { fetchPage });
+      await vi.advanceTimersByTimeAsync(30_000);
+      const book = await pending;
+      expect(book.failures).toBe(0);
+      const files = await unzipEpub(book.file);
+      expect(files.get('OEBPS/chapter3.xhtml')).not.toContain('could not be downloaded');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -60,6 +60,7 @@ export class ConversionError extends Error {
       | 'empty_input'
       | 'parse_failed'
       | 'fetch_failed'
+      | 'fetch_transient'
       | 'login_wall',
   ) {
     super(message);

@@ -20,6 +20,17 @@ export interface NovelToc {
   author: string;
   coverUrl: string | null;
   chapters: NovelChapterLink[];
+  /**
+   * Fields that came from a page-level guess (the `<title>` tag, a site-wide
+   * `meta[name=author]`) rather than real per-work metadata. A chapter-index
+   * page is often just a list of links, so a chapter page may know better.
+   */
+  weak: { title: boolean; author: boolean };
+}
+
+export interface WorkMetadata {
+  title: string | null;
+  author: string | null;
 }
 
 /** Fewer links than this is not a chapter list. */
@@ -157,25 +168,30 @@ const cleanTitleTag = (raw: string): string => {
   return first.replace(/(最新章节列表|最新章节|章节列表|章节目录|全文阅读|无弹窗)+$/, '').trim();
 };
 
+/** Meta tags that name the work itself, as opposed to the page or the site. */
+const WORK_TITLE_META = [
+  'meta[property="og:novel:book_name"]',
+  'meta[property="og:title"]',
+  'meta[name="twitter:title"]',
+];
+const WORK_AUTHOR_META = ['meta[property="og:novel:author"]', 'meta[property="books:author"]'];
+
 const extractMetadata = (
   doc: Document,
   pageUrl: string,
-): { title: string; author: string; coverUrl: string | null } => {
+): { title: string; author: string; coverUrl: string | null; weak: NovelToc['weak'] } => {
+  const workTitle = metaContent(doc, WORK_TITLE_META);
   const title =
-    metaContent(doc, [
-      'meta[property="og:novel:book_name"]',
-      'meta[property="og:title"]',
-      'meta[name="twitter:title"]',
-    ]) ||
+    workTitle ||
     cleanTitleTag(doc.querySelector('title')?.textContent || '') ||
     new URL(pageUrl).hostname;
 
+  // `meta[name=author]` is routinely set site-wide (to the operator, not the
+  // writer), so it counts as a guess rather than work metadata.
+  const workAuthor = metaContent(doc, WORK_AUTHOR_META);
   const author =
-    metaContent(doc, [
-      'meta[property="og:novel:author"]',
-      'meta[property="books:author"]',
-      'meta[name="author"]',
-    ]) ||
+    workAuthor ||
+    metaContent(doc, ['meta[name="author"]']) ||
     doc.body?.textContent?.match(/作者[:：]\s*([^\s，,。；;、]{1,32})/)?.[1] ||
     '';
 
@@ -191,8 +207,46 @@ const extractMetadata = (
       /* unparseable cover URL — cover is optional */
     }
   }
-  return { title, author, coverUrl };
+  return { title, author, coverUrl, weak: { title: !workTitle, author: !workAuthor } };
 };
+
+/** Headings a chapter page uses for the work title and the writer's byline. */
+const WORK_TITLE_HEADINGS = ['h1[class*="title"]', 'h2[class*="title"]'];
+const WORK_AUTHOR_HEADINGS = ['[class*="byline"]', '[rel="author"]', '[class*="author"]'];
+
+const headingText = (doc: Document, selectors: string[]): string | null => {
+  for (const selector of selectors) {
+    const text = doc.querySelector(selector)?.textContent?.replace(/\s+/g, ' ').trim();
+    // A heading naming the chapter ("Chapter 7") describes this page, not the
+    // work — the same test that recognizes chapter links recognizes it here.
+    if (text && !isChapterText(text)) return text;
+  }
+  return null;
+};
+
+/**
+ * Work title and author as advertised by a single chapter page. Chapter pages
+ * usually carry the real per-work metadata even when the chapter-index page is
+ * nothing but a list of links, so this backfills what the index couldn't say.
+ * Returns `null` per field when the page offers no better answer than the
+ * index already had — notably the site-wide `meta[name=author]`, which is
+ * deliberately not consulted here.
+ */
+export function parseWorkMetadata(html: string, _pageUrl?: string): WorkMetadata {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const titleTag = cleanTitleTag(doc.querySelector('title')?.textContent || '');
+  return {
+    title:
+      metaContent(doc, WORK_TITLE_META) ||
+      headingText(doc, WORK_TITLE_HEADINGS) ||
+      (titleTag && !isChapterText(titleTag) ? titleTag : null) ||
+      null,
+    author:
+      metaContent(doc, WORK_AUTHOR_META) ||
+      headingText(doc, WORK_AUTHOR_HEADINGS)?.replace(/^by\s+/i, '') ||
+      null,
+  };
+}
 
 /**
  * Parse a web-novel TOC page into title/author/cover metadata plus an ordered

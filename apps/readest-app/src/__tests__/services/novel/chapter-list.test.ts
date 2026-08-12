@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseChapterList } from '@/services/novel/chapterList';
+import { parseChapterList, parseWorkMetadata } from '@/services/novel/chapterList';
 
 const cnChapter = (n: number) => `<dd><a href="/book/1/${n}.html">第${n}章 陨落的天才</a></dd>`;
 
@@ -123,5 +123,78 @@ describe('parseChapterList', () => {
 </body></html>`;
     const toc = parseChapterList(page, 'https://www.example.com/book/2/')!;
     expect(toc.title).toBe('神墓');
+  });
+});
+
+/** A bare chapter-index page: no per-work metadata at all, and a site-wide
+ *  `meta[name=author]` naming the site operator rather than the writer. */
+const indexOnlyPage = `<!DOCTYPE html><html><head>
+<title>Navigate Work | Example Archive</title>
+<meta name="author" content="Example Archive Foundation"/>
+</head><body>
+<h2 class="heading">Chapter Index for <a href="/works/42">A Work</a></h2>
+<ol class="chapter index group">
+${Array.from({ length: 6 }, (_, i) => `<li><a href="/works/42/chapters/${100 + i}">${i + 1}. part ${i + 1}</a></li>`).join('\n')}
+</ol>
+</body></html>`;
+
+/** The same work's chapter page, which does carry the real metadata. */
+const workChapterPage = `<!DOCTYPE html><html><head>
+<title>A Work - Chapter 2 - Ann Author - Fandom [Example Archive]</title>
+<meta name="author" content="Example Archive Foundation"/>
+</head><body>
+<h2 class="title heading">A Work</h2>
+<h3 class="byline heading">Ann Author</h3>
+<div id="chapters"><h3 class="title">Chapter 2: part 2</h3></div>
+</body></html>`;
+
+describe('metadata confidence', () => {
+  it('marks title and author weak when only page-level guesses are available', () => {
+    const toc = parseChapterList(indexOnlyPage, 'https://archive.example.org/works/42/navigate')!;
+    expect(toc.weak).toEqual({ title: true, author: true });
+    expect(toc.title).toBe('Navigate Work');
+  });
+
+  it('does not mark fields weak when real work metadata is present', () => {
+    const toc = parseChapterList(cnPage, 'https://www.example.com/book/1/')!;
+    expect(toc.weak).toEqual({ title: false, author: false });
+  });
+});
+
+describe('parseWorkMetadata', () => {
+  it('reads the work title and byline from a chapter page', () => {
+    const meta = parseWorkMetadata(
+      workChapterPage,
+      'https://archive.example.org/works/42/chapters/101',
+    );
+    expect(meta).toEqual({ title: 'A Work', author: 'Ann Author' });
+  });
+
+  it('prefers og metadata over headings', () => {
+    const page = workChapterPage.replace(
+      '<h2 class="title heading">A Work</h2>',
+      '<meta property="og:novel:book_name" content="Canonical Title"/><h2 class="title heading">A Work</h2>',
+    );
+    expect(parseWorkMetadata(page, 'https://archive.example.org/x').title).toBe('Canonical Title');
+  });
+
+  it('ignores a heading that is just the chapter title', () => {
+    const page = `<!DOCTYPE html><html><head><title>Chapter 7 - My Novel</title></head><body>
+<h1 class="title">Chapter 7</h1>
+</body></html>`;
+    expect(parseWorkMetadata(page, 'https://novels.example.org/x').title).toBeNull();
+  });
+
+  it('strips a leading "by" from the byline', () => {
+    const page = workChapterPage.replace(
+      '<h3 class="byline heading">Ann Author</h3>',
+      '<h3 class="byline heading">by Ann Author</h3>',
+    );
+    expect(parseWorkMetadata(page, 'https://archive.example.org/x').author).toBe('Ann Author');
+  });
+
+  it('never reports the site-wide author meta as the work author', () => {
+    const page = workChapterPage.replace('<h3 class="byline heading">Ann Author</h3>', '');
+    expect(parseWorkMetadata(page, 'https://archive.example.org/x').author).toBeNull();
   });
 });

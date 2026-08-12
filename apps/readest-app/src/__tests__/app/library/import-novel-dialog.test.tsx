@@ -43,6 +43,7 @@ const toc: NovelToc = {
   title: 'My Novel',
   author: 'Author X',
   coverUrl: null,
+  weak: { title: false, author: false },
   chapters: Array.from({ length: 6 }, (_, i) => ({
     title: `Chapter ${i + 1}`,
     url: `https://n.example.org/c/${i + 1}`,
