@@ -6,6 +6,21 @@ const DOCTYPE_XHTML11 = `<!DOCTYPE html PUBLIC
 "-//W3C//DTD XHTML 1.1//EN"
 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">`;
 
+// Legacy Persian/Arabic ebooks misuse the RLM (U+200F) as a half-space between
+// the parts of a compound word (e.g. mi-ravam, ketab-ha). RLM is an invisible
+// bidi control that does NOT break the cursive join, so those words render
+// wrong. The correct half-space is the ZWNJ (U+200C). Swap a run of RLMs for
+// ZWNJs ONLY when it sits between two Arabic-script non-digit characters: an
+// RLM next to a digit is a live bidi hint (it keeps adjacent digit runs
+// visually separate), and one next to Latin text or a boundary can be a
+// genuine direction mark, so both are left intact. The character classes are
+// the Arabic blocks minus the Arabic-Indic (U+0660-0669) and extended
+// (U+06F0-06F9) digits, ending at U+FEFC to exclude the BOM. Both marks are
+// single UTF-16 code units replaced one-for-one, so the text length is
+// unchanged and CFIs / annotations stay valid.
+const RLM_HALF_SPACE_REGEX =
+  /([\u0600-\u065F\u066A-\u06EF\u06FA-\u06FF\uFB50-\uFDFF\uFE70-\uFEFC])(\u200F+)(?=[\u0600-\u065F\u066A-\u06EF\u06FA-\u06FF\uFB50-\uFDFF\uFE70-\uFEFC])/gu;
+
 export const sanitizerTransformer: Transformer = {
   name: 'sanitizer',
 
@@ -59,23 +74,10 @@ export const sanitizerTransformer: Transformer = {
       .replaceAll('&#8206;', '\u200E')
       .replaceAll('&#x200f;', '\u200F')
       .replaceAll('&#8207;', '\u200F');
-    // Legacy Persian/Arabic ebooks misuse the RLM (U+200F) as a half-space
-    // between the parts of a compound word (e.g. mi-ravam, ketab-ha). RLM is an
-    // invisible bidi control that does NOT break the cursive join, so those
-    // words render wrong. The correct half-space is the ZWNJ (U+200C). Swap
-    // RLM -> ZWNJ ONLY when it sits between two Arabic-script letters, so any
-    // RLM used as a genuine direction hint (next to digits/Latin, or at a
-    // boundary) is left intact. Both marks are single UTF-16 code units, so the
-    // text length is unchanged and CFIs / annotations stay valid.
-    const halfSpace = new RegExp(
-      '([\u0600-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF])\u200F(?=[\u0600-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF])',
-      'gu',
+    serialized = serialized.replace(
+      RLM_HALF_SPACE_REGEX,
+      (_match, letter: string, rlms: string) => letter + '\u200C'.repeat(rlms.length),
     );
-    let prevSerialized;
-    do {
-      prevSerialized = serialized;
-      serialized = serialized.replace(halfSpace, '$1\u200C');
-    } while (serialized !== prevSerialized);
     serialized = '<?xml version="1.0" encoding="utf-8"?>' + DOCTYPE_XHTML11 + serialized;
     serialized = serialized.replace(/(<head[^>]*>)/i, '\n$1');
     serialized = serialized.replace(/(<\/body>)(<\/html>)/i, '$1\n$2');

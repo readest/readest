@@ -723,6 +723,46 @@ describe('sanitizerTransformer', () => {
     expect(result).toMatch(/^<\?xml version="1\.0" encoding="utf-8"\?>/);
     expect(result).toContain('<!DOCTYPE html');
   });
+
+  const sanitize = async (text: string) => {
+    const html = `<html><head></head><body><p>${text}</p></body></html>`;
+    return sanitizerTransformer.transform(makeCtx({ content: html }));
+  };
+
+  test('converts RLM misused as half-space between Arabic letters to ZWNJ', async () => {
+    // "mi-ravam" written with RLM (U+200F) instead of ZWNJ (U+200C)
+    const result = await sanitize('می\u200Fروم');
+    expect(result).toContain('می\u200Cروم');
+    expect(result).not.toContain('\u200F');
+  });
+
+  test('converts a run of consecutive RLMs between Arabic letters, preserving length', async () => {
+    const result = await sanitize('ا\u200F\u200Fب');
+    expect(result).toContain('ا\u200C\u200Cب');
+    expect(result).not.toContain('\u200F');
+  });
+
+  test('converts RLM after an Arabic letter with a diacritic', async () => {
+    // letter + kasra (U+0650) + RLM + letter
+    const result = await sanitize('بِ\u200Fب');
+    expect(result).toContain('بِ\u200Cب');
+  });
+
+  test('leaves RLM between Arabic-script digits untouched', async () => {
+    // RLM between digits is a live bidi hint that keeps the digit runs
+    // separate; swapping it for ZWNJ would flip their visual order.
+    const persianDigits = await sanitize('۱\u200F۲');
+    expect(persianDigits).toContain('۱\u200F۲');
+    const arabicDigits = await sanitize('١\u200F٢');
+    expect(arabicDigits).toContain('١\u200F٢');
+  });
+
+  test('leaves RLM next to Latin text or at a text boundary untouched', async () => {
+    const latin = await sanitize('abc\u200Fا');
+    expect(latin).toContain('abc\u200Fا');
+    const boundary = await sanitize('\u200Fاب');
+    expect(boundary).toContain('\u200Fاب');
+  });
 });
 
 // =============================================================================
