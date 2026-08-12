@@ -10,6 +10,11 @@ DEV_PORT=3000
 WEBDRIVER_PORT=4445
 POLL_INTERVAL=3
 TIMEOUT=300
+# `tauri dev` compiles the Rust backend before it launches the binary, and a
+# cold CI cache can spend 5+ minutes in that compile, so the WebDriver wait
+# needs its own budget rather than sharing (and losing) the dev-server one.
+# A crashed app still fails fast via the liveness check in the wait loop.
+WEBDRIVER_TIMEOUT=900
 
 cleanup() {
   if [[ -n "${TAURI_PID:-}" ]]; then
@@ -56,14 +61,14 @@ dotenv -e .env.tauri -- tauri dev --features webdriver --no-watch \
   --config '{"build":{"beforeDevCommand":""},"app":{"security":{"capabilities":["default","desktop-capability","webdriver-remote"]}}}' &
 TAURI_PID=$!
 
-echo "Waiting for WebDriver server on port $WEBDRIVER_PORT (timeout ${TIMEOUT}s)..."
+echo "Waiting for WebDriver server on port $WEBDRIVER_PORT (timeout ${WEBDRIVER_TIMEOUT}s)..."
 elapsed=0
 while ! curl -sf "http://127.0.0.1:${WEBDRIVER_PORT}/status" >/dev/null 2>&1; do
   if ! kill -0 "$TAURI_PID" 2>/dev/null; then
     echo "ERROR: Tauri app exited before WebDriver became ready."
     exit 1
   fi
-  if (( elapsed >= TIMEOUT )); then
+  if (( elapsed >= WEBDRIVER_TIMEOUT )); then
     echo "ERROR: Timed out waiting for WebDriver on port $WEBDRIVER_PORT."
     exit 1
   fi
