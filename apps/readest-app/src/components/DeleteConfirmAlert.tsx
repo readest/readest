@@ -26,45 +26,47 @@ const DeleteConfirmAlert: React.FC<{
   const [purgeData, setPurgeData] = useState(false);
 
   return (
-    <Alert
-      title={title}
-      message={message}
-      confirmLabel={purgeData ? _('Purge & Delete') : _('Delete')}
-      confirmButtonClassName={purgeData ? 'btn-error' : 'btn-warning'}
-      onCancel={onCancel}
-      onConfirm={() => onConfirm(purgeData)}
-    >
-      {showPurgeToggle && (
-        <label
-          className={clsx(
-            'eink-bordered flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors',
-            purgeData
-              ? 'not-eink:border-error/40 not-eink:bg-error/10'
-              : 'not-eink:border-base-content/10 not-eink:bg-base-100/60',
-          )}
-        >
-          <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
-            <span className={clsx('text-sm font-medium', purgeData && 'not-eink:text-error')}>
-              {_('Purge all reading data')}
-            </span>
-            <span className='text-neutral-content text-xs'>
-              {purgeData
-                ? _(
-                    'This permanently erases reading progress, notes, and bookmarks. This cannot be undone.',
-                  )
-                : _('Also erase reading progress, notes, and bookmarks.')}
-            </span>
-          </div>
-          <input
-            type='checkbox'
-            className={clsx('toggle toggle-sm shrink-0', purgeData && 'not-eink:toggle-error')}
-            checked={purgeData}
-            onChange={(e) => setPurgeData(e.target.checked)}
-            aria-label={_('Purge all reading data')}
-          />
-        </label>
-      )}
-    </Alert>
+    <div className='w-full max-w-md'>
+      <Alert
+        title={title}
+        message={message}
+        confirmLabel={purgeData ? _('Purge & Delete') : _('Delete')}
+        confirmButtonClassName={purgeData ? 'btn-error' : 'btn-warning'}
+        onCancel={onCancel}
+        onConfirm={() => onConfirm(purgeData)}
+      >
+        {showPurgeToggle && (
+          <label
+            className={clsx(
+              'eink-bordered flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors',
+              purgeData
+                ? 'not-eink:border-error/40 not-eink:bg-error/10'
+                : 'not-eink:border-base-content/10 not-eink:bg-base-100/60',
+            )}
+          >
+            <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
+              <span className={clsx('text-sm font-medium', purgeData && 'not-eink:text-error')}>
+                {_('Purge all reading data')}
+              </span>
+              <span className='text-neutral-content text-xs'>
+                {purgeData
+                  ? _(
+                      'This permanently erases reading progress, notes, and bookmarks. This cannot be undone.',
+                    )
+                  : _('Also erase reading progress, notes, and bookmarks.')}
+              </span>
+            </div>
+            <input
+              type='checkbox'
+              className={clsx('toggle toggle-sm shrink-0', purgeData && 'not-eink:toggle-error')}
+              checked={purgeData}
+              onChange={(e) => setPurgeData(e.target.checked)}
+              aria-label={_('Purge all reading data')}
+            />
+          </label>
+        )}
+      </Alert>
+    </div>
   );
 };
 
