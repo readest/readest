@@ -1,4 +1,5 @@
 require("spec_helper")
+require("spec.koreader_stubs")
 
 describe("localsend_ffi.libNameFor", function()
     local FFIMod = require("library.localsend_ffi")
@@ -20,5 +21,31 @@ describe("localsend_ffi.libNameFor", function()
     it("refuses other arches", function()
         assert.is_nil(FFIMod.libNameFor({ is_kindle = true, os = "Linux", arch = "x64" }))
         assert.is_nil(FFIMod.libNameFor({ is_emulator = true, os = "Linux", arch = "arm64" }))
+    end)
+end)
+
+describe("readest_localsend dispatch", function()
+    local LocalSend = require("readest_localsend")
+
+    it("routes events to per-type handlers and ignores unknown types", function()
+        local seen = {}
+        local orig = LocalSend.handlers
+        LocalSend.handlers = {
+            receive_request = function(_, ev) seen.request = ev end,
+            receive_end = function(_, ev) seen.done = ev end,
+        }
+        LocalSend:dispatch({ type = "receive_request", sessionId = "s1" })
+        LocalSend:dispatch({ type = "receive_end", sessionId = "s1", received = 2 })
+        LocalSend:dispatch({ type = "totally_unknown" })
+        LocalSend.handlers = orig
+        assert.equals("s1", seen.request.sessionId)
+        assert.equals(2, seen.done.received)
+    end)
+
+    it("exposes handlers for every event the ffi crate emits", function()
+        for _, t in ipairs({ "started", "receive_request", "receive_request_closed",
+                             "receive_file_done", "receive_end", "error" }) do
+            assert.is_function(LocalSend.handlers[t], t)
+        end
     end)
 end)
