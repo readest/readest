@@ -172,13 +172,15 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Build LocalSend native libs for KOReader (Kindle armv7 softfp + Kobo armv7 hardfloat)
+      - name: Build LocalSend native libs for KOReader (Kindle armv7 softfp + Kobo/reMarkable armv7 hardfloat + arm64 Linux)
         run: |
           rustup target add armv7-unknown-linux-gnueabi
           rustup target add armv7-unknown-linux-gnueabihf
+          rustup target add aarch64-unknown-linux-gnu
           pip3 install --break-system-packages ziglang cargo-zigbuild
           node apps/readest.koplugin/scripts/build-localsend-libs.mjs --only armv7
           node apps/readest.koplugin/scripts/build-localsend-libs.mjs --only armv7hf
+          node apps/readest.koplugin/scripts/build-localsend-libs.mjs --only arm64-linux
 
       - name: create KOReader plugin zip
         env:
