@@ -152,9 +152,11 @@ const createPacedHarness = () => {
   let frameCb: FrameRequestCallback | null = null;
   let time = 0;
   const deltas: number[] = [];
+  const subpixels: number[] = [];
   const onStop = vi.fn();
   const scroller = new PacedScroller({
     scrollBy: (delta) => deltas.push(delta),
+    onSubpixel: (offset) => subpixels.push(offset),
     onStop,
     raf: (cb) => {
       frameCb = cb;
@@ -176,7 +178,7 @@ const createPacedHarness = () => {
   };
   const scrolledTotal = () => deltas.reduce((a, b) => a + b, 0);
   const hasPendingFrame = () => frameCb !== null;
-  return { scroller, deltas, onStop, step, advanceIdle, scrolledTotal, hasPendingFrame };
+  return { scroller, deltas, subpixels, onStop, step, advanceIdle, scrolledTotal, hasPendingFrame };
 };
 
 describe('PacedScroller', () => {
@@ -188,6 +190,31 @@ describe('PacedScroller', () => {
     expect(scroller.active).toBe(true);
     expect(scroller.paused).toBe(false);
     expect(hasPendingFrame()).toBe(true);
+  });
+
+  // Scroll offsets quantize to whole CSS pixels in both Blink and WebKit, so a
+  // slow session only emits a scrollBy every few frames. The carried remainder
+  // is reported every frame so the caller can render the motion in between.
+  test('reports the carried sub-pixel remainder on every frame', () => {
+    const { scroller, step, deltas, subpixels } = createPacedHarness();
+    scroller.start(5); // 5px/s: one whole pixel every 200ms
+    step(50);
+    step(50);
+    step(50);
+    expect(deltas).toEqual([]);
+    expect(subpixels).toEqual([0.25, 0.5, 0.75]);
+    step(50);
+    expect(deltas).toEqual([1]);
+    expect(subpixels.at(-1)).toBeCloseTo(0);
+  });
+
+  test('clears the sub-pixel remainder when the session stops', () => {
+    const { scroller, step, subpixels } = createPacedHarness();
+    scroller.start(5);
+    step(50);
+    expect(subpixels.at(-1)).toBeCloseTo(0.25);
+    scroller.stop();
+    expect(subpixels.at(-1)).toBe(0);
   });
 
   test('scrolls at the configured velocity', () => {

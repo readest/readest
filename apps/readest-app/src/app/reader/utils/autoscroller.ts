@@ -18,6 +18,9 @@ export const AUTOSCROLL_MAX_VELOCITY = 4000;
 
 interface AutoscrollerOptions {
   scrollBy: (delta: number) => void;
+  // Called every frame with the remainder still carried between whole-pixel
+  // steps, so the caller can render the motion the scroll position cannot.
+  onSubpixel?: (offset: number) => void;
   onStop?: () => void;
   raf?: (cb: FrameRequestCallback) => number;
   caf?: (id: number) => void;
@@ -167,7 +170,9 @@ export class PacedScroller {
     if (!this.#active) return;
     this.#active = false;
     this.#paused = false;
+    this.#residual = 0;
     this.#cancelFrame();
+    this.#opts.onSubpixel?.(0);
     this.#opts.onStop?.();
   }
 
@@ -196,6 +201,7 @@ export class PacedScroller {
       // scrollBy may stop the session (e.g. the book ended); don't re-arm then.
       if (!this.#active || this.#paused) return;
     }
+    this.#opts.onSubpixel?.(this.#residual);
     this.#frameId = (this.#opts.raf ?? requestAnimationFrame)((t) => this.#tick(t));
   }
 }

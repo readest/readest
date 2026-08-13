@@ -83,6 +83,16 @@ export const useAutoScroll = (
           stallStartRef.current = null;
         }
       },
+      // Whole pixels are all a scroll offset can express, so the remainder is
+      // rendered as a sub-pixel transform on the scrollport. Without it a slow
+      // session visibly steps: at the minimum speed of 5px/s the page jumps a
+      // whole pixel every 200ms instead of gliding.
+      onSubpixel: (offset) => {
+        const renderer = viewRef.current?.renderer;
+        if (!renderer) return;
+        const sign = renderer.scrollProp === 'scrollLeft' ? -1 : 1;
+        renderer.subpixelOffset = sign * offset;
+      },
       onStop: () => {
         setActive(false);
         setPaused(false);
