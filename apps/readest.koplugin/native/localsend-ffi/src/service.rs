@@ -178,28 +178,36 @@ pub async fn stop(service: &mut Service) {
     let _ = tokio::time::timeout(timeout, service.discovery.wait_stopped()).await;
 }
 
-pub fn accept(service: &Service, session_id: &str) -> bool {
-    let Some(pending) = lock(&service.pending).remove(session_id) else {
+/// Accepts a pending receive request. Registers the `ReceiveSession` in
+/// `receiving` BEFORE sending the `Accept` decision: the peer can start
+/// streaming `FileUpload`s as soon as it sees the decision on the wire, and
+/// `handle_file_upload` drops any upload whose session isn't registered
+/// yet, so sending first would race the first file against its own
+/// registration. If the decision channel is already closed (the request
+/// ended on the wire while it was pending), the insert is rolled back.
+pub fn accept(pending: &PendingMap, receiving: &ReceivingMap, session_id: &str) -> bool {
+    let Some(entry) = lock(pending).remove(session_id) else {
         return false;
     };
-    let ids: HashSet<String> = pending.files.keys().cloned().collect();
-    if pending
+    let ids: HashSet<String> = entry.files.keys().cloned().collect();
+    lock(receiving).insert(session_id.to_string(), ReceiveSession::default());
+    if entry
         .decision_tx
         .send(PrepareUploadDecisionV2::Accept(ids))
         .is_err()
     {
-        // The request already ended on the wire.
+        // The request already ended on the wire; undo the registration.
+        lock(receiving).remove(session_id);
         return false;
     }
-    lock(&service.receiving).insert(session_id.to_string(), ReceiveSession::default());
     true
 }
 
-pub fn decline(service: &Service, session_id: &str) -> bool {
-    let Some(pending) = lock(&service.pending).remove(session_id) else {
+pub fn decline(pending: &PendingMap, session_id: &str) -> bool {
+    let Some(entry) = lock(pending).remove(session_id) else {
         return false;
     };
-    let _ = pending.decision_tx.send(PrepareUploadDecisionV2::Decline);
+    let _ = entry.decision_tx.send(PrepareUploadDecisionV2::Decline);
     true
 }
 
@@ -507,5 +515,48 @@ mod tests {
         assert!(!staging.exists());
         assert!(dir.join("keep.epub").exists());
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn accept_registers_session_before_the_decision_is_sent() {
+        let pending: PendingMap = Arc::new(Mutex::new(HashMap::new()));
+        let receiving: ReceivingMap = Arc::new(Mutex::new(HashMap::new()));
+        let (decision_tx, mut decision_rx) = oneshot::channel();
+        pending.lock().unwrap().insert(
+            "s1".to_string(),
+            PendingReceive {
+                files: HashMap::new(),
+                decision_tx,
+            },
+        );
+
+        assert!(accept(&pending, &receiving, "s1"));
+
+        // The session must already be registered by the time a peer can
+        // react to the Accept decision, closing the race where a
+        // FileUpload for the first file arrives before its session does.
+        assert!(receiving.lock().unwrap().contains_key("s1"));
+        assert!(matches!(
+            decision_rx.try_recv(),
+            Ok(PrepareUploadDecisionV2::Accept(_))
+        ));
+    }
+
+    #[test]
+    fn accept_rolls_back_the_session_when_the_decision_channel_is_closed() {
+        let pending: PendingMap = Arc::new(Mutex::new(HashMap::new()));
+        let receiving: ReceivingMap = Arc::new(Mutex::new(HashMap::new()));
+        let (decision_tx, decision_rx) = oneshot::channel();
+        drop(decision_rx); // request already ended on the wire
+        pending.lock().unwrap().insert(
+            "s1".to_string(),
+            PendingReceive {
+                files: HashMap::new(),
+                decision_tx,
+            },
+        );
+
+        assert!(!accept(&pending, &receiving, "s1"));
+        assert!(!receiving.lock().unwrap().contains_key("s1"));
     }
 }

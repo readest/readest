@@ -1,11 +1,19 @@
 //! C ABI for KOReader's LuaJIT FFI. Poll-based: LuaJIT forbids callbacks
-//! from foreign threads, so every function is non-blocking (ls_start binds
-//! sockets synchronously but returns immediately after) and Lua drains the
-//! event queue on a UI timer. Every `char*` returned by `ls_status` and
-//! `ls_poll_event` is malloc'd by Rust and MUST be released with
-//! `ls_string_free`. The exception is `ls_version`, whose return value is a
-//! static string owned by the library for its whole lifetime and must never
-//! be freed.
+//! from foreign threads, so every function is non-blocking. `ls_start`
+//! validates its config synchronously (a bad config returns `ERR_ARG`
+//! immediately, with an `error` event already queued) and then hands the
+//! rest of the work to a dedicated OS thread that owns a tokio runtime and
+//! runs `service::start`. That includes first-run RSA-2048 identity keygen,
+//! which can take many seconds on a ~1 GHz e-reader CPU, so `ls_start`
+//! itself always returns immediately without waiting for keygen or the
+//! socket bind to finish. Lua polls `ls_status` (see the `starting` field)
+//! and drains the event queue on a UI timer to learn when the service is
+//! actually up. `ls_stop` is likewise non-blocking: it only signals the
+//! worker thread and detaches, it does not wait for shutdown to complete.
+//! Every `char*` returned by `ls_status` and `ls_poll_event` is malloc'd by
+//! Rust and MUST be released with `ls_string_free`. The exception is
+//! `ls_version`, whose return value is a static string owned by the library
+//! for its whole lifetime and must never be freed.
 
 mod config;
 mod events;
@@ -16,7 +24,8 @@ use config::StartConfig;
 use serde::Serialize;
 use std::ffi::{c_char, c_int, CStr, CString};
 use std::panic::catch_unwind;
-use std::sync::{Mutex, PoisonError};
+use std::sync::{Arc, Mutex as StdMutex, MutexGuard, PoisonError};
+use tokio::sync::oneshot;
 
 pub const OK: c_int = 0;
 pub const ERR_ARG: c_int = -1;
@@ -27,14 +36,40 @@ pub const ERR_PANIC: c_int = -100;
 /// Bump when the exported ABI changes; Lua refuses a mismatched lib.
 const ABI_VERSION: &CStr = c"1";
 
-struct Running {
-    rt: tokio::runtime::Runtime,
-    service: service::Service,
+/// Progress of the worker thread spawned by `ls_start`, polled by
+/// `ls_status`. Lives behind an `Arc` shared between that thread and every
+/// FFI call, so a synchronous `ls_status`/`ls_accept`/`ls_decline` never
+/// needs to touch the tokio runtime (which only the worker thread owns).
+enum LiveStatus {
+    /// `service::start` (identity keygen + socket bind) is still running.
+    Starting,
+    Running {
+        alias: String,
+        port: u16,
+        multicast_error: Option<String>,
+        // Needed by `ls_accept`/`ls_decline`, which run on the calling
+        // (UI) thread and so cannot reach into the worker thread's local
+        // `Service` value; both are already `Arc<Mutex<_>>` inside
+        // `Service`, so cloning them out here is cheap.
+        pending: service::PendingMap,
+        receiving: service::ReceivingMap,
+    },
+    /// `service::start` returned an error; the worker thread has exited
+    /// and already pushed an `error` event with the reason.
+    Failed,
 }
 
-static STATE: Mutex<Option<Running>> = Mutex::new(None);
+struct Running {
+    /// Signals the worker thread to stop the service and exit. Consumed by
+    /// the first `ls_stop`; a later one is then a no-op (see `state().take()`
+    /// in `ls_stop`, which also makes a second call a no-op).
+    stop_tx: Option<oneshot::Sender<()>>,
+    status: Arc<StdMutex<LiveStatus>>,
+}
 
-fn state() -> std::sync::MutexGuard<'static, Option<Running>> {
+static STATE: StdMutex<Option<Running>> = StdMutex::new(None);
+
+fn state() -> MutexGuard<'static, Option<Running>> {
     STATE.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
@@ -76,32 +111,80 @@ pub extern "C" fn ls_start(config_json: *const c_char) -> c_int {
             return OK; // idempotent: context switches re-attach, not restart
         }
         events::clear();
-        let rt = match tokio::runtime::Builder::new_multi_thread()
-            .worker_threads(2)
-            .enable_all()
-            .build()
-        {
-            Ok(rt) => rt,
-            Err(err) => {
-                events::push(&events::Event::Error {
-                    message: format!("runtime: {err}"),
-                });
-                return ERR_START;
-            }
-        };
-        match rt.block_on(service::start(config)) {
-            Ok(svc) => {
-                *guard = Some(Running { rt, service: svc });
-                OK
-            }
-            Err(err) => {
-                events::push(&events::Event::Error { message: err });
-                rt.shutdown_background();
-                ERR_START
-            }
-        }
+
+        let status = Arc::new(StdMutex::new(LiveStatus::Starting));
+        let (stop_tx, stop_rx) = oneshot::channel::<()>();
+        let worker_status = status.clone();
+        // Keygen (first-run RSA-2048 self-signed cert) and the socket bind
+        // happen inside `service::start`, which this thread cannot afford
+        // to wait for: it's called synchronously from a LuaJIT UI callback,
+        // and a multi-second stall there freezes the whole reader with no
+        // repaint. Run all of it on a dedicated OS thread instead.
+        std::thread::spawn(move || run_worker(config, worker_status, stop_rx));
+
+        *guard = Some(Running {
+            stop_tx: Some(stop_tx),
+            status,
+        });
+        OK
     })
     .unwrap_or(ERR_PANIC)
+}
+
+/// Body of the OS thread spawned by `ls_start`. Owns the tokio runtime for
+/// the whole lifetime of one start/stop cycle: builds it, drives
+/// `service::start` to completion, publishes the result into `status`,
+/// parks on `stop_rx` once running, then drives `service::stop` and shuts
+/// the runtime down. None of this ever touches the calling (UI) thread.
+fn run_worker(
+    config: StartConfig,
+    status: Arc<StdMutex<LiveStatus>>,
+    stop_rx: oneshot::Receiver<()>,
+) {
+    let set_status = |s: LiveStatus| {
+        *status.lock().unwrap_or_else(PoisonError::into_inner) = s;
+    };
+
+    let rt = match tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(2)
+        .enable_all()
+        .build()
+    {
+        Ok(rt) => rt,
+        Err(err) => {
+            events::push(&events::Event::Error {
+                message: format!("runtime: {err}"),
+            });
+            set_status(LiveStatus::Failed);
+            return;
+        }
+    };
+
+    match rt.block_on(service::start(config)) {
+        Ok(mut svc) => {
+            // service::start already pushed the `started` event.
+            set_status(LiveStatus::Running {
+                alias: svc.alias.clone(),
+                port: svc.port,
+                multicast_error: svc.multicast_error.clone(),
+                pending: svc.pending.clone(),
+                receiving: svc.receiving.clone(),
+            });
+            // Park here until ls_stop signals (or the sender is dropped,
+            // e.g. the process is exiting), then tear the service down and
+            // shut the runtime down, all still off the UI thread.
+            rt.block_on(async {
+                let _ = stop_rx.await;
+            });
+            rt.block_on(service::stop(&mut svc));
+            rt.shutdown_background();
+        }
+        Err(err) => {
+            events::push(&events::Event::Error { message: err });
+            set_status(LiveStatus::Failed);
+            rt.shutdown_background();
+        }
+    }
 }
 
 #[no_mangle]
@@ -110,10 +193,13 @@ pub extern "C" fn ls_stop() -> c_int {
         let Some(mut running) = state().take() else {
             return OK;
         };
-        running.rt.block_on(service::stop(&mut running.service));
-        running
-            .rt
-            .shutdown_timeout(std::time::Duration::from_secs(2));
+        // Signal the worker thread and detach without joining: it owns the
+        // tokio runtime and cleans itself up (service::stop, then runtime
+        // shutdown) asynchronously off this thread. Joining here would put
+        // back the multi-second UI stall this whole restructure removes.
+        if let Some(tx) = running.stop_tx.take() {
+            let _ = tx.send(());
+        }
         OK
     })
     .unwrap_or(ERR_PANIC)
@@ -123,10 +209,27 @@ pub extern "C" fn ls_stop() -> c_int {
 #[serde(rename_all = "camelCase")]
 struct Status {
     running: bool,
+    /// True only while the worker thread spawned by `ls_start` is still
+    /// doing first-run identity keygen / binding sockets and hasn't reached
+    /// `running` (or failed) yet. Lets Lua distinguish "not started" from
+    /// "starting" instead of showing a plain off state for the several
+    /// seconds keygen can take on slow hardware.
+    starting: bool,
     alias: Option<String>,
     port: Option<u16>,
     local_ips: Vec<String>,
     multicast_error: Option<String>,
+}
+
+fn not_running_status(starting: bool) -> Status {
+    Status {
+        running: false,
+        starting,
+        alias: None,
+        port: None,
+        local_ips: Vec::new(),
+        multicast_error: None,
+    }
 }
 
 #[no_mangle]
@@ -134,20 +237,30 @@ pub extern "C" fn ls_status() -> *mut c_char {
     catch_unwind(|| {
         let guard = state();
         let status = match guard.as_ref() {
-            Some(running) => Status {
-                running: true,
-                alias: Some(running.service.alias.clone()),
-                port: Some(running.service.port),
-                local_ips: service::local_ips(),
-                multicast_error: running.service.multicast_error.clone(),
-            },
-            None => Status {
-                running: false,
-                alias: None,
-                port: None,
-                local_ips: Vec::new(),
-                multicast_error: None,
-            },
+            Some(running) => {
+                let live = running
+                    .status
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner);
+                match &*live {
+                    LiveStatus::Running {
+                        alias,
+                        port,
+                        multicast_error,
+                        ..
+                    } => Status {
+                        running: true,
+                        starting: false,
+                        alias: Some(alias.clone()),
+                        port: Some(*port),
+                        local_ips: service::local_ips(),
+                        multicast_error: multicast_error.clone(),
+                    },
+                    LiveStatus::Starting => not_running_status(true),
+                    LiveStatus::Failed => not_running_status(false),
+                }
+            }
+            None => not_running_status(false),
         };
         to_owned_cstring(serde_json::to_string(&status).unwrap_or_else(|_| "{}".into()))
     })
@@ -172,10 +285,21 @@ fn respond(session_id: *const c_char, accept: bool) -> c_int {
         let Some(running) = guard.as_ref() else {
             return ERR_STATE;
         };
+        let live = running
+            .status
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        let LiveStatus::Running {
+            pending, receiving, ..
+        } = &*live
+        else {
+            // Starting or Failed: no service to accept/decline against yet.
+            return ERR_STATE;
+        };
         let ok = if accept {
-            service::accept(&running.service, id)
+            service::accept(pending, receiving, id)
         } else {
-            service::decline(&running.service, id)
+            service::decline(pending, id)
         };
         if ok {
             OK
@@ -252,5 +376,24 @@ mod tests {
         // Poll on empty queue is NULL
         crate::events::clear();
         assert!(ls_poll_event().is_null());
+    }
+
+    // Locks the `starting` field into the JSON contract: a service that was
+    // never started must report `starting:false`, not just `running:false`,
+    // so Lua can tell "off" apart from "keygen/bind still in progress".
+    #[test]
+    fn status_reports_not_starting_when_never_started() {
+        let _guard = events::TEST_QUEUE_GUARD
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+
+        assert_eq!(ls_stop(), OK); // no-op; guarantees STATE is None below
+        let status_ptr = ls_status();
+        let status = unsafe { CStr::from_ptr(status_ptr) }
+            .to_str()
+            .unwrap()
+            .to_string();
+        unsafe { ls_string_free(status_ptr) };
+        assert!(status.contains(r#""starting":false"#), "{status}");
     }
 }
