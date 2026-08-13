@@ -2,8 +2,15 @@
 -- accepts files from Readest apps (or any LocalSend sender). Receive-only.
 --
 -- Module singleton: KOReader instantiates the plugin per context (reader /
--- FileManager) but the native service is process-wide; its state lives here
--- and survives context switches (init just re-attaches the poll loop).
+-- FileManager) but the helper process + its control socket are process-
+-- wide; their state lives here and survives context switches. init() only
+-- re-points self.plugin and re-attaches a poll task; onCloseWidget() only
+-- unschedules that poll task — neither closes the socket, so a reader<->
+-- FileManager switch does not interrupt an in-flight transfer.
+--
+-- Transport: the localsend-helper static binary (bin/localsend-helper-*)
+-- is spawned as a background process and speaks newline-delimited JSON
+-- over a local TCP control socket. See library/localsend_helper.lua.
 
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
@@ -14,37 +21,54 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("readest_i18n")
-local LocalSendFFI = require("library.localsend_ffi")
+local Helper = require("library.localsend_helper")
 
 local POLL_INTERVAL = 0.5
 
 local LocalSend = {
-    plugin = nil,          -- current ReadestSync instance
-    lib = nil,             -- ffi namespace once loaded
-    lib_err = nil,         -- why the lib is unavailable (nil = not tried yet)
+    plugin = nil,           -- current ReadestSync instance
+    sock = nil,             -- connected control socket, or nil
+    port = nil,             -- control port the helper is listening on
+    rx_buffer = "",         -- partial line carried between poll ticks
+    binpath = nil,          -- resolved path to the helper binary
     running = false,
+    available = false,      -- whether a helper binary exists for this device
+    status_cache = {},      -- last {running,alias,port,localIps,multicastError}
     poll_task = nil,
-    request_dialogs = {},  -- sessionId -> ConfirmBox, dismissed on abort
+    request_dialogs = {},   -- sessionId -> ConfirmBox, dismissed on abort
 }
 
 function LocalSend:init(plugin)
     self.plugin = plugin
-    if self.lib == nil and self.lib_err == nil then
-        local lib, err = LocalSendFFI.load(plugin.path)
-        self.lib, self.lib_err = lib, err
-        if err then
-            logger.info("ReadestLocalSend: unavailable: " .. tostring(err))
+    local name = Helper.binaryNameFor({
+        is_android = Device:isAndroid(),
+        is_emulator = Device:isEmulator(),
+        os = jit.os,
+        arch = jit.arch,
+    })
+    if name then
+        local path = plugin.path .. "/bin/" .. name
+        local lfs = require("libs/libkoreader-lfs")
+        if lfs.attributes(path, "mode") == "file" then
+            self.available = true
+            self.binpath = path
+        else
+            self.available = false
+            logger.info("ReadestLocalSend: unavailable: binary not found: " .. path)
         end
+    else
+        self.available = false
+        logger.info("ReadestLocalSend: unavailable: unsupported device")
     end
     -- Re-attach after a context switch: the service kept running while the
     -- previous plugin instance (and its poll task) went away.
-    if self.lib and plugin.settings.localsend_enabled and NetworkMgr:isConnected() then
+    if self.available and plugin.settings.localsend_enabled and NetworkMgr:isConnected() then
         self:startService()
     end
 end
 
 function LocalSend:isAvailable()
-    return self.lib ~= nil
+    return self.available
 end
 
 function LocalSend:downloadDir()
@@ -56,8 +80,8 @@ function LocalSend:downloadDir()
 end
 
 function LocalSend:startService()
-    if not self.lib then return end
-    if self.running then
+    if not self.available then return end
+    if self.running and self.sock then
         self:schedulePoll()
         return
     end
@@ -69,7 +93,30 @@ function LocalSend:startService()
         })
         return
     end
-    local config = require("json").encode({
+    local port = Helper.pickPort()
+    if not port then
+        UIManager:show(InfoMessage:new{
+            text = _("LocalSend error: could not find a free port."),
+            timeout = 3,
+        })
+        return
+    end
+    Helper.spawn(self.binpath, port)
+    local sock, err = Helper.connect(port, 3)
+    if not sock then
+        logger.warn("ReadestLocalSend: connect failed: " .. tostring(err))
+        os.execute("pkill -f localsend-helper >/dev/null 2>&1")
+        UIManager:show(InfoMessage:new{
+            text = _("LocalSend failed to start."),
+            timeout = 3,
+        })
+        return
+    end
+    self.sock = sock
+    self.port = port
+    self.rx_buffer = ""
+    Helper.send(self.sock, {
+        cmd = "start",
         alias = self.plugin.settings.localsend_alias or Device.model or "KOReader",
         deviceModel = "KOReader",
         deviceType = "mobile",
@@ -77,22 +124,20 @@ function LocalSend:startService()
         dataDir = DataStorage:getSettingsDir() .. "/readest-localsend",
         downloadDir = dir,
     })
-    local rc = self.lib.ls_start(config)
-    if rc ~= 0 then
-        logger.warn("ReadestLocalSend: ls_start rc=" .. tostring(rc))
-        self:drainEvents() -- surfaces the queued error event as an InfoMessage
-        return
-    end
     self.running = true
     self:schedulePoll()
+    UIManager:show(InfoMessage:new{ text = _("Starting LocalSend…"), timeout = 2 })
 end
 
 function LocalSend:stopService()
     self:unschedulePoll()
-    if self.lib and self.running then
-        self.lib.ls_stop()
-        self.running = false
+    if self.sock then
+        Helper.send(self.sock, { cmd = "stop" })
+        self.sock:close()
+        self.sock = nil
+        os.execute("pkill -f localsend-helper >/dev/null 2>&1")
     end
+    self.running = false
 end
 
 function LocalSend:toggle()
@@ -115,7 +160,7 @@ end
 function LocalSend:schedulePoll()
     if self.poll_task then return end
     self.poll_task = function()
-        self:drainEvents()
+        self:pollTick()
         if self.running and self.poll_task then
             UIManager:scheduleIn(POLL_INTERVAL, self.poll_task)
         end
@@ -130,17 +175,21 @@ function LocalSend:unschedulePoll()
     end
 end
 
-function LocalSend:drainEvents()
-    if not self.lib then return end
-    while true do
-        local s = LocalSendFFI.takeString(self.lib, self.lib.ls_poll_event())
-        if not s then break end
-        local ok, ev = pcall(function() return require("json").decode(s) end)
-        if ok and type(ev) == "table" and ev.type then
-            self:dispatch(ev)
-        else
-            logger.warn("ReadestLocalSend: undecodable event: " .. tostring(s))
-        end
+-- One non-blocking read of the control socket per tick, framed into
+-- complete JSON lines and dispatched. If the helper's end of the socket
+-- has closed (it crashed, was killed, or exited on its own), stop the
+-- service instead of rescheduling — there's nothing left to poll.
+function LocalSend:pollTick()
+    if not self.sock then return end
+    local chunk, closed = Helper.recvChunk(self.sock)
+    local events
+    events, self.rx_buffer = Helper.parseLines(self.rx_buffer, chunk)
+    for _, ev in ipairs(events) do
+        self:dispatch(ev)
+    end
+    if closed then
+        logger.warn("ReadestLocalSend: helper connection closed")
+        self:stopService()
     end
 end
 
@@ -175,7 +224,7 @@ function LocalSend:onReceiveRequest(ev)
         flush_events_on_show = true,
         ok_callback = function()
             self.request_dialogs[ev.sessionId] = nil
-            self.lib.ls_accept(ev.sessionId)
+            Helper.send(self.sock, { cmd = "accept", sessionId = ev.sessionId })
             UIManager:show(InfoMessage:new{
                 text = T(_("Receiving %1 file(s) from %2…"), #files, sender),
                 timeout = 2,
@@ -183,7 +232,7 @@ function LocalSend:onReceiveRequest(ev)
         end,
         cancel_callback = function()
             self.request_dialogs[ev.sessionId] = nil
-            self.lib.ls_decline(ev.sessionId)
+            Helper.send(self.sock, { cmd = "decline", sessionId = ev.sessionId })
         end,
     }
     self.request_dialogs[ev.sessionId] = dialog
@@ -226,29 +275,33 @@ function LocalSend:onReceiveEnd(ev)
 end
 
 LocalSend.handlers = {
-    started = function(_self, ev)
+    started = function(self, ev)
         logger.info("ReadestLocalSend: started on port " .. tostring(ev.port))
+        self.status_cache.alias = ev.alias
+        self.status_cache.port = ev.port
+        Helper.send(self.sock, { cmd = "status" })
+    end,
+    -- Reply to our own {cmd="status"} request; the only source of localIps
+    -- and multicastError, since nothing here talks to the helper
+    -- synchronously anymore.
+    status = function(self, ev)
+        self.status_cache = {
+            running = ev.running,
+            alias = ev.alias,
+            port = ev.port,
+            localIps = ev.localIps,
+            multicastError = ev.multicastError,
+        }
     end,
     receive_request = function(self, ev) self:onReceiveRequest(ev) end,
     receive_request_closed = function(self, ev) self:onReceiveRequestClosed(ev) end,
     receive_file_done = function(self, ev) self:onReceiveFileDone(ev) end,
     receive_end = function(self, ev) self:onReceiveEnd(ev) end,
-    -- Queued when the async ls_start failed (or a runtime error occurred).
-    -- Stop client-side polling so a later toggle/network event can retry;
-    -- the Rust side self-heals a failed start without needing ls_stop first.
+    -- An error event means the helper failed (e.g. a bind error at start);
+    -- there's no separate "is it actually still running" status to check
+    -- (the FFI-era stale-error guard doesn't apply: this event only arrives
+    -- from the one helper process this socket is connected to).
     error = function(_self, ev)
-        -- Event::Error is only emitted on a failed start. If ls_status shows
-        -- the service is actually running, this is a stale error from a
-        -- superseded worker during a suspend/resume overlap; ignore it so it
-        -- can't tear down the healthy service.
-        if _self.lib then
-            local s = LocalSendFFI.takeString(_self.lib, _self.lib.ls_status())
-            local ok, status = pcall(function() return require("json").decode(s or "") end)
-            if ok and type(status) == "table" and status.running then
-                logger.info("ReadestLocalSend: ignoring stale error while running: " .. tostring(ev.message))
-                return
-            end
-        end
         UIManager:show(InfoMessage:new{
             text = T(_("LocalSend error: %1"), ev.message or "?"),
             timeout = 5,
@@ -258,18 +311,11 @@ LocalSend.handlers = {
 }
 
 function LocalSend:statusText()
-    if not self.lib then
+    if not self.available then
         return _("LocalSend not available on this device")
     end
-    if not self.running then
-        return _("LocalSend off")
-    end
-    local s = LocalSendFFI.takeString(self.lib, self.lib.ls_status())
-    local ok, status = pcall(function() return require("json").decode(s or "") end)
-    if not ok or type(status) ~= "table" or not status.running then
-        if ok and type(status) == "table" and status.starting then
-            return _("Starting LocalSend…")
-        end
+    local status = self.status_cache
+    if not self.running or next(status) == nil then
         return _("LocalSend off")
     end
     local octet
