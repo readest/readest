@@ -7,7 +7,11 @@
 use crate::config::StartConfig;
 use crate::events::{self, DevicePayload, Event, FileInfo, SenderInfo};
 use crate::identity::Identity;
-use localsend::discovery::{DiscoveryConfig, DiscoveryHandle, DEFAULT_DISCOVERY_TIMEOUT};
+use localsend::discovery::{
+    DeviceChannel, DiscoveredDevice, DiscoveryConfig, DiscoveryHandle, HttpChannel,
+    DEFAULT_DISCOVERY_TIMEOUT,
+};
+use localsend::http::dto_v2::RegisterDtoV2;
 use localsend::http::server::common::save::FileUploadTarget;
 use localsend::http::server::v2::{PrepareUploadDecisionV2, ServerEventV2, SessionEndReasonV2};
 use localsend::http::server::web::{WebConfig, WebI18n};
@@ -306,11 +310,58 @@ fn spawn_event_pump(service: &Service, mut server_rx: mpsc::Receiver<ServerEvent
     let receiving = service.receiving.clone();
     let send_cancel = service.send_cancel.clone();
     let download_dir = service.download_dir.clone();
+    let discovery = service.discovery.clone();
+    let self_fingerprint = service.identity.fingerprint.clone();
     tokio::spawn(async move {
         while let Some(event) = server_rx.recv().await {
-            handle_server_event(&pending, &receiving, &send_cancel, &download_dir, event);
+            // Register is handled here, in the async pump, so it can await
+            // `add_device`; every other event is synchronous. A peer answering
+            // this device's announcement (or probing it during a scan)
+            // registers over HTTP -- feed it into discovery so `list_devices`
+            // learns who answered. Without this, only multicast responders
+            // (e.g. macOS) ever appear; iOS (no multicast entitlement) and
+            // Android answer over HTTP and would stay invisible.
+            if let ServerEventV2::Register { ip, info } = event {
+                let host = match ip.scope_id {
+                    Some(scope_id) => format!("{}%{scope_id}", ip.ip),
+                    None => ip.ip.to_string(),
+                };
+                register_peer(&discovery, &self_fingerprint, host, info).await;
+            } else {
+                handle_server_event(&pending, &receiving, &send_cancel, &download_dir, event);
+            }
         }
     });
+}
+
+/// Puts a peer that registered with this device's HTTP server into the
+/// discovery store, so `device_payloads`/`list_devices` report it. Its own
+/// registrations (multicast loopback of a scan probing this host) are ignored
+/// by fingerprint. Ported from `register_peer` in
+/// apps/readest-app/src-tauri/src/localsend/service.rs.
+pub async fn register_peer(
+    discovery: &DiscoveryHandle,
+    self_fingerprint: &str,
+    host: String,
+    info: RegisterDtoV2,
+) {
+    if info.fingerprint == self_fingerprint {
+        return;
+    }
+    let device = DiscoveredDevice {
+        alias: info.alias,
+        version: info.version,
+        device_model: info.device_model,
+        device_type: info.device_type,
+        fingerprint: info.fingerprint,
+        channel: DeviceChannel::Http(HttpChannel {
+            host,
+            port: info.port,
+            protocol: info.protocol,
+        }),
+        download: info.download,
+    };
+    discovery.add_device(device).await;
 }
 
 fn handle_server_event(
@@ -321,9 +372,8 @@ fn handle_server_event(
     event: ServerEventV2,
 ) {
     match event {
-        // Registers/announce answers are handled inside the crate's server
-        // and discovery responder; `device_payloads` reads the resulting
-        // peer list on demand, so nothing needs to happen here.
+        // Register is intercepted in spawn_event_pump (it needs to await
+        // discovery.add_device), so it never reaches this synchronous handler.
         ServerEventV2::Register { .. } => {}
         ServerEventV2::PrepareUpload {
             session_id,
@@ -1018,6 +1068,56 @@ mod tests {
         );
         let _ = std::fs::remove_dir_all(&dir);
         discovery
+    }
+
+    fn register_dto(fingerprint: &str) -> RegisterDtoV2 {
+        RegisterDtoV2 {
+            alias: "Phone".into(),
+            version: "2.1".into(),
+            device_model: Some("Android".into()),
+            device_type: None,
+            fingerprint: fingerprint.into(),
+            port: FIRST_PORT,
+            protocol: ProtocolType::Https,
+            download: false,
+        }
+    }
+
+    // An iOS/Android peer answers over HTTP /register; register_peer must feed
+    // it into discovery so list_devices reports it (the bug where KOReader saw
+    // only multicast responders like macOS).
+    #[tokio::test]
+    async fn register_peer_adds_answering_device() {
+        let discovery = test_discovery("Reader").await;
+        register_peer(
+            &discovery,
+            "self-fp",
+            "192.168.2.135".into(),
+            register_dto("peer-fp"),
+        )
+        .await;
+
+        let devices = device_payloads(&discovery);
+        assert_eq!(devices.len(), 1);
+        assert_eq!(devices[0].fingerprint, "peer-fp");
+        assert_eq!(devices[0].host, "192.168.2.135");
+        assert_eq!(devices[0].port, FIRST_PORT);
+    }
+
+    // A device's own scan probes loop back to its HTTP server; those carry our
+    // own fingerprint and must not register us as our own peer.
+    #[tokio::test]
+    async fn register_peer_ignores_own_fingerprint() {
+        let discovery = test_discovery("Reader").await;
+        register_peer(
+            &discovery,
+            "self-fp",
+            "192.168.2.120".into(),
+            register_dto("self-fp"),
+        )
+        .await;
+
+        assert!(device_payloads(&discovery).is_empty());
     }
 
     #[tokio::test]
