@@ -3,17 +3,7 @@
 -- applyRemote upsert with max-duration conflict resolution.
 
 local spec_helper = require("spec_helper")
-
--- Minimal KOReader stubs the module pulls at require-time.
-package.preload["ui/widget/infomessage"] = function()
-    return { new = function() return {} end }
-end
-package.preload["ui/uimanager"] = function()
-    return { show = function() end }
-end
-package.preload["readest_i18n"] = function()
-    return function(s) return s end
-end
+local stubs = require("spec.koreader_stubs")
 
 local SQ3 = require("lua-ljsqlite3/init")
 local DataStorage = require("datastorage")
@@ -45,11 +35,38 @@ describe("readest_syncstats", function()
 
     before_each(function()
         spec_helper.reset()
+        stubs.reset()
         os.remove(statsDbPath())
         seedDb()
         package.loaded["readest_syncstats"] = nil
         SyncStats = require("readest_syncstats")
     end)
+
+    -- Chunked pushes chain via UIManager:nextTick; run them to completion.
+    local function drainScheduled()
+        while stubs.UIManager:drain() > 0 do end
+    end
+
+    -- Seed one book plus a page event per entry of `starts` (page = index).
+    local function seedPageEvents(starts)
+        local conn = SQ3.open(statsDbPath())
+        conn:exec("INSERT INTO book (title, authors, md5) VALUES ('T', 'A', 'md5-big');")
+        conn:exec("BEGIN;")
+        local stmt = conn:prepare(
+            "INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages) VALUES (1, ?, ?, 5, 9);")
+        for i, start in ipairs(starts) do
+            stmt:reset():bind(i, start):step()
+        end
+        stmt:close()
+        conn:exec("COMMIT;")
+        conn:close()
+    end
+
+    local function sequentialStarts(n)
+        local starts = {}
+        for i = 1, n do starts[i] = i end
+        return starts
+    end
 
     it("collects only events past the cursor, joined with md5", function()
         local conn = SQ3.open(statsDbPath())
@@ -339,6 +356,104 @@ describe("readest_syncstats", function()
         assert.is_nil(captured.missing) -- satisfied the pushChanges required_params
         assert.are.equal(2, #captured.payload.statPages)
         assert.are.equal(250, settings.stats_push_cursor) -- max start_time; only set on success
+    end)
+
+    -- #5666: a device with a large backlog (fresh push cursor after pulling the
+    -- full multi-device history) must not send everything in one request — the
+    -- sync client's 10s total socket timeout kills it, the cursor never
+    -- advances, and every retry re-sends the same payload, wedging "Push stats
+    -- now" forever. Mirror the app's statsSync.ts: bounded chunks, cursor
+    -- advanced per successful chunk.
+    it("pushes a large backlog in bounded chunks, advancing the cursor per chunk (#5666)", function()
+        seedPageEvents(sequentialStarts(1001))
+        local settings = { stats_push_cursor = 0 }
+        local calls, cursor_at_call = {}, {}
+        local client = { pushChanges = function(_, payload, cb)
+            table.insert(calls, payload)
+            table.insert(cursor_at_call, settings.stats_push_cursor)
+            cb(true)
+        end }
+
+        SyncStats:push(settings, client, false)
+        drainScheduled()
+
+        assert.are.equal(3, #calls)
+        assert.are.equal(500, #calls[1].statPages)
+        assert.are.equal(500, #calls[2].statPages)
+        assert.are.equal(1, #calls[3].statPages)
+        -- each chunk resumes where the previous one ended
+        assert.are.equal(501, calls[2].statPages[1].start_time)
+        assert.are.equal(1001, calls[3].statPages[1].start_time)
+        -- the cursor advanced after every successful chunk, not once at the end
+        assert.are.same({ 0, 500, 1000 }, cursor_at_call)
+        assert.are.equal(1001, settings.stats_push_cursor)
+        -- every chunk redeclares the stat books its pages reference
+        for _, payload in ipairs(calls) do
+            assert.are.equal(1, #payload.statBooks)
+            assert.are.equal("md5-big", payload.statBooks[1].book_hash)
+        end
+    end)
+
+    it("keeps partial progress when a chunk fails, and a retry resumes from the cursor", function()
+        seedPageEvents(sequentialStarts(1000))
+        local settings = { stats_push_cursor = 0 }
+        local n = 0
+        local client = { pushChanges = function(_, _payload, cb)
+            n = n + 1
+            cb(n ~= 2) -- second chunk fails (e.g. socket timeout)
+        end }
+
+        -- Patch show/new on the instances the module captured (whichever spec
+        -- file's stub won the package.loaded race — see koreader_stubs.lua).
+        local InfoMessage = require("ui/widget/infomessage")
+        local UIManager = require("ui/uimanager")
+        local orig_new, orig_show = InfoMessage.new, UIManager.show
+        local shown = {}
+        InfoMessage.new = function(_, o) return { text = o and o.text } end
+        UIManager.show = function(_, w) table.insert(shown, w and w.text) end
+
+        SyncStats:push(settings, client, true)
+        drainScheduled()
+
+        InfoMessage.new, UIManager.show = orig_new, orig_show
+        assert.are.equal(500, settings.stats_push_cursor) -- first chunk's progress kept
+        assert.are.same({ "Failed to push reading statistics" }, shown)
+
+        -- the retry picks up after the last successful chunk
+        local retry_calls = {}
+        local retry_client = { pushChanges = function(_, payload, cb)
+            table.insert(retry_calls, payload)
+            cb(true)
+        end }
+        SyncStats:push(settings, retry_client, false)
+        drainScheduled()
+
+        assert.are.equal(1, #retry_calls)
+        assert.are.equal(500, #retry_calls[1].statPages)
+        assert.are.equal(501, retry_calls[1].statPages[1].start_time)
+        assert.are.equal(1000, settings.stats_push_cursor)
+    end)
+
+    it("never splits page events sharing a start_time across chunks", function()
+        -- 499 distinct seconds, then 3 events in the same second (split view /
+        -- same-second turns). Cutting between them would advance the cursor
+        -- past the unsent ones and drop them on resume.
+        local starts = sequentialStarts(499)
+        for _ = 1, 3 do starts[#starts + 1] = 500 end
+        seedPageEvents(starts)
+        local settings = { stats_push_cursor = 0 }
+        local calls = {}
+        local client = { pushChanges = function(_, payload, cb)
+            table.insert(calls, payload)
+            cb(true)
+        end }
+
+        SyncStats:push(settings, client, false)
+        drainScheduled()
+
+        assert.are.equal(1, #calls)
+        assert.are.equal(502, #calls[1].statPages)
+        assert.are.equal(500, settings.stats_push_cursor)
     end)
 
     -- The "Push stats now" / "Pull stats now" menu entries call push/pull with
