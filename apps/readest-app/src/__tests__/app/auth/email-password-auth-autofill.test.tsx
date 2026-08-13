@@ -96,6 +96,13 @@ describe('EmailPasswordAuth autofill (#5499)', () => {
 
   it('sends a magic link and a reset email with the FormData email', async () => {
     const { client, auth } = createSupabaseMock();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
     const { container, getByText } = render(
       <EmailPasswordAuth
         supabaseClient={client}
@@ -109,11 +116,16 @@ describe('EmailPasswordAuth autofill (#5499)', () => {
     autofill(email, 'magic@example.com');
     fireEvent.submit(container.querySelector('form') as HTMLFormElement);
     await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalled();
       expect(auth.signInWithOtp).toHaveBeenCalledWith({
         email: 'magic@example.com',
-        options: { emailRedirectTo: 'https://web.readest.com/auth/callback' },
+        options: {
+          emailRedirectTo: 'https://web.readest.com/auth/callback',
+          shouldCreateUser: false,
+        },
       });
     });
+    fetchSpy.mockRestore();
 
     fireEvent.click(getByText('Already have an account? Sign in'));
     fireEvent.click(getByText('Forgot your password?'));

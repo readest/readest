@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { useTranslation } from '@/hooks/useTranslation';
 
+const apiUrl = process.env['NEXT_PUBLIC_BIBLO_API_URL'] || 'http://localhost:3001/api/v0';
+
 type AuthView = 'sign_in' | 'sign_up' | 'magic_link' | 'forgotten_password';
 
 interface EmailPasswordAuthProps {
@@ -105,9 +107,35 @@ export default function EmailPasswordAuth({
         if (error) setError(error.message);
         else if (user && !session) setMessage(_('Check your email for the confirmation link'));
       } else if (view === 'magic_link') {
+        // Verify user with backend and mirror if needed
+        try {
+          const checkRes = await fetch(`${apiUrl}/auth/prepare-magic-link`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+          });
+
+          if (!checkRes.ok) {
+            const errData = await checkRes.json();
+            throw new Error(
+              errData.message ||
+                _('Account validation failed. Please make sure you have a Biblophile account.'),
+            );
+          }
+        } catch (err: any) {
+          setError(err.message || _('Failed to verify account. Please try again.'));
+          setLoading(false);
+          return;
+        }
+
         const { error } = await supabaseClient.auth.signInWithOtp({
           email,
-          options: { emailRedirectTo: redirectTo },
+          options: {
+            emailRedirectTo: redirectTo,
+            shouldCreateUser: false,
+          },
         });
         if (error) setError(error.message);
         else setMessage(_('Check your email for the magic link'));
