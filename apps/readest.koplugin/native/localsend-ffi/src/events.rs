@@ -57,7 +57,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn receive_request_serializes_snake_type_camel_fields() {
+    fn event_queue_contract() {
+        // Serialization: verify snake_case type tags, camelCase field names, and nested struct fields
         clear();
         push(&Event::ReceiveRequest {
             session_id: "s1".into(),
@@ -70,19 +71,34 @@ mod tests {
             total_size: 7,
         });
         let json = pop().unwrap();
+
+        // Type tag and top-level fields
         assert!(json.contains(r#""type":"receive_request""#), "{json}");
         assert!(json.contains(r#""sessionId":"s1""#), "{json}");
-        assert!(json.contains(r#""fileName":"a.epub""#), "{json}");
         assert!(json.contains(r#""totalSize":7"#), "{json}");
-        assert!(pop().is_none());
-    }
 
-    #[test]
-    fn queue_is_fifo() {
-        clear();
+        // Nested sender struct fields
+        assert!(json.contains(r#""alias":"Mac""#), "{json}");
+        assert!(json.contains(r#""deviceModel":"macOS""#), "{json}");
+        assert!(json.contains(r#""ip":"192.168.1.120""#), "{json}");
+
+        // Nested files array and FileInfo struct fields
+        assert!(json.contains(r#""fileName":"a.epub""#), "{json}");
+        assert!(json.contains(r#""id":"f1""#), "{json}");
+        assert!(json.contains(r#""size":7"#), "{json}");
+
+        assert!(pop().is_none(), "queue should be empty after draining");
+
+        // FIFO behavior: verify queue processes events in order
         push(&Event::Started { alias: "a".into(), port: 53318 });
         push(&Event::Error { message: "boom".into() });
-        assert!(pop().unwrap().contains("started"));
-        assert!(pop().unwrap().contains("boom"));
+
+        let first = pop().unwrap();
+        assert!(first.contains("started"), "first pop should be Started event: {first}");
+
+        let second = pop().unwrap();
+        assert!(second.contains("boom"), "second pop should be Error event: {second}");
+
+        assert!(pop().is_none(), "queue should be empty after draining both events");
     }
 }
