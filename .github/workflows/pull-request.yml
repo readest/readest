@@ -28,7 +28,7 @@ jobs:
           submodules: 'true'
       - name: detect src-tauri changes
         id: changes
-        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
         with:
           filters: |
             tauri:
@@ -208,7 +208,7 @@ jobs:
 
       - name: detect koplugin changes
         id: changes
-        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
         with:
           filters: |
             koplugin:
@@ -289,7 +289,7 @@ jobs:
 
       - name: detect tauri-related changes
         id: changes
-        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
         with:
           filters: |
             tauri:
@@ -350,7 +350,7 @@ jobs:
           # configured with cache-workspace-crates for the vendored tauri fork).
           cache: false
 
-      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - uses: Swatinem/rust-cache@258712b0b7b1ddf8bddc9fc3b0faca682b2736c3 # v2
         if: steps.changes.outputs.tauri == 'true'
         with:
           # cache-workspace-crates caches the path/workspace crates too: the
