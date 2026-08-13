@@ -28,7 +28,12 @@ const LIBS_DIR = path.join(PLUGIN_DIR, 'libs');
 // Kindle (kindlepw2 toolchain) userland glibc floor; verified against the
 // KOReader kindle release binaries. Bump ONLY if a readelf check of a
 // current release shows a higher floor is safe.
-const KINDLE_GLIBC = '2.19';
+//
+// Observed 2026-08-13 against koreader-kindle-v2026.07.1.zip: `strings`
+// over every shipped .so/binary (koreader/libs/*, koreader/common/*,
+// luajit, dbclient, dropbear, fbink, scp, sdcv, sftp-server, tar, wmctrl,
+// zsync2) tops out at GLIBC_2.12 (koreader/libs/libzmq.so.5).
+const KINDLE_GLIBC = '2.12';
 
 const TARGETS = {
   armv7: {
@@ -41,7 +46,10 @@ const TARGETS = {
       if (!t.stdout || !t.stdout.includes('armv7-unknown-linux-gnueabi')) {
         return 'run: rustup target add armv7-unknown-linux-gnueabi';
       }
-      if (spawnSync('cargo', ['zigbuild', '--version']).status !== 0) {
+      // Note: `cargo zigbuild --version` always fails (cargo forwards
+      // "zigbuild" as the subcommand name, and that subcommand has no
+      // --version flag), so probe the cargo-zigbuild binary directly.
+      if (spawnSync('cargo-zigbuild', ['--version']).status !== 0) {
         return 'install cargo-zigbuild + zig (brew install zig && cargo install cargo-zigbuild)';
       }
       return null;
