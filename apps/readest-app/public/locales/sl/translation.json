@@ -1652,7 +1652,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} slovarjev ni podprtih in so onemogočeni",
   "No new dictionaries were imported": "Novi slovarji niso bili uvoženi",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Berite knjige iz njihovih izvirnih map, namesto da bi jih kopirali v knjižnico. Prihrani prostor na disku; samodejno nalaganje v oblak še naprej deluje, če je omogočeno.",
-  "This folder is an external library. Books here are always read in place.": "Ta mapa je zunanja knjižnica. Knjige v njej se vedno berejo na izvirnem mestu.",
   "Swipe to Paginate": "Drsanje za listanje",
   "Share anonymous usage data so we can understand how Readest is used and make it better.": "Delite anonimne podatke o uporabi, da bomo razumeli, kako se Readest uporablja, in ga lahko izboljšali.",
   "Anonymous, aggregated feature usage": "Anonimna, združena uporaba funkcij",
@@ -2206,5 +2205,6 @@
   "On": "Vklopljeno",
   "Not available for this book.": "Ni na voljo za to knjigo.",
   "Start of Book": "Začetek knjige",
-  "End of Book": "Konec knjige"
+  "End of Book": "Konec knjige",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ta mapa je zunanja knjižnica. Odkljukajte, da knjig ne berete več z izvirnega mesta; prihodnji uvozi bodo knjige kopirali v knjižnico."
 }

@@ -1590,7 +1590,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} அகராதிகள் ஆதரிக்கப்படவில்லை மற்றும் முடக்கப்பட்டுள்ளன",
   "No new dictionaries were imported": "புதிய அகராதிகள் எதுவும் இறக்குமதி செய்யப்படவில்லை",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "புத்தகங்களை நூலகத்திற்கு நகலெடுக்காமல், அவற்றின் அசல் கோப்புறைகளில் இருந்தே வாசிக்கவும். வட்டக் கொள்ளளவை சேமிக்கும்; இயக்கப்பட்டிருந்தால் கிளவுட் தானியங்கு பதிவேற்றம் இன்னும் வேலை செய்யும்.",
-  "This folder is an external library. Books here are always read in place.": "இந்த கோப்புறை ஒரு வெளிப்புற நூலகம். இங்குள்ள புத்தகங்கள் எப்போதும் அவற்றின் அசல் இடத்திலேயே வாசிக்கப்படும்.",
   "Swipe to Paginate": "பக்கம் மாற்ற ஸ்வைப் செய்யவும்",
   "Share anonymous usage data so we can understand how Readest is used and make it better.": "Readest எவ்வாறு பயன்படுத்தப்படுகிறது என்பதைப் புரிந்து கொள்ளவும் அதை மேம்படுத்தவும் அநாமதேய பயன்பாட்டுத் தரவைப் பகிரவும்.",
   "Anonymous, aggregated feature usage": "அநாமதேய, தொகுக்கப்பட்ட அம்சப் பயன்பாடு",
@@ -2094,5 +2093,6 @@
   "On": "இயக்கத்தில்",
   "Not available for this book.": "இந்தப் புத்தகத்திற்குக் கிடைக்கவில்லை.",
   "Start of Book": "புத்தகத்தின் தொடக்கம்",
-  "End of Book": "புத்தகத்தின் முடிவு"
+  "End of Book": "புத்தகத்தின் முடிவு",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "இந்தக் கோப்புறை ஒரு வெளிப்புற நூலகம். அதன் புத்தகங்களை இருக்கும் இடத்திலிருந்தே படிப்பதை நிறுத்த குறியை நீக்கவும்; இனிவரும் இறக்குமதிகளில் புத்தகங்கள் நூலகத்திற்கு நகலெடுக்கப்படும்."
 }

@@ -1331,12 +1331,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         selectedGroupIds: [],
         minSizeKB: 0,
         flatten: false,
-        // URL ingress / drag-drop don't go through the dialog and so
-        // can't set this. Default to the legacy "copy" behaviour;
-        // already-registered external roots will still be detected
-        // by `runFolderImport` itself via the prefix check, so books
-        // under a registered folder are imported in-place either way.
-        readInPlace: false,
+        // URL ingress / drag-drop don't go through the dialog, so no
+        // user expressed an in-place choice here — pass the folder's
+        // actual registration state. A registered root stays registered
+        // (register is a no-op) and keeps importing in place; anything
+        // else keeps the legacy "copy" behaviour (unregister is a
+        // no-op). A blanket `false` would silently unregister a
+        // registered root now that `runFolderImport` treats OFF as
+        // "stop reading this folder in place" (#5680).
+        readInPlace: isRegisteredExternalRoot(dirPath),
         // Non-dialog path never opts into auto-import.
         autoImport: false,
       });
@@ -1543,6 +1546,32 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   };
 
   /**
+   * Remove `directory` from `settings.externalLibraryFolders` (and persist
+   * settings) — the symmetric counterpart of
+   * {@link registerExternalLibraryFolder}, run when the user unchecks "Read
+   * books in place" for a registered folder (#5680). Subsequent imports from
+   * the folder copy books into Books/<hash>/ again; books previously imported
+   * in place keep working (the reader falls back to `book.filePath`) and are
+   * converted to managed copies as re-imports encounter them. A no-op when
+   * the folder isn't registered.
+   */
+  const unregisterExternalLibraryFolder = async (directory: string): Promise<void> => {
+    const target = normalizeRoot(directory);
+    if (!target) return;
+    const liveSettings = useSettingsStore.getState().settings;
+    const existing = liveSettings.externalLibraryFolders ?? [];
+    const next = existing.filter((r) => normalizeRoot(r) !== target);
+    if (next.length === existing.length) return;
+    const nextSettings = { ...liveSettings, externalLibraryFolders: next };
+    setSettings(nextSettings);
+    try {
+      await saveSettings(envConfig, nextSettings);
+    } catch (e) {
+      console.error('Failed to persist externalLibraryFolders update:', e);
+    }
+  };
+
+  /**
    * Add or remove `directory` from `settings.autoImportFolders` (and persist)
    * per the user's per-folder "Auto-import new books from this folder" choice.
    * `flatten` records the same import's "Folder Structure" pick so later scans
@@ -1631,9 +1660,15 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // ingest layer's `shouldImportInPlace` does a path-prefix match
     // against `settings.externalLibraryFolders`). Register here so the
     // bookkeeping survives across launches and so subsequent imports
-    // from the same folder don't have to re-trigger the toggle.
+    // from the same folder don't have to re-trigger the toggle. The
+    // OFF branch unregisters so unchecking the box on a registered
+    // folder turns in-place mode off again (#5680) — callers that
+    // bypass the dialog must pass the folder's actual registration
+    // state, not a blanket `false` (see handleImportBooksFromDirectory).
     if (result.readInPlace) {
       await registerExternalLibraryFolder(result.directory);
+    } else {
+      await unregisterExternalLibraryFolder(result.directory);
     }
     // Opt this folder into (or out of) auto-import per the dialog's per-folder
     // checkbox. `result.autoImport` already implies `readInPlace` (the dialog

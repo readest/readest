@@ -1559,7 +1559,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} từ điển không được hỗ trợ và đã bị vô hiệu hóa",
   "No new dictionaries were imported": "Không có từ điển mới nào được nhập",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Đọc sách trực tiếp từ thư mục gốc thay vì sao chép vào thư viện. Tiết kiệm dung lượng đĩa; tự động tải lên đám mây vẫn hoạt động nếu được bật.",
-  "This folder is an external library. Books here are always read in place.": "Thư mục này là thư viện ngoài. Sách trong đây luôn được đọc tại vị trí gốc.",
   "Swipe to Paginate": "Vuốt để Sang Trang",
   "Share anonymous usage data so we can understand how Readest is used and make it better.": "Chia sẻ dữ liệu sử dụng ẩn danh để chúng tôi có thể hiểu cách Readest được sử dụng và cải thiện nó.",
   "Anonymous, aggregated feature usage": "Sử dụng tính năng ẩn danh và tổng hợp",
@@ -2038,5 +2037,6 @@
   "On": "Bật",
   "Not available for this book.": "Không khả dụng cho sách này.",
   "Start of Book": "Đầu sách",
-  "End of Book": "Cuối sách"
+  "End of Book": "Cuối sách",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Thư mục này là thư viện ngoài. Bỏ chọn để ngừng đọc sách tại chỗ; các lần nhập sau sẽ sao chép sách vào thư viện."
 }

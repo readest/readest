@@ -1714,7 +1714,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} قاموس غير مدعوم ومعطل",
   "No new dictionaries were imported": "لم يتم استيراد أي قواميس جديدة",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "اقرأ الكتب من مجلداتها الأصلية بدلاً من نسخها إلى المكتبة. يوفر مساحة على القرص؛ ولا يزال الرفع التلقائي إلى السحابة يعمل إذا كان مفعلاً.",
-  "This folder is an external library. Books here are always read in place.": "هذا المجلد هو مكتبة خارجية. تُقرأ الكتب هنا دائمًا من مكانها.",
   "Swipe to Paginate": "اسحب لتصفح الصفحات",
   "Share anonymous usage data so we can understand how Readest is used and make it better.": "شارك بيانات الاستخدام المجهولة لنفهم كيف يُستخدم Readest ونحسّنه.",
   "Anonymous, aggregated feature usage": "استخدام مجهول ومجمَّع للميزات",
@@ -2318,5 +2317,6 @@
   "On": "مفعّل",
   "Not available for this book.": "غير متاح لهذا الكتاب.",
   "Start of Book": "بداية الكتاب",
-  "End of Book": "نهاية الكتاب"
+  "End of Book": "نهاية الكتاب",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "هذا المجلد مكتبة خارجية. ألغِ التحديد للتوقف عن قراءة كتبه من مكانها؛ وستُنسخ الكتب إلى المكتبة في عمليات الاستيراد القادمة."
 }

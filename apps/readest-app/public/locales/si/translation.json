@@ -1590,7 +1590,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "ශබ්දකෝෂ {{count}}ක් සහාය නොදක්වන අතර අක්‍රිය කර ඇත",
   "No new dictionaries were imported": "නව ශබ්දකෝෂ ආයාත කර නැත",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "පොත් පුස්තකාලයට පිටපත් කරනවාට වඩා ඒවායේ මුල් ෆෝල්ඩරවලින් කියවන්න. තැටි ඉඩ ඉතිරි කරයි; සක්‍රිය නම් වලාකුළු ස්වයංක්‍රීය උඩුගත කිරීම තවමත් ක්‍රියා කරයි.",
-  "This folder is an external library. Books here are always read in place.": "මෙම ෆෝල්ඩරය බාහිර පුස්තකාලයකි. මෙහි ඇති පොත් සැමවිටම ඔවුන්ගේ මුල් ස්ථානයේ සිට කියවනු ලැබේ.",
   "Swipe to Paginate": "පිටු මාරුවට ස්වයිප් කරන්න",
   "Share anonymous usage data so we can understand how Readest is used and make it better.": "Readest භාවිතය වටහාගෙන එය වඩාත් යහපත් කිරීමට අපට හැකි වන පරිදි අනාමික භාවිත දත්ත බෙදාගන්න.",
   "Anonymous, aggregated feature usage": "අනාමික, ඒකරාශී වූ විශේෂාංග භාවිතය",
@@ -2094,5 +2093,6 @@
   "On": "සක්‍රියයි",
   "Not available for this book.": "මෙම පොත සඳහා නොමැත.",
   "Start of Book": "පොතේ ආරම්භය",
-  "End of Book": "පොතේ අවසානය"
+  "End of Book": "පොතේ අවසානය",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "මෙම ෆෝල්ඩරය බාහිර පුස්තකාලයකි. එහි පොත් ඒවා ඇති තැනින්ම කියවීම නැවැත්වීමට සලකුණ ඉවත් කරන්න; ඉදිරි ආයාත වලදී පොත් පුස්තකාලයට පිටපත් වේ."
 }

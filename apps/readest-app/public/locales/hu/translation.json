@@ -1590,7 +1590,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} szótár nem támogatott, és le van tiltva",
   "No new dictionaries were imported": "Nem importáltunk új szótárakat",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Olvassa a könyveket az eredeti mappáikból, ahelyett, hogy a könyvtárba másolná őket. Lemezterületet takarít meg; a felhő automatikus feltöltése továbbra is működik, ha engedélyezve van.",
-  "This folder is an external library. Books here are always read in place.": "Ez a mappa egy külső könyvtár. Az itt található könyvek mindig a saját helyükön nyílnak meg.",
   "Swipe to Paginate": "Lapozás húzással",
   "Share anonymous usage data so we can understand how Readest is used and make it better.": "Oszd meg az anonim használati adatokat, hogy megérthessük, hogyan használják a Readestet, és továbbfejleszthessük.",
   "Anonymous, aggregated feature usage": "Anonim, összesített funkcióhasználat",
@@ -2094,5 +2093,6 @@
   "On": "Be",
   "Not available for this book.": "Ehhez a könyvhöz nem érhető el.",
   "Start of Book": "Könyv eleje",
-  "End of Book": "Könyv vége"
+  "End of Book": "Könyv vége",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ez a mappa külső könyvtár. Törölje a jelölést, hogy a könyveit ne az eredeti helyükről olvassa; a későbbi importálások a könyveket a könyvtárba másolják."
 }

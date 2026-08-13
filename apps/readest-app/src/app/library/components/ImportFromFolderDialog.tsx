@@ -69,8 +69,10 @@ export interface ImportFromFolderResult {
    * notes) still live in Readest's data dir. Deleting such a book from
    * Readest only removes those Readest-side sidecars; the original
    * source file under the registered folder is left untouched.
-   * Defaults to `false`, which keeps the legacy "copy into Readest"
-   * behaviour and leaves the registered folder list untouched.
+   * When `false`, books are copied into Readest (the legacy behaviour)
+   * and the directory is removed from `settings.externalLibraryFolders`
+   * if it was registered — unchecking the box on a registered folder is
+   * how users turn in-place mode off again (#5680).
    */
   readInPlace: boolean;
   /**
@@ -120,11 +122,12 @@ interface ImportFromFolderDialogProps {
   /**
    * Predicate the dialog uses to decide whether the currently-displayed
    * folder is already registered as an external library folder. When
-   * `true`, the "Read in place" toggle is forced ON and locked, with a
-   * note explaining that imports from this folder are always in-place
-   * (until the user removes it from Settings, which v1 doesn't expose).
-   * Implementations should match by exact string after the same path
-   * normalization the importer uses.
+   * `true`, the "Read in place" toggle defaults to ON (reflecting the
+   * folder's actual state) but stays editable — unchecking it and
+   * confirming tells the caller to unregister the folder, so future
+   * imports copy books into the library again (#5680). Implementations
+   * should match by exact string after the same path normalization the
+   * importer uses.
    */
   isRegisteredExternalRoot?: (directory: string) => boolean;
   /**
@@ -207,13 +210,15 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
   // root regardless of where it lived on disk. The caller seeds this
   // from localStorage so the user's last choice is restored.
   const [folderMode, setFolderMode] = useState<'keep' | 'flatten'>(initialFolderMode);
-  // "Read in place" toggle. When the directory is already registered
-  // as an external library folder we force this ON and hide the
-  // toggle's interactive surface — see {@link readInPlaceLocked}
-  // below — because imports from a registered folder are always
-  // in-place by design (the importer's `shouldImportInPlace` check is
-  // path-prefix based and ignores any per-import opt-out).
-  const [readInPlace, setReadInPlace] = useState<boolean>(initialReadInPlace);
+  // "Read in place" toggle. `null` means the user hasn't touched the box
+  // for the currently-shown folder, so it reflects reality: ON when the
+  // folder is already registered as an external library folder, otherwise
+  // the caller-persisted last choice. An explicit click overrides both —
+  // unchecking a registered folder makes OK report `readInPlace: false`,
+  // which the caller turns into an unregistration (#5680). Picking a
+  // different folder resets the override so the box snaps back to that
+  // folder's actual state.
+  const [readInPlaceChoice, setReadInPlaceChoice] = useState<boolean | null>(null);
   // "Auto-import new books from this folder" — a sub-option of "Read in
   // place". Auto-import scans the folder on every open/focus and reads its
   // books in place, so it is only offered (and only takes effect) when the
@@ -224,9 +229,9 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
   // the folders already opted into auto-import.
   const [view, setView] = useState<'import' | 'watched'>('import');
 
-  const readInPlaceLocked = !!directory && (isRegisteredExternalRoot?.(directory) ?? false);
-  const effectiveReadInPlace = readInPlaceLocked || readInPlace;
-  const effectiveAutoImport = effectiveReadInPlace && autoImport;
+  const isRegisteredRoot = !!directory && (isRegisteredExternalRoot?.(directory) ?? false);
+  const readInPlace = readInPlaceChoice ?? (isRegisteredRoot || initialReadInPlace);
+  const effectiveAutoImport = readInPlace && autoImport;
 
   /** Same normalization the caller matches watched roots with. */
   const isCurrentDirectory = (path: string) => {
@@ -276,7 +281,13 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
     setPicking(true);
     try {
       const picked = await onPickDirectory();
-      if (picked) setDirectory(picked);
+      if (picked) {
+        setDirectory(picked);
+        // A different folder is a different context: drop any explicit
+        // read-in-place override so the box shows the picked folder's
+        // actual state (ON when registered, last choice otherwise).
+        setReadInPlaceChoice(null);
+      }
     } finally {
       setPicking(false);
     }
@@ -300,7 +311,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
       selectedGroupIds: selectedIds,
       minSizeKB: safeMinSizeKB,
       flatten: folderMode === 'flatten',
-      readInPlace: effectiveReadInPlace,
+      readInPlace,
       autoImport: effectiveAutoImport,
     });
   };
@@ -444,28 +455,30 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
             copied into Books/<hash>/ as before. When ON, the chosen
             folder is registered in `settings.externalLibraryFolders`
             and the importer keeps each book at its original path —
-            no copy. See `runFolderImport` and `shouldImportInPlace`
-            in ingestService for the downstream effects (cloud sync,
-            symmetric local delete). */}
+            no copy. Unchecking it for an already-registered folder
+            unregisters it on OK. See `runFolderImport` and
+            `shouldImportInPlace` in ingestService for the downstream
+            effects (cloud sync, symmetric local delete). */}
         <div className='flex flex-col gap-1.5'>
           <label
             className={clsx(
               'flex items-start gap-2 rounded-md px-1 py-1 text-sm',
-              readInPlaceLocked ? 'cursor-default' : 'cursor-pointer hover:bg-base-200/50',
+              'cursor-pointer hover:bg-base-200/50',
             )}
           >
             <input
               type='checkbox'
               className='checkbox checkbox-sm mt-0.5'
-              checked={effectiveReadInPlace}
-              disabled={readInPlaceLocked}
-              onChange={(e) => setReadInPlace(e.target.checked)}
+              checked={readInPlace}
+              onChange={(e) => setReadInPlaceChoice(e.target.checked)}
             />
             <span className='select-none'>
               <span className='block'>{_('Read books in place')}</span>
               <span className='text-base-content/60 block text-xs'>
-                {readInPlaceLocked
-                  ? _('This folder is an external library. Books here are always read in place.')
+                {isRegisteredRoot
+                  ? _(
+                      'This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.',
+                    )
                   : _(
                       'Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.',
                     )}
@@ -475,7 +488,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
           {/* Auto-import sub-option. Only shown when the folder is read in
               place — auto-import re-scans and reads books straight from the
               folder, so it has no meaning for copied imports. */}
-          {effectiveReadInPlace && (
+          {readInPlace && (
             <label className='ms-6 flex cursor-pointer items-start gap-2 rounded-md px-1 py-1 text-sm hover:bg-base-200/50'>
               <input
                 type='checkbox'

@@ -1621,7 +1621,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} de dicționare nu sunt acceptate și sunt dezactivate",
   "No new dictionaries were imported": "Nu au fost importate dicționare noi",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Citește cărțile din folderele lor originale în loc să le copieze în bibliotecă. Economisește spațiu pe disc; încărcarea automată în cloud funcționează în continuare dacă este activată.",
-  "This folder is an external library. Books here are always read in place.": "Acest folder este o bibliotecă externă. Cărțile de aici sunt întotdeauna citite din locația originală.",
   "Swipe to Paginate": "Glisare pentru a Schimba Pagina",
   "Share anonymous usage data so we can understand how Readest is used and make it better.": "Partajează date anonime de utilizare pentru a ne ajuta să înțelegem cum este folosit Readest și să-l îmbunătățim.",
   "Anonymous, aggregated feature usage": "Utilizare anonimă și agregată a funcțiilor",
@@ -2150,5 +2149,6 @@
   "On": "Activat",
   "Not available for this book.": "Indisponibil pentru această carte.",
   "Start of Book": "Începutul cărții",
-  "End of Book": "Sfârșitul cărții"
+  "End of Book": "Sfârșitul cărții",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Acest dosar este o bibliotecă externă. Debifați pentru a nu mai citi cărțile din locația lor originală; importurile viitoare vor copia cărțile în bibliotecă."
 }

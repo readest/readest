@@ -1559,7 +1559,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} kamus tidak didukung dan dinonaktifkan",
   "No new dictionaries were imported": "Tidak ada kamus baru yang diimpor",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Baca buku dari folder aslinya alih-alih menyalinnya ke perpustakaan. Menghemat ruang disk; unggah otomatis ke awan tetap berfungsi jika diaktifkan.",
-  "This folder is an external library. Books here are always read in place.": "Folder ini adalah pustaka eksternal. Buku di sini selalu dibaca di tempat aslinya.",
   "Swipe to Paginate": "Geser untuk Pindah Halaman",
   "Share anonymous usage data so we can understand how Readest is used and make it better.": "Bagikan data penggunaan anonim agar kami dapat memahami bagaimana Readest digunakan dan meningkatkannya.",
   "Anonymous, aggregated feature usage": "Penggunaan fitur anonim dan agregat",
@@ -2038,5 +2037,6 @@
   "On": "Aktif",
   "Not available for this book.": "Tidak tersedia untuk buku ini.",
   "Start of Book": "Awal buku",
-  "End of Book": "Akhir buku"
+  "End of Book": "Akhir buku",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Folder ini adalah pustaka eksternal. Hapus centang untuk berhenti membaca bukunya di tempat; impor berikutnya akan menyalin buku ke pustaka."
 }

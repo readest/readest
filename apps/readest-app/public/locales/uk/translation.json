@@ -1652,7 +1652,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} словників не підтримуються і вимкнено",
   "No new dictionaries were imported": "Нові словники не імпортовано",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Читайте книги з їхніх початкових тек, замість копіювання до бібліотеки. Заощаджує місце на диску; автозавантаження до хмари продовжує працювати, якщо ввімкнено.",
-  "This folder is an external library. Books here are always read in place.": "Ця тека — зовнішня бібліотека. Книги в ній завжди читаються з початкового розташування.",
   "Swipe to Paginate": "Гортання для перегортання",
   "Share anonymous usage data so we can understand how Readest is used and make it better.": "Поділіться анонімними даними використання, щоб ми могли зрозуміти, як використовується Readest, і покращити його.",
   "Anonymous, aggregated feature usage": "Анонімне, агреговане використання функцій",
@@ -2206,5 +2205,6 @@
   "On": "Увімк.",
   "Not available for this book.": "Недоступно для цієї книги.",
   "Start of Book": "Початок книги",
-  "End of Book": "Кінець книги"
+  "End of Book": "Кінець книги",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ця тека — зовнішня бібліотека. Зніміть позначку, щоб припинити читати її книги на місці; під час наступних імпортів книги копіюватимуться в бібліотеку."
 }

@@ -1590,7 +1590,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} woordenboeken worden niet ondersteund en zijn uitgeschakeld",
   "No new dictionaries were imported": "Er zijn geen nieuwe woordenboeken geïmporteerd",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Lees boeken vanuit hun oorspronkelijke mappen in plaats van ze naar de bibliotheek te kopiëren. Bespaart schijfruimte; automatische uploads naar de cloud blijven werken als ze ingeschakeld zijn.",
-  "This folder is an external library. Books here are always read in place.": "Deze map is een externe bibliotheek. De boeken hier worden altijd op hun oorspronkelijke locatie gelezen.",
   "Swipe to Paginate": "Vegen om door te bladeren",
   "Share anonymous usage data so we can understand how Readest is used and make it better.": "Deel anonieme gebruiksgegevens zodat we kunnen begrijpen hoe Readest wordt gebruikt en het kunnen verbeteren.",
   "Anonymous, aggregated feature usage": "Anoniem, geaggregeerd functiegebruik",
@@ -2094,5 +2093,6 @@
   "On": "Aan",
   "Not available for this book.": "Niet beschikbaar voor dit boek.",
   "Start of Book": "Begin van het boek",
-  "End of Book": "Einde van het boek"
+  "End of Book": "Einde van het boek",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Deze map is een externe bibliotheek. Vink uit om de boeken niet langer op hun oorspronkelijke locatie te lezen; toekomstige imports kopiëren de boeken naar de bibliotheek."
 }

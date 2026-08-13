@@ -1590,7 +1590,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} ordböcker stöds inte och är inaktiverade",
   "No new dictionaries were imported": "Inga nya ordböcker importerades",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Läs böcker direkt från deras ursprungsmappar i stället för att kopiera dem till biblioteket. Sparar diskutrymme; automatisk uppladdning till molnet fungerar fortfarande om den är aktiverad.",
-  "This folder is an external library. Books here are always read in place.": "Den här mappen är ett externt bibliotek. Böckerna här läses alltid från sin ursprungsplats.",
   "Swipe to Paginate": "Svep för att Bläddra",
   "Share anonymous usage data so we can understand how Readest is used and make it better.": "Dela anonyma användningsdata så att vi kan förstå hur Readest används och göra det bättre.",
   "Anonymous, aggregated feature usage": "Anonym, aggregerad funktionsanvändning",
@@ -2094,5 +2093,6 @@
   "On": "På",
   "Not available for this book.": "Inte tillgängligt för den här boken.",
   "Start of Book": "Bokens början",
-  "End of Book": "Bokens slut"
+  "End of Book": "Bokens slut",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Den här mappen är ett externt bibliotek. Avmarkera för att sluta läsa dess böcker på plats; framtida importer kopierar böckerna till biblioteket."
 }

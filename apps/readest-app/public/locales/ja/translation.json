@@ -1559,7 +1559,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} 件の辞書が非対応のため無効になっています",
   "No new dictionaries were imported": "新しい辞書は読み込まれませんでした",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "ライブラリにコピーせず、元のフォルダから直接書籍を読み込みます。ディスク容量を節約でき、自動アップロードが有効ならクラウド同期も引き続き機能します。",
-  "This folder is an external library. Books here are always read in place.": "このフォルダは外部ライブラリです。ここの書籍は常に元の場所から読み込まれます。",
   "Swipe to Paginate": "スワイプでページ送り",
   "Share anonymous usage data so we can understand how Readest is used and make it better.": "Readestがどのように使われているかを把握し、改善するために匿名の使用データを共有してください。",
   "Anonymous, aggregated feature usage": "匿名で集計された機能の使用状況",
@@ -2038,5 +2037,6 @@
   "On": "オン",
   "Not available for this book.": "この本では利用できません。",
   "Start of Book": "本の先頭",
-  "End of Book": "本の末尾"
+  "End of Book": "本の末尾",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "このフォルダは外部ライブラリです。チェックを外すと元の場所から直接読み込まなくなり、以降のインポートでは本がライブラリにコピーされます。"
 }

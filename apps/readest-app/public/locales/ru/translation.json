@@ -1652,7 +1652,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} словарей не поддерживаются и отключены",
   "No new dictionaries were imported": "Новые словари не были импортированы",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Читать книги из их исходных папок вместо копирования в библиотеку. Экономит место на диске; автозагрузка в облако по-прежнему работает, если включена.",
-  "This folder is an external library. Books here are always read in place.": "Эта папка — внешняя библиотека. Книги в ней всегда открываются по исходному пути.",
   "Swipe to Paginate": "Смахивание для перелистывания",
   "Share anonymous usage data so we can understand how Readest is used and make it better.": "Поделитесь анонимными данными об использовании, чтобы мы могли понять, как используется Readest, и улучшить его.",
   "Anonymous, aggregated feature usage": "Анонимное, агрегированное использование функций",
@@ -2206,5 +2205,6 @@
   "On": "Вкл.",
   "Not available for this book.": "Недоступно для этой книги.",
   "Start of Book": "Начало книги",
-  "End of Book": "Конец книги"
+  "End of Book": "Конец книги",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Эта папка — внешняя библиотека. Снимите флажок, чтобы перестать читать её книги на месте; при последующих импортах книги будут копироваться в библиотеку."
 }

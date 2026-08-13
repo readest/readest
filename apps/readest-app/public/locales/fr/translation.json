@@ -1621,7 +1621,6 @@
   "{{count}} dictionary is unsupported and disabled_other": "{{count}} dictionnaires ne sont pas pris en charge et sont désactivés",
   "No new dictionaries were imported": "Aucun nouveau dictionnaire n’a été importé",
   "Read books from their original folders instead of copying them into the library. Saves disk space; cloud auto-upload still works if enabled.": "Lit les livres depuis leur dossier d’origine au lieu de les copier dans la bibliothèque. Économise de l’espace disque ; l’envoi automatique vers le cloud continue de fonctionner s’il est activé.",
-  "This folder is an external library. Books here are always read in place.": "Ce dossier est une bibliothèque externe. Les livres y sont toujours lus depuis leur emplacement d’origine.",
   "Swipe to Paginate": "Glisser pour Tourner la Page",
   "Share anonymous usage data so we can understand how Readest is used and make it better.": "Partagez des données d'utilisation anonymes pour nous aider à comprendre comment Readest est utilisé et à l'améliorer.",
   "Anonymous, aggregated feature usage": "Utilisation des fonctionnalités anonyme et agrégée",
@@ -2150,5 +2149,6 @@
   "On": "Activé",
   "Not available for this book.": "Non disponible pour ce livre.",
   "Start of Book": "Début du livre",
-  "End of Book": "Fin du livre"
+  "End of Book": "Fin du livre",
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ce dossier est une bibliothèque externe. Décochez pour cesser de lire ses livres sur place ; les prochaines importations copieront les livres dans la bibliothèque."
 }
