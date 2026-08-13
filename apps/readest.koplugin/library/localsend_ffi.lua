@@ -19,12 +19,20 @@ int ls_stop(void);
 void ls_string_free(char* s);
 ]]
 
--- Pure mapping so specs can exercise it. Deliberately NOT keyed on generic
--- Linux/arm: Kobo is hard-float and must never load the softfp Kindle lib.
--- dev = { is_kindle = bool, is_emulator = bool, os = jit.os, arch = jit.arch }
+-- Pure mapping so specs can exercise it. Kindle ships soft-float armv7
+-- (gnueabi); Kobo (all kobo/kobov4/kobov5) ships hard-float armv7
+-- (gnueabihf). The two ABIs are NOT interchangeable: a softfp lib will not
+-- dlopen in a hardfloat KOReader process and vice-versa, so each device
+-- class is keyed on its own flag rather than the generic Linux/arm pair -
+-- no try-load fallback is needed since Kindle and Kobo are distinct,
+-- unambiguous device classes. Everything else returns nil.
+-- dev = { is_kindle = bool, is_kobo = bool, is_emulator = bool, os = jit.os, arch = jit.arch }
 function M.libNameFor(dev)
     if dev.is_kindle and dev.arch == "arm" then
         return "liblocalsend-armv7.so"
+    end
+    if dev.is_kobo and dev.arch == "arm" then
+        return "liblocalsend-armv7hf.so"
     end
     if dev.is_emulator and dev.os == "OSX" and dev.arch == "arm64" then
         return "liblocalsend-arm64.dylib"
@@ -39,6 +47,7 @@ function M.load(plugin_path)
     local Device = require("device")
     local name = M.libNameFor({
         is_kindle = Device:isKindle(),
+        is_kobo = Device:isKobo(),
         is_emulator = Device:isEmulator(),
         os = jit.os,
         arch = jit.arch,

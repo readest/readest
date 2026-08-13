@@ -9,13 +9,25 @@ describe("localsend_ffi.libNameFor", function()
             FFIMod.libNameFor({ is_kindle = true, os = "Linux", arch = "arm" }))
     end)
 
+    it("picks the hardfloat .so on Kobo arm", function()
+        assert.equals("liblocalsend-armv7hf.so",
+            FFIMod.libNameFor({ is_kobo = true, os = "Linux", arch = "arm" }))
+    end)
+
     it("picks the arm64 dylib on the macOS emulator", function()
         assert.equals("liblocalsend-arm64.dylib",
             FFIMod.libNameFor({ is_emulator = true, os = "OSX", arch = "arm64" }))
     end)
 
-    it("refuses non-Kindle linux arm devices (Kobo is hard-float)", function()
+    it("refuses linux arm devices that are neither kindle nor kobo", function()
         assert.is_nil(FFIMod.libNameFor({ os = "Linux", arch = "arm" }))
+    end)
+
+    it("never crosses the softfp/hardfloat ABI boundary between kindle and kobo", function()
+        assert.equals("liblocalsend-armv7.so",
+            FFIMod.libNameFor({ is_kindle = true, arch = "arm" }))
+        assert.equals("liblocalsend-armv7hf.so",
+            FFIMod.libNameFor({ is_kobo = true, arch = "arm" }))
     end)
 
     it("refuses other arches", function()
