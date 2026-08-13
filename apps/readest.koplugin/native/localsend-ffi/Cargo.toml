@@ -19,7 +19,7 @@ anyhow = "1"
 bytes = "1"
 futures-util = "0.3"
 if-addrs = "0.15"
-localsend = { git = "https://github.com/readest/localsend", rev = "3721994985277e49e7e1ee4ed97601ad5405fc87", default-features = false, features = ["discovery"] }
+localsend = { git = "https://github.com/readest/localsend", rev = "3cae1825670617244ad235ba4295114d53e5fd2b", default-features = false, features = ["discovery"] }
 pem = "4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

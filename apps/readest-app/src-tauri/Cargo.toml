@@ -84,7 +84,7 @@ tauri-plugin-webdriver = { version = "0.2", optional = true }
 # pulls the whole Flutter SDK (552 MB checked out) and blows past MAX_PATH on
 # Windows. The fork's `readest` branch tracks the same upstream rev
 # (ff2995c9523c5fae407f7d444d0986b2c6ae568e); rebase it when bumping.
-localsend = { git = "https://github.com/readest/localsend", rev = "3721994985277e49e7e1ee4ed97601ad5405fc87", default-features = false, features = ["discovery"] }
+localsend = { git = "https://github.com/readest/localsend", rev = "3cae1825670617244ad235ba4295114d53e5fd2b", default-features = false, features = ["discovery"] }
 uuid = { version = "1", features = ["v4"] }
 pem = "4"
 anyhow = "1"
