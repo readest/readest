@@ -3,7 +3,8 @@
 
 use serde::Serialize;
 use std::collections::VecDeque;
-use std::sync::{Mutex, PoisonError};
+use std::sync::{Mutex, OnceLock, PoisonError};
+use tokio::sync::Notify;
 
 #[derive(Serialize)]
 #[serde(
@@ -40,6 +41,13 @@ pub enum Event {
     Error {
         message: String,
     },
+    Status {
+        running: bool,
+        alias: Option<String>,
+        port: Option<u16>,
+        local_ips: Vec<String>,
+        multicast_error: Option<String>,
+    },
 }
 
 #[derive(Serialize)]
@@ -64,10 +72,28 @@ fn queue() -> std::sync::MutexGuard<'static, VecDeque<String>> {
     EVENTS.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
+/// Wakes anyone awaiting `notified()` as soon as a new event is queued, so
+/// the helper binary's event forwarder can block on this instead of
+/// busy-polling `pop()` in a loop.
+static NOTIFY: OnceLock<Notify> = OnceLock::new();
+
+fn notify() -> &'static Notify {
+    NOTIFY.get_or_init(Notify::new)
+}
+
+/// Resolves once the next `push()` call happens after this future was
+/// created. Callers that want to drain the queue first and only then wait
+/// must call this *after* draining, otherwise a push that lands in between
+/// is missed until the following one.
+pub fn notified() -> tokio::sync::futures::Notified<'static> {
+    notify().notified()
+}
+
 pub fn push(event: &Event) {
     if let Ok(json) = serde_json::to_string(event) {
         queue().push_back(json);
     }
+    notify().notify_one();
 }
 
 pub fn pop() -> Option<String> {

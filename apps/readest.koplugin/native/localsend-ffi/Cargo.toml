@@ -9,7 +9,10 @@ publish = false
 
 [lib]
 name = "localsend_ffi"
-crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "localsend-helper"
+path = "src/bin/helper.rs"
 
 [dependencies]
 anyhow = "1"
@@ -18,7 +21,7 @@ localsend = { git = "https://github.com/readest/localsend", rev = "3721994985277
 pem = "4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros"] }
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros", "net", "io-util"] }
 
 [dev-dependencies]
 serde_json = "1"
