@@ -3,6 +3,7 @@
 use anyhow::Context;
 use localsend::crypto::cert::fingerprint_from_cert_der;
 use localsend::discovery::DeviceIdentity;
+use localsend::http::dto_v2::RegisterDtoV2;
 use localsend::http::server::TlsConfig;
 use localsend::http::state::ClientInfo;
 use localsend::model::discovery::{DeviceType, ProtocolType, PROTOCOL_VERSION_V2};
@@ -174,6 +175,23 @@ impl Identity {
         }
     }
 
+    /// The registration announced when this device sends a `prepare-upload`
+    /// request, i.e. what `run_send` puts on the wire as `info`. Ported from
+    /// `Identity::register_dto` in
+    /// apps/readest-app/src-tauri/src/localsend/identity.rs.
+    pub fn register_dto(&self, port: u16) -> RegisterDtoV2 {
+        RegisterDtoV2 {
+            alias: self.alias.clone(),
+            version: PROTOCOL_VERSION_V2.to_string(),
+            device_model: Some(self.device_model.clone()),
+            device_type: Some(self.device_type.clone()),
+            fingerprint: self.fingerprint.clone(),
+            port,
+            protocol: ProtocolType::Https,
+            download: false,
+        }
+    }
+
     pub fn multicast_device(&self, port: u16) -> MulticastDevice {
         MulticastDevice {
             alias: self.alias.clone(),
@@ -210,6 +228,12 @@ mod tests {
             a.multicast_device(53318).device_model.as_deref(),
             Some("KOReader")
         );
+        let dto = a.register_dto(53318);
+        assert_eq!(dto.alias, "KO");
+        assert_eq!(dto.device_model.as_deref(), Some("KOReader"));
+        assert_eq!(dto.fingerprint, a.fingerprint);
+        assert_eq!(dto.port, 53318);
+        assert!(matches!(dto.protocol, ProtocolType::Https));
         let _ = std::fs::remove_dir_all(&dir);
     }
 

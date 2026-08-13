@@ -17,6 +17,9 @@ pub enum Event {
         alias: String,
         port: u16,
     },
+    Devices {
+        devices: Vec<DevicePayload>,
+    },
     ReceiveRequest {
         session_id: String,
         sender: SenderInfo,
@@ -37,6 +40,20 @@ pub enum Event {
         reason: String,
         received: usize,
         failed: usize,
+    },
+    SendProgress {
+        session_id: String,
+        bytes_done: u64,
+        bytes_total: u64,
+        files_done: usize,
+        files_total: usize,
+    },
+    SendEnd {
+        session_id: Option<String>,
+        /// "sent" | "declined" | "cancelled" | "error"
+        status: String,
+        error: Option<String>,
+        files_sent: usize,
     },
     Error {
         message: String,
@@ -64,6 +81,37 @@ pub struct FileInfo {
     pub id: String,
     pub file_name: String,
     pub size: u64,
+}
+
+/// A discovered peer, as reported by `list_devices`. Ported from
+/// `DevicePayload` in apps/readest-app/src-tauri/src/localsend/events.rs.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DevicePayload {
+    pub alias: String,
+    pub device_model: Option<String>,
+    pub device_type: Option<String>,
+    pub fingerprint: String,
+    pub host: String,
+    pub port: u16,
+    pub protocol: String,
+    /// An IPv4 address of the device when one is known; the UI derives the
+    /// "#<last-octet>" tag from it (`host` may be IPv6).
+    pub ipv4_host: Option<String>,
+}
+
+pub fn device_type_str(t: &Option<localsend::model::discovery::DeviceType>) -> Option<String> {
+    use localsend::model::discovery::DeviceType::*;
+    t.as_ref().map(|t| {
+        match t {
+            Mobile => "mobile",
+            Desktop => "desktop",
+            Web => "web",
+            Headless => "headless",
+            Server => "server",
+        }
+        .to_string()
+    })
 }
 
 static EVENTS: Mutex<VecDeque<String>> = Mutex::new(VecDeque::new());
@@ -180,6 +228,84 @@ mod tests {
         assert!(
             pop().is_none(),
             "queue should be empty after draining both events"
+        );
+    }
+
+    #[test]
+    fn send_events_serialize_camel_case() {
+        let _guard = TEST_QUEUE_GUARD
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        clear();
+
+        push(&Event::Devices {
+            devices: vec![DevicePayload {
+                alias: "Mac".into(),
+                device_model: Some("macOS".into()),
+                device_type: Some("desktop".into()),
+                fingerprint: "F".into(),
+                host: "192.168.1.2".into(),
+                port: 53318,
+                protocol: "https".into(),
+                ipv4_host: Some("192.168.1.2".into()),
+            }],
+        });
+        let json = pop().unwrap();
+        assert!(json.contains(r#""type":"devices""#), "{json}");
+        assert!(json.contains(r#""deviceModel":"macOS""#), "{json}");
+        assert!(json.contains(r#""ipv4Host":"192.168.1.2""#), "{json}");
+
+        push(&Event::SendProgress {
+            session_id: "s1".into(),
+            bytes_done: 10,
+            bytes_total: 100,
+            files_done: 0,
+            files_total: 2,
+        });
+        let json = pop().unwrap();
+        assert!(json.contains(r#""type":"send_progress""#), "{json}");
+        assert!(json.contains(r#""sessionId":"s1""#), "{json}");
+        assert!(json.contains(r#""bytesDone":10"#), "{json}");
+        assert!(json.contains(r#""filesTotal":2"#), "{json}");
+
+        push(&Event::SendEnd {
+            session_id: Some("s1".into()),
+            status: "sent".into(),
+            error: None,
+            files_sent: 2,
+        });
+        let json = pop().unwrap();
+        assert!(json.contains(r#""type":"send_end""#), "{json}");
+        assert!(json.contains(r#""filesSent":2"#), "{json}");
+        assert!(json.contains(r#""status":"sent""#), "{json}");
+
+        assert!(pop().is_none());
+    }
+
+    #[test]
+    fn device_type_str_maps_every_variant() {
+        use localsend::model::discovery::DeviceType;
+
+        assert_eq!(device_type_str(&None), None);
+        assert_eq!(
+            device_type_str(&Some(DeviceType::Mobile)),
+            Some("mobile".to_string())
+        );
+        assert_eq!(
+            device_type_str(&Some(DeviceType::Desktop)),
+            Some("desktop".to_string())
+        );
+        assert_eq!(
+            device_type_str(&Some(DeviceType::Web)),
+            Some("web".to_string())
+        );
+        assert_eq!(
+            device_type_str(&Some(DeviceType::Headless)),
+            Some("headless".to_string())
+        );
+        assert_eq!(
+            device_type_str(&Some(DeviceType::Server)),
+            Some("server".to_string())
         );
     }
 }

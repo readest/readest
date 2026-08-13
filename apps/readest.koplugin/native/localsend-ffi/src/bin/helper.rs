@@ -1,8 +1,9 @@
 //! localsend-helper: static-musl process spawned by the KOReader Lua plugin.
 //! Binds 127.0.0.1:<control-port>, accepts ONE connection, then speaks
 //! newline-delimited JSON: Lua sends {"cmd":...}; we stream {"type":...} events.
-//! Runs the LocalSend receive service. No glibc dependency (static musl) so it
-//! runs on ancient e-reader kernels where an FFI cdylib segfaults.
+//! Runs the LocalSend service (both receive and send). No glibc dependency
+//! (static musl) so it runs on ancient e-reader kernels where an FFI cdylib
+//! segfaults.
 
 use localsend_ffi::{
     config::StartConfig,
@@ -38,6 +39,8 @@ struct StartCmd {
 struct Cmd {
     cmd: String,
     session_id: Option<String>,
+    fingerprint: Option<String>,
+    paths: Option<Vec<String>>,
 }
 
 fn parse_control_port() -> Option<u16> {
@@ -211,6 +214,24 @@ fn dispatch(line: &str, svc: &service::Service) -> bool {
                 multicast_error: svc.multicast_error.clone(),
             });
         }
+        "list_devices" => {
+            events::push(&Event::Devices {
+                devices: service::device_payloads(&svc.discovery),
+            });
+        }
+        "send" => {
+            if let (Some(fingerprint), Some(paths)) = (cmd.fingerprint, cmd.paths) {
+                if let Err(err) = service::start_send(svc, &fingerprint, paths) {
+                    events::push(&Event::SendEnd {
+                        session_id: None,
+                        status: "error".into(),
+                        error: Some(err),
+                        files_sent: 0,
+                    });
+                }
+            }
+        }
+        "cancel_send" => service::cancel_send(svc),
         "stop" => return true,
         // Unknown command: ignored.
         _ => {}

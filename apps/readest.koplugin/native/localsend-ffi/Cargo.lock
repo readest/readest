@@ -940,12 +940,16 @@ name = "localsend-ffi"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bytes",
+ "futures-util",
  "if-addrs",
  "localsend",
  "pem 4.0.0",
  "serde",
  "serde_json",
  "tokio",
+ "tokio-stream",
+ "tokio-util",
 ]
 
 [[package]]
