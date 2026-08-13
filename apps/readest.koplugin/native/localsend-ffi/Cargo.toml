@@ -1,0 +1,26 @@
+[package]
+name = "localsend-ffi"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Standalone crate; keep any future ancestor workspace from claiming it.
+[workspace]
+
+[lib]
+name = "localsend_ffi"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+anyhow = "1"
+if-addrs = "0.15"
+localsend = { git = "https://github.com/readest/localsend", rev = "3721994985277e49e7e1ee4ed97601ad5405fc87", default-features = false, features = ["discovery"] }
+pem = "4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros"] }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+strip = "symbols"
