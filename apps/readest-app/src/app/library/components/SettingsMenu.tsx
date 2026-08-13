@@ -41,6 +41,7 @@ import {
 import { selectDirectory } from '@/utils/bridge';
 import { nextThemeMode } from '@/utils/ambientLight';
 import dayjs from 'dayjs';
+import { clampSyncTimeForDisplay } from '@/utils/time';
 import UserAvatar from '@/components/UserAvatar';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
@@ -304,7 +305,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const syncRowLabel = providerLastError
     ? _('Sync failed')
     : lastSyncTime
-      ? _('Synced {{time}}', { time: dayjs(lastSyncTime).fromNow() })
+      ? _('Synced {{time}}', { time: dayjs(clampSyncTimeForDisplay(lastSyncTime)).fromNow() })
       : _('Never synced');
 
   return (

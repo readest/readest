@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import dayjs from 'dayjs';
-import { initDayjs } from '@/utils/time';
+import { clampSyncTimeForDisplay, initDayjs } from '@/utils/time';
 
 describe('initDayjs', () => {
   beforeEach(() => {
@@ -131,5 +131,19 @@ describe('initDayjs', () => {
     initDayjs('ja');
     const formatted = dayjs('2024-01-15').format('dddd');
     expect(formatted).toBe('月曜日');
+  });
+});
+
+describe('clampSyncTimeForDisplay', () => {
+  it('returns a past sync timestamp unchanged', () => {
+    const past = Date.now() - 60_000;
+    expect(clampSyncTimeForDisplay(past)).toBe(past);
+  });
+
+  it('clamps a future timestamp from a clock-skewed peer to now (#5661)', () => {
+    const before = Date.now();
+    const clamped = clampSyncTimeForDisplay(before + 3_600_000);
+    expect(clamped).toBeGreaterThanOrEqual(before);
+    expect(clamped).toBeLessThanOrEqual(Date.now());
   });
 });

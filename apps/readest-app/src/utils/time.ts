@@ -35,6 +35,12 @@ export const initDayjs = (locale: string) => {
   dayjs.extend(relativeTime);
 };
 
+// "Last synced" labels show the newest pulled record's timestamp, which is the
+// AUTHORING device's clock — a clock-skewed peer can stamp the future and the
+// label would read "Synced in an hour" (#5661). Clamp to local now at display
+// time only; the record-derived pull cursor must never be clamped.
+export const clampSyncTimeForDisplay = (time: number): number => Math.min(time, Date.now());
+
 // Clock-style playback time for the TTS scrubber: m:ss below one hour,
 // h:mm:ss above. Pass forceHours so both labels of a row share the format
 // chosen by the total's magnitude and the row never re-layouts when the

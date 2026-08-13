@@ -36,6 +36,7 @@ import { eventDispatcher } from '@/utils/event';
 import { getMaxInlineSize } from '@/utils/config';
 import { nextThemeMode } from '@/utils/ambientLight';
 import dayjs from 'dayjs';
+import { clampSyncTimeForDisplay } from '@/utils/time';
 import { saveViewSettings } from '@/helpers/settings';
 import { tauriHandleToggleFullScreen } from '@/utils/window';
 import MenuItem from '@/components/MenuItem';
@@ -473,7 +474,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
             ? _('Sign in to Sync')
             : lastSyncTime
               ? _('Synced {{time}}', {
-                  time: dayjs(lastSyncTime).fromNow(),
+                  time: dayjs(clampSyncTimeForDisplay(lastSyncTime)).fromNow(),
                 })
               : _('Never synced')
         }

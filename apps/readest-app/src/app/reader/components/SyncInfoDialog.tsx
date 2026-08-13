@@ -3,6 +3,7 @@ import Dialog from '@/components/Dialog';
 import { useTranslation } from '@/hooks/useTranslation';
 import { BookMetadata } from '@/libs/document';
 import { formatLocaleDateTime, getMetadataHashInfo } from '@/utils/book';
+import { clampSyncTimeForDisplay } from '@/utils/time';
 
 interface SyncInfoDialogProps {
   isOpen: boolean;
@@ -33,7 +34,9 @@ const SyncInfoDialog: React.FC<SyncInfoDialogProps> = ({
   const info = metadata ? getMetadataHashInfo(metadata) : undefined;
   const displayHash = storedMetaHash || info?.metaHash || '';
   const placeholder = _('(none)');
-  const lastSyncedLabel = lastSyncedAt ? formatLocaleDateTime(lastSyncedAt) : _('Never synced');
+  const lastSyncedLabel = lastSyncedAt
+    ? formatLocaleDateTime(clampSyncTimeForDisplay(lastSyncedAt))
+    : _('Never synced');
 
   return (
     <Dialog
