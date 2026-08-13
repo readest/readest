@@ -301,7 +301,9 @@ jobs:
             args: '--target aarch64-pc-windows-msvc --bundles nsis'
 
     runs-on: ${{ matrix.config.os }}
-    timeout-minutes: 60
+    # The Android build alone runs ~50min on a cold cache, so 60 was not enough
+    # headroom once setup and signing are counted.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

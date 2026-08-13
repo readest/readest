@@ -83,7 +83,7 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     # Backstop only — must stay ABOVE setup time + the per-step timeouts below,
     # because a job-level timeout reports `cancelled` and skips assemble-manifest.
-    timeout-minutes: 75
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -182,7 +182,9 @@ jobs:
       - name: build and sign Android apks
         if: matrix.config.release == 'android'
         shell: bash
-        timeout-minutes: 55
+        # Two full Android builds (universal + arm64) already run ~50min on a
+        # cold cache, so 55 left no headroom. Stays under the job backstop above.
+        timeout-minutes: 75
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
