@@ -22,6 +22,7 @@ local logger = require("logger")
 local T = require("ffi/util").template
 local _ = require("readest_i18n")
 local Helper = require("library.localsend_helper")
+local Firewall = require("library.localsend_firewall")
 
 local POLL_INTERVAL = 0.5
 
@@ -101,11 +102,17 @@ function LocalSend:startService()
         })
         return
     end
+    -- Best-effort: on a device with a default-DROP firewall (e.g. Kindle)
+    -- this is what makes the server/discovery ports reachable from the LAN
+    -- at all. Doesn't fail startService if it no-ops (no iptables, or not
+    -- needed on this device/network).
+    Firewall.open()
     Helper.spawn(self.binpath, port)
     local sock, err = Helper.connect(port, 3)
     if not sock then
         logger.warn("ReadestLocalSend: connect failed: " .. tostring(err))
         os.execute("pkill -f localsend-helper >/dev/null 2>&1")
+        Firewall.close()
         UIManager:show(InfoMessage:new{
             text = _("LocalSend failed to start."),
             timeout = 3,
@@ -137,6 +144,7 @@ function LocalSend:stopService()
         self.sock = nil
         os.execute("pkill -f localsend-helper >/dev/null 2>&1")
     end
+    Firewall.close()
     self.running = false
 end
 

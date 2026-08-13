@@ -87,6 +87,25 @@ describe("localsend_helper.parseLines", function()
     end)
 end)
 
+describe("localsend_firewall.rules", function()
+    local Firewall = require("library.localsend_firewall")
+
+    it("returns the two INPUT accept rules LocalSend needs", function()
+        local rules = Firewall.rules()
+        assert.equals(2, #rules)
+        assert.same({ "-p", "tcp", "--dport", "53317:53327", "-m", "conntrack",
+            "--ctstate", "NEW,ESTABLISHED", "-j", "ACCEPT" }, rules[1])
+        assert.same({ "-p", "udp", "--dport", "53317", "-j", "ACCEPT" }, rules[2])
+    end)
+
+    it("returns a fresh table each call so callers can't mutate cached state", function()
+        local a = Firewall.rules()
+        a[1].mutated = true
+        local b = Firewall.rules()
+        assert.is_nil(b[1].mutated)
+    end)
+end)
+
 describe("readest_localsend dispatch", function()
     local LocalSend = require("readest_localsend")
 
