@@ -203,9 +203,6 @@ export default function EmailPasswordAuth({
             <button type='button' className={LINK_CLASS} onClick={switchView('forgotten_password')}>
               {_('Forgot your password?')}
             </button>
-            <button type='button' className={LINK_CLASS} onClick={switchView('sign_up')}>
-              {_("Don't have an account? Sign up")}
-            </button>
           </>
         )}
         {view !== 'sign_in' && (

@@ -3,7 +3,7 @@ __copyright__ = '2026, Bilingify LLC'
 
 from calibre.customize import InterfaceActionBase
 
-PLUGIN_VERSION = (0, 11, 20)
+PLUGIN_VERSION = (0, 12, 1)
 
 
 class ReadestPlugin(InterfaceActionBase):
