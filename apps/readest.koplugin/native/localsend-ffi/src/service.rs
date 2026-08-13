@@ -14,6 +14,7 @@ use localsend::model::transfer::FileDto;
 use localsend::multicast::{
     InterfaceFilter, DEFAULT_MULTICAST_GROUP, DEFAULT_MULTICAST_GROUP_V6, DEFAULT_PORT,
 };
+use localsend::util::filename::{sanitize_with, Options, Rules};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, PoisonError};
@@ -323,15 +324,21 @@ fn handle_file_upload(
         session.in_progress.insert(file_id.clone());
     }
 
+    // The wire-supplied file name is peer-controlled and protocol v2 allows
+    // directory components in it; sanitize before it ever touches a path so
+    // a traversal payload (or an absolute path, which would make `join`
+    // discard `staging`/`download_dir` entirely) cannot escape either dir.
+    let file_name = safe_file_name(&file.file_name);
+
     let staging = download_dir.join(STAGING_DIR);
     let _ = std::fs::create_dir_all(&staging);
-    let staging_path = unique_path(&staging, &file.file_name);
+    let staging_path = unique_path(&staging, &file_name);
 
     let (result_tx, result_rx) = oneshot::channel::<Result<(), String>>();
     {
         let receiving = receiving.clone();
         let download_dir = download_dir.to_path_buf();
-        let file_name = file.file_name.clone();
+        let file_name = file_name.clone();
         let staging_path = staging_path.clone();
         tokio::spawn(async move {
             let result = match result_rx.await {
@@ -408,6 +415,33 @@ fn sweep_staging(download_dir: &Path) {
     let _ = std::fs::remove_dir_all(download_dir.join(STAGING_DIR));
 }
 
+/// Sanitizes a peer-supplied file name before it is ever joined onto a path.
+/// Mirrors `localsend::util::filename::sanitize_path` (take the last path
+/// segment, drop `.`/`..`/empty segments, sanitize under the strictest
+/// `Rules::Universal` set) but with an empty placeholder so a name that
+/// collapses to nothing (`".."`, all separators, empty) is detectable here
+/// and mapped to a fixed fallback name instead of the crate's own
+/// "untitled" placeholder.
+fn safe_file_name(name: &str) -> String {
+    let last = name
+        .rsplit(['/', '\\'])
+        .find(|segment| !segment.is_empty() && *segment != "." && *segment != "..")
+        .unwrap_or("");
+    let sanitized = sanitize_with(
+        last,
+        Rules::Universal,
+        &Options {
+            replacement: "_",
+            placeholder: "",
+        },
+    );
+    if sanitized.is_empty() {
+        "received.bin".to_string()
+    } else {
+        sanitized
+    }
+}
+
 /// "name.epub" -> "name (2).epub" until unused, like the upstream CLI.
 pub fn unique_path(dir: &Path, file_name: &str) -> PathBuf {
     let candidate = dir.join(file_name);
@@ -442,6 +476,24 @@ mod tests {
         std::fs::write(dir.join("b (2).epub"), b"x").unwrap();
         assert_eq!(unique_path(&dir, "b.epub"), dir.join("b (3).epub"));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn safe_file_name_flattens_traversal_to_last_segment() {
+        assert_eq!(safe_file_name("../../../../etc/init.d/rcS"), "rcS");
+        assert_eq!(safe_file_name("../../etc/passwd"), "passwd");
+    }
+
+    #[test]
+    fn safe_file_name_drops_absolute_root() {
+        assert_eq!(safe_file_name("/etc/passwd"), "passwd");
+    }
+
+    #[test]
+    fn safe_file_name_falls_back_when_nothing_safe_survives() {
+        assert_eq!(safe_file_name(""), "received.bin");
+        assert_eq!(safe_file_name(".."), "received.bin");
+        assert_eq!(safe_file_name("///"), "received.bin");
     }
 
     #[test]
