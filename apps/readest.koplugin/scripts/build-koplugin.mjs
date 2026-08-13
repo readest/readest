@@ -8,9 +8,9 @@
  *   docs/     — design notes
  *   spec/     — busted test suite
  *   .busted   — busted runner config
- *   native/   — Rust source for the LocalSend FFI lib (built .so/.dylib
- *               artifacts ship from libs/ instead; see
- *               build-localsend-libs.mjs)
+ *   native/   — Rust source for the LocalSend helper binary (built
+ *               static-musl binaries ship from bin/ instead; see
+ *               build-localsend-bins.mjs)
  *
  * Usage:
  *   node apps/readest.koplugin/scripts/build-koplugin.js [--version X.Y.Z]
@@ -117,12 +117,12 @@ function main() {
       `${PLUGIN_NAME}/.busted`,
       `${PLUGIN_NAME}/native/*`,
     ];
-    const libsDir = path.join(PLUGIN_DIR, 'libs');
-    const libs = fs.existsSync(libsDir) ? fs.readdirSync(libsDir) : [];
-    if (libs.length === 0) {
+    const binDir = path.join(PLUGIN_DIR, 'bin');
+    const bins = fs.existsSync(binDir) ? fs.readdirSync(binDir) : [];
+    if (bins.length === 0) {
       console.warn(
-        'warning: libs/ is empty; LocalSend receive will be unavailable in this zip.\n' +
-          '         run: node apps/readest.koplugin/scripts/build-localsend-libs.mjs'
+        'warning: bin/ is empty; LocalSend receive will be unavailable in this zip.\n' +
+          '         run: node apps/readest.koplugin/scripts/build-localsend-bins.mjs'
       );
     }
     const zipArgs = ['-r', out, PLUGIN_NAME, '-x', ...exclusions];
