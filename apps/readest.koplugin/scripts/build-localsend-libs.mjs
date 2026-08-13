@@ -4,9 +4,10 @@
  * apps/readest.koplugin/libs/ (gitignored; the release workflow builds them
  * before zipping, see .github/workflows/release.yml).
  *
- *   node build-localsend-libs.mjs                 # every target this host can build
- *   node build-localsend-libs.mjs --only armv7    # Kindle .so only
- *   node build-localsend-libs.mjs --only armv7hf  # Kobo .so only
+ *   node build-localsend-libs.mjs                     # every target this host can build
+ *   node build-localsend-libs.mjs --only armv7        # Kindle .so only
+ *   node build-localsend-libs.mjs --only armv7hf      # Kobo .so only
+ *   node build-localsend-libs.mjs --only arm64-linux  # reMarkable/generic arm64 Linux .so only
  *   node build-localsend-libs.mjs --only arm64-mac
  *
  * armv7 needs: rustup target add armv7-unknown-linux-gnueabi
@@ -14,6 +15,8 @@
  *              or pip3 install ziglang cargo-zigbuild)
  * armv7hf needs: rustup target add armv7-unknown-linux-gnueabihf
  *                cargo-zigbuild + zig (same install as armv7)
+ * arm64-linux needs: rustup target add aarch64-unknown-linux-gnu
+ *                     cargo-zigbuild + zig (same install as armv7)
  * arm64-mac needs: an aarch64 macOS host (plain cargo build).
  */
 
@@ -49,6 +52,22 @@ const KINDLE_GLIBC = '2.12';
 // file as the Kindle build.
 const KOBO_GLIBC = '2.12';
 
+// arm64 Linux (reMarkable Paper Pro and generic arm64 e-readers) glibc
+// floor. Unlike the Kindle/Kobo floors above (which match those devices'
+// own low glibc), this one is chosen to MAXIMIZE compatibility: the lowest
+// glibc that still links cleanly under zig, not the reMarkable device's
+// own floor. 2.17 is the aarch64 glibc baseline (the oldest glibc that
+// ships an aarch64 dynamic linker at all), and ring/rustls (pulled in via
+// the localsend crate's TLS stack) link cleanly against it under zig, so
+// no bump above the baseline was needed.
+//
+// Observed 2026-08-13 against koreader-remarkable-aarch64-v2026.07.1.zip:
+// `strings` over the largest shipped aarch64 .so/binaries (libwrap-mupdf.so,
+// libkoreader-cre.so, libharfbuzz.so.0, libcrypto.so.57, libstdc++.so.6,
+// luajit, libzmq.so.5, etc.) tops out at GLIBC_2.35 (libwrap-mupdf.so and
+// libharfbuzz.so.0) -- comfortably above the 2.17 floor chosen here.
+const ARM64_LINUX_GLIBC = '2.17';
+
 const TARGETS = {
   armv7: {
     triple: 'armv7-unknown-linux-gnueabi',
@@ -78,6 +97,25 @@ const TARGETS = {
       const t = spawnSync('rustup', ['target', 'list', '--installed'], { encoding: 'utf8' });
       if (!t.stdout || !t.stdout.includes('armv7-unknown-linux-gnueabihf')) {
         return 'run: rustup target add armv7-unknown-linux-gnueabihf';
+      }
+      // Note: `cargo zigbuild --version` always fails (cargo forwards
+      // "zigbuild" as the subcommand name, and that subcommand has no
+      // --version flag), so probe the cargo-zigbuild binary directly.
+      if (spawnSync('cargo-zigbuild', ['--version']).status !== 0) {
+        return 'install cargo-zigbuild + zig (brew install zig && cargo install cargo-zigbuild)';
+      }
+      return null;
+    },
+  },
+  'arm64-linux': {
+    triple: 'aarch64-unknown-linux-gnu',
+    cargo: ['zigbuild', '--release', '--target', `aarch64-unknown-linux-gnu.${ARM64_LINUX_GLIBC}`],
+    artifact: ['aarch64-unknown-linux-gnu', 'release', 'liblocalsend_ffi.so'],
+    out: 'liblocalsend-arm64.so',
+    check() {
+      const t = spawnSync('rustup', ['target', 'list', '--installed'], { encoding: 'utf8' });
+      if (!t.stdout || !t.stdout.includes('aarch64-unknown-linux-gnu')) {
+        return 'run: rustup target add aarch64-unknown-linux-gnu';
       }
       // Note: `cargo zigbuild --version` always fails (cargo forwards
       // "zigbuild" as the subcommand name, and that subcommand has no
