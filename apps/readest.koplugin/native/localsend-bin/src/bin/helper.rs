@@ -5,7 +5,7 @@
 //! (static musl) so it runs on ancient e-reader kernels where an FFI cdylib
 //! segfaults.
 
-use localsend_ffi::{
+use localsend_bin::{
     config::StartConfig,
     events::{self, Event},
     service,

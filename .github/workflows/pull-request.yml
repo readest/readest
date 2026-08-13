@@ -67,7 +67,7 @@ jobs:
         working-directory: apps/readest-app/src-tauri
         run: cargo test -p Readest --lib
 
-  # apps/readest.koplugin/native/localsend-ffi is a standalone Cargo crate
+  # apps/readest.koplugin/native/localsend-bin is a standalone Cargo crate
   # (not part of the src-tauri workspace), built into the koplugin's release
   # libs by the release workflow. Before this job it had no PR-time CI at
   # all. Paths-filtered like rust_lint so most PRs skip the toolchain install.
@@ -85,7 +85,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: 'true'
-      - name: detect localsend-ffi changes
+      - name: detect localsend-bin changes
         id: changes
         uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
         with:
@@ -104,15 +104,15 @@ jobs:
           components: rustfmt, clippy
       - name: Format check
         if: steps.changes.outputs.native == 'true'
-        working-directory: apps/readest.koplugin/native/localsend-ffi
+        working-directory: apps/readest.koplugin/native/localsend-bin
         run: cargo fmt --check
       - name: Clippy Check
         if: steps.changes.outputs.native == 'true'
-        working-directory: apps/readest.koplugin/native/localsend-ffi
+        working-directory: apps/readest.koplugin/native/localsend-bin
         run: cargo clippy --all-targets -- -D warnings
       - name: Unit tests
         if: steps.changes.outputs.native == 'true'
-        working-directory: apps/readest.koplugin/native/localsend-ffi
+        working-directory: apps/readest.koplugin/native/localsend-bin
         run: cargo test
 
   build_web_app:

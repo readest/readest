@@ -1,5 +1,5 @@
 [package]
-name = "localsend-ffi"
+name = "localsend-bin"
 version = "0.1.0"
 edition = "2021"
 publish = false
@@ -8,7 +8,7 @@ publish = false
 [workspace]
 
 [lib]
-name = "localsend_ffi"
+name = "localsend_bin"
 
 [[bin]]
 name = "localsend-helper"

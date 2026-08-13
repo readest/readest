@@ -30,7 +30,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PLUGIN_DIR = path.resolve(__dirname, '..');
-const CRATE_DIR = path.join(PLUGIN_DIR, 'native', 'localsend-ffi');
+const CRATE_DIR = path.join(PLUGIN_DIR, 'native', 'localsend-bin');
 const BIN_DIR = path.join(PLUGIN_DIR, 'bin');
 
 const TARGETS = {
