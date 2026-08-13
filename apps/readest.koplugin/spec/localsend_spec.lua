@@ -14,12 +14,31 @@ describe("localsend_ffi.libNameFor", function()
             FFIMod.libNameFor({ is_kobo = true, os = "Linux", arch = "arm" }))
     end)
 
+    it("picks the hardfloat .so on reMarkable 2 (armv7)", function()
+        assert.equals("liblocalsend-armv7hf.so",
+            FFIMod.libNameFor({ is_remarkable = true, os = "Linux", arch = "arm" }))
+    end)
+
+    it("picks the arm64 .so on reMarkable Paper Pro", function()
+        assert.equals("liblocalsend-arm64.so",
+            FFIMod.libNameFor({ is_remarkable = true, os = "Linux", arch = "arm64" }))
+    end)
+
+    it("picks the arm64 .so on a generic arm64 Linux e-reader", function()
+        assert.equals("liblocalsend-arm64.so",
+            FFIMod.libNameFor({ os = "Linux", arch = "arm64" }))
+    end)
+
+    it("excludes Android arm64 (dlopen of a plugin .so is forbidden by the linker namespace)", function()
+        assert.is_nil(FFIMod.libNameFor({ is_android = true, os = "Linux", arch = "arm64" }))
+    end)
+
     it("picks the arm64 dylib on the macOS emulator", function()
         assert.equals("liblocalsend-arm64.dylib",
             FFIMod.libNameFor({ is_emulator = true, os = "OSX", arch = "arm64" }))
     end)
 
-    it("refuses linux arm devices that are neither kindle nor kobo", function()
+    it("refuses linux arm devices that are neither kindle, kobo, nor remarkable", function()
         assert.is_nil(FFIMod.libNameFor({ os = "Linux", arch = "arm" }))
     end)
 
@@ -30,9 +49,20 @@ describe("localsend_ffi.libNameFor", function()
             FFIMod.libNameFor({ is_kobo = true, arch = "arm" }))
     end)
 
+    it("never crosses the arm64 .so/.dylib boundary between Linux and the macOS emulator", function()
+        assert.equals("liblocalsend-arm64.so",
+            FFIMod.libNameFor({ os = "Linux", arch = "arm64" }))
+        assert.equals("liblocalsend-arm64.dylib",
+            FFIMod.libNameFor({ is_emulator = true, os = "OSX", arch = "arm64" }))
+        assert.equals("liblocalsend-armv7hf.so",
+            FFIMod.libNameFor({ is_kobo = true, os = "Linux", arch = "arm" }))
+        assert.equals("liblocalsend-armv7.so",
+            FFIMod.libNameFor({ is_kindle = true, os = "Linux", arch = "arm" }))
+    end)
+
     it("refuses other arches", function()
         assert.is_nil(FFIMod.libNameFor({ is_kindle = true, os = "Linux", arch = "x64" }))
-        assert.is_nil(FFIMod.libNameFor({ is_emulator = true, os = "Linux", arch = "arm64" }))
+        assert.is_nil(FFIMod.libNameFor({ is_pocketbook = true, os = "Linux", arch = "arm" }))
     end)
 end)
 

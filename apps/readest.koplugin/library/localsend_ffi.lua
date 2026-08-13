@@ -20,20 +20,40 @@ void ls_string_free(char* s);
 ]]
 
 -- Pure mapping so specs can exercise it. Kindle ships soft-float armv7
--- (gnueabi); Kobo (all kobo/kobov4/kobov5) ships hard-float armv7
--- (gnueabihf). The two ABIs are NOT interchangeable: a softfp lib will not
--- dlopen in a hardfloat KOReader process and vice-versa, so each device
--- class is keyed on its own flag rather than the generic Linux/arm pair -
--- no try-load fallback is needed since Kindle and Kobo are distinct,
--- unambiguous device classes. Everything else returns nil.
--- dev = { is_kindle = bool, is_kobo = bool, is_emulator = bool, os = jit.os, arch = jit.arch }
+-- (gnueabi); Kobo and reMarkable 2 ship hard-float armv7 (gnueabihf). The
+-- two 32-bit ABIs are NOT interchangeable: a softfp lib will not dlopen in a
+-- hardfloat KOReader process and vice-versa, so each device class is keyed
+-- on its own flag rather than the generic Linux/arm pair - no try-load
+-- fallback is needed since Kindle, Kobo, and reMarkable are distinct,
+-- unambiguous device classes.
+--
+-- arm64 Linux (reMarkable Paper Pro and other arm64 e-readers) has a single
+-- float ABI, so unlike 32-bit ARM it can use one generic branch keyed on
+-- os/arch rather than a device flag. Android is Linux+arm64 too but is
+-- excluded: its linker namespace forbids dlopen of a plugin-bundled .so, so
+-- it degrades to "not available" instead of attempting a doomed load.
+--
+-- The macOS emulator (developer only) is also arm64; it is distinguished
+-- from Linux arm64 by jit.os so it gets the .dylib instead of the .so.
+-- Everything else returns nil.
+-- dev = { is_kindle = bool, is_kobo = bool, is_remarkable = bool,
+--         is_android = bool, is_emulator = bool, os = jit.os, arch = jit.arch }
 function M.libNameFor(dev)
+    -- Kindle: soft-float armv7 (gnueabi).
     if dev.is_kindle and dev.arch == "arm" then
         return "liblocalsend-armv7.so"
     end
-    if dev.is_kobo and dev.arch == "arm" then
+    -- Kobo and reMarkable 2: hard-float armv7 (gnueabihf).
+    if (dev.is_kobo or dev.is_remarkable) and dev.arch == "arm" then
         return "liblocalsend-armv7hf.so"
     end
+    -- reMarkable Paper Pro and other arm64 Linux e-readers (single arm64
+    -- float ABI). Android is excluded: its linker namespace forbids dlopen
+    -- of a plugin-bundled .so, so it degrades to "not available" instead.
+    if dev.os == "Linux" and dev.arch == "arm64" and not dev.is_android then
+        return "liblocalsend-arm64.so"
+    end
+    -- macOS emulator (developer only).
     if dev.is_emulator and dev.os == "OSX" and dev.arch == "arm64" then
         return "liblocalsend-arm64.dylib"
     end
@@ -48,6 +68,8 @@ function M.load(plugin_path)
     local name = M.libNameFor({
         is_kindle = Device:isKindle(),
         is_kobo = Device:isKobo(),
+        is_remarkable = Device:isRemarkable(),
+        is_android = Device:isAndroid(),
         is_emulator = Device:isEmulator(),
         os = jit.os,
         arch = jit.arch,
