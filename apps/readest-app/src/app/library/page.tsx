@@ -118,6 +118,7 @@ import ImportFromUrlDialog from './components/ImportFromUrlDialog';
 import ImportNovelDialog from './components/ImportNovelDialog';
 import NowPlayingBar from './components/NowPlayingBar';
 import { ttsSessionManager } from '@/services/tts';
+import { ttsDownloadManager } from '@/services/tts/ttsDownloadManager';
 import { clipPageWithSignInFallback } from '@/services/send/clipSignIn';
 import ClipSignInAlert from '@/components/ClipSignInAlert';
 import useShortcuts from '@/hooks/useShortcuts';
@@ -1145,6 +1146,11 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           clearBookData(book.hash);
           if (syncBooks) pushLibrary();
         }
+
+        // A deleted book's downloads are pointless in every delete action:
+        // drop its queue rows (the warm cache itself is kept for non-purge
+        // deletes, so a re-downloaded book still resumes).
+        ttsDownloadManager.removeBook(book.hash);
 
         // Cloud deletion. The transfer queue only speaks to Readest storage, so a
         // book whose cloud copy lives on the selected third-party provider must

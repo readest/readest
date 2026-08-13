@@ -1,39 +1,38 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TTSController } from '@/services/tts/TTSController';
 import {
   chapterDownloadStatus,
-  chapterSections,
   deriveDownloadChapters,
   DownloadChapter,
   SectionCacheStatus,
 } from '@/services/tts/downloadChapters';
-
-export interface ChapterDownloadState {
-  // The chapter currently synthesizing, plus its live progress.
-  activeChapterKey: string | null;
-  done: number;
-  total: number;
-}
+import type { TTSDownloadItem } from '@/store/ttsDownloadStore';
+import { useTTSDownloadStore } from '@/store/ttsDownloadStore';
+import { ttsDownloadManager } from '@/services/tts/ttsDownloadManager';
 
 export interface UseTTSDownloadsResult {
   supported: boolean;
   chapters: DownloadChapter[];
   statuses: Map<number, SectionCacheStatus>;
   cacheBytes: number;
-  download: ChapterDownloadState;
-  downloadChapter: (chapter: DownloadChapter) => Promise<void>;
-  downloadAll: () => Promise<void>;
-  cancel: () => void;
+  // This book's queue rows (pending/in_progress/failed); completed chapters
+  // leave the queue and surface through the cache-status badges instead.
+  items: TTSDownloadItem[];
+  itemFor: (chapter: DownloadChapter) => TTSDownloadItem | undefined;
+  downloadChapter: (chapter: DownloadChapter) => void;
+  downloadAll: () => void;
+  cancelChapter: (chapter: DownloadChapter) => void;
+  cancelAll: () => void;
   statusOf: (chapter: DownloadChapter) => 'none' | 'partial' | 'complete';
   refresh: () => Promise<void>;
 }
 
 // Orchestrates the podcast download surface: derives chapters from the TOC,
-// reads per-section cache status, and runs the headless synthesizer with live
-// progress. Everything is off the playback path; a download can run while the
-// user listens.
+// reads per-section cache status, and drives the persistent per-book queue
+// (ttsDownloadStore + ttsDownloadManager). Everything is off the playback
+// path; a download can run while the user listens.
 export const useTTSDownloads = (
   bookKey: string,
   getController: () => TTSController | null,
@@ -43,15 +42,24 @@ export const useTTSDownloads = (
   const { getBookData } = useBookDataStore();
   const [statuses, setStatuses] = useState<Map<number, SectionCacheStatus>>(new Map());
   const [cacheBytes, setCacheBytes] = useState(0);
-  const [download, setDownload] = useState<ChapterDownloadState>({
-    activeChapterKey: null,
-    done: 0,
-    total: 0,
-  });
-  const abortRef = useRef<AbortController | null>(null);
 
   const controller = getController();
   const supported = !!controller?.canDownload();
+
+  const allItems = useTTSDownloadStore((state) => state.items);
+  const items = useMemo(
+    () => Object.values(allItems).filter((item) => item.bookHash === bookKey),
+    [allItems, bookKey],
+  );
+
+  // Bind the book to the manager while a download-capable session is live so
+  // queued items — including rows restored from a previous session — process.
+  useEffect(() => {
+    if (!supported) return;
+    ttsDownloadManager.attachController(bookKey, getController);
+    return () => ttsDownloadManager.detachController(bookKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supported, bookKey]);
 
   const chapters = useMemo(() => {
     if (!controller) return [];
@@ -90,55 +98,41 @@ export const useTTSDownloads = (
     if (isOpen) void refresh();
   }, [isOpen, refresh]);
 
-  const runDownload = useCallback(
-    async (targets: DownloadChapter[]) => {
-      const downloader = getController()?.getTTSDownloader();
-      if (!downloader || !targets.length) return;
-      abortRef.current?.abort();
-      const abort = new AbortController();
-      abortRef.current = abort;
-      try {
-        for (const chapter of targets) {
-          if (abort.signal.aborted) break;
-          const sections = chapterSections(chapter).filter(
-            (section) => !statuses.get(section)?.packed,
-          );
-          if (!sections.length) continue;
-          setDownload({ activeChapterKey: chapter.key, done: 0, total: 0 });
-          await downloader.download(
-            sections,
-            (progress) => {
-              setDownload((prev) =>
-                prev.activeChapterKey === chapter.key
-                  ? { ...prev, done: progress.done, total: progress.total }
-                  : prev,
-              );
-            },
-            abort.signal,
-          );
-          await refresh();
-        }
-      } finally {
-        if (abortRef.current === abort) abortRef.current = null;
-        setDownload({ activeChapterKey: null, done: 0, total: 0 });
-      }
-    },
-    [getController, refresh, statuses],
+  // Refresh when the queue set changes (a chapter completed or failed);
+  // progress-only updates must not re-read the database.
+  const itemSnapshot = items.map((item) => `${item.id}:${item.status}`).join('|');
+  useEffect(() => {
+    if (isOpen && itemSnapshot) void refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, itemSnapshot]);
+
+  const itemFor = useCallback(
+    (chapter: DownloadChapter) =>
+      useTTSDownloadStore.getState().itemForChapter(bookKey, chapter.key),
+    [bookKey],
   );
 
   const downloadChapter = useCallback(
-    (chapter: DownloadChapter) => runDownload([chapter]),
-    [runDownload],
+    (chapter: DownloadChapter) => ttsDownloadManager.queueChapter(bookKey, chapter),
+    [bookKey],
   );
 
-  const downloadAll = useCallback(
-    () => runDownload(chapters.filter((c) => chapterDownloadStatus(c, statuses) !== 'complete')),
-    [runDownload, chapters, statuses],
+  const downloadAll = useCallback(() => {
+    ttsDownloadManager.queueAll(
+      bookKey,
+      chapters.filter((c) => chapterDownloadStatus(c, statuses) !== 'complete'),
+    );
+  }, [bookKey, chapters, statuses]);
+
+  const cancelChapter = useCallback(
+    (chapter: DownloadChapter) => {
+      const item = useTTSDownloadStore.getState().itemForChapter(bookKey, chapter.key);
+      if (item) ttsDownloadManager.cancelItem(item.id);
+    },
+    [bookKey],
   );
 
-  const cancel = useCallback(() => abortRef.current?.abort(), []);
-
-  useEffect(() => () => abortRef.current?.abort(), []);
+  const cancelAll = useCallback(() => ttsDownloadManager.removeBook(bookKey), [bookKey]);
 
   const statusOf = useCallback(
     (chapter: DownloadChapter) => chapterDownloadStatus(chapter, statuses),
@@ -150,10 +144,12 @@ export const useTTSDownloads = (
     chapters,
     statuses,
     cacheBytes,
-    download,
+    items,
+    itemFor,
     downloadChapter,
     downloadAll,
-    cancel,
+    cancelChapter,
+    cancelAll,
     statusOf,
     refresh,
   };
