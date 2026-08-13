@@ -92,11 +92,19 @@ function M.deviceLabel(dev)
     if not name or name == "" then
         name = dev.deviceModel or "?"
     end
+    local parts = { name }
+    -- Show the platform/model (e.g. "macOS") as a tag, matching the Readest
+    -- app's device picker. Skip it when empty or when it already stood in for
+    -- a missing alias above (so it isn't printed twice).
+    local model = dev.deviceModel
+    if model and model ~= "" and model ~= name then
+        parts[#parts + 1] = model
+    end
     local octet = dev.ipv4Host and dev.ipv4Host:match("%.(%d+)$")
     if octet then
-        return name .. " · #" .. octet
+        parts[#parts + 1] = "#" .. octet
     end
-    return name
+    return table.concat(parts, " · ")
 end
 
 -- Picks a free local port by binding an ephemeral port and closing it right

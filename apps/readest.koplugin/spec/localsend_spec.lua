@@ -90,17 +90,29 @@ end)
 describe("localsend_helper.deviceLabel", function()
     local Helper = require("library.localsend_helper")
 
-    it("formats alias with the ipv4 last octet", function()
-        assert.equals("Pixel · #42", Helper.deviceLabel({
+    it("shows alias, platform tag, then the ipv4 last octet", function()
+        assert.equals("Pixel · Pixel 8 · #42", Helper.deviceLabel({
             alias = "Pixel", deviceModel = "Pixel 8", ipv4Host = "192.168.1.42",
         }))
     end)
 
-    it("falls back to just the alias when there's no ipv4Host", function()
-        assert.equals("Pixel", Helper.deviceLabel({ alias = "Pixel", deviceModel = "Pixel 8" }))
+    it("shows the platform tag as Readest does (e.g. macOS)", function()
+        assert.equals("Readest · macOS · #120", Helper.deviceLabel({
+            alias = "Readest", deviceModel = "macOS", ipv4Host = "192.168.2.120",
+        }))
     end)
 
-    it("falls back to deviceModel when alias is empty", function()
+    it("omits the ipv4 octet when there's no ipv4Host", function()
+        assert.equals("Pixel · Pixel 8", Helper.deviceLabel({
+            alias = "Pixel", deviceModel = "Pixel 8",
+        }))
+    end)
+
+    it("shows just the alias when there's no model or ipv4Host", function()
+        assert.equals("Pixel", Helper.deviceLabel({ alias = "Pixel" }))
+    end)
+
+    it("falls back to deviceModel when alias is empty (not duplicated)", function()
         assert.equals("Galaxy Tab", Helper.deviceLabel({
             alias = "", deviceModel = "Galaxy Tab", ipv4Host = nil,
         }))

@@ -155,7 +155,7 @@ function ReadestSync:registerFileDialogButton()
                 if not readest_format_for_ext(ext) then return nil end
                 return {
                     {
-                        text = _("Add to Readest"),
+                        text = _("Add to Readest library"),
                         enabled = plugin.settings.access_token ~= nil,
                         callback = function()
                             local fc = FileManager.instance and FileManager.instance.file_chooser
@@ -177,7 +177,7 @@ function ReadestSync:registerFileDialogButton()
                 if not (plugin.localsend and plugin.localsend:isAvailable()) then return nil end
                 return {
                     {
-                        text = _("Send with LocalSend"),
+                        text = _("Send to nearby Readest devices"),
                         callback = function()
                             local fc = FileManager.instance and FileManager.instance.file_chooser
                             local dlg = fc and fc.file_dialog

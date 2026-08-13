@@ -191,6 +191,9 @@ msgstr "Cuota de almacenamiento superada."
 msgid "Upload failed."
 msgstr "Subida fallida."
 
+msgid "Send to nearby Readest devices"
+msgstr ""
+
 msgid "Download Book"
 msgstr "Descargar libro"
 
@@ -236,8 +239,8 @@ msgstr "Obtener anotaciones de Readest de otros dispositivos"
 msgid "Full sync all readest annotations"
 msgstr "Sincronizar completamente todas las anotaciones de Readest"
 
-msgid "Add to Readest"
-msgstr "Añadir a Readest"
+msgid "Add to Readest library"
+msgstr ""
 
 msgid "Sign in to Readest first."
 msgstr "Inicia sesión en Readest primero."
@@ -356,6 +359,15 @@ msgstr "Sincronización de libros fallida"
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr ""
 
+msgid "LocalSend error: could not find a free port."
+msgstr ""
+
+msgid "LocalSend failed to start."
+msgstr ""
+
+msgid "Starting LocalSend…"
+msgstr ""
+
 msgid "LocalSend will start when Wi-Fi connects."
 msgstr ""
 
@@ -383,16 +395,43 @@ msgstr ""
 msgid "LocalSend: received %1 file(s)."
 msgstr ""
 
-msgid "LocalSend error: %1"
-msgstr ""
-
 msgid "LocalSend not available on this device"
 msgstr ""
 
-msgid "LocalSend off"
+msgid "Scanning for nearby devices…"
 msgstr ""
 
-msgid "Starting LocalSend…"
+msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
+msgstr ""
+
+msgid "Rescan"
+msgstr ""
+
+msgid "Send to…"
+msgstr ""
+
+msgid "Sending…"
+msgstr ""
+
+msgid "Sending… %1%"
+msgstr ""
+
+msgid "Sent %1 file(s)."
+msgstr ""
+
+msgid "The other device declined the transfer."
+msgstr ""
+
+msgid "Transfer cancelled."
+msgstr ""
+
+msgid "Send failed: %1"
+msgstr ""
+
+msgid "LocalSend error: %1"
+msgstr ""
+
+msgid "LocalSend off"
 msgstr ""
 
 msgid "Visible as %1"

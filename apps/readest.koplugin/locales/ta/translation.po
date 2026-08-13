@@ -191,6 +191,9 @@ msgstr "சேமிப்பக ஒதுக்கீடு மீறப்ப�
 msgid "Upload failed."
 msgstr "பதிவேற்றம் தோல்வியடைந்தது."
 
+msgid "Send to nearby Readest devices"
+msgstr ""
+
 msgid "Download Book"
 msgstr "புத்தகம் பதிவிறக்கு"
 
@@ -236,8 +239,8 @@ msgstr "மற்ற சாதனங்களிலிருந்து Readest
 msgid "Full sync all readest annotations"
 msgstr "அனைத்து Readest குறிப்புகளின் முழு ஒத்திசைவு"
 
-msgid "Add to Readest"
-msgstr "Readest-இல் சேர்"
+msgid "Add to Readest library"
+msgstr ""
 
 msgid "Sign in to Readest first."
 msgstr "முதலில் Readest-இல் உள்நுழையவும்."
@@ -356,6 +359,15 @@ msgstr "புத்தகங்கள் ஒத்திசைவு தோல�
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr ""
 
+msgid "LocalSend error: could not find a free port."
+msgstr ""
+
+msgid "LocalSend failed to start."
+msgstr ""
+
+msgid "Starting LocalSend…"
+msgstr ""
+
 msgid "LocalSend will start when Wi-Fi connects."
 msgstr ""
 
@@ -383,16 +395,43 @@ msgstr ""
 msgid "LocalSend: received %1 file(s)."
 msgstr ""
 
-msgid "LocalSend error: %1"
-msgstr ""
-
 msgid "LocalSend not available on this device"
 msgstr ""
 
-msgid "LocalSend off"
+msgid "Scanning for nearby devices…"
 msgstr ""
 
-msgid "Starting LocalSend…"
+msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
+msgstr ""
+
+msgid "Rescan"
+msgstr ""
+
+msgid "Send to…"
+msgstr ""
+
+msgid "Sending…"
+msgstr ""
+
+msgid "Sending… %1%"
+msgstr ""
+
+msgid "Sent %1 file(s)."
+msgstr ""
+
+msgid "The other device declined the transfer."
+msgstr ""
+
+msgid "Transfer cancelled."
+msgstr ""
+
+msgid "Send failed: %1"
+msgstr ""
+
+msgid "LocalSend error: %1"
+msgstr ""
+
+msgid "LocalSend off"
 msgstr ""
 
 msgid "Visible as %1"

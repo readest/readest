@@ -191,6 +191,9 @@ msgstr "Cota de stocare a fost depășită."
 msgid "Upload failed."
 msgstr "Încărcarea a eșuat."
 
+msgid "Send to nearby Readest devices"
+msgstr ""
+
 msgid "Download Book"
 msgstr "Descarcă cartea"
 
@@ -236,8 +239,8 @@ msgstr "Obține adnotările Readest de pe alte dispozitive"
 msgid "Full sync all readest annotations"
 msgstr "Sincronizare completă a tuturor adnotărilor Readest"
 
-msgid "Add to Readest"
-msgstr "Adaugă la Readest"
+msgid "Add to Readest library"
+msgstr ""
 
 msgid "Sign in to Readest first."
 msgstr "Conectează-te mai întâi la Readest."
@@ -356,6 +359,15 @@ msgstr "Sincronizarea cărților a eșuat"
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr ""
 
+msgid "LocalSend error: could not find a free port."
+msgstr ""
+
+msgid "LocalSend failed to start."
+msgstr ""
+
+msgid "Starting LocalSend…"
+msgstr ""
+
 msgid "LocalSend will start when Wi-Fi connects."
 msgstr ""
 
@@ -383,16 +395,43 @@ msgstr ""
 msgid "LocalSend: received %1 file(s)."
 msgstr ""
 
-msgid "LocalSend error: %1"
-msgstr ""
-
 msgid "LocalSend not available on this device"
 msgstr ""
 
-msgid "LocalSend off"
+msgid "Scanning for nearby devices…"
 msgstr ""
 
-msgid "Starting LocalSend…"
+msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
+msgstr ""
+
+msgid "Rescan"
+msgstr ""
+
+msgid "Send to…"
+msgstr ""
+
+msgid "Sending…"
+msgstr ""
+
+msgid "Sending… %1%"
+msgstr ""
+
+msgid "Sent %1 file(s)."
+msgstr ""
+
+msgid "The other device declined the transfer."
+msgstr ""
+
+msgid "Transfer cancelled."
+msgstr ""
+
+msgid "Send failed: %1"
+msgstr ""
+
+msgid "LocalSend error: %1"
+msgstr ""
+
+msgid "LocalSend off"
 msgstr ""
 
 msgid "Visible as %1"
