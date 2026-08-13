@@ -6,14 +6,40 @@ use std::collections::VecDeque;
 use std::sync::{Mutex, PoisonError};
 
 #[derive(Serialize)]
-#[serde(tag = "type", rename_all = "snake_case", rename_all_fields = "camelCase")]
+#[serde(
+    tag = "type",
+    rename_all = "snake_case",
+    rename_all_fields = "camelCase"
+)]
 pub enum Event {
-    Started { alias: String, port: u16 },
-    ReceiveRequest { session_id: String, sender: SenderInfo, files: Vec<FileInfo>, total_size: u64 },
-    ReceiveRequestClosed { session_id: String },
-    ReceiveFileDone { session_id: String, file_name: String, path: Option<String>, error: Option<String> },
-    ReceiveEnd { session_id: String, reason: String, received: usize, failed: usize },
-    Error { message: String },
+    Started {
+        alias: String,
+        port: u16,
+    },
+    ReceiveRequest {
+        session_id: String,
+        sender: SenderInfo,
+        files: Vec<FileInfo>,
+        total_size: u64,
+    },
+    ReceiveRequestClosed {
+        session_id: String,
+    },
+    ReceiveFileDone {
+        session_id: String,
+        file_name: String,
+        path: Option<String>,
+        error: Option<String>,
+    },
+    ReceiveEnd {
+        session_id: String,
+        reason: String,
+        received: usize,
+        failed: usize,
+    },
+    Error {
+        message: String,
+    },
 }
 
 #[derive(Serialize)]
@@ -67,7 +93,11 @@ mod tests {
                 device_model: Some("macOS".into()),
                 ip: "192.168.1.120".into(),
             },
-            files: vec![FileInfo { id: "f1".into(), file_name: "a.epub".into(), size: 7 }],
+            files: vec![FileInfo {
+                id: "f1".into(),
+                file_name: "a.epub".into(),
+                size: 7,
+            }],
             total_size: 7,
         });
         let json = pop().unwrap();
@@ -90,15 +120,29 @@ mod tests {
         assert!(pop().is_none(), "queue should be empty after draining");
 
         // FIFO behavior: verify queue processes events in order
-        push(&Event::Started { alias: "a".into(), port: 53318 });
-        push(&Event::Error { message: "boom".into() });
+        push(&Event::Started {
+            alias: "a".into(),
+            port: 53318,
+        });
+        push(&Event::Error {
+            message: "boom".into(),
+        });
 
         let first = pop().unwrap();
-        assert!(first.contains("started"), "first pop should be Started event: {first}");
+        assert!(
+            first.contains("started"),
+            "first pop should be Started event: {first}"
+        );
 
         let second = pop().unwrap();
-        assert!(second.contains("boom"), "second pop should be Error event: {second}");
+        assert!(
+            second.contains("boom"),
+            "second pop should be Error event: {second}"
+        );
 
-        assert!(pop().is_none(), "queue should be empty after draining both events");
+        assert!(
+            pop().is_none(),
+            "queue should be empty after draining both events"
+        );
     }
 }

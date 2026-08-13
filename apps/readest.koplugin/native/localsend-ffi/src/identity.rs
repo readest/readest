@@ -145,13 +145,18 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("lsffi-id-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let _ = std::fs::remove_file(dir.join("identity.pem"));
-        let a = Identity::load_or_generate(&dir, "KO".into(), "KOReader".into(), DeviceType::Mobile)
-            .unwrap();
-        let b = Identity::load_or_generate(&dir, "KO".into(), "KOReader".into(), DeviceType::Mobile)
-            .unwrap();
+        let a =
+            Identity::load_or_generate(&dir, "KO".into(), "KOReader".into(), DeviceType::Mobile)
+                .unwrap();
+        let b =
+            Identity::load_or_generate(&dir, "KO".into(), "KOReader".into(), DeviceType::Mobile)
+                .unwrap();
         assert_eq!(a.fingerprint, b.fingerprint);
         assert!(a.cert_pem.contains("BEGIN CERTIFICATE"));
-        assert_eq!(a.multicast_device(53318).device_model.as_deref(), Some("KOReader"));
+        assert_eq!(
+            a.multicast_device(53318).device_model.as_deref(),
+            Some("KOReader")
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
