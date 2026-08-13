@@ -27,6 +27,12 @@ const LAYOUT_EPUB_URL = new URL('../fixtures/data/sample-table-layout.epub', imp
 // non-wrapping) data table — it cannot fit the column, so it must SCROLL rather
 // than be clipped.
 const WIDE_EPUB_URL = new URL('../fixtures/data/sample-table-wide.epub', import.meta.url).href;
+// sample-table-transcript.epub: an interview transcript laid out as a table with a
+// narrow speaker-label column ("Angela:") next to a column of long prose (#5681).
+const TRANSCRIPT_EPUB_URL = new URL(
+  '../fixtures/data/sample-table-transcript.epub',
+  import.meta.url,
+).href;
 
 // Spine indices of sample-table-layout.epub whose sections contain <table>.
 const TABLE_SECTION_INDICES = [2, 3, 4, 9, 10];
@@ -88,6 +94,7 @@ const isClipped = (w: HTMLElement) =>
 
 let layoutBook: BookDoc;
 let wideBook: BookDoc;
+let transcriptBook: BookDoc;
 
 describe('Paginator table layout', () => {
   let paginator: Renderer;
@@ -95,6 +102,7 @@ describe('Paginator table layout', () => {
   beforeAll(async () => {
     layoutBook = await loadEPUB(LAYOUT_EPUB_URL, 'sample-table-layout.epub');
     wideBook = await loadEPUB(WIDE_EPUB_URL, 'sample-table-wide.epub');
+    transcriptBook = await loadEPUB(TRANSCRIPT_EPUB_URL, 'sample-table-transcript.epub');
     await import('foliate-js/paginator.js');
   }, 30000);
 
@@ -148,6 +156,42 @@ describe('Paginator table layout', () => {
       }
     }
     expect(checked).toBeGreaterThan(0);
+  }, 60000);
+
+  // #5681: a transcript table pairs a short speaker label with long prose. Cell
+  // rules that let a word break anywhere (`overflow-wrap: anywhere`) drop each
+  // cell's min-content width to one character, so auto table layout hands the
+  // whole column to the prose and shreds "Angela:" into a stack of letters.
+  it('keeps a short label column wide enough for its word', async () => {
+    paginator = createPaginator(600);
+    paginator.open(transcriptBook);
+    paginator.setStyles?.(getStyles(makeViewSettings(), undefined, []));
+
+    const stabilized = waitForStabilized(paginator);
+    await paginator.goTo({ index: 0 });
+    await stabilized;
+    const doc = getSectionDoc(paginator, 0);
+    expect(doc, 'transcript section doc').toBeTruthy();
+    paginator.setStyles?.(getStyles(makeViewSettings(), undefined, []));
+    applyScrollableStyle(doc!);
+
+    const label = doc!.querySelector<HTMLElement>('#speaker')!;
+    expect(label, 'speaker label').toBeTruthy();
+
+    // One client rect per line box: a label broken mid-word reports several.
+    const range = doc!.createRange();
+    range.selectNodeContents(label);
+    expect(range.getClientRects().length, 'lines the speaker label wraps onto').toBe(1);
+
+    // And the cell is at least as wide as the unbroken label.
+    const cell = label.closest('td')!;
+    const probe = doc!.createElement('span');
+    probe.textContent = label.textContent;
+    probe.style.cssText = 'position:absolute;white-space:nowrap;visibility:hidden';
+    label.appendChild(probe);
+    const labelWidth = probe.getBoundingClientRect().width;
+    probe.remove();
+    expect(cell.getBoundingClientRect().width).toBeGreaterThanOrEqual(labelWidth - TOLERANCE_PX);
   }, 60000);
 
   it('scrolls a table too wide for its column instead of clipping it', async () => {
