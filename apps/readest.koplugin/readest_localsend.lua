@@ -25,6 +25,10 @@ local Helper = require("library.localsend_helper")
 local Firewall = require("library.localsend_firewall")
 
 local POLL_INTERVAL = 0.5
+-- Discovery is passive (peers announce themselves); this is long enough for
+-- list_devices replies to arrive on a healthy LAN before showDevicePicker
+-- reads whatever landed in device_list.
+local DEVICE_SCAN_DELAY = 2.5
 
 local LocalSend = {
     plugin = nil,           -- current ReadestSync instance
@@ -37,6 +41,11 @@ local LocalSend = {
     status_cache = {},      -- last {running,alias,port,localIps,multicastError}
     poll_task = nil,
     request_dialogs = {},   -- sessionId -> ConfirmBox, dismissed on abort
+    pending_send = nil,     -- { path = ... } while a send is picking a device
+    device_list = {},       -- last "devices" event reply
+    scanning_msg = nil,     -- "Scanning…" InfoMessage handle, or nil
+    device_dialog = nil,    -- open device-picker ButtonDialog, or nil
+    send_progress_msg = nil,-- "Sending…" InfoMessage handle, or nil
 }
 
 function LocalSend:init(plugin)
@@ -297,6 +306,132 @@ function LocalSend:onReceiveEnd(ev)
     end
 end
 
+-- ── Send ───────────────────────────────────────────────────────────
+--
+-- File-menu entry point (main.lua's "Send with LocalSend" button). Needs
+-- the service running for discovery, then scans passively for a couple of
+-- seconds before showing whatever landed in device_list — there's no
+-- explicit "scan complete" signal from the helper.
+function LocalSend:sendFile(path)
+    if not self.available then
+        UIManager:show(InfoMessage:new{
+            text = _("LocalSend not available on this device"),
+            timeout = 3,
+        })
+        return
+    end
+    if not self.running then
+        self:startService()
+        if not self.running then
+            -- startService() already showed an error InfoMessage.
+            return
+        end
+    end
+    self.pending_send = { path = path }
+    self.device_list = self.device_list or {}
+    self.scanning_msg = InfoMessage:new{ text = _("Scanning for nearby devices…") }
+    UIManager:show(self.scanning_msg)
+    Helper.send(self.sock, { cmd = "list_devices" })
+    UIManager:scheduleIn(DEVICE_SCAN_DELAY, function() self:showDevicePicker() end)
+end
+
+function LocalSend:showDevicePicker()
+    if self.scanning_msg then
+        UIManager:close(self.scanning_msg)
+        self.scanning_msg = nil
+    end
+    -- Nothing left to pick a device for (e.g. the service died meanwhile).
+    if not self.pending_send then return end
+    local path = self.pending_send.path
+    local devices = self.device_list or {}
+    if #devices == 0 then
+        self.pending_send = nil
+        UIManager:show(InfoMessage:new{
+            text = _("No nearby devices found. Make sure the other device has LocalSend/Readest open."),
+            timeout = 3,
+        })
+        return
+    end
+
+    local ButtonDialog = require("ui/widget/buttondialog")
+    local buttons = {}
+    for _, dev in ipairs(devices) do
+        table.insert(buttons, {
+            {
+                text = Helper.deviceLabel(dev),
+                callback = function()
+                    UIManager:close(self.device_dialog)
+                    self.device_dialog = nil
+                    self:sendTo(dev.fingerprint, path)
+                    self.pending_send = nil
+                end,
+            },
+        })
+    end
+    table.insert(buttons, {
+        {
+            text = _("Rescan"),
+            callback = function()
+                UIManager:close(self.device_dialog)
+                self.device_dialog = nil
+                Helper.send(self.sock, { cmd = "list_devices" })
+                UIManager:scheduleIn(DEVICE_SCAN_DELAY, function() self:showDevicePicker() end)
+            end,
+        },
+        {
+            text = _("Cancel"),
+            callback = function()
+                self.pending_send = nil
+                UIManager:close(self.device_dialog)
+                self.device_dialog = nil
+            end,
+        },
+    })
+    self.device_dialog = ButtonDialog:new{
+        title = _("Send to…"),
+        title_align = "center",
+        buttons = buttons,
+    }
+    UIManager:show(self.device_dialog)
+end
+
+function LocalSend:sendTo(fingerprint, path)
+    Helper.send(self.sock, { cmd = "send", fingerprint = fingerprint, paths = { path } })
+    self.send_progress_msg = InfoMessage:new{ text = _("Sending…") }
+    UIManager:show(self.send_progress_msg)
+end
+
+function LocalSend:onSendProgress(ev)
+    if not self.send_progress_msg then return end
+    local text = _("Sending…")
+    local total = ev.bytesTotal or 0
+    if total > 0 then
+        local pct = math.floor((ev.bytesDone or 0) * 100 / total)
+        text = T(_("Sending… %1%"), pct)
+    end
+    UIManager:close(self.send_progress_msg)
+    self.send_progress_msg = InfoMessage:new{ text = text }
+    UIManager:show(self.send_progress_msg)
+end
+
+function LocalSend:onSendEnd(ev)
+    if self.send_progress_msg then
+        UIManager:close(self.send_progress_msg)
+        self.send_progress_msg = nil
+    end
+    local text
+    if ev.status == "sent" then
+        text = T(_("Sent %1 file(s)."), ev.filesSent or 0)
+    elseif ev.status == "declined" then
+        text = _("The other device declined the transfer.")
+    elseif ev.status == "cancelled" then
+        text = _("Transfer cancelled.")
+    else
+        text = T(_("Send failed: %1"), ev.error or "?")
+    end
+    UIManager:show(InfoMessage:new{ text = text, timeout = 4 })
+end
+
 LocalSend.handlers = {
     started = function(self, ev)
         logger.info("ReadestLocalSend: started on port " .. tostring(ev.port))
@@ -320,6 +455,12 @@ LocalSend.handlers = {
     receive_request_closed = function(self, ev) self:onReceiveRequestClosed(ev) end,
     receive_file_done = function(self, ev) self:onReceiveFileDone(ev) end,
     receive_end = function(self, ev) self:onReceiveEnd(ev) end,
+    -- Reply to our own {cmd="list_devices"} request. Just caches the list —
+    -- showDevicePicker (scheduled separately by sendFile/Rescan) is what
+    -- actually shows it, so late-arriving devices just update the cache.
+    devices = function(self, ev) self.device_list = ev.devices or {} end,
+    send_progress = function(self, ev) self:onSendProgress(ev) end,
+    send_end = function(self, ev) self:onSendEnd(ev) end,
     -- An error event means the helper failed (e.g. a bind error at start);
     -- there's no separate "is it actually still running" status to check
     -- (the FFI-era stale-error guard doesn't apply: this event only arrives

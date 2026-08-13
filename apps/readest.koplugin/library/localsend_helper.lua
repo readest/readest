@@ -80,6 +80,25 @@ function M.parseLines(buffer, chunk)
     return events, data:sub(from)
 end
 
+-- Pure display-label formatter for a device entry from the "devices" event
+-- (list_devices reply): { alias, deviceModel, deviceType, fingerprint, host,
+-- port, protocol, ipv4Host }. Mirrors the "<name> · #<last octet>" style
+-- readest_localsend.lua's statusText() uses for this device's own status, so
+-- "which device is this" reads the same on both sides of a transfer. Falls
+-- back to deviceModel when alias is empty/nil, and drops the octet tag
+-- entirely when there's no ipv4Host to parse one from.
+function M.deviceLabel(dev)
+    local name = dev.alias
+    if not name or name == "" then
+        name = dev.deviceModel or "?"
+    end
+    local octet = dev.ipv4Host and dev.ipv4Host:match("%.(%d+)$")
+    if octet then
+        return name .. " · #" .. octet
+    end
+    return name
+end
+
 -- Picks a free local port by binding an ephemeral port and closing it right
 -- away (small TOCTOU race, acceptable here: the helper binds moments
 -- later). pcall-guarded; nil on any failure (e.g. luasocket unavailable).

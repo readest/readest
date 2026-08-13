@@ -87,6 +87,26 @@ describe("localsend_helper.parseLines", function()
     end)
 end)
 
+describe("localsend_helper.deviceLabel", function()
+    local Helper = require("library.localsend_helper")
+
+    it("formats alias with the ipv4 last octet", function()
+        assert.equals("Pixel · #42", Helper.deviceLabel({
+            alias = "Pixel", deviceModel = "Pixel 8", ipv4Host = "192.168.1.42",
+        }))
+    end)
+
+    it("falls back to just the alias when there's no ipv4Host", function()
+        assert.equals("Pixel", Helper.deviceLabel({ alias = "Pixel", deviceModel = "Pixel 8" }))
+    end)
+
+    it("falls back to deviceModel when alias is empty", function()
+        assert.equals("Galaxy Tab", Helper.deviceLabel({
+            alias = "", deviceModel = "Galaxy Tab", ipv4Host = nil,
+        }))
+    end)
+end)
+
 describe("localsend_firewall.rules", function()
     local Firewall = require("library.localsend_firewall")
 
@@ -126,7 +146,8 @@ describe("readest_localsend dispatch", function()
 
     it("exposes handlers for every event the helper protocol emits", function()
         for _, t in ipairs({ "started", "status", "receive_request", "receive_request_closed",
-                             "receive_file_done", "receive_end", "error" }) do
+                             "receive_file_done", "receive_end", "error",
+                             "devices", "send_progress", "send_end" }) do
             assert.is_function(LocalSend.handlers[t], t)
         end
     end)

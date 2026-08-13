@@ -166,6 +166,27 @@ function ReadestSync:registerFileDialogButton()
                     },
                 }
             end)
+        -- Second row (own registration id): shown only for supported book
+        -- formats, and only once a LocalSend helper binary exists for this
+        -- device (plugin.localsend:init() sets that during plugin init()).
+        FileManager.instance:addFileDialogButtons("readest_send_localsend",
+            function(file, is_file, _book_props)
+                if not is_file then return nil end
+                local ext = file:match("%.([^./\\]+)$")
+                if not readest_format_for_ext(ext) then return nil end
+                if not (plugin.localsend and plugin.localsend:isAvailable()) then return nil end
+                return {
+                    {
+                        text = _("Send with LocalSend"),
+                        callback = function()
+                            local fc = FileManager.instance and FileManager.instance.file_chooser
+                            local dlg = fc and fc.file_dialog
+                            if dlg then UIManager:close(dlg) end
+                            plugin.localsend:sendFile(file)
+                        end,
+                    },
+                }
+            end)
     end)
 end
 
