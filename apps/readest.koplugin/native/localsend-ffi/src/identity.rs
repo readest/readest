@@ -55,10 +55,48 @@ impl Identity {
                         // only the first save() wins. Adopt the winner's
                         // identity instead of failing, so both callers agree
                         // on the fingerprint peers end up pinning.
-                        let text = std::fs::read_to_string(&path)
-                            .with_context(|| format!("could not read {}", path.display()))?;
-                        Self::from_pem(&text, alias, device_model, device_type)
-                            .with_context(|| format!("invalid identity file: {}", path.display()))
+                        //
+                        // The winner's create_new() claims the file before
+                        // its write_all() finishes, so a read right here can
+                        // land inside that window and see a partial (or
+                        // empty) file. Retry a handful of times with a short
+                        // sleep to ride it out; this runs on the ls_start
+                        // worker thread (off the UI thread), so blocking
+                        // briefly here is fine. Only a truly corrupt file
+                        // exhausts every attempt.
+                        const MAX_ATTEMPTS: u32 = 10;
+                        let mut last_err = anyhow::anyhow!(
+                            "could not read {} after {MAX_ATTEMPTS} attempts",
+                            path.display()
+                        );
+                        for attempt in 0..MAX_ATTEMPTS {
+                            if attempt > 0 {
+                                std::thread::sleep(std::time::Duration::from_millis(5));
+                            }
+                            let text = match std::fs::read_to_string(&path) {
+                                Ok(text) => text,
+                                Err(err) => {
+                                    last_err = anyhow::Error::new(err)
+                                        .context(format!("could not read {}", path.display()));
+                                    continue;
+                                }
+                            };
+                            match Self::from_pem(
+                                &text,
+                                alias.clone(),
+                                device_model.clone(),
+                                device_type.clone(),
+                            ) {
+                                Ok(identity) => return Ok(identity),
+                                Err(err) => {
+                                    last_err = err.context(format!(
+                                        "invalid identity file: {}",
+                                        path.display()
+                                    ));
+                                }
+                            }
+                        }
+                        Err(last_err)
                     }
                     Err(err) => {
                         Err(err).with_context(|| format!("could not save {}", path.display()))
@@ -205,4 +243,15 @@ mod tests {
 
         let _ = std::fs::remove_dir_all(&dir);
     }
+
+    // A dedicated test that forces the AlreadyExists retry loop to actually
+    // observe a partial read, as opposed to
+    // load_or_generate_racing_writers_converge_on_one_fingerprint above
+    // (which exercises the same arm but with real thread-scheduling timing,
+    // where the winner's write_all of a few KB typically completes before
+    // the loser's read lands), would need to pause save()'s own write_all
+    // mid-flight, i.e. a test seam in production code. That's out of scope
+    // here and would be its own source of flakiness, so the race test above
+    // (real concurrent load_or_generate callers converging on one
+    // fingerprint) is left as the coverage for this path.
 }

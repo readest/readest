@@ -237,6 +237,18 @@ LocalSend.handlers = {
     -- Stop client-side polling so a later toggle/network event can retry;
     -- the Rust side self-heals a failed start without needing ls_stop first.
     error = function(_self, ev)
+        -- Event::Error is only emitted on a failed start. If ls_status shows
+        -- the service is actually running, this is a stale error from a
+        -- superseded worker during a suspend/resume overlap; ignore it so it
+        -- can't tear down the healthy service.
+        if _self.lib then
+            local s = LocalSendFFI.takeString(_self.lib, _self.lib.ls_status())
+            local ok, status = pcall(function() return require("json").decode(s or "") end)
+            if ok and type(status) == "table" and status.running then
+                logger.info("ReadestLocalSend: ignoring stale error while running: " .. tostring(ev.message))
+                return
+            end
+        end
         UIManager:show(InfoMessage:new{
             text = T(_("LocalSend error: %1"), ev.message or "?"),
             timeout = 5,

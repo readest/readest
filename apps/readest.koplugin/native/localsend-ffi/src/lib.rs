@@ -143,10 +143,30 @@ pub extern "C" fn ls_start(config_json: *const c_char) -> c_int {
         // to wait for: it's called synchronously from a LuaJIT UI callback,
         // and a multi-second stall there freezes the whole reader with no
         // repaint. Run all of it on a dedicated OS thread instead.
-        std::thread::spawn(move || run_worker(config, worker_status, stop_rx));
-
-        *guard = Some(Running { stop_tx, status });
-        OK
+        //
+        // `Builder::spawn` (unlike `thread::spawn`) returns a `Result`
+        // instead of panicking when the OS refuses to create the thread
+        // (e.g. out of memory/thread quota on a resource-starved e-reader).
+        // Handle that failure explicitly: a bare `thread::spawn` here would
+        // panic, get caught by the `catch_unwind` above, and turn into
+        // `ERR_PANIC` with no `Event::Error` ever queued, so `drainEvents`
+        // on the Lua side would surface nothing and the toggle would fail
+        // silently.
+        match std::thread::Builder::new()
+            .name("localsend".into())
+            .spawn(move || run_worker(config, worker_status, stop_rx))
+        {
+            Ok(_handle) => {
+                *guard = Some(Running { stop_tx, status });
+                OK
+            }
+            Err(err) => {
+                events::push(&events::Event::Error {
+                    message: format!("could not start thread: {err}"),
+                });
+                ERR_START
+            }
+        }
     })
     .unwrap_or(ERR_PANIC)
 }
