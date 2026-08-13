@@ -6,11 +6,14 @@
  *
  *   node build-localsend-libs.mjs                 # every target this host can build
  *   node build-localsend-libs.mjs --only armv7    # Kindle .so only
+ *   node build-localsend-libs.mjs --only armv7hf  # Kobo .so only
  *   node build-localsend-libs.mjs --only arm64-mac
  *
  * armv7 needs: rustup target add armv7-unknown-linux-gnueabi
  *              cargo-zigbuild + zig (brew install zig && cargo install cargo-zigbuild,
  *              or pip3 install ziglang cargo-zigbuild)
+ * armv7hf needs: rustup target add armv7-unknown-linux-gnueabihf
+ *                cargo-zigbuild + zig (same install as armv7)
  * arm64-mac needs: an aarch64 macOS host (plain cargo build).
  */
 
@@ -35,6 +38,17 @@ const LIBS_DIR = path.join(PLUGIN_DIR, 'libs');
 // zsync2) tops out at GLIBC_2.12 (koreader/libs/libzmq.so.5).
 const KINDLE_GLIBC = '2.12';
 
+// Kobo (hard-float) userland glibc floor; verified against the KOReader
+// kobo release binaries. Bump ONLY if a readelf check of a current release
+// shows a higher floor is safe.
+//
+// Observed 2026-08-13 against koreader-kobo-v2026.07.1.zip: `strings` over
+// every shipped .so/binary (koreader/libs/*, koreader/common/*, luajit,
+// dbclient, dropbear, fbink, fbdepth, sdcv, sftp-server, scp, tar, zsync2)
+// tops out at GLIBC_2.12 (koreader/libs/libzmq.so.5) -- same floor and same
+// file as the Kindle build.
+const KOBO_GLIBC = '2.12';
+
 const TARGETS = {
   armv7: {
     triple: 'armv7-unknown-linux-gnueabi',
@@ -45,6 +59,25 @@ const TARGETS = {
       const t = spawnSync('rustup', ['target', 'list', '--installed'], { encoding: 'utf8' });
       if (!t.stdout || !t.stdout.includes('armv7-unknown-linux-gnueabi')) {
         return 'run: rustup target add armv7-unknown-linux-gnueabi';
+      }
+      // Note: `cargo zigbuild --version` always fails (cargo forwards
+      // "zigbuild" as the subcommand name, and that subcommand has no
+      // --version flag), so probe the cargo-zigbuild binary directly.
+      if (spawnSync('cargo-zigbuild', ['--version']).status !== 0) {
+        return 'install cargo-zigbuild + zig (brew install zig && cargo install cargo-zigbuild)';
+      }
+      return null;
+    },
+  },
+  armv7hf: {
+    triple: 'armv7-unknown-linux-gnueabihf',
+    cargo: ['zigbuild', '--release', '--target', `armv7-unknown-linux-gnueabihf.${KOBO_GLIBC}`],
+    artifact: ['armv7-unknown-linux-gnueabihf', 'release', 'liblocalsend_ffi.so'],
+    out: 'liblocalsend-armv7hf.so',
+    check() {
+      const t = spawnSync('rustup', ['target', 'list', '--installed'], { encoding: 'utf8' });
+      if (!t.stdout || !t.stdout.includes('armv7-unknown-linux-gnueabihf')) {
+        return 'run: rustup target add armv7-unknown-linux-gnueabihf';
       }
       // Note: `cargo zigbuild --version` always fails (cargo forwards
       // "zigbuild" as the subcommand name, and that subcommand has no
