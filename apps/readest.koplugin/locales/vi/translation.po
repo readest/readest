@@ -290,6 +290,9 @@ msgstr "Gửi sách ngay"
 msgid "Pull books now"
 msgstr "Lấy sách ngay"
 
+msgid "Receive via LocalSend"
+msgstr ""
+
 msgid "Upload current book to Readest"
 msgstr "Tải sách hiện tại lên Readest"
 
@@ -349,6 +352,51 @@ msgstr "Đã đồng bộ sách"
 
 msgid "Books sync failed"
 msgstr "Đồng bộ sách thất bại"
+
+msgid "Set a Readest download folder or a KOReader home folder first."
+msgstr ""
+
+msgid "LocalSend will start when Wi-Fi connects."
+msgstr ""
+
+msgid "… and %1 more"
+msgstr ""
+
+msgid "%1 wants to send you %2 file(s) (%3):"
+msgstr ""
+
+msgid "Accept"
+msgstr ""
+
+msgid "Decline"
+msgstr ""
+
+msgid "Receiving %1 file(s) from %2…"
+msgstr ""
+
+msgid "LocalSend: received %1 file(s), %2 failed."
+msgstr ""
+
+msgid "LocalSend transfer cancelled."
+msgstr ""
+
+msgid "LocalSend: received %1 file(s)."
+msgstr ""
+
+msgid "LocalSend error: %1"
+msgstr ""
+
+msgid "LocalSend not available on this device"
+msgstr ""
+
+msgid "LocalSend off"
+msgstr ""
+
+msgid "Visible as %1"
+msgstr ""
+
+msgid "(limited discovery)"
+msgstr ""
 
 msgid "Checking for update…"
 msgstr "Đang kiểm tra cập nhật…"
