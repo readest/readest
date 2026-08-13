@@ -2316,5 +2316,7 @@
   "Only book files are accepted; other file types are declined automatically.": "تُقبل ملفات الكتب فقط؛ وتُرفض أنواع الملفات الأخرى تلقائيًا.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "اكتشاف الأجهزة عبر البث المتعدد غير متاح؛ قد تحتاج الأجهزة إلى تحديث يدوي.",
   "On": "مفعّل",
-  "Not available for this book.": "غير متاح لهذا الكتاب."
+  "Not available for this book.": "غير متاح لهذا الكتاب.",
+  "Start of Book": "بداية الكتاب",
+  "End of Book": "نهاية الكتاب"
 }

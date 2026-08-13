@@ -2092,5 +2092,7 @@
   "Only book files are accepted; other file types are declined automatically.": "Alleen boekbestanden worden geaccepteerd; andere bestandstypen worden automatisch geweigerd.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "Apparaatdetectie via multicast is niet beschikbaar; apparaten moeten mogelijk handmatig vernieuwd worden.",
   "On": "Aan",
-  "Not available for this book.": "Niet beschikbaar voor dit boek."
+  "Not available for this book.": "Niet beschikbaar voor dit boek.",
+  "Start of Book": "Begin van het boek",
+  "End of Book": "Einde van het boek"
 }

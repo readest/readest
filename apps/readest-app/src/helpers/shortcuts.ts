@@ -260,6 +260,16 @@ const DEFAULT_SHORTCUTS = {
     description: _('Scroll Half Page Up'),
     section: 'Navigation',
   },
+  onGoBookStart: {
+    keys: ['Home'],
+    description: _('Start of Book'),
+    section: 'Navigation',
+  },
+  onGoBookEnd: {
+    keys: ['End'],
+    description: _('End of Book'),
+    section: 'Navigation',
+  },
   onGoBack: {
     keys: ['shift+ArrowLeft', 'shift+h', 'alt+ArrowLeft'],
     description: _('Go Back'),

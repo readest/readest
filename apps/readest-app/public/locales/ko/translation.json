@@ -2036,5 +2036,7 @@
   "Only book files are accepted; other file types are declined automatically.": "책 파일만 수락되며, 다른 파일 형식은 자동으로 거절됩니다.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "멀티캐스트를 통한 기기 검색을 사용할 수 없습니다. 수동 새로고침이 필요할 수 있습니다.",
   "On": "켜짐",
-  "Not available for this book.": "이 책에서는 사용할 수 없습니다."
+  "Not available for this book.": "이 책에서는 사용할 수 없습니다.",
+  "Start of Book": "책의 처음",
+  "End of Book": "책의 끝"
 }

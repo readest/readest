@@ -2036,5 +2036,7 @@
   "Only book files are accepted; other file types are declined automatically.": "Hanya fail buku diterima; jenis fail lain ditolak secara automatik.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "Penemuan peranti melalui multicast tidak tersedia; peranti mungkin perlu dimuat semula secara manual.",
   "On": "Hidup",
-  "Not available for this book.": "Tidak tersedia untuk buku ini."
+  "Not available for this book.": "Tidak tersedia untuk buku ini.",
+  "Start of Book": "Permulaan buku",
+  "End of Book": "Penghujung buku"
 }

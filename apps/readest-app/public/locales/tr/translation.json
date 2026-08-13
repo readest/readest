@@ -2092,5 +2092,7 @@
   "Only book files are accepted; other file types are declined automatically.": "Yalnızca kitap dosyaları kabul edilir; diğer dosya türleri otomatik olarak reddedilir.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "Multicast üzerinden cihaz bulma kullanılamıyor; cihazların elle yenilenmesi gerekebilir.",
   "On": "Açık",
-  "Not available for this book.": "Bu kitap için kullanılamıyor."
+  "Not available for this book.": "Bu kitap için kullanılamıyor.",
+  "Start of Book": "Kitabın başı",
+  "End of Book": "Kitabın sonu"
 }

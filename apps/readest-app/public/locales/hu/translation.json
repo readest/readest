@@ -2092,5 +2092,7 @@
   "Only book files are accepted; other file types are declined automatically.": "Csak könyvfájlok fogadhatók; a többi fájltípus automatikusan elutasításra kerül.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "A multicast alapú eszközkeresés nem érhető el; kézi frissítésre lehet szükség.",
   "On": "Be",
-  "Not available for this book.": "Ehhez a könyvhöz nem érhető el."
+  "Not available for this book.": "Ehhez a könyvhöz nem érhető el.",
+  "Start of Book": "Könyv eleje",
+  "End of Book": "Könyv vége"
 }

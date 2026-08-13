@@ -2092,5 +2092,7 @@
   "Only book files are accepted; other file types are declined automatically.": "புத்தகக் கோப்புகள் மட்டுமே ஏற்கப்படும்; பிற வகைக் கோப்புகள் தானாக நிராகரிக்கப்படும்.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "மல்டிகாஸ்ட் வழியாக சாதனங்களைக் கண்டறிய முடியவில்லை; கைமுறையாகப் புதுப்பிக்க வேண்டியிருக்கலாம்.",
   "On": "இயக்கத்தில்",
-  "Not available for this book.": "இந்தப் புத்தகத்திற்குக் கிடைக்கவில்லை."
+  "Not available for this book.": "இந்தப் புத்தகத்திற்குக் கிடைக்கவில்லை.",
+  "Start of Book": "புத்தகத்தின் தொடக்கம்",
+  "End of Book": "புத்தகத்தின் முடிவு"
 }

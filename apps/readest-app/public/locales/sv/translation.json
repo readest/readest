@@ -2092,5 +2092,7 @@
   "Only book files are accepted; other file types are declined automatically.": "Endast bokfiler accepteras; andra filtyper avböjs automatiskt.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "Enhetsidentifiering via multicast är inte tillgänglig; enheter kan behöva uppdateras manuellt.",
   "On": "På",
-  "Not available for this book.": "Inte tillgängligt för den här boken."
+  "Not available for this book.": "Inte tillgängligt för den här boken.",
+  "Start of Book": "Bokens början",
+  "End of Book": "Bokens slut"
 }

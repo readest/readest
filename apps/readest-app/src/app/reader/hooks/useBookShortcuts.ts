@@ -187,6 +187,19 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     getView(sideBarBookKey)?.next(distance);
   };
 
+  // Home / End (#5660). The view is registered in the store before its opening
+  // navigation runs, so a jump fired in that window is discarded by it anyway —
+  // after needlessly paging in the far end of the book. Wait for `inited`.
+  const goBookStart = () => {
+    if (!getViewState(sideBarBookKey ?? '')?.inited) return;
+    getView(sideBarBookKey)?.goToFraction(0);
+  };
+
+  const goBookEnd = () => {
+    if (!getViewState(sideBarBookKey ?? '')?.inited) return;
+    getView(sideBarBookKey)?.goToFraction(1);
+  };
+
   const goBack = () => {
     getView(sideBarBookKey)?.history.back();
   };
@@ -428,6 +441,8 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onGoNextSection: goNextSection,
       onGoLeftSection: goLeftSection,
       onGoRightSection: goRightSection,
+      onGoBookStart: goBookStart,
+      onGoBookEnd: goBookEnd,
       onGoBack: goBack,
       onGoForward: goForward,
       onZoomIn: zoomIn,

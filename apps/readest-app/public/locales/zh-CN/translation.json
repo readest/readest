@@ -2036,5 +2036,7 @@
   "Only book files are accepted; other file types are declined automatically.": "仅接受图书文件，其他类型的文件将被自动拒绝。",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "无法通过组播发现设备，可能需要手动刷新。",
   "On": "已开启",
-  "Not available for this book.": "此书不支持此功能。"
+  "Not available for this book.": "此书不支持此功能。",
+  "Start of Book": "书籍开头",
+  "End of Book": "书籍结尾"
 }

@@ -2092,5 +2092,7 @@
   "Only book files are accepted; other file types are declined automatically.": "শুধুমাত্র বইয়ের ফাইল গৃহীত হয়; অন্যান্য ফাইল স্বয়ংক্রিয়ভাবে প্রত্যাখ্যাত হয়।",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "মাল্টিকাস্টের মাধ্যমে ডিভাইস খোঁজা যাচ্ছে না; ম্যানুয়ালি রিফ্রেশ করার প্রয়োজন হতে পারে।",
   "On": "চালু",
-  "Not available for this book.": "এই বইয়ের জন্য উপলব্ধ নয়।"
+  "Not available for this book.": "এই বইয়ের জন্য উপলব্ধ নয়।",
+  "Start of Book": "বইয়ের শুরু",
+  "End of Book": "বইয়ের শেষ"
 }

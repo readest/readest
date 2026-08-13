@@ -2036,5 +2036,7 @@
   "Only book files are accepted; other file types are declined automatically.": "དེབ་ཡིག་ཆ་ཁོ་ན་དང་ལེན་བྱེད། ཡིག་ཆ་རིགས་གཞན་རང་འགུལ་གྱིས་ཁས་མི་ལེན།",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "Multicast བརྒྱུད་སྒྲིག་ཆས་འཚོལ་མི་ཐུབ། ལག་ཐོག་གསར་སྒྱུར་དགོས་སྲིད།",
   "On": "ཁ་ཕྱེ།",
-  "Not available for this book.": "དེབ་འདིར་བེད་སྤྱོད་མི་ཐུབ།"
+  "Not available for this book.": "དེབ་འདིར་བེད་སྤྱོད་མི་ཐུབ།",
+  "Start of Book": "དཔེ་དེབ་ཀྱི་མགོ།",
+  "End of Book": "དཔེ་དེབ་ཀྱི་མཇུག"
 }

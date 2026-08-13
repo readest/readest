@@ -2092,5 +2092,7 @@
   "Only book files are accepted; other file types are declined automatically.": "Γίνονται δεκτά μόνο αρχεία βιβλίων· οι άλλοι τύποι αρχείων απορρίπτονται αυτόματα.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "Η ανακάλυψη συσκευών μέσω multicast δεν είναι διαθέσιμη· ίσως χρειαστεί χειροκίνητη ανανέωση.",
   "On": "Ενεργό",
-  "Not available for this book.": "Μη διαθέσιμο για αυτό το βιβλίο."
+  "Not available for this book.": "Μη διαθέσιμο για αυτό το βιβλίο.",
+  "Start of Book": "Αρχή βιβλίου",
+  "End of Book": "Τέλος βιβλίου"
 }

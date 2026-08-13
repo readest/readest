@@ -2204,5 +2204,7 @@
   "Only book files are accepted; other file types are declined automatically.": "Sprejete so le datoteke knjig; druge vrste datotek so samodejno zavrnjene.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "Odkrivanje naprav prek multicasta ni na voljo; morda bo potrebna ročna osvežitev.",
   "On": "Vklopljeno",
-  "Not available for this book.": "Ni na voljo za to knjigo."
+  "Not available for this book.": "Ni na voljo za to knjigo.",
+  "Start of Book": "Začetek knjige",
+  "End of Book": "Konec knjige"
 }

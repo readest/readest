@@ -2036,5 +2036,7 @@
   "Only book files are accepted; other file types are declined automatically.": "本のファイルのみ受け入れられ、その他のファイルは自動的に拒否されます。",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "マルチキャストによるデバイス検出が利用できません。手動での更新が必要な場合があります。",
   "On": "オン",
-  "Not available for this book.": "この本では利用できません。"
+  "Not available for this book.": "この本では利用できません。",
+  "Start of Book": "本の先頭",
+  "End of Book": "本の末尾"
 }

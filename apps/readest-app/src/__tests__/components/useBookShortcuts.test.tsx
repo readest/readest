@@ -15,6 +15,7 @@ const mockView = {
   prev: vi.fn(),
   next: vi.fn(),
   pan: vi.fn(),
+  goToFraction: vi.fn(),
   renderer: {
     scrolled: false,
     setAttribute: vi.fn(),
@@ -23,6 +24,11 @@ const mockView = {
     back: vi.fn(),
     forward: vi.fn(),
   },
+};
+
+const currentViewState = {
+  ttsEnabled: false,
+  inited: true,
 };
 
 const currentViewSettings = {
@@ -38,7 +44,7 @@ const currentViewSettings = {
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     getView: () => mockView,
-    getViewState: () => ({ ttsEnabled: false }),
+    getViewState: () => currentViewState,
     getViewSettings: () => currentViewSettings,
     setViewSettings: vi.fn(),
   }),
@@ -127,6 +133,7 @@ describe('useBookShortcuts', () => {
     currentViewSettings.vertical = false;
     currentViewSettings.rtl = false;
     currentViewSettings.paragraphMode.enabled = false;
+    currentViewState.inited = true;
     mockView.book.dir = 'ltr';
   });
 
@@ -176,6 +183,32 @@ describe('useBookShortcuts', () => {
     shortcutState.actions?.['onGoNext']?.();
 
     expect(mockView.next).toHaveBeenCalledWith(72);
+  });
+
+  it('jumps to the start of the book on Home, ignoring the reading ruler (#5660)', () => {
+    vi.spyOn(eventDispatcher, 'dispatchSync').mockReturnValue(true);
+
+    render(<Harness />);
+    shortcutState.actions?.['onGoBookStart']?.();
+
+    expect(mockView.goToFraction).toHaveBeenCalledWith(0);
+  });
+
+  it('jumps to the end of the book on End (#5660)', () => {
+    render(<Harness />);
+    shortcutState.actions?.['onGoBookEnd']?.();
+
+    expect(mockView.goToFraction).toHaveBeenCalledWith(1);
+  });
+
+  it('ignores book start/end jumps until the view finished initializing (#5660)', () => {
+    currentViewState.inited = false;
+
+    render(<Harness />);
+    shortcutState.actions?.['onGoBookStart']?.();
+    shortcutState.actions?.['onGoBookEnd']?.();
+
+    expect(mockView.goToFraction).not.toHaveBeenCalled();
   });
 
   it('dispatches rsvp-start for the current book when the RSVP shortcut fires', () => {

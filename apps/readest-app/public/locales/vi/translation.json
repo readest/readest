@@ -2036,5 +2036,7 @@
   "Only book files are accepted; other file types are declined automatically.": "Chỉ chấp nhận tệp sách; các loại tệp khác sẽ tự động bị từ chối.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "Không thể phát hiện thiết bị qua multicast; có thể cần làm mới thủ công.",
   "On": "Bật",
-  "Not available for this book.": "Không khả dụng cho sách này."
+  "Not available for this book.": "Không khả dụng cho sách này.",
+  "Start of Book": "Đầu sách",
+  "End of Book": "Cuối sách"
 }

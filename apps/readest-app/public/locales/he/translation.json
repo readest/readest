@@ -2148,5 +2148,7 @@
   "Only book files are accepted; other file types are declined automatically.": "רק קובצי ספרים מתקבלים; סוגי קבצים אחרים נדחים אוטומטית.",
   "Device discovery via multicast is unavailable; devices may need a manual refresh.": "גילוי מכשירים באמצעות multicast אינו זמין; ייתכן שיידרש רענון ידני.",
   "On": "פעיל",
-  "Not available for this book.": "לא זמין עבור ספר זה."
+  "Not available for this book.": "לא זמין עבור ספר זה.",
+  "Start of Book": "תחילת הספר",
+  "End of Book": "סוף הספר"
 }
