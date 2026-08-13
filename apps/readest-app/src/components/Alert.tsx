@@ -27,7 +27,12 @@ const Alert: React.FC<{
   const divRef = useKeyDownActions({ onCancel, onConfirm });
 
   return (
-    <div className={clsx('z-[130] flex justify-center px-4')}>
+    // `w-full` is load-bearing: every call site mounts this as the lone child
+    // of a `flex justify-center` bar, and a flex item without a definite width
+    // sizes to its content. Without it the surface below measured itself off
+    // its longest line, so the box resized whenever the text changed (e.g. the
+    // delete confirmation's purge toggle swapping in longer copy mid-dialog).
+    <div className='z-[130] flex w-full justify-center px-4'>
       <div
         ref={divRef}
         role='alert'
