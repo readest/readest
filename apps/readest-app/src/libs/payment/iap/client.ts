@@ -72,6 +72,42 @@ export const verifyGooglePurchaseProducts = async (purchases: IAPPurchase[]) => 
   }
 };
 
+// An iOS storage purchase whose one-shot client verification never reached the
+// server (network failure, app closed mid-flow) is recorded nowhere: the App
+// Store webhook deliberately ignores one-time purchase events. Restore is the
+// only flow that sees the transaction again, so re-verify each restored
+// one-time iOS purchase; replays are deduped by original transaction id
+// server-side.
+export const verifyApplePurchaseProducts = async (purchases: IAPPurchase[]) => {
+  const products = purchases.filter(
+    (p) => p.platform === 'ios' && isPurchaseProduct(p.productId) && p.originalTransactionId,
+  );
+  if (products.length === 0) return;
+
+  try {
+    const token = await getAccessToken();
+    if (!token) return;
+
+    await Promise.allSettled(
+      products.map((purchase) =>
+        fetch(`${getNodeAPIBaseUrl()}/apple/iap-verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            transactionId: purchase.transactionId || purchase.originalTransactionId,
+            originalTransactionId: purchase.originalTransactionId,
+          }),
+        }),
+      ),
+    );
+  } catch (error) {
+    console.error('Failed to verify restored purchase products:', error);
+  }
+};
+
 export const initializeIAP = async () => {
   const iapService = new IAPService();
   await iapService.initialize();

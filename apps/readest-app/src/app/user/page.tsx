@@ -20,6 +20,7 @@ import { Toast } from '@/components/Toast';
 import {
   purchaseIAPProduct,
   restoreIAPPurchases,
+  verifyApplePurchaseProducts,
   verifyGooglePurchaseProducts,
   getSubscriptionSuccessUrl as getIAPSubscriptionSuccessUrl,
 } from '@/libs/payment/iap/client';
@@ -201,8 +202,11 @@ const ProfilePage = () => {
       if (purchases.length > 0) {
         // Restored one-time purchases (storage add-ons) may still be
         // unconsumed on Google Play, blocking repurchase; re-verifying lets
-        // the server consume them.
+        // the server consume them. On iOS, restore is the only flow that can
+        // record a purchase whose original verification never reached the
+        // server, so re-verify those too.
         await verifyGooglePurchaseProducts(purchases);
+        await verifyApplePurchaseProducts(purchases);
         const restoredSubscriptions = purchases
           .filter((p) => !isPurchaseProduct(p.productId))
           .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
