@@ -392,6 +392,9 @@ msgstr ""
 msgid "LocalSend off"
 msgstr ""
 
+msgid "Starting LocalSend…"
+msgstr ""
+
 msgid "Visible as %1"
 msgstr ""
 
