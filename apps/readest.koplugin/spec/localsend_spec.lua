@@ -60,4 +60,16 @@ describe("readest_localsend dispatch", function()
             assert.is_function(LocalSend.handlers[t], t)
         end
     end)
+
+    it("error and started handlers run without shadowing the i18n function", function()
+        -- Real handlers (not the dispatch test's temporary overrides). A
+        -- first parameter named `_` would shadow the module-level i18n `_`
+        -- and crash on `_("...")` inside the handler body.
+        assert.has_no.errors(function()
+            LocalSend.handlers.error(LocalSend, { message = "boom" })
+        end)
+        assert.has_no.errors(function()
+            LocalSend.handlers.started(LocalSend, { port = 53318 })
+        end)
+    end)
 end)

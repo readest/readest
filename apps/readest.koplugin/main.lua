@@ -1070,6 +1070,14 @@ end
 -- devices where Suspend/Resume also fire on focus changes (Android),
 -- the debounce keeps this from hammering the API.
 function ReadestSync:onResume()
+    -- Guarded because some tests construct a plugin table without calling
+    -- init() (see onCloseWidget). The service kept running while suspended
+    -- only if the platform doesn't tear down networking on suspend; restart
+    -- unconditionally so a real suspend/resume cycle always ends up in sync
+    -- with the localsend_enabled setting.
+    if self.localsend and self.settings.localsend_enabled and NetworkMgr:isConnected() then
+        self.localsend:startService()
+    end
     if not (self.settings.auto_sync and self.settings.access_token and self.ui.document) then
         return
     end

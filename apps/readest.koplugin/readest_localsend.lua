@@ -49,7 +49,8 @@ end
 
 function LocalSend:downloadDir()
     local dir = self.plugin.settings.library_download_dir
-        or G_reader_settings:readSetting("home_dir")
+    if dir == "" then dir = nil end
+    dir = dir or G_reader_settings:readSetting("home_dir")
     if dir == "" then dir = nil end
     return dir
 end
@@ -168,6 +169,10 @@ function LocalSend:onReceiveRequest(ev)
             .. "\n\n" .. table.concat(names, "\n"),
         ok_text = _("Accept"),
         cancel_text = _("Decline"),
+        -- The dialog pops up unprompted from a background poll; without this
+        -- a tap already in flight (e.g. a page turn) is replayed onto the
+        -- dialog and instantly triggers cancel_callback (declines the file).
+        flush_events_on_show = true,
         ok_callback = function()
             self.request_dialogs[ev.sessionId] = nil
             self.lib.ls_accept(ev.sessionId)
@@ -221,18 +226,22 @@ function LocalSend:onReceiveEnd(ev)
 end
 
 LocalSend.handlers = {
-    started = function(_, ev)
+    started = function(_self, ev)
         logger.info("ReadestLocalSend: started on port " .. tostring(ev.port))
     end,
     receive_request = function(self, ev) self:onReceiveRequest(ev) end,
     receive_request_closed = function(self, ev) self:onReceiveRequestClosed(ev) end,
     receive_file_done = function(self, ev) self:onReceiveFileDone(ev) end,
     receive_end = function(self, ev) self:onReceiveEnd(ev) end,
-    error = function(_, ev)
+    -- Queued when the async ls_start failed (or a runtime error occurred).
+    -- Stop client-side polling so a later toggle/network event can retry;
+    -- the Rust side self-heals a failed start without needing ls_stop first.
+    error = function(_self, ev)
         UIManager:show(InfoMessage:new{
             text = T(_("LocalSend error: %1"), ev.message or "?"),
             timeout = 5,
         })
+        _self:stopService()
     end,
 }
 
@@ -246,6 +255,9 @@ function LocalSend:statusText()
     local s = LocalSendFFI.takeString(self.lib, self.lib.ls_status())
     local ok, status = pcall(function() return require("json").decode(s or "") end)
     if not ok or type(status) ~= "table" or not status.running then
+        if ok and type(status) == "table" and status.starting then
+            return _("Starting LocalSend…")
+        end
         return _("LocalSend off")
     end
     local octet
