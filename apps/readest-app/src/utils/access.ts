@@ -252,13 +252,16 @@ export const validateUserAndToken = async (authHeader: string | null | undefined
         .join(''),
     );
     const decoded = JSON.parse(jsonPayload);
-    if (!decoded || !decoded.userId) return {};
+
+    // Support both Supabase tokens (sub) and legacy tokens (userId)
+    const userId = decoded.sub || decoded.userId;
+    if (!userId) return {};
 
     const user = {
-      id: String(decoded.userId),
+      id: String(userId),
       email: decoded.email || '',
       user_metadata: {
-        name: decoded.name || '',
+        name: decoded.user_metadata?.display_name || decoded.name || '',
       },
     };
     return { user, token };

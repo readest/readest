@@ -10,6 +10,7 @@ import {
   useEffect,
 } from 'react';
 import posthog from 'posthog-js';
+import { supabase } from '@/utils/supabase';
 
 export interface User {
   id: string;
@@ -60,6 +61,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log('Logging out from Biblophile account');
     const refreshToken = localStorage.getItem('refresh_token');
     const apiUrl = process.env['NEXT_PUBLIC_BIBLO_API_URL'] || '1/v0';
+
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Supabase sign-out failed:', e);
+    }
 
     try {
       if (refreshToken) {
