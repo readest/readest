@@ -45,14 +45,14 @@ const BrightnessOverlay: React.FC<BrightnessOverlayProps> = ({ visible, level })
           'bg-base-100/90 not-eink:shadow-md',
         )}
       >
-        <PiSun className='text-base-content h-4 w-4' />
+        <span className='text-base-content text-xs tabular-nums'>{valuePercent}</span>
         <div className='bg-base-content/20 relative h-40 w-1.5 overflow-hidden rounded-full'>
           <div
             className='bg-base-content absolute bottom-0 left-0 w-full rounded-full'
             style={{ height: `${fillPercent}%` }}
           />
         </div>
-        <span className='text-base-content text-xs tabular-nums'>{valuePercent}</span>
+        <PiSun className='text-base-content h-4 w-4' />
       </div>
     </div>
   );
