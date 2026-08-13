@@ -1141,10 +1141,12 @@ function ReadestSync:onCloseWidget()
         UIManager:unschedule(self.reader_ready_pull_task)
         self.reader_ready_pull_task = nil
     end
-    -- The service survives context switches; only this instance's poll
-    -- task must go (the next init() re-attaches one). Guarded because
-    -- some tests construct a plugin table without calling init().
-    if self.localsend then self.localsend:unschedulePoll() end
+    -- The LocalSend poll belongs to the singleton service, not to this
+    -- plugin instance, and its closure captures the singleton (which
+    -- survives context switches). Tearing it down here raced the next
+    -- init()'s re-attach and could strand the service with no live poll
+    -- (incoming transfers silently ignored), so leave it running; it stops
+    -- only when the service does (stopService).
 end
 
 function ReadestSync:deletePluginSettings()

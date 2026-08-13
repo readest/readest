@@ -166,7 +166,11 @@ function LocalSend:toggle()
 end
 
 function LocalSend:schedulePoll()
-    if self.poll_task then return end
+    -- The poll belongs to the (singleton) service, not to a plugin instance.
+    -- Always (re)schedule a fresh task so a context switch that re-attaches
+    -- can never leave the service running with no live poll. Unschedule any
+    -- prior task first so exactly one is ever pending.
+    self:unschedulePoll()
     self.poll_task = function()
         self:pollTick()
         if self.running and self.poll_task then
@@ -208,6 +212,9 @@ function LocalSend:dispatch(ev)
 end
 
 function LocalSend:onReceiveRequest(ev)
+    logger.info("ReadestLocalSend: receive_request from "
+        .. tostring(ev.sender and ev.sender.alias)
+        .. " files=" .. tostring(ev.files and #ev.files))
     local util = require("util")
     local files = ev.files or {}
     local names = {}
@@ -280,6 +287,14 @@ function LocalSend:onReceiveEnd(ev)
     UIManager:show(InfoMessage:new{ text = text, timeout = 4 })
     local LibraryWidget = require("library.librarywidget")
     if LibraryWidget._menu then LibraryWidget.refresh() end
+    -- Refresh the KOReader FileManager so a received book appears in the
+    -- current folder without leaving and re-entering it.
+    if (ev.received or 0) > 0 then
+        local ok_fm, FileManager = pcall(require, "apps/filemanager/filemanager")
+        if ok_fm and FileManager.instance and FileManager.instance.file_chooser then
+            FileManager.instance.file_chooser:refreshPath()
+        end
+    end
 end
 
 LocalSend.handlers = {
