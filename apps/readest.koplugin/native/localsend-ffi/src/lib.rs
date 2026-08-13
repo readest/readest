@@ -1,8 +1,11 @@
 //! C ABI for KOReader's LuaJIT FFI. Poll-based: LuaJIT forbids callbacks
 //! from foreign threads, so every function is non-blocking (ls_start binds
 //! sockets synchronously but returns immediately after) and Lua drains the
-//! event queue on a UI timer. All returned strings are malloc'd by Rust and
-//! MUST be released with ls_string_free.
+//! event queue on a UI timer. Every `char*` returned by `ls_status` and
+//! `ls_poll_event` is malloc'd by Rust and MUST be released with
+//! `ls_string_free`. The exception is `ls_version`, whose return value is a
+//! static string owned by the library for its whole lifetime and must never
+//! be freed.
 
 mod config;
 mod events;
@@ -194,8 +197,10 @@ pub extern "C" fn ls_decline(session_id: *const c_char) -> c_int {
 }
 
 /// # Safety
-/// `s` must be null or a pointer previously returned by one of this crate's
-/// `ls_*` functions, and must not be freed more than once.
+/// `s` must be null or a pointer previously returned by `ls_status` or
+/// `ls_poll_event`, and must not be freed more than once. Never pass the
+/// pointer returned by `ls_version` here: it is a static string, not a
+/// Rust-owned allocation, and freeing it is undefined behavior.
 #[no_mangle]
 pub unsafe extern "C" fn ls_string_free(s: *mut c_char) {
     if !s.is_null() {
@@ -208,10 +213,16 @@ mod tests {
     use super::*;
     use std::ffi::{CStr, CString};
 
-    // One sequential test: the event queue and STATE are process-global, so
-    // parallel test threads would race on them.
+    // The event queue and STATE are process-global; TEST_QUEUE_GUARD
+    // serializes this test against every other test in the crate that
+    // touches EVENTS (see events::tests::event_queue_contract), so parallel
+    // test threads can't interleave their clear/push/pop calls.
     #[test]
     fn ffi_surface_contract() {
+        let _guard = events::TEST_QUEUE_GUARD
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+
         // ABI version
         let v = unsafe { CStr::from_ptr(ls_version()) };
         assert_eq!(v.to_str().unwrap(), "1");

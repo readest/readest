@@ -78,12 +78,23 @@ pub fn clear() {
     queue().clear();
 }
 
+/// Serializes every test (in this module and elsewhere in the crate) that
+/// touches the process-global `EVENTS` queue, so parallel test threads don't
+/// interleave their clear/push/pop calls. Poison-safe: one failing test
+/// under the guard must not cascade into every later test failing too.
+#[cfg(test)]
+pub(crate) static TEST_QUEUE_GUARD: Mutex<()> = Mutex::new(());
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn event_queue_contract() {
+        let _guard = TEST_QUEUE_GUARD
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+
         // Serialization: verify snake_case type tags, camelCase field names, and nested struct fields
         clear();
         push(&Event::ReceiveRequest {

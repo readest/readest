@@ -39,6 +39,19 @@ fn starts_polls_started_event_and_stops() {
     unsafe { localsend_ffi::ls_string_free(ptr) };
     assert!(status.contains(r#""running":true"#), "{status}");
 
+    // Idempotency: starting again while already running re-attaches instead
+    // of restarting, and must still report OK and still-running.
+    assert_eq!(localsend_ffi::ls_start(cfg.as_ptr()), localsend_ffi::OK);
+    let ptr = localsend_ffi::ls_status();
+    let status = unsafe { CStr::from_ptr(ptr) }.to_str().unwrap().to_string();
+    unsafe { localsend_ffi::ls_string_free(ptr) };
+    assert!(status.contains(r#""running":true"#), "{status}");
+
     assert_eq!(localsend_ffi::ls_stop(), localsend_ffi::OK);
+
+    // Idempotency: stopping again once already stopped is a no-op, not an
+    // error.
+    assert_eq!(localsend_ffi::ls_stop(), localsend_ffi::OK);
+
     let _ = std::fs::remove_dir_all(&base);
 }
