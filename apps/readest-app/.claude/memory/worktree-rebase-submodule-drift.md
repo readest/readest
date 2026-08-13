@@ -5,6 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 33b70e98-fb55-467a-b03f-e4065491bc7e
+  modified: 2026-08-12T15:03:38.741Z
 ---
 
 When a `pnpm worktree:new` worktree is rebased onto a newer `origin/main` that
@@ -33,4 +34,13 @@ git checkout <commit>
 Then re-run the failing test and `git status --porcelain packages/foliate-js`
 (should be clean) before pushing. Run this check after ANY rebase of a worktree
 when `git log <base>..origin/main -- packages/foliate-js` is non-empty.
+
+**Same failure in the MAIN checkout (seen on #5650):** `git submodule status`
+showed `+f65836f` while `git ls-tree HEAD packages/foliate-js` wanted `63a2eb1`
+(one commit ahead, foliate#70), so the pre-push hook failed on
+`foliate-epub-malformed-xhtml.test.ts` — tests untouched by the diff. There the
+plain `git submodule update --init packages/foliate-js` works (no `file://`
+transport problem, that is worktree-only). Before running it, confirm nothing
+local is discarded: `git merge-base --is-ancestor <checked-out> <pointer>` must
+succeed, and the submodule's own `git status` must be clean.
 See [[feedback_pr_rebase]], [[feedback_use_worktree]].

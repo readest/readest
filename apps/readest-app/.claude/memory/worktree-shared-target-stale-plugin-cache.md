@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: c14ae948-5947-4c4a-b2cf-1e5bc7b0567b
-  modified: 2026-08-06T06:17:52.229Z
+  modified: 2026-08-10T08:24:19.104Z
 ---
 
 Every `pnpm worktree:new` worktree symlinks `target ->
@@ -26,7 +26,18 @@ minutes earlier, then the #1217 worktree got removed post-merge and the next
 Readest build-script rerun (triggered by a capabilities/default.json mtime
 bump from the rebase) read 26 packages' stale outputs.
 
-**Fix — surgical, never `cargo clean` the shared target (hours of rebuilds
+**Now auto-prevented (dev commit `1e2e27fe2`, 2026-08-10):** `scripts/worktree-rm.ts`
+runs package-scoped `cargo clean -p` for the six local path crates
+(`tauri-plugin-{fs,native-tts,native-bridge,webview-upgrade,turso}` + `Readest`)
+right after `git worktree remove`, best-effort. So `pnpm worktree:rm` no longer
+leaves dangling paths. Manual recovery below is still needed for worktrees
+removed with plain `git worktree remove` (bypassing the script). NOTE the app
+crate (`Readest`) clean forces a ~2-3 min recompile on the next Rust build in
+ANY checkout — cost of the guaranteed fix. Cleaning the plugins alone does NOT
+suffice: the app's own `build.rs` caches the stale path and only re-runs when
+the app crate is cleaned.
+
+**Manual fix — surgical, never `cargo clean` the shared target (hours of rebuilds
 for every worktree):**
 
 ```

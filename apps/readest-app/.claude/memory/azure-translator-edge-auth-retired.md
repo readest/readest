@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 23d24f5c-e4dc-482d-b692-69a990218a23
-  modified: 2026-08-07T09:25:14.786Z
+  modified: 2026-08-11T00:18:07.412Z
 ---
 
 The `azure` translation provider broke on 2026-08-07 with `Failed to get auth token: 404`.
@@ -49,3 +49,20 @@ so it is fingerprint/soft-throttle behaviour. Verify through the running app ins
 
 Verified in Chrome at `/reader/<hash>`: 21/21 proxy calls 200, zero 429s, zero console errors,
 long paragraphs and headings translating inline. Related: [[stale-format-gates-in-settings]].
+
+**Follow-up regression found 2026-08-11 (fix in PR #5620, branch
+`fix/azure-translator-bing-lang-codes`): the migration kept `normalizeToFullLang`, and bing
+rejects maximized culture codes.** ttranslatev3 accepts ONLY its
+own language list — bare subtags plus script variants (`en`, `ja`, `zh-Hans`) — and answers
+`statusCode: 400` (inside HTTP 200, empty errorMessage) for `en-US`, `de-DE`, `zh-CN`. The old
+api-edge endpoint tolerated full culture codes, which is why `normalizeToFullLang` survived since
+2024. Every non-Chinese target failed ("Unable to fetch the translation. Try again later." in
+TranslatorPopup); the #5555 desktop verify passed only because its target normalized to zh-Hans.
+Fix: `azure.ts` now uses `normalizeToShortLang` like every other provider; the hand-rolled
+`@/utils/lang` mock in `providers.test.ts` (whose fake normalizeToFullLang mapped en→en, hiding
+the maximization) was deleted so provider tests run the real normalizers. Verified on the
+Xiaomi 13 in the real popup (en→zh-Hans renders) AND a live sweep: all 42 normalized codes for
+the selectable TRANSLATOR_LANGS translate, zero 400s. Device-probe trick worth reusing: CDP
+`Runtime.evaluate` replicating `plugin:http|fetch` IPC verbatim reproduces exactly what
+tauriFetch sends — the bing scrape+translate worked from the installed app before the fix, which
+is what isolated the failure to the `to=` parameter rather than headers/Origin/scope.

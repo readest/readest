@@ -59,3 +59,12 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - [FXL scrolled clipped at camera hole](fxl-scrolled-notch-mask-edge-to-edge.md) MERGED #5503; SectionInfo notch mask skips isFixedLayout; CDP elementsFromPoint + live classList.remove repro
 - [#5270 OPDS feed cover+metadata](opds-feed-cover-5270.md) BOTH MERGED #5471+#5477; feed-wins per-field merge
 - [#5492 stale OPDS cover after server update](opds-cover-updated-cache-5492.md) MERGED #5495; `<updated>` in cache keys
+- [Paragraph-layout `:has()` allowlist trap](paragraph-layout-has-allowlist-trap.md) MERGED #5555; tell = lineHeight `normal` · [Translation CFI stability](translation-cfi-stability.md) MERGED #5555; hazard = blanking source nodes
+- [#5516 Pages in Book Details](book-details-page-count-5516.md) MERGED #5523; live count in `bookData.config` · [#5499 Android autofill sign-in](android-signin-autofill-formdata-5499.md) MERGED #5505; FormData at submit
+- [Hint band align + battery `invert`](hint-band-align-and-battery-invert-contrast.md) contrast = base-content, NEVER invert() · [Autohide cursor blanked mid-selection](cursor-autohide-blanked-during-selection.md) MERGED foliate-js#68 + #5557
+- [#5584 title bar dead in OPDS view](titlebar-drag-needs-headerref-5584.md) MERGED #5592; drag is JS, every header MUST pass `headerRef` + exclude its inputs
+- [Window title names the book](window-title-book-name-a11y-5547.md) MERGED #5547; macOS Overlay DRAWS the title; set-title ACL fixed #5578
+- [Annotations toolbar count summary](annotations-toolbar-count-summary-5576.md) MERGED #5576 · [Highlight style buttons preview colors](highlight-style-buttons-preview-colors.md) MERGED #5578; resolve `customColors[c] || c`
+- [#5496 popup chrome family](popup-chrome-family-5496.md) MERGED; `.popup-container` load-bearing for eink · [#5213 dictionary single-word gate](quick-action-dictionary-single-word-5213.md) MERGED #5529; 8-char CJK cap
+- [Search history chips over textures](library-search-history-mask-fade-5488.md) MERGED #5488; fades = `mask-image` · [#5119 Then-by asc/desc](library-then-by-sort-order-5119.md) MERGED #5474; URL cleanup lies on deep links
+- [#5259 dropdown viewport fix](dropdown-floating-ui-portal-5259.md) MERGED #5392; portals break TalkBack traversal
