@@ -491,4 +491,57 @@ describe('Paginator scrolled mode (browser)', () => {
     expect(last).toBeDefined();
     expect(last!.index).toBe(next);
   });
+
+  // Regression for issue #5635: the scrolled-mode relocate is a trailing-only
+  // debounce, so a scroll that never pauses (the Auto Scroll reading mode)
+  // reset the timer on every frame and reading progress never updated until
+  // the scrolling stopped. A continuous scroll burst must emit periodic
+  // 'scroll' relocates while it is still in progress.
+  it('should emit periodic relocates while a continuous scroll never pauses', async () => {
+    paginator = createPaginator();
+    paginator.open(book);
+    paginator.setAttribute('flow', 'scrolled');
+
+    const sections = book.sections!;
+    // A tall section so the whole burst stays inside it.
+    const K = sections.findIndex((s) => s.linear !== 'no' && (s.size ?? 0) > 8000);
+    expect(K).toBeGreaterThanOrEqual(0);
+
+    const stabilized = waitForStabilized(paginator);
+    await paginator.goTo({ index: K, anchor: 0 });
+    await stabilized;
+    await waitForFillComplete(paginator);
+
+    // Freeze the loaded set so preloads don't interleave with the burst.
+    paginator.setAttribute('no-preload', '');
+
+    const container = paginator.shadowRoot!.getElementById('container')!;
+
+    // Consume #justAnchored from the navigation with isolated nudges whose
+    // trailing debounce settles before the burst starts.
+    for (const top of [10, 20]) {
+      container.scrollTop = top;
+      container.dispatchEvent(new Event('scroll'));
+      await new Promise((r) => setTimeout(r, 350));
+    }
+
+    let during = 0;
+    const onReloc = (e: Event) => {
+      if ((e as CustomEvent).detail.reason === 'scroll') during += 1;
+    };
+    paginator.addEventListener('relocate', onReloc as EventListener);
+
+    // Continuous burst for 2.5s with no pause ever longer than the 250ms
+    // debounce, mimicking Auto Scroll's per-frame steps.
+    const burstStart = Date.now();
+    while (Date.now() - burstStart < 2500) {
+      container.scrollTop += 4;
+      container.dispatchEvent(new Event('scroll'));
+      await new Promise((r) => setTimeout(r, 25));
+    }
+    // Snapshot before the trailing debounce can fire: only relocates emitted
+    // while the scrolling was still in progress count.
+    paginator.removeEventListener('relocate', onReloc as EventListener);
+    expect(during).toBeGreaterThanOrEqual(2);
+  });
 });
