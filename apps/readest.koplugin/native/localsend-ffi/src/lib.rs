@@ -23,7 +23,7 @@ mod service;
 use config::StartConfig;
 use serde::Serialize;
 use std::ffi::{c_char, c_int, CStr, CString};
-use std::panic::catch_unwind;
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::{Arc, Mutex as StdMutex, MutexGuard, PoisonError};
 use tokio::sync::oneshot;
 
@@ -60,10 +60,10 @@ enum LiveStatus {
 }
 
 struct Running {
-    /// Signals the worker thread to stop the service and exit. Consumed by
-    /// the first `ls_stop`; a later one is then a no-op (see `state().take()`
-    /// in `ls_stop`, which also makes a second call a no-op).
-    stop_tx: Option<oneshot::Sender<()>>,
+    /// Signals the worker thread to stop the service and exit. `ls_stop`
+    /// does `state().take()` before sending, which already guarantees
+    /// single consumption, so this doesn't need to be an `Option`.
+    stop_tx: oneshot::Sender<()>,
     status: Arc<StdMutex<LiveStatus>>,
 }
 
@@ -107,9 +107,32 @@ pub extern "C" fn ls_start(config_json: *const c_char) -> c_int {
             }
         };
         let mut guard = state();
+        // A previously failed start leaves STATE occupied (LiveStatus::Failed)
+        // even though its worker thread already exited: without this, the
+        // idempotent re-attach check below would return OK forever and a
+        // caller (e.g. Lua's onNetworkConnected retry) could never restart
+        // a dead service. Clear it so this call falls through to spawn a
+        // fresh worker instead.
+        let stale_failed = guard.as_ref().is_some_and(|running| {
+            matches!(
+                *running
+                    .status
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner),
+                LiveStatus::Failed
+            )
+        });
+        if stale_failed {
+            *guard = None;
+        }
         if guard.is_some() {
             return OK; // idempotent: context switches re-attach, not restart
         }
+        // A prior worker's teardown (server/discovery stop, up to ~2s) can
+        // still be in flight here if ls_stop was just called: it may still
+        // push its own late events into this same queue right as we clear
+        // it. Harmless (worst case a stale event Lua never sees), and not
+        // worth blocking ls_start on.
         events::clear();
 
         let status = Arc::new(StdMutex::new(LiveStatus::Starting));
@@ -122,21 +145,43 @@ pub extern "C" fn ls_start(config_json: *const c_char) -> c_int {
         // repaint. Run all of it on a dedicated OS thread instead.
         std::thread::spawn(move || run_worker(config, worker_status, stop_rx));
 
-        *guard = Some(Running {
-            stop_tx: Some(stop_tx),
-            status,
-        });
+        *guard = Some(Running { stop_tx, status });
         OK
     })
     .unwrap_or(ERR_PANIC)
 }
 
-/// Body of the OS thread spawned by `ls_start`. Owns the tokio runtime for
-/// the whole lifetime of one start/stop cycle: builds it, drives
-/// `service::start` to completion, publishes the result into `status`,
-/// parks on `stop_rx` once running, then drives `service::stop` and shuts
-/// the runtime down. None of this ever touches the calling (UI) thread.
+/// Body of the OS thread spawned by `ls_start`. Wraps `run_worker_inner` in
+/// `catch_unwind`: this thread is detached (`ls_stop` never joins it), so
+/// an uncaught panic would kill the worker silently and leave `LiveStatus`
+/// stuck at `Starting` forever, with no event and no way for a caller to
+/// ever recover via a retry (see the `stale_failed` check in `ls_start`,
+/// which only fires on `Failed`).
 fn run_worker(
+    config: StartConfig,
+    status: Arc<StdMutex<LiveStatus>>,
+    stop_rx: oneshot::Receiver<()>,
+) {
+    let status_for_panic = status.clone();
+    let outcome = catch_unwind(AssertUnwindSafe(move || {
+        run_worker_inner(config, status, stop_rx);
+    }));
+    if outcome.is_err() {
+        events::push(&events::Event::Error {
+            message: "internal error: worker thread panicked".to_string(),
+        });
+        *status_for_panic
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner) = LiveStatus::Failed;
+    }
+}
+
+/// Owns the tokio runtime for the whole lifetime of one start/stop cycle:
+/// builds it, drives `service::start` to completion, publishes the result
+/// into `status`, parks on `stop_rx` once running, then drives
+/// `service::stop` and shuts the runtime down. None of this ever touches
+/// the calling (UI) thread.
+fn run_worker_inner(
     config: StartConfig,
     status: Arc<StdMutex<LiveStatus>>,
     stop_rx: oneshot::Receiver<()>,
@@ -162,13 +207,20 @@ fn run_worker(
 
     match rt.block_on(service::start(config)) {
         Ok(mut svc) => {
-            // service::start already pushed the `started` event.
             set_status(LiveStatus::Running {
                 alias: svc.alias.clone(),
                 port: svc.port,
                 multicast_error: svc.multicast_error.clone(),
                 pending: svc.pending.clone(),
                 receiving: svc.receiving.clone(),
+            });
+            // Pushed only after LiveStatus is Running, not from inside
+            // service::start, so a consumer that sees `started` on the
+            // queue can never observe running:false or get ERR_STATE from
+            // ls_accept/ls_decline right after.
+            events::push(&events::Event::Started {
+                alias: svc.alias.clone(),
+                port: svc.port,
             });
             // Park here until ls_stop signals (or the sender is dropped,
             // e.g. the process is exiting), then tear the service down and
@@ -190,16 +242,16 @@ fn run_worker(
 #[no_mangle]
 pub extern "C" fn ls_stop() -> c_int {
     catch_unwind(|| {
-        let Some(mut running) = state().take() else {
+        let Some(running) = state().take() else {
             return OK;
         };
         // Signal the worker thread and detach without joining: it owns the
         // tokio runtime and cleans itself up (service::stop, then runtime
         // shutdown) asynchronously off this thread. Joining here would put
         // back the multi-second UI stall this whole restructure removes.
-        if let Some(tx) = running.stop_tx.take() {
-            let _ = tx.send(());
-        }
+        // `state().take()` above already guarantees this send only ever
+        // happens once, even across repeated ls_stop calls.
+        let _ = running.stop_tx.send(());
         OK
     })
     .unwrap_or(ERR_PANIC)
@@ -395,5 +447,82 @@ mod tests {
             .to_string();
         unsafe { ls_string_free(status_ptr) };
         assert!(status.contains(r#""starting":false"#), "{status}");
+    }
+
+    // A failed start used to leave STATE occupied forever (idempotent
+    // re-attach kept returning OK against a dead LiveStatus::Failed), so a
+    // retry via Lua's context-switch/onNetworkConnected path could never
+    // actually restart the service. Seeds STATE as if a previous worker
+    // already failed and exited, then asserts ls_start replaces it with a
+    // freshly spawned worker instead of no-opping.
+    #[test]
+    fn ls_start_clears_a_stale_failed_status_and_retries() {
+        let _guard = events::TEST_QUEUE_GUARD
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+
+        assert_eq!(ls_stop(), OK); // clean slate
+
+        let stale_status = Arc::new(StdMutex::new(LiveStatus::Failed));
+        let (stop_tx, _dropped_rx) = oneshot::channel::<()>();
+        *state() = Some(Running {
+            stop_tx,
+            status: stale_status.clone(),
+        });
+
+        // A data dir whose parent path component is a plain file, not a
+        // directory, so std::fs::create_dir_all fails fast and
+        // deterministically without ever reaching the network bind: this
+        // test must not touch real sockets, that's what tests/smoke.rs is
+        // for.
+        let blocker = std::env::temp_dir().join(format!("lsffi-blocker-{}", std::process::id()));
+        std::fs::write(&blocker, b"x").unwrap();
+        let bad_dir = blocker.join("sub");
+        let cfg = serde_json::json!({
+            "alias": "a",
+            "deviceModel": "m",
+            "deviceType": "mobile",
+            "dataDir": bad_dir.to_string_lossy(),
+            "downloadDir": bad_dir.to_string_lossy(),
+        })
+        .to_string();
+        let cfg = CString::new(cfg).unwrap();
+
+        assert_eq!(ls_start(cfg.as_ptr()), OK);
+
+        // A fresh worker was actually spawned, not an idempotent no-op
+        // against the stale Failed entry: STATE now points at a brand new
+        // status cell.
+        let fresh_status = {
+            let guard = state();
+            let running = guard.as_ref().expect("ls_start should repopulate STATE");
+            assert!(
+                !Arc::ptr_eq(&running.status, &stale_status),
+                "ls_start should replace a stale Failed status with a fresh one"
+            );
+            running.status.clone()
+        };
+
+        // Wait for the fresh worker to actually finish (fast: create_dir_all
+        // fails immediately, no network I/O) so no background thread is
+        // still touching EVENTS/STATE after this test's guard is released.
+        let mut became_failed = false;
+        for _ in 0..200 {
+            if matches!(
+                *fresh_status.lock().unwrap_or_else(PoisonError::into_inner),
+                LiveStatus::Failed
+            ) {
+                became_failed = true;
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+        assert!(
+            became_failed,
+            "fresh worker should have failed fast against the blocked data dir"
+        );
+
+        assert_eq!(ls_stop(), OK);
+        let _ = std::fs::remove_file(&blocker);
     }
 }

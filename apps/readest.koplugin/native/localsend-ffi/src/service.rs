@@ -62,11 +62,21 @@ pub struct Service {
     pub download_dir: PathBuf,
 }
 
+/// Does not push `Event::Started` itself: the caller (`run_worker` in
+/// lib.rs) does that only after it has published `LiveStatus::Running`, so
+/// a consumer that observes the `started` event on the queue can never
+/// race ahead of `ls_status`/`ls_accept`/`ls_decline` still reporting the
+/// service as not running yet.
 pub async fn start(config: StartConfig) -> Result<Service, String> {
     let data_dir = PathBuf::from(&config.data_dir);
     std::fs::create_dir_all(&data_dir).map_err(|e| format!("dataDir: {e}"))?;
     let download_dir = PathBuf::from(&config.download_dir);
     std::fs::create_dir_all(&download_dir).map_err(|e| format!("downloadDir: {e}"))?;
+    // Narrow window: a just-stopped prior worker (ls_stop detaches and
+    // gives it up to ~2s to tear down server/discovery) could still be
+    // touching this same inbox if ls_start is called again immediately.
+    // Harmless in practice (worst case a stray leftover partial file), and
+    // not worth serializing start/stop for.
     sweep_staging(&download_dir);
 
     let device_type = config.device_type();
@@ -159,10 +169,6 @@ pub async fn start(config: StartConfig) -> Result<Service, String> {
         download_dir,
     };
     spawn_event_pump(&service, server_rx);
-    events::push(&Event::Started {
-        alias: config.alias,
-        port,
-    });
     Ok(service)
 }
 

@@ -38,17 +38,32 @@ impl Identity {
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
                 let cert = localsend::crypto::cert::generate_self_signed()?;
                 let identity = Self {
-                    alias,
-                    device_model,
-                    device_type,
+                    alias: alias.clone(),
+                    device_model: device_model.clone(),
+                    device_type: device_type.clone(),
                     fingerprint: cert.fingerprint,
                     cert_pem: cert.certificate_pem,
                     key_pem: cert.private_key_pem,
                 };
-                identity
-                    .save(&path)
-                    .with_context(|| format!("could not save {}", path.display()))?;
-                Ok(identity)
+                match identity.save(&path) {
+                    Ok(()) => Ok(identity),
+                    Err(err) if err.kind() == std::io::ErrorKind::AlreadyExists => {
+                        // Lost a create-new race to a concurrent keygen: two
+                        // ls_start workers can overlap (e.g. a screen sleep
+                        // mid-keygen followed by a quick stop/start), both
+                        // see no identity.pem and both generate a cert, but
+                        // only the first save() wins. Adopt the winner's
+                        // identity instead of failing, so both callers agree
+                        // on the fingerprint peers end up pinning.
+                        let text = std::fs::read_to_string(&path)
+                            .with_context(|| format!("could not read {}", path.display()))?;
+                        Self::from_pem(&text, alias, device_model, device_type)
+                            .with_context(|| format!("invalid identity file: {}", path.display()))
+                    }
+                    Err(err) => {
+                        Err(err).with_context(|| format!("could not save {}", path.display()))
+                    }
+                }
             }
             Err(err) => Err(err).context(format!("could not read {}", path.display())),
         }
@@ -157,6 +172,37 @@ mod tests {
             a.multicast_device(53318).device_model.as_deref(),
             Some("KOReader")
         );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn load_or_generate_racing_writers_converge_on_one_fingerprint() {
+        // Simulates two ls_start workers overlapping on a fresh data dir
+        // (e.g. a screen sleep mid-keygen followed by a quick ls_stop then
+        // ls_start): both threads see no identity.pem and both generate a
+        // cert, but only one create_new() save() can win. The loser must
+        // adopt the winner's identity instead of returning an error.
+        let dir = std::env::temp_dir().join(format!("lsffi-id-race-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+        let spawn = |dir: std::path::PathBuf, barrier: std::sync::Arc<std::sync::Barrier>| {
+            std::thread::spawn(move || {
+                barrier.wait();
+                Identity::load_or_generate(&dir, "KO".into(), "KOReader".into(), DeviceType::Mobile)
+            })
+        };
+        let t1 = spawn(dir.clone(), barrier.clone());
+        let t2 = spawn(dir.clone(), barrier);
+
+        let a = t1.join().unwrap().expect("winner should succeed");
+        let b = t2
+            .join()
+            .unwrap()
+            .expect("loser should adopt the winner's identity instead of erroring");
+        assert_eq!(a.fingerprint, b.fingerprint);
+
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
