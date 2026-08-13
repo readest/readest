@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
+const originalScrollIntoView = Element.prototype.scrollIntoView;
+
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string, opts?: Record<string, unknown>) =>
     opts ? Object.entries(opts).reduce((s, [k, v]) => s.replace(`{{${k}}}`, String(v)), key) : key,
@@ -39,7 +41,10 @@ const makeDownloads = (overrides: Partial<UseTTSDownloadsResult> = {}): UseTTSDo
 });
 
 describe('TTSChaptersView', () => {
-  afterEach(() => cleanup());
+  afterEach(() => {
+    cleanup();
+    Element.prototype.scrollIntoView = originalScrollIntoView;
+  });
 
   test('lists every chapter with a download control', () => {
     render(
@@ -88,5 +93,22 @@ describe('TTSChaptersView', () => {
   test('marks the currently playing chapter', () => {
     render(<TTSChaptersView downloads={makeDownloads()} activeSectionIndex={1} isEink={false} />);
     expect(screen.getByLabelText('Now playing')).toBeTruthy();
+  });
+
+  test('scrolls instantly to the playing chapter on open', () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    render(<TTSChaptersView downloads={makeDownloads()} activeSectionIndex={1} isEink={false} />);
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'instant', block: 'start' });
+  });
+
+  test('does not scroll when no chapter is playing', () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    render(
+      <TTSChaptersView downloads={makeDownloads()} activeSectionIndex={null} isEink={false} />,
+    );
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 });

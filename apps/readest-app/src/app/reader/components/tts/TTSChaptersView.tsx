@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import clsx from 'clsx';
 import { MdGraphicEq } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -27,6 +27,14 @@ const TTSChaptersView: React.FC<TTSChaptersViewProps> = ({
   const completeCount = chapters.filter((c) => statusOf(c) === 'complete').length;
   const anyIncomplete = completeCount < chapters.length;
   const busy = download.activeChapterKey !== null;
+
+  const activeRowRef = useRef<HTMLDivElement | null>(null);
+
+  // Opening the list jumps straight to the currently playing chapter so the
+  // current and next chapters are in view without manual scrolling.
+  useEffect(() => {
+    activeRowRef.current?.scrollIntoView?.({ behavior: 'instant', block: 'start' });
+  }, []);
 
   return (
     <div className='flex w-full flex-col pb-4'>
@@ -67,6 +75,7 @@ const TTSChaptersView: React.FC<TTSChaptersViewProps> = ({
           return (
             <div
               key={chapter.key}
+              ref={isPlaying ? activeRowRef : undefined}
               className='flex w-full items-center gap-3 rounded-lg px-2 py-2'
               style={{ paddingInlineStart: `${8 + chapter.depth * 14}px` }}
             >
