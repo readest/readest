@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Book } from '@/types/book';
 import type { OPDSCatalog } from '@/types/opds';
 import type { AppService } from '@/types/system';
 import type { OPDSSubscriptionState, PendingItem } from '@/services/opds/types';
@@ -361,5 +362,80 @@ describe('OPDS auto-download orchestrator', () => {
     await syncSubscribedCatalogs(catalogs, appService, []);
 
     expect(downloadFile).toHaveBeenCalledTimes(1);
+  });
+
+  // The module-level loadSubscriptionState mock resolves one SHARED state
+  // object that earlier tests' runs mutate (knownEntryIds grows across
+  // tests); these tests need a pristine state per call.
+  const freshStatePerLoad = () => {
+    vi.mocked(loadSubscriptionState).mockImplementation(async (_appService, catalogId) => ({
+      catalogId,
+      lastCheckedAt: 0,
+      knownEntryIds: [],
+      failedEntries: [],
+    }));
+  };
+
+  it('persists imported books before recording their entries as known (#5658)', async () => {
+    // Once an entry lands in knownEntryIds it is never downloaded again, so
+    // the library rows must be on disk first — a kill between the two writes
+    // must lose at most the "already known" marker, never the books.
+    freshStatePerLoad();
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([
+      {
+        entryId: 'urn:shelf:1',
+        title: 'Issue 1',
+        acquisitionHref: '/dl/1.epub',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      },
+    ]);
+
+    const callOrder: string[] = [];
+    const onBooksImported = vi.fn(async (books: Book[]) => {
+      expect(books).toHaveLength(1);
+      callOrder.push('persist-library');
+    });
+    vi.mocked(saveSubscriptionState).mockImplementation(async () => {
+      callOrder.push('save-state');
+    });
+
+    const result = await syncSubscribedCatalogs(catalogs, appService, [], onBooksImported);
+
+    expect(result.totalNewBooks).toBe(1);
+    expect(onBooksImported).toHaveBeenCalledTimes(1);
+    expect(callOrder).toEqual(['persist-library', 'save-state']);
+  });
+
+  it('does not record entries as known when persisting the library fails', async () => {
+    freshStatePerLoad();
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([
+      {
+        entryId: 'urn:shelf:1',
+        title: 'Issue 1',
+        acquisitionHref: '/dl/1.epub',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      },
+    ]);
+
+    const onBooksImported = vi.fn(async () => {
+      throw new Error('disk full');
+    });
+
+    const result = await syncSubscribedCatalogs(catalogs, appService, [], onBooksImported);
+
+    // The catalog run fails and is surfaced, and the entry stays unknown so
+    // the next sync retries the download (imports are idempotent).
+    expect(result.errors).toHaveLength(1);
+    for (const call of vi.mocked(saveSubscriptionState).mock.calls) {
+      expect((call[1] as OPDSSubscriptionState).knownEntryIds).not.toContain('urn:shelf:1');
+    }
   });
 });

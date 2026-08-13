@@ -136,6 +136,7 @@ async function syncCatalog(
   catalog: OPDSCatalog,
   appService: AppService,
   books: Book[],
+  onBooksImported?: (newBooks: Book[]) => Promise<void>,
 ): Promise<{ newBooks: Book[]; state: OPDSSubscriptionState }> {
   const state = await loadSubscriptionState(appService, catalog.id);
 
@@ -217,6 +218,16 @@ async function syncCatalog(
     }
   }
 
+  // Persist the imported books BEFORE recording their entries as known: an
+  // entry in knownEntryIds is never downloaded again, so a kill between the
+  // two writes would otherwise lose the library rows for good while the
+  // marker survives (#5658). In the reverse order a kill merely costs a
+  // redundant re-download — imports are idempotent. A failed persist throws
+  // out of the catalog run, leaving the entries unknown for the next sync.
+  if (newBooks.length > 0) {
+    await onBooksImported?.(newBooks);
+  }
+
   state.knownEntryIds = pruneKnownEntryIds([...state.knownEntryIds, ...newKnownIds]);
   state.failedEntries = updatedFailedEntries;
   state.lastCheckedAt = Date.now();
@@ -238,6 +249,7 @@ export async function syncSubscribedCatalogs(
   catalogs: OPDSCatalog[],
   appService: AppService,
   books: Book[],
+  onBooksImported?: (newBooks: Book[]) => Promise<void>,
 ): Promise<SyncResult> {
   const eligible = catalogs.filter((c) => c.autoDownload && !c.disabled);
   if (eligible.length === 0) {
@@ -249,7 +261,7 @@ export async function syncSubscribedCatalogs(
 
   for (const catalog of eligible) {
     try {
-      const { newBooks } = await syncCatalog(catalog, appService, books);
+      const { newBooks } = await syncCatalog(catalog, appService, books, onBooksImported);
       allNewBooks.push(...newBooks);
     } catch (reason) {
       console.error(`OPDS sync: catalog "${catalog.name}" failed:`, reason);

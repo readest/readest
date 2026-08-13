@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import type { Book } from '@/types/book';
 import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -31,35 +32,43 @@ export function useOPDSSubscriptions() {
       try {
         isSyncingRef.current = true;
         const librarySnapshot = [...useLibraryStore.getState().library];
-        const { newBooks, totalNewBooks, errors } = await syncSubscribedCatalogs(
-          catalogs,
-          appService,
-          librarySnapshot,
-        );
 
-        if (totalNewBooks > 0) {
+        // Runs per catalog, BEFORE the service records the downloaded entries
+        // in knownEntryIds — an entry in there is never downloaded again, so
+        // the library rows must reach disk first or a kill between the two
+        // writes loses the books for good (#5658).
+        const persistImportedBooks = async (imported: Book[]) => {
           const currentLibrary = useLibraryStore.getState().library;
           const existingHashes = new Set(currentLibrary.map((b) => b.hash));
           // Two feed entries can resolve to the same file; importBook returns
           // the same row for both, so dedupe by hash before merging.
-          const importedBooks = [...new Map(newBooks.map((b) => [b.hash, b])).values()];
+          const importedBooks = [...new Map(imported.map((b) => [b.hash, b])).values()];
           const uniqueNewBooks = importedBooks.filter((b) => !existingHashes.has(b.hash));
           // Save even when uniqueNewBooks is empty: a re-downloaded book that
           // was previously deleted is already in currentLibrary as a tombstoned
           // row that importBook resurrected in place (cleared its `deletedAt`).
-          // The feed entry is already persisted in knownEntryIds by this point,
-          // so skipping the save would leave the book tombstoned on disk after
-          // a restart and never downloaded again (#5658).
+          // Skipping the save would leave the book tombstoned on disk after a
+          // restart and never downloaded again (#5658).
           const merged = [...uniqueNewBooks, ...currentLibrary];
           useLibraryStore.getState().setLibrary(merged);
-          appService.saveLibraryBooks(merged);
+          await appService.saveLibraryBooks(merged);
+        };
 
+        const { newBooks, totalNewBooks, errors } = await syncSubscribedCatalogs(
+          catalogs,
+          appService,
+          librarySnapshot,
+          persistImportedBooks,
+        );
+
+        if (totalNewBooks > 0) {
           // Mirror the manual OPDS download path: queue cloud upload for each
           // newly imported book when the user is logged in and Readest Cloud
           // storage is active. Delay so the transfer manager has a chance
           // to finish initializing if this fires right after libraryLoaded.
           const { settings: currentSettings } = useSettingsStore.getState();
           if (user && isReadestCloudStorageActive(currentSettings)) {
+            const importedBooks = [...new Map(newBooks.map((b) => [b.hash, b])).values()];
             const booksToUpload = importedBooks.filter((b) => !b.uploadedAt);
             if (booksToUpload.length > 0) {
               setTimeout(() => {
