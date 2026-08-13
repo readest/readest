@@ -192,7 +192,7 @@ msgid "Upload failed."
 msgstr "Nalaganje ni uspelo."
 
 msgid "Send to nearby Readest devices"
-msgstr ""
+msgstr "Pošlji napravam Readest v bližini"
 
 msgid "Download Book"
 msgstr "Prenesi knjigo"
@@ -240,7 +240,7 @@ msgid "Full sync all readest annotations"
 msgstr "Polna sinhronizacija vseh opomb Readest"
 
 msgid "Add to Readest library"
-msgstr ""
+msgstr "Dodaj v knjižnico Readest"
 
 msgid "Sign in to Readest first."
 msgstr "Najprej se prijavite v Readest."
@@ -294,7 +294,7 @@ msgid "Pull books now"
 msgstr "Pridobi knjige zdaj"
 
 msgid "Receive via LocalSend"
-msgstr ""
+msgstr "Prejmi prek LocalSend"
 
 msgid "Upload current book to Readest"
 msgstr "Naloži trenutno knjigo v Readest"
@@ -357,88 +357,88 @@ msgid "Books sync failed"
 msgstr "Sinhronizacija knjig ni uspela"
 
 msgid "Set a Readest download folder or a KOReader home folder first."
-msgstr ""
+msgstr "Najprej nastavite mapo za prenose Readest ali domačo mapo KOReader."
 
 msgid "LocalSend error: could not find a free port."
-msgstr ""
+msgstr "Napaka LocalSend: prostih vrat ni bilo mogoče najti."
 
 msgid "LocalSend failed to start."
-msgstr ""
+msgstr "LocalSend se ni zagnal."
 
 msgid "Starting LocalSend…"
-msgstr ""
+msgstr "Zaganjanje LocalSend…"
 
 msgid "LocalSend will start when Wi-Fi connects."
-msgstr ""
+msgstr "LocalSend se bo zagnal, ko bo vzpostavljena povezava Wi-Fi."
 
 msgid "… and %1 more"
-msgstr ""
+msgstr "… in še %1"
 
 msgid "%1 wants to send you %2 file(s) (%3):"
-msgstr ""
+msgstr "%1 vam želi poslati %2 datotek(e) (%3):"
 
 msgid "Accept"
-msgstr ""
+msgstr "Sprejmi"
 
 msgid "Decline"
-msgstr ""
+msgstr "Zavrni"
 
 msgid "Receiving %1 file(s) from %2…"
-msgstr ""
+msgstr "Prejemanje %1 datotek(e) od %2…"
 
 msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr ""
+msgstr "LocalSend: prejeto %1 datotek(e), %2 neuspešnih."
 
 msgid "LocalSend transfer cancelled."
-msgstr ""
+msgstr "Prenos LocalSend preklican."
 
 msgid "LocalSend: received %1 file(s)."
-msgstr ""
+msgstr "LocalSend: prejeto %1 datotek(e)."
 
 msgid "LocalSend not available on this device"
-msgstr ""
+msgstr "LocalSend ni na voljo na tej napravi"
 
 msgid "Scanning for nearby devices…"
-msgstr ""
+msgstr "Iskanje naprav v bližini…"
 
 msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr ""
+msgstr "Nobene naprave v bližini ni bilo mogoče najti. Prepričajte se, da je na drugi napravi odprt LocalSend/Readest."
 
 msgid "Rescan"
-msgstr ""
+msgstr "Znova preglej"
 
 msgid "Send to…"
-msgstr ""
+msgstr "Pošlji…"
 
 msgid "Sending…"
-msgstr ""
+msgstr "Pošiljanje…"
 
 msgid "Sending… %1%"
-msgstr ""
+msgstr "Pošiljanje… %1%"
 
 msgid "Sent %1 file(s)."
-msgstr ""
+msgstr "Poslano %1 datotek(e)."
 
 msgid "The other device declined the transfer."
-msgstr ""
+msgstr "Druga naprava je zavrnila prenos."
 
 msgid "Transfer cancelled."
-msgstr ""
+msgstr "Prenos preklican."
 
 msgid "Send failed: %1"
-msgstr ""
+msgstr "Pošiljanje ni uspelo: %1"
 
 msgid "LocalSend error: %1"
-msgstr ""
+msgstr "Napaka LocalSend: %1"
 
 msgid "LocalSend off"
-msgstr ""
+msgstr "LocalSend izklopljen"
 
 msgid "Visible as %1"
-msgstr ""
+msgstr "Viden kot %1"
 
 msgid "(limited discovery)"
-msgstr ""
+msgstr "(omejeno odkrivanje)"
 
 msgid "Checking for update…"
 msgstr "Preverjanje posodobitev…"
