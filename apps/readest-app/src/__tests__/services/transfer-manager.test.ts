@@ -988,4 +988,100 @@ describe('TransferManager', () => {
       expect(t.replicaFiles?.map((f) => f.logical)).toEqual(['webster.mdx', 'webster.mdd']);
     });
   });
+
+  // Replica transfers are background sync (fonts / textures / dictionaries /
+  // OPDS catalogs pull and push on their own). They must never toast — a
+  // library with a dozen synced fonts otherwise fires a dozen success toasts
+  // on a fresh device, and a dozen "Failed to download file" toasts when the
+  // download breaks (issue #5675).
+  describe('replica transfers are silent background work', () => {
+    const makeReplicaAppService = () =>
+      ({
+        uploadBook: vi.fn().mockResolvedValue(undefined),
+        downloadBook: vi.fn().mockResolvedValue(undefined),
+        deleteBook: vi.fn().mockResolvedValue(undefined),
+        uploadReplicaFile: vi.fn().mockResolvedValue(undefined),
+        downloadReplicaFile: vi.fn().mockResolvedValue(undefined),
+        isMacOSApp: false,
+      }) as Record<string, unknown>;
+
+    const replicaFiles = [{ logical: 'Georgia.ttf', lfp: 'b1/Georgia.ttf', byteSize: 10 }];
+
+    const toastsOfType = (type: string) =>
+      (eventDispatcher.dispatch as Mock).mock.calls.filter(
+        (c) => c[0] === 'toast' && (c[1] as Record<string, unknown>)?.['type'] === type,
+      );
+
+    test('queueReplicaDownload marks the transfer as background', async () => {
+      const appService = makeReplicaAppService();
+      await transferManager.initialize(appService as never, () => [], vi.fn(), translationFn);
+
+      const id = transferManager.queueReplicaDownload(
+        'font',
+        'c1',
+        'Georgia Regular',
+        replicaFiles,
+        'Fonts',
+      );
+      expect(useTransferStore.getState().transfers[id!]!.isBackground).toBe(true);
+    });
+
+    test('queueReplicaUpload marks the transfer as background', async () => {
+      const appService = makeReplicaAppService();
+      await transferManager.initialize(appService as never, () => [], vi.fn(), translationFn);
+
+      const id = transferManager.queueReplicaUpload(
+        'font',
+        'c1',
+        'Georgia Regular',
+        replicaFiles,
+        'Fonts',
+      );
+      expect(useTransferStore.getState().transfers[id!]!.isBackground).toBe(true);
+    });
+
+    test('a successful replica download dispatches no toast', async () => {
+      const appService = makeReplicaAppService();
+      await transferManager.initialize(appService as never, () => [], vi.fn(), translationFn);
+
+      transferManager.queueReplicaDownload('font', 'c1', 'Georgia Regular', replicaFiles, 'Fonts');
+      await vi.advanceTimersByTimeAsync(500);
+
+      expect(toastsOfType('info')).toHaveLength(0);
+    });
+
+    test('a failing replica download dispatches no error toast once retries are exhausted', async () => {
+      const appService = makeReplicaAppService();
+      // Native Tauri rejections arrive as plain strings, which is what the
+      // real os-error-2 failure looks like.
+      appService['downloadReplicaFile'] = vi
+        .fn()
+        .mockRejectedValue('No such file or directory (os error 2)');
+      await transferManager.initialize(appService as never, () => [], vi.fn(), translationFn);
+
+      const id = transferManager.queueReplicaDownload(
+        'font',
+        'c1',
+        'Georgia Regular',
+        replicaFiles,
+        'Fonts',
+      );
+      await vi.advanceTimersByTimeAsync(60000);
+
+      expect(useTransferStore.getState().transfers[id!]!.status).toBe('failed');
+      expect(toastsOfType('error')).toHaveLength(0);
+    });
+
+    test('a failing foreground book upload still toasts', async () => {
+      const book = makeBook({ hash: 'h1', title: 'Loud Book' });
+      const appService = makeReplicaAppService();
+      (appService['uploadBook'] as Mock).mockRejectedValue(new Error('Network fail'));
+      await transferManager.initialize(appService as never, () => [book], vi.fn(), translationFn);
+
+      transferManager.queueUpload(book);
+      await vi.advanceTimersByTimeAsync(60000);
+
+      expect(toastsOfType('error').length).toBeGreaterThan(0);
+    });
+  });
 });
