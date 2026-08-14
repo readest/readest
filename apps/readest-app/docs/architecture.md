@@ -371,7 +371,7 @@ and (sometimes) the native shell.
 
 ### 6.1 Sync
 
-Two sync paths coexist:
+Three sync paths coexist:
 
 The first is **legacy KOReader-compatible sync** for reading progress,
 implemented by `src/services/sync/KOSyncClient.ts` against `pages/api/sync.ts`
@@ -386,6 +386,15 @@ category adapters in `src/services/sync/adapters/*` (annotations, settings,
 dictionaries, fonts, textures, OPDS catalogs). The orchestrator is
 `replicaSyncManager.ts`. A cursor store (`replicaCursorStore.ts`) tracks "where
 I last pulled to" per category so syncs are incremental.
+
+The third is **third-party file sync**, a provider-neutral engine under
+`src/services/sync/file` with adapters for WebDAV, Google Drive, S3, OneDrive,
+and iCloud. It stores shared shelf metadata in `library.json` alongside book
+files, covers, and per-book config. Remote-only books appear as cloud-backed
+shelf rows with their cover and reading config; the book file stays remote
+until the user opens or downloads it. A library tombstone removes the row from
+other devices, but provider bytes are deleted only when the user explicitly
+chooses the cloud-and-device deletion action.
 
 ### 6.2 Cloud library
 
