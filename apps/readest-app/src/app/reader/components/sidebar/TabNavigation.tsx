@@ -8,7 +8,7 @@ import { LuMessageSquare } from 'react-icons/lu';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
-import { isForcedMobileLayout } from '../../utils/layout';
+import { isForcedMobileLayout } from '../../utils/mobileLayout';
 
 const TabNavigation: React.FC<{
   activeTab: string;

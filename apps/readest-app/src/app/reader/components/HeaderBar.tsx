@@ -20,7 +20,7 @@ import { annotationToolQuickActions } from './annotator/AnnotationTools';
 import { AnnotationToolType } from '@/types/annotator';
 import { saveViewSettings } from '@/helpers/settings';
 import { getHeaderTriggerHeight } from '@/utils/insets';
-import { isForcedMobileLayout } from '../utils/layout';
+import { isForcedMobileLayout } from '../utils/mobileLayout';
 import { HighlighterIcon } from '@/components/HighlighterIcon';
 import Dropdown from '@/components/Dropdown';
 import ModalPortal from '@/components/ModalPortal';

@@ -11,7 +11,7 @@ import { useDeviceControlStore } from '@/store/deviceStore';
 import { eventDispatcher } from '@/utils/event';
 import type { FooterBarProps, NavigationHandlers, FooterBarChildProps } from './types';
 import { debounce } from '@/utils/debounce';
-import { isForcedMobileLayout } from '../../utils/layout';
+import { isForcedMobileLayout } from '../../utils/mobileLayout';
 import { RSVPControl } from '../rsvp';
 import MobileFooterBar from './MobileFooterBar';
 import DesktopFooterBar from './DesktopFooterBar';

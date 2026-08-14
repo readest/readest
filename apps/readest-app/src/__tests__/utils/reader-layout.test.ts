@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isForcedMobileLayout } from '@/app/reader/utils/layout';
+import { isForcedMobileLayout } from '@/app/reader/utils/mobileLayout';
 
 const setViewport = (width: number, height: number) => {
   Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });

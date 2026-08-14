@@ -22,7 +22,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatCompactTime, formatPlaybackTime } from '@/utils/time';
-import { isForcedMobileLayout } from '../../utils/layout';
+import { isForcedMobileLayout } from '../../utils/mobileLayout';
 import { TTSPlaybackInfo, usePlaybackInfo } from './usePlaybackInfo';
 import { useCountdownLabel } from './useCountdownLabel';
 import { formatRate } from './SpeedRuler';
