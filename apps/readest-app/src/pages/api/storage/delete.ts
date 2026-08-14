@@ -23,49 +23,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Missing or invalid fileKey' });
     }
 
-    const apiUrl = process.env['NEXT_PUBLIC_BIBLO_API_URL'] || 'http://localhost:3001/api/v0';
-
     try {
-      const response = await fetch(
-        `${apiUrl}/storage/delete?fileKey=${encodeURIComponent(fileKey)}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: req.headers.authorization || `Bearer ${token}`,
-          },
-        },
-      );
-
-      if (!response.ok) {
-        const errData = await response.json();
-        return res
-          .status(response.status)
-          .json({ error: errData.error || 'Failed to delete metadata' });
-      }
-
-      // Now delete S3/R2 object
+      // 1. Delete object from R2/S3
       await deleteObject(fileKey);
 
-      // Soft delete in Supabase
-      try {
-        const supabase = createSupabaseAdminClient();
-        const { error: supabaseError } = await supabase
-          .from('files')
-          .update({ deleted_at: new Date().toISOString() })
-          .eq('user_id', user.id)
-          .eq('file_key', fileKey);
+      // 2. Soft delete in Supabase
+      const supabase = createSupabaseAdminClient();
+      const { error: supabaseError } = await supabase
+        .from('files')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .eq('file_key', fileKey);
 
-        if (supabaseError) {
-          console.error('Error soft-deleting file metadata in Supabase:', supabaseError);
-        }
-      } catch (subError) {
-        console.error('Exception soft-deleting file metadata in Supabase:', subError);
+      if (supabaseError) {
+        console.error('Error soft-deleting file metadata in Supabase:', supabaseError);
+        return res.status(500).json({ error: supabaseError.message });
       }
 
       res.status(200).json({ message: 'File deleted successfully' });
     } catch (error: any) {
       console.error('Error deleting file metadata or object:', error);
-      res.status(500).json({ error: 'Could not delete file from storage backend' });
+      res.status(500).json({ error: 'Could not delete file' });
     }
   } catch (error) {
     console.error(error);
