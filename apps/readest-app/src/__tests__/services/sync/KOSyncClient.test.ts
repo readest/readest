@@ -250,6 +250,56 @@ describe('KOSyncClient.updateProgress – document metadata', () => {
     expect(body['percentage']).toBe(0.14);
   });
 
+  it('newline-joins structured authors instead of sending localized display punctuation', async () => {
+    const mock = setFetch(() => jsonResponse(200, {}));
+
+    const book = {
+      ...makeBook(),
+      author: 'Alexandre Dumas et Auguste Maquet',
+      format: 'EPUB',
+      metadata: {
+        author: [{ name: { en: 'Alexandre Dumas' } }, { name: { en: 'Auguste Maquet' } }],
+      },
+    } as unknown as Book;
+    const client = new KOSyncClient(makeConfig({ userkey: 'key', sendMetadata: true }));
+    await client.updateProgress(book, '/body/DocFragment[12]', 0.14);
+
+    const metadata = sentBody(mock)['metadata'] as Record<string, string>;
+    expect(metadata['authors']).toBe('Alexandre Dumas\nAuguste Maquet');
+  });
+
+  it.each([
+    {
+      label: 'trims string contributors and string names',
+      metadataAuthors: [' Alexandre Dumas ', { name: ' Auguste Maquet ' }],
+      expected: 'Alexandre Dumas\nAuguste Maquet',
+    },
+    {
+      label: 'uses the first non-empty translated name when the user language is missing',
+      metadataAuthors: [null, { name: { fr: ' Victor Hugo ' } }],
+      expected: 'Victor Hugo',
+    },
+    {
+      label: 'falls back to the display author when no structured name is usable',
+      metadataAuthors: [null, {}, { name: { en: '  ' } }],
+      expected: 'Fallback Author',
+    },
+  ])('$label', async ({ metadataAuthors, expected }) => {
+    const mock = setFetch(() => jsonResponse(200, {}));
+    const book = {
+      ...makeBook(),
+      author: 'Fallback Author',
+      format: 'EPUB',
+      metadata: { author: metadataAuthors },
+    } as unknown as Book;
+    const client = new KOSyncClient(makeConfig({ userkey: 'key', sendMetadata: true }));
+
+    await client.updateProgress(book, '/body/DocFragment[12]', 0.14);
+
+    const metadata = sentBody(mock)['metadata'] as Record<string, string>;
+    expect(metadata['authors']).toBe(expected);
+  });
+
   it('names the file by its source title when that differs from the display title', async () => {
     const mock = setFetch(() => jsonResponse(200, {}));
 
