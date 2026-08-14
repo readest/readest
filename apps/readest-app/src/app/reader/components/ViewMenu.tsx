@@ -430,8 +430,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         </>
       )}
 
-      <MenuItem label={_('Settings')} shortcut='Shift+F' onClick={openSettingsDialog} />
-
       {!bookData.isFixedLayout && (
         <MenuItem
           label={_('Scrolled Mode')}
@@ -520,6 +518,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         }
         onClick={cycleThemeMode}
       />
+      <MenuItem label={_('Settings')} shortcut='Shift+F' onClick={openSettingsDialog} />
       {bookData.book?.format === 'PDF' && appService?.supportsCanvasContext2DFilter && (
         <MenuItem
           label={_('Apply Theme Colors to PDF')}

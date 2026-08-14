@@ -155,12 +155,23 @@ export class ReaderPage extends BasePage {
   // --- reader settings ---
 
   /**
+   * Open the settings dialog from the header's view menu. The header used to
+   * carry a dedicated "Font & Layout" button, but it duplicated the mobile
+   * footer's Font tab and was removed (#5652); the view menu's "Settings"
+   * entry is the header's remaining route into the dialog.
+   */
+  async openSettings(): Promise<void> {
+    await this.revealHeader();
+    await this.headerBar.locator('button[aria-label="View Options"]').click();
+    await this.page.locator('.view-menu').getByText('Settings', { exact: true }).click();
+  }
+
+  /**
    * Open the settings dialog, increase the default font size by one step,
    * and return the value before and after.
    */
   async increaseFontSize(): Promise<{ before: string; after: string }> {
-    await this.revealHeader();
-    await this.headerBar.locator('button[aria-label="Font & Layout"]').click();
+    await this.openSettings();
     await this.page.locator('[data-tab="Font"]').click();
 
     const row = this.page.locator('[data-setting-id="settings.font.defaultFontSize"]');
@@ -180,8 +191,7 @@ export class ReaderPage extends BasePage {
    * Settings -> Behavior -> Customize Toolbar, by its chip label.
    */
   async enableAnnotationTool(name: string): Promise<void> {
-    await this.revealHeader();
-    await this.headerBar.locator('button[aria-label="Font & Layout"]').click();
+    await this.openSettings();
     await this.page.locator('[data-tab="Control"]').click();
     await this.page.locator('[data-setting-id="settings.control.customizeToolbar"]').click();
     await this.page.getByRole('button', { name, exact: true }).click();
@@ -194,8 +204,7 @@ export class ReaderPage extends BasePage {
    * margin, right under the header bar's hover strip.
    */
   async setPageHeaderVisible(visible: boolean): Promise<void> {
-    await this.revealHeader();
-    await this.headerBar.locator('button[aria-label="Font & Layout"]').click();
+    await this.openSettings();
     await this.page.locator('[data-tab="Layout"]').click();
 
     const toggle = this.page
