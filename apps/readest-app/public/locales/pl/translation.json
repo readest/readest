@@ -2206,5 +2206,6 @@
   "Not available for this book.": "Niedostępne dla tej książki.",
   "Start of Book": "Początek książki",
   "End of Book": "Koniec książki",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ten folder jest zewnętrzną biblioteką. Odznacz, aby przestać czytać jego książki z oryginalnej lokalizacji; przyszłe importy skopiują książki do biblioteki."
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ten folder jest zewnętrzną biblioteką. Odznacz, aby przestać czytać jego książki z oryginalnej lokalizacji; przyszłe importy skopiują książki do biblioteki.",
+  "More Settings": "Więcej ustawień"
 }

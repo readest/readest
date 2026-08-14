@@ -2038,5 +2038,6 @@
   "Not available for this book.": "དེབ་འདིར་བེད་སྤྱོད་མི་ཐུབ།",
   "Start of Book": "དཔེ་དེབ་ཀྱི་མགོ།",
   "End of Book": "དཔེ་དེབ་ཀྱི་མཇུག",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "སྣོད་འདི་ནི་ཕྱིའི་དཔེ་མཛོད་ཅིག་ཡིན། འདེམས་རྟགས་ཕྱིར་བསུབ་ན་དེའི་དཔེ་ཆ་རང་ས་ནས་ཀློག་མཚམས་འཇོག་ངེས། ཕྱིས་ཀྱི་ནང་འདྲེན་སྐབས་དཔེ་ཆ་དཔེ་མཛོད་ནང་དུ་འདྲ་བཤུས་བྱེད་ངེས།"
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "སྣོད་འདི་ནི་ཕྱིའི་དཔེ་མཛོད་ཅིག་ཡིན། འདེམས་རྟགས་ཕྱིར་བསུབ་ན་དེའི་དཔེ་ཆ་རང་ས་ནས་ཀློག་མཚམས་འཇོག་ངེས། ཕྱིས་ཀྱི་ནང་འདྲེན་སྐབས་དཔེ་ཆ་དཔེ་མཛོད་ནང་དུ་འདྲ་བཤུས་བྱེད་ངེས།",
+  "More Settings": "སྒྲིག་སྟངས་གཞན།"
 }

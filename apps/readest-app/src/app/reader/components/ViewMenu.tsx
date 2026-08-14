@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BiMoon, BiSun } from 'react-icons/bi';
+import { PiGear } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline, MdOutlineSensors } from 'react-icons/md';
 import { MdRemove, MdAdd, MdContrast } from 'react-icons/md';
@@ -100,7 +101,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     setIsDropdownOpen?.(false);
   };
 
-  const openFontLayoutMenu = () => {
+  const openSettingsDialog = () => {
     setIsDropdownOpen?.(false);
     setSettingsDialogBookKey(bookKey);
     setSettingsDialogOpen(true);
@@ -430,8 +431,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         </>
       )}
 
-      <MenuItem label={_('Font & Layout')} shortcut='Shift+F' onClick={openFontLayoutMenu} />
-
       {!bookData.isFixedLayout && (
         <MenuItem
           label={_('Scrolled Mode')}
@@ -520,6 +519,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         }
         onClick={cycleThemeMode}
       />
+      <MenuItem label={_('Settings')} Icon={PiGear} onClick={openSettingsDialog} />
       {bookData.book?.format === 'PDF' && appService?.supportsCanvasContext2DFilter && (
         <MenuItem
           label={_('Apply Theme Colors to PDF')}

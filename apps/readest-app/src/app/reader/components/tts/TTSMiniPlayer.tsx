@@ -22,6 +22,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatCompactTime, formatPlaybackTime } from '@/utils/time';
+import { isForcedMobileLayout } from '../../utils/mobileLayout';
 import { TTSPlaybackInfo, usePlaybackInfo } from './usePlaybackInfo';
 import { useCountdownLabel } from './useCountdownLabel';
 import { formatRate } from './SpeedRuler';
@@ -122,8 +123,7 @@ const TTSMiniPlayer = ({
   const viewSettings = getViewSettings(bookKey);
   const barVisible = hoveredBookKey === bookKey;
   const safeAreaMargin = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
-  const forceMobileLayout =
-    !!appService?.isMobile && window.innerWidth >= 640 && window.innerWidth <= window.innerHeight;
+  const forceMobileLayout = isForcedMobileLayout(appService?.isMobile);
   const usesMobileBar = forceMobileLayout || window.innerWidth < 640 || window.innerHeight < 640;
 
   // Distance from the bottom edge (safe-area margin excluded) to the top of

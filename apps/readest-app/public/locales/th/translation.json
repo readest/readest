@@ -2038,5 +2038,6 @@
   "Not available for this book.": "ไม่พร้อมใช้งานสำหรับหนังสือเล่มนี้",
   "Start of Book": "ต้นเล่ม",
   "End of Book": "ท้ายเล่ม",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "โฟลเดอร์นี้เป็นคลังหนังสือภายนอก ยกเลิกการเลือกเพื่อหยุดอ่านหนังสือจากตำแหน่งเดิม การนำเข้าครั้งต่อไปจะคัดลอกหนังสือเข้าคลังหนังสือ"
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "โฟลเดอร์นี้เป็นคลังหนังสือภายนอก ยกเลิกการเลือกเพื่อหยุดอ่านหนังสือจากตำแหน่งเดิม การนำเข้าครั้งต่อไปจะคัดลอกหนังสือเข้าคลังหนังสือ",
+  "More Settings": "การตั้งค่าเพิ่มเติม"
 }

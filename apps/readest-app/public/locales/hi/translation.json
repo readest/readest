@@ -2094,5 +2094,6 @@
   "Not available for this book.": "इस पुस्तक के लिए उपलब्ध नहीं है।",
   "Start of Book": "पुस्तक की शुरुआत",
   "End of Book": "पुस्तक का अंत",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "यह फ़ोल्डर एक बाहरी लाइब्रेरी है। इसकी किताबें मूल स्थान से पढ़ना बंद करने के लिए टिक हटाएँ; आगे के आयात में किताबें लाइब्रेरी में कॉपी की जाएँगी।"
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "यह फ़ोल्डर एक बाहरी लाइब्रेरी है। इसकी किताबें मूल स्थान से पढ़ना बंद करने के लिए टिक हटाएँ; आगे के आयात में किताबें लाइब्रेरी में कॉपी की जाएँगी।",
+  "More Settings": "अधिक सेटिंग्स"
 }

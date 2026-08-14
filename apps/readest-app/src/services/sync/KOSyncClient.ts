@@ -4,8 +4,35 @@ import { KOSyncSettings } from '@/types/settings';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { KoSyncProxyPayload } from '@/types/kosync';
 import { isLanAddress } from '@/utils/network';
+import { getUserLang, makeSafeFilename } from '@/utils/misc';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import { getAPIBaseUrl, isTauriAppPlatform } from '../environment';
+
+const getContributorName = (contributor: unknown): string => {
+  if (typeof contributor === 'string') return contributor.trim();
+  if (!contributor || typeof contributor !== 'object') return '';
+
+  const name = (contributor as { name?: unknown }).name;
+  if (typeof name === 'string') return name.trim();
+  if (!name || typeof name !== 'object') return '';
+
+  const names = name as Record<string, unknown>;
+  const preferredName = names[getUserLang()];
+  if (typeof preferredName === 'string' && preferredName.trim()) return preferredName.trim();
+
+  const fallbackName = Object.values(names).find(
+    (value): value is string => typeof value === 'string' && !!value.trim(),
+  );
+  return fallbackName?.trim() ?? '';
+};
+
+const getMetadataAuthors = (book: Book): string => {
+  const contributors = book.metadata?.author as unknown;
+  if (!Array.isArray(contributors)) return book.author;
+
+  const authors = contributors.map(getContributorName).filter(Boolean);
+  return authors.length > 0 ? authors.join('\n') : book.author;
+};
 
 /**
  * Interface for KOSync progress response from the server
@@ -231,6 +258,23 @@ export class KOSyncClient {
       percentage,
       device: this.config.deviceName,
       device_id: this.config.deviceId,
+      // The optional metadata field KOReader 2026.05+ sends when "Send
+      // document metadata" is enabled (koreader/koreader#15306), also
+      // implemented by CrossPoint 1.5.0+. The official server ignores it;
+      // custom servers may use it to identify the book behind the hash.
+      // `authors` is a single string in KOReader's format, newline-joined
+      // when there are several. Book.author uses locale-specific display
+      // punctuation, so recover the individual names from structured metadata.
+      // The extension is the lowercased format, the same value as EXTS in
+      // libs/document, not imported here so this client stays off the document
+      // lib's foliate-js dependency chain.
+      ...(this.config.sendMetadata && {
+        metadata: {
+          filename: `${makeSafeFilename(book.sourceTitle || book.title)}.${book.format.toLowerCase()}`,
+          title: book.title,
+          authors: getMetadataAuthors(book),
+        },
+      }),
     };
 
     try {
