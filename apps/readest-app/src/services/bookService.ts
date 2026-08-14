@@ -674,7 +674,13 @@ export async function importBook(
     if (existingBook) existingBook.coverHash = coverHash;
     // Never overwrite the config file only when it's not existed
     if (!existingBook) {
-      await saveBookConfigFn(book, INIT_BOOK_CONFIG);
+      // A config.json for this hash can already be on the disk. It holds the
+      // reading position, the bookmarks and the notes. The backup restore extracts
+      // one, and then it imports the book file. Write the empty config only when
+      // no config is present, so the import keeps what the restore recovered.
+      if (!(await fs.exists(getConfigFilename(book), 'Books'))) {
+        await saveBookConfigFn(book, INIT_BOOK_CONFIG);
+      }
       // Concurrent imports of identical bytes (the folder-import pool) both
       // read `byHash` right after hashing but only write it here, after the
       // createDir/writeFile/cover awaits — so both miss and both would push a
@@ -714,7 +720,9 @@ export async function importBook(
           config.bookHash = hash;
           config.metaHash = metaHash;
           await fs.writeFile(getConfigFilename(book), 'Books', serializeRawConfig(config));
-        } else {
+        } else if (!(await fs.exists(getConfigFilename(book), 'Books'))) {
+          // No config to move, but the new hash directory can already hold one.
+          // This is the same fault as the new-book path above.
           await saveBookConfigFn(book, INIT_BOOK_CONFIG);
         }
       }

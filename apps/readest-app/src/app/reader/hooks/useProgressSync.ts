@@ -234,7 +234,61 @@ export const useProgressSync = (bookKey: string) => {
       if (syncedConfig.location && isMalformedLocationCfi(syncedConfig.location)) {
         syncedConfig = { ...syncedConfig, location: undefined };
       }
-      const configCFI = config?.location;
+      // referencePageCount belongs to the edition, not to the device. The app sent
+      // it to the server, but nothing read it back. Thus a count set on one device
+      // did not reach the others. Then a push from a device without the count
+      // replaced view_settings, which the server keeps as one value.
+      //
+      // This runs before the position work below. No await is between the read at
+      // the top of this function and the clock comparison here.
+      //
+      // Examine the value first. A bad value would go to config.json and back to
+      // the server. The maximum agrees with the input. The minimum is higher than
+      // the input minimum of 0, because 0 means "not set".
+      const remoteCount = syncedConfig.viewSettings?.referencePageCount;
+      const remotePageCount =
+        typeof remoteCount === 'number' && remoteCount >= 0.1 && remoteCount <= 10000
+          ? remoteCount
+          : undefined;
+      const pageCountViewSettings = getViewSettings(bookKey);
+      const localPageCount = pageCountViewSettings?.referencePageCount;
+      const pageCountViewState = useReaderStore.getState().getViewState(bookKey);
+      // The last writer wins on the ROW clock, and a tie goes to the remote value.
+      // Each page turn stamps that clock. Thus a device that only reads can win
+      // against a device that edited. This fault is not new. The project corrected
+      // it three times with one clock for each field: reading_status (#4634),
+      // cover_hash (#4544) and metadata (#5438). A correction here alone does not
+      // help, because peers still push the full view_settings value on the row
+      // clock. The !localPageCount test makes the usual case work: a device with no
+      // count takes the remote count.
+      if (
+        pageCountViewSettings &&
+        remotePageCount &&
+        remotePageCount !== localPageCount &&
+        (!localPageCount || (syncedConfig.updatedAt ?? 0) >= (config.updatedAt ?? 0))
+      ) {
+        const adopted = { ...pageCountViewSettings, referencePageCount: remotePageCount };
+        setViewSettings(bookKey, adopted);
+        // Only the primary view owns the config on the disk. saveViewSettings does
+        // the same. The write also stops during a preview, because `config` then
+        // holds the previewed position, which useProgressAutoSave does not keep.
+        // The value stays in memory, so the app does not lose it.
+        if (pageCountViewState?.isPrimary && !pageCountViewState.previewMode) {
+          try {
+            await saveConfig(envConfig, bookKey, { ...config, viewSettings: adopted }, settings);
+          } catch (error) {
+            // The remainder of the pull must continue. The gate is already open.
+            // If this stops the pull, the delayed push writes the local position
+            // over a newer remote position (#5625). The XPointer catch below gives
+            // the same reason.
+            console.warn('Failed to persist the synced reference page count', error);
+          }
+        }
+      }
+      // Read the config again. The write above can wait for the disk, and a page
+      // turn in that time replaces the config in the store. The older position
+      // would move the reader back.
+      const configCFI = (getConfig(bookKey) ?? config)?.location;
       let remoteCFILocation = syncedConfig.location;
       const xpointer = syncedConfig.xpointer;
       const bookData = getBookData(bookKey);
@@ -273,7 +327,8 @@ export const useProgressSync = (bookKey: string) => {
         }
       }
       // Reading progress applies below. Proofread (find/replace) rules merge
-      // separately just after; other config fields remain device-local.
+      // separately just after, and referencePageCount was adopted above; every
+      // other config field remains device-local.
       // TODO: general config sync via a more robust profile-based solution.
       if (remoteCFILocation && configCFI) {
         if (CFI.compare(configCFI, remoteCFILocation) < 0) {
@@ -313,10 +368,10 @@ export const useProgressSync = (bookKey: string) => {
       // Item-level CRDT (see utils/proofread.ts) keeps a concurrent edit on
       // another device from being lost to whole-config last-writer-wins, and
       // tombstones stop a deleted rule from being resurrected by a stale peer.
+      const localViewSettings = getViewSettings(bookKey);
       const remoteRules = (syncedConfig.viewSettings?.proofreadRules ?? []).filter(
         (r) => r.scope !== 'library',
       );
-      const localViewSettings = getViewSettings(bookKey);
       const localRules = localViewSettings?.proofreadRules ?? [];
       if (localViewSettings && (remoteRules.length || localRules.length)) {
         const mergedRules = mergeProofreadRules(localRules, remoteRules);
@@ -327,7 +382,8 @@ export const useProgressSync = (bookKey: string) => {
             await saveConfig(
               envConfig,
               bookKey,
-              { ...config, viewSettings: updatedViewSettings, updatedAt: Date.now() },
+              // Re-read for the same reason as configCFI above.
+              { ...(getConfig(bookKey) ?? config), viewSettings: updatedViewSettings },
               settings,
             );
           }

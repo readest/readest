@@ -37,7 +37,7 @@ const h = vi.hoisted(() => {
     user: { id: 'u1' },
     syncConfigsMock: vi.fn(async () => {}),
     syncBooksMock: vi.fn(async () => {}),
-    saveConfigMock: vi.fn(async () => {}),
+    saveConfigMock: vi.fn(async (..._args: unknown[]) => {}),
     setViewSettingsMock: vi.fn(),
     recreateViewerMock: vi.fn(),
     cfiCompareMock: vi.fn((_a: string, _b: string) => 0),
@@ -50,7 +50,13 @@ const h = vi.hoisted(() => {
     state: {
       syncedConfigs: [] as unknown[] | null,
       progress: { location: 'cfi-loc' } as { location: string; fraction?: number } | null,
-      viewSettings: { proofreadRules: [] } as { proofreadRules: unknown[] } | null,
+      viewSettings: { proofreadRules: [] } as {
+        proofreadRules: unknown[];
+        referencePageCount?: number;
+      } | null,
+      isPrimary: true,
+      hasView: true,
+      previewMode: false,
       bookDoc: {} as unknown,
     },
     eventListeners: new Map<string, Set<(e: CustomEvent) => void>>(),
@@ -88,13 +94,21 @@ vi.mock('@/store/bookDataStore', () => ({
 
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: h.makeStore({
-    getView: () => h.view,
+    getView: () => (h.state.hasView ? h.view : null),
     getProgress: () => h.state.progress,
     getViewSettings: () => h.state.viewSettings,
-    setViewSettings: h.setViewSettingsMock,
+    // Mirror the real store: setViewSettings replaces this view's settings, so
+    // a later getViewSettings in the same pass sees the update.
+    setViewSettings: (key: string, vs: unknown) => {
+      h.state.viewSettings = vs as typeof h.state.viewSettings;
+      h.setViewSettingsMock(key, vs);
+    },
     recreateViewer: h.recreateViewerMock,
     setHoveredBookKey: vi.fn(),
-    getViewState: () => ({ previewMode: false }),
+    getViewState: () => ({
+      previewMode: h.state.previewMode,
+      isPrimary: h.state.isPrimary,
+    }),
   }),
 }));
 
@@ -172,6 +186,10 @@ beforeEach(() => {
   h.state.syncedConfigs = [];
   h.state.progress = { location: 'cfi-loc' };
   h.state.viewSettings = { proofreadRules: [] };
+  h.config = { progress: [5, 100], location: 'cfi-loc', updatedAt: 1000 };
+  h.state.isPrimary = true;
+  h.state.hasView = true;
+  h.state.previewMode = false;
   h.state.bookDoc = {};
   h.eventListeners.clear();
 });
@@ -361,6 +379,273 @@ describe('useProgressSync', () => {
     expect(h.setViewSettingsMock).not.toHaveBeenCalled();
     expect(h.saveConfigMock).not.toHaveBeenCalled();
     expect(h.recreateViewerMock).not.toHaveBeenCalled();
+  });
+
+  // referencePageCount describes the BOOK (its paperback-equivalent page count),
+  // not the device, so a peer that knows the count must be able to hand it over.
+  // The local config in this harness carries updatedAt: 1000, so a synced config
+  // below is "older" or "newer" relative to that.
+  test('adopts a synced referencePageCount when this device has none', async () => {
+    h.cfiCompareMock.mockReturnValue(0);
+    h.state.viewSettings = { proofreadRules: [], referencePageCount: 0 };
+    h.state.syncedConfigs = [
+      // Older than the local config: a device with no count of its own still
+      // takes the remote one, because 0 means "never set".
+      {
+        bookHash: 'h1',
+        metaHash: 'm1',
+        updatedAt: 500,
+        viewSettings: { referencePageCount: 8235 },
+      },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.setViewSettingsMock).toHaveBeenCalledTimes(1);
+    const applied = h.setViewSettingsMock.mock.calls[0]![1] as { referencePageCount?: number };
+    expect(applied.referencePageCount).toBe(8235);
+    // Persisted too, so the value survives the next open and pushes back up.
+    // Assert the payload, not just that a write happened.
+    expect(h.saveConfigMock).toHaveBeenCalledTimes(1);
+    const saved = h.saveConfigMock.mock.calls[0]![2] as {
+      viewSettings?: { referencePageCount?: number };
+    };
+    expect(saved.viewSettings?.referencePageCount).toBe(8235);
+  });
+
+  test('takes a newer synced referencePageCount over the local one', async () => {
+    h.cfiCompareMock.mockReturnValue(0);
+    h.state.viewSettings = { proofreadRules: [], referencePageCount: 300 };
+    h.state.syncedConfigs = [
+      {
+        bookHash: 'h1',
+        metaHash: 'm1',
+        updatedAt: 5000,
+        viewSettings: { referencePageCount: 8235 },
+      },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    const applied = h.setViewSettingsMock.mock.calls[0]![1] as { referencePageCount?: number };
+    expect(applied.referencePageCount).toBe(8235);
+  });
+
+  test('keeps a local referencePageCount when the synced config is older', async () => {
+    h.cfiCompareMock.mockReturnValue(0);
+    h.state.viewSettings = { proofreadRules: [], referencePageCount: 300 };
+    h.state.syncedConfigs = [
+      {
+        bookHash: 'h1',
+        metaHash: 'm1',
+        updatedAt: 500,
+        viewSettings: { referencePageCount: 8235 },
+      },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.setViewSettingsMock).not.toHaveBeenCalled();
+    expect(h.saveConfigMock).not.toHaveBeenCalled();
+  });
+
+  // Never skip adoption: a device left holding 0 prunes the key from its next
+  // push (0 equals the global default) and flattens the row for every device.
+  // Losing the count without the user asking is the outcome this change exists
+  // to stop. Pushing needs a live view, so the clock bump cannot out-rank a peer
+  // before the view has relocated.
+  test('adopts the count even when the book has no live view', async () => {
+    h.cfiCompareMock.mockReturnValue(0);
+    h.state.hasView = false;
+    h.state.viewSettings = { proofreadRules: [], referencePageCount: 0 };
+    h.state.syncedConfigs = [
+      {
+        bookHash: 'h1',
+        metaHash: 'm1',
+        updatedAt: 5000,
+        viewSettings: { referencePageCount: 8235 },
+      },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    const applied = h.setViewSettingsMock.mock.calls[0]![1] as { referencePageCount?: number };
+    expect(applied.referencePageCount).toBe(8235);
+  });
+
+  // `config` carries the previewed position during a deep-link preview, which
+  // useProgressAutoSave deliberately never persists. So adopt in memory, but do
+  // not write the config; a push can only come from a non-preview session.
+  // This pins THIS write only. The proofread merge further down the same pull
+  // has no preview guard of its own, so a pull that also changes a rule still
+  // persists the previewed position -- pre-existing, and noted in the PR.
+  test('adopts the count in memory during a preview without writing to disk', async () => {
+    h.cfiCompareMock.mockReturnValue(0);
+    h.state.previewMode = true;
+    h.state.viewSettings = { proofreadRules: [], referencePageCount: 0 };
+    h.state.syncedConfigs = [
+      {
+        bookHash: 'h1',
+        metaHash: 'm1',
+        updatedAt: 5000,
+        viewSettings: { referencePageCount: 8235 },
+      },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    const applied = h.setViewSettingsMock.mock.calls[0]![1] as { referencePageCount?: number };
+    expect(applied.referencePageCount).toBe(8235);
+    expect(h.saveConfigMock).not.toHaveBeenCalled();
+  });
+
+  // The adoption awaits a disk write, and a page turn during that yield replaces
+  // the store's config object. The position compare below it must therefore
+  // re-read the config, not reuse the snapshot taken at the top of the pull, or
+  // it walks the reader back to a position already passed.
+  test('re-reads the position after the awaited write, not the snapshot', async () => {
+    h.cfiCompareMock.mockReturnValue(-1);
+    h.state.viewSettings = { proofreadRules: [], referencePageCount: 0 };
+    h.state.syncedConfigs = [
+      {
+        bookHash: 'h1',
+        metaHash: 'm1',
+        updatedAt: 5000,
+        location: 'cfi-remote',
+        viewSettings: { referencePageCount: 8235 },
+      },
+    ];
+    // The reader turns a page while the adoption's write is in flight. The real
+    // store REPLACES the config object (readerStore.setProgress), which is what
+    // makes the snapshot taken at the top of the pull go stale, so the mock must
+    // replace it too rather than mutate in place.
+    h.saveConfigMock.mockImplementationOnce(async () => {
+      h.config = { ...h.config, location: 'cfi-after-turn' };
+    });
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.cfiCompareMock).toHaveBeenCalledWith('cfi-after-turn', 'cfi-remote');
+  });
+
+  // A failed disk write must not reject the pull. Aborting here would skip the
+  // position work while the pull gate is already open, and the debounced push
+  // would then overwrite a newer remote position with the local one (#5625).
+  test('a failed config write does not abort the rest of the pull', async () => {
+    h.cfiCompareMock.mockReturnValue(-1);
+    h.saveConfigMock.mockRejectedValueOnce(new Error('disk full'));
+    h.state.viewSettings = { proofreadRules: [], referencePageCount: 0 };
+    h.state.syncedConfigs = [
+      {
+        bookHash: 'h1',
+        metaHash: 'm1',
+        updatedAt: 5000,
+        location: 'cfi-remote',
+        viewSettings: { referencePageCount: 8235 },
+      },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.saveConfigMock).toHaveBeenCalled();
+    expect(h.view.goTo).toHaveBeenCalledWith('cfi-remote');
+  });
+
+  // Only the primary view owns config.json. A second view of the same book must
+  // still take the value in memory, but must not write the shared config.
+  test('a non-primary view adopts the count without writing to disk', async () => {
+    h.cfiCompareMock.mockReturnValue(0);
+    h.state.isPrimary = false;
+    h.state.viewSettings = { proofreadRules: [], referencePageCount: 0 };
+    h.state.syncedConfigs = [
+      {
+        bookHash: 'h1',
+        metaHash: 'm1',
+        updatedAt: 500,
+        viewSettings: { referencePageCount: 8235 },
+      },
+    ];
+    renderHook(() => useProgressSync('h1-view2'));
+    await advance(0);
+
+    const applied = h.setViewSettingsMock.mock.calls[0]![1] as { referencePageCount?: number };
+    expect(applied.referencePageCount).toBe(8235);
+    expect(h.saveConfigMock).not.toHaveBeenCalled();
+  });
+
+  test('keeps the local referencePageCount when the synced config carries none', async () => {
+    h.cfiCompareMock.mockReturnValue(0);
+    h.state.viewSettings = { proofreadRules: [], referencePageCount: 300 };
+    h.state.syncedConfigs = [{ bookHash: 'h1', metaHash: 'm1', updatedAt: 5000, viewSettings: {} }];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.setViewSettingsMock).not.toHaveBeenCalled();
+    expect(h.saveConfigMock).not.toHaveBeenCalled();
+  });
+
+  // The tie-break is deliberate: mergeBookConfig resolves an equal clock in the
+  // remote's favour, and this mirrors it.
+  test('adopts a synced referencePageCount on an equal updatedAt', async () => {
+    h.cfiCompareMock.mockReturnValue(0);
+    h.state.viewSettings = { proofreadRules: [], referencePageCount: 300 };
+    h.state.syncedConfigs = [
+      {
+        bookHash: 'h1',
+        metaHash: 'm1',
+        updatedAt: 1000,
+        viewSettings: { referencePageCount: 8235 },
+      },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    const applied = h.setViewSettingsMock.mock.calls[0]![1] as { referencePageCount?: number };
+    expect(applied.referencePageCount).toBe(8235);
+  });
+
+  test('does not rewrite the config when the counts already agree', async () => {
+    h.cfiCompareMock.mockReturnValue(0);
+    h.state.viewSettings = { proofreadRules: [], referencePageCount: 8235 };
+    h.state.syncedConfigs = [
+      {
+        bookHash: 'h1',
+        metaHash: 'm1',
+        updatedAt: 5000,
+        viewSettings: { referencePageCount: 8235 },
+      },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.setViewSettingsMock).not.toHaveBeenCalled();
+    expect(h.saveConfigMock).not.toHaveBeenCalled();
+  });
+
+  // The proofread merge runs straight after the page-count adoption and spreads
+  // the same view-settings object, so it must not drop the count it just gained.
+  test('keeps the adopted page count when proofread rules merge in the same pull', async () => {
+    h.cfiCompareMock.mockReturnValue(0);
+    h.state.viewSettings = { proofreadRules: [], referencePageCount: 0 };
+    h.state.syncedConfigs = [
+      {
+        bookHash: 'h1',
+        metaHash: 'm1',
+        viewSettings: {
+          referencePageCount: 8235,
+          proofreadRules: [{ id: 'remote', scope: 'book', pattern: 'b', updatedAt: 200 }],
+        },
+      },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    const last = h.setViewSettingsMock.mock.calls.at(-1)![1] as {
+      referencePageCount?: number;
+      proofreadRules: { id: string }[];
+    };
+    expect(last.referencePageCount).toBe(8235);
+    expect(last.proofreadRules.map((r) => r.id)).toEqual(['remote']);
   });
 
   test('sync-book-progress flushes the pending cloud push on book close', async () => {

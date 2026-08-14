@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Book } from '@/types/book';
-import { getMetadataHash } from '@/utils/book';
+import { getMetadataHash, INIT_BOOK_CONFIG } from '@/utils/book';
 
 const mockOpen = vi.hoisted(() => vi.fn());
 const mockPartialMD5 = vi.hoisted(() => vi.fn());
@@ -814,5 +814,125 @@ describe('importBook with BookLookupIndex', () => {
     expect(lookupIndex.byFilePath.get('/lib/a.epub')).toBe(inPlaceBook);
     expect(lookupIndex.byFilePath.has('/lib/b.epub')).toBe(false);
     expect(lookupIndex.byFilePath.has('https://example.com/c.epub')).toBe(false);
+  });
+});
+
+// A book directory can already hold a config.json when importBook runs. The
+// backup restore is the clearest case: it extracts every file of an orphan hash
+// dir (one absent from the archive's library.json), config.json included, and
+// then calls importBook on the extracted file -- while its sibling branch, for a
+// dir the library does know, carefully merges that same config. Stamping
+// INIT_BOOK_CONFIG over it discards the reading position, the bookmarks and the
+// annotations the restore just recovered.
+describe('importBook preserves an existing book config', () => {
+  let service: TestAppService;
+
+  const configWrites = (fs: ReturnType<TestAppService['getFs']>, path: string) =>
+    fs.writeFile.mock.calls.filter((c: unknown[]) => c[0] === path);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new TestAppService();
+    const fs = service.getFs();
+    fs.exists.mockResolvedValue(false);
+    fs.createDir.mockResolvedValue(undefined);
+    fs.writeFile.mockResolvedValue(undefined);
+    fs.removeDir.mockResolvedValue(undefined);
+    fs.readFile.mockResolvedValue('{}');
+  });
+
+  // fs is mocked, so "never written" is exactly "content unchanged".
+  it('leaves an existing config.json untouched when adding a new book', async () => {
+    const books: Book[] = [];
+
+    mockPartialMD5.mockResolvedValue('restored-hash');
+    setupMockBookDoc();
+
+    const fs = service.getFs();
+    fs.exists.mockImplementation(async (path: string) => path === 'restored-hash/config.json');
+
+    const mockFile = new File(['content'], 'test.epub', { type: 'application/epub+zip' });
+    const result = await service.importBook(mockFile, books);
+
+    expect(result?.hash).toBe('restored-hash');
+    expect(configWrites(fs, 'restored-hash/config.json')).toHaveLength(0);
+  });
+
+  // The restore passes overwrite: true, which re-writes a book file that is
+  // already on disk. The config must still survive that.
+  it('leaves an existing config.json untouched on an overwrite import', async () => {
+    const books: Book[] = [];
+
+    mockPartialMD5.mockResolvedValue('restored-hash');
+    setupMockBookDoc();
+
+    const fs = service.getFs();
+    // Both the book file and the config are already present, so `overwrite`
+    // genuinely re-writes the book file on this run.
+    fs.exists.mockImplementation(async (path: string) => path.startsWith('restored-hash/'));
+
+    const mockFile = new File(['content'], 'test.epub', { type: 'application/epub+zip' });
+    await service.importBook(mockFile, books, { overwrite: true });
+
+    expect(configWrites(fs, 'restored-hash/config.json')).toHaveLength(0);
+  });
+
+  it('still initializes config.json for a new book that has none', async () => {
+    const books: Book[] = [];
+
+    mockPartialMD5.mockResolvedValue('fresh-hash');
+    setupMockBookDoc();
+
+    const fs = service.getFs();
+    const mockFile = new File(['content'], 'test.epub', { type: 'application/epub+zip' });
+    await service.importBook(mockFile, books);
+
+    const writes = configWrites(fs, 'fresh-hash/config.json');
+    expect(writes).toHaveLength(1);
+    expect(JSON.parse(writes[0]![2] as string).updatedAt).toBe(INIT_BOOK_CONFIG.updatedAt);
+  });
+
+  // Same clobber on the metaHash migration path: the book moves to a new hash
+  // directory, the OLD directory has no config to migrate, but the NEW directory
+  // already holds one.
+  it('does not overwrite an existing config when migrating to a new hash directory', async () => {
+    const metaHash = getMetadataHash(TEST_METADATA);
+    const existingBook = makeBook({ hash: 'old-hash-123', metaHash });
+    const books: Book[] = [existingBook];
+
+    mockPartialMD5.mockResolvedValue('new-hash-456');
+    setupMockBookDoc();
+
+    const fs = service.getFs();
+    fs.exists.mockImplementation(async (path: string) => {
+      if (path === 'old-hash-123/config.json') return false;
+      if (path === 'old-hash-123') return true;
+      if (path === 'new-hash-456/config.json') return true;
+      return false;
+    });
+
+    const mockFile = new File(['new content'], 'test.epub', { type: 'application/epub+zip' });
+    await service.importBook(mockFile, books);
+
+    expect(configWrites(fs, 'new-hash-456/config.json')).toHaveLength(0);
+    // The migration itself still completes.
+    expect(fs.removeDir).toHaveBeenCalledWith('old-hash-123', 'Books', true);
+  });
+
+  it('still initializes config.json when neither directory has one', async () => {
+    const metaHash = getMetadataHash(TEST_METADATA);
+    const existingBook = makeBook({ hash: 'old-hash-123', metaHash });
+    const books: Book[] = [existingBook];
+
+    mockPartialMD5.mockResolvedValue('new-hash-456');
+    setupMockBookDoc();
+
+    const fs = service.getFs();
+    fs.exists.mockImplementation(async (path: string) => path === 'old-hash-123');
+
+    const mockFile = new File(['new content'], 'test.epub', { type: 'application/epub+zip' });
+    await service.importBook(mockFile, books);
+
+    expect(configWrites(fs, 'new-hash-456/config.json')).toHaveLength(1);
   });
 });
