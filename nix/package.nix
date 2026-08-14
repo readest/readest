@@ -26,21 +26,23 @@ rustPlatform.buildRustPackage (finalAttrs: {
   pname = "readest";
   src = lib.fileset.toSource {
     root = ../.;
-    fileset = lib.fileset.unions [
-      ../apps/readest-app
-      ../apps/readest-app/src-tauri/plugins/tauri-plugin-turso
-      ../apps/readest-app/src-tauri/plugins/tauri-plugin-webview-upgrade
+    fileset = lib.fileset.intersection
+      (lib.fileset.gitTracked ../.)
+      (lib.fileset.unions [
+        ../apps/readest-app
+        ../apps/readest-app/src-tauri/plugins/tauri-plugin-turso
+        ../apps/readest-app/src-tauri/plugins/tauri-plugin-webview-upgrade
 
-      ../packages
-      ../patches
+        ../packages
+        ../patches
 
-      ../package.json
-      ../pnpm-lock.yaml
-      ../pnpm-workspace.yaml
+        ../package.json
+        ../pnpm-lock.yaml
+        ../pnpm-workspace.yaml
 
-      ../Cargo.toml
-      ../Cargo.lock
-    ];
+        ../Cargo.toml
+        ../Cargo.lock
+      ]);
   };
   postUnpack = ''
     # pnpm.configHook has to write to ../.., as our sourceRoot is set to
