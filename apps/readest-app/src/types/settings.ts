@@ -335,6 +335,12 @@ export interface KeyBinding {
   id: string;
   /** Human-readable label shown in settings. */
   label: string;
+  /** DOM modifier state. Optional so persisted single-key bindings remain valid. */
+  ctrlKey?: boolean;
+  altKey?: boolean;
+  shiftKey?: boolean;
+  metaKey?: boolean;
+  altGraphKey?: boolean;
 }
 
 export interface HardwarePageTurnerSettings {

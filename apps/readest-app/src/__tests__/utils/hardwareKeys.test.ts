@@ -2,6 +2,8 @@ import { describe, test, expect } from 'vitest';
 import {
   normalizeNativeKey,
   normalizeDomKeyEvent,
+  formatKeyBindingLabel,
+  isModifierKeyEvent,
   matchesBinding,
   resolvePageTurn,
   isPencilNativeKey,
@@ -44,6 +46,123 @@ describe('normalizeDomKeyEvent', () => {
       label: 'Media Next',
     });
   });
+
+  test('records modifier combinations on the non-modifier key', () => {
+    const event = {
+      code: 'KeyD',
+      key: 'd',
+      ctrlKey: true,
+      shiftKey: true,
+      altKey: false,
+      metaKey: false,
+    } as KeyboardEvent;
+    expect(normalizeDomKeyEvent(event)).toEqual({
+      source: 'dom',
+      id: 'KeyD',
+      label: 'D',
+      ctrlKey: true,
+      shiftKey: true,
+    });
+  });
+
+  test('translates each chord label independently', () => {
+    expect(
+      formatKeyBindingLabel(
+        { source: 'dom', id: 'KeyD', label: 'D', ctrlKey: true, shiftKey: true },
+        (value) => `[${value}]`,
+      ),
+    ).toBe('[Ctrl] + [Shift] + [D]');
+  });
+
+  test('keeps code-only iframe key messages compatible', () => {
+    expect(normalizeDomKeyEvent({ code: 'ArrowRight' })).toEqual({
+      source: 'dom',
+      id: 'ArrowRight',
+      label: 'Arrow Right',
+    });
+  });
+
+  test('keeps a modifier-only key usable as a legacy main key', () => {
+    const event = {
+      code: 'ControlRight',
+      key: 'Control',
+      ctrlKey: true,
+      shiftKey: false,
+      altKey: false,
+      metaKey: false,
+    } as KeyboardEvent;
+    expect(normalizeDomKeyEvent(event)).toEqual({
+      source: 'dom',
+      id: 'ControlRight',
+      label: 'ControlRight',
+    });
+  });
+
+  test('does not treat AltGraph synthetic Ctrl+Alt flags as a chord', () => {
+    const event = {
+      code: 'AltRight',
+      key: 'AltGraph',
+      ctrlKey: true,
+      altKey: true,
+      shiftKey: false,
+      metaKey: false,
+    } as KeyboardEvent;
+    expect(normalizeDomKeyEvent(event)).toEqual({
+      source: 'dom',
+      id: 'AltRight',
+      label: 'AltRight',
+    });
+  });
+
+  test('keeps AltGraph chords distinct from Ctrl+Alt chords', () => {
+    const altGraphChord = normalizeDomKeyEvent({
+      code: 'KeyD',
+      key: 'd',
+      ctrlKey: true,
+      altKey: true,
+      getModifierState: (modifier) => modifier === 'AltGraph',
+    });
+    expect(altGraphChord).toEqual({
+      source: 'dom',
+      id: 'KeyD',
+      label: 'D',
+      altGraphKey: true,
+    });
+    expect(formatKeyBindingLabel(altGraphChord, (value) => value)).toBe('AltGraph + D');
+    expect(
+      matchesBinding(altGraphChord, {
+        source: 'dom',
+        id: 'KeyD',
+        altGraphKey: true,
+      }),
+    ).toBe(true);
+    expect(
+      matchesBinding(altGraphChord, {
+        source: 'dom',
+        id: 'KeyD',
+        ctrlKey: true,
+        altKey: true,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe('isModifierKeyEvent', () => {
+  test.each([
+    ['Control', 'ControlRight'],
+    ['Shift', 'ShiftLeft'],
+    ['Alt', 'AltRight'],
+    ['Meta', 'MetaLeft'],
+    ['AltGraph', ''],
+  ])('identifies %s as a modifier-only keydown', (key, code) => {
+    expect(isModifierKeyEvent({ key, code } as KeyboardEvent)).toBe(true);
+  });
+
+  test('does not classify the completed chord key as modifier-only', () => {
+    expect(isModifierKeyEvent({ key: 'ArrowRight', code: 'ArrowRight' } as KeyboardEvent)).toBe(
+      false,
+    );
+  });
 });
 
 describe('matchesBinding', () => {
@@ -63,6 +182,33 @@ describe('matchesBinding', () => {
 
   test('rejects a null binding', () => {
     expect(matchesBinding(null, { source: 'native', id: 'MediaNext' })).toBe(false);
+  });
+
+  test('requires an exact modifier combination', () => {
+    const combo = {
+      source: 'dom' as const,
+      id: 'ArrowRight',
+      label: 'Ctrl + Arrow Right',
+      ctrlKey: true,
+    };
+
+    expect(matchesBinding(combo, { source: 'dom', id: 'ArrowRight', ctrlKey: true })).toBe(true);
+    expect(matchesBinding(combo, { source: 'dom', id: 'ArrowRight' })).toBe(false);
+    expect(
+      matchesBinding(combo, {
+        source: 'dom',
+        id: 'ArrowRight',
+        ctrlKey: true,
+        shiftKey: true,
+      }),
+    ).toBe(false);
+  });
+
+  test('keeps legacy bindings without modifier fields matching plain keys only', () => {
+    const legacy = { source: 'dom' as const, id: 'ArrowRight', label: 'Arrow Right' };
+
+    expect(matchesBinding(legacy, { source: 'dom', id: 'ArrowRight' })).toBe(true);
+    expect(matchesBinding(legacy, { source: 'dom', id: 'ArrowRight', ctrlKey: true })).toBe(false);
   });
 });
 

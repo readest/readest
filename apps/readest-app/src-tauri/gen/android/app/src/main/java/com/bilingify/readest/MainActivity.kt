@@ -25,6 +25,17 @@ import com.readest.native_bridge.KeyDownInterceptor
 import com.readest.native_bridge.NativeBridgePlugin
 import com.readest.native_bridge.SelectionMenuSuppressor
 
+internal fun shouldCaptureNativeLearnKey(keyCode: Int): Boolean = when (keyCode) {
+    KeyEvent.KEYCODE_VOLUME_DOWN,
+    KeyEvent.KEYCODE_VOLUME_UP,
+    KeyEvent.KEYCODE_MEDIA_NEXT,
+    KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+    KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+    KeyEvent.KEYCODE_MEDIA_REWIND -> true
+    else -> false
+}
+
 class MainActivity : TauriActivity(), KeyDownInterceptor {
     private var wv: WebView? = null
     private var interceptVolumeKeysEnabled = false
@@ -175,9 +186,10 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
         if (event.action == KeyEvent.ACTION_DOWN) {
             val keyCode = event.keyCode
 
-            // Learn mode: forward and consume every key so the settings UI
-            // can capture whatever the remote sends.
-            if (keyLearnModeEnabled && keyCode != KeyEvent.KEYCODE_BACK) {
+            // Only keys forwarded natively at runtime are learned natively.
+            // Keyboard, D-pad, and remote keys continue to WebView so their
+            // DOM identity and complete modifier chord are preserved.
+            if (keyLearnModeEnabled && shouldCaptureNativeLearnKey(keyCode)) {
                 forwardKeyToWebView(keyNameFor(keyCode), keyCode)
                 return true
             }
