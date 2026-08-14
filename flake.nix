@@ -196,6 +196,9 @@
           };
 
           formatter = pkgs.nixpkgs-fmt;
+          checks = lib.optionalAttrs (!isDarwin) {
+            build = self.packages.${system}.default;
+          };
         });
 
 }

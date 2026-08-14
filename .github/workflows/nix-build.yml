@@ -17,7 +17,6 @@ jobs:
     steps:
     - uses: actions/checkout@v5
     - uses: cachix/install-nix-action@v31
-    - uses: DeterminateSystems/determinate-nix-action@v3
       with:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
     - uses: cachix/cachix-action@v14
@@ -25,25 +24,4 @@ jobs:
         name: readest
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - name: build with nix
-      run: nix build 'github:${{ github.repository }}?ref=${{ github.ref }}' -L  --extra-substituters "https://readest.cachix.org"
-    - name: Fix hash mismatches
-      if: failure() && github.event_name == 'pull_request'
-      id: fix-hashes
-      run: |
-        git stash --include-untracked
-        git fetch --depth=1 origin "$GITHUB_HEAD_REF"
-        git checkout -B "$GITHUB_HEAD_REF" "${{ github.event.pull_request.head.sha }}"
-        
-        determinate-nixd fix hashes --auto-apply
-        
-        if ! git diff --quiet; then
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add --update --ignore-removal .
-          git commit -m "[dependabot] chore(nix): update hashes"
-          git push origin "$GITHUB_HEAD_REF"
-        fi
-        
-        git checkout -
-        git stash pop || true
-      
+      run: nix build 'github:${{ github.repository }}?ref=${{ github.ref }}' -L  --extra-substituters "https://readest.cachix.org"     
