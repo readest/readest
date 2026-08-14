@@ -58,28 +58,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const logout = useCallback(async () => {
-    console.log('Logging out from Biblophile account');
-    const refreshToken = localStorage.getItem('refresh_token');
-    const apiUrl = process.env['NEXT_PUBLIC_BIBLO_API_URL'] || '1/v0';
-
+    console.log('Logging out from Biblophile/Supabase account');
     try {
       await supabase.auth.signOut();
     } catch (e) {
       console.warn('Supabase sign-out failed:', e);
-    }
-
-    try {
-      if (refreshToken) {
-        await fetch(`${apiUrl}/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refreshToken }),
-        });
-      }
-    } catch (e) {
-      console.warn('Logout API call failed:', e);
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('refresh_token');
