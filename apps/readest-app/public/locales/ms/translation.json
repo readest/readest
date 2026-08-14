@@ -2039,5 +2039,7 @@
   "Start of Book": "Permulaan buku",
   "End of Book": "Penghujung buku",
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Folder ini ialah perpustakaan luaran. Nyahtanda untuk berhenti membaca bukunya di tempat asal; import akan datang akan menyalin buku ke perpustakaan.",
-  "More Settings": "Tetapan Lain"
+  "More Settings": "Tetapan Lain",
+  "Right-to-Left Pages": "Halaman Kanan ke Kiri",
+  "Send Document Metadata": "Hantar Metadata Dokumen"
 }

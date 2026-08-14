@@ -2095,5 +2095,7 @@
   "Start of Book": "පොතේ ආරම්භය",
   "End of Book": "පොතේ අවසානය",
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "මෙම ෆෝල්ඩරය බාහිර පුස්තකාලයකි. එහි පොත් ඒවා ඇති තැනින්ම කියවීම නැවැත්වීමට සලකුණ ඉවත් කරන්න; ඉදිරි ආයාත වලදී පොත් පුස්තකාලයට පිටපත් වේ.",
-  "More Settings": "තවත් සැකසුම්"
+  "More Settings": "තවත් සැකසුම්",
+  "Right-to-Left Pages": "දකුණේ සිට වමට පිටු",
+  "Send Document Metadata": "ලේඛන පාරදත්ත යවන්න"
 }

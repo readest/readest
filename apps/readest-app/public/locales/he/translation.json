@@ -2151,5 +2151,7 @@
   "Start of Book": "תחילת הספר",
   "End of Book": "סוף הספר",
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "תיקייה זו היא ספרייה חיצונית. בטלו את הסימון כדי להפסיק לקרוא את הספרים במקומם; בייבואים הבאים הספרים יועתקו לספרייה.",
-  "More Settings": "הגדרות נוספות"
+  "More Settings": "הגדרות נוספות",
+  "Right-to-Left Pages": "עמודים מימין לשמאל",
+  "Send Document Metadata": "שליחת מטא-נתונים של המסמך"
 }

@@ -2207,5 +2207,7 @@
   "Start of Book": "Začetek knjige",
   "End of Book": "Konec knjige",
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ta mapa je zunanja knjižnica. Odkljukajte, da knjig ne berete več z izvirnega mesta; prihodnji uvozi bodo knjige kopirali v knjižnico.",
-  "More Settings": "Več nastavitev"
+  "More Settings": "Več nastavitev",
+  "Right-to-Left Pages": "Strani od desne proti levi",
+  "Send Document Metadata": "Pošlji metapodatke dokumenta"
 }

@@ -2151,5 +2151,7 @@
   "Start of Book": "Începutul cărții",
   "End of Book": "Sfârșitul cărții",
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Acest dosar este o bibliotecă externă. Debifați pentru a nu mai citi cărțile din locația lor originală; importurile viitoare vor copia cărțile în bibliotecă.",
-  "More Settings": "Mai multe setări"
+  "More Settings": "Mai multe setări",
+  "Right-to-Left Pages": "Pagini de la dreapta la stânga",
+  "Send Document Metadata": "Trimite metadatele documentului"
 }

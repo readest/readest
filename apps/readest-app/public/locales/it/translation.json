@@ -2151,5 +2151,7 @@
   "Start of Book": "Inizio del libro",
   "End of Book": "Fine del libro",
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Questa cartella è una libreria esterna. Deseleziona per smettere di leggere i suoi libri nella posizione originale; le prossime importazioni copieranno i libri nella libreria.",
-  "More Settings": "Altre impostazioni"
+  "More Settings": "Altre impostazioni",
+  "Right-to-Left Pages": "Pagine da destra a sinistra",
+  "Send Document Metadata": "Invia metadati del documento"
 }

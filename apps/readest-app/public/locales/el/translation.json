@@ -2095,5 +2095,7 @@
   "Start of Book": "Αρχή βιβλίου",
   "End of Book": "Τέλος βιβλίου",
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Αυτός ο φάκελος είναι εξωτερική βιβλιοθήκη. Καταργήστε την επιλογή για να σταματήσει η επιτόπια ανάγνωση των βιβλίων του· οι μελλοντικές εισαγωγές θα αντιγράφουν τα βιβλία στη βιβλιοθήκη.",
-  "More Settings": "Περισσότερες ρυθμίσεις"
+  "More Settings": "Περισσότερες ρυθμίσεις",
+  "Right-to-Left Pages": "Σελίδες από δεξιά προς τα αριστερά",
+  "Send Document Metadata": "Αποστολή μεταδεδομένων εγγράφου"
 }

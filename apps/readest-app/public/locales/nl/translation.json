@@ -2095,5 +2095,7 @@
   "Start of Book": "Begin van het boek",
   "End of Book": "Einde van het boek",
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Deze map is een externe bibliotheek. Vink uit om de boeken niet langer op hun oorspronkelijke locatie te lezen; toekomstige imports kopiëren de boeken naar de bibliotheek.",
-  "More Settings": "Meer instellingen"
+  "More Settings": "Meer instellingen",
+  "Right-to-Left Pages": "Pagina's van rechts naar links",
+  "Send Document Metadata": "Documentmetadata verzenden"
 }

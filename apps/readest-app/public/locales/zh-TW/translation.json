@@ -2039,5 +2039,7 @@
   "Start of Book": "書籍開頭",
   "End of Book": "書籍結尾",
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "此資料夾是外部書庫。取消勾選後將不再就地讀取其中的書籍；之後的匯入會把書籍複製到書庫中。",
-  "More Settings": "更多設定"
+  "More Settings": "更多設定",
+  "Right-to-Left Pages": "從右到左翻頁",
+  "Send Document Metadata": "傳送文件中繼資料"
 }
