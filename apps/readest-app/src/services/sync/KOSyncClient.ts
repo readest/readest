@@ -4,6 +4,7 @@ import { KOSyncSettings } from '@/types/settings';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { KoSyncProxyPayload } from '@/types/kosync';
 import { isLanAddress } from '@/utils/network';
+import { makeSafeFilename } from '@/utils/misc';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import { getAPIBaseUrl, isTauriAppPlatform } from '../environment';
 
@@ -231,6 +232,22 @@ export class KOSyncClient {
       percentage,
       device: this.config.deviceName,
       device_id: this.config.deviceId,
+      // The optional metadata field KOReader 2026.05+ sends when "Send
+      // document metadata" is enabled (koreader/koreader#15306), also
+      // implemented by CrossPoint 1.5.0+. The official server ignores it;
+      // custom servers may use it to identify the book behind the hash.
+      // `authors` is a single string in KOReader's format (newline-joined
+      // when there are several), which Book.author already is. The extension
+      // is the lowercased format, the same value as EXTS in libs/document,
+      // not imported here so this client stays off the document lib's
+      // foliate-js dependency chain.
+      ...(this.config.sendMetadata && {
+        metadata: {
+          filename: `${makeSafeFilename(book.sourceTitle || book.title)}.${book.format.toLowerCase()}`,
+          title: book.title,
+          authors: book.author,
+        },
+      }),
     };
 
     try {

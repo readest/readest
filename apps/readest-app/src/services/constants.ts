@@ -77,6 +77,7 @@ export const DEFAULT_KOSYNC_SETTINGS = {
   deviceName: '',
   checksumMethod: 'binary',
   strategy: 'prompt',
+  sendMetadata: false,
   enabled: false,
 } as KOSyncSettings;
 
