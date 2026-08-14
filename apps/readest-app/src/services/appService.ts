@@ -18,6 +18,7 @@ import { SchemaType } from '@/services/database/migrate';
 import { Book, BookConfig, BookContent, ImportBookOptions, ViewSettings } from '@/types/book';
 import type { BookNav } from '@/services/nav';
 import { getLibraryFilename, getLibraryBackupFilename } from '@/utils/book';
+import { getDirPath } from '@/utils/path';
 
 import { getOSPlatform } from '@/utils/misc';
 import { isStoragePermissionError, requestStoragePermission } from '@/utils/permission';
@@ -384,6 +385,19 @@ export abstract class BaseAppService implements AppService {
     base: BaseDir,
     onProgress?: ProgressHandler,
   ) {
+    // The native downloader writes with `File::create`, which does not create
+    // parent directories, so a missing bundle dir fails as an opaque
+    // "No such file or directory (os error 2)" (issue #5675). The pull path
+    // only mkdirs when it MINTS a bundle dir for a record it has never seen —
+    // a record whose directory was lost afterwards (custom root dir changed,
+    // external storage cleared), a transfer replayed from the persisted queue,
+    // and Retry All all arrive here with nothing on disk. Book downloads have
+    // always guarded this (see cloudService.downloadBook); do the same here.
+    // `createDir` is recursive, so this is a no-op when the dir exists.
+    const bundleDir = getDirPath(lfp);
+    if (bundleDir) {
+      await this.fs.createDir(bundleDir, base, true);
+    }
     // Resolve the relative `<bundleDir>/<filename>` lfp against the
     // replica's base dir before downloading. Mirrors how upload uses
     // `resolveFilePath(opts.lfp, opts.base)`. Without this, the writer
