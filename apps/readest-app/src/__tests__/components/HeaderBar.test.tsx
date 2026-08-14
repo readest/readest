@@ -123,3 +123,16 @@ describe('HeaderBar sidebar toggle', () => {
     expect(screen.getByText('sidebar-toggler')).toBeTruthy();
   });
 });
+
+describe('HeaderBar font button', () => {
+  it('is gone on every platform, since it opened the last panel rather than Font', () => {
+    useEnvMock.mockReturnValue({ envConfig: {}, appService: { isMobile: false } });
+    setViewport(1440, 900);
+    renderHeader();
+    // queryByRole, not querySelector: jsdom's selector engine fails to match
+    // [aria-label="Font & Layout"] on the `&`, so a CSS-based assertion here
+    // passes whether or not the button is rendered.
+    expect(screen.queryByRole('button', { name: 'Font & Layout' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
+  });
+});
