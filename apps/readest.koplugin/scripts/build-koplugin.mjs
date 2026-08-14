@@ -13,9 +13,9 @@
  *               build-localsend-bins.mjs)
  *
  * Usage:
- *   node apps/readest.koplugin/scripts/build-koplugin.js [--version X.Y.Z]
- *                                                       [--out PATH]
- *                                                       [--keep-meta]
+ *   node apps/readest.koplugin/scripts/build-koplugin.mjs [--version X.Y.Z]
+ *                                                         [--out PATH]
+ *                                                         [--keep-meta]
  *
  * --version    Stamp _meta.lua with this version before zipping. If
  *              omitted, a "dev-<sha>" placeholder is used so the

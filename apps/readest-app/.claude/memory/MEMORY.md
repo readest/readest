@@ -33,6 +33,7 @@
 - [koplugin local_present sweep](koplugin-local-present-sweep-noop.md) UNFIXED; fix = rm readest_library.sqlite3 · [10k library breaks /sync pull](sync-pull-10k-worker-1102.md) MERGED #5364
 - [#5625 loadDocument parsererror fallback](loaddocument-xhtml-parsererror-5625.md) MERGED #5630 + foliate#70; device verify pending
 ## Build, Testing & CI
+- [Kindle SSH deploy+debug recipe](kindle-ssh-deploy-debug-recipe.md) 192.168.2.180:2222 blank-pw askpass; crash.log silent for sync (dbg-level); check device WAN first
 - Stable recipes → [Build & CI Recipes](build-ci-recipes.md) · [Store listings in fastlane](store-listings-fastlane-5573.md) MERGED #5573; readest-promotions NOT live
 - [Turbopack dev stale chunk phantom](turbopack-dev-stale-chunk-phantom.md) rm -rf .next first · [Concurrent sessions share .next/out](concurrent-sessions-share-next-out-dir.md) check `ps` first
 - [format:check gate](verify-format-check-gate.md) · [Worktree rebase submodule drift](worktree-rebase-submodule-drift.md) · [Worktree submodule origin = local gitdir](worktree-submodule-origin-is-local-gitdir.md) use FETCH_HEAD
@@ -101,7 +102,7 @@
 - [#5360 Wayland tap kills native menu](wayland-tap-context-menu-5360.md) MERGED #5467; verify pending
 ## Networking & LAN
 - [LocalSend integration](localsend-integration.md) MERGED #5611; fork `readest/localsend`; mTLS needs `WebConfig{upload:true}`; commands need 3-place ACL
-- [koplugin LocalSend receive](koplugin-localsend-receive.md) branch UNMERGED; Kindle softfp + Kobo hardfloat; ANDROID IMPOSSIBLE; review fixes in flight
+- [koplugin LocalSend receive+send](koplugin-localsend-receive.md) MERGED #5687 (15b446dc7); REARCHITECTED cdylib→static-musl BINARY+subprocess (Kindle glibc crash); crate renamed localsend-ffi→localsend-bin; SEND added; Kindle→Xiaomi device-VERIFIED; register_peer fix = iOS/Android discovery; fork pinned 3cae1825 (SO_REUSEPORT best-effort); i18n done all 33 locales; ANDROID exec still IMPOSSIBLE
 - LocalSend discovery was DEAD 3 ways — MERGED #5626 + fork rev 37219949; rev bumps rebase BOTH patches
 - [#5651 RLM->ZWNJ half-space](persian-rlm-halfspace-zwnj-5651.md) MERGED; U+0600-06FF contains DIGITS — swap between digits flips visual order
 ## Architecture & Patterns

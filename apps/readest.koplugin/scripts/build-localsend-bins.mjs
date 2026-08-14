@@ -9,7 +9,7 @@
  * armv7 binary runs on both ABIs because it is a standalone process spoken
  * to over a local TCP socket, not an FFI library linked into the host.
  *
- *   node build-localsend-bins.mjs                 # every target this host can build
+ *   node build-localsend-bins.mjs                 # armv7 + arm64 (the device targets)
  *   node build-localsend-bins.mjs --only armv7     # Kindle/Kobo/generic armv7 Linux only
  *   node build-localsend-bins.mjs --only arm64     # reMarkable/generic arm64 Linux only
  *   node build-localsend-bins.mjs --only macos     # native arm64 macOS (KOReader emulator)
@@ -146,8 +146,10 @@ function build(name) {
   return true;
 }
 
+const DEFAULT_TARGETS = ['armv7', 'arm64'];
+
 const args = parseArgs(process.argv.slice(2));
-const names = args.only ? [args.only] : Object.keys(TARGETS);
+const names = args.only ? [args.only] : DEFAULT_TARGETS;
 let built = 0;
 for (const name of names) {
   if (build(name)) built++;
