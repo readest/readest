@@ -308,7 +308,7 @@ const ShareLanding = () => {
                       rel='noopener'
                       className='text-primary font-medium hover:underline'
                     >
-                      {_('Download Readest')}
+                      {_('Download Leaf')}
                     </a>
                   </p>
                 </>
