@@ -8,8 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  id-token: read
-  contents: write
+  contents: read
 
 jobs:
   tests:
