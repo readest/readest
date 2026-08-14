@@ -233,6 +233,10 @@ export interface BookLayout {
   hideScrollbar: boolean;
   /* Auto Scroll (#4998) speed as a percentage; 100 = AUTO_SCROLL_BASE_PX_PER_SEC. */
   autoScrollSpeed: number;
+  /* True when a session was still running as the book was closed, so reopening
+     the book resumes it (#5631). Per book: written with the global write
+     skipped, and cleared by any explicit stop. */
+  autoScrollRunning: boolean;
 }
 
 export interface BookStyle {

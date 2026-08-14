@@ -344,6 +344,7 @@ export const DEFAULT_BOOK_LAYOUT: BookLayout = {
   allowScript: false,
   hideScrollbar: false,
   autoScrollSpeed: 100,
+  autoScrollRunning: false,
 };
 
 export const DEFAULT_BOOK_LANGUAGE: BookLanguage = {
