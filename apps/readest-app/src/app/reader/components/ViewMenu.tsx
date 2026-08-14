@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BiMoon, BiSun } from 'react-icons/bi';
+import { PiGear } from 'react-icons/pi';
 import { TbSunMoon } from 'react-icons/tb';
 import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline, MdOutlineSensors } from 'react-icons/md';
 import { MdRemove, MdAdd, MdContrast } from 'react-icons/md';
@@ -518,7 +519,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         }
         onClick={cycleThemeMode}
       />
-      <MenuItem label={_('Settings')} shortcut='Shift+F' onClick={openSettingsDialog} />
+      <MenuItem label={_('Settings')} Icon={PiGear} onClick={openSettingsDialog} />
       {bookData.book?.format === 'PDF' && appService?.supportsCanvasContext2DFilter && (
         <MenuItem
           label={_('Apply Theme Colors to PDF')}
