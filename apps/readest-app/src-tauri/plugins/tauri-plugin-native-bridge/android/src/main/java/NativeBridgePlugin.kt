@@ -28,9 +28,11 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.hardware.input.InputManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Base64
+import android.view.InputDevice
 import android.view.PixelCopy
 import android.webkit.WebView
 import android.content.pm.ActivityInfo
@@ -245,8 +247,40 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         }
     }
 
+    // Chromium's Web Gamepad API starts a native polling thread as soon as a
+    // page observes it (#5693). InputManager is event-driven, so use it only to
+    // tell JS when the browser API should be enabled or disabled.
+    private var inputManager: InputManager? = null
+    private var gamepadConnected = false
+    private val gamepadInputListener = object : InputManager.InputDeviceListener {
+        override fun onInputDeviceAdded(deviceId: Int) = emitGamepadConnection()
+        override fun onInputDeviceRemoved(deviceId: Int) = emitGamepadConnection()
+        override fun onInputDeviceChanged(deviceId: Int) = emitGamepadConnection()
+    }
+
+    private fun hasConnectedGamepad(): Boolean {
+        val inputManager = inputManager ?: return false
+        return inputManager.inputDeviceIds.any { deviceId ->
+            val device = inputManager.getInputDevice(deviceId) ?: return@any false
+            device.supportsSource(InputDevice.SOURCE_GAMEPAD) ||
+                device.supportsSource(InputDevice.SOURCE_JOYSTICK)
+        }
+    }
+
+    private fun emitGamepadConnection(force: Boolean = false) {
+        val connected = hasConnectedGamepad()
+        if (!force && connected == gamepadConnected) return
+        gamepadConnected = connected
+        if (!hasListener(GAMEPAD_CONNECTION_EVENT)) return
+
+        val payload = JSObject().apply { put("connected", connected) }
+        triggerEvent(GAMEPAD_CONNECTION_EVENT, payload)
+    }
+
     override fun onDestroy() {
         stopAmbientLightUpdatesInternal()
+        inputManager?.unregisterInputDeviceListener(gamepadInputListener)
+        inputManager = null
         try {
             multicastLock?.takeIf { it.isHeld }?.release()
         } catch (_: Exception) {
@@ -259,6 +293,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     }
 
     companion object {
+        private const val GAMEPAD_CONNECTION_EVENT = "gamepad-connection"
         private const val REQUEST_MANAGE_STORAGE = 1001
         private const val FOLDER_PICKER_REQUEST_CODE = 1002
         private const val FILE_PICKER_REQUEST_CODE = 1003
@@ -288,6 +323,9 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         instance = this
         webViewRef = webView
         super.load(webView)
+        inputManager = activity.getSystemService(Context.INPUT_SERVICE) as? InputManager
+        gamepadConnected = hasConnectedGamepad()
+        inputManager?.registerInputDeviceListener(gamepadInputListener, null)
         activity.application.registerActivityLifecycleCallbacks(lifecycleCallbacks)
         handleIntent(activity.intent)
         pendingFilePickerData?.let { data ->
@@ -471,6 +509,12 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             for ((event, payload) in toReplay) {
                 triggerEvent(event, payload)
             }
+        }
+        if (hasListener(GAMEPAD_CONNECTION_EVENT)) {
+            // registerListener can race both initial app hydration and device
+            // changes. Re-query instead of trusting the cached value so an
+            // already-connected controller is always reported immediately.
+            emitGamepadConnection(force = true)
         }
     }
 
