@@ -17,6 +17,10 @@ jobs:
       - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: cachix/cachix-action@f495f3ffa2f3810a92e5cc0abc2c5d6a2a07ec82
+        with:
+          name: readest
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: check flake
         run: nix flake check --all-systems -L
   # The Rust format/clippy/test steps only run when src-tauri changed, so the
