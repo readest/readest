@@ -2206,5 +2206,6 @@
   "Not available for this book.": "Ni na voljo za to knjigo.",
   "Start of Book": "Začetek knjige",
   "End of Book": "Konec knjige",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ta mapa je zunanja knjižnica. Odkljukajte, da knjig ne berete več z izvirnega mesta; prihodnji uvozi bodo knjige kopirali v knjižnico."
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ta mapa je zunanja knjižnica. Odkljukajte, da knjig ne berete več z izvirnega mesta; prihodnji uvozi bodo knjige kopirali v knjižnico.",
+  "More Settings": "Več nastavitev"
 }

@@ -2038,5 +2038,6 @@
   "Not available for this book.": "이 책에서는 사용할 수 없습니다.",
   "Start of Book": "책의 처음",
   "End of Book": "책의 끝",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "이 폴더는 외부 라이브러리입니다. 선택을 해제하면 원래 위치에서 책을 읽지 않으며, 이후 가져오기에서는 책이 라이브러리로 복사됩니다."
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "이 폴더는 외부 라이브러리입니다. 선택을 해제하면 원래 위치에서 책을 읽지 않으며, 이후 가져오기에서는 책이 라이브러리로 복사됩니다.",
+  "More Settings": "추가 설정"
 }

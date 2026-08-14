@@ -2150,5 +2150,6 @@
   "Not available for this book.": "Non disponible pour ce livre.",
   "Start of Book": "Début du livre",
   "End of Book": "Fin du livre",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ce dossier est une bibliothèque externe. Décochez pour cesser de lire ses livres sur place ; les prochaines importations copieront les livres dans la bibliothèque."
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ce dossier est une bibliothèque externe. Décochez pour cesser de lire ses livres sur place ; les prochaines importations copieront les livres dans la bibliothèque.",
+  "More Settings": "Plus de paramètres"
 }

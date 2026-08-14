@@ -2094,5 +2094,6 @@
   "Not available for this book.": "Bu kitap için kullanılamıyor.",
   "Start of Book": "Kitabın başı",
   "End of Book": "Kitabın sonu",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Bu klasör harici bir kitaplıktır. Kitaplarını bulundukları yerden okumayı durdurmak için işareti kaldırın; sonraki içe aktarmalarda kitaplar kitaplığa kopyalanır."
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Bu klasör harici bir kitaplıktır. Kitaplarını bulundukları yerden okumayı durdurmak için işareti kaldırın; sonraki içe aktarmalarda kitaplar kitaplığa kopyalanır.",
+  "More Settings": "Diğer ayarlar"
 }

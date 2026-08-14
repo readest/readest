@@ -2206,5 +2206,6 @@
   "Not available for this book.": "Недоступно для цієї книги.",
   "Start of Book": "Початок книги",
   "End of Book": "Кінець книги",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ця тека — зовнішня бібліотека. Зніміть позначку, щоб припинити читати її книги на місці; під час наступних імпортів книги копіюватимуться в бібліотеку."
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ця тека — зовнішня бібліотека. Зніміть позначку, щоб припинити читати її книги на місці; під час наступних імпортів книги копіюватимуться в бібліотеку.",
+  "More Settings": "Інші налаштування"
 }

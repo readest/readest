@@ -2094,5 +2094,6 @@
   "Not available for this book.": "Inte tillgängligt för den här boken.",
   "Start of Book": "Bokens början",
   "End of Book": "Bokens slut",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Den här mappen är ett externt bibliotek. Avmarkera för att sluta läsa dess böcker på plats; framtida importer kopierar böckerna till biblioteket."
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Den här mappen är ett externt bibliotek. Avmarkera för att sluta läsa dess böcker på plats; framtida importer kopierar böckerna till biblioteket.",
+  "More Settings": "Fler inställningar"
 }

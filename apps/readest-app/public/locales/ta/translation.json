@@ -2094,5 +2094,6 @@
   "Not available for this book.": "இந்தப் புத்தகத்திற்குக் கிடைக்கவில்லை.",
   "Start of Book": "புத்தகத்தின் தொடக்கம்",
   "End of Book": "புத்தகத்தின் முடிவு",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "இந்தக் கோப்புறை ஒரு வெளிப்புற நூலகம். அதன் புத்தகங்களை இருக்கும் இடத்திலிருந்தே படிப்பதை நிறுத்த குறியை நீக்கவும்; இனிவரும் இறக்குமதிகளில் புத்தகங்கள் நூலகத்திற்கு நகலெடுக்கப்படும்."
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "இந்தக் கோப்புறை ஒரு வெளிப்புற நூலகம். அதன் புத்தகங்களை இருக்கும் இடத்திலிருந்தே படிப்பதை நிறுத்த குறியை நீக்கவும்; இனிவரும் இறக்குமதிகளில் புத்தகங்கள் நூலகத்திற்கு நகலெடுக்கப்படும்.",
+  "More Settings": "மேலும் அமைப்புகள்"
 }

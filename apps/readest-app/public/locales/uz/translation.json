@@ -2094,5 +2094,6 @@
   "Not available for this book.": "Bu kitob uchun mavjud emas.",
   "Start of Book": "Kitob boshi",
   "End of Book": "Kitob oxiri",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Bu jild tashqi kutubxona. Kitoblarini joyida o‘qishni to‘xtatish uchun belgini olib tashlang; keyingi importlarda kitoblar kutubxonaga nusxalanadi."
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Bu jild tashqi kutubxona. Kitoblarini joyida o‘qishni to‘xtatish uchun belgini olib tashlang; keyingi importlarda kitoblar kutubxonaga nusxalanadi.",
+  "More Settings": "Boshqa sozlamalar"
 }

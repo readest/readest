@@ -2318,5 +2318,6 @@
   "Not available for this book.": "غير متاح لهذا الكتاب.",
   "Start of Book": "بداية الكتاب",
   "End of Book": "نهاية الكتاب",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "هذا المجلد مكتبة خارجية. ألغِ التحديد للتوقف عن قراءة كتبه من مكانها؛ وستُنسخ الكتب إلى المكتبة في عمليات الاستيراد القادمة."
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "هذا المجلد مكتبة خارجية. ألغِ التحديد للتوقف عن قراءة كتبه من مكانها؛ وستُنسخ الكتب إلى المكتبة في عمليات الاستيراد القادمة.",
+  "More Settings": "مزيد من الإعدادات"
 }

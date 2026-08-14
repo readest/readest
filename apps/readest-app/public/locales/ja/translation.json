@@ -2038,5 +2038,6 @@
   "Not available for this book.": "この本では利用できません。",
   "Start of Book": "本の先頭",
   "End of Book": "本の末尾",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "このフォルダは外部ライブラリです。チェックを外すと元の場所から直接読み込まなくなり、以降のインポートでは本がライブラリにコピーされます。"
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "このフォルダは外部ライブラリです。チェックを外すと元の場所から直接読み込まなくなり、以降のインポートでは本がライブラリにコピーされます。",
+  "More Settings": "その他の設定"
 }

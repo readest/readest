@@ -2206,5 +2206,6 @@
   "Not available for this book.": "Недоступно для этой книги.",
   "Start of Book": "Начало книги",
   "End of Book": "Конец книги",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Эта папка — внешняя библиотека. Снимите флажок, чтобы перестать читать её книги на месте; при последующих импортах книги будут копироваться в библиотеку."
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Эта папка — внешняя библиотека. Снимите флажок, чтобы перестать читать её книги на месте; при последующих импортах книги будут копироваться в библиотеку.",
+  "More Settings": "Другие настройки"
 }

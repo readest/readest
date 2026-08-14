@@ -2094,5 +2094,6 @@
   "Not available for this book.": "Ehhez a könyvhöz nem érhető el.",
   "Start of Book": "Könyv eleje",
   "End of Book": "Könyv vége",
-  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ez a mappa külső könyvtár. Törölje a jelölést, hogy a könyveit ne az eredeti helyükről olvassa; a későbbi importálások a könyveket a könyvtárba másolják."
+  "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ez a mappa külső könyvtár. Törölje a jelölést, hogy a könyveit ne az eredeti helyükről olvassa; a későbbi importálások a könyveket a könyvtárba másolják.",
+  "More Settings": "További beállítások"
 }
