@@ -235,8 +235,6 @@ describe('Paginator stabilization (browser)', () => {
       paginator.render?.();
       // render() dispatches stabilized in a RAF
       await stabilizedFromRender;
-      // If we get here, stabilized was emitted
-      expect(true).toBe(true);
     });
 
     it('should preserve primaryIndex across re-renders', async () => {

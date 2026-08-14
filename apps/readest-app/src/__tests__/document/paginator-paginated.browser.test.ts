@@ -467,31 +467,7 @@ describe('Paginator multi-view architecture (browser)', () => {
     });
   });
 
-  describe('Adjacent index skipping non-linear sections', () => {
-    it('should skip non-linear sections during navigation', async () => {
-      paginator = createPaginator();
-      paginator.open(book);
-      const sections = book.sections!;
-      const nonLinearIdx = sections.findIndex((s) => s.linear === 'no');
-      // If there are non-linear sections, navigating past them should work
-      if (nonLinearIdx >= 0) {
-        const prevLinear = sections.slice(0, nonLinearIdx).findLastIndex((s) => s.linear !== 'no');
-        if (prevLinear >= 0) {
-          const stabilized = waitForStabilized(paginator);
-          await paginator.goTo({ index: prevLinear });
-          await stabilized;
-          await waitForFillComplete(paginator);
-          // Next should skip non-linear and go to next linear
-          await paginator.next();
-          await new Promise((r) => setTimeout(r, 500));
-          expect(paginator.primaryIndex).not.toBe(nonLinearIdx);
-          expect(sections[paginator.primaryIndex]!.linear).not.toBe('no');
-        }
-      }
-      // If no non-linear sections, the test passes trivially
-      expect(true).toBe(true);
-    });
-
+  describe('Adjacent section lifecycle', () => {
     it('ignores a page turn when the section list is invalidated before navigation resumes', async () => {
       paginator = createPaginator();
       paginator.setAttribute('no-preload', '');

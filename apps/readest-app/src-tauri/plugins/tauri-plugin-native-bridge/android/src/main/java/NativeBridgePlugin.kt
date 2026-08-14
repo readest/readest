@@ -32,7 +32,6 @@ import android.hardware.input.InputManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Base64
-import android.view.InputDevice
 import android.view.PixelCopy
 import android.webkit.WebView
 import android.content.pm.ActivityInfo
@@ -260,10 +259,8 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
 
     private fun hasConnectedGamepad(): Boolean {
         val inputManager = inputManager ?: return false
-        return inputManager.inputDeviceIds.any { deviceId ->
-            val device = inputManager.getInputDevice(deviceId) ?: return@any false
-            device.supportsSource(InputDevice.SOURCE_GAMEPAD) ||
-                device.supportsSource(InputDevice.SOURCE_JOYSTICK)
+        return hasGamepadDevice(inputManager.inputDeviceIds) { deviceId ->
+            inputManager.getInputDevice(deviceId)?.sources
         }
     }
 
