@@ -100,7 +100,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
     setIsDropdownOpen?.(false);
   };
 
-  const openFontLayoutMenu = () => {
+  const openSettingsDialog = () => {
     setIsDropdownOpen?.(false);
     setSettingsDialogBookKey(bookKey);
     setSettingsDialogOpen(true);
@@ -430,7 +430,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
         </>
       )}
 
-      <MenuItem label={_('Font & Layout')} shortcut='Shift+F' onClick={openFontLayoutMenu} />
+      <MenuItem label={_('Settings')} shortcut='Shift+F' onClick={openSettingsDialog} />
 
       {!bookData.isFixedLayout && (
         <MenuItem
