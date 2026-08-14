@@ -15,7 +15,6 @@
 , glib-networking
 , autoPatchelfHook
 , lib
-, nix-update-script
 , moreutils
 , jq
 , gst_all_1
@@ -89,7 +88,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     jq '.version = "${finalAttrs.version}"' package.json | sponge package.json
 
     mkdir -p src-tauri/plugins/tauri-plugin-turso/dist-js
-    cp -r ${finalAttrs.passthru.tursoPlugin} src-tauri/plugins/tauri-plugin-turso/dist-js
+    cp -r ${finalAttrs.tursoPlugin} src-tauri/plugins/tauri-plugin-turso/dist-js
     jq '.scripts.build = "true"' \
       src-tauri/plugins/tauri-plugin-turso/package.json | \
       sponge src-tauri/plugins/tauri-plugin-turso/package.json
@@ -134,11 +133,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     pnpm --filter @readest/readest-app build
   '';
 
-  passthru.updateScript = nix-update-script { };
-
-
-
-  passthru.tursoPluginDeps = fetchPnpmDeps {
+  tursoPluginDeps = fetchPnpmDeps {
     pname = "tauri-plugin-turso";
     version = finalAttrs.version;
     src = "${finalAttrs.src}/apps/readest-app/src-tauri/plugins/tauri-plugin-turso";
@@ -147,7 +142,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     hash = "sha256-quVUYsT3u4UBhuJ75QQ4SEuW8MhGQ0vGhtwtUj/eKHs=";
   };
 
-  passthru.tursoPlugin = stdenv.mkDerivation {
+  tursoPlugin = stdenv.mkDerivation {
     pname = "tauri-plugin-turso";
     version = finalAttrs.version;
     src = "${finalAttrs.src}/apps/readest-app/src-tauri/plugins/tauri-plugin-turso";
@@ -157,7 +152,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
       pnpmConfigHook
       nodejs
     ];
-    pnpmDeps = finalAttrs.passthru.tursoPluginDeps;
+    pnpmDeps = finalAttrs.tursoPluginDeps;
     buildPhase = ''
       pnpm build
     '';
