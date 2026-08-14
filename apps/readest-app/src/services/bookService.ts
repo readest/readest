@@ -540,6 +540,7 @@ export async function importBook(
     if (existingBook) {
       if (!transient) {
         existingBook.deletedAt = null;
+        existingBook.fileSyncDeletionRequestedAt = null;
       }
       existingBook.createdAt = Date.now();
       existingBook.updatedAt = Date.now();

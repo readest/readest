@@ -115,6 +115,12 @@ export interface Book {
   createdAt: number;
   updatedAt: number;
   deletedAt?: number | null;
+  /**
+   * Positive authorization to delete this book's directory from third-party
+   * file-sync providers. Must equal the current `deletedAt` tombstone; a plain
+   * tombstone hides the library row but preserves provider bytes (#5695).
+   */
+  fileSyncDeletionRequestedAt?: number | null;
 
   uploadedAt?: number | null;
   downloadedAt?: number | null;

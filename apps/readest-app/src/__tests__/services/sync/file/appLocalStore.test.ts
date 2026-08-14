@@ -12,7 +12,7 @@ import { createAppLocalStore } from '@/services/sync/file/appLocalStore';
  * runs while the library store hasn't loaded yet (the app launched straight
  * into the reader / settings, never mounting the Library view), the engine's
  * addBookToLibrary / updateBookMetadata used to merge against the EMPTY
- * in-memory library and persist a downloaded book (or a metadata update) as
+ * in-memory library and persist a synced book (or a metadata update) as
  * the *entire* library, wiping everything already on disk. The store bridge
  * now hydrates from disk first.
  */
@@ -63,8 +63,20 @@ describe('createAppLocalStore — library hydration (data-loss guard)', () => {
     expect(appService.loadLibraryBooks).toHaveBeenCalledTimes(1);
     expect(savedLibrary).not.toBeNull();
     const hashes = savedLibrary!.map((b) => b.hash).sort();
-    // The downloaded book is appended; a, b must survive (no clobber to [c]).
+    // The synced book is appended; a, b must survive (no clobber to [c]).
     expect(hashes).toEqual(['a', 'b', 'c']);
+  });
+
+  test('addBookToLibrary preserves a metadata-only cloud-shelf row (#5009)', async () => {
+    await makeStore().addBookToLibrary(
+      makeBook('c', { uploadedAt: 900, downloadedAt: null, coverDownloadedAt: 800 }),
+    );
+
+    expect(savedLibrary!.find((book) => book.hash === 'c')).toMatchObject({
+      uploadedAt: 900,
+      downloadedAt: null,
+      coverDownloadedAt: 800,
+    });
   });
 
   test('updateBookMetadata does not wipe the library when the store is unloaded', async () => {
@@ -84,6 +96,67 @@ describe('createAppLocalStore — library hydration (data-loss guard)', () => {
 
     expect(appService.loadLibraryBooks).not.toHaveBeenCalled();
     expect(savedLibrary!.map((b) => b.hash).sort()).toEqual(['a', 'b', 'c']);
+  });
+
+  test('serializes concurrent cloud-shelf additions so neither row is overwritten', async () => {
+    useLibraryStore.getState().setLibrary([makeBook('a'), makeBook('b')]);
+    const originalSave = appService.saveLibraryBooks;
+    vi.mocked(appService.saveLibraryBooks).mockImplementation(async (books: Book[]) => {
+      // Force the first add to finish last. Without a serialized commit, both
+      // calls snapshot [a, b] and the delayed [a, b, c] write drops d.
+      if (books.some((book) => book.hash === 'c') && !books.some((book) => book.hash === 'd')) {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      savedLibrary = books;
+    });
+
+    const store = makeStore();
+    await Promise.all([
+      store.addBookToLibrary(makeBook('c')),
+      store.addBookToLibrary(makeBook('d')),
+    ]);
+
+    expect(savedLibrary!.map((book) => book.hash).sort()).toEqual(['a', 'b', 'c', 'd']);
+    expect(
+      useLibraryStore
+        .getState()
+        .library.map((book) => book.hash)
+        .sort(),
+    ).toEqual(['a', 'b', 'c', 'd']);
+    appService.saveLibraryBooks = originalSave;
+  });
+
+  test('replaces an older tombstone when a newer live cloud row is discovered', async () => {
+    useLibraryStore.getState().setLibrary([
+      makeBook('a', {
+        deletedAt: 100,
+        fileSyncDeletionRequestedAt: 100,
+      }),
+      makeBook('b'),
+    ]);
+
+    await makeStore().addBookToLibrary(
+      makeBook('a', {
+        updatedAt: 200,
+        deletedAt: null,
+        fileSyncDeletionRequestedAt: null,
+        downloadedAt: null,
+        uploadedAt: 200,
+      }),
+    );
+
+    expect(savedLibrary!.find((book) => book.hash === 'a')).toMatchObject({
+      deletedAt: null,
+      fileSyncDeletionRequestedAt: null,
+      downloadedAt: null,
+      uploadedAt: 200,
+    });
+    expect(
+      useLibraryStore
+        .getState()
+        .visibleLibrary.map((book) => book.hash)
+        .sort(),
+    ).toEqual(['a', 'b']);
   });
 
   test('deleteBookLocally removes the managed copy and persists the tombstone (#4860)', async () => {

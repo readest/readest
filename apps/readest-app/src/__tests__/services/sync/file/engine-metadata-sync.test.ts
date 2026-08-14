@@ -293,7 +293,7 @@ describe('FileSyncEngine soft-delete propagation', () => {
     const provider = makeProvider(null, null, capture);
     // The GC sweep is separate, so the deleted book's hash dir + file still
     // exist remotely. Passing the deleted book in (it stays in allBooksMap)
-    // must keep the discovery pass from re-adding it as a download candidate.
+    // must keep the discovery pass from re-adding it as a cloud-shelf candidate.
     provider.list = vi.fn(async (path: string) => {
       if (path.endsWith('/books'))
         return [{ name: 'h1', path: '/Readest/books/h1', isDirectory: true }];
@@ -312,7 +312,7 @@ describe('FileSyncEngine soft-delete propagation', () => {
     });
 
     expect(addBookToLibrary).not.toHaveBeenCalled();
-    expect(result.booksDownloaded).toBe(0);
+    expect(result.booksAdded).toBe(0);
     expect(capture.index!.books.find((b) => b.hash === 'h1')!.deletedAt).toBe(500);
   });
 });

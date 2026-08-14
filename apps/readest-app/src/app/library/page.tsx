@@ -1134,9 +1134,20 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
         if (deleteAction === 'local' || deleteAction === 'both' || deleteAction === 'purge') {
           await appService?.deleteBook(book, deleteAction === 'purge' ? 'purge' : 'local');
           if (deleteAction === 'both' || deleteAction === 'purge') {
-            book.deletedAt = Date.now();
+            const deletedAt = Date.now();
+            book.deletedAt = deletedAt;
+            // A library tombstone alone is not permission to destroy bytes on
+            // a third-party file mirror. Bind the explicit cloud-and-device
+            // intent to this exact tombstone so the file-sync engine can
+            // distinguish it from a local-only or indirectly-created delete
+            // (#5695, the third recurrence of #5084).
+            book.fileSyncDeletionRequestedAt = deletedAt;
             book.downloadedAt = null;
             book.coverDownloadedAt = null;
+          } else {
+            // "Remove from Device Only" must never leave stale authorization
+            // from an older delete/re-import cycle on the live row.
+            book.fileSyncDeletionRequestedAt = null;
           }
           await updateBook(envConfig, book);
           if (ttsSessionManager.getSessionByHash(book.hash)) {

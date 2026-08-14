@@ -158,5 +158,8 @@ export const stripDeviceLocalFields = (book: Book): Book => {
   for (const field of DEVICE_LOCAL_BOOK_FIELDS) {
     delete copy[field];
   }
+  // Delete authorization belongs to one tombstone only. Never publish or
+  // adopt it on a live row after a re-import/revival.
+  if (!copy.deletedAt) delete copy.fileSyncDeletionRequestedAt;
   return copy;
 };

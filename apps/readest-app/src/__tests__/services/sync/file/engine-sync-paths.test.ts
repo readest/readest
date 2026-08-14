@@ -9,9 +9,9 @@ import type { RemoteBookConfig, RemoteLibraryIndex } from '@/services/sync/file/
 /**
  * Coverage for the engine paths the behavior-preservation gate
  * (engine-metadata-sync) does not execute: streaming upload + HEAD
- * short-circuit, remote-only discovery -> streaming download -> addBook, and
- * the receive (pull-only) strategy. These carry the OOM-avoidance and
- * idempotency value of the original WebDAV sync.
+ * short-circuit, remote-only discovery -> metadata-only shelf addition,
+ * explicit streaming download, and the receive (pull-only) strategy. These
+ * carry the OOM-avoidance and idempotency value of the original WebDAV sync.
  */
 
 const makeBook = (hash: string, overrides: Partial<Book> = {}): Book => ({
@@ -110,10 +110,25 @@ describe('FileSyncEngine.pushBookFile — streaming upload', () => {
   });
 });
 
-describe('FileSyncEngine.syncLibrary — remote discovery + streaming download', () => {
-  test('discovers a remote-only book, streams it down, and adds it to the library', async () => {
+describe('FileSyncEngine.syncLibrary — remote discovery + cloud shelf (#5009)', () => {
+  test('adds a remote-only book as metadata without downloading its file', async () => {
     const downloadStream = vi.fn(async () => true);
+    const readBinary = vi.fn(async (path: string) =>
+      path.endsWith('/cover.png') ? new ArrayBuffer(3) : null,
+    );
+    const remoteConfig: RemoteBookConfig = {
+      schemaVersion: 1,
+      bookHash: 'h2',
+      config: { progress: [2, 10], updatedAt: 20 },
+      booknotes: [],
+      writerDeviceId: 'peer',
+      writerVersion: 'readest-webdav-1',
+      updatedAt: 20,
+    };
     const provider = fakeProvider({
+      readText: async (path: string) =>
+        path.endsWith('/config.json') ? JSON.stringify(remoteConfig) : null,
+      readBinary,
       list: async (path: string) =>
         path.endsWith('/books')
           ? [{ name: 'h2', path: '/Readest/books/h2', isDirectory: true }]
@@ -129,7 +144,14 @@ describe('FileSyncEngine.syncLibrary — remote discovery + streaming download',
     });
     const addBookToLibrary = vi.fn<(book: Book) => Promise<void>>(async () => {});
     const prepareLocalBookPath = vi.fn(async () => '/local/h2/Remote.epub');
-    const store = fakeStore({ addBookToLibrary, prepareLocalBookPath });
+    const saveBookCover = vi.fn(async () => {});
+    const saveBookConfig = vi.fn(async () => {});
+    const store = fakeStore({
+      addBookToLibrary,
+      prepareLocalBookPath,
+      saveBookCover,
+      saveBookConfig,
+    });
 
     const res = await new FileSyncEngine(provider, store).syncLibrary([], {
       strategy: 'silent',
@@ -137,13 +159,67 @@ describe('FileSyncEngine.syncLibrary — remote discovery + streaming download',
       deviceId: 'd',
     });
 
-    expect(downloadStream).toHaveBeenCalledWith(
-      '/Readest/books/h2/Remote.epub',
-      '/local/h2/Remote.epub',
+    expect(downloadStream).not.toHaveBeenCalled();
+    expect(prepareLocalBookPath).not.toHaveBeenCalled();
+    expect(readBinary).toHaveBeenCalledTimes(1);
+    expect(readBinary).toHaveBeenCalledWith('/Readest/books/h2/cover.png');
+    expect(saveBookCover).toHaveBeenCalledTimes(1);
+    expect(saveBookConfig).toHaveBeenCalledWith(
+      expect.objectContaining({ hash: 'h2' }),
+      expect.objectContaining({ progress: [2, 10] }),
     );
     expect(addBookToLibrary).toHaveBeenCalledTimes(1);
-    expect(addBookToLibrary.mock.calls[0]![0].hash).toBe('h2');
-    expect(res.booksDownloaded).toBe(1);
+    expect(addBookToLibrary.mock.calls[0]![0]).toMatchObject({
+      hash: 'h2',
+      downloadedAt: null,
+    });
+    expect(addBookToLibrary.mock.calls[0]![0].uploadedAt).toEqual(expect.any(Number));
+    expect(addBookToLibrary.mock.calls[0]![0].coverDownloadedAt).toEqual(expect.any(Number));
+    expect(res.configsDownloaded).toBe(1);
+    expect(res.booksAdded).toBe(1);
+  });
+
+  test('still adds the cloud-shelf row when optional cover and config pulls fail', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const provider = fakeProvider({
+      readText: async (path: string) => {
+        if (path.endsWith('/config.json')) throw new Error('config unavailable');
+        return null;
+      },
+      readBinary: async () => {
+        throw new Error('cover unavailable');
+      },
+      list: async (path: string) =>
+        path.endsWith('/books')
+          ? [{ name: 'h2', path: '/Readest/books/h2', isDirectory: true }]
+          : [
+              {
+                name: 'Remote.epub',
+                path: '/Readest/books/h2/Remote.epub',
+                isDirectory: false,
+                size: 50,
+              },
+            ],
+    });
+    const addBookToLibrary = vi.fn<(book: Book) => Promise<void>>(async () => {});
+
+    const res = await new FileSyncEngine(provider, fakeStore({ addBookToLibrary })).syncLibrary(
+      [],
+      {
+        strategy: 'silent',
+        syncBooks: false,
+        deviceId: 'd',
+      },
+    );
+
+    expect(addBookToLibrary).toHaveBeenCalledWith(
+      expect.objectContaining({ hash: 'h2', uploadedAt: expect.any(Number), downloadedAt: null }),
+    );
+    expect(res.booksAdded).toBe(1);
+    expect(res.failures).toBe(0);
+    expect(warn).toHaveBeenCalledWith('file sync: cover download failed', 'h2', expect.any(Error));
+    expect(warn).toHaveBeenCalledWith('file sync: config download failed', 'h2', expect.any(Error));
+    warn.mockRestore();
   });
 });
 
@@ -736,7 +812,7 @@ describe('FileSyncEngine.syncLibrary — empty-dir record', () => {
     });
     const res = await new FileSyncEngine(provider, fakeStore()).syncLibrary([], opts);
 
-    expect(res.booksDownloaded).toBe(0);
+    expect(res.booksAdded).toBe(0);
     const idx = JSON.parse(
       captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
     ) as RemoteLibraryIndex;
@@ -785,7 +861,7 @@ describe('FileSyncEngine.syncLibrary — empty-dir record', () => {
       opts,
     );
 
-    expect(res.booksDownloaded).toBe(1);
+    expect(res.booksAdded).toBe(1);
     const idx = JSON.parse(
       captured.writes.find((w) => w.path.endsWith('library.json'))!.body,
     ) as RemoteLibraryIndex;

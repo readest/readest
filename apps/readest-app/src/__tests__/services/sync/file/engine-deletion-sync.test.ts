@@ -157,7 +157,7 @@ describe('FileSyncEngine.syncLibrary — deletion propagation (#4860)', () => {
     expect(res.booksDeleted).toBe(0);
   });
 
-  test('GCs the remote hash directory of a locally-deleted book', async () => {
+  test('GCs the remote hash directory when the tombstone explicitly authorizes file deletion', async () => {
     const captured: Captured = { writes: [], deletedDirs: [] };
     const provider = fakeProvider({
       readText: async () => null, // fresh remote index
@@ -169,12 +169,111 @@ describe('FileSyncEngine.syncLibrary — deletion propagation (#4860)', () => {
     });
     const store = fakeStore();
 
-    await new FileSyncEngine(provider, store).syncLibrary(
+    const deleted = makeBook('h1', {
+      updatedAt: 100,
+      deletedAt: 100,
+      fileSyncDeletionRequestedAt: 100,
+    });
+
+    await new FileSyncEngine(provider, store).syncLibrary([deleted], {
+      strategy: 'silent',
+      syncBooks: true,
+      deviceId: 'd',
+    });
+
+    expect(captured.deletedDirs).toContain('/Readest/books/h1');
+    const pushed = JSON.parse(libraryWrite(captured)!.body) as RemoteLibraryIndex;
+    expect(pushed.books.find((book) => book.hash === 'h1')?.fileSyncDeletionRequestedAt).toBe(100);
+  });
+
+  test('does not GC provider bytes for an ambiguous tombstone without explicit file-delete intent (#5695)', async () => {
+    const captured: Captured = { writes: [], deletedDirs: [] };
+    const provider = fakeProvider({
+      readText: async () => null,
+      list: async (path: string) =>
+        path.endsWith('/books')
+          ? [{ name: 'h1', path: '/Readest/books/h1', isDirectory: true }]
+          : [],
+      captured,
+    });
+
+    await new FileSyncEngine(provider, fakeStore()).syncLibrary(
       [makeBook('h1', { updatedAt: 100, deletedAt: 100 })],
       { strategy: 'silent', syncBooks: true, deviceId: 'd' },
     );
 
-    expect(captured.deletedDirs).toContain('/Readest/books/h1');
+    // A library tombstone still hides the row, but it is not sufficient proof
+    // that the user chose "Remove from Cloud & Device". Preserving bytes is the
+    // safe default for older or accidentally-tombstoned rows.
+    expect(captured.deletedDirs).toEqual([]);
+  });
+
+  test('does not GC provider bytes when delete authorization belongs to an older tombstone', async () => {
+    const captured: Captured = { writes: [], deletedDirs: [] };
+    const provider = fakeProvider({
+      readText: async () => null,
+      list: async (path: string) =>
+        path.endsWith('/books')
+          ? [{ name: 'h1', path: '/Readest/books/h1', isDirectory: true }]
+          : [],
+      captured,
+    });
+
+    await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      [
+        makeBook('h1', {
+          updatedAt: 200,
+          deletedAt: 200,
+          fileSyncDeletionRequestedAt: 100,
+        }),
+      ],
+      { strategy: 'silent', syncBooks: true, deviceId: 'd' },
+    );
+
+    expect(captured.deletedDirs).toEqual([]);
+  });
+
+  test('a newer live remote row revives an older tombstone instead of deleting the new provider copy', async () => {
+    const captured: Captured = { writes: [], deletedDirs: [] };
+    const remoteLive = makeBook('h1', { updatedAt: 300, deletedAt: null });
+    const provider = fakeProvider({
+      readText: async (path: string) =>
+        path.endsWith('library.json') ? JSON.stringify(makeIndex([remoteLive])) : null,
+      list: async (path: string) =>
+        path.endsWith('/books')
+          ? [{ name: 'h1', path: '/Readest/books/h1', isDirectory: true }]
+          : [
+              {
+                name: 'Revived.epub',
+                path: '/Readest/books/h1/Revived.epub',
+                isDirectory: false,
+                size: 50,
+              },
+            ],
+      captured,
+    });
+    const addBookToLibrary = vi.fn<(book: Book) => Promise<void>>(async () => {});
+
+    await new FileSyncEngine(provider, fakeStore({ addBookToLibrary })).syncLibrary(
+      [
+        makeBook('h1', {
+          updatedAt: 100,
+          deletedAt: 100,
+          fileSyncDeletionRequestedAt: 100,
+        }),
+      ],
+      { strategy: 'silent', syncBooks: true, deviceId: 'd' },
+    );
+
+    expect(captured.deletedDirs).toEqual([]);
+    expect(addBookToLibrary).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hash: 'h1',
+        deletedAt: null,
+        downloadedAt: null,
+      }),
+    );
+    expect(addBookToLibrary.mock.calls[0]![0].fileSyncDeletionRequestedAt).toBeFalsy();
   });
 
   test('does not GC a hash dir that is no longer on the server', async () => {

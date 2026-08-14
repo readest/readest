@@ -88,22 +88,35 @@ export const useBookTransferActions = (
       const settingsNow = useSettingsStore.getState().settings;
       const backends = getActiveFileSyncBackends(settingsNow);
       const readest = isReadestCloudEnabled(settingsNow);
-      // Prefer Readest Cloud when the book is actually in its storage — that is
-      // the resumable, queue-backed path. Otherwise fetch it from a file mirror.
-      const useFileBackend = backends.length > 0 && !(readest && book.uploadedAt);
-      if (useFileBackend) {
+      // `uploadedAt` proves that some cloud copy exists, but it does not encode
+      // provenance: the file-sync engine stamps it for WebDAV/Drive/S3/etc. too.
+      // Try the enabled file mirrors first so a metadata-only shelf row is not
+      // misrouted into Readest Cloud. When none has the file, fall through to
+      // the native, resumable path if that backend is also enabled (#5009).
+      if (backends.length > 0) {
         const ok = await runFileBookDownload(envConfig, book);
-        if (ok) await updateBook(envConfig, book);
-        if (!silent) {
-          eventDispatcher.dispatch('toast', {
-            type: ok ? 'info' : 'error',
-            timeout: 2000,
-            message: ok
-              ? _('Book downloaded: {{title}}', { title: book.title })
-              : _('Failed to download book: {{title}}', { title: book.title }),
-          });
+        if (ok) {
+          await updateBook(envConfig, book);
+          if (!silent) {
+            eventDispatcher.dispatch('toast', {
+              type: 'info',
+              timeout: 2000,
+              message: _('Book downloaded: {{title}}', { title: book.title }),
+            });
+          }
+          return true;
         }
-        return ok;
+
+        if (!readest || !book.uploadedAt) {
+          if (!silent) {
+            eventDispatcher.dispatch('toast', {
+              type: 'error',
+              timeout: 2000,
+              message: _('Failed to download book: {{title}}', { title: book.title }),
+            });
+          }
+          return false;
+        }
       }
 
       if (redownload || !queued) {

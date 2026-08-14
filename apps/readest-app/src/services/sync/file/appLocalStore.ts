@@ -32,6 +32,24 @@ const resolveLocalSource = async (
   return null;
 };
 
+// Cloud-shelf discovery prepares covers/configs concurrently, but library
+// persistence is a read-modify-write transaction. Serialize commits per app
+// service so two providers or two remote books cannot save L+A / L+B over each
+// other. Weak keys avoid retaining an app instance after its environment dies.
+const libraryAddQueues = new WeakMap<AppService, Promise<void>>();
+const serializeLibraryAdd = async (
+  appService: AppService,
+  work: () => Promise<void>,
+): Promise<void> => {
+  const queue = libraryAddQueues.get(appService) ?? Promise.resolve();
+  const run = queue.then(work, work);
+  libraryAddQueues.set(
+    appService,
+    run.catch(() => {}),
+  );
+  await run;
+};
+
 /**
  * The app-backed {@link LocalStore} used by every file-sync consumer (the
  * reader hook and the library "Sync now" form). Consolidating the buffered +
@@ -111,25 +129,46 @@ export const createAppLocalStore = ({
       book.coverImageUrl = null;
     }
     book.syncedAt = Date.now();
-    book.downloadedAt = Date.now();
+    // The caller owns file availability. Library discovery deliberately adds
+    // cloud-shelf rows with `downloadedAt: null`; stamping them here would turn
+    // metadata-only sync back into a false claim that the EPUB/PDF is on disk.
     if (!book.metaHash) book.metaHash = book.hash;
-    // Hydrate from disk if the store hasn't loaded yet. Merging against an
-    // empty in-memory array would persist this book as the *entire* library
-    // and clobber whatever is on disk. Mirrors useLibraryStore.updateBooks'
-    // hardening; the Sync-now caller also hydrates up front, so this is
-    // belt-and-suspenders for a data-loss path.
-    let library = useLibraryStore.getState().library;
-    if (!useLibraryStore.getState().libraryLoaded) {
-      library = await appService.loadLibraryBooks();
-      useLibraryStore.getState().setLibrary(library);
-    }
-    // Avoid duplicates if the user runs Sync now twice quickly.
-    if (library.find((b) => b.hash === book.hash)) return;
-    const newLibrary = [...library, book];
-    await appService.saveLibraryBooks(newLibrary);
-    // Update the store last so subscribers re-render against a library that's
-    // already persisted on disk.
-    useLibraryStore.getState().setLibrary(newLibrary);
+    await serializeLibraryAdd(appService, async () => {
+      // Hydrate from disk if the store hasn't loaded yet. Merging against an
+      // empty in-memory array would persist this book as the *entire* library
+      // and clobber whatever is on disk. Mirrors useLibraryStore.updateBooks'
+      // hardening; the Sync-now caller also hydrates up front, so this is
+      // belt-and-suspenders for a data-loss path.
+      let library = useLibraryStore.getState().library;
+      if (!useLibraryStore.getState().libraryLoaded) {
+        library = await appService.loadLibraryBooks();
+        useLibraryStore.getState().setLibrary(library);
+      }
+
+      const existingIndex = library.findIndex((candidate) => candidate.hash === book.hash);
+      if (existingIndex >= 0) {
+        const existing = library[existingIndex]!;
+        // A newer live remote row is a re-import/revival of this hash. Replace
+        // the older tombstone with the metadata-only row; every other duplicate
+        // remains an idempotent no-op.
+        if (
+          !existing.deletedAt ||
+          book.deletedAt ||
+          (book.updatedAt ?? 0) <= (existing.deletedAt ?? 0)
+        ) {
+          return;
+        }
+      }
+
+      const newLibrary =
+        existingIndex >= 0
+          ? [...library.slice(0, existingIndex), book, ...library.slice(existingIndex + 1)]
+          : [...library, book];
+      await appService.saveLibraryBooks(newLibrary);
+      // Update the store last so subscribers re-render against a library that's
+      // already persisted on disk.
+      useLibraryStore.getState().setLibrary(newLibrary);
+    });
   },
 
   updateBookMetadata: async (book) => {
