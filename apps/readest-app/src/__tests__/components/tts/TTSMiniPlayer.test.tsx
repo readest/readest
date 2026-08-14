@@ -178,18 +178,54 @@ describe('TTSMiniPlayer', () => {
     viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
     render(<TTSMiniPlayer {...makeProps()} />);
     expect(screen.queryByLabelText('Stop reading aloud')).toBeNull();
-    const transport = screen.getByLabelText('Next Sentence').closest('[dir="ltr"]');
-    expect(transport?.querySelectorAll('button')).toHaveLength(5);
+    const row = screen.getByLabelText('Next Sentence').closest('[dir="ltr"]');
+    // The settings glyph plus five transport glyphs; stop is not among them.
+    expect(row?.querySelectorAll('button')).toHaveLength(6);
   });
 
-  // The transport, not the time, takes the row's slack -- otherwise the glyphs
-  // stay crammed against the right edge while the middle sits empty (#5310).
-  test('minimal style spreads the transport across the row', () => {
+  // The transport halves, not the time, take the row's slack -- otherwise the
+  // glyphs stay crammed against the edges while the sides sit empty (#5310).
+  test('minimal style spreads each transport half across its side', () => {
     viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
     render(<TTSMiniPlayer {...makeProps()} />);
-    const transport = screen.getByLabelText('Next Sentence').closest('[dir="ltr"]');
-    expect(transport?.className).toContain('flex-1');
-    expect(transport?.className).toContain('justify-between');
+    const left = screen.getByLabelText('Previous Sentence').parentElement;
+    const right = screen.getByLabelText('Next Sentence').parentElement;
+    expect(left?.className).toContain('justify-between');
+    expect(right?.className).toContain('justify-between');
+  });
+
+  // #5636: the card reads as a symmetric transport. The play glyph sits in the
+  // exact middle of the card so it doubles as a halfway mark against the
+  // progress line on the bottom edge, and the remaining time moves to the far
+  // right where it hangs over the un-played part of that line.
+  test('minimal style centers the play button and puts the time on the right', () => {
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
+    render(<TTSMiniPlayer {...makeProps()} />);
+    const play = screen.getByLabelText('Pause');
+    const row = play.parentElement;
+    // All seven items sit in one between-spread row, mirrored widths about the
+    // middle: the equal gaps are what land the play glyph on the midpoint.
+    expect(row?.className).toContain('justify-between');
+    expect(row?.children).toHaveLength(7);
+    const items = Array.from(row?.children ?? []);
+    expect(items[0]).toBe(screen.getByLabelText('Playback settings'));
+    expect(items[1]).toBe(screen.getByLabelText('Previous Paragraph'));
+    expect(items[2]).toBe(screen.getByLabelText('Previous Sentence'));
+    expect(items[3]).toBe(play);
+    expect(items[4]).toBe(screen.getByLabelText('Next Sentence'));
+    expect(items[5]).toBe(screen.getByLabelText('Next Paragraph'));
+    // The time box ends the row, mirroring the settings glyph that starts it.
+    expect(items[6]).toBe(screen.getByLabelText('Open Read Aloud player'));
+  });
+
+  // The two end boxes share one fixed width -- with the skip glyphs paired off,
+  // that is what makes the item widths mirror, so the even between-spread gaps
+  // put the play glyph dead-center rather than merely near it.
+  test('minimal style gives the settings glyph the same fixed box as the time', () => {
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
+    render(<TTSMiniPlayer {...makeProps()} />);
+    expect(screen.getByLabelText('Playback settings').className).toContain('w-14');
+    expect(screen.getByLabelText('Open Read Aloud player').className).toContain('w-14');
   });
 
   // A content-sized box would re-center every glyph as the label narrows on

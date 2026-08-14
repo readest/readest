@@ -298,21 +298,76 @@ const TTSMiniPlayer = ({
             </div>
           </div>
         ) : (
-          <div className='text-base-content flex h-14 items-center gap-2 px-3'>
+          // A symmetric transport (#5636): one between-spread row whose item
+          // widths mirror about the middle -- a fixed box at each end, two skip
+          // glyphs each side -- so the equal gaps land the play glyph on the
+          // card's exact midpoint, where it doubles as a halfway mark against
+          // the progress line on the bottom edge, and the remaining time sits
+          // on the far right where it hangs over the un-played part of that
+          // line. The spreading is also what keeps "<<" and "<" from being
+          // mistaken for each other on a phone (#5310). The row is dir=ltr
+          // because the progress line it annotates fills physically
+          // left-to-right.
+          <div dir='ltr' className='text-base-content flex h-14 items-center justify-between px-3'>
             {/* Visible route into the full player: a settings glyph carrying
-              the live speed as a superscript (the sheet is where speed and
-              voice live). The time text expands too, but text alone reads
-              as a label, not an affordance. */}
+                the live speed as a superscript (the sheet is where speed and
+                voice live). The time text expands too, but text alone reads
+                as a label, not an affordance. */}
             <button
               type='button'
               aria-label={_('Playback settings')}
               onClick={onExpand}
-              className='text-base-content/70 flex shrink-0 rounded-full p-1 pe-4'
+              className='text-base-content/70 flex w-14 shrink justify-center rounded-full p-1'
             >
               <SpeedSettingsIcon
                 size={iconSize26}
                 label={formatRate(viewSettings?.ttsRate ?? 1.0)}
               />
+            </button>
+            <button
+              type='button'
+              className='shrink-0 rounded-full p-1'
+              aria-label={_('Previous Paragraph')}
+              onClick={() => onBackward(false)}
+            >
+              <MdKeyboardDoubleArrowLeft size={iconSize26} />
+            </button>
+            <button
+              type='button'
+              className='shrink-0 rounded-full p-1'
+              aria-label={_('Previous Sentence')}
+              onClick={() => onBackward(true)}
+            >
+              <MdKeyboardArrowLeft size={iconSize26} />
+            </button>
+            <button
+              type='button'
+              className='shrink-0 rounded-full p-1'
+              aria-label={isPlaying ? _('Pause') : _('Play')}
+              onClick={onTogglePlay}
+            >
+              {/* Same canvas size for both glyphs, or the row shifts on toggle. */}
+              {isPlaying ? <MdOutlinePause size={iconSize26} /> : <MdPlayArrow size={iconSize26} />}
+            </button>
+            <button
+              type='button'
+              className='shrink-0 rounded-full p-1'
+              aria-label={_('Next Sentence')}
+              onClick={() => onForward(true)}
+            >
+              <MdKeyboardArrowRight size={iconSize26} />
+            </button>
+            {/* No stop button on purpose (#5310): five transport glyphs already
+                crowd a phone, and an accidental hit on a sixth ends the
+                session. Stopping lives on the same toolbar TTS button that
+                started it. */}
+            <button
+              type='button'
+              className='shrink-0 rounded-full p-1'
+              aria-label={_('Next Paragraph')}
+              onClick={() => onForward(false)}
+            >
+              <MdKeyboardDoubleArrowRight size={iconSize26} />
             </button>
             <div
               role='button'
@@ -324,16 +379,16 @@ const TTSMiniPlayer = ({
               aria-label={_('Open Read Aloud player')}
               className='flex w-14 min-w-0 cursor-pointer flex-col items-center justify-center gap-0.5'
             >
-              {/* A fixed 4rem box, not a flexible or content-sized one: the
-                  former hogs the row and leaves the transport crammed against
-                  the right edge, the latter re-centers every glyph each time
-                  the label changes width ("-9:59" -> "-10:00"). Scales with the
-                  UI font since both the box and the text are rem-based (#5310).
-                  Default shrink is deliberate: on a tiny card at a large font
-                  scale the box gives way and the label truncates, rather than
-                  pushing a transport glyph off the edge. An armed sleep timer
-                  stacks on its own line so it can never squeeze the time into
-                  truncation. */}
+              {/* A fixed 4rem box matching the settings glyph's, not a flexible
+                  or content-sized one: the latter would re-position every glyph
+                  each time the label changes width ("-9:59" -> "-10:00"), and
+                  the mirrored pair is what keeps the play glyph centered.
+                  Scales with the UI font since both the box and the text are
+                  rem-based (#5310). Default shrink is deliberate: on a tiny
+                  card at a large font scale the box gives way and the label
+                  truncates, rather than pushing a transport glyph off the
+                  edge. An armed sleep timer stacks on its own line so it can
+                  never squeeze the time into truncation. */}
               {compactLabel && (
                 // max-w-full is load-bearing: a nowrap span is a flex item in a
                 // column, and without it the cross size resolves to the text's
@@ -348,65 +403,6 @@ const TTSMiniPlayer = ({
                   {timerLabel}
                 </span>
               )}
-            </div>
-            {/* The transport takes the slack and spreads into it, so the space
-                freed by the stop button becomes separation between glyphs
-                rather than dead middle. That is what stops "<<" and "<" from
-                being mistaken for each other on a phone (#5310). No gap on
-                purpose: a fixed one would add 16px to the row's min width and
-                start crushing the time box on a 360px phone, and it buys
-                nothing -- justify-between already does the spreading whenever
-                there is anything to spread. */}
-            <div dir='ltr' className='flex flex-1 items-center justify-between'>
-              <button
-                type='button'
-                className='shrink-0 rounded-full p-1'
-                aria-label={_('Previous Paragraph')}
-                onClick={() => onBackward(false)}
-              >
-                <MdKeyboardDoubleArrowLeft size={iconSize26} />
-              </button>
-              <button
-                type='button'
-                className='shrink-0 rounded-full p-1'
-                aria-label={_('Previous Sentence')}
-                onClick={() => onBackward(true)}
-              >
-                <MdKeyboardArrowLeft size={iconSize26} />
-              </button>
-              <button
-                type='button'
-                className='shrink-0 rounded-full p-1'
-                aria-label={isPlaying ? _('Pause') : _('Play')}
-                onClick={onTogglePlay}
-              >
-                {/* Same canvas size for both glyphs, or the row shifts on toggle. */}
-                {isPlaying ? (
-                  <MdOutlinePause size={iconSize26} />
-                ) : (
-                  <MdPlayArrow size={iconSize26} />
-                )}
-              </button>
-              <button
-                type='button'
-                className='shrink-0 rounded-full p-1'
-                aria-label={_('Next Sentence')}
-                onClick={() => onForward(true)}
-              >
-                <MdKeyboardArrowRight size={iconSize26} />
-              </button>
-              {/* No stop button here on purpose (#5310): five transport glyphs
-                  already crowd a phone, and an accidental hit on a sixth ends
-                  the session. Stopping lives on the same toolbar TTS button
-                  that started it. */}
-              <button
-                type='button'
-                className='shrink-0 rounded-full p-1'
-                aria-label={_('Next Paragraph')}
-                onClick={() => onForward(false)}
-              >
-                <MdKeyboardDoubleArrowRight size={iconSize26} />
-              </button>
             </div>
           </div>
         )}
