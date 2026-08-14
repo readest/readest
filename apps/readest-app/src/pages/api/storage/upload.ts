@@ -69,68 +69,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const fileKey = `${user.id}/${fileName}`;
-    const apiUrl = process.env['NEXT_PUBLIC_BIBLO_API_URL'] || 'http://localhost:3001/api/v0';
-
     let objSize = fileSize;
+
     try {
-      const response = await fetch(`${apiUrl}/storage/upload`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: req.headers.authorization || `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          fileName,
-          fileSize,
-          bookHash,
-          replicaKind,
-          replicaId,
-        }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        return res
-          .status(response.status)
-          .json({ error: errData.error || 'Failed to save metadata' });
-      }
-
-      const fileMetadata = await response.json();
-      if (fileMetadata && fileMetadata.size) {
-        objSize = fileMetadata.size;
-      }
-
-      // Sync file metadata to Supabase so sharing/stats query features can find it
-      try {
-        const supabase = createSupabaseAdminClient();
-        const { error: supabaseError } = await supabase.from('files').upsert(
+      const supabase = createSupabaseAdminClient();
+      const { data: fileMetadata, error: supabaseError } = await supabase
+        .from('files')
+        .upsert(
           {
-            id: fileMetadata.id || `file_${Date.now()}`,
             user_id: user.id,
             file_key: fileKey,
-            book_hash: bookHash || '',
-            file_size: objSize,
-            mime_type: fileMetadata.mimeType || 'application/octet-stream',
-            storage_path: fileMetadata.storagePath || fileKey,
-            created_at: fileMetadata.createdAt || new Date().toISOString(),
-            updated_at: fileMetadata.updatedAt || new Date().toISOString(),
+            book_hash: bookHash || null,
+            file_size: fileSize,
+            replica_kind: replicaKind || null,
+            replica_id: replicaId || null,
             deleted_at: null,
+            updated_at: new Date().toISOString(),
           },
           {
             onConflict: 'file_key',
           },
-        );
+        )
+        .select()
+        .single();
 
-        if (supabaseError) {
-          console.error('Error syncing file metadata to Supabase:', supabaseError);
-        } else {
-          console.log('Synced file metadata to Supabase successfully for fileKey:', fileKey);
-        }
-      } catch (subError) {
-        console.error('Exception syncing file metadata to Supabase:', subError);
+      if (supabaseError) {
+        console.error('Error saving file metadata to Supabase:', supabaseError);
+        return res.status(500).json({ error: supabaseError.message });
+      }
+
+      if (fileMetadata && fileMetadata.file_size) {
+        objSize = Number(fileMetadata.file_size);
       }
     } catch (error: any) {
-      console.error('Error saving file metadata to backend:', error);
+      console.error('Error saving file metadata to Supabase:', error);
       return res.status(500).json({ error: 'Could not connect to storage metadata server' });
     }
 

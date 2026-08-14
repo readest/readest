@@ -25,20 +25,16 @@
 
 ## Running with Docker/Podman Compose
 
-### 1. setup .env
+### 1. Setup .env
+
+To generate matching secure JWT keys, database passwords, and configure the `.env` file automatically, run the initializer script from the `docker/` directory:
 
 ```bash
-cp docker/.env.example docker/.env
+cd docker
+./init.sh
 ```
 
-update `docker/.env`:
-
-- update `POSTGRES_PASSWORD` to a strong password (32+ chars)
-- update `JWT_SECRET` to a random secret (32+ chars)
-- regenerate `ANON_KEY` and `SERVICE_ROLE_KEY` as HS256 JWTs signed with your `JWT_SECRET` (use [jwt.io](https://jwt.io/) or a similar tool):
-  - `ANON_KEY` payload: `{"role": "anon"}`
-  - `SERVICE_ROLE_KEY` payload: `{"role": "service_role"}`
-- set `MINIO_ROOT_PASSWORD` to a strong password
+*(Alternatively, you can manually copy `cp .env.example .env` and generate HS256-signed keys for `ANON_KEY` and `SERVICE_ROLE_KEY` using your custom `JWT_SECRET`.)*
 
 ### 2. Start the Stack (pull prebuilt client image)
 
