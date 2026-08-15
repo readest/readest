@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BookSearchMatch, BookSearchResult, SearchExcerpt } from '@/types/book';
+import { FoliateView } from '@/types/view';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgress } from '@/store/readerProgressStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { findNearestCfi } from '@/utils/cfi';
@@ -12,6 +14,7 @@ interface SearchResultItemProps {
   cfi: string;
   excerpt: SearchExcerpt;
   isNearest?: boolean;
+  isOnScreen?: boolean;
   onSelectResult: (cfi: string) => void;
 }
 
@@ -22,6 +25,64 @@ const PRE_DISPLAY_LIMIT = 20;
 const clipPre = (pre: string) => {
   const points = Array.from(pre);
   return points.length > PRE_DISPLAY_LIMIT ? `…${points.slice(-PRE_DISPLAY_LIMIT).join('')}` : pre;
+};
+
+// On a paginated multi-column page straddling a chapter boundary, foliate's
+// relocate range only covers the primary section's document, so results in the
+// adjacent visible section fall outside the location range (see #getVisibleRange
+// in foliate-js/paginator.js). The body-text mark still shows — it lives in the
+// DOM — but the location-based `isCurrent` check misses it. Complement it with a
+// direct on-screen check for results in non-primary sections.
+export const getVisibleCfiSet = (
+  view: FoliateView,
+  cfis: string[],
+  container: DOMRect,
+): Set<string> => {
+  const renderer = view.renderer;
+  const contents = renderer.getContents();
+  if (contents.length <= 1) return new Set<string>();
+  const primaryIndex = renderer.primaryIndex;
+
+  const onScreenSections = new Set<number>();
+  for (const content of contents) {
+    if (content.index == null || content.index === primaryIndex) continue;
+    const frame = content.doc?.defaultView?.frameElement?.getBoundingClientRect();
+    if (!frame) continue;
+    if (frame.right > container.left && frame.left < container.right) {
+      onScreenSections.add(content.index);
+    }
+  }
+  if (onScreenSections.size === 0) return new Set<string>();
+
+  const visible = new Set<string>();
+  for (const cfi of cfis) {
+    try {
+      const { index, anchor } = view.resolveCFI(cfi);
+      if (!onScreenSections.has(index)) continue;
+      const doc = contents.find((c) => c.index === index)?.doc;
+      if (!doc) continue;
+      const resolved = anchor(doc);
+      if (typeof resolved === 'number') continue;
+      const frame = doc.defaultView?.frameElement?.getBoundingClientRect();
+      if (!frame) continue;
+      const rect = resolved.getBoundingClientRect();
+      const left = rect.left + frame.left;
+      const right = rect.right + frame.left;
+      const top = rect.top + frame.top;
+      const bottom = rect.bottom + frame.top;
+      if (
+        right > container.left &&
+        left < container.right &&
+        bottom > container.top &&
+        top < container.bottom
+      ) {
+        visible.add(cfi);
+      }
+    } catch {
+      // malformed or unresolvable CFI — treat as not visible
+    }
+  }
+  return visible;
 };
 
 // nearby-words excerpts emphasize each matched word; other modes bold the single match span.
@@ -57,6 +118,7 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
   cfi,
   excerpt,
   isNearest,
+  isOnScreen,
   onSelectResult,
 }) => {
   const { getProgress } = useReaderStore();
@@ -70,7 +132,9 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
       ref={viewRef}
       className={clsx(
         'my-2 cursor-pointer rounded-lg p-2 text-sm',
-        isCurrent ? 'bg-base-300 hover:bg-gray-300/70' : 'hover:bg-base-300 bg-base-100',
+        isCurrent || isOnScreen
+          ? 'bg-base-300 hover:bg-gray-300/70'
+          : 'hover:bg-base-300 bg-base-100',
       )}
       tabIndex={0}
       onClick={() => onSelectResult(cfi)}
@@ -94,6 +158,7 @@ interface ChapterSectionProps {
   label: string;
   subitems: BookSearchMatch[];
   nearestCfi: string | null;
+  visibleCfiSet: Set<string>;
   isExpanded: boolean;
   onToggle: () => void;
   onSelectResult: (cfi: string) => void;
@@ -104,6 +169,7 @@ const ChapterSection: React.FC<ChapterSectionProps> = ({
   label,
   subitems,
   nearestCfi,
+  visibleCfiSet,
   isExpanded,
   onToggle,
   onSelectResult,
@@ -191,6 +257,7 @@ const ChapterSection: React.FC<ChapterSectionProps> = ({
               cfi={item.cfi}
               excerpt={item.excerpt}
               isNearest={item.cfi === nearestCfi}
+              isOnScreen={visibleCfiSet.has(item.cfi)}
               onSelectResult={onSelectResult}
             />
           ))}
@@ -208,9 +275,13 @@ interface SearchResultsProps {
 
 const SearchResults: React.FC<SearchResultsProps> = ({ bookKey, results, onSelectResult }) => {
   const _ = useTranslation();
-  const { getProgress } = useReaderStore();
+  const getView = useReaderStore((s) => s.getView);
   const { getSearchNavState } = useSidebarStore();
-  const progress = getProgress(bookKey);
+  // Reactive subscription: the highlight must track page turns even when the
+  // sidebar store is quiet (a page with no search hits never bumps
+  // searchResultIndex). See readerProgressStore for why this is a dedicated
+  // store instead of readerStore.
+  const progress = useBookProgress(bookKey);
   const { searchProgress, searchError } = getSearchNavState(bookKey);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(() => new Set());
 
@@ -230,17 +301,33 @@ const SearchResults: React.FC<SearchResultsProps> = ({ bookKey, results, onSelec
     });
   }, []);
 
-  const nearestCfi = useMemo(() => {
-    const allCfis: string[] = [];
+  const allCfis = useMemo(() => {
+    const cfis: string[] = [];
     for (const result of results) {
       if ('subitems' in result) {
-        for (const item of result.subitems) allCfis.push(item.cfi);
+        for (const item of result.subitems) cfis.push(item.cfi);
       } else {
-        allCfis.push(result.cfi);
+        cfis.push(result.cfi);
       }
     }
+    return cfis;
+  }, [results]);
+
+  const nearestCfi = useMemo(() => {
     return findNearestCfi(allCfis, progress?.location);
-  }, [progress?.location, results]);
+  }, [progress?.location, allCfis]);
+
+  // Cfis that are on screen but outside the reported location range (the
+  // non-primary section of a page straddling a chapter boundary). Recomputes
+  // when the reading position moves; the renderer geometry is authoritative.
+  const visibleCfiSet = useMemo(() => {
+    if (!allCfis.length) return new Set<string>();
+    const view = getView?.(bookKey);
+    if (!view?.renderer) return new Set<string>();
+    const containerRect = view.getBoundingClientRect();
+    if (containerRect.width === 0 && containerRect.height === 0) return new Set<string>();
+    return getVisibleCfiSet(view, allCfis, containerRect);
+  }, [allCfis, progress, getView, bookKey]);
 
   const totalMatches = useMemo(
     () =>
@@ -272,6 +359,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({ bookKey, results, onSelec
                 label={result.label}
                 subitems={result.subitems}
                 nearestCfi={nearestCfi}
+                visibleCfiSet={visibleCfiSet}
                 isExpanded={!collapsedSections.has(sectionKey)}
                 onToggle={() => toggleSection(sectionKey)}
                 onSelectResult={onSelectResult}
@@ -285,6 +373,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({ bookKey, results, onSelec
                 cfi={result.cfi}
                 excerpt={result.excerpt}
                 isNearest={result.cfi === nearestCfi}
+                isOnScreen={visibleCfiSet.has(result.cfi)}
                 onSelectResult={onSelectResult}
               />
             );

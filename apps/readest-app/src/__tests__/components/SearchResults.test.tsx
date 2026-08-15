@@ -5,9 +5,16 @@ import SearchResults from '@/app/reader/components/sidebar/SearchResults';
 import { BookSearchResult } from '@/types/book';
 
 const navState = vi.hoisted(() => ({ searchProgress: 1 }));
+const readerStoreState = vi.hoisted(() => ({
+  getProgress: () => ({ location: '' }),
+  getView: () => null,
+}));
 
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({ getProgress: () => ({ location: '' }) }),
+  // Emulate zustand's selector semantics: with a selector return its result,
+  // without (SearchResultItem's whole-store destructure) return the state.
+  useReaderStore: (selector?: (s: typeof readerStoreState) => unknown) =>
+    selector ? selector(readerStoreState) : readerStoreState,
 }));
 
 vi.mock('@/store/sidebarStore', () => ({
