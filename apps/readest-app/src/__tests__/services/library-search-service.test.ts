@@ -434,6 +434,32 @@ describe('searchLibraryBooks', () => {
     await session.close();
   });
 
+  it('searches without a cap when maxResultsPerBook is unlimited', async () => {
+    const book = makeBook('uncapped', 'Uncapped');
+    const file = makeFile('# Chapter\ntext');
+    const service = makeService(new Map([['uncapped', file]]));
+    const session = createLibrarySearchSession(service);
+    const cached = await session.open(book);
+    Object.assign(cached.bookDoc, {
+      sections: [{ id: '0', createDocument: async () => makeDocument('a'.repeat(600)) }],
+    });
+    const events = [];
+
+    for await (const event of searchLibraryBooks(service, [book], 'a', {
+      config: { ...config, mode: 'fuzzy' },
+      session,
+      maxResultsPerBook: Infinity,
+    })) {
+      events.push(event);
+    }
+
+    const result = events.find((event) => event.type === 'result');
+    const completed = events.find((event) => event.type === 'completed');
+    expect(result?.result.subitems).toHaveLength(600);
+    expect(completed).toMatchObject({ matchCount: 600, truncated: false });
+    await session.close();
+  });
+
   it('caps each book independently and continues to later books', async () => {
     const first = makeBook('partial', 'Partial');
     const second = makeBook('remainder', 'Remainder');

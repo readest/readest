@@ -225,6 +225,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
           signal: controller.signal,
           session,
           sectionIndex,
+          // The library sweep caps each book so no single book floods the
+          // shared results list; in-book search has no such competition and
+          // must report every match.
+          maxResultsPerBook: Infinity,
         })) {
           if (stopped()) return;
           if (event.type === 'progress') {
