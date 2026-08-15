@@ -389,6 +389,26 @@ describe('useProgressSync', () => {
     expect(h.saveConfigMock).not.toHaveBeenCalled();
   });
 
+  test('an equal config timestamp keeps the local page count', async () => {
+    // Pinned on both backends so they can never pick different winners for the
+    // same pair of configs; the file-sync twin lives in sync/file/merge.test.ts.
+    h.cfiCompareMock.mockReturnValue(0);
+    h.state.viewSettings = { proofreadRules: [], referencePageCount: 350 };
+    h.state.syncedConfigs = [
+      {
+        bookHash: 'h1',
+        metaHash: 'm1',
+        updatedAt: h.config.updatedAt,
+        viewSettings: { referencePageCount: 400 },
+      },
+    ];
+    renderHook(() => useProgressSync('h1-view1'));
+    await advance(0);
+
+    expect(h.setViewSettingsMock).not.toHaveBeenCalled();
+    expect(h.saveConfigMock).not.toHaveBeenCalled();
+  });
+
   test('does not rewrite the config when neither side has a page count', async () => {
     // An unset key and a 0 both mean "no count". Treating them as different
     // would rewrite viewSettings and bump updatedAt on every single book open.

@@ -134,6 +134,12 @@ export function getReferencePageInfo({
  * device has simply read the book more recently. When both sides carry one the
  * newer config wins.
  *
+ * `remoteIsNewer` must be a STRICT `remote > local` comparison, so an equal
+ * timestamp keeps the local count. Both callers have to derive it the same way
+ * or the two backends pick different winners for the same pair of configs; a
+ * tie is ordinary rather than rare, because a remote-wins merge copies the
+ * remote `updatedAt` onto the local config.
+ *
  * A missing remote count never clears a local one. Neither wire can tell
  * "the user cleared it" from "written by a client that predates this merge"
  * (`serializeConfig` drops every setting equal to the global default, and the

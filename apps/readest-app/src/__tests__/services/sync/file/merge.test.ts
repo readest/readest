@@ -151,6 +151,22 @@ describe('mergeBookConfig reference page count (issue #5716)', () => {
     expect(mergeBookConfig(localNewer, r).config.viewSettings!.referencePageCount).toBe(350);
   });
 
+  test('an equal config timestamp keeps the local count, as the cloud path does', () => {
+    // Both backends hand resolveReferencePageCount the SAME predicate so they
+    // cannot pick different winners for the same pair of configs. The scalar
+    // spread above still resolves ties toward the remote; only the count is
+    // conservative, matching useProgressSync. A tie is the ordinary steady
+    // state here, because a remote-wins merge copies remote.updatedAt onto the
+    // local config, so every later pull of an unchanged remote ties.
+    const local = {
+      updatedAt: 100,
+      booknotes: [],
+      viewSettings: { referencePageCount: 350 },
+    } as unknown as BookConfig;
+    const r = envelope({ config: { updatedAt: 100 }, referencePageCount: 400 });
+    expect(mergeBookConfig(local, r).config.viewSettings!.referencePageCount).toBe(350);
+  });
+
   test('leaves viewSettings absent when neither side has a count', () => {
     const local: BookConfig = { updatedAt: 50, booknotes: [] };
     const { config } = mergeBookConfig(local, envelope({ config: { updatedAt: 100 } }));
