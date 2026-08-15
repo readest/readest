@@ -43,6 +43,7 @@ describe('libraryStore', () => {
       groups: {},
       hashIndex: new Map(),
       visibleLibrary: [],
+      coverThumbnails: new Map(),
     });
   });
 
@@ -74,6 +75,30 @@ describe('libraryStore', () => {
       expect(groups).toHaveLength(1);
       expect(groups[0]!.name).toBe('Fiction');
     });
+
+    test('preserves matching thumbnails across reloads and drops changed or deleted covers', () => {
+      const retained = makeBook({ hash: 'same', coverHash: 'cover-v1' });
+      const changed = makeBook({ hash: 'changed', coverHash: 'cover-v1' });
+      const deleted = makeBook({ hash: 'deleted', coverHash: 'cover-v1' });
+      useLibraryStore.getState().setLibrary([retained, changed, deleted]);
+      useLibraryStore.getState().setBookCoverThumbnail('same', 'cover-v1', 'asset://same.jpg');
+      useLibraryStore
+        .getState()
+        .setBookCoverThumbnail('changed', 'cover-v1', 'asset://changed.jpg');
+      useLibraryStore
+        .getState()
+        .setBookCoverThumbnail('deleted', 'cover-v1', 'asset://deleted.jpg');
+
+      useLibraryStore.getState().setLibrary([
+        { ...retained, title: 'Reloaded' },
+        { ...changed, coverHash: 'cover-v2' },
+        { ...deleted, deletedAt: 10 },
+      ]);
+
+      expect(Array.from(useLibraryStore.getState().coverThumbnails.entries())).toEqual([
+        ['same', { coverHash: 'cover-v1', url: 'asset://same.jpg' }],
+      ]);
+    });
   });
 
   describe('getBookByHash', () => {
@@ -87,6 +112,56 @@ describe('libraryStore', () => {
     test('returns undefined for unknown hash', () => {
       useLibraryStore.getState().setLibrary([makeBook({ hash: 'a' })]);
       expect(useLibraryStore.getState().getBookByHash('nonexistent')).toBeUndefined();
+    });
+  });
+
+  describe('setBookCoverThumbnail', () => {
+    test('stores the derivative separately without replacing the original book cover', () => {
+      const original = makeBook({
+        hash: 'a',
+        coverHash: 'cover-v1',
+        coverImageUrl: 'asset://original.png',
+        updatedAt: 1234,
+      });
+      useLibraryStore.getState().setLibrary([original]);
+      const libraryBefore = useLibraryStore.getState().library;
+      const visibleBefore = useLibraryStore.getState().visibleLibrary;
+
+      useLibraryStore.getState().setBookCoverThumbnail('a', 'cover-v1', 'asset://thumbnail.jpg');
+
+      const state = useLibraryStore.getState();
+      expect(state.library).toBe(libraryBefore);
+      expect(state.visibleLibrary).toBe(visibleBefore);
+      expect(state.library[0]?.coverImageUrl).toBe('asset://original.png');
+      expect(state.library[0]?.updatedAt).toBe(1234);
+      expect(state.coverThumbnails.get('a')).toEqual({
+        coverHash: 'cover-v1',
+        url: 'asset://thumbnail.jpg',
+      });
+    });
+
+    test('ignores stale results after a cover changes or the book disappears', () => {
+      const book = makeBook({ hash: 'a', coverHash: 'cover-v2' });
+      useLibraryStore.getState().setLibrary([book]);
+
+      useLibraryStore
+        .getState()
+        .setBookCoverThumbnail('a', 'cover-v1', 'asset://stale-thumbnail.jpg');
+      useLibraryStore
+        .getState()
+        .setBookCoverThumbnail('missing', null, 'asset://missing-thumbnail.jpg');
+
+      expect(useLibraryStore.getState().coverThumbnails.size).toBe(0);
+    });
+
+    test('does not publish a new map when the same thumbnail is reported twice', () => {
+      useLibraryStore.getState().setLibrary([makeBook({ hash: 'a', coverHash: 'cover-v1' })]);
+      useLibraryStore.getState().setBookCoverThumbnail('a', 'cover-v1', 'asset://thumbnail.jpg');
+      const before = useLibraryStore.getState().coverThumbnails;
+
+      useLibraryStore.getState().setBookCoverThumbnail('a', 'cover-v1', 'asset://thumbnail.jpg');
+
+      expect(useLibraryStore.getState().coverThumbnails).toBe(before);
     });
   });
 

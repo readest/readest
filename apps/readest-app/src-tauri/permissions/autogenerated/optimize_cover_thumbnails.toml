@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-optimize-cover-thumbnails"
+description = "Enables the optimize_cover_thumbnails command without any pre-configured scope."
+commands.allow = ["optimize_cover_thumbnails"]
+
+[[permission]]
+identifier = "deny-optimize-cover-thumbnails"
+description = "Denies the optimize_cover_thumbnails command without any pre-configured scope."
+commands.deny = ["optimize_cover_thumbnails"]

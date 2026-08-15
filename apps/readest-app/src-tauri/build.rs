@@ -34,6 +34,7 @@ fn main() {
             "set_webview_info",
             "is_updater_disabled",
             "allow_paths_in_scopes",
+            "optimize_cover_thumbnails",
             "read_dir",
             "parse_epub_metadata",
             "extract_epub_cover_full",

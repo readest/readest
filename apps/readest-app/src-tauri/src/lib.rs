@@ -23,6 +23,7 @@ use tauri_plugin_fs::FsExt;
 #[cfg(desktop)]
 use tauri::{Listener, Url};
 mod clip_url;
+mod cover_thumbnail;
 mod dir_scanner;
 #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
 mod discord_rpc;
@@ -412,6 +413,7 @@ pub fn run() {
             #[cfg(desktop)]
             is_updater_disabled,
             allow_paths_in_scopes,
+            cover_thumbnail::optimize_cover_thumbnails,
             dir_scanner::read_dir,
             epub_parser::parse_epub_metadata,
             epub_parser::extract_epub_cover_full,

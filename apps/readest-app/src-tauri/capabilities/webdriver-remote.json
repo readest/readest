@@ -16,6 +16,7 @@
     "allow-set-webview-info",
     "allow-is-updater-disabled",
     "allow-allow-paths-in-scopes",
+    "allow-optimize-cover-thumbnails",
     "allow-read-dir",
     "allow-parse-epub-metadata",
     "allow-extract-epub-cover-full",

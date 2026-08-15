@@ -512,6 +512,11 @@ export abstract class BaseAppService implements AppService {
     return LibrarySvc.loadLibraryBooks(this.fs, this.generateCoverImageUrl.bind(this));
   }
 
+  requestCoverThumbnail(_book: Book): void {
+    // Native apps override this. Web and Node already load appropriately sized
+    // cover sources and do not have the Tauri thumbnail worker.
+  }
+
   // Prompt for storage permission at most once per session (see saveLibraryBooks).
   private storagePermissionRequested = false;
 
