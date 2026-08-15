@@ -345,6 +345,12 @@ describe('transformStylesheet', () => {
       expect(result).toContain('url(images/fixed.png)');
     });
 
+    it('does not touch fixed inside var() or other functions', () => {
+      const css = '.b { background-attachment: var(--fixed, fixed); }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('var(--fixed, fixed)');
+    });
+
     it('rewrites fixed in inline styles', () => {
       const css = 'background-image: url(t1.png); background-attachment: fixed';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
@@ -384,6 +390,32 @@ describe('transformStylesheet', () => {
       const css = '.band { background-color: blue; margin: -2em -2em 1em -2em !important; }';
       const result = transformStylesheet(css, VW, VH, VERTICAL);
       expect(result).toContain(OVERRIDE);
+    });
+
+    it('zeroes only the side whose resolved value is negative', () => {
+      const css = '.band { background-color: red; margin: 1em -2em 3em 4em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('margin-right: 0 !important');
+      expect(result).not.toContain('margin-left: 0 !important');
+    });
+
+    it('resolves later declarations over earlier ones per side', () => {
+      const css = '.band { background-color: red; margin: -2em; margin-left: 1em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('margin-right: 0 !important');
+      expect(result).not.toContain('margin-left: 0 !important');
+    });
+
+    it('detects a painting background declared after background: none', () => {
+      const css = '.band { background: none; background-color: red; margin: 0 -2em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain(OVERRIDE);
+    });
+
+    it('treats alpha-zero colors as non-painting', () => {
+      const css = '.hang { background-color: rgba(0, 0, 0, 0); margin: 0 -2em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain('margin-right: 0 !important');
     });
 
     it('leaves negative margins alone when the rule paints no background', () => {

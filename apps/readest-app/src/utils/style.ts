@@ -1102,48 +1102,70 @@ export const transformStylesheet = (
   // paginator lays out as one huge multi-column strip and moves with
   // transforms, so the image lands far from its element and Blink smears the
   // text painted over it (#5711). Inside a transformed subtree the spec
-  // demands scroll behavior anyway, so rewrite fixed to scroll. url() values
-  // are masked first so a file named fixed.png is not rewritten.
+  // demands scroll behavior anyway, so rewrite fixed to scroll. Function
+  // tokens (url(), var(), gradients) are masked first so a file named
+  // fixed.png or a custom property like var(--fixed) is not rewritten.
   css = css.replace(
     /((?:^|[{;\s])background(?:-attachment)?\s*:)([^;{}]*)/gi,
     (match, prop: string, value: string) => {
       if (!/\bfixed\b/i.test(value)) return match;
-      const urls: string[] = [];
-      const masked = value.replace(/url\([^)]*\)/gi, (url) => {
-        urls.push(url);
-        return `READEST_URL_${urls.length - 1}_PLACEHOLDER`;
+      const fns: string[] = [];
+      const masked = value.replace(/[\w-]*\([^)]*\)/g, (fn) => {
+        fns.push(fn);
+        return `READEST_FN_${fns.length - 1}_PLACEHOLDER`;
       });
       const rewritten = masked.replace(/\bfixed\b/gi, 'scroll');
-      return prop + rewritten.replace(/READEST_URL_(\d+)_PLACEHOLDER/g, (_, i) => urls[+i]!);
+      return prop + rewritten.replace(/READEST_FN_(\d+)_PLACEHOLDER/g, (_, i) => fns[+i]!);
     },
   );
 
   // Books authored for Duokan fake full-bleed bands with negative horizontal
   // margins sized to Duokan's fixed 2em page padding. Columns are not clipped,
   // so any overhang past the column box paints onto the adjacent page (#5711).
-  // Duokan's layout does not exist here, so drop the trick: zero the
-  // horizontal margins on rules that also paint a background (hanging indents
-  // keep their layout). The band stops at the column edge instead of
-  // full-bleeding, the same rendering the issue reporter picked as their
-  // custom-CSS workaround.
+  // Duokan's layout does not exist here, so drop the trick: zero each
+  // horizontal margin whose resolved value is negative on rules that also
+  // paint a background (hanging indents keep their layout). The band stops at
+  // the column edge instead of full-bleeding, the same rendering the issue
+  // reporter picked as their custom-CSS workaround.
   if (!vertical) {
-    const hasNegativeHorizontalMargin = (block: string): boolean => {
-      if (/(?:^|[^a-z-])margin-(?:left|right)\s*:\s*-/i.test(block)) return true;
-      const shorthand = /(?:^|[^a-z-])margin\s*:\s*([^;!}]+)/i.exec(block);
-      // calc()/var() shorthands are too ambiguous to split on whitespace
-      if (!shorthand || shorthand[1]!.includes('(')) return false;
-      const parts = shorthand[1]!.trim().split(/\s+/);
-      if (parts.length < 1 || parts.length > 4) return false;
-      const [top, right = top!, , left = right] = parts;
-      return right!.startsWith('-') || left.startsWith('-');
-    };
     css = css.replace(ruleRegex, (match, selector, block: string) => {
-      const bgMatch = /background(?:-color|-image)?\s*:\s*([^;!}]+)/i.exec(block);
-      if (!bgMatch || /^(?:none|transparent)\s*$/i.test(bgMatch[1]!.trim())) return match;
-      if (!hasNegativeHorizontalMargin(block)) return match;
-      return (
-        selector + block.replace(/}$/, ' margin-left: 0 !important; margin-right: 0 !important; }')
+      const bgValues = [
+        ...block.matchAll(/(?:^|[^-a-z])background(?:-color|-image)?\s*:\s*([^;!}]+)/gi),
+      ].map((m) => m[1]!.trim());
+      const paints = bgValues.some(
+        (v) =>
+          !/^(?:none|transparent)$/i.test(v) &&
+          !/^(?:rgba|hsla)\([^)]*[,\s]0(?:\.0+)?\s*\)$/i.test(v),
       );
+      if (!paints) return match;
+      // Resolve each side's final value in declaration order; the shorthand
+      // sets both sides. !important precedence between declarations of the
+      // same block is ignored: getting it wrong can only leave an authored
+      // negative margin in place, never break a valid layout.
+      let left = '';
+      let right = '';
+      for (const decl of block.matchAll(/(?:^|[^-a-z])margin(-left|-right)?\s*:\s*([^;!}]+)/gi)) {
+        const side = decl[1];
+        const value = decl[2]!.trim();
+        if (side === '-left') {
+          left = value;
+        } else if (side === '-right') {
+          right = value;
+        } else {
+          // calc()/var() shorthands are too ambiguous to split on whitespace
+          if (value.includes('(')) continue;
+          const parts = value.split(/\s+/);
+          if (parts.length < 1 || parts.length > 4) continue;
+          const [top, r = top!, , l = r] = parts;
+          right = r!;
+          left = l;
+        }
+      }
+      const overrides =
+        (left.startsWith('-') ? ' margin-left: 0 !important;' : '') +
+        (right.startsWith('-') ? ' margin-right: 0 !important;' : '');
+      if (!overrides) return match;
+      return selector + block.replace(/}$/, `${overrides} }`);
     });
   }
 
