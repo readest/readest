@@ -389,6 +389,62 @@ export class ReaderPage extends BasePage {
     await this.annotationPopup.waitFor({ state: 'visible' });
   }
 
+  /**
+   * Select a single word of book text.
+   *
+   * The instant quick action only fires for a single lookup term, and it fires
+   * off the selection itself — so unlike {@link selectText} this waits for no
+   * popup, leaving the spec to say which one it expects.
+   */
+  async selectWord(): Promise<void> {
+    await this.openTocChapter(3);
+    const frame = await this.visibleSectionFrame();
+
+    await frame.locator('body').evaluate(() => {
+      const paragraphs = Array.from(document.querySelectorAll('p'));
+      const target = paragraphs.find((p) => (p.textContent ?? '').trim().length > 60);
+      if (!target) {
+        throw new Error('no selectable paragraph in the visible section');
+      }
+      const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
+      let textNode = walker.nextNode();
+      let word: { node: Node; start: number; end: number } | null = null;
+      while (textNode && !word) {
+        const text = textNode.textContent ?? '';
+        const match = /[A-Za-z]{4,}/.exec(text);
+        if (match) {
+          word = { node: textNode, start: match.index, end: match.index + match[0].length };
+        }
+        textNode = walker.nextNode();
+      }
+      if (!word) {
+        throw new Error('no single word found in the target paragraph');
+      }
+      const range = document.createRange();
+      range.setStart(word.node, word.start);
+      range.setEnd(word.node, word.end);
+      const selection = document.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    });
+  }
+
+  /** The text currently selected inside the on-screen book section. */
+  async selectedSectionText(): Promise<string> {
+    const frame = await this.visibleSectionFrame();
+    return frame.locator('body').evaluate(() => document.getSelection()?.toString() ?? '');
+  }
+
+  /**
+   * Turn on an instant quick action (`Instant Dictionary`, `Instant Highlight`,
+   * …) from the header bar's quick-action dropdown.
+   */
+  async setQuickAction(action: string): Promise<void> {
+    await this.revealHeader();
+    await this.headerBar.getByRole('button', { name: 'Enable Quick Action on Selection' }).click();
+    await this.page.getByRole('menuitem', { name: `Instant ${action}` }).click();
+  }
+
   /** A tool button inside the annotation popup, by its accessible name. */
   popupTool(name: string | RegExp): Locator {
     return this.annotationPopup.getByRole('button', { name });

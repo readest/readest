@@ -945,6 +945,15 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           // toolbar so highlighting and copying stay reachable (#5213).
           if (selection && isSingleLookupTerm(selection.text)) {
             handleDictionary();
+            // The instant lookup consumes the gesture: the word was tapped to be
+            // looked up, not selected. Drop the selection so iOS's native
+            // handles and blue highlight — painted above web content — don't sit
+            // on top of the popup, and so dismissing it has no live selection to
+            // return a toolbar to (#5585, the other side of #5213's boundary).
+            // Clear the flag before deselecting: the selectionchange this fires
+            // would otherwise dismiss the popup we just opened.
+            isTextSelected.current = false;
+            view?.deselect();
           } else {
             handleShowAnnotPopup();
           }
