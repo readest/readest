@@ -311,6 +311,118 @@ describe('transformStylesheet', () => {
     });
   });
 
+  describe('background-attachment fixed (issue 5711)', () => {
+    it('rewrites background-attachment: fixed to scroll', () => {
+      const css =
+        '#b1 { background-image: url(../Images/t1.png); background-attachment: fixed; background-position: top left; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('background-attachment: scroll');
+      expect(result).not.toMatch(/background-attachment\s*:\s*fixed/);
+    });
+
+    it('rewrites the fixed keyword inside the background shorthand', () => {
+      const css = '.hero { background: url(../Images/t2.png) no-repeat fixed bottom right; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('no-repeat scroll bottom right');
+      expect(result).not.toMatch(/\bfixed\b/);
+    });
+
+    it('rewrites every layer of a multi-layer background-attachment list', () => {
+      const css = '.multi { background-attachment: fixed, scroll, fixed; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('background-attachment: scroll, scroll, scroll');
+    });
+
+    it('preserves !important when rewriting fixed', () => {
+      const css = '.b { background-attachment: fixed !important; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('background-attachment: scroll !important');
+    });
+
+    it('does not touch url() values containing the word fixed', () => {
+      const css = '.logo { background: url(images/fixed.png) no-repeat; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('url(images/fixed.png)');
+    });
+
+    it('rewrites fixed in inline styles', () => {
+      const css = 'background-image: url(t1.png); background-attachment: fixed';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('background-attachment: scroll');
+    });
+
+    it('does not touch position: fixed', () => {
+      const css = '.pinned { position: fixed; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('position: fixed');
+    });
+  });
+
+  describe('negative horizontal margins with background (issue 5711)', () => {
+    const OVERRIDE = 'margin-left: 0 !important; margin-right: 0 !important;';
+
+    it('zeroes horizontal margins when the shorthand has negative left/right components', () => {
+      const css =
+        'h1.title { background-color: #0069B7; color: white; margin: -2em -2em 1.5em -2em; padding-top: 3em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain(OVERRIDE);
+    });
+
+    it('zeroes horizontal margins for a two-value shorthand with a negative horizontal component', () => {
+      const css = '.band { background-color: red; margin: 1em -3em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain(OVERRIDE);
+    });
+
+    it('zeroes horizontal margins for negative margin-left/right longhands', () => {
+      const css = '.band { background: #333; margin-left: -32px; margin-right: -1.5em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain(OVERRIDE);
+    });
+
+    it('wins over an authored !important margin via later cascade order', () => {
+      const css = '.band { background-color: blue; margin: -2em -2em 1em -2em !important; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain(OVERRIDE);
+    });
+
+    it('leaves negative margins alone when the rule paints no background', () => {
+      const css = '.hang { margin-left: -1em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain(OVERRIDE);
+    });
+
+    it('leaves negative margins alone when the background is none or transparent', () => {
+      const css = '.hang { background: none; margin-left: -1em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain(OVERRIDE);
+    });
+
+    it('leaves rules alone when only the vertical margin is negative', () => {
+      const css = '.band { background-color: red; margin: -2em 1em 2em; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain(OVERRIDE);
+    });
+
+    it('preserves auto centering when the horizontal component is auto', () => {
+      const css = '.pull { background-color: red; margin: -1em auto; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain(OVERRIDE);
+    });
+
+    it('skips shorthands containing calc() or var()', () => {
+      const css = '.band { background-color: red; margin: calc(0px - 2em) 0; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).not.toContain(OVERRIDE);
+    });
+
+    it('does not zero margins when vertical is true', () => {
+      const css = 'h1.title { background-color: blue; margin: -2em -2em 1.5em -2em; }';
+      const result = transformStylesheet(css, VW, VH, true);
+      expect(result).not.toContain(OVERRIDE);
+    });
+  });
+
   describe('hardcoded pixel width clamping', () => {
     it('adds max-width and border-box when width exceeds viewport', () => {
       const css = '.calibre8 { display: block; width: 1200px; padding: 2em 0 0 1em; }';
