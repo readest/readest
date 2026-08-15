@@ -674,7 +674,18 @@ export async function importBook(
     if (existingBook) existingBook.coverHash = coverHash;
     // Never overwrite the config file only when it's not existed
     if (!existingBook) {
-      await saveBookConfigFn(book, INIT_BOOK_CONFIG);
+      // Guard on the FILE, not the library record: a hash dir can already hold
+      // a config.json while no library row points at it. `restoreBackup` walks
+      // straight into that — for a hash dir the archive's library.json does not
+      // list, it extracts the dir (config.json included) and then imports the
+      // book file — and a library.json that was lost or reset leaves every
+      // Books/<hash>/ in the same state. Stamping INIT_BOOK_CONFIG here threw
+      // away the reading position, bookmarks and annotations sitting on disk
+      // (issue #5716). Same hash means the same bytes, so an existing config
+      // always belongs to this book.
+      if (!(await fs.exists(getConfigFilename(book), 'Books'))) {
+        await saveBookConfigFn(book, INIT_BOOK_CONFIG);
+      }
       // Concurrent imports of identical bytes (the folder-import pool) both
       // read `byHash` right after hashing but only write it here, after the
       // createDir/writeFile/cover awaits — so both miss and both would push a

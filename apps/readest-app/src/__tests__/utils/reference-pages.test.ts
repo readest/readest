@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getReferencePageInfo } from '@/utils/progress';
+import { getReferencePageInfo, resolveReferencePageCount } from '@/utils/progress';
 
 const makePageList = (labels: string[]) => labels.map((label) => ({ label, href: '#' }));
 
@@ -130,5 +130,38 @@ describe('getReferencePageInfo', () => {
         referencePageCount: 0,
       }),
     ).toBeNull();
+  });
+});
+
+// Issue #5716: the count describes the book's print edition, so it has to
+// cross devices even though the rest of viewSettings is device-local. Both
+// sync backends share this policy so they can never drift apart.
+describe('resolveReferencePageCount (cross-device merge policy)', () => {
+  it('adopts a peer count when this device has none', () => {
+    expect(resolveReferencePageCount(0, 350, false)).toBe(350);
+    expect(resolveReferencePageCount(undefined, 350, false)).toBe(350);
+  });
+
+  it('keeps the local count when the peer has none', () => {
+    expect(resolveReferencePageCount(350, 0, true)).toBe(350);
+    expect(resolveReferencePageCount(350, undefined, true)).toBe(350);
+  });
+
+  it('lets the newer config win when both sides have a count', () => {
+    expect(resolveReferencePageCount(350, 400, true)).toBe(400);
+    expect(resolveReferencePageCount(350, 400, false)).toBe(350);
+  });
+
+  it('never clears a local count from an absent remote one', () => {
+    // A peer running a build that predates this merge pushes a config with no
+    // count at all. That is indistinguishable on the wire from "the user
+    // cleared it", and wiping a number the user typed is the worse failure.
+    expect(resolveReferencePageCount(350, undefined, true)).toBe(350);
+    expect(resolveReferencePageCount(350, 0, true)).toBe(350);
+  });
+
+  it('resolves to 0 (unset) when neither side has one', () => {
+    expect(resolveReferencePageCount(0, 0, true)).toBe(0);
+    expect(resolveReferencePageCount(undefined, undefined, false)).toBe(0);
   });
 });

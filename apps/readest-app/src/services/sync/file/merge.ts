@@ -1,4 +1,5 @@
 import { Book, BookConfig, BookNote } from '@/types/book';
+import { resolveReferencePageCount } from '@/utils/progress';
 import { RemoteBookConfig } from './wire';
 
 /**
@@ -80,6 +81,23 @@ export const mergeBookConfig = (
       : ({ ...filteredRemote, ...local } as BookConfig);
   const notes = mergeNotes(local.booknotes ?? [], remote.booknotes ?? []);
   merged.booknotes = notes;
+  // The reference page count is the one viewSettings key that crosses devices
+  // (issue #5716) — it describes the book's print edition, not the screen. It
+  // arrives as its own envelope key, so apply it to viewSettings by hand
+  // rather than through the scalar spread above, which would replace the whole
+  // local view settings object.
+  const mergedPageCount = resolveReferencePageCount(
+    local.viewSettings?.referencePageCount,
+    remote.referencePageCount,
+    remoteConfigUpdated >= localConfigUpdated,
+  );
+  // `> 0` keeps a config that never had a count free of an invented `0` key:
+  // the resolver can only return a positive value when one of the two sides
+  // actually carried one. An unset key and a 0 both mean "no count", so the
+  // comparison normalizes the local side too.
+  if (mergedPageCount > 0 && mergedPageCount !== (local.viewSettings?.referencePageCount ?? 0)) {
+    merged.viewSettings = { ...merged.viewSettings, referencePageCount: mergedPageCount };
+  }
   return { config: merged, notes };
 };
 

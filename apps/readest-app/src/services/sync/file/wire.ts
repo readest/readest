@@ -26,6 +26,19 @@ export interface RemoteBookConfig {
   config: Partial<BookConfig>;
   /** Booknotes carry their own per-note updatedAt/deletedAt for merging. */
   booknotes: BookNote[];
+  /**
+   * The user-entered reference page count (issue #5716). It stands in for a
+   * page list the book doesn't ship, so it is a fact about the book's print
+   * edition rather than a device preference — the one viewSettings key that
+   * crosses devices.
+   *
+   * It rides its own envelope key instead of `config.viewSettings` on purpose:
+   * `mergeBookConfig` spreads `config` wholesale, so a nested viewSettings
+   * would replace a peer's entire view settings object. Optional + additive —
+   * a client that predates it simply drops the key, and the merge policy in
+   * `resolveReferencePageCount` treats an absent count as "no opinion".
+   */
+  referencePageCount?: number;
   writerDeviceId: string;
   writerVersion: 'readest-webdav-1';
   /** When the writer last touched the row (client wall clock, millis). */
@@ -35,9 +48,11 @@ export interface RemoteBookConfig {
 /**
  * Convert the live local BookConfig into the wire envelope. We deliberately
  * drop transient view state (search config, RSVP position, viewSettings,
- * etc.) — those are device-local UI preferences, not progress.
+ * etc.) — those are device-local UI preferences, not progress. The lone
+ * exception is `referencePageCount`, which is book data wearing a view-setting
+ * costume; it travels as its own envelope key (see RemoteBookConfig).
  *
- * Why viewSettings stays local even though it lives in BookConfig:
+ * Why the rest of viewSettings stays local even though it lives in BookConfig:
  *   - Different devices have different screen sizes / DPI / typography
  *     preferences. Pushing a phone's 14pt setting onto a desktop would
  *     surprise users in a bad way.
@@ -64,12 +79,14 @@ export const buildRemotePayload = (
     xpointer: config.xpointer,
     updatedAt: config.updatedAt,
   };
+  const referencePageCount = config.viewSettings?.referencePageCount;
   return {
     schemaVersion: 1,
     bookHash: book.hash,
     metaHash: book.metaHash,
     config: trimmed,
     booknotes: config.booknotes ?? [],
+    ...(referencePageCount ? { referencePageCount } : {}),
     writerDeviceId: deviceId,
     writerVersion: 'readest-webdav-1',
     updatedAt: Date.now(),
