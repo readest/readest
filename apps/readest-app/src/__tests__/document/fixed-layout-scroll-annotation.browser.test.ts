@@ -74,6 +74,7 @@ describe('fixed-layout scroll-mode PDF annotations (readest#5586)', () => {
 
     await waitFor(() => renderStarted && overlayers.length === 1);
     const staleOverlayer = overlayers[0]!;
+    expect(staleOverlayer.isConnected).toBe(true);
 
     finishRender();
 
