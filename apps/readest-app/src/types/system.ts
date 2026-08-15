@@ -109,6 +109,7 @@ export interface AppService {
   isEink: boolean;
   canCustomizeRootDir: boolean;
   canReadExternalDir: boolean;
+  supportsCoverThumbnailOptimization: boolean;
   supportsCanvasContext2DFilter: boolean;
   supportsViewTransitionsAPI: boolean;
   supportsViewTransitionGroup: boolean;

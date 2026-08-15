@@ -600,6 +600,7 @@ export class NativeAppService extends BaseAppService {
   // absolute-path reads outside the app sandbox work once the user grants All
   // Files Access. Apple offers no equivalent, so App Store builds stay gated.
   override canReadExternalDir = DIST_CHANNEL !== 'appstore';
+  override supportsCoverThumbnailOptimization = true;
   override supportsCanvasContext2DFilter =
     OS_TYPE !== 'ios' && OS_TYPE !== 'macos' && OS_TYPE !== 'linux';
   // WebKitGTK on Linux crashes when a View Transition snapshots the window,

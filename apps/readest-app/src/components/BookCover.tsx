@@ -85,7 +85,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
         !book.coverImageUrl ||
         metadataCoverImageUrl ||
         matchingThumbnail ||
-        appService?.appPlatform !== 'tauri'
+        !appService?.supportsCoverThumbnailOptimization
       ) {
         return;
       }
@@ -197,6 +197,9 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
   },
   (prevProps, nextProps) => {
     return (
+      prevProps.book.hash === nextProps.book.hash &&
+      prevProps.book.coverHash === nextProps.book.coverHash &&
+      prevProps.book.deletedAt === nextProps.book.deletedAt &&
       prevProps.book.coverImageUrl === nextProps.book.coverImageUrl &&
       prevProps.book.metadata?.coverImageUrl === nextProps.book.metadata?.coverImageUrl &&
       prevProps.book.updatedAt === nextProps.book.updatedAt &&

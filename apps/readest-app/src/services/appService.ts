@@ -71,6 +71,7 @@ export abstract class BaseAppService implements AppService {
   hasIAP = false;
   canCustomizeRootDir = false;
   canReadExternalDir = false;
+  supportsCoverThumbnailOptimization = false;
   supportsCanvasContext2DFilter = true;
   supportsViewTransitionsAPI = false;
   supportsViewTransitionGroup = false;

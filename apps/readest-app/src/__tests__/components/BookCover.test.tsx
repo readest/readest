@@ -5,7 +5,7 @@ const requestCoverThumbnailMock = vi.fn();
 
 vi.mock('@/services/environment', () => ({
   getInitializedAppService: () => ({
-    appPlatform: 'tauri',
+    supportsCoverThumbnailOptimization: true,
     requestCoverThumbnail: requestCoverThumbnailMock,
   }),
   isTauriAppPlatform: () => true,
@@ -171,6 +171,17 @@ describe('BookCover', () => {
 
     expect(container.querySelector('img')?.getAttribute('src')).toBe('asset://original-v2.png');
     await waitFor(() => expect(requestCoverThumbnailMock).toHaveBeenCalledWith(book));
+  });
+
+  it('requests a new thumbnail when the cover revision changes without a timestamp change', async () => {
+    const book = makeBook({ hash: 'book-1', coverHash: 'cover-v1', updatedAt: 1 });
+    const { rerender } = render(<BookCover book={book} coverFit='crop' />);
+    await waitFor(() => expect(requestCoverThumbnailMock).toHaveBeenCalledWith(book));
+
+    const revisedBook = { ...book, coverHash: 'cover-v2' };
+    rerender(<BookCover book={revisedBook} coverFit='crop' />);
+
+    await waitFor(() => expect(requestCoverThumbnailMock).toHaveBeenCalledWith(revisedBook));
   });
 
   it('falls back to the original image rather than the placeholder if a thumbnail cannot load', () => {
