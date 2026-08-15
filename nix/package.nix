@@ -166,6 +166,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
     homepage = "https://github.com/readest/readest";
     mainProgram = "readest";
     license = lib.licenses.agpl3Plus;
-    meta.platforms = lib.platforms.linux;
+    platforms = lib.platforms.linux;
   };
 })
