@@ -64,6 +64,18 @@ impl QueueState {
     fn finish(&mut self, job: &CoverJob) {
         self.queued.remove(&job.key());
     }
+
+    /// Mark the current worker as stopped and reserve a replacement when work
+    /// arrived between the worker's last empty pop and its teardown.
+    fn finish_worker(&mut self) -> bool {
+        self.running = false;
+        if self.pending.is_empty() {
+            false
+        } else {
+            self.running = true;
+            true
+        }
+    }
 }
 
 #[derive(Clone, Serialize)]
@@ -76,6 +88,18 @@ struct CoverThumbnailReadyPayload {
 
 static QUEUE: OnceLock<Mutex<QueueState>> = OnceLock::new();
 
+struct WorkerRunningGuard {
+    app: AppHandle,
+}
+
+impl Drop for WorkerRunningGuard {
+    fn drop(&mut self) {
+        if lock_queue().finish_worker() {
+            spawn_worker(self.app.clone());
+        }
+    }
+}
+
 fn queue() -> &'static Mutex<QueueState> {
     QUEUE.get_or_init(|| Mutex::new(QueueState::default()))
 }
@@ -84,6 +108,14 @@ fn lock_queue() -> std::sync::MutexGuard<'static, QueueState> {
     queue()
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+fn spawn_worker(app: AppHandle) {
+    tauri::async_runtime::spawn_blocking(move || run_worker(app));
+}
+
+fn catch_worker_panic<T>(work: impl FnOnce() -> T) -> std::thread::Result<T> {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(work))
 }
 
 fn is_md5(value: &str) -> bool {
@@ -143,25 +175,24 @@ pub fn optimize_cover_thumbnails(
     let jobs = build_jobs(Path::new(&books_dir), Path::new(&cache_dir), covers);
     let should_start = lock_queue().enqueue(jobs);
     if should_start {
-        tauri::async_runtime::spawn_blocking(move || run_worker(app));
+        spawn_worker(app);
     }
     Ok(())
 }
 
 fn run_worker(app: AppHandle) {
+    let _running = WorkerRunningGuard { app: app.clone() };
+
     loop {
         let job = {
             let mut state = lock_queue();
             match state.pop() {
                 Some(job) => job,
-                None => {
-                    state.running = false;
-                    return;
-                }
+                None => return,
             }
         };
 
-        match create_or_reuse_thumbnail(&job) {
+        let outcome = catch_worker_panic(|| match create_or_reuse_thumbnail(&job) {
             Ok(path) => {
                 let _ = app.emit(
                     COVER_THUMBNAIL_READY_EVENT,
@@ -173,13 +204,15 @@ fn run_worker(app: AppHandle) {
                 );
             }
             Err(error) => {
-                // Remove failed jobs from the in-process dedupe set. A later
-                // visibility request can submit them again after interruption
-                // or a transient read/decode/write failure.
                 log::warn!("Cover thumbnail failed for {}: {error}", job.book_hash);
             }
+        });
+        if outcome.is_err() {
+            log::warn!("Cover thumbnail panicked for {}", job.book_hash);
         }
 
+        // Failed and panicking jobs leave the dedupe set so a later visibility
+        // request can retry them. The worker continues with the next cover.
         lock_queue().finish(&job);
     }
 }
@@ -228,7 +261,23 @@ fn encode_thumbnail(bytes: &[u8]) -> Result<Vec<u8>, String> {
     } else {
         image
     };
-    let rgb = image.to_rgb8();
+    let rgb = if image.has_alpha() {
+        let rgba = image.into_rgba8();
+        image::RgbImage::from_fn(rgba.width(), rgba.height(), |x, y| {
+            let source = rgba.get_pixel(x, y);
+            let alpha = source[3] as u16;
+            let composite = |channel: u8| -> u8 {
+                ((channel as u16 * alpha + 255 * (255 - alpha) + 127) / 255) as u8
+            };
+            image::Rgb([
+                composite(source[0]),
+                composite(source[1]),
+                composite(source[2]),
+            ])
+        })
+    } else {
+        image.into_rgb8()
+    };
     let mut output = Vec::with_capacity(64 * 1024);
     JpegEncoder::new_with_quality(Cursor::new(&mut output), COVER_JPEG_QUALITY)
         .encode(
@@ -278,6 +327,34 @@ mod tests {
 
         assert!(state.enqueue([cover]));
         assert_eq!(state.pending.len(), 1);
+    }
+
+    #[test]
+    fn panicking_job_is_removed_and_later_work_can_continue() {
+        let failed = job("a");
+        let next = job("b");
+        let mut state = QueueState::default();
+
+        assert!(state.enqueue([failed.clone(), next.clone()]));
+        let active = state.pop().unwrap();
+        assert!(catch_worker_panic(|| panic!("malformed image decoder panic")).is_err());
+        state.finish(&active);
+
+        assert_eq!(state.pop().unwrap().key(), next.key());
+        state.running = false;
+        assert!(state.enqueue([failed]));
+    }
+
+    #[test]
+    fn worker_exit_restarts_when_work_arrives_during_teardown() {
+        let mut state = QueueState {
+            running: true,
+            ..QueueState::default()
+        };
+
+        assert!(!state.enqueue([job("a")]));
+        assert!(state.finish_worker());
+        assert!(state.running);
     }
 
     #[test]
@@ -356,10 +433,11 @@ mod tests {
 
         let thumbnail = encode_thumbnail(&png).unwrap();
         assert_eq!(&thumbnail[..2], &[0xff, 0xd8]);
-        assert_eq!(
-            image::load_from_memory(&thumbnail).unwrap().dimensions(),
-            (240, 360)
-        );
+        let decoded = image::load_from_memory(&thumbnail).unwrap();
+        assert_eq!(decoded.dimensions(), (240, 360));
+        assert!(decoded.get_pixel(120, 180).0[..3]
+            .iter()
+            .all(|channel| *channel >= 250));
     }
 
     #[test]

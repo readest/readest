@@ -15,7 +15,7 @@ export interface CoverThumbnailReadyPayload {
 
 type VisibilityCallback = () => void;
 
-const visibilityCallbacks = new Map<Element, VisibilityCallback>();
+const visibilityCallbacks = new WeakMap<Element, VisibilityCallback>();
 let visibilityObserver: IntersectionObserver | null = null;
 
 const getVisibilityObserver = (): IntersectionObserver => {

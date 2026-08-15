@@ -33,6 +33,8 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
     onAspectRatioChange,
   }) => {
     const coverRef = useRef<HTMLDivElement>(null);
+    const bookRef = useRef(book);
+    bookRef.current = book;
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
     const [failedThumbnailUrl, setFailedThumbnailUrl] = useState<string | null>(null);
@@ -87,8 +89,17 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
       ) {
         return;
       }
-      return observeCoverForThumbnail(element, () => appService.requestCoverThumbnail(book));
-    }, [book, matchingThumbnail, metadataCoverImageUrl]);
+      return observeCoverForThumbnail(element, () =>
+        appService.requestCoverThumbnail(bookRef.current),
+      );
+    }, [
+      book.hash,
+      book.coverHash,
+      book.coverImageUrl,
+      book.deletedAt,
+      matchingThumbnail,
+      metadataCoverImageUrl,
+    ]);
 
     return (
       <div

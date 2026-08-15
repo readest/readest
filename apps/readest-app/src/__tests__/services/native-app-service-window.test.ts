@@ -159,6 +159,15 @@ describe('NativeAppService cover optimization', () => {
         payload: {
           bookHash: '0123456789abcdef0123456789abcdef',
           coverHash: null,
+          thumbnailPath: '',
+        },
+      });
+      expect(setBookCoverThumbnailMock).not.toHaveBeenCalled();
+
+      coverReady?.({
+        payload: {
+          bookHash: '0123456789abcdef0123456789abcdef',
+          coverHash: null,
           thumbnailPath: '/tmp/app-cache/cover-thumbnails/cover.jpg',
         },
       });

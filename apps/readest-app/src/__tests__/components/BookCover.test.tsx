@@ -25,7 +25,12 @@ vi.mock('next/image', () => ({
 
 beforeEach(() => {
   requestCoverThumbnailMock.mockClear();
-  useLibraryStore.setState({ coverThumbnails: new Map() });
+  useLibraryStore.setState({
+    coverThumbnails: new Map(),
+    library: [],
+    hashIndex: new Map(),
+    visibleLibrary: [],
+  });
 });
 
 afterEach(() => {
@@ -111,7 +116,7 @@ describe('BookCover', () => {
     expect(requestCoverThumbnailMock).not.toHaveBeenCalled();
   });
 
-  it('keeps the original cover visible while lazily requesting its thumbnail', async () => {
+  it('keeps the original cover visible while requesting its thumbnail', async () => {
     const book = makeBook({
       coverHash: 'cover-v1',
       coverImageUrl: 'https://example.com/full-size-cover.jpg',
@@ -220,12 +225,15 @@ describe('BookCover', () => {
     );
     const book = makeBook({ coverHash: 'cover-v1' });
 
-    render(<BookCover book={book} coverFit='crop' />);
+    const { rerender } = render(<BookCover book={book} coverFit='crop' />);
 
     expect(observe).toHaveBeenCalledOnce();
     expect(requestCoverThumbnailMock).not.toHaveBeenCalled();
+    const progressedBook = { ...book, updatedAt: 2 };
+    rerender(<BookCover book={progressedBook} coverFit='crop' />);
+    expect(observe).toHaveBeenCalledOnce();
     act(() => reveal?.());
-    expect(requestCoverThumbnailMock).toHaveBeenCalledWith(book);
+    expect(requestCoverThumbnailMock).toHaveBeenCalledWith(progressedBook);
     expect(unobserve).toHaveBeenCalledOnce();
   });
 });
