@@ -569,6 +569,12 @@ const getParagraphLayoutStyles = (
   html, body {
     text-align: var(--default-text-align);
   }
+  /* Authored text-wrap: pretty (e.g. Standard Ebooks' core.css) makes engines
+     that justify with it (Safari 26+, recent Chromium) overshoot inter-word
+     gaps and blocks the Word Spacing setting (#5582). Only the style longhand
+     is reset so an authored nowrap mode survives, and only on justified text
+     containers so balanced headings keep their rag. */
+  ${justify ? 'html, body, p, li, blockquote, dd { text-wrap-style: auto !important; }' : ''}
   [align="left"] { text-align: left; }
   [align="right"] { text-align: right; }
   [align="center"] { text-align: center; }
