@@ -351,6 +351,21 @@ describe('transformStylesheet', () => {
       expect(result).toContain('var(--fixed, fixed)');
     });
 
+    it('rewrites fixed after a data URI whose semicolons would end the declaration match', () => {
+      const css = '.d { background: url(data:image/png;base64,AAAA) no-repeat fixed top left; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('url(data:image/png;base64,AAAA)');
+      expect(result).toContain('no-repeat scroll top left');
+    });
+
+    it('does not corrupt a quoted url containing a closing paren and the word fixed', () => {
+      const css = '.q { background: url("weird) fixed.png") fixed; }';
+      const result = transformStylesheet(css, VW, VH, VERTICAL);
+      expect(result).toContain('url("weird) fixed.png")');
+      expect(result).toContain('scroll');
+      expect(result).not.toContain('scroll.png');
+    });
+
     it('rewrites fixed in inline styles', () => {
       const css = 'background-image: url(t1.png); background-attachment: fixed';
       const result = transformStylesheet(css, VW, VH, VERTICAL);

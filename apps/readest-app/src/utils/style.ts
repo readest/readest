@@ -1102,9 +1102,17 @@ export const transformStylesheet = (
   // paginator lays out as one huge multi-column strip and moves with
   // transforms, so the image lands far from its element and Blink smears the
   // text painted over it (#5711). Inside a transformed subtree the spec
-  // demands scroll behavior anyway, so rewrite fixed to scroll. Function
-  // tokens (url(), var(), gradients) are masked first so a file named
-  // fixed.png or a custom property like var(--fixed) is not rewritten.
+  // demands scroll behavior anyway, so rewrite fixed to scroll. url() tokens
+  // are masked across the sheet before the declaration split: an unquoted
+  // data URI may contain semicolons that would end the declaration match
+  // early, and a quoted url may contain closing parens or the word fixed.
+  // Remaining function tokens (var(), gradients) are masked per value so a
+  // custom property like var(--fixed) is not rewritten either.
+  const urlTokens: string[] = [];
+  css = css.replace(/url\(\s*(?:"[^"]*"|'[^']*'|[^)]*)\s*\)/gi, (url) => {
+    urlTokens.push(url);
+    return `READEST_URL_${urlTokens.length - 1}_PLACEHOLDER`;
+  });
   css = css.replace(
     /((?:^|[{;\s])background(?:-attachment)?\s*:)([^;{}]*)/gi,
     (match, prop: string, value: string) => {
@@ -1118,6 +1126,7 @@ export const transformStylesheet = (
       return prop + rewritten.replace(/READEST_FN_(\d+)_PLACEHOLDER/g, (_, i) => fns[+i]!);
     },
   );
+  css = css.replace(/READEST_URL_(\d+)_PLACEHOLDER/g, (_, i) => urlTokens[+i]!);
 
   // Books authored for Duokan fake full-bleed bands with negative horizontal
   // margins sized to Duokan's fixed 2em page padding. Columns are not clipped,
