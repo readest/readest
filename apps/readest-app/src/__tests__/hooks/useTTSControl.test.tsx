@@ -204,6 +204,10 @@ const { mockSessionManager } = vi.hoisted(() => ({
     getSessionByHash: vi.fn((_hash: string) => null as unknown),
     getActiveSession: vi.fn(() => null as unknown),
     stopActive: vi.fn().mockResolvedValue(undefined),
+    stopController: vi.fn(
+      async (_bookHash: string, controller: { shutdown: () => Promise<void> }) =>
+        controller.shutdown().catch(() => {}),
+    ),
     setSleepTimer: vi.fn(),
     getSleepTimer: vi.fn(() => null),
     setStopAtChapterEnd: vi.fn(),
@@ -848,6 +852,9 @@ describe('useTTSControl background session lifecycle', () => {
     mockSessionManager.release.mockClear();
     mockSessionManager.adopt.mockClear();
     mockSessionManager.stopActive.mockClear();
+    mockSessionManager.stopController.mockClear();
+    mockSessionManager.addEventListener.mockClear();
+    mockSessionManager.removeEventListener.mockClear();
     mockSessionManager.getSessionByHash.mockReturnValue(null);
     mockSessionManager.getActiveSession.mockReturnValue(null);
   });
@@ -890,7 +897,7 @@ describe('useTTSControl background session lifecycle', () => {
     expect(controller.shutdown).not.toHaveBeenCalled();
   });
 
-  it('unmount after termination shuts down and releases', async () => {
+  it('unmount after termination delegates the joinable controller teardown', async () => {
     const controller = await startSession();
     controller.terminated = true;
     mockSessionManager.getSessionByHash.mockReturnValue({
@@ -899,8 +906,7 @@ describe('useTTSControl background session lifecycle', () => {
       controller,
     });
     cleanup();
-    expect(controller.shutdown).toHaveBeenCalled();
-    expect(mockSessionManager.release).toHaveBeenCalledWith('book');
+    expect(mockSessionManager.stopController).toHaveBeenCalledWith('book', controller, 'user');
   });
 
   it('tts-close-book detaches a live session; tts-stop stays a hard stop', async () => {
@@ -916,8 +922,31 @@ describe('useTTSControl background session lifecycle', () => {
       await eventDispatcher.dispatch('tts-stop', { bookKey: 'book-1' });
       for (let i = 0; i < 5; i++) await Promise.resolve();
     });
-    expect(controller.shutdown).toHaveBeenCalled();
-    expect(mockSessionManager.release).toHaveBeenCalledWith('book');
+    expect(mockSessionManager.stopController).toHaveBeenCalledWith('book', controller, 'user');
+  });
+
+  it('ignores a stopped event for the controller another reader replaced', async () => {
+    const controller = await startSession();
+    const listener = mockSessionManager.addEventListener.mock.calls.find(
+      ([event]) => event === 'session-changed',
+    )?.[1] as ((event: Event) => void) | undefined;
+    expect(listener).toBeDefined();
+
+    act(() => {
+      listener!(
+        new CustomEvent('session-changed', {
+          detail: {
+            reason: 'stopped',
+            session: { bookHash: 'other', bookKey: 'other-r1', controller: {} },
+          },
+        }),
+      );
+    });
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-stop', { bookKey: 'book-1' });
+    });
+
+    expect(mockSessionManager.stopController).toHaveBeenCalledWith('book', controller, 'user');
   });
 
   it('mounting a book stops an active session of a different, unmounted book', async () => {

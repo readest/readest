@@ -335,7 +335,45 @@ export abstract class BaseAppService implements AppService {
   }
 
   async deleteBook(book: Book, deleteAction: DeleteAction): Promise<void> {
-    return CloudSvc.deleteBook(this.fs, book, deleteAction);
+    const loadTTSCleanup = async () => {
+      const [downloads, cache, sessions] = await Promise.all([
+        import('@/services/tts/ttsDownloadManager'),
+        import('@/services/tts/providers/bookCacheStore'),
+        import('@/services/tts/TTSSessionManager'),
+      ]);
+      return {
+        downloadManager: downloads.ttsDownloadManager,
+        clearDownloads: cache.clearBookTTSDownloads,
+        sessionManager: sessions.ttsSessionManager,
+      };
+    };
+    let ttsCleanup: Awaited<ReturnType<typeof loadTTSCleanup>> | undefined;
+
+    // Purge recursively removes the cache directory, so its open TTS database
+    // must be quiesced before the filesystem delete. Other local actions keep
+    // failure semantics unchanged and clean up only after their delete lands.
+    if (deleteAction === 'purge') {
+      ttsCleanup = await loadTTSCleanup();
+      await ttsCleanup.downloadManager.removeBook(book.hash);
+      await ttsCleanup.sessionManager.stopBook(book.hash, 'deleted');
+    }
+    await CloudSvc.deleteBook(this.fs, book, deleteAction);
+    if (deleteAction === 'cloud') return;
+    ttsCleanup ??= await loadTTSCleanup();
+
+    // Keep cleanup at the shared local-deletion boundary so library actions,
+    // sync-driven removal, and account purge all follow the same contract.
+    // The book deletion has already succeeded; cache housekeeping is
+    // best-effort and must not turn that success into a failed delete.
+    if (deleteAction !== 'purge') {
+      await ttsCleanup.downloadManager.removeBook(book.hash);
+      await ttsCleanup.sessionManager.stopBook(book.hash, 'deleted');
+    }
+    try {
+      await ttsCleanup.clearDownloads(this, book.hash);
+    } catch (err) {
+      console.warn('Failed to clear downloaded TTS audio for deleted book', err);
+    }
   }
 
   async uploadFileToCloud(

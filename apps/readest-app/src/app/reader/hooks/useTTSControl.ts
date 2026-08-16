@@ -198,8 +198,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           // close all funnel through this cleanup).
           ttsSessionManager.detach(bookHash);
         } else {
-          controller.shutdown();
-          ttsSessionManager.release(bookHash);
+          void ttsSessionManager.stopController(bookHash, controller, 'user');
         }
         ttsControllerRef.current = null;
       }
@@ -211,8 +210,19 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   // by another book) must reconcile this reader's UI when it is mounted.
   useEffect(() => {
     const onSessionChanged = (e: Event) => {
-      const { reason } = (e as CustomEvent<{ reason: string }>).detail;
-      if (reason !== 'stopped' || !ttsControllerRef.current) return;
+      const { reason, session } = (
+        e as CustomEvent<{
+          reason: string;
+          session: { controller: TTSController } | null;
+        }>
+      ).detail;
+      if (
+        reason !== 'stopped' ||
+        !ttsControllerRef.current ||
+        session?.controller !== ttsControllerRef.current
+      ) {
+        return;
+      }
       ttsControllerRef.current = null;
       setTtsController(null);
       setIsPlaying(false);
@@ -774,23 +784,14 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       getView(bookKey)?.deselect();
       releaseUnblockAudio();
 
-      // Tear down the controller, the lock-screen media session, and the
-      // background-audio session best-effort and IN PARALLEL. The controller's
-      // own shutdown can stall on iOS system TTS, and it must NOT gate the media
-      // session / background-audio teardown — otherwise the lock-screen Now
-      // Playing keeps running after TTS is disabled (Edge TTS was unaffected
-      // because it never hits the stalling native path). See #4676.
-      await Promise.all([
-        ttsController
-          ? Promise.resolve()
-              .then(() => ttsController.shutdown())
-              .catch((error) => console.warn('TTS shutdown failed:', error))
-          : Promise.resolve(),
-        Promise.resolve()
-          .then(() => ttsMediaBridge.unbind())
-          .catch(() => {}),
-      ]);
-      ttsSessionManager.release(getBookHashFromKey(bookKey));
+      // Unbind immediately: controller shutdown can stall on iOS system TTS,
+      // but lock-screen Now Playing must still disappear at once (#4676).
+      // The manager owns the joinable teardown so deletion cannot race its
+      // still-open cache database.
+      ttsMediaBridge.unbind();
+      if (ttsController) {
+        await ttsSessionManager.stopController(getBookHashFromKey(bookKey), ttsController, 'user');
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [appService],

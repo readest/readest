@@ -45,6 +45,22 @@ vi.mock('@/services/cloudService', () => ({
   downloadReplicaFileFromCloud: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('@/services/tts/ttsDownloadManager', () => ({
+  ttsDownloadManager: {
+    removeBook: vi.fn(),
+  },
+}));
+
+vi.mock('@/services/tts/providers/bookCacheStore', () => ({
+  clearBookTTSDownloads: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@/services/tts/TTSSessionManager', () => ({
+  ttsSessionManager: {
+    stopBook: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 vi.mock('@/services/fontService', () => ({
   importFont: vi.fn().mockResolvedValue({ name: 'Font', path: '/f' }),
   deleteFont: vi.fn().mockResolvedValue(undefined),
@@ -80,7 +96,11 @@ vi.mock('@/utils/permission', async (importOriginal) => {
 import { BaseAppService } from '@/services/appService';
 import * as Settings from '@/services/settingsService';
 import * as BookSvc from '@/services/bookService';
+import * as CloudSvc from '@/services/cloudService';
 import * as LibrarySvc from '@/services/libraryService';
+import { ttsDownloadManager } from '@/services/tts/ttsDownloadManager';
+import { clearBookTTSDownloads } from '@/services/tts/providers/bookCacheStore';
+import { ttsSessionManager } from '@/services/tts/TTSSessionManager';
 import { requestStoragePermission } from '@/utils/permission';
 
 // Concrete test implementation of BaseAppService
@@ -423,6 +443,79 @@ describe('BaseAppService', () => {
     test('loadLibraryBooks delegates', async () => {
       const result = await service.loadLibraryBooks();
       expect(result).toEqual([{ title: 'Book1' }]);
+    });
+  });
+
+  describe('deleteBook TTS queue lifecycle', () => {
+    const book = { hash: 'book-hash', title: 'Book' } as Parameters<
+      TestAppService['deleteBook']
+    >[0];
+
+    test('clears queued downloads only when the local copy is deleted', async () => {
+      await service.deleteBook(book, 'cloud');
+      expect(ttsDownloadManager.removeBook).not.toHaveBeenCalled();
+      expect(clearBookTTSDownloads).not.toHaveBeenCalled();
+
+      await service.deleteBook(book, 'local');
+      expect(ttsDownloadManager.removeBook).toHaveBeenCalledTimes(1);
+      expect(ttsDownloadManager.removeBook).toHaveBeenCalledWith('book-hash');
+      expect(clearBookTTSDownloads).toHaveBeenCalledWith(service, 'book-hash');
+    });
+
+    test('does not clear queued downloads when local deletion fails', async () => {
+      vi.mocked(CloudSvc.deleteBook).mockRejectedValueOnce(new Error('disk failure'));
+
+      await expect(service.deleteBook(book, 'local')).rejects.toThrow('disk failure');
+      expect(ttsDownloadManager.removeBook).not.toHaveBeenCalled();
+      expect(clearBookTTSDownloads).not.toHaveBeenCalled();
+    });
+
+    test('quiesces downloads and the live session before purging the cache directory', async () => {
+      let finishDownloadCancellation: () => void = () => {};
+      let finishSessionStop: () => void = () => {};
+      vi.mocked(ttsDownloadManager.removeBook).mockReturnValueOnce(
+        new Promise<void>((resolve) => {
+          finishDownloadCancellation = resolve;
+        }),
+      );
+      vi.mocked(ttsSessionManager.stopBook).mockReturnValueOnce(
+        new Promise<void>((resolve) => {
+          finishSessionStop = resolve;
+        }),
+      );
+
+      const deletion = service.deleteBook(book, 'purge');
+
+      await vi.waitFor(() => expect(ttsDownloadManager.removeBook).toHaveBeenCalled());
+      expect(ttsDownloadManager.removeBook).toHaveBeenCalledWith('book-hash');
+      expect(ttsSessionManager.stopBook).not.toHaveBeenCalled();
+      expect(CloudSvc.deleteBook).not.toHaveBeenCalled();
+
+      finishDownloadCancellation();
+      await vi.waitFor(() => expect(ttsSessionManager.stopBook).toHaveBeenCalled());
+      expect(ttsSessionManager.stopBook).toHaveBeenCalledWith('book-hash', 'deleted');
+      expect(CloudSvc.deleteBook).not.toHaveBeenCalled();
+
+      finishSessionStop();
+      await deletion;
+      expect(CloudSvc.deleteBook).toHaveBeenCalled();
+    });
+
+    test('waits for active download cancellation before clearing pinned audio', async () => {
+      let finishCancellation: () => void = () => {};
+      vi.mocked(ttsDownloadManager.removeBook).mockReturnValueOnce(
+        new Promise<void>((resolve) => {
+          finishCancellation = resolve;
+        }),
+      );
+
+      const deletion = service.deleteBook(book, 'local');
+      await vi.waitFor(() => expect(ttsDownloadManager.removeBook).toHaveBeenCalled());
+      expect(clearBookTTSDownloads).not.toHaveBeenCalled();
+
+      finishCancellation();
+      await deletion;
+      expect(clearBookTTSDownloads).toHaveBeenCalledWith(service, 'book-hash');
     });
   });
 
