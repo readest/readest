@@ -1,9 +1,12 @@
 import { afterEach, expect, test } from 'vitest';
 import { BlobWriter, TextReader, Uint8ArrayReader, ZipWriter } from '@zip.js/zip.js';
 import { WebDatabaseService } from '@/services/database/webDatabaseService';
+import { WebAppService } from '@/services/webAppService';
 import { SourceBroker, SqlBroker } from '@/services/plugins/brokers';
+import { getBundledPlugin } from '@/services/plugins/catalog';
 import { createPluginHostCallHandler } from '@/services/plugins/hostCalls';
 import { createPluginRuntime } from '@/services/plugins/runtime';
+import { importPluginDictionaries } from '@/services/dictionaries/plugins/import';
 
 const createDictionary = async (): Promise<File> => {
   const writer = new ZipWriter(new BlobWriter('application/zip'));
@@ -59,8 +62,14 @@ test('builds and queries a Yomitan dictionary through a real Worker and browser 
   const sourceBroker = new SourceBroker();
   const sqlBroker = new SqlBroker();
   const sourceHandle = sourceBroker.register({ pluginId }, source);
-  const database = await WebDatabaseService.open(':memory:');
-  closeDatabase = () => database.close();
+  const databaseName = `readest-yomitan-${crypto.randomUUID()}.sqlite3`;
+  let database = await WebDatabaseService.open(databaseName);
+  closeDatabase = async () => {
+    await database.close();
+    const root = await navigator.storage.getDirectory();
+    await root.removeEntry(databaseName).catch(() => undefined);
+    await root.removeEntry(`${databaseName}-wal`).catch(() => undefined);
+  };
   const databaseHandle = await sqlBroker.register({ pluginId, dictionaryId }, database, 'staging');
   const runtime = createPluginRuntime({
     createWorker: () =>
@@ -95,6 +104,8 @@ test('builds and queries a Yomitan dictionary through a real Worker and browser 
   ).resolves.toMatchObject({ indexVersion: 1, entries: 1 });
 
   sqlBroker.revoke(databaseHandle);
+  await database.close();
+  database = await WebDatabaseService.open(databaseName);
   const activeDatabaseHandle = await sqlBroker.register(
     { pluginId, dictionaryId },
     database,
@@ -120,4 +131,31 @@ test('builds and queries a Yomitan dictionary through a real Worker and browser 
     mimeType: 'image/png',
     bytes: new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
   });
+});
+
+test('imports a Yomitan dictionary through the browser app service', async () => {
+  const appService = new WebAppService();
+  const source = await createDictionary();
+  const bundledPlugin = getBundledPlugin('readest.yomitan');
+  if (!bundledPlugin) throw new Error('Bundled Yomitan plugin is missing');
+  const result = await importPluginDictionaries(appService, [{ file: source }], [], {
+    resolvePlugin: () => ({
+      ...bundledPlugin,
+      createWorker: () =>
+        new Worker(new URL('../../../../plugins/yomitan/worker.ts', import.meta.url), {
+          type: 'module',
+        }),
+    }),
+  });
+  const dictionary = result.imported[0];
+
+  try {
+    expect(dictionary).toMatchObject({
+      name: 'Browser Japanese',
+      kind: 'plugin',
+      plugin: { pluginId: 'readest.yomitan', formatId: 'yomitan' },
+    });
+  } finally {
+    if (dictionary) await appService.deleteDictionary(dictionary);
+  }
 });

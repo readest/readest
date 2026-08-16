@@ -130,6 +130,10 @@ const nextConfig = {
         source: '/_next/static/:path*',
         headers: [
           {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+          {
             key: 'Cache-Control',
             value: isDev
               ? 'public, max-age=0, must-revalidate'
