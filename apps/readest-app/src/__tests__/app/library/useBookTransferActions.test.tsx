@@ -4,7 +4,6 @@ import { renderHook } from '@testing-library/react';
 import type { Book } from '@/types/book';
 import type { EnvConfigType } from '@/services/environment';
 import type { AppService } from '@/types/system';
-import type { ProgressPayload } from '@/utils/transfer';
 
 /**
  * Issue #5062 — cloud sync providers are independently selectable, so a
@@ -72,9 +71,9 @@ const makeBook = (over: Partial<Book> = {}): Book => ({
 
 const setup = (appService: AppService | null = null) => {
   const updateBook = vi.fn(async (_envConfig: EnvConfigType, _book: Book) => {});
-  const updateBookTransferProgress = vi.fn((_bookHash: string, _progress: ProgressPayload) => {});
+  const setBooksTransferProgress = vi.fn();
   const { result } = renderHook(() =>
-    useBookTransferActions(envConfig, appService, updateBook, updateBookTransferProgress),
+    useBookTransferActions(envConfig, appService, updateBook, setBooksTransferProgress),
   );
   return { result, updateBook };
 };
@@ -129,7 +128,7 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
     const book = makeBook({ uploadedAt: 12345 });
     const ok = await result.current.handleBookDownload(book, { queued: true });
 
-    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book);
+    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book, expect.any(Function));
     expect(queueDownload).not.toHaveBeenCalled();
     expect(ok).toBe(true);
   });
@@ -143,7 +142,7 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
     const book = makeBook({ uploadedAt: 12345 });
     const ok = await result.current.handleBookDownload(book, { queued: true });
 
-    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book);
+    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book, expect.any(Function));
     expect(queueDownload).toHaveBeenCalledWith(book, 1);
     expect(ok).toBe(true);
   });
@@ -158,7 +157,7 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
     const book = makeBook({ uploadedAt: 12345 });
     const ok = await result.current.handleBookDownload(book, { queued: false });
 
-    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book);
+    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book, expect.any(Function));
     expect(downloadBook).toHaveBeenCalledWith(book, false, false, expect.any(Function));
     expect(queueDownload).not.toHaveBeenCalled();
     expect(updateBook).toHaveBeenCalledWith(envConfig, book);
@@ -173,7 +172,7 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
     const book = makeBook({ uploadedAt: null });
     const ok = await result.current.handleBookDownload(book, { queued: true });
 
-    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book);
+    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book, expect.any(Function));
     expect(queueDownload).not.toHaveBeenCalled();
     expect(updateBook).toHaveBeenCalledWith(envConfig, book);
     expect(ok).toBe(true);

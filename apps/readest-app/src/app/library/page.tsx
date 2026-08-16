@@ -26,8 +26,6 @@ import { getBookWithUpdatedMetadata, listFormater } from '@/utils/book';
 import { getImportErrorMessage } from '@/services/errors';
 import { ingestFile } from '@/services/ingestService';
 import { eventDispatcher } from '@/utils/event';
-import { ProgressPayload } from '@/utils/transfer';
-import { throttle } from '@/utils/throttle';
 import { transferManager } from '@/services/transferManager';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { getFilename, getFolderImportGroupName, joinScannedPath } from '@/utils/path';
@@ -1096,20 +1094,42 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     scanAndImport: autoImportFromWatchedFolders,
   });
 
-  const updateBookTransferProgress = throttle((bookHash: string, progress: ProgressPayload) => {
-    if (progress.total === 0) return;
-    const progressPct = (progress.progress / progress.total) * 100;
-    setBooksTransferProgress((prev) => ({
-      ...prev,
-      [bookHash]: progressPct,
-    }));
-  }, 500);
+  // Queue downloads (the TransferQueuePanel path) report progress into the
+  // transfer store, not through the transfer actions hook, so mirror active
+  // download transfers back into booksTransferProgress to drive the cover
+  // progress overlay. The entry is dropped when the transfer leaves
+  // pending/in_progress (completed, failed, cancelled).
+  useEffect(() => {
+    const syncFromTransferQueue = () => {
+      const { transfers } = useTransferStore.getState();
+      setBooksTransferProgress((prev) => {
+        let merged = prev;
+        let changed = false;
+        for (const t of Object.values(transfers)) {
+          if (t.kind !== 'book' || t.type !== 'download') continue;
+          const active = t.status === 'pending' || t.status === 'in_progress';
+          if (active && merged[t.bookHash] !== t.progress) {
+            if (!changed) merged = { ...prev };
+            merged[t.bookHash] = t.progress;
+            changed = true;
+          } else if (!active && merged[t.bookHash] != null) {
+            if (!changed) merged = { ...prev };
+            delete merged[t.bookHash];
+            changed = true;
+          }
+        }
+        return changed ? merged : prev;
+      });
+    };
+    syncFromTransferQueue();
+    return useTransferStore.subscribe(syncFromTransferQueue);
+  }, []);
 
   const { handleBookUpload, handleBookDownload } = useBookTransferActions(
     envConfig,
     appService,
     updateBook,
-    updateBookTransferProgress,
+    setBooksTransferProgress,
   );
 
   const handleBookDelete = (deleteAction: DeleteAction) => {

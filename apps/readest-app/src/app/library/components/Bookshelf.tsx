@@ -936,7 +936,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           handleLibraryNavigation={handleLibraryNavigation}
           handleUpdateReadingStatus={handleUpdateReadingStatus}
           transferProgress={
-            'hash' in item ? booksTransferProgress[(item as Book).hash] || null : null
+            'hash' in item ? (booksTransferProgress[(item as Book).hash] ?? null) : null
           }
           showTimeRemaining={showTimeRemaining}
         />

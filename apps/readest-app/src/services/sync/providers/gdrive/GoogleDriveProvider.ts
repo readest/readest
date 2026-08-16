@@ -35,6 +35,7 @@
 
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriDownload, tauriUpload } from '@/utils/transfer';
+import type { ProgressHandler } from '@/utils/transfer';
 import {
   FileEntry,
   FileHead,
@@ -787,13 +788,17 @@ class DriveProviderImpl {
    * media URL needs a bearer token (the session-URI shortcut is upload-only).
    * Returns `false` when the file is absent or the transport swallows a failure.
    */
-  async downloadStream(remotePath: string, localPath: string): Promise<boolean> {
+  async downloadStream(
+    remotePath: string,
+    localPath: string,
+    onProgress?: ProgressHandler,
+  ): Promise<boolean> {
     logDriveOp('downloadStream', remotePath);
     try {
       const fileId = await this.resolveFile(remotePath);
       if (fileId === null) return false;
       const token = await this.auth.getAccessToken();
-      await tauriDownload(mediaDownloadUrl(fileId), localPath, undefined, {
+      await tauriDownload(mediaDownloadUrl(fileId), localPath, onProgress, {
         Authorization: `Bearer ${token}`,
       });
       return true;
@@ -932,7 +937,8 @@ export const createGoogleDriveProvider = (
 
   if (isTauriAppPlatform()) {
     provider.uploadStream = (remotePath, localPath) => impl.uploadStream(remotePath, localPath);
-    provider.downloadStream = (remotePath, localPath) => impl.downloadStream(remotePath, localPath);
+    provider.downloadStream = (remotePath, localPath, onProgress) =>
+      impl.downloadStream(remotePath, localPath, onProgress);
   }
 
   return provider;

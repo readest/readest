@@ -37,6 +37,7 @@ import { AwsClient } from 'aws4fetch';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
 import { tauriDownload, tauriUpload } from '@/utils/transfer';
+import type { ProgressHandler } from '@/utils/transfer';
 import {
   FileEntry,
   FileHead,
@@ -338,10 +339,14 @@ class S3ProviderImpl {
   }
 
   /** Streaming download via a presigned GET URL; same contract as upload. */
-  async downloadStream(remotePath: string, localPath: string): Promise<boolean> {
+  async downloadStream(
+    remotePath: string,
+    localPath: string,
+    onProgress?: ProgressHandler,
+  ): Promise<boolean> {
     try {
       const url = await this.presign(HTTP_GET, remotePath);
-      await tauriDownload(url, localPath);
+      await tauriDownload(url, localPath, onProgress);
       return true;
     } catch (e) {
       console.warn('S3Provider.downloadStream failed', remotePath, e);
@@ -435,7 +440,8 @@ export const createS3Provider = (
 
   if (isTauriAppPlatform()) {
     provider.uploadStream = (remotePath, localPath) => impl.uploadStream(remotePath, localPath);
-    provider.downloadStream = (remotePath, localPath) => impl.downloadStream(remotePath, localPath);
+    provider.downloadStream = (remotePath, localPath, onProgress) =>
+      impl.downloadStream(remotePath, localPath, onProgress);
   }
 
   return provider;

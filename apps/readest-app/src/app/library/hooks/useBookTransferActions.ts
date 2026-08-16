@@ -1,8 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import type { Book } from '@/types/book';
 import type { EnvConfigType } from '@/services/environment';
 import type { AppService } from '@/types/system';
-import type { ProgressPayload } from '@/utils/transfer';
+import { createProgressThrottle, type ProgressPayload } from '@/utils/transfer';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
@@ -34,9 +34,32 @@ export const useBookTransferActions = (
   envConfig: EnvConfigType,
   appService: AppService | null,
   updateBook: (envConfig: EnvConfigType, book: Book) => Promise<void>,
-  updateBookTransferProgress: (bookHash: string, progress: ProgressPayload) => void,
+  setBooksTransferProgress: Dispatch<SetStateAction<{ [key: string]: number | null }>>,
 ) => {
   const _ = useTranslation();
+
+  // Per-book helpers for the cover progress overlay. Progress is throttled
+  // per transfer (native plugins emit dense per-chunk bursts) and the entry
+  // is dropped once the transfer finishes, so a stale value cannot linger.
+  // When the backend cannot report a byte total (chunked response / buffered
+  // fallback) the entry is set to -1, which the overlay renders as an
+  // indeterminate spinner instead of a frozen 0%.
+  const progressSetter = (bookHash: string) => (progress: ProgressPayload) => {
+    setBooksTransferProgress((prev) => {
+      const next = progress.total > 0 ? (progress.progress / progress.total) * 100 : -1;
+      if (prev[bookHash] === next) return prev;
+      return { ...prev, [bookHash]: next };
+    });
+  };
+
+  const clearProgress = (bookHash: string) => {
+    setBooksTransferProgress((prev) => {
+      if (prev[bookHash] == null) return prev;
+      const next = { ...prev };
+      delete next[bookHash];
+      return next;
+    });
+  };
 
   const handleBookUpload = useCallback(
     async (book: Book, _syncBooks = true) => {
@@ -94,7 +117,17 @@ export const useBookTransferActions = (
       // misrouted into Readest Cloud. When none has the file, fall through to
       // the native, resumable path if that backend is also enabled (#5009).
       if (backends.length > 0) {
-        const ok = await runFileBookDownload(envConfig, book);
+        const progressThrottle = createProgressThrottle(progressSetter(book.hash), 100);
+        // Kick the overlay off immediately (indeterminate); the native transfer
+        // plugin then reports byte progress through runFileBookDownload.
+        progressThrottle.push({ progress: 0, total: 0, transferSpeed: 0 });
+        let ok = false;
+        try {
+          ok = await runFileBookDownload(envConfig, book, (p) => progressThrottle.push(p));
+        } finally {
+          progressThrottle.flush();
+          clearProgress(book.hash);
+        }
         if (ok) {
           await updateBook(envConfig, book);
           if (!silent) {
@@ -120,10 +153,12 @@ export const useBookTransferActions = (
       }
 
       if (redownload || !queued) {
+        const progressThrottle = createProgressThrottle(progressSetter(book.hash), 100);
         try {
-          await appService?.downloadBook(book, false, redownload, (progress) => {
-            updateBookTransferProgress(book.hash, progress);
-          });
+          await appService?.downloadBook(book, false, redownload, (progress) =>
+            progressThrottle.push(progress),
+          );
+          progressThrottle.flush();
           await updateBook(envConfig, book);
           if (!silent) {
             eventDispatcher.dispatch('toast', {
@@ -136,6 +171,8 @@ export const useBookTransferActions = (
           }
           return true;
         } catch {
+          progressThrottle.cancel();
+          clearProgress(book.hash);
           if (!silent) {
             eventDispatcher.dispatch('toast', {
               message: _('Failed to download book: {{title}}', {

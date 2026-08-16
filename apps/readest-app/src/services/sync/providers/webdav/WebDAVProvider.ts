@@ -107,10 +107,10 @@ export const createWebDAVProvider = (settings: WebDAVSettings): FileSyncProvider
         return false;
       }
     };
-    provider.downloadStream = async (remotePath, localPath) => {
+    provider.downloadStream = async (remotePath, localPath, onProgress) => {
       const url = buildRequestUrl(settings.serverUrl, remotePath);
       try {
-        await tauriDownload(url, localPath, undefined, authHeaders());
+        await tauriDownload(url, localPath, onProgress, authHeaders());
         return true;
       } catch (e) {
         console.warn('WebDAVProvider.downloadStream failed', remotePath, e);
