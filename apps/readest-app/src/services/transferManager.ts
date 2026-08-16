@@ -232,7 +232,9 @@ class TransferManager {
 
     const id = store.addReplicaTransfer(replicaKind, replicaId, displayTitle, 'upload', {
       priority: opts.priority,
-      isBackground: opts.isBackground,
+      // Replica transfers are background sync by default — see the note on
+      // queueReplicaDownload.
+      isBackground: opts.isBackground ?? true,
       files,
       base,
       reincarnation: opts.reincarnation,
@@ -260,7 +262,12 @@ class TransferManager {
 
     const id = store.addReplicaTransfer(replicaKind, replicaId, displayTitle, 'download', {
       priority: opts.priority,
-      isBackground: opts.isBackground,
+      // Replica bundles (fonts, textures, dictionaries, OPDS catalogs) sync on
+      // their own schedule, not because the user asked for this file right
+      // now. Toasting each one turns a fresh device into a wall of
+      // notifications, so they are background — and therefore silent — unless
+      // a caller explicitly opts into the foreground.
+      isBackground: opts.isBackground ?? true,
       files,
       base,
     });
@@ -286,7 +293,8 @@ class TransferManager {
 
     const id = store.addReplicaTransfer(replicaKind, replicaId, displayTitle, 'delete', {
       priority: opts.priority,
-      isBackground: opts.isBackground,
+      // Background by default — see the note on queueReplicaDownload.
+      isBackground: opts.isBackground ?? true,
       files: filenames.map((logical) => ({ logical, lfp: '', byteSize: 0 })),
     });
     this.persistQueue();
@@ -483,20 +491,27 @@ class TransferManager {
           this.processQueue();
         }, delay);
       } else {
-        if (errorMessage.includes('Not authenticated')) {
-          eventDispatcher.dispatch('toast', {
-            type: 'error',
-            message: _('Please log in to continue'),
-          });
-        } else if (isQuotaError) {
-          this.recordQuotaFailure();
-        } else {
-          const errorMessages = getTransferMessages(transfer, _).failure;
+        // Background work fails quietly. The success path has always honoured
+        // `isBackground`; the failure path did not, so a broken replica sync
+        // fired one toast per file (issue #5675 — sixteen "Failed to download
+        // file" toasts for sixteen fonts). The failure is still recorded on
+        // the transfer, which is what the Transfer Queue panel reads.
+        if (!transfer.isBackground) {
+          if (errorMessage.includes('Not authenticated')) {
+            eventDispatcher.dispatch('toast', {
+              type: 'error',
+              message: _('Please log in to continue'),
+            });
+          } else if (isQuotaError) {
+            this.recordQuotaFailure();
+          } else {
+            const errorMessages = getTransferMessages(transfer, _).failure;
 
-          eventDispatcher.dispatch('toast', {
-            type: 'error',
-            message: errorMessages[transfer.type],
-          });
+            eventDispatcher.dispatch('toast', {
+              type: 'error',
+              message: errorMessages[transfer.type],
+            });
+          }
         }
 
         useTransferStore.getState().setTransferStatus(transfer.id, 'failed', errorMessage);

@@ -2155,5 +2155,8 @@
   "Cancel all ({{count}})_one": "Cancelar tudo ({{count}})",
   "Cancel all ({{count}})_many": "Cancelar tudo ({{count}})",
   "Cancel all ({{count}})_other": "Cancelar tudo ({{count}})",
-  "Waiting…": "Aguardando…"
+  "Waiting…": "Aguardando…",
+  "More Settings": "Mais configurações",
+  "Right-to-Left Pages": "Páginas da direita para a esquerda",
+  "Send Document Metadata": "Enviar metadados do documento"
 }

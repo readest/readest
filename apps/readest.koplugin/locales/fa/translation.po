@@ -191,6 +191,9 @@ msgstr "سهمیه ذخیره‌سازی به پایان رسید."
 msgid "Upload failed."
 msgstr "بارگذاری ناموفق بود."
 
+msgid "Send to nearby Readest devices"
+msgstr "ارسال به دستگاه‌های Readest نزدیک"
+
 msgid "Download Book"
 msgstr "دانلود کتاب"
 
@@ -236,8 +239,8 @@ msgstr "دریافت یادداشت‌های Readest از دستگاه‌های 
 msgid "Full sync all readest annotations"
 msgstr "همگام‌سازی کامل تمام یادداشت‌های Readest"
 
-msgid "Add to Readest"
-msgstr "افزودن به Readest"
+msgid "Add to Readest library"
+msgstr "افزودن به کتابخانهٔ Readest"
 
 msgid "Sign in to Readest first."
 msgstr "ابتدا وارد Readest شوید."
@@ -289,6 +292,9 @@ msgstr "اکنون ارسال کتاب‌ها"
 
 msgid "Pull books now"
 msgstr "اکنون دریافت کتاب‌ها"
+
+msgid "Receive via LocalSend"
+msgstr "دریافت از طریق LocalSend"
 
 msgid "Upload current book to Readest"
 msgstr "بارگذاری کتاب فعلی در Readest"
@@ -349,6 +355,90 @@ msgstr "کتاب‌ها همگام شدند"
 
 msgid "Books sync failed"
 msgstr "همگام‌سازی کتاب‌ها ناموفق بود"
+
+msgid "Set a Readest download folder or a KOReader home folder first."
+msgstr "ابتدا یک پوشهٔ دانلود Readest یا پوشهٔ خانگی KOReader تعیین کنید."
+
+msgid "LocalSend error: could not find a free port."
+msgstr "خطای LocalSend: پورت آزادی یافت نشد."
+
+msgid "LocalSend failed to start."
+msgstr "LocalSend شروع نشد."
+
+msgid "Starting LocalSend…"
+msgstr "در حال شروع LocalSend…"
+
+msgid "LocalSend will start when Wi-Fi connects."
+msgstr "LocalSend پس از اتصال Wi-Fi شروع می‌شود."
+
+msgid "… and %1 more"
+msgstr "… و %1 مورد دیگر"
+
+msgid "%1 wants to send you %2 file(s) (%3):"
+msgstr "%1 می‌خواهد %2 فایل برای شما بفرستد (%3):"
+
+msgid "Accept"
+msgstr "پذیرفتن"
+
+msgid "Decline"
+msgstr "رد کردن"
+
+msgid "Receiving %1 file(s) from %2…"
+msgstr "در حال دریافت %1 فایل از %2…"
+
+msgid "LocalSend: received %1 file(s), %2 failed."
+msgstr "LocalSend: %1 فایل دریافت شد، %2 ناموفق."
+
+msgid "LocalSend transfer cancelled."
+msgstr "انتقال LocalSend لغو شد."
+
+msgid "LocalSend: received %1 file(s)."
+msgstr "LocalSend: %1 فایل دریافت شد."
+
+msgid "LocalSend not available on this device"
+msgstr "LocalSend روی این دستگاه در دسترس نیست"
+
+msgid "Scanning for nearby devices…"
+msgstr "در حال جست‌وجوی دستگاه‌های نزدیک…"
+
+msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
+msgstr "دستگاه نزدیکی یافت نشد. مطمئن شوید LocalSend/Readest روی دستگاه دیگر باز است."
+
+msgid "Rescan"
+msgstr "پویش دوباره"
+
+msgid "Send to…"
+msgstr "ارسال به…"
+
+msgid "Sending…"
+msgstr "در حال ارسال…"
+
+msgid "Sending… %1%"
+msgstr "در حال ارسال… %1%"
+
+msgid "Sent %1 file(s)."
+msgstr "%1 فایل ارسال شد."
+
+msgid "The other device declined the transfer."
+msgstr "دستگاه دیگر انتقال را رد کرد."
+
+msgid "Transfer cancelled."
+msgstr "انتقال لغو شد."
+
+msgid "Send failed: %1"
+msgstr "ارسال ناموفق بود: %1"
+
+msgid "LocalSend error: %1"
+msgstr "خطای LocalSend: %1"
+
+msgid "LocalSend off"
+msgstr "LocalSend خاموش"
+
+msgid "Visible as %1"
+msgstr "نمایان با نام %1"
+
+msgid "(limited discovery)"
+msgstr "(کشف محدود)"
 
 msgid "Checking for update…"
 msgstr "در حال بررسی به‌روزرسانی…"

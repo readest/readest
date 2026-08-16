@@ -75,6 +75,7 @@ vi.mock('@pdfjs/pdf.min.mjs', () => {
     numPages: 3,
     getPage: vi.fn(async () => makePage()),
     getMetadata: vi.fn(async () => ({ metadata: undefined, info: {} })),
+    getViewerPreferences: vi.fn(async () => null),
     getOutline: vi.fn(async () => null),
     getDestination: vi.fn(),
     getPageIndex: vi.fn(),

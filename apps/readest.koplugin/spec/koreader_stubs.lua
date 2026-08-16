@@ -129,6 +129,9 @@ end
 package.preload["ui/widget/infomessage"] = function()
     return { new = function(_, o) return o or {} end }
 end
+package.preload["ui/widget/confirmbox"] = function()
+    return { new = function(self, o) return setmetatable(o or {}, { __index = self }) end }
+end
 package.preload["ui/widget/keyvaluepage"] = function()
     return { new = function(_, o) return o or {} end }
 end

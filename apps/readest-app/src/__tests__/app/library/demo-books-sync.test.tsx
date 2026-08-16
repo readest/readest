@@ -66,10 +66,6 @@ vi.mock('@/services/sync/file/runLibrarySync', () => ({
   runFileLibrarySyncPass: vi.fn(async () => ({ booksSynced: 0 })),
 }));
 
-vi.mock('@/services/sync/fleetDetection', () => ({
-  checkMixedFleetOnce: vi.fn(),
-}));
-
 const { useBooksSync } = await import('@/app/library/hooks/useBooksSync');
 const { useLibraryStore } = await import('@/store/libraryStore');
 

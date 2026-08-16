@@ -1,0 +1,36 @@
+[package]
+name = "localsend-bin"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Standalone crate; keep any future ancestor workspace from claiming it.
+[workspace]
+
+[lib]
+name = "localsend_bin"
+
+[[bin]]
+name = "localsend-helper"
+path = "src/bin/helper.rs"
+
+[dependencies]
+anyhow = "1"
+bytes = "1"
+futures-util = "0.3"
+if-addrs = "0.15"
+localsend = { git = "https://github.com/readest/localsend", rev = "3cae1825670617244ad235ba4295114d53e5fd2b", default-features = false, features = ["discovery"] }
+pem = "4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros", "net", "io-util"] }
+tokio-stream = "0.1"
+tokio-util = "0.7"
+
+[dev-dependencies]
+serde_json = "1"
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+strip = "symbols"

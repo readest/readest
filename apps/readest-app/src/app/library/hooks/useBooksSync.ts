@@ -18,8 +18,6 @@ import { isDemoBook } from '@/services/demoBooks';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { ensureFeedBookCover } from '@/services/rss/feedBook';
 import { runFileLibrarySyncPass } from '@/services/sync/file/runLibrarySync';
-import { checkMixedFleetOnce } from '@/services/sync/fleetDetection';
-import { useSyncContext } from '@/context/SyncContext';
 import {
   pickFresherReadingStatus,
   needsCoverRefresh,
@@ -35,7 +33,6 @@ export const useBooksSync = () => {
   const { library, isSyncing, libraryLoaded } = useLibraryStore();
   const { setLibrary, setIsSyncing, setSyncProgress } = useLibraryStore();
   const { useSyncInited, syncedBooks, syncBooks, lastSyncedAtBooks } = useSync();
-  const { syncClient } = useSyncContext();
   const isPullingRef = useRef(false);
 
   const getNewBooks = useCallback(() => {
@@ -136,15 +133,10 @@ export const useBooksSync = () => {
     throttle(
       async () => {
         if (isPullingRef.current) return;
-        // Readest Cloud unchecked: the native book channel is gated, so the
-        // interval runs the read-only mixed-fleet probe instead — a device
-        // still writing natively would otherwise fork progress silently
-        // (the auto library sync itself is useLibraryFileSync's).
+        // Readest Cloud unchecked: the native book channel is gated (the auto
+        // library sync itself is useLibraryFileSync's).
         const settingsNow = useSettingsStore.getState().settings;
-        if (!isReadestCloudEnabled(settingsNow)) {
-          void checkMixedFleetOnce(syncClient, settingsNow, _);
-          return;
-        }
+        if (!isReadestCloudEnabled(settingsNow)) return;
         const newBooks = getNewBooks();
         if (!newBooks.lastSyncedAt) return;
         isPullingRef.current = true;

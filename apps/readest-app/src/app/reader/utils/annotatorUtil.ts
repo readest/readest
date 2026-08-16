@@ -318,6 +318,34 @@ export function buildTTSSentenceHighlight(
 
 export type AnnotationDrawKind = 'bubble' | 'highlight' | 'underline' | 'squiggly' | 'none';
 
+/** Overlay styles the reader draws: the annotation styles plus the extra
+ *  strokes only the TTS highlight offers. */
+export type OverlayStyle = HighlightStyle | 'strikethrough' | 'outline';
+
+/**
+ * Color to draw an annotation or TTS overlay in.
+ *
+ * On B&W e-ink the highlight overlay is composited with `mix-blend-mode:
+ * difference` at full opacity (see `useTheme.ts`), so its color is an inversion
+ * mask rather than paint: difference is `|backdrop - source|`, so white swaps
+ * page and ink around each other while black is the identity and leaves the
+ * page untouched. Masking with the theme background therefore erased every
+ * highlight on a dark page, and since overlays keep the fill they were drawn
+ * with, going back to light stayed broken until reload (#5667). One mask
+ * inverts both themes, so it must not follow the theme at all.
+ *
+ * The remaining styles are stroked without a blend mode and take the theme ink.
+ */
+export function getAnnotationOverlayColor<T extends string | undefined>(
+  style: OverlayStyle,
+  hexColor: T,
+  { isBwEink, isDarkMode }: { isBwEink: boolean; isDarkMode: boolean },
+): T | string {
+  if (!isBwEink) return hexColor;
+  if (style === 'highlight') return '#ffffff';
+  return isDarkMode ? '#ffffff' : '#000000';
+}
+
 /**
  * Decide what an overlay should draw for an annotation. The bubble vs.
  * highlight choice keys off the overlay's `value` prefix — NOT `annotation.note`

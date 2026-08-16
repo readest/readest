@@ -191,6 +191,9 @@ msgstr "已超出存储配额。"
 msgid "Upload failed."
 msgstr "上传失败。"
 
+msgid "Send to nearby Readest devices"
+msgstr "发送到附近的 Readest 设备"
+
 msgid "Download Book"
 msgstr "下载书籍"
 
@@ -236,8 +239,8 @@ msgstr "从其他设备拉取 Readest 标注"
 msgid "Full sync all readest annotations"
 msgstr "完整同步所有 Readest 标注"
 
-msgid "Add to Readest"
-msgstr "添加到 Readest"
+msgid "Add to Readest library"
+msgstr "添加到 Readest 书库"
 
 msgid "Sign in to Readest first."
 msgstr "请先登录 Readest。"
@@ -289,6 +292,9 @@ msgstr "立即推送书籍"
 
 msgid "Pull books now"
 msgstr "立即拉取书籍"
+
+msgid "Receive via LocalSend"
+msgstr "通过 LocalSend 接收"
 
 msgid "Upload current book to Readest"
 msgstr "上传当前书籍到 Readest"
@@ -349,6 +355,90 @@ msgstr "书籍已同步"
 
 msgid "Books sync failed"
 msgstr "书籍同步失败"
+
+msgid "Set a Readest download folder or a KOReader home folder first."
+msgstr "请先设置 Readest 下载文件夹或 KOReader 主文件夹。"
+
+msgid "LocalSend error: could not find a free port."
+msgstr "LocalSend 错误：找不到可用端口。"
+
+msgid "LocalSend failed to start."
+msgstr "LocalSend 启动失败。"
+
+msgid "Starting LocalSend…"
+msgstr "正在启动 LocalSend…"
+
+msgid "LocalSend will start when Wi-Fi connects."
+msgstr "LocalSend 将在 Wi-Fi 连接后启动。"
+
+msgid "… and %1 more"
+msgstr "…还有 %1 个"
+
+msgid "%1 wants to send you %2 file(s) (%3):"
+msgstr "%1 想向你发送 %2 个文件（%3）："
+
+msgid "Accept"
+msgstr "接受"
+
+msgid "Decline"
+msgstr "拒绝"
+
+msgid "Receiving %1 file(s) from %2…"
+msgstr "正在从 %2 接收 %1 个文件…"
+
+msgid "LocalSend: received %1 file(s), %2 failed."
+msgstr "LocalSend：已接收 %1 个文件，%2 个失败。"
+
+msgid "LocalSend transfer cancelled."
+msgstr "LocalSend 传输已取消。"
+
+msgid "LocalSend: received %1 file(s)."
+msgstr "LocalSend：已接收 %1 个文件。"
+
+msgid "LocalSend not available on this device"
+msgstr "此设备不支持 LocalSend"
+
+msgid "Scanning for nearby devices…"
+msgstr "正在扫描附近的设备…"
+
+msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
+msgstr "未找到附近的设备。请确保对方设备已打开 LocalSend/Readest。"
+
+msgid "Rescan"
+msgstr "重新扫描"
+
+msgid "Send to…"
+msgstr "发送到…"
+
+msgid "Sending…"
+msgstr "正在发送…"
+
+msgid "Sending… %1%"
+msgstr "正在发送… %1%"
+
+msgid "Sent %1 file(s)."
+msgstr "已发送 %1 个文件。"
+
+msgid "The other device declined the transfer."
+msgstr "对方设备拒绝了传输。"
+
+msgid "Transfer cancelled."
+msgstr "传输已取消。"
+
+msgid "Send failed: %1"
+msgstr "发送失败：%1"
+
+msgid "LocalSend error: %1"
+msgstr "LocalSend 错误：%1"
+
+msgid "LocalSend off"
+msgstr "LocalSend 已关闭"
+
+msgid "Visible as %1"
+msgstr "显示为 %1"
+
+msgid "(limited discovery)"
+msgstr "（发现受限）"
 
 msgid "Checking for update…"
 msgstr "正在检查更新…"

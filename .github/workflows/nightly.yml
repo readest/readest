@@ -453,6 +453,71 @@ jobs:
           # Per-leg manifest fragment.
           rclone copy "$out/frag" "$base/manifest-fragments/"
 
+  # Nightly KOReader plugin zip. Mirrors release.yml's build-koreader-plugin
+  # job (keep the helper-binary targets and zip exclusions in sync) but
+  # uploads to R2 under nightly/<version>/ next to the other nightly
+  # artifacts instead of a GitHub release. Deliberately NOT part of
+  # latest.json — the updater manifest carries Tauri app platforms only.
+  build-koreader-plugin:
+    needs: compute-version
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Build LocalSend helper binaries for KOReader (static musl armv7 + arm64)
+        run: |
+          rustup target add armv7-unknown-linux-musleabi
+          rustup target add aarch64-unknown-linux-musl
+          pip3 install --break-system-packages ziglang cargo-zigbuild
+          node apps/readest.koplugin/scripts/build-localsend-bins.mjs --only armv7
+          node apps/readest.koplugin/scripts/build-localsend-bins.mjs --only arm64
+
+      - name: create KOReader plugin zip
+        run: |
+          version="${{ needs.compute-version.outputs.nightly_version }}"
+          plugin_zip="Readest-${version}-1.koplugin.zip"
+          meta_file="apps/readest.koplugin/_meta.lua"
+          perl -i -pe "s/^}/    version = \"${version}\",\n}/" "${meta_file}"
+
+          # Same dev-only exclusions as release.yml (keep the two lists in sync).
+          cd apps
+          zip -r ../${plugin_zip} readest.koplugin \
+            -x 'readest.koplugin/scripts/*' \
+               'readest.koplugin/docs/*' \
+               'readest.koplugin/spec/*' \
+               'readest.koplugin/.busted' \
+               'readest.koplugin/native/*'
+
+      - name: install rclone
+        run: sudo apt-get update && sudo apt-get install -y rclone
+
+      - name: configure rclone
+        run: |
+          mkdir -p ~/.config/rclone
+          cat > ~/.config/rclone/rclone.conf <<EOF
+          [r2]
+          type = s3
+          provider = Cloudflare
+          access_key_id = ${{ secrets.RELEASE_R2_ACCESS_KEY_ID }}
+          secret_access_key = ${{ secrets.RELEASE_R2_SECRET_ACCESS_KEY }}
+          endpoint = https://${{ secrets.RELEASE_R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          EOF
+
+      - name: upload plugin zip to R2
+        run: |
+          set -euo pipefail
+          version="${{ needs.compute-version.outputs.nightly_version }}"
+          mkdir -p koplugin-out
+          mv "Readest-${version}-1.koplugin.zip" koplugin-out/
+          rclone copy koplugin-out "r2:readest-releases/nightly/${version}/"
+          echo "uploaded https://download.readest.com/nightly/${version}/Readest-${version}-1.koplugin.zip"
+
   assemble-manifest:
     needs: [compute-version, build]
     if: ${{ always() && needs.build.result != 'cancelled' }}

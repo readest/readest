@@ -110,6 +110,70 @@ describe('mergeBookConfig (LWW scalars + CRDT notes)', () => {
   });
 });
 
+// Issue #5716: the count is the only viewSettings key that crosses devices.
+describe('mergeBookConfig reference page count (issue #5716)', () => {
+  test('adopts a peer count into viewSettings when this device has none', () => {
+    const local = {
+      updatedAt: 200,
+      booknotes: [],
+      viewSettings: { defaultFontSize: 14 },
+    } as unknown as BookConfig;
+    // Local is the NEWER config here: a device that read the book after the
+    // peer typed the count still has to receive it.
+    const r = envelope({ config: { updatedAt: 100 }, referencePageCount: 350 });
+    const { config } = mergeBookConfig(local, r);
+    expect(config.viewSettings!.referencePageCount).toBe(350);
+    // The rest of the local view settings survive untouched.
+    expect(config.viewSettings!.defaultFontSize).toBe(14);
+  });
+
+  test('a peer without a count never clears the local one', () => {
+    const local = {
+      updatedAt: 50,
+      booknotes: [],
+      viewSettings: { referencePageCount: 350 },
+    } as unknown as BookConfig;
+    const r = envelope({ config: { updatedAt: 100 } });
+    const { config } = mergeBookConfig(local, r);
+    expect(config.viewSettings!.referencePageCount).toBe(350);
+  });
+
+  test('the newer config wins when both sides carry a count', () => {
+    const local = {
+      updatedAt: 50,
+      booknotes: [],
+      viewSettings: { referencePageCount: 350 },
+    } as unknown as BookConfig;
+    const r = envelope({ config: { updatedAt: 100 }, referencePageCount: 400 });
+    expect(mergeBookConfig(local, r).config.viewSettings!.referencePageCount).toBe(400);
+
+    const localNewer = { ...local, updatedAt: 500 } as unknown as BookConfig;
+    expect(mergeBookConfig(localNewer, r).config.viewSettings!.referencePageCount).toBe(350);
+  });
+
+  test('an equal config timestamp keeps the local count, as the cloud path does', () => {
+    // Both backends hand resolveReferencePageCount the SAME predicate so they
+    // cannot pick different winners for the same pair of configs. The scalar
+    // spread above still resolves ties toward the remote; only the count is
+    // conservative, matching useProgressSync. A tie is the ordinary steady
+    // state here, because a remote-wins merge copies remote.updatedAt onto the
+    // local config, so every later pull of an unchanged remote ties.
+    const local = {
+      updatedAt: 100,
+      booknotes: [],
+      viewSettings: { referencePageCount: 350 },
+    } as unknown as BookConfig;
+    const r = envelope({ config: { updatedAt: 100 }, referencePageCount: 400 });
+    expect(mergeBookConfig(local, r).config.viewSettings!.referencePageCount).toBe(350);
+  });
+
+  test('leaves viewSettings absent when neither side has a count', () => {
+    const local: BookConfig = { updatedAt: 50, booknotes: [] };
+    const { config } = mergeBookConfig(local, envelope({ config: { updatedAt: 100 } }));
+    expect(config.viewSettings).toBeUndefined();
+  });
+});
+
 describe('mergeBookMetadata (LWW field subset)', () => {
   test('overlays only metadata fields, preserves local file-system fields', () => {
     const local = {

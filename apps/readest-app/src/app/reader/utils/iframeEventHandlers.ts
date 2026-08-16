@@ -239,6 +239,9 @@ const getKeyStatus = (event?: MouseEvent | WheelEvent | TouchEvent) => {
 };
 
 export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
+  const target = event.target as HTMLElement | null;
+  const interactiveTarget =
+    !!target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName ?? '');
   keyboardState = {
     key: event.key,
     code: event.code,
@@ -255,6 +258,14 @@ export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
     event.preventDefault();
   }
 
+  // The original iframe KeyboardEvent must be consumed synchronously. A later
+  // postMessage handler cannot cancel browser defaults such as Ctrl+End.
+  if (eventDispatcher.dispatchSync('iframe-page-turn-keydown', { bookKey, event })) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    return;
+  }
+
   window.postMessage(
     {
       type: 'iframe-keydown',
@@ -265,6 +276,9 @@ export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
       shiftKey: event.shiftKey,
       altKey: event.altKey,
       metaKey: event.metaKey,
+      altGraphKey: event.getModifierState('AltGraph'),
+      repeat: event.repeat,
+      interactiveTarget,
     },
     '*',
   );

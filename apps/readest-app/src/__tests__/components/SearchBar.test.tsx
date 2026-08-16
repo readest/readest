@@ -110,4 +110,13 @@ describe('SearchBar', () => {
     expect(mocks.searchLibraryBooks).toHaveBeenCalledTimes(1);
     expect(mocks.searchLibraryBooks.mock.calls[0]![3].sectionIndex).toBe(4);
   });
+
+  // The library scan caps each book at 500 matches; in-book search must not
+  // inherit that cap and silently stop at 500 results.
+  it('searches the book without a result cap', async () => {
+    mocks.progress = null;
+    await renderBar();
+
+    expect(mocks.searchLibraryBooks.mock.calls[0]![3].maxResultsPerBook).toBe(Infinity);
+  });
 });

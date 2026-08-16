@@ -191,6 +191,9 @@ msgstr "Opslagquotum overschreden."
 msgid "Upload failed."
 msgstr "Uploaden mislukt."
 
+msgid "Send to nearby Readest devices"
+msgstr "Verzenden naar Readest-apparaten in de buurt"
+
 msgid "Download Book"
 msgstr "Boek downloaden"
 
@@ -236,8 +239,8 @@ msgstr "Readest-aantekeningen van andere apparaten ophalen"
 msgid "Full sync all readest annotations"
 msgstr "Alle Readest-aantekeningen volledig synchroniseren"
 
-msgid "Add to Readest"
-msgstr "Toevoegen aan Readest"
+msgid "Add to Readest library"
+msgstr "Toevoegen aan Readest-bibliotheek"
 
 msgid "Sign in to Readest first."
 msgstr "Meld je eerst aan bij Readest."
@@ -289,6 +292,9 @@ msgstr "Boeken nu pushen"
 
 msgid "Pull books now"
 msgstr "Boeken nu pullen"
+
+msgid "Receive via LocalSend"
+msgstr "Ontvangen via LocalSend"
 
 msgid "Upload current book to Readest"
 msgstr "Huidig boek uploaden naar Readest"
@@ -349,6 +355,90 @@ msgstr "Boeken gesynchroniseerd"
 
 msgid "Books sync failed"
 msgstr "Synchronisatie van boeken mislukt"
+
+msgid "Set a Readest download folder or a KOReader home folder first."
+msgstr "Stel eerst een Readest-downloadmap of een KOReader-startmap in."
+
+msgid "LocalSend error: could not find a free port."
+msgstr "LocalSend-fout: geen vrije poort gevonden."
+
+msgid "LocalSend failed to start."
+msgstr "LocalSend kon niet worden gestart."
+
+msgid "Starting LocalSend…"
+msgstr "LocalSend wordt gestart…"
+
+msgid "LocalSend will start when Wi-Fi connects."
+msgstr "LocalSend start zodra Wi-Fi verbinding maakt."
+
+msgid "… and %1 more"
+msgstr "… en nog %1"
+
+msgid "%1 wants to send you %2 file(s) (%3):"
+msgstr "%1 wil je %2 bestand(en) sturen (%3):"
+
+msgid "Accept"
+msgstr "Accepteren"
+
+msgid "Decline"
+msgstr "Weigeren"
+
+msgid "Receiving %1 file(s) from %2…"
+msgstr "%1 bestand(en) van %2 ontvangen…"
+
+msgid "LocalSend: received %1 file(s), %2 failed."
+msgstr "LocalSend: %1 bestand(en) ontvangen, %2 mislukt."
+
+msgid "LocalSend transfer cancelled."
+msgstr "LocalSend-overdracht geannuleerd."
+
+msgid "LocalSend: received %1 file(s)."
+msgstr "LocalSend: %1 bestand(en) ontvangen."
+
+msgid "LocalSend not available on this device"
+msgstr "LocalSend niet beschikbaar op dit apparaat"
+
+msgid "Scanning for nearby devices…"
+msgstr "Zoeken naar apparaten in de buurt…"
+
+msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
+msgstr "Geen apparaten in de buurt gevonden. Zorg dat op het andere apparaat LocalSend/Readest geopend is."
+
+msgid "Rescan"
+msgstr "Opnieuw zoeken"
+
+msgid "Send to…"
+msgstr "Verzenden naar…"
+
+msgid "Sending…"
+msgstr "Verzenden…"
+
+msgid "Sending… %1%"
+msgstr "Verzenden… %1%"
+
+msgid "Sent %1 file(s)."
+msgstr "%1 bestand(en) verzonden."
+
+msgid "The other device declined the transfer."
+msgstr "Het andere apparaat heeft de overdracht geweigerd."
+
+msgid "Transfer cancelled."
+msgstr "Overdracht geannuleerd."
+
+msgid "Send failed: %1"
+msgstr "Verzenden mislukt: %1"
+
+msgid "LocalSend error: %1"
+msgstr "LocalSend-fout: %1"
+
+msgid "LocalSend off"
+msgstr "LocalSend uit"
+
+msgid "Visible as %1"
+msgstr "Zichtbaar als %1"
+
+msgid "(limited discovery)"
+msgstr "(beperkte detectie)"
 
 msgid "Checking for update…"
 msgstr "Controleren op update…"

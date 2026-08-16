@@ -183,6 +183,13 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
     await saveSettings(envConfig, newSettings);
   };
 
+  const handleToggleSendMetadata = async () => {
+    const kosync = { ...settings.kosync, sendMetadata: !settings.kosync.sendMetadata };
+    const newSettings = { ...settings, kosync };
+    setSettings(newSettings);
+    await saveSettings(envConfig, newSettings);
+  };
+
   const description: string = isConfigured
     ? _('Sync as {{userDisplayName}}', { userDisplayName: settings.kosync.username })
     : _('Connect to your KOReader Sync server.');
@@ -235,6 +242,17 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
                   options={[{ value: 'binary', label: _('File Content') }]}
                 />
               </div>
+              {/* Mirrors KOReader's "Send document metadata" setting: include
+                  filename/title/authors in progress uploads so custom sync
+                  servers can tell which book a document hash is. Off by
+                  default, like KOReader. */}
+              <label className='flex min-h-14 items-center justify-between px-4'>
+                <SettingLabel>{_('Send Document Metadata')}</SettingLabel>
+                <Toggle
+                  checked={settings.kosync.sendMetadata ?? false}
+                  onChange={handleToggleSendMetadata}
+                />
+              </label>
               <div className='-me-2 flex min-h-14 items-center justify-between gap-3 px-4'>
                 <SettingLabel>{_('Device Name')}</SettingLabel>
                 <input

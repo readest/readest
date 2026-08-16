@@ -544,7 +544,14 @@ input[type='range'].slider-input {
   color: theme('colors.base-content') !important;
 }
 
-[data-eink='true'] [class*='bg-base-content'] {
+/* E-ink cannot render a translucent wash, so a tinted base-content surface is
+   flattened to solid ink. `[class*=…]` matches the class attribute as plain
+   text, so skip elements whose only match is variant-prefixed: `hover:`,
+   `not-eink:hover:`, `group-hover:` and friends were painted solid at rest, on
+   every screen, which swallowed the footer bar's page indicator whole (#5667)
+   and forced `eink-inverted` workarounds elsewhere (#4454). A variant that
+   really does want ink on e-ink (`eink:bg-base-content`) emits its own rule. */
+[data-eink='true'] [class*='bg-base-content']:not([class*=':bg-base-content']) {
   background-color: theme('colors.base-content') !important;
 }
 

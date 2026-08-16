@@ -9,6 +9,7 @@ import { getBookProgress, useBookProgress } from '@/store/readerProgressStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { mergeProofreadRules } from '@/utils/proofread';
+import { resolveReferencePageCount } from '@/utils/progress';
 import { serializeConfig } from '@/utils/serializer';
 import { CFI } from '@/libs/document';
 import { debounce } from '@/utils/debounce';
@@ -308,34 +309,61 @@ export const useProgressSync = (bookKey: string) => {
           });
         }
       }
-      // Merge book/selection-scope proofread rules from the remote config by id.
-      // Library-scope rules sync via the settings replica, so they're excluded.
-      // Item-level CRDT (see utils/proofread.ts) keeps a concurrent edit on
-      // another device from being lost to whole-config last-writer-wins, and
-      // tombstones stop a deleted rule from being resurrected by a stale peer.
-      const remoteRules = (syncedConfig.viewSettings?.proofreadRules ?? []).filter(
-        (r) => r.scope !== 'library',
-      );
+      // Two view settings cross devices; everything else in viewSettings stays
+      // device-local. Both merges accumulate into one updatedViewSettings so a
+      // pull that moves both still writes the config once.
       const localViewSettings = getViewSettings(bookKey);
-      const localRules = localViewSettings?.proofreadRules ?? [];
-      if (localViewSettings && (remoteRules.length || localRules.length)) {
-        const mergedRules = mergeProofreadRules(localRules, remoteRules);
-        if (JSON.stringify(mergedRules) !== JSON.stringify(localRules)) {
-          const updatedViewSettings = { ...localViewSettings, proofreadRules: mergedRules };
-          setViewSettings(bookKey, updatedViewSettings);
-          if (config) {
-            await saveConfig(
-              envConfig,
-              bookKey,
-              { ...config, viewSettings: updatedViewSettings, updatedAt: Date.now() },
-              settings,
-            );
+      if (localViewSettings) {
+        let updatedViewSettings = localViewSettings;
+        let rulesChanged = false;
+        // Merge book/selection-scope proofread rules from the remote config by id.
+        // Library-scope rules sync via the settings replica, so they're excluded.
+        // Item-level CRDT (see utils/proofread.ts) keeps a concurrent edit on
+        // another device from being lost to whole-config last-writer-wins, and
+        // tombstones stop a deleted rule from being resurrected by a stale peer.
+        const remoteRules = (syncedConfig.viewSettings?.proofreadRules ?? []).filter(
+          (r) => r.scope !== 'library',
+        );
+        const localRules = localViewSettings.proofreadRules ?? [];
+        if (remoteRules.length || localRules.length) {
+          const mergedRules = mergeProofreadRules(localRules, remoteRules);
+          if (JSON.stringify(mergedRules) !== JSON.stringify(localRules)) {
+            updatedViewSettings = { ...updatedViewSettings, proofreadRules: mergedRules };
+            rulesChanged = true;
           }
+        }
+        // The reference page count describes the book's print edition, not this
+        // screen, so it travels with reading state (issue #5716). Without this
+        // a count typed on one device never reached the others, and the peer's
+        // next push — carrying no count, because serializeConfig strips every
+        // setting equal to global — erased it from the cloud row under the
+        // server's whole-row last-writer-wins.
+        const mergedPageCount = resolveReferencePageCount(
+          localViewSettings.referencePageCount,
+          syncedConfig.viewSettings?.referencePageCount,
+          (syncedConfig.updatedAt ?? 0) > (config.updatedAt ?? 0),
+        );
+        // Compare against the NORMALIZED local value: an unset key and a 0 both
+        // mean "no count", so neither may be rewritten into the other and bump
+        // updatedAt on every book open.
+        if (mergedPageCount !== (localViewSettings.referencePageCount ?? 0)) {
+          updatedViewSettings = { ...updatedViewSettings, referencePageCount: mergedPageCount };
+        }
+        if (updatedViewSettings !== localViewSettings) {
+          setViewSettings(bookKey, updatedViewSettings);
+          await saveConfig(
+            envConfig,
+            bookKey,
+            { ...config, viewSettings: updatedViewSettings, updatedAt: Date.now() },
+            settings,
+          );
           // Refresh a live view so merged rules take effect immediately; a
           // not-yet-rendered view picks them up from viewSettings on first
-          // render. Skip while previewing a deep-link target.
+          // render. Skip while previewing a deep-link target. Only a rule
+          // change needs this — the footer reads the page count straight off
+          // viewSettings on its next render.
           const isPreview = useReaderStore.getState().getViewState(bookKey)?.previewMode;
-          if (getView(bookKey) && !isPreview) {
+          if (rulesChanged && getView(bookKey) && !isPreview) {
             recreateViewer(envConfig, bookKey);
           }
         }

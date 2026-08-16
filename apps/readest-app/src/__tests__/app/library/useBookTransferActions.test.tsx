@@ -70,11 +70,11 @@ const makeBook = (over: Partial<Book> = {}): Book => ({
   ...over,
 });
 
-const setup = () => {
+const setup = (appService: AppService | null = null) => {
   const updateBook = vi.fn(async (_envConfig: EnvConfigType, _book: Book) => {});
   const updateBookTransferProgress = vi.fn((_bookHash: string, _progress: ProgressPayload) => {});
   const { result } = renderHook(() =>
-    useBookTransferActions(envConfig, null, updateBook, updateBookTransferProgress),
+    useBookTransferActions(envConfig, appService, updateBook, updateBookTransferProgress),
   );
   return { result, updateBook };
 };
@@ -121,7 +121,7 @@ describe('useBookTransferActions upload routing (issue #5062)', () => {
 });
 
 describe('useBookTransferActions download routing (issue #5062)', () => {
-  it('uses the native (queue-backed) path when the book is already in Readest Cloud storage', async () => {
+  it('tries file mirrors first because uploadedAt does not identify which provider has the book (#5009)', async () => {
     routing.readestEnabled = true;
     routing.backends = ['webdav'];
 
@@ -129,8 +129,39 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
     const book = makeBook({ uploadedAt: 12345 });
     const ok = await result.current.handleBookDownload(book, { queued: true });
 
-    expect(runFileBookDownload).not.toHaveBeenCalled();
+    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book);
+    expect(queueDownload).not.toHaveBeenCalled();
+    expect(ok).toBe(true);
+  });
+
+  it('falls back to Readest Cloud when no enabled file mirror holds the book', async () => {
+    routing.readestEnabled = true;
+    routing.backends = ['webdav'];
+    runFileBookDownload.mockResolvedValueOnce(false);
+
+    const { result } = setup();
+    const book = makeBook({ uploadedAt: 12345 });
+    const ok = await result.current.handleBookDownload(book, { queued: true });
+
+    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book);
     expect(queueDownload).toHaveBeenCalledWith(book, 1);
+    expect(ok).toBe(true);
+  });
+
+  it('falls back to an immediate Readest Cloud download when opening a cloud-shelf book', async () => {
+    routing.readestEnabled = true;
+    routing.backends = ['webdav'];
+    runFileBookDownload.mockResolvedValueOnce(false);
+    const downloadBook = vi.fn(async () => {});
+
+    const { result, updateBook } = setup({ downloadBook } as unknown as AppService);
+    const book = makeBook({ uploadedAt: 12345 });
+    const ok = await result.current.handleBookDownload(book, { queued: false });
+
+    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book);
+    expect(downloadBook).toHaveBeenCalledWith(book, false, false, expect.any(Function));
+    expect(queueDownload).not.toHaveBeenCalled();
+    expect(updateBook).toHaveBeenCalledWith(envConfig, book);
     expect(ok).toBe(true);
   });
 

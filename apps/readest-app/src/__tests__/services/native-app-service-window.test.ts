@@ -1,6 +1,34 @@
 import { describe, test, expect, vi } from 'vitest';
+import type { Book } from '@/types/book';
 
 const osTypeMock = vi.fn().mockReturnValue('macos');
+const invokeMock = vi.fn<(command: string, args?: unknown) => Promise<unknown>>();
+invokeMock.mockResolvedValue(undefined);
+type CoverEventCallback = (event: {
+  payload: { bookHash: string; coverHash: string | null; thumbnailPath: string };
+}) => void;
+const listenMock = vi.fn<(event: string, callback: CoverEventCallback) => Promise<() => void>>();
+listenMock.mockResolvedValue(() => undefined);
+const setBookCoverThumbnailMock = vi.fn();
+const loadLibraryBooksMock = vi.fn(
+  async (
+    _fs: unknown,
+    generateCoverImageUrl: (book: Record<string, unknown>) => Promise<string>,
+  ) => {
+    const book = {
+      hash: '0123456789abcdef0123456789abcdef',
+      format: 'EPUB',
+      title: 'Legacy cover',
+      author: 'Author',
+      createdAt: 1,
+      updatedAt: 2,
+      coverHash: null,
+      coverImageUrl: 'asset://full-size-cover.png',
+    };
+    book.coverImageUrl = await generateCoverImageUrl(book);
+    return [book];
+  },
+);
 
 vi.mock('@tauri-apps/plugin-os', () => ({
   type: () => osTypeMock(),
@@ -21,8 +49,25 @@ vi.mock('@tauri-apps/plugin-fs', () => ({
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn().mockResolvedValue(undefined),
+  invoke: (command: string, args?: unknown) => invokeMock(command, args),
   convertFileSrc: (p: string) => `asset://${p}`,
+}));
+
+vi.mock('@tauri-apps/api/event', () => ({
+  listen: (event: string, callback: CoverEventCallback) => listenMock(event, callback),
+}));
+
+vi.mock('@/services/libraryService', () => ({
+  loadLibraryBooks: (
+    fs: unknown,
+    generateCoverImageUrl: (book: Record<string, unknown>) => Promise<string>,
+  ) => loadLibraryBooksMock(fs, generateCoverImageUrl),
+}));
+
+vi.mock('@/store/libraryStore', () => ({
+  useLibraryStore: {
+    getState: () => ({ setBookCoverThumbnail: setBookCoverThumbnailMock }),
+  },
 }));
 
 vi.mock('@tauri-apps/plugin-dialog', () => ({
@@ -68,6 +113,170 @@ async function loadServiceWithOS(os: 'macos' | 'windows' | 'linux' | 'ios' | 'an
   const mod = await import('@/services/nativeAppService');
   return new mod.NativeAppService();
 }
+
+describe('NativeAppService cover optimization', () => {
+  test('keeps original covers and only queues a visible cover on demand', async () => {
+    let finishOptimization = () => {};
+    invokeMock.mockClear();
+    listenMock.mockClear();
+    setBookCoverThumbnailMock.mockClear();
+    invokeMock.mockImplementation((command: string) => {
+      if (command !== 'optimize_cover_thumbnails') return Promise.resolve(undefined);
+      return new Promise<void>((resolve) => {
+        finishOptimization = resolve;
+      });
+    });
+
+    try {
+      const service = await loadServiceWithOS('ios');
+      service.localBooksDir = '/tmp/books';
+
+      const books = await service.loadLibraryBooks();
+
+      expect(books[0]?.coverImageUrl).toBe(
+        'asset:///tmp/books/0123456789abcdef0123456789abcdef/cover.png',
+      );
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      expect(invokeMock).not.toHaveBeenCalledWith('optimize_cover_thumbnails', expect.anything());
+
+      service.requestCoverThumbnail(books[0]!);
+      service.requestCoverThumbnail(books[0]!);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(invokeMock).toHaveBeenCalledWith('optimize_cover_thumbnails', {
+        booksDir: '/tmp/books',
+        cacheDir: '/tmp/app-cache',
+        covers: [
+          {
+            bookHash: '0123456789abcdef0123456789abcdef',
+            coverHash: null,
+          },
+        ],
+      });
+
+      const coverReady = listenMock.mock.calls[0]?.[1];
+      expect(coverReady).toBeDefined();
+      coverReady?.({
+        payload: {
+          bookHash: '0123456789abcdef0123456789abcdef',
+          coverHash: null,
+          thumbnailPath: '',
+        },
+      });
+      expect(setBookCoverThumbnailMock).not.toHaveBeenCalled();
+
+      coverReady?.({
+        payload: {
+          bookHash: '0123456789abcdef0123456789abcdef',
+          coverHash: null,
+          thumbnailPath: '/tmp/app-cache/cover-thumbnails/cover.jpg',
+        },
+      });
+      expect(setBookCoverThumbnailMock).toHaveBeenCalledWith(
+        '0123456789abcdef0123456789abcdef',
+        null,
+        'asset:///tmp/app-cache/cover-thumbnails/cover.jpg',
+      );
+    } finally {
+      finishOptimization();
+      invokeMock.mockResolvedValue(undefined);
+    }
+  }, 15_000);
+
+  test('microbatches distinct covers and retries after an interrupted IPC submission', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    invokeMock.mockClear();
+    listenMock.mockClear();
+    listenMock.mockResolvedValue(() => undefined);
+    invokeMock.mockImplementation((command: string) => {
+      if (command !== 'optimize_cover_thumbnails') return Promise.resolve(undefined);
+      return Promise.reject(new Error('interrupted'));
+    });
+
+    try {
+      const service = await loadServiceWithOS('ios');
+      service.localBooksDir = '/tmp/books';
+      const first = {
+        hash: '0123456789abcdef0123456789abcdef',
+        format: 'EPUB',
+        title: 'First',
+        author: 'Author',
+        createdAt: 1,
+        updatedAt: 2,
+        coverHash: null,
+      } as Book;
+      const second = {
+        ...first,
+        hash: 'fedcba9876543210fedcba9876543210',
+        title: 'Second',
+        coverHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      };
+
+      service.requestCoverThumbnail(first);
+      service.requestCoverThumbnail(second);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const optimizeCalls = invokeMock.mock.calls.filter(
+        ([command]) => command === 'optimize_cover_thumbnails',
+      );
+      expect(optimizeCalls).toHaveLength(1);
+      expect(optimizeCalls[0]?.[1]).toEqual({
+        booksDir: '/tmp/books',
+        cacheDir: '/tmp/app-cache',
+        covers: [
+          { bookHash: first.hash, coverHash: null },
+          { bookHash: second.hash, coverHash: second.coverHash },
+        ],
+      });
+
+      invokeMock.mockResolvedValue(undefined);
+      service.requestCoverThumbnail(first);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(
+        invokeMock.mock.calls.filter(([command]) => command === 'optimize_cover_thumbnails'),
+      ).toHaveLength(2);
+    } finally {
+      warn.mockRestore();
+      invokeMock.mockResolvedValue(undefined);
+    }
+  });
+
+  test('retries listener setup after registration is interrupted', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    invokeMock.mockClear();
+    listenMock.mockClear();
+    listenMock
+      .mockRejectedValueOnce(new Error('listener interrupted'))
+      .mockResolvedValue(() => undefined);
+
+    try {
+      const service = await loadServiceWithOS('ios');
+      service.localBooksDir = '/tmp/books';
+      const book = {
+        hash: '0123456789abcdef0123456789abcdef',
+        format: 'EPUB',
+        title: 'Retry',
+        author: 'Author',
+        createdAt: 1,
+        updatedAt: 2,
+        coverHash: null,
+      } as Book;
+
+      service.requestCoverThumbnail(book);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(invokeMock).not.toHaveBeenCalledWith('optimize_cover_thumbnails', expect.anything());
+
+      service.requestCoverThumbnail(book);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(listenMock).toHaveBeenCalledTimes(2);
+      expect(invokeMock).toHaveBeenCalledWith('optimize_cover_thumbnails', expect.anything());
+    } finally {
+      warn.mockRestore();
+      listenMock.mockResolvedValue(() => undefined);
+    }
+  });
+});
 
 // Regression (#3682): the Linux window used to be created fully transparent to
 // draw rounded corners (#1982). On WebKitGTK a transparent window whose web

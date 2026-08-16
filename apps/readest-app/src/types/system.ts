@@ -109,6 +109,7 @@ export interface AppService {
   isEink: boolean;
   canCustomizeRootDir: boolean;
   canReadExternalDir: boolean;
+  supportsCoverThumbnailOptimization: boolean;
   supportsCanvasContext2DFilter: boolean;
   supportsViewTransitionsAPI: boolean;
   supportsViewTransitionGroup: boolean;
@@ -227,6 +228,7 @@ export interface AppService {
   loadFeeds(): Promise<RssFeed[]>;
   saveFeeds(feeds: RssFeed[]): Promise<void>;
   loadLibraryBooks(): Promise<Book[]>;
+  requestCoverThumbnail(book: Book): void;
   saveLibraryBooks(books: Book[], options?: SaveLibraryBooksOptions): Promise<void>;
   getCoverImageUrl(book: Book): string;
   getCoverImageBlobUrl(book: Book): Promise<string>;

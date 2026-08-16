@@ -14,6 +14,7 @@ import {
   DirEntry,
 } from '@tauri-apps/plugin-fs';
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { open as openDialog, save as saveDialog, ask } from '@tauri-apps/plugin-dialog';
 import {
   join,
@@ -35,6 +36,7 @@ import {
   FileItem,
   DistChannel,
 } from '@/types/system';
+import type { Book } from '@/types/book';
 import { getOSPlatform, isContentURI, isFileURI, isValidURL } from '@/utils/misc';
 import { getDirPath, getFilename } from '@/utils/path';
 import { NativeFile, RemoteFile } from '@/utils/file';
@@ -47,8 +49,15 @@ import {
 import { galleryFileName } from '@/utils/image';
 import { copyFiles } from '@/utils/files';
 import { detectViewTransitionGroup, detectViewTransitionsAPI } from '@/utils/viewTransition';
+import { useLibraryStore } from '@/store/libraryStore';
 
 import { BaseAppService } from './appService';
+import {
+  buildCoverThumbnailRequests,
+  COVER_THUMBNAIL_READY_EVENT,
+  type CoverThumbnailRequest,
+  type CoverThumbnailReadyPayload,
+} from './coverThumbnailService';
 import { DatabaseOpts, DatabaseService } from '@/types/database';
 import { SchemaType } from '@/services/database/migrate';
 import {
@@ -591,6 +600,7 @@ export class NativeAppService extends BaseAppService {
   // absolute-path reads outside the app sandbox work once the user grants All
   // Files Access. Apple offers no equivalent, so App Store builds stay gated.
   override canReadExternalDir = DIST_CHANNEL !== 'appstore';
+  override supportsCoverThumbnailOptimization = true;
   override supportsCanvasContext2DFilter =
     OS_TYPE !== 'ios' && OS_TYPE !== 'macos' && OS_TYPE !== 'linux';
   // WebKitGTK on Linux crashes when a View Transition snapshots the window,
@@ -604,6 +614,9 @@ export class NativeAppService extends BaseAppService {
 
   private execDir?: string = undefined;
   private customRootDir?: string = undefined;
+  private coverThumbnailListenerReady?: Promise<void>;
+  private pendingCoverThumbnailRequests = new Map<string, CoverThumbnailRequest>();
+  private coverThumbnailFlushScheduled = false;
 
   constructor(customRootDir?: string) {
     super();
@@ -613,6 +626,9 @@ export class NativeAppService extends BaseAppService {
   }
 
   override async init() {
+    // Listener setup is allowed to overlap the rest of startup. The worker
+    // waits for it before emitting cached or newly-generated thumbnails.
+    void this.startCoverThumbnailListener().catch(() => {});
     const execDir = await invoke<string>('get_executable_dir');
     this.execDir = execDir;
     // Report the WebView User-Agent so Sentry can tag crashes with the
@@ -680,6 +696,66 @@ export class NativeAppService extends BaseAppService {
     }
     await this.prepareBooksDir();
     await this.runMigrations();
+  }
+
+  private startCoverThumbnailListener(): Promise<void> {
+    if (this.coverThumbnailListenerReady) return this.coverThumbnailListenerReady;
+
+    const listenerReady = listen<CoverThumbnailReadyPayload>(
+      COVER_THUMBNAIL_READY_EVENT,
+      ({ payload }) => {
+        if (!payload.bookHash || !payload.thumbnailPath) return;
+        useLibraryStore
+          .getState()
+          .setBookCoverThumbnail(
+            payload.bookHash,
+            payload.coverHash,
+            convertFileSrc(payload.thumbnailPath),
+          );
+      },
+    ).then(() => undefined);
+    this.coverThumbnailListenerReady = listenerReady;
+    void listenerReady.catch((error) => {
+      if (this.coverThumbnailListenerReady === listenerReady) {
+        this.coverThumbnailListenerReady = undefined;
+      }
+      console.warn('[covers] failed to register thumbnail listener:', error);
+    });
+    return listenerReady;
+  }
+
+  override requestCoverThumbnail(book: Book): void {
+    const request = buildCoverThumbnailRequests([book])[0];
+    if (!request) return;
+    const key = `${request.bookHash}:${request.coverHash ?? 'legacy'}`;
+    this.pendingCoverThumbnailRequests.set(key, request);
+    if (this.coverThumbnailFlushScheduled) return;
+
+    this.coverThumbnailFlushScheduled = true;
+    queueMicrotask(() => {
+      this.coverThumbnailFlushScheduled = false;
+      const covers = Array.from(this.pendingCoverThumbnailRequests.values());
+      this.pendingCoverThumbnailRequests.clear();
+      void this.submitCoverThumbnailRequests(covers);
+    });
+  }
+
+  private async submitCoverThumbnailRequests(covers: CoverThumbnailRequest[]) {
+    if (covers.length === 0) return;
+
+    try {
+      await this.startCoverThumbnailListener();
+      const cacheDir = await this.fs.getPrefix('Cache');
+      await invoke('optimize_cover_thumbnails', {
+        booksDir: this.localBooksDir,
+        cacheDir,
+        covers,
+      });
+    } catch (error) {
+      // A later visibility request submits the same content-addressed job
+      // again, so interruption or a transient IPC error remains retryable.
+      console.warn('[covers] background thumbnail optimization failed:', error);
+    }
   }
 
   override async runMigrations() {

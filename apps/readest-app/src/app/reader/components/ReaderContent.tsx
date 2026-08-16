@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useAndroidGamepadConnection } from '@/hooks/useAndroidGamepadConnection';
 import { useGamepad } from '@/hooks/useGamepad';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SystemSettings } from '@/types/settings';
@@ -63,7 +64,13 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const [errorLoading, setErrorLoading] = useState(false);
 
   useBookShortcuts({ sideBarBookKey, bookKeys });
-  useGamepad();
+  const isAndroidApp = appService?.isAndroidApp === true;
+  const androidGamepadConnected = useAndroidGamepadConnection(isAndroidApp);
+  // Android's native bridge gates the Web Gamepad API so Chromium polls only
+  // while a controller exists. Other platforms retain the existing behavior.
+  useGamepad({
+    enabled: appService !== null && (!isAndroidApp || androidGamepadConnected),
+  });
 
   useEffect(() => {
     if (isInitiating.current) return;

@@ -191,6 +191,9 @@ msgstr "מכסת האחסון חרגה."
 msgid "Upload failed."
 msgstr "ההעלאה נכשלה."
 
+msgid "Send to nearby Readest devices"
+msgstr "שליחה למכשירי Readest בקרבת מקום"
+
 msgid "Download Book"
 msgstr "הורד ספר"
 
@@ -236,8 +239,8 @@ msgstr "משוך הערות Readest ממכשירים אחרים"
 msgid "Full sync all readest annotations"
 msgstr "סנכרון מלא של כל הערות Readest"
 
-msgid "Add to Readest"
-msgstr "הוסף ל-Readest"
+msgid "Add to Readest library"
+msgstr "הוספה לספריית Readest"
 
 msgid "Sign in to Readest first."
 msgstr "התחבר תחילה ל-Readest."
@@ -289,6 +292,9 @@ msgstr "שלח ספרים עכשיו"
 
 msgid "Pull books now"
 msgstr "משוך ספרים עכשיו"
+
+msgid "Receive via LocalSend"
+msgstr "קבלה דרך LocalSend"
 
 msgid "Upload current book to Readest"
 msgstr "העלה את הספר הנוכחי ל-Readest"
@@ -349,6 +355,90 @@ msgstr "הספרים סונכרנו"
 
 msgid "Books sync failed"
 msgstr "סנכרון הספרים נכשל"
+
+msgid "Set a Readest download folder or a KOReader home folder first."
+msgstr "תחילה הגדירו תיקיית הורדות של Readest או תיקיית בית של KOReader."
+
+msgid "LocalSend error: could not find a free port."
+msgstr "שגיאת LocalSend: לא נמצאה יציאה פנויה."
+
+msgid "LocalSend failed to start."
+msgstr "הפעלת LocalSend נכשלה."
+
+msgid "Starting LocalSend…"
+msgstr "מפעיל את LocalSend…"
+
+msgid "LocalSend will start when Wi-Fi connects."
+msgstr "LocalSend יופעל כשה-Wi-Fi יתחבר."
+
+msgid "… and %1 more"
+msgstr "… ועוד %1"
+
+msgid "%1 wants to send you %2 file(s) (%3):"
+msgstr "%1 רוצה לשלוח לך %2 קבצים (%3):"
+
+msgid "Accept"
+msgstr "קבל"
+
+msgid "Decline"
+msgstr "דחה"
+
+msgid "Receiving %1 file(s) from %2…"
+msgstr "מקבל %1 קבצים מ-%2…"
+
+msgid "LocalSend: received %1 file(s), %2 failed."
+msgstr "LocalSend: התקבלו %1 קבצים, %2 נכשלו."
+
+msgid "LocalSend transfer cancelled."
+msgstr "העברת LocalSend בוטלה."
+
+msgid "LocalSend: received %1 file(s)."
+msgstr "LocalSend: התקבלו %1 קבצים."
+
+msgid "LocalSend not available on this device"
+msgstr "LocalSend אינו זמין במכשיר זה"
+
+msgid "Scanning for nearby devices…"
+msgstr "סורק מכשירים בקרבת מקום…"
+
+msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
+msgstr "לא נמצאו מכשירים בקרבת מקום. ודאו שה-LocalSend/Readest פתוח במכשיר האחר."
+
+msgid "Rescan"
+msgstr "סרוק שוב"
+
+msgid "Send to…"
+msgstr "שליחה אל…"
+
+msgid "Sending…"
+msgstr "שולח…"
+
+msgid "Sending… %1%"
+msgstr "שולח… %1%"
+
+msgid "Sent %1 file(s)."
+msgstr "נשלחו %1 קבצים."
+
+msgid "The other device declined the transfer."
+msgstr "המכשיר האחר דחה את ההעברה."
+
+msgid "Transfer cancelled."
+msgstr "ההעברה בוטלה."
+
+msgid "Send failed: %1"
+msgstr "השליחה נכשלה: %1"
+
+msgid "LocalSend error: %1"
+msgstr "שגיאת LocalSend: %1"
+
+msgid "LocalSend off"
+msgstr "LocalSend כבוי"
+
+msgid "Visible as %1"
+msgstr "מופיע בשם %1"
+
+msgid "(limited discovery)"
+msgstr "(איתור מוגבל)"
 
 msgid "Checking for update…"
 msgstr "בודק עדכון…"

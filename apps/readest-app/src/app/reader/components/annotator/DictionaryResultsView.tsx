@@ -140,6 +140,7 @@ export function useDictionaryResults({
   // Edge fetch and playback so the header button can show one active state.
   const [isSpeaking, setIsSpeaking] = useState(false);
   const langCode = typeof lang === 'string' ? lang : Array.isArray(lang) ? lang[0] : undefined;
+  const loadKey = `${currentWord}::${langCode || ''}`;
   const speakWord = useCallback(() => {
     // Warm the audio context synchronously inside the click gesture; the
     // synth/play happens after a network await, outside the gesture window.
@@ -220,8 +221,6 @@ export function useDictionaryResults({
   // parallel whenever currentWord (or the provider list) changes.
   useEffect(() => {
     if (!definitionProviders.length) return;
-    const langCode = typeof lang === 'string' ? lang : Array.isArray(lang) ? lang[0] : undefined;
-    const loadKey = `${currentWord}::${langCode || ''}`;
 
     setCards(() => {
       const next: Record<string, CardState> = {};
@@ -297,14 +296,24 @@ export function useDictionaryResults({
     });
 
     return () => controllers.forEach((c) => c.abort());
-  }, [currentWord, definitionProviders, lang, pushWord, isDarkMode, themeCode.bg, themeCode.fg]);
+  }, [
+    currentWord,
+    definitionProviders,
+    langCode,
+    pushWord,
+    isDarkMode,
+    themeCode.bg,
+    themeCode.fg,
+  ]);
 
   // Visible cards = providers that are still loading or finished with a
   // result. Empty/unsupported/error cards are removed entirely.
   const visibleDefinitionProviders = definitionProviders.filter((p) => {
     const card = cards[p.id];
     if (!card) return true;
-    return card.state === 'loading' || card.state === 'loaded';
+    // A new query must remount containers hidden by the previous empty result
+    // before the lookup effect asks providers to render into them.
+    return card.loadKey !== loadKey || card.state === 'loading' || card.state === 'loaded';
   });
 
   const resolveWebSearchUrl = useCallback(

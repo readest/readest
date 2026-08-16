@@ -393,6 +393,19 @@ describe('cloudService', () => {
   });
 
   describe('uploadBook', () => {
+    test('clears stale file-sync deletion authorization when reviving a book', async () => {
+      const book = createMockBook({
+        deletedAt: 100,
+        fileSyncDeletionRequestedAt: 100,
+      });
+      const resolveFilePath = vi.fn(async (path: string, base: BaseDir) => `${base}:${path}`);
+
+      await uploadBook(mockFs, resolveFilePath, book);
+
+      expect(book.deletedAt).toBeNull();
+      expect(book.fileSyncDeletionRequestedAt).toBeNull();
+    });
+
     test('uses an existing managed copy before a stale filePath', async () => {
       const book = createMockBook({ filePath: '/Users/me/Library/missing.epub' });
       const managedPath = `${book.hash}/${book.title}.epub`;

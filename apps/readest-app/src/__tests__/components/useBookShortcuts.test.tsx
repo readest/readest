@@ -57,9 +57,12 @@ vi.mock('@/store/sidebarStore', () => ({
   }),
 }));
 
+const mockSetSettingsDialogOpen = vi.fn();
+const mockSetSettingsDialogBookKey = vi.fn();
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({
-    setSettingsDialogOpen: vi.fn(),
+    setSettingsDialogOpen: mockSetSettingsDialogOpen,
+    setSettingsDialogBookKey: mockSetSettingsDialogBookKey,
   }),
 }));
 
@@ -218,5 +221,13 @@ describe('useBookShortcuts', () => {
     shortcutState.actions?.['onStartRSVP']?.();
 
     expect(dispatchSpy).toHaveBeenCalledWith('rsvp-start', { bookKey: 'book-1' });
+  });
+
+  it('targets the active book when the settings shortcut opens the dialog (#5591)', () => {
+    render(<Harness />);
+    shortcutState.actions?.['onOpenFontLayoutSettings']?.();
+
+    expect(mockSetSettingsDialogBookKey).toHaveBeenCalledWith('book-1');
+    expect(mockSetSettingsDialogOpen).toHaveBeenCalledWith(true);
   });
 });

@@ -67,6 +67,7 @@ import { transformContent } from '@/services/transformService';
 import {
   buildTTSSentenceHighlight,
   decideAnnotationDraw,
+  getAnnotationOverlayColor,
   getHighlightColorHex,
   mergeRestyledAnnotation,
   removeBookNoteOverlays,
@@ -507,8 +508,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const { style, color } = annotation as BookNote;
     const value = (annotation as BookNote & { value?: string }).value;
     const hexColor = getHighlightColorHex(settings, color);
-    const einkBgColor = isDarkMode ? '#000000' : '#ffffff';
-    const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
     // Choose what to draw from the overlay's `value` (cfi vs NOTE_PREFIX+cfi),
     // not from `annotation.note`: a unified record (style + note) is added as
     // two overlays and must draw a highlight for the cfi overlay AND a bubble
@@ -522,7 +521,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       draw(Overlayer.bubble, { writingMode });
     } else if (kind === 'highlight') {
       draw(Overlayer.highlight, {
-        color: isBwEink ? einkBgColor : hexColor,
+        color: getAnnotationOverlayColor('highlight', hexColor, { isBwEink, isDarkMode }),
         vertical: viewSettings.vertical,
       });
     } else if (kind === 'underline' || kind === 'squiggly') {
@@ -540,7 +539,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
       draw(Overlayer[kind], {
         writingMode,
-        color: isBwEink ? einkFgColor : hexColor,
+        color: getAnnotationOverlayColor(kind, hexColor, { isBwEink, isDarkMode }),
         padding,
       });
     }
@@ -945,6 +944,15 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           // toolbar so highlighting and copying stay reachable (#5213).
           if (selection && isSingleLookupTerm(selection.text)) {
             handleDictionary();
+            // The instant lookup consumes the gesture: the word was tapped to be
+            // looked up, not selected. Drop the selection so iOS's native
+            // handles and blue highlight — painted above web content — don't sit
+            // on top of the popup, and so dismissing it has no live selection to
+            // return a toolbar to (#5585, the other side of #5213's boundary).
+            // Clear the flag before deselecting: the selectionchange this fires
+            // would otherwise dismiss the popup we just opened.
+            isTextSelected.current = false;
+            view?.deselect();
           } else {
             handleShowAnnotPopup();
           }

@@ -67,6 +67,54 @@ jobs:
         working-directory: apps/readest-app/src-tauri
         run: cargo test -p Readest --lib
 
+  # apps/readest.koplugin/native/localsend-bin is a standalone Cargo crate
+  # (not part of the src-tauri workspace), built into the koplugin's release
+  # libs by the release workflow. Before this job it had no PR-time CI at
+  # all. Paths-filtered like rust_lint so most PRs skip the toolchain install.
+  koplugin_rust_lint:
+    runs-on: ubuntu-latest
+    # pull-requests: read lets dorny/paths-filter list a PR's changed files
+    # via the REST API (the top-level grant is contents: read only).
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      SCCACHE_GHA_ENABLED: 'true'
+      RUSTC_WRAPPER: sccache
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: 'true'
+      - name: detect localsend-bin changes
+        id: changes
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4
+        with:
+          filters: |
+            native:
+              - 'apps/readest.koplugin/native/**'
+      - name: setup sccache
+        if: steps.changes.outputs.native == 'true'
+        uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+      - name: Install minimal stable with clippy and rustfmt
+        if: steps.changes.outputs.native == 'true'
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+      - name: Format check
+        if: steps.changes.outputs.native == 'true'
+        working-directory: apps/readest.koplugin/native/localsend-bin
+        run: cargo fmt --check
+      - name: Clippy Check
+        if: steps.changes.outputs.native == 'true'
+        working-directory: apps/readest.koplugin/native/localsend-bin
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Unit tests
+        if: steps.changes.outputs.native == 'true'
+        working-directory: apps/readest.koplugin/native/localsend-bin
+        run: cargo test
+
   build_web_app:
     runs-on: ubuntu-latest
     steps:

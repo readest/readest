@@ -221,6 +221,7 @@ export async function uploadBook(
   completedFiles.count++;
 
   book.deletedAt = null;
+  book.fileSyncDeletionRequestedAt = null;
   book.updatedAt = Date.now();
   book.uploadedAt = Date.now();
   book.downloadedAt = Date.now();

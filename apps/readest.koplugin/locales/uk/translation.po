@@ -191,6 +191,9 @@ msgstr "Перевищено квоту сховища."
 msgid "Upload failed."
 msgstr "Не вдалося відправити."
 
+msgid "Send to nearby Readest devices"
+msgstr "Надіслати на пристрої Readest поблизу"
+
 msgid "Download Book"
 msgstr "Завантажити книгу"
 
@@ -236,8 +239,8 @@ msgstr "Отримати нотатки Readest з інших пристроїв
 msgid "Full sync all readest annotations"
 msgstr "Повна синхронізація всіх нотаток Readest"
 
-msgid "Add to Readest"
-msgstr "Додати до Readest"
+msgid "Add to Readest library"
+msgstr "Додати до бібліотеки Readest"
 
 msgid "Sign in to Readest first."
 msgstr "Спочатку увійдіть у Readest."
@@ -289,6 +292,9 @@ msgstr "Надіслати книги зараз"
 
 msgid "Pull books now"
 msgstr "Отримати книги зараз"
+
+msgid "Receive via LocalSend"
+msgstr "Отримати через LocalSend"
 
 msgid "Upload current book to Readest"
 msgstr "Завантажити поточну книгу до Readest"
@@ -349,6 +355,90 @@ msgstr "Книги синхронізовано"
 
 msgid "Books sync failed"
 msgstr "Не вдалося синхронізувати книги"
+
+msgid "Set a Readest download folder or a KOReader home folder first."
+msgstr "Спочатку вкажіть папку завантажень Readest або домашню папку KOReader."
+
+msgid "LocalSend error: could not find a free port."
+msgstr "Помилка LocalSend: не знайдено вільного порту."
+
+msgid "LocalSend failed to start."
+msgstr "Не вдалося запустити LocalSend."
+
+msgid "Starting LocalSend…"
+msgstr "Запуск LocalSend…"
+
+msgid "LocalSend will start when Wi-Fi connects."
+msgstr "LocalSend запуститься після підключення до Wi-Fi."
+
+msgid "… and %1 more"
+msgstr "… та ще %1"
+
+msgid "%1 wants to send you %2 file(s) (%3):"
+msgstr "%1 хоче надіслати вам %2 файл(ів) (%3):"
+
+msgid "Accept"
+msgstr "Прийняти"
+
+msgid "Decline"
+msgstr "Відхилити"
+
+msgid "Receiving %1 file(s) from %2…"
+msgstr "Отримання %1 файл(ів) від %2…"
+
+msgid "LocalSend: received %1 file(s), %2 failed."
+msgstr "LocalSend: отримано %1 файл(ів), %2 з помилкою."
+
+msgid "LocalSend transfer cancelled."
+msgstr "Передавання LocalSend скасовано."
+
+msgid "LocalSend: received %1 file(s)."
+msgstr "LocalSend: отримано %1 файл(ів)."
+
+msgid "LocalSend not available on this device"
+msgstr "LocalSend недоступний на цьому пристрої"
+
+msgid "Scanning for nearby devices…"
+msgstr "Пошук пристроїв поблизу…"
+
+msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
+msgstr "Пристроїв поблизу не знайдено. Переконайтеся, що на іншому пристрої відкрито LocalSend/Readest."
+
+msgid "Rescan"
+msgstr "Повторити пошук"
+
+msgid "Send to…"
+msgstr "Надіслати на…"
+
+msgid "Sending…"
+msgstr "Надсилання…"
+
+msgid "Sending… %1%"
+msgstr "Надсилання… %1%"
+
+msgid "Sent %1 file(s)."
+msgstr "Надіслано %1 файл(ів)."
+
+msgid "The other device declined the transfer."
+msgstr "Інший пристрій відхилив передавання."
+
+msgid "Transfer cancelled."
+msgstr "Передавання скасовано."
+
+msgid "Send failed: %1"
+msgstr "Помилка надсилання: %1"
+
+msgid "LocalSend error: %1"
+msgstr "Помилка LocalSend: %1"
+
+msgid "LocalSend off"
+msgstr "LocalSend вимкнено"
+
+msgid "Visible as %1"
+msgstr "Видимий як %1"
+
+msgid "(limited discovery)"
+msgstr "(обмежене виявлення)"
 
 msgid "Checking for update…"
 msgstr "Перевірка оновлень…"

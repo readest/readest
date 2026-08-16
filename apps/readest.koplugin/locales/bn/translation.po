@@ -191,6 +191,9 @@ msgstr "স্টোরেজ কোটা অতিক্রান্ত।"
 msgid "Upload failed."
 msgstr "আপলোড ব্যর্থ।"
 
+msgid "Send to nearby Readest devices"
+msgstr "কাছাকাছি Readest ডিভাইসে পাঠান"
+
 msgid "Download Book"
 msgstr "বই ডাউনলোড"
 
@@ -236,8 +239,8 @@ msgstr "অন্যান্য ডিভাইস থেকে Readest টী�
 msgid "Full sync all readest annotations"
 msgstr "সকল Readest টীকার পূর্ণ সিঙ্ক"
 
-msgid "Add to Readest"
-msgstr "Readest-এ যোগ করুন"
+msgid "Add to Readest library"
+msgstr "Readest লাইব্রেরিতে যোগ করুন"
 
 msgid "Sign in to Readest first."
 msgstr "প্রথমে Readest-এ সাইন ইন করুন।"
@@ -289,6 +292,9 @@ msgstr "এখনই বই পুশ করুন"
 
 msgid "Pull books now"
 msgstr "এখনই বই পুল করুন"
+
+msgid "Receive via LocalSend"
+msgstr "LocalSend-এর মাধ্যমে গ্রহণ করুন"
 
 msgid "Upload current book to Readest"
 msgstr "বর্তমান বইটি Readest-এ আপলোড করুন"
@@ -349,6 +355,90 @@ msgstr "বইগুলি সিঙ্ক হয়েছে"
 
 msgid "Books sync failed"
 msgstr "বই সিঙ্ক ব্যর্থ"
+
+msgid "Set a Readest download folder or a KOReader home folder first."
+msgstr "প্রথমে একটি Readest ডাউনলোড ফোল্ডার বা KOReader হোম ফোল্ডার সেট করুন।"
+
+msgid "LocalSend error: could not find a free port."
+msgstr "LocalSend ত্রুটি: কোনো খালি পোর্ট পাওয়া যায়নি।"
+
+msgid "LocalSend failed to start."
+msgstr "LocalSend শুরু করা যায়নি।"
+
+msgid "Starting LocalSend…"
+msgstr "LocalSend শুরু হচ্ছে…"
+
+msgid "LocalSend will start when Wi-Fi connects."
+msgstr "Wi-Fi সংযুক্ত হলে LocalSend শুরু হবে।"
+
+msgid "… and %1 more"
+msgstr "… এবং আরও %1টি"
+
+msgid "%1 wants to send you %2 file(s) (%3):"
+msgstr "%1 আপনাকে %2টি ফাইল পাঠাতে চায় (%3):"
+
+msgid "Accept"
+msgstr "গ্রহণ করুন"
+
+msgid "Decline"
+msgstr "প্রত্যাখ্যান করুন"
+
+msgid "Receiving %1 file(s) from %2…"
+msgstr "%2 থেকে %1টি ফাইল গ্রহণ করা হচ্ছে…"
+
+msgid "LocalSend: received %1 file(s), %2 failed."
+msgstr "LocalSend: %1টি ফাইল গ্রহণ করা হয়েছে, %2টি ব্যর্থ।"
+
+msgid "LocalSend transfer cancelled."
+msgstr "LocalSend স্থানান্তর বাতিল করা হয়েছে।"
+
+msgid "LocalSend: received %1 file(s)."
+msgstr "LocalSend: %1টি ফাইল গ্রহণ করা হয়েছে।"
+
+msgid "LocalSend not available on this device"
+msgstr "এই ডিভাইসে LocalSend উপলব্ধ নয়"
+
+msgid "Scanning for nearby devices…"
+msgstr "কাছাকাছি ডিভাইস খোঁজা হচ্ছে…"
+
+msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
+msgstr "কাছাকাছি কোনো ডিভাইস পাওয়া যায়নি। নিশ্চিত করুন যে অন্য ডিভাইসে LocalSend/Readest খোলা আছে।"
+
+msgid "Rescan"
+msgstr "আবার স্ক্যান করুন"
+
+msgid "Send to…"
+msgstr "পাঠান…"
+
+msgid "Sending…"
+msgstr "পাঠানো হচ্ছে…"
+
+msgid "Sending… %1%"
+msgstr "পাঠানো হচ্ছে… %1%"
+
+msgid "Sent %1 file(s)."
+msgstr "%1টি ফাইল পাঠানো হয়েছে।"
+
+msgid "The other device declined the transfer."
+msgstr "অন্য ডিভাইস স্থানান্তর প্রত্যাখ্যান করেছে।"
+
+msgid "Transfer cancelled."
+msgstr "স্থানান্তর বাতিল করা হয়েছে।"
+
+msgid "Send failed: %1"
+msgstr "পাঠানো ব্যর্থ: %1"
+
+msgid "LocalSend error: %1"
+msgstr "LocalSend ত্রুটি: %1"
+
+msgid "LocalSend off"
+msgstr "LocalSend বন্ধ"
+
+msgid "Visible as %1"
+msgstr "%1 নামে দৃশ্যমান"
+
+msgid "(limited discovery)"
+msgstr "(সীমিত আবিষ্কার)"
 
 msgid "Checking for update…"
 msgstr "আপডেট পরীক্ষা করা হচ্ছে…"

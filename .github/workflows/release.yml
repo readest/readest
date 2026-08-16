@@ -172,6 +172,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Build LocalSend helper binaries for KOReader (static musl armv7 + arm64)
+        run: |
+          rustup target add armv7-unknown-linux-musleabi
+          rustup target add aarch64-unknown-linux-musl
+          pip3 install --break-system-packages ziglang cargo-zigbuild
+          node apps/readest.koplugin/scripts/build-localsend-bins.mjs --only armv7
+          node apps/readest.koplugin/scripts/build-localsend-bins.mjs --only arm64
+
       - name: create KOReader plugin zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -186,6 +194,8 @@ jobs:
           #   docs/     — design notes
           #   spec/     — busted test suite
           #   .busted   — busted runner config
+          #   native/   — Rust source for the LocalSend helper binary (built
+          #               static-musl binaries ship from bin/ instead)
           # Mirror these in apps/readest.koplugin/scripts/build-koplugin.mjs
           # for local builds.
           cd apps
@@ -193,7 +203,8 @@ jobs:
             -x 'readest.koplugin/scripts/*' \
                'readest.koplugin/docs/*' \
                'readest.koplugin/spec/*' \
-               'readest.koplugin/.busted'
+               'readest.koplugin/.busted' \
+               'readest.koplugin/native/*'
           cd ..
 
           echo "Uploading ${plugin_zip} to GitHub release"

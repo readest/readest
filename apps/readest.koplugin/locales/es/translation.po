@@ -191,6 +191,9 @@ msgstr "Cuota de almacenamiento superada."
 msgid "Upload failed."
 msgstr "Subida fallida."
 
+msgid "Send to nearby Readest devices"
+msgstr "Enviar a dispositivos Readest cercanos"
+
 msgid "Download Book"
 msgstr "Descargar libro"
 
@@ -236,8 +239,8 @@ msgstr "Obtener anotaciones de Readest de otros dispositivos"
 msgid "Full sync all readest annotations"
 msgstr "Sincronizar completamente todas las anotaciones de Readest"
 
-msgid "Add to Readest"
-msgstr "Añadir a Readest"
+msgid "Add to Readest library"
+msgstr "Añadir a la biblioteca de Readest"
 
 msgid "Sign in to Readest first."
 msgstr "Inicia sesión en Readest primero."
@@ -289,6 +292,9 @@ msgstr "Enviar libros ahora"
 
 msgid "Pull books now"
 msgstr "Obtener libros ahora"
+
+msgid "Receive via LocalSend"
+msgstr "Recibir mediante LocalSend"
 
 msgid "Upload current book to Readest"
 msgstr "Subir el libro actual a Readest"
@@ -349,6 +355,90 @@ msgstr "Libros sincronizados"
 
 msgid "Books sync failed"
 msgstr "Sincronización de libros fallida"
+
+msgid "Set a Readest download folder or a KOReader home folder first."
+msgstr "Primero define una carpeta de descargas de Readest o una carpeta de inicio de KOReader."
+
+msgid "LocalSend error: could not find a free port."
+msgstr "Error de LocalSend: no se encontró un puerto libre."
+
+msgid "LocalSend failed to start."
+msgstr "No se pudo iniciar LocalSend."
+
+msgid "Starting LocalSend…"
+msgstr "Iniciando LocalSend…"
+
+msgid "LocalSend will start when Wi-Fi connects."
+msgstr "LocalSend se iniciará cuando se conecte el Wi-Fi."
+
+msgid "… and %1 more"
+msgstr "… y %1 más"
+
+msgid "%1 wants to send you %2 file(s) (%3):"
+msgstr "%1 quiere enviarte %2 archivo(s) (%3):"
+
+msgid "Accept"
+msgstr "Aceptar"
+
+msgid "Decline"
+msgstr "Rechazar"
+
+msgid "Receiving %1 file(s) from %2…"
+msgstr "Recibiendo %1 archivo(s) de %2…"
+
+msgid "LocalSend: received %1 file(s), %2 failed."
+msgstr "LocalSend: %1 archivo(s) recibido(s), %2 con error."
+
+msgid "LocalSend transfer cancelled."
+msgstr "Transferencia de LocalSend cancelada."
+
+msgid "LocalSend: received %1 file(s)."
+msgstr "LocalSend: %1 archivo(s) recibido(s)."
+
+msgid "LocalSend not available on this device"
+msgstr "LocalSend no disponible en este dispositivo"
+
+msgid "Scanning for nearby devices…"
+msgstr "Buscando dispositivos cercanos…"
+
+msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
+msgstr "No se encontraron dispositivos cercanos. Asegúrate de que el otro dispositivo tenga LocalSend/Readest abierto."
+
+msgid "Rescan"
+msgstr "Volver a buscar"
+
+msgid "Send to…"
+msgstr "Enviar a…"
+
+msgid "Sending…"
+msgstr "Enviando…"
+
+msgid "Sending… %1%"
+msgstr "Enviando… %1%"
+
+msgid "Sent %1 file(s)."
+msgstr "%1 archivo(s) enviado(s)."
+
+msgid "The other device declined the transfer."
+msgstr "El otro dispositivo rechazó la transferencia."
+
+msgid "Transfer cancelled."
+msgstr "Transferencia cancelada."
+
+msgid "Send failed: %1"
+msgstr "Error al enviar: %1"
+
+msgid "LocalSend error: %1"
+msgstr "Error de LocalSend: %1"
+
+msgid "LocalSend off"
+msgstr "LocalSend desactivado"
+
+msgid "Visible as %1"
+msgstr "Visible como %1"
+
+msgid "(limited discovery)"
+msgstr "(detección limitada)"
 
 msgid "Checking for update…"
 msgstr "Buscando actualización…"

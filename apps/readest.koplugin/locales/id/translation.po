@@ -191,6 +191,9 @@ msgstr "Kuota penyimpanan terlampaui."
 msgid "Upload failed."
 msgstr "Unggahan gagal."
 
+msgid "Send to nearby Readest devices"
+msgstr "Kirim ke perangkat Readest terdekat"
+
 msgid "Download Book"
 msgstr "Unduh Buku"
 
@@ -236,8 +239,8 @@ msgstr "Ambil anotasi Readest dari perangkat lain"
 msgid "Full sync all readest annotations"
 msgstr "Sinkronisasi penuh semua anotasi Readest"
 
-msgid "Add to Readest"
-msgstr "Tambahkan ke Readest"
+msgid "Add to Readest library"
+msgstr "Tambahkan ke pustaka Readest"
 
 msgid "Sign in to Readest first."
 msgstr "Masuk ke Readest terlebih dahulu."
@@ -289,6 +292,9 @@ msgstr "Kirim buku sekarang"
 
 msgid "Pull books now"
 msgstr "Tarik buku sekarang"
+
+msgid "Receive via LocalSend"
+msgstr "Terima melalui LocalSend"
 
 msgid "Upload current book to Readest"
 msgstr "Unggah buku saat ini ke Readest"
@@ -349,6 +355,90 @@ msgstr "Buku tersinkronisasi"
 
 msgid "Books sync failed"
 msgstr "Sinkronisasi buku gagal"
+
+msgid "Set a Readest download folder or a KOReader home folder first."
+msgstr "Atur folder unduhan Readest atau folder utama KOReader terlebih dahulu."
+
+msgid "LocalSend error: could not find a free port."
+msgstr "Kesalahan LocalSend: tidak dapat menemukan port yang tersedia."
+
+msgid "LocalSend failed to start."
+msgstr "LocalSend gagal dijalankan."
+
+msgid "Starting LocalSend…"
+msgstr "Memulai LocalSend…"
+
+msgid "LocalSend will start when Wi-Fi connects."
+msgstr "LocalSend akan dimulai saat Wi-Fi terhubung."
+
+msgid "… and %1 more"
+msgstr "…dan %1 lainnya"
+
+msgid "%1 wants to send you %2 file(s) (%3):"
+msgstr "%1 ingin mengirimi Anda %2 file (%3):"
+
+msgid "Accept"
+msgstr "Terima"
+
+msgid "Decline"
+msgstr "Tolak"
+
+msgid "Receiving %1 file(s) from %2…"
+msgstr "Menerima %1 file dari %2…"
+
+msgid "LocalSend: received %1 file(s), %2 failed."
+msgstr "LocalSend: menerima %1 file, %2 gagal."
+
+msgid "LocalSend transfer cancelled."
+msgstr "Transfer LocalSend dibatalkan."
+
+msgid "LocalSend: received %1 file(s)."
+msgstr "LocalSend: menerima %1 file."
+
+msgid "LocalSend not available on this device"
+msgstr "LocalSend tidak tersedia di perangkat ini"
+
+msgid "Scanning for nearby devices…"
+msgstr "Memindai perangkat terdekat…"
+
+msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
+msgstr "Tidak ada perangkat terdekat yang ditemukan. Pastikan perangkat lain membuka LocalSend/Readest."
+
+msgid "Rescan"
+msgstr "Pindai ulang"
+
+msgid "Send to…"
+msgstr "Kirim ke…"
+
+msgid "Sending…"
+msgstr "Mengirim…"
+
+msgid "Sending… %1%"
+msgstr "Mengirim… %1%"
+
+msgid "Sent %1 file(s)."
+msgstr "%1 file terkirim."
+
+msgid "The other device declined the transfer."
+msgstr "Perangkat lain menolak transfer."
+
+msgid "Transfer cancelled."
+msgstr "Transfer dibatalkan."
+
+msgid "Send failed: %1"
+msgstr "Pengiriman gagal: %1"
+
+msgid "LocalSend error: %1"
+msgstr "Kesalahan LocalSend: %1"
+
+msgid "LocalSend off"
+msgstr "LocalSend nonaktif"
+
+msgid "Visible as %1"
+msgstr "Terlihat sebagai %1"
+
+msgid "(limited discovery)"
+msgstr "(penemuan terbatas)"
 
 msgid "Checking for update…"
 msgstr "Memeriksa pembaruan…"

@@ -1,8 +1,19 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, cleanup, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { render, cleanup, fireEvent, waitFor, act } from '@testing-library/react';
+
+const requestCoverThumbnailMock = vi.fn();
+
+vi.mock('@/services/environment', () => ({
+  getInitializedAppService: () => ({
+    supportsCoverThumbnailOptimization: true,
+    requestCoverThumbnail: requestCoverThumbnailMock,
+  }),
+  isTauriAppPlatform: () => true,
+}));
 
 import BookCover from '@/components/BookCover';
 import { Book } from '@/types/book';
+import { useLibraryStore } from '@/store/libraryStore';
 
 vi.mock('next/image', () => ({
   __esModule: true,
@@ -12,7 +23,20 @@ vi.mock('next/image', () => ({
   },
 }));
 
-afterEach(cleanup);
+beforeEach(() => {
+  requestCoverThumbnailMock.mockClear();
+  useLibraryStore.setState({
+    coverThumbnails: new Map(),
+    library: [],
+    hashIndex: new Map(),
+    visibleLibrary: [],
+  });
+});
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 const makeBook = (overrides?: Partial<Book>): Book =>
   ({
@@ -63,5 +87,164 @@ describe('BookCover', () => {
     const { container } = render(<BookCover book={book} coverFit='crop' />);
     const fallback = container.querySelector('.fallback-cover');
     expect(fallback?.textContent).toContain('Edited Author');
+  });
+
+  it('shows the placeholder and reports an error when the original cover cannot load', () => {
+    const onImageError = vi.fn();
+    const { container } = render(
+      <BookCover book={makeBook()} coverFit='crop' onImageError={onImageError} />,
+    );
+
+    fireEvent.error(container.querySelector('img')!);
+
+    expect(container.querySelector('.fallback-cover')?.classList.contains('invisible')).toBe(false);
+    expect(onImageError).toHaveBeenCalledOnce();
+  });
+
+  it('uses an edited metadata cover without scheduling native optimization', () => {
+    const { container } = render(
+      <BookCover
+        book={makeBook({
+          coverImageUrl: 'asset://original.png',
+          metadata: { coverImageUrl: 'blob:edited-cover' } as Book['metadata'],
+        })}
+        coverFit='crop'
+      />,
+    );
+
+    expect(container.querySelector('img')?.getAttribute('src')).toBe('blob:edited-cover');
+    expect(requestCoverThumbnailMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps the original cover visible while requesting its thumbnail', async () => {
+    const book = makeBook({
+      coverHash: 'cover-v1',
+      coverImageUrl: 'https://example.com/full-size-cover.jpg',
+    });
+
+    const { container } = render(<BookCover book={book} coverFit='crop' />);
+
+    expect(container.querySelector('img')?.getAttribute('src')).toBe(
+      'https://example.com/full-size-cover.jpg',
+    );
+    expect(container.querySelector('.fallback-cover')?.classList.contains('invisible')).toBe(true);
+    await waitFor(() => expect(requestCoverThumbnailMock).toHaveBeenCalledWith(book));
+  });
+
+  it('switches to a matching optimized thumbnail without mutating the original cover URL', () => {
+    const book = makeBook({
+      hash: 'book-1',
+      coverHash: 'cover-v1',
+      coverImageUrl: 'https://example.com/full-size-cover.jpg',
+    });
+    useLibraryStore.setState({
+      library: [book],
+      hashIndex: new Map([['book-1', 0]]),
+      visibleLibrary: [book],
+    });
+    const { container } = render(<BookCover book={book} coverFit='crop' />);
+
+    act(() => {
+      useLibraryStore
+        .getState()
+        .setBookCoverThumbnail('book-1', 'cover-v1', 'asset://thumbnail.jpg');
+    });
+
+    expect(container.querySelector('img')?.getAttribute('src')).toBe('asset://thumbnail.jpg');
+    expect(book.coverImageUrl).toBe('https://example.com/full-size-cover.jpg');
+    expect(container.querySelector('.fallback-cover')?.classList.contains('invisible')).toBe(true);
+  });
+
+  it('ignores a thumbnail for an older cover revision and requests the current one', async () => {
+    const book = makeBook({
+      hash: 'book-1',
+      coverHash: 'cover-v2',
+      coverImageUrl: 'asset://original-v2.png',
+    });
+    useLibraryStore.setState({
+      coverThumbnails: new Map([
+        ['book-1', { coverHash: 'cover-v1', url: 'asset://stale-thumbnail.jpg' }],
+      ]),
+    });
+
+    const { container } = render(<BookCover book={book} coverFit='crop' />);
+
+    expect(container.querySelector('img')?.getAttribute('src')).toBe('asset://original-v2.png');
+    await waitFor(() => expect(requestCoverThumbnailMock).toHaveBeenCalledWith(book));
+  });
+
+  it('requests a new thumbnail when the cover revision changes without a timestamp change', async () => {
+    const book = makeBook({ hash: 'book-1', coverHash: 'cover-v1', updatedAt: 1 });
+    const { rerender } = render(<BookCover book={book} coverFit='crop' />);
+    await waitFor(() => expect(requestCoverThumbnailMock).toHaveBeenCalledWith(book));
+
+    const revisedBook = { ...book, coverHash: 'cover-v2' };
+    rerender(<BookCover book={revisedBook} coverFit='crop' />);
+
+    await waitFor(() => expect(requestCoverThumbnailMock).toHaveBeenCalledWith(revisedBook));
+  });
+
+  it('falls back to the original image rather than the placeholder if a thumbnail cannot load', () => {
+    const book = makeBook({
+      hash: 'book-1',
+      coverHash: 'cover-v1',
+      coverImageUrl: 'https://example.com/full-size-cover.jpg',
+    });
+    useLibraryStore.setState({
+      library: [book],
+      hashIndex: new Map([['book-1', 0]]),
+      visibleLibrary: [book],
+    });
+    useLibraryStore.getState().setBookCoverThumbnail('book-1', 'cover-v1', 'asset://thumbnail.jpg');
+    const { container } = render(<BookCover book={book} coverFit='crop' />);
+
+    fireEvent.error(container.querySelector('img')!);
+
+    expect(container.querySelector('img')?.getAttribute('src')).toBe(
+      'https://example.com/full-size-cover.jpg',
+    );
+    expect(container.querySelector('.fallback-cover')?.classList.contains('invisible')).toBe(true);
+  });
+
+  it('waits for the viewport prefetch margin before requesting optimization', () => {
+    let reveal: (() => void) | undefined;
+    const observe = vi.fn();
+    const unobserve = vi.fn();
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          reveal = () =>
+            callback(
+              [
+                {
+                  isIntersecting: true,
+                  target: observe.mock.calls[0]![0],
+                } as IntersectionObserverEntry,
+              ],
+              this as unknown as IntersectionObserver,
+            );
+        }
+        observe = observe;
+        unobserve = unobserve;
+        disconnect = vi.fn();
+        takeRecords = () => [];
+        root = null;
+        rootMargin = '400px';
+        thresholds = [0];
+      },
+    );
+    const book = makeBook({ coverHash: 'cover-v1' });
+
+    const { rerender } = render(<BookCover book={book} coverFit='crop' />);
+
+    expect(observe).toHaveBeenCalledOnce();
+    expect(requestCoverThumbnailMock).not.toHaveBeenCalled();
+    const progressedBook = { ...book, updatedAt: 2 };
+    rerender(<BookCover book={progressedBook} coverFit='crop' />);
+    expect(observe).toHaveBeenCalledOnce();
+    act(() => reveal?.());
+    expect(requestCoverThumbnailMock).toHaveBeenCalledWith(progressedBook);
+    expect(unobserve).toHaveBeenCalledOnce();
   });
 });

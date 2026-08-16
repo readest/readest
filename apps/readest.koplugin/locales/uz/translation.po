@@ -191,6 +191,9 @@ msgstr "Xotira kvotasi oshib ketdi."
 msgid "Upload failed."
 msgstr "Yuklab boʻlmadi."
 
+msgid "Send to nearby Readest devices"
+msgstr "Yaqin-atrofdagi Readest qurilmalariga yuborish"
+
 msgid "Download Book"
 msgstr "Kitobni yuklab olish"
 
@@ -236,8 +239,8 @@ msgstr "Readest izohlarini boshqa qurilmalardan olish"
 msgid "Full sync all readest annotations"
 msgstr "Barcha Readest izohlarini toʻliq sinxronlash"
 
-msgid "Add to Readest"
-msgstr "Readest-ga qoʻshish"
+msgid "Add to Readest library"
+msgstr "Readest kutubxonasiga qo'shish"
 
 msgid "Sign in to Readest first."
 msgstr "Avval Readest-ga kiring."
@@ -289,6 +292,9 @@ msgstr "Kitoblarni hozir yuborish"
 
 msgid "Pull books now"
 msgstr "Kitoblarni hozir olish"
+
+msgid "Receive via LocalSend"
+msgstr "LocalSend orqali qabul qilish"
 
 msgid "Upload current book to Readest"
 msgstr "Joriy kitobni Readest-ga yuklash"
@@ -349,6 +355,90 @@ msgstr "Kitoblar sinxronlandi"
 
 msgid "Books sync failed"
 msgstr "Kitoblarni sinxronlab boʻlmadi"
+
+msgid "Set a Readest download folder or a KOReader home folder first."
+msgstr "Avval Readest yuklab olish jildini yoki KOReader asosiy jildini belgilang."
+
+msgid "LocalSend error: could not find a free port."
+msgstr "LocalSend xatosi: bo'sh port topilmadi."
+
+msgid "LocalSend failed to start."
+msgstr "LocalSend ishga tushmadi."
+
+msgid "Starting LocalSend…"
+msgstr "LocalSend ishga tushirilmoqda…"
+
+msgid "LocalSend will start when Wi-Fi connects."
+msgstr "Wi-Fi ulanganda LocalSend ishga tushadi."
+
+msgid "… and %1 more"
+msgstr "… va yana %1 ta"
+
+msgid "%1 wants to send you %2 file(s) (%3):"
+msgstr "%1 sizga %2 ta fayl yubormoqchi (%3):"
+
+msgid "Accept"
+msgstr "Qabul qilish"
+
+msgid "Decline"
+msgstr "Rad etish"
+
+msgid "Receiving %1 file(s) from %2…"
+msgstr "%2 dan %1 ta fayl qabul qilinmoqda…"
+
+msgid "LocalSend: received %1 file(s), %2 failed."
+msgstr "LocalSend: %1 ta fayl qabul qilindi, %2 tasi muvaffaqiyatsiz."
+
+msgid "LocalSend transfer cancelled."
+msgstr "LocalSend uzatishi bekor qilindi."
+
+msgid "LocalSend: received %1 file(s)."
+msgstr "LocalSend: %1 ta fayl qabul qilindi."
+
+msgid "LocalSend not available on this device"
+msgstr "Bu qurilmada LocalSend mavjud emas"
+
+msgid "Scanning for nearby devices…"
+msgstr "Yaqin-atrofdagi qurilmalar qidirilmoqda…"
+
+msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
+msgstr "Yaqin-atrofda qurilma topilmadi. Boshqa qurilmada LocalSend/Readest ochiqligiga ishonch hosil qiling."
+
+msgid "Rescan"
+msgstr "Qayta qidirish"
+
+msgid "Send to…"
+msgstr "Yuborish…"
+
+msgid "Sending…"
+msgstr "Yuborilmoqda…"
+
+msgid "Sending… %1%"
+msgstr "Yuborilmoqda… %1%"
+
+msgid "Sent %1 file(s)."
+msgstr "%1 ta fayl yuborildi."
+
+msgid "The other device declined the transfer."
+msgstr "Boshqa qurilma uzatishni rad etdi."
+
+msgid "Transfer cancelled."
+msgstr "Uzatish bekor qilindi."
+
+msgid "Send failed: %1"
+msgstr "Yuborish muvaffaqiyatsiz: %1"
+
+msgid "LocalSend error: %1"
+msgstr "LocalSend xatosi: %1"
+
+msgid "LocalSend off"
+msgstr "LocalSend o'chiq"
+
+msgid "Visible as %1"
+msgstr "%1 sifatida ko'rinadi"
+
+msgid "(limited discovery)"
+msgstr "(cheklangan aniqlash)"
 
 msgid "Checking for update…"
 msgstr "Yangilanishlar tekshirilmoqda…"

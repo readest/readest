@@ -191,6 +191,9 @@ msgstr "Kuota storan dilampaui."
 msgid "Upload failed."
 msgstr "Muat naik gagal."
 
+msgid "Send to nearby Readest devices"
+msgstr "Hantar ke peranti Readest berdekatan"
+
 msgid "Download Book"
 msgstr "Muat turun Buku"
 
@@ -236,8 +239,8 @@ msgstr "Tarik anotasi Readest dari peranti lain"
 msgid "Full sync all readest annotations"
 msgstr "Penyegerakan penuh semua anotasi Readest"
 
-msgid "Add to Readest"
-msgstr "Tambah ke Readest"
+msgid "Add to Readest library"
+msgstr "Tambah ke pustaka Readest"
 
 msgid "Sign in to Readest first."
 msgstr "Log masuk ke Readest dahulu."
@@ -289,6 +292,9 @@ msgstr "Hantar buku sekarang"
 
 msgid "Pull books now"
 msgstr "Tarik buku sekarang"
+
+msgid "Receive via LocalSend"
+msgstr "Terima melalui LocalSend"
 
 msgid "Upload current book to Readest"
 msgstr "Muat naik buku semasa ke Readest"
@@ -349,6 +355,90 @@ msgstr "Buku diselaraskan"
 
 msgid "Books sync failed"
 msgstr "Penyegerakan buku gagal"
+
+msgid "Set a Readest download folder or a KOReader home folder first."
+msgstr "Tetapkan folder muat turun Readest atau folder utama KOReader dahulu."
+
+msgid "LocalSend error: could not find a free port."
+msgstr "Ralat LocalSend: tidak dapat mencari port yang kosong."
+
+msgid "LocalSend failed to start."
+msgstr "LocalSend gagal dimulakan."
+
+msgid "Starting LocalSend…"
+msgstr "Memulakan LocalSend…"
+
+msgid "LocalSend will start when Wi-Fi connects."
+msgstr "LocalSend akan bermula apabila Wi-Fi disambung."
+
+msgid "… and %1 more"
+msgstr "…dan %1 lagi"
+
+msgid "%1 wants to send you %2 file(s) (%3):"
+msgstr "%1 mahu menghantar %2 fail kepada anda (%3):"
+
+msgid "Accept"
+msgstr "Terima"
+
+msgid "Decline"
+msgstr "Tolak"
+
+msgid "Receiving %1 file(s) from %2…"
+msgstr "Menerima %1 fail daripada %2…"
+
+msgid "LocalSend: received %1 file(s), %2 failed."
+msgstr "LocalSend: menerima %1 fail, %2 gagal."
+
+msgid "LocalSend transfer cancelled."
+msgstr "Pemindahan LocalSend dibatalkan."
+
+msgid "LocalSend: received %1 file(s)."
+msgstr "LocalSend: menerima %1 fail."
+
+msgid "LocalSend not available on this device"
+msgstr "LocalSend tidak tersedia pada peranti ini"
+
+msgid "Scanning for nearby devices…"
+msgstr "Mengimbas peranti berdekatan…"
+
+msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
+msgstr "Tiada peranti berdekatan ditemui. Pastikan peranti lain membuka LocalSend/Readest."
+
+msgid "Rescan"
+msgstr "Imbas semula"
+
+msgid "Send to…"
+msgstr "Hantar ke…"
+
+msgid "Sending…"
+msgstr "Menghantar…"
+
+msgid "Sending… %1%"
+msgstr "Menghantar… %1%"
+
+msgid "Sent %1 file(s)."
+msgstr "%1 fail dihantar."
+
+msgid "The other device declined the transfer."
+msgstr "Peranti lain menolak pemindahan."
+
+msgid "Transfer cancelled."
+msgstr "Pemindahan dibatalkan."
+
+msgid "Send failed: %1"
+msgstr "Penghantaran gagal: %1"
+
+msgid "LocalSend error: %1"
+msgstr "Ralat LocalSend: %1"
+
+msgid "LocalSend off"
+msgstr "LocalSend dimatikan"
+
+msgid "Visible as %1"
+msgstr "Kelihatan sebagai %1"
+
+msgid "(limited discovery)"
+msgstr "(penemuan terhad)"
 
 msgid "Checking for update…"
 msgstr "Menyemak kemas kini…"

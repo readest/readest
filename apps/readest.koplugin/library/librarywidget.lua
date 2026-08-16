@@ -1266,6 +1266,18 @@ function M.handleHold(item, opts)
                 M.refresh()
             end)
         end)
+
+        -- Send the local copy straight to a nearby Readest device over the
+        -- LAN. Mirrors the FileManager long-press "Send to nearby Readest
+        -- devices" action; only offered when a helper binary exists for this
+        -- device (isAvailable()) and we have a real file to hand off.
+        local LocalSend = require("readest_localsend")
+        if row.file_path and LocalSend:isAvailable() then
+            add_row(_("Send to nearby Readest devices"), function()
+                close()
+                LocalSend:sendFile(row.file_path)
+            end)
+        end
     end
 
     -- Download: parity with BookDetailView's `book.uploadedAt && onDownload`.

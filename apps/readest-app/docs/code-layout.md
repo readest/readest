@@ -213,13 +213,18 @@ This is shared infrastructure code, not an HTTP backend directory.
 
 ### `src/services/sync`
 
-Sync clients and replica-sync orchestration.
+Sync clients and orchestration.
 
 - legacy/remote sync client code such as `KOSyncClient.ts`
 - replica sync flow: bootstrap, publish, pull, apply, persistence, cursor storage, encryption, and passphrase handling
 - adapter subdirectory for sync categories such as dictionary, font, texture, OPDS catalog, and settings
+- provider-neutral file sync under `file/`, with WebDAV, Google Drive, S3,
+  OneDrive, and iCloud adapters under `providers/`; it reconciles shared
+  `library.json` metadata, covers, per-book config, and book files
 
-This is mostly client-side sync orchestration talking to backend endpoints like `src/pages/api/sync.ts` and `src/pages/api/sync/replicas.ts`.
+This is mostly client-side sync orchestration talking to backend endpoints like
+`src/pages/api/sync.ts` and `src/pages/api/sync/replicas.ts`, or directly to the
+selected third-party file provider.
 
 ### `src/services/send`
 

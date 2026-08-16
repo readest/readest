@@ -11,6 +11,7 @@ import { useDeviceControlStore } from '@/store/deviceStore';
 import { eventDispatcher } from '@/utils/event';
 import type { FooterBarProps, NavigationHandlers, FooterBarChildProps } from './types';
 import { debounce } from '@/utils/debounce';
+import { isForcedMobileLayout } from '../../utils/mobileLayout';
 import { RSVPControl } from '../rsvp';
 import MobileFooterBar from './MobileFooterBar';
 import DesktopFooterBar from './DesktopFooterBar';
@@ -196,12 +197,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const footerBarRef = useRef<HTMLDivElement>(null);
   useSpatialNavigation(footerBarRef, isVisible);
 
-  // Force the mobile footer bar on mobile tablets/foldables in portrait mode
-  // where the viewport width exceeds the `sm:` (640px) breakpoint. Phones
-  // (innerWidth < 640) are intentionally excluded so their styling and panel
-  // slide-down animation remain exactly as before — see #3742 / #3746.
-  const forceMobileLayout =
-    !!appService?.isMobile && window.innerWidth >= 640 && window.innerWidth <= window.innerHeight;
+  const forceMobileLayout = isForcedMobileLayout(appService?.isMobile);
 
   const commonProps: FooterBarChildProps = {
     bookKey,

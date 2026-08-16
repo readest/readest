@@ -23,13 +23,19 @@ let mockHighlightStyles: Record<HighlightStyle, HighlightColor> = {
 // Settings seed `customHighlightColors` with the default palette, so the named
 // colors always resolve to a hex through it (see DEFAULT_READSETTINGS).
 let mockCustomColors: Record<string, string> = { ...HIGHLIGHT_COLOR_HEX };
+let mockViewSettings = { isEink: false, isColorEink: false };
+let mockIsDarkMode = false;
 
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: {}, appService: null }),
 }));
 
 vi.mock('@/store/themeStore', () => ({
-  useThemeStore: () => ({ isDarkMode: false }),
+  useThemeStore: () => ({
+    get isDarkMode() {
+      return mockIsDarkMode;
+    },
+  }),
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -51,7 +57,9 @@ vi.mock('@/store/settingsStore', () => ({
         userHighlightColors: [],
         defaultHighlightLabels: {},
       },
-      globalViewSettings: { isEink: false, isColorEink: false },
+      get globalViewSettings() {
+        return mockViewSettings;
+      },
     },
   }),
 }));
@@ -97,6 +105,8 @@ const getStyleGlyph = (container: HTMLElement, style: HighlightStyle) => {
 afterEach(() => {
   mockHighlightStyles = { highlight: 'yellow', underline: 'red', squiggly: 'blue' };
   mockCustomColors = { ...HIGHLIGHT_COLOR_HEX };
+  mockViewSettings = { isEink: false, isColorEink: false };
+  mockIsDarkMode = false;
   cleanup();
 });
 
@@ -160,5 +170,65 @@ describe('underline and squiggly rule color', () => {
 
     expect(getStyleGlyph(container, 'underline').style.color).toBe('');
     expect(getStyleGlyph(container, 'underline').className).toContain('text-base-content');
+  });
+});
+
+/**
+ * `[data-eink='true'] [class*='text-base-content']` in globals.css flattens the
+ * ink with `!important`, which outranks an inline `color`. The marker glyph and
+ * the selected-color check both sit on a base-content chip and set their own
+ * contrasting ink inline, so carrying that class painted them base-content on
+ * base-content: a solid black square with an invisible "A", and a color swatch
+ * with no visible check (#5667). Their color is always explicit, so they must
+ * not opt into the override at all.
+ */
+describe('e-ink chip legibility', () => {
+  const getCheck = (container: HTMLElement) => {
+    const check = container.querySelector<SVGElement>('button[aria-label^="Select"] svg');
+    if (!check) throw new Error('selected color check not rendered');
+    return check;
+  };
+
+  it('keeps the marker glyph off the e-ink ink override', () => {
+    mockViewSettings = { isEink: true, isColorEink: false };
+    const { container } = renderOptions('yellow');
+    const glyph = getStyleGlyph(container, 'highlight');
+
+    expect(glyph.style.backgroundColor).toBe('rgb(0, 0, 0)');
+    expect(glyph.style.color).toBe('rgb(255, 255, 255)');
+    expect(glyph.className).not.toContain('text-base-content');
+  });
+
+  it('inverts the marker glyph with the theme, so a dark page reads too', () => {
+    mockViewSettings = { isEink: true, isColorEink: false };
+    mockIsDarkMode = true;
+    const { container } = renderOptions('yellow');
+    const glyph = getStyleGlyph(container, 'highlight');
+
+    expect(glyph.style.backgroundColor).toBe('rgb(255, 255, 255)');
+    expect(glyph.style.color).toBe('rgb(0, 0, 0)');
+  });
+
+  it('keeps the selected-color check off the e-ink ink override', () => {
+    mockViewSettings = { isEink: true, isColorEink: false };
+    const { container } = renderOptions('yellow');
+
+    expect(getCheck(container).style.color).toBe('rgb(255, 255, 255)');
+    expect(getCheck(container).classList.contains('text-base-content')).toBe(false);
+  });
+
+  it('still flattens the rule glyphs to the theme ink, which needs the override', () => {
+    mockViewSettings = { isEink: true, isColorEink: false };
+    const { container } = renderOptions('yellow');
+
+    expect(getStyleGlyph(container, 'underline').className).toContain('text-base-content');
+  });
+
+  it('leaves color e-ink on the real palette, where the check reads as content ink', () => {
+    mockViewSettings = { isEink: true, isColorEink: true };
+    const { container } = renderOptions('yellow');
+
+    expect(getStyleGlyph(container, 'highlight').style.backgroundColor).toBe('rgb(250, 204, 21)');
+    expect(getCheck(container).classList.contains('text-base-content')).toBe(true);
   });
 });

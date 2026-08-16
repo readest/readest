@@ -345,6 +345,17 @@ describe('DictionarySheet — concurrent lookup', () => {
     expect(screen.queryByText('Empty One')).toBeNull();
     expect(screen.queryByText('Empty Two')).toBeNull();
   });
+
+  it('finds a known word after an empty lookup without closing the sheet', async () => {
+    providersForNextRender.push(buildRealStarDictProvider());
+    const { rerender } = renderSheet({ word: 'not-in-cmudict' });
+
+    await waitFor(() => expect(screen.queryByTestId('dict-card')).toBeNull());
+
+    rerender(<DictionarySheet word='hello' onDismiss={() => {}} />);
+
+    await waitFor(() => screen.getByText('CMU American English spelling'));
+  });
 });
 
 describe('DictionarySheet — query normalization', () => {

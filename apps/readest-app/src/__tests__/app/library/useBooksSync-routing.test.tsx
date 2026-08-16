@@ -49,8 +49,6 @@ const runFileLibrarySyncPass = vi.hoisted(() =>
   vi.fn(async (): Promise<{ booksSynced: number } | null> => ({ booksSynced: 1 })),
 );
 
-const checkMixedFleetOnce = vi.hoisted(() => vi.fn(async () => false));
-
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'user-1' } }),
 }));
@@ -86,10 +84,6 @@ vi.mock('@/services/sync/cloudSyncProvider', () => ({
 
 vi.mock('@/services/sync/file/runLibrarySync', () => ({
   runFileLibrarySyncPass,
-}));
-
-vi.mock('@/services/sync/fleetDetection', () => ({
-  checkMixedFleetOnce,
 }));
 
 const { useBooksSync } = await import('@/app/library/hooks/useBooksSync');
@@ -234,30 +228,5 @@ describe('useBooksSync pullLibrary routing (issue #5062)', () => {
     const toastCalls = dispatchSpy.mock.calls.filter(([event]) => event === 'toast');
     expect(toastCalls).toHaveLength(1);
     expect(toastCalls[0]?.[1]).toMatchObject({ type: 'info', message: '4 book(s) synced' });
-  });
-});
-
-describe('useBooksSync handleAutoSync mixed-fleet probe gate (issue #5062)', () => {
-  it('runs the mixed-fleet probe when Readest Cloud is off', async () => {
-    routing.readestEnabled = false;
-    routing.backends = ['webdav'];
-
-    renderHook(() => useBooksSync());
-
-    await waitFor(() => expect(checkMixedFleetOnce).toHaveBeenCalled());
-  });
-
-  it('does not run the mixed-fleet probe when Readest Cloud is on', async () => {
-    routing.readestEnabled = true;
-    routing.backends = [];
-
-    renderHook(() => useBooksSync());
-
-    // A probe warning "another device still syncs via Readest Cloud" is
-    // meaningless while this device also syncs via Readest Cloud. Wait for
-    // the native pull (which does run in this scenario) as a sync point
-    // before asserting the probe never fired.
-    await waitFor(() => expect(syncState.syncBooks).toHaveBeenCalled());
-    expect(checkMixedFleetOnce).not.toHaveBeenCalled();
   });
 });

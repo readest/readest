@@ -158,6 +158,26 @@ describe('importBook metaHash deduplication', () => {
     expect(existingBook.metaHash).toBe(metaHash);
   });
 
+  it('clears file-sync deletion authorization when re-importing the same hash', async () => {
+    const existingBook = makeBook({
+      deletedAt: 100,
+      fileSyncDeletionRequestedAt: 100,
+    });
+    const books: Book[] = [existingBook];
+
+    mockPartialMD5.mockResolvedValue(existingBook.hash);
+    setupMockBookDoc();
+
+    const result = await service.importBook(
+      new File(['same content'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+    );
+
+    expect(result).toBe(existingBook);
+    expect(existingBook.deletedAt).toBeNull();
+    expect(existingBook.fileSyncDeletionRequestedAt).toBeNull();
+  });
+
   // Cross-device file-update convergence (issue #4544 §E): re-importing an
   // edited file re-keys the hash and clears uploadedAt so the new bytes get
   // re-uploaded; the old entry is soft-deleted. Peers then pull the deleted

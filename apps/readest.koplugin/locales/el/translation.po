@@ -191,6 +191,9 @@ msgstr "Υπέρβαση ορίου αποθήκευσης."
 msgid "Upload failed."
 msgstr "Η μεταφόρτωση απέτυχε."
 
+msgid "Send to nearby Readest devices"
+msgstr "Αποστολή σε κοντινές συσκευές Readest"
+
 msgid "Download Book"
 msgstr "Λήψη βιβλίου"
 
@@ -236,8 +239,8 @@ msgstr "Λήψη σχολίων Readest από άλλες συσκευές"
 msgid "Full sync all readest annotations"
 msgstr "Πλήρης συγχρονισμός όλων των σχολίων Readest"
 
-msgid "Add to Readest"
-msgstr "Προσθήκη στο Readest"
+msgid "Add to Readest library"
+msgstr "Προσθήκη στη βιβλιοθήκη Readest"
 
 msgid "Sign in to Readest first."
 msgstr "Συνδεθείτε πρώτα στο Readest."
@@ -289,6 +292,9 @@ msgstr "Αποστολή βιβλίων τώρα"
 
 msgid "Pull books now"
 msgstr "Λήψη βιβλίων τώρα"
+
+msgid "Receive via LocalSend"
+msgstr "Λήψη μέσω LocalSend"
 
 msgid "Upload current book to Readest"
 msgstr "Μεταφόρτωση τρέχοντος βιβλίου στο Readest"
@@ -349,6 +355,90 @@ msgstr "Τα βιβλία συγχρονίστηκαν"
 
 msgid "Books sync failed"
 msgstr "Αποτυχία συγχρονισμού βιβλίων"
+
+msgid "Set a Readest download folder or a KOReader home folder first."
+msgstr "Ορίστε πρώτα έναν φάκελο λήψεων Readest ή έναν αρχικό φάκελο KOReader."
+
+msgid "LocalSend error: could not find a free port."
+msgstr "Σφάλμα LocalSend: δεν βρέθηκε ελεύθερη θύρα."
+
+msgid "LocalSend failed to start."
+msgstr "Η εκκίνηση του LocalSend απέτυχε."
+
+msgid "Starting LocalSend…"
+msgstr "Εκκίνηση LocalSend…"
+
+msgid "LocalSend will start when Wi-Fi connects."
+msgstr "Το LocalSend θα ξεκινήσει μόλις συνδεθεί το Wi-Fi."
+
+msgid "… and %1 more"
+msgstr "… και %1 ακόμη"
+
+msgid "%1 wants to send you %2 file(s) (%3):"
+msgstr "Ο/Η %1 θέλει να σας στείλει %2 αρχείο(α) (%3):"
+
+msgid "Accept"
+msgstr "Αποδοχή"
+
+msgid "Decline"
+msgstr "Απόρριψη"
+
+msgid "Receiving %1 file(s) from %2…"
+msgstr "Λήψη %1 αρχείου(ων) από %2…"
+
+msgid "LocalSend: received %1 file(s), %2 failed."
+msgstr "LocalSend: ελήφθησαν %1 αρχείο(α), %2 απέτυχαν."
+
+msgid "LocalSend transfer cancelled."
+msgstr "Η μεταφορά LocalSend ακυρώθηκε."
+
+msgid "LocalSend: received %1 file(s)."
+msgstr "LocalSend: ελήφθησαν %1 αρχείο(α)."
+
+msgid "LocalSend not available on this device"
+msgstr "Το LocalSend δεν είναι διαθέσιμο σε αυτή τη συσκευή"
+
+msgid "Scanning for nearby devices…"
+msgstr "Αναζήτηση κοντινών συσκευών…"
+
+msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
+msgstr "Δεν βρέθηκαν κοντινές συσκευές. Βεβαιωθείτε ότι η άλλη συσκευή έχει ανοιχτό το LocalSend/Readest."
+
+msgid "Rescan"
+msgstr "Νέα σάρωση"
+
+msgid "Send to…"
+msgstr "Αποστολή σε…"
+
+msgid "Sending…"
+msgstr "Αποστολή…"
+
+msgid "Sending… %1%"
+msgstr "Αποστολή… %1%"
+
+msgid "Sent %1 file(s)."
+msgstr "Στάλθηκαν %1 αρχείο(α)."
+
+msgid "The other device declined the transfer."
+msgstr "Η άλλη συσκευή απέρριψε τη μεταφορά."
+
+msgid "Transfer cancelled."
+msgstr "Η μεταφορά ακυρώθηκε."
+
+msgid "Send failed: %1"
+msgstr "Η αποστολή απέτυχε: %1"
+
+msgid "LocalSend error: %1"
+msgstr "Σφάλμα LocalSend: %1"
+
+msgid "LocalSend off"
+msgstr "LocalSend ανενεργό"
+
+msgid "Visible as %1"
+msgstr "Ορατό ως %1"
+
+msgid "(limited discovery)"
+msgstr "(περιορισμένη ανίχνευση)"
 
 msgid "Checking for update…"
 msgstr "Έλεγχος για ενημέρωση…"

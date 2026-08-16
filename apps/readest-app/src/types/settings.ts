@@ -84,6 +84,14 @@ export interface KOSyncSettings {
   checksumMethod: KOSyncChecksumMethod;
   strategy: KOSyncStrategy;
   customHeaders?: Record<string, string>;
+  /**
+   * Include the book's filename, title and authors in progress uploads, in the
+   * optional `metadata` field KOReader 2026.05+ sends when "Send document
+   * metadata" is enabled. The official sync server ignores it; custom
+   * KOSync-compatible servers may use it to identify what is being read.
+   * Off by default, matching KOReader.
+   */
+  sendMetadata?: boolean;
 }
 
 export interface BookOrbitSettings {
@@ -335,6 +343,12 @@ export interface KeyBinding {
   id: string;
   /** Human-readable label shown in settings. */
   label: string;
+  /** DOM modifier state. Optional so persisted single-key bindings remain valid. */
+  ctrlKey?: boolean;
+  altKey?: boolean;
+  shiftKey?: boolean;
+  metaKey?: boolean;
+  altGraphKey?: boolean;
 }
 
 export interface HardwarePageTurnerSettings {

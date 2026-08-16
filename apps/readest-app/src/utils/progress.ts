@@ -120,6 +120,43 @@ export function getReferencePageInfo({
   return null;
 }
 
+/**
+ * Merge policy for the user-entered reference page count (issue #5716).
+ *
+ * The count stands in for a page list the book doesn't ship, so it describes
+ * the BOOK — its print edition — not this screen. That makes it the one
+ * `viewSettings` key that has to cross devices, and both sync backends call
+ * this so the two can never drift apart: `useProgressSync.applyRemoteProgress`
+ * for the Readest cloud, `mergeBookConfig` for the file-sync providers.
+ *
+ * A device with no count always adopts a peer's, regardless of which config is
+ * newer — the common case is that the peer typed the count first and this
+ * device has simply read the book more recently. When both sides carry one the
+ * newer config wins.
+ *
+ * `remoteIsNewer` must be a STRICT `remote > local` comparison, so an equal
+ * timestamp keeps the local count. Both callers have to derive it the same way
+ * or the two backends pick different winners for the same pair of configs; a
+ * tie is ordinary rather than rare, because a remote-wins merge copies the
+ * remote `updatedAt` onto the local config.
+ *
+ * A missing remote count never clears a local one. Neither wire can tell
+ * "the user cleared it" from "written by a client that predates this merge"
+ * (`serializeConfig` drops every setting equal to the global default, and the
+ * default is 0), and silently wiping a number the user typed is the worse
+ * failure. The cost is that clearing the count doesn't propagate; the user
+ * re-clears it on the other device.
+ */
+export const resolveReferencePageCount = (
+  local: number | undefined,
+  remote: number | undefined,
+  remoteIsNewer: boolean,
+): number => {
+  if (!remote || remote <= 0) return local ?? 0;
+  if (!local || local <= 0) return remote;
+  return remoteIsNewer ? remote : local;
+};
+
 export function formatNumber(
   number: number | undefined,
   localize: boolean = false,

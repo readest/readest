@@ -355,6 +355,10 @@ const FoliateViewer: React.FC<{
         writingDir?.vertical || viewSettings.writingMode.includes('vertical') || false;
       const newRtl =
         writingDir?.rtl ||
+        // Fixed-layout books carry no writing mode; their direction may come
+        // from the document itself (PDF ViewerPreferences /Direction /R2L),
+        // and page-turn taps and swipes must follow it.
+        bookDoc.dir === 'rtl' ||
         getDirFromUILanguage() === 'rtl' ||
         viewSettings.writingMode.includes('rl') ||
         false;
@@ -806,16 +810,16 @@ const FoliateViewer: React.FC<{
       } else {
         await view.goToFraction(0);
       }
-      setViewInited(bookKey, true);
-
       // The reader is showing a deep-link target, not the user's actual reading
       // position. Mark the view as a preview so progress writers (auto-save,
       // cloud sync, kosync) skip until the user takes a reading action. The
       // flag clears on the first user-initiated relocate (page / scroll) in
-      // docRelocateHandler below.
+      // docRelocateHandler below. Set before `inited` so everything that starts
+      // reading on init (e.g. Auto Scroll resume) already sees the preview.
       if (overrideLocation) {
         setPreviewMode(bookKey, true);
       }
+      setViewInited(bookKey, true);
       if (overrideLocation && searchParams?.get('highlight') === 'search') {
         librarySearchHighlightTimerRef.current = await showTransientHighlight(
           view,
