@@ -306,5 +306,17 @@ describe('BookCover', () => {
         false,
       );
     });
+
+    it('hides the spine when covers are hidden even after a cover has loaded', () => {
+      const book = makeBook();
+      const { container } = render(<BookCover book={book} coverFit='crop' showSpine />);
+      const img = container.querySelector('img.cover-image')!;
+      fireEvent.load(img);
+      expect(container.querySelector('.book-spine')?.classList.contains('visible')).toBe(true);
+
+      act(() => enableHideCovers());
+
+      expect(container.querySelector('.book-spine')?.classList.contains('visible')).toBe(false);
+    });
   });
 });

@@ -48,7 +48,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
     const hideCovers = useSettingsStore((state) => state.settings.libraryHideCovers);
     const displayCoverUrl = hideCovers ? null : coverImageUrl;
 
-    const shouldShowSpine = showSpine && imageLoaded && !imageError;
+    const shouldShowSpine = showSpine && !hideCovers && imageLoaded && !imageError;
 
     const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
       setImageLoaded(true);
