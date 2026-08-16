@@ -96,9 +96,15 @@ node scripts/build-wordlens-data.mjs build en vi /tmp/ww-data/en_50k.txt /tmp/ww
 
 ## 3. Sync to R2
 ```bash
-WORDLENS_R2_BUCKET=<cdn-bucket> pnpm wordlens:sync
+WORDLENS_R2_BUCKET=<cdn-bucket> pnpm wordlens:sync           # only what changed
+WORDLENS_R2_BUCKET=<cdn-bucket> pnpm wordlens:sync --force   # re-upload every pack
 ```
-Uploads every pack (immutable cache) + `manifest.json` (5-min cache), manifest last.
+**Incremental:** the sync fetches the manifest already on the CDN and compares each
+pack's `sha256`, so a one-pair refresh uploads that one pack, not all ~20 MB. Packs go
+up first (immutable cache), `manifest.json` LAST (5-min cache) — and it is skipped
+entirely if any pack failed, so the published manifest never references a pack the
+bucket is missing. Use `--force` when the remote manifest is fine but an object was
+deleted from the bucket; an unreachable manifest (first sync) falls back to a full upload.
 
 ## 4. Commit
 ```bash

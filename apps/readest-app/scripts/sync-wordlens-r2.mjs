@@ -1,11 +1,19 @@
 // Upload the committed Word Lens gloss packs + manifest to the cdn.readest.com
 // R2 bucket under /wordlens/. Maintainer/CI tool — run after regenerating data.
 //
-//   WORDLENS_R2_BUCKET=<bucket> node scripts/sync-wordlens-r2.mjs
+//   WORDLENS_R2_BUCKET=<bucket> node scripts/sync-wordlens-r2.mjs [--force]
+//
+// INCREMENTAL by default: a data refresh usually touches one pair, so re-uploading
+// all ~20 MB is waste. The published manifest already carries every pack's sha256,
+// so we fetch it and upload only the packs that are new or changed (planSync). If
+// it can't be fetched (first sync, network), we fall back to uploading everything;
+// --force does the same on demand (e.g. an object was deleted from the bucket).
 //
 // Pack files get a one-year immutable cache (the app cache-busts via a ?v=<sha8>
 // query); manifest.json gets a short max-age so new packs surface quickly. Packs
-// upload first, manifest LAST, so the CDN manifest never points at a missing pack.
+// upload first, manifest LAST, so the CDN manifest never points at a missing pack —
+// and it is SKIPPED entirely if any pack failed, so clients never see a manifest
+// whose sha256 references a pack the bucket doesn't have.
 //
 // Robustness: each `wrangler r2 object put` is a separate process, spawned with NO
 // stdin (so it can't block on a prompt) and telemetry off. Some wrangler versions
@@ -14,16 +22,47 @@
 // the output and, once "Upload complete" is printed, give wrangler a moment to exit
 // and otherwise kill it and move on. A per-file timeout is the backstop; one failed
 // file is logged and the batch continues, returning a non-zero exit if any failed.
-import { readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 
 const SRC_DIR = resolve('data/wordlens');
+const MANIFEST_FILE = 'manifest.json';
+// Mirrors WORDLENS_CDN_BASE in src/services/wordlens/glossPacks.ts (the URL clients read).
+const CDN_BASE = process.env.WORDLENS_CDN_BASE || 'https://cdn.readest.com/wordlens';
 const PACK_CACHE = 'public, max-age=31536000, immutable';
 const MANIFEST_CACHE = 'public, max-age=300';
 const SUCCESS_RE = /Upload complete/i;
 const POST_SUCCESS_GRACE_MS = 2_000; // wait this long for a clean exit after success
 const PER_FILE_TIMEOUT_MS = 120_000; // hard backstop per file
+
+// Which pack files need uploading: those whose sha256 is missing from, or differs
+// from, the manifest already published on the CDN. `remote` null (unreachable) or
+// `force` means "upload every local pack". Sorted for stable output; manifest.json
+// is not included — the caller always uploads it last. A pack the CDN still has but
+// the local manifest dropped is left alone: the new manifest stops referencing it.
+export function planSync(local, remote, { force = false } = {}) {
+  const localPacks = local?.packs ?? [];
+  const files = localPacks.map((p) => p.file).sort();
+  if (force || !remote) return files;
+  const remoteSha = new Map((remote.packs ?? []).map((p) => [p.file, p.sha256]));
+  return localPacks
+    .filter((p) => remoteSha.get(p.file) !== p.sha256)
+    .map((p) => p.file)
+    .sort();
+}
+
+// The manifest currently published on the CDN, or null if it can't be read (first
+// sync, offline, 404). Null makes planSync fall back to a full upload.
+async function fetchRemoteManifest() {
+  try {
+    const res = await fetch(`${CDN_BASE}/${MANIFEST_FILE}`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
 
 const uploadOne = (bucket, file) =>
   new Promise((resolveP) => {
@@ -86,29 +125,50 @@ async function main() {
   if (!bucket) {
     throw new Error('WORDLENS_R2_BUCKET env var is required (the cdn.readest.com R2 bucket name)');
   }
-  const all = readdirSync(SRC_DIR).filter((f) => f.endsWith('.json'));
-  if (!all.includes('manifest.json')) {
+  const force = process.argv.slice(2).includes('--force');
+  let local;
+  try {
+    local = JSON.parse(readFileSync(resolve(SRC_DIR, MANIFEST_FILE), 'utf8'));
+  } catch {
     throw new Error('manifest.json missing — run `pnpm wordlens:manifest` first');
   }
-  const ordered = [...all.filter((f) => f !== 'manifest.json').sort(), 'manifest.json'];
+  const remote = force ? null : await fetchRemoteManifest();
+  if (!force && !remote) console.log('Remote manifest unavailable — uploading every pack.');
+  const packs = planSync(local, remote, { force });
+  if (!packs.length) {
+    console.log(`Everything on ${bucket}/wordlens/ is already up to date.`);
+    return;
+  }
+  console.log(`Uploading ${packs.length}/${local.packs.length} packs: ${packs.join(', ')}`);
 
   let ok = 0;
   const failed = [];
-  for (const file of ordered) {
+  for (const file of packs) {
     // Sequential: keep output readable and avoid hammering the proxy.
     // eslint-disable-next-line no-await-in-loop
     if (await uploadOne(bucket, file)) ok += 1;
     else failed.push(file);
   }
 
-  console.log(`\nSynced ${ok}/${ordered.length} files to ${bucket}/wordlens/`);
+  // Manifest LAST, and only when every pack landed — publishing it after a failure
+  // would point clients at a pack sha256 the bucket doesn't have.
   if (failed.length) {
-    console.error(`Failed: ${failed.join(', ')}`);
+    console.error(`\nFailed: ${failed.join(', ')}`);
+    console.error(`Skipped ${MANIFEST_FILE} — rerun to publish once the packs upload.`);
     process.exit(1);
   }
+  if (!(await uploadOne(bucket, MANIFEST_FILE))) {
+    console.error(`\nFailed: ${MANIFEST_FILE}`);
+    process.exit(1);
+  }
+  console.log(`\nSynced ${ok} pack(s) + ${MANIFEST_FILE} to ${bucket}/wordlens/`);
 }
 
-main().catch((err) => {
-  console.error(err instanceof Error ? err.message : err);
-  process.exit(1);
-});
+// Only run the CLI when executed directly, not when imported by the unit tests
+// (mirrors build-wordlens-data.mjs).
+if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  });
+}
