@@ -282,6 +282,23 @@ describe('narration mark source and timeline', () => {
     expect(timeline!.getMeasuredFraction()).toBeCloseTo(1, 5);
   });
 
+  test('seeks inside the active narration clip instead of restarting it', async () => {
+    const controller = new TTSController(null, makeView([true]));
+    await controller.init();
+    await controller.initViewTTS(0);
+    await controller.ensureTimeline();
+    controller.dispatchSpeakMark({ offset: 0, name: '0', text: 'First', language: 'en' });
+    const seekWithin = vi
+      .spyOn(controller.ttsMediaOverlayClient, 'seekToChunkPosition')
+      .mockResolvedValue(true);
+    const stop = vi.spyOn(controller.ttsMediaOverlayClient, 'stop');
+
+    await controller.seekToTime(2);
+
+    expect(seekWithin).toHaveBeenCalledWith(2);
+    expect(stop).not.toHaveBeenCalled();
+  });
+
   test('synthesis still uses foliate segmentation for the same book', async () => {
     const controller = new TTSController(null, makeView([true]));
     controller.useNarration = false;

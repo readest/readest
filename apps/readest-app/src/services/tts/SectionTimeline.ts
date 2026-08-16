@@ -105,7 +105,9 @@ export class SectionTimeline {
   // Map seconds (at the current rate) to a sentence, clamping past-the-end
   // seeks to the last sentence so an over-estimated total is never a dead
   // gesture. Null only for an empty timeline.
-  sentenceAtTime(seconds: number): { index: number; sentence: TimelineSentence } | null {
+  sentenceAtTime(
+    seconds: number,
+  ): { index: number; sentence: TimelineSentence; withinMediaSec: number } | null {
     const n = this.#sentences.length;
     if (n === 0) return null;
     const target = Math.max(0, seconds) * this.#rate;
@@ -124,7 +126,11 @@ export class SectionTimeline {
     }
     // Binary search finds the last sentence starting at or before the target;
     // past-the-end targets land on the final sentence by construction.
-    return { index, sentence: this.#sentences[index]! };
+    const withinMediaSec = Math.min(
+      Math.max(target - this.#prefix[index]!, 0),
+      this.#durations[index]!,
+    );
+    return { index, sentence: this.#sentences[index]!, withinMediaSec };
   }
 
   // Locate the timeline sentence containing (or last starting at or before)

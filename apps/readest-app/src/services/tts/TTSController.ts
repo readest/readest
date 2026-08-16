@@ -1008,6 +1008,13 @@ export class TTSController extends EventTarget {
     if (!timeline) return;
     const target = timeline.sentenceAtTime(seconds);
     if (!target) return;
+    if (
+      target.index === this.#currentSentenceIndex &&
+      this.ttsClient.getCapabilities().continuousTimeline &&
+      (await this.ttsClient.seekToChunkPosition?.(target.withinMediaSec))
+    ) {
+      return;
+    }
     const isPlaying = this.state === 'playing';
     // While playing, this is a handover to the utterance about to be spoken
     // below; only a stopped session should actually be silenced here.

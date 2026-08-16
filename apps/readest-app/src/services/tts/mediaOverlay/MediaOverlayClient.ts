@@ -538,6 +538,17 @@ export class MediaOverlayClient implements TTSClient {
     return Math.min(Math.max(elapsed / duration, 0), 1);
   }
 
+  async seekToChunkPosition(seconds: number): Promise<boolean> {
+    const audio = this.#audio;
+    const par = this.#currentPar;
+    if (!audio || !par) return false;
+    const within = Math.min(Math.max(seconds, 0), par.clipEnd - par.clipBegin);
+    const position = par.clipBegin + within;
+    if (this.#native && this.#player) await this.#player.seek(position);
+    else audio.currentTime = position;
+    return true;
+  }
+
   getVoiceId(): string {
     return MEDIA_OVERLAY_VOICE_ID;
   }

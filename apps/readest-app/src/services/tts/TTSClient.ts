@@ -65,4 +65,8 @@ export interface TTSClient {
   // rather than position/duration so it cannot skew between two calls, and so a
   // playback rate change cannot be applied to one but not the other.
   getChunkProgress?(): number | null;
+  // Move within the currently audible chunk while keeping its play/pause state.
+  // Continuous recordings use this so chapter-scale clips do not snap back to
+  // their start when the scrubber moves inside them.
+  seekToChunkPosition?(seconds: number): Promise<boolean>;
 }
