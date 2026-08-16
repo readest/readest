@@ -262,10 +262,13 @@ const BookCellInner: React.FC<BookCellProps> = ({
       </div>
       <BookmarkPullDown bookKey={bookKey} ribbonHidden={!!hoveredBookKey} slideRef={slideRef} />
       <PageNavigationButtons bookKey={bookKey} isDropdownOpen={isDropdownOpen} />
-      <Annotator bookKey={bookKey} contentInsets={contentInsets} />
       <SearchResultsNav bookKey={bookKey} gridInsets={gridInsets} />
       <BooknotesNav bookKey={bookKey} gridInsets={gridInsets} toc={bookDoc.toc || []} />
       <FootnotePopup bookKey={bookKey} bookDoc={bookDoc} />
+      {/* After FootnotePopup so the selection toolbar and lookup popups stack
+          above the footnote popup (and its dismiss overlay) when the user
+          selects text inside it. */}
+      <Annotator bookKey={bookKey} contentInsets={contentInsets} />
       <FooterBar
         bookKey={bookKey}
         bookFormat={book.format}
