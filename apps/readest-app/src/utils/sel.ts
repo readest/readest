@@ -35,6 +35,11 @@ export interface TextSelection {
   // Native Android selection handles were suppressed for this selection
   // (Blink hyphen bounds bug, issue #1553) — the app draws its own handles.
   handlesSuppressed?: boolean;
+  // Selection made inside the footnote/annotation popup window rather than a
+  // main book document. `cfi` (when present) already points into the pristine
+  // section document; tools that need a live main-document range or that
+  // cannot work without a CFI must be disabled accordingly.
+  popup?: boolean;
 }
 
 const frameRect = (frame: Frame, rect?: Rect, sx = 1, sy = 1) => {
