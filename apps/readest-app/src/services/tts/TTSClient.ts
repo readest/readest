@@ -50,7 +50,7 @@ export interface TTSClient {
   getCapabilities(): TTSCapabilities;
   // Ordered sentence labels for a section (timeline enumeration), consumed
   // by clients with a persistent cache to drive section-pack compaction.
-  registerSectionManifest?(section: number, marks: string[]): void;
+  registerSectionManifest?(section: number, marks: string[]): void | Promise<void>;
   // Cached per-ordinal audio durations (seconds) for a section under the
   // current voice; empty when the client has no persistent cache.
   getSectionDurations?(section: number): Promise<Map<number, number>>;

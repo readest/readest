@@ -63,6 +63,18 @@ describe('sweepTTSCaches', () => {
     expect(deleteDir).toHaveBeenCalledWith('tts-cache/bbb', 'Cache', true);
   });
 
+  test('never deletes a book cache that contains explicit downloads', async () => {
+    bookCache('aaa', 60, NOW - 1 * HOUR); // active
+    bookCache('bbb', 60, NOW - 9 * HOUR); // oldest, but pinned
+    files.push({ path: 'bbb/downloads.json', size: 1 });
+    bookCache('ccc', 60, NOW - 5 * HOUR);
+
+    await sweepTTSCaches(appService, 'aaa', 200, () => NOW);
+
+    expect(deleteDir).toHaveBeenCalledTimes(1);
+    expect(deleteDir).toHaveBeenCalledWith('tts-cache/ccc', 'Cache', true);
+  });
+
   test('spares caches used within the grace window (another live session)', async () => {
     bookCache('aaa', 80, NOW - 1 * HOUR);
     bookCache('bbb', 80, NOW - 60_000); // one minute ago: likely open elsewhere

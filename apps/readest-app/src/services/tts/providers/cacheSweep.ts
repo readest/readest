@@ -9,6 +9,7 @@ import type { AppService } from '@/types/system';
 
 const TTS_CACHE_ROOT = 'tts-cache';
 const META_FILE = 'meta.json';
+const DOWNLOADS_MARKER = 'downloads.json';
 // Never sweep a cache stamped within this window: a recent stamp usually
 // means another window's live session (its database may be open right now).
 const RECENT_USE_GRACE_MS = 10 * 60 * 1000;
@@ -40,12 +41,14 @@ export const sweepTTSCaches = async (
     // Recursive listing with sizes; paths are host-separator relative paths
     // like `<hash>/packs/3-abcd1234.mp3` (backslashes on Windows).
     const files = await appService.readDirectory(TTS_CACHE_ROOT, 'Cache');
-    const books = new Map<string, { size: number }>();
+    const books = new Map<string, { size: number; pinned: boolean }>();
     for (const file of files) {
-      const hash = file.path.split(/[/\\]/)[0];
+      const parts = file.path.split(/[/\\]/);
+      const hash = parts[0];
       if (!hash) continue;
-      const book = books.get(hash) ?? { size: 0 };
+      const book = books.get(hash) ?? { size: 0, pinned: false };
       book.size += file.size;
+      if (parts.at(-1) === DOWNLOADS_MARKER) book.pinned = true;
       books.set(hash, book);
     }
     let total = [...books.values()].reduce((sum, book) => sum + book.size, 0);
@@ -53,7 +56,7 @@ export const sweepTTSCaches = async (
 
     const candidates: { hash: string; size: number; lastUsedAt: number }[] = [];
     for (const [hash, book] of books) {
-      if (hash === activeBookHash) continue;
+      if (hash === activeBookHash || book.pinned) continue;
       let lastUsedAt = 0;
       try {
         const raw = (await appService.readFile(

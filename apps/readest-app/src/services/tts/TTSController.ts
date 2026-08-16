@@ -806,6 +806,22 @@ export class TTSController extends EventTarget {
     return this.ttsEdgeClient.getCacheBytes();
   }
 
+  async beginDownloadSections(sections: number[]) {
+    await this.ttsEdgeClient.beginDownloadSections(sections);
+  }
+
+  async completeDownloadSections(sections: number[]) {
+    await this.ttsEdgeClient.completeDownloadSections(sections);
+  }
+
+  async cancelDownloadSections(sections: number[]) {
+    await this.ttsEdgeClient.cancelDownloadSections(sections);
+  }
+
+  async clearDownloads() {
+    await this.ttsEdgeClient.clearDownloads();
+  }
+
   // Whether the active client can ever produce a timeline — it needs a real
   // audio clock. The scrubber renders a reserved disabled slot while true and
   // info is still null, and hides entirely while false.

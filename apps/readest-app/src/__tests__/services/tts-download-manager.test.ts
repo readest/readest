@@ -16,6 +16,10 @@ const chapter = (key: string, startSection: number, endSection: number): Downloa
 });
 
 const makeController = () => {
+  const packed = new Set<number>();
+  const beginDownloadSections = vi.fn().mockResolvedValue(undefined);
+  const completeDownloadSections = vi.fn().mockResolvedValue(undefined);
+  const cancelDownloadSections = vi.fn().mockResolvedValue(undefined);
   const downloader = {
     download: vi
       .fn()
@@ -25,6 +29,7 @@ const makeController = () => {
             for (let done = 1; done <= 3; done++) {
               onProgress?.({ sectionIndex: section, total: 3, done, synthesized: done });
             }
+            packed.add(section);
           }
           return { completed: [...sections], skipped: [], synthesized: 0 };
         },
@@ -32,9 +37,29 @@ const makeController = () => {
   };
   const controller = {
     getTTSDownloader: () => downloader,
-    getSectionCacheStatuses: vi.fn().mockResolvedValue(new Map()),
+    getSectionCacheStatuses: vi
+      .fn()
+      .mockImplementation(
+        async () =>
+          new Map(
+            [...packed].map((section) => [
+              section,
+              { total: 1, recorded: 1, packed: true, pinned: true, active: false },
+            ]),
+          ),
+      ),
+    beginDownloadSections,
+    completeDownloadSections,
+    cancelDownloadSections,
   };
-  return { downloader, controller: controller as unknown as TTSController };
+  return {
+    downloader,
+    controller: controller as unknown as TTSController,
+    packed,
+    beginDownloadSections,
+    completeDownloadSections,
+    cancelDownloadSections,
+  };
 };
 
 describe('TTSDownloadManager', () => {
@@ -49,7 +74,8 @@ describe('TTSDownloadManager', () => {
   });
 
   test('processes queued chapters in order, one at a time', async () => {
-    const { downloader, controller } = makeController();
+    const { downloader, controller, beginDownloadSections, completeDownloadSections } =
+      makeController();
     const manager = new TTSDownloadManager();
     manager.queueChapter('book', chapter('a', 0, 2));
     manager.queueChapter('book', chapter('b', 2, 3));
@@ -64,6 +90,8 @@ describe('TTSDownloadManager', () => {
     await vi.waitFor(() =>
       expect(useTTSDownloadStore.getState().itemsForBook('book')).toHaveLength(0),
     );
+    expect(beginDownloadSections.mock.calls).toEqual([[[0, 1]], [[2]]]);
+    expect(completeDownloadSections.mock.calls).toEqual([[[0, 1]], [[2]]]);
   });
 
   test('a chapter already pending or active is not queued twice', async () => {
@@ -90,12 +118,13 @@ describe('TTSDownloadManager', () => {
   });
 
   test('a failed chapter can be retried by queueing it again', async () => {
-    const { downloader, controller } = makeController();
+    const { downloader, controller, packed } = makeController();
     let calls = 0;
-    downloader.download.mockImplementation(async () => {
+    downloader.download.mockImplementation(async (sections: number[]) => {
       calls++;
       if (calls === 1) throw new Error('offline');
-      return { completed: [], skipped: [], synthesized: 0 };
+      for (const section of sections) packed.add(section);
+      return { completed: [...sections], skipped: [], synthesized: 0 };
     });
     const manager = new TTSDownloadManager();
     manager.attachController('book', () => controller);
@@ -112,7 +141,7 @@ describe('TTSDownloadManager', () => {
   });
 
   test('cancelling an active chapter aborts it and drops the row', async () => {
-    const { downloader, controller } = makeController();
+    const { downloader, controller, cancelDownloadSections } = makeController();
     let resolveDownload: () => void = () => {};
     downloader.download.mockImplementation(
       (
@@ -140,6 +169,125 @@ describe('TTSDownloadManager', () => {
     await vi.waitFor(() =>
       expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')).toBeUndefined(),
     );
+    await vi.waitFor(() => expect(cancelDownloadSections).toHaveBeenCalledWith([0]));
+  });
+
+  test('cancelling while cache status loads never starts the stale item', async () => {
+    const { downloader, controller, beginDownloadSections } = makeController();
+    let resolveStatuses: (value: Map<number, never>) => void = () => {};
+    vi.mocked(controller.getSectionCacheStatuses).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveStatuses = resolve;
+        }),
+    );
+    const manager = new TTSDownloadManager();
+    manager.attachController('book', () => controller);
+    manager.queueChapter('book', chapter('a', 0, 1));
+    await vi.waitFor(() => expect(controller.getSectionCacheStatuses).toHaveBeenCalledTimes(1));
+
+    manager.cancelItem('book:a');
+    resolveStatuses(new Map<number, never>());
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(beginDownloadSections).not.toHaveBeenCalled();
+    expect(downloader.download).not.toHaveBeenCalled();
+    expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')).toBeUndefined();
+  });
+
+  test('a cancelled attempt cannot update or remove an immediate retry of the same chapter', async () => {
+    const { downloader, controller } = makeController();
+    const packed = new Set<number>();
+    vi.mocked(controller.getSectionCacheStatuses).mockImplementation(
+      async () =>
+        new Map(
+          [...packed].map((section) => [
+            section,
+            { total: 1, recorded: 1, packed: true, pinned: true, active: false },
+          ]),
+        ),
+    );
+
+    let resolveOldAttempt: () => void = () => {};
+    let reportOldProgress: ((progress: SectionDownloadProgress) => void) | undefined;
+    downloader.download
+      .mockImplementationOnce(
+        (_sections: number[], onProgress?: (progress: SectionDownloadProgress) => void) =>
+          new Promise((resolve) => {
+            reportOldProgress = onProgress;
+            resolveOldAttempt = () => resolve({ completed: [], skipped: [], synthesized: 0 });
+          }),
+      )
+      .mockImplementationOnce(async (sections: number[]) => {
+        for (const section of sections) packed.add(section);
+        return { completed: [...sections], skipped: [], synthesized: 0 };
+      });
+
+    const manager = new TTSDownloadManager();
+    manager.attachController('book', () => controller);
+    manager.queueChapter('book', chapter('a', 0, 1));
+    await vi.waitFor(() =>
+      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')?.status).toBe(
+        'in_progress',
+      ),
+    );
+
+    manager.cancelItem('book:a');
+    manager.queueChapter('book', chapter('a', 0, 1));
+    expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')).toMatchObject({
+      status: 'pending',
+      done: 0,
+    });
+
+    reportOldProgress?.({ sectionIndex: 0, total: 3, done: 1, synthesized: 1 });
+    expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')).toMatchObject({
+      status: 'pending',
+      done: 0,
+    });
+
+    resolveOldAttempt();
+    await vi.waitFor(() => expect(downloader.download).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() =>
+      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')).toBeUndefined(),
+    );
+  });
+
+  test('cancelling during successful finalization does not release the attempt twice', async () => {
+    const { controller, completeDownloadSections, cancelDownloadSections } = makeController();
+    let finishFinalization: () => void = () => {};
+    completeDownloadSections.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishFinalization = resolve;
+        }),
+    );
+    const manager = new TTSDownloadManager();
+    manager.attachController('book', () => controller);
+    manager.queueChapter('book', chapter('a', 0, 1));
+    await vi.waitFor(() => expect(completeDownloadSections).toHaveBeenCalledWith([0]));
+
+    manager.cancelItem('book:a');
+    finishFinalization();
+    await vi.waitFor(() =>
+      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')).toBeUndefined(),
+    );
+    await Promise.resolve();
+
+    expect(cancelDownloadSections).not.toHaveBeenCalled();
+  });
+
+  test('a failed pin acquisition does not release another attempt ownership', async () => {
+    const { controller, beginDownloadSections, cancelDownloadSections } = makeController();
+    beginDownloadSections.mockRejectedValueOnce(new Error('pin failed'));
+    const manager = new TTSDownloadManager();
+    manager.attachController('book', () => controller);
+    manager.queueChapter('book', chapter('a', 0, 1));
+
+    await vi.waitFor(() =>
+      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')?.status).toBe('failed'),
+    );
+    expect(cancelDownloadSections).not.toHaveBeenCalled();
   });
 
   test('removeBook aborts and drops only the targeted book queue', async () => {
@@ -175,8 +323,109 @@ describe('TTSDownloadManager', () => {
     expect(useTTSDownloadStore.getState().itemForChapter('book2', 'x')).toBeDefined();
   });
 
-  test('aggregates sentence progress across a chapter sections', async () => {
+  test('removeBook waits for a previously cancelled synthesis attempt to unwind', async () => {
+    const { downloader, controller, cancelDownloadSections } = makeController();
+    let releaseDownload: () => void = () => {};
+    downloader.download.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releaseDownload = () => resolve({ completed: [], skipped: [], synthesized: 0 });
+        }),
+    );
+    const manager = new TTSDownloadManager();
+    manager.attachController('book', () => controller);
+    manager.queueChapter('book', chapter('a', 0, 1));
+    await vi.waitFor(() =>
+      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')?.status).toBe(
+        'in_progress',
+      ),
+    );
+
+    manager.cancelItem('book:a');
+    let removalFinished = false;
+    const removal = Promise.resolve(manager.removeBook('book')).then(() => {
+      removalFinished = true;
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(removalFinished).toBe(false);
+
+    releaseDownload();
+    await removal;
+    expect(cancelDownloadSections).toHaveBeenCalledWith([0]);
+  });
+
+  test('removeBook hydrates before deleting so a cold manager preserves other books', () => {
+    const seeder = new TTSDownloadManager();
+    seeder.queueChapter('book1', chapter('a', 0, 1));
+    seeder.queueChapter('book2', chapter('b', 1, 2));
+    useTTSDownloadStore.setState({ items: {} });
+
+    const manager = new TTSDownloadManager();
+    manager.removeBook('book1');
+
+    expect(useTTSDownloadStore.getState().itemForChapter('book1', 'a')).toBeUndefined();
+    expect(useTTSDownloadStore.getState().itemForChapter('book2', 'b')).toBeDefined();
+    const persisted = JSON.parse(localStorage.getItem(QUEUE_KEY)!);
+    expect(Object.keys(persisted.items)).toEqual(['book2:b']);
+  });
+
+  test('parks a pending item when its attached controller is unavailable', async () => {
     const { downloader, controller } = makeController();
+    const manager = new TTSDownloadManager();
+    manager.queueChapter('book', chapter('a', 0, 1));
+    const getController = vi.fn().mockReturnValueOnce(null).mockReturnValue(controller);
+
+    manager.attachController('book', getController);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(getController).toHaveBeenCalledTimes(1);
+    expect(downloader.download).not.toHaveBeenCalled();
+    expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')?.status).toBe('pending');
+
+    manager.attachController('book', getController);
+    await vi.waitFor(() => expect(downloader.download).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() =>
+      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')).toBeUndefined(),
+    );
+  });
+
+  test('keeps an incomplete resolved download as failed so it can be retried', async () => {
+    const { downloader, controller, cancelDownloadSections } = makeController();
+    downloader.download.mockResolvedValue({ completed: [], skipped: [0], synthesized: 0 });
+    const manager = new TTSDownloadManager();
+    manager.attachController('book', () => controller);
+    manager.queueChapter('book', chapter('a', 0, 1));
+
+    await vi.waitFor(() =>
+      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')?.status).toBe('failed'),
+    );
+    expect(cancelDownloadSections).toHaveBeenCalledWith([0]);
+  });
+
+  test('repairs a pinned section whose durable pack is missing', async () => {
+    const { downloader, controller, packed } = makeController();
+    vi.mocked(controller.getSectionCacheStatuses).mockImplementation(async () => {
+      if (packed.has(0)) {
+        return new Map([[0, { total: 1, recorded: 1, packed: true, pinned: true, active: false }]]);
+      }
+      return new Map([[0, { total: 1, recorded: 1, packed: false, pinned: true, active: false }]]);
+    });
+    const manager = new TTSDownloadManager();
+    manager.attachController('book', () => controller);
+    manager.queueChapter('book', chapter('a', 0, 1));
+
+    await vi.waitFor(() =>
+      expect(downloader.download).toHaveBeenCalledWith([0], expect.anything(), expect.anything()),
+    );
+    await vi.waitFor(() =>
+      expect(useTTSDownloadStore.getState().itemForChapter('book', 'a')).toBeUndefined(),
+    );
+  });
+
+  test('aggregates sentence progress across a chapter sections', async () => {
+    const { downloader, controller, packed } = makeController();
     const observed: Array<[number, number]> = [];
     const unsub = useTTSDownloadStore.subscribe((state) => {
       const item = state.itemForChapter('book', 'a');
@@ -191,6 +440,7 @@ describe('TTSDownloadManager', () => {
             onProgress?.({ sectionIndex: section, total, done, synthesized: done });
             await Promise.resolve();
           }
+          packed.add(section);
         }
         return { completed: [...sections], skipped: [], synthesized: 0 };
       },
@@ -210,16 +460,19 @@ describe('TTSDownloadManager', () => {
   });
 
   test('regression: a chapter completing never touches a queued successor', async () => {
-    const { downloader, controller } = makeController();
+    const { downloader, controller, packed } = makeController();
     const resolvers: Array<() => void> = [];
     downloader.download.mockImplementation(
       (
-        _sections: number[],
+        sections: number[],
         _onProgress?: (p: SectionDownloadProgress) => void,
         signal?: AbortSignal,
       ) =>
         new Promise((resolve) => {
-          const resolver = () => resolve({ completed: [], skipped: [], synthesized: 0 });
+          const resolver = () => {
+            for (const section of sections) packed.add(section);
+            resolve({ completed: [...sections], skipped: [], synthesized: 0 });
+          };
           resolvers.push(resolver);
           signal?.addEventListener('abort', resolver);
         }),

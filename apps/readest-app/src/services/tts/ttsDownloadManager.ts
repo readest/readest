@@ -24,9 +24,23 @@ interface PersistedQueueData {
   items: Record<string, TTSDownloadItem>;
 }
 
+interface ActiveDownload {
+  id: string;
+  bookHash: string;
+  abortController: AbortController;
+  controller: TTSController;
+  sections: number[];
+  pinReady: Promise<void>;
+  settled: Promise<void>;
+  resolveSettled: () => void;
+  finalizing?: Promise<void>;
+  cleanup?: Promise<void>;
+}
+
 export class TTSDownloadManager {
   #controllers = new Map<string, () => TTSController | null>();
-  #abortControllers = new Map<string, AbortController>();
+  #activeDownloads = new Map<string, ActiveDownload>();
+  #unsettledDownloads = new Map<string, Set<ActiveDownload>>();
   #isProcessing = false;
   #loaded = false;
 
@@ -44,95 +58,172 @@ export class TTSDownloadManager {
 
   queueChapter(bookHash: string, chapter: DownloadChapter, priority: number = 10): void {
     this.#ensureLoaded();
+    if (!this.#enqueueChapter(bookHash, chapter, priority)) return;
+    this.persist();
+    void this.processQueue();
+  }
+
+  #enqueueChapter(bookHash: string, chapter: DownloadChapter, priority: number): boolean {
     const store = useTTSDownloadStore.getState();
     const existing = store.itemForChapter(bookHash, chapter.key);
-    if (existing?.status === 'pending' || existing?.status === 'in_progress') return;
+    if (existing?.status === 'pending' || existing?.status === 'in_progress') return false;
     if (existing?.status === 'failed') {
       // Retry: back to pending, progress starts over.
       store.removeItem(existing.id);
     }
     store.enqueue(chapter, bookHash, priority);
-    this.persist();
-    void this.processQueue();
+    return true;
   }
 
   queueAll(bookHash: string, chapters: DownloadChapter[]): void {
+    this.#ensureLoaded();
     // 'Download all' batches run ahead of individually tapped chapters.
-    for (const chapter of chapters) this.queueChapter(bookHash, chapter, 1);
+    let queued = false;
+    for (const chapter of chapters) {
+      queued = this.#enqueueChapter(bookHash, chapter, 1) || queued;
+    }
+    if (!queued) return;
+    this.persist();
+    void this.processQueue();
   }
 
   // Cancel an active download or drop a queued row. Aborting does not kill
   // the sentence currently being synthesized (the provider ignores signals);
   // the downloader unwinds at the next sentence boundary.
   cancelItem(id: string): void {
-    this.#abortControllers.get(id)?.abort();
-    this.#abortControllers.delete(id);
+    this.#ensureLoaded();
+    const active = this.#activeDownloads.get(id);
+    active?.abortController.abort();
+    // Removing the attempt before the row makes every late callback from that
+    // attempt inert, even if the same deterministic row ID is queued again.
+    this.#activeDownloads.delete(id);
+    if (active) void this.#cancelActive(active);
     useTTSDownloadStore.getState().removeItem(id);
     this.persist();
   }
 
   // Empty a book's queue: aborts its active download and drops every row.
   // Used by the "Cancel all" toggle and on book deletion.
-  removeBook(bookHash: string): void {
+  async removeBook(bookHash: string): Promise<void> {
+    this.#ensureLoaded();
     const store = useTTSDownloadStore.getState();
+    const unsettledAttempts = [...(this.#unsettledDownloads.get(bookHash) ?? [])];
+    for (const active of unsettledAttempts) {
+      active.abortController.abort();
+      if (this.#activeDownloads.get(active.id) === active) {
+        this.#activeDownloads.delete(active.id);
+      }
+      void this.#cancelActive(active);
+    }
     for (const item of store.itemsForBook(bookHash)) {
-      this.#abortControllers.get(item.id)?.abort();
-      this.#abortControllers.delete(item.id);
       store.removeItem(item.id);
     }
     this.persist();
+    // Storage clearing and book deletion must wait for the ignored in-flight
+    // synthesis signal to reach a sentence boundary. Otherwise that late
+    // sentence can repopulate audio immediately after Clear all removed it.
+    await Promise.all(unsettledAttempts.map((active) => active.settled));
   }
 
   private async processQueue(): Promise<void> {
     if (this.#isProcessing) return;
     this.#isProcessing = true;
+    const parkedBooks = new Set<string>();
     try {
       for (;;) {
-        const item = this.#nextPendingItem();
+        const item = this.#nextPendingItem(parkedBooks);
         if (!item) break;
-        await this.#execute(item);
+        const started = await this.#execute(item);
+        if (!started) parkedBooks.add(item.bookHash);
       }
     } finally {
       this.#isProcessing = false;
     }
   }
 
-  #nextPendingItem(): TTSDownloadItem | undefined {
+  #nextPendingItem(parkedBooks: Set<string>): TTSDownloadItem | undefined {
     const store = useTTSDownloadStore.getState();
     return Object.values(store.items)
-      .filter((item) => item.status === 'pending' && this.#controllers.has(item.bookHash))
+      .filter(
+        (item) =>
+          item.status === 'pending' &&
+          !parkedBooks.has(item.bookHash) &&
+          this.#controllers.has(item.bookHash),
+      )
       .sort((a, b) => a.priority - b.priority || a.createdAt - b.createdAt)[0];
   }
 
-  async #execute(item: TTSDownloadItem): Promise<void> {
+  async #execute(item: TTSDownloadItem): Promise<boolean> {
     const getController = this.#controllers.get(item.bookHash);
     const controller = getController?.();
     const downloader = controller?.getTTSDownloader();
-    if (!controller || !downloader) return;
+    if (!controller || !downloader) return false;
 
     const store = useTTSDownloadStore.getState();
-    const abort = new AbortController();
-    this.#abortControllers.set(item.id, abort);
-    store.setInProgress(item.id);
-
-    const finish = (remove: boolean) => {
-      this.#abortControllers.delete(item.id);
-      if (remove) store.removeItem(item.id);
-      this.persist();
-    };
+    const current = store.items[item.id];
+    if (!current || current.status !== 'pending') return true;
+    let active: ActiveDownload | null = null;
 
     try {
       // Read section statuses fresh so restored rows and stale closures never
       // re-download a section that packed while the item sat in the queue.
       const statuses = await controller.getSectionCacheStatuses();
+      // Cancellation can land while SQLite is reading the statuses. The row
+      // object is attempt identity until setInProgress replaces it; never
+      // start synthesis for a row that disappeared or was requeued meanwhile.
+      if (useTTSDownloadStore.getState().items[item.id] !== current) return true;
       const sections = Array.from(
         { length: item.endSection - item.startSection },
         (_, i) => item.startSection + i,
-      ).filter((section) => !statuses.get(section)?.packed);
+      ).filter((section) => {
+        const status = statuses.get(section);
+        return !status?.pinned || !status.packed;
+      });
       if (sections.length === 0) {
         // Everything already packed while queued: nothing to download.
-        finish(true);
-        return;
+        if (useTTSDownloadStore.getState().items[item.id]?.status === 'pending') {
+          store.removeItem(item.id);
+          this.persist();
+        }
+        return true;
+      }
+
+      // The pin starts before synthesis and belongs to this exact execution
+      // attempt. Cancellation chains behind it so an immediate same-ID retry
+      // cannot be unpinned by the old attempt's late teardown.
+      let resolveSettled: () => void = () => {};
+      const settled = new Promise<void>((resolve) => {
+        resolveSettled = resolve;
+      });
+      active = {
+        id: item.id,
+        bookHash: item.bookHash,
+        abortController: new AbortController(),
+        controller,
+        sections,
+        pinReady: controller.beginDownloadSections(sections),
+        settled,
+        resolveSettled,
+      };
+      const unsettled = this.#unsettledDownloads.get(item.bookHash) ?? new Set();
+      unsettled.add(active);
+      this.#unsettledDownloads.set(item.bookHash, unsettled);
+      this.#activeDownloads.set(item.id, active);
+      store.setInProgress(item.id);
+
+      const isCurrent = () => this.#activeDownloads.get(item.id) === active;
+      const finish = (error?: string) => {
+        if (!isCurrent()) return;
+        this.#activeDownloads.delete(item.id);
+        if (error) store.setFailed(item.id, error);
+        else store.removeItem(item.id);
+        this.persist();
+      };
+
+      await active.pinReady;
+      if (!isCurrent()) {
+        await this.#cancelActive(active);
+        return true;
       }
 
       // Sentence totals are known per section only after it enumerates, so
@@ -142,6 +233,7 @@ export class TTSDownloadManager {
       let lastTotal = 0;
       let currentSection = -1;
       const onProgress = (progress: SectionDownloadProgress) => {
+        if (!isCurrent()) return;
         if (progress.sectionIndex !== currentSection) {
           baseDone += lastTotal;
           baseTotal += lastTotal;
@@ -151,23 +243,76 @@ export class TTSDownloadManager {
         store.updateProgress(item.id, baseDone + progress.done, baseTotal + progress.total);
       };
 
-      await downloader.download(sections, onProgress, abort.signal);
+      await downloader.download(sections, onProgress, active.abortController.signal);
 
-      if (abort.signal.aborted) {
-        finish(true);
-        return;
+      if (!isCurrent()) {
+        await this.#cancelActive(active);
+        return true;
       }
-      // Done: drop the row — the cache badges already show 'Downloaded'.
-      finish(true);
+
+      // A resolved synthesis attempt is not necessarily a successful download:
+      // enumeration can be skipped, and offline/permanent misses resolve false.
+      // The packed cache is the source of truth for whether the chapter is done.
+      const finalStatuses = await controller.getSectionCacheStatuses();
+      if (!isCurrent()) {
+        await this.#cancelActive(active);
+        return true;
+      }
+      const incomplete = sections.some((section) => !finalStatuses.get(section)?.packed);
+      if (incomplete) {
+        await this.#cancelActive(active);
+        finish('Download incomplete');
+      } else {
+        active.finalizing = controller.completeDownloadSections(sections);
+        await active.finalizing;
+        if (!isCurrent()) {
+          await this.#cancelActive(active);
+          return true;
+        }
+        finish();
+      }
     } catch (err) {
-      if (abort.signal.aborted) {
-        finish(true);
-        return;
+      if (active) {
+        await this.#cancelActive(active);
+        if (this.#activeDownloads.get(item.id) !== active) return true;
+        this.#activeDownloads.delete(item.id);
+        store.setFailed(item.id, err instanceof Error ? err.message : String(err));
+        this.persist();
+      } else if (useTTSDownloadStore.getState().items[item.id] === current) {
+        store.setFailed(item.id, err instanceof Error ? err.message : String(err));
+        this.persist();
       }
-      this.#abortControllers.delete(item.id);
-      store.setFailed(item.id, err instanceof Error ? err.message : String(err));
-      this.persist();
+    } finally {
+      if (active) {
+        const unsettled = this.#unsettledDownloads.get(active.bookHash);
+        unsettled?.delete(active);
+        if (unsettled?.size === 0) this.#unsettledDownloads.delete(active.bookHash);
+        active.resolveSettled();
+      }
     }
+    return true;
+  }
+
+  #cancelActive(active: ActiveDownload): Promise<void> {
+    if (!active.cleanup) {
+      const release = () => active.controller.cancelDownloadSections(active.sections);
+      // Completion and cancellation each consume exactly one active refcount.
+      // Once finalization succeeds, a late cancel must not consume it again;
+      // only a failed finalization falls back to the cancellation release.
+      const cleanup = active.finalizing
+        ? active.finalizing.then(
+            () => undefined,
+            () => release(),
+          )
+        : active.pinReady.then(
+            () => release(),
+            () => undefined,
+          );
+      active.cleanup = cleanup.catch((err) => {
+        console.warn('Failed to release TTS download pins', err);
+      });
+    }
+    return active.cleanup;
   }
 
   #ensureLoaded(): void {

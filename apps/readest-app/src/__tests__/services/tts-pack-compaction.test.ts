@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { md5 } from 'js-md5';
 import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
@@ -102,7 +102,13 @@ describe('SqliteTTSCacheStore pack compaction', () => {
       store.registerSectionMarks(9, ['m1', 'm2', 'm3']),
     ]);
     const statuses = await store.getSectionStatuses();
-    expect(statuses.get(9)).toEqual({ total: 3, recorded: 0, packed: false });
+    expect(statuses.get(9)).toEqual({
+      total: 3,
+      recorded: 0,
+      packed: false,
+      pinned: false,
+      active: false,
+    });
   });
 
   test('re-registering identical marks preserves an already recorded key', async () => {
@@ -113,7 +119,13 @@ describe('SqliteTTSCacheStore pack compaction', () => {
     // even a forced re-run must not wipe the recorded key.
     await store.registerSectionMarks(9, ['m1', 'm2']);
     const statuses = await store.getSectionStatuses();
-    expect(statuses.get(9)).toEqual({ total: 2, recorded: 1, packed: false });
+    expect(statuses.get(9)).toEqual({
+      total: 2,
+      recorded: 1,
+      packed: false,
+      pinned: false,
+      active: false,
+    });
   });
 
   test('a shorter re-registration trims trailing ordinals', async () => {
@@ -161,6 +173,20 @@ describe('SqliteTTSCacheStore pack compaction', () => {
     expect(await store.get('k1')).not.toBeNull();
   });
 
+  test('a lost pinned pack becomes repairable instead of staying downloaded', async () => {
+    await store.beginDownloadSections([3]);
+    await cacheSection(3, ['m1'], ['k1']);
+    await store.compact();
+    await store.completeDownloadSections([3]);
+    packFs.files.clear();
+
+    expect(await store.get('k1')).toBeNull();
+    expect((await store.getSectionStatuses()).get(3)).toMatchObject({
+      packed: false,
+      pinned: true,
+    });
+  });
+
   test('evicting under pressure removes the oldest pack with its entries and file', async () => {
     const tight = new SqliteTTSCacheStore(db, {
       budgetBytes: 150,
@@ -182,6 +208,116 @@ describe('SqliteTTSCacheStore pack compaction', () => {
     expect(await tight.get('k1')).toBeNull();
     expect(await tight.get('k3')).not.toBeNull();
     expect(await tight.get('k4')).not.toBeNull();
+  });
+
+  test('an explicit download can exceed the cache budget and its pack is never evicted', async () => {
+    const tight = new SqliteTTSCacheStore(db, {
+      budgetBytes: 50,
+      now: () => clock.t++,
+      packFs,
+    });
+    await tight.beginDownloadSections([1]);
+    await tight.registerSectionMarks(1, ['m1', 'm2']);
+    expect((await tight.getSectionStatuses()).get(1)).toMatchObject({
+      pinned: false,
+      active: true,
+    });
+    await tight.put('k1', sentence(1));
+    await tight.recordMarkKey(1, 0, 'k1');
+    await tight.put('k2', sentence(2));
+    await tight.recordMarkKey(1, 1, 'k2');
+    expect(await tight.compact()).toBe(1);
+    await tight.completeDownloadSections([1]);
+
+    expect((await tight.getSectionStatuses()).get(1)).toMatchObject({
+      pinned: true,
+      active: false,
+    });
+    expect(await tight.get('k1')).not.toBeNull();
+    expect(await tight.get('k2')).not.toBeNull();
+    expect((await packFs.list()).filter((name) => name.endsWith('.mp3'))).toHaveLength(1);
+
+    // Ordinary warm-cache audio still obeys the 50-byte budget; it must not
+    // evict or expand storage beyond the explicitly downloaded 80-byte pack.
+    await tight.put('warm', sentence(9, 40));
+    expect(await tight.get('warm')).toBeNull();
+    expect(await tight.get('k1')).not.toBeNull();
+  });
+
+  test('one window cancelling cannot remove another window completed pin', async () => {
+    await store.beginDownloadSections([8]);
+    await store.beginDownloadSections([8]);
+    await cacheSection(8, ['m1'], ['shared']);
+    await store.compact();
+
+    await store.completeDownloadSections([8]);
+    expect((await store.getSectionStatuses()).get(8)).toMatchObject({
+      pinned: true,
+      active: true,
+    });
+
+    await store.cancelDownloadSections([8]);
+    expect((await store.getSectionStatuses()).get(8)).toMatchObject({
+      pinned: true,
+      active: false,
+    });
+    expect(await store.get('shared')).not.toBeNull();
+  });
+
+  test('beginning a multi-section download is atomic', async () => {
+    const execute = db.execute.bind(db);
+    let inserts = 0;
+    const executeSpy = vi.spyOn(db, 'execute').mockImplementation(async (sql, params) => {
+      if (sql.includes('INSERT INTO pinned_sections') && ++inserts === 2) {
+        throw new Error('pin failed');
+      }
+      return execute(sql, params);
+    });
+
+    await expect(store.beginDownloadSections([1, 2])).rejects.toThrow('pin failed');
+    executeSpy.mockRestore();
+
+    const statuses = await store.getSectionStatuses();
+    expect(statuses.get(1)?.active).not.toBe(true);
+    expect(statuses.get(2)?.active).not.toBe(true);
+  });
+
+  test('completing a multi-section download is atomic', async () => {
+    await store.beginDownloadSections([1, 2]);
+    await cacheSection(1, ['m1'], ['k1']);
+    await cacheSection(2, ['m1'], ['k2']);
+    await store.compact();
+    const execute = db.execute.bind(db);
+    let updates = 0;
+    const executeSpy = vi.spyOn(db, 'execute').mockImplementation(async (sql, params) => {
+      if (sql.includes('UPDATE pinned_sections') && ++updates === 2) {
+        throw new Error('completion failed');
+      }
+      return execute(sql, params);
+    });
+
+    await expect(store.completeDownloadSections([1, 2])).rejects.toThrow('completion failed');
+    executeSpy.mockRestore();
+
+    const statuses = await store.getSectionStatuses();
+    expect(statuses.get(1)).toMatchObject({ pinned: false, active: true });
+    expect(statuses.get(2)).toMatchObject({ pinned: false, active: true });
+  });
+
+  test('clearDownloads removes pinned audio while preserving ordinary warm cache entries', async () => {
+    await store.beginDownloadSections([3]);
+    await cacheSection(3, ['m1', 'm2'], ['k1', 'k2']);
+    await store.compact();
+    await store.completeDownloadSections([3]);
+    await store.put('warm', sentence(9));
+
+    await store.clearDownloads();
+
+    expect(await store.hasDownloads()).toBe(false);
+    expect(await store.get('k1')).toBeNull();
+    expect(await store.get('k2')).toBeNull();
+    expect(await store.get('warm')).not.toBeNull();
+    expect((await packFs.list()).filter((name) => name.endsWith('.mp3'))).toHaveLength(0);
   });
 
   test('gc removes pack files unknown to the database', async () => {
@@ -292,8 +428,20 @@ describe('SqliteTTSCacheStore pack portability', () => {
     await store.recordMarkKey(5, 0, 'p1');
 
     const statuses = await store.getSectionStatuses();
-    expect(statuses.get(3)).toEqual({ total: 2, recorded: 2, packed: true });
-    expect(statuses.get(5)).toEqual({ total: 3, recorded: 1, packed: false });
+    expect(statuses.get(3)).toEqual({
+      total: 2,
+      recorded: 2,
+      packed: true,
+      pinned: false,
+      active: false,
+    });
+    expect(statuses.get(5)).toEqual({
+      total: 3,
+      recorded: 1,
+      packed: false,
+      pinned: false,
+      active: false,
+    });
     expect(await store.totalCacheBytes()).toBeGreaterThan(0);
   });
 

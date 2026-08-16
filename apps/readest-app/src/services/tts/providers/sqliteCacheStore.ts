@@ -144,6 +144,11 @@ const SCHEMA = [
     created_at       INTEGER NOT NULL,
     accessed_at      INTEGER NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS pinned_sections (
+    section INTEGER PRIMARY KEY,
+    active  INTEGER NOT NULL DEFAULT 0,
+    pinned  INTEGER NOT NULL DEFAULT 0
+  )`,
 ];
 
 // Batch accessed_at updates: reads must not each cost a synchronous write.
@@ -175,6 +180,20 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
         await this.#db
           .execute('ALTER TABLE packs ADD COLUMN keys_fingerprint TEXT')
           .catch(() => {});
+        // PR-build compatibility: the first queue draft represented completed
+        // pins as active=0 and had no independent completed flag.
+        let migratedLegacyPins = false;
+        try {
+          await this.#db.execute(
+            'ALTER TABLE pinned_sections ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0',
+          );
+          migratedLegacyPins = true;
+        } catch {
+          // Fresh/current schema already has the column.
+        }
+        if (migratedLegacyPins) {
+          await this.#db.execute('UPDATE pinned_sections SET pinned = 1 WHERE active = 0');
+        }
       })();
     }
     return this.#ready;
@@ -189,7 +208,7 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     );
     const row = rows[0];
     if (!row) return null;
-    const audio = toArrayBuffer(row.audio) ?? (await this.#readPackedAudio(key, row));
+    const audio = toArrayBuffer(row.audio) ?? (await this.#readPackedAudio(row));
     if (!audio) return null;
     this.#pendingTouches.set(key, this.#now());
     if (row.pack_id != null) this.#pendingPackTouches.set(row.pack_id, this.#now());
@@ -203,7 +222,7 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     };
   }
 
-  async #readPackedAudio(key: string, row: EntryRow): Promise<ArrayBuffer | null> {
+  async #readPackedAudio(row: EntryRow): Promise<ArrayBuffer | null> {
     if (
       !this.#packFs ||
       row.pack_id == null ||
@@ -221,10 +240,16 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     try {
       return await this.#packFs.readRange(path, row.pack_offset, row.pack_length);
     } catch (err) {
-      // Self-heal: the pack file is gone or truncated. Drop the dead row so
-      // the sentence is treated as a miss and resynthesized into a loose row.
+      // Self-heal: the pack file is gone or truncated. Drop the whole pack,
+      // not just this key, so a pinned section becomes visibly incomplete
+      // and can be downloaded again.
       console.warn('TTS pack range read failed; healing entry to a miss', err);
-      await this.#db.execute('DELETE FROM entries WHERE key = ?', [key]);
+      await this.#transaction(async () => {
+        await this.#db.execute('DELETE FROM entries WHERE pack_id = ?', [row.pack_id]);
+        await this.#db.execute('DELETE FROM packs WHERE id = ?', [row.pack_id]);
+      });
+      await this.#packFs.remove(path).catch(() => {});
+      await this.#packFs.remove(packSidecarName(path)).catch(() => {});
       return null;
     }
   }
@@ -236,8 +261,10 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
   ): Promise<void> {
     await this.#ensureSchema();
     const size = entry.audio.byteLength;
-    if (size > this.#budgetBytes) return;
-    await this.#evictUntilFits(size, key);
+    const activeDownload = await this.#hasActiveDownload();
+    if (size > this.#budgetBytes && !activeDownload) return;
+    const fits = await this.#evictUntilFits(size, key);
+    if (!fits && !activeDownload) return;
     const timestamp = this.#now();
     await this.#db.execute(
       `INSERT OR REPLACE INTO entries
@@ -302,6 +329,137 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       section,
       ordinal,
     ]);
+  }
+
+  // Explicit downloads are durable user data, not disposable warm-cache
+  // entries. Mark the target sections before synthesis so their loose rows
+  // are protected while the pack is still being assembled.
+  async beginDownloadSections(sections: number[]): Promise<void> {
+    await this.#ensureSchema();
+    await this.#transaction(async () => {
+      for (const section of new Set(sections)) {
+        await this.#db.execute(
+          `INSERT INTO pinned_sections (section, active, pinned) VALUES (?, 1, 0)
+           ON CONFLICT(section) DO UPDATE SET active = pinned_sections.active + 1`,
+          [section],
+        );
+      }
+    });
+  }
+
+  // A completed explicit download remains pinned only when compaction
+  // produced its durable section pack. Incomplete sections fall back to
+  // ordinary warm-cache data and can be retried later.
+  async completeDownloadSections(sections: number[]): Promise<void> {
+    await this.#ensureSchema();
+    await this.#transaction(async () => {
+      for (const section of new Set(sections)) {
+        const pack = await this.#db.select<DatabaseRow & { id: number }>(
+          'SELECT id FROM packs WHERE section = ? LIMIT 1',
+          [section],
+        );
+        if (pack.length) {
+          await this.#db.execute(
+            `UPDATE pinned_sections
+                SET active = MAX(active - 1, 0), pinned = 1
+              WHERE section = ?`,
+            [section],
+          );
+        } else {
+          await this.#releaseDownloadSection(section);
+        }
+      }
+    });
+  }
+
+  async cancelDownloadSections(sections: number[]): Promise<void> {
+    await this.#ensureSchema();
+    await this.#transaction(async () => {
+      for (const section of new Set(sections)) {
+        await this.#releaseDownloadSection(section);
+      }
+    });
+  }
+
+  async #releaseDownloadSection(section: number): Promise<void> {
+    await this.#db.execute(
+      'UPDATE pinned_sections SET active = MAX(active - 1, 0) WHERE section = ?',
+      [section],
+    );
+    await this.#db.execute(
+      'DELETE FROM pinned_sections WHERE section = ? AND active = 0 AND pinned = 0',
+      [section],
+    );
+  }
+
+  async #transaction(action: () => Promise<void>): Promise<void> {
+    await this.#db.execute('BEGIN');
+    try {
+      await action();
+      await this.#db.execute('COMMIT');
+    } catch (err) {
+      try {
+        await this.#db.execute('ROLLBACK');
+      } catch {
+        // No open transaction to roll back.
+      }
+      throw err;
+    }
+  }
+
+  async hasDownloads(): Promise<boolean> {
+    await this.#ensureSchema();
+    const rows = await this.#db.select<DatabaseRow & { section: number }>(
+      'SELECT section FROM pinned_sections WHERE active > 0 OR pinned = 1 LIMIT 1',
+    );
+    return rows.length > 0;
+  }
+
+  // Remove only explicitly downloaded sections. Unpinned loose entries are
+  // the ordinary playback cache and deliberately survive Clear downloads.
+  async clearDownloads(): Promise<void> {
+    await this.#ensureSchema();
+    await this.#flushTouches();
+    const packs = await this.#db.select<DatabaseRow & { id: number; path: string }>(
+      `SELECT p.id, p.path FROM packs p
+        JOIN pinned_sections ps ON ps.section = p.section
+       WHERE ps.active > 0 OR ps.pinned = 1`,
+    );
+    try {
+      await this.#db.execute('BEGIN');
+      await this.#db.execute(
+        `DELETE FROM entries WHERE pack_id IN (
+           SELECT p.id FROM packs p
+             JOIN pinned_sections ps ON ps.section = p.section
+            WHERE ps.active > 0 OR ps.pinned = 1
+         )`,
+      );
+      await this.#db.execute(
+        `DELETE FROM entries WHERE pack_id IS NULL AND key IN (
+           SELECT mm.key FROM manifest_marks mm
+             JOIN pinned_sections ps ON ps.section = mm.section
+            WHERE mm.key IS NOT NULL AND (ps.active > 0 OR ps.pinned = 1)
+         )`,
+      );
+      await this.#db.execute(
+        `DELETE FROM packs WHERE section IN (
+           SELECT section FROM pinned_sections WHERE active > 0 OR pinned = 1
+         )`,
+      );
+      await this.#db.execute('DELETE FROM pinned_sections');
+      await this.#db.execute('COMMIT');
+    } catch (err) {
+      try {
+        await this.#db.execute('ROLLBACK');
+      } catch {
+        // No open transaction to roll back.
+      }
+      throw err;
+    }
+    for (const pack of packs) {
+      await this.#packFs?.remove(pack.path).catch(() => {});
+      await this.#packFs?.remove(packSidecarName(pack.path)).catch(() => {});
+    }
   }
 
   // Merge every fully cached section into one pack file. Returns the number
@@ -502,7 +660,7 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     );
     if (existing.length) return false;
     if (sidecar.totalSize > this.#budgetBytes) return false;
-    await this.#evictUntilFits(sidecar.totalSize, '');
+    if (!(await this.#evictUntilFits(sidecar.totalSize, ''))) return false;
     return this.#adoptPack(new Uint8Array(data), sidecar, `imported-${sidecar.keysFingerprint}`);
   }
 
@@ -510,15 +668,27 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
   // of manifest sentences that have a cached key; `total` is the manifest
   // size; `packed` means the whole section compacted into a pack file.
   async getSectionStatuses(): Promise<
-    Map<number, { total: number; recorded: number; packed: boolean }>
+    Map<
+      number,
+      { total: number; recorded: number; packed: boolean; pinned: boolean; active: boolean }
+    >
   > {
     await this.#ensureSchema();
-    const out = new Map<number, { total: number; recorded: number; packed: boolean }>();
+    const out = new Map<
+      number,
+      { total: number; recorded: number; packed: boolean; pinned: boolean; active: boolean }
+    >();
     const totals = await this.#db.select<DatabaseRow & { section: number; total: number }>(
       'SELECT section, COUNT(*) AS total FROM manifest_marks GROUP BY section',
     );
     for (const row of totals)
-      out.set(row.section, { total: row.total, recorded: 0, packed: false });
+      out.set(row.section, {
+        total: row.total,
+        recorded: 0,
+        packed: false,
+        pinned: false,
+        active: false,
+      });
     const recorded = await this.#db.select<DatabaseRow & { section: number; recorded: number }>(
       `SELECT mm.section, COUNT(*) AS recorded FROM manifest_marks mm
          JOIN entries e ON e.key = mm.key
@@ -534,6 +704,21 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     for (const row of packed) {
       const entry = out.get(row.section);
       if (entry) entry.packed = true;
+    }
+    const pins = await this.#db.select<
+      DatabaseRow & { section: number; active: number; pinned: number }
+    >('SELECT section, active, pinned FROM pinned_sections WHERE active > 0 OR pinned = 1');
+    for (const row of pins) {
+      const entry = out.get(row.section) ?? {
+        total: 0,
+        recorded: 0,
+        packed: false,
+        pinned: false,
+        active: false,
+      };
+      entry.pinned = row.pinned === 1;
+      entry.active = row.active > 0;
+      out.set(row.section, entry);
     }
     return out;
   }
@@ -673,7 +858,14 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     }
   }
 
-  async #evictUntilFits(incomingSize: number, replacingKey: string): Promise<void> {
+  async #hasActiveDownload(): Promise<boolean> {
+    const rows = await this.#db.select<DatabaseRow & { section: number }>(
+      'SELECT section FROM pinned_sections WHERE active > 0 LIMIT 1',
+    );
+    return rows.length > 0;
+  }
+
+  async #evictUntilFits(incomingSize: number, replacingKey: string): Promise<boolean> {
     // Pending touches must land first so eviction sees true recency.
     await this.#flushTouches();
     const totals = await this.#db.select<DatabaseRow & { total: number | null }>(
@@ -688,6 +880,11 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
         await this.#db.select<DatabaseRow & { key: string; size: number; accessed_at: number }>(
           `SELECT key, size, accessed_at FROM entries
             WHERE pack_id IS NULL AND key != ?
+              AND NOT EXISTS (
+                SELECT 1 FROM manifest_marks mm
+                  JOIN pinned_sections ps ON ps.section = mm.section
+                 WHERE mm.key = entries.key AND (ps.active > 0 OR ps.pinned = 1)
+              )
             ORDER BY accessed_at ASC LIMIT 1`,
           [replacingKey],
         )
@@ -695,9 +892,16 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       const oldestPack = (
         await this.#db.select<
           DatabaseRow & { id: number; path: string; size: number; accessed_at: number }
-        >('SELECT id, path, size, accessed_at FROM packs ORDER BY accessed_at ASC LIMIT 1')
+        >(
+          `SELECT id, path, size, accessed_at FROM packs
+            WHERE NOT EXISTS (
+              SELECT 1 FROM pinned_sections ps
+               WHERE ps.section = packs.section AND (ps.active > 0 OR ps.pinned = 1)
+            )
+            ORDER BY accessed_at ASC LIMIT 1`,
+        )
       )[0];
-      if (!oldestLoose && !oldestPack) return;
+      if (!oldestLoose && !oldestPack) return false;
       const evictPack =
         oldestPack && (!oldestLoose || oldestPack.accessed_at <= oldestLoose.accessed_at);
       if (evictPack) {
@@ -711,6 +915,7 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
         total -= oldestLoose!.size;
       }
     }
+    return true;
   }
 
   async #flushTouches(): Promise<void> {

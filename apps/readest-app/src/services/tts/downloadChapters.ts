@@ -22,6 +22,8 @@ export interface SectionCacheStatus {
   total: number;
   recorded: number;
   packed: boolean;
+  pinned: boolean;
+  active: boolean;
 }
 
 const flatten = (
@@ -88,14 +90,14 @@ export const chapterDownloadStatus = (
   chapter: DownloadChapter,
   statuses: Map<number, SectionCacheStatus>,
 ): ChapterDownloadStatus => {
-  let allPacked = true;
+  let allDownloaded = true;
   let anyRecorded = false;
   for (let section = chapter.startSection; section < chapter.endSection; section++) {
     const status = statuses.get(section);
-    if (!status?.packed) allPacked = false;
+    if (!status?.packed || !status.pinned) allDownloaded = false;
     if (status && (status.packed || status.recorded > 0)) anyRecorded = true;
   }
-  if (allPacked) return 'complete';
+  if (allDownloaded) return 'complete';
   return anyRecorded ? 'partial' : 'none';
 };
 

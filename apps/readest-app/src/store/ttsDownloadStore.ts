@@ -118,8 +118,7 @@ export const useTTSDownloadStore = create<TTSDownloadState>((set, get) => ({
 
   itemsForBook: (bookHash) => Object.values(get().items).filter((i) => i.bookHash === bookHash),
 
-  itemForChapter: (bookHash, chapterKey) =>
-    Object.values(get().items).find((i) => i.bookHash === bookHash && i.chapterKey === chapterKey),
+  itemForChapter: (bookHash, chapterKey) => get().items[`${bookHash}:${chapterKey}`],
 
   restoreItems: (items) => {
     const restored: Record<string, TTSDownloadItem> = {};

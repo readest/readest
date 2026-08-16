@@ -257,7 +257,7 @@ export class BufferedTTSClient implements TTSClient {
           if (located && meta.req && this.provider instanceof CachingProvider) {
             // The sentence audibly played: record its cache key against the
             // section manifest so a fully covered section can compact.
-            this.provider.recordMark(located.sectionIndex, located.sentenceIndex, meta.req);
+            void this.provider.recordMark(located.sectionIndex, located.sentenceIndex, meta.req);
           }
           this.#startWordTracking(generation, event.index, meta);
           yield {
@@ -604,9 +604,9 @@ export class BufferedTTSClient implements TTSClient {
     this.#sentenceGapSec = sec;
   }
 
-  registerSectionManifest(section: number, marks: string[]): void {
+  registerSectionManifest(section: number, marks: string[]): Promise<void> | void {
     if (this.provider instanceof CachingProvider) {
-      this.provider.registerSectionManifest(section, marks);
+      return this.provider.registerSectionManifest(section, marks);
     }
   }
 
@@ -644,8 +644,32 @@ export class BufferedTTSClient implements TTSClient {
       // section stays incomplete and can be retried later.
       return false;
     }
-    this.provider.recordMark(section, ordinal, req);
+    await this.provider.recordMark(section, ordinal, req);
     return true;
+  }
+
+  async beginDownloadSections(sections: number[]): Promise<void> {
+    if (this.provider instanceof CachingProvider) {
+      await this.provider.beginDownloadSections(sections);
+    }
+  }
+
+  async completeDownloadSections(sections: number[]): Promise<void> {
+    if (this.provider instanceof CachingProvider) {
+      await this.provider.completeDownloadSections(sections);
+    }
+  }
+
+  async cancelDownloadSections(sections: number[]): Promise<void> {
+    if (this.provider instanceof CachingProvider) {
+      await this.provider.cancelDownloadSections(sections);
+    }
+  }
+
+  async clearDownloads(): Promise<void> {
+    if (this.provider instanceof CachingProvider) {
+      await this.provider.clearDownloads();
+    }
   }
 
   async compactCache(): Promise<void> {
@@ -653,7 +677,10 @@ export class BufferedTTSClient implements TTSClient {
   }
 
   async getSectionCacheStatuses(): Promise<
-    Map<number, { total: number; recorded: number; packed: boolean }>
+    Map<
+      number,
+      { total: number; recorded: number; packed: boolean; pinned: boolean; active: boolean }
+    >
   > {
     if (!(this.provider instanceof CachingProvider)) return new Map();
     return this.provider.getSectionStatuses();
