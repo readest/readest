@@ -29,3 +29,6 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - [iOS SPM Sentry proxy hang](ios-spm-sentry-proxy-tls-download.md)
 - [tauri 2.11 remote ACL app commands](tauri-211-remote-acl-app-commands.md) webdriver = remote origin
 - [Kotlin never compiled in CI](android-kotlin-unit-test-gradle-recipe.md) compile plugin Kotlin locally via gen/android gradlew
+- [#5550 docker never applied migrations](docker-selfhost-migrations-never-applied-5550.md) MERGED #5551; dir mount shadows core schema
+- [PR #5605 nix packaging review](nix-packaging-pr-5605.md) 2 blockers posted; readest ALREADY in nixpkgs — cachix = CI-only
+- test-tauri.sh webdriver bogus timeout MERGED #5644: WEBDRIVER_TIMEOUT=900 + build_tauri_app gated on tauri paths
