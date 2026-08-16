@@ -87,6 +87,16 @@ describe('footnote popup CFI mapping', () => {
   const roundTrip = (
     buildExtractRange: (doc: Document) => Range,
     buildSelection: (popupDoc: Document) => Range,
+    // Where the mapped CFI must land in the PRISTINE document. Text equality
+    // alone would pass an off-by-one first-level index that happens to hit
+    // identical text elsewhere, so anchor assertions are what catch a delta
+    // regression.
+    expectPristine?: (pristineDoc: Document) => {
+      startContainer: Node;
+      startOffset: number;
+      endContainer: Node;
+      endOffset: number;
+    },
   ) => {
     const popupDoc = XHTML(SECTION);
     const pristineDoc = XHTML(SECTION);
@@ -98,43 +108,103 @@ describe('footnote popup CFI mapping', () => {
     const resolved = resolveInDoc(pristineDoc, cfi!);
     expect(resolved).not.toBeNull();
     expect(resolved!.toString()).toBe(selection.toString());
+    if (expectPristine) {
+      const expected = expectPristine(pristineDoc);
+      expect(resolved!.startContainer).toBe(expected.startContainer);
+      expect(resolved!.startOffset).toBe(expected.startOffset);
+      expect(resolved!.endContainer).toBe(expected.endContainer);
+      expect(resolved!.endOffset).toBe(expected.endOffset);
+    }
     return { popupDoc, pristineDoc, mapping: mapping!, cfi: cfi! };
   };
 
   it('maps a text selection inside an extracted <li> back to the pristine document', () => {
-    const { cfi } = roundTrip(liContents, (popupDoc) => {
-      // "Second note text" without the trailing part
-      const text = popupDoc.body.firstChild!;
-      const range = popupDoc.createRange();
-      range.setStart(text, 7);
-      range.setEnd(text, 16);
-      return range;
-    });
+    const { cfi } = roundTrip(
+      liContents,
+      (popupDoc) => {
+        // "Second note text" without the trailing part
+        const text = popupDoc.body.firstChild!;
+        const range = popupDoc.createRange();
+        range.setStart(text, 7);
+        range.setEnd(text, 16);
+        return range;
+      },
+      (pristineDoc) => {
+        const text = pristineDoc.getElementById('fn2')!.firstChild!;
+        return { startContainer: text, startOffset: 7, endContainer: text, endOffset: 16 };
+      },
+    );
     expect(cfi).toContain('epubcfi(/6/12!');
   });
 
   it('maps a selection spanning elements in a <dt>/<dd> extraction', () => {
-    roundTrip(dtRun, (popupDoc) => {
-      // from inside the dt text to inside the second dd text
-      const dt = popupDoc.getElementById('dt1')!;
-      const dds = popupDoc.querySelectorAll('dd');
-      const range = popupDoc.createRange();
-      range.setStart(dt.firstChild!, 1);
-      range.setEnd(dds[1]!.firstChild!, 6);
-      return range;
-    });
+    roundTrip(
+      dtRun,
+      (popupDoc) => {
+        // from inside the dt text to inside the second dd text
+        const dt = popupDoc.getElementById('dt1')!;
+        const dds = popupDoc.querySelectorAll('dd');
+        const range = popupDoc.createRange();
+        range.setStart(dt.firstChild!, 1);
+        range.setEnd(dds[1]!.firstChild!, 6);
+        return range;
+      },
+      (pristineDoc) => ({
+        startContainer: pristineDoc.getElementById('dt1')!.firstChild!,
+        startOffset: 1,
+        endContainer: pristineDoc.querySelectorAll('dd')[1]!.firstChild!,
+        endOffset: 6,
+      }),
+    );
   });
 
   it('maps a selection in a paragraph-run extraction (setStartBefore/setEndBefore)', () => {
-    roundTrip(paragraphRun, (popupDoc) => {
-      const p = popupDoc.getElementById('pn1')!;
-      // text node after the <a>: " A paragraph-style note body."
-      const text = p.childNodes[1]!;
-      const range = popupDoc.createRange();
-      range.setStart(text, 3);
-      range.setEnd(text, 12);
-      return range;
-    });
+    roundTrip(
+      paragraphRun,
+      (popupDoc) => {
+        const p = popupDoc.getElementById('pn1')!;
+        // text node after the <a>: " A paragraph-style note body."
+        const text = p.childNodes[1]!;
+        const range = popupDoc.createRange();
+        range.setStart(text, 3);
+        range.setEnd(text, 12);
+        return range;
+      },
+      (pristineDoc) => {
+        const text = pristineDoc.getElementById('pn1')!.childNodes[1]!;
+        return { startContainer: text, startOffset: 3, endContainer: text, endOffset: 12 };
+      },
+    );
+  });
+
+  it('preserves a non-zero element-container end boundary (offsets survive normalization)', () => {
+    roundTrip(
+      dtRun,
+      (popupDoc) => {
+        // End boundary sits ON the <dl>-less popup body at a child index: the
+        // raw CFI step for an element carries no offset, so the boundary must
+        // be pushed into the preceding child's text or it collapses to the
+        // element start and the mapped range loses everything after it.
+        const dt = popupDoc.getElementById('dt1')!;
+        const range = popupDoc.createRange();
+        range.setStart(dt.firstChild!, 0);
+        range.setEnd(popupDoc.body, 2);
+        return range;
+      },
+      (pristineDoc) => {
+        const dt = pristineDoc.getElementById('dt1')!;
+        // body offset 2 is the boundary before the first <dd>, i.e. the end of
+        // the inter-element whitespace that follows <dt> — normalization must
+        // land there rather than collapsing to the container's start.
+        const afterDt = dt.nextSibling as Text;
+        return {
+          startContainer: dt.firstChild!,
+          startOffset: 0,
+          endContainer: afterDt,
+          endOffset: afterDt.data.length,
+        };
+      },
+    );
   });
 
   it('maps a select-all selection (body-level boundaries) via normalization', () => {
@@ -192,6 +262,28 @@ describe('footnote popup CFI mapping', () => {
     outside.setEnd(dt2Text, 5);
     const bookCfi = CFI.joinIndir(BASE_CFI, CFI.fromRange(outside)) as string;
     expect(getFootnoteLocalCfi(bookCfi, mapping, popupDoc)).toBeNull();
+  });
+
+  it('returns null when the selection boundary cannot be pushed below the popup body', () => {
+    const popupDoc = XHTML(SECTION);
+    const mapping = simulatePopup(popupDoc, liContents)!;
+    // An emptied popup body has nothing under it to anchor to, so the mapped
+    // path is the body step alone and there is no fragment-level index to shift.
+    popupDoc.body.replaceChildren();
+    const range = popupDoc.createRange();
+    range.setStart(popupDoc.body, 0);
+    range.collapse(true);
+    expect(getFootnoteSelectionCfi(range, mapping, BASE_CFI)).toBeNull();
+  });
+
+  it('returns null when the container CFI is unparseable', () => {
+    const popupDoc = XHTML(SECTION);
+    const mapping = simulatePopup(popupDoc, liContents)!;
+    const range = popupDoc.createRange();
+    range.selectNodeContents(popupDoc.body.firstChild!);
+    expect(
+      getFootnoteSelectionCfi(range, { ...mapping, containerCfi: 'not a cfi' }, BASE_CFI),
+    ).toBeNull();
   });
 
   it('returns null mapping for a range with text-node boundaries (resolved CFI anchors)', () => {

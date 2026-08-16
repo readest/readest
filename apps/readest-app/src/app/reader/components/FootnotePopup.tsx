@@ -17,6 +17,7 @@ import { getPopupPosition, getPosition, Position } from '@/utils/sel';
 import { FootnoteHandler } from 'foliate-js/footnotes.js';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { eventDispatcher } from '@/utils/event';
+import { getCfiSpinePrefix } from '@/utils/cfi';
 import { shouldCheckAsFootnote } from '../utils/footnoteHeuristics';
 import { showTransientHighlight } from '../utils/transientHighlight';
 import { drawAnnotationOverlay } from '../utils/annotatorUtil';
@@ -68,6 +69,17 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   const drawnNotesRef = useRef(new Map<string, { value: string; updatedAt: number }>());
   const [popupContentEpoch, setPopupContentEpoch] = useState(0);
   const booknotes = useBookDataStore((s) => s.booksData[bookKey.split('-')[0]!]?.config?.booknotes);
+
+  // Point the popup at a new (or no) source document: drop the CFI mapping and
+  // the drawn-overlay bookkeeping, and tell the Annotator that any selection
+  // made in the previous popup document is gone.
+  const resetPopupAnnotationState = (
+    map: { index: number; extract: FootnoteExtractMapping | null; doc?: Document } | null = null,
+  ) => {
+    popupMapRef.current = map;
+    drawnNotesRef.current.clear();
+    eventDispatcher.dispatch('footnote-selection', { key: bookKey });
+  };
   const historyRef = useRef<{ items: Record<string, unknown>[]; index: number }>({
     items: [],
     index: -1,
@@ -138,8 +150,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     };
     const handleBeforeRender = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      const { view } = detail;
-      view.addEventListener('link', (e: Event) => {
+      const { view: popupView } = detail;
+      popupView.addEventListener('link', (e: Event) => {
         e.preventDefault();
         const { detail: popupLinkDetail } = e as CustomEvent;
         const footnoteAnchorId = getHashFromHref(footnoteHrefRef.current);
@@ -159,7 +171,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
           setShowPopup(false);
         });
       });
-      view.addEventListener('load', (e: CustomEvent) => {
+      popupView.addEventListener('load', (e: CustomEvent) => {
         const { doc, index } = e.detail as { doc: Document; index: number };
         const bookData = getBookData(bookKey)!;
         mountAdditionalFonts(doc, isCJKLang(bookData.book?.primaryLanguage));
@@ -182,7 +194,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
           const info = popupMapRef.current;
           const extract = info && info.index === index ? info.extract : null;
           const cfi = extract
-            ? (getFootnoteSelectionCfi(range, extract, view.getCFI(index)) ?? undefined)
+            ? (getFootnoteSelectionCfi(range, extract, popupView.getCFI(index)) ?? undefined)
             : undefined;
           eventDispatcher.dispatch('footnote-selection', {
             key: bookKey,
@@ -214,7 +226,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       });
       // Style callback for annotation overlays drawn in the popup document
       // (the annotation-sync effect below adds them with mapped local CFIs).
-      view.addEventListener('draw-annotation', (e: Event) => {
+      popupView.addEventListener('draw-annotation', (e: Event) => {
         const viewSettings = getViewSettings(bookKey)!;
         drawAnnotationOverlay((e as CustomEvent).detail, {
           settings: useSettingsStore.getState().settings,
@@ -226,7 +238,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       // A click on a drawn overlay reports the popup-local value; map it back
       // to its booknote and open the toolbar in the annotated state so the
       // highlight can be restyled or deleted, like in the main view.
-      view.addEventListener('show-annotation', (e: Event) => {
+      popupView.addEventListener('show-annotation', (e: Event) => {
         const detail = (e as CustomEvent).detail as {
           value: string;
           index: number;
@@ -258,9 +270,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
           rect: isNote ? detail.rect : undefined,
         });
       });
-      footnoteViewRef.current = view;
-      footnoteRef.current?.replaceChildren(view);
-      const { renderer } = view;
+      footnoteViewRef.current = popupView;
+      footnoteRef.current?.replaceChildren(popupView);
+      const { renderer } = popupView;
       const viewSettings = getViewSettings(bookKey)!;
       const backButtonMargin = canGoBackRef.current ? 32 : 0;
       renderer.setAttribute('flow', 'scrolled');
@@ -288,10 +300,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       // console.log('render footnote', detail);
       const { view, href, index, extract } = detail;
       footnoteHrefRef.current = href;
-      popupMapRef.current = { index: index ?? -1, extract: extract ?? null };
-      drawnNotesRef.current.clear();
-      // A new popup document invalidates any selection made in the previous one
-      eventDispatcher.dispatch('footnote-selection', { key: bookKey });
+      resetPopupAnnotationState({ index: index ?? -1, extract: extract ?? null });
       sizeAdjustCountRef.current = 0;
       view.addEventListener('relocate', () => {
         if (sizeAdjustCountRef.current >= maxSizeAdjustCount) return;
@@ -423,9 +432,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
 
   const handleDismissPopup = () => {
     closePopup();
-    popupMapRef.current = null;
-    drawnNotesRef.current.clear();
-    eventDispatcher.dispatch('footnote-selection', { key: bookKey });
+    resetPopupAnnotationState();
     historyRef.current = { items: [], index: -1 };
     canGoBackRef.current = false;
     sizeAdjustCountRef.current = 0;
@@ -447,9 +454,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     // This popup shows text synthesized from a data/alt attribute in the host
     // document: there is no book document behind it, so no CFI mapping.
     footnoteViewRef.current = null;
-    popupMapRef.current = null;
-    drawnNotesRef.current.clear();
-    eventDispatcher.dispatch('footnote-selection', { key: bookKey });
+    resetPopupAnnotationState();
     const rect = gridFrame.getBoundingClientRect();
     const viewSettings = getViewSettings(bookKey)!;
     const triangPos = getPosition(element, rect, popupPadding, viewSettings.vertical);
@@ -527,8 +532,16 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       view.addAnnotation({ ...note, value });
       drawn.set(key, { value, updatedAt: note.updatedAt });
     };
+    // Only notes anchored in the popup's own section can map into it, and a
+    // heavy library carries thousands elsewhere. Reject those with a pure
+    // string compare of the spine prefix (id assertions stripped, since a
+    // foreign/imported CFI may spell them differently) before paying for the
+    // parse and DOM work inside getFootnoteLocalCfi.
+    const stripAssertions = (prefix: string | null) => prefix?.replace(/\[[^\]]*\]/g, '') ?? null;
+    const sectionPrefix = stripAssertions(getCfiSpinePrefix(view.getCFI(info.index)));
     for (const note of booknotes ?? []) {
       if (note.type !== 'annotation' || note.deletedAt || (!note.style && !note.note)) continue;
+      if (sectionPrefix && stripAssertions(getCfiSpinePrefix(note.cfi)) !== sectionPrefix) continue;
       const value = getFootnoteLocalCfi(note.cfi, info.extract, doc);
       if (!value) continue;
       if (note.style) upsert(note.id, value, note);
@@ -567,10 +580,18 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(report, 250);
     };
+    // Report the finished drag immediately instead of waiting out the debounce,
+    // matching the popup-document path.
+    const onPointerUp = () => {
+      if (timer) clearTimeout(timer);
+      report();
+    };
     document.addEventListener('selectionchange', onSelectionChange);
+    document.addEventListener('pointerup', onPointerUp);
     return () => {
       if (timer) clearTimeout(timer);
       document.removeEventListener('selectionchange', onSelectionChange);
+      document.removeEventListener('pointerup', onPointerUp);
     };
   }, [showPopup, bookKey]);
 

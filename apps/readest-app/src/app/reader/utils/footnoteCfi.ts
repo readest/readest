@@ -40,9 +40,11 @@ const boundaryParts = (node: Node, offset: number): CfiPart[] | null => {
 };
 
 // Element-container boundaries lose their child offset when serialized (CFI
-// offsets only apply to character-data steps), so a boundary sitting on the
-// popup <body> itself (e.g. a select-all) must be pushed down into the
-// nearest text position before mapping.
+// offsets only apply to character-data steps), so any boundary sitting on an
+// element (a select-all on <body>, a triple-click ending on a block, ...)
+// must be pushed down to the equivalent text position before mapping —
+// otherwise the CFI resolves at the element's start instead of the child
+// offset the boundary meant.
 const descendToStart = (node: Node): [Node, number] => {
   let n: Node = node;
   while (n.nodeType === Node.ELEMENT_NODE && n.firstChild) n = n.firstChild;
@@ -55,16 +57,18 @@ const descendToEnd = (node: Node): [Node, number] => {
   return [n, n.nodeType === Node.TEXT_NODE ? (n.nodeValue?.length ?? 0) : n.childNodes.length];
 };
 
-const normalizeBoundary = (
-  body: HTMLElement,
-  node: Node,
-  offset: number,
-  isEnd: boolean,
-): [Node, number] => {
-  if (node !== body) return [node, offset];
-  const child = body.childNodes[isEnd ? offset - 1 : offset];
-  if (!child) return [node, offset];
-  return isEnd ? descendToEnd(child) : descendToStart(child);
+const normalizeBoundary = (node: Node, offset: number, isEnd: boolean): [Node, number] => {
+  if (node.nodeType !== Node.ELEMENT_NODE) return [node, offset];
+  const children = node.childNodes;
+  const child = children[isEnd ? offset - 1 : offset];
+  if (child) return isEnd ? descendToEnd(child) : descendToStart(child);
+  // A start boundary after the last child is the same point as the end of
+  // that child; a boundary in a childless element (offset 0) serializes
+  // losslessly as the element step itself.
+  if (!isEnd && offset > 0 && children.length > 0) {
+    return descendToEnd(children[children.length - 1]!);
+  }
+  return [node, offset];
 };
 
 // Translate a selection range inside the (mutated) footnote popup document
@@ -76,13 +80,12 @@ export const getFootnoteSelectionCfi = (
   baseCfi: string,
 ): string | null => {
   try {
-    const body = range.startContainer.ownerDocument?.body;
-    if (!body) return null;
+    if (!range.startContainer.ownerDocument?.body) return null;
     const containerParts = parseSinglePath(mapping.containerCfi);
     if (!containerParts?.length) return null;
 
     const mapBoundary = (node: Node, offset: number, isEnd: boolean): string | null => {
-      const [n, o] = normalizeBoundary(body, node, offset, isEnd);
+      const [n, o] = normalizeBoundary(node, offset, isEnd);
       const parts = boundaryParts(n, o);
       // parts[0] is the popup <body> step; below it lies the fragment
       if (!parts || parts.length < 2) return null;

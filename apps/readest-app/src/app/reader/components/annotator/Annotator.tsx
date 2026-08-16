@@ -381,6 +381,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // element for data-attribute footnotes), so the per-section listeners
   // attached in onLoad below never see them. A detail without a range means
   // the popup selection was cleared or the popup closed.
+  const footnoteSelectionEpochRef = useRef(0);
   useEffect(() => {
     const onFootnoteSelection = async (event: CustomEvent) => {
       const detail = event.detail as {
@@ -394,6 +395,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         rect?: TextSelection['rect'];
       };
       if (detail.key !== bookKey) return;
+      // Every event for this book advances the epoch so a handler still
+      // awaiting getAnnotationText below can detect it was superseded — a
+      // cleared or newer selection must not be overwritten by stale state.
+      const epoch = ++footnoteSelectionEpochRef.current;
       if (!detail.range) {
         if (selectionIsPopupRef.current) handleDismissPopup();
         return;
@@ -413,6 +418,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             (detail.isNote ? b.note : b.style),
         );
         if (annotation) {
+          const text = annotation.text || (await getAnnotationText(detail.range));
+          if (epoch !== footnoteSelectionEpochRef.current) return;
           if (detail.isNote) {
             setShowAnnotationNotes(true);
             setHighlightOptionsVisible(false);
@@ -427,7 +434,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           setEditingAnnotation(null);
           setSelection({
             key: bookKey,
-            text: annotation.text || (await getAnnotationText(detail.range)),
+            text,
             range: detail.range,
             index: detail.index ?? -1,
             cfi: detail.cfi,
@@ -440,9 +447,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           return;
         }
       }
+      const text = await getAnnotationText(detail.range);
+      if (epoch !== footnoteSelectionEpochRef.current) return;
       setSelection({
         key: bookKey,
-        text: await getAnnotationText(detail.range),
+        text,
         range: detail.range,
         index: detail.index ?? -1,
         cfi: detail.cfi,
@@ -1206,6 +1215,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
     if (!viewSettings?.copyToNotebook) return;
 
+    // A popup-window range is not in a main view document; use the CFI the
+    // popup mapped into the pristine section (absent for data-attribute
+    // footnotes, which have no real text node to anchor to). Resolve it
+    // before the toast so an unanchorable excerpt isn't reported as saved.
+    const cfi = selection.popup ? selection.cfi : view?.getCFI(selection.index, selection.range);
+    if (!cfi) return;
+
     eventDispatcher.dispatch('toast', {
       type: 'info',
       message: _('Copied to notebook'),
@@ -1214,11 +1230,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     });
 
     const { booknotes: annotations = [] } = config;
-    // A popup-window range is not in a main view document; use the CFI the
-    // popup mapped into the pristine section (absent for data-attribute
-    // footnotes, which have no real text node to anchor to).
-    const cfi = selection.popup ? selection.cfi : view?.getCFI(selection.index, selection.range);
-    if (!cfi) return;
     const annotation: BookNote = {
       id: uniqueId(),
       type: 'excerpt',
@@ -1425,6 +1436,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
   const handleAnnotate = () => {
     if (!selection || !selection.text) return;
+    // A popup selection without a CFI has nothing to anchor a note to (the
+    // toolbar button is disabled, this guards the keyboard shortcut).
+    if (selection.popup && !selection.cfi) return;
     // A popup selection already carries the footnote target's href; the
     // current reading position would file the note under the wrong section.
     if (!selection.popup) {
