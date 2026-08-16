@@ -31,6 +31,7 @@ import {
   ttsSessionManager,
   TTS_STOP_AT_CHAPTER_END,
 } from '@/services/tts/TTSSessionManager';
+import { getAnnotationOverlayColor } from '../utils/annotatorUtil';
 
 interface UseTTSControlProps {
   bookKey: string;
@@ -718,14 +719,13 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
   // TTS highlight options
   const getTTSHighlightOptions = useCallback(
-    (ttsHighlightOptions: TTSHighlightOptions, isEink: boolean) => {
-      const einkBgColor = isDarkMode ? '#000000' : '#ffffff';
-      const color = isEink ? einkBgColor : ttsHighlightOptions.color;
-      return {
-        ...ttsHighlightOptions,
-        color,
-      };
-    },
+    (ttsHighlightOptions: TTSHighlightOptions, isBwEink: boolean) => ({
+      ...ttsHighlightOptions,
+      color: getAnnotationOverlayColor(ttsHighlightOptions.style, ttsHighlightOptions.color, {
+        isBwEink,
+        isDarkMode,
+      }),
+    }),
     [isDarkMode],
   );
 
@@ -733,11 +733,19 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     const ttsHighlightOptions = viewSettings?.ttsHighlightOptions;
     if (ttsControllerRef.current && ttsHighlightOptions) {
       ttsControllerRef.current.updateHighlightOptions(
-        getTTSHighlightOptions(ttsHighlightOptions, viewSettings!.isEink),
+        getTTSHighlightOptions(
+          ttsHighlightOptions,
+          viewSettings!.isEink && !viewSettings!.isColorEink,
+        ),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewSettings?.ttsHighlightOptions, viewSettings?.isEink, getTTSHighlightOptions]);
+  }, [
+    viewSettings?.ttsHighlightOptions,
+    viewSettings?.isEink,
+    viewSettings?.isColorEink,
+    getTTSHighlightOptions,
+  ]);
 
   useEffect(() => {
     if (ttsControllerRef.current && viewSettings?.ttsHighlightGranularity) {
@@ -906,7 +914,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         await ttsController.init();
         await ttsController.initViewTTS(ttsFromIndex);
         ttsController.updateHighlightOptions(
-          getTTSHighlightOptions(viewSettings.ttsHighlightOptions, viewSettings.isEink),
+          getTTSHighlightOptions(
+            viewSettings.ttsHighlightOptions,
+            viewSettings.isEink && !viewSettings.isColorEink,
+          ),
         );
         ttsController.setHighlightGranularity(viewSettings.ttsHighlightGranularity ?? 'word');
         // A recording has no audio for arbitrary text: it only exists as the

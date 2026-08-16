@@ -248,7 +248,14 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                 ...(style === 'squiggly' && { textDecorationStyle: 'wavy' }),
               }}
               className={clsx(
-                'text-base-content decoration-inherit rounded-sm p-0 leading-none',
+                'decoration-inherit rounded-sm p-0 leading-none',
+                // The marker glyph always sets its own ink above, so it must
+                // stay off `text-base-content`: the e-ink rule for that class
+                // flattens the color with `!important`, which outranks the
+                // inline style and painted the "A" base-content on a
+                // base-content chip -- a solid black square (#5667). The rules
+                // carry no inline ink and do want the flattening.
+                style !== 'highlight' && 'text-base-content',
                 style === 'highlight' ? 'flex items-center justify-center' : 'text-center',
                 style === 'underline' || style === 'squiggly' ? 'sm:mt-[-2px]' : '',
               )}
@@ -337,7 +344,10 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                   {selectedColor === color && (
                     <FaCheck
                       size={size10}
-                      className='text-base-content'
+                      // Same reason as the marker glyph: on B&W e-ink the dot
+                      // is a base-content disc, so the check sets its own
+                      // contrasting ink and must not be flattened back.
+                      className={clsx(!isBwEink && 'text-base-content')}
                       style={isBwEink ? { color: einkBgColor } : undefined}
                     />
                   )}

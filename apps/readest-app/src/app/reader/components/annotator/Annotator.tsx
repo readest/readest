@@ -67,6 +67,7 @@ import { transformContent } from '@/services/transformService';
 import {
   buildTTSSentenceHighlight,
   decideAnnotationDraw,
+  getAnnotationOverlayColor,
   getHighlightColorHex,
   mergeRestyledAnnotation,
   removeBookNoteOverlays,
@@ -507,8 +508,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const { style, color } = annotation as BookNote;
     const value = (annotation as BookNote & { value?: string }).value;
     const hexColor = getHighlightColorHex(settings, color);
-    const einkBgColor = isDarkMode ? '#000000' : '#ffffff';
-    const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
     // Choose what to draw from the overlay's `value` (cfi vs NOTE_PREFIX+cfi),
     // not from `annotation.note`: a unified record (style + note) is added as
     // two overlays and must draw a highlight for the cfi overlay AND a bubble
@@ -522,7 +521,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       draw(Overlayer.bubble, { writingMode });
     } else if (kind === 'highlight') {
       draw(Overlayer.highlight, {
-        color: isBwEink ? einkBgColor : hexColor,
+        color: getAnnotationOverlayColor('highlight', hexColor, { isBwEink, isDarkMode }),
         vertical: viewSettings.vertical,
       });
     } else if (kind === 'underline' || kind === 'squiggly') {
@@ -540,7 +539,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
       draw(Overlayer[kind], {
         writingMode,
-        color: isBwEink ? einkFgColor : hexColor,
+        color: getAnnotationOverlayColor(kind, hexColor, { isBwEink, isDarkMode }),
         padding,
       });
     }
