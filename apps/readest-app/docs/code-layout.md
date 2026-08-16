@@ -298,6 +298,10 @@ Read Aloud abstraction and implementations.
 - `mediaOverlay/`: a book's own recorded narration (EPUB 3 Media Overlays)
   played in place of synthesis — see
   [read-along-narration.md](read-along-narration.md)
+- `ttsDownloadManager.ts` + `src/store/ttsDownloadStore.ts`: durable per-book
+  Offline Audio queue and progress state
+- `providers/bookCacheStore.ts` + `providers/sqliteCacheStore.ts`: per-book
+  SQLite warm cache, pinned downloads, and compacted section packs
 - controller/data/types/utilities
 
 Mixed runtime code, mostly used by the reader frontend.

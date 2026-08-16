@@ -446,6 +446,13 @@ Four Read Aloud backends behind one interface (`src/services/tts`):
 `liveRateChange`) is how the controller and UI degrade per engine; gate on it
 rather than comparing client identities.
 
+Edge Read Aloud also supports persistent Offline Audio downloads. A durable,
+per-book queue (`ttsDownloadManager` + `ttsDownloadStore`) resumes when that
+book next has an active reader session. Completed sections are compacted into
+pinned packs under `Cache/tts-cache/<bookHash>/`; ordinary playback remains an
+evictable warm cache. Clearing Offline Audio removes only pinned downloads,
+while deleting a local book drains its queue and removes its downloaded audio.
+
 ### 6.6 Dictionaries
 
 `src/services/dictionaries` parses StarDict and SLOB packs locally
