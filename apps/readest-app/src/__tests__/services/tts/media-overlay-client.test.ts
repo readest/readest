@@ -164,6 +164,40 @@ describe('MediaOverlayClient capabilities', () => {
     const groups = await client.getVoices('en');
     expect(groups[0]!.voices[0]!.name).toBe('Book narration');
   });
+
+  test('can load clips and a narrator name from an external narration source', async () => {
+    [section] = await makeSection(WORD_SMIL);
+    const loadBlob = vi.fn(async () => new Blob([new Uint8Array(8)], { type: 'audio/mpeg' }));
+    client = new MediaOverlayClient({ dispatchSpeakMark: vi.fn() } as unknown as TTSController);
+    await client.init();
+    client.attachSource({ narrator: 'External Narrator', loadBlob });
+    client.setSection(section);
+
+    expect((await client.getVoices('en'))[0]!.voices[0]!.name).toBe('External Narrator');
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+
+    expect(loadBlob).toHaveBeenCalledWith('OEBPS/ch1.mp3');
+  });
+
+  test('streams an external narration URL without loading it into a blob', async () => {
+    [section] = await makeSection(WORD_SMIL);
+    const loadBlob = vi.fn(async () => new Blob([new Uint8Array(8)]));
+    client = new MediaOverlayClient({ dispatchSpeakMark: vi.fn() } as unknown as TTSController);
+    await client.init();
+    client.attachSource({
+      loadBlob,
+      resolveUrl: vi.fn(async () => 'http://asset.localhost/books/ch1.mp3'),
+    });
+    client.setSection(section);
+
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+
+    expect(audio().src).toBe('http://asset.localhost/books/ch1.mp3');
+    expect(loadBlob).not.toHaveBeenCalled();
+    expect(createObjectURL).not.toHaveBeenCalled();
+  });
 });
 
 describe('MediaOverlayClient playback', () => {

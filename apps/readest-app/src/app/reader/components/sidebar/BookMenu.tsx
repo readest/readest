@@ -34,9 +34,14 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
   const { getVisibleLibrary } = useLibraryStore();
   const { openParallelView } = useBooksManager();
   const { sideBarBookKey } = useSidebarStore();
-  const { getConfig } = useBookDataStore();
+  const { getConfig, getBookData } = useBookDataStore();
   const { parallelViews, setParallel, unsetParallel } = useParallelViewStore();
   const viewSettings = getViewSettings(sideBarBookKey!);
+  const bookData = sideBarBookKey ? getBookData(sideBarBookKey) : null;
+  const canPairAudiobook =
+    bookData?.book?.format === 'EPUB' &&
+    bookData.bookDoc?.rendition?.layout !== 'pre-paginated' &&
+    !!bookData.bookDoc?.toc?.length;
 
   const [isSortedTOC, setIsSortedTOC] = React.useState(viewSettings?.sortedTOC || false);
 
@@ -124,6 +129,10 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     eventDispatcher.dispatch('clear-annotations', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
+  const handleManageAudiobook = () => {
+    eventDispatcher.dispatch('manage-audiobook', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
 
   return (
     <Menu
@@ -197,6 +206,14 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       )}
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem label={_('Proofread')} onClick={showProofreadRulesWindow} />
+      {canPairAudiobook && (
+        <MenuItem
+          label={
+            getConfig(sideBarBookKey!)?.audiobook ? _('Manage Audiobook') : _('Pair Audiobook')
+          }
+          onClick={handleManageAudiobook}
+        />
+      )}
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem label={_('Export Annotations')} onClick={handleExportAnnotations} />
       <MenuItem label={_('Import Annotations')} onClick={handleImportAnnotations} />

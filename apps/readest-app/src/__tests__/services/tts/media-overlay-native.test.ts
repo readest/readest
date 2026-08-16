@@ -25,6 +25,7 @@ vi.mock('@/utils/misc', async (importOriginal) => ({
 }));
 
 import { addPluginListener, invoke, type PluginListener } from '@tauri-apps/api/core';
+import { writeFile } from '@tauri-apps/plugin-fs';
 import type { BookDoc } from '@/libs/document';
 import type { TTSController } from '@/services/tts/TTSController';
 import {
@@ -130,6 +131,22 @@ describe('MediaOverlayClient on iOS Tauri', () => {
     const step = await pending;
 
     expect(step.value?.code).toBe('error');
+  });
+
+  test('plays a paired local audiobook from its existing path without staging a copy', async () => {
+    await setup();
+    client.attachSource({
+      narrator: 'External Narrator',
+      loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])),
+      resolvePath: vi.fn(async () => '/books/hash/audiobook/book.m4b'),
+    });
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+
+    expect(writeFile).not.toHaveBeenCalled();
+    expect(controlCalls.find((call) => call['action'] === 'load')?.['path']).toBe(
+      '/books/hash/audiobook/book.m4b',
+    );
   });
 
   test('invalidatePlayback makes the next block open a fresh native session', async () => {

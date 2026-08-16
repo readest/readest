@@ -1,5 +1,6 @@
 import { FoliateView, ViewTTS } from '@/types/view';
 import { AppService } from '@/types/system';
+import type { PairedAudiobook } from '@/types/book';
 import { SectionItem } from '@/libs/document';
 import { transformTTSSectionDocument } from './transformDoc';
 import { filterSSMLWithLang, parseSSMLMarks } from '@/utils/ssml';
@@ -38,6 +39,7 @@ import {
   MediaOverlayTTS,
   MEDIA_OVERLAY_VOICE_ID,
 } from './mediaOverlay';
+import { findPairedAudiobookSection, loadPairedAudiobookSection } from './pairedAudiobook';
 
 // App-wide monotonic sequence for 'tts-position' events. A fresh TTSController
 // is constructed per `tts-speak`, so a per-instance counter would restart at 0
@@ -161,6 +163,7 @@ export class TTSController extends EventTarget {
   // book's own recording.
   #mediaOverlaySection: MediaOverlaySection | null = null;
   #useNarration = true;
+  #pairedAudiobook: PairedAudiobook | null = null;
 
   ttsLang: string = '';
   ttsRate: number = 1.0;
@@ -314,7 +317,7 @@ export class TTSController extends EventTarget {
     let newTts: ViewTTS;
     let narration: MediaOverlaySection | null = null;
     if (this.narrationActive) {
-      narration = await loadMediaOverlaySection(view.book, sectionIndex, doc, this.ttsLang);
+      narration = await this.#loadNarrationSection(view, sectionIndex, doc);
     }
     if (narration) {
       newTts = new MediaOverlayTTS(doc, narration, this.#getHighlighter());
@@ -357,7 +360,7 @@ export class TTSController extends EventTarget {
     this.#ttsDoc = doc;
     if (narration) {
       this.#mediaOverlaySection = narration;
-      this.ttsMediaOverlayClient.attachBook(view.book);
+      this.#attachNarrationSource(view.book);
       this.ttsMediaOverlayClient.setSection(narration);
     }
     // The timeline maps the old document's ranges; rebuild lazily.
@@ -399,7 +402,7 @@ export class TTSController extends EventTarget {
     // voice for this book) is what overrides it. Deliberately last, so it wins
     // over the globally remembered preferred client.
     if (this.narrationAvailable) {
-      this.ttsMediaOverlayClient.attachBook(this.view.book);
+      this.#attachNarrationSource(this.view.book);
       if (this.useNarration && (await this.ttsMediaOverlayClient.init())) {
         this.ttsClient = this.ttsMediaOverlayClient;
       }
@@ -407,7 +410,10 @@ export class TTSController extends EventTarget {
   }
 
   get narrationAvailable(): boolean {
-    return this.#attached && hasMediaOverlays(this.view?.book);
+    return (
+      this.#attached &&
+      (this.#pairedAudiobookAvailable(this.view?.book) || hasMediaOverlays(this.view?.book))
+    );
   }
 
   get narrationActive(): boolean {
@@ -422,6 +428,65 @@ export class TTSController extends EventTarget {
 
   get useNarration(): boolean {
     return this.#useNarration;
+  }
+
+  set pairedAudiobook(value: PairedAudiobook | null | undefined) {
+    this.#pairedAudiobook = value ?? null;
+  }
+
+  get pairedAudiobook(): PairedAudiobook | null {
+    return this.#pairedAudiobook;
+  }
+
+  #pairedAudiobookAvailable(book: FoliateView['book'] | null | undefined): boolean {
+    return !!(
+      this.appService &&
+      book &&
+      this.#pairedAudiobook &&
+      findPairedAudiobookSection(book, this.#pairedAudiobook, 0, 1) >= 0
+    );
+  }
+
+  #usesPairedAudiobook(book: FoliateView['book']): boolean {
+    return this.#pairedAudiobookAvailable(book);
+  }
+
+  #attachNarrationSource(book: FoliateView['book']): void {
+    if (this.#usesPairedAudiobook(book) && this.#pairedAudiobook && this.appService) {
+      const narrator = this.#pairedAudiobook.narrator;
+      this.ttsMediaOverlayClient.attachSource({
+        ...(narrator ? { narrator } : {}),
+        loadBlob: async (href) => await this.appService!.openFile(href, 'Books'),
+        resolveUrl: async (href) => {
+          const appService = this.appService!;
+          if (appService.appPlatform !== 'tauri' || appService.isMobileApp) return null;
+          const file = await appService.openFile(href, 'Books');
+          return 'url' in file && typeof file.url === 'string' ? file.url : null;
+        },
+        resolvePath: async (href) => await this.appService!.resolveFilePath(href, 'Books'),
+      });
+      return;
+    }
+    this.ttsMediaOverlayClient.attachBook(book);
+  }
+
+  #findNarratedSection(book: FoliateView['book'], from: number, direction: 1 | -1): number {
+    if (this.#usesPairedAudiobook(book) && this.#pairedAudiobook) {
+      return findPairedAudiobookSection(book, this.#pairedAudiobook, from, direction);
+    }
+    return findNarratedSection(book, from, direction);
+  }
+
+  #loadNarrationSection(
+    view: FoliateView,
+    sectionIndex: number,
+    doc: Document,
+  ): Promise<MediaOverlaySection | null> | MediaOverlaySection | null {
+    const lang = this.ttsLang || view.language?.canonical || 'en';
+    if (this.#usesPairedAudiobook(view.book) && this.#pairedAudiobook) {
+      return loadPairedAudiobookSection(view.book, this.#pairedAudiobook, sectionIndex, doc, lang);
+    }
+    return loadMediaOverlaySection(view.book, sectionIndex, doc, lang);
   }
 
   #getPrimaryContent() {
@@ -531,7 +596,7 @@ export class TTSController extends EventTarget {
     // indexes and notes are routinely left out. Step over those sections in
     // whichever direction playback is moving instead of stalling on silence.
     if (this.narrationActive) {
-      const narrated = findNarratedSection(this.view.book, sectionIndex, direction);
+      const narrated = this.#findNarratedSection(this.view.book, sectionIndex, direction);
       if (narrated === -1) return false;
       sectionIndex = narrated;
     }
@@ -575,12 +640,7 @@ export class TTSController extends EventTarget {
     }
 
     if (this.narrationActive) {
-      const narration = await loadMediaOverlaySection(
-        this.view.book,
-        sectionIndex,
-        doc,
-        this.ttsLang || this.view.language?.canonical || 'en',
-      );
+      const narration = await this.#loadNarrationSection(this.view, sectionIndex, doc);
       if (narration) {
         this.#mediaOverlaySection = narration;
         this.ttsMediaOverlayClient.setSection(narration);

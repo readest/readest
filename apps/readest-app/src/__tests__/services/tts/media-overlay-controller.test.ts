@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { TTSController } from '@/services/tts/TTSController';
 import type { TTSClient, TTSMessageEvent } from '@/services/tts/TTSClient';
 import { MEDIA_OVERLAY_VOICE_ID } from '@/services/tts/mediaOverlay';
+import type { PairedAudiobook } from '@/types/book';
+import type { AppService } from '@/types/system';
 import type { FoliateView } from '@/types/view';
 
 // Synthesis clients replaced with fakes; the narration client is the real one,
@@ -120,6 +122,34 @@ const makePlainView = () => {
   return view;
 };
 
+const PAIRED_AUDIOBOOK: PairedAudiobook = {
+  version: 1,
+  narrator: 'External Narrator',
+  files: [{ id: 'audio-0', name: 'chapter.mp3', path: 'hash/audiobook/chapter.mp3', duration: 30 }],
+  chapters: [{ id: 'audio-0:0', fileId: 'audio-0', label: 'Chapter 1', start: 0, end: 30 }],
+  mappings: [{ ebookChapterId: 'chapter.xhtml', audioChapterId: 'audio-0:0' }],
+  createdAt: 1,
+};
+
+const makePairedView = () => {
+  const docs = [makeDoc('<p>Front matter.</p>'), makeDoc('<h1>Chapter 1</h1><p>Text.</p>')];
+  return {
+    book: {
+      toc: [{ id: 0, label: 'Chapter 1', href: 'chapter.xhtml', index: 0 }],
+      sections: [
+        { id: 'front.xhtml', createDocument: vi.fn().mockResolvedValue(docs[0]) },
+        { id: 'chapter.xhtml', createDocument: vi.fn().mockResolvedValue(docs[1]) },
+      ],
+      splitTOCHref: (href: string) => href.split('#'),
+    },
+    renderer: { getContents: () => [], primaryIndex: 0 },
+    language: { isCJK: false, canonical: 'en' },
+    getCFI: vi.fn().mockReturnValue('epubcfi(/6/2!/4/2)'),
+    resolveCFI: vi.fn().mockReturnValue({ anchor: () => null }),
+    tts: null,
+  } as unknown as FoliateView;
+};
+
 beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -171,6 +201,25 @@ describe('narration selection', () => {
 
     expect(controller.narrationAvailable).toBe(false);
     expect(controller.ttsClient).toBe(controller.ttsEdgeClient);
+  });
+
+  test('a paired audiobook is offered as narration without EPUB media overlays', async () => {
+    const view = makePairedView();
+    const appService = {
+      openFile: vi.fn(async () => new File(['audio'], 'chapter.mp3')),
+    } as unknown as AppService;
+    const controller = new TTSController(appService, view);
+    controller.pairedAudiobook = PAIRED_AUDIOBOOK;
+
+    await controller.init();
+    await controller.initViewTTS(0);
+
+    expect(controller.narrationAvailable).toBe(true);
+    expect(controller.narrationActive).toBe(true);
+    expect(view.book.sections[0]!.createDocument).not.toHaveBeenCalled();
+    expect(view.book.sections[1]!.createDocument).toHaveBeenCalled();
+    expect(view.tts!.start()).toContain('<mark name="0"/>');
+    expect((await controller.getVoices('en'))[0]!.voices[0]!.name).toBe('External Narrator');
   });
 
   test('the narrator leads the voice list, and only for narrated books', async () => {

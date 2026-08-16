@@ -17,7 +17,7 @@ vi.mock('@tauri-apps/plugin-fs', () => ({
 }));
 
 import { addPluginListener, invoke, type PluginListener } from '@tauri-apps/api/core';
-import { writeFile } from '@tauri-apps/plugin-fs';
+import { remove, writeFile } from '@tauri-apps/plugin-fs';
 import { NativeNarrationPlayer } from '@/services/tts/mediaOverlay/NativeNarrationPlayer';
 
 describe('NativeNarrationPlayer', () => {
@@ -74,6 +74,20 @@ describe('NativeNarrationPlayer', () => {
     );
 
     await player.shutdown();
+  });
+
+  test('loads an existing local audiobook path without copying or deleting it', async () => {
+    const player = new NativeNarrationPlayer();
+    await player.loadPath('hash/audiobook/book.m4b', '/books/hash/audiobook/book.m4b', 20);
+
+    expect(writeFile).not.toHaveBeenCalled();
+    expect(controlCalls.find((call) => call['action'] === 'load')).toMatchObject({
+      path: '/books/hash/audiobook/book.m4b',
+      positionMs: 20_000,
+    });
+
+    await player.shutdown();
+    expect(remove).not.toHaveBeenCalledWith('/books/hash/audiobook/book.m4b');
   });
 
   test('ended events notify listeners', async () => {

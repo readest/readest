@@ -21,7 +21,7 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: (cmd: string, args?: { name?: string }) => invokeMock(cmd, args),
 }));
 
-import { useFileSelector } from '@/hooks/useFileSelector';
+import { FILE_SELECTION_PRESETS, useFileSelector } from '@/hooks/useFileSelector';
 import { eventDispatcher } from '@/utils/event';
 
 const _ = (key: string) => key;
@@ -84,6 +84,25 @@ describe('useFileSelector cover selection', () => {
 
     expect(selectFiles).toHaveBeenCalledWith(expect.any(String), ['png', 'jpg', 'jpeg', 'gif']);
     expect(result.files).toHaveLength(1);
+  });
+});
+
+describe('useFileSelector audiobook selection', () => {
+  test('web: advertises M4B explicitly when the browser has no MIME registration for it', () => {
+    expect(FILE_SELECTION_PRESETS.audio.accept.split(',')).toContain('.m4b');
+  });
+
+  test('Android: uses an unfiltered picker so M4B files are selectable, then filters locally', async () => {
+    basenameMock.mockResolvedValueOnce('Novel.m4b');
+    const { appService, selectFiles } = makeAppService('android', [
+      'content://com.android.providers.downloads/document/42',
+    ]);
+    const { selectFiles: select } = useFileSelector(appService, _);
+
+    const result = await select({ type: 'audio', multiple: true });
+
+    expect(selectFiles).toHaveBeenCalledWith(expect.any(String), []);
+    expect(result.files).toEqual([expect.objectContaining({ name: 'Novel.m4b' })]);
   });
 });
 

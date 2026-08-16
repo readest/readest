@@ -10,10 +10,11 @@
 // pars in a paragraph are contiguous audio, and re-seeking between them would
 // put an audible seam in the middle of a narrated sentence.
 //
-// On iOS Tauri the clock is an in-process AVPlayer (NativeNarrationPlayer):
-// HTMLAudioElement is interrupted when TTSMediaBridge claims the app's
-// non-mixable .playback session — the same constraint that moved Edge TTS to
-// NativeAudioPlayer. Everywhere else a plain HTMLAudioElement is enough.
+// On mobile Tauri the clock is an in-process native player
+// (NativeNarrationPlayer). iOS needs it so TTSMediaBridge and narration share
+// one playback session; Android needs it so multi-hour local files can stream
+// from disk without buffering the whole audiobook through the WebView.
+// Desktop and web use a plain HTMLAudioElement.
 
 import type { BookDoc } from '@/libs/document';
 import { getOSPlatform, stubTranslation as _ } from '@/utils/misc';
@@ -49,7 +50,8 @@ const HANDOVER_GRACE_MS = 1000;
 // Inline of isTauriAppPlatform(): importing @/services/environment pulls the
 // app-service graph into unit tests that only need the platform bit.
 const isNativeNarrationPlatform = (): boolean =>
-  getOSPlatform() === 'ios' && process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri';
+  ['android', 'ios'].includes(getOSPlatform()) &&
+  process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri';
 
 // Container blobs come out of the zip with no MIME type, and a media element
 // given a typeless blob URL refuses to decode it ("Format error"), so the type
@@ -80,6 +82,13 @@ interface ClipRun {
   pars: NarrationPar[];
 }
 
+export interface NarrationAudioSource {
+  narrator?: string;
+  loadBlob: (href: string) => Promise<Blob>;
+  resolveUrl?: (href: string) => Promise<string | null>;
+  resolvePath?: (href: string) => Promise<string | null>;
+}
+
 // Minimal clock surface shared by HTMLAudioElement and NativeNarrationPlayer.
 interface NarrationClock {
   currentTime: number;
@@ -108,7 +117,7 @@ export class MediaOverlayClient implements TTSClient {
   initialized = false;
   controller?: TTSController;
 
-  #book: BookDoc | null = null;
+  #source: NarrationAudioSource | null = null;
   #section: MediaOverlaySection | null = null;
   #native = isNativeNarrationPlatform();
   #player: NativeNarrationPlayer | null = null;
@@ -141,7 +150,20 @@ export class MediaOverlayClient implements TTSClient {
   // session, independently of the section, so the voice list can name the
   // narrator before any section has been indexed.
   attachBook(book: BookDoc | null): void {
-    this.#book = book;
+    this.attachSource(
+      book?.loadBlob
+        ? {
+            narrator: book.media?.narrator,
+            loadBlob: (href) => book.loadBlob!(href),
+          }
+        : null,
+    );
+  }
+
+  // External audiobook files use the same clock and clip machinery as EPUB
+  // Media Overlays; only the blob provider and narrator label differ.
+  attachSource(source: NarrationAudioSource | null): void {
+    this.#source = source;
   }
 
   // The narration index for the section now playing; rebuilt on every section
@@ -151,7 +173,7 @@ export class MediaOverlayClient implements TTSClient {
   }
 
   #narratorName(): string {
-    return this.#book?.media?.narrator?.trim() || _('Book narration');
+    return this.#source?.narrator?.trim() || _('Book narration');
   }
 
   // Concurrent callers share one load. Playback and the controller's
@@ -172,15 +194,19 @@ export class MediaOverlayClient implements TTSClient {
   }
 
   async #loadAudio(href: string): Promise<NarrationClock> {
-    if (!this.#book?.loadBlob) throw new Error('Book cannot load narration audio');
-
-    const blob = audioBlobWithType(href, await this.#book.loadBlob(href));
+    if (!this.#source) throw new Error('Book cannot load narration audio');
 
     if (this.#native && this.#player) {
+      const path = await this.#source.resolvePath?.(href).catch(() => null);
       // Keep any prior native session's file until the new one is staged; load()
       // replaces the AVPlayer item. Do not call #releaseAudio (that aborts).
       this.#cancelHandover();
-      await this.#player.load(href, blob, 0);
+      if (path) {
+        await this.#player.loadPath(href, path, 0);
+      } else {
+        const blob = audioBlobWithType(href, await this.#source.loadBlob(href));
+        await this.#player.load(href, blob, 0);
+      }
       this.#player.playbackRate = this.#rate;
       this.#player.pause();
       this.#audio = this.#player;
@@ -189,8 +215,14 @@ export class MediaOverlayClient implements TTSClient {
       return this.#player;
     }
 
+    const directUrl = await this.#source.resolveUrl?.(href).catch(() => null);
     this.#releaseAudio();
-    const url = URL.createObjectURL(blob);
+    let url = directUrl ?? null;
+    if (!url) {
+      const blob = audioBlobWithType(href, await this.#source.loadBlob(href));
+      url = URL.createObjectURL(blob);
+      this.#objectUrl = url;
+    }
     const audio = new Audio();
     audio.src = url;
     // Speed changes must not raise the narrator's pitch.
@@ -198,7 +230,6 @@ export class MediaOverlayClient implements TTSClient {
     audio.playbackRate = this.#rate;
     this.#audio = audio;
     this.#audioHref = href;
-    this.#objectUrl = url;
     return audio;
   }
 
@@ -469,7 +500,7 @@ export class MediaOverlayClient implements TTSClient {
   }
 
   #voices(): TTSVoice[] {
-    if (!this.#book) return [];
+    if (!this.#source) return [];
     return [{ id: MEDIA_OVERLAY_VOICE_ID, name: this.#narratorName(), lang: this.#lang }];
   }
 
@@ -524,6 +555,6 @@ export class MediaOverlayClient implements TTSClient {
     }
     this.#currentPar = null;
     this.#section = null;
-    this.#book = null;
+    this.#source = null;
   }
 }
