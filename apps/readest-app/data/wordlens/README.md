@@ -31,6 +31,10 @@ for p in es-en fr-en de-en pt-en it-en ru-en en-es en-fr en-de en-pt en-ru; do c
 
 # Source-language lemmatization lists (michmech) — used to lemmatize X→en source words
 for c in es fr de pt it ru; do curl -sL -o lemmatization-$c.txt https://raw.githubusercontent.com/michmech/lemmatization-lists/master/lemmatization-$c.txt; done
+
+# en→vi only: WikDict has no Vietnamese, so the glosses come from the kaikki English
+# Wiktionary extract (CC-BY-SA-4.0) — ~3.2 GB, streamed line-by-line by the build.
+curl -sL --retry 3 -C - -o kaikki-en.jsonl https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl
 ```
 
 ## 2. Generate packs (run from `apps/readest-app`)
@@ -71,7 +75,15 @@ done
 for tgt in es fr de pt ru; do
   node scripts/build-wordlens-data.mjs build-wikdict en "$tgt" /tmp/ww-data/en_50k.txt "/tmp/ww-data/en-$tgt.sqlite3" 20000
 done
+
+# en→vi: no WikDict dictionary exists, so use the kaikki `build` mode instead — it reads
+# the Vietnamese `translations` off each English Wiktionary entry. Same lemmatization
+# (en-en table) and same output shape as the WikDict pairs.
+node scripts/build-wordlens-data.mjs build en vi /tmp/ww-data/en_50k.txt /tmp/ww-data/kaikki-en.jsonl 20000
 ```
+> **vi is en-target only.** Vietnamese words are multi-syllable with spaces *inside* the
+> word ("học sinh"), so the planner's whitespace tokenizer would gloss syllables, not
+> words. A `vi-en` pack needs a Vietnamese segmenter first — deferred, like ja/ko/th.
 - Each build writes `data/wordlens/<pair>.json` **and** regenerates `manifest.json`
   (sha256 + bytes + entry count). Rebuild only the manifest with `pnpm wordlens:manifest`.
 - The last CLI arg is `topN` (default 30000 for en-zh, 20000 otherwise).

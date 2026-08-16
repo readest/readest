@@ -9,6 +9,7 @@
 
 The **en↔中文** packs use dedicated dictionaries (highest quality there); **all other
 pairs** (es/fr/de/pt/it/ru ↔ en) use the lightweight WikDict + FrequencyWords stack.
+**en→vi** has no WikDict dictionary and uses the kaikki Wiktionary extract instead.
 
 ## Sources
 
@@ -20,6 +21,9 @@ pairs** (es/fr/de/pt/it/ru ↔ en) use the lightweight WikDict + FrequencyWords 
   https://github.com/drkameleon/complete-hsk-vocabulary
 - **WikDict** (bilingual glosses for es/fr/de/pt/it/ru ↔ en) — CC-BY-SA 3.0,
   derived from DBnary / Wiktionary. https://www.wikdict.com/
+- **kaikki.org Wiktionary extract** (English→Vietnamese glosses, from the `translations`
+  of each English entry) — CC-BY-SA 4.0.
+  https://kaikki.org/dictionary/English/
 - **FrequencyWords** (difficulty ranking; word-frequency lists from OpenSubtitles/OPUS)
   — CC-BY-SA 4.0. https://github.com/hermitdave/FrequencyWords
 - **lemmatization-lists** (form→lemma mappings used to lemmatize non-English source
@@ -46,6 +50,8 @@ node scripts/build-wordlens-data.mjs build-wikdict es en es_50k.txt es-en.sqlite
 node scripts/build-wordlens-data.mjs build-wikdict en es en_50k.txt en-es.sqlite3 20000
 # (repeat for fr/de/pt/it/ru ↔ en)
 
-# For maximum coverage, the kaikki Wiktionary dump can be used instead of WikDict:
+# For maximum coverage — and for en→vi, which WikDict does not cover at all — the kaikki
+# Wiktionary dump can be used instead of WikDict:
 node scripts/build-wordlens-data.mjs build es en es_50k.txt /path/to/es-extract.jsonl 20000
+node scripts/build-wordlens-data.mjs build en vi en_50k.txt /path/to/kaikki-en.jsonl 20000
 ```

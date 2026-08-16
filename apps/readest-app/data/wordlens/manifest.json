@@ -65,6 +65,15 @@
       "entries": 14925
     },
     {
+      "pair": "en-vi",
+      "source": "en",
+      "target": "vi",
+      "file": "en-vi.json",
+      "bytes": 667227,
+      "sha256": "0e4074c1167b1f649bc65fb806dc6978106b0f8e38ec1839ba9e70e880426427",
+      "entries": 9759
+    },
+    {
       "pair": "en-zh",
       "source": "en",
       "target": "zh",
