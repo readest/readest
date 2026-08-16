@@ -144,7 +144,18 @@ describe('MediaOverlayClient capabilities', () => {
       gapControl: false,
       liveRateChange: true,
       continuousTimeline: true,
+      textHighlight: true,
     });
+  });
+
+  test('disables text highlighting for a source without fine text timing', async () => {
+    await setup();
+    client.attachSource({
+      loadBlob: async () => new Blob([new Uint8Array(8)]),
+      textHighlight: false,
+    });
+
+    expect(client.getCapabilities().textHighlight).toBe(false);
   });
 
   test('offers the narrator as its only voice', async () => {
@@ -326,6 +337,16 @@ describe('MediaOverlayClient playback', () => {
 
     expect(audio().seeks).toEqual([3]);
     expect(audio().currentTime).toBe(3);
+  });
+
+  test('starts at a requested position inside the first narration clip', async () => {
+    await setup();
+    client.setNextChunkPosition(1.5);
+    const iter = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
+    await iter.next();
+
+    expect(audio().seeks).toEqual([4.5]);
+    expect(audio().currentTime).toBe(4.5);
   });
 
   test('resumes mid-block from the requested mark', async () => {

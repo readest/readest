@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // --- Dependency mocks (must be set up before importing the hook) ---
@@ -146,6 +146,7 @@ vi.mock('@/services/tts', () => ({
       pause: vi.fn().mockResolvedValue(undefined),
       resume: vi.fn().mockResolvedValue(undefined),
       start: vi.fn().mockResolvedValue(undefined),
+      startFromRange: vi.fn().mockReturnValue('<speak>hello</speak>'),
       stop: vi.fn().mockResolvedValue(undefined),
       shutdown: vi.fn().mockResolvedValue(undefined),
       forward: vi.fn().mockResolvedValue(undefined),
@@ -162,6 +163,7 @@ vi.mock('@/services/tts', () => ({
       getSentenceProgress: vi.fn().mockReturnValue(null),
       isSoundingSentenceOnScreen: vi.fn().mockReturnValue(false),
       getCurrentHighlightCfi: vi.fn().mockReturnValue(null),
+      getCurrentPlaybackCfi: vi.fn().mockReturnValue(null),
       reapplyCurrentHighlight: vi.fn(),
       terminated: false,
       isViewAttached: true,
@@ -347,6 +349,7 @@ describe('useTTSControl reading a selection aloud', () => {
     });
     const controller = ttsControllerInstances[0] as unknown as {
       speak: ReturnType<typeof vi.fn>;
+      startFromRange: ReturnType<typeof vi.fn>;
     };
     return { range, controller };
   };
@@ -356,7 +359,7 @@ describe('useTTSControl reading a selection aloud', () => {
 
     const { range, controller } = await speakSelection();
 
-    expect(mockView.tts.from).toHaveBeenCalledWith(range);
+    expect(controller.startFromRange).toHaveBeenCalledWith(range);
     // Not a one-shot: the session goes on from that passage rather than being
     // stopped by the one-time callback as soon as the first clip ends.
     expect(controller.speak).toHaveBeenCalledWith(expect.anything(), false, expect.any(Function));
@@ -430,6 +433,28 @@ describe('useTTSControl back-to-position prompt', () => {
 
   it('appears when the reader has paged away from the sentence entirely', async () => {
     expect(await startSessionThenRelocate(false)).toBe('true');
+  });
+
+  it('returns to the live narration position instead of a stale saved mark', async () => {
+    const BackHarness = () => {
+      const tts = useTTSControl({ bookKey: 'book-1' });
+      return <button onClick={tts.handleBackToCurrentTTSLocation}>Back</button>;
+    };
+    render(<BackHarness />);
+    await act(async () => {
+      const p = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await p;
+    });
+    const controller = ttsControllerInstances[0] as unknown as {
+      getCurrentPlaybackCfi: ReturnType<typeof vi.fn>;
+    };
+    controller.getCurrentPlaybackCfi.mockReturnValue('live-narration-cfi');
+
+    fireEvent.click(screen.getByText('Back'));
+
+    expect(mockView.resolveNavigation).toHaveBeenLastCalledWith('live-narration-cfi');
   });
 });
 
@@ -972,6 +997,7 @@ describe('useTTSControl background session lifecycle', () => {
       attachView: vi.fn().mockResolvedValue(undefined),
       getSpeakingLang: vi.fn().mockReturnValue('en'),
       getCurrentHighlightCfi: vi.fn().mockReturnValue(null),
+      getCurrentPlaybackCfi: vi.fn().mockReturnValue(null),
       isSoundingSentenceOnScreen: vi.fn().mockReturnValue(false),
       getSpokenSentence: vi.fn().mockReturnValue(null),
       updateHighlightOptions: vi.fn(),

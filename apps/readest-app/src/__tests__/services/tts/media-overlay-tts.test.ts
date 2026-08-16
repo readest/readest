@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import type { BookDoc } from '@/libs/document';
 import {
   loadMediaOverlaySection,
-  type MediaOverlaySection,
+  MediaOverlaySection,
+  type NarrationPar,
 } from '@/services/tts/mediaOverlay/MediaOverlaySection';
 import { MediaOverlayTTS } from '@/services/tts/mediaOverlay/MediaOverlayTTS';
 import { parseSSMLMarks } from '@/utils/ssml';
@@ -215,5 +216,38 @@ describe('MediaOverlayTTS', () => {
     target.setEnd(doc.body, 0);
 
     expect(marksOf(tts.from(target))).toEqual(['0', '1', '2']);
+  });
+
+  test('maps a page position proportionally into an approximately timed chapter', () => {
+    const approximateDoc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body><p>abcdefghij</p></body></html>',
+      'text/html',
+    );
+    const text = approximateDoc.querySelector('p')!.firstChild as Text;
+    const chapter = approximateDoc.createRange();
+    chapter.selectNodeContents(text);
+    const approximateSection = new MediaOverlaySection(
+      [
+        {
+          markName: '0',
+          blockIndex: 0,
+          range: chapter,
+          text: 'Chapter',
+          audioHref: 'chapter.m4b',
+          clipBegin: 20,
+          clipEnd: 120,
+        } satisfies NarrationPar,
+      ],
+      'en',
+      'approximate',
+    );
+    const tts = new MediaOverlayTTS(approximateDoc, approximateSection, highlight);
+    const page = approximateDoc.createRange();
+    page.setStart(text, 5);
+    page.setEnd(text, 8);
+
+    expect(marksOf(tts.from(page))).toEqual(['0']);
+    expect(tts.takeStartPosition()).toBeCloseTo(50, 5);
+    expect(tts.getPlaybackRange(0.75)?.toString()).toBe('h');
   });
 });

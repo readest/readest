@@ -174,5 +174,5 @@ export const loadPairedAudiobookSection = (
     });
   }
 
-  return pars.length ? new MediaOverlaySection(pars, lang) : null;
+  return pars.length ? new MediaOverlaySection(pars, lang, 'approximate') : null;
 };

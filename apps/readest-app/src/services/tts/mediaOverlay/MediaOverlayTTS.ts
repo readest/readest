@@ -13,12 +13,69 @@
 
 import type { MediaOverlaySection, NarrationPar } from './MediaOverlaySection';
 
+const textFractionAt = (outer: Range, target: Range): number => {
+  try {
+    const outerDoc = outer.startContainer.ownerDocument ?? outer.startContainer;
+    const targetDoc = target.startContainer.ownerDocument ?? target.startContainer;
+    if (outerDoc !== targetDoc) return 0;
+    const relation = outer.comparePoint(target.startContainer, target.startOffset);
+    if (relation < 0) return 0;
+    if (relation > 0) return 1;
+    const total = outer.toString().length;
+    if (total <= 0) return 0;
+    const prefix = outer.cloneRange();
+    prefix.setEnd(target.startContainer, target.startOffset);
+    return Math.min(Math.max(prefix.toString().length / total, 0), 1);
+  } catch {
+    return 0;
+  }
+};
+
+const textRangeAt = (outer: Range, fraction: number): Range => {
+  const doc = outer.startContainer.ownerDocument!;
+  const root = doc.body ?? outer.commonAncestorContainer;
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const segments: { node: Text; start: number; end: number }[] = [];
+  let total = 0;
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const text = node as Text;
+    if (!outer.intersectsNode(text)) continue;
+    const start = text === outer.startContainer ? outer.startOffset : 0;
+    const end = text === outer.endContainer ? outer.endOffset : text.length;
+    if (end <= start) continue;
+    segments.push({ node: text, start, end });
+    total += end - start;
+  }
+
+  if (!segments.length || total <= 0) return outer.cloneRange();
+  let offset = Math.min(Math.max(fraction, 0), 1) * total;
+  for (const segment of segments) {
+    const length = segment.end - segment.start;
+    if (offset < length) {
+      const start = segment.start + Math.floor(offset);
+      const range = doc.createRange();
+      range.setStart(segment.node, start);
+      range.setEnd(segment.node, Math.min(start + 1, segment.end));
+      return range;
+    }
+    offset -= length;
+  }
+
+  const last = segments.at(-1)!;
+  const range = doc.createRange();
+  range.setStart(last.node, Math.max(last.start, last.end - 1));
+  range.setEnd(last.node, last.end);
+  return range;
+};
+
 export class MediaOverlayTTS {
   readonly doc: Document;
   highlight: (range: Range) => void;
   #section: MediaOverlaySection;
   #blockIndex = -1;
   #lastMark: string | null = null;
+  #pendingStartPosition: number | null = null;
+  #playbackProgress = 0;
 
   constructor(doc: Document, section: MediaOverlaySection, highlight: (range: Range) => void) {
     this.doc = doc;
@@ -39,6 +96,8 @@ export class MediaOverlayTTS {
     if (!block?.length) return undefined;
     this.#blockIndex = blockIndex;
     this.#lastMark = mark;
+    this.#pendingStartPosition = null;
+    this.#playbackProgress = 0;
     if (paused) {
       const par = mark ? this.#section.parByMark(mark) : block[0];
       if (par) this.highlight(par.range.cloneRange());
@@ -94,6 +153,7 @@ export class MediaOverlayTTS {
   setMark(mark: string): Range | undefined {
     const par = this.#section.parByMark(mark);
     if (!par) return undefined;
+    if (this.#lastMark !== mark) this.#playbackProgress = 0;
     this.#blockIndex = par.blockIndex;
     this.#lastMark = mark;
     this.highlight(par.range.cloneRange());
@@ -103,6 +163,26 @@ export class MediaOverlayTTS {
   getLastRange(): Range | undefined {
     if (!this.#lastMark) return undefined;
     return this.#section.parByMark(this.#lastMark)?.range.cloneRange();
+  }
+
+  // The one-character text location corresponding to the active recording
+  // position. Exact Media Overlays retain their publisher-authored par range;
+  // chapter-only pairings use a linear text/audio estimate for navigation.
+  getPlaybackRange(progress?: number | null): Range | undefined {
+    if (!this.#lastMark) return undefined;
+    const par = this.#section.parByMark(this.#lastMark);
+    if (!par) return undefined;
+    if (this.#section.textTiming === 'exact') return par.range.cloneRange();
+    if (progress !== null && progress !== undefined && Number.isFinite(progress)) {
+      this.#playbackProgress = Math.min(Math.max(progress, 0), 1);
+    }
+    return textRangeAt(par.range, this.#playbackProgress);
+  }
+
+  takeStartPosition(): number | null {
+    const position = this.#pendingStartPosition;
+    this.#pendingStartPosition = null;
+    return position;
   }
 
   // Resume at the par a location falls inside: the first one still running at
@@ -128,6 +208,13 @@ export class MediaOverlayTTS {
       pars.at(-1);
     // Unlike foliate's `from`, this leaves #lastMark pointing at the resolved
     // par so a later resume() picks up there instead of the block start.
-    return target ? this.#enter(target.blockIndex, target.markName) : this.#enter(0, null);
+    if (!target) return this.#enter(0, null);
+    const ssml = this.#enter(target.blockIndex, target.markName);
+    if (this.#section.textTiming === 'approximate') {
+      const fraction = textFractionAt(target.range, range);
+      this.#playbackProgress = fraction;
+      this.#pendingStartPosition = (target.clipEnd - target.clipBegin) * fraction;
+    }
+    return ssml;
   }
 }

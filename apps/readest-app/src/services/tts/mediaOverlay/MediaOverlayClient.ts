@@ -84,6 +84,7 @@ interface ClipRun {
 
 export interface NarrationAudioSource {
   narrator?: string;
+  textHighlight?: boolean;
   loadBlob: (href: string) => Promise<Blob>;
   resolveUrl?: (href: string) => Promise<string | null>;
   resolvePath?: (href: string) => Promise<string | null>;
@@ -126,6 +127,7 @@ export class MediaOverlayClient implements TTSClient {
   #objectUrl: string | null = null;
   #audioLoad: { href: string; promise: Promise<NarrationClock> } | null = null;
   #currentPar: NarrationPar | null = null;
+  #nextChunkPosition: number | null = null;
   #handoverTimer: ReturnType<typeof setTimeout> | null = null;
   #rate = 1;
   #lang = 'en';
@@ -164,6 +166,7 @@ export class MediaOverlayClient implements TTSClient {
   // Media Overlays; only the blob provider and narrator label differ.
   attachSource(source: NarrationAudioSource | null): void {
     this.#source = source;
+    this.#nextChunkPosition = null;
   }
 
   // The narration index for the section now playing; rebuilt on every section
@@ -354,7 +357,10 @@ export class MediaOverlayClient implements TTSClient {
       return;
     }
 
-    for (const run of toRuns(pars)) {
+    const runs = toRuns(pars);
+    const requestedStart = this.#nextChunkPosition;
+    this.#nextChunkPosition = null;
+    for (const [runIndex, run] of runs.entries()) {
       if (signal.aborted) return;
 
       let audio: NarrationClock;
@@ -377,14 +383,19 @@ export class MediaOverlayClient implements TTSClient {
       // the paragraph's first word ("me me"). Move the playhead only for a real
       // discontinuity: session start, a sentence skip, a scrub, a new audio file.
       const first = run.pars[0]!;
+      const requestedPosition =
+        runIndex === 0 && requestedStart !== null
+          ? first.clipBegin + Math.min(Math.max(requestedStart, 0), first.clipEnd - first.clipBegin)
+          : null;
       const alreadyRolling =
         audio.currentTime >= first.clipBegin - CLIP_CONTINUITY_TOLERANCE_SEC &&
         audio.currentTime < first.clipEnd;
-      if (!alreadyRolling) {
+      if (requestedPosition !== null || !alreadyRolling) {
+        const position = requestedPosition ?? first.clipBegin;
         // Native seek is async (plugin invoke); assigning currentTime alone can
         // race with play() and start from the previous playhead.
-        if (this.#native && this.#player) await this.#player.seek(first.clipBegin);
-        else audio.currentTime = first.clipBegin;
+        if (this.#native && this.#player) await this.#player.seek(position);
+        else audio.currentTime = position;
       }
       try {
         await audio.play();
@@ -519,7 +530,12 @@ export class MediaOverlayClient implements TTSClient {
       gapControl: false,
       liveRateChange: true,
       continuousTimeline: true,
+      textHighlight: this.#source?.textHighlight !== false,
     };
+  }
+
+  setNextChunkPosition(seconds: number): void {
+    this.#nextChunkPosition = Number.isFinite(seconds) ? Math.max(seconds, 0) : null;
   }
 
   getChunkPosition(): number | null {

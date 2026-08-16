@@ -450,6 +450,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
       const { anchor, index: ttsSectionIndex } = view.resolveCFI(cfi);
       if (viewSectionIndex !== ttsSectionIndex) {
+        if (!preview && !followingTTSLocationRef.current) return;
         // TTS crossed into a new section before the view caught up. The
         // `await onSectionChange` path in TTSController fires renderer.goTo
         // via handleSectionChange, but the new paginator's #goTo can resolve
@@ -608,7 +609,14 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     // sentence's ttsLocation (a sentence spanning a page break), so the word
     // position is the correct reference — otherwise the back-to-TTS button
     // wrongly appears after the view follows the word onto the next page.
-    const highlightCfi = ttsController.getCurrentHighlightCfi() ?? ttsLocation;
+    const highlightCfi =
+      ttsController.getCurrentPlaybackCfi() ??
+      ttsController.getCurrentHighlightCfi() ??
+      ttsLocation;
+    if (highlightCfi !== ttsLocation) {
+      viewSettings.ttsLocation = highlightCfi;
+      setViewSettings(bookKey, viewSettings);
+    }
     // ...and a sentence that straddles a page break keeps its start cfi on the
     // page behind once the view follows the voice, so a recording — which has no
     // word cfi to fall back on — needs the layout asked directly.
@@ -638,7 +646,8 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   const handleBackToCurrentTTSLocation = () => {
     const view = getView(bookKey);
     const viewSettings = getViewSettings(bookKey);
-    const ttsLocation = viewSettings?.ttsLocation;
+    const ttsLocation =
+      ttsControllerRef.current?.getCurrentPlaybackCfi() ?? viewSettings?.ttsLocation;
     if (!view || !ttsLocation) return;
 
     const resolved = view.resolveNavigation(ttsLocation);
@@ -933,9 +942,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           speakSelection && !narrateSelection
             ? genSSMLRaw(ttsSpeakRange!.toString().trim())
             : narrateSelection
-              ? view.tts?.from(ttsSpeakRange!)
+              ? ttsController.startFromRange(ttsSpeakRange!)
               : ttsFromRange
-                ? view.tts?.from(ttsFromRange)
+                ? ttsController.startFromRange(ttsFromRange)
                 : view.tts?.start();
         if (ssml) {
           const lang = parseSSMLLang(ssml, primaryLang) || 'en';

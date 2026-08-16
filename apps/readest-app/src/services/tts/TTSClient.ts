@@ -25,6 +25,10 @@ export interface TTSCapabilities {
   // utterances, so the controller must not insert its own pauses between them —
   // the recording already contains the pauses its narrator made.
   continuousTimeline?: boolean;
+  // Whether the source has text timing precise enough to draw a meaningful
+  // highlight. Chapter-only audiobook mappings keep location/navigation but
+  // disable the visual overlay.
+  textHighlight?: boolean;
 }
 
 export interface TTSClient {
@@ -69,4 +73,7 @@ export interface TTSClient {
   // Continuous recordings use this so chapter-scale clips do not snap back to
   // their start when the scrubber moves inside them.
   seekToChunkPosition?(seconds: number): Promise<boolean>;
+  // Apply an initial offset to the next chunk that starts playing. Used when a
+  // chapter-only recording estimates the current page's position in its track.
+  setNextChunkPosition?(seconds: number): void;
 }

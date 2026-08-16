@@ -79,6 +79,7 @@ describe('paired audiobook narration sections', () => {
       },
     ]);
     expect(section?.blockCount).toBe(2);
+    expect(section?.textTiming).toBe('approximate');
   });
 
   it('plays a shared audio chapter once and spans every mapped ebook chapter', () => {

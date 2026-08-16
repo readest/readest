@@ -222,6 +222,45 @@ describe('narration selection', () => {
     expect((await controller.getVoices('en'))[0]!.voices[0]!.name).toBe('External Narrator');
   });
 
+  test('starts paired narration at the current text position without drawing a chapter highlight', async () => {
+    const view = makePairedView();
+    const appService = {
+      openFile: vi.fn(async () => new File(['audio'], 'chapter.mp3')),
+      resolveFilePath: vi.fn(async () => '/books/chapter.mp3'),
+    } as unknown as AppService;
+    const controller = new TTSController(appService, view);
+    controller.pairedAudiobook = PAIRED_AUDIOBOOK;
+    await controller.init();
+    await controller.initViewTTS(0);
+
+    const doc = view.tts!.doc;
+    const text = doc.querySelector('p')!.firstChild as Text;
+    const page = doc.createRange();
+    page.setStart(text, 2);
+    page.setEnd(text, text.length);
+    const setStart = vi.spyOn(controller.ttsMediaOverlayClient, 'setNextChunkPosition');
+    const overlayer = { remove: vi.fn(), add: vi.fn() };
+    (
+      view.renderer as unknown as { getContents: () => unknown[]; primaryIndex: number }
+    ).getContents = () => [{ doc, index: 1, overlayer }];
+    (view.renderer as unknown as { primaryIndex: number }).primaryIndex = 1;
+    view.getCFI = vi.fn((_index, range: Range) => `cfi:${range.toString()}`);
+
+    expect(controller.startFromRange(page)).toContain('<mark name="0"/>');
+    expect(setStart).toHaveBeenCalledOnce();
+    expect(setStart.mock.calls[0]![0]).toBeGreaterThan(0);
+
+    const location = vi.fn();
+    controller.addEventListener('tts-highlight-mark', location);
+    controller.dispatchSpeakMark({ offset: 0, name: '0', text: 'Chapter', language: 'en' });
+
+    expect(overlayer.add).not.toHaveBeenCalled();
+    expect((location.mock.calls[0]![0] as CustomEvent).detail.cfi).not.toContain('Chapter 1Text.');
+    vi.spyOn(controller.ttsMediaOverlayClient, 'getChunkProgress').mockReturnValue(0.75);
+    expect(controller.getCurrentPlaybackCfi()).toMatch(/^cfi:.$/);
+    expect(controller.isSoundingSentenceOnScreen()).toBe(false);
+  });
+
   test('the narrator leads the voice list, and only for narrated books', async () => {
     const narrated = new TTSController(null, makeView([true]));
     await narrated.init();
