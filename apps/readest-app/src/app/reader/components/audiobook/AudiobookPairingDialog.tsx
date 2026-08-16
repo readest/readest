@@ -24,6 +24,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { AudiobookChapter, AudiobookChapterMapping, PairedAudiobook } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
+import StepProgress from './AudiobookStepProgress';
 
 type WizardStep = 'summary' | 'select' | 'anchor' | 'review';
 
@@ -54,34 +55,6 @@ const mappingRecord = (mappings: AudiobookChapterMapping[]): Record<string, stri
   Object.fromEntries(
     mappings.map(({ ebookChapterId, audioChapterId }) => [ebookChapterId, audioChapterId]),
   );
-
-const StepProgress = ({ current }: { current: number }) => {
-  const _ = useTranslation();
-  return (
-    <div
-      className='mb-5 grid grid-cols-3 gap-2'
-      role='progressbar'
-      aria-label={_('Audiobook pairing progress')}
-      aria-valuemin={1}
-      aria-valuemax={3}
-      aria-valuenow={current}
-    >
-      {[1, 2, 3].map((step) => (
-        <div
-          key={step}
-          className={clsx(
-            'eink-bordered flex h-8 items-center justify-center rounded-md border text-xs font-semibold',
-            step <= current
-              ? 'border-base-content bg-base-content text-base-100'
-              : 'border-base-300 bg-base-100 text-neutral-content',
-          )}
-        >
-          {step}
-        </div>
-      ))}
-    </div>
-  );
-};
 
 const SurfaceHeader = ({ title, description }: { title: string; description: string }) => (
   <div className='mb-5'>
