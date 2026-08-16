@@ -123,6 +123,10 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     );
   };
 
+  const handleToggleHideCovers = async () => {
+    await saveSysSettings(envConfig, 'libraryHideCovers', !settings.libraryHideCovers);
+  };
+
   const handleSetColumns = async (value: number) => {
     await saveSysSettings(envConfig, 'libraryColumns', value);
     await saveSysSettings(envConfig, 'libraryAutoColumns', false);
@@ -244,6 +248,16 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           transient
         />
       ))}
+
+      {/* Hide covers */}
+      <hr aria-hidden='true' className='border-base-200 my-1' />
+      <MenuItem
+        label={_('Hide covers')}
+        buttonClass='min-h-8 !py-1'
+        toggled={settings.libraryHideCovers}
+        onClick={handleToggleHideCovers}
+        transient
+      />
 
       {/* Recently read shelf */}
       <hr aria-hidden='true' className='border-base-200 my-1' />

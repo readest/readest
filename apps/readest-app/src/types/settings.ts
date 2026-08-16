@@ -438,6 +438,12 @@ export interface SystemSettings {
   libraryAutoColumns: boolean;
   libraryColumns: number;
   librarySkeuomorphicCovers: boolean;
+  /**
+   * When true, the library hides real cover images and shows a plain
+   * title/author panel instead. Privacy escape hatch for when the shelf is
+   * visible to others.
+   */
+  libraryHideCovers: boolean;
   /** Show the recently-read carousel at the top of the library (issue #3797). */
   libraryRecentShelfEnabled: boolean;
   /**
