@@ -25,6 +25,7 @@
 import { readFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const SRC_DIR = resolve('data/wordlens');
 const MANIFEST_FILE = 'manifest.json';
@@ -50,6 +51,23 @@ export function planSync(local, remote, { force = false } = {}) {
     .filter((p) => remoteSha.get(p.file) !== p.sha256)
     .map((p) => p.file)
     .sort();
+}
+
+// What clients actually act on: the schema version plus each pack's file -> sha256.
+// Order and derived fields (bytes, entries) are ignored, so a manifest regenerated
+// with identical content never triggers a pointless upload.
+const manifestKey = (m) =>
+  JSON.stringify([
+    m?.schemaVersion ?? null,
+    (m?.packs ?? []).map((p) => [p.file, p.sha256]).sort(),
+  ]);
+
+// Does the manifest itself need republishing? planSync can't answer this: RETIRING a
+// pair changes the manifest while leaving every remaining pack byte-identical, so a
+// run with nothing to upload must still publish, or the CDN keeps advertising a pack
+// we dropped. A null remote (unreachable) always counts as changed.
+export function manifestChanged(local, remote) {
+  return !remote || manifestKey(local) !== manifestKey(remote);
 }
 
 // The manifest currently published on the CDN, or null if it can't be read (first
@@ -135,11 +153,15 @@ async function main() {
   const remote = force ? null : await fetchRemoteManifest();
   if (!force && !remote) console.log('Remote manifest unavailable — uploading every pack.');
   const packs = planSync(local, remote, { force });
-  if (!packs.length) {
+  if (!packs.length && !manifestChanged(local, remote)) {
     console.log(`Everything on ${bucket}/wordlens/ is already up to date.`);
     return;
   }
-  console.log(`Uploading ${packs.length}/${local.packs.length} packs: ${packs.join(', ')}`);
+  if (packs.length) {
+    console.log(`Uploading ${packs.length}/${local.packs.length} packs: ${packs.join(', ')}`);
+  } else {
+    console.log(`No pack changed; republishing ${MANIFEST_FILE} only.`);
+  }
 
   let ok = 0;
   const failed = [];
@@ -164,9 +186,11 @@ async function main() {
   console.log(`\nSynced ${ok} pack(s) + ${MANIFEST_FILE} to ${bucket}/wordlens/`);
 }
 
-// Only run the CLI when executed directly, not when imported by the unit tests
-// (mirrors build-wordlens-data.mjs).
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+// Only run the CLI when executed directly, not when imported by the unit tests.
+// pathToFileURL rather than `file://${argv[1]}`: the latter mismatches on Windows
+// paths and on URL-reserved characters in the path, which would silently turn a
+// real `pnpm wordlens:sync` into a no-op.
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   main().catch((err) => {
     console.error(err instanceof Error ? err.message : err);
     process.exit(1);

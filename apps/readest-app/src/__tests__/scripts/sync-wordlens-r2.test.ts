@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planSync } from '../../../scripts/sync-wordlens-r2.mjs';
+import { planSync, manifestChanged } from '../../../scripts/sync-wordlens-r2.mjs';
 
 // The sync script mirrors data/wordlens to R2. Re-uploading all ~20 MB when a single
 // pair changed is wasted bandwidth, so planSync diffs the local manifest against the
@@ -54,5 +54,44 @@ describe('planSync', () => {
   it('ignores a remote pack that no longer exists locally', () => {
     const remote = { schemaVersion: 1, packs: [...local.packs, pack('it-en', 'ddd')] };
     expect(planSync(local, remote)).toEqual([]);
+  });
+});
+
+// planSync alone can't decide whether to publish the manifest: dropping a pair changes
+// the manifest while leaving every remaining pack byte-identical, so a "no packs to
+// upload" run must still republish, or the CDN keeps advertising the retired pack.
+describe('manifestChanged', () => {
+  it('is false when the CDN manifest already matches', () => {
+    expect(manifestChanged(local, local)).toBe(false);
+  });
+
+  it('is true when a pack was retired locally (no pack upload would be planned)', () => {
+    const remote = { schemaVersion: 1, packs: [...local.packs, pack('it-en', 'ddd')] };
+    expect(planSync(local, remote)).toEqual([]); // nothing to upload...
+    expect(manifestChanged(local, remote)).toBe(true); // ...but the manifest is stale
+  });
+
+  it('is true when a pack sha changed', () => {
+    const remote = {
+      schemaVersion: 1,
+      packs: [pack('en-zh', 'aaa'), pack('en-es', 'bbb'), pack('en-vi', 'OLD')],
+    };
+    expect(manifestChanged(local, remote)).toBe(true);
+  });
+
+  it('is true when the schema version changed', () => {
+    expect(manifestChanged(local, { ...local, schemaVersion: 2 })).toBe(true);
+  });
+
+  it('is true when the remote manifest is unreachable', () => {
+    expect(manifestChanged(local, null)).toBe(true);
+  });
+
+  it('ignores pack ordering and derived fields the client never diffs on', () => {
+    const remote = {
+      schemaVersion: 1,
+      packs: [{ ...pack('en-vi', 'ccc'), bytes: 999 }, pack('en-zh', 'aaa'), pack('en-es', 'bbb')],
+    };
+    expect(manifestChanged(local, remote)).toBe(false);
   });
 });
