@@ -109,6 +109,7 @@ const BookItem: React.FC<BookItemProps> = ({
           <div
             className='absolute inset-0 flex items-center justify-center bg-black/40'
             role='progressbar'
+            aria-label={book.title}
             aria-valuenow={transferProgress === -1 ? undefined : Math.round(transferProgress)}
             aria-valuemin={0}
             aria-valuemax={100}

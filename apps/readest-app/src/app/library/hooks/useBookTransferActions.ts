@@ -159,6 +159,7 @@ export const useBookTransferActions = (
             progressThrottle.push(progress),
           );
           progressThrottle.flush();
+          clearProgress(book.hash);
           await updateBook(envConfig, book);
           if (!silent) {
             eventDispatcher.dispatch('toast', {

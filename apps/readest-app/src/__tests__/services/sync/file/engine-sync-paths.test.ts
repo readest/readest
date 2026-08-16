@@ -284,6 +284,26 @@ describe('FileSyncEngine.downloadBookFile', () => {
       undefined,
     );
   });
+
+  test('forwards an onProgress handler to the streaming downloader', async () => {
+    const onProgress = vi.fn();
+    const downloadStream = vi.fn(async () => true);
+    const prepareLocalBookPath = vi.fn(async () => '/local/h1/B.epub');
+    const provider = fakeProvider({ list: hashDirListing(true), downloadStream });
+    const store = fakeStore({ prepareLocalBookPath });
+
+    const ok = await new FileSyncEngine(provider, store).downloadBookFile(
+      makeBook('h1'),
+      onProgress,
+    );
+
+    expect(ok).toBe(true);
+    expect(downloadStream).toHaveBeenCalledWith(
+      '/Readest/books/h1/B.epub',
+      '/local/h1/B.epub',
+      onProgress,
+    );
+  });
 });
 
 describe('FileSyncEngine.syncLibrary — receive strategy is pull-only', () => {

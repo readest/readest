@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
+import type { SetStateAction } from 'react';
 
 import type { Book } from '@/types/book';
 import type { EnvConfigType } from '@/services/environment';
 import type { AppService } from '@/types/system';
+import type { ProgressHandler } from '@/utils/transfer';
 
 /**
  * Issue #5062 — cloud sync providers are independently selectable, so a
@@ -69,13 +71,20 @@ const makeBook = (over: Partial<Book> = {}): Book => ({
   ...over,
 });
 
+type ProgressState = { [key: string]: number | null };
+
 const setup = (appService: AppService | null = null) => {
   const updateBook = vi.fn(async (_envConfig: EnvConfigType, _book: Book) => {});
-  const setBooksTransferProgress = vi.fn();
+  // Mimic React's functional state updates so tests can assert the actual
+  // progress transitions (indeterminate start, percentage updates, cleanup).
+  let progressState: ProgressState = {};
+  const setBooksTransferProgress = vi.fn((updater: SetStateAction<ProgressState>) => {
+    progressState = typeof updater === 'function' ? updater(progressState) : updater;
+  });
   const { result } = renderHook(() =>
     useBookTransferActions(envConfig, appService, updateBook, setBooksTransferProgress),
   );
-  return { result, updateBook };
+  return { result, updateBook, getProgress: () => progressState };
 };
 
 beforeEach(() => {
@@ -176,5 +185,47 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
     expect(queueDownload).not.toHaveBeenCalled();
     expect(updateBook).toHaveBeenCalledWith(envConfig, book);
     expect(ok).toBe(true);
+  });
+
+  it('shows indeterminate progress while a file-backend download runs and clears it on completion', async () => {
+    routing.backends = ['gdrive'];
+    let release!: (ok: boolean) => void;
+    runFileBookDownload.mockImplementationOnce(
+      () =>
+        new Promise<boolean>((res) => {
+          release = res;
+        }),
+    );
+
+    const { result, getProgress } = setup();
+    const book = makeBook({ uploadedAt: 12345 });
+    const promise = result.current.handleBookDownload(book, { queued: true });
+
+    // The native plugin cannot report a byte total up front, so the entry
+    // starts indeterminate (-1) until progress events arrive.
+    expect(getProgress()).toEqual({ [book.hash]: -1 });
+
+    release(true);
+    await promise;
+    expect(getProgress()).toEqual({});
+  });
+
+  it('reports percentage progress from a direct download and clears it on completion', async () => {
+    const downloadBook = vi.fn(
+      async (_book: Book, _redownload: boolean, _reuse: boolean, onProgress?: ProgressHandler) => {
+        onProgress?.({ progress: 50, total: 100, transferSpeed: 0 });
+      },
+    );
+
+    const { result, getProgress } = setup({ downloadBook } as unknown as AppService);
+    const book = makeBook({ uploadedAt: 12345 });
+    const promise = result.current.handleBookDownload(book, { queued: false });
+
+    // The direct-download progress handler emits synchronously; the throttled
+    // leading edge lands 50% before the transfer resolves.
+    expect(getProgress()).toEqual({ [book.hash]: 50 });
+
+    await promise;
+    expect(getProgress()).toEqual({});
   });
 });
