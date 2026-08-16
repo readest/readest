@@ -87,6 +87,19 @@ describe('manifestChanged', () => {
     expect(manifestChanged(local, null)).toBe(true);
   });
 
+  // resolvePack routes on source/target, so they belong in the key even though the
+  // generator cannot currently diverge them from the hash: packEntry reads both out of
+  // the pack's meta, which sha256 covers. Keeps the key honest if that ever changes.
+  it('is true when a pack is rerouted to another language, hash unchanged', () => {
+    const rerouted = { ...pack('en-vi', 'ccc'), target: 'vt' };
+    const remote = {
+      schemaVersion: 1,
+      packs: [pack('en-zh', 'aaa'), pack('en-es', 'bbb'), rerouted],
+    };
+    expect(planSync(local, remote)).toEqual([]); // file + sha256 both match
+    expect(manifestChanged(local, remote)).toBe(true);
+  });
+
   it('ignores pack ordering and derived fields the client never diffs on', () => {
     const remote = {
       schemaVersion: 1,

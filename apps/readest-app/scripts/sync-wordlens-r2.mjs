@@ -53,13 +53,16 @@ export function planSync(local, remote, { force = false } = {}) {
     .sort();
 }
 
-// What clients actually act on: the schema version plus each pack's file -> sha256.
-// Order and derived fields (bytes, entries) are ignored, so a manifest regenerated
-// with identical content never triggers a pointless upload.
+// What clients actually act on: the schema version, each pack's source/target (how
+// resolvePack routes a book language to a pack) and its file/sha256 (what gets fetched
+// and cache-busted). Order and derived fields (bytes, entries) are ignored, so a
+// manifest regenerated with identical content never triggers a pointless upload.
+// source/target are redundant today — packEntry reads them from the pack's meta, which
+// sha256 covers — but they are what routing depends on, so the key states it outright.
 const manifestKey = (m) =>
   JSON.stringify([
     m?.schemaVersion ?? null,
-    (m?.packs ?? []).map((p) => [p.file, p.sha256]).sort(),
+    (m?.packs ?? []).map((p) => [p.source, p.target, p.file, p.sha256]).sort(),
   ]);
 
 // Does the manifest itself need republishing? planSync can't answer this: RETIRING a
