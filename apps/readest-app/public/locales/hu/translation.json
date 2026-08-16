@@ -2097,5 +2097,6 @@
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Ez a mappa külső könyvtár. Törölje a jelölést, hogy a könyveit ne az eredeti helyükről olvassa; a későbbi importálások a könyveket a könyvtárba másolják.",
   "More Settings": "További beállítások",
   "Right-to-Left Pages": "Oldalak jobbról balra",
-  "Send Document Metadata": "Dokumentum metaadatainak küldése"
+  "Send Document Metadata": "Dokumentum metaadatainak küldése",
+  "Hide covers": "Könyvborítók elrejtése"
 }

@@ -2097,5 +2097,6 @@
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "این پوشه یک کتابخانه خارجی است. برای توقف خواندن کتاب‌ها از محل اصلی، تیک را بردارید؛ در واردسازی‌های بعدی کتاب‌ها به کتابخانه کپی می‌شوند.",
   "More Settings": "تنظیمات بیشتر",
   "Right-to-Left Pages": "صفحات راست به چپ",
-  "Send Document Metadata": "ارسال فراداده سند"
+  "Send Document Metadata": "ارسال فراداده سند",
+  "Hide covers": "پنهان کردن جلد کتاب‌ها"
 }

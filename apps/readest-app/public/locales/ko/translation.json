@@ -2041,5 +2041,6 @@
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "이 폴더는 외부 라이브러리입니다. 선택을 해제하면 원래 위치에서 책을 읽지 않으며, 이후 가져오기에서는 책이 라이브러리로 복사됩니다.",
   "More Settings": "추가 설정",
   "Right-to-Left Pages": "오른쪽에서 왼쪽으로 페이지 넘김",
-  "Send Document Metadata": "문서 메타데이터 전송"
+  "Send Document Metadata": "문서 메타데이터 전송",
+  "Hide covers": "책 표지 숨기기"
 }

@@ -2097,5 +2097,6 @@
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Bu klasör harici bir kitaplıktır. Kitaplarını bulundukları yerden okumayı durdurmak için işareti kaldırın; sonraki içe aktarmalarda kitaplar kitaplığa kopyalanır.",
   "More Settings": "Diğer ayarlar",
   "Right-to-Left Pages": "Sağdan Sola Sayfalar",
-  "Send Document Metadata": "Belge Meta Verilerini Gönder"
+  "Send Document Metadata": "Belge Meta Verilerini Gönder",
+  "Hide covers": "Kitap kapaklarını gizle"
 }

@@ -2321,5 +2321,6 @@
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "هذا المجلد مكتبة خارجية. ألغِ التحديد للتوقف عن قراءة كتبه من مكانها؛ وستُنسخ الكتب إلى المكتبة في عمليات الاستيراد القادمة.",
   "More Settings": "مزيد من الإعدادات",
   "Right-to-Left Pages": "صفحات من اليمين إلى اليسار",
-  "Send Document Metadata": "إرسال البيانات الوصفية للمستند"
+  "Send Document Metadata": "إرسال البيانات الوصفية للمستند",
+  "Hide covers": "إخفاء أغلفة الكتب"
 }
