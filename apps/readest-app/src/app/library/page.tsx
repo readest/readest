@@ -301,8 +301,10 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       | typeof LibraryGroupByType.Subject;
     groupName: string;
   } | null>(null);
+  // Direct (non-queued) download progress, keyed by book hash. Entries are
+  // added and removed by useBookTransferActions, its only writer.
   const [booksTransferProgress, setBooksTransferProgress] = useState<{
-    [key: string]: number | null;
+    [key: string]: number;
   }>({});
   const [pendingNavigationBookIds, setPendingNavigationBookIds] = useState<string[] | null>(null);
   const isInitiating = useRef(false);
@@ -1095,36 +1097,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
   });
 
   // Queue downloads (the TransferQueuePanel path) report progress into the
-  // transfer store, not through the transfer actions hook, so mirror active
-  // download transfers back into booksTransferProgress to drive the cover
-  // progress overlay. The entry is dropped when the transfer leaves
-  // pending/in_progress (completed, failed, cancelled).
-  useEffect(() => {
-    const syncFromTransferQueue = () => {
-      const { transfers } = useTransferStore.getState();
-      setBooksTransferProgress((prev) => {
-        let merged = prev;
-        let changed = false;
-        for (const t of Object.values(transfers)) {
-          if (t.kind !== 'book' || t.type !== 'download') continue;
-          const active = t.status === 'pending' || t.status === 'in_progress';
-          if (active && merged[t.bookHash] !== t.progress) {
-            if (!changed) merged = { ...prev };
-            merged[t.bookHash] = t.progress;
-            changed = true;
-          } else if (!active && merged[t.bookHash] != null) {
-            if (!changed) merged = { ...prev };
-            delete merged[t.bookHash];
-            changed = true;
-          }
-        }
-        return changed ? merged : prev;
-      });
-    };
-    syncFromTransferQueue();
-    return useTransferStore.subscribe(syncFromTransferQueue);
-  }, []);
-
+  // transfer store instead of through this hook. Bookshelf reads them straight
+  // from the store via `selectActiveBookDownloadProgress` and merges them with
+  // this state, so `booksTransferProgress` keeps a single writer.
   const { handleBookUpload, handleBookDownload } = useBookTransferActions(
     envConfig,
     appService,

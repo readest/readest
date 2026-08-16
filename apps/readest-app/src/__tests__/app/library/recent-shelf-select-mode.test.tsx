@@ -72,6 +72,7 @@ const baseProps = {
   selectedBooks: new Set<string>(),
   toggleSelection: noop,
   handleSetSelectMode: noop,
+  transferProgress: {},
 };
 
 const tapSlide = (title: string) => {
