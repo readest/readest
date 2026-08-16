@@ -47,6 +47,15 @@
       "entries": 15070
     },
     {
+      "pair": "en-hu",
+      "source": "en",
+      "target": "hu",
+      "file": "en-hu.json",
+      "bytes": 932125,
+      "sha256": "ff6ce132e4f7438377a5aef7f755298ee507e31f3016d6f34b03ff53c124a0f3",
+      "entries": 13641
+    },
+    {
       "pair": "en-pt",
       "source": "en",
       "target": "pt",
