@@ -91,18 +91,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           localStorage.setItem('token', result.data.accessToken);
           setToken(result.data.accessToken);
         }
-      } else {
-        await logout();
       }
     } catch (e) {
       console.error('Refresh token call failed:', e);
     }
-  }, [logout]);
+  }, []);
 
   useEffect(() => {
     // Attempt initial token refresh on mount
     refresh();
-  }, []);
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const userData: User = {
+          id: session.user.id,
+          email: session.user.email,
+          user_metadata: session.user.user_metadata,
+        };
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+      } else if (_event === 'SIGNED_OUT') {
+        setUser(null);
+        localStorage.removeItem('user');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [refresh]);
 
   const value = useMemo(
     () => ({ token, user, login, logout, refresh }),
