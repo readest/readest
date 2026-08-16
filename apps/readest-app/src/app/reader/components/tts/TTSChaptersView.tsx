@@ -32,12 +32,18 @@ const TTSChaptersView: React.FC<TTSChaptersViewProps> = ({
     downloadAll,
     cancelChapter,
     cancelAll,
+    clearDownloads,
     cacheBytes,
+    statuses,
+    clearing,
   } = downloads;
 
   const completeCount = chapters.filter((c) => statusOf(c) === 'complete').length;
   const anyIncomplete = completeCount < chapters.length;
   const queueCount = items.length;
+  const hasExplicitDownloads = [...statuses.values()].some(
+    (status) => status.pinned || status.active,
+  );
 
   const activeRowRef = useRef<HTMLDivElement | null>(null);
 
@@ -57,24 +63,37 @@ const TTSChaptersView: React.FC<TTSChaptersViewProps> = ({
           })}
           {cacheBytes > 0 ? ` · ${formatBytes(cacheBytes)}` : ''}
         </span>
-        {queueCount > 0 ? (
-          <button
-            type='button'
-            className='text-primary shrink-0 text-sm font-medium sm:text-xs'
-            onClick={cancelAll}
-          >
-            {_('Cancel all ({{count}})', { count: queueCount })}
-          </button>
-        ) : (
-          <button
-            type='button'
-            className='text-primary shrink-0 text-sm font-medium disabled:opacity-40 sm:text-xs'
-            disabled={!anyIncomplete}
-            onClick={() => void downloadAll()}
-          >
-            {_('Download all')}
-          </button>
-        )}
+        <div className='flex shrink-0 items-center gap-2'>
+          {hasExplicitDownloads && (
+            <button
+              type='button'
+              className='touch-target text-base-content/70 shrink-0 text-sm font-medium disabled:opacity-40 sm:text-xs'
+              disabled={clearing}
+              onClick={() => void clearDownloads()}
+            >
+              {_('Clear all')}
+            </button>
+          )}
+          {queueCount > 0 ? (
+            <button
+              type='button'
+              className='touch-target text-primary shrink-0 text-sm font-medium sm:text-xs'
+              disabled={clearing}
+              onClick={cancelAll}
+            >
+              {_('Cancel all ({{count}})', { count: queueCount })}
+            </button>
+          ) : (
+            <button
+              type='button'
+              className='touch-target text-primary shrink-0 text-sm font-medium disabled:opacity-40 sm:text-xs'
+              disabled={!anyIncomplete || clearing}
+              onClick={() => void downloadAll()}
+            >
+              {_('Download all')}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className='flex w-full flex-col'>
@@ -140,6 +159,8 @@ const TTSChaptersView: React.FC<TTSChaptersViewProps> = ({
                   item?.status === 'in_progress' && item.total > 0 ? item.done / item.total : 0
                 }
                 isEink={isEink}
+                chapterLabel={chapter.label}
+                disabled={clearing}
                 onDownload={() => void downloadChapter(chapter)}
                 onCancel={() => cancelChapter(chapter)}
               />

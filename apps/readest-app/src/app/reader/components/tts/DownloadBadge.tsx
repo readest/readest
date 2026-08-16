@@ -21,6 +21,8 @@ interface DownloadBadgeProps {
   // 0..1 while active; drives the ring. Ignored otherwise.
   progress: number;
   isEink: boolean;
+  chapterLabel: string;
+  disabled?: boolean;
   onDownload: () => void;
   onCancel: () => void;
 }
@@ -38,6 +40,8 @@ const DownloadBadge: React.FC<DownloadBadgeProps> = ({
   failed,
   progress,
   isEink,
+  chapterLabel,
+  disabled = false,
   onDownload,
   onCancel,
 }) => {
@@ -52,9 +56,10 @@ const DownloadBadge: React.FC<DownloadBadgeProps> = ({
     return (
       <button
         type='button'
-        aria-label={_('Stop downloading')}
+        aria-label={`${_('Stop downloading')}: ${chapterLabel}`}
+        disabled={disabled}
         onClick={onCancel}
-        className='relative flex shrink-0 items-center justify-center'
+        className='touch-target relative flex shrink-0 items-center justify-center'
         style={{ width: size, height: size }}
       >
         <svg width={size} height={size} className='rotate-[-90deg]'>
@@ -88,9 +93,10 @@ const DownloadBadge: React.FC<DownloadBadgeProps> = ({
     return (
       <button
         type='button'
-        aria-label={_('Remove from queue')}
+        aria-label={`${_('Remove from queue')}: ${chapterLabel}`}
+        disabled={disabled}
         onClick={onCancel}
-        className={clsx('flex shrink-0 items-center justify-center rounded-full')}
+        className={clsx('touch-target flex shrink-0 items-center justify-center rounded-full')}
         style={{ width: size, height: size }}
       >
         <MdOutlineSchedule size={size} className='text-base-content/70' />
@@ -108,11 +114,11 @@ const DownloadBadge: React.FC<DownloadBadgeProps> = ({
   return (
     <button
       type='button'
-      aria-label={label}
-      disabled={status === 'complete'}
+      aria-label={`${label}: ${chapterLabel}`}
+      disabled={status === 'complete' || disabled}
       onClick={onClick ?? undefined}
       className={clsx(
-        'flex shrink-0 items-center justify-center rounded-full',
+        'touch-target flex shrink-0 items-center justify-center rounded-full',
         status !== 'complete' && 'not-eink:hover:bg-base-200',
       )}
       style={{ width: size, height: size }}
