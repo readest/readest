@@ -98,6 +98,23 @@ describe('replicaTransferIntegration', () => {
     expect(appService.openFile).toHaveBeenCalledWith('b/webster.mdx', 'Dictionaries');
   });
 
+  test('publishes a full SHA-256 for plugin ZIP sources', async () => {
+    const appService = makeFakeAppService() as unknown as AppService;
+    startReplicaTransferIntegration(appService);
+    mockPublish.mockResolvedValue(undefined);
+
+    await eventDispatcher.dispatch('replica-transfer-complete', {
+      kind: 'dictionary',
+      replicaId: 'plugin-content-id',
+      type: 'upload',
+      files: [{ logical: 'reader.zip', lfp: 'bundle/reader.zip', byteSize: 18 }],
+    });
+
+    const manifestFiles = mockPublish.mock.calls[0]![2];
+    expect(manifestFiles[0]!.partialMd5).toMatch(/^[0-9a-f]{32}$/u);
+    expect(manifestFiles[0]!.sha256).toMatch(/^[0-9a-f]{64}$/u);
+  });
+
   test('upload event carries reincarnation token into manifest publish', async () => {
     const appService = makeFakeAppService() as unknown as AppService;
     startReplicaTransferIntegration(appService);

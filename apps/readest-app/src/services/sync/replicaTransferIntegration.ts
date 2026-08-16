@@ -5,6 +5,7 @@ import { publishReplicaManifest } from './replicaPublish';
 import type { AppService } from '@/types/system';
 import type { ClosableFile } from '@/utils/file';
 import type { ReplicaTransferFile } from '@/store/transferStore';
+import { sha256File } from '@/services/dictionaries/plugins/integrity';
 
 interface ReplicaTransferCompleteDetail {
   kind: string;
@@ -15,7 +16,7 @@ interface ReplicaTransferCompleteDetail {
   filenames?: string[];
 }
 
-type DownloadHandler = (replicaId: string) => void;
+type DownloadHandler = (replicaId: string) => void | Promise<void>;
 
 const downloadHandlers = new Map<string, DownloadHandler>();
 
@@ -51,9 +52,17 @@ const handleReplicaUpload = async (detail: ReplicaTransferCompleteDetail): Promi
       detail.files.map(async (f) => {
         const file = await appServiceRef!.openFile(f.lfp, base);
         const partialMd5 = await partialMD5(file);
+        const sha256 = f.logical.toLowerCase().endsWith('.zip')
+          ? await sha256File(file)
+          : undefined;
         const closable = file as ClosableFile;
         if (closable && closable.close) await closable.close();
-        return { filename: f.logical, byteSize: f.byteSize, partialMd5 };
+        return {
+          filename: f.logical,
+          byteSize: f.byteSize,
+          partialMd5,
+          ...(sha256 ? { sha256 } : {}),
+        };
       }),
     );
     await publishReplicaManifest(
@@ -67,14 +76,14 @@ const handleReplicaUpload = async (detail: ReplicaTransferCompleteDetail): Promi
   }
 };
 
-const handleReplicaDownload = (detail: ReplicaTransferCompleteDetail): void => {
+const handleReplicaDownload = async (detail: ReplicaTransferCompleteDetail): Promise<void> => {
   // Per-kind handler clears the `unavailable` placeholder flag now that
   // binaries are on disk. Stores register at boot via
   // registerReplicaDownloadHandler.
   const handler = downloadHandlers.get(detail.kind);
   if (!handler) return;
   try {
-    handler(detail.replicaId);
+    await handler(detail.replicaId);
   } catch (err) {
     console.warn('replica-transfer-complete download handler failed', err);
   }
@@ -88,7 +97,7 @@ const handleReplicaTransferComplete = async (event: CustomEvent): Promise<void> 
   if (detail.type === 'upload') {
     await handleReplicaUpload(detail);
   } else if (detail.type === 'download') {
-    handleReplicaDownload(detail);
+    await handleReplicaDownload(detail);
   }
   // 'delete' is fire-and-forget; no follow-up needed.
 };

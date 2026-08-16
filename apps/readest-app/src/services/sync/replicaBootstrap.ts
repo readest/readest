@@ -1,4 +1,4 @@
-import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
+import { findDictionaryByContentId, useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useCustomTextureStore } from '@/store/customTextureStore';
 import { dictionaryAdapter, DICTIONARY_KIND } from './adapters/dictionary';
@@ -33,7 +33,19 @@ export const bootstrapReplicaAdapters = (): void => {
   // replicaTransferIntegration once binaries are on disk. Each store
   // exposes a markAvailable* method that clears the placeholder
   // `unavailable` flag set by the pull orchestrator.
-  registerReplicaDownloadHandler(DICTIONARY_KIND, (replicaId) => {
+  registerReplicaDownloadHandler(DICTIONARY_KIND, async (replicaId) => {
+    const dict = findDictionaryByContentId(replicaId);
+    if (!dict || dict.kind !== 'plugin') {
+      useCustomDictionaryStore.getState().markAvailableByContentId(replicaId);
+      return;
+    }
+    const env = getReplicaPersistEnv();
+    if (!env) return;
+    const appService = await env.getAppService();
+    const { materializePluginDictionary } = await import(
+      '@/services/dictionaries/plugins/materialize'
+    );
+    await materializePluginDictionary(appService, dict);
     useCustomDictionaryStore.getState().markAvailableByContentId(replicaId);
   });
   // Fonts need more than the unavailable flag cleared: the binary must

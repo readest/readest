@@ -3,6 +3,7 @@ import { buildLocalDictFromRow } from '@/services/sync/replicaDictionaryApply';
 import type { ImportedDictionary } from '@/services/dictionaries/types';
 import type { ReplicaAdapter } from '@/services/sync/replicaRegistry';
 import type { ReplicaRow } from '@/types/replica';
+import { parsePluginDictionaryMetadata } from '@/services/dictionaries/plugins/record';
 
 export const DICTIONARY_KIND = 'dictionary';
 export const DICTIONARY_SCHEMA_VERSION = 1;
@@ -28,6 +29,8 @@ export const primaryDictionaryFile = (d: ImportedDictionary): string | null => {
       return d.files.slob ?? null;
     case 'bgl':
       return d.files.bgl ?? null;
+    case 'plugin':
+      return d.files.pluginSource ?? null;
     default:
       return null;
   }
@@ -67,6 +70,15 @@ export const enumerateDictionaryFiles = (
     case 'bgl':
       push(d.files.bgl);
       break;
+    case 'plugin':
+      if (d.files.pluginSource) {
+        out.push({
+          logical: d.files.pluginSource,
+          lfp: `${d.bundleDir}/${d.files.pluginSource}`,
+          byteSize: d.plugin?.source.byteSize ?? 0,
+        });
+      }
+      break;
   }
   return out;
 };
@@ -93,13 +105,16 @@ export const dictionaryAdapter: ReplicaAdapter<ImportedDictionary> = {
     if (d.lang !== undefined) fields['lang'] = d.lang;
     if (d.unsupported) fields['unsupported'] = true;
     if (d.unsupportedReason) fields['unsupportedReason'] = d.unsupportedReason;
+    if (d.kind === 'plugin' && d.plugin) fields['plugin'] = d.plugin;
     return fields;
   },
 
   unpack(fields: Record<string, unknown>): ImportedDictionary {
+    const kind = fields['kind'] as ImportedDictionary['kind'];
+    const plugin = kind === 'plugin' ? parsePluginDictionaryMetadata(fields['plugin']) : undefined;
     return {
       id: '',
-      kind: fields['kind'] as ImportedDictionary['kind'],
+      kind,
       name: String(fields['name'] ?? ''),
       bundleDir: '',
       files: {},
@@ -108,6 +123,7 @@ export const dictionaryAdapter: ReplicaAdapter<ImportedDictionary> = {
       unsupported: fields['unsupported'] === true ? true : undefined,
       unsupportedReason:
         fields['unsupportedReason'] !== undefined ? String(fields['unsupportedReason']) : undefined,
+      ...(plugin ? { plugin } : {}),
     };
   },
 

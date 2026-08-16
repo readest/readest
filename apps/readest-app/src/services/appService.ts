@@ -311,10 +311,38 @@ export abstract class BaseAppService implements AppService {
     files: SelectedFile[],
     existingDictionaries: ImportedDictionary[] = [],
   ): Promise<DictSvc.ImportDictionariesResult> {
-    return DictSvc.importDictionaries(this.fs, files, existingDictionaries);
+    const { importPluginDictionaries } = await import('./dictionaries/plugins/import');
+    const pluginResult = await importPluginDictionaries(this, files, existingDictionaries);
+    const replacedPluginIds = new Set(
+      pluginResult.replacements.flatMap((replacement) => replacement.oldIds),
+    );
+    const dictionariesForLegacyImport = [
+      ...existingDictionaries.filter((dictionary) => !replacedPluginIds.has(dictionary.id)),
+      ...pluginResult.imported,
+      ...pluginResult.replacements.map((replacement) => replacement.newDict),
+    ];
+    const legacyResult = await DictSvc.importDictionaries(
+      this.fs,
+      pluginResult.unclaimed,
+      dictionariesForLegacyImport,
+    );
+    return {
+      imported: [...pluginResult.imported, ...legacyResult.imported],
+      replacements: [...pluginResult.replacements, ...legacyResult.replacements],
+      orphanFiles: legacyResult.orphanFiles,
+    };
   }
 
   async deleteDictionary(dict: ImportedDictionary): Promise<void> {
+    if (dict.kind === 'plugin') {
+      const [{ evictProvider }, { getDictionaryPluginControlStore }] = await Promise.all([
+        import('./dictionaries/registry'),
+        import('./dictionaries/plugins/controlService'),
+      ]);
+      evictProvider(dict.id);
+      const controlStore = await getDictionaryPluginControlStore(this);
+      await controlStore.removeDictionary(dict.id);
+    }
     return DictSvc.deleteDictionary(this.fs, dict);
   }
 

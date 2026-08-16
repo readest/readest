@@ -116,6 +116,7 @@
     "@googleapis/androidpublisher": "^36.0.0",
     "@mozilla/readability": "^0.6.0",
     "@napi-rs/wasm-runtime": "^1.1.1",
+    "@noble/hashes": "^1.8.0",
     "@opennextjs/cloudflare": "^1.19.4",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",

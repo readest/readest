@@ -29,12 +29,13 @@ const baseRow = (overrides: Partial<ReplicaRow> = {}): ReplicaRow => ({
 });
 
 const manifest = (
-  files: { filename: string; byteSize?: number; partialMd5?: string }[],
+  files: { filename: string; byteSize?: number; partialMd5?: string; sha256?: string }[],
 ): Manifest => ({
   files: files.map((f) => ({
     filename: f.filename,
     byteSize: f.byteSize ?? 0,
     partialMd5: f.partialMd5 ?? '',
+    ...(f.sha256 ? { sha256: f.sha256 } : {}),
   })),
   schemaVersion: 1,
 });
@@ -118,6 +119,12 @@ describe('filesFromManifest', () => {
     expect(filesFromManifest(m, 'bgl')).toEqual({ bgl: 'w.bgl' });
   });
 
+  test('plugin manifest: retains only its source archive', () => {
+    expect(filesFromManifest(manifest([{ filename: 'reader.zip' }]), 'plugin')).toEqual({
+      pluginSource: 'reader.zip',
+    });
+  });
+
   test('null manifest returns empty files object', () => {
     expect(filesFromManifest(null, 'mdict')).toEqual({});
   });
@@ -185,6 +192,49 @@ describe('buildLocalDictFromRow', () => {
     const dict = buildLocalDictFromRow(row, 'b')!;
     expect(dict.unsupported).toBe(true);
     expect(dict.unsupportedReason).toBe('encrypted MDX');
+  });
+
+  test('reconstructs a plugin placeholder with synced source metadata', () => {
+    const row = baseRow({
+      fields_jsonb: {
+        name: { v: 'Reader Japanese', t: hlcPack(NOW, 0, DEV) as Hlc, s: DEV },
+        kind: { v: 'plugin', t: hlcPack(NOW, 1, DEV) as Hlc, s: DEV },
+        addedAt: { v: NOW, t: hlcPack(NOW, 2, DEV) as Hlc, s: DEV },
+        plugin: {
+          v: {
+            recordVersion: 1,
+            pluginId: 'readest.yomitan',
+            formatId: 'yomitan',
+            sourceFormatVersion: 3,
+            indexVersion: 1,
+            source: {
+              filename: 'reader.zip',
+              byteSize: 123,
+              sha256: 'a'.repeat(64),
+            },
+          },
+          t: hlcPack(NOW, 3, DEV) as Hlc,
+          s: DEV,
+        },
+      },
+      manifest_jsonb: manifest([
+        {
+          filename: 'reader.zip',
+          byteSize: 123,
+          partialMd5: 'b'.repeat(32),
+          sha256: 'a'.repeat(64),
+        },
+      ]),
+    });
+    expect(buildLocalDictFromRow(row, 'bundle')).toMatchObject({
+      kind: 'plugin',
+      files: { pluginSource: 'reader.zip' },
+      unavailable: true,
+      plugin: {
+        pluginId: 'readest.yomitan',
+        source: { sha256: 'a'.repeat(64) },
+      },
+    });
   });
 
   test('falls back to current time when addedAt missing', () => {

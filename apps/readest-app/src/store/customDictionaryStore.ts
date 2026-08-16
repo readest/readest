@@ -516,11 +516,40 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
       const persisted = settings?.customDictionaries ?? [];
       const persistedSettings = settings?.dictionarySettings ?? DEFAULT_DICTIONARY_SETTINGS;
       const appService = await envConfig.getAppService();
+      const pluginDictionaries = persisted.filter(
+        (dict) => !dict.deletedAt && dict.kind === 'plugin',
+      );
+      const pluginControlStore =
+        pluginDictionaries.length > 0
+          ? await import('@/services/dictionaries/plugins/controlService').then((module) =>
+              module.getDictionaryPluginControlStore(appService),
+            )
+          : undefined;
       const dictionaries = await Promise.all(
         persisted.map(async (dict) => {
           if (dict.deletedAt) return dict;
           const exists = await appService.exists(dict.bundleDir, 'Dictionaries');
-          return exists ? dict : { ...dict, unavailable: true };
+          if (!exists) return { ...dict, unavailable: true };
+          if (dict.kind !== 'plugin' || !dict.plugin || !pluginControlStore) return dict;
+          const generation = await pluginControlStore.getActiveGeneration(dict.id);
+          if (
+            generation?.pluginId === dict.plugin.pluginId &&
+            generation.indexVersion === dict.plugin.indexVersion
+          ) {
+            return dict;
+          }
+          try {
+            const { materializePluginDictionary } = await import(
+              '@/services/dictionaries/plugins/materialize'
+            );
+            await materializePluginDictionary(appService, dict, {
+              controlStore: pluginControlStore,
+            });
+            return { ...dict, unavailable: undefined };
+          } catch (error) {
+            console.warn('Failed to materialize plugin dictionary', dict.id, error);
+            return { ...dict, unavailable: true };
+          }
         }),
       );
 

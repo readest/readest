@@ -120,7 +120,7 @@ export const publishReplicaDelete = async (kind: string, contentId: string): Pro
 export const publishReplicaManifest = async (
   kind: string,
   contentId: string,
-  files: { filename: string; byteSize: number; partialMd5: string }[],
+  files: { filename: string; byteSize: number; partialMd5: string; sha256?: string }[],
   reincarnation?: string,
 ): Promise<void> => {
   if (!isSyncCategoryEnabled(kind)) return;

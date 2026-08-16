@@ -16,6 +16,8 @@ export interface ManifestFile {
   filename: string;
   byteSize: number;
   partialMd5: string;
+  /** Full source integrity hash for plugin-backed archives. */
+  sha256?: string;
   mtime?: number;
 }
 

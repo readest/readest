@@ -123,6 +123,9 @@ importers:
       '@napi-rs/wasm-runtime':
         specifier: ^1.1.1
         version: 1.1.4(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)
+      '@noble/hashes':
+        specifier: ^1.8.0
+        version: 1.8.0
       '@opennextjs/cloudflare':
         specifier: ^1.19.4
         version: 1.19.9(next@16.2.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(@types/node@22.19.19)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(wrangler@4.90.0(@cloudflare/workers-types@4.20260518.1)(@types/node@22.19.19))

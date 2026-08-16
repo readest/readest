@@ -63,7 +63,7 @@ interface CustomDictionariesProps {
 interface ProviderRow {
   id: string;
   label: string;
-  kind: 'builtin' | 'stardict' | 'mdict' | 'dict' | 'slob' | 'bgl' | 'web';
+  kind: 'builtin' | 'stardict' | 'mdict' | 'dict' | 'slob' | 'bgl' | 'plugin' | 'web';
   badge: string;
   imported?: ImportedDictionary;
   /** Set on `kind: 'web'` rows. The shape distinguishes deletable custom
@@ -481,7 +481,9 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
                 ? _('Slob')
                 : dict.kind === 'bgl'
                   ? _('Babylon')
-                  : _('StarDict'),
+                  : dict.kind === 'plugin'
+                    ? _('Yomitan')
+                    : _('StarDict'),
         imported: dict,
         disabled,
         reason,

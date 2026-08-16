@@ -76,6 +76,26 @@ describe('pack ∘ unpack = identity for the synced subset', () => {
     expect(unpacked.unsupported).toBe(true);
     expect(unpacked.unsupportedReason).toBe('encrypted MDX');
   });
+
+  test('plugin source contract round-trips without device-local materialization', () => {
+    const d = baseDict({
+      kind: 'plugin',
+      files: { pluginSource: 'reader.zip' },
+      plugin: {
+        recordVersion: 1,
+        pluginId: 'readest.yomitan',
+        formatId: 'yomitan',
+        sourceFormatVersion: 3,
+        indexVersion: 1,
+        source: { filename: 'reader.zip', byteSize: 123, sha256: 'a'.repeat(64) },
+      },
+    });
+    const packed = dictionaryAdapter.pack(d);
+    expect(packed['plugin']).toEqual(d.plugin);
+    expect(packed['bundleDir']).toBeUndefined();
+    expect(packed['files']).toBeUndefined();
+    expect(dictionaryAdapter.unpack(packed).plugin).toEqual(d.plugin);
+  });
 });
 
 describe('primaryDictionaryFile', () => {
@@ -109,6 +129,12 @@ describe('primaryDictionaryFile', () => {
 
   test('bgl → .bgl', () => {
     expect(primaryDictionaryFile(baseDict({ kind: 'bgl', files: { bgl: 'w.bgl' } }))).toBe('w.bgl');
+  });
+
+  test('plugin → retained source archive', () => {
+    expect(
+      primaryDictionaryFile(baseDict({ kind: 'plugin', files: { pluginSource: 'reader.zip' } })),
+    ).toBe('reader.zip');
   });
 
   test('returns null when no primary file is recorded', () => {
@@ -174,6 +200,25 @@ describe('enumerateDictionaryFiles', () => {
     const d = baseDict({ kind: 'bgl', bundleDir: 'bg', files: { bgl: 'w.bgl' } });
     const files = enumerateDictionaryFiles(d);
     expect(files.map((f) => f.logical)).toEqual(['w.bgl']);
+  });
+
+  test('plugin bundle: source archive only, with its known byte size', () => {
+    const d = baseDict({
+      kind: 'plugin',
+      bundleDir: 'yp',
+      files: { pluginSource: 'reader.zip' },
+      plugin: {
+        recordVersion: 1,
+        pluginId: 'readest.yomitan',
+        formatId: 'yomitan',
+        sourceFormatVersion: 3,
+        indexVersion: 1,
+        source: { filename: 'reader.zip', byteSize: 123, sha256: 'a'.repeat(64) },
+      },
+    });
+    expect(enumerateDictionaryFiles(d)).toEqual([
+      { logical: 'reader.zip', lfp: 'yp/reader.zip', byteSize: 123 },
+    ]);
   });
 
   test('absent files are skipped', () => {

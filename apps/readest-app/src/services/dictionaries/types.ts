@@ -14,6 +14,7 @@ export type DictionaryProviderKind =
   | 'dict'
   | 'slob'
   | 'bgl'
+  | 'plugin'
   | 'web';
 
 export interface DictionaryLookupContext {
@@ -65,7 +66,7 @@ export interface DictionaryProvider {
  */
 export interface ImportedDictionary {
   id: string;
-  kind: 'stardict' | 'mdict' | 'dict' | 'slob' | 'bgl';
+  kind: 'stardict' | 'mdict' | 'dict' | 'slob' | 'bgl' | 'plugin';
   /** Display name, derived from `.ifo` `bookname`, `.mdx` `Title`, slob `label`, BGL title, or DICT `00databaseshort`. */
   name: string;
   /**
@@ -122,6 +123,22 @@ export interface ImportedDictionary {
     slob?: string;
     // Babylon bundle: a single self-contained `.bgl` file.
     bgl?: string;
+    // Bundled dictionary-plugin source archive. Derived SQLite indexes stay
+    // device-local in the plugin control database and never sync here.
+    pluginSource?: string;
+  };
+  /** Declarative format/source metadata for a bundled dictionary plugin. */
+  plugin?: {
+    recordVersion: 1;
+    pluginId: string;
+    formatId: string;
+    sourceFormatVersion: number;
+    indexVersion: number;
+    source: {
+      filename: string;
+      byteSize: number;
+      sha256: string;
+    };
   };
   /** Source language code if known. */
   lang?: string;
