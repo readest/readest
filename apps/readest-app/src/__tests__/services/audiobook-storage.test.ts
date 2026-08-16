@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { AudiobookChapterMapping, PairedAudiobook } from '@/types/book';
 import {
   importPairedAudiobook,
+  replacePairedAudiobook,
   removePairedAudiobook,
   type AudiobookStorage,
 } from '@/services/audiobook/storage';
@@ -46,10 +47,9 @@ describe('paired audiobook storage', () => {
     ]);
 
     expect(storage.createDir).toHaveBeenCalledWith('book-hash/audiobook', 'Books', true);
-    expect(storage.writeFile).toHaveBeenCalledWith(
-      'book-hash/audiobook/audio-0-01_ Opening_.mp3',
-      'Books',
-      file,
+    expect(storage.writeFile).toHaveBeenCalledWith(association.files[0]!.path, 'Books', file);
+    expect(association.files[0]!.path).toMatch(
+      /^book-hash\/audiobook\/\d+-audio-0-01_ Opening_\.mp3$/,
     );
     expect(association).toMatchObject({
       version: 1,
@@ -59,7 +59,7 @@ describe('paired audiobook storage', () => {
         {
           id: 'audio-0',
           name: '01: Opening?.mp3',
-          path: 'book-hash/audiobook/audio-0-01_ Opening_.mp3',
+          path: association.files[0]!.path,
           duration: 42,
         },
       ],
@@ -80,7 +80,7 @@ describe('paired audiobook storage', () => {
     const storage = makeStorage();
     const file = new File([], 'Novel.m4b', { type: 'audio/mp4' });
 
-    await importPairedAudiobook(
+    const association = await importPairedAudiobook(
       storage,
       'book-hash',
       [],
@@ -109,7 +109,7 @@ describe('paired audiobook storage', () => {
     expect(storage.copyFile).toHaveBeenCalledWith(
       '/picked/Novel.m4b',
       'None',
-      'book-hash/audiobook/audio-0-Novel.m4b',
+      association.files[0]!.path,
       'Books',
     );
     expect(storage.writeFile).not.toHaveBeenCalled();
@@ -125,12 +125,17 @@ describe('paired audiobook storage', () => {
       createdAt: 1,
     };
 
-    await removePairedAudiobook(storage, 'book-hash', association);
+    const persist = vi.fn().mockResolvedValue(undefined);
+    await removePairedAudiobook(storage, 'book-hash', association, persist);
 
+    expect(persist).toHaveBeenCalledWith(undefined);
     expect(storage.deleteDir).toHaveBeenCalledWith('book-hash/audiobook', 'Books', true);
+    expect(persist.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(storage.deleteDir).mock.invocationCallOrder[0]!,
+    );
   });
 
-  it('deletes files left behind when an existing pairing is replaced', async () => {
+  it('persists a replacement before deleting files left behind by the previous pairing', async () => {
     const storage = makeStorage();
     const file = new File(['new'], 'new.mp3', { type: 'audio/mpeg' });
     const previous: PairedAudiobook = {
@@ -141,7 +146,8 @@ describe('paired audiobook storage', () => {
       createdAt: 1,
     };
 
-    await importPairedAudiobook(
+    const persist = vi.fn().mockResolvedValue(undefined);
+    await replacePairedAudiobook(
       storage,
       'book-hash',
       [],
@@ -165,8 +171,134 @@ describe('paired audiobook storage', () => {
         },
       ],
       previous,
+      persist,
     );
 
+    expect(persist).toHaveBeenCalledOnce();
     expect(storage.deleteFile).toHaveBeenCalledWith('book-hash/audiobook/old.mp3', 'Books');
+    expect(persist.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(storage.deleteFile).mock.invocationCallOrder.at(-1)!,
+    );
+  });
+
+  it('never deletes paths outside the current book audiobook directory', async () => {
+    const storage = makeStorage();
+    const file = new File(['new'], 'new.mp3', { type: 'audio/mpeg' });
+    const previous: PairedAudiobook = {
+      version: 1,
+      files: [
+        { id: 'safe', name: 'safe.mp3', path: 'book-hash/audiobook/safe.mp3', duration: 10 },
+        { id: 'other', name: 'other.epub', path: 'other-book/book.epub', duration: 10 },
+        {
+          id: 'traversal',
+          name: 'private.json',
+          path: 'book-hash/audiobook/../../private.json',
+          duration: 10,
+        },
+        { id: 'absolute', name: 'absolute', path: '/private/absolute', duration: 10 },
+      ],
+      chapters: [],
+      mappings: [],
+      createdAt: 1,
+    };
+
+    await replacePairedAudiobook(
+      storage,
+      'book-hash',
+      [],
+      [
+        {
+          file,
+          metadata: {
+            id: 'audio-0',
+            name: file.name,
+            duration: 20,
+            chapters: [
+              {
+                id: 'audio-0:0',
+                fileId: 'audio-0',
+                label: 'New',
+                start: 0,
+                end: 20,
+              },
+            ],
+          },
+        },
+      ],
+      previous,
+      vi.fn().mockResolvedValue(undefined),
+    );
+
+    expect(storage.deleteFile).toHaveBeenCalledTimes(1);
+    expect(storage.deleteFile).toHaveBeenCalledWith('book-hash/audiobook/safe.mp3', 'Books');
+  });
+
+  it('rolls back newly copied files and preserves old files when config persistence fails', async () => {
+    const storage = makeStorage();
+    const file = new File(['new'], 'new.mp3', { type: 'audio/mpeg' });
+    const previous: PairedAudiobook = {
+      version: 1,
+      files: [{ id: 'old-0', name: 'old.mp3', path: 'book-hash/audiobook/old.mp3', duration: 10 }],
+      chapters: [],
+      mappings: [],
+      createdAt: 1,
+    };
+    const persistError = new Error('config write failed');
+
+    await expect(
+      replacePairedAudiobook(
+        storage,
+        'book-hash',
+        [],
+        [
+          {
+            file,
+            metadata: {
+              id: 'audio-0',
+              name: file.name,
+              duration: 20,
+              chapters: [
+                {
+                  id: 'audio-0:0',
+                  fileId: 'audio-0',
+                  label: 'New',
+                  start: 0,
+                  end: 20,
+                },
+              ],
+            },
+          },
+        ],
+        previous,
+        vi.fn().mockRejectedValue(persistError),
+      ),
+    ).rejects.toBe(persistError);
+
+    const deletedPaths = vi.mocked(storage.deleteFile).mock.calls.map(([path]) => path);
+    expect(deletedPaths).not.toContain('book-hash/audiobook/old.mp3');
+    expect(deletedPaths).toHaveLength(1);
+    expect(deletedPaths[0]).toMatch(/^book-hash\/audiobook\/\d+-audio-0-new\.mp3$/);
+  });
+
+  it('does not remove files when clearing the persisted association fails', async () => {
+    const storage = makeStorage();
+    const association: PairedAudiobook = {
+      version: 1,
+      files: [],
+      chapters: [],
+      mappings: [],
+      createdAt: 1,
+    };
+
+    await expect(
+      removePairedAudiobook(
+        storage,
+        'book-hash',
+        association,
+        vi.fn().mockRejectedValue(new Error('config write failed')),
+      ),
+    ).rejects.toThrow('config write failed');
+
+    expect(storage.deleteDir).not.toHaveBeenCalled();
   });
 });

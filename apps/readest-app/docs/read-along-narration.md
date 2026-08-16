@@ -1,10 +1,11 @@
 ## Read-Along Narration
 
 Readest can play a recorded human narration instead of synthesizing speech while
-keeping the rest of Read Aloud: highlighting, page-following, chapter skip, the
-scrubber and seek, speed, sleep timer, lock-screen and CarPlay controls, and
-background sessions. Narration can come from an EPUB 3 Media Overlay or from a
-separate audiobook paired to a reflowable EPUB.
+keeping the rest of Read Aloud: page-following, chapter skip, the scrubber and
+seek, speed, sleep timer, lock-screen and CarPlay controls, and background
+sessions. Narration can come from an EPUB 3 Media Overlay, which also supplies
+timed text highlighting, or from a separate audiobook paired to a reflowable
+EPUB.
 
 ### Prior art
 
@@ -58,8 +59,8 @@ forced-alignment library underneath several such tools).
 
 Readest deliberately does **not** infer sentence or word timings itself. Tools
 like Storyteller remain the route to exact phrase-level highlighting. Pairing a
-separate audiobook instead provides chapter-level alignment: each mapped ebook
-chapter becomes one highlight and one timed audio clip.
+separate audiobook instead provides chapter-level alignment for navigation and
+playback, without drawing a text highlight that would imply finer timing.
 
 ### Pairing a separate audiobook
 
@@ -72,11 +73,20 @@ The pairing wizard follows Continuum's anchor-and-review flow:
    leave ebook chapters without audio, reuse an audio chapter where necessary,
    and ignore extra tracks before creating the association.
 
+When one audio chapter is reused for consecutive ebook chapters, Readest treats
+them as one continuous run. Chapters in the same spine document share one text
+span; runs crossing spine documents divide the clip into equal chapter slices
+so playback continues instead of restarting the recording at every section
+boundary.
+
 The wizard reports chapter-count mismatches rather than hiding them. Audio and
 the association stay under `Books/<book hash>/audiobook/` on the current device;
 they are not uploaded by Readest cloud or file sync. Normal reading progress is
 still synced, so another device with its own local pairing resumes at the same
-ebook chapter.
+ebook chapter. Replacements use new file paths and persist the new association
+before removing old audio. Re-importing or deduplicating an edited EPUB copies
+the paired files and rewrites those paths before retiring the previous book
+directory.
 
 ### Using it
 
@@ -97,10 +107,11 @@ Two behaviours worth knowing:
   read-alongs, and what Storyteller produces at its finest granularity) gives
   true word-by-word highlighting for free. Readest does not interpolate word
   positions inside a clip, so the highlight can never drift out of sync.
-- **Paired audiobooks highlight by chapter.** A separate audiobook has no text
-  timings, so the mapped chapter remains highlighted while its audio chapter or
-  track plays. Switching between reading and listening therefore resumes at
-  chapter granularity.
+- **Paired audiobooks do not highlight text.** A separate audiobook has no
+  sentence or word timings, so highlighting a whole mapped chapter would be
+  misleading. Readest instead maps the current page proportionally into that
+  chapter's audio span when narration starts and offers a return-to-narration
+  action if the reader moves elsewhere while audio continues.
 - **Unnarrated sections are skipped.** Publishers routinely leave front matter,
   indexes and notes out of the recording. Playback steps over those sections
   rather than stalling on silence; starting Read Aloud in unnarrated front
@@ -146,9 +157,10 @@ Consequences of that shape:
   `SectionTimeline`, so a narrated chapter reports the recording's real length
   with no `~`. It is deliberately not routed through the text-keyed duration
   cache in `ttsDuration.ts`, where two identical sentences would collide.
-- **Capabilities, not identity checks.** The client reports
-  `{ wordBoundaries: false, mediaClock: true, gapControl: false, liveRateChange: true, continuousTimeline: true }`,
-  and `ensureTimeline`/`supportsPlaybackInfo`/`getPlaybackInfo` gate on
+- **Capabilities, not identity checks.** Embedded overlays report
+  `{ wordBoundaries: false, textHighlight: true, mediaClock: true, gapControl: false, liveRateChange: true, continuousTimeline: true }`;
+  a paired audiobook reports the same clock capabilities with
+  `textHighlight: false`. `ensureTimeline`/`supportsPlaybackInfo`/`getPlaybackInfo` gate on
   `mediaClock` rather than comparing against the Edge client — which is what
   `TTSCapabilities` in `TTSClient.ts` existed for.
 - **A continuous timeline is handed over, not stopped.** `continuousTimeline`

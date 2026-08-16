@@ -21,5 +21,6 @@ describe('Audiobook StepProgress', () => {
     expect(steps[1]?.classList.contains('step-neutral')).toBe(true);
     expect(steps[2]?.classList.contains('step-neutral')).toBe(false);
     expect(steps[1]?.getAttribute('aria-current')).toBe('step');
+    expect(Array.from(steps, (step) => step.textContent)).toEqual(['Files', 'Align', 'Review']);
   });
 });

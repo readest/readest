@@ -1,0 +1,96 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { AudiobookPreviewPlayer } from '@/services/audiobook/preview';
+import type { AppService } from '@/types/system';
+
+class FakeAudio {
+  static instances: FakeAudio[] = [];
+  src = '';
+  currentTime = 0;
+  play = vi.fn().mockResolvedValue(undefined);
+  pause = vi.fn();
+  listeners = new Map<string, Set<() => void>>();
+
+  constructor() {
+    FakeAudio.instances.push(this);
+  }
+
+  addEventListener(type: string, listener: () => void) {
+    const listeners = this.listeners.get(type) ?? new Set();
+    listeners.add(listener);
+    this.listeners.set(type, listeners);
+  }
+
+  removeEventListener(type: string, listener: () => void) {
+    this.listeners.get(type)?.delete(listener);
+  }
+}
+
+const createObjectURL = vi.fn(() => 'blob:audiobook-preview');
+const revokeObjectURL = vi.fn();
+
+const makeAppService = (overrides: Partial<AppService> = {}) =>
+  ({
+    appPlatform: 'web',
+    isMobileApp: false,
+    openFile: vi.fn(),
+    resolveFilePath: vi.fn(),
+    ...overrides,
+  }) as AppService;
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  FakeAudio.instances = [];
+  createObjectURL.mockClear();
+  revokeObjectURL.mockClear();
+  vi.stubGlobal('Audio', FakeAudio);
+  Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectURL });
+  Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revokeObjectURL });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
+
+describe('AudiobookPreviewPlayer', () => {
+  it('previews the selected clip and toggles it off without retaining a blob URL', async () => {
+    const onStopped = vi.fn();
+    const player = new AudiobookPreviewPlayer(makeAppService(), onStopped);
+    const file = new File(['audio'], 'book.m4b', { type: 'audio/mp4' });
+
+    expect(await player.toggle({ id: 'audio-0:1', file, start: 12, end: 42 })).toBe(true);
+    const audio = FakeAudio.instances[0]!;
+    expect(audio.src).toBe('blob:audiobook-preview');
+    expect(audio.currentTime).toBe(12);
+    expect(audio.play).toHaveBeenCalledOnce();
+
+    expect(await player.toggle({ id: 'audio-0:1', file, start: 12, end: 42 })).toBe(false);
+    expect(audio.pause).toHaveBeenCalledOnce();
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:audiobook-preview');
+    expect(onStopped).toHaveBeenCalledWith('audio-0:1');
+  });
+
+  it('stops at the end of a short chapter preview and closes files it opened', async () => {
+    const close = vi.fn().mockResolvedValue(undefined);
+    const opened = Object.assign(new File(['audio'], 'stored.m4b'), { close });
+    const appService = makeAppService({
+      openFile: vi.fn().mockResolvedValue(opened),
+    });
+    const onStopped = vi.fn();
+    const player = new AudiobookPreviewPlayer(appService, onStopped);
+
+    await player.toggle({
+      id: 'audio-0:0',
+      path: 'hash/audiobook/stored.m4b',
+      base: 'Books',
+      start: 5,
+      end: 7,
+    });
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    expect(FakeAudio.instances[0]!.pause).toHaveBeenCalledOnce();
+    expect(close).toHaveBeenCalledOnce();
+    expect(onStopped).toHaveBeenCalledWith('audio-0:0');
+  });
+});

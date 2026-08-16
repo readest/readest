@@ -111,7 +111,6 @@ export class NativeNarrationPlayer {
       return res.session;
     });
     await this.#nativeSession;
-    this.#startPolling();
   }
 
   // Forget the native session id after another engine (Edge) aborted the shared
@@ -190,11 +189,14 @@ export class NativeNarrationPlayer {
     await invoke('plugin:native-tts|playout_control', { payload: { action: 'resume' } });
     this.#cache.playing = true;
     this.#cache.at = performance.now();
+    this.#startPolling();
   }
 
   pause(): void {
+    const mediaSec = this.currentTime;
     this.#userPaused = true;
-    this.#cache.playing = false;
+    this.#cache = { mediaSec, playing: false, at: performance.now() };
+    this.#stopPolling();
     void invoke('plugin:native-tts|playout_control', { payload: { action: 'pause' } }).catch(
       () => {},
     );
@@ -299,7 +301,7 @@ export class NativeNarrationPlayer {
   }
 
   async #poll(): Promise<void> {
-    if (this.#resolvedSession === null || this.#ended) return;
+    if (this.#resolvedSession === null || this.#ended || this.#userPaused) return;
     try {
       const pos = await invoke<PlayoutPosition>('plugin:native-tts|playout_position');
       if (pos.session !== this.#resolvedSession) return;

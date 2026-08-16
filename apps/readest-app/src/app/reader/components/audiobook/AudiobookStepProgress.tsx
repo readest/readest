@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 const StepProgress = ({ current }: { current: number }) => {
   const _ = useTranslation();
+  const labels = [_('Files'), _('Align'), _('Review')];
 
   return (
     <ul
@@ -16,14 +17,19 @@ const StepProgress = ({ current }: { current: number }) => {
       aria-valuemax={3}
       aria-valuenow={current}
     >
-      {[1, 2, 3].map((step) => (
-        <li
-          key={step}
-          className={clsx('step', step <= current && 'step-neutral')}
-          aria-label={_('Step {{step}}', { step })}
-          aria-current={step === current ? 'step' : undefined}
-        />
-      ))}
+      {labels.map((label, index) => {
+        const step = index + 1;
+        return (
+          <li
+            key={step}
+            className={clsx('step', step <= current && 'step-neutral')}
+            aria-label={_('Step {{step}}: {{label}}', { step, label })}
+            aria-current={step === current ? 'step' : undefined}
+          >
+            {label}
+          </li>
+        );
+      })}
     </ul>
   );
 };

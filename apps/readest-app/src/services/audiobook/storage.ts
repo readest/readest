@@ -16,6 +16,30 @@ export interface AudiobookImportFile {
 
 export const getAudiobookDirectory = (bookHash: string): string => `${bookHash}/audiobook`;
 
+export const isAudiobookFilePath = (bookHash: string, path: string): boolean => {
+  const prefix = `${getAudiobookDirectory(bookHash)}/`;
+  const filename = path.startsWith(prefix) ? path.slice(prefix.length) : '';
+  return (
+    filename.length > 0 &&
+    filename !== '.' &&
+    filename !== '..' &&
+    !filename.includes('/') &&
+    !filename.includes('\\')
+  );
+};
+
+const deleteAudiobookFiles = async (
+  storage: AudiobookStorage,
+  bookHash: string,
+  files: AudiobookFile[],
+): Promise<void> => {
+  for (const file of files) {
+    if (isAudiobookFilePath(bookHash, file.path)) {
+      await storage.deleteFile(file.path, 'Books');
+    }
+  }
+};
+
 export const importPairedAudiobook = async (
   storage: AudiobookStorage,
   bookHash: string,
@@ -25,27 +49,30 @@ export const importPairedAudiobook = async (
 ): Promise<PairedAudiobook> => {
   const directory = getAudiobookDirectory(bookHash);
   await storage.createDir(directory, 'Books', true);
+  const createdAt = Math.max(Date.now(), (previous?.createdAt ?? 0) + 1);
 
   const files: AudiobookFile[] = [];
-  for (const { file, sourcePath, metadata } of importFiles) {
-    const filename = `${metadata.id}-${makeSafeFilename(metadata.name)}`;
-    const path = `${directory}/${filename}`;
-    if (sourcePath) {
-      await storage.copyFile(sourcePath, 'None', path, 'Books');
-    } else {
-      await storage.writeFile(path, 'Books', file);
+  const createdPaths: string[] = [];
+  try {
+    for (const { file, sourcePath, metadata } of importFiles) {
+      const filename = `${createdAt}-${metadata.id}-${makeSafeFilename(metadata.name)}`;
+      const path = `${directory}/${filename}`;
+      createdPaths.push(path);
+      if (sourcePath) {
+        await storage.copyFile(sourcePath, 'None', path, 'Books');
+      } else {
+        await storage.writeFile(path, 'Books', file);
+      }
+      files.push({
+        id: metadata.id,
+        name: metadata.name,
+        path,
+        duration: metadata.duration,
+      });
     }
-    files.push({
-      id: metadata.id,
-      name: metadata.name,
-      path,
-      duration: metadata.duration,
-    });
-  }
-
-  const nextPaths = new Set(files.map((file) => file.path));
-  for (const oldFile of previous?.files ?? []) {
-    if (!nextPaths.has(oldFile.path)) await storage.deleteFile(oldFile.path, 'Books');
+  } catch (error) {
+    await Promise.allSettled(createdPaths.map((path) => storage.deleteFile(path, 'Books')));
+    throw error;
   }
 
   const title = importFiles.find(({ metadata }) => metadata.title)?.metadata.title;
@@ -57,14 +84,50 @@ export const importPairedAudiobook = async (
     files,
     chapters: importFiles.flatMap(({ metadata }) => metadata.chapters),
     mappings,
-    createdAt: Date.now(),
+    createdAt,
   };
+};
+
+export const replacePairedAudiobook = async (
+  storage: AudiobookStorage,
+  bookHash: string,
+  mappings: AudiobookChapterMapping[],
+  importFiles: AudiobookImportFile[],
+  previous: PairedAudiobook | undefined,
+  persist: (association: PairedAudiobook) => Promise<void>,
+): Promise<PairedAudiobook> => {
+  const association = await importPairedAudiobook(
+    storage,
+    bookHash,
+    mappings,
+    importFiles,
+    previous,
+  );
+  try {
+    await persist(association);
+  } catch (error) {
+    await Promise.allSettled(
+      association.files.map((file) => storage.deleteFile(file.path, 'Books')),
+    );
+    throw error;
+  }
+
+  const nextPaths = new Set(association.files.map((file) => file.path));
+  const obsolete = (previous?.files ?? []).filter((file) => !nextPaths.has(file.path));
+  try {
+    await deleteAudiobookFiles(storage, bookHash, obsolete);
+  } catch (error) {
+    console.warn('Failed to remove replaced audiobook files:', error);
+  }
+  return association;
 };
 
 export const removePairedAudiobook = async (
   storage: AudiobookStorage,
   bookHash: string,
   _association: PairedAudiobook,
+  persist: (association: undefined) => Promise<void>,
 ): Promise<void> => {
+  await persist(undefined);
   await storage.deleteDir(getAudiobookDirectory(bookHash), 'Books', true);
 };

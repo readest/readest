@@ -82,6 +82,20 @@ describe('paired audiobook narration sections', () => {
     expect(section?.textTiming).toBe('approximate');
   });
 
+  it('resolves named and empty TOC anchors to the following chapter text', () => {
+    const doc = makeDoc(
+      '<a name="one"></a><h1>Chapter 1</h1><p>First text.</p>' +
+        '<a id="two"></a><h1>Chapter 2</h1><p>Second text.</p>',
+    );
+
+    const section = loadPairedAudiobookSection(book, association, 1, doc, 'en');
+
+    expect(section?.pars.map((par) => par.range.toString())).toEqual([
+      'Chapter 1First text.',
+      'Chapter 2Second text.',
+    ]);
+  });
+
   it('plays a shared audio chapter once and spans every mapped ebook chapter', () => {
     const shared: PairedAudiobook = {
       ...association,
@@ -99,5 +113,28 @@ describe('paired audiobook narration sections', () => {
     expect(section?.pars).toHaveLength(1);
     expect(section?.pars[0]?.text).toBe('Chapter 1');
     expect(section?.pars[0]?.range.toString()).toBe('Chapter 1First text.Chapter 2Second text.');
+  });
+
+  it('splits a shared audio chapter across consecutive EPUB spine sections', () => {
+    const shared: PairedAudiobook = {
+      ...association,
+      mappings: [
+        { ebookChapterId: 'chapter.xhtml#one', audioChapterId: 'audio-0:0' },
+        { ebookChapterId: 'chapter.xhtml#two', audioChapterId: 'audio-0:0' },
+        { ebookChapterId: 'last.xhtml', audioChapterId: 'audio-0:0' },
+      ],
+    };
+    const chapterDoc = makeDoc(
+      '<h1 id="one">Chapter 1</h1><p>First text.</p><h1 id="two">Chapter 2</h1><p>Second text.</p>',
+    );
+    const lastDoc = makeDoc('<h1>Chapter 3</h1><p>Third text.</p>');
+
+    const chapterSection = loadPairedAudiobookSection(book, shared, 1, chapterDoc, 'en');
+    const lastSection = loadPairedAudiobookSection(book, shared, 2, lastDoc, 'en');
+
+    expect(chapterSection?.pars).toHaveLength(1);
+    expect(chapterSection?.pars[0]).toMatchObject({ clipBegin: 5, clipEnd: 25 });
+    expect(lastSection?.pars).toHaveLength(1);
+    expect(lastSection?.pars[0]).toMatchObject({ clipBegin: 25, clipEnd: 35 });
   });
 });

@@ -8,6 +8,14 @@ interface PairedChapterEntry {
   sectionIndex: number;
   audioChapter: AudiobookChapter;
   audioFile: AudiobookFile;
+  clipBegin: number;
+  clipEnd: number;
+}
+
+interface PairedChapterCandidate
+  extends Omit<PairedChapterEntry, 'tocItems' | 'clipBegin' | 'clipEnd'> {
+  tocItem: TOCItem;
+  orderIndex: number;
 }
 
 interface TextPoint {
@@ -44,10 +52,9 @@ const pairedChapterEntries = (
   const mappingByEbook = new Map(
     association.mappings.map((mapping) => [mapping.ebookChapterId, mapping.audioChapterId]),
   );
-  const usedAudioChapters = new Set<string>();
-  const entries: PairedChapterEntry[] = [];
+  const candidates: PairedChapterCandidate[] = [];
 
-  for (const { href } of tocByHref.values()) {
+  for (const [orderIndex, { href }] of [...tocByHref.values()].entries()) {
     const audioChapterId = mappingByEbook.get(href);
     if (!audioChapterId) continue;
     const audioChapter = chapterById.get(audioChapterId);
@@ -56,21 +63,50 @@ const pairedChapterEntries = (
     const sectionIndex = sectionIndexForHref(book, href);
     if (!audioChapter || !audioFile || !tocItem || sectionIndex < 0) continue;
 
-    // Continuum permits several ebook chapters to point at one audio chapter.
-    // Consecutive chapters in the same document become one text span over one
-    // clip. A later non-consecutive duplicate remains skipped so sequential
-    // playback never rewinds and repeats the recording.
-    if (usedAudioChapters.has(audioChapterId)) {
-      const previous = entries.at(-1);
-      if (previous?.audioChapter.id === audioChapterId && previous.sectionIndex === sectionIndex) {
-        previous.tocItems.push(tocItem);
-      }
-      continue;
-    }
-    usedAudioChapters.add(audioChapterId);
-    entries.push({ tocItems: [tocItem], sectionIndex, audioChapter, audioFile });
+    candidates.push({ tocItem, sectionIndex, audioChapter, audioFile, orderIndex });
   }
 
+  const entries: PairedChapterEntry[] = [];
+  for (let index = 0; index < candidates.length; ) {
+    const first = candidates[index]!;
+    let end = index + 1;
+    while (
+      end < candidates.length &&
+      candidates[end]!.audioChapter.id === first.audioChapter.id &&
+      candidates[end]!.orderIndex === candidates[end - 1]!.orderIndex + 1
+    ) {
+      end += 1;
+    }
+
+    const run = candidates.slice(index, end);
+    const duration = first.audioChapter.end - first.audioChapter.start;
+    for (const [runIndex, candidate] of run.entries()) {
+      // A chapter-only pairing has no finer timing signal. Divide one reused
+      // clip into equal chapter slices so a run can cross spine documents
+      // without replaying the whole recording at every section boundary.
+      const clipBegin = first.audioChapter.start + (duration * runIndex) / run.length;
+      const clipEnd = first.audioChapter.start + (duration * (runIndex + 1)) / run.length;
+      const previous = entries.at(-1);
+      if (
+        previous?.audioChapter.id === candidate.audioChapter.id &&
+        previous.sectionIndex === candidate.sectionIndex &&
+        runIndex > 0
+      ) {
+        previous.tocItems.push(candidate.tocItem);
+        previous.clipEnd = clipEnd;
+      } else {
+        entries.push({
+          tocItems: [candidate.tocItem],
+          sectionIndex: candidate.sectionIndex,
+          audioChapter: candidate.audioChapter,
+          audioFile: candidate.audioFile,
+          clipBegin,
+          clipEnd,
+        });
+      }
+    }
+    index = end;
+  }
   return entries;
 };
 
@@ -101,8 +137,22 @@ const fragmentId = (href: string): string | null => {
 
 const chapterStart = (doc: Document, href: string): TextPoint | null => {
   const id = fragmentId(href);
-  const root = (id ? doc.getElementById(id) : null) ?? doc.body;
-  return root ? (readableTextPoints(root)?.first ?? null) : null;
+  if (!id) return doc.body ? (readableTextPoints(doc.body)?.first ?? null) : null;
+
+  const root = doc.getElementById(id) ?? doc.getElementsByName(id).item(0);
+  if (!root) return null;
+  const point = readableTextPoints(root)?.first;
+  if (point) return point;
+
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const text = node as Text;
+    if (!text.data.trim()) continue;
+    if (root.compareDocumentPosition(text) & Node.DOCUMENT_POSITION_FOLLOWING) {
+      return { node: text, offset: text.data.length - text.data.trimStart().length };
+    }
+  }
+  return null;
 };
 
 const chapterRange = (
@@ -169,8 +219,8 @@ export const loadPairedAudiobookSection = (
       range,
       text: firstTocItem.label.trim() || entry.audioChapter.label,
       audioHref: entry.audioFile.path,
-      clipBegin: entry.audioChapter.start,
-      clipEnd: entry.audioChapter.end,
+      clipBegin: entry.clipBegin,
+      clipEnd: entry.clipEnd,
     });
   }
 

@@ -117,7 +117,18 @@ vi.mock('@/store/libraryStore', () => ({
 }));
 
 vi.mock('@/utils/serializer', () => ({
-  serializeConfig: () => JSON.stringify({ progress: [5, 100], location: 'cfi-loc' }),
+  serializeConfig: () =>
+    JSON.stringify({
+      progress: [5, 100],
+      location: 'cfi-loc',
+      audiobook: {
+        version: 1,
+        files: [{ path: 'h1/audiobook/private.m4b' }],
+        chapters: [],
+        mappings: [],
+        createdAt: 1,
+      },
+    }),
 }));
 
 vi.mock('@/utils/xcfi', () => ({
@@ -212,6 +223,16 @@ describe('useProgressSync', () => {
 
     expect(h.syncConfigsMock).toHaveBeenCalledWith(expect.any(Array), 'h1', 'm1', 'push');
     expect(h.syncBooksMock).not.toHaveBeenCalled();
+  });
+
+  test('does not upload the device-local audiobook association', async () => {
+    renderHook(() => useProgressSync('h1-view1'));
+    await flushAutoSync();
+
+    const push = h.syncConfigsMock.mock.calls.find((call) => (call as unknown[])[3] === 'push') as
+      | unknown[]
+      | undefined;
+    expect((push?.[0] as unknown[])?.[0]).not.toHaveProperty('audiobook');
   });
 
   test('retries the first pull on failure with backoff, then releases the gate', async () => {

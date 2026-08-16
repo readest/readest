@@ -136,4 +136,32 @@ describe('NativeNarrationPlayer', () => {
     expect(controlCalls.filter((c) => c['action'] === 'start-session').length).toBe(2);
     await player.shutdown();
   });
+
+  test('polls the native clock only while playback is active', async () => {
+    vi.useFakeTimers();
+    try {
+      const player = new NativeNarrationPlayer();
+      await player.loadPath('hash/audiobook/book.m4b', '/books/hash/audiobook/book.m4b', 0);
+
+      await vi.advanceTimersByTimeAsync(1_000);
+      const positionCalls = () =>
+        vi
+          .mocked(invoke)
+          .mock.calls.filter(([command]) => command === 'plugin:native-tts|playout_position')
+          .length;
+      expect(positionCalls()).toBe(0);
+
+      await player.play();
+      await vi.advanceTimersByTimeAsync(250);
+      expect(positionCalls()).toBe(1);
+
+      player.pause();
+      const pausedCalls = positionCalls();
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect(positionCalls()).toBe(pausedCalls);
+      await player.shutdown();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

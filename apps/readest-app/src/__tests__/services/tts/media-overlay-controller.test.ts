@@ -244,7 +244,7 @@ describe('narration selection', () => {
       view.renderer as unknown as { getContents: () => unknown[]; primaryIndex: number }
     ).getContents = () => [{ doc, index: 1, overlayer }];
     (view.renderer as unknown as { primaryIndex: number }).primaryIndex = 1;
-    view.getCFI = vi.fn((_index, range: Range) => `cfi:${range.toString()}`);
+    view.getCFI = vi.fn((_index: number, range?: Range) => `cfi:${range?.toString() ?? ''}`);
 
     expect(controller.startFromRange(page)).toContain('<mark name="0"/>');
     expect(setStart).toHaveBeenCalledOnce();
