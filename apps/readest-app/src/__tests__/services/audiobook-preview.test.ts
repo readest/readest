@@ -5,9 +5,10 @@ import type { AppService } from '@/types/system';
 
 class FakeAudio {
   static instances: FakeAudio[] = [];
+  static playImplementations: Array<() => Promise<void>> = [];
   src = '';
   currentTime = 0;
-  play = vi.fn().mockResolvedValue(undefined);
+  play = vi.fn(() => FakeAudio.playImplementations.shift()?.() ?? Promise.resolve());
   pause = vi.fn();
   listeners = new Map<string, Set<() => void>>();
 
@@ -41,6 +42,7 @@ const makeAppService = (overrides: Partial<AppService> = {}) =>
 beforeEach(() => {
   vi.useFakeTimers();
   FakeAudio.instances = [];
+  FakeAudio.playImplementations = [];
   createObjectURL.mockClear();
   revokeObjectURL.mockClear();
   vi.stubGlobal('Audio', FakeAudio);
@@ -92,5 +94,35 @@ describe('AudiobookPreviewPlayer', () => {
     expect(FakeAudio.instances[0]!.pause).toHaveBeenCalledOnce();
     expect(close).toHaveBeenCalledOnce();
     expect(onStopped).toHaveBeenCalledWith('audio-0:0');
+  });
+
+  it('serializes rapid preview switches so a stale request cannot stop the latest clip', async () => {
+    let resolveFirstPlay!: () => void;
+    FakeAudio.playImplementations = [
+      () =>
+        new Promise<void>((resolve) => {
+          resolveFirstPlay = resolve;
+        }),
+      () => Promise.resolve(),
+    ];
+    const onStopped = vi.fn();
+    const player = new AudiobookPreviewPlayer(makeAppService(), onStopped);
+    const file = new File(['audio'], 'book.m4b', { type: 'audio/mp4' });
+
+    const first = player.toggle({ id: 'first', file, start: 0, end: 1 });
+    for (let index = 0; index < 10 && !resolveFirstPlay; index += 1) await Promise.resolve();
+    const second = player.toggle({ id: 'second', file, start: 10, end: 25 });
+    for (let index = 0; index < 10; index += 1) await Promise.resolve();
+    const instancesBeforeFirstResolved = FakeAudio.instances.length;
+
+    resolveFirstPlay();
+    await expect(first).resolves.toBe(true);
+    await expect(second).resolves.toBe(true);
+    expect(instancesBeforeFirstResolved).toBe(1);
+    expect(FakeAudio.instances).toHaveLength(2);
+
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(FakeAudio.instances[1]!.pause).not.toHaveBeenCalled();
+    expect(onStopped).not.toHaveBeenCalledWith('second');
   });
 });

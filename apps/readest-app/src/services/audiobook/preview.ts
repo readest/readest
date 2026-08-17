@@ -26,18 +26,32 @@ export class AudiobookPreviewPlayer {
   #ownedFile: ClosablePreviewFile | null = null;
   #timer: ReturnType<typeof setTimeout> | null = null;
   #endedListener: (() => void) | null = null;
+  #transition = Promise.resolve();
 
   constructor(appService: AppService, onStopped: (id: string) => void) {
     this.#appService = appService;
     this.#onStopped = onStopped;
   }
 
-  async toggle(clip: AudiobookPreviewClip): Promise<boolean> {
+  #enqueue<T>(operation: () => Promise<T>): Promise<T> {
+    const pending = this.#transition.then(operation);
+    this.#transition = pending.then(
+      () => undefined,
+      () => undefined,
+    );
+    return pending;
+  }
+
+  toggle(clip: AudiobookPreviewClip): Promise<boolean> {
+    return this.#enqueue(() => this.#toggle(clip));
+  }
+
+  async #toggle(clip: AudiobookPreviewClip): Promise<boolean> {
     if (this.#activeId === clip.id) {
-      await this.stop();
+      await this.#stop();
       return false;
     }
-    await this.stop();
+    await this.#stop();
 
     this.#activeId = clip.id;
     try {
@@ -76,12 +90,16 @@ export class AudiobookPreviewPlayer {
       }
       return true;
     } catch (error) {
-      await this.stop();
+      await this.#stop();
       throw error;
     }
   }
 
-  async stop(): Promise<void> {
+  stop(): Promise<void> {
+    return this.#enqueue(() => this.#stop());
+  }
+
+  async #stop(): Promise<void> {
     const stoppedId = this.#activeId;
     this.#activeId = null;
     if (this.#timer) clearTimeout(this.#timer);
