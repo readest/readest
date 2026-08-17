@@ -5,6 +5,7 @@ import {
   AppService,
   BaseDir,
   DeleteAction,
+  type DictionaryImportProgressHandler,
   DistChannel,
   FileItem,
   FileSystem,
@@ -110,6 +111,9 @@ export abstract class BaseAppService implements AppService {
     base: BaseDir,
     opts?: DatabaseOpts,
   ): Promise<DatabaseService>;
+  async installDatabase(path: string, base: BaseDir, source: File): Promise<void> {
+    await this.writeFile(path, base, source);
+  }
 
   // Databases live at the resolved fs path on native and node; the web app
   // overrides both because its databases live in OPFS under flattened names,
@@ -310,9 +314,12 @@ export abstract class BaseAppService implements AppService {
   async importDictionaries(
     files: SelectedFile[],
     existingDictionaries: ImportedDictionary[] = [],
+    onProgress?: DictionaryImportProgressHandler,
   ): Promise<DictSvc.ImportDictionariesResult> {
     const { importPluginDictionaries } = await import('./dictionaries/plugins/import');
-    const pluginResult = await importPluginDictionaries(this, files, existingDictionaries);
+    const pluginResult = await importPluginDictionaries(this, files, existingDictionaries, {
+      ...(onProgress ? { onProgress } : {}),
+    });
     const replacedPluginIds = new Set(
       pluginResult.replacements.flatMap((replacement) => replacement.oldIds),
     );

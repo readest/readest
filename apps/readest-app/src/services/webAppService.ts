@@ -430,6 +430,15 @@ export class WebAppService extends BaseAppService {
     return db;
   }
 
+  override async installDatabase(path: string, base: BaseDir, source: File): Promise<void> {
+    const root = await navigator.storage.getDirectory();
+    const handle = await root.getFileHandle(await this.opfsDatabaseName(path, base), {
+      create: true,
+    });
+    const writable = await handle.createWritable();
+    await source.stream().pipeTo(writable);
+  }
+
   private async opfsDatabaseName(path: string, base: BaseDir): Promise<string> {
     const fullPath = await this.resolveFilePath(path, base);
     return fullPath.replace(/[/\\]+/g, '_').replace(/^_+/, '');

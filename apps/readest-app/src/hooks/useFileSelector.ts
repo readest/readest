@@ -212,7 +212,7 @@ export const FILE_SELECTION_PRESETS = {
     dialogTitle: _('Select Fonts'),
   },
   dictionaries: {
-    accept: '.mdx, .mdd, .ifo, .idx, .dict, .dz, .syn, .index, .slob, .bgl, .css, .zip',
+    accept: '.mdx, .mdd, .ifo, .idx, .dict, .dz, .syn, .index, .slob, .bgl, .css, .zip, .rdict',
     extensions: [
       'mdx',
       'mdd',
@@ -226,6 +226,7 @@ export const FILE_SELECTION_PRESETS = {
       'bgl',
       'css',
       'zip',
+      'rdict',
     ],
     dialogTitle: _('Select Dictionary Files'),
   },

@@ -1,6 +1,6 @@
 import type { SelectedFile } from '@/hooks/useFileSelector';
 import type { DatabaseService } from '@/types/database';
-import type { AppService } from '@/types/system';
+import type { AppService, DictionaryImportProgressHandler } from '@/types/system';
 import type { ClosableFile } from '@/utils/file';
 import { uniqueId } from '@/utils/misc';
 import { getFilename } from '@/utils/path';
@@ -31,7 +31,13 @@ import {
 interface PluginImportHost
   extends Pick<
     AppService,
-    'openFile' | 'createDir' | 'writeFile' | 'deleteDir' | 'openDatabase' | 'deleteDatabase'
+    | 'openFile'
+    | 'createDir'
+    | 'writeFile'
+    | 'deleteDir'
+    | 'openDatabase'
+    | 'installDatabase'
+    | 'deleteDatabase'
   > {}
 
 interface PluginImportDependencies {
@@ -39,6 +45,7 @@ interface PluginImportDependencies {
   controlStore?: DictionaryPluginControlStore;
   createBuildId?: () => string;
   isWorkerSupported?: () => boolean;
+  onProgress?: DictionaryImportProgressHandler;
 }
 
 export interface ImportPluginDictionariesResult {
@@ -133,6 +140,7 @@ const importOne = async (
   controlStore: DictionaryPluginControlStore,
   createBuildId: () => string,
   isWorkerSupported: () => boolean,
+  onProgress?: DictionaryImportProgressHandler,
 ): Promise<
   | { claimed: false }
   | {
@@ -163,6 +171,7 @@ const importOne = async (
   let databasePath: string | undefined;
   let bundleDir: string | undefined;
   let activated = false;
+  let verifiedTitle: string | undefined;
   try {
     const probed = await runtime.call('probe', {
       sources: [{ handle: sourceHandle, name: filename, size: file.size }],
@@ -201,19 +210,29 @@ const importOne = async (
       databasePath,
       contribution.indexVersion,
     );
+    if (contribution.materialization === 'database') {
+      await host.installDatabase(databasePath, 'Dictionaries', file);
+    }
     database = await host.openDatabase('dictionary-plugin-index', databasePath, 'Dictionaries');
     databaseHandle = await sqlBroker.register(
       { pluginId: plugin.manifest.id, dictionaryId },
       database,
-      'staging',
+      contribution.materialization === 'database' ? 'active' : 'staging',
     );
-    await runtime.call('buildIndex', {
-      dictionaryId,
-      sourceHandle,
-      databaseHandle,
-      sourceFormatVersion: inspected.sourceFormatVersion,
-    });
-    await runtime.call('verifyIndex', { dictionaryId, databaseHandle });
+    if (contribution.materialization === 'sql') {
+      await runtime.call(
+        'buildIndex',
+        {
+          dictionaryId,
+          sourceHandle,
+          databaseHandle,
+          sourceFormatVersion: inspected.sourceFormatVersion,
+        },
+        onProgress ? { onProgress } : {},
+      );
+    }
+    const verified = await runtime.call('verifyIndex', { dictionaryId, databaseHandle });
+    verifiedTitle = verified.title;
     await stopLeaseHeartbeat();
     stopLeaseHeartbeat = undefined;
     sqlBroker.revoke(databaseHandle);
@@ -236,13 +255,10 @@ const importOne = async (
     await runtime.call('verifyIndex', { dictionaryId, databaseHandle });
     await controlStore.markGenerationHealthy(dictionaryId, buildId);
 
-    const fresh = createDictionaryRecord(
-      dictionaryId,
-      bundleDir,
-      sourceManifest,
-      plugin,
-      inspected,
-    );
+    const fresh = createDictionaryRecord(dictionaryId, bundleDir, sourceManifest, plugin, {
+      ...inspected,
+      ...(verifiedTitle === undefined ? {} : { title: verifiedTitle }),
+    });
     const live = findExistingDictionaryMatches(fresh, existingDictionaries);
     if (live.length > 0) {
       const preserved = preserveLiveDictionaryState(fresh, live);
@@ -319,6 +335,7 @@ export const importPluginDictionaries = async (
       controlStore,
       createBuildId,
       isWorkerSupported,
+      dependencies.onProgress,
     );
     if (!result.claimed) {
       unclaimed.push(source);

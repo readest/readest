@@ -117,6 +117,24 @@ describe('SqlBroker', () => {
     }
   });
 
+  test('permits bounded bulk inserts and rejects larger parameter lists', async () => {
+    const { db } = createDatabase();
+    const broker = new SqlBroker({ createHandle: () => 'db-1' });
+    const handle = await broker.register(pluginContext, db, 'staging');
+    const request = {
+      handle,
+      sql: 'INSERT INTO terms(value) VALUES (?)',
+      params: Array(9_000).fill('value'),
+    };
+
+    await expect(broker.execute(pluginContext, request)).resolves.toMatchObject({
+      rowsAffected: 1,
+    });
+    await expect(
+      broker.execute(pluginContext, { ...request, params: [...request.params, 'too-many'] }),
+    ).rejects.toThrow(/parameter limit/i);
+  });
+
   test('rolls back a failed staging transaction', async () => {
     const { db, execute } = createDatabase({ failOn: 'INSERT INTO broken' });
     const broker = new SqlBroker({ createHandle: () => 'db-1' });

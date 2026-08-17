@@ -1,6 +1,7 @@
 import type { DatabaseExecResult, DatabaseRow } from '@/types/database';
 import {
   MAX_PLUGIN_RESOURCE_BYTES,
+  MAX_PLUGIN_SQL_PARAMS,
   type PluginPayload,
   type PluginSqlValue,
 } from '@/services/plugins/contract';
@@ -18,7 +19,10 @@ import {
   type YomitanTermTuple,
 } from './schemas';
 
-export const YOMITAN_INDEX_VERSION = 1;
+export const YOMITAN_INDEX_VERSION = 2;
+export const YOMITAN_PORTABLE_APPLICATION_ID = 0x52444954;
+const YOMITAN_PORTABLE_FORMAT_VERSION = 1;
+const SQLITE_HEADER = new TextEncoder().encode('SQLite format 3\0');
 
 interface SqlStatement {
   sql: string;
@@ -53,22 +57,28 @@ const byBankOrder = (left: { filename: string }, right: { filename: string }): n
   bankOrder(left.filename) - bankOrder(right.filename) ||
   left.filename.localeCompare(right.filename);
 
-const mediaKindFor = (
-  path: string,
-): 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp' | 'image/svg+xml' | undefined => {
+const mediaKindFor = (path: string): string => {
   const lower = path.toLowerCase();
   if (lower.endsWith('.png')) return 'image/png';
   if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
   if (lower.endsWith('.gif')) return 'image/gif';
   if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.avif')) return 'image/avif';
   if (lower.endsWith('.svg')) return 'image/svg+xml';
-  return undefined;
+  const extension = lower.match(/\.([a-z0-9][a-z0-9+.-]*)$/u)?.[1];
+  return extension ? `image/${extension}` : 'application/octet-stream';
+};
+
+const ownedBytes = (value: Uint8Array): Uint8Array<ArrayBuffer> => {
+  const bytes = new Uint8Array(value.byteLength);
+  bytes.set(value);
+  return bytes;
 };
 
 const schemaStatements = (): SqlStatement[] => [
   { sql: 'CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)', params: [] },
   {
-    sql: 'CREATE TABLE terms (id INTEGER PRIMARY KEY AUTOINCREMENT, expression TEXT NOT NULL, reading TEXT NOT NULL, definition_tags TEXT NOT NULL, rules TEXT NOT NULL, score REAL NOT NULL, glossary_json TEXT NOT NULL, sequence INTEGER NOT NULL, term_tags TEXT NOT NULL, bank_order INTEGER NOT NULL)',
+    sql: 'CREATE TABLE terms (id INTEGER PRIMARY KEY AUTOINCREMENT, expression TEXT NOT NULL, reading TEXT NOT NULL, definition_tags TEXT NOT NULL, rules TEXT NOT NULL, score REAL NOT NULL, glossary_json BLOB, sequence INTEGER NOT NULL, term_tags TEXT NOT NULL, bank_order INTEGER NOT NULL, entry_index INTEGER)',
     params: [],
   },
   {
@@ -80,16 +90,11 @@ const schemaStatements = (): SqlStatement[] => [
     params: [],
   },
   {
-    sql: 'CREATE TABLE resources (key TEXT PRIMARY KEY, archive_path TEXT NOT NULL, media_kind TEXT NOT NULL)',
+    sql: 'CREATE TABLE resources (key TEXT PRIMARY KEY, archive_path TEXT NOT NULL, media_kind TEXT NOT NULL, data BLOB)',
     params: [],
   },
   {
-    sql: 'CREATE INDEX terms_expression_idx ON terms(expression, score DESC)',
-    params: [],
-  },
-  { sql: 'CREATE INDEX terms_reading_idx ON terms(reading, score DESC)', params: [] },
-  {
-    sql: 'CREATE INDEX term_meta_expression_idx ON term_meta(expression, reading, mode)',
+    sql: 'CREATE TABLE term_banks (bank_order INTEGER PRIMARY KEY, data BLOB NOT NULL)',
     params: [],
   },
 ];
@@ -108,19 +113,18 @@ const insertStatement = (
 const insertRows = async (
   host: YomitanHost,
   databaseHandle: string,
+  statements: SqlStatement[],
   table: string,
   columns: string[],
   rows: PluginSqlValue[][],
 ): Promise<void> => {
-  const rowsPerStatement = Math.max(1, Math.floor(900 / columns.length));
-  const statements: SqlStatement[] = [];
+  const rowsPerStatement = Math.max(1, Math.floor(MAX_PLUGIN_SQL_PARAMS / columns.length));
   for (let offset = 0; offset < rows.length; offset += rowsPerStatement) {
     statements.push(insertStatement(table, columns, rows.slice(offset, offset + rowsPerStatement)));
     if (statements.length === 16) {
       await host.transaction(databaseHandle, statements.splice(0));
     }
   }
-  if (statements.length > 0) await host.transaction(databaseHandle, statements);
 };
 
 const readIndex = async (host: YomitanHost, sourceHandle: string): Promise<YomitanIndex> => {
@@ -133,8 +137,33 @@ const readIndex = async (host: YomitanHost, sourceHandle: string): Promise<Yomit
   }
 };
 
+const readPortableVersion = async (
+  host: YomitanHost,
+  sourceHandle: string,
+): Promise<number | undefined> => {
+  const stat = await host.stat(sourceHandle);
+  if (stat.size < 100) return undefined;
+  const { bytes } = await host.readRange(sourceHandle, 0, 100);
+  if (bytes.byteLength < 100) return undefined;
+  if (SQLITE_HEADER.some((byte, index) => bytes[index] !== byte)) return undefined;
+  const uint32 = (offset: number): number =>
+    ((bytes[offset]! << 24) |
+      (bytes[offset + 1]! << 16) |
+      (bytes[offset + 2]! << 8) |
+      bytes[offset + 3]!) >>>
+    0;
+  if (uint32(68) !== YOMITAN_PORTABLE_APPLICATION_ID) return undefined;
+  const version = uint32(60);
+  return version === YOMITAN_PORTABLE_FORMAT_VERSION ? version : undefined;
+};
+
 export const probeYomitanSource = async (host: YomitanHost, sourceHandle: string) => {
   try {
+    if ((await readPortableVersion(host, sourceHandle)) !== undefined) {
+      return {
+        matches: [{ sourceHandle, formatId: 'yomitan-indexed' as const, confidence: 1 }],
+      };
+    }
     await readIndex(host, sourceHandle);
     return {
       matches: [{ sourceHandle, formatId: 'yomitan' as const, confidence: 1 }],
@@ -145,6 +174,15 @@ export const probeYomitanSource = async (host: YomitanHost, sourceHandle: string
 };
 
 export const inspectYomitanSource = async (host: YomitanHost, sourceHandle: string) => {
+  const portableVersion = await readPortableVersion(host, sourceHandle);
+  if (portableVersion !== undefined) {
+    const { name } = await host.stat(sourceHandle);
+    return {
+      formatId: 'yomitan-indexed' as const,
+      sourceFormatVersion: portableVersion,
+      title: name.replace(/\.rdict$/iu, '') || name,
+    };
+  }
   const index = await readIndex(host, sourceHandle);
   return {
     formatId: 'yomitan' as const,
@@ -158,10 +196,12 @@ export const inspectYomitanSource = async (host: YomitanHost, sourceHandle: stri
 const termRows = (
   terms: YomitanTermTuple[],
   order: number,
+  storage: 'expanded' | 'banked',
 ): { rows: PluginSqlValue[][]; resourceRefs: string[] } => {
   const rows: PluginSqlValue[][] = [];
   const resourceRefs = new Set<string>();
-  for (const term of terms) {
+  for (let entryIndex = 0; entryIndex < terms.length; entryIndex += 1) {
+    const term = terms[entryIndex]!;
     const [expression, reading, definitionTags, rules, score, glossary, sequence, termTags] = term;
     const definitions = normalizeYomitanGlossary(glossary);
     collectYomitanResourceRefs(definitions).forEach((ref) => resourceRefs.add(ref));
@@ -171,13 +211,21 @@ const termRows = (
       splitYomitanTags(definitionTags).join(' '),
       splitYomitanTags(rules).join(' '),
       score,
-      JSON.stringify(definitions),
+      storage === 'expanded' ? JSON.stringify(definitions) : null,
       sequence,
       splitYomitanTags(termTags).join(' '),
       order,
+      storage === 'banked' ? entryIndex : null,
     ]);
   }
   return { rows, resourceRefs: [...resourceRefs] };
+};
+
+const gzipJson = async (value: unknown): Promise<Uint8Array<ArrayBuffer>> => {
+  const input = new Response(JSON.stringify(value)).body;
+  if (!input) throw new Error('Failed to encode portable Yomitan term bank');
+  const stream = input.pipeThrough(new CompressionStream('gzip'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
 };
 
 const tagRows = (tags: YomitanTagTuple[]): PluginSqlValue[][] =>
@@ -219,7 +267,9 @@ const legacyTagRows = (index: YomitanIndex): PluginSqlValue[][] => {
 export const buildYomitanIndex = async (
   host: YomitanHost,
   request: PluginPayload<'buildIndex'>,
+  options: { storage?: 'expanded' | 'banked' } = {},
 ) => {
+  const storage = options.storage ?? 'expanded';
   const archive = await openYomitanArchive(host, request.sourceHandle);
   try {
     const index = parseYomitanIndex(await archive.readJson('index.json', 2 * 1_024 * 1_024));
@@ -228,9 +278,11 @@ export const buildYomitanIndex = async (
     }
 
     await host.transaction(request.databaseHandle, schemaStatements());
+    const insertStatements: SqlStatement[] = [];
     await insertRows(
       host,
       request.databaseHandle,
+      insertStatements,
       'meta',
       ['key', 'value'],
       [
@@ -238,6 +290,7 @@ export const buildYomitanIndex = async (
         ['source_format_version', String(index.sourceFormatVersion)],
         ['title', index.title],
         ['revision', index.revision ?? ''],
+        ['storage_format', storage === 'banked' ? 'banked-gzip-v1' : 'expanded-v1'],
       ],
     );
 
@@ -256,6 +309,7 @@ export const buildYomitanIndex = async (
       await insertRows(
         host,
         request.databaseHandle,
+        insertStatements,
         'tags',
         ['name', 'category', 'sort_order', 'notes', 'score'],
         legacyTags,
@@ -268,6 +322,7 @@ export const buildYomitanIndex = async (
       await insertRows(
         host,
         request.databaseHandle,
+        insertStatements,
         'tags',
         ['name', 'category', 'sort_order', 'notes', 'score'],
         tagRows(tags),
@@ -278,11 +333,13 @@ export const buildYomitanIndex = async (
     for (const bank of termBanks) {
       if (host.signal.aborted) throw new DOMException('Yomitan import aborted', 'AbortError');
       const terms = yomitanTermBankSchema.parse(await archive.readJson(bank.filename));
-      const normalized = termRows(terms, bankOrder(bank.filename));
+      const order = bankOrder(bank.filename);
+      const normalized = termRows(terms, order, storage);
       normalized.resourceRefs.forEach((ref) => referencedResources.add(ref));
       await insertRows(
         host,
         request.databaseHandle,
+        insertStatements,
         'terms',
         [
           'expression',
@@ -294,9 +351,20 @@ export const buildYomitanIndex = async (
           'sequence',
           'term_tags',
           'bank_order',
+          'entry_index',
         ],
         normalized.rows,
       );
+      if (storage === 'banked') {
+        await insertRows(
+          host,
+          request.databaseHandle,
+          insertStatements,
+          'term_banks',
+          ['bank_order', 'data'],
+          [[order, await gzipJson(terms)]],
+        );
+      }
       entries += terms.length;
       host.progress('indexing', ++completed, allBanks.length);
     }
@@ -307,6 +375,7 @@ export const buildYomitanIndex = async (
       await insertRows(
         host,
         request.databaseHandle,
+        insertStatements,
         'term_meta',
         ['expression', 'mode', 'reading', 'payload_json'],
         metadata.map(metaRow),
@@ -319,21 +388,41 @@ export const buildYomitanIndex = async (
       const entry = archive.entries.find((candidate) => candidate.filename === ref);
       const mimeType = mediaKindFor(ref);
       if (!entry) throw new Error(`Referenced Yomitan resource is missing: ${ref}`);
-      if (!mimeType) throw new Error(`Unsupported Yomitan resource type: ${ref}`);
       if (entry.uncompressedSize > MAX_PLUGIN_RESOURCE_BYTES) {
         throw new Error(`Yomitan resource exceeds size limit: ${ref}`);
       }
-      resourceRows.push([ref, ref, mimeType]);
+      resourceRows.push([
+        ref,
+        ref,
+        mimeType,
+        storage === 'banked' ? await archive.readBytes(ref) : null,
+      ]);
     }
     if (resourceRows.length > 0) {
       await insertRows(
         host,
         request.databaseHandle,
+        insertStatements,
         'resources',
-        ['key', 'archive_path', 'media_kind'],
+        ['key', 'archive_path', 'media_kind', 'data'],
         resourceRows,
       );
     }
+    if (insertStatements.length > 0) {
+      await host.transaction(request.databaseHandle, insertStatements);
+    }
+
+    await host.transaction(request.databaseHandle, [
+      {
+        sql: 'CREATE INDEX terms_expression_idx ON terms(expression, score DESC)',
+        params: [],
+      },
+      { sql: 'CREATE INDEX terms_reading_idx ON terms(reading, score DESC)', params: [] },
+      {
+        sql: 'CREATE INDEX term_meta_expression_idx ON term_meta(expression, reading, mode)',
+        params: [],
+      },
+    ]);
 
     return { indexVersion: YOMITAN_INDEX_VERSION, entries, resources: resourceRows.length };
   } finally {
@@ -357,7 +446,14 @@ export const verifyYomitanIndex = async (host: YomitanHost, databaseHandle: stri
   const countRows = await host.select(databaseHandle, 'SELECT COUNT(*) AS count FROM terms', [], 1);
   const entries = Number(firstValue(countRows.rows, 'count'));
   if (!Number.isSafeInteger(entries) || entries < 1) throw new Error('Yomitan index is empty');
-  return { indexVersion: version, entries };
+  const titleRows = await host.select(
+    databaseHandle,
+    "SELECT value FROM meta WHERE key = 'title'",
+    [],
+    1,
+  );
+  const title = firstValue(titleRows.rows, 'value');
+  return { indexVersion: version, entries, ...(typeof title === 'string' ? { title } : {}) };
 };
 
 export const readYomitanResource = async (
@@ -366,7 +462,7 @@ export const readYomitanResource = async (
 ) => {
   const result = await host.select(
     request.databaseHandle,
-    'SELECT archive_path, media_kind FROM resources WHERE key = ?',
+    'SELECT archive_path, media_kind, data FROM resources WHERE key = ?',
     [request.resourceRef],
     1,
   );
@@ -377,11 +473,25 @@ export const readYomitanResource = async (
     throw new Error(`Yomitan resource not found: ${request.resourceRef}`);
   }
   const expectedMime = mediaKindFor(path);
-  if (!expectedMime || expectedMime !== mimeType)
-    throw new Error('Invalid Yomitan resource metadata');
+  if (expectedMime !== mimeType) throw new Error('Invalid Yomitan resource metadata');
+  const data = row?.['data'];
+  if (data instanceof Uint8Array) return { mimeType: expectedMime, bytes: ownedBytes(data) };
+  if (ArrayBuffer.isView(data)) {
+    return {
+      mimeType: expectedMime,
+      bytes: ownedBytes(new Uint8Array(data.buffer, data.byteOffset, data.byteLength)),
+    };
+  }
+  if (data instanceof ArrayBuffer) return { mimeType: expectedMime, bytes: new Uint8Array(data) };
+  if (
+    Array.isArray(data) &&
+    data.every((byte) => Number.isInteger(byte) && byte >= 0 && byte <= 255)
+  ) {
+    return { mimeType: expectedMime, bytes: Uint8Array.from(data) };
+  }
   const archive = await openYomitanArchive(host, request.sourceHandle);
   try {
-    return { mimeType: expectedMime, bytes: await archive.readBytes(path) };
+    return { mimeType: expectedMime, bytes: ownedBytes(await archive.readBytes(path)) };
   } finally {
     await archive.close();
   }

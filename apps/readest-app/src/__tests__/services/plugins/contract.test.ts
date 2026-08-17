@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import {
   parseDictionaryLookupResult,
+  parsePluginOperationResult,
+  pluginHostCallSchema,
   pluginManifestSchema,
   pluginRequestSchema,
 } from '@/services/plugins/contract';
@@ -16,6 +18,7 @@ const manifest = {
         id: 'yomitan',
         extensions: ['zip'],
         indexVersion: 1,
+        materialization: 'sql',
       },
     ],
   },
@@ -73,6 +76,52 @@ describe('pluginRequestSchema', () => {
         requestId: 'request-1',
         operation: 'lookup',
         payload: { dictionaryId: 'dict-1', query: '読む' },
+      }),
+    ).toThrow();
+  });
+});
+
+describe('plugin operation protocol', () => {
+  test('accepts metadata returned while verifying an installed database', () => {
+    expect(
+      parsePluginOperationResult('verifyIndex', {
+        indexVersion: 2,
+        entries: 435_448,
+        title: 'Jitendex',
+      }),
+    ).toEqual({ indexVersion: 2, entries: 435_448, title: 'Jitendex' });
+  });
+
+  test('keeps plugin resources opaque to the protocol', () => {
+    const resource = {
+      mimeType: 'image/bmp',
+      bytes: new Uint8Array([66, 77]),
+    };
+
+    expect(parsePluginOperationResult('readResource', resource)).toEqual(resource);
+  });
+
+  test('accepts bounded bulk SQL parameters', () => {
+    const hostCall = {
+      kind: 'host-call',
+      protocolVersion: 1,
+      requestId: 'request-1',
+      callId: 'call-1',
+      capability: 'sql.transaction',
+      payload: {
+        handle: 'db-1',
+        statements: [{ sql: 'INSERT INTO terms(value) VALUES (?)', params: Array(9_000).fill(1) }],
+      },
+    };
+
+    expect(pluginHostCallSchema.parse(hostCall)).toEqual(hostCall);
+    expect(() =>
+      pluginHostCallSchema.parse({
+        ...hostCall,
+        payload: {
+          ...hostCall.payload,
+          statements: [{ ...hostCall.payload.statements[0], params: Array(9_001).fill(1) }],
+        },
       }),
     ).toThrow();
   });

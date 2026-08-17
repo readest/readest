@@ -1,4 +1,5 @@
 import type { DatabaseExecResult, DatabaseRow, DatabaseService } from '@/types/database';
+import { MAX_PLUGIN_SQL_PARAMS } from './contract';
 
 export interface PluginScope {
   pluginId: string;
@@ -266,7 +267,7 @@ export class SqlBroker {
   constructor(options: SqlBrokerOptions = {}) {
     this.maxRows = options.maxRows ?? 1_000;
     this.maxSqlBytes = options.maxSqlBytes ?? 65_536;
-    this.maxParams = options.maxParams ?? 999;
+    this.maxParams = options.maxParams ?? MAX_PLUGIN_SQL_PARAMS;
     this.maxTransactionStatements = options.maxTransactionStatements ?? 64;
     this.createHandle = options.createHandle ?? (() => opaqueHandle('database'));
   }

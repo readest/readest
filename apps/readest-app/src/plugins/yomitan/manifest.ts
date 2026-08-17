@@ -10,7 +10,14 @@ export const yomitanPluginManifest = pluginManifestSchema.parse({
       {
         id: 'yomitan',
         extensions: ['zip'],
-        indexVersion: 1,
+        indexVersion: 2,
+        materialization: 'sql',
+      },
+      {
+        id: 'yomitan-indexed',
+        extensions: ['rdict'],
+        indexVersion: 2,
+        materialization: 'database',
       },
     ],
   },

@@ -7,8 +7,13 @@ import { getBundledPlugin } from '@/services/plugins/catalog';
 import { createPluginHostCallHandler } from '@/services/plugins/hostCalls';
 import { createPluginRuntime } from '@/services/plugins/runtime';
 import { importPluginDictionaries } from '@/services/dictionaries/plugins/import';
+import {
+  buildYomitanIndex,
+  YOMITAN_PORTABLE_APPLICATION_ID,
+  type YomitanHost,
+} from '@/plugins/yomitan/importer';
 
-const createDictionary = async (): Promise<File> => {
+const createDictionary = async (termCount = 1): Promise<File> => {
   const writer = new ZipWriter(new BlobWriter('application/zip'));
   await writer.add(
     'index.json',
@@ -17,10 +22,10 @@ const createDictionary = async (): Promise<File> => {
   await writer.add(
     'term_bank_1.json',
     new TextReader(
-      JSON.stringify([
-        [
-          '読む',
-          'よむ',
+      JSON.stringify(
+        Array.from({ length: termCount }, (_, index) => [
+          index === 0 ? '読む' : `語${index}`,
+          index === 0 ? 'よむ' : `ご${index}`,
           'v5',
           'v5',
           100,
@@ -30,10 +35,10 @@ const createDictionary = async (): Promise<File> => {
               content: ['to read', { tag: 'img', path: 'read.png', alt: 'stroke order' }],
             },
           ],
-          1,
+          index + 1,
           'v5',
-        ],
-      ]),
+        ]),
+      ),
     ),
   );
   await writer.add(
@@ -43,6 +48,60 @@ const createDictionary = async (): Promise<File> => {
   return new File([await writer.close()], 'browser-japanese.zip', {
     type: 'application/zip',
   });
+};
+
+const createPortableDictionary = async (): Promise<File> => {
+  const source = await createDictionary();
+  const databaseName = `readest-yomitan-portable-source-${crypto.randomUUID()}.sqlite3`;
+  const database = await WebDatabaseService.open(databaseName);
+  const host: YomitanHost = {
+    signal: new AbortController().signal,
+    stat: async () => ({ name: source.name, size: source.size, type: source.type }),
+    readRange: async (_handle, offset, length) => ({
+      bytes: new Uint8Array(await source.slice(offset, offset + length).arrayBuffer()),
+    }),
+    execute: async (_handle, sql, params = []) => database.execute(sql, params),
+    select: async (_handle, sql, params = []) => ({ rows: await database.select(sql, params) }),
+    transaction: async (_handle, statements) => {
+      await database.execute('BEGIN IMMEDIATE');
+      try {
+        const results = [];
+        for (const statement of statements) {
+          results.push(await database.execute(statement.sql, statement.params ?? []));
+        }
+        await database.execute('COMMIT');
+        return { results };
+      } catch (error) {
+        await database.execute('ROLLBACK');
+        throw error;
+      }
+    },
+    progress: () => undefined,
+  };
+  await buildYomitanIndex(
+    host,
+    {
+      dictionaryId: 'portable-source',
+      sourceHandle: 'source',
+      databaseHandle: 'database',
+      sourceFormatVersion: 3,
+    },
+    { storage: 'banked' },
+  );
+  await database.execute(`PRAGMA application_id = ${YOMITAN_PORTABLE_APPLICATION_ID}`);
+  await database.execute('PRAGMA user_version = 1');
+  await database.close();
+  const root = await navigator.storage.getDirectory();
+  const file = await (await root.getFileHandle(databaseName)).getFile();
+  const header = new Uint8Array(await file.slice(0, 100).arrayBuffer());
+  expect(new TextDecoder().decode(header.subarray(0, 16))).toBe('SQLite format 3\0');
+  expect(new DataView(header.buffer).getUint32(68, false)).toBe(YOMITAN_PORTABLE_APPLICATION_ID);
+  const portable = new File([await file.arrayBuffer()], 'browser-japanese.rdict', {
+    type: 'application/vnd.sqlite3',
+  });
+  await root.removeEntry(databaseName).catch(() => undefined);
+  await root.removeEntry(`${databaseName}-wal`).catch(() => undefined);
+  return portable;
 };
 
 let closeRuntime: (() => void) | undefined;
@@ -58,7 +117,7 @@ afterEach(async () => {
 test('builds and queries a Yomitan dictionary through a real Worker and browser SQLite', async () => {
   const pluginId = 'readest.yomitan';
   const dictionaryId = 'browser-dictionary';
-  const source = await createDictionary();
+  const source = await createDictionary(1_000);
   const sourceBroker = new SourceBroker();
   const sqlBroker = new SqlBroker();
   const sourceHandle = sourceBroker.register({ pluginId }, source);
@@ -98,10 +157,10 @@ test('builds and queries a Yomitan dictionary through a real Worker and browser 
       databaseHandle,
       sourceFormatVersion: inspected.sourceFormatVersion,
     }),
-  ).resolves.toMatchObject({ indexVersion: 1, entries: 1, resources: 1 });
+  ).resolves.toMatchObject({ indexVersion: 2, entries: 1_000, resources: 1 });
   await expect(
     runtime.call('verifyIndex', { dictionaryId, databaseHandle }),
-  ).resolves.toMatchObject({ indexVersion: 1, entries: 1 });
+  ).resolves.toMatchObject({ indexVersion: 2, entries: 1_000 });
 
   sqlBroker.revoke(databaseHandle);
   await database.close();
@@ -150,10 +209,67 @@ test('imports a Yomitan dictionary through the browser app service', async () =>
   const dictionary = result.imported[0];
 
   try {
+    expect(result.unclaimed).toEqual([]);
+    expect(result.replacements).toEqual([]);
+    expect(result.imported).toHaveLength(1);
     expect(dictionary).toMatchObject({
       name: 'Browser Japanese',
       kind: 'plugin',
       plugin: { pluginId: 'readest.yomitan', formatId: 'yomitan' },
+    });
+  } finally {
+    if (dictionary) await appService.deleteDictionary(dictionary);
+  }
+});
+
+test('installs and queries a portable Yomitan database through browser OPFS', async () => {
+  const appService = new WebAppService();
+  const source = await createPortableDictionary();
+  expect(source.size).toBeGreaterThan(100);
+  const bundledPlugin = getBundledPlugin('readest.yomitan');
+  if (!bundledPlugin) throw new Error('Bundled Yomitan plugin is missing');
+  const probeSourceBroker = new SourceBroker();
+  const probeSqlBroker = new SqlBroker();
+  const probeSourceHandle = probeSourceBroker.register(
+    { pluginId: bundledPlugin.manifest.id },
+    source,
+  );
+  const probeRuntime = createPluginRuntime({
+    createWorker: () =>
+      new Worker(new URL('../../../../plugins/yomitan/worker.ts', import.meta.url), {
+        type: 'module',
+      }),
+    handleHostCall: createPluginHostCallHandler(
+      bundledPlugin.manifest.id,
+      probeSourceBroker,
+      probeSqlBroker,
+    ),
+  });
+  await expect(
+    probeRuntime.call('probe', {
+      sources: [{ handle: probeSourceHandle, name: source.name, size: source.size }],
+    }),
+  ).resolves.toMatchObject({ matches: [{ formatId: 'yomitan-indexed', confidence: 1 }] });
+  probeRuntime.close();
+  const result = await importPluginDictionaries(appService, [{ file: source }], [], {
+    resolvePlugin: () => ({
+      ...bundledPlugin,
+      createWorker: () =>
+        new Worker(new URL('../../../../plugins/yomitan/worker.ts', import.meta.url), {
+          type: 'module',
+        }),
+    }),
+  });
+  const dictionary = result.imported[0];
+
+  try {
+    expect(result.unclaimed).toEqual([]);
+    expect(result.replacements).toEqual([]);
+    expect(result.imported).toHaveLength(1);
+    expect(dictionary).toMatchObject({
+      name: 'Browser Japanese',
+      kind: 'plugin',
+      plugin: { formatId: 'yomitan-indexed', indexVersion: 2 },
     });
   } finally {
     if (dictionary) await appService.deleteDictionary(dictionary);

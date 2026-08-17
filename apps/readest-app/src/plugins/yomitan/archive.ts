@@ -11,7 +11,7 @@ import { normalizeYomitanResourcePath } from './content';
 
 const MAX_ARCHIVE_ENTRIES = 20_000;
 const MAX_ENTRY_BYTES = 64 * 1_024 * 1_024;
-const MAX_ARCHIVE_UNCOMPRESSED_BYTES = 512 * 1_024 * 1_024;
+const MAX_ARCHIVE_UNCOMPRESSED_BYTES = 1_024 * 1_024 * 1_024;
 
 export interface YomitanArchiveHost {
   signal: AbortSignal;

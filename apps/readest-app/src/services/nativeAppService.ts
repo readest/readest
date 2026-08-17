@@ -994,6 +994,10 @@ export class NativeAppService extends BaseAppService {
     return db;
   }
 
+  override async installDatabase(path: string, base: BaseDir, source: File): Promise<void> {
+    await this.writeFile(path, base, source);
+  }
+
   async migrate20251029() {
     console.log('Running migration 20251029 to update paths in Images dir...');
     const rootPath = await this.resolveFilePath('..', 'Data');

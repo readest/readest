@@ -18,6 +18,7 @@ import type { PluginWorkerLike } from '@/services/plugins/runtime';
 import type { BundledPluginDefinition } from '@/services/plugins/catalog';
 import type { BaseDir } from '@/types/system';
 import { computePluginDictionaryContentId } from '@/services/dictionaries/plugins/integrity';
+import { YOMITAN_PORTABLE_APPLICATION_ID } from '@/plugins/yomitan/importer';
 
 class LoopbackWorker implements PluginWorkerLike {
   onmessage: ((event: MessageEvent<unknown>) => void) | null = null;
@@ -90,6 +91,54 @@ const createDictionary = async (): Promise<File> => {
   return new File([await writer.close()], 'reader-japanese.zip', { type: 'application/zip' });
 };
 
+const createPortableDictionary = async (path: string): Promise<File> => {
+  const database = await NodeDatabaseService.open(path);
+  await database.execute(`PRAGMA application_id = ${YOMITAN_PORTABLE_APPLICATION_ID}`);
+  await database.execute('PRAGMA user_version = 1');
+  await database.execute('CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+  await database.execute(
+    'CREATE TABLE terms (id INTEGER PRIMARY KEY, expression TEXT NOT NULL, reading TEXT NOT NULL, definition_tags TEXT NOT NULL, rules TEXT NOT NULL, score REAL NOT NULL, glossary_json BLOB, sequence INTEGER NOT NULL, term_tags TEXT NOT NULL, bank_order INTEGER NOT NULL, entry_index INTEGER)',
+  );
+  await database.execute(
+    'CREATE TABLE tags (name TEXT PRIMARY KEY, category TEXT NOT NULL, sort_order REAL NOT NULL, notes TEXT NOT NULL, score REAL NOT NULL)',
+  );
+  await database.execute(
+    'CREATE TABLE term_meta (id INTEGER PRIMARY KEY, expression TEXT NOT NULL, mode TEXT NOT NULL, reading TEXT NOT NULL, payload_json TEXT NOT NULL)',
+  );
+  await database.execute(
+    'CREATE TABLE resources (key TEXT PRIMARY KEY, archive_path TEXT NOT NULL, media_kind TEXT NOT NULL, data BLOB)',
+  );
+  await database.execute(
+    'CREATE TABLE term_banks (bank_order INTEGER PRIMARY KEY, data BLOB NOT NULL)',
+  );
+  await database.execute(
+    "INSERT INTO meta VALUES ('index_version', '2'), ('title', 'Portable Jitendex')",
+  );
+  await database.execute('INSERT INTO terms VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+    1,
+    '読む',
+    'よむ',
+    'v5',
+    'v5',
+    100,
+    null,
+    1,
+    'v5',
+    1,
+    0,
+  ]);
+  await database.execute("INSERT INTO tags VALUES ('v5', 'partOfSpeech', 1, 'Godan verb', 5)");
+  const bank = [['読む', 'よむ', 'v5', 'v5', 100, ['portable definition'], 1, 'v5']];
+  const compressed = new Uint8Array(
+    await new Response(
+      new Response(JSON.stringify(bank)).body!.pipeThrough(new CompressionStream('gzip')),
+    ).arrayBuffer(),
+  );
+  await database.execute('INSERT INTO term_banks VALUES (?, ?)', [1, compressed]);
+  await database.close();
+  return new File([await readFile(path)], basename(path), { type: 'application/vnd.sqlite3' });
+};
+
 describe('bundled dictionary plugin integration', () => {
   let root: string | undefined;
 
@@ -121,6 +170,9 @@ describe('bundled dictionary plugin integration', () => {
         else if (content instanceof File) {
           await writeFile(fullPath, new Uint8Array(await content.arrayBuffer()));
         } else await writeFile(fullPath, new Uint8Array(content));
+      },
+      installDatabase: async (path: string, base: BaseDir, source: File): Promise<void> => {
+        await writeFile(resolve(path, base), new Uint8Array(await source.arrayBuffer()));
       },
       deleteDir: async (path: string, base: BaseDir): Promise<void> => {
         await rm(resolve(path, base), { recursive: true, force: true });
@@ -166,7 +218,7 @@ describe('bundled dictionary plugin integration', () => {
         pluginId: 'readest.yomitan',
         formatId: 'yomitan',
         sourceFormatVersion: 3,
-        indexVersion: 1,
+        indexVersion: 2,
       },
     });
     expect(dict.plugin?.source.sha256).toMatch(/^[0-9a-f]{64}$/u);
@@ -200,6 +252,9 @@ describe('bundled dictionary plugin integration', () => {
       },
       openDatabase: async (_schema: string, path: string, base: BaseDir) =>
         NodeDatabaseService.open(resolve(path, base)),
+      installDatabase: async (path: string, base: BaseDir, source: File): Promise<void> => {
+        await writeFile(resolve(path, base), new Uint8Array(await source.arrayBuffer()));
+      },
       deleteDatabase: async (path: string, base: BaseDir): Promise<void> => {
         await rm(resolve(path, base), { force: true });
         await rm(`${resolve(path, base)}-wal`, { force: true });
@@ -227,7 +282,7 @@ describe('bundled dictionary plugin integration', () => {
         pluginId: 'readest.yomitan',
         formatId: 'yomitan',
         sourceFormatVersion: 3,
-        indexVersion: 1,
+        indexVersion: 2,
         source: { filename: source.name, byteSize: source.size, sha256 },
       },
       addedAt: Date.now(),
@@ -264,6 +319,82 @@ describe('bundled dictionary plugin integration', () => {
       }),
     ).rejects.toThrow(/integrity|size|sha-256/i);
     expect(await controlStore.getGeneration(dict.id, 'corrupt-build')).toBeUndefined();
+    await controlDb.close();
+  });
+
+  test('installs a portable index without rebuilding its Yomitan banks', async () => {
+    root = await mkdtemp(join(tmpdir(), 'readest-yomitan-portable-'));
+    const resolve = (path: string, base: BaseDir): string =>
+      base === 'None' ? path : join(root!, path);
+    let installedDatabases = 0;
+    const host = {
+      openFile: async (path: string, base: BaseDir): Promise<File> => {
+        const fullPath = resolve(path, base);
+        return new File([await readFile(fullPath)], basename(fullPath));
+      },
+      createDir: async (path: string, base: BaseDir): Promise<void> => {
+        await mkdir(resolve(path, base), { recursive: true });
+      },
+      writeFile: async (
+        path: string,
+        base: BaseDir,
+        content: string | ArrayBuffer | File,
+      ): Promise<void> => {
+        const fullPath = resolve(path, base);
+        await mkdir(dirname(fullPath), { recursive: true });
+        if (typeof content === 'string') await writeFile(fullPath, content);
+        else if (content instanceof File) {
+          await writeFile(fullPath, new Uint8Array(await content.arrayBuffer()));
+        } else await writeFile(fullPath, new Uint8Array(content));
+      },
+      installDatabase: async (path: string, base: BaseDir, source: File): Promise<void> => {
+        installedDatabases += 1;
+        const fullPath = resolve(path, base);
+        await mkdir(dirname(fullPath), { recursive: true });
+        await writeFile(fullPath, new Uint8Array(await source.arrayBuffer()));
+      },
+      deleteDir: async (path: string, base: BaseDir): Promise<void> => {
+        await rm(resolve(path, base), { recursive: true, force: true });
+      },
+      openDatabase: async (_schema: string, path: string, base: BaseDir) =>
+        NodeDatabaseService.open(resolve(path, base)),
+      deleteDatabase: async (path: string, base: BaseDir): Promise<void> => {
+        await rm(resolve(path, base), { force: true });
+        await rm(`${resolve(path, base)}-wal`, { force: true });
+      },
+    };
+    const controlDb = await NodeDatabaseService.open(join(root, 'portable-control.sqlite3'));
+    const controlStore = new DictionaryPluginControlStore(controlDb, {
+      createId: () => 'portable-owner',
+      deleteDatabase: (path) => host.deleteDatabase(path, 'Dictionaries'),
+    });
+    await controlStore.initialize();
+    const plugin: BundledPluginDefinition = {
+      manifest: yomitanPluginManifest,
+      createWorker: () => new LoopbackWorker(),
+    };
+    const source = await createPortableDictionary(join(root, 'portable-jitendex.rdict'));
+
+    const imported = await importPluginDictionaries(host, [{ file: source }], [], {
+      resolvePlugin: () => plugin,
+      controlStore,
+      createBuildId: () => 'portable-build',
+      isWorkerSupported: () => true,
+    });
+
+    expect(installedDatabases).toBe(1);
+    expect(imported.imported[0]).toMatchObject({
+      name: 'Portable Jitendex',
+      plugin: { formatId: 'yomitan-indexed', indexVersion: 2 },
+    });
+    const dict = imported.imported[0]!;
+    const provider = createPluginDictionaryProvider({ dict, host, plugin, controlStore });
+    const container = document.createElement('div');
+    await expect(
+      provider.lookup('読みました', { signal: new AbortController().signal, container }),
+    ).resolves.toMatchObject({ ok: true, headword: '読む' });
+    expect(container.textContent).toContain('portable definition');
+    provider.dispose?.();
     await controlDb.close();
   });
 });

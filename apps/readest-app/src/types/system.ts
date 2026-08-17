@@ -20,6 +20,14 @@ export type DeleteAction = 'cloud' | 'local' | 'both' | 'purge';
 export type SelectDirectoryMode = 'read' | 'write';
 export type DistChannel = 'readest' | 'playstore' | 'appstore' | 'unknown';
 
+export interface DictionaryImportProgress {
+  stage: string;
+  completed: number;
+  total?: number;
+}
+
+export type DictionaryImportProgressHandler = (progress: DictionaryImportProgress) => void;
+
 export type ResolvedPath = {
   baseDir: number;
   basePrefix: () => Promise<string>;
@@ -175,6 +183,7 @@ export interface AppService {
   importDictionaries(
     files: SelectedFile[],
     existingDictionaries?: ImportedDictionary[],
+    onProgress?: DictionaryImportProgressHandler,
   ): Promise<ImportDictionariesResult>;
   deleteDictionary(dict: ImportedDictionary): Promise<void>;
   importBook(file: string | File, books: Book[], options?: ImportBookOptions): Promise<Book | null>;
@@ -242,6 +251,7 @@ export interface AppService {
     base: BaseDir,
     opts?: DatabaseOpts,
   ): Promise<DatabaseService>;
+  installDatabase(path: string, base: BaseDir, source: File): Promise<void>;
   databaseExists(path: string, base: BaseDir): Promise<boolean>;
   deleteDatabase(path: string, base: BaseDir): Promise<void>;
 }

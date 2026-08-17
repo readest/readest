@@ -109,6 +109,26 @@ describe('Yomitan structured content', () => {
       /nodes/i,
     );
   });
+
+  test('normalizes Jitendex structured content nested to depth 13', () => {
+    const tags = [
+      'ul',
+      'li',
+      'ol',
+      'li',
+      'div',
+      'div',
+      'div',
+      'div',
+      'span',
+      'span',
+      'ruby',
+      'rt',
+    ] as const;
+    const content = tags.reduceRight<unknown>((child, tag) => ({ tag, content: child }), '物作り');
+
+    expect(normalizeYomitanGlossary([{ type: 'structured-content', content }])).toHaveLength(1);
+  });
 });
 
 describe('Japanese deinflection', () => {

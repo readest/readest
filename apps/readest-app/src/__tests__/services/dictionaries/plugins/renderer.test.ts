@@ -74,6 +74,23 @@ describe('plugin dictionary renderer', () => {
     expect(decoded).not.toMatch(/script|onload/iu);
   });
 
+  test('produces a signature-checked AVIF data URL', () => {
+    const avif = new Uint8Array([
+      0, 0, 0, 28, 102, 116, 121, 112, 97, 118, 105, 102, 0, 0, 0, 0, 97, 118, 105, 102, 109, 105,
+      102, 49, 109, 105, 97, 102,
+    ]);
+
+    expect(createDictionaryResourceDataUrl('image/avif', avif)).toMatch(
+      /^data:image\/avif;base64,/u,
+    );
+  });
+
+  test('lets the browser decode other image resource types', () => {
+    expect(createDictionaryResourceDataUrl('image/bmp', new Uint8Array([66, 77, 0, 0]))).toMatch(
+      /^data:image\/bmp;base64,/u,
+    );
+  });
+
   test('rejects mismatched raster signatures and oversized resources', () => {
     expect(() =>
       createDictionaryResourceDataUrl('image/png', new TextEncoder().encode('<svg/>')),
@@ -81,5 +98,8 @@ describe('plugin dictionary renderer', () => {
     expect(() =>
       createDictionaryResourceDataUrl('image/png', new Uint8Array(4 * 1_024 * 1_024 + 1)),
     ).toThrow(/size/i);
+    expect(() =>
+      createDictionaryResourceDataUrl('application/octet-stream', new Uint8Array([1, 2, 3])),
+    ).toThrow(/resource type/i);
   });
 });

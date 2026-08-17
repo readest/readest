@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const PLUGIN_PROTOCOL_VERSION = 1 as const;
 export const MAX_PLUGIN_RESOURCE_BYTES = 4 * 1_024 * 1_024;
+export const MAX_PLUGIN_SQL_PARAMS = 9_000;
 
 const identifierSchema = z
   .string()
@@ -18,6 +19,7 @@ export const dictionaryFormatContributionSchema = z.strictObject({
     .min(1)
     .max(16),
   indexVersion: z.number().int().positive(),
+  materialization: z.enum(['sql', 'database']),
 });
 
 export const pluginManifestSchema = z.strictObject({
@@ -335,6 +337,7 @@ const buildIndexResultSchema = z.strictObject({
 const verifyIndexResultSchema = z.strictObject({
   indexVersion: z.number().int().positive(),
   entries: z.number().int().nonnegative(),
+  title: z.string().min(1).max(1_024).optional(),
 });
 
 const resourceBytesSchema = z
@@ -344,8 +347,14 @@ const resourceBytesSchema = z
     'Dictionary resource exceeds the protocol byte limit',
   );
 
+const resourceMimeTypeSchema = z
+  .string()
+  .min(3)
+  .max(255)
+  .regex(/^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/iu);
+
 const readResourceResultSchema = z.strictObject({
-  mimeType: z.enum(['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml']),
+  mimeType: resourceMimeTypeSchema,
   bytes: resourceBytesSchema,
 });
 
@@ -433,7 +442,7 @@ const sqlValueSchema = z.union([
 
 export type PluginSqlValue = z.infer<typeof sqlValueSchema>;
 
-const sqlParamsSchema = z.array(sqlValueSchema).max(999).optional();
+const sqlParamsSchema = z.array(sqlValueSchema).max(MAX_PLUGIN_SQL_PARAMS).optional();
 
 const hostCallEnvelope = {
   kind: z.literal('host-call'),

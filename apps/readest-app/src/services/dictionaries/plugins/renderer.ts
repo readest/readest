@@ -10,6 +10,20 @@ import {
 const hasPrefix = (bytes: Uint8Array, prefix: number[]): boolean =>
   prefix.every((value, index) => bytes[index] === value);
 
+const hasAvifSignature = (bytes: Uint8Array): boolean => {
+  if (bytes.byteLength < 16) return false;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const boxSize = view.getUint32(0);
+  const text = (offset: number): string =>
+    new TextDecoder('ascii').decode(bytes.subarray(offset, offset + 4));
+  if (boxSize < 16 || boxSize > bytes.byteLength || text(4) !== 'ftyp') return false;
+  if (text(8) === 'avif' || text(8) === 'avis') return true;
+  for (let offset = 16; offset + 4 <= boxSize; offset += 4) {
+    if (text(offset) === 'avif' || text(offset) === 'avis') return true;
+  }
+  return false;
+};
+
 const assertRasterSignature = (mimeType: string, bytes: Uint8Array): void => {
   const valid =
     (mimeType === 'image/png' && hasPrefix(bytes, [137, 80, 78, 71, 13, 10, 26, 10])) ||
@@ -19,7 +33,8 @@ const assertRasterSignature = (mimeType: string, bytes: Uint8Array): void => {
         new TextDecoder('ascii').decode(bytes.subarray(0, 6)) === 'GIF89a')) ||
     (mimeType === 'image/webp' &&
       new TextDecoder('ascii').decode(bytes.subarray(0, 4)) === 'RIFF' &&
-      new TextDecoder('ascii').decode(bytes.subarray(8, 12)) === 'WEBP');
+      new TextDecoder('ascii').decode(bytes.subarray(8, 12)) === 'WEBP') ||
+    (mimeType === 'image/avif' && hasAvifSignature(bytes));
   if (!valid) throw new Error(`Dictionary resource signature does not match ${mimeType}`);
 };
 
@@ -38,6 +53,9 @@ export const createDictionaryResourceDataUrl = (
 ): string => {
   if (bytes.byteLength > MAX_PLUGIN_RESOURCE_BYTES) {
     throw new Error('Dictionary resource exceeds size limit');
+  }
+  if (!mimeType.startsWith('image/')) {
+    throw new Error(`Unsupported dictionary resource type: ${mimeType}`);
   }
   let safeBytes = bytes;
   if (mimeType === 'image/svg+xml') {
@@ -110,7 +128,9 @@ export const createDictionaryResourceDataUrl = (
     });
     if (!/<svg(?:\s|>)/iu.test(sanitized)) throw new Error('Dictionary SVG has no safe root');
     safeBytes = new TextEncoder().encode(sanitized);
-  } else {
+  } else if (
+    ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/avif'].includes(mimeType)
+  ) {
     assertRasterSignature(mimeType, bytes);
   }
   return `data:${mimeType};base64,${bytesToBase64(safeBytes)}`;

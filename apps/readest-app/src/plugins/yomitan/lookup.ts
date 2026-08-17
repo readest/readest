@@ -5,8 +5,9 @@ import {
   type PluginPayload,
 } from '@/services/plugins/contract';
 import type { DatabaseRow } from '@/types/database';
+import { normalizeYomitanGlossary } from './content';
 import { deinflectJapanese, type DeinflectionCandidate } from './deinflect';
-import { splitYomitanTags } from './schemas';
+import { splitYomitanTags, yomitanTermBankSchema } from './schemas';
 import type { YomitanHost } from './importer';
 
 const stringField = (row: DatabaseRow, key: string): string => {
@@ -19,6 +20,24 @@ const numberField = (row: DatabaseRow, key: string): number => {
   const value = Number(row[key]);
   if (!Number.isFinite(value)) throw new Error(`Invalid Yomitan index field: ${key}`);
   return value;
+};
+
+const bytesField = (row: DatabaseRow, key: string): Uint8Array<ArrayBuffer> => {
+  const value = row[key];
+  let view: Uint8Array;
+  if (value instanceof Uint8Array) view = value;
+  else if (ArrayBuffer.isView(value)) {
+    view = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+  } else if (value instanceof ArrayBuffer) view = new Uint8Array(value);
+  else if (
+    Array.isArray(value) &&
+    value.every((byte) => Number.isInteger(byte) && byte >= 0 && byte <= 255)
+  ) {
+    view = Uint8Array.from(value);
+  } else throw new Error(`Invalid Yomitan index field: ${key}`);
+  const bytes = new Uint8Array(view.byteLength);
+  bytes.set(view);
+  return bytes;
 };
 
 const placeholders = (count: number): string => Array.from({ length: count }, () => '?').join(', ');
@@ -52,6 +71,55 @@ interface TagInfo {
   notes?: string;
   score?: number;
 }
+
+const loadBankedDefinitions = async (
+  host: YomitanHost,
+  databaseHandle: string,
+  terms: IndexedTerm[],
+): Promise<Map<number, ReturnType<typeof normalizeYomitanGlossary>>> => {
+  const bankOrders = [
+    ...new Set(
+      terms
+        .filter(({ row }) => row['glossary_json'] === null)
+        .map(({ row }) => numberField(row, 'bank_order')),
+    ),
+  ];
+  if (bankOrders.length === 0) return new Map();
+  const rows = (
+    await host.select(
+      databaseHandle,
+      `SELECT bank_order, data FROM term_banks WHERE bank_order IN (${placeholders(bankOrders.length)})`,
+      bankOrders,
+      bankOrders.length,
+    )
+  ).rows;
+  const banks = new Map<number, ReturnType<typeof yomitanTermBankSchema.parse>>();
+  for (const row of rows) {
+    const bytes = bytesField(row, 'data');
+    const stream = new Response(bytes.buffer).body!.pipeThrough(new DecompressionStream('gzip'));
+    banks.set(
+      numberField(row, 'bank_order'),
+      yomitanTermBankSchema.parse(JSON.parse(await new Response(stream).text())),
+    );
+  }
+  const definitions = new Map<number, ReturnType<typeof normalizeYomitanGlossary>>();
+  for (const { row } of terms) {
+    if (row['glossary_json'] !== null) continue;
+    const id = numberField(row, 'id');
+    const bank = banks.get(numberField(row, 'bank_order'));
+    const entryIndex = numberField(row, 'entry_index');
+    const term = bank?.[entryIndex];
+    if (!term) throw new Error('Portable Yomitan term bank entry is missing');
+    if (
+      term[0] !== stringField(row, 'expression') ||
+      (term[1] || term[0]) !== stringField(row, 'reading')
+    ) {
+      throw new Error('Portable Yomitan term bank entry does not match its index');
+    }
+    definitions.set(id, normalizeYomitanGlossary(term[5]));
+  }
+  return definitions;
+};
 
 const loadTags = async (
   host: YomitanHost,
@@ -182,7 +250,7 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
   const terms = candidates.map((candidate) => candidate.term);
   const result = await host.select(
     request.databaseHandle,
-    `SELECT id, expression, reading, definition_tags, rules, score, glossary_json, sequence, term_tags, bank_order FROM terms WHERE expression IN (${placeholders(terms.length)}) OR reading IN (${placeholders(terms.length)}) ORDER BY score DESC, bank_order ASC`,
+    `SELECT id, expression, reading, definition_tags, rules, score, glossary_json, sequence, term_tags, bank_order, entry_index FROM terms WHERE expression IN (${placeholders(terms.length)}) OR reading IN (${placeholders(terms.length)}) ORDER BY score DESC, bank_order ASC`,
     [...terms, ...terms],
     256,
   );
@@ -198,17 +266,23 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
       numberField(left.row, 'bank_order') - numberField(right.row, 'bank_order'),
   );
   const limited = indexed.slice(0, 128);
-  const [tags, metadata] = await Promise.all([
+  const [tags, metadata, bankedDefinitions] = await Promise.all([
     loadTags(host, request.databaseHandle, limited),
     loadMetadata(host, request.databaseHandle, limited),
+    loadBankedDefinitions(host, request.databaseHandle, limited),
   ]);
 
   const entries: DictionaryLookupEntry[] = limited.map(({ row, candidate }) => {
     const expression = stringField(row, 'expression');
     const reading = stringField(row, 'reading');
+    const glossary = row['glossary_json'];
     const definitions = dictionaryContentNodeSchema
       .array()
-      .parse(JSON.parse(stringField(row, 'glossary_json')));
+      .parse(
+        typeof glossary === 'string'
+          ? JSON.parse(glossary)
+          : bankedDefinitions.get(numberField(row, 'id')),
+      );
     const tagNames = [
       ...splitYomitanTags(stringField(row, 'definition_tags')),
       ...splitYomitanTags(stringField(row, 'term_tags')),

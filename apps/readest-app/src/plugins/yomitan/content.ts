@@ -1,6 +1,6 @@
 import type { DictionaryContentNode } from '@/services/plugins/contract';
 
-const MAX_DEPTH = 12;
+const MAX_DEPTH = 16;
 const MAX_NODES = 1_024;
 
 interface NormalizeState {

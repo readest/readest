@@ -15,7 +15,10 @@ import { getDictionaryPluginControlStore } from './controlService';
 import { computePluginDictionaryContentId, sha256File } from './integrity';
 import { pluginDictionaryMetadataSchema } from './record';
 
-type MaterializationHost = Pick<AppService, 'openFile' | 'openDatabase' | 'deleteDatabase'>;
+type MaterializationHost = Pick<
+  AppService,
+  'openFile' | 'openDatabase' | 'installDatabase' | 'deleteDatabase'
+>;
 
 interface MaterializeOptions {
   plugin?: BundledPluginDefinition;
@@ -107,14 +110,23 @@ export const materializePluginDictionary = async (
       databasePath,
       metadata.indexVersion,
     );
+    if (contribution.materialization === 'database') {
+      await host.installDatabase(databasePath, 'Dictionaries', source);
+    }
     database = await host.openDatabase('dictionary-plugin-index', databasePath, 'Dictionaries');
-    databaseHandle = await sqlBroker.register(scope, database, 'staging');
-    await runtime.call('buildIndex', {
-      dictionaryId: dict.id,
-      sourceHandle,
-      databaseHandle,
-      sourceFormatVersion: metadata.sourceFormatVersion,
-    });
+    databaseHandle = await sqlBroker.register(
+      scope,
+      database,
+      contribution.materialization === 'database' ? 'active' : 'staging',
+    );
+    if (contribution.materialization === 'sql') {
+      await runtime.call('buildIndex', {
+        dictionaryId: dict.id,
+        sourceHandle,
+        databaseHandle,
+        sourceFormatVersion: metadata.sourceFormatVersion,
+      });
+    }
     await runtime.call('verifyIndex', { dictionaryId: dict.id, databaseHandle });
     await stopLeaseHeartbeat();
     stopLeaseHeartbeat = undefined;
