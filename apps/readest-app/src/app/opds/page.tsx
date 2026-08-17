@@ -16,8 +16,7 @@ import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
-import { transferManager } from '@/services/transferManager';
-import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
+import { queueOPDSBookUploads } from '@/services/opds/cloudUpload';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useTheme } from '@/hooks/useTheme';
 import { useLibrary } from '@/hooks/useLibrary';
@@ -656,10 +655,8 @@ export default function BrowserPage() {
                 console.error('OPDS: failed to update source map:', sourceMapError);
               }
             }
-            if (user && book && !book.uploadedAt && isReadestCloudStorageActive(settings)) {
-              setTimeout(() => {
-                transferManager.queueUpload(book);
-              }, 3000);
+            if (book) {
+              queueOPDSBookUploads(!!user, useSettingsStore.getState().settings, [book]);
             }
             setLibrary(library);
             appService.saveLibraryBooks(library);

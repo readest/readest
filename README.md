@@ -186,7 +186,7 @@ If you prefer a more reliable out-of-the-box experience on Arch Linux, consider 
 
 ## Contributors
 
-Readest is open-source, and contributions are welcome! Feel free to open issues, suggest features, or submit pull requests. Please **review our [contributing guidelines](CONTRIBUTING.md) before you start**. We also welcome you to join our [Discord][link-discord] community for either support or contributing guidance.
+Readest is open-source, and contributions are welcome! Feel free to open issues, suggest features, or submit pull requests. Please **review our [contributing guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before you start**. We also welcome you to join our [Discord][link-discord] community for either support or contributing guidance.
 
 <a href="https://github.com/readest/readest/graphs/contributors">
   <p align="left">
