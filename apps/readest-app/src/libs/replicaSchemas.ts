@@ -62,6 +62,7 @@ const opdsCatalogFieldsSchema = z
     autoDownload: fieldEnvelopeSchema.optional(),
     disabled: fieldEnvelopeSchema.optional(),
     addedAt: fieldEnvelopeSchema.optional(),
+    sortOrder: fieldEnvelopeSchema.optional(),
     // Encrypted-credential fields. The CRDT envelope wraps a cipher
     // envelope as `v` when the publishing device had its CryptoSession
     // unlocked; otherwise the field is omitted from the row.

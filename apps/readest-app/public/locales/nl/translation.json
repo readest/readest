@@ -2098,5 +2098,9 @@
   "More Settings": "Meer instellingen",
   "Right-to-Left Pages": "Pagina's van rechts naar links",
   "Send Document Metadata": "Documentmetadata verzenden",
-  "Hide covers": "Boekomslagen verbergen"
+  "Hide covers": "Boekomslagen verbergen",
+  "Auto-download from “{{name}}”?": "Automatisch downloaden van “{{name}}”?",
+  "Stop auto-downloading from “{{name}}”?": "Automatisch downloaden van “{{name}}” stoppen?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Readest downloadt automatisch elke nieuwe publicatie uit deze catalogus wanneer de app synchroniseert. Hierbij kunnen zeer veel boeken worden gedownload.",
+  "New publications from this catalog will no longer be downloaded automatically.": "Nieuwe publicaties uit deze catalogus worden niet meer automatisch gedownload."
 }

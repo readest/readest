@@ -2098,5 +2098,9 @@
   "More Settings": "Fler inställningar",
   "Right-to-Left Pages": "Sidor från höger till vänster",
   "Send Document Metadata": "Skicka dokumentmetadata",
-  "Hide covers": "Dölj bokomslag"
+  "Hide covers": "Dölj bokomslag",
+  "Auto-download from “{{name}}”?": "Hämta automatiskt från ”{{name}}”?",
+  "Stop auto-downloading from “{{name}}”?": "Sluta hämta automatiskt från ”{{name}}”?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Readest hämtar automatiskt varje ny publikation från den här katalogen när appen synkroniserar. Det kan innebära att väldigt många böcker hämtas.",
+  "New publications from this catalog will no longer be downloaded automatically.": "Nya publikationer från den här katalogen hämtas inte längre automatiskt."
 }

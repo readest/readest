@@ -2042,5 +2042,9 @@
   "More Settings": "更多設定",
   "Right-to-Left Pages": "從右到左翻頁",
   "Send Document Metadata": "傳送文件中繼資料",
-  "Hide covers": "隱藏封面"
+  "Hide covers": "隱藏封面",
+  "Auto-download from “{{name}}”?": "從「{{name}}」自動下載？",
+  "Stop auto-downloading from “{{name}}”?": "停止從「{{name}}」自動下載？",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "應用同步時，Readest 將自動下載此目錄中的每一本新出版物。這可能會下載大量書籍。",
+  "New publications from this catalog will no longer be downloaded automatically.": "此目錄中的新出版物將不再自動下載。"
 }

@@ -2098,5 +2098,9 @@
   "More Settings": "További beállítások",
   "Right-to-Left Pages": "Oldalak jobbról balra",
   "Send Document Metadata": "Dokumentum metaadatainak küldése",
-  "Hide covers": "Könyvborítók elrejtése"
+  "Hide covers": "Könyvborítók elrejtése",
+  "Auto-download from “{{name}}”?": "Automatikus letöltés innen: „{{name}}”?",
+  "Stop auto-downloading from “{{name}}”?": "Leállítja az automatikus letöltést innen: „{{name}}”?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "A Readest az alkalmazás minden szinkronizálásakor automatikusan letölti a katalógus összes új kiadványát. Ez nagyon sok könyv letöltését jelentheti.",
+  "New publications from this catalog will no longer be downloaded automatically.": "A katalógus új kiadványai a továbbiakban nem töltődnek le automatikusan."
 }

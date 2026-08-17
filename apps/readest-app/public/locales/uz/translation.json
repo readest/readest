@@ -2098,5 +2098,9 @@
   "More Settings": "Boshqa sozlamalar",
   "Right-to-Left Pages": "Oʻngdan chapga sahifalar",
   "Send Document Metadata": "Hujjat metamaʼlumotlarini yuborish",
-  "Hide covers": "Kitob muqovalarini yashirish"
+  "Hide covers": "Kitob muqovalarini yashirish",
+  "Auto-download from “{{name}}”?": "“{{name}}” dan avtomatik yuklab olinsinmi?",
+  "Stop auto-downloading from “{{name}}”?": "“{{name}}” dan avtomatik yuklab olish to‘xtatilsinmi?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Ilova sinxronlanganda Readest ushbu katalogdagi har bir yangi nashrni avtomatik yuklab oladi. Bu juda ko‘p kitob yuklab olinishiga olib kelishi mumkin.",
+  "New publications from this catalog will no longer be downloaded automatically.": "Ushbu katalogdagi yangi nashrlar endi avtomatik yuklab olinmaydi."
 }

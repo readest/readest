@@ -2210,5 +2210,9 @@
   "More Settings": "Інші налаштування",
   "Right-to-Left Pages": "Сторінки справа наліво",
   "Send Document Metadata": "Надсилати метадані документа",
-  "Hide covers": "Сховати обкладинки книг"
+  "Hide covers": "Сховати обкладинки книг",
+  "Auto-download from “{{name}}”?": "Автоматично завантажувати з «{{name}}»?",
+  "Stop auto-downloading from “{{name}}”?": "Припинити автоматичне завантаження з «{{name}}»?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Readest автоматично завантажуватиме кожну нову публікацію з цього каталогу під час синхронізації застосунку. Це може завантажити велику кількість книг.",
+  "New publications from this catalog will no longer be downloaded automatically.": "Нові публікації з цього каталогу більше не завантажуватимуться автоматично."
 }

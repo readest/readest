@@ -2098,5 +2098,9 @@
   "More Settings": "تنظیمات بیشتر",
   "Right-to-Left Pages": "صفحات راست به چپ",
   "Send Document Metadata": "ارسال فراداده سند",
-  "Hide covers": "پنهان کردن جلد کتاب‌ها"
+  "Hide covers": "پنهان کردن جلد کتاب‌ها",
+  "Auto-download from “{{name}}”?": "دانلود خودکار از «{{name}}»؟",
+  "Stop auto-downloading from “{{name}}”?": "توقف دانلود خودکار از «{{name}}»؟",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Readest هنگام همگام‌سازی برنامه، هر انتشار جدید این کاتالوگ را به‌طور خودکار دانلود می‌کند. ممکن است تعداد زیادی کتاب دانلود شود.",
+  "New publications from this catalog will no longer be downloaded automatically.": "انتشارات جدید این کاتالوگ دیگر به‌طور خودکار دانلود نمی‌شوند."
 }

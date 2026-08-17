@@ -109,6 +109,32 @@ describe('opdsCatalogAdapter', () => {
     expect(opdsCatalogAdapter.unpackRow(noUrl, '')).toBeNull();
   });
 
+  test('round-trips sortOrder so a manual drag order syncs cross-device', () => {
+    const fields = opdsCatalogAdapter.pack({ ...sample, sortOrder: 2 });
+    expect(opdsCatalogAdapter.unpack(fields).sortOrder).toBe(2);
+
+    const row = makeRow({
+      fields_jsonb: { ...makeRow().fields_jsonb, sortOrder: env(2) },
+    });
+    expect(opdsCatalogAdapter.unpackRow(row, '')!.sortOrder).toBe(2);
+  });
+
+  test('sortOrder 0 survives the round trip', () => {
+    // Guards against a truthiness check swallowing the first slot.
+    const fields = opdsCatalogAdapter.pack({ ...sample, sortOrder: 0 });
+    expect(opdsCatalogAdapter.unpack(fields).sortOrder).toBe(0);
+
+    const row = makeRow({
+      fields_jsonb: { ...makeRow().fields_jsonb, sortOrder: env(0) },
+    });
+    expect(opdsCatalogAdapter.unpackRow(row, '')!.sortOrder).toBe(0);
+  });
+
+  test('omits sortOrder entirely for never-dragged catalogs', () => {
+    expect(opdsCatalogAdapter.pack(sample)).not.toHaveProperty('sortOrder');
+    expect(opdsCatalogAdapter.unpackRow(makeRow(), '')!.sortOrder).toBeUndefined();
+  });
+
   test('unpackRow surfaces the reincarnation token', () => {
     const row = makeRow({ reincarnation: 'rev1' });
     const out = opdsCatalogAdapter.unpackRow(row, '');

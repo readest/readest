@@ -2042,5 +2042,9 @@
   "More Settings": "その他の設定",
   "Right-to-Left Pages": "右から左のページ送り",
   "Send Document Metadata": "ドキュメントのメタデータを送信",
-  "Hide covers": "表紙を非表示"
+  "Hide covers": "表紙を非表示",
+  "Auto-download from “{{name}}”?": "「{{name}}」から自動ダウンロードしますか？",
+  "Stop auto-downloading from “{{name}}”?": "「{{name}}」からの自動ダウンロードを停止しますか？",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "アプリの同期時に、Readest はこのカタログの新しい出版物をすべて自動的にダウンロードします。大量の書籍がダウンロードされる可能性があります。",
+  "New publications from this catalog will no longer be downloaded automatically.": "このカタログの新しい出版物は自動的にダウンロードされなくなります。"
 }

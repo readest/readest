@@ -2154,5 +2154,9 @@
   "More Settings": "Mai multe setări",
   "Right-to-Left Pages": "Pagini de la dreapta la stânga",
   "Send Document Metadata": "Trimite metadatele documentului",
-  "Hide covers": "Ascunde coperțile cărților"
+  "Hide covers": "Ascunde coperțile cărților",
+  "Auto-download from “{{name}}”?": "Descărcați automat din „{{name}}”?",
+  "Stop auto-downloading from “{{name}}”?": "Opriți descărcarea automată din „{{name}}”?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Readest va descărca automat fiecare publicație nouă din acest catalog atunci când aplicația se sincronizează. Astfel se poate descărca un număr mare de cărți.",
+  "New publications from this catalog will no longer be downloaded automatically.": "Publicațiile noi din acest catalog nu vor mai fi descărcate automat."
 }

@@ -2322,5 +2322,9 @@
   "More Settings": "مزيد من الإعدادات",
   "Right-to-Left Pages": "صفحات من اليمين إلى اليسار",
   "Send Document Metadata": "إرسال البيانات الوصفية للمستند",
-  "Hide covers": "إخفاء أغلفة الكتب"
+  "Hide covers": "إخفاء أغلفة الكتب",
+  "Auto-download from “{{name}}”?": "تنزيل تلقائي من “{{name}}”؟",
+  "Stop auto-downloading from “{{name}}”?": "إيقاف التنزيل التلقائي من “{{name}}”؟",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "سيقوم Readest بتنزيل كل منشور جديد من هذا الكتالوج تلقائياً عند مزامنة التطبيق. قد يؤدي ذلك إلى تنزيل عدد كبير من الكتب.",
+  "New publications from this catalog will no longer be downloaded automatically.": "لن يتم تنزيل المنشورات الجديدة من هذا الكتالوج تلقائياً بعد الآن."
 }

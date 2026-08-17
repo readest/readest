@@ -2210,5 +2210,9 @@
   "More Settings": "Več nastavitev",
   "Right-to-Left Pages": "Strani od desne proti levi",
   "Send Document Metadata": "Pošlji metapodatke dokumenta",
-  "Hide covers": "Skrij naslovnice knjig"
+  "Hide covers": "Skrij naslovnice knjig",
+  "Auto-download from “{{name}}”?": "Samodejno prenašanje iz »{{name}}«?",
+  "Stop auto-downloading from “{{name}}”?": "Ustavim samodejno prenašanje iz »{{name}}«?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Readest bo ob vsaki sinhronizaciji aplikacije samodejno prenesel vsako novo vsebino iz tega kataloga. Prenese se lahko veliko število knjig.",
+  "New publications from this catalog will no longer be downloaded automatically.": "Nove vsebine iz tega kataloga ne bodo več samodejno prenesene."
 }

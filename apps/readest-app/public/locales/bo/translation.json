@@ -2042,5 +2042,9 @@
   "More Settings": "སྒྲིག་སྟངས་གཞན།",
   "Right-to-Left Pages": "ཤོག་ངོས་གཡས་ནས་གཡོན།",
   "Send Document Metadata": "ཡིག་ཆའི་གནས་ཚུལ་བསྐུར་བ།",
-  "Hide covers": "དཔེ་དེབ་ཀྱི་མདུན་ཤོག་སྦས་པ།"
+  "Hide covers": "དཔེ་དེབ་ཀྱི་མདུན་ཤོག་སྦས་པ།",
+  "Auto-download from “{{name}}”?": "“{{name}}” ནས་རང་འགུལ་ཕབ་ལེན་བྱེད་དམ།",
+  "Stop auto-downloading from “{{name}}”?": "“{{name}}” ནས་རང་འགུལ་ཕབ་ལེན་མཚམས་འཇོག་བྱེད་དམ།",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "མཉེན་ཆས་མཉམ་སྦྱོར་སྐབས། Readest ཡིས་དཀར་ཆག་འདིའི་གསར་འདོན་གསར་པ་ཚང་མ་རང་འགུལ་གྱིས་ཕབ་ལེན་བྱེད། དེས་དཔེ་དེབ་མང་པོ་ཞིག་ཕབ་ལེན་བྱེད་སྲིད།",
+  "New publications from this catalog will no longer be downloaded automatically.": "དཀར་ཆག་འདིའི་གསར་འདོན་གསར་པ་རྣམས་ཕྱིན་ཆད་རང་འགུལ་གྱིས་ཕབ་ལེན་མི་བྱེད།"
 }

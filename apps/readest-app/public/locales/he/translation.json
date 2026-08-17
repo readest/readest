@@ -2154,5 +2154,9 @@
   "More Settings": "הגדרות נוספות",
   "Right-to-Left Pages": "עמודים מימין לשמאל",
   "Send Document Metadata": "שליחת מטא-נתונים של המסמך",
-  "Hide covers": "הסתר כריכות ספרים"
+  "Hide covers": "הסתר כריכות ספרים",
+  "Auto-download from “{{name}}”?": "להוריד אוטומטית מ–“{{name}}”?",
+  "Stop auto-downloading from “{{name}}”?": "להפסיק הורדה אוטומטית מ–“{{name}}”?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Readest יוריד אוטומטית כל פרסום חדש מהקטלוג הזה בכל סנכרון של האפליקציה. ייתכן שיורדו ספרים רבים מאוד.",
+  "New publications from this catalog will no longer be downloaded automatically.": "פרסומים חדשים מהקטלוג הזה לא יורדו עוד באופן אוטומטי."
 }

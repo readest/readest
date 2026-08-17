@@ -2098,5 +2098,9 @@
   "More Settings": "अधिक सेटिंग्स",
   "Right-to-Left Pages": "दाएँ से बाएँ पृष्ठ",
   "Send Document Metadata": "दस्तावेज़ मेटाडेटा भेजें",
-  "Hide covers": "पुस्तक कवर छिपाएँ"
+  "Hide covers": "पुस्तक कवर छिपाएँ",
+  "Auto-download from “{{name}}”?": "“{{name}}” से स्वचालित डाउनलोड करें?",
+  "Stop auto-downloading from “{{name}}”?": "“{{name}}” से स्वचालित डाउनलोड बंद करें?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "ऐप सिंक होने पर Readest इस कैटलॉग के हर नए प्रकाशन को स्वचालित रूप से डाउनलोड करेगा। इससे बड़ी संख्या में पुस्तकें डाउनलोड हो सकती हैं।",
+  "New publications from this catalog will no longer be downloaded automatically.": "इस कैटलॉग के नए प्रकाशन अब स्वचालित रूप से डाउनलोड नहीं होंगे।"
 }

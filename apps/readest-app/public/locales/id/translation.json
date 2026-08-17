@@ -2042,5 +2042,9 @@
   "More Settings": "Pengaturan Lainnya",
   "Right-to-Left Pages": "Halaman Kanan ke Kiri",
   "Send Document Metadata": "Kirim Metadata Dokumen",
-  "Hide covers": "Sembunyikan sampul buku"
+  "Hide covers": "Sembunyikan sampul buku",
+  "Auto-download from “{{name}}”?": "Unduh otomatis dari “{{name}}”?",
+  "Stop auto-downloading from “{{name}}”?": "Hentikan unduh otomatis dari “{{name}}”?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Readest akan otomatis mengunduh setiap publikasi baru dari katalog ini saat aplikasi disinkronkan. Ini dapat mengunduh sejumlah besar buku.",
+  "New publications from this catalog will no longer be downloaded automatically.": "Publikasi baru dari katalog ini tidak akan diunduh otomatis lagi."
 }
