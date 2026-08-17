@@ -2,7 +2,12 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { useSettingsStore } from '@/store/settingsStore';
-import { needsProxy, getProxiedURL, omitOriginHeader, probeAuth } from '@/app/opds/utils/opdsReq';
+import {
+  needsProxy,
+  getProxiedURL,
+  probeAuth,
+  withOriginSuppressed,
+} from '@/app/opds/utils/opdsReq';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import type { BookFormat } from '@/types/book';
 import type { BookDoc, BookMetadata } from '@/libs/document';
@@ -51,12 +56,11 @@ export const createPseStreamPageLoader = (data: PseStreamData) => {
     const authHeader = await authHeaderPromise;
 
     const fetchURL = useProxy ? getProxiedURL(url, authHeader || '', true, customHeaders) : url;
-    const headers: Record<string, string> = {
+    const headers: Record<string, string> = withOriginSuppressed({
       'User-Agent': READEST_OPDS_USER_AGENT,
-      ...omitOriginHeader(),
       ...(!useProxy ? customHeaders : {}),
       ...(!useProxy && authHeader ? { Authorization: authHeader } : {}),
-    };
+    });
     const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
     const res = await fetch(fetchURL, {
       headers,

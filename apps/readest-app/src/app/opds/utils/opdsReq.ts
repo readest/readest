@@ -47,17 +47,28 @@ export const needsProxy = (url: string): boolean => {
 };
 
 /**
- * tauri-plugin-http appends the webview origin (e.g. `tauri://localhost`) as
- * the Origin header of every request unless the caller sets one. Spring-based
- * servers such as Komga treat it as a foreign CORS origin and reject the
- * request with 403 "Invalid CORS request" before authentication ever happens
- * (#5698). An explicit empty Origin instructs the plugin (built with the
- * `unsafe-headers` feature) to drop the header entirely, matching what native
- * OPDS clients send. Spread it before custom headers so a user-defined Origin
- * still wins.
+ * tauri-plugin-http appends the webview origin (`tauri://localhost`, or
+ * `http://tauri.localhost` on Android/Windows) as the Origin header of every
+ * request unless the caller sets one. A native client has no business
+ * asserting a browser origin, and any Origin-checking middlebox in front of
+ * the catalog rejects the unrecognized value with 403 before authentication
+ * ever happens: in #5698 the nginx reverse proxy in front of Komga answered
+ * 403 and Komga itself logged no request at all. An explicit empty Origin
+ * instructs the plugin (built with the `unsafe-headers` feature, see
+ * `src-tauri/Cargo.toml`) to drop the header entirely, matching what native
+ * OPDS clients send.
+ *
+ * Applied to the assembled header set rather than spread ahead of it, because
+ * header names are case-insensitive on the wire but not in a JS object: a
+ * custom header spelled `origin` would survive alongside `Origin` as a second
+ * key, and the plugin's `new Headers()` merges the pair into `", https://..."`
+ * — which is neither empty (so the plugin keeps it) nor a valid Origin. The
+ * case-insensitive check keeps a user-defined Origin of any spelling intact.
  */
-export const omitOriginHeader = (): Record<string, string> =>
-  isTauriAppPlatform() ? { Origin: '' } : {};
+export const withOriginSuppressed = (headers: Record<string, string>): Record<string, string> =>
+  isTauriAppPlatform() && !Object.keys(headers).some((key) => key.toLowerCase() === 'origin')
+    ? { Origin: '', ...headers }
+    : headers;
 
 const PROXY_OVERRIDES: Record<string, string> = {
   standardebooks: NODE_OPDS_PROXY_URL,
@@ -238,12 +249,11 @@ export const probeAuth = async (
   const fetchURL = useProxy
     ? getProxiedURL(cleanUrl, '', false, normalizedCustomHeaders)
     : cleanUrl;
-  const headers: Record<string, string> = {
+  const headers: Record<string, string> = withOriginSuppressed({
     'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: 'application/atom+xml, application/xml, text/xml, */*',
-    ...omitOriginHeader(),
     ...(!useProxy ? normalizedCustomHeaders : {}),
-  };
+  });
 
   // Probe with HEAD request
   const fetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
@@ -356,13 +366,12 @@ export const fetchWithAuth = async (
   const fetchURL = useProxy
     ? getProxiedURL(cleanUrl, preemptiveAuth || '', false, normalizedCustomHeaders)
     : cleanUrl;
-  const baseHeaders: Record<string, string> = {
+  const baseHeaders: Record<string, string> = withOriginSuppressed({
     'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: 'application/atom+xml, application/xml, text/xml, */*',
-    ...omitOriginHeader(),
     ...(!useProxy ? normalizedCustomHeaders : {}),
     ...(options.headers as Record<string, string>),
-  };
+  });
   const headers: Record<string, string> = {
     ...baseHeaders,
     ...(preemptiveAuth && !useProxy ? { Authorization: preemptiveAuth } : {}),

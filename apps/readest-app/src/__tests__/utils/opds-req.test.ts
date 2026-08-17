@@ -323,6 +323,31 @@ describe('opdsReq', () => {
       expect(headers['Origin']).toBe('https://allowed.example.com');
     });
 
+    it('lets a lowercase custom origin header win without colliding with the marker', async () => {
+      // Header names are case-insensitive on the wire but not in a JS object,
+      // and `normalizeCustomHeaders` preserves whatever the user typed. A
+      // `{ Origin: '' }` marker spread alongside a custom `origin` would leave
+      // both keys in place, and the plugin's `new Headers()` merges the pair
+      // into `", https://allowed.example.com"` — not empty, so the plugin never
+      // drops it, and not a valid Origin either, so the catalog still 403s.
+      tauriFetchMock.mockResolvedValue(makeResponse({ status: 200, body: '<feed/>' }));
+
+      await fetchWithAuth(
+        'https://komga.example.com/opds/v2/catalog',
+        'alice',
+        's3cret',
+        false,
+        {},
+        { origin: 'https://allowed.example.com' },
+      );
+
+      const init = tauriFetchMock.mock.calls[0]![1] as RequestInit;
+      const headers = init.headers as Record<string, string>;
+      // Assert through Headers, which is what the plugin builds internally, so
+      // a reintroduced duplicate key fails here instead of silently on device.
+      expect(new Headers(headers).get('origin')).toBe('https://allowed.example.com');
+    });
+
     it('suppresses the webview Origin header on the HEAD probe', async () => {
       tauriFetchMock.mockResolvedValue(makeResponse({ status: 200 }));
 
