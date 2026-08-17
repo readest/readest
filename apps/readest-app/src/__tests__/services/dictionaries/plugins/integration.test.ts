@@ -91,6 +91,16 @@ const createDictionary = async (): Promise<File> => {
   return new File([await writer.close()], 'reader-japanese.zip', { type: 'application/zip' });
 };
 
+const createInvalidDictionary = async (): Promise<File> => {
+  const writer = new ZipWriter(new BlobWriter('application/zip'));
+  await writer.add(
+    'index.json',
+    new TextReader(JSON.stringify({ title: 'Broken Japanese', revision: '1', format: 3 })),
+  );
+  await writer.add('term_bank_1.json', new TextReader(JSON.stringify([['invalid']])));
+  return new File([await writer.close()], 'broken-japanese.zip', { type: 'application/zip' });
+};
+
 const createPortableDictionary = async (path: string): Promise<File> => {
   const database = await NodeDatabaseService.open(path);
   await database.execute(`PRAGMA application_id = ${YOMITAN_PORTABLE_APPLICATION_ID}`);
@@ -238,6 +248,76 @@ describe('bundled dictionary plugin integration', () => {
     expect(container.textContent).toContain('to read');
     expect(container.querySelector('img')?.src).toMatch(/^data:image\/png;base64,/u);
     provider.dispose?.();
+    await controlDb.close();
+  });
+
+  test('returns earlier successful imports when a later plugin source fails', async () => {
+    root = await mkdtemp(join(tmpdir(), 'readest-yomitan-partial-'));
+    const resolve = (path: string, base: BaseDir): string =>
+      base === 'None' ? path : join(root!, path);
+    const host = {
+      openFile: async (path: string, base: BaseDir): Promise<File> => {
+        const fullPath = resolve(path, base);
+        return new File([await readFile(fullPath)], basename(fullPath));
+      },
+      createDir: async (path: string, base: BaseDir): Promise<void> => {
+        await mkdir(resolve(path, base), { recursive: true });
+      },
+      writeFile: async (
+        path: string,
+        base: BaseDir,
+        content: string | ArrayBuffer | File,
+      ): Promise<void> => {
+        const fullPath = resolve(path, base);
+        await mkdir(dirname(fullPath), { recursive: true });
+        if (typeof content === 'string') await writeFile(fullPath, content);
+        else if (content instanceof File) {
+          await writeFile(fullPath, new Uint8Array(await content.arrayBuffer()));
+        } else await writeFile(fullPath, new Uint8Array(content));
+      },
+      installDatabase: async (path: string, base: BaseDir, source: File): Promise<void> => {
+        await writeFile(resolve(path, base), new Uint8Array(await source.arrayBuffer()));
+      },
+      deleteDir: async (path: string, base: BaseDir): Promise<void> => {
+        await rm(resolve(path, base), { recursive: true, force: true });
+      },
+      openDatabase: async (_schema: string, path: string, base: BaseDir) =>
+        NodeDatabaseService.open(resolve(path, base)),
+      deleteDatabase: async (path: string, base: BaseDir): Promise<void> => {
+        await rm(resolve(path, base), { force: true });
+        await rm(`${resolve(path, base)}-wal`, { force: true });
+      },
+    };
+    const controlDb = await NodeDatabaseService.open(join(root, 'control.sqlite3'));
+    const controlStore = new DictionaryPluginControlStore(controlDb, {
+      createId: () => 'owner-1',
+      deleteDatabase: (path) => host.deleteDatabase(path, 'Dictionaries'),
+    });
+    await controlStore.initialize();
+    const plugin: BundledPluginDefinition = {
+      manifest: yomitanPluginManifest,
+      createWorker: () => new LoopbackWorker(),
+    };
+    let build = 0;
+
+    const result = await importPluginDictionaries(
+      host,
+      [{ file: await createDictionary() }, { file: await createInvalidDictionary() }],
+      [],
+      {
+        resolvePlugin: () => plugin,
+        controlStore,
+        createBuildId: () => `build-${++build}`,
+        isWorkerSupported: () => true,
+      },
+    );
+
+    expect(result.imported).toHaveLength(1);
+    expect(result).toMatchObject({
+      failures: [
+        { name: 'broken-japanese.zip', message: expect.stringMatching(/invalid|too small/i) },
+      ],
+    });
     await controlDb.close();
   });
 

@@ -1,6 +1,8 @@
 import {
   dictionaryContentNodeSchema,
+  MAX_DICTIONARY_DOCUMENT_NODES,
   parseDictionaryLookupResult,
+  type DictionaryContentNode,
   type DictionaryLookupEntry,
   type PluginPayload,
 } from '@/services/plugins/contract';
@@ -116,7 +118,7 @@ const loadBankedDefinitions = async (
     ) {
       throw new Error('Portable Yomitan term bank entry does not match its index');
     }
-    definitions.set(id, normalizeYomitanGlossary(term[5]));
+    definitions.set(id, normalizeYomitanGlossary(term[5], term[0]));
   }
   return definitions;
 };
@@ -135,7 +137,7 @@ const loadTags = async (
   const values = [...names];
   const result = await host.select(
     databaseHandle,
-    `SELECT name, category, notes, score FROM tags WHERE name IN (${placeholders(values.length)})`,
+    `SELECT name, category, notes, score FROM tags WHERE name IN (${placeholders(values.length)}) ORDER BY name ASC LIMIT 256`,
     values,
     256,
   );
@@ -171,7 +173,7 @@ const loadMetadata = async (
   return (
     await host.select(
       databaseHandle,
-      `SELECT expression, mode, reading, payload_json FROM term_meta WHERE expression IN (${placeholders(expressions.length)})`,
+      `SELECT expression, mode, reading, payload_json FROM term_meta WHERE expression IN (${placeholders(expressions.length)}) ORDER BY id ASC LIMIT 1000`,
       expressions,
       1_000,
     )
@@ -239,10 +241,20 @@ const metadataFor = (
     }
   }
   return {
-    ...(frequencies.length === 0 ? {} : { frequencies }),
-    ...(pitches.length === 0 ? {} : { pitches }),
-    ...(ipa.length === 0 ? {} : { ipa }),
+    ...(frequencies.length === 0 ? {} : { frequencies: frequencies.slice(0, 128) }),
+    ...(pitches.length === 0 ? {} : { pitches: pitches.slice(0, 128) }),
+    ...(ipa.length === 0 ? {} : { ipa: ipa.slice(0, 128) }),
   };
+};
+
+const countDocumentNodes = (definitions: DictionaryContentNode[]): number => {
+  let count = 0;
+  const visit = (node: DictionaryContentNode): void => {
+    count += 1;
+    if (node.type === 'element') node.children.forEach(visit);
+  };
+  definitions.forEach(visit);
+  return count;
 };
 
 export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'lookup'>) => {
@@ -250,7 +262,7 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
   const terms = candidates.map((candidate) => candidate.term);
   const result = await host.select(
     request.databaseHandle,
-    `SELECT id, expression, reading, definition_tags, rules, score, glossary_json, sequence, term_tags, bank_order, entry_index FROM terms WHERE expression IN (${placeholders(terms.length)}) OR reading IN (${placeholders(terms.length)}) ORDER BY score DESC, bank_order ASC`,
+    `SELECT id, expression, reading, definition_tags, rules, score, glossary_json, sequence, term_tags, bank_order, entry_index FROM terms WHERE expression IN (${placeholders(terms.length)}) OR reading IN (${placeholders(terms.length)}) ORDER BY score DESC, bank_order ASC LIMIT 256`,
     [...terms, ...terms],
     256,
   );
@@ -272,7 +284,9 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
     loadBankedDefinitions(host, request.databaseHandle, limited),
   ]);
 
-  const entries: DictionaryLookupEntry[] = limited.map(({ row, candidate }) => {
+  const entries: DictionaryLookupEntry[] = [];
+  let documentNodes = 0;
+  for (const { row, candidate } of limited) {
     const expression = stringField(row, 'expression');
     const reading = stringField(row, 'reading');
     const glossary = row['glossary_json'];
@@ -287,8 +301,10 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
       ...splitYomitanTags(stringField(row, 'definition_tags')),
       ...splitYomitanTags(stringField(row, 'term_tags')),
     ];
-    const uniqueTags = [...new Set(tagNames)].map((name) => tags.get(name) ?? { name });
-    return {
+    const uniqueTags = [...new Set(tagNames)]
+      .slice(0, 128)
+      .map((name) => tags.get(name) ?? { name });
+    const entry: DictionaryLookupEntry = {
       expression,
       reading,
       rules: splitYomitanTags(stringField(row, 'rules')),
@@ -298,6 +314,10 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
       ...metadataFor(metadata, expression, reading),
       definitions,
     };
-  });
+    const entryNodes = countDocumentNodes(definitions);
+    if (documentNodes + entryNodes > MAX_DICTIONARY_DOCUMENT_NODES) continue;
+    documentNodes += entryNodes;
+    entries.push(entry);
+  }
   return parseDictionaryLookupResult({ entries });
 };

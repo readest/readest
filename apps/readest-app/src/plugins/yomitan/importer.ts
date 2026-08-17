@@ -203,7 +203,7 @@ const termRows = (
   for (let entryIndex = 0; entryIndex < terms.length; entryIndex += 1) {
     const term = terms[entryIndex]!;
     const [expression, reading, definitionTags, rules, score, glossary, sequence, termTags] = term;
-    const definitions = normalizeYomitanGlossary(glossary);
+    const definitions = normalizeYomitanGlossary(glossary, expression);
     collectYomitanResourceRefs(definitions).forEach((ref) => resourceRefs.add(ref));
     rows.push([
       expression,

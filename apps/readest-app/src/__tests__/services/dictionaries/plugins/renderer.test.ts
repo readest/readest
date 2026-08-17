@@ -102,4 +102,94 @@ describe('plugin dictionary renderer', () => {
       createDictionaryResourceDataUrl('application/octet-stream', new Uint8Array([1, 2, 3])),
     ).toThrow(/resource type/i);
   });
+
+  test('deduplicates in-flight resource loads within one rendered result', async () => {
+    const container = document.createElement('div');
+    const resolveResource = vi.fn(async () => ({
+      mimeType: 'image/png' as const,
+      bytes: new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
+    }));
+
+    await renderPluginDictionaryResult(
+      container,
+      {
+        entries: [
+          {
+            expression: '読む',
+            reading: 'よむ',
+            definitions: Array.from({ length: 100 }, () => ({
+              type: 'image' as const,
+              resourceRef: 'shared.png',
+            })),
+          },
+        ],
+      },
+      { resolveResource },
+    );
+
+    expect(resolveResource).toHaveBeenCalledTimes(1);
+    expect(container.querySelectorAll('img')).toHaveLength(100);
+  });
+
+  test('loads distinct resources with bounded concurrency', async () => {
+    const container = document.createElement('div');
+    let active = 0;
+    let maxActive = 0;
+    const resolveResource = vi.fn(async () => {
+      active += 1;
+      maxActive = Math.max(maxActive, active);
+      await Promise.resolve();
+      active -= 1;
+      return {
+        mimeType: 'image/png' as const,
+        bytes: new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
+      };
+    });
+
+    await renderPluginDictionaryResult(
+      container,
+      {
+        entries: [
+          {
+            expression: '読む',
+            reading: 'よむ',
+            definitions: ['one.png', 'two.png', 'three.png'].map((resourceRef) => ({
+              type: 'image' as const,
+              resourceRef,
+            })),
+          },
+        ],
+      },
+      { resolveResource },
+    );
+
+    expect(maxActive).toBe(1);
+  });
+
+  test('caps aggregate unique resource bytes for one rendered result', async () => {
+    const container = document.createElement('div');
+    const bytes = new Uint8Array(3 * 1_024 * 1_024);
+    bytes.set([137, 80, 78, 71, 13, 10, 26, 10]);
+
+    await renderPluginDictionaryResult(
+      container,
+      {
+        entries: [
+          {
+            expression: '読む',
+            reading: 'よむ',
+            definitions: ['one.png', 'two.png', 'three.png'].map((resourceRef) => ({
+              type: 'image' as const,
+              resourceRef,
+            })),
+          },
+        ],
+      },
+      {
+        resolveResource: async () => ({ mimeType: 'image/png', bytes }),
+      },
+    );
+
+    expect(container.querySelectorAll('img[data-resource-error="true"]')).toHaveLength(1);
+  });
 });

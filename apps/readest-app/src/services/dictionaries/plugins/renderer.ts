@@ -141,6 +141,29 @@ interface RenderOptions {
   resolveResource: (resourceRef: string) => Promise<PluginResult<'readResource'>>;
 }
 
+interface RenderContext extends RenderOptions {
+  resourceDataUrls: Map<string, Promise<string>>;
+  resourceBytes: number;
+}
+
+const MAX_RENDERED_RESOURCE_BYTES = MAX_PLUGIN_RESOURCE_BYTES * 2;
+
+const resolveResourceDataUrl = (resourceRef: string, context: RenderContext): Promise<string> => {
+  const cached = context.resourceDataUrls.get(resourceRef);
+  if (cached) return cached;
+  const pending = (async () => {
+    const resource = await context.resolveResource(resourceRef);
+    if (context.resourceBytes + resource.bytes.byteLength > MAX_RENDERED_RESOURCE_BYTES) {
+      throw new Error('Dictionary result resources exceed aggregate size limit');
+    }
+    const dataUrl = createDictionaryResourceDataUrl(resource.mimeType, resource.bytes);
+    context.resourceBytes += resource.bytes.byteLength;
+    return dataUrl;
+  })();
+  context.resourceDataUrls.set(resourceRef, pending);
+  return pending;
+};
+
 const applyNodeStyle = (
   element: HTMLElement,
   style: Extract<DictionaryContentNode, { type: 'element' }>['style'],
@@ -153,7 +176,7 @@ const applyNodeStyle = (
   if (style.textAlign) element.style.textAlign = style.textAlign;
 };
 
-const renderNode = async (node: DictionaryContentNode, options: RenderOptions): Promise<Node> => {
+const renderNode = async (node: DictionaryContentNode, context: RenderContext): Promise<Node> => {
   if (node.type === 'text') return document.createTextNode(node.value);
   if (node.type === 'lineBreak') return document.createElement('br');
   if (node.type === 'link') {
@@ -164,7 +187,7 @@ const renderNode = async (node: DictionaryContentNode, options: RenderOptions): 
       anchor.dataset['dictionaryLookup'] = node.target.word;
       anchor.addEventListener('click', (event) => {
         event.preventDefault();
-        options.onNavigate?.(node.target.type === 'lookup' ? node.target.word : '');
+        context.onNavigate?.(node.target.type === 'lookup' ? node.target.word : '');
       });
     } else {
       anchor.href = node.target.url;
@@ -182,8 +205,7 @@ const renderNode = async (node: DictionaryContentNode, options: RenderOptions): 
     if (node.imageRendering) image.style.imageRendering = node.imageRendering;
     if (node.appearance === 'monochrome') image.classList.add('dictionary-image-monochrome');
     try {
-      const resource = await options.resolveResource(node.resourceRef);
-      image.src = createDictionaryResourceDataUrl(resource.mimeType, resource.bytes);
+      image.src = await resolveResourceDataUrl(node.resourceRef, context);
     } catch {
       image.dataset['resourceError'] = 'true';
     }
@@ -196,8 +218,7 @@ const renderNode = async (node: DictionaryContentNode, options: RenderOptions): 
   if (node.colSpan && element instanceof HTMLTableCellElement) element.colSpan = node.colSpan;
   if (node.rowSpan && element instanceof HTMLTableCellElement) element.rowSpan = node.rowSpan;
   applyNodeStyle(element, node.style);
-  const children = await Promise.all(node.children.map((child) => renderNode(child, options)));
-  element.append(...children);
+  for (const child of node.children) element.append(await renderNode(child, context));
   return element;
 };
 
@@ -207,6 +228,11 @@ export const renderPluginDictionaryResult = async (
   options: RenderOptions,
 ): Promise<void> => {
   const result = parseDictionaryLookupResult(value);
+  const context: RenderContext = {
+    ...options,
+    resourceDataUrls: new Map(),
+    resourceBytes: 0,
+  };
   const fragment = document.createDocumentFragment();
   for (const entry of result.entries) {
     const article = document.createElement('article');
@@ -255,10 +281,9 @@ export const renderPluginDictionaryResult = async (
 
     const definitions = document.createElement('div');
     definitions.className = 'dictionary-plugin-definitions';
-    const nodes = await Promise.all(
-      entry.definitions.map((definition) => renderNode(definition, options)),
-    );
-    definitions.append(...nodes);
+    for (const definition of entry.definitions) {
+      definitions.append(await renderNode(definition, context));
+    }
     article.append(definitions);
     fragment.append(article);
   }

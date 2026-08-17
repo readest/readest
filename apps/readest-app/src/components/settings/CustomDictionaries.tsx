@@ -618,7 +618,21 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           timeout: 4000,
         });
       }
-      if (added === 0 && replaced === 0 && importResult.orphanFiles.length === 0) {
+      for (const error of importResult.importErrors ?? []) {
+        eventDispatcher.dispatch('toast', {
+          type: 'error',
+          message: _('Failed to import dictionary: {{message}}', {
+            message: `${error.name}: ${error.message}`,
+          }),
+          timeout: 4000,
+        });
+      }
+      if (
+        added === 0 &&
+        replaced === 0 &&
+        importResult.orphanFiles.length === 0 &&
+        !importResult.importErrors?.length
+      ) {
         eventDispatcher.dispatch('toast', {
           type: 'info',
           message: _('No new dictionaries were imported'),

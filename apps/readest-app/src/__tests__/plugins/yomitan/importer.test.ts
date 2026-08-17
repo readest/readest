@@ -138,6 +138,16 @@ const createPortableHeader = (): File => {
   return new File([bytes], 'Jitendex.rdict', { type: 'application/vnd.sqlite3' });
 };
 
+const createDictionaryWithTerms = async (terms: unknown[]): Promise<File> => {
+  const writer = new ZipWriter(new BlobWriter('application/zip'));
+  await writer.add(
+    'index.json',
+    new TextReader(JSON.stringify({ title: 'Lookup limits', revision: '1', format: 3 })),
+  );
+  await writer.add('term_bank_1.json', new TextReader(JSON.stringify(terms)));
+  return new File([await writer.close()], 'lookup-limits.zip', { type: 'application/zip' });
+};
+
 interface ExecutedStatement {
   sql: string;
   params: unknown[];
@@ -319,6 +329,64 @@ describe('Yomitan importer and lookup', () => {
       sourceFormatVersion: 1,
       title: 'Jitendex',
     });
+  });
+
+  test('bounds high-cardinality exact matches before the SQL broker row cap', async () => {
+    const source = await createDictionaryWithTerms(
+      Array.from({ length: 257 }, (_, index) => [
+        '同じ',
+        'おなじ',
+        '',
+        '',
+        257 - index,
+        [`definition ${index}`],
+        index + 1,
+        '',
+      ]),
+    );
+    db = await NodeDatabaseService.open(':memory:');
+    const host = createHost(source, db);
+    await buildYomitanIndex(host, {
+      dictionaryId: 'dict-1',
+      sourceHandle: 'source-1',
+      databaseHandle: 'db-1',
+      sourceFormatVersion: 3,
+    });
+
+    const result = await lookupYomitan(host, {
+      dictionaryId: 'dict-1',
+      databaseHandle: 'db-1',
+      query: '同じ',
+      language: 'ja',
+    });
+
+    expect(result.entries).toHaveLength(128);
+  });
+
+  test('truncates ranked entries before the aggregate document budget is exceeded', async () => {
+    const definitions = Array.from({ length: 600 }, (_, index) => `definition ${index}`);
+    const source = await createDictionaryWithTerms([
+      ['同じ', 'おなじ', '', '', 2, definitions, 1, ''],
+      ['同じ', 'おなじ', '', '', 1, definitions, 2, ''],
+    ]);
+    db = await NodeDatabaseService.open(':memory:');
+    const host = createHost(source, db);
+    await buildYomitanIndex(host, {
+      dictionaryId: 'dict-1',
+      sourceHandle: 'source-1',
+      databaseHandle: 'db-1',
+      sourceFormatVersion: 3,
+    });
+
+    const result = await lookupYomitan(host, {
+      dictionaryId: 'dict-1',
+      databaseHandle: 'db-1',
+      query: '同じ',
+      language: 'ja',
+    });
+
+    expect(result.entries).toHaveLength(1);
+    expect(result.entries[0]?.definitions).toHaveLength(600);
   });
 
   test('builds a compact portable index with compressed banks and embedded resources', async () => {

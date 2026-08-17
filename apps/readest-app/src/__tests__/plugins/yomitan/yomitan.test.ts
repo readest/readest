@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { normalizeYomitanGlossary } from '@/plugins/yomitan/content';
 import { deinflectJapanese } from '@/plugins/yomitan/deinflect';
+import { parseDictionaryLookupResult } from '@/services/plugins/contract';
 import {
   parseYomitanIndex,
   yomitanTagBankSchema,
@@ -110,6 +111,15 @@ describe('Yomitan structured content', () => {
     );
   });
 
+  test('resolves an empty internal query to the current headword', () => {
+    expect(
+      normalizeYomitanGlossary(
+        [{ type: 'structured-content', content: { tag: 'a', href: '?', content: 'Same term' } }],
+        '読む',
+      ),
+    ).toEqual([{ type: 'link', label: 'Same term', target: { type: 'lookup', word: '読む' } }]);
+  });
+
   test('normalizes Jitendex structured content nested to depth 13', () => {
     const tags = [
       'ul',
@@ -127,7 +137,13 @@ describe('Yomitan structured content', () => {
     ] as const;
     const content = tags.reduceRight<unknown>((child, tag) => ({ tag, content: child }), '物作り');
 
-    expect(normalizeYomitanGlossary([{ type: 'structured-content', content }])).toHaveLength(1);
+    const definitions = normalizeYomitanGlossary([{ type: 'structured-content', content }]);
+    expect(definitions).toHaveLength(1);
+    expect(() =>
+      parseDictionaryLookupResult({
+        entries: [{ expression: '物作り', reading: 'ものづくり', definitions }],
+      }),
+    ).not.toThrow();
   });
 });
 

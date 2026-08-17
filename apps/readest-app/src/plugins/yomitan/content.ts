@@ -1,10 +1,12 @@
-import type { DictionaryContentNode } from '@/services/plugins/contract';
-
-const MAX_DEPTH = 16;
-const MAX_NODES = 1_024;
+import {
+  MAX_DICTIONARY_DOCUMENT_DEPTH,
+  MAX_DICTIONARY_DOCUMENT_NODES,
+  type DictionaryContentNode,
+} from '@/services/plugins/contract';
 
 interface NormalizeState {
   nodes: number;
+  currentHeadword?: string;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -41,10 +43,12 @@ export const normalizeYomitanResourcePath = (path: unknown): string => {
 };
 
 const countNode = (state: NormalizeState, depth: number): void => {
-  if (depth > MAX_DEPTH) throw new Error(`Yomitan content exceeds maximum depth ${MAX_DEPTH}`);
+  if (depth > MAX_DICTIONARY_DOCUMENT_DEPTH) {
+    throw new Error(`Yomitan content exceeds maximum depth ${MAX_DICTIONARY_DOCUMENT_DEPTH}`);
+  }
   state.nodes += 1;
-  if (state.nodes > MAX_NODES) {
-    throw new Error(`Yomitan content exceeds maximum nodes ${MAX_NODES}`);
+  if (state.nodes > MAX_DICTIONARY_DOCUMENT_NODES) {
+    throw new Error(`Yomitan content exceeds maximum nodes ${MAX_DICTIONARY_DOCUMENT_NODES}`);
   }
 };
 
@@ -150,10 +154,11 @@ const plainText = (nodes: DictionaryContentNode[]): string => {
   return parts.join('').trim();
 };
 
-const internalLookupWord = (href: string): string => {
+const internalLookupWord = (href: string, currentHeadword?: string): string => {
   const query = href.slice(1);
   const params = new URLSearchParams(query);
-  const word = params.get('query') ?? params.get('term') ?? decodeURIComponent(query);
+  const requested = params.get('query') ?? params.get('term') ?? decodeURIComponent(query);
+  const word = requested.trim() || currentHeadword?.trim() || '';
   if (!word.trim() || word.length > 512) throw new Error('Invalid Yomitan internal link');
   return word.trim();
 };
@@ -163,7 +168,9 @@ const normalizeValue = (
   depth: number,
   state: NormalizeState,
 ): DictionaryContentNode[] => {
-  if (depth > MAX_DEPTH) throw new Error(`Yomitan content exceeds maximum depth ${MAX_DEPTH}`);
+  if (depth > MAX_DICTIONARY_DOCUMENT_DEPTH) {
+    throw new Error(`Yomitan content exceeds maximum depth ${MAX_DICTIONARY_DOCUMENT_DEPTH}`);
+  }
   if (typeof value === 'string') {
     countNode(state, depth);
     return [{ type: 'text', value }];
@@ -209,7 +216,13 @@ const normalizeValue = (
     const label = plainText(children) || href;
     countNode(state, depth);
     if (href.startsWith('?')) {
-      return [{ type: 'link', label, target: { type: 'lookup', word: internalLookupWord(href) } }];
+      return [
+        {
+          type: 'link',
+          label,
+          target: { type: 'lookup', word: internalLookupWord(href, state.currentHeadword) },
+        },
+      ];
     }
     let url: URL;
     try {
@@ -268,8 +281,14 @@ const normalizeValue = (
   ];
 };
 
-export const normalizeYomitanGlossary = (glossary: unknown[]): DictionaryContentNode[] => {
-  const state: NormalizeState = { nodes: 0 };
+export const normalizeYomitanGlossary = (
+  glossary: unknown[],
+  currentHeadword?: string,
+): DictionaryContentNode[] => {
+  const state: NormalizeState = {
+    nodes: 0,
+    ...(currentHeadword === undefined ? {} : { currentHeadword }),
+  };
   return glossary.flatMap((value) => normalizeValue(value, 1, state));
 };
 

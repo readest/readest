@@ -9,12 +9,13 @@
  * handoff is supported, enabling it stays exclusive and locks the rest.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import CustomDictionaries from '@/components/settings/CustomDictionaries';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';
 import type { DictionarySettings } from '@/services/dictionaries/types';
+import { eventDispatcher } from '@/utils/event';
 
 // Per-test platform control. `isSystemDictionaryEnabled` (real, from the
 // registry) reads `isSystemDictionarySupported`, so toggling these flips both
@@ -30,7 +31,8 @@ vi.mock('@/services/dictionaries/systemDictionary', () => ({
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (s: string) => s,
+  useTranslation: () => (s: string, values?: Record<string, string | number>) =>
+    s.replace(/\{\{(\w+)\}\}/gu, (_match, key: string) => String(values?.[key] ?? '')),
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -160,5 +162,35 @@ describe('CustomDictionaries — import progress', () => {
     expect(
       (await screen.findByRole('button', { name: 'Import Dictionary' })) as HTMLButtonElement,
     ).toMatchObject({ disabled: false });
+  });
+
+  it('reports a failed plugin source while retaining successful imports', async () => {
+    seedSettings({ providerOrder: [], providerEnabled: {}, webSearches: [] });
+    mocks.selectFiles.mockResolvedValue({
+      files: [
+        { file: new File(['valid'], 'valid.zip') },
+        { file: new File(['broken'], 'broken.zip') },
+      ],
+    });
+    mocks.importDictionaries.mockResolvedValue({
+      imported: [],
+      replacements: [],
+      orphanFiles: [],
+      importErrors: [{ name: 'broken.zip', message: 'Invalid Yomitan bank' }],
+    });
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+
+    render(<CustomDictionaries onBack={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Import Dictionary' }));
+
+    await waitFor(() =>
+      expect(dispatch).toHaveBeenCalledWith(
+        'toast',
+        expect.objectContaining({
+          type: 'error',
+          message: 'Failed to import dictionary: broken.zip: Invalid Yomitan bank',
+        }),
+      ),
+    );
   });
 });

@@ -411,24 +411,27 @@ describe('BaseAppService', () => {
         name: 'Replacement plugin',
       };
       const unclaimed = [{ file: new File(['legacy'], 'legacy.bgl') }];
-      vi.mocked(PluginImport.importPluginDictionaries).mockResolvedValue({
+      const pluginImportResult = {
         imported: [importedPlugin],
         replacements: [{ oldIds: [oldPlugin.id], newDict: replacementPlugin }],
         unclaimed,
-      });
+        failures: [{ name: 'broken.zip', message: 'Invalid Yomitan bank' }],
+      };
+      vi.mocked(PluginImport.importPluginDictionaries).mockResolvedValue(pluginImportResult);
       vi.mocked(DictSvc.importDictionaries).mockResolvedValue({
         imported: [],
         replacements: [],
         orphanFiles: [],
       });
 
-      await service.importDictionaries(unclaimed, [oldPlugin, untouched]);
+      const result = await service.importDictionaries(unclaimed, [oldPlugin, untouched]);
 
       expect(DictSvc.importDictionaries).toHaveBeenCalledWith(mockFs, unclaimed, [
         untouched,
         importedPlugin,
         replacementPlugin,
       ]);
+      expect(result).toMatchObject({ importErrors: pluginImportResult.failures });
     });
 
     test('evicts lookup state and removes derived plugin indexes before deleting the source', async () => {

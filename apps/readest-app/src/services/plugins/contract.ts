@@ -278,18 +278,18 @@ export const dictionaryLookupResultSchema = z.strictObject({
 export type DictionaryLookupResult = z.infer<typeof dictionaryLookupResultSchema>;
 export type DictionaryLookupEntry = z.infer<typeof dictionaryLookupEntrySchema>;
 
-const MAX_DOCUMENT_DEPTH = 12;
-const MAX_DOCUMENT_NODES = 1_024;
+export const MAX_DICTIONARY_DOCUMENT_DEPTH = 16;
+export const MAX_DICTIONARY_DOCUMENT_NODES = 1_024;
 
 const assertDocumentLimits = (result: DictionaryLookupResult): void => {
   let nodes = 0;
   const visit = (node: DictionaryContentNode, depth: number): void => {
-    if (depth > MAX_DOCUMENT_DEPTH) {
-      throw new Error(`Dictionary document exceeds maximum depth ${MAX_DOCUMENT_DEPTH}`);
+    if (depth > MAX_DICTIONARY_DOCUMENT_DEPTH) {
+      throw new Error(`Dictionary document exceeds maximum depth ${MAX_DICTIONARY_DOCUMENT_DEPTH}`);
     }
     nodes += 1;
-    if (nodes > MAX_DOCUMENT_NODES) {
-      throw new Error(`Dictionary document exceeds maximum nodes ${MAX_DOCUMENT_NODES}`);
+    if (nodes > MAX_DICTIONARY_DOCUMENT_NODES) {
+      throw new Error(`Dictionary document exceeds maximum nodes ${MAX_DICTIONARY_DOCUMENT_NODES}`);
     }
     if (node.type === 'element') {
       for (const child of node.children) visit(child, depth + 1);

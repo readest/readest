@@ -52,6 +52,7 @@ export interface ImportPluginDictionariesResult {
   imported: ImportedDictionary[];
   replacements: { oldIds: string[]; newDict: ImportedDictionary }[];
   unclaimed: SelectedFile[];
+  failures: { name: string; message: string }[];
 }
 
 const randomBuildId = (): string => {
@@ -320,6 +321,7 @@ export const importPluginDictionaries = async (
   const imported: ImportedDictionary[] = [];
   const replacements: { oldIds: string[]; newDict: ImportedDictionary }[] = [];
   const unclaimed: SelectedFile[] = [];
+  const failures: { name: string; message: string }[] = [];
 
   for (const source of files) {
     const plugin = resolvePlugin(extensionOf(selectedName(source)));
@@ -327,16 +329,25 @@ export const importPluginDictionaries = async (
       unclaimed.push(source);
       continue;
     }
-    const result = await importOne(
-      host,
-      source,
-      plugin,
-      existingDictionaries,
-      controlStore,
-      createBuildId,
-      isWorkerSupported,
-      dependencies.onProgress,
-    );
+    let result: Awaited<ReturnType<typeof importOne>>;
+    try {
+      result = await importOne(
+        host,
+        source,
+        plugin,
+        existingDictionaries,
+        controlStore,
+        createBuildId,
+        isWorkerSupported,
+        dependencies.onProgress,
+      );
+    } catch (error) {
+      failures.push({
+        name: selectedName(source) || 'dictionary',
+        message: error instanceof Error ? error.message : String(error),
+      });
+      continue;
+    }
     if (!result.claimed) {
       unclaimed.push(source);
     } else if (result.imported) {
@@ -351,5 +362,5 @@ export const importPluginDictionaries = async (
       ];
     }
   }
-  return { imported, replacements, unclaimed };
+  return { imported, replacements, unclaimed, failures };
 };

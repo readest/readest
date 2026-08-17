@@ -337,6 +337,7 @@ export abstract class BaseAppService implements AppService {
       imported: [...pluginResult.imported, ...legacyResult.imported],
       replacements: [...pluginResult.replacements, ...legacyResult.replacements],
       orphanFiles: legacyResult.orphanFiles,
+      ...(pluginResult.failures.length === 0 ? {} : { importErrors: pluginResult.failures }),
     };
   }
 
