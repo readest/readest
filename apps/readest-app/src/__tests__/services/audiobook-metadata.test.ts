@@ -1,6 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { parseBlob } from 'music-metadata';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { buildAudiobookChapters } from '@/services/audiobook/metadata';
+import { buildAudiobookChapters, parseAudiobookFile } from '@/services/audiobook/metadata';
+
+vi.mock('music-metadata', () => ({ parseBlob: vi.fn() }));
+
+beforeEach(() => {
+  vi.mocked(parseBlob).mockReset();
+});
 
 describe('buildAudiobookChapters', () => {
   it('converts MP4 chapter timescales and derives missing end times', () => {
@@ -57,5 +64,50 @@ describe('buildAudiobookChapters', () => {
         end: 91,
       },
     ]);
+  });
+});
+
+describe('parseAudiobookFile', () => {
+  it('reads title, narrator, duration, and fallback chapter metadata', async () => {
+    vi.mocked(parseBlob).mockResolvedValue({
+      format: { duration: 90, chapters: [], trackInfo: [], tagTypes: [] },
+      common: {
+        title: 'Opening',
+        album: 'The Book',
+        albumartist: 'A Narrator',
+        track: { no: null, of: null },
+        disk: { no: null, of: null },
+        movementIndex: { no: null, of: null },
+      },
+      native: {},
+      quality: { warnings: [] },
+    });
+
+    await expect(
+      parseAudiobookFile(new File(['audio'], 'book.m4b'), 'audio-0'),
+    ).resolves.toMatchObject({
+      id: 'audio-0',
+      title: 'The Book',
+      narrator: 'A Narrator',
+      duration: 90,
+      chapters: [{ label: 'Opening', start: 0, end: 90 }],
+    });
+  });
+
+  it('rejects audio whose duration cannot be determined', async () => {
+    vi.mocked(parseBlob).mockResolvedValue({
+      format: { chapters: [], trackInfo: [], tagTypes: [] },
+      common: {
+        track: { no: null, of: null },
+        disk: { no: null, of: null },
+        movementIndex: { no: null, of: null },
+      },
+      native: {},
+      quality: { warnings: [] },
+    });
+
+    await expect(parseAudiobookFile(new File(['audio'], 'broken.m4b'), 'audio-0')).rejects.toThrow(
+      'Could not determine the duration of broken.m4b',
+    );
   });
 });

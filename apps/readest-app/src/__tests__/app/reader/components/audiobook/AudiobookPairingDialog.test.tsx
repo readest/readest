@@ -108,17 +108,24 @@ describe('AudiobookPairingDialog', () => {
   });
 
   it('shows book context and mounts only one audio option list while editing a large mapping', () => {
-    render(<AudiobookPairingDialog bookKey='book-hash-view' bookDoc={bookDoc} onClose={vi.fn()} />);
+    const { container } = render(
+      <AudiobookPairingDialog bookKey='book-hash-view' bookDoc={bookDoc} onClose={vi.fn()} />,
+    );
 
-    expect(screen.getByRole('dialog', { name: 'Manage Audiobook' })).toBeTruthy();
-    expect(screen.getByText('A Very Good Book')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Mapping' }));
+    expect(container.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe(
+      'Manage Audiobook',
+    );
+    expect(container.textContent).toContain('A Very Good Book');
+    const editButton = [...container.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Edit Mapping',
+    );
+    fireEvent.click(editButton!);
 
-    expect(screen.getByRole('heading', { name: 'Review Chapter Mapping' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Save Changes' })).toBeTruthy();
-    expect(screen.queryAllByRole('option')).toHaveLength(0);
+    expect(container.textContent).toContain('Review Chapter Mapping');
+    expect(container.textContent).toContain('Save Changes');
+    expect(container.querySelectorAll('[role="option"]')).toHaveLength(0);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Audio for Chapter 1' }));
-    expect(screen.getAllByRole('option')).toHaveLength(301);
+    fireEvent.click(container.querySelector('button[aria-label="Audio for Chapter 1"]')!);
+    expect(container.querySelectorAll('[role="option"]')).toHaveLength(301);
   });
 });

@@ -460,10 +460,10 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
           <label className='font-medium' htmlFor='audiobook-ebook-anchor'>
             {_('Ebook chapter')}
           </label>
-          <div className='relative w-full sm:max-w-[60%]'>
+          <div className='hover:bg-base-200/60 focus-within:bg-base-200/60 flex w-full items-center rounded-md sm:max-w-[60%]'>
             <select
               id='audiobook-ebook-anchor'
-              className='select w-full appearance-none !border-0 !bg-transparent pe-8 shadow-none focus:outline-none'
+              className='select h-9 min-w-0 flex-1 cursor-pointer !appearance-none truncate !border-0 !bg-transparent !bg-none !pe-1 !ps-2 text-end focus:!border-0 focus:!shadow-none focus:!outline-none focus:!ring-0'
               value={selectedEbookChapterId}
               onChange={(event) => setSelectedEbookChapterId(event.target.value)}
             >
@@ -473,7 +473,10 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
                 </option>
               ))}
             </select>
-            <MdArrowDropDown className='pointer-events-none absolute end-2 top-1/2 h-5 w-5 -translate-y-1/2' />
+            <MdArrowDropDown
+              aria-hidden='true'
+              className='text-base-content/55 pointer-events-none h-5 w-5 flex-shrink-0'
+            />
           </div>
         </div>
         <div className='flex min-h-16 flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between'>
@@ -481,10 +484,10 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
             {_('Audio chapter or track')}
           </label>
           <div className='flex w-full items-center sm:max-w-[60%]'>
-            <div className='relative min-w-0 flex-1'>
+            <div className='hover:bg-base-200/60 focus-within:bg-base-200/60 flex min-w-0 flex-1 items-center rounded-md'>
               <select
                 id='audiobook-audio-anchor'
-                className='select w-full appearance-none !border-0 !bg-transparent pe-8 shadow-none focus:outline-none'
+                className='select h-9 min-w-0 flex-1 cursor-pointer !appearance-none truncate !border-0 !bg-transparent !bg-none !pe-1 !ps-2 text-end focus:!border-0 focus:!shadow-none focus:!outline-none focus:!ring-0'
                 value={selectedAudioChapterId}
                 onChange={(event) => setSelectedAudioChapterId(event.target.value)}
               >
@@ -494,7 +497,10 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
                   </option>
                 ))}
               </select>
-              <MdArrowDropDown className='pointer-events-none absolute end-2 top-1/2 h-5 w-5 -translate-y-1/2' />
+              <MdArrowDropDown
+                aria-hidden='true'
+                className='text-base-content/55 pointer-events-none h-5 w-5 flex-shrink-0'
+              />
             </div>
             {audioChapterById.get(selectedAudioChapterId) && (
               <button

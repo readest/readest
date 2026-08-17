@@ -24,7 +24,7 @@ describe('AudiobookChapterPicker', () => {
   it('renders one searchable audio list instead of duplicating it for every ebook row', () => {
     const onSelect = vi.fn();
     const onPreview = vi.fn();
-    const { getAllByRole, getByRole, queryByRole } = render(
+    const { container, getByRole } = render(
       <AudiobookChapterPicker
         chapters={chapters}
         value='audio-0:0'
@@ -35,17 +35,18 @@ describe('AudiobookChapterPicker', () => {
       />,
     );
 
-    expect(getAllByRole('option')).toHaveLength(301);
+    expect(container.querySelectorAll('[role="option"]')).toHaveLength(301);
     fireEvent.change(getByRole('searchbox', { name: 'Search audio chapters' }), {
       target: { value: 'Track 299' },
     });
 
-    expect(getAllByRole('option')).toHaveLength(2);
-    expect(queryByRole('option', { name: /Track 1 ·/ })).toBeNull();
-    fireEvent.click(getByRole('option', { name: /Track 299 ·/ }));
+    const filteredOptions = container.querySelectorAll<HTMLElement>('[role="option"]');
+    expect(filteredOptions).toHaveLength(2);
+    expect(container.textContent).not.toContain('Track 1 ·');
+    fireEvent.click(filteredOptions[1]!);
     expect(onSelect).toHaveBeenCalledWith('audio-0:298');
 
-    fireEvent.click(getByRole('button', { name: 'Preview Track 299' }));
+    fireEvent.click(container.querySelector('button[aria-label="Preview Track 299"]')!);
     expect(onPreview).toHaveBeenCalledWith(chapters[298]);
   });
 });

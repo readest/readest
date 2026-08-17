@@ -352,6 +352,48 @@ describe('importBook metaHash deduplication', () => {
     expect(existingBook.deletedAt).toBeNull();
   });
 
+  it('rejects paired-audio paths outside the book being migrated', async () => {
+    const metaHash = getMetadataHash(TEST_METADATA);
+    const existingBook = makeBook({ hash: 'old-hash-123', metaHash });
+    const books: Book[] = [existingBook];
+    mockPartialMD5.mockResolvedValue('new-hash-456');
+    setupMockBookDoc();
+
+    const fs = service.getFs();
+    fs.exists.mockImplementation(async (path: string) =>
+      ['old-hash-123/config.json', 'old-hash-123'].includes(path),
+    );
+    fs.readFile.mockResolvedValue(
+      JSON.stringify({
+        audiobook: {
+          version: 1,
+          files: [
+            {
+              id: 'audio-0',
+              name: 'book.m4b',
+              path: 'another-book/audiobook/book.m4b',
+              duration: 100,
+            },
+          ],
+          chapters: [],
+          mappings: [],
+          createdAt: 1,
+        },
+      }),
+    );
+
+    await expect(
+      service.importBook(
+        new File(['new content'], 'test.epub', { type: 'application/epub+zip' }),
+        books,
+      ),
+    ).rejects.toThrow('Invalid paired audiobook path');
+
+    expect(fs.copyFile).not.toHaveBeenCalled();
+    expect(fs.removeDir).not.toHaveBeenCalledWith('old-hash-123', 'Books', true);
+    expect(existingBook.hash).toBe('old-hash-123');
+  });
+
   it('should prefer exact file hash match over metaHash match', async () => {
     const metaHash = getMetadataHash(TEST_METADATA);
 

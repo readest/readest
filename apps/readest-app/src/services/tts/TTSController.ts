@@ -2,6 +2,7 @@ import { FoliateView, ViewTTS } from '@/types/view';
 import { AppService } from '@/types/system';
 import type { PairedAudiobook } from '@/types/book';
 import { SectionItem } from '@/libs/document';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { transformTTSSectionDocument } from './transformDoc';
 import { filterSSMLWithLang, parseSSMLMarks } from '@/utils/ssml';
 import { Overlayer } from 'foliate-js/overlayer.js';
@@ -461,8 +462,7 @@ export class TTSController extends EventTarget {
         resolveUrl: async (href) => {
           const appService = this.appService!;
           if (appService.appPlatform !== 'tauri' || appService.isMobileApp) return null;
-          const file = await appService.openFile(href, 'Books');
-          return 'url' in file && typeof file.url === 'string' ? file.url : null;
+          return convertFileSrc(await appService.resolveFilePath(href, 'Books'));
         },
         resolvePath: async (href) => await this.appService!.resolveFilePath(href, 'Books'),
       });
@@ -985,7 +985,7 @@ export class TTSController extends EventTarget {
     if (!timeline || this.#timelineSectionIndex !== this.#ttsSectionIndex) return;
     const target = timeline.sentenceAtTime(seconds);
     if (!target) return;
-    const range = target.sentence.range;
+    const range = this.#rangeAtSeekTarget(target.sentence, target.withinMediaSec);
     try {
       const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
       this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi, preview: true } }));
@@ -1017,6 +1017,27 @@ export class TTSController extends EventTarget {
     }
   }
 
+  // A paired audiobook has only chapter-level timing. Convert the scrubber's
+  // exact audio offset into the same proportional one-character text location
+  // used by live playback, while precisely timed narration stays par-snapped.
+  #rangeAtSeekTarget(sentence: TimelineSentence, withinMediaSec: number): Range {
+    if (this.ttsClient.getCapabilities().textHighlight !== false) return sentence.range;
+    const duration = sentence.duration;
+    const length = rangeTextExcludingInert(sentence.range).length;
+    if (!duration || !Number.isFinite(duration) || length <= 1) return sentence.range;
+    const fraction = Math.min(Math.max(withinMediaSec / duration, 0), 1);
+    const offset = Math.min(Math.floor(fraction * length), length - 1);
+    return getTextSubRange(sentence.range, offset, offset + 1) ?? sentence.range;
+  }
+
+  #dispatchSeekLocation(range: Range) {
+    try {
+      const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
+      this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
+      this.#dispatchPosition(cfi, 'sentence');
+    } catch {}
+  }
+
   // Sentence-snapped seek through the same navigation machinery as prev/next:
   // foliate's from(range) returns the paragraph SSML sliced at the target
   // sentence, so highlighting, page-follow, and mark bookkeeping come free.
@@ -1027,11 +1048,13 @@ export class TTSController extends EventTarget {
     if (!timeline) return;
     const target = timeline.sentenceAtTime(seconds);
     if (!target) return;
+    const range = this.#rangeAtSeekTarget(target.sentence, target.withinMediaSec);
     if (
       target.index === this.#currentSentenceIndex &&
       this.ttsClient.getCapabilities().continuousTimeline &&
       (await this.ttsClient.seekToChunkPosition?.(target.withinMediaSec))
     ) {
+      this.#dispatchSeekLocation(range);
       return;
     }
     const isPlaying = this.state === 'playing';
@@ -1040,7 +1063,10 @@ export class TTSController extends EventTarget {
     await this.stop(isPlaying);
     if (!isPlaying) this.state = 'forward-paused';
     this.#currentSentenceIndex = target.index;
-    const ssml = this.#getTts()?.from(target.sentence.range);
+    const ssml = this.#getTts()?.from(range);
+    if (this.ttsClient.getCapabilities().textHighlight === false) {
+      this.ttsClient.setNextChunkPosition?.(target.withinMediaSec);
+    }
     await this.#handleNavigationWithSSML(ssml, isPlaying);
     if (!isPlaying) this.reapplyCurrentHighlight();
   }

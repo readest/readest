@@ -115,6 +115,39 @@ describe('paired audiobook storage', () => {
     expect(storage.writeFile).not.toHaveBeenCalled();
   });
 
+  it('removes every partially imported file when a later copy fails', async () => {
+    const storage = makeStorage();
+    vi.mocked(storage.copyFile)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('copy failed'));
+    const importFile = (index: number): Parameters<typeof importPairedAudiobook>[3][number] => ({
+      file: new File([], `${index}.mp3`, { type: 'audio/mpeg' }),
+      sourcePath: `/picked/${index}.mp3`,
+      metadata: {
+        id: `audio-${index}`,
+        name: `${index}.mp3`,
+        duration: 10,
+        chapters: [
+          {
+            id: `audio-${index}:0`,
+            fileId: `audio-${index}`,
+            label: `Chapter ${index}`,
+            start: 0,
+            end: 10,
+          },
+        ],
+      },
+    });
+
+    await expect(
+      importPairedAudiobook(storage, 'book-hash', [], [importFile(1), importFile(2)]),
+    ).rejects.toThrow('copy failed');
+
+    const attemptedPaths = vi.mocked(storage.copyFile).mock.calls.map(([, , path]) => path);
+    expect(storage.deleteFile).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(storage.deleteFile).mock.calls.map(([path]) => path)).toEqual(attemptedPaths);
+  });
+
   it('removes only the paired-audio directory', async () => {
     const storage = makeStorage();
     const association: PairedAudiobook = {
