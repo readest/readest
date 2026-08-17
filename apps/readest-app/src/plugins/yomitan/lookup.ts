@@ -129,7 +129,7 @@ const loadBankedDefinitions = async (
   host: YomitanHost,
   databaseHandle: string,
   terms: IndexedTerm[],
-): Promise<Map<number, ReturnType<typeof normalizeYomitanGlossary>>> => {
+): Promise<Map<DatabaseRow, ReturnType<typeof normalizeYomitanGlossary>>> => {
   const bankOrders = [
     ...new Set(
       terms
@@ -198,11 +198,10 @@ const loadBankedDefinitions = async (
       // A malformed bank invalidates only the entries that reference it.
     }
   }
-  const definitions = new Map<number, ReturnType<typeof normalizeYomitanGlossary>>();
+  const definitions = new Map<DatabaseRow, ReturnType<typeof normalizeYomitanGlossary>>();
   for (const { row } of terms) {
     if (row['glossary_json'] !== null) continue;
     try {
-      const id = numberField(row, 'id');
       const bank = banks.get(numberField(row, 'bank_order'));
       const entryIndex = numberField(row, 'entry_index');
       const term = bank?.[entryIndex];
@@ -215,7 +214,7 @@ const loadBankedDefinitions = async (
       }
       const normalized = normalizeYomitanGlossary(term[5], term[0]);
       const parsed = dictionaryContentNodeSchema.array().safeParse(normalized);
-      if (parsed.success) definitions.set(id, parsed.data);
+      if (parsed.success) definitions.set(row, parsed.data);
     } catch {
       // Portable databases are untrusted; skip malformed entries without breaking other matches.
     }
@@ -404,9 +403,7 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
       const reading = stringField(row, 'reading');
       const glossary = row['glossary_json'];
       const definitions =
-        typeof glossary === 'string'
-          ? JSON.parse(glossary)
-          : bankedDefinitions.get(numberField(row, 'id'));
+        typeof glossary === 'string' ? JSON.parse(glossary) : bankedDefinitions.get(row);
       const tagNames = [
         ...splitYomitanTags(stringField(row, 'definition_tags')),
         ...splitYomitanTags(stringField(row, 'term_tags')),

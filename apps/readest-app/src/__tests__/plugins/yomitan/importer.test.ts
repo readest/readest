@@ -749,6 +749,82 @@ describe('Yomitan importer and lookup', () => {
     });
   });
 
+  test('keeps banked definitions isolated when portable term ids are duplicated', async () => {
+    const source = createPortableHeader();
+    db = await NodeDatabaseService.open(':memory:');
+    const host = createHost(source, db);
+    await db.execute(
+      'CREATE TABLE terms (id INTEGER, expression TEXT NOT NULL, reading TEXT NOT NULL, definition_tags TEXT NOT NULL, rules TEXT NOT NULL, score REAL NOT NULL, glossary_json BLOB, sequence INTEGER NOT NULL, term_tags TEXT NOT NULL, bank_order INTEGER NOT NULL, entry_index INTEGER)',
+    );
+    await db.execute(
+      'CREATE TABLE tags (name TEXT PRIMARY KEY, category TEXT NOT NULL, sort_order REAL NOT NULL, notes TEXT NOT NULL, score REAL NOT NULL)',
+    );
+    await db.execute(
+      'CREATE TABLE term_meta (id INTEGER PRIMARY KEY, expression TEXT NOT NULL, mode TEXT NOT NULL, reading TEXT NOT NULL, payload_json TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE TABLE term_banks (bank_order INTEGER PRIMARY KEY, data BLOB NOT NULL)',
+    );
+    const banks = await Promise.all(
+      [
+        [['word', 'word', '', '', 2, ['definition-A'], 1, '']],
+        [['other', 'word', '', '', 1, ['definition-B'], 2, '']],
+      ].map(
+        async (bank) =>
+          new Uint8Array(
+            await new Response(
+              new Response(JSON.stringify(bank)).body!.pipeThrough(new CompressionStream('gzip')),
+            ).arrayBuffer(),
+          ),
+      ),
+    );
+    await db.execute('INSERT INTO term_banks VALUES (?, ?), (?, ?)', [1, banks[0], 2, banks[1]]);
+    await db.execute('INSERT INTO terms VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+      1,
+      'word',
+      'word',
+      '',
+      '',
+      2,
+      null,
+      1,
+      '',
+      1,
+      0,
+    ]);
+    await db.execute('INSERT INTO terms VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+      1,
+      'other',
+      'word',
+      '',
+      '',
+      1,
+      null,
+      2,
+      '',
+      2,
+      0,
+    ]);
+
+    const result = await lookupYomitan(host, {
+      dictionaryId: 'dict-1',
+      databaseHandle: 'db-1',
+      query: 'word',
+      language: 'en',
+    });
+
+    expect(result.entries).toEqual([
+      expect.objectContaining({
+        expression: 'word',
+        definitions: [{ type: 'text', value: 'definition-A' }],
+      }),
+      expect.objectContaining({
+        expression: 'other',
+        definitions: [{ type: 'text', value: 'definition-B' }],
+      }),
+    ]);
+  });
+
   test.each([
     ['missing', [], []],
     ['corrupt', [{ bank_order: 999, data_size: 1 }], [{ data: new Uint8Array([0]) }]],
