@@ -1,5 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const tauriMocks = vi.hoisted(() => ({
+  addPluginListener: vi.fn(),
+  invoke: vi.fn(),
+  unregister: vi.fn(),
+}));
+
+vi.mock('@tauri-apps/api/core', () => ({
+  addPluginListener: tauriMocks.addPluginListener,
+  convertFileSrc: vi.fn((path: string) => path),
+  invoke: tauriMocks.invoke,
+}));
+
 import { AudiobookPreviewPlayer } from '@/services/audiobook/preview';
 import type { AppService } from '@/types/system';
 
@@ -45,6 +57,11 @@ beforeEach(() => {
   FakeAudio.playImplementations = [];
   createObjectURL.mockClear();
   revokeObjectURL.mockClear();
+  tauriMocks.unregister.mockReset();
+  tauriMocks.addPluginListener.mockResolvedValue({ unregister: tauriMocks.unregister });
+  tauriMocks.invoke.mockImplementation(async (command: string) =>
+    command === 'plugin:native-tts|playout_control' ? { session: 1 } : undefined,
+  );
   vi.stubGlobal('Audio', FakeAudio);
   Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectURL });
   Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revokeObjectURL });
@@ -124,5 +141,19 @@ describe('AudiobookPreviewPlayer', () => {
     await vi.advanceTimersByTimeAsync(1_000);
     expect(FakeAudio.instances[1]!.pause).not.toHaveBeenCalled();
     expect(onStopped).not.toHaveBeenCalledWith('second');
+  });
+
+  it('unregisters the native playback listener when a mobile preview stops', async () => {
+    const appService = makeAppService({
+      appPlatform: 'tauri',
+      isMobileApp: true,
+      resolveFilePath: vi.fn().mockResolvedValue('/books/book.m4b'),
+    });
+    const player = new AudiobookPreviewPlayer(appService, vi.fn());
+
+    await player.toggle({ id: 'chapter-1', path: 'book.m4b', start: 0, end: 30 });
+    await player.stop();
+
+    expect(tauriMocks.unregister).toHaveBeenCalledOnce();
   });
 });

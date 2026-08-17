@@ -106,7 +106,7 @@ export class AudiobookPreviewPlayer {
     this.#timer = null;
     const nativePlayer = this.#nativePlayer;
     this.#nativePlayer = null;
-    await nativePlayer?.release();
+    await nativePlayer?.shutdown();
     if (this.#audio) {
       this.#audio.pause();
       if (this.#endedListener) this.#audio.removeEventListener('ended', this.#endedListener);
