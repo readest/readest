@@ -122,6 +122,39 @@ describe('DictionaryPluginControlStore', () => {
     expect(deleteDatabase).toHaveBeenCalledWith('index-2.db');
   });
 
+  test('does not discard a generation after a newer build retains it for rollback', async () => {
+    db = await NodeDatabaseService.open(':memory:');
+    const deleteDatabase = vi.fn(async () => undefined);
+    let id = 0;
+    const store = new DictionaryPluginControlStore(db, {
+      now: () => 1_000,
+      createId: () => `owner-${++id}`,
+      deleteDatabase,
+    });
+    await store.initialize();
+
+    const firstLease = await store.acquireLease('dict-1', 'build');
+    await store.stageGeneration(firstLease, 'readest.yomitan', 'build-1', 'index-1.db', 1);
+    await store.activateGeneration(firstLease, 'build-1');
+    await store.releaseLease(firstLease);
+    await store.markGenerationHealthy('dict-1', 'build-1');
+
+    const secondLease = await store.acquireLease('dict-1', 'build');
+    await store.stageGeneration(secondLease, 'readest.yomitan', 'build-2', 'index-2.db', 1);
+    await store.activateGeneration(secondLease, 'build-2');
+    await store.releaseLease(secondLease);
+
+    await store.discardFailedGeneration('dict-1', 'build-1');
+
+    expect(await store.getGeneration('dict-1', 'build-1')).toMatchObject({ state: 'previous' });
+    expect(await store.getActiveGeneration('dict-1')).toMatchObject({ buildId: 'build-2' });
+    expect(deleteDatabase).not.toHaveBeenCalledWith('index-1.db');
+
+    await store.rollbackUnhealthyGeneration('dict-1', 'build-2');
+    expect(await store.getActiveGeneration('dict-1')).toMatchObject({ buildId: 'build-1' });
+    expect(deleteDatabase).toHaveBeenCalledWith('index-2.db');
+  });
+
   test('removes an unhealthy first activation when there is no rollback target', async () => {
     db = await NodeDatabaseService.open(':memory:');
     const deleteDatabase = vi.fn(async () => undefined);

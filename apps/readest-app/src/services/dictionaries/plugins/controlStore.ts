@@ -409,32 +409,31 @@ export class DictionaryPluginControlStore {
   async discardFailedGeneration(dictionaryId: string, buildId: string): Promise<void> {
     const path = await this.serialized(() =>
       this.transaction(async () => {
-        const generations = await this.db.select(
-          'SELECT database_path FROM dictionary_plugin_generations WHERE dictionary_id = ? AND build_id = ?',
-          [dictionaryId, buildId],
-        );
-        const databasePath = generations[0]?.['database_path'];
         const pointers = await this.db.select(
           'SELECT active_build_id, previous_build_id FROM dictionary_plugin_active WHERE dictionary_id = ?',
           [dictionaryId],
         );
         const pointer = pointers[0];
-        if (pointer?.['active_build_id'] === buildId) {
-          const previous = pointer['previous_build_id'];
-          if (typeof previous === 'string') {
-            await this.db.execute(
-              "UPDATE dictionary_plugin_generations SET state = 'healthy' WHERE dictionary_id = ? AND build_id = ?",
-              [dictionaryId, previous],
-            );
-            await this.db.execute(
-              'UPDATE dictionary_plugin_active SET active_build_id = ?, previous_build_id = NULL WHERE dictionary_id = ?',
-              [previous, dictionaryId],
-            );
-          } else {
-            await this.db.execute('DELETE FROM dictionary_plugin_active WHERE dictionary_id = ?', [
-              dictionaryId,
-            ]);
-          }
+        if (pointer?.['active_build_id'] !== buildId) return undefined;
+        const generations = await this.db.select(
+          'SELECT database_path FROM dictionary_plugin_generations WHERE dictionary_id = ? AND build_id = ?',
+          [dictionaryId, buildId],
+        );
+        const databasePath = generations[0]?.['database_path'];
+        const previous = pointer['previous_build_id'];
+        if (typeof previous === 'string') {
+          await this.db.execute(
+            "UPDATE dictionary_plugin_generations SET state = 'healthy' WHERE dictionary_id = ? AND build_id = ?",
+            [dictionaryId, previous],
+          );
+          await this.db.execute(
+            'UPDATE dictionary_plugin_active SET active_build_id = ?, previous_build_id = NULL WHERE dictionary_id = ?',
+            [previous, dictionaryId],
+          );
+        } else {
+          await this.db.execute('DELETE FROM dictionary_plugin_active WHERE dictionary_id = ?', [
+            dictionaryId,
+          ]);
         }
         await this.db.execute(
           "UPDATE dictionary_plugin_generations SET state = 'tombstoned' WHERE dictionary_id = ? AND build_id = ?",
