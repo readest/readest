@@ -87,6 +87,10 @@ So the rough split is:
 - `apps/readest-app/src/libs`
   Shared library code. Some of it is server-oriented, some client-oriented, some neutral.
 
+- `apps/readest-app/src/plugins`
+  Bundled plugin implementations that run behind the host-owned Worker protocol.
+  The Yomitan implementation is also reused by Node conversion tooling.
+
 - `apps/readest-app/src/helpers`
   General helper code, usually shared.
 
@@ -248,11 +252,24 @@ This is shared integration logic. Actual HTTP exposure happens via route handler
 
 Dictionary import, parsing, lookup, and provider registry.
 
-- readers/parsers for StarDict, SLOB, and related formats
+- readers/parsers for StarDict, MDict, DICT, SLOB, BGL, and related formats
 - provider adapters for dictionary/web/wikipedia/wiktionary sources
+- `plugins/`: source integrity, index generations, materialization, provider lifecycle, and semantic rendering for bundled dictionary plugins
 - dictionary service, deduplication, content ID, and lookup candidate generation
 
 This is primarily client/application functionality.
+
+### `src/services/plugins`
+
+Host-owned infrastructure for bundled plugins.
+
+- manifest, request, result, and semantic-content contracts
+- Worker request routing and host capability calls
+- scoped source reads and bounded SQL access through opaque handles
+- bundled plugin discovery and lookup/build worker lifecycles
+
+Plugin implementations live separately under `src/plugins`; currently the
+Yomitan plugin accepts raw `.zip` dictionaries and portable `.rdict` indexes.
 
 ### `src/services/annotation`
 

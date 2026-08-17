@@ -1,6 +1,8 @@
 # Testing
 
-Readest uses three test tiers, all powered by [Vitest](https://vitest.dev/).
+Readest uses several test tiers. Unit, browser, Tauri integration, and Android
+device tests use [Vitest](https://vitest.dev/); full Tauri UI E2E uses
+WebDriverIO with Mocha.
 
 ## Unit Tests (`pnpm test`)
 
@@ -28,7 +30,7 @@ pnpm test:browser
 - **Config:** `vitest.browser.config.mts`
 - **Pattern:** `src/**/*.browser.test.ts`
 - **Browser:** Chromium (headless, via `@vitest/browser-playwright`)
-- **Use for:** WASM modules (e.g. `@tursodatabase/database-wasm`), Web Worker integration, browser-specific storage APIs.
+- **Use for:** WASM modules (e.g. `@tursodatabase/database-wasm`), Web Worker integration such as bundled dictionary plugins, and browser-specific storage APIs.
 
 ## Tauri Integration Tests (`pnpm test:tauri`)
 

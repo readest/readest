@@ -29,6 +29,9 @@ pnpm format:check          # Check formatting without writing (Biome)
 # Rust
 pnpm fmt:check             # Check formatting Rust code (src-tauri)
 pnpm clippy:check          # Lint Rust code (src-tauri)
+
+# Dictionary tooling
+pnpm dictionary:yomitan:convert <input.zip> [output.rdict]  # Build a portable Yomitan dictionary
 ```
 
 ### Source Layout
@@ -41,6 +44,7 @@ pnpm clippy:check          # Lint Rust code (src-tauri)
 | `src/store/`      | Zustand state stores                                          |
 | `src/hooks/`      | Custom React hooks                                            |
 | `src/libs/`       | Document loaders, payment, storage, sync                      |
+| `src/plugins/`    | Bundled plugin implementations, including Yomitan             |
 | `src/utils/`      | Pure utility functions                                        |
 | `src/types/`      | TypeScript type definitions                                   |
 | `src/context/`    | React Context providers (Auth, Env, Sync, etc.)               |

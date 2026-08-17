@@ -52,7 +52,7 @@
 | **Scroll/Page View Modes**                 | Switch between scrolling or paginated reading modes.                                                                   | ✅         |
 | **Full-Text Search**                       | Search inside a book or across the current library shelf to find relevant sections.                                    | ✅         |
 | **Annotations and Highlighting**           | Add highlights, bookmarks, and notes to enhance your reading experience and use instant mode for quicker interactions. | ✅         |
-| **Dictionary/Wikipedia Lookup**            | Instantly look up words and terms when reading.                                                                        | ✅         |
+| **Dictionary/Wikipedia Lookup**            | Look up words with built-in sources or import local packs, including Yomitan ZIP/RDICT, from Settings → Custom Dictionaries. | ✅         |
 | **[Parallel Read][link-parallel-read]**    | Read two books or documents simultaneously in a split-screen view.                                                     | ✅         |
 | **Customize Font and Layout**              | Adjust font, layout, theme mode, and theme colors for a personalized experience.                                       | ✅         |
 | **Code Syntax Highlighting**               | Read software manuals with rich coloring of code examples.                                                             | ✅         |
@@ -120,6 +120,10 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 Guides, tutorials, and FAQs for installing and using Readest live in the official documentation:
 
 📖 **[https://readest.com/docs][link-docs]**
+
+Contributor references live in the repository: [architecture](./apps/readest-app/docs/architecture.md),
+[code layout](./apps/readest-app/docs/code-layout.md), and
+[testing](./apps/readest-app/docs/testing.md).
 
 ## Building from Source
 

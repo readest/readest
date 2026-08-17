@@ -139,7 +139,9 @@ plus the platform-specific `*AppService.ts` (`webAppService`, `nativeAppService`
 require-corp` on every document. The COOP/COEP pair is required so that the
 browser exposes `SharedArrayBuffer`, which the Turso WASM thread pool needs in
 order to run the in-browser replica database; without those headers
-`initThreadPool` hangs.
+`initThreadPool` hangs. `next.config.mjs` also applies COEP to `/_next/static/*`
+so bundled module workers inherit the isolation required by the database-backed
+dictionary plugin runtime.
 
 `/runtime-config.js` is a server route that emits
 `window.__READEST_RUNTIME_CONFIG = {...}` as a JavaScript file. It is loaded as
@@ -455,11 +457,25 @@ while deleting a local book drains its queue and removes its downloaded audio.
 
 ### 6.6 Dictionaries
 
-`src/services/dictionaries` parses StarDict and SLOB packs locally
-(`readers/`), and integrates online sources (Wikipedia, Wiktionary,
-provider-specific). Lookup goes through a candidate generator + dedup so
-clicking a word finds all installed dictionaries and online sources in one
-roundtrip.
+`src/services/dictionaries` imports local StarDict, MDict, DICT, SLOB, and BGL
+packs and integrates online sources such as Wikipedia and Wiktionary. Lookup
+goes through a candidate generator and deduplication layer so clicking a word
+finds all enabled local and online sources in one roundtrip.
+
+Bundled dictionary formats run through the plugin boundary in
+`src/services/plugins`. A validated Worker protocol exposes only opaque source
+and database handles; host-side brokers enforce dictionary scope, SQL limits,
+and read-only access to active indexes. `src/services/dictionaries/plugins`
+owns import, integrity checks, device-local materialization, generation
+activation/rollback, provider lifecycle, and semantic result rendering.
+
+The first bundled implementation is Yomitan (`src/plugins/yomitan`). Raw `.zip`
+dictionaries are indexed into staged SQLite generations, while portable
+`.rdict` files install a pre-indexed database. Replica sync retains the source
+archive and its SHA-256 metadata, not the derived database, so each device can
+verify and rebuild its own index. Use
+`pnpm dictionary:yomitan:convert <input.zip> [output.rdict]` to create the
+portable form.
 
 ### 6.7 OPDS / Calibre
 
