@@ -983,8 +983,11 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
   const handleTTSStop = async (event: CustomEvent) => {
     const { bookKey: ttsBookKey } = event.detail;
-    if (ttsControllerRef.current && bookKey === ttsBookKey) {
-      handleStop(bookKey);
+    if (bookKey !== ttsBookKey) return;
+    if (ttsControllerRef.current) {
+      await handleStop(bookKey);
+    } else {
+      await ttsSessionManager.stopBook(getBookHashFromKey(bookKey), 'user');
     }
   };
 

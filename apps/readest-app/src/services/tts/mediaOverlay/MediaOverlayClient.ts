@@ -575,11 +575,10 @@ export class MediaOverlayClient implements TTSClient {
 
   async shutdown(): Promise<void> {
     this.initialized = false;
+    const player = this.#player;
+    this.#player = null;
     this.#releaseAudio();
-    if (this.#player) {
-      await this.#player.shutdown();
-      this.#player = null;
-    }
+    if (player) await player.shutdown();
     this.#currentPar = null;
     this.#section = null;
     this.#source = null;

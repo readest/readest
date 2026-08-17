@@ -206,6 +206,7 @@ const { mockSessionManager } = vi.hoisted(() => ({
     getSessionByHash: vi.fn((_hash: string) => null as unknown),
     getActiveSession: vi.fn(() => null as unknown),
     stopActive: vi.fn().mockResolvedValue(undefined),
+    stopBook: vi.fn().mockResolvedValue(undefined),
     stopController: vi.fn(
       async (_bookHash: string, controller: { shutdown: () => Promise<void> }) =>
         controller.shutdown().catch(() => {}),
@@ -566,6 +567,34 @@ describe('useTTSControl handleStop resilience (#4676)', () => {
     });
 
     expect(setTTSEnabled).toHaveBeenCalledWith('book-1', false);
+  });
+
+  it('keeps an awaited tts-stop dispatch pending until controller shutdown finishes', async () => {
+    const controller = await startSession();
+    let finishShutdown!: () => void;
+    const teardown = new Promise<void>((resolve) => {
+      finishShutdown = resolve;
+    });
+    controller.shutdown.mockReturnValueOnce(teardown);
+    mockSessionManager.stopBook.mockReturnValueOnce(teardown);
+
+    let firstStopped = false;
+    let secondStopped = false;
+    const firstStop = eventDispatcher.dispatch('tts-stop', { bookKey: 'book-1' }).then(() => {
+      firstStopped = true;
+    });
+    const secondStop = eventDispatcher.dispatch('tts-stop', { bookKey: 'book-1' }).then(() => {
+      secondStopped = true;
+    });
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+
+    expect(firstStopped).toBe(false);
+    expect(secondStopped).toBe(false);
+    expect(mockSessionManager.stopBook).toHaveBeenCalledWith('book', 'user');
+    finishShutdown();
+    await Promise.all([firstStop, secondStop]);
+    expect(firstStopped).toBe(true);
+    expect(secondStopped).toBe(true);
   });
 
   it('disables TTS even when controller.shutdown never resolves', async () => {

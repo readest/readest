@@ -161,4 +161,35 @@ describe('MediaOverlayClient on iOS Tauri', () => {
 
     expect(controlCalls.filter((c) => c['action'] === 'start-session')).toHaveLength(2);
   });
+
+  test('shutdown awaits one native abort', async () => {
+    await setup();
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+
+    let finishAbort!: () => void;
+    const abortGate = new Promise<void>((resolve) => {
+      finishAbort = resolve;
+    });
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
+      const payload = (args as { payload?: Record<string, unknown> })?.payload ?? {};
+      if (cmd === 'plugin:native-tts|playout_control') {
+        controlCalls.push(payload);
+        if (payload['action'] === 'abort') await abortGate;
+        return { session: null } as unknown;
+      }
+      return undefined as unknown;
+    });
+
+    let settled = false;
+    const shutdown = client.shutdown().then(() => {
+      settled = true;
+    });
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+
+    expect(settled).toBe(false);
+    finishAbort();
+    await shutdown;
+    expect(controlCalls.filter((call) => call['action'] === 'abort')).toHaveLength(1);
+  });
 });
