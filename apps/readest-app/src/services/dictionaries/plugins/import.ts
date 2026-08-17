@@ -288,7 +288,7 @@ const importOne = async (
     return { claimed: true, imported: fresh };
   } catch (error) {
     if (dictionaryId && buildId) {
-      if (activated) await controlStore.discardFailedGeneration(dictionaryId, buildId);
+      if (activated) await controlStore.discardFailedGeneration(dictionaryId, buildId, 'active');
       else await controlStore.markGenerationFailed(dictionaryId, buildId);
     }
     if (databasePath && !activated) {

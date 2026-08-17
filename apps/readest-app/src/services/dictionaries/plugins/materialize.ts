@@ -146,7 +146,7 @@ export const materializePluginDictionary = async (
     return generation;
   } catch (error) {
     if (buildId) {
-      if (activated) await controlStore.discardFailedGeneration(dict.id, buildId);
+      if (activated) await controlStore.discardFailedGeneration(dict.id, buildId, 'active');
       else await controlStore.markGenerationFailed(dict.id, buildId);
     }
     if (databasePath && !activated) {

@@ -123,7 +123,7 @@ export const createPluginDictionaryProvider = ({
           isBrokenDerivedDatabaseError(error)
         ) {
           await controlStore
-            .discardFailedGeneration(dict.id, generation.buildId)
+            .discardFailedGeneration(dict.id, generation.buildId, 'healthy')
             .catch(() => undefined);
         }
         throw error;

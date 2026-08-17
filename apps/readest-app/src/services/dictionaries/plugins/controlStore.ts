@@ -357,10 +357,12 @@ export class DictionaryPluginControlStore {
           throw new Error(`Dictionary plugin generation is not active: ${buildId}`);
         }
         const generations = await this.db.select(
-          'SELECT database_path FROM dictionary_plugin_generations WHERE dictionary_id = ? AND build_id = ?',
+          'SELECT database_path, state FROM dictionary_plugin_generations WHERE dictionary_id = ? AND build_id = ?',
           [dictionaryId, buildId],
         );
-        const databasePath = generations[0]?.['database_path'];
+        const generation = generations[0];
+        if (generation?.['state'] !== 'active') return undefined;
+        const databasePath = generation['database_path'];
         const previous = pointer['previous_build_id'];
         if (typeof previous !== 'string') {
           await this.db.execute('DELETE FROM dictionary_plugin_active WHERE dictionary_id = ?', [
@@ -406,7 +408,11 @@ export class DictionaryPluginControlStore {
     );
   }
 
-  async discardFailedGeneration(dictionaryId: string, buildId: string): Promise<void> {
+  async discardFailedGeneration(
+    dictionaryId: string,
+    buildId: string,
+    expectedState: 'active' | 'healthy',
+  ): Promise<void> {
     const path = await this.serialized(() =>
       this.transaction(async () => {
         const pointers = await this.db.select(
@@ -416,10 +422,12 @@ export class DictionaryPluginControlStore {
         const pointer = pointers[0];
         if (pointer?.['active_build_id'] !== buildId) return undefined;
         const generations = await this.db.select(
-          'SELECT database_path FROM dictionary_plugin_generations WHERE dictionary_id = ? AND build_id = ?',
+          'SELECT database_path, state FROM dictionary_plugin_generations WHERE dictionary_id = ? AND build_id = ?',
           [dictionaryId, buildId],
         );
-        const databasePath = generations[0]?.['database_path'];
+        const generation = generations[0];
+        if (generation?.['state'] !== expectedState) return undefined;
+        const databasePath = generation['database_path'];
         const previous = pointer['previous_build_id'];
         if (typeof previous === 'string') {
           await this.db.execute(

@@ -224,7 +224,7 @@ describe('bundled dictionary plugin integration', () => {
 
     await expect(provider.init!()).rejects.toThrow('derived database missing');
     await expect(provider.init!()).rejects.toThrow(/not materialized/i);
-    expect(discardFailedGeneration).toHaveBeenCalledWith(dict.id, 'build-1');
+    expect(discardFailedGeneration).toHaveBeenCalledWith(dict.id, 'build-1', 'healthy');
     expect(openDatabase).toHaveBeenCalledOnce();
     provider.dispose?.();
   });
