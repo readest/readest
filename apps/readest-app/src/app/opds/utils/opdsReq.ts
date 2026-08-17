@@ -46,6 +46,19 @@ export const needsProxy = (url: string): boolean => {
   return isWebAppPlatform() && url.startsWith('http');
 };
 
+/**
+ * tauri-plugin-http appends the webview origin (e.g. `tauri://localhost`) as
+ * the Origin header of every request unless the caller sets one. Spring-based
+ * servers such as Komga treat it as a foreign CORS origin and reject the
+ * request with 403 "Invalid CORS request" before authentication ever happens
+ * (#5698). An explicit empty Origin instructs the plugin (built with the
+ * `unsafe-headers` feature) to drop the header entirely, matching what native
+ * OPDS clients send. Spread it before custom headers so a user-defined Origin
+ * still wins.
+ */
+export const omitOriginHeader = (): Record<string, string> =>
+  isTauriAppPlatform() ? { Origin: '' } : {};
+
 const PROXY_OVERRIDES: Record<string, string> = {
   standardebooks: NODE_OPDS_PROXY_URL,
 };
@@ -228,6 +241,7 @@ export const probeAuth = async (
   const headers: Record<string, string> = {
     'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: 'application/atom+xml, application/xml, text/xml, */*',
+    ...omitOriginHeader(),
     ...(!useProxy ? normalizedCustomHeaders : {}),
   };
 
@@ -345,6 +359,7 @@ export const fetchWithAuth = async (
   const baseHeaders: Record<string, string> = {
     'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: 'application/atom+xml, application/xml, text/xml, */*',
+    ...omitOriginHeader(),
     ...(!useProxy ? normalizedCustomHeaders : {}),
     ...(options.headers as Record<string, string>),
   };

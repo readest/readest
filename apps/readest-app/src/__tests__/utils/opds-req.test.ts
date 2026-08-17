@@ -234,6 +234,16 @@ describe('opdsReq', () => {
       expect(res.status).toBe(200);
     });
 
+    it('does not add an Origin header to web-platform requests', async () => {
+      fetchMock.mockResolvedValue(makeResponse({ status: 200, body: '<feed/>' }));
+
+      await fetchWithAuth('https://komga.example.com/opds/v2/catalog', 'alice', 's3cret', true);
+
+      const init = fetchMock.mock.calls[0]![1] as RequestInit;
+      const headers = init.headers as Record<string, string>;
+      expect('Origin' in headers).toBe(false);
+    });
+
     it('retries with Digest auth when the server issues a Digest challenge', async () => {
       fetchMock
         .mockResolvedValueOnce(
@@ -251,6 +261,77 @@ describe('opdsReq', () => {
       const headers = init.headers as Record<string, string>;
       expect(headers['Authorization']).toMatch(/^Digest /);
       expect(res.status).toBe(200);
+    });
+  });
+
+  describe('Origin header suppression on Tauri (#5698)', () => {
+    // tauri-plugin-http appends the webview origin (`tauri://localhost`) as
+    // the Origin header of every request unless the caller sets one.
+    // Spring-based servers such as Komga treat it as a foreign CORS origin
+    // and reject the request with 403 "Invalid CORS request" before
+    // authentication ever happens. An explicit empty Origin makes the plugin
+    // (built with `unsafe-headers`) drop the header entirely.
+    let fetchWithAuth: typeof import('@/app/opds/utils/opdsReq').fetchWithAuth;
+    let probeAuth: typeof import('@/app/opds/utils/opdsReq').probeAuth;
+    let isTauriAppPlatform: ReturnType<typeof vi.fn>;
+    let tauriFetchMock: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+      const envModule = await import('@/services/environment');
+      isTauriAppPlatform = envModule.isTauriAppPlatform as ReturnType<typeof vi.fn>;
+      isTauriAppPlatform.mockReturnValue(true);
+      // The mock registry is not cleared by vi.resetModules(), so the plugin
+      // fetch mock and its call history persist across tests unless reset.
+      const pluginHttp = await import('@tauri-apps/plugin-http');
+      tauriFetchMock = pluginHttp.fetch as ReturnType<typeof vi.fn>;
+      tauriFetchMock.mockReset();
+      const opdsReq = await import('@/app/opds/utils/opdsReq');
+      fetchWithAuth = opdsReq.fetchWithAuth;
+      probeAuth = opdsReq.probeAuth;
+    });
+
+    afterEach(() => {
+      tauriFetchMock.mockReset();
+      isTauriAppPlatform.mockReturnValue(false);
+    });
+
+    it('suppresses the webview Origin header on fetchWithAuth requests', async () => {
+      tauriFetchMock.mockResolvedValue(makeResponse({ status: 200, body: '<feed/>' }));
+
+      await fetchWithAuth('https://komga.example.com/opds/v2/catalog', 'alice', 's3cret', false);
+
+      expect(tauriFetchMock).toHaveBeenCalledTimes(1);
+      const init = tauriFetchMock.mock.calls[0]![1] as RequestInit;
+      const headers = init.headers as Record<string, string>;
+      expect(headers['Origin']).toBe('');
+    });
+
+    it('lets a user-defined custom Origin header win over the suppression marker', async () => {
+      tauriFetchMock.mockResolvedValue(makeResponse({ status: 200, body: '<feed/>' }));
+
+      await fetchWithAuth(
+        'https://komga.example.com/opds/v2/catalog',
+        'alice',
+        's3cret',
+        false,
+        {},
+        { Origin: 'https://allowed.example.com' },
+      );
+
+      const init = tauriFetchMock.mock.calls[0]![1] as RequestInit;
+      const headers = init.headers as Record<string, string>;
+      expect(headers['Origin']).toBe('https://allowed.example.com');
+    });
+
+    it('suppresses the webview Origin header on the HEAD probe', async () => {
+      tauriFetchMock.mockResolvedValue(makeResponse({ status: 200 }));
+
+      await probeAuth('https://komga.example.com/opds/v2/catalog', 'alice', 's3cret', false);
+
+      expect(tauriFetchMock).toHaveBeenCalledTimes(1);
+      const init = tauriFetchMock.mock.calls[0]![1] as RequestInit;
+      const headers = init.headers as Record<string, string>;
+      expect(headers['Origin']).toBe('');
     });
   });
 });
