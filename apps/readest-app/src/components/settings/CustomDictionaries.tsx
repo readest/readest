@@ -280,6 +280,10 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
 
   const { selectFiles } = useFileSelector(appService, _);
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<{
+    stage: string;
+    percentage: number;
+  } | null>(null);
   // Android only: the dictionary app remembered for the browser-excluding
   // system-lookup chooser (issue #4559). Stays null on every other platform
   // and whenever nothing has been remembered, so the reset row below only
@@ -516,6 +520,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
   const handleImport = async () => {
     if (importing) return;
     setImporting(true);
+    setImportProgress(null);
     try {
       const result = await selectFiles({ type: 'dictionaries', multiple: true });
       if (result.error) {
@@ -528,7 +533,15 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
       }
       // User cancelled the picker — staying silent is the right call here.
       if (result.files.length === 0) return;
-      const importResult = await appService?.importDictionaries(result.files, dictionaries);
+      const importResult = await appService?.importDictionaries(
+        result.files,
+        dictionaries,
+        ({ stage, completed, total }) => {
+          if (total === undefined || total <= 0) return;
+          const percentage = Math.min(100, Math.max(0, Math.floor((completed / total) * 100)));
+          setImportProgress({ stage, percentage });
+        },
+      );
       if (!importResult) {
         eventDispatcher.dispatch('toast', {
           type: 'error',
@@ -622,6 +635,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
       });
     } finally {
       setImporting(false);
+      setImportProgress(null);
     }
   };
 
@@ -837,8 +851,19 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           >
             <MdAdd className='h-3.5 w-3.5' />
           </span>
-          <span className='line-clamp-1'>
-            {importing ? _('Importing…') : _('Import Dictionary')}
+          <span className='line-clamp-1' aria-live='polite'>
+            {importing ? (
+              importProgress ? (
+                <>
+                  {importProgress.stage === 'indexing' ? _('Indexing…') : _('Importing…')}
+                  {` ${importProgress.percentage}%`}
+                </>
+              ) : (
+                _('Importing…')
+              )
+            ) : (
+              _('Import Dictionary')
+            )}
           </span>
         </button>
         <button
