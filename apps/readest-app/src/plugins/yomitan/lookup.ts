@@ -10,6 +10,7 @@ import {
   type DictionaryContentNode,
   type DictionaryLookupEntry,
   type PluginPayload,
+  type PluginSqlValue,
 } from '@/services/plugins/contract';
 import type { DatabaseRow } from '@/types/database';
 import { normalizeYomitanGlossary } from './content';
@@ -19,6 +20,10 @@ import type { YomitanHost } from './importer';
 
 const MAX_YOMITAN_TAG_LOOKUP_NAMES = 256;
 const MAX_YOMITAN_TERM_BANK_JSON_BYTES = 64 * 1_024 * 1_024;
+const MAX_YOMITAN_EXPRESSION_BYTES = 512 * 4;
+const MAX_YOMITAN_TAG_NAME_BYTES = 256 * 4;
+const MAX_YOMITAN_TAG_TEXT_BYTES = 4_000 * 4;
+const MAX_DEFERRED_TEXT_ROWS_PER_BATCH = 256;
 
 class YomitanLookupLimitError extends Error {}
 
@@ -89,6 +94,78 @@ const readTextWithLimit = async (
 };
 
 const placeholders = (count: number): string => Array.from({ length: count }, () => '?').join(', ');
+
+type SqlRowId = Extract<PluginSqlValue, number | bigint>;
+
+const sqlRowId = (row: DatabaseRow): SqlRowId => {
+  const value = row['portable_rowid'];
+  if (typeof value === 'bigint') return value;
+  if (typeof value === 'number' && Number.isSafeInteger(value)) return value;
+  throw new Error('Invalid portable Yomitan row id');
+};
+
+const sqlRowIdKey = (value: SqlRowId): string => `${typeof value}:${String(value)}`;
+
+const loadDeferredTextColumn = async (
+  host: YomitanHost,
+  databaseHandle: string,
+  rows: DatabaseRow[],
+  options: {
+    table: 'term_meta' | 'terms';
+    column: 'glossary_json' | 'payload_json';
+    sizeKey: 'glossary_size' | 'payload_size';
+  },
+): Promise<void> => {
+  const pending: { row: DatabaseRow; rowId: SqlRowId; size: number }[] = [];
+  for (const row of rows) {
+    if (Object.hasOwn(row, options.column)) continue;
+    try {
+      const rowId = sqlRowId(row);
+      const size = numberField(row, options.sizeKey);
+      if (!Number.isSafeInteger(size) || size < 0 || size > MAX_PLUGIN_RESOURCE_BYTES) continue;
+      pending.push({ row, rowId, size });
+    } catch {
+      // Invalid or oversized cells are isolated from valid sibling rows.
+    }
+  }
+
+  const loadBatch = async (batch: typeof pending): Promise<void> => {
+    if (batch.length === 0) return;
+    const targets = new Map(batch.map((item) => [sqlRowIdKey(item.rowId), item]));
+    const result = await host.select(
+      databaseHandle,
+      `SELECT _rowid_ AS portable_rowid, ${options.column} FROM ${options.table} WHERE _rowid_ IN (${placeholders(batch.length)}) AND typeof(${options.column}) = 'text' AND length(CAST(${options.column} AS BLOB)) <= ?`,
+      [...batch.map(({ rowId }) => rowId), MAX_PLUGIN_RESOURCE_BYTES],
+      batch.length,
+    );
+    for (const resultRow of result.rows) {
+      try {
+        const target = targets.get(sqlRowIdKey(sqlRowId(resultRow)));
+        const value = stringField(resultRow, options.column);
+        if (!target || new TextEncoder().encode(value).byteLength !== target.size) continue;
+        target.row[options.column] = value;
+      } catch {
+        // Portable databases are untrusted; skip malformed deferred cells.
+      }
+    }
+  };
+
+  let batch: typeof pending = [];
+  let batchBytes = 0;
+  for (const item of pending) {
+    if (
+      batch.length >= MAX_DEFERRED_TEXT_ROWS_PER_BATCH ||
+      (batch.length > 0 && batchBytes + item.size > MAX_PLUGIN_RESOURCE_BYTES)
+    ) {
+      await loadBatch(batch);
+      batch = [];
+      batchBytes = 0;
+    }
+    batch.push(item);
+    batchBytes += item.size;
+  }
+  await loadBatch(batch);
+};
 
 const candidateFor = (
   row: DatabaseRow,
@@ -236,7 +313,7 @@ const loadTags = async (
   const values = [...names].slice(0, MAX_YOMITAN_TAG_LOOKUP_NAMES);
   const result = await host.select(
     databaseHandle,
-    `SELECT name, category, notes, score FROM tags WHERE name IN (${placeholders(values.length)}) ORDER BY name ASC LIMIT 256`,
+    `SELECT name, CASE WHEN typeof(category) = 'text' AND length(CAST(category AS BLOB)) <= ${MAX_YOMITAN_TAG_NAME_BYTES} THEN category END AS category, CASE WHEN typeof(notes) = 'text' AND length(CAST(notes AS BLOB)) <= ${MAX_YOMITAN_TAG_TEXT_BYTES} THEN notes END AS notes, CASE WHEN typeof(score) IN ('integer', 'real') THEN score END AS score, CASE WHEN typeof(category) = 'text' AND length(CAST(category AS BLOB)) <= ${MAX_YOMITAN_TAG_NAME_BYTES} AND typeof(notes) = 'text' AND length(CAST(notes AS BLOB)) <= ${MAX_YOMITAN_TAG_TEXT_BYTES} AND typeof(score) IN ('integer', 'real') THEN 1 ELSE 0 END AS portable_valid FROM tags WHERE name IN (${placeholders(values.length)}) AND typeof(name) = 'text' AND length(CAST(name AS BLOB)) <= ${MAX_YOMITAN_TAG_NAME_BYTES} ORDER BY name ASC LIMIT 256`,
     values,
     256,
   );
@@ -246,6 +323,9 @@ const loadTags = async (
     const rawName = row['name'];
     try {
       const name = stringField(row, 'name');
+      if (Object.hasOwn(row, 'portable_valid') && numberField(row, 'portable_valid') !== 1) {
+        throw new Error('Invalid portable Yomitan tag row');
+      }
       const category = stringField(row, 'category');
       const notes = stringField(row, 'notes');
       const score = numberField(row, 'score');
@@ -279,14 +359,20 @@ const loadMetadata = async (
 ): Promise<DatabaseRow[]> => {
   const expressions = [...new Set(terms.map(({ row }) => stringField(row, 'expression')))];
   if (expressions.length === 0) return [];
-  return (
+  const rows = (
     await host.select(
       databaseHandle,
-      `SELECT expression, mode, reading, payload_json FROM term_meta WHERE expression IN (${placeholders(expressions.length)}) ORDER BY id ASC LIMIT 1000`,
+      `SELECT _rowid_ AS portable_rowid, expression, mode, reading, length(CAST(payload_json AS BLOB)) AS payload_size FROM term_meta WHERE expression IN (${placeholders(expressions.length)}) AND typeof(id) IN ('integer', 'real') AND typeof(expression) = 'text' AND length(CAST(expression AS BLOB)) <= ${MAX_YOMITAN_EXPRESSION_BYTES} AND mode IN ('freq', 'pitch', 'ipa') AND typeof(reading) = 'text' AND length(CAST(reading AS BLOB)) <= ${MAX_YOMITAN_EXPRESSION_BYTES} AND typeof(payload_json) = 'text' ORDER BY id ASC LIMIT 1000`,
       expressions,
       1_000,
     )
   ).rows;
+  await loadDeferredTextColumn(host, databaseHandle, rows, {
+    table: 'term_meta',
+    column: 'payload_json',
+    sizeKey: 'payload_size',
+  });
+  return rows;
 };
 
 const metadataFor = (
@@ -362,9 +448,9 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
   const terms = candidates.map((candidate) => candidate.term);
   const result = await host.select(
     request.databaseHandle,
-    `SELECT id, expression, reading, definition_tags, rules, score, glossary_json, sequence, term_tags, bank_order, entry_index FROM terms WHERE expression IN (${placeholders(terms.length)}) OR reading IN (${placeholders(terms.length)}) ORDER BY score DESC, bank_order ASC LIMIT 256`,
+    `SELECT _rowid_ AS portable_rowid, id, expression, reading, definition_tags, rules, score, glossary_json IS NULL AS glossary_is_banked, length(CAST(glossary_json AS BLOB)) AS glossary_size, term_tags, bank_order, entry_index FROM terms WHERE (expression IN (${placeholders(terms.length)}) OR reading IN (${placeholders(terms.length)})) AND typeof(id) IN ('integer', 'real') AND typeof(expression) = 'text' AND length(CAST(expression AS BLOB)) <= ${MAX_YOMITAN_EXPRESSION_BYTES} AND typeof(reading) = 'text' AND length(CAST(reading AS BLOB)) <= ${MAX_YOMITAN_EXPRESSION_BYTES} AND typeof(definition_tags) = 'text' AND length(CAST(definition_tags AS BLOB)) <= ${MAX_YOMITAN_TAG_TEXT_BYTES} AND typeof(rules) = 'text' AND length(CAST(rules AS BLOB)) <= ${MAX_YOMITAN_TAG_TEXT_BYTES} AND typeof(score) IN ('integer', 'real') AND (glossary_json IS NULL OR typeof(glossary_json) = 'text') AND typeof(term_tags) = 'text' AND length(CAST(term_tags AS BLOB)) <= ${MAX_YOMITAN_TAG_TEXT_BYTES} AND typeof(bank_order) IN ('integer', 'real') AND (entry_index IS NULL OR typeof(entry_index) IN ('integer', 'real')) ORDER BY score DESC, bank_order ASC LIMIT 128`,
     [...terms, ...terms],
-    256,
+    128,
   );
   const indexed: IndexedTerm[] = [];
   for (const row of result.rows) {
@@ -389,6 +475,20 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
       numberField(left.row, 'bank_order') - numberField(right.row, 'bank_order'),
   );
   const limited = indexed.slice(0, 128);
+  for (const { row } of limited) {
+    if (Object.hasOwn(row, 'glossary_json')) continue;
+    try {
+      if (numberField(row, 'glossary_is_banked') === 1) row['glossary_json'] = null;
+    } catch {
+      // Invalid rows remain without a glossary and are skipped below.
+    }
+  }
+  await loadDeferredTextColumn(
+    host,
+    request.databaseHandle,
+    limited.map(({ row }) => row),
+    { table: 'terms', column: 'glossary_json', sizeKey: 'glossary_size' },
+  );
   const [loadedTags, metadata, bankedDefinitions] = await Promise.all([
     loadTags(host, request.databaseHandle, limited),
     loadMetadata(host, request.databaseHandle, limited),

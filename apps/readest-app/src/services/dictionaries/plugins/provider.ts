@@ -28,6 +28,11 @@ interface ProviderState {
 
 const MAX_RESOURCE_CACHE_BYTES = 16 * 1_024 * 1_024;
 
+const isBrokenDerivedDatabaseError = (error: unknown): boolean =>
+  /ENOENT|NO SUCH FILE|NOT FOUND|DOES NOT EXIST|MISSING|CORRUPT|MALFORMED|NOT A DATABASE|INVALID .*INDEX|INDEX VERSION MISMATCH|INDEX IS EMPTY/iu.test(
+    error instanceof Error ? error.message : String(error),
+  );
+
 export const createPluginDictionaryProvider = ({
   dict,
   host,
@@ -111,6 +116,14 @@ export const createPluginDictionaryProvider = ({
         if (!verified && generation.state === 'active') {
           await controlStore
             .rollbackUnhealthyGeneration(dict.id, generation.buildId)
+            .catch(() => undefined);
+        } else if (
+          !verified &&
+          generation.state === 'healthy' &&
+          isBrokenDerivedDatabaseError(error)
+        ) {
+          await controlStore
+            .discardFailedGeneration(dict.id, generation.buildId)
             .catch(() => undefined);
         }
         throw error;

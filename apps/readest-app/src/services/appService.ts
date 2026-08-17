@@ -19,7 +19,7 @@ import { SchemaType } from '@/services/database/migrate';
 import { Book, BookConfig, BookContent, ImportBookOptions, ViewSettings } from '@/types/book';
 import type { BookNav } from '@/services/nav';
 import { getLibraryFilename, getLibraryBackupFilename } from '@/utils/book';
-import { getDirPath } from '@/utils/path';
+import { getDirPath, getFilename } from '@/utils/path';
 
 import { getOSPlatform } from '@/utils/misc';
 import { isStoragePermissionError, requestStoragePermission } from '@/utils/permission';
@@ -328,11 +328,34 @@ export abstract class BaseAppService implements AppService {
       ...pluginResult.imported,
       ...pluginResult.replacements.map((replacement) => replacement.newDict),
     ];
-    const legacyResult = await DictSvc.importDictionaries(
-      this.fs,
-      pluginResult.unclaimed,
-      dictionariesForLegacyImport,
-    );
+    let legacyResult: DictSvc.ImportDictionariesResult;
+    try {
+      legacyResult = await DictSvc.importDictionaries(
+        this.fs,
+        pluginResult.unclaimed,
+        dictionariesForLegacyImport,
+      );
+    } catch (error) {
+      const name =
+        pluginResult.unclaimed
+          .map(
+            (selected) =>
+              selected.file?.name ??
+              selected.name ??
+              (selected.path ? getFilename(selected.path) : undefined),
+          )
+          .filter((value): value is string => Boolean(value))
+          .join(', ') || 'Selected dictionaries';
+      return {
+        imported: pluginResult.imported,
+        replacements: pluginResult.replacements,
+        orphanFiles: [],
+        importErrors: [
+          ...pluginResult.failures,
+          { name, message: error instanceof Error ? error.message : String(error) },
+        ],
+      };
+    }
     return {
       imported: [...pluginResult.imported, ...legacyResult.imported],
       replacements: [...pluginResult.replacements, ...legacyResult.replacements],

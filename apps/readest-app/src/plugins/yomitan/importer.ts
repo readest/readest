@@ -56,6 +56,14 @@ const bankOrder = (filename: string): number => {
   return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
 };
 
+const checkedTermBankOrder = (filename: string): number => {
+  const order = bankOrder(filename);
+  if (!Number.isSafeInteger(order) || order < 1) {
+    throw new Error(`Invalid Yomitan term bank order: ${filename}`);
+  }
+  return order;
+};
+
 const byBankOrder = (left: { filename: string }, right: { filename: string }): number =>
   bankOrder(left.filename) - bankOrder(right.filename) ||
   left.filename.localeCompare(right.filename);
@@ -364,10 +372,20 @@ export const buildYomitanIndex = async (
       ],
     );
 
-    const termBanks = archive.list(TERM_BANK_PATTERN).sort(byBankOrder);
+    const termBanks = archive
+      .list(TERM_BANK_PATTERN)
+      .map((bank) => ({ ...bank, order: checkedTermBankOrder(bank.filename) }))
+      .sort(
+        (left, right) => left.order - right.order || left.filename.localeCompare(right.filename),
+      );
     const tagBanks = archive.list(TAG_BANK_PATTERN).sort(byBankOrder);
     const metaBanks = archive.list(TERM_META_BANK_PATTERN).sort(byBankOrder);
     if (termBanks.length === 0) throw new Error('Yomitan dictionary has no term banks');
+    for (let index = 1; index < termBanks.length; index += 1) {
+      if (termBanks[index - 1]!.order === termBanks[index]!.order) {
+        throw new Error(`Duplicate Yomitan term bank order: ${termBanks[index]!.order}`);
+      }
+    }
 
     const allBanks = [...tagBanks, ...termBanks, ...metaBanks];
     let completed = 0;
@@ -403,7 +421,7 @@ export const buildYomitanIndex = async (
     for (const bank of termBanks) {
       if (host.signal.aborted) throw new DOMException('Yomitan import aborted', 'AbortError');
       const terms = yomitanTermBankSchema.parse(await archive.readJson(bank.filename));
-      const order = bankOrder(bank.filename);
+      const order = bank.order;
       const normalized = termRows(terms, order, storage);
       normalized.resourceRefs.forEach((ref) => referencedResources.add(ref));
       await insertRows(
@@ -506,10 +524,65 @@ export const buildYomitanIndex = async (
 
 const firstValue = (rows: DatabaseRow[], key: string): unknown => rows[0]?.[key];
 
+const PORTABLE_INDEX_TABLES = [
+  'meta',
+  'terms',
+  'tags',
+  'term_meta',
+  'resources',
+  'term_banks',
+] as const;
+
 export const verifyYomitanIndex = async (host: YomitanHost, databaseHandle: string) => {
+  try {
+    const schemaRows = await host.select(
+      databaseHandle,
+      `SELECT name, type, sql FROM main.sqlite_schema WHERE name IN (${PORTABLE_INDEX_TABLES.map(() => '?').join(', ')})`,
+      [...PORTABLE_INDEX_TABLES],
+      PORTABLE_INDEX_TABLES.length,
+    );
+    const schemaByName = new Map(
+      schemaRows.rows.map((row) => [row['name'], { type: row['type'], sql: row['sql'] }]),
+    );
+    if (
+      PORTABLE_INDEX_TABLES.some((name) => {
+        const schema = schemaByName.get(name);
+        return (
+          schema?.type !== 'table' ||
+          typeof schema.sql !== 'string' ||
+          !/^\s*CREATE\s+TABLE\b/iu.test(schema.sql)
+        );
+      })
+    ) {
+      throw new Error('Required portable index table is missing or unsafe');
+    }
+    for (const table of ['terms', 'term_meta']) {
+      const shadowedRowIds = await host.select(
+        databaseHandle,
+        `SELECT name FROM pragma_table_info('${table}') WHERE lower(name) IN ('rowid', '_rowid_', 'oid') LIMIT 1`,
+        [],
+        1,
+      );
+      if (shadowedRowIds.rows.length > 0) {
+        throw new Error('Portable index table shadows SQLite row identity');
+      }
+    }
+    for (const sql of [
+      'SELECT key, value FROM main.meta LIMIT 0',
+      'SELECT _rowid_, id, expression, reading, definition_tags, rules, score, glossary_json, sequence, term_tags, bank_order, entry_index FROM main.terms LIMIT 0',
+      'SELECT name, category, sort_order, notes, score FROM main.tags LIMIT 0',
+      'SELECT _rowid_, id, expression, mode, reading, payload_json FROM main.term_meta LIMIT 0',
+      'SELECT key, archive_path, media_kind, data FROM main.resources LIMIT 0',
+      'SELECT bank_order, data FROM main.term_banks LIMIT 0',
+    ]) {
+      await host.select(databaseHandle, sql, [], 1);
+    }
+  } catch {
+    throw new Error('Invalid portable Yomitan index schema');
+  }
   const versionRows = await host.select(
     databaseHandle,
-    "SELECT value FROM meta WHERE key = 'index_version'",
+    "SELECT value FROM main.meta WHERE key = 'index_version'",
     [],
     1,
   );
@@ -517,26 +590,17 @@ export const verifyYomitanIndex = async (host: YomitanHost, databaseHandle: stri
   if (version !== YOMITAN_INDEX_VERSION) {
     throw new Error(`Yomitan index version mismatch: ${String(version)}`);
   }
-  try {
-    for (const sql of [
-      'SELECT key, value FROM meta LIMIT 0',
-      'SELECT id, expression, reading, definition_tags, rules, score, glossary_json, sequence, term_tags, bank_order, entry_index FROM terms LIMIT 0',
-      'SELECT name, category, sort_order, notes, score FROM tags LIMIT 0',
-      'SELECT id, expression, mode, reading, payload_json FROM term_meta LIMIT 0',
-      'SELECT key, archive_path, media_kind, data FROM resources LIMIT 0',
-      'SELECT bank_order, data FROM term_banks LIMIT 0',
-    ]) {
-      await host.select(databaseHandle, sql, [], 1);
-    }
-  } catch {
-    throw new Error('Invalid portable Yomitan index schema');
-  }
-  const countRows = await host.select(databaseHandle, 'SELECT COUNT(*) AS count FROM terms', [], 1);
+  const countRows = await host.select(
+    databaseHandle,
+    'SELECT COUNT(*) AS count FROM main.terms',
+    [],
+    1,
+  );
   const entries = Number(firstValue(countRows.rows, 'count'));
   if (!Number.isSafeInteger(entries) || entries < 1) throw new Error('Yomitan index is empty');
   const titleRows = await host.select(
     databaseHandle,
-    "SELECT value FROM meta WHERE key = 'title'",
+    "SELECT value FROM main.meta WHERE key = 'title'",
     [],
     1,
   );

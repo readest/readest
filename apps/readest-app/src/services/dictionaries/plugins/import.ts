@@ -314,8 +314,7 @@ export const importPluginDictionaries = async (
   dependencies: PluginImportDependencies = {},
 ): Promise<ImportPluginDictionariesResult> => {
   const resolvePlugin = dependencies.resolvePlugin ?? findDictionaryFormatPlugin;
-  const controlStore =
-    dependencies.controlStore ?? (await getDictionaryPluginControlStore(host as AppService));
+  let controlStore = dependencies.controlStore;
   const createBuildId = dependencies.createBuildId ?? randomBuildId;
   const isWorkerSupported = dependencies.isWorkerSupported ?? (() => typeof Worker !== 'undefined');
   const imported: ImportedDictionary[] = [];
@@ -331,6 +330,7 @@ export const importPluginDictionaries = async (
     }
     let result: Awaited<ReturnType<typeof importOne>>;
     try {
+      controlStore ??= await getDictionaryPluginControlStore(host as AppService);
       result = await importOne(
         host,
         source,

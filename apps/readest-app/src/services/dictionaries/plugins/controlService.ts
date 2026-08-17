@@ -14,14 +14,22 @@ export const getDictionaryPluginControlStore = (
       'dictionary-plugin-control.sqlite3',
       'Dictionaries',
     );
-    const store = new DictionaryPluginControlStore(db, {
-      deleteDatabase: (path) => appService.deleteDatabase(path, 'Dictionaries'),
-    });
-    await store.initialize();
-    await store.cleanupTombstones();
-    return store;
+    try {
+      const store = new DictionaryPluginControlStore(db, {
+        deleteDatabase: (path) => appService.deleteDatabase(path, 'Dictionaries'),
+      });
+      await store.initialize();
+      await store.cleanupTombstones();
+      return store;
+    } catch (error) {
+      await db.close().catch(() => undefined);
+      throw error;
+    }
   })();
   stores.set(appService, created);
+  void created.catch(() => {
+    if (stores.get(appService) === created) stores.delete(appService);
+  });
   return created;
 };
 

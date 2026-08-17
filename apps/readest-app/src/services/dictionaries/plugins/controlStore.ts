@@ -356,15 +356,22 @@ export class DictionaryPluginControlStore {
         if (!pointer || pointer['active_build_id'] !== buildId) {
           throw new Error(`Dictionary plugin generation is not active: ${buildId}`);
         }
-        const previous = pointer['previous_build_id'];
-        if (typeof previous !== 'string') {
-          throw new Error(`Dictionary plugin generation has no rollback target: ${buildId}`);
-        }
         const generations = await this.db.select(
           'SELECT database_path FROM dictionary_plugin_generations WHERE dictionary_id = ? AND build_id = ?',
           [dictionaryId, buildId],
         );
         const databasePath = generations[0]?.['database_path'];
+        const previous = pointer['previous_build_id'];
+        if (typeof previous !== 'string') {
+          await this.db.execute('DELETE FROM dictionary_plugin_active WHERE dictionary_id = ?', [
+            dictionaryId,
+          ]);
+          await this.db.execute(
+            "UPDATE dictionary_plugin_generations SET state = 'tombstoned' WHERE dictionary_id = ? AND build_id = ?",
+            [dictionaryId, buildId],
+          );
+          return typeof databasePath === 'string' ? databasePath : undefined;
+        }
         await this.db.execute(
           "UPDATE dictionary_plugin_generations SET state = 'healthy' WHERE dictionary_id = ? AND build_id = ?",
           [dictionaryId, previous],

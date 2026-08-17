@@ -122,6 +122,28 @@ describe('DictionaryPluginControlStore', () => {
     expect(deleteDatabase).toHaveBeenCalledWith('index-2.db');
   });
 
+  test('removes an unhealthy first activation when there is no rollback target', async () => {
+    db = await NodeDatabaseService.open(':memory:');
+    const deleteDatabase = vi.fn(async () => undefined);
+    const store = new DictionaryPluginControlStore(db, {
+      now: () => 1_000,
+      createId: () => 'owner-1',
+      deleteDatabase,
+    });
+    await store.initialize();
+
+    const lease = await store.acquireLease('dict-1', 'build');
+    await store.stageGeneration(lease, 'readest.yomitan', 'build-1', 'index-1.db', 1);
+    await store.activateGeneration(lease, 'build-1');
+    await store.releaseLease(lease);
+
+    await store.rollbackUnhealthyGeneration('dict-1', 'build-1');
+
+    expect(await store.getActiveGeneration('dict-1')).toBeUndefined();
+    expect(await store.getGeneration('dict-1', 'build-1')).toBeUndefined();
+    expect(deleteDatabase).toHaveBeenCalledWith('index-1.db');
+  });
+
   test('tombstones and removes every derived index when a dictionary is deleted', async () => {
     db = await NodeDatabaseService.open(':memory:');
     const deleteDatabase = vi.fn(async (path: string) => {

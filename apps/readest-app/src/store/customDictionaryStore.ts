@@ -10,6 +10,7 @@ import { useSettingsStore } from './settingsStore';
 import { publishReplicaDelete, publishReplicaUpsert } from '@/services/sync/replicaPublish';
 import { DICTIONARY_KIND } from '@/services/sync/adapters/dictionary';
 import { markExplicitProviderOrderPublish } from '@/services/sync/replicaSettingsSync';
+import type { DictionaryPluginControlStore } from '@/services/dictionaries/plugins/controlStore';
 
 const publishDictUpsert = (dict: ImportedDictionary): void => {
   if (!dict.contentId) return;
@@ -519,18 +520,23 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
       const pluginDictionaries = persisted.filter(
         (dict) => !dict.deletedAt && dict.kind === 'plugin',
       );
-      const pluginControlStore =
-        pluginDictionaries.length > 0
-          ? await import('@/services/dictionaries/plugins/controlService').then((module) =>
-              module.getDictionaryPluginControlStore(appService),
-            )
-          : undefined;
+      let pluginControlStore: DictionaryPluginControlStore | undefined;
+      if (pluginDictionaries.length > 0) {
+        try {
+          pluginControlStore = await import('@/services/dictionaries/plugins/controlService').then(
+            (module) => module.getDictionaryPluginControlStore(appService),
+          );
+        } catch (error) {
+          console.warn('Failed to open dictionary plugin control store', error);
+        }
+      }
       const dictionaries = await Promise.all(
         persisted.map(async (dict) => {
           if (dict.deletedAt) return dict;
           const exists = await appService.exists(dict.bundleDir, 'Dictionaries');
           if (!exists) return { ...dict, unavailable: true };
-          if (dict.kind !== 'plugin' || !dict.plugin || !pluginControlStore) return dict;
+          if (dict.kind !== 'plugin' || !dict.plugin) return dict;
+          if (!pluginControlStore) return { ...dict, unavailable: true };
           const generation = await pluginControlStore.getActiveGeneration(dict.id);
           if (
             generation?.pluginId === dict.plugin.pluginId &&

@@ -434,6 +434,39 @@ describe('BaseAppService', () => {
       expect(result).toMatchObject({ importErrors: pluginImportResult.failures });
     });
 
+    test('returns committed plugin replacements when a legacy import fails', async () => {
+      const oldPlugin = {
+        id: 'old-plugin',
+        kind: 'plugin',
+        name: 'Old plugin',
+        bundleDir: 'old-plugin-dir',
+        files: { pluginSource: 'old.zip' },
+        addedAt: 1,
+      } as ImportedDictionary;
+      const replacementPlugin = {
+        ...oldPlugin,
+        id: 'replacement-plugin',
+        bundleDir: 'replacement-plugin-dir',
+      };
+      const legacyFile = { file: new File(['legacy'], 'legacy.bgl') };
+      vi.mocked(PluginImport.importPluginDictionaries).mockResolvedValue({
+        imported: [],
+        replacements: [{ oldIds: [oldPlugin.id], newDict: replacementPlugin }],
+        unclaimed: [legacyFile],
+        failures: [],
+      });
+      vi.mocked(DictSvc.importDictionaries).mockRejectedValue(
+        new Error('injected legacy write failure'),
+      );
+
+      await expect(service.importDictionaries([legacyFile], [oldPlugin])).resolves.toEqual({
+        imported: [],
+        replacements: [{ oldIds: [oldPlugin.id], newDict: replacementPlugin }],
+        orphanFiles: [],
+        importErrors: [{ name: 'legacy.bgl', message: 'injected legacy write failure' }],
+      });
+    });
+
     test('evicts lookup state and removes derived plugin indexes before deleting the source', async () => {
       const removeDictionary = vi.fn().mockResolvedValue(undefined);
       vi.mocked(getDictionaryPluginControlStore).mockResolvedValue({

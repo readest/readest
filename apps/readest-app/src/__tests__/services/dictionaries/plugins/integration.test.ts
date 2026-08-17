@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { BlobWriter, TextReader, Uint8ArrayReader, ZipWriter } from '@zip.js/zip.js';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -155,6 +155,126 @@ describe('bundled dictionary plugin integration', () => {
   afterEach(async () => {
     if (root) await rm(root, { recursive: true, force: true });
     root = undefined;
+  });
+
+  test('routes legacy-only files without opening the plugin control database', async () => {
+    const openDatabase = vi.fn().mockRejectedValue(new Error('plugin control unavailable'));
+    const host = { openDatabase } as unknown as Parameters<typeof importPluginDictionaries>[0];
+    const source = { file: new File(['legacy'], 'legacy.bgl') };
+
+    await expect(importPluginDictionaries(host, [source])).resolves.toEqual({
+      imported: [],
+      replacements: [],
+      unclaimed: [source],
+      failures: [],
+    });
+    expect(openDatabase).not.toHaveBeenCalled();
+  });
+
+  test('invalidates a missing healthy derived index without retrying the stale pointer', async () => {
+    const source = new File(['x'], 'dictionary.zip');
+    const dict = {
+      id: 'dict-1',
+      contentId: 'dict-1',
+      kind: 'plugin' as const,
+      name: 'Dictionary',
+      bundleDir: 'bundle',
+      files: { pluginSource: source.name },
+      plugin: {
+        recordVersion: 1 as const,
+        pluginId: 'readest.yomitan',
+        formatId: 'yomitan',
+        sourceFormatVersion: 3,
+        indexVersion: 2,
+        source: { filename: source.name, byteSize: source.size, sha256: 'a'.repeat(64) },
+      },
+      addedAt: 1,
+    };
+    let active = true;
+    const discardFailedGeneration = vi.fn(async () => {
+      active = false;
+    });
+    const controlStore = {
+      getActiveGeneration: vi.fn(async () =>
+        active
+          ? {
+              dictionaryId: dict.id,
+              pluginId: 'readest.yomitan',
+              buildId: 'build-1',
+              databasePath: 'missing.sqlite3',
+              indexVersion: 2,
+              state: 'healthy',
+              createdAt: 1,
+            }
+          : undefined,
+      ),
+      discardFailedGeneration,
+    } as unknown as DictionaryPluginControlStore;
+    const openDatabase = vi.fn().mockRejectedValue(new Error('derived database missing'));
+    const host = {
+      openFile: vi.fn().mockResolvedValue(source),
+      openDatabase,
+      deleteDatabase: vi.fn(async () => undefined),
+    };
+    const plugin: BundledPluginDefinition = {
+      manifest: yomitanPluginManifest,
+      createWorker: () => new LoopbackWorker(),
+    };
+    const provider = createPluginDictionaryProvider({ dict, host, plugin, controlStore });
+
+    await expect(provider.init!()).rejects.toThrow('derived database missing');
+    await expect(provider.init!()).rejects.toThrow(/not materialized/i);
+    expect(discardFailedGeneration).toHaveBeenCalledWith(dict.id, 'build-1');
+    expect(openDatabase).toHaveBeenCalledOnce();
+    provider.dispose?.();
+  });
+
+  test('does not invalidate a healthy derived index on a transient busy error', async () => {
+    const source = new File(['x'], 'dictionary.zip');
+    const dict = {
+      id: 'dict-1',
+      contentId: 'dict-1',
+      kind: 'plugin' as const,
+      name: 'Dictionary',
+      bundleDir: 'bundle',
+      files: { pluginSource: source.name },
+      plugin: {
+        recordVersion: 1 as const,
+        pluginId: 'readest.yomitan',
+        formatId: 'yomitan',
+        sourceFormatVersion: 3,
+        indexVersion: 2,
+        source: { filename: source.name, byteSize: source.size, sha256: 'a'.repeat(64) },
+      },
+      addedAt: 1,
+    };
+    const discardFailedGeneration = vi.fn(async () => undefined);
+    const controlStore = {
+      getActiveGeneration: vi.fn(async () => ({
+        dictionaryId: dict.id,
+        pluginId: 'readest.yomitan',
+        buildId: 'build-1',
+        databasePath: 'busy.sqlite3',
+        indexVersion: 2,
+        state: 'healthy',
+        createdAt: 1,
+      })),
+      discardFailedGeneration,
+    } as unknown as DictionaryPluginControlStore;
+    const host = {
+      openFile: vi.fn().mockResolvedValue(source),
+      openDatabase: vi.fn().mockRejectedValue(new Error('database is busy')),
+      deleteDatabase: vi.fn(async () => undefined),
+    };
+    const plugin: BundledPluginDefinition = {
+      manifest: yomitanPluginManifest,
+      createWorker: () => new LoopbackWorker(),
+    };
+    const provider = createPluginDictionaryProvider({ dict, host, plugin, controlStore });
+
+    await expect(provider.init!()).rejects.toThrow('database is busy');
+    expect(discardFailedGeneration).not.toHaveBeenCalled();
+    provider.dispose?.();
   });
 
   test('imports through Worker RPC and renders through the active read-only generation', async () => {

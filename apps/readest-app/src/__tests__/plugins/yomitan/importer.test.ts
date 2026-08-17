@@ -17,6 +17,7 @@ import {
   MAX_PLUGIN_SQL_REQUEST_BYTES,
   pluginSqlValueBytes,
 } from '@/services/plugins/contract';
+import { SqlBroker } from '@/services/plugins/brokers';
 
 const createDictionary = async (): Promise<File> => {
   const writer = new ZipWriter(new BlobWriter('application/zip'));
@@ -308,6 +309,42 @@ describe('Yomitan importer and lookup', () => {
     ).resolves.toEqual({ mimeType: 'image/bmp', bytes: new Uint8Array([66, 77, 0, 0]) });
   });
 
+  test.each([
+    ['duplicate numeric orders', ['term_bank_1.json', 'term_bank_01.json'], /duplicate/i],
+    ['an unsafe numeric order', ['term_bank_9007199254740992.json'], /invalid/i],
+  ])('rejects term banks with %s', async (_case, filenames, expectedError) => {
+    const writer = new ZipWriter(new BlobWriter('application/zip'));
+    await writer.add(
+      'index.json',
+      new TextReader(JSON.stringify({ title: 'Invalid banks', revision: '1', format: 3 })),
+    );
+    for (const [index, filename] of filenames.entries()) {
+      await writer.add(
+        filename,
+        new TextReader(
+          JSON.stringify([[`word-${index}`, '', '', '', 1, [`definition-${index}`], index, '']]),
+        ),
+      );
+    }
+    const source = new File([await writer.close()], 'invalid-banks.zip', {
+      type: 'application/zip',
+    });
+    db = await NodeDatabaseService.open(':memory:');
+
+    await expect(
+      buildYomitanIndex(
+        createHost(source, db),
+        {
+          dictionaryId: 'dict-1',
+          sourceHandle: 'source-1',
+          databaseHandle: 'db-1',
+          sourceFormatVersion: 3,
+        },
+        { storage: 'banked' },
+      ),
+    ).rejects.toThrow(expectedError);
+  });
+
   test('does not claim an arbitrary ZIP', async () => {
     const writer = new ZipWriter(new BlobWriter('application/zip'));
     await writer.add('notes.txt', new TextReader('not a dictionary'));
@@ -353,6 +390,61 @@ describe('Yomitan importer and lookup', () => {
     );
     await db.execute("INSERT INTO meta VALUES ('index_version', '2'), ('title', 'Incomplete')");
     await db.execute("INSERT INTO terms VALUES (1, '読む', 'よむ', '', '', 1, '[]', 1, '', 1, 0)");
+
+    await expect(verifyYomitanIndex(host, 'db-1')).rejects.toThrow(/schema/i);
+  });
+
+  test.each([
+    'meta',
+    'terms',
+  ] as const)('rejects a portable %s view before querying dictionary data', async (table) => {
+    const source = await createDictionaryWithTerms([
+      ['word', 'word', '', '', 1, ['definition'], 1, ''],
+    ]);
+    db = await NodeDatabaseService.open(':memory:');
+    const baseHost = createHost(source, db);
+    await buildYomitanIndex(baseHost, {
+      dictionaryId: 'dict-1',
+      sourceHandle: 'source-1',
+      databaseHandle: 'db-1',
+      sourceFormatVersion: 3,
+    });
+    await db.execute(`ALTER TABLE ${table} RENAME TO ${table}_source`);
+    await db.execute(`CREATE VIEW ${table} AS SELECT * FROM ${table}_source`);
+
+    const queries: string[] = [];
+    const host: YomitanHost = {
+      ...baseHost,
+      select: async (handle, sql, params, maxRows) => {
+        queries.push(sql);
+        return baseHost.select(handle, sql, params, maxRows);
+      },
+    };
+
+    await expect(verifyYomitanIndex(host, 'db-1')).rejects.toThrow(/schema/i);
+    expect(queries).toHaveLength(1);
+    expect(queries[0]).toContain('main.sqlite_schema');
+  });
+
+  test('rejects portable tables that shadow SQLite row identity', async () => {
+    const source = await createDictionaryWithTerms([
+      ['word', 'word', '', '', 1, ['definition'], 1, ''],
+    ]);
+    db = await NodeDatabaseService.open(':memory:');
+    const host = createHost(source, db);
+    await buildYomitanIndex(host, {
+      dictionaryId: 'dict-1',
+      sourceHandle: 'source-1',
+      databaseHandle: 'db-1',
+      sourceFormatVersion: 3,
+    });
+    await db.execute('ALTER TABLE terms RENAME TO original_terms');
+    await db.execute(
+      'CREATE TABLE terms (rowid INTEGER, id INTEGER, expression TEXT NOT NULL, reading TEXT NOT NULL, definition_tags TEXT NOT NULL, rules TEXT NOT NULL, score REAL NOT NULL, glossary_json BLOB, sequence INTEGER NOT NULL, term_tags TEXT NOT NULL, bank_order INTEGER NOT NULL, entry_index INTEGER)',
+    );
+    await db.execute(
+      'INSERT INTO terms SELECT 1, id, expression, reading, definition_tags, rules, score, glossary_json, sequence, term_tags, bank_order, entry_index FROM original_terms',
+    );
 
     await expect(verifyYomitanIndex(host, 'db-1')).rejects.toThrow(/schema/i);
   });
@@ -688,6 +780,102 @@ describe('Yomitan importer and lookup', () => {
       ],
     });
     expect((result.entries[0]?.tags ?? []).map(({ name }) => name)).not.toContain('oversized');
+  });
+
+  test('isolates oversized portable text cells before broker transport', async () => {
+    const source = createPortableHeader();
+    db = await NodeDatabaseService.open(':memory:');
+    await db.execute(
+      'CREATE TABLE terms (id INTEGER PRIMARY KEY, expression TEXT NOT NULL, reading TEXT NOT NULL, definition_tags TEXT NOT NULL, rules TEXT NOT NULL, score REAL NOT NULL, glossary_json BLOB, sequence INTEGER NOT NULL, term_tags TEXT NOT NULL, bank_order INTEGER NOT NULL, entry_index INTEGER)',
+    );
+    await db.execute(
+      'CREATE TABLE tags (name TEXT PRIMARY KEY, category TEXT NOT NULL, sort_order REAL NOT NULL, notes TEXT NOT NULL, score REAL NOT NULL)',
+    );
+    await db.execute(
+      'CREATE TABLE term_meta (id INTEGER PRIMARY KEY, expression TEXT NOT NULL, mode TEXT NOT NULL, reading TEXT NOT NULL, payload_json TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE TABLE term_banks (bank_order INTEGER PRIMARY KEY, data BLOB NOT NULL)',
+    );
+    const oversized = 'x'.repeat(MAX_PLUGIN_RESOURCE_BYTES + 1);
+    await db.execute('INSERT INTO terms VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+      1,
+      'word',
+      'word',
+      'good oversized',
+      '',
+      2,
+      oversized,
+      1,
+      '',
+      1,
+      0,
+    ]);
+    await db.execute('INSERT INTO terms VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+      2,
+      'word',
+      'word',
+      'good oversized',
+      '',
+      1,
+      JSON.stringify([{ type: 'text', value: 'good' }]),
+      2,
+      '',
+      1,
+      1,
+    ]);
+    await db.execute('INSERT INTO tags VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)', [
+      'good',
+      'partOfSpeech',
+      1,
+      'valid tag',
+      1,
+      'oversized',
+      'partOfSpeech',
+      2,
+      oversized,
+      1,
+    ]);
+    await db.execute('INSERT INTO term_meta VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)', [
+      1,
+      'word',
+      'freq',
+      'word',
+      '42',
+      2,
+      'word',
+      'freq',
+      'word',
+      oversized,
+    ]);
+
+    const scope = { pluginId: 'readest.yomitan', dictionaryId: 'dict-1' };
+    const broker = new SqlBroker({ createHandle: () => 'broker-db' });
+    const databaseHandle = await broker.register(scope, db, 'active');
+    const baseHost = createHost(source, db);
+    const host: YomitanHost = {
+      ...baseHost,
+      select: (_handle, sql, params = [], maxRows = 1_000) =>
+        broker.select(scope, { handle: databaseHandle, sql, params, maxRows }),
+    };
+
+    await expect(
+      lookupYomitan(host, {
+        dictionaryId: 'dict-1',
+        databaseHandle,
+        query: 'word',
+        language: 'en',
+      }),
+    ).resolves.toMatchObject({
+      entries: [
+        {
+          expression: 'word',
+          definitions: [{ type: 'text', value: 'good' }],
+          tags: [expect.objectContaining({ name: 'good' })],
+          frequencies: [{ value: 42 }],
+        },
+      ],
+    });
   });
 
   test('isolates duplicate portable term-bank rows from inline matches', async () => {
