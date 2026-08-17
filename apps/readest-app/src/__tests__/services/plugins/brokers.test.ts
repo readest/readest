@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 import { SourceBroker, SqlBroker } from '@/services/plugins/brokers';
+import { MAX_PLUGIN_RESOURCE_BYTES } from '@/services/plugins/contract';
 import type { DatabaseExecResult, DatabaseRow, DatabaseService } from '@/types/database';
 
 const pluginContext = { pluginId: 'readest.yomitan', dictionaryId: 'dict-1' };
@@ -82,6 +83,72 @@ describe('SqlBroker', () => {
       'SELECT * FROM (SELECT id FROM terms) AS plugin_query LIMIT ?',
       [3],
     );
+  });
+
+  test('caps individual cells and aggregate bytes returned by SQL', async () => {
+    const defaultLimit = createDatabase({
+      rows: [{ data: new Uint8Array(MAX_PLUGIN_RESOURCE_BYTES + 1) }],
+    });
+    const defaultBroker = new SqlBroker({ createHandle: () => 'db-default' });
+    const defaultHandle = await defaultBroker.register(pluginContext, defaultLimit.db, 'active');
+
+    await expect(
+      defaultBroker.select(pluginContext, {
+        handle: defaultHandle,
+        sql: 'SELECT data FROM resources',
+        maxRows: 1,
+      }),
+    ).rejects.toMatchObject({ code: 'SQL_RESULT_LIMIT' });
+
+    const oversizedCell = createDatabase({ rows: [{ data: new Uint8Array(5) }] });
+    const cellBroker = new SqlBroker({
+      createHandle: () => 'db-cell',
+      maxResultBytes: 8,
+      maxResultCellBytes: 4,
+    });
+    const cellHandle = await cellBroker.register(pluginContext, oversizedCell.db, 'active');
+
+    await expect(
+      cellBroker.select(pluginContext, {
+        handle: cellHandle,
+        sql: 'SELECT data FROM resources',
+        maxRows: 1,
+      }),
+    ).rejects.toMatchObject({ code: 'SQL_RESULT_LIMIT' });
+
+    const oversizedResult = createDatabase({
+      rows: [{ first: new Uint8Array(4), second: new Uint8Array(4) }],
+    });
+    const resultBroker = new SqlBroker({
+      createHandle: () => 'db-result',
+      maxResultBytes: 15,
+      maxResultCellBytes: 4,
+    });
+    const resultHandle = await resultBroker.register(pluginContext, oversizedResult.db, 'active');
+
+    await expect(
+      resultBroker.select(pluginContext, {
+        handle: resultHandle,
+        sql: 'SELECT first, second FROM resources',
+        maxRows: 1,
+      }),
+    ).rejects.toMatchObject({ code: 'SQL_RESULT_LIMIT' });
+
+    const nativeBlob = createDatabase({ rows: [{ data: [1, 2, 3, 4] }] });
+    const nativeBroker = new SqlBroker({
+      createHandle: () => 'db-native',
+      maxResultBytes: 8,
+      maxResultCellBytes: 4,
+    });
+    const nativeHandle = await nativeBroker.register(pluginContext, nativeBlob.db, 'active');
+
+    await expect(
+      nativeBroker.select(pluginContext, {
+        handle: nativeHandle,
+        sql: 'SELECT data FROM resources',
+        maxRows: 1,
+      }),
+    ).resolves.toEqual({ rows: [{ data: [1, 2, 3, 4] }] });
   });
 
   test('permits scoped staging DDL/DML and rejects escape-oriented SQL', async () => {

@@ -1,5 +1,5 @@
 import type { DatabaseExecResult, DatabaseRow, DatabaseService } from '@/types/database';
-import { MAX_PLUGIN_SQL_PARAMS } from './contract';
+import { MAX_PLUGIN_RESOURCE_BYTES, MAX_PLUGIN_SQL_PARAMS } from './contract';
 
 export interface PluginScope {
   pluginId: string;
@@ -62,6 +62,8 @@ interface SqlBrokerOptions {
   maxRows?: number;
   maxSqlBytes?: number;
   maxParams?: number;
+  maxResultBytes?: number;
+  maxResultCellBytes?: number;
   maxTransactionStatements?: number;
   createHandle?: () => string;
 }
@@ -256,11 +258,50 @@ const assertParams = (params: unknown[], maxParams: number): void => {
   }
 };
 
+const sqlResultValueBytes = (value: unknown): number => {
+  if (value === null) return 0;
+  if (typeof value === 'string') return new TextEncoder().encode(value).byteLength;
+  if (typeof value === 'number' || typeof value === 'bigint') return 8;
+  if (typeof value === 'boolean') return 1;
+  if (value instanceof ArrayBuffer) return value.byteLength;
+  if (ArrayBuffer.isView(value)) return value.byteLength;
+  if (
+    Array.isArray(value) &&
+    value.every((byte) => Number.isInteger(byte) && byte >= 0 && byte <= 255)
+  ) {
+    return value.length;
+  }
+  throw new PluginBrokerError('Unsupported SQL result type', 'SQL_RESULT_TYPE');
+};
+
+const assertSqlResultSize = (
+  rows: DatabaseRow[],
+  maxResultBytes: number,
+  maxResultCellBytes: number,
+): void => {
+  const encoder = new TextEncoder();
+  let totalBytes = 0;
+  for (const row of rows) {
+    for (const [key, value] of Object.entries(row)) {
+      const cellBytes = sqlResultValueBytes(value);
+      if (cellBytes > maxResultCellBytes) {
+        throw new PluginBrokerError('SQL result cell size limit exceeded', 'SQL_RESULT_LIMIT');
+      }
+      totalBytes += encoder.encode(key).byteLength + cellBytes;
+      if (totalBytes > maxResultBytes) {
+        throw new PluginBrokerError('SQL result size limit exceeded', 'SQL_RESULT_LIMIT');
+      }
+    }
+  }
+};
+
 export class SqlBroker {
   private readonly entries = new Map<string, SqlEntry>();
   private readonly maxRows: number;
   private readonly maxSqlBytes: number;
   private readonly maxParams: number;
+  private readonly maxResultBytes: number;
+  private readonly maxResultCellBytes: number;
   private readonly maxTransactionStatements: number;
   private readonly createHandle: () => string;
 
@@ -268,6 +309,8 @@ export class SqlBroker {
     this.maxRows = options.maxRows ?? 1_000;
     this.maxSqlBytes = options.maxSqlBytes ?? 65_536;
     this.maxParams = options.maxParams ?? MAX_PLUGIN_SQL_PARAMS;
+    this.maxResultBytes = options.maxResultBytes ?? MAX_PLUGIN_RESOURCE_BYTES * 2;
+    this.maxResultCellBytes = options.maxResultCellBytes ?? MAX_PLUGIN_RESOURCE_BYTES;
     this.maxTransactionStatements = options.maxTransactionStatements ?? 64;
     this.createHandle = options.createHandle ?? (() => opaqueHandle('database'));
   }
@@ -367,6 +410,7 @@ export class SqlBroker {
       if (rows.length > request.maxRows) {
         throw new PluginBrokerError('SQL row limit exceeded', 'SQL_ROW_LIMIT');
       }
+      assertSqlResultSize(rows, this.maxResultBytes, this.maxResultCellBytes);
       return { rows };
     });
   }

@@ -608,6 +608,126 @@ describe('Yomitan importer and lookup', () => {
     });
   });
 
+  test('isolates malformed portable tags and metadata from valid matches', async () => {
+    const source = createPortableHeader();
+    db = await NodeDatabaseService.open(':memory:');
+    const term = {
+      id: 1,
+      expression: 'word',
+      reading: 'word',
+      definition_tags: 'bad good',
+      rules: '',
+      score: 1,
+      glossary_json: JSON.stringify([{ type: 'text', value: 'valid' }]),
+      sequence: 1,
+      term_tags: '',
+      bank_order: 1,
+      entry_index: 0,
+    };
+    const baseHost = createHost(source, db);
+    const host: YomitanHost = {
+      ...baseHost,
+      select: async (_handle, sql) => {
+        if (sql.includes('FROM terms WHERE')) return { rows: [term] };
+        if (sql.includes('FROM tags WHERE')) {
+          return {
+            rows: [
+              { name: 'bad', category: null, notes: '', score: 0 },
+              { name: 'good', category: 'partOfSpeech', notes: 'Valid tag', score: 1 },
+            ],
+          };
+        }
+        if (sql.includes('FROM term_meta WHERE')) {
+          return {
+            rows: [
+              { expression: 'word', reading: 'word', mode: 'freq', payload_json: '{' },
+              { expression: 'word', reading: 'word', mode: 'freq', payload_json: '42' },
+            ],
+          };
+        }
+        throw new Error(`Unexpected query: ${sql}`);
+      },
+    };
+
+    await expect(
+      lookupYomitan(host, {
+        dictionaryId: 'dict-1',
+        databaseHandle: 'db-1',
+        query: 'word',
+        language: 'en',
+      }),
+    ).resolves.toMatchObject({
+      entries: [
+        {
+          expression: 'word',
+          definitions: [{ type: 'text', value: 'valid' }],
+          tags: expect.arrayContaining([
+            expect.objectContaining({ name: 'good', category: 'partOfSpeech' }),
+          ]),
+          frequencies: [{ value: 42 }],
+        },
+      ],
+    });
+  });
+
+  test.each([
+    ['missing', [], []],
+    ['corrupt', [{ bank_order: 999, data_size: 1 }], [{ data: new Uint8Array([0]) }]],
+  ])('isolates %s portable term banks from inline matches', async (_case, sizeRows, dataRows) => {
+    const source = createPortableHeader();
+    db = await NodeDatabaseService.open(':memory:');
+    const rows = [
+      {
+        id: 1,
+        expression: 'word',
+        reading: 'word',
+        definition_tags: '',
+        rules: '',
+        score: 2,
+        glossary_json: null,
+        sequence: 1,
+        term_tags: '',
+        bank_order: 999,
+        entry_index: 0,
+      },
+      {
+        id: 2,
+        expression: 'word',
+        reading: 'word',
+        definition_tags: '',
+        rules: '',
+        score: 1,
+        glossary_json: JSON.stringify([{ type: 'text', value: 'valid' }]),
+        sequence: 2,
+        term_tags: '',
+        bank_order: 1,
+        entry_index: 1,
+      },
+    ];
+    const baseHost = createHost(source, db);
+    const host: YomitanHost = {
+      ...baseHost,
+      select: async (_handle, sql) => {
+        if (sql.includes('FROM terms WHERE')) return { rows };
+        if (sql.includes('length(data) AS data_size')) return { rows: sizeRows };
+        if (sql.includes('SELECT data FROM term_banks')) return { rows: dataRows };
+        if (sql.includes('FROM term_meta WHERE')) return { rows: [] };
+        throw new Error(`Unexpected query: ${sql}`);
+      },
+    };
+
+    await expect(
+      lookupYomitan(host, {
+        dictionaryId: 'dict-1',
+        databaseHandle: 'db-1',
+        query: 'word',
+        language: 'en',
+      }),
+    ).resolves.toMatchObject({
+      entries: [{ expression: 'word', definitions: [{ type: 'text', value: 'valid' }] }],
+    });
+  });
+
   test('caps aggregate portable term-bank decompression per lookup', async () => {
     const source = await createDictionary();
     db = await NodeDatabaseService.open(':memory:');

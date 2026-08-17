@@ -16,6 +16,8 @@ import type { YomitanHost } from './importer';
 const MAX_YOMITAN_TAG_LOOKUP_NAMES = 256;
 const MAX_YOMITAN_TERM_BANK_JSON_BYTES = 64 * 1_024 * 1_024;
 
+class YomitanLookupLimitError extends Error {}
+
 const stringField = (row: DatabaseRow, key: string): string => {
   const value = row[key];
   if (typeof value !== 'string') throw new Error(`Invalid Yomitan index field: ${key}`);
@@ -42,7 +44,9 @@ const bytesField = (row: DatabaseRow, key: string, maxBytes: number): Uint8Array
   ) {
     view = Uint8Array.from(value);
   } else throw new Error(`Invalid Yomitan index field: ${key}`);
-  if (view.byteLength > maxBytes) throw new Error(`Yomitan ${key} exceeds size limit`);
+  if (view.byteLength > maxBytes) {
+    throw new YomitanLookupLimitError(`Yomitan ${key} exceeds size limit`);
+  }
   const bytes = new Uint8Array(view.byteLength);
   bytes.set(view);
   return bytes;
@@ -67,7 +71,9 @@ const readTextWithLimit = async (
       budget.bytesRead += value.byteLength;
       if (budget.bytesRead > budget.maxBytes) {
         await reader.cancel().catch(() => undefined);
-        throw new Error('Portable Yomitan term banks exceed aggregate decompressed size limit');
+        throw new YomitanLookupLimitError(
+          'Portable Yomitan term banks exceed aggregate decompressed size limit',
+        );
       }
       chunks.push(decoder.decode(value, { stream: true }));
     }
@@ -133,7 +139,15 @@ const loadBankedDefinitions = async (
   ).rows;
   const sizes = new Map<number, number>();
   for (const row of sizeRows) {
-    sizes.set(numberField(row, 'bank_order'), numberField(row, 'data_size'));
+    try {
+      const order = numberField(row, 'bank_order');
+      const size = numberField(row, 'data_size');
+      if (Number.isSafeInteger(order) && Number.isSafeInteger(size) && size >= 0) {
+        sizes.set(order, size);
+      }
+    } catch {
+      // Portable databases are untrusted; skip malformed bank metadata rows.
+    }
   }
   const decompressionBudget = {
     bytesRead: 0,
@@ -142,33 +156,38 @@ const loadBankedDefinitions = async (
   const banks = new Map<number, ReturnType<typeof yomitanTermBankSchema.parse>>();
   for (const order of bankOrders) {
     const size = sizes.get(order);
-    if (
-      size === undefined ||
-      !Number.isSafeInteger(size) ||
-      size < 0 ||
-      size > MAX_PLUGIN_RESOURCE_BYTES
-    ) {
-      throw new Error(`Portable Yomitan term bank exceeds size limit: ${order}`);
+    if (size === undefined) continue;
+    if (size > MAX_PLUGIN_RESOURCE_BYTES) {
+      throw new YomitanLookupLimitError(`Portable Yomitan term bank exceeds size limit: ${order}`);
     }
-    const dataRows = (
-      await host.select(
-        databaseHandle,
-        'SELECT data FROM term_banks WHERE bank_order = ?',
-        [order],
-        1,
-      )
-    ).rows;
-    const bytes = bytesField(dataRows[0] ?? {}, 'data', MAX_PLUGIN_RESOURCE_BYTES);
-    if (bytes.byteLength !== size) {
-      throw new Error(`Invalid portable Yomitan term bank size: ${order}`);
+    try {
+      const dataRows = (
+        await host.select(
+          databaseHandle,
+          'SELECT data FROM term_banks WHERE bank_order = ?',
+          [order],
+          1,
+        )
+      ).rows;
+      const bytes = bytesField(dataRows[0] ?? {}, 'data', MAX_PLUGIN_RESOURCE_BYTES);
+      if (bytes.byteLength !== size) continue;
+      const stream = new Response(bytes.buffer).body!.pipeThrough(new DecompressionStream('gzip'));
+      banks.set(
+        order,
+        yomitanTermBankSchema.parse(
+          JSON.parse(await readTextWithLimit(stream, decompressionBudget, host.signal)),
+        ),
+      );
+    } catch (error) {
+      if (
+        host.signal.aborted ||
+        error instanceof YomitanLookupLimitError ||
+        (error instanceof Error && error.name === 'AbortError')
+      ) {
+        throw error;
+      }
+      // A malformed bank invalidates only the entries that reference it.
     }
-    const stream = new Response(bytes.buffer).body!.pipeThrough(new DecompressionStream('gzip'));
-    banks.set(
-      order,
-      yomitanTermBankSchema.parse(
-        JSON.parse(await readTextWithLimit(stream, decompressionBudget, host.signal)),
-      ),
-    );
   }
   const definitions = new Map<number, ReturnType<typeof normalizeYomitanGlossary>>();
   for (const { row } of terms) {
@@ -213,23 +232,24 @@ const loadTags = async (
     values,
     256,
   );
-  return new Map(
-    result.rows.map((row) => {
+  const tags = new Map<string, TagInfo>();
+  for (const row of result.rows) {
+    try {
       const name = stringField(row, 'name');
       const category = stringField(row, 'category');
       const notes = stringField(row, 'notes');
       const score = numberField(row, 'score');
-      return [
+      tags.set(name, {
         name,
-        {
-          name,
-          ...(category ? { category } : {}),
-          ...(notes ? { notes } : {}),
-          ...(Number.isFinite(score) ? { score } : {}),
-        },
-      ];
-    }),
-  );
+        ...(category ? { category } : {}),
+        ...(notes ? { notes } : {}),
+        ...(Number.isFinite(score) ? { score } : {}),
+      });
+    } catch {
+      // Portable databases are untrusted; skip malformed tag rows.
+    }
+  }
+  return tags;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -261,55 +281,61 @@ const metadataFor = (
   const pitches: NonNullable<DictionaryLookupEntry['pitches']> = [];
   const ipa: NonNullable<DictionaryLookupEntry['ipa']> = [];
   for (const row of metadata) {
-    if (stringField(row, 'expression') !== expression) continue;
-    const rowReading = stringField(row, 'reading');
-    if (rowReading && rowReading !== reading) continue;
-    const mode = stringField(row, 'mode');
-    const payload: unknown = JSON.parse(stringField(row, 'payload_json'));
-    if (mode === 'freq') {
-      if (typeof payload === 'number' || typeof payload === 'string') {
-        frequencies.push({ value: payload });
-      } else if (isRecord(payload) && typeof payload['value'] === 'number') {
-        frequencies.push({
-          value: payload['value'],
-          ...(typeof payload['displayValue'] === 'string'
-            ? { displayValue: payload['displayValue'] }
-            : {}),
-        });
-      }
-    } else if (mode === 'pitch' && Array.isArray(payload)) {
-      for (const value of payload) {
-        if (!isRecord(value)) continue;
-        const position = value['position'];
-        if (
-          (typeof position !== 'number' || !Number.isInteger(position) || position < 0) &&
-          (typeof position !== 'string' || !/^[HL]+$/u.test(position))
-        ) {
-          continue;
+    try {
+      if (stringField(row, 'expression') !== expression) continue;
+      const rowReading = stringField(row, 'reading');
+      if (rowReading && rowReading !== reading) continue;
+      const mode = stringField(row, 'mode');
+      const payload: unknown = JSON.parse(stringField(row, 'payload_json'));
+      if (mode === 'freq') {
+        if (typeof payload === 'number' || typeof payload === 'string') {
+          frequencies.push({ value: payload });
+        } else if (isRecord(payload) && typeof payload['value'] === 'number') {
+          frequencies.push({
+            value: payload['value'],
+            ...(typeof payload['displayValue'] === 'string'
+              ? { displayValue: payload['displayValue'] }
+              : {}),
+          });
         }
-        pitches.push({
-          position,
-          ...(typeof value['nasal'] === 'number' || Array.isArray(value['nasal'])
-            ? { nasal: value['nasal'] as number | number[] }
-            : {}),
-          ...(typeof value['devoice'] === 'number' || Array.isArray(value['devoice'])
-            ? { devoice: value['devoice'] as number | number[] }
-            : {}),
-          ...(Array.isArray(value['tags']) && value['tags'].every((tag) => typeof tag === 'string')
-            ? { tags: value['tags'] as string[] }
-            : {}),
-        });
+      } else if (mode === 'pitch' && Array.isArray(payload)) {
+        for (const value of payload) {
+          if (!isRecord(value)) continue;
+          const position = value['position'];
+          if (
+            (typeof position !== 'number' || !Number.isInteger(position) || position < 0) &&
+            (typeof position !== 'string' || !/^[HL]+$/u.test(position))
+          ) {
+            continue;
+          }
+          pitches.push({
+            position,
+            ...(typeof value['nasal'] === 'number' || Array.isArray(value['nasal'])
+              ? { nasal: value['nasal'] as number | number[] }
+              : {}),
+            ...(typeof value['devoice'] === 'number' || Array.isArray(value['devoice'])
+              ? { devoice: value['devoice'] as number | number[] }
+              : {}),
+            ...(Array.isArray(value['tags']) &&
+            value['tags'].every((tag) => typeof tag === 'string')
+              ? { tags: value['tags'] as string[] }
+              : {}),
+          });
+        }
+      } else if (mode === 'ipa' && Array.isArray(payload)) {
+        for (const value of payload) {
+          if (!isRecord(value) || typeof value['ipa'] !== 'string') continue;
+          ipa.push({
+            value: value['ipa'],
+            ...(Array.isArray(value['tags']) &&
+            value['tags'].every((tag) => typeof tag === 'string')
+              ? { tags: value['tags'] as string[] }
+              : {}),
+          });
+        }
       }
-    } else if (mode === 'ipa' && Array.isArray(payload)) {
-      for (const value of payload) {
-        if (!isRecord(value) || typeof value['ipa'] !== 'string') continue;
-        ipa.push({
-          value: value['ipa'],
-          ...(Array.isArray(value['tags']) && value['tags'].every((tag) => typeof tag === 'string')
-            ? { tags: value['tags'] as string[] }
-            : {}),
-        });
-      }
+    } catch {
+      // Portable databases are untrusted; skip malformed metadata rows.
     }
   }
   return {
