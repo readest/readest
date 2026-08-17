@@ -4,11 +4,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { useTranslation } from '@/hooks/useTranslation';
 import { syncSubscribedCatalogs } from '@/services/opds';
+import { queueOPDSBookUploads } from '@/services/opds/cloudUpload';
 import { AUTO_CHECK_INTERVAL_MS } from '@/services/opds/types';
-import { transferManager } from '@/services/transferManager';
 import { eventDispatcher } from '@/utils/event';
 
 export function useOPDSSubscriptions() {
@@ -62,22 +61,7 @@ export function useOPDSSubscriptions() {
         );
 
         if (totalNewBooks > 0) {
-          // Mirror the manual OPDS download path: queue cloud upload for each
-          // newly imported book when the user is logged in and Readest Cloud
-          // storage is active. Delay so the transfer manager has a chance
-          // to finish initializing if this fires right after libraryLoaded.
-          const { settings: currentSettings } = useSettingsStore.getState();
-          if (user && isReadestCloudStorageActive(currentSettings)) {
-            const importedBooks = [...new Map(newBooks.map((b) => [b.hash, b])).values()];
-            const booksToUpload = importedBooks.filter((b) => !b.uploadedAt);
-            if (booksToUpload.length > 0) {
-              setTimeout(() => {
-                for (const book of booksToUpload) {
-                  transferManager.queueUpload(book);
-                }
-              }, 3000);
-            }
-          }
+          queueOPDSBookUploads(!!user, useSettingsStore.getState().settings, newBooks);
         }
 
         if (verbose && totalNewBooks > 0) {
