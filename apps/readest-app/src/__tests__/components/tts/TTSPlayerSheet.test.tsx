@@ -109,7 +109,6 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   ttsLang: 'en',
   isPlaying: true,
   hasTimeline: true,
-  hasGapControl: false,
   timeoutOption: 0,
   timeoutTimestamp: 0,
   chapterRemainingSec: null as number | null,
@@ -118,8 +117,6 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   onBackward: vi.fn(),
   onForward: vi.fn(),
   onSetRate: vi.fn(),
-  onSetSentenceGap: vi.fn(),
-  onSetParagraphGap: vi.fn(),
   onGetVoices: vi.fn().mockResolvedValue(voiceGroups),
   onSetVoice: vi.fn(),
   onGetVoiceId: vi.fn().mockReturnValue('ava'),
@@ -255,23 +252,6 @@ describe('TTSPlayerSheet', () => {
     expect(viewSettings['ttsRate']).toBe(1.5);
     expect(settings.globalViewSettings.ttsRate).toBe(1.5);
     expect(saveSettings).toHaveBeenCalled();
-  });
-
-  test('rate-derived pauses keep sub-second precision instead of collapsing to zero', () => {
-    // The gaps are sub-second by design (0.15s / 0.3s), so rounding them to a
-    // whole number erases both at every speed - no pause between sentences or
-    // paragraphs, and no control left to restore one. See #5414.
-    const props = makeProps();
-    render(<TTSPlayerSheet {...props} />);
-    fireEvent.click(screen.getByLabelText('Speed'));
-    const slider = screen.getByRole('slider', { name: 'Speed' });
-    fireEvent.change(slider, { target: { value: '1.5' } });
-    fireEvent.pointerUp(slider);
-    // Faster speech shortens the pauses, it must not erase them.
-    expect(props.onSetSentenceGap).toHaveBeenCalledWith(0.12);
-    expect(props.onSetParagraphGap).toHaveBeenCalledWith(0.24);
-    expect(viewSettings['ttsSentenceGap']).toBe(0.12);
-    expect(viewSettings['ttsParagraphGap']).toBe(0.24);
   });
 
   test('voice button drills into the voice list and selects a voice', async () => {

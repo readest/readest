@@ -67,6 +67,15 @@ export interface ChunkTiming {
   gapSec: number;
 }
 
+export interface SessionOptions {
+  // Silence to leave between the previous session's last sample and this
+  // session's first one, scheduled on the audio clock. A paragraph is one
+  // session, so this is the inter-paragraph pause: putting it here (rather
+  // than sleeping between sessions) lets the next paragraph's synthesis and
+  // decode run *inside* the pause instead of extending it (#5750).
+  startAfterPreviousSec?: number;
+}
+
 export type WebAudioPlayerEvent =
   | { type: 'chunk-start'; chunkIndex: number }
   | { type: 'session-end' }
@@ -202,6 +211,10 @@ export class WebAudioPlayer implements TTSAudioPlayer {
   #generation = 0;
   #session: PlayerSession | null = null;
   #userPaused = false;
+  // Audio-clock time the last naturally-ended session stopped sounding, or 0
+  // when there is nothing to hand over (first session, or one that was aborted
+  // mid-playback by a stop/seek/skip). Consumed by the next startSession.
+  #carryOverEndTime = 0;
 
   constructor(createContext?: () => TTSAudioContext) {
     this.#createContext = createContext ?? getSharedContext;
@@ -231,14 +244,18 @@ export class WebAudioPlayer implements TTSAudioPlayer {
     return buffer;
   }
 
-  startSession(onEvent: (event: WebAudioPlayerEvent) => void): number {
+  startSession(onEvent: (event: WebAudioPlayerEvent) => void, opts?: SessionOptions): number {
     this.abortSession();
     const generation = ++this.#generation;
+    // Consume the handover once: a session that is later aborted must not pass
+    // the same deadline on to the one after it.
+    const carryOver = this.#carryOverEndTime;
+    this.#carryOverEndTime = 0;
     this.#session = {
       generation,
       onEvent,
       chunks: [],
-      nextStartTime: 0,
+      nextStartTime: carryOver > 0 ? carryOver + Math.max(0, opts?.startAfterPreviousSec ?? 0) : 0,
       ended: false,
       endedEmitted: false,
       waiters: [],
@@ -289,6 +306,11 @@ export class WebAudioPlayer implements TTSAudioPlayer {
     const session = this.#session;
     if (!session) return;
     this.#session = null;
+    // A session cut short (stop, seek, skip to another sentence) has no end to
+    // hand over: its scheduled tail never sounds, so the next session must
+    // start from the live clock. The handover between two paragraphs aborts
+    // too, but only after session-end already recorded the real end time.
+    if (!session.endedEmitted) this.#carryOverEndTime = 0;
     for (const chunk of session.chunks) {
       chunk.source.onended = null;
       try {
@@ -404,6 +426,11 @@ export class WebAudioPlayer implements TTSAudioPlayer {
     if (!session.ended || session.endedEmitted) return;
     if (session.chunks.some((c) => !c.ended)) return;
     session.endedEmitted = true;
+    // Hand the audio clock to the next session. The last chunk's own trailing
+    // gap is dropped: it was never sounded (nothing follows it in this
+    // session), and the next session brings its own inter-paragraph pause.
+    const last = session.chunks[session.chunks.length - 1];
+    this.#carryOverEndTime = last ? last.startTime + last.duration : 0;
     session.onEvent({ type: 'session-end' });
   }
 

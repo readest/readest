@@ -17,8 +17,6 @@ import { RiVoiceAiFill } from 'react-icons/ri';
 import { useRouter } from 'next/navigation';
 import { TTSVoicesGroup } from '@/services/tts';
 import { MEDIA_OVERLAY_VOICE_ID } from '@/services/tts/mediaOverlay';
-import { DEFAULT_SENTENCE_GAP_SEC } from '@/services/tts/EdgeTTSClient';
-import { DEFAULT_PARAGRAPH_GAP_SEC } from '@/services/tts/TTSController';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useReaderStore } from '@/store/readerStore';
@@ -42,8 +40,6 @@ import { TTS_STOP_AT_CHAPTER_END } from '@/services/tts/TTSSessionManager';
 import type { UseTTSDownloadsResult } from '@/app/reader/hooks/useTTSDownloads';
 
 type SheetView = 'main' | 'speed' | 'voice' | 'timer' | 'chapters';
-
-export const formatGap = (sec: number) => `${parseFloat(sec.toFixed(2))}s`;
 
 const getTTSTimeoutOptions = (_: TranslationFunc) => {
   return [
@@ -79,8 +75,6 @@ type TTSPlayerSheetProps = {
   onBackward: (byMark: boolean) => void;
   onForward: (byMark: boolean) => void;
   onSetRate: (rate: number) => void;
-  onSetSentenceGap: (sec: number) => void;
-  onSetParagraphGap: (sec: number) => void;
   onGetVoices: (lang: string) => Promise<TTSVoicesGroup[]>;
   onSetVoice: (voice: string, lang: string) => void;
   onGetVoiceId: () => string;
@@ -109,8 +103,6 @@ const TTSPlayerSheet = ({
   onBackward,
   onForward,
   onSetRate,
-  onSetSentenceGap,
-  onSetParagraphGap,
   onGetVoices,
   onSetVoice,
   onGetVoiceId,
@@ -198,35 +190,20 @@ const TTSPlayerSheet = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, ttsLang]);
 
-  /* Scale a given `baseGap` based on a given `rate`. Gaps are sub-second
-   * (0.15s / 0.3s), so they have to keep two decimals — rounding to a whole
-   * number floors every one of them to 0 and silently removes the pauses
-   * along with any way to get them back (#5414). */
-  const scaleGap = (baseGap: number, rate: number) => {
-    const k = 0.6;
-    return Math.round((baseGap / Math.pow(rate, k)) * 100) / 100;
-  };
-
   const handleSelectRate = (value: number) => {
     setRate(value);
+    // The pauses are derived from the rate and persisted by onSetRate's handler
+    // — every entry point that changes the rate has to re-derive them, so only
+    // one of them may own it (#5750).
     onSetRate(value);
-
-    const gap = scaleGap(DEFAULT_SENTENCE_GAP_SEC, value);
-    const paragraphGap = scaleGap(DEFAULT_PARAGRAPH_GAP_SEC, value);
-    onSetSentenceGap(gap);
-    onSetParagraphGap(paragraphGap);
 
     const vs = getViewSettings(bookKey)!;
     vs.ttsRate = value;
-    vs.ttsSentenceGap = gap;
-    vs.ttsParagraphGap = paragraphGap;
     setViewSettings(bookKey, vs);
     // Read the store fresh at call time: a `settings` captured at render goes
     // stale if anything else persisted settings since this sheet mounted.
     const { settings, setSettings, saveSettings } = useSettingsStore.getState();
     settings.globalViewSettings.ttsRate = value;
-    settings.globalViewSettings.ttsSentenceGap = gap;
-    settings.globalViewSettings.ttsParagraphGap = paragraphGap;
     setSettings(settings);
     saveSettings(envConfig, settings);
   };
