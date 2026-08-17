@@ -208,7 +208,7 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     );
     const row = rows[0];
     if (!row) return null;
-    const audio = toArrayBuffer(row.audio) ?? (await this.#readPackedAudio(row));
+    const audio = toArrayBuffer(row.audio) ?? (await this.#readPackedAudio(key, row));
     if (!audio) return null;
     this.#pendingTouches.set(key, this.#now());
     if (row.pack_id != null) this.#pendingPackTouches.set(row.pack_id, this.#now());
@@ -222,7 +222,7 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     };
   }
 
-  async #readPackedAudio(row: EntryRow): Promise<ArrayBuffer | null> {
+  async #readPackedAudio(key: string, row: EntryRow): Promise<ArrayBuffer | null> {
     if (
       !this.#packFs ||
       row.pack_id == null ||
@@ -244,7 +244,7 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       // not just this key, so a pinned section becomes visibly incomplete
       // and can be downloaded again.
       console.warn(
-        `[TTS] pack range read failed (key=${row['key']} pack=${row.pack_id}); healing entry to a miss`,
+        `[TTS] pack range read failed (key=${key} pack=${row.pack_id}); healing entry to a miss`,
         err,
       );
       await this.#transaction(async () => {
@@ -526,7 +526,7 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
         // under the same voice), so its entry is pack-backed with audio NULL.
         // Resolve the bytes from that pack so THIS section can pack too; the
         // content is identical by key, so embedding a copy is safe.
-        audio = await this.#readPackedAudio(row);
+        audio = await this.#readPackedAudio(row.key, row);
       }
       if (!audio) {
         console.warn(`[TTS] pack audio missing for key=${row.key} section=${section}`);

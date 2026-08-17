@@ -646,6 +646,7 @@ export class BufferedTTSClient implements TTSClient {
     ordinal: number,
     lang: string,
     text: string,
+    signal?: AbortSignal,
   ): Promise<boolean> {
     if (!(this.provider instanceof CachingProvider)) return false;
     const voiceId = await this.getVoiceIdFromLang(lang);
@@ -653,7 +654,14 @@ export class BufferedTTSClient implements TTSClient {
     try {
       // Retry transient failures exactly like live playback: a single network
       // blip (DNS, socket reset) must not drop a sentence and fail a chapter.
-      await this.#synthesizeWithRetry(lang, text, voiceId, new AbortController().signal);
+      // Abort with the caller's signal so cancelling a download interrupts an
+      // in-flight synthesis instead of waiting for it to finish.
+      await this.#synthesizeWithRetry(
+        lang,
+        text,
+        voiceId,
+        signal ?? new AbortController().signal,
+      );
     } catch (err) {
       // Offline / permanent failure: leave the ordinal unrecorded so the
       // section stays incomplete and can be retried later.

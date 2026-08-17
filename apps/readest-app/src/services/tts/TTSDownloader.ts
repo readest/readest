@@ -34,7 +34,13 @@ export interface CacheWarmer {
   // Synthesize this sentence into the cache (a hit is a no-op) and record its
   // key against the section manifest at the ordinal. Returns whether audio is
   // now cached for it (false = offline miss / permanent failure).
-  warmSentence(section: number, ordinal: number, lang: string, text: string): Promise<boolean>;
+  warmSentence(
+    section: number,
+    ordinal: number,
+    lang: string,
+    text: string,
+    signal?: AbortSignal,
+  ): Promise<boolean>;
   // Force any newly-completed sections to compact into packs now (and push,
   // if pack sync is on) rather than waiting for the debounced timer.
   compactCache(): Promise<void>;
@@ -95,7 +101,13 @@ export class TTSDownloader {
           break;
         }
         const s = sentences[done]!;
-        const ok = await this.#warmer.warmSentence(sectionIndex, s.ordinal, s.lang, s.text);
+        const ok = await this.#warmer.warmSentence(
+          sectionIndex,
+          s.ordinal,
+          s.lang,
+          s.text,
+          signal,
+        );
         if (ok) synthesized++;
         onProgress?.({
           sectionIndex,
