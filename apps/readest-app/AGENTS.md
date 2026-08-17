@@ -98,7 +98,7 @@ See [docs/safe-area-insets.md](docs/safe-area-insets.md) for rules on handling t
 
 ### Read Aloud
 
-Four engines sit behind `TTSClient`, including recorded-narration playback from EPUB 3 Media Overlays (a Kindle Immersion Reading equivalent). Gate behaviour on `TTSCapabilities`, never on client identity. See [docs/read-along-narration.md](docs/read-along-narration.md).
+Four engines sit behind `TTSClient`, including recorded-narration playback from EPUB 3 Media Overlays and device-local audiobook pairings. Gate behaviour on `TTSCapabilities`, never on client identity. See [docs/read-along-narration.md](docs/read-along-narration.md).
 
 ### Design System
 

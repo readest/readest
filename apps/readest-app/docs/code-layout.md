@@ -288,6 +288,12 @@ Translation provider integration.
 
 Mixed integration code. Some providers are used via server APIs to avoid exposing secrets.
 
+### `src/services/audiobook`
+
+Device-local companion-audiobook support: metadata parsing, chapter mapping,
+preview playback, and copied-file lifecycle. `src/services/tts/pairedAudiobook.ts`
+adapts a saved pairing for the Read Aloud stack.
+
 ### `src/services/tts`
 
 Read Aloud abstraction and implementations.
@@ -295,8 +301,10 @@ Read Aloud abstraction and implementations.
 - `WebSpeechClient.ts`: browser TTS
 - `NativeTTSClient.ts`: native/Tauri TTS
 - `EdgeTTSClient.ts`: remote/provider-backed TTS
-- `mediaOverlay/`: a book's own recorded narration (EPUB 3 Media Overlays)
-  played in place of synthesis — see
+- `mediaOverlay/`: a book's own recorded narration, from embedded EPUB 3 Media
+  Overlays or a device-local audiobook pairing, played in place of synthesis
+- `pairedAudiobook.ts`: turns saved ebook/audio chapter mappings into narration
+  sections consumed by the recorded-audio client — see
   [read-along-narration.md](read-along-narration.md)
 - `ttsDownloadManager.ts` + `src/store/ttsDownloadStore.ts`: durable per-book
   Offline Audio queue and progress state

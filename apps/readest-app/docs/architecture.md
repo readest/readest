@@ -436,15 +436,15 @@ Four Read Aloud backends behind one interface (`src/services/tts`):
 - `EdgeTTSClient` going through `src/app/api/tts/edge` for streaming Microsoft
   Edge voices,
 - `MediaOverlayClient` (`tts/mediaOverlay/`), which plays a book's own recorded
-  narration from EPUB 3 Media Overlays instead of synthesizing — a Kindle
-  Immersion Reading equivalent. It also replaces foliate's text segmentation
-  with the SMIL par list, so marks and audio clips are 1:1 and the rest of the
-  stack (timeline, scrubber, media session, highlighting) is untouched. See
-  [read-along-narration.md](read-along-narration.md).
+  narration from embedded EPUB 3 Media Overlays or a device-local audiobook
+  paired to a reflowable EPUB. Embedded overlays replace foliate's text
+  segmentation with the SMIL par list; paired audiobooks use chapter mappings
+  from `src/services/audiobook` and disable text highlighting when no phrase
+  timing is available. See [read-along-narration.md](read-along-narration.md).
 
 `TTSCapabilities` (`wordBoundaries`, `mediaClock`, `gapControl`,
-`liveRateChange`) is how the controller and UI degrade per engine; gate on it
-rather than comparing client identities.
+`liveRateChange`, `continuousTimeline`, `textHighlight`) is how the controller
+and UI degrade per engine; gate on it rather than comparing client identities.
 
 Edge Read Aloud also supports persistent Offline Audio downloads. A durable,
 per-book queue (`ttsDownloadManager` + `ttsDownloadStore`) resumes when that

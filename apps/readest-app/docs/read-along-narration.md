@@ -79,14 +79,14 @@ span; runs crossing spine documents divide the clip into equal chapter slices
 so playback continues instead of restarting the recording at every section
 boundary.
 
-The wizard reports chapter-count mismatches rather than hiding them. Audio and
-the association stay under `Books/<book hash>/audiobook/` on the current device;
-they are not uploaded by Readest cloud or file sync. Normal reading progress is
-still synced, so another device with its own local pairing resumes at the same
-ebook chapter. Replacements use new file paths and persist the new association
-before removing old audio. Re-importing or deduplicating an edited EPUB copies
-the paired files and rewrites those paths before retiring the previous book
-directory.
+The wizard reports chapter-count mismatches rather than hiding them. Audio stays
+under `Books/<book hash>/audiobook/`, while the association is stored in that
+book's device-local `config.json`; neither is uploaded by Readest cloud or file
+sync. Normal reading progress is still synced, so another device with its own
+local pairing resumes at the same ebook chapter. Replacements use new file paths
+and persist the new association before removing old audio. Re-importing or
+deduplicating an edited EPUB copies the paired files and rewrites those paths
+before retiring the previous book directory.
 
 ### Using it
 
