@@ -101,13 +101,7 @@ export class TTSDownloader {
           break;
         }
         const s = sentences[done]!;
-        const ok = await this.#warmer.warmSentence(
-          sectionIndex,
-          s.ordinal,
-          s.lang,
-          s.text,
-          signal,
-        );
+        const ok = await this.#warmer.warmSentence(sectionIndex, s.ordinal, s.lang, s.text, signal);
         if (ok) synthesized++;
         onProgress?.({
           sectionIndex,

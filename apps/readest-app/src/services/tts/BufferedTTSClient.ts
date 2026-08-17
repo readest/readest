@@ -656,12 +656,7 @@ export class BufferedTTSClient implements TTSClient {
       // blip (DNS, socket reset) must not drop a sentence and fail a chapter.
       // Abort with the caller's signal so cancelling a download interrupts an
       // in-flight synthesis instead of waiting for it to finish.
-      await this.#synthesizeWithRetry(
-        lang,
-        text,
-        voiceId,
-        signal ?? new AbortController().signal,
-      );
+      await this.#synthesizeWithRetry(lang, text, voiceId, signal ?? new AbortController().signal);
     } catch (err) {
       // Offline / permanent failure: leave the ordinal unrecorded so the
       // section stays incomplete and can be retried later.
