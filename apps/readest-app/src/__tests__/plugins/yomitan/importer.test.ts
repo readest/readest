@@ -501,6 +501,112 @@ describe('Yomitan importer and lookup', () => {
     ).rejects.toThrow(/decompressed size limit/i);
   });
 
+  test('skips contract-invalid portable rows without failing the lookup', async () => {
+    const source = await createDictionary();
+    db = await NodeDatabaseService.open(':memory:');
+    const host = createHost(source, db);
+    await buildYomitanIndex(
+      host,
+      {
+        dictionaryId: 'dict-1',
+        sourceHandle: 'source-1',
+        databaseHandle: 'db-1',
+        sourceFormatVersion: 3,
+      },
+      { storage: 'banked' },
+    );
+
+    await db.execute("UPDATE terms SET rules = ? WHERE expression = '読む'", [
+      Array.from({ length: 65 }, (_, index) => `rule-${index}`).join(' '),
+    ]);
+    await expect(
+      lookupYomitan(host, {
+        dictionaryId: 'dict-1',
+        databaseHandle: 'db-1',
+        query: '読む',
+        language: 'ja',
+      }),
+    ).resolves.toEqual({ entries: [] });
+
+    await db.execute("UPDATE terms SET rules = '', glossary_json = ? WHERE expression = '読む'", [
+      JSON.stringify([{ type: 'image', resourceRef: 'wide.png', width: 8_193 }]),
+    ]);
+    await expect(
+      lookupYomitan(host, {
+        dictionaryId: 'dict-1',
+        databaseHandle: 'db-1',
+        query: '読む',
+        language: 'ja',
+      }),
+    ).resolves.toEqual({ entries: [] });
+  });
+
+  test('caps aggregate portable term-bank decompression per lookup', async () => {
+    const source = await createDictionary();
+    db = await NodeDatabaseService.open(':memory:');
+    const host = createHost(source, db);
+    await buildYomitanIndex(
+      host,
+      {
+        dictionaryId: 'dict-1',
+        sourceHandle: 'source-1',
+        databaseHandle: 'db-1',
+        sourceFormatVersion: 3,
+      },
+      { storage: 'banked' },
+    );
+    const compressed = (await db.select('SELECT data FROM term_banks WHERE bank_order = 1'))[0]![
+      'data'
+    ];
+    await db.execute('INSERT INTO term_banks VALUES (?, ?)', [2, compressed]);
+    await db.execute(
+      "INSERT INTO terms (expression, reading, definition_tags, rules, score, glossary_json, sequence, term_tags, bank_order, entry_index) VALUES ('読む', 'よむ', 'v5', 'v5', 99, NULL, 2, 'v5', 2, 0)",
+    );
+
+    const expandedBankJson = JSON.stringify([
+      ['読む', 'よむ', 'v5', 'v5', 100, ['to read'], 1, 'v5'],
+    ]);
+    const NativeTextDecoder = TextDecoder;
+    vi.stubGlobal(
+      'TextDecoder',
+      class {
+        decode(value?: Uint8Array): string {
+          if (!value) return '';
+          return new NativeTextDecoder().decode(
+            new Uint8Array(
+              value.buffer,
+              value.byteOffset,
+              value.buffer.byteLength - value.byteOffset,
+            ),
+          );
+        }
+      },
+    );
+    vi.stubGlobal(
+      'DecompressionStream',
+      class {
+        readonly readable = new ReadableStream<Uint8Array>({
+          start(controller) {
+            const expandedBank = new TextEncoder().encode(expandedBankJson);
+            Object.defineProperty(expandedBank, 'byteLength', { value: 40 * 1_024 * 1_024 });
+            controller.enqueue(expandedBank);
+            controller.close();
+          },
+        });
+        readonly writable = new WritableStream<Uint8Array>();
+      },
+    );
+
+    await expect(
+      lookupYomitan(host, {
+        dictionaryId: 'dict-1',
+        databaseHandle: 'db-1',
+        query: '読みました',
+        language: 'ja',
+      }),
+    ).rejects.toThrow(/aggregate decompressed size limit/i);
+  });
+
   test('bounds high-cardinality exact matches before the SQL broker row cap', async () => {
     const source = await createDictionaryWithTerms(
       Array.from({ length: 257 }, (_, index) => [

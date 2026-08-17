@@ -1,5 +1,6 @@
 import {
   dictionaryContentNodeSchema,
+  dictionaryLookupEntrySchema,
   MAX_DICTIONARY_DOCUMENT_NODES,
   MAX_PLUGIN_RESOURCE_BYTES,
   parseDictionaryLookupResult,
@@ -50,13 +51,12 @@ const bytesField = (row: DatabaseRow, key: string, maxBytes: number): Uint8Array
 
 const readTextWithLimit = async (
   stream: ReadableStream<Uint8Array>,
-  maxBytes: number,
+  budget: { bytesRead: number; maxBytes: number },
   signal: AbortSignal,
 ): Promise<string> => {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
   const chunks: string[] = [];
-  let bytesRead = 0;
   try {
     while (true) {
       if (signal.aborted) {
@@ -65,10 +65,10 @@ const readTextWithLimit = async (
       }
       const { value, done } = await reader.read();
       if (done) break;
-      bytesRead += value.byteLength;
-      if (bytesRead > maxBytes) {
+      budget.bytesRead += value.byteLength;
+      if (budget.bytesRead > budget.maxBytes) {
         await reader.cancel().catch(() => undefined);
-        throw new Error('Portable Yomitan term bank exceeds decompressed size limit');
+        throw new Error('Portable Yomitan term banks exceed aggregate decompressed size limit');
       }
       chunks.push(decoder.decode(value, { stream: true }));
     }
@@ -136,6 +136,10 @@ const loadBankedDefinitions = async (
   for (const row of sizeRows) {
     sizes.set(numberField(row, 'bank_order'), numberField(row, 'data_size'));
   }
+  const decompressionBudget = {
+    bytesRead: 0,
+    maxBytes: MAX_YOMITAN_TERM_BANK_JSON_BYTES,
+  };
   const banks = new Map<number, ReturnType<typeof yomitanTermBankSchema.parse>>();
   for (const order of bankOrders) {
     const size = sizes.get(order);
@@ -163,7 +167,7 @@ const loadBankedDefinitions = async (
     banks.set(
       order,
       yomitanTermBankSchema.parse(
-        JSON.parse(await readTextWithLimit(stream, MAX_YOMITAN_TERM_BANK_JSON_BYTES, host.signal)),
+        JSON.parse(await readTextWithLimit(stream, decompressionBudget, host.signal)),
       ),
     );
   }
@@ -181,7 +185,13 @@ const loadBankedDefinitions = async (
     ) {
       throw new Error('Portable Yomitan term bank entry does not match its index');
     }
-    definitions.set(id, normalizeYomitanGlossary(term[5], term[0]));
+    try {
+      const normalized = normalizeYomitanGlossary(term[5], term[0]);
+      const parsed = dictionaryContentNodeSchema.array().safeParse(normalized);
+      if (parsed.success) definitions.set(id, parsed.data);
+    } catch {
+      // Portable databases are untrusted; skip malformed entries without breaking other matches.
+    }
   }
   return definitions;
 };
@@ -353,13 +363,18 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
     const expression = stringField(row, 'expression');
     const reading = stringField(row, 'reading');
     const glossary = row['glossary_json'];
-    const definitions = dictionaryContentNodeSchema
-      .array()
-      .parse(
+    let definitions: DictionaryContentNode[];
+    try {
+      const value =
         typeof glossary === 'string'
           ? JSON.parse(glossary)
-          : bankedDefinitions.get(numberField(row, 'id')),
-      );
+          : bankedDefinitions.get(numberField(row, 'id'));
+      const parsed = dictionaryContentNodeSchema.array().safeParse(value);
+      if (!parsed.success) continue;
+      definitions = parsed.data;
+    } catch {
+      continue;
+    }
     const tagNames = [
       ...splitYomitanTags(stringField(row, 'definition_tags')),
       ...splitYomitanTags(stringField(row, 'term_tags')),
@@ -367,7 +382,7 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
     const uniqueTags = [...new Set(tagNames)]
       .slice(0, 128)
       .map((name) => tags.get(name) ?? { name });
-    const entry: DictionaryLookupEntry = {
+    const entry = dictionaryLookupEntrySchema.safeParse({
       expression,
       reading,
       rules: splitYomitanTags(stringField(row, 'rules')),
@@ -376,11 +391,12 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
       ...(uniqueTags.length === 0 ? {} : { tags: uniqueTags }),
       ...metadataFor(metadata, expression, reading),
       definitions,
-    };
+    });
+    if (!entry.success) continue;
     const entryNodes = countDocumentNodes(definitions);
     if (documentNodes + entryNodes > MAX_DICTIONARY_DOCUMENT_NODES) continue;
     documentNodes += entryNodes;
-    entries.push(entry);
+    entries.push(entry.data);
   }
   return parseDictionaryLookupResult({ entries });
 };
