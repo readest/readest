@@ -30,7 +30,7 @@ export interface SectionEnumerator {
 }
 
 export interface CacheWarmer {
-  registerSectionManifest(section: number, labels: string[]): void;
+  registerSectionManifest(section: number, labels: string[]): void | Promise<void>;
   // Synthesize this sentence into the cache (a hit is a no-op) and record its
   // key against the section manifest at the ordinal. Returns whether audio is
   // now cached for it (false = offline miss / permanent failure).
@@ -81,7 +81,7 @@ export class TTSDownloader {
         continue;
       }
 
-      this.#warmer.registerSectionManifest(
+      await this.#warmer.registerSectionManifest(
         sectionIndex,
         sentences.map((s) => s.label),
       );

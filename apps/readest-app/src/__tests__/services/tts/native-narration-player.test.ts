@@ -17,7 +17,7 @@ vi.mock('@tauri-apps/plugin-fs', () => ({
 }));
 
 import { addPluginListener, invoke, type PluginListener } from '@tauri-apps/api/core';
-import { writeFile } from '@tauri-apps/plugin-fs';
+import { remove, writeFile } from '@tauri-apps/plugin-fs';
 import { NativeNarrationPlayer } from '@/services/tts/mediaOverlay/NativeNarrationPlayer';
 
 describe('NativeNarrationPlayer', () => {
@@ -76,6 +76,20 @@ describe('NativeNarrationPlayer', () => {
     await player.shutdown();
   });
 
+  test('loads an existing local audiobook path without copying or deleting it', async () => {
+    const player = new NativeNarrationPlayer();
+    await player.loadPath('hash/audiobook/book.m4b', '/books/hash/audiobook/book.m4b', 20);
+
+    expect(writeFile).not.toHaveBeenCalled();
+    expect(controlCalls.find((call) => call['action'] === 'load')).toMatchObject({
+      path: '/books/hash/audiobook/book.m4b',
+      positionMs: 20_000,
+    });
+
+    await player.shutdown();
+    expect(remove).not.toHaveBeenCalledWith('/books/hash/audiobook/book.m4b');
+  });
+
   test('ended events notify listeners', async () => {
     const player = new NativeNarrationPlayer();
     await player.ensureReady();
@@ -121,5 +135,33 @@ describe('NativeNarrationPlayer', () => {
     await player.load('ch1.mp3', new Blob([new Uint8Array(4)]), 0);
     expect(controlCalls.filter((c) => c['action'] === 'start-session').length).toBe(2);
     await player.shutdown();
+  });
+
+  test('polls the native clock only while playback is active', async () => {
+    vi.useFakeTimers();
+    try {
+      const player = new NativeNarrationPlayer();
+      await player.loadPath('hash/audiobook/book.m4b', '/books/hash/audiobook/book.m4b', 0);
+
+      await vi.advanceTimersByTimeAsync(1_000);
+      const positionCalls = () =>
+        vi
+          .mocked(invoke)
+          .mock.calls.filter(([command]) => command === 'plugin:native-tts|playout_position')
+          .length;
+      expect(positionCalls()).toBe(0);
+
+      await player.play();
+      await vi.advanceTimersByTimeAsync(250);
+      expect(positionCalls()).toBe(1);
+
+      player.pause();
+      const pausedCalls = positionCalls();
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect(positionCalls()).toBe(pausedCalls);
+      await player.shutdown();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -2153,5 +2153,6 @@
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Esta carpeta es una biblioteca externa. Desmarca para dejar de leer sus libros en su ubicación original; las próximas importaciones copiarán los libros a la biblioteca.",
   "More Settings": "Más configuraciones",
   "Right-to-Left Pages": "Páginas de derecha a izquierda",
-  "Send Document Metadata": "Enviar metadatos del documento"
+  "Send Document Metadata": "Enviar metadatos del documento",
+  "Hide covers": "Ocultar portadas de libros"
 }

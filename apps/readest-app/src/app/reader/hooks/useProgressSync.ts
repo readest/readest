@@ -79,6 +79,7 @@ export const useProgressSync = (bookKey: string) => {
       serializeConfig(newConfig, settings.globalViewSettings, DEFAULT_BOOK_SEARCH_CONFIG),
     );
     delete compressedConfig.booknotes;
+    delete compressedConfig.audiobook;
     // The /api/sync POST handler piggybacks books.progress + books.updated_at
     // off this configs push (saves the separate syncBooks round-trip that
     // used to keep the library record fresh while a reader stayed open —

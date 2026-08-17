@@ -101,3 +101,4 @@ className="not-eink:text-primary not-eink:opacity-60"
 - [#5295 Win fullscreen vs maximized](win-fullscreen-maximized-taskbar-5295.md) MERGED #5380; unmaximize-first on Windows
 - #4885 iOS brightness lock · [#4917 iOS share .txt stuck](ios-share-txt-stuck-supportstext.md)
 - [#3049 SteamOS Gaming Mode import dead](steamos-gamescope-file-dialog-3049.md) MERGED #5475; no FileChooser portal in gamescope; toast BEFORE dialog
+- [#1217 FireOS import no-op](fireos-import-activity-recreation-1217.md) MERGED #5531 · [iOS .txt/.md share sheet lost](ios-txt-share-sheet-tauri211-fileassoc.md) MERGED #5415

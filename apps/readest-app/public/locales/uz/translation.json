@@ -2097,5 +2097,6 @@
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Bu jild tashqi kutubxona. Kitoblarini joyida o‘qishni to‘xtatish uchun belgini olib tashlang; keyingi importlarda kitoblar kutubxonaga nusxalanadi.",
   "More Settings": "Boshqa sozlamalar",
   "Right-to-Left Pages": "Oʻngdan chapga sahifalar",
-  "Send Document Metadata": "Hujjat metamaʼlumotlarini yuborish"
+  "Send Document Metadata": "Hujjat metamaʼlumotlarini yuborish",
+  "Hide covers": "Kitob muqovalarini yashirish"
 }

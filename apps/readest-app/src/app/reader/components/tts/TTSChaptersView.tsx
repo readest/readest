@@ -13,20 +13,37 @@ interface TTSChaptersViewProps {
 }
 
 // Podcast-style episode list: every chapter is a row with a download badge.
-// Downloading a chapter caches its audio for offline playback; the badge
-// reflects what is already on the device.
+// Downloading a chapter queues it on the persistent per-book download queue
+// (Spotify-style: tapping a queued chapter removes it from the queue, tapping
+// a partial/failed one resumes it); the badge reflects the queue row on top
+// of what is already cached on the device.
 const TTSChaptersView: React.FC<TTSChaptersViewProps> = ({
   downloads,
   activeSectionIndex,
   isEink,
 }) => {
   const _ = useTranslation();
-  const { chapters, statusOf, download, downloadChapter, downloadAll, cancel, cacheBytes } =
-    downloads;
+  const {
+    chapters,
+    statusOf,
+    items,
+    itemFor,
+    downloadChapter,
+    downloadAll,
+    cancelChapter,
+    cancelAll,
+    clearDownloads,
+    cacheBytes,
+    statuses,
+    clearing,
+  } = downloads;
 
   const completeCount = chapters.filter((c) => statusOf(c) === 'complete').length;
   const anyIncomplete = completeCount < chapters.length;
-  const busy = download.activeChapterKey !== null;
+  const queueCount = items.length;
+  const hasExplicitDownloads = [...statuses.values()].some(
+    (status) => status.pinned || status.active,
+  );
 
   const activeRowRef = useRef<HTMLDivElement | null>(null);
 
@@ -46,31 +63,62 @@ const TTSChaptersView: React.FC<TTSChaptersViewProps> = ({
           })}
           {cacheBytes > 0 ? ` · ${formatBytes(cacheBytes)}` : ''}
         </span>
-        <button
-          type='button'
-          className='text-primary shrink-0 text-sm font-medium disabled:opacity-40 sm:text-xs'
-          disabled={busy || !anyIncomplete}
-          onClick={() => void downloadAll()}
-        >
-          {_('Download all')}
-        </button>
+        <div className='flex shrink-0 items-center gap-2'>
+          {hasExplicitDownloads && (
+            <button
+              type='button'
+              className='touch-target text-base-content/70 shrink-0 text-sm font-medium disabled:opacity-40 sm:text-xs'
+              disabled={clearing}
+              onClick={() => void clearDownloads()}
+            >
+              {_('Clear all')}
+            </button>
+          )}
+          {queueCount > 0 ? (
+            <button
+              type='button'
+              className='touch-target text-primary shrink-0 text-sm font-medium sm:text-xs'
+              disabled={clearing}
+              onClick={cancelAll}
+            >
+              {_('Cancel all ({{count}})', { count: queueCount })}
+            </button>
+          ) : (
+            <button
+              type='button'
+              className='touch-target text-primary shrink-0 text-sm font-medium disabled:opacity-40 sm:text-xs'
+              disabled={!anyIncomplete || clearing}
+              onClick={() => void downloadAll()}
+            >
+              {_('Download all')}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className='flex w-full flex-col'>
         {chapters.map((chapter) => {
           const status = statusOf(chapter);
-          const isActive = download.activeChapterKey === chapter.key;
+          const item = itemFor(chapter);
+          const isActive = item?.status === 'in_progress';
+          const isQueued = item?.status === 'pending';
+          const isFailed = item?.status === 'failed';
           const isPlaying =
             activeSectionIndex !== null &&
             activeSectionIndex >= chapter.startSection &&
             activeSectionIndex < chapter.endSection;
-          const subtitle = isActive
-            ? _('Downloading {{done}}/{{total}}', { done: download.done, total: download.total })
-            : status === 'complete'
-              ? _('Downloaded')
-              : status === 'partial'
-                ? _('Partly downloaded')
-                : null;
+          const subtitle =
+            item?.status === 'in_progress'
+              ? _('Downloading {{done}}/{{total}}', { done: item.done, total: item.total })
+              : item?.status === 'pending'
+                ? _('Waiting…')
+                : item?.status === 'failed'
+                  ? _('Download failed')
+                  : status === 'complete'
+                    ? _('Downloaded')
+                    : status === 'partial'
+                      ? _('Partly downloaded')
+                      : null;
 
           return (
             <div
@@ -105,10 +153,16 @@ const TTSChaptersView: React.FC<TTSChaptersViewProps> = ({
               <DownloadBadge
                 status={status}
                 active={isActive}
-                progress={download.total > 0 ? download.done / download.total : 0}
+                queued={isQueued}
+                failed={isFailed}
+                progress={
+                  item?.status === 'in_progress' && item.total > 0 ? item.done / item.total : 0
+                }
                 isEink={isEink}
+                chapterLabel={chapter.label}
+                disabled={clearing}
                 onDownload={() => void downloadChapter(chapter)}
-                onCancel={cancel}
+                onCancel={() => cancelChapter(chapter)}
               />
             </div>
           );

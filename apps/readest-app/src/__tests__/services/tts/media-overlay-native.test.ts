@@ -25,6 +25,7 @@ vi.mock('@/utils/misc', async (importOriginal) => ({
 }));
 
 import { addPluginListener, invoke, type PluginListener } from '@tauri-apps/api/core';
+import { writeFile } from '@tauri-apps/plugin-fs';
 import type { BookDoc } from '@/libs/document';
 import type { TTSController } from '@/services/tts/TTSController';
 import {
@@ -132,6 +133,22 @@ describe('MediaOverlayClient on iOS Tauri', () => {
     expect(step.value?.code).toBe('error');
   });
 
+  test('plays a paired local audiobook from its existing path without staging a copy', async () => {
+    await setup();
+    client.attachSource({
+      narrator: 'External Narrator',
+      loadBlob: vi.fn(async () => new Blob([new Uint8Array(8)])),
+      resolvePath: vi.fn(async () => '/books/hash/audiobook/book.m4b'),
+    });
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+
+    expect(writeFile).not.toHaveBeenCalled();
+    expect(controlCalls.find((call) => call['action'] === 'load')?.['path']).toBe(
+      '/books/hash/audiobook/book.m4b',
+    );
+  });
+
   test('invalidatePlayback makes the next block open a fresh native session', async () => {
     await setup();
     const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
@@ -143,5 +160,36 @@ describe('MediaOverlayClient on iOS Tauri', () => {
     await next.next();
 
     expect(controlCalls.filter((c) => c['action'] === 'start-session')).toHaveLength(2);
+  });
+
+  test('shutdown awaits one native abort', async () => {
+    await setup();
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    await iter.next();
+
+    let finishAbort!: () => void;
+    const abortGate = new Promise<void>((resolve) => {
+      finishAbort = resolve;
+    });
+    vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
+      const payload = (args as { payload?: Record<string, unknown> })?.payload ?? {};
+      if (cmd === 'plugin:native-tts|playout_control') {
+        controlCalls.push(payload);
+        if (payload['action'] === 'abort') await abortGate;
+        return { session: null } as unknown;
+      }
+      return undefined as unknown;
+    });
+
+    let settled = false;
+    const shutdown = client.shutdown().then(() => {
+      settled = true;
+    });
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+
+    expect(settled).toBe(false);
+    finishAbort();
+    await shutdown;
+    expect(controlCalls.filter((call) => call['action'] === 'abort')).toHaveLength(1);
   });
 });

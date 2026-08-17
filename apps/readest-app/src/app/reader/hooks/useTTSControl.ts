@@ -198,8 +198,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           // close all funnel through this cleanup).
           ttsSessionManager.detach(bookHash);
         } else {
-          controller.shutdown();
-          ttsSessionManager.release(bookHash);
+          void ttsSessionManager.stopController(bookHash, controller, 'user');
         }
         ttsControllerRef.current = null;
       }
@@ -211,8 +210,19 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   // by another book) must reconcile this reader's UI when it is mounted.
   useEffect(() => {
     const onSessionChanged = (e: Event) => {
-      const { reason } = (e as CustomEvent<{ reason: string }>).detail;
-      if (reason !== 'stopped' || !ttsControllerRef.current) return;
+      const { reason, session } = (
+        e as CustomEvent<{
+          reason: string;
+          session: { controller: TTSController } | null;
+        }>
+      ).detail;
+      if (
+        reason !== 'stopped' ||
+        !ttsControllerRef.current ||
+        session?.controller !== ttsControllerRef.current
+      ) {
+        return;
+      }
       ttsControllerRef.current = null;
       setTtsController(null);
       setIsPlaying(false);
@@ -440,6 +450,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
       const { anchor, index: ttsSectionIndex } = view.resolveCFI(cfi);
       if (viewSectionIndex !== ttsSectionIndex) {
+        if (!preview && !followingTTSLocationRef.current) return;
         // TTS crossed into a new section before the view caught up. The
         // `await onSectionChange` path in TTSController fires renderer.goTo
         // via handleSectionChange, but the new paginator's #goTo can resolve
@@ -598,7 +609,14 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     // sentence's ttsLocation (a sentence spanning a page break), so the word
     // position is the correct reference — otherwise the back-to-TTS button
     // wrongly appears after the view follows the word onto the next page.
-    const highlightCfi = ttsController.getCurrentHighlightCfi() ?? ttsLocation;
+    const highlightCfi =
+      ttsController.getCurrentPlaybackCfi() ??
+      ttsController.getCurrentHighlightCfi() ??
+      ttsLocation;
+    if (highlightCfi !== ttsLocation) {
+      viewSettings.ttsLocation = highlightCfi;
+      setViewSettings(bookKey, viewSettings);
+    }
     // ...and a sentence that straddles a page break keeps its start cfi on the
     // page behind once the view follows the voice, so a recording — which has no
     // word cfi to fall back on — needs the layout asked directly.
@@ -628,7 +646,8 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   const handleBackToCurrentTTSLocation = () => {
     const view = getView(bookKey);
     const viewSettings = getViewSettings(bookKey);
-    const ttsLocation = viewSettings?.ttsLocation;
+    const ttsLocation =
+      ttsControllerRef.current?.getCurrentPlaybackCfi() ?? viewSettings?.ttsLocation;
     if (!view || !ttsLocation) return;
 
     const resolved = view.resolveNavigation(ttsLocation);
@@ -774,23 +793,14 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       getView(bookKey)?.deselect();
       releaseUnblockAudio();
 
-      // Tear down the controller, the lock-screen media session, and the
-      // background-audio session best-effort and IN PARALLEL. The controller's
-      // own shutdown can stall on iOS system TTS, and it must NOT gate the media
-      // session / background-audio teardown — otherwise the lock-screen Now
-      // Playing keeps running after TTS is disabled (Edge TTS was unaffected
-      // because it never hits the stalling native path). See #4676.
-      await Promise.all([
-        ttsController
-          ? Promise.resolve()
-              .then(() => ttsController.shutdown())
-              .catch((error) => console.warn('TTS shutdown failed:', error))
-          : Promise.resolve(),
-        Promise.resolve()
-          .then(() => ttsMediaBridge.unbind())
-          .catch(() => {}),
-      ]);
-      ttsSessionManager.release(getBookHashFromKey(bookKey));
+      // Unbind immediately: controller shutdown can stall on iOS system TTS,
+      // but lock-screen Now Playing must still disappear at once (#4676).
+      // The manager owns the joinable teardown so deletion cannot race its
+      // still-open cache database.
+      ttsMediaBridge.unbind();
+      if (ttsController) {
+        await ttsSessionManager.stopController(getBookHashFromKey(bookKey), ttsController, 'user');
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [appService],
@@ -884,6 +894,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         // this, only runs on the background-session reattach path), so set the
         // book key here or the per-book audio cache never gets a hash to open.
         ttsController.bookKey = bookKey;
+        ttsController.pairedAudiobook = bookData.config?.audiobook;
         ttsControllerRef.current = ttsController;
         setTtsController(ttsController);
         ttsSessionManager.claim(bookKey, ttsController, {
@@ -931,9 +942,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           speakSelection && !narrateSelection
             ? genSSMLRaw(ttsSpeakRange!.toString().trim())
             : narrateSelection
-              ? view.tts?.from(ttsSpeakRange!)
+              ? ttsController.startFromRange(ttsSpeakRange!)
               : ttsFromRange
-                ? view.tts?.from(ttsFromRange)
+                ? ttsController.startFromRange(ttsFromRange)
                 : view.tts?.start();
         if (ssml) {
           const lang = parseSSMLLang(ssml, primaryLang) || 'en';
@@ -972,8 +983,11 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
   const handleTTSStop = async (event: CustomEvent) => {
     const { bookKey: ttsBookKey } = event.detail;
-    if (ttsControllerRef.current && bookKey === ttsBookKey) {
-      handleStop(bookKey);
+    if (bookKey !== ttsBookKey) return;
+    if (ttsControllerRef.current) {
+      await handleStop(bookKey);
+    } else {
+      await ttsSessionManager.stopBook(getBookHashFromKey(bookKey), 'user');
     }
   };
 

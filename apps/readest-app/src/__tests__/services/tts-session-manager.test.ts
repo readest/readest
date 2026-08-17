@@ -283,6 +283,92 @@ describe('TTSSessionManager', () => {
     expect(statsMocks.instances[0]!.stop).toHaveBeenCalled();
   });
 
+  test('stopBook joins teardown after the live slot has already been cleared', async () => {
+    let finishShutdown: () => void = () => {};
+    controller.shutdown.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishShutdown = resolve;
+      }),
+    );
+    claim();
+
+    const stopping = manager.stopActive('user');
+    expect(manager.getActiveSession()).toBeNull();
+    let joined = false;
+    const joining = manager.stopBook('hashA', 'deleted').then(() => {
+      joined = true;
+    });
+    await Promise.resolve();
+    expect(joined).toBe(false);
+
+    finishShutdown();
+    await Promise.all([stopping, joining]);
+    expect(joined).toBe(true);
+  });
+
+  test('a concurrent generic stop does not tear down a replacement session', async () => {
+    let finishShutdown: () => void = () => {};
+    controller.shutdown.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishShutdown = resolve;
+      }),
+    );
+    claim();
+
+    const firstStop = manager.stopActive('user');
+    const joinedStop = manager.stopActive('user');
+    const replacement = new FakeController();
+    claim('hashB-r1', replacement);
+
+    finishShutdown();
+    await Promise.all([firstStop, joinedStop]);
+    expect(manager.getActiveSession()?.controller).toBe(replacement as unknown as TTSController);
+    expect(replacement.shutdown).not.toHaveBeenCalled();
+  });
+
+  test('a user stop requested for a replacement waits and then stops it', async () => {
+    let finishShutdown: () => void = () => {};
+    controller.shutdown.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishShutdown = resolve;
+      }),
+    );
+    claim();
+
+    const firstStop = manager.stopActive('user');
+    const replacement = new FakeController();
+    claim('hashB-r1', replacement);
+    const replacementStop = manager.stopActive('user');
+
+    finishShutdown();
+    await Promise.all([firstStop, replacementStop]);
+    expect(manager.getActiveSession()).toBeNull();
+    expect(replacement.shutdown).toHaveBeenCalledTimes(1);
+  });
+
+  test('stopBook waits for a replaced controller of the same book to close', async () => {
+    let finishOldShutdown: () => void = () => {};
+    controller.shutdown.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishOldShutdown = resolve;
+      }),
+    );
+    claim();
+    const replacement = new FakeController();
+    claim('hashA-r2', replacement);
+
+    let finished = false;
+    const stopping = manager.stopBook('hashA', 'deleted').then(() => {
+      finished = true;
+    });
+    await vi.waitFor(() => expect(replacement.shutdown).toHaveBeenCalledTimes(1));
+    expect(finished).toBe(false);
+
+    finishOldShutdown();
+    await stopping;
+    expect(finished).toBe(true);
+  });
+
   test('never orphans a stats recorder when the same session is re-claimed', () => {
     claim();
     // The recorder owns a heartbeat interval; an orphan would keep writing.

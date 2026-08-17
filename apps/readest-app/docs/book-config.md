@@ -38,6 +38,10 @@ Version 1 documents these fields as the supported integration surface:
 - `xpointer`: current reading location as XPointer for KOReader interoperability.
 - `booknotes`: bookmarks, annotations, and excerpts.
 - `rsvpPosition`: RSVP reading position.
+- `audiobook`: optional device-local manifest for a paired audiobook, including
+  copied file paths, chapter timing, and ebook-to-audio chapter mappings. Audio
+  files live under `Books/<book hash>/audiobook/`; neither the manifest nor the
+  files are included in cloud or file sync.
 - `updatedAt`: last config update timestamp in milliseconds.
 
 `viewSettings` and `searchConfig` are persisted app state. They are partial

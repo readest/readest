@@ -68,3 +68,9 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - [#5496 popup chrome family](popup-chrome-family-5496.md) MERGED; `.popup-container` load-bearing for eink · [#5213 dictionary single-word gate](quick-action-dictionary-single-word-5213.md) MERGED #5529; 8-char CJK cap
 - [Search history chips over textures](library-search-history-mask-fade-5488.md) MERGED #5488; fades = `mask-image` · [#5119 Then-by asc/desc](library-then-by-sort-order-5119.md) MERGED #5474; URL cleanup lies on deep links
 - [#5259 dropdown viewport fix](dropdown-floating-ui-portal-5259.md) MERGED #5392; portals break TalkBack traversal
+- [Azure translator edge auth retired](azure-translator-edge-auth-retired.md) MERGED #5555; short lang codes #5620 verified
+- [RSVP landscape safe-area insets](rsvp-landscape-safe-area-insets-5548.md) MERGED; the ONE physical pl/pr exception · [#3392 footer page-number jump](page-number-jump-3392.md) MERGED #5524
+- [#5561 BT Play dead after a pause](tts-paused-webview-freeze-5561.md) MERGED #5567 · [TTS listening counts as reading stats](tts-listening-counts-as-reading-stats.md) MERGED #5450
+- [#5539 TTS ruby furigana](tts-ruby-furigana-readings-5539.md) MERGED #5546 · [#5636 symmetric minimal mini-player](tts-miniplayer-symmetric-5636.md) MERGED #5707; mirror-width items in ONE justify-between row = even gaps + exact centering
+- [#1359 pull-down bookmark gesture](pull-down-bookmark-gesture-1359.md) MERGED #5493 · [#5647 footnote jump flash](footnote-jump-flash-5647.md) MERGED #5655; searchHighlight.ts RENAMED transientHighlight.ts
+- [Override Layout collapsed `<pre>`](override-layout-collapses-pre-whitespace.md) MERGED #5549 · [Scroll toggle broke turn animation](captured-turn-prepared-surface-lost-on-scroll-toggle.md) FIXED+verified; CDP touch hold is the instrument

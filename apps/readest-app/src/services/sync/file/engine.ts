@@ -1,4 +1,5 @@
 import { Book, BookConfig, BookNote } from '@/types/book';
+import type { ProgressHandler } from '@/utils/transfer';
 import { FileHead, FileSyncError, FileSyncProvider } from './provider';
 import { LocalStore } from './localStore';
 import {
@@ -432,7 +433,7 @@ export class FileSyncEngine {
    * metadata-only shelf rows; it deliberately leaves this binary transfer to
    * the explicit action.
    */
-  async downloadBookFile(book: Book): Promise<boolean> {
+  async downloadBookFile(book: Book, onProgress?: ProgressHandler): Promise<boolean> {
     const dirPath = buildBookDirPath(this.provider.rootPath, book.hash);
     const entries = await this.provider.list(dirPath);
     const fileEntry = entries.find(
@@ -443,7 +444,7 @@ export class FileSyncEngine {
     let written = false;
     if (this.provider.downloadStream) {
       const dst = await this.store.prepareLocalBookPath(book);
-      written = await this.provider.downloadStream(fileEntry.path, dst);
+      written = await this.provider.downloadStream(fileEntry.path, dst, onProgress);
     } else {
       const bytes = await this.provider.readBinary(fileEntry.path);
       if (bytes) {

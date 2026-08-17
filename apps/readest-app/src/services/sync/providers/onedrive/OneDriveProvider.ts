@@ -17,6 +17,7 @@ import {
   FileSyncProvider,
 } from '@/services/sync/file/provider';
 import { tauriDownload, tauriUpload } from '@/utils/transfer';
+import type { ProgressHandler } from '@/utils/transfer';
 import {
   childrenUrl,
   contentUrl,
@@ -284,10 +285,14 @@ class OneDriveProviderImpl {
    * The content URL needs a bearer token. Returns `false` when the transport
    * swallows a failure (e.g. the remote file is absent).
    */
-  async downloadStream(remotePath: string, localPath: string): Promise<boolean> {
+  async downloadStream(
+    remotePath: string,
+    localPath: string,
+    onProgress?: ProgressHandler,
+  ): Promise<boolean> {
     try {
       const token = await this.auth.getAccessToken();
-      await tauriDownload(contentUrl(remotePath), localPath, undefined, {
+      await tauriDownload(contentUrl(remotePath), localPath, onProgress, {
         Authorization: `Bearer ${token}`,
       });
       return true;
@@ -393,7 +398,8 @@ export const createOneDriveProvider = (
 
   if (isTauriAppPlatform()) {
     provider.uploadStream = (remotePath, localPath) => impl.uploadStream(remotePath, localPath);
-    provider.downloadStream = (remotePath, localPath) => impl.downloadStream(remotePath, localPath);
+    provider.downloadStream = (remotePath, localPath, onProgress) =>
+      impl.downloadStream(remotePath, localPath, onProgress);
   }
 
   return provider;

@@ -28,6 +28,12 @@ interface RecentShelfProps {
   handleBookDownload: (book: Book, options?: { redownload?: boolean; queued?: boolean }) => void;
   showBookDetailsModal: (book: Book) => void;
   showTimeRemaining: boolean;
+  /**
+   * Cover transfer progress by book hash. A book can appear here and in the
+   * grid at once, so both have to read the same map — otherwise the strip
+   * offers a Download button for a book the grid already shows downloading.
+   */
+  transferProgress: { [key: string]: number };
 }
 
 /**
@@ -51,7 +57,7 @@ type RecentSlideProps = Pick<
   | 'handleBookDownload'
   | 'showBookDetailsModal'
   | 'showTimeRemaining'
-> & { book: Book; bookSelected: boolean };
+> & { book: Book; bookSelected: boolean; transferProgress: number | null };
 
 const RecentSlide: React.FC<RecentSlideProps> = ({
   book,
@@ -65,6 +71,7 @@ const RecentSlide: React.FC<RecentSlideProps> = ({
   handleBookDownload,
   showBookDetailsModal,
   showTimeRemaining,
+  transferProgress,
 }) => {
   // Same select vocabulary as the grid (`BookshelfItem`): long-press enters
   // select mode and selects; while in select mode a tap toggles instead of
@@ -121,7 +128,7 @@ const RecentSlide: React.FC<RecentSlideProps> = ({
             coverFit={coverFit}
             isSelectMode={isSelectMode}
             bookSelected={bookSelected}
-            transferProgress={null}
+            transferProgress={transferProgress}
             handleBookUpload={handleBookUpload}
             handleBookDownload={handleBookDownload}
             showBookDetailsModal={showBookDetailsModal}
@@ -154,6 +161,7 @@ const RecentShelf: React.FC<RecentShelfProps> = ({
   handleBookDownload,
   showBookDetailsModal,
   showTimeRemaining,
+  transferProgress,
 }) => {
   const _ = useTranslation();
   // `--rs-cols` mirrors the grid's column count: the responsive ladder
@@ -243,6 +251,7 @@ const RecentShelf: React.FC<RecentShelfProps> = ({
                 handleBookDownload={handleBookDownload}
                 showBookDetailsModal={showBookDetailsModal}
                 showTimeRemaining={showTimeRemaining}
+                transferProgress={transferProgress[book.hash] ?? null}
               />
             ))}
           </div>

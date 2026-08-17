@@ -26,6 +26,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
+import { selectActiveBookDownloadProgress, useTransferStore } from '@/store/transferStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { navigateToLibrary, navigateToReader, showReaderWindow } from '@/utils/nav';
@@ -94,7 +95,8 @@ interface BookshelfProps {
   handleShowDetailsBook: (book: Book) => void;
   handleLibraryNavigation: (targetGroup: string) => void;
   handlePushLibrary: () => Promise<void>;
-  booksTransferProgress: { [key: string]: number | null };
+  /** Direct (non-queued) downloads only; queue transfers are read from the store. */
+  booksTransferProgress: { [key: string]: number };
   contentSearch: ContentSearchRequest | null;
   onSearchContents: () => void;
   onSearchProgress?: (value: number | null) => void;
@@ -816,6 +818,18 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     [libraryBooks],
   );
 
+  // Cover transfer overlay progress for every book on screen, from both
+  // sources: queued downloads live in the transfer store, direct ones in
+  // `booksTransferProgress`. Merged on read so neither has to reconcile
+  // against the other's lifecycle, and so the recent strip and the grid
+  // cannot disagree about the same book. Selecting `transfers` keeps the
+  // subscription off the store's unrelated UI fields.
+  const transfers = useTransferStore((state) => state.transfers);
+  const transferProgress = useMemo(
+    () => ({ ...selectActiveBookDownloadProgress(transfers), ...booksTransferProgress }),
+    [transfers, booksTransferProgress],
+  );
+
   // A top-level quick-resume strip: hidden while searching, inside a group, or
   // when nothing has been read yet. It stays up in select mode so shelf books
   // can be selected in place, just like the grid.
@@ -839,11 +853,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           handleBookDownload={handleBookDownload}
           showBookDetailsModal={handleShowDetailsBook}
           showTimeRemaining={showTimeRemaining}
+          transferProgress={transferProgress}
         />
       ) : null,
     [
       showRecentShelf,
       recentBooks,
+      transferProgress,
       coverFit,
       settings.libraryAutoColumns,
       settings.libraryColumns,
@@ -935,9 +951,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           handleShowDetailsBook={handleShowDetailsBook}
           handleLibraryNavigation={handleLibraryNavigation}
           handleUpdateReadingStatus={handleUpdateReadingStatus}
-          transferProgress={
-            'hash' in item ? booksTransferProgress[(item as Book).hash] || null : null
-          }
+          transferProgress={'hash' in item ? (transferProgress[(item as Book).hash] ?? null) : null}
           showTimeRemaining={showTimeRemaining}
         />
       );
@@ -950,7 +964,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       viewMode,
       coverFit,
       isSelectMode,
-      booksTransferProgress,
+      transferProgress,
       iconSize15,
       handleImportBooks,
       toggleSelection,

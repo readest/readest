@@ -2041,5 +2041,6 @@
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "Folder ini adalah pustaka eksternal. Hapus centang untuk berhenti membaca bukunya di tempat; impor berikutnya akan menyalin buku ke pustaka.",
   "More Settings": "Pengaturan Lainnya",
   "Right-to-Left Pages": "Halaman Kanan ke Kiri",
-  "Send Document Metadata": "Kirim Metadata Dokumen"
+  "Send Document Metadata": "Kirim Metadata Dokumen",
+  "Hide covers": "Sembunyikan sampul buku"
 }

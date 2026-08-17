@@ -7,6 +7,7 @@ import { formatAuthors, formatTitle } from '@/utils/book';
 import { getInitializedAppService } from '@/services/environment';
 import { observeCoverForThumbnail } from '@/services/coverThumbnailService';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 interface BookCoverProps {
   book: Book;
@@ -44,8 +45,10 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
     const usableThumbnail = matchingThumbnail === failedThumbnailUrl ? null : matchingThumbnail;
     const metadataCoverImageUrl = book.metadata?.coverImageUrl || null;
     const coverImageUrl = metadataCoverImageUrl || usableThumbnail || book.coverImageUrl || null;
+    const hideCovers = useSettingsStore((state) => state.settings.libraryHideCovers);
+    const displayCoverUrl = hideCovers ? null : coverImageUrl;
 
-    const shouldShowSpine = showSpine && imageLoaded && !imageError;
+    const shouldShowSpine = showSpine && !hideCovers && imageLoaded && !imageError;
 
     const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
       setImageLoaded(true);
@@ -82,6 +85,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
       const appService = getInitializedAppService();
       if (
         !element ||
+        hideCovers ||
         !book.coverImageUrl ||
         metadataCoverImageUrl ||
         matchingThumbnail ||
@@ -99,6 +103,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
       book.deletedAt,
       matchingThumbnail,
       metadataCoverImageUrl,
+      hideCovers,
     ]);
 
     return (
@@ -108,9 +113,9 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
       >
         {coverFit === 'crop' ? (
           <>
-            {coverImageUrl && (
+            {displayCoverUrl && (
               <Image
-                src={coverImageUrl}
+                src={displayCoverUrl}
                 alt={book.title}
                 fill={true}
                 loading='lazy'
@@ -136,9 +141,9 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
                 mode === 'grid' ? 'items-end' : 'items-center',
               )}
             >
-              {coverImageUrl && (
+              {displayCoverUrl && (
                 <Image
-                  src={coverImageUrl}
+                  src={displayCoverUrl}
                   alt={book.title}
                   width={0}
                   height={0}
@@ -164,7 +169,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
         <div
           className={clsx(
             'fallback-cover absolute inset-0 p-2',
-            coverImageUrl && !imageError && 'invisible',
+            displayCoverUrl && !imageError && 'invisible',
             'text-neutral-content text-center font-serif font-medium',
             isPreview ? 'bg-base-200/50' : 'bg-base-100',
             imageClassName,

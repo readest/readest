@@ -87,19 +87,28 @@ describe('deriveDownloadChapters', () => {
 describe('chapterDownloadStatus', () => {
   const chapter = { key: 'a', label: 'A', depth: 0, startSection: 1, endSection: 4 };
 
-  test('complete only when every span section is packed', () => {
+  test('complete only when every span section is explicitly downloaded', () => {
     const statuses = new Map([
-      [1, { total: 3, recorded: 3, packed: true }],
-      [2, { total: 2, recorded: 2, packed: true }],
-      [3, { total: 4, recorded: 4, packed: true }],
+      [1, { total: 3, recorded: 3, packed: true, pinned: true, active: false }],
+      [2, { total: 2, recorded: 2, packed: true, pinned: true, active: false }],
+      [3, { total: 4, recorded: 4, packed: true, pinned: true, active: false }],
     ]);
     expect(chapterDownloadStatus(chapter, statuses)).toBe('complete');
   });
 
+  test('a fully warm-cached but unpinned chapter remains downloadable', () => {
+    const statuses = new Map([
+      [1, { total: 3, recorded: 3, packed: true, pinned: false, active: false }],
+      [2, { total: 2, recorded: 2, packed: true, pinned: false, active: false }],
+      [3, { total: 4, recorded: 4, packed: true, pinned: false, active: false }],
+    ]);
+    expect(chapterDownloadStatus(chapter, statuses)).toBe('partial');
+  });
+
   test('partial when some section has recorded audio but not all are packed', () => {
     const statuses = new Map([
-      [1, { total: 3, recorded: 3, packed: true }],
-      [2, { total: 2, recorded: 1, packed: false }],
+      [1, { total: 3, recorded: 3, packed: true, pinned: true, active: false }],
+      [2, { total: 2, recorded: 1, packed: false, pinned: false, active: false }],
     ]);
     expect(chapterDownloadStatus(chapter, statuses)).toBe('partial');
   });

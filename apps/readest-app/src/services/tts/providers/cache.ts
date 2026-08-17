@@ -29,12 +29,22 @@ export interface TTSCacheStore {
   // labels per section, and the observed synthesis key per sentence ordinal.
   registerSectionMarks?(section: number, marks: string[]): Promise<void>;
   recordMarkKey?(section: number, ordinal: number, key: string): Promise<void>;
+  beginDownloadSections?(sections: number[]): Promise<void>;
+  completeDownloadSections?(sections: number[]): Promise<void>;
+  cancelDownloadSections?(sections: number[]): Promise<void>;
+  clearDownloads?(): Promise<void>;
+  hasDownloads?(): Promise<boolean>;
   // Force completed sections to compact into packs now (and push if sync is
   // on), rather than waiting for the debounced timer. Used by downloads.
   // Returns the pack count (SqliteTTSCacheStore) or void (BookTTSCacheStore).
   compact?(): Promise<number | void>;
   // Per-section download status + total size, for the podcast UI.
-  getSectionStatuses?(): Promise<Map<number, { total: number; recorded: number; packed: boolean }>>;
+  getSectionStatuses?(): Promise<
+    Map<
+      number,
+      { total: number; recorded: number; packed: boolean; pinned: boolean; active: boolean }
+    >
+  >;
   // Per-ordinal audio durations (seconds) of a section's cached sentences for
   // one voice, boundary-derived without reading audio. Feeds the timeline's
   // duration hydration so downloaded chapters report a measured timeline.
@@ -133,20 +143,36 @@ export class CachingProvider implements SpeechProvider {
   }
 
   // Ordered sentence labels for a section, from the timeline enumeration.
-  registerSectionManifest(section: number, marks: string[]): void {
-    void this.#store.registerSectionMarks?.(section, marks).catch((err) => {
+  async registerSectionManifest(section: number, marks: string[]): Promise<void> {
+    await this.#store.registerSectionMarks?.(section, marks).catch((err) => {
       console.warn('TTS cache manifest registration failed', err);
     });
   }
 
   // The sentence at this ordinal audibly played from this synthesis request;
   // record its cache key so the section can compact once fully covered.
-  recordMark(section: number, ordinal: number, req: SpeechSynthesisRequest): void {
+  async recordMark(section: number, ordinal: number, req: SpeechSynthesisRequest): Promise<void> {
     if (this.#inner.cacheable === false) return;
     const key = computeTTSCacheKey(this.#inner.id, req);
-    void this.#store.recordMarkKey?.(section, ordinal, key).catch((err) => {
+    await this.#store.recordMarkKey?.(section, ordinal, key).catch((err) => {
       console.warn('TTS cache mark recording failed', err);
     });
+  }
+
+  async beginDownloadSections(sections: number[]): Promise<void> {
+    await this.#store.beginDownloadSections?.(sections);
+  }
+
+  async completeDownloadSections(sections: number[]): Promise<void> {
+    await this.#store.completeDownloadSections?.(sections);
+  }
+
+  async cancelDownloadSections(sections: number[]): Promise<void> {
+    await this.#store.cancelDownloadSections?.(sections);
+  }
+
+  async clearDownloads(): Promise<void> {
+    await this.#store.clearDownloads?.();
   }
 
   async compact(): Promise<void> {
@@ -154,7 +180,10 @@ export class CachingProvider implements SpeechProvider {
   }
 
   async getSectionStatuses(): Promise<
-    Map<number, { total: number; recorded: number; packed: boolean }>
+    Map<
+      number,
+      { total: number; recorded: number; packed: boolean; pinned: boolean; active: boolean }
+    >
   > {
     return (await this.#store.getSectionStatuses?.()) ?? new Map();
   }

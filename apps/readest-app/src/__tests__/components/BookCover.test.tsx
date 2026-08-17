@@ -13,7 +13,10 @@ vi.mock('@/services/environment', () => ({
 
 import BookCover from '@/components/BookCover';
 import { Book } from '@/types/book';
+import { SystemSettings } from '@/types/settings';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 
 vi.mock('next/image', () => ({
   __esModule: true,
@@ -31,6 +34,7 @@ beforeEach(() => {
     hashIndex: new Map(),
     visibleLibrary: [],
   });
+  useSettingsStore.setState({ settings: { ...DEFAULT_SYSTEM_SETTINGS } as SystemSettings });
 });
 
 afterEach(() => {
@@ -246,5 +250,73 @@ describe('BookCover', () => {
     act(() => reveal?.());
     expect(requestCoverThumbnailMock).toHaveBeenCalledWith(progressedBook);
     expect(unobserve).toHaveBeenCalledOnce();
+  });
+
+  describe('hide covers', () => {
+    const enableHideCovers = () =>
+      useSettingsStore.setState({
+        settings: {
+          ...DEFAULT_SYSTEM_SETTINGS,
+          libraryHideCovers: true,
+        } as SystemSettings,
+      });
+
+    it('renders the title panel instead of the cover image when enabled', () => {
+      enableHideCovers();
+      const book = makeBook();
+
+      const { container } = render(<BookCover book={book} coverFit='crop' />);
+
+      expect(container.querySelector('img.cover-image')).toBeNull();
+      const fallback = container.querySelector('.fallback-cover');
+      expect(fallback).toBeTruthy();
+      expect(fallback?.classList.contains('invisible')).toBe(false);
+      expect(fallback?.textContent).toContain('Test Book');
+    });
+
+    it('does not request thumbnail optimization when covers are hidden', async () => {
+      enableHideCovers();
+      const book = makeBook({ hash: 'book-1', coverHash: 'cover-v1' });
+
+      render(<BookCover book={book} coverFit='crop' />);
+
+      await waitFor(() => expect(requestCoverThumbnailMock).not.toHaveBeenCalled());
+    });
+
+    it('still renders the real cover when the option is disabled', () => {
+      const book = makeBook();
+
+      const { container } = render(<BookCover book={book} coverFit='crop' />);
+
+      expect(container.querySelector('img.cover-image')).toBeTruthy();
+      expect(container.querySelector('.fallback-cover')?.classList.contains('invisible')).toBe(
+        true,
+      );
+    });
+
+    it('switches an already-mounted cover when the option is toggled', () => {
+      const book = makeBook();
+      const { container } = render(<BookCover book={book} coverFit='crop' />);
+      expect(container.querySelector('img.cover-image')).toBeTruthy();
+
+      act(() => enableHideCovers());
+
+      expect(container.querySelector('img.cover-image')).toBeNull();
+      expect(container.querySelector('.fallback-cover')?.classList.contains('invisible')).toBe(
+        false,
+      );
+    });
+
+    it('hides the spine when covers are hidden even after a cover has loaded', () => {
+      const book = makeBook();
+      const { container } = render(<BookCover book={book} coverFit='crop' showSpine />);
+      const img = container.querySelector('img.cover-image')!;
+      fireEvent.load(img);
+      expect(container.querySelector('.book-spine')?.classList.contains('visible')).toBe(true);
+
+      act(() => enableHideCovers());
+
+      expect(container.querySelector('.book-spine')?.classList.contains('visible')).toBe(false);
+    });
   });
 });

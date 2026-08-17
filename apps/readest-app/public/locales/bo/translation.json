@@ -2041,5 +2041,6 @@
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "སྣོད་འདི་ནི་ཕྱིའི་དཔེ་མཛོད་ཅིག་ཡིན། འདེམས་རྟགས་ཕྱིར་བསུབ་ན་དེའི་དཔེ་ཆ་རང་ས་ནས་ཀློག་མཚམས་འཇོག་ངེས། ཕྱིས་ཀྱི་ནང་འདྲེན་སྐབས་དཔེ་ཆ་དཔེ་མཛོད་ནང་དུ་འདྲ་བཤུས་བྱེད་ངེས།",
   "More Settings": "སྒྲིག་སྟངས་གཞན།",
   "Right-to-Left Pages": "ཤོག་ངོས་གཡས་ནས་གཡོན།",
-  "Send Document Metadata": "ཡིག་ཆའི་གནས་ཚུལ་བསྐུར་བ།"
+  "Send Document Metadata": "ཡིག་ཆའི་གནས་ཚུལ་བསྐུར་བ།",
+  "Hide covers": "དཔེ་དེབ་ཀྱི་མདུན་ཤོག་སྦས་པ།"
 }

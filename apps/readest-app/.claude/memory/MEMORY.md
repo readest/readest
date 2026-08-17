@@ -22,61 +22,67 @@
 - `src/hooks/useSafeAreaInsets.ts` · `src/app/reader/components/FoliateViewer.tsx` · `.../annotator/Annotator.tsx`
 ## Sync Notes
 - Resolved/stable sync memories → [Sync Fixes](sync-fixes.md)
-- [#5426 BookOrbit integration](bookorbit-integration-5426.md) MERGED #5487 · [#5062 multi-provider sync](multi-provider-cloud-sync-5062.md) MERGED #5122; native verify pending
+- [#5062 multi-provider sync](multi-provider-cloud-sync-5062.md) MERGED #5122; native verify pending
+- [#5720 mixed-fleet toast REMOVED](mixed-fleet-toast-removed-5720.md) MERGED #5726; fixed anchor re-warned every launch; user chose removal; ack-cursor design saved if it returns
 - [iCloud sync provider](icloud-sync-provider.md) SHIPPED #5532+#5537; Dev ID recommit due 2027-02; MAS sandbox-blank open
 - [#5570 KOSync/BookOrbit custom headers](custom-headers-kosync-bookorbit-5570.md) MERGED; kosync proxy OPEN RELAY fix UNMERGED on `fix/kosync-proxy-endpoint-allowlist`
 - [#5661 "Synced in an hour"](sync-clock-skew-lastsynced-5661.md) display clamp MERGED #5674; epoch-skew LWW poisoning itself unfixed (user's clock)
-- [#5253 OneDrive OAuth trailing slash](onedrive-oauth-callback-slash-5253.md) MERGED #5479; Rust drops unknown TS fields
-- [OneDrive AADSTS90023 Origin](onedrive-token-origin-aadsts90023.md) MERGED #5604, verified; needs `unsafe-headers` + `Origin: ''`
-- [deleted_at OR cursor invariant](sync-deleted-at-cursor-invariant.md) load-bearing · [#5465 dictionary prefs vs toggle](dictionary-prefs-settings-replica-category-5465.md) MERGED #5470
+- [#5675 font sync "Unknown error"](font-sync-download-unknown-error-5675.md) PR #5700; mkdir FUSED with id minting so `local` branch skips it; `Unknown error` collapse still UNFIXED
+- [#5716 reference page count never synced](reference-page-count-sync-5716.md) MERGED #5727; per-book viewSettings cross NEITHER backend; `book_configs` has NO field-level merge; device verify pending
+- [deleted_at OR cursor invariant](sync-deleted-at-cursor-invariant.md) load-bearing
 - #5067 shelf progress never pulled `mergeBookMetadata` subset = what travels
-- [koplugin local_present sweep](koplugin-local-present-sweep-noop.md) UNFIXED; fix = rm readest_library.sqlite3 · [10k library breaks /sync pull](sync-pull-10k-worker-1102.md) MERGED #5364
+- [koplugin local_present sweep](koplugin-local-present-sweep-noop.md) UNFIXED; fix = rm readest_library.sqlite3
 - [#5625 loadDocument parsererror fallback](loaddocument-xhtml-parsererror-5625.md) MERGED #5630 + foliate#70; device verify pending
 ## Build, Testing & CI
-- [Kindle SSH deploy+debug recipe](kindle-ssh-deploy-debug-recipe.md) 192.168.2.180:2222 blank-pw askpass; crash.log silent for sync (dbg-level); check device WAN first
+- [Kindle SSH deploy+debug recipe](kindle-ssh-deploy-debug-recipe.md) 192.168.2.180:2222 blank-pw askpass; crash.log silent for sync
 - Stable recipes → [Build & CI Recipes](build-ci-recipes.md) · [Store listings in fastlane](store-listings-fastlane-5573.md) MERGED #5573; readest-promotions NOT live
 - [Turbopack dev stale chunk phantom](turbopack-dev-stale-chunk-phantom.md) rm -rf .next first · [Concurrent sessions share .next/out](concurrent-sessions-share-next-out-dir.md) check `ps` first
 - [format:check gate](verify-format-check-gate.md) · [Worktree rebase submodule drift](worktree-rebase-submodule-drift.md) · [Worktree submodule origin = local gitdir](worktree-submodule-origin-is-local-gitdir.md) use FETCH_HEAD
 - [worktree:rm deinits the SHARED .git/config](worktree-rm-deinits-shared-git-config.md) check `git submodule status` after rm
 - [Shared-target stale plugin cache](worktree-shared-target-stale-plugin-cache.md) cargo clean -p only · [Web e2e local flake](web-e2e-local-devserver-cold-compile-flake.md) cold compile, NOT your change
 - [Chrome verify recipe](browser-verify-readest-web-recipe.md) · [CI/PR delivery + push keepalive](ci-pr-delivery-and-push.md) fork pushes need SSH
-- [#5550 docker never applied migrations](docker-selfhost-migrations-never-applied-5550.md) MERGED #5551; dir mount shadows core schema
-- [PR #5605 nix packaging review](nix-packaging-pr-5605.md) 2 blockers posted; readest ALREADY in nixpkgs — cachix = CI-only
-- test-tauri.sh webdriver bogus timeout MERGED #5644: WEBDRIVER_TIMEOUT=900 + build_tauri_app gated on tauri paths
 ## Platform Compat
 - Resolved/stable → pointer index at end of [Platform Compat](platform-compat-fixes.md)
-- [#1217 FireOS import no-op](fireos-import-activity-recreation-1217.md) MERGED #5531 · [#5372/#2862 Play keeps All Files Access](play-all-files-access-restored-5372.md) MERGED #5378; NEXT submission fills the form
-- [iOS .txt/.md share sheet lost](ios-txt-share-sheet-tauri211-fileassoc.md) MERGED #5415 · [#5397 Photos save crash](ios-photos-add-usage-description-5397.md) MERGED #5405; device-verify pending
+- [#5372/#2862 Play keeps All Files Access](play-all-files-access-restored-5372.md) MERGED #5378; NEXT submission fills the form
+- [#5397 Photos save crash](ios-photos-add-usage-description-5397.md) MERGED #5405; device-verify pending
 - [Android OAuth hangs on MS passkey page](android-oauth-passkey-no-credential-provider.md) no Credential Manager provider; wedges WebAuthn till reboot; NOT a CCT bug
 - [APKs opened with Readest](android-intent-filter-pathpattern-needs-host.md) MERGED #5610, verify PENDING; `pathPattern` DEAD without `android:host`
 ## Reader Features & UI
 - Resolved/stable feature memories → [Reader Feature Fixes](reader-feature-fixes.md)
 - [#5662 Alert sized off its own text](alert-flex-item-content-sizing-5662.md) MERGED; `w-full` wrapper LOAD-BEARING; needs browser test
-- [#5660 Home/End jump to book start/end](home-end-book-jump-5660.md) MERGED #5673 (`1cbab73f9`); `goToFraction(0|1)` covers reflowable+FXL+scrolled in ONE call; view is in the store BEFORE `view.init()` so guard on `inited`; footer "66 / 68" at the true end is correct (location = page START fraction)
-- [Azure translator edge auth retired](azure-translator-edge-auth-retired.md) MERGED #5555; short lang codes #5620 verified
+- [#5660 Home/End jump](home-end-book-jump-5660.md) MERGED #5673; `goToFraction(0|1)` one call; guard on `inited`; end footer "66 / 68" is correct
 - [#1582 translated text loses formatting](translation-inline-markup-1582.md) STILL OPEN; default `deepl` CORRUPTS markup
 - [#5600 PDF quota toast on every selection](pdf-translation-quota-toast-5600.md) MERGED #5617; contextmenu auto-open + stale `translationEnabled` UNFIXED
-- [RSVP landscape safe-area insets](rsvp-landscape-safe-area-insets-5548.md) MERGED; the ONE physical pl/pr exception · [#3392 footer page-number jump](page-number-jump-3392.md) MERGED #5524
-- [#5538 highlight resize orphan bubble](highlight-resize-orphan-note-bubble-5538.md) MERGED #5541; drag-race overlay UNFIXED · [#5539 TTS ruby furigana](tts-ruby-furigana-readings-5539.md) MERGED #5546
+- [#5538 highlight resize orphan bubble](highlight-resize-orphan-note-bubble-5538.md) MERGED #5541; drag-race overlay UNFIXED
+- [#5652/#5634 header vs footer dedup](reader-header-footer-dedup-5652-5634.md) MERGED #5708; `Aa` GONE so desktop has NO one-click settings; device verify pending
+- [#5585 Instant Dictionary deselects](instant-dictionary-deselect-5585.md) MERGED #5730; clear `isTextSelected` BEFORE `view.deselect()`; toolbar path keeps its selection (that IS #5213); device verify pending
+- [#5667 e-ink highlight invisible in dark](eink-highlight-difference-mask-5667.md) MERGED #5735; difference-blend fill is an INVERSION MASK (always white), black = identity; transientHighlight still UNFIXED; device verify pending
+- [e-ink `[class*=]` matchers](eink-class-substring-matchers.md) fire on `hover:`/`not-eink:` variants and beat inline styles; caused #4454 AND the #5667 black page-indicator pill
 - [#4977 top bar blocks text selection](header-trigger-overlaps-text-4977.md) strip sized to content top; iPad web gap
-- [#5561 BT Play dead after a pause](tts-paused-webview-freeze-5561.md) MERGED #5567 · [TTS listening counts as reading stats](tts-listening-counts-as-reading-stats.md) MERGED #5450
 - [#5480 Media Overlays narration](media-overlay-narration-5480.md) MERGED; 3 review findings UNFIXED
-- [#5562 MO narration via iOS native AVPlayer](media-overlay-ios-native-playout-5562.md) MERGED; Swift compiled ONLY by ios build; verify PENDING
-- [#1359 pull-down bookmark gesture](pull-down-bookmark-gesture-1359.md) MERGED #5493 · [#5501 Apple Pencil page turner](apple-pencil-page-turner-5501.md) MERGED #5511; verify PENDING
+- [#5562 MO narration iOS native AVPlayer](media-overlay-ios-native-playout-5562.md) MERGED; Swift compiled ONLY by ios build; verify PENDING
+- [#5501 Apple Pencil page turner](apple-pencil-page-turner-5501.md) MERGED #5511; verify PENDING
 - [Mobile sheet virtuoso first-paint blank](mobile-sheet-virtuoso-first-paint-blank.md) PRE-EXISTING · [PR #5389 library full-text search review](pr-5389-library-search-review.md) plan in .agents/plans
+- [#5724 reader search capped at 500](reader-search-500-cap-5724.md) MERGED #5728; `maxResultsPerBook: Infinity`; sidebar list is NOT virtualized
+- [Word Lens en-vi pack](wordlens-en-vi-pack-5737.md) MERGED #5737; WikDict has NO vi, use kaikki + aria2c -x16 (curl = 6h); vi is target-only
+- [Word Lens en-hu pack](wordlens-en-hu-pack-5738.md) PR #5738; no hu in WikDict either; ONE cached kaikki dump serves every en-X; MERGING DOES NOT PUBLISH, R2 sync is manual
+- [wordlens:sync now incremental](wordlens-sync-incremental-5737.md) MERGED #5737 + fix in #5738; diffs CDN manifest sha256; retired-pair manifest republish was the review catch
 - [Readest Voice self-hosted TTS](selfhosted-premium-tts-plans.md) APPROVED 2026-07-08; not started
 - [#4584 tap-death](issue-4584-tap-death-investigation.md) UNFIXED; likely WebView-148 · [#5353 italic last glyph clipped](italic-synthetic-oblique-clip-5353.md) WebView regression, not Readest code
 - [#5250 invert img dead w/ overrideColor](invert-img-dark-override-5250.md) PR #5383 open, VERIFIED
 - [#5633 iOS image zoom blurry](ios-imageviewer-zoom-blur-5633.md) MERGED #5639; TableViewer same bug UNFIXED; verify pending
+- [#5631 Auto Scroll resumes on reopen](autoscroll-resume-on-reopen-5631.md) MERGED #5710; per-book `autoScrollRunning`; StrictMode LATCHED the unmount ref
 - [#5635 Auto Scroll progress frozen](autoscroll-progress-relocate-maxwait-5635.md) MERGED #5676 + foliate#72; scrolled relocate 1s max-wait; jitter (item 1) OPEN
-- [#5647 footnote jump flash](footnote-jump-flash-5647.md) MERGED #5655; searchHighlight.ts RENAMED transientHighlight.ts
+- [#5591 RTL page order for fixed layout](fixed-layout-rtl-spread-5591.md) MERGED #5712 + foliate#75; ViewMenu toggle RIDES writingMode (never a parallel setting); PDF ViewerPreferences R2L auto-detect; Shift+F settings dialog had NO bookKey (ghost '' saves)
+- [#5711 fixed-attachment garble + negative-margin bleed](css-fixed-attachment-negative-margin-5711.md) MERGED #5729; fixed→scroll + zero negative h-margins (max() clamp REJECTED as hack); body corner-logo over footer = paginator bg mirroring, OPEN
 - [#5649 FXL text follows the theme](fxl-authored-colors-5649.md) MERGED #5657; FXL docs get ONLY applyFixedlayoutStyles
 - [#5641 Chrome-Android FXL text autosizing](fxl-chrome-android-text-autosizing-5641.md) MERGED #5659; verify pending; fix = text-size-adjust none
-- [#5663 last page unreachable on iOS 18](ios-last-page-scroll-clamp-5663.md) PR #5678 + foliate#73 OPEN; cssAnimateScroll transforms shrink the container scroll extent, WebKit clamps the final scrollLeft one page short; forced layout does NOT fix it, rAF re-apply does; repros iOS 18.5 NOT 26.3; headless self-driving sim harness
+- [#5582 SE wide word gaps](se-text-wrap-pretty-justify-5582.md) MERGED #5718; device visual verify pending; fix = `text-wrap-style: auto` longhand gated on justify
+- [#5663 last page unreachable on iOS 18](ios-last-page-scroll-clamp-5663.md) MERGED #5678 + foliate#73; WebKit clamps final scrollLeft after animated transforms; rAF re-apply fixes; repros 18.5 NOT 26.3
+- [Scroll offsets quantize; sub-pixel rendering differs](scroll-offsets-quantize-subpixel-rendering.md) MERGED #5679 + foliate#74; Blink SNAPS composited layers to device px; measure pixels, not getBoundingClientRect
 - [#5414 Edge silence untrimmed on iOS](edge-tts-baked-silence-ios-native-5414.md) MERGED #5417; verify pending · [#5230 Edge TTS mid-book stall](edge-tts-tauri-ws-hang-5230.md) MERGED #5534
 - [Proofread gate = reflowable formats](proofread-gate-reflowable-formats.md) selection rules born dead (UNFIXED)
-- [Override Layout collapsed `<pre>`](override-layout-collapses-pre-whitespace.md) MERGED #5549 · [Stale format gates in Settings](stale-format-gates-in-settings.md)
-- [Scroll toggle broke turn animation](captured-turn-prepared-surface-lost-on-scroll-toggle.md) FIXED+verified; CDP touch hold is the instrument
+- [Stale format gates in Settings](stale-format-gates-in-settings.md)
 - Proofread: [#4700](proofread-enhancements-4700.md); [#4781 CRDT](proofread-per-book-crdt-sync.md); #4859 edit toggle; [#5277 fonts lost](proofread-rule-change-font-loss-5277.md) MERGED #5345
 - [Send-to-Readest local file:// clips](send-to-readest-local-file-clips.md) metaHash dedup · [Extension file:// fetch capability](extension-file-url-fetch-capability.md) content scripts CANNOT
 - [OPDS fixes](opds-fixes.md) #4479 #4502 #4503 #4749 #4782 #4272 Basic-400s TLS#4988 Calibre-authors#5183 http-selflinks#5300 searchTerms#5500
@@ -96,13 +102,14 @@
 - [#3797 recently-read shelf](recent-read-shelf-3797.md) · #3889 auto-import folders · [auto-import re-imports dupes](auto-import-duplicate-files-reimport.md) MERGED #5337; needs `altFilePaths`
 - [#5601 bulk folder import exhaustion](bulk-folder-import-exhaustion-5601.md) #5607+#5615 MERGED, verified; Android `allow_paths_in_scopes` silent no-op UNFIXED
 - [#5658 OPDS books erased on restart](opds-autodownload-tombstone-5658.md) MERGED #5665; knownEntryIds device-local, tombstones sync
+- [#5680 Read-in-place uncheck](readinplace-uncheck-unregister-5680.md) MERGED #5685; drag-drop ingress MUST pass real registration state, else silent unregister
 - [#5411 PDF metaHash filename salt](pdf-metahash-filename-salt-5411.md) MERGED #5412; re-parse preserves salt · [koplugin metaHash parity](koplugin-metahash-parity.md) MERGED #5508
 - #5079 Time Remaining sort "no time" bucket OUTSIDE sort multiplier · memo comparator swallows new prop
 - [#5175 select bar hides last book](select-mode-actions-overlap-last-book-5175.md) Virtuoso Footer spacer · [#5222 bookshelf import menu](bookshelf-import-menu-popup-5247.md) MERGED #5247
 - [#5360 Wayland tap kills native menu](wayland-tap-context-menu-5360.md) MERGED #5467; verify pending
 ## Networking & LAN
 - [LocalSend integration](localsend-integration.md) MERGED #5611; fork `readest/localsend`; mTLS needs `WebConfig{upload:true}`; commands need 3-place ACL
-- [koplugin LocalSend receive+send](koplugin-localsend-receive.md) MERGED #5687 (15b446dc7); REARCHITECTED cdylib→static-musl BINARY+subprocess (Kindle glibc crash); crate renamed localsend-ffi→localsend-bin; SEND added; Kindle→Xiaomi device-VERIFIED; register_peer fix = iOS/Android discovery; fork pinned 3cae1825 (SO_REUSEPORT best-effort); i18n done all 33 locales; ANDROID exec still IMPOSSIBLE
+- [koplugin LocalSend receive+send](koplugin-localsend-receive.md) MERGED #5687; static-musl BINARY+subprocess (Kindle glibc); Kindle→Xiaomi VERIFIED; fork pinned 3cae1825; ANDROID exec IMPOSSIBLE
 - LocalSend discovery was DEAD 3 ways — MERGED #5626 + fork rev 37219949; rev bumps rebase BOTH patches
 - [#5651 RLM->ZWNJ half-space](persian-rlm-halfspace-zwnj-5651.md) MERGED; U+0600-06FF contains DIGITS — swap between digits flips visual order
 ## Architecture & Patterns
@@ -114,6 +121,7 @@
 - Markdown: [.md support #774](markdown-md-support-774.md); resume position #4862; footnotes #5074; [#5279 YAML frontmatter](markdown-yaml-frontmatter-5279.md) MERGED #5344; dedup race UNFIXED
 - [md titled after first H1, not the file](markdown-title-first-h1-over-filename.md) PR #5653; existing libraries keep their titles
 - Style: `getLayoutStyles()` always, `getColorStyles()` when overriding; `transformStylesheet()` rewrites EPUB CSS
+- [#5681 table label column shredded](table-cell-overflow-wrap-anywhere-5681.md) MERGED #5686; `overflow-wrap:anywhere` on td/th = 1-char min-content; use `break-word`
 - TTS `#ttsSectionIndex`; insets: native plugin → useSafeAreaInsets → styles; Dropdowns `DropdownContext`
 - Stale settings closure: persist `useSettingsStore.getState().settings` ([#4780](webdav-connect-nullified-4780.md)) · Page margins not live #4898 in-place mutation froze memo
 - [#5301 "Column Gap"->"Additional Margin"](column-gap-additional-margins-5301.md) label rename only
@@ -128,3 +136,5 @@
 - i18n: [en plurals manual](feedback_en_plurals_manual.md); [i18n:extract prunes keys](i18n-extract-prunes-keys.md); {{provider}} case suffixes #5102; [label rename = key rename](i18n-label-rename-workflow.md)
 - [Dependabot transitive fixes](dependabot-pnpm-overrides.md) `overrides:` · [deps security recipe](deps-security-overrides-workflow.md) MERGED #5335+#5518 · [gstack upgrade](feedback_gstack_upgrade.md)
 - [Next page-export check webpack-only](nextjs-page-export-webpack-only-check.md) MERGED #5336; `rm -rf .next` if lint trips
+- [Reserved route filenames under src/app/](nextjs-app-dir-reserved-route-filenames.md) a helper named `layout.ts` = route layout; build-only failure, lint is GREEN
+- [Reader chrome changes need e2e](verify-reader-chrome-needs-e2e.md) `ReaderPage.ts` hard-codes toolbar aria-labels; grep `e2e/` before deleting a reader button

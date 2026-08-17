@@ -1,13 +1,11 @@
-// Continuous long-file playout for Media Overlay on iOS Tauri.
+// Continuous long-file playout for Media Overlay on mobile Tauri.
 //
 // Edge TTS already plays through an in-process AVPlayer (NativeAudioPlayer)
-// because WebKit HTMLMediaElement / WebAudio cannot own the app's
-// non-mixable .playback session — Now Playing, mute switch, and AirPods all
-// fight it. Media Overlay used HTMLAudioElement and was interrupted ~0.5s
-// after play() when TTSMediaBridge claimed that session. This player routes
-// narration through the same native playout AVPlayer via load/seek, staging
-// chapter audio to a temp file (100 MB clips cannot cross the plugin as
-// base64).
+// because WebKit HTMLMediaElement / WebAudio cannot own the app's non-mixable
+// playback session. Android uses the same interface so local audiobooks stream
+// through ExoPlayer rather than being copied into a WebView Blob. This player
+// stages container blobs to a temp file, while paired audiobooks can hand the
+// native player their existing path directly.
 
 import { addPluginListener, invoke, PluginListener } from '@tauri-apps/api/core';
 import { join, tempDir } from '@tauri-apps/api/path';
@@ -49,6 +47,7 @@ export class NativeNarrationPlayer {
   #href: string | null = null;
   #stagedPath: string | null = null;
   #stagedHref: string | null = null;
+  #ownsStagedPath = false;
   #rate = 1;
   #userPaused = true;
   #ended = false;
@@ -112,7 +111,6 @@ export class NativeNarrationPlayer {
       return res.session;
     });
     await this.#nativeSession;
-    this.#startPolling();
   }
 
   // Forget the native session id after another engine (Edge) aborted the shared
@@ -135,6 +133,25 @@ export class NativeNarrationPlayer {
   async load(href: string, blob: Blob, startSec = 0): Promise<void> {
     await this.ensureReady();
     const path = await this.#stageBlob(href, blob);
+    await this.#loadResolvedPath(href, path, startSec);
+  }
+
+  // Paired audiobooks already live as ordinary files under Books/<hash>.
+  // Hand AVPlayer that path directly: copying a multi-hour M4B through a Blob
+  // and a second temp file would double I/O and briefly hold the whole book in
+  // memory. The caller owns the path, so release() must never delete it.
+  async loadPath(href: string, path: string, startSec = 0): Promise<void> {
+    await this.ensureReady();
+    if (this.#ownsStagedPath && this.#stagedPath && this.#stagedPath !== path) {
+      await remove(this.#stagedPath).catch(() => undefined);
+    }
+    this.#stagedHref = href;
+    this.#stagedPath = path;
+    this.#ownsStagedPath = false;
+    await this.#loadResolvedPath(href, path, startSec);
+  }
+
+  async #loadResolvedPath(href: string, path: string, startSec: number): Promise<void> {
     this.#href = href;
     this.#ended = false;
     await invoke('plugin:native-tts|playout_control', {
@@ -172,11 +189,14 @@ export class NativeNarrationPlayer {
     await invoke('plugin:native-tts|playout_control', { payload: { action: 'resume' } });
     this.#cache.playing = true;
     this.#cache.at = performance.now();
+    this.#startPolling();
   }
 
   pause(): void {
+    const mediaSec = this.currentTime;
     this.#userPaused = true;
-    this.#cache.playing = false;
+    this.#cache = { mediaSec, playing: false, at: performance.now() };
+    this.#stopPolling();
     void invoke('plugin:native-tts|playout_control', { payload: { action: 'pause' } }).catch(
       () => {},
     );
@@ -195,9 +215,11 @@ export class NativeNarrationPlayer {
     this.#href = null;
     this.#stopPolling();
     const path = this.#stagedPath;
+    const ownsPath = this.#ownsStagedPath;
     this.#stagedPath = null;
     this.#stagedHref = null;
-    if (path) {
+    this.#ownsStagedPath = false;
+    if (path && ownsPath) {
       await remove(path).catch(() => undefined);
     }
     this.#nativeSession = null;
@@ -219,7 +241,7 @@ export class NativeNarrationPlayer {
 
   async #stageBlob(href: string, blob: Blob): Promise<string> {
     if (this.#stagedHref === href && this.#stagedPath) return this.#stagedPath;
-    if (this.#stagedPath) {
+    if (this.#stagedPath && this.#ownsStagedPath) {
       await remove(this.#stagedPath).catch(() => undefined);
     }
     const name = `mo-narration-${hashHref(href)}.${fileExtension(href)}`;
@@ -228,6 +250,7 @@ export class NativeNarrationPlayer {
     const path = await join(await tempDir(), name);
     this.#stagedHref = href;
     this.#stagedPath = path;
+    this.#ownsStagedPath = true;
     return path;
   }
 
@@ -278,7 +301,7 @@ export class NativeNarrationPlayer {
   }
 
   async #poll(): Promise<void> {
-    if (this.#resolvedSession === null || this.#ended) return;
+    if (this.#resolvedSession === null || this.#ended || this.#userPaused) return;
     try {
       const pos = await invoke<PlayoutPosition>('plugin:native-tts|playout_position');
       if (pos.session !== this.#resolvedSession) return;

@@ -2097,5 +2097,6 @@
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "এই ফোল্ডারটি একটি বাহ্যিক লাইব্রেরি। এর বইগুলি নিজ স্থানে পড়া বন্ধ করতে টিক তুলে দিন; পরবর্তী ইমপোর্টে বইগুলি লাইব্রেরিতে কপি করা হবে।",
   "More Settings": "আরও সেটিংস",
   "Right-to-Left Pages": "ডান থেকে বামে পৃষ্ঠা",
-  "Send Document Metadata": "নথির মেটাডেটা পাঠান"
+  "Send Document Metadata": "নথির মেটাডেটা পাঠান",
+  "Hide covers": "বইয়ের মলাট লুকান"
 }

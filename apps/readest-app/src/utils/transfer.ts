@@ -15,6 +15,18 @@ export interface ProgressPayload {
 
 export type ProgressHandler = (progress: ProgressPayload) => void;
 
+/**
+ * Percentage sentinel for "running, but the byte total is unknown". Chunked
+ * responses, buffered fallbacks and queued-but-not-started transfers have no
+ * total to divide by; reporting 0 there renders as a frozen 0%, so progress
+ * surfaces render this as an indeterminate state instead.
+ */
+export const INDETERMINATE_PROGRESS = -1;
+
+/** Bytes to a 0-100 percentage, or {@link INDETERMINATE_PROGRESS}. */
+export const toProgressPercent = (progress: ProgressPayload): number =>
+  progress.total > 0 ? (progress.progress / progress.total) * 100 : INDETERMINATE_PROGRESS;
+
 export interface ProgressThrottle {
   /** Record a progress payload, emitting at most once per interval. */
   push: (progress: ProgressPayload) => void;

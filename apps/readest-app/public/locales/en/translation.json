@@ -103,5 +103,7 @@
   "Downloading {{count}} book(s)_one": "Downloading {{count}} book",
   "Downloading {{count}} book(s)_other": "Downloading {{count}} books",
   "Failed to download {{count}} book(s)_one": "Failed to download {{count}} book",
-  "Failed to download {{count}} book(s)_other": "Failed to download {{count}} books"
+  "Failed to download {{count}} book(s)_other": "Failed to download {{count}} books",
+  "Cancel all ({{count}})_one": "Cancel all ({{count}})",
+  "Cancel all ({{count}})_other": "Cancel all ({{count}})"
 }

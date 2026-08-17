@@ -14,8 +14,9 @@
  * on auth / not-found / network / conflict without knowing the backend.
  */
 
-export type FileSyncErrorCode = 'AUTH_FAILED' | 'NOT_FOUND' | 'NETWORK' | 'CONFLICT' | 'UNKNOWN';
+import type { ProgressHandler } from '@/utils/transfer';
 
+export type FileSyncErrorCode = 'AUTH_FAILED' | 'NOT_FOUND' | 'NETWORK' | 'CONFLICT' | 'UNKNOWN';
 export class FileSyncError extends Error {
   code: FileSyncErrorCode;
   /** HTTP status when the request reached the server, if applicable. */
@@ -81,7 +82,12 @@ export interface FileSyncProvider {
   uploadStream?(remotePath: string, localPath: string): Promise<boolean>;
   /**
    * Optional streaming download: GET `remotePath` straight to `localPath`.
-   * Same ownership + fallback rules as {@link uploadStream}.
+   * Same ownership + fallback rules as {@link uploadStream}. When the backend
+   * can observe bytes as they arrive, it reports them through `onProgress`.
    */
-  downloadStream?(remotePath: string, localPath: string): Promise<boolean>;
+  downloadStream?(
+    remotePath: string,
+    localPath: string,
+    onProgress?: ProgressHandler,
+  ): Promise<boolean>;
 }

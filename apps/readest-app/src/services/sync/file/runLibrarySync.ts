@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Book } from '@/types/book';
 import type { EnvConfigType } from '@/services/environment';
+import type { ProgressHandler } from '@/utils/transfer';
 import type { TranslationFunc } from '@/hooks/useTranslation';
 import type { SystemSettings } from '@/types/settings';
 import type { UserPlan } from '@/types/quota';
@@ -214,13 +215,14 @@ export const runFileBookUpload = async (envConfig: EnvConfigType, book: Book): P
 export const runFileBookDownload = async (
   envConfig: EnvConfigType,
   book: Book,
+  onProgress?: ProgressHandler,
 ): Promise<boolean> => {
   const backends = getActiveFileSyncBackends(useSettingsStore.getState().settings);
   for (const kind of backends) {
     try {
       const engine = await buildEngine(envConfig, kind);
       if (!engine) continue;
-      if (!(await engine.downloadBookFile(book))) continue;
+      if (!(await engine.downloadBookFile(book, onProgress))) continue;
       book.downloadedAt = Date.now();
       if (!book.coverDownloadedAt) book.coverDownloadedAt = Date.now();
       return true;

@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
+import type { SetStateAction } from 'react';
 
 import type { Book } from '@/types/book';
 import type { EnvConfigType } from '@/services/environment';
 import type { AppService } from '@/types/system';
-import type { ProgressPayload } from '@/utils/transfer';
+import { INDETERMINATE_PROGRESS, type ProgressHandler } from '@/utils/transfer';
 
 /**
  * Issue #5062 — cloud sync providers are independently selectable, so a
@@ -22,7 +23,15 @@ const routing = vi.hoisted(() => ({
 }));
 
 const runFileBookUpload = vi.hoisted(() => vi.fn(async () => true));
-const runFileBookDownload = vi.hoisted(() => vi.fn(async () => true));
+const runFileBookDownload = vi.hoisted(() =>
+  vi.fn(
+    async (
+      _envConfig: EnvConfigType,
+      _book: Book,
+      _onProgress?: ProgressHandler,
+    ): Promise<boolean> => true,
+  ),
+);
 const queueUpload = vi.hoisted(() => vi.fn(() => 'transfer-1'));
 const queueDownload = vi.hoisted(() => vi.fn(() => 'transfer-1'));
 
@@ -70,13 +79,20 @@ const makeBook = (over: Partial<Book> = {}): Book => ({
   ...over,
 });
 
+type ProgressState = { [key: string]: number };
+
 const setup = (appService: AppService | null = null) => {
   const updateBook = vi.fn(async (_envConfig: EnvConfigType, _book: Book) => {});
-  const updateBookTransferProgress = vi.fn((_bookHash: string, _progress: ProgressPayload) => {});
+  // Mimic React's functional state updates so tests can assert the actual
+  // progress transitions (indeterminate start, percentage updates, cleanup).
+  let progressState: ProgressState = {};
+  const setBooksTransferProgress = vi.fn((updater: SetStateAction<ProgressState>) => {
+    progressState = typeof updater === 'function' ? updater(progressState) : updater;
+  });
   const { result } = renderHook(() =>
-    useBookTransferActions(envConfig, appService, updateBook, updateBookTransferProgress),
+    useBookTransferActions(envConfig, appService, updateBook, setBooksTransferProgress),
   );
-  return { result, updateBook };
+  return { result, updateBook, getProgress: () => progressState };
 };
 
 beforeEach(() => {
@@ -129,7 +145,7 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
     const book = makeBook({ uploadedAt: 12345 });
     const ok = await result.current.handleBookDownload(book, { queued: true });
 
-    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book);
+    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book, expect.any(Function));
     expect(queueDownload).not.toHaveBeenCalled();
     expect(ok).toBe(true);
   });
@@ -143,7 +159,7 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
     const book = makeBook({ uploadedAt: 12345 });
     const ok = await result.current.handleBookDownload(book, { queued: true });
 
-    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book);
+    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book, expect.any(Function));
     expect(queueDownload).toHaveBeenCalledWith(book, 1);
     expect(ok).toBe(true);
   });
@@ -158,7 +174,7 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
     const book = makeBook({ uploadedAt: 12345 });
     const ok = await result.current.handleBookDownload(book, { queued: false });
 
-    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book);
+    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book, expect.any(Function));
     expect(downloadBook).toHaveBeenCalledWith(book, false, false, expect.any(Function));
     expect(queueDownload).not.toHaveBeenCalled();
     expect(updateBook).toHaveBeenCalledWith(envConfig, book);
@@ -173,9 +189,98 @@ describe('useBookTransferActions download routing (issue #5062)', () => {
     const book = makeBook({ uploadedAt: null });
     const ok = await result.current.handleBookDownload(book, { queued: true });
 
-    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book);
+    expect(runFileBookDownload).toHaveBeenCalledWith(envConfig, book, expect.any(Function));
     expect(queueDownload).not.toHaveBeenCalled();
     expect(updateBook).toHaveBeenCalledWith(envConfig, book);
     expect(ok).toBe(true);
+  });
+
+  it('shows indeterminate progress while a file-backend download runs and clears it on completion', async () => {
+    routing.backends = ['gdrive'];
+    let release!: (ok: boolean) => void;
+    runFileBookDownload.mockImplementationOnce(
+      () =>
+        new Promise<boolean>((res) => {
+          release = res;
+        }),
+    );
+
+    const { result, getProgress } = setup();
+    const book = makeBook({ uploadedAt: 12345 });
+    const promise = result.current.handleBookDownload(book, { queued: true });
+
+    // The native plugin cannot report a byte total up front, so the entry
+    // starts indeterminate until progress events arrive.
+    expect(getProgress()).toEqual({ [book.hash]: INDETERMINATE_PROGRESS });
+
+    release(true);
+    await promise;
+    expect(getProgress()).toEqual({});
+  });
+
+  it('reports percentage progress from a direct download and clears it on completion', async () => {
+    vi.useFakeTimers();
+    try {
+      let release!: () => void;
+      let emit!: ProgressHandler;
+      const downloadBook = vi.fn(
+        (_book: Book, _redownload: boolean, _reuse: boolean, onProgress?: ProgressHandler) => {
+          emit = onProgress!;
+          return new Promise<void>((res) => {
+            release = res;
+          });
+        },
+      );
+
+      const { result, getProgress } = setup({ downloadBook } as unknown as AppService);
+      const book = makeBook({ uploadedAt: 12345 });
+      const promise = result.current.handleBookDownload(book, { queued: false });
+
+      // The overlay is primed before the first byte — without this the cover
+      // stays blank across the signed-URL round trip, auth and TLS handshake
+      // for the queued:false callers (useOpenBook, the details modal's
+      // Redownload), which is the "no visual feedback" symptom this exists to
+      // remove. The kick takes the throttle's leading edge, so the first real
+      // percentage lands on the trailing edge.
+      expect(getProgress()).toEqual({ [book.hash]: INDETERMINATE_PROGRESS });
+
+      emit({ progress: 50, total: 100, transferSpeed: 0 });
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(getProgress()).toEqual({ [book.hash]: 50 });
+
+      release();
+      await promise;
+      expect(getProgress()).toEqual({});
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ignores a progress event that arrives after the transfer finished', async () => {
+    // Tauri delivers Channel messages over IPC independently of the invoke
+    // response, so the downloader's last payload can land after the command
+    // resolved. Nothing clears the entry a second time, so a late event that
+    // re-armed the throttle would leave the cover stuck behind a stale overlay
+    // with its action button gone, permanently.
+    vi.useFakeTimers();
+    try {
+      routing.backends = ['gdrive'];
+      let late!: ProgressHandler;
+      runFileBookDownload.mockImplementationOnce(async (_env, _book, onProgress) => {
+        late = onProgress!;
+        return true;
+      });
+
+      const { result, getProgress } = setup();
+      const book = makeBook({ uploadedAt: 12345 });
+      await result.current.handleBookDownload(book, { queued: true });
+      expect(getProgress()).toEqual({});
+
+      late({ progress: 90, total: 100, transferSpeed: 0 });
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(getProgress()).toEqual({});
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // --- Dependency mocks (must be set up before importing the hook) ---
@@ -146,6 +146,7 @@ vi.mock('@/services/tts', () => ({
       pause: vi.fn().mockResolvedValue(undefined),
       resume: vi.fn().mockResolvedValue(undefined),
       start: vi.fn().mockResolvedValue(undefined),
+      startFromRange: vi.fn().mockReturnValue('<speak>hello</speak>'),
       stop: vi.fn().mockResolvedValue(undefined),
       shutdown: vi.fn().mockResolvedValue(undefined),
       forward: vi.fn().mockResolvedValue(undefined),
@@ -162,6 +163,7 @@ vi.mock('@/services/tts', () => ({
       getSentenceProgress: vi.fn().mockReturnValue(null),
       isSoundingSentenceOnScreen: vi.fn().mockReturnValue(false),
       getCurrentHighlightCfi: vi.fn().mockReturnValue(null),
+      getCurrentPlaybackCfi: vi.fn().mockReturnValue(null),
       reapplyCurrentHighlight: vi.fn(),
       terminated: false,
       isViewAttached: true,
@@ -204,6 +206,11 @@ const { mockSessionManager } = vi.hoisted(() => ({
     getSessionByHash: vi.fn((_hash: string) => null as unknown),
     getActiveSession: vi.fn(() => null as unknown),
     stopActive: vi.fn().mockResolvedValue(undefined),
+    stopBook: vi.fn().mockResolvedValue(undefined),
+    stopController: vi.fn(
+      async (_bookHash: string, controller: { shutdown: () => Promise<void> }) =>
+        controller.shutdown().catch(() => {}),
+    ),
     setSleepTimer: vi.fn(),
     getSleepTimer: vi.fn(() => null),
     setStopAtChapterEnd: vi.fn(),
@@ -343,6 +350,7 @@ describe('useTTSControl reading a selection aloud', () => {
     });
     const controller = ttsControllerInstances[0] as unknown as {
       speak: ReturnType<typeof vi.fn>;
+      startFromRange: ReturnType<typeof vi.fn>;
     };
     return { range, controller };
   };
@@ -352,7 +360,7 @@ describe('useTTSControl reading a selection aloud', () => {
 
     const { range, controller } = await speakSelection();
 
-    expect(mockView.tts.from).toHaveBeenCalledWith(range);
+    expect(controller.startFromRange).toHaveBeenCalledWith(range);
     // Not a one-shot: the session goes on from that passage rather than being
     // stopped by the one-time callback as soon as the first clip ends.
     expect(controller.speak).toHaveBeenCalledWith(expect.anything(), false, expect.any(Function));
@@ -426,6 +434,28 @@ describe('useTTSControl back-to-position prompt', () => {
 
   it('appears when the reader has paged away from the sentence entirely', async () => {
     expect(await startSessionThenRelocate(false)).toBe('true');
+  });
+
+  it('returns to the live narration position instead of a stale saved mark', async () => {
+    const BackHarness = () => {
+      const tts = useTTSControl({ bookKey: 'book-1' });
+      return <button onClick={tts.handleBackToCurrentTTSLocation}>Back</button>;
+    };
+    render(<BackHarness />);
+    await act(async () => {
+      const p = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await p;
+    });
+    const controller = ttsControllerInstances[0] as unknown as {
+      getCurrentPlaybackCfi: ReturnType<typeof vi.fn>;
+    };
+    controller.getCurrentPlaybackCfi.mockReturnValue('live-narration-cfi');
+
+    fireEvent.click(screen.getByText('Back'));
+
+    expect(mockView.resolveNavigation).toHaveBeenLastCalledWith('live-narration-cfi');
   });
 });
 
@@ -537,6 +567,34 @@ describe('useTTSControl handleStop resilience (#4676)', () => {
     });
 
     expect(setTTSEnabled).toHaveBeenCalledWith('book-1', false);
+  });
+
+  it('keeps an awaited tts-stop dispatch pending until controller shutdown finishes', async () => {
+    const controller = await startSession();
+    let finishShutdown!: () => void;
+    const teardown = new Promise<void>((resolve) => {
+      finishShutdown = resolve;
+    });
+    controller.shutdown.mockReturnValueOnce(teardown);
+    mockSessionManager.stopBook.mockReturnValueOnce(teardown);
+
+    let firstStopped = false;
+    let secondStopped = false;
+    const firstStop = eventDispatcher.dispatch('tts-stop', { bookKey: 'book-1' }).then(() => {
+      firstStopped = true;
+    });
+    const secondStop = eventDispatcher.dispatch('tts-stop', { bookKey: 'book-1' }).then(() => {
+      secondStopped = true;
+    });
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+
+    expect(firstStopped).toBe(false);
+    expect(secondStopped).toBe(false);
+    expect(mockSessionManager.stopBook).toHaveBeenCalledWith('book', 'user');
+    finishShutdown();
+    await Promise.all([firstStop, secondStop]);
+    expect(firstStopped).toBe(true);
+    expect(secondStopped).toBe(true);
   });
 
   it('disables TTS even when controller.shutdown never resolves', async () => {
@@ -848,6 +906,9 @@ describe('useTTSControl background session lifecycle', () => {
     mockSessionManager.release.mockClear();
     mockSessionManager.adopt.mockClear();
     mockSessionManager.stopActive.mockClear();
+    mockSessionManager.stopController.mockClear();
+    mockSessionManager.addEventListener.mockClear();
+    mockSessionManager.removeEventListener.mockClear();
     mockSessionManager.getSessionByHash.mockReturnValue(null);
     mockSessionManager.getActiveSession.mockReturnValue(null);
   });
@@ -890,7 +951,7 @@ describe('useTTSControl background session lifecycle', () => {
     expect(controller.shutdown).not.toHaveBeenCalled();
   });
 
-  it('unmount after termination shuts down and releases', async () => {
+  it('unmount after termination delegates the joinable controller teardown', async () => {
     const controller = await startSession();
     controller.terminated = true;
     mockSessionManager.getSessionByHash.mockReturnValue({
@@ -899,8 +960,7 @@ describe('useTTSControl background session lifecycle', () => {
       controller,
     });
     cleanup();
-    expect(controller.shutdown).toHaveBeenCalled();
-    expect(mockSessionManager.release).toHaveBeenCalledWith('book');
+    expect(mockSessionManager.stopController).toHaveBeenCalledWith('book', controller, 'user');
   });
 
   it('tts-close-book detaches a live session; tts-stop stays a hard stop', async () => {
@@ -916,8 +976,31 @@ describe('useTTSControl background session lifecycle', () => {
       await eventDispatcher.dispatch('tts-stop', { bookKey: 'book-1' });
       for (let i = 0; i < 5; i++) await Promise.resolve();
     });
-    expect(controller.shutdown).toHaveBeenCalled();
-    expect(mockSessionManager.release).toHaveBeenCalledWith('book');
+    expect(mockSessionManager.stopController).toHaveBeenCalledWith('book', controller, 'user');
+  });
+
+  it('ignores a stopped event for the controller another reader replaced', async () => {
+    const controller = await startSession();
+    const listener = mockSessionManager.addEventListener.mock.calls.find(
+      ([event]) => event === 'session-changed',
+    )?.[1] as ((event: Event) => void) | undefined;
+    expect(listener).toBeDefined();
+
+    act(() => {
+      listener!(
+        new CustomEvent('session-changed', {
+          detail: {
+            reason: 'stopped',
+            session: { bookHash: 'other', bookKey: 'other-r1', controller: {} },
+          },
+        }),
+      );
+    });
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-stop', { bookKey: 'book-1' });
+    });
+
+    expect(mockSessionManager.stopController).toHaveBeenCalledWith('book', controller, 'user');
   });
 
   it('mounting a book stops an active session of a different, unmounted book', async () => {
@@ -943,6 +1026,7 @@ describe('useTTSControl background session lifecycle', () => {
       attachView: vi.fn().mockResolvedValue(undefined),
       getSpeakingLang: vi.fn().mockReturnValue('en'),
       getCurrentHighlightCfi: vi.fn().mockReturnValue(null),
+      getCurrentPlaybackCfi: vi.fn().mockReturnValue(null),
       isSoundingSentenceOnScreen: vi.fn().mockReturnValue(false),
       getSpokenSentence: vi.fn().mockReturnValue(null),
       updateHighlightOptions: vi.fn(),

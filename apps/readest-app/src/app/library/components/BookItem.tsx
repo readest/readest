@@ -20,6 +20,7 @@ import { navigateToLogin } from '@/utils/nav';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { formatAuthors, formatDescription, formatSeries } from '@/utils/book';
+import { INDETERMINATE_PROGRESS } from '@/utils/transfer';
 import ReadingProgress from './ReadingProgress';
 import BookCover from '@/components/BookCover';
 
@@ -72,6 +73,12 @@ const BookItem: React.FC<BookItemProps> = ({
 
   const seriesText = formatSeries(book.metadata?.series, book.metadata?.seriesIndex);
 
+  // One condition drives both the cover overlay and the hiding of the row's
+  // transfer buttons, so the cover can never end up showing neither. The
+  // entry is removed once the transfer settles, including at 100%.
+  const isTransferring = transferProgress !== null;
+  const isIndeterminate = transferProgress === INDETERMINATE_PROGRESS;
+
   return (
     <div
       role='none'
@@ -105,6 +112,27 @@ const BookItem: React.FC<BookItemProps> = ({
           )}
           onAspectRatioChange={setCoverAspect}
         />
+        {isTransferring && (
+          // E-ink cannot render a translucent wash — it dithers over the cover
+          // art — and has no shadows, so the scrim becomes a solid base-100
+          // panel with a 1px base-content border and ink-colored content.
+          <div
+            className='absolute inset-0 flex items-center justify-center bg-black/40 eink:border eink:border-base-content eink:bg-base-100'
+            role='progressbar'
+            aria-label={_('Downloading {{title}}', { title: book.title })}
+            aria-valuenow={isIndeterminate ? undefined : Math.round(transferProgress)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            {isIndeterminate ? (
+              <span className='loading loading-spinner loading-sm text-white eink:text-base-content' />
+            ) : (
+              <span className='eink:text-base-content text-sm font-semibold text-white not-eink:drop-shadow-sm'>
+                {Math.round(transferProgress)}%
+              </span>
+            )}
+          </div>
+        )}
         {bookSelected && (
           <div className='absolute inset-0 bg-black opacity-30 transition-opacity duration-300'></div>
         )}
@@ -186,50 +214,39 @@ const BookItem: React.FC<BookItemProps> = ({
                 <LiaHeadphonesSolid size={iconSize15} />
               </div>
             )}
-            {transferProgress !== null ? (
-              transferProgress === 100 ? null : (
-                <div
-                  className='radial-progress'
-                  style={
-                    {
-                      '--value': transferProgress,
-                      '--size': `${iconSize15}px`,
-                      '--thickness': '2px',
-                    } as React.CSSProperties
-                  }
-                  role='progressbar'
-                ></div>
-              )
-            ) : (
-              // A feed book has no file to move either way, so it never gets a
-              // cloud badge — it would only queue a transfer that fails (#5307).
-              !isFeedBook(book) &&
-              (!book.uploadedAt || (book.uploadedAt && !book.downloadedAt)) && (
-                <button
-                  aria-label={!book.uploadedAt ? _('Upload Book') : _('Download Book')}
-                  className='show-cloud-button -m-2 p-2'
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => {
-                    if (!user) {
-                      navigateToLogin(router);
-                      return;
-                    }
-                    if (!book.uploadedAt) {
-                      handleBookUpload(book);
-                    } else if (!book.downloadedAt) {
-                      handleBookDownload(book, { queued: true });
-                    }
-                  }}
-                >
-                  {!book.uploadedAt && isReadestCloudStorageActive(settings) && (
-                    <LiaCloudUploadAltSolid size={iconSize15} />
-                  )}
-                  {book.uploadedAt && !book.downloadedAt && (
-                    <LiaCloudDownloadAltSolid size={iconSize15} />
-                  )}
-                </button>
-              )
-            )}
+            {isTransferring
+              ? // Progress is rendered as a cover overlay; keep the row's action
+                // buttons hidden while a transfer is active. Same condition as
+                // the overlay, so a book can never show neither.
+                null
+              : // A feed book has no file to move either way, so it never gets a
+                // cloud badge — it would only queue a transfer that fails (#5307).
+                !isFeedBook(book) &&
+                (!book.uploadedAt || (book.uploadedAt && !book.downloadedAt)) && (
+                  <button
+                    aria-label={!book.uploadedAt ? _('Upload Book') : _('Download Book')}
+                    className='show-cloud-button -m-2 p-2'
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => {
+                      if (!user) {
+                        navigateToLogin(router);
+                        return;
+                      }
+                      if (!book.uploadedAt) {
+                        handleBookUpload(book);
+                      } else if (!book.downloadedAt) {
+                        handleBookDownload(book, { queued: true });
+                      }
+                    }}
+                  >
+                    {!book.uploadedAt && isReadestCloudStorageActive(settings) && (
+                      <LiaCloudUploadAltSolid size={iconSize15} />
+                    )}
+                    {book.uploadedAt && !book.downloadedAt && (
+                      <LiaCloudDownloadAltSolid size={iconSize15} />
+                    )}
+                  </button>
+                )}
           </div>
         </div>
       </div>

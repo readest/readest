@@ -29,3 +29,6 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - [S3/R2 provider](s3-r2-sync-provider.md) MERGED #5051 · [OneDrive provider](onedrive-sync-provider.md) MERGED #5048
 - [Hardcover edition_id #4792](hardcover-progress-edition-id-4792.md)
 - [#5444 CORS preflight cache fix](cors-preflight-cache-fix-5444.md) VERIFIED prod: OPTIONS -83%; wrangler OAuth token works for CF GraphQL analytics (1d max range)
+- [#5253 OneDrive OAuth trailing slash](onedrive-oauth-callback-slash-5253.md) MERGED #5479; Rust drops unknown TS fields · [OneDrive AADSTS90023 Origin](onedrive-token-origin-aadsts90023.md) MERGED #5604, verified; needs `unsafe-headers` + `Origin: ''`
+- [#5465 dictionary prefs vs toggle](dictionary-prefs-settings-replica-category-5465.md) MERGED #5470 · [10k library breaks /sync pull](sync-pull-10k-worker-1102.md) MERGED #5364
+- [#5426 BookOrbit integration](bookorbit-integration-5426.md) MERGED #5487

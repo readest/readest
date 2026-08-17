@@ -207,7 +207,11 @@ const Notebook: React.FC = ({}) => {
     const view = getView(sideBarBookKey);
     const config = getConfig(sideBarBookKey)!;
 
-    const cfi = view?.getCFI(selection.index, selection.range);
+    // A footnote-popup selection's range lives in the popup document, not a
+    // main view section; recomputing here would yield an unresolvable CFI
+    // that misses the existing highlight and forks a second record. Use the
+    // CFI the popup already mapped into the pristine section.
+    const cfi = selection.popup ? selection.cfi : view?.getCFI(selection.index, selection.range);
     if (!cfi) return;
 
     const { booknotes: annotations = [] } = config;

@@ -24,6 +24,8 @@ export interface NarrationPar {
   clipEnd: number;
 }
 
+export type NarrationTextTiming = 'exact' | 'approximate';
+
 const SSML_NS = 'http://www.w3.org/2001/10/synthesis';
 
 // Mirrors foliate's `blockTags` in tts.js (not exported), so paragraph-level
@@ -113,12 +115,14 @@ const escapeXML = (text: string): string =>
 export class MediaOverlaySection {
   readonly pars: NarrationPar[];
   readonly blocks: NarrationPar[][] = [];
+  readonly textTiming: NarrationTextTiming;
   #lang: string;
   #byMark: Map<string, NarrationPar>;
 
-  constructor(pars: NarrationPar[], lang: string) {
+  constructor(pars: NarrationPar[], lang: string, textTiming: NarrationTextTiming = 'exact') {
     this.pars = pars;
     this.#lang = lang || 'en';
+    this.textTiming = textTiming;
     this.#byMark = new Map(pars.map((par) => [par.markName, par]));
     for (const par of pars) {
       (this.blocks[par.blockIndex] ??= []).push(par);

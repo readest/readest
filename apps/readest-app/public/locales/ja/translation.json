@@ -2041,5 +2041,6 @@
   "This folder is an external library. Uncheck to stop reading its books in place; future imports will copy books into the library.": "このフォルダは外部ライブラリです。チェックを外すと元の場所から直接読み込まなくなり、以降のインポートでは本がライブラリにコピーされます。",
   "More Settings": "その他の設定",
   "Right-to-Left Pages": "右から左のページ送り",
-  "Send Document Metadata": "ドキュメントのメタデータを送信"
+  "Send Document Metadata": "ドキュメントのメタデータを送信",
+  "Hide covers": "表紙を非表示"
 }
