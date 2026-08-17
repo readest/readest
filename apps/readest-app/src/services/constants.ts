@@ -1056,6 +1056,7 @@ export const TRANSLATED_LANGS = {
   ro: 'Română',
   hu: 'Magyar',
   uz: 'Oʻzbek',
+  ka: 'ქართული',
 };
 
 export const TRANSLATOR_LANGS: Record<string, string> = {
