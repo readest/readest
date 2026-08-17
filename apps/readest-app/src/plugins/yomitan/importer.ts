@@ -1,5 +1,6 @@
 import type { DatabaseExecResult, DatabaseRow } from '@/types/database';
 import {
+  dictionaryLookupEntrySchema,
   MAX_PLUGIN_RESOURCE_BYTES,
   MAX_PLUGIN_SQL_PARAMS,
   type PluginPayload,
@@ -203,13 +204,26 @@ const termRows = (
   for (let entryIndex = 0; entryIndex < terms.length; entryIndex += 1) {
     const term = terms[entryIndex]!;
     const [expression, reading, definitionTags, rules, score, glossary, sequence, termTags] = term;
+    const normalizedReading = reading || expression;
+    const normalizedRules = splitYomitanTags(rules);
+    const normalizedTags = [
+      ...new Set([...splitYomitanTags(definitionTags), ...splitYomitanTags(termTags)]),
+    ].slice(0, 128);
     const definitions = normalizeYomitanGlossary(glossary, expression);
+    dictionaryLookupEntrySchema.parse({
+      expression,
+      reading: normalizedReading,
+      rules: normalizedRules,
+      score,
+      tags: normalizedTags.map((name) => ({ name })),
+      definitions,
+    });
     collectYomitanResourceRefs(definitions).forEach((ref) => resourceRefs.add(ref));
     rows.push([
       expression,
-      reading || expression,
+      normalizedReading,
       splitYomitanTags(definitionTags).join(' '),
-      splitYomitanTags(rules).join(' '),
+      normalizedRules.join(' '),
       score,
       storage === 'expanded' ? JSON.stringify(definitions) : null,
       sequence,
@@ -356,13 +370,17 @@ export const buildYomitanIndex = async (
         normalized.rows,
       );
       if (storage === 'banked') {
+        const compressed = await gzipJson(terms);
+        if (compressed.byteLength > MAX_PLUGIN_RESOURCE_BYTES) {
+          throw new Error(`Portable Yomitan term bank exceeds size limit: ${bank.filename}`);
+        }
         await insertRows(
           host,
           request.databaseHandle,
           insertStatements,
           'term_banks',
           ['bank_order', 'data'],
-          [[order, await gzipJson(terms)]],
+          [[order, compressed]],
         );
       }
       entries += terms.length;
@@ -443,6 +461,20 @@ export const verifyYomitanIndex = async (host: YomitanHost, databaseHandle: stri
   if (version !== YOMITAN_INDEX_VERSION) {
     throw new Error(`Yomitan index version mismatch: ${String(version)}`);
   }
+  try {
+    for (const sql of [
+      'SELECT key, value FROM meta LIMIT 0',
+      'SELECT id, expression, reading, definition_tags, rules, score, glossary_json, sequence, term_tags, bank_order, entry_index FROM terms LIMIT 0',
+      'SELECT name, category, sort_order, notes, score FROM tags LIMIT 0',
+      'SELECT id, expression, mode, reading, payload_json FROM term_meta LIMIT 0',
+      'SELECT key, archive_path, media_kind, data FROM resources LIMIT 0',
+      'SELECT bank_order, data FROM term_banks LIMIT 0',
+    ]) {
+      await host.select(databaseHandle, sql, [], 1);
+    }
+  } catch {
+    throw new Error('Invalid portable Yomitan index schema');
+  }
   const countRows = await host.select(databaseHandle, 'SELECT COUNT(*) AS count FROM terms', [], 1);
   const entries = Number(firstValue(countRows.rows, 'count'));
   if (!Number.isSafeInteger(entries) || entries < 1) throw new Error('Yomitan index is empty');
@@ -462,7 +494,7 @@ export const readYomitanResource = async (
 ) => {
   const result = await host.select(
     request.databaseHandle,
-    'SELECT archive_path, media_kind, data FROM resources WHERE key = ?',
+    'SELECT archive_path, media_kind, length(data) AS data_size FROM resources WHERE key = ?',
     [request.resourceRef],
     1,
   );
@@ -474,20 +506,35 @@ export const readYomitanResource = async (
   }
   const expectedMime = mediaKindFor(path);
   if (expectedMime !== mimeType) throw new Error('Invalid Yomitan resource metadata');
-  const data = row?.['data'];
-  if (data instanceof Uint8Array) return { mimeType: expectedMime, bytes: ownedBytes(data) };
-  if (ArrayBuffer.isView(data)) {
-    return {
-      mimeType: expectedMime,
-      bytes: ownedBytes(new Uint8Array(data.buffer, data.byteOffset, data.byteLength)),
-    };
-  }
-  if (data instanceof ArrayBuffer) return { mimeType: expectedMime, bytes: new Uint8Array(data) };
-  if (
-    Array.isArray(data) &&
-    data.every((byte) => Number.isInteger(byte) && byte >= 0 && byte <= 255)
-  ) {
-    return { mimeType: expectedMime, bytes: Uint8Array.from(data) };
+  const dataSize = row?.['data_size'];
+  if (dataSize !== null && dataSize !== undefined) {
+    const size = Number(dataSize);
+    if (!Number.isSafeInteger(size) || size < 0 || size > MAX_PLUGIN_RESOURCE_BYTES) {
+      throw new Error(`Yomitan resource exceeds size limit: ${request.resourceRef}`);
+    }
+    const dataResult = await host.select(
+      request.databaseHandle,
+      'SELECT data FROM resources WHERE key = ?',
+      [request.resourceRef],
+      1,
+    );
+    const data = dataResult.rows[0]?.['data'];
+    let view: Uint8Array;
+    if (data instanceof Uint8Array) view = data;
+    else if (ArrayBuffer.isView(data)) {
+      view = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    } else if (data instanceof ArrayBuffer) view = new Uint8Array(data);
+    else if (
+      Array.isArray(data) &&
+      data.length <= MAX_PLUGIN_RESOURCE_BYTES &&
+      data.every((byte) => Number.isInteger(byte) && byte >= 0 && byte <= 255)
+    ) {
+      view = Uint8Array.from(data);
+    } else throw new Error(`Invalid Yomitan resource data: ${request.resourceRef}`);
+    if (view.byteLength !== size || view.byteLength > MAX_PLUGIN_RESOURCE_BYTES) {
+      throw new Error(`Yomitan resource exceeds size limit: ${request.resourceRef}`);
+    }
+    return { mimeType: expectedMime, bytes: ownedBytes(view) };
   }
   const archive = await openYomitanArchive(host, request.sourceHandle);
   try {

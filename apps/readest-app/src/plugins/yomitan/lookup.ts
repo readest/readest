@@ -1,6 +1,7 @@
 import {
   dictionaryContentNodeSchema,
   MAX_DICTIONARY_DOCUMENT_NODES,
+  MAX_PLUGIN_RESOURCE_BYTES,
   parseDictionaryLookupResult,
   type DictionaryContentNode,
   type DictionaryLookupEntry,
@@ -11,6 +12,9 @@ import { normalizeYomitanGlossary } from './content';
 import { deinflectJapanese, type DeinflectionCandidate } from './deinflect';
 import { splitYomitanTags, yomitanTermBankSchema } from './schemas';
 import type { YomitanHost } from './importer';
+
+const MAX_YOMITAN_TAG_LOOKUP_NAMES = 256;
+const MAX_YOMITAN_TERM_BANK_JSON_BYTES = 64 * 1_024 * 1_024;
 
 const stringField = (row: DatabaseRow, key: string): string => {
   const value = row[key];
@@ -24,7 +28,7 @@ const numberField = (row: DatabaseRow, key: string): number => {
   return value;
 };
 
-const bytesField = (row: DatabaseRow, key: string): Uint8Array<ArrayBuffer> => {
+const bytesField = (row: DatabaseRow, key: string, maxBytes: number): Uint8Array<ArrayBuffer> => {
   const value = row[key];
   let view: Uint8Array;
   if (value instanceof Uint8Array) view = value;
@@ -33,13 +37,46 @@ const bytesField = (row: DatabaseRow, key: string): Uint8Array<ArrayBuffer> => {
   } else if (value instanceof ArrayBuffer) view = new Uint8Array(value);
   else if (
     Array.isArray(value) &&
+    value.length <= maxBytes &&
     value.every((byte) => Number.isInteger(byte) && byte >= 0 && byte <= 255)
   ) {
     view = Uint8Array.from(value);
   } else throw new Error(`Invalid Yomitan index field: ${key}`);
+  if (view.byteLength > maxBytes) throw new Error(`Yomitan ${key} exceeds size limit`);
   const bytes = new Uint8Array(view.byteLength);
   bytes.set(view);
   return bytes;
+};
+
+const readTextWithLimit = async (
+  stream: ReadableStream<Uint8Array>,
+  maxBytes: number,
+  signal: AbortSignal,
+): Promise<string> => {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  const chunks: string[] = [];
+  let bytesRead = 0;
+  try {
+    while (true) {
+      if (signal.aborted) {
+        await reader.cancel().catch(() => undefined);
+        throw new DOMException('Yomitan operation aborted', 'AbortError');
+      }
+      const { value, done } = await reader.read();
+      if (done) break;
+      bytesRead += value.byteLength;
+      if (bytesRead > maxBytes) {
+        await reader.cancel().catch(() => undefined);
+        throw new Error('Portable Yomitan term bank exceeds decompressed size limit');
+      }
+      chunks.push(decoder.decode(value, { stream: true }));
+    }
+    chunks.push(decoder.decode());
+    return chunks.join('');
+  } finally {
+    reader.releaseLock();
+  }
 };
 
 const placeholders = (count: number): string => Array.from({ length: count }, () => '?').join(', ');
@@ -87,21 +124,47 @@ const loadBankedDefinitions = async (
     ),
   ];
   if (bankOrders.length === 0) return new Map();
-  const rows = (
+  const sizeRows = (
     await host.select(
       databaseHandle,
-      `SELECT bank_order, data FROM term_banks WHERE bank_order IN (${placeholders(bankOrders.length)})`,
+      `SELECT bank_order, length(data) AS data_size FROM term_banks WHERE bank_order IN (${placeholders(bankOrders.length)})`,
       bankOrders,
       bankOrders.length,
     )
   ).rows;
+  const sizes = new Map<number, number>();
+  for (const row of sizeRows) {
+    sizes.set(numberField(row, 'bank_order'), numberField(row, 'data_size'));
+  }
   const banks = new Map<number, ReturnType<typeof yomitanTermBankSchema.parse>>();
-  for (const row of rows) {
-    const bytes = bytesField(row, 'data');
+  for (const order of bankOrders) {
+    const size = sizes.get(order);
+    if (
+      size === undefined ||
+      !Number.isSafeInteger(size) ||
+      size < 0 ||
+      size > MAX_PLUGIN_RESOURCE_BYTES
+    ) {
+      throw new Error(`Portable Yomitan term bank exceeds size limit: ${order}`);
+    }
+    const dataRows = (
+      await host.select(
+        databaseHandle,
+        'SELECT data FROM term_banks WHERE bank_order = ?',
+        [order],
+        1,
+      )
+    ).rows;
+    const bytes = bytesField(dataRows[0] ?? {}, 'data', MAX_PLUGIN_RESOURCE_BYTES);
+    if (bytes.byteLength !== size) {
+      throw new Error(`Invalid portable Yomitan term bank size: ${order}`);
+    }
     const stream = new Response(bytes.buffer).body!.pipeThrough(new DecompressionStream('gzip'));
     banks.set(
-      numberField(row, 'bank_order'),
-      yomitanTermBankSchema.parse(JSON.parse(await new Response(stream).text())),
+      order,
+      yomitanTermBankSchema.parse(
+        JSON.parse(await readTextWithLimit(stream, MAX_YOMITAN_TERM_BANK_JSON_BYTES, host.signal)),
+      ),
     );
   }
   const definitions = new Map<number, ReturnType<typeof normalizeYomitanGlossary>>();
@@ -134,7 +197,7 @@ const loadTags = async (
     splitYomitanTags(stringField(row, 'term_tags')).forEach((tag) => names.add(tag));
   }
   if (names.size === 0) return new Map();
-  const values = [...names];
+  const values = [...names].slice(0, MAX_YOMITAN_TAG_LOOKUP_NAMES);
   const result = await host.select(
     databaseHandle,
     `SELECT name, category, notes, score FROM tags WHERE name IN (${placeholders(values.length)}) ORDER BY name ASC LIMIT 256`,

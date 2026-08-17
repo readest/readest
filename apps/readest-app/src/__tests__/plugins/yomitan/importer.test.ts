@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import { BlobWriter, TextReader, Uint8ArrayReader, ZipWriter } from '@zip.js/zip.js';
 import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
 import type { DatabaseService } from '@/types/database';
@@ -12,6 +12,7 @@ import {
   type YomitanHost,
 } from '@/plugins/yomitan/importer';
 import { lookupYomitan } from '@/plugins/yomitan/lookup';
+import { MAX_PLUGIN_RESOURCE_BYTES } from '@/services/plugins/contract';
 
 const createDictionary = async (): Promise<File> => {
   const writer = new ZipWriter(new BlobWriter('application/zip'));
@@ -138,13 +139,19 @@ const createPortableHeader = (): File => {
   return new File([bytes], 'Jitendex.rdict', { type: 'application/vnd.sqlite3' });
 };
 
-const createDictionaryWithTerms = async (terms: unknown[]): Promise<File> => {
+const createDictionaryWithTerms = async (
+  terms: unknown[],
+  resources: Record<string, Uint8Array> = {},
+): Promise<File> => {
   const writer = new ZipWriter(new BlobWriter('application/zip'));
   await writer.add(
     'index.json',
     new TextReader(JSON.stringify({ title: 'Lookup limits', revision: '1', format: 3 })),
   );
   await writer.add('term_bank_1.json', new TextReader(JSON.stringify(terms)));
+  for (const [path, bytes] of Object.entries(resources)) {
+    await writer.add(path, new Uint8ArrayReader(bytes));
+  }
   return new File([await writer.close()], 'lookup-limits.zip', { type: 'application/zip' });
 };
 
@@ -200,6 +207,7 @@ describe('Yomitan importer and lookup', () => {
   let db: DatabaseService | undefined;
 
   afterEach(async () => {
+    vi.unstubAllGlobals();
     await db?.close();
     db = undefined;
   });
@@ -329,6 +337,168 @@ describe('Yomitan importer and lookup', () => {
       sourceFormatVersion: 1,
       title: 'Jitendex',
     });
+  });
+
+  test('rejects portable indexes missing required lookup tables', async () => {
+    const source = createPortableHeader();
+    db = await NodeDatabaseService.open(':memory:');
+    const host = createHost(source, db);
+    await db.execute('CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+    await db.execute(
+      'CREATE TABLE terms (id INTEGER PRIMARY KEY, expression TEXT NOT NULL, reading TEXT NOT NULL, definition_tags TEXT NOT NULL, rules TEXT NOT NULL, score REAL NOT NULL, glossary_json BLOB, sequence INTEGER NOT NULL, term_tags TEXT NOT NULL, bank_order INTEGER NOT NULL, entry_index INTEGER)',
+    );
+    await db.execute("INSERT INTO meta VALUES ('index_version', '2'), ('title', 'Incomplete')");
+    await db.execute("INSERT INTO terms VALUES (1, '読む', 'よむ', '', '', 1, '[]', 1, '', 1, 0)");
+
+    await expect(verifyYomitanIndex(host, 'db-1')).rejects.toThrow(/schema/i);
+  });
+
+  test.each([
+    [
+      'too many grammatical rules',
+      Array.from({ length: 65 }, (_, index) => `rule-${index}`).join(' '),
+      ['definition'],
+    ],
+    [
+      'an image wider than the host contract',
+      '',
+      [{ type: 'image', path: 'wide.png', width: 8_193 }],
+    ],
+  ])('rejects a term with %s during indexing', async (_case, rules, glossary) => {
+    const source = await createDictionaryWithTerms(
+      [['読む', 'よむ', '', rules, 1, glossary, 1, '']],
+      { 'wide.png': new Uint8Array([137, 80, 78, 71]) },
+    );
+    db = await NodeDatabaseService.open(':memory:');
+
+    await expect(
+      buildYomitanIndex(createHost(source, db), {
+        dictionaryId: 'dict-1',
+        sourceHandle: 'source-1',
+        databaseHandle: 'db-1',
+        sourceFormatVersion: 3,
+      }),
+    ).rejects.toThrow();
+  });
+
+  test('caps tag lookups before constructing broker SQL', async () => {
+    const source = createPortableHeader();
+    db = await NodeDatabaseService.open(':memory:');
+    const rows = Array.from({ length: 128 }, (_, rowIndex) => ({
+      id: rowIndex + 1,
+      expression: 'word',
+      reading: 'word',
+      definition_tags: Array.from(
+        { length: 100 },
+        (_, tagIndex) => `tag-${rowIndex}-${tagIndex}`,
+      ).join(' '),
+      rules: '',
+      score: 128 - rowIndex,
+      glossary_json: JSON.stringify([{ type: 'text', value: `definition ${rowIndex}` }]),
+      sequence: rowIndex + 1,
+      term_tags: '',
+      bank_order: 1,
+      entry_index: rowIndex,
+    }));
+    let tagParamCount = 0;
+    const baseHost = createHost(source, db);
+    const host: YomitanHost = {
+      ...baseHost,
+      select: async (_handle, sql, params = []) => {
+        if (sql.includes('FROM terms WHERE')) return { rows };
+        if (sql.includes('FROM tags WHERE')) {
+          tagParamCount = params.length;
+          return { rows: [] };
+        }
+        if (sql.includes('FROM term_meta WHERE')) return { rows: [] };
+        throw new Error(`Unexpected query: ${sql}`);
+      },
+    };
+
+    await expect(
+      lookupYomitan(host, {
+        dictionaryId: 'dict-1',
+        databaseHandle: 'db-1',
+        query: 'word',
+        language: 'en',
+      }),
+    ).resolves.toMatchObject({ entries: { length: 128 } });
+    expect(tagParamCount).toBe(256);
+  });
+
+  test('rejects oversized portable blobs before loading them', async () => {
+    const source = createPortableHeader();
+    db = await NodeDatabaseService.open(':memory:');
+    const host = createHost(source, db);
+    const oversized = new Uint8Array(MAX_PLUGIN_RESOURCE_BYTES + 1);
+    await db.execute(
+      'CREATE TABLE resources (key TEXT PRIMARY KEY, archive_path TEXT NOT NULL, media_kind TEXT NOT NULL, data BLOB)',
+    );
+    await db.execute('INSERT INTO resources VALUES (?, ?, ?, ?)', [
+      'large.png',
+      'large.png',
+      'image/png',
+      oversized,
+    ]);
+
+    await expect(
+      readYomitanResource(host, {
+        sourceHandle: 'source-1',
+        databaseHandle: 'db-1',
+        resourceRef: 'large.png',
+      }),
+    ).rejects.toThrow(/size limit/i);
+
+    await db.execute(
+      'CREATE TABLE terms (id INTEGER PRIMARY KEY, expression TEXT NOT NULL, reading TEXT NOT NULL, definition_tags TEXT NOT NULL, rules TEXT NOT NULL, score REAL NOT NULL, glossary_json BLOB, sequence INTEGER NOT NULL, term_tags TEXT NOT NULL, bank_order INTEGER NOT NULL, entry_index INTEGER)',
+    );
+    await db.execute(
+      'CREATE TABLE tags (name TEXT PRIMARY KEY, category TEXT NOT NULL, sort_order REAL NOT NULL, notes TEXT NOT NULL, score REAL NOT NULL)',
+    );
+    await db.execute(
+      'CREATE TABLE term_meta (id INTEGER PRIMARY KEY, expression TEXT NOT NULL, mode TEXT NOT NULL, reading TEXT NOT NULL, payload_json TEXT NOT NULL)',
+    );
+    await db.execute(
+      'CREATE TABLE term_banks (bank_order INTEGER PRIMARY KEY, data BLOB NOT NULL)',
+    );
+    await db.execute("INSERT INTO terms VALUES (1, 'word', 'word', '', '', 1, NULL, 1, '', 1, 0)");
+    await db.execute('INSERT INTO term_banks VALUES (?, ?)', [1, oversized]);
+
+    await expect(
+      lookupYomitan(host, {
+        dictionaryId: 'dict-1',
+        databaseHandle: 'db-1',
+        query: 'word',
+        language: 'en',
+      }),
+    ).rejects.toThrow(/size limit/i);
+
+    await db.execute('UPDATE term_banks SET data = ? WHERE bank_order = 1', [new Uint8Array([0])]);
+    const expandedChunk = new Uint8Array([0]);
+    Object.defineProperty(expandedChunk, 'byteLength', {
+      value: 64 * 1_024 * 1_024 + 1,
+    });
+    vi.stubGlobal(
+      'DecompressionStream',
+      class {
+        readonly readable = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(expandedChunk);
+            controller.close();
+          },
+        });
+        readonly writable = new WritableStream<Uint8Array>();
+      },
+    );
+
+    await expect(
+      lookupYomitan(host, {
+        dictionaryId: 'dict-1',
+        databaseHandle: 'db-1',
+        query: 'word',
+        language: 'en',
+      }),
+    ).rejects.toThrow(/decompressed size limit/i);
   });
 
   test('bounds high-cardinality exact matches before the SQL broker row cap', async () => {
