@@ -541,6 +541,73 @@ describe('Yomitan importer and lookup', () => {
     ).resolves.toEqual({ entries: [] });
   });
 
+  test.each([
+    ['malformed fields', { rules: null }],
+    [
+      'over-depth definitions',
+      {
+        glossary_json: JSON.stringify([
+          Array.from({ length: 17 }).reduce<unknown>(
+            (child) => ({ type: 'element', tag: 'div', children: [child] }),
+            { type: 'text', value: 'too deep' },
+          ),
+        ]),
+      },
+    ],
+  ])('isolates portable rows with %s from valid siblings', async (_case, invalidFields) => {
+    const source = createPortableHeader();
+    db = await NodeDatabaseService.open(':memory:');
+    const rows = [
+      {
+        id: 1,
+        expression: 'word',
+        reading: 'word',
+        definition_tags: '',
+        rules: '',
+        score: 2,
+        glossary_json: JSON.stringify([{ type: 'text', value: 'invalid' }]),
+        sequence: 1,
+        term_tags: '',
+        bank_order: 1,
+        entry_index: 0,
+        ...invalidFields,
+      },
+      {
+        id: 2,
+        expression: 'word',
+        reading: 'word',
+        definition_tags: '',
+        rules: '',
+        score: 1,
+        glossary_json: JSON.stringify([{ type: 'text', value: 'valid' }]),
+        sequence: 2,
+        term_tags: '',
+        bank_order: 1,
+        entry_index: 1,
+      },
+    ];
+    const baseHost = createHost(source, db);
+    const host: YomitanHost = {
+      ...baseHost,
+      select: async (_handle, sql) => {
+        if (sql.includes('FROM terms WHERE')) return { rows };
+        if (sql.includes('FROM term_meta WHERE')) return { rows: [] };
+        throw new Error(`Unexpected query: ${sql}`);
+      },
+    };
+
+    await expect(
+      lookupYomitan(host, {
+        dictionaryId: 'dict-1',
+        databaseHandle: 'db-1',
+        query: 'word',
+        language: 'en',
+      }),
+    ).resolves.toMatchObject({
+      entries: [{ expression: 'word', definitions: [{ type: 'text', value: 'valid' }] }],
+    });
+  });
+
   test('caps aggregate portable term-bank decompression per lookup', async () => {
     const source = await createDictionary();
     db = await NodeDatabaseService.open(':memory:');

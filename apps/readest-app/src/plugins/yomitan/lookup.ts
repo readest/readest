@@ -1,6 +1,5 @@
 import {
   dictionaryContentNodeSchema,
-  dictionaryLookupEntrySchema,
   MAX_DICTIONARY_DOCUMENT_NODES,
   MAX_PLUGIN_RESOURCE_BYTES,
   parseDictionaryLookupResult,
@@ -174,18 +173,18 @@ const loadBankedDefinitions = async (
   const definitions = new Map<number, ReturnType<typeof normalizeYomitanGlossary>>();
   for (const { row } of terms) {
     if (row['glossary_json'] !== null) continue;
-    const id = numberField(row, 'id');
-    const bank = banks.get(numberField(row, 'bank_order'));
-    const entryIndex = numberField(row, 'entry_index');
-    const term = bank?.[entryIndex];
-    if (!term) throw new Error('Portable Yomitan term bank entry is missing');
-    if (
-      term[0] !== stringField(row, 'expression') ||
-      (term[1] || term[0]) !== stringField(row, 'reading')
-    ) {
-      throw new Error('Portable Yomitan term bank entry does not match its index');
-    }
     try {
+      const id = numberField(row, 'id');
+      const bank = banks.get(numberField(row, 'bank_order'));
+      const entryIndex = numberField(row, 'entry_index');
+      const term = bank?.[entryIndex];
+      if (!term) throw new Error('Portable Yomitan term bank entry is missing');
+      if (
+        term[0] !== stringField(row, 'expression') ||
+        (term[1] || term[0]) !== stringField(row, 'reading')
+      ) {
+        throw new Error('Portable Yomitan term bank entry does not match its index');
+      }
       const normalized = normalizeYomitanGlossary(term[5], term[0]);
       const parsed = dictionaryContentNodeSchema.array().safeParse(normalized);
       if (parsed.success) definitions.set(id, parsed.data);
@@ -341,8 +340,19 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
   );
   const indexed: IndexedTerm[] = [];
   for (const row of result.rows) {
-    const match = candidateFor(row, candidates);
-    if (match) indexed.push({ row, ...match });
+    try {
+      const match = candidateFor(row, candidates);
+      if (!match) continue;
+      stringField(row, 'definition_tags');
+      stringField(row, 'term_tags');
+      numberField(row, 'id');
+      numberField(row, 'score');
+      numberField(row, 'bank_order');
+      numberField(row, 'entry_index');
+      indexed.push({ row, ...match });
+    } catch {
+      // Portable databases are untrusted; skip malformed rows without breaking other matches.
+    }
   }
   indexed.sort(
     (left, right) =>
@@ -360,43 +370,43 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
   const entries: DictionaryLookupEntry[] = [];
   let documentNodes = 0;
   for (const { row, candidate } of limited) {
-    const expression = stringField(row, 'expression');
-    const reading = stringField(row, 'reading');
-    const glossary = row['glossary_json'];
-    let definitions: DictionaryContentNode[];
     try {
-      const value =
+      const expression = stringField(row, 'expression');
+      const reading = stringField(row, 'reading');
+      const glossary = row['glossary_json'];
+      const definitions =
         typeof glossary === 'string'
           ? JSON.parse(glossary)
           : bankedDefinitions.get(numberField(row, 'id'));
-      const parsed = dictionaryContentNodeSchema.array().safeParse(value);
-      if (!parsed.success) continue;
-      definitions = parsed.data;
+      const tagNames = [
+        ...splitYomitanTags(stringField(row, 'definition_tags')),
+        ...splitYomitanTags(stringField(row, 'term_tags')),
+      ];
+      const uniqueTags = [...new Set(tagNames)]
+        .slice(0, 128)
+        .map((name) => tags.get(name) ?? { name });
+      const [entry] = parseDictionaryLookupResult({
+        entries: [
+          {
+            expression,
+            reading,
+            rules: splitYomitanTags(stringField(row, 'rules')),
+            score: numberField(row, 'score'),
+            ...(candidate.reasons.length === 0 ? {} : { deinflection: candidate.reasons }),
+            ...(uniqueTags.length === 0 ? {} : { tags: uniqueTags }),
+            ...metadataFor(metadata, expression, reading),
+            definitions,
+          },
+        ],
+      }).entries;
+      if (!entry) continue;
+      const entryNodes = countDocumentNodes(entry.definitions);
+      if (documentNodes + entryNodes > MAX_DICTIONARY_DOCUMENT_NODES) continue;
+      documentNodes += entryNodes;
+      entries.push(entry);
     } catch {
-      continue;
+      // Portable databases are untrusted; skip malformed rows without breaking other matches.
     }
-    const tagNames = [
-      ...splitYomitanTags(stringField(row, 'definition_tags')),
-      ...splitYomitanTags(stringField(row, 'term_tags')),
-    ];
-    const uniqueTags = [...new Set(tagNames)]
-      .slice(0, 128)
-      .map((name) => tags.get(name) ?? { name });
-    const entry = dictionaryLookupEntrySchema.safeParse({
-      expression,
-      reading,
-      rules: splitYomitanTags(stringField(row, 'rules')),
-      score: numberField(row, 'score'),
-      ...(candidate.reasons.length === 0 ? {} : { deinflection: candidate.reasons }),
-      ...(uniqueTags.length === 0 ? {} : { tags: uniqueTags }),
-      ...metadataFor(metadata, expression, reading),
-      definitions,
-    });
-    if (!entry.success) continue;
-    const entryNodes = countDocumentNodes(definitions);
-    if (documentNodes + entryNodes > MAX_DICTIONARY_DOCUMENT_NODES) continue;
-    documentNodes += entryNodes;
-    entries.push(entry.data);
   }
   return parseDictionaryLookupResult({ entries });
 };
