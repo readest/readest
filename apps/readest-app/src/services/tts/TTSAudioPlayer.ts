@@ -14,15 +14,22 @@
 // decode (AVPlayer streams the compressed file and time-stretches natively).
 // A driver implements exactly one of them.
 
-import type { ChunkTiming, TTSAudioBuffer, WebAudioPlayerEvent } from './WebAudioPlayer';
+import type {
+  ChunkTiming,
+  SessionOptions,
+  TTSAudioBuffer,
+  WebAudioPlayerEvent,
+} from './WebAudioPlayer';
 
 export interface TTSAudioPlayer {
   // The web driver resolves with its AudioContext; callers only await.
   ensureContext(): Promise<unknown>;
   // Returns a generation token; events for older generations must be ignored
   // by the caller. The onEvent callback delivers chunk-start (audible),
-  // session-end, and error events.
-  startSession(onEvent: (event: WebAudioPlayerEvent) => void): number;
+  // session-end, and error events. A driver that cannot schedule silence
+  // against the previous session ignores opts (and reports scheduledGaps
+  // false), leaving the pause to the controller.
+  startSession(onEvent: (event: WebAudioPlayerEvent) => void, opts?: SessionOptions): number;
   // PCM path (web): schedule a prepared buffer gaplessly.
   scheduleChunk?(generation: number, buffer: TTSAudioBuffer, timing: ChunkTiming): void;
   // Raw path (native): enqueue the compressed chunk; resolves with its

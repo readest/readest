@@ -157,7 +157,7 @@ describe('EdgeTTSClient Web Audio playback', () => {
 
   test('chunks are scheduled with a rate-scaled gap and no element restarts', async () => {
     const client = await startClient();
-    await client.setRate(1); // gap = 0.15 / 1
+    await client.setRate(1); // default gap, unscaled at 1.0x
     const { done } = collectSpeak(client, new AbortController().signal);
     await flush();
     await flush();
@@ -165,6 +165,47 @@ describe('EdgeTTSClient Web Audio playback', () => {
     expect(second!.startedAt! - first!.endTime).toBeCloseTo(0.15, 5);
     await ctx().advanceTo(5);
     await done;
+  });
+
+  test('the gap it is given is scheduled as-is at a faster rate', async () => {
+    const client = await startClient();
+    await client.setRate(2);
+    // The gap arrives already scaled for 2x (see scaleGapForRate). Scaling it
+    // again here left 0.05s between sentences and ran them together (#5750).
+    client.setSentenceGap(0.1);
+    const { done } = collectSpeak(client, new AbortController().signal);
+    await flush();
+    await flush();
+    const [first, second] = ctx().sources;
+    expect(second!.startedAt! - first!.endTime).toBeCloseTo(0.1, 5);
+    await ctx().advanceTo(5);
+    await done;
+  });
+
+  test('the next paragraph starts a pause after the last one, not after its synthesis', async () => {
+    // One speak() is one paragraph. The pause between them belongs on the
+    // audio clock, so a slow synthesis eats into it instead of adding to it —
+    // that is what made paragraph pauses swing with the network (#5750).
+    parsedMarks = [{ name: '0', text: 'Only sentence.', language: 'en' }];
+    const client = await startClient();
+    await client.setRate(1);
+    client.setParagraphGap(0.3);
+
+    const { done } = collectSpeak(client, new AbortController().signal);
+    await flush();
+    await flush();
+    const first = ctx().sources[0]!;
+    await ctx().advanceTo(1.03); // starts at 0.03, 1s long
+    await done;
+
+    const { done: nextDone } = collectSpeak(client, new AbortController().signal);
+    await flush();
+    await flush();
+    const second = ctx().sources[1]!;
+    expect(second.startedAt! - first.endTime).toBeCloseTo(0.3, 5);
+
+    await ctx().advanceTo(5);
+    await nextDone;
   });
 
   test('setSentenceGap before speaking changes the observed gap', async () => {

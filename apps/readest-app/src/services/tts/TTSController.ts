@@ -919,23 +919,33 @@ export class TTSController extends EventTarget {
     this.ttsEdgeClient.setSentenceGap(sec);
   }
 
-  // Universal (not Edge-only) paragraph-to-paragraph gap. See
-  // DEFAULT_PARAGRAPH_GAP_SEC and #delayParagraphGap for where it's applied.
+  // Universal (not Edge-only) paragraph-to-paragraph gap, in wall-clock
+  // seconds at the current rate. See DEFAULT_PARAGRAPH_GAP_SEC and
+  // #delayParagraphGap for where it's applied.
   setParagraphGap(sec: number): void {
     this.#paragraphGapSec = sec;
+    // The buffered client needs it too: it schedules this pause as silence on
+    // its own audio clock rather than letting #delayParagraphGap sleep for it.
+    this.ttsEdgeClient.setParagraphGap(sec);
   }
 
   // Abortable delay inserted before auto-advancing to the next paragraph.
-  // Scales with rate like the sentence gap so pauses shrink with speed.
-  // Races against `signal` so a stop()/pause() during the gap resolves
-  // immediately instead of leaving a stray forward() to fire afterward.
+  // Already scaled for the rate before it gets here (see scaleGapForRate), so
+  // this waits it out as given. Races against `signal` so a stop()/pause()
+  // during the gap resolves immediately instead of leaving a stray forward()
+  // to fire afterward.
   //
   // Skipped entirely for a continuous timeline (recorded narration): the audio
   // for the next paragraph is the same recording playing on, so padding it adds
   // silence the narrator did not leave and pushes the highlight behind the voice.
   async #delayParagraphGap(signal: AbortSignal): Promise<void> {
-    if (this.ttsClient.getCapabilities().continuousTimeline) return;
-    const ms = (this.#paragraphGapSec / this.ttsRate) * 1000;
+    const capabilities = this.ttsClient.getCapabilities();
+    if (capabilities.continuousTimeline) return;
+    // Already scheduled as silence on the client's own audio clock, with the
+    // next paragraph's synthesis and decode running inside it. Sleeping here
+    // too would play the pause twice and put that latency back on top (#5750).
+    if (capabilities.scheduledGaps) return;
+    const ms = this.#paragraphGapSec * 1000;
     if (ms <= 0 || signal.aborted) return;
     await new Promise<void>((resolve) => {
       const onAbort = () => {

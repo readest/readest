@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useProofreadStore } from '@/store/proofreadStore';
 import { TransformContext } from '@/services/transformers/types';
@@ -17,6 +18,7 @@ import {
 } from '@/services/tts';
 import { DEFAULT_SENTENCE_GAP_SEC } from '@/services/tts/EdgeTTSClient';
 import { DEFAULT_PARAGRAPH_GAP_SEC } from '@/services/tts/TTSController';
+import { scaleGapForRate } from '@/services/tts/gap';
 import { eventDispatcher } from '@/utils/event';
 import { genSSMLRaw, parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
@@ -45,7 +47,7 @@ const PAGE_FOLLOW_INTERVAL_MS = 200;
 
 export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProps) => {
   const _ = useTranslation();
-  const { appService } = useEnv();
+  const { appService, envConfig } = useEnv();
   const { user } = useAuth();
   const { isDarkMode } = useThemeStore();
   const getBookData = useBookDataStore((s) => s.getBookData);
@@ -1089,6 +1091,35 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // The pauses between sentences and between paragraphs are derived from the
+  // playback rate, so every entry point that changes the rate has to re-derive
+  // them or they stay scaled for the previous one. They all funnel through
+  // handleSetRate, which makes this the single owner: scaling the gap here AND
+  // again at schedule time gave base/rate^1.6 (#5750).
+  const applyRateScaledGaps = useCallback(
+    (rate: number) => {
+      const sentenceGap = scaleGapForRate(DEFAULT_SENTENCE_GAP_SEC, rate);
+      const paragraphGap = scaleGapForRate(DEFAULT_PARAGRAPH_GAP_SEC, rate);
+      // Live: both are read at schedule time, so neither needs a restart.
+      ttsControllerRef.current?.setSentenceGap(sentenceGap);
+      ttsControllerRef.current?.setParagraphGap(paragraphGap);
+      const viewSettings = getViewSettings(bookKey);
+      if (viewSettings) {
+        viewSettings.ttsSentenceGap = sentenceGap;
+        viewSettings.ttsParagraphGap = paragraphGap;
+        setViewSettings(bookKey, viewSettings);
+      }
+      // Read the store fresh at call time: a `settings` captured at render goes
+      // stale if anything else persisted settings since this hook mounted.
+      const { settings, setSettings, saveSettings } = useSettingsStore.getState();
+      settings.globalViewSettings.ttsSentenceGap = sentenceGap;
+      settings.globalViewSettings.ttsParagraphGap = paragraphGap;
+      setSettings(settings);
+      saveSettings(envConfig, settings);
+    },
+    [bookKey, envConfig, getViewSettings, setViewSettings],
+  );
+
   // Rate/voice/timeout/bar controls
   // rate range: 0.5 - 3, 1.0 is normal speed.
   // Short throttle: live AVPlayer rate changes are cheap; the old 3s window
@@ -1097,6 +1128,11 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSetRate = useCallback(
     throttle(async (rate: number) => {
+      // Before the controller check: the rate is persisted whether or not a
+      // session is running (the RSVP overlay can set it with Read Aloud
+      // stopped), so the pauses have to follow it either way or the next
+      // session starts with pauses scaled for the old rate.
+      applyRateScaledGaps(rate);
       const ttsController = ttsControllerRef.current;
       if (!ttsController) return;
       // Native MO / Edge AVPlayer can change rate without tearing down the
@@ -1119,18 +1155,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     }, 200),
     [],
   );
-
-  // Inter-sentence gap: read live at schedule time by the controller, so
-  // changing it must not stop/restart playback like handleSetRate does.
-  const handleSetSentenceGap = useCallback((sec: number) => {
-    ttsControllerRef.current?.setSentenceGap(sec);
-  }, []);
-
-  // Paragraph gap: applies to every TTS client (not Edge-only), read live by
-  // the controller when auto-advancing, so no stop/restart here either.
-  const handleSetParagraphGap = useCallback((sec: number) => {
-    ttsControllerRef.current?.setParagraphGap(sec);
-  }, []);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSetVoice = useCallback(
@@ -1208,8 +1232,6 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     handleForward,
     handlePause,
     handleSetRate,
-    handleSetSentenceGap,
-    handleSetParagraphGap,
     handleSetVoice,
     handleGetVoices,
     handleGetVoiceId,

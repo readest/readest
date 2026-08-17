@@ -56,6 +56,8 @@ let mockProgress = {
 const mockViewSettings = {
   ttsLocation: null as string | null,
   ttsRate: 1,
+  ttsSentenceGap: 0.15,
+  ttsParagraphGap: 0.3,
   ttsHighlightOptions: { style: 'highlight', color: '#ffff00' },
   isEink: false,
   ttsMediaMetadata: 'sentence',
@@ -83,6 +85,24 @@ vi.mock('@/store/readerStore', () => {
     selector ? selector(store) : store;
   useReaderStore.getState = () => store;
   return { useReaderStore };
+});
+
+const mockSettings = {
+  globalViewSettings: { ttsRate: 1, ttsSentenceGap: 0.15, ttsParagraphGap: 0.3 },
+};
+const mockSaveSettings = vi.fn();
+vi.mock('@/store/settingsStore', () => {
+  // Lazy accessors only: the factory is hoisted above the consts it reads.
+  const state = {
+    get settings() {
+      return mockSettings;
+    },
+    setSettings: vi.fn(),
+    saveSettings: (...args: unknown[]) => mockSaveSettings(...args),
+  };
+  return {
+    useSettingsStore: Object.assign(() => state, { getState: () => state }),
+  };
 });
 
 vi.mock('@/store/bookDataStore', () => {
@@ -1104,16 +1124,60 @@ describe('useTTSControl gap control (handleSetSentenceGap / handleSupportsGapCon
     };
   };
 
-  it('handleSetSentenceGap calls controller.setSentenceGap directly, without stop/start', async () => {
-    const controller = await startSession();
-    controller.state = 'playing';
+  // Both the player sheet's speed ruler and the RSVP overlay's `tts-set-rate`
+  // land here, so deriving the pauses at this one funnel is what keeps them
+  // from going stale against the rate they were scaled for (#5750).
+  it('a rate change re-derives and persists both pauses', async () => {
+    const controller = (await startSession()) as unknown as {
+      setSentenceGap: ReturnType<typeof vi.fn>;
+      setParagraphGap: ReturnType<typeof vi.fn>;
+    };
 
-    act(() => {
-      hookResult!.handleSetSentenceGap(0.5);
+    await act(async () => {
+      hookResult!.handleSetRate(2);
+      for (let i = 0; i < 10; i++) await Promise.resolve();
     });
 
-    expect(controller.setSentenceGap).toHaveBeenCalledWith(0.5);
-    expect(controller.stop).not.toHaveBeenCalled();
-    expect(controller.start).not.toHaveBeenCalled();
+    expect(controller.setSentenceGap).toHaveBeenCalledWith(0.1);
+    expect(controller.setParagraphGap).toHaveBeenCalledWith(0.2);
+    expect(mockViewSettings.ttsSentenceGap).toBe(0.1);
+    expect(mockViewSettings.ttsParagraphGap).toBe(0.2);
+    expect(mockSettings.globalViewSettings.ttsSentenceGap).toBe(0.1);
+    expect(mockSettings.globalViewSettings.ttsParagraphGap).toBe(0.2);
+    expect(mockSaveSettings).toHaveBeenCalled();
+  });
+
+  // The RSVP overlay can set the rate before Read Aloud has ever started, and
+  // it persists ttsRate either way. Skipping the derivation when there is no
+  // controller yet would leave the stored pauses scaled for the old rate, to be
+  // picked up by the next session — the exact staleness this funnel removes.
+  it('derives the pauses even with no session running', async () => {
+    mockViewSettings.ttsSentenceGap = 0.15;
+    mockViewSettings.ttsParagraphGap = 0.3;
+    render(<CaptureHarness />);
+
+    await act(async () => {
+      hookResult!.handleSetRate(1.5);
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+    });
+
+    expect(mockViewSettings.ttsSentenceGap).toBe(0.12);
+    expect(mockViewSettings.ttsParagraphGap).toBe(0.24);
+  });
+
+  it('the tts-set-rate bus re-derives the pauses too', async () => {
+    const controller = (await startSession()) as unknown as {
+      setSentenceGap: ReturnType<typeof vi.fn>;
+      setParagraphGap: ReturnType<typeof vi.fn>;
+    };
+
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-set-rate', { bookKey: 'book-1', rate: 1.5 });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+    });
+
+    expect(mockViewSettings.ttsRate).toBe(1.5);
+    expect(controller.setSentenceGap).toHaveBeenCalledWith(0.12);
+    expect(controller.setParagraphGap).toHaveBeenCalledWith(0.24);
   });
 });

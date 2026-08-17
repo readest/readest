@@ -160,6 +160,80 @@ describe('WebAudioPlayer session end', () => {
   });
 });
 
+describe('WebAudioPlayer paragraph handover', () => {
+  // One paragraph per session: the pause between them is silence on the audio
+  // clock, not a JS sleep, so synthesis and decode of the next paragraph hide
+  // inside it instead of adding to it (#5750).
+  const endParagraph = async (
+    ctx: FakeAudioContext,
+    player: WebAudioPlayer,
+    onEvent: (e: WebAudioPlayerEvent) => void,
+    seconds: number,
+  ) => {
+    const gen = player.startSession(onEvent);
+    player.scheduleChunk(gen, makeBuffer(seconds), {
+      trimStartSec: 0,
+      mediaScale: 1,
+      gapSec: 0.15,
+    });
+    player.endSession(gen);
+    await ctx.advanceTo(SAFETY + seconds);
+    // The controller's handover stop, after the session ended on its own.
+    player.abortSession();
+  };
+
+  test('the next paragraph is scheduled a gap after the previous one ended', async () => {
+    const { ctx, player, onEvent } = setup();
+    await player.ensureContext();
+    await endParagraph(ctx, player, onEvent, 2);
+
+    const next = player.startSession(onEvent, { startAfterPreviousSec: 0.3 });
+    player.scheduleChunk(next, makeBuffer(1), { trimStartSec: 0, mediaScale: 1, gapSec: 0.15 });
+
+    expect(ctx.sources[1]!.startedAt).toBeCloseTo(SAFETY + 2 + 0.3, 5);
+  });
+
+  test('a pipeline that missed the deadline starts as soon as it can', async () => {
+    const { ctx, player, onEvent } = setup();
+    await player.ensureContext();
+    await endParagraph(ctx, player, onEvent, 2);
+    await ctx.advanceTo(SAFETY + 2 + 1); // synthesis took a second
+
+    const next = player.startSession(onEvent, { startAfterPreviousSec: 0.3 });
+    player.scheduleChunk(next, makeBuffer(1), { trimStartSec: 0, mediaScale: 1, gapSec: 0.15 });
+
+    expect(ctx.sources[1]!.startedAt).toBeCloseTo(SAFETY + 2 + 1 + SAFETY, 5);
+  });
+
+  test('a session aborted mid-playback carries nothing over', async () => {
+    const { ctx, player, onEvent } = setup();
+    await player.ensureContext();
+    const gen = player.startSession(onEvent);
+    player.scheduleChunk(gen, makeBuffer(2), { trimStartSec: 0, mediaScale: 1, gapSec: 0.15 });
+    await ctx.advanceTo(1);
+    player.abortSession(); // a stop or a skip, not the end of a paragraph
+
+    const next = player.startSession(onEvent, { startAfterPreviousSec: 0.3 });
+    player.scheduleChunk(next, makeBuffer(1), { trimStartSec: 0, mediaScale: 1, gapSec: 0.15 });
+
+    expect(ctx.sources[1]!.startedAt).toBeCloseTo(1 + SAFETY, 5);
+  });
+
+  test('the carry-over is consumed once, not by every later session', async () => {
+    const { ctx, player, onEvent } = setup();
+    await player.ensureContext();
+    await endParagraph(ctx, player, onEvent, 2);
+    const next = player.startSession(onEvent, { startAfterPreviousSec: 0.3 });
+    player.scheduleChunk(next, makeBuffer(1), { trimStartSec: 0, mediaScale: 1, gapSec: 0.15 });
+    player.abortSession(); // stopped before it ever ended
+
+    const third = player.startSession(onEvent, { startAfterPreviousSec: 0.3 });
+    player.scheduleChunk(third, makeBuffer(1), { trimStartSec: 0, mediaScale: 1, gapSec: 0.15 });
+
+    expect(ctx.sources[2]!.startedAt).toBeCloseTo(ctx.currentTime + SAFETY, 5);
+  });
+});
+
 describe('WebAudioPlayer abort', () => {
   test('abort stops pending sources, resolves waiters false, silences events', async () => {
     const { ctx, player, events, onEvent } = setup();

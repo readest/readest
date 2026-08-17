@@ -87,10 +87,13 @@ vi.mock('@/services/tts/EdgeTTSClient', () => ({
   // mock factory replaces the whole module, so it must re-export it too.
   DEFAULT_SENTENCE_GAP_SEC: 0.15,
   EdgeTTSClient: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
-    // TTSController.setSentenceGap always forwards to the real ttsEdgeClient
-    // instance regardless of the active engine, so this mock needs the method
-    // even though the other two client mocks don't.
-    Object.assign(this, makeMockTTSClient('edge'), { setSentenceGap: () => {} });
+    // TTSController.setSentenceGap/setParagraphGap always forward to the real
+    // ttsEdgeClient instance regardless of the active engine, so this mock
+    // needs both methods even though the other two client mocks don't.
+    Object.assign(this, makeMockTTSClient('edge'), {
+      setSentenceGap: () => {},
+      setParagraphGap: () => {},
+    });
   }),
 }));
 vi.mock('@/services/tts/NativeTTSClient', () => ({

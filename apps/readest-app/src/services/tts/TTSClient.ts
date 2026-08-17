@@ -29,6 +29,10 @@ export interface TTSCapabilities {
   // highlight. Chapter-only audiobook mappings keep location/navigation but
   // disable the visual overlay.
   textHighlight?: boolean;
+  // Schedules the pause between two blocks itself, as silence on its own audio
+  // clock. The controller must not also sleep for it: doing both plays the gap
+  // twice and puts synthesis latency on top of it instead of inside it (#5750).
+  scheduledGaps?: boolean;
 }
 
 export interface TTSClient {
