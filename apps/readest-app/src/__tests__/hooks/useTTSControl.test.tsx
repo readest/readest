@@ -1147,6 +1147,24 @@ describe('useTTSControl gap control (handleSetSentenceGap / handleSupportsGapCon
     expect(mockSaveSettings).toHaveBeenCalled();
   });
 
+  // The RSVP overlay can set the rate before Read Aloud has ever started, and
+  // it persists ttsRate either way. Skipping the derivation when there is no
+  // controller yet would leave the stored pauses scaled for the old rate, to be
+  // picked up by the next session — the exact staleness this funnel removes.
+  it('derives the pauses even with no session running', async () => {
+    mockViewSettings.ttsSentenceGap = 0.15;
+    mockViewSettings.ttsParagraphGap = 0.3;
+    render(<CaptureHarness />);
+
+    await act(async () => {
+      hookResult!.handleSetRate(1.5);
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+    });
+
+    expect(mockViewSettings.ttsSentenceGap).toBe(0.12);
+    expect(mockViewSettings.ttsParagraphGap).toBe(0.24);
+  });
+
   it('the tts-set-rate bus re-derives the pauses too', async () => {
     const controller = (await startSession()) as unknown as {
       setSentenceGap: ReturnType<typeof vi.fn>;

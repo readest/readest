@@ -1128,9 +1128,13 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleSetRate = useCallback(
     throttle(async (rate: number) => {
+      // Before the controller check: the rate is persisted whether or not a
+      // session is running (the RSVP overlay can set it with Read Aloud
+      // stopped), so the pauses have to follow it either way or the next
+      // session starts with pauses scaled for the old rate.
+      applyRateScaledGaps(rate);
       const ttsController = ttsControllerRef.current;
       if (!ttsController) return;
-      applyRateScaledGaps(rate);
       // Native MO / Edge AVPlayer can change rate without tearing down the
       // session. stop→start on continuous narration was racing the rate
       // invoke and often left playback at the old speed.
