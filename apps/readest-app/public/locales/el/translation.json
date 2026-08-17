@@ -2098,5 +2098,9 @@
   "More Settings": "Περισσότερες ρυθμίσεις",
   "Right-to-Left Pages": "Σελίδες από δεξιά προς τα αριστερά",
   "Send Document Metadata": "Αποστολή μεταδεδομένων εγγράφου",
-  "Hide covers": "Απόκρυψη εξωφύλλων βιβλίων"
+  "Hide covers": "Απόκρυψη εξωφύλλων βιβλίων",
+  "Auto-download from “{{name}}”?": "Αυτόματη λήψη από το “{{name}}”;",
+  "Stop auto-downloading from “{{name}}”?": "Διακοπή αυτόματης λήψης από το “{{name}}”;",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Το Readest θα κατεβάζει αυτόματα κάθε νέα δημοσίευση αυτού του καταλόγου κατά τον συγχρονισμό της εφαρμογής. Ενδέχεται να ληφθεί μεγάλος αριθμός βιβλίων.",
+  "New publications from this catalog will no longer be downloaded automatically.": "Οι νέες δημοσιεύσεις αυτού του καταλόγου δεν θα λαμβάνονται πλέον αυτόματα."
 }

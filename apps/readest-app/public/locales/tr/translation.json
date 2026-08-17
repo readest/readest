@@ -2098,5 +2098,9 @@
   "More Settings": "Diğer ayarlar",
   "Right-to-Left Pages": "Sağdan Sola Sayfalar",
   "Send Document Metadata": "Belge Meta Verilerini Gönder",
-  "Hide covers": "Kitap kapaklarını gizle"
+  "Hide covers": "Kitap kapaklarını gizle",
+  "Auto-download from “{{name}}”?": "“{{name}}” kaynağından otomatik indirilsin mi?",
+  "Stop auto-downloading from “{{name}}”?": "“{{name}}” kaynağından otomatik indirme durdurulsun mu?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Readest, uygulama eşitlendiğinde bu katalogdaki her yeni yayını otomatik olarak indirir. Bu, çok sayıda kitabın indirilmesine yol açabilir.",
+  "New publications from this catalog will no longer be downloaded automatically.": "Bu katalogdaki yeni yayınlar artık otomatik olarak indirilmeyecek."
 }

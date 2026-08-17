@@ -2098,5 +2098,9 @@
   "More Settings": "තවත් සැකසුම්",
   "Right-to-Left Pages": "දකුණේ සිට වමට පිටු",
   "Send Document Metadata": "ලේඛන පාරදත්ත යවන්න",
-  "Hide covers": "පොත් ආවරණ සඟවන්න"
+  "Hide covers": "පොත් ආවරණ සඟවන්න",
+  "Auto-download from “{{name}}”?": "“{{name}}” වෙතින් ස්වයංක්‍රීයව බාගත කරන්නද?",
+  "Stop auto-downloading from “{{name}}”?": "“{{name}}” වෙතින් ස්වයංක්‍රීය බාගැනීම නවත්වන්නද?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "යෙදුම සමමුහුර්ත වන විට Readest මෙම නාමාවලියේ සෑම නව ප්‍රකාශනයක්ම ස්වයංක්‍රීයව බාගත කරයි. මෙමගින් විශාල පොත් ගණනක් බාගත විය හැක.",
+  "New publications from this catalog will no longer be downloaded automatically.": "මෙම නාමාවලියේ නව ප්‍රකාශන තවදුරටත් ස්වයංක්‍රීයව බාගත නොවේ."
 }

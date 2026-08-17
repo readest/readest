@@ -11,7 +11,26 @@ import {
   IoEye,
   IoCloudDownloadOutline,
 } from 'react-icons/io5';
-import { MdChevronRight } from 'react-icons/md';
+import { MdChevronRight, MdDragIndicator } from 'react-icons/md';
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import Alert from '@/components/Alert';
 import Dropdown from '@/components/Dropdown';
 import Menu from '@/components/Menu';
 import MenuItem from '@/components/MenuItem';
@@ -98,6 +117,221 @@ const EMPTY_NEW_CATALOG = {
   autoDownload: false,
 };
 
+interface CatalogCardProps {
+  catalog: OPDSCatalog;
+  subState: OPDSSubscriptionState | undefined;
+  /** False when there is nothing to reorder (a single catalog); hides the handle. */
+  reorderable: boolean;
+  onOpen: (catalog: OPDSCatalog) => void;
+  onEdit: (catalog: OPDSCatalog) => void;
+  onRemove: (id: string) => void;
+  /** Opens the confirmation alert rather than flipping the switch (#5746). */
+  onRequestToggleAutoDownload: (id: string) => void;
+  onShowFailed: (id: string) => void;
+}
+
+/**
+ * One "My Catalogs" card. Split out of CatalogManager because `useSortable`
+ * is a hook and cannot be called from inside a `.map()` callback.
+ */
+function CatalogCard({
+  catalog,
+  subState,
+  reorderable,
+  onOpen,
+  onEdit,
+  onRemove,
+  onRequestToggleAutoDownload,
+  onShowFailed,
+}: CatalogCardProps) {
+  const _ = useTranslation();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: catalog.id,
+    disabled: !reorderable,
+  });
+
+  const lastCheckedAt = subState?.lastCheckedAt ?? 0;
+  const failedCount = subState?.failedEntries.length ?? 0;
+  const showSubscriptionStatus =
+    catalog.autoDownload && subState && (lastCheckedAt > 0 || failedCount > 0);
+
+  return (
+    // Whole card is the browse trigger. Uses role='button' (not
+    // a real <button>) because it nests other interactive
+    // elements: the drag handle, 3-dot menu, auto-download toggle,
+    // and failed-downloads link. Inner controls call
+    // e.stopPropagation() so their clicks don't bubble.
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        // Keep the dragged card visible, just dimmed, so the user can tell
+        // which one is moving.
+        opacity: isDragging ? 0.6 : 1,
+      }}
+      role='button'
+      tabIndex={catalog.disabled ? -1 : 0}
+      onClick={() => !catalog.disabled && onOpen(catalog)}
+      onKeyDown={(e) => {
+        if (catalog.disabled) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen(catalog);
+        }
+      }}
+      className={clsx(
+        'card eink-bordered bg-base-100 border-base-200 group/card flex flex-col border transition-colors duration-150',
+        'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+        isDragging && 'z-10 shadow-md',
+        catalog.disabled ? 'cursor-not-allowed opacity-60' : 'hover:bg-base-300 cursor-pointer',
+      )}
+    >
+      <div className='flex flex-1 flex-col gap-2.5 px-4 pb-2 pt-4'>
+        {/* Header: drag handle + icon + name | overflow menu (Edit / Remove). */}
+        <div className='flex items-start justify-between gap-2'>
+          {reorderable && (
+            // The handle is the only element carrying drag listeners, so the
+            // rest of the card stays a plain browse target. stopPropagation on
+            // the wrapper (not the button — that would clobber dnd-kit's own
+            // onKeyDown) keeps handle clicks and Space/arrow keys from also
+            // browsing the catalog.
+            <div
+              className='-ms-1.5 -mt-1 flex-shrink-0'
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              {/* Sized to match the 3-dot menu trigger rather than carrying
+                  `touch-target`: that class inflates the hit area to 44px via
+                  a ::before, which here would bleed an invisible dead zone
+                  over the catalog name and swallow taps meant to browse. */}
+              <button
+                type='button'
+                className='text-base-content/45 hover:bg-base-200 hover:text-base-content focus-visible:ring-base-content/15 flex h-7 w-7 cursor-grab touch-none items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 active:cursor-grabbing'
+                {...attributes}
+                {...listeners}
+                aria-label={_('Drag to reorder')}
+                title={_('Drag to reorder')}
+              >
+                <MdDragIndicator className='h-4 w-4' />
+              </button>
+            </div>
+          )}
+          <h4 className='flex min-w-0 flex-1 items-center gap-1.5 text-sm font-semibold'>
+            {catalog.icon && <span className='flex-shrink-0'>{catalog.icon}</span>}
+            <span className='truncate'>{catalog.name}</span>
+          </h4>
+          {/* stopPropagation on the trigger wrapper so opening
+              the menu doesn't also browse the catalog.
+              The Dropdown component itself handles floating the
+              menu via daisyui's `.dropdown .dropdown-content`
+              position:absolute rule — don't add !relative here
+              or the menu inlines into the card layout. */}
+          <div
+            className='-me-1.5 -mt-1 flex-shrink-0'
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <Dropdown
+              label={_('Catalog actions')}
+              className='dropdown-bottom dropdown-end'
+              buttonClassName='text-base-content/55 hover:bg-base-200 hover:text-base-content focus-visible:ring-base-content/15 flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
+              toggleButton={<IoEllipsisVertical className='h-4 w-4' />}
+            >
+              <Menu className='dropdown-content no-triangle border-base-300 z-20 mt-1 min-w-[8rem] rounded-lg border shadow-lg'>
+                <MenuItem noIcon transient label={_('Edit')} onClick={() => onEdit(catalog)} />
+                <MenuItem
+                  noIcon
+                  transient
+                  label={_('Remove')}
+                  onClick={() => onRemove(catalog.id)}
+                />
+              </Menu>
+            </Dropdown>
+          </div>
+        </div>
+
+        {/* Description (optional) — single line in My Catalogs
+            to keep cards compact and consistent in height
+            regardless of description length. */}
+        {catalog.description && (
+          <p className='text-base-content/70 line-clamp-1 text-xs leading-relaxed'>
+            {catalog.description}
+          </p>
+        )}
+
+        {/* URL — quieter, mono-ish */}
+        <p className='text-base-content/55 truncate text-[11px]' title={catalog.url}>
+          {catalog.url}
+        </p>
+
+        {/* Auto-download row — label and toggle live in a SAME
+            flex line (items-center → vertically centered with
+            each other). Subline sits beneath as a sibling.
+            The subline always renders (with &nbsp; placeholder
+            when no status data) so the row's total height stays
+            constant — toggling AD on/off or sync-status data
+            arriving via opds-sync-complete never shifts the
+            card. Browse is the whole-card click; stopPropagation
+            on the label so toggling doesn't also browse. */}
+        <div className='mt-auto flex flex-col gap-0.5'>
+          <label
+            onClick={(e) => e.stopPropagation()}
+            className={clsx(
+              'flex items-center justify-between gap-2',
+              catalog.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+            )}
+          >
+            <span className='text-base-content/80 inline-flex items-center gap-1.5 text-xs'>
+              <IoCloudDownloadOutline className='h-3.5 w-3.5' />
+              {_('Auto-download')}
+            </span>
+            <input
+              type='checkbox'
+              className='toggle toggle-sm toggle-primary flex-shrink-0'
+              checked={!!catalog.autoDownload}
+              disabled={!!catalog.disabled}
+              onChange={() => onRequestToggleAutoDownload(catalog.id)}
+            />
+          </label>
+          <span className='text-base-content/55 truncate text-[11px] leading-tight'>
+            {showSubscriptionStatus ? (
+              <>
+                {lastCheckedAt > 0 && (
+                  <span>
+                    {_('Last synced {{when}}', {
+                      when: dayjs(lastCheckedAt).fromNow(),
+                    })}
+                  </span>
+                )}
+                {failedCount > 0 && (
+                  <>
+                    {lastCheckedAt > 0 && <span aria-hidden> · </span>}
+                    <button
+                      type='button'
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onShowFailed(catalog.id);
+                      }}
+                      className='text-error hover:underline'
+                    >
+                      {_('{{count}} failed', { count: failedCount })}
+                    </button>
+                  </>
+                )}
+              </>
+            ) : (
+              // &nbsp; reserves line-height so the row above
+              // stays anchored at a consistent vertical position.
+              <>&nbsp;</>
+            )}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface CatalogManagerProps {
   /**
    * When true, the panel title block (h1 + description) is hidden because
@@ -138,6 +372,20 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
     Record<string, OPDSSubscriptionState>
   >({});
   const [failedDialogCatalogId, setFailedDialogCatalogId] = useState<string | null>(null);
+  // Auto-download is a one-tap trigger for a potentially huge download, and
+  // the toggle sits on a scrollable list — easy to hit by accident, worst of
+  // all on slow-refreshing e-ink screens (#5746). Flipping it from the list
+  // now only opens this confirmation; the switch itself never mutates.
+  const [confirmAutoDownloadId, setConfirmAutoDownloadId] = useState<string | null>(null);
+  const confirmAutoDownloadCatalog = confirmAutoDownloadId
+    ? catalogs.find((c) => c.id === confirmAutoDownloadId)
+    : undefined;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const reloadSubscriptionStates = useCallback(async () => {
     if (!appService) return;
@@ -173,9 +421,11 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
   }, [envConfig]);
 
   // Surface the latest store state into the local mirror used by
-  // subscriptions / dialog rendering. Filters out tombstones.
+  // subscriptions / dialog rendering. Goes through getAvailableCatalogs so
+  // the rendered order is the store's display order — drag-to-reorder stamps
+  // sortOrder against exactly this sequence, so the two must not diverge.
   useEffect(() => {
-    setCatalogs(allCatalogs.filter((c) => !c.deletedAt));
+    setCatalogs(useCustomOPDSStore.getState().getAvailableCatalogs());
   }, [allCatalogs]);
 
   // Persist via the store (settings + replica push), then update local
@@ -374,6 +624,17 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
     }
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const ids = catalogs.map((c) => c.id);
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    useCustomOPDSStore.getState().reorderCatalogs(arrayMove(ids, from, to));
+    persistMutation();
+  };
+
   const handleOpenCatalog = (catalog: OPDSCatalog) => {
     const params = new URLSearchParams({ url: catalog.url });
     params.set('id', catalog.id);
@@ -432,164 +693,31 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
             </button>
           </div>
         ) : (
-          <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
-            {catalogs.map((catalog) => {
-              const subState = subscriptionStates[catalog.id];
-              const lastCheckedAt = subState?.lastCheckedAt ?? 0;
-              const failedCount = subState?.failedEntries.length ?? 0;
-              const showSubscriptionStatus =
-                catalog.autoDownload && subState && (lastCheckedAt > 0 || failedCount > 0);
-
-              return (
-                // Whole card is the browse trigger. Uses role='button' (not
-                // a real <button>) because it nests other interactive
-                // elements: the 3-dot menu, auto-download toggle, and
-                // failed-downloads link. Inner controls call
-                // e.stopPropagation() so their clicks don't bubble.
-                <div
-                  key={catalog.id}
-                  role='button'
-                  tabIndex={catalog.disabled ? -1 : 0}
-                  onClick={() => !catalog.disabled && handleOpenCatalog(catalog)}
-                  onKeyDown={(e) => {
-                    if (catalog.disabled) return;
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleOpenCatalog(catalog);
-                    }
-                  }}
-                  className={clsx(
-                    'card eink-bordered bg-base-100 border-base-200 group/card flex flex-col border transition-colors duration-150',
-                    'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
-                    catalog.disabled
-                      ? 'cursor-not-allowed opacity-60'
-                      : 'hover:bg-base-300 cursor-pointer',
-                  )}
-                >
-                  <div className='flex flex-1 flex-col gap-2.5 px-4 pb-2 pt-4'>
-                    {/* Header: icon + name + chevron hint (whole card is
-                        the click target) | overflow menu (Edit / Remove). */}
-                    <div className='flex items-start justify-between gap-2'>
-                      <h4 className='flex min-w-0 flex-1 items-center gap-1.5 text-sm font-semibold'>
-                        {catalog.icon && <span className='flex-shrink-0'>{catalog.icon}</span>}
-                        <span className='truncate'>{catalog.name}</span>
-                      </h4>
-                      {/* stopPropagation on the trigger wrapper so opening
-                          the menu doesn't also browse the catalog.
-                          The Dropdown component itself handles floating the
-                          menu via daisyui's `.dropdown .dropdown-content`
-                          position:absolute rule — don't add !relative here
-                          or the menu inlines into the card layout. */}
-                      <div
-                        className='-mr-1.5 -mt-1 flex-shrink-0'
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => e.stopPropagation()}
-                      >
-                        <Dropdown
-                          label={_('Catalog actions')}
-                          className='dropdown-bottom dropdown-end'
-                          buttonClassName='text-base-content/55 hover:bg-base-200 hover:text-base-content focus-visible:ring-base-content/15 flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
-                          toggleButton={<IoEllipsisVertical className='h-4 w-4' />}
-                        >
-                          <Menu className='dropdown-content no-triangle border-base-300 z-20 mt-1 min-w-[8rem] rounded-lg border shadow-lg'>
-                            <MenuItem
-                              noIcon
-                              transient
-                              label={_('Edit')}
-                              onClick={() => handleEditCatalog(catalog)}
-                            />
-                            <MenuItem
-                              noIcon
-                              transient
-                              label={_('Remove')}
-                              onClick={() => handleRemoveCatalog(catalog.id)}
-                            />
-                          </Menu>
-                        </Dropdown>
-                      </div>
-                    </div>
-
-                    {/* Description (optional) — single line in My Catalogs
-                        to keep cards compact and consistent in height
-                        regardless of description length. */}
-                    {catalog.description && (
-                      <p className='text-base-content/70 line-clamp-1 text-xs leading-relaxed'>
-                        {catalog.description}
-                      </p>
-                    )}
-
-                    {/* URL — quieter, mono-ish */}
-                    <p className='text-base-content/55 truncate text-[11px]' title={catalog.url}>
-                      {catalog.url}
-                    </p>
-
-                    {/* Auto-download row — label and toggle live in a SAME
-                        flex line (items-center → vertically centered with
-                        each other). Subline sits beneath as a sibling.
-                        The subline always renders (with &nbsp; placeholder
-                        when no status data) so the row's total height stays
-                        constant — toggling AD on/off or sync-status data
-                        arriving via opds-sync-complete never shifts the
-                        card. Browse is the whole-card click; stopPropagation
-                        on the label so toggling doesn't also browse. */}
-                    <div className='mt-auto flex flex-col gap-0.5'>
-                      <label
-                        onClick={(e) => e.stopPropagation()}
-                        className={clsx(
-                          'flex items-center justify-between gap-2',
-                          catalog.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
-                        )}
-                      >
-                        <span className='text-base-content/80 inline-flex items-center gap-1.5 text-xs'>
-                          <IoCloudDownloadOutline className='h-3.5 w-3.5' />
-                          {_('Auto-download')}
-                        </span>
-                        <input
-                          type='checkbox'
-                          className='toggle toggle-sm toggle-primary flex-shrink-0'
-                          checked={!!catalog.autoDownload}
-                          disabled={!!catalog.disabled}
-                          onChange={() => handleToggleAutoDownload(catalog.id)}
-                        />
-                      </label>
-                      <span className='text-base-content/55 truncate text-[11px] leading-tight'>
-                        {showSubscriptionStatus ? (
-                          <>
-                            {lastCheckedAt > 0 && (
-                              <span>
-                                {_('Last synced {{when}}', {
-                                  when: dayjs(lastCheckedAt).fromNow(),
-                                })}
-                              </span>
-                            )}
-                            {failedCount > 0 && (
-                              <>
-                                {lastCheckedAt > 0 && <span aria-hidden> · </span>}
-                                <button
-                                  type='button'
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setFailedDialogCatalogId(catalog.id);
-                                  }}
-                                  className='text-error hover:underline'
-                                >
-                                  {_('{{count}} failed', { count: failedCount })}
-                                </button>
-                              </>
-                            )}
-                          </>
-                        ) : (
-                          // &nbsp; reserves line-height so the row above
-                          // stays anchored at a consistent vertical position.
-                          <>&nbsp;</>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            {/* rectSortingStrategy (not the vertical one) because this list is
+                a two-column grid from `sm:` up. */}
+            <SortableContext items={catalogs.map((c) => c.id)} strategy={rectSortingStrategy}>
+              <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+                {catalogs.map((catalog) => (
+                  <CatalogCard
+                    key={catalog.id}
+                    catalog={catalog}
+                    subState={subscriptionStates[catalog.id]}
+                    reorderable={catalogs.length > 1}
+                    onOpen={handleOpenCatalog}
+                    onEdit={handleEditCatalog}
+                    onRemove={handleRemoveCatalog}
+                    onRequestToggleAutoDownload={setConfirmAutoDownloadId}
+                    onShowFailed={setFailedDialogCatalogId}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
       </section>
 
@@ -878,6 +1006,38 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
               </form>
             </div>
           </dialog>
+        </ModalPortal>
+      )}
+
+      {confirmAutoDownloadCatalog && (
+        <ModalPortal>
+          <Alert
+            title={
+              confirmAutoDownloadCatalog.autoDownload
+                ? _('Stop auto-downloading from “{{name}}”?', {
+                    name: confirmAutoDownloadCatalog.name,
+                  })
+                : _('Auto-download from “{{name}}”?', { name: confirmAutoDownloadCatalog.name })
+            }
+            message={
+              confirmAutoDownloadCatalog.autoDownload
+                ? _(
+                    'New publications from this catalog will no longer be downloaded automatically.',
+                  )
+                : _(
+                    'Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.',
+                  )
+            }
+            confirmLabel={confirmAutoDownloadCatalog.autoDownload ? _('Turn Off') : _('Enable')}
+            confirmButtonClassName={
+              confirmAutoDownloadCatalog.autoDownload ? 'btn-contrast' : 'btn-warning'
+            }
+            onCancel={() => setConfirmAutoDownloadId(null)}
+            onConfirm={() => {
+              handleToggleAutoDownload(confirmAutoDownloadCatalog.id);
+              setConfirmAutoDownloadId(null);
+            }}
+          />
         </ModalPortal>
       )}
 

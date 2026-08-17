@@ -2042,5 +2042,9 @@
   "More Settings": "การตั้งค่าเพิ่มเติม",
   "Right-to-Left Pages": "หน้าจากขวาไปซ้าย",
   "Send Document Metadata": "ส่งข้อมูลเมตาของเอกสาร",
-  "Hide covers": "ซ่อนปกหนังสือ"
+  "Hide covers": "ซ่อนปกหนังสือ",
+  "Auto-download from “{{name}}”?": "ดาวน์โหลดอัตโนมัติจาก “{{name}}” หรือไม่?",
+  "Stop auto-downloading from “{{name}}”?": "หยุดดาวน์โหลดอัตโนมัติจาก “{{name}}” หรือไม่?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Readest จะดาวน์โหลดสิ่งพิมพ์ใหม่ทุกรายการจากแคตตาล็อกนี้โดยอัตโนมัติเมื่อแอปซิงค์ ซึ่งอาจดาวน์โหลดหนังสือจำนวนมาก",
+  "New publications from this catalog will no longer be downloaded automatically.": "สิ่งพิมพ์ใหม่จากแคตตาล็อกนี้จะไม่ถูกดาวน์โหลดโดยอัตโนมัติอีกต่อไป"
 }

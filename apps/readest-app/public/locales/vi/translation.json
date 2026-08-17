@@ -2042,5 +2042,9 @@
   "More Settings": "Cài đặt khác",
   "Right-to-Left Pages": "Trang từ phải sang trái",
   "Send Document Metadata": "Gửi siêu dữ liệu tài liệu",
-  "Hide covers": "Ẩn bìa sách"
+  "Hide covers": "Ẩn bìa sách",
+  "Auto-download from “{{name}}”?": "Tự động tải xuống từ “{{name}}”?",
+  "Stop auto-downloading from “{{name}}”?": "Dừng tự động tải xuống từ “{{name}}”?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Readest sẽ tự động tải xuống mọi ấn phẩm mới từ danh mục này khi ứng dụng đồng bộ hóa. Việc này có thể tải xuống một số lượng lớn sách.",
+  "New publications from this catalog will no longer be downloaded automatically.": "Các ấn phẩm mới từ danh mục này sẽ không còn được tải xuống tự động."
 }

@@ -2154,5 +2154,9 @@
   "More Settings": "Altre impostazioni",
   "Right-to-Left Pages": "Pagine da destra a sinistra",
   "Send Document Metadata": "Invia metadati del documento",
-  "Hide covers": "Nascondi le copertine dei libri"
+  "Hide covers": "Nascondi le copertine dei libri",
+  "Auto-download from “{{name}}”?": "Scaricare automaticamente da “{{name}}”?",
+  "Stop auto-downloading from “{{name}}”?": "Interrompere il download automatico da “{{name}}”?",
+  "Readest will automatically download every new publication from this catalog when the app syncs. This may download a large number of books.": "Readest scaricherà automaticamente ogni nuova pubblicazione di questo catalogo quando l'app si sincronizza. Potrebbe scaricare un gran numero di libri.",
+  "New publications from this catalog will no longer be downloaded automatically.": "Le nuove pubblicazioni di questo catalogo non verranno più scaricate automaticamente."
 }
