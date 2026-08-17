@@ -3,6 +3,10 @@ import { z } from 'zod';
 export const PLUGIN_PROTOCOL_VERSION = 1 as const;
 export const MAX_PLUGIN_RESOURCE_BYTES = 4 * 1_024 * 1_024;
 export const MAX_PLUGIN_SQL_PARAMS = 9_000;
+export const MAX_PLUGIN_SQL_PARAMETER_BYTES = MAX_PLUGIN_RESOURCE_BYTES;
+export const MAX_PLUGIN_SQL_REQUEST_BYTES = MAX_PLUGIN_RESOURCE_BYTES * 2;
+export const MAX_PLUGIN_ERROR_CODE_LENGTH = 128;
+export const MAX_PLUGIN_ERROR_MESSAGE_LENGTH = 4_000;
 
 const identifierSchema = z
   .string()
@@ -230,19 +234,19 @@ export const dictionaryContentNodeSchema: z.ZodType<DictionaryContentNode> = z.l
   ]),
 );
 
-const dictionaryTagSchema = z.strictObject({
+export const dictionaryTagSchema = z.strictObject({
   name: z.string().min(1).max(256),
   category: z.string().max(256).optional(),
   notes: z.string().max(4_000).optional(),
   score: z.number().optional(),
 });
 
-const dictionaryFrequencySchema = z.strictObject({
+export const dictionaryFrequencySchema = z.strictObject({
   value: z.union([z.number(), z.string().max(512)]),
   displayValue: z.string().max(512).optional(),
 });
 
-const dictionaryPitchSchema = z.strictObject({
+export const dictionaryPitchSchema = z.strictObject({
   position: z.union([z.number().int().nonnegative(), z.string().regex(/^[HL]+$/u)]),
   nasal: z
     .union([z.number().int().nonnegative(), z.array(z.number().int().nonnegative())])
@@ -253,7 +257,7 @@ const dictionaryPitchSchema = z.strictObject({
   tags: z.array(z.string().max(256)).max(64).optional(),
 });
 
-const dictionaryIpaSchema = z.strictObject({
+export const dictionaryIpaSchema = z.strictObject({
   value: z.string().min(1).max(2_000),
   tags: z.array(z.string().max(256)).max(64).optional(),
 });
@@ -397,9 +401,23 @@ export const parsePluginOperationResult = <T extends PluginOperation>(
   return result as PluginResult<T>;
 };
 
+export const normalizePluginErrorPayload = (
+  code: unknown,
+  message: unknown,
+): { code: string; message: string } => ({
+  code:
+    (typeof code === 'string' ? code : String(code)).slice(0, MAX_PLUGIN_ERROR_CODE_LENGTH) ||
+    'UNKNOWN_ERROR',
+  message:
+    (typeof message === 'string' ? message : String(message)).slice(
+      0,
+      MAX_PLUGIN_ERROR_MESSAGE_LENGTH,
+    ) || 'Plugin operation failed',
+});
+
 const errorPayloadSchema = z.strictObject({
-  code: z.string().min(1).max(128),
-  message: z.string().min(1).max(4_000),
+  code: z.string().min(1).max(MAX_PLUGIN_ERROR_CODE_LENGTH),
+  message: z.string().min(1).max(MAX_PLUGIN_ERROR_MESSAGE_LENGTH),
 });
 
 const responseEnvelope = {
@@ -442,7 +460,37 @@ const sqlValueSchema = z.union([
 
 export type PluginSqlValue = z.infer<typeof sqlValueSchema>;
 
-const sqlParamsSchema = z.array(sqlValueSchema).max(MAX_PLUGIN_SQL_PARAMS).optional();
+export const pluginSqlValueBytes = (value: unknown): number => {
+  if (value === null) return 0;
+  if (typeof value === 'string') return new TextEncoder().encode(value).byteLength;
+  if (typeof value === 'number') return 8;
+  if (typeof value === 'bigint') {
+    const bits = value === 0n ? 1 : value.toString(2).replace('-', '').length;
+    return Math.ceil(bits / 8);
+  }
+  if (typeof value === 'boolean') return 1;
+  if (value instanceof Uint8Array) return value.byteLength;
+  throw new TypeError('Unsupported SQL parameter type');
+};
+
+const boundedSqlValueSchema = sqlValueSchema.superRefine((value, context) => {
+  if (pluginSqlValueBytes(value) > MAX_PLUGIN_SQL_PARAMETER_BYTES) {
+    context.addIssue({ code: 'custom', message: 'SQL parameter cell size limit exceeded' });
+  }
+});
+
+const sqlParamsSchema = z
+  .array(boundedSqlValueSchema)
+  .max(MAX_PLUGIN_SQL_PARAMS)
+  .superRefine((params, context) => {
+    if (
+      params.reduce<number>((total, value) => total + pluginSqlValueBytes(value), 0) >
+      MAX_PLUGIN_SQL_REQUEST_BYTES
+    ) {
+      context.addIssue({ code: 'custom', message: 'SQL parameter payload size limit exceeded' });
+    }
+  })
+  .optional();
 
 const hostCallEnvelope = {
   kind: z.literal('host-call'),
@@ -493,12 +541,34 @@ const transactionStatementSchema = z.strictObject({
   params: sqlParamsSchema,
 });
 
+const transactionStatementsSchema = z
+  .array(transactionStatementSchema)
+  .min(1)
+  .max(64)
+  .superRefine((statements, context) => {
+    const totalBytes = statements.reduce<number>(
+      (total, statement) =>
+        total +
+        (statement.params ?? []).reduce<number>(
+          (statementTotal, value) => statementTotal + pluginSqlValueBytes(value),
+          0,
+        ),
+      0,
+    );
+    if (totalBytes > MAX_PLUGIN_SQL_REQUEST_BYTES) {
+      context.addIssue({
+        code: 'custom',
+        message: 'SQL transaction parameter size limit exceeded',
+      });
+    }
+  });
+
 const sqlTransactionCallSchema = z.strictObject({
   ...hostCallEnvelope,
   capability: z.literal('sql.transaction'),
   payload: z.strictObject({
     handle: opaqueHandleSchema,
-    statements: z.array(transactionStatementSchema).min(1).max(64),
+    statements: transactionStatementsSchema,
   }),
 });
 

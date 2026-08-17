@@ -1,5 +1,9 @@
 import {
   dictionaryContentNodeSchema,
+  dictionaryFrequencySchema,
+  dictionaryIpaSchema,
+  dictionaryPitchSchema,
+  dictionaryTagSchema,
   MAX_DICTIONARY_DOCUMENT_NODES,
   MAX_PLUGIN_RESOURCE_BYTES,
   parseDictionaryLookupResult,
@@ -116,6 +120,11 @@ interface TagInfo {
   score?: number;
 }
 
+interface LoadedTags {
+  values: Map<string, TagInfo>;
+  invalidNames: Set<string>;
+}
+
 const loadBankedDefinitions = async (
   host: YomitanHost,
   databaseHandle: string,
@@ -132,7 +141,7 @@ const loadBankedDefinitions = async (
   const sizeRows = (
     await host.select(
       databaseHandle,
-      `SELECT bank_order, length(data) AS data_size FROM term_banks WHERE bank_order IN (${placeholders(bankOrders.length)})`,
+      `SELECT bank_order, MAX(length(data)) AS data_size FROM term_banks WHERE bank_order IN (${placeholders(bankOrders.length)}) GROUP BY bank_order HAVING COUNT(*) = 1`,
       bankOrders,
       bankOrders.length,
     )
@@ -218,13 +227,13 @@ const loadTags = async (
   host: YomitanHost,
   databaseHandle: string,
   terms: IndexedTerm[],
-): Promise<Map<string, TagInfo>> => {
+): Promise<LoadedTags> => {
   const names = new Set<string>();
   for (const { row } of terms) {
     splitYomitanTags(stringField(row, 'definition_tags')).forEach((tag) => names.add(tag));
     splitYomitanTags(stringField(row, 'term_tags')).forEach((tag) => names.add(tag));
   }
-  if (names.size === 0) return new Map();
+  if (names.size === 0) return { values: new Map(), invalidNames: new Set() };
   const values = [...names].slice(0, MAX_YOMITAN_TAG_LOOKUP_NAMES);
   const result = await host.select(
     databaseHandle,
@@ -233,23 +242,32 @@ const loadTags = async (
     256,
   );
   const tags = new Map<string, TagInfo>();
+  const invalidNames = new Set<string>();
   for (const row of result.rows) {
+    const rawName = row['name'];
     try {
       const name = stringField(row, 'name');
       const category = stringField(row, 'category');
       const notes = stringField(row, 'notes');
       const score = numberField(row, 'score');
-      tags.set(name, {
+      const parsed = dictionaryTagSchema.safeParse({
         name,
         ...(category ? { category } : {}),
         ...(notes ? { notes } : {}),
         ...(Number.isFinite(score) ? { score } : {}),
       });
+      if (parsed.success) {
+        tags.set(name, parsed.data);
+        invalidNames.delete(name);
+      } else if (!tags.has(name)) {
+        invalidNames.add(name);
+      }
     } catch {
+      if (typeof rawName === 'string' && !tags.has(rawName)) invalidNames.add(rawName);
       // Portable databases are untrusted; skip malformed tag rows.
     }
   }
-  return tags;
+  return { values: tags, invalidNames };
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -289,49 +307,34 @@ const metadataFor = (
       const payload: unknown = JSON.parse(stringField(row, 'payload_json'));
       if (mode === 'freq') {
         if (typeof payload === 'number' || typeof payload === 'string') {
-          frequencies.push({ value: payload });
-        } else if (isRecord(payload) && typeof payload['value'] === 'number') {
-          frequencies.push({
+          const parsed = dictionaryFrequencySchema.safeParse({ value: payload });
+          if (parsed.success) frequencies.push(parsed.data);
+        } else if (isRecord(payload)) {
+          const parsed = dictionaryFrequencySchema.safeParse({
             value: payload['value'],
-            ...(typeof payload['displayValue'] === 'string'
-              ? { displayValue: payload['displayValue'] }
-              : {}),
+            ...('displayValue' in payload ? { displayValue: payload['displayValue'] } : {}),
           });
+          if (parsed.success) frequencies.push(parsed.data);
         }
       } else if (mode === 'pitch' && Array.isArray(payload)) {
         for (const value of payload) {
           if (!isRecord(value)) continue;
-          const position = value['position'];
-          if (
-            (typeof position !== 'number' || !Number.isInteger(position) || position < 0) &&
-            (typeof position !== 'string' || !/^[HL]+$/u.test(position))
-          ) {
-            continue;
-          }
-          pitches.push({
-            position,
-            ...(typeof value['nasal'] === 'number' || Array.isArray(value['nasal'])
-              ? { nasal: value['nasal'] as number | number[] }
-              : {}),
-            ...(typeof value['devoice'] === 'number' || Array.isArray(value['devoice'])
-              ? { devoice: value['devoice'] as number | number[] }
-              : {}),
-            ...(Array.isArray(value['tags']) &&
-            value['tags'].every((tag) => typeof tag === 'string')
-              ? { tags: value['tags'] as string[] }
-              : {}),
+          const parsed = dictionaryPitchSchema.safeParse({
+            position: value['position'],
+            ...('nasal' in value ? { nasal: value['nasal'] } : {}),
+            ...('devoice' in value ? { devoice: value['devoice'] } : {}),
+            ...('tags' in value ? { tags: value['tags'] } : {}),
           });
+          if (parsed.success) pitches.push(parsed.data);
         }
       } else if (mode === 'ipa' && Array.isArray(payload)) {
         for (const value of payload) {
-          if (!isRecord(value) || typeof value['ipa'] !== 'string') continue;
-          ipa.push({
+          if (!isRecord(value)) continue;
+          const parsed = dictionaryIpaSchema.safeParse({
             value: value['ipa'],
-            ...(Array.isArray(value['tags']) &&
-            value['tags'].every((tag) => typeof tag === 'string')
-              ? { tags: value['tags'] as string[] }
-              : {}),
+            ...('tags' in value ? { tags: value['tags'] } : {}),
           });
+          if (parsed.success) ipa.push(parsed.data);
         }
       }
     } catch {
@@ -387,7 +390,7 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
       numberField(left.row, 'bank_order') - numberField(right.row, 'bank_order'),
   );
   const limited = indexed.slice(0, 128);
-  const [tags, metadata, bankedDefinitions] = await Promise.all([
+  const [loadedTags, metadata, bankedDefinitions] = await Promise.all([
     loadTags(host, request.databaseHandle, limited),
     loadMetadata(host, request.databaseHandle, limited),
     loadBankedDefinitions(host, request.databaseHandle, limited),
@@ -409,8 +412,9 @@ export const lookupYomitan = async (host: YomitanHost, request: PluginPayload<'l
         ...splitYomitanTags(stringField(row, 'term_tags')),
       ];
       const uniqueTags = [...new Set(tagNames)]
+        .filter((name) => !loadedTags.invalidNames.has(name))
         .slice(0, 128)
-        .map((name) => tags.get(name) ?? { name });
+        .map((name) => loadedTags.values.get(name) ?? { name });
       const [entry] = parseDictionaryLookupResult({
         entries: [
           {

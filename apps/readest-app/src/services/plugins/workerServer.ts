@@ -1,7 +1,9 @@
 import {
   PLUGIN_PROTOCOL_VERSION,
+  normalizePluginErrorPayload,
   parsePluginOperationResult,
   pluginWorkerInboundMessageSchema,
+  pluginWorkerOutboundMessageSchema,
   type PluginHostCall,
   type PluginOperation,
   type PluginPayload,
@@ -57,14 +59,16 @@ class WorkerHostCallError extends Error {
 }
 
 const errorPayload = (error: unknown): { code: string; message: string } => {
-  if (error instanceof WorkerHostCallError) return { code: error.code, message: error.message };
-  if (error instanceof DOMException && error.name === 'AbortError') {
-    return { code: 'ABORTED', message: error.message || 'Plugin operation aborted' };
+  if (error instanceof WorkerHostCallError) {
+    return normalizePluginErrorPayload(error.code, error.message);
   }
-  return {
-    code: 'PLUGIN_OPERATION_FAILED',
-    message: error instanceof Error ? error.message : String(error),
-  };
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    return normalizePluginErrorPayload('ABORTED', error.message || 'Plugin operation aborted');
+  }
+  return normalizePluginErrorPayload(
+    'PLUGIN_OPERATION_FAILED',
+    error instanceof Error ? error.message : String(error),
+  );
 };
 
 const missingHandler = (operation: PluginOperation): never => {
@@ -111,7 +115,8 @@ export const startPluginWorkerServer = (
     }
   };
 
-  const post = (message: PluginWorkerOutboundMessage): void => workerScope.postMessage(message);
+  const post = (message: PluginWorkerOutboundMessage): void =>
+    workerScope.postMessage(pluginWorkerOutboundMessageSchema.parse(message));
 
   const createContext = (
     requestId: string,
@@ -194,7 +199,25 @@ export const startPluginWorkerServer = (
 
   workerScope.onmessage = (event): void => {
     const parsed = pluginWorkerInboundMessageSchema.safeParse(event.data);
-    if (!parsed.success) return;
+    if (!parsed.success) {
+      const value = event.data;
+      if (typeof value !== 'object' || value === null) return;
+      const envelope = value as Record<string, unknown>;
+      if (
+        envelope['kind'] !== 'host-result' ||
+        typeof envelope['requestId'] !== 'string' ||
+        typeof envelope['callId'] !== 'string'
+      ) {
+        return;
+      }
+      const call = pendingHostCalls.get(envelope['callId']);
+      if (!call || call.requestId !== envelope['requestId']) return;
+      pendingHostCalls.delete(envelope['callId']);
+      call.reject(
+        new WorkerHostCallError('Plugin host returned an invalid result', 'INVALID_HOST_RESULT'),
+      );
+      return;
+    }
     const message = parsed.data;
     if (message.kind === 'request') {
       handleRequest(message);

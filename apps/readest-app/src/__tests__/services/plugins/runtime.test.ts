@@ -10,10 +10,12 @@ class FakeWorker implements PluginWorkerLike {
   onerror: ((event: ErrorEvent) => void) | null = null;
   onmessageerror: ((event: MessageEvent<unknown>) => void) | null = null;
   readonly sent: PluginWorkerInboundMessage[] = [];
+  readonly transfers: Transferable[][] = [];
   terminated = false;
 
-  postMessage(message: unknown): void {
+  postMessage(message: unknown, transfer: Transferable[] = []): void {
     this.sent.push(message as PluginWorkerInboundMessage);
+    this.transfers.push(transfer);
   }
 
   terminate(): void {
@@ -147,6 +149,49 @@ describe('plugin runtime', () => {
       },
     });
     await expect(pending).resolves.toMatchObject({ title: 'Test dictionary' });
+  });
+
+  test('bounds host errors and transfers binary host results', async () => {
+    const worker = new FakeWorker();
+    const bytes = new Uint8Array([1, 2, 3, 4]);
+    const handleHostCall = vi
+      .fn()
+      .mockResolvedValueOnce({ rows: [{ data: bytes }] })
+      .mockRejectedValueOnce(new Error('x'.repeat(4_001)));
+    const runtime = createPluginRuntime({ createWorker: () => worker, handleHostCall });
+    const pending = runtime.call('lookup', lookupPayload);
+    const request = worker.sent[0];
+    if (request?.kind !== 'request') throw new Error('Expected request');
+
+    worker.emit({
+      kind: 'host-call',
+      protocolVersion: PLUGIN_PROTOCOL_VERSION,
+      requestId: request.requestId,
+      callId: 'call-1',
+      capability: 'sql.select',
+      payload: { handle: 'db-1', sql: 'SELECT data FROM resources', maxRows: 1 },
+    });
+    await vi.waitFor(() => expect(worker.sent).toHaveLength(2));
+    expect(worker.transfers[1]).toEqual([bytes.buffer]);
+
+    worker.emit({
+      kind: 'host-call',
+      protocolVersion: PLUGIN_PROTOCOL_VERSION,
+      requestId: request.requestId,
+      callId: 'call-2',
+      capability: 'sql.select',
+      payload: { handle: 'db-1', sql: 'SELECT data FROM resources', maxRows: 1 },
+    });
+    await vi.waitFor(() => expect(worker.sent).toHaveLength(3));
+    const errorResult = worker.sent[2];
+    expect(errorResult?.kind).toBe('host-result');
+    if (errorResult?.kind !== 'host-result' || errorResult.ok) {
+      throw new Error('Expected host error');
+    }
+    expect(errorResult.error.message).toHaveLength(4_000);
+
+    runtime.close();
+    await expect(pending).rejects.toThrow(/closed/i);
   });
 
   test('cancels an aborted request and rejects with AbortError', async () => {

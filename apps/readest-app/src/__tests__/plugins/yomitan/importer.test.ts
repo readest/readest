@@ -12,7 +12,11 @@ import {
   type YomitanHost,
 } from '@/plugins/yomitan/importer';
 import { lookupYomitan } from '@/plugins/yomitan/lookup';
-import { MAX_PLUGIN_RESOURCE_BYTES } from '@/services/plugins/contract';
+import {
+  MAX_PLUGIN_RESOURCE_BYTES,
+  MAX_PLUGIN_SQL_REQUEST_BYTES,
+  pluginSqlValueBytes,
+} from '@/services/plugins/contract';
 
 const createDictionary = async (): Promise<File> => {
   const writer = new ZipWriter(new BlobWriter('application/zip'));
@@ -615,7 +619,7 @@ describe('Yomitan importer and lookup', () => {
       id: 1,
       expression: 'word',
       reading: 'word',
-      definition_tags: 'bad good',
+      definition_tags: 'bad good oversized',
       rules: '',
       score: 1,
       glossary_json: JSON.stringify([{ type: 'text', value: 'valid' }]),
@@ -634,6 +638,12 @@ describe('Yomitan importer and lookup', () => {
             rows: [
               { name: 'bad', category: null, notes: '', score: 0 },
               { name: 'good', category: 'partOfSpeech', notes: 'Valid tag', score: 1 },
+              {
+                name: 'oversized',
+                category: 'partOfSpeech',
+                notes: 'x'.repeat(4_001),
+                score: 1,
+              },
             ],
           };
         }
@@ -642,12 +652,90 @@ describe('Yomitan importer and lookup', () => {
             rows: [
               { expression: 'word', reading: 'word', mode: 'freq', payload_json: '{' },
               { expression: 'word', reading: 'word', mode: 'freq', payload_json: '42' },
+              {
+                expression: 'word',
+                reading: 'word',
+                mode: 'pitch',
+                payload_json: JSON.stringify([
+                  { position: 1, nasal: ['invalid'] },
+                  { position: 2, nasal: [0] },
+                ]),
+              },
             ],
           };
         }
         throw new Error(`Unexpected query: ${sql}`);
       },
     };
+
+    const result = await lookupYomitan(host, {
+      dictionaryId: 'dict-1',
+      databaseHandle: 'db-1',
+      query: 'word',
+      language: 'en',
+    });
+    expect(result).toMatchObject({
+      entries: [
+        {
+          expression: 'word',
+          definitions: [{ type: 'text', value: 'valid' }],
+          tags: expect.arrayContaining([
+            expect.objectContaining({ name: 'good', category: 'partOfSpeech' }),
+          ]),
+          frequencies: [{ value: 42 }],
+          pitches: [{ position: 2, nasal: [0] }],
+        },
+      ],
+    });
+    expect((result.entries[0]?.tags ?? []).map(({ name }) => name)).not.toContain('oversized');
+  });
+
+  test('isolates duplicate portable term-bank rows from inline matches', async () => {
+    const source = createPortableHeader();
+    db = await NodeDatabaseService.open(':memory:');
+    const host = createHost(source, db);
+    await db.execute(
+      'CREATE TABLE terms (id INTEGER PRIMARY KEY, expression TEXT NOT NULL, reading TEXT NOT NULL, definition_tags TEXT NOT NULL, rules TEXT NOT NULL, score REAL NOT NULL, glossary_json BLOB, sequence INTEGER NOT NULL, term_tags TEXT NOT NULL, bank_order INTEGER NOT NULL, entry_index INTEGER)',
+    );
+    await db.execute(
+      'CREATE TABLE tags (name TEXT PRIMARY KEY, category TEXT NOT NULL, sort_order REAL NOT NULL, notes TEXT NOT NULL, score REAL NOT NULL)',
+    );
+    await db.execute(
+      'CREATE TABLE term_meta (id INTEGER PRIMARY KEY, expression TEXT NOT NULL, mode TEXT NOT NULL, reading TEXT NOT NULL, payload_json TEXT NOT NULL)',
+    );
+    await db.execute('CREATE TABLE term_banks (bank_order INTEGER, data BLOB NOT NULL)');
+    await db.execute('INSERT INTO term_banks VALUES (?, ?), (?, ?)', [
+      999,
+      new Uint8Array([1]),
+      999,
+      new Uint8Array([2]),
+    ]);
+    await db.execute('INSERT INTO terms VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+      1,
+      'word',
+      'word',
+      '',
+      '',
+      2,
+      null,
+      1,
+      '',
+      999,
+      0,
+    ]);
+    await db.execute('INSERT INTO terms VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+      2,
+      'word',
+      'word',
+      '',
+      '',
+      1,
+      JSON.stringify([{ type: 'text', value: 'valid' }]),
+      2,
+      '',
+      1,
+      0,
+    ]);
 
     await expect(
       lookupYomitan(host, {
@@ -657,16 +745,7 @@ describe('Yomitan importer and lookup', () => {
         language: 'en',
       }),
     ).resolves.toMatchObject({
-      entries: [
-        {
-          expression: 'word',
-          definitions: [{ type: 'text', value: 'valid' }],
-          tags: expect.arrayContaining([
-            expect.objectContaining({ name: 'good', category: 'partOfSpeech' }),
-          ]),
-          frequencies: [{ value: 42 }],
-        },
-      ],
+      entries: [{ expression: 'word', definitions: [{ type: 'text', value: 'valid' }] }],
     });
   });
 
@@ -709,7 +788,7 @@ describe('Yomitan importer and lookup', () => {
       ...baseHost,
       select: async (_handle, sql) => {
         if (sql.includes('FROM terms WHERE')) return { rows };
-        if (sql.includes('length(data) AS data_size')) return { rows: sizeRows };
+        if (sql.includes('AS data_size')) return { rows: sizeRows };
         if (sql.includes('SELECT data FROM term_banks')) return { rows: dataRows };
         if (sql.includes('FROM term_meta WHERE')) return { rows: [] };
         throw new Error(`Unexpected query: ${sql}`);
@@ -881,6 +960,57 @@ describe('Yomitan importer and lookup', () => {
       await db.select("SELECT data FROM resources WHERE key = 'images/read.png'")
     )[0]!['data'];
     expect(ArrayBuffer.isView(resource)).toBe(true);
+  });
+
+  test('batches portable resource inserts within the SQL transaction byte budget', async () => {
+    const resources = {
+      'one.png': new Uint8Array(MAX_PLUGIN_RESOURCE_BYTES),
+      'two.png': new Uint8Array(MAX_PLUGIN_RESOURCE_BYTES),
+    };
+    const source = await createDictionaryWithTerms(
+      [
+        [
+          'word',
+          'word',
+          '',
+          '',
+          1,
+          [
+            {
+              type: 'structured-content',
+              content: [
+                { tag: 'img', path: 'one.png' },
+                { tag: 'img', path: 'two.png' },
+              ],
+            },
+          ],
+          1,
+          '',
+        ],
+      ],
+      resources,
+    );
+    db = await NodeDatabaseService.open(':memory:');
+    const transactions: ExecutedStatement[][] = [];
+    const host = createHost(source, db, [], transactions);
+
+    await buildYomitanIndex(
+      host,
+      {
+        dictionaryId: 'dict-1',
+        sourceHandle: 'source-1',
+        databaseHandle: 'db-1',
+        sourceFormatVersion: 3,
+      },
+      { storage: 'banked' },
+    );
+
+    for (const transaction of transactions) {
+      const parameterBytes = transaction
+        .flatMap(({ params }) => params)
+        .reduce<number>((total, value) => total + pluginSqlValueBytes(value), 0);
+      expect(parameterBytes).toBeLessThanOrEqual(MAX_PLUGIN_SQL_REQUEST_BYTES);
+    }
   });
 
   test('looks up portable banks and resources serialized as native JSON byte arrays', async () => {

@@ -1,5 +1,11 @@
 import type { DatabaseExecResult, DatabaseRow, DatabaseService } from '@/types/database';
-import { MAX_PLUGIN_RESOURCE_BYTES, MAX_PLUGIN_SQL_PARAMS } from './contract';
+import {
+  MAX_PLUGIN_RESOURCE_BYTES,
+  MAX_PLUGIN_SQL_PARAMETER_BYTES,
+  MAX_PLUGIN_SQL_PARAMS,
+  MAX_PLUGIN_SQL_REQUEST_BYTES,
+  pluginSqlValueBytes,
+} from './contract';
 
 export interface PluginScope {
   pluginId: string;
@@ -62,6 +68,8 @@ interface SqlBrokerOptions {
   maxRows?: number;
   maxSqlBytes?: number;
   maxParams?: number;
+  maxParamBytes?: number;
+  maxParamCellBytes?: number;
   maxResultBytes?: number;
   maxResultCellBytes?: number;
   maxTransactionStatements?: number;
@@ -240,7 +248,13 @@ const normalizeSql = (sql: string): { statement: string; analysis: string } => {
   return { statement, analysis: cleanAnalysis.toUpperCase().replace(/\s+/gu, ' ').trim() };
 };
 
-const assertParams = (params: unknown[], maxParams: number): void => {
+const assertParams = (
+  params: unknown[],
+  maxParams: number,
+  maxParamBytes: number,
+  maxParamCellBytes: number,
+  budget = { bytes: 0 },
+): void => {
   if (params.length > maxParams) {
     throw new PluginBrokerError('SQL parameter limit exceeded', 'SQL_PARAMETER_LIMIT');
   }
@@ -255,44 +269,87 @@ const assertParams = (params: unknown[], maxParams: number): void => {
     ) {
       throw new PluginBrokerError('Unsupported SQL parameter type', 'SQL_PARAMETER_TYPE');
     }
+    const bytes = pluginSqlValueBytes(value);
+    if (bytes > maxParamCellBytes) {
+      throw new PluginBrokerError(
+        'SQL parameter cell size limit exceeded',
+        'SQL_PARAMETER_SIZE_LIMIT',
+      );
+    }
+    budget.bytes += bytes;
+    if (budget.bytes > maxParamBytes) {
+      throw new PluginBrokerError(
+        'SQL parameter payload size limit exceeded',
+        'SQL_PARAMETER_SIZE_LIMIT',
+      );
+    }
   }
 };
 
-const sqlResultValueBytes = (value: unknown): number => {
-  if (value === null) return 0;
-  if (typeof value === 'string') return new TextEncoder().encode(value).byteLength;
-  if (typeof value === 'number' || typeof value === 'bigint') return 8;
-  if (typeof value === 'boolean') return 1;
-  if (value instanceof ArrayBuffer) return value.byteLength;
-  if (ArrayBuffer.isView(value)) return value.byteLength;
-  if (
-    Array.isArray(value) &&
-    value.every((byte) => Number.isInteger(byte) && byte >= 0 && byte <= 255)
-  ) {
-    return value.length;
+const normalizeSqlResultValue = (
+  value: unknown,
+  maxCellBytes: number,
+): { bytes: number; value: unknown } => {
+  if (value === null) return { bytes: 0, value };
+  if (typeof value === 'string') {
+    return { bytes: new TextEncoder().encode(value).byteLength, value };
+  }
+  if (typeof value === 'number' || typeof value === 'bigint') return { bytes: 8, value };
+  if (typeof value === 'boolean') return { bytes: 1, value };
+  if (value instanceof ArrayBuffer) {
+    if (value.byteLength > maxCellBytes) {
+      throw new PluginBrokerError('SQL result cell size limit exceeded', 'SQL_RESULT_LIMIT');
+    }
+    return { bytes: value.byteLength, value: new Uint8Array(value) };
+  }
+  if (ArrayBuffer.isView(value)) {
+    if (value.byteLength > maxCellBytes) {
+      throw new PluginBrokerError('SQL result cell size limit exceeded', 'SQL_RESULT_LIMIT');
+    }
+    const source = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+    const bytes = new Uint8Array(source.byteLength);
+    bytes.set(source);
+    return { bytes: bytes.byteLength, value: bytes };
+  }
+  if (Array.isArray(value)) {
+    if (value.length > maxCellBytes) {
+      throw new PluginBrokerError('SQL result cell size limit exceeded', 'SQL_RESULT_LIMIT');
+    }
+    const bytes = new Uint8Array(value.length);
+    for (let index = 0; index < value.length; index += 1) {
+      const byte = value[index];
+      if (typeof byte !== 'number' || !Number.isInteger(byte) || byte < 0 || byte > 255) {
+        throw new PluginBrokerError('Unsupported SQL result type', 'SQL_RESULT_TYPE');
+      }
+      bytes[index] = byte;
+    }
+    return { bytes: bytes.byteLength, value: bytes };
   }
   throw new PluginBrokerError('Unsupported SQL result type', 'SQL_RESULT_TYPE');
 };
 
-const assertSqlResultSize = (
+const normalizeSqlResultRows = (
   rows: DatabaseRow[],
   maxResultBytes: number,
   maxResultCellBytes: number,
-): void => {
+): DatabaseRow[] => {
   const encoder = new TextEncoder();
   let totalBytes = 0;
-  for (const row of rows) {
+  return rows.map((row) => {
+    const normalized: DatabaseRow = {};
     for (const [key, value] of Object.entries(row)) {
-      const cellBytes = sqlResultValueBytes(value);
-      if (cellBytes > maxResultCellBytes) {
+      const cell = normalizeSqlResultValue(value, maxResultCellBytes);
+      if (cell.bytes > maxResultCellBytes) {
         throw new PluginBrokerError('SQL result cell size limit exceeded', 'SQL_RESULT_LIMIT');
       }
-      totalBytes += encoder.encode(key).byteLength + cellBytes;
+      totalBytes += encoder.encode(key).byteLength + cell.bytes;
       if (totalBytes > maxResultBytes) {
         throw new PluginBrokerError('SQL result size limit exceeded', 'SQL_RESULT_LIMIT');
       }
+      normalized[key] = cell.value;
     }
-  }
+    return normalized;
+  });
 };
 
 export class SqlBroker {
@@ -300,6 +357,8 @@ export class SqlBroker {
   private readonly maxRows: number;
   private readonly maxSqlBytes: number;
   private readonly maxParams: number;
+  private readonly maxParamBytes: number;
+  private readonly maxParamCellBytes: number;
   private readonly maxResultBytes: number;
   private readonly maxResultCellBytes: number;
   private readonly maxTransactionStatements: number;
@@ -309,6 +368,8 @@ export class SqlBroker {
     this.maxRows = options.maxRows ?? 1_000;
     this.maxSqlBytes = options.maxSqlBytes ?? 65_536;
     this.maxParams = options.maxParams ?? MAX_PLUGIN_SQL_PARAMS;
+    this.maxParamBytes = options.maxParamBytes ?? MAX_PLUGIN_SQL_REQUEST_BYTES;
+    this.maxParamCellBytes = options.maxParamCellBytes ?? MAX_PLUGIN_SQL_PARAMETER_BYTES;
     this.maxResultBytes = options.maxResultBytes ?? MAX_PLUGIN_RESOURCE_BYTES * 2;
     this.maxResultCellBytes = options.maxResultCellBytes ?? MAX_PLUGIN_RESOURCE_BYTES;
     this.maxTransactionStatements = options.maxTransactionStatements ?? 64;
@@ -347,7 +408,7 @@ export class SqlBroker {
     if (new TextEncoder().encode(sql).byteLength > this.maxSqlBytes) {
       throw new PluginBrokerError('SQL length limit exceeded', 'SQL_LENGTH_LIMIT');
     }
-    assertParams(params, this.maxParams);
+    assertParams(params, this.maxParams, this.maxParamBytes, this.maxParamCellBytes);
     const normalized = normalizeSql(sql);
     const first = normalized.analysis.split(' ')[0] ?? '';
     const forbidden = /\b(?:ATTACH|DETACH|VACUUM|LOAD_EXTENSION)\b/u.test(normalized.analysis);
@@ -410,8 +471,9 @@ export class SqlBroker {
       if (rows.length > request.maxRows) {
         throw new PluginBrokerError('SQL row limit exceeded', 'SQL_ROW_LIMIT');
       }
-      assertSqlResultSize(rows, this.maxResultBytes, this.maxResultCellBytes);
-      return { rows };
+      return {
+        rows: normalizeSqlResultRows(rows, this.maxResultBytes, this.maxResultCellBytes),
+      };
     });
   }
 
@@ -433,10 +495,18 @@ export class SqlBroker {
       );
     }
     return this.locked(entry, async () => {
+      const parameterBudget = { bytes: 0 };
       const statements = request.statements.map((statement) => {
         const params = statement.params ?? [];
+        assertParams(
+          params,
+          this.maxParams,
+          this.maxParamBytes,
+          this.maxParamCellBytes,
+          parameterBudget,
+        );
         return {
-          sql: this.validate(entry, statement.sql, params, 'write'),
+          sql: this.validate(entry, statement.sql, [], 'write'),
           params,
         };
       });

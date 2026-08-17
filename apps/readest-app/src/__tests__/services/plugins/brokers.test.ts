@@ -148,7 +148,7 @@ describe('SqlBroker', () => {
         sql: 'SELECT data FROM resources',
         maxRows: 1,
       }),
-    ).resolves.toEqual({ rows: [{ data: [1, 2, 3, 4] }] });
+    ).resolves.toEqual({ rows: [{ data: new Uint8Array([1, 2, 3, 4]) }] });
   });
 
   test('permits scoped staging DDL/DML and rejects escape-oriented SQL', async () => {
@@ -200,6 +200,40 @@ describe('SqlBroker', () => {
     await expect(
       broker.execute(pluginContext, { ...request, params: [...request.params, 'too-many'] }),
     ).rejects.toThrow(/parameter limit/i);
+  });
+
+  test('caps SQL parameter cells, calls, and complete transactions by bytes', async () => {
+    const { db } = createDatabase();
+    const broker = new SqlBroker({
+      createHandle: () => 'db-1',
+      maxParamCellBytes: 4,
+      maxParamBytes: 8,
+    });
+    const handle = await broker.register(pluginContext, db, 'staging');
+
+    await expect(
+      broker.execute(pluginContext, {
+        handle,
+        sql: 'INSERT INTO resources(data) VALUES (?)',
+        params: [new Uint8Array(5)],
+      }),
+    ).rejects.toMatchObject({ code: 'SQL_PARAMETER_SIZE_LIMIT' });
+    await expect(
+      broker.execute(pluginContext, {
+        handle,
+        sql: 'INSERT INTO resources(data) VALUES (?), (?)',
+        params: [new Uint8Array(4), new Uint8Array(5)],
+      }),
+    ).rejects.toMatchObject({ code: 'SQL_PARAMETER_SIZE_LIMIT' });
+    await expect(
+      broker.transaction(pluginContext, {
+        handle,
+        statements: [
+          { sql: 'INSERT INTO resources(data) VALUES (?)', params: [new Uint8Array(4)] },
+          { sql: 'INSERT INTO resources(data) VALUES (?)', params: [new Uint8Array(5)] },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: 'SQL_PARAMETER_SIZE_LIMIT' });
   });
 
   test('rolls back a failed staging transaction', async () => {

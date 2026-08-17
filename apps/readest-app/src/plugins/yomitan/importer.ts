@@ -3,6 +3,8 @@ import {
   dictionaryLookupEntrySchema,
   MAX_PLUGIN_RESOURCE_BYTES,
   MAX_PLUGIN_SQL_PARAMS,
+  MAX_PLUGIN_SQL_REQUEST_BYTES,
+  pluginSqlValueBytes,
   type PluginPayload,
   type PluginSqlValue,
 } from '@/services/plugins/contract';
@@ -111,6 +113,41 @@ const insertStatement = (
   params: rows.flat(),
 });
 
+const statementParameterBytes = (statement: SqlStatement): number =>
+  (statement.params ?? []).reduce<number>((total, value) => total + pluginSqlValueBytes(value), 0);
+
+const flushInsertStatements = async (
+  host: YomitanHost,
+  databaseHandle: string,
+  statements: SqlStatement[],
+): Promise<void> => {
+  if (statements.length === 0) return;
+  await host.transaction(databaseHandle, statements.splice(0));
+};
+
+const queueInsertStatement = async (
+  host: YomitanHost,
+  databaseHandle: string,
+  statements: SqlStatement[],
+  statement: SqlStatement,
+): Promise<void> => {
+  const statementBytes = statementParameterBytes(statement);
+  if (statementBytes > MAX_PLUGIN_SQL_REQUEST_BYTES) {
+    throw new Error('Yomitan SQL statement exceeds parameter byte limit');
+  }
+  const queuedBytes = statements.reduce<number>(
+    (total, queued) => total + statementParameterBytes(queued),
+    0,
+  );
+  if (statements.length === 16 || queuedBytes + statementBytes > MAX_PLUGIN_SQL_REQUEST_BYTES) {
+    await flushInsertStatements(host, databaseHandle, statements);
+  }
+  statements.push(statement);
+  if (statements.length === 16) {
+    await flushInsertStatements(host, databaseHandle, statements);
+  }
+};
+
 const insertRows = async (
   host: YomitanHost,
   databaseHandle: string,
@@ -120,12 +157,31 @@ const insertRows = async (
   rows: PluginSqlValue[][],
 ): Promise<void> => {
   const rowsPerStatement = Math.max(1, Math.floor(MAX_PLUGIN_SQL_PARAMS / columns.length));
-  for (let offset = 0; offset < rows.length; offset += rowsPerStatement) {
-    statements.push(insertStatement(table, columns, rows.slice(offset, offset + rowsPerStatement)));
-    if (statements.length === 16) {
-      await host.transaction(databaseHandle, statements.splice(0));
+  let batch: PluginSqlValue[][] = [];
+  let batchBytes = 0;
+  const flushBatch = async (): Promise<void> => {
+    if (batch.length === 0) return;
+    await queueInsertStatement(
+      host,
+      databaseHandle,
+      statements,
+      insertStatement(table, columns, batch),
+    );
+    batch = [];
+    batchBytes = 0;
+  };
+  for (const row of rows) {
+    const rowBytes = row.reduce<number>((total, value) => total + pluginSqlValueBytes(value), 0);
+    if (
+      batch.length > 0 &&
+      (batch.length === rowsPerStatement || batchBytes + rowBytes > MAX_PLUGIN_SQL_REQUEST_BYTES)
+    ) {
+      await flushBatch();
     }
+    batch.push(row);
+    batchBytes += rowBytes;
   }
+  await flushBatch();
 };
 
 const readIndex = async (host: YomitanHost, sourceHandle: string): Promise<YomitanIndex> => {

@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
+  MAX_PLUGIN_RESOURCE_BYTES,
+  MAX_PLUGIN_SQL_REQUEST_BYTES,
   parseDictionaryLookupResult,
   parsePluginOperationResult,
   pluginHostCallSchema,
@@ -124,6 +126,43 @@ describe('plugin operation protocol', () => {
         },
       }),
     ).toThrow();
+  });
+
+  test('rejects oversized SQL parameter cells and transaction payloads', () => {
+    const hostCall = {
+      kind: 'host-call',
+      protocolVersion: 1,
+      requestId: 'request-1',
+      callId: 'call-1',
+      capability: 'sql.execute',
+      payload: {
+        handle: 'db-1',
+        sql: 'INSERT INTO resources(data) VALUES (?)',
+        params: [new Uint8Array(MAX_PLUGIN_RESOURCE_BYTES + 1)],
+      },
+    };
+
+    expect(() => pluginHostCallSchema.parse(hostCall)).toThrow(/parameter.*size/i);
+    expect(() =>
+      pluginHostCallSchema.parse({
+        ...hostCall,
+        capability: 'sql.transaction',
+        payload: {
+          handle: 'db-1',
+          statements: [
+            {
+              sql: hostCall.payload.sql,
+              params: [new Uint8Array(MAX_PLUGIN_RESOURCE_BYTES)],
+            },
+            {
+              sql: hostCall.payload.sql,
+              params: [new Uint8Array(MAX_PLUGIN_SQL_REQUEST_BYTES - MAX_PLUGIN_RESOURCE_BYTES)],
+            },
+            { sql: hostCall.payload.sql, params: [new Uint8Array(1)] },
+          ],
+        },
+      }),
+    ).toThrow(/transaction.*size/i);
   });
 });
 

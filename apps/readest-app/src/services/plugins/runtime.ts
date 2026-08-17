@@ -1,5 +1,6 @@
 import {
   PLUGIN_PROTOCOL_VERSION,
+  normalizePluginErrorPayload,
   parsePluginOperationResult,
   pluginRequestSchema,
   pluginWorkerOutboundMessageSchema,
@@ -57,11 +58,37 @@ interface CreatePluginRuntimeOptions {
 const abortError = (): DOMException => new DOMException('Plugin request aborted', 'AbortError');
 
 const errorDetails = (error: unknown): { code: string; message: string } => {
-  if (error instanceof PluginRuntimeError) return { code: error.code, message: error.message };
-  return {
-    code: 'HOST_CALL_FAILED',
-    message: error instanceof Error ? error.message : String(error),
+  if (error instanceof PluginRuntimeError) {
+    return normalizePluginErrorPayload(error.code, error.message);
+  }
+  return normalizePluginErrorPayload(
+    'HOST_CALL_FAILED',
+    error instanceof Error ? error.message : String(error),
+  );
+};
+
+const transferablesFor = (value: unknown): Transferable[] => {
+  const buffers = new Set<ArrayBuffer>();
+  const visited = new Set<object>();
+  const visit = (candidate: unknown): void => {
+    if (candidate instanceof ArrayBuffer) {
+      buffers.add(candidate);
+      return;
+    }
+    if (ArrayBuffer.isView(candidate)) {
+      if (candidate.buffer instanceof ArrayBuffer) buffers.add(candidate.buffer);
+      return;
+    }
+    if (typeof candidate !== 'object' || candidate === null || visited.has(candidate)) return;
+    visited.add(candidate);
+    if (Array.isArray(candidate)) {
+      candidate.forEach(visit);
+      return;
+    }
+    Object.values(candidate).forEach(visit);
   };
+  visit(value);
+  return [...buffers];
 };
 
 export const createPluginRuntime = ({
@@ -112,7 +139,7 @@ export const createPluginRuntime = ({
       ok: true,
       result,
     };
-    targetWorker.postMessage(message);
+    targetWorker.postMessage(message, transferablesFor(result));
   };
 
   const postHostError = (
