@@ -651,10 +651,16 @@ export class BufferedTTSClient implements TTSClient {
     const voiceId = await this.getVoiceIdFromLang(lang);
     const req = { lang, text, voice: voiceId, pitch: this.#pitch };
     try {
-      await this.provider.synthesize(req, new AbortController().signal);
-    } catch {
+      // Retry transient failures exactly like live playback: a single network
+      // blip (DNS, socket reset) must not drop a sentence and fail a chapter.
+      await this.#synthesizeWithRetry(lang, text, voiceId, new AbortController().signal);
+    } catch (err) {
       // Offline / permanent failure: leave the ordinal unrecorded so the
       // section stays incomplete and can be retried later.
+      console.warn(
+        `[TTS] warmSentence FAIL s=${section} o=${ordinal} lang=${lang} voice=${voiceId} ` +
+          `text="${text.slice(0, 80)}" err=${err instanceof Error ? err.message : String(err)}`,
+      );
       return false;
     }
     await this.provider.recordMark(section, ordinal, req);

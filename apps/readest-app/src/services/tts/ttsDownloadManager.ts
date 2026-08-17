@@ -260,6 +260,10 @@ export class TTSDownloadManager {
       }
       const incomplete = sections.some((section) => !finalStatuses.get(section)?.packed);
       if (incomplete) {
+        console.warn(
+          `[TTS] download FAIL item=${item.id}` +
+            ` incompleteSections=[${sections.filter((s) => !finalStatuses.get(s)?.packed).join(',')}]`,
+        );
         await this.#cancelActive(active);
         finish('Download incomplete');
       } else {

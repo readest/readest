@@ -83,6 +83,42 @@ describe('SqliteTTSCacheStore pack compaction', () => {
     expect(bytes[80]).toBe(3);
   });
 
+  test('a section sharing a sentence key with an already-packed section still packs (regression)', async () => {
+    // Section A packs first, adopting the shared key k1 into its pack. From
+    // then on k1's entry is pack-backed (audio NULL pointing at pack A).
+    await cacheSection(4, ['mA1', 'mA2'], ['k1', 'k2']);
+    expect(await store.compact()).toBe(1);
+    expect((await store.getSectionStatuses()).get(4)?.packed).toBe(true);
+
+    // Section B repeats k1 (a cache hit during a download, so no loose row is
+    // written) plus a fresh k3. The old completable check rejected B because
+    // k1's entry has audio NULL, so B could never pack and its chapter failed
+    // forever, even though every sentence was cached.
+    await store.registerSectionMarks(5, ['mB1', 'mB2']);
+    await store.put('k3', sentence(3));
+    await store.recordMarkKey(5, 0, 'k1');
+    await store.recordMarkKey(5, 1, 'k3');
+    expect(await store.compact()).toBe(1);
+    expect((await store.getSectionStatuses()).get(5)?.packed).toBe(true);
+
+    const packNames = (await packFs.list()).filter((n) => n.endsWith('.mp3'));
+    expect(packNames).toHaveLength(2);
+    // The shared sentence is still readable after B's pack adopted the key.
+    expect(await store.get('k1')).not.toBeNull();
+    expect(await store.get('k3')).not.toBeNull();
+  });
+
+  test('an empty-manifest section that packed is reported as packed (regression)', async () => {
+    // Cover / blank / symbol-only sections have zero recordable sentences, but
+    // still pack an (empty) pack and must be reported as packed — otherwise a
+    // "Download all" for a book with such a chapter fails forever.
+    await store.registerSectionMarks(6, []);
+    expect(await store.compact()).toBe(1);
+    expect(await store.getSectionStatuses()).toEqual(
+      new Map([[6, { total: 0, recorded: 0, packed: true, pinned: false, active: false }]]),
+    );
+  });
+
   test('packed entries read back through range reads, byte for byte', async () => {
     await cacheSection(3, ['m1', 'm2'], ['k1', 'k2']);
     await store.compact();

@@ -243,7 +243,10 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       // Self-heal: the pack file is gone or truncated. Drop the whole pack,
       // not just this key, so a pinned section becomes visibly incomplete
       // and can be downloaded again.
-      console.warn('TTS pack range read failed; healing entry to a miss', err);
+      console.warn(
+        `[TTS] pack range read failed (key=${row['key']} pack=${row.pack_id}); healing entry to a miss`,
+        err,
+      );
       await this.#transaction(async () => {
         await this.#db.execute('DELETE FROM entries WHERE pack_id = ?', [row.pack_id]);
         await this.#db.execute('DELETE FROM packs WHERE id = ?', [row.pack_id]);
@@ -479,7 +482,7 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
           AND NOT EXISTS (
           SELECT 1 FROM manifest_marks mm
             LEFT JOIN entries e ON e.key = mm.key
-           WHERE mm.section = m.section AND (e.key IS NULL OR e.audio IS NULL))`,
+           WHERE mm.section = m.section AND e.key IS NULL)`,
     );
     let created = 0;
     for (const manifest of completable) {
@@ -490,9 +493,19 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
 
   async #packSection(section: number, fingerprint: string): Promise<boolean> {
     const rows = await this.#db.select<
-      DatabaseRow & { key: string; audio: unknown; boundaries: string; duration_ms: number | null }
+      DatabaseRow & {
+        key: string;
+        audio: unknown;
+        boundaries: string;
+        duration_ms: number | null;
+        pack_id: number | null;
+        pack_offset: number | null;
+        pack_length: number | null;
+      }
     >(
-      `SELECT mm.key, e.audio, e.boundaries, e.duration_ms FROM manifest_marks mm
+      `SELECT mm.key, e.audio, e.boundaries, e.duration_ms,
+              e.pack_id, e.pack_offset, e.pack_length
+         FROM manifest_marks mm
          JOIN entries e ON e.key = mm.key
         WHERE mm.section = ? ORDER BY mm.ordinal ASC`,
       [section],
@@ -507,8 +520,18 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       durationMs: number | null;
     }[] = [];
     for (const row of rows) {
-      const audio = toArrayBuffer(row.audio);
-      if (!audio) return false;
+      let audio = toArrayBuffer(row.audio);
+      if (!audio) {
+        // This sentence was packed into another section first (identical text
+        // under the same voice), so its entry is pack-backed with audio NULL.
+        // Resolve the bytes from that pack so THIS section can pack too; the
+        // content is identical by key, so embedding a copy is safe.
+        audio = await this.#readPackedAudio(row);
+      }
+      if (!audio) {
+        console.warn(`[TTS] pack audio missing for key=${row.key} section=${section}`);
+        return false;
+      }
       parts.push({
         key: row.key,
         bytes: new Uint8Array(audio),
@@ -565,15 +588,22 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       'SELECT id FROM packs WHERE path = ?',
       [finalName],
     );
-    if (existing.length) return false;
+    if (existing.length) {
+      return false;
+    }
 
     const tmpName = `tmp-${finalName}`;
-    await packFs.write(tmpName, merged);
-    await packFs.rename(tmpName, finalName);
-    await packFs.write(
-      packSidecarName(finalName),
-      new TextEncoder().encode(JSON.stringify(sidecar)),
-    );
+    try {
+      await packFs.write(tmpName, merged);
+      await packFs.rename(tmpName, finalName);
+      await packFs.write(
+        packSidecarName(finalName),
+        new TextEncoder().encode(JSON.stringify(sidecar)),
+      );
+    } catch (err) {
+      console.warn(`[TTS] pack write failed section=${sidecar.section}`, err);
+      throw err;
+    }
 
     const timestamp = this.#now();
     try {
@@ -702,8 +732,15 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       'SELECT DISTINCT section FROM packs',
     );
     for (const row of packed) {
-      const entry = out.get(row.section);
-      if (entry) entry.packed = true;
+      const entry = out.get(row.section) ?? {
+        total: 0,
+        recorded: 0,
+        packed: false,
+        pinned: false,
+        active: false,
+      };
+      entry.packed = true;
+      out.set(row.section, entry);
     }
     const pins = await this.#db.select<
       DatabaseRow & { section: number; active: number; pinned: number }

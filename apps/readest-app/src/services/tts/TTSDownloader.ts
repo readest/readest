@@ -77,6 +77,7 @@ export class TTSDownloader {
       if (signal?.aborted) break;
       const sentences = await this.#enumerator.enumerateSection(sectionIndex);
       if (!sentences) {
+        console.warn('[TTS] download section failed to enumerate', sectionIndex);
         skipped.push(sectionIndex);
         continue;
       }
