@@ -2,6 +2,7 @@
 
 When contributing to `Readest`, whether on GitHub or in other community spaces:
 
+- Follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 - Be respectful, civil, and open-minded.
 - Before opening a new pull request, try searching through the [issue tracker](https://github.com/readest/readest/issues) for known issues or fixes.
 - If you want to make code changes based on your personal opinion(s), make sure you open an issue first describing the changes you want to make, and open a pull request only when your suggestions get approved by maintainers.
