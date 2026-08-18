@@ -82,6 +82,29 @@ export const createTranslationTargetNode = ({
 
 const SOURCE_HIDDEN_CLASS = 'translation-source-hidden';
 
+export const groupTextNodesByDocument = (nodes: HTMLElement[]) => {
+  const grouped = new Map<Document, HTMLElement[]>();
+  nodes.forEach((node) => {
+    const documentNodes = grouped.get(node.ownerDocument);
+    if (documentNodes) {
+      documentNodes.push(node);
+    } else {
+      grouped.set(node.ownerDocument, [node]);
+    }
+  });
+  return grouped;
+};
+
+export const observeTextNodesByDocument = (
+  nodes: HTMLElement[],
+  createObserver: (document: Document) => IntersectionObserver,
+) =>
+  Array.from(groupTextNodesByDocument(nodes), ([document, documentNodes]) => {
+    const observer = createObserver(document);
+    documentNodes.forEach((node) => observer.observe(node));
+    return observer;
+  });
+
 /**
  * Hides or restores a paragraph's original text.
  *
@@ -143,7 +166,7 @@ export function useTextTranslation(
   const translatorPreservesMarkup = !!getTranslators().find(
     (translator) => translator.name === provider,
   )?.preservesMarkup;
-  const observerRef = useRef<IntersectionObserver | null>(null);
+  const observerRefs = useRef<IntersectionObserver[]>([]);
   const translatedElements = useRef<HTMLElement[]>([]);
   const allTextNodes = useRef<HTMLElement[]>([]);
   const translationQueue = useRef<HTMLElement[]>([]);
@@ -185,8 +208,6 @@ export function useTextTranslation(
   const observeTextNodes = () => {
     if (!view || !enabled.current) return;
 
-    const observer = createTranslationObserver();
-    observerRef.current = observer;
     const nodes = walkTextNodes(view, ['pre', 'code', 'math']);
     console.log(
       'Observing text nodes for translation:',
@@ -194,7 +215,8 @@ export function useTextTranslation(
       // nodes.map((n) => n.textContent),
     );
     allTextNodes.current = nodes;
-    nodes.forEach((el) => observer.observe(el));
+    observerRefs.current.forEach((observer) => observer.disconnect());
+    observerRefs.current = observeTextNodesByDocument(nodes, createTranslationObserver);
   };
 
   const updateTranslation = () => {
@@ -216,9 +238,10 @@ export function useTextTranslation(
     }
   };
 
-  const createTranslationObserver = () => {
+  const createTranslationObserver = (document: Document) => {
     const visibleElements = new Set<HTMLElement>();
-    return new IntersectionObserver(
+    const Observer = document.defaultView?.IntersectionObserver ?? IntersectionObserver;
+    return new Observer(
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
@@ -300,10 +323,11 @@ export function useTextTranslation(
   };
 
   const recreateTranslationObserver = () => {
-    const observer = createTranslationObserver();
-    observerRef.current?.disconnect();
-    observerRef.current = observer;
-    allTextNodes.current.forEach((el) => observer.observe(el));
+    observerRefs.current.forEach((observer) => observer.disconnect());
+    observerRefs.current = observeTextNodesByDocument(
+      allTextNodes.current,
+      createTranslationObserver,
+    );
   };
 
   const translateElement = async (el: HTMLElement) => {
@@ -483,7 +507,8 @@ export function useTextTranslation(
         view.removeEventListener('load', observeTextNodes);
         view.removeEventListener('load', hintInitialTranslating);
       }
-      observerRef.current?.disconnect();
+      observerRefs.current.forEach((observer) => observer.disconnect());
+      observerRefs.current = [];
       translatedElements.current = [];
       translationQueue.current = [];
       activeTranslations.current = 0;

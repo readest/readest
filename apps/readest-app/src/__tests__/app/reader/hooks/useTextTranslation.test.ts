@@ -1,5 +1,50 @@
 import { describe, it, expect } from 'vitest';
-import { createTranslationTargetNode } from '@/app/reader/hooks/useTextTranslation';
+import {
+  createTranslationTargetNode,
+  groupTextNodesByDocument,
+  observeTextNodesByDocument,
+} from '@/app/reader/hooks/useTextTranslation';
+
+describe('groupTextNodesByDocument', () => {
+  it('keeps text nodes from separate iframe documents in separate observer groups', () => {
+    const firstDocument = document.implementation.createHTMLDocument('first');
+    const secondDocument = document.implementation.createHTMLDocument('second');
+    const firstNode = firstDocument.createElement('p');
+    const secondNode = secondDocument.createElement('p');
+    const anotherSecondNode = secondDocument.createElement('p');
+
+    const groups = groupTextNodesByDocument([firstNode, secondNode, anotherSecondNode]);
+
+    expect(groups.size).toBe(2);
+    expect(groups.get(firstDocument)).toEqual([firstNode]);
+    expect(groups.get(secondDocument)).toEqual([secondNode, anotherSecondNode]);
+  });
+});
+
+describe('observeTextNodesByDocument', () => {
+  it('creates one observer per iframe document and observes only that document nodes', () => {
+    const firstDocument = document.implementation.createHTMLDocument('first');
+    const secondDocument = document.implementation.createHTMLDocument('second');
+    const firstNode = firstDocument.createElement('p');
+    const secondNode = secondDocument.createElement('p');
+    const observed = new Map<Document, HTMLElement[]>();
+    const disconnected: Document[] = [];
+
+    const observers = observeTextNodesByDocument([firstNode, secondNode], (ownerDocument) => {
+      observed.set(ownerDocument, []);
+      return {
+        observe: (node: HTMLElement) => observed.get(ownerDocument)!.push(node),
+        disconnect: () => disconnected.push(ownerDocument),
+      } as unknown as IntersectionObserver;
+    });
+
+    expect(observers).toHaveLength(2);
+    expect(observed.get(firstDocument)).toEqual([firstNode]);
+    expect(observed.get(secondDocument)).toEqual([secondNode]);
+    observers.forEach((observer) => observer.disconnect());
+    expect(disconnected).toEqual([firstDocument, secondDocument]);
+  });
+});
 
 describe('createTranslationTargetNode', () => {
   it('sets dir="rtl" on the wrapper for an RTL target language', () => {
