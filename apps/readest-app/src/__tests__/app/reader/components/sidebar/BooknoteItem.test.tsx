@@ -16,7 +16,13 @@ const mocks = vi.hoisted(() => {
     setNotebookEditAnnotation: vi.fn(),
     addAnnotation: vi.fn(),
     saveConfig: vi.fn(),
-    updateBooknotes: vi.fn(() => ({ booknotes: state.booknotes })),
+    // Mirrors the real store: `updateBooknotes` writes back whatever array
+    // it's called with (production code now returns a new array from
+    // `updateBooknoteNoteText` instead of mutating the existing one).
+    updateBooknotes: vi.fn((_key: string, booknotes: typeof state.booknotes) => {
+      state.booknotes = booknotes;
+      return { booknotes: state.booknotes };
+    }),
   };
 });
 
