@@ -56,9 +56,10 @@ rustPlatform.buildRustPackage (finalAttrs: {
     inherit (finalAttrs) pname version src;
     pnpm = pnpm_11;
     fetcherVersion = 4;
-    # Regenerate whenever pnpm-lock.yaml changes: nix build prints the expected
-    # hash on mismatch. Went stale after #5754 and #5764 landed on main.
-    hash = "sha256-FOqG6WJW+/nn0mICJlqEbiDpbgqrhY1Ij9826SqxjAo=";
+    # Regenerate whenever pnpm-lock.yaml changes: the nix-deps-check workflow
+    # fails on pull requests that change the lockfile and prints the expected
+    # hash in its log.
+    hash = "sha256-0gMtrfX+s3cOPGrl1cmmAMwvk0jMVezm3j+oJqvlhb8=";
     pnpmInstallFlags = [
       # Increase number of fetch attempts to work around timeout issues on slow
       # networks: "TimeoutError: The operation was aborted due to timeout".
