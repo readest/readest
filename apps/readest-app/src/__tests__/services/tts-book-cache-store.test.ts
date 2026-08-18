@@ -19,6 +19,11 @@ const packState = vi.hoisted(() => {
         if (!data) throw new Error('missing pack');
         return data.slice(offset, offset + length).buffer as ArrayBuffer;
       }),
+      readSidecar: vi.fn(async (name: string) => {
+        const data = files.get(name);
+        if (!data) return null;
+        return JSON.parse(new TextDecoder().decode(data));
+      }),
       remove: vi.fn(async (name: string) => {
         files.delete(name);
       }),

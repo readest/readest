@@ -88,6 +88,15 @@ const createNativePackFs = (dir: string): TTSPackFs => ({
       await file.close();
     }
   },
+  async readSidecar(name) {
+    try {
+      const { readTextFile, BaseDirectory } = await import('@tauri-apps/plugin-fs');
+      const text = await readTextFile(`${dir}/${name}`, { baseDir: BaseDirectory.AppCache });
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  },
   async remove(name) {
     const { remove, BaseDirectory } = await import('@tauri-apps/plugin-fs');
     await remove(`${dir}/${name}`, { baseDir: BaseDirectory.AppCache });

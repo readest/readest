@@ -35,6 +35,10 @@ export interface TTSPackFs {
   write(name: string, data: Uint8Array): Promise<void>;
   rename(from: string, to: string): Promise<void>;
   readRange(name: string, offset: number, length: number): Promise<ArrayBuffer>;
+  // Read and parse a pack's sidecar JSON, or null when the file is missing.
+  // Used by the transfer-on-removal path to repoint shared entries at a
+  // surviving pack with the correct (offset, length).
+  readSidecar(name: string): Promise<TTSPackSidecar | null>;
   remove(name: string): Promise<void>;
   list(): Promise<string[]>;
 }
@@ -149,6 +153,8 @@ const SCHEMA = [
     active  INTEGER NOT NULL DEFAULT 0,
     pinned  INTEGER NOT NULL DEFAULT 0
   )`,
+  `CREATE INDEX IF NOT EXISTS idx_manifest_marks_key ON manifest_marks(key)`,
+  `CREATE INDEX IF NOT EXISTS idx_packs_section ON packs(section)`,
 ];
 
 // Batch accessed_at updates: reads must not each cost a synchronous write.
@@ -240,20 +246,29 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     try {
       return await this.#packFs.readRange(path, row.pack_offset, row.pack_length);
     } catch (err) {
-      // Self-heal: the pack file is gone or truncated. Drop the whole pack,
-      // not just this key, so a pinned section becomes visibly incomplete
-      // and can be downloaded again.
+      // Self-heal: the pack file is gone or truncated. Transfer any shared
+      // keys to a surviving pack (or detach them to NULL/NULL when no
+      // candidate exists), then drop the pack so a pinned section becomes
+      // visibly incomplete and can be downloaded again.
       console.warn(
         `[TTS] pack range read failed (key=${key} pack=${row.pack_id}); healing entry to a miss`,
         err,
       );
-      await this.#transaction(async () => {
-        await this.#db.execute('DELETE FROM entries WHERE pack_id = ?', [row.pack_id]);
-        await this.#db.execute('DELETE FROM packs WHERE id = ?', [row.pack_id]);
-      });
-      await this.#packFs.remove(path).catch(() => {});
-      await this.#packFs.remove(packSidecarName(path)).catch(() => {});
-      return null;
+      await this.#transferSharedEntriesOnPackDeletion([row.pack_id]);
+      // The heal may have repointed this entry to a surviving pack: retry so
+      // the reader gets the audio instead of a false miss. Each retry removes
+      // a pack row, so this terminates.
+      const healed = await this.#db.select<EntryRow>(
+        `SELECT audio, boundaries, duration_ms, pack_id, pack_offset, pack_length
+           FROM entries WHERE key = ?`,
+        [key],
+      );
+      const healedRow = healed[0];
+      if (!healedRow) return null;
+      const healedAudio = toArrayBuffer(healedRow.audio);
+      if (healedAudio) return healedAudio;
+      if (healedRow.pack_id == null || healedRow.pack_id === row.pack_id) return null;
+      return this.#readPackedAudio(key, healedRow);
     }
   }
 
@@ -729,7 +744,10 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       if (entry) entry.recorded = row.recorded;
     }
     const packed = await this.#db.select<DatabaseRow & { section: number }>(
-      'SELECT DISTINCT section FROM packs',
+      `SELECT DISTINCT p.section FROM packs p
+        JOIN manifests m ON m.section = p.section
+                         AND (p.fingerprint = m.fingerprint
+                              OR p.fingerprint LIKE 'imported-%')`,
     );
     for (const row of packed) {
       const entry = out.get(row.section) ?? {
@@ -933,7 +951,11 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
           `SELECT id, path, size, accessed_at FROM packs
             WHERE NOT EXISTS (
               SELECT 1 FROM pinned_sections ps
-               WHERE ps.section = packs.section AND (ps.active > 0 OR ps.pinned = 1)
+                JOIN manifests m ON m.section = ps.section
+               WHERE ps.section = packs.section
+                 AND (ps.active > 0 OR ps.pinned = 1)
+                 AND (packs.fingerprint = m.fingerprint
+                      OR packs.fingerprint LIKE 'imported-%')
             )
             ORDER BY accessed_at ASC LIMIT 1`,
         )
@@ -942,10 +964,7 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       const evictPack =
         oldestPack && (!oldestLoose || oldestPack.accessed_at <= oldestLoose.accessed_at);
       if (evictPack) {
-        await this.#db.execute('DELETE FROM entries WHERE pack_id = ?', [oldestPack!.id]);
-        await this.#db.execute('DELETE FROM packs WHERE id = ?', [oldestPack!.id]);
-        await this.#packFs?.remove(oldestPack!.path).catch(() => {});
-        await this.#packFs?.remove(packSidecarName(oldestPack!.path)).catch(() => {});
+        await this.#transferSharedEntriesOnPackDeletion([oldestPack!.id]);
         total -= oldestPack!.size;
       } else {
         await this.#db.execute('DELETE FROM entries WHERE key = ?', [oldestLoose!.key]);
@@ -953,6 +972,158 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       }
     }
     return true;
+  }
+
+  // When a pack is about to be deleted (LRU eviction or self-heal because its
+  // file is gone), any of its entry rows may still be referenced by a pinned
+  // section through `manifest_marks`. Destroying those rows would make the
+  // pinned chapter unplayable offline even though the bytes still exist in a
+  // surviving pack that contains the same key. This helper repoints each
+  // affected entry to a surviving current pack (via the content-addressed
+  // `manifest_marks -> packs` bridge), or detaches it to (pack_id = NULL,
+  // audio = NULL) when no candidate exists — the same recovery as today's
+  // "Download incomplete" path, where the next synthesis repopulates the row.
+  //
+  // Runs as one transaction so the cache state is always consistent. File I/O
+  // (sidecar reads for candidate offsets, then the pack/sidecar removals)
+  // happens OUTSIDE the transaction, mirroring the existing self-heal pattern.
+  async #transferSharedEntriesOnPackDeletion(packIds: number[]): Promise<void> {
+    const packFs = this.#packFs;
+    const packPlaceholders = packIds.map(() => '?').join(',');
+
+    // The pack rows being removed: we need their paths for file cleanup, and
+    // they are stable for the duration (we hold the write lock via the tx).
+    const packRows = await this.#db.select<DatabaseRow & { id: number; path: string }>(
+      `SELECT id, path FROM packs WHERE id IN (${packPlaceholders})`,
+      packIds,
+    );
+
+    // Candidates: for each key currently owned by one of the deleted packs,
+    // find a surviving pack of a section whose manifest records the same key
+    // and whose fingerprint matches that section's current manifest. Ranked
+    // deterministically (pinned first, then FIFO, then id) so the outcome is
+    // order-independent. The inner EXISTS is a correlated subquery (NOT a CTE)
+    // so the planner keeps full index flexibility over entries(pack_id).
+    const candidates = await this.#db.select<
+      DatabaseRow & {
+        key: string;
+        candidate_pack_id: number;
+        candidate_path: string;
+        rn: number;
+      }
+    >(
+      `SELECT mm.key, p.id AS candidate_pack_id, p.path AS candidate_path,
+              ROW_NUMBER() OVER (
+                PARTITION BY mm.key
+                ORDER BY (CASE WHEN ps.pinned = 1 THEN 0 ELSE 1 END),
+                         p.created_at, p.id
+              ) AS rn
+         FROM manifest_marks mm
+         JOIN packs p ON p.section = mm.section
+         JOIN manifests m ON m.section = p.section AND p.fingerprint = m.fingerprint
+         LEFT JOIN pinned_sections ps ON ps.section = p.section
+        WHERE EXISTS (
+                SELECT 1 FROM entries e
+                 WHERE e.key = mm.key AND e.pack_id IN (${packPlaceholders})
+              )
+          AND p.id NOT IN (${packPlaceholders})`,
+      [...packIds, ...packIds],
+    );
+
+    // Resolve offsets/lengths from each candidate pack's sidecar, caching the
+    // parse per path and indexing entries by key for O(1) lookups. A missing
+    // sidecar just disqualifies that candidate (skip), never aborts the tx.
+    const sidecarCache = new Map<
+      string,
+      { byKey: Map<string, { offset: number; length: number }> }
+    >();
+    const transfers: {
+      key: string;
+      packId: number;
+      packOffset: number;
+      packLength: number;
+    }[] = [];
+    for (const row of candidates) {
+      if (row.rn !== 1) continue;
+      let cached = sidecarCache.get(row.candidate_path);
+      if (!cached) {
+        if (!packFs) continue;
+        const sidecar = await packFs.readSidecar(packSidecarName(row.candidate_path));
+        if (!sidecar) continue;
+        const byKey = new Map(
+          sidecar.entries.map((e) => [e.key, { offset: e.offset, length: e.length }]),
+        );
+        cached = { byKey };
+        sidecarCache.set(row.candidate_path, cached);
+      }
+      const se = cached.byKey.get(row.key);
+      if (se) {
+        transfers.push({
+          key: row.key,
+          packId: row.candidate_pack_id,
+          packOffset: se.offset,
+          packLength: se.length,
+        });
+      }
+    }
+
+    await this.#transaction(async () => {
+      // Single UPDATE repointing every transferred entry at its new pack,
+      // driven by a JSON payload expanded with json_each (built into libsql).
+      // No temp table: the Turso node driver corrupts temp-table DDL on
+      // in-memory databases once the schema grows past a few pages.
+      if (transfers.length) {
+        await this.#db.execute(
+          `UPDATE entries
+              SET pack_id = json_extract(j.value, '$.pack_id'),
+                  pack_offset = json_extract(j.value, '$.pack_offset'),
+                  pack_length = json_extract(j.value, '$.pack_length')
+             FROM json_each(?) AS j
+            WHERE entries.key = json_extract(j.value, '$.k')`,
+          [
+            JSON.stringify(
+              transfers.map((t) => ({
+                k: t.key,
+                pack_id: t.packId,
+                pack_offset: t.packOffset,
+                pack_length: t.packLength,
+              })),
+            ),
+          ],
+        );
+      }
+
+      // Entries still owned by a deleted pack after the transfer are the
+      // no-candidate ones: detach them to a loose miss (same recovery as the
+      // "Download incomplete" path). The transfer UPDATE ran first in this
+      // transaction, so no NOT IN/EXISTS guard is needed.
+      await this.#db.execute(
+        `UPDATE entries
+            SET pack_id = NULL, audio = NULL
+          WHERE pack_id IN (${packPlaceholders})`,
+        packIds,
+      );
+
+      // Reflect the new active references so a freshly-receiving pack is not
+      // immediately re-selected by the LRU.
+      if (transfers.length) {
+        const distinctCandidateIds = [...new Set(transfers.map((t) => t.packId))];
+        await this.#db.execute(
+          `UPDATE packs SET accessed_at = ?
+            WHERE id IN (${distinctCandidateIds.map(() => '?').join(',')})`,
+          [this.#now(), ...distinctCandidateIds],
+        );
+      }
+
+      // Drop the evicted packs (their entry rows are already gone or moved).
+      await this.#db.execute(`DELETE FROM packs WHERE id IN (${packPlaceholders})`, packIds);
+    });
+
+    // File cleanup runs after COMMIT (matches the self-heal pattern).
+    for (const pack of packRows) {
+      await packFs?.remove(pack.path).catch(() => {});
+      await packFs?.remove(packSidecarName(pack.path)).catch(() => {});
+    }
   }
 
   async #flushTouches(): Promise<void> {
