@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { md5 } from 'js-md5';
 import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
+import { chapterDownloadStatus } from '@/services/tts/downloadChapters';
 import {
   SqliteTTSCacheStore,
   TTSPackFs,
@@ -501,6 +502,84 @@ describe('SqliteTTSCacheStore pack compaction', () => {
     expect(await store.get('k2')).toBeNull();
     expect(await store.get('warm')).not.toBeNull();
     expect((await packFs.list()).filter((name) => name.endsWith('.mp3'))).toHaveLength(0);
+  });
+
+  test('clearDownloads fully removes downloaded chapters sharing sentences with a warm section (regression)', async () => {
+    // Two downloaded chapters share k1. A third, warm-cache section also
+    // repeats k1 and packs last, so k1's single entry row ends up owned by
+    // the warm section's pack. Clear downloads must still remove the
+    // downloaded chapters entirely — their marks, statuses, and pack files —
+    // while the warm section keeps its own cache.
+    await store.beginDownloadSections([4, 5]);
+    await cacheSection(4, ['mA1', 'mA2'], ['k1', 'k2']);
+    expect(await store.compact()).toBe(1);
+    await store.registerSectionMarks(5, ['mB1', 'mB2']);
+    await store.put('k4', sentence(4));
+    await store.recordMarkKey(5, 0, 'k1');
+    await store.recordMarkKey(5, 1, 'k4');
+    expect(await store.compact()).toBe(1);
+    await store.completeDownloadSections([4, 5]);
+
+    await store.registerSectionMarks(6, ['mC1', 'mC2']);
+    await store.put('k3', sentence(3));
+    await store.recordMarkKey(6, 0, 'k1');
+    await store.recordMarkKey(6, 1, 'k3');
+    expect(await store.compact()).toBe(1);
+    expect((await store.getSectionStatuses()).get(6)).toMatchObject({
+      packed: true,
+      pinned: false,
+    });
+
+    await store.clearDownloads();
+
+    expect(await store.hasDownloads()).toBe(false);
+    expect(await store.get('k2')).toBeNull();
+    expect(await store.get('k4')).toBeNull();
+    // The warm section still owns the shared sentence.
+    expect(await store.get('k1')).not.toBeNull();
+    const statuses = await store.getSectionStatuses();
+    // Cleared chapters leave no marks behind, so the podcast sheet must not
+    // label them partially downloaded.
+    expect(statuses.get(4)).toBeUndefined();
+    expect(statuses.get(5)).toBeUndefined();
+    expect(statuses.get(6)).toMatchObject({ packed: true, pinned: false });
+    expect(
+      chapterDownloadStatus(
+        { key: 'ch4', label: 'Chapter 4', depth: 0, startSection: 4, endSection: 5 },
+        statuses,
+      ),
+    ).toBe('none');
+    // Only the warm section's pack remains on disk.
+    expect((await packFs.list()).filter((name) => name.endsWith('.mp3'))).toHaveLength(1);
+  });
+
+  test('clearDownloads drops a shared entry a warm pack adopted when no section marks it anymore (regression)', async () => {
+    // Section 4 downloads k1; warm section 6 also marks k1 and packs last,
+    // adopting k1's entry row into its pack. Section 6's manifest then
+    // changes (a re-enumeration, e.g. a voice change) so nothing marks k1
+    // anymore. Clear downloads must garbage-collect the row instead of
+    // leaking it inside the surviving warm pack.
+    await store.beginDownloadSections([4]);
+    await cacheSection(4, ['mA1'], ['k1']);
+    expect(await store.compact()).toBe(1);
+    await store.completeDownloadSections([4]);
+
+    await store.registerSectionMarks(6, ['mC1', 'mC2']);
+    await store.put('k3', sentence(3));
+    await store.recordMarkKey(6, 0, 'k1');
+    await store.recordMarkKey(6, 1, 'k3');
+    expect(await store.compact()).toBe(1);
+    expect(await store.get('k1')).not.toBeNull();
+
+    await store.registerSectionMarks(6, ['mC2']);
+    await store.recordMarkKey(6, 0, 'k3');
+
+    await store.clearDownloads();
+
+    expect(await store.get('k1')).toBeNull();
+    expect(await store.get('k3')).not.toBeNull();
+    expect((await store.getSectionStatuses()).get(4)).toBeUndefined();
+    expect((await packFs.list()).filter((name) => name.endsWith('.mp3'))).toHaveLength(1);
   });
 
   test('gc removes pack files unknown to the database', async () => {

@@ -453,6 +453,25 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
         JOIN pinned_sections ps ON ps.section = p.section
        WHERE ps.active > 0 OR ps.pinned = 1`,
     );
+    // Shared sentences have one entry row per key, adopted by whichever
+    // section packed last, so the row may now live in an unpinned section's
+    // pack. Capture the cleared sections and their keys before the
+    // transaction so their marks can be dropped and entries that only the
+    // cleared sections referenced can be garbage-collected.
+    const clearedSections = (
+      await this.#db.select<DatabaseRow & { section: number }>(
+        'SELECT section FROM pinned_sections WHERE active > 0 OR pinned = 1',
+      )
+    ).map((row) => row.section);
+    const clearedKeys = (
+      await this.#db.select<DatabaseRow & { key: string }>(
+        `SELECT DISTINCT mm.key FROM manifest_marks mm
+           JOIN pinned_sections ps ON ps.section = mm.section
+          WHERE mm.key IS NOT NULL AND (ps.active > 0 OR ps.pinned = 1)`,
+      )
+    ).map((row) => row.key);
+    const sectionPlaceholders = clearedSections.map(() => '?').join(',');
+    const keyPlaceholders = clearedKeys.map(() => '?').join(',');
     try {
       await this.#db.execute('BEGIN');
       await this.#db.execute(
@@ -474,6 +493,31 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
            SELECT section FROM pinned_sections WHERE active > 0 OR pinned = 1
          )`,
       );
+      // Cleared sections stop claiming sentences: drop their marks and
+      // manifest so the podcast sheet offers them as not downloaded even
+      // when a shared entry row survives in a warm section's pack.
+      if (clearedSections.length) {
+        await this.#db.execute(
+          `DELETE FROM manifest_marks WHERE section IN (${sectionPlaceholders})`,
+          clearedSections,
+        );
+        await this.#db.execute(
+          `DELETE FROM manifests WHERE section IN (${sectionPlaceholders})`,
+          clearedSections,
+        );
+      }
+      // Entries that only the cleared sections referenced are now
+      // unreachable (owned by a surviving pack or detached): drop them
+      // instead of leaking rows the warm cache will never read.
+      if (clearedKeys.length) {
+        await this.#db.execute(
+          `DELETE FROM entries WHERE key IN (${keyPlaceholders})
+             AND NOT EXISTS (
+               SELECT 1 FROM manifest_marks mm WHERE mm.key = entries.key
+             )`,
+          clearedKeys,
+        );
+      }
       await this.#db.execute('DELETE FROM pinned_sections');
       await this.#db.execute('COMMIT');
     } catch (err) {
