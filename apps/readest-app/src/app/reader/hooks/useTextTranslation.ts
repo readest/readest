@@ -113,6 +113,31 @@ export const excludeTranslationNodes = (nodes: HTMLElement[]) =>
       !node.querySelector(':scope > .translation-target'),
   );
 
+export const getTranslationContextNodes = (
+  nodes: HTMLElement[],
+  document: Document,
+  visibleElements: Set<HTMLElement>,
+) => {
+  const documentNodes = nodes.filter((node) => node.ownerDocument === document);
+  if (documentNodes.length === 0 || visibleElements.size === 0) return [];
+
+  let firstIdx = documentNodes.length;
+  let lastIdx = -1;
+  for (const element of visibleElements) {
+    const index = documentNodes.indexOf(element);
+    if (index !== -1) {
+      if (index < firstIdx) firstIdx = index;
+      if (index > lastIdx) lastIdx = index;
+    }
+  }
+  if (lastIdx === -1) return [];
+
+  return documentNodes.slice(
+    Math.max(0, firstIdx - 1),
+    Math.min(documentNodes.length, lastIdx + 3),
+  );
+};
+
 /**
  * Hides or restores a paragraph's original text.
  *
@@ -259,32 +284,8 @@ export function useTextTranslation(
           }
         }
 
-        if (visibleElements.size === 0) return;
-
-        const nodes = allTextNodes.current;
-        if (nodes.length === 0) return;
-
-        let firstIdx = nodes.length;
-        let lastIdx = -1;
-        for (const el of visibleElements) {
-          const idx = nodes.indexOf(el);
-          if (idx !== -1) {
-            if (idx < firstIdx) firstIdx = idx;
-            if (idx > lastIdx) lastIdx = idx;
-          }
-        }
-
-        if (lastIdx === -1) return;
-
-        const startIdx = Math.max(0, firstIdx - 1);
-        const endIdx = Math.min(nodes.length - 1, lastIdx + 2);
-
-        for (let i = startIdx; i <= endIdx; i++) {
-          const node = nodes[i];
-          if (node) {
-            scheduleTranslation(node);
-          }
-        }
+        const nodes = getTranslationContextNodes(allTextNodes.current, document, visibleElements);
+        nodes.forEach((node) => scheduleTranslation(node));
       },
       { threshold: 0 },
     );

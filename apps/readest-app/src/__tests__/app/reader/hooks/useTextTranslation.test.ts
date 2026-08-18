@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createTranslationTargetNode,
   excludeTranslationNodes,
+  getTranslationContextNodes,
   groupTextNodesByDocument,
   observeTextNodesByDocument,
 } from '@/app/reader/hooks/useTextTranslation';
@@ -67,6 +68,26 @@ describe('excludeTranslationNodes', () => {
     paragraph.textContent = 'Source paragraph';
 
     expect(excludeTranslationNodes([paragraph])).toEqual([paragraph]);
+  });
+});
+
+describe('getTranslationContextNodes', () => {
+  it('does not include adjacent context nodes from another document', () => {
+    const firstDocument = document.implementation.createHTMLDocument('first');
+    const secondDocument = document.implementation.createHTMLDocument('second');
+    const firstBefore = firstDocument.createElement('p');
+    const firstVisible = firstDocument.createElement('p');
+    const secondAdjacent = secondDocument.createElement('p');
+    const secondAfter = secondDocument.createElement('p');
+
+    const context = getTranslationContextNodes(
+      [firstBefore, firstVisible, secondAdjacent, secondAfter],
+      firstDocument,
+      new Set([firstVisible]),
+    );
+
+    expect(context).toEqual([firstBefore, firstVisible]);
+    expect(context.every((node) => node.ownerDocument === firstDocument)).toBe(true);
   });
 });
 
