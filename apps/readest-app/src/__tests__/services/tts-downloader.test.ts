@@ -90,6 +90,10 @@ describe('TTSDownloader', () => {
     // All three were attempted; two succeeded.
     expect(warmer.warmed).toHaveLength(3);
     expect(result.synthesized).toBe(2);
+    // A section with a failed sentence is reported skipped, not completed: the
+    // manifest gap means it has not fully downloaded.
+    expect(result.completed).toEqual([]);
+    expect(result.skipped).toEqual([0]);
     // A section with a failed sentence is still compacted (the pack simply
     // won't form until the gap fills), so a later retry can complete it.
     expect(warmer.compacts).toBe(1);

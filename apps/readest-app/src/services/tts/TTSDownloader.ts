@@ -94,6 +94,7 @@ export class TTSDownloader {
       );
 
       let synthesized = 0;
+      let failed = false;
       let aborted = false;
       for (let done = 0; done < sentences.length; done++) {
         if (signal?.aborted) {
@@ -103,6 +104,7 @@ export class TTSDownloader {
         const s = sentences[done]!;
         const ok = await this.#warmer.warmSentence(sectionIndex, s.ordinal, s.lang, s.text, signal);
         if (ok) synthesized++;
+        else failed = true;
         onProgress?.({
           sectionIndex,
           total: sentences.length,
@@ -117,7 +119,8 @@ export class TTSDownloader {
       await this.#warmer.compactCache();
       synthesizedTotal += synthesized;
       if (aborted) break;
-      completed.push(sectionIndex);
+      if (failed) skipped.push(sectionIndex);
+      else completed.push(sectionIndex);
     }
 
     return { completed, skipped, synthesized: synthesizedTotal };
