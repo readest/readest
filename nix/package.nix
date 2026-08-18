@@ -56,7 +56,9 @@ rustPlatform.buildRustPackage (finalAttrs: {
     inherit (finalAttrs) pname version src;
     pnpm = pnpm_11;
     fetcherVersion = 4;
-    hash = "sha256-MTB3PWV0PP0yJ9tJFgtV1TBm1E06Sa/ZfsCSQHCHSss=";
+    # Regenerate whenever pnpm-lock.yaml changes: nix build prints the expected
+    # hash on mismatch. Went stale after #5754 and #5764 landed on main.
+    hash = "sha256-FOqG6WJW+/nn0mICJlqEbiDpbgqrhY1Ij9826SqxjAo=";
     pnpmInstallFlags = [
       # Increase number of fetch attempts to work around timeout issues on slow
       # networks: "TimeoutError: The operation was aborted due to timeout".
