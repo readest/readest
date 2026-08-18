@@ -252,7 +252,19 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       [row.pack_id],
     );
     const path = packs[0]?.path;
-    if (!path) return null;
+    if (!path) {
+      // Dangling pack reference (crash artifact or interleaved eviction):
+      // detach to a loose miss so the next synthesis repopulates the row
+      // instead of leaving a permanent miss no eviction branch can reclaim.
+      await this.#db.execute(
+        `UPDATE entries
+            SET pack_id = NULL, audio = NULL, size = 0,
+                pack_offset = NULL, pack_length = NULL
+          WHERE key = ?`,
+        [key],
+      );
+      return null;
+    }
     try {
       return await this.#packFs.readRange(path, row.pack_offset, row.pack_length);
     } catch (err) {
@@ -471,7 +483,6 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       )
     ).map((row) => row.key);
     const sectionPlaceholders = clearedSections.map(() => '?').join(',');
-    const keyPlaceholders = clearedKeys.map(() => '?').join(',');
     try {
       await this.#db.execute('BEGIN');
       await this.#db.execute(
@@ -508,14 +519,17 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       }
       // Entries that only the cleared sections referenced are now
       // unreachable (owned by a surviving pack or detached): drop them
-      // instead of leaking rows the warm cache will never read.
+      // instead of leaking rows the warm cache will never read. The keys ride
+      // in as one JSON array — a fully downloaded book has one key per
+      // distinct sentence, easily past SQLite's host-parameter cap.
       if (clearedKeys.length) {
         await this.#db.execute(
-          `DELETE FROM entries WHERE key IN (${keyPlaceholders})
-             AND NOT EXISTS (
-               SELECT 1 FROM manifest_marks mm WHERE mm.key = entries.key
-             )`,
-          clearedKeys,
+          `DELETE FROM entries
+            WHERE key IN (SELECT j.value FROM json_each(?) AS j)
+              AND NOT EXISTS (
+                SELECT 1 FROM manifest_marks mm WHERE mm.key = entries.key
+              )`,
+          [JSON.stringify(clearedKeys)],
         );
       }
       await this.#db.execute('DELETE FROM pinned_sections');
@@ -551,7 +565,8 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
           AND NOT EXISTS (
           SELECT 1 FROM manifest_marks mm
             LEFT JOIN entries e ON e.key = mm.key
-           WHERE mm.section = m.section AND e.key IS NULL)`,
+           WHERE mm.section = m.section
+             AND (e.key IS NULL OR (e.audio IS NULL AND e.pack_id IS NULL)))`,
     );
     let created = 0;
     for (const manifest of completable) {
@@ -1052,8 +1067,10 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     const packFs = this.#packFs;
     const packPlaceholders = packIds.map(() => '?').join(',');
 
-    // The pack rows being removed: we need their paths for file cleanup, and
-    // they are stable for the duration (we hold the write lock via the tx).
+    // The pack rows being removed: we need their paths for file cleanup.
+    // Candidate selection and sidecar reads below run OUTSIDE the transaction
+    // (file I/O must not sit inside it), so the transfer UPDATE re-validates
+    // each candidate pack still exists before repointing entries at it.
     const packRows = await this.#db.select<DatabaseRow & { id: number; path: string }>(
       `SELECT id, path FROM packs WHERE id IN (${packPlaceholders})`,
       packIds,
@@ -1121,8 +1138,20 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
           continue;
         }
         cached = {
+          // Malformed entries are dropped here so a corrupt sidecar can only
+          // disqualify its candidate: JSON.stringify drops undefined, so a
+          // non-numeric offset passed through would commit as NULL and turn
+          // the transferred entry into a permanent silent miss.
           byKey: new Map(
-            sidecar.entries.map((e) => [e.key, { offset: e.offset, length: e.length }]),
+            sidecar.entries
+              .filter(
+                (e) =>
+                  Number.isInteger(e.offset) &&
+                  e.offset >= 0 &&
+                  Number.isInteger(e.length) &&
+                  e.length > 0,
+              )
+              .map((e) => [e.key, { offset: e.offset, length: e.length }]),
           ),
         };
         sidecarCache.set(row.candidate_path, cached);
@@ -1151,7 +1180,10 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
                   pack_offset = json_extract(j.value, '$.pack_offset'),
                   pack_length = json_extract(j.value, '$.pack_length')
              FROM json_each(?) AS j
-            WHERE entries.key = json_extract(j.value, '$.k')`,
+            WHERE entries.key = json_extract(j.value, '$.k')
+              AND EXISTS (
+                SELECT 1 FROM packs p WHERE p.id = json_extract(j.value, '$.pack_id')
+              )`,
           [
             JSON.stringify(
               transfers.map((t) => ({

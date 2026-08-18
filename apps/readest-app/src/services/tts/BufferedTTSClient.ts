@@ -655,8 +655,15 @@ export class BufferedTTSClient implements TTSClient {
       // Retry transient failures exactly like live playback: a single network
       // blip (DNS, socket reset) must not drop a sentence and fail a chapter.
       // Abort with the caller's signal so cancelling a download interrupts an
-      // in-flight synthesis instead of waiting for it to finish.
-      await this.#synthesizeWithRetry(lang, text, voiceId, signal ?? new AbortController().signal);
+      // in-flight synthesis instead of waiting for it to finish. An aborted
+      // synthesis resolves undefined: nothing was cached, so record nothing.
+      const result = await this.#synthesizeWithRetry(
+        lang,
+        text,
+        voiceId,
+        signal ?? new AbortController().signal,
+      );
+      if (!result) return false;
     } catch (err) {
       // Offline / permanent failure: leave the ordinal unrecorded so the
       // section stays incomplete and can be retried later.

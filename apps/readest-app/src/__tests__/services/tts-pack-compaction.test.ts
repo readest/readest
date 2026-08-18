@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { md5 } from 'js-md5';
 import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
+import type { DatabaseRow } from '@/types/database';
 import { chapterDownloadStatus } from '@/services/tts/downloadChapters';
 import {
   SqliteTTSCacheStore,
@@ -347,6 +348,84 @@ describe('SqliteTTSCacheStore pack compaction', () => {
       packed: true,
       pinned: true,
     });
+  });
+
+  test('detached entries do not keep a section eternally completable after a heal', async () => {
+    // Pinned section 1 packs, then its pack file is lost with no surviving
+    // candidate: self-heal detaches k1/k2 to loose misses. compact() must not
+    // re-attempt the section until the sentences re-synthesize — a predicate
+    // that sees detached rows as packable churns a full-section audio load
+    // plus a "pack audio missing" warning every debounce cycle, forever.
+    await store.beginDownloadSections([1]);
+    await cacheSection(1, ['m1', 'm2'], ['k1', 'k2']);
+    await store.compact();
+    await store.completeDownloadSections([1]);
+    const packName = (await packFs.list()).find((n) => n.endsWith('.mp3'))!;
+    packFs.files.delete(packName);
+    expect(await store.get('k1')).toBeNull();
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      expect(await store.compact()).toBe(0);
+      const missing = warn.mock.calls.filter((call) =>
+        String(call[0]).includes('pack audio missing'),
+      );
+      expect(missing).toEqual([]);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test('an entry pointing at a vanished pack row detaches to a loose miss', async () => {
+    // A crash between a transfer commit and file cleanup (or an interleaved
+    // eviction) can leave an entry whose pack_id references no pack row. The
+    // read must detach it so the next synthesis repopulates the row, instead
+    // of leaving a permanent silent miss that neither eviction branch counts.
+    await cacheSection(3, ['m1'], ['k1']);
+    await store.compact();
+    await db.execute('DELETE FROM packs', []);
+    expect(await store.get('k1')).toBeNull();
+    const rows = await db.select<DatabaseRow & { pack_id: number | null }>(
+      "SELECT pack_id FROM entries WHERE key = 'k1'",
+    );
+    expect(rows[0]!.pack_id).toBeNull();
+  });
+
+  test('a transfer candidate with malformed sidecar offsets is skipped, not committed as NULL', async () => {
+    // Pinned section 1 owns k1+k2 in packA; section 2 packs k1 (shared) + k3,
+    // adopting k1's row into packB. packA's sidecar is corrupted so k1's entry
+    // lacks a numeric offset: evicting packB must not repoint k1 at packA with
+    // NULL offsets (JSON.stringify drops undefined, so json_extract yields
+    // NULL — a permanent silent miss). With no valid candidate it detaches.
+    await store.beginDownloadSections([1]);
+    await cacheSection(1, ['m1', 'm2'], ['k1', 'k2']);
+    await store.compact();
+    await store.completeDownloadSections([1]);
+    await store.registerSectionMarks(2, ['mB1', 'mB2']);
+    await store.put('k3', sentence(3));
+    await store.recordMarkKey(2, 0, 'k1');
+    await store.recordMarkKey(2, 1, 'k3');
+    await store.compact();
+
+    const packAName = (await packFs.list()).find((n) => n.startsWith('1-') && n.endsWith('.mp3'))!;
+    const sidecarName = packSidecarName(packAName);
+    const sidecar = JSON.parse(
+      new TextDecoder().decode(packFs.files.get(sidecarName)!),
+    ) as TTSPackSidecar;
+    delete (sidecar.entries[0] as { offset?: number }).offset;
+    packFs.files.set(sidecarName, new TextEncoder().encode(JSON.stringify(sidecar)));
+
+    const tight = new SqliteTTSCacheStore(db, {
+      budgetBytes: 100,
+      now: () => clock.t++,
+      packFs,
+    });
+    await tight.put('oversize', sentence(9, 80));
+
+    const rows = await db.select<DatabaseRow & { pack_id: number | null }>(
+      "SELECT pack_id FROM entries WHERE key = 'k1'",
+    );
+    expect(rows[0]!.pack_id).toBeNull();
   });
 
   test('an imported pack for a pinned section survives eviction (imported-% special-case)', async () => {
