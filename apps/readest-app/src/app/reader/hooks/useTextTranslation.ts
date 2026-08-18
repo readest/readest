@@ -287,6 +287,10 @@ export function useTextTranslation(
     translatedElements.current.forEach((element) => {
       const translationTargets = element.querySelectorAll('.translation-target');
       translationTargets.forEach((target) => target.remove());
+      // The hidden source wrapper is `display: none`, so a paragraph left with
+      // neither a target nor a visible original renders blank for as long as the
+      // re-translation is in flight, and stays blank if that translation fails.
+      setSourceVisibility(element, true);
     });
 
     translatedElements.current = [];
