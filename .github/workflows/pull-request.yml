@@ -7,6 +7,9 @@ on:
 permissions:
   contents: read
 jobs:
+  # Evaluation only: the flake exposes no `checks`, so this verifies that every
+  # output still evaluates across systems without compiling anything. The full
+  # build runs in nix-build.yml on main, which is also what populates the cache.
   # Only on pull_request: main pushes are already covered by nix-build.yml, and
   # running both there would build and push the same paths twice.
   nix_flake_check:

@@ -205,9 +205,16 @@
           };
 
           formatter = pkgs.nixpkgs-fmt;
-          checks = lib.optionalAttrs (!isDarwin) {
-            build = self.packages.${system}.default;
-          };
+
+          # Deliberately no `checks.build`. `nix flake check` builds everything
+          # in `checks`, so pointing it at packages.default turned the PR check
+          # into a full release build: cargo vendor, a production Next.js build,
+          # and a cold release compile of the whole Tauri tree, with no sccache
+          # or rust-cache available inside the nix sandbox. That ran ~45 min per
+          # PR. The flake outputs are still evaluated across systems here, which
+          # catches eval errors, and `nix build` in nix-build.yml does the real
+          # build on main and pushes the result to the binary cache.
+          checks = { };
         });
 
 }
