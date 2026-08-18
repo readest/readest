@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 4af4f927-b772-4650-bb93-26ccd73ba1cb
-  modified: 2026-08-06T03:23:22.515Z
+  modified: 2026-08-16T09:36:54.615Z
 ---
 
 Moved from MEMORY.md to keep the index small. One line per memory; open the linked file for detail.
@@ -74,3 +74,21 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - [#5539 TTS ruby furigana](tts-ruby-furigana-readings-5539.md) MERGED #5546 · [#5636 symmetric minimal mini-player](tts-miniplayer-symmetric-5636.md) MERGED #5707; mirror-width items in ONE justify-between row = even gaps + exact centering
 - [#1359 pull-down bookmark gesture](pull-down-bookmark-gesture-1359.md) MERGED #5493 · [#5647 footnote jump flash](footnote-jump-flash-5647.md) MERGED #5655; searchHighlight.ts RENAMED transientHighlight.ts
 - [Override Layout collapsed `<pre>`](override-layout-collapses-pre-whitespace.md) MERGED #5549 · [Scroll toggle broke turn animation](captured-turn-prepared-surface-lost-on-scroll-toggle.md) FIXED+verified; CDP touch hold is the instrument
+- [#5660 Home/End jump](home-end-book-jump-5660.md) MERGED #5673; `goToFraction(0|1)` one call; guard on `inited`; end footer "66 / 68" is correct
+- [#5724 reader search capped at 500](reader-search-500-cap-5724.md) MERGED #5728; `maxResultsPerBook: Infinity`; sidebar list is NOT virtualized
+- [Word Lens en-vi pack](wordlens-en-vi-pack-5737.md) MERGED #5737; WikDict has NO vi, use kaikki + aria2c -x16 (curl = 6h); vi is target-only
+- [wordlens:sync now incremental](wordlens-sync-incremental-5737.md) MERGED #5737 + fix in #5738; diffs CDN manifest sha256; retired-pair manifest republish was the review catch
+- [#5631 Auto Scroll resumes on reopen](autoscroll-resume-on-reopen-5631.md) MERGED #5710; per-book `autoScrollRunning`; StrictMode LATCHED the unmount ref
+- [Stale format gates in Settings](stale-format-gates-in-settings.md)
+- Proofread: [#4700](proofread-enhancements-4700.md); [#4781 CRDT](proofread-per-book-crdt-sync.md); #4859 edit toggle; [#5277 fonts lost](proofread-rule-change-font-loss-5277.md) MERGED #5345
+- [Send-to-Readest local file:// clips](send-to-readest-local-file-clips.md) metaHash dedup · [Extension file:// fetch capability](extension-file-url-fetch-capability.md) content scripts CANNOT
+- [Book action platform surfaces](book-actions-platform-surfaces.md) · [menu append race #4389](tauri-menu-append-race-4389.md) · [iOS cover picker no-op](ios-cover-picker-nofilter-5346.md) MERGED #5346
+- TXT: [#4390 author](txt-author-recognition-4390.md); [#4658 chapter measure-word](txt-chapter-measure-word-4658.md)
+- [Cover stale (in-place mutation)](cover-stale-inplace-mutation-memo.md) · [Series/author back no-op #4437](series-folder-back-noop-4437.md)
+- [Library/reader texture #4743](library-reader-separate-texture-4743.md) · [list series overflow #4796](list-view-series-overflow-4796.md)
+- [#3797 recently-read shelf](recent-read-shelf-3797.md) · #3889 auto-import folders · [auto-import re-imports dupes](auto-import-duplicate-files-reimport.md) MERGED #5337; needs `altFilePaths`
+- [#5411 PDF metaHash filename salt](pdf-metahash-filename-salt-5411.md) MERGED #5412; re-parse preserves salt · [koplugin metaHash parity](koplugin-metahash-parity.md) MERGED #5508
+- #5079 Time Remaining sort "no time" bucket OUTSIDE sort multiplier · memo comparator swallows new prop
+- [#5175 select bar hides last book](select-mode-actions-overlap-last-book-5175.md) Virtuoso Footer spacer · [#5222 bookshelf import menu](bookshelf-import-menu-popup-5247.md) MERGED #5247
+- [#5651 RLM->ZWNJ half-space](persian-rlm-halfspace-zwnj-5651.md) MERGED; U+0600-06FF contains DIGITS — swap between digits flips visual order
+- [#5301 "Column Gap"->"Additional Margin"](column-gap-additional-margins-5301.md) label rename only

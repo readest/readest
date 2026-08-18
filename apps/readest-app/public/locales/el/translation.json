@@ -1810,7 +1810,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "Συγχρονίστε τη βιβλιοθήκη, την πρόοδο ανάγνωσης και τις επισημάνσεις σας με το Readest Cloud.",
   "Account and Storage": "Λογαριασμός και αποθήκευση",
   "Manage your plan and stored files": "Διαχειριστείτε το πρόγραμμα και τα αποθηκευμένα αρχεία σας",
-  "Another device is still syncing this library via Readest Cloud": "Μια άλλη συσκευή εξακολουθεί να συγχρονίζει αυτήν τη βιβλιοθήκη μέσω Readest Cloud",
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}} μεταφόρτωση απέτυχε: ανεπαρκές όριο αποθήκευσης",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}} μεταφορτώσεις απέτυχαν: ανεπαρκές όριο αποθήκευσης",
   "Library sync via {{provider}}": "Συγχρονισμός βιβλιοθήκης μέσω {{provider}}",

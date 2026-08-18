@@ -1810,7 +1810,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "Kütüphanenizi, okuma ilerlemenizi ve vurgularınızı Readest Cloud ile senkronize edin.",
   "Account and Storage": "Hesap ve depolama",
   "Manage your plan and stored files": "Planınızı ve depolanan dosyalarınızı yönetin",
-  "Another device is still syncing this library via Readest Cloud": "Başka bir cihaz bu kütüphaneyi hâlâ Readest Cloud üzerinden senkronize ediyor",
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}} yükleme başarısız: yetersiz depolama kotası",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}} yükleme başarısız: yetersiz depolama kotası",
   "Library sync via {{provider}}": "{{provider}} ile kitaplık eşitleme",

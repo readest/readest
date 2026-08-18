@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: bd78030b-1892-4a7c-8c99-79084f0310bc
-  modified: 2026-08-06T03:23:07.764Z
+  modified: 2026-08-16T09:36:59.539Z
 ---
 
 Moved from MEMORY.md to keep the index small. One line per memory; open the linked file for detail.
@@ -22,3 +22,7 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - Scrolled: [#4727 wheel](pdf-scroll-mode-wheel-double-4727.md); [#4436 header center](scrolled-header-title-center-4436.md); [Duokan cover](duokan-fullscreen-cover-scroll.md)
 - [#5375 SVG cover stretch](svg-cover-stretch-duokan-5375.md) SUPERSEDED by #5263
 - [#5263 Duokan fullscreen cover letterbox](duokan-fullscreen-cover-letterbox-5263.md) ALL MERGED; letterbox + blank cover + unseeded scrollBounds dead swipe; adb gestures deliver NO touchmove
+- [#5591 RTL page order for fixed layout](fixed-layout-rtl-spread-5591.md) MERGED #5712 + foliate#75; ViewMenu toggle RIDES writingMode (never a parallel setting); PDF ViewerPreferences R2L auto-detect; Shift+F settings dialog had NO bookKey (ghost '' saves)
+- [#5649 FXL text follows the theme](fxl-authored-colors-5649.md) MERGED #5657; FXL docs get ONLY applyFixedlayoutStyles
+- [#5663 last page unreachable on iOS 18](ios-last-page-scroll-clamp-5663.md) MERGED #5678 + foliate#73; WebKit clamps final scrollLeft after animated transforms; rAF re-apply fixes; repros 18.5 NOT 26.3
+- [Scroll offsets quantize; sub-pixel rendering differs](scroll-offsets-quantize-subpixel-rendering.md) MERGED #5679 + foliate#74; Blink SNAPS composited layers to device px; measure pixels, not getBoundingClientRect

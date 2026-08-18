@@ -1878,7 +1878,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "Sinhronizirajte knjižnico, napredek branja in označbe z Readest Cloud.",
   "Account and Storage": "Račun in shramba",
   "Manage your plan and stored files": "Upravljajte svoj paket in shranjene datoteke",
-  "Another device is still syncing this library via Readest Cloud": "Druga naprava še vedno sinhronizira to knjižnico prek Readest Cloud",
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}} nalaganje ni uspelo: nezadostna kvota v shrambi",
   "{{count}} uploads failed: insufficient storage quota_two": "{{count}} nalaganji nista uspeli: nezadostna kvota v shrambi",
   "{{count}} uploads failed: insufficient storage quota_few": "{{count}} nalaganja niso uspela: nezadostna kvota v shrambi",

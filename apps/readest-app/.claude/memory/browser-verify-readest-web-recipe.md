@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 0dba721b-b7cb-42d4-8240-34a5f3afd221
-  modified: 2026-08-13T07:47:47.030Z
+  modified: 2026-08-16T09:28:51.174Z
 ---
 
 Recipe for verifying reader/annotator changes in Chrome against `pnpm dev-web` (run it from
@@ -59,4 +59,15 @@ keypress at all** as a baseline and grep the console for `doc index loaded` time
 **Screenshot coordinates:** the screenshot may be scaled relative to CSS pixels
 (e.g. 1568x774 image for a 1280x632 viewport). Coordinates you pass back are in the same
 scaled space, so reading positions off the screenshot is correct — but any coordinate you
-compute in CSS px from JS must be multiplied by `screenshotWidth / innerWidth`.
+compute in CSS px from JS must be multiplied by `screenshotWidth / innerWidth`. For SMALL
+targets (toolbar icons, superscript footnote links) don't eyeball the screenshot — a few
+px of reading error lands on foliate's tap-to-turn region or a dismiss overlay and silently
+does the wrong thing (page turn / popup dismissed). Get the element rect via JS
+(`getBoundingClientRect`), scale the center, and click that; verify hit-testing first with
+`document.elementFromPoint` in CSS space.
+
+**Opening a footnote/link popup reliably:** pixel-clicking tiny `<a>`s is flaky, but a
+synthetic `MouseEvent('click', {bubbles: true})` dispatched ON THE ANCHOR inside the
+iframe doc works — foliate's link handler listens on the iframe doc, so the event bubbles
+into it (unlike synthetic clicks on the top document, which just turn the page). Find it
+with `view.renderer.getContents()[i].doc.querySelector('a[href*="..."]')`.

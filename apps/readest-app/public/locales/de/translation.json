@@ -1810,7 +1810,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "Synchronisieren Sie Ihre Bibliothek, Ihren Lesefortschritt und Ihre Markierungen mit Readest Cloud.",
   "Account and Storage": "Konto und Speicher",
   "Manage your plan and stored files": "Tarif und gespeicherte Dateien verwalten",
-  "Another device is still syncing this library via Readest Cloud": "Ein anderes Gerät synchronisiert diese Bibliothek weiterhin über Readest Cloud",
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}} Upload fehlgeschlagen: unzureichendes Speicherkontingent",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}} Uploads fehlgeschlagen: unzureichendes Speicherkontingent",
   "Library sync via {{provider}}": "Bibliothekssynchronisierung über {{provider}}",

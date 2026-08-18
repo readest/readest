@@ -1844,7 +1844,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "סנכרן את הספרייה, התקדמות הקריאה וההדגשות שלך עם Readest Cloud.",
   "Account and Storage": "חשבון ואחסון",
   "Manage your plan and stored files": "נהל את המינוי והקבצים המאוחסנים שלך",
-  "Another device is still syncing this library via Readest Cloud": "מכשיר אחר עדיין מסנכרן את הספרייה הזו דרך Readest Cloud",
   "{{count}} uploads failed: insufficient storage quota_one": "העלאה {{count}} נכשלה: מכסת אחסון לא מספקת",
   "{{count}} uploads failed: insufficient storage quota_two": "{{count}} העלאות נכשלו: מכסת אחסון לא מספקת",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}} העלאות נכשלו: מכסת אחסון לא מספקת",

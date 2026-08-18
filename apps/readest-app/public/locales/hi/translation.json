@@ -1810,7 +1810,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "अपनी लाइब्रेरी, पढ़ने की प्रगति और हाइलाइट्स को Readest Cloud से सिंक करें।",
   "Account and Storage": "खाता और स्टोरेज",
   "Manage your plan and stored files": "अपने प्लान और संग्रहीत फ़ाइलों का प्रबंधन करें",
-  "Another device is still syncing this library via Readest Cloud": "कोई अन्य डिवाइस अभी भी Readest Cloud के माध्यम से इस लाइब्रेरी को सिंक कर रहा है",
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}} अपलोड विफल: अपर्याप्त स्टोरेज कोटा",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}} अपलोड विफल: अपर्याप्त स्टोरेज कोटा",
   "Library sync via {{provider}}": "{{provider}} के माध्यम से लाइब्रेरी सिंक",

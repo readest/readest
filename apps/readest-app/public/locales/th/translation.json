@@ -1776,7 +1776,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "ซิงค์คลังหนังสือ ความคืบหน้าการอ่าน และไฮไลต์ของคุณกับ Readest Cloud",
   "Account and Storage": "บัญชีและพื้นที่จัดเก็บ",
   "Manage your plan and stored files": "จัดการแพ็กเกจและไฟล์ที่จัดเก็บของคุณ",
-  "Another device is still syncing this library via Readest Cloud": "อุปกรณ์อื่นยังคงซิงค์คลังหนังสือนี้ผ่าน Readest Cloud",
   "{{count}} uploads failed: insufficient storage quota_other": "อัปโหลดล้มเหลว {{count}} รายการ: พื้นที่จัดเก็บไม่เพียงพอ",
   "Library sync via {{provider}}": "ซิงค์คลังหนังสือผ่าน {{provider}}",
   "Google Drive session expired": "เซสชัน Google Drive หมดอายุแล้ว",

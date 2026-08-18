@@ -1776,7 +1776,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "Segerakkan perpustakaan, kemajuan bacaan dan penonjolan anda dengan Readest Cloud.",
   "Account and Storage": "Akaun dan storan",
   "Manage your plan and stored files": "Urus pelan dan fail tersimpan anda",
-  "Another device is still syncing this library via Readest Cloud": "Peranti lain masih menyegerakkan perpustakaan ini melalui Readest Cloud",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}} muat naik gagal: kuota storan tidak mencukupi",
   "Library sync via {{provider}}": "Penyegerakan pustaka melalui {{provider}}",
   "Google Drive session expired": "Sesi Google Drive telah tamat tempoh",

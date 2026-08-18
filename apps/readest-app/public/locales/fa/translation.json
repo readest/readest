@@ -1810,7 +1810,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "کتابخانه، وضعیت مطالعه و هایلایت‌های خود را با Readest Cloud همگام‌سازی کنید.",
   "Account and Storage": "حساب و فضای ذخیره‌سازی",
   "Manage your plan and stored files": "مدیریت طرح اشتراک و فایل‌های ذخیره‌شده",
-  "Another device is still syncing this library via Readest Cloud": "دستگاه دیگری هنوز این کتابخانه را از طریق Readest Cloud همگام‌سازی می‌کند",
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}} بارگذاری ناموفق بود: سهمیه‌ی ذخیره‌سازی کافی نیست",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}} بارگذاری ناموفق بود: سهمیه‌ی ذخیره‌سازی کافی نیست",
   "Library sync via {{provider}}": "همگام‌سازی کتابخانه از طریق {{provider}}",

@@ -1776,7 +1776,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "라이브러리, 읽기 진행 상황, 하이라이트를 Readest Cloud와 동기화합니다.",
   "Account and Storage": "계정 및 저장소",
   "Manage your plan and stored files": "요금제와 저장된 파일 관리",
-  "Another device is still syncing this library via Readest Cloud": "다른 기기가 아직 Readest Cloud를 통해 이 라이브러리를 동기화하고 있습니다",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}}개의 업로드 실패: 저장소 할당량 부족",
   "Library sync via {{provider}}": "{{provider}}을(를) 통한 서재 동기화",
   "Google Drive session expired": "Google Drive 세션이 만료되었습니다",

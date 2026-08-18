@@ -1810,7 +1810,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "ඔබේ පුස්තකාලය, කියවීමේ ප්‍රගතිය සහ ඉස්මතු කිරීම් Readest Cloud සමඟ සමමුහුර්ත කරන්න.",
   "Account and Storage": "ගිණුම සහ ගබඩාව",
   "Manage your plan and stored files": "ඔබේ සැලසුම සහ ගබඩා කළ ගොනු කළමනාකරණය කරන්න",
-  "Another device is still syncing this library via Readest Cloud": "තවත් උපාංගයක් තවමත් Readest Cloud හරහා මෙම පුස්තකාලය සමමුහුර්ත කරයි",
   "{{count}} uploads failed: insufficient storage quota_one": "උඩුගත කිරීම් {{count}}ක් අසාර්ථකයි: ප්‍රමාණවත් නොවන ගබඩා ප්‍රමාණය",
   "{{count}} uploads failed: insufficient storage quota_other": "උඩුගත කිරීම් {{count}}ක් අසාර්ථකයි: ප්‍රමාණවත් නොවන ගබඩා ප්‍රමාණය",
   "Library sync via {{provider}}": "{{provider}} හරහා පුස්තකාල සමමුහූර්තකරණය",

@@ -1810,7 +1810,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "Kutubxonangiz, oʻqish jarayoni va belgilashlaringizni Readest Cloud bilan sinxronlang.",
   "Account and Storage": "Hisob va xotira",
   "Manage your plan and stored files": "Tarif reja va saqlangan fayllarni boshqaring",
-  "Another device is still syncing this library via Readest Cloud": "Boshqa qurilma hali ham bu kutubxonani Readest Cloud orqali sinxronlamoqda",
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}} ta yuklash muvaffaqiyatsiz: yetarli xotira kvotasi yoʻq",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}} ta yuklash muvaffaqiyatsiz: yetarli xotira kvotasi yoʻq",
   "Library sync via {{provider}}": "Kutubxona {{provider}} orqali sinxronlashtiriladi",

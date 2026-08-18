@@ -1776,7 +1776,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "ཁྱེད་ཀྱི་དཔེ་མཛོད་དང་། ཀློག་པའི་ཡར་འཕེལ། གཙོ་གནད་བཅས་ Readest Cloud དང་མཉམ་སྒྲིག་བྱེད།",
   "Account and Storage": "རྩིས་ཐོ་དང་ཉར་ཚགས།",
   "Manage your plan and stored files": "ཁྱེད་ཀྱི་འཆར་གཞི་དང་ཉར་བའི་ཡིག་ཆ་དོ་དམ་བྱེད།",
-  "Another device is still syncing this library via Readest Cloud": "སྒྲིག་ཆས་གཞན་ཞིག་གིས་ད་དུང་ Readest Cloud བརྒྱུད་ནས་དཔེ་མཛོད་འདི་མཉམ་སྒྲིག་བྱེད་བཞིན་འདུག",
   "{{count}} uploads failed: insufficient storage quota_other": "ཡར་འགོད་ {{count}} མ་ཐུབ། སྤྲི་དོན་གྱི་ཉར་ཚགས་ས་ཁོངས་མི་འདང་།",
   "Library sync via {{provider}}": "{{provider}} བརྒྱུད་ནས་དཔེ་མཛོད་མཉམ་སྒྲིག",
   "Google Drive session expired": "Google Drive ཡི་ཐེངས་གྲངས་ཀྱི་དུས་ཡོལ་སོང་",

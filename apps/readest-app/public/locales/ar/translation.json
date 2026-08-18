@@ -1946,7 +1946,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "زامن مكتبتك وتقدم القراءة والتمييزات مع Readest Cloud.",
   "Account and Storage": "الحساب والتخزين",
   "Manage your plan and stored files": "إدارة اشتراكك وملفاتك المخزنة",
-  "Another device is still syncing this library via Readest Cloud": "لا يزال جهاز آخر يزامن هذه المكتبة عبر Readest Cloud",
   "{{count}} uploads failed: insufficient storage quota_zero": "لم يفشل أي رفع: حصة التخزين غير كافية",
   "{{count}} uploads failed: insufficient storage quota_one": "فشل رفع واحد: حصة التخزين غير كافية",
   "{{count}} uploads failed: insufficient storage quota_two": "فشل رفعان: حصة التخزين غير كافية",

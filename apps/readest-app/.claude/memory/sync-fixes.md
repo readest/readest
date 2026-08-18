@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 4af4f927-b772-4650-bb93-26ccd73ba1cb
-  modified: 2026-07-28T14:48:08.560Z
+  modified: 2026-08-16T09:36:39.438Z
 ---
 
 Moved from MEMORY.md to keep the index small. One line per memory; open the linked file for detail.
@@ -32,3 +32,9 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - [#5253 OneDrive OAuth trailing slash](onedrive-oauth-callback-slash-5253.md) MERGED #5479; Rust drops unknown TS fields · [OneDrive AADSTS90023 Origin](onedrive-token-origin-aadsts90023.md) MERGED #5604, verified; needs `unsafe-headers` + `Origin: ''`
 - [#5465 dictionary prefs vs toggle](dictionary-prefs-settings-replica-category-5465.md) MERGED #5470 · [10k library breaks /sync pull](sync-pull-10k-worker-1102.md) MERGED #5364
 - [#5426 BookOrbit integration](bookorbit-integration-5426.md) MERGED #5487
+- [#5720 mixed-fleet toast REMOVED](mixed-fleet-toast-removed-5720.md) MERGED #5726; fixed anchor re-warned every launch; user chose removal; ack-cursor design saved if it returns
+- #5067 shelf progress never pulled `mergeBookMetadata` subset = what travels
+- koplugin: [#4374 cover upload](koplugin-cover-upload.md); #5094 gesture + upload current; [#4954 slow open](koplugin-library-open-mosaic-cache-4954.md)
+- [#5666 Push stats now wedged](koplugin-stats-push-chunking-5666.md) MERGED #5670; 500-event chunks w/ per-chunk cursor
+- [#5507 auth nil response](koplugin-auth-nil-response-5507.md) MERGED; busted = ONE state · [#5527 conflict re-prompt on refocus](kosync-conflict-reprompt-5527.md) MERGED #5528
+- Calibre: [plugin push #4863](calibre-plugin-push-4863.md); `uploaded_at` != blob #5325; status marks #5332; [custom columns #4811](calibre-custom-columns-4811.md)

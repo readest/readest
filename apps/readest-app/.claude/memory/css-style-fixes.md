@@ -72,3 +72,6 @@ Key functions:
 - `snap()` - Swipe gesture detection for page turning
 
 Common issue: A fix applied to `columnize()` but not `scrolled()` (or vice versa). Always check both paths.
+
+## Moved from MEMORY.md index
+- [#5681 table label column shredded](table-cell-overflow-wrap-anywhere-5681.md) MERGED #5686; `overflow-wrap:anywhere` on td/th = 1-char min-content; use `break-word`

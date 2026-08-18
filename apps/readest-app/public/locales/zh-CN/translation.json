@@ -1776,7 +1776,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "将您的书库、阅读进度和高亮与 Readest 云端同步。",
   "Account and Storage": "账户与存储",
   "Manage your plan and stored files": "管理您的订阅方案和已存储的文件",
-  "Another device is still syncing this library via Readest Cloud": "另一台设备仍在通过 Readest 云端同步此书库",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}} 个上传失败：云存储空间不足",
   "Library sync via {{provider}}": "通过 {{provider}} 同步书库",
   "Google Drive session expired": "Google Drive 会话已过期",

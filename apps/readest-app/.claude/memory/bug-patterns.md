@@ -131,3 +131,11 @@
 6. **Test in both paginated and scrolled modes** for layout changes
 7. **Test on multiple platforms** for any UI change
 8. **Run `pnpm build-check`** before submitting
+
+## Moved from MEMORY.md index
+- [CFI.compare null = app crash](cfi-compare-null-crash-findnearestcfi.md) MERGED #5533; `''` cfi is SAFE · [Minified `Module.<letter>` frames](minified-stack-module-namespace-frames.md) = `import * as` namespace
+- [Native DB close() closes ALL turso conns](native-db-close-all-not-loaded.md) MERGED #5497; "not loaded" = READEST-6 · [Turso "concurrent use forbidden"](turso-concurrent-use-forbidden.md) `op_lock` async mutex
+- [#5097/#5308 encoded href](epub-encoded-href-reserved-chars-5097.md) `decodeURI` keeps reserved chars; MERGED #5311
+- [#5273 undeclared cover.jpg](epub-undeclared-cover-entry-5273.md) MERGED #5339 + foliate#61 · [#5455 OPF `<item></item>` skipped](epub-opf-expanded-item-tags-5455.md) MERGED #5463
+- Stale settings closure: persist `useSettingsStore.getState().settings` ([#4780](webdav-connect-nullified-4780.md)) · Page margins not live #4898 in-place mutation froze memo
+- [Foliate touch-listener capture phase](foliate-touch-listener-capture-phase.md) · [iframe cross-realm instanceof](iframe-cross-realm-instanceof.md) duck-type `'closest'`

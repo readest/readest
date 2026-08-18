@@ -1810,7 +1810,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "Synka ditt bibliotek, dina läsframsteg och markeringar med Readest Cloud.",
   "Account and Storage": "Konto och lagring",
   "Manage your plan and stored files": "Hantera ditt abonnemang och lagrade filer",
-  "Another device is still syncing this library via Readest Cloud": "En annan enhet synkar fortfarande det här biblioteket via Readest Cloud",
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}} uppladdning misslyckades: otillräcklig lagringskvot",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}} uppladdningar misslyckades: otillräcklig lagringskvot",
   "Library sync via {{provider}}": "Bibliotekssynkronisering via {{provider}}",

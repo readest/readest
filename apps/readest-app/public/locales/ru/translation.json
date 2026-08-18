@@ -1878,7 +1878,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "Синхронизируйте свою библиотеку, прогресс чтения и выделения с Readest Cloud.",
   "Account and Storage": "Аккаунт и хранилище",
   "Manage your plan and stored files": "Управляйте тарифом и сохранёнными файлами",
-  "Another device is still syncing this library via Readest Cloud": "Другое устройство всё ещё синхронизирует эту библиотеку через Readest Cloud",
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}} загрузка не удалась: недостаточно квоты хранилища",
   "{{count}} uploads failed: insufficient storage quota_few": "{{count}} загрузки не удались: недостаточно квоты хранилища",
   "{{count}} uploads failed: insufficient storage quota_many": "{{count}} загрузок не удалось: недостаточно квоты хранилища",

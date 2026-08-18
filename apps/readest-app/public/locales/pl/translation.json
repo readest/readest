@@ -1878,7 +1878,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "Synchronizuj bibliotekę, postęp czytania i zaznaczenia z Readest Cloud.",
   "Account and Storage": "Konto i przechowywanie",
   "Manage your plan and stored files": "Zarządzaj swoim planem i przechowywanymi plikami",
-  "Another device is still syncing this library via Readest Cloud": "Inne urządzenie nadal synchronizuje tę bibliotekę przez Readest Cloud",
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}} przesyłanie nieudane: niewystarczająca kwota przechowywania",
   "{{count}} uploads failed: insufficient storage quota_few": "{{count}} przesyłania nieudane: niewystarczająca kwota przechowywania",
   "{{count}} uploads failed: insufficient storage quota_many": "{{count}} przesyłań nieudanych: niewystarczająca kwota przechowywania",

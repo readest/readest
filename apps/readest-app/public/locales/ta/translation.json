@@ -1810,7 +1810,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "உங்கள் நூலகம், வாசிப்பு முன்னேற்றம் மற்றும் சிறப்பம்சங்களை Readest Cloud-உடன் ஒத்திசைக்கவும்.",
   "Account and Storage": "கணக்கு மற்றும் சேமிப்பகம்",
   "Manage your plan and stored files": "உங்கள் திட்டம் மற்றும் சேமிக்கப்பட்ட கோப்புகளை நிர்வகிக்கவும்",
-  "Another device is still syncing this library via Readest Cloud": "மற்றொரு சாதனம் இன்னும் Readest Cloud வழியாக இந்த நூலகத்தை ஒத்திசைக்கிறது",
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}} பதிவேற்றம் தோல்வியடைந்தது: போதுமான சேமிப்பக ஒதுக்கீடு இல்லை",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}} பதிவேற்றங்கள் தோல்வியடைந்தன: போதுமான சேமிப்பக ஒதுக்கீடு இல்லை",
   "Library sync via {{provider}}": "{{provider}} வழியாக நூலக ஒத்திசைவு",

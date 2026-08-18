@@ -1844,7 +1844,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "Sincronizează-ți biblioteca, progresul citirii și evidențierile cu Readest Cloud.",
   "Account and Storage": "Cont și stocare",
   "Manage your plan and stored files": "Gestionează-ți abonamentul și fișierele stocate",
-  "Another device is still syncing this library via Readest Cloud": "Un alt dispozitiv încă sincronizează această bibliotecă prin Readest Cloud",
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}} încărcare eșuată: cotă de stocare insuficientă",
   "{{count}} uploads failed: insufficient storage quota_few": "{{count}} încărcări eșuate: cotă de stocare insuficientă",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}} de încărcări eșuate: cotă de stocare insuficientă",

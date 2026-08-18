@@ -1776,7 +1776,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "Đồng bộ thư viện, tiến trình đọc và điểm nổi bật của bạn với Readest Cloud.",
   "Account and Storage": "Tài khoản và lưu trữ",
   "Manage your plan and stored files": "Quản lý gói đăng ký và tệp đã lưu của bạn",
-  "Another device is still syncing this library via Readest Cloud": "Một thiết bị khác vẫn đang đồng bộ thư viện này qua Readest Cloud",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}} lượt tải lên thất bại: không đủ lượng lưu trữ",
   "Library sync via {{provider}}": "Đồng bộ thư viện qua {{provider}}",
   "Google Drive session expired": "Phiên Google Drive đã hết hạn",

@@ -1810,7 +1810,6 @@
   "Sync your library, reading progress, and highlights with Readest Cloud.": "আপনার লাইব্রেরি, পড়ার অগ্রগতি এবং হাইলাইটগুলি Readest Cloud-এর সাথে সিঙ্ক করুন।",
   "Account and Storage": "অ্যাকাউন্ট এবং স্টোরেজ",
   "Manage your plan and stored files": "আপনার প্ল্যান এবং সংরক্ষিত ফাইল পরিচালনা করুন",
-  "Another device is still syncing this library via Readest Cloud": "অন্য একটি ডিভাইস এখনও Readest Cloud-এর মাধ্যমে এই লাইব্রেরি সিঙ্ক করছে",
   "{{count}} uploads failed: insufficient storage quota_one": "{{count}}টি আপলোড ব্যর্থ: অপর্যাপ্ত স্টোরেজ কোটা",
   "{{count}} uploads failed: insufficient storage quota_other": "{{count}}টি আপলোড ব্যর্থ: অপর্যাপ্ত স্টোরেজ কোটা",
   "Library sync via {{provider}}": "{{provider}} এর মাধ্যমে লাইব্রেরি সিঙ্ক",
