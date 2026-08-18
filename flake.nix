@@ -1,6 +1,17 @@
 {
   description = "Readest development environment";
 
+  # Points `nix run`/`nix build` at the project's public Cachix cache so users
+  # do not compile the Rust/Tauri stack and webkitgtk from source. Nix ignores
+  # this for non-trusted users and otherwise prompts for consent, so the README
+  # also documents `cachix use readest` as the permanent opt-in.
+  nixConfig = {
+    extra-substituters = [ "https://readest.cachix.org" ];
+    extra-trusted-public-keys = [
+      "readest.cachix.org-1:KvKAePcZZCZB8ytFIAOGdgN3VRdmFHGRMHqMVckbt5c="
+    ];
+  };
+
   inputs = {
     self.submodules = true;
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -17,7 +28,6 @@
   outputs = { self, nixpkgs, flake-utils, android, fenix }:
     flake-utils.lib.eachSystem [
       "x86_64-linux"
-      "aarch64-linux"
       "aarch64-darwin"
     ]
       (system:
@@ -118,10 +128,7 @@
             };
         in
         {
-          packages = lib.optionalAttrs (!isDarwin)
-            {
-              default = pkgs.callPackage ./nix/package.nix { };
-            } // lib.optionalAttrs (system != "aarch64-linux") {
+          packages = {
             android-sdk = android.sdk.${system} (sdkPkgs: with sdkPkgs; [
               build-tools-36-0-0
               build-tools-35-0-0
@@ -141,18 +148,15 @@
               system-images-android-34-google-apis-x86-64
               system-images-android-34-google-apis-playstore-x86-64
             ]);
+          } // lib.optionalAttrs (!isDarwin) {
+            default = pkgs.callPackage ./nix/package.nix { };
           };
 
           devShells = {
             default = mkCommonShell {
               name = "readest-dev";
             };
-          } // lib.optionalAttrs isDarwin {
-            ios = mkCommonShell {
-              name = "readest-ios";
-              extraNativeBuildInputs = [ pkgs.cocoapods ];
-            };
-          } // lib.optionalAttrs (system != "aarch64-linux") {
+
             android =
               let
                 android-sdk = self.packages.${system}.android-sdk;
@@ -193,6 +197,11 @@
                     ANDROID_AVD_HOME = "$XDG_CONFIG_HOME/.android/avd";
                   };
                 };
+          } // lib.optionalAttrs isDarwin {
+            ios = mkCommonShell {
+              name = "readest-ios";
+              extraNativeBuildInputs = [ pkgs.cocoapods ];
+            };
           };
 
           formatter = pkgs.nixpkgs-fmt;

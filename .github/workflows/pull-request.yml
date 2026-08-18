@@ -7,7 +7,10 @@ on:
 permissions:
   contents: read
 jobs:
+  # Only on pull_request: main pushes are already covered by nix-build.yml, and
+  # running both there would build and push the same paths twice.
   nix_flake_check:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -15,12 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24
-        with:
-          skipPush: true
+      # skipPush is a cachix-action input, not an install-nix-action one. The
+      # cache is public, so pulling needs no token at all; omitting authToken
+      # keeps the push token out of PR-triggered builds entirely.
       - uses: cachix/cachix-action@f495f3ffa2f3810a92e5cc0abc2c5d6a2a07ec82
         with:
           name: readest
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          skipPush: true
       - name: check flake
         run: nix flake check --all-systems -L
   # The Rust format/clippy/test steps only run when src-tauri changed, so the
