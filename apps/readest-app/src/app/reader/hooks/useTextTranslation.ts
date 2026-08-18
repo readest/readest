@@ -105,13 +105,37 @@ export const observeTextNodesByDocument = (
     return observer;
   });
 
-export const excludeTranslationNodes = (nodes: HTMLElement[]) =>
-  nodes.filter(
-    (node) =>
-      !node.closest(`.${SOURCE_HIDDEN_CLASS}`) &&
-      !node.closest('.translation-target') &&
-      !node.querySelector(':scope > .translation-target'),
-  );
+/**
+ * Maps a fresh walk of the (possibly already translated) DOM back to one entry
+ * per source paragraph.
+ *
+ * Two shapes have to be normalized. Generated `.translation-target` wrappers are
+ * never source text, so they are dropped outright. A hidden original is *wrapped*
+ * rather than erased, so `walkTextNodes` stops seeing direct text on the
+ * paragraph, descends past it, and emits the `.translation-source-hidden` wrapper
+ * instead — that one is folded back to the paragraph that owns it.
+ *
+ * Folding rather than dropping matters because `allTextNodes` is addressed by
+ * index: `getTranslationContextNodes` slices a window around the visible nodes
+ * and `findNodeIndicesInRange` maps the reading position to a slot. Dropping an
+ * already translated paragraph shifts every index after it and leaves the
+ * reading position unresolvable, which silently kills the read-ahead. Keeping
+ * the paragraph is safe because `scheduleTranslation` and `translateElement`
+ * both already bail when it holds a `.translation-target`.
+ */
+export const resolveTranslationSourceNodes = (nodes: HTMLElement[]) => {
+  const sources: HTMLElement[] = [];
+  const seen = new Set<HTMLElement>();
+  for (const node of nodes) {
+    if (node.closest('.translation-target')) continue;
+    const hider = node.closest<HTMLElement>(`.${SOURCE_HIDDEN_CLASS}`);
+    const source = hider?.parentElement ?? node;
+    if (seen.has(source)) continue;
+    seen.add(source);
+    sources.push(source);
+  }
+  return sources;
+};
 
 export const getTranslationContextNodes = (
   nodes: HTMLElement[],
@@ -241,7 +265,7 @@ export function useTextTranslation(
   const observeTextNodes = () => {
     if (!view || !enabled.current) return;
 
-    const nodes = excludeTranslationNodes(walkTextNodes(view, ['pre', 'code', 'math']));
+    const nodes = resolveTranslationSourceNodes(walkTextNodes(view, ['pre', 'code', 'math']));
     console.log(
       'Observing text nodes for translation:',
       nodes.length,
