@@ -60,12 +60,13 @@ For Windows targets, “Build Tools for Visual Studio 2022” (or a higher editi
 #### Using Nix
 
 If you have Nix installed, you can leverage the included flake to enter a
-development shell to install and run all the necessary dependencies and commands:
+development shell to install and run all the necessary dependencies and commands.
+Run these from the repository root, where `flake.nix` lives:
 
 ```bash
-nix develop ./ops  # enter a dev shell for the web app
-nix develop ./ops#ios # enter a dev shell for the ios app
-nix develop ./ops#android # enter a dev shell for the android app
+nix develop           # enter a dev shell for the web and desktop app
+nix develop .#android # enter a dev shell for the android app
+nix develop .#ios     # enter a dev shell for the ios app (macOS only)
 ```
 
 Then, simply run:

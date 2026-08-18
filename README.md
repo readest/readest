@@ -118,46 +118,36 @@ Stay tuned for continuous improvements and updates! Contributions and suggestion
 #### Nix
 
 > [!NOTE]
-> The nix package for Readest currently only supports `x86_64-linux`.
-> nix-darwin is not supported currently.
+> The Nix package supports `x86_64-linux` only. nix-darwin is not supported.
 
-To try the app out first:
+Try it without installing. `--accept-flake-config` opts in to the project's
+binary cache; without it Nix builds the whole Rust/Tauri stack from source.
 
 ```sh
 nix run --accept-flake-config github:readest/readest
 ```
 
-`--accept-flake-config` opts in to the project's binary cache. Without it you
-build the Rust/Tauri stack and webkitgtk from source, which takes a while. To
-opt in permanently instead, either run:
-
-```sh
-cachix use readest
-```
-
-or add the cache to `configuration.nix`:
+To install it, add the input to your `flake.nix`:
 
 ```nix
+inputs.readest.url = "github:readest/readest";
+```
+
+then in `configuration.nix` add the package and the cache. The cache is needed
+here as well because a flake input's own `nixConfig` does not apply to your
+system build:
+
+```nix
+environment.systemPackages = [
+  inputs.readest.packages.${pkgs.stdenv.hostPlatform.system}.default
+];
+
 nix.settings = {
   substituters = [ "https://readest.cachix.org" ];
   trusted-public-keys = [
     "readest.cachix.org-1:KvKAePcZZCZB8ytFIAOGdgN3VRdmFHGRMHqMVckbt5c="
   ];
 };
-```
-
-To get the latest version of Readest for your system, add the following input to `flake.nix`:
-
-```nix
-inputs.readest.url = "github:readest/readest";
-```
-
-Then add the following to `configuration.nix`:
-
-```nix
-environment.systemPackages = [
-    inputs.readest.packages.${pkgs.stdenv.hostPlatform.system}.default
-];
 ```
 
 ## Documentation
