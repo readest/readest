@@ -1038,7 +1038,7 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
                ) AS rn
           FROM manifest_marks mm
           JOIN packs p ON p.section = mm.section
-          JOIN manifests m ON m.section = p.section AND p.fingerprint = m.fingerprint
+          JOIN manifests m ON m.section = p.section AND ${CURRENT_PACK_PREDICATE}
           LEFT JOIN pinned_sections ps ON ps.section = p.section
          WHERE EXISTS (
                  SELECT 1 FROM entries e
