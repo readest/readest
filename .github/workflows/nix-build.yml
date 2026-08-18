@@ -14,7 +14,7 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24
     - uses: cachix/cachix-action@f495f3ffa2f3810a92e5cc0abc2c5d6a2a07ec82
       with:
