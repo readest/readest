@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   createTranslationTargetNode,
+  excludeTranslationNodes,
   groupTextNodesByDocument,
   observeTextNodesByDocument,
 } from '@/app/reader/hooks/useTextTranslation';
@@ -43,6 +44,29 @@ describe('observeTextNodesByDocument', () => {
     expect(observed.get(secondDocument)).toEqual([secondNode]);
     observers.forEach((observer) => observer.disconnect());
     expect(disconnected).toEqual([firstDocument, secondDocument]);
+  });
+});
+
+describe('excludeTranslationNodes', () => {
+  it('excludes generated translation wrappers when translated DOM is scanned again', () => {
+    const source = document.createElement('p');
+    source.className = 'translation-source';
+    const hiddenSource = document.createElement('font');
+    hiddenSource.className = 'translation-source-hidden';
+    hiddenSource.textContent = 'Source paragraph';
+    const target = document.createElement('font');
+    target.className = 'translation-target translation-target-block';
+    target.textContent = 'Translated paragraph';
+    source.append(hiddenSource, target);
+
+    expect(excludeTranslationNodes([source, hiddenSource, target])).toEqual([]);
+  });
+
+  it('keeps untranslated book text nodes', () => {
+    const paragraph = document.createElement('p');
+    paragraph.textContent = 'Source paragraph';
+
+    expect(excludeTranslationNodes([paragraph])).toEqual([paragraph]);
   });
 });
 

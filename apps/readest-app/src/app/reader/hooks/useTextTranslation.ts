@@ -105,6 +105,14 @@ export const observeTextNodesByDocument = (
     return observer;
   });
 
+export const excludeTranslationNodes = (nodes: HTMLElement[]) =>
+  nodes.filter(
+    (node) =>
+      !node.closest(`.${SOURCE_HIDDEN_CLASS}`) &&
+      !node.closest('.translation-target') &&
+      !node.querySelector(':scope > .translation-target'),
+  );
+
 /**
  * Hides or restores a paragraph's original text.
  *
@@ -208,7 +216,7 @@ export function useTextTranslation(
   const observeTextNodes = () => {
     if (!view || !enabled.current) return;
 
-    const nodes = walkTextNodes(view, ['pre', 'code', 'math']);
+    const nodes = excludeTranslationNodes(walkTextNodes(view, ['pre', 'code', 'math']));
     console.log(
       'Observing text nodes for translation:',
       nodes.length,
