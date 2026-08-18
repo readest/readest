@@ -92,7 +92,8 @@ const createNativePackFs = (dir: string): TTSPackFs => ({
     try {
       const { readTextFile, BaseDirectory } = await import('@tauri-apps/plugin-fs');
       const text = await readTextFile(`${dir}/${name}`, { baseDir: BaseDirectory.AppCache });
-      return JSON.parse(text);
+      const parsed = JSON.parse(text);
+      return parsed && Array.isArray(parsed.entries) ? parsed : null;
     } catch {
       return null;
     }

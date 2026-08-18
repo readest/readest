@@ -160,6 +160,16 @@ const SCHEMA = [
 // Batch accessed_at updates: reads must not each cost a synchronous write.
 const TOUCH_FLUSH_LIMIT = 64;
 
+// importPack stores synced packs under a fingerprint prefixed with this, so a
+// pack adopted from another device never equals the local manifest
+// fingerprint yet still counts as "current" for its section.
+const IMPORTED_FINGERPRINT_PREFIX = 'imported-';
+
+// A pack is current for its section when its fingerprint matches the
+// section's current manifest or was imported. Shared by status reporting and
+// eviction protection so the convention cannot drift between queries.
+const CURRENT_PACK_PREDICATE = `(p.fingerprint = m.fingerprint OR p.fingerprint LIKE '${IMPORTED_FINGERPRINT_PREFIX}%')`;
+
 export class SqliteTTSCacheStore implements TTSCacheStore {
   #db: DatabaseService;
   #budgetBytes: number;
@@ -616,8 +626,14 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
         new TextEncoder().encode(JSON.stringify(sidecar)),
       );
     } catch (err) {
+      // A failed section must not reject the whole compact(): drop whatever
+      // landed (the DB has not changed yet) and report the section unpacked
+      // so a later run retries it.
       console.warn(`[TTS] pack write failed section=${sidecar.section}`, err);
-      throw err;
+      await packFs.remove(tmpName).catch(() => {});
+      await packFs.remove(finalName).catch(() => {});
+      await packFs.remove(packSidecarName(finalName)).catch(() => {});
+      return false;
     }
 
     const timestamp = this.#now();
@@ -706,7 +722,11 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     if (existing.length) return false;
     if (sidecar.totalSize > this.#budgetBytes) return false;
     if (!(await this.#evictUntilFits(sidecar.totalSize, ''))) return false;
-    return this.#adoptPack(new Uint8Array(data), sidecar, `imported-${sidecar.keysFingerprint}`);
+    return this.#adoptPack(
+      new Uint8Array(data),
+      sidecar,
+      `${IMPORTED_FINGERPRINT_PREFIX}${sidecar.keysFingerprint}`,
+    );
   }
 
   // Per-section download status for the podcast UI. `recorded` is the count
@@ -745,9 +765,7 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     }
     const packed = await this.#db.select<DatabaseRow & { section: number }>(
       `SELECT DISTINCT p.section FROM packs p
-        JOIN manifests m ON m.section = p.section
-                         AND (p.fingerprint = m.fingerprint
-                              OR p.fingerprint LIKE 'imported-%')`,
+        JOIN manifests m ON m.section = p.section AND ${CURRENT_PACK_PREDICATE}`,
     );
     for (const row of packed) {
       const entry = out.get(row.section) ?? {
@@ -948,14 +966,13 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
         await this.#db.select<
           DatabaseRow & { id: number; path: string; size: number; accessed_at: number }
         >(
-          `SELECT id, path, size, accessed_at FROM packs
+          `SELECT id, path, size, accessed_at FROM packs p
             WHERE NOT EXISTS (
               SELECT 1 FROM pinned_sections ps
                 JOIN manifests m ON m.section = ps.section
-               WHERE ps.section = packs.section
+               WHERE ps.section = p.section
                  AND (ps.active > 0 OR ps.pinned = 1)
-                 AND (packs.fingerprint = m.fingerprint
-                      OR packs.fingerprint LIKE 'imported-%')
+                 AND ${CURRENT_PACK_PREDICATE}
             )
             ORDER BY accessed_at ASC LIMIT 1`,
         )
@@ -1012,30 +1029,35 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
         rn: number;
       }
     >(
-      `SELECT mm.key, p.id AS candidate_pack_id, p.path AS candidate_path,
-              ROW_NUMBER() OVER (
-                PARTITION BY mm.key
-                ORDER BY (CASE WHEN ps.pinned = 1 THEN 0 ELSE 1 END),
-                         p.created_at, p.id
-              ) AS rn
-         FROM manifest_marks mm
-         JOIN packs p ON p.section = mm.section
-         JOIN manifests m ON m.section = p.section AND p.fingerprint = m.fingerprint
-         LEFT JOIN pinned_sections ps ON ps.section = p.section
-        WHERE EXISTS (
-                SELECT 1 FROM entries e
-                 WHERE e.key = mm.key AND e.pack_id IN (${packPlaceholders})
-              )
-          AND p.id NOT IN (${packPlaceholders})`,
+      `SELECT * FROM (
+        SELECT mm.key, p.id AS candidate_pack_id, p.path AS candidate_path,
+               ROW_NUMBER() OVER (
+                 PARTITION BY mm.key
+                 ORDER BY (CASE WHEN ps.pinned = 1 THEN 0 ELSE 1 END),
+                          p.created_at, p.id
+               ) AS rn
+          FROM manifest_marks mm
+          JOIN packs p ON p.section = mm.section
+          JOIN manifests m ON m.section = p.section AND p.fingerprint = m.fingerprint
+          LEFT JOIN pinned_sections ps ON ps.section = p.section
+         WHERE EXISTS (
+                 SELECT 1 FROM entries e
+                  WHERE e.key = mm.key AND e.pack_id IN (${packPlaceholders})
+               )
+           AND p.id NOT IN (${packPlaceholders})
+       ) ORDER BY key, rn`,
       [...packIds, ...packIds],
     );
 
     // Resolve offsets/lengths from each candidate pack's sidecar, caching the
-    // parse per path and indexing entries by key for O(1) lookups. A missing
-    // sidecar just disqualifies that candidate (skip), never aborts the tx.
+    // parse per path and indexing entries by key for O(1) lookups. Candidates
+    // arrive in rank order per key, so each key takes its first valid one: a
+    // corrupt or missing sidecar disqualifies only that candidate and the key
+    // falls through to the next ranked pack. A key that resolves against no
+    // candidate at all is left for the detach step below.
     const sidecarCache = new Map<
       string,
-      { byKey: Map<string, { offset: number; length: number }> }
+      { byKey: Map<string, { offset: number; length: number }> } | null
     >();
     const transfers: {
       key: string;
@@ -1043,28 +1065,34 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       packOffset: number;
       packLength: number;
     }[] = [];
+    const resolved = new Set<string>();
     for (const row of candidates) {
-      if (row.rn !== 1) continue;
+      if (resolved.has(row.key)) continue;
       let cached = sidecarCache.get(row.candidate_path);
-      if (!cached) {
+      if (cached === undefined) {
         if (!packFs) continue;
         const sidecar = await packFs.readSidecar(packSidecarName(row.candidate_path));
-        if (!sidecar) continue;
-        const byKey = new Map(
-          sidecar.entries.map((e) => [e.key, { offset: e.offset, length: e.length }]),
-        );
-        cached = { byKey };
+        if (!sidecar) {
+          sidecarCache.set(row.candidate_path, null);
+          continue;
+        }
+        cached = {
+          byKey: new Map(
+            sidecar.entries.map((e) => [e.key, { offset: e.offset, length: e.length }]),
+          ),
+        };
         sidecarCache.set(row.candidate_path, cached);
       }
+      if (!cached) continue;
       const se = cached.byKey.get(row.key);
-      if (se) {
-        transfers.push({
-          key: row.key,
-          packId: row.candidate_pack_id,
-          packOffset: se.offset,
-          packLength: se.length,
-        });
-      }
+      if (!se) continue;
+      transfers.push({
+        key: row.key,
+        packId: row.candidate_pack_id,
+        packOffset: se.offset,
+        packLength: se.length,
+      });
+      resolved.add(row.key);
     }
 
     await this.#transaction(async () => {
@@ -1099,7 +1127,8 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
       // transaction, so no NOT IN/EXISTS guard is needed.
       await this.#db.execute(
         `UPDATE entries
-            SET pack_id = NULL, audio = NULL
+            SET pack_id = NULL, audio = NULL, size = 0,
+                pack_offset = NULL, pack_length = NULL
           WHERE pack_id IN (${packPlaceholders})`,
         packIds,
       );

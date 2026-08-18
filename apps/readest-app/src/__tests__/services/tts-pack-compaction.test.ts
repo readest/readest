@@ -369,6 +369,7 @@ describe('SqliteTTSCacheStore pack compaction', () => {
       new TextDecoder().decode(otherFs.files.get(packSidecarName(otherName))!),
     ) as TTSPackSidecar;
     const otherBytes = otherFs.files.get(otherName)!.slice().buffer as ArrayBuffer;
+    await otherDb.close();
 
     // Import into the pinned section's store.
     await store.registerSectionMarks(1, ['m1', 'm2']);
@@ -385,7 +386,7 @@ describe('SqliteTTSCacheStore pack compaction', () => {
     await tight.put('oversize', sentence(9, 80));
 
     const surviving = (await packFs.list()).filter((n) => n.endsWith('.mp3'));
-    expect(surviving.length).toBeGreaterThanOrEqual(1);
+    expect(surviving).toContain(otherName);
     expect((await store.getSectionStatuses()).get(1)).toMatchObject({
       packed: true,
       pinned: true,
