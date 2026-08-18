@@ -18,12 +18,21 @@ vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ appService: { isMobile: false }, envConfig: {} }),
 }));
 
+vi.mock('@/store/settingsStore', () => ({
+  useSettingsStore: () => ({ settings: {} }),
+}));
+
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getConfig: () => ({ viewSettings: {} }), setConfig: vi.fn() }),
+  useBookDataStore: () => ({
+    getConfig: () => ({ viewSettings: {} }),
+    setConfig: vi.fn(),
+    saveConfig: vi.fn(),
+    updateBooknotes: vi.fn(),
+  }),
 }));
 
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({ setHoveredBookKey: vi.fn() }),
+  useReaderStore: () => ({ setHoveredBookKey: vi.fn(), getViewsById: () => [] }),
 }));
 
 vi.mock('@/store/sidebarStore', () => ({
@@ -32,6 +41,10 @@ vi.mock('@/store/sidebarStore', () => ({
 
 vi.mock('@/hooks/useResponsiveSize', () => ({
   useResponsiveSize: (n: number) => n,
+}));
+
+vi.mock('@/hooks/useTranslation', () => ({
+  useTranslation: () => (key: string) => key,
 }));
 
 import AnnotationNotes from '@/app/reader/components/annotator/AnnotationNotes';

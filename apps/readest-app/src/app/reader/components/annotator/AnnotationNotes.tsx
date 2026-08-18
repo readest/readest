@@ -1,13 +1,8 @@
 import clsx from 'clsx';
-import dayjs from 'dayjs';
 import React, { useMemo } from 'react';
 import { BookNote } from '@/types/book';
-import { useEnv } from '@/context/EnvContext';
-import { useBookDataStore } from '@/store/bookDataStore';
-import { useReaderStore } from '@/store/readerStore';
-import { useSidebarStore } from '@/store/sidebarStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { parseNoteMarkdown } from '../../utils/noteMarkdown';
+import AnnotationNoteItem from './AnnotationNoteItem';
 
 interface AnnotationNotesProps {
   bookKey: string;
@@ -30,38 +25,11 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
   popupHeight,
   onDismiss,
 }) => {
-  const { appService } = useEnv();
-  const { getConfig, setConfig } = useBookDataStore();
-  const { setHoveredBookKey } = useReaderStore();
-  const { setSideBarVisible } = useSidebarStore();
-  const config = getConfig(bookKey);
   const maxSize = useResponsiveSize(250);
 
   const sortedNotes = useMemo(() => {
     return [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
   }, [notes]);
-  // Parsing is not free for long notes; the popup re-renders on every
-  // reposition, so cache by the notes list like the sidebar does.
-  const notesHtml = useMemo(
-    () => sortedNotes.map((note) => (note.note ? parseNoteMarkdown(note.note) : '')),
-    [sortedNotes],
-  );
-
-  const handleShowAnnotation = (note: BookNote) => {
-    if (!note.id) return;
-
-    if (appService?.isMobile) {
-      onDismiss();
-    }
-
-    setHoveredBookKey('');
-    setSideBarVisible(true);
-    if (config?.viewSettings) {
-      setConfig(bookKey, {
-        viewSettings: { ...config.viewSettings, sideBarTab: 'annotations' },
-      });
-    }
-  };
 
   return (
     <div
@@ -101,55 +69,14 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
         }
       >
         {sortedNotes.map((note, index) => (
-          <div
-            role='none'
+          <AnnotationNoteItem
             key={note.id || index}
-            onClick={() => handleShowAnnotation?.(note)}
-            // Popup surface tokens, but no border of its own: the enclosing
-            // Popup already draws the bubble outline that the triangle is
-            // aligned to, and a second one doubles it along the triangle side.
-            className={clsx(
-              'popup-container cursor-pointer rounded-lg transition-colors',
-              'not-eink:shadow-lg bg-base-300 theme-dark:bg-base-100',
-            )}
-            style={
-              isVertical
-                ? {
-                    minWidth: 'max-content',
-                    height: `${popupHeight}px`,
-                    maxHeight: `${popupHeight}px`,
-                  }
-                : {}
-            }
-          >
-            {note.note && (
-              <div
-                dir='auto'
-                className={clsx(
-                  'm-4 hyphens-auto text-justify font-sans text-sm',
-                  isVertical && 'writing-vertical-rl',
-                )}
-                style={
-                  isVertical
-                    ? {
-                        fontFeatureSettings: "'vrt2' 1, 'vert' 1",
-                        minWidth: 'max-content',
-                      }
-                    : {}
-                }
-              >
-                <div className={clsx('flex flex-col justify-between gap-2')}>
-                  <div
-                    className='prose prose-sm max-w-none'
-                    dangerouslySetInnerHTML={{ __html: notesHtml[index] ?? '' }}
-                  />
-                  <span className='text-base-content/50 text-sm sm:text-xs'>
-                    {dayjs(note.createdAt).fromNow()}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
+            bookKey={bookKey}
+            note={note}
+            isVertical={isVertical}
+            popupHeight={popupHeight}
+            onDismiss={onDismiss}
+          />
         ))}
       </div>
     </div>
