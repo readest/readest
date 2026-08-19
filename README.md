@@ -130,7 +130,12 @@ nix run --accept-flake-config github:readest/readest
 To install it, add the input to your `flake.nix`:
 
 ```nix
-inputs.readest.url = "github:readest/readest";
+# Due to a limitation in how Nix fetches submodules, a regular GitHub input type will fail to evaluate.
+inputs.readest = {
+  url = "https://github.com/readest/readest.git";
+  type = "git";
+  submodules = true;
+};
 ```
 
 then in `configuration.nix` add the package and the cache. The cache is needed
