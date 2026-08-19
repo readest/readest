@@ -247,6 +247,39 @@ describe('BaseAppService', () => {
     });
   });
 
+  describe('isRootDirUsable', () => {
+    test('defaults to no unavailable root', () => {
+      expect(service.unavailableRootDir).toBeNull();
+    });
+
+    test('reports usable without creating anything when the dir already exists', async () => {
+      vi.mocked(mockFs.exists).mockResolvedValue(true);
+      await expect(service.isRootDirUsable()).resolves.toBe(true);
+      expect(mockFs.createDir).not.toHaveBeenCalled();
+    });
+
+    test('creates the books dir when missing and reports usable', async () => {
+      vi.mocked(mockFs.exists).mockResolvedValue(false);
+      await expect(service.isRootDirUsable()).resolves.toBe(true);
+      expect(mockFs.createDir).toHaveBeenCalledWith('', 'Books', true);
+    });
+
+    // The macOS App Sandbox denies `file-write-create` for any path outside the
+    // app container. A stale `customRootDir` therefore made the first library
+    // read throw, and that rejection was never caught — the App Store build sat
+    // on a blank window forever. Probing the root has to answer "no", not throw.
+    test('reports unusable when the books dir cannot be created', async () => {
+      vi.mocked(mockFs.exists).mockResolvedValue(false);
+      vi.mocked(mockFs.createDir).mockRejectedValue(new Error('forbidden path'));
+      await expect(service.isRootDirUsable()).resolves.toBe(false);
+    });
+
+    test('reports unusable when the root cannot even be probed', async () => {
+      vi.mocked(mockFs.exists).mockRejectedValue(new Error('forbidden path'));
+      await expect(service.isRootDirUsable()).resolves.toBe(false);
+    });
+  });
+
   describe('saveLibraryBooks storage permission (READEST-A)', () => {
     // clearAllMocks resets call history but not implementations, so restore the
     // shared saveLibraryBooks mock's default after these override it.

@@ -125,7 +125,18 @@ export interface AppService {
   storefrontRegionCode: string | null;
   isOnlineCatalogsAccessible: boolean;
 
+  /**
+   * The configured library root when it turned out to be unreachable this
+   * session (deleted, unplugged, or sandbox-denied); null when the root is
+   * fine. Set during `init` so the UI can name the folder in an error instead
+   * of failing silently. The setting itself is left untouched, so a drive that
+   * comes back is picked up on the next launch.
+   */
+  unavailableRootDir: string | null;
+
   init(): Promise<void>;
+  /** Probe the configured library root. Resolves false instead of throwing. */
+  isRootDirUsable(): Promise<boolean>;
   openFile(path: string, base: BaseDir): Promise<File>;
   copyFile(srcPath: string, srcBase: BaseDir, dstPath: string, dstBase: BaseDir): Promise<void>;
   readFile(path: string, base: BaseDir, mode: 'text' | 'binary'): Promise<string | ArrayBuffer>;

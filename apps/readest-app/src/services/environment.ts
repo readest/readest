@@ -43,8 +43,13 @@ let nativeAppService: AppService | null = null;
 const getNativeAppService = async () => {
   if (!nativeAppService) {
     const { NativeAppService } = await import('@/services/nativeAppService');
-    nativeAppService = new NativeAppService();
-    await nativeAppService.init();
+    // Publish the singleton only after `init` resolves. Assigning first meant a
+    // failed init left a half-built service cached forever: every later caller
+    // got it back without re-running init, and `getInitializedAppService`
+    // handed synchronous callers an object whose paths were never resolved.
+    const service = new NativeAppService();
+    await service.init();
+    nativeAppService = service;
   }
   return nativeAppService;
 };
@@ -53,8 +58,9 @@ let webAppService: AppService | null = null;
 const getWebAppService = async () => {
   if (!webAppService) {
     const { WebAppService } = await import('@/services/webAppService');
-    webAppService = new WebAppService();
-    await webAppService.init();
+    const service = new WebAppService();
+    await service.init();
+    webAppService = service;
   }
   return webAppService;
 };

@@ -662,12 +662,23 @@ export class NativeAppService extends BaseAppService {
       });
     }
     const settings = await this.loadSettings();
-    if (this.customRootDir || settings.customRootDir) {
+    const customRootDir = this.customRootDir || settings.customRootDir;
+    if (customRootDir) {
       this.fs.resolvePath = getPathResolver({
-        customRootDir: this.customRootDir || settings.customRootDir,
+        customRootDir,
         isPortable: this.isPortableApp,
         execDir,
       });
+      // Validate the root before anything depends on it. We deliberately keep
+      // the custom resolver installed when it fails: silently falling back to
+      // the default location would scatter imports into a second library and
+      // make the real books look lost once the root comes back. Recording it
+      // here lets the library page name the folder instead of dying on an
+      // unhandled rejection (blank App Store window, sandbox-denied root).
+      if (!(await this.isRootDirUsable())) {
+        this.unavailableRootDir = customRootDir;
+        console.error('[nativeAppService] library root is not usable:', customRootDir);
+      }
     }
     if (this.isIOSApp) {
       this.isOnlineCatalogsAccessible = this.distChannel !== 'appstore';

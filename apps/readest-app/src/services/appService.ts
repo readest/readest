@@ -46,6 +46,7 @@ export abstract class BaseAppService implements AppService {
   osPlatform: OsPlatform = getOSPlatform();
   appPlatform: AppPlatform = 'tauri';
   localBooksDir = '';
+  unavailableRootDir: string | null = null;
   isMobile = false;
   isMacOSApp = false;
   isLinuxApp = false;
@@ -180,6 +181,25 @@ export abstract class BaseAppService implements AppService {
 
   async prepareBooksDir() {
     this.localBooksDir = await this.fs.getPrefix('Books');
+  }
+
+  /**
+   * A user-configured library root is untrusted input: the folder can be
+   * deleted, live on an unplugged drive, or — under the macOS App Sandbox —
+   * be a path the kernel refuses outright. Probe it once at startup so a bad
+   * root is reported rather than thrown deep inside the first library read,
+   * where the rejection had nothing to catch it and left the app on a blank
+   * page. Never throws; the answer is the return value.
+   */
+  async isRootDirUsable(): Promise<boolean> {
+    try {
+      if (!(await this.fs.exists('', 'Books'))) {
+        await this.fs.createDir('', 'Books', true);
+      }
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async openFile(path: string, base: BaseDir): Promise<File> {
