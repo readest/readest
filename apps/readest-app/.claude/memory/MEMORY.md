@@ -46,7 +46,7 @@
 - [APKs opened with Readest](android-intent-filter-pathpattern-needs-host.md) MERGED #5610, verify PENDING; `pathPattern` DEAD without `android:host`
 ## Reader Features & UI
 - Resolved/stable feature memories → [Reader Feature Fixes](reader-feature-fixes.md)
-- [Audiobookshelf phases 1+2](audiobookshelf-integration-phase1.md) MERGED into local dev (~58 commits, NOT pushed); PlaybackSource seam + `abs://` scheme + podcasts w/ per-episode sessions; Xiaomi-verified incl. podcasts; i18n DONE; device verify still pending: iOS build+streaming, lock screen/CarPlay/Auto, e-ink player
+- [Audiobookshelf phases 1+2](audiobookshelf-integration-phase1.md) PR #5801 OPEN (54 dev commits squashed to 3 on `feat/audiobookshelf`); PlaybackSource seam + `abs://` scheme + podcasts w/ per-episode sessions; Xiaomi-verified incl. podcasts; i18n DONE; device verify still pending: iOS build+streaming, lock screen/CarPlay/Auto, e-ink player; NOTE dev keeps the unsquashed history so merging #5801 diverges main from dev
 - [#5142/#5757 bookmark pull on fixed layout](bookmark-pull-fixed-layout-5142.md) committed `abe180cbd` on dev; gate = hasVerticalPanning not isFixedLayout; yields to mid-gesture selection/scrollLocked; Xiaomi-verified via CDP synthetic touch
 - [#5662 Alert sized off its own text](alert-flex-item-content-sizing-5662.md) MERGED; `w-full` wrapper LOAD-BEARING; needs browser test
 - [#1582 translated text loses formatting](translation-inline-markup-1582.md) STILL OPEN; default `deepl` CORRUPTS markup
