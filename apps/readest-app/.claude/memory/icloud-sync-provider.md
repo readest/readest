@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: c14ae948-5947-4c4a-b2cf-1e5bc7b0567b
-  modified: 2026-08-06T13:23:57.781Z
+  modified: 2026-08-18T19:24:23.523Z
 ---
 
 # iCloud Cloud Sync provider — PR #5532 (2026-08-06)
@@ -81,6 +81,12 @@ BLANK window (unsandboxed same binary renders fine; last sandboxed run was
 ~/Library/Containers/com.bilingify.readest). Investigate before next Mac
 App Store submission — NOT caused by the iCloud change (blank persists with
 iCloud entitlements stripped).
+**ROOT-CAUSED + WORKED AROUND 2026-08-19 — see
+[[mas-sandbox-blank-customrootdir]].** Container state was a red herring:
+stale `customRootDir` (`~/Documents/Readest-Test`) is sandbox-denied on
+`createDir`, and `initLibrary()` has no `.catch()`, so the page renders
+nothing. Removing `customRootDir` from the container's settings.json fixes
+it. The unguarded-init code defect is still UNFIXED.
 
 **iOS SMOKE PASSED 2026-08-06** (user-confirmed): `pnpm build-ios` (dev
 signing, Xcode-managed team profile auto-minted WITH iCloud), installed to

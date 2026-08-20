@@ -24,7 +24,8 @@
 - Resolved/stable sync memories → [Sync Fixes](sync-fixes.md)
 - [Books toggle doesn't gate OPDS uploads](sync-books-toggle-opds-upload-leak.md) OPDS gate MERGED #5759; still UNFIXED: `isBookUploadAllowed` provider-only + queued-entry residue, /user panel renders un-hydrated store; syncCategories NOT in SETTINGS_WHITELIST (doc rot)
 - [#5062 multi-provider sync](multi-provider-cloud-sync-5062.md) MERGED #5122; native verify pending
-- [iCloud sync provider](icloud-sync-provider.md) SHIPPED #5532+#5537; Dev ID recommit due 2027-02; MAS sandbox-blank open
+- [iCloud sync provider](icloud-sync-provider.md) SHIPPED #5532+#5537; Dev ID recommit due 2027-02
+- [MAS blank window](mas-sandbox-blank-customrootdir.md) ROOT-CAUSED; hardening MERGED #5789 (`4171f45bd`); stale `customRootDir` sandbox-denied on `createDir`, unguarded `initLibrary()` left `checkOpenWithBooks` true so the early return rendered a bare div; runtime verify PENDING; macOS custom root still has NO security-scoped bookmark; `i18n:extract` sweeps ~56 unrelated drift keys; readest has NO VERSION file so `/ship` version-bump does NOT apply
 - [#5570 KOSync/BookOrbit custom headers](custom-headers-kosync-bookorbit-5570.md) MERGED; kosync proxy OPEN RELAY fix UNMERGED on `fix/kosync-proxy-endpoint-allowlist`
 - [#5661 "Synced in an hour"](sync-clock-skew-lastsynced-5661.md) display clamp MERGED #5674; epoch-skew LWW poisoning itself unfixed (user's clock)
 - [#5675 font sync "Unknown error"](font-sync-download-unknown-error-5675.md) PR #5700; mkdir FUSED with id minting so `local` branch skips it; `Unknown error` collapse still UNFIXED
@@ -33,7 +34,7 @@
 - [koplugin local_present sweep](koplugin-local-present-sweep-noop.md) UNFIXED; fix = rm readest_library.sqlite3
 - [#5625 loadDocument parsererror fallback](loaddocument-xhtml-parsererror-5625.md) MERGED #5630 + foliate#70; device verify pending
 ## Build, Testing & CI
-- [Nix FOD hash staleness](nix-fod-hash-staleness.md) main's nix-build RED since #5778; any pnpm-lock.yaml change needs pnpmDeps.hash bump in nix/package.nix; stale hash = offline-tarball error, NOT hash mismatch (cachix serves old store)
+- [Nix FOD hash staleness](nix-fod-hash-staleness.md) MERGED #5779 (hash bump + nix-deps-check PR guardrail); compute new pnpmDeps.hash via the PR check's `got:` line, NEVER docker/OrbStack (user ban); stale hash on main = offline-tarball error, NOT mismatch (cachix serves old store)
 - Stable recipes → [Build & CI Recipes](build-ci-recipes.md) · [Store listings in fastlane](store-listings-fastlane-5573.md) MERGED #5573; readest-promotions NOT live
 - [worktree:new REBASES a PR branch](worktree-new-rebases-pr-force-push.md) pushing to a contributor's fork from it = FORCE push; cherry-pick onto the real head instead
 - [Workflow-file pushes need SSH](push-workflow-file-needs-ssh-not-gh-oauth.md) HTTPS fork remote + gh OAuth token = rejected without `workflow` scope; push the SSH URL
@@ -103,6 +104,7 @@
 - [Virtuoso + OverlayScrollbars](virtuoso_overlayscrollbars.md) · [Theorem competitor analysis](theorem-competitor-feature-analysis.md)
 - [Design system → DESIGN.md](feedback_design_system_doc.md) never `pl/pr/ml/mr` (RTL)
 ## Workflow & Feedback
+- [Always verify on Xiaomi](feedback-always-verify-on-xiaomi.md) device 368b0948; CDP+deep-link recipe; suites alone repeatedly missed device bugs
 - [Slice-in-loop NOT O(n^2)](review-perf-slice-not-quadratic.md) V8 SlicedString · [Commit messages English-only](feedback-commit-message-english-only.md) no CJK, no em/en dashes
 - PR flow: [rebase onto origin/main](feedback_pr_rebase.md); [fresh branch per PR](feedback_pr_new_branch.md); [always `pnpm worktree:new`](feedback_use_worktree.md); [don't push till confirmed](feedback_dont_push_every_change.md)
 - [Test file filter](feedback_test_file_filter.md) `pnpm test <path>` no `--` · [No test seams in prod](feedback_no_test_seams_in_prod.md) · [no lookbehind regex](feedback_no_lookbehind_regex.md)
