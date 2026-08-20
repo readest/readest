@@ -16,7 +16,7 @@ jobs:
     steps:      
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858
-      - uses: DeterminateSystems/update-flake-lock@0281a39e4c38fabb75c9d1377e541666db300909
+      - uses: DeterminateSystems/update-flake-lock@6eeac1e86e13a9256682f930c4c7568acc43f047
         with:
           pr-title: "chore(nix): update flake inputs"
           pr-labels: |
