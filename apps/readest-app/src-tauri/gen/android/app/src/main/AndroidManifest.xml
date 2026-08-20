@@ -47,7 +47,7 @@
         <meta-data android:name="io.sentry.ndk.enable" android:value="false" />
 
         <activity
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
+            android:configChanges="orientation|keyboardHidden|keyboard|navigation|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
             android:launchMode="singleTask"
             android:label="@string/main_activity_title"
             android:hardwareAccelerated="true"
