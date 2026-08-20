@@ -74,6 +74,11 @@ vi.mock('@/helpers/settings', () => ({
 
 vi.mock('@/app/reader/utils/annotatorUtil', () => ({
   getHighlightColorLabel: () => undefined,
+  // AnnotationPopup -> AnnotationNotes -> AnnotationNoteItem ->
+  // useSaveBooknoteNoteText imports these; a browser-mode mock is a strict
+  // ESM module, so every named import along the chain must exist.
+  decideNoteBubbleTransition: () => 'none',
+  applyNoteBubbleTransition: () => {},
 }));
 
 // ── Real component imports ──────────────────────────────────────────────
