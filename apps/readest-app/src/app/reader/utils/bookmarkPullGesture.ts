@@ -69,15 +69,17 @@ export const pullHintShift = (offset: number, hintHeight: number, pinTop: number
 
 /**
  * The gesture exists only where a vertical drag has no other meaning and the
- * continuous slide can look right: paginated (not scrolled) reflowable books
- * in horizontal writing mode, and never on e-ink (ghosting).
+ * continuous slide can look right: paginated (not scrolled) books in
+ * horizontal writing mode, and never on e-ink (ghosting). Fixed-layout books
+ * (PDF/CBZ) qualify too, but only while the page cannot pan vertically —
+ * a zoomed or fit-width page scrolls under the finger instead (#5142).
  */
 export const canPullBookmark = (mode: {
   scrolled: boolean;
   vertical: boolean;
   isEink: boolean;
-  isFixedLayout: boolean;
-}): boolean => !mode.scrolled && !mode.vertical && !mode.isEink && !mode.isFixedLayout;
+  verticalPanning: boolean;
+}): boolean => !mode.scrolled && !mode.vertical && !mode.isEink && !mode.verticalPanning;
 
 export interface BookmarkPullHandlers {
   onTouchStart: (doc: Document, event: TouchEvent) => void;

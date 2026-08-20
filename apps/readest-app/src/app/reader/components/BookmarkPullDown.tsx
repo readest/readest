@@ -3,11 +3,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { RiArrowDownLine } from 'react-icons/ri';
 
 import { useReaderStore } from '@/store/readerStore';
-import { useBookDataStore } from '@/store/bookDataStore';
 import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { setLayeredTurnTouchClaimed } from '@/app/reader/utils/iframeEventHandlers';
+import { hasVerticalPanning } from '@/app/reader/hooks/usePagination';
 import {
   BOOKMARK_PULL_ACTIVATION_PX,
   canPullBookmark,
@@ -214,15 +214,15 @@ const BookmarkPullDown: React.FC<BookmarkPullDownProps> = ({ bookKey, ribbonHidd
         resetGesture();
         const selection = doc.getSelection?.();
         if (selection && !selection.isCollapsed) return; // don't hijack selection
-        const viewSettings = useReaderStore.getState().getViewSettings(bookKey);
-        const bookData = useBookDataStore.getState().getBookData(bookKey);
+        const store = useReaderStore.getState();
+        const viewSettings = store.getViewSettings(bookKey);
         if (!viewSettings) return;
         if (
           !canPullBookmark({
             scrolled: !!viewSettings.scrolled,
             vertical: !!viewSettings.vertical,
             isEink: !!viewSettings.isEink,
-            isFixedLayout: !!bookData?.isFixedLayout,
+            verticalPanning: hasVerticalPanning(store.getView(bookKey), viewSettings),
           })
         ) {
           return;
@@ -234,7 +234,7 @@ const BookmarkPullDown: React.FC<BookmarkPullDownProps> = ({ bookKey, ribbonHidd
         startYRef.current = t.screenY;
         armedRef.current = true;
       },
-      onTouchMove: (_doc, e) => {
+      onTouchMove: (doc, e) => {
         if (!armedRef.current) return;
         if (e.touches.length !== 1) {
           if (activeRef.current) springBack();
@@ -246,6 +246,16 @@ const BookmarkPullDown: React.FC<BookmarkPullDownProps> = ({ bookKey, ribbonHidd
         const dx = t.screenX - startXRef.current;
         const dy = t.screenY - startYRef.current + baseOffsetRef.current;
         if (!activeRef.current) {
+          // A text-selection gesture that only began after touchstart owns the
+          // sequence: the OS long-press selected a word and the finger is now
+          // extending it (#5757), or the instant-highlight quick action engaged
+          // and locked the renderer. Yield permanently — one-way, as below.
+          const selection = doc.getSelection?.();
+          const view = useReaderStore.getState().getView(bookKey);
+          if ((selection && !selection.isCollapsed) || view?.renderer.scrollLocked) {
+            resetGesture();
+            return;
+          }
           if (!shouldActivatePull(dx, dy)) {
             // One-way ownership: once the sequence is clearly horizontal (a
             // page turn) or upward, this gesture may not claim it later.

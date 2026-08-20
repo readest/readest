@@ -15,12 +15,21 @@ let currentViewSettings: Record<string, unknown>;
 let currentRibbonVisible: boolean;
 let currentHoveredBookKey: string | null = null;
 let hoverCalls: (string | null)[] = [];
+let currentLayout: string;
+let currentOverflowY: boolean;
+let currentScrollLocked: boolean;
+let selectionCollapsed: boolean;
 
 vi.mock('@/store/readerStore', () => {
   const buildState = () => ({
     viewStates: { [BOOK_KEY]: { ribbonVisible: currentRibbonVisible } },
     hoveredBookKey: currentHoveredBookKey,
     getViewSettings: () => currentViewSettings,
+    getView: () => ({
+      book: { rendition: { layout: currentLayout } },
+      isOverflowY: () => currentOverflowY,
+      renderer: { scrollLocked: currentScrollLocked },
+    }),
     setHoveredBookKey: (key: string | null) => {
       hoverCalls.push(key);
       currentHoveredBookKey = key;
@@ -32,18 +41,6 @@ vi.mock('@/store/readerStore', () => {
   };
   useReaderStore.getState = buildState;
   return { useReaderStore };
-});
-
-vi.mock('@/store/bookDataStore', () => {
-  const buildState = () => ({
-    getBookData: () => ({ isFixedLayout: false }),
-  });
-  const useBookDataStore = <R,>(selector?: (s: ReturnType<typeof buildState>) => R) => {
-    const state = buildState();
-    return selector ? selector(state) : state;
-  };
-  useBookDataStore.getState = buildState;
-  return { useBookDataStore };
 });
 
 vi.mock('@/store/themeStore', () => ({
@@ -97,6 +94,13 @@ describe('BookmarkPullDown', () => {
     currentRibbonVisible = false;
     currentHoveredBookKey = null;
     hoverCalls = [];
+    currentLayout = 'reflowable';
+    currentOverflowY = false;
+    currentScrollLocked = false;
+    selectionCollapsed = true;
+    vi.spyOn(document, 'getSelection').mockImplementation(
+      () => ({ isCollapsed: selectionCollapsed }) as Selection,
+    );
     slide = document.createElement('div');
     vi.mocked(setLayeredTurnTouchClaimed).mockClear();
     registerBookmarkPullDoc(BOOK_KEY, document);
@@ -105,6 +109,7 @@ describe('BookmarkPullDown', () => {
   afterEach(() => {
     setBookmarkPullHandlers(BOOK_KEY, null);
     cleanup();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -208,6 +213,68 @@ describe('BookmarkPullDown', () => {
     dispatchTouch('touchend', 300 + BOOKMARK_PULL_TRIGGER_PX + 20);
     expect(dispatchSpy).not.toHaveBeenCalledWith('toggle-bookmark', { bookKey: BOOK_KEY });
     dispatchSpy.mockRestore();
+  });
+
+  it('yields to a long-press selection that appears mid-gesture (#5757)', () => {
+    const { container } = renderComponent();
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+
+    dispatchTouch('touchstart', 300);
+    // The OS long-press selects a word while the finger is still down, after
+    // the touchstart guard has already armed the pull.
+    selectionCollapsed = false;
+    dispatchTouch('touchmove', 330);
+    expect(container.querySelector('.bookmark-pull-band')).toBeNull();
+
+    // Ownership is one-way: the rest of the drag cannot claim the pull either.
+    dispatchTouch('touchmove', 300 + BOOKMARK_PULL_TRIGGER_PX + 20);
+    dispatchTouch('touchend', 300 + BOOKMARK_PULL_TRIGGER_PX + 20);
+    expect(container.querySelector('.bookmark-pull-band')).toBeNull();
+    expect(dispatchSpy).not.toHaveBeenCalledWith('toggle-bookmark', { bookKey: BOOK_KEY });
+    dispatchSpy.mockRestore();
+  });
+
+  it('yields to the instant-highlight quick action drag', () => {
+    const { container } = renderComponent();
+
+    dispatchTouch('touchstart', 300);
+    // The still-hold engaged instant annotating, which locks the renderer.
+    currentScrollLocked = true;
+    dispatchTouch('touchmove', 330);
+    expect(container.querySelector('.bookmark-pull-band')).toBeNull();
+  });
+
+  it('engages on a fixed-layout page that cannot pan vertically', () => {
+    currentLayout = 'pre-paginated';
+    currentViewSettings = {
+      scrolled: false,
+      vertical: false,
+      isEink: false,
+      zoomLevel: 100,
+      zoomMode: 'fit-page',
+    };
+    const { container } = renderComponent();
+
+    dispatchTouch('touchstart', 300);
+    dispatchTouch('touchmove', 330);
+    expect(container.querySelector('.bookmark-pull-band')).not.toBeNull();
+  });
+
+  it('does not engage while a fixed-layout page pans vertically', () => {
+    currentLayout = 'pre-paginated';
+    currentOverflowY = true;
+    currentViewSettings = {
+      scrolled: false,
+      vertical: false,
+      isEink: false,
+      zoomLevel: 100,
+      zoomMode: 'fit-width',
+    };
+    const { container } = renderComponent();
+
+    dispatchTouch('touchstart', 300);
+    dispatchTouch('touchmove', 330);
+    expect(container.querySelector('.bookmark-pull-band')).toBeNull();
   });
 
   it('shows remove wording while bookmarked', () => {
