@@ -46,7 +46,8 @@
 - [APKs opened with Readest](android-intent-filter-pathpattern-needs-host.md) MERGED #5610, verify PENDING; `pathPattern` DEAD without `android:host`
 ## Reader Features & UI
 - Resolved/stable feature memories → [Reader Feature Fixes](reader-feature-fixes.md)
-- [Audiobookshelf integration phase 1](audiobookshelf-integration-phase1.md) 14 tasks on `feat/audiobookshelf-phase1`, NOT pushed; PlaybackSource seam + `abs://` scheme; Task 15 e2e curl-verified against dev ABS instance; device verify pending: iOS build+streaming, Android background, lock screen/CarPlay/Auto, e-ink player, i18n extraction
+- [Audiobookshelf phases 1+2](audiobookshelf-integration-phase1.md) MERGED into local dev (~58 commits, NOT pushed); PlaybackSource seam + `abs://` scheme + podcasts w/ per-episode sessions; Xiaomi-verified incl. podcasts; i18n DONE; device verify still pending: iOS build+streaming, lock screen/CarPlay/Auto, e-ink player
+- [#5142/#5757 bookmark pull on fixed layout](bookmark-pull-fixed-layout-5142.md) committed `abe180cbd` on dev; gate = hasVerticalPanning not isFixedLayout; yields to mid-gesture selection/scrollLocked; Xiaomi-verified via CDP synthetic touch
 - [#5662 Alert sized off its own text](alert-flex-item-content-sizing-5662.md) MERGED; `w-full` wrapper LOAD-BEARING; needs browser test
 - [#1582 translated text loses formatting](translation-inline-markup-1582.md) STILL OPEN; default `deepl` CORRUPTS markup
 - [#5772 iframe translation observer](translation-iframe-observer-5772.md) MERGED `9fb8266bf` + my 2 commits; cross-document IntersectionObserver is NOT broken (MEASURED, 0 disagreements) so the PR's stated root cause is FALSE and `defaultView.IntersectionObserver` is inert on Chromium (WKWebView untested); `allTextNodes` is INDEX-COUPLED, never filter it at walk time
