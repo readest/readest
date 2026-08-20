@@ -20,6 +20,7 @@ import type { ThemeCode } from '@/utils/style';
 import {
   applyThemeModeClass,
   applyScrollModeClass,
+  applyEinkModeAttribute,
   applyScrollbarStyle,
   applyTranslationStyle,
   getThemeCode,
@@ -105,6 +106,38 @@ describe('applyScrollModeClass', () => {
     document.body.className = '';
     applyScrollModeClass(document, false);
     expect(document.body.classList.contains('paginated-mode')).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// applyEinkModeAttribute (#5795)
+// ---------------------------------------------------------------------------
+describe('applyEinkModeAttribute', () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute('data-eink');
+  });
+
+  it("sets data-eink='true' on the book document root when e-ink mode is on", () => {
+    applyEinkModeAttribute(document, true);
+    expect(document.documentElement.getAttribute('data-eink')).toBe('true');
+  });
+
+  it("writes data-eink='false' rather than removing it so LCD-only rules can match", () => {
+    applyEinkModeAttribute(document, true);
+    applyEinkModeAttribute(document, false);
+    expect(document.documentElement.getAttribute('data-eink')).toBe('false');
+    expect(document.body.matches("html[data-eink='false'] body")).toBe(true);
+  });
+
+  it('lets a synced user stylesheet gate rules on the rendering screen', () => {
+    const p = document.createElement('p');
+    document.body.appendChild(p);
+    const einkOnly = "html[data-eink='true'] body *";
+    applyEinkModeAttribute(document, true);
+    expect(p.matches(einkOnly)).toBe(true);
+    applyEinkModeAttribute(document, false);
+    expect(p.matches(einkOnly)).toBe(false);
+    p.remove();
   });
 });
 
