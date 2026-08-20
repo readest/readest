@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { Marked } from 'marked';
 import markedKatex from 'marked-katex-extension';
 
@@ -18,4 +19,13 @@ const noteMarkdown = new Marked({ gfm: true }).use(
   }),
 );
 
-export const parseNoteMarkdown = (note: string) => noteMarkdown.parse(note);
+// Notes reach dangerouslySetInnerHTML in the sidebar and the popup, and they
+// can come from annotation imports and sync, not only the local editor, so the
+// HTML is sanitized here once for both sinks. `utils/sanitize.ts#sanitizeHtml`
+// is not reused: its tag allowlist has no MathML and would strip the KaTeX
+// output, which the mathMl profile keeps.
+export const parseNoteMarkdown = (note: string) =>
+  DOMPurify.sanitize(noteMarkdown.parse(note, { async: false }), {
+    USE_PROFILES: { html: true, mathMl: true },
+    FORBID_TAGS: ['style', 'form', 'input', 'button', 'textarea', 'select'],
+  });
