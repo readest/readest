@@ -7,6 +7,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { parseNoteMarkdown } from '../../utils/noteMarkdown';
 
 interface AnnotationNotesProps {
   bookKey: string;
@@ -132,7 +133,10 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
                 }
               >
                 <div className={clsx('flex flex-col justify-between gap-2')}>
-                  {note.note}
+                  <div
+                    className='prose prose-sm max-w-none'
+                    dangerouslySetInnerHTML={{ __html: parseNoteMarkdown(note.note) }}
+                  />
                   <span className='text-base-content/50 text-sm sm:text-xs'>
                     {dayjs(note.createdAt).fromNow()}
                   </span>

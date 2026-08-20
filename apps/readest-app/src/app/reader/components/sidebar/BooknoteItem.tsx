@@ -3,8 +3,6 @@ import dayjs from 'dayjs';
 import React, { useMemo, useRef, useState } from 'react';
 import { MdEdit, MdDelete, MdContentCopy } from 'react-icons/md';
 
-import { Marked } from 'marked';
-import markedKatex from 'marked-katex-extension';
 import { useEnv } from '@/context/EnvContext';
 import { BookNote, HighlightColor } from '@/types/book';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -24,6 +22,7 @@ import {
   decideNoteBubbleTransition,
   removeBookNoteOverlays,
 } from '../../utils/annotatorUtil';
+import { parseNoteMarkdown } from '../../utils/noteMarkdown';
 import TextButton from '@/components/TextButton';
 import TextEditor, { TextEditorRef } from '@/components/TextEditor';
 
@@ -34,22 +33,6 @@ interface BooknoteItemProps {
   onClick?: () => void;
   inlineNoteEditing?: boolean;
 }
-
-// A scoped parser: `.use()` mutates in place, and the export dialog still
-// parses with the shared `marked` singleton. Mirrored in
-// __tests__/utils/md-note.test.ts — keep the options there in sync.
-const markdownParser = new Marked({ gfm: true }).use(
-  markedKatex({
-    // Bad math renders red inline with the error on hover instead of throwing.
-    throwOnError: false,
-    // The default emits MathML + HTML and needs katex.min.css to hide one; no
-    // KaTeX stylesheet is loaded here, so equations would render twice.
-    output: 'mathml',
-    // The default needs a space before the opening `$`, so `word\n$x$` renders
-    // as plain text with no error. Cost: `$5 and $10` is math (`\$` escapes).
-    nonStandard: true,
-  }),
-);
 
 const BooknoteItem: React.FC<BooknoteItemProps> = ({
   bookKey,
@@ -85,10 +68,10 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     [cfi, progress?.location, isNearest],
   );
 
-  // markdownParser.parse is heavy when called on every list scroll re-render
+  // parseNoteMarkdown is heavy when called on every list scroll re-render
   // across hundreds of items. Cache by note text — note edits change
   // item.note and bust the cache automatically.
-  const noteHtml = useMemo(() => (note ? markdownParser.parse(note) : ''), [note]);
+  const noteHtml = useMemo(() => (note ? parseNoteMarkdown(note) : ''), [note]);
 
   // dayjs().fromNow() reformats every render; cache per createdAt.
   const createdAtLabel = useMemo(() => dayjs(item.createdAt).fromNow(), [item.createdAt]);
