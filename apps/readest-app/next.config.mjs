@@ -22,6 +22,7 @@ const standaloneOutput = !exportOutput && process.env['BUILD_STANDALONE'] === 't
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH || undefined,
   // Ensure Next.js uses SSG instead of SSR
   // https://nextjs.org/docs/pages/building-your-application/deploying/static-exports
   // The Docker production image opts into a self-contained `.next/standalone`
@@ -179,7 +180,7 @@ const withPWA = pwaDisabled
       reloadOnOnline: true,
       disable: false,
       register: true,
-      scope: '/',
+      scope: process.env.NEXT_PUBLIC_BASE_PATH ? `${process.env.NEXT_PUBLIC_BASE_PATH}/` : '/',
     });
 
 const withAnalyzer = withBundleAnalyzer({
