@@ -20,6 +20,7 @@ import { annotationToolQuickActions } from './annotator/AnnotationTools';
 import { AnnotationToolType } from '@/types/annotator';
 import { saveViewSettings } from '@/helpers/settings';
 import { getHeaderTriggerHeight } from '@/utils/insets';
+import { getBookDataAttributes } from '@/utils/book';
 import { isForcedMobileLayout } from '../utils/mobileLayout';
 import { HighlighterIcon } from '@/components/HighlighterIcon';
 import Dropdown from '@/components/Dropdown';
@@ -297,6 +298,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             !windowButtonVisible && 'absolute inset-0',
             isHeaderCompact && '!hidden',
           )}
+          {...getBookDataAttributes(bookTitle, bookData?.book?.metadata)}
         >
           <div
             aria-hidden='true'

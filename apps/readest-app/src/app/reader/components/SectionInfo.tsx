@@ -7,6 +7,7 @@ import { useReaderStore } from '@/store/readerStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { getHeaderBandGeometry } from '@/utils/insets';
+import { getBookDataAttributes } from '@/utils/book';
 import { useBookDataStore } from '@/store/bookDataStore';
 
 interface SectionInfoProps {
@@ -102,6 +103,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
         role='none'
         tabIndex={-1}
         onClick={handleSectionClick}
+        {...getBookDataAttributes(bookData?.book?.title, bookData?.book?.metadata)}
         style={
           isVertical
             ? {

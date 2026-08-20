@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatSeries } from '@/utils/book';
+import { formatSeries, getBookDataAttributes } from '@/utils/book';
 
 describe('formatSeries', () => {
   it('returns an empty string when there is no series name', () => {
@@ -30,5 +30,59 @@ describe('formatSeries', () => {
   it('omits the number when the index is zero or not a finite number', () => {
     expect(formatSeries('Harry Potter', 0)).toBe('Harry Potter');
     expect(formatSeries('Harry Potter', Number.NaN)).toBe('Harry Potter');
+  });
+});
+
+describe('getBookDataAttributes (#5776)', () => {
+  // Custom Reader UI CSS reads these with attr() to surface "Series #2 - Title"
+  // in the running header / header bar. Series attributes must be absent (not
+  // empty) for standalone books so `[data-book-series]` presence checks work.
+  it('exposes the title and omits series attributes for a standalone book', () => {
+    expect(getBookDataAttributes('Dune', {})).toEqual({
+      'data-book-title': 'Dune',
+      'data-book-series': undefined,
+      'data-book-series-index': undefined,
+    });
+    expect(getBookDataAttributes('Dune', undefined)['data-book-series']).toBeUndefined();
+  });
+
+  it('exposes the trimmed series name and its index', () => {
+    expect(
+      getBookDataAttributes('Leviathan Wakes', { series: ' The Expanse ', seriesIndex: 1 }),
+    ).toEqual({
+      'data-book-title': 'Leviathan Wakes',
+      'data-book-series': 'The Expanse',
+      'data-book-series-index': 1,
+    });
+  });
+
+  it('keeps fractional indices', () => {
+    expect(
+      getBookDataAttributes('Novella', { series: 'The Expanse', seriesIndex: 1.5 })[
+        'data-book-series-index'
+      ],
+    ).toBe(1.5);
+  });
+
+  it('omits the index when it is missing, zero (the unknown-position default) or not finite', () => {
+    // readerStore fills a missing calibre:series_index with parseFloat('0'),
+    // so 0 means "no position", matching formatSeries.
+    expect(getBookDataAttributes('T', { series: 'S' })['data-book-series-index']).toBeUndefined();
+    expect(
+      getBookDataAttributes('T', { series: 'S', seriesIndex: 0 })['data-book-series-index'],
+    ).toBeUndefined();
+    expect(
+      getBookDataAttributes('T', { series: 'S', seriesIndex: Number.NaN })[
+        'data-book-series-index'
+      ],
+    ).toBeUndefined();
+  });
+
+  it('omits the index when there is no series to index into', () => {
+    expect(getBookDataAttributes('T', { seriesIndex: 3 })).toEqual({
+      'data-book-title': 'T',
+      'data-book-series': undefined,
+      'data-book-series-index': undefined,
+    });
   });
 });

@@ -174,6 +174,29 @@ export const formatSeries = (series?: string, seriesIndex?: number) => {
   return hasIndex ? `${name} #${seriesIndex}` : name;
 };
 
+/**
+ * Book metadata as inert `data-*` attributes for Custom Reader UI CSS (#5776):
+ * the running header and HeaderBar only print the title, so series readers
+ * append "Series #2" themselves via `attr()`. Series attributes are omitted
+ * (undefined, so React drops them) for standalone books, keeping
+ * `[data-book-series]` presence checks meaningful. The index gate mirrors
+ * formatSeries: readerStore defaults a missing position to 0.
+ */
+export const getBookDataAttributes = (
+  title?: string,
+  metadata?: Pick<BookMetadata, 'series' | 'seriesIndex'>,
+) => {
+  const series = metadata?.series?.trim() || undefined;
+  const seriesIndex = metadata?.seriesIndex;
+  const hasIndex =
+    !!series && typeof seriesIndex === 'number' && Number.isFinite(seriesIndex) && seriesIndex > 0;
+  return {
+    'data-book-title': title || undefined,
+    'data-book-series': series,
+    'data-book-series-index': hasIndex ? seriesIndex : undefined,
+  };
+};
+
 export const formatPublisher = (publisher: string | LanguageMap) => {
   return typeof publisher === 'string' ? publisher : formatLanguageMap(publisher);
 };

@@ -40,8 +40,11 @@ vi.mock('@/store/readerStore', () => ({
     setHoveredBookKey: vi.fn(),
   }),
 }));
+let currentBookData: {
+  book?: { title: string; metadata?: { series?: string; seriesIndex?: number } };
+} | null = null;
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData: () => null, getConfig: () => null }),
+  useBookDataStore: () => ({ getBookData: () => currentBookData, getConfig: () => null }),
 }));
 vi.mock('@/store/trafficLightStore', () => ({
   useTrafficLightStore: () => ({
@@ -101,6 +104,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   useEnvMock.mockReset();
+  currentBookData = null;
 });
 
 describe('HeaderBar sidebar toggle', () => {
@@ -134,5 +138,36 @@ describe('HeaderBar font button', () => {
     // passes whether or not the button is rendered.
     expect(screen.queryByRole('button', { name: 'Font & Layout' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Settings' })).toBeNull();
+  });
+});
+
+describe('HeaderBar book metadata data attributes (#5776)', () => {
+  // The desktop header only prints the title; series readers want "Book 2"
+  // next to it. Exposed on .header-title as inert data attributes so Custom
+  // Reader UI CSS can append them with attr() without a default UI change.
+  it('exposes title, series and series index on .header-title', () => {
+    currentBookData = {
+      book: { title: 'Book', metadata: { series: 'The Expanse', seriesIndex: 2 } },
+    };
+    useEnvMock.mockReturnValue({ envConfig: {}, appService: { isMobile: false } });
+    setViewport(1440, 900);
+    const { container } = renderHeader();
+    const title = container.querySelector('.header-title') as HTMLElement;
+
+    expect(title.getAttribute('data-book-title')).toBe('Book');
+    expect(title.getAttribute('data-book-series')).toBe('The Expanse');
+    expect(title.getAttribute('data-book-series-index')).toBe('2');
+  });
+
+  it('leaves the series attributes off for a standalone book', () => {
+    currentBookData = { book: { title: 'Book', metadata: {} } };
+    useEnvMock.mockReturnValue({ envConfig: {}, appService: { isMobile: false } });
+    setViewport(1440, 900);
+    const { container } = renderHeader();
+    const title = container.querySelector('.header-title') as HTMLElement;
+
+    expect(title.getAttribute('data-book-title')).toBe('Book');
+    expect(title.hasAttribute('data-book-series')).toBe(false);
+    expect(title.hasAttribute('data-book-series-index')).toBe(false);
   });
 });

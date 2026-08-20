@@ -1,8 +1,13 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import SectionInfo from '@/app/reader/components/SectionInfo';
 
-let currentBookData: { isFixedLayout: boolean } | undefined;
+let currentBookData:
+  | {
+      isFixedLayout?: boolean;
+      book?: { title: string; metadata?: { series?: string; seriesIndex?: number } };
+    }
+  | undefined;
 let currentMarginTopPx = 44;
 
 vi.mock('@/context/EnvContext', () => ({
@@ -33,6 +38,13 @@ vi.mock('@/store/bookDataStore', () => {
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string) => key,
 }));
+
+// Module-level mock state; reset after every test so a failing assertion (or
+// a test that forgets) cannot leak book data into its neighbours.
+afterEach(() => {
+  currentBookData = undefined;
+  currentMarginTopPx = 44;
+});
 
 const baseProps = {
   bookKey: 'book-1',
@@ -90,7 +102,6 @@ describe('SectionInfo notch mask', () => {
 
     expect(notch.classList.contains('notch-masked')).toBe(false);
     expect(notch.classList.contains('bg-base-100')).toBe(false);
-    currentBookData = undefined;
   });
 });
 
@@ -195,5 +206,33 @@ describe('SectionInfo contrast against the page (#4901)', () => {
     const info = container.querySelector('.sectioninfo') as HTMLElement;
 
     expect(info.classList.contains('mix-blend-difference')).toBe(false);
+  });
+});
+
+describe('SectionInfo book metadata data attributes (#5776)', () => {
+  // Custom Reader UI CSS has no other way to reach the book's series: the
+  // running header only prints the section title. The attributes sit inert on
+  // .sectioninfo for `attr()` / `[data-book-series]` rules.
+  it('exposes title, series and series index on .sectioninfo', () => {
+    currentBookData = {
+      isFixedLayout: false,
+      book: { title: 'Leviathan Wakes', metadata: { series: 'The Expanse', seriesIndex: 1 } },
+    };
+    const { container } = render(<SectionInfo {...baseProps} />);
+    const info = container.querySelector('.sectioninfo') as HTMLElement;
+
+    expect(info.getAttribute('data-book-title')).toBe('Leviathan Wakes');
+    expect(info.getAttribute('data-book-series')).toBe('The Expanse');
+    expect(info.getAttribute('data-book-series-index')).toBe('1');
+  });
+
+  it('leaves the series attributes off for a standalone book', () => {
+    currentBookData = { isFixedLayout: false, book: { title: 'Dune', metadata: {} } };
+    const { container } = render(<SectionInfo {...baseProps} />);
+    const info = container.querySelector('.sectioninfo') as HTMLElement;
+
+    expect(info.getAttribute('data-book-title')).toBe('Dune');
+    expect(info.hasAttribute('data-book-series')).toBe(false);
+    expect(info.hasAttribute('data-book-series-index')).toBe(false);
   });
 });
