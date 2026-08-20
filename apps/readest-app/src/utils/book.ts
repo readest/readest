@@ -166,12 +166,23 @@ export const formatDescription = (description?: string | LanguageMap) => {
     .trim();
 };
 
+/**
+ * The series position, or undefined when the book has none. Tolerates the two
+ * shapes found in real libraries: readerStore/bookService default a missing
+ * calibre:series_index to 0 (so 0 means "no position"), and indices edited
+ * before the metadata form coerced numbers were persisted (and synced) as
+ * strings like "2".
+ */
+export const getSeriesIndex = (seriesIndex?: number | string): number | undefined => {
+  const index = typeof seriesIndex === 'string' ? parseFloat(seriesIndex) : seriesIndex;
+  return typeof index === 'number' && Number.isFinite(index) && index > 0 ? index : undefined;
+};
+
 export const formatSeries = (series?: string, seriesIndex?: number) => {
   const name = series?.trim();
   if (!name) return '';
-  const hasIndex =
-    typeof seriesIndex === 'number' && Number.isFinite(seriesIndex) && seriesIndex > 0;
-  return hasIndex ? `${name} #${seriesIndex}` : name;
+  const index = getSeriesIndex(seriesIndex);
+  return index !== undefined ? `${name} #${index}` : name;
 };
 
 /**
@@ -179,21 +190,20 @@ export const formatSeries = (series?: string, seriesIndex?: number) => {
  * the running header and HeaderBar only print the title, so series readers
  * append "Series #2" themselves via `attr()`. Series attributes are omitted
  * (undefined, so React drops them) for standalone books, keeping
- * `[data-book-series]` presence checks meaningful. The index gate mirrors
- * formatSeries: readerStore defaults a missing position to 0.
+ * `[data-book-series]` presence checks meaningful. Persisted metadata is not
+ * runtime-validated (backup restore, sync index), so a non-string series is
+ * treated as absent rather than thrown on.
  */
 export const getBookDataAttributes = (
   title?: string,
   metadata?: Pick<BookMetadata, 'series' | 'seriesIndex'>,
 ) => {
-  const series = metadata?.series?.trim() || undefined;
-  const seriesIndex = metadata?.seriesIndex;
-  const hasIndex =
-    !!series && typeof seriesIndex === 'number' && Number.isFinite(seriesIndex) && seriesIndex > 0;
+  const series =
+    typeof metadata?.series === 'string' ? metadata.series.trim() || undefined : undefined;
   return {
     'data-book-title': title || undefined,
     'data-book-series': series,
-    'data-book-series-index': hasIndex ? seriesIndex : undefined,
+    'data-book-series-index': series ? getSeriesIndex(metadata?.seriesIndex) : undefined,
   };
 };
 

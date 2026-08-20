@@ -31,6 +31,13 @@ describe('formatSeries', () => {
     expect(formatSeries('Harry Potter', 0)).toBe('Harry Potter');
     expect(formatSeries('Harry Potter', Number.NaN)).toBe('Harry Potter');
   });
+
+  it('accepts an index persisted as a string by the metadata edit form', () => {
+    // Libraries edited before the form coerced numbers hold "2", synced across
+    // devices; the badge must not drop the index for those books.
+    expect(formatSeries('Harry Potter', '2' as unknown as number)).toBe('Harry Potter #2');
+    expect(formatSeries('Harry Potter', 'abc' as unknown as number)).toBe('Harry Potter');
+  });
 });
 
 describe('getBookDataAttributes (#5776)', () => {
@@ -84,5 +91,57 @@ describe('getBookDataAttributes (#5776)', () => {
       'data-book-series': undefined,
       'data-book-series-index': undefined,
     });
+  });
+
+  it('omits the title attribute when the book has no title yet', () => {
+    // SectionInfo renders before bookData resolves; no attribute beats an empty one.
+    expect(
+      getBookDataAttributes(undefined, { series: 'S', seriesIndex: 1 })['data-book-title'],
+    ).toBeUndefined();
+    expect(getBookDataAttributes('', { series: 'S' })['data-book-title']).toBeUndefined();
+  });
+
+  it('drops a whitespace-only series along with its index', () => {
+    expect(getBookDataAttributes('T', { series: '   ', seriesIndex: 2 })).toEqual({
+      'data-book-title': 'T',
+      'data-book-series': undefined,
+      'data-book-series-index': undefined,
+    });
+  });
+
+  it('omits negative and infinite indices', () => {
+    expect(
+      getBookDataAttributes('T', { series: 'S', seriesIndex: -1 })['data-book-series-index'],
+    ).toBeUndefined();
+    expect(
+      getBookDataAttributes('T', { series: 'S', seriesIndex: Number.POSITIVE_INFINITY })[
+        'data-book-series-index'
+      ],
+    ).toBeUndefined();
+  });
+
+  it('accepts an index persisted as a string by the metadata edit form', () => {
+    expect(
+      getBookDataAttributes('T', { series: 'S', seriesIndex: '2' as unknown as number })[
+        'data-book-series-index'
+      ],
+    ).toBe(2);
+    expect(
+      getBookDataAttributes('T', { series: 'S', seriesIndex: 'abc' as unknown as number })[
+        'data-book-series-index'
+      ],
+    ).toBeUndefined();
+  });
+
+  it('does not throw on a non-string series from a corrupt or foreign metadata row', () => {
+    // Persisted metadata is not runtime-validated (backup restore, sync index);
+    // a bad row must not make the reader header unrenderable.
+    expect(getBookDataAttributes('T', { series: 42 as unknown as string, seriesIndex: 1 })).toEqual(
+      {
+        'data-book-title': 'T',
+        'data-book-series': undefined,
+        'data-book-series-index': undefined,
+      },
+    );
   });
 });

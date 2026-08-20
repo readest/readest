@@ -79,6 +79,15 @@ export const useMetadataEdit = (metadata: BookMetadata | null, tags: string[]) =
         case 'subject':
           newMeta['subject'] = value ? value.split(/,|;|，|、/).map((s) => s.trim()) : [];
           break;
+        // Number inputs still hand over strings; stored as-is they persist and
+        // sync as "2", and every numeric consumer (formatSeries, the reader's
+        // data-book-series-index) drops the index.
+        case 'seriesIndex':
+        case 'seriesTotal': {
+          const parsed = value ? parseFloat(value) : Number.NaN;
+          newMeta[field] = Number.isFinite(parsed) ? parsed : undefined;
+          break;
+        }
         default:
           newMeta[field] = value;
       }
