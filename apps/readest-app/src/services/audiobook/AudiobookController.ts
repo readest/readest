@@ -40,6 +40,14 @@ const ERROR_RECOVERY_MS = 30_000;
 
 export interface AudiobookSource {
   itemId: string;
+  /**
+   * Podcast episode id when this source plays a single episode; undefined
+   * for whole-audiobook playback. Carried here (not just passed to the
+   * syncer) so a live session's episode can be read back off its controller
+   * via getEpisodeId() - openAudiobookSession's reuse check needs that to
+   * tell "same episode, reuse" from "different episode, replace" apart.
+   */
+  episodeId?: string;
   title: string;
   author: string;
   tracks: ABSTrack[];
@@ -280,6 +288,21 @@ export class AudiobookController extends EventTarget implements PlaybackSource {
 
   getChapters(): ABSChapter[] {
     return this.#chapters;
+  }
+
+  /** Podcast episode id this session is playing, if any. See AudiobookSource.episodeId. */
+  getEpisodeId(): string | undefined {
+    return this.#source.episodeId;
+  }
+
+  /**
+   * The source title: an episode title when playing a single podcast
+   * episode, the book title otherwise (see openAudiobookSession, which sets
+   * AudiobookSource.title accordingly). Lets the player route show the
+   * right heading without threading episode data through separately.
+   */
+  getTitle(): string {
+    return this.#source.title;
   }
 
   async seekToChapter(index: number): Promise<void> {

@@ -9,6 +9,7 @@ import {
   MdMenuBook,
   MdOutlinePause,
   MdPlayArrow,
+  MdPodcasts,
   MdSkipNext,
   MdSkipPrevious,
 } from 'react-icons/md';
@@ -16,9 +17,11 @@ import { TbRewindBackward15, TbRewindForward30 } from 'react-icons/tb';
 import { IoArrowBack } from 'react-icons/io5';
 
 import type { Book } from '@/types/book';
-import type { ABSChapter } from '@/types/audiobookshelf';
+import type { ABSChapter, ABSEpisode, ABSMediaProgress } from '@/types/audiobookshelf';
 import type { AudiobookController } from '@/services/audiobook/AudiobookController';
+import { loadAbsEpisodes } from '@/services/audiobook/openAudiobook';
 import { ttsSessionManager, TTS_STOP_AT_CHAPTER_END } from '@/services/tts/TTSSessionManager';
+import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -28,18 +31,39 @@ import TTSScrubber from '@/app/reader/components/tts/TTSScrubber';
 import SpeedRuler, { formatRate } from '@/app/reader/components/tts/SpeedRuler';
 import { getTTSTimeoutOptions } from '@/app/reader/components/tts/TTSPlayerSheet';
 import { useCountdownLabel } from '@/app/reader/components/tts/useCountdownLabel';
+import Spinner from '@/components/Spinner';
+import EpisodesView from './EpisodesView';
 
-type PlayerSubView = 'main' | 'speed' | 'timer' | 'chapters';
+type PlayerSubView = 'main' | 'speed' | 'timer' | 'chapters' | 'episodes';
 
 interface PlayerViewProps {
   book: Book;
   bookKey: string;
   controller: AudiobookController;
   onGoBack: () => void;
+  onSelectEpisode: (episode: ABSEpisode) => void;
+  /**
+   * The episode just tapped (from this view's own embedded Episodes
+   * subview), while its claim is still in flight up in page.tsx. Owned by
+   * the parent, not this component - only the parent's handleSelectEpisode
+   * knows whether a claim actually succeeded, failed, or threw, so only it
+   * can correctly clear this on every outcome (see page.tsx). This
+   * component only ever READS it, to know when to leave the Episodes
+   * subview and to relay it to EpisodesView for the row's busy indicator.
+   */
+  pendingEpisodeId: string | null;
 }
 
-const PlayerView = ({ book, bookKey, controller, onGoBack }: PlayerViewProps) => {
+const PlayerView = ({
+  book,
+  bookKey,
+  controller,
+  onGoBack,
+  onSelectEpisode,
+  pendingEpisodeId,
+}: PlayerViewProps) => {
   const _ = useTranslation();
+  const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const isEink = settings.globalViewSettings?.isEink ?? false;
   const iconSize18 = useResponsiveSize(18);
@@ -48,12 +72,25 @@ const PlayerView = ({ book, bookKey, controller, onGoBack }: PlayerViewProps) =>
   const iconSize32 = useResponsiveSize(32);
 
   const [view, setView] = useState<PlayerSubView>('main');
+  const [episodesData, setEpisodesData] = useState<{
+    episodes: ABSEpisode[];
+    progressByEpisodeId: Map<string, ABSMediaProgress>;
+  } | null>(null);
   const [coverFailed, setCoverFailed] = useState(false);
   const [isPlaying, setIsPlaying] = useState(controller.state === 'playing');
   const [currentChapter, setCurrentChapter] = useState<ABSChapter | null>(
     controller.getCurrentChapter(),
   );
   const [rate, setRate] = useState(controller.rate);
+  // Episode switch replaces the whole controller instance (page.tsx swaps
+  // in a freshly claimed one - see handleSelectEpisode), not just its
+  // internal state, so the `useState` initializer above only ever runs
+  // once and never re-reads the new controller's rate on its own. Without
+  // this, the display would stay frozen on the OUTGOING controller's rate
+  // until some other rate-changing interaction happened to call setRate.
+  useEffect(() => {
+    setRate(controller.rate);
+  }, [controller]);
   const [timeoutOption, setTimeoutOption] = useState(() =>
     ttsSessionManager.getStopAtChapterEnd()
       ? TTS_STOP_AT_CHAPTER_END
@@ -101,14 +138,60 @@ const PlayerView = ({ book, bookKey, controller, onGoBack }: PlayerViewProps) =>
   // Leaving this route does NOT stop playback (the session survives
   // headless, same as closing the reader on a TTS session). Only a session
   // that ended elsewhere (sleep timer, NowPlayingBar's stop, natural end,
-  // an error) should bounce the player back.
+  // an error) should bounce the player back - except for a podcast episode,
+  // whose end the player route itself handles by falling back to this
+  // show's episode list (see page.tsx), not the library.
   useEffect(() => {
     const onSessionChanged = () => {
-      if (!ttsSessionManager.getSessionByHash(book.hash)) onGoBack();
+      if (ttsSessionManager.getSessionByHash(book.hash)) return;
+      if (controller.getEpisodeId()) return;
+      onGoBack();
     };
     ttsSessionManager.addEventListener('session-changed', onSessionChanged);
     return () => ttsSessionManager.removeEventListener('session-changed', onSessionChanged);
-  }, [book.hash, onGoBack]);
+  }, [book.hash, controller, onGoBack]);
+
+  // The embedded Episodes subview loads (and reloads, for fresh progress)
+  // each time it's opened, mirroring how the main scrubber always reflects
+  // the controller's current position rather than a cached snapshot. Resets
+  // to null (Spinner) synchronously on every open rather than leaving the
+  // previous open's snapshot on screen while the fresh fetch is in flight -
+  // a re-open must never show stale progress as if it were current. The
+  // `cancelled` flag is the standard guard against a stale fetch's result
+  // landing after a newer open (or StrictMode's dev-only replay) superseded
+  // it; unlike the mount effect in page.tsx, there is no "guard set before
+  // the first await and never cleared" failure mode here to work around, so
+  // the plain flag (not a promise cache) is enough.
+  useEffect(() => {
+    if (view !== 'episodes') return;
+    let cancelled = false;
+    setEpisodesData(null);
+    (async () => {
+      const activeAppService = appService ?? (await envConfig.getAppService());
+      const result = await loadAbsEpisodes(activeAppService, book);
+      if (!cancelled) setEpisodesData(result);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, book]);
+
+  // Once the parent hands down a controller for the tapped episode (a fresh
+  // claim landing, or the reuse path resolving instantly for an already-
+  // playing episode), leave the Episodes subview for the transport view.
+  // Keyed on the controller's OWN episodeId rather than firing eagerly from
+  // the tap itself, so a still-in-flight claim for a DIFFERENT episode
+  // leaves the subview showing its pending row instead of flashing the
+  // previous episode's transport. Does NOT clear `pendingEpisodeId` itself
+  // (that's the parent's job, via page.tsx's own matching effect - see its
+  // comment) - this only reacts to it, the same prop a failed claim also
+  // clears to reset the busy row without ever switching views.
+  useEffect(() => {
+    if (pendingEpisodeId && controller.getEpisodeId() === pendingEpisodeId) {
+      setView('main');
+    }
+  }, [controller, pendingEpisodeId]);
 
   const handleTogglePlay = () => {
     void (isPlaying ? controller.pause() : controller.start());
@@ -142,6 +225,11 @@ const PlayerView = ({ book, bookKey, controller, onGoBack }: PlayerViewProps) =>
   };
 
   const chapters = controller.getChapters();
+  const episodeId = controller.getEpisodeId();
+  // A podcast episode's title lives on the controller's source, not on
+  // `book` (the show); falls back to the show for a plain audiobook.
+  const headingTitle = episodeId ? controller.getTitle() : book.title;
+  const headingSubtitle = episodeId ? book.title : book.author;
   const timeoutOptions = getTTSTimeoutOptions(_);
   const timerCaption =
     timeoutOption === TTS_STOP_AT_CHAPTER_END
@@ -162,8 +250,8 @@ const PlayerView = ({ book, bookKey, controller, onGoBack }: PlayerViewProps) =>
           <IoArrowBack size={iconSize24 * 0.85} className='rtl:rotate-180' />
         </button>
         <div className='pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-16 text-center'>
-          <span className='line-clamp-1 text-sm font-semibold'>{book.title}</span>
-          <span className='text-base-content/70 line-clamp-1 text-xs'>{book.author}</span>
+          <span className='line-clamp-1 text-sm font-semibold'>{headingTitle}</span>
+          <span className='text-base-content/70 line-clamp-1 text-xs'>{headingSubtitle}</span>
         </div>
       </div>
     ) : (
@@ -178,7 +266,13 @@ const PlayerView = ({ book, bookKey, controller, onGoBack }: PlayerViewProps) =>
         </button>
         <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
           <span className='line-clamp-1 text-center font-semibold'>
-            {view === 'speed' ? _('Speed') : view === 'chapters' ? _('Chapters') : _('Set Timeout')}
+            {view === 'speed'
+              ? _('Speed')
+              : view === 'chapters'
+                ? _('Chapters')
+                : view === 'episodes'
+                  ? _('Episodes')
+                  : _('Set Timeout')}
           </span>
         </div>
       </div>
@@ -204,8 +298,8 @@ const PlayerView = ({ book, bookKey, controller, onGoBack }: PlayerViewProps) =>
               </div>
             )}
             <div className='flex w-full flex-col items-center gap-0.5 text-center'>
-              <span className='line-clamp-2 text-lg font-semibold'>{book.title}</span>
-              <span className='text-base-content/70 line-clamp-1 text-sm'>{book.author}</span>
+              <span className='line-clamp-2 text-lg font-semibold'>{headingTitle}</span>
+              <span className='text-base-content/70 line-clamp-1 text-sm'>{headingSubtitle}</span>
               {currentChapter && (
                 <span className='text-base-content/60 line-clamp-1 text-sm'>
                   {currentChapter.title}
@@ -306,6 +400,19 @@ const PlayerView = ({ book, bookKey, controller, onGoBack }: PlayerViewProps) =>
                   </span>
                 </button>
               )}
+              {episodeId && (
+                <button
+                  type='button'
+                  aria-label={_('Episodes')}
+                  onClick={() => setView('episodes')}
+                  className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
+                >
+                  <MdPodcasts size={iconSize18} />
+                  <span className='text-base-content/60 max-w-full truncate px-1 text-xs'>
+                    {_('Episodes')}
+                  </span>
+                </button>
+              )}
             </div>
           </>
         )}
@@ -367,6 +474,22 @@ const PlayerView = ({ book, bookKey, controller, onGoBack }: PlayerViewProps) =>
             })}
           </div>
         )}
+        {view === 'episodes' &&
+          (episodesData ? (
+            <EpisodesView
+              episodes={episodesData.episodes}
+              progressByEpisodeId={episodesData.progressByEpisodeId}
+              activeEpisodeId={episodeId}
+              pendingEpisodeId={pendingEpisodeId ?? undefined}
+              // Sets pendingEpisodeId itself (page.tsx's handleSelectEpisode)
+              // before the claim starts - this component only reacts to that
+              // prop (see the pending-controller effect above), it never
+              // sets it, so no local wrapper is needed here.
+              onSelectEpisode={onSelectEpisode}
+            />
+          ) : (
+            <Spinner loading />
+          ))}
       </div>
     </div>
   );

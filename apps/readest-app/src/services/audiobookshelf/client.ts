@@ -283,8 +283,16 @@ export class ABSClient {
     return this.#request<{ mediaProgress: ABSMediaProgress[] }>('/api/me');
   }
 
-  async openPlaybackSession(itemId: string): Promise<ABSPlaybackSession> {
-    return this.#request<ABSPlaybackSession>(`/api/items/${itemId}/play`, {
+  async openPlaybackSession(itemId: string, episodeId?: string): Promise<ABSPlaybackSession> {
+    // Normalized here too (not just at AbsProgressSyncer's ctor) so any
+    // caller that passes '' gets the same "no episode" book-level path,
+    // one consistent rule across the client, the progress syncer's
+    // mediaProgress matcher, and its localStorage key.
+    const normalizedEpisodeId = episodeId || undefined;
+    const path = normalizedEpisodeId
+      ? `/api/items/${itemId}/play/${encodeURIComponent(normalizedEpisodeId)}`
+      : `/api/items/${itemId}/play`;
+    return this.#request<ABSPlaybackSession>(path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

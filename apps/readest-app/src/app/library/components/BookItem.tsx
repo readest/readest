@@ -86,12 +86,17 @@ const BookItem: React.FC<BookItemProps> = ({
   // total length when unplayed, remaining time once started (mirrors the
   // scrubber's "-remaining" convention).
   const isAbsBook = isAudiobook(book);
+  const isPodcastShow = book.absMediaType === 'podcast';
   const absDuration = book.duration ?? 0;
   const absCurrentTime = book.progress?.[0] ?? 0;
   const absTimeLabel =
     absCurrentTime > 0
       ? `-${formatCompactTime(Math.max(absDuration - absCurrentTime, 0))}`
       : formatCompactTime(absDuration);
+  // A podcast show has no total duration or resume position of its own (those
+  // live per-episode, a later task), so the row badges its episode count
+  // instead of the duration/remaining-time label audiobooks get.
+  const episodeCountLabel = _('{{count}} episodes', { count: book.episodeCount ?? 0 });
 
   return (
     <div
@@ -206,7 +211,9 @@ const BookItem: React.FC<BookItemProps> = ({
               className='text-neutral-content/70 flex min-w-0 justify-between text-xs'
               role='status'
             >
-              <span className='truncate tabular-nums'>{absTimeLabel}</span>
+              <span className='truncate tabular-nums'>
+                {isPodcastShow ? episodeCountLabel : absTimeLabel}
+              </span>
             </div>
           ) : (
             (book.progress || book.readingStatus) && (

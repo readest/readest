@@ -132,6 +132,50 @@ describe('ABSClient', () => {
     expect(String(fetchMock.mock.calls[1]![0])).toContain('page=1');
   });
 
+  it('openPlaybackSession posts to the book play path when no episodeId is given', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, { id: 'sess1', currentTime: 12, audioTracks: [] }),
+    );
+    await client.openPlaybackSession('item1');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://abs.local:13378/api/items/item1/play',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('openPlaybackSession appends the episode id to the play path when given', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, { id: 'sess1', currentTime: 12, audioTracks: [] }),
+    );
+    await client.openPlaybackSession('item1', 'ep1');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://abs.local:13378/api/items/item1/play/ep1',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('openPlaybackSession encodes the episode id in the play path', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, { id: 'sess1', currentTime: 12, audioTracks: [] }),
+    );
+    await client.openPlaybackSession('item1', 'ep/1 two');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://abs.local:13378/api/items/item1/play/ep%2F1%20two',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('openPlaybackSession treats an empty-string episodeId the same as no episodeId', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, { id: 'sess1', currentTime: 12, audioTracks: [] }),
+    );
+    await client.openPlaybackSession('item1', '');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://abs.local:13378/api/items/item1/play',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
   it('coalesces concurrent 401s into a single /auth/refresh call', async () => {
     // Two client calls racing (e.g. a periodic syncSession alongside a UI
     // read) both start with the stale token and both see a 401. Without an

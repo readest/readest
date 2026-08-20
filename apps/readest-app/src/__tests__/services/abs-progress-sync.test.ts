@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { resolveResumePosition, AbsProgressSyncer } from '@/services/audiobookshelf/progressSync';
+import {
+  resolveResumePosition,
+  AbsProgressSyncer,
+  readLocalLastPlayedAt,
+} from '@/services/audiobookshelf/progressSync';
 import { useLibraryStore } from '@/store/libraryStore';
 import type { Book } from '@/types/book';
 
@@ -80,8 +84,123 @@ describe('AbsProgressSyncer', () => {
 
   it('begin opens a session and resolves the resume position', async () => {
     const resume = await syncer.begin(100, 1000);
-    expect(client.openPlaybackSession).toHaveBeenCalledWith('i1');
+    // A book syncer has no episodeId; it forwards `undefined`, which
+    // ABSClient#openPlaybackSession treats the same as omitting the
+    // argument (see the "book session URL unchanged" client test).
+    expect(client.openPlaybackSession).toHaveBeenCalledWith('i1', undefined);
     expect(resume).toBe(500);
+  });
+
+  it("begin's book matching ignores mediaProgress entries with a truthy episodeId", async () => {
+    // A book syncer (no episodeId) must not match an entry that carries a
+    // truthy episodeId, even when libraryItemId matches. If it wrongly
+    // matched, serverLastUpdate would be 9000 (newer than localLastPlayedAt
+    // 100) and resume would fall back to the session's currentTime (500)
+    // instead of the local position.
+    client.getMe.mockResolvedValueOnce({
+      mediaProgress: [
+        {
+          libraryItemId: 'i1',
+          episodeId: 'ep9',
+          currentTime: 999,
+          duration: 3600,
+          isFinished: false,
+          lastUpdate: 9000,
+        },
+      ],
+    });
+    const resume = await syncer.begin(50, 100);
+    expect(resume).toBe(50);
+  });
+
+  it("begin's book matching matches a mediaProgress entry with an explicit null episodeId", async () => {
+    // /api/me sends `episodeId: null` (not just an absent field) for a
+    // book's own mediaProgress entry. A book syncer must still match it.
+    client.getMe.mockResolvedValueOnce({
+      mediaProgress: [
+        {
+          libraryItemId: 'i1',
+          episodeId: null,
+          currentTime: 42,
+          duration: 3600,
+          isFinished: false,
+          lastUpdate: 9000,
+        },
+      ],
+    });
+    // localLastPlayedAt (100) is older than the matched entry's lastUpdate
+    // (9000), so the server should win, proving the entry was matched: if
+    // unmatched, serverLastUpdate falls back to 0 and local (100 > 0) would
+    // win instead, resolving to localCurrentTime (700) rather than the
+    // session's currentTime (500, from the shared client mock).
+    const resume = await syncer.begin(700, 100);
+    expect(resume).toBe(500);
+  });
+
+  it('begin passes the episodeId to openPlaybackSession for an episode', async () => {
+    const episodeSyncer = new AbsProgressSyncer({
+      client: client as never,
+      itemId: 'show1',
+      episodeId: 'ep1',
+      bookHash: 'h-ep1',
+      duration: 1800,
+      appService: { saveLibraryBooks: vi.fn() } as never,
+    });
+    await episodeSyncer.begin(0, 0);
+    expect(client.openPlaybackSession).toHaveBeenCalledWith('show1', 'ep1');
+  });
+
+  it("begin's episode matching ignores show-level and other-episode entries", async () => {
+    client.openPlaybackSession.mockResolvedValueOnce({
+      id: 'sess-ep1',
+      currentTime: 999,
+      audioTracks: [],
+    });
+    client.getMe.mockResolvedValueOnce({
+      mediaProgress: [
+        // Show-level entry: same libraryItemId, no episodeId. Must be ignored.
+        {
+          libraryItemId: 'show1',
+          currentTime: 10,
+          duration: 1800,
+          isFinished: false,
+          lastUpdate: 5000,
+        },
+        // Other-episode entry: same libraryItemId, different episodeId. Must be ignored.
+        {
+          libraryItemId: 'show1',
+          episodeId: 'ep2',
+          currentTime: 20,
+          duration: 1800,
+          isFinished: false,
+          lastUpdate: 6000,
+        },
+        // Target entry for (show1, ep1).
+        {
+          libraryItemId: 'show1',
+          episodeId: 'ep1',
+          currentTime: 30,
+          duration: 1800,
+          isFinished: false,
+          lastUpdate: 1000,
+        },
+      ],
+    });
+    const episodeSyncer = new AbsProgressSyncer({
+      client: client as never,
+      itemId: 'show1',
+      episodeId: 'ep1',
+      bookHash: 'h-ep1',
+      duration: 1800,
+      appService: { saveLibraryBooks: vi.fn() } as never,
+    });
+    // localLastPlayedAt (2000) is newer than the matched (show1, ep1) entry's
+    // lastUpdate (1000), so local should win. If matching had instead picked
+    // the show-level (5000) or other-episode (6000) entry, local would not
+    // be considered fresher and resume would fall back to the session's
+    // currentTime (999) instead.
+    const resume = await episodeSyncer.begin(700, 2000);
+    expect(resume).toBe(700);
   });
 
   it('onTick syncs the session with listened time deltas', async () => {
@@ -219,6 +338,106 @@ describe('AbsProgressSyncer', () => {
 
       hooks.onPause!(520);
       expect(appService.saveLibraryBooks).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('per-episode localStorage key isolation', () => {
+    afterEach(() => {
+      localStorage.clear();
+    });
+
+    it('writes distinct keys for two episodes sharing a bookHash, and leaves the book-level key untouched', async () => {
+      const nowSpy = vi.spyOn(Date, 'now');
+      const makeEpisodeSyncer = (episodeId: string) =>
+        new AbsProgressSyncer({
+          client: client as never,
+          itemId: 'show1',
+          episodeId,
+          bookHash: 'hShow',
+          duration: 1800,
+          appService: { saveLibraryBooks: vi.fn() } as never,
+        });
+      const bookSyncer = new AbsProgressSyncer({
+        client: client as never,
+        itemId: 'i1',
+        bookHash: 'hShow',
+        duration: 3600,
+        appService: { saveLibraryBooks: vi.fn() } as never,
+      });
+
+      try {
+        const ep1Syncer = makeEpisodeSyncer('ep1');
+        nowSpy.mockReturnValue(1111);
+        await ep1Syncer.begin(0, 0);
+        ep1Syncer.hooks().onTick!(10);
+
+        const ep2Syncer = makeEpisodeSyncer('ep2');
+        nowSpy.mockReturnValue(2222);
+        await ep2Syncer.begin(0, 0);
+        ep2Syncer.hooks().onTick!(20);
+
+        nowSpy.mockReturnValue(3333);
+        await bookSyncer.begin(0, 0);
+        bookSyncer.hooks().onTick!(30);
+
+        expect(localStorage.getItem('abs-last-played-hShow:ep1')).toBe('1111');
+        expect(localStorage.getItem('abs-last-played-hShow:ep2')).toBe('2222');
+        expect(localStorage.getItem('abs-last-played-hShow')).toBe('3333');
+      } finally {
+        nowSpy.mockRestore();
+      }
+    });
+
+    it('treats an empty-string episodeId as no episode: same session call, cache key, and mediaProgress match as a book', async () => {
+      client.getMe.mockResolvedValueOnce({
+        mediaProgress: [
+          // Book-level entry (no episodeId), the same shape /api/me sends
+          // for a show that isn't episode-scoped.
+          {
+            libraryItemId: 'show2',
+            currentTime: 77,
+            duration: 1800,
+            isFinished: false,
+            lastUpdate: 4000,
+          },
+        ],
+      });
+      const emptyEpisodeSyncer = new AbsProgressSyncer({
+        client: client as never,
+        itemId: 'show2',
+        episodeId: '',
+        bookHash: 'hEmpty',
+        duration: 1800,
+        appService: { saveLibraryBooks: vi.fn() } as never,
+      });
+
+      // localLastPlayedAt (0) is older than the book-level entry's
+      // lastUpdate (4000), so the server should win (session currentTime,
+      // 500 from the shared default mock) only if '' matched the
+      // book-level entry the same way `undefined` would.
+      const resume = await emptyEpisodeSyncer.begin(999, 0);
+      expect(client.openPlaybackSession).toHaveBeenCalledWith('show2', undefined);
+      expect(resume).toBe(500);
+
+      emptyEpisodeSyncer.hooks().onTick!(10);
+      expect(localStorage.getItem('abs-last-played-hEmpty')).not.toBeNull();
+      expect(localStorage.getItem('abs-last-played-hEmpty:')).toBeNull();
+    });
+  });
+
+  describe('readLocalLastPlayedAt with an episodeId', () => {
+    afterEach(() => {
+      localStorage.clear();
+    });
+
+    it('reads the per-episode key, distinct from the book-level key and other episodes', () => {
+      localStorage.setItem('abs-last-played-hShow', '111');
+      localStorage.setItem('abs-last-played-hShow:ep1', '222');
+      localStorage.setItem('abs-last-played-hShow:ep2', '333');
+
+      expect(readLocalLastPlayedAt('hShow')).toBe(111);
+      expect(readLocalLastPlayedAt('hShow', 'ep1')).toBe(222);
+      expect(readLocalLastPlayedAt('hShow', 'ep2')).toBe(333);
     });
   });
 });

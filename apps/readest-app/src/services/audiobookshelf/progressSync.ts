@@ -19,16 +19,37 @@ const PERSIST_THROTTLE_MS = 10_000;
 // (background/suspend) doesn't get credited with the whole gap.
 const MAX_LISTENED_SEC = 60;
 
-const lastPlayedAtKey = (bookHash: string): string => `abs-last-played-${bookHash}`;
+/**
+ * Normalizes an episodeId so `undefined`, `null`, and `''` are all treated
+ * as "no episode" (book-level) by one consistent rule, shared by the ctor,
+ * the mediaProgress matcher below, and (independently) the client's play
+ * path — see ABSClient#openPlaybackSession.
+ */
+const normalizeEpisodeId = (episodeId?: string | null): string | undefined =>
+  episodeId || undefined;
 
 /**
- * When this device last wrote progress for `bookHash`, in ms (0 when never).
- * Written by AbsProgressSyncer#cacheLocally; read by the resume rule and by
- * the library sync's newest-wins guard.
+ * localStorage key for a book's (or podcast episode's) last-played-locally
+ * timestamp. The `episodeId` suffix keeps every episode's cache isolated
+ * even if two episodes ever end up sharing a `bookHash`, and leaves the book
+ * key format (no suffix) unchanged for backward compatibility with
+ * already-cached books. The `:` delimiter is unambiguous because ABS book
+ * hashes are 32-char lowercase hex md5 digests, which can never contain `:`.
  */
-export const readLocalLastPlayedAt = (bookHash: string): number => {
+const lastPlayedAtKey = (bookHash: string, episodeId?: string): string => {
+  const normalized = normalizeEpisodeId(episodeId);
+  return normalized ? `abs-last-played-${bookHash}:${normalized}` : `abs-last-played-${bookHash}`;
+};
+
+/**
+ * When this device last wrote progress for `bookHash` (and, for a podcast
+ * episode, `episodeId`), in ms (0 when never). Written by
+ * AbsProgressSyncer#cacheLocally; read by the resume rule and by the library
+ * sync's newest-wins guard.
+ */
+export const readLocalLastPlayedAt = (bookHash: string, episodeId?: string): number => {
   try {
-    const raw = localStorage.getItem(lastPlayedAtKey(bookHash));
+    const raw = localStorage.getItem(lastPlayedAtKey(bookHash, episodeId));
     return raw ? Number(raw) || 0 : 0;
   } catch {
     return 0;
@@ -61,6 +82,7 @@ export const resolveResumePosition = (input: {
 export class AbsProgressSyncer {
   #client: ABSClient;
   #itemId: string;
+  #episodeId?: string;
   #bookHash: string;
   #duration: number;
   #appService: AppService;
@@ -72,12 +94,14 @@ export class AbsProgressSyncer {
   constructor(input: {
     client: ABSClient;
     itemId: string;
+    episodeId?: string;
     bookHash: string;
     duration: number;
     appService: AppService;
   }) {
     this.#client = input.client;
     this.#itemId = input.itemId;
+    this.#episodeId = normalizeEpisodeId(input.episodeId);
     this.#bookHash = input.bookHash;
     this.#duration = input.duration;
     this.#appService = input.appService;
@@ -86,12 +110,21 @@ export class AbsProgressSyncer {
   /** Open the server listening session; returns the resume position honoring resolveResumePosition. */
   async begin(localCurrentTime: number, localLastPlayedAt: number): Promise<number> {
     const [session, me] = await Promise.all([
-      this.#client.openPlaybackSession(this.#itemId),
+      this.#client.openPlaybackSession(this.#itemId, this.#episodeId),
       this.#client.getMe(),
     ]);
     this.#sessionId = session.id;
+    // Match on (libraryItemId, episodeId) together, normalizing both sides
+    // through normalizeEpisodeId: a book (no episodeId) refuses to match a
+    // show-level or other-episode entry, and an episode refuses to match
+    // its show's book-level entry. An explicit `episodeId: null` on the
+    // mediaProgress entry (the book case, per /api/me) normalizes to
+    // `undefined` the same as an absent field.
     const serverLastUpdate =
-      me.mediaProgress.find((p) => p.libraryItemId === this.#itemId)?.lastUpdate ?? 0;
+      me.mediaProgress.find(
+        (p) =>
+          p.libraryItemId === this.#itemId && normalizeEpisodeId(p.episodeId) === this.#episodeId,
+      )?.lastUpdate ?? 0;
     const resume = resolveResumePosition({
       serverCurrentTime: session.currentTime,
       serverLastUpdate,
@@ -178,7 +211,7 @@ export class AbsProgressSyncer {
     }
 
     try {
-      localStorage.setItem(lastPlayedAtKey(this.#bookHash), String(Date.now()));
+      localStorage.setItem(lastPlayedAtKey(this.#bookHash, this.#episodeId), String(Date.now()));
     } catch (err) {
       // Best-effort: a book still plays fine without the local resume cache.
       console.warn(err);

@@ -92,6 +92,8 @@
   "{{count}} chapters could not be downloaded._other": "{{count}} chapters could not be downloaded.",
   "{{count}} chapters_one": "{{count}} chapter",
   "{{count}} chapters_other": "{{count}} chapters",
+  "{{count}} episodes_one": "{{count}} episode",
+  "{{count}} episodes_other": "{{count}} episodes",
   "{{title}}, {{count}} results_one": "{{title}}, {{count}} result",
   "{{title}}, {{count}} results_other": "{{title}}, {{count}} results",
   "Within {{count}} words_one": "Within {{count}} word",

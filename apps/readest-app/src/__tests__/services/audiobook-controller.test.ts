@@ -232,6 +232,14 @@ describe('AudiobookController', () => {
     expect(controller.state).toBe('playing');
   });
 
+  it('getTitle returns the source title (the episode title when playing a podcast episode)', () => {
+    controller = new AudiobookController(
+      { ...source(), episodeId: 'ep1', title: 'Episode One' },
+      clock,
+    );
+    expect(controller.getTitle()).toBe('Episode One');
+  });
+
   it('a seek before start survives the initial load', async () => {
     await controller.seekToTime(150); // lands in track 2, before start() ever ran
     expect(clock.url).toBe('http://x/f/2?token=t');

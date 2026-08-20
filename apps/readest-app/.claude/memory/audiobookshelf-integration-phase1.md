@@ -50,3 +50,9 @@ Branch `feat/audiobookshelf-phase1` (worktree `/Users/chrox/dev/readest-feat-aud
 - AudiobookController #onError has no re-entrancy guard (double-toast if a future clock both rejects load() and fires 'error').
 - Product decision pending: audiobook listening time is NOT counted in reading stats (stats gate is TTS-only).
 - i18n extraction for ~8 new keys required before release. Sleep-timer offers End of Chapter on chapterless books. sw.ts clientRoutes lacks /player.
+
+## Phase 2: Podcasts (2026-08-19, same branch)
+
+Podcast shows sync as `format:'ABS'` Books marked `absMediaType:'podcast'` with `episodeCount` badges; episodes play through the SAME AudiobookController as single-track sources (`episode.audioTrack` + episode chapters), sessions via `POST /api/items/:id/play/:episodeId`, progress keyed `(libraryItemId, episodeId)` with localStorage keys `abs-last-played-<hash>:<episodeId>`. Player route renders an Episodes view (newest-first) for podcasts, never auto-claims; pending-episode state lives in page.tsx (claim owner) after two fix rounds. Episode resume is SERVER-WINS (`begin(0,0)`) until a per-episode position cache exists. Rate carries across episode switches; NativeAudiobookClock replays pre-load setRate at session establishment. Show-level Book.progress mirrors the last-played episode BY DESIGN.
+
+Xiaomi-verified: picker/default-select, 10 shows w/ badges, episodes list, playback, per-episode server round-trip, episode switch, restart survival. WATCH-ITEM: one-off settings.absServers wipe on first podcast-build boot (unreproduced). Automation note: `readest://book/<hash>` deep link bypasses #4584 tap-death.

@@ -87,6 +87,26 @@ describe('NativeAudiobookClock', () => {
     expect(clock.paused).toBe(true);
   });
 
+  // Regression: page.tsx's handleSelectEpisode carries a previous episode's
+  // rate onto a freshly claimed, not-yet-started controller via
+  // controller.setRate() - before AudiobookController#start() ever calls
+  // load(). At that point #nativeSession is still null, so setRate() could
+  // only update the local #rate mirror and skipped the native invoke
+  // entirely (its early return), silently leaving the AVPlayer at 1x while
+  // #rate and the UI both reported the carried rate.
+  test('setRate before load() replays the rate once the native session is established', async () => {
+    const clock = new NativeAudiobookClock();
+
+    await clock.setRate(1.5);
+    expect(controlCalls.some((c) => c['action'] === 'set-rate')).toBe(false);
+
+    await clock.load('https://abs.example/f/1', 0);
+
+    expect(
+      controlCalls.filter((c) => c['action'] === 'set-rate' && c['rate'] === 1.5),
+    ).toHaveLength(1);
+  });
+
   test('currentTime setter issues a native seek', async () => {
     const clock = new NativeAudiobookClock();
     await clock.load('https://abs.example/f/1', 0);

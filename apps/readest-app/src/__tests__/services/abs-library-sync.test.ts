@@ -17,6 +17,15 @@ const item = (id: string, title: string, numTracks = 3): ABSLibraryItem => ({
   },
 });
 
+const podcastItem = (id: string, title: string, numEpisodes = 2): ABSLibraryItem => ({
+  id,
+  mediaType: 'podcast',
+  media: {
+    metadata: { title, author: 'Podcast Author' },
+    numEpisodes,
+  },
+});
+
 describe('reconcileAbsBooks', () => {
   it('creates Book stubs with deterministic hash, ABS format, and duration', () => {
     const { upserts, tombstoneHashes } = reconcileAbsBooks({
@@ -39,18 +48,149 @@ describe('reconcileAbsBooks', () => {
     expect(book.createdAt).toBe(1000);
   });
 
-  it('skips items without audio tracks (ebook-only) and podcast items', () => {
+  it('skips items without audio tracks (ebook-only)', () => {
     const ebookOnly = item('i2', 'Text Only', 0);
-    const podcast = { ...item('i3', 'Cast'), mediaType: 'podcast' as const };
     const { upserts } = reconcileAbsBooks({
       server,
-      items: [ebookOnly, podcast],
+      items: [ebookOnly],
       progress: [],
       library: [],
       lastPlayedAtByHash: new Map(),
       now: 1,
     });
     expect(upserts).toEqual([]);
+  });
+
+  describe('podcast shows', () => {
+    it('creates a podcast show stub with absMediaType, undefined duration, and author from metadata.author', () => {
+      const { upserts } = reconcileAbsBooks({
+        server,
+        items: [podcastItem('p1', 'Daily News')],
+        progress: [],
+        library: [],
+        lastPlayedAtByHash: new Map(),
+        now: 1000,
+      });
+      expect(upserts).toHaveLength(1);
+      const book = upserts[0]!;
+      expect(book.format).toBe('ABS');
+      expect(book.absMediaType).toBe('podcast');
+      expect(book.filePath).toBe(makeAbsFilePath('srv1', 'p1'));
+      expect(book.hash).toBe(md5(makeAbsFilePath('srv1', 'p1')));
+      expect(book.title).toBe('Daily News');
+      expect(book.author).toBe('Podcast Author');
+      expect(book.duration).toBeUndefined();
+      expect(book.episodeCount).toBe(2);
+      expect(book.progress).toBeUndefined();
+    });
+
+    it('falls back to episodes.length for the episode count when numEpisodes is absent', () => {
+      const expanded: ABSLibraryItem = {
+        id: 'p2',
+        mediaType: 'podcast',
+        media: {
+          metadata: { title: 'Weekly', author: 'A' },
+          episodes: [
+            { id: 'e1', title: 'Ep1' },
+            { id: 'e2', title: 'Ep2' },
+            { id: 'e3', title: 'Ep3' },
+          ],
+        },
+      };
+      const { upserts } = reconcileAbsBooks({
+        server,
+        items: [expanded],
+        progress: [],
+        library: [],
+        lastPlayedAtByHash: new Map(),
+        now: 1,
+      });
+      expect(upserts[0]!.episodeCount).toBe(3);
+    });
+
+    it('upserts an existing show when its episode count changes, and never maps show-level progress', () => {
+      const first = reconcileAbsBooks({
+        server,
+        items: [podcastItem('p1', 'Daily News', 5)],
+        progress: [],
+        library: [],
+        lastPlayedAtByHash: new Map(),
+        now: 1000,
+      }).upserts[0]!;
+      expect(first.episodeCount).toBe(5);
+
+      const showProgress = [
+        {
+          libraryItemId: 'p1',
+          currentTime: 100,
+          duration: 200,
+          isFinished: false,
+          lastUpdate: 999999,
+        },
+      ];
+
+      // Same episode count and server-reported progress: nothing to upsert.
+      const unchanged = reconcileAbsBooks({
+        server,
+        items: [podcastItem('p1', 'Daily News', 5)],
+        progress: showProgress,
+        library: [first],
+        lastPlayedAtByHash: new Map(),
+        now: 2000,
+      });
+      expect(unchanged.upserts).toEqual([]);
+
+      // A new episode alone triggers an upsert; progress still isn't mapped.
+      const { upserts } = reconcileAbsBooks({
+        server,
+        items: [podcastItem('p1', 'Daily News', 6)],
+        progress: showProgress,
+        library: [first],
+        lastPlayedAtByHash: new Map(),
+        now: 3000,
+      });
+      expect(upserts).toHaveLength(1);
+      expect(upserts[0]!.episodeCount).toBe(6);
+      expect(upserts[0]!.progress).toBeUndefined();
+    });
+
+    it('keeps show-level progress set by playing an episode across an unrelated reconcile', () => {
+      const first = reconcileAbsBooks({
+        server,
+        items: [podcastItem('p1', 'Daily News', 5)],
+        progress: [],
+        library: [],
+        lastPlayedAtByHash: new Map(),
+        now: 1000,
+      }).upserts[0]!;
+      // Simulates AbsProgressSyncer#cacheLocally having written show-level
+      // progress after the user played an episode - never something
+      // reconcileAbsBooks itself does, since a podcast's itemProgress
+      // lookup above is unconditionally undefined.
+      const existing: Book = { ...first, progress: [120, 600] };
+
+      const { upserts } = reconcileAbsBooks({
+        server,
+        items: [podcastItem('p1', 'Daily News', 6)],
+        progress: [
+          {
+            libraryItemId: 'p1',
+            currentTime: 999,
+            duration: 999,
+            isFinished: false,
+            lastUpdate: 999999,
+          },
+        ],
+        library: [existing],
+        lastPlayedAtByHash: new Map(),
+        now: 3000,
+      });
+
+      // A routine resync (here, the episode-count bump) must not clobber
+      // the episode-driven progress with the show-level server value.
+      expect(upserts).toHaveLength(1);
+      expect(upserts[0]!.progress).toEqual([120, 600]);
+    });
   });
 
   it('updates changed metadata on existing entries without touching createdAt', () => {

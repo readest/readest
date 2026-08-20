@@ -139,7 +139,7 @@ describe('ABSForm', () => {
     });
     const server = useABSServerStore.getState().getAvailableServers()[0]!;
     expect(server.accessToken).toBe('at-1');
-    expect(server.libraryIds).toEqual(['lib1', 'lib2']);
+    expect(server.libraryIds).toEqual(['lib1', 'lib2', 'lib3']);
     expect(server.username).toBe('alice');
     expect(server.password).toBe('hunter2');
 
@@ -147,7 +147,7 @@ describe('ABSForm', () => {
       expect(screen.getByRole('checkbox', { name: 'Fiction' })).not.toBeNull();
     });
     expect(screen.getByRole('checkbox', { name: 'Sci-Fi' })).not.toBeNull();
-    expect(screen.queryByRole('checkbox', { name: 'Podcasts' })).toBeNull();
+    expect(screen.getByRole('checkbox', { name: 'Podcasts' })).not.toBeNull();
   });
 
   test('toggling a library checkbox updates server.libraryIds', async () => {
@@ -164,7 +164,7 @@ describe('ABSForm', () => {
 
     await waitFor(() => {
       const server = useABSServerStore.getState().getAvailableServers()[0]!;
-      expect(server.libraryIds).toEqual(['lib2']);
+      expect(server.libraryIds).toEqual(['lib2', 'lib3']);
     });
   });
 

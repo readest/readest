@@ -76,14 +76,14 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
       });
       await client.login();
       const libraries = await client.getLibraries();
-      const bookLibraryIds = libraries
-        .filter((library) => library.mediaType === 'book')
+      const syncableLibraryIds = libraries
+        .filter((library) => library.mediaType === 'book' || library.mediaType === 'podcast')
         .map((library) => library.id);
 
       const added = useABSServerStore.getState().addServer({
         ...draft,
         ...tokens,
-        libraryIds: bookLibraryIds,
+        libraryIds: syncableLibraryIds,
       });
       void useABSServerStore.getState().saveABSServers(envConfig);
       void eventDispatcher.dispatch('sync-abs-servers', {});
@@ -267,7 +267,9 @@ const ABSServerDetail: React.FC<ABSServerDetailProps> = ({
       .getLibraries()
       .then((libs) => {
         if (cancelled) return;
-        setLibraries(libs.filter((library) => library.mediaType === 'book'));
+        setLibraries(
+          libs.filter((library) => library.mediaType === 'book' || library.mediaType === 'podcast'),
+        );
       })
       .catch(() => {
         if (!cancelled) setLibError(_('Failed to load libraries from the server.'));

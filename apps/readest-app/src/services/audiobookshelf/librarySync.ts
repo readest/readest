@@ -23,6 +23,17 @@ const audioTrackCount = (item: ABSLibraryItem): number =>
 const isAudiobookItem = (item: ABSLibraryItem): boolean =>
   item.mediaType === 'book' && audioTrackCount(item) > 0;
 
+/** True for podcast show items. */
+const isPodcastItem = (item: ABSLibraryItem): boolean => item.mediaType === 'podcast';
+
+/**
+ * Episode count from whichever field the server populated: the library list
+ * endpoint gives `numEpisodes` on minified podcast items; an expanded item
+ * without it falls back to `episodes.length`.
+ */
+const episodeCount = (item: ABSLibraryItem): number =>
+  item.media.numEpisodes ?? item.media.episodes?.length ?? 0;
+
 const progressEqual = (a: Book['progress'], b: Book['progress']): boolean => {
   if (!a || !b) return !a && !b;
   return a[0] === b[0] && a[1] === b[1];
@@ -60,16 +71,22 @@ export const reconcileAbsBooks = (input: {
   const seenFilePaths = new Set<string>();
 
   for (const item of items) {
-    if (!isAudiobookItem(item)) continue;
+    const podcast = isPodcastItem(item);
+    if (!podcast && !isAudiobookItem(item)) continue;
 
     const filePath = makeAbsFilePath(server.id, item.id);
     seenFilePaths.add(filePath);
 
     const serverTitle = item.media.metadata.title || _('Untitled');
-    const serverAuthor = item.media.metadata.authorName ?? '';
-    const duration = item.media.duration;
+    const serverAuthor = podcast
+      ? (item.media.metadata.author ?? '')
+      : (item.media.metadata.authorName ?? '');
+    const duration = podcast ? undefined : item.media.duration;
     const primaryLanguage = item.media.metadata.language ?? undefined;
-    const itemProgress = progressByItemId.get(item.id);
+    const numEpisodes = podcast ? episodeCount(item) : undefined;
+    // A show's own progress is never mapped — per-episode progress is a
+    // later task, so a podcast item never looks up or applies server progress.
+    const itemProgress = podcast ? undefined : progressByItemId.get(item.id);
     const serverProgress: Book['progress'] = itemProgress
       ? [Math.round(itemProgress.currentTime), Math.round(itemProgress.duration)]
       : undefined;
@@ -81,7 +98,13 @@ export const reconcileAbsBooks = (input: {
       // re-clobbered and re-persisted by every 5-minute pass, while the
       // local `abs-last-played-<hash>` stamp stayed fresh — so the resume
       // rule then trusted the poisoned cache. Server absent = keep local.
+      // Podcast shows always keep local: show-level progress mirrors the
+      // last-played episode via the progress syncer (AbsProgressSyncer
+      // #cacheLocally writes it into Book.progress on every episode's
+      // pause/tick/seek/end) - reconcile never overwrites it, since a
+      // podcast's own itemProgress lookup above is unconditionally undefined.
       const keepLocalProgress =
+        podcast ||
         !itemProgress ||
         isLocalProgressFresher(lastPlayedAtByHash.get(existing.hash) ?? 0, itemProgress.lastUpdate);
       const bookProgress = keepLocalProgress ? existing.progress : serverProgress;
@@ -98,6 +121,7 @@ export const reconcileAbsBooks = (input: {
         existing.title !== title ||
         existing.author !== author ||
         existing.duration !== duration ||
+        existing.episodeCount !== numEpisodes ||
         !progressEqual(existing.progress, bookProgress) ||
         (existing.deletedAt ?? null) !== null;
       if (!changed) continue;
@@ -108,6 +132,7 @@ export const reconcileAbsBooks = (input: {
         author,
         sourceTitle: title,
         duration,
+        episodeCount: numEpisodes,
         primaryLanguage,
         progress: bookProgress,
         deletedAt: null,
@@ -122,8 +147,10 @@ export const reconcileAbsBooks = (input: {
         author: serverAuthor,
         sourceTitle: serverTitle,
         duration,
+        absMediaType: podcast ? 'podcast' : undefined,
+        episodeCount: numEpisodes,
         primaryLanguage,
-        progress: serverProgress,
+        progress: podcast ? undefined : serverProgress,
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
@@ -193,7 +220,9 @@ export const syncAbsServer = async (appService: AppService, server: ABSServer): 
     },
   });
 
-  const libraries = (await client.getLibraries()).filter((lib) => lib.mediaType === 'book');
+  const libraries = (await client.getLibraries()).filter(
+    (lib) => lib.mediaType === 'book' || lib.mediaType === 'podcast',
+  );
   const selectedLibraries = server.libraryIds
     ? libraries.filter((lib) => server.libraryIds!.includes(lib.id))
     : libraries;

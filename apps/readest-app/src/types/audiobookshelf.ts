@@ -43,24 +43,47 @@ export interface ABSChapter {
   title: string;
 }
 
+/** Subset of a podcast episode we consume (ABSLibraryItem['media'].episodes[]). */
+export interface ABSEpisode {
+  id: string;
+  title: string;
+  subtitle?: string | null;
+  season?: string | null;
+  episode?: string | null;
+  publishedAt?: number | null; // ms
+  duration?: number; // sec
+  chapters?: ABSChapter[];
+  audioTrack?: ABSTrack;
+}
+
 /** Subset of a library item (list or expanded) we consume. */
 export interface ABSLibraryItem {
   id: string;
   mediaType: 'book' | 'podcast';
   updatedAt?: number;
   media: {
-    metadata: { title?: string | null; authorName?: string | null; language?: string | null };
+    metadata: {
+      title?: string | null;
+      authorName?: string | null; // book items
+      author?: string | null; // podcast items
+      language?: string | null;
+    };
     duration?: number;
     numTracks?: number;
     numAudioFiles?: number;
+    /** Episode count, populated on minified podcast items from the library list endpoint. */
+    numEpisodes?: number;
     tracks?: ABSTrack[];
     chapters?: ABSChapter[];
+    episodes?: ABSEpisode[];
   };
 }
 
 /** Subset of user.mediaProgress entries from GET /api/me. */
 export interface ABSMediaProgress {
   libraryItemId: string;
+  /** Set for podcast episode progress; null/absent for book-level progress. */
+  episodeId?: string | null;
   currentTime: number; // seconds
   duration: number; // seconds
   isFinished: boolean;

@@ -96,6 +96,18 @@ export class NativeAudiobookClock implements AudiobookClock {
     await invoke('plugin:native-tts|playout_control', {
       payload: { action: 'load', path: url, positionMs },
     });
+    // #rate is the authoritative value: a setRate() call before this load()
+    // (e.g. page.tsx carrying a previous episode's rate onto a freshly
+    // claimed, not-yet-started controller - see openAudiobook.ts) landed
+    // before #ensureReady() ever established the native session, so its own
+    // invoke was skipped and only this mirror updated. Replay it now that
+    // the session exists, mirroring how HtmlAudioClock.load() re-applies
+    // its rate across a src reset.
+    if (this.#rate !== 1) {
+      await invoke('plugin:native-tts|playout_control', {
+        payload: { action: 'set-rate', rate: this.#rate },
+      });
+    }
     this.#cache = {
       mediaSec: Math.max(0, startAt),
       playing: !this.#userPaused,

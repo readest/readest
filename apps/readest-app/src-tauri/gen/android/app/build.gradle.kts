@@ -23,7 +23,11 @@ android {
         keystoreProperties.load(FileInputStream(keystorePropertiesFile))
     }
     defaultConfig {
-        manifestPlaceholders["usesCleartextTraffic"] = "false"
+        // Plain-http LAN media servers (Audiobookshelf and friends) stream through
+        // the webview audio element, which obeys this manifest flag; native plugin
+        // HTTP already allows cleartext. Scoped alternative (custom-scheme stream
+        // proxy) is tracked as a follow-up.
+        manifestPlaceholders["usesCleartextTraffic"] = "true"
         // Sentry DSN precedence: environment (CI secret / shell export) wins,
         // else the gitignored .env.local, else .env at the app root (../../../
         // from this module). Empty => Sentry auto-init no-ops.

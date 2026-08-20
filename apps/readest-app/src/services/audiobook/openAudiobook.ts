@@ -22,7 +22,13 @@ import { isTauriAppPlatform, type EnvConfigType } from '@/services/environment';
 import { eventDispatcher } from '@/utils/event';
 import type { AppService } from '@/types/system';
 import type { Book } from '@/types/book';
-import type { ABSServer } from '@/types/audiobookshelf';
+import type {
+  ABSChapter,
+  ABSEpisode,
+  ABSMediaProgress,
+  ABSServer,
+  ABSTrack,
+} from '@/types/audiobookshelf';
 
 // iOS Tauri must use the app-process AVPlayer (mirrors MediaOverlayClient's
 // NativeNarrationPlayer split): WebKit HTMLMediaElement / WebAudio cannot own
@@ -47,51 +53,127 @@ const notifyServerNotFound = (): void => {
   });
 };
 
-/** Idempotent: reuses the live session for the same book hash, else claims a new one. */
-export const openAudiobookSession = async (input: {
-  appService: AppService;
-  book: Book;
-}): Promise<{ bookKey: string; controller: AudiobookController } | null> => {
-  const { appService, book } = input;
+const notifyEpisodeNotFound = (): void => {
+  eventDispatcher.dispatch('toast', {
+    message: _('Episode not found'),
+    type: 'error',
+  });
+};
 
-  const existing = ttsSessionManager.getSessionByHash(book.hash);
-  if (existing && existing.controller.kind === 'audiobook') {
-    return { bookKey: existing.bookKey, controller: existing.controller as AudiobookController };
-  }
+const buildClient = (appService: AppService, server: ABSServer): ABSClient =>
+  new ABSClient(server, {
+    onTokensUpdated: (patch) => {
+      useABSServerStore.getState().updateServer(server.id, patch);
+      void useABSServerStore.getState().saveABSServers(toEnvConfig(appService));
+    },
+  });
 
+/** Resolves the server config for a library book, toasting when it's gone. */
+const resolveServer = (book: Book): { itemId: string; server: ABSServer } | null => {
   const parsed = parseAbsFilePath(book.filePath);
-  const server: ABSServer | undefined = parsed ? findABSServerById(parsed.serverId) : undefined;
+  const server = parsed ? findABSServerById(parsed.serverId) : undefined;
   if (!parsed || !server) {
     notifyServerNotFound();
     return null;
   }
+  return { itemId: parsed.itemId, server };
+};
+
+/**
+ * Idempotent: reuses the live session for the same (book hash, episodeId),
+ * else claims a new one.
+ *
+ * A podcast book (`book.absMediaType === 'podcast'`) has no book-level
+ * session: `episodeId` is required to open one. Without it, this returns
+ * null without claiming or opening any server session, and without a toast
+ * - the player route renders the episode list instead, so this isn't an
+ * error (see loadAbsEpisodes).
+ */
+export const openAudiobookSession = async (input: {
+  appService: AppService;
+  book: Book;
+  episodeId?: string;
+}): Promise<{ bookKey: string; controller: AudiobookController } | null> => {
+  const { appService, book } = input;
+  const episodeId = input.episodeId || undefined;
+
+  if (book.absMediaType === 'podcast' && !episodeId) {
+    return null;
+  }
+
+  const existing = ttsSessionManager.getSessionByHash(book.hash);
+  if (existing && existing.controller.kind === 'audiobook') {
+    const controller = existing.controller as AudiobookController;
+    // A show can have several live-switchable episodes: reuse only when the
+    // live session is for the SAME episode. A different episode falls
+    // through to claim a fresh session below - TTSSessionManager.claim
+    // swaps it into the same slot, tearing the old one down via shutdown,
+    // the same as switching to a different book.
+    if (controller.getEpisodeId() === episodeId) {
+      return { bookKey: existing.bookKey, controller };
+    }
+  }
+
+  const resolved = resolveServer(book);
+  if (!resolved) return null;
+  const { itemId, server } = resolved;
 
   try {
-    const client = new ABSClient(server, {
-      onTokensUpdated: (patch) => {
-        useABSServerStore.getState().updateServer(server.id, patch);
-        void useABSServerStore.getState().saveABSServers(toEnvConfig(appService));
-      },
-    });
+    const client = buildClient(appService, server);
+    const item = await client.getItemExpanded(itemId);
 
-    const item = await client.getItemExpanded(parsed.itemId);
-    const tracks = item.media.tracks ?? [];
-    const chapters = item.media.chapters ?? [];
-    const duration = item.media.duration ?? tracks.reduce((sum, track) => sum + track.duration, 0);
+    let tracks: ABSTrack[];
+    let chapters: ABSChapter[];
+    let title: string;
+    let author: string;
+    let duration: number;
+
+    if (episodeId) {
+      const episode = item.media.episodes?.find((e) => e.id === episodeId);
+      if (!episode?.audioTrack) {
+        notifyEpisodeNotFound();
+        return null;
+      }
+      tracks = [episode.audioTrack];
+      chapters = episode.chapters ?? [];
+      title = episode.title;
+      author = item.media.metadata.title || book.title;
+      duration = episode.duration ?? episode.audioTrack.duration;
+    } else {
+      tracks = item.media.tracks ?? [];
+      chapters = item.media.chapters ?? [];
+      title = book.title;
+      author = book.author;
+      duration = item.media.duration ?? tracks.reduce((sum, track) => sum + track.duration, 0);
+    }
 
     const syncer = new AbsProgressSyncer({
       client,
-      itemId: parsed.itemId,
+      itemId,
+      episodeId,
       bookHash: book.hash,
       duration,
       appService,
     });
-    const startAt = await syncer.begin(book.progress?.[0] ?? 0, readLocalLastPlayedAt(book.hash));
+    // Book.progress is show-level, never per-episode, so an episode has no
+    // cached local position to compare against - only readLocalLastPlayedAt's
+    // real per-episode timestamp, written on every pause/tick/seek/end by
+    // AbsProgressSyncer#cacheLocally. Feeding that real timestamp in here
+    // (alongside a hardcoded 0 position) let a fresher local stamp - the app
+    // killed right after a pause, before the close-session call landed, or
+    // the server's clock running behind the device's - win
+    // resolveResumePosition and discard an at-worst-15s-stale server
+    // position, restarting the episode from 0. Passing 0 for both args
+    // instead makes the server always win for episodes.
+    const startAt = episodeId
+      ? await syncer.begin(0, 0)
+      : await syncer.begin(book.progress?.[0] ?? 0, readLocalLastPlayedAt(book.hash));
 
     const sourceObj: AudiobookSource = {
-      itemId: parsed.itemId,
-      title: book.title,
-      author: book.author,
+      itemId,
+      episodeId,
+      title,
+      author,
       tracks,
       chapters,
       // Reads the server's CURRENT accessToken on every call - never a
@@ -114,8 +196,8 @@ export const openAudiobookSession = async (input: {
     const bookKey = `${book.hash}-${uniqueId()}`;
     const meta: TTSMediaBridgeMeta = {
       bookKey,
-      title: book.title,
-      author: book.author,
+      title,
+      author,
       coverImageUrl: book.coverImageUrl ?? null,
       metadataMode: 'chapter',
       getSectionLabel: () => controller.getCurrentChapter()?.title,
@@ -125,6 +207,45 @@ export const openAudiobookSession = async (input: {
     return { bookKey, controller };
   } catch (error) {
     console.warn('[ABS] failed to open audiobook session:', error);
+    notifyConnectionError(server.name);
+    return null;
+  }
+};
+
+/**
+ * Loads a podcast show's episodes and each episode's server-side progress,
+ * for the player route's episode list. Episodes come back newest-first by
+ * publishedAt. Never claims a session - pass the chosen episode's id to
+ * openAudiobookSession to actually play it.
+ */
+export const loadAbsEpisodes = async (
+  appService: AppService,
+  book: Book,
+): Promise<{
+  episodes: ABSEpisode[];
+  progressByEpisodeId: Map<string, ABSMediaProgress>;
+} | null> => {
+  const resolved = resolveServer(book);
+  if (!resolved) return null;
+  const { itemId, server } = resolved;
+
+  try {
+    const client = buildClient(appService, server);
+    const [item, me] = await Promise.all([client.getItemExpanded(itemId), client.getMe()]);
+
+    const episodes = [...(item.media.episodes ?? [])].sort(
+      (a, b) => (b.publishedAt ?? 0) - (a.publishedAt ?? 0),
+    );
+    const progressByEpisodeId = new Map<string, ABSMediaProgress>();
+    for (const progress of me.mediaProgress) {
+      if (progress.libraryItemId === itemId && progress.episodeId) {
+        progressByEpisodeId.set(progress.episodeId, progress);
+      }
+    }
+
+    return { episodes, progressByEpisodeId };
+  } catch (error) {
+    console.warn('[ABS] failed to load episodes:', error);
     notifyConnectionError(server.name);
     return null;
   }
