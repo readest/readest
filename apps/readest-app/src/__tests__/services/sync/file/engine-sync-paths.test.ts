@@ -110,6 +110,34 @@ describe('FileSyncEngine.pushBookFile — streaming upload', () => {
   });
 });
 
+// pushBookFile is called both from syncLibrary's guarded push loop AND
+// directly by the explicit per-book Upload action (runFileBookUpload), which
+// bypasses needsFilePush entirely. It needs its own ABS guard so a direct
+// call can never probe the synthetic abs:// path, regardless of caller.
+describe('FileSyncEngine.pushBookFile — ABS books never push a file (direct call)', () => {
+  test('short-circuits before touching the store or the provider', async () => {
+    const uploadStream = vi.fn(async () => true);
+    const head = vi.fn(async () => null);
+    const provider = fakeProvider({ head, uploadStream });
+    // Even if the store layer claimed a local source existed (e.g. a bug, or
+    // a stale row), the ABS guard must win — it is checked before any store
+    // call is made.
+    const resolveLocalBookPath = vi.fn(async () => ({ path: '/local/x.abs', size: 100 }));
+    const loadBookFile = vi.fn(async () => ({ bytes: new ArrayBuffer(10), size: 10 }));
+    const store = fakeStore({ resolveLocalBookPath, loadBookFile });
+
+    const res = await new FileSyncEngine(provider, store).pushBookFile(
+      makeBook('h1', { format: 'ABS', filePath: 'abs://server-1/item-abc' }),
+    );
+
+    expect(res).toEqual({ uploaded: false, reason: 'no-source' });
+    expect(resolveLocalBookPath).not.toHaveBeenCalled();
+    expect(loadBookFile).not.toHaveBeenCalled();
+    expect(head).not.toHaveBeenCalled();
+    expect(uploadStream).not.toHaveBeenCalled();
+  });
+});
+
 describe('FileSyncEngine.syncLibrary — remote discovery + cloud shelf (#5009)', () => {
   test('adds a remote-only book as metadata without downloading its file', async () => {
     const downloadStream = vi.fn(async () => true);
@@ -1000,6 +1028,72 @@ describe('FileSyncEngine.syncLibrary — no-source probe memo', () => {
       { ...opts, fullSync: true },
     );
     expect(h.loadBookFile).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ABS books stream from an Audiobookshelf server and never have a local or
+// remote file — `filePath` is a synthetic `abs://<serverId>/<itemId>` marker,
+// not a real path. The engine must never treat it as "this device holds the
+// file" (which would schedule a doomed push attempt), in incremental sync OR
+// full sync (which otherwise bypasses the local-file gate entirely). Config
+// sync is unaffected: an ABS book's title/author/tags still replicate.
+describe('FileSyncEngine.syncLibrary — ABS books never push a file', () => {
+  test('incremental sync never probes for a file despite a synthetic filePath', async () => {
+    const provider = fakeProvider({
+      head: async (p: string) => (p.endsWith('library.json') ? { etag: 'E1' } : null),
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify(makeIndex([makeBook('h1', { format: 'ABS', updatedAt: 100 })]))
+          : null,
+      captured: { writes: [] },
+    });
+    const loadBookFile = vi.fn(async () => null);
+    const resolveLocalBookPath = vi.fn(async () => null);
+    const store = fakeStore({
+      loadConfig: async () => ({ updatedAt: 1, booknotes: [] }),
+      loadBookFile,
+      resolveLocalBookPath,
+    });
+
+    const res = await new FileSyncEngine(provider, store).syncLibrary(
+      [makeBook('h1', { format: 'ABS', updatedAt: 200, filePath: 'abs://server-1/item-abc' })],
+      { strategy: 'silent', syncBooks: true, deviceId: 'd' },
+    );
+
+    // Neither book-file loader is ever consulted — pushBookFile never runs
+    // for an ABS book, so it never HEAD-probes the (nonexistent) binary either.
+    expect(loadBookFile).not.toHaveBeenCalled();
+    expect(resolveLocalBookPath).not.toHaveBeenCalled();
+    expect(res.filesUploaded).toBe(0);
+    // Metadata/config still sync normally for an ABS book.
+    expect(res.configsUploaded).toBe(1);
+  });
+
+  test('full sync (which bypasses the local-file gate) still skips the file for ABS books', async () => {
+    const provider = fakeProvider({
+      readText: async (p) =>
+        p.endsWith('library.json')
+          ? JSON.stringify(makeIndex([makeBook('h1', { format: 'ABS', updatedAt: 100 })]))
+          : null,
+      captured: { writes: [] },
+    });
+    const loadBookFile = vi.fn(async () => null);
+    const resolveLocalBookPath = vi.fn(async () => null);
+    const store = fakeStore({
+      loadConfig: async () => ({ updatedAt: 1, booknotes: [] }),
+      loadBookFile,
+      resolveLocalBookPath,
+    });
+
+    const res = await new FileSyncEngine(provider, store).syncLibrary(
+      [makeBook('h1', { format: 'ABS', updatedAt: 100, filePath: 'abs://server-1/item-abc' })],
+      { strategy: 'silent', syncBooks: true, deviceId: 'd', fullSync: true },
+    );
+
+    expect(loadBookFile).not.toHaveBeenCalled();
+    expect(resolveLocalBookPath).not.toHaveBeenCalled();
+    expect(res.filesUploaded).toBe(0);
+    expect(res.configsUploaded).toBe(1);
   });
 });
 

@@ -7,6 +7,7 @@ import { Book } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useLibraryStore } from '@/store/libraryStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useAndroidGamepadConnection } from '@/hooks/useAndroidGamepadConnection';
@@ -18,6 +19,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { UnlistenFn } from '@tauri-apps/api/event';
 import { tauriHandleClose, tauriHandleOnCloseWindow } from '@/utils/window';
 import { isTauriAppPlatform } from '@/services/environment';
+import { splitLibraryOpenIds } from '@/utils/audiobook';
 import { uniqueId } from '@/utils/misc';
 import { throttle } from '@/utils/throttle';
 import { eventDispatcher } from '@/utils/event';
@@ -80,7 +82,24 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
 
     const pathname = window.location.pathname;
     const bookIds = ids || searchParams?.get('ids') || pathname.split('/reader/')[1] || '';
-    const initialIds = bookIds.split(BOOK_IDS_SEPARATOR).filter(Boolean);
+    const requestedIds = bookIds.split(BOOK_IDS_SEPARATOR).filter(Boolean);
+
+    // A streaming audiobook has no document to load - a deep link naming one
+    // (a stale bookmark, an "Open With" link, etc.) must not reach
+    // initViewState/loadBookContent. A lone audiobook id redirects to the
+    // player; one mixed into a multi-book deep link is just dropped, and the
+    // rest of the reader opens normally. Same split the library's own open
+    // paths use (src/utils/audiobook.ts), so a stray ABS id is handled
+    // identically everywhere it could turn up.
+    const { getBookByHash } = useLibraryStore.getState();
+    const { audiobookHash, readerIds: initialIds } = splitLibraryOpenIds(
+      requestedIds,
+      getBookByHash,
+    );
+    if (audiobookHash) {
+      router.replace(`/player?id=${audiobookHash}`);
+      return;
+    }
     const initialBookKeys = initialIds.map((id) => `${id}-${uniqueId()}`);
     setBookKeys(initialBookKeys);
     const uniqueIds = new Set<string>();

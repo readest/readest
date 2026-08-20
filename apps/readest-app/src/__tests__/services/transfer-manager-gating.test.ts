@@ -180,6 +180,34 @@ describe('provider gating of book uploads', () => {
   });
 });
 
+describe('ABS books never enter the cloud file transfer queue', () => {
+  test('queueUpload returns null for an ABS book even with Readest Cloud selected', async () => {
+    await initManager();
+
+    const id = transferManager.queueUpload(makeBook({ format: 'ABS' }));
+    expect(id).toBeNull();
+    expect(Object.keys(useTransferStore.getState().transfers)).toHaveLength(0);
+  });
+
+  test('queueDownload returns null for an ABS book', async () => {
+    await initManager();
+
+    const id = transferManager.queueDownload(makeBook({ format: 'ABS' }));
+    expect(id).toBeNull();
+    expect(Object.keys(useTransferStore.getState().transfers)).toHaveLength(0);
+  });
+
+  test('queueBatchUploads drops ABS books but still queues the rest', async () => {
+    await initManager();
+
+    const ids = transferManager.queueBatchUploads([
+      makeBook({ format: 'ABS' }),
+      makeBook({ hash: 'hash2' }),
+    ]);
+    expect(ids).toHaveLength(1);
+  });
+});
+
 describe('settings-loaded barrier', () => {
   test('a pending book upload does not execute before settings hydration', async () => {
     settingsNotLoaded();

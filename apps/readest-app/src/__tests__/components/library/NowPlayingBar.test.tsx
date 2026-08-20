@@ -58,10 +58,11 @@ vi.mock('@/services/tts', () => ({
 import { eventDispatcher } from '@/utils/event';
 import NowPlayingBar from '@/app/library/components/NowPlayingBar';
 
-const makeSession = (state = 'playing') => ({
+const makeSession = (state = 'playing', kind: 'tts' | 'audiobook' = 'tts') => ({
   bookHash: 'hashA',
   bookKey: 'hashA-r1',
   controller: {
+    kind,
     state,
     pause: vi.fn().mockResolvedValue(true),
     start: vi.fn().mockResolvedValue(undefined),
@@ -135,6 +136,14 @@ describe('NowPlayingBar', () => {
     render(<NowPlayingBar isSelectMode={false} />);
     fireEvent.click(screen.getByText('Alice in Wonderland'));
     expect(navigateToReader).toHaveBeenCalledWith(expect.anything(), ['hashA']);
+  });
+
+  test('tapping the body routes an audiobook session to the player instead of the reader', () => {
+    mockManager.session = makeSession('playing', 'audiobook');
+    render(<NowPlayingBar isSelectMode={false} />);
+    fireEvent.click(screen.getByText('Alice in Wonderland'));
+    expect(pushMock).toHaveBeenCalledWith('/player?id=hashA');
+    expect(navigateToReader).not.toHaveBeenCalled();
   });
 
   test('disappears when the manager reports the session stopped', () => {

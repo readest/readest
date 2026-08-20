@@ -19,6 +19,12 @@ vi.mock('@/store/customOPDSStore', () => ({
   findOPDSCatalogByContentId: vi.fn(),
 }));
 
+vi.mock('@/store/absServerStore', () => ({
+  useABSServerStore: {
+    getState: () => ({ applyRemoteServer: vi.fn(), softDeleteByContentId: vi.fn() }),
+  },
+}));
+
 import {
   __resetBootstrapForTests,
   bootstrapReplicaAdapters,
@@ -46,12 +52,19 @@ describe('bootstrapReplicaAdapters', () => {
   test('is idempotent: calling twice is a no-op (does not throw)', () => {
     bootstrapReplicaAdapters();
     bootstrapReplicaAdapters();
-    expect(listReplicaAdapters()).toHaveLength(5);
+    expect(listReplicaAdapters()).toHaveLength(6);
   });
 
-  test('registers the current allowlist (dictionary, font, texture, opds_catalog, settings)', () => {
+  test('registers the current allowlist (dictionary, font, texture, opds_catalog, abs_server, settings)', () => {
     bootstrapReplicaAdapters();
     const kinds = listReplicaAdapters().map((a) => a.kind);
-    expect(kinds).toEqual(['dictionary', 'font', 'texture', 'opds_catalog', 'settings']);
+    expect(kinds).toEqual([
+      'dictionary',
+      'font',
+      'texture',
+      'opds_catalog',
+      'abs_server',
+      'settings',
+    ]);
   });
 });

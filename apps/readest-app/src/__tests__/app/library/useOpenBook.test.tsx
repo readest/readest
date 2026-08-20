@@ -25,13 +25,14 @@ const routing = vi.hoisted(() => ({
 
 const isBookAvailable = vi.hoisted(() => vi.fn(async () => false));
 const navigateToReader = vi.hoisted(() => vi.fn());
+const routerPush = vi.hoisted(() => vi.fn());
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (text: string) => text,
 }));
 
 vi.mock('@/hooks/useAppRouter', () => ({
-  useAppRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useAppRouter: () => ({ push: routerPush, replace: vi.fn() }),
 }));
 
 vi.mock('@/utils/nav', () => ({
@@ -131,5 +132,21 @@ describe('useOpenBook — a missing local file must not delete the cloud copy (#
 
     expect(deleteIntents).toEqual([]);
     expect(navigateToReader).not.toHaveBeenCalled();
+  });
+});
+
+describe('useOpenBook — audiobooks open in the player, not the reader', () => {
+  it('routes an ABS book straight to /player without touching file-availability logic', async () => {
+    const book = makeBook({ format: 'ABS', filePath: 'abs://srv1/item1' });
+
+    const { result, handleBookDownload } = setup();
+    await result.current.openBook(book);
+    await flushNavigation();
+
+    expect(routerPush).toHaveBeenCalledWith('/player?id=h1');
+    expect(navigateToReader).not.toHaveBeenCalled();
+    expect(isBookAvailable).not.toHaveBeenCalled();
+    expect(handleBookDownload).not.toHaveBeenCalled();
+    expect(deleteIntents).toEqual([]);
   });
 });

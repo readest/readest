@@ -137,6 +137,10 @@ export const EXTS: Record<BookFormat, string> = {
   FBZ: 'fbz',
   TXT: 'txt',
   MD: 'md',
+  // ABS books stream from the server and never have a real on-disk file, so
+  // this extension is never used to write or look up a file. It exists only
+  // to satisfy the Record<BookFormat, string> exhaustiveness check.
+  ABS: 'abs',
 };
 
 export const MIMETYPES: Record<BookFormat, string[]> = {
@@ -150,6 +154,8 @@ export const MIMETYPES: Record<BookFormat, string[]> = {
   FBZ: ['application/x-zip-compressed-fb2', 'application/zip'],
   TXT: ['text/plain'],
   MD: ['text/markdown', 'text/x-markdown'],
+  // Never matched against a real download; see the EXTS.ABS comment above.
+  ABS: ['application/vnd.audiobookshelf'],
 };
 
 export interface DocumentLoaderOptions {

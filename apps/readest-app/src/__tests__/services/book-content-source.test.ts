@@ -92,4 +92,29 @@ describe('book content source resolution', () => {
 
     await expect(isBookAvailable(fs, book)).resolves.toBe(true);
   });
+
+  test('isBookAvailable treats an ABS book as available without probing the filesystem', async () => {
+    const book = makeBook({
+      format: 'ABS',
+      downloadedAt: undefined,
+      filePath: 'abs://server-1/item-abc',
+    });
+    const fs = makeFs({});
+
+    await expect(isBookAvailable(fs, book)).resolves.toBe(true);
+    // ABS books stream from the server; resolving a content source (and thus
+    // probing the abs:// filePath) must never happen for them.
+    expect(fs.exists).not.toHaveBeenCalled();
+  });
+
+  test('getBookFileSize returns null for an ABS book instead of a false-positive size', async () => {
+    const book = makeBook({
+      format: 'ABS',
+      downloadedAt: undefined,
+      filePath: 'abs://server-1/item-abc',
+    });
+    const fs = makeFs({});
+
+    await expect(getBookFileSize(fs, book)).resolves.toBeNull();
+  });
 });

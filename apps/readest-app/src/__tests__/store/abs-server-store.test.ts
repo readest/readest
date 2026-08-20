@@ -1,0 +1,143 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { findABSServerById, useABSServerStore } from '@/store/absServerStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { computeAbsServerContentId } from '@/services/sync/adapters/absServer';
+import type { ABSServer } from '@/types/audiobookshelf';
+import type { SystemSettings } from '@/types/settings';
+
+// Mock replicaPublish like the OPDS store test does.
+vi.mock('@/services/sync/replicaPublish', () => ({
+  publishReplicaUpsert: vi.fn(),
+  publishReplicaDelete: vi.fn(),
+}));
+
+describe('absServerStore', () => {
+  beforeEach(() => {
+    useABSServerStore.setState({ servers: [] });
+    useSettingsStore.setState({ settings: { absServers: [] } as unknown as SystemSettings });
+  });
+
+  it('addServer computes contentId from normalized url and mints a reincarnation token', () => {
+    const server = useABSServerStore.getState().addServer({
+      name: 'Home',
+      url: 'http://ABS.local:13378',
+    });
+    expect(server.contentId).toBe(computeAbsServerContentId('http://ABS.local:13378'));
+    expect(server.reincarnation).toBeTruthy();
+    expect(server.addedAt).toBeTruthy();
+  });
+
+  // The id is baked into every ABS book's `abs://<serverId>/<itemId>` filePath
+  // and hashed from it. A device-local id (the old `Date.now()`) gave the same
+  // audiobook a different hash on each device; an id that later changed
+  // orphaned the whole shelf (removeAbsServerBooks / openAudiobookSession look
+  // the server up by the current id).
+  it('addServer uses the contentId as the local id, ignoring any other value', () => {
+    const a = useABSServerStore.getState().addServer({ name: 'Home', url: 'http://abs.local' });
+    expect(a.id).toBe(a.contentId);
+    expect(a.id).toBe(computeAbsServerContentId('http://abs.local'));
+
+    // A second device adding the same URL derives the identical id, so both
+    // devices mint the same book hashes.
+    useABSServerStore.setState({ servers: [] });
+    const b = useABSServerStore
+      .getState()
+      .addServer({ name: 'Elsewhere', url: 'http://abs.local' });
+    expect(b.id).toBe(a.id);
+  });
+
+  it('re-adding a removed server revives it under the same contentId', () => {
+    const { addServer, removeServer, getAvailableServers } = useABSServerStore.getState();
+    const server = addServer({ name: 'Home', url: 'http://abs.local' });
+    removeServer(server.id);
+    expect(getAvailableServers()).toHaveLength(0);
+    addServer({ name: 'Home', url: 'http://abs.local' });
+    expect(getAvailableServers()).toHaveLength(1);
+    expect(useABSServerStore.getState().servers).toHaveLength(1);
+  });
+
+  it('applyRemoteServer preserves local credentials when remote arrives without them', () => {
+    const { addServer, applyRemoteServer } = useABSServerStore.getState();
+    const local = addServer({
+      name: 'Home',
+      url: 'http://abs.local',
+      username: 'u',
+      password: 'p',
+      accessToken: 'a',
+      refreshToken: 'r',
+    });
+    applyRemoteServer({
+      id: local.contentId!,
+      contentId: local.contentId,
+      name: 'Home2',
+      url: 'http://abs.local',
+    });
+    const merged = useABSServerStore.getState().findByContentId(local.contentId!);
+    expect(merged?.name).toBe('Home2');
+    expect(merged?.username).toBe('u');
+    expect(merged?.accessToken).toBe('a');
+  });
+
+  it('applyRemoteServer never changes an existing server id, and keeps lastSyncedAt', () => {
+    const { addServer, updateServer, applyRemoteServer } = useABSServerStore.getState();
+    const local = addServer({ name: 'Home', url: 'http://abs.local' });
+    updateServer(local.id, { lastSyncedAt: 4242 });
+
+    // A remote row whose replica_id-derived id disagrees with the local one
+    // (a pre-fix device, or any future id scheme change): taking it would
+    // orphan and duplicate every book this server materialized.
+    applyRemoteServer({
+      id: 'some-other-id',
+      contentId: local.contentId,
+      name: 'Home',
+      url: 'http://abs.local',
+    });
+
+    const merged = useABSServerStore.getState().findByContentId(local.contentId!);
+    expect(merged?.id).toBe(local.id);
+    expect(merged?.lastSyncedAt).toBe(4242);
+  });
+
+  it('removeServer soft-deletes and getAvailableServers filters tombstones', () => {
+    const { addServer, removeServer, getAvailableServers } = useABSServerStore.getState();
+    const server = addServer({ name: 'Home', url: 'http://abs.local' });
+    expect(removeServer(server.id)).toBe(true);
+    expect(getAvailableServers()).toHaveLength(0);
+    expect(useABSServerStore.getState().servers[0]!.deletedAt).toBeTruthy();
+  });
+
+  describe('findABSServerById', () => {
+    const server: ABSServer = { id: 's1', name: 'Home', url: 'http://abs.local' };
+
+    it('returns undefined for an empty id', () => {
+      expect(findABSServerById('')).toBeUndefined();
+    });
+
+    it('finds a server already loaded into the in-memory store', () => {
+      useABSServerStore.setState({ servers: [server] });
+      expect(findABSServerById('s1')).toEqual(server);
+    });
+
+    it('falls back to persisted settings when the store has not been hydrated yet', () => {
+      useABSServerStore.setState({ servers: [] });
+      useSettingsStore.setState({
+        settings: { absServers: [server] } as unknown as SystemSettings,
+      });
+      expect(findABSServerById('s1')).toEqual(server);
+    });
+
+    it('ignores a tombstoned entry in the settings fallback', () => {
+      useABSServerStore.setState({ servers: [] });
+      useSettingsStore.setState({
+        settings: {
+          absServers: [{ ...server, deletedAt: 123 }],
+        } as unknown as SystemSettings,
+      });
+      expect(findABSServerById('s1')).toBeUndefined();
+    });
+
+    it('returns undefined when the server is in neither the store nor settings', () => {
+      expect(findABSServerById('missing')).toBeUndefined();
+    });
+  });
+});

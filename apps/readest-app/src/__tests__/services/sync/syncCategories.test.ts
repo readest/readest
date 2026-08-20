@@ -223,9 +223,10 @@ describe('isSyncCategoryEnabled', () => {
 });
 
 describe('SYNC_CATEGORIES', () => {
-  test('covers all ten user-facing categories (incl. settings + stats + credentials)', () => {
+  test('covers all eleven user-facing categories (incl. settings + stats + credentials)', () => {
     expect([...SYNC_CATEGORIES].sort()).toEqual(
       [
+        'abs_server',
         'book',
         'credentials',
         'dictionary',

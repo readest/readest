@@ -1047,7 +1047,10 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
             return
           }
           let startMs = args.positionMs ?? 0
-          self.loadContinuousFile(path: path, startMs: startMs)
+          guard self.loadContinuousFile(path: path, startMs: startMs) else {
+            invoke.reject("playout load: invalid URL")
+            return
+          }
           invoke.resolve(PlayoutControlResponse(session: self.playoutSession))
         case "seek":
           let positionMs = args.positionMs ?? 0
@@ -1114,10 +1117,15 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
     }
   }
 
-  // Continuous long-file playout for Media Overlay. Reuses the Edge playout
-  // AVPlayer so Now Playing / session ownership stay in-process; skips silence
-  // trimming and never deletes the staged path (JS owns it).
-  private func loadContinuousFile(path: String, startMs: Double) {
+  // Continuous long-file playout for Media Overlay and streamed audiobooks.
+  // Reuses the Edge playout AVPlayer so Now Playing / session ownership stay
+  // in-process; skips silence trimming and never deletes the staged path (JS
+  // owns it). `path` is either a local file path (Media Overlay chapter
+  // blobs, paired local audiobooks) or a remote http(s) URL (Audiobookshelf
+  // streaming) — AVPlayer streams HTTP URLs natively, and the `?token=`
+  // query needs no header injection. Returns false if `path` is a malformed
+  // remote URL; callers must invoke.reject in that case.
+  private func loadContinuousFile(path: String, startMs: Double) -> Bool {
     // A prior Edge queue would fight continuous playback; clear it without
     // tearing down the session id the JS side is bound to.
     playoutGapTimer?.invalidate()
@@ -1137,7 +1145,7 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
     playoutLoadedPath = path
     if alreadyLoaded {
       seekPlayout(toMs: startMs)
-      return
+      return true
     }
 
     if playoutPlayer == nil {
@@ -1146,7 +1154,13 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
       playoutPlayer = player
     }
     bindNowPlayingSession(to: playoutPlayer!)
-    let url = URL(fileURLWithPath: path)
+    let url: URL
+    if path.hasPrefix("http://") || path.hasPrefix("https://") {
+      guard let remote = URL(string: path) else { return false }
+      url = remote
+    } else {
+      url = URL(fileURLWithPath: path)
+    }
     let playerItem = AVPlayerItem(url: url)
     playerItem.audioTimePitchAlgorithm = .timeDomain
     if let observer = playoutItemEndObserver {
@@ -1181,6 +1195,7 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
     // Intentionally not auto-playing: Media Overlay JS calls resume after seek,
     // matching HTMLAudioElement where load and play are separate steps.
     emitPlayoutEvent("chunk-start", index: 0)
+    return true
   }
 
   private func seekPlayout(toMs positionMs: Double) {

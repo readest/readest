@@ -97,6 +97,10 @@ export interface TTSViewBindings {
 export const DEFAULT_PARAGRAPH_GAP_SEC = 0.3;
 
 export class TTSController extends EventTarget {
+  // PlaybackSource tag: the media bridge and the session manager consume this
+  // controller through that seam, and TTS-only consumers narrow back with
+  // asTTSController(). See src/services/playback/playbackSource.ts.
+  readonly kind = 'tts' as const;
   appService: AppService | null = null;
   view: FoliateView;
   // The owning reader's book key, bound (and re-bound) by attachView; the

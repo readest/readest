@@ -94,6 +94,15 @@ export function bookTests(
       const service = getService();
       expect(await service.isBookAvailable(makeFakeBook())).toBe(false);
     });
+
+    it('should report an ABS book as available even with no local file', async () => {
+      const service = getService();
+      const absBook = makeFakeBook({
+        format: 'ABS',
+        filePath: 'abs://server-1/item-abc',
+      });
+      expect(await service.isBookAvailable(absBook)).toBe(true);
+    });
   });
 
   describe('Book file size', () => {

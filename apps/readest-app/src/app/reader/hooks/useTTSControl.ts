@@ -29,6 +29,7 @@ import { pageBreakFraction } from '@/utils/ttsPageFollow';
 import { getTextSubRange, rangeTextExcludingInert } from '@/services/tts/wordHighlight';
 import { releaseUnblockAudio, ttsMediaBridge, unblockAudio } from '@/services/tts/ttsMediaBridge';
 import {
+  asTTSController,
   getBookHashFromKey,
   ttsSessionManager,
   TTS_STOP_AT_CHAPTER_END,
@@ -259,8 +260,11 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   useEffect(() => {
     const bookHash = getBookHashFromKey(bookKey);
     const session = ttsSessionManager.getSessionByHash(bookHash);
-    if (!session || session.controller.terminated) return;
-    if (ttsControllerRef.current === session.controller) return;
+    // TTS only: the reader adopts a live session by attaching its own view to
+    // the controller, which no other playback source has.
+    const sessionController = asTTSController(session?.controller);
+    if (!sessionController || sessionController.terminated) return;
+    if (ttsControllerRef.current === sessionController) return;
     const primaryKey = useReaderStore
       .getState()
       .bookKeys.find((k) => getBookHashFromKey(k) === bookHash);
@@ -273,7 +277,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       if (!view) return false;
       isStartingTTSRef.current = true;
       try {
-        const controller = session.controller;
+        const controller = sessionController;
         ttsControllerRef.current = controller;
         setTtsController(controller);
         // Indicator on at adoption START so it never flickers in after the

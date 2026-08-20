@@ -8,6 +8,7 @@ import { useAppRouter } from '@/hooks/useAppRouter';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToReader, showReaderWindow } from '@/utils/nav';
 import { getActiveFileSyncBackends } from '@/services/sync/cloudSyncProvider';
+import { isAudiobook } from '@/utils/audiobook';
 
 /**
  * Whether a third-party file mirror (WebDAV / Google Drive / S3 / OneDrive) is
@@ -78,6 +79,14 @@ export const useOpenBook = ({ setLoading, handleBookDownload }: UseOpenBookOptio
 
   const openBook = useCallback(
     async (book: Book, cfi?: string, options?: { highlightSearchResult?: boolean }) => {
+      // A streaming audiobook has no local file and no document loader path -
+      // it opens in the full-screen player instead of the reader. Short-circuit
+      // before any of the file-availability logic below, which assumes a real
+      // file backs `book.filePath`.
+      if (isAudiobook(book)) {
+        router.push(`/player?id=${book.hash}`);
+        return;
+      }
       // In-place books point at a file outside Books/<hash>/ that the user (or
       // another app) may have moved, renamed, or deleted between sessions. Probe
       // the source before navigating: if it's gone, drop the stale record

@@ -17,6 +17,7 @@ import {
   RiGoogleLine,
   RiMicrosoftLine,
   RiAppleLine,
+  RiHeadphoneLine,
 } from 'react-icons/ri';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -25,6 +26,7 @@ import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
+import { useABSServerStore } from '@/store/absServerStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
 import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { saveSysSettings } from '@/helpers/settings';
@@ -36,6 +38,7 @@ import { getMicrosoftClientId } from '@/services/sync/providers/onedrive/buildOn
 import { isICloudSupportedPlatform } from '@/services/sync/providers/icloud/buildICloudProvider';
 import { getICloudContainerStatus } from '@/utils/bridge';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
+import ABSForm from './integrations/ABSForm';
 import BookOrbitForm from './integrations/BookOrbitForm';
 import KOSyncForm from './integrations/KOSyncForm';
 import ReadwiseForm from './integrations/ReadwiseForm';
@@ -77,6 +80,7 @@ type SubPage =
   | 'readwise'
   | 'hardcover'
   | 'opds'
+  | 'audiobookshelf'
   | 'send'
   | 'localsend'
   | null;
@@ -101,6 +105,8 @@ const IntegrationsPanel: React.FC = () => {
   const { settings, requestedSubPage, setRequestedSubPage } = useSettingsStore();
   const opdsCatalogs = useCustomOPDSStore((s) => s.catalogs);
   const opdsCount = opdsCatalogs.filter((c) => !c.deletedAt).length;
+  const absServers = useABSServerStore((s) => s.servers);
+  const absCount = absServers.filter((s) => !s.deletedAt).length;
   // Surface a library-wide WebDAV sync that's mid-flight in the row's
   // status line. Keeps the user from feeling like the run was lost
   // when they back out of the WebDAV sub-page or close the dialog.
@@ -146,6 +152,12 @@ const IntegrationsPanel: React.FC = () => {
   // handles backfilling contentId for legacy entries.
   useEffect(() => {
     void useCustomOPDSStore.getState().loadCustomOPDSCatalogs(envConfig);
+  }, [envConfig]);
+
+  // Same hydration as above, for the Audiobookshelf server list — keeps the
+  // Content Sources row's server count accurate on first open.
+  useEffect(() => {
+    void useABSServerStore.getState().loadABSServers(envConfig);
   }, [envConfig]);
 
   // Android Back / Esc: when any integrations sub-page (KOSync, WebDAV,
@@ -201,6 +213,7 @@ const IntegrationsPanel: React.FC = () => {
       requestedSubPage === 'readwise' ||
       requestedSubPage === 'hardcover' ||
       requestedSubPage === 'opds' ||
+      requestedSubPage === 'audiobookshelf' ||
       requestedSubPage === 'send' ||
       requestedSubPage === 'localsend'
     ) {
@@ -440,6 +453,12 @@ const IntegrationsPanel: React.FC = () => {
         <CatalogManager inSubPage />
       </div>
     );
+  if (subPage === 'audiobookshelf')
+    return (
+      <div className='my-4 w-full'>
+        <ABSForm onBack={() => setSubPage(null)} />
+      </div>
+    );
   if (subPage === 'send')
     return (
       <div className='my-4 w-full'>
@@ -547,6 +566,7 @@ const IntegrationsPanel: React.FC = () => {
 
   const opdsStatus =
     opdsCount > 0 ? _('{{count}} catalog', { count: opdsCount }) : _('No catalogs');
+  const absStatus = absCount > 0 ? _('{{count}} server', { count: absCount }) : _('No servers');
 
   return (
     <div className='my-4 w-full space-y-6'>
@@ -734,6 +754,12 @@ const IntegrationsPanel: React.FC = () => {
               title={_('OPDS Catalogs')}
               status={opdsStatus}
               onClick={() => setSubPage('opds')}
+            />
+            <IntegrationRow
+              icon={RiHeadphoneLine}
+              title={_('Audiobookshelf')}
+              status={absStatus}
+              onClick={() => setSubPage('audiobookshelf')}
             />
             <IntegrationRow
               icon={RiSendPlaneLine}

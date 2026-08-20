@@ -25,6 +25,7 @@ import {
   pickFresherMetadata,
 } from '@/app/library/utils/libraryUtils';
 import { getPrimaryLanguage } from '@/utils/book';
+import { isAudiobook, parseAbsFilePath } from '@/utils/audiobook';
 
 export const useBooksSync = () => {
   const _ = useTranslation();
@@ -42,6 +43,14 @@ export const useBooksSync = () => {
       // Demo books are the sample shelf we hand anonymous web visitors, not the
       // user's content — they never go to the cloud (issue #5049).
       .filter((book) => !isDemoBook(book))
+      // An ABS book is a stub for a stream on someone's Audiobookshelf server:
+      // its identity lives entirely in `filePath` (`abs://<serverId>/<itemId>`),
+      // which the push below strips. Peers would accumulate dead `format: 'ABS'`
+      // rows with no filePath — unopenable, stuck at 0:00, and never healed or
+      // tombstoned, because reconcileAbsBooks only ever touches books it can
+      // parse a server id out of. Peers that configured the same server already
+      // materialize these books themselves, with the same hash.
+      .filter((book) => !isAudiobook(book))
       .filter(
         (book) =>
           !book.syncedAt ||
@@ -185,7 +194,14 @@ export const useBooksSync = () => {
         .library.filter(isDemoBook)
         .map((book) => book.hash),
     );
-    const cloudBooks = syncedBooks.filter((book) => !demoHashes.has(book.hash));
+    const cloudBooks = syncedBooks.filter(
+      // Rows pushed before ABS books were excluded from the push (above) are
+      // dead on arrival: `filePath` was stripped, so nothing can resolve the
+      // server or item they came from. Drop them rather than shelving an
+      // unopenable entry; the local ABS sync owns these books.
+      (book) =>
+        !demoHashes.has(book.hash) && !(isAudiobook(book) && !parseAbsFilePath(book.filePath)),
+    );
     if (!cloudBooks.length) return;
 
     // Process old books first so that when we update the library the order is preserved

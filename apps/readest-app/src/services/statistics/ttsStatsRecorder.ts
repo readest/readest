@@ -23,6 +23,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { getBookProgress } from '@/store/readerProgressStore';
 import { DEFAULT_STATS_TRACKING_CONFIG, type StatBook } from '@/types/statistics';
 import type { TTSSession } from '@/services/tts/TTSSessionManager';
+import type { TTSController } from '@/services/tts/TTSController';
 import type { FoliateView } from '@/types/view';
 import { getAccessToken } from '@/utils/access';
 import { StatisticsDb } from './statisticsDb';
@@ -98,8 +99,13 @@ interface ResolvedPage {
   totalPages: number;
 }
 
+// A session whose source is the TTS controller. The manager's TTSSession
+// carries any PlaybackSource; this recorder places the spoken position with
+// the controller's foliate view, so it only ever runs for TTS.
+export type TtsStatsSession = Omit<TTSSession, 'controller'> & { controller: TTSController };
+
 export class TtsStatsRecorder {
-  readonly #session: TTSSession;
+  readonly #session: TtsStatsSession;
   readonly #core = new TrackerCore(DEFAULT_STATS_TRACKING_CONFIG);
   #db: StatisticsDb | null = null;
   #dbPromise: Promise<StatisticsDb | null> | null = null;
@@ -115,7 +121,7 @@ export class TtsStatsRecorder {
   #headless: HeadlessResolver | null = null;
   #headlessUnavailable = false;
 
-  constructor(session: TTSSession) {
+  constructor(session: TtsStatsSession) {
     this.#session = session;
   }
 

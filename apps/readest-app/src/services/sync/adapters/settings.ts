@@ -27,7 +27,7 @@ export const SETTINGS_REPLICA_ID = 'singleton';
  *     across devices.
  *   * Collection settings already synced via dedicated kinds
  *     (`customFonts`, `customTextures`, `customDictionaries`,
- *     `opdsCatalogs`). Note: `dictionarySettings` sub-fields
+ *     `opdsCatalogs`, `absServers`). Note: `dictionarySettings` sub-fields
  *     (providerOrder / providerEnabled / webSearches) ARE bundled
  *     here — see entries below. They ride this row for transport but
  *     are gated by the 'dictionary' sync category, not 'settings'

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BookConfig, BookProgress } from '@/types/book';
-import type { TTSSession } from '@/services/tts/TTSSessionManager';
+import type { TtsStatsSession } from '@/services/statistics/ttsStatsRecorder';
 
 const mocks = vi.hoisted(() => ({
   progress: null as BookProgress | null,
@@ -83,7 +83,7 @@ const resolveCFIToSectionMidpoint = () => ({
  * `view.close()` nulls the view's own progress helpers, so a headless session
  * only ever has the book and resolveCFI to work with. Model exactly that.
  */
-const makeSession = (opts: { isViewAttached: boolean; hasBook?: boolean }): TTSSession => {
+const makeSession = (opts: { isViewAttached: boolean; hasBook?: boolean }): TtsStatsSession => {
   const controller = {
     isViewAttached: opts.isViewAttached,
     view: {
@@ -95,7 +95,7 @@ const makeSession = (opts: { isViewAttached: boolean; hasBook?: boolean }): TTSS
     bookHash: 'hash-1',
     bookKey: 'hash-1-view1',
     controller,
-  } as unknown as TTSSession;
+  } as unknown as TtsStatsSession;
 };
 
 const setViewPage = (current: number, total: number) => {

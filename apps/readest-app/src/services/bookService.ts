@@ -29,6 +29,7 @@ import { getBaseFilename, getFilename } from '@/utils/path';
 import { BookDoc, DocumentLoader } from '@/libs/document';
 import { hasMediaOverlays } from '@/services/tts/mediaOverlay';
 import { getAudiobookDirectory, isAudiobookFilePath } from '@/services/audiobook/storage';
+import { isAudiobook } from '@/utils/audiobook';
 import { tryNativeParseEpub } from '@/utils/tauriEpubBridge';
 import { tryNativeParseMobi } from '@/utils/tauriMobiBridge';
 import { isPseStreamFileName, openPseStreamBook, parsePseStreamFileName } from './opds/pseStream';
@@ -904,6 +905,8 @@ export async function importBook(
 // --- Book Content & Config ---
 
 export async function isBookAvailable(fs: FileSystem, book: Book): Promise<boolean> {
+  // ABS books stream from the server and have no local/cloud file to resolve.
+  if (isAudiobook(book)) return true;
   return (await resolveBookContentSource(fs, book)).kind !== 'missing';
 }
 

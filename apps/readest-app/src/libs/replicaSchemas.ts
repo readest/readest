@@ -71,6 +71,24 @@ const opdsCatalogFieldsSchema = z
   })
   .catchall(fieldEnvelopeWithCipher);
 
+const absServerFieldsSchema = z
+  .object({
+    name: fieldEnvelopeSchema.optional(),
+    url: fieldEnvelopeSchema.optional(),
+    addedAt: fieldEnvelopeSchema.optional(),
+    libraryIds: fieldEnvelopeSchema.optional(),
+    disabled: fieldEnvelopeSchema.optional(),
+    serverVersion: fieldEnvelopeSchema.optional(),
+    // Encrypted-credential fields. The CRDT envelope wraps a cipher
+    // envelope as `v` when the publishing device had its CryptoSession
+    // unlocked; otherwise the field is omitted from the row.
+    username: fieldEnvelopeWithCipher.optional(),
+    password: fieldEnvelopeWithCipher.optional(),
+    accessToken: fieldEnvelopeWithCipher.optional(),
+    refreshToken: fieldEnvelopeWithCipher.optional(),
+  })
+  .catchall(fieldEnvelopeWithCipher);
+
 // Open-shaped: the bundled `settings` row stores arbitrary scalar
 // preferences keyed by `<setting>` or `<group>.<id>` (for flat-map
 // settings like providerEnabled.<id>, syncCategories.<id>,
@@ -114,6 +132,13 @@ export const KIND_ALLOWLIST: Record<string, KindSpec> = {
     maxSchemaVersion: 1,
     maxRowsPerUser: 50,
     fields: opdsCatalogFieldsSchema,
+    binary: false,
+  },
+  abs_server: {
+    minSchemaVersion: 1,
+    maxSchemaVersion: 1,
+    maxRowsPerUser: 50,
+    fields: absServerFieldsSchema,
     binary: false,
   },
   settings: {

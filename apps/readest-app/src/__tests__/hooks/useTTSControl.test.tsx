@@ -185,6 +185,7 @@ vi.mock('@/services/tts', () => ({
       getCurrentHighlightCfi: vi.fn().mockReturnValue(null),
       getCurrentPlaybackCfi: vi.fn().mockReturnValue(null),
       reapplyCurrentHighlight: vi.fn(),
+      kind: 'tts',
       terminated: false,
       isViewAttached: true,
       narrationActive: narrationState.active,
@@ -242,6 +243,9 @@ const { mockSessionManager } = vi.hoisted(() => ({
 
 vi.mock('@/services/tts/TTSSessionManager', () => ({
   getBookHashFromKey: (key: string) => key.split('-')[0]!,
+  // Mirrors the real kind gate: only a TTS source is adoptable by the reader.
+  asTTSController: (source: { kind?: string } | null | undefined) =>
+    source && source.kind === 'tts' ? source : null,
   ttsSessionManager: mockSessionManager,
   TTS_STOP_AT_CHAPTER_END: -1,
 }));
@@ -1038,6 +1042,7 @@ describe('useTTSControl background session lifecycle', () => {
 
   it('adopts a live session for the same book without constructing a controller', async () => {
     const liveController = {
+      kind: 'tts',
       state: 'playing',
       terminated: false,
       isViewAttached: false,

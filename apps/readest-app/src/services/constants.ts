@@ -249,6 +249,7 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
     font: true,
     texture: true,
     opds_catalog: true,
+    abs_server: true,
     settings: true,
   },
 };

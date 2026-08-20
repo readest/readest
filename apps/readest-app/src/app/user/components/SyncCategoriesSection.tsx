@@ -52,6 +52,10 @@ const useCategoryCopy = (): Record<SyncCategory, CategoryCopy> => {
       title: _('OPDS catalogs'),
       description: _('Saved catalog URLs and (encrypted) credentials'),
     },
+    abs_server: {
+      title: _('Audiobookshelf Servers'),
+      description: _('Saved server URLs and (encrypted) credentials'),
+    },
     settings: {
       // Dictionary preferences ride this row too, but they're gated by the
       // Dictionaries toggle above, so they're deliberately not listed here.

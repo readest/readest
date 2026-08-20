@@ -19,7 +19,9 @@ import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { navigateToLogin } from '@/utils/nav';
 import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
+import { isAudiobook } from '@/utils/audiobook';
 import { formatAuthors, formatDescription, formatSeries } from '@/utils/book';
+import { formatCompactTime } from '@/utils/time';
 import { INDETERMINATE_PROGRESS } from '@/utils/transfer';
 import ReadingProgress from './ReadingProgress';
 import BookCover from '@/components/BookCover';
@@ -78,6 +80,18 @@ const BookItem: React.FC<BookItemProps> = ({
   // entry is removed once the transfer settles, including at 100%.
   const isTransferring = transferProgress !== null;
   const isIndeterminate = transferProgress === INDETERMINATE_PROGRESS;
+
+  // ABS books track progress in seconds, not pages, so the row shows a
+  // duration/remaining-time label instead of ReadingProgress's page percent:
+  // total length when unplayed, remaining time once started (mirrors the
+  // scrubber's "-remaining" convention).
+  const isAbsBook = isAudiobook(book);
+  const absDuration = book.duration ?? 0;
+  const absCurrentTime = book.progress?.[0] ?? 0;
+  const absTimeLabel =
+    absCurrentTime > 0
+      ? `-${formatCompactTime(Math.max(absDuration - absCurrentTime, 0))}`
+      : formatCompactTime(absDuration);
 
   return (
     <div
@@ -180,15 +194,24 @@ const BookItem: React.FC<BookItemProps> = ({
         <div
           className={clsx(
             'flex items-center',
-            book.progress || book.readingStatus ? 'justify-between' : 'justify-end',
+            book.progress || book.readingStatus || isAbsBook ? 'justify-between' : 'justify-end',
           )}
           style={{
             height: `${iconSize15}px`,
             minHeight: `${iconSize15}px`,
           }}
         >
-          {(book.progress || book.readingStatus) && (
-            <ReadingProgress book={book} showTimeRemaining={showTimeRemaining} />
+          {isAbsBook ? (
+            <div
+              className='text-neutral-content/70 flex min-w-0 justify-between text-xs'
+              role='status'
+            >
+              <span className='truncate tabular-nums'>{absTimeLabel}</span>
+            </div>
+          ) : (
+            (book.progress || book.readingStatus) && (
+              <ReadingProgress book={book} showTimeRemaining={showTimeRemaining} />
+            )
           )}
           <div className='flex shrink-0 items-center justify-center gap-x-2'>
             {!appService?.isMobile && (
@@ -205,11 +228,11 @@ const BookItem: React.FC<BookItemProps> = ({
                 </div>
               </button>
             )}
-            {book.hasNarration && (
+            {(book.hasNarration || isAbsBook) && (
               <div
                 className='pt-[2px] sm:pt-[1px]'
-                title={_('Includes narration')}
-                aria-label={_('Includes narration')}
+                title={isAbsBook ? _('Audiobook') : _('Includes narration')}
+                aria-label={isAbsBook ? _('Audiobook') : _('Includes narration')}
               >
                 <LiaHeadphonesSolid size={iconSize15} />
               </div>
@@ -221,7 +244,11 @@ const BookItem: React.FC<BookItemProps> = ({
                 null
               : // A feed book has no file to move either way, so it never gets a
                 // cloud badge — it would only queue a transfer that fails (#5307).
+                // Same for an ABS book: it streams from the server and never has
+                // uploadedAt/downloadedAt set, so without this check the badge
+                // would render forever and Upload would always fail.
                 !isFeedBook(book) &&
+                !isAudiobook(book) &&
                 (!book.uploadedAt || (book.uploadedAt && !book.downloadedAt)) && (
                   <button
                     aria-label={!book.uploadedAt ? _('Upload Book') : _('Download Book')}

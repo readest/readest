@@ -59,6 +59,9 @@ import type { TTSController } from '@/services/tts/TTSController';
 import { eventDispatcher } from '@/utils/event';
 
 class FakeController extends EventTarget {
+  // Stands in for a TTSController: the manager gates the stats recorder on
+  // this PlaybackSource tag.
+  readonly kind = 'tts' as const;
   state = 'playing';
   terminated = false;
   isViewAttached = true;
@@ -274,6 +277,17 @@ describe('TTSSessionManager', () => {
     expect(manager.getPlaybackState()).toBeNull();
     controller.emitState('playing');
     expect(manager.getPlaybackState()).toBe('playing');
+  });
+
+  test('the stats recorder holds the live session, so adopt rebinds its bookKey', () => {
+    claim();
+    // Identity, not a copy: adopt() rewrites bookKey IN PLACE when the reader
+    // reattaches to a background session, and the recorder resolves progress
+    // and config by that key. A snapshot would keep writing to the closed
+    // pane's entry for the rest of the session.
+    expect(statsMocks.instances[0]!.session).toBe(manager.getActiveSession());
+    manager.adopt('hashA-r2', meta('hashA-r2'));
+    expect(statsMocks.instances[0]!.session.bookKey).toBe('hashA-r2');
   });
 
   test('flushes the stats recorder when the session stops', async () => {

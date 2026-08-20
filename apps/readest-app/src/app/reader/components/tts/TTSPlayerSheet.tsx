@@ -41,7 +41,9 @@ import type { UseTTSDownloadsResult } from '@/app/reader/hooks/useTTSDownloads';
 
 type SheetView = 'main' | 'speed' | 'voice' | 'timer' | 'chapters';
 
-const getTTSTimeoutOptions = (_: TranslationFunc) => {
+// Exported so the audiobook player route (src/app/player/components/PlayerView.tsx)
+// can reuse the same sleep-timer preset list instead of duplicating it.
+export const getTTSTimeoutOptions = (_: TranslationFunc) => {
   return [
     { label: _('No Timeout'), value: 0 },
     { label: _('End of Chapter'), value: TTS_STOP_AT_CHAPTER_END },

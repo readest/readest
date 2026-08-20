@@ -3,8 +3,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { MdClose, MdPauseCircleFilled, MdPlayCircleFilled } from 'react-icons/md';
 import { ttsSessionManager, TTSSession } from '@/services/tts';
+import { asAudiobookController } from '@/services/audiobook/AudiobookController';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useLibraryStore } from '@/store/libraryStore';
 import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
@@ -96,9 +98,19 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
 
   if (!visible) return null;
 
-  const book = getBookData(session.bookKey)?.book;
+  // An audiobook session never runs through the reader's initViewState, so
+  // bookDataStore has no entry for it - fall back to the library record
+  // (harmless for a TTS session, whose bookDataStore entry already exists).
+  // Read the store directly rather than the reactive hook: the library
+  // array gets a fresh reference on every progress-cache tick (~15s while an
+  // audiobook plays), and this component has no reason to re-render off
+  // that - it already re-renders from its own session/playback state.
+  const book =
+    getBookData(session.bookKey)?.book ??
+    useLibraryStore.getState().getBookByHash(session.bookHash);
   const title = book?.title ?? '';
   const coverImageUrl = book?.coverImageUrl;
+  const isAudiobookSession = !!asAudiobookController(session.controller);
 
   const handleToggle = () => {
     const controller = session.controller;
@@ -117,7 +129,11 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
   };
 
   const handleOpen = () => {
-    navigateToReader(router, [session.bookHash]);
+    if (isAudiobookSession) {
+      router.push(`/player?id=${session.bookHash}`);
+    } else {
+      navigateToReader(router, [session.bookHash]);
+    }
   };
 
   return (
