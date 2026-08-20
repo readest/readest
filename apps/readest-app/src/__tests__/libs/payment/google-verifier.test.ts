@@ -100,7 +100,7 @@ describe('GoogleIAPVerifier.consumeProductPurchase', () => {
     });
 
     expect(apiMocks.productsConsume).toHaveBeenCalledWith({
-      packageName: 'com.bilingify.readest',
+      packageName: 'com.biblophile.readest',
       productId: 'com.bilingify.readest.purchase.storage.1gb',
       token: 'token-1',
     });

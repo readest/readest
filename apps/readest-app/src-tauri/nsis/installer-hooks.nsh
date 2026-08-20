@@ -1,9 +1,9 @@
-; Leaf NSIS Installer Hooks
+; Yomi NSIS Installer Hooks
 ; Registers/unregisters the thumbnail provider DLL for Windows Explorer thumbnails
 
 !include "LogicLib.nsh"
 
-; CLSID for Leaf Thumbnail Provider
+; CLSID for Yomi Thumbnail Provider
 !define CLSID_READEST_THUMBNAIL "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 
 ; IThumbnailProvider Shell Extension Handler GUID  
@@ -13,13 +13,13 @@
 ; NSIS_HOOK_POSTINSTALL - Called after files are installed
 ;------------------------------------------------------------------------------
 !macro NSIS_HOOK_POSTINSTALL
-    DetailPrint "Registering Leaf Thumbnail Provider..."
+    DetailPrint "Registering Yomi Thumbnail Provider..."
     
     ; Always do manual registration for reliability
     ; regsvr32 may fail silently if DLL can't find dependencies
     
     ; Register CLSID with full DLL path
-    WriteRegStr HKCR "CLSID\${CLSID_READEST_THUMBNAIL}" "" "Leaf Thumbnail Provider"
+    WriteRegStr HKCR "CLSID\${CLSID_READEST_THUMBNAIL}" "" "Yomi Thumbnail Provider"
     WriteRegStr HKCR "CLSID\${CLSID_READEST_THUMBNAIL}\InprocServer32" "" "$INSTDIR\readest_thumbnail.dll"
     WriteRegStr HKCR "CLSID\${CLSID_READEST_THUMBNAIL}\InprocServer32" "ThreadingModel" "Apartment"
     
@@ -62,7 +62,7 @@
 ; NSIS_HOOK_PREUNINSTALL - Called before files are removed
 ;------------------------------------------------------------------------------
 !macro NSIS_HOOK_PREUNINSTALL
-    DetailPrint "Unregistering Leaf Thumbnail Provider..."
+    DetailPrint "Unregistering Yomi Thumbnail Provider..."
     
     ; Remove CLSID
     DeleteRegKey HKCR "CLSID\${CLSID_READEST_THUMBNAIL}"

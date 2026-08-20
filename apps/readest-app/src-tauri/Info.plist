@@ -19,7 +19,7 @@
       </dict>
     </dict>
     <key>NSFaceIDUsageDescription</key>
-    <string>Leaf uses Face ID to unlock the app.</string>
+    <string>Yomi uses Face ID to unlock the app.</string>
     <key>LSSupportsOpeningDocumentsInPlace</key>
     <false/>
     <key>UIViewControllerBasedStatusBarAppearance</key>

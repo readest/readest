@@ -1,10 +1,10 @@
 {
-  "name": "Leaf",
-  "short_name": "Leaf",
+  "name": "Yomi",
+  "short_name": "Yomi",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "description": "Leaf is an open-source eBook reader supporting EPUB, PDF, and sync across devices.",
+  "description": "Yomi is an open-source eBook reader supporting EPUB, PDF, and sync across devices.",
   "icons": [
     {
       "src": "/icon.png",

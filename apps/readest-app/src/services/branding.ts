@@ -1,8 +1,8 @@
 /**
  * Branding Configuration - Single Source of Truth
  */
-export const BRAND_NAME = 'Leaf';
-export const BRAND_FULL_NAME = 'Leaf by Biblophile';
+export const BRAND_NAME = 'Yomi';
+export const BRAND_FULL_NAME = 'Yomi by Biblophile';
 
 /**
  * Mobile and Desktop bundle configurations.

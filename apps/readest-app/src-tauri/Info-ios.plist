@@ -51,7 +51,7 @@
          without this key TCC terminates the app on the first attempt (#5397)
          and iOS hides "Save Image" from the share sheet entirely. -->
     <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>Leaf needs access to save images from your books to your photo library.</string>
+    <string>Yomi needs access to save images from your books to your photo library.</string>
     <key>CFBundleURLTypes</key>
     <array>
       <dict>

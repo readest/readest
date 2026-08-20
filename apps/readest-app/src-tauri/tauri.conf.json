@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Leaf",
+  "productName": "Yomi",
   "mainBinaryName": "readest",
   "identifier": "com.biblophile.readest",
   "version": "../package.json",
@@ -176,7 +176,7 @@
       "requireLiteralLeadingDot": false
     },
     "cli": {
-      "description": "Leaf CLI",
+      "description": "Yomi CLI",
       "args": [
         {
           "name": "file1",
