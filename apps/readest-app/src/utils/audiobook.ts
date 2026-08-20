@@ -1,3 +1,4 @@
+import type { BookMetadata } from '@/libs/document';
 import type { Book } from '@/types/book';
 
 /** Scheme prefix for the synthetic filePath of an ABS streaming audiobook. */
@@ -22,6 +23,59 @@ export const parseAbsFilePath = (
   const itemId = rest.slice(slashIndex + 1);
   if (!serverId || !itemId) return null;
   return { serverId, itemId };
+};
+
+/**
+ * Build the `metadata` payload an ABS stub syncs with.
+ *
+ * The cloud `books` row has no column for `filePath`, `duration`,
+ * `absMediaType` or `episodeCount`, and the push strips `filePath` outright
+ * because for every other format it is a device-local absolute path. An ABS
+ * stub has no file at all — `abs://<serverId>/<itemId>` IS its identity, and
+ * the mirrored fields are all a peer has to draw the row — so they travel
+ * inside `metadata`, which does sync. Same trick a feed book uses for
+ * `metadata.feedUrl` (src/services/rss/feedBookUrl.ts).
+ *
+ * Any existing metadata (a user's edit) is preserved; only the mirrors are
+ * authoritative, so a metadata edit that dropped them is healed on the next
+ * reconcile pass.
+ */
+export const buildAbsBookMetadata = (
+  book: Pick<
+    Book,
+    | 'title'
+    | 'author'
+    | 'primaryLanguage'
+    | 'metadata'
+    | 'filePath'
+    | 'duration'
+    | 'absMediaType'
+    | 'episodeCount'
+  >,
+): BookMetadata => ({
+  title: book.title,
+  author: book.author,
+  language: book.primaryLanguage ?? '',
+  ...book.metadata,
+  absSource: book.filePath,
+  absMediaType: book.absMediaType,
+  absEpisodeCount: book.episodeCount,
+  absDuration: book.duration,
+});
+
+/**
+ * Rebuild the device-side fields of a pulled ABS row from its metadata mirror
+ * (see {@link buildAbsBookMetadata}). A legacy row pushed before the mirror
+ * existed carries nothing to rebuild from and is left untouched — it stays
+ * filePath-less, and useBooksSync drops it on the way into the library.
+ */
+export const restoreAbsBookFields = (book: Book): void => {
+  const source = book.metadata?.absSource;
+  if (!source || !parseAbsFilePath(source)) return;
+  book.filePath = source;
+  book.absMediaType = book.metadata?.absMediaType;
+  book.episodeCount = book.metadata?.absEpisodeCount;
+  book.duration = book.metadata?.absDuration;
 };
 
 export interface LibraryOpenSplit {

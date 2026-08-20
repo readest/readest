@@ -12,6 +12,7 @@ import { loadAbsEpisodes, openAudiobookSession } from '@/services/audiobook/open
 import { ttsSessionManager } from '@/services/tts/TTSSessionManager';
 import { useEnv } from '@/context/EnvContext';
 import { useAppRouter } from '@/hooks/useAppRouter';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibrary } from '@/hooks/useLibrary';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTheme } from '@/hooks/useTheme';
@@ -234,6 +235,16 @@ const PlayerRoute = () => {
       navigateToLibrary(router);
     }
   };
+
+  // Without this, the Android system Back button falls through to Kotlin's
+  // default handler, which finishes the whole activity instead of navigating
+  // - killing background audio with it (the session manager and media
+  // session support headless playback fine; only the route never asked for
+  // Back to be routed through JS). Reuses the same shared hook the reader and
+  // the OPDS browser route already rely on for this, and the same
+  // handleGoBack the header back button uses, so Back and the header button
+  // always agree.
+  useKeyDownActions({ onCancel: handleGoBack });
 
   // Guards against a double tap (or a tap on a second row before the first
   // claim lands) putting two full claims in flight at once - two

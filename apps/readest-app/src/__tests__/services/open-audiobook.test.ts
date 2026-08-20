@@ -229,6 +229,28 @@ describe('openAudiobookSession', () => {
     expect(clock).toBeInstanceOf(NativeAudiobookClock);
   });
 
+  // The HTML clock is a WebView <audio> element, and Chromium requests Android
+  // audio focus for it under the app's own uid. The media service requesting
+  // focus too is preempted by it and gets AUDIOFOCUS_LOSS, which the service
+  // relays as media-session-pause - stopping the audiobook ~300ms after it
+  // auto-started.
+  it('hands the session over as not owning audio focus when the clock is the WebView element', async () => {
+    await openAudiobookSession({ appService, book });
+
+    const [, , meta] = mocks.claim.mock.calls[0]!;
+    expect(meta.ownsAudioFocus).toBe(false);
+  });
+
+  it('keeps audio focus with the media session when the clock is native', async () => {
+    mocks.getOSPlatform.mockReturnValue('ios');
+    mocks.isTauriAppPlatform.mockReturnValue(true);
+
+    await openAudiobookSession({ appService, book });
+
+    const [, , meta] = mocks.claim.mock.calls[0]!;
+    expect(meta.ownsAudioFocus).toBe(true);
+  });
+
   it('uses HtmlAudioClock on iOS web (Tauri check must gate, not OS alone)', async () => {
     mocks.getOSPlatform.mockReturnValue('ios');
     mocks.isTauriAppPlatform.mockReturnValue(false);

@@ -220,6 +220,44 @@ describe('ReplicaSyncManager.markDirty + flush', () => {
     await manager.flush();
     expect(client.push).toHaveBeenCalledTimes(2);
   });
+
+  // A backend whose kind allowlist predates this client 422s the WHOLE push
+  // when a single row carries an unknown kind. The queue is only cleared on
+  // success, so without per-kind isolation that one row wedges every other
+  // kind's writes for the rest of the session.
+  test('UNKNOWN_KIND push: known kinds still land, the unknown kind stays queued', async () => {
+    const known = makeRow('r1');
+    const unknown = { ...makeRow('r2'), kind: 'abs_server' };
+    const client = {
+      ...makeFakeClient(),
+      push: vi.fn(async (rows: ReplicaRow[]): Promise<ReplicaRow[]> => {
+        if (rows.some((r) => r.kind === 'abs_server')) {
+          throw new SyncError('UNKNOWN_KIND', 'kind=abs_server is not in the server allowlist', {
+            status: 422,
+          });
+        }
+        return rows;
+      }),
+    };
+    const { manager } = makeManager(client);
+    manager.markDirty(known);
+    manager.markDirty(unknown);
+
+    await manager.flush();
+
+    // Batch attempt + one retry per kind.
+    const pushedKinds = client.push.mock.calls.map((call) => call[0]!.map((r) => r.kind));
+    expect(pushedKinds).toContainEqual(['dictionary']);
+    expect(manager.pendingKeys()).toEqual([{ kind: 'abs_server', replicaId: 'r2' }]);
+
+    // The rejected kind is dropped from later batches, so it can never
+    // poison another push.
+    client.push.mockClear();
+    manager.markDirty(makeRow('r3'));
+    await manager.flush();
+    expect(client.push).toHaveBeenCalledOnce();
+    expect(client.push.mock.calls[0]![0]!.map((r) => r.kind)).toEqual(['dictionary']);
+  });
 });
 
 describe('ReplicaSyncManager.pull', () => {
@@ -369,5 +407,44 @@ describe('ReplicaSyncManager.pullMany (batched incremental)', () => {
     const result = await manager.pullMany([]);
     expect(result.size).toBe(0);
     expect(client.pullBatch).not.toHaveBeenCalled();
+  });
+
+  // One kind the backend's allowlist predates 422s the entire batched pull,
+  // which used to take every OTHER kind's sync down with it (the caller
+  // bails on the rejection). Fall back to per-kind pulls so the known kinds
+  // still land, and remember the offender.
+  test('UNKNOWN_KIND batch: falls back per kind and omits the rejected kind', async () => {
+    const dictRow = makeRow('d1');
+    const client = {
+      ...makeFakeClient(),
+      pullBatch: vi.fn(
+        async (
+          _cursors: { kind: string; since: Hlc | null }[],
+        ): Promise<{ kind: string; rows: ReplicaRow[] }[]> => {
+          throw new SyncError('UNKNOWN_KIND', 'cursors[1].kind=abs_server', { status: 422 });
+        },
+      ),
+      pull: vi.fn(async (kind: string, _since: Hlc | null) => {
+        if (kind === 'abs_server') {
+          throw new SyncError('UNKNOWN_KIND', 'kind=abs_server', { status: 422 });
+        }
+        return [dictRow] as ReplicaRow[];
+      }),
+    };
+    const { manager } = makeManager(client);
+
+    const result = await manager.pullMany(['dictionary', 'abs_server']);
+
+    expect(result.get('dictionary')).toEqual([dictRow]);
+    // Absent, NOT an empty array: the backend told us nothing about this
+    // kind, which must never read as "the server has no rows".
+    expect(result.has('abs_server')).toBe(false);
+
+    // Later batches route around the rejected kind entirely.
+    client.pullBatch.mockClear();
+    client.pullBatch.mockResolvedValue([{ kind: 'dictionary', rows: [] as ReplicaRow[] }]);
+    await manager.pullMany(['dictionary', 'abs_server']);
+    expect(client.pullBatch).toHaveBeenCalledOnce();
+    expect(client.pullBatch.mock.calls[0]![0]!.map((c) => c.kind)).toEqual(['dictionary']);
   });
 });

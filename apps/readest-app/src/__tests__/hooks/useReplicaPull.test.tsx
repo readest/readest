@@ -307,6 +307,46 @@ describe('useReplicaPull', () => {
     expect(dictionaryPullCount()).toBe(2);
   });
 
+  // `pullMany` omits a kind the backend rejected with UNKNOWN_KIND. That is
+  // "no information", not "the server has no rows" — applying it would run
+  // the kind's apply path (and its tombstone mirroring) against an empty
+  // result set. The slot is released so a later mount retries.
+  test('a kind missing from the batch result is not applied', async () => {
+    const managerMock = makeManagerMock();
+    managerMock.pullMany.mockImplementation(async () => {
+      const out = new Map<string, unknown[]>();
+      out.set('font', []);
+      return out;
+    });
+    getReplicaSyncSpy.mockReturnValue({ manager: managerMock });
+
+    const view = renderHook(() => useReplicaPull({ kinds: ['dictionary', 'font'], delayMs: 100 }));
+    await act(async () => {
+      vi.advanceTimersByTime(200);
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(dictionaryPullCount()).toBe(0);
+    view.unmount();
+
+    // Slot released: a later mount tries the missing kind again.
+    managerMock.pullMany.mockImplementation(async (kinds) => {
+      const out = new Map<string, unknown[]>();
+      for (const k of kinds) out.set(k, []);
+      return out;
+    });
+    renderHook(() => useReplicaPull({ kinds: ['dictionary', 'font'], delayMs: 100 }));
+    await act(async () => {
+      vi.advanceTimersByTime(200);
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(dictionaryPullCount()).toBe(1);
+  });
+
   test('cleanup cancels a pending pull when the component unmounts before delayMs', () => {
     getReplicaSyncSpy.mockReturnValue({ manager: makeManagerMock() });
     const view = renderHook(() => useReplicaPull({ kinds: ['dictionary'], delayMs: 5_000 }));

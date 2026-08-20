@@ -151,6 +151,35 @@ describe('TTSMediaBridge', () => {
     expect(controller.start).toHaveBeenCalled();
   });
 
+  // Android relays a synthetic media-session-pause on audio-focus loss. An
+  // audiobook's audio plays through a WebView <audio> element, for which
+  // Chromium requests audio focus in the app's own uid; the media service
+  // requesting focus as well loses it to that request and relays the loss as a
+  // pause, killing playback ~300ms after it started. Sessions whose audio the
+  // app renders itself (TTS, native narration) keep the service as the owner.
+  test('the activation payload carries who owns audio focus', async () => {
+    class RecordingTauriSession extends TauriMediaSession {
+      activations: { active: boolean; ownsAudioFocus?: boolean }[] = [];
+      override setActionHandler() {}
+      override async setActive(state: { active: boolean; ownsAudioFocus?: boolean }) {
+        this.activations.push(state);
+      }
+      override async updateMetadata() {}
+      override async updatePlaybackState() {}
+    }
+    const tauriSession = new RecordingTauriSession();
+    bridge = new TTSMediaBridge(() => tauriSession as unknown as MediaSession);
+
+    await bridge.bind(controller as unknown as TTSController, meta());
+    expect(tauriSession.activations[0]!.ownsAudioFocus).toBe(true);
+
+    await bridge.bind(
+      new FakeController() as unknown as TTSController,
+      meta({ ownsAudioFocus: false }),
+    );
+    expect(tauriSession.activations.at(-1)!.ownsAudioFocus).toBe(false);
+  });
+
   test('speak-mark events update metadata and clamped position state headless', async () => {
     await bind();
     controller.getPlaybackInfo.mockReturnValue({ position: 90, duration: 60, measuredFraction: 1 });

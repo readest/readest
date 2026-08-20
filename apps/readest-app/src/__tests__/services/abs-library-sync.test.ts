@@ -427,4 +427,130 @@ describe('reconcileAbsBooks', () => {
     });
     expect(tombstoneHashes).toEqual([]);
   });
+
+  describe('cloud sync mirror in metadata', () => {
+    // The cloud books row has no column for filePath / duration /
+    // absMediaType / episodeCount, and the push strips filePath outright. An
+    // ABS stub's identity IS that path, so reconcile mirrors it (and the badge
+    // fields) into `metadata`, which does sync.
+    it('mirrors the abs:// identity and the badge fields onto a new stub', () => {
+      const { upserts } = reconcileAbsBooks({
+        server,
+        items: [item('i1', 'Peter Pan')],
+        progress: [],
+        library: [],
+        lastPlayedAtByHash: new Map(),
+        now: 1000,
+      });
+      const meta = upserts[0]!.metadata!;
+      expect(meta.absSource).toBe(makeAbsFilePath('srv1', 'i1'));
+      expect(meta.absDuration).toBe(3600);
+      expect(meta.absMediaType).toBeUndefined();
+    });
+
+    it('mirrors the episode count on a podcast show stub', () => {
+      const { upserts } = reconcileAbsBooks({
+        server,
+        items: [podcastItem('p1', 'Daily News', 7)],
+        progress: [],
+        library: [],
+        lastPlayedAtByHash: new Map(),
+        now: 1000,
+      });
+      const meta = upserts[0]!.metadata!;
+      expect(meta.absSource).toBe(makeAbsFilePath('srv1', 'p1'));
+      expect(meta.absMediaType).toBe('podcast');
+      expect(meta.absEpisodeCount).toBe(7);
+    });
+
+    it('backfills the mirror on a legacy row that predates it', () => {
+      const legacy = reconcileAbsBooks({
+        server,
+        items: [item('i1', 'Same')],
+        progress: [],
+        library: [],
+        lastPlayedAtByHash: new Map(),
+        now: 1000,
+      }).upserts[0]!;
+      delete legacy.metadata;
+
+      const { upserts } = reconcileAbsBooks({
+        server,
+        items: [item('i1', 'Same')],
+        progress: [],
+        library: [legacy],
+        lastPlayedAtByHash: new Map(),
+        now: 2000,
+      });
+      expect(upserts).toHaveLength(1);
+      expect(upserts[0]!.metadata!.absSource).toBe(makeAbsFilePath('srv1', 'i1'));
+    });
+
+    it('keeps a user-edited metadata payload while restoring the mirror', () => {
+      const first = reconcileAbsBooks({
+        server,
+        items: [item('i1', 'Server Title')],
+        progress: [],
+        library: [],
+        lastPlayedAtByHash: new Map(),
+        now: 1000,
+      }).upserts[0]!;
+      // The metadata editor rewrites `metadata` wholesale, so an edit can drop
+      // the mirror; the next pass must restore it without losing the edit.
+      const edited: Book = {
+        ...first,
+        title: 'My Title',
+        metadataUpdatedAt: 1500,
+        metadata: { title: 'My Title', author: 'My Author', language: 'en', publisher: 'Mine' },
+      };
+      const { upserts } = reconcileAbsBooks({
+        server,
+        items: [item('i1', 'Server Title')],
+        progress: [],
+        library: [edited],
+        lastPlayedAtByHash: new Map(),
+        now: 2000,
+      });
+      expect(upserts).toHaveLength(1);
+      expect(upserts[0]!.title).toBe('My Title');
+      expect(upserts[0]!.metadata!.publisher).toBe('Mine');
+      expect(upserts[0]!.metadata!.absSource).toBe(makeAbsFilePath('srv1', 'i1'));
+    });
+
+    it('adopts a row pulled from the cloud instead of duplicating it', () => {
+      // What a peer that has the same server configured actually holds after
+      // the cloud pull: the same hash (md5 of the abs:// path), filePath and
+      // mirrors rebuilt by transformBookFromDB, but no local sync history.
+      const pulled: Book = {
+        hash: md5(makeAbsFilePath('srv1', 'i1')),
+        format: 'ABS',
+        filePath: makeAbsFilePath('srv1', 'i1'),
+        title: 'Peter Pan',
+        author: 'Author A',
+        duration: 3600,
+        createdAt: 500,
+        updatedAt: 500,
+        syncedAt: 600,
+        metadata: {
+          title: 'Peter Pan',
+          author: 'Author A',
+          language: '',
+          absSource: makeAbsFilePath('srv1', 'i1'),
+          absDuration: 3600,
+        },
+      };
+
+      const { upserts, tombstoneHashes } = reconcileAbsBooks({
+        server,
+        items: [item('i1', 'Peter Pan')],
+        progress: [],
+        library: [pulled],
+        lastPlayedAtByHash: new Map(),
+        now: 2000,
+      });
+      // Identity matched by filePath -> same hash -> nothing to add or remove.
+      expect(tombstoneHashes).toEqual([]);
+      expect(upserts).toEqual([]);
+    });
+  });
 });

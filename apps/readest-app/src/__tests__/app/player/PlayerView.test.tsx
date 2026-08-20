@@ -288,10 +288,12 @@ describe('PlayerView embedded Episodes subview', () => {
       />,
     );
 
-    // Still on the Episodes subview - not the stale transport for episode
-    // one - with the tapped row marked pending.
+    // Still on the Episodes subview (now a Dialog sheet) - not the stale
+    // transport for episode one - with the tapped row marked pending. The
+    // transport underneath stays mounted the whole time the sheet is open,
+    // so the scrubber is still in the DOM.
     expect(screen.getByText('Episode Two')).toBeTruthy();
-    expect(screen.queryByTestId('scrubber')).toBeNull();
+    expect(screen.queryByTestId('scrubber')).toBeTruthy();
     const pendingRow = screen.getByText('Episode Two').closest('button');
     expect(pendingRow?.getAttribute('aria-busy')).toBe('true');
 
@@ -401,7 +403,156 @@ describe('PlayerView embedded Episodes subview', () => {
     expect(screen.getByText('Episode Two').closest('button')?.getAttribute('aria-busy')).toBe(
       'false',
     );
-    // Still on the Episodes subview - a failed claim must not switch views.
-    expect(screen.queryByTestId('scrubber')).toBeNull();
+    // Still on the Episodes subview (sheet stays open) - a failed claim must
+    // not switch views. The transport underneath stays mounted regardless.
+    expect(screen.getByText('Episode Two')).toBeTruthy();
+    expect(screen.queryByTestId('scrubber')).toBeTruthy();
+  });
+});
+
+describe('PlayerView picker sheets', () => {
+  beforeEach(() => {
+    mocks.getSessionByHash.mockReturnValue(null);
+    mocks.sessionListeners.clear();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  const audiobookOf = (episodeId?: string) => {
+    const controller = new FakeController(episodeId);
+    controller.getChapters = () => [
+      { id: 1, title: 'Chapter One', start: 0, end: 120 },
+      { id: 2, title: 'Chapter Two', start: 120, end: 240 },
+    ];
+    return controller;
+  };
+
+  it('opens the Speed picker in a dialog over the still-mounted transport, and applies live', () => {
+    const controller = audiobookOf('ep1');
+    const setRateSpy = vi.spyOn(controller, 'setRate');
+    render(
+      <PlayerView
+        book={book}
+        bookKey='h1-ep1'
+        controller={asController(controller)}
+        onGoBack={vi.fn()}
+        onSelectEpisode={vi.fn()}
+        pendingEpisodeId={null}
+      />,
+    );
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    fireEvent.click(screen.getByLabelText('Speed'));
+
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    // Transport (scrubber, cover) stays mounted underneath the sheet.
+    expect(screen.getByTestId('scrubber')).toBeTruthy();
+
+    const slider = screen.getByRole('slider');
+    fireEvent.change(slider, { target: { value: '1.5' } });
+    fireEvent.pointerUp(slider);
+    // Speed applies live, straight to the controller - no "confirm" step.
+    expect(setRateSpy).toHaveBeenCalledWith(1.5);
+  });
+
+  it('dismissing the Speed sheet returns to the transport', () => {
+    const controller = audiobookOf('ep1');
+    render(
+      <PlayerView
+        book={book}
+        bookKey='h1-ep1'
+        controller={asController(controller)}
+        onGoBack={vi.fn()}
+        onSelectEpisode={vi.fn()}
+        pendingEpisodeId={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText('Speed'));
+    expect(screen.getByRole('dialog')).toBeTruthy();
+
+    // Matches the Settings-sheet dismissal convention: the Dialog's own
+    // close affordance calls onClose. The default header renders both a
+    // mobile back-styled button and a desktop pill, both labeled 'Close'.
+    fireEvent.click(screen.getAllByLabelText('Close')[0]!);
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByTestId('scrubber')).toBeTruthy();
+  });
+
+  it('opens the Sleep Timer picker and selecting an option applies it and closes the sheet', () => {
+    const controller = audiobookOf('ep1');
+    render(
+      <PlayerView
+        book={book}
+        bookKey='h1-ep1'
+        controller={asController(controller)}
+        onGoBack={vi.fn()}
+        onSelectEpisode={vi.fn()}
+        pendingEpisodeId={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText('Sleep Timer'));
+    expect(screen.getByRole('dialog')).toBeTruthy();
+
+    fireEvent.click(screen.getByText('End of Chapter'));
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByTestId('scrubber')).toBeTruthy();
+  });
+
+  it('opens the Chapters picker and tapping a chapter seeks and closes the sheet', () => {
+    const controller = audiobookOf('ep1');
+    const seekSpy = vi.spyOn(controller, 'seekToChapter');
+    render(
+      <PlayerView
+        book={book}
+        bookKey='h1-ep1'
+        controller={asController(controller)}
+        onGoBack={vi.fn()}
+        onSelectEpisode={vi.fn()}
+        pendingEpisodeId={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText('Chapters'));
+    expect(screen.getByRole('dialog')).toBeTruthy();
+
+    fireEvent.click(screen.getByText('Chapter Two'));
+
+    expect(seekSpy).toHaveBeenCalledWith(1);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByTestId('scrubber')).toBeTruthy();
+  });
+
+  it('opens the Episodes picker in a dialog over the transport', async () => {
+    mocks.loadAbsEpisodes.mockResolvedValue({
+      episodes: [
+        { id: 'ep1', title: 'Episode One', publishedAt: 2000, duration: 600 },
+        { id: 'ep2', title: 'Episode Two', publishedAt: 1000, duration: 500 },
+      ],
+      progressByEpisodeId: new Map(),
+    });
+    const controller = audiobookOf('ep1');
+    render(
+      <PlayerView
+        book={book}
+        bookKey='h1-ep1'
+        controller={asController(controller)}
+        onGoBack={vi.fn()}
+        onSelectEpisode={vi.fn()}
+        pendingEpisodeId={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText('Episodes'));
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(screen.getByTestId('scrubber')).toBeTruthy();
+
+    await waitFor(() => expect(screen.getByText('Episode One')).toBeTruthy());
   });
 });

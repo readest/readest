@@ -9,13 +9,18 @@ const AUTO_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 export function useABSSync() {
   const { appService, envConfig } = useEnv();
   const isSyncingRef = useRef(false);
-  const hydratePromiseRef = useRef<Promise<void> | null>(null);
 
-  const ensureHydrated = useCallback(() => {
-    if (!hydratePromiseRef.current) {
-      hydratePromiseRef.current = useABSServerStore.getState().loadABSServers(envConfig);
-    }
-    return hydratePromiseRef.current;
+  // Retry hydration while the store is empty instead of caching the first
+  // attempt: `EnvProvider` publishes `appService` BEFORE
+  // `appService.loadSettings()` resolves, so this hook's mount-time
+  // hydration can read the `{}` placeholder settings and come back with
+  // nothing. An empty store is no information, not "the user has no
+  // servers" — caching it stranded ABS sync (and left every later
+  // `saveABSServers` writing an empty list) for the whole session.
+  // `loadABSServers` is a cheap in-memory read, so re-running it is fine.
+  const ensureHydrated = useCallback(async () => {
+    if (useABSServerStore.getState().servers.length > 0) return;
+    await useABSServerStore.getState().loadABSServers(envConfig);
   }, [envConfig]);
 
   const checkABSServers = useCallback(async () => {

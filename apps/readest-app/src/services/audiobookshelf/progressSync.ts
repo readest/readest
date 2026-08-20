@@ -197,13 +197,16 @@ export class AbsProgressSyncer {
     const idx = library.findIndex((b) => b.hash === this.#bookHash);
     if (idx !== -1) {
       const book = library[idx]!;
+      const now = Date.now();
       const progress: [number, number] = [Math.round(pos), Math.round(this.#duration)];
-      const updatedBook: Book = { ...book, progress };
+      // Bump updatedAt so Date Read sorting reflects listening activity, the
+      // same way the reader's progress saves do for regular books. Reconcile
+      // never compares updatedAt, so this cannot cause sync churn.
+      const updatedBook: Book = { ...book, progress, updatedAt: now };
       const newLibrary = library.slice();
       newLibrary[idx] = updatedBook;
       setLibrary(newLibrary);
 
-      const now = Date.now();
       if (force || now - this.#lastPersistAt >= PERSIST_THROTTLE_MS) {
         this.#lastPersistAt = now;
         Promise.resolve(this.#appService.saveLibraryBooks(newLibrary)).catch(console.warn);

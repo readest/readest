@@ -2,7 +2,6 @@ import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 import {
   MdAlarm,
-  MdArrowBackIosNew,
   MdCheck,
   MdChevronRight,
   MdGraphicEq,
@@ -31,6 +30,7 @@ import TTSScrubber from '@/app/reader/components/tts/TTSScrubber';
 import SpeedRuler, { formatRate } from '@/app/reader/components/tts/SpeedRuler';
 import { getTTSTimeoutOptions } from '@/app/reader/components/tts/TTSPlayerSheet';
 import { useCountdownLabel } from '@/app/reader/components/tts/useCountdownLabel';
+import Dialog from '@/components/Dialog';
 import Spinner from '@/components/Spinner';
 import EpisodesView from './EpisodesView';
 
@@ -238,184 +238,177 @@ const PlayerView = ({
         ? timerLabel
         : _('Sleep Timer');
 
-  const header =
-    view === 'main' ? (
-      <div className='relative flex h-12 w-full items-center px-2'>
-        <button
-          type='button'
-          aria-label={_('Go Back')}
-          onClick={onGoBack}
-          className='btn btn-ghost btn-circle z-10 flex h-9 min-h-9 w-9'
-        >
-          <IoArrowBack size={iconSize24 * 0.85} className='rtl:rotate-180' />
-        </button>
-        <div className='pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-16 text-center'>
-          <span className='line-clamp-1 text-sm font-semibold'>{headingTitle}</span>
-          <span className='text-base-content/70 line-clamp-1 text-xs'>{headingSubtitle}</span>
-        </div>
+  // The four pickers (speed / sleep timer / chapters / episodes) no longer
+  // replace this view - they open in a Dialog sheet over it (snapHeight on
+  // mobile presents it as a bottom action sheet with the standard drag bar;
+  // desktop gets the Dialog's own default centered-modal presentation, same
+  // as Settings and the reader's TTSPlayerSheet). The transport below stays
+  // mounted the whole time, so dismissing the sheet (drag down / scrim tap /
+  // back) just returns to it without any view-switch flicker.
+  const pickerTitle =
+    view === 'speed'
+      ? _('Speed')
+      : view === 'chapters'
+        ? _('Chapters')
+        : view === 'episodes'
+          ? _('Episodes')
+          : _('Set Timeout');
+
+  const header = (
+    <div className='relative flex h-12 w-full items-center px-2'>
+      <button
+        type='button'
+        aria-label={_('Go Back')}
+        onClick={onGoBack}
+        className='btn btn-ghost btn-circle z-10 flex h-9 min-h-9 w-9'
+      >
+        <IoArrowBack size={iconSize24 * 0.85} className='rtl:rotate-180' />
+      </button>
+      <div className='pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-16 text-center'>
+        <span className='line-clamp-1 text-sm font-semibold'>{headingTitle}</span>
+        <span className='text-base-content/70 line-clamp-1 text-xs'>{headingSubtitle}</span>
       </div>
-    ) : (
-      <div className='relative flex h-12 w-full items-center px-2'>
-        <button
-          type='button'
-          aria-label={_('Go Back')}
-          onClick={() => setView('main')}
-          className='btn btn-ghost btn-circle z-10 flex h-9 min-h-9 w-9'
-        >
-          <MdArrowBackIosNew size={iconSize24 * 0.8} className='rtl:rotate-180' />
-        </button>
-        <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
-          <span className='line-clamp-1 text-center font-semibold'>
-            {view === 'speed'
-              ? _('Speed')
-              : view === 'chapters'
-                ? _('Chapters')
-                : view === 'episodes'
-                  ? _('Episodes')
-                  : _('Set Timeout')}
-          </span>
-        </div>
-      </div>
-    );
+    </div>
+  );
 
   return (
     <div className='bg-base-100 flex h-full w-full flex-col overflow-hidden'>
       {header}
       <div className='flex w-full flex-1 flex-col items-center gap-4 overflow-y-auto px-4 pb-6 pt-2'>
-        {view === 'main' && (
-          <>
-            {book.coverImageUrl && !coverFailed ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={book.coverImageUrl}
-                alt=''
-                className='not-eink:shadow-lg eink-bordered mt-4 h-56 w-56 rounded-2xl object-cover'
-                onError={() => setCoverFailed(true)}
-              />
-            ) : (
-              <div className='eink-bordered bg-base-200 text-base-content/40 mt-4 flex h-56 w-56 items-center justify-center rounded-2xl'>
-                <MdMenuBook size={iconSize32 * 1.5} />
-              </div>
-            )}
-            <div className='flex w-full flex-col items-center gap-0.5 text-center'>
-              <span className='line-clamp-2 text-lg font-semibold'>{headingTitle}</span>
-              <span className='text-base-content/70 line-clamp-1 text-sm'>{headingSubtitle}</span>
-              {currentChapter && (
-                <span className='text-base-content/60 line-clamp-1 text-sm'>
-                  {currentChapter.title}
-                </span>
-              )}
-            </div>
-            <div className='w-full max-w-md'>
-              <TTSScrubber
-                bookKey={bookKey}
-                isEink={isEink}
-                onSeek={handleSeek}
-                onGetPlaybackInfo={() => controller.getPlaybackInfo()}
-              />
-            </div>
-            <div dir='ltr' className='flex items-center justify-center gap-2'>
-              <button
-                type='button'
-                className='rounded-full p-2'
-                title={_('Previous Chapter')}
-                aria-label={_('Previous Chapter')}
-                onClick={() => void controller.backward()}
-              >
-                <MdSkipPrevious size={iconSize28} />
-              </button>
-              <button
-                type='button'
-                className='rounded-full p-2'
-                title={_('Back 15 Seconds')}
-                aria-label={_('Back 15 Seconds')}
-                onClick={() => void controller.backward(true)}
-              >
-                <TbRewindBackward15 size={iconSize24} />
-              </button>
-              <button
-                type='button'
-                className='btn btn-contrast btn-circle mx-2 h-16 min-h-16 w-16'
-                aria-label={isPlaying ? _('Pause') : _('Play')}
-                onClick={handleTogglePlay}
-              >
-                {isPlaying ? (
-                  <MdOutlinePause size={iconSize32} />
-                ) : (
-                  <MdPlayArrow size={iconSize32} />
-                )}
-              </button>
-              <button
-                type='button'
-                className='rounded-full p-2'
-                title={_('Forward 30 Seconds')}
-                aria-label={_('Forward 30 Seconds')}
-                onClick={() => void controller.forward(true)}
-              >
-                <TbRewindForward30 size={iconSize24} />
-              </button>
-              <button
-                type='button'
-                className='rounded-full p-2'
-                title={_('Next Chapter')}
-                aria-label={_('Next Chapter')}
-                onClick={() => void controller.forward()}
-              >
-                <MdSkipNext size={iconSize28} />
-              </button>
-            </div>
-            <div className='flex w-full max-w-md gap-2'>
-              <button
-                type='button'
-                aria-label={_('Speed')}
-                onClick={() => setView('speed')}
-                className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
-              >
-                <span className='text-sm font-semibold tabular-nums'>{formatRate(rate)}</span>
-                <span className='text-base-content/60 max-w-full truncate px-1 text-xs'>
-                  {_('Speed')}
-                </span>
-              </button>
-              <button
-                type='button'
-                aria-label={_('Sleep Timer')}
-                onClick={() => setView('timer')}
-                className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
-              >
-                <MdAlarm size={iconSize18} />
-                <span className='text-base-content/60 max-w-full truncate px-1 text-xs tabular-nums'>
-                  {timerCaption}
-                </span>
-              </button>
-              {chapters.length > 0 && (
-                <button
-                  type='button'
-                  aria-label={_('Chapters')}
-                  onClick={() => setView('chapters')}
-                  className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
-                >
-                  <MdChevronRight size={iconSize18} />
-                  <span className='text-base-content/60 max-w-full truncate px-1 text-xs'>
-                    {_('Chapters')}
-                  </span>
-                </button>
-              )}
-              {episodeId && (
-                <button
-                  type='button'
-                  aria-label={_('Episodes')}
-                  onClick={() => setView('episodes')}
-                  className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
-                >
-                  <MdPodcasts size={iconSize18} />
-                  <span className='text-base-content/60 max-w-full truncate px-1 text-xs'>
-                    {_('Episodes')}
-                  </span>
-                </button>
-              )}
-            </div>
-          </>
+        {book.coverImageUrl && !coverFailed ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={book.coverImageUrl}
+            alt=''
+            className='not-eink:shadow-lg eink-bordered mt-4 h-56 w-56 rounded-2xl object-cover'
+            onError={() => setCoverFailed(true)}
+          />
+        ) : (
+          <div className='eink-bordered bg-base-200 text-base-content/40 mt-4 flex h-56 w-56 items-center justify-center rounded-2xl'>
+            <MdMenuBook size={iconSize32 * 1.5} />
+          </div>
         )}
+        <div className='flex w-full flex-col items-center gap-0.5 text-center'>
+          <span className='line-clamp-2 text-lg font-semibold'>{headingTitle}</span>
+          <span className='text-base-content/70 line-clamp-1 text-sm'>{headingSubtitle}</span>
+          {currentChapter && (
+            <span className='text-base-content/60 line-clamp-1 text-sm'>
+              {currentChapter.title}
+            </span>
+          )}
+        </div>
+        <div className='w-full max-w-md'>
+          <TTSScrubber
+            bookKey={bookKey}
+            isEink={isEink}
+            onSeek={handleSeek}
+            onGetPlaybackInfo={() => controller.getPlaybackInfo()}
+          />
+        </div>
+        <div dir='ltr' className='flex items-center justify-center gap-2'>
+          <button
+            type='button'
+            className='rounded-full p-2'
+            title={_('Previous Chapter')}
+            aria-label={_('Previous Chapter')}
+            onClick={() => void controller.backward()}
+          >
+            <MdSkipPrevious size={iconSize28} />
+          </button>
+          <button
+            type='button'
+            className='rounded-full p-2'
+            title={_('Back 15 Seconds')}
+            aria-label={_('Back 15 Seconds')}
+            onClick={() => void controller.backward(true)}
+          >
+            <TbRewindBackward15 size={iconSize24} />
+          </button>
+          <button
+            type='button'
+            className='btn btn-contrast btn-circle mx-2 h-16 min-h-16 w-16'
+            aria-label={isPlaying ? _('Pause') : _('Play')}
+            onClick={handleTogglePlay}
+          >
+            {isPlaying ? <MdOutlinePause size={iconSize32} /> : <MdPlayArrow size={iconSize32} />}
+          </button>
+          <button
+            type='button'
+            className='rounded-full p-2'
+            title={_('Forward 30 Seconds')}
+            aria-label={_('Forward 30 Seconds')}
+            onClick={() => void controller.forward(true)}
+          >
+            <TbRewindForward30 size={iconSize24} />
+          </button>
+          <button
+            type='button'
+            className='rounded-full p-2'
+            title={_('Next Chapter')}
+            aria-label={_('Next Chapter')}
+            onClick={() => void controller.forward()}
+          >
+            <MdSkipNext size={iconSize28} />
+          </button>
+        </div>
+        <div className='flex w-full max-w-md gap-2'>
+          <button
+            type='button'
+            aria-label={_('Speed')}
+            onClick={() => setView('speed')}
+            className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
+          >
+            <span className='text-sm font-semibold tabular-nums'>{formatRate(rate)}</span>
+            <span className='text-base-content/60 max-w-full truncate px-1 text-xs'>
+              {_('Speed')}
+            </span>
+          </button>
+          <button
+            type='button'
+            aria-label={_('Sleep Timer')}
+            onClick={() => setView('timer')}
+            className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
+          >
+            <MdAlarm size={iconSize18} />
+            <span className='text-base-content/60 max-w-full truncate px-1 text-xs tabular-nums'>
+              {timerCaption}
+            </span>
+          </button>
+          {chapters.length > 0 && (
+            <button
+              type='button'
+              aria-label={_('Chapters')}
+              onClick={() => setView('chapters')}
+              className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
+            >
+              <MdChevronRight size={iconSize18} />
+              <span className='text-base-content/60 max-w-full truncate px-1 text-xs'>
+                {_('Chapters')}
+              </span>
+            </button>
+          )}
+          {episodeId && (
+            <button
+              type='button'
+              aria-label={_('Episodes')}
+              onClick={() => setView('episodes')}
+              className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
+            >
+              <MdPodcasts size={iconSize18} />
+              <span className='text-base-content/60 max-w-full truncate px-1 text-xs'>
+                {_('Episodes')}
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+      <Dialog
+        id='player_picker_sheet'
+        isOpen={view !== 'main'}
+        onClose={() => setView('main')}
+        snapHeight={0.6}
+        title={pickerTitle}
+      >
         {view === 'speed' && (
           <div className='flex w-full max-w-md flex-col items-center pt-4'>
             <SpeedRuler rate={rate} onSelect={handleSelectRate} />
@@ -490,7 +483,7 @@ const PlayerView = ({
           ) : (
             <Spinner loading />
           ))}
-      </div>
+      </Dialog>
     </div>
   );
 };

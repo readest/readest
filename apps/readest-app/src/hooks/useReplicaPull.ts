@@ -450,7 +450,12 @@ const triggerIncrementalPullAll = (): void => {
       }
       await Promise.allSettled(
         kindsToPull.map(async (kind) => {
-          const rows = rowsByKind.get(kind) ?? [];
+          // Absent (as opposed to empty) means the backend answered nothing
+          // for this kind — see ReplicaSyncManager.pullMany. Applying an
+          // empty row set instead would be indistinguishable from the server
+          // having no rows at all.
+          const rows = rowsByKind.get(kind);
+          if (!rows) return;
           try {
             await runPullForKind(kind, service, envConfig, undefined, async () => rows);
           } catch (err) {
@@ -649,7 +654,15 @@ export const useReplicaPull = ({
           await Promise.allSettled(
             eligible.map(async (kind) => {
               try {
-                const rows = rowsByKind.get(kind) ?? [];
+                // Absent (as opposed to empty) means the backend answered
+                // nothing for this kind — see ReplicaSyncManager.pullMany.
+                // Release the dedup slot so a later mount retries instead of
+                // applying "no information" as an empty server state.
+                const rows = rowsByKind.get(kind);
+                if (!rows) {
+                  pulledKinds.delete(kind);
+                  return;
+                }
                 await runPullForKind(kind, appService, envConfig, undefined, async () => rows);
               } catch (err) {
                 console.warn(`replica ${kind} boot apply failed`, err);

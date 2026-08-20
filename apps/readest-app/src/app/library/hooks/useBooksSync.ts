@@ -43,14 +43,6 @@ export const useBooksSync = () => {
       // Demo books are the sample shelf we hand anonymous web visitors, not the
       // user's content — they never go to the cloud (issue #5049).
       .filter((book) => !isDemoBook(book))
-      // An ABS book is a stub for a stream on someone's Audiobookshelf server:
-      // its identity lives entirely in `filePath` (`abs://<serverId>/<itemId>`),
-      // which the push below strips. Peers would accumulate dead `format: 'ABS'`
-      // rows with no filePath — unopenable, stuck at 0:00, and never healed or
-      // tombstoned, because reconcileAbsBooks only ever touches books it can
-      // parse a server id out of. Peers that configured the same server already
-      // materialize these books themselves, with the same hash.
-      .filter((book) => !isAudiobook(book))
       .filter(
         (book) =>
           !book.syncedAt ||
@@ -69,6 +61,12 @@ export const useBooksSync = () => {
       // peers chase a non-existent path instead of downloading).
       // `altFilePaths` (the other on-disk names that resolve to the same book)
       // is device-local for exactly the same reason.
+      //
+      // An ABS book is the one format whose `filePath` is NOT device-local —
+      // `abs://<serverId>/<itemId>` is its entire identity — so it keeps
+      // riding along in `metadata.absSource` (reconcileAbsBooks writes it) and
+      // is rebuilt by transformBookFromDB. The strip below still applies to it:
+      // the device-field convention holds, only the mirror crosses.
       .map(({ filePath: _filePath, altFilePaths: _altFilePaths, ...rest }): Book => rest);
     return {
       books: newBooks,
@@ -195,10 +193,12 @@ export const useBooksSync = () => {
         .map((book) => book.hash),
     );
     const cloudBooks = syncedBooks.filter(
-      // Rows pushed before ABS books were excluded from the push (above) are
-      // dead on arrival: `filePath` was stripped, so nothing can resolve the
-      // server or item they came from. Drop them rather than shelving an
-      // unopenable entry; the local ABS sync owns these books.
+      // An ABS row arrives with its `abs://` filePath rebuilt from
+      // `metadata.absSource` (transformBookFromDB). A row that still has none
+      // — pushed before the mirror existed, when the push stripped filePath
+      // and carried nothing in its place — is dead on arrival: nothing can
+      // resolve the server or item it came from. Drop it rather than shelving
+      // an unopenable entry.
       (book) =>
         !demoHashes.has(book.hash) && !(isAudiobook(book) && !parseAbsFilePath(book.filePath)),
     );
@@ -276,11 +276,13 @@ export const useBooksSync = () => {
     // `uploadedAt` gates adoption so a peer never shelves a book whose file it
     // cannot fetch. A feed book has no file to fetch — it is rebuilt from
     // `metadata.feedUrl` — so it would never pass that gate and the
-    // subscription stayed stuck on the device that added it (issue #5307).
+    // subscription stayed stuck on the device that added it (issue #5307). An
+    // ABS book is fileless for the same reason: it streams from the
+    // Audiobookshelf server named in its `abs://` filePath.
     const newBooks = cloudBooks.filter(
       (newBook) =>
         !bookHashesInLibrary.has(newBook.hash) &&
-        (newBook.uploadedAt || isFeedBook(newBook)) &&
+        (newBook.uploadedAt || isFeedBook(newBook) || isAudiobook(newBook)) &&
         !newBook.deletedAt,
     );
 

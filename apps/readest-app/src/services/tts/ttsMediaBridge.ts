@@ -27,6 +27,11 @@ export interface TTSMediaBridgeMeta {
   author: string;
   coverImageUrl: string | null;
   metadataMode: TTSMediaMetadataMode;
+  // False when this session's audio plays through a WebView media element, so
+  // the native media session leaves audio focus alone — see
+  // MediaSessionState.ownsAudioFocus. Defaults to true: TTS (WebAudio or the
+  // platform engine) and native narration render outside the WebView.
+  ownsAudioFocus?: boolean;
   // Live section label while the reader is mounted; returns undefined when
   // the supplying hook is dead (headless) — the bridge then keeps the last
   // known label rather than freezing on a stale store read.
@@ -162,6 +167,7 @@ export class TTSMediaBridge {
     if (mediaSession instanceof TauriMediaSession) {
       await mediaSession.setActive({
         active: true,
+        ownsAudioFocus: meta.ownsAudioFocus ?? true,
         // bookKey is `${hash}-${uniqueId()}`; the hash alone addresses the book
         // for a readest://book/{hash} resume deep link from the car.
         bookHash: meta.bookKey.split('-')[0],

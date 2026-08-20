@@ -11,6 +11,7 @@ import {
 import { DBBookConfig, DBBook, DBBookNote } from '@/types/records';
 import { sanitizeString } from './sanitize';
 import { buildFeedBookUrl } from '@/services/rss/feedBookUrl';
+import { restoreAbsBookFields } from './audiobook';
 
 export const transformBookConfigToDB = (bookConfig: unknown, userId: string): DBBookConfig => {
   const {
@@ -167,6 +168,12 @@ export const transformBookFromDB = (dbBook: DBBook): Book => {
   // metadata so the reader can rebuild the feed:// descriptor here.
   if (!book.url && book.metadata?.feedUrl) {
     book.url = buildFeedBookUrl(book.metadata.feedUrl);
+  }
+  // Same story for an ABS stub, whose identity is its `abs://` filePath: no
+  // column carries it (and the push strips filePath as device-local), so it
+  // rides in metadata and is rebuilt here along with the badge fields.
+  if (book.format === 'ABS') {
+    restoreAbsBookFields(book);
   }
   return book;
 };

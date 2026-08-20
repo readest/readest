@@ -295,6 +295,17 @@ describe('AbsProgressSyncer', () => {
       expect(originalBook.progress).toBeUndefined();
     });
 
+    it('bumps updatedAt on playback so Date Read sorting reflects listening', async () => {
+      const originalBook = seedBook();
+      const before = originalBook.updatedAt;
+      const { localSyncer } = makeSyncer();
+      await localSyncer.begin(0, 0);
+      localSyncer.hooks().onTick!(515);
+
+      const updatedBook = useLibraryStore.getState().library.find((b) => b.hash === 'h1');
+      expect(updatedBook!.updatedAt).toBeGreaterThan(before);
+    });
+
     it('throttles the disk write across two rapid ticks', async () => {
       seedBook();
       const { localSyncer, appService } = makeSyncer();

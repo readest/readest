@@ -66,6 +66,11 @@ pub struct GetVoicesResponse {
 #[serde(rename_all = "camelCase")]
 pub struct SetMediaSessionActiveRequest {
     pub active: bool,
+    // Android: whether the media service should hold the app's audio focus for
+    // this session. False when the session's audio plays through a WebView
+    // media element, which Chromium already requests focus for (see
+    // MediaPlaybackService.ownsAudioFocus). Defaults to true when absent.
+    pub owns_audio_focus: Option<bool>,
     pub notification_title: Option<String>,
     pub notification_text: Option<String>,
     pub foreground_service_title: Option<String>,

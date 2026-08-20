@@ -18,6 +18,14 @@ export interface PlaybackState {
 
 export interface MediaSessionState {
   active: boolean;
+  // Android: whether the media service should hold the app's audio focus for
+  // this session. True for audio the app renders itself (TTS engines,
+  // WebAudio, the native narration player). FALSE when the audio plays through
+  // a WebView media element: Chromium requests audio focus for that element
+  // under the same uid, the service's competing request loses to it, and the
+  // resulting AUDIOFOCUS_LOSS comes back as a synthetic media-session-pause
+  // that stops playback the app itself just started.
+  ownsAudioFocus?: boolean;
   notificationTitle?: string;
   notificationText?: string;
   foregroundServiceTitle?: string;

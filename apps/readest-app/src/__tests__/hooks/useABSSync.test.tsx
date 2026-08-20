@@ -106,6 +106,28 @@ describe('useABSSync', () => {
     expect(mockedSync).toHaveBeenCalledWith(appService);
   });
 
+  // `EnvProvider` publishes `appService` BEFORE `appService.loadSettings()`
+  // resolves, so the mount-time hydration can read the `{}` placeholder
+  // settings. Caching that empty result stranded ABS sync for the whole
+  // session — and left every `saveABSServers` publishing an empty list.
+  test('re-hydrates when the first attempt ran before settings loaded', async () => {
+    useSettingsStore.setState({ settings: {} as SystemSettings });
+    mockedSync.mockResolvedValue();
+
+    renderHook(() => useABSSync());
+    await settle();
+    expect(mockedSync).not.toHaveBeenCalled();
+
+    // Settings land after that first attempt.
+    useSettingsStore.setState({ settings: makeSettings({ absServers: [server] }) });
+    await act(async () => {
+      await eventDispatcher.dispatch('sync-abs-servers');
+    });
+
+    expect(useABSServerStore.getState().getAvailableServers()).toEqual([server]);
+    expect(mockedSync).toHaveBeenCalledTimes(1);
+  });
+
   test('the sync-abs-servers event triggers a run', async () => {
     mockedSync.mockResolvedValue();
 

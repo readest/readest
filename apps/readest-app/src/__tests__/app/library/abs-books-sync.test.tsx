@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 
 import type { Book } from '@/types/book';
-import { makeAbsFilePath } from '@/utils/audiobook';
+import { buildAbsBookMetadata, makeAbsFilePath } from '@/utils/audiobook';
 
 /**
  * ABS books are stubs for streams on an Audiobookshelf server. Their whole
@@ -10,15 +10,14 @@ import { makeAbsFilePath } from '@/utils/audiobook';
  * strips `filePath` from every row, because for ordinary books it is a
  * device-local absolute path.
  *
- * So an ABS book that reaches the Readest Cloud book channel arrives on peers
- * as a `format: 'ABS'` row with nothing to resolve: unopenable, stuck at 0:00,
- * and permanently stranded — `reconcileAbsBooks` only touches books it can
- * parse a server id out of, so it neither heals nor tombstones them. Worse, on
- * a peer that HAS the same server configured, that row merges over the good
- * local one and takes its filePath away.
+ * So the identity rides across inside the synced `metadata` column instead
+ * (`metadata.absSource`, mirroring how a feed book carries `metadata.feedUrl`),
+ * and `transformBookFromDB` rebuilds `filePath` from it on the way in. That
+ * makes an ABS row shareable across devices: peers shelve it, and a peer that
+ * has the same server configured adopts it by hash instead of duplicating it.
  *
- * ABS books must stay out of the push, and a filePath-less ABS row must be
- * dropped on the way back in.
+ * A row that still has no resolvable identity — one pushed before the mirror
+ * existed — is dead on arrival and must still be dropped.
  */
 
 const ABS_FILE_PATH = makeAbsFilePath('srv-content-id', 'item-1');
@@ -77,6 +76,19 @@ const makeBook = (over: Partial<Book> & Pick<Book, 'hash'>): Book => ({
   ...over,
 });
 
+/** An ABS row as reconcileAbsBooks produces it: filePath plus the mirror. */
+const makeAbsBook = (over: Partial<Book> & Pick<Book, 'hash'>): Book => {
+  const book = makeBook({
+    format: 'ABS',
+    filePath: ABS_FILE_PATH,
+    title: 'An Audiobook',
+    duration: 3600,
+    ...over,
+  });
+  book.metadata = buildAbsBookMetadata(book);
+  return book;
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   syncState.syncedBooks = null;
@@ -84,42 +96,51 @@ beforeEach(() => {
 });
 
 describe('ABS audiobooks and the Readest Cloud book channel', () => {
-  it('never pushes an ABS book to the cloud', async () => {
-    useLibraryStore.getState().setLibrary([
-      makeBook({
-        hash: 'abs-1',
-        format: 'ABS',
-        filePath: ABS_FILE_PATH,
-        title: 'An Audiobook',
-      }),
-      makeBook({ hash: 'mine-1', title: 'My Own Book' }),
-    ]);
+  it('pushes an ABS book, carrying its identity in metadata instead of filePath', async () => {
+    useLibraryStore
+      .getState()
+      .setLibrary([makeAbsBook({ hash: 'abs-1' }), makeBook({ hash: 'mine-1' })]);
 
     const { result } = renderHook(() => useBooksSync());
     await result.current.pushLibrary();
 
     // Both the explicit push and the auto-sync effect push, so assert on the
-    // set of hashes that ever reached the cloud channel, not the call count.
-    const pushed = new Set(
+    // set of rows that ever reached the cloud channel, not the call count.
+    const pushed = new Map(
       syncState.syncBooks.mock.calls
         .flatMap((call) => (call[0] ?? []) as Book[])
-        .map((book) => book.hash),
+        .map((book) => [book.hash, book]),
     );
 
-    expect([...pushed]).toEqual(['mine-1']);
+    expect([...pushed.keys()].sort()).toEqual(['abs-1', 'mine-1']);
+    const abs = pushed.get('abs-1')!;
+    expect(abs.filePath).toBeUndefined();
+    expect(abs.metadata?.absSource).toBe(ABS_FILE_PATH);
   });
 
-  it('drops a filePath-less ABS row on pull instead of stranding the local book', async () => {
+  it('shelves a pulled ABS row even though it has no uploadedAt', async () => {
+    useLibraryStore.setState({ libraryLoaded: true });
+    // What transformBookFromDB hands the hook: filePath rebuilt from the
+    // mirror, and no uploadedAt (an ABS stub has no file in cloud storage).
+    syncState.syncedBooks = [makeAbsBook({ hash: 'abs-1', uploadedAt: null, updatedAt: 3000 })];
+
+    renderHook(() => useBooksSync());
+
+    await waitFor(() => {
+      const shelved = useLibraryStore.getState().library.find((book) => book.hash === 'abs-1');
+      expect(shelved?.filePath).toBe(ABS_FILE_PATH);
+      expect(shelved?.duration).toBe(3600);
+    });
+  });
+
+  it('drops a filePath-less ABS row instead of stranding the local book', async () => {
     // Local: this device materialized the audiobook itself from the ABS
-    // server, so it has a real filePath and a fresh position. Cloud: the row a
-    // peer pushed before ABS books were excluded — same hash, no filePath, and
-    // a newer updatedAt, so it wins whole-row LWW.
+    // server, so it has a real filePath and a fresh position. Cloud: a row
+    // pushed before the metadata mirror existed — same hash, nothing to
+    // resolve a server or item from, and a newer updatedAt so it wins LWW.
     useLibraryStore.getState().setLibrary([
-      makeBook({
+      makeAbsBook({
         hash: 'abs-1',
-        format: 'ABS',
-        filePath: ABS_FILE_PATH,
-        title: 'An Audiobook',
         progress: [900, 3600],
         updatedAt: 1000,
       }),
@@ -133,8 +154,8 @@ describe('ABS audiobooks and the Readest Cloud book channel', () => {
         progress: [0, 3600],
         updatedAt: 3000,
       }),
-      // A never-seen ABS row from a server this device has not configured:
-      // there is nothing here that could ever resolve to a stream.
+      // A never-seen ABS row with no identity either: nothing here could ever
+      // resolve to a stream.
       makeBook({
         hash: 'abs-2',
         format: 'ABS',

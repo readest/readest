@@ -8,7 +8,7 @@ import { downloadFile } from '@/libs/storage';
 import type { ABSLibraryItem, ABSMediaProgress, ABSServer } from '@/types/audiobookshelf';
 import type { AppService } from '@/types/system';
 import type { Book } from '@/types/book';
-import { makeAbsFilePath, parseAbsFilePath } from '@/utils/audiobook';
+import { buildAbsBookMetadata, makeAbsFilePath, parseAbsFilePath } from '@/utils/audiobook';
 import { getCoverFilename } from '@/utils/book';
 import { md5 } from '@/utils/md5';
 import { stubTranslation as _, uniqueId } from '@/utils/misc';
@@ -123,10 +123,14 @@ export const reconcileAbsBooks = (input: {
         existing.duration !== duration ||
         existing.episodeCount !== numEpisodes ||
         !progressEqual(existing.progress, bookProgress) ||
-        (existing.deletedAt ?? null) !== null;
+        (existing.deletedAt ?? null) !== null ||
+        // The cloud sync mirror is missing (a row created before it existed)
+        // or was dropped by a metadata edit, which rewrites `metadata`
+        // wholesale. Without it the row syncs to peers with no identity.
+        existing.metadata?.absSource !== filePath;
       if (!changed) continue;
 
-      upserts.push({
+      const updated: Book = {
         ...existing,
         title,
         author,
@@ -137,9 +141,11 @@ export const reconcileAbsBooks = (input: {
         progress: bookProgress,
         deletedAt: null,
         updatedAt: now,
-      });
+      };
+      updated.metadata = buildAbsBookMetadata(updated);
+      upserts.push(updated);
     } else {
-      upserts.push({
+      const stub: Book = {
         hash: md5(filePath),
         format: 'ABS',
         filePath,
@@ -154,7 +160,11 @@ export const reconcileAbsBooks = (input: {
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
-      });
+      };
+      // The identity and badge fields have no cloud columns, so they ride to
+      // peers inside `metadata` — see buildAbsBookMetadata.
+      stub.metadata = buildAbsBookMetadata(stub);
+      upserts.push(stub);
     }
   }
 

@@ -4,6 +4,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { computeAbsServerContentId } from '@/services/sync/adapters/absServer';
 import type { ABSServer } from '@/types/audiobookshelf';
 import type { SystemSettings } from '@/types/settings';
+import type { EnvConfigType } from '@/services/environment';
 
 // Mock replicaPublish like the OPDS store test does.
 vi.mock('@/services/sync/replicaPublish', () => ({
@@ -11,10 +12,16 @@ vi.mock('@/services/sync/replicaPublish', () => ({
   publishReplicaDelete: vi.fn(),
 }));
 
+const makeEnvConfig = (): EnvConfigType => ({ getAppService: vi.fn() }) as unknown as EnvConfigType;
+
 describe('absServerStore', () => {
   beforeEach(() => {
     useABSServerStore.setState({ servers: [] });
-    useSettingsStore.setState({ settings: { absServers: [] } as unknown as SystemSettings });
+    useSettingsStore.setState({
+      settings: { absServers: [] } as unknown as SystemSettings,
+      setSettings: (s: SystemSettings) => useSettingsStore.setState({ settings: s }),
+      saveSettings: vi.fn(),
+    } as unknown as ReturnType<typeof useSettingsStore.getState>);
   });
 
   it('addServer computes contentId from normalized url and mints a reincarnation token', () => {
@@ -104,6 +111,57 @@ describe('absServerStore', () => {
     expect(removeServer(server.id)).toBe(true);
     expect(getAvailableServers()).toHaveLength(0);
     expect(useABSServerStore.getState().servers[0]!.deletedAt).toBeTruthy();
+  });
+
+  describe('saveABSServers', () => {
+    const persisted: ABSServer = {
+      id: 'srv-1',
+      contentId: 'srv-1',
+      addedAt: 1,
+      name: 'Home',
+      url: 'http://abs.local',
+      accessToken: 'stale',
+    };
+
+    // Device-reported data loss: `settings.absServers` came back empty on the
+    // first boot after an app update. `EnvProvider` publishes `appService`
+    // BEFORE `appService.loadSettings()` resolves, so the library-mount
+    // hydration (`useABSSync` -> `loadABSServers`) reads the `{}` placeholder
+    // settings and leaves the store empty for the whole session. Every later
+    // `saveABSServers` then published that empty store as the complete server
+    // list. The wipe trigger in the field was the ABS token refresh
+    // (`openAudiobook`'s `onTokensUpdated`), whose `updateServer` silently
+    // no-ops against the empty store before the unconditional persist.
+    it('keeps persisted servers the store never loaded', async () => {
+      // Boot race: the settings store still holds its `{}` placeholder.
+      useSettingsStore.setState({ settings: {} as SystemSettings });
+      await useABSServerStore.getState().loadABSServers(makeEnvConfig());
+      expect(useABSServerStore.getState().servers).toHaveLength(0);
+
+      // Settings land after that hydration already ran.
+      useSettingsStore.setState({
+        settings: { absServers: [persisted] } as unknown as SystemSettings,
+      });
+
+      // A 401 token refresh arrives on the un-hydrated store.
+      useABSServerStore.getState().updateServer('srv-1', { accessToken: 'rotated' });
+      await useABSServerStore.getState().saveABSServers(makeEnvConfig());
+
+      expect(useSettingsStore.getState().settings.absServers).toEqual([persisted]);
+    });
+
+    it('still removes a server the store did load and tombstoned', async () => {
+      useSettingsStore.setState({
+        settings: { absServers: [persisted] } as unknown as SystemSettings,
+      });
+      await useABSServerStore.getState().loadABSServers(makeEnvConfig());
+      expect(useABSServerStore.getState().getAvailableServers()).toHaveLength(1);
+
+      useABSServerStore.getState().removeServer('srv-1');
+      await useABSServerStore.getState().saveABSServers(makeEnvConfig());
+
+      expect(useSettingsStore.getState().settings.absServers).toEqual([]);
+    });
   });
 
   describe('findABSServerById', () => {

@@ -169,6 +169,23 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
         var pluginEventTrigger: ((String, JSObject) -> Unit)? = null
 
+        // Whether this service should hold the app's audio focus for the
+        // current session. True for audio the app renders itself (the
+        // TextToSpeech engine, WebAudio, the narration ExoPlayer above).
+        //
+        // FALSE for audiobook playback, whose audio comes from a WebView
+        // <audio> element: Chromium requests AUDIOFOCUS_GAIN for that element
+        // under this same uid, which preempts this service's request and
+        // delivers AUDIOFOCUS_LOSS here ~15ms later. The listener below then
+        // relayed media-session-pause to the WebView, pausing the audiobook a
+        // fraction of a second after it started. Chromium keeps the
+        // interruption contract for its own element (it pauses on loss and
+        // resumes after a transient one), so the service stays out of the way
+        // — the ACTION_AUDIO_BECOMING_NOISY receiver and the lock-screen
+        // transport controls below are unaffected either way.
+        @Volatile
+        var ownsAudioFocus: Boolean = true
+
         var currentTitle: String = "Read Aloud"
         var currentArtist: String = "Reading your content"
         var currentArtwork: Bitmap? = null
@@ -304,11 +321,11 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
     }
 
     private fun activateSession() {
-        Log.d("MediaPlaybackService", "activateSession (wasActive=$sessionActive)")
+        Log.d("MediaPlaybackService", "activateSession (wasActive=$sessionActive, focus=$ownsAudioFocus)")
         if (!sessionActive) {
             sessionActive = true
 
-            requestFocus()
+            if (ownsAudioFocus) requestFocus()
             if (!noisyReceiverRegistered) {
                 noisyReceiverRegistered = true
                 ContextCompat.registerReceiver(

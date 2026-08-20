@@ -101,6 +101,7 @@ class UpdateMediaSessionStateArgs {
 @InvokeArg
 class SetMediaSessionActiveArgs {
   var active: Boolean? = null
+  var ownsAudioFocus: Boolean? = null
   var notificationTitle: String? = null
   var notificationText: String? = null
   var foregroundServiceTitle: String? = null
@@ -589,6 +590,9 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                 MediaPlaybackService.pluginEventTrigger = { event, data -> trigger(event, data) }
                 MediaPlaybackService.currentTitle = FOREGROUND_SERVICE_TITLE
                 MediaPlaybackService.currentArtist = FOREGROUND_SERVICE_TEXT
+                // Set before the service starts: activateSession reads it to
+                // decide whether to take audio focus for this session.
+                MediaPlaybackService.ownsAudioFocus = args.ownsAudioFocus ?: true
                 // Persist the book so the Android Auto browse tree can offer a
                 // "Resume last book" entry after the process is cold.
                 args.bookHash?.let {

@@ -4,6 +4,7 @@ import { getCurrent } from '@tauri-apps/plugin-deep-link';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { isTauriAppPlatform } from '@/services/environment';
+import { isAudiobook } from '@/utils/audiobook';
 import { navigateToReader } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { parseBookDeepLink } from '@/utils/deeplink';
@@ -38,6 +39,16 @@ export function useOpenBookLink() {
           message: _('Book not in your library'),
           timeout: 2500,
         });
+        return;
+      }
+      // A streaming audiobook has no document to load - it always opens in
+      // the player, the same as a library tap on it (useOpenBook.ts). This
+      // must come before the reader-mounted check below: switching it into
+      // an already-mounted reader in place would drive initViewState down
+      // the document-loader path a streaming ABS book has no file for, and
+      // the reader hangs on the spinner.
+      if (isAudiobook(book)) {
+        router.push(`/player?id=${bookHash}`);
         return;
       }
       // If a reader is already mounted, switch in place via useBooksManager: it

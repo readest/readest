@@ -244,7 +244,25 @@ export const useABSServerStore = create<ABSServerStoreState>((set, get) => ({
       // re-import / reincarnation, but they're stripped at the
       // persistence boundary. The next pull will mirror server-side
       // tombstones back into memory if the row is still deleted.
-      settings.absServers = servers.filter((s) => !s.deletedAt);
+      const live = servers.filter((s) => !s.deletedAt);
+      // An in-memory list the store never loaded is NO INFORMATION about the
+      // configured servers — it must never be published as "the user has
+      // none". `EnvProvider` sets `appService` before `loadSettings()`
+      // resolves, so the library-mount hydration (`useABSSync`) can read the
+      // `{}` placeholder settings and leave the store empty for the whole
+      // session; the ABS token refresh then persisted that empty store
+      // (`onTokensUpdated` -> `updateServer` silently no-ops -> this save)
+      // over the user's real server list. Carry through every persisted entry
+      // the store has no record of — neither a live copy nor a tombstone.
+      // Deletions always leave a tombstone in `servers`, so a removed server
+      // is never resurrected here.
+      const known = new Set(
+        servers.flatMap((s) => [s.id, s.contentId]).filter((v): v is string => !!v),
+      );
+      const unseen = (settings.absServers ?? []).filter(
+        (s) => !known.has(s.id) && !(s.contentId && known.has(s.contentId)),
+      );
+      settings.absServers = [...live, ...unseen];
       setSettings(settings);
       saveSettings(_envConfig, settings);
     } catch (error) {

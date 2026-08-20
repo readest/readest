@@ -190,7 +190,8 @@ export const openAudiobookSession = async (input: {
       startAt,
     };
 
-    const clock = isIOSTauri() ? new NativeAudiobookClock() : new HtmlAudioClock();
+    const nativeClock = isIOSTauri();
+    const clock = nativeClock ? new NativeAudiobookClock() : new HtmlAudioClock();
     const controller = new AudiobookController(sourceObj, clock, syncer.hooks());
 
     const bookKey = `${book.hash}-${uniqueId()}`;
@@ -200,6 +201,12 @@ export const openAudiobookSession = async (input: {
       author,
       coverImageUrl: book.coverImageUrl ?? null,
       metadataMode: 'chapter',
+      // HtmlAudioClock plays through a WebView media element, and Chromium
+      // requests Android audio focus for it in this same app. The media
+      // service must not request focus too: Chromium's request preempts it,
+      // and the service relays that AUDIOFOCUS_LOSS as a media-session-pause
+      // that stopped playback right after it started.
+      ownsAudioFocus: nativeClock,
       getSectionLabel: () => controller.getCurrentChapter()?.title,
     };
     ttsSessionManager.claim(bookKey, controller, meta);
