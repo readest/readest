@@ -31,6 +31,10 @@ import { BookData, useBookDataStore } from './bookDataStore';
 import { useLibraryStore } from './libraryStore';
 import { clearBookProgress, getBookProgress, setBookProgress } from './readerProgressStore';
 import { uniqueId } from '@/utils/misc';
+import { ArcService } from '@/services/arcService';
+import { getAccessToken } from '@/utils/access';
+import { isWebAppPlatform } from '@/services/environment';
+import { Book } from '@/types/book';
 
 interface ViewState {
   /* Unique key for each book view */
@@ -191,8 +195,48 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     try {
       const appService = await envConfig.getAppService();
       const { settings } = useSettingsStore.getState();
-      const { getBookByHash, library } = useLibraryStore.getState();
-      const book = getBookByHash(id);
+      const { getBookByHash, library, setLibrary } = useLibraryStore.getState();
+      let book = getBookByHash(id);
+
+      if (id.startsWith('arc_')) {
+        if (!book || !book.url) {
+          try {
+            const campaignId = Number(id.replace('arc_', ''));
+            const appliedArcs = await ArcService.getAppliedArcs();
+            const arc = appliedArcs.find((a) => a.campaignId === campaignId);
+            if (arc && arc.status === 'approved') {
+              const token = await getAccessToken();
+              const base =
+                process.env['NEXT_PUBLIC_BIBLO_API_URL'] || 'http://localhost:3001/api/v0';
+              const isWeb = isWebAppPlatform();
+              const origin = typeof window !== 'undefined' ? window.location.origin : '';
+              const readUrl = isWeb
+                ? `${origin}/api/marketing/arcs/${arc.campaignId}/read?token=${token}`
+                : `${base}/marketing/arcs/${arc.campaignId}/read?token=${token}`;
+
+              const transientBook: Book = {
+                hash: `arc_${arc.campaignId}`,
+                title: arc.bookName || arc.title || 'Untitled ARC',
+                author: 'Advance Review Copy',
+                format: (arc.format?.toUpperCase() || 'EPUB') as any,
+                url: readUrl,
+                coverImageUrl: arc.bookPhoto || null,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                readingStatus: arc.reviewStatus === 'submitted' ? 'finished' : 'unread',
+              };
+
+              const filteredLibrary = library.filter((b) => b.hash !== id);
+              const newLibrary = [...filteredLibrary, transientBook];
+              setLibrary(newLibrary);
+              book = transientBook;
+            }
+          } catch (err) {
+            console.error('Failed to resolve transient ARC book on init:', err);
+          }
+        }
+      }
+
       if (!book) {
         console.error(
           `Book ${id} not found in library (size=${library.length}); likely the in-memory entry was dropped by a library reload.`,
