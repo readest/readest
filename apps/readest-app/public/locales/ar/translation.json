@@ -2429,5 +2429,6 @@
   "Unable to connect to {{server}}": "تعذّر الاتصال بـ{{server}}",
   "Audiobookshelf server not found": "لم يتم العثور على خادم Audiobookshelf",
   "Episode not found": "لم يتم العثور على الحلقة",
-  "Words per minute": "كلمة في الدقيقة"
+  "Words per minute": "كلمة في الدقيقة",
+  "View Book Cover": "عرض غلاف الكتاب"
 }

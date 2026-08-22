@@ -2193,5 +2193,6 @@
   "Unable to connect to {{server}}": "{{server}} உடன் இணைக்க முடியவில்லை",
   "Audiobookshelf server not found": "Audiobookshelf சர்வர் கிடைக்கவில்லை",
   "Episode not found": "எபிசோட் கிடைக்கவில்லை",
-  "Words per minute": "நிமிடத்திற்கு சொற்கள்"
+  "Words per minute": "நிமிடத்திற்கு சொற்கள்",
+  "View Book Cover": "புத்தக அட்டையைக் காண்க"
 }

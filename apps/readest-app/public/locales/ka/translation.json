@@ -2193,5 +2193,6 @@
   "Unable to connect to {{server}}": "{{server}}-თან დაკავშირება ვერ მოხერხდა",
   "Audiobookshelf server not found": "Audiobookshelf სერვერი ვერ მოიძებნა",
   "Episode not found": "ეპიზოდი ვერ მოიძებნა",
-  "Words per minute": "სიტყვა წუთში"
+  "Words per minute": "სიტყვა წუთში",
+  "View Book Cover": "წიგნის ყდის ნახვა"
 }

@@ -2193,5 +2193,6 @@
   "Unable to connect to {{server}}": "Nem sikerült csatlakozni ehhez: {{server}}",
   "Audiobookshelf server not found": "Az Audiobookshelf szerver nem található",
   "Episode not found": "Az epizód nem található",
-  "Words per minute": "Szó percenként"
+  "Words per minute": "Szó percenként",
+  "View Book Cover": "Könyvborító megtekintése"
 }

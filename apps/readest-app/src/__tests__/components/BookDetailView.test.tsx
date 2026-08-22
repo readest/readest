@@ -1,28 +1,49 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, cleanup, fireEvent } from '@testing-library/react';
+import { render, cleanup, fireEvent, waitFor } from '@testing-library/react';
 
 import { Book } from '@/types/book';
 import BookDetailView from '@/components/metadata/BookDetailView';
 import { DropdownProvider } from '@/context/DropdownContext';
 
+const mocks = vi.hoisted(() => ({
+  toDataUrl: vi.fn(async (url: string) => `data:image/png;base64,${url}`),
+}));
+
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string) => s,
 }));
 
-vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({
+vi.mock('@/store/settingsStore', () => {
+  const state = {
     settings: {
       metadataSeriesCollapsed: true,
       // The "File Path" entry lives under the Metadata section; tests below
       // depend on it being expanded by default so the row is in the DOM.
       metadataOthersCollapsed: false,
       metadataDescriptionCollapsed: true,
+      libraryHideCovers: false,
     },
-  }),
-}));
+  };
+  const useSettingsStore = (selector?: (s: typeof state) => unknown) =>
+    selector ? selector(state) : state;
+  return { useSettingsStore };
+});
 
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: {}, appService: null }),
+}));
+
+// Pulled in by the cover viewer (reader's ImageViewer); not under test here.
+vi.mock('@/store/themeStore', () => ({
+  useThemeStore: () => ({ safeAreaInsets: null, systemUIVisible: false, statusBarHeight: 0 }),
+}));
+
+vi.mock('@/hooks/useKeyDownActions', () => ({
+  useKeyDownActions: () => {},
+}));
+
+vi.mock('@/libs/document', () => ({
+  convertBlobUrlToDataUrl: mocks.toDataUrl,
 }));
 
 vi.mock('@/helpers/settings', () => ({
@@ -238,5 +259,30 @@ describe('BookDetailView tags and subjects', () => {
     expect(onMetadataValueClick).toHaveBeenCalledWith('subject', 'History');
     fireEvent.click(getByText('Favorite'));
     expect(onMetadataValueClick).toHaveBeenCalledWith('tag', 'Favorite');
+  });
+});
+
+// #5813: the Book Details thumbnail must open the cover full screen in the
+// reader's image viewer (same zoom/pan/save as an in-book illustration).
+describe('BookDetailView cover viewer', () => {
+  const findViewer = () => document.body.querySelector('[aria-label="Image viewer"]');
+
+  it('opens the cover full screen in the image viewer when tapped', async () => {
+    const { container } = renderView({ book: makeBook({ coverImageUrl: 'blob:cover-full' }) });
+
+    const cover = container.querySelector('button[aria-label="View Book Cover"]');
+    expect(cover).toBeTruthy();
+    fireEvent.click(cover!);
+
+    await waitFor(() => expect(findViewer()).toBeTruthy());
+    expect(mocks.toDataUrl).toHaveBeenCalledWith('blob:cover-full');
+    expect(findViewer()!.querySelector('img')!.getAttribute('src')).toBe(
+      'data:image/png;base64,blob:cover-full',
+    );
+
+    // Closing the viewer returns to the details view, which stays open.
+    fireEvent.click(findViewer()!.querySelector('button[aria-label="Close"]')!);
+    expect(findViewer()).toBeNull();
+    expect(container.querySelector('button[aria-label="View Book Cover"]')).toBeTruthy();
   });
 });

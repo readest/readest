@@ -2252,5 +2252,6 @@
   "Unable to connect to {{server}}": "Impossible de se connecter à {{server}}",
   "Audiobookshelf server not found": "Serveur Audiobookshelf introuvable",
   "Episode not found": "Épisode introuvable",
-  "Words per minute": "Mots par minute"
+  "Words per minute": "Mots par minute",
+  "View Book Cover": "Voir la couverture du livre"
 }

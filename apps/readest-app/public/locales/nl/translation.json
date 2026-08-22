@@ -2193,5 +2193,6 @@
   "Unable to connect to {{server}}": "Kan geen verbinding maken met {{server}}",
   "Audiobookshelf server not found": "Audiobookshelf-server niet gevonden",
   "Episode not found": "Aflevering niet gevonden",
-  "Words per minute": "Woorden per minuut"
+  "Words per minute": "Woorden per minuut",
+  "View Book Cover": "Boekomslag bekijken"
 }

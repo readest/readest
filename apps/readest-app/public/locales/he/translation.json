@@ -2252,5 +2252,6 @@
   "Unable to connect to {{server}}": "לא ניתן להתחבר אל {{server}}",
   "Audiobookshelf server not found": "שרת Audiobookshelf לא נמצא",
   "Episode not found": "הפרק לא נמצא",
-  "Words per minute": "מילים לדקה"
+  "Words per minute": "מילים לדקה",
+  "View Book Cover": "הצג כריכת ספר"
 }

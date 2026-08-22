@@ -2252,5 +2252,6 @@
   "Unable to connect to {{server}}": "Conectarea la {{server}} nu a reușit",
   "Audiobookshelf server not found": "Serverul Audiobookshelf nu a fost găsit",
   "Episode not found": "Episodul nu a fost găsit",
-  "Words per minute": "Cuvinte pe minut"
+  "Words per minute": "Cuvinte pe minut",
+  "View Book Cover": "Vezi coperta cărții"
 }

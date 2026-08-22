@@ -2134,5 +2134,6 @@
   "Unable to connect to {{server}}": "{{server}}에 연결할 수 없습니다",
   "Audiobookshelf server not found": "Audiobookshelf 서버를 찾을 수 없습니다",
   "Episode not found": "에피소드를 찾을 수 없습니다",
-  "Words per minute": "분당 단어 수"
+  "Words per minute": "분당 단어 수",
+  "View Book Cover": "책 표지 보기"
 }

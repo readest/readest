@@ -30,6 +30,7 @@ import {
 import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { saveSysSettings } from '@/helpers/settings';
 import BookCover from '@/components/BookCover';
+import BookCoverViewer, { useBookCoverViewer } from '@/components/BookCoverViewer';
 import Dropdown from '../Dropdown';
 import MenuItem from '../MenuItem';
 
@@ -68,6 +69,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const [subjectsExpanded, setSubjectsExpanded] = useState(false);
+  const { coverSrc, openCoverViewer, closeCoverViewer } = useBookCoverViewer(book);
   const subjects = getContributorNames(metadata?.subject);
   const visibleSubjects = subjectsExpanded ? subjects : subjects.slice(0, 3);
 
@@ -112,9 +114,15 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   return (
     <div className='relative w-full rounded-lg'>
       <div className='mb-6 me-4 flex h-32 items-start'>
-        <div className='me-6 aspect-[28/41] h-32 shadow-lg sm:me-10'>
+        <button
+          type='button'
+          aria-label={_('View Book Cover')}
+          className='me-6 aspect-[28/41] h-32 shadow-lg sm:me-10'
+          onClick={openCoverViewer}
+        >
           <BookCover mode='list' book={book} showSpine={settings.librarySkeuomorphicCovers} />
-        </div>
+        </button>
+        {coverSrc && <BookCoverViewer src={coverSrc} onClose={closeCoverViewer} />}
         <div className='title-author flex h-32 flex-col justify-between'>
           <div>
             <p className='text-base-content mb-2 line-clamp-2 break-words text-lg font-bold'>

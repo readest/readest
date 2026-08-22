@@ -2134,5 +2134,6 @@
   "Unable to connect to {{server}}": "{{server}} ལ་མཐུད་ཐུབ་མ་སོང་།",
   "Audiobookshelf server not found": "Audiobookshelf ཞབས་ཞུ་བ་མ་རྙེད།",
   "Episode not found": "འདོན་ཐེངས་མ་རྙེད།",
-  "Words per minute": "སྐར་མ་རེར་ཚིག་གྲངས།"
+  "Words per minute": "སྐར་མ་རེར་ཚིག་གྲངས།",
+  "View Book Cover": "དཔེ་དེབ་ཀྱི་མདུན་ཤོག་བལྟ་བ"
 }

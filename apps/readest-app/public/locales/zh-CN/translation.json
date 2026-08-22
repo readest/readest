@@ -2134,5 +2134,6 @@
   "Unable to connect to {{server}}": "无法连接到 {{server}}",
   "Audiobookshelf server not found": "未找到 Audiobookshelf 服务器",
   "Episode not found": "未找到该单集",
-  "Words per minute": "每分钟字数"
+  "Words per minute": "每分钟字数",
+  "View Book Cover": "查看书籍封面"
 }

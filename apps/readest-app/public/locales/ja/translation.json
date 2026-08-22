@@ -2134,5 +2134,6 @@
   "Unable to connect to {{server}}": "{{server}}に接続できません",
   "Audiobookshelf server not found": "Audiobookshelfサーバーが見つかりません",
   "Episode not found": "エピソードが見つかりません",
-  "Words per minute": "1分あたりの単語数"
+  "Words per minute": "1分あたりの単語数",
+  "View Book Cover": "書籍のカバーを表示"
 }
