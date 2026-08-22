@@ -99,6 +99,37 @@ test.describe('Annotation', () => {
     await expect(reader.annotationPopup).toBeHidden();
   });
 
+  // Tapping a highlight (or holding one out with Instant Highlight) opens its
+  // range editor: app-drawn handles in a fixed overlay painted after the lookup
+  // popups, so they floated on top of the dictionary (#5815). A lookup hides
+  // them; they come back only with the toolbar.
+  test('hides the range-edit handles while the dictionary popup is open (#5815)', async ({
+    openBook,
+  }) => {
+    const reader = await openBook();
+
+    await reader.selectText();
+    await reader.highlightSelection();
+    await reader.dismissPopup();
+    await reader.clickHighlight();
+
+    await expect(reader.annotationPopup).toBeVisible();
+    await expect(reader.rangeHandles).toHaveCount(2);
+
+    await reader.popupTool('Dictionary').click();
+
+    await expect(reader.dictionaryPopup).toBeVisible();
+    await expect(reader.rangeHandles).toHaveCount(0);
+
+    await reader.page.keyboard.press('Escape');
+
+    await expect(reader.dictionaryPopup).toBeHidden();
+    // A highlight tap carries no live selection, so the dismiss is the full
+    // one: no toolbar to return to and no editor to bring back.
+    await expect(reader.annotationPopup).toBeHidden();
+    await expect(reader.rangeHandles).toHaveCount(0);
+  });
+
   test('changes the highlight color', async ({ openBook }) => {
     const reader = await openBook();
 

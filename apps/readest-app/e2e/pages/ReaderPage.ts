@@ -26,6 +26,7 @@ export class ReaderPage extends BasePage {
   readonly proofreadPopup: Locator;
   readonly noteEditor: Locator;
   readonly annotationItems: Locator;
+  readonly rangeHandles: Locator;
   readonly pageJumpInput: Locator;
 
   constructor(page: Page) {
@@ -49,6 +50,9 @@ export class ReaderPage extends BasePage {
     this.proofreadPopup = page.locator('.popup-container:has-text("Selected text:")');
     this.noteEditor = page.locator('.note-editor-container');
     this.annotationItems = page.locator('li.booknote-item[role="button"]');
+    // The app-drawn range-edit handles (the selection / annotation range
+    // editors), as opposed to the browser's native selection handles.
+    this.rangeHandles = page.locator('[data-testid="selection-handle"]');
   }
 
   /** Wait until the reader route is active and the book viewer has mounted. */
@@ -452,6 +456,31 @@ export class ReaderPage extends BasePage {
 
   async highlightSelection(): Promise<void> {
     await this.popupTool('Highlight').click();
+  }
+
+  /**
+   * Click the first highlight drawn in the book, opening its toolbar and
+   * range editor.
+   *
+   * The overlay is an SVG laid over its section iframe in that iframe's own
+   * client coordinates, so a point just inside the highlight path's top-left
+   * corner (the start of its first line — {@link selectText} selects from a
+   * paragraph start) is a point on the highlighted text in that document. The
+   * click is dispatched there rather than through the page mouse, so it also
+   * reaches a highlight in a prerendered section that is not on screen.
+   */
+  async clickHighlight(): Promise<void> {
+    const overlay = this.foliateView.locator('svg g path').first();
+    await overlay.waitFor({ state: 'attached' });
+    await overlay.evaluate((node) => {
+      const path = node as SVGPathElement;
+      const box = path.getBBox();
+      const doc = path.ownerSVGElement?.parentElement?.querySelector('iframe')?.contentDocument;
+      if (!doc) throw new Error('highlight overlay has no section document');
+      doc.dispatchEvent(
+        new MouseEvent('click', { clientX: box.x + 4, clientY: box.y + 4, bubbles: true }),
+      );
+    });
   }
 
   async selectHighlightColor(color: string): Promise<void> {

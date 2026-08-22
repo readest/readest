@@ -2067,6 +2067,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     }
   };
 
+  // The range editors are fixed full-screen overlays rendered after the lookup
+  // popups, so their handles would float on top of the dictionary sheet /
+  // popup (#5815). They belong to the toolbar: hide them while a lookup is
+  // open, and let them come back with the toolbar (or go with the dismiss).
+  const lookupPopupOpen = showDictionaryPopup || showDeepLPopup || showProofreadPopup;
+
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
       {showDictionaryPopup &&
@@ -2160,20 +2166,23 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           }}
         />
       )}
-      {!editingAnnotation && selection?.handlesSuppressed && selection.range && (
-        <SelectionRangeEditor
-          bookKey={bookKey}
-          isVertical={viewSettings.vertical}
-          selection={selection}
-          handleColor={selectedColor}
-          onRangeChange={applyProgrammaticSelection}
-          onStartDrag={handleStartEditAnnotation}
-          noteAutoTurnPoint={noteAutoTurnPoint}
-          cancelAutoTurn={cancelAutoTurn}
-          onAutoTurn={onAutoTurn}
-        />
-      )}
-      {editingAnnotation && editingAnnotation.color && selection && (
+      {!editingAnnotation &&
+        !lookupPopupOpen &&
+        selection?.handlesSuppressed &&
+        selection.range && (
+          <SelectionRangeEditor
+            bookKey={bookKey}
+            isVertical={viewSettings.vertical}
+            selection={selection}
+            handleColor={selectedColor}
+            onRangeChange={applyProgrammaticSelection}
+            onStartDrag={handleStartEditAnnotation}
+            noteAutoTurnPoint={noteAutoTurnPoint}
+            cancelAutoTurn={cancelAutoTurn}
+            onAutoTurn={onAutoTurn}
+          />
+        )}
+      {editingAnnotation && editingAnnotation.color && selection && !lookupPopupOpen && (
         <AnnotationRangeEditor
           bookKey={bookKey}
           isVertical={viewSettings.vertical}

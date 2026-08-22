@@ -73,6 +73,7 @@ export const Handle: React.FC<HandleProps> = ({
 
   return (
     <div
+      data-testid='selection-handle'
       className={clsx(
         'pointer-events-auto absolute z-50 cursor-grab touch-none active:cursor-grabbing',
         hidden && 'hidden',
