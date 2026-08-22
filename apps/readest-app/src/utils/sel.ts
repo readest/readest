@@ -1,3 +1,5 @@
+import { getPdfTextFromRange, getPdfTextLayer } from '@/utils/pdfText';
+
 export interface Frame {
   top: number;
   left: number;
@@ -880,6 +882,11 @@ export const repairJumpedSelectionRange = (
 };
 
 export const getTextFromRange = (range: Range, rejectTags: string[] = []): string => {
+  // pdf.js breaks every printed line with a <br>; rebuild paragraphs from the
+  // page geometry instead of emitting one line per line (#5814).
+  const textLayer = getPdfTextLayer(range);
+  if (textLayer) return getPdfTextFromRange(range, textLayer);
+
   const clonedRange = range.cloneRange();
   const fragment = clonedRange.cloneContents();
   const walker = document.createTreeWalker(
