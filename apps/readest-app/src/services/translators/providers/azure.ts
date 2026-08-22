@@ -6,6 +6,7 @@ import { splitTextIntoChunks } from '../utils';
 import { normalizeToShortLang } from '@/utils/lang';
 import {
   BING_REQUEST_HEADERS,
+  BING_TRANSLATE_PATH,
   BING_TRANSLATE_URL,
   BING_TRANSLATOR_URL,
   BingAuthParams,
@@ -31,7 +32,9 @@ import {
  *   inspected rather than just `response.ok`;
  * - bing.com sends no CORS headers, so a browser cannot call it at all. In the
  *   Tauri app the requests go out directly; in web builds they go through the
- *   same-origin proxy at /api/azure-translate.
+ *   same-origin proxy at /api/azure-translate;
+ * - from some networks www.bing.com redirects to a regional host, and the
+ *   translate POST has to go to that host too (see `translateUrl`).
  */
 const PROXY_URL = '/api/azure-translate';
 // Must not exceed the per-user concurrency the proxy allows, or the surplus
@@ -48,6 +51,26 @@ const buildTranslateQuery = (auth: BingAuthParams) =>
   new URLSearchParams({ isVertical: '1', IG: auth.ig, IID: auth.iid });
 
 let cachedAuth: BingAuthParams | null = null;
+// Where the translate POST goes: the bing.com host that actually served the
+// translator page. From mainland China www.bing.com answers a 302 to
+// cn.bing.com for the page and for the POST alike; the page redirect is
+// followed fine, but a followed POST redirect is replayed as a bodiless GET
+// and comes back empty (#5823). Refreshed together with the auth material,
+// since both come from the same page fetch.
+let translateUrl = BING_TRANSLATE_URL;
+// Only a bing.com host is ever used, so a stray redirect can never send the
+// token and text anywhere else.
+const translateUrlFor = (pageUrl: string | undefined): string => {
+  try {
+    const { protocol, host } = new URL(pageUrl ?? '');
+    if (protocol === 'https:' && (host === 'bing.com' || host.endsWith('.bing.com'))) {
+      return `https://${host}${BING_TRANSLATE_PATH}`;
+    }
+  } catch {
+    // not a URL: keep the default host
+  }
+  return BING_TRANSLATE_URL;
+};
 // Concurrent lines must not each scrape the translator page, so the in-flight
 // request is shared between callers.
 let authPromise: Promise<BingAuthParams> | null = null;
@@ -95,6 +118,7 @@ async function fetchAuthParams(token?: string | null): Promise<BingAuthParams> {
     if (!response.ok) {
       throw new Error(`bing translate auth failed with status ${response.status}`);
     }
+    translateUrl = translateUrlFor(response.url);
     return parseBingAuthParams(await response.text(), Date.now());
   }
 
@@ -150,7 +174,7 @@ async function translateChunk(
 
   const response = await withRequestLimit(() =>
     isTauriAppPlatform()
-      ? tauriFetch(`${BING_TRANSLATE_URL}?${query}`, {
+      ? tauriFetch(`${translateUrl}?${query}`, {
           method: 'POST',
           headers: BING_REQUEST_HEADERS,
           body: body.toString(),
@@ -169,7 +193,11 @@ async function translateChunk(
     throw new Error(`bing translate failed with status ${response.status}`);
   }
 
-  const data = await response.json().catch(() => null);
+  // An empty or non-JSON body (the reply to a redirected POST, an HTML
+  // interstitial) is a failure to report, not a translation to echo back.
+  const data = await response.json().catch(() => {
+    throw new Error('bing translate failed: malformed response');
+  });
   // A rejected or expired token answers `statusCode: 205` with HTTP 200.
   const statusCode = typeof data?.statusCode === 'number' ? data.statusCode : null;
   if (statusCode !== null && statusCode !== 200) {

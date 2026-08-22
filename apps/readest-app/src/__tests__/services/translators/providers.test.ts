@@ -736,6 +736,52 @@ describe('azureProvider', () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
+  it('posts translations to the bing host that served the translator page', async () => {
+    // From some networks (mainland China) www.bing.com answers a 302 to a
+    // regional host for the page and for the translate POST alike. The client
+    // follows the page redirect, but a followed POST redirect turns into a
+    // bodiless GET that comes back empty, so the translate call has to go to
+    // the host the page actually came from.
+    vi.mocked(isTauriAppPlatform).mockReturnValue(true);
+    vi.mocked(tauriFetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        url: 'https://cn.bing.com/translator',
+        text: async () => BING_PAGE,
+      } as Response)
+      .mockResolvedValueOnce(translationBody('你好') as unknown as Response);
+
+    const { azureProvider } = await import('@/services/translators/providers/azure');
+    const result = await azureProvider.translate(['Hello'], 'en', 'zh-CN');
+    expect(result).toEqual(['你好']);
+
+    const urls = vi.mocked(tauriFetch).mock.calls.map((call) => String(call[0]));
+    expect(urls[0]).toBe('https://www.bing.com/translator');
+    expect(urls[1]).toMatch(/^https:\/\/cn\.bing\.com\/ttranslatev3\?/);
+  });
+
+  it('throws a malformed-response error for a 200 non-JSON translate body', async () => {
+    // The empty reply of a followed POST redirect (or any HTML interstitial)
+    // used to be treated as "no translation" and the source text was echoed
+    // back as if it had been translated.
+    vi.mocked(isTauriAppPlatform).mockReturnValue(true);
+    vi.mocked(tauriFetch)
+      .mockResolvedValueOnce({ ok: true, status: 200, text: async () => BING_PAGE } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => {
+          throw new SyntaxError('Unexpected end of JSON input');
+        },
+      } as unknown as Response);
+
+    const { azureProvider } = await import('@/services/translators/providers/azure');
+    await expect(azureProvider.translate(['Hello'], 'en', 'fr')).rejects.toThrow(
+      'bing translate failed: malformed response',
+    );
+  });
+
   it('sends Bing language codes rather than maximized culture codes', async () => {
     // Bing's ttranslatev3 answers `statusCode: 400` for region-maximized
     // codes like en-US or de-DE (verified live 2026-08-11); it only accepts
