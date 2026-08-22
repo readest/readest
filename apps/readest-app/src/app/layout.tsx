@@ -23,6 +23,8 @@ const description =
   'Perfect for deep reading, analysis, and understanding. Explore now!';
 const previewImage = 'https://cdn.readest.com/images/open_graph_preview_read_now.png';
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 export const metadata: Metadata = {
   metadataBase: new URL(url),
   title: {
@@ -31,7 +33,7 @@ export const metadata: Metadata = {
   },
   description,
   generator: 'Next.js',
-  manifest: '/manifest.json',
+  manifest: `${basePath}/manifest.json`,
   keywords: ['epub', 'pdf', 'ebook', 'reader', 'biblophile', 'pwa'],
   authors: [
     {
@@ -40,8 +42,8 @@ export const metadata: Metadata = {
     },
   ],
   icons: {
-    icon: [{ url: '/icon.png' }, { url: '/favicon.ico' }],
-    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+    icon: [{ url: `${basePath}/icon.png` }, { url: `${basePath}/favicon.ico` }],
+    apple: [{ url: `${basePath}/apple-touch-icon.png`, sizes: '180x180' }],
   },
   appleWebApp: {
     capable: true,

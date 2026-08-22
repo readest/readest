@@ -29,7 +29,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name='format-detection' content='telephone=no' />
         <meta name='mobile-web-app-capable' content='yes' />
         <meta name='theme-color' content='white' />
-        <link rel='manifest' href='/manifest.json' />
+        <link rel='manifest' href={`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/manifest.json`} />
       </Head>
       <EnvProvider>
         <Providers>
