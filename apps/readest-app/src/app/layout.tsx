@@ -23,7 +23,7 @@ const description =
   'Perfect for deep reading, analysis, and understanding. Explore now!';
 const previewImage = 'https://cdn.readest.com/images/open_graph_preview_read_now.png';
 
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
 
 export const metadata: Metadata = {
   metadataBase: new URL(url),

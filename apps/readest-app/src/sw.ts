@@ -18,7 +18,7 @@ const serwist = new Serwist({
   fallbacks: {
     entries: [
       {
-        url: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/offline`,
+        url: `${process.env['NEXT_PUBLIC_BASE_PATH'] || ''}/offline`,
         matcher({ request }) {
           return request.destination === 'document';
         },
@@ -28,7 +28,7 @@ const serwist = new Serwist({
   runtimeCaching: [
     {
       matcher: ({ url, request }) => {
-        const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+        const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
         const clientRoutes = [`${basePath}/library`, `${basePath}/reader`];
         const isClientRoute = clientRoutes.some((route) => url.pathname.startsWith(route));
         return isClientRoute && request.mode === 'navigate';

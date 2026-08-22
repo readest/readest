@@ -3,6 +3,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { useTranslation } from '@/hooks/useTranslation';
 import EmailPasswordAuth from './EmailPasswordAuth';
 
+const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
+
 interface AuthPanelProps {
   supabaseClient: SupabaseClient;
   redirectTo?: string;
@@ -20,7 +22,13 @@ export default function AuthPanel({
   return (
     <div className='flex w-full max-w-sm flex-col items-center gap-6'>
       <div className='flex flex-col items-center gap-3 text-center'>
-        <Image src='/icon.png' alt='' width={56} height={56} className='eink-bordered rounded-xl' />
+        <Image
+          src={`${basePath}/icon.png`}
+          alt=''
+          width={56}
+          height={56}
+          className='eink-bordered rounded-xl'
+        />
         <div>
           <h1 className='text-xl font-semibold tracking-tight'>
             {_('Sign in with your Biblophile account')}

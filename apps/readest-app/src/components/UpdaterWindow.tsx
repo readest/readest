@@ -2,6 +2,8 @@ import clsx from 'clsx';
 import { BRAND_NAME } from '@/services/branding';
 import semver from 'semver';
 import Image from 'next/image';
+
+const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
 import { useEnv } from '@/context/EnvContext';
 import { useEffect, useState } from 'react';
 import { type as osType, arch as osArch } from '@tauri-apps/plugin-os';
@@ -543,7 +545,13 @@ export const UpdaterContent = ({
       <div className='flex w-full max-w-2xl flex-col gap-4'>
         <div className='flex flex-col justify-center gap-4 sm:flex-row sm:items-start'>
           <div className='flex items-center justify-center'>
-            <Image src='/icon.png' alt='Logo' className='h-20 w-20' width={64} height={64} />
+            <Image
+              src={`${basePath}/icon.png`}
+              alt='Logo'
+              className='h-20 w-20'
+              width={64}
+              height={64}
+            />
           </div>
 
           {checkUpdate ? (
