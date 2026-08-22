@@ -2251,5 +2251,6 @@
   "Playback interrupted, tap play to retry": "Lecture interrompue, appuyez sur lecture pour réessayer",
   "Unable to connect to {{server}}": "Impossible de se connecter à {{server}}",
   "Audiobookshelf server not found": "Serveur Audiobookshelf introuvable",
-  "Episode not found": "Épisode introuvable"
+  "Episode not found": "Épisode introuvable",
+  "Words per minute": "Mots par minute"
 }

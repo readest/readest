@@ -2251,5 +2251,6 @@
   "Playback interrupted, tap play to retry": "Redare întreruptă, atinge redarea pentru a relua",
   "Unable to connect to {{server}}": "Conectarea la {{server}} nu a reușit",
   "Audiobookshelf server not found": "Serverul Audiobookshelf nu a fost găsit",
-  "Episode not found": "Episodul nu a fost găsit"
+  "Episode not found": "Episodul nu a fost găsit",
+  "Words per minute": "Cuvinte pe minut"
 }

@@ -2192,5 +2192,6 @@
   "Playback interrupted, tap play to retry": "A lejátszás megszakadt, koppintson a lejátszásra az újrapróbálkozáshoz",
   "Unable to connect to {{server}}": "Nem sikerült csatlakozni ehhez: {{server}}",
   "Audiobookshelf server not found": "Az Audiobookshelf szerver nem található",
-  "Episode not found": "Az epizód nem található"
+  "Episode not found": "Az epizód nem található",
+  "Words per minute": "Szó percenként"
 }

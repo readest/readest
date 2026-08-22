@@ -2192,5 +2192,6 @@
   "Playback interrupted, tap play to retry": "Ijro toʻxtadi, qayta urinish uchun ijro tugmasini bosing",
   "Unable to connect to {{server}}": "{{server}} bilan ulanib boʻlmadi",
   "Audiobookshelf server not found": "Audiobookshelf serveri topilmadi",
-  "Episode not found": "Epizod topilmadi"
+  "Episode not found": "Epizod topilmadi",
+  "Words per minute": "Daqiqasiga soʻz soni"
 }

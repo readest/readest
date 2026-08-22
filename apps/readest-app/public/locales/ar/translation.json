@@ -2428,5 +2428,6 @@
   "Playback interrupted, tap play to retry": "انقطع التشغيل، اضغط على تشغيل لإعادة المحاولة",
   "Unable to connect to {{server}}": "تعذّر الاتصال بـ{{server}}",
   "Audiobookshelf server not found": "لم يتم العثور على خادم Audiobookshelf",
-  "Episode not found": "لم يتم العثور على الحلقة"
+  "Episode not found": "لم يتم العثور على الحلقة",
+  "Words per minute": "كلمة في الدقيقة"
 }

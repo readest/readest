@@ -2133,5 +2133,6 @@
   "Playback interrupted, tap play to retry": "再生が中断されました。タップして再試行してください",
   "Unable to connect to {{server}}": "{{server}}に接続できません",
   "Audiobookshelf server not found": "Audiobookshelfサーバーが見つかりません",
-  "Episode not found": "エピソードが見つかりません"
+  "Episode not found": "エピソードが見つかりません",
+  "Words per minute": "1分あたりの単語数"
 }

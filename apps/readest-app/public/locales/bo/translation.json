@@ -2133,5 +2133,6 @@
   "Playback interrupted, tap play to retry": "གཏོང་བ་བར་ཆད་བྱུང་། ཡང་བསྐྱར་ཚོད་ལྟ་ཆེད་གཏོང་བ་ལ་མནན་རོགས།",
   "Unable to connect to {{server}}": "{{server}} ལ་མཐུད་ཐུབ་མ་སོང་།",
   "Audiobookshelf server not found": "Audiobookshelf ཞབས་ཞུ་བ་མ་རྙེད།",
-  "Episode not found": "འདོན་ཐེངས་མ་རྙེད།"
+  "Episode not found": "འདོན་ཐེངས་མ་རྙེད།",
+  "Words per minute": "སྐར་མ་རེར་ཚིག་གྲངས།"
 }

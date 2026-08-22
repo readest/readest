@@ -2192,5 +2192,6 @@
   "Playback interrupted, tap play to retry": "இயக்கம் தடைபட்டது, மீண்டும் முயற்சிக்க பிளேயைத் தட்டவும்",
   "Unable to connect to {{server}}": "{{server}} உடன் இணைக்க முடியவில்லை",
   "Audiobookshelf server not found": "Audiobookshelf சர்வர் கிடைக்கவில்லை",
-  "Episode not found": "எபிசோட் கிடைக்கவில்லை"
+  "Episode not found": "எபிசோட் கிடைக்கவில்லை",
+  "Words per minute": "நிமிடத்திற்கு சொற்கள்"
 }

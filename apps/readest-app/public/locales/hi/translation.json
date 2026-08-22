@@ -2192,5 +2192,6 @@
   "Playback interrupted, tap play to retry": "प्लेबैक बाधित हुआ, फिर से प्रयास करने के लिए प्ले पर टैप करें",
   "Unable to connect to {{server}}": "{{server}} से कनेक्ट नहीं हो सका",
   "Audiobookshelf server not found": "Audiobookshelf सर्वर नहीं मिला",
-  "Episode not found": "एपिसोड नहीं मिला"
+  "Episode not found": "एपिसोड नहीं मिला",
+  "Words per minute": "शब्द प्रति मिनट"
 }

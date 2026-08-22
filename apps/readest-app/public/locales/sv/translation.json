@@ -2192,5 +2192,6 @@
   "Playback interrupted, tap play to retry": "Uppspelningen avbröts, tryck på spela upp för att försöka igen",
   "Unable to connect to {{server}}": "Det går inte att ansluta till {{server}}",
   "Audiobookshelf server not found": "Audiobookshelf-servern hittades inte",
-  "Episode not found": "Avsnittet hittades inte"
+  "Episode not found": "Avsnittet hittades inte",
+  "Words per minute": "Ord per minut"
 }

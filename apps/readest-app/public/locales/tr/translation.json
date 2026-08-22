@@ -2192,5 +2192,6 @@
   "Playback interrupted, tap play to retry": "Oynatma kesintiye uğradı, tekrar denemek için oynat'a dokunun",
   "Unable to connect to {{server}}": "{{server}} sunucusuna bağlanılamıyor",
   "Audiobookshelf server not found": "Audiobookshelf sunucusu bulunamadı",
-  "Episode not found": "Bölüm bulunamadı"
+  "Episode not found": "Bölüm bulunamadı",
+  "Words per minute": "Dakikadaki kelime sayısı"
 }

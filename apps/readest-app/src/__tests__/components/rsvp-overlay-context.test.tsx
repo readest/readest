@@ -109,6 +109,7 @@ const renderOverlay = (
   gridInsets: Insets = { top: 0, bottom: 0, left: 0, right: 0 },
 ) => {
   const controller = buildController(state);
+  const onClose = vi.fn();
   const result = render(
     <RSVPOverlay
       gridInsets={gridInsets}
@@ -116,12 +117,12 @@ const renderOverlay = (
       chapters={[]}
       currentChapterHref={null}
       fontFamily={fontFamily}
-      onClose={vi.fn()}
+      onClose={onClose}
       onChapterSelect={vi.fn()}
       onRequestNextPage={vi.fn()}
     />,
   );
-  return { ...result, controller };
+  return { ...result, controller, onClose };
 };
 
 describe('RSVPOverlay — capture lifecycle', () => {
@@ -676,5 +677,97 @@ describe('RSVPOverlay — start delay setting (#4478)', () => {
     expect(select).not.toBeNull();
     fireEvent.change(select, { target: { value: '0' } });
     expect(controller.setStartDelay).toHaveBeenCalledWith(0);
+  });
+});
+
+describe('RSVPOverlay — fine-grained WPM entry (#5820)', () => {
+  afterEach(() => cleanup());
+
+  const wordState = () =>
+    buildState({
+      words: [{ text: 'hello', orpIndex: 1, pauseMultiplier: 1 }],
+      currentIndex: 0,
+      wpm: 300,
+    });
+
+  const openWpmDropdown = (container: HTMLElement) => {
+    fireEvent.click(container.querySelector('[aria-label="Select reading speed"]') as HTMLElement);
+    const dropdown = container.querySelector('[data-testid="rsvp-wpm-dropdown"]') as HTMLElement;
+    const input = dropdown.querySelector('[aria-label="Words per minute"]') as HTMLInputElement;
+    return { dropdown, input };
+  };
+
+  test('the dropdown offers a numeric field prefilled with the current speed', () => {
+    const { container } = renderOverlay(wordState());
+    const { input } = openWpmDropdown(container);
+
+    expect(input).not.toBeNull();
+    expect(input.value).toBe('300');
+    // Digits-only soft keyboard on phones — the whole point of #5820.
+    expect(input.inputMode).toBe('numeric');
+  });
+
+  test('typing an exact value and pressing Enter sets that speed', () => {
+    const { container, controller } = renderOverlay(wordState());
+    const { input } = openWpmDropdown(container);
+
+    input.focus();
+    fireEvent.change(input, { target: { value: '325' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(controller.setWpm).toHaveBeenCalledWith(325);
+  });
+
+  test('leaving the field commits the typed value', () => {
+    const { container, controller } = renderOverlay(wordState());
+    const { input } = openWpmDropdown(container);
+
+    fireEvent.change(input, { target: { value: '380' } });
+    fireEvent.blur(input);
+
+    expect(controller.setWpm).toHaveBeenCalledWith(380);
+  });
+
+  test('Escape in the field discards the draft without committing', () => {
+    const { container, controller } = renderOverlay(wordState());
+    const { input } = openWpmDropdown(container);
+
+    fireEvent.change(input, { target: { value: '999' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(input.value).toBe('300');
+    expect(controller.setWpm).not.toHaveBeenCalled();
+  });
+
+  test('the fine +/- buttons nudge by 10 WPM rather than the 50 WPM coarse step', () => {
+    const { container, controller } = renderOverlay(wordState());
+    const { dropdown } = openWpmDropdown(container);
+
+    fireEvent.click(dropdown.querySelector('[aria-label="Increase speed"]') as HTMLElement);
+    expect(controller.setWpm).toHaveBeenLastCalledWith(310);
+    fireEvent.click(dropdown.querySelector('[aria-label="Decrease speed"]') as HTMLElement);
+    expect(controller.setWpm).toHaveBeenLastCalledWith(290);
+
+    // The transport's coarse steppers were not what fired.
+    expect(controller.increaseSpeed).not.toHaveBeenCalled();
+    expect(controller.decreaseSpeed).not.toHaveBeenCalled();
+  });
+
+  // The overlay listens for its shortcuts on `document` in the capture phase,
+  // which would otherwise steal arrows (speed), Space (play) and Escape (close
+  // the whole session) from the caret while a speed is being typed.
+  test('keys typed in the field never reach the RSVP shortcuts', () => {
+    const { container, controller, onClose } = renderOverlay(wordState());
+    const { input } = openWpmDropdown(container);
+
+    fireEvent.keyDown(input, { key: 'ArrowLeft' });
+    fireEvent.keyDown(input, { key: 'ArrowRight' });
+    fireEvent.keyDown(input, { key: ' ' });
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    expect(controller.decreaseSpeed).not.toHaveBeenCalled();
+    expect(controller.increaseSpeed).not.toHaveBeenCalled();
+    expect(controller.togglePlayPause).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

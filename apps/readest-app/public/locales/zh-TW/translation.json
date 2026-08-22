@@ -2133,5 +2133,6 @@
   "Playback interrupted, tap play to retry": "播放已中斷，點一下播放即可重試",
   "Unable to connect to {{server}}": "無法連線至 {{server}}",
   "Audiobookshelf server not found": "找不到 Audiobookshelf 伺服器",
-  "Episode not found": "找不到該集"
+  "Episode not found": "找不到該集",
+  "Words per minute": "每分鐘字數"
 }

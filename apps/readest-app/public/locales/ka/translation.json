@@ -2192,5 +2192,6 @@
   "Playback interrupted, tap play to retry": "დაკვრა შეწყდა, გასამეორებლად შეეხეთ დაკვრას",
   "Unable to connect to {{server}}": "{{server}}-თან დაკავშირება ვერ მოხერხდა",
   "Audiobookshelf server not found": "Audiobookshelf სერვერი ვერ მოიძებნა",
-  "Episode not found": "ეპიზოდი ვერ მოიძებნა"
+  "Episode not found": "ეპიზოდი ვერ მოიძებნა",
+  "Words per minute": "სიტყვა წუთში"
 }

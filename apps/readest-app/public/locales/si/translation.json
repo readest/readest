@@ -2192,5 +2192,6 @@
   "Playback interrupted, tap play to retry": "වාදනය බාධා විය, නැවත උත්සාහ කිරීමට වාදනය ස්පර්ශ කරන්න",
   "Unable to connect to {{server}}": "{{server}} වෙත සම්බන්ධ විය නොහැක",
   "Audiobookshelf server not found": "Audiobookshelf සේවාදායකයා හමු නොවීය",
-  "Episode not found": "කථාංගය හමු නොවීය"
+  "Episode not found": "කථාංගය හමු නොවීය",
+  "Words per minute": "විනාඩියකට වචන"
 }

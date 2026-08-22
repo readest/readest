@@ -2192,5 +2192,6 @@
   "Playback interrupted, tap play to retry": "Wiedergabe unterbrochen, zum erneuten Versuch auf Wiedergabe tippen",
   "Unable to connect to {{server}}": "Verbindung zu {{server}} nicht möglich",
   "Audiobookshelf server not found": "Audiobookshelf-Server nicht gefunden",
-  "Episode not found": "Episode nicht gefunden"
+  "Episode not found": "Episode nicht gefunden",
+  "Words per minute": "Wörter pro Minute"
 }

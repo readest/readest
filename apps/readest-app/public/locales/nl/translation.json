@@ -2192,5 +2192,6 @@
   "Playback interrupted, tap play to retry": "Afspelen onderbroken, tik op afspelen om het opnieuw te proberen",
   "Unable to connect to {{server}}": "Kan geen verbinding maken met {{server}}",
   "Audiobookshelf server not found": "Audiobookshelf-server niet gevonden",
-  "Episode not found": "Aflevering niet gevonden"
+  "Episode not found": "Aflevering niet gevonden",
+  "Words per minute": "Woorden per minuut"
 }

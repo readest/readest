@@ -2251,5 +2251,6 @@
   "Playback interrupted, tap play to retry": "הניגון נקטע, הקש על ניגון כדי לנסות שוב",
   "Unable to connect to {{server}}": "לא ניתן להתחבר אל {{server}}",
   "Audiobookshelf server not found": "שרת Audiobookshelf לא נמצא",
-  "Episode not found": "הפרק לא נמצא"
+  "Episode not found": "הפרק לא נמצא",
+  "Words per minute": "מילים לדקה"
 }

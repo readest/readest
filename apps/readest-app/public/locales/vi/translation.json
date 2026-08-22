@@ -2133,5 +2133,6 @@
   "Playback interrupted, tap play to retry": "Phát bị gián đoạn, nhấn phát để thử lại",
   "Unable to connect to {{server}}": "Không thể kết nối với {{server}}",
   "Audiobookshelf server not found": "Không tìm thấy máy chủ Audiobookshelf",
-  "Episode not found": "Không tìm thấy tập"
+  "Episode not found": "Không tìm thấy tập",
+  "Words per minute": "Số từ mỗi phút"
 }

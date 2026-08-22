@@ -2310,5 +2310,6 @@
   "Playback interrupted, tap play to retry": "Predvajanje je bilo prekinjeno, za ponovni poskus se dotaknite predvajanja",
   "Unable to connect to {{server}}": "Povezava s strežnikom {{server}} ni uspela",
   "Audiobookshelf server not found": "Strežnika Audiobookshelf ni bilo mogoče najti",
-  "Episode not found": "Epizode ni mogoče najti"
+  "Episode not found": "Epizode ni mogoče najti",
+  "Words per minute": "Besed na minuto"
 }

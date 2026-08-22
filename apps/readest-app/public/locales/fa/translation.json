@@ -2192,5 +2192,6 @@
   "Playback interrupted, tap play to retry": "پخش قطع شد، برای تلاش دوباره روی پخش ضربه بزنید",
   "Unable to connect to {{server}}": "اتصال به {{server}} ممکن نیست",
   "Audiobookshelf server not found": "سرور Audiobookshelf یافت نشد",
-  "Episode not found": "قسمت یافت نشد"
+  "Episode not found": "قسمت یافت نشد",
+  "Words per minute": "کلمه در دقیقه"
 }

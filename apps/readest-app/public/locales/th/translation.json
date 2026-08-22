@@ -2133,5 +2133,6 @@
   "Playback interrupted, tap play to retry": "การเล่นถูกขัดจังหวะ แตะเล่นเพื่อลองใหม่",
   "Unable to connect to {{server}}": "ไม่สามารถเชื่อมต่อกับ {{server}}",
   "Audiobookshelf server not found": "ไม่พบเซิร์ฟเวอร์ Audiobookshelf",
-  "Episode not found": "ไม่พบตอน"
+  "Episode not found": "ไม่พบตอน",
+  "Words per minute": "คำต่อนาที"
 }
