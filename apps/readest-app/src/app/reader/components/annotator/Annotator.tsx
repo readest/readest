@@ -526,33 +526,32 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     // For PDF selections, enable right-click context menu to directly open translator popup.
     if (bookData.isFixedLayout) {
       detail.doc?.addEventListener('contextmenu', (e: Event) => {
-        try {
-          const sel = doc.getSelection?.();
-          if (sel && !sel.isCollapsed) {
-            const range = sel.getRangeAt(0);
-            const text = sel.toString();
-            if (text.trim()) {
-              setSelection({
-                key: bookKey,
-                text,
-                range,
-                index,
-                cfi: view?.getCFI(index, range),
-                page: index + 1,
-              });
-              // Show translation popup preferentially for PDF right-click
-              setShowAnnotPopup(false);
-              setShowDeepLPopup(true);
-              setShowDictionaryPopup(false);
-            }
-          }
-        } catch (err) {
-          console.warn('PDF context menu translation failed:', err);
-        }
         // Prevent native menu to keep experience consistent
         e.preventDefault();
         e.stopPropagation();
-        return false;
+        try {
+          const sel = doc.getSelection?.();
+          if (!sel || sel.isCollapsed) return;
+          const range = sel.getRangeAt(0);
+          // Same text as the toolbar path, with PDF line wraps joined (#5814).
+          void getAnnotationText(range).then((text) => {
+            if (!text.trim()) return;
+            setSelection({
+              key: bookKey,
+              text,
+              range,
+              index,
+              cfi: view?.getCFI(index, range),
+              page: index + 1,
+            });
+            // Show translation popup preferentially for PDF right-click
+            setShowAnnotPopup(false);
+            setShowDeepLPopup(true);
+            setShowDictionaryPopup(false);
+          });
+        } catch (err) {
+          console.warn('PDF context menu translation failed:', err);
+        }
       });
     }
 
