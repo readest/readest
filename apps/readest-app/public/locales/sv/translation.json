@@ -2193,5 +2193,6 @@
   "Unable to connect to {{server}}": "Det går inte att ansluta till {{server}}",
   "Audiobookshelf server not found": "Audiobookshelf-servern hittades inte",
   "Episode not found": "Avsnittet hittades inte",
-  "Words per minute": "Ord per minut"
+  "Words per minute": "Ord per minut",
+  "View Book Cover": "Visa bokomslag"
 }

@@ -2311,5 +2311,6 @@
   "Unable to connect to {{server}}": "Не вдалося під'єднатися до {{server}}",
   "Audiobookshelf server not found": "Сервер Audiobookshelf не знайдено",
   "Episode not found": "Епізод не знайдено",
-  "Words per minute": "Слів за хвилину"
+  "Words per minute": "Слів за хвилину",
+  "View Book Cover": "Переглянути обкладинку книги"
 }

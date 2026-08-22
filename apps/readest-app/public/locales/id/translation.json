@@ -2134,5 +2134,6 @@
   "Unable to connect to {{server}}": "Tidak dapat terhubung ke {{server}}",
   "Audiobookshelf server not found": "Server Audiobookshelf tidak ditemukan",
   "Episode not found": "Episode tidak ditemukan",
-  "Words per minute": "Kata per menit"
+  "Words per minute": "Kata per menit",
+  "View Book Cover": "Lihat Sampul Buku"
 }

@@ -2193,5 +2193,6 @@
   "Unable to connect to {{server}}": "{{server}} sunucusuna bağlanılamıyor",
   "Audiobookshelf server not found": "Audiobookshelf sunucusu bulunamadı",
   "Episode not found": "Bölüm bulunamadı",
-  "Words per minute": "Dakikadaki kelime sayısı"
+  "Words per minute": "Dakikadaki kelime sayısı",
+  "View Book Cover": "Kitap Kapağını Görüntüle"
 }

@@ -2193,5 +2193,6 @@
   "Unable to connect to {{server}}": "{{server}} bilan ulanib boʻlmadi",
   "Audiobookshelf server not found": "Audiobookshelf serveri topilmadi",
   "Episode not found": "Epizod topilmadi",
-  "Words per minute": "Daqiqasiga soʻz soni"
+  "Words per minute": "Daqiqasiga soʻz soni",
+  "View Book Cover": "Kitob muqovasini koʻrish"
 }

@@ -2193,5 +2193,6 @@
   "Unable to connect to {{server}}": "Δεν είναι δυνατή η σύνδεση με {{server}}",
   "Audiobookshelf server not found": "Δεν βρέθηκε διακομιστής Audiobookshelf",
   "Episode not found": "Το επεισόδιο δεν βρέθηκε",
-  "Words per minute": "Λέξεις ανά λεπτό"
+  "Words per minute": "Λέξεις ανά λεπτό",
+  "View Book Cover": "Προβολή εξωφύλλου βιβλίου"
 }

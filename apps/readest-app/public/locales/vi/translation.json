@@ -2134,5 +2134,6 @@
   "Unable to connect to {{server}}": "Không thể kết nối với {{server}}",
   "Audiobookshelf server not found": "Không tìm thấy máy chủ Audiobookshelf",
   "Episode not found": "Không tìm thấy tập",
-  "Words per minute": "Số từ mỗi phút"
+  "Words per minute": "Số từ mỗi phút",
+  "View Book Cover": "Xem bìa sách"
 }
