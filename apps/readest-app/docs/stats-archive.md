@@ -98,24 +98,164 @@ Guard order for `compact`: 503 (disabled / no token / no bucket) before 401 (bad
 `restore`: 503 (no token / no bucket), 401, then 409 while compaction is enabled, so
 restore and compaction are mutually exclusive without locking.
 
-## Rollout
+**Targeted run.** `POST /api/stats/compact` with a JSON body `{"user_id": "<uuid>"}`
+and the token compacts that one user: no claiming, the enabled flag is ignored (it is an
+operator action, also usable while the cron is off), and the batching thresholds are
+ignored (everything older than the window is archived, in segments of
+`STATS_COMPACT_SEGMENT_ROWS`, up to `STATS_COMPACT_SEGMENTS_PER_USER` per call; repeat
+until `users_archived` is 0). The response carries `"targeted": true`. Use it to validate
+on a known account before enabling the cron, or to drain one heavy user.
 
-1. Apply migration 020 (additive: new tables/functions, autovacuum settings on
-   `stat_pages`). Deploy the API with `STATS_COMPACT_ENABLED = "false"`: nothing
-   observable changes (no segments exist; the cron fires and gets 503).
-2. Create the bucket (`readest-stats-archive`) and `wrangler secret put
-   STATS_COMPACT_TOKEN`. On a preview deployment set `STATS_COMPACT_ENABLED = "true"`,
-   run `POST /api/stats/compact` by hand against a test account until it is fully
-   compacted, then verify a fresh-device pull (cursor 0, app and koplugin, paged and
-   unpaginated) reproduces per-book `count(*)` and `sum(duration)` exactly.
-3. Set `STATS_COMPACT_ENABLED = "true"` in production. Watch `STATS_COMPACT_AE` and
-   `pg_stat_user_tables` (`n_live_tup`, `n_dead_tup`, `last_autovacuum`) for
-   `stat_pages`. Steady state for the measurement queries below is 0 rows.
-4. After the backlog drains: `REINDEX INDEX CONCURRENTLY stat_pages_pkey` off-peak
-   (needs free disk about the index size) to reclaim index bloat; optionally
-   `pg_repack` the heap.
+## Deployment, step by step
 
-Measurement queries:
+Everything up to step 5 is safe with `STATS_COMPACT_ENABLED = "false"` (the default in
+`wrangler.toml`): no segments exist, so pulls behave exactly as before, and the cron
+fires every 10 minutes and gets a 503. Prerequisites: `wrangler` logged in
+(`pnpm exec wrangler whoami`), access to the database SQL editor (or `psql`), and the
+Workers paid plan (for `[limits] cpu_ms`; delete that block if the deploy rejects it).
+Run the shell commands from `apps/readest-app`.
+
+**1. Apply migration 020.** Paste `docker/volumes/db/migrations/020_stat_archives.sql`
+into the SQL editor and run it (additive and re-runnable: `IF NOT EXISTS`,
+`CREATE OR REPLACE`, `ON CONFLICT DO NOTHING`). Check:
+
+```sql
+select proname from pg_proc where proname in
+  ('stat_archive_claim_users','stat_archive_candidate','stat_archive_rows',
+   'stat_archive_commit','upsert_stat_pages_as');                       -- 5 rows
+select has_function_privilege('anon',
+  'public.stat_archive_commit(uuid,text,timestamptz,timestamptz,integer,integer)','execute'); -- false
+select * from public.stat_archive_state;                                 -- 1 row, user_cursor null
+```
+
+**2. Create the bucket and the token (once).**
+
+```bash
+pnpm exec wrangler r2 bucket create readest-stats-archive
+openssl rand -hex 32            # the token; keep it in your password manager
+pnpm exec wrangler secret put STATS_COMPACT_TOKEN   # paste the token
+```
+
+Secrets are stored per Worker and survive deploys; vars in `wrangler.toml` are
+re-applied on every deploy (that is why the kill switch lives there).
+
+**3. Deploy with compaction disabled.** `pnpm deploy`, then:
+
+```bash
+TOKEN=...   # the value from step 2
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://web.readest.com/api/stats/compact \
+  -H "x-compact-token: $TOKEN"                                            # 503 (disabled)
+curl -s -X POST https://web.readest.com/api/stats/restore -H "x-compact-token: $TOKEN" \
+  -H 'content-type: application/json' -d '{"user_id":"00000000-0000-0000-0000-000000000000"}'
+                                          # {"restored_segments":0,"rows":0}: restore path is live
+```
+
+In the Cloudflare dashboard (Workers & Pages > readest-web > Settings) the cron
+`*/10 * * * *` and the bindings `STATS_ARCHIVE_R2` / `STATS_COMPACT_AE` are listed.
+Any device syncing now behaves as before (no manifest rows exist).
+
+**4. Validate on one known account, on production data, cron still off.** Use your own
+account (or any account whose device you control).
+
+```sql
+-- 4a. its id
+select id from auth.users where email = '<you@example.com>';
+-- 4b. snapshot per-book totals; keep the output
+select book_hash, count(*) as n, sum(duration) as d
+from public.stat_pages where user_id = '<uid>' group by 1 order by 1;
+```
+
+```bash
+# 4c. targeted compaction: that user only, ignores the enabled flag and the batching
+#     thresholds, archives everything older than the window; repeat until users_archived = 0
+curl -s -X POST https://web.readest.com/api/stats/compact -H "x-compact-token: $TOKEN" \
+  -H 'content-type: application/json' -d '{"user_id":"<uid>"}'
+# {"ok":true,"targeted":true,"users_claimed":1,"users_archived":1,"segments":N,"rows":R,...}
+```
+
+```sql
+-- 4d. manifest + nothing older than the window left hot
+select id, updated_from, updated_to, row_count, bytes, object_key
+from public.stat_archives where user_id = '<uid>' order by updated_to;
+select count(*) from public.stat_pages
+where user_id = '<uid>' and updated_at <= now() - interval '7 days';    -- 0
+```
+
+```bash
+# 4d'. look at one object
+pnpm exec wrangler r2 object get readest-stats-archive/stats/v1/<uid>/<updated_to_ms>.json \
+  --file /tmp/seg.json && head -c 400 /tmp/seg.json
+```
+
+4e. Fresh pull on a device signed in as that account: a fresh app install (its pull
+cursor starts at 0), or KOReader / the KOReader emulator with the Readest plugin logged
+in and a fresh `statistics.sqlite3`, then "Pull reading statistics". Compare with 4b:
+
+```bash
+sqlite3 statistics.sqlite3 "select b.md5, count(*), sum(p.duration) from page_stat_data p
+  join book b on b.id = p.id_book group by 1 order by 1;"
+```
+
+Per-book `count(*)` and `sum(duration)` must match 4b exactly. If the account signs in
+with email + password you can also pull through the API directly:
+
+```bash
+ACCESS=$(curl -s "https://<project>.supabase.co/auth/v1/token?grant_type=password" \
+  -H "apikey: $SUPABASE_ANON_KEY" -H 'content-type: application/json' \
+  -d '{"email":"<you@example.com>","password":"..."}' | jq -r .access_token)
+curl -s "https://web.readest.com/api/sync?type=stats&since=0&limit=1000" \
+  -H "Authorization: Bearer $ACCESS" | jq '.statPages | length, (.[0] // empty)'
+```
+
+Pages of 1000 come from the segments first (rows carry `updated_at_ms`), then hot rows;
+advance `since` to the last `updated_at_ms` to walk the whole history.
+
+4f. Optional: undo the test with the restore endpoint (`{"user_id":"<uid>"}`): the
+rows are back in Postgres (4b totals match again), the manifest rows are gone, the
+objects stay.
+
+**5. Enable the cron.** In `wrangler.toml` set `STATS_COMPACT_ENABLED = "true"`, commit,
+`pnpm deploy`. The first run happens within 10 minutes; a manual run is identical:
+
+```bash
+curl -s -X POST https://web.readest.com/api/stats/compact -H "x-compact-token: $TOKEN"
+# {"ok":true,"users_claimed":50,"users_archived":N,"segments":...,"errors":0,"commit_mismatches":0,...}
+```
+
+Watch, daily for the first two weeks:
+
+```bash
+# Analytics Engine SQL API (API token with "Account Analytics: Read")
+curl -s "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/analytics_engine/sql" \
+  -H "Authorization: Bearer $CF_API_TOKEN" --data "
+  SELECT toStartOfInterval(timestamp, INTERVAL '1' HOUR) AS h, count() AS runs,
+         sum(double2) AS users_archived, sum(double3) AS segments, sum(double4) AS rows,
+         sum(double5) AS bytes, sum(double7) AS errors, sum(double8) AS mismatches
+  FROM stats_compact WHERE index1 = 'compact' AND timestamp > NOW() - INTERVAL '1' DAY
+  GROUP BY h ORDER BY h DESC"
+```
+
+`errors` and `mismatches` should stay 0. Postgres side: the measurement queries below,
+plus `select n_live_tup, n_dead_tup, last_autovacuum, last_autoanalyze from
+pg_stat_user_tables where relname = 'stat_pages';` (autovacuum must keep up: migration
+020 sets the table's scale factor to 1%). At the defaults the backlog drains at up to
+50 users x 50k rows per run, 144 runs per day.
+
+**6. After the backlog drains** (the measurement queries return 0 rows), off-peak:
+
+```sql
+select pg_size_pretty(pg_relation_size('public.stat_pages_pkey'));   -- needs about this much free disk
+REINDEX INDEX CONCURRENTLY public.stat_pages_pkey;
+REINDEX INDEX CONCURRENTLY public.idx_stat_pages_user_updated;
+```
+
+That reclaims the index bloat inside the database (the provider's disk does not shrink;
+the freed pages are reused). `pg_repack` on the heap is heavier; skip unless needed.
+
+**7. Revisit the window** after a couple of weeks with the pull metric (next section):
+share of pulls that reach the archive = `pull` points / total stats pulls.
+
+Measurement queries (daily during rollout; steady state is 0 rows):
 
 ```sql
 -- users still holding an archivable backlog (expect 0 rows in steady state)

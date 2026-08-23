@@ -51,10 +51,32 @@ interface Summary {
 }
 
 const DAY_MS = 86400000;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Optional `{ "user_id": uuid }` body: an operator compacting ONE user by hand
+ * (validation on a known account, or draining a heavy user). Returns undefined
+ * for the cron's body-less request, null for a malformed user_id.
+ */
+async function readTarget(request: Request): Promise<string | null | undefined> {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return undefined;
+  }
+  const userId = (body as { user_id?: unknown } | null)?.user_id;
+  if (userId === undefined) return undefined;
+  return typeof userId === 'string' && UUID_RE.test(userId) ? userId : null;
+}
 
 export async function POST(request: Request) {
   const env = getStatsArchiveEnv();
-  const guard = guardArchiveRequest(request, env, 'compact');
+  const target = await readTarget(request);
+  if (target === null) {
+    return NextResponse.json({ error: 'user_id must be a uuid' }, { status: 400 });
+  }
+  const guard = guardArchiveRequest(request, env, target ? 'targeted' : 'compact');
   if (!guard.ok) return NextResponse.json(guard.body, { status: guard.status });
 
   const started = Date.now();
@@ -92,11 +114,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ ...body, duration_ms }, { status });
   };
 
-  const { data: claimed, error: claimErr } = await supabase.rpc('stat_archive_claim_users', {
-    p_n: cfg.usersPerRun,
-  });
-  if (claimErr) return finish(500, 'error', { ok: false, error: claimErr.message });
-  const users = (claimed ?? []) as string[];
+  let users: string[];
+  if (target) {
+    users = [target];
+  } else {
+    const { data: claimed, error: claimErr } = await supabase.rpc('stat_archive_claim_users', {
+      p_n: cfg.usersPerRun,
+    });
+    if (claimErr) return finish(500, 'error', { ok: false, error: claimErr.message });
+    users = (claimed ?? []) as string[];
+  }
   s.users_claimed = users.length;
   const window = `${cfg.windowDays} days`;
 
@@ -110,7 +137,10 @@ export async function POST(request: Request) {
       const c = (Array.isArray(cand) ? cand[0] : cand) as CandidateRow | undefined;
       if (!c || !(c.eligible > 0)) continue;
       const oldestMs = c.oldest ? tsToMs(c.oldest) : Number.POSITIVE_INFINITY;
+      // A targeted run archives everything older than the window regardless of
+      // the batching thresholds (they only exist to bound R2 PUTs for the cron).
       const eligible =
+        target !== undefined ||
         c.eligible >= cfg.minRows ||
         oldestMs <= Date.now() - cfg.maxAgeDays * DAY_MS ||
         c.hot_total > cfg.hotCap;
@@ -188,5 +218,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return finish(200, 'ok', { ok: true, ...s });
+  return finish(200, 'ok', { ok: true, ...(target ? { targeted: true } : {}), ...s });
 }

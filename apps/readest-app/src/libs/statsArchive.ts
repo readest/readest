@@ -270,13 +270,15 @@ export type ArchiveGuardResult =
 /**
  * Guard for the compact / restore endpoints. Order matters: configuration
  * problems answer 503 before any auth check so a misconfigured deployment
- * never reports auth errors; restore deliberately works while compaction is
- * disabled (rollback) and refuses while it is enabled (mutual exclusion).
+ * never reports auth errors. `compact` (the cron) additionally needs
+ * STATS_COMPACT_ENABLED; `targeted` (an operator compacting one user by hand)
+ * and `restore` deliberately work while compaction is disabled, and restore
+ * refuses while it is enabled (mutual exclusion with the cron).
  */
 export function guardArchiveRequest(
   req: Request,
   env: Partial<StatsArchiveEnv>,
-  mode: 'compact' | 'restore',
+  mode: 'compact' | 'targeted' | 'restore',
 ): ArchiveGuardResult {
   const enabled = env.STATS_COMPACT_ENABLED === 'true';
   if (!env.STATS_COMPACT_TOKEN || !env.STATS_ARCHIVE_R2 || (mode === 'compact' && !enabled)) {

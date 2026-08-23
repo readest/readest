@@ -143,6 +143,22 @@ describe('guardArchiveRequest', () => {
     expect(guardArchiveRequest(req('t'), env, 'compact')).toMatchObject({ ok: true });
   });
 
+  it('targeted runs need token + bucket but ignore the enabled flag', () => {
+    const base = { STATS_COMPACT_TOKEN: 't', STATS_ARCHIVE_R2: bucket };
+    expect(guardArchiveRequest(req('t'), base, 'targeted')).toMatchObject({ ok: true });
+    expect(
+      guardArchiveRequest(req('t'), { ...base, STATS_COMPACT_ENABLED: 'true' }, 'targeted'),
+    ).toMatchObject({ ok: true });
+    expect(guardArchiveRequest(req('x'), base, 'targeted')).toMatchObject({
+      ok: false,
+      status: 401,
+    });
+    expect(guardArchiveRequest(req('t'), { STATS_ARCHIVE_R2: bucket }, 'targeted')).toMatchObject({
+      ok: false,
+      status: 503,
+    });
+  });
+
   it('restore works while compaction is disabled and refuses with 409 while it is enabled', () => {
     const base = { STATS_COMPACT_TOKEN: 't', STATS_ARCHIVE_R2: bucket };
     expect(guardArchiveRequest(req('t'), base, 'restore')).toMatchObject({ ok: true });

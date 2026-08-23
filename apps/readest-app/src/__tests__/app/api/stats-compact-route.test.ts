@@ -97,6 +97,68 @@ describe('POST /api/stats/compact guard', () => {
   });
 });
 
+describe('POST /api/stats/compact targeted run ({ user_id })', () => {
+  const UID = '00000000-0000-0000-0000-000000000001';
+  const postUser = (user_id: unknown, token: string | null = 't') =>
+    POST(
+      new Request('https://web.readest.com/api/stats/compact', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(token ? { 'x-compact-token': token } : {}),
+        },
+        body: JSON.stringify({ user_id }),
+      }),
+    );
+
+  beforeEach(() => {
+    // cron disabled: a targeted run still works (operator action) ...
+    cfEnv = { STATS_ARCHIVE_R2: bucket, STATS_COMPACT_AE: ae, STATS_COMPACT_TOKEN: 't' };
+    // ... and ignores the eligibility thresholds: this user is far below them
+    rpcHandlers['stat_archive_candidate'] = () => ({
+      data: [{ eligible: 3, oldest: daysAgo(8), hot_total: 10, archived_to: EPOCH }],
+    });
+    rpcHandlers['stat_archive_rows'] = ({ p_user }) =>
+      p_user === UID
+        ? { data: [dbRow('2026-07-01T00:00:00+00:00', 1), dbRow('2026-07-01T00:00:00+00:00', 2)] }
+        : { data: [] };
+  });
+
+  it('archives exactly that user, without claiming, with the enabled flag off and thresholds ignored', async () => {
+    const res = await postUser(UID);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({
+      ok: true,
+      targeted: true,
+      users_claimed: 1,
+      users_archived: 1,
+      segments: 1,
+      rows: 2,
+    });
+    expect(rpcCalls.some((c) => c.fn === 'stat_archive_claim_users')).toBe(false);
+    expect(rpcCalls.find((c) => c.fn === 'stat_archive_candidate')?.args['p_user']).toBe(UID);
+    expect(bucket.put.mock.calls[0]![0]).toMatch(`stats/v1/${UID}/`);
+  });
+
+  it('archives nothing when the user has no rows older than the window', async () => {
+    rpcHandlers['stat_archive_candidate'] = () => ({
+      data: [{ eligible: 0, oldest: null, hot_total: 10, archived_to: EPOCH }],
+    });
+    expect(await (await postUser(UID)).json()).toMatchObject({
+      users_claimed: 1,
+      users_archived: 0,
+    });
+    expect(bucket.put).not.toHaveBeenCalled();
+  });
+
+  it('still requires the token and the bucket, and a well-formed user_id', async () => {
+    expect((await postUser(UID, 'wrong')).status).toBe(401);
+    expect((await postUser('nope')).status).toBe(400);
+    cfEnv = { STATS_COMPACT_TOKEN: 't' };
+    expect((await postUser(UID)).status).toBe(503);
+  });
+});
+
 describe('POST /api/stats/compact run', () => {
   it('archives eligible users: put object, commit exact range, report summary + AE point', async () => {
     const res = await post();
