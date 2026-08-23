@@ -18,25 +18,6 @@ import {
 import { validateUserAndToken } from '@/utils/access';
 import { DBBook, DBBookConfig } from '@/types/records';
 
-const pageKey = (r: StatPageRecord) => `${r.book_hash}|${r.page}|${r.start_time}`;
-
-/**
- * Decide which incoming page events to write: new keys always win; existing
- * keys win only when the incoming duration is strictly longer (union/upsert
- * semantics — KOReader-compatible).
- */
-export function pickWinningPages(
-  incoming: StatPageRecord[],
-  server: Map<string, StatPageRecord>,
-): { toUpsert: StatPageRecord[] } {
-  const toUpsert: StatPageRecord[] = [];
-  for (const rec of incoming) {
-    const existing = server.get(pageKey(rec));
-    if (!existing || rec.duration > existing.duration) toUpsert.push(rec);
-  }
-  return { toUpsert };
-}
-
 /**
  * Field-level last-writer-wins for a books row's reading_status: return the
  * status fields with the newer reading_status_updated_at (ties → client). NULL
@@ -774,46 +755,24 @@ export async function POST(req: NextRequest) {
     }
 
     if (statPages.length > 0) {
-      // Process in batches so the "longer-duration-wins" merge stays correct at
-      // scale: the existing-row fetch is scoped to each batch's (book_hash,
-      // start_time) keys (not a book's whole history) and bounded under
-      // PostgREST's ~1000-row cap — otherwise existing rows beyond 1000 are
-      // invisible to pickWinningPages and a shorter duration could overwrite a
-      // longer one.
+      // The "longer-duration-wins" merge (new keys insert, existing keys update
+      // only when the incoming duration is strictly longer) runs inside the
+      // upsert_stat_pages RPC (migration 019) as one INSERT ... ON CONFLICT.
+      // The RPC stamps user_id (auth.uid()) and updated_at (now()) itself.
+      // Batches only bound the statement size; clients already chunk at 500.
       const BATCH = 500;
       for (let off = 0; off < statPages.length; off += BATCH) {
-        const batch = statPages.slice(off, off + BATCH);
-        const bookHashes = [...new Set(batch.map((p) => p.book_hash))];
-        const startTimes = [...new Set(batch.map((p) => p.start_time))];
-        const { data: existing, error: exErr } = await supabase
-          .from('stat_pages')
-          .select('*')
-          .eq('user_id', user.id)
-          .in('book_hash', bookHashes)
-          .in('start_time', startTimes);
-        if (exErr) return NextResponse.json({ error: exErr.message }, { status: 500 });
-        const serverMap = new Map<string, StatPageRecord>();
-        (existing ?? []).forEach((r) =>
-          serverMap.set(pageKey(r as StatPageRecord), r as StatPageRecord),
-        );
-        const { toUpsert } = pickWinningPages(batch, serverMap);
-        const rows = toUpsert.map((p) => ({
-          user_id: user.id,
+        const rows = statPages.slice(off, off + BATCH).map((p) => ({
           book_hash: p.book_hash,
           page: p.page,
           start_time: p.start_time,
           duration: p.duration,
           total_pages: p.total_pages,
           ext: p.ext ?? null,
-          updated_at: new Date().toISOString(),
           deleted_at: p.deleted_at ?? null,
         }));
-        if (rows.length > 0) {
-          const { error } = await supabase
-            .from('stat_pages')
-            .upsert(rows, { onConflict: 'user_id,book_hash,page,start_time' });
-          if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-        }
+        const { error } = await supabase.rpc('upsert_stat_pages', { p_rows: rows });
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       }
     }
 
