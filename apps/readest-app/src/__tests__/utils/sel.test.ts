@@ -257,6 +257,49 @@ describe('sel utilities', () => {
       expect(result.dir).toBe('down');
       expect(result.point.x).toBeGreaterThan(0);
     });
+
+    it("anchors a multi-page selection to the last segment, in that segment's frame", async () => {
+      const { getPosition } = await import('@/utils/sel');
+      // Two PDF page iframes stacked in scrolled mode; the selection starts on
+      // the upper page and ends on the lower one (a cross-page selection).
+      const makeFrame = (top: number) => {
+        const iframe = document.createElement('iframe');
+        document.body.appendChild(iframe);
+        iframe.getBoundingClientRect = () =>
+          ({ top, left: 100, right: 500, bottom: top + 400, width: 400, height: 400 }) as DOMRect;
+        return iframe.contentDocument!;
+      };
+      const upper = makeFrame(0);
+      const lower = makeFrame(404);
+      const rangeIn = (doc: Document, rect: { top: number; bottom: number }) =>
+        ({
+          getClientRects: () => [{ ...rect, left: 20, right: 120 }] as unknown as DOMRectList,
+          commonAncestorContainer: doc.body,
+          // Marks the mock as a Range for getIframeElement, which walks up from
+          // commonAncestorContainer to the owning iframe.
+          collapse: () => {},
+        }) as unknown as Range;
+      const first = rangeIn(upper, { top: 300, bottom: 320 });
+      const last = rangeIn(lower, { top: 50, bottom: 70 });
+      const selection = {
+        key: 'k',
+        text: 'a b',
+        page: 1,
+        index: 0,
+        range: first,
+        segments: [
+          { range: first, index: 0, text: 'a' },
+          { range: last, index: 1, text: 'b' },
+        ],
+      };
+      const rect: Rect = { top: 0, right: 1024, bottom: 768, left: 0 };
+      const result = getPosition(selection, rect, 10);
+      // Below the last line of the LAST segment: 404 (frame) + 70 + 6.
+      expect(result.dir).toBe('down');
+      expect(result.point.y).toBe(480);
+      expect(result.point.x).toBe(170);
+      document.body.innerHTML = '';
+    });
   });
 
   describe('isPointerInsideSelection', () => {

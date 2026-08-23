@@ -21,6 +21,21 @@ import {
 } from '@/utils/sel';
 import { Corner, useAutoPageTurn } from './useAutoPageTurn';
 import { useInstantAnnotation } from './useInstantAnnotation';
+import {
+  applyCrossDocSegments,
+  buildCrossDocSegments,
+  CrossDocSegment,
+  findContentAtPoint,
+  getCaretPosition,
+  getCaretPositionInText,
+  isTextAtPoint,
+  rangeBetweenPositions,
+  rangeFromPositions,
+  SectionAnchor,
+  SelectionBounds,
+  setNativeDragFrozen,
+  toDocPoint,
+} from '../utils/crossDocSelection';
 
 // Instant-highlight quick action: on touch a plain tap and a swipe are both
 // page-turn gestures, so the highlight must not engage on pointer-down or it
@@ -114,6 +129,19 @@ export const useTextSelector = (
   const programmaticSelectionRef = useRef(false);
   const programmaticClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Cross-page selection (#5809). Fixed-layout pages are separate iframes, so a
+  // selection dragged onto the next page is kept as one native selection per
+  // page and published as a single TextSelection with `segments`.
+  // The DOM-anchored start of a mouse selection drag, captured at pointer-down.
+  const dragAnchorRef = useRef<SectionAnchor | null>(null);
+  // Live state while the pointer/finger is over a page other than the anchor's.
+  // `frozen`: the anchor page's native drag has been frozen (mouse path).
+  const crossDocRef = useRef<{
+    anchor: SectionAnchor;
+    segments: CrossDocSegment[];
+    frozen: boolean;
+  } | null>(null);
+
   // #5427: whether the native layer is currently refusing the system
   // selection toolbar (MainActivity hands out a no-op ActionMode while set).
   const selectionMenuSuppressedRef = useRef(false);
@@ -141,6 +169,168 @@ export const useTextSelector = (
     programmaticClearTimer.current = setTimeout(() => {
       programmaticSelectionRef.current = false;
     }, 150);
+  };
+
+  const getContents = () => getView(bookKey)?.renderer?.getContents?.() ?? [];
+
+  // Extend the selection anchored at `anchor` to the page under `point`
+  // (window coords): the anchor page to its edge, pages between in full, the
+  // target page up to the caret under the point. Returns whether a cross-page
+  // state is active afterwards; over the anchor page itself the state is left
+  // (the native drag takes over again).
+  const extendCrossDocTo = (anchor: SectionAnchor, point: Point): boolean => {
+    const contents = getContents();
+    const target = findContentAtPoint(contents, point);
+    if (!target) return !!crossDocRef.current;
+    if (target.doc === anchor.doc) {
+      clearCrossDoc();
+      return false;
+    }
+    const local = toDocPoint(target.doc, point);
+    const caret = local && getCaretPositionInText(target.doc, local.x, local.y);
+    if (!caret) return !!crossDocRef.current;
+    const segments = buildCrossDocSegments(anchor, { ...target, pos: caret }, contents);
+    if (segments.length === 0) return !!crossDocRef.current;
+    // Our own writes: their selectionchange echoes are not user input.
+    guardProgrammaticSelection();
+    applyCrossDocSegments(segments, contents, anchor);
+    crossDocRef.current = { anchor, segments, frozen: crossDocRef.current?.frozen ?? false };
+    return true;
+  };
+
+  // Leave the cross-page state. Unless `keepSelections` (committing), the
+  // other pages' parts are cleared so only the anchor page's selection remains.
+  const clearCrossDoc = (keepSelections = false) => {
+    const state = crossDocRef.current;
+    if (!state) return;
+    crossDocRef.current = null;
+    if (state.frozen) setNativeDragFrozen(state.anchor.doc, false);
+    if (!keepSelections) {
+      for (const { doc } of state.segments) {
+        if (doc !== state.anchor.doc) doc.getSelection()?.removeAllRanges();
+      }
+    }
+    releaseProgrammaticSelection();
+  };
+
+  // Publish the per-page parts as one selection: all their text joined, the
+  // range/cfi/index anchored on the first part (#5809).
+  const makeCrossDocSelection = async (segments: CrossDocSegment[], handlesSuppressed = false) => {
+    const parts: { range: Range; index: number; text: string }[] = [];
+    for (const segment of segments) {
+      const range = rangeFromPositions(segment.doc, segment.start, segment.end);
+      if (!range) continue;
+      const text = await getAnnotationText(range);
+      if (!text.trim()) continue;
+      parts.push({ range, index: segment.index, text });
+    }
+    const first = parts[0];
+    if (!first) return false;
+    isTextSelected.current = true;
+    const progress = getProgress(bookKey);
+    setSelection({
+      key: bookKey,
+      text: parts.map((part) => part.text).join(' '),
+      cfi: view?.getCFI(first.index, first.range),
+      page: bookData?.isFixedLayout ? first.index + 1 : progress?.page || 0,
+      range: first.range,
+      index: first.index,
+      segments: parts.length > 1 ? parts : undefined,
+      handlesSuppressed,
+    });
+    return true;
+  };
+
+  // Drive a selection from the app's own handles (SelectionRangeEditor): the
+  // dragged end follows `point` (window coords) while `anchor` stays put. Over
+  // the anchor's page the selection is rebuilt there; over another page it
+  // continues across pages (#5809). Resolves to the selection's new outer
+  // bounds, or null when the point is over no page.
+  const dragSelectionTo = async (
+    anchor: SectionAnchor,
+    point: Point,
+    commit: boolean,
+  ): Promise<SelectionBounds | null> => {
+    const rangeBounds = (doc: Document, index: number, range: Range): SelectionBounds => ({
+      start: { doc, index, pos: { node: range.startContainer, offset: range.startOffset } },
+      end: { doc, index, pos: { node: range.endContainer, offset: range.endOffset } },
+    });
+    const segmentBounds = (segments: CrossDocSegment[]): SelectionBounds | null => {
+      const first = segments[0];
+      const last = segments.at(-1);
+      if (!first || !last) return null;
+      return {
+        start: { doc: first.doc, index: first.index, pos: first.start },
+        end: { doc: last.doc, index: last.index, pos: last.end },
+      };
+    };
+    // A release that resolves to no new range (off any page, or collapsed on the
+    // anchor) still commits what the drag has built so far.
+    const commitLive = async (): Promise<SelectionBounds | null> => {
+      const segments = crossDocRef.current?.segments ?? [];
+      if (segments.length > 0) {
+        clearCrossDoc(true);
+        await makeCrossDocSelection(segments, true);
+        return segmentBounds(segments);
+      }
+      const sel = anchor.doc.getSelection();
+      if (!sel || !isValidSelection(sel)) return null;
+      await makeSelection(sel, anchor.index, false, true);
+      return rangeBounds(anchor.doc, anchor.index, sel.getRangeAt(0));
+    };
+
+    const target = findContentAtPoint(getContents(), point);
+    if (!target) return commit ? commitLive() : null;
+    if (target.doc === anchor.doc) {
+      clearCrossDoc();
+      const local = toDocPoint(anchor.doc, point);
+      const caret = local && getCaretPositionInText(anchor.doc, local.x, local.y);
+      const range = caret && rangeBetweenPositions(anchor.doc, anchor.pos, caret);
+      if (!range) return commit ? commitLive() : null;
+      await applyProgrammaticSelection(range, anchor.index, commit);
+      return rangeBounds(anchor.doc, anchor.index, range);
+    }
+    if (!extendCrossDocTo(anchor, point)) return commit ? commitLive() : null;
+    const segments = crossDocRef.current?.segments ?? [];
+    if (commit) {
+      clearCrossDoc(true);
+      await makeCrossDocSelection(segments, true);
+    }
+    return segmentBounds(segments);
+  };
+
+  // Android, fixed-layout pages in scroll mode (#5809): the native selection
+  // handles can't leave their page iframe (their touches never reach the page),
+  // so once a touch gesture has made a selection swap them for the app's own
+  // handles, which drag across pages. A selection that goes empty for one
+  // painted frame drops its native handles; `handlesSuppressed` then brings up
+  // the SelectionRangeEditor.
+  const suppressNativeHandlesForPages = async () => {
+    if (sanitizedGestureRef.current || !gestureInitialRef.current) return;
+    if (!bookData?.isFixedLayout || !getViewSettings(bookKey)?.scrolled) return;
+    const content = getContents().find(
+      (c) => c.doc && c.index != null && isValidSelection(c.doc.getSelection()!),
+    );
+    if (!content || content.index == null) return;
+    const { doc, index } = content;
+    const win = doc.defaultView;
+    const sel = doc.getSelection();
+    if (!win || !sel) return;
+    sanitizedGestureRef.current = true;
+    const range = sel.getRangeAt(0).cloneRange();
+    guardProgrammaticSelection();
+    sel.removeAllRanges();
+    await new Promise<void>((resolve) =>
+      win.requestAnimationFrame(() => win.requestAnimationFrame(() => resolve())),
+    );
+    // Bail if a competing gesture touched the selection while we waited.
+    if (sel.rangeCount > 0 || range.collapsed) {
+      releaseProgrammaticSelection();
+      return;
+    }
+    sel.addRange(range);
+    releaseProgrammaticSelection();
+    await makeSelection(sel, index, false, true);
   };
 
   const {
@@ -175,6 +365,18 @@ export const useTextSelector = (
     if (rebuildRange) {
       sel.removeAllRanges();
       sel.addRange(liveRange);
+    }
+    // One page holds the live selection: drop a stale one left on another page
+    // (the far part of an earlier cross-page selection), guarded so its
+    // selectionchange doesn't dismiss the popup this selection is opening.
+    const ownerDoc = liveRange.startContainer?.ownerDocument;
+    const stale = getContents().filter(
+      (c) => c.doc && c.doc !== ownerDoc && c.doc.getSelection()?.rangeCount,
+    );
+    if (stale.length > 0) {
+      guardProgrammaticSelection();
+      stale.forEach((c) => c.doc.getSelection()?.removeAllRanges());
+      releaseProgrammaticSelection();
     }
     // Selection.getRangeAt() returns the live, associated Range by reference.
     // Clone only for double-click normalization so native touch paths retain
@@ -282,6 +484,8 @@ export const useTextSelector = (
   const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
     lastPointerType.current = ev.pointerType;
     isPointerDown.current = true;
+    clearCrossDoc();
+    dragAnchorRef.current = null;
 
     if (isInstantAnnotationEnabled()) {
       const eligible = handleInstantAnnotationPointerDown(doc, index, ev);
@@ -295,6 +499,19 @@ export const useTextSelector = (
         ev.preventDefault();
         startInstantAnnotating(ev.target as HTMLElement, { x: ev.clientX, y: ev.clientY });
       }
+    }
+
+    // Cross-page drag (#5809): remember where a mouse selection drag starts so
+    // it can continue onto an adjacent page iframe.
+    if (
+      !isInstantAnnotating.current &&
+      ev.pointerType === 'mouse' &&
+      ev.button === 0 &&
+      bookData?.isFixedLayout &&
+      isTextAtPoint(doc, ev.clientX, ev.clientY)
+    ) {
+      const pos = getCaretPosition(doc, ev.clientX, ev.clientY);
+      if (pos) dragAnchorRef.current = { doc, index, pos };
     }
   };
 
@@ -354,6 +571,22 @@ export const useTextSelector = (
       return;
     }
 
+    // Cross-page drag (#5809): the browser keeps delivering a mouse drag to the
+    // iframe it started in, even once the pointer is over another page iframe.
+    // Over another page, extend the selection into it and freeze the origin
+    // page's native drag (which would otherwise chase the out-of-frame pointer);
+    // back over the origin page the native drag resumes.
+    const dragAnchor = dragAnchorRef.current;
+    if (dragAnchor && ev.pointerType === 'mouse' && ev.buttons & 1 && pointerPos.current) {
+      if (extendCrossDocTo(dragAnchor, pointerPos.current)) {
+        const state = crossDocRef.current;
+        if (state && !state.frozen) {
+          setNativeDragFrozen(dragAnchor.doc, true);
+          state.frozen = true;
+        }
+      }
+    }
+
     // Pointer-driven auto page-turn (#1354) for web/desktop/iOS, where the
     // pointer is the reliable, stable signal at the corner. Android uses the
     // caret in handleSelectionchange (no pointermove during a selection drag).
@@ -391,6 +624,8 @@ export const useTextSelector = (
   const handlePointerCancel = (_doc: Document, _index: number, _ev: PointerEvent) => {
     isPointerDown.current = false;
     mouseDoubleClickRef.current = null;
+    clearCrossDoc();
+    dragAnchorRef.current = null;
     // A pending still-hold that never engaged: drop it so a swipe-takeover
     // (Android fires pointercancel when the browser starts scrolling) keeps its
     // native page-turn instead of being swallowed.
@@ -513,6 +748,30 @@ export const useTextSelector = (
     isPointerDown.current = false;
     const mouseDoubleClick = mouseDoubleClickRef.current;
     mouseDoubleClickRef.current = null;
+    dragAnchorRef.current = null;
+
+    // Cross-page drag (#5809): the release ends the drag; commit the per-page
+    // parts as one selection (re-applied, so a native drag that fought the
+    // anchor page's part mid-gesture can't leave it stale).
+    if (crossDocRef.current) {
+      const { anchor } = crossDocRef.current;
+      if (ev) {
+        const feRect = doc.defaultView?.frameElement?.getBoundingClientRect();
+        extendCrossDocTo(anchor, {
+          x: ev.clientX + (feRect?.left ?? 0),
+          y: ev.clientY + (feRect?.top ?? 0),
+        });
+      }
+      const segments = crossDocRef.current?.segments ?? [];
+      if (segments.length > 0) {
+        guardProgrammaticSelection();
+        applyCrossDocSegments(segments, getContents(), anchor);
+        clearCrossDoc(true);
+        isUpToPopup.current = true;
+        await makeCrossDocSelection(segments);
+        return;
+      }
+    }
     // A tap (or a long-press shorter than the hold) that never engaged: drop the
     // pending still-hold so the tap falls through to a page turn.
     if (instantHoldTimer.current) cancelInstantHold();
@@ -574,6 +833,7 @@ export const useTextSelector = (
 
     if (osPlatform === 'android' && appService?.isAndroidApp) {
       await sanitizeAndroidHyphenSelection(doc, index);
+      await suppressNativeHandlesForPages();
     }
   };
   const handleTouchStart = () => {
@@ -794,7 +1054,7 @@ export const useTextSelector = (
     handleShowPopup,
     handleUpToPopup,
     handleContextmenu,
-    applyProgrammaticSelection,
+    dragSelectionTo,
     // The shared corner auto-turn feed/cancel/subscribe, re-exposed so the range
     // editors can drive the same machine from their overlay handle drags.
     noteAutoTurnPoint,

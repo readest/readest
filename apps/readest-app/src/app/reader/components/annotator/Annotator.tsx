@@ -344,7 +344,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     handleShowPopup,
     handleUpToPopup,
     handleContextmenu,
-    applyProgrammaticSelection,
+    dragSelectionTo,
     noteAutoTurnPoint,
     cancelAutoTurn,
     onAutoTurn,
@@ -1301,70 +1301,77 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     if (!selection || !selection.text) return null;
     setHighlightOptionsVisible(true);
     const { booknotes: annotations = [] } = config;
-    // Popup-window selections carry the CFI mapped into the pristine section;
-    // recomputing from the popup range would yield an unresolvable path.
-    const cfi = selection.popup ? selection.cfi : view?.getCFI(selection.index, selection.range);
-    if (!cfi) return null;
     const style = highlightStyle || settings.globalReadSettings.highlightStyle;
     const color = settings.globalReadSettings.highlightStyles[style];
     setSelectedStyle(style);
     setSelectedColor(color);
-    const annotation: BookNote = {
-      id: uniqueId(),
-      type: 'annotation',
-      cfi,
-      style,
-      color,
-      text: selection.text,
-      note: '',
-      page: progress.page,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    const existingIndex = annotations.findIndex(
-      (annotation) =>
-        annotation.cfi === cfi &&
-        annotation.type === 'annotation' &&
-        annotation.style &&
-        !annotation.deletedAt,
-    );
     const views = getViewsById(bookKey.split('-')[0]!);
     // Only a brand-new highlight is a placeholder the cancel flow may remove;
     // restyling/toggling an existing one must never tear down the user's record.
     let created: BookNote | null = null;
-    if (existingIndex !== -1) {
-      const existing = annotations[existingIndex]!;
-      // Tear down both the original anchor and any global fan-outs that
-      // were drawn for the previous style/color, so the redraw below
-      // doesn't end up overlaying two highlights at the same position.
-      views.forEach((view) => view?.addAnnotation(existing, true));
-      if (existing.global) {
-        views.forEach((view) => removeGlobalAnnotationOverlays(view, existing));
-      }
-      if (update) {
-        // Preserve the note/text/createdAt and the `global` flag of the existing
-        // record so a restyle (color/style change) of a unified annotation
-        // doesn't wipe its note or silently demote a global highlight. The note
-        // bubble overlay (NOTE_PREFIX) isn't torn down above, so it persists; we
-        // only redraw the highlight overlay (value = cfi).
-        const merged = mergeRestyledAnnotation(existing, annotation);
-        annotations[existingIndex] = merged;
-        views.forEach((view) => view?.addAnnotation(merged));
-        if (merged.global) {
-          views.forEach((view) => {
-            if (view) expandAllRenderedSections(view, merged);
-          });
+    let firstCfi: string | undefined;
+    // A selection across pages (#5809) is highlighted one page at a time: one
+    // record per part, the selection itself staying anchored on the first.
+    for (const part of selection.segments ?? [selection]) {
+      // Popup-window selections carry the CFI mapped into the pristine section;
+      // recomputing from the popup range would yield an unresolvable path.
+      const cfi = selection.popup ? selection.cfi : view?.getCFI(part.index, part.range);
+      if (!cfi) continue;
+      firstCfi ??= cfi;
+      const annotation: BookNote = {
+        id: uniqueId(),
+        type: 'annotation',
+        cfi,
+        style,
+        color,
+        text: part.text,
+        note: '',
+        page: progress.page,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      const existingIndex = annotations.findIndex(
+        (annotation) =>
+          annotation.cfi === cfi &&
+          annotation.type === 'annotation' &&
+          annotation.style &&
+          !annotation.deletedAt,
+      );
+      if (existingIndex !== -1) {
+        const existing = annotations[existingIndex]!;
+        // Tear down both the original anchor and any global fan-outs that
+        // were drawn for the previous style/color, so the redraw below
+        // doesn't end up overlaying two highlights at the same position.
+        views.forEach((view) => view?.addAnnotation(existing, true));
+        if (existing.global) {
+          views.forEach((view) => removeGlobalAnnotationOverlays(view, existing));
+        }
+        if (update) {
+          // Preserve the note/text/createdAt and the `global` flag of the existing
+          // record so a restyle (color/style change) of a unified annotation
+          // doesn't wipe its note or silently demote a global highlight. The note
+          // bubble overlay (NOTE_PREFIX) isn't torn down above, so it persists; we
+          // only redraw the highlight overlay (value = cfi).
+          const merged = mergeRestyledAnnotation(existing, annotation);
+          annotations[existingIndex] = merged;
+          views.forEach((view) => view?.addAnnotation(merged));
+          if (merged.global) {
+            views.forEach((view) => {
+              if (view) expandAllRenderedSections(view, merged);
+            });
+          }
+        } else {
+          existing.deletedAt = Date.now();
+          handleDismissPopup();
         }
       } else {
-        existing.deletedAt = Date.now();
-        handleDismissPopup();
+        annotations.push(annotation);
+        views.forEach((view) => view?.addAnnotation(annotation));
+        created ??= annotation;
       }
-    } else {
-      annotations.push(annotation);
-      views.forEach((view) => view?.addAnnotation(annotation));
-      setSelection({ ...selection, cfi, annotated: true });
-      created = annotation;
     }
+    if (!firstCfi) return null;
+    if (created) setSelection({ ...selection, cfi: firstCfi, annotated: true });
 
     const updatedConfig = updateBooknotes(bookKey, annotations);
     if (updatedConfig) {
@@ -2174,7 +2181,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             isVertical={viewSettings.vertical}
             selection={selection}
             handleColor={selectedColor}
-            onRangeChange={applyProgrammaticSelection}
+            onDragTo={dragSelectionTo}
             onStartDrag={handleStartEditAnnotation}
             noteAutoTurnPoint={noteAutoTurnPoint}
             cancelAutoTurn={cancelAutoTurn}

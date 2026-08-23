@@ -24,6 +24,14 @@ export interface Position {
   dir?: PositionDir;
 }
 
+// One section's part of a selection that runs across section documents (a PDF
+// selection continued onto the next page, #5809).
+export interface SelectionSegment {
+  range: Range;
+  index: number;
+  text: string;
+}
+
 export interface TextSelection {
   key: string;
   text: string;
@@ -34,6 +42,10 @@ export interface TextSelection {
   href?: string;
   annotated?: boolean;
   rect?: Rect;
+  // Present when the selection spans several section documents, in reading
+  // order. `range`/`index`/`cfi` are the first segment's and `text` is all
+  // segments' text joined, so single-range consumers keep working.
+  segments?: SelectionSegment[];
   // Native Android selection handles were suppressed for this selection
   // (Blink hyphen bounds bug, issue #1553) — the app draws its own handles.
   handlesSuppressed?: boolean;
@@ -226,22 +238,20 @@ export const isPointerInsideSelection = (selection: Selection, ev: PointerEvent)
   return false;
 };
 
-export const getPosition = (
-  targetElement: Range | Element | TextSelection,
-  rect: Rect,
-  paddingPx: number,
-  isVertical: boolean = false,
-) => {
-  const { range: target, rect: targetRect } =
-    targetElement && 'range' in targetElement
-      ? targetElement
-      : { range: targetElement, rect: undefined };
+// The iframe rect and CSS transform scale that map a target's client rects
+// into the outer webview's coordinate system.
+const getFrameTransform = (target: Range | Element) => {
   const frameElement = getIframeElement(target);
   const transform = frameElement ? getComputedStyle(frameElement).transform : '';
   const match = transform.match(/matrix\((.+)\)/);
   const [sx, , , sy] = match?.[1]?.split(/\s*,\s*/)?.map((x) => parseFloat(x)) ?? [];
-
   const frame = frameElement?.getBoundingClientRect() ?? { top: 0, left: 0 };
+  return { frame, sx, sy };
+};
+
+// A target's line rects in webview coordinates (an element's padding excluded).
+const getWebviewRects = (target: Range | Element): Rect[] => {
+  const { frame, sx, sy } = getFrameTransform(target);
   let padding = { top: 0, right: 0, bottom: 0, left: 0 };
   if ('nodeType' in target && target.nodeType === 1) {
     const computedStyle = window.getComputedStyle(target);
@@ -252,20 +262,47 @@ export const getPosition = (
       left: parseInt(computedStyle.paddingLeft, 10) || 0,
     };
   }
-  const rects = Array.from(target.getClientRects()).map((rect) => {
-    return {
-      top: rect.top + padding.top,
-      right: rect.right - padding.right,
-      bottom: rect.bottom - padding.bottom,
-      left: rect.left + padding.left,
-    };
-  });
-  const first = targetRect
-    ? frameRect(frame, targetRect, sx, sy)
-    : frameRect(frame, rects[0], sx, sy);
-  const last = targetRect
-    ? frameRect(frame, targetRect, sx, sy)
-    : frameRect(frame, rects.at(-1), sx, sy);
+  return Array.from(target.getClientRects()).map((rect) =>
+    frameRect(
+      frame,
+      {
+        top: rect.top + padding.top,
+        right: rect.right - padding.right,
+        bottom: rect.bottom - padding.bottom,
+        left: rect.left + padding.left,
+      },
+      sx,
+      sy,
+    ),
+  );
+};
+
+export const getPosition = (
+  targetElement: Range | Element | TextSelection,
+  rect: Rect,
+  paddingPx: number,
+  isVertical: boolean = false,
+) => {
+  const {
+    range: target,
+    rect: targetRect,
+    segments,
+  } = targetElement && 'range' in targetElement
+    ? targetElement
+    : { range: targetElement, rect: undefined, segments: undefined };
+  // A selection across section documents: its rects span several iframes, so
+  // gather them per segment (each in its own frame) in reading order.
+  const ranges = segments && segments.length > 1 ? segments.map((s) => s.range) : [target];
+  let rects: Rect[];
+  if (targetRect) {
+    const { frame, sx, sy } = getFrameTransform(target);
+    rects = [frameRect(frame, targetRect, sx, sy)];
+  } else {
+    rects = ranges.flatMap(getWebviewRects);
+  }
+  const zero = { left: 0, right: 0, top: 0, bottom: 0 };
+  const first = rects[0] ?? zero;
+  const last = rects.at(-1) ?? zero;
 
   if (isVertical) {
     const leftSpace = first.left - rect.left;
@@ -317,10 +354,7 @@ export const getPosition = (
     // Multi-page selection: both ends are off the visible page, but the middle
     // may cross it. Anchor to the last on-screen line so the popup tracks the
     // visible part of the selection.
-    const v = rects
-      .map((r) => frameRect(frame, r, sx, sy))
-      .filter((r) => inFrame(midX(r), midY(r)))
-      .at(-1);
+    const v = rects.filter((r) => inFrame(midX(r), midY(r))).at(-1);
     if (v) {
       return {
         point: constrainPointWithinRect(
