@@ -511,4 +511,94 @@ describe("readest_syncstats", function()
 
         assert.are.equal(4242, settings.stats_pull_cursor) -- newest updated_at_ms
     end)
+
+    -- Build a pull response of `n` page events with updated_at_ms running
+    -- from `from_ms` upwards (one per ms), all for one book.
+    local function pageResponse(from_ms, n)
+        local pages = {}
+        for i = 1, n do
+            pages[i] = { book_hash = "md5-pull", page = i, start_time = from_ms + i,
+                         duration = 5, total_pages = 10, updated_at_ms = from_ms + i }
+        end
+        return {
+            statBooks = { { book_hash = "md5-pull", title = "P", authors = "A" } },
+            statPages = pages,
+        }
+    end
+
+    it("pulls a large history in bounded pages, advancing the cursor per page", function()
+        local settings = { stats_pull_cursor = 0 }
+        local sinces, limits, cursor_at_call = {}, {}, {}
+        -- server pages: 1000, 1000, then a short page of 5
+        local sizes = { 1000, 1000, 5 }
+        local client = { pullChanges = function(_, params, cb)
+            table.insert(sinces, params.since)
+            table.insert(limits, params.limit)
+            table.insert(cursor_at_call, settings.stats_pull_cursor)
+            cb(true, pageResponse(params.since, sizes[#sinces] or 0), 200)
+        end }
+
+        SyncStats:pull(settings, client, false, function() end)
+        drainScheduled()
+
+        assert.are.equal(3, #sinces)
+        assert.are.same({ 1000, 1000, 1000 }, limits)
+        -- each page resumes from the previous page's newest updated_at_ms
+        assert.are.same({ 0, 1000, 2000 }, sinces)
+        -- the cursor advanced after every page, not once at the end
+        assert.are.same({ 0, 1000, 2000 }, cursor_at_call)
+        assert.are.equal(2005, settings.stats_pull_cursor)
+        assert.are.equal(settings, G_reader_settings:readSetting("readest_sync"))
+
+        local conn = SQ3.open(statsDbPath())
+        local n = conn:rowexec("SELECT COUNT(*) FROM page_stat_data;")
+        conn:close()
+        assert.are.equal(2005, tonumber(n))
+    end)
+
+    it("keeps partial progress when a page fails, and a retry resumes from the cursor", function()
+        local settings = { stats_pull_cursor = 0 }
+        local calls = 0
+        local client = { pullChanges = function(_, params, cb)
+            calls = calls + 1
+            if calls == 2 then
+                cb(false, nil, 500)
+            else
+                cb(true, pageResponse(params.since, 1000), 200)
+            end
+        end }
+
+        SyncStats:pull(settings, client, false, function() end)
+        drainScheduled()
+
+        assert.are.equal(2, calls)
+        assert.are.equal(1000, settings.stats_pull_cursor) -- first page kept
+
+        local sinces = {}
+        client.pullChanges = function(_, params, cb)
+            table.insert(sinces, params.since)
+            cb(true, pageResponse(params.since, #sinces == 1 and 1000 or 3), 200)
+        end
+        SyncStats:pull(settings, client, false, function() end)
+        drainScheduled()
+
+        assert.are.same({ 1000, 2000 }, sinces) -- resumed, not restarted
+        assert.are.equal(2003, settings.stats_pull_cursor)
+    end)
+
+    it("declares limit as an expected pullChanges param", function()
+        local json = require("json")
+        local f = assert(io.open("readest-sync-api.json", "r"))
+        local spec = json.decode(f:read("*a"))
+        f:close()
+
+        local method = spec.methods.pullChanges
+        local expected = {}
+        for _, k in ipairs(method.required_params or {}) do expected[k] = true end
+        for _, k in ipairs(method.optional_params or {}) do expected[k] = true end
+
+        for _, k in ipairs({ "since", "type", "book", "meta_hash", "limit" }) do
+            assert.is_true(expected[k] == true, k .. " must be an expected pullChanges param")
+        end
+    end)
 end)

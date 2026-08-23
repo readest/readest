@@ -6,6 +6,7 @@
       "path": "/sync",
       "method": "GET",
       "required_params": ["since", "type", "book", "meta_hash"],
+      "optional_params": ["limit"],
       "expected_status": [200, 400, 301, 401, 403]
     },
     "pushChanges": {

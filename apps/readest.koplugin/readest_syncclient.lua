@@ -106,6 +106,7 @@ function ReadestSyncClient:pullChanges(params, callback)
         type      = params.type,
         book      = params.book,
         meta_hash = params.meta_hash,
+        limit     = params.limit,
     }, callback)
 end
 
