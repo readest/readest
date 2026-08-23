@@ -1312,10 +1312,25 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     let firstCfi: string | undefined;
     // A selection across pages (#5809) is highlighted one page at a time: one
     // record per part, the selection itself staying anchored on the first.
-    for (const part of selection.segments ?? [selection]) {
-      // Popup-window selections carry the CFI mapped into the pristine section;
-      // recomputing from the popup range would yield an unresolvable path.
-      const cfi = selection.popup ? selection.cfi : view?.getCFI(part.index, part.range);
+    // Popup-window selections carry the CFI mapped into the pristine section;
+    // recomputing from the popup range would yield an unresolvable path.
+    const parts = selection.segments ?? [selection];
+    const cfis = parts.map((part) =>
+      selection.popup ? selection.cfi : view?.getCFI(part.index, part.range),
+    );
+    const findExisting = (cfi: string) =>
+      annotations.findIndex(
+        (annotation) =>
+          annotation.cfi === cfi &&
+          annotation.type === 'annotation' &&
+          annotation.style &&
+          !annotation.deletedAt,
+      );
+    // Toggling off only once every part is highlighted; otherwise the missing
+    // parts are added and the already highlighted ones left alone.
+    const allExist = cfis.every((cfi) => cfi && findExisting(cfi) !== -1);
+    for (const [i, part] of parts.entries()) {
+      const cfi = cfis[i];
       if (!cfi) continue;
       firstCfi ??= cfi;
       const annotation: BookNote = {
@@ -1330,14 +1345,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
-      const existingIndex = annotations.findIndex(
-        (annotation) =>
-          annotation.cfi === cfi &&
-          annotation.type === 'annotation' &&
-          annotation.style &&
-          !annotation.deletedAt,
-      );
+      const existingIndex = findExisting(cfi);
       if (existingIndex !== -1) {
+        if (!update && !allExist) continue;
         const existing = annotations[existingIndex]!;
         // Tear down both the original anchor and any global fan-outs that
         // were drawn for the previous style/color, so the redraw below
