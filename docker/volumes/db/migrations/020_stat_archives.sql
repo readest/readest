@@ -35,13 +35,28 @@ DROP POLICY IF EXISTS stat_archives_select ON public.stat_archives;
 CREATE POLICY stat_archives_select ON public.stat_archives FOR SELECT TO authenticated
   USING ((SELECT auth.uid()) = user_id);
 
--- Single-row sweep cursor for the compaction job.
+-- Single-row sweep cursor for the compaction job. Service-role only: RLS with
+-- no policies denies every other role, and the REVOKE keeps PostgREST from
+-- exposing it through Supabase's default table privileges.
 CREATE TABLE IF NOT EXISTS public.stat_archive_state (
   id          smallint PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   user_cursor uuid,
   updated_at  timestamp with time zone NOT NULL DEFAULT now()
 );
+ALTER TABLE public.stat_archive_state ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.stat_archive_state FROM PUBLIC, anon, authenticated;
 INSERT INTO public.stat_archive_state (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+-- Users whose account was deleted while archive objects may still exist under
+-- stats/v1/{user_id}/ (the account-deletion handler queues every deleted user;
+-- the compaction job sweeps the prefix and removes the row once it lists
+-- empty). No foreign key: the auth user is already gone. Service-role only.
+CREATE TABLE IF NOT EXISTS public.stat_archive_orphans (
+  user_id     uuid PRIMARY KEY,
+  created_at  timestamp with time zone NOT NULL DEFAULT now()
+);
+ALTER TABLE public.stat_archive_orphans ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.stat_archive_orphans FROM PUBLIC, anon, authenticated;
 
 -- Next batch of users in stat_pages PK order after the saved cursor (loose
 -- index scan: one PK probe per user), advancing the cursor in the same

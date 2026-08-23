@@ -8,14 +8,10 @@ workers_dev = true
 preview_urls = true
 
 # Reading-statistics compaction (POST /api/stats/compact via worker.ts
-# scheduled()). Every 10 minutes; each run does bounded work and returns.
+# scheduled()). Every 10 minutes; each run does bounded work (mostly I/O wait,
+# well inside the default CPU limit) and returns.
 [triggers]
 crons = ["*/10 * * * *"]
-
-# A compaction run reads/writes up to 50 users x 5 segments; allow the paid-plan
-# CPU ceiling so a busy run never dies mid-user (the work itself is mostly I/O).
-[limits]
-cpu_ms = 300000
 
 [[routes]]
 pattern = "web-cf.readest.com"
@@ -79,7 +75,8 @@ dataset = "iap_webhooks"
 
 # Reading-statistics archive metrics. One point per compaction run: indexes
 # ['compact'], blobs [outcome, error], doubles [users_claimed, users_archived,
-# segments, rows, bytes, duration_ms, errors, commit_mismatches]. One point per
+# segments, rows, bytes, duration_ms, errors, commit_mismatches, orphans_swept].
+# One point per
 # R2-backed stats pull: indexes ['pull'], blobs ['paged'|'full'], doubles
 # [segments_read, segment_rows_returned, limit].
 [[analytics_engine_datasets]]

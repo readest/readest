@@ -6,6 +6,7 @@ import {
   decodeSegment,
   takePage,
   guardArchiveRequest,
+  isCompactionEnabled,
   readCompactConfig,
   tsToMs,
   type ArchivedPageRow,
@@ -113,13 +114,10 @@ describe('guardArchiveRequest', () => {
 
   it('reports 503 before 401 when the feature is not configured', () => {
     expect(guardArchiveRequest(req('t'), {}, 'compact')).toMatchObject({ ok: false, status: 503 });
-    expect(
-      guardArchiveRequest(
-        req('t'),
-        { STATS_COMPACT_TOKEN: 't', STATS_ARCHIVE_R2: bucket },
-        'compact',
-      ),
-    ).toMatchObject({ ok: false, status: 503 }); // not enabled
+    expect(guardArchiveRequest(req('x'), { STATS_ARCHIVE_R2: bucket }, 'compact')).toMatchObject({
+      ok: false,
+      status: 503,
+    }); // no token: 503 even with a wrong header
     expect(
       guardArchiveRequest(
         req('t'),
@@ -129,34 +127,20 @@ describe('guardArchiveRequest', () => {
     ).toMatchObject({ ok: false, status: 503 }); // no bucket
   });
 
-  it('rejects a wrong token with 401 and accepts the right one', () => {
-    const env = {
-      STATS_COMPACT_TOKEN: 't',
-      STATS_COMPACT_ENABLED: 'true',
-      STATS_ARCHIVE_R2: bucket,
-    };
-    expect(guardArchiveRequest(req('nope'), env, 'compact')).toMatchObject({
-      ok: false,
-      status: 401,
-    });
-    expect(guardArchiveRequest(req(), env, 'compact')).toMatchObject({ ok: false, status: 401 });
-    expect(guardArchiveRequest(req('t'), env, 'compact')).toMatchObject({ ok: true });
-  });
-
-  it('targeted runs need token + bucket but ignore the enabled flag', () => {
+  it('rejects a wrong token with 401 and accepts the right one, whether or not compaction is enabled', () => {
     const base = { STATS_COMPACT_TOKEN: 't', STATS_ARCHIVE_R2: bucket };
-    expect(guardArchiveRequest(req('t'), base, 'targeted')).toMatchObject({ ok: true });
-    expect(
-      guardArchiveRequest(req('t'), { ...base, STATS_COMPACT_ENABLED: 'true' }, 'targeted'),
-    ).toMatchObject({ ok: true });
-    expect(guardArchiveRequest(req('x'), base, 'targeted')).toMatchObject({
-      ok: false,
-      status: 401,
-    });
-    expect(guardArchiveRequest(req('t'), { STATS_ARCHIVE_R2: bucket }, 'targeted')).toMatchObject({
-      ok: false,
-      status: 503,
-    });
+    for (const env of [base, { ...base, STATS_COMPACT_ENABLED: 'true' }]) {
+      expect(guardArchiveRequest(req('nope'), env, 'compact')).toMatchObject({
+        ok: false,
+        status: 401,
+      });
+      expect(guardArchiveRequest(req(), env, 'compact')).toMatchObject({ ok: false, status: 401 });
+      expect(guardArchiveRequest(req('t'), env, 'compact')).toMatchObject({ ok: true });
+    }
+    // the kill switch is the route's business, not the guard's
+    expect(isCompactionEnabled(base)).toBe(false);
+    expect(isCompactionEnabled({ ...base, STATS_COMPACT_ENABLED: 'true' })).toBe(true);
+    expect(isCompactionEnabled({ ...base, STATS_COMPACT_ENABLED: 'TRUE' })).toBe(false);
   });
 
   it('restore works while compaction is disabled and refuses with 409 while it is enabled', () => {
@@ -209,5 +193,14 @@ describe('readCompactConfig', () => {
       segmentsPerUser: 2,
       segmentRows: 10000,
     });
+  });
+
+  it('falls back on digit strings beyond the safe integer range', () => {
+    expect(
+      readCompactConfig({
+        STATS_COMPACT_SEGMENT_ROWS: '99999999999999999999',
+        STATS_COMPACT_USERS_PER_RUN: '9007199254740993',
+      }),
+    ).toMatchObject({ segmentRows: 10000, usersPerRun: 50 });
   });
 });

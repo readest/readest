@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import {
   SEGMENT_VERSION,
+  deleteUserSegments,
   encodeSegment,
   getStatsArchiveEnv,
   guardArchiveRequest,
+  isCompactionEnabled,
   readCompactConfig,
   segmentKey,
   tsToMs,
@@ -48,6 +50,52 @@ interface Summary {
   bytes: number;
   errors: number;
   commit_mismatches: number;
+  orphans_swept: number;
+}
+
+const ORPHANS_PER_RUN = 20;
+
+/**
+ * Account-deletion cleanup queue: every deleted user is queued in
+ * stat_archive_orphans by /api/user/delete; each batch run deletes the
+ * stats/v1/{user_id}/ prefix of a few queued users and removes the row once the
+ * listing is empty. Runs even while compaction is disabled (it is cleanup, not
+ * compaction) and is bounded so it never starves the run.
+ */
+async function sweepOrphans(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  bucket: NonNullable<ReturnType<typeof getStatsArchiveEnv>['STATS_ARCHIVE_R2']>,
+): Promise<{ swept: number; errors: number }> {
+  const out = { swept: 0, errors: 0 };
+  const { data, error } = await supabase
+    .from('stat_archive_orphans')
+    .select('user_id')
+    .order('created_at', { ascending: true })
+    .limit(ORPHANS_PER_RUN);
+  if (error) {
+    console.error('stats compact: orphan queue read failed', error.message);
+    out.errors++;
+    return out;
+  }
+  for (const { user_id } of (data ?? []) as { user_id: string }[]) {
+    try {
+      await deleteUserSegments(bucket, user_id);
+      const { error: delErr } = await supabase
+        .from('stat_archive_orphans')
+        .delete()
+        .eq('user_id', user_id);
+      if (delErr) throw delErr;
+      out.swept++;
+    } catch (e) {
+      out.errors++;
+      console.error(
+        'stats compact: orphan sweep failed',
+        user_id,
+        e instanceof Error ? e.message : e,
+      );
+    }
+  }
+  return out;
 }
 
 const DAY_MS = 86400000;
@@ -55,18 +103,23 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 /**
  * Optional `{ "user_id": uuid }` body: an operator compacting ONE user by hand
- * (validation on a known account, or draining a heavy user). Returns undefined
- * for the cron's body-less request, null for a malformed user_id.
+ * (validation on a known account, or draining a heavy user). Only an EMPTY body
+ * is the cron's batch request; every non-empty body must be a valid targeted
+ * request (null = malformed, answered 400), so a typo never starts a batch run.
  */
 async function readTarget(request: Request): Promise<string | null | undefined> {
+  const raw = (await request.text()).trim();
+  if (raw === '') return undefined;
   let body: unknown;
   try {
-    body = await request.json();
+    body = JSON.parse(raw);
   } catch {
-    return undefined;
+    return null;
   }
-  const userId = (body as { user_id?: unknown } | null)?.user_id;
-  if (userId === undefined) return undefined;
+  const userId =
+    body && typeof body === 'object' && !Array.isArray(body)
+      ? (body as { user_id?: unknown }).user_id
+      : undefined;
   return typeof userId === 'string' && UUID_RE.test(userId) ? userId : null;
 }
 
@@ -74,9 +127,12 @@ export async function POST(request: Request) {
   const env = getStatsArchiveEnv();
   const target = await readTarget(request);
   if (target === null) {
-    return NextResponse.json({ error: 'user_id must be a uuid' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'body must be empty (batch run) or {"user_id": "<uuid>"} (targeted run)' },
+      { status: 400 },
+    );
   }
-  const guard = guardArchiveRequest(request, env, target ? 'targeted' : 'compact');
+  const guard = guardArchiveRequest(request, env, 'compact');
   if (!guard.ok) return NextResponse.json(guard.body, { status: guard.status });
 
   const started = Date.now();
@@ -91,7 +147,19 @@ export async function POST(request: Request) {
     bytes: 0,
     errors: 0,
     commit_mismatches: 0,
+    orphans_swept: 0,
   };
+
+  // Batch runs (the cron) first do the account-deletion cleanup, kill switch
+  // or not; only the compaction itself is gated by STATS_COMPACT_ENABLED.
+  if (!target) {
+    const sweep = await sweepOrphans(supabase, bucket);
+    s.orphans_swept = sweep.swept;
+    s.errors += sweep.errors;
+    if (!isCompactionEnabled(env)) {
+      return NextResponse.json({ disabled: true, orphans_swept: s.orphans_swept }, { status: 503 });
+    }
+  }
 
   const finish = (status: number, outcome: 'ok' | 'error', body: Record<string, unknown>) => {
     const duration_ms = Date.now() - started;
@@ -109,6 +177,7 @@ export async function POST(request: Request) {
         duration_ms,
         s.errors,
         s.commit_mismatches,
+        s.orphans_swept,
       ],
     });
     return NextResponse.json({ ...body, duration_ms }, { status });

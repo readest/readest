@@ -16,8 +16,39 @@ const rpcMock = vi.fn(async (fn: string, args: Record<string, unknown>) => {
   const r = h(args);
   return { data: r.data ?? null, error: r.error ?? null };
 });
+// stat_archive_orphans (account-deletion cleanup queue): selects return the
+// queued rows, deletes by user_id remove them.
+let orphanRows: { user_id: string }[] = [];
+const orphanCalls: { method: string; args: unknown[] }[] = [];
+const makeOrphanBuilder = () => {
+  const chain: { method: string; args: unknown[] }[] = [];
+  const builder: Record<string, unknown> = {};
+  const rec =
+    (method: string) =>
+    (...args: unknown[]) => {
+      orphanCalls.push({ method, args });
+      chain.push({ method, args });
+      return builder;
+    };
+  for (const m of ['select', 'delete', 'eq', 'order', 'limit']) builder[m] = rec(m);
+  // biome-ignore lint/suspicious/noThenProperty: mock PostgREST builder is intentionally thenable
+  (builder as { then: unknown }).then = (resolve: (v: unknown) => void) => {
+    if (chain.some((c) => c.method === 'delete')) {
+      const id = chain.find((c) => c.method === 'eq' && c.args[0] === 'user_id')?.args[1];
+      orphanRows = orphanRows.filter((o) => o.user_id !== id);
+      return resolve({ data: null, error: null });
+    }
+    const lim = chain.find((c) => c.method === 'limit')?.args[0] as number | undefined;
+    return resolve({ data: orphanRows.slice(0, lim ?? orphanRows.length), error: null });
+  };
+  return builder;
+};
+const fromMock = vi.fn((table: string) => {
+  if (table !== 'stat_archive_orphans') throw new Error(`unexpected table ${table}`);
+  return makeOrphanBuilder();
+});
 vi.mock('@/utils/supabase', () => ({
-  createSupabaseAdminClient: () => ({ rpc: rpcMock }),
+  createSupabaseAdminClient: () => ({ rpc: rpcMock, from: fromMock }),
 }));
 
 let cfEnv: Record<string, unknown> = {};
@@ -52,6 +83,11 @@ const daysAgo = (d: number) => new Date(Date.now() - d * 86400000).toISOString()
 
 beforeEach(() => {
   rpcCalls.length = 0;
+  rpcMock.mockClear();
+  orphanRows = [];
+  orphanCalls.length = 0;
+  fromMock.mockClear();
+  bucket.list.mockReset().mockResolvedValue({ objects: [], truncated: false });
   for (const k of Object.keys(rpcHandlers)) delete rpcHandlers[k];
   bucket.put.mockReset().mockResolvedValue(undefined);
   bucket.delete.mockReset();
@@ -156,6 +192,73 @@ describe('POST /api/stats/compact targeted run ({ user_id })', () => {
     expect((await postUser('nope')).status).toBe(400);
     cfEnv = { STATS_COMPACT_TOKEN: 't' };
     expect((await postUser(UID)).status).toBe(503);
+  });
+
+  it('rejects any non-empty body that is not a valid targeted request instead of running a batch', async () => {
+    cfEnv = { ...cfEnv, STATS_COMPACT_ENABLED: 'true' };
+    const raw = (body: string) =>
+      POST(
+        new Request('https://web.readest.com/api/stats/compact', {
+          method: 'POST',
+          headers: { 'x-compact-token': 't', 'content-type': 'application/json' },
+          body,
+        }),
+      );
+    for (const body of ['{"userId":"' + UID + '"}', '{"user_id":', '[]', '"x"', '{}', '   ']) {
+      // whitespace-only counts as empty (cron-shaped); everything else is malformed
+      const res = await raw(body);
+      if (body.trim() === '') {
+        expect(res.status).toBe(200);
+      } else {
+        expect(res.status).toBe(400);
+      }
+    }
+    // the malformed bodies never reached the database: only the whitespace run claimed users
+    expect(rpcCalls.filter((c) => c.fn === 'stat_archive_claim_users')).toHaveLength(1);
+  });
+});
+
+describe('POST /api/stats/compact orphan sweep (account-deletion cleanup)', () => {
+  const A = '00000000-0000-0000-0000-00000000000a';
+  const B = '00000000-0000-0000-0000-00000000000b';
+
+  it('deletes queued users prefixes and dequeues them, even while compaction is disabled', async () => {
+    cfEnv = { STATS_ARCHIVE_R2: bucket, STATS_COMPACT_AE: ae, STATS_COMPACT_TOKEN: 't' };
+    orphanRows = [{ user_id: A }, { user_id: B }];
+    bucket.list.mockImplementation(async ({ prefix }: { prefix: string }) => ({
+      objects: prefix.includes(A) ? [{ key: `stats/v1/${A}/1.json` }] : [],
+      truncated: false,
+    }));
+    const res = await post();
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ disabled: true, orphans_swept: 2 });
+    expect(bucket.delete).toHaveBeenCalledWith([`stats/v1/${A}/1.json`]);
+    expect(orphanRows).toEqual([]);
+    expect(rpcMock).not.toHaveBeenCalled(); // no compaction while disabled
+  });
+
+  it('keeps a queued user whose prefix could not be deleted and counts the error', async () => {
+    orphanRows = [{ user_id: A }, { user_id: B }];
+    bucket.list.mockImplementation(async ({ prefix }: { prefix: string }) => {
+      if (prefix.includes(A)) throw new Error('r2 down');
+      return { objects: [], truncated: false };
+    });
+    const body = await (await post()).json();
+    expect(body).toMatchObject({ ok: true, orphans_swept: 1, errors: 1 });
+    expect(orphanRows).toEqual([{ user_id: A }]);
+  });
+
+  it('does not run the sweep for a targeted request', async () => {
+    orphanRows = [{ user_id: A }];
+    await POST(
+      new Request('https://web.readest.com/api/stats/compact', {
+        method: 'POST',
+        headers: { 'x-compact-token': 't', 'content-type': 'application/json' },
+        body: JSON.stringify({ user_id: '00000000-0000-0000-0000-000000000001' }),
+      }),
+    );
+    expect(orphanRows).toEqual([{ user_id: A }]);
+    expect(fromMock).not.toHaveBeenCalled();
   });
 });
 

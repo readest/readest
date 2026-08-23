@@ -269,29 +269,33 @@ export type ArchiveGuardResult =
 
 /**
  * Guard for the compact / restore endpoints. Order matters: configuration
- * problems answer 503 before any auth check so a misconfigured deployment
- * never reports auth errors. `compact` (the cron) additionally needs
- * STATS_COMPACT_ENABLED; `targeted` (an operator compacting one user by hand)
- * and `restore` deliberately work while compaction is disabled, and restore
- * refuses while it is enabled (mutual exclusion with the cron).
+ * problems (no token, no bucket) answer 503 before any auth check so a
+ * misconfigured deployment never reports auth errors; then 401 on a bad token.
+ * The compact route applies STATS_COMPACT_ENABLED itself, after its
+ * maintenance step, so operator actions (targeted runs, the orphan sweep,
+ * restore) work while the cron is off; `restore` additionally refuses with 409
+ * while compaction is enabled (mutual exclusion with the cron).
  */
 export function guardArchiveRequest(
   req: Request,
   env: Partial<StatsArchiveEnv>,
-  mode: 'compact' | 'targeted' | 'restore',
+  mode: 'compact' | 'restore',
 ): ArchiveGuardResult {
-  const enabled = env.STATS_COMPACT_ENABLED === 'true';
-  if (!env.STATS_COMPACT_TOKEN || !env.STATS_ARCHIVE_R2 || (mode === 'compact' && !enabled)) {
+  if (!env.STATS_COMPACT_TOKEN || !env.STATS_ARCHIVE_R2) {
     return { ok: false, status: 503, body: { disabled: true } };
   }
   if (req.headers.get('x-compact-token') !== env.STATS_COMPACT_TOKEN) {
     return { ok: false, status: 401, body: { error: 'unauthorized' } };
   }
-  if (mode === 'restore' && enabled) {
+  if (mode === 'restore' && env.STATS_COMPACT_ENABLED === 'true') {
     return { ok: false, status: 409, body: { error: 'disable compaction first' } };
   }
   return { ok: true };
 }
+
+/** The cron's batch run is the only path gated by the kill switch. */
+export const isCompactionEnabled = (env: Partial<StatsArchiveEnv>) =>
+  env.STATS_COMPACT_ENABLED === 'true';
 
 export interface CompactConfig {
   usersPerRun: number;
@@ -313,8 +317,11 @@ const COMPACT_DEFAULTS: CompactConfig = {
   segmentRows: 10000,
 };
 
-const positiveInt = (value: string | undefined, fallback: number) =>
-  value !== undefined && /^\d+$/.test(value) && Number(value) >= 1 ? Number(value) : fallback;
+const positiveInt = (value: string | undefined, fallback: number) => {
+  if (value === undefined || !/^\d+$/.test(value)) return fallback;
+  const n = Number(value);
+  return Number.isSafeInteger(n) && n >= 1 ? n : fallback;
+};
 
 /** Compaction knobs from wrangler vars; garbage or out-of-range falls back. */
 export function readCompactConfig(env: Partial<StatsArchiveEnv>): CompactConfig {

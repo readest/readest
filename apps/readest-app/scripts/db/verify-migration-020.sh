@@ -158,7 +158,15 @@ declare n int; begin
 end \$\$;
 reset role;
 
--- 7. RLS: authenticated users see only their own manifest rows
+-- 7. RLS: authenticated users see only their own manifest rows; every archive
+--    table has RLS enabled; the service-role-only tables are not readable by
+--    anon/authenticated at all
+do \$\$ begin
+  assert (select bool_and(relrowsecurity) from pg_class
+          where relname in ('stat_archives','stat_archive_state','stat_archive_orphans')), 'RLS on all 3 tables';
+  assert (select count(*) from pg_class
+          where relname in ('stat_archives','stat_archive_state','stat_archive_orphans')) = 3;
+end \$\$;
 set role authenticated;
 select set_config('request.jwt.claim.sub', '$U1', false);
 do \$\$ begin
@@ -167,10 +175,21 @@ end \$\$;
 select set_config('request.jwt.claim.sub', '$U2', false);
 do \$\$ begin
   assert (select count(*) from public.stat_archives) = 0, 'u2 sees nothing';
-  raise notice 'ok 7: stat_archives RLS';
+  raise notice 'ok 7: stat_archives RLS + relrowsecurity on all tables';
 end \$\$;
 reset role;
 SQL
+
+# 7b. anon/authenticated cannot read the service-role-only tables (REVOKE, not just RLS)
+for tbl in stat_archive_state stat_archive_orphans; do
+  for role in anon authenticated; do
+    if $PSQL -c "set role $role; select * from public.$tbl;" >/dev/null 2>"$D/err"; then
+      echo "FAIL 7b: $role could select $tbl" >&2; exit 1
+    fi
+    grep -q "permission denied" "$D/err" || { echo "FAIL 7b: unexpected error for $role/$tbl: $(head -1 "$D/err")" >&2; exit 1; }
+  done
+done
+echo "ok 7b: anon/authenticated cannot read stat_archive_state / stat_archive_orphans"
 
 # 8. grants: anon/authenticated cannot execute the archive RPCs
 for fn in "stat_archive_claim_users(1)" "stat_archive_candidate('$U1','7 days')" "stat_archive_rows('$U1','epoch','7 days',1)" "stat_archive_commit('$U1','k','epoch',now(),0,0)" "upsert_stat_pages_as('$U1','[]')"; do

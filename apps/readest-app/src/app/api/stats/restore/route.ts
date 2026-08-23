@@ -20,6 +20,7 @@ import {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CHUNK = 500;
+const MANIFEST_PAGE = 1000;
 
 export async function POST(request: Request) {
   const env = getStatsArchiveEnv();
@@ -38,12 +39,6 @@ export async function POST(request: Request) {
 
   const bucket = env.STATS_ARCHIVE_R2!;
   const supabase = createSupabaseAdminClient();
-  const { data: manifest, error: manErr } = await supabase
-    .from('stat_archives')
-    .select('*')
-    .eq('user_id', userId)
-    .order('updated_to', { ascending: true });
-  if (manErr) return NextResponse.json({ error: manErr.message }, { status: 500 });
 
   let restoredSegments = 0;
   let rows = 0;
@@ -55,38 +50,54 @@ export async function POST(request: Request) {
     );
   };
 
-  for (const m of (manifest ?? []) as StatArchiveManifestRow[]) {
-    let segment;
-    try {
-      segment = await readSegment(bucket, m);
-    } catch (e) {
-      if (e instanceof SegmentUnavailableError) return fail(m.id, e.message);
-      throw e;
-    }
-    for (let i = 0; i < segment.rows.length; i += CHUNK) {
-      const chunk = segment.rows.slice(i, i + CHUNK).map((r) => ({
-        book_hash: r.book_hash,
-        page: r.page,
-        start_time: r.start_time,
-        duration: r.duration,
-        total_pages: r.total_pages,
-        ext: r.ext ?? null,
-        deleted_at: r.deleted_at ?? null,
-      }));
-      const { error: upErr } = await supabase.rpc('upsert_stat_pages_as', {
-        p_user: userId,
-        p_rows: chunk,
-      });
-      if (upErr) return fail(m.id, upErr.message);
-    }
-    const { error: delErr } = await supabase
+  // PostgREST caps a response at MANIFEST_PAGE rows (Supabase's db-max-rows), so
+  // read the manifest page by page until it is empty. Every restored row is
+  // deleted below, so each page starts from the oldest remaining segment and
+  // no cursor is needed; a re-run after a failure resumes the same way.
+  for (;;) {
+    const { data: manifest, error: manErr } = await supabase
       .from('stat_archives')
-      .delete()
+      .select('*')
       .eq('user_id', userId)
-      .eq('id', m.id);
-    if (delErr) return fail(m.id, delErr.message);
-    restoredSegments++;
-    rows += segment.rows.length;
+      .order('updated_to', { ascending: true })
+      .range(0, MANIFEST_PAGE - 1);
+    if (manErr) return NextResponse.json({ error: manErr.message }, { status: 500 });
+    const page = (manifest ?? []) as StatArchiveManifestRow[];
+    if (page.length === 0) break;
+
+    for (const m of page) {
+      let segment;
+      try {
+        segment = await readSegment(bucket, m);
+      } catch (e) {
+        if (e instanceof SegmentUnavailableError) return fail(m.id, e.message);
+        throw e;
+      }
+      for (let i = 0; i < segment.rows.length; i += CHUNK) {
+        const chunk = segment.rows.slice(i, i + CHUNK).map((r) => ({
+          book_hash: r.book_hash,
+          page: r.page,
+          start_time: r.start_time,
+          duration: r.duration,
+          total_pages: r.total_pages,
+          ext: r.ext ?? null,
+          deleted_at: r.deleted_at ?? null,
+        }));
+        const { error: upErr } = await supabase.rpc('upsert_stat_pages_as', {
+          p_user: userId,
+          p_rows: chunk,
+        });
+        if (upErr) return fail(m.id, upErr.message);
+      }
+      const { error: delErr } = await supabase
+        .from('stat_archives')
+        .delete()
+        .eq('user_id', userId)
+        .eq('id', m.id);
+      if (delErr) return fail(m.id, delErr.message);
+      restoredSegments++;
+      rows += segment.rows.length;
+    }
   }
 
   return NextResponse.json({ restored_segments: restoredSegments, rows });

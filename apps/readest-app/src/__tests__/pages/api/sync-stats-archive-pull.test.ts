@@ -12,20 +12,33 @@ type Call = { table: string; method: string; args: unknown[] };
 const calls: Call[] = [];
 const tableData: Record<string, unknown[]> = {};
 
+// The mock applies the query constraints the handler relies on: `.eq(col, v)`
+// on any column the fixture rows carry (book_hash, user_id) and `.gt(col, v)`
+// on ISO timestamp columns (updated_at / updated_to), so a test cannot pass
+// only because the database would have filtered for it.
 const makeBuilder = (table: string) => {
+  const chain: { method: string; args: unknown[] }[] = [];
   const builder: Record<string, unknown> = {};
   const rec =
     (method: string) =>
     (...args: unknown[]) => {
       calls.push({ table, method, args });
+      chain.push({ method, args });
       return builder;
     };
   for (const m of ['select', 'eq', 'or', 'gt', 'lt', 'in', 'is', 'order', 'range']) {
     builder[m] = rec(m);
   }
   // biome-ignore lint/suspicious/noThenProperty: mock PostgREST builder is intentionally thenable
-  (builder as { then: unknown }).then = (resolve: (v: unknown) => void) =>
-    resolve({ data: tableData[table] ?? [], error: null });
+  (builder as { then: unknown }).then = (resolve: (v: unknown) => void) => {
+    let rows = (tableData[table] ?? []) as Record<string, unknown>[];
+    for (const c of chain) {
+      const [col, val] = c.args as [string, unknown];
+      if (c.method === 'eq') rows = rows.filter((r) => !(col in r) || r[col] === val);
+      if (c.method === 'gt') rows = rows.filter((r) => !(col in r) || String(r[col]) > String(val));
+    }
+    return resolve({ data: rows, error: null });
+  };
   return builder;
 };
 const fromMock = vi.fn((table: string) => makeBuilder(table));
@@ -192,13 +205,42 @@ describe('GET /api/sync?type=stats with archived segments', () => {
       doubles: [2, 4, 0],
     });
 
-    bucket.get.mockResolvedValueOnce(objectOf([seg(100), seg(300)]));
+    bucket.get
+      .mockResolvedValueOnce(objectOf([seg(100), seg(300)]))
+      .mockResolvedValueOnce(objectOf([seg(400), seg(600)]));
     await GET(req('type=stats&since=0&limit=1000'));
     expect(ae.writeDataPoint.mock.calls[1]![0]).toEqual({
       indexes: ['pull'],
       blobs: ['paged'],
-      doubles: [1, 2, 1000],
+      doubles: [2, 4, 1000],
     });
+  });
+
+  it('fills a paged response across tiers: short archive pages are topped up with hot rows', async () => {
+    // one archived row, one newer hot row, limit 2: both come back in one page,
+    // so a client that stops on a short page (the koplugin) never stalls on the
+    // tier boundary
+    tableData['stat_archives'] = [manifest(1, 100)];
+    tableData['stat_pages'] = [hot(900), hot(901, 51)];
+    bucket.get.mockResolvedValue(objectOf([seg(100)]));
+    const rows = await pagesOf(await GET(req('type=stats&since=0&limit=2')));
+    expect(rows.map((r) => r.updated_at_ms)).toEqual([100, 900]);
+
+    // several short segments are read until the page is full, then cut with ties
+    tableData['stat_archives'] = [manifest(1, 100), manifest(2, 300, 100), manifest(3, 600, 300)];
+    tableData['stat_pages'] = [hot(900)];
+    bucket.get
+      .mockResolvedValueOnce(objectOf([seg(100)]))
+      .mockResolvedValueOnce(objectOf([seg(200), seg(300, 1), seg(300, 2)]))
+      .mockResolvedValueOnce(objectOf([seg(600)]));
+    const page = await pagesOf(await GET(req('type=stats&since=0&limit=3')));
+    expect(page.map((r) => [r.updated_at_ms, r.page])).toEqual([
+      [100, 1],
+      [200, 1],
+      [300, 1],
+      [300, 2],
+    ]);
+    expect(bucket.get).toHaveBeenCalledTimes(3); // the third segment was never needed
   });
 
   it('answers 500 without advancing when a segment object is missing or corrupt', async () => {

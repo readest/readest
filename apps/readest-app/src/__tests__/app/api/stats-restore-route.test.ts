@@ -8,23 +8,32 @@ import { encodeSegment, SEGMENT_VERSION, type ArchivedPageRow } from '@/libs/sta
 
 type Call = { table: string; method: string; args: unknown[] };
 const calls: Call[] = [];
+// Stateful manifest: selects honor `.range(from, to)` (PostgREST caps rows at
+// 1000 in production), deletes remove the row, so the route's "repeat until
+// empty" loop terminates the way it does against the real database.
 let manifestRows: Record<string, unknown>[] = [];
 const makeBuilder = (table: string) => {
-  const chain: string[] = [];
+  const chain: { method: string; args: unknown[] }[] = [];
   const builder: Record<string, unknown> = {};
   const rec =
     (method: string) =>
     (...args: unknown[]) => {
       calls.push({ table, method, args });
-      chain.push(method);
+      chain.push({ method, args });
       return builder;
     };
-  for (const m of ['select', 'delete', 'eq', 'order']) builder[m] = rec(m);
+  for (const m of ['select', 'delete', 'eq', 'order', 'range']) builder[m] = rec(m);
   // biome-ignore lint/suspicious/noThenProperty: mock PostgREST builder is intentionally thenable
-  (builder as { then: unknown }).then = (resolve: (v: unknown) => void) =>
-    resolve(
-      chain.includes('delete') ? { data: null, error: null } : { data: manifestRows, error: null },
-    );
+  (builder as { then: unknown }).then = (resolve: (v: unknown) => void) => {
+    if (chain.some((c) => c.method === 'delete')) {
+      const id = chain.find((c) => c.method === 'eq' && c.args[0] === 'id')?.args[1];
+      manifestRows = manifestRows.filter((m) => m['id'] !== id);
+      return resolve({ data: null, error: null });
+    }
+    const range = chain.find((c) => c.method === 'range')?.args as [number, number] | undefined;
+    const rows = range ? manifestRows.slice(range[0], range[1] + 1) : manifestRows.slice(0, 1000);
+    return resolve({ data: rows, error: null });
+  };
   return builder;
 };
 const fromMock = vi.fn((table: string) => makeBuilder(table));
@@ -155,5 +164,22 @@ describe('POST /api/stats/restore', () => {
       1,
     );
     expect(rpcMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores more manifest rows than one PostgREST page by reading until the manifest is empty', async () => {
+    const uid = '00000000-0000-0000-0000-000000000001';
+    manifestRows = Array.from({ length: 1001 }, (_, i) => ({
+      ...manifest(i + 1, 100 + i),
+      user_id: uid,
+    }));
+    bucket.get.mockImplementation(async () => objectOf([row(1, 1)]));
+
+    const res = await post({ user_id: uid });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ restored_segments: 1001, rows: 1001 });
+    expect(manifestRows).toHaveLength(0);
+    expect(
+      calls.filter((c) => c.table === 'stat_archives' && c.method === 'select').length,
+    ).toBeGreaterThanOrEqual(2);
   });
 });

@@ -17,31 +17,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Not authenticated' });
     }
 
-    // Reading-statistics archive objects in R2 do not cascade with the auth
-    // user (Postgres rows do). Delete them first and refuse to delete the user
-    // when that fails, so an account never disappears while its history stays.
-    const bucket = getStatsArchiveEnv().STATS_ARCHIVE_R2;
-    if (bucket) {
-      try {
-        await deleteUserSegments(bucket, user.id);
-      } catch (e) {
-        console.error('user delete: stats archive cleanup failed', user.id, e);
-        return res.status(500).json({ error: 'stats archive cleanup failed' });
-      }
-    }
-
     const supabaseAdmin = createSupabaseAdminClient();
     const { error } = await supabaseAdmin.auth.admin.deleteUser(user.id);
     if (error) {
       return res.status(500).json({ error: error.message });
     }
 
-    // Best-effort second sweep: a compaction run that was between its object
-    // put and its (now failing) commit during the first sweep may have left
-    // one more object behind.
+    // Reading-statistics archive objects in R2 do not cascade with the auth
+    // user (Postgres rows do). The identity goes first: deleting objects before
+    // a failed deleteUser would leave an active account with its history gone.
+    // After the identity is gone, the user id is queued in stat_archive_orphans
+    // (swept by the compaction job until the prefix lists empty, which also
+    // catches an object a concurrent compaction run wrote after this sweep) and
+    // the prefix is deleted right away, best-effort.
+    const bucket = getStatsArchiveEnv().STATS_ARCHIVE_R2;
     if (bucket) {
+      const { error: queueErr } = await supabaseAdmin
+        .from('stat_archive_orphans')
+        .upsert({ user_id: user.id }, { onConflict: 'user_id' });
+      if (queueErr) {
+        console.error(
+          'user delete: could not queue stats archive cleanup',
+          user.id,
+          queueErr.message,
+        );
+      }
       await deleteUserSegments(bucket, user.id).catch((e) =>
-        console.warn('user delete: post-delete stats archive sweep failed', user.id, e),
+        console.error('user delete: stats archive cleanup failed (queued for sweep)', user.id, e),
       );
     }
 

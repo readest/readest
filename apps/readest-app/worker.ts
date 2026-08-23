@@ -34,9 +34,14 @@ export default {
       headers: { 'x-compact-token': env.STATS_COMPACT_TOKEN ?? '' },
     });
     ctx.waitUntil(
-      handler.fetch(req, env, ctx).then((res: Response) => {
-        if (!res.ok) console.warn('stats compact cron: status', res.status);
-      }),
+      handler
+        .fetch(req, env, ctx)
+        .then((res: Response) => {
+          if (!res.ok) console.warn('stats compact cron: status', res.status);
+        })
+        .catch((e: unknown) => {
+          console.error('stats compact cron: failed', e instanceof Error ? e.message : e);
+        }),
     );
   },
 };

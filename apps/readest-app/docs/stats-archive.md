@@ -84,7 +84,7 @@ commit_mismatches, duration_ms}`; per-user failures count in `errors`, only a fa
 claim is a 500. Every run logs one JSON line (`tag: "stats-compact"`) and writes one
 Analytics Engine point to `STATS_COMPACT_AE` (`indexes ['compact']`,
 `blobs [outcome, error]`, `doubles [users_claimed, users_archived, segments, rows,
-bytes, duration_ms, errors, commit_mismatches]`).
+bytes, duration_ms, errors, commit_mismatches, orphans_swept]`).
 
 The stats pull writes one point to the same dataset per **R2-backed** pull (none for
 hot-only pulls): `indexes ['pull']`, `blobs ['paged' | 'full']`, `doubles
@@ -94,7 +94,9 @@ reach the archive, which is the number that should drive `STATS_COMPACT_WINDOW_D
 a larger window spares devices idle for less than the window, at the price of a
 proportionally larger hot table.
 
-Guard order for `compact`: 503 (disabled / no token / no bucket) before 401 (bad token).
+Guard order for `compact`: 503 (no token / no bucket) before 401 (bad token); then the
+batch run sweeps the account-deletion queue (below) and, if `STATS_COMPACT_ENABLED` is
+not `"true"`, answers `503 {"disabled":true,"orphans_swept":N}` without compacting.
 `restore`: 503 (no token / no bucket), 401, then 409 while compaction is enabled, so
 restore and compaction are mutually exclusive without locking.
 
@@ -111,8 +113,7 @@ on a known account before enabling the cron, or to drain one heavy user.
 Everything up to step 5 is safe with `STATS_COMPACT_ENABLED = "false"` (the default in
 `wrangler.toml`): no segments exist, so pulls behave exactly as before, and the cron
 fires every 10 minutes and gets a 503. Prerequisites: `wrangler` logged in
-(`pnpm exec wrangler whoami`), access to the database SQL editor (or `psql`), and the
-Workers paid plan (for `[limits] cpu_ms`; delete that block if the deploy rejects it).
+(`pnpm exec wrangler whoami`) and access to the database SQL editor (or `psql`).
 Run the shell commands from `apps/readest-app`.
 
 **1. Apply migration 020.** Paste `docker/volumes/db/migrations/020_stat_archives.sql`
@@ -230,7 +231,8 @@ curl -s "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/analytics_
   -H "Authorization: Bearer $CF_API_TOKEN" --data "
   SELECT toStartOfInterval(timestamp, INTERVAL '1' HOUR) AS h, count() AS runs,
          sum(double2) AS users_archived, sum(double3) AS segments, sum(double4) AS rows,
-         sum(double5) AS bytes, sum(double7) AS errors, sum(double8) AS mismatches
+         sum(double5) AS bytes, sum(double7) AS errors, sum(double8) AS mismatches,
+         sum(double9) AS orphans_swept
   FROM stats_compact WHERE index1 = 'compact' AND timestamp > NOW() - INTERVAL '1' DAY
   GROUP BY h ORDER BY h DESC"
 ```
@@ -281,13 +283,17 @@ SELECT pg_size_pretty(pg_total_relation_size('public.stat_pages'));
 
 ## Account deletion
 
-`DELETE /api/user/delete` deletes `stats/v1/{user_id}/` (paginated listing, batches of
-1000 keys) **before** deleting the auth user and refuses the deletion (500) if that
-fails; it sweeps the prefix once more afterwards, best-effort, to catch an object
-written by a compaction run that was between its put and its (now failing) commit.
-Residual orphans (a put landing after the second sweep) can be found by listing
-`stats/v1/` prefixes whose user has no `auth.users` row; delete them with the bucket
-tools.
+`DELETE /api/user/delete` deletes the auth user **first** (Postgres rows cascade; a
+compaction commit in flight for that user fails on the manifest's foreign key). Only
+then does it touch R2: it queues the user id in `stat_archive_orphans` (service-role
+only, no foreign key) and deletes `stats/v1/{user_id}/` right away, best-effort
+(paginated listing, batches of 1000 keys). The response is 200 once the identity is
+gone, whatever R2 did; the queued row makes the cleanup reliable: every batch run of
+`POST /api/stats/compact` (kill switch on or off) sweeps up to 20 queued users, deletes
+their prefix again and removes the row once the listing is empty, which also catches an
+object a compaction run wrote after the immediate sweep. Deleting objects before the
+identity would be worse: a failed `deleteUser` would leave an active account with its
+history gone and a manifest pointing at missing objects.
 
 ## Self-hosting
 

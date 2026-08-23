@@ -459,27 +459,37 @@ export async function GET(req: NextRequest) {
           { error: `stat_archives: ${manErr.message || 'Unknown error'}` },
           { status: 500 },
         );
-      const archived: ReturnType<typeof toWireStatPage>[] = [];
+      // Attach updated_at_ms (epoch ms) so non-JS clients (the Lua koplugin) can
+      // compute their pull cursor without parsing ISO-8601 timestamps.
+      const withMs = <T extends { updated_at?: string }>(rows: T[]) =>
+        rows.map((r) => ({
+          ...r,
+          updated_at_ms: r.updated_at ? new Date(r.updated_at).getTime() : 0,
+        }));
+      const hotRows = withMs((sp.data ?? []) as unknown as StatPageRecord[]);
+      let pageRows: StatPageRecord[] = hotRows;
       const segments = (manifest ?? []) as StatArchiveManifestRow[];
       if (segments.length > 0) {
         const archiveEnv = getStatsArchiveEnv();
         const bucket = archiveEnv.STATS_ARCHIVE_R2;
         const sinceMs = since.getTime();
+        const archived: StatPageRecord[] = [];
         let segmentsRead = 0;
         try {
           if (!bucket) {
             throw new SegmentUnavailableError(segments[0]!.id, 'archive storage not configured');
           }
+          // Segments are read lazily, oldest first, until they fill the page;
+          // a paged pull whose segments run short is topped up with hot rows
+          // (which are newer than every segment), so a page is only ever short
+          // when the whole history is exhausted. Clients that stop on a short
+          // page (the koplugin) therefore never stall on a tier boundary.
           for (const m of segments) {
             const segment = await readSegment(bucket, m);
             segmentsRead++;
-            const page = takePage(segment.rows, sinceMs, limit, bookParam);
-            if (page.length === 0) continue;
-            archived.push(...page.map((r) => toWireStatPage(r, user.id)));
-            // A paged pull returns one contiguous updated_at range per response:
-            // the first segment that still has rows > since; hot rows follow
-            // once no segment does.
-            if (limit > 0) break;
+            const kept = takePage(segment.rows, sinceMs, 0, bookParam);
+            archived.push(...(kept.map((r) => toWireStatPage(r, user.id)) as StatPageRecord[]));
+            if (limit > 0 && archived.length >= limit) break;
           }
         } catch (e) {
           if (e instanceof SegmentUnavailableError) {
@@ -488,25 +498,27 @@ export async function GET(req: NextRequest) {
           }
           throw e;
         }
+        const combined =
+          limit > 0 && archived.length >= limit ? archived : [...archived, ...hotRows];
+        if (limit > 0 && combined.length > limit) {
+          // Cut at `limit`, extended with every row sharing the last
+          // updated_at_ms (segments never split a millisecond and the hot page
+          // was already completed by fetchPagedPages, so the ties are present).
+          const edge = combined[limit - 1]!.updated_at_ms;
+          let end = limit;
+          while (end < combined.length && combined[end]!.updated_at_ms === edge) end++;
+          pageRows = combined.slice(0, end);
+        } else {
+          pageRows = combined;
+        }
         // One data point per R2-backed pull (hot-only pulls write nothing), so
         // the share and size of archive reads can inform the hot-window knob.
         archiveEnv.STATS_COMPACT_AE?.writeDataPoint({
           indexes: ['pull'],
           blobs: [limit > 0 ? 'paged' : 'full'],
-          doubles: [segmentsRead, archived.length, limit],
+          doubles: [segmentsRead, Math.min(archived.length, pageRows.length), limit],
         });
       }
-      const pageRows =
-        limit > 0 && archived.length > 0
-          ? archived
-          : [...archived, ...((sp.data ?? []) as Record<string, unknown>[])];
-      // Attach updated_at_ms (epoch ms) so non-JS clients (the Lua koplugin) can
-      // compute their pull cursor without parsing ISO-8601 timestamps.
-      const withMs = <T extends { updated_at?: string }>(rows: T[]) =>
-        rows.map((r) => ({
-          ...r,
-          updated_at_ms: r.updated_at ? new Date(r.updated_at).getTime() : 0,
-        }));
       (
         results as unknown as { statBooks: StatBookRecord[]; statPages: StatPageRecord[] }
       ).statBooks = withMs((sb.data ?? []) as unknown as StatBookRecord[]);
