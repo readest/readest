@@ -20,8 +20,11 @@ import {
  * Each run claims a batch of users, archives the eligible ones in bounded
  * segments and returns a summary; per-user failures are counted, not fatal.
  *
- * Guard order: 503 when disabled/unconfigured (self-host, kill switch) before
- * any auth check; 401 on a bad token. See statsArchive.ts.
+ * Guard order: 503 when unconfigured (no token / no bucket: self-host) before
+ * any auth check; 401 on a bad token; then a batch run sweeps the
+ * account-deletion queue and, if STATS_COMPACT_ENABLED is not "true", answers
+ * 503 without compacting. A targeted run ({ user_id } body) skips the sweep and
+ * the kill switch. See statsArchive.ts.
  */
 
 interface CandidateRow {
