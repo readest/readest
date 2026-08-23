@@ -223,6 +223,28 @@ describe('dragSelectionTo (the app handles)', () => {
     expect(selection.handlesSuppressed).toBe(true);
   });
 
+  test('a drag released off any page commits what it built and lets later selection changes through', async () => {
+    const { result, setSelection } = setup();
+    const anchor = { doc: pageA.doc, index: 1, pos: { node: pageA.textNode, offset: 0 } };
+    await result.current.dragSelectionTo(anchor, { x: 60, y: 100 }, false);
+    // Released in the gap between pages: nothing under the point.
+    const bounds = await result.current.dragSelectionTo(anchor, { x: 60, y: 402 }, true);
+    expect(bounds?.start.index).toBe(1);
+    expect(setSelection).toHaveBeenCalledTimes(1);
+    expect(setSelection.mock.calls[0]![0]).toMatchObject({
+      text: 'first ',
+      handlesSuppressed: true,
+    });
+    // The programmatic guard held during the drag must not outlive it: a
+    // later native selection change is processed again.
+    await new Promise((r) => setTimeout(r, 200));
+    pageA.doc.getSelection()!.setBaseAndExtent(pageA.textNode, 6, pageA.textNode, 10);
+    result.current.handleSelectionchange(pageA.doc, 1);
+    await flush();
+    expect(setSelection).toHaveBeenCalledTimes(2);
+    expect(setSelection.mock.calls[1]![0]).toMatchObject({ text: 'page' });
+  });
+
   test("a handle dragged back onto the anchor page drops the other page's part", async () => {
     const { result, setSelection } = setup();
     // Anchored at the page start so the caret (pinned at offset 6) spans text.

@@ -10,10 +10,11 @@ interface NotebookState {
   isNotebookPinned: boolean;
   notebookActiveTab: NotebookTab;
   notebookNewAnnotation: TextSelection | null;
-  // Id of the highlight eagerly created by the "Annotate" action as the anchor
-  // for a note in progress. Tracked so a cancelled creation flow can tear that
-  // empty placeholder back down instead of leaking it (#4791).
-  notebookNewHighlightId: string | null;
+  // Ids of the highlights eagerly created by the "Annotate" action as the anchor
+  // for a note in progress (one per page of a cross-page selection, #5809).
+  // Tracked so a cancelled creation flow can tear those empty placeholders back
+  // down instead of leaking them (#4791).
+  notebookNewHighlightIds: string[];
   notebookEditAnnotation: BookNote | null;
   notebookAnnotationDrafts: { [key: string]: string };
   getIsNotebookVisible: () => boolean;
@@ -25,7 +26,7 @@ interface NotebookState {
   setNotebookPin: (pinned: boolean) => void;
   setNotebookActiveTab: (tab: NotebookTab) => void;
   setNotebookNewAnnotation: (selection: TextSelection | null) => void;
-  setNotebookNewHighlightId: (id: string | null) => void;
+  setNotebookNewHighlightIds: (ids: string[]) => void;
   setNotebookEditAnnotation: (note: BookNote | null) => void;
   saveNotebookAnnotationDraft: (key: string, note: string) => void;
   getNotebookAnnotationDraft: (key: string) => string | undefined;
@@ -37,7 +38,7 @@ export const useNotebookStore = create<NotebookState>((set, get) => ({
   isNotebookPinned: false,
   notebookActiveTab: 'notes',
   notebookNewAnnotation: null,
-  notebookNewHighlightId: null,
+  notebookNewHighlightIds: [],
   notebookEditAnnotation: null,
   notebookAnnotationDrafts: {},
   getIsNotebookVisible: () => get().isNotebookVisible,
@@ -50,7 +51,7 @@ export const useNotebookStore = create<NotebookState>((set, get) => ({
   setNotebookActiveTab: (tab: NotebookTab) => set({ notebookActiveTab: tab }),
   setNotebookNewAnnotation: (selection: TextSelection | null) =>
     set({ notebookNewAnnotation: selection }),
-  setNotebookNewHighlightId: (id: string | null) => set({ notebookNewHighlightId: id }),
+  setNotebookNewHighlightIds: (ids: string[]) => set({ notebookNewHighlightIds: ids }),
   setNotebookEditAnnotation: (note: BookNote | null) => set({ notebookEditAnnotation: note }),
   saveNotebookAnnotationDraft: (key: string, note: string) =>
     set((state) => ({

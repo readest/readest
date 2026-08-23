@@ -273,6 +273,9 @@ export const useTextSelector = (
         await makeCrossDocSelection(segments, true);
         return segmentBounds(segments);
       }
+      // The drag's writes held the programmatic guard; the drag is over, so let
+      // later selectionchange events through again.
+      releaseProgrammaticSelection();
       const sel = anchor.doc.getSelection();
       if (!sel || !isValidSelection(sel)) return null;
       await makeSelection(sel, anchor.index, false, true);

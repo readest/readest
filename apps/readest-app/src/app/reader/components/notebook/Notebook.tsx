@@ -51,7 +51,7 @@ const Notebook: React.FC = ({}) => {
   const { getView, getViewsById, getProgress, getViewSettings } = useReaderStore();
   const { getNotebookWidth, setNotebookWidth, setNotebookVisible, toggleNotebookPin } =
     useNotebookStore();
-  const { setNotebookNewAnnotation, setNotebookNewHighlightId } = useNotebookStore();
+  const { setNotebookNewAnnotation, setNotebookNewHighlightIds } = useNotebookStore();
   const { setNotebookEditAnnotation, setNotebookActiveTab } = useNotebookStore();
   const { activeConversationId } = useAIChatStore();
 
@@ -143,26 +143,28 @@ const Notebook: React.FC = ({}) => {
     saveSysSettings(envConfig, 'globalReadSettings', newGlobalReadSettings);
   };
 
-  // Abandon a note-creation flow: tear down the empty highlight the "Annotate"
-  // action eagerly created as the note anchor so it doesn't leak into the
-  // booknotes list (#4791). A saved note carries text, so it survives the guard
-  // in removeEmptyAnnotationPlaceholder; a restyled pre-existing highlight has no
-  // tracked id and is left alone. `bookKey` is passed explicitly so the unmount/
-  // book-switch cleanup targets the book the placeholder belongs to.
+  // Abandon a note-creation flow: tear down the empty highlights the "Annotate"
+  // action eagerly created as the note anchor (one per page of a cross-page
+  // selection) so they don't leak into the booknotes list (#4791). A saved note
+  // carries text, so it survives the guard in removeEmptyAnnotationPlaceholder;
+  // a restyled pre-existing highlight has no tracked id and is left alone.
+  // `bookKey` is passed explicitly so the unmount/book-switch cleanup targets
+  // the book the placeholders belong to.
   const handleCancelNewAnnotation = useCallback(
     (bookKey: string | null) => {
-      const { notebookNewHighlightId } = useNotebookStore.getState();
-      if (bookKey && notebookNewHighlightId) {
+      const { notebookNewHighlightIds } = useNotebookStore.getState();
+      if (bookKey && notebookNewHighlightIds.length > 0) {
         const config = getConfig(bookKey);
         const { booknotes: annotations = [] } = config || {};
-        const placeholder = removeEmptyAnnotationPlaceholder(
-          annotations,
-          notebookNewHighlightId,
-          Date.now(),
-        );
-        if (placeholder) {
+        const now = Date.now();
+        const placeholders = notebookNewHighlightIds
+          .map((id) => removeEmptyAnnotationPlaceholder(annotations, id, now))
+          .filter((placeholder): placeholder is BookNote => placeholder !== null);
+        if (placeholders.length > 0) {
           const views = getViewsById(bookKey.split('-')[0]!);
-          views.forEach((view) => removeBookNoteOverlays(view, placeholder));
+          for (const placeholder of placeholders) {
+            views.forEach((view) => removeBookNoteOverlays(view, placeholder));
+          }
           const updatedConfig = updateBooknotes(bookKey, annotations);
           if (updatedConfig) {
             // Read settings fresh: this callback has stable identity (empty deps)
@@ -171,7 +173,7 @@ const Notebook: React.FC = ({}) => {
           }
         }
       }
-      setNotebookNewHighlightId(null);
+      setNotebookNewHighlightIds([]);
       setNotebookNewAnnotation(null);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -257,8 +259,8 @@ const Notebook: React.FC = ({}) => {
     }
     setNotebookNewAnnotation(null);
     // The placeholder now carries a note (or a fresh unified record was created),
-    // so it's a real annotation — drop the cancel-cleanup handle (#4791).
-    setNotebookNewHighlightId(null);
+    // so it's a real annotation — drop the cancel-cleanup handles (#4791).
+    setNotebookNewHighlightIds([]);
   };
 
   const handleEditNote = (note: BookNote, isDelete: boolean) => {

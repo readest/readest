@@ -10,7 +10,7 @@ beforeEach(() => {
     isNotebookPinned: false,
     notebookActiveTab: 'notes',
     notebookNewAnnotation: null,
-    notebookNewHighlightId: null,
+    notebookNewHighlightIds: [],
     notebookEditAnnotation: null,
     notebookAnnotationDrafts: {},
   });
@@ -138,17 +138,17 @@ describe('notebookStore', () => {
     });
   });
 
-  // ── New highlight placeholder id ───────────────────────────────
-  describe('setNotebookNewHighlightId', () => {
-    test('tracks the placeholder highlight id', () => {
-      useNotebookStore.getState().setNotebookNewHighlightId('hl-1');
-      expect(useNotebookStore.getState().notebookNewHighlightId).toBe('hl-1');
+  // ── New highlight placeholder ids ──────────────────────────────
+  describe('setNotebookNewHighlightIds', () => {
+    test('tracks the placeholder highlight ids (one per page of a cross-page selection)', () => {
+      useNotebookStore.getState().setNotebookNewHighlightIds(['hl-1', 'hl-2']);
+      expect(useNotebookStore.getState().notebookNewHighlightIds).toEqual(['hl-1', 'hl-2']);
     });
 
-    test('clears the placeholder highlight id when set to null', () => {
-      useNotebookStore.getState().setNotebookNewHighlightId('hl-1');
-      useNotebookStore.getState().setNotebookNewHighlightId(null);
-      expect(useNotebookStore.getState().notebookNewHighlightId).toBeNull();
+    test('clears the placeholder highlight ids when set to an empty list', () => {
+      useNotebookStore.getState().setNotebookNewHighlightIds(['hl-1']);
+      useNotebookStore.getState().setNotebookNewHighlightIds([]);
+      expect(useNotebookStore.getState().notebookNewHighlightIds).toEqual([]);
     });
   });
 
@@ -231,7 +231,7 @@ describe('notebookStore', () => {
       expect(state.isNotebookPinned).toBe(false);
       expect(state.notebookActiveTab).toBe('notes');
       expect(state.notebookNewAnnotation).toBeNull();
-      expect(state.notebookNewHighlightId).toBeNull();
+      expect(state.notebookNewHighlightIds).toEqual([]);
       expect(state.notebookEditAnnotation).toBeNull();
       expect(state.notebookAnnotationDrafts).toEqual({});
     });

@@ -121,7 +121,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const getView = useReaderStore((s) => s.getView);
   const getViewsById = useReaderStore((s) => s.getViewsById);
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
-  const { setNotebookVisible, setNotebookNewAnnotation, setNotebookNewHighlightId } =
+  const { setNotebookVisible, setNotebookNewAnnotation, setNotebookNewHighlightIds } =
     useNotebookStore();
   const { clearBooknotesNav, isSideBarVisible } = useSidebarStore();
   const { listenToNativeTouchEvents } = useDeviceControlStore();
@@ -1297,8 +1297,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     handleDismissPopupAndSelection();
   };
 
-  const handleHighlight = (update = false, highlightStyle?: HighlightStyle): BookNote | null => {
-    if (!selection || !selection.text) return null;
+  // Returns the brand-new highlight records (one per page of a cross-page
+  // selection): only those are placeholders the note-cancel flow may remove;
+  // restyling/toggling an existing one must never tear down the user's record.
+  const handleHighlight = (update = false, highlightStyle?: HighlightStyle): BookNote[] => {
+    if (!selection || !selection.text) return [];
     setHighlightOptionsVisible(true);
     const { booknotes: annotations = [] } = config;
     const style = highlightStyle || settings.globalReadSettings.highlightStyle;
@@ -1306,9 +1309,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setSelectedStyle(style);
     setSelectedColor(color);
     const views = getViewsById(bookKey.split('-')[0]!);
-    // Only a brand-new highlight is a placeholder the cancel flow may remove;
-    // restyling/toggling an existing one must never tear down the user's record.
-    let created: BookNote | null = null;
+    const created: BookNote[] = [];
+    let deleted = false;
     let firstCfi: string | undefined;
     // A selection across pages (#5809) is highlighted one page at a time: one
     // record per part, the selection itself staying anchored on the first.
@@ -1372,16 +1374,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           }
         } else {
           existing.deletedAt = Date.now();
-          handleDismissPopup();
+          deleted = true;
         }
       } else {
         annotations.push(annotation);
         views.forEach((view) => view?.addAnnotation(annotation));
-        created ??= annotation;
+        created.push(annotation);
       }
     }
-    if (!firstCfi) return null;
-    if (created) setSelection({ ...selection, cfi: firstCfi, annotated: true });
+    if (!firstCfi) return [];
+    if (deleted) handleDismissPopup();
+    if (created.length > 0) setSelection({ ...selection, cfi: firstCfi, annotated: true });
 
     const updatedConfig = updateBooknotes(bookKey, annotations);
     if (updatedConfig) {
@@ -1464,10 +1467,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const created = handleHighlight(true);
     setNotebookVisible(true);
     setNotebookNewAnnotation(selection);
-    // Remember the eagerly-created highlight so the notebook can remove it if the
-    // note is never saved. A restyle of an existing highlight returns null — that
-    // record predates this flow and must survive a cancel (#4791).
-    setNotebookNewHighlightId(created?.id ?? null);
+    // Remember the eagerly-created highlights (one per page of a cross-page
+    // selection) so the notebook can remove them if the note is never saved. A
+    // restyle of an existing highlight creates none — that record predates this
+    // flow and must survive a cancel (#4791).
+    setNotebookNewHighlightIds(created.map((annotation) => annotation.id));
     handleDismissPopup();
   };
 
