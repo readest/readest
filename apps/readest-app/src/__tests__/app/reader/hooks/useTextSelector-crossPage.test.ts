@@ -25,6 +25,7 @@ const h = vi.hoisted(() => ({
   appService: { isAndroidApp: false, isMobile: false },
   osPlatform: 'macos',
   viewSettings: { scrolled: true },
+  isFixedLayout: true,
 }));
 
 vi.mock('@/context/EnvContext', () => ({
@@ -38,7 +39,7 @@ vi.mock('@/store/readerStore', () => ({
   }),
 }));
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData: () => ({ isFixedLayout: true }) }),
+  useBookDataStore: () => ({ getBookData: () => ({ isFixedLayout: h.isFixedLayout }) }),
 }));
 vi.mock('@/utils/event', () => ({
   eventDispatcher: { onSync: vi.fn(), offSync: vi.fn(), on: vi.fn(), off: vi.fn() },
@@ -127,6 +128,7 @@ beforeEach(() => {
   h.appService = { isAndroidApp: false, isMobile: false };
   h.osPlatform = 'macos';
   h.viewSettings = { scrolled: true };
+  h.isFixedLayout = true;
   pageA = makePage(0, 'first page text', 6, 1);
   pageB = makePage(404, 'second page text', 6, 2);
   h.contents = [pageA, pageB];
@@ -259,6 +261,52 @@ describe('dragSelectionTo (the app handles)', () => {
     const selection = setSelection.mock.calls[0]![0];
     expect(selection).toMatchObject({ index: 1, text: 'first ', handlesSuppressed: true });
     expect(selection.segments).toBeUndefined();
+  });
+});
+
+describe('gating: only fixed-layout books in scroll mode', () => {
+  const crossPageStaysOff = async (result: ReturnType<typeof setup>['result']) => {
+    // A mouse drag over another section iframe never crosses.
+    result.current.handlePointerDown(pageA.doc, 1, mouse(50, 50));
+    result.current.handlePointerMove(pageA.doc, 1, mouse(60, 500));
+    expect(pageA.doc.documentElement.style.userSelect).toBe('');
+    expect(pageB.doc.getSelection()!.rangeCount).toBe(0);
+    await result.current.handlePointerUp(pageA.doc, 1, mouse(60, 500, 0));
+    expect(pageB.doc.getSelection()!.rangeCount).toBe(0);
+    // The app handles stay in the anchor's own document: the point is mapped
+    // into that document (its iframe starts at y=0, so 500 lands on its text).
+    const anchor = { doc: pageA.doc, index: 1, pos: { node: pageA.textNode, offset: 0 } };
+    const bounds = await result.current.dragSelectionTo(anchor, { x: 60, y: 500 }, false);
+    expect(bounds?.end.index).toBe(1);
+    expect(pageA.doc.getSelection()!.toString()).toBe('first ');
+    expect(pageB.doc.getSelection()!.rangeCount).toBe(0);
+    // A stale selection on another section is left alone.
+    pageB.doc.getSelection()!.setBaseAndExtent(pageB.textNode, 0, pageB.textNode, 6);
+    pageA.doc.getSelection()!.setBaseAndExtent(pageA.textNode, 0, pageA.textNode, 5);
+    result.current.handleSelectionchange(pageA.doc, 1);
+    await flush();
+    expect(pageB.doc.getSelection()!.toString()).toBe('second');
+  };
+
+  test('a reflowable book (EPUB) keeps single-document selection behaviour', async () => {
+    h.isFixedLayout = false;
+    const { result } = setup();
+    await crossPageStaysOff(result);
+  });
+
+  test('a paginated fixed-layout book keeps single-document selection behaviour', async () => {
+    h.viewSettings = { scrolled: false };
+    const { result } = setup();
+    await crossPageStaysOff(result);
+  });
+
+  test('a fixed-layout book in scroll mode drops a stale selection left on another page', async () => {
+    const { result } = setup();
+    pageB.doc.getSelection()!.setBaseAndExtent(pageB.textNode, 0, pageB.textNode, 6);
+    pageA.doc.getSelection()!.setBaseAndExtent(pageA.textNode, 0, pageA.textNode, 5);
+    result.current.handleSelectionchange(pageA.doc, 1);
+    await flush();
+    expect(pageB.doc.getSelection()!.rangeCount).toBe(0);
   });
 });
 

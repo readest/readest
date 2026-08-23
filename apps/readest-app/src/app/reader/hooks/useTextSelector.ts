@@ -173,6 +173,11 @@ export const useTextSelector = (
 
   const getContents = () => getView(bookKey)?.renderer?.getContents?.() ?? [];
 
+  // The cross-page selection (#5809) exists only for fixed-layout pages in
+  // scroll mode, where the next page is on screen to continue onto. Reflowable
+  // books and paginated fixed layout keep the single-document behaviour.
+  const crossPageEnabled = () => !!bookData?.isFixedLayout && !!getViewSettings(bookKey)?.scrolled;
+
   // Extend the selection anchored at `anchor` to the page under `point`
   // (window coords): the anchor page to its edge, pages between in full, the
   // target page up to the caret under the point. Returns whether a cross-page
@@ -282,6 +287,22 @@ export const useTextSelector = (
       return rangeBounds(anchor.doc, anchor.index, sel.getRangeAt(0));
     };
 
+    if (!crossPageEnabled()) {
+      // Single-document drag (reflowable books, paginated fixed layout): the
+      // range runs from the anchor to the caret under the point in the anchor's
+      // own document, exactly as the handles always worked.
+      const feRect = anchor.doc.defaultView?.frameElement?.getBoundingClientRect();
+      const range = rangeFromAnchorToPoint(
+        anchor.doc,
+        anchor.pos.node,
+        anchor.pos.offset,
+        point.x - (feRect?.left ?? 0),
+        point.y - (feRect?.top ?? 0),
+      );
+      if (!range) return commit ? commitLive() : null;
+      await applyProgrammaticSelection(range, anchor.index, commit);
+      return rangeBounds(anchor.doc, anchor.index, range);
+    }
     const target = findContentAtPoint(getContents(), point);
     if (!target) return commit ? commitLive() : null;
     if (target.doc === anchor.doc) {
@@ -310,7 +331,7 @@ export const useTextSelector = (
   // the SelectionRangeEditor.
   const suppressNativeHandlesForPages = async () => {
     if (sanitizedGestureRef.current || !gestureInitialRef.current) return;
-    if (!bookData?.isFixedLayout || !getViewSettings(bookKey)?.scrolled) return;
+    if (!crossPageEnabled()) return;
     const content = getContents().find(
       (c) => c.doc && c.index != null && isValidSelection(c.doc.getSelection()!),
     );
@@ -373,9 +394,9 @@ export const useTextSelector = (
     // (the far part of an earlier cross-page selection), guarded so its
     // selectionchange doesn't dismiss the popup this selection is opening.
     const ownerDoc = liveRange.startContainer?.ownerDocument;
-    const stale = getContents().filter(
-      (c) => c.doc && c.doc !== ownerDoc && c.doc.getSelection()?.rangeCount,
-    );
+    const stale = crossPageEnabled()
+      ? getContents().filter((c) => c.doc && c.doc !== ownerDoc && c.doc.getSelection()?.rangeCount)
+      : [];
     if (stale.length > 0) {
       guardProgrammaticSelection();
       stale.forEach((c) => c.doc.getSelection()?.removeAllRanges());
@@ -510,7 +531,7 @@ export const useTextSelector = (
       !isInstantAnnotating.current &&
       ev.pointerType === 'mouse' &&
       ev.button === 0 &&
-      bookData?.isFixedLayout &&
+      crossPageEnabled() &&
       isTextAtPoint(doc, ev.clientX, ev.clientY)
     ) {
       const pos = getCaretPosition(doc, ev.clientX, ev.clientY);
