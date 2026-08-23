@@ -86,6 +86,14 @@ Analytics Engine point to `STATS_COMPACT_AE` (`indexes ['compact']`,
 `blobs [outcome, error]`, `doubles [users_claimed, users_archived, segments, rows,
 bytes, duration_ms, errors, commit_mismatches]`).
 
+The stats pull writes one point to the same dataset per **R2-backed** pull (none for
+hot-only pulls): `indexes ['pull']`, `blobs ['paged' | 'full']`, `doubles
+[segments_read, segment_rows_returned, limit]`. Dividing the count of `pull` points by
+the total stats pulls (edge logs or `pg_stat_statements`) gives the share of pulls that
+reach the archive, which is the number that should drive `STATS_COMPACT_WINDOW_DAYS`:
+a larger window spares devices idle for less than the window, at the price of a
+proportionally larger hot table.
+
 Guard order for `compact`: 503 (disabled / no token / no bucket) before 401 (bad token).
 `restore`: 503 (no token / no bucket), 401, then 409 while compaction is enabled, so
 restore and compaction are mutually exclusive without locking.

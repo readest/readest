@@ -462,14 +462,18 @@ export async function GET(req: NextRequest) {
       const archived: ReturnType<typeof toWireStatPage>[] = [];
       const segments = (manifest ?? []) as StatArchiveManifestRow[];
       if (segments.length > 0) {
-        const bucket = getStatsArchiveEnv().STATS_ARCHIVE_R2;
+        const archiveEnv = getStatsArchiveEnv();
+        const bucket = archiveEnv.STATS_ARCHIVE_R2;
         const sinceMs = since.getTime();
+        let segmentsRead = 0;
         try {
           if (!bucket) {
             throw new SegmentUnavailableError(segments[0]!.id, 'archive storage not configured');
           }
           for (const m of segments) {
-            const page = takePage((await readSegment(bucket, m)).rows, sinceMs, limit, bookParam);
+            const segment = await readSegment(bucket, m);
+            segmentsRead++;
+            const page = takePage(segment.rows, sinceMs, limit, bookParam);
             if (page.length === 0) continue;
             archived.push(...page.map((r) => toWireStatPage(r, user.id)));
             // A paged pull returns one contiguous updated_at range per response:
@@ -484,6 +488,13 @@ export async function GET(req: NextRequest) {
           }
           throw e;
         }
+        // One data point per R2-backed pull (hot-only pulls write nothing), so
+        // the share and size of archive reads can inform the hot-window knob.
+        archiveEnv.STATS_COMPACT_AE?.writeDataPoint({
+          indexes: ['pull'],
+          blobs: [limit > 0 ? 'paged' : 'full'],
+          doubles: [segmentsRead, archived.length, limit],
+        });
       }
       const pageRows =
         limit > 0 && archived.length > 0

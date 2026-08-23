@@ -173,6 +173,34 @@ describe('GET /api/sync?type=stats with archived segments', () => {
     expect(rows.map((r) => r.updated_at_ms)).toEqual([100, 300, 400, 600, 900]);
   });
 
+  it('records one Analytics Engine point per R2-backed pull, none for hot-only pulls', async () => {
+    const ae = { writeDataPoint: vi.fn() };
+    cfEnv = { STATS_ARCHIVE_R2: bucket, STATS_COMPACT_AE: ae };
+    tableData['stat_pages'] = [hot(900)];
+    await GET(req('type=stats&since=0&limit=1000'));
+    expect(ae.writeDataPoint).not.toHaveBeenCalled();
+
+    tableData['stat_archives'] = [manifest(1, 300), manifest(2, 600, 300)];
+    bucket.get
+      .mockResolvedValueOnce(objectOf([seg(100), seg(300)]))
+      .mockResolvedValueOnce(objectOf([seg(400), seg(600)]));
+    await GET(req('type=stats&since=0'));
+    expect(ae.writeDataPoint).toHaveBeenCalledTimes(1);
+    expect(ae.writeDataPoint.mock.calls[0]![0]).toEqual({
+      indexes: ['pull'],
+      blobs: ['full'],
+      doubles: [2, 4, 0],
+    });
+
+    bucket.get.mockResolvedValueOnce(objectOf([seg(100), seg(300)]));
+    await GET(req('type=stats&since=0&limit=1000'));
+    expect(ae.writeDataPoint.mock.calls[1]![0]).toEqual({
+      indexes: ['pull'],
+      blobs: ['paged'],
+      doubles: [1, 2, 1000],
+    });
+  });
+
   it('answers 500 without advancing when a segment object is missing or corrupt', async () => {
     tableData['stat_archives'] = [manifest(7, 300)];
     bucket.get.mockResolvedValueOnce(null);

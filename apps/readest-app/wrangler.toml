@@ -77,9 +77,11 @@ bucket_name = "readest-stats-archive"
 binding = "IAP_WEBHOOK_AE"
 dataset = "iap_webhooks"
 
-# One data point per reading-statistics compaction run: indexes ['compact'],
-# blobs [outcome, error], doubles [users_claimed, users_archived, segments, rows,
-# bytes, duration_ms, errors, commit_mismatches].
+# Reading-statistics archive metrics. One point per compaction run: indexes
+# ['compact'], blobs [outcome, error], doubles [users_claimed, users_archived,
+# segments, rows, bytes, duration_ms, errors, commit_mismatches]. One point per
+# R2-backed stats pull: indexes ['pull'], blobs ['paged'|'full'], doubles
+# [segments_read, segment_rows_returned, limit].
 [[analytics_engine_datasets]]
 binding = "STATS_COMPACT_AE"
 dataset = "stats_compact"
