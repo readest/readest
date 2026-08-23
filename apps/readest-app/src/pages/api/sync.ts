@@ -17,6 +17,14 @@ import {
 } from '@/libs/sync';
 import { validateUserAndToken } from '@/utils/access';
 import { DBBook, DBBookConfig } from '@/types/records';
+import {
+  getStatsArchiveEnv,
+  readSegment,
+  takePage,
+  toWireStatPage,
+  SegmentUnavailableError,
+  type StatArchiveManifestRow,
+} from '@/libs/statsArchive';
 
 /**
  * Field-level last-writer-wins for a books row's reading_status: return the
@@ -432,6 +440,55 @@ export async function GET(req: NextRequest) {
           { error: `stat_pages: ${sp.error.message || 'Unknown error'}` },
           { status: 500 },
         );
+      // Archive tier (migration 020): page events older than the hot window live
+      // in immutable per-user segments listed in stat_archives; every hot row is
+      // newer than every segment, so "segments in updated_to order, then hot
+      // rows" is global updated_at order and the paging contract above holds
+      // across tiers. The manifest is read AFTER the hot rows on purpose: a
+      // compaction committing in between moves rows from hot to a segment, so
+      // reading hot first can only return such rows twice (clients union-merge),
+      // never zero times.
+      const { data: manifest, error: manErr } = await supabase
+        .from('stat_archives')
+        .select('*')
+        .eq('user_id', user.id)
+        .gt('updated_to', sinceIso)
+        .order('updated_to', { ascending: true });
+      if (manErr)
+        return NextResponse.json(
+          { error: `stat_archives: ${manErr.message || 'Unknown error'}` },
+          { status: 500 },
+        );
+      const archived: ReturnType<typeof toWireStatPage>[] = [];
+      const segments = (manifest ?? []) as StatArchiveManifestRow[];
+      if (segments.length > 0) {
+        const bucket = getStatsArchiveEnv().STATS_ARCHIVE_R2;
+        const sinceMs = since.getTime();
+        try {
+          if (!bucket) {
+            throw new SegmentUnavailableError(segments[0]!.id, 'archive storage not configured');
+          }
+          for (const m of segments) {
+            const page = takePage((await readSegment(bucket, m)).rows, sinceMs, limit, bookParam);
+            if (page.length === 0) continue;
+            archived.push(...page.map((r) => toWireStatPage(r, user.id)));
+            // A paged pull returns one contiguous updated_at range per response:
+            // the first segment that still has rows > since; hot rows follow
+            // once no segment does.
+            if (limit > 0) break;
+          }
+        } catch (e) {
+          if (e instanceof SegmentUnavailableError) {
+            console.error('stats pull:', e.message);
+            return NextResponse.json({ error: `stat_pages: ${e.message}` }, { status: 500 });
+          }
+          throw e;
+        }
+      }
+      const pageRows =
+        limit > 0 && archived.length > 0
+          ? archived
+          : [...archived, ...((sp.data ?? []) as Record<string, unknown>[])];
       // Attach updated_at_ms (epoch ms) so non-JS clients (the Lua koplugin) can
       // compute their pull cursor without parsing ISO-8601 timestamps.
       const withMs = <T extends { updated_at?: string }>(rows: T[]) =>
@@ -444,7 +501,7 @@ export async function GET(req: NextRequest) {
       ).statBooks = withMs((sb.data ?? []) as unknown as StatBookRecord[]);
       (
         results as unknown as { statBooks: StatBookRecord[]; statPages: StatPageRecord[] }
-      ).statPages = withMs((sp.data ?? []) as unknown as StatPageRecord[]);
+      ).statPages = withMs(pageRows as unknown as StatPageRecord[]);
     }
 
     const dbErrors = Object.values(errors).filter((err) => err !== null);
