@@ -28,6 +28,14 @@ local API_CALL_DEBOUNCE_DELAY = 30
 -- into a single pull for the book you settle on instead of stacking blocking
 -- round-trips (#5006).
 local BACKGROUND_PULL_DELAY = 1
+
+-- KOReader's "Action when Wi-Fi is off" (Network settings). nil is "prompt",
+-- the default; "turn on" brings Wi-Fi up without asking; "ignore" (Android)
+-- waits for the system to reconnect. Only "prompt" puts a dialog in front of
+-- the reader.
+local function wifiEnableAction()
+    return G_reader_settings:readSetting("wifi_enable_action") or "prompt"
+end
 local SUPABAE_ANON_KEY_BASE64 = "ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5aaWMzbDRablZ6YW1weFpIaHJhbkZzZVhOaklpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzTXpReE1qTTJOekVzSW1WNGNDSTZNakEwT1RZNU9UWTNNWDAuM1U1VXFhb3VfMVNnclZlMWVvOXJBcGMwdUtqcWhwUWRVWGh2d1VIbVVmZw=="
 
 ReadestSync.default_settings = {
@@ -785,18 +793,18 @@ end
 -- "Action when Wi-Fi is off" setting and reruns the call once connected,
 -- like every other interactive network action in KOReader.
 --
--- Background pulls (auto sync on book open / device wake) never bring Wi-Fi
--- up, the same as background pushes. On devices where KOReader drives the
--- radio (Kobo, Kindle, PocketBook, …) that bring-up is modal on the UI
--- thread: "prompt" asks on every wake (#4113, #2137) and "turn on" shows an
--- uncancellable "Connecting to Wi-Fi…" / "Scanning for networks…" for ~30 s
--- when no known access point is in range (#5838). When offline, a background
--- pull skips silently, remembers that it skipped, and onNetworkConnected
--- reruns it once the device is back online (KOReader broadcasts
--- NetworkConnected after its own silent "Restore Wi-Fi connection on resume"
--- completes, and after a manual toggle).
+-- Background pulls (auto sync on book open / device wake) take that path
+-- only when the configured action is silent ("turn on", "ignore"): the user
+-- told KOReader to handle Wi-Fi without asking, so the pull behaves as it
+-- always did. With "prompt" (the default) the same path puts a "Do you want
+-- to turn on Wi-Fi?" box in front of the reader on every open and wake, one
+-- per pull (#4113, #2137, #5838), and a background task must never do that.
+-- So a background pull then skips silently when offline, remembers that it
+-- skipped, and onNetworkConnected reruns it once the device is back online
+-- (KOReader broadcasts NetworkConnected after its own silent "Restore Wi-Fi
+-- connection on resume" completes, and after a manual toggle).
 function ReadestSync:willRerunPullWhenOnline(interactive, callback)
-    if interactive then
+    if interactive or wifiEnableAction() ~= "prompt" then
         return NetworkMgr:willRerunWhenOnline(callback)
     end
     if NetworkMgr:isOnline() then
@@ -1095,21 +1103,25 @@ function ReadestSync:onCloseDocument()
     if not (self.settings.auto_sync and self.settings.access_token) then
         return
     end
-    -- Like the background pulls, the close-time push never brings Wi-Fi up.
-    -- It used to go through NetworkMgr:goOnlineToRun, which with "Action when
-    -- Wi-Fi is off: turn on" blocks the UI thread on a Wi-Fi scan when no
-    -- known access point is in range (#5838), and with "prompt" silently did
-    -- nothing anyway. What was read offline reaches the server with the next
-    -- online push: progress on the next page turn, notes and stats from their
-    -- sync cursors.
+    local function push()
+        self:pushBookConfig(false)
+        self:pushBookNotes(false)
+        self:pushBookStats(false)
+        self:pushOpenBook(false)
+    end
+    -- The push needs the document, so it cannot be deferred: with "turn on"
+    -- let KOReader bring Wi-Fi up (blocking) as it always did. With anything
+    -- else goOnlineToRun refuses to run offline, so skip without a dialog and
+    -- let the next online push catch up.
+    if wifiEnableAction() == "turn_on" then
+        NetworkMgr:goOnlineToRun(push)
+        return
+    end
     if not NetworkMgr:isOnline() then
         logger.dbg("ReadestSync: offline; skipping close-time push")
         return
     end
-    self:pushBookConfig(false)
-    self:pushBookNotes(false)
-    self:pushBookStats(false)
-    self:pushOpenBook(false)
+    push()
 end
 
 function ReadestSync:onReadestPushBooks()
@@ -1134,12 +1146,12 @@ end
 
 -- Waking the device with a book already open should pull like reopening
 -- the book does (issue #4924). Delayed because Wi-Fi is usually still
--- coming back up right after wake; if it isn't back yet the pull skips and
--- onNetworkConnected reruns it (KOReader turns Wi-Fi off on suspend, so on
--- Kobo/Kindle that rerun, once "Restore Wi-Fi connection on resume" has
--- finished, is the path that actually pulls). On devices where
--- Suspend/Resume also fire on focus changes (Android), the debounce keeps
--- this from hammering the API.
+-- coming back up right after wake; with "Action when Wi-Fi is off: prompt"
+-- the pull skips if it isn't, and onNetworkConnected reruns it (KOReader
+-- turns Wi-Fi off on suspend, so on Kobo/Kindle that rerun, once "Restore
+-- Wi-Fi connection on resume" has finished, is the path that actually
+-- pulls). On devices where Suspend/Resume also fire on focus changes
+-- (Android), the debounce keeps this from hammering the API.
 function ReadestSync:onResume()
     -- Guarded because some tests construct a plugin table without calling
     -- init() (see onCloseWidget). The service kept running while suspended

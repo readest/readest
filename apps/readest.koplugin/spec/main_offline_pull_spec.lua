@@ -9,7 +9,9 @@
 -- that it skipped, and onNetworkConnected reruns it once the device is back
 -- online. Interactive pulls (menu taps / gestures) keep going through
 -- NetworkMgr:willRerunWhenOnline, like every other interactive KOReader
--- network action.
+-- network action, and so do background pulls when KOReader's "Action when
+-- Wi-Fi is off" is a silent one ("turn on", "ignore"): only "prompt" would
+-- put a dialog up, so only "prompt" is bypassed.
 
 require("spec_helper")
 local stubs = require("spec.koreader_stubs")
@@ -42,6 +44,33 @@ end
 describe("ReadestSync:willRerunPullWhenOnline", function()
     before_each(function()
         stubs.reset()
+        G_reader_settings:saveSetting("wifi_enable_action", nil)  -- KOReader default: prompt
+    end)
+
+    -- "turn on" and "ignore" never show a dialog, so a background pull keeps
+    -- taking KOReader's path, exactly as before.
+    for _, action in ipairs({ "turn_on", "ignore" }) do
+        it("takes NetworkMgr's path for a background pull when the Wi-Fi action is " .. action, function()
+            local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+            G_reader_settings:saveSetting("wifi_enable_action", action)
+            NetworkMgrStub._online = false
+
+            assert.is_false(plugin:willRerunPullWhenOnline(false, function() end))
+            assert.are.equal(1, NetworkMgrStub._willRerunWhenOnline_calls)
+            assert.is_nil(plugin.pull_pending_offline)
+            G_reader_settings:saveSetting("wifi_enable_action", nil)
+        end)
+    end
+
+    it("skips a background pull when offline with the action set to prompt explicitly", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+        G_reader_settings:saveSetting("wifi_enable_action", "prompt")
+        NetworkMgrStub._online = false
+
+        assert.is_true(plugin:willRerunPullWhenOnline(false, function() end))
+        assert.are.equal(0, NetworkMgrStub._willRerunWhenOnline_calls)
+        assert.is_true(plugin.pull_pending_offline)
+        G_reader_settings:saveSetting("wifi_enable_action", nil)
     end)
 
     it("lets a background pull proceed when online, without asking NetworkMgr to bring Wi-Fi up", function()
