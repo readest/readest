@@ -1,3 +1,4 @@
+import dynamic from 'next/dynamic';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { RiDeleteBinLine } from 'react-icons/ri';
 
@@ -77,7 +78,7 @@ import {
   removeGlobalAnnotationOverlays,
   sourceCfiFromSyntheticValue,
 } from '../../utils/globalAnnotations';
-import { annotationToolButtons } from './AnnotationTools';
+import { annotationToolButtons, xrayToolButton } from './AnnotationTools';
 import AnnotationRangeEditor from './AnnotationRangeEditor';
 import SelectionRangeEditor from './SelectionRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
@@ -101,6 +102,8 @@ import {
   convertAnnotationExportToBookNotes,
   parseAnnotationExport,
 } from '@/services/annotation/providers/readest';
+
+const XRayPopup = dynamic(() => import('./XRayPopup'), { ssr: false });
 
 const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   bookKey,
@@ -158,6 +161,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const [translationEpoch, setTranslationEpoch] = useState(0);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
+  const [showXRayPopup, setShowXRayPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
@@ -202,7 +206,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const pendingWordLensDictRef = useRef(false);
 
   const showingPopup =
-    showAnnotPopup || showDictionaryPopup || showDeepLPopup || showProofreadPopup;
+    showAnnotPopup || showDictionaryPopup || showXRayPopup || showDeepLPopup || showProofreadPopup;
 
   const popupPadding = useResponsiveSize(10);
   const trianglePadding = popupPadding * 2 + 6;
@@ -218,16 +222,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const proofreadPopupWidth = Math.min(440, maxWidth);
   const proofreadPopupHeight = Math.min(200, maxHeight);
   const canShare = canShareText(appService);
+  // X-Ray is a runtime-only Tauri action, not part of synced toolbar preferences.
+  const xrayAvailable =
+    appService?.appPlatform === 'tauri' && !!settings.aiSettings?.enabled && !!progress?.location;
   // The toolbar is now customizable, so size the selection popup to the number
   // of visible tools (responsive) up to a max — otherwise a 2-tool toolbar
   // renders a sparse, full-width bar. Annotated selections keep the max width
   // since they show the wider highlight options / notes instead of the buttons.
   const annotPopupMaxWidth = Math.min(useResponsiveSize(300), maxWidth);
   const annotPopupToolSize = useResponsiveSize(44);
-  const visibleToolCount = getToolbarToolTypes(
-    viewSettings.annotationToolbarItems,
-    canShare,
-  ).length;
+  const toolbarToolTypes = getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare);
+  const visibleToolCount = toolbarToolTypes.length + (xrayAvailable ? 1 : 0);
   const annotPopupWidth = selection?.annotated
     ? annotPopupMaxWidth
     : Math.min(Math.max(visibleToolCount, 1) * annotPopupToolSize, annotPopupMaxWidth);
@@ -319,6 +324,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       setShowAnnotationNotes(false);
       setAnnotationNotes([]);
       setShowDictionaryPopup(false);
+      setShowXRayPopup(false);
       setShowDeepLPopup(false);
       setShowProofreadPopup(false);
       setEditingAnnotation(null);
@@ -548,6 +554,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             setShowAnnotPopup(false);
             setShowDeepLPopup(true);
             setShowDictionaryPopup(false);
+            setShowXRayPopup(false);
           });
         } catch (err) {
           console.warn('PDF context menu translation failed:', err);
@@ -1198,6 +1205,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     setShowAnnotPopup(true);
     setShowDeepLPopup(false);
     setShowDictionaryPopup(false);
+    setShowXRayPopup(false);
     setShowProofreadPopup(false);
   };
 
@@ -1511,12 +1519,23 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       return;
     }
     setShowAnnotPopup(false);
+    setShowXRayPopup(false);
     setShowDictionaryPopup(true);
+  };
+
+  const handleXRay = () => {
+    if (!selection?.text || !xrayAvailable) return;
+    setShowAnnotPopup(false);
+    setShowDictionaryPopup(false);
+    setShowDeepLPopup(false);
+    setShowProofreadPopup(false);
+    setShowXRayPopup(true);
   };
 
   const handleTranslation = () => {
     if (!selection || !selection.text) return;
     setShowAnnotPopup(false);
+    setShowXRayPopup(false);
     setShowDeepLPopup(true);
   };
 
@@ -2066,9 +2085,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     }
   };
 
-  const toolButtons = getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare)
+  const toolButtons = toolbarToolTypes
     .map(buildToolButton)
     .filter((button): button is NonNullable<typeof button> => button !== null);
+  if (xrayAvailable) {
+    const dictionaryIndex = toolbarToolTypes.indexOf('dictionary');
+    toolButtons.splice(dictionaryIndex < 0 ? toolButtons.length : dictionaryIndex + 1, 0, {
+      tooltipText: _(xrayToolButton.label),
+      Icon: xrayToolButton.Icon,
+      onClick: handleXRay,
+    });
+  }
 
   // The lookup popups never deselect (handleDictionary / handleTranslation /
   // handleProofread only flip popup flags), so a genuine selection is still
@@ -2091,7 +2118,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // popups, so their handles would float on top of the dictionary sheet /
   // popup (#5815). They belong to the toolbar: hide them while a lookup is
   // open, and let them come back with the toolbar (or go with the dismiss).
-  const lookupPopupOpen = showDictionaryPopup || showDeepLPopup || showProofreadPopup;
+  const lookupPopupOpen =
+    showDictionaryPopup || showXRayPopup || showDeepLPopup || showProofreadPopup;
 
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
@@ -2134,6 +2162,19 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
             />
           );
         })()}
+      {showXRayPopup && trianglePosition && dictPopupPosition && progress?.location && (
+        <XRayPopup
+          term={selection?.text as string}
+          bookKey={bookKey}
+          currentCfi={progress.location}
+          language={primaryLang}
+          position={dictPopupPosition}
+          trianglePosition={trianglePosition}
+          popupWidth={dictPopupWidth}
+          popupHeight={dictPopupHeight}
+          onDismiss={handleDismissPopupShowToolbar}
+        />
+      )}
       {showDeepLPopup && trianglePosition && translatorPopupPosition && (
         <TranslatorPopup
           text={selection?.text as string}
