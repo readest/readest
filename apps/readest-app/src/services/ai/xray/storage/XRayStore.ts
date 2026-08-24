@@ -60,9 +60,13 @@ const stateBatchStatement = (state: XRayBookState): string => `
     updated_at = excluded.updated_at,
     version = excluded.version,
     error = excluded.error
+  WHERE xray_books.fingerprint = excluded.fingerprint
+    AND excluded.max_position_index > xray_books.max_position_index
 `;
 
 export class XRayStore {
+  private commitQueue: Promise<void> = Promise.resolve();
+
   constructor(private readonly db: DatabaseService) {}
 
   static async open(appService: AppService): Promise<XRayStore> {
@@ -113,7 +117,9 @@ export class XRayStore {
          last_batch_id = excluded.last_batch_id,
          updated_at = excluded.updated_at,
          version = excluded.version,
-         error = excluded.error`,
+         error = excluded.error
+       WHERE xray_books.fingerprint != excluded.fingerprint
+          OR excluded.max_position_index > xray_books.max_position_index`,
       [
         state.fingerprint.bookHash,
         serializeFingerprint(state.fingerprint),
@@ -128,13 +134,20 @@ export class XRayStore {
   }
 
   async commitBatch(batch: XRayExtractionBatch, state: XRayBookState): Promise<void> {
+    const commit = this.commitQueue.then(() => this.commitBatchNow(batch, state));
+    this.commitQueue = commit.catch(() => undefined);
+    return commit;
+  }
+
+  private async commitBatchNow(batch: XRayExtractionBatch, state: XRayBookState): Promise<void> {
     const invalidateLookups = `
       DELETE FROM xray_lookups
       WHERE book_hash = ${sqlQuote(batch.fingerprint.bookHash)}
+        AND fingerprint = ${sqlQuote(serializeFingerprint(batch.fingerprint))}
         AND max_position_index >= ${batch.minPositionIndex}
     `;
     const batchStatement = `
-      INSERT INTO xray_batches
+      INSERT OR IGNORE INTO xray_batches
         (batch_id, book_hash, fingerprint, min_position_index, max_position_index, payload)
       VALUES (
         ${sqlQuote(batch.batchId)},
@@ -146,7 +159,7 @@ export class XRayStore {
       )
     `;
 
-    await this.db.batch([invalidateLookups, batchStatement, stateBatchStatement(state)]);
+    await this.db.batch([batchStatement, invalidateLookups, stateBatchStatement(state)]);
   }
 
   async listBatches(bookHash: string, maxPositionIndex: number): Promise<XRayExtractionBatch[]> {

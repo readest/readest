@@ -1,15 +1,20 @@
 import * as CFI from 'foliate-js/epubcfi.js';
 
-import type { BookDoc } from '@/libs/document';
-import type { AISettings } from '@/services/ai/types';
 import type { XRayBookFingerprint, XRaySourceUnit } from '@/services/ai/xray/types';
 import { ReedyDb } from '@/services/reedy/db/ReedyDb';
 import type { BookMeta } from '@/services/reedy/db/types';
-import type { EmbeddingModel } from '@/services/reedy/models/EmbeddingModel';
-import { BookIndexer, type IndexBookOptions } from '@/services/reedy/retrieval/BookIndexer';
-import { BookRetriever, type RetrieverResult } from '@/services/reedy/retrieval/BookRetriever';
 import type { DatabaseRow, DatabaseService } from '@/types/database';
 import type { AppService } from '@/types/system';
+
+type ReadOnlyDatabase = Pick<DatabaseService, 'select'>;
+type ReedyMetadataReader = Pick<ReedyDb, 'getBookMeta'>;
+
+interface ReedyConnection {
+  readonly db: ReadOnlyDatabase;
+  readonly reedy: ReedyMetadataReader;
+}
+
+type ReedyConnectionOpener = () => Promise<ReedyConnection | null>;
 
 interface ChunkRow extends DatabaseRow {
   id: string;
@@ -43,56 +48,45 @@ export interface XRaySourceSlice {
 }
 
 export class ReedyXRaySource {
-  private readonly indexer: Pick<BookIndexer, 'indexBook'>;
-  private readonly retriever: Pick<BookRetriever, 'search'>;
+  private connection: ReedyConnection | null;
+  private connectionPromise: Promise<ReedyConnection | null> | null = null;
 
   constructor(
-    private readonly db: DatabaseService,
-    private readonly reedy: Pick<ReedyDb, 'getBookMeta'>,
-    private readonly embeddingModel: EmbeddingModel,
-    indexer?: Pick<BookIndexer, 'indexBook'>,
-    retriever?: Pick<BookRetriever, 'search'>,
+    db: ReadOnlyDatabase | null,
+    reedy: ReedyMetadataReader | null,
+    private readonly activeEmbeddingModelId: string,
+    private readonly openConnection?: ReedyConnectionOpener,
   ) {
-    this.indexer = indexer ?? new BookIndexer(reedy as ReedyDb);
-    this.retriever = retriever ?? new BookRetriever(reedy as ReedyDb);
+    this.connection = db && reedy ? { db, reedy } : null;
   }
 
   static async open(
     appService: AppService,
-    settings: AISettings,
-    embeddingModel?: EmbeddingModel,
+    activeEmbeddingModelId: string,
   ): Promise<ReedyXRaySource> {
-    const db = await appService.openDatabase('reedy', 'reedy.db', 'Data', {
-      experimental: ['index_method'],
-    });
-    const reedy = new ReedyDb(db);
-    const embedding =
-      embeddingModel ?? (await import('./models')).createXRayModels(settings).embedding;
-    return new ReedyXRaySource(db, reedy, embedding);
+    const openConnection = () => openExistingReedyDatabase(appService);
+    const connection = await openConnection();
+    return new ReedyXRaySource(
+      connection?.db ?? null,
+      connection?.reedy ?? null,
+      activeEmbeddingModelId,
+      openConnection,
+    );
   }
 
   async getStatus(bookHash: string): Promise<XRaySourceStatus> {
-    return this.statusFromMeta(bookHash, await this.reedy.getBookMeta(bookHash));
-  }
-
-  async indexBook(
-    bookDoc: BookDoc,
-    bookHash: string,
-    options: IndexBookOptions = {},
-  ): Promise<void> {
-    const vectors = await this.embeddingModel.embed(['Readest X-Ray index initialization'], {
-      signal: options.signal,
-    });
-    if (!vectors[0]) throw new Error('Embedding model returned no warm-up vector');
-    void this.embeddingModel.dim;
-    await this.indexer.indexBook(bookDoc, bookHash, this.embeddingModel, options);
+    const connection = await this.getConnection();
+    if (!connection) return { kind: 'not_indexed' };
+    return this.statusFromMeta(bookHash, await connection.reedy.getBookMeta(bookHash));
   }
 
   async readThrough(bookHash: string, currentCfi: string): Promise<XRaySourceSlice> {
-    const status = await this.getStatus(bookHash);
+    const connection = await this.getConnection();
+    if (!connection) throw unavailableError({ kind: 'not_indexed' });
+    const status = this.statusFromMeta(bookHash, await connection.reedy.getBookMeta(bookHash));
     if (status.kind !== 'ready') throw unavailableError(status);
 
-    const rows = await this.db.select<ChunkRow>(
+    const rows = await connection.db.select<ChunkRow>(
       `SELECT id, section_index, start_cfi, end_cfi, position_index, text
        FROM reedy_book_chunks
        WHERE book_hash = ?
@@ -113,7 +107,7 @@ export class ReedyXRaySource {
       });
     }
 
-    const finalStatus = this.statusFromMeta(bookHash, await this.reedy.getBookMeta(bookHash));
+    const finalStatus = this.statusFromMeta(bookHash, await connection.reedy.getBookMeta(bookHash));
     if (
       finalStatus.kind !== 'ready' ||
       finalStatus.fingerprint.contentHash !== status.fingerprint.contentHash
@@ -128,22 +122,15 @@ export class ReedyXRaySource {
     };
   }
 
-  async searchThrough(
-    bookHash: string,
-    query: string,
-    currentCfi: string,
-    k: number,
-  ): Promise<RetrieverResult> {
-    const { maxPositionIndex } = await this.readThrough(bookHash, currentCfi);
-    if (maxPositionIndex < 0) return { passages: [], status: 'ok' };
-
-    return this.retriever.search({
-      bookHash,
-      query,
-      k,
-      spoilerBoundPosition: maxPositionIndex,
-      activeEmbeddingModel: this.embeddingModel,
-    });
+  private async getConnection(): Promise<ReedyConnection | null> {
+    if (this.connection || !this.openConnection) return this.connection;
+    this.connectionPromise ??= this.openConnection();
+    try {
+      this.connection = await this.connectionPromise;
+      return this.connection;
+    } finally {
+      this.connectionPromise = null;
+    }
   }
 
   private statusFromMeta(bookHash: string, meta: BookMeta | null): XRaySourceStatus {
@@ -151,10 +138,10 @@ export class ReedyXRaySource {
     if (meta.indexingStatus === 'indexing') return { kind: 'indexing' };
     if (meta.indexingStatus === 'failed') return { kind: 'failed', error: meta.error };
 
-    if (meta.embeddingModel !== this.embeddingModel.id) {
+    if (meta.embeddingModel !== this.activeEmbeddingModelId) {
       return {
         kind: 'stale_index',
-        activeModel: this.embeddingModel.id,
+        activeModel: this.activeEmbeddingModelId,
         indexedModel: meta.embeddingModel,
       };
     }
@@ -171,6 +158,18 @@ export class ReedyXRaySource {
     };
   }
 }
+
+const openExistingReedyDatabase = async (
+  appService: AppService,
+): Promise<ReedyConnection | null> => {
+  if (!(await appService.databaseExists('reedy.db', 'Data'))) return null;
+  const fullPath = await appService.resolveFilePath('reedy.db', 'Data');
+  const { NativeDatabaseService } = await import('@/services/database/nativeDatabaseService');
+  const db = await NativeDatabaseService.open(`sqlite:${fullPath}`, {
+    experimental: ['index_method'],
+  });
+  return { db, reedy: new ReedyDb(db) };
+};
 
 const toFingerprint = (bookHash: string, meta: BookMeta): XRayBookFingerprint => ({
   bookHash,

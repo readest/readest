@@ -11,7 +11,7 @@ export const XRAY_ENTITY_TYPES = [
 export type XRayEntityType = (typeof XRAY_ENTITY_TYPES)[number];
 export type XRayClaimStatus = 'true' | 'false' | 'suspected';
 
-// positionIndex is authoritative for spoiler bounds. displayPage is presentation metadata only.
+// CFI controls source admission. positionIndex bounds derived rows; displayPage is metadata only.
 export interface XRaySourceLocator {
   readonly unitId: string;
   readonly startCfi: string;
@@ -47,7 +47,6 @@ export interface XRayInferredEvidenceLocator extends XRayEvidenceBase {
 }
 
 export type XRayEvidenceLocator = XRayDirectEvidenceLocator | XRayInferredEvidenceLocator;
-export type XRayEvidence = XRayEvidenceLocator;
 
 export interface XRayModelEvidence {
   readonly unitId: string;

@@ -80,21 +80,31 @@ describe('XRayStore', () => {
     await expect(store.listBatches(fingerprint.bookHash, 19)).resolves.toEqual([first, second]);
   });
 
-  it('does not advance state when an immutable batch insert fails', async () => {
+  it('makes duplicate commits idempotent without regressing the cursor', async () => {
     const batch = makeBatch('batch-1', 0, 9);
-    const pendingState: XRayBookState = {
-      ...makeState(0, 'previous-batch', 500),
-      pendingPositionIndex: 9,
-      error: 'retry pending',
-    };
-    await store.saveState(pendingState);
-    await expect(store.getState(fingerprint.bookHash)).resolves.toEqual(pendingState);
-
     const committedState = makeState(9, batch.batchId, 1_000);
     await store.commitBatch(batch, committedState);
+    const later = makeBatch('batch-2', 10, 19);
+    const laterState = makeState(19, later.batchId, 2_000);
+    await store.commitBatch(later, laterState);
 
-    await expect(store.commitBatch(batch, makeState(99, batch.batchId, 2_000))).rejects.toThrow();
-    await expect(store.getState(fingerprint.bookHash)).resolves.toEqual(committedState);
+    await expect(store.commitBatch(batch, committedState)).resolves.toBeUndefined();
+    await expect(store.getState(fingerprint.bookHash)).resolves.toEqual(laterState);
+    await expect(store.listBatches(fingerprint.bookHash, 19)).resolves.toEqual([batch, later]);
+  });
+
+  it('does not let a stale generation replace the current state', async () => {
+    const first = makeBatch('batch-1', 0, 9);
+    await store.commitBatch(first, makeState(9, first.batchId, 1_000));
+
+    const nextFingerprint = { ...fingerprint, contentHash: 'content-b' };
+    await store.clearBook(fingerprint.bookHash);
+    const next = makeBatch('batch-next', 0, 9, nextFingerprint);
+    const nextState = makeState(9, next.batchId, 3_000, nextFingerprint);
+    await store.commitBatch(next, nextState);
+    await store.commitBatch(first, makeState(9, first.batchId, 4_000));
+
+    await expect(store.getState(fingerprint.bookHash)).resolves.toEqual(nextState);
   });
 
   it('clears one book without affecting another and round-trips lookup cache entries', async () => {

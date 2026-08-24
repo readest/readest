@@ -116,9 +116,13 @@ describe('XRayPipeline', () => {
     );
     await expect(store.getState(BOOK_HASH)).resolves.toMatchObject({
       maxPositionIndex: -1,
-      pendingPositionIndex: 0,
-      error: 'model unavailable',
     });
+    await expect(store.getState(BOOK_HASH)).resolves.toEqual(
+      expect.not.objectContaining({
+        pendingPositionIndex: expect.anything(),
+        error: expect.anything(),
+      }),
+    );
 
     await expect(pipeline.update(BOOK_HASH, 'epubcfi(/6/2!/4/2/1:20)')).resolves.toMatchObject({
       kind: 'updated',
@@ -128,6 +132,70 @@ describe('XRayPipeline', () => {
       expect.not.objectContaining({ pendingPositionIndex: expect.anything() }),
     );
     expect(extract).toHaveBeenCalledTimes(2);
+  });
+
+  it('coalesces the same update behind the latest committed cursor', async () => {
+    const readThrough = vi.fn().mockResolvedValue(slice('index-1', [0]));
+    let release: (() => void) | undefined;
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const extract = vi.fn(async ({ units }: { units: readonly XRaySourceUnit[] }) => {
+      await hold;
+      return extractionFor(units);
+    });
+    const pipeline = new XRayPipeline({ readThrough }, store, { extract } as XRayExtractionModel);
+
+    const first = pipeline.update(BOOK_HASH, 'epubcfi(/6/2!/4/2/1:20)');
+    const second = pipeline.update(BOOK_HASH, 'epubcfi(/6/2!/4/2/1:20)');
+    await vi.waitFor(() => expect(extract).toHaveBeenCalledTimes(1));
+    release?.();
+
+    await expect(Promise.all([first, second])).resolves.toHaveLength(2);
+    await expect(store.getState(BOOK_HASH)).resolves.toMatchObject({
+      fingerprint: fingerprint('index-1'),
+      maxPositionIndex: 0,
+    });
+    await expect(store.listBatches(BOOK_HASH, 0)).resolves.toHaveLength(1);
+  });
+
+  it('serializes different bounds so extracted batches never overlap', async () => {
+    const readThrough = vi.fn(async (_bookHash: string, cfi: string) =>
+      cfi === 'at-five'
+        ? slice('index-1', [0, 1, 2, 3, 4])
+        : slice('index-1', [0, 1, 2, 3, 4, 5, 6, 7]),
+    );
+    let release: (() => void) | undefined;
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const extract = vi.fn(async ({ units }: { units: readonly XRaySourceUnit[] }) => {
+      if (units[0]?.positionIndex === 0) await hold;
+      return extractionFor(units);
+    });
+    const firstPipeline = new XRayPipeline({ readThrough }, store, {
+      extract,
+    } as XRayExtractionModel);
+    const secondPipeline = new XRayPipeline({ readThrough }, store, {
+      extract,
+    } as XRayExtractionModel);
+
+    const first = firstPipeline.update(BOOK_HASH, 'at-five');
+    const second = secondPipeline.update(BOOK_HASH, 'at-eight');
+    await vi.waitFor(() => expect(extract).toHaveBeenCalledTimes(1));
+    release?.();
+
+    await expect(Promise.all([first, second])).resolves.toHaveLength(2);
+    expect(
+      (await store.listBatches(BOOK_HASH, 7)).map((batch) => [
+        batch.minPositionIndex,
+        batch.maxPositionIndex,
+      ]),
+    ).toEqual([
+      [0, 4],
+      [5, 7],
+    ]);
+    await expect(store.getState(BOOK_HASH)).resolves.toMatchObject({ maxPositionIndex: 7 });
   });
 
   it('rebuilds only X-Ray-derived rows when the Reedy fingerprint changes', async () => {

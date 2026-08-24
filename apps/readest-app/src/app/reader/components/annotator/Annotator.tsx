@@ -224,7 +224,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const canShare = canShareText(appService);
   // X-Ray is a runtime-only Tauri action, not part of synced toolbar preferences.
   const xrayAvailable =
-    appService?.appPlatform === 'tauri' && !!settings.aiSettings?.enabled && !!progress?.location;
+    appService?.appPlatform === 'tauri' &&
+    !!settings.aiSettings?.enabled &&
+    !!settings.aiSettings.reedy?.enabled &&
+    !!progress?.location;
   // The toolbar is now customizable, so size the selection popup to the number
   // of visible tools (responsive) up to a max — otherwise a 2-tool toolbar
   // renders a sparse, full-width bar. Annotated selections keep the max width

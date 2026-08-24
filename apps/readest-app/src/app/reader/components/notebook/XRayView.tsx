@@ -16,9 +16,14 @@ import {
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { AISettings } from '@/services/ai/types';
-import { getXRayService } from '@/services/ai/xray/XRayService';
 import type { XRaySourceStatus } from '@/services/ai/xray/source/ReedyXRaySource';
-import type { XRayEntity, XRayEvidenceLocator, XRaySnapshot } from '@/services/ai/xray/types';
+import type {
+  XRayClaimStatus,
+  XRayEntity,
+  XRayEntityType,
+  XRayEvidenceLocator,
+  XRaySnapshot,
+} from '@/services/ai/xray/types';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -44,7 +49,8 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   const [query, setQuery] = useState('');
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase());
   const [status, setStatus] = useState<XRaySourceStatus | null>(null);
-  const [snapshot, setSnapshot] = useState<XRaySnapshot | null>(null);
+  const [loadedSnapshot, setSnapshot] = useState<XRaySnapshot | null>(null);
+  const [snapshotCfi, setSnapshotCfi] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +63,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         !appService ||
         appService.appPlatform !== 'tauri' ||
         !aiSettings?.enabled ||
+        !aiSettings.reedy?.enabled ||
         !hasCredentials(aiSettings) ||
         !bookHash ||
         !currentCfi
@@ -65,9 +72,15 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         return;
       }
       const id = ++requestId.current;
-      if (showLoading) setIsLoading(true);
+      if (showLoading) {
+        setIsLoading(true);
+        setStatus(null);
+        setSnapshot(null);
+        setSnapshotCfi(null);
+      }
       setError(null);
       try {
+        const { getXRayService } = await import('@/services/ai/xray/XRayService');
         const service = await getXRayService(appService, aiSettings);
         const nextStatus = await service.getStatus(bookHash);
         const nextSnapshot =
@@ -75,14 +88,15 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
         if (id !== requestId.current) return;
         setStatus(nextStatus);
         setSnapshot(nextSnapshot);
-      } catch (reason) {
+        setSnapshotCfi(nextSnapshot ? currentCfi : null);
+      } catch {
         if (id !== requestId.current) return;
-        setError(reason instanceof Error ? reason.message : String(reason));
+        setError(_('Failed to load X-Ray'));
       } finally {
         if (id === requestId.current) setIsLoading(false);
       }
     },
-    [aiSettings, appService, bookHash, currentCfi],
+    [_, aiSettings, appService, bookHash, currentCfi],
   );
 
   useEffect(() => {
@@ -107,31 +121,31 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   }, [load, status?.kind]);
 
   const update = async (): Promise<void> => {
-    if (!appService || !bookDoc || !currentCfi || !aiSettings) return;
+    if (!appService || !bookDoc || !currentCfi || !aiSettings?.reedy?.enabled) return;
     setIsUpdating(true);
     setError(null);
     try {
+      const { getXRayService } = await import('@/services/ai/xray/XRayService');
       const service = await getXRayService(appService, aiSettings);
       const result = await service.updateForProgress({
         bookHash,
         currentCfi,
-        bookDoc,
-        indexIfNeeded: true,
         metadata: {
           title: formatTitle(bookDoc.metadata.title),
           description: bookDoc.metadata.description,
           subject: getContributorNames(bookDoc.metadata.subject),
         },
       });
-      await load(false);
       if (result.kind === 'updated') {
         void eventDispatcher.dispatch('xray-updated', {
           bookHash,
           maxPositionIndex: result.maxPositionIndex,
         });
+      } else if (result.kind === 'unavailable') {
+        await load(false);
       }
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : String(reason));
+    } catch {
+      setError(_('X-Ray update failed.'));
     } finally {
       setIsUpdating(false);
     }
@@ -141,15 +155,15 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     if (evidence.inferred || !evidence.startCfi) return;
     getView(bookKey)?.goTo(evidence.startCfi);
   };
+  const snapshot = snapshotCfi === currentCfi ? loadedSnapshot : null;
 
+  if (appService?.appPlatform !== 'tauri') {
+    return null;
+  }
   if (!aiSettings?.enabled) {
     return <CenteredMessage>{_('Enable AI in Settings to use X-Ray')}</CenteredMessage>;
   }
-  if (appService?.appPlatform !== 'tauri') {
-    return (
-      <CenteredMessage>{_('X-Ray is available in the desktop and mobile apps')}</CenteredMessage>
-    );
-  }
+  if (!aiSettings.reedy?.enabled) return null;
   if (!hasCredentials(aiSettings)) {
     return (
       <CenteredMessage>{_('Configure the selected AI provider to use X-Ray')}</CenteredMessage>
@@ -161,8 +175,16 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
   if (isLoading) {
     return (
       <div className='flex h-full items-center justify-center' aria-label={_('Loading X-Ray')}>
-        <span className='loading loading-spinner loading-sm' />
+        <span className='loading loading-spinner loading-sm eink:hidden' />
+        <span className='hidden text-sm eink:inline'>{_('Loading X-Ray')}</span>
       </div>
+    );
+  }
+  if (error && !snapshot) {
+    return (
+      <CenteredMessage>
+        <span role='alert'>{error}</span>
+      </CenteredMessage>
     );
   }
 
@@ -178,22 +200,6 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
             {statusDescription(status, _)}
           </p>
         </div>
-        {canPrepare(status) ? (
-          <button
-            type='button'
-            className='btn btn-contrast btn-sm min-h-9'
-            onClick={update}
-            disabled={isUpdating}
-          >
-            {isUpdating ? <span className='loading loading-spinner loading-xs' /> : null}
-            {isUpdating ? _('Building X-Ray') : _('Build X-Ray to here')}
-          </button>
-        ) : null}
-        {error ? (
-          <p className='text-error text-xs' role='alert'>
-            {error}
-          </p>
-        ) : null}
       </div>
     );
   }
@@ -216,10 +222,30 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
     { id: 'relationships', label: _('Links'), count: snapshot.relationships.length },
     { id: 'claims', label: _('Claims'), count: snapshot.claims.length },
   ];
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      nextIndex = (index + 1) % tabs.length;
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      nextIndex = (index - 1 + tabs.length) % tabs.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = tabs.length - 1;
+    }
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const nextTab = tabs[nextIndex]!.id;
+    setActiveTab(nextTab);
+    event.currentTarget.parentElement
+      ?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+      .item(nextIndex)
+      .focus();
+  };
 
   return (
     <section className='flex min-h-0 flex-1 flex-col' aria-label={_('X-Ray')}>
-      <header className='border-base-300/60 border-b px-3 pb-3'>
+      <header className='border-base-300/60 border-b px-3 pb-3 eink:border-base-content'>
         <div className='flex items-center justify-between gap-3'>
           <div className='min-w-0'>
             <div className='flex items-center gap-2'>
@@ -239,7 +265,10 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
             title={_('Update X-Ray')}
           >
             {isUpdating ? (
-              <span className='loading loading-spinner loading-xs' />
+              <>
+                <span className='loading loading-spinner loading-xs eink:hidden' />
+                <LuRefreshCw className='hidden size-4 eink:block' aria-hidden='true' />
+              </>
             ) : (
               <LuRefreshCw className='size-4' aria-hidden='true' />
             )}
@@ -253,11 +282,11 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
       </header>
 
       <div
-        className='border-base-300/50 flex gap-1 overflow-x-auto border-b px-3 py-2'
+        className='border-base-300/50 flex gap-1 overflow-x-auto border-b px-3 py-2 eink:border-base-content'
         role='tablist'
         aria-label={_('X-Ray sections')}
       >
-        {tabs.map((tab) => (
+        {tabs.map((tab, index) => (
           <button
             key={tab.id}
             type='button'
@@ -265,15 +294,18 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
             id={`xray-tab-${tab.id}`}
             aria-selected={activeTab === tab.id}
             aria-controls={`xray-panel-${tab.id}`}
+            tabIndex={activeTab === tab.id ? 0 : -1}
             className={clsx(
-              'min-h-7 shrink-0 rounded-md px-2 py-1 text-[11px] font-medium',
+              'min-h-8 shrink-0 rounded-md px-2 py-1 text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/15',
               activeTab === tab.id
                 ? 'bg-base-300 text-base-content'
                 : 'text-base-content/60 hover:bg-base-300/50',
             )}
             onClick={() => setActiveTab(tab.id)}
+            onKeyDown={(event) => handleTabKeyDown(event, index)}
           >
-            {tab.label} <span className='tabular-nums opacity-60'>{tab.count}</span>
+            {tab.label}{' '}
+            <span className='tabular-nums opacity-60 eink:opacity-100'>{tab.count}</span>
           </button>
         ))}
       </div>
@@ -348,7 +380,10 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                 >
                   <div className='flex flex-wrap items-center gap-1.5 text-sm font-semibold'>
                     <span>{relationship.source}</span>
-                    <span className='text-base-content/35' aria-hidden='true'>
+                    <span
+                      className='text-base-content/35 inline-block rtl:rotate-180'
+                      aria-hidden='true'
+                    >
                       →
                     </span>
                     <span>{relationship.target}</span>
@@ -388,7 +423,7 @@ const XRayView: React.FC<XRayViewProps> = ({ bookKey }) => {
                     </p>
                     {claim.status ? (
                       <span className='text-base-content/50 text-[10px] uppercase'>
-                        {claim.status}
+                        {claimStatusLabel(claim.status, _)}
                       </span>
                     ) : null}
                   </div>
@@ -420,13 +455,13 @@ const EntityCard = ({
   translate: ReturnType<typeof useTranslation>;
 }) => (
   <details className='group border-base-300/70 bg-base-100/35 eink-bordered rounded-lg border'>
-    <summary className='cursor-pointer list-none px-3 py-3 [&::-webkit-details-marker]:hidden'>
+    <summary className='cursor-pointer list-none rounded-lg px-3 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/15 [&::-webkit-details-marker]:hidden'>
       <div className='flex items-start justify-between gap-3'>
         <div className='min-w-0'>
           <div className='flex flex-wrap items-center gap-2'>
             <span className='text-sm font-semibold'>{entity.name}</span>
             <span className='text-base-content/45 text-[10px] font-semibold uppercase tracking-wide'>
-              {entity.type}
+              {entityTypeLabel(entity.type, _)}
             </span>
           </div>
           <p className='text-base-content/70 mt-1 text-xs leading-relaxed'>
@@ -439,7 +474,7 @@ const EntityCard = ({
         />
       </div>
     </summary>
-    <div className='border-base-300/60 border-t px-3 py-3'>
+    <div className='border-base-300/60 border-t px-3 py-3 eink:border-base-content'>
       {entity.aliases.length ? (
         <p className='text-base-content/60 text-[11px]'>
           {_('Also known as')}: {entity.aliases.join(', ')}
@@ -491,7 +526,7 @@ const EvidenceList = ({
           <button
             key={`${item.unitId}:${item.exactQuote}`}
             type='button'
-            className='hover:bg-base-200/60 focus-visible:outline-base-content/50 block w-full rounded-md px-1.5 py-1 text-start text-[11px] leading-relaxed focus-visible:outline focus-visible:outline-2'
+            className='hover:bg-base-200/60 block min-h-8 w-full rounded-md px-1.5 py-1 text-start text-[11px] leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/15'
             onClick={() => onNavigate(item)}
             title={_('Jump to quote')}
           >
@@ -517,35 +552,56 @@ const CenteredMessage = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-const canPrepare = (status: XRaySourceStatus | null): boolean =>
-  !status ||
-  status.kind === 'not_indexed' ||
-  status.kind === 'stale_index' ||
-  status.kind === 'failed';
-
 const statusTitle = (
   status: XRaySourceStatus | null,
   _: ReturnType<typeof useTranslation>,
 ): string => {
-  if (!status || status.kind === 'not_indexed') return _('X-Ray is not built yet');
+  if (!status || status.kind === 'not_indexed') return _('Book not indexed');
   if (status.kind === 'indexing') return _('The book index is still being prepared');
   if (status.kind === 'empty_index') return _('No readable text was found');
   if (status.kind === 'stale_index') return _('The book index needs an update');
   if (status.kind === 'failed') return _('The book index could not be prepared');
-  return _('X-Ray is ready');
+  return _('X-Ray');
 };
 
 const statusDescription = (
   status: XRaySourceStatus | null,
   _: ReturnType<typeof useTranslation>,
 ): string => {
+  if (!status || status.kind === 'not_indexed')
+    return _('Book must be indexed first. Open AI Assistant to index.');
   if (status?.kind === 'indexing') return _('X-Ray will become available after indexing finishes.');
   if (status?.kind === 'empty_index')
     return _('This book may contain only images or unsupported text.');
   if (status?.kind === 'stale_index')
     return _('Rebuild with the currently selected embedding model.');
-  if (status?.kind === 'failed' && status.error) return status.error;
-  return _('Build a spoiler-safe reference using only what you have read.');
+  if (status?.kind === 'failed') return _('Try preparing the book index again in AI Assistant.');
+  return _('X-Ray uses only what you have read.');
+};
+
+const entityTypeLabel = (type: XRayEntityType, _: ReturnType<typeof useTranslation>): string => {
+  const labels: Record<XRayEntityType, string> = {
+    character: _('Character'),
+    location: _('Location'),
+    organization: _('Organization'),
+    artifact: _('Artifact'),
+    term: _('Term'),
+    event: _('Event'),
+    concept: _('Concept'),
+  };
+  return labels[type];
+};
+
+const claimStatusLabel = (
+  status: XRayClaimStatus,
+  _: ReturnType<typeof useTranslation>,
+): string => {
+  const labels: Record<XRayClaimStatus, string> = {
+    true: _('True'),
+    false: _('False'),
+    suspected: _('Suspected'),
+  };
+  return labels[status];
 };
 
 const hasCredentials = (settings: AISettings): boolean => {

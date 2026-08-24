@@ -194,4 +194,16 @@ describe('XRaySnapshotService', () => {
     ]);
     expect(result.maxPositionIndex).toBe(0);
   });
+
+  it('keeps fallback lookup caches separate for each language', async () => {
+    const sourceUnit = unit(0, 'The brass key opened the cellar.');
+    const readThrough = vi.fn().mockResolvedValue(sourceSlice([sourceUnit]));
+    const listBatches = vi.spyOn(store, 'listBatches');
+    const service = new XRaySnapshotService({ readThrough }, store);
+
+    await service.lookup(BOOK_HASH, 'at-first', 'brass key', 'en');
+    await service.lookup(BOOK_HASH, 'at-first', 'brass key', 'fr');
+
+    expect(listBatches).toHaveBeenCalledTimes(2);
+  });
 });

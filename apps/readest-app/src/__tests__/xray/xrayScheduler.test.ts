@@ -1,12 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { XRayScheduler, type XRayScheduledUpdate } from '@/services/ai/xray/XRayScheduler';
-import type { BookDoc } from '@/libs/document';
 
 const request = (currentCfi: string): XRayScheduledUpdate => ({
   bookHash: 'book-a',
   currentCfi,
-  bookDoc: {} as BookDoc,
 });
 
 describe('XRayScheduler', () => {

@@ -34,9 +34,10 @@ export class XRaySnapshotService {
     const displayTerm = term.normalize('NFKC').trim().replace(/\s+/g, ' ');
     const key = normalize(displayTerm);
     if (!key) return emptyLookup(displayTerm, source.maxPositionIndex);
+    const cacheKey = JSON.stringify([normalize(language), key]);
 
     const cached = await this.store.getLookup(
-      key,
+      cacheKey,
       bookHash,
       source.maxPositionIndex,
       source.fingerprint,
@@ -52,7 +53,7 @@ export class XRaySnapshotService {
       : contextLookup(displayTerm, source, language);
 
     await this.store.saveLookup({
-      key,
+      key: cacheKey,
       bookHash,
       maxPositionIndex: source.maxPositionIndex,
       fingerprint: source.fingerprint,

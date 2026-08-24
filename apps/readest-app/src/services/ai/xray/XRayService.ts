@@ -1,10 +1,12 @@
-import type { BookDoc } from '@/libs/document';
 import type { AISettings } from '@/services/ai/types';
-import type { IndexBookOptions } from '@/services/reedy/retrieval/BookIndexer';
 import type { AppService } from '@/types/system';
 
 import type { GenreMetadata } from './genre';
-import { ReedyXRaySource, type XRaySourceStatus } from './source/ReedyXRaySource';
+import {
+  ReedyXRaySource,
+  type XRaySourceSlice,
+  type XRaySourceStatus,
+} from './source/ReedyXRaySource';
 import { XRayStore } from './storage/XRayStore';
 import type { XRayLookupResult, XRaySnapshot } from './types';
 import { XRayModelExtractor } from './XRayModelExtractor';
@@ -14,15 +16,15 @@ import { XRaySnapshotService } from './XRaySnapshotService';
 export interface XRayProgressUpdate {
   readonly bookHash: string;
   readonly currentCfi: string;
-  readonly bookDoc: BookDoc;
   readonly metadata?: GenreMetadata;
-  readonly indexIfNeeded: boolean;
   readonly signal?: AbortSignal;
 }
 
 export type XRayProgressUpdateResult =
   | XRayUpdateResult
   | { readonly kind: 'unavailable'; readonly status: XRaySourceStatus };
+
+const XRAY_DERIVATION_VERSION = 1;
 
 export class XRayService {
   private readonly pipeline: XRayPipeline;
@@ -32,38 +34,45 @@ export class XRayService {
     private readonly source: ReedyXRaySource,
     store: XRayStore,
     extractor: XRayModelExtractor,
+    chatModelIdentity: string,
   ) {
-    this.pipeline = new XRayPipeline(source, store, extractor);
-    this.snapshots = new XRaySnapshotService(source, store);
+    const derivedSource = {
+      readThrough: async (bookHash: string, currentCfi: string) =>
+        withDerivationFingerprint(
+          await source.readThrough(bookHash, currentCfi),
+          chatModelIdentity,
+        ),
+    };
+    this.pipeline = new XRayPipeline(derivedSource, store, extractor);
+    this.snapshots = new XRaySnapshotService(derivedSource, store);
   }
 
   static async open(appService: AppService, settings: AISettings): Promise<XRayService> {
+    if (appService.appPlatform !== 'tauri') {
+      throw new Error('X-Ray is only available in the Tauri app');
+    }
     const { createXRayModels } = await import('./source/models');
     const models = createXRayModels(settings);
     const [source, store] = await Promise.all([
-      ReedyXRaySource.open(appService, settings, models.embedding),
+      ReedyXRaySource.open(appService, models.embeddingModelId),
       XRayStore.open(appService),
     ]);
-    return new XRayService(source, store, new XRayModelExtractor(models.chat));
+    return new XRayService(
+      source,
+      store,
+      new XRayModelExtractor(models.chat),
+      models.chatModelIdentity,
+    );
   }
 
   getStatus(bookHash: string): Promise<XRaySourceStatus> {
     return this.source.getStatus(bookHash);
   }
 
-  indexBook(bookDoc: BookDoc, bookHash: string, options?: IndexBookOptions): Promise<void> {
-    return this.source.indexBook(bookDoc, bookHash, options);
-  }
-
   async updateForProgress(update: XRayProgressUpdate): Promise<XRayProgressUpdateResult> {
-    let status = await this.source.getStatus(update.bookHash);
+    const status = await this.source.getStatus(update.bookHash);
     if (status.kind !== 'ready') {
-      if (!update.indexIfNeeded || status.kind === 'indexing' || status.kind === 'empty_index') {
-        return { kind: 'unavailable', status };
-      }
-      await this.source.indexBook(update.bookDoc, update.bookHash, { signal: update.signal });
-      status = await this.source.getStatus(update.bookHash);
-      if (status.kind !== 'ready') return { kind: 'unavailable', status };
+      return { kind: 'unavailable', status };
     }
 
     return this.pipeline.update(update.bookHash, update.currentCfi, {
@@ -85,6 +94,17 @@ export class XRayService {
     return this.snapshots.lookup(bookHash, currentCfi, term, language);
   }
 }
+
+const withDerivationFingerprint = (
+  source: XRaySourceSlice,
+  chatModelIdentity: string,
+): XRaySourceSlice => ({
+  ...source,
+  fingerprint: {
+    ...source.fingerprint,
+    contentHash: `${source.fingerprint.contentHash}:xray-v${XRAY_DERIVATION_VERSION}:${chatModelIdentity}`,
+  },
+});
 
 const serviceCache = new WeakMap<AppService, WeakMap<AISettings, Promise<XRayService>>>();
 

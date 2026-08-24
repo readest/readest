@@ -47,7 +47,12 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
 
     setResult(null);
     setError('');
-    if (!appService || appService.appPlatform !== 'tauri' || !aiSettings?.enabled) {
+    if (
+      !appService ||
+      appService.appPlatform !== 'tauri' ||
+      !aiSettings?.enabled ||
+      !aiSettings.reedy?.enabled
+    ) {
       setLoading(false);
       return;
     }
@@ -64,9 +69,9 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
       .then((lookup) => {
         if (!cancelled) setResult(lookup);
       })
-      .catch((cause: unknown) => {
+      .catch(() => {
         if (!cancelled) {
-          setError(cause instanceof Error ? cause.message : _('Could not load X-Ray.'));
+          setError(_('Failed to load X-Ray'));
         }
       })
       .finally(() => {
@@ -94,7 +99,7 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
       onDismiss={onDismiss}
     >
       <div className='flex h-full flex-col overflow-hidden rounded-lg'>
-        <header className='border-base-content/10 flex items-start justify-between gap-3 border-b px-4 py-3'>
+        <header className='border-base-content/10 flex items-start justify-between gap-3 border-b px-4 py-3 eink:border-base-content'>
           <div className='min-w-0'>
             <p className='text-base-content/55 text-[10px] font-semibold uppercase tracking-[0.16em]'>
               {_('X-Ray')}
@@ -109,14 +114,13 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
         <div className='min-h-0 flex-1 overflow-y-auto px-4 py-3' aria-live='polite'>
           {loading ? (
             <div className='text-base-content/60 flex h-full items-center justify-center gap-2 text-xs'>
-              <span className='loading loading-spinner loading-sm' />
+              <span className='loading loading-spinner loading-sm eink:hidden' />
               {_('Looking up selection...')}
             </div>
           ) : error ? (
-            <div className='space-y-1.5 text-sm'>
-              <p className='font-medium'>{_('Could not load X-Ray.')}</p>
-              <p className='text-base-content/60 break-words text-xs'>{error}</p>
-            </div>
+            <p className='text-base-content/60 break-words text-sm' role='alert'>
+              {error}
+            </p>
           ) : !result || result.source === 'none' ? (
             <p className='text-base-content/60 text-sm'>
               {_('No X-Ray match found up to your current location.')}
@@ -125,7 +129,7 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
             <div className='space-y-4'>
               <div className='space-y-2'>
                 <span className='bg-base-200 eink-bordered inline-flex rounded px-2 py-1 text-[10px] font-semibold uppercase tracking-wide'>
-                  {result.entity?.type ?? _('Book context')}
+                  {_('Book context')}
                 </span>
                 <p className='text-sm leading-relaxed'>{result.summary}</p>
               </div>
@@ -139,8 +143,8 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
                     <button
                       key={`${evidence.unitId}:${evidence.positionIndex}:${evidence.exactQuote}`}
                       type='button'
-                      className='eink-bordered border-base-content/15 bg-base-200/45 hover:bg-base-200 w-full rounded-lg border p-2.5 text-left disabled:cursor-default'
-                      aria-label={_('Go to quote')}
+                      className='eink-bordered border-base-content/15 bg-base-200/45 hover:bg-base-200 w-full rounded-lg border p-2.5 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/15 disabled:cursor-default'
+                      aria-label={evidence.inferred ? _('Inferred evidence') : _('Jump to quote')}
                       disabled={evidence.inferred || !evidence.startCfi}
                       onClick={() => goToEvidence(evidence.startCfi)}
                     >
@@ -153,6 +157,7 @@ const XRayPopup: React.FC<XRayPopupProps> = ({
                               position: evidence.positionIndex + 1,
                             })
                           : _('Page {{page}}', { page: evidence.displayPage })}
+                        {evidence.inferred ? ` · ${_('Inferred')}` : ''}
                       </span>
                     </button>
                   ))}

@@ -5,7 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import XRayPopup from '@/app/reader/components/annotator/XRayPopup';
 
 const mocks = vi.hoisted(() => ({
-  aiSettings: { enabled: true, provider: 'ollama', indexingMode: 'on-demand' },
+  aiSettings: {
+    enabled: true,
+    provider: 'ollama',
+    indexingMode: 'on-demand',
+    reedy: { enabled: true },
+  },
   appService: { appPlatform: 'tauri' },
   goTo: vi.fn(),
   lookup: vi.fn(),
@@ -97,7 +102,7 @@ describe('XRayPopup', () => {
     expect(await screen.findByText('A curious girl who follows the White Rabbit.')).toBeTruthy();
     expect(mocks.lookup).toHaveBeenCalledWith('booka', 'epubcfi(/6/4!/4/2/1:20)', 'Alice', 'en');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Go to quote' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Jump to quote' }));
 
     expect(mocks.goTo).toHaveBeenCalledWith('epubcfi(/6/2!/4/2/1:0)');
     expect(onDismiss).toHaveBeenCalledOnce();

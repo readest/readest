@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { PiNotePencil, PiRobot } from 'react-icons/pi';
 import { LuScanSearch } from 'react-icons/lu';
 
@@ -22,7 +22,13 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
   const { settings } = useSettingsStore();
   const aiEnabled = settings?.aiSettings?.enabled ?? false;
 
-  const xrayEnabled = aiEnabled && appService?.appPlatform === 'tauri';
+  const xrayEnabled =
+    aiEnabled && !!settings?.aiSettings?.reedy?.enabled && appService?.appPlatform === 'tauri';
+
+  useEffect(() => {
+    if (activeTab === 'xray' && !xrayEnabled) onTabChange(aiEnabled ? 'ai' : 'notes');
+  }, [activeTab, aiEnabled, onTabChange, xrayEnabled]);
+
   const tabs: NotebookTab[] = aiEnabled
     ? xrayEnabled
       ? ['notes', 'ai', 'xray']
@@ -55,6 +61,26 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
     }
   };
 
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      nextIndex = (index + 1) % tabs.length;
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      nextIndex = (index - 1 + tabs.length) % tabs.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = tabs.length - 1;
+    }
+    if (nextIndex === null) return;
+    event.preventDefault();
+    onTabChange(tabs[nextIndex]!);
+    event.currentTarget.parentElement
+      ?.querySelectorAll<HTMLButtonElement>('button')
+      .item(nextIndex)
+      .focus();
+  };
+
   return (
     <nav
       className={clsx(
@@ -64,22 +90,17 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
       dir='ltr'
       aria-label={_('Notebook sections')}
     >
-      {tabs.map((tab) => (
+      {tabs.map((tab, index) => (
         <button
           type='button'
           key={tab}
           aria-pressed={activeTab === tab}
           className={clsx(
-            'm-1.5 flex-1 cursor-pointer rounded-lg p-2 transition-colors duration-200',
+            'm-1.5 flex-1 cursor-pointer rounded-lg p-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/15',
             activeTab === tab && 'bg-base-300/85',
           )}
           onClick={() => onTabChange(tab)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              onTabChange(tab);
-            }
-          }}
+          onKeyDown={(event) => handleTabKeyDown(event, index)}
           title={getTabLabel(tab)}
           aria-label={getTabLabel(tab)}
         >

@@ -1,16 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { BookDoc } from '@/libs/document';
 import { migrate } from '@/services/database/migrate';
 import { getMigrations } from '@/services/database/migrations';
 import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
 import { ReedyDb } from '@/services/reedy/db/ReedyDb';
 import type { BookMeta, ChunkRow } from '@/services/reedy/db/types';
-import type { EmbeddingModel } from '@/services/reedy/models/EmbeddingModel';
-import type { BookIndexer } from '@/services/reedy/retrieval/BookIndexer';
-import type { BookRetriever } from '@/services/reedy/retrieval/BookRetriever';
 import { ReedyXRaySource } from '@/services/ai/xray/source/ReedyXRaySource';
 import type { DatabaseService } from '@/types/database';
+import type { AppService } from '@/types/system';
+
+const mocks = vi.hoisted(() => ({ openNativeDatabase: vi.fn() }));
+
+vi.mock('@/services/database/nativeDatabaseService', () => ({
+  NativeDatabaseService: { open: mocks.openNativeDatabase },
+}));
 
 const BOOK_HASH = 'book-a';
 const MODEL_ID = 'embedding-a';
@@ -43,14 +46,6 @@ const chunk = (
   tokenCount: 2,
 });
 
-const fixedModel = (): EmbeddingModel => ({
-  id: MODEL_ID,
-  dim: 2,
-  async embed(texts) {
-    return texts.map(() => [1, 0]);
-  },
-});
-
 describe('ReedyXRaySource', () => {
   let db: DatabaseService;
   let reedy: ReedyDb;
@@ -59,14 +54,64 @@ describe('ReedyXRaySource', () => {
     db = await NodeDatabaseService.open(':memory:', { experimental: ['index_method'] });
     await migrate(db, getMigrations('reedy'));
     reedy = new ReedyDb(db);
+    mocks.openNativeDatabase.mockReset().mockResolvedValue(db);
   });
 
   afterEach(async () => {
     await db.close();
   });
 
+  it('opens the canonical Reedy database without creating a second index', async () => {
+    const databaseExists = vi.fn().mockResolvedValue(true);
+    const resolveFilePath = vi.fn().mockResolvedValue('/data/reedy.db');
+    const openDatabase = vi.fn();
+
+    await ReedyXRaySource.open(
+      { databaseExists, resolveFilePath, openDatabase } as unknown as AppService,
+      MODEL_ID,
+    );
+
+    expect(databaseExists).toHaveBeenCalledWith('reedy.db', 'Data');
+    expect(resolveFilePath).toHaveBeenCalledWith('reedy.db', 'Data');
+    expect(mocks.openNativeDatabase).toHaveBeenCalledWith('sqlite:/data/reedy.db', {
+      experimental: ['index_method'],
+    });
+    expect(openDatabase).not.toHaveBeenCalled();
+  });
+
+  it('does not create a Reedy database when the canonical index is missing', async () => {
+    const source = await ReedyXRaySource.open(
+      {
+        databaseExists: vi.fn().mockResolvedValue(false),
+      } as unknown as AppService,
+      MODEL_ID,
+    );
+
+    await expect(source.getStatus(BOOK_HASH)).resolves.toEqual({ kind: 'not_indexed' });
+    expect(mocks.openNativeDatabase).not.toHaveBeenCalled();
+  });
+
+  it('opens Reedy after indexing creates a database later in the session', async () => {
+    let exists = false;
+    const databaseExists = vi.fn(async () => exists);
+    const source = await ReedyXRaySource.open(
+      {
+        databaseExists,
+        resolveFilePath: vi.fn().mockResolvedValue('/data/reedy.db'),
+      } as unknown as AppService,
+      MODEL_ID,
+    );
+
+    await expect(source.getStatus(BOOK_HASH)).resolves.toEqual({ kind: 'not_indexed' });
+    await reedy.upsertBookMeta(indexedMeta());
+    exists = true;
+
+    await expect(source.getStatus(BOOK_HASH)).resolves.toMatchObject({ kind: 'ready' });
+    expect(mocks.openNativeDatabase).toHaveBeenCalledOnce();
+  });
+
   it('reports missing, ready, and stale Reedy indexes', async () => {
-    const source = new ReedyXRaySource(db, reedy, fixedModel());
+    const source = new ReedyXRaySource(db, reedy, MODEL_ID);
     await expect(source.getStatus(BOOK_HASH)).resolves.toEqual({ kind: 'not_indexed' });
 
     await reedy.upsertBookMeta(indexedMeta());
@@ -79,7 +124,7 @@ describe('ReedyXRaySource', () => {
       maxPositionIndex: 1,
     });
 
-    const stale = new ReedyXRaySource(db, reedy, { ...fixedModel(), id: 'embedding-b' });
+    const stale = new ReedyXRaySource(db, reedy, 'embedding-b');
     await expect(stale.getStatus(BOOK_HASH)).resolves.toEqual({
       kind: 'stale_index',
       activeModel: 'embedding-b',
@@ -93,7 +138,7 @@ describe('ReedyXRaySource', () => {
     const second = chunk('chunk-1', 1, 11, 20);
     await reedy.insertChunks([second, first]);
 
-    const source = new ReedyXRaySource(db, reedy, fixedModel());
+    const source = new ReedyXRaySource(db, reedy, MODEL_ID);
     await expect(source.readThrough(BOOK_HASH, 'epubcfi(/6/2!/4/2/1:15)')).resolves.toEqual({
       fingerprint: {
         bookHash: BOOK_HASH,
@@ -122,57 +167,11 @@ describe('ReedyXRaySource', () => {
     const source = new ReedyXRaySource(
       db,
       { getBookMeta } as Pick<ReedyDb, 'getBookMeta'>,
-      fixedModel(),
+      MODEL_ID,
     );
 
     await expect(source.readThrough(BOOK_HASH, 'epubcfi(/6/2!/4/2/1:15)')).rejects.toThrow(
       'Reedy index changed while X-Ray was reading it',
     );
-  });
-
-  it('warms the embedding model before handing it to BookIndexer', async () => {
-    let dim: number | null = null;
-    const model: EmbeddingModel = {
-      id: MODEL_ID,
-      get dim() {
-        if (dim === null) throw new Error('embedding dim unknown');
-        return dim;
-      },
-      async embed(texts) {
-        dim = 2;
-        return texts.map(() => [1, 0]);
-      },
-    };
-    const indexBook = vi.fn(async (_book: BookDoc, _hash: string, activeModel: EmbeddingModel) => {
-      expect(activeModel.dim).toBe(2);
-    });
-    const source = new ReedyXRaySource(db, reedy, model, { indexBook } as Pick<
-      BookIndexer,
-      'indexBook'
-    >);
-
-    await source.indexBook({} as BookDoc, BOOK_HASH);
-
-    expect(indexBook).toHaveBeenCalledOnce();
-  });
-
-  it('derives the Reedy search spoiler bound from the current CFI', async () => {
-    await reedy.upsertBookMeta(indexedMeta());
-    await reedy.insertChunks([chunk('chunk-0', 0, 0, 10), chunk('chunk-1', 1, 11, 20)]);
-    const search = vi.fn().mockResolvedValue({ passages: [], status: 'ok' });
-    const source = new ReedyXRaySource(db, reedy, fixedModel(), undefined, { search } as Pick<
-      BookRetriever,
-      'search'
-    >);
-
-    await source.searchThrough(BOOK_HASH, 'Who is this?', 'epubcfi(/6/2!/4/2/1:15)', 3);
-
-    expect(search).toHaveBeenCalledWith({
-      bookHash: BOOK_HASH,
-      query: 'Who is this?',
-      k: 3,
-      spoilerBoundPosition: 0,
-      activeEmbeddingModel: expect.objectContaining({ id: MODEL_ID }),
-    });
   });
 });

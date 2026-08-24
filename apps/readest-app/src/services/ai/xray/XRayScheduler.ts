@@ -1,11 +1,8 @@
-import type { BookDoc } from '@/libs/document';
-
 import type { GenreMetadata } from './genre';
 
 export interface XRayScheduledUpdate {
   readonly bookHash: string;
   readonly currentCfi: string;
-  readonly bookDoc: BookDoc;
   readonly metadata?: GenreMetadata;
 }
 

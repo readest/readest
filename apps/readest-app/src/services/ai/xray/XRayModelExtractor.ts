@@ -1,6 +1,5 @@
 import { generateText, Output } from 'ai';
 
-import type { AISettings } from '@/services/ai/types';
 import type { ChatModel } from '@/services/reedy/models/ChatModel';
 
 import type { XRayExtractionModel, XRayExtractionRequest } from './XRayPipeline';
@@ -9,11 +8,6 @@ import { xrayExtractionSchema } from './validators';
 
 export class XRayModelExtractor implements XRayExtractionModel {
   constructor(private readonly model: ChatModel) {}
-
-  static async create(settings: AISettings): Promise<XRayModelExtractor> {
-    const { createXRayModels } = await import('./source/models');
-    return new XRayModelExtractor(createXRayModels(settings).chat);
-  }
 
   async extract(request: XRayExtractionRequest): Promise<XRayModelExtraction> {
     const result = await generateText({

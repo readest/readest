@@ -12,6 +12,7 @@ import { validateXRayExtraction } from './validators';
 
 const DEFAULT_MAX_UNITS_PER_BATCH = 8;
 const XRAY_STATE_VERSION = 1;
+const updateQueues = new Map<string, Promise<XRayUpdateResult>>();
 
 export interface XRayExtractionRequest {
   readonly units: readonly XRaySourceUnit[];
@@ -60,18 +61,48 @@ export class XRayPipeline {
     currentCfi: string,
     options: XRayUpdateOptions = {},
   ): Promise<XRayUpdateResult> {
+    const previous = updateQueues.get(bookHash);
+    const waitForPrevious = previous
+      ? previous.then(
+          () => undefined,
+          () => undefined,
+        )
+      : Promise.resolve();
+    const current = waitForPrevious.then(() => this.runUpdate(bookHash, currentCfi, options));
+    updateQueues.set(bookHash, current);
+    void current
+      .finally(() => {
+        if (updateQueues.get(bookHash) === current) updateQueues.delete(bookHash);
+      })
+      .catch(() => undefined);
+    return current;
+  }
+
+  private async runUpdate(
+    bookHash: string,
+    currentCfi: string,
+    options: XRayUpdateOptions,
+  ): Promise<XRayUpdateResult> {
     const source = await this.source.readThrough(bookHash, currentCfi);
     let state = await this.store.getState(bookHash);
 
-    if (state && !sameFingerprint(state.fingerprint, source.fingerprint)) {
+    if (
+      state &&
+      (state.version !== XRAY_STATE_VERSION ||
+        !sameFingerprint(state.fingerprint, source.fingerprint))
+    ) {
       await this.store.clearBook(bookHash);
       state = null;
     }
 
-    const committedPosition = state?.maxPositionIndex ?? -1;
+    if (!state) {
+      state = initialState(source.fingerprint);
+      await this.store.saveState(state);
+    }
+
+    const committedPosition = state.maxPositionIndex;
     const pendingUnits = source.units.filter((item) => item.positionIndex > committedPosition);
     if (pendingUnits.length === 0) {
-      if (!state) await this.store.saveState(initialState(source.fingerprint));
       return {
         kind: 'current',
         batchCount: 0,
@@ -82,7 +113,6 @@ export class XRayPipeline {
 
     const genre = options.metadata ? detectGenre(options.metadata) : getGenreHints('unknown');
     let cursor = committedPosition;
-    let lastBatchId = state?.lastBatchId;
     let completedUnits = 0;
     let batchCount = 0;
 
@@ -92,49 +122,29 @@ export class XRayPipeline {
       const minPositionIndex = units[0]!.positionIndex;
       const maxPositionIndex = units.at(-1)!.positionIndex;
       const batchId = batchKey(source.fingerprint, minPositionIndex, maxPositionIndex);
-      const pendingState: XRayBookState = {
+      const extracted = await this.model.extract({ units, genre, signal: options.signal });
+      const output = validateXRayExtraction(extracted, units, maxPositionIndex);
+      const batch: XRayExtractionBatch = {
+        batchId,
         fingerprint: source.fingerprint,
-        maxPositionIndex: cursor,
-        pendingPositionIndex: maxPositionIndex,
-        ...(lastBatchId === undefined ? {} : { lastBatchId }),
+        sourceUnitIds: units.map((item) => item.unitId),
+        minPositionIndex,
+        maxPositionIndex,
+        output,
+        createdAt: Date.now(),
+      };
+      const committedState: XRayBookState = {
+        fingerprint: source.fingerprint,
+        maxPositionIndex,
+        lastBatchId: batchId,
         updatedAt: Date.now(),
         version: XRAY_STATE_VERSION,
       };
-      await this.store.saveState(pendingState);
-
-      try {
-        const extracted = await this.model.extract({ units, genre, signal: options.signal });
-        const output = validateXRayExtraction(extracted, units, maxPositionIndex);
-        const batch: XRayExtractionBatch = {
-          batchId,
-          fingerprint: source.fingerprint,
-          sourceUnitIds: units.map((item) => item.unitId),
-          minPositionIndex,
-          maxPositionIndex,
-          output,
-          createdAt: Date.now(),
-        };
-        const committedState: XRayBookState = {
-          fingerprint: source.fingerprint,
-          maxPositionIndex,
-          lastBatchId: batchId,
-          updatedAt: Date.now(),
-          version: XRAY_STATE_VERSION,
-        };
-        await this.store.commitBatch(batch, committedState);
-        cursor = maxPositionIndex;
-        lastBatchId = batchId;
-        completedUnits += units.length;
-        batchCount += 1;
-        options.onProgress?.(completedUnits, pendingUnits.length);
-      } catch (error) {
-        await this.store.saveState({
-          ...pendingState,
-          error: error instanceof Error ? error.message : String(error),
-          updatedAt: Date.now(),
-        });
-        throw error;
-      }
+      await this.store.commitBatch(batch, committedState);
+      cursor = maxPositionIndex;
+      completedUnits += units.length;
+      batchCount += 1;
+      options.onProgress?.(completedUnits, pendingUnits.length);
     }
 
     return {

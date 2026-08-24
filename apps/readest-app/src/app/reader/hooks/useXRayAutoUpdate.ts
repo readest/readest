@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 
 import { useEnv } from '@/context/EnvContext';
 import type { AISettings } from '@/services/ai/types';
-import { getXRayService } from '@/services/ai/xray/XRayService';
 import { XRayScheduler } from '@/services/ai/xray/XRayScheduler';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useBookProgress } from '@/store/readerProgressStore';
@@ -23,6 +22,7 @@ export const useXRayAutoUpdate = (bookKey: string): void => {
       !appService ||
       appService.appPlatform !== 'tauri' ||
       !aiSettings?.enabled ||
+      !aiSettings.reedy?.enabled ||
       !hasCredentials(aiSettings)
     ) {
       scheduler.current = null;
@@ -31,10 +31,10 @@ export const useXRayAutoUpdate = (bookKey: string): void => {
 
     const nextScheduler = new XRayScheduler(
       async (update, signal) => {
+        const { getXRayService } = await import('@/services/ai/xray/XRayService');
         const service = await getXRayService(appService, aiSettings);
         const result = await service.updateForProgress({
           ...update,
-          indexIfNeeded: aiSettings.indexingMode === 'background',
           signal,
         });
         if (result.kind === 'updated') {
@@ -60,7 +60,6 @@ export const useXRayAutoUpdate = (bookKey: string): void => {
     scheduler.current?.schedule({
       bookHash,
       currentCfi: progress.location,
-      bookDoc,
       metadata: {
         title: formatTitle(bookDoc.metadata.title),
         description: bookDoc.metadata.description,

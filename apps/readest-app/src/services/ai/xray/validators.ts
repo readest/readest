@@ -70,24 +70,6 @@ export const xrayExtractionSchema = z.object({
   claims: z.array(xrayModelClaimSchema).optional().default([]),
 });
 
-const unwrapCodeFence = (raw: string): string => {
-  const trimmed = raw.trim();
-  const match = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(trimmed);
-  return match?.[1] ?? trimmed;
-};
-
-export const parseXRayExtraction = (raw: string): XRayModelExtraction | null => {
-  let value: unknown;
-  try {
-    value = JSON.parse(unwrapCodeFence(raw)) as unknown;
-  } catch {
-    return null;
-  }
-
-  const parsed = xrayExtractionSchema.safeParse(value);
-  return parsed.success ? parsed.data : null;
-};
-
 const evidenceLocator = (item: XRayModelEvidence, unit: XRaySourceUnit): XRayEvidenceLocator => {
   const shared = {
     unitId: unit.unitId,

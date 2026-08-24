@@ -6,7 +6,6 @@ import type {
   XRaySourceUnit,
 } from '@/services/ai/xray/types';
 import {
-  parseXRayExtraction,
   validateEvidence,
   validateXRayExtraction,
   xrayEntityTypeSchema,
@@ -89,20 +88,10 @@ const extraction = (itemEvidence: readonly XRayModelEvidence[]): XRayModelExtrac
   ],
 });
 
-describe('parseXRayExtraction', () => {
-  test('accepts the bounded schema and rejects malformed or unknown entity types', () => {
-    expect(parseXRayExtraction('not json')).toBeNull();
-    expect(parseXRayExtraction(JSON.stringify({ entities: 'not-an-array' }))).toBeNull();
+describe('xrayEntityTypeSchema', () => {
+  test('accepts supported types and rejects unknown types', () => {
     expect(xrayEntityTypeSchema.safeParse('character').success).toBe(true);
     expect(xrayEntityTypeSchema.safeParse('theme').success).toBe(false);
-
-    const invalid = extraction([evidence()]);
-    const raw = JSON.stringify({
-      ...invalid,
-      entities: [{ ...invalid.entities[0], type: 'person' }],
-    });
-    expect(parseXRayExtraction(raw)).toBeNull();
-    expect(parseXRayExtraction(JSON.stringify(extraction([evidence()])))).not.toBeNull();
   });
 });
 
