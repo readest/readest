@@ -26,6 +26,8 @@ import {
   type StatArchiveManifestRow,
 } from '@/libs/statsArchive';
 
+const ms = (s?: string | number | null) => (s ? new Date(s).getTime() : 0);
+
 /**
  * Field-level last-writer-wins for a books row's reading_status: return the
  * status fields with the newer reading_status_updated_at (ties → client). NULL
@@ -50,7 +52,6 @@ export function resolveReadingStatusMerge(
   client: Pick<DBBook, 'reading_status' | 'reading_status_updated_at'>,
   server: Pick<DBBook, 'reading_status' | 'reading_status_updated_at'>,
 ): Pick<DBBook, 'reading_status' | 'reading_status_updated_at'> {
-  const ms = (s?: string | null) => (s ? new Date(s).getTime() : 0);
   return ms(client.reading_status_updated_at) >= ms(server.reading_status_updated_at)
     ? {
         reading_status: client.reading_status,
@@ -96,7 +97,6 @@ export function resolveCoverMerge(
   client: Pick<DBBook, 'cover_hash' | 'cover_updated_at'>,
   server: Pick<DBBook, 'cover_hash' | 'cover_updated_at'>,
 ): Pick<DBBook, 'cover_hash' | 'cover_updated_at'> {
-  const ms = (s?: string | null) => (s ? new Date(s).getTime() : 0);
   return ms(client.cover_updated_at) >= ms(server.cover_updated_at)
     ? { cover_hash: client.cover_hash, cover_updated_at: client.cover_updated_at }
     : { cover_hash: server.cover_hash, cover_updated_at: server.cover_updated_at };
@@ -131,7 +131,6 @@ export function resolveMetadataMerge(
   server: BookMetadataFields,
   clientRowWins: boolean,
 ): BookMetadataFields {
-  const ms = (s?: string | null) => (s ? new Date(s).getTime() : 0);
   const clientMs = ms(client.metadata_updated_at);
   const serverMs = ms(server.metadata_updated_at);
   const clientWins = clientMs === serverMs ? clientRowWins : clientMs > serverMs;
@@ -151,6 +150,46 @@ export const bookMetadataChanged = (
   a.author !== b.author ||
   (a.metadata ?? null) !== (b.metadata ?? null) ||
   JSON.stringify(a.tags ?? null) !== JSON.stringify(b.tags ?? null);
+
+// Epoch ms of a row's latest change. A delete counts: KOReader's tombstones
+// keep the highlight's original updated_at (the plugin never bumps it on
+// delete), so ranking rows on updated_at alone puts a tombstone below a live
+// duplicate of the same note (issue #5818).
+type ChangeStamps = {
+  updated_at?: string | number | null;
+  deleted_at?: string | number | null;
+};
+const latestChangeMs = (rec: ChangeStamps) => Math.max(ms(rec.updated_at), ms(rec.deleted_at));
+
+/**
+ * Collapse rows sharing `keys` down to the one changed most recently, keeping
+ * the input order. The same note can exist under two book_hash values when the
+ * two devices hold different copies of a book (meta_hash bridges them); a
+ * deletion on either side must win over the stale live duplicate or it never
+ * reaches the peer. A tie goes to the tombstone: a delete and an edit in the
+ * same millisecond must not resurrect the note.
+ */
+export function dedupeLatest<T extends ChangeStamps>(records: T[], keys: (keyof T)[]): T[] {
+  const keyOf = (rec: T) =>
+    keys
+      .map((k) => rec[k])
+      .filter(Boolean)
+      .join('|');
+  const latest = new Map<string, { rec: T; at: number }>();
+  for (const rec of records) {
+    const key = keyOf(rec);
+    if (!key) continue;
+    const at = latestChangeMs(rec);
+    const best = latest.get(key);
+    if (!best || at > best.at || (at === best.at && !!rec.deleted_at && !best.rec.deleted_at)) {
+      latest.set(key, { rec, at });
+    }
+  }
+  return records.filter((rec) => {
+    const key = keyOf(rec);
+    return !key || latest.get(key)?.rec === rec;
+  });
+}
 
 const transformsToDB = {
   books: transformBookToDB,
@@ -253,23 +292,9 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      let records = allRecords;
-      if (dedupeKeys && dedupeKeys.length > 0) {
-        const seen = new Set<string>();
-        records = records.filter((rec) => {
-          const key = dedupeKeys
-            .map((k) => rec[k])
-            .filter(Boolean)
-            .join('|');
-          if (key && seen.has(key)) {
-            return false;
-          } else {
-            seen.add(key);
-            return true;
-          }
-        });
-      }
-      (results as unknown as Record<string, SyncRecord[]>)[DBSyncTypeMap[table]] = records || [];
+      const records =
+        dedupeKeys && dedupeKeys.length > 0 ? dedupeLatest(allRecords, dedupeKeys) : allRecords;
+      (results as unknown as Record<string, SyncRecord[]>)[DBSyncTypeMap[table]] = records;
     };
 
     // One bounded page of books for the app's and the calibre plugin's
