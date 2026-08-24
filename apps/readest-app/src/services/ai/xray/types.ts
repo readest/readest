@@ -157,6 +157,7 @@ export interface XRayExtractionBatch {
   readonly batchId: string;
   readonly fingerprint: XRayBookFingerprint;
   readonly sourceUnitIds: readonly string[];
+  readonly minPositionIndex: number;
   readonly maxPositionIndex: number;
   readonly output: XRayExtractionOutput;
   readonly createdAt: number;
@@ -165,9 +166,11 @@ export interface XRayExtractionBatch {
 export interface XRayBookState {
   readonly fingerprint: XRayBookFingerprint;
   readonly maxPositionIndex: number;
+  readonly pendingPositionIndex?: number;
   readonly lastBatchId?: string;
   readonly updatedAt: number;
   readonly version: number;
+  readonly error?: string;
 }
 
 export interface XRaySnapshot extends XRayExtractionOutput {
@@ -183,4 +186,12 @@ export interface XRayLookupResult {
   readonly source: 'entity' | 'lexrank' | 'none';
   readonly entity?: XRayEntity;
   readonly maxPositionIndex: number;
+}
+
+export interface XRayLookupCacheRow {
+  readonly key: string;
+  readonly bookHash: string;
+  readonly maxPositionIndex: number;
+  readonly fingerprint: XRayBookFingerprint;
+  readonly result: XRayLookupResult;
 }
