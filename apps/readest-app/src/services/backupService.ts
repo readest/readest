@@ -4,7 +4,7 @@ import { EXTS } from '@/libs/document';
 import { isTauriAppPlatform } from '@/services/environment';
 import { Book, BookConfig, BookNote } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
-import { getLibraryFilename } from '@/utils/book';
+import { getBookDirOfPath, getLibraryFilename } from '@/utils/book';
 import { stampBookConfigSchema } from '@/utils/serializer';
 import { configureZip } from '@/utils/zip';
 
@@ -307,7 +307,14 @@ export async function addBackupEntriesToZip(
   // and dirs no live row references — a soft-deleted book whose file
   // lingered, or an import killed before the library was saved. Those never
   // show in the library UI and must not be silently exported either (#5837).
+  // With no rows at all (a library.json that failed to load hands back `[]`)
+  // every dir is exported instead, so a broken library can still be rebuilt
+  // by restore's orphan-dir import.
   const liveHashes = new Set(books.filter((b) => !b.deletedAt).map((b) => b.hash));
+  const isExported = (path: string) => {
+    const dir = getBookDirOfPath(path);
+    return !!dir && (books.length === 0 || liveHashes.has(dir));
+  };
   const booksDir = await appService.resolveFilePath('', 'Books');
   const files = await appService.readDirectory(booksDir, 'None');
   // `readDirectory` returns host-separator paths; on Windows that is a
@@ -315,8 +322,8 @@ export async function addBackupEntriesToZip(
   // slashes so the backup restores on every platform — restore matches a
   // book's files by `${hash}/` (see `restoreFromBackupZip`). Issue #4703.
   const bookFiles = files
-    .map((file) => ({ file, entryName: file.path.replace(/\\/g, '/') }))
-    .filter(({ file, entryName }) => file.size > 0 && liveHashes.has(entryName.split('/')[0]!));
+    .filter((file) => file.size > 0 && isExported(file.path))
+    .map((file) => ({ file, entryName: file.path.replace(/\\/g, '/') }));
   const total = bookFiles.length;
 
   for (let i = 0; i < bookFiles.length; i++) {

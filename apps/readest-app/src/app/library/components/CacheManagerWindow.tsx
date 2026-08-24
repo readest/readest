@@ -13,10 +13,11 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { formatBytes } from '@/utils/book';
 import {
   clearCacheEntries,
-  getCacheEntries,
   getCacheStats,
-  getOrphanedBookEntries,
+  getClearableEntries,
+  withoutLiveBookEntries,
   CacheClearProgress,
+  CacheEntry,
   CacheSource,
 } from '@/utils/cache';
 import { AppService } from '@/types/system';
@@ -56,23 +57,14 @@ const getCacheSources = async (appService: AppService): Promise<CacheSource[]> =
   return sources;
 };
 
-/**
- * Cache entries plus orphaned book files under Books/ (#5837). Orphans are
- * only knowable against a loaded library — an unloaded one would mark every
- * book on disk as an orphan — so they are skipped until then.
- */
-const getClearableEntries = async (appService: AppService) => {
-  const cacheEntries = await getCacheEntries(appService, await getCacheSources(appService));
-  const { library, libraryLoaded } = useLibraryStore.getState();
-  const orphanEntries = libraryLoaded ? await getOrphanedBookEntries(appService, library) : [];
-  return { entries: [...cacheEntries, ...orphanEntries], orphanCount: orphanEntries.length };
-};
-
 export const CacheManagerWindow = () => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState<CacheStatus>('scanning');
+  // The scanned set is what the user confirms, so Clear deletes exactly the
+  // files the dialog described rather than rescanning under their feet.
+  const [entries, setEntries] = useState<CacheEntry[]>([]);
   const [count, setCount] = useState(0);
   const [orphanCount, setOrphanCount] = useState(0);
   const [size, setSize] = useState(0);
@@ -84,8 +76,14 @@ export const CacheManagerWindow = () => {
     setStatus('scanning');
     setErrorMessage('');
     try {
-      const { entries, orphanCount } = await getClearableEntries(appService);
+      const { library, libraryLoaded } = useLibraryStore.getState();
+      const { entries, orphanCount } = await getClearableEntries(
+        appService,
+        await getCacheSources(appService),
+        { books: library, loaded: libraryLoaded },
+      );
       const stats = getCacheStats(entries);
+      setEntries(entries);
       setCount(stats.count);
       setOrphanCount(orphanCount);
       setSize(stats.size);
@@ -129,9 +127,18 @@ export const CacheManagerWindow = () => {
     setStatus('clearing');
     setProgress({ current: 0, total: 0 });
     try {
-      const { entries } = await getClearableEntries(appService);
-      await clearCacheEntries(appService, entries, setProgress);
+      const { library } = useLibraryStore.getState();
+      const { failed } = await clearCacheEntries(
+        appService,
+        withoutLiveBookEntries(entries, library),
+        setProgress,
+      );
       await scanCache();
+      if (failed > 0) {
+        setErrorMessage(_('Failed to delete {{count}} file(s)', { count: failed }));
+        setStatus('error');
+        return;
+      }
       setStatus('done');
     } catch (error) {
       console.error('Error clearing cache:', error);

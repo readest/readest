@@ -16,6 +16,16 @@ import { md5 } from './md5';
 export const getDir = (book: Book) => {
   return `${book.hash}`;
 };
+/**
+ * The `<hash>` dir a Books/-relative path lives in, or undefined for a
+ * root-level file (library metadata). Accepts host separators, so a Windows
+ * `readDirectory` path (`hash\cover.png`) resolves the same as a POSIX one.
+ */
+export const getBookDirOfPath = (path: string) => {
+  const normalized = path.replace(/\\/g, '/');
+  const slashIdx = normalized.indexOf('/');
+  return slashIdx < 0 ? undefined : normalized.slice(0, slashIdx);
+};
 export const getLibraryFilename = () => {
   return 'library.json';
 };

@@ -83,10 +83,28 @@ describe('addBackupEntriesToZip - only live library books are exported (#5837)',
     expect(names).not.toContain('library.json.bak');
   });
 
-  it('exports nothing from the Books tree when the library is empty', async () => {
+  it('falls back to exporting every dir when the library has no rows at all', async () => {
+    // A library.json that failed to load hands back [] (safeLoadJSON); the
+    // Books tree is then the only copy, and restore's orphan import is how a
+    // broken library gets rebuilt. Root-level metadata still stays out.
     const { writer, names } = makeCapturingWriter();
 
     await addBackupEntriesToZip(writer, makeAppService([], files), {});
+
+    expect(names.filter((n) => n.includes('/'))).toEqual(
+      files.map((f) => f.path).filter((p) => p.includes('/')),
+    );
+    expect(names).not.toContain('library.json.bak');
+  });
+
+  it('exports nothing from the Books tree when every row is soft-deleted', async () => {
+    const { writer, names } = makeCapturingWriter();
+
+    await addBackupEntriesToZip(
+      writer,
+      makeAppService([makeBook({ hash: DELETED_HASH, deletedAt: 5000 })], files),
+      {},
+    );
 
     expect(names.filter((n) => n.includes('/'))).toEqual([]);
   });
