@@ -43,6 +43,7 @@ import LocalSendManager from '@/components/localsend/LocalSendManager';
 import BooksGrid from './BooksGrid';
 import SettingsDialog from '@/components/settings/SettingsDialog';
 import AudiobookPairingDialog from './audiobook/AudiobookPairingDialog';
+import HardcoverLinkDialog from './hardcover/HardcoverLinkDialog';
 
 const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ ids, settings }) => {
   const _ = useTranslation();
@@ -58,6 +59,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
   const { isSettingsDialogOpen, settingsDialogBookKey } = useSettingsStore();
   const [showDetailsBook, setShowDetailsBook] = useState<Book | null>(null);
   const [audiobookBookKey, setAudiobookBookKey] = useState<string | null>(null);
+  const [hardcoverLinkBookKey, setHardcoverLinkBookKey] = useState<string | null>(null);
   const [shareDialogState, setShareDialogState] = useState<{
     book: Book;
     cfi: string | null;
@@ -133,8 +135,16 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
       const detail = event.detail as { bookKey?: string } | undefined;
       if (detail?.bookKey) setAudiobookBookKey(detail.bookKey);
     };
+    const handleLinkHardcoverBook = (event: CustomEvent) => {
+      const detail = event.detail as { bookKey?: string } | undefined;
+      if (detail?.bookKey) setHardcoverLinkBookKey(detail.bookKey);
+    };
     eventDispatcher.on('manage-audiobook', handleManageAudiobook);
-    return () => eventDispatcher.off('manage-audiobook', handleManageAudiobook);
+    eventDispatcher.on('hardcover-link-book', handleLinkHardcoverBook);
+    return () => {
+      eventDispatcher.off('manage-audiobook', handleManageAudiobook);
+      eventDispatcher.off('hardcover-link-book', handleLinkHardcoverBook);
+    };
   }, []);
 
   useEffect(() => {
@@ -339,6 +349,12 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
           bookKey={audiobookBookKey}
           bookDoc={getBookData(audiobookBookKey)!.bookDoc!}
           onClose={() => setAudiobookBookKey(null)}
+        />
+      )}
+      {hardcoverLinkBookKey && (
+        <HardcoverLinkDialog
+          bookKey={hardcoverLinkBookKey}
+          onClose={() => setHardcoverLinkBookKey(null)}
         />
       )}
       <Notebook />

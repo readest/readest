@@ -36,14 +36,23 @@ const h = vi.hoisted(() => {
     config: {
       progress: [5, 100] as [number, number],
       booknotes: [] as Array<{ type: string; deletedAt?: number }>,
+      hardcover: undefined as { bookId: number; title: string } | undefined,
     },
     state: {
       progress: { location: 'cfi-loc' } as { location: string } | null,
     },
+    resolvedLink: { bookId: 202, title: 'Resolved Title' },
     setSettingsMock: vi.fn(),
     saveSettingsMock: vi.fn(async () => {}),
-    pushProgressMock: vi.fn(async () => {}),
-    syncBookNotesMock: vi.fn(async () => ({ inserted: 0, updated: 0, skipped: 0 })),
+    setConfigMock: vi.fn(),
+    saveConfigMock: vi.fn(async () => {}),
+    pushProgressMock: vi.fn(async () => ({ bookId: 202, title: 'Resolved Title' })),
+    syncBookNotesMock: vi.fn(async () => ({
+      inserted: 1,
+      updated: 0,
+      skipped: 0,
+      link: { bookId: 202, title: 'Resolved Title' },
+    })),
     toasts: [] as Array<{ message: string; type: string }>,
     eventListeners: new Map<string, Set<(e: CustomEvent) => void>>(),
   };
@@ -69,6 +78,8 @@ vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: h.makeStore({
     getConfig: () => h.config,
     getBookData: () => ({ book: h.book }),
+    setConfig: h.setConfigMock,
+    saveConfig: h.saveConfigMock,
   }),
 }));
 
@@ -127,12 +138,14 @@ const dispatch = (name: string, detail: unknown) =>
 beforeEach(() => {
   vi.useFakeTimers();
   h.settings.hardcover = { enabled: true, accessToken: 'tok', autoSync: false, lastSyncedAt: 0 };
-  h.config = { progress: [5, 100], booknotes: [] };
+  h.config = { progress: [5, 100], booknotes: [], hardcover: undefined };
   h.state.progress = { location: 'cfi-loc' };
   h.pushProgressMock.mockClear();
   h.syncBookNotesMock.mockClear();
   h.setSettingsMock.mockClear();
   h.saveSettingsMock.mockClear();
+  h.setConfigMock.mockClear();
+  h.saveConfigMock.mockClear();
   h.toasts.length = 0;
   h.eventListeners.clear();
 });
@@ -172,7 +185,7 @@ describe('useHardcoverSync auto sync', () => {
     h.settings.hardcover.autoSync = true;
     const { rerender } = renderHook(() => useHardcoverSync('h1-view1'));
 
-    h.config = { progress: [5, 100], booknotes: [{ type: 'annotation' }] };
+    h.config = { progress: [5, 100], booknotes: [{ type: 'annotation' }], hardcover: undefined };
     rerender();
     await advance(HARDCOVER_SYNC_DEBOUNCE_MS + 100);
 
@@ -183,7 +196,7 @@ describe('useHardcoverSync auto sync', () => {
     h.settings.hardcover.autoSync = false;
     const { rerender } = renderHook(() => useHardcoverSync('h1-view1'));
 
-    h.config = { progress: [5, 100], booknotes: [{ type: 'annotation' }] };
+    h.config = { progress: [5, 100], booknotes: [{ type: 'annotation' }], hardcover: undefined };
     rerender();
     await advance(HARDCOVER_SYNC_DEBOUNCE_MS + 100);
 
@@ -205,5 +218,86 @@ describe('useHardcoverSync auto sync', () => {
     });
 
     expect(h.pushProgressMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useHardcoverSync remembers the matched book (#5846)', () => {
+  test('records the resolved Hardcover book after a manual progress push when none is linked', async () => {
+    renderHook(() => useHardcoverSync('h1-view1'));
+
+    await act(async () => {
+      dispatch('hardcover-push-progress', { bookKey: 'h1-view1' });
+      await flushMicrotasks();
+    });
+
+    expect(h.saveConfigMock).toHaveBeenCalledTimes(1);
+    expect(h.saveConfigMock).toHaveBeenCalledWith(
+      expect.anything(),
+      'h1-view1',
+      expect.objectContaining({ hardcover: h.resolvedLink }),
+      h.settings,
+    );
+    expect(h.setConfigMock).toHaveBeenCalledWith('h1-view1', { hardcover: h.resolvedLink });
+  });
+
+  test('records the resolved Hardcover book after a notes push', async () => {
+    h.config = { progress: [5, 100], booknotes: [{ type: 'annotation' }], hardcover: undefined };
+    renderHook(() => useHardcoverSync('h1-view1'));
+
+    await act(async () => {
+      dispatch('hardcover-push-notes', { bookKey: 'h1-view1' });
+      await flushMicrotasks();
+    });
+
+    expect(h.setConfigMock).toHaveBeenCalledWith('h1-view1', { hardcover: h.resolvedLink });
+  });
+
+  test('leaves the config alone when the same book is already linked', async () => {
+    h.config = { progress: [5, 100], booknotes: [], hardcover: { ...h.resolvedLink } };
+    renderHook(() => useHardcoverSync('h1-view1'));
+
+    await act(async () => {
+      dispatch('hardcover-push-progress', { bookKey: 'h1-view1' });
+      await flushMicrotasks();
+    });
+
+    expect(h.pushProgressMock).toHaveBeenCalledTimes(1);
+    expect(h.saveConfigMock).not.toHaveBeenCalled();
+    expect(h.setConfigMock).not.toHaveBeenCalled();
+  });
+
+  test('never overwrites a link the user stored while the push was in flight', async () => {
+    // The push snapshot had no link; the user picked a different book in
+    // "Link Book" before it resolved. The manual choice must survive.
+    h.config = { progress: [5, 100], booknotes: [], hardcover: { bookId: 999, title: 'Chosen' } };
+    renderHook(() => useHardcoverSync('h1-view1'));
+
+    await act(async () => {
+      dispatch('hardcover-push-progress', { bookKey: 'h1-view1' });
+      await flushMicrotasks();
+    });
+
+    expect(h.pushProgressMock).toHaveBeenCalledTimes(1);
+    expect(h.saveConfigMock).not.toHaveBeenCalled();
+    expect(h.setConfigMock).not.toHaveBeenCalled();
+  });
+
+  test('reports a failed manual push instead of claiming success', async () => {
+    h.pushProgressMock.mockRejectedValueOnce(new Error('Unable to resolve this book in Hardcover'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderHook(() => useHardcoverSync('h1-view1'));
+
+    await act(async () => {
+      dispatch('hardcover-push-progress', { bookKey: 'h1-view1' });
+      await flushMicrotasks();
+    });
+
+    expect(h.toasts).toEqual([
+      {
+        message: 'Hardcover progress sync failed: {{error}}',
+        type: 'error',
+      },
+    ]);
+    expect(h.saveConfigMock).not.toHaveBeenCalled();
   });
 });
