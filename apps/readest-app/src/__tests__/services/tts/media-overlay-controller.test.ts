@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { TTSController } from '@/services/tts/TTSController';
 import type { TTSClient, TTSMessageEvent } from '@/services/tts/TTSClient';
 import { MEDIA_OVERLAY_VOICE_ID } from '@/services/tts/mediaOverlay';
+import { useABSServerStore } from '@/store/absServerStore';
 import type { PairedAudiobook } from '@/types/book';
 import type { AppService } from '@/types/system';
 import type { FoliateView } from '@/types/view';
@@ -131,6 +132,25 @@ const PAIRED_AUDIOBOOK: PairedAudiobook = {
   createdAt: 1,
 };
 
+// The same chapter, streamed from an Audiobookshelf item split across two files.
+const ABS_PAIRED_AUDIOBOOK: PairedAudiobook = {
+  version: 1,
+  narrator: 'Server Narrator',
+  files: [{ id: 'abs', name: 'Book', path: 'abs://srv1/item1', duration: 30 }],
+  chapters: [{ id: 'abs:0', fileId: 'abs', label: 'Chapter 1', start: 0, end: 30 }],
+  mappings: [{ ebookChapterId: 'chapter.xhtml', audioChapterId: 'abs:0' }],
+  createdAt: 1,
+  source: {
+    kind: 'audiobookshelf',
+    serverId: 'srv1',
+    itemId: 'item1',
+    tracks: [
+      { index: 1, startOffset: 0, duration: 20, contentUrl: '/api/items/item1/file/1' },
+      { index: 2, startOffset: 20, duration: 10, contentUrl: '/api/items/item1/file/2' },
+    ],
+  },
+};
+
 const makePairedView = () => {
   const docs = [makeDoc('<p>Front matter.</p>'), makeDoc('<h1>Chapter 1</h1><p>Text.</p>')];
   return {
@@ -249,6 +269,57 @@ describe('narration selection', () => {
       'Books',
     );
     expect(appService.openFile).not.toHaveBeenCalled();
+  });
+
+  test('streams an Audiobookshelf pairing as tokened track URLs on one timeline', async () => {
+    useABSServerStore.setState({
+      servers: [{ id: 'srv1', name: 'Home', url: 'http://abs.local/', accessToken: 'tok-1' }],
+    });
+    const view = makePairedView();
+    const appService = {
+      appPlatform: 'tauri',
+      isMobileApp: true,
+      openFile: vi.fn(),
+      resolveFilePath: vi.fn(),
+    } as unknown as AppService;
+    const controller = new TTSController(appService, view);
+    controller.pairedAudiobook = ABS_PAIRED_AUDIOBOOK;
+    const attachSource = vi.spyOn(controller.ttsMediaOverlayClient, 'attachSource');
+
+    await controller.init();
+    await controller.initViewTTS(0);
+
+    expect(controller.narrationAvailable).toBe(true);
+    expect((await controller.getVoices('en'))[0]!.voices[0]!.name).toBe('Server Narrator');
+    const source = attachSource.mock.calls.at(-1)?.[0];
+    expect(source?.textHighlight).toBe(false);
+    await expect(source?.resolveTracks?.('abs://srv1/item1')).resolves.toEqual([
+      { url: 'http://abs.local/api/items/item1/file/1?token=tok-1', startOffset: 0, duration: 20 },
+      { url: 'http://abs.local/api/items/item1/file/2?token=tok-1', startOffset: 20, duration: 10 },
+    ]);
+    // The token is read per call, so a rotation is picked up by the next load.
+    useABSServerStore.getState().updateServer('srv1', { accessToken: 'tok-2' });
+    await expect(source?.resolveTracks?.('abs://srv1/item1')).resolves.toMatchObject([
+      { url: 'http://abs.local/api/items/item1/file/1?token=tok-2' },
+      { url: 'http://abs.local/api/items/item1/file/2?token=tok-2' },
+    ]);
+    // Nothing local exists to open or resolve for a streamed pairing.
+    expect(appService.openFile).not.toHaveBeenCalled();
+    expect(appService.resolveFilePath).not.toHaveBeenCalled();
+    useABSServerStore.setState({ servers: [] });
+  });
+
+  test('a streamed pairing whose server was removed cannot load audio', async () => {
+    useABSServerStore.setState({ servers: [] });
+    const controller = new TTSController({} as AppService, makePairedView());
+    controller.pairedAudiobook = ABS_PAIRED_AUDIOBOOK;
+    const attachSource = vi.spyOn(controller.ttsMediaOverlayClient, 'attachSource');
+
+    await controller.init();
+
+    const source = attachSource.mock.calls.at(-1)?.[0];
+    await expect(source?.resolveTracks?.('abs://srv1/item1')).resolves.toBeNull();
+    await expect(source?.loadBlob('abs://srv1/item1')).rejects.toThrow(/server not found/i);
   });
 
   test('starts paired narration at the current text position without drawing a chapter highlight', async () => {

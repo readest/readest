@@ -34,6 +34,8 @@ export interface ABSTrack {
   duration: number; // seconds
   contentUrl: string; // server-relative, e.g. /api/items/<id>/file/<ino>
   mimeType: string;
+  /** The audio file's name, e.g. `20686-01.mp3`. */
+  title?: string;
 }
 
 export interface ABSChapter {
@@ -67,6 +69,8 @@ export interface ABSLibraryItem {
       authorName?: string | null; // book items
       author?: string | null; // podcast items
       language?: string | null;
+      narratorName?: string | null; // minified book items
+      narrators?: string[]; // expanded book items
     };
     duration?: number;
     numTracks?: number;

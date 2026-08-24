@@ -309,6 +309,46 @@ describe('importBook metaHash deduplication', () => {
     ).toBeLessThan(fs.removeDir.mock.invocationCallOrder[0]!);
   });
 
+  it('carries a streamed pairing over unchanged, copying nothing', async () => {
+    const metaHash = getMetadataHash(TEST_METADATA);
+    const existingBook = makeBook({ hash: 'old-hash-123', metaHash });
+    const books: Book[] = [existingBook];
+    mockPartialMD5.mockResolvedValue('new-hash-456');
+    setupMockBookDoc();
+
+    const fs = service.getFs();
+    fs.exists.mockImplementation(async (path: string) =>
+      ['old-hash-123/config.json', 'old-hash-123'].includes(path),
+    );
+    fs.readFile.mockResolvedValue(
+      JSON.stringify({
+        audiobook: {
+          version: 1,
+          files: [{ id: 'abs', name: 'Book', path: 'abs://srv1/item1', duration: 100 }],
+          chapters: [],
+          mappings: [],
+          createdAt: 1,
+          source: { kind: 'audiobookshelf', serverId: 'srv1', itemId: 'item1', tracks: [] },
+        },
+      }),
+    );
+
+    await service.importBook(
+      new File(['new content'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+    );
+
+    expect(fs.createDir).not.toHaveBeenCalledWith('new-hash-456/audiobook', 'Books', true);
+    expect(fs.copyFile).not.toHaveBeenCalled();
+    const configWrite = fs.writeFile.mock.calls.find(
+      (call: unknown[]) => call[0] === 'new-hash-456/config.json',
+    );
+    const writtenConfig = JSON.parse(configWrite![2] as string);
+    expect(writtenConfig.audiobook.files[0].path).toBe('abs://srv1/item1');
+    expect(writtenConfig.audiobook.source.itemId).toBe('item1');
+    expect(fs.removeDir).toHaveBeenCalledWith('old-hash-123', 'Books', true);
+  });
+
   it('keeps the old book directory when paired-audio migration fails', async () => {
     const metaHash = getMetadataHash(TEST_METADATA);
     const existingBook = makeBook({ hash: 'old-hash-123', metaHash });

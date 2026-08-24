@@ -67,7 +67,9 @@ playback, without drawing a text highlight that would imply finer timing.
 The pairing wizard follows Continuum's anchor-and-review flow:
 
 1. Open a reflowable EPUB's book menu and choose **Pair Audiobook**.
-2. Select one M4B file or a naturally ordered set of MP3/M4A tracks.
+2. Select one M4B file or a naturally ordered set of MP3/M4A tracks, or, when
+   an Audiobookshelf server is configured, **Choose from Audiobookshelf** and
+   pick one of its audiobooks to stream instead.
 3. Choose one ebook chapter and the audio chapter or track known to match it.
 4. Readest fills the mapping in both directions by position. Review every row,
    leave ebook chapters without audio, reuse an audio chapter where necessary,
@@ -87,6 +89,14 @@ local pairing resumes at the same ebook chapter. Replacements use new file paths
 and persist the new association before removing old audio. Re-importing or
 deduplicating an edited EPUB copies the paired files and rewrites those paths
 before retiring the previous book directory.
+
+An Audiobookshelf pairing keeps nothing on the device: the association records
+the server, item and track list (`PairedAudiobook.source`) and playback streams
+each file with the server's current access token, so it needs the server row
+and a network connection. It is otherwise the same device-local association,
+and removing it only unpairs. Listening position is not reported back to the
+Audiobookshelf server while reading along; reading progress still syncs through
+Readest as usual.
 
 ### Using it
 
@@ -139,6 +149,16 @@ pieces are `src/services/audiobook/` (metadata, positional mapping, and local
 storage) plus `src/services/tts/pairedAudiobook.ts`, which turns each mapped TOC
 chapter into a `NarrationPar`. A chapter table embedded in an M4B supplies clip
 boundaries; a standalone track without chapter metadata becomes one clip.
+
+An Audiobookshelf item (`src/services/audiobook/absPairing.ts`) is converted to
+ONE virtual file on the item's global timeline rather than one file per track:
+ABS times its chapters globally and they routinely span media files, which the
+per-file clip model cannot express. `MultiTrackNarrationClock` then presents the
+item's tracks to the client as a single `NarrationClock`: seeks land on the file
+holding the position, a file running out rolls into the next, and only the last
+file's end surfaces as `ended`. It drives `HtmlAudioClock` on web/desktop and
+the client's own `NativeNarrationPlayer` (given track URLs) on mobile, selected
+through the `resolveTracks` hook on `NarrationAudioSource`.
 
 Consequences of that shape:
 
@@ -218,8 +238,8 @@ reader's own highlight style.
   behaviour: a sentence straddling a page break waits for the next mark.
 - **Mobile Tauri** plays narration through `NativeNarrationPlayer`: AVPlayer on
   iOS and ExoPlayer on Android. Paired audiobooks are streamed directly from
-  their local path. Desktop Tauri streams its asset URL through
-  `HTMLAudioElement`; web uses a blob URL.
+  their local path, or by `http(s)` URL for an Audiobookshelf pairing. Desktop
+  Tauri streams its asset URL through `HTMLAudioElement`; web uses a blob URL.
 
 ### The library badge
 

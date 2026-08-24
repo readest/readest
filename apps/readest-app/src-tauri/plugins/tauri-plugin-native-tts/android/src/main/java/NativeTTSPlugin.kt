@@ -694,15 +694,22 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
     }
 
     private fun loadContinuousFile(path: String, positionMs: Double) {
-        val file = File(path)
-        require(file.isFile) { "Narration file not found: $path" }
+        // A paired Audiobookshelf audiobook streams its tracks by URL, the
+        // same way the iOS playout player already accepts http(s) paths.
+        val uri = if (path.startsWith("http://") || path.startsWith("https://")) {
+            Uri.parse(path)
+        } else {
+            val file = File(path)
+            require(file.isFile) { "Narration file not found: $path" }
+            Uri.fromFile(file)
+        }
         val player = ensurePlayoutPlayer()
         val startMs = positionMs.coerceAtLeast(0.0).toLong()
 
         if (playoutLoadedPath == path && player.currentMediaItem != null) {
             player.seekTo(startMs)
         } else {
-            player.setMediaItem(MediaItem.fromUri(Uri.fromFile(file)), startMs)
+            player.setMediaItem(MediaItem.fromUri(uri), startMs)
             player.prepare()
             playoutLoadedPath = path
         }

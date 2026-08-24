@@ -459,6 +459,23 @@ export class TTSController extends EventTarget {
   #attachNarrationSource(book: FoliateView['book']): void {
     if (this.#usesPairedAudiobook(book) && this.#pairedAudiobook && this.appService) {
       const narrator = this.#pairedAudiobook.narrator;
+      const source = this.#pairedAudiobook.source;
+      if (source?.kind === 'audiobookshelf') {
+        // Streamed from the server: the tracks resolve to URLs carrying the
+        // live token, and there is no blob to fall back to. Loaded on demand
+        // so the server store (and its settings graph) stays out of this
+        // module's imports for every other book.
+        this.ttsMediaOverlayClient.attachSource({
+          ...(narrator ? { narrator } : {}),
+          textHighlight: false,
+          resolveTracks: async () =>
+            (await import('@/services/audiobook/absPairing')).absNarrationTracks(source),
+          loadBlob: async () => {
+            throw new Error('Audiobookshelf server not found');
+          },
+        });
+        return;
+      }
       this.ttsMediaOverlayClient.attachSource({
         ...(narrator ? { narrator } : {}),
         textHighlight: false,

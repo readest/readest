@@ -1,4 +1,5 @@
 import { ABSClient } from '@/services/audiobookshelf/client';
+import { createAbsClient } from '@/services/audiobookshelf/createClient';
 import {
   isLocalProgressFresher,
   readLocalLastPlayedAt,
@@ -265,12 +266,7 @@ export const backfillAbsCovers = async (appService: AppService): Promise<void> =
 
 /** Orchestrates: fetch, reconcile, apply to the library store, download missing covers. */
 export const syncAbsServer = async (appService: AppService, server: ABSServer): Promise<void> => {
-  const client = new ABSClient(server, {
-    onTokensUpdated: (patch) => {
-      useABSServerStore.getState().updateServer(server.id, patch);
-      void useABSServerStore.getState().saveABSServers(toEnvConfig(appService));
-    },
-  });
+  const client = createAbsClient(appService, server);
 
   const libraries = (await client.getLibraries()).filter(
     (lib) => lib.mediaType === 'book' || lib.mediaType === 'podcast',

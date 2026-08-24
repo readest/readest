@@ -11,14 +11,14 @@
 import { AudiobookController, type AudiobookSource } from './AudiobookController';
 import { HtmlAudioClock } from './AudiobookClock';
 import { NativeAudiobookClock } from './NativeAudiobookClock';
-import { ABSClient } from '@/services/audiobookshelf/client';
+import { createAbsClient } from '@/services/audiobookshelf/createClient';
 import { AbsProgressSyncer, readLocalLastPlayedAt } from '@/services/audiobookshelf/progressSync';
 import { findABSServerById, useABSServerStore } from '@/store/absServerStore';
 import { ttsSessionManager } from '@/services/tts/TTSSessionManager';
 import type { TTSMediaBridgeMeta } from '@/services/tts/ttsMediaBridge';
-import { parseAbsFilePath } from '@/utils/audiobook';
+import { buildAbsMediaUrl, parseAbsFilePath } from '@/utils/audiobook';
 import { getOSPlatform, stubTranslation as _, uniqueId } from '@/utils/misc';
-import { isTauriAppPlatform, type EnvConfigType } from '@/services/environment';
+import { isTauriAppPlatform } from '@/services/environment';
 import { eventDispatcher } from '@/utils/event';
 import type { AppService } from '@/types/system';
 import type { Book } from '@/types/book';
@@ -34,10 +34,6 @@ import type {
 // NativeNarrationPlayer split): WebKit HTMLMediaElement / WebAudio cannot own
 // the app's non-mixable audio session.
 const isIOSTauri = (): boolean => isTauriAppPlatform() && getOSPlatform() === 'ios';
-
-const toEnvConfig = (appService: AppService): EnvConfigType => ({
-  getAppService: async () => appService,
-});
 
 const notifyConnectionError = (serverName: string): void => {
   eventDispatcher.dispatch('toast', {
@@ -59,14 +55,6 @@ const notifyEpisodeNotFound = (): void => {
     type: 'error',
   });
 };
-
-const buildClient = (appService: AppService, server: ABSServer): ABSClient =>
-  new ABSClient(server, {
-    onTokensUpdated: (patch) => {
-      useABSServerStore.getState().updateServer(server.id, patch);
-      void useABSServerStore.getState().saveABSServers(toEnvConfig(appService));
-    },
-  });
 
 /** Resolves the server config for a library book, toasting when it's gone. */
 const resolveServer = (book: Book): { itemId: string; server: ABSServer } | null => {
@@ -119,7 +107,7 @@ export const openAudiobookSession = async (input: {
   const { itemId, server } = resolved;
 
   try {
-    const client = buildClient(appService, server);
+    const client = createAbsClient(appService, server);
     const item = await client.getItemExpanded(itemId);
 
     let tracks: ABSTrack[];
@@ -181,12 +169,8 @@ export const openAudiobookSession = async (input: {
       // refresh (by this client or another, e.g. the periodic library sync)
       // carries the rotated token instead of the one this session started
       // with.
-      resolveUrl: (contentPath: string) => {
-        const current = useABSServerStore.getState().getServer(server.id) ?? server;
-        const base = current.url.replace(/\/+$/, '');
-        const separator = contentPath.includes('?') ? '&' : '?';
-        return `${base}${contentPath}${separator}token=${current.accessToken ?? ''}`;
-      },
+      resolveUrl: (contentPath: string) =>
+        buildAbsMediaUrl(useABSServerStore.getState().getServer(server.id) ?? server, contentPath),
       startAt,
     };
 
@@ -237,7 +221,7 @@ export const loadAbsEpisodes = async (
   const { itemId, server } = resolved;
 
   try {
-    const client = buildClient(appService, server);
+    const client = createAbsClient(appService, server);
     const [item, me] = await Promise.all([client.getItemExpanded(itemId), client.getMe()]);
 
     const episodes = [...(item.media.episodes ?? [])].sort(
