@@ -100,6 +100,20 @@ const makeDeps = (overrides: Partial<NotesPassDeps> = {}): NotesPassDeps => ({
 });
 
 describe('runBookOrbitNotesPass', () => {
+  it('match-checks the open book as a current file so BookOrbit lists it for manual linking', async () => {
+    const deps = makeDeps();
+    await runBookOrbitNotesPass(deps);
+    expect(deps.client.matchCheck).toHaveBeenCalledWith([
+      {
+        hash: HASH,
+        title: 'A Book',
+        authors: 'An Author',
+        lastOpen: Math.floor(NOW / 1000),
+        source: 'current_file',
+      },
+    ]);
+  });
+
   it('skips the exchange and hints when the book is unmatched', async () => {
     const deps = makeDeps();
     (deps.client.matchCheck as ReturnType<typeof vi.fn>).mockResolvedValue({

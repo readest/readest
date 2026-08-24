@@ -86,7 +86,18 @@ export const runBookOrbitNotesPass = async (deps: NotesPassDeps): Promise<void> 
   const { client, store, book } = deps;
   const hash = book.hash;
 
-  const matchResult = await client.matchCheck([{ hash, title: book.title, authors: book.author }]);
+  // Same shape the BookOrbit koplugin sends for the open document: `source`
+  // is what gets the book listed under "Unmatched KOReader Books" so the user
+  // can link it by hand, and `lastOpen` labels that entry.
+  const matchResult = await client.matchCheck([
+    {
+      hash,
+      title: book.title,
+      authors: book.author,
+      lastOpen: Math.floor(deps.now() / 1000),
+      source: 'current_file',
+    },
+  ]);
   if (!matchResult.matches.some((match) => match.hash === hash)) {
     deps.onUnmatched();
     return;
