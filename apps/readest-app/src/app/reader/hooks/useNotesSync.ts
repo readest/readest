@@ -11,6 +11,20 @@ import { getIndexFromCfi } from '@/utils/cfi';
 import { removeBookNoteOverlays } from '../utils/annotatorUtil';
 import { removeGlobalAnnotationOverlays } from '../utils/globalAnnotations';
 
+const latestChangeAt = (note: BookNote) => Math.max(note.updatedAt, note.deletedAt ?? 0);
+
+// Latest change wins, the same rule the server's dedupeLatest applies across
+// duplicate rows, so a highlight edited after a remote deletion survives and a
+// deletion made after a remote edit sticks. A tie goes to the tombstone.
+const incomingWins = (existing: BookNote, incoming: BookNote) => {
+  const existingAt = latestChangeAt(existing);
+  const incomingAt = latestChangeAt(incoming);
+  return (
+    incomingAt > existingAt ||
+    (incomingAt === existingAt && !!incoming.deletedAt && !existing.deletedAt)
+  );
+};
+
 export const useNotesSync = (bookKey: string) => {
   const { user } = useAuth();
   const { syncedNotes, syncNotes, lastSyncedAtNotes } = useSync(bookKey);
@@ -172,15 +186,14 @@ export const useNotesSync = (bookKey: string) => {
       const oldNotes = config?.booknotes ?? [];
       const existingNote = oldNotes.find((oldNote) => oldNote.id === note.id);
       if (existingNote) {
-        if (
-          existingNote.updatedAt < note.updatedAt ||
-          (existingNote.deletedAt ?? 0) < (note.deletedAt ?? 0)
-        ) {
+        if (incomingWins(existingNote, note)) {
           // A tombstone from KOReader carries no cfi; keep the local anchor or
           // setConfig discards the note instead of recording the deletion.
           return { ...existingNote, ...note, cfi: note.cfi || existingNote.cfi };
         } else {
-          return { ...note, ...existingNote };
+          // The local note wins; a losing tombstone must not leak its
+          // deletedAt through a key the live note never had.
+          return { ...note, ...existingNote, deletedAt: existingNote.deletedAt };
         }
       }
       return note;
@@ -199,9 +212,10 @@ export const useNotesSync = (bookKey: string) => {
       convertedNotes.forEach((note) => {
         if (note.deletedAt) {
           // Deleted on another device: clear the overlay drawn from the
-          // local copy, which is the one holding the cfi it was drawn with.
+          // local copy, which is the one holding the cfi it was drawn with,
+          // unless the local note was edited after that deletion.
           const local = oldNotes.find((oldNote) => oldNote.id === note.id);
-          if (local && !local.deletedAt) {
+          if (local && !local.deletedAt && incomingWins(local, note)) {
             getViewsById(bookKey.split('-')[0]!).forEach((v) => {
               removeBookNoteOverlays(v, local);
               if (local.global) removeGlobalAnnotationOverlays(v, local);

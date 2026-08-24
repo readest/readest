@@ -204,6 +204,35 @@ describe('useNotesSync pulled tombstones', () => {
     expect(h.view.addAnnotation).not.toHaveBeenCalled();
   });
 
+  test('a local note edited after the remote deletion survives the tombstone', async () => {
+    h.state.config = { location: h.localCfi, booknotes: [{ ...h.localNote, updatedAt: 6000 }] };
+    h.state.syncedNotes = [
+      { ...h.localNote, bookHash: 'r', metaHash: 'm1', updatedAt: 1000, deletedAt: 5000 },
+    ];
+
+    renderHook(() => useNotesSync('r-1'));
+
+    await waitFor(() => expect(h.setConfigMock).toHaveBeenCalled());
+    expect(savedNote('n1')?.deletedAt).toBeUndefined();
+    expect(savedNote('n1')?.updatedAt).toBe(6000);
+    expect(h.view.addAnnotation).not.toHaveBeenCalled();
+    expect(h.removeGlobalOverlaysMock).not.toHaveBeenCalled();
+  });
+
+  test('a local deletion made after the remote edit is kept', async () => {
+    h.state.config = {
+      location: h.localCfi,
+      booknotes: [{ ...h.localNote, updatedAt: 3000, deletedAt: 5000 }],
+    };
+    h.state.syncedNotes = [{ ...h.localNote, bookHash: 'r', metaHash: 'm1', updatedAt: 4000 }];
+
+    renderHook(() => useNotesSync('r-1'));
+
+    await waitFor(() => expect(h.setConfigMock).toHaveBeenCalled());
+    expect(savedNote('n1')?.deletedAt).toBe(5000);
+    expect(h.view.addAnnotation).not.toHaveBeenCalled();
+  });
+
   test('a tombstone for a note this device never had is recorded without touching the view', async () => {
     h.state.syncedNotes = [
       { ...h.localNote, id: 'n2', bookHash: 'r', metaHash: 'm1', updatedAt: 1000, deletedAt: 5000 },
