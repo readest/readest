@@ -161,4 +161,17 @@ export class HardcoverSyncMapStore {
     });
     this.modified = true;
   }
+
+  // Forget every note -> journal mapping for a book. Used when the book is
+  // linked to a different Hardcover book: the journal entries belong to the
+  // old one, so the notes must be inserted afresh rather than updated in place.
+  async clearForBook(bookHash: string): Promise<void> {
+    await this.withDb(async (db) => {
+      await db.execute('DELETE FROM hardcover_note_mappings WHERE book_hash = ?', [bookHash]);
+    });
+    if (this.loadedBookHash === bookHash) {
+      this.mappings.clear();
+      this.modified = false;
+    }
+  }
 }

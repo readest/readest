@@ -1,13 +1,13 @@
-import { Book, BookConfig, BookNote } from '@/types/book';
+import { Book, BookConfig, BookNote, HardcoverBookLink } from '@/types/book';
 import { getContentMd5 } from '@/utils/misc';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
 import { HardcoverSyncMapStore } from './HardcoverSyncMapStore';
 import {
   QUERY_GET_USER_ID,
-  QUERY_SEARCH_BOOK,
+  QUERY_SEARCH_BOOKS,
   QUERY_GET_EDITION,
-  QUERY_GET_BOOK_USER_DATA,
+  QUERY_GET_BOOKS,
   MUTATION_INSERT_USER_BOOK,
   MUTATION_UPDATE_USER_BOOK,
   MUTATION_INSERT_READ,
@@ -30,6 +30,7 @@ type BookContext = {
   pages: number | null;
   bookId: number;
   bookPages: number | null;
+  title: string;
   userBook: {
     id: number;
     status_id: number;
@@ -38,6 +39,63 @@ type BookContext = {
 };
 
 type ActiveRead = { id: number; started_at: string | null };
+
+type EditionRow = { id: number; pages: number | null; reading_format_id?: number | null };
+
+type UserBookRow = {
+  id: number;
+  status_id: number;
+  edition?: EditionRow | null;
+  user_book_reads?: Array<{ id: number; started_at: string | null; edition?: EditionRow | null }>;
+};
+
+// One row of QUERY_GET_BOOKS. `editions` holds at most the top readable
+// (non-audiobook) edition; `user_books` is the caller's shelf entry, if any.
+type BookRow = {
+  id: number;
+  title?: string | null;
+  pages?: number | null;
+  release_year?: number | null;
+  users_read_count?: number | null;
+  cached_image?: { url?: string | null } | null;
+  cached_contributors?: Array<{
+    author?: { name?: string | null } | null;
+    contribution?: string | null;
+  }> | null;
+  editions?: EditionRow[] | null;
+  user_books?: UserBookRow[] | null;
+};
+
+/** A Hardcover book as presented in the "Link Book" picker. */
+export interface HardcoverBookCandidate {
+  bookId: number;
+  title: string;
+  authors: string[];
+  coverUrl: string | null;
+  releaseYear: number | null;
+  pages: number | null;
+  readersCount: number | null;
+  /** Has at least one non-audiobook edition. */
+  readable: boolean;
+  /** Already in the user's Hardcover library, in any status. */
+  onShelf: boolean;
+}
+
+/**
+ * Automatic-match rule shared by sync and the picker (#5846): the first hit
+ * the user already shelved that has a readable edition, else the first
+ * readable hit. Audiobook-only entries never receive text progress, even when
+ * an earlier mis-match already put one on the shelf.
+ */
+export const pickAutoMatch = <T extends { onShelf: boolean; readable: boolean }>(
+  candidates: T[],
+): T | null =>
+  candidates.find((c) => c.onShelf && c.readable) ?? candidates.find((c) => c.readable) ?? null;
+
+const rowFlags = (row: BookRow) => ({
+  readable: (row.editions?.length ?? 0) > 0,
+  onShelf: (row.user_books?.length ?? 0) > 0,
+});
 
 export class HardcoverClient {
   private minRequestIntervalMs = 1150;
@@ -249,99 +307,120 @@ export class HardcoverClient {
     return null;
   }
 
-  private async searchBookByTitle(title: string, author: string): Promise<BookContext | null> {
-    await this.authenticate();
-    const query = `${title} ${author}`.trim();
-    const data = await this.request<{ query: string }, { search?: { results?: unknown } }>(
-      QUERY_SEARCH_BOOK,
-      { query },
-    );
+  private async searchBookIds(query: string): Promise<number[]> {
+    const data = await this.request<
+      { query: string },
+      { search?: { ids?: Array<string | number> | null } | null }
+    >(QUERY_SEARCH_BOOKS, { query });
+    return (data.search?.ids ?? []).map(Number).filter((id) => Number.isInteger(id) && id > 0);
+  }
 
-    const rawResults = data.search?.results;
-    let hits: unknown[] = [];
-    if (typeof rawResults === 'string') {
-      try {
-        hits = JSON.parse(rawResults);
-      } catch {
-        hits = [];
-      }
-    } else if (
-      rawResults &&
-      typeof rawResults === 'object' &&
-      'hits' in rawResults &&
-      Array.isArray((rawResults as { hits?: unknown[] }).hits)
-    ) {
-      hits = (rawResults as { hits: unknown[] }).hits;
-    } else if (Array.isArray(rawResults)) {
-      hits = rawResults;
+  // Hydrates books by id in the caller's order (search rank); Hasura's `_in`
+  // returns rows in arbitrary order.
+  private async hydrateBooks(ids: number[]): Promise<BookRow[]> {
+    if (ids.length === 0 || !this.userId) return [];
+    const data = await this.request<
+      { ids: number[]; user_id: number },
+      { books?: BookRow[] | null }
+    >(QUERY_GET_BOOKS, { ids, user_id: this.userId });
+    const byId = new Map((data.books ?? []).map((row) => [Number(row.id), row]));
+    const rows: BookRow[] = [];
+    for (const id of ids) {
+      const row = byId.get(id);
+      if (row) rows.push(row);
     }
+    return rows;
+  }
 
-    const hit = (hits[0] || {}) as {
-      id?: number;
-      pages?: number;
-      featured_edition_id?: number;
-      document?: { id?: number; pages?: number; featured_edition_id?: number };
-    };
-
-    const rawBookId = hit.id ?? hit.document?.id;
-    if (!rawBookId) return null;
-
-    const bookId = Number(rawBookId);
-    const rawEditionId = hit.featured_edition_id ?? hit.document?.featured_edition_id;
-    // Only the featured edition is a real edition id; never substitute the book
-    // id (Hardcover rejects a book id passed as edition_id, #4792).
-    const editionId = rawEditionId != null ? Number(rawEditionId) : null;
-    const pages =
-      hit.pages != null
-        ? Number(hit.pages)
-        : hit.document?.pages != null
-          ? Number(hit.document.pages)
-          : null;
+  private toBookContext(row: BookRow): BookContext {
+    const userBook = row.user_books?.[0];
+    const activeRead = userBook?.user_book_reads?.[0];
+    const selectedEdition =
+      (this.isReadableEdition(activeRead?.edition) ? activeRead?.edition : null) ??
+      (this.isReadableEdition(userBook?.edition) ? userBook?.edition : null) ??
+      row.editions?.[0] ??
+      null;
+    const bookPages = row.pages ?? null;
 
     return {
-      editionId,
-      pages,
-      bookId,
-      bookPages: pages,
-      userBook: null,
+      // Null when the book has no readable edition and the user picked none —
+      // never the book id (#4792).
+      editionId: selectedEdition?.id ?? null,
+      pages: selectedEdition?.pages ?? bookPages,
+      bookId: Number(row.id),
+      bookPages,
+      title: row.title ?? '',
+      userBook: userBook
+        ? {
+            id: userBook.id,
+            status_id: userBook.status_id,
+            user_book_reads: userBook.user_book_reads ?? [],
+          }
+        : null,
     };
   }
 
-  private async fetchBookContext(book: Book): Promise<BookContext | null> {
-    await this.authenticate();
-    const isbn = this.extractISBN(book);
+  private toCandidate(row: BookRow): HardcoverBookCandidate {
+    const contributors = (row.cached_contributors ?? []).filter((c) => c?.author?.name);
+    // Plain authors first; narrators, translators, etc. only when nothing else.
+    const credited = contributors.filter(
+      (c) => !c.contribution || /^author$/i.test(c.contribution),
+    );
+    const authors: string[] = [];
+    for (const contributor of credited.length ? credited : contributors) {
+      const name = contributor.author?.name?.trim();
+      if (name && !authors.includes(name)) authors.push(name);
+    }
 
+    return {
+      bookId: Number(row.id),
+      title: row.title ?? '',
+      authors,
+      coverUrl: row.cached_image?.url ?? null,
+      releaseYear: row.release_year ?? null,
+      pages: row.pages ?? null,
+      readersCount: row.users_read_count ?? null,
+      ...rowFlags(row),
+    };
+  }
+
+  /** Search Hardcover for the "Link Book" picker; results keep the search rank. */
+  async searchBooks(query: string): Promise<HardcoverBookCandidate[]> {
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+    await this.authenticate();
+    const rows = await this.hydrateBooks(await this.searchBookIds(trimmed));
+    return rows.map((row) => this.toCandidate(row));
+  }
+
+  private async fetchBookContext(
+    book: Book,
+    link?: HardcoverBookLink | null,
+  ): Promise<BookContext | null> {
+    await this.authenticate();
+
+    // A linked book (chosen by the user, or recorded from an earlier match)
+    // wins over every heuristic below (#5846).
+    if (link) {
+      const [row] = await this.hydrateBooks([link.bookId]);
+      return row ? this.toBookContext(row) : null;
+    }
+
+    const isbn = this.extractISBN(book);
     if (isbn && this.userId) {
       const data = await this.request<
         { isbn: string[]; user_id: number },
         {
-          editions?: Array<{
-            id: number;
-            pages: number | null;
-            reading_format_id?: number | null;
-            book: {
-              id: number;
-              pages: number | null;
-              user_books?: Array<{
+          editions?: Array<
+            EditionRow & {
+              book: {
                 id: number;
-                status_id: number;
-                edition?: {
-                  id: number;
-                  pages: number | null;
-                  reading_format_id?: number | null;
-                } | null;
-                user_book_reads?: Array<{
-                  id: number;
-                  started_at: string | null;
-                  edition?: {
-                    id: number;
-                    pages: number | null;
-                    reading_format_id?: number | null;
-                  } | null;
-                }>;
-              }>;
-            };
-          }>;
+                title?: string | null;
+                pages: number | null;
+                user_books?: UserBookRow[];
+              };
+            }
+          >;
         }
       >(QUERY_GET_EDITION, {
         isbn: [isbn],
@@ -362,6 +441,7 @@ export class HardcoverClient {
           pages: selectedEdition?.pages ?? edition.pages,
           bookId: edition.book.id,
           bookPages: edition.book.pages,
+          title: edition.book.title || book.title || '',
           userBook: userBook
             ? {
                 ...userBook,
@@ -373,57 +453,11 @@ export class HardcoverClient {
     }
 
     if (book.title && book.author) {
-      const titleContext = await this.searchBookByTitle(book.title, book.author);
-      if (!titleContext || !this.userId) return titleContext;
-
-      const bookResult = await this.request<
-        { book_id: number; user_id: number },
-        {
-          editions?: Array<{
-            book: {
-              id: number;
-              pages: number | null;
-              user_books?: Array<{
-                id: number;
-                status_id: number;
-                edition?: {
-                  id: number;
-                  pages: number | null;
-                  reading_format_id?: number | null;
-                } | null;
-                user_book_reads?: Array<{
-                  id: number;
-                  started_at: string | null;
-                  edition?: {
-                    id: number;
-                    pages: number | null;
-                    reading_format_id?: number | null;
-                  } | null;
-                }>;
-              }>;
-            };
-          }>;
-        }
-      >(QUERY_GET_BOOK_USER_DATA, { book_id: titleContext.bookId, user_id: this.userId });
-
-      const bookData = bookResult.editions?.[0]?.book;
-      if (!bookData) return titleContext;
-
-      const userBook = bookData.user_books?.[0];
-      const activeRead = userBook?.user_book_reads?.[0];
-      const selectedEdition =
-        (this.isReadableEdition(activeRead?.edition) ? activeRead?.edition : null) ??
-        (this.isReadableEdition(userBook?.edition) ? userBook?.edition : null);
-
-      return {
-        ...titleContext,
-        editionId: selectedEdition?.id ?? titleContext.editionId,
-        pages: selectedEdition?.pages ?? titleContext.pages,
-        bookPages: bookData.pages ?? titleContext.bookPages,
-        userBook: userBook
-          ? { ...userBook, user_book_reads: userBook.user_book_reads ?? [] }
-          : null,
-      };
+      const rows = await this.hydrateBooks(
+        await this.searchBookIds(`${book.title} ${book.author}`.trim()),
+      );
+      const picked = pickAutoMatch(rows.map((row) => ({ row, ...rowFlags(row) })));
+      return picked ? this.toBookContext(picked.row) : null;
     }
 
     return null;
@@ -458,8 +492,11 @@ export class HardcoverClient {
     this.hydrateUserBookReads(context, data.update_user_book?.user_book?.user_book_reads);
   }
 
-  private async ensureBookInLibrary(book: Book, isReading = true): Promise<BookContext | null> {
-    const context = await this.fetchBookContext(book);
+  private async ensureBookInLibrary(
+    book: Book,
+    link?: HardcoverBookLink | null,
+  ): Promise<BookContext | null> {
+    const context = await this.fetchBookContext(book, link);
     if (!context) return null;
 
     if (context.userBook) return context;
@@ -481,7 +518,7 @@ export class HardcoverClient {
         // Omit edition_id entirely when unknown so Hardcover falls back to the
         // book's default edition instead of rejecting an invalid one (#4792).
         ...(context.editionId != null ? { edition_id: context.editionId } : {}),
-        status_id: isReading ? 2 : 1,
+        status_id: 2,
       },
     });
 
@@ -496,28 +533,41 @@ export class HardcoverClient {
       ...context,
       userBook: {
         id: newUserBook.id,
-        status_id: isReading ? 2 : 1,
+        status_id: 2,
         user_book_reads: newUserBook.user_book_reads ?? [],
       },
     };
   }
 
-  async pushProgress(book: Book, config: BookConfig): Promise<void> {
-    const context = await this.ensureBookInLibrary(book, true);
-    if (!context?.userBook) return;
+  /**
+   * Pushes reading progress and returns the Hardcover book it went to, so the
+   * caller can remember the match. Throws when no book resolves — a silent
+   * return here used to let the UI report a sync that never happened.
+   */
+  async pushProgress(book: Book, config: BookConfig): Promise<HardcoverBookLink> {
+    const context = await this.ensureBookInLibrary(book, config.hardcover);
+    const userBook = context?.userBook;
+    if (!context || !userBook) {
+      throw new Error('Unable to resolve this book in Hardcover');
+    }
+    const link: HardcoverBookLink = { bookId: context.bookId, title: context.title };
 
     await this.updateUserBookStatus(context, 2);
 
     const current = config.progress?.[0] ?? book.progress?.[0] ?? 0;
     const total =
       config.progress?.[1] ?? book.progress?.[1] ?? context.pages ?? context.bookPages ?? 0;
-    if (total <= 0) return;
+    if (total <= 0) return link;
 
     const localPagesRead = Math.min(Math.max(current, 0), total);
     const percent = total > 0 ? (localPagesRead / total) * 100 : 0;
     const progressPages = this.getHardcoverProgressPages(current, total, context);
-    if (progressPages === null) return;
-    const activeRead = context.userBook.user_book_reads?.[0];
+    if (progressPages === null) {
+      // Nothing can be scaled onto Hardcover's pages, so nothing is sent; the
+      // caller must not report (or remember) a sync that never happened.
+      throw new Error('Hardcover has no page count for this book');
+    }
+    const activeRead = userBook.user_book_reads?.[0];
     const startedAt = this.formatDay(new Date(book.createdAt || Date.now()));
 
     if (activeRead?.id) {
@@ -529,7 +579,7 @@ export class HardcoverClient {
       });
     } else {
       await this.request(MUTATION_INSERT_READ, {
-        user_book_id: context.userBook.id,
+        user_book_id: userBook.id,
         edition_id: context.editionId,
         progress_pages: progressPages,
         started_at: startedAt,
@@ -539,6 +589,8 @@ export class HardcoverClient {
     if (percent >= 100) {
       await this.updateUserBookStatus(context, 3);
     }
+
+    return link;
   }
 
   private buildJournalPayload(note: BookNote, config: BookConfig, context: BookContext) {
@@ -611,11 +663,12 @@ export class HardcoverClient {
   async syncBookNotes(
     book: Book,
     config: BookConfig,
-  ): Promise<{ inserted: number; updated: number; skipped: number }> {
-    const context = await this.ensureBookInLibrary(book, true);
+  ): Promise<{ inserted: number; updated: number; skipped: number; link: HardcoverBookLink }> {
+    const context = await this.ensureBookInLibrary(book, config.hardcover);
     if (!context) {
       throw new Error('Unable to resolve this book in Hardcover');
     }
+    const link: HardcoverBookLink = { bookId: context.bookId, title: context.title };
 
     const rawNotes = (config.booknotes ?? []).filter(
       (note) => (note.type === 'annotation' || note.type === 'excerpt') && !note.deletedAt,
@@ -706,6 +759,6 @@ export class HardcoverClient {
       await this.mapStore.flush();
     }
 
-    return { inserted, updated, skipped };
+    return { inserted, updated, skipped, link };
   }
 }

@@ -564,6 +564,18 @@ export interface BookSearchResult {
 
 export const BOOK_CONFIG_SCHEMA_VERSION = 3;
 
+/**
+ * The Hardcover book this file syncs to. Set explicitly from the book menu
+ * ("Link Book") or recorded from the first successful automatic match; once
+ * present it bypasses ISBN and title matching entirely (#5846). Device-local:
+ * the cloud config push only carries the columns in `transformBookConfigToDB`.
+ */
+export interface HardcoverBookLink {
+  bookId: number;
+  /** Display only — lets the menu show the linked book without a request. */
+  title: string;
+}
+
 export interface BookConfig {
   schemaVersion?: number;
   bookHash?: string;
@@ -581,6 +593,7 @@ export interface BookConfig {
    * sync; ordinary reading progress remains the shared cross-device state.
    */
   audiobook?: PairedAudiobook;
+  hardcover?: HardcoverBookLink;
 
   lastSyncedAtConfig?: number;
   lastSyncedAtNotes?: number;
