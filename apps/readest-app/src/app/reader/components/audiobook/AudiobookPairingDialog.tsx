@@ -344,10 +344,13 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
         // Chapter times are global; the preview plays the file holding the start.
         const remote = absPreviewClip(previewAbsSource, chapter.start);
         if (!remote) throw new Error(_('Audiobookshelf server not found'));
+        // A chapter can continue into the next track; keep the preview within
+        // the file it starts in so it does not run off the end of the clip.
+        const withinTrack = Math.min(chapter.end - chapter.start, remote.duration - remote.start);
         clip = {
           url: remote.url,
           start: remote.start,
-          end: remote.start + chapter.end - chapter.start,
+          end: remote.start + withinTrack,
         };
       } else {
         clip = {
@@ -643,7 +646,11 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
         </div>
       </div>
       <WizardActions>
-        <button className='btn btn-ghost' disabled={busy} onClick={() => setStep('select')}>
+        <button
+          className='btn btn-ghost eink-bordered'
+          disabled={busy}
+          onClick={() => setStep('select')}
+        >
           {_('Back')}
         </button>
       </WizardActions>

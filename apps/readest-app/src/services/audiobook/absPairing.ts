@@ -47,7 +47,9 @@ export const listPairableAbsBooks = (library: Book[]): Book[] =>
 export const buildAbsPairingSource = (item: ABSLibraryItem, serverId: string): AbsPairingSource => {
   const tracks = [...(item.media.tracks ?? [])].sort((a, b) => a.startOffset - b.startOffset);
   if (!tracks.length) throw new Error('This audiobook has no audio tracks.');
-  const duration = tracks.reduce((sum, track) => sum + track.duration, 0);
+  // The global endpoint, not the sum: a gap or overlap between track offsets
+  // makes the two differ, and chapter ends are clamped against this value.
+  const duration = Math.max(...tracks.map((track) => track.startOffset + track.duration));
   const title = item.media.metadata.title?.trim() || undefined;
   const { narrators, narratorName } = item.media.metadata;
   const narrator =
@@ -137,11 +139,15 @@ export const absNarrationTracks = (source: PairedAudiobookAbsSource): NarrationT
   }));
 };
 
-/** The file holding a global position, for previewing a chapter from its start. */
+/**
+ * The file holding a global position, for previewing a chapter from its start.
+ * `duration` is the selected track's length, so a caller can keep the preview
+ * within the file even when the chapter continues into the next track.
+ */
 export const absPreviewClip = (
   source: PairedAudiobookAbsSource,
   globalSec: number,
-): { url: string; start: number } | null => {
+): { url: string; start: number; duration: number } | null => {
   const tracks = absNarrationTracks(source);
   if (!tracks?.length) return null;
   const sorted = [...tracks].sort((a, b) => a.startOffset - b.startOffset);
@@ -150,5 +156,6 @@ export const absPreviewClip = (
   return {
     url: track.url,
     start: Math.max(0, Math.min(globalSec - track.startOffset, track.duration)),
+    duration: track.duration,
   };
 };

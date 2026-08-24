@@ -108,6 +108,41 @@ describe('buildAbsPairingSource', () => {
 
     expect(() => buildAbsPairingSource(empty, 'srv1')).toThrow(/no audio/i);
   });
+
+  it('takes the global endpoint from track offsets, not the sum, when tracks are non-contiguous', () => {
+    // A gap between tracks: file/1 ends at 100, file/2 starts at 200. The sum
+    // of durations (150) understates the real endpoint (250).
+    const gapped: ABSLibraryItem = {
+      ...item,
+      media: {
+        ...item.media,
+        tracks: [
+          {
+            index: 1,
+            startOffset: 0,
+            duration: 100,
+            contentUrl: '/api/items/item1/file/1',
+            mimeType: 'audio/mpeg',
+          },
+          {
+            index: 2,
+            startOffset: 200,
+            duration: 50,
+            contentUrl: '/api/items/item1/file/2',
+            mimeType: 'audio/mpeg',
+          },
+        ],
+        chapters: [{ id: 0, start: 0, end: 999, title: 'Whole' }],
+      },
+    };
+
+    const source = buildAbsPairingSource(gapped, 'srv1');
+
+    expect(source.files[0]!.duration).toBe(250);
+    expect(source.chapters).toEqual([
+      { id: 'abs:0', fileId: 'abs', label: 'Whole', start: 0, end: 250 },
+    ]);
+  });
 });
 
 describe('absPreviewClip', () => {
@@ -120,16 +155,18 @@ describe('absPreviewClip', () => {
     useABSServerStore.setState({ servers: [] });
   });
 
-  it('points at the file holding a global position, with its in-file offset', () => {
+  it('points at the file holding a global position, with its in-file offset and track length', () => {
     const { source } = buildAbsPairingSource(item, 'srv1');
 
     expect(absPreviewClip(source, 120)).toEqual({
       url: 'http://abs.local:13378/api/items/item1/file/2?token=tok',
       start: 20,
+      duration: 50,
     });
     expect(absPreviewClip(source, 0)).toEqual({
       url: 'http://abs.local:13378/api/items/item1/file/1?token=tok',
       start: 0,
+      duration: 100,
     });
   });
 

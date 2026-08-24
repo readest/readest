@@ -47,7 +47,9 @@ export class MultiTrackNarrationClock implements NarrationClock {
   constructor(tracks: NarrationTrack[], player: NarrationTrackPlayer) {
     this.#tracks = [...tracks].sort((a, b) => a.startOffset - b.startOffset);
     this.#player = player;
-    this.duration = this.#tracks.reduce((sum, track) => sum + track.duration, 0);
+    // Global endpoint, not the sum: a gap or overlap between offsets makes them
+    // differ, and #locate clamps against this. Matches buildAbsPairingSource.
+    this.duration = Math.max(...this.#tracks.map((track) => track.startOffset + track.duration));
     player.addEventListener('ended', this.#onTrackEnded);
     player.addEventListener('error', this.#onTrackError);
     player.addEventListener('timeupdate', this.#onTimeUpdate);
@@ -89,6 +91,13 @@ export class MultiTrackNarrationClock implements NarrationClock {
     if (index !== this.#index) {
       await this.#load(index, offset);
       return;
+    }
+    // #load sets the playhead to its own startAt when it settles; a seek issued
+    // for the same track while that load is in flight would be overwritten, so
+    // wait it out first (then re-derive, in case another seek switched tracks).
+    if (this.#pending) {
+      await this.#pending;
+      if (this.#locate(seconds).index !== this.#index) return this.seek(seconds);
     }
     this.#target = this.#tracks[index]!.startOffset + offset;
     if (this.#player.seek) await this.#player.seek(offset);

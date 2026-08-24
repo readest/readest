@@ -204,6 +204,25 @@ describe('MultiTrackNarrationClock', () => {
     expect(clock.paused).toBe(true);
   });
 
+  test('a same-track seek during a pending load lands after the load settles', async () => {
+    const { player, clock } = setup();
+    // Start a cross-track load and hold it open.
+    let open!: () => void;
+    player.loadGate = new Promise<void>((resolve) => {
+      open = resolve;
+    });
+    const loading = clock.seek(120); // -> t2, in-track offset 20
+
+    // Scrub again within the SAME track while the load is still in flight.
+    const reseek = clock.seek(140); // -> t2, in-track offset 40
+    open();
+    await Promise.all([loading, reseek]);
+
+    // The load set the playhead to 20; the seek must win, not be overwritten.
+    expect(player.currentTime).toBe(40);
+    expect(clock.currentTime).toBe(140);
+  });
+
   test('a load superseded by a later seek never starts playing', async () => {
     const { player, clock } = setup();
     await clock.play();

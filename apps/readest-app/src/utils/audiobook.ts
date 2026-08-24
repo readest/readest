@@ -38,7 +38,9 @@ export const buildAbsMediaUrl = (
 ): string => {
   const base = server.url.replace(/\/+$/, '');
   const separator = contentPath.includes('?') ? '&' : '?';
-  return `${base}${contentPath}${separator}token=${server.accessToken ?? ''}`;
+  // Encode the token: a `+`, `&`, or `#` in a non-JWT access token would
+  // otherwise be reparsed as query syntax and the media request fail auth.
+  return `${base}${contentPath}${separator}token=${encodeURIComponent(server.accessToken ?? '')}`;
 };
 
 /**
