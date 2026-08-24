@@ -425,7 +425,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     };
 
     const handleHighlightMark = (e: Event) => {
-      const { cfi, preview } = (e as CustomEvent<{ cfi: string; preview?: boolean }>).detail;
+      const { cfi, sentenceCfi, preview } = (
+        e as CustomEvent<{ cfi: string; sentenceCfi?: string; preview?: boolean }>
+      ).detail;
       const view = getView(bookKey);
       const progress = getProgress(bookKey);
       const viewSettings = getViewSettings(bookKey);
@@ -490,7 +492,14 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       if (!range) return;
       if (!view.renderer.scrolled) {
         view.renderer.scrollToAnchor?.(range);
-        followSentenceAcrossPages(range);
+        // Page-follow measures where the page cuts the whole sounding sentence.
+        // A chapter-only pairing highlights a one-character reading dot, so
+        // follow its separate full-sentence range when the mark carries one.
+        const followRange =
+          sentenceCfi && sentenceCfi !== cfi
+            ? (view.resolveCFI(sentenceCfi).anchor(doc) ?? range)
+            : range;
+        followSentenceAcrossPages(followRange);
       } else {
         const rect = range.getBoundingClientRect();
         const { start, end, sideProp } = view.renderer;

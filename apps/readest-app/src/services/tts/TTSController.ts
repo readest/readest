@@ -1671,7 +1671,14 @@ export class TTSController extends EventTarget {
             ? (this.#getCurrentPlaybackRange() ?? range)
             : range;
         const cfi = this.view.getCFI(this.#ttsSectionIndex, playbackRange);
-        this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
+        // A chapter-only pairing highlights a one-character reading dot, but the
+        // view needs the whole sounding sentence to know where the page cuts it
+        // off (followSentenceAcrossPages). Carry that range's cfi too; it is the
+        // mark range itself when the client highlights the full text, so no
+        // extra work for synthesized voices or exact Media Overlays.
+        const sentenceCfi =
+          playbackRange === range ? cfi : this.view.getCFI(this.#ttsSectionIndex, range);
+        this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi, sentenceCfi } }));
         this.#dispatchPosition(cfi, 'sentence');
       } catch {
         this.#suppressMarkHighlight = false;

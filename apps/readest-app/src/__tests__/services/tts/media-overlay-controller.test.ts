@@ -361,6 +361,38 @@ describe('narration selection', () => {
     expect(controller.isSoundingSentenceOnScreen()).toBe(false);
   });
 
+  test('gives page-follow the whole chapter range, not the one-character reading position', async () => {
+    const view = makePairedView();
+    const appService = {
+      openFile: vi.fn(async () => new File(['audio'], 'chapter.mp3')),
+      resolveFilePath: vi.fn(async () => '/books/chapter.mp3'),
+    } as unknown as AppService;
+    const controller = new TTSController(appService, view);
+    controller.pairedAudiobook = PAIRED_AUDIOBOOK;
+    await controller.init();
+    await controller.initViewTTS(0);
+
+    const doc = view.tts!.doc;
+    (
+      view.renderer as unknown as { getContents: () => unknown[]; primaryIndex: number }
+    ).getContents = () => [{ doc, index: 1, overlayer: { remove: vi.fn(), add: vi.fn() } }];
+    (view.renderer as unknown as { primaryIndex: number }).primaryIndex = 1;
+    view.getCFI = vi.fn((_index: number, range?: Range) => `cfi:${range?.toString() ?? ''}`);
+
+    const marks: CustomEvent[] = [];
+    controller.addEventListener('tts-highlight-mark', (e) => marks.push(e as CustomEvent));
+    controller.dispatchSpeakMark({ offset: 0, name: '0', text: 'Chapter', language: 'en' });
+
+    const detail = marks[0]!.detail as { cfi: string; sentenceCfi?: string };
+    // The reading dot is one character; a chapter-only pairing has no finer
+    // text timing.
+    expect(detail.cfi).toMatch(/^cfi:.$/);
+    // Page-follow needs the whole chapter's extent to know where the page cuts
+    // it off, so the mark carries that separately.
+    expect(detail.sentenceCfi).toContain('Chapter 1Text.');
+    expect(detail.sentenceCfi).not.toBe(detail.cfi);
+  });
+
   test('keeps paired-audiobook scrubber preview and seek aligned with the audio offset', async () => {
     const view = makePairedView();
     const appService = {
