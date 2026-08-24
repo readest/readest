@@ -51,8 +51,8 @@
       "source": "en",
       "target": "hu",
       "file": "en-hu.json",
-      "bytes": 932125,
-      "sha256": "ff6ce132e4f7438377a5aef7f755298ee507e31f3016d6f34b03ff53c124a0f3",
+      "bytes": 931273,
+      "sha256": "0a190830f53a2edc0408add26c47652787de8f625ab4c742fec05f13d670aff5",
       "entries": 13641
     },
     {
@@ -78,8 +78,8 @@
       "source": "en",
       "target": "vi",
       "file": "en-vi.json",
-      "bytes": 667227,
-      "sha256": "0e4074c1167b1f649bc65fb806dc6978106b0f8e38ec1839ba9e70e880426427",
+      "bytes": 667043,
+      "sha256": "b71109a53a09d7250557767e2c0798b2061e75a82a80882e6d3c6715bd041f0d",
       "entries": 9759
     },
     {

@@ -33,10 +33,14 @@ for p in es-en fr-en de-en pt-en it-en ru-en en-es en-fr en-de en-pt en-ru; do c
 for c in es fr de pt it ru; do curl -sL -o lemmatization-$c.txt https://raw.githubusercontent.com/michmech/lemmatization-lists/master/lemmatization-$c.txt; done
 
 # en→vi and en→hu: WikDict publishes neither Vietnamese nor Hungarian, so the glosses come
-# from the kaikki English Wiktionary extract (CC-BY-SA-4.0) — ~3.2 GB, streamed line-by-line
-# by the build. One download serves every kaikki-sourced pair; use aria2c, not curl: kaikki
-# throttles a single connection to ~270 KB/s (6h), while 16 parallel ranges finish in ~20 min.
-aria2c -x16 -s16 -o kaikki-en.jsonl https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl
+# from the kaikki.org raw wiktextract dump of the English Wiktionary (CC-BY-SA-4.0) — ~2.8 GB
+# gzipped. It holds EVERY language section (English is ~1/4 of the lines); the build gunzips
+# it on the fly and keeps only the `lang_code: en` entries, so do not inflate it (~17 GB).
+# Do NOT download the per-language `kaikki.org-dictionary-<Language>.jsonl` files: they are
+# post-processed for the website and DEPRECATED (tatuylonen/wiktextract#1178).
+# One download serves every kaikki-sourced pair; use aria2c, not curl: kaikki throttles a
+# single connection to ~270 KB/s (hours), while 16 parallel ranges finish in a few minutes.
+aria2c -x16 -s16 -o raw-wiktextract-data.jsonl.gz https://kaikki.org/dictionary/raw-wiktextract-data.jsonl.gz
 ```
 
 ## 2. Generate packs (run from `apps/readest-app`)
@@ -80,16 +84,22 @@ done
 
 # en→vi, en→hu: no WikDict dictionary exists, so use the kaikki `build` mode instead — it
 # reads the target-language `translations` off each English Wiktionary entry. Same
-# lemmatization (en-en table) and same output shape as the WikDict pairs.
+# lemmatization (en-en table) and same output shape as the WikDict pairs. Pass the .gz
+# as is; each build streams the whole dump (5 to 7 min). The raw dump keeps Wiktionary page
+# order, so the first translation is the primary sense; the deprecated post-processed file
+# re-sorted senses (it glossed `bear` as "đầu cơ giá xuống" before "gấu").
 for tgt in vi hu; do
-  node scripts/build-wordlens-data.mjs build en "$tgt" /tmp/ww-data/en_50k.txt /tmp/ww-data/kaikki-en.jsonl 20000
+  node scripts/build-wordlens-data.mjs build en "$tgt" /tmp/ww-data/en_50k.txt /tmp/ww-data/raw-wiktextract-data.jsonl.gz 20000
 done
 ```
 > **vi and hu are en-target only.** Vietnamese words are multi-syllable with spaces *inside*
 > the word ("học sinh"), so the planner's whitespace tokenizer would gloss syllables, not
 > words. Hungarian is agglutinative, so its surface forms ("házaimban") need a lemmatizer,
 > and michmech publishes no Hungarian list. Both need that missing piece before a `vi-en` or
-> `hu-en` pack would gloss anything useful — deferred, like ja/ko/th.
+> `hu-en` pack would gloss anything useful — deferred, like ja/ko/th. (The Vietnamese
+> Wiktionary's own raw dump, https://kaikki.org/viwiktionary/raw-wiktextract-data.jsonl.gz
+> at ~33 MB, could widen `en-vi` from its English section, but its "past participle of X"
+> form-of glosses need a new build mode plus cleanup — also deferred.)
 - Each build writes `data/wordlens/<pair>.json` **and** regenerates `manifest.json`
   (sha256 + bytes + entry count). Rebuild only the manifest with `pnpm wordlens:manifest`.
 - The last CLI arg is `topN` (default 30000 for en-zh, 20000 otherwise).
@@ -97,8 +107,9 @@ done
   `build-wikdict en ja …` — it joins the manifest automatically. (ja/ko/th as a *source*
   language still need a word segmenter — deferred.)
 
-> Max-coverage alternative to WikDict (heavier): the kaikki Wiktionary dump via the
-> `build <src> <tgt> <freq.txt> <wiktionary.jsonl>` mode — see `ATTRIBUTION.md`.
+> Max-coverage alternative to WikDict (heavier): the same kaikki raw dump via the
+> `build <src> <tgt> <freq.txt> <raw-wiktextract-data.jsonl.gz>` mode — an X→en build keeps
+> the `lang_code: <src>` entries of that one file — see `ATTRIBUTION.md`.
 
 ## 3. Sync to R2
 ```bash
