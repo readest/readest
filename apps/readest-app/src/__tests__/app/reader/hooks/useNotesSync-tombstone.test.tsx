@@ -233,6 +233,21 @@ describe('useNotesSync pulled tombstones', () => {
     expect(h.view.addAnnotation).not.toHaveBeenCalled();
   });
 
+  test('a remote edit newer than the local deletion brings the note back without its deletedAt', async () => {
+    h.state.config = {
+      location: h.localCfi,
+      booknotes: [{ ...h.localNote, updatedAt: 3000, deletedAt: 5000 }],
+    };
+    // No deletedAt key at all, the shape that would leak the local tombstone.
+    h.state.syncedNotes = [{ ...h.localNote, bookHash: 'r', metaHash: 'm1', updatedAt: 6000 }];
+
+    renderHook(() => useNotesSync('r-1'));
+
+    await waitFor(() => expect(h.setConfigMock).toHaveBeenCalled());
+    expect(savedNote('n1')?.deletedAt ?? null).toBeNull();
+    expect(savedNote('n1')?.updatedAt).toBe(6000);
+  });
+
   test('a tombstone for a note this device never had is recorded without touching the view', async () => {
     h.state.syncedNotes = [
       { ...h.localNote, id: 'n2', bookHash: 'r', metaHash: 'm1', updatedAt: 1000, deletedAt: 5000 },

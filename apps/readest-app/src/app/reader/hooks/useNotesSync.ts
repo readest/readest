@@ -188,8 +188,15 @@ export const useNotesSync = (bookKey: string) => {
       if (existingNote) {
         if (incomingWins(existingNote, note)) {
           // A tombstone from KOReader carries no cfi; keep the local anchor or
-          // setConfig discards the note instead of recording the deletion.
-          return { ...existingNote, ...note, cfi: note.cfi || existingNote.cfi };
+          // setConfig discards the note instead of recording the deletion. The
+          // winner's deletedAt is pinned either way so a newer live note does
+          // not inherit a stale local tombstone through a missing key.
+          return {
+            ...existingNote,
+            ...note,
+            cfi: note.cfi || existingNote.cfi,
+            deletedAt: note.deletedAt,
+          };
         } else {
           // The local note wins; a losing tombstone must not leak its
           // deletedAt through a key the live note never had.
