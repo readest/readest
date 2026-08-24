@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
+import { AwsV4Signer } from 'aws4fetch';
 import { createS3Provider, type S3FetchFn } from '@/services/sync/providers/s3/S3Provider';
 import { FileSyncError } from '@/services/sync/file/provider';
 import { runSemanticContract } from '@/__tests__/services/sync/file/providerSemanticContract';
@@ -100,6 +101,34 @@ describe('S3Provider — transport', () => {
     expect(h.url(0)).toContain(`/readest/Readest/books/h1/${encodeURIComponent('白夜行.epub')}`);
   });
 
+  // SigV4 signs the RFC 3986 form of the path, where `!'()*` are `%21%27%28%29%2A`.
+  // AWS/R2 re-canonicalize the received path so a raw `(` on the wire still
+  // verifies, but Qiniu Kodo (#5839) does not re-canonicalize a path that
+  // already contains percent-encoding, so the wire path must already match.
+  test('sends keys with sub-delims in SigV4 canonical (RFC 3986) form', async () => {
+    const h = makeS3();
+    h.fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+    await h.provider.head("/Readest/books/h1/测试(test)*!'.epub");
+    const objectUrl = h.url(0);
+    expect(new URL(objectUrl).pathname).toBe(
+      '/readest/Readest/books/h1/%E6%B5%8B%E8%AF%95%28test%29%2A%21%27.epub',
+    );
+    // The invariant the fix rests on: the path on the wire is the path that was signed.
+    const signerFor = (url: string) =>
+      new AwsV4Signer({ url, method: 'HEAD', service: 's3', ...config });
+    expect(new URL(objectUrl).pathname).toBe(signerFor(objectUrl).encodedPath);
+
+    // Same rule for query values: the canonical query string is RFC 3986 too.
+    h.fetchMock.mockResolvedValueOnce(xml(emptyList));
+    await h.provider.list('/Readest/(dir)');
+    const listUrl = h.url(1);
+    expect(new URL(listUrl).search).toContain('prefix=Readest%2F%28dir%29%2F');
+    expect(new URL(listUrl).search.slice(1).split('&').sort().join('&')).toBe(
+      signerFor(listUrl).encodedSearch,
+    );
+  });
+
   test('head returns size and the ETag stripped of quotes', async () => {
     const h = makeS3();
     h.fetchMock.mockResolvedValueOnce(
@@ -157,7 +186,7 @@ describe('S3Provider — transport', () => {
       .mockResolvedValueOnce(
         xml(
           listPage({
-            keys: [{ key: 'Readest/books/h1/config.json' }, { key: 'Readest/books/h1/B.epub' }],
+            keys: [{ key: 'Readest/books/h1/config.json' }, { key: 'Readest/books/h1/B (1).epub' }],
           }),
         ),
       )
@@ -171,6 +200,8 @@ describe('S3Provider — transport', () => {
     expect(h.method(1)).toBe('DELETE');
     expect(h.method(2)).toBe('DELETE');
     expect(h.url(1)).toContain('config.json');
+    // Listed keys are raw (no encoding-type=url), so they are encoded exactly once.
+    expect(new URL(h.url(2)).pathname).toBe('/readest/Readest/books/h1/B%20%281%29.epub');
   });
 
   test('retries a transient 503 with backoff and then succeeds', async () => {
