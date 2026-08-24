@@ -2317,5 +2317,18 @@
   "Includes {{count}} orphaned book file(s) not in your library_two": "Vključuje {{count}} osiroteli datoteki knjig, ki nista v vaši knjižnici",
   "Includes {{count}} orphaned book file(s) not in your library_few": "Vključuje {{count}} osirotele datoteke knjig, ki niso v vaši knjižnici",
   "Includes {{count}} orphaned book file(s) not in your library_other": "Vključuje {{count}} osirotelih datotek knjig, ki niso v vaši knjižnici",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "To bo izbrisalo vse predpomnjene datoteke in osirotele datoteke knjig, ki niso v vaši knjižnici. Tega dejanja ni mogoče razveljaviti."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "To bo izbrisalo vse predpomnjene datoteke in osirotele datoteke knjig, ki niso v vaši knjižnici. Tega dejanja ni mogoče razveljaviti.",
+  "Link Book": "Poveži knjigo",
+  "Link Hardcover Book": "Poveži knjigo Hardcover",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "Izberite knjigo Hardcover, ki ustreza »{{book}}«. Napredek branja in zapiski se bodo sinhronizirali z njo.",
+  "Currently linked": "Trenutno povezano",
+  "Unlink": "Prekini povezavo",
+  "Search Hardcover": "Išči v Hardcover",
+  "No matching books found. Try a different title or author.": "Ni najdenih ustreznih knjig. Poskusite z drugim naslovom ali avtorjem.",
+  "On your shelf": "Na vaši polici",
+  "Linked": "Povezano",
+  "Linked to “{{title}}”": "Povezano z »{{title}}«",
+  "Hardcover link removed. The next sync will match the book again.": "Povezava s Hardcover je odstranjena. Naslednja sinhronizacija bo knjigo znova poiskala.",
+  "{{pages}} pages": "{{pages}} strani",
+  "{{readers}} readers": "{{readers}} bralcev"
 }

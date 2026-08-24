@@ -2197,5 +2197,18 @@
   "View Book Cover": "Buchcover anzeigen",
   "Includes {{count}} orphaned book file(s) not in your library_one": "Enthält {{count}} verwaiste Buchdatei, die nicht in Ihrer Bibliothek ist",
   "Includes {{count}} orphaned book file(s) not in your library_other": "Enthält {{count}} verwaiste Buchdateien, die nicht in Ihrer Bibliothek sind",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Dadurch werden alle zwischengespeicherten Dateien sowie verwaiste Buchdateien, die nicht in Ihrer Bibliothek sind, gelöscht. Dies kann nicht rückgängig gemacht werden."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Dadurch werden alle zwischengespeicherten Dateien sowie verwaiste Buchdateien, die nicht in Ihrer Bibliothek sind, gelöscht. Dies kann nicht rückgängig gemacht werden.",
+  "Link Book": "Buch verknüpfen",
+  "Link Hardcover Book": "Hardcover-Buch verknüpfen",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "Wählen Sie das Hardcover-Buch, das zu „{{book}}“ passt. Lesefortschritt und Notizen werden damit synchronisiert.",
+  "Currently linked": "Derzeit verknüpft",
+  "Unlink": "Verknüpfung aufheben",
+  "Search Hardcover": "Hardcover durchsuchen",
+  "No matching books found. Try a different title or author.": "Keine passenden Bücher gefunden. Versuchen Sie einen anderen Titel oder Autor.",
+  "On your shelf": "In Ihrem Regal",
+  "Linked": "Verknüpft",
+  "Linked to “{{title}}”": "Mit „{{title}}“ verknüpft",
+  "Hardcover link removed. The next sync will match the book again.": "Hardcover-Verknüpfung entfernt. Die nächste Synchronisierung ordnet das Buch erneut zu.",
+  "{{pages}} pages": "{{pages}} Seiten",
+  "{{readers}} readers": "{{readers}} Leser"
 }

@@ -2197,5 +2197,18 @@
   "View Book Cover": "புத்தக அட்டையைக் காண்க",
   "Includes {{count}} orphaned book file(s) not in your library_one": "உங்கள் நூலகத்தில் இல்லாத {{count}} அனாதைப் புத்தகக் கோப்பு அடங்கும்",
   "Includes {{count}} orphaned book file(s) not in your library_other": "உங்கள் நூலகத்தில் இல்லாத {{count}} அனாதைப் புத்தகக் கோப்புகள் அடங்கும்",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "இது தற்காலிகச் சேமிப்பில் உள்ள அனைத்துக் கோப்புகளையும், உங்கள் நூலகத்தில் இல்லாத அனாதைப் புத்தகக் கோப்புகளையும் நீக்கும். இதை மீட்டெடுக்க முடியாது."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "இது தற்காலிகச் சேமிப்பில் உள்ள அனைத்துக் கோப்புகளையும், உங்கள் நூலகத்தில் இல்லாத அனாதைப் புத்தகக் கோப்புகளையும் நீக்கும். இதை மீட்டெடுக்க முடியாது.",
+  "Link Book": "புத்தகத்தை இணை",
+  "Link Hardcover Book": "Hardcover புத்தகத்தை இணை",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "“{{book}}”-க்கு பொருந்தும் Hardcover புத்தகத்தைத் தேர்ந்தெடுக்கவும். வாசிப்பு முன்னேற்றமும் குறிப்புகளும் அதனுடன் ஒத்திசைக்கப்படும்.",
+  "Currently linked": "தற்போது இணைக்கப்பட்டுள்ளது",
+  "Unlink": "இணைப்பை நீக்கு",
+  "Search Hardcover": "Hardcover-இல் தேடு",
+  "No matching books found. Try a different title or author.": "பொருந்தும் புத்தகங்கள் எதுவும் கிடைக்கவில்லை. வேறு தலைப்பு அல்லது ஆசிரியரை முயற்சிக்கவும்.",
+  "On your shelf": "உங்கள் அலமாரியில்",
+  "Linked": "இணைக்கப்பட்டது",
+  "Linked to “{{title}}”": "“{{title}}”-உடன் இணைக்கப்பட்டது",
+  "Hardcover link removed. The next sync will match the book again.": "Hardcover இணைப்பு நீக்கப்பட்டது. அடுத்த ஒத்திசைவில் புத்தகம் மீண்டும் பொருத்தப்படும்.",
+  "{{pages}} pages": "{{pages}} பக்கங்கள்",
+  "{{readers}} readers": "{{readers}} வாசகர்கள்"
 }

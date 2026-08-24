@@ -2137,5 +2137,18 @@
   "Words per minute": "Kata per menit",
   "View Book Cover": "Lihat Sampul Buku",
   "Includes {{count}} orphaned book file(s) not in your library_other": "Termasuk {{count}} file buku yatim yang tidak ada di perpustakaan Anda",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Tindakan ini akan menghapus semua file cache dan file buku yatim yang tidak ada di perpustakaan Anda. Tindakan ini tidak dapat dibatalkan."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Tindakan ini akan menghapus semua file cache dan file buku yatim yang tidak ada di perpustakaan Anda. Tindakan ini tidak dapat dibatalkan.",
+  "Link Book": "Tautkan Buku",
+  "Link Hardcover Book": "Tautkan Buku Hardcover",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "Pilih buku Hardcover yang cocok dengan “{{book}}”. Progres membaca dan catatan akan disinkronkan ke buku tersebut.",
+  "Currently linked": "Saat ini tertaut",
+  "Unlink": "Lepas Tautan",
+  "Search Hardcover": "Cari di Hardcover",
+  "No matching books found. Try a different title or author.": "Tidak ada buku yang cocok. Coba judul atau penulis lain.",
+  "On your shelf": "Di rak Anda",
+  "Linked": "Tertaut",
+  "Linked to “{{title}}”": "Ditautkan ke “{{title}}”",
+  "Hardcover link removed. The next sync will match the book again.": "Tautan Hardcover dihapus. Sinkronisasi berikutnya akan mencocokkan buku lagi.",
+  "{{pages}} pages": "{{pages}} halaman",
+  "{{readers}} readers": "{{readers}} pembaca"
 }

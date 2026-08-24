@@ -2197,5 +2197,18 @@
   "View Book Cover": "Visa bokomslag",
   "Includes {{count}} orphaned book file(s) not in your library_one": "Inkluderar {{count}} föräldralös bokfil som inte finns i ditt bibliotek",
   "Includes {{count}} orphaned book file(s) not in your library_other": "Inkluderar {{count}} föräldralösa bokfiler som inte finns i ditt bibliotek",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Detta tar bort alla cachade filer och föräldralösa bokfiler som inte finns i ditt bibliotek. Åtgärden kan inte ångras."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Detta tar bort alla cachade filer och föräldralösa bokfiler som inte finns i ditt bibliotek. Åtgärden kan inte ångras.",
+  "Link Book": "Länka bok",
+  "Link Hardcover Book": "Länka Hardcover-bok",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "Välj den Hardcover-bok som motsvarar ”{{book}}”. Läsframsteg och anteckningar synkroniseras till den.",
+  "Currently linked": "Länkad just nu",
+  "Unlink": "Ta bort länk",
+  "Search Hardcover": "Sök på Hardcover",
+  "No matching books found. Try a different title or author.": "Inga matchande böcker hittades. Prova en annan titel eller författare.",
+  "On your shelf": "I din bokhylla",
+  "Linked": "Länkad",
+  "Linked to “{{title}}”": "Länkad till ”{{title}}”",
+  "Hardcover link removed. The next sync will match the book again.": "Hardcover-länken har tagits bort. Nästa synkronisering matchar boken igen.",
+  "{{pages}} pages": "{{pages}} sidor",
+  "{{readers}} readers": "{{readers}} läsare"
 }

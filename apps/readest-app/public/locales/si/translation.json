@@ -2197,5 +2197,18 @@
   "View Book Cover": "පොතේ ආවරණය බලන්න",
   "Includes {{count}} orphaned book file(s) not in your library_one": "ඔබේ පුස්තකාලයේ නොමැති අනාථ පොත් ගොනු {{count}} ඇතුළත් වේ",
   "Includes {{count}} orphaned book file(s) not in your library_other": "ඔබේ පුස්තකාලයේ නොමැති අනාථ පොත් ගොනු {{count}} ඇතුළත් වේ",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "මෙය සියලුම හැඹිලිගත ගොනු සහ ඔබේ පුස්තකාලයේ නොමැති අනාථ පොත් ගොනු මකා දමයි. මෙය පෙරළිය නොහැක."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "මෙය සියලුම හැඹිලිගත ගොනු සහ ඔබේ පුස්තකාලයේ නොමැති අනාථ පොත් ගොනු මකා දමයි. මෙය පෙරළිය නොහැක.",
+  "Link Book": "පොත සම්බන්ධ කරන්න",
+  "Link Hardcover Book": "Hardcover පොත සම්බන්ධ කරන්න",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "“{{book}}” ට ගැළපෙන Hardcover පොත තෝරන්න. කියවීමේ ප්‍රගතිය සහ සටහන් ඒ සමඟ සමමුහුර්ත වේ.",
+  "Currently linked": "දැනට සම්බන්ධයි",
+  "Unlink": "සම්බන්ධය ඉවත් කරන්න",
+  "Search Hardcover": "Hardcover හි සොයන්න",
+  "No matching books found. Try a different title or author.": "ගැළපෙන පොත් හමු නොවීය. වෙනත් මාතෘකාවක් හෝ කතුවරයෙකු උත්සාහ කරන්න.",
+  "On your shelf": "ඔබේ රාක්කයේ",
+  "Linked": "සම්බන්ධ කර ඇත",
+  "Linked to “{{title}}”": "“{{title}}” සමඟ සම්බන්ධ කරන ලදී",
+  "Hardcover link removed. The next sync will match the book again.": "Hardcover සම්බන්ධය ඉවත් කරන ලදී. ඊළඟ සමමුහුර්තකරණයේදී පොත නැවත ගැළපේ.",
+  "{{pages}} pages": "පිටු {{pages}}",
+  "{{readers}} readers": "පාඨකයින් {{readers}}"
 }

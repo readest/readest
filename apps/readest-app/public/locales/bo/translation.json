@@ -2137,5 +2137,18 @@
   "Words per minute": "སྐར་མ་རེར་ཚིག་གྲངས།",
   "View Book Cover": "དཔེ་དེབ་ཀྱི་མདུན་ཤོག་བལྟ་བ",
   "Includes {{count}} orphaned book file(s) not in your library_other": "ཁྱེད་ཀྱི་དཔེ་མཛོད་ནང་མེད་པའི་དེབ་ཀྱི་ཡིག་ཆ་ {{count}} ཚུད་ཡོད།",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "འདིས་གསོག་ཉར་གྱི་ཡིག་ཆ་ཚང་མ་དང་ཁྱེད་ཀྱི་དཔེ་མཛོད་ནང་མེད་པའི་དེབ་ཀྱི་ཡིག་ཆ་རྣམས་བསུབ་ངེས་ཡིན། འདི་སྔར་བཞིན་བཟོ་མི་ཐུབ།"
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "འདིས་གསོག་ཉར་གྱི་ཡིག་ཆ་ཚང་མ་དང་ཁྱེད་ཀྱི་དཔེ་མཛོད་ནང་མེད་པའི་དེབ་ཀྱི་ཡིག་ཆ་རྣམས་བསུབ་ངེས་ཡིན། འདི་སྔར་བཞིན་བཟོ་མི་ཐུབ།",
+  "Link Book": "དེབ་སྦྲེལ་མཐུད།",
+  "Link Hardcover Book": "Hardcover དེབ་སྦྲེལ་མཐུད།",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "“{{book}}” དང་མཐུན་པའི་ Hardcover དེབ་འདེམས་རོགས། ཀློག་པའི་འཕེལ་རིམ་དང་མཆན་རྣམས་དེ་དང་ཟླ་སྒྲིག་བྱེད།",
+  "Currently linked": "ད་ལྟ་སྦྲེལ་མཐུད་བྱས་ཟིན།",
+  "Unlink": "སྦྲེལ་མཐུད་འདོར་བ།",
+  "Search Hardcover": "Hardcover ནང་འཚོལ་བཤེར།",
+  "No matching books found. Try a different title or author.": "མཐུན་པའི་དེབ་མ་རྙེད། ཁ་བྱང་ངམ་རྩོམ་པ་པོ་གཞན་ཞིག་ཚོད་ལྟ་བྱོས།",
+  "On your shelf": "ཁྱེད་ཀྱི་དེབ་སྒྲོམ་ནང་།",
+  "Linked": "སྦྲེལ་མཐུད་ཟིན།",
+  "Linked to “{{title}}”": "“{{title}}” དང་སྦྲེལ་མཐུད་ཟིན།",
+  "Hardcover link removed. The next sync will match the book again.": "Hardcover སྦྲེལ་མཐུད་བསུབས་ཟིན། ཟླ་སྒྲིག་རྗེས་མའི་སྐབས་དེབ་བསྐྱར་དུ་མཐུན་སྒྲིག་བྱེད།",
+  "{{pages}} pages": "ཤོག་ངོས་ {{pages}}",
+  "{{readers}} readers": "ཀློག་མཁན་ {{readers}}"
 }

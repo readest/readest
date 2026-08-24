@@ -2257,5 +2257,18 @@
   "Includes {{count}} orphaned book file(s) not in your library_one": "Include {{count}} fișier de carte orfan care nu se află în biblioteca dvs.",
   "Includes {{count}} orphaned book file(s) not in your library_few": "Include {{count}} fișiere de carte orfane care nu se află în biblioteca dvs.",
   "Includes {{count}} orphaned book file(s) not in your library_other": "Include {{count}} de fișiere de carte orfane care nu se află în biblioteca dvs.",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Această acțiune va șterge toate fișierele din memoria cache și fișierele de carte orfane care nu se află în biblioteca dvs. Acțiunea nu poate fi anulată."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Această acțiune va șterge toate fișierele din memoria cache și fișierele de carte orfane care nu se află în biblioteca dvs. Acțiunea nu poate fi anulată.",
+  "Link Book": "Asociază cartea",
+  "Link Hardcover Book": "Asociază o carte Hardcover",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "Alege cartea Hardcover care corespunde cu „{{book}}”. Progresul lecturii și notele se vor sincroniza cu ea.",
+  "Currently linked": "Asociată în prezent",
+  "Unlink": "Dezasociază",
+  "Search Hardcover": "Caută pe Hardcover",
+  "No matching books found. Try a different title or author.": "Nu s-au găsit cărți potrivite. Încearcă alt titlu sau autor.",
+  "On your shelf": "Pe raftul tău",
+  "Linked": "Asociată",
+  "Linked to “{{title}}”": "Asociată cu „{{title}}”",
+  "Hardcover link removed. The next sync will match the book again.": "Asocierea cu Hardcover a fost eliminată. Următoarea sincronizare va potrivi din nou cartea.",
+  "{{pages}} pages": "{{pages}} pagini",
+  "{{readers}} readers": "{{readers}} cititori"
 }

@@ -2137,5 +2137,18 @@
   "Words per minute": "분당 단어 수",
   "View Book Cover": "책 표지 보기",
   "Includes {{count}} orphaned book file(s) not in your library_other": "서재에 없는 고아 책 파일 {{count}}개 포함",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "캐시된 모든 파일과 서재에 없는 고아 책 파일을 삭제합니다. 이 작업은 되돌릴 수 없습니다."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "캐시된 모든 파일과 서재에 없는 고아 책 파일을 삭제합니다. 이 작업은 되돌릴 수 없습니다.",
+  "Link Book": "책 연결",
+  "Link Hardcover Book": "Hardcover 책 연결",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "“{{book}}”에 해당하는 Hardcover 책을 선택하세요. 읽기 진행률과 메모가 해당 책에 동기화됩니다.",
+  "Currently linked": "현재 연결됨",
+  "Unlink": "연결 해제",
+  "Search Hardcover": "Hardcover 검색",
+  "No matching books found. Try a different title or author.": "일치하는 책을 찾을 수 없습니다. 다른 제목이나 저자로 시도해 보세요.",
+  "On your shelf": "내 서재에 있음",
+  "Linked": "연결됨",
+  "Linked to “{{title}}”": "“{{title}}”에 연결됨",
+  "Hardcover link removed. The next sync will match the book again.": "Hardcover 연결이 해제되었습니다. 다음 동기화 시 책을 다시 매칭합니다.",
+  "{{pages}} pages": "{{pages}}페이지",
+  "{{readers}} readers": "독자 {{readers}}명"
 }

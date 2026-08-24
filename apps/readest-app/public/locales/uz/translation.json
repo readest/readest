@@ -2197,5 +2197,18 @@
   "View Book Cover": "Kitob muqovasini koʻrish",
   "Includes {{count}} orphaned book file(s) not in your library_one": "Kutubxonangizda yoʻq {{count}} ta yetim kitob faylini oʻz ichiga oladi",
   "Includes {{count}} orphaned book file(s) not in your library_other": "Kutubxonangizda yoʻq {{count}} ta yetim kitob faylini oʻz ichiga oladi",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Bu barcha keshlangan fayllarni va kutubxonangizda yoʻq yetim kitob fayllarini oʻchiradi. Buni qaytarib boʻlmaydi."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Bu barcha keshlangan fayllarni va kutubxonangizda yoʻq yetim kitob fayllarini oʻchiradi. Buni qaytarib boʻlmaydi.",
+  "Link Book": "Kitobni bogʻlash",
+  "Link Hardcover Book": "Hardcover kitobini bogʻlash",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "“{{book}}” ga mos keladigan Hardcover kitobini tanlang. Oʻqish jarayoni va eslatmalar u bilan sinxronlanadi.",
+  "Currently linked": "Hozir bogʻlangan",
+  "Unlink": "Bogʻlanishni uzish",
+  "Search Hardcover": "Hardcover’da qidirish",
+  "No matching books found. Try a different title or author.": "Mos kitoblar topilmadi. Boshqa sarlavha yoki muallifni sinab koʻring.",
+  "On your shelf": "Javoningizda",
+  "Linked": "Bogʻlangan",
+  "Linked to “{{title}}”": "“{{title}}” bilan bogʻlandi",
+  "Hardcover link removed. The next sync will match the book again.": "Hardcover bogʻlanishi olib tashlandi. Keyingi sinxronlash kitobni qayta moslaydi.",
+  "{{pages}} pages": "{{pages}} sahifa",
+  "{{readers}} readers": "{{readers}} oʻquvchi"
 }

@@ -2197,5 +2197,18 @@
   "View Book Cover": "Προβολή εξωφύλλου βιβλίου",
   "Includes {{count}} orphaned book file(s) not in your library_one": "Περιλαμβάνει {{count}} ορφανό αρχείο βιβλίου που δεν υπάρχει στη βιβλιοθήκη σας",
   "Includes {{count}} orphaned book file(s) not in your library_other": "Περιλαμβάνει {{count}} ορφανά αρχεία βιβλίων που δεν υπάρχουν στη βιβλιοθήκη σας",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Αυτό θα διαγράψει όλα τα προσωρινά αποθηκευμένα αρχεία και τα ορφανά αρχεία βιβλίων που δεν υπάρχουν στη βιβλιοθήκη σας. Αυτή η ενέργεια δεν μπορεί να αναιρεθεί."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Αυτό θα διαγράψει όλα τα προσωρινά αποθηκευμένα αρχεία και τα ορφανά αρχεία βιβλίων που δεν υπάρχουν στη βιβλιοθήκη σας. Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.",
+  "Link Book": "Σύνδεση βιβλίου",
+  "Link Hardcover Book": "Σύνδεση βιβλίου Hardcover",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "Επιλέξτε το βιβλίο Hardcover που αντιστοιχεί στο «{{book}}». Η πρόοδος ανάγνωσης και οι σημειώσεις θα συγχρονίζονται με αυτό.",
+  "Currently linked": "Συνδεδεμένο αυτήν τη στιγμή",
+  "Unlink": "Αποσύνδεση",
+  "Search Hardcover": "Αναζήτηση στο Hardcover",
+  "No matching books found. Try a different title or author.": "Δεν βρέθηκαν βιβλία που να ταιριάζουν. Δοκιμάστε άλλον τίτλο ή συγγραφέα.",
+  "On your shelf": "Στο ράφι σας",
+  "Linked": "Συνδεδεμένο",
+  "Linked to “{{title}}”": "Συνδέθηκε με το «{{title}}»",
+  "Hardcover link removed. The next sync will match the book again.": "Η σύνδεση με το Hardcover αφαιρέθηκε. Ο επόμενος συγχρονισμός θα αντιστοιχίσει ξανά το βιβλίο.",
+  "{{pages}} pages": "{{pages}} σελίδες",
+  "{{readers}} readers": "{{readers}} αναγνώστες"
 }

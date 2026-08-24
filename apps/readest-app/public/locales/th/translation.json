@@ -2137,5 +2137,18 @@
   "Words per minute": "คำต่อนาที",
   "View Book Cover": "ดูภาพปกหนังสือ",
   "Includes {{count}} orphaned book file(s) not in your library_other": "รวมไฟล์หนังสือกำพร้าที่ไม่อยู่ในคลังหนังสือของคุณ {{count}} ไฟล์",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "การดำเนินการนี้จะลบไฟล์แคชทั้งหมดและไฟล์หนังสือกำพร้าที่ไม่อยู่ในคลังหนังสือของคุณ ไม่สามารถยกเลิกได้"
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "การดำเนินการนี้จะลบไฟล์แคชทั้งหมดและไฟล์หนังสือกำพร้าที่ไม่อยู่ในคลังหนังสือของคุณ ไม่สามารถยกเลิกได้",
+  "Link Book": "เชื่อมโยงหนังสือ",
+  "Link Hardcover Book": "เชื่อมโยงหนังสือ Hardcover",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "เลือกหนังสือ Hardcover ที่ตรงกับ “{{book}}” ความคืบหน้าการอ่านและบันทึกจะซิงค์ไปยังหนังสือนั้น",
+  "Currently linked": "เชื่อมโยงอยู่ในขณะนี้",
+  "Unlink": "ยกเลิกการเชื่อมโยง",
+  "Search Hardcover": "ค้นหาใน Hardcover",
+  "No matching books found. Try a different title or author.": "ไม่พบหนังสือที่ตรงกัน ลองใช้ชื่อเรื่องหรือผู้แต่งอื่น",
+  "On your shelf": "อยู่ในชั้นหนังสือของคุณ",
+  "Linked": "เชื่อมโยงแล้ว",
+  "Linked to “{{title}}”": "เชื่อมโยงกับ “{{title}}” แล้ว",
+  "Hardcover link removed. The next sync will match the book again.": "ลบการเชื่อมโยง Hardcover แล้ว การซิงค์ครั้งถัดไปจะจับคู่หนังสืออีกครั้ง",
+  "{{pages}} pages": "{{pages}} หน้า",
+  "{{readers}} readers": "ผู้อ่าน {{readers}} คน"
 }

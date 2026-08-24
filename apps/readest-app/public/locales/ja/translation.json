@@ -2137,5 +2137,18 @@
   "Words per minute": "1分あたりの単語数",
   "View Book Cover": "書籍のカバーを表示",
   "Includes {{count}} orphaned book file(s) not in your library_other": "ライブラリにない孤立した本のファイル {{count}} 件を含みます",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "すべてのキャッシュファイルと、ライブラリにない孤立した本のファイルを削除します。この操作は取り消せません。"
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "すべてのキャッシュファイルと、ライブラリにない孤立した本のファイルを削除します。この操作は取り消せません。",
+  "Link Book": "本をリンク",
+  "Link Hardcover Book": "Hardcoverの本をリンク",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "「{{book}}」に該当するHardcoverの本を選択してください。読書進捗とメモはその本に同期されます。",
+  "Currently linked": "現在リンク中",
+  "Unlink": "リンク解除",
+  "Search Hardcover": "Hardcoverを検索",
+  "No matching books found. Try a different title or author.": "該当する本が見つかりませんでした。別のタイトルや著者で試してください。",
+  "On your shelf": "本棚にあり",
+  "Linked": "リンク済み",
+  "Linked to “{{title}}”": "「{{title}}」にリンクしました",
+  "Hardcover link removed. The next sync will match the book again.": "Hardcoverのリンクを解除しました。次回の同期で本を再度照合します。",
+  "{{pages}} pages": "{{pages}}ページ",
+  "{{readers}} readers": "{{readers}}人が読書"
 }

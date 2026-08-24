@@ -2257,5 +2257,18 @@
   "Includes {{count}} orphaned book file(s) not in your library_one": "כולל קובץ ספר יתום אחד שאינו בספרייה שלך",
   "Includes {{count}} orphaned book file(s) not in your library_two": "כולל {{count}} קובצי ספרים יתומים שאינם בספרייה שלך",
   "Includes {{count}} orphaned book file(s) not in your library_other": "כולל {{count}} קובצי ספרים יתומים שאינם בספרייה שלך",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "פעולה זו תמחק את כל הקבצים השמורים במטמון ואת קובצי הספרים היתומים שאינם בספרייה שלך. לא ניתן לבטל פעולה זו."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "פעולה זו תמחק את כל הקבצים השמורים במטמון ואת קובצי הספרים היתומים שאינם בספרייה שלך. לא ניתן לבטל פעולה זו.",
+  "Link Book": "קישור ספר",
+  "Link Hardcover Book": "קישור ספר ב-Hardcover",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "בחרו את הספר ב-Hardcover שמתאים ל-„{{book}}“. התקדמות הקריאה וההערות יסונכרנו אליו.",
+  "Currently linked": "מקושר כעת",
+  "Unlink": "ביטול קישור",
+  "Search Hardcover": "חיפוש ב-Hardcover",
+  "No matching books found. Try a different title or author.": "לא נמצאו ספרים תואמים. נסו כותרת או מחבר אחרים.",
+  "On your shelf": "במדף שלך",
+  "Linked": "מקושר",
+  "Linked to “{{title}}”": "קושר אל „{{title}}“",
+  "Hardcover link removed. The next sync will match the book again.": "הקישור ל-Hardcover הוסר. הסנכרון הבא יתאים את הספר מחדש.",
+  "{{pages}} pages": "{{pages}} עמודים",
+  "{{readers}} readers": "{{readers}} קוראים"
 }

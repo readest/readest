@@ -2317,5 +2317,18 @@
   "Includes {{count}} orphaned book file(s) not in your library_few": "Включає {{count}} осиротілі файли книг, яких немає у вашій бібліотеці",
   "Includes {{count}} orphaned book file(s) not in your library_many": "Включає {{count}} осиротілих файлів книг, яких немає у вашій бібліотеці",
   "Includes {{count}} orphaned book file(s) not in your library_other": "Включає {{count}} осиротілого файлу книги, якого немає у вашій бібліотеці",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Це видалить усі файли з кешу та осиротілі файли книг, яких немає у вашій бібліотеці. Цю дію не можна скасувати."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Це видалить усі файли з кешу та осиротілі файли книг, яких немає у вашій бібліотеці. Цю дію не можна скасувати.",
+  "Link Book": "Пов'язати книгу",
+  "Link Hardcover Book": "Пов'язати книгу Hardcover",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "Виберіть книгу Hardcover, яка відповідає «{{book}}». Прогрес читання та нотатки синхронізуватимуться з нею.",
+  "Currently linked": "Зараз пов'язано",
+  "Unlink": "Відв'язати",
+  "Search Hardcover": "Пошук у Hardcover",
+  "No matching books found. Try a different title or author.": "Відповідних книг не знайдено. Спробуйте іншу назву або автора.",
+  "On your shelf": "На вашій полиці",
+  "Linked": "Пов'язано",
+  "Linked to “{{title}}”": "Пов'язано з «{{title}}»",
+  "Hardcover link removed. The next sync will match the book again.": "Зв'язок із Hardcover видалено. Наступна синхронізація знову зіставить книгу.",
+  "{{pages}} pages": "{{pages}} сторінок",
+  "{{readers}} readers": "{{readers}} читачів"
 }

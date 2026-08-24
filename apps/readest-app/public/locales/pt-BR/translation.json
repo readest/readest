@@ -2257,5 +2257,18 @@
   "Includes {{count}} orphaned book file(s) not in your library_one": "Inclui {{count}} arquivo de livro órfão que não está na sua biblioteca",
   "Includes {{count}} orphaned book file(s) not in your library_many": "Inclui {{count}} arquivos de livro órfãos que não estão na sua biblioteca",
   "Includes {{count}} orphaned book file(s) not in your library_other": "Inclui {{count}} arquivos de livro órfãos que não estão na sua biblioteca",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Isso excluirá todos os arquivos em cache e os arquivos de livro órfãos que não estão na sua biblioteca. Esta ação não pode ser desfeita."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Isso excluirá todos os arquivos em cache e os arquivos de livro órfãos que não estão na sua biblioteca. Esta ação não pode ser desfeita.",
+  "Link Book": "Vincular livro",
+  "Link Hardcover Book": "Vincular livro do Hardcover",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "Escolha o livro do Hardcover que corresponde a “{{book}}”. O progresso de leitura e as notas serão sincronizados com ele.",
+  "Currently linked": "Vinculado atualmente",
+  "Unlink": "Desvincular",
+  "Search Hardcover": "Buscar no Hardcover",
+  "No matching books found. Try a different title or author.": "Nenhum livro correspondente encontrado. Tente outro título ou autor.",
+  "On your shelf": "Na sua estante",
+  "Linked": "Vinculado",
+  "Linked to “{{title}}”": "Vinculado a “{{title}}”",
+  "Hardcover link removed. The next sync will match the book again.": "Vínculo com o Hardcover removido. A próxima sincronização buscará o livro novamente.",
+  "{{pages}} pages": "{{pages}} páginas",
+  "{{readers}} readers": "{{readers}} leitores"
 }

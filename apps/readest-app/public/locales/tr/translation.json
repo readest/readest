@@ -2197,5 +2197,18 @@
   "View Book Cover": "Kitap Kapağını Görüntüle",
   "Includes {{count}} orphaned book file(s) not in your library_one": "Kütüphanenizde olmayan {{count}} sahipsiz kitap dosyası dahil",
   "Includes {{count}} orphaned book file(s) not in your library_other": "Kütüphanenizde olmayan {{count}} sahipsiz kitap dosyası dahil",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Bu, önbelleğe alınmış tüm dosyaları ve kütüphanenizde olmayan sahipsiz kitap dosyalarını siler. Bu işlem geri alınamaz."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Bu, önbelleğe alınmış tüm dosyaları ve kütüphanenizde olmayan sahipsiz kitap dosyalarını siler. Bu işlem geri alınamaz.",
+  "Link Book": "Kitabı Bağla",
+  "Link Hardcover Book": "Hardcover Kitabını Bağla",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "“{{book}}” ile eşleşen Hardcover kitabını seçin. Okuma ilerlemesi ve notlar bu kitapla senkronize edilecek.",
+  "Currently linked": "Şu anda bağlı",
+  "Unlink": "Bağlantıyı Kaldır",
+  "Search Hardcover": "Hardcover'da ara",
+  "No matching books found. Try a different title or author.": "Eşleşen kitap bulunamadı. Farklı bir başlık veya yazar deneyin.",
+  "On your shelf": "Rafınızda",
+  "Linked": "Bağlı",
+  "Linked to “{{title}}”": "“{{title}}” ile bağlandı",
+  "Hardcover link removed. The next sync will match the book again.": "Hardcover bağlantısı kaldırıldı. Bir sonraki senkronizasyon kitabı yeniden eşleştirecek.",
+  "{{pages}} pages": "{{pages}} sayfa",
+  "{{readers}} readers": "{{readers}} okuyucu"
 }

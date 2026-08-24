@@ -2197,5 +2197,18 @@
   "View Book Cover": "Könyvborító megtekintése",
   "Includes {{count}} orphaned book file(s) not in your library_one": "{{count}} olyan árva könyvfájlt tartalmaz, amely nincs a könyvtárában",
   "Includes {{count}} orphaned book file(s) not in your library_other": "{{count}} olyan árva könyvfájlt tartalmaz, amely nincs a könyvtárában",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Ez törli az összes gyorsítótárazott fájlt és a könyvtárában nem szereplő árva könyvfájlokat. A művelet nem vonható vissza."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Ez törli az összes gyorsítótárazott fájlt és a könyvtárában nem szereplő árva könyvfájlokat. A művelet nem vonható vissza.",
+  "Link Book": "Könyv összekapcsolása",
+  "Link Hardcover Book": "Hardcover-könyv összekapcsolása",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "Válaszd ki a(z) „{{book}}” című könyvnek megfelelő Hardcover-könyvet. Az olvasási előrehaladás és a jegyzetek ezzel szinkronizálódnak.",
+  "Currently linked": "Jelenleg összekapcsolva",
+  "Unlink": "Kapcsolat megszüntetése",
+  "Search Hardcover": "Keresés a Hardcoveren",
+  "No matching books found. Try a different title or author.": "Nem található egyező könyv. Próbálj másik címet vagy szerzőt.",
+  "On your shelf": "A polcodon",
+  "Linked": "Összekapcsolva",
+  "Linked to “{{title}}”": "Összekapcsolva ezzel: „{{title}}”",
+  "Hardcover link removed. The next sync will match the book again.": "A Hardcover-kapcsolat eltávolítva. A következő szinkronizálás újra párosítja a könyvet.",
+  "{{pages}} pages": "{{pages}} oldal",
+  "{{readers}} readers": "{{readers}} olvasó"
 }

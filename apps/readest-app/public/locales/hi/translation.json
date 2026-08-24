@@ -2197,5 +2197,18 @@
   "View Book Cover": "पुस्तक कवर देखें",
   "Includes {{count}} orphaned book file(s) not in your library_one": "इसमें आपकी लाइब्रेरी में मौजूद न होने वाली {{count}} अनाथ पुस्तक फ़ाइल शामिल है",
   "Includes {{count}} orphaned book file(s) not in your library_other": "इसमें आपकी लाइब्रेरी में मौजूद न होने वाली {{count}} अनाथ पुस्तक फ़ाइलें शामिल हैं",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "इससे सभी कैश की गई फ़ाइलें और आपकी लाइब्रेरी में मौजूद न होने वाली अनाथ पुस्तक फ़ाइलें हट जाएँगी. इसे पूर्ववत नहीं किया जा सकता."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "इससे सभी कैश की गई फ़ाइलें और आपकी लाइब्रेरी में मौजूद न होने वाली अनाथ पुस्तक फ़ाइलें हट जाएँगी. इसे पूर्ववत नहीं किया जा सकता.",
+  "Link Book": "पुस्तक लिंक करें",
+  "Link Hardcover Book": "Hardcover पुस्तक लिंक करें",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "“{{book}}” से मेल खाने वाली Hardcover पुस्तक चुनें। पढ़ने की प्रगति और नोट्स उसी से सिंक होंगे।",
+  "Currently linked": "वर्तमान में लिंक है",
+  "Unlink": "लिंक हटाएँ",
+  "Search Hardcover": "Hardcover में खोजें",
+  "No matching books found. Try a different title or author.": "कोई मेल खाती पुस्तक नहीं मिली। कोई अन्य शीर्षक या लेखक आज़माएँ।",
+  "On your shelf": "आपकी शेल्फ़ में",
+  "Linked": "लिंक किया गया",
+  "Linked to “{{title}}”": "“{{title}}” से लिंक किया गया",
+  "Hardcover link removed. The next sync will match the book again.": "Hardcover लिंक हटा दिया गया। अगला सिंक पुस्तक को फिर से मिलाएगा।",
+  "{{pages}} pages": "{{pages}} पृष्ठ",
+  "{{readers}} readers": "{{readers}} पाठक"
 }

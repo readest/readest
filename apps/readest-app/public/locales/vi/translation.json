@@ -2137,5 +2137,18 @@
   "Words per minute": "Số từ mỗi phút",
   "View Book Cover": "Xem bìa sách",
   "Includes {{count}} orphaned book file(s) not in your library_other": "Bao gồm {{count}} tệp sách mồ côi không có trong thư viện của bạn",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Thao tác này sẽ xóa tất cả tệp trong bộ nhớ đệm và các tệp sách mồ côi không có trong thư viện của bạn. Không thể hoàn tác."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Thao tác này sẽ xóa tất cả tệp trong bộ nhớ đệm và các tệp sách mồ côi không có trong thư viện của bạn. Không thể hoàn tác.",
+  "Link Book": "Liên Kết Sách",
+  "Link Hardcover Book": "Liên Kết Sách Hardcover",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "Chọn sách Hardcover tương ứng với “{{book}}”. Tiến độ đọc và ghi chú sẽ được đồng bộ với sách đó.",
+  "Currently linked": "Đang liên kết",
+  "Unlink": "Bỏ liên kết",
+  "Search Hardcover": "Tìm trên Hardcover",
+  "No matching books found. Try a different title or author.": "Không tìm thấy sách phù hợp. Hãy thử tiêu đề hoặc tác giả khác.",
+  "On your shelf": "Có trong kệ của bạn",
+  "Linked": "Đã liên kết",
+  "Linked to “{{title}}”": "Đã liên kết với “{{title}}”",
+  "Hardcover link removed. The next sync will match the book again.": "Đã gỡ liên kết Hardcover. Lần đồng bộ tiếp theo sẽ tự khớp lại sách.",
+  "{{pages}} pages": "{{pages}} trang",
+  "{{readers}} readers": "{{readers}} người đọc"
 }

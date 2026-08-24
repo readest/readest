@@ -2137,5 +2137,18 @@
   "Words per minute": "每分钟字数",
   "View Book Cover": "查看书籍封面",
   "Includes {{count}} orphaned book file(s) not in your library_other": "包含 {{count}} 个不在书库中的孤立书籍文件",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "这将删除所有缓存文件以及不在书库中的孤立书籍文件，此操作无法撤销。"
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "这将删除所有缓存文件以及不在书库中的孤立书籍文件，此操作无法撤销。",
+  "Link Book": "关联图书",
+  "Link Hardcover Book": "关联 Hardcover 图书",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "选择与《{{book}}》对应的 Hardcover 图书，阅读进度和笔记将同步到该图书。",
+  "Currently linked": "当前已关联",
+  "Unlink": "取消关联",
+  "Search Hardcover": "搜索 Hardcover",
+  "No matching books found. Try a different title or author.": "未找到匹配的图书，请尝试其他书名或作者。",
+  "On your shelf": "已在书架",
+  "Linked": "已关联",
+  "Linked to “{{title}}”": "已关联到《{{title}}》",
+  "Hardcover link removed. The next sync will match the book again.": "已取消 Hardcover 关联，下次同步时将重新匹配图书。",
+  "{{pages}} pages": "{{pages}} 页",
+  "{{readers}} readers": "{{readers}} 位读者"
 }

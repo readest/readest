@@ -2197,5 +2197,18 @@
   "View Book Cover": "مشاهده جلد کتاب",
   "Includes {{count}} orphaned book file(s) not in your library_one": "شامل {{count}} فایل کتاب بی‌سرپرست که در کتابخانه‌ی شما نیست",
   "Includes {{count}} orphaned book file(s) not in your library_other": "شامل {{count}} فایل کتاب بی‌سرپرست که در کتابخانه‌ی شما نیستند",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "این کار همهٔ فایل‌های ذخیره‌شده در حافظهٔ پنهان و فایل‌های کتاب بی‌سرپرستی را که در کتابخانه‌ی شما نیستند حذف می‌کند. این عمل قابل بازگشت نیست."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "این کار همهٔ فایل‌های ذخیره‌شده در حافظهٔ پنهان و فایل‌های کتاب بی‌سرپرستی را که در کتابخانه‌ی شما نیستند حذف می‌کند. این عمل قابل بازگشت نیست.",
+  "Link Book": "پیوند کتاب",
+  "Link Hardcover Book": "پیوند کتاب Hardcover",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "کتاب Hardcover مطابق با «{{book}}» را انتخاب کنید. پیشرفت مطالعه و یادداشت‌ها با آن همگام‌سازی می‌شوند.",
+  "Currently linked": "در حال حاضر پیوند شده",
+  "Unlink": "حذف پیوند",
+  "Search Hardcover": "جستجو در Hardcover",
+  "No matching books found. Try a different title or author.": "کتاب مطابقی یافت نشد. عنوان یا نویسنده دیگری را امتحان کنید.",
+  "On your shelf": "در قفسه شما",
+  "Linked": "پیوند شده",
+  "Linked to “{{title}}”": "به «{{title}}» پیوند شد",
+  "Hardcover link removed. The next sync will match the book again.": "پیوند Hardcover حذف شد. همگام‌سازی بعدی دوباره کتاب را تطبیق می‌دهد.",
+  "{{pages}} pages": "{{pages}} صفحه",
+  "{{readers}} readers": "{{readers}} خواننده"
 }

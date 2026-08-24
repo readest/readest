@@ -2197,5 +2197,18 @@
   "View Book Cover": "Boekomslag bekijken",
   "Includes {{count}} orphaned book file(s) not in your library_one": "Inclusief {{count}} verweesd boekbestand dat niet in je bibliotheek staat",
   "Includes {{count}} orphaned book file(s) not in your library_other": "Inclusief {{count}} verweesde boekbestanden die niet in je bibliotheek staan",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Hiermee worden alle gecachte bestanden en verweesde boekbestanden die niet in je bibliotheek staan verwijderd. Dit kan niet ongedaan worden gemaakt."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Hiermee worden alle gecachte bestanden en verweesde boekbestanden die niet in je bibliotheek staan verwijderd. Dit kan niet ongedaan worden gemaakt.",
+  "Link Book": "Boek koppelen",
+  "Link Hardcover Book": "Hardcover-boek koppelen",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "Kies het Hardcover-boek dat overeenkomt met “{{book}}”. Leesvoortgang en notities worden ermee gesynchroniseerd.",
+  "Currently linked": "Momenteel gekoppeld",
+  "Unlink": "Ontkoppelen",
+  "Search Hardcover": "Zoeken op Hardcover",
+  "No matching books found. Try a different title or author.": "Geen overeenkomende boeken gevonden. Probeer een andere titel of auteur.",
+  "On your shelf": "In je boekenkast",
+  "Linked": "Gekoppeld",
+  "Linked to “{{title}}”": "Gekoppeld aan “{{title}}”",
+  "Hardcover link removed. The next sync will match the book again.": "Hardcover-koppeling verwijderd. De volgende synchronisatie zoekt het boek opnieuw.",
+  "{{pages}} pages": "{{pages}} pagina's",
+  "{{readers}} readers": "{{readers}} lezers"
 }

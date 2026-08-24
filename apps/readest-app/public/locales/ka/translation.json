@@ -2197,5 +2197,18 @@
   "View Book Cover": "წიგნის ყდის ნახვა",
   "Includes {{count}} orphaned book file(s) not in your library_one": "მოიცავს {{count}} ობოლ წიგნის ფაილს, რომელიც არ არის თქვენს ბიბლიოთეკაში",
   "Includes {{count}} orphaned book file(s) not in your library_other": "მოიცავს {{count}} ობოლ წიგნის ფაილს, რომელიც არ არის თქვენს ბიბლიოთეკაში",
-  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "ეს წაშლის ყველა ქეშირებულ ფაილს და ობოლ წიგნის ფაილებს, რომლებიც არ არის თქვენს ბიბლიოთეკაში. მოქმედების გაუქმება შეუძლებელია."
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "ეს წაშლის ყველა ქეშირებულ ფაილს და ობოლ წიგნის ფაილებს, რომლებიც არ არის თქვენს ბიბლიოთეკაში. მოქმედების გაუქმება შეუძლებელია.",
+  "Link Book": "წიგნის დაკავშირება",
+  "Link Hardcover Book": "Hardcover წიგნის დაკავშირება",
+  "Pick the Hardcover book that matches “{{book}}”. Reading progress and notes will sync to it.": "აირჩიეთ Hardcover წიგნი, რომელიც შეესაბამება „{{book}}“-ს. კითხვის პროგრესი და შენიშვნები მასთან დასინქრონდება.",
+  "Currently linked": "ამჟამად დაკავშირებულია",
+  "Unlink": "კავშირის გაუქმება",
+  "Search Hardcover": "ძებნა Hardcover-ში",
+  "No matching books found. Try a different title or author.": "შესაბამისი წიგნები ვერ მოიძებნა. სცადეთ სხვა სათაური ან ავტორი.",
+  "On your shelf": "თქვენს თაროზე",
+  "Linked": "დაკავშირებულია",
+  "Linked to “{{title}}”": "დაკავშირდა „{{title}}“-თან",
+  "Hardcover link removed. The next sync will match the book again.": "Hardcover კავშირი წაიშალა. შემდეგი სინქრონიზაცია წიგნს ხელახლა შეუსაბამებს.",
+  "{{pages}} pages": "{{pages}} გვერდი",
+  "{{readers}} readers": "{{readers}} მკითხველი"
 }
