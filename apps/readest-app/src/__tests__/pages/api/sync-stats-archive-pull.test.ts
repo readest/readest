@@ -37,6 +37,10 @@ const makeBuilder = (table: string) => {
       if (c.method === 'eq') rows = rows.filter((r) => !(col in r) || r[col] === val);
       if (c.method === 'gt') rows = rows.filter((r) => !(col in r) || String(r[col]) > String(val));
     }
+    const range = chain.find((c) => c.method === 'range')?.args as [number, number] | undefined;
+    if (range) rows = rows.slice(range[0], range[1] + 1);
+    // PostgREST also caps un-ranged responses (Supabase db-max-rows = 1000)
+    else rows = rows.slice(0, 1000);
     return resolve({ data: rows, error: null });
   };
   return builder;
@@ -241,6 +245,39 @@ describe('GET /api/sync?type=stats with archived segments', () => {
       [300, 2],
     ]);
     expect(bucket.get).toHaveBeenCalledTimes(3); // the third segment was never needed
+  });
+
+  it('reads past the 1000-row manifest page cap instead of treating the first page as complete', async () => {
+    // 1001 single-row segments plus a hot row. The unpaginated pull must return
+    // all 1001 archived rows before the hot one; treating the capped first page
+    // as complete would let a cursor advance past the 1001st segment's rows.
+    tableData['stat_archives'] = Array.from({ length: 1001 }, (_, i) => manifest(i + 1, 100 + i));
+    tableData['stat_pages'] = [hot(90000)];
+    bucket.get.mockImplementation(async (key: string) => {
+      const toMs = Number(/\/(\d+)\.json$/.exec(key)![1]);
+      return objectOf([seg(toMs)]);
+    });
+    const rows = await pagesOf(await GET(req('type=stats&since=0')));
+    expect(rows).toHaveLength(1002);
+    expect(rows[0]!.updated_at_ms).toBe(100);
+    expect(rows[1000]!.updated_at_ms).toBe(1100);
+    expect(rows[1001]!.updated_at_ms).toBe(90000);
+    expect(bucket.get).toHaveBeenCalledTimes(1001);
+    // two manifest pages were requested
+    const ranges = calls.filter((c) => c.table === 'stat_archives' && c.method === 'range');
+    expect(ranges.map((c) => c.args)).toEqual([
+      [0, 999],
+      [1000, 1999],
+    ]);
+
+    // a paged pull that fills inside the first manifest page never asks for the second
+    calls.length = 0;
+    bucket.get.mockClear();
+    const page = await pagesOf(await GET(req('type=stats&since=0&limit=2')));
+    expect(page.map((r) => r.updated_at_ms)).toEqual([100, 101]);
+    expect(calls.filter((c) => c.table === 'stat_archives' && c.method === 'range')).toHaveLength(
+      1,
+    );
   });
 
   it('answers 500 without advancing when a segment object is missing or corrupt', async () => {

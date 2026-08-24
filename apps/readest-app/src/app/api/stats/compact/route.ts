@@ -82,6 +82,15 @@ async function sweepOrphans(
   }
   for (const { user_id } of (data ?? []) as { user_id: string }[]) {
     try {
+      // The queue row is written BEFORE deleteUser (a durable tombstone), so a
+      // row can exist for an account whose deletion then failed. Never touch a
+      // living user's archive: skip and keep the row (the deletion handler
+      // unqueues it, best-effort; skipping here is the backstop).
+      const { data: existing } = await supabase.auth.admin.getUserById(user_id);
+      if (existing?.user) {
+        console.warn('stats compact: orphaned user still exists, skipping', user_id);
+        continue;
+      }
       await deleteUserSegments(bucket, user_id);
       const { error: delErr } = await supabase
         .from('stat_archive_orphans')
@@ -235,6 +244,16 @@ export async function POST(request: Request) {
         // truncated millisecond for the segment/key.
         const toIso = rows[rows.length - 1]!.updated_at;
         const toMs = tsToMs(toIso);
+        // stat_archive_rows extends every segment to the end of its last
+        // millisecond, so consecutive segments always end in strictly later
+        // milliseconds and the ms-keyed object names cannot collide. Fail loud
+        // (this user only) if that SQL invariant ever regresses, instead of
+        // silently overwriting the previous object.
+        if (toMs <= tsToMs(from)) {
+          throw new Error(
+            `segment boundary did not advance past the previous millisecond for ${userId}`,
+          );
+        }
         const archived: ArchivedPageRow[] = rows.map((r) => ({
           book_hash: r.book_hash,
           page: r.page,

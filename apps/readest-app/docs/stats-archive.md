@@ -45,6 +45,12 @@ the two reads, rows that moved out of the hot table are visible through the mani
 Reading hot first can only return such rows twice (clients union-merge), never zero
 times. Do not reorder these queries.
 
+The manifest query is itself capped at 1000 rows by PostgREST (Supabase `db-max-rows`),
+so the pull reads it in `range` pages: hot rows are appended only once a short final
+page proves no archived rows remain past the cursor, and a paged pull stops fetching
+manifest pages as soon as its response page is full. Treating a capped first page as
+the complete list would let a client's cursor advance past unread segments.
+
 ## Segment objects
 
 Key `stats/v1/{user_id}/{updated_to_ms}.json`, `Content-Type: application/json`:
@@ -283,17 +289,21 @@ SELECT pg_size_pretty(pg_total_relation_size('public.stat_pages'));
 
 ## Account deletion
 
-`DELETE /api/user/delete` deletes the auth user **first** (Postgres rows cascade; a
-compaction commit in flight for that user fails on the manifest's foreign key). Only
-then does it touch R2: it queues the user id in `stat_archive_orphans` (service-role
-only, no foreign key) and deletes `stats/v1/{user_id}/` right away, best-effort
-(paginated listing, batches of 1000 keys). The response is 200 once the identity is
-gone, whatever R2 did; the queued row makes the cleanup reliable: every batch run of
-`POST /api/stats/compact` (kill switch on or off) sweeps up to 20 queued users, deletes
-their prefix again and removes the row once the listing is empty, which also catches an
-object a compaction run wrote after the immediate sweep. Deleting objects before the
-identity would be worse: a failed `deleteUser` would leave an active account with its
-history gone and a manifest pointing at missing objects.
+`DELETE /api/user/delete` runs three steps. (1) It writes the durable tombstone first:
+an upsert into `stat_archive_orphans` (service-role only, no foreign key). If even that
+fails, it stops with 500 **before anything destructive**, so a retry is always possible.
+(2) It deletes the auth user (Postgres rows cascade; a compaction commit in flight for
+that user fails on the manifest's foreign key). If this fails, the tombstone is removed
+again, best-effort. (3) It deletes `stats/v1/{user_id}/` right away, best-effort
+(paginated listing, batches of 1000 keys), and answers 200: the tombstone makes the
+cleanup reliable regardless. Every batch run of `POST /api/stats/compact` (kill switch
+on or off) sweeps up to 20 queued users; it first checks the user is really gone
+(`auth.admin.getUserById`) and skips, keeping the row, if the account still exists —
+a stale tombstone can never wipe a living account — then deletes the prefix and removes
+the row once the listing is empty, which also catches an object a compaction run wrote
+after the immediate sweep. Deleting objects before the identity would be worse: a
+failed `deleteUser` would leave an active account with its history gone and a manifest
+pointing at missing objects.
 
 ## Self-hosting
 

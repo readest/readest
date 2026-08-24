@@ -3,13 +3,15 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 // DELETE /api/user/delete must also remove the user's reading-statistics
 // archive objects in R2 (stats/v1/{user_id}/...). Postgres rows cascade with
-// the auth user; R2 objects do not. The identity goes first (deleting objects
-// before a failed deleteUser would leave an active account with its history
-// gone); then the user id is queued in stat_archive_orphans for the compaction
-// job's sweep and the prefix is deleted right away, best-effort.
+// the auth user; R2 objects do not. Order: (1) queue the user id in
+// stat_archive_orphans as a durable tombstone (500 before anything destructive
+// if even that fails), (2) delete the identity (compensating the tombstone if
+// that fails; the compaction sweep also skips living users), (3) delete the
+// prefix immediately, best-effort; the tombstone makes the cleanup reliable.
 
 const deleteUserMock = vi.fn();
 const orphanUpsertMock = vi.fn();
+const orphanDeleteEqMock = vi.fn();
 vi.mock('@/utils/cors', () => ({
   corsAllMethods: {},
   runMiddleware: vi.fn().mockResolvedValue(undefined),
@@ -22,6 +24,7 @@ vi.mock('@/utils/supabase', () => ({
     auth: { admin: { deleteUser: deleteUserMock } },
     from: (table: string) => ({
       upsert: (...a: unknown[]) => orphanUpsertMock(table, ...a),
+      delete: () => ({ eq: (...a: unknown[]) => orphanDeleteEqMock(table, ...a) }),
     }),
   }),
 }));
@@ -66,6 +69,10 @@ beforeEach(() => {
     events.push(`queue:${table}`);
     return { error: null };
   });
+  orphanDeleteEqMock.mockReset().mockImplementation(async (table: string) => {
+    events.push(`unqueue:${table}`);
+    return { error: null };
+  });
   bucket.list.mockReset().mockResolvedValue({ objects: [], truncated: false });
   bucket.delete.mockReset().mockImplementation(async (keys: string[]) => {
     events.push(`delete:${keys.join(',')}`);
@@ -74,7 +81,7 @@ beforeEach(() => {
 });
 
 describe('DELETE /api/user/delete stats archive cleanup', () => {
-  it('deletes the user first, then queues the id for the sweep and deletes the prefix (paginated listing)', async () => {
+  it('queues the tombstone, deletes the user, then deletes the prefix (paginated listing)', async () => {
     bucket.list
       .mockResolvedValueOnce({
         objects: [{ key: 'stats/v1/u1/1.json' }, { key: 'stats/v1/u1/2.json' }],
@@ -86,8 +93,8 @@ describe('DELETE /api/user/delete stats archive cleanup', () => {
     const res = await call();
     expect(res.statusCode).toBe(200);
     expect(events).toEqual([
-      'deleteUser',
       'queue:stat_archive_orphans',
+      'deleteUser',
       'delete:stats/v1/u1/1.json,stats/v1/u1/2.json',
       'delete:stats/v1/u1/3.json',
     ]);
@@ -100,21 +107,33 @@ describe('DELETE /api/user/delete stats archive cleanup', () => {
     expect(bucket.list.mock.calls[1]![0]).toMatchObject({ prefix: 'stats/v1/u1/', cursor: 'c1' });
   });
 
-  it('touches nothing in R2 when deleting the user fails', async () => {
+  it('stops with 500 before deleting anything when the tombstone cannot be written', async () => {
+    orphanUpsertMock.mockResolvedValue({ error: { message: 'db down' } });
+    const res = await call();
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({ error: 'stats archive cleanup could not be prepared' });
+    expect(deleteUserMock).not.toHaveBeenCalled();
+    expect(bucket.list).not.toHaveBeenCalled();
+    expect(bucket.delete).not.toHaveBeenCalled();
+  });
+
+  it('compensates the tombstone and touches nothing in R2 when deleting the user fails', async () => {
     deleteUserMock.mockResolvedValue({ error: { message: 'auth down' } });
     const res = await call();
     expect(res.statusCode).toBe(500);
+    expect(events).toEqual(['queue:stat_archive_orphans', 'unqueue:stat_archive_orphans']);
+    expect(orphanDeleteEqMock).toHaveBeenCalledWith('stat_archive_orphans', 'user_id', 'u1');
     expect(bucket.list).not.toHaveBeenCalled();
     expect(bucket.delete).not.toHaveBeenCalled();
-    expect(orphanUpsertMock).not.toHaveBeenCalled();
   });
 
-  it('still answers 200 when the immediate prefix delete fails: the queued row lets the sweep finish the job', async () => {
+  it('still answers 200 when the immediate prefix delete fails: the tombstone lets the sweep finish the job', async () => {
     bucket.list.mockRejectedValueOnce(new Error('r2 down'));
     const res = await call();
     expect(res.statusCode).toBe(200);
     expect(deleteUserMock).toHaveBeenCalledTimes(1);
     expect(orphanUpsertMock).toHaveBeenCalledTimes(1);
+    expect(orphanDeleteEqMock).not.toHaveBeenCalled(); // tombstone stays for the sweep
   });
 
   it('is a no-op without the R2 binding (self-host)', async () => {

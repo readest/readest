@@ -47,8 +47,19 @@ const fromMock = vi.fn((table: string) => {
   if (table !== 'stat_archive_orphans') throw new Error(`unexpected table ${table}`);
   return makeOrphanBuilder();
 });
+// auth.admin.getUserById: the orphan sweep's safety check. Default: every
+// queued user is really deleted ("user not found").
+type GetUserResult = { data: { user: { id: string } | null }; error: { message: string } | null };
+const getUserByIdMock = vi.fn<(id: string) => Promise<GetUserResult>>(async () => ({
+  data: { user: null },
+  error: { message: 'not found' },
+}));
 vi.mock('@/utils/supabase', () => ({
-  createSupabaseAdminClient: () => ({ rpc: rpcMock, from: fromMock }),
+  createSupabaseAdminClient: () => ({
+    rpc: rpcMock,
+    from: fromMock,
+    auth: { admin: { getUserById: getUserByIdMock } },
+  }),
 }));
 
 let cfEnv: Record<string, unknown> = {};
@@ -87,6 +98,9 @@ beforeEach(() => {
   orphanRows = [];
   orphanCalls.length = 0;
   fromMock.mockClear();
+  getUserByIdMock
+    .mockReset()
+    .mockResolvedValue({ data: { user: null }, error: { message: 'not found' } });
   bucket.list.mockReset().mockResolvedValue({ objects: [], truncated: false });
   for (const k of Object.keys(rpcHandlers)) delete rpcHandlers[k];
   bucket.put.mockReset().mockResolvedValue(undefined);
@@ -248,6 +262,22 @@ describe('POST /api/stats/compact orphan sweep (account-deletion cleanup)', () =
     expect(orphanRows).toEqual([{ user_id: A }]);
   });
 
+  it('skips (and keeps) a queued user that still exists: never wipes a living account', async () => {
+    orphanRows = [{ user_id: A }, { user_id: B }];
+    getUserByIdMock.mockImplementation(async (id: string) =>
+      id === A
+        ? { data: { user: { id: A } }, error: null }
+        : { data: { user: null }, error: { message: 'not found' } },
+    );
+    const body = await (await post()).json();
+    expect(body).toMatchObject({ ok: true, orphans_swept: 1, errors: 0 });
+    expect(orphanRows).toEqual([{ user_id: A }]); // stale tombstone kept, no delete attempted
+    const listedPrefixes = bucket.list.mock.calls.map(
+      (call) => (call[0] as { prefix: string }).prefix,
+    );
+    expect(listedPrefixes.some((p) => p.includes(A))).toBe(false);
+  });
+
   it('does not run the sweep for a targeted request', async () => {
     orphanRows = [{ user_id: A }];
     await POST(
@@ -400,6 +430,29 @@ describe('POST /api/stats/compact run', () => {
     const body = await (await post()).json();
     expect(body).toMatchObject({ ok: true, segments: 0, rows: 0, users_archived: 0, errors: 0 });
     expect(bucket.delete).not.toHaveBeenCalled();
+  });
+
+  it('fails loud, without writing an object, if a segment boundary does not advance past the previous millisecond', async () => {
+    // rows whose max updated_at truncates to the same millisecond as p_from
+    // would reuse the previous object key; the route must error out instead of
+    // overwriting (the SQL extension makes this impossible unless it regresses)
+    rpcHandlers['stat_archive_candidate'] = () => ({
+      data: [
+        {
+          eligible: 600,
+          oldest: daysAgo(40),
+          hot_total: 700,
+          archived_to: '2026-07-01T00:00:00.123+00:00',
+        },
+      ],
+    });
+    rpcHandlers['stat_archive_rows'] = () => ({
+      data: [dbRow('2026-07-01T00:00:00.123456+00:00', 1)],
+    });
+    const body = await (await post()).json();
+    expect(body).toMatchObject({ errors: 2, segments: 0, users_archived: 0 });
+    expect(bucket.put).not.toHaveBeenCalled();
+    expect(rpcCalls.some((c) => c.fn === 'stat_archive_commit')).toBe(false);
   });
 
   it('counts an R2 put failure as an error for that user and continues the run', async () => {
