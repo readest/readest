@@ -57,13 +57,17 @@ export class ReedyXRaySource {
     this.retriever = retriever ?? new BookRetriever(reedy as ReedyDb);
   }
 
-  static async open(appService: AppService, settings: AISettings): Promise<ReedyXRaySource> {
-    const { createXRayModels } = await import('./models');
+  static async open(
+    appService: AppService,
+    settings: AISettings,
+    embeddingModel?: EmbeddingModel,
+  ): Promise<ReedyXRaySource> {
     const db = await appService.openDatabase('reedy', 'reedy.db', 'Data', {
       experimental: ['index_method'],
     });
     const reedy = new ReedyDb(db);
-    const { embedding } = createXRayModels(settings);
+    const embedding =
+      embeddingModel ?? (await import('./models')).createXRayModels(settings).embedding;
     return new ReedyXRaySource(db, reedy, embedding);
   }
 
