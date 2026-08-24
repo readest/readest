@@ -128,6 +128,11 @@ export class XRayStore {
   }
 
   async commitBatch(batch: XRayExtractionBatch, state: XRayBookState): Promise<void> {
+    const invalidateLookups = `
+      DELETE FROM xray_lookups
+      WHERE book_hash = ${sqlQuote(batch.fingerprint.bookHash)}
+        AND max_position_index >= ${batch.minPositionIndex}
+    `;
     const batchStatement = `
       INSERT INTO xray_batches
         (batch_id, book_hash, fingerprint, min_position_index, max_position_index, payload)
@@ -141,7 +146,7 @@ export class XRayStore {
       )
     `;
 
-    await this.db.batch([batchStatement, stateBatchStatement(state)]);
+    await this.db.batch([invalidateLookups, batchStatement, stateBatchStatement(state)]);
   }
 
   async listBatches(bookHash: string, maxPositionIndex: number): Promise<XRayExtractionBatch[]> {
