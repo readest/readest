@@ -25,6 +25,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useAutoFocus } from '@/hooks/useAutoFocus';
 import { useSettingsStore } from '@/store/settingsStore';
+import { isAbsBookOrphaned, useABSServerStore } from '@/store/absServerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { selectActiveBookDownloadProgress, useTransferStore } from '@/store/transferStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -285,15 +286,29 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     [router, searchParams],
   );
 
+  // ABS books whose server row hasn't reached this device (or was removed)
+  // can't stream, have no cover source, and can't be opened — hide them from
+  // every shelf derivation (grid, groups, recent shelf, search). They stay in
+  // the store and keep syncing; they reappear the moment the server row
+  // lands. `absServers` and `settings` are deps because the orphan check
+  // reads the server store with a settings fallback, both of which hydrate
+  // asynchronously after the cached library first renders.
+  const absServers = useABSServerStore((state) => state.servers);
+  const visibleBooks = useMemo(
+    () => libraryBooks.filter((book) => !isAbsBookOrphaned(book)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [libraryBooks, absServers, settings],
+  );
+
   const filteredBooks = useMemo(() => {
     const bookFilter = createBookFilter(queryTerm);
-    return queryTerm ? libraryBooks.filter((book) => bookFilter(book)) : libraryBooks;
-  }, [libraryBooks, queryTerm]);
+    return queryTerm ? visibleBooks.filter((book) => bookFilter(book)) : visibleBooks;
+  }, [visibleBooks, queryTerm]);
 
   const manualGroupName = groupBy === LibraryGroupByType.Group ? getGroupName(groupId) : undefined;
   const currentShelfBooks = useMemo(
-    () => resolveCurrentShelfBooks(libraryBooks, groupBy, groupId, manualGroupName),
-    [libraryBooks, groupBy, groupId, manualGroupName],
+    () => resolveCurrentShelfBooks(visibleBooks, groupBy, groupId, manualGroupName),
+    [visibleBooks, groupBy, groupId, manualGroupName],
   );
   const filteredShelfBooks = useMemo(() => {
     const bookFilter = createBookFilter(queryTerm);
@@ -828,10 +843,10 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   );
 
   // Flat recency slice of the whole library, independent of the main shelf's
-  // sort/grouping. Built from `libraryBooks` (not the sorted/filtered items).
+  // sort/grouping. Built from `visibleBooks` (not the sorted/filtered items).
   const recentBooks = useMemo(
-    () => selectRecentShelfBooks(libraryBooks, RECENT_SHELF_BOOK_COUNT),
-    [libraryBooks],
+    () => selectRecentShelfBooks(visibleBooks, RECENT_SHELF_BOOK_COUNT),
+    [visibleBooks],
   );
 
   // Cover transfer overlay progress for every book on screen, from both

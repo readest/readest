@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { EnvConfigType } from '@/services/environment';
 import type { ABSServer } from '@/types/audiobookshelf';
+import type { Book } from '@/types/book';
+import { parseAbsFilePath } from '@/utils/audiobook';
 import { useSettingsStore } from './settingsStore';
 import { getReplicaPersistEnv } from '@/services/sync/replicaPersist';
 import { publishReplicaDelete, publishReplicaUpsert } from '@/services/sync/replicaPublish';
@@ -286,4 +288,19 @@ export const findABSServerById = (id: string): ABSServer | undefined => {
   if (inMemory) return inMemory;
   const persisted = useSettingsStore.getState().settings?.absServers ?? [];
   return persisted.find((s) => s.id === id && !s.deletedAt);
+};
+
+/**
+ * True for an ABS book whose server row is absent (not yet synced to this
+ * device, or removed). All audio data lives on the ABS server, so without
+ * the server row the book cannot stream, has no cover source, and cannot be
+ * opened — the library display hides orphans until the server row lands.
+ * The rows themselves stay in the store and keep syncing. A `disabled`
+ * server still counts as configured: disabling only pauses auto-sync.
+ */
+export const isAbsBookOrphaned = (book: Book): boolean => {
+  const parsed = parseAbsFilePath(book.filePath);
+  if (!parsed) return false;
+  const server = findABSServerById(parsed.serverId);
+  return !server || !!server.deletedAt;
 };
