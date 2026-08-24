@@ -141,18 +141,12 @@ const TOCItemView = React.memo<{
           {createExpanderIcon(flatItem.isExpanded || false)}
         </button>
       )}
-      <div
-        className='ms-2 truncate text-ellipsis'
-        style={{
-          maxWidth: 'calc(100% - 24px)',
-          whiteSpace: 'nowrap',
-          textOverflow: 'ellipsis',
-        }}
-      >
-        {item.label}
-      </div>
+      <div className='ms-2 min-w-0 break-words'>{item.label}</div>
       {(item.location || item.index !== undefined) && (
-        <div aria-hidden='true' className='text-base-content/50 ms-auto ps-1 text-xs sm:pe-1'>
+        <div
+          aria-hidden='true'
+          className='text-base-content/50 ms-auto shrink-0 ps-1 text-xs sm:pe-1'
+        >
           {item.location ? item.location.current + 1 : item.index + 1}
         </div>
       )}
