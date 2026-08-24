@@ -2135,5 +2135,7 @@
   "Audiobookshelf server not found": "ไม่พบเซิร์ฟเวอร์ Audiobookshelf",
   "Episode not found": "ไม่พบตอน",
   "Words per minute": "คำต่อนาที",
-  "View Book Cover": "ดูภาพปกหนังสือ"
+  "View Book Cover": "ดูภาพปกหนังสือ",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "รวมไฟล์หนังสือกำพร้าที่ไม่อยู่ในคลังหนังสือของคุณ {{count}} ไฟล์",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "การดำเนินการนี้จะลบไฟล์แคชทั้งหมดและไฟล์หนังสือกำพร้าที่ไม่อยู่ในคลังหนังสือของคุณ ไม่สามารถยกเลิกได้"
 }

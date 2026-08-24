@@ -2194,5 +2194,8 @@
   "Audiobookshelf server not found": "Audiobookshelf sunucusu bulunamadı",
   "Episode not found": "Bölüm bulunamadı",
   "Words per minute": "Dakikadaki kelime sayısı",
-  "View Book Cover": "Kitap Kapağını Görüntüle"
+  "View Book Cover": "Kitap Kapağını Görüntüle",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "Kütüphanenizde olmayan {{count}} sahipsiz kitap dosyası dahil",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "Kütüphanenizde olmayan {{count}} sahipsiz kitap dosyası dahil",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Bu, önbelleğe alınmış tüm dosyaları ve kütüphanenizde olmayan sahipsiz kitap dosyalarını siler. Bu işlem geri alınamaz."
 }

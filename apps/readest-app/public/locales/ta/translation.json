@@ -2194,5 +2194,8 @@
   "Audiobookshelf server not found": "Audiobookshelf சர்வர் கிடைக்கவில்லை",
   "Episode not found": "எபிசோட் கிடைக்கவில்லை",
   "Words per minute": "நிமிடத்திற்கு சொற்கள்",
-  "View Book Cover": "புத்தக அட்டையைக் காண்க"
+  "View Book Cover": "புத்தக அட்டையைக் காண்க",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "உங்கள் நூலகத்தில் இல்லாத {{count}} அனாதைப் புத்தகக் கோப்பு அடங்கும்",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "உங்கள் நூலகத்தில் இல்லாத {{count}} அனாதைப் புத்தகக் கோப்புகள் அடங்கும்",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "இது தற்காலிகச் சேமிப்பில் உள்ள அனைத்துக் கோப்புகளையும், உங்கள் நூலகத்தில் இல்லாத அனாதைப் புத்தகக் கோப்புகளையும் நீக்கும். இதை மீட்டெடுக்க முடியாது."
 }

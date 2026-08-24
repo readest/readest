@@ -2194,5 +2194,8 @@
   "Audiobookshelf server not found": "سرور Audiobookshelf یافت نشد",
   "Episode not found": "قسمت یافت نشد",
   "Words per minute": "کلمه در دقیقه",
-  "View Book Cover": "مشاهده جلد کتاب"
+  "View Book Cover": "مشاهده جلد کتاب",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "شامل {{count}} فایل کتاب بی‌سرپرست که در کتابخانه‌ی شما نیست",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "شامل {{count}} فایل کتاب بی‌سرپرست که در کتابخانه‌ی شما نیستند",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "این کار همهٔ فایل‌های ذخیره‌شده در حافظهٔ پنهان و فایل‌های کتاب بی‌سرپرستی را که در کتابخانه‌ی شما نیستند حذف می‌کند. این عمل قابل بازگشت نیست."
 }

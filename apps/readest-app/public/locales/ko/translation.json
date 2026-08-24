@@ -2135,5 +2135,7 @@
   "Audiobookshelf server not found": "Audiobookshelf 서버를 찾을 수 없습니다",
   "Episode not found": "에피소드를 찾을 수 없습니다",
   "Words per minute": "분당 단어 수",
-  "View Book Cover": "책 표지 보기"
+  "View Book Cover": "책 표지 보기",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "서재에 없는 고아 책 파일 {{count}}개 포함",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "캐시된 모든 파일과 서재에 없는 고아 책 파일을 삭제합니다. 이 작업은 되돌릴 수 없습니다."
 }

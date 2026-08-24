@@ -109,5 +109,7 @@
   "Cancel all ({{count}})_one": "Cancel all ({{count}})",
   "Cancel all ({{count}})_other": "Cancel all ({{count}})",
   "{{count}} server_one": "{{count}} server",
-  "{{count}} server_other": "{{count}} servers"
+  "{{count}} server_other": "{{count}} servers",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "Includes {{count}} orphaned book file not in your library",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "Includes {{count}} orphaned book files not in your library"
 }

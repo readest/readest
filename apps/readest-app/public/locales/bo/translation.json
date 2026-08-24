@@ -2135,5 +2135,7 @@
   "Audiobookshelf server not found": "Audiobookshelf ཞབས་ཞུ་བ་མ་རྙེད།",
   "Episode not found": "འདོན་ཐེངས་མ་རྙེད།",
   "Words per minute": "སྐར་མ་རེར་ཚིག་གྲངས།",
-  "View Book Cover": "དཔེ་དེབ་ཀྱི་མདུན་ཤོག་བལྟ་བ"
+  "View Book Cover": "དཔེ་དེབ་ཀྱི་མདུན་ཤོག་བལྟ་བ",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "ཁྱེད་ཀྱི་དཔེ་མཛོད་ནང་མེད་པའི་དེབ་ཀྱི་ཡིག་ཆ་ {{count}} ཚུད་ཡོད།",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "འདིས་གསོག་ཉར་གྱི་ཡིག་ཆ་ཚང་མ་དང་ཁྱེད་ཀྱི་དཔེ་མཛོད་ནང་མེད་པའི་དེབ་ཀྱི་ཡིག་ཆ་རྣམས་བསུབ་ངེས་ཡིན། འདི་སྔར་བཞིན་བཟོ་མི་ཐུབ།"
 }

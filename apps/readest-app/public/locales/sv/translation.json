@@ -2194,5 +2194,8 @@
   "Audiobookshelf server not found": "Audiobookshelf-servern hittades inte",
   "Episode not found": "Avsnittet hittades inte",
   "Words per minute": "Ord per minut",
-  "View Book Cover": "Visa bokomslag"
+  "View Book Cover": "Visa bokomslag",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "Inkluderar {{count}} föräldralös bokfil som inte finns i ditt bibliotek",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "Inkluderar {{count}} föräldralösa bokfiler som inte finns i ditt bibliotek",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Detta tar bort alla cachade filer och föräldralösa bokfiler som inte finns i ditt bibliotek. Åtgärden kan inte ångras."
 }

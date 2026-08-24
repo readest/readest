@@ -2194,5 +2194,8 @@
   "Audiobookshelf server not found": "Audiobookshelf සේවාදායකයා හමු නොවීය",
   "Episode not found": "කථාංගය හමු නොවීය",
   "Words per minute": "විනාඩියකට වචන",
-  "View Book Cover": "පොතේ ආවරණය බලන්න"
+  "View Book Cover": "පොතේ ආවරණය බලන්න",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "ඔබේ පුස්තකාලයේ නොමැති අනාථ පොත් ගොනු {{count}} ඇතුළත් වේ",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "ඔබේ පුස්තකාලයේ නොමැති අනාථ පොත් ගොනු {{count}} ඇතුළත් වේ",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "මෙය සියලුම හැඹිලිගත ගොනු සහ ඔබේ පුස්තකාලයේ නොමැති අනාථ පොත් ගොනු මකා දමයි. මෙය පෙරළිය නොහැක."
 }

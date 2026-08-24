@@ -2135,5 +2135,7 @@
   "Audiobookshelf server not found": "找不到 Audiobookshelf 伺服器",
   "Episode not found": "找不到該集",
   "Words per minute": "每分鐘字數",
-  "View Book Cover": "查看書籍封面"
+  "View Book Cover": "查看書籍封面",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "包含 {{count}} 個不在書庫中的孤立書籍檔案",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "這將刪除所有快取檔案以及不在書庫中的孤立書籍檔案，此操作無法復原。"
 }

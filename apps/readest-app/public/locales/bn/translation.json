@@ -2194,5 +2194,8 @@
   "Audiobookshelf server not found": "Audiobookshelf সার্ভার পাওয়া যায়নি",
   "Episode not found": "এপিসোড পাওয়া যায়নি",
   "Words per minute": "প্রতি মিনিটে শব্দ",
-  "View Book Cover": "বইয়ের প্রচ্ছদ দেখুন"
+  "View Book Cover": "বইয়ের প্রচ্ছদ দেখুন",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "আপনার লাইব্রেরিতে নেই এমন {{count}}টি অনাথ বইয়ের ফাইল অন্তর্ভুক্ত",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "আপনার লাইব্রেরিতে নেই এমন {{count}}টি অনাথ বইয়ের ফাইল অন্তর্ভুক্ত",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "এটি সমস্ত ক্যাশ করা ফাইল এবং আপনার লাইব্রেরিতে নেই এমন অনাথ বইয়ের ফাইল মুছে ফেলবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।"
 }

@@ -2312,5 +2312,10 @@
   "Audiobookshelf server not found": "Сервер Audiobookshelf не найден",
   "Episode not found": "Эпизод не найден",
   "Words per minute": "Слов в минуту",
-  "View Book Cover": "Посмотреть обложку книги"
+  "View Book Cover": "Посмотреть обложку книги",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "Включает {{count}} осиротевший файл книги, которого нет в вашей библиотеке",
+  "Includes {{count}} orphaned book file(s) not in your library_few": "Включает {{count}} осиротевших файла книг, которых нет в вашей библиотеке",
+  "Includes {{count}} orphaned book file(s) not in your library_many": "Включает {{count}} осиротевших файлов книг, которых нет в вашей библиотеке",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "Включает {{count}} осиротевшего файла книги, которого нет в вашей библиотеке",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Это удалит все файлы из кэша и осиротевшие файлы книг, которых нет в вашей библиотеке. Это действие нельзя отменить."
 }

@@ -2194,5 +2194,8 @@
   "Audiobookshelf server not found": "Audiobookshelf-Server nicht gefunden",
   "Episode not found": "Episode nicht gefunden",
   "Words per minute": "Wörter pro Minute",
-  "View Book Cover": "Buchcover anzeigen"
+  "View Book Cover": "Buchcover anzeigen",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "Enthält {{count}} verwaiste Buchdatei, die nicht in Ihrer Bibliothek ist",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "Enthält {{count}} verwaiste Buchdateien, die nicht in Ihrer Bibliothek sind",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Dadurch werden alle zwischengespeicherten Dateien sowie verwaiste Buchdateien, die nicht in Ihrer Bibliothek sind, gelöscht. Dies kann nicht rückgängig gemacht werden."
 }

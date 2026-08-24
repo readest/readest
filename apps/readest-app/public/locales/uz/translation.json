@@ -2194,5 +2194,8 @@
   "Audiobookshelf server not found": "Audiobookshelf serveri topilmadi",
   "Episode not found": "Epizod topilmadi",
   "Words per minute": "Daqiqasiga soʻz soni",
-  "View Book Cover": "Kitob muqovasini koʻrish"
+  "View Book Cover": "Kitob muqovasini koʻrish",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "Kutubxonangizda yoʻq {{count}} ta yetim kitob faylini oʻz ichiga oladi",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "Kutubxonangizda yoʻq {{count}} ta yetim kitob faylini oʻz ichiga oladi",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Bu barcha keshlangan fayllarni va kutubxonangizda yoʻq yetim kitob fayllarini oʻchiradi. Buni qaytarib boʻlmaydi."
 }

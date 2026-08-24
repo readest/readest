@@ -2194,5 +2194,8 @@
   "Audiobookshelf server not found": "Audiobookshelf სერვერი ვერ მოიძებნა",
   "Episode not found": "ეპიზოდი ვერ მოიძებნა",
   "Words per minute": "სიტყვა წუთში",
-  "View Book Cover": "წიგნის ყდის ნახვა"
+  "View Book Cover": "წიგნის ყდის ნახვა",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "მოიცავს {{count}} ობოლ წიგნის ფაილს, რომელიც არ არის თქვენს ბიბლიოთეკაში",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "მოიცავს {{count}} ობოლ წიგნის ფაილს, რომელიც არ არის თქვენს ბიბლიოთეკაში",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "ეს წაშლის ყველა ქეშირებულ ფაილს და ობოლ წიგნის ფაილებს, რომლებიც არ არის თქვენს ბიბლიოთეკაში. მოქმედების გაუქმება შეუძლებელია."
 }

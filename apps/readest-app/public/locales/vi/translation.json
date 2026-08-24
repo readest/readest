@@ -2135,5 +2135,7 @@
   "Audiobookshelf server not found": "Không tìm thấy máy chủ Audiobookshelf",
   "Episode not found": "Không tìm thấy tập",
   "Words per minute": "Số từ mỗi phút",
-  "View Book Cover": "Xem bìa sách"
+  "View Book Cover": "Xem bìa sách",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "Bao gồm {{count}} tệp sách mồ côi không có trong thư viện của bạn",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Thao tác này sẽ xóa tất cả tệp trong bộ nhớ đệm và các tệp sách mồ côi không có trong thư viện của bạn. Không thể hoàn tác."
 }

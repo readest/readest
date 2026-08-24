@@ -2430,5 +2430,12 @@
   "Audiobookshelf server not found": "لم يتم العثور على خادم Audiobookshelf",
   "Episode not found": "لم يتم العثور على الحلقة",
   "Words per minute": "كلمة في الدقيقة",
-  "View Book Cover": "عرض غلاف الكتاب"
+  "View Book Cover": "عرض غلاف الكتاب",
+  "Includes {{count}} orphaned book file(s) not in your library_zero": "يتضمن {{count}} ملف كتاب يتيم غير موجود في مكتبتك",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "يتضمن ملف كتاب يتيمًا واحدًا غير موجود في مكتبتك",
+  "Includes {{count}} orphaned book file(s) not in your library_two": "يتضمن ملفي كتاب يتيمين غير موجودين في مكتبتك",
+  "Includes {{count}} orphaned book file(s) not in your library_few": "يتضمن {{count}} ملفات كتب يتيمة غير موجودة في مكتبتك",
+  "Includes {{count}} orphaned book file(s) not in your library_many": "يتضمن {{count}} ملف كتاب يتيمًا غير موجود في مكتبتك",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "يتضمن {{count}} ملف كتاب يتيم غير موجود في مكتبتك",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "سيؤدي هذا إلى حذف جميع الملفات المخزنة مؤقتًا وملفات الكتب اليتيمة غير الموجودة في مكتبتك. لا يمكن التراجع عن هذا الإجراء."
 }

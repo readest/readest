@@ -2194,5 +2194,8 @@
   "Audiobookshelf server not found": "Audiobookshelf सर्वर नहीं मिला",
   "Episode not found": "एपिसोड नहीं मिला",
   "Words per minute": "शब्द प्रति मिनट",
-  "View Book Cover": "पुस्तक कवर देखें"
+  "View Book Cover": "पुस्तक कवर देखें",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "इसमें आपकी लाइब्रेरी में मौजूद न होने वाली {{count}} अनाथ पुस्तक फ़ाइल शामिल है",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "इसमें आपकी लाइब्रेरी में मौजूद न होने वाली {{count}} अनाथ पुस्तक फ़ाइलें शामिल हैं",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "इससे सभी कैश की गई फ़ाइलें और आपकी लाइब्रेरी में मौजूद न होने वाली अनाथ पुस्तक फ़ाइलें हट जाएँगी. इसे पूर्ववत नहीं किया जा सकता."
 }

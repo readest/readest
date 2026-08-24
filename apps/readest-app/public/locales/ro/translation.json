@@ -2253,5 +2253,9 @@
   "Audiobookshelf server not found": "Serverul Audiobookshelf nu a fost găsit",
   "Episode not found": "Episodul nu a fost găsit",
   "Words per minute": "Cuvinte pe minut",
-  "View Book Cover": "Vezi coperta cărții"
+  "View Book Cover": "Vezi coperta cărții",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "Include {{count}} fișier de carte orfan care nu se află în biblioteca dvs.",
+  "Includes {{count}} orphaned book file(s) not in your library_few": "Include {{count}} fișiere de carte orfane care nu se află în biblioteca dvs.",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "Include {{count}} de fișiere de carte orfane care nu se află în biblioteca dvs.",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Această acțiune va șterge toate fișierele din memoria cache și fișierele de carte orfane care nu se află în biblioteca dvs. Acțiunea nu poate fi anulată."
 }

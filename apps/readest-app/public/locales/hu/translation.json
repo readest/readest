@@ -2194,5 +2194,8 @@
   "Audiobookshelf server not found": "Az Audiobookshelf szerver nem található",
   "Episode not found": "Az epizód nem található",
   "Words per minute": "Szó percenként",
-  "View Book Cover": "Könyvborító megtekintése"
+  "View Book Cover": "Könyvborító megtekintése",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "{{count}} olyan árva könyvfájlt tartalmaz, amely nincs a könyvtárában",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "{{count}} olyan árva könyvfájlt tartalmaz, amely nincs a könyvtárában",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Ez törli az összes gyorsítótárazott fájlt és a könyvtárában nem szereplő árva könyvfájlokat. A művelet nem vonható vissza."
 }

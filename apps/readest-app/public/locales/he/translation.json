@@ -2253,5 +2253,9 @@
   "Audiobookshelf server not found": "שרת Audiobookshelf לא נמצא",
   "Episode not found": "הפרק לא נמצא",
   "Words per minute": "מילים לדקה",
-  "View Book Cover": "הצג כריכת ספר"
+  "View Book Cover": "הצג כריכת ספר",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "כולל קובץ ספר יתום אחד שאינו בספרייה שלך",
+  "Includes {{count}} orphaned book file(s) not in your library_two": "כולל {{count}} קובצי ספרים יתומים שאינם בספרייה שלך",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "כולל {{count}} קובצי ספרים יתומים שאינם בספרייה שלך",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "פעולה זו תמחק את כל הקבצים השמורים במטמון ואת קובצי הספרים היתומים שאינם בספרייה שלך. לא ניתן לבטל פעולה זו."
 }

@@ -2135,5 +2135,7 @@
   "Audiobookshelf server not found": "Pelayan Audiobookshelf tidak ditemui",
   "Episode not found": "Episod tidak ditemui",
   "Words per minute": "Perkataan seminit",
-  "View Book Cover": "Lihat Kulit Buku"
+  "View Book Cover": "Lihat Kulit Buku",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "Termasuk {{count}} fail buku yatim yang tiada dalam perpustakaan anda",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Tindakan ini akan memadam semua fail cache dan fail buku yatim yang tiada dalam perpustakaan anda. Tindakan ini tidak boleh diundurkan."
 }

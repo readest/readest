@@ -1,4 +1,8 @@
-import { AppService, BaseDir } from '@/types/system';
+import { AppService, BaseDir, FileItem } from '@/types/system';
+import { Book } from '@/types/book';
+import { EXTS } from '@/libs/document';
+
+const BOOK_EXTS = new Set(Object.values(EXTS));
 
 export interface CacheClearProgress {
   current: number;
@@ -48,6 +52,39 @@ export const getCacheEntries = async (
     } catch {
       // Missing or unreadable source — skip it.
     }
+  }
+  return entries;
+};
+
+/**
+ * Files under Books/ that no live library book owns, as deletable entries:
+ * everything in a `<hash>/` dir with no library row (an import killed before
+ * the library was saved), plus any book file lingering in a soft-deleted
+ * book's dir (a cloud tombstone never deletes local files). A plain delete
+ * keeps cover.png and config.json there on purpose so a re-download resumes,
+ * so those stay. Root-level library metadata is never an orphan. Neither kind
+ * shows in the library UI, which is how they went unnoticed in #5837.
+ */
+export const getOrphanedBookEntries = async (
+  appService: AppService,
+  books: Book[],
+): Promise<CacheEntry[]> => {
+  const rows = new Map(books.map((book) => [book.hash, book]));
+  let files: FileItem[];
+  try {
+    files = await appService.readDirectory('', 'Books');
+  } catch {
+    return [];
+  }
+  const entries: CacheEntry[] = [];
+  for (const file of files) {
+    const path = file.path.replace(/\\/g, '/');
+    const slashIdx = path.indexOf('/');
+    if (slashIdx < 0) continue;
+    const row = rows.get(path.slice(0, slashIdx));
+    if (row && !row.deletedAt) continue;
+    if (row && !BOOK_EXTS.has(path.split('.').pop()?.toLowerCase() ?? '')) continue;
+    entries.push({ base: 'Books', path: file.path, size: file.size || 0 });
   }
   return entries;
 };

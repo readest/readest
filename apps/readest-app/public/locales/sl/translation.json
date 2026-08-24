@@ -2312,5 +2312,10 @@
   "Audiobookshelf server not found": "Strežnika Audiobookshelf ni bilo mogoče najti",
   "Episode not found": "Epizode ni mogoče najti",
   "Words per minute": "Besed na minuto",
-  "View Book Cover": "Prikaži naslovnico knjige"
+  "View Book Cover": "Prikaži naslovnico knjige",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "Vključuje {{count}} osirotelo datoteko knjige, ki ni v vaši knjižnici",
+  "Includes {{count}} orphaned book file(s) not in your library_two": "Vključuje {{count}} osiroteli datoteki knjig, ki nista v vaši knjižnici",
+  "Includes {{count}} orphaned book file(s) not in your library_few": "Vključuje {{count}} osirotele datoteke knjig, ki niso v vaši knjižnici",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "Vključuje {{count}} osirotelih datotek knjig, ki niso v vaši knjižnici",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "To bo izbrisalo vse predpomnjene datoteke in osirotele datoteke knjig, ki niso v vaši knjižnici. Tega dejanja ni mogoče razveljaviti."
 }

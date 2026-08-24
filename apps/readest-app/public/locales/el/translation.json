@@ -2194,5 +2194,8 @@
   "Audiobookshelf server not found": "Δεν βρέθηκε διακομιστής Audiobookshelf",
   "Episode not found": "Το επεισόδιο δεν βρέθηκε",
   "Words per minute": "Λέξεις ανά λεπτό",
-  "View Book Cover": "Προβολή εξωφύλλου βιβλίου"
+  "View Book Cover": "Προβολή εξωφύλλου βιβλίου",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "Περιλαμβάνει {{count}} ορφανό αρχείο βιβλίου που δεν υπάρχει στη βιβλιοθήκη σας",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "Περιλαμβάνει {{count}} ορφανά αρχεία βιβλίων που δεν υπάρχουν στη βιβλιοθήκη σας",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Αυτό θα διαγράψει όλα τα προσωρινά αποθηκευμένα αρχεία και τα ορφανά αρχεία βιβλίων που δεν υπάρχουν στη βιβλιοθήκη σας. Αυτή η ενέργεια δεν μπορεί να αναιρεθεί."
 }

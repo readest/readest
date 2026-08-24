@@ -2194,5 +2194,8 @@
   "Audiobookshelf server not found": "Audiobookshelf-server niet gevonden",
   "Episode not found": "Aflevering niet gevonden",
   "Words per minute": "Woorden per minuut",
-  "View Book Cover": "Boekomslag bekijken"
+  "View Book Cover": "Boekomslag bekijken",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "Inclusief {{count}} verweesd boekbestand dat niet in je bibliotheek staat",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "Inclusief {{count}} verweesde boekbestanden die niet in je bibliotheek staan",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Hiermee worden alle gecachte bestanden en verweesde boekbestanden die niet in je bibliotheek staan verwijderd. Dit kan niet ongedaan worden gemaakt."
 }

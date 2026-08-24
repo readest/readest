@@ -1,15 +1,93 @@
 import { describe, it, expect, vi } from 'vitest';
 import { AppService, FileItem } from '@/types/system';
+import { Book } from '@/types/book';
 import {
   clearCacheEntries,
   getCacheEntries,
   getCacheStats,
+  getOrphanedBookEntries,
   CacheClearProgress,
   CacheEntry,
 } from '@/utils/cache';
 
 const makeFiles = (...names: string[]): FileItem[] =>
   names.map((path, i) => ({ path, size: (i + 1) * 10 }));
+
+const makeBook = (hash: string, deletedAt: number | null = null): Book =>
+  ({
+    hash,
+    format: 'EPUB',
+    title: hash,
+    author: '',
+    createdAt: 1,
+    updatedAt: 1,
+    deletedAt,
+  }) as Book;
+
+describe('getOrphanedBookEntries (#5837)', () => {
+  const LIVE = 'live-hash';
+  const DELETED = 'deleted-hash';
+  const ORPHAN = 'orphan-hash';
+
+  it('returns every file of a hash dir no library row references', async () => {
+    const readDirectory = vi
+      .fn()
+      .mockResolvedValue(makeFiles(`${ORPHAN}/book.epub`, `${ORPHAN}/cover.png`));
+    const appService = { readDirectory } as unknown as AppService;
+
+    const entries = await getOrphanedBookEntries(appService, [makeBook(LIVE)]);
+
+    expect(readDirectory).toHaveBeenCalledWith('', 'Books');
+    expect(entries).toEqual([
+      { base: 'Books', path: `${ORPHAN}/book.epub`, size: 10 },
+      { base: 'Books', path: `${ORPHAN}/cover.png`, size: 20 },
+    ]);
+  });
+
+  it('never touches a live book dir or root-level library metadata', async () => {
+    const readDirectory = vi
+      .fn()
+      .mockResolvedValue(
+        makeFiles('library.json', 'library.json.bak', `${LIVE}/book.epub`, `${LIVE}/config.json`),
+      );
+    const appService = { readDirectory } as unknown as AppService;
+
+    expect(await getOrphanedBookEntries(appService, [makeBook(LIVE)])).toEqual([]);
+  });
+
+  it('flags only lingering book files in a soft-deleted book dir', async () => {
+    // A plain delete keeps cover.png and config.json on purpose (a re-download
+    // resumes with them); a book file left there is the leftover to reclaim.
+    const readDirectory = vi
+      .fn()
+      .mockResolvedValue(
+        makeFiles(`${DELETED}/book.pdf`, `${DELETED}/cover.png`, `${DELETED}/config.json`),
+      );
+    const appService = { readDirectory } as unknown as AppService;
+
+    const entries = await getOrphanedBookEntries(appService, [makeBook(DELETED, 5000)]);
+
+    expect(entries).toEqual([{ base: 'Books', path: `${DELETED}/book.pdf`, size: 10 }]);
+  });
+
+  it('handles Windows backslash paths', async () => {
+    const readDirectory = vi
+      .fn()
+      .mockResolvedValue(makeFiles(`${LIVE}\\book.epub`, `${ORPHAN}\\book.epub`));
+    const appService = { readDirectory } as unknown as AppService;
+
+    const entries = await getOrphanedBookEntries(appService, [makeBook(LIVE)]);
+
+    expect(entries).toEqual([{ base: 'Books', path: `${ORPHAN}\\book.epub`, size: 20 }]);
+  });
+
+  it('contributes nothing when the Books dir cannot be read', async () => {
+    const readDirectory = vi.fn().mockRejectedValue(new Error('unreadable'));
+    const appService = { readDirectory } as unknown as AppService;
+
+    expect(await getOrphanedBookEntries(appService, [])).toEqual([]);
+  });
+});
 
 describe('getCacheStats', () => {
   it('sums file count and byte size', () => {

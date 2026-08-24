@@ -2135,5 +2135,7 @@
   "Audiobookshelf server not found": "Audiobookshelfサーバーが見つかりません",
   "Episode not found": "エピソードが見つかりません",
   "Words per minute": "1分あたりの単語数",
-  "View Book Cover": "書籍のカバーを表示"
+  "View Book Cover": "書籍のカバーを表示",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "ライブラリにない孤立した本のファイル {{count}} 件を含みます",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "すべてのキャッシュファイルと、ライブラリにない孤立した本のファイルを削除します。この操作は取り消せません。"
 }

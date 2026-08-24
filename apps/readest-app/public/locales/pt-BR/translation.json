@@ -2253,5 +2253,9 @@
   "Audiobookshelf server not found": "Servidor Audiobookshelf não encontrado",
   "Episode not found": "Episódio não encontrado",
   "Words per minute": "Palavras por minuto",
-  "View Book Cover": "Ver capa do livro"
+  "View Book Cover": "Ver capa do livro",
+  "Includes {{count}} orphaned book file(s) not in your library_one": "Inclui {{count}} arquivo de livro órfão que não está na sua biblioteca",
+  "Includes {{count}} orphaned book file(s) not in your library_many": "Inclui {{count}} arquivos de livro órfãos que não estão na sua biblioteca",
+  "Includes {{count}} orphaned book file(s) not in your library_other": "Inclui {{count}} arquivos de livro órfãos que não estão na sua biblioteca",
+  "This will delete all cached files and orphaned book files not in your library. This cannot be undone.": "Isso excluirá todos os arquivos em cache e os arquivos de livro órfãos que não estão na sua biblioteca. Esta ação não pode ser desfeita."
 }
