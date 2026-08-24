@@ -111,6 +111,9 @@ async function sweepOrphans(
 }
 
 const DAY_MS = 86400000;
+// PostgREST caps every response at db-max-rows (1000 on Supabase); one RPC call
+// can never return more, so segments are assembled from sub-pages of this size.
+const RPC_PAGE = 1000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
@@ -230,25 +233,41 @@ export async function POST(request: Request) {
       let from = c.archived_to;
       let archivedAny = false;
       for (let i = 0; i < cfg.segmentsPerUser; i++) {
-        const { data: rowsData, error: rowsErr } = await supabase.rpc('stat_archive_rows', {
-          p_user: userId,
-          p_from: from,
-          p_window: window,
-          p_limit: cfg.segmentRows,
-        });
-        if (rowsErr) throw rowsErr;
-        const rows = (rowsData ?? []) as HotRow[];
+        // PostgREST truncates every RPC response at db-max-rows (1000 on
+        // Supabase), so a segment is ASSEMBLED from sub-pages of at most
+        // RPC_PAGE rows. stat_archive_rows (migration 021) makes every
+        // sub-page end at a complete millisecond, so each sub-boundary is a
+        // safe p_from and the final boundary is a safe commit range end. The
+        // sub-page loop only treats an EMPTY page as "drained": a short page
+        // can simply mean the trailing millisecond was trimmed.
+        const rows: HotRow[] = [];
+        let subFrom = from;
+        for (;;) {
+          const want = Math.min(RPC_PAGE, cfg.segmentRows - rows.length);
+          if (want <= 0) break;
+          const { data: pageData, error: rowsErr } = await supabase.rpc('stat_archive_rows', {
+            p_user: userId,
+            p_from: subFrom,
+            p_window: window,
+            p_limit: want,
+          });
+          if (rowsErr) throw rowsErr;
+          const page = (pageData ?? []) as HotRow[];
+          if (page.length === 0) break;
+          rows.push(...page);
+          subFrom = page[page.length - 1]!.updated_at;
+        }
         if (rows.length === 0) break;
-        // The RPC returns rows in updated_at order; the last one bounds the
+        // The sub-pages arrive in updated_at order; the last row bounds the
         // segment. Keep its exact (microsecond) timestamp for the commit and the
         // truncated millisecond for the segment/key.
         const toIso = rows[rows.length - 1]!.updated_at;
         const toMs = tsToMs(toIso);
-        // stat_archive_rows extends every segment to the end of its last
-        // millisecond, so consecutive segments always end in strictly later
-        // milliseconds and the ms-keyed object names cannot collide. Fail loud
-        // (this user only) if that SQL invariant ever regresses, instead of
-        // silently overwriting the previous object.
+        // stat_archive_rows ends every page at a complete millisecond, so
+        // consecutive segments always end in strictly later milliseconds and
+        // the ms-keyed object names cannot collide. Fail loud (this user only)
+        // if that SQL invariant ever regresses, instead of silently
+        // overwriting the previous object.
         if (toMs <= tsToMs(from)) {
           throw new Error(
             `segment boundary did not advance past the previous millisecond for ${userId}`,
@@ -287,13 +306,23 @@ export async function POST(request: Request) {
           p_bytes: bytes,
         });
         if (commitErr) {
-          if ((commitErr as { code?: string }).code === '40001') {
+          const code = (commitErr as { code?: string }).code;
+          if (code === '40001') {
             // Lost the compare-and-set: another run owns this user right now.
             console.info('stats compact: lost CAS for user, skipping', userId);
             break;
           }
+          if (
+            code === 'P0001' &&
+            String((commitErr as { message?: string }).message ?? '').includes('segment holds')
+          ) {
+            // The commit refused a row-count mismatch and rolled back
+            // (migration 021): nothing was lost, the object stays for a retry.
+            s.commit_mismatches++;
+          }
           throw commitErr;
         }
+        // Belt: the SQL refuses mismatches before this can be non-zero.
         if (Number(deleted) !== rows.length) s.commit_mismatches++;
         s.segments++;
         s.rows += rows.length;

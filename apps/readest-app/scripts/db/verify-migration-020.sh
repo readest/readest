@@ -54,6 +54,7 @@ SQL
 $PSQL -f "$MIGRATIONS/014_add_reading_stats.sql"
 $PSQL -f "$MIGRATIONS/019_stat_pages_upsert_rpc.sql"
 $PSQL -f "$MIGRATIONS/020_stat_archives.sql"
+$PSQL -f "$MIGRATIONS/021_stat_archive_row_cap.sql"
 
 # Seed: u1 has 30 old rows (3 per ms over 10 ms, 40 days ago; the 2nd ms also
 # holds a row 400 microseconds later, i.e. same millisecond, different
@@ -104,33 +105,57 @@ declare r record; begin
   raise notice 'ok 2: candidate counts';
 end \$\$;
 
--- 3. rows: limit 4 lands inside the 2nd millisecond (3 rows at +1.0 ms plus one
---    at +1.4 ms) -> extended to the whole millisecond: 3 + 4 = 7 rows, 2 distinct ms
+-- 3. rows (migration 021 trim semantics): a limit landing inside a millisecond
+--    TRIMS the whole trailing millisecond (loss-proof under any proxy row cap);
+--    a page that provably holds the entire trailing millisecond keeps it; a page
+--    entirely inside one millisecond extends to the whole millisecond.
 do \$\$
-declare n int; d int; begin
+declare n int; d int; t0 timestamptz; begin
+  -- limit 4 cuts inside the 2nd ms (3 rows at +1.0ms, 1 at +1.4ms): trim to ms0
   select count(*), count(distinct date_trunc('milliseconds', updated_at)) into n, d
     from public.stat_archive_rows('$U1', 'epoch', '7 days', 4);
-  assert n = 7 and d = 2, format('rows=%s ms=%s', n, d);
+  assert n = 3 and d = 1, format('trim: rows=%s ms=%s', n, d);
+  -- limit 5 still cuts inside the run of equal timestamps: same trim
+  select count(*) into n from public.stat_archive_rows('$U1', 'epoch', '7 days', 5);
+  assert n = 3, format('trim equal-ts run: rows=%s', n);
+  -- limit 7 covers the whole 2nd millisecond: kept
+  select count(*), count(distinct date_trunc('milliseconds', updated_at)) into n, d
+    from public.stat_archive_rows('$U1', 'epoch', '7 days', 7);
+  assert n = 7 and d = 2, format('covered ms kept: rows=%s ms=%s', n, d);
+  -- page entirely inside one millisecond: extend to the whole millisecond
+  select max(updated_at) into t0 from public.stat_archive_rows('$U1', 'epoch', '7 days', 3);
+  select count(*) into n from public.stat_archive_rows('$U1', t0, '7 days', 2);
+  assert n = 4, format('single-ms page extends: rows=%s', n);
+  -- large limit returns everything eligible (hot rows excluded by the window)
   select count(*) into n from public.stat_archive_rows('$U1', 'epoch', '7 days', 100);
-  assert n = 31, format('all eligible %s', n);  -- hot rows excluded by the window
-  raise notice 'ok 3: segment rows extend to the trailing millisecond';
+  assert n = 31, format('all eligible %s', n);
+  raise notice 'ok 3: segment rows trim to complete milliseconds';
 end \$\$;
 
--- 4. commit: deletes exactly (from, to], returns the count, CAS protects against a second committer
+-- 4. commit: deletes exactly (from, to], returns the count, CAS protects against
+--    a second committer, and a row-count mismatch REFUSES and rolls back
 do \$\$
 declare t_to timestamptz; n int; begin
   select max(updated_at) into t_to from public.stat_archive_rows('$U1', 'epoch', '7 days', 4);
-  n := public.stat_archive_commit('$U1', 'stats/v1/u1/seg1.json', 'epoch', t_to, 7, 123);
-  assert n = 7, format('deleted %s', n);
-  assert (select count(*) from public.stat_pages where user_id = '$U1') = 29;
+  -- refusal first: declaring the wrong row count must roll everything back
+  begin
+    perform public.stat_archive_commit('$U1', 'stats/v1/u1/seg1-bad.json', 'epoch', t_to, 2, 123);
+    raise exception 'mismatched commit must fail';
+  exception when sqlstate 'P0001' then null;
+  end;
+  assert (select count(*) from public.stat_archives where user_id = '$U1') = 0, 'refused commit left no manifest';
+  assert (select count(*) from public.stat_pages where user_id = '$U1') = 36, 'refused commit deleted nothing';
+  n := public.stat_archive_commit('$U1', 'stats/v1/u1/seg1.json', 'epoch', t_to, 3, 123);
+  assert n = 3, format('deleted %s', n);
+  assert (select count(*) from public.stat_pages where user_id = '$U1') = 33;
   assert (select archived_to from public.stat_archive_candidate('$U1', '7 days')) = t_to;
   begin
-    perform public.stat_archive_commit('$U1', 'stats/v1/u1/seg1-dup.json', 'epoch', t_to, 7, 123);
+    perform public.stat_archive_commit('$U1', 'stats/v1/u1/seg1-dup.json', 'epoch', t_to, 3, 123);
     raise exception 'second committer must fail';
   exception when sqlstate '40001' then null;
   end;
   assert (select count(*) from public.stat_archives where user_id = '$U1') = 1;
-  raise notice 'ok 4: commit range delete + CAS 40001';
+  raise notice 'ok 4: commit range delete + mismatch refusal + CAS 40001';
 end \$\$;
 
 -- 5. a follow-up segment resumes from archived_to and drains the rest
@@ -138,8 +163,8 @@ do \$\$
 declare t_from timestamptz; t_to timestamptz; n int; begin
   select archived_to into t_from from public.stat_archive_candidate('$U1', '7 days');
   select max(updated_at) into t_to from public.stat_archive_rows('$U1', t_from, '7 days', 1000);
-  n := public.stat_archive_commit('$U1', 'stats/v1/u1/seg2.json', t_from, t_to, 24, 456);
-  assert n = 24, format('deleted %s', n);
+  n := public.stat_archive_commit('$U1', 'stats/v1/u1/seg2.json', t_from, t_to, 28, 456);
+  assert n = 28, format('deleted %s', n);
   assert (select eligible from public.stat_archive_candidate('$U1', '7 days')) = 0;
   assert (select hot_total from public.stat_archive_candidate('$U1', '7 days')) = 5, 'hot rows untouched';
   raise notice 'ok 5: second segment drains the backlog, hot rows untouched';
