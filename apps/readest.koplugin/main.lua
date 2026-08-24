@@ -22,10 +22,12 @@ local ReadestSync = WidgetContainer:new{
 }
 
 local API_CALL_DEBOUNCE_DELAY = 30
--- Delay before the on-open pull runs, so the reader paints and becomes
--- interactive first and rapid book switching coalesces to a single pull for
--- the book you settle on, instead of stacking blocking round-trips (#5006).
-local READER_READY_PULL_DELAY = 1
+-- Delay before a background pull runs (book open, device wake, network back).
+-- Lets the reader paint and become interactive first, gives Wi-Fi a moment to
+-- settle after wake (kosync uses the same 1s), and coalesces rapid triggers
+-- into a single pull for the book you settle on instead of stacking blocking
+-- round-trips (#5006).
+local BACKGROUND_PULL_DELAY = 1
 local SUPABAE_ANON_KEY_BASE64 = "ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW5aaWMzbDRablZ6YW1weFpIaHJhbkZzZVhOaklpd2ljbTlzWlNJNkltRnViMjRpTENKcFlYUWlPakUzTXpReE1qTTJOekVzSW1WNGNDSTZNakEwT1RZNU9UWTNNWDAuM1U1VXFhb3VfMVNnclZlMWVvOXJBcGMwdUtqcWhwUWRVWGh2d1VIbVVmZw=="
 
 ReadestSync.default_settings = {
@@ -102,21 +104,27 @@ end
 
 function ReadestSync:onReaderReady()
     if self.settings.auto_sync and self.settings.access_token then
-        -- Defer the per-book pull so the reader is interactive first, and keep a
-        -- handle so a rapid book switch cancels it (onCloseWidget) instead of
-        -- stacking blocking round-trips on the UI thread (issue #5006).
-        if self.reader_ready_pull_task then
-            UIManager:unschedule(self.reader_ready_pull_task)
-        end
-        self.reader_ready_pull_task = function()
-            self.reader_ready_pull_task = nil
-            self:pullBookConfig(false)
-            self:pullBookNotes(false)
-            self:pullBookStats(false)
-        end
-        UIManager:scheduleIn(READER_READY_PULL_DELAY, self.reader_ready_pull_task)
+        -- Defer the per-book pull so the reader is interactive first (issue #5006).
+        self:scheduleBackgroundPull(BACKGROUND_PULL_DELAY)
     end
     self:onDispatcherRegisterReaderActions()
+end
+
+-- Schedule the background pull of the open book's config, notes and stats.
+-- One handle for every trigger (book open, device wake, network back), so
+-- rapid events coalesce into a single pull instead of stacking blocking
+-- round-trips on the UI thread, and onCloseWidget cancels whatever is pending.
+function ReadestSync:scheduleBackgroundPull(delay)
+    if self.background_pull_task then
+        UIManager:unschedule(self.background_pull_task)
+    end
+    self.background_pull_task = function()
+        self.background_pull_task = nil
+        self:pullBookConfig(false)
+        self:pullBookNotes(false)
+        self:pullBookStats(false)
+    end
+    UIManager:scheduleIn(delay, self.background_pull_task)
 end
 
 -- Reverse-lookup table: file extension (lowercase) → Readest format
@@ -769,6 +777,36 @@ function ReadestSync:showSyncInfo()
     })
 end
 
+-- Gate a pull on connectivity. Returns true when the caller must stop
+-- (offline), false to proceed.
+--
+-- Interactive pulls (menu tap / gesture) go through
+-- NetworkMgr:willRerunWhenOnline, which brings Wi-Fi up per KOReader's
+-- "Action when Wi-Fi is off" setting and reruns the call once connected,
+-- like every other interactive network action in KOReader.
+--
+-- Background pulls (auto sync on book open / device wake) never bring Wi-Fi
+-- up, the same as background pushes. On devices where KOReader drives the
+-- radio (Kobo, Kindle, PocketBook, …) that bring-up is modal on the UI
+-- thread: "prompt" asks on every wake (#4113, #2137) and "turn on" shows an
+-- uncancellable "Connecting to Wi-Fi…" / "Scanning for networks…" for ~30 s
+-- when no known access point is in range (#5838). When offline, a background
+-- pull skips silently, remembers that it skipped, and onNetworkConnected
+-- reruns it once the device is back online (KOReader broadcasts
+-- NetworkConnected after its own silent "Restore Wi-Fi connection on resume"
+-- completes, and after a manual toggle).
+function ReadestSync:willRerunPullWhenOnline(interactive, callback)
+    if interactive then
+        return NetworkMgr:willRerunWhenOnline(callback)
+    end
+    if NetworkMgr:isOnline() then
+        return false
+    end
+    logger.dbg("ReadestSync: offline; skipping background pull until NetworkConnected")
+    self.pull_pending_offline = true
+    return true
+end
+
 -- ── Config sync ────────────────────────────────────────────────────
 
 function ReadestSync:pushBookConfig(interactive)
@@ -793,7 +831,7 @@ function ReadestSync:pullBookConfig(interactive)
     local book_hash, meta_hash = self:getBookIdentifiers()
     if not book_hash or not meta_hash then return end
 
-    if NetworkMgr:willRerunWhenOnline(function() self:pullBookConfig(interactive) end) then
+    if self:willRerunPullWhenOnline(interactive, function() self:pullBookConfig(interactive) end) then
         return
     end
 
@@ -823,7 +861,7 @@ end
 
 function ReadestSync:pullBookStats(interactive)
     logger.dbg("ReadestStats pullBookStats: triggered, interactive=" .. tostring(interactive))
-    if NetworkMgr:willRerunWhenOnline(function() self:pullBookStats(interactive) end) then
+    if self:willRerunPullWhenOnline(interactive, function() self:pullBookStats(interactive) end) then
         return
     end
     local client = self:ensureClient(interactive)
@@ -852,7 +890,7 @@ function ReadestSync:pullBookNotes(interactive, full_sync)
     local book_hash, meta_hash = self:getBookIdentifiers()
     if not book_hash or not meta_hash then return end
 
-    if NetworkMgr:willRerunWhenOnline(function() self:pullBookNotes(interactive, full_sync) end) then
+    if self:willRerunPullWhenOnline(interactive, function() self:pullBookNotes(interactive, full_sync) end) then
         return
     end
 
@@ -1054,14 +1092,24 @@ function ReadestSync:pushOpenBook(interactive)
 end
 
 function ReadestSync:onCloseDocument()
-    if self.settings.auto_sync and self.settings.access_token then
-        NetworkMgr:goOnlineToRun(function()
-            self:pushBookConfig(false)
-            self:pushBookNotes(false)
-            self:pushBookStats(false)
-            self:pushOpenBook(false)
-        end)
+    if not (self.settings.auto_sync and self.settings.access_token) then
+        return
     end
+    -- Like the background pulls, the close-time push never brings Wi-Fi up.
+    -- It used to go through NetworkMgr:goOnlineToRun, which with "Action when
+    -- Wi-Fi is off: turn on" blocks the UI thread on a Wi-Fi scan when no
+    -- known access point is in range (#5838), and with "prompt" silently did
+    -- nothing anyway. What was read offline reaches the server with the next
+    -- online push: progress on the next page turn, notes and stats from their
+    -- sync cursors.
+    if not NetworkMgr:isOnline() then
+        logger.dbg("ReadestSync: offline; skipping close-time push")
+        return
+    end
+    self:pushBookConfig(false)
+    self:pushBookNotes(false)
+    self:pushBookStats(false)
+    self:pushOpenBook(false)
 end
 
 function ReadestSync:onReadestPushBooks()
@@ -1086,10 +1134,12 @@ end
 
 -- Waking the device with a book already open should pull like reopening
 -- the book does (issue #4924). Delayed because Wi-Fi is usually still
--- coming back up right after wake (kosync uses the same 1s delay); the
--- pull helpers rerun themselves when online if that isn't enough. On
--- devices where Suspend/Resume also fire on focus changes (Android),
--- the debounce keeps this from hammering the API.
+-- coming back up right after wake; if it isn't back yet the pull skips and
+-- onNetworkConnected reruns it (KOReader turns Wi-Fi off on suspend, so on
+-- Kobo/Kindle that rerun, once "Restore Wi-Fi connection on resume" has
+-- finished, is the path that actually pulls). On devices where
+-- Suspend/Resume also fire on focus changes (Android), the debounce keeps
+-- this from hammering the API.
 function ReadestSync:onResume()
     -- Guarded because some tests construct a plugin table without calling
     -- init() (see onCloseWidget). The service kept running while suspended
@@ -1107,16 +1157,7 @@ function ReadestSync:onResume()
         return
     end
     self.last_resume_sync_timestamp = now
-    if self.resume_pull_task then
-        UIManager:unschedule(self.resume_pull_task)
-    end
-    self.resume_pull_task = function()
-        self.resume_pull_task = nil
-        self:pullBookConfig(false)
-        self:pullBookNotes(false)
-        self:pullBookStats(false)
-    end
-    UIManager:scheduleIn(1, self.resume_pull_task)
+    self:scheduleBackgroundPull(BACKGROUND_PULL_DELAY)
 end
 
 function ReadestSync:onAnnotationsModified(items)
@@ -1139,6 +1180,16 @@ function ReadestSync:onNetworkConnected()
     if self.settings.localsend_enabled then
         self.localsend:startService()
     end
+    -- A background pull (open / wake) was skipped while offline, see
+    -- willRerunPullWhenOnline. Now that the device is online, run it.
+    if not self.pull_pending_offline then
+        return
+    end
+    if not (self.settings.auto_sync and self.settings.access_token and self.ui.document) then
+        return
+    end
+    self.pull_pending_offline = nil
+    self:scheduleBackgroundPull(BACKGROUND_PULL_DELAY)
 end
 
 function ReadestSync:onNetworkDisconnected()
@@ -1154,14 +1205,13 @@ function ReadestSync:onCloseWidget()
         UIManager:unschedule(self.delayed_push_task)
         self.delayed_push_task = nil
     end
-    if self.resume_pull_task then
-        UIManager:unschedule(self.resume_pull_task)
-        self.resume_pull_task = nil
+    if self.background_pull_task then
+        UIManager:unschedule(self.background_pull_task)
+        self.background_pull_task = nil
     end
-    if self.reader_ready_pull_task then
-        UIManager:unschedule(self.reader_ready_pull_task)
-        self.reader_ready_pull_task = nil
-    end
+    -- A skipped pull belongs to the document that was open at the time; the
+    -- next open pulls on its own, so don't carry the flag across books.
+    self.pull_pending_offline = nil
     -- The LocalSend poll belongs to the singleton service, not to this
     -- plugin instance, and its closure captures the singleton (which
     -- survives context switches). Tearing it down here raced the next
