@@ -70,16 +70,23 @@ Objects are immutable and are **never deleted by the compaction path**: after a 
 commit a concurrent winner's manifest may already reference the key, and a retry
 overwrites the same key with identical content. Only account deletion removes objects.
 
-A segment is **assembled from RPC sub-pages** of at most 1000 rows, because PostgREST
-truncates every response at `db-max-rows` and a truncated page must never define a
-boundary. `stat_archive_rows` (migration 021) ends every page at a complete
-millisecond, trimming the trailing millisecond unless the page provably holds all of
-it, so each sub-boundary is safe; only an empty page means the user is drained (a
-short page can simply mean the trailing millisecond was trimmed).
-`stat_archive_commit` refuses (P0001, full rollback) whenever the range's delete count
-differs from the declared segment row count, so any counting bug is loud and lossless;
-the route reports such refusals as `commit_mismatches` plus an error, and in a healthy
-deployment the metric stays 0.
+A segment is **assembled from keyset sub-pages**, because PostgREST truncates every
+response at `db-max-rows` and a truncated page must never define a boundary.
+`stat_archive_rows` (migration 021) is a plain keyset pager over
+`(updated_at, book_hash, page, start_time)`: truncation only shortens a page, the
+caller's cursor comes from rows it actually received, and the tie columns let it
+paginate *inside* a millisecond that holds more rows than one response can carry
+(a restore can land two 500-row chunks, each stamping one `now()`, in one
+millisecond). The compaction route owns the boundary policy: it fetches pages until
+the target size plus a complete millisecond to cut at (or the user is drained), trims
+the trailing millisecond unless it is provably closed (drained and ended at least a
+minute before the window cutoff, so no still-hot row of it can age in later), defers
+a user whose only eligible rows sit in a still-fresh millisecond, and hard-stops a
+pathological single millisecond beyond 50k rows. `stat_archive_commit` refuses
+(P0001, full rollback) whenever the range's delete count differs from the declared
+segment row count, so any counting bug is loud and lossless; the route reports such
+refusals as `commit_mismatches` plus an error, and in a healthy deployment the metric
+stays 0.
 
 ## Compaction policy (wrangler vars, defaults)
 
@@ -137,8 +144,8 @@ Run the shell commands from `apps/readest-app`.
 and then `021_stat_archive_row_cap.sql` into the SQL editor and run them (additive and
 re-runnable: `IF NOT EXISTS`, `CREATE OR REPLACE`, `ON CONFLICT DO NOTHING`). 021 is
 required: it hardens the archive RPCs against PostgREST's 1000-row response cap
-(millisecond-safe trimming in `stat_archive_rows`, row-count refusal in
-`stat_archive_commit`); the 020 versions can lose rows under truncation. Check:
+(`stat_archive_rows` becomes a truncation-proof keyset pager, `stat_archive_commit`
+refuses row-count mismatches); the 020 versions can lose rows under truncation. Check:
 
 ```sql
 select proname from pg_proc where proname in

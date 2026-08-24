@@ -105,38 +105,48 @@ declare r record; begin
   raise notice 'ok 2: candidate counts';
 end \$\$;
 
--- 3. rows (migration 021 trim semantics): a limit landing inside a millisecond
---    TRIMS the whole trailing millisecond (loss-proof under any proxy row cap);
---    a page that provably holds the entire trailing millisecond keeps it; a page
---    entirely inside one millisecond extends to the whole millisecond.
+-- 3. rows (migration 021 keyset pager): pages are plain keyset pages over
+--    (updated_at, book_hash, page, start_time); the tie cursor resumes INSIDE a
+--    run of equal timestamps, so any proxy truncation only shortens a page and
+--    can never skip or repeat rows. Boundary policy lives in the caller.
 do \$\$
-declare n int; d int; t0 timestamptz; begin
-  -- limit 4 cuts inside the 2nd ms (3 rows at +1.0ms, 1 at +1.4ms): trim to ms0
-  select count(*), count(distinct date_trunc('milliseconds', updated_at)) into n, d
-    from public.stat_archive_rows('$U1', 'epoch', '7 days', 4);
-  assert n = 3 and d = 1, format('trim: rows=%s ms=%s', n, d);
-  -- limit 5 still cuts inside the run of equal timestamps: same trim
-  select count(*) into n from public.stat_archive_rows('$U1', 'epoch', '7 days', 5);
-  assert n = 3, format('trim equal-ts run: rows=%s', n);
-  -- limit 7 covers the whole 2nd millisecond: kept
-  select count(*), count(distinct date_trunc('milliseconds', updated_at)) into n, d
-    from public.stat_archive_rows('$U1', 'epoch', '7 days', 7);
-  assert n = 7 and d = 2, format('covered ms kept: rows=%s ms=%s', n, d);
-  -- page entirely inside one millisecond: extend to the whole millisecond
-  select max(updated_at) into t0 from public.stat_archive_rows('$U1', 'epoch', '7 days', 3);
-  select count(*) into n from public.stat_archive_rows('$U1', t0, '7 days', 2);
-  assert n = 4, format('single-ms page extends: rows=%s', n);
+declare n int; t0 timestamptz; b text; p int; st bigint; begin
+  -- plain page: exactly the first 4 rows in order, no trimming
+  select count(*) into n from public.stat_archive_rows('$U1', 'epoch', '7 days', 4);
+  assert n = 4, format('page: rows=%s', n);
+  -- resume inside the equal-timestamp run at +1.0ms via the tie cursor
+  select updated_at, book_hash, page, start_time into t0, b, p, st
+    from public.stat_archive_rows('$U1', 'epoch', '7 days', 4)
+    order by updated_at desc, book_hash desc, page desc, start_time desc limit 1;
+  select count(*) into n
+    from public.stat_archive_rows('$U1', t0, '7 days', 100, b, p, st)
+    where updated_at = t0;
+  assert n = 2, format('tie resume inside equal-ts run: rows=%s', n);  -- 3 rows share +1.0ms, 1 consumed
+  -- without the tie cursor the same p_from skips the rest of the run
+  select count(*) into n
+    from public.stat_archive_rows('$U1', t0, '7 days', 100)
+    where updated_at = t0;
+  assert n = 0, format('no tie, no equal-ts rows: %s', n);
+  -- the pages tile the history exactly: 4 + the tie-resumed remainder = all 31
+  select 4 + count(*) into n from public.stat_archive_rows('$U1', t0, '7 days', 100, b, p, st);
+  assert n = 31, format('tiled total %s', n);
   -- large limit returns everything eligible (hot rows excluded by the window)
   select count(*) into n from public.stat_archive_rows('$U1', 'epoch', '7 days', 100);
   assert n = 31, format('all eligible %s', n);
-  raise notice 'ok 3: segment rows trim to complete milliseconds';
+  raise notice 'ok 3: keyset pages tile the history, ties resume inside a millisecond';
 end \$\$;
 
 -- 4. commit: deletes exactly (from, to], returns the count, CAS protects against
 --    a second committer, and a row-count mismatch REFUSES and rolls back
 do \$\$
 declare t_to timestamptz; n int; begin
-  select max(updated_at) into t_to from public.stat_archive_rows('$U1', 'epoch', '7 days', 4);
+  -- boundary = end of the first millisecond (boundaries are the CALLER's job
+  -- now and must sit at complete milliseconds; computed here with plain SQL)
+  select max(updated_at) into t_to from public.stat_pages
+   where user_id = '$U1'
+     and date_trunc('milliseconds', updated_at) =
+         (select min(date_trunc('milliseconds', updated_at)) from public.stat_pages
+           where user_id = '$U1');
   -- refusal first: declaring the wrong row count must roll everything back
   begin
     perform public.stat_archive_commit('$U1', 'stats/v1/u1/seg1-bad.json', 'epoch', t_to, 2, 123);
