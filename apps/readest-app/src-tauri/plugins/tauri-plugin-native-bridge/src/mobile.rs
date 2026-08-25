@@ -432,7 +432,7 @@ impl<R: Runtime> NativeBridge<R> {
     /// Push an import status into the open browser's banner.
     pub fn set_web_browser_status(&self, payload: WebBrowserStatusRequest) -> crate::Result<()> {
         self.0
-            .run_mobile_plugin::<serde_json::Value>("set_web_browser_status", payload)
+            .run_mobile_plugin::<serde::de::IgnoredAny>("set_web_browser_status", payload)
             .map(|_| ())
             .map_err(Into::into)
     }
