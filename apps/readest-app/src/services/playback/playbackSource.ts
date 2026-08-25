@@ -36,6 +36,12 @@ export interface PlaybackInfo {
   measuredFraction: number;
 }
 
+// The transport's time skips, shared by the audiobook player and a paired
+// audiobook read along: a long hop forward, a shorter one back to re-hear the
+// phrase just missed.
+export const SKIP_FORWARD_SEC = 30;
+export const SKIP_BACKWARD_SEC = 15;
+
 /**
  * The narrow surface ttsMediaBridge and TTSSessionManager consume.
  *

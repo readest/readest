@@ -81,6 +81,12 @@ span; runs crossing spine documents divide the clip into equal chapter slices
 so playback continues instead of restarting the recording at every section
 boundary.
 
+Audiobook chapter lists are often finer than the EPUB's table of contents
+(1, 1.1, 1.2, 2 ...). An audio chapter left without an ebook chapter plays as
+part of the mapped chapter before it in the same file, so the recording is
+heard in full and the page keeps following it proportionally. Audio before
+the first mapped chapter of a file (opening credits, say) is not played.
+
 The wizard reports chapter-count mismatches rather than hiding them. Audio stays
 under `Books/<book hash>/audiobook/`, while the association is stored in that
 book's device-local `config.json`; neither is uploaded by Readest cloud or file
@@ -123,6 +129,14 @@ Two behaviours worth knowing:
   misleading. Readest instead maps the current page proportionally into that
   chapter's audio span when narration starts and offers a return-to-narration
   action if the reader moves elsewhere while audio continues.
+- **Paired audiobooks move by audio.** With no sentences to step by, the
+  transport takes an audio player's vocabulary: the small step is the
+  audiobook player's skip (30 seconds forward, 15 back), the large step moves
+  to the previous or next chapter of the audiobook's own chapter list
+  (backward more than a few seconds into a chapter restarts it), and the
+  lock-screen skip and track buttons do the same. The page turns to another ebook chapter only when the target audio
+  chapter is narrated by a different mapped chapter; a sub-chapter inside the
+  current one is a seek within its text span.
 - **Unnarrated sections are skipped.** Publishers routinely leave front matter,
   indexes and notes out of the recording. Playback steps over those sections
   rather than stalling on silence; starting Read Aloud in unnarrated front
@@ -183,7 +197,10 @@ Consequences of that shape:
   a paired audiobook reports the same clock capabilities with
   `textHighlight: false`. `ensureTimeline`/`supportsPlaybackInfo`/`getPlaybackInfo` gate on
   `mediaClock` rather than comparing against the Edge client — which is what
-  `TTSCapabilities` in `TTSClient.ts` existed for.
+  `TTSCapabilities` in `TTSClient.ts` existed for. `usesAudioTransport`
+  (`mediaClock` without `textHighlight`) is what turns `forward`/`backward`
+  into the time seek and audiobook-chapter skip, so the media session's
+  `seekforward`/`nexttrack` handlers need no special case.
 - **A continuous timeline is handed over, not stopped.** `continuousTimeline`
   tells the controller that consecutive blocks are one recording, so it neither
   pads paragraph transitions with its own delay nor treats the stop between two

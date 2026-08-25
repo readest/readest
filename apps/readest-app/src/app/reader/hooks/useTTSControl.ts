@@ -79,6 +79,15 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   const playbackStateRef = useRef<'playing' | 'paused' | 'stopped'>('stopped');
   const [ttsController, setTtsController] = useState<TTSController | null>(null);
   const [ttsClientsInited, setTtsClientsInitialized] = useState(false);
+  // Whether the transport steps by recording time and audiobook chapter
+  // (paired audiobook) rather than by sentence and paragraph. State, not a
+  // per-render read of the controller: an adopted session flips
+  // ttsClientsInited before its attach resolves, and the mini player would
+  // otherwise keep that first render's sentence labels.
+  const [audioTransport, setAudioTransport] = useState(false);
+  const syncAudioTransport = useCallback(() => {
+    setAudioTransport(ttsControllerRef.current?.usesAudioTransport() ?? false);
+  }, []);
 
   // Broadcast playback transitions on the app-wide bus so consumers that
   // can't read the hook-local isPlaying flag (RSVP, paragraph mode) can react.
@@ -315,6 +324,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         });
         const speakingLang = controller.getSpeakingLang();
         if (speakingLang) setTtsLang(speakingLang);
+        syncAudioTransport();
       } catch (err) {
         console.warn('TTS session adoption failed:', err);
       } finally {
@@ -892,6 +902,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         // .playback/.spokenAudio). The old call set .mixWithOthers, which
         // disqualifies the app from Now Playing and fought the claim.
         setTtsClientsInitialized(false);
+        setAudioTransport(false);
 
         // Show the mini player immediately, in the "playing" state: client
         // init below can take a while and the session is conceptually already
@@ -981,6 +992,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           setIsPlaying(false);
         }
         setTtsClientsInitialized(true);
+        syncAudioTransport();
         setTTSEnabled(bookKey, true);
       } catch (error) {
         setShowIndicator(false);
@@ -1181,6 +1193,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         } else {
           await ttsController.setVoice(voice, lang);
         }
+        syncAudioTransport();
       }
     }, 3000),
     [],
@@ -1254,6 +1267,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     handleSeekPreview,
     handleGetPlaybackInfo,
     handleSupportsPlaybackInfo,
+    audioTransport,
     refreshTtsLang,
     getController,
   };

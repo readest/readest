@@ -12,8 +12,10 @@ import {
   MdPlayArrow,
   MdOutlineFileDownload,
   MdChevronRight,
+  MdSkipNext,
+  MdSkipPrevious,
 } from 'react-icons/md';
-import { RiVoiceAiFill } from 'react-icons/ri';
+import { RiForward30Line, RiReplay15Line, RiVoiceAiFill } from 'react-icons/ri';
 import { useRouter } from 'next/navigation';
 import { TTSVoicesGroup } from '@/services/tts';
 import { MEDIA_OVERLAY_VOICE_ID } from '@/services/tts/mediaOverlay';
@@ -69,6 +71,10 @@ type TTSPlayerSheetProps = {
   ttsLang: string;
   isPlaying: boolean;
   hasTimeline: boolean;
+  // Paired audiobook: the transport skips 30s forward / 15s back through the
+  // recording and moves by audiobook chapter instead of by sentence and
+  // paragraph.
+  audioTransport: boolean;
   timeoutOption: number;
   timeoutTimestamp: number;
   chapterRemainingSec: number | null;
@@ -97,6 +103,7 @@ const TTSPlayerSheet = ({
   ttsLang,
   isPlaying,
   hasTimeline,
+  audioTransport,
   timeoutOption,
   timeoutTimestamp,
   chapterRemainingSec,
@@ -264,6 +271,13 @@ const TTSPlayerSheet = ({
   // vertical space is tight); sub-views keep the back button and their title.
   // Desktop hides the drag handle and has no swipe-to-dismiss, so the main
   // view floats the standard dialog close pill over its top-right corner.
+  // Transport labels by step size: sentence and paragraph for speech, time
+  // skip and audiobook chapter for a paired recording.
+  const prevLargeLabel = audioTransport ? _('Previous Chapter') : _('Previous Paragraph');
+  const prevSmallLabel = audioTransport ? _('Back 15 Seconds') : _('Previous Sentence');
+  const nextSmallLabel = audioTransport ? _('Forward 30 Seconds') : _('Next Sentence');
+  const nextLargeLabel = audioTransport ? _('Next Chapter') : _('Next Paragraph');
+
   const header =
     view === 'main' ? (
       <button
@@ -353,20 +367,28 @@ const TTSPlayerSheet = ({
             <button
               type='button'
               className='rounded-full p-2'
-              title={_('Previous Paragraph')}
-              aria-label={_('Previous Paragraph')}
+              title={prevLargeLabel}
+              aria-label={prevLargeLabel}
               onClick={() => onBackward(false)}
             >
-              <MdKeyboardDoubleArrowLeft size={iconSize24} />
+              {audioTransport ? (
+                <MdSkipPrevious size={iconSize24} />
+              ) : (
+                <MdKeyboardDoubleArrowLeft size={iconSize24} />
+              )}
             </button>
             <button
               type='button'
               className='rounded-full p-2'
-              title={_('Previous Sentence')}
-              aria-label={_('Previous Sentence')}
+              title={prevSmallLabel}
+              aria-label={prevSmallLabel}
               onClick={() => onBackward(true)}
             >
-              <MdKeyboardArrowLeft size={iconSize28} />
+              {audioTransport ? (
+                <RiReplay15Line size={iconSize24} />
+              ) : (
+                <MdKeyboardArrowLeft size={iconSize28} />
+              )}
             </button>
             <button
               type='button'
@@ -379,20 +401,28 @@ const TTSPlayerSheet = ({
             <button
               type='button'
               className='rounded-full p-2'
-              title={_('Next Sentence')}
-              aria-label={_('Next Sentence')}
+              title={nextSmallLabel}
+              aria-label={nextSmallLabel}
               onClick={() => onForward(true)}
             >
-              <MdKeyboardArrowRight size={iconSize28} />
+              {audioTransport ? (
+                <RiForward30Line size={iconSize24} />
+              ) : (
+                <MdKeyboardArrowRight size={iconSize28} />
+              )}
             </button>
             <button
               type='button'
               className='rounded-full p-2'
-              title={_('Next Paragraph')}
-              aria-label={_('Next Paragraph')}
+              title={nextLargeLabel}
+              aria-label={nextLargeLabel}
               onClick={() => onForward(false)}
             >
-              <MdKeyboardDoubleArrowRight size={iconSize24} />
+              {audioTransport ? (
+                <MdSkipNext size={iconSize24} />
+              ) : (
+                <MdKeyboardDoubleArrowRight size={iconSize24} />
+              )}
             </button>
           </div>
           <div className='flex w-full gap-2'>

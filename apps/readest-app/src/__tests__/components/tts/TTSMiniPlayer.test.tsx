@@ -53,6 +53,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   isEink: false,
   visible: true,
   hasTimeline: true,
+  audioTransport: false,
   timeoutTimestamp: 0,
   chapterRemainingSec: null as number | null,
   gridInsets,
@@ -152,6 +153,38 @@ describe('TTSMiniPlayer', () => {
     expect(props.onTogglePlay).toHaveBeenCalled();
     expect(screen.getByLabelText('Next Sentence').closest('[dir="ltr"]')).toBeTruthy();
     expect(screen.getByLabelText('Next Paragraph').closest('[dir="ltr"]')).toBeTruthy();
+  });
+
+  test('a paired audiobook seeks and skips chapters from the same four transport slots', () => {
+    viewSettingsOverride = { ttsPlayerStyle: 'minimal' };
+    const props = makeProps({ audioTransport: true });
+    render(<TTSMiniPlayer {...props} />);
+    for (const label of [
+      'Previous Paragraph',
+      'Previous Sentence',
+      'Next Sentence',
+      'Next Paragraph',
+    ]) {
+      expect(screen.queryByLabelText(label)).toBeNull();
+    }
+    fireEvent.click(screen.getByLabelText('Previous Chapter'));
+    expect(props.onBackward).toHaveBeenCalledWith(false);
+    fireEvent.click(screen.getByLabelText('Back 15 Seconds'));
+    expect(props.onBackward).toHaveBeenCalledWith(true);
+    fireEvent.click(screen.getByLabelText('Forward 30 Seconds'));
+    expect(props.onForward).toHaveBeenCalledWith(true);
+    fireEvent.click(screen.getByLabelText('Next Chapter'));
+    expect(props.onForward).toHaveBeenCalledWith(false);
+  });
+
+  test('full style turns its sentence pair into time skips for a paired audiobook', () => {
+    const props = makeProps({ audioTransport: true });
+    render(<TTSMiniPlayer {...props} />);
+    expect(screen.queryByLabelText('Previous Sentence')).toBeNull();
+    fireEvent.click(screen.getByLabelText('Back 15 Seconds'));
+    expect(props.onBackward).toHaveBeenCalledWith(true);
+    fireEvent.click(screen.getByLabelText('Forward 30 Seconds'));
+    expect(props.onForward).toHaveBeenCalledWith(true);
   });
 
   test('play and pause glyphs share a size so toggling does not shift the row', () => {

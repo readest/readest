@@ -151,6 +151,49 @@ const ABS_PAIRED_AUDIOBOOK: PairedAudiobook = {
   },
 };
 
+// An audiobook whose chapter list is finer than the EPUB's: "One.1" has no
+// TOC entry to map to, so it plays as the tail of Chapter 1's recording.
+const SUB_CHAPTER_AUDIOBOOK: PairedAudiobook = {
+  version: 1,
+  files: [{ id: 'audio-0', name: 'book.m4b', path: 'hash/audiobook/book.m4b', duration: 60 }],
+  chapters: [
+    { id: 'audio-0:0', fileId: 'audio-0', label: 'One', start: 0, end: 30 },
+    { id: 'audio-0:1', fileId: 'audio-0', label: 'One.1', start: 30, end: 45 },
+    { id: 'audio-0:2', fileId: 'audio-0', label: 'Two', start: 45, end: 60 },
+  ],
+  mappings: [
+    { ebookChapterId: 'chapter.xhtml', audioChapterId: 'audio-0:0' },
+    { ebookChapterId: 'last.xhtml', audioChapterId: 'audio-0:2' },
+  ],
+  createdAt: 1,
+};
+
+const makeSubChapterView = () => {
+  const docs = [
+    makeDoc('<p>Front matter.</p>'),
+    makeDoc('<h1>Chapter 1</h1><p>First chapter text.</p>'),
+    makeDoc('<h1>Chapter 2</h1><p>Second chapter text.</p>'),
+  ];
+  return {
+    book: {
+      toc: [
+        { id: 0, label: 'Chapter 1', href: 'chapter.xhtml', index: 0 },
+        { id: 1, label: 'Chapter 2', href: 'last.xhtml', index: 0 },
+      ],
+      sections: docs.map((doc, index) => ({
+        id: ['front.xhtml', 'chapter.xhtml', 'last.xhtml'][index],
+        createDocument: vi.fn().mockResolvedValue(doc),
+      })),
+      splitTOCHref: (href: string) => href.split('#'),
+    },
+    renderer: { getContents: () => [], primaryIndex: 0 },
+    language: { isCJK: false, canonical: 'en' },
+    getCFI: vi.fn().mockReturnValue('epubcfi(/6/2!/4/2)'),
+    resolveCFI: vi.fn().mockReturnValue({ anchor: () => null }),
+    tts: null,
+  } as unknown as FoliateView;
+};
+
 const makePairedView = () => {
   const docs = [makeDoc('<p>Front matter.</p>'), makeDoc('<h1>Chapter 1</h1><p>Text.</p>')];
   return {
@@ -459,6 +502,104 @@ describe('narration selection', () => {
     expect(controller.useNarration).toBe(true);
     // Returning must invalidate again: Edge may have aborted the shared player.
     expect(invalidate).toHaveBeenCalled();
+  });
+});
+
+describe('paired audiobook transport', () => {
+  const appService = {
+    openFile: vi.fn(async () => new File(['audio'], 'book.m4b')),
+    resolveFilePath: vi.fn(async () => '/books/book.m4b'),
+  } as unknown as AppService;
+
+  const startPaired = async () => {
+    const view = makeSubChapterView();
+    const controller = new TTSController(appService, view);
+    controller.pairedAudiobook = SUB_CHAPTER_AUDIOBOOK;
+    await controller.init();
+    await controller.initViewTTS(0);
+    await controller.ensureTimeline();
+    controller.dispatchSpeakMark({ offset: 0, name: '0', text: 'Chapter 1', language: 'en' });
+    // Installed after setup so only the transport's own page turns count.
+    controller.onSectionChange = vi.fn();
+    const client = controller.ttsMediaOverlayClient;
+    const position = vi.spyOn(client, 'getChunkPosition').mockReturnValue(0);
+    const seekWithin = vi.spyOn(client, 'seekToChunkPosition').mockResolvedValue(true);
+    const startAt = vi.spyOn(client, 'setNextChunkPosition');
+    return { controller, position, seekWithin, startAt };
+  };
+
+  test('only a chapter-timed recording drives the transport by audio', async () => {
+    const paired = new TTSController(appService, makeSubChapterView());
+    paired.pairedAudiobook = SUB_CHAPTER_AUDIOBOOK;
+    await paired.init();
+    expect(paired.usesAudioTransport()).toBe(true);
+
+    const overlays = new TTSController(null, makeView([true]));
+    await overlays.init();
+    expect(overlays.usesAudioTransport()).toBe(false);
+
+    const synthesized = new TTSController(null, makeView([false]));
+    await synthesized.init();
+    expect(synthesized.usesAudioTransport()).toBe(false);
+  });
+
+  test('the small step skips 30s forward and 15s back through the recording, whatever the rate', async () => {
+    const { controller, position, seekWithin } = await startPaired();
+
+    await controller.forward(true);
+    expect(seekWithin).toHaveBeenLastCalledWith(30);
+
+    position.mockReturnValue(25);
+    await controller.backward(true);
+    expect(seekWithin).toHaveBeenLastCalledWith(10);
+
+    // The timeline counts seconds at the rate; the skip is recording time.
+    await controller.setRate(2);
+    position.mockReturnValue(10);
+    await controller.forward(true);
+    expect(seekWithin).toHaveBeenLastCalledWith(40);
+
+    position.mockReturnValue(4);
+    await controller.backward(true);
+    expect(seekWithin).toHaveBeenLastCalledWith(0);
+    expect(controller.onSectionChange).not.toHaveBeenCalled();
+  });
+
+  test('the large step walks the audiobook chapters, turning the page only into a mapped one', async () => {
+    const { controller, position, seekWithin, startAt } = await startPaired();
+    const stop = vi.spyOn(controller.ttsMediaOverlayClient, 'stop');
+
+    // Chapter 1 -> One.1: the same recording span, so no restart and no page turn.
+    await controller.forward();
+    expect(seekWithin).toHaveBeenLastCalledWith(30);
+    expect(stop).not.toHaveBeenCalled();
+    expect(controller.onSectionChange).not.toHaveBeenCalled();
+
+    // One.1 -> Two: a mapped chapter in the next section.
+    position.mockReturnValue(30);
+    await controller.forward();
+    expect(controller.onSectionChange).toHaveBeenLastCalledWith(2);
+    expect(startAt).toHaveBeenLastCalledWith(0);
+
+    // Two, five seconds in: backward restarts it.
+    position.mockReturnValue(5);
+    await controller.backward();
+    expect(seekWithin).toHaveBeenLastCalledWith(0);
+
+    // Two, at its start: backward returns to One.1, inside Chapter 1's section.
+    position.mockReturnValue(0);
+    await controller.backward();
+    expect(controller.onSectionChange).toHaveBeenLastCalledWith(1);
+    expect(startAt).toHaveBeenLastCalledWith(30);
+  });
+
+  test('auto-advance still moves by narration block', async () => {
+    const { controller, seekWithin } = await startPaired();
+
+    await controller.forward(false, true);
+
+    expect(seekWithin).not.toHaveBeenCalled();
+    expect(controller.onSectionChange).toHaveBeenLastCalledWith(2);
   });
 });
 
