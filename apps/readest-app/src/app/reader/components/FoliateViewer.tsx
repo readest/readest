@@ -85,6 +85,7 @@ import { isMetered } from '@/utils/network';
 import { eventDispatcher } from '@/utils/event';
 import { isFontType } from '@/utils/font';
 import { getScrollGapAttr } from '@/utils/webtoon';
+import { observeDynamicResources } from '@/utils/dynamicResources';
 import { useMiddleClickAutoscroll } from '../hooks/useMiddleClickAutoscroll';
 import { useAutoScroll } from '../hooks/useAutoScroll';
 import { useAutoScrollSpeedGesture } from '../hooks/useAutoScrollSpeedGesture';
@@ -404,6 +405,13 @@ const FoliateViewer: React.FC<{
         skipToNextSectionCallback: skipToNextSection,
         skipToNextSectionLabel: _('End of this section. Continue to the next.'),
       });
+
+      if (viewSettings.allowScript) {
+        // Book scripts may add media, or a background image, with a path
+        // relative to the section long after foliate's load-time URL rewrite.
+        const section = bookDoc.sections?.[detail.index];
+        if (section?.loadHref) observeDynamicResources(detail.doc, section.loadHref);
+      }
 
       // Inline scripts in tauri platforms are not executed by default
       if (viewSettings.allowScript && isTauriAppPlatform()) {
