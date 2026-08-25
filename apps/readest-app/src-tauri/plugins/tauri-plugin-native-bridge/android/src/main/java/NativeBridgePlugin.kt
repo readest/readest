@@ -1404,7 +1404,15 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             withContext(Dispatchers.IO) {
                 val books = org.json.JSONArray()
                 for (book in args.books) {
-                    ReadingWidgetStore.writeThumbnail(activity, book.hash, book.coverPath, book.percent)
+                    // A thumbnail failure must never escape pluginScope: an
+                    // uncaught exception here kills the process, and the
+                    // snapshot is republished on every library load, so one
+                    // bad cover would crash the app on every launch.
+                    try {
+                        ReadingWidgetStore.writeThumbnail(activity, book.hash, book.coverPath, book.percent)
+                    } catch (e: Exception) {
+                        Log.w("NativeBridgePlugin", "widget thumbnail failed for ${book.hash}", e)
+                    }
                     books.put(
                         org.json.JSONObject()
                             .put("hash", book.hash)
