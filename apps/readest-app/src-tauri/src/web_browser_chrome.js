@@ -23,6 +23,7 @@
       ':host{all:initial;}' +
       '.pill{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2147483647;' +
       'display:flex;align-items:center;gap:4px;padding:4px 6px;border-radius:999px;' +
+      'box-sizing:border-box;max-width:calc(100vw - 24px);' +
       'background:' +
       BG +
       ';color:' +
@@ -36,11 +37,12 @@
       '.btn{appearance:none;border:0;background:transparent;color:' +
       FG +
       ';width:32px;height:32px;border-radius:999px;' +
-      'display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;padding:0;margin:0;}' +
+      'display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;padding:0;margin:0;flex:none;}' +
       '.btn:hover{background:rgba(128,128,128,.18);}' +
-      '.status{display:none;align-items:center;gap:8px;padding:0 8px;max-width:48vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+      '.status{display:none;align-items:center;gap:8px;padding:0 8px;min-width:0;flex:0 1 auto;}' +
       '.status.show{display:inline-flex;}' +
-      '.open{appearance:none;border:0;border-radius:999px;padding:4px 12px;background:' +
+      '.status-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:0 1 auto;}' +
+      '.open{appearance:none;border:0;border-radius:999px;padding:4px 12px;flex:none;white-space:nowrap;background:' +
       FG +
       ';color:' +
       BG +
@@ -91,7 +93,7 @@
       location.reload();
     });
     refs.status = el('span', 'status');
-    refs.statusText = el('span');
+    refs.statusText = el('span', 'status-text');
     refs.open = el('button', 'open', label('open', 'Open'));
     refs.open.type = 'button';
     refs.open.hidden = true;

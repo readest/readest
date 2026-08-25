@@ -496,4 +496,27 @@ mod tests {
         assert!(js.contains("readest-browser.invalid"));
         assert!(js.contains("__readestBrowser"));
     }
+
+    // Regression guard for #5775: a long download filename must ellipsize the
+    // status text instead of clipping the [Open] button. That needs the
+    // ellipsis on a shrinkable text child plus a non-shrinking Open button,
+    // not `text-overflow` on the flex container, where it has no effect.
+    #[cfg(desktop)]
+    #[test]
+    fn chrome_script_keeps_open_button_from_clipping() {
+        let js = chrome_script(&WebBrowserOptions::default());
+        // The filename lives in a dedicated span that ellipsizes...
+        assert!(js.contains(".status-text{"));
+        assert!(js.contains("text-overflow:ellipsis"));
+        // ...and the Open button never shrinks away (flex:none in its rule).
+        let open_rule = js
+            .split(".open{")
+            .nth(1)
+            .and_then(|rest| rest.split('}').next())
+            .expect("chrome CSS defines an .open rule");
+        assert!(
+            open_rule.contains("flex:none"),
+            "the Open button must not shrink/clip: {open_rule}"
+        );
+    }
 }
