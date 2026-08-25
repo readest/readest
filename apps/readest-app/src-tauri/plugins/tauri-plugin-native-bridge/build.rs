@@ -38,6 +38,8 @@ const COMMANDS: &[&str] = &[
     "checkPermissions",
     "requestPermissions",
     "clip_url",
+    "open_web_browser",
+    "set_web_browser_status",
     "set_secure_item",
     "get_secure_item",
     "clear_secure_item",

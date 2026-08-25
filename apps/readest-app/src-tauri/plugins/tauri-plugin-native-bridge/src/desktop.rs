@@ -322,6 +322,22 @@ impl<R: Runtime> NativeBridge<R> {
         ))
     }
 
+    pub fn open_web_browser(
+        &self,
+        _payload: WebBrowserRequest,
+    ) -> crate::Result<WebBrowserResponse> {
+        Err(crate::Error::NativeBridgeError(
+            "open_web_browser plugin is mobile-only; desktop callers should invoke the top-level command"
+                .to_string(),
+        ))
+    }
+
+    pub fn set_web_browser_status(&self, _payload: WebBrowserStatusRequest) -> crate::Result<()> {
+        Err(crate::Error::NativeBridgeError(
+            "set_web_browser_status plugin is mobile-only".to_string(),
+        ))
+    }
+
     /// Share-Extension clip files only exist in the iOS App Group
     /// container — desktop has no share extension.
     pub fn read_share_clip_html(

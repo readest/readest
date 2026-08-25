@@ -40,6 +40,7 @@ mod sentry_config;
 mod spawn_fresh_browser;
 mod transfer_file;
 #[cfg(desktop)]
+mod web_browser;
 mod window_state;
 #[cfg(target_os = "windows")]
 use tauri::webview::ScrollBarStyle;
@@ -433,6 +434,8 @@ pub fn run() {
             #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
             discord_rpc::clear_book_presence,
             clip_url::clip_url,
+            web_browser::open_web_browser,
+            web_browser::set_web_browser_status,
             localsend::commands::localsend_start,
             localsend::commands::localsend_stop,
             localsend::commands::localsend_get_status,
