@@ -57,6 +57,25 @@ export const usePullToRefresh = (
 
       el.addEventListener('touchmove', handleTouchMove, { passive: true });
       el.addEventListener('touchend', handleTouchEnd);
+      el.addEventListener('touchcancel', handleTouchCancel);
+
+      function detachGesture() {
+        el!.removeEventListener('touchmove', handleTouchMove);
+        el!.removeEventListener('touchend', handleTouchEnd);
+        el!.removeEventListener('touchcancel', handleTouchCancel);
+      }
+
+      // The browser can cancel a touch (a system gesture, a native scroll
+      // takeover), and touchend never fires then: snap back and let go of
+      // the gesture without refreshing.
+      function handleTouchCancel() {
+        detachGesture();
+        hideLoadingSpinner(el!.parentNode as HTMLDivElement);
+        for (const wrapper of nativeBounce ? [] : getWrappers(el!)) {
+          wrapper.style.transition = SNAP_BACK_TRANSITION;
+          wrapper.style.transform = 'translateY(0)';
+        }
+      }
 
       function handleTouchMove(moveEvent: TouchEvent) {
         const el = ref.current;
@@ -159,8 +178,7 @@ export const usePullToRefresh = (
         const y = endEvent.changedTouches[0]!.clientY;
         const dy = y - initialY;
 
-        el.removeEventListener('touchmove', handleTouchMove);
-        el.removeEventListener('touchend', handleTouchEnd);
+        detachGesture();
         if (!atTop && !bottomPull) return;
 
         const isStage2 = onTriggerStage2 && dy > TRIGGER_THRESHOLD_STAGE2;

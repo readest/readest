@@ -161,6 +161,44 @@ describe('usePullToRefresh', () => {
     expect(getByTestId('book-grid').style.transform).toBe('');
   });
 
+  // A cancelled touch never reaches touchend, so the pull must snap back and
+  // let go of its move/end listeners from touchcancel, without refreshing.
+  it('snaps back and detaches when the browser cancels the touch', () => {
+    mockPlatform(ANDROID_UA);
+    const onRefresh = vi.fn();
+    const { getByTestId } = render(<Harness onRefresh={onRefresh} />);
+    const scroller = getByTestId('scroller');
+    mockScrollMetrics(scroller, { scrollTop: 1200, scrollHeight: 2000, clientHeight: 800 });
+
+    scroller.dispatchEvent(touchEvent('touchstart', 0, 300));
+    scroller.dispatchEvent(touchEvent('touchmove', 0, 200));
+    expect(getByTestId('book-grid').style.transform).toMatch(/^translate3d\(0, -.+px, 0\)$/);
+
+    scroller.dispatchEvent(touchEvent('touchcancel', 0, 200));
+
+    expect(getByTestId('book-grid').style.transform).toBe('translateY(0)');
+    expect(onRefresh).not.toHaveBeenCalled();
+
+    // The gesture is over: a stray move must not be handled any more.
+    scroller.dispatchEvent(touchEvent('touchmove', 0, 100));
+    expect(getByTestId('book-grid').style.transform).toBe('translateY(0)');
+  });
+
+  it('hides the spinner when a top pull is cancelled', () => {
+    mockPlatform(ANDROID_UA);
+    const { getByTestId } = render(<Harness onRefresh={() => {}} />);
+    const scroller = getByTestId('scroller');
+
+    scroller.dispatchEvent(touchEvent('touchstart', 0, 0));
+    scroller.dispatchEvent(touchEvent('touchmove', 0, 60));
+    expect(scroller.parentElement!.querySelector('.pull-refresh-loading')).not.toBeNull();
+
+    scroller.dispatchEvent(touchEvent('touchcancel', 0, 60));
+
+    expect(scroller.parentElement!.querySelector('.pull-refresh-loading')).toBeNull();
+    expect(getByTestId('book-grid').style.transform).toBe('translateY(0)');
+  });
+
   it('on iOS leaves the bottom edge to the native bounce', () => {
     mockPlatform(IOS_UA);
     const { getByTestId } = render(<Harness onRefresh={() => {}} />);
