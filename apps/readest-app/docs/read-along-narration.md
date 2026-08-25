@@ -132,11 +132,13 @@ Two behaviours worth knowing:
 - **Paired audiobooks move by audio.** With no sentences to step by, the
   transport takes an audio player's vocabulary: the small step is the
   audiobook player's skip (30 seconds forward, 15 back), the large step moves
-  to the previous or next chapter of the audiobook's own chapter list
+  to the previous or next reachable audiobook chapter, one a mapped chapter's
+  clip covers, so audio before the first mapped chapter stays out of reach
   (backward more than a few seconds into a chapter restarts it), and the
-  lock-screen skip and track buttons do the same. The page turns to another ebook chapter only when the target audio
-  chapter is narrated by a different mapped chapter; a sub-chapter inside the
-  current one is a seek within its text span.
+  lock-screen skip and track buttons do the same. The page turns to another
+  ebook chapter only when the target audio chapter is narrated by a different
+  mapped chapter; a sub-chapter inside the current one is a seek within its
+  text span.
 - **Unnarrated sections are skipped.** Publishers routinely leave front matter,
   indexes and notes out of the recording. Playback steps over those sections
   rather than stalling on silence; starting Read Aloud in unnarrated front

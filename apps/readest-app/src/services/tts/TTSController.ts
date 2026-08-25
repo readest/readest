@@ -940,7 +940,8 @@ export class TTSController extends EventTarget {
   // sentence step used to skip a whole chapter. The transport moves by audio
   // instead — the small step is the audiobook player's time skip
   // (SKIP_FORWARD_SEC / SKIP_BACKWARD_SEC of recording), the large step walks
-  // the audiobook's own chapter list (#5863).
+  // the reachable audiobook chapters, those a mapped chapter's clip covers
+  // (#5863).
   usesAudioTransport(): boolean {
     const capabilities = this.ttsClient.getCapabilities();
     return capabilities.mediaClock && capabilities.textHighlight === false;
@@ -1171,11 +1172,12 @@ export class TTSController extends EventTarget {
     return index < 0 ? null : timeline.positionAt(index, seconds - section.pars[index]!.clipBegin);
   }
 
-  // Skip to the adjacent chapter of the audiobook's own chapter list, which is
-  // often finer than the EPUB's. A chapter inside the section already playing
-  // is a plain seek; one narrated by another section navigates there first —
-  // the page turns only when the recording moves to a different mapped
-  // chapter.
+  // Skip to the adjacent reachable audiobook chapter (narratedAudioChapters:
+  // the ones a mapped chapter's clip covers, often finer than the EPUB's TOC;
+  // audio before the first mapped chapter is not among them). A chapter inside
+  // the section already playing is a plain seek; one narrated by another
+  // section navigates there first — the page turns only when the recording
+  // moves to a different mapped chapter.
   async #stepAudioChapter(direction: 1 | -1): Promise<void> {
     await this.initViewTTS();
     await this.ensureTimeline();
