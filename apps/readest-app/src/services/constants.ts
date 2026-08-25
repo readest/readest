@@ -1053,7 +1053,7 @@ export const TRANSLATED_LANGS = {
   ta: 'தமிழ்',
   si: 'සිංහල',
   'zh-CN': '简体中文',
-  'zh-TW': '正體中文',
+  'zh-TW': '繁體中文',
   ro: 'Română',
   hu: 'Magyar',
   uz: 'Oʻzbek',
