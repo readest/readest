@@ -269,7 +269,15 @@ export default function AuthPage() {
         const now = Date.now();
         localStorage.setItem(lastRedirectAtKey, now.toString());
         if (now - lastRedirectAt > 3000) {
-          router.push(redirectTo ?? '/library');
+          const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
+          let target = redirectTo ?? '/library';
+          if (basePath && target.startsWith(basePath)) {
+            target = target.substring(basePath.length);
+          }
+          if (!target.startsWith('/')) {
+            target = '/' + target;
+          }
+          router.push(target);
         }
       }
     });

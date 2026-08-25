@@ -6,6 +6,7 @@ import { EnvProvider } from '@/context/EnvContext';
 import Providers from '@/components/Providers';
 import { Poppins } from 'next/font/google';
 
+import { READEST_WEB_BASE_URL } from '@/services/constants';
 import '../styles/globals.css';
 
 const poppins = Poppins({
@@ -14,7 +15,7 @@ const poppins = Poppins({
   variable: '--font-poppins',
 });
 
-const url = 'https://web.readest.com/';
+const url = READEST_WEB_BASE_URL.endsWith('/') ? READEST_WEB_BASE_URL : `${READEST_WEB_BASE_URL}/`;
 const title = 'Biblophile — Where You Read, Digest and Get Insight';
 const description =
   'Discover Biblophile, the ultimate online ebook reader for immersive and organized reading. ' +
@@ -24,6 +25,14 @@ const description =
 const previewImage = 'https://cdn.readest.com/images/open_graph_preview_read_now.png';
 
 const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
+
+const getTwitterDomain = () => {
+  try {
+    return new URL(READEST_WEB_BASE_URL).host;
+  } catch {
+    return 'biblophile.com';
+  }
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(url),
@@ -65,7 +74,7 @@ export const metadata: Metadata = {
   },
   other: {
     'apple-mobile-web-app-capable': 'yes',
-    'twitter:domain': 'web.readest.com',
+    'twitter:domain': getTwitterDomain(),
     'twitter:url': url,
   },
 };

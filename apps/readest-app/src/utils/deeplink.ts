@@ -1,5 +1,13 @@
 import { READEST_WEB_BASE_URL } from '@/services/constants';
 
+const getWebHost = (): string => {
+  try {
+    return new URL(READEST_WEB_BASE_URL).host;
+  } catch {
+    return 'web.readest.com';
+  }
+};
+
 export type AnnotationDeepLink = {
   bookHash: string;
   noteId: string;
@@ -59,8 +67,7 @@ export const parseAnnotationDeepLink = (url: string): AnnotationDeepLink | null 
 
   const isCustomScheme = parsed.protocol === 'readest:';
   const isWebHost =
-    (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
-    parsed.host === 'web.readest.com';
+    (parsed.protocol === 'https:' || parsed.protocol === 'http:') && parsed.host === getWebHost();
   if (!isCustomScheme && !isWebHost) return null;
 
   // For readest:// URLs the URL parser stores the first path segment in the
@@ -107,8 +114,7 @@ export const parseBookDeepLink = (url: string): { bookHash: string; autoplay?: b
 
   const isCustomScheme = parsed.protocol === 'readest:';
   const isWebHost =
-    (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
-    parsed.host === 'web.readest.com';
+    (parsed.protocol === 'https:' || parsed.protocol === 'http:') && parsed.host === getWebHost();
   if (!isCustomScheme && !isWebHost) return null;
 
   const segments: string[] = isCustomScheme

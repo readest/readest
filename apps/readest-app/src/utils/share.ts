@@ -115,6 +115,8 @@ const isWebReadestHost = (host: string): boolean => {
   // Matches the production host and any preview domain Readest may serve from.
   // Conservative: accepts only the exact production host or a *.readest.com
   // subdomain so a third-party site cannot impersonate a share URL.
-  if (host === new URL(READEST_WEB_BASE_URL).host) return true;
-  return host.endsWith('.readest.com');
+  try {
+    if (host === new URL(READEST_WEB_BASE_URL).host) return true;
+  } catch {}
+  return host.endsWith('.biblophile.com') || host.endsWith('.readest.com');
 };

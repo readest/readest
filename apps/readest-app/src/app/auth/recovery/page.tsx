@@ -34,7 +34,15 @@ export default function ResetPasswordPage() {
       if (session?.access_token && session.user && event === 'USER_UPDATED') {
         login(session.access_token, session.user);
         const redirectTo = new URLSearchParams(window.location.search).get('redirect');
-        router.push(redirectTo ?? '/library');
+        const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
+        let target = redirectTo ?? '/library';
+        if (basePath && target.startsWith(basePath)) {
+          target = target.substring(basePath.length);
+        }
+        if (!target.startsWith('/')) {
+          target = '/' + target;
+        }
+        router.push(target);
       }
     });
 
