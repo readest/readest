@@ -39,8 +39,8 @@ mod sentry_config;
 #[cfg(desktop)]
 mod spawn_fresh_browser;
 mod transfer_file;
-#[cfg(desktop)]
 mod web_browser;
+#[cfg(desktop)]
 mod window_state;
 #[cfg(target_os = "windows")]
 use tauri::webview::ScrollBarStyle;
