@@ -122,6 +122,29 @@ describe('applyScrollableStyle', () => {
     expect(math.parentElement?.tagName.toLowerCase()).toBe('p');
   });
 
+  it('does not wrap inline math that is the sole child of an inline span (#480)', () => {
+    // DITA/MathType exports wrap every inline formula as <span><math/></span>. The
+    // span flows with the paragraph text, so the math must keep flowing too: a
+    // block wrapper would break the line and indent the formula.
+    document.body.innerHTML =
+      '<p>Inconsistent Systems, <span class="eqn-inline"><math><mi>r</mi></math></span>' +
+      ' and <span class="eqn-inline"><math><mi>n</mi></math></span></p>';
+    applyScrollableStyle(document);
+    document.querySelectorAll('math').forEach((math) => {
+      expect(math.parentElement?.tagName).toBe('SPAN');
+    });
+    expect(document.querySelectorAll(`.${SCROLL_WRAPPER_CLASS}`)).toHaveLength(0);
+  });
+
+  it('wraps a display equation whose only wrapper is a span filling a block', () => {
+    // <p><span><math/></span></p>: the span chain is the sole content of a block,
+    // so the formula stands on its own line and still needs the scroll wrapper.
+    document.body.innerHTML = '<div><span><math><mi>x</mi></math></span></div>';
+    applyScrollableStyle(document);
+    const math = document.querySelector('math')!;
+    expect(math.parentElement?.classList.contains(SCROLL_WRAPPER_CLASS)).toBe(true);
+  });
+
   it('wraps math[display="block"] even when it has a sibling (e.g. an equation number)', () => {
     document.body.innerHTML = `<div><math display="block"><mi>x</mi></math><span>(1)</span></div>`;
     applyScrollableStyle(document);
