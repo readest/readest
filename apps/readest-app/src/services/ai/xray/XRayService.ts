@@ -51,6 +51,9 @@ export class XRayService {
     if (appService.appPlatform !== 'tauri') {
       throw new Error('X-Ray is only available in the Tauri app');
     }
+    if (!settings.enabled || !settings.reedy?.enabled) {
+      throw new Error('X-Ray requires AI and Reedy to be enabled');
+    }
     const { createXRayModels } = await import('./source/models');
     const models = createXRayModels(settings);
     const [source, store] = await Promise.all([

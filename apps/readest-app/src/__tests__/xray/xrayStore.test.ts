@@ -93,6 +93,22 @@ describe('XRayStore', () => {
     await expect(store.listBatches(fingerprint.bookHash, 19)).resolves.toEqual([batch, later]);
   });
 
+  it('persists state metadata when a batch commit keeps the same cursor', async () => {
+    const batch = makeBatch('batch-1', 0, 9);
+    const committedState = makeState(9, batch.batchId, 1_000);
+    await store.commitBatch(batch, committedState);
+    const refreshedState: XRayBookState = {
+      ...committedState,
+      pendingPositionIndex: 10,
+      updatedAt: 2_000,
+      error: 'retry pending',
+    };
+
+    await store.commitBatch(batch, refreshedState);
+
+    await expect(store.getState(fingerprint.bookHash)).resolves.toEqual(refreshedState);
+  });
+
   it('does not let a stale generation replace the current state', async () => {
     const first = makeBatch('batch-1', 0, 9);
     await store.commitBatch(first, makeState(9, first.batchId, 1_000));
@@ -102,7 +118,9 @@ describe('XRayStore', () => {
     const next = makeBatch('batch-next', 0, 9, nextFingerprint);
     const nextState = makeState(9, next.batchId, 3_000, nextFingerprint);
     await store.commitBatch(next, nextState);
-    await store.commitBatch(first, makeState(9, first.batchId, 4_000));
+    const staleState = makeState(9, first.batchId, 4_000);
+    await store.commitBatch(first, staleState);
+    await store.saveState(staleState);
 
     await expect(store.getState(fingerprint.bookHash)).resolves.toEqual(nextState);
   });

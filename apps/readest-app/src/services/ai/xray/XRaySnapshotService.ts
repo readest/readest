@@ -107,7 +107,10 @@ const mergeBatches = (
     relationships,
     events,
     claims,
-    maxPositionIndex: batches.at(-1)?.maxPositionIndex ?? -1,
+    maxPositionIndex: batches.reduce(
+      (highest, batch) => Math.max(highest, batch.maxPositionIndex),
+      -1,
+    ),
     updatedAt: batches.reduce((latest, batch) => Math.max(latest, batch.createdAt), 0),
   };
 };

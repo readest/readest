@@ -140,6 +140,42 @@ describe('XRaySnapshotService', () => {
     expect(secondSnapshot.entities[0]!.facts).toHaveLength(2);
   });
 
+  it('uses the highest batch bound when stored ranges overlap', async () => {
+    const firstUnit = unit(0, 'Alice arrived at the station.');
+    const laterUnit = unit(5, 'Alice began the investigation.');
+    const wideBatch = {
+      ...batch(firstUnit, entity(firstUnit, 'A traveler.')),
+      batchId: 'batch-wide',
+      maxPositionIndex: 10,
+    };
+    const narrowBatch = {
+      ...batch(laterUnit, entity(laterUnit, 'An investigator.')),
+      batchId: 'batch-narrow',
+    };
+    await store.commitBatch(wideBatch, {
+      fingerprint,
+      maxPositionIndex: 10,
+      lastBatchId: wideBatch.batchId,
+      updatedAt: wideBatch.createdAt,
+      version: 1,
+    });
+    await store.commitBatch(narrowBatch, {
+      fingerprint,
+      maxPositionIndex: 5,
+      lastBatchId: narrowBatch.batchId,
+      updatedAt: narrowBatch.createdAt,
+      version: 1,
+    });
+    const service = new XRaySnapshotService(
+      { readThrough: vi.fn().mockResolvedValue(sourceSlice([unit(10, 'Current page.')])) },
+      store,
+    );
+
+    const snapshot = await service.getSnapshot(BOOK_HASH, 'at-current');
+
+    expect(snapshot.maxPositionIndex).toBe(10);
+  });
+
   it('invalidates fallback lookups when extraction adds an entity, then reuses the new cache', async () => {
     const sourceUnit = unit(0, 'Alice arrived at the station.');
     const readThrough = vi.fn().mockResolvedValue(sourceSlice([sourceUnit]));

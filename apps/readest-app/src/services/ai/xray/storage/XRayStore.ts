@@ -61,7 +61,7 @@ const stateBatchStatement = (state: XRayBookState): string => `
     version = excluded.version,
     error = excluded.error
   WHERE xray_books.fingerprint = excluded.fingerprint
-    AND excluded.max_position_index > xray_books.max_position_index
+    AND excluded.max_position_index >= xray_books.max_position_index
 `;
 
 export class XRayStore {
@@ -118,8 +118,8 @@ export class XRayStore {
          updated_at = excluded.updated_at,
          version = excluded.version,
          error = excluded.error
-       WHERE xray_books.fingerprint != excluded.fingerprint
-          OR excluded.max_position_index > xray_books.max_position_index`,
+       WHERE xray_books.fingerprint = excluded.fingerprint
+         AND excluded.max_position_index >= xray_books.max_position_index`,
       [
         state.fingerprint.bookHash,
         serializeFingerprint(state.fingerprint),
