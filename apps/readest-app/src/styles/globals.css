@@ -31,13 +31,6 @@
   --safe-area-inset-left: env(safe-area-inset-left);
 }
 
-/* Reader content scrolls inside <foliate-view>'s shadow-DOM container
-   (exposed via ::part). WebKit only gives nested scroll containers native
-   overscroll/rubber-band when they opt in explicitly. (#5148) */
-foliate-view::part(container) {
-  -webkit-overflow-scrolling: touch;
-}
-
 /* Fixes the scrollbar gutter issue for DaisyUI */
 /* https://github.com/saadeghi/daisyui/issues/3040#issuecomment-2250530354 */
 :root:has(:is(.modal-open, .modal:target, .modal-toggle:checked + .modal, .modal[open])) {
