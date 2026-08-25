@@ -175,6 +175,8 @@ use std::sync::{
     atomic::{AtomicU64, Ordering},
     Arc, Mutex,
 };
+#[cfg(target_os = "windows")]
+use tauri::webview::ScrollBarStyle;
 #[cfg(desktop)]
 use tauri::{
     webview::{DownloadEvent, NewWindowResponse},
@@ -325,6 +327,12 @@ pub async fn open_web_browser(
             }
             _ => true,
         });
+
+    // WebView2 refuses a webview whose environment options differ from the
+    // browser process already running (HRESULT 0x8007139F); scroll bar style
+    // is one of them, so match the main window (lib.rs).
+    #[cfg(target_os = "windows")]
+    let builder = builder.scroll_bar_style(ScrollBarStyle::FluentOverlay);
 
     let window = builder.build().map_err(|e| e.to_string())?;
 
