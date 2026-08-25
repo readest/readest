@@ -38,15 +38,23 @@ export const isMacPlatform = () =>
 
 export const getCommandPaletteShortcut = () => (isMacPlatform() ? '⌘⇧P' : 'Ctrl+Shift+P');
 
+export const getAPIBaseUrl = () => {
+  if (isWebDevMode()) {
+    const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
+    return `${basePath}/api`;
+  }
+  if (isTauriAppPlatform()) {
+    return `${getBaseUrl()}/api/v0`;
+  }
+  const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
+  return `${basePath}/api/v0`;
+};
+
 const isWebDevMode = () => process.env['NODE_ENV'] === 'development' && isWebAppPlatform();
 
-// Dev API only in development mode and web platform
-// with command `pnpm dev-web`
-// for production build or tauri app use the production Web API
-export const getAPIBaseUrl = () => (isWebDevMode() ? '/api' : `${getBaseUrl()}/api/v0`);
-
 // For Node.js API that currently not supported in some edge runtimes
-export const getNodeAPIBaseUrl = () => (isWebDevMode() ? '/api' : `${getNodeBaseUrl()}/api`);
+export const getNodeAPIBaseUrl = () =>
+  isWebDevMode() ? `${process.env['NEXT_PUBLIC_BASE_PATH'] || ''}/api` : `${getNodeBaseUrl()}/api`;
 
 export interface EnvConfigType {
   getAppService: () => Promise<AppService>;

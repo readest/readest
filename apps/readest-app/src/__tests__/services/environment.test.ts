@@ -219,7 +219,7 @@ describe('environment', () => {
       env['NEXT_PUBLIC_APP_PLATFORM'] = 'web';
       delete env['NEXT_PUBLIC_API_BASE_URL'];
       const { getAPIBaseUrl } = await import('@/services/environment');
-      expect(getAPIBaseUrl()).toBe('https://web.readest.com/api');
+      expect(getAPIBaseUrl()).toBe('/api/v0');
     });
 
     test('returns full URL for tauri platform even in development', async () => {
@@ -227,7 +227,7 @@ describe('environment', () => {
       env['NEXT_PUBLIC_APP_PLATFORM'] = 'tauri';
       delete env['NEXT_PUBLIC_API_BASE_URL'];
       const { getAPIBaseUrl } = await import('@/services/environment');
-      expect(getAPIBaseUrl()).toBe('https://web.readest.com/api');
+      expect(getAPIBaseUrl()).toBe('https://web.readest.com/api/v0');
     });
   });
 

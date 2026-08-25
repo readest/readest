@@ -9,6 +9,19 @@ const allowedOrigins = [
   'tauri://localhost',
 ];
 
+const checkAllowedOrigin = (origin: string) => {
+  if (allowedOrigins.includes(origin)) return true;
+  if (origin === 'https://biblophile.com' || origin.endsWith('.biblophile.com')) return true;
+  const customWebUrl = process.env['NEXT_PUBLIC_WEB_BASE_URL'];
+  if (customWebUrl) {
+    try {
+      const customOrigin = new URL(customWebUrl).origin;
+      if (origin === customOrigin) return true;
+    } catch {}
+  }
+  return false;
+};
+
 const corsOptions = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Max-Age': '86400',
@@ -20,7 +33,7 @@ export function middleware(request: NextRequest) {
 
   if (isApi || isLocales) {
     const origin = request.headers.get('origin') ?? '';
-    let isAllowedOrigin = allowedOrigins.includes(origin);
+    let isAllowedOrigin = checkAllowedOrigin(origin);
 
     const isDev = process.env.NODE_ENV === 'development';
     if (isDev && (origin === 'null' || origin === '')) {

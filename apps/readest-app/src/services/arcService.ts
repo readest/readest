@@ -18,7 +18,8 @@ export interface AppliedArc {
 const getBibloApiBaseUrl = () => {
   if (isWebAppPlatform()) {
     // Proxied endpoint for web to avoid CORS
-    return '/api/marketing';
+    const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
+    return `${basePath}/api/marketing`;
   }
   // Direct endpoint for Tauri / native platforms
   const base = process.env['NEXT_PUBLIC_BIBLO_API_URL'] || 'http://localhost:3001/api/v0';
