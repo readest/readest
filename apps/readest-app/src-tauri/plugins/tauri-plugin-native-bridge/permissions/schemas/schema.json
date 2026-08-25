@@ -703,6 +703,18 @@
           "markdownDescription": "Denies the open_external_url command without any pre-configured scope."
         },
         {
+          "description": "Enables the open_web_browser command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-open-web-browser",
+          "markdownDescription": "Enables the open_web_browser command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the open_web_browser command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-open-web-browser",
+          "markdownDescription": "Denies the open_web_browser command without any pre-configured scope."
+        },
+        {
           "description": "Enables the read_share_clip_html command without any pre-configured scope.",
           "type": "string",
           "const": "allow-read-share-clip-html",
@@ -893,6 +905,18 @@
           "type": "string",
           "const": "deny-set-system-ui-visibility",
           "markdownDescription": "Denies the set_system_ui_visibility command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the set_web_browser_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-set-web-browser-status",
+          "markdownDescription": "Enables the set_web_browser_status command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the set_web_browser_status command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-set-web-browser-status",
+          "markdownDescription": "Denies the set_web_browser_status command without any pre-configured scope."
         },
         {
           "description": "Enables the show_file_picker command without any pre-configured scope.",
