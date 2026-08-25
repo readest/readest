@@ -84,10 +84,16 @@ export function useWebBrowserDownloads() {
     let cancelled = false;
     subscribeWebBrowserDownloads(!!appService.isMobileApp, (download) => {
       void handlerRef.current(download);
-    }).then((fn) => {
-      if (cancelled) fn();
-      else dispose = fn;
-    });
+    })
+      .then((fn) => {
+        if (cancelled) fn();
+        else dispose = fn;
+      })
+      .catch((err) => {
+        // Without the listener, downloads would never reach the library. This is a
+        // rare internal failure; log it and avoid an unhandled promise rejection.
+        console.warn('[browser] failed to subscribe to web browser downloads', err);
+      });
     return () => {
       cancelled = true;
       dispose?.();

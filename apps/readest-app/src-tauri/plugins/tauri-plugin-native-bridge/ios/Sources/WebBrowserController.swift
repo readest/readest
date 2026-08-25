@@ -503,6 +503,8 @@ final class WebBrowserController: UIViewController, WKNavigationDelegate, WKUIDe
 
   func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
     guard let entry = downloadPaths.removeValue(forKey: ObjectIdentifier(download)) else { return }
+    // Drop the partial file so it does not linger in the cache.
+    try? FileManager.default.removeItem(at: entry.path)
     setStatus(state: "failed", filename: entry.path.lastPathComponent, bookHash: nil)
     onDownload?(
       WebBrowserDownloadEvent(

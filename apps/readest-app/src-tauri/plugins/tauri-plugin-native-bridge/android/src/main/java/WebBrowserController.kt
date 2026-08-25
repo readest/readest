@@ -501,16 +501,21 @@ class WebBrowserController(
         return if (cleaned.isEmpty()) "download" else cleaned
     }
 
+    // Atomically reserve the destination so two concurrent downloads of the
+    // same filename can never share a path: createNewFile() succeeds for only
+    // one caller, and the loser retries with the next suffix.
     private fun uniqueFile(dir: File, name: String): File {
-        val first = File(dir, name)
-        if (!first.exists()) return first
         val dot = name.lastIndexOf('.')
         val stem = if (dot > 0) name.substring(0, dot) else name
         val ext = if (dot > 0) name.substring(dot) else ""
-        var n = 1
+        var n = 0
         while (true) {
-            val candidate = File(dir, "$stem ($n)$ext")
-            if (!candidate.exists()) return candidate
+            val candidate = if (n == 0) File(dir, name) else File(dir, "$stem ($n)$ext")
+            try {
+                if (candidate.createNewFile()) return candidate
+            } catch (e: IOException) {
+                Log.w(TAG, "reserve failed: ${candidate.name}", e)
+            }
             n++
         }
     }

@@ -305,6 +305,11 @@ pub async fn open_web_browser(
                         .and_then(|n| n.to_str())
                         .unwrap_or("download")
                         .to_string();
+                    // A failed/cancelled download leaves a partial file behind; drop
+                    // it so the cache does not fill and the next attempt reuses the name.
+                    if !success {
+                        let _ = std::fs::remove_file(&dest);
+                    }
                     let _ = dl_app.emit(
                         "web-browser-download",
                         WebBrowserDownload {
@@ -382,12 +387,16 @@ pub async fn open_web_browser(
         is_eink: options.is_eink,
         labels: options.labels,
     };
-    app.native_bridge()
-        .open_web_browser(request)
-        .map(|r| WebBrowserResult {
-            open_book_hash: r.open_book_hash,
-        })
-        .map_err(|e| e.to_string())
+    // `open_web_browser` blocks until the native browser closes, which can be
+    // minutes. Run it on the blocking pool so it never parks an async worker.
+    let response =
+        tauri::async_runtime::spawn_blocking(move || app.native_bridge().open_web_browser(request))
+            .await
+            .map_err(|e| e.to_string())?
+            .map_err(|e| e.to_string())?;
+    Ok(WebBrowserResult {
+        open_book_hash: response.open_book_hash,
+    })
 }
 
 #[cfg(mobile)]
