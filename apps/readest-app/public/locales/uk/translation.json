@@ -2330,5 +2330,19 @@
   "Linked to “{{title}}”": "Пов'язано з «{{title}}»",
   "Hardcover link removed. The next sync will match the book again.": "Зв'язок із Hardcover видалено. Наступна синхронізація знову зіставить книгу.",
   "{{pages}} pages": "{{pages}} сторінок",
-  "{{readers}} readers": "{{readers}} читачів"
+  "{{readers}} readers": "{{readers}} читачів",
+  "From Web Browser": "З веббраузера",
+  "Please enter a valid http(s) URL": "Введіть дійсну URL-адресу http(s)",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Переглядайте свій сервер книг Calibre-Web, Kavita чи інший прямо в Readest. Завантажені там книги додаються до вашої бібліотеки.",
+  "Name (optional)": "Назва (необов’язково)",
+  "Add Source": "Додати джерело",
+  "Reload": "Перезавантажити",
+  "Stop": "Зупинити",
+  "More": "Більше",
+  "Open in Browser": "Відкрити у браузері",
+  "Sign out of this site": "Вийти з цього сайту",
+  "Not secure": "Не захищено",
+  "Importing": "Імпортування",
+  "Added to library": "Додано до бібліотеки",
+  "Not a supported book format": "Непідтримуваний формат книги"
 }

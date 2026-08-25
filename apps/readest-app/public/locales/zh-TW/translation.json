@@ -2150,5 +2150,19 @@
   "Linked to “{{title}}”": "已連結至《{{title}}》",
   "Hardcover link removed. The next sync will match the book again.": "已取消 Hardcover 連結，下次同步時將重新比對書籍。",
   "{{pages}} pages": "{{pages}} 頁",
-  "{{readers}} readers": "{{readers}} 位讀者"
+  "{{readers}} readers": "{{readers}} 位讀者",
+  "From Web Browser": "從網頁瀏覽器",
+  "Please enter a valid http(s) URL": "請輸入有效的 http(s) 網址",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "在 Readest 內直接瀏覽你的 Calibre-Web、Kavita 或其他書籍伺服器，在那裡下載的書籍會自動加入書庫。",
+  "Name (optional)": "名稱（選填）",
+  "Add Source": "新增來源",
+  "Reload": "重新載入",
+  "Stop": "停止",
+  "More": "更多",
+  "Open in Browser": "在瀏覽器中開啟",
+  "Sign out of this site": "登出此網站",
+  "Not secure": "不安全",
+  "Importing": "正在匯入",
+  "Added to library": "已加入書庫",
+  "Not a supported book format": "不支援的書籍格式"
 }

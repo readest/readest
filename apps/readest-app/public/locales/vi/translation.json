@@ -2150,5 +2150,19 @@
   "Linked to “{{title}}”": "Đã liên kết với “{{title}}”",
   "Hardcover link removed. The next sync will match the book again.": "Đã gỡ liên kết Hardcover. Lần đồng bộ tiếp theo sẽ tự khớp lại sách.",
   "{{pages}} pages": "{{pages}} trang",
-  "{{readers}} readers": "{{readers}} người đọc"
+  "{{readers}} readers": "{{readers}} người đọc",
+  "From Web Browser": "Từ trình duyệt web",
+  "Please enter a valid http(s) URL": "Vui lòng nhập URL http(s) hợp lệ",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Duyệt máy chủ sách Calibre-Web, Kavita hoặc máy chủ khác ngay trong Readest. Sách bạn tải về ở đó sẽ được thêm vào thư viện.",
+  "Name (optional)": "Tên (tùy chọn)",
+  "Add Source": "Thêm nguồn",
+  "Reload": "Tải lại",
+  "Stop": "Dừng",
+  "More": "Thêm",
+  "Open in Browser": "Mở trong trình duyệt",
+  "Sign out of this site": "Đăng xuất khỏi trang này",
+  "Not secure": "Không an toàn",
+  "Importing": "Đang nhập",
+  "Added to library": "Đã thêm vào thư viện",
+  "Not a supported book format": "Định dạng sách không được hỗ trợ"
 }

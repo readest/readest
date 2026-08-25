@@ -2270,5 +2270,19 @@
   "Linked to “{{title}}”": "קושר אל „{{title}}“",
   "Hardcover link removed. The next sync will match the book again.": "הקישור ל-Hardcover הוסר. הסנכרון הבא יתאים את הספר מחדש.",
   "{{pages}} pages": "{{pages}} עמודים",
-  "{{readers}} readers": "{{readers}} קוראים"
+  "{{readers}} readers": "{{readers}} קוראים",
+  "From Web Browser": "מדפדפן אינטרנט",
+  "Please enter a valid http(s) URL": "יש להזין כתובת http(s) תקינה",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "גלשו בשרת הספרים שלכם (Calibre-Web, Kavita או אחר) בתוך Readest. ספרים שתורידו שם יתווספו לספרייה שלכם.",
+  "Name (optional)": "שם (אופציונלי)",
+  "Add Source": "הוספת מקור",
+  "Reload": "טעינה מחדש",
+  "Stop": "עצור",
+  "More": "עוד",
+  "Open in Browser": "פתיחה בדפדפן",
+  "Sign out of this site": "התנתקות מאתר זה",
+  "Not secure": "לא מאובטח",
+  "Importing": "מייבא",
+  "Added to library": "נוסף לספרייה",
+  "Not a supported book format": "פורמט ספר לא נתמך"
 }

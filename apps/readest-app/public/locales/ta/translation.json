@@ -2210,5 +2210,19 @@
   "Linked to “{{title}}”": "“{{title}}”-உடன் இணைக்கப்பட்டது",
   "Hardcover link removed. The next sync will match the book again.": "Hardcover இணைப்பு நீக்கப்பட்டது. அடுத்த ஒத்திசைவில் புத்தகம் மீண்டும் பொருத்தப்படும்.",
   "{{pages}} pages": "{{pages}} பக்கங்கள்",
-  "{{readers}} readers": "{{readers}} வாசகர்கள்"
+  "{{readers}} readers": "{{readers}} வாசகர்கள்",
+  "From Web Browser": "இணைய உலாவியிலிருந்து",
+  "Please enter a valid http(s) URL": "சரியான http(s) URL ஐ உள்ளிடவும்",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "உங்கள் Calibre-Web, Kavita அல்லது பிற புத்தக சேவையகத்தை Readest-க்குள்ளேயே உலாவுங்கள். அங்கு பதிவிறக்கும் புத்தகங்கள் உங்கள் நூலகத்தில் சேர்க்கப்படும்.",
+  "Name (optional)": "பெயர் (விருப்பத்தேர்வு)",
+  "Add Source": "மூலத்தைச் சேர்",
+  "Reload": "மீண்டும் ஏற்று",
+  "Stop": "நிறுத்து",
+  "More": "மேலும்",
+  "Open in Browser": "உலாவியில் திற",
+  "Sign out of this site": "இந்த தளத்திலிருந்து வெளியேறு",
+  "Not secure": "பாதுகாப்பற்றது",
+  "Importing": "இறக்குமதி செய்கிறது",
+  "Added to library": "நூலகத்தில் சேர்க்கப்பட்டது",
+  "Not a supported book format": "ஆதரிக்கப்படாத புத்தக வடிவம்"
 }

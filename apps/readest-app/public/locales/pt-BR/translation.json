@@ -2270,5 +2270,19 @@
   "Linked to “{{title}}”": "Vinculado a “{{title}}”",
   "Hardcover link removed. The next sync will match the book again.": "Vínculo com o Hardcover removido. A próxima sincronização buscará o livro novamente.",
   "{{pages}} pages": "{{pages}} páginas",
-  "{{readers}} readers": "{{readers}} leitores"
+  "{{readers}} readers": "{{readers}} leitores",
+  "From Web Browser": "Do navegador web",
+  "Please enter a valid http(s) URL": "Digite uma URL http(s) válida",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Navegue no seu servidor de livros Calibre-Web, Kavita ou outro dentro do Readest. Os livros baixados lá são adicionados à sua biblioteca.",
+  "Name (optional)": "Nome (opcional)",
+  "Add Source": "Adicionar fonte",
+  "Reload": "Recarregar",
+  "Stop": "Parar",
+  "More": "Mais",
+  "Open in Browser": "Abrir no navegador",
+  "Sign out of this site": "Sair deste site",
+  "Not secure": "Não seguro",
+  "Importing": "Importando",
+  "Added to library": "Adicionado à biblioteca",
+  "Not a supported book format": "Formato de livro não suportado"
 }

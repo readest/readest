@@ -2210,5 +2210,19 @@
   "Linked to “{{title}}”": "Länkad till ”{{title}}”",
   "Hardcover link removed. The next sync will match the book again.": "Hardcover-länken har tagits bort. Nästa synkronisering matchar boken igen.",
   "{{pages}} pages": "{{pages}} sidor",
-  "{{readers}} readers": "{{readers}} läsare"
+  "{{readers}} readers": "{{readers}} läsare",
+  "From Web Browser": "Från webbläsare",
+  "Please enter a valid http(s) URL": "Ange en giltig http(s)-URL",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Bläddra i din Calibre-Web-, Kavita- eller annan bokserver inuti Readest. Böcker du laddar ner där läggs till i ditt bibliotek.",
+  "Name (optional)": "Namn (valfritt)",
+  "Add Source": "Lägg till källa",
+  "Reload": "Ladda om",
+  "Stop": "Stoppa",
+  "More": "Mer",
+  "Open in Browser": "Öppna i webbläsare",
+  "Sign out of this site": "Logga ut från den här webbplatsen",
+  "Not secure": "Inte säker",
+  "Importing": "Importerar",
+  "Added to library": "Tillagd i biblioteket",
+  "Not a supported book format": "Bokformatet stöds inte"
 }

@@ -2210,5 +2210,19 @@
   "Linked to “{{title}}”": "დაკავშირდა „{{title}}“-თან",
   "Hardcover link removed. The next sync will match the book again.": "Hardcover კავშირი წაიშალა. შემდეგი სინქრონიზაცია წიგნს ხელახლა შეუსაბამებს.",
   "{{pages}} pages": "{{pages}} გვერდი",
-  "{{readers}} readers": "{{readers}} მკითხველი"
+  "{{readers}} readers": "{{readers}} მკითხველი",
+  "From Web Browser": "ვებ-ბრაუზერიდან",
+  "Please enter a valid http(s) URL": "გთხოვთ, შეიყვანოთ სწორი http(s) URL",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "დაათვალიერეთ თქვენი Calibre-Web, Kavita ან სხვა წიგნების სერვერი Readest-ის შიგნით. იქ ჩამოტვირთული წიგნები თქვენს ბიბლიოთეკას ემატება.",
+  "Name (optional)": "სახელი (არასავალდებულო)",
+  "Add Source": "წყაროს დამატება",
+  "Reload": "ხელახლა ჩატვირთვა",
+  "Stop": "შეჩერება",
+  "More": "მეტი",
+  "Open in Browser": "ბრაუზერში გახსნა",
+  "Sign out of this site": "ამ საიტიდან გასვლა",
+  "Not secure": "დაუცველი",
+  "Importing": "იმპორტირდება",
+  "Added to library": "ბიბლიოთეკაში დაემატა",
+  "Not a supported book format": "წიგნის ფორმატი მხარდაუჭერელია"
 }

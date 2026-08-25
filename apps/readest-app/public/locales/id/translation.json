@@ -2150,5 +2150,19 @@
   "Linked to “{{title}}”": "Ditautkan ke “{{title}}”",
   "Hardcover link removed. The next sync will match the book again.": "Tautan Hardcover dihapus. Sinkronisasi berikutnya akan mencocokkan buku lagi.",
   "{{pages}} pages": "{{pages}} halaman",
-  "{{readers}} readers": "{{readers}} pembaca"
+  "{{readers}} readers": "{{readers}} pembaca",
+  "From Web Browser": "Dari browser web",
+  "Please enter a valid http(s) URL": "Masukkan URL http(s) yang valid",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Jelajahi server buku Calibre-Web, Kavita, atau lainnya di dalam Readest. Buku yang Anda unduh di sana akan ditambahkan ke perpustakaan Anda.",
+  "Name (optional)": "Nama (opsional)",
+  "Add Source": "Tambah sumber",
+  "Reload": "Muat ulang",
+  "Stop": "Berhenti",
+  "More": "Lainnya",
+  "Open in Browser": "Buka di browser",
+  "Sign out of this site": "Keluar dari situs ini",
+  "Not secure": "Tidak aman",
+  "Importing": "Mengimpor",
+  "Added to library": "Ditambahkan ke perpustakaan",
+  "Not a supported book format": "Format buku tidak didukung"
 }

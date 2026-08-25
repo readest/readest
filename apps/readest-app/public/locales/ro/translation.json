@@ -2270,5 +2270,19 @@
   "Linked to “{{title}}”": "Asociată cu „{{title}}”",
   "Hardcover link removed. The next sync will match the book again.": "Asocierea cu Hardcover a fost eliminată. Următoarea sincronizare va potrivi din nou cartea.",
   "{{pages}} pages": "{{pages}} pagini",
-  "{{readers}} readers": "{{readers}} cititori"
+  "{{readers}} readers": "{{readers}} cititori",
+  "From Web Browser": "Din browserul web",
+  "Please enter a valid http(s) URL": "Introduceți un URL http(s) valid",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Răsfoiți serverul de cărți Calibre-Web, Kavita sau altul direct în Readest. Cărțile descărcate acolo sunt adăugate în biblioteca dvs.",
+  "Name (optional)": "Nume (opțional)",
+  "Add Source": "Adaugă sursă",
+  "Reload": "Reîncarcă",
+  "Stop": "Oprește",
+  "More": "Mai multe",
+  "Open in Browser": "Deschide în browser",
+  "Sign out of this site": "Deconectare de pe acest site",
+  "Not secure": "Nesecurizat",
+  "Importing": "Se importă",
+  "Added to library": "Adăugat în bibliotecă",
+  "Not a supported book format": "Format de carte neacceptat"
 }

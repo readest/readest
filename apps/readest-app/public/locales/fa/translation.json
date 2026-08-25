@@ -2210,5 +2210,19 @@
   "Linked to “{{title}}”": "به «{{title}}» پیوند شد",
   "Hardcover link removed. The next sync will match the book again.": "پیوند Hardcover حذف شد. همگام‌سازی بعدی دوباره کتاب را تطبیق می‌دهد.",
   "{{pages}} pages": "{{pages}} صفحه",
-  "{{readers}} readers": "{{readers}} خواننده"
+  "{{readers}} readers": "{{readers}} خواننده",
+  "From Web Browser": "از مرورگر وب",
+  "Please enter a valid http(s) URL": "لطفاً یک نشانی http(s) معتبر وارد کنید",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "سرور کتاب Calibre-Web، Kavita یا هر سرور دیگر خود را داخل Readest مرور کنید. کتاب‌هایی که آنجا دانلود می‌کنید به کتابخانه شما افزوده می‌شوند.",
+  "Name (optional)": "نام (اختیاری)",
+  "Add Source": "افزودن منبع",
+  "Reload": "بارگذاری مجدد",
+  "Stop": "توقف",
+  "More": "بیشتر",
+  "Open in Browser": "باز کردن در مرورگر",
+  "Sign out of this site": "خروج از این سایت",
+  "Not secure": "ناامن",
+  "Importing": "در حال وارد کردن",
+  "Added to library": "به کتابخانه افزوده شد",
+  "Not a supported book format": "قالب کتاب پشتیبانی نمی‌شود"
 }

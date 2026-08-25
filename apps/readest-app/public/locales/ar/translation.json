@@ -2450,5 +2450,19 @@
   "Linked to “{{title}}”": "تم الربط بـ «{{title}}»",
   "Hardcover link removed. The next sync will match the book again.": "تمت إزالة رابط Hardcover. ستعيد المزامنة التالية مطابقة الكتاب.",
   "{{pages}} pages": "{{pages}} صفحة",
-  "{{readers}} readers": "{{readers}} قارئ"
+  "{{readers}} readers": "{{readers}} قارئ",
+  "From Web Browser": "من متصفح الويب",
+  "Please enter a valid http(s) URL": "يرجى إدخال عنوان URL صالح يبدأ بـ http(s)",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "تصفّح خادم الكتب الخاص بك (Calibre-Web أو Kavita أو غيره) داخل Readest. الكتب التي تنزّلها هناك تُضاف إلى مكتبتك.",
+  "Name (optional)": "الاسم (اختياري)",
+  "Add Source": "إضافة مصدر",
+  "Reload": "إعادة التحميل",
+  "Stop": "إيقاف",
+  "More": "المزيد",
+  "Open in Browser": "فتح في المتصفح",
+  "Sign out of this site": "تسجيل الخروج من هذا الموقع",
+  "Not secure": "غير آمن",
+  "Importing": "جارٍ الاستيراد",
+  "Added to library": "تمت الإضافة إلى المكتبة",
+  "Not a supported book format": "تنسيق كتاب غير مدعوم"
 }

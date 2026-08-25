@@ -2150,5 +2150,19 @@
   "Linked to “{{title}}”": "เชื่อมโยงกับ “{{title}}” แล้ว",
   "Hardcover link removed. The next sync will match the book again.": "ลบการเชื่อมโยง Hardcover แล้ว การซิงค์ครั้งถัดไปจะจับคู่หนังสืออีกครั้ง",
   "{{pages}} pages": "{{pages}} หน้า",
-  "{{readers}} readers": "ผู้อ่าน {{readers}} คน"
+  "{{readers}} readers": "ผู้อ่าน {{readers}} คน",
+  "From Web Browser": "จากเว็บเบราว์เซอร์",
+  "Please enter a valid http(s) URL": "กรุณาใส่ URL http(s) ที่ถูกต้อง",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "เรียกดูเซิร์ฟเวอร์หนังสือ Calibre-Web, Kavita หรืออื่น ๆ ของคุณภายใน Readest หนังสือที่คุณดาวน์โหลดจากที่นั่นจะถูกเพิ่มลงในคลังหนังสือของคุณ",
+  "Name (optional)": "ชื่อ (ไม่บังคับ)",
+  "Add Source": "เพิ่มแหล่งที่มา",
+  "Reload": "โหลดใหม่",
+  "Stop": "หยุด",
+  "More": "เพิ่มเติม",
+  "Open in Browser": "เปิดในเบราว์เซอร์",
+  "Sign out of this site": "ออกจากระบบเว็บไซต์นี้",
+  "Not secure": "ไม่ปลอดภัย",
+  "Importing": "กำลังนำเข้า",
+  "Added to library": "เพิ่มลงในคลังหนังสือแล้ว",
+  "Not a supported book format": "รูปแบบหนังสือไม่รองรับ"
 }

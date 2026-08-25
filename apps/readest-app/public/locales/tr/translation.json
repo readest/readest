@@ -2210,5 +2210,19 @@
   "Linked to “{{title}}”": "“{{title}}” ile bağlandı",
   "Hardcover link removed. The next sync will match the book again.": "Hardcover bağlantısı kaldırıldı. Bir sonraki senkronizasyon kitabı yeniden eşleştirecek.",
   "{{pages}} pages": "{{pages}} sayfa",
-  "{{readers}} readers": "{{readers}} okuyucu"
+  "{{readers}} readers": "{{readers}} okuyucu",
+  "From Web Browser": "Web tarayıcısından",
+  "Please enter a valid http(s) URL": "Lütfen geçerli bir http(s) URL'si girin",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Calibre-Web, Kavita veya başka bir kitap sunucunuza Readest içinden göz atın. Orada indirdiğiniz kitaplar kitaplığınıza eklenir.",
+  "Name (optional)": "Ad (isteğe bağlı)",
+  "Add Source": "Kaynak ekle",
+  "Reload": "Yenile",
+  "Stop": "Durdur",
+  "More": "Daha fazla",
+  "Open in Browser": "Tarayıcıda aç",
+  "Sign out of this site": "Bu siteden çıkış yap",
+  "Not secure": "Güvenli değil",
+  "Importing": "İçe aktarılıyor",
+  "Added to library": "Kitaplığa eklendi",
+  "Not a supported book format": "Desteklenmeyen kitap biçimi"
 }

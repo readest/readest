@@ -2150,5 +2150,19 @@
   "Linked to “{{title}}”": "「{{title}}」にリンクしました",
   "Hardcover link removed. The next sync will match the book again.": "Hardcoverのリンクを解除しました。次回の同期で本を再度照合します。",
   "{{pages}} pages": "{{pages}}ページ",
-  "{{readers}} readers": "{{readers}}人が読書"
+  "{{readers}} readers": "{{readers}}人が読書",
+  "From Web Browser": "ウェブブラウザから",
+  "Please enter a valid http(s) URL": "有効な http(s) URL を入力してください",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Calibre-Web、Kavita などの書籍サーバーを Readest 内で閲覧できます。そこでダウンロードした書籍はライブラリに追加されます。",
+  "Name (optional)": "名前（任意）",
+  "Add Source": "ソースを追加",
+  "Reload": "再読み込み",
+  "Stop": "停止",
+  "More": "その他",
+  "Open in Browser": "ブラウザで開く",
+  "Sign out of this site": "このサイトからサインアウト",
+  "Not secure": "保護されていない通信",
+  "Importing": "インポート中",
+  "Added to library": "ライブラリに追加しました",
+  "Not a supported book format": "対応していない書籍形式です"
 }

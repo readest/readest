@@ -2330,5 +2330,19 @@
   "Linked to “{{title}}”": "Povezano z »{{title}}«",
   "Hardcover link removed. The next sync will match the book again.": "Povezava s Hardcover je odstranjena. Naslednja sinhronizacija bo knjigo znova poiskala.",
   "{{pages}} pages": "{{pages}} strani",
-  "{{readers}} readers": "{{readers}} bralcev"
+  "{{readers}} readers": "{{readers}} bralcev",
+  "From Web Browser": "Iz spletnega brskalnika",
+  "Please enter a valid http(s) URL": "Vnesite veljaven URL http(s)",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Brskajte po svojem strežniku knjig Calibre-Web, Kavita ali drugem kar v Readestu. Knjige, ki jih tam prenesete, se dodajo v vašo knjižnico.",
+  "Name (optional)": "Ime (neobvezno)",
+  "Add Source": "Dodaj vir",
+  "Reload": "Znova naloži",
+  "Stop": "Ustavi",
+  "More": "Več",
+  "Open in Browser": "Odpri v brskalniku",
+  "Sign out of this site": "Odjava s tega spletnega mesta",
+  "Not secure": "Ni varno",
+  "Importing": "Uvažanje",
+  "Added to library": "Dodano v knjižnico",
+  "Not a supported book format": "Nepodprta oblika knjige"
 }

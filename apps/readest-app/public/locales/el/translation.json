@@ -2210,5 +2210,19 @@
   "Linked to “{{title}}”": "Συνδέθηκε με το «{{title}}»",
   "Hardcover link removed. The next sync will match the book again.": "Η σύνδεση με το Hardcover αφαιρέθηκε. Ο επόμενος συγχρονισμός θα αντιστοιχίσει ξανά το βιβλίο.",
   "{{pages}} pages": "{{pages}} σελίδες",
-  "{{readers}} readers": "{{readers}} αναγνώστες"
+  "{{readers}} readers": "{{readers}} αναγνώστες",
+  "From Web Browser": "Από πρόγραμμα περιήγησης",
+  "Please enter a valid http(s) URL": "Εισαγάγετε μια έγκυρη διεύθυνση URL http(s)",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Περιηγηθείτε στον διακομιστή βιβλίων Calibre-Web, Kavita ή άλλον μέσα από το Readest. Τα βιβλία που κατεβάζετε εκεί προστίθενται στη βιβλιοθήκη σας.",
+  "Name (optional)": "Όνομα (προαιρετικό)",
+  "Add Source": "Προσθήκη πηγής",
+  "Reload": "Επαναφόρτωση",
+  "Stop": "Διακοπή",
+  "More": "Περισσότερα",
+  "Open in Browser": "Άνοιγμα στο πρόγραμμα περιήγησης",
+  "Sign out of this site": "Αποσύνδεση από αυτόν τον ιστότοπο",
+  "Not secure": "Μη ασφαλής",
+  "Importing": "Γίνεται εισαγωγή",
+  "Added to library": "Προστέθηκε στη βιβλιοθήκη",
+  "Not a supported book format": "Μη υποστηριζόμενη μορφή βιβλίου"
 }

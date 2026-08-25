@@ -2210,5 +2210,19 @@
   "Linked to “{{title}}”": "Gekoppeld aan “{{title}}”",
   "Hardcover link removed. The next sync will match the book again.": "Hardcover-koppeling verwijderd. De volgende synchronisatie zoekt het boek opnieuw.",
   "{{pages}} pages": "{{pages}} pagina's",
-  "{{readers}} readers": "{{readers}} lezers"
+  "{{readers}} readers": "{{readers}} lezers",
+  "From Web Browser": "Vanuit webbrowser",
+  "Please enter a valid http(s) URL": "Voer een geldige http(s)-URL in",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Blader door je Calibre-Web-, Kavita- of andere boekenserver binnen Readest. Boeken die je daar downloadt, worden aan je bibliotheek toegevoegd.",
+  "Name (optional)": "Naam (optioneel)",
+  "Add Source": "Bron toevoegen",
+  "Reload": "Herladen",
+  "Stop": "Stoppen",
+  "More": "Meer",
+  "Open in Browser": "Openen in browser",
+  "Sign out of this site": "Uitloggen bij deze site",
+  "Not secure": "Niet beveiligd",
+  "Importing": "Importeren",
+  "Added to library": "Toegevoegd aan bibliotheek",
+  "Not a supported book format": "Boekformaat wordt niet ondersteund"
 }

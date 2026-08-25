@@ -2150,5 +2150,19 @@
   "Linked to “{{title}}”": "Dipautkan ke “{{title}}”",
   "Hardcover link removed. The next sync will match the book again.": "Pautan Hardcover dialih keluar. Penyegerakan seterusnya akan memadankan buku semula.",
   "{{pages}} pages": "{{pages}} halaman",
-  "{{readers}} readers": "{{readers}} pembaca"
+  "{{readers}} readers": "{{readers}} pembaca",
+  "From Web Browser": "Daripada pelayar web",
+  "Please enter a valid http(s) URL": "Sila masukkan URL http(s) yang sah",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Layari pelayan buku Calibre-Web, Kavita atau lain-lain di dalam Readest. Buku yang anda muat turun di sana akan ditambah ke perpustakaan anda.",
+  "Name (optional)": "Nama (pilihan)",
+  "Add Source": "Tambah sumber",
+  "Reload": "Muat semula",
+  "Stop": "Berhenti",
+  "More": "Lagi",
+  "Open in Browser": "Buka dalam pelayar",
+  "Sign out of this site": "Log keluar dari laman ini",
+  "Not secure": "Tidak selamat",
+  "Importing": "Mengimport",
+  "Added to library": "Ditambah ke perpustakaan",
+  "Not a supported book format": "Format buku tidak disokong"
 }

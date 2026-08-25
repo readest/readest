@@ -2150,5 +2150,19 @@
   "Linked to “{{title}}”": "“{{title}}”에 연결됨",
   "Hardcover link removed. The next sync will match the book again.": "Hardcover 연결이 해제되었습니다. 다음 동기화 시 책을 다시 매칭합니다.",
   "{{pages}} pages": "{{pages}}페이지",
-  "{{readers}} readers": "독자 {{readers}}명"
+  "{{readers}} readers": "독자 {{readers}}명",
+  "From Web Browser": "웹 브라우저에서",
+  "Please enter a valid http(s) URL": "유효한 http(s) URL을 입력하세요",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Calibre-Web, Kavita 등 책 서버를 Readest 안에서 둘러보세요. 거기서 다운로드한 책은 라이브러리에 추가됩니다.",
+  "Name (optional)": "이름(선택 사항)",
+  "Add Source": "소스 추가",
+  "Reload": "새로고침",
+  "Stop": "중지",
+  "More": "더보기",
+  "Open in Browser": "브라우저에서 열기",
+  "Sign out of this site": "이 사이트에서 로그아웃",
+  "Not secure": "안전하지 않음",
+  "Importing": "가져오는 중",
+  "Added to library": "라이브러리에 추가됨",
+  "Not a supported book format": "지원되지 않는 책 형식입니다"
 }

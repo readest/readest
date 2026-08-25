@@ -2210,5 +2210,19 @@
   "Linked to “{{title}}”": "Összekapcsolva ezzel: „{{title}}”",
   "Hardcover link removed. The next sync will match the book again.": "A Hardcover-kapcsolat eltávolítva. A következő szinkronizálás újra párosítja a könyvet.",
   "{{pages}} pages": "{{pages}} oldal",
-  "{{readers}} readers": "{{readers}} olvasó"
+  "{{readers}} readers": "{{readers}} olvasó",
+  "From Web Browser": "Webböngészőből",
+  "Please enter a valid http(s) URL": "Adjon meg egy érvényes http(s) URL-t",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Böngéssze Calibre-Web, Kavita vagy más könyvszerverét a Readesten belül. Az ott letöltött könyvek a könyvtárába kerülnek.",
+  "Name (optional)": "Név (nem kötelező)",
+  "Add Source": "Forrás hozzáadása",
+  "Reload": "Újratöltés",
+  "Stop": "Leállítás",
+  "More": "Több",
+  "Open in Browser": "Megnyitás böngészőben",
+  "Sign out of this site": "Kijelentkezés erről a webhelyről",
+  "Not secure": "Nem biztonságos",
+  "Importing": "Importálás",
+  "Added to library": "Hozzáadva a könyvtárhoz",
+  "Not a supported book format": "Nem támogatott könyvformátum"
 }

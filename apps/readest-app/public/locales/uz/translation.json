@@ -2210,5 +2210,19 @@
   "Linked to “{{title}}”": "“{{title}}” bilan bogʻlandi",
   "Hardcover link removed. The next sync will match the book again.": "Hardcover bogʻlanishi olib tashlandi. Keyingi sinxronlash kitobni qayta moslaydi.",
   "{{pages}} pages": "{{pages}} sahifa",
-  "{{readers}} readers": "{{readers}} oʻquvchi"
+  "{{readers}} readers": "{{readers}} oʻquvchi",
+  "From Web Browser": "Veb-brauzerdan",
+  "Please enter a valid http(s) URL": "Yaroqli http(s) URL kiriting",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "Calibre-Web, Kavita yoki boshqa kitob serveringizni Readest ichida ko‘ring. U yerdan yuklab olingan kitoblar kutubxonangizga qo‘shiladi.",
+  "Name (optional)": "Nomi (ixtiyoriy)",
+  "Add Source": "Manba qo‘shish",
+  "Reload": "Qayta yuklash",
+  "Stop": "To‘xtatish",
+  "More": "Ko‘proq",
+  "Open in Browser": "Brauzerda ochish",
+  "Sign out of this site": "Bu saytdan chiqish",
+  "Not secure": "Xavfsiz emas",
+  "Importing": "Import qilinmoqda",
+  "Added to library": "Kutubxonaga qo‘shildi",
+  "Not a supported book format": "Qo‘llab-quvvatlanmaydigan kitob formati"
 }

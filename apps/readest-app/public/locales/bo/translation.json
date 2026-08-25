@@ -2150,5 +2150,19 @@
   "Linked to “{{title}}”": "“{{title}}” དང་སྦྲེལ་མཐུད་ཟིན།",
   "Hardcover link removed. The next sync will match the book again.": "Hardcover སྦྲེལ་མཐུད་བསུབས་ཟིན། ཟླ་སྒྲིག་རྗེས་མའི་སྐབས་དེབ་བསྐྱར་དུ་མཐུན་སྒྲིག་བྱེད།",
   "{{pages}} pages": "ཤོག་ངོས་ {{pages}}",
-  "{{readers}} readers": "ཀློག་མཁན་ {{readers}}"
+  "{{readers}} readers": "ཀློག་མཁན་ {{readers}}",
+  "From Web Browser": "དྲ་ལྟ་ཆས་ནས།",
+  "Please enter a valid http(s) URL": "ཁྲིམས་མཐུན་གྱི་ http(s) URL ཞིག་འཇུག་རོགས།",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "ཁྱེད་ཀྱི་ Calibre-Web དང་ Kavita ཡང་ན་གཞན་གྱི་དཔེ་དེབ་ཞབས་ཞུ་བ་ Readest ནང་ནས་ལྟ་ཞིབ་བྱེད། དེ་ནས་ཕབ་ལེན་བྱས་པའི་དཔེ་དེབ་རྣམས་ཁྱེད་ཀྱི་དཔེ་མཛོད་ནང་སྣོན་འཇུག་བྱེད།",
+  "Name (optional)": "མིང་། (འདེམས་ཀ)",
+  "Add Source": "འབྱུང་ཁུངས་སྣོན་པ།",
+  "Reload": "བསྐྱར་དུ་འཇུག་པ།",
+  "Stop": "མཚམས་འཇོག",
+  "More": "མང་བ།",
+  "Open in Browser": "དྲ་ལྟ་ཆས་ནང་ཁ་ཕྱེ།",
+  "Sign out of this site": "དྲ་ཚིགས་འདི་ནས་ཕྱིར་ཐོན།",
+  "Not secure": "བདེ་འཇགས་མེད།",
+  "Importing": "ནང་འདྲེན་བྱེད་བཞིན་པ།",
+  "Added to library": "དཔེ་མཛོད་ནང་སྣོན་འཇུག་བྱས།",
+  "Not a supported book format": "རྒྱབ་སྐྱོར་མེད་པའི་དཔེ་དེབ་རྣམ་གཞག"
 }

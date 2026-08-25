@@ -2150,5 +2150,19 @@
   "Linked to “{{title}}”": "已关联到《{{title}}》",
   "Hardcover link removed. The next sync will match the book again.": "已取消 Hardcover 关联，下次同步时将重新匹配图书。",
   "{{pages}} pages": "{{pages}} 页",
-  "{{readers}} readers": "{{readers}} 位读者"
+  "{{readers}} readers": "{{readers}} 位读者",
+  "From Web Browser": "从网页浏览器",
+  "Please enter a valid http(s) URL": "请输入有效的 http(s) 网址",
+  "Browse your Calibre-Web, Kavita or other book server inside Readest. Books you download there are added to your library.": "在 Readest 内直接浏览你的 Calibre-Web、Kavita 或其他图书服务器，在那里下载的图书会自动加入书库。",
+  "Name (optional)": "名称（可选）",
+  "Add Source": "添加来源",
+  "Reload": "重新加载",
+  "Stop": "停止",
+  "More": "更多",
+  "Open in Browser": "在浏览器中打开",
+  "Sign out of this site": "退出此网站",
+  "Not secure": "不安全",
+  "Importing": "正在导入",
+  "Added to library": "已加入书库",
+  "Not a supported book format": "不支持的图书格式"
 }
