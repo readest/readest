@@ -18,6 +18,10 @@ import {
 import { navigateToReader } from '@/utils/nav';
 import type { WebSource } from '@/types/webSource';
 
+// Stable fallback: a fresh `[]` per render would be an unstable zustand
+// snapshot and loop React until error #185 (seen on the first device run).
+const NO_SOURCES: WebSource[] = [];
+
 interface WebSourcesDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -33,7 +37,7 @@ const WebSourcesDialog: React.FC<WebSourcesDialogProps> = ({ isOpen, onClose }) 
   const _ = useTranslation();
   const router = useRouter();
   const { envConfig, appService } = useEnv();
-  const sources = useSettingsStore((s) => s.settings.webSources ?? []);
+  const sources = useSettingsStore((s) => s.settings.webSources ?? NO_SOURCES);
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
