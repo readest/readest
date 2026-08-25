@@ -323,6 +323,15 @@ describe('mountAdditionalFonts', () => {
     vi.mocked(isCJKEnv).mockReturnValue(false);
   });
 
+  it('skips a document without a <head> such as an SVG spine item (#480)', async () => {
+    const svgDoc = new DOMParser().parseFromString(
+      '<svg xmlns="http://www.w3.org/2000/svg"><text>page</text></svg>',
+      'image/svg+xml',
+    );
+    await expect(mountAdditionalFonts(svgDoc, true)).resolves.toBeUndefined();
+    expect(svgDoc.querySelector('style, link')).toBeNull();
+  });
+
   it('should mount basic Google Fonts link tags', async () => {
     await mountAdditionalFonts(document);
 
@@ -405,6 +414,16 @@ describe('mountCustomFont', () => {
 
   beforeEach(() => {
     document.head.innerHTML = '';
+  });
+
+  it('skips a document without a <head> such as an SVG spine item (#480)', () => {
+    const svgDoc = new DOMParser().parseFromString(
+      '<svg xmlns="http://www.w3.org/2000/svg"><text>page</text></svg>',
+      'image/svg+xml',
+    );
+    expect(svgDoc.head).toBeNull();
+    expect(() => mountCustomFont(svgDoc, baseFont)).not.toThrow();
+    expect(svgDoc.getElementById('custom-font-test-font-id')).toBeNull();
   });
 
   it('should create a style element with the correct id', () => {
