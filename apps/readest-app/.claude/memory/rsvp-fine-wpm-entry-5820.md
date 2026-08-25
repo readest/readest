@@ -46,3 +46,7 @@ change speed, Space toggles play and Escape kills the session while typing.
   different binary that prints its version and exits 0 (silent no-op build).
 
 Related: [[feedback-always-verify-on-xiaomi]], [[i18n-extract-prunes-keys]].
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [#5820 RSVP fine WPM entry](rsvp-fine-wpm-entry-5820.md) MERGED #5825; Chrome + Xiaomi verified; Chrome-MCP `key Escape` only blurs, deep link needs cold start, `pnpm exec dotenv` outside scripts

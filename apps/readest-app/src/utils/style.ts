@@ -436,12 +436,13 @@ const getPageLayoutStyles = (
     display: table !important;
     max-width: 100%;
   }
-  pre, code, math {
+  pre, code {
     white-space: pre-wrap !important;
     scrollbar-width: none;
   }
   math {
     overflow: auto;
+    scrollbar-width: none;
   }
   table, math {
     max-width: calc(var(--available-width) * 1px);

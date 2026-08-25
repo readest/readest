@@ -9,8 +9,10 @@ import { styleTransformer } from './style';
 import { proofreadTransformer } from './proofread';
 import { warichuTransformer } from './warichu';
 import { nbspTransformer } from './nbsp';
+import { epubSwitchTransformer } from './epubSwitch';
 
 export const availableTransformers: Transformer[] = [
+  epubSwitchTransformer,
   punctuationTransformer,
   footnoteTransformer,
   languageTransformer,

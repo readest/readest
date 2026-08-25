@@ -233,6 +233,8 @@
     "allow-update-book-presence",
     "allow-clear-book-presence",
     "allow-clip-url",
+    "allow-open-web-browser",
+    "allow-set-web-browser-status",
     "allow-spawn-fresh-browser",
     "allow-verify-update-signature",
     "allow-install-nightly-update",

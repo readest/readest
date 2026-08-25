@@ -417,6 +417,26 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 
+    /// Present the native in-app browser (`WebBrowserController.swift/.kt`).
+    /// Blocks until the user closes it; downloads arrive meanwhile as
+    /// `web-browser-download` plugin events.
+    pub fn open_web_browser(
+        &self,
+        payload: WebBrowserRequest,
+    ) -> crate::Result<WebBrowserResponse> {
+        self.0
+            .run_mobile_plugin("open_web_browser", payload)
+            .map_err(Into::into)
+    }
+
+    /// Push an import status into the open browser's banner.
+    pub fn set_web_browser_status(&self, payload: WebBrowserStatusRequest) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin::<serde::de::IgnoredAny>("set_web_browser_status", payload)
+            .map(|_| ())
+            .map_err(Into::into)
+    }
+
     /// Read + delete a Share-Extension-captured page HTML file from the
     /// App Group container (iOS only; Android resolves `html: None`).
     pub fn read_share_clip_html(

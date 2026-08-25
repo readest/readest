@@ -76,7 +76,7 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - [Override Layout collapsed `<pre>`](override-layout-collapses-pre-whitespace.md) MERGED #5549 · [Scroll toggle broke turn animation](captured-turn-prepared-surface-lost-on-scroll-toggle.md) FIXED+verified; CDP touch hold is the instrument
 - [#5660 Home/End jump](home-end-book-jump-5660.md) MERGED #5673; `goToFraction(0|1)` one call; guard on `inited`; end footer "66 / 68" is correct
 - [#5724 reader search capped at 500](reader-search-500-cap-5724.md) MERGED #5728; `maxResultsPerBook: Infinity`; sidebar list is NOT virtualized
-- [Word Lens en-vi pack](wordlens-en-vi-pack-5737.md) MERGED #5737; WikDict has NO vi, use kaikki + aria2c -x16 (curl = 6h); vi is target-only
+- [Word Lens en-vi pack](wordlens-en-vi-pack-5737.md) MERGED #5737; WikDict has NO vi; build from the kaikki RAW dump (raw-wiktextract-data.jsonl.gz, per-language file DEPRECATED) + aria2c -x16; vi is target-only
 - [wordlens:sync now incremental](wordlens-sync-incremental-5737.md) MERGED #5737 + fix in #5738; diffs CDN manifest sha256; retired-pair manifest republish was the review catch
 - [#5631 Auto Scroll resumes on reopen](autoscroll-resume-on-reopen-5631.md) MERGED #5710; per-book `autoScrollRunning`; StrictMode LATCHED the unmount ref
 - [Stale format gates in Settings](stale-format-gates-in-settings.md)
@@ -92,3 +92,10 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - [#5175 select bar hides last book](select-mode-actions-overlap-last-book-5175.md) Virtuoso Footer spacer · [#5222 bookshelf import menu](bookshelf-import-menu-popup-5247.md) MERGED #5247
 - [#5651 RLM->ZWNJ half-space](persian-rlm-halfspace-zwnj-5651.md) MERGED; U+0600-06FF contains DIGITS — swap between digits flips visual order
 - [#5301 "Column Gap"->"Additional Margin"](column-gap-additional-margins-5301.md) label rename only
+- [#5820 RSVP fine WPM entry](rsvp-fine-wpm-entry-5820.md) MERGED #5825, verified; Chrome-MCP/deep-link quirks inside
+- [#5815 markers over the dictionary sheet](lookup-popup-range-handles-5815.md) MERGED #5829, Xiaomi verified
+- [#5809 PDF cross-page selection](pdf-cross-page-selection-5809.md) MERGED #5831; Chrome + Xiaomi VERIFIED; iOS not covered
+- [#5814 PDF copy joins line wraps](pdf-copy-join-lines-5814.md) MERGED #5828; unindented last line still merges
+- [#5823 Azure translate](azure-translate-regional-redirect-5823.md) MERGED #5826, CLOSED; bing www 302 -> cn = silent ECHO; worktree submodule file:// quirk
+- [#5142/#5757 bookmark pull on fixed layout](bookmark-pull-fixed-layout-5142.md) `abe180cbd` on dev; gate = hasVerticalPanning; Xiaomi-verified via CDP synthetic touch
+- [#5601 bulk folder import exhaustion](bulk-folder-import-exhaustion-5601.md) #5607+#5615 MERGED, verified; Android `allow_paths_in_scopes` silent no-op UNFIXED

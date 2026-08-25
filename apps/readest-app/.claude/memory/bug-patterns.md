@@ -139,3 +139,4 @@
 - [#5273 undeclared cover.jpg](epub-undeclared-cover-entry-5273.md) MERGED #5339 + foliate#61 · [#5455 OPF `<item></item>` skipped](epub-opf-expanded-item-tags-5455.md) MERGED #5463
 - Stale settings closure: persist `useSettingsStore.getState().settings` ([#4780](webdav-connect-nullified-4780.md)) · Page margins not live #4898 in-place mutation froze memo
 - [Foliate touch-listener capture phase](foliate-touch-listener-capture-phase.md) · [iframe cross-realm instanceof](iframe-cross-realm-instanceof.md) duck-type `'closest'`
+- **Zustand v5 unstable selector snapshot** (`useStore((s) => s.x ?? [])`) loops React until error #185 (Maximum update depth); return a module-level constant instead. Found on-device in #5775 (`WebSourcesDialog`); unit tests with a mocked store cannot catch it, render with the real store.

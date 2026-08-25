@@ -19,3 +19,7 @@ Issue #5814 (2026-08-21): copying/annotating/translating a PDF selection gave on
 **Why:** The heuristic thresholds are tuned on real PDFs; future reports ("paragraphs merged", "lines not joined") should be checked against these rules before changing constants.
 
 **How to apply:** Dump row geometry in the page with the snippet pattern used here (walk `.textLayer` children, group at `<br>`, `getBoundingClientRect` per span) and compare with `classifyBreak` order. Chrome-MCP recipe for PDF selection tests: find iframes through shadow roots (`foliate-view`), build a Range in `iframe.contentDocument`, `addRange`, dispatch `pointerup`/`mouseup` on the end span, then `document.querySelector('button[aria-label="复制"]').click()` (zh UI) with `navigator.clipboard.writeText` wrapped to capture text; synthetic mouse drags and `cmd+c` key events did NOT work. Web import without a picker: `fetch('/_tmp/x.pdf')` from `public/_tmp` (delete before commit) => `DataTransfer` => `DragEvent('drop')` on `.library-page`. See [[feedback-always-verify-on-xiaomi]] for the device recipe (not done for this change).
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [#5814 PDF copy joins line wraps into paragraphs](pdf-copy-join-lines-5814.md) MERGED #5828; geometry heuristics in `src/utils/pdfText.ts`; Chrome-web verified on 3 PDFs; nearly-full unindented last line still merges

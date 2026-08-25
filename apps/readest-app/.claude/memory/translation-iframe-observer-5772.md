@@ -63,3 +63,7 @@ browser test is INVISIBLE - surface values by forcing an assertion diff
 a dwell, not the first callback, or you measure pre-layout noise.
 
 See [[bug-patterns]], [[worktree-new-rebases-pr-force-push]], [[css-style-fixes]].
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [#5772 iframe translation observer](translation-iframe-observer-5772.md) MERGED; cross-document IntersectionObserver NOT broken (PR's root cause FALSE); `allTextNodes` INDEX-COUPLED

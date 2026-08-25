@@ -32,3 +32,7 @@ removed).
 done). If the reporter still wants a built-in
 toggle, it is a follow-up feature, not part of #5803. Related: [[eink-class-substring-matchers]],
 [[library-reader-separate-texture-4743]] (per-device vs synced setting split).
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [#5795 e-ink per-device CSS via data-eink](eink-per-device-css-data-eink-5795.md) MERGED #5803; `html[data-eink]` mirrored onto book docs; WenKai single 400 face = not a bug; comment POSTED; Boox verify PENDING

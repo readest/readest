@@ -31,6 +31,13 @@
   --safe-area-inset-left: env(safe-area-inset-left);
 }
 
+/* Native rubber-band belongs to the library page and the bookshelf only. The
+   reader's scrolled-mode container is a nested scroller too, and iOS WKWebView
+   would bounce it; the foliate view must never overscroll. (#5148) */
+foliate-view::part(container) {
+  overscroll-behavior: none;
+}
+
 /* Fixes the scrollbar gutter issue for DaisyUI */
 /* https://github.com/saadeghi/daisyui/issues/3040#issuecomment-2250530354 */
 :root:has(:is(.modal-open, .modal:target, .modal-toggle:checked + .modal, .modal[open])) {

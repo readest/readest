@@ -16,3 +16,7 @@ User report (v0.11.12 Windows): imported a folder via "Import From Directory" wi
 **Fix (PR #4696):** never `removeFile` an `external` source. Only `managed` sources (our Books/<hash>/ copy) and app-generated sidecars (cover.png, and the whole Books/<hash>/ dir on `purge`) are Readest's to delete. Removed the `external` branch entirely; flipped the in-place tests to assert the source is preserved (cover sidecar still removed on `both`, sidecar dir still wiped on `purge`). Also fixed the misleading JSDoc in `ImportFromFolderDialog.tsx` (`readInPlace`) that documented the destructive behavior as intended.
 
 Out of scope but noted in the support thread: deletion flow lacks a warning/disclaimer, and delete doesn't use the OS Recycle Bin. See [[bug-patterns]].
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [In-place delete wiped originals](in-place-delete-wiped-originals.md) never `fs.removeFile` `external` · [#5084/#5265 "Delete locally" wiped Drive](gdrive-delete-locally-wiped-cloud-5084.md) MERGED #5376

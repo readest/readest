@@ -57,3 +57,7 @@ config; an Android build in the same worktree clobbers `.next` and kills the
 e2e server. `pnpm dev-android` from a fresh worktree took ~6 min (cargo
 cache shared). See [[feedback-always-verify-on-xiaomi]],
 [[instant-dictionary-deselect-5585]].
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [#5815 markers over the dictionary sheet](lookup-popup-range-handles-5815.md) MERGED #5829; markers = app-drawn range-editor handles (Instant Highlight / highlight tap), NOT native; gated on `lookupPopupOpen`; Xiaomi verified; CDP long-press = `synthesizeTapGesture`, instant hold needs `adb input swipe`

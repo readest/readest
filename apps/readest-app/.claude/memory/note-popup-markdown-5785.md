@@ -20,3 +20,7 @@ Fix (**MERGED** as PR #5805, squash `841b3639b` on main, 2026-08-20; worktree an
 **Why:** `prose` colors are theme-aware via daisyUI (`--tw-prose-body: oklch(var(--bc)/0.8)`), so no color overrides are needed; `max-w-none` keeps vertical-rl `minWidth: max-content` behaviour (prose caps width at 65ch).
 
 **How to apply:** Open PR #5780 ([[pr-5780-inline-note-popup-edit-review]]) replaces the whole popup card block with `AnnotationNoteItem.tsx`, which still renders `{note.note}` raw; whichever merges second must port the prose render into `AnnotationNoteItem`. The old "Mirrored in __tests__/utils/md-note.test.ts" comment was stale (test deleted in 171c6de9a). Side observation: the Notebook panel showed "no notes yet" right after saving a note in dev-web, unverified whether pre-existing.
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [#5785 note popup markdown](note-popup-markdown-5785.md) MERGED #5805; `noteMarkdown` util, DOMPurify html+mathMl; OPEN: note links navigate the whole webview (pre-existing)

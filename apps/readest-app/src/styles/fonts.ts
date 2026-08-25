@@ -115,6 +115,8 @@ const getAdditionalCJKFontFaces = () => `
 `;
 
 export const mountAdditionalFonts = async (document: Document, isCJK = false) => {
+  // An SVG spine item has no <head> to mount into.
+  if (!document.head) return;
   const mountCJKFonts = isCJK || isCJKEnv();
 
   // Mount font stylesheets and @font-face rules
@@ -278,6 +280,8 @@ export function createCustomFont(
 }
 
 export const mountCustomFont = (document: Document, font: CustomFont) => {
+  // An SVG spine item has no <head> to mount into.
+  if (!document.head) return;
   const fontStyleId = `custom-font-${font.id}`;
   const styleElement = document.getElementById(fontStyleId) || document.createElement('style');
   styleElement.id = fontStyleId;

@@ -3,6 +3,7 @@ import { CustomFont } from '@/styles/fonts';
 import { CustomTexture } from '@/styles/textures';
 import { HighlightColor, HighlightStyle, UserHighlightColor, ViewSettings } from './book';
 import { OPDSCatalog } from './opds';
+import { WebSource } from './webSource';
 import { ABSServer } from './audiobookshelf';
 import type { AISettings } from '@/services/ai/types';
 import type { NotebookTab } from '@/store/notebookStore';
@@ -467,6 +468,8 @@ export interface SystemSettings {
   dictionarySettings: DictionarySettings;
   opdsCatalogs: OPDSCatalog[];
   absServers: ABSServer[];
+  /** Saved sites for the "From Web Browser" import (#5775). Device-local. */
+  webSources?: WebSource[];
   metadataSeriesCollapsed: boolean;
   metadataOthersCollapsed: boolean;
   metadataDescriptionCollapsed: boolean;

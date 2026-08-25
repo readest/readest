@@ -305,6 +305,7 @@ const FoliateViewer: React.FC<{
               content: data,
               sectionHref: detail.name,
               transformers: [
+                'epubSwitch',
                 'style',
                 'punctuation',
                 'footnote',

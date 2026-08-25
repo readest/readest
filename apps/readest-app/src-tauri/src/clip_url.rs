@@ -39,6 +39,8 @@ use tauri::AppHandle;
 
 #[cfg(desktop)]
 use std::time::Duration;
+#[cfg(target_os = "windows")]
+use tauri::webview::ScrollBarStyle;
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
 #[cfg(desktop)]
@@ -642,6 +644,14 @@ pub async fn clip_url(
 
     #[cfg(all(not(target_os = "macos"), desktop))]
     let win_builder = win_builder.decorations(false).shadow(true);
+
+    // WebView2 shares one browser process across every webview in the app
+    // and refuses to create one whose environment options differ from those
+    // already running (HRESULT 0x8007139F, ERROR_INVALID_STATE). Scroll bar
+    // style is such an option, so this has to match the main window (lib.rs)
+    // or the clip window never opens on Windows.
+    #[cfg(target_os = "windows")]
+    let win_builder = win_builder.scroll_bar_style(ScrollBarStyle::FluentOverlay);
 
     let webview_result = win_builder.build();
 

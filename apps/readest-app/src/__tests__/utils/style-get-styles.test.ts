@@ -64,6 +64,22 @@ function makeThemeCode(overrides: Partial<ThemeCode> = {}): ThemeCode {
 // ---------------------------------------------------------------------------
 // getFontStyles branches
 // ---------------------------------------------------------------------------
+describe('oversized-block rules (via getStyles)', () => {
+  it('does not force pre-wrap white-space onto MathML (#480)', () => {
+    // MathML markup is usually pretty-printed; pre-wrap would turn the newlines
+    // and indentation between <mi>/<mo> tokens into rendered line breaks and
+    // spaces, breaking every inline formula onto its own line.
+    const css = getStyles(makeViewSettings(), makeThemeCode());
+    const preWrapSelectors = [...css.matchAll(/([^{}]+)\{[^}]*white-space:\s*pre-wrap/g)].map((m) =>
+      m[1]!.trim(),
+    );
+    expect(preWrapSelectors.length).toBeGreaterThan(0);
+    for (const selector of preWrapSelectors) {
+      expect(selector).not.toMatch(/\bmath\b/);
+    }
+  });
+});
+
 describe('getFontStyles branches (via getStyles)', () => {
   const theme = makeThemeCode();
 

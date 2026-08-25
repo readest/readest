@@ -224,6 +224,9 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     // packets without it. Released in onDestroy.
     private var multicastLock: android.net.wifi.WifiManager.MulticastLock? = null
 
+    // The in-app browser presented by `open_web_browser` (#5775); null when closed.
+    private var activeWebBrowser: WebBrowserController? = null
+
     private var sensorManager: SensorManager? = null
     private var ambientLightListening = false
     private var lastEmittedLux: Float = Float.NaN
@@ -1401,7 +1404,15 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             withContext(Dispatchers.IO) {
                 val books = org.json.JSONArray()
                 for (book in args.books) {
-                    ReadingWidgetStore.writeThumbnail(activity, book.hash, book.coverPath, book.percent)
+                    // A thumbnail failure must never escape pluginScope: an
+                    // uncaught exception here kills the process, and the
+                    // snapshot is republished on every library load, so one
+                    // bad cover would crash the app on every launch.
+                    try {
+                        ReadingWidgetStore.writeThumbnail(activity, book.hash, book.coverPath, book.percent)
+                    } catch (e: Exception) {
+                        Log.w("NativeBridgePlugin", "widget thumbnail failed for ${book.hash}", e)
+                    }
                     books.put(
                         org.json.JSONObject()
                             .put("hash", book.hash)
@@ -1797,6 +1808,57 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
             }
         }
         controller.show()
+    }
+
+    /**
+     * Present the in-app browser (#5775). Resolves `{ openBookHash? }` when
+     * the user closes it; downloads are emitted as `web-browser-download`
+     * plugin events while it is open (queued if JS has not registered yet).
+     */
+    @Command
+    fun open_web_browser(invoke: Invoke) {
+        val args = try {
+            invoke.parseArgs(WebBrowserArgs::class.java)
+        } catch (e: Exception) {
+            invoke.reject(e.message ?: "Invalid open_web_browser args")
+            return
+        }
+        val controller = WebBrowserController(
+            activity,
+            args,
+            onDownload = { event ->
+                val payload = JSObject()
+                payload.put("url", event.url)
+                payload.put("path", event.path)
+                payload.put("filename", event.filename)
+                payload.put("success", event.success)
+                event.error?.let { payload.put("error", it) }
+                emitOrQueue("web-browser-download", payload)
+            },
+            completion = { hash ->
+                activeWebBrowser = null
+                val ret = JSObject()
+                if (hash != null) ret.put("openBookHash", hash)
+                invoke.resolve(ret)
+            },
+        )
+        activeWebBrowser = controller
+        controller.show()
+    }
+
+    /** Push an import status into the open browser's banner. */
+    @Command
+    fun set_web_browser_status(invoke: Invoke) {
+        val args = try {
+            invoke.parseArgs(WebBrowserStatusArgs::class.java)
+        } catch (e: Exception) {
+            invoke.reject(e.message ?: "Invalid set_web_browser_status args")
+            return
+        }
+        activity.runOnUiThread {
+            activeWebBrowser?.setStatus(args.state ?: "", args.filename ?: "", args.bookHash)
+        }
+        invoke.resolve()
     }
 
     /**

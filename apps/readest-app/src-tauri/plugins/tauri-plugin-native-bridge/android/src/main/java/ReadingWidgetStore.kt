@@ -26,7 +26,11 @@ object ReadingWidgetStore {
         File(context.filesDir, "widget/covers").apply { mkdirs() }
 
     fun writeThumbnail(context: Context, hash: String, sourcePath: String, percent: Int) {
-        val dst = File(coversDir(context), "$hash.png")
+        val dir = coversDir(context)
+        val dst = File(dir, "$hash.png")
+        // The hash comes from library records (cloud sync, backup restore)
+        // and is used as a file name; never let it escape the covers dir.
+        if (dst.canonicalFile.parentFile != dir.canonicalFile) return
         val src = File(sourcePath)
         if (!src.exists()) { dst.delete(); return }
         // Note: skip-if-unchanged removed because the composite depends on the live percent.
@@ -38,11 +42,22 @@ object ReadingWidgetStore {
         var sample = 1
         while (longEdge / sample > THUMB_HEIGHT * 2) sample *= 2
         val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-        val bitmap = BitmapFactory.decodeFile(sourcePath, opts) ?: return
+        val bitmap = BitmapFactory.decodeFile(sourcePath, opts) ?: run { dst.delete(); return }
 
         // Center-crop to 2:3 portrait aspect (width:height = 2:3).
         val srcW = bitmap.width
         val srcH = bitmap.height
+        // A cover that decodes 1px tall (a 1x1 placeholder cover shipped in
+        // some EPUBs, or a wide banner that inSampleSize downsamples to a
+        // single row) makes cropW = srcH * 2 / 3 = 0, and Bitmap.createBitmap
+        // throws "width must be > 0". A 1px-wide cover crops fine but is just
+        // as useless, so reject both: drop any stale thumbnail so the widget
+        // falls back to no cover instead.
+        if (srcW < 2 || srcH < 2) {
+            bitmap.recycle()
+            dst.delete()
+            return
+        }
         val cropW: Int
         val cropH: Int
         if (srcW * 3 > srcH * 2) {
@@ -138,7 +153,8 @@ object ReadingWidgetStore {
     }
 
     private fun notifyWidgets(context: Context) {
-        val mgr = AppWidgetManager.getInstance(context)
+        // Null on builds without app widget support (TV, automotive).
+        val mgr = AppWidgetManager.getInstance(context) ?: return
         val cls = ReadingWidgetProvider::class.java
         val ids = mgr.getAppWidgetIds(ComponentName(context, cls))
         if (ids.isNotEmpty()) {

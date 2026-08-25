@@ -105,3 +105,7 @@ forward of `webview_devtools_remote_<pid>`).
 (may sit above the first part); iOS unsupported; EPUB scrolled cross-chapter
 not enabled (gated on isFixedLayout); double-click-drag across pages keeps
 the caret anchor (not word start).
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [#5809 PDF cross-page selection](pdf-cross-page-selection-5809.md) MERGED #5831 (`4df8b37b7`), worktree removed, issue closed; gated `isFixedLayout && scrolled`; `segments` composite; mouse = html user-select:none freeze (Chromium 148+); Android = app handles in scroll mode (native handle touches never reach the page); Chrome + Xiaomi PR-APK VERIFIED (forward/back/backward/highlight/pan/paginated); iOS not covered

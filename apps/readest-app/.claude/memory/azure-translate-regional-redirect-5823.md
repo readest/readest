@@ -23,3 +23,7 @@ Issue #5823 (2026-08-22, Windows 0.12.1, Azure Translator, Auto Detect -> Indone
 - Device APK reports versionName 0.12.1 even for dev builds; it was a post-#5620 build. md5-check before trusting.
 
 **How to apply:** Treat Azure/Bing failures as three separate things (language code, regional host, error surfacing). For any Tauri networking repro on this Mac, decide first whether the bug needs proxied or direct egress. See [[feedback-always-verify-on-xiaomi]], [[translation-inline-markup-1582]].
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [#5823 Azure "Unable to fetch the translation"](azure-translate-regional-redirect-5823.md) reporter's bug = #5620 (merged, NOT in 0.12.1); PR #5826 MERGED (`a4358d22e`), worktree removed, issue CLOSED: regional bing host POST (www 302 -> cn = silent ECHO) + popup error detail; Mac system proxy hides the redirect from Tauri; `tauri dev` binary invisible to computer-use; worktree submodule is file:// (needs `protocol.file.allow=always` after a pin bump)

@@ -398,6 +398,42 @@ pub struct ClipUrlResponse {
     pub html: String,
 }
 
+/// Args for the in-app web browser (#5775). Mirrors `WebBrowserOptions`
+/// in `web_browser.rs` plus the absolute `download_dir` Rust resolved from
+/// `app_cache_dir()` so native downloads land inside the fs scope.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebBrowserRequest {
+    pub url: String,
+    pub download_dir: String,
+    #[serde(default)]
+    pub background: Option<String>,
+    #[serde(default)]
+    pub foreground: Option<String>,
+    #[serde(default)]
+    pub is_eink: Option<bool>,
+    #[serde(default)]
+    pub labels: HashMap<String, String>,
+}
+
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebBrowserResponse {
+    /// Set when the user tapped [Open] on an imported book in the chrome.
+    #[serde(default)]
+    pub open_book_hash: Option<String>,
+}
+
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WebBrowserStatusRequest {
+    /// `importing` | `added` | `failed` | `unsupported`
+    pub state: String,
+    pub filename: String,
+    #[serde(default)]
+    pub book_hash: Option<String>,
+}
+
 /// Read (and delete) a page-HTML file the iOS Share Extension captured
 /// from the user's signed-in Safari tab into the App Group container.
 #[derive(Debug, Default, Deserialize, Serialize)]

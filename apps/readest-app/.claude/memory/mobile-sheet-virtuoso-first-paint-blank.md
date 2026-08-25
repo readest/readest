@@ -15,3 +15,7 @@ On the mobile bottom-sheet sidebar (window < 640px), the annotations/TOC list fi
 **Why:** `initialTopMostItemIndex={index: nearestIndex, align: 'center'}` (far index at a deep reading position) races the sheet slide-in animation + deferred OverlayScrollbars init; the `initialized` rAF re-apply doesn't recover it. The desktop docked sidebar is unaffected (no entry animation).
 
 **How to apply:** file/fix as its own issue, NOT inside feature branches touching BooknoteView (the tuned scroll wiring is easy to break). Candidate fix direction: delay virtuoso mount (or re-assert scrollToIndex) until the sheet's transitionend, or listen for the first ResizeObserver tick before applying initialTopMostItemIndex.
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [Mobile sheet virtuoso first-paint blank](mobile-sheet-virtuoso-first-paint-blank.md) PRE-EXISTING · [PR #5389 library full-text search review](pr-5389-library-search-review.md) plan in .agents/plans

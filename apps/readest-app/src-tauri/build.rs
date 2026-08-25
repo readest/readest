@@ -48,6 +48,8 @@ fn main() {
             "update_book_presence",
             "clear_book_presence",
             "clip_url",
+            "open_web_browser",
+            "set_web_browser_status",
             "spawn_fresh_browser",
             "verify_update_signature",
             "install_nightly_update",

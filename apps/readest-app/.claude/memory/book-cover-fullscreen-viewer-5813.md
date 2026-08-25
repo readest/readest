@@ -49,3 +49,7 @@ Cover">`. i18n key added manually to all 34 locales (no scanner churn).
 **How to apply:** after merge, verify on Xiaomi (sidebar is `position: fixed`
 full-width on mobile) and iOS (asset fetch). Related:
 [[feedback-always-verify-on-xiaomi]], [[ios-imageviewer-zoom-blur-5633]].
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [#5813 cover full screen from sidebar/Book Details](book-cover-fullscreen-viewer-5813.md) MERGED #5827, worktree removed; web verified, device verify pending; ImageViewer Escape = pre-existing; aria-labels are translated (don't select by English label)

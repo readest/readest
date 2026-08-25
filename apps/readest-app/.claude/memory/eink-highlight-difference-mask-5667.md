@@ -39,3 +39,7 @@ re-breaks it.
 **How to apply:** before touching any e-ink overlay color, check whether the
 overlay is blended. Grep `--overlayer-highlight-blend-mode` in `useTheme.ts`.
 If blended: white always, never the theme background.
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [#5667 e-ink highlight invisible in dark](eink-highlight-difference-mask-5667.md) MERGED #5735; difference-blend fill = INVERSION MASK; transientHighlight UNFIXED; device verify pending
