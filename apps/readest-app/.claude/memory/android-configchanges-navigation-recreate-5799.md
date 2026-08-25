@@ -21,3 +21,7 @@ Issue #5799 (Android): connecting/disconnecting a Bluetooth HID page turner (Han
 **NOT verified:** the actual BT-HID hotplug on the patched build — needs the physical Free3-M (no adb way to synthesize a `navigation` config change on a non-rooted phone). Reporter already verified the pre-fix crash with the hardware.
 
 See [[feedback-always-verify-on-xiaomi]] for the CDP recipe; wry/tao are the readest fork submodule at `packages/tauri` / cargo registry.
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [#5799 BT HID hotplug recreates activity](android-configchanges-navigation-recreate-5799.md) MERGED #5804; `navigation` in gen manifest configChanges (upstream template lacks it, regen reintroduces); real hotplug verify PENDING

@@ -1,22 +1,28 @@
 ---
 name: apple-iap-lost-storage-purchase-restore-verify
-description: "Apple order MSXWGYVFZK (1GB storage, CHN) never reached Supabase: one-shot client verify + webhook ignores one-time purchases + iOS restore never re-verified; fix mirrors Google #5545"
+description: "Apple one-time storage purchases keep getting lost client-side (orders MSXWGYVFZK 08-13, MLYD8F9573 08-25 both credited manually); restore-verify fix #5669 MERGED but UNRELEASED (newest tag v0.12.1 predates it), so shipped iOS Restore Purchases still can't self-heal; manual credit recipe inside"
 metadata: 
   node_type: memory
   type: project
   originSessionId: ef318d77-c7c9-46ec-80e5-99d7caf2520b
-  modified: 2026-08-13T05:18:02.909Z
+  modified: 2026-08-25T00:00:00.000Z
 ---
 
-Found 2026-08-13. A CHN-storefront Apple purchase (order MSXWGYVFZK, tx `450003083195506`, `com.bilingify.readest.storage.1gb.purchase`, ¥68, valid + unrevoked per App Store Server API `lookupOrder`) never landed in `payments`/`plans`. Buyer's Apple ID is `114*...@gmail.com` but their Readest login is `1147370717@qq.com` (user `d1b08ed8-dd0c-48a0-9e6d-13809db22bb5`) — Apple ID email ≠ Readest login, so the buyer was NOT derivable from data; chrox supplied the account from the support conversation. CREDITED manually 2026-08-13 (payments row + `storage_purchased_bytes` = 1 GiB) via scratchpad `credit-order.js`.
+**Incidents (both = valid, unrevoked Apple tx that never reached `payments`/`plans`):**
+1. 2026-08-13 order MSXWGYVFZK, tx `450003083195506`, CHN ¥68. Apple ID email ≠ Readest login (`1147370717@qq.com`, user `d1b08ed8-dd0c-48a0-9e6d-13809db22bb5`). CREDITED manually.
+2. 2026-08-25 order MLYD8F9573, tx `150003317647031`, DEU €9.99 (Apple `price` is milliunits: 9990), purchased 04:53Z. Apple ID `daniel@drs.li` ≠ Readest login `drs1337@googlemail.com` (google OAuth, user `1d9cbfc7-41a9-4f32-b94e-51468f4b3d38`). CREDITED manually same day; `payments.metadata = {manual_credit:true, apple_order_id, reason}` for audit. Other iOS 1 GB purchases that same day DID land, so the pipeline works for most users; the loss is per-device (network/app death between StoreKit and the one-shot client verify).
+
+Buyer is NEVER derivable from data: Apple ID email ≠ login in both cases and the app sets no `appAccountToken` (Apple tx shows `appAccountToken: null`). Support must supply the account email.
 
 **Why one-time purchases get lost (3 gaps):**
-1. Verification is ONE client-side fetch from `subscription/success/page.tsx` to `node.readest.com/api/apple/iap-verify`; network failure (China) or app death = purchase recorded nowhere.
-2. `StoreKitManager.swift` (StoreKit 1) calls `finishTransaction` on `.purchased` even when `purchaseHandler` is nil — a transaction delivered while JS isn't listening is silently dropped.
-3. Apple webhook `notifications.ts` deliberately skips non-refund one-time purchase events (`ignored_purchase_event`) — can't attribute anyway: the app never sets `appAccountToken` (grep = zero usage).
+1. Verification is ONE client-side fetch from `subscription/success/page.tsx` to `node.readest.com/api/apple/iap-verify`; failure = purchase recorded nowhere.
+2. `StoreKitManager.swift` (StoreKit 1) calls `finishTransaction` on `.purchased` even when `purchaseHandler` is nil — dropped silently.
+3. Apple webhook `notifications.ts` skips non-refund one-time purchase events (`ignored_purchase_event`).
 
-**Fix (MERGED PR #5669 2026-08-13):** `verifyApplePurchaseProducts` in `src/libs/payment/iap/client.ts` — iOS mirror of `verifyGooglePurchaseProducts` ([[google-iap-consume-storage-purchases]] #5545, which only covered `platform === 'android'`) — wired into `handleIAPRestorePurchase` in `user/page.tsx`. Server dedupes via upsert on `apple_original_transaction_id`; `updateUserStorage` recomputes `plans.storage_purchased_bytes` (= sum of completed `payments.storage_gb`). Restored SK1 transactions DO carry `original?.transactionIdentifier`, and the verify route only needs originalTransactionId. Customer self-heal after release: sign in → Restore Purchases.
+**Fix #5669 (MERGED 2026-08-13, ed3ecca6d) is NOT in any release** as of 2026-08-25: newest tag `v0.12.1` was cut 2026-08-09. `verifyApplePurchaseProducts` (`src/libs/payment/iap/client.ts`, wired into `handleIAPRestorePurchase` in `user/page.tsx`) only helps once an iOS build containing it ships — until then every "Restore Purchases doesn't work" ticket for a storage purchase is expected and needs a manual credit. After release: customer signs in → Restore Purchases; server dedupes via upsert on `apple_original_transaction_id`.
 
-**Key lookups:** `lookupOrder(orderId)` in `app-store-server-api` maps an emailed Apple ORDER ID → transaction; env keys `APPLE_IAP_*` + `APPLE_IAP_PRIVATE_KEY_BASE64` in `.env.local`, prod Supabase URL base64 in `.env`, admin key `SUPABASE_ADMIN_KEY`. Manual credit script: scratchpad `credit-order.js` (guards against double-credit; needs the buyer's account email from support).
+**Manual credit recipe** (scratchpad is session-scoped and gets wiped — rebuild from this): Node CJS script requiring `node_modules/app-store-server-api` + `@supabase/supabase-js`; env from `.env.local` (`APPLE_IAP_KEY_ID/ISSUER_ID/BUNDLE_ID/PRIVATE_KEY_BASE64`, `SUPABASE_ADMIN_KEY`) and `.env` (`NEXT_PUBLIC_DEFAULT_SUPABASE_URL_BASE64`, base64-decode). Steps: `new AppStoreServerAPI(key,keyId,issuerId,bundleId,Environment.Production).lookupOrder(orderId)` → `status 0` = valid → `decodeTransaction(signedTransactions[i])`; find user via GoTrue admin `GET {url}/auth/v1/admin/users?filter=<email>` (also try gmail↔googlemail); guard no existing `payments` row for `apple_original_transaction_id` (abort if another user owns it); upsert `payments` {user_id, provider:'apple', product_id, apple_transaction_id, apple_original_transaction_id, storage_gb (parse `\.(\d+)gb`), status:'completed'} onConflict `apple_original_transaction_id` (the automatic path leaves amount/currency NULL); then `plans.storage_purchased_bytes = sum(storage_gb of completed|succeeded payments) * 2^30`. `plans` has NO `updated_at` column.
 
-**Follow-ups (not done):** set `appAccountToken` (= Supabase user UUID) at purchase so ONE_TIME_CHARGE webhooks are attributable server-side; iOS storage products are Non-Consumable in ASC (Apple tx `type: "Non-Consumable"`) so the same tier can't be stacked twice on iOS, contradicting the "each purchase adds more space" design — verify ASC config before relying on stacking. Free-plan `plans.storage_usage_bytes` has users at 77 GB with 0 purchased — quota enforcement gap worth auditing.
+**Quota display:** `getStoragePlanData` in `src/utils/access.ts` reads `plan`/`storage_usage_bytes`/`storage_purchased_bytes` from JWT claims, so a credited user sees the new quota only after token refresh or sign-out/in. Free plan + 1 GB purchase shows **1.5 GB** (`DEFAULT_STORAGE_QUOTA.free` 500 MB + purchased; `plan` stays `free` in the claim, `purchase` quota is 0).
+
+**Follow-ups (not done):** ship a release with #5669; set `appAccountToken` (= Supabase user UUID) at purchase so ONE_TIME_CHARGE webhooks are attributable server-side; iOS storage products are Non-Consumable in ASC so the same tier can't be stacked twice on iOS — verify ASC config before relying on "each purchase adds more space". Free-plan `plans.storage_usage_bytes` has users at 77 GB with 0 purchased — quota enforcement gap worth auditing. See [[google-iap-consume-storage-purchases]] for the Android mirror (#5545).

@@ -11,9 +11,11 @@ metadata:
 PR #5738 (2026-08-16) adds `en-hu`, plus the review follow-up to #5737's sync.
 
 **WikDict has no Hungarian either** (`en-hu.sqlite3` = 404), so `en-hu` uses the same kaikki
-`build` mode as en-vi. The cached `data/wordlens/.sources/kaikki-en.jsonl` already covered it:
-**one 3.2 GB download serves every kaikki-sourced en-X pair**, so adding another target is now
-just one build command, no download. See [[wordlens-en-vi-pack-5737]].
+`build` mode as en-vi. **One kaikki download serves every kaikki-sourced en-X pair**, so adding
+another target is just one build command. Since 2026-08-25 that download is the RAW dump
+`.sources/raw-wiktextract-data.jsonl.gz` (the old `.sources/kaikki-en.jsonl` is the DEPRECATED
+post-processed file); en-hu was regenerated from it with 652 first-sense fixes. See
+[[wordlens-en-vi-pack-5737]].
 
 **13,641 entries** — far better than en-vi's 9,759 and close to en-es (14,769) / en-de (14,926).
 Hungarian Wiktionary translation coverage is good. Per-band: 1k+:868 2k+:1496 4k+:2298 8k+:2642

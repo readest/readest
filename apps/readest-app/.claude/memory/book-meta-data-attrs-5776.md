@@ -46,3 +46,7 @@ Existing libraries still hold string indices; never reintroduce a strict
 (readerStore/bookService default missing position to 0), pre-existing, OPEN.
 The `/ship` skill's gstack bin paths (`~/.claude/skills/gstack/bin`) are stale
 here; the install lives at `apps/readest-app/.claude/skills/gstack/`.
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [#5776 book title/series data attrs](book-meta-data-attrs-5776.md) MERGED #5806; edited `seriesIndex` persisted as STRING fixed via `getSeriesIndex`; index 0 unrepresentable; device check pending

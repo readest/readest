@@ -67,3 +67,6 @@ TTS tracks its own section independently from the view via `#ttsSectionIndex`:
 4. **Can't restart:** Check for refs/guards that prevent re-entry into speak handlers
 5. **Fails on some chapters:** Check if chapter has lang attribute and XHTML namespace
 6. **SSML errors:** Check `src/utils/ssml.ts` for proper namespace/lang handling
+
+## Recent fixes
+- [#5767 TTS offline shared-sentence fix](tts-offline-shared-sentence-5768.md) MERGED; Xiaomi VERIFIED; OPEN: empty-section Downloaded flip

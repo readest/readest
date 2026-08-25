@@ -65,3 +65,7 @@ syncCategories restored to book:true (semantically the pre-test state; the expli
 
 Related: [[reference-page-count-sync-5716]] (book_configs no field-level merge),
 [[multi-provider-cloud-sync-5062]] (provider routing), [[browser-verify-readest-web-recipe]].
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [Books toggle doesn't gate OPDS uploads](sync-books-toggle-opds-upload-leak.md) OPDS gate MERGED #5759; `isBookUploadAllowed` provider-only + queued residue UNFIXED; syncCategories NOT in SETTINGS_WHITELIST

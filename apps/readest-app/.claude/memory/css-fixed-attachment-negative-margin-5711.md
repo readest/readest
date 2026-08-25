@@ -21,3 +21,7 @@ Non-obvious traps hit while reproducing:
 - When hunting "who painted this pixel" in the reader, enumerate computed `backgroundImage !== 'none'` across ALL iframes AND the top document's shadow roots — the painter was a foliate shadow-DOM div, invisible to `elementFromPoint` (canvas-level paint under content).
 
 Related: [[table-cell-overflow-wrap-anywhere-5681]] (same transformStylesheet hub), [[fxl-authored-colors-5649]] (FXL bypasses all transforms).
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [#5711 fixed-attachment garble + negative-margin bleed](css-fixed-attachment-negative-margin-5711.md) MERGED #5729; body corner-logo over footer = paginator bg mirroring, OPEN

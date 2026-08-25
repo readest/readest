@@ -1,10 +1,11 @@
 ---
 name: audiobookshelf-integration-phase1
 description: "Audiobookshelf (ABS) integration Phase 1 - 14 tasks shipped on feat/audiobookshelf-phase1: server config+sync, API client, abs:// book format, library sync, PlaybackSource seam, streaming AudiobookController, progress sync, player route, iOS native AVPlayer; web uses ABS opt-in CORS (proxy removed)"
-metadata:
+metadata: 
   node_type: memory
   type: project
-  modified: 2026-08-19T06:55:00.000Z
+  modified: 2026-08-24T07:10:16.082Z
+  originSessionId: b402aa04-f3da-47c5-b46b-e3e7d2a6a05f
 ---
 
 Branch `feat/audiobookshelf-phase1` (worktree `/Users/chrox/dev/readest-feat-audiobookshelf-phase1`), 24 commits on `771b152e5..HEAD`. Spec/plan at `.superpowers/sdd/2026-08-18-audiobookshelf-phase1-plan/` and `.claude/plans/2026-08-18-audiobookshelf-{integration-design,phase1-plan}.md`. NOT pushed/PR'd as of Task 15 (final verification pass) - do not push until the user confirms.
@@ -57,6 +58,18 @@ Podcast shows sync as `format:'ABS'` Books marked `absMediaType:'podcast'` with 
 
 Xiaomi-verified: picker/default-select, 10 shows w/ badges, episodes list, playback, per-episode server round-trip, episode switch, restart survival. WATCH-ITEM: one-off settings.absServers wipe on first podcast-build boot (unreproduced) — hardened by `0da2cbcd2` (never wipe local server config on no-information). Automation note: `readest://book/<hash>` deep link bypasses #4584 tap-death.
 
+## ABS server info not syncing cross-device (2026-08-24, ROOT-CAUSED, awaiting deploy)
+
+Setup on Xiaomi never appears on other devices: the DEPLOYED prod API (web.readest.com/api/sync/replicas) rejects `kind=abs_server` with 422 UNKNOWN_KIND — its `KIND_ALLOWLIST` predates the #5801 merge (probe: abs_server 422, opds_catalog 200 w/ rows). Device push is silently routed around (`unsupportedKinds`, session-scoped, `replicaSyncManager.ts`); the row never lands in the `replicas` table, so every device's pull returns 0 rows. ABS book stubs DO cross (legacy `/api/sync?type=books` channel) — books-without-server is the telltale signature. NO code fix needed (allowlist already on main); fix = web deploy, but migration 020 MUST be applied to prod first (see stat-pages memory) or stats pulls 500. After deploy the Xiaomi row self-heals: app restart clears unsupportedKinds and the 5-min ABS sync's `updateServer(lastSyncedAt)` (librarySync.ts:288) republishes. Credentials (tokens/password) still won't cross unless the user opts into the Credentials sync category — web will show the server but need a login.
+
+**Orphan-tile fix (2026-08-24, MERGED #5841 `39275c986`, worktree removed).** (1) `isAbsBookOrphaned` in absServerStore + Bookshelf `visibleBooks` filter hides ABS books whose server row is absent/tombstoned from grid/groups/recent/search (rows stay in store and keep syncing; disabled servers still count as configured); (2) `backfillAbsCovers` in librarySync fetches missing covers UNAUTHENTICATED (cover endpoints public, itemId from filePath) before `syncAllAbsServers` in useABSSync, clone-then-replace so store books are never mutated in place. Web-verified: library 77 -> 28, orphan tiles gone. Suite 9938 pass + lint + format clean. Backfill not yet network-verified (needs a device with the server row).
+
+**Missing covers on peers = same root cause, self-heals.** ABS covers never travel through Readest Cloud (audiobooks are fileless; transferManager.ts:154/184 returns null, nothing uploaded) — each device fetches covers DIRECTLY from the ABS server during its own `syncAbsServer` pass (`downloadAbsCover`; ABS cover endpoints are unauthenticated + CORS-open). A peer that adopted ABS books via the cloud books channel shows placeholder covers (local `/Readest/Books/<hash>/cover.png` 404s) until it can run its own ABS sync, which needs the server row + a login. Healing works because the cover loop's gate is `upserts` membership and cloud-adopted books ALWAYS reconcile as changed on first sync: `duration`/`episodeCount` are local-only Book fields (not cloud columns in transformBookToDB), undefined on the peer vs real values from ABS. LATENT coupling: cover backfill only runs for changed books — a book that reconciles unchanged with a missing cover.png never re-fetches it (masked today, would bite if duration/episodeCount ever become cloud columns).
+
 ## Status 2026-08-20
 
 Phases 1+2 are fully merged into local `dev` (still NOT pushed; `dev` is ~58 commits ahead of origin/main). The `feat/audiobookshelf-phase1` branch still exists but its worktree is removed; a phase-2 SDD run on 2026-08-20 confirmed every plan task P1-P5 (incl. Xiaomi device verification) was already completed on dev by the 2026-08-19 session — nothing remained to implement. i18n extraction+translation for the player/ABS strings is DONE (`3d01e7365`), clearing that backlog item. Remaining device-verify debt from the Phase 1 list: iOS build+streaming, lock screen/CarPlay/Android Auto seam coverage, e-ink player visual check. PR #5801 (2026-08-20) ships the 54 ABS commits squashed to 3 on `feat/audiobookshelf` (worktree `/Users/chrox/dev/readest-feat-audiobookshelf`); lint-staged auto-collapsed tauri.conf.json arrays during the squash so the branch also carries the Biome format normalization; the 4 non-ABS dev commits (bookmark pull, tauri style, memory chores) are NOT in the PR.
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [Audiobookshelf phases 1+2](audiobookshelf-integration-phase1.md) MERGED #5801; orphan-tile hide + unauth cover backfill MERGED #5841; abs_server cross-device sync DEAD until web deploy (prod API 422 UNKNOWN_KIND, migration 020 first); iOS/CarPlay/e-ink verify pending

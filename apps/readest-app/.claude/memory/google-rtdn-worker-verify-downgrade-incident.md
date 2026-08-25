@@ -20,3 +20,7 @@ Production incident found 2026-07-17 (user report: Plus reverted to free, restor
 **Why:** googleapis client is Node-only; workerd repro crashed with uncaught "internal error" even at import. Any code that must run in the RTDN path on the worker needs jose+fetch (like the Apple handler) or the push subscription must target node.readest.com.
 
 **How to apply:** fix MERGED+DEPLOYED 2026-07-17 (PR #5163): (b) throw on verify-failure for non-terminal notification types (Pub/Sub retries), (c) upsert onConflict `user_id,purchase_token` + stop rewriting created_at, (d) log real verify errors. Data repair APPLIED 2026-07-17: 23 sub rows + 20 plans restored, 8 genuine expiries left; script idempotent (re-verifies live). Pub/Sub push URL repointed to node.readest.com 2026-07-17 (endpoint probed live, 401 on bad token = RTDN token env present). INCIDENT CLOSED. Watch: next renewal should write a `..N` suffixed order_id + advanced expiry (signature of the fixed path). If the webhook must ever move back to the worker, the verifier needs a jose+fetch rewrite first. Reporter user cc36b1b5 (order GPA.3350-9974-1920-32675, active till Aug 3, fully restored). Related: [[cf-worker-64mb-turbopack-regression]].
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [Google RTDN verify downgrade](google-rtdn-worker-verify-downgrade-incident.md) googleapis dead on workerd · [Play storage add-ons never consumed](google-iap-consume-storage-purchases.md) MERGED #5545

@@ -68,3 +68,7 @@ Checked and NOT at risk: our own API routes validate Origin (`azure-translate/ro
 `tokenEndpoint.ts:52-64` already implements this same opt-out (`ORIGIN_HEADER` /
 `NO_ORIGIN`) for OAuth token redemption, ungated by platform. See [[opds-fixes]],
 [[custom-headers-kosync-bookorbit-5570]].
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [#5698 Komga OPDS 403](opds-komga-origin-403-5698.md) MERGED #5765; empty-Origin opt-out needs `unsafe-headers`; 28 of 29 plugin-http sites still send `tauri://localhost`

@@ -135,3 +135,7 @@ relaunch against a still-existing picked folder.
 shell makes `runningboardd` write the **entire environment** into the macOS
 unified log as part of the RBSLaunchRequest job description — key and password
 together. Anything that collects a sysdiagnose captures them.
+
+
+## Index status as of 2026-08-24 (moved verbatim from MEMORY.md)
+- [MAS blank window](mas-sandbox-blank-customrootdir.md) hardening MERGED #5789; stale `customRootDir` sandbox-denied; runtime verify PENDING; macOS custom root has NO security-scoped bookmark; readest has NO VERSION file (`/ship` bump N/A)
