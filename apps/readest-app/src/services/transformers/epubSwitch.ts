@@ -41,7 +41,7 @@ export const epubSwitchTransformer: Transformer = {
 
   transform: async (ctx) => {
     const { content } = ctx;
-    if (!/<(?:\w+:)?switch[\s>]/.test(content)) return content;
+    if (!/<(?:[^\s<>/:]+:)?switch[\s/>]/.test(content)) return content;
 
     const doc = new DOMParser().parseFromString(content, 'application/xhtml+xml');
     if (doc.querySelector('parsererror')) return content;

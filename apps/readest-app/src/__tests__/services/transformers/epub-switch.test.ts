@@ -64,6 +64,20 @@ describe('epubSwitchTransformer', () => {
     expect(result).not.toMatch(/<switch/);
   });
 
+  test('resolves a switch bound to a hyphenated namespace prefix', async () => {
+    // XML names allow hyphens in prefixes; the fast path must not skip them.
+    const html =
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub-3="${OPS}"><head><title>t</title></head>` +
+      `<body><epub-3:switch><epub-3:case required-namespace="${CML}">` +
+      `<chem xmlns="${CML}"><atom>H</atom></chem></epub-3:case>` +
+      '<epub-3:default><p id="fallback">water</p></epub-3:default></epub-3:switch></body></html>';
+    const result = await epubSwitchTransformer.transform(makeCtx(html));
+    expect(result).toContain('id="fallback"');
+    expect(result).not.toContain('<atom');
+    expect(result).not.toMatch(/<epub-3:switch/);
+  });
+
   test('keeps the XML declaration and doctype of a resolved document', async () => {
     const html =
       '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE html>\n' +
