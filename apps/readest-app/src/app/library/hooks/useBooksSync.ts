@@ -35,6 +35,17 @@ export const useBooksSync = () => {
   const { setLibrary, setIsSyncing, setSyncProgress } = useLibraryStore();
   const { useSyncInited, syncedBooks, syncBooks, lastSyncedAtBooks } = useSync();
   const isPullingRef = useRef(false);
+  // A library change that lands while a sync is in flight must not be lost.
+  // The post-import chain (push, pull, follow-up pull) runs for seconds and a
+  // book's upload completes inside it, stamping `uploadedAt` — the field
+  // peers gate adoption on. Dropping that change left the cloud row with
+  // `uploaded_at = null` until an unrelated change re-pushed the book.
+  const syncPendingRef = useRef(false);
+  const handleAutoSyncRef = useRef<() => void>(() => {});
+  const releaseSyncLock = useCallback(() => {
+    isPullingRef.current = false;
+    if (syncPendingRef.current) handleAutoSyncRef.current();
+  }, []);
 
   const getNewBooks = useCallback(() => {
     if (!user) return {};
@@ -129,28 +140,34 @@ export const useBooksSync = () => {
           });
         }
       } finally {
-        isPullingRef.current = false;
+        releaseSyncLock();
       }
     },
-    [_, user, libraryLoaded, syncBooks, envConfig],
+    [_, user, libraryLoaded, syncBooks, envConfig, releaseSyncLock],
   );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleAutoSync = useCallback(
     throttle(
       async () => {
-        if (isPullingRef.current) return;
+        if (isPullingRef.current) {
+          syncPendingRef.current = true;
+          return;
+        }
         // Readest Cloud unchecked: the native book channel is gated (the auto
         // library sync itself is useLibraryFileSync's).
         const settingsNow = useSettingsStore.getState().settings;
         if (!isReadestCloudEnabled(settingsNow)) return;
         const newBooks = getNewBooks();
         if (!newBooks.lastSyncedAt) return;
+        // getNewBooks just read the live library, so every change up to now
+        // rides on this sync; only changes landing during it re-arm.
+        syncPendingRef.current = false;
         isPullingRef.current = true;
         try {
           await syncBooks(newBooks.books, 'both');
         } finally {
-          isPullingRef.current = false;
+          releaseSyncLock();
         }
       },
       SYNC_BOOKS_INTERVAL_SEC * 1000,
@@ -160,8 +177,11 @@ export const useBooksSync = () => {
   );
 
   useEffect(() => {
+    handleAutoSyncRef.current = handleAutoSync;
+  }, [handleAutoSync]);
+
+  useEffect(() => {
     if (!user) return;
-    if (isPullingRef.current) return;
     handleAutoSync();
   }, [user, library, handleAutoSync]);
 
