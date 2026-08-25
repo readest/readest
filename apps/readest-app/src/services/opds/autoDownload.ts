@@ -15,7 +15,7 @@ import {
   saveSubscriptionState,
   pruneKnownEntryIds,
 } from './subscriptionState';
-import { upsertOPDSSourceMapping } from './sourceMap';
+import { findBookByOPDSSources, upsertOPDSSourceMapping } from './sourceMap';
 import { isRetryEligible, DOWNLOAD_CONCURRENCY, MAX_RETRY_ATTEMPTS } from './types';
 import type { PendingItem, SyncResult, OPDSSubscriptionState, FailedEntry } from './types';
 import { runWithConcurrency } from '@/utils/concurrency';
@@ -31,6 +31,32 @@ async function downloadAndImport(
   books: Book[],
 ): Promise<Book> {
   const url = resolveURL(item.acquisitionHref, item.baseURL);
+  // Identity gate (#5859): if this OPDS source already maps to a book still in
+  // the library, it is already imported. Re-importing it would mint a NEW
+  // book_hash for a re-packaged-but-identical file (calibre/CWA rewrites the
+  // EPUB on each ingest, so the bytes — and thus partialMD5 — differ while the
+  // content does not), stranding the reading position across hashes. Reuse the
+  // existing book instead of re-downloading. A genuinely new edition changes
+  // the feed entry id (or the acquisition URL), so it still imports normally.
+  //
+  // Look up under BOTH catalog keys: `contentId` is backfilled at a later save,
+  // so a source imported before the backfill is mapped under `id` while later
+  // syncs key on `contentId` — matching only one would miss the mapping and
+  // re-import anyway.
+  const catalogIds = [...new Set([catalog.contentId, catalog.id].filter(Boolean) as string[])];
+  let existing: Book | null = null;
+  for (const catalogId of catalogIds) {
+    existing = await findBookByOPDSSources(appService, {
+      catalogId,
+      sourceUrls: [url],
+      library: books,
+    });
+    if (existing) break;
+  }
+  if (existing) {
+    console.log(`[OPDS] "${item.title}" already imported for this source — skipping re-download`);
+    return existing;
+  }
   const username = catalog.username ?? '';
   const password = catalog.password ?? '';
   const customHeaders = normalizeCustomHeaders(catalog.customHeaders);
