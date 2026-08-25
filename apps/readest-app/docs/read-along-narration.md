@@ -67,7 +67,9 @@ playback, without drawing a text highlight that would imply finer timing.
 The pairing wizard follows Continuum's anchor-and-review flow:
 
 1. Open a reflowable EPUB's book menu and choose **Pair Audiobook**.
-2. Select one M4B file or a naturally ordered set of MP3/M4A tracks.
+2. Select one M4B file or a naturally ordered set of MP3/M4A tracks, or, when
+   an Audiobookshelf server is configured, **Choose from Audiobookshelf** and
+   pick one of its audiobooks to stream instead.
 3. Choose one ebook chapter and the audio chapter or track known to match it.
 4. Readest fills the mapping in both directions by position. Review every row,
    leave ebook chapters without audio, reuse an audio chapter where necessary,
@@ -79,6 +81,12 @@ span; runs crossing spine documents divide the clip into equal chapter slices
 so playback continues instead of restarting the recording at every section
 boundary.
 
+Audiobook chapter lists are often finer than the EPUB's table of contents
+(1, 1.1, 1.2, 2 ...). An audio chapter left without an ebook chapter plays as
+part of the mapped chapter before it in the same file, so the recording is
+heard in full and the page keeps following it proportionally. Audio before
+the first mapped chapter of a file (opening credits, say) is not played.
+
 The wizard reports chapter-count mismatches rather than hiding them. Audio stays
 under `Books/<book hash>/audiobook/`, while the association is stored in that
 book's device-local `config.json`; neither is uploaded by Readest cloud or file
@@ -87,6 +95,15 @@ local pairing resumes at the same ebook chapter. Replacements use new file paths
 and persist the new association before removing old audio. Re-importing or
 deduplicating an edited EPUB copies the paired files and rewrites those paths
 before retiring the previous book directory.
+
+An Audiobookshelf pairing stores no audio on the device. The association itself
+is still device-local, recording the server, item and track list
+(`PairedAudiobook.source`); playback streams each file with the server's current
+access token, so it needs that association's server row and a network
+connection. It is otherwise the same device-local association,
+and removing it only unpairs. Listening position is not reported back to the
+Audiobookshelf server while reading along; reading progress still syncs through
+Readest as usual.
 
 ### Using it
 
@@ -112,6 +129,16 @@ Two behaviours worth knowing:
   misleading. Readest instead maps the current page proportionally into that
   chapter's audio span when narration starts and offers a return-to-narration
   action if the reader moves elsewhere while audio continues.
+- **Paired audiobooks move by audio.** With no sentences to step by, the
+  transport takes an audio player's vocabulary: the small step is the
+  audiobook player's skip (30 seconds forward, 15 back), the large step moves
+  to the previous or next reachable audiobook chapter, one a mapped chapter's
+  clip covers, so audio before the first mapped chapter stays out of reach
+  (backward more than a few seconds into a chapter restarts it), and the
+  lock-screen skip and track buttons do the same. The page turns to another
+  ebook chapter only when the target audio chapter is narrated by a different
+  mapped chapter; a sub-chapter inside the current one is a seek within its
+  text span.
 - **Unnarrated sections are skipped.** Publishers routinely leave front matter,
   indexes and notes out of the recording. Playback steps over those sections
   rather than stalling on silence; starting Read Aloud in unnarrated front
@@ -140,6 +167,16 @@ storage) plus `src/services/tts/pairedAudiobook.ts`, which turns each mapped TOC
 chapter into a `NarrationPar`. A chapter table embedded in an M4B supplies clip
 boundaries; a standalone track without chapter metadata becomes one clip.
 
+An Audiobookshelf item (`src/services/audiobook/absPairing.ts`) is converted to
+ONE virtual file on the item's global timeline rather than one file per track:
+ABS times its chapters globally and they routinely span media files, which the
+per-file clip model cannot express. `MultiTrackNarrationClock` then presents the
+item's tracks to the client as a single `NarrationClock`: seeks land on the file
+holding the position, a file running out rolls into the next, and only the last
+file's end surfaces as `ended`. It drives `HtmlAudioClock` on web/desktop and
+the client's own `NativeNarrationPlayer` (given track URLs) on mobile, selected
+through the `resolveTracks` hook on `NarrationAudioSource`.
+
 Consequences of that shape:
 
 - **Marks are 1:1 with clips by construction.** Mark names are section-global par
@@ -162,7 +199,10 @@ Consequences of that shape:
   a paired audiobook reports the same clock capabilities with
   `textHighlight: false`. `ensureTimeline`/`supportsPlaybackInfo`/`getPlaybackInfo` gate on
   `mediaClock` rather than comparing against the Edge client — which is what
-  `TTSCapabilities` in `TTSClient.ts` existed for.
+  `TTSCapabilities` in `TTSClient.ts` existed for. `usesAudioTransport`
+  (`mediaClock` without `textHighlight`) is what turns `forward`/`backward`
+  into the time seek and audiobook-chapter skip, so the media session's
+  `seekforward`/`nexttrack` handlers need no special case.
 - **A continuous timeline is handed over, not stopped.** `continuousTimeline`
   tells the controller that consecutive blocks are one recording, so it neither
   pads paragraph transitions with its own delay nor treats the stop between two
@@ -218,8 +258,8 @@ reader's own highlight style.
   behaviour: a sentence straddling a page break waits for the next mark.
 - **Mobile Tauri** plays narration through `NativeNarrationPlayer`: AVPlayer on
   iOS and ExoPlayer on Android. Paired audiobooks are streamed directly from
-  their local path. Desktop Tauri streams its asset URL through
-  `HTMLAudioElement`; web uses a blob URL.
+  their local path, or by `http(s)` URL for an Audiobookshelf pairing. Desktop
+  Tauri streams its asset URL through `HTMLAudioElement`; web uses a blob URL.
 
 ### The library badge
 

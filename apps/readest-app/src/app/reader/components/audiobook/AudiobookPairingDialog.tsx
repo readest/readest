@@ -7,6 +7,7 @@ import {
   MdAudiotrack,
   MdDeleteOutline,
   MdFolderOpen,
+  MdHeadphones,
   MdPlayArrow,
   MdStop,
 } from 'react-icons/md';
@@ -17,25 +18,39 @@ import { useFileSelector, type SelectedFile } from '@/hooks/useFileSelector';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { BookDoc } from '@/libs/document';
 import {
+  absPreviewClip,
+  listPairableAbsBooks,
+  loadAbsPairingSource,
+  type AbsPairingSource,
+} from '@/services/audiobook/absPairing';
+import {
   buildSequentialAudiobookMappings,
   collectAudiobookTextChapters,
 } from '@/services/audiobook/mapping';
 import { parseAudiobookFile, type ParsedAudiobookFile } from '@/services/audiobook/metadata';
-import { AudiobookPreviewPlayer } from '@/services/audiobook/preview';
+import { AudiobookPreviewPlayer, type AudiobookPreviewClip } from '@/services/audiobook/preview';
 import {
+  persistStreamedPairedAudiobook,
   replacePairedAudiobook,
   removePairedAudiobook,
   type AudiobookImportFile,
 } from '@/services/audiobook/storage';
+import { findABSServerById } from '@/store/absServerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useLibraryStore } from '@/store/libraryStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import type { AudiobookChapter, AudiobookChapterMapping, PairedAudiobook } from '@/types/book';
+import type {
+  AudiobookChapter,
+  AudiobookChapterMapping,
+  Book,
+  PairedAudiobook,
+} from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
 import AudiobookChapterPicker, { formatAudiobookTimecode } from './AudiobookChapterPicker';
 import StepProgress from './AudiobookStepProgress';
 
-type WizardStep = 'summary' | 'select' | 'anchor' | 'review';
+type WizardStep = 'summary' | 'select' | 'abs' | 'anchor' | 'review';
 
 interface AudiobookPairingDialogProps {
   bookKey: string;
@@ -97,6 +112,9 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
   const [association] = useState<PairedAudiobook | null>(initialAssociation);
   const [step, setStep] = useState<WizardStep>(association ? 'summary' : 'select');
   const [preparedFiles, setPreparedFiles] = useState<PreparedImportFile[]>([]);
+  const [preparedAbs, setPreparedAbs] = useState<AbsPairingSource | null>(null);
+  const [absBooks, setAbsBooks] = useState<Book[]>([]);
+  const [absQuery, setAbsQuery] = useState('');
   const [selectedEbookChapterId, setSelectedEbookChapterId] = useState('');
   const [selectedAudioChapterId, setSelectedAudioChapterId] = useState('');
   const [mappings, setMappings] = useState<Record<string, string>>(
@@ -111,13 +129,24 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
 
   const ebookChapters = useMemo(() => collectAudiobookTextChapters(bookDoc.toc ?? []), [bookDoc]);
   const importedAudioChapters = useMemo(
-    () => preparedFiles.flatMap(({ metadata }) => metadata.chapters),
-    [preparedFiles],
+    () => preparedAbs?.chapters ?? preparedFiles.flatMap(({ metadata }) => metadata.chapters),
+    [preparedAbs, preparedFiles],
   );
+  const hasPreparedSource = preparedFiles.length > 0 || preparedAbs !== null;
   const audioChapters =
-    step === 'review' && preparedFiles.length === 0
-      ? (association?.chapters ?? [])
-      : importedAudioChapters;
+    step === 'review' && !hasPreparedSource ? (association?.chapters ?? []) : importedAudioChapters;
+  // Where the audio for a preview comes from: the source being prepared, else
+  // the saved pairing whose mapping is being edited.
+  const previewAbsSource = preparedAbs?.source ?? (hasPreparedSource ? null : association?.source);
+  const filteredAbsBooks = useMemo(() => {
+    const normalized = absQuery.trim().toLocaleLowerCase();
+    if (!normalized) return absBooks;
+    return absBooks.filter(
+      (candidate) =>
+        candidate.title.toLocaleLowerCase().includes(normalized) ||
+        candidate.author.toLocaleLowerCase().includes(normalized),
+    );
+  }, [absBooks, absQuery]);
   const audioChapterById = new Map(audioChapters.map((chapter) => [chapter.id, chapter]));
   const mappedAudioIds = new Set(Object.values(mappings));
   const mappedCount = Object.keys(mappings).filter((id) => mappings[id]).length;
@@ -146,6 +175,21 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
     },
     [preparedFiles],
   );
+
+  // The reader does not always have the library loaded (a deep link opens a
+  // book directly), so read it from disk when the store is empty.
+  useEffect(() => {
+    if (!appService) return;
+    let cancelled = false;
+    const { library, libraryLoaded } = useLibraryStore.getState();
+    void (async () => {
+      const books = libraryLoaded ? library : await appService.loadLibraryBooks();
+      if (!cancelled) setAbsBooks(listPairableAbsBooks(books));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [appService]);
 
   const persistAssociation = async (nextAssociation: PairedAudiobook | undefined) => {
     const current = getConfig(bookKey);
@@ -216,6 +260,7 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
       }
       const chapters = nextFiles.flatMap(({ metadata }) => metadata.chapters);
       if (!chapters.length) throw new Error(_('No playable audio chapters were found.'));
+      setPreparedAbs(null);
       setPreparedFiles(nextFiles);
       setSelectedEbookChapterId(ebookChapters[0]!.id);
       setSelectedAudioChapterId(chapters[0]!.id);
@@ -224,6 +269,30 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
     } catch (cause) {
       await closeFiles(openedFiles);
       setError(cause instanceof Error ? cause.message : _('Failed to read audiobook files.'));
+    } finally {
+      setBusyMessage('');
+    }
+  };
+
+  const chooseAbsBook = async (candidate: Book) => {
+    if (!appService) return;
+    setError('');
+    if (!ebookChapters.length) {
+      setError(_('This book has no table of contents to map to audio chapters.'));
+      return;
+    }
+    setBusyMessage(_('Loading audiobook chapters'));
+    try {
+      await previewPlayerRef.current?.stop();
+      const source = await loadAbsPairingSource(appService, candidate);
+      setPreparedFiles([]);
+      setPreparedAbs(source);
+      setSelectedEbookChapterId(ebookChapters[0]!.id);
+      setSelectedAudioChapterId(source.chapters[0]!.id);
+      setMappings({});
+      setStep('anchor');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : _('Failed to load the audiobook.'));
     } finally {
       setBusyMessage('');
     }
@@ -244,6 +313,7 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
 
   const editExistingMapping = () => {
     setPreparedFiles([]);
+    setPreparedAbs(null);
     setMappings(mappingRecord(association?.mappings ?? []));
     setStep('review');
   };
@@ -269,18 +339,33 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
     const stored = association?.files.find((file) => file.id === chapter.fileId);
     try {
       await eventDispatcher.dispatch('tts-stop', { bookKey });
-      const playing = await previewPlayerRef.current.toggle({
-        id: chapter.id,
-        ...(prepared?.previewPath
-          ? { path: prepared.previewPath, base: 'None' as const }
-          : stored
-            ? { path: stored.path, base: 'Books' as const }
-            : prepared
-              ? { file: prepared.file }
-              : {}),
-        start: chapter.start,
-        end: chapter.end,
-      });
+      let clip: Omit<AudiobookPreviewClip, 'id'>;
+      if (previewAbsSource) {
+        // Chapter times are global; the preview plays the file holding the start.
+        const remote = absPreviewClip(previewAbsSource, chapter.start);
+        if (!remote) throw new Error(_('Audiobookshelf server not found'));
+        // A chapter can continue into the next track; keep the preview within
+        // the file it starts in so it does not run off the end of the clip.
+        const withinTrack = Math.min(chapter.end - chapter.start, remote.duration - remote.start);
+        clip = {
+          url: remote.url,
+          start: remote.start,
+          end: remote.start + withinTrack,
+        };
+      } else {
+        clip = {
+          ...(prepared?.previewPath
+            ? { path: prepared.previewPath, base: 'None' as const }
+            : stored
+              ? { path: stored.path, base: 'Books' as const }
+              : prepared
+                ? { file: prepared.file }
+                : {}),
+          start: chapter.start,
+          end: chapter.end,
+        };
+      }
+      const playing = await previewPlayerRef.current.toggle({ id: chapter.id, ...clip });
       setPreviewingAudioChapterId(playing ? chapter.id : null);
     } catch (cause) {
       setPreviewingAudioChapterId(null);
@@ -296,7 +381,24 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
       await eventDispatcher.dispatch('tts-stop', { bookKey });
       await previewPlayerRef.current?.stop();
       let nextAssociation: PairedAudiobook | null;
-      if (preparedFiles.length) {
+      if (preparedAbs) {
+        nextAssociation = await persistStreamedPairedAudiobook(
+          appService,
+          book.hash,
+          {
+            version: 1,
+            ...(preparedAbs.title ? { title: preparedAbs.title } : {}),
+            ...(preparedAbs.narrator ? { narrator: preparedAbs.narrator } : {}),
+            files: preparedAbs.files,
+            chapters: preparedAbs.chapters,
+            mappings: orderedMappings(),
+            createdAt: Math.max(Date.now(), (association?.createdAt ?? 0) + 1),
+            source: preparedAbs.source,
+          },
+          association ?? undefined,
+          persistAssociation,
+        );
+      } else if (preparedFiles.length) {
         nextAssociation = await replacePairedAudiobook(
           appService,
           book.hash,
@@ -332,7 +434,9 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
       await removePairedAudiobook(appService, book.hash, association, persistAssociation);
       eventDispatcher.dispatch('toast', {
         type: 'info',
-        message: _('Audiobook removed from this device.'),
+        message: association.source
+          ? _('Audiobook unpaired.')
+          : _('Audiobook removed from this device.'),
       });
       onClose();
     } catch (cause) {
@@ -345,32 +449,53 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
   const renderSummary = () => {
     if (!association) return null;
     const totalDuration = association.files.reduce((total, file) => total + file.duration, 0);
+    const streamedFrom = association.source
+      ? (findABSServerById(association.source.serverId)?.name ?? 'Audiobookshelf')
+      : null;
     return (
       <>
         <SurfaceHeader
           title={_('Paired Audiobook')}
-          description={_('Manage the local recording paired with this ebook.')}
+          description={
+            streamedFrom
+              ? _('Manage the Audiobookshelf audiobook paired with this ebook.')
+              : _('Manage the local recording paired with this ebook.')
+          }
         />
         <div className='eink-bordered border-base-200 bg-base-100 mb-5 rounded-lg border'>
           <div className='flex min-h-14 items-center gap-3 px-4 py-3'>
             <span className='bg-base-200 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full'>
-              <MdAudiotrack className='h-5 w-5' />
+              {streamedFrom ? (
+                <MdHeadphones className='h-5 w-5' />
+              ) : (
+                <MdAudiotrack className='h-5 w-5' />
+              )}
             </span>
             <div className='min-w-0 flex-1'>
               <p className='truncate font-medium'>{association.title || book?.title}</p>
               <p className='text-neutral-content text-[0.85em]'>
-                {_('{{files}} files · {{chapters}} audio chapters · {{duration}}', {
-                  files: association.files.length,
-                  chapters: association.chapters.length,
-                  duration: formatAudiobookTimecode(totalDuration),
-                })}
+                {streamedFrom
+                  ? _('{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}', {
+                      chapters: association.chapters.length,
+                      duration: formatAudiobookTimecode(totalDuration),
+                      server: streamedFrom,
+                    })
+                  : _('{{files}} files · {{chapters}} audio chapters · {{duration}}', {
+                      files: association.files.length,
+                      chapters: association.chapters.length,
+                      duration: formatAudiobookTimecode(totalDuration),
+                    })}
               </p>
             </div>
           </div>
         </div>
         {confirmRemove ? (
           <div className='eink-bordered border-error/50 bg-base-100 mb-5 rounded-lg border p-4'>
-            <p className='font-medium'>{_('Remove audiobook files from this device?')}</p>
+            <p className='font-medium'>
+              {streamedFrom
+                ? _('Unpair this audiobook?')
+                : _('Remove audiobook files from this device?')}
+            </p>
             <p className='text-neutral-content mt-1 text-[0.85em]'>
               {_('The ebook, notes, and reading progress will be kept.')}
             </p>
@@ -436,6 +561,27 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
         <span className='font-medium'>{_('Select Audio Files')}</span>
         <span className='text-neutral-content text-[0.85em]'>MP3 · M4A · M4B</span>
       </button>
+      {absBooks.length > 0 && (
+        <button
+          type='button'
+          onClick={() => setStep('abs')}
+          disabled={busy}
+          className={clsx(
+            'eink-bordered group mt-4 flex min-h-28 w-full flex-col items-center justify-center gap-3',
+            'border-base-200 bg-base-100 rounded-lg border px-6 py-5',
+            'hover:border-base-300 hover:bg-base-200/60 transition-colors duration-150',
+            'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+          )}
+        >
+          <span className='bg-base-200 group-hover:bg-base-content group-hover:text-base-100 flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-150'>
+            <MdHeadphones className='h-6 w-6' />
+          </span>
+          <span className='font-medium'>{_('Choose from Audiobookshelf')}</span>
+          <span className='text-neutral-content text-[0.85em]'>
+            {_('Streamed from your server, nothing to download')}
+          </span>
+        </button>
+      )}
       {association && (
         <div className='mt-5 flex justify-start'>
           <button className='btn btn-ghost' disabled={busy} onClick={() => setStep('summary')}>
@@ -443,6 +589,71 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
           </button>
         </div>
       )}
+    </>
+  );
+
+  const renderAbsPicker = () => (
+    <>
+      <StepProgress current={1} />
+      <SurfaceHeader
+        title={_('Choose Audiobook')}
+        description={_('Pick the Audiobookshelf audiobook to pair with “{{book}}”.', {
+          book: book?.title ?? _('this ebook'),
+        })}
+      />
+      <div className='eink-bordered border-base-200 bg-base-100 mb-5 overflow-hidden rounded-lg border'>
+        <div className='border-base-200 border-b p-2'>
+          <input
+            type='search'
+            className='input input-sm eink-bordered w-full'
+            aria-label={_('Search audiobooks')}
+            placeholder={_('Search audiobooks')}
+            value={absQuery}
+            onChange={(event) => setAbsQuery(event.target.value)}
+          />
+        </div>
+        <div className='divide-base-200 max-h-80 overflow-y-auto divide-y' role='list'>
+          {filteredAbsBooks.map((candidate) => (
+            <button
+              key={candidate.hash}
+              type='button'
+              role='listitem'
+              className='hover:bg-base-200 flex min-h-14 w-full items-center gap-3 px-4 py-2 text-start'
+              disabled={busy}
+              onClick={() => chooseAbsBook(candidate)}
+            >
+              <span className='bg-base-200 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full'>
+                <MdHeadphones className='h-5 w-5' />
+              </span>
+              <span className='min-w-0 flex-1'>
+                <span className='block truncate font-medium'>{candidate.title}</span>
+                <span className='text-neutral-content block truncate text-[0.85em]'>
+                  {[
+                    candidate.author,
+                    candidate.duration && formatAudiobookTimecode(candidate.duration),
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+              </span>
+            </button>
+          ))}
+          {filteredAbsBooks.length === 0 && (
+            <p className='text-neutral-content px-3 py-5 text-center text-sm'>
+              {_('No matching audiobooks')}
+            </p>
+          )}
+        </div>
+      </div>
+      <WizardActions>
+        <button
+          className='btn btn-ghost eink-bordered'
+          disabled={busy}
+          onClick={() => setStep('select')}
+        >
+          {_('Back')}
+        </button>
+      </WizardActions>
     </>
   );
 
@@ -535,7 +746,11 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
         </p>
       )}
       <WizardActions>
-        <button className='btn btn-ghost' disabled={busy} onClick={() => setStep('select')}>
+        <button
+          className='btn btn-ghost'
+          disabled={busy}
+          onClick={() => setStep(preparedAbs ? 'abs' : 'select')}
+        >
           {_('Back')}
         </button>
         <button
@@ -648,7 +863,7 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
         <button
           className='btn btn-ghost'
           disabled={busy}
-          onClick={() => setStep(preparedFiles.length ? 'anchor' : 'summary')}
+          onClick={() => setStep(hasPreparedSource ? 'anchor' : 'summary')}
         >
           {_('Back')}
         </button>
@@ -694,6 +909,7 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
         )}
         {step === 'summary' && renderSummary()}
         {step === 'select' && renderSelect()}
+        {step === 'abs' && renderAbsPicker()}
         {step === 'anchor' && renderAnchor()}
         {step === 'review' && renderReview()}
       </div>

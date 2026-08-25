@@ -1,7 +1,7 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { HardcoverClient } from '@/services/hardcover/HardcoverClient';
 import type { HardcoverSyncMapStore } from '@/services/hardcover/HardcoverSyncMapStore';
-import type { Book, BookConfig, BookNote } from '@/types/book';
+import type { Book, BookConfig, BookNote, HardcoverBookLink } from '@/types/book';
 
 type MockFetchResponse = {
   ok: boolean;
@@ -17,6 +17,7 @@ type TestBookContext = {
   pages: number | null;
   bookId: number;
   bookPages: number | null;
+  title?: string;
   userBook: {
     id: number;
     status_id: number;
@@ -29,14 +30,20 @@ type HardcoverClientTestApi = {
   minRequestIntervalMs: number;
   extractISBN: (book: Book) => string | null;
   request: <TVariables, TData>(query: string, variables: TVariables) => Promise<TData>;
-  fetchBookContext: (book: Book) => Promise<TestBookContext | null>;
+  fetchBookContext: (
+    book: Book,
+    link?: HardcoverBookLink | null,
+  ) => Promise<TestBookContext | null>;
   buildJournalPayload: (
     note: BookNote,
     config: BookConfig,
     context: TestBookContext,
   ) => { action_at: string; entry: string; event: string };
-  ensureBookInLibrary: (book: Book, isReading?: boolean) => Promise<TestBookContext | null>;
-  pushProgress: (book: Book, config: BookConfig) => Promise<void>;
+  ensureBookInLibrary: (
+    book: Book,
+    link?: HardcoverBookLink | null,
+  ) => Promise<TestBookContext | null>;
+  pushProgress: (book: Book, config: BookConfig) => Promise<HardcoverBookLink>;
 };
 
 type RequestSpyCall = [query: string, variables?: unknown];
@@ -313,7 +320,7 @@ describe('HardcoverClient', () => {
         }),
     });
 
-    const context = await clientApi.ensureBookInLibrary(book, true);
+    const context = await clientApi.ensureBookInLibrary(book);
 
     expect(context).toMatchObject({
       editionId: 606,
@@ -624,7 +631,7 @@ describe('HardcoverClient', () => {
     await expect(client.pushProgress(book, config)).rejects.toThrow('insert_user_book failed');
   });
 
-  test('should skip progress push when Hardcover edition page count is unknown', async () => {
+  test('should fail the progress push when Hardcover edition page count is unknown', async () => {
     const book = { createdAt: 1711737600000, metadata: { isbn: '1234567890' } } as Book;
     const config = { progress: [25, 100] } as BookConfig;
 
@@ -637,7 +644,9 @@ describe('HardcoverClient', () => {
     } as TestBookContext);
     const requestSpy = vi.spyOn(clientApi, 'request').mockResolvedValue({});
 
-    await client.pushProgress(book, config);
+    // Nothing can be sent, so the caller must not report a sync (or remember
+    // the match) on the strength of a no-op.
+    await expect(client.pushProgress(book, config)).rejects.toThrow('page count');
 
     const requestCalls = requestSpy.mock.calls as RequestSpyCall[];
     const insertReadCall = requestCalls.find((call) =>
@@ -650,60 +659,51 @@ describe('HardcoverClient', () => {
     expect(updateReadCall).toBeUndefined();
   });
 
+  const respond = (data: unknown) =>
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ data }),
+    });
+
+  const requestBodies = () =>
+    (fetchMock.mock.calls as FetchMockCall[]).map(
+      (call) =>
+        JSON.parse(call[1]?.body ?? '{}') as {
+          query: string;
+          variables?: Record<string, unknown>;
+        },
+    );
+
   test('should apply edition preference when resolving context via title search', async () => {
     const book = { title: 'Test Book', author: 'Test Author' } as Book;
 
-    // authenticate
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({ data: { me: { id: 1 } } }),
-    });
-    // QUERY_SEARCH_BOOK
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: () =>
-        Promise.resolve({
-          data: {
-            search: {
-              results: [{ id: 202, pages: 300, featured_edition_id: 101 }],
-            },
-          },
-        }),
-    });
-    // QUERY_GET_BOOK_USER_DATA
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: () =>
-        Promise.resolve({
-          data: {
-            editions: [
-              {
-                book: {
-                  id: 202,
-                  pages: 300,
-                  user_books: [
-                    {
-                      id: 303,
-                      status_id: 2,
-                      edition: { id: 404, pages: 310, reading_format_id: 1 },
-                      user_book_reads: [
-                        {
-                          id: 505,
-                          started_at: '2026-03-29',
-                          edition: { id: 606, pages: 400, reading_format_id: 1 },
-                        },
-                      ],
-                    },
-                  ],
+    respond({ me: { id: 1 } }); // authenticate
+    respond({ search: { ids: ['202'] } }); // QUERY_SEARCH_BOOKS
+    respond({
+      books: [
+        {
+          id: 202,
+          title: 'Test Book',
+          pages: 300,
+          editions: [{ id: 101, pages: 290, reading_format_id: 1 }],
+          user_books: [
+            {
+              id: 303,
+              status_id: 2,
+              edition: { id: 404, pages: 310, reading_format_id: 1 },
+              user_book_reads: [
+                {
+                  id: 505,
+                  started_at: '2026-03-29',
+                  edition: { id: 606, pages: 400, reading_format_id: 1 },
                 },
-              },
-            ],
-          },
-        }),
-    });
+              ],
+            },
+          ],
+        },
+      ],
+    }); // QUERY_GET_BOOKS
 
     const context = await clientApi.fetchBookContext(book);
 
@@ -712,62 +712,327 @@ describe('HardcoverClient', () => {
       pages: 400,
       bookId: 202,
       bookPages: 300,
+      title: 'Test Book',
       userBook: { id: 303 },
     });
   });
 
-  test('leaves the edition id unresolved when title search lacks a featured edition and the user has none selected', async () => {
-    const book = { title: 'Crime and Punishment', author: 'Fyodor Dostoevsky' } as Book;
+  test('auto-match prefers a hit already on the shelf over an earlier audiobook-only hit (#5846)', async () => {
+    const book = { title: 'Project Hail Mary', author: 'Andy Weir' } as Book;
 
-    // authenticate
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve({ data: { me: { id: 1 } } }),
-    });
-    // QUERY_SEARCH_BOOK — real Typesense hit shape, no featured_edition_id present
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: () =>
-        Promise.resolve({
-          data: { search: { results: { hits: [{ document: { id: 713309, pages: 311 } }] } } },
-        }),
-    });
-    // QUERY_GET_BOOK_USER_DATA — currently-reading book, but no specific edition selected
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: () =>
-        Promise.resolve({
-          data: {
-            editions: [
-              {
-                book: {
-                  id: 713309,
-                  pages: 311,
-                  user_books: [
-                    {
-                      id: 303,
-                      status_id: 2,
-                      edition: null,
-                      user_book_reads: [{ id: 505, started_at: '2026-06-25', edition: null }],
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        }),
+    respond({ me: { id: 1 } });
+    respond({ search: { ids: ['111', '222', '333'] } });
+    // Hasura's `_in` returns rows in arbitrary order, not search rank.
+    respond({
+      books: [
+        {
+          id: 333,
+          title: 'Project Hail Mary (ebook)',
+          pages: 476,
+          editions: [{ id: 3, pages: 476, reading_format_id: 1 }],
+          user_books: [{ id: 900, status_id: 2, edition: null, user_book_reads: [] }],
+        },
+        {
+          id: 111,
+          title: 'Project Hail Mary (audiobook)',
+          pages: null,
+          editions: [],
+          user_books: [],
+        },
+        {
+          id: 222,
+          title: 'Project Hail Mary',
+          pages: 480,
+          editions: [{ id: 2, pages: 480, reading_format_id: 4 }],
+          user_books: [],
+        },
+      ],
     });
 
     const context = await clientApi.fetchBookContext(book);
+
+    expect(context).toMatchObject({
+      bookId: 333,
+      editionId: 3,
+      pages: 476,
+      userBook: { id: 900 },
+    });
+  });
+
+  test('auto-match ignores an on-shelf audiobook-only entry in favour of a readable hit (#5846)', async () => {
+    // The issue's exact shelf state: an earlier sync already added the
+    // audiobook entry as "currently reading", and it outranks the real book.
+    const book = { title: 'Project Hail Mary', author: 'Andy Weir' } as Book;
+
+    respond({ me: { id: 1 } });
+    respond({ search: { ids: ['111', '222'] } });
+    respond({
+      books: [
+        {
+          id: 111,
+          title: 'Project Hail Mary (audiobook)',
+          pages: null,
+          editions: [],
+          user_books: [{ id: 900, status_id: 2, edition: null, user_book_reads: [] }],
+        },
+        {
+          id: 222,
+          title: 'Project Hail Mary',
+          pages: 480,
+          editions: [{ id: 2, pages: 480, reading_format_id: 1 }],
+          user_books: [],
+        },
+      ],
+    });
+
+    const context = await clientApi.fetchBookContext(book);
+
+    expect(context).toMatchObject({ bookId: 222, editionId: 2, pages: 480, userBook: null });
+  });
+
+  test('auto-match skips audiobook-only hits when nothing is on the shelf (#5846)', async () => {
+    const book = { title: 'Project Hail Mary', author: 'Andy Weir' } as Book;
+
+    respond({ me: { id: 1 } });
+    respond({ search: { ids: ['111', '222'] } });
+    respond({
+      books: [
+        {
+          id: 111,
+          title: 'Project Hail Mary (audiobook)',
+          pages: null,
+          editions: [],
+          user_books: [],
+        },
+        {
+          id: 222,
+          title: 'Project Hail Mary',
+          pages: 480,
+          editions: [{ id: 2, pages: 480, reading_format_id: 1 }],
+          user_books: [],
+        },
+      ],
+    });
+
+    const context = await clientApi.fetchBookContext(book);
+
+    expect(context).toMatchObject({
+      bookId: 222,
+      editionId: 2,
+      pages: 480,
+      bookPages: 480,
+      userBook: null,
+    });
+  });
+
+  test('auto-match resolves nothing when every hit is audiobook-only', async () => {
+    respond({ me: { id: 1 } });
+    respond({ search: { ids: ['111'] } });
+    respond({
+      books: [{ id: 111, title: 'Audio only', pages: null, editions: [], user_books: [] }],
+    });
+
+    const context = await clientApi.fetchBookContext({ title: 'Audio only', author: 'A' } as Book);
+
+    expect(context).toBeNull();
+  });
+
+  test('a linked book resolves directly by id, bypassing ISBN and title matching', async () => {
+    const book = {
+      title: 'Local Title',
+      author: 'Local Author',
+      metadata: { isbn: '9780679783268' },
+    } as unknown as Book;
+
+    respond({ me: { id: 1 } });
+    respond({
+      books: [
+        {
+          id: 777,
+          title: 'Linked Title',
+          pages: 200,
+          editions: [{ id: 70, pages: 210, reading_format_id: 1 }],
+          user_books: [],
+        },
+      ],
+    });
+
+    const context = await clientApi.fetchBookContext(book, { bookId: 777, title: 'Linked Title' });
+
+    expect(context).toMatchObject({
+      bookId: 777,
+      editionId: 70,
+      pages: 210,
+      bookPages: 200,
+      title: 'Linked Title',
+      userBook: null,
+    });
+    const bodies = requestBodies();
+    expect(bodies.some((body) => body.query.includes('query GetEdition'))).toBe(false);
+    expect(bodies.some((body) => body.query.includes('query SearchBooks'))).toBe(false);
+    expect(
+      bodies.find((body) => body.query.includes('query GetBooks'))?.variables?.['ids'],
+    ).toEqual([777]);
+  });
+
+  test('a linked book that no longer exists on Hardcover resolves to nothing', async () => {
+    respond({ me: { id: 1 } });
+    respond({ books: [] });
+
+    const context = await clientApi.fetchBookContext({ title: 'X', author: 'Y' } as Book, {
+      bookId: 1,
+      title: 'Gone',
+    });
+
+    expect(context).toBeNull();
+  });
+
+  test('leaves the edition id unresolved when the linked book has no readable edition and the user has none selected', async () => {
+    respond({ me: { id: 1 } });
+    respond({
+      books: [
+        {
+          id: 713309,
+          title: 'Crime and Punishment',
+          pages: 311,
+          editions: [],
+          user_books: [
+            {
+              id: 303,
+              status_id: 2,
+              edition: null,
+              user_book_reads: [{ id: 505, started_at: '2026-06-25', edition: null }],
+            },
+          ],
+        },
+      ],
+    });
+
+    const context = await clientApi.fetchBookContext(
+      { title: 'Crime and Punishment', author: 'Fyodor Dostoevsky' } as Book,
+      { bookId: 713309, title: 'Crime and Punishment' },
+    );
 
     expect(context?.bookId).toBe(713309);
     // Regression #4792: the edition id must NOT fall back to the book id. Sending
     // a book id as edition_id makes Hardcover's Action reject the read mutation
     // with a parse-failed error. Leave it null when no real edition is known.
     expect(context?.editionId).toBeNull();
+    expect(context?.pages).toBe(311);
+  });
+
+  test('searchBooks returns candidates in search-rank order with shelf and format flags', async () => {
+    respond({ me: { id: 1 } });
+    respond({ search: { ids: ['111', '222'] } });
+    respond({
+      books: [
+        {
+          id: 222,
+          title: 'Ebook Entry',
+          pages: 480,
+          release_year: 2021,
+          users_read_count: 1200,
+          cached_image: { url: 'https://assets.hardcover.app/cover.jpg' },
+          cached_contributors: [
+            { author: { name: 'Andy Weir' }, contribution: null },
+            { author: { name: 'Ray Porter' }, contribution: 'Narrator' },
+          ],
+          editions: [{ id: 2, pages: 480, reading_format_id: 1 }],
+          user_books: [{ id: 900, status_id: 2, edition: null, user_book_reads: [] }],
+        },
+        {
+          id: 111,
+          title: 'Audiobook Entry',
+          pages: null,
+          release_year: null,
+          users_read_count: 3,
+          cached_image: null,
+          cached_contributors: [],
+          editions: [],
+          user_books: [],
+        },
+      ],
+    });
+
+    const results = await client.searchBooks('Project Hail Mary Andy Weir');
+
+    expect(results).toEqual([
+      {
+        bookId: 111,
+        title: 'Audiobook Entry',
+        authors: [],
+        coverUrl: null,
+        releaseYear: null,
+        pages: null,
+        readersCount: 3,
+        readable: false,
+        onShelf: false,
+      },
+      {
+        bookId: 222,
+        title: 'Ebook Entry',
+        authors: ['Andy Weir'],
+        coverUrl: 'https://assets.hardcover.app/cover.jpg',
+        releaseYear: 2021,
+        pages: 480,
+        readersCount: 1200,
+        readable: true,
+        onShelf: true,
+      },
+    ]);
+    const search = requestBodies().find((body) => body.query.includes('query SearchBooks'));
+    expect(search?.variables?.['query']).toBe('Project Hail Mary Andy Weir');
+  });
+
+  test('searchBooks returns nothing for a blank query without hitting the API', async () => {
+    const results = await client.searchBooks('   ');
+
+    expect(results).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test('pushProgress returns the resolved link and throws when nothing resolves', async () => {
+    const book = { createdAt: 1711737600000, title: 'Test Book', author: 'Test Author' } as Book;
+    const config = { progress: [25, 100] } as BookConfig;
+
+    const contextSpy = vi.spyOn(clientApi, 'ensureBookInLibrary').mockResolvedValue({
+      editionId: 101,
+      pages: 100,
+      bookId: 202,
+      bookPages: 100,
+      title: 'Resolved Title',
+      userBook: { id: 303, status_id: 2, user_book_reads: [] },
+    });
+    vi.spyOn(clientApi, 'request').mockResolvedValue({});
+
+    await expect(client.pushProgress(book, config)).resolves.toEqual({
+      bookId: 202,
+      title: 'Resolved Title',
+    });
+
+    contextSpy.mockResolvedValue(null);
+    await expect(client.pushProgress(book, config)).rejects.toThrow(
+      'Unable to resolve this book in Hardcover',
+    );
+  });
+
+  test('pushProgress hands the stored link to context resolution', async () => {
+    const book = { createdAt: 1711737600000, title: 'Test Book', author: 'Test Author' } as Book;
+    const link = { bookId: 777, title: 'Linked' };
+    const config = { progress: [25, 100], hardcover: link } as BookConfig;
+    const contextSpy = vi.spyOn(clientApi, 'fetchBookContext').mockResolvedValue({
+      editionId: 70,
+      pages: 200,
+      bookId: 777,
+      bookPages: 200,
+      title: 'Linked',
+      userBook: { id: 1, status_id: 2, user_book_reads: [] },
+    });
+    vi.spyOn(clientApi, 'request').mockResolvedValue({});
+
+    await client.pushProgress(book, config);
+
+    expect(contextSpy).toHaveBeenCalledWith(book, link);
   });
 
   test('forwards a null edition id to the read mutation when no edition is resolved (#4792)', async () => {

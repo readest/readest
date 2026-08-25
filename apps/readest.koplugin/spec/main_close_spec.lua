@@ -51,6 +51,9 @@ describe("ReadestSync:onCloseDocument", function()
     it("pushes config, notes, stats and the open book row (no library pull)", function()
         local plugin = makePlugin({ auto_sync = true, access_token = "tok" })
         plugin:onCloseDocument()
+        -- Never through goOnlineToRun: with "Action when Wi-Fi is off: turn on"
+        -- that blocks the UI thread on a Wi-Fi scan (issue #5838).
+        assert.are.equal(0, stubs.NetworkMgr._goOnlineToRun_calls)
 
         local by = called(plugin)
         assert.truthy(by.pushBookConfig)
@@ -60,6 +63,32 @@ describe("ReadestSync:onCloseDocument", function()
         assert.is_false(by.pushOpenBook.arg1)  -- non-interactive
         -- The heavy full-library pull ("both") must be gone from the close path.
         assert.is_nil(by.syncBooksLibrary)
+    end)
+
+    it("skips the close-time push silently when offline (no Wi-Fi bring-up)", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok" })
+        stubs.NetworkMgr._online = false
+        plugin:onCloseDocument()
+
+        assert.are.equal(0, #plugin.calls)
+        assert.are.equal(0, stubs.NetworkMgr._goOnlineToRun_calls)
+        assert.are.equal(0, stubs.NetworkMgr._willRerunWhenOnline_calls)
+    end)
+
+    it("lets KOReader bring Wi-Fi up for the close-time push when the action is turn on", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok" })
+        G_reader_settings:saveSetting("wifi_enable_action", "turn_on")
+        stubs.NetworkMgr._online = false
+        plugin:onCloseDocument()
+        G_reader_settings:saveSetting("wifi_enable_action", nil)
+
+        -- As before this change: goOnlineToRun connects (blocking) and runs the pushes.
+        assert.are.equal(1, stubs.NetworkMgr._goOnlineToRun_calls)
+        local by = called(plugin)
+        assert.truthy(by.pushBookConfig)
+        assert.truthy(by.pushBookNotes)
+        assert.truthy(by.pushBookStats)
+        assert.truthy(by.pushOpenBook)
     end)
 
     it("does nothing when auto sync is disabled", function()

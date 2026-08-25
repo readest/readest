@@ -49,6 +49,10 @@ class FakeAudio {
   pause(): void {
     this.paused = true;
   }
+  // HtmlAudioClock (the per-track player behind a multi-track source) calls
+  // these on the element; a plain narration element never does.
+  load(): void {}
+  removeAttribute(): void {}
 
   #emit(type: string): void {
     for (const fn of [...(this.#listeners.get(type) ?? [])]) fn();
@@ -208,6 +212,38 @@ describe('MediaOverlayClient capabilities', () => {
     expect(audio().src).toBe('http://asset.localhost/books/ch1.mp3');
     expect(loadBlob).not.toHaveBeenCalled();
     expect(createObjectURL).not.toHaveBeenCalled();
+  });
+
+  // A recording split across files (an Audiobookshelf item) is one timeline
+  // to the client: the clip's global time picks the file and in-file offset.
+  test('plays a multi-track source from the file holding the clip', async () => {
+    [section] = await makeSection(WORD_SMIL);
+    const loadBlob = vi.fn(async () => new Blob([new Uint8Array(8)]));
+    client = new MediaOverlayClient({ dispatchSpeakMark: vi.fn() } as unknown as TTSController);
+    await client.init();
+    client.attachSource({
+      loadBlob,
+      resolveTracks: vi.fn(async () => [
+        { url: 'http://abs/t1', startOffset: 0, duration: 2 },
+        { url: 'http://abs/t2', startOffset: 2, duration: 10 },
+      ]),
+    });
+    client.setSection(section);
+
+    // Block 1 is the whole-paragraph par at 3s..6s: 1s into the second file.
+    const iter = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
+    const first = await iter.next();
+
+    expect(first.value).toMatchObject({ code: 'boundary' });
+    expect(audio().src).toBe('http://abs/t2');
+    expect(audio().seeks).toEqual([1]);
+    expect(audio().playCalls).toBe(1);
+    expect(loadBlob).not.toHaveBeenCalled();
+
+    // The clock the client watches is global: 4s into t2 is 6s, the clip end.
+    const pending = iter.next();
+    audio().advanceTo(4);
+    expect((await pending).value).toMatchObject({ code: 'end' });
   });
 });
 

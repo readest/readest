@@ -146,6 +146,7 @@ export interface AppService {
   deleteDir(path: string, base: BaseDir, recursive?: boolean): Promise<void>;
   exists(path: string, base: BaseDir): Promise<boolean>;
   isDirectory(path: string, base: BaseDir): Promise<boolean>;
+  stats(path: string, base: BaseDir): Promise<FileInfo>;
   getImageURL(path: string): Promise<string>;
 
   setCustomRootDir(customRootDir: string): Promise<void>;

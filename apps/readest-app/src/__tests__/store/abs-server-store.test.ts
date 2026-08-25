@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { findABSServerById, useABSServerStore } from '@/store/absServerStore';
+import { findABSServerById, isAbsBookOrphaned, useABSServerStore } from '@/store/absServerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { computeAbsServerContentId } from '@/services/sync/adapters/absServer';
+import { makeAbsFilePath } from '@/utils/audiobook';
 import type { ABSServer } from '@/types/audiobookshelf';
+import type { Book } from '@/types/book';
 import type { SystemSettings } from '@/types/settings';
 import type { EnvConfigType } from '@/services/environment';
 
@@ -196,6 +198,57 @@ describe('absServerStore', () => {
 
     it('returns undefined when the server is in neither the store nor settings', () => {
       expect(findABSServerById('missing')).toBeUndefined();
+    });
+  });
+
+  // An ABS book whose server row hasn't synced to this device (or whose
+  // server was removed) cannot stream, has no cover source, and cannot be
+  // opened — the library display hides it until the server row lands.
+  describe('isAbsBookOrphaned', () => {
+    const server: ABSServer = {
+      id: 'srv1',
+      contentId: 'srv1',
+      addedAt: 1,
+      name: 'Home',
+      url: 'http://abs.local',
+    };
+    const absBook = {
+      hash: 'h1',
+      format: 'ABS',
+      title: 'Peter Pan',
+      filePath: makeAbsFilePath('srv1', 'item1'),
+    } as Book;
+
+    it('is false for a non-ABS book', () => {
+      const epub = { hash: 'h2', format: 'EPUB', title: 'T', filePath: '/books/t.epub' } as Book;
+      expect(isAbsBookOrphaned(epub)).toBe(false);
+    });
+
+    it('is true when the server is in neither the store nor settings', () => {
+      expect(isAbsBookOrphaned(absBook)).toBe(true);
+    });
+
+    it('is false when the server is in the in-memory store', () => {
+      useABSServerStore.setState({ servers: [server] });
+      expect(isAbsBookOrphaned(absBook)).toBe(false);
+    });
+
+    it('is false when the server exists only in persisted settings (pre-hydration)', () => {
+      useABSServerStore.setState({ servers: [] });
+      useSettingsStore.setState({
+        settings: { absServers: [server] } as unknown as SystemSettings,
+      });
+      expect(isAbsBookOrphaned(absBook)).toBe(false);
+    });
+
+    it('is true when the in-memory server row is tombstoned', () => {
+      useABSServerStore.setState({ servers: [{ ...server, deletedAt: 123 }] });
+      expect(isAbsBookOrphaned(absBook)).toBe(true);
+    });
+
+    it('is false for a disabled server — configured servers keep their shelf', () => {
+      useABSServerStore.setState({ servers: [{ ...server, disabled: true }] });
+      expect(isAbsBookOrphaned(absBook)).toBe(false);
     });
   });
 });

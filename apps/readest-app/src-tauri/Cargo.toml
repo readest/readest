@@ -113,7 +113,7 @@ percent-encoding = "2"
 # webview rendering (~30-60 KB instead of multi-MB). Default features
 # are disabled to keep the binary lean — we only need decoders for the
 # formats EPUBs actually use (jpeg/png/gif) plus the JPEG encoder.
-image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "webp"] }
 
 # Native MOBI/AZW/AZW3 import path. Mirrors the EPUB fast-path: parse
 # PalmDB + MobiHeader + EXTH in Rust to extract title/author/publisher/

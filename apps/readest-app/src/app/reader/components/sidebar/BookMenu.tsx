@@ -123,6 +123,13 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     eventDispatcher.dispatch('hardcover-push-progress', { bookKey: sideBarBookKey });
     setIsDropdownOpen?.(false);
   };
+  // Hosted by ReaderContent (like the audiobook dialog) so the picker
+  // outlives this dropdown.
+  const handleLinkHardcoverBook = () => {
+    eventDispatcher.dispatch('hardcover-link-book', { bookKey: sideBarBookKey });
+    setIsDropdownOpen?.(false);
+  };
+  const hardcoverLink = sideBarBookKey ? getConfig(sideBarBookKey)?.hardcover : undefined;
   // Routed through Annotator (per-book, long-lived) so that the
   // confirmation dialog isn't unmounted with the dropdown menu.
   const handleClearAnnotations = () => {
@@ -201,6 +208,12 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
           <ul className='flex flex-col ps-1'>
             <MenuItem label={_('Push Progress')} noIcon onClick={handlePushHardcoverProgress} />
             <MenuItem label={_('Push Notes')} noIcon onClick={handlePushHardcoverNotes} />
+            <MenuItem
+              label={_('Link Book')}
+              description={hardcoverLink?.title}
+              noIcon
+              onClick={handleLinkHardcoverBook}
+            />
           </ul>
         </MenuItem>
       )}

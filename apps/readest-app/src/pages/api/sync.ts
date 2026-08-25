@@ -17,6 +17,16 @@ import {
 } from '@/libs/sync';
 import { validateUserAndToken } from '@/utils/access';
 import { DBBook, DBBookConfig } from '@/types/records';
+import {
+  getStatsArchiveEnv,
+  readSegment,
+  takePage,
+  toWireStatPage,
+  SegmentUnavailableError,
+  type StatArchiveManifestRow,
+} from '@/libs/statsArchive';
+
+const ms = (s?: string | number | null) => (s ? new Date(s).getTime() : 0);
 
 /**
  * Field-level last-writer-wins for a books row's reading_status: return the
@@ -42,7 +52,6 @@ export function resolveReadingStatusMerge(
   client: Pick<DBBook, 'reading_status' | 'reading_status_updated_at'>,
   server: Pick<DBBook, 'reading_status' | 'reading_status_updated_at'>,
 ): Pick<DBBook, 'reading_status' | 'reading_status_updated_at'> {
-  const ms = (s?: string | null) => (s ? new Date(s).getTime() : 0);
   return ms(client.reading_status_updated_at) >= ms(server.reading_status_updated_at)
     ? {
         reading_status: client.reading_status,
@@ -88,7 +97,6 @@ export function resolveCoverMerge(
   client: Pick<DBBook, 'cover_hash' | 'cover_updated_at'>,
   server: Pick<DBBook, 'cover_hash' | 'cover_updated_at'>,
 ): Pick<DBBook, 'cover_hash' | 'cover_updated_at'> {
-  const ms = (s?: string | null) => (s ? new Date(s).getTime() : 0);
   return ms(client.cover_updated_at) >= ms(server.cover_updated_at)
     ? { cover_hash: client.cover_hash, cover_updated_at: client.cover_updated_at }
     : { cover_hash: server.cover_hash, cover_updated_at: server.cover_updated_at };
@@ -123,7 +131,6 @@ export function resolveMetadataMerge(
   server: BookMetadataFields,
   clientRowWins: boolean,
 ): BookMetadataFields {
-  const ms = (s?: string | null) => (s ? new Date(s).getTime() : 0);
   const clientMs = ms(client.metadata_updated_at);
   const serverMs = ms(server.metadata_updated_at);
   const clientWins = clientMs === serverMs ? clientRowWins : clientMs > serverMs;
@@ -143,6 +150,46 @@ export const bookMetadataChanged = (
   a.author !== b.author ||
   (a.metadata ?? null) !== (b.metadata ?? null) ||
   JSON.stringify(a.tags ?? null) !== JSON.stringify(b.tags ?? null);
+
+// Epoch ms of a row's latest change. A delete counts: KOReader's tombstones
+// keep the highlight's original updated_at (the plugin never bumps it on
+// delete), so ranking rows on updated_at alone puts a tombstone below a live
+// duplicate of the same note (issue #5818).
+type ChangeStamps = {
+  updated_at?: string | number | null;
+  deleted_at?: string | number | null;
+};
+const latestChangeMs = (rec: ChangeStamps) => Math.max(ms(rec.updated_at), ms(rec.deleted_at));
+
+/**
+ * Collapse rows sharing `keys` down to the one changed most recently, keeping
+ * the input order. The same note can exist under two book_hash values when the
+ * two devices hold different copies of a book (meta_hash bridges them); a
+ * deletion on either side must win over the stale live duplicate or it never
+ * reaches the peer. A tie goes to the tombstone: a delete and an edit in the
+ * same millisecond must not resurrect the note.
+ */
+export function dedupeLatest<T extends ChangeStamps>(records: T[], keys: (keyof T)[]): T[] {
+  const keyOf = (rec: T) =>
+    keys
+      .map((k) => rec[k])
+      .filter(Boolean)
+      .join('|');
+  const latest = new Map<string, { rec: T; at: number }>();
+  for (const rec of records) {
+    const key = keyOf(rec);
+    if (!key) continue;
+    const at = latestChangeMs(rec);
+    const best = latest.get(key);
+    if (!best || at > best.at || (at === best.at && !!rec.deleted_at && !best.rec.deleted_at)) {
+      latest.set(key, { rec, at });
+    }
+  }
+  return records.filter((rec) => {
+    const key = keyOf(rec);
+    return !key || latest.get(key)?.rec === rec;
+  });
+}
 
 const transformsToDB = {
   books: transformBookToDB,
@@ -245,23 +292,9 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      let records = allRecords;
-      if (dedupeKeys && dedupeKeys.length > 0) {
-        const seen = new Set<string>();
-        records = records.filter((rec) => {
-          const key = dedupeKeys
-            .map((k) => rec[k])
-            .filter(Boolean)
-            .join('|');
-          if (key && seen.has(key)) {
-            return false;
-          } else {
-            seen.add(key);
-            return true;
-          }
-        });
-      }
-      (results as unknown as Record<string, SyncRecord[]>)[DBSyncTypeMap[table]] = records || [];
+      const records =
+        dedupeKeys && dedupeKeys.length > 0 ? dedupeLatest(allRecords, dedupeKeys) : allRecords;
+      (results as unknown as Record<string, SyncRecord[]>)[DBSyncTypeMap[table]] = records;
     };
 
     // One bounded page of books for the app's and the calibre plugin's
@@ -432,6 +465,14 @@ export async function GET(req: NextRequest) {
           { error: `stat_pages: ${sp.error.message || 'Unknown error'}` },
           { status: 500 },
         );
+      // Archive tier (migration 020): page events older than the hot window live
+      // in immutable per-user segments listed in stat_archives; every hot row is
+      // newer than every segment, so "segments in updated_to order, then hot
+      // rows" is global updated_at order and the paging contract above holds
+      // across tiers. The manifest is read AFTER the hot rows on purpose: a
+      // compaction committing in between moves rows from hot to a segment, so
+      // reading hot first can only return such rows twice (clients union-merge),
+      // never zero times.
       // Attach updated_at_ms (epoch ms) so non-JS clients (the Lua koplugin) can
       // compute their pull cursor without parsing ISO-8601 timestamps.
       const withMs = <T extends { updated_at?: string }>(rows: T[]) =>
@@ -439,12 +480,90 @@ export async function GET(req: NextRequest) {
           ...r,
           updated_at_ms: r.updated_at ? new Date(r.updated_at).getTime() : 0,
         }));
+      const hotRows = withMs((sp.data ?? []) as unknown as StatPageRecord[]);
+      let pageRows: StatPageRecord[] = hotRows;
+      // PostgREST caps a response at MANIFEST_PAGE rows (Supabase's db-max-rows),
+      // so the manifest is read page by page: hot rows may only be appended once
+      // the FINAL manifest page (a short one) proves no archived rows remain
+      // past the cursor — otherwise a short response could advance a client's
+      // cursor over segments the first page did not show.
+      const MANIFEST_PAGE = 1000;
+      const archived: StatPageRecord[] = [];
+      let segmentsRead = 0;
+      let anySegments = false;
+      const archiveEnv = getStatsArchiveEnv();
+      const sinceMs = since.getTime();
+      for (let manifestOffset = 0; ; manifestOffset += MANIFEST_PAGE) {
+        const { data: manifest, error: manErr } = await supabase
+          .from('stat_archives')
+          .select('*')
+          .eq('user_id', user.id)
+          .gt('updated_to', sinceIso)
+          .order('updated_to', { ascending: true })
+          .range(manifestOffset, manifestOffset + MANIFEST_PAGE - 1);
+        if (manErr)
+          return NextResponse.json(
+            { error: `stat_archives: ${manErr.message || 'Unknown error'}` },
+            { status: 500 },
+          );
+        const segments = (manifest ?? []) as StatArchiveManifestRow[];
+        if (segments.length === 0) break;
+        anySegments = true;
+        const bucket = archiveEnv.STATS_ARCHIVE_R2;
+        try {
+          if (!bucket) {
+            throw new SegmentUnavailableError(segments[0]!.id, 'archive storage not configured');
+          }
+          // Segments are read lazily, oldest first, until they fill the page;
+          // a paged pull whose segments run short is topped up with hot rows
+          // (which are newer than every segment), so a page is only ever short
+          // when the whole history is exhausted. Clients that stop on a short
+          // page (the koplugin) therefore never stall on a tier boundary.
+          for (const m of segments) {
+            const segment = await readSegment(bucket, m);
+            segmentsRead++;
+            const kept = takePage(segment.rows, sinceMs, 0, bookParam);
+            archived.push(...(kept.map((r) => toWireStatPage(r, user.id)) as StatPageRecord[]));
+            if (limit > 0 && archived.length >= limit) break;
+          }
+        } catch (e) {
+          if (e instanceof SegmentUnavailableError) {
+            console.error('stats pull:', e.message);
+            return NextResponse.json({ error: `stat_pages: ${e.message}` }, { status: 500 });
+          }
+          throw e;
+        }
+        if (limit > 0 && archived.length >= limit) break;
+        if (segments.length < MANIFEST_PAGE) break;
+      }
+      if (anySegments) {
+        const combined =
+          limit > 0 && archived.length >= limit ? archived : [...archived, ...hotRows];
+        if (limit > 0 && combined.length > limit) {
+          // Cut at `limit`, extended with every row sharing the last
+          // updated_at_ms (segments never split a millisecond and the hot page
+          // was already completed by fetchPagedPages, so the ties are present).
+          const edge = combined[limit - 1]!.updated_at_ms;
+          let end = limit;
+          while (end < combined.length && combined[end]!.updated_at_ms === edge) end++;
+          pageRows = combined.slice(0, end);
+        } else {
+          pageRows = combined;
+        }
+        // One data point per R2-backed pull (hot-only pulls write nothing), so
+        // the share and size of archive reads can inform the hot-window knob.
+        archiveEnv.STATS_COMPACT_AE?.writeDataPoint({
+          indexes: ['pull'],
+          blobs: [limit > 0 ? 'paged' : 'full'],
+          doubles: [segmentsRead, Math.min(archived.length, pageRows.length), limit],
+        });
+      }
       (
         results as unknown as { statBooks: StatBookRecord[]; statPages: StatPageRecord[] }
       ).statBooks = withMs((sb.data ?? []) as unknown as StatBookRecord[]);
       (
         results as unknown as { statBooks: StatBookRecord[]; statPages: StatPageRecord[] }
-      ).statPages = withMs((sp.data ?? []) as unknown as StatPageRecord[]);
+      ).statPages = withMs(pageRows as unknown as StatPageRecord[]);
     }
 
     const dbErrors = Object.values(errors).filter((err) => err !== null);

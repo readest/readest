@@ -109,6 +109,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   ttsLang: 'en',
   isPlaying: true,
   hasTimeline: true,
+  audioTransport: false,
   timeoutOption: 0,
   timeoutTimestamp: 0,
   chapterRemainingSec: null as number | null,
@@ -207,6 +208,27 @@ describe('TTSPlayerSheet', () => {
     fireEvent.click(screen.getByLabelText('Next Sentence'));
     expect(props.onForward).toHaveBeenCalledWith(true);
     fireEvent.click(screen.getByLabelText('Next Paragraph'));
+    expect(props.onForward).toHaveBeenCalledWith(false);
+  });
+
+  test('a paired audiobook gets seek and chapter transport with the same step semantics', () => {
+    const props = makeProps({ audioTransport: true });
+    render(<TTSPlayerSheet {...props} />);
+    for (const label of [
+      'Previous Paragraph',
+      'Previous Sentence',
+      'Next Sentence',
+      'Next Paragraph',
+    ]) {
+      expect(screen.queryByLabelText(label)).toBeNull();
+    }
+    fireEvent.click(screen.getByLabelText('Previous Chapter'));
+    expect(props.onBackward).toHaveBeenCalledWith(false);
+    fireEvent.click(screen.getByLabelText('Back 15 Seconds'));
+    expect(props.onBackward).toHaveBeenCalledWith(true);
+    fireEvent.click(screen.getByLabelText('Forward 30 Seconds'));
+    expect(props.onForward).toHaveBeenCalledWith(true);
+    fireEvent.click(screen.getByLabelText('Next Chapter'));
     expect(props.onForward).toHaveBeenCalledWith(false);
   });
 

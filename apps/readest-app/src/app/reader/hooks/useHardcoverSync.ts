@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { debounce } from '@/utils/debounce';
 import { HardcoverClient, HardcoverSyncMapStore } from '@/services/hardcover';
-import { BookNote } from '@/types/book';
+import { BookNote, HardcoverBookLink } from '@/types/book';
 
 // Hardcover throttles its API hard (≈1 req/1.15s), and the "currently reading"
 // status + reading-session progress it tracks doesn't need second-by-second
@@ -23,7 +23,7 @@ interface PushOptions {
 export const useHardcoverSync = (bookKey: string) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
-  const { getConfig, getBookData } = useBookDataStore();
+  const { getConfig, getBookData, setConfig, saveConfig } = useBookDataStore();
   // Reactive page-turn signal — drives the auto-push effect below. The host
   // (Annotator) already subscribes to this, so it adds no extra renders.
   const progress = useBookProgress(bookKey);
@@ -50,6 +50,22 @@ export const useHardcoverSync = (bookKey: string) => {
     const mapStore = new HardcoverSyncMapStore(appService);
     return new HardcoverClient(settings.hardcover, mapStore);
   }, [envConfig]);
+
+  // Remember which Hardcover book a sync resolved to (#5846): the book menu
+  // shows it, later syncs skip the title search, and a wrong match becomes
+  // visible and fixable from "Link Book". Only ever fills in a missing link:
+  // a push runs for seconds (Hardcover throttles hard), and a link the user
+  // picked in the meantime must not be overwritten by the stale match.
+  const rememberLink = useCallback(
+    async (link: HardcoverBookLink) => {
+      const config = getConfig(bookKey);
+      if (!config || config.hardcover) return;
+      const { settings } = useSettingsStore.getState();
+      await saveConfig(envConfig, bookKey, { ...config, hardcover: link }, settings);
+      setConfig(bookKey, { hardcover: link });
+    },
+    [bookKey, envConfig, getConfig, saveConfig, setConfig],
+  );
 
   const pushNotes = useCallback(
     async (options?: PushOptions) => {
@@ -86,7 +102,7 @@ export const useHardcoverSync = (bookKey: string) => {
 
       try {
         const result = await client.syncBookNotes(book, config);
-
+        await rememberLink(result.link);
         await updateLastSyncedAt(Date.now());
         if (!silent) {
           eventDispatcher.dispatch('toast', {
@@ -116,7 +132,7 @@ export const useHardcoverSync = (bookKey: string) => {
         }
       }
     },
-    [_, bookKey, getBookData, getClient, getConfig, updateLastSyncedAt],
+    [_, bookKey, getBookData, getClient, getConfig, rememberLink, updateLastSyncedAt],
   );
 
   const pushProgress = useCallback(
@@ -138,7 +154,8 @@ export const useHardcoverSync = (bookKey: string) => {
       }
 
       try {
-        await client.pushProgress(book, config);
+        const link = await client.pushProgress(book, config);
+        await rememberLink(link);
         await updateLastSyncedAt(Date.now());
         if (!silent) {
           eventDispatcher.dispatch('toast', {
@@ -158,7 +175,7 @@ export const useHardcoverSync = (bookKey: string) => {
         }
       }
     },
-    [_, bookKey, getBookData, getClient, getConfig, updateLastSyncedAt],
+    [_, bookKey, getBookData, getClient, getConfig, rememberLink, updateLastSyncedAt],
   );
 
   // Debounced, silent auto-pushers. Settings are read at call time so a freshly

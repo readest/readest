@@ -564,6 +564,18 @@ export interface BookSearchResult {
 
 export const BOOK_CONFIG_SCHEMA_VERSION = 3;
 
+/**
+ * The Hardcover book this file syncs to. Set explicitly from the book menu
+ * ("Link Book") or recorded from the first successful automatic match; once
+ * present it bypasses ISBN and title matching entirely (#5846). Device-local:
+ * the cloud config push only carries the columns in `transformBookConfigToDB`.
+ */
+export interface HardcoverBookLink {
+  bookId: number;
+  /** Display only — lets the menu show the linked book without a request. */
+  title: string;
+}
+
 export interface BookConfig {
   schemaVersion?: number;
   bookHash?: string;
@@ -577,10 +589,13 @@ export interface BookConfig {
   viewSettings?: Partial<ViewSettings>;
   /**
    * A device-local recording paired with this ebook. The audio files live
-   * under Books/<hash>/audiobook/ and are deliberately excluded from cloud
-   * sync; ordinary reading progress remains the shared cross-device state.
+   * under Books/<hash>/audiobook/, or stream from an Audiobookshelf server
+   * (see PairedAudiobook.source); either way the pairing is deliberately
+   * excluded from cloud sync, and ordinary reading progress remains the
+   * shared cross-device state.
    */
   audiobook?: PairedAudiobook;
+  hardcover?: HardcoverBookLink;
 
   lastSyncedAtConfig?: number;
   lastSyncedAtNotes?: number;
@@ -611,6 +626,25 @@ export interface AudiobookChapterMapping {
   audioChapterId: string;
 }
 
+/**
+ * An audiobook streamed from an Audiobookshelf server instead of copied to
+ * the device. The pairing then has a single virtual file
+ * (`abs://<serverId>/<itemId>`) whose chapters are timed on the item's global
+ * timeline, and the track list here maps that timeline onto the server's
+ * media files; nothing under Books/<hash>/audiobook/ exists for it.
+ */
+export interface PairedAudiobookAbsSource {
+  kind: 'audiobookshelf';
+  serverId: string;
+  itemId: string;
+  tracks: {
+    index: number;
+    startOffset: number; // global seconds
+    duration: number; // seconds
+    contentUrl: string; // server-relative
+  }[];
+}
+
 export interface PairedAudiobook {
   version: 1;
   title?: string;
@@ -619,6 +653,7 @@ export interface PairedAudiobook {
   chapters: AudiobookChapter[];
   mappings: AudiobookChapterMapping[];
   createdAt: number;
+  source?: PairedAudiobookAbsSource;
 }
 
 export interface BookDataRecord {

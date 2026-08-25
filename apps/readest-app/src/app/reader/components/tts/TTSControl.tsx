@@ -39,6 +39,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   const isEink = viewSettings?.isEink ?? false;
   const playerStyle = viewSettings?.ttsPlayerStyle ?? 'full';
   const hasTimeline = tts.ttsClientsInited && tts.handleSupportsPlaybackInfo();
+  const audioTransport = tts.ttsClientsInited && tts.audioTransport;
   const miniPlayerMounted = tts.showIndicator && !showPlayerSheet;
   const miniPlayerVisible = useMiniPlayerAutoHide(bookKey, playerStyle, miniPlayerMounted);
 
@@ -108,6 +109,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           isEink={isEink}
           visible={miniPlayerVisible}
           hasTimeline={hasTimeline}
+          audioTransport={audioTransport}
           timeoutTimestamp={tts.timeoutTimestamp}
           chapterRemainingSec={tts.chapterRemainingSec}
           gridInsets={gridInsets}
@@ -126,6 +128,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           ttsLang={tts.ttsLang}
           isPlaying={tts.isPlaying}
           hasTimeline={hasTimeline}
+          audioTransport={audioTransport}
           timeoutOption={tts.timeoutOption}
           timeoutTimestamp={tts.timeoutTimestamp}
           chapterRemainingSec={tts.chapterRemainingSec}

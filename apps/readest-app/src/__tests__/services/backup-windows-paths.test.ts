@@ -14,10 +14,13 @@ import type { AppService, FileItem } from '@/types/system';
 
 const BOOK_HASH = '6afdd0136531fbe028e0503a14ba234c';
 
-/** Build a stub AppService whose `readDirectory` returns the given file list. */
+/**
+ * Build a stub AppService whose `readDirectory` returns the given file list.
+ * The library owns BOOK_HASH: only a live book's dir is exported (#5837).
+ */
 function makeAppService(files: FileItem[]): AppService {
   return {
-    loadLibraryBooks: async () => [],
+    loadLibraryBooks: async () => [{ hash: BOOK_HASH }],
     loadSettings: async () => ({}) as never,
     resolveFilePath: async () => 'C:/Users/me/AppData/Books',
     readDirectory: async () => files,

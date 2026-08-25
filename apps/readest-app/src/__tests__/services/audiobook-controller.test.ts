@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { AudiobookController, SKIP_FORWARD_SEC } from '@/services/audiobook/AudiobookController';
+import { AudiobookController } from '@/services/audiobook/AudiobookController';
+import { SKIP_FORWARD_SEC } from '@/services/playback/playbackSource';
 import type { AudiobookClock } from '@/services/audiobook/AudiobookClock';
 import type { ABSChapter, ABSTrack } from '@/types/audiobookshelf';
 

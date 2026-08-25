@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useABSServerStore } from '@/store/absServerStore';
-import { syncAllAbsServers } from '@/services/audiobookshelf/librarySync';
+import { backfillAbsCovers, syncAllAbsServers } from '@/services/audiobookshelf/librarySync';
 import { eventDispatcher } from '@/utils/event';
 
 const AUTO_CHECK_INTERVAL_MS = 5 * 60 * 1000;
@@ -34,6 +34,9 @@ export function useABSSync() {
 
     try {
       isSyncingRef.current = true;
+      // Covers first, unauthenticated: books adopted via the cloud channel
+      // must not stay coverless behind a failing (or absent) login.
+      await backfillAbsCovers(appService);
       await syncAllAbsServers(appService);
     } catch (error) {
       console.error('ABS sync error:', error);

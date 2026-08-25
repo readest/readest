@@ -86,6 +86,7 @@ describe('TTSControl', () => {
       handleGetPlaybackInfo: vi.fn().mockReturnValue(null),
       handleSetSentenceGap: vi.fn(),
       handleSupportsPlaybackInfo: vi.fn().mockReturnValue(true),
+      audioTransport: false,
       handleSupportsGapControl: vi.fn().mockReturnValue(false),
       refreshTtsLang: vi.fn(),
     });

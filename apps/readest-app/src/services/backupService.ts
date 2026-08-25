@@ -4,7 +4,7 @@ import { EXTS } from '@/libs/document';
 import { isTauriAppPlatform } from '@/services/environment';
 import { Book, BookConfig, BookNote } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
-import { getLibraryFilename } from '@/utils/book';
+import { getBookDirOfPath, getLibraryFilename } from '@/utils/book';
 import { stampBookConfigSchema } from '@/utils/serializer';
 import { configureZip } from '@/utils/zip';
 
@@ -271,20 +271,6 @@ export function reviveRestoredBooks(revived: RevivedBook[], now: number = Date.n
   }
 }
 
-/** Library metadata files to skip from the directory scan. */
-const LIBRARY_META_FILES = new Set([
-  'library.json',
-  'library.json.bak',
-  'library_backup.json',
-  'library.db',
-  'library.db-shm',
-  'library.db-wal',
-]);
-
-function isLibraryMetaFile(path: string): boolean {
-  return LIBRARY_META_FILES.has(path);
-}
-
 type ProgressCallback = (current: number, total: number, filename: string) => void;
 
 /**
@@ -316,23 +302,36 @@ export async function addBackupEntriesToZip(
     console.warn('Skipping settings backup:', error);
   }
 
-  // Add all book files, skipping library metadata files
+  // Add the files of every live library book. Only a book's own `<hash>/`
+  // dir is exported: the Books/ tree also holds root-level library metadata
+  // and dirs no live row references — a soft-deleted book whose file
+  // lingered, or an import killed before the library was saved. Those never
+  // show in the library UI and must not be silently exported either (#5837).
+  // With no rows at all (a library.json that failed to load hands back `[]`)
+  // every dir is exported instead, so a broken library can still be rebuilt
+  // by restore's orphan-dir import.
+  const liveHashes = new Set(books.filter((b) => !b.deletedAt).map((b) => b.hash));
+  const isExported = (path: string) => {
+    const dir = getBookDirOfPath(path);
+    return !!dir && (books.length === 0 || liveHashes.has(dir));
+  };
   const booksDir = await appService.resolveFilePath('', 'Books');
   const files = await appService.readDirectory(booksDir, 'None');
-  const bookFiles = files.filter((f) => f.size > 0 && !isLibraryMetaFile(f.path));
+  // `readDirectory` returns host-separator paths; on Windows that is a
+  // backslash (e.g. `hash\cover.png`). Zip entry names must use forward
+  // slashes so the backup restores on every platform — restore matches a
+  // book's files by `${hash}/` (see `restoreFromBackupZip`). Issue #4703.
+  const bookFiles = files
+    .filter((file) => file.size > 0 && isExported(file.path))
+    .map((file) => ({ file, entryName: file.path.replace(/\\/g, '/') }));
   const total = bookFiles.length;
 
   for (let i = 0; i < bookFiles.length; i++) {
-    const file = bookFiles[i]!;
+    const { file, entryName } = bookFiles[i]!;
     onProgress?.(i + 1, total, file.path);
     try {
       const content = await appService.readFile(file.path, 'Books', 'binary');
       const data = new Uint8Array(content as ArrayBuffer);
-      // `readDirectory` returns host-separator paths; on Windows that is a
-      // backslash (e.g. `hash\cover.png`). Zip entry names must use forward
-      // slashes so the backup restores on every platform — restore matches a
-      // book's files by `${hash}/` (see `restoreFromBackupZip`). Issue #4703.
-      const entryName = file.path.replace(/\\/g, '/');
       await writer.add(entryName, new Uint8ArrayReader(data), { level: 0 });
     } catch (error) {
       console.warn(`Skipping file ${file.path}:`, error);

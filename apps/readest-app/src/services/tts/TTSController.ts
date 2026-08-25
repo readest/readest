@@ -40,7 +40,14 @@ import {
   MediaOverlayTTS,
   MEDIA_OVERLAY_VOICE_ID,
 } from './mediaOverlay';
-import { findPairedAudiobookSection, loadPairedAudiobookSection } from './pairedAudiobook';
+import {
+  adjacentAudioChapter,
+  findPairedAudiobookSection,
+  loadPairedAudiobookSection,
+  narratedAudioChapters,
+  type NarratedAudioChapter,
+} from './pairedAudiobook';
+import { SKIP_BACKWARD_SEC, SKIP_FORWARD_SEC } from '@/services/playback/playbackSource';
 
 // App-wide monotonic sequence for 'tts-position' events. A fresh TTSController
 // is constructed per `tts-speak`, so a per-instance counter would restart at 0
@@ -459,6 +466,23 @@ export class TTSController extends EventTarget {
   #attachNarrationSource(book: FoliateView['book']): void {
     if (this.#usesPairedAudiobook(book) && this.#pairedAudiobook && this.appService) {
       const narrator = this.#pairedAudiobook.narrator;
+      const source = this.#pairedAudiobook.source;
+      if (source?.kind === 'audiobookshelf') {
+        // Streamed from the server: the tracks resolve to URLs carrying the
+        // live token, and there is no blob to fall back to. Loaded on demand
+        // so the server store (and its settings graph) stays out of this
+        // module's imports for every other book.
+        this.ttsMediaOverlayClient.attachSource({
+          ...(narrator ? { narrator } : {}),
+          textHighlight: false,
+          resolveTracks: async () =>
+            (await import('@/services/audiobook/absPairing')).absNarrationTracks(source),
+          loadBlob: async () => {
+            throw new Error('Audiobookshelf server not found');
+          },
+        });
+        return;
+      }
       this.ttsMediaOverlayClient.attachSource({
         ...(narrator ? { narrator } : {}),
         textHighlight: false,
@@ -911,6 +935,18 @@ export class TTSController extends EventTarget {
     return this.ttsClient.getCapabilities().mediaClock;
   }
 
+  // A recording with chapter-level text timing only (a paired audiobook) has
+  // no sentences or paragraphs to step by: its marks ARE chapters, so the
+  // sentence step used to skip a whole chapter. The transport moves by audio
+  // instead — the small step is the audiobook player's time skip
+  // (SKIP_FORWARD_SEC / SKIP_BACKWARD_SEC of recording), the large step walks
+  // the reachable audiobook chapters, those a mapped chapter's clip covers
+  // (#5863).
+  usesAudioTransport(): boolean {
+    const capabilities = this.ttsClient.getCapabilities();
+    return capabilities.mediaClock && capabilities.textHighlight === false;
+  }
+
   // Whether the active client supports the inter-sentence gap control.
   supportsGapControl(): boolean {
     return this.ttsClient.getCapabilities().gapControl;
@@ -1076,6 +1112,16 @@ export class TTSController extends EventTarget {
     // below; only a stopped session should actually be silenced here.
     await this.stop(isPlaying);
     if (!isPlaying) this.state = 'forward-paused';
+    await this.#resumeAt(target, range, isPlaying);
+  }
+
+  // Continue (or park a paused session) at a timeline target once the current
+  // utterance has been stopped.
+  async #resumeAt(
+    target: { index: number; withinMediaSec: number },
+    range: Range,
+    isPlaying: boolean,
+  ): Promise<void> {
     this.#currentSentenceIndex = target.index;
     const ssml = this.#getTts()?.from(range);
     if (this.ttsClient.getCapabilities().textHighlight === false) {
@@ -1083,6 +1129,86 @@ export class TTSController extends EventTarget {
     }
     await this.#handleNavigationWithSSML(ssml, isPlaying);
     if (!isPlaying) this.reapplyCurrentHighlight();
+  }
+
+  // Move through the recording by a span of recording seconds. The timeline
+  // counts seconds at the playback rate, so the span is scaled back first.
+  async #seekBy(seconds: number): Promise<void> {
+    await this.initViewTTS();
+    await this.ensureTimeline();
+    const info = this.getPlaybackInfo();
+    if (!info) return;
+    await this.seekToTime(info.position + seconds / this.ttsRate);
+  }
+
+  // The recording position now sounding: the clip of the current mark plus
+  // the clock's offset into it.
+  #narrationPosition(): { audioHref: string; seconds: number } | null {
+    const timeline = this.#sectionTimeline;
+    const section = this.#mediaOverlaySection;
+    if (!timeline || !section || this.#timelineSectionIndex !== this.#ttsSectionIndex) return null;
+    let index = this.#currentSentenceIndex;
+    if (index < 0) {
+      const range = this.#getTts()?.getLastRange();
+      index = range ? timeline.indexOfRange(range) : -1;
+    }
+    const par = section.pars[index];
+    if (!par) return null;
+    return {
+      audioHref: par.audioHref,
+      seconds: par.clipBegin + (this.ttsClient.getChunkPosition?.() ?? 0),
+    };
+  }
+
+  // Timeline seconds of a recording position inside the current section, or
+  // null when no clip of the section plays it.
+  #sectionTimeAt(audioHref: string, seconds: number): number | null {
+    const timeline = this.#sectionTimeline;
+    const section = this.#mediaOverlaySection;
+    if (!timeline || !section) return null;
+    const index = section.pars.findIndex(
+      (par) => par.audioHref === audioHref && par.clipBegin <= seconds && seconds < par.clipEnd,
+    );
+    return index < 0 ? null : timeline.positionAt(index, seconds - section.pars[index]!.clipBegin);
+  }
+
+  // Skip to the adjacent reachable audiobook chapter (narratedAudioChapters:
+  // the ones a mapped chapter's clip covers, often finer than the EPUB's TOC;
+  // audio before the first mapped chapter is not among them). A chapter inside
+  // the section already playing is a plain seek; one narrated by another
+  // section navigates there first — the page turns only when the recording
+  // moves to a different mapped chapter.
+  async #stepAudioChapter(direction: 1 | -1): Promise<void> {
+    await this.initViewTTS();
+    await this.ensureTimeline();
+    const association = this.#pairedAudiobook;
+    const current = this.#narrationPosition();
+    if (!association || !current) return;
+    const chapters = narratedAudioChapters(this.view.book, association);
+    const target = adjacentAudioChapter(chapters, current.audioHref, current.seconds, direction);
+    if (!target) return;
+    if (target.sectionIndex === this.#ttsSectionIndex) {
+      const seconds = this.#sectionTimeAt(target.audioHref, target.chapter.start);
+      if (seconds !== null) await this.seekToTime(seconds);
+      return;
+    }
+    const isPlaying = this.state === 'playing';
+    await this.stop(isPlaying);
+    if (!isPlaying) this.state = direction > 0 ? 'forward-paused' : 'backward-paused';
+    if (!(await this.#initTTSForSection(target.sectionIndex))) return;
+    await this.#startSectionAt(target, isPlaying);
+  }
+
+  async #startSectionAt(target: NarratedAudioChapter, isPlaying: boolean): Promise<void> {
+    const timeline = await this.ensureTimeline();
+    const seconds = this.#sectionTimeAt(target.audioHref, target.chapter.start);
+    const located = seconds === null ? null : timeline?.sentenceAtTime(seconds);
+    if (!located) {
+      await this.#handleNavigationWithSSML(this.#getTts()?.start(), isPlaying);
+      return;
+    }
+    const range = this.#rangeAtSeekTarget(located.sentence, located.withinMediaSec);
+    await this.#resumeAt(located, range, isPlaying);
   }
 
   async #initTTSForNextSection(): Promise<boolean> {
@@ -1427,6 +1553,11 @@ export class TTSController extends EventTarget {
 
   // goto previous mark/paragraph
   async backward(byMark = false) {
+    if (this.usesAudioTransport()) {
+      if (byMark) await this.#seekBy(-SKIP_BACKWARD_SEC);
+      else await this.#stepAudioChapter(-1);
+      return;
+    }
     await this.initViewTTS();
     const isPlaying = this.state === 'playing';
     // While playing, this is a handover to the utterance about to be spoken
@@ -1449,6 +1580,11 @@ export class TTSController extends EventTarget {
   // skip ahead and getting playback stopped instead is the opposite of the
   // request, and on the lock screen there is no obvious way to recover.
   async forward(byMark = false, isAutoAdvance = false) {
+    if (!isAutoAdvance && this.usesAudioTransport()) {
+      if (byMark) await this.#seekBy(SKIP_FORWARD_SEC);
+      else await this.#stepAudioChapter(1);
+      return;
+    }
     await this.initViewTTS();
     const isPlaying = this.state === 'playing';
     // While playing, this is a handover to the utterance about to be spoken
@@ -1654,7 +1790,14 @@ export class TTSController extends EventTarget {
             ? (this.#getCurrentPlaybackRange() ?? range)
             : range;
         const cfi = this.view.getCFI(this.#ttsSectionIndex, playbackRange);
-        this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
+        // A chapter-only pairing highlights a one-character reading dot, but the
+        // view needs the whole sounding sentence to know where the page cuts it
+        // off (followSentenceAcrossPages). Carry that range's cfi too; it is the
+        // mark range itself when the client highlights the full text, so no
+        // extra work for synthesized voices or exact Media Overlays.
+        const sentenceCfi =
+          playbackRange === range ? cfi : this.view.getCFI(this.#ttsSectionIndex, range);
+        this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi, sentenceCfi } }));
         this.#dispatchPosition(cfi, 'sentence');
       } catch {
         this.#suppressMarkHighlight = false;

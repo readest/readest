@@ -33,6 +33,7 @@ vi.mock('@/services/opds/feedChecker', () => ({
 
 vi.mock('@/services/opds/sourceMap', () => ({
   upsertOPDSSourceMapping: vi.fn().mockResolvedValue(undefined),
+  findBookByOPDSSources: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('@/services/opds/cover', () => ({

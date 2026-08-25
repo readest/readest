@@ -122,12 +122,35 @@ export const replacePairedAudiobook = async (
   return association;
 };
 
+/**
+ * Saves a pairing that streams from a server: nothing to copy, so only the
+ * association is persisted, after which whatever local audio the previous
+ * pairing kept under this book is deleted.
+ */
+export const persistStreamedPairedAudiobook = async (
+  storage: AudiobookStorage,
+  bookHash: string,
+  association: PairedAudiobook,
+  previous: PairedAudiobook | undefined,
+  persist: (association: PairedAudiobook) => Promise<void>,
+): Promise<PairedAudiobook> => {
+  await persist(association);
+  try {
+    await deleteAudiobookFiles(storage, bookHash, previous?.files ?? []);
+  } catch (error) {
+    console.warn('Failed to remove replaced audiobook files:', error);
+  }
+  return association;
+};
+
 export const removePairedAudiobook = async (
   storage: AudiobookStorage,
   bookHash: string,
-  _association: PairedAudiobook,
+  association: PairedAudiobook,
   persist: (association: undefined) => Promise<void>,
 ): Promise<void> => {
   await persist(undefined);
+  // A streamed pairing never created the directory.
+  if (association.source) return;
   await storage.deleteDir(getAudiobookDirectory(bookHash), 'Books', true);
 };

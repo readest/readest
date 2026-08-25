@@ -8,13 +8,16 @@ import {
 } from 'react-icons/ri';
 import { documentDir, join } from '@tauri-apps/api/path';
 import { useEnv } from '@/context/EnvContext';
+import { useLibraryStore } from '@/store/libraryStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatBytes } from '@/utils/book';
 import {
   clearCacheEntries,
-  getCacheEntries,
   getCacheStats,
+  getClearableEntries,
+  withoutLiveBookEntries,
   CacheClearProgress,
+  CacheEntry,
   CacheSource,
 } from '@/utils/cache';
 import { AppService } from '@/types/system';
@@ -59,7 +62,11 @@ export const CacheManagerWindow = () => {
   const { appService } = useEnv();
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState<CacheStatus>('scanning');
+  // The scanned set is what the user confirms, so Clear deletes exactly the
+  // files the dialog described rather than rescanning under their feet.
+  const [entries, setEntries] = useState<CacheEntry[]>([]);
   const [count, setCount] = useState(0);
+  const [orphanCount, setOrphanCount] = useState(0);
   const [size, setSize] = useState(0);
   const [progress, setProgress] = useState<CacheClearProgress>({ current: 0, total: 0 });
   const [errorMessage, setErrorMessage] = useState('');
@@ -69,9 +76,16 @@ export const CacheManagerWindow = () => {
     setStatus('scanning');
     setErrorMessage('');
     try {
-      const entries = await getCacheEntries(appService, await getCacheSources(appService));
+      const { library, libraryLoaded } = useLibraryStore.getState();
+      const { entries, orphanCount } = await getClearableEntries(
+        appService,
+        await getCacheSources(appService),
+        { books: library, loaded: libraryLoaded },
+      );
       const stats = getCacheStats(entries);
+      setEntries(entries);
       setCount(stats.count);
+      setOrphanCount(orphanCount);
       setSize(stats.size);
       setStatus('idle');
     } catch (error) {
@@ -113,9 +127,18 @@ export const CacheManagerWindow = () => {
     setStatus('clearing');
     setProgress({ current: 0, total: 0 });
     try {
-      const entries = await getCacheEntries(appService, await getCacheSources(appService));
-      await clearCacheEntries(appService, entries, setProgress);
+      const { library } = useLibraryStore.getState();
+      const { failed } = await clearCacheEntries(
+        appService,
+        withoutLiveBookEntries(entries, library),
+        setProgress,
+      );
       await scanCache();
+      if (failed > 0) {
+        setErrorMessage(_('Failed to delete {{count}} file(s)', { count: failed }));
+        setStatus('error');
+        return;
+      }
       setStatus('done');
     } catch (error) {
       console.error('Error clearing cache:', error);
@@ -188,6 +211,13 @@ export const CacheManagerWindow = () => {
                 {status === 'scanning' ? '—' : formatBytes(size)}
               </span>
               <span className='text-base-content/60 line-clamp-2 text-sm'>{heroCaption}</span>
+              {orphanCount > 0 && (status === 'idle' || status === 'confirming') && (
+                <span className='text-base-content/60 text-sm'>
+                  {_('Includes {{count}} orphaned book file(s) not in your library', {
+                    count: orphanCount,
+                  })}
+                </span>
+              )}
             </div>
           </div>
 
@@ -223,7 +253,11 @@ export const CacheManagerWindow = () => {
           {status === 'confirming' && (
             <p className='text-base-content/60 flex items-center justify-center gap-1.5 text-center text-[13px] leading-relaxed'>
               <RiErrorWarningFill className='text-warning h-4 w-4 shrink-0' aria-hidden='true' />
-              {_('This will delete all cached files. This cannot be undone.')}
+              {orphanCount > 0
+                ? _(
+                    'This will delete all cached files and orphaned book files not in your library. This cannot be undone.',
+                  )
+                : _('This will delete all cached files. This cannot be undone.')}
             </p>
           )}
 

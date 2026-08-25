@@ -42,6 +42,14 @@
             overlays = [ fenix.overlays.default ];
           };
 
+          # ABI of the Android 34 emulator image. avdmanager only accepts an
+          # image that is installed in the SDK, and the emulator only runs
+          # images that match the host CPU, so both the SDK package list and
+          # the `avdmanager create avd -k` path derive from this one value.
+          androidAbi = if pkgs.stdenv.hostPlatform.isAarch64 then "arm64-v8a" else "x86_64";
+          # android-nixpkgs spells the x86_64 ABI as `x86-64` in attribute names.
+          androidImageSuffix = lib.replaceStrings [ "_" ] [ "-" ] androidAbi;
+
           toolchain = with pkgs.fenix.complete; [
             cargo
             clippy
@@ -139,14 +147,8 @@
               platforms-android-36
               platforms-android-35
               platforms-android-34
-            ]
-            ++ lib.optionals (system == "aarch64-darwin") [
-              system-images-android-34-google-apis-arm64-v8a
-              system-images-android-34-google-apis-playstore-arm64-v8a
-            ]
-            ++ lib.optionals (system == "x86_64-linux") [
-              system-images-android-34-google-apis-x86-64
-              system-images-android-34-google-apis-playstore-x86-64
+              sdkPkgs."system-images-android-34-google-apis-${androidImageSuffix}"
+              sdkPkgs."system-images-android-34-google-apis-playstore-${androidImageSuffix}"
             ]);
           } // lib.optionalAttrs (!isDarwin) {
             default = pkgs.callPackage ./nix/package.nix { };
@@ -173,7 +175,7 @@
                     if [ ! -d "$ANDROID_AVD_HOME/${name}.avd" ]; then
                         avdmanager create avd \
                           -n ${name} \
-                          -k "system-images;android-34;google_apis;x86_64" \
+                          -k "system-images;android-34;google_apis;${androidAbi}" \
                           -d "pixel" \
                           --force
                       fi

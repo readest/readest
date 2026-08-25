@@ -168,7 +168,13 @@ export class BookOrbitClient {
   async matchCheck(books: MatchCheckBook[]): Promise<MatchCheckResponse> {
     return await this.postJson<MatchCheckResponse>('/plugin/match-check', {
       hashes: books.map((book) => book.hash),
-      books,
+      // The server validates title <= 500 and authors <= 1000 chars and rejects
+      // the whole request otherwise, which would leave the book unregistered.
+      books: books.map((book) => ({
+        ...book,
+        title: book.title?.slice(0, 500),
+        authors: book.authors?.slice(0, 1000),
+      })),
     });
   }
 

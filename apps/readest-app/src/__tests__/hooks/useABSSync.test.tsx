@@ -20,15 +20,17 @@ vi.mock('@/services/sync/replicaPublish', () => ({
 }));
 vi.mock('@/services/audiobookshelf/librarySync', () => ({
   syncAllAbsServers: vi.fn(),
+  backfillAbsCovers: vi.fn(),
 }));
 
-import { syncAllAbsServers } from '@/services/audiobookshelf/librarySync';
+import { backfillAbsCovers, syncAllAbsServers } from '@/services/audiobookshelf/librarySync';
 import { useABSServerStore } from '@/store/absServerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
 import { useABSSync } from '@/hooks/useABSSync';
 
 const mockedSync = vi.mocked(syncAllAbsServers);
+const mockedBackfill = vi.mocked(backfillAbsCovers);
 
 // contentId/addedAt already set so loadABSServers' backfill is a no-op and
 // doesn't fire an unrelated saveSettings call.
@@ -79,6 +81,23 @@ describe('useABSSync', () => {
 
     expect(mockedSync).toHaveBeenCalledTimes(1);
     expect(mockedSync).toHaveBeenCalledWith(appService);
+  });
+
+  test('backfills covers before the authenticated sync so a failing login cannot block them', async () => {
+    useABSServerStore.setState({ servers: [server] });
+    const order: string[] = [];
+    mockedBackfill.mockImplementation(async () => {
+      order.push('backfill');
+    });
+    mockedSync.mockImplementation(async () => {
+      order.push('sync');
+    });
+
+    renderHook(() => useABSSync());
+    await settle();
+
+    expect(order).toEqual(['backfill', 'sync']);
+    expect(mockedBackfill).toHaveBeenCalledWith(appService);
   });
 
   test('does not sync when neither the store nor settings have servers', async () => {

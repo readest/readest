@@ -308,6 +308,8 @@ const migratePairedAudiobook = async (
   targetHash: string,
 ): Promise<PairedAudiobook> => {
   if (sourceHash === targetHash) return association;
+  // Streamed from a server: no files under the old hash to carry over.
+  if (association.source) return association;
 
   const targetDirectory = getAudiobookDirectory(targetHash);
   await fs.createDir(targetDirectory, 'Books', true);

@@ -1,4 +1,5 @@
 import { ABSClient } from '@/services/audiobookshelf/client';
+import { createAbsClient } from '@/services/audiobookshelf/createClient';
 import {
   isLocalProgressFresher,
   readLocalLastPlayedAt,
@@ -12,7 +13,7 @@ import { buildAbsBookMetadata, makeAbsFilePath, parseAbsFilePath } from '@/utils
 import { getCoverFilename } from '@/utils/book';
 import { md5 } from '@/utils/md5';
 import { stubTranslation as _, uniqueId } from '@/utils/misc';
-import { useABSServerStore } from '@/store/absServerStore';
+import { findABSServerById, useABSServerStore } from '@/store/absServerStore';
 import { useLibraryStore } from '@/store/libraryStore';
 
 /** Number of audio tracks a library item carries, from whichever field the server populated. */
@@ -186,14 +187,15 @@ const toEnvConfig = (appService: AppService): EnvConfigType => ({
  * Download and write an upserted book's cover. Best effort: any failure
  * (offline, 404, empty body) is logged and skipped, never fails the sync.
  * Mirrors applyOPDSCover (src/services/opds/cover.ts), minus probeAuth —
- * ABS cover URLs are unauthenticated.
+ * ABS cover URLs are unauthenticated. Returns true when the cover was
+ * written and the book's cover fields were updated.
  */
 const downloadAbsCover = async (
   appService: AppService,
   client: ABSClient,
   book: Book,
   itemId: string,
-): Promise<void> => {
+): Promise<boolean> => {
   const tmpPath = await appService.resolveFilePath(`abs_cover_${uniqueId()}`, 'Cache');
   try {
     await downloadFile({
@@ -206,12 +208,14 @@ const downloadAbsCover = async (
       skipSslVerification: true,
     });
     const bytes = (await appService.readFile(tmpPath, 'None', 'binary')) as ArrayBuffer;
-    if (!bytes?.byteLength) return;
+    if (!bytes?.byteLength) return false;
     await appService.writeFile(getCoverFilename(book), 'Books', bytes);
     book.coverHash = await appService.computeCoverHash(book);
     book.coverImageUrl = await appService.generateCoverImageUrl(book);
+    return true;
   } catch (error) {
     console.warn(`[ABS] failed to download cover for "${book.title}":`, error);
+    return false;
   } finally {
     try {
       await appService.deleteFile(tmpPath, 'None');
@@ -221,14 +225,48 @@ const downloadAbsCover = async (
   }
 };
 
+/**
+ * Fetch missing covers for ABS books whose server row is present, without
+ * requiring authentication — ABS cover endpoints are public. Covers the
+ * books-adopted-via-cloud case: a device that received the book rows and the
+ * server row but has no (valid) login yet would otherwise show placeholder
+ * tiles until its first authenticated library sync. Cloned books replace
+ * their store entries only on success; originals are never mutated in place.
+ */
+export const backfillAbsCovers = async (appService: AppService): Promise<void> => {
+  const { library } = useLibraryStore.getState();
+  const clients = new Map<string, ABSClient>();
+  const replaced = new Map<string, Book>();
+  for (const book of library) {
+    if (book.deletedAt) continue;
+    const parsed = parseAbsFilePath(book.filePath);
+    if (!parsed) continue;
+    const server = findABSServerById(parsed.serverId);
+    if (!server || server.deletedAt) continue;
+    if (await appService.exists(getCoverFilename(book), 'Books')) continue;
+    let client = clients.get(server.id);
+    if (!client) {
+      // Cover downloads never touch token endpoints, so no refresh callback.
+      client = new ABSClient(server, { onTokensUpdated: () => {} });
+      clients.set(server.id, client);
+    }
+    const clone = { ...book };
+    if (await downloadAbsCover(appService, client, clone, parsed.itemId)) {
+      replaced.set(book.hash, clone);
+    }
+  }
+  if (replaced.size === 0) return;
+  // Re-read the store: the downloads above are async and a concurrent sync
+  // may have swapped the library array since the first read.
+  const current = useLibraryStore.getState().library;
+  const newLibrary = current.map((book) => replaced.get(book.hash) ?? book);
+  useLibraryStore.getState().setLibrary(newLibrary);
+  await appService.saveLibraryBooks(newLibrary);
+};
+
 /** Orchestrates: fetch, reconcile, apply to the library store, download missing covers. */
 export const syncAbsServer = async (appService: AppService, server: ABSServer): Promise<void> => {
-  const client = new ABSClient(server, {
-    onTokensUpdated: (patch) => {
-      useABSServerStore.getState().updateServer(server.id, patch);
-      void useABSServerStore.getState().saveABSServers(toEnvConfig(appService));
-    },
-  });
+  const client = createAbsClient(appService, server);
 
   const libraries = (await client.getLibraries()).filter(
     (lib) => lib.mediaType === 'book' || lib.mediaType === 'podcast',

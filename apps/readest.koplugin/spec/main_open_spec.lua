@@ -12,19 +12,7 @@ local UIManagerStub = stubs.UIManager
 local ReadestSync = require("main")
 
 local function makePlugin(opts)
-    local plugin = setmetatable({
-        settings = {
-            auto_sync = opts.auto_sync,
-            access_token = opts.access_token,
-        },
-        pull_calls = {},
-    }, { __index = ReadestSync })
-    for _, method in ipairs({ "pullBookConfig", "pullBookNotes", "pullBookStats" }) do
-        plugin[method] = function(self, interactive)
-            table.insert(self.pull_calls, { method = method, interactive = interactive })
-        end
-    end
-    return plugin
+    return stubs.makePullPlugin(ReadestSync, opts)
 end
 
 describe("ReadestSync:onReaderReady", function()

@@ -169,6 +169,14 @@ export interface MatchCheckBook {
   hash: string;
   title?: string;
   authors?: string;
+  /** Unix seconds the document was last opened. */
+  lastOpen?: number;
+  /**
+   * Where the hash was seen. BookOrbit only surfaces `current_file` and `file`
+   * hashes as "Unmatched KOReader Books" for manual linking; anything without a
+   * source is stored as `statistics` and never offered to the user.
+   */
+  source?: 'current_file' | 'file' | 'statistics';
 }
 
 export interface MatchCheckResponse {

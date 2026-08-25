@@ -143,6 +143,32 @@ describe('AudiobookPreviewPlayer', () => {
     expect(onStopped).not.toHaveBeenCalledWith('second');
   });
 
+  it('streams a remote clip URL straight into the element', async () => {
+    const appService = makeAppService();
+    const player = new AudiobookPreviewPlayer(appService, vi.fn());
+
+    await player.toggle({ id: 'abs:0', url: 'http://abs/track?token=t', start: 7, end: 40 });
+
+    const audio = FakeAudio.instances[0]!;
+    expect(audio.src).toBe('http://abs/track?token=t');
+    expect(audio.currentTime).toBe(7);
+    expect(createObjectURL).not.toHaveBeenCalled();
+    expect(appService.openFile).not.toHaveBeenCalled();
+    expect(appService.resolveFilePath).not.toHaveBeenCalled();
+  });
+
+  it('hands a remote clip URL to the native player on mobile', async () => {
+    const appService = makeAppService({ appPlatform: 'tauri', isMobileApp: true });
+    const player = new AudiobookPreviewPlayer(appService, vi.fn());
+
+    await player.toggle({ id: 'abs:0', url: 'http://abs/track?token=t', start: 7, end: 40 });
+
+    expect(tauriMocks.invoke).toHaveBeenCalledWith('plugin:native-tts|playout_control', {
+      payload: { action: 'load', path: 'http://abs/track?token=t', positionMs: 7000 },
+    });
+    expect(appService.resolveFilePath).not.toHaveBeenCalled();
+  });
+
   it('unregisters the native playback listener when a mobile preview stops', async () => {
     const appService = makeAppService({
       appPlatform: 'tauri',

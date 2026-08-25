@@ -157,8 +157,22 @@ const keyFor = (path: string): string =>
     .filter((s) => s.length > 0)
     .join('/');
 
+/**
+ * Percent-encode a path segment or query value in SigV4 canonical (RFC 3986)
+ * form: like `encodeURIComponent`, plus the sub-delims `!'()*` it leaves raw.
+ * The signer canonicalizes both the path and the query this way. AWS and R2
+ * re-canonicalize whatever arrives, but some gateways (Qiniu Kodo, #5839) do
+ * not re-canonicalize a path that already contains percent-encoding, so the
+ * wire form must already match. Same escaping as the AWS SDK's `escapeUri`.
+ */
+const encodeSegment = (segment: string): string =>
+  encodeURIComponent(segment).replace(
+    /[!'()*]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+
 /** Percent-encode a key for the URL path, keeping `/` separators. */
-const encodeKey = (key: string): string => key.split('/').map(encodeURIComponent).join('/');
+const encodeKey = (key: string): string => key.split('/').map(encodeSegment).join('/');
 
 /** Parse a `Retry-After` header (delta-seconds) into ms, or undefined. */
 const parseRetryAfterMs = (header: string | null): number | undefined => {
@@ -189,7 +203,7 @@ class S3ProviderImpl {
       accessKeyId: config.accessKeyId,
       secretAccessKey: config.secretAccessKey,
     });
-    this.baseUrl = `${config.endpoint.replace(/\/+$/, '')}/${encodeURIComponent(config.bucket)}`;
+    this.baseUrl = `${config.endpoint.replace(/\/+$/, '')}/${encodeSegment(config.bucket)}`;
   }
 
   private urlFor(key: string): string {
@@ -232,8 +246,8 @@ class S3ProviderImpl {
     let token: string | undefined;
     do {
       const url =
-        `${this.baseUrl}?list-type=2&prefix=${encodeURIComponent(prefix)}&delimiter=%2F` +
-        (token ? `&continuation-token=${encodeURIComponent(token)}` : '');
+        `${this.baseUrl}?list-type=2&prefix=${encodeSegment(prefix)}&delimiter=%2F` +
+        (token ? `&continuation-token=${encodeSegment(token)}` : '');
       const res = await this.request(HTTP_GET, url);
       await this.ensureOk(res, 'list', path);
       const doc = new DOMParser().parseFromString(await res.text(), 'application/xml');
@@ -303,8 +317,8 @@ class S3ProviderImpl {
     let token: string | undefined;
     do {
       const url =
-        `${this.baseUrl}?list-type=2&prefix=${encodeURIComponent(prefix)}` +
-        (token ? `&continuation-token=${encodeURIComponent(token)}` : '');
+        `${this.baseUrl}?list-type=2&prefix=${encodeSegment(prefix)}` +
+        (token ? `&continuation-token=${encodeSegment(token)}` : '');
       const res = await this.request(HTTP_GET, url);
       await this.ensureOk(res, 'list', path);
       const doc = new DOMParser().parseFromString(await res.text(), 'application/xml');

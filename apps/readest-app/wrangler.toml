@@ -1,9 +1,17 @@
 name = "readest-web"
-main = ".open-next/worker.js"
+# Custom entry: re-exports OpenNext's generated fetch handler and adds the
+# scheduled() handler for the reading-statistics compaction cron (worker.ts).
+main = "./worker.ts"
 compatibility_date = "2026-04-10"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 preview_urls = true
+
+# Reading-statistics compaction (POST /api/stats/compact via worker.ts
+# scheduled()). Every 10 minutes; each run does bounded work (mostly I/O wait,
+# well inside the default CPU limit) and returns.
+[triggers]
+crons = ["*/10 * * * *"]
 
 [[routes]]
 pattern = "web-cf.readest.com"
@@ -22,6 +30,16 @@ custom_domain = true
 
 [vars]
 PNPM_VERSION = "10.28.1"
+# Reading-statistics archive kill switch. "true" lets the cron compact
+# stat_pages into R2; anything else makes POST /api/stats/compact answer 503
+# (the cron keeps firing harmlessly). STATS_COMPACT_TOKEN is a secret
+# (`wrangler secret put STATS_COMPACT_TOKEN`). Optional knobs with defaults:
+# STATS_COMPACT_USERS_PER_RUN=50, STATS_COMPACT_WINDOW_DAYS=7,
+# STATS_COMPACT_MIN_ROWS=500, STATS_COMPACT_MAX_AGE_DAYS=30,
+# STATS_COMPACT_HOT_CAP=20000, STATS_COMPACT_SEGMENTS_PER_USER=5,
+# STATS_COMPACT_SEGMENT_ROWS=10000. See docs/stats-archive.md.
+STATS_COMPACT_ENABLED = "true"
+STATS_COMPACT_USERS_PER_RUN = "100"
 
 [observability]
 enabled = true
@@ -41,9 +59,27 @@ id = "fa6e3eb1988a424bbf3c952e01650ced"
 binding = "NEXT_INC_CACHE_R2_BUCKET"
 bucket_name = "readest-next-inc-cache"
 
+# Reading-statistics archive: immutable per-user JSON segments of page events
+# older than the hot window (stats/v1/{user_id}/{updated_to_ms}.json), listed in
+# the stat_archives table. Written by POST /api/stats/compact, read by the
+# stats pull in /api/sync. Absent binding = feature off (self-host).
+[[r2_buckets]]
+binding = "STATS_ARCHIVE_R2"
+bucket_name = "readest-stats-archive"
+
 # Per-event metrics for the App Store / Google Play subscription webhooks and the
 # reconciliation sweep. 100% capture, independent of the head-sampled Workers
 # Logs above. Queryable via the Analytics Engine SQL API.
 [[analytics_engine_datasets]]
 binding = "IAP_WEBHOOK_AE"
 dataset = "iap_webhooks"
+
+# Reading-statistics archive metrics. One point per compaction run: indexes
+# ['compact'], blobs [outcome, error], doubles [users_claimed, users_archived,
+# segments, rows, bytes, duration_ms, errors, commit_mismatches, orphans_swept].
+# One point per
+# R2-backed stats pull: indexes ['pull'], blobs ['paged'|'full'], doubles
+# [segments_read, segment_rows_returned, limit].
+[[analytics_engine_datasets]]
+binding = "STATS_COMPACT_AE"
+dataset = "stats_compact"

@@ -441,6 +441,27 @@ mod tests {
     }
 
     #[test]
+    fn webp_covers_decode_to_jpeg_thumbnails() {
+        // A 6x4 lossless WebP: EPUBs ship WebP covers, and the parser stores
+        // whatever it cannot re-encode as cover.png verbatim (#5863).
+        const WEBP: &[u8] = &[
+            0x52, 0x49, 0x46, 0x46, 0x1e, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50,
+            0x38, 0x4c, 0x11, 0x00, 0x00, 0x00, 0x2f, 0x05, 0xc0, 0x00, 0x00, 0x07, 0x50, 0x8f,
+            0x22, 0xd7, 0xa3, 0xff, 0x81, 0x88, 0xe8, 0x7f, 0x00, 0x00,
+        ];
+
+        let thumbnail = encode_thumbnail(WEBP).unwrap();
+        assert_eq!(&thumbnail[..2], &[0xff, 0xd8]);
+        let decoded = image::load_from_memory(&thumbnail).unwrap();
+        assert_eq!(decoded.dimensions(), (6, 4));
+        let pixel = decoded.get_pixel(3, 2).0;
+        assert!(
+            pixel[0] > 150 && pixel[1] < 80 && pixel[2] < 80,
+            "{pixel:?}"
+        );
+    }
+
+    #[test]
     fn corrupt_source_does_not_commit_a_cache_checkpoint() {
         let unique = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

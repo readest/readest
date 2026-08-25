@@ -8,7 +8,9 @@
 // The generalized `build` mode assembles a pack for any (src→tgt) pair where one
 // side is English, from two open datasets:
 //   - FrequencyWords (CC-BY-SA-4.0): `word count` per line, descending → rank.
-//   - kaikki Wiktionary extract (CC-BY-SA-4.0): JSONL, used for the gloss map.
+//   - kaikki.org raw wiktextract dump (CC-BY-SA-4.0): .jsonl or .jsonl.gz, used for
+//     the gloss map. The raw dump holds every language section of the English
+//     Wiktionary, so each build keeps only the entries whose `lang_code` matches.
 //     tgt === 'en'  → foreign headword → English glosses (extractXToEn).
 //     src === 'en'  → English headword → target-language words (extractEnToX).
 //
@@ -32,6 +34,7 @@ import {
 import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { createInterface } from 'node:readline';
+import { createGunzip } from 'node:zlib';
 import { execFileSync } from 'node:child_process';
 
 const OUT_DIR = resolve('data/wordlens');
@@ -698,14 +701,16 @@ export function inflectionMapFromPack(jsonText) {
   }
 }
 
-// Stream a (possibly ~1 GB) JSONL file line-by-line, applying `perLine(obj)` to
-// each parsed object. Shared by the streaming extractors so the CLI never holds
-// the whole file in memory; parse errors are skipped silently.
+// Stream a JSONL file line-by-line, applying `perLine(obj)` to each parsed object.
+// `.gz` input is gunzipped on the fly, so the ~2.8 GB kaikki raw dump is read as
+// downloaded instead of being inflated (~17 GB) to disk. Shared by the streaming
+// extractors so the CLI never holds the whole file in memory; parse errors are
+// skipped silently.
 async function streamJsonl(path, perLine) {
-  const rl = createInterface({
-    input: createReadStream(path, { encoding: 'utf8' }),
-    crlfDelay: Infinity,
-  });
+  const file = createReadStream(path);
+  const input = path.endsWith('.gz') ? file.pipe(createGunzip()) : file;
+  input.setEncoding('utf8');
+  const rl = createInterface({ input, crlfDelay: Infinity });
   for await (const line of rl) {
     if (!line.trim()) continue;
     let obj;

@@ -100,10 +100,57 @@ const makeDeps = (overrides: Partial<NotesPassDeps> = {}): NotesPassDeps => ({
 });
 
 describe('runBookOrbitNotesPass', () => {
+  it('match-checks the open book as a current file so BookOrbit lists it for manual linking', async () => {
+    const deps = makeDeps();
+    await runBookOrbitNotesPass(deps);
+    expect(deps.client.matchCheck).toHaveBeenCalledWith([
+      {
+        hash: HASH,
+        title: 'A Book',
+        authors: 'An Author',
+        lastOpen: Math.floor(NOW / 1000),
+        source: 'current_file',
+      },
+    ]);
+  });
+
+  it('floors lastOpen to whole unix seconds', async () => {
+    const deps = makeDeps({ now: () => NOW + 999 });
+    await runBookOrbitNotesPass(deps);
+    const [books] = (deps.client.matchCheck as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    expect(books[0].lastOpen).toBe(NOW / 1000);
+    expect(Number.isInteger(books[0].lastOpen)).toBe(true);
+  });
+
+  it('still registers a current file when the book has no author', async () => {
+    const deps = makeDeps({ book: { hash: HASH, title: 'A Book' } });
+    await runBookOrbitNotesPass(deps);
+    const [books] = (deps.client.matchCheck as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    // The client JSON-encodes the body, so an absent author drops off the wire
+    // while the fields that get the book listed stay.
+    expect(JSON.parse(JSON.stringify(books[0]))).toEqual({
+      hash: HASH,
+      title: 'A Book',
+      lastOpen: NOW / 1000,
+      source: 'current_file',
+    });
+  });
+
   it('skips the exchange and hints when the book is unmatched', async () => {
     const deps = makeDeps();
     (deps.client.matchCheck as ReturnType<typeof vi.fn>).mockResolvedValue({
       matches: [],
+      libraryVersion: 'v1',
+    });
+    await runBookOrbitNotesPass(deps);
+    expect(deps.onUnmatched).toHaveBeenCalledTimes(1);
+    expect(deps.client.exchangeAnnotations).not.toHaveBeenCalled();
+  });
+
+  it('treats a match for another hash as unmatched', async () => {
+    const deps = makeDeps();
+    (deps.client.matchCheck as ReturnType<typeof vi.fn>).mockResolvedValue({
+      matches: [{ hash: 'e'.repeat(32), bookId: 2, bookFileId: 2 }],
       libraryVersion: 'v1',
     });
     await runBookOrbitNotesPass(deps);

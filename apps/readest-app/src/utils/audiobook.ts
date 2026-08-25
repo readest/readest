@@ -1,4 +1,5 @@
 import type { BookMetadata } from '@/libs/document';
+import type { ABSServer } from '@/types/audiobookshelf';
 import type { Book } from '@/types/book';
 
 /** Scheme prefix for the synthetic filePath of an ABS streaming audiobook. */
@@ -23,6 +24,23 @@ export const parseAbsFilePath = (
   const itemId = rest.slice(slashIndex + 1);
   if (!serverId || !itemId) return null;
   return { serverId, itemId };
+};
+
+/**
+ * Absolute media URL for a server-relative track path, authenticated by query
+ * token (media elements cannot send headers). Takes the server row rather
+ * than a client on purpose: callers pass the store's CURRENT row on every
+ * load so a token rotated mid-session is used, not one captured at start.
+ */
+export const buildAbsMediaUrl = (
+  server: Pick<ABSServer, 'url' | 'accessToken'>,
+  contentPath: string,
+): string => {
+  const base = server.url.replace(/\/+$/, '');
+  const separator = contentPath.includes('?') ? '&' : '?';
+  // Encode the token: a `+`, `&`, or `#` in a non-JWT access token would
+  // otherwise be reparsed as query syntax and the media request fail auth.
+  return `${base}${contentPath}${separator}token=${encodeURIComponent(server.accessToken ?? '')}`;
 };
 
 /**
