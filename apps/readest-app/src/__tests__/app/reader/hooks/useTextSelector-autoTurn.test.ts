@@ -104,9 +104,13 @@ const setSelection = (valid: boolean) => {
   } as unknown as Selection;
 };
 
-// Move the pointer to window point (x, y) while a selection is active.
+// Move the pointer to window point (x, y) while a selection is active. A real
+// drag streams selectionchange as it goes, which is what marks the gesture as
+// one that is moving the selection.
 const pointerMove = (result: Handlers, x: number, y: number, valid = true) => {
   setSelection(valid);
+  caretRect = { left: 500, right: 500, top: 495, bottom: 505 };
+  result.current.handleSelectionchange(doc, 0);
   result.current.handlePointerMove(doc, 0, { clientX: x, clientY: y } as PointerEvent);
 };
 
@@ -215,9 +219,52 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
     expect(h.view.next).toHaveBeenCalledTimes(2);
   });
 
-  test('ignores a pointer outside the reading area', async () => {
+  test('ignores a pointer that is off screen', async () => {
     const { result } = setup();
-    pointerMove(result, VW + 200, 920); // beyond the frame's right edge
+    // Past the page and past the window: not a finger, so not an intent to turn.
+    pointerMove(result, window.innerWidth + 200, 920);
+    await advance();
+
+    expect(h.view.next).not.toHaveBeenCalled();
+  });
+
+  test('a drag into the page margin turns the page', async () => {
+    const { result } = setup({ top: 20, right: 20, bottom: 20, left: 20 });
+    pointerMove(result, 990, 500);
+    await advance();
+
+    expect(h.view.next).toHaveBeenCalledTimes(1);
+  });
+
+  test('a mouse only turns the page while a button is held', async () => {
+    const { result } = setup();
+    setSelection(true);
+    caretRect = { left: 500, right: 500, top: 495, bottom: 505 };
+    result.current.handleSelectionchange(doc, 0);
+    result.current.handlePointerMove(doc, 0, {
+      clientX: 970,
+      clientY: 970,
+      pointerType: 'mouse',
+      buttons: 0,
+    } as PointerEvent);
+    await advance();
+    expect(h.view.next).not.toHaveBeenCalled();
+
+    result.current.handlePointerMove(doc, 0, {
+      clientX: 970,
+      clientY: 970,
+      pointerType: 'mouse',
+      buttons: 1,
+    } as PointerEvent);
+    await advance();
+    expect(h.view.next).toHaveBeenCalledTimes(1);
+  });
+
+  test('releasing the pointer drops a pending turn', async () => {
+    const { result } = setup();
+    pointerMove(result, 970, 970);
+    await vi.advanceTimersByTimeAsync(DWELL_MS - 100);
+    await result.current.handlePointerUp(doc, 0);
     await advance();
 
     expect(h.view.next).not.toHaveBeenCalled();
@@ -227,6 +274,17 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
     h.viewSettings = { scrolled: true };
     const { result } = setup();
     pointerMove(result, 970, 970);
+    await advance();
+
+    expect(h.view.next).not.toHaveBeenCalled();
+  });
+
+  test('a finger resting at the edge without dragging the selection does not turn', async () => {
+    const { result } = setup();
+    setSelection(true);
+    // No selectionchange: the selection is on screen but the gesture is not
+    // moving it.
+    result.current.handlePointerMove(doc, 0, { clientX: 970, clientY: 970 } as PointerEvent);
     await advance();
 
     expect(h.view.next).not.toHaveBeenCalled();
@@ -249,10 +307,10 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
   });
 
   test('measures corners against the content-inset reading area', async () => {
-    // A 100px inset shrinks the frame to [100,900]: the outer corner (960,960)
-    // now falls outside the area, while (870,870) is inside the inset corner.
+    // A 100px inset shrinks the frame to [100,900]: (770,770) is 130px in from
+    // that corner and stays mid-text, while (870,870) is inside the inset corner.
     const { result } = setup({ top: 100, right: 100, bottom: 100, left: 100 });
-    pointerMove(result, 960, 960);
+    pointerMove(result, 770, 770);
     await advance();
     expect(h.view.next).not.toHaveBeenCalled();
 

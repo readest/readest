@@ -71,6 +71,7 @@ export const useTextSelector = (
   // through a shared engagement point — see useAutoPageTurn.
   const {
     isAutoTurning,
+    turnHint,
     cornerAtPoint,
     noteCorner,
     noteAutoTurnPoint,
@@ -94,6 +95,14 @@ export const useTextSelector = (
   // (#4728) has no pointer drag — handleSelectionchange uses this to refresh the
   // popup/range for keyboard-driven changes while still deferring mid-drag.
   const isPointerDown = useRef(false);
+  // Whether a pointer is currently dragging over the page. Tracked from the
+  // moves themselves rather than from pointerdown, because a WebKit selection
+  // handle drag delivers moves without a matching down.
+  const pointerDragActive = useRef(false);
+  // Whether this gesture has moved the selection. The page only auto-turns for
+  // a gesture that is dragging the selection, so a finger resting at the page
+  // edge with a selection still on screen doesn't flip pages.
+  const selectionDragging = useRef(false);
   const isInstantAnnotating = useRef(false);
   const isInstantAnnotated = useRef(false);
   const annotationStartPoint = useRef<Point | null>(null);
@@ -506,6 +515,7 @@ export const useTextSelector = (
   };
 
   const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
+    selectionDragging.current = false;
     lastPointerType.current = ev.pointerType;
     isPointerDown.current = true;
     clearCrossDoc();
@@ -621,7 +631,13 @@ export const useTextSelector = (
     const viewSettings = getViewSettings(bookKey);
     const sel = doc.getSelection();
     const valid = !!sel && isValidSelection(sel);
-    const corner = !viewSettings?.scrolled && valid ? pointerCornerNow() : null;
+    // Only an active drag arms the turn: the zone reaches past the text, so a
+    // mouse merely moving there with a selection on screen would otherwise turn
+    // the page on its own. A touch or pen move is by definition a live drag.
+    const dragging = ev.pointerType === 'mouse' ? (ev.buttons & 1) !== 0 : true;
+    pointerDragActive.current = dragging;
+    const armed = valid && dragging && selectionDragging.current;
+    const corner = !viewSettings?.scrolled && armed ? pointerCornerNow() : null;
     noteCorner(corner, (c) => inCorner(c, doc));
   };
 
@@ -631,6 +647,7 @@ export const useTextSelector = (
   const handleNativeTouchMove = (x: number, y: number, doc: Document) => {
     const dpr = window.devicePixelRatio || 1;
     pointerPos.current = { x: x / dpr, y: y / dpr };
+    pointerDragActive.current = true;
     maybeCancelInstantHoldOnMove();
     const viewSettings = getViewSettings(bookKey);
     // Instant highlight has no DOM selection (user-select is off); feed the
@@ -641,12 +658,15 @@ export const useTextSelector = (
     }
     const sel = doc.getSelection();
     const valid = !!sel && isValidSelection(sel);
-    const corner = !viewSettings?.scrolled && valid ? pointerCornerNow() : null;
+    const armed = valid && selectionDragging.current;
+    const corner = !viewSettings?.scrolled && armed ? pointerCornerNow() : null;
     noteCorner(corner, (c) => inCorner(c, doc));
   };
 
   const handlePointerCancel = (_doc: Document, _index: number, _ev: PointerEvent) => {
     isPointerDown.current = false;
+    pointerDragActive.current = false;
+    cancelAutoTurn();
     mouseDoubleClickRef.current = null;
     clearCrossDoc();
     dragAnchorRef.current = null;
@@ -770,6 +790,8 @@ export const useTextSelector = (
 
   const handlePointerUp = async (doc: Document, index: number, ev?: PointerEvent) => {
     isPointerDown.current = false;
+    pointerDragActive.current = false;
+    cancelAutoTurn();
     const mouseDoubleClick = mouseDoubleClickRef.current;
     mouseDoubleClickRef.current = null;
     dragAnchorRef.current = null;
@@ -862,6 +884,7 @@ export const useTextSelector = (
   };
   const handleTouchStart = () => {
     isTouchStarted.current = true;
+    selectionDragging.current = false;
     pendingTouchSelection.current = false;
     gestureInitialRef.current = null;
     sanitizedGestureRef.current = false;
@@ -880,6 +903,8 @@ export const useTextSelector = (
   // Android native-touch bridge calls this without a doc (it never defers).
   const handleTouchEnd = (doc?: Document, index?: number) => {
     isTouchStarted.current = false;
+    pointerDragActive.current = false;
+    cancelAutoTurn();
     if (!pendingTouchSelection.current) return;
     pendingTouchSelection.current = false;
     if (!doc || index === undefined) return;
@@ -895,8 +920,10 @@ export const useTextSelector = (
     }
   };
 
-  // The corner the latest pointer (pointermove / native touchmove) position is in.
-  const pointerCornerNow = (): Corner | null => cornerAtPoint(pointerPos.current);
+  // The corner the latest pointer (pointermove / native touchmove) position is
+  // in. A finger dragged off the end of the page reads as the edge it left by,
+  // so the gesture that means "keep going" is the one that turns.
+  const pointerCornerNow = (): Corner | null => cornerAtPoint(pointerPos.current, true);
   // The corner the selection caret (focus) is in.
   const caretCornerNow = (doc: Document): Corner | null => {
     const sel = doc.getSelection();
@@ -907,7 +934,7 @@ export const useTextSelector = (
   // Injected into the dwell machine as the native-selection liveness predicate so
   // the page only turns while the caret OR the finger is still in the corner.
   const inCorner = (c: Corner, doc: Document): boolean =>
-    pointerCornerNow() === c || caretCornerNow(doc) === c;
+    (pointerDragActive.current && pointerCornerNow() === c) || caretCornerNow(doc) === c;
 
   const handleSelectionchange = (doc: Document, index: number) => {
     // Echo of our own programmatic selection writes (handle suppression or a
@@ -923,6 +950,8 @@ export const useTextSelector = (
     const isTouchInput = lastPointerType.current === 'touch' || lastPointerType.current === 'pen';
     const sel = doc.getSelection() as Selection;
     const viewSettings = getViewSettings(bookKey);
+
+    if (isValidSelection(sel)) selectionDragging.current = true;
 
     if (isAndroid) syncSelectionMenuSuppression(isValidSelection(sel));
 
@@ -1084,5 +1113,6 @@ export const useTextSelector = (
     noteAutoTurnPoint,
     cancelAutoTurn,
     onAutoTurn: onAfterTurn,
+    turnHint,
   };
 };

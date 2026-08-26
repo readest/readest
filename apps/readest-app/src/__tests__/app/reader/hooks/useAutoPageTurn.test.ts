@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook } from '@testing-library/react';
 
 const DWELL_MS = 500;
 // The mocked reading frame is 1000x1000; the corner zone is capped at 50px, so
@@ -142,11 +142,23 @@ describe('useAutoPageTurn corner-dwell page turn (decoupled from DOM selection)'
 
   test('measures corners against the content-inset reading area', async () => {
     const { result } = setup({ top: 100, right: 100, bottom: 100, left: 100 });
-    result.current.noteAutoTurnPoint({ x: 960, y: 960 });
+    // 130px in from the inset corner (900,900) — mid-text, no turn. Without the
+    // insets the same point would be 130px from the frame corner, also no turn.
+    result.current.noteAutoTurnPoint({ x: 770, y: 770 });
     await advance();
     expect(h.view.next).not.toHaveBeenCalled();
 
     result.current.noteAutoTurnPoint({ x: 870, y: 870 });
+    await advance();
+    expect(h.view.next).toHaveBeenCalledTimes(1);
+  });
+
+  test('the page margin outside the text turns the page', async () => {
+    // A 600x600 frame inset by 100 leaves the text at [100,500]; (550,550) is
+    // in the margin, off the text but on the page.
+    areaRect = { left: 0, top: 0, right: 600, bottom: 600, width: 600, height: 600 };
+    const { result } = setup({ top: 100, right: 100, bottom: 100, left: 100 });
+    result.current.noteAutoTurnPoint({ x: 550, y: 550 });
     await advance();
     expect(h.view.next).toHaveBeenCalledTimes(1);
   });
@@ -202,6 +214,76 @@ describe('useAutoPageTurn corner-dwell page turn (decoupled from DOM selection)'
     result.current.noteAutoTurnPoint({ x: 900, y: 900 });
     await advance();
     expect(h.view.next).not.toHaveBeenCalled();
+  });
+});
+
+describe('a drag that leaves the text reads as the edge it left by', () => {
+  // A text area smaller than the window, so a point past its edge is still on
+  // screen — which is what separates a finger from a caret that has jumped into
+  // the next, off-screen column.
+  const inset = { left: 100, top: 100, right: 500, bottom: 500, width: 400, height: 400 };
+
+  beforeEach(() => {
+    areaRect = inset;
+  });
+
+  test('past the trailing edge turns to the next page', async () => {
+    const { result } = setup();
+    result.current.noteAutoTurnPoint({ x: 530, y: 300 });
+    await advance();
+
+    expect(h.view.next).toHaveBeenCalledTimes(1);
+  });
+
+  test('past the leading edge turns back', async () => {
+    const { result } = setup();
+    result.current.noteAutoTurnPoint({ x: 300, y: 70 });
+    await advance();
+
+    expect(h.view.prev).toHaveBeenCalledTimes(1);
+  });
+
+  test('past both edges follows the axis it left furthest by', () => {
+    const { result } = setup();
+    // Bottom-left: 40px below the text, 10px to the left of it.
+    expect(result.current.cornerAtPoint({ x: 90, y: 540 }, true)).toBe('br');
+    expect(result.current.cornerAtPoint({ x: 60, y: 510 }, true)).toBe('tl');
+  });
+
+  test('the caret signal keeps the strict test', () => {
+    const { result } = setup();
+    expect(result.current.cornerAtPoint({ x: 530, y: 300 })).toBe(null);
+    expect(result.current.cornerAtPoint({ x: 530, y: 300 }, true)).toBe('br');
+  });
+
+  test('an off-screen point is a jumped caret, not a finger', () => {
+    const { result } = setup();
+    expect(result.current.cornerAtPoint({ x: window.innerWidth + 40, y: 300 }, true)).toBe(null);
+  });
+});
+
+describe('turnHint marks the armed edge', () => {
+  test('engaging arms the hint, leaving clears it', async () => {
+    const { result } = setup();
+    expect(result.current.turnHint).toBe(null);
+
+    act(() => result.current.noteAutoTurnPoint({ x: 970, y: 970 }));
+    expect(result.current.turnHint).toEqual({ corner: 'br', turned: false });
+
+    act(() => result.current.noteAutoTurnPoint({ x: 500, y: 500 }));
+    expect(result.current.turnHint).toBe(null);
+  });
+
+  test('the hint reports the turn, and cancel() drops it', async () => {
+    const { result } = setup();
+    act(() => result.current.noteAutoTurnPoint({ x: 970, y: 970 }));
+    await act(async () => {
+      await advance();
+    });
+    expect(result.current.turnHint).toEqual({ corner: 'br', turned: true });
+
+    act(() => result.current.cancel());
+    expect(result.current.turnHint).toBe(null);
   });
 });
 
