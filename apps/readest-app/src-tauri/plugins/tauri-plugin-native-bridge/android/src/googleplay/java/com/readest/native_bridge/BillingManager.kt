@@ -41,7 +41,12 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
 
         billingClient = BillingClient.newBuilder(activity)
             .setListener(this)
-            .enablePendingPurchases()
+            .enablePendingPurchases(
+                PendingPurchasesParams.newBuilder()
+                    .enableOneTimeProducts()
+                    .build()
+            )
+            .enableAutoServiceReconnection()
             .build()
 
         billingClient.startConnection(object : BillingClientStateListener {
@@ -56,16 +61,14 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
             }
 
             override fun onBillingServiceDisconnected() {
-                Log.w(TAG, "Billing service disconnected")
-                // Try to reconnect
-                initialize { }
+                Log.w(TAG, "Billing service disconnected; waiting for automatic reconnection")
             }
         })
     }
 
     fun fetchProducts(productIds: List<String>, callback: (List<ProductData>) -> Unit) {
-        if (!::billingClient.isInitialized || !billingClient.isReady) {
-            Log.e(TAG, "Billing client not ready")
+        if (!::billingClient.isInitialized) {
+            Log.e(TAG, "Billing client not initialized")
             callback(emptyList())
             return
         }
@@ -119,9 +122,9 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
             .setProductList(productList)
             .build()
 
-        billingClient.queryProductDetailsAsync(params) { billingResult, productDetailsList ->
+        billingClient.queryProductDetailsAsync(params) { billingResult, queryResult ->
             if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                val products = productDetailsList.map { productDetails ->
+                val products = queryResult.productDetailsList.map { productDetails ->
                     // Cache for purchase later
                     productsCache[productDetails.productId] = productDetails
                     
@@ -204,8 +207,8 @@ class BillingManager(private val activity: Activity) : PurchasesUpdatedListener 
     }
 
     fun restorePurchases(callback: (List<PurchaseData>) -> Unit) {
-        if (!::billingClient.isInitialized || !billingClient.isReady) {
-            Log.e(TAG, "Billing client not ready")
+        if (!::billingClient.isInitialized) {
+            Log.e(TAG, "Billing client not initialized")
             callback(emptyList())
             return
         }
