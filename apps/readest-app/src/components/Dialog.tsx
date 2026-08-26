@@ -16,6 +16,8 @@ import { Overlay } from './Overlay';
 
 const VELOCITY_THRESHOLD = 0.5;
 const SNAP_THRESHOLD = 0.2;
+// How long the modal takes to fade and scale away once `isOpen` goes false.
+const CLOSE_TRANSITION_MS = 300;
 
 interface DialogProps {
   id?: string;
@@ -66,6 +68,26 @@ const Dialog: React.FC<DialogProps> = ({
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
   const iconSize22 = useResponsiveSize(22);
   const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
+
+  // Callers gate the body on the same flag they pass as `isOpen`
+  // (`<Dialog isOpen={open}>{open && <Body />}</Dialog>`), so the body would
+  // vanish on the frame the close starts and the box would collapse onto its
+  // title bar for the length of the fade. Hold the last body until it is over.
+  const lastBodyRef = useRef<ReactNode>(null);
+  const [closingBody, setClosingBody] = useState<ReactNode>(null);
+  if (isOpen) lastBodyRef.current = children;
+
+  useEffect(() => {
+    if (isOpen) {
+      setClosingBody(null);
+      return;
+    }
+    setClosingBody(lastBodyRef.current);
+    const timer = setTimeout(() => setClosingBody(null), CLOSE_TRANSITION_MS);
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+
+  const body = isOpen ? children : closingBody;
 
   const handleKeyDown = (event: KeyboardEvent | CustomEvent) => {
     if (event instanceof CustomEvent) {
@@ -306,7 +328,7 @@ const Dialog: React.FC<DialogProps> = ({
             }}
             defer
           >
-            {children}
+            {body}
           </OverlayScrollbarsComponent>
         ) : (
           <div
@@ -315,7 +337,7 @@ const Dialog: React.FC<DialogProps> = ({
               contentClassName,
             )}
           >
-            {children}
+            {body}
           </div>
         )}
       </div>

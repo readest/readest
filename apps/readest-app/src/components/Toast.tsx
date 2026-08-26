@@ -5,6 +5,12 @@ import { eventDispatcher } from '@/utils/event';
 
 export type ToastType = 'info' | 'success' | 'warning' | 'error';
 
+// The top bar a `toast-top` toast has to clear, plus the gap daisyUI 4 drew as
+// `.toast` padding. daisyUI 5 moved that padding into the insets, which the
+// `top` below overrides, so the toast carries the gap itself.
+const TOP_BAR_HEIGHT = 44;
+const TOAST_GAP = 16;
+
 export const Toast = () => {
   const { safeAreaInsets } = useThemeStore();
   const [toastMessage, setToastMessage] = useState('');
@@ -118,14 +124,17 @@ export const Toast = () => {
     toastMessage && (
       <div
         data-capture-invalidating-overlay='true'
+        // No width utility here: daisyUI 5 sizes the toast with
+        // `width: max-content`, and `width: auto` on a box pinned to
+        // `inset-inline: 50%` (toast-center) resolves to zero.
         className={clsx(
-          'toast z-[130] w-auto max-w-(--breakpoint-sm) transition-all duration-300',
+          'toast z-[130] max-w-(--breakpoint-sm) transition-all duration-300',
           toastClassMap[toastType],
           isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
         )}
         style={{
           top: toastClassMap[toastType].includes('toast-top')
-            ? `${(safeAreaInsets?.top || 0) + 44}px`
+            ? `${(safeAreaInsets?.top || 0) + TOP_BAR_HEIGHT + TOAST_GAP}px`
             : undefined,
         }}
       >

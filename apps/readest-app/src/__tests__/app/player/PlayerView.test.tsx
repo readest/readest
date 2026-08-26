@@ -313,7 +313,9 @@ describe('PlayerView embedded Episodes subview', () => {
     );
 
     await waitFor(() => expect(screen.getByTestId('scrubber')).toBeTruthy());
-    expect(screen.queryByText('Episode Two')).toBeNull();
+    // The sheet fades out as one piece, so its rows outlive the close by the
+    // length of that transition rather than blanking on the spot.
+    await waitFor(() => expect(screen.queryByText('Episode Two')).toBeNull());
   });
 
   it('switches back to the transport view immediately when re-tapping the already-playing episode', async () => {
