@@ -21,9 +21,7 @@ export const AUTO_TURN_CORNER_MAX_PX = 50;
 
 export type Corner = 'br' | 'tl';
 export type Point = { x: number; y: number };
-// The armed edge, for the on-screen mark that tells the reader a page turn is
-// waiting on the dwell. `turned` is set once the page has flipped, while the
-// signal is still held in the corner.
+// The armed edge, for the on-screen mark; `turned` once the page has flipped.
 export type TurnHint = { corner: Corner; turned: boolean };
 
 // The subset of useTextSelector's return that drives the shared corner auto-turn,
@@ -51,12 +49,9 @@ const cornerOf = (x: number, y: number, w: number, h: number): Corner | null => 
 // if any. Corners are measured against `area` (the visible text bounds in window
 // coordinates) so they land on the text, not the page margins or a sidebar.
 //
-// `beyond` reads a point that has left the reading area as the edge it left by:
-// the trailing (right/bottom) edge turns forward, the leading edge turns back,
-// which is what dragging a selection off the end of the page means. It is only
-// for pointer signals — a real finger or cursor, always on screen. The caret
-// signal keeps the strict test, because a caret dragged at the edge jumps into
-// the next, off-screen column.
+// `beyond` reads a point that has left the area as the edge it left by, the
+// rule turnForFocusBeyondPage already uses: dragging a selection off the end of
+// the page means turn. Pointer signals only — the caret keeps the strict test.
 const cornerAt = (
   xWin: number,
   yWin: number,
@@ -66,16 +61,12 @@ const cornerAt = (
   if (!area || area.width <= 0 || area.height <= 0) return null;
   const x = xWin - area.left;
   const y = yWin - area.top;
-  const overTrailing = Math.max(x - area.width, y - area.height);
-  const overLeading = Math.max(-x, -y);
-  if (overTrailing > 0 || overLeading > 0) {
+  if (x < 0 || x > area.width || y < 0 || y > area.height) {
     // A pointer is always on screen, so an off-screen point is not one: it is a
     // caret that has jumped into the next, off-screen column.
     if (!beyond || xWin < 0 || xWin > window.innerWidth) return null;
     if (yWin < 0 || yWin > window.innerHeight) return null;
-    // Past both a leading and a trailing edge (a bottom-left overshoot, say):
-    // the axis it left furthest by is the one the drag is heading along.
-    return overTrailing >= overLeading ? 'br' : 'tl';
+    return turnForFocusBeyondPage({ x: xWin, y: yWin }, area) === 'next' ? 'br' : 'tl';
   }
   return cornerOf(x, y, area.width, area.height);
 };
@@ -156,7 +147,6 @@ export const useAutoPageTurn = (bookKey: string, contentInsets: Insets = ZERO_IN
   // Callers inject it so the caret-or-pointer dual signal of native selection is
   // preserved while a point-only caller (editor/instant) reports its own point.
   const isInCornerRef = useRef<(corner: Corner) => boolean>(() => false);
-  // Engagement mirrored into render state so the reader can mark the armed edge.
   const [turnHint, setTurnHint] = useState<TurnHint | null>(null);
   // Latest point fed through the point-based convenience entry.
   const lastPointRef = useRef<Point | null>(null);

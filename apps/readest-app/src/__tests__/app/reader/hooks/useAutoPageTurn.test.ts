@@ -243,11 +243,12 @@ describe('a drag that leaves the text reads as the edge it left by', () => {
     expect(h.view.prev).toHaveBeenCalledTimes(1);
   });
 
-  test('past both edges follows the axis it left furthest by', () => {
+  test('past both edges reads as the trailing one, like the keyboard rule', () => {
     const { result } = setup();
-    // Bottom-left: 40px below the text, 10px to the left of it.
+    // Bottom-left: below the text and to the left of it. turnForFocusBeyondPage
+    // answers 'next' here, and the drag reads the same way.
     expect(result.current.cornerAtPoint({ x: 90, y: 540 }, true)).toBe('br');
-    expect(result.current.cornerAtPoint({ x: 60, y: 510 }, true)).toBe('tl');
+    expect(result.current.cornerAtPoint({ x: 60, y: 510 }, true)).toBe('br');
   });
 
   test('the caret signal keeps the strict test', () => {

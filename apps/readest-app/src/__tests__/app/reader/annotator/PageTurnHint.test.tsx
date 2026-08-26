@@ -67,6 +67,21 @@ describe('PageTurnHint', () => {
     expect(foot!.style.transformOrigin).toBe('left');
   });
 
+  test('draws the armed edge solid on e-ink, which cannot run a bar out', () => {
+    document.documentElement.setAttribute('data-eink', 'true');
+    const { container } = render(
+      <PageTurnHint
+        bookKey='book-1'
+        contentInsets={INSETS}
+        hint={{ corner: 'br', turned: false }}
+      />,
+    );
+    const bar = bars(container)[0]!;
+    expect(bar.style.transform).toBe('scaleY(1)');
+    expect(Number(bar.style.opacity)).toBe(1);
+    document.documentElement.removeAttribute('data-eink');
+  });
+
   test('fills over the dwell, then holds once the page has turned', () => {
     const { container, rerender } = render(
       <PageTurnHint

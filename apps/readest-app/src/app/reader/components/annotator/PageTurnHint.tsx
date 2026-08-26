@@ -29,11 +29,15 @@ const PageTurnHint: React.FC<PageTurnHintProps> = ({ bookKey, contentInsets, hin
   const area = getReadingAreaRect(bookKey, contentInsets);
   if (!area) return null;
 
+  // E-ink refreshes too slowly to run the bar out, and a translucent one barely
+  // renders, so there the armed edge is simply drawn solid.
+  const isEink = document.documentElement.getAttribute('data-eink') === 'true';
   const forward = hint.corner === 'br';
-  const thickness = 3;
-  const bar = 'bg-base-content absolute rounded-full';
-  const filled = hint.turned || grown;
+  const filled = isEink || hint.turned || grown;
+  // Physical sides on purpose: the corners come from screen coordinates
+  // (cornerOf), so a logical `end-0` would put the bar on the wrong edge in RTL.
   const style = (horizontal: boolean): React.CSSProperties => ({
+    opacity: isEink ? 1 : hint.turned ? 0.75 : 0.35,
     transform: `scale${horizontal ? 'X' : 'Y'}(${filled ? 1 : 0})`,
     transformOrigin: forward ? (horizontal ? 'right' : 'bottom') : horizontal ? 'left' : 'top',
     transitionProperty: 'transform',
@@ -48,12 +52,18 @@ const PageTurnHint: React.FC<PageTurnHintProps> = ({ bookKey, contentInsets, hin
       aria-hidden='true'
     >
       <div
-        className={clsx(bar, 'inset-y-0', forward ? 'right-0' : 'left-0')}
-        style={{ width: thickness, opacity: hint.turned ? 0.75 : 0.35, ...style(false) }}
+        className={clsx(
+          'bg-base-content absolute inset-y-0 rounded-full',
+          forward ? 'right-0' : 'left-0',
+        )}
+        style={{ width: 3, ...style(false) }}
       />
       <div
-        className={clsx(bar, 'inset-x-0', forward ? 'bottom-0' : 'top-0')}
-        style={{ height: thickness, opacity: hint.turned ? 0.75 : 0.35, ...style(true) }}
+        className={clsx(
+          'bg-base-content absolute inset-x-0 rounded-full',
+          forward ? 'bottom-0' : 'top-0',
+        )}
+        style={{ height: 3, ...style(true) }}
       />
     </div>
   );

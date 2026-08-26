@@ -110,6 +110,9 @@ const setSelection = (valid: boolean) => {
 const pointerMove = (result: Handlers, x: number, y: number, valid = true) => {
   setSelection(valid);
   caretRect = { left: 500, right: 500, top: 495, bottom: 505 };
+  // A real drag moves the pointer and the selection follows; the turn only arms
+  // once a selectionchange lands while the pointer is dragging.
+  result.current.handlePointerMove(doc, 0, { clientX: x, clientY: y } as PointerEvent);
   result.current.handleSelectionchange(doc, 0);
   result.current.handlePointerMove(doc, 0, { clientX: x, clientY: y } as PointerEvent);
 };
@@ -238,9 +241,7 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
 
   test('a mouse only turns the page while a button is held', async () => {
     const { result } = setup();
-    setSelection(true);
-    caretRect = { left: 500, right: 500, top: 495, bottom: 505 };
-    result.current.handleSelectionchange(doc, 0);
+    pointerMove(result, 500, 500);
     result.current.handlePointerMove(doc, 0, {
       clientX: 970,
       clientY: 970,
@@ -257,6 +258,15 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
       buttons: 1,
     } as PointerEvent);
     await advance();
+    expect(h.view.next).toHaveBeenCalledTimes(1);
+  });
+
+  test('pointercancel mid-drag keeps the pending turn (Android scroll takeover)', async () => {
+    const { result } = setup();
+    pointerMove(result, 970, 970);
+    result.current.handlePointerCancel(doc, 0, {} as PointerEvent);
+    await advance();
+
     expect(h.view.next).toHaveBeenCalledTimes(1);
   });
 
@@ -282,8 +292,10 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
   test('a finger resting at the edge without dragging the selection does not turn', async () => {
     const { result } = setup();
     setSelection(true);
-    // No selectionchange: the selection is on screen but the gesture is not
-    // moving it.
+    // The long-press that made the selection, then a finger that just sits
+    // there: moves, but no selectionchange while dragging.
+    result.current.handleSelectionchange(doc, 0);
+    result.current.handlePointerMove(doc, 0, { clientX: 970, clientY: 970 } as PointerEvent);
     result.current.handlePointerMove(doc, 0, { clientX: 970, clientY: 970 } as PointerEvent);
     await advance();
 

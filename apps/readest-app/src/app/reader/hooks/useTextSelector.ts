@@ -95,13 +95,9 @@ export const useTextSelector = (
   // (#4728) has no pointer drag — handleSelectionchange uses this to refresh the
   // popup/range for keyboard-driven changes while still deferring mid-drag.
   const isPointerDown = useRef(false);
-  // Whether a pointer is currently dragging over the page. Tracked from the
-  // moves themselves rather than from pointerdown, because a WebKit selection
-  // handle drag delivers moves without a matching down.
+  // Tracked from the moves themselves rather than from pointerdown, because a
+  // WebKit selection handle drag delivers moves without a matching down.
   const pointerDragActive = useRef(false);
-  // Whether this gesture has moved the selection. The page only auto-turns for
-  // a gesture that is dragging the selection, so a finger resting at the page
-  // edge with a selection still on screen doesn't flip pages.
   const selectionDragging = useRef(false);
   const isInstantAnnotating = useRef(false);
   const isInstantAnnotated = useRef(false);
@@ -665,8 +661,6 @@ export const useTextSelector = (
 
   const handlePointerCancel = (_doc: Document, _index: number, _ev: PointerEvent) => {
     isPointerDown.current = false;
-    pointerDragActive.current = false;
-    cancelAutoTurn();
     mouseDoubleClickRef.current = null;
     clearCrossDoc();
     dragAnchorRef.current = null;
@@ -921,8 +915,7 @@ export const useTextSelector = (
   };
 
   // The corner the latest pointer (pointermove / native touchmove) position is
-  // in. A finger dragged off the end of the page reads as the edge it left by,
-  // so the gesture that means "keep going" is the one that turns.
+  // in, reading a finger dragged off the page as the edge it left by.
   const pointerCornerNow = (): Corner | null => cornerAtPoint(pointerPos.current, true);
   // The corner the selection caret (focus) is in.
   const caretCornerNow = (doc: Document): Corner | null => {
@@ -951,7 +944,10 @@ export const useTextSelector = (
     const sel = doc.getSelection() as Selection;
     const viewSettings = getViewSettings(bookKey);
 
-    if (isValidSelection(sel)) selectionDragging.current = true;
+    // Only a selection that moves while a pointer is dragging arms the turn: the
+    // long-press that creates one must not, or a finger that then rests at the
+    // page edge would flip pages.
+    if (isValidSelection(sel) && pointerDragActive.current) selectionDragging.current = true;
 
     if (isAndroid) syncSelectionMenuSuppression(isValidSelection(sel));
 
