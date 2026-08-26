@@ -985,9 +985,9 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                     type='submit'
                     disabled={isValidating}
                     className={clsx(
-                      'btn btn-primary',
+                      'btn btn-contrast',
                       'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
-                      'focus-visible:ring-primary/40 focus-visible:outline-hidden focus-visible:ring-2',
+                      'focus-visible:ring-base-content/40 focus-visible:outline-hidden focus-visible:ring-2',
                       isValidating && 'opacity-60',
                     )}
                   >
