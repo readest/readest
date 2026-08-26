@@ -811,9 +811,23 @@
   }
 
   /* daisyUI 5's toggle already matches v4's look (base-100 track, base-content
-     knob); only the track got narrower, from 3rem to 2.5rem. */
+     knob) and keeps its heights; only the track widths shrank, and they do not
+     share one ratio. The size rules follow the base rule on purpose: `:where()`
+     leaves every one of them at zero specificity, so order decides. */
   :where(.toggle) {
     width: 3rem;
+  }
+
+  :where(.toggle-xs) {
+    width: 1.5rem;
+  }
+
+  :where(.toggle-sm) {
+    width: 2rem;
+  }
+
+  :where(.toggle-lg) {
+    width: 4rem;
   }
 
   /* daisyUI 5 also paints `.btn-disabled` on elements that are not buttons

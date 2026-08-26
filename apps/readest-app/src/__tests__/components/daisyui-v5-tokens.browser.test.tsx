@@ -76,6 +76,8 @@ describe('daisyUI 5 theme tokens', () => {
         </select>
         <input data-testid='checkbox' type='checkbox' className='checkbox' />
         <input data-testid='toggle' type='checkbox' className='toggle' defaultChecked />
+        <input data-testid='toggle-sm' type='checkbox' className='toggle toggle-sm' />
+        <input data-testid='toggle-xs' type='checkbox' className='toggle toggle-xs' />
       </>,
     );
     const box = (id: string) => getByTestId(id).getBoundingClientRect();
@@ -93,6 +95,9 @@ describe('daisyUI 5 theme tokens', () => {
     expect(box('toggle').height).toBe(24);
     expect(getComputedStyle(toggle).backgroundColor).toBe('rgb(255, 255, 255)');
     expect(getComputedStyle(toggle, '::before').backgroundColor).toBe('rgb(23, 23, 23)');
+    // Each size has its own v4 width, so the base pin must not flatten them.
+    expect([box('toggle-sm').width, box('toggle-sm').height]).toEqual([32, 20]);
+    expect([box('toggle-xs').width, box('toggle-xs').height]).toEqual([24, 16]);
   });
 
   it('keeps the Tailwind 3 default palette', () => {
