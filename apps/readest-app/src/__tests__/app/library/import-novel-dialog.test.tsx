@@ -105,6 +105,58 @@ describe('ImportNovelDialog', () => {
     expect(screen.getByText('Chapter 6')).toBeTruthy();
   });
 
+  it('selects every discovered chapter by default and toggles the whole list', async () => {
+    setup();
+    await goToPreview();
+
+    const chapterCheckboxes = screen.getAllByRole('checkbox');
+    expect(chapterCheckboxes).toHaveLength(6);
+    expect(chapterCheckboxes.every((checkbox) => (checkbox as HTMLInputElement).checked)).toBe(
+      true,
+    );
+    expect(screen.getByText('6 selected')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Deselect all' }));
+    expect(chapterCheckboxes.every((checkbox) => !(checkbox as HTMLInputElement).checked)).toBe(
+      true,
+    );
+    expect(screen.getByText('0 selected')).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Import' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select all' }));
+    expect(chapterCheckboxes.every((checkbox) => (checkbox as HTMLInputElement).checked)).toBe(
+      true,
+    );
+  });
+
+  it('downloads only selected chapters under the chosen book title', async () => {
+    setup();
+    await goToPreview();
+
+    const titleInput = screen.getByRole('textbox', { name: 'Book title' }) as HTMLInputElement;
+    expect(titleInput.value).toBe('My Novel');
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Chapter 1' }));
+    expect(titleInput.value).toBe('My Novel Chapters 2 - 6');
+    fireEvent.change(titleInput, { target: { value: 'My Novel Volume 2' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Chapter 2' }));
+    expect(titleInput.value).toBe('My Novel Volume 2');
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+
+    await waitFor(() => expect(downloadNovelMock).toHaveBeenCalled());
+    expect(downloadNovelMock).toHaveBeenCalledWith(
+      {
+        ...toc,
+        title: 'My Novel Volume 2',
+        chapters: toc.chapters.slice(2),
+      },
+      'https://n.example.org/toc',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+  });
+
   it('downloads on Import and hands the file to onImport', async () => {
     const { onClose, onImport } = setup();
     await goToPreview();
