@@ -196,7 +196,14 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     stopTrackingPopupContentSize();
     const observer = new ResizeObserver(() => {
       if (contentSizeFrameRef.current) cancelAnimationFrame(contentSizeFrameRef.current);
-      contentSizeFrameRef.current = requestAnimationFrame(() => fitPopupToContent(view));
+      contentSizeFrameRef.current = requestAnimationFrame(() => {
+        // Showing the popup only from `relocate` left one whose visible content
+        // is elements alone — an image, a bare figure — parked off-screen for
+        // good: an element-only visible range collapses, so foliate's paginator
+        // returns before it ever dispatches `relocate`. A measured content size
+        // is the same promise that event was standing in for.
+        if (fitPopupToContent(view) > 0) setShowPopup(true);
+      });
     });
     observer.observe(doc.documentElement);
     contentSizeObserverRef.current = observer;

@@ -11,6 +11,14 @@ const PARAGRAPH_HEIGHT = 152;
 const h = vi.hoisted(() => ({
   viewSettings: { vertical: false, scrolled: false },
   dispatchFootnote: (() => {}) as (detail: unknown) => void,
+  handlerListeners: new Map<string, ((e: Event) => void)[]>(),
+  resizeObservers: [] as ((entries: unknown[]) => void)[],
+  frames: [] as ((() => void) | null)[],
+  emitHandler: (name: string, detail: unknown) => {
+    for (const cb of h.handlerListeners.get(name) ?? []) {
+      cb(new CustomEvent(name, { detail }));
+    }
+  },
 }));
 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: { isMobile: true } }) }));
@@ -35,10 +43,27 @@ vi.mock('@/store/customFontStore', () => ({
 }));
 vi.mock('../hooks/useFoliateEvents', () => ({ useFoliateEvents: () => {} }));
 vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({ useFoliateEvents: () => {} }));
+// The popup's stylesheet is beside the point here; these tests are about the box.
+vi.mock('@/utils/style', () => ({
+  getStyles: () => '',
+  getFootnoteStyles: () => '',
+  getThemeCode: () => ({ bg: '#fff', fg: '#000' }),
+}));
+vi.mock('@/styles/fonts', () => ({
+  mountAdditionalFonts: () => {},
+  mountCustomFont: () => {},
+}));
 vi.mock('foliate-js/footnotes.js', () => ({
   FootnoteHandler: class {
-    addEventListener() {}
-    removeEventListener() {}
+    addEventListener(name: string, cb: (e: Event) => void) {
+      h.handlerListeners.set(name, [...(h.handlerListeners.get(name) ?? []), cb]);
+    }
+    removeEventListener(name: string, cb: (e: Event) => void) {
+      h.handlerListeners.set(
+        name,
+        (h.handlerListeners.get(name) ?? []).filter((l) => l !== cb),
+      );
+    }
     handle() {
       return undefined;
     }
@@ -58,17 +83,45 @@ import FootnotePopup from '@/app/reader/components/FootnotePopup';
 import { BookDoc } from '@/libs/document';
 
 const footnoteBox = () => document.querySelector<HTMLElement>('.footnote-content');
+const popupContainer = () => document.querySelector<HTMLElement>('#popup-container');
+
+// Just enough of a foliate view for the popup's before-render/render wiring.
+const makePopupView = (viewSize = 240) => {
+  const view = document.createElement('div');
+  Object.assign(view, {
+    renderer: { setAttribute: () => {}, setStyles: () => {}, viewSize },
+    getCFI: () => '',
+    close: () => {},
+  });
+  return view as HTMLDivElement & { renderer: { viewSize: number } };
+};
+
+const flushFrames = () => {
+  const pending = h.frames.slice();
+  h.frames.length = 0;
+  pending.forEach((cb) => cb?.());
+};
 
 beforeEach(() => {
+  h.handlerListeners.clear();
+  h.resizeObservers.length = 0;
+  h.frames.length = 0;
   // jsdom has no ResizeObserver, and Popup keeps one on its container.
   vi.stubGlobal(
     'ResizeObserver',
     class {
+      constructor(cb: (entries: unknown[]) => void) {
+        h.resizeObservers.push(cb);
+      }
       observe() {}
       unobserve() {}
       disconnect() {}
     },
   );
+  vi.stubGlobal('requestAnimationFrame', (cb: () => void) => h.frames.push(cb));
+  vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+    h.frames[id - 1] = null;
+  });
   const cell = document.createElement('div');
   cell.id = 'gridcell-book-1';
   cell.getBoundingClientRect = () =>
@@ -101,5 +154,32 @@ describe('footnote popup built from a data/alt attribute', () => {
     });
 
     expect(footnoteBox()?.style.height).toBe(`${PARAGRAPH_HEIGHT}px`);
+  });
+});
+
+// A footnote whose visible content is elements only — an image, a bare figure —
+// makes foliate's visible range collapse, so the paginator never dispatches
+// `relocate`. Gating the popup's visibility on that event alone left such a
+// popup loaded, sized, and parked off-screen forever (#5887).
+describe('footnote popup whose section never emits relocate', () => {
+  test('shows once the content has been measured', () => {
+    render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
+
+    const popupView = makePopupView();
+    act(() => {
+      h.emitHandler('before-render', { view: popupView });
+      h.emitHandler('render', { view: popupView, href: 'notes.xhtml#n1', index: 1, extract: null });
+    });
+    expect(popupContainer()?.getAttribute('aria-hidden')).toBe('true');
+
+    act(() => {
+      popupView.dispatchEvent(new CustomEvent('load', { detail: { doc: document, index: 1 } }));
+      // The content observer reports the first measurement; no `relocate` ever
+      // arrives, exactly as for an image-only footnote.
+      h.resizeObservers.forEach((cb) => cb([]));
+      flushFrames();
+    });
+
+    expect(popupContainer()?.getAttribute('aria-hidden')).toBe('false');
   });
 });
