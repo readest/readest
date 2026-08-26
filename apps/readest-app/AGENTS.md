@@ -22,7 +22,7 @@ pnpm tauri:dev:test        # Start Tauri app with webdriver
 pnpm test:tauri            # Run Tauri integration tests
 
 # Linting & Formatting
-pnpm lint                  # Biome (linter) + tsgo (type check)
+pnpm lint                  # Biome (linter) + tsc (type check)
 pnpm format                # Biome formatter (runs from monorepo root)
 pnpm format:check          # Check formatting without writing (Biome)
 
