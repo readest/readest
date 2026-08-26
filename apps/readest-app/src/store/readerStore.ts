@@ -210,8 +210,9 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
                 process.env['NEXT_PUBLIC_BIBLO_API_URL'] || 'http://localhost:3001/api/v0';
               const isWeb = isWebAppPlatform();
               const origin = typeof window !== 'undefined' ? window.location.origin : '';
+              const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
               const readUrl = isWeb
-                ? `${origin}/api/marketing/arcs/${arc.campaignId}/read?token=${token}`
+                ? `${origin}${basePath}/api/marketing/arcs/${arc.campaignId}/read?token=${token}`
                 : `${base}/marketing/arcs/${arc.campaignId}/read?token=${token}`;
 
               const transientBook: Book = {

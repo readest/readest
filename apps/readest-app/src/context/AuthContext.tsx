@@ -112,9 +112,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
+        if (session.access_token) {
+          setToken(session.access_token);
+          localStorage.setItem('token', session.access_token);
+        }
       } else if (_event === 'SIGNED_OUT') {
         setUser(null);
+        setToken(null);
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
       }
     });
 
