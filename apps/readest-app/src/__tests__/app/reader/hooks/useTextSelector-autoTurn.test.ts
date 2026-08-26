@@ -312,10 +312,19 @@ describe('useTextSelector auto page-turn on corner dwell (#1354)', () => {
 
   test('the selection caret is also an engagement signal', async () => {
     const { result } = setup();
-    caretMove(result, 970, 970);
+    pointerMove(result, 500, 500); // a drag is under way
+    caretMove(result, 970, 970); // and its caret reaches the corner
     await advance();
 
     expect(h.view.next).toHaveBeenCalledTimes(1);
+  });
+
+  test('a caret parked in the corner by a long-press does not turn', async () => {
+    const { result } = setup();
+    caretMove(result, 970, 970);
+    await advance();
+
+    expect(h.view.next).not.toHaveBeenCalled();
   });
 
   test('measures corners against the content-inset reading area', async () => {

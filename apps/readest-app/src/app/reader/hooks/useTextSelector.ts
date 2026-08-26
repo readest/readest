@@ -965,8 +965,9 @@ export const useTextSelector = (
     // Auto page-turn (#1354): the selection caret is one of the engagement
     // signals on every platform (and the only one on Android during a native
     // selection drag, where pointer/touch-move don't fire). Feed it into the same
-    // dwell machine the pointer uses.
-    if (isValidSelection(sel)) {
+    // dwell machine the pointer uses, under the same gate: without it a
+    // long-press that lands a caret in a corner would turn the page by itself.
+    if (isValidSelection(sel) && selectionDragging.current) {
       noteCorner(!viewSettings?.scrolled ? caretCornerNow(doc) : null, (c) => inCorner(c, doc));
     } else {
       cancelAutoTurn();
