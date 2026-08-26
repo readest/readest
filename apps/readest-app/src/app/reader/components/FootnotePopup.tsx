@@ -176,18 +176,17 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     return size;
   };
 
+  // Fits the box along the reading axis and returns the size it applied.
   const fitPopupToContent = (view: FoliateView) => {
     const { renderer } = view;
-    if (!renderer) return;
-    if (getViewSettings(bookKey)!.vertical) {
-      setResponsiveWidth(
-        clipPopupWith(Math.min(getResponsivePopupSize(renderer.viewSize, true), getMaxWidth())),
-      );
-    } else {
-      setResponsiveHeight(
-        clipPopupHeight(Math.min(getResponsivePopupSize(renderer.viewSize, false), getMaxHeight())),
-      );
-    }
+    if (!renderer) return 0;
+    const vertical = getViewSettings(bookKey)!.vertical;
+    const size = vertical
+      ? clipPopupWith(Math.min(getResponsivePopupSize(renderer.viewSize, true), getMaxWidth()))
+      : clipPopupHeight(Math.min(getResponsivePopupSize(renderer.viewSize, false), getMaxHeight()));
+    if (vertical) setResponsiveWidth(size);
+    else setResponsiveHeight(size);
+    return size;
   };
 
   // The document keeps growing after the first `relocate` — the section may
@@ -197,7 +196,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     stopTrackingPopupContentSize();
     const observer = new ResizeObserver(() => {
       if (contentSizeFrameRef.current) cancelAnimationFrame(contentSizeFrameRef.current);
-      // Next frame, so the renderer's own observer has expanded the view first.
       contentSizeFrameRef.current = requestAnimationFrame(() => fitPopupToContent(view));
     });
     observer.observe(doc.documentElement);
@@ -375,19 +373,12 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       resetPopupAnnotationState({ index: index ?? -1, extract: extract ?? null });
       sizeAdjustCountRef.current = 0;
       view.addEventListener('relocate', () => {
-        // The cross-axis widening below reflows the document, so keep it capped.
-        fitPopupToContent(view as FoliateView);
-        if (sizeAdjustCountRef.current < maxSizeAdjustCount) {
+        const readingAxisSize = fitPopupToContent(view as FoliateView);
+        // The cross-axis widening reflows the document, so keep it capped.
+        if (readingAxisSize > 0 && sizeAdjustCountRef.current < maxSizeAdjustCount) {
           sizeAdjustCountRef.current += 1;
           const { renderer } = view as FoliateView;
           const viewSettings = getViewSettings(bookKey)!;
-          const readingAxisSize = viewSettings.vertical
-            ? clipPopupWith(
-                Math.min(getResponsivePopupSize(renderer.viewSize, true), getMaxWidth()),
-              )
-            : clipPopupHeight(
-                Math.min(getResponsivePopupSize(renderer.viewSize, false), getMaxHeight()),
-              );
           const scrollRatio = renderer.viewSize / readingAxisSize;
           if (scrollRatio > 1.5) {
             if (viewSettings.vertical) {
@@ -419,9 +410,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   }, [showPopup]);
 
   useEffect(() => {
-    seedPopupSize(viewSettings.vertical);
+    if (!showPopup) seedPopupSize(viewSettings.vertical);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewSettings]);
+  }, [viewSettings, showPopup]);
 
   useEffect(() => {
     if (trianglePosition && gridRect) {
@@ -444,6 +435,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     const rect = gridFrame.getBoundingClientRect();
     const viewSettings = getViewSettings(bookKey)!;
     const triangPos = getPosition(detail.a, rect, popupPadding, viewSettings.vertical);
+    stopTrackingPopupContentSize();
     seedPopupSize(viewSettings.vertical);
     setGridRect(rect);
     setTrianglePosition(triangPos);
