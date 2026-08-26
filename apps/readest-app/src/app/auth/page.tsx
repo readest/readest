@@ -72,9 +72,11 @@ export default function AuthPage() {
   };
 
   const getWebRedirectTo = () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
     return process.env.NODE_ENV === 'production'
       ? WEB_AUTH_CALLBACK
-      : `${window.location.origin}/auth/callback`;
+      : `${origin}${basePath}/auth/callback`;
   };
 
   const tauriSignInApple = async () => {
