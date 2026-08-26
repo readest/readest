@@ -69,9 +69,18 @@ export const buildContextTranslationContext = (
 ): ContextTranslationContext => {
   const selectedText = normalizeWhitespace(selection.text);
   const budget = Math.max(0, maxContextChars - selectedText.length);
-  const sideBudget = Math.floor(budget / 2);
-  const beforeContext = nearestBefore(getRangeTextBefore(selection.range), sideBudget);
-  const afterContext = nearestAfter(getRangeTextAfter(selection.range), budget - sideBudget);
+  const fullBeforeContext = normalizeWhitespace(getRangeTextBefore(selection.range));
+  const fullAfterContext = normalizeWhitespace(getRangeTextAfter(selection.range));
+  let beforeBudget = Math.floor(budget / 2);
+  let afterBudget = budget - beforeBudget;
+  if (fullBeforeContext.length < beforeBudget) {
+    afterBudget += beforeBudget - fullBeforeContext.length;
+  }
+  if (fullAfterContext.length < afterBudget) {
+    beforeBudget += afterBudget - fullAfterContext.length;
+  }
+  const beforeContext = nearestBefore(fullBeforeContext, beforeBudget);
+  const afterContext = nearestAfter(fullAfterContext, afterBudget);
   const paragraph = getParagraph(selection.range);
 
   return {
