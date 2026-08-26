@@ -791,6 +791,10 @@
     --font-size-min: 0.75rem;
   }
 
+  :where(.loading-lg) {
+    width: 2.5rem;
+  }
+
   :where(.checkbox) {
     border-radius: var(--radius-field);
   }

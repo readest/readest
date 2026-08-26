@@ -78,6 +78,7 @@ describe('daisyUI 5 theme tokens', () => {
         <input data-testid='toggle' type='checkbox' className='toggle' defaultChecked />
         <input data-testid='toggle-sm' type='checkbox' className='toggle toggle-sm' />
         <input data-testid='toggle-xs' type='checkbox' className='toggle toggle-xs' />
+        <span data-testid='loading-lg' className='loading loading-dots loading-lg' />
       </>,
     );
     const box = (id: string) => getByTestId(id).getBoundingClientRect();
@@ -98,6 +99,8 @@ describe('daisyUI 5 theme tokens', () => {
     // Each size has its own v4 width, so the base pin must not flatten them.
     expect([box('toggle-sm').width, box('toggle-sm').height]).toEqual([32, 20]);
     expect([box('toggle-xs').width, box('toggle-xs').height]).toEqual([24, 16]);
+    // daisyUI 5 shrank `loading-lg` from 2.5rem to 1.75rem.
+    expect(box('loading-lg').width).toBe(40);
   });
 
   it('keeps the Tailwind 3 default palette', () => {
