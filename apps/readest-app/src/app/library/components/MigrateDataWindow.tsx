@@ -185,7 +185,10 @@ export const MigrateDataWindow = () => {
   };
 
   const handleStartMigration = async () => {
-    if (!appService || !currentDataDir || !newDataDir || !filesToMigrate.length) return;
+    // Note: an empty library means `filesToMigrate` is legitimately empty (#5876) -
+    // the copy/verify loops below simply no-op in that case, but the new location
+    // must still be persisted, so file count is not part of this guard.
+    if (!appService || !currentDataDir || !newDataDir) return;
 
     setMigrationStatus('migrating');
     setErrorMessage('');
