@@ -19,7 +19,7 @@ import { FootnoteHandler } from 'foliate-js/footnotes.js';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { eventDispatcher } from '@/utils/event';
 import { getCfiSpinePrefix } from '@/utils/cfi';
-import { shouldCheckAsFootnote } from '../utils/footnoteHeuristics';
+import { isLinkTargetVisible, shouldCheckAsFootnote } from '../utils/footnoteHeuristics';
 import { showTransientHighlight } from '../utils/transientHighlight';
 import { drawAnnotationOverlay } from '../utils/annotatorUtil';
 import {
@@ -95,9 +95,22 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     index: -1,
   });
   const [canGoBack, setCanGoBack] = useState(false);
-  // The book location the popup is currently showing. Only popups backed by a
-  // book document have one, so this doubles as the gate for the jump button.
+  // The book location the popup is currently showing, when that location is
+  // somewhere the reader can actually be taken. Null for a popup with no book
+  // document behind it, and for a target the stylesheet hides, so this doubles
+  // as the gate for the jump button. The ref holds the same verdict taken at
+  // click time, which is early enough for `before-render` to decide whether
+  // the document has to leave room for the chrome; `render` recomputes it from
+  // the href it is handed rather than trusting the ref to still match.
   const [sourceHref, setSourceHref] = useState<string | null>(null);
+  const jumpHrefRef = useRef<string | null>(null);
+
+  // Inline footnote bodies are hidden by the reader's own stylesheet, so a
+  // link pointing at one has nowhere to take the reader and earns no button.
+  const getJumpHref = (href: string | undefined | null) => {
+    const mainView = getView(bookKey);
+    return href && mainView && isLinkTargetVisible(mainView, href) ? href : null;
+  };
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // A link that jumps in-page instead of opening a popup (undetected or
@@ -175,6 +188,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         const items = [...history.items.slice(0, history.index + 1), popupLinkDetail];
         historyRef.current = { items, index: items.length - 1 };
         setCanGoBack(true);
+        jumpHrefRef.current = getJumpHref(popupLinkDetail.href);
         footnoteHandler.handle(bookDoc, e)?.catch((err) => {
           console.warn(err);
           getView(bookKey)?.goTo(popupLinkDetail.href);
@@ -304,13 +318,17 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       const footnoteStyles = getFootnoteStyles();
       // The chrome strip (jump-to-location, plus Back once a link has been
       // followed) floats over the popup document, so the text has to start
-      // clear of it. A scrolled renderer ignores its `margin-*` attributes —
-      // it only publishes them as CSS variables — so reserve the strip in the
-      // document's own padding instead. `padding-block-start` lands on top in
-      // horizontal writing and on the right in vertical, which is where the
-      // strip sits in each mode.
-      const chromeStyles = `body { padding-block-start: calc(1em + ${chromeSize}px) !important; }`;
-      renderer.setStyles?.(`${mainStyles}\n${footnoteStyles}\n${chromeStyles}`);
+      // clear of it — and only then, or a popup with no buttons opens under a
+      // band of dead space. A scrolled renderer ignores its `margin-*`
+      // attributes (it only publishes them as CSS variables), so reserve the
+      // strip in the document's own padding instead: `padding-block-start`
+      // lands on top in horizontal writing and on the right in vertical,
+      // which is where the strip sits in each mode.
+      const hasChrome = historyRef.current.index > 0 || !!jumpHrefRef.current;
+      const chromeStyles = hasChrome
+        ? `\nbody { padding-block-start: calc(1em + ${chromeSize}px) !important; }`
+        : '';
+      renderer.setStyles?.(`${mainStyles}\n${footnoteStyles}${chromeStyles}`);
     };
 
     const handleRender = (e: Event) => {
@@ -318,7 +336,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       // console.log('render footnote', detail);
       const { view, href, index, extract } = detail;
       footnoteHrefRef.current = href;
-      setSourceHref(href ?? null);
+      setSourceHref(getJumpHref(href));
       resetPopupAnnotationState({ index: index ?? -1, extract: extract ?? null });
       sizeAdjustCountRef.current = 0;
       view.addEventListener('relocate', () => {
@@ -411,6 +429,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       detail['check'] = true;
     }
     historyRef.current = { items: [detail], index: 0 };
+    jumpHrefRef.current = getJumpHref(detail.href);
     setCanGoBack(false);
     const popupPromise = footnoteHandler.handle(bookDoc, event);
     if (popupPromise) {
@@ -434,6 +453,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     historyRef.current = { ...history, index: newIndex };
     setCanGoBack(newIndex > 0);
     const detail = history.items[newIndex]!;
+    jumpHrefRef.current = getJumpHref(detail['href'] as string | undefined);
     const syntheticEvent = new CustomEvent('link', {
       detail: { ...detail, follow: true },
       cancelable: true,
@@ -472,6 +492,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     setResponsiveHeight(popupHeight);
     setShowPopup(false);
     setSourceHref(null);
+    jumpHrefRef.current = null;
   };
 
   // Handle custom footnote popup event from iframe event
@@ -482,6 +503,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     // This popup shows text synthesized from a data/alt attribute in the host
     // document: there is no book document behind it, so no CFI mapping.
     footnoteViewRef.current = null;
+    jumpHrefRef.current = null;
     setSourceHref(null);
     resetPopupAnnotationState();
     const rect = gridFrame.getBoundingClientRect();

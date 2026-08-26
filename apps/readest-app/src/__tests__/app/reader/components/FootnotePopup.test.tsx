@@ -21,6 +21,7 @@ const hoisted = vi.hoisted(() => ({
   onLinkClick: { current: null as ((event: Event) => void) | null },
   goTo: vi.fn(),
   showTransientHighlight: vi.fn(),
+  isLinkTargetVisible: vi.fn(),
 }));
 
 vi.mock('foliate-js/footnotes.js', () => {
@@ -109,6 +110,7 @@ vi.mock('@/app/reader/utils/annotatorUtil', () => ({
 
 vi.mock('@/app/reader/utils/footnoteHeuristics', () => ({
   shouldCheckAsFootnote: () => false,
+  isLinkTargetVisible: hoisted.isLinkTargetVisible,
 }));
 
 vi.mock('@/components/Overlay', () => ({
@@ -146,6 +148,12 @@ const renderPopup = async () => {
   return render(<FootnotePopup bookKey={BOOK_KEY} bookDoc={{} as BookDoc} />);
 };
 
+const stylesOf = (view: HTMLElement) => {
+  const setStyles = (view as unknown as { renderer: { setStyles: ReturnType<typeof vi.fn> } })
+    .renderer.setStyles;
+  return setStyles.mock.calls.at(-1)?.[0] as string | undefined;
+};
+
 /** Drive a link click in the book through to a rendered footnote popup. */
 const openFootnotePopup = async (href = HREF) => {
   const anchor = document.createElement('a');
@@ -165,6 +173,7 @@ const openFootnotePopup = async (href = HREF) => {
     );
     view.dispatchEvent(new CustomEvent('relocate', { detail: {} }));
   });
+  return view;
 };
 
 describe('FootnotePopup jump to location', () => {
@@ -174,6 +183,7 @@ describe('FootnotePopup jump to location', () => {
     hoisted.onLinkClick.current = null;
     hoisted.goTo.mockReset();
     hoisted.showTransientHighlight.mockReset().mockResolvedValue(null);
+    hoisted.isLinkTargetVisible.mockReset().mockReturnValue(true);
   });
 
   it('navigates the book view to the popup source and dismisses the popup', async () => {
@@ -212,6 +222,32 @@ describe('FootnotePopup jump to location', () => {
     });
 
     expect(hoisted.goTo).toHaveBeenCalledWith(nestedHref);
+  });
+
+  // The reader's stylesheet hides inline footnote bodies, so a link that
+  // points at one has nowhere to take the reader (#5766 follow-up).
+  it('offers no jump when the link target is hidden in the book', async () => {
+    hoisted.isLinkTargetVisible.mockReturnValue(false);
+    await renderPopup();
+    await openFootnotePopup('ch1.xhtml#B_1');
+
+    expect(screen.getByTestId('popup').dataset['open']).toBe('true');
+    expect(screen.queryByLabelText('Jump to Location')).toBeNull();
+  });
+
+  // The chrome floats over the popup document, so the document has to start
+  // clear of it -- but only when there is something to clear.
+  it('reserves room for the chrome only when a button will be shown', async () => {
+    await renderPopup();
+    const withButton = await openFootnotePopup();
+    expect(stylesOf(withButton)).toContain('padding-block-start');
+  });
+
+  it('reserves no room when the popup has no chrome at all', async () => {
+    hoisted.isLinkTargetVisible.mockReturnValue(false);
+    await renderPopup();
+    const bare = await openFootnotePopup('ch1.xhtml#B_1');
+    expect(stylesOf(bare)).not.toContain('padding-block-start');
   });
 
   it('offers no jump for popups synthesized from a data attribute', async () => {
