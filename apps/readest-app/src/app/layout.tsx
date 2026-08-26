@@ -16,13 +16,13 @@ const poppins = Poppins({
 });
 
 const url = READEST_WEB_BASE_URL.endsWith('/') ? READEST_WEB_BASE_URL : `${READEST_WEB_BASE_URL}/`;
-const title = 'Biblophile — Where You Read, Digest and Get Insight';
+const title = 'Yomi — A Better Way to Read';
 const description =
-  'Discover Biblophile, the ultimate online ebook reader for immersive and organized reading. ' +
-  'Enjoy seamless access to your digital library, powerful tools for highlighting, bookmarking, ' +
-  'and note-taking, and support for multiple book views. ' +
-  'Perfect for deep reading, analysis, and understanding. Explore now!';
-const previewImage = 'https://cdn.readest.com/images/open_graph_preview_read_now.png';
+  'Yomi is Biblophile’s ebook reader, built for thoughtful and immersive reading. ' +
+  'Read your books, highlight passages, bookmark moments, and capture notes as you go. ' +
+  'Designed to help you read deeply, understand more, and make every book your own.';
+const previewImage =
+  'https://ik.imagekit.io/umjnzfgqh/biblophile/common_assets/logos/yomi_og_preview_card.jpg';
 
 const basePath = process.env['NEXT_PUBLIC_BASE_PATH'] || '';
 
