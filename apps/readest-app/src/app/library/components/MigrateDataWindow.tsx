@@ -58,6 +58,7 @@ export const MigrateDataWindow = () => {
   const [filesToMigrate, setFilesToMigrate] = useState<FileItem[]>([]);
   const [currentDirFileCount, setCurrentDirFileCount] = useState('');
   const [currentDirFileSize, setCurrentDirFileSize] = useState(0);
+  const [dirScanned, setDirScanned] = useState(false);
   const [androidNewDirs, setAndroidNewDirs] = useState<{ path: string; label: string }[]>([]);
 
   useEffect(() => {
@@ -86,12 +87,14 @@ export const MigrateDataWindow = () => {
     try {
       if (!appService) return;
 
+      setDirScanned(false);
       const dataDir = await appService.resolveFilePath('', 'Data');
       setCurrentDataDir(dataDir);
       const files = await appService.readDirectory(dataDir, 'None');
       setFilesToMigrate(files);
       setCurrentDirFileCount(files.length.toLocaleString());
       setCurrentDirFileSize(files.reduce((acc, file) => acc + file.size, 0));
+      setDirScanned(true);
     } catch (error) {
       console.error('Error loading current data directory:', error);
     }
@@ -185,10 +188,13 @@ export const MigrateDataWindow = () => {
   };
 
   const handleStartMigration = async () => {
-    // Note: an empty library means `filesToMigrate` is legitimately empty (#5876) -
-    // the copy/verify loops below simply no-op in that case, but the new location
-    // must still be persisted, so file count is not part of this guard.
-    if (!appService || !currentDataDir || !newDataDir) return;
+    // An empty library leaves `filesToMigrate` legitimately empty (#5876): the
+    // copy/verify loops below no-op, but the new location must still be
+    // persisted, so the file count is not part of this guard. `dirScanned`
+    // keeps that apart from a failed scan, where the list is empty because
+    // `readDirectory` rejected and the delete below would wipe the old
+    // directory without having copied anything.
+    if (!appService || !currentDataDir || !newDataDir || !dirScanned) return;
 
     setMigrationStatus('migrating');
     setErrorMessage('');
@@ -273,7 +279,7 @@ export const MigrateDataWindow = () => {
       : 0;
 
   const canStartMigration =
-    newDataDir && newDataDir !== currentDataDir && migrationStatus === 'idle';
+    newDataDir && newDataDir !== currentDataDir && migrationStatus === 'idle' && dirScanned;
 
   const osPlatform = getOSPlatform();
   const fileRevealLabel =
