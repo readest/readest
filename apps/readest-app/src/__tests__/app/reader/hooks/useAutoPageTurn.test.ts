@@ -12,11 +12,13 @@ const h = vi.hoisted(() => ({
     prev: vi.fn(),
     renderer: { containerPosition: 100 },
   },
+  viewSettings: { rtl: false } as { rtl: boolean },
 }));
 
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     getView: () => h.view,
+    getViewSettings: () => h.viewSettings,
   }),
 }));
 
@@ -39,6 +41,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.useFakeTimers();
   areaRect = { left: 0, top: 0, right: VW, bottom: VW, width: VW, height: VW };
+  h.viewSettings = { rtl: false };
   const cell = document.createElement('div');
   cell.id = 'gridcell-book-1';
   const fv = document.createElement('foliate-view');
@@ -285,6 +288,53 @@ describe('turnHint marks the armed edge', () => {
 
     act(() => result.current.cancel());
     expect(result.current.turnHint).toBe(null);
+  });
+});
+
+describe('an RTL book ends its page at the bottom-left, and reads that as forward', () => {
+  // A text area smaller than the window, so a point past its edge is still on
+  // screen. viewSettings.rtl is the flag the rest of the reader already maps
+  // screen sides through — it is what makes the physically left nav button say
+  // "Next Page" — and it covers vertical-rl as well as dir=rtl.
+  const inset = { left: 100, top: 100, right: 500, bottom: 500, width: 400, height: 400 };
+
+  beforeEach(() => {
+    areaRect = inset;
+    h.viewSettings = { rtl: true };
+  });
+
+  test('past the left edge turns to the next page', async () => {
+    const { result } = setup();
+    result.current.noteAutoTurnPoint({ x: 70, y: 300 });
+    await advance();
+
+    expect(h.view.next).toHaveBeenCalledTimes(1);
+    expect(h.view.prev).not.toHaveBeenCalled();
+  });
+
+  test('past the right edge turns back', async () => {
+    const { result } = setup();
+    result.current.noteAutoTurnPoint({ x: 530, y: 300 });
+    await advance();
+
+    expect(h.view.prev).toHaveBeenCalledTimes(1);
+    expect(h.view.next).not.toHaveBeenCalled();
+  });
+
+  test('the bottom-left corner is the forward corner', async () => {
+    const { result } = setup();
+    result.current.noteAutoTurnPoint({ x: 130, y: 470 });
+    await advance();
+
+    expect(h.view.next).toHaveBeenCalledTimes(1);
+  });
+
+  test('the top-right corner turns back', async () => {
+    const { result } = setup();
+    result.current.noteAutoTurnPoint({ x: 470, y: 130 });
+    await advance();
+
+    expect(h.view.prev).toHaveBeenCalledTimes(1);
   });
 });
 

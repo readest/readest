@@ -45,6 +45,16 @@ const cornerOf = (x: number, y: number, w: number, h: number): Corner | null => 
   return null;
 };
 
+// Which way a point that has left the page must turn to stay in view, in
+// area-local coordinates: past the trailing (right/bottom) edge goes forward,
+// past the leading (left/top) edge goes back. Shared by the drag machine and
+// the keyboard path so the two can't drift apart.
+const edgeBeyond = (x: number, y: number, w: number, h: number): 'next' | 'prev' | null => {
+  if (x > w || y > h) return 'next';
+  if (x < 0 || y < 0) return 'prev';
+  return null;
+};
+
 // Map a window-coordinate point to the corner of the reading area it sits in,
 // if any. Corners are measured against `area` (the visible text bounds in window
 // coordinates) so they land on the text, not the page margins or a sidebar.
@@ -52,21 +62,29 @@ const cornerOf = (x: number, y: number, w: number, h: number): Corner | null => 
 // `beyond` reads a point that has left the area as the edge it left by, the
 // rule turnForFocusBeyondPage already uses: dragging a selection off the end of
 // the page means turn. Pointer signals only — the caret keeps the strict test.
+//
+// `rtl` mirrors the horizontal axis first. In a right-to-left book (and in
+// vertical-rl, which viewSettings.rtl also covers) the columns run right to
+// left, so the page ENDS at its bottom-left: without the mirror, dragging
+// forward off the left edge asked for view.prev() and the page went backwards.
 const cornerAt = (
   xWin: number,
   yWin: number,
   area: DOMRect | null,
   beyond = false,
+  rtl = false,
 ): Corner | null => {
   if (!area || area.width <= 0 || area.height <= 0) return null;
-  const x = xWin - area.left;
+  const local = xWin - area.left;
+  const x = rtl ? area.width - local : local;
   const y = yWin - area.top;
   if (x < 0 || x > area.width || y < 0 || y > area.height) {
     // A pointer is always on screen, so an off-screen point is not one: it is a
-    // caret that has jumped into the next, off-screen column.
+    // caret that has jumped into the next, off-screen column. The window bounds
+    // are real screen coordinates, so they are checked unmirrored.
     if (!beyond || xWin < 0 || xWin > window.innerWidth) return null;
     if (yWin < 0 || yWin > window.innerHeight) return null;
-    return turnForFocusBeyondPage({ x: xWin, y: yWin }, area) === 'next' ? 'br' : 'tl';
+    return edgeBeyond(x, y, area.width, area.height) === 'next' ? 'br' : 'tl';
   }
   return cornerOf(x, y, area.width, area.height);
 };
@@ -105,11 +123,7 @@ export const turnForFocusBeyondPage = (
   area: DOMRect | null,
 ): 'next' | 'prev' | null => {
   if (!area || area.width <= 0 || area.height <= 0) return null;
-  const x = point.x - area.left;
-  const y = point.y - area.top;
-  if (x > area.width || y > area.height) return 'next';
-  if (x < 0 || y < 0) return 'prev';
-  return null;
+  return edgeBeyond(point.x - area.left, point.y - area.top, area.width, area.height);
 };
 
 // The page to turn to so a keyboard-extended selection's focus stays visible, or
@@ -135,7 +149,7 @@ export const keyboardTurnDirection = (
 // the correct way). One turn per engagement — a signal must leave the corner and
 // return to turn another page.
 export const useAutoPageTurn = (bookKey: string, contentInsets: Insets = ZERO_INSETS) => {
-  const { getView } = useReaderStore();
+  const { getView, getViewSettings } = useReaderStore();
 
   const autoTurnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // The corner an input signal is currently engaged in. Stays set after a turn
@@ -155,7 +169,9 @@ export const useAutoPageTurn = (bookKey: string, contentInsets: Insets = ZERO_IN
   const readingAreaRect = (): DOMRect | null => getReadingAreaRect(bookKey, contentInsets);
 
   const cornerAtPoint = (point: Point | null, beyond = false): Corner | null =>
-    point ? cornerAt(point.x, point.y, readingAreaRect(), beyond) : null;
+    point
+      ? cornerAt(point.x, point.y, readingAreaRect(), beyond, !!getViewSettings(bookKey)?.rtl)
+      : null;
 
   const clearTimer = () => {
     if (autoTurnTimer.current) {

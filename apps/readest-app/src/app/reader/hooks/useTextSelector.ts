@@ -47,6 +47,10 @@ const INSTANT_HOLD_MS = 300;
 // Movement past this many CSS px during the hold means the user is swiping, not
 // settling in to highlight, so the pending engagement is cancelled.
 const INSTANT_HOLD_MOVE_PX = 10;
+// How far a pointer must travel before it counts as dragging a selection rather
+// than resting on it. A long press drifts a pixel or two, and taking that drift
+// for a drag let the long-press selection arm the corner turn by itself.
+const SELECTION_DRAG_SLOP_PX = 10;
 // Ignore tiny pointer jitter, but preserve a deliberate double-click-drag even
 // when it only extends the selection into adjacent whitespace.
 const DOUBLE_CLICK_DRAG_MOVE_PX = 3;
@@ -99,6 +103,9 @@ export const useTextSelector = (
   // WebKit selection handle drag delivers moves without a matching down.
   const pointerDragActive = useRef(false);
   const selectionDragging = useRef(false);
+  // Where this gesture's pointer travel is measured from — the first move of the
+  // gesture, for the same reason.
+  const dragOriginRef = useRef<Point | null>(null);
   const isInstantAnnotating = useRef(false);
   const isInstantAnnotated = useRef(false);
   const annotationStartPoint = useRef<Point | null>(null);
@@ -510,8 +517,40 @@ export const useTextSelector = (
     }
   };
 
-  const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
+  // Whether the pointer has actually travelled since this gesture began. A
+  // pointermove arriving is not a drag: on touch every move looks like one, so
+  // without this a long press that drifted a pixel marked its own selection as
+  // dragged, and a finger then resting at the page edge flipped the page.
+  const noteDragTravel = (): boolean => {
+    const now = pointerPos.current;
+    if (!now) return false;
+    const origin = dragOriginRef.current;
+    if (!origin) {
+      dragOriginRef.current = now;
+      return false;
+    }
+    return Math.hypot(now.x - origin.x, now.y - origin.y) > SELECTION_DRAG_SLOP_PX;
+  };
+
+  // A new gesture: nothing is a drag yet.
+  const beginSelectionDrag = () => {
+    pointerDragActive.current = false;
     selectionDragging.current = false;
+    dragOriginRef.current = null;
+  };
+
+  // The gesture is over: drop the per-gesture drag latches and any pending
+  // corner turn (with the edge mark it drew). Leaving the latches set let a
+  // later move with no drag of its own inherit them and turn the page.
+  const endSelectionDrag = () => {
+    pointerDragActive.current = false;
+    selectionDragging.current = false;
+    dragOriginRef.current = null;
+    cancelAutoTurn();
+  };
+
+  const handlePointerDown = (doc: Document, index: number, ev: PointerEvent) => {
+    beginSelectionDrag();
     lastPointerType.current = ev.pointerType;
     isPointerDown.current = true;
     clearCrossDoc();
@@ -629,8 +668,10 @@ export const useTextSelector = (
     const valid = !!sel && isValidSelection(sel);
     // Only an active drag arms the turn: the zone reaches past the text, so a
     // mouse merely moving there with a selection on screen would otherwise turn
-    // the page on its own. A touch or pen move is by definition a live drag.
-    const dragging = ev.pointerType === 'mouse' ? (ev.buttons & 1) !== 0 : true;
+    // the page on its own. For a mouse that means a held button; for any pointer
+    // it means the finger has actually travelled, not just twitched.
+    const dragging =
+      noteDragTravel() && (ev.pointerType === 'mouse' ? (ev.buttons & 1) !== 0 : true);
     pointerDragActive.current = dragging;
     const armed = valid && dragging && selectionDragging.current;
     const corner = !viewSettings?.scrolled && armed ? pointerCornerNow() : null;
@@ -643,7 +684,7 @@ export const useTextSelector = (
   const handleNativeTouchMove = (x: number, y: number, doc: Document) => {
     const dpr = window.devicePixelRatio || 1;
     pointerPos.current = { x: x / dpr, y: y / dpr };
-    pointerDragActive.current = true;
+    pointerDragActive.current = noteDragTravel();
     maybeCancelInstantHoldOnMove();
     const viewSettings = getViewSettings(bookKey);
     // Instant highlight has no DOM selection (user-select is off); feed the
@@ -654,7 +695,7 @@ export const useTextSelector = (
     }
     const sel = doc.getSelection();
     const valid = !!sel && isValidSelection(sel);
-    const armed = valid && selectionDragging.current;
+    const armed = valid && pointerDragActive.current && selectionDragging.current;
     const corner = !viewSettings?.scrolled && armed ? pointerCornerNow() : null;
     noteCorner(corner, (c) => inCorner(c, doc));
   };
@@ -668,9 +709,13 @@ export const useTextSelector = (
     // (Android fires pointercancel when the browser starts scrolling) keeps its
     // native page-turn instead of being swallowed.
     cancelInstantHold();
-    // NB: don't cancel the auto-turn here — on Android pointercancel fires mid
-    // edge-drag (browser takes over for scrolling), which is exactly when the
-    // user is dragging into the corner. Cancel only on a real release.
+    // In the Android app pointercancel fires mid edge-drag (the browser takes
+    // over for scrolling) while the finger keeps going, and the native-touch
+    // bridge still reports the rest of the gesture — its touchend is the real
+    // release, so leave the pending turn and the drag latches alone there.
+    // Everywhere else pointercancel IS the end: no pointerup or touchend
+    // follows it, so this is the only chance to drop the turn and the edge mark.
+    if (!appService?.isAndroidApp) endSelectionDrag();
     if (isInstantAnnotating.current) {
       stopInstantAnnotating();
       handleInstantAnnotationPointerCancel();
@@ -784,8 +829,7 @@ export const useTextSelector = (
 
   const handlePointerUp = async (doc: Document, index: number, ev?: PointerEvent) => {
     isPointerDown.current = false;
-    pointerDragActive.current = false;
-    cancelAutoTurn();
+    endSelectionDrag();
     const mouseDoubleClick = mouseDoubleClickRef.current;
     mouseDoubleClickRef.current = null;
     dragAnchorRef.current = null;
@@ -878,7 +922,7 @@ export const useTextSelector = (
   };
   const handleTouchStart = () => {
     isTouchStarted.current = true;
-    selectionDragging.current = false;
+    beginSelectionDrag();
     pendingTouchSelection.current = false;
     gestureInitialRef.current = null;
     sanitizedGestureRef.current = false;
@@ -897,8 +941,7 @@ export const useTextSelector = (
   // Android native-touch bridge calls this without a doc (it never defers).
   const handleTouchEnd = (doc?: Document, index?: number) => {
     isTouchStarted.current = false;
-    pointerDragActive.current = false;
-    cancelAutoTurn();
+    endSelectionDrag();
     if (!pendingTouchSelection.current) return;
     pendingTouchSelection.current = false;
     if (!doc || index === undefined) return;
