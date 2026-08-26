@@ -1,15 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 
-const { subscribeMock, setStatusMock, ingestMock, updateBooksMock, dispatchMock } = vi.hoisted(
-  () => ({
-    subscribeMock: vi.fn(),
-    setStatusMock: vi.fn(),
-    ingestMock: vi.fn(),
-    updateBooksMock: vi.fn(),
-    dispatchMock: vi.fn(),
-  }),
-);
+const {
+  subscribeMock,
+  setStatusMock,
+  ingestMock,
+  updateBooksMock,
+  dispatchMock,
+  isTauriAppPlatformMock,
+} = vi.hoisted(() => ({
+  subscribeMock: vi.fn(),
+  setStatusMock: vi.fn(),
+  ingestMock: vi.fn(),
+  updateBooksMock: vi.fn(),
+  dispatchMock: vi.fn(),
+  isTauriAppPlatformMock: vi.fn(),
+}));
 
 vi.mock('@/services/webBrowser/webBrowser', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/services/webBrowser/webBrowser')>();
@@ -20,6 +26,7 @@ vi.mock('@/services/webBrowser/webBrowser', async (importOriginal) => {
   };
 });
 vi.mock('@/services/ingestService', () => ({ ingestFile: ingestMock }));
+vi.mock('@/services/environment', () => ({ isTauriAppPlatform: isTauriAppPlatformMock }));
 vi.mock('@/utils/event', () => ({ eventDispatcher: { dispatch: dispatchMock } }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (k: string) => k }));
 vi.mock('@/context/EnvContext', () => ({
@@ -55,6 +62,7 @@ beforeEach(() => {
   ingestMock.mockReset();
   updateBooksMock.mockReset().mockResolvedValue(undefined);
   dispatchMock.mockReset();
+  isTauriAppPlatformMock.mockReset().mockReturnValue(true);
 });
 
 async function mountAndGetHandler(): Promise<Handler> {
@@ -69,6 +77,15 @@ async function mountAndGetHandler(): Promise<Handler> {
 }
 
 describe('useWebBrowserDownloads', () => {
+  it('does not subscribe to Tauri download events in the web app', () => {
+    isTauriAppPlatformMock.mockReturnValue(false);
+    subscribeMock.mockResolvedValue(() => {});
+
+    renderHook(() => useWebBrowserDownloads());
+
+    expect(subscribeMock).not.toHaveBeenCalled();
+  });
+
   it('imports a supported download into the current group and reports added', async () => {
     ingestMock.mockResolvedValue({ hash: 'h1', title: 'Dune' });
     const handler = await mountAndGetHandler();

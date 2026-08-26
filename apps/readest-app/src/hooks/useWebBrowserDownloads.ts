@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { isTauriAppPlatform } from '@/services/environment';
 import { ingestFile } from '@/services/ingestService';
 import {
   isSupportedBookDownload,
@@ -79,7 +80,7 @@ export function useWebBrowserDownloads() {
   handlerRef.current = handleDownload;
 
   useEffect(() => {
-    if (!appService) return;
+    if (!isTauriAppPlatform() || !appService) return;
     let dispose: (() => void) | null = null;
     let cancelled = false;
     subscribeWebBrowserDownloads(!!appService.isMobileApp, (download) => {
