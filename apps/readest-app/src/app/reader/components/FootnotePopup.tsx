@@ -287,6 +287,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
           doc.addEventListener('contextmenu', (ev: Event) => ev.preventDefault());
         }
 
+        // Each request builds its own view; a superseded one still loads, and
+        // must not resize or repaint the popup the newer request now owns.
+        if (popupView !== footnoteViewRef.current) return;
         const info = popupMapRef.current;
         if (info && info.index === index) {
           popupMapRef.current = { ...info, doc };
