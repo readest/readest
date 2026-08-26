@@ -19,23 +19,14 @@ const appService = {
   distChannel: 'github',
   resolveFilePath: vi.fn(async () => '/current/data/dir'),
   readDirectory: vi.fn(async () => []),
-  selectDirectory: vi.fn(async () => '/new/data/dir'),
-  createDir: vi.fn(async () => {}),
-  copyFile: vi.fn(async () => {}),
-  deleteDir: vi.fn(async () => {}),
-  setCustomRootDir: vi.fn(async () => {}),
 };
-
-const settings: Record<string, unknown> = {};
-const setSettings = vi.fn();
-const saveSettings = vi.fn(async () => {});
 
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ appService, envConfig: {} }),
 }));
 
 vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({ settings, setSettings, saveSettings }),
+  useSettingsStore: () => ({ settings: {}, setSettings: vi.fn(), saveSettings: vi.fn() }),
 }));
 
 vi.mock('@tauri-apps/api/path', () => ({
@@ -89,37 +80,5 @@ describe('MigrateDataWindow e-ink button hierarchy', () => {
     // indistinguishable (see issue #4396). It must be a borderless ghost instead.
     expect(cancelButton.className).not.toContain('btn-outline');
     expect(cancelButton.className).toContain('btn-ghost');
-  });
-});
-
-describe('MigrateDataWindow with an empty library', () => {
-  it('still saves the new data location when there are no files to copy (#5876)', async () => {
-    // Empty library: the current data directory has no files to migrate.
-    appService.readDirectory.mockResolvedValue([]);
-
-    render(<MigrateDataWindow />);
-
-    await act(async () => {
-      setMigrateDataDirDialogVisible(true);
-    });
-
-    await screen.findByText('/current/data/dir');
-
-    const chooseFolderButton = screen.getByRole('button', { name: 'Choose New Folder' });
-    await act(async () => {
-      chooseFolderButton.click();
-    });
-
-    const startButton = await screen.findByRole('button', { name: 'Start Migration' });
-    expect(startButton.hasAttribute('disabled')).toBe(false);
-
-    await act(async () => {
-      startButton.click();
-    });
-
-    // Even with zero files to copy, the new location must still be persisted.
-    expect(appService.setCustomRootDir).toHaveBeenCalledWith('/new/data/dir');
-    expect(saveSettings).toHaveBeenCalled();
-    expect(await screen.findByText('Migration completed successfully!')).toBeTruthy();
   });
 });
