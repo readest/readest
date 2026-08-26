@@ -35,14 +35,22 @@ beforeAll(async () => {
 
 afterEach(() => cleanup());
 
-// The toast fades and scales in over 300ms; measure it once it has landed.
+const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+// The toast fades and scales in, and daisyUI 5 gives the alert an entrance
+// animation of its own. Both move the box while they run and
+// `getBoundingClientRect` sees them, so run every animation under the toast to
+// its end state instead of waiting on the clock.
 const showToast = async (detail: Record<string, unknown>) => {
   render(<Toast />);
   await act(async () => {
     await eventDispatcher.dispatch('toast', detail);
   });
   const toast = document.querySelector('.toast') as HTMLElement;
-  await waitFor(() => expect(getComputedStyle(toast).opacity).toBe('1'));
+  await waitFor(() => expect(toast.className).toContain('opacity-100'));
+  await nextFrame();
+  for (const animation of toast.getAnimations({ subtree: true })) animation.finish();
+  await nextFrame();
   return toast;
 };
 

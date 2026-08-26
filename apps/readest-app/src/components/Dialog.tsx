@@ -72,22 +72,24 @@ const Dialog: React.FC<DialogProps> = ({
   // Callers gate the body on the same flag they pass as `isOpen`
   // (`<Dialog isOpen={open}>{open && <Body />}</Dialog>`), so the body would
   // vanish on the frame the close starts and the box would collapse onto its
-  // title bar for the length of the fade. Hold the last body until it is over.
+  // title bar for the length of the fade. Keep the last body until the fade is
+  // over. The closing render picks it up itself rather than an effect handing
+  // it back: an effect only runs once React has already committed the tree
+  // without it, and a passive one only once the browser may have painted that.
+  // The state below just ends the hold.
   const lastBodyRef = useRef<ReactNode>(null);
-  const [closingBody, setClosingBody] = useState<ReactNode>(null);
+  const [isBodyHoldOver, setIsBodyHoldOver] = useState(false);
   if (isOpen) lastBodyRef.current = children;
+  const body = isOpen ? children : isBodyHoldOver ? null : lastBodyRef.current;
 
   useEffect(() => {
     if (isOpen) {
-      setClosingBody(null);
+      setIsBodyHoldOver(false);
       return;
     }
-    setClosingBody(lastBodyRef.current);
-    const timer = setTimeout(() => setClosingBody(null), CLOSE_TRANSITION_MS);
+    const timer = setTimeout(() => setIsBodyHoldOver(true), CLOSE_TRANSITION_MS);
     return () => clearTimeout(timer);
   }, [isOpen]);
-
-  const body = isOpen ? children : closingBody;
 
   const handleKeyDown = (event: KeyboardEvent | CustomEvent) => {
     if (event instanceof CustomEvent) {
