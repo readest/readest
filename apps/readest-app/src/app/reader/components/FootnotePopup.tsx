@@ -40,9 +40,6 @@ interface FootnotePopupProps {
 const popupWidth = 360;
 const popupHeight = 88;
 
-// Height of the chrome strip floating over the popup document, in px.
-const chromeSize = 32;
-
 const chromeButtonClassName = clsx(
   'btn btn-ghost btn-circle eink-bordered text-base-content bg-base-200/80 hover:bg-base-200',
   'h-8 min-h-8 w-8 p-0 shadow-xs',
@@ -98,12 +95,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
   // The book location the popup is currently showing, when that location is
   // somewhere the reader can actually be taken. Null for a popup with no book
   // document behind it, and for a target the stylesheet hides, so this doubles
-  // as the gate for the jump button. The ref holds the same verdict taken at
-  // click time, which is early enough for `before-render` to decide whether
-  // the document has to leave room for the chrome; `render` recomputes it from
-  // the href it is handed rather than trusting the ref to still match.
+  // as the gate for the jump button.
   const [sourceHref, setSourceHref] = useState<string | null>(null);
-  const jumpHrefRef = useRef<string | null>(null);
 
   // Inline footnote bodies are hidden by the reader's own stylesheet, so a
   // link pointing at one has nowhere to take the reader and earns no button.
@@ -188,7 +181,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         const items = [...history.items.slice(0, history.index + 1), popupLinkDetail];
         historyRef.current = { items, index: items.length - 1 };
         setCanGoBack(true);
-        jumpHrefRef.current = getJumpHref(popupLinkDetail.href);
         footnoteHandler.handle(bookDoc, e)?.catch((err) => {
           console.warn(err);
           getView(bookKey)?.goTo(popupLinkDetail.href);
@@ -316,19 +308,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       }
       const mainStyles = getStyles(viewSettings, popupTheme, getLoadedFonts());
       const footnoteStyles = getFootnoteStyles();
-      // The chrome strip (jump-to-location, plus Back once a link has been
-      // followed) floats over the popup document, so the text has to start
-      // clear of it — and only then, or a popup with no buttons opens under a
-      // band of dead space. A scrolled renderer ignores its `margin-*`
-      // attributes (it only publishes them as CSS variables), so reserve the
-      // strip in the document's own padding instead: `padding-block-start`
-      // lands on top in horizontal writing and on the right in vertical,
-      // which is where the strip sits in each mode.
-      const hasChrome = historyRef.current.index > 0 || !!jumpHrefRef.current;
-      const chromeStyles = hasChrome
-        ? `\nbody { padding-block-start: calc(1em + ${chromeSize}px) !important; }`
-        : '';
-      renderer.setStyles?.(`${mainStyles}\n${footnoteStyles}${chromeStyles}`);
+      renderer.setStyles?.(`${mainStyles}\n${footnoteStyles}`);
     };
 
     const handleRender = (e: Event) => {
@@ -429,7 +409,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
       detail['check'] = true;
     }
     historyRef.current = { items: [detail], index: 0 };
-    jumpHrefRef.current = getJumpHref(detail.href);
     setCanGoBack(false);
     const popupPromise = footnoteHandler.handle(bookDoc, event);
     if (popupPromise) {
@@ -453,7 +432,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     historyRef.current = { ...history, index: newIndex };
     setCanGoBack(newIndex > 0);
     const detail = history.items[newIndex]!;
-    jumpHrefRef.current = getJumpHref(detail['href'] as string | undefined);
     const syntheticEvent = new CustomEvent('link', {
       detail: { ...detail, follow: true },
       cancelable: true,
@@ -492,7 +470,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     setResponsiveHeight(popupHeight);
     setShowPopup(false);
     setSourceHref(null);
-    jumpHrefRef.current = null;
   };
 
   // Handle custom footnote popup event from iframe event
@@ -503,7 +480,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
     // This popup shows text synthesized from a data/alt attribute in the host
     // document: there is no book document behind it, so no CFI mapping.
     footnoteViewRef.current = null;
-    jumpHrefRef.current = null;
     setSourceHref(null);
     resetPopupAnnotationState();
     const rect = gridFrame.getBoundingClientRect();
@@ -659,12 +635,14 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
         onDismiss={handleDismissPopup}
       >
         {(canGoBack || sourceHref) && (
+          // The chrome floats over the text rather than pushing it down, so
+          // the strip must not swallow taps meant for the words beneath it.
           <div
             className={clsx(
-              'absolute z-10 flex gap-1',
+              'pointer-events-none absolute z-10 flex gap-1',
               viewSettings.vertical
-                ? 'end-0 top-0 h-full w-8 flex-col items-center pt-2'
-                : 'start-0 top-0 h-8 w-full items-center px-2',
+                ? 'bottom-2 end-2 top-2 w-8 flex-col items-end'
+                : 'end-2 start-2 top-2 h-8 flex-row items-start',
             )}
           >
             {canGoBack && (
@@ -673,7 +651,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
                 onClick={handleBack}
                 aria-label={_('Back')}
                 title={_('Back')}
-                className={chromeButtonClassName}
+                className={clsx(chromeButtonClassName, 'pointer-events-auto')}
               >
                 <MdArrowBack size={size18} />
               </button>
@@ -684,7 +662,11 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
                 onClick={handleGoToSource}
                 aria-label={_('Jump to Location')}
                 title={_('Jump to Location')}
-                className={clsx(chromeButtonClassName, !viewSettings.vertical && 'ms-auto')}
+                className={clsx(
+                  chromeButtonClassName,
+                  'pointer-events-auto',
+                  !viewSettings.vertical && 'ms-auto',
+                )}
               >
                 <MdOutlineArrowOutward size={size18} />
               </button>

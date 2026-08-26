@@ -235,19 +235,13 @@ describe('FootnotePopup jump to location', () => {
     expect(screen.queryByLabelText('Jump to Location')).toBeNull();
   });
 
-  // The chrome floats over the popup document, so the document has to start
-  // clear of it -- but only when there is something to clear.
-  it('reserves room for the chrome only when a button will be shown', async () => {
+  // The chrome floats over the popup document rather than pushing it down:
+  // reserving a strip left a band of dead space above every short footnote.
+  it('reserves no room in the popup document for the chrome', async () => {
     await renderPopup();
-    const withButton = await openFootnotePopup();
-    expect(stylesOf(withButton)).toContain('padding-block-start');
-  });
-
-  it('reserves no room when the popup has no chrome at all', async () => {
-    hoisted.isLinkTargetVisible.mockReturnValue(false);
-    await renderPopup();
-    const bare = await openFootnotePopup('ch1.xhtml#B_1');
-    expect(stylesOf(bare)).not.toContain('padding-block-start');
+    const view = await openFootnotePopup();
+    expect(screen.getByLabelText('Jump to Location')).toBeTruthy();
+    expect(stylesOf(view)).not.toContain('padding-block-start');
   });
 
   it('offers no jump for popups synthesized from a data attribute', async () => {
