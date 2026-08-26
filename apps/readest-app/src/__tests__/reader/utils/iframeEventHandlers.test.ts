@@ -113,10 +113,13 @@ describe('iframeEventHandlers click gestures', () => {
     expect(types).not.toContain('iframe-single-click');
   });
 
-  test('side buttons use a configured shortcut or fall back to reader history', async () => {
+  test('iframe shortcuts are consumed synchronously or fall back to reader events', async () => {
     const { eventDispatcher } = await import('@/utils/event');
-    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatchSync').mockReturnValue(true);
-    const { handleAuxclick, handleMousedown, handleMouseup } = await importHandlers();
+    const dispatchSpy = vi
+      .spyOn(eventDispatcher, 'dispatchSync')
+      .mockImplementation((name) => name === 'iframe-shortcut-mouseup');
+    const { handleAuxclick, handleKeydown, handleMousedown, handleMouseup } =
+      await importHandlers();
     const consumedDown = mouseEvent({ button: 3 });
     const consumedUp = mouseEvent({ button: 3 });
     const consumedAux = mouseEvent({ button: 3 });
@@ -133,6 +136,29 @@ describe('iframeEventHandlers click gestures', () => {
     expect(consumedUp.preventDefault).toHaveBeenCalledOnce();
     expect(consumedAux.preventDefault).toHaveBeenCalledOnce();
     expect(postedTypes(postSpy)).not.toContain('iframe-mouseup');
+
+    dispatchSpy.mockImplementation((name) => name === 'iframe-shortcut-keydown');
+    const keyEvent = {
+      key: 'F5',
+      code: 'F5',
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      metaKey: false,
+      repeat: false,
+      target: null,
+      getModifierState: () => false,
+      preventDefault: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as KeyboardEvent;
+    handleKeydown('book-1', keyEvent);
+    expect(keyEvent.preventDefault).toHaveBeenCalledOnce();
+    expect(keyEvent.stopImmediatePropagation).toHaveBeenCalledOnce();
+    expect(
+      postSpy.mock.calls.find(
+        (call: unknown[]) => (call[0] as { type?: string }).type === 'iframe-keydown',
+      )?.[0],
+    ).toMatchObject({ type: 'iframe-keydown', handled: true });
 
     dispatchSpy.mockReturnValue(false);
     handleMouseup('book-1', mouseEvent({ button: 4 }));

@@ -153,11 +153,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       eventDispatcher.dispatch(action === 'next' ? 'paragraph-next' : 'paragraph-prev', {
         bookKey: sideBarBookKey,
       });
-      return;
+      return true;
     }
-    if (moveReadingRuler('up')) return;
-    if (view?.renderer.scrolled && event instanceof MessageEvent) return;
+    if (moveReadingRuler('up')) return true;
+    if (view?.renderer.scrolled && event instanceof MessageEvent) return false;
     viewPagination(view, viewSettings, 'up', 'pan', distance);
+    return true;
   };
 
   const goDown = (event?: KeyboardEvent | MessageEvent) => {
@@ -169,11 +170,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       eventDispatcher.dispatch(action === 'prev' ? 'paragraph-prev' : 'paragraph-next', {
         bookKey: sideBarBookKey,
       });
-      return;
+      return true;
     }
-    if (moveReadingRuler('down')) return;
-    if (view?.renderer.scrolled && event instanceof MessageEvent) return;
+    if (moveReadingRuler('down')) return true;
+    if (view?.renderer.scrolled && event instanceof MessageEvent) return false;
     viewPagination(view, viewSettings, 'down', 'pan', distance);
+    return true;
   };
 
   const goPrevSection = () => {
@@ -247,23 +249,20 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     window.location.reload();
   };
 
-  const toggleFullscreen = async () => {
-    if (isTauriAppPlatform()) {
-      await tauriHandleToggleFullScreen();
-    }
+  const toggleFullscreen = () => {
+    if (!isTauriAppPlatform()) return false;
+    return tauriHandleToggleFullScreen().then(() => true);
   };
 
-  const closeWindow = async () => {
-    if (isTauriAppPlatform()) {
-      await tauriHandleClose();
-    }
+  const closeWindow = () => {
+    if (!isTauriAppPlatform()) return false;
+    return tauriHandleClose().then(() => true);
   };
 
-  const quitApp = async () => {
+  const quitApp = () => {
     // on web platform use browser's default shortcut to close the tab
-    if (isTauriAppPlatform()) {
-      await tauriQuitApp();
-    }
+    if (!isTauriAppPlatform()) return false;
+    return tauriQuitApp().then(() => true);
   };
 
   const showSearchBar = () => {
@@ -322,12 +321,13 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   };
 
   const toggleToolbar = () => {
-    if (!sideBarBookKey) return;
+    if (!sideBarBookKey) return false;
     // Don't intercept Enter when a button is focused (let native click fire)
     const active = document.activeElement;
-    if (active && active.tagName === 'BUTTON') return;
+    if (active && active.tagName === 'BUTTON') return false;
     const { hoveredBookKey, setHoveredBookKey } = useReaderStore.getState();
     setHoveredBookKey(hoveredBookKey === sideBarBookKey ? '' : sideBarBookKey);
+    return true;
   };
 
   const toggleTTS = () => {

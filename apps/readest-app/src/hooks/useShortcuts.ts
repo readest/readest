@@ -9,10 +9,20 @@ export type KeyActionHandlers = {
   ) => void | boolean | Promise<void | boolean>;
 };
 
+const isInteractiveTarget = (target: EventTarget | null): boolean => {
+  const element = target as HTMLElement | null;
+  return !!element?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(element?.tagName ?? '');
+};
+
+const isNativeActivation = (event: KeyboardEvent): boolean => {
+  const target = event.target as HTMLElement | null;
+  return /^(A|BUTTON)$/.test(target?.tagName ?? '') && (event.key === 'Enter' || event.key === ' ');
+};
+
 const useShortcuts = (
   actions: KeyActionHandlers,
   dependencies: React.DependencyList = [],
-  options: { allowInInputs?: boolean } = {},
+  options: { allowInInputs?: boolean; capture?: boolean } = {},
 ) => {
   const [shortcuts, setShortcuts] = useState<ShortcutConfig>(loadShortcuts);
 
@@ -32,13 +42,7 @@ const useShortcuts = (
     };
   }, []);
 
-  const processKeyEvent = (
-    eventLike: ShortcutEventLike,
-    event: KeyboardEvent | MessageEvent,
-    consumeOnMatch = false,
-  ) => {
-    // FIXME: This is a temporary fix to disable Back button navigation
-    if (eventLike.key.toLowerCase() === 'backspace') return true;
+  const processKeyEvent = (eventLike: ShortcutEventLike, event: KeyboardEvent | MessageEvent) => {
     for (const [actionName, actionHandler] of Object.entries(actions)) {
       const shortcutKey = actionName as keyof ShortcutConfig;
       const handler = actionHandler as KeyActionHandlers[keyof ShortcutConfig];
@@ -46,31 +50,38 @@ const useShortcuts = (
       // console.log('Checking action:', shortcutKey);
       if (handler && shortcutEntry?.keys && matchesShortcut(eventLike, shortcutEntry.keys)) {
         const result = handler(event);
-        if (result || (consumeOnMatch && result !== false)) {
-          return true;
-        }
+        if (result !== false) return true;
       }
     }
-    return false;
+    // Keep Backspace from navigating away when no action claims it.
+    return eventLike.key.toLowerCase() === 'backspace';
   };
 
   const unifiedHandleKeyDown = (event: KeyboardEvent | MessageEvent) => {
+    if (document.querySelector('[data-shortcut-recording="true"]')) return;
+
     // Check if the focus is on an input, textarea, or contenteditable element
-    const activeElement = document.activeElement as HTMLElement;
-    const isInteractiveElement =
-      activeElement.tagName === 'INPUT' ||
-      activeElement.tagName === 'TEXTAREA' ||
-      activeElement.isContentEditable;
+    const activeElement = document.activeElement as HTMLElement | null;
+    const isInteractiveElement = isInteractiveTarget(activeElement);
+    const iframeInteractiveTarget =
+      event instanceof MessageEvent &&
+      event.data?.type === 'iframe-keydown' &&
+      !!event.data.interactiveTarget;
 
     const isNoteEditor =
-      activeElement.tagName === 'TEXTAREA' && activeElement.classList.contains('note-editor');
+      activeElement?.tagName === 'TEXTAREA' && activeElement.classList.contains('note-editor');
 
-    if (isInteractiveElement && !isNoteEditor && !options.allowInInputs) {
+    if (
+      ((isInteractiveElement && !isNoteEditor) || iframeInteractiveTarget) &&
+      !options.allowInInputs
+    ) {
       return; // Skip handling if the user is typing in an input, textarea, or contenteditable
     }
 
     if (event instanceof KeyboardEvent) {
       const { key, ctrlKey, altKey, metaKey, shiftKey } = event;
+
+      if (isNativeActivation(event) && !options.allowInInputs) return;
 
       if (isNoteEditor && !((key === 'Enter' && ctrlKey) || key == 'Escape')) {
         return;
@@ -98,6 +109,7 @@ const useShortcuts = (
       event.data &&
       event.data.type === 'iframe-keydown'
     ) {
+      if (event.data.handled) return;
       const { key, ctrlKey, altKey, metaKey, shiftKey, altGraphKey } = event.data;
       processKeyEvent({ key, ctrlKey, altKey, metaKey, shiftKey, altGraphKey }, event);
     }
@@ -129,7 +141,7 @@ const useShortcuts = (
     const message = new MessageEvent('shortcut-mouseup', {
       data: { type: 'shortcut-mouseup', button: event.button },
     });
-    if (processKeyEvent(eventLike, message, true)) event.stopImmediatePropagation();
+    if (processKeyEvent(eventLike, message)) event.stopImmediatePropagation();
   };
 
   const handleIframeMouseUp = (customEvent: CustomEvent) => {
@@ -144,27 +156,64 @@ const useShortcuts = (
         button: detail.event.button,
       },
     });
-    return processKeyEvent(eventLike, message, true);
+    return processKeyEvent(eventLike, message);
+  };
+
+  const handleIframeKeyDown = (customEvent: CustomEvent) => {
+    const detail = customEvent.detail as { bookKey?: string; event?: KeyboardEvent } | undefined;
+    if (!detail?.event) return false;
+    if (
+      (isInteractiveTarget(detail.event.target) || isNativeActivation(detail.event)) &&
+      !options.allowInInputs
+    ) {
+      return false;
+    }
+    const { key, code, ctrlKey, altKey, metaKey, shiftKey, repeat } = detail.event;
+    const eventLike: ShortcutEventLike = {
+      key,
+      ctrlKey,
+      altKey,
+      metaKey,
+      shiftKey,
+      altGraphKey: detail.event.getModifierState('AltGraph'),
+    };
+    const message = new MessageEvent('iframe-keydown', {
+      data: {
+        type: 'iframe-keydown',
+        bookKey: detail.bookKey,
+        key,
+        code,
+        ctrlKey,
+        altKey,
+        metaKey,
+        shiftKey,
+        altGraphKey: eventLike.altGraphKey,
+        repeat,
+      },
+    });
+    return processKeyEvent(eventLike, message);
   };
 
   useEffect(() => {
-    window.addEventListener('keydown', unifiedHandleKeyDown);
+    window.addEventListener('keydown', unifiedHandleKeyDown, options.capture);
     window.addEventListener('message', unifiedHandleKeyDown);
     window.addEventListener('mousedown', handleMouseEvent);
     window.addEventListener('mouseup', handleMouseEvent);
     window.addEventListener('auxclick', handleMouseEvent);
     eventDispatcher.onSync('iframe-shortcut-mouseup', handleIframeMouseUp);
+    eventDispatcher.onSync('iframe-shortcut-keydown', handleIframeKeyDown);
 
     return () => {
-      window.removeEventListener('keydown', unifiedHandleKeyDown);
+      window.removeEventListener('keydown', unifiedHandleKeyDown, options.capture);
       window.removeEventListener('message', unifiedHandleKeyDown);
       window.removeEventListener('mousedown', handleMouseEvent);
       window.removeEventListener('mouseup', handleMouseEvent);
       window.removeEventListener('auxclick', handleMouseEvent);
       eventDispatcher.offSync('iframe-shortcut-mouseup', handleIframeMouseUp);
+      eventDispatcher.offSync('iframe-shortcut-keydown', handleIframeKeyDown);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shortcuts, options.allowInInputs, ...dependencies]);
+  }, [shortcuts, options.allowInInputs, options.capture, ...dependencies]);
 };
 
 export default useShortcuts;

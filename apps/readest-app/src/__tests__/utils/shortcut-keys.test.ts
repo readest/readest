@@ -5,6 +5,7 @@ import {
   getShortcutFromKeyboardEvent,
   getShortcutFromMouseEvent,
   matchesShortcut,
+  normalizeShortcut,
 } from '../../utils/shortcutKeys';
 
 const evt = (
@@ -26,8 +27,8 @@ const evt = (
 
 describe('formatKeyForDisplay', () => {
   describe('Mac platform', () => {
-    it('maps ctrl to ⌘', () => {
-      expect(formatKeyForDisplay('ctrl+f', true)).toBe('⌘F');
+    it('maps ctrl to ⌃', () => {
+      expect(formatKeyForDisplay('ctrl+f', true)).toBe('⌃F');
     });
 
     it('maps cmd to ⌘', () => {
@@ -193,6 +194,11 @@ describe('shortcut recording', () => {
     expect(getShortcutFromKeyboardEvent(evt('ö', { ctrlKey: true }))).toBe('ctrl+ö');
     expect(getShortcutFromKeyboardEvent(evt('+', { shiftKey: true }))).toBe('shift+plus');
     expect(
+      getShortcutFromKeyboardEvent(
+        new KeyboardEvent('keydown', { key: 'P', ctrlKey: true, shiftKey: true }),
+      ),
+    ).toBe('ctrl+shift+P');
+    expect(
       getShortcutFromKeyboardEvent({
         ...evt('@', { ctrlKey: true, altKey: true }),
         altGraphKey: true,
@@ -205,6 +211,9 @@ describe('shortcut recording', () => {
 
     expect(formatKeyForDisplay('shift+plus', false)).toBe('Shift++');
     expect(formatKeyForDisplay('MouseX1', false)).toBe('Mouse X1');
+    expect(matchesShortcut(evt('+', { shiftKey: true }), ['shift+plus'])).toBe(true);
+    expect(matchesShortcut(evt('+', { shiftKey: true }), ['shift+='])).toBe(true);
+    expect(normalizeShortcut('shift+=')).toBe(normalizeShortcut('shift+plus'));
     expect(
       matchesShortcut({ ...evt('@', { ctrlKey: true, altKey: true }), altGraphKey: true }, [
         'altgr+@',

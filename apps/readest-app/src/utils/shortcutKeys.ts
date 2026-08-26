@@ -1,5 +1,5 @@
 const MODIFIER_MAP_MAC: Record<string, string> = {
-  ctrl: '⌘',
+  ctrl: '⌃',
   cmd: '⌘',
   alt: '⌥',
   opt: '⌥',
@@ -84,20 +84,22 @@ type MouseShortcutEventLike = Pick<MouseEvent, 'button'> &
 
 const parseShortcut = (shortcut: string) => {
   const keys = shortcut.toLowerCase().split('+');
+  const shiftKey = keys.includes('shift');
+  const key = keys.find((part) => !MODIFIERS.has(part));
   return {
     ctrlKey: keys.includes('ctrl'),
     altKey: keys.includes('alt') || keys.includes('opt'),
     altGraphKey: keys.includes('altgr'),
     metaKey: keys.includes('meta') || keys.includes('cmd'),
-    shiftKey: keys.includes('shift'),
-    key: keys.find((k) => !MODIFIERS.has(k)),
+    shiftKey,
+    key: shiftKey && key === '=' ? 'plus' : key,
   };
 };
 
 // Whether a keyboard event matches any of the given shortcut strings. `alt`/`opt`
 // and `cmd`/`meta` are treated as equivalent, matching how shortcuts are authored.
 export const matchesShortcut = (event: ShortcutEventLike, keys: string[]): boolean => {
-  const key = event.key.toLowerCase();
+  const key = event.key === '+' ? 'plus' : event.key.toLowerCase();
   const altGraphKey = !!event.altGraphKey;
   return keys.some((shortcut) => {
     const parsed = parseShortcut(shortcut);
@@ -135,7 +137,13 @@ export const getShortcutFromKeyboardEvent = (event: KeyboardShortcutEventLike): 
     return null;
   }
   const altGraphKey = !!event.altGraphKey || event.getModifierState?.('AltGraph') === true;
-  return serializeShortcut(event.key, { ...event, altGraphKey });
+  return serializeShortcut(event.key, {
+    ctrlKey: event.ctrlKey,
+    altKey: event.altKey,
+    metaKey: event.metaKey,
+    shiftKey: event.shiftKey,
+    altGraphKey,
+  });
 };
 
 export const getShortcutFromMouseEvent = (event: MouseShortcutEventLike): string | null => {

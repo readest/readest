@@ -241,7 +241,28 @@ const getKeyStatus = (event?: MouseEvent | WheelEvent | TouchEvent) => {
 export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
   const target = event.target as HTMLElement | null;
   const interactiveTarget =
-    !!target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName ?? '');
+    !!target?.isContentEditable ||
+    /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName ?? '') ||
+    (/^(A|BUTTON)$/.test(target?.tagName ?? '') && (event.key === 'Enter' || event.key === ' '));
+  const postKeydown = (handled: boolean) => {
+    window.postMessage(
+      {
+        type: 'iframe-keydown',
+        bookKey,
+        key: event.key,
+        code: event.code,
+        ctrlKey: event.ctrlKey,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+        metaKey: event.metaKey,
+        altGraphKey: event.getModifierState('AltGraph'),
+        repeat: event.repeat,
+        interactiveTarget,
+        handled,
+      },
+      '*',
+    );
+  };
   keyboardState = {
     key: event.key,
     code: event.code,
@@ -263,25 +284,18 @@ export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
   if (eventDispatcher.dispatchSync('iframe-page-turn-keydown', { bookKey, event })) {
     event.preventDefault();
     event.stopImmediatePropagation();
+    postKeydown(true);
     return;
   }
 
-  window.postMessage(
-    {
-      type: 'iframe-keydown',
-      bookKey,
-      key: event.key,
-      code: event.code,
-      ctrlKey: event.ctrlKey,
-      shiftKey: event.shiftKey,
-      altKey: event.altKey,
-      metaKey: event.metaKey,
-      altGraphKey: event.getModifierState('AltGraph'),
-      repeat: event.repeat,
-      interactiveTarget,
-    },
-    '*',
-  );
+  if (eventDispatcher.dispatchSync('iframe-shortcut-keydown', { bookKey, event })) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    postKeydown(true);
+    return;
+  }
+
+  postKeydown(false);
 };
 
 export const handleKeyup = (bookKey: string, event: KeyboardEvent) => {

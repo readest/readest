@@ -147,13 +147,16 @@ const SideBar = ({}) => {
   }, [sideBarBookKey, clearSearch]);
 
   const handleHideSideBar = useCallback(() => {
+    if (!isSideBarVisible) return false;
     if (searchTermRef.current) {
       handleHideSearchBar();
-    } else if (!isSideBarPinned) {
-      setSideBarVisible(false);
+      return true;
     }
+    if (isSideBarPinned) return false;
+    setSideBarVisible(false);
+    return true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sideBarBookKey, isSideBarPinned]);
+  }, [sideBarBookKey, isSideBarPinned, isSideBarVisible]);
 
   useShortcuts({ onShowSearchBar: handleShowSearchBar, onEscape: handleHideSideBar }, [
     handleHideSideBar,

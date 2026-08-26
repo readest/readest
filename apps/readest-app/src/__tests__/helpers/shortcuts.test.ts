@@ -128,19 +128,15 @@ describe('getShortcutsForDisplay', () => {
       'Selection',
       'Zoom',
       'Window',
+      'Notes',
     ]);
   });
 
-  it('excludes entries with empty section', async () => {
+  it('assigns every action to a visible section', async () => {
     const mod = await getModule();
-    const result = mod.getShortcutsForDisplay(true);
-    const allDescriptions = result.flatMap((s) => s.items.map((i) => i.description));
-    // onEscape and onSaveNote have empty section, should be excluded
     const shortcuts = mod.loadShortcuts();
     const hiddenEntries = Object.values(shortcuts).filter((e) => e.section === '');
-    for (const hidden of hiddenEntries) {
-      expect(allDescriptions).not.toContain(hidden.description);
-    }
+    expect(hiddenEntries).toEqual([]);
   });
 
   it('each item has a description and non-empty keys', async () => {

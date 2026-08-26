@@ -368,6 +368,7 @@ export const usePagination = (
   // All resolve through the shared binding registry. Suppressed while the
   // toolbar is visible so D-pad keys keep driving toolbar spatial navigation.
   const handleHardwarePageTurn = (candidate: KeyCandidate, execute = true): boolean => {
+    if (document.querySelector('[data-shortcut-recording="true"]')) return false;
     const settings = useSettingsStore.getState().settings.hardwarePageTurner;
     if (!settings?.enabled) return false;
     if (useReaderStore.getState().hoveredBookKey) return false;
@@ -423,7 +424,11 @@ export const usePagination = (
     const event = detail?.event;
     if (detail?.bookKey !== bookKey || !event) return false;
     const target = event.target as HTMLElement | null;
-    if (target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName ?? '')) {
+    if (
+      target?.isContentEditable ||
+      /^(INPUT|TEXTAREA|SELECT)$/.test(target?.tagName ?? '') ||
+      (/^(A|BUTTON)$/.test(target?.tagName ?? '') && (event.key === 'Enter' || event.key === ' '))
+    ) {
       return false;
     }
     return handleHardwarePageTurn(normalizeDomKeyEvent(event), !event.repeat);
@@ -440,7 +445,7 @@ export const usePagination = (
       candidate = normalizeDomKeyEvent(event);
       execute = !event.repeat;
     } else if (event.data?.type === 'iframe-keydown' && event.data.bookKey === bookKey) {
-      if (event.data.interactiveTarget || event.data.repeat) return;
+      if (event.data.handled || event.data.interactiveTarget || event.data.repeat) return;
       const id = event.data.code || event.data.key;
       if (typeof id !== 'string' || !id) return;
       candidate = normalizeDomKeyEvent(event.data);

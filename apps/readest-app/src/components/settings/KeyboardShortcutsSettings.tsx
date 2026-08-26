@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Alert from '@/components/Alert';
 import ModalPortal from '@/components/ModalPortal';
 import {
   getDefaultShortcuts,
   getShortcutConflicts,
+  isShortcutCustomized,
   loadShortcuts,
   resetShortcutBinding,
   saveShortcuts,
@@ -21,10 +21,13 @@ import {
   getShortcutFromKeyboardEvent,
   getShortcutFromMouseEvent,
 } from '@/utils/shortcutKeys';
+import { MdClose, MdRestartAlt } from 'react-icons/md';
 import SubPageHeader from './SubPageHeader';
 import { BoxedList, SettingsRow } from './primitives';
 
 const LEARN_TIMEOUT_MS = 8000;
+const ROW_ACTION_CLASS =
+  'touch-target hover:bg-base-200/60 focus-visible:bg-base-200/60 flex h-8 min-h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none';
 
 type PendingReplacement = {
   action: ShortcutAction;
@@ -45,6 +48,7 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
   const [pendingReplacement, setPendingReplacement] = useState<PendingReplacement | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const replacementDialogRef = useRef<HTMLDivElement>(null);
   useKeyDownActions({ onCancel: onBack, enabled: !listening && !pendingReplacement });
 
   useEffect(() => {
@@ -60,6 +64,39 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
     });
     return () => cancelAnimationFrame(frame);
   }, []);
+
+  useEffect(() => {
+    if (!pendingReplacement) return;
+    const dialog = replacementDialogRef.current;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const buttons = dialog?.querySelectorAll<HTMLButtonElement>('button:not([disabled])');
+    buttons?.[0]?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        setPendingReplacement(null);
+        return;
+      }
+      if (event.key !== 'Tab' || !buttons?.length) return;
+      const first = buttons[0]!;
+      const last = buttons[buttons.length - 1]!;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    dialog?.addEventListener('keydown', handleKeyDown);
+    return () => {
+      dialog?.removeEventListener('keydown', handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [pendingReplacement]);
 
   const persist = (next: ShortcutConfig) => {
     shortcutsRef.current = next;
@@ -143,15 +180,9 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listening]);
 
-  const defaults = getDefaultShortcuts();
-  const isCustomized = (action: ShortcutAction) => {
-    const keys = shortcuts[action].keys;
-    const defaultKeys = defaults[action].keys;
-    return (
-      keys.length !== defaultKeys.length || keys.some((key, index) => key !== defaultKeys[index])
-    );
-  };
-  const hasCustomShortcuts = (Object.keys(shortcuts) as ShortcutAction[]).some(isCustomized);
+  const hasCustomShortcuts = (Object.keys(shortcuts) as ShortcutAction[]).some((action) =>
+    isShortcutCustomized(shortcuts, action),
+  );
 
   const resetAll = () => {
     stopListening();
@@ -171,7 +202,7 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
   };
 
   return (
-    <div ref={rootRef} className='w-full'>
+    <div ref={rootRef} className='w-full' data-shortcut-recording={listening ? 'true' : undefined}>
       <SubPageHeader
         parentLabel={_('Behavior')}
         currentLabel={_('Keyboard Shortcuts')}
@@ -180,7 +211,7 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
         rightSlot={
           <button
             type='button'
-            className='btn btn-ghost btn-xs'
+            className='btn btn-ghost btn-sm h-8 min-h-8 px-2'
             onClick={resetAll}
             disabled={!hasCustomShortcuts}
           >
@@ -206,31 +237,33 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
                   <SettingsRow
                     key={action}
                     label={_(entry.description)}
-                    className='flex-wrap py-2'
                     data-setting-id={`settings.control.keyboardShortcuts.${action}`}
                   >
-                    <div className='ms-auto flex max-w-full flex-wrap items-center justify-end gap-2'>
-                      {isCustomized(action) && !isListening && (
+                    <div className='ms-auto flex max-w-[60%] shrink-0 items-center justify-end gap-1'>
+                      {isShortcutCustomized(shortcuts, action) && !isListening && (
                         <button
                           type='button'
-                          className='text-base-content/65 hover:text-base-content text-[0.8em] focus-visible:underline focus-visible:outline-none'
+                          className={ROW_ACTION_CLASS}
+                          aria-label={`${_('Reset')}: ${_(entry.description)}`}
+                          title={_('Reset')}
                           onClick={() =>
                             persist(resetShortcutBinding(shortcutsRef.current, action))
                           }
                         >
-                          {_('Reset')}
+                          <MdRestartAlt aria-hidden='true' className='h-4 w-4' />
                         </button>
                       )}
                       {entry.keys.length > 0 && !isListening && (
                         <button
                           type='button'
-                          className='text-base-content/65 hover:text-base-content text-[0.8em] focus-visible:underline focus-visible:outline-none'
+                          className={ROW_ACTION_CLASS}
                           aria-label={`${_('Clear')}: ${_(entry.description)}`}
+                          title={_('Clear')}
                           onClick={() =>
                             persist(setShortcutBinding(shortcutsRef.current, action, null))
                           }
                         >
-                          {_('Clear')}
+                          <MdClose aria-hidden='true' className='h-4 w-4' />
                         </button>
                       )}
                       <button
@@ -238,10 +271,11 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
                         className={
                           isListening
                             ? 'btn btn-contrast btn-sm h-8 min-h-8'
-                            : 'eink-bordered border-base-300 bg-base-200/70 hover:bg-base-300/70 min-h-8 rounded-md border px-2 text-[0.8em] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-base-content/15'
+                            : 'hover:bg-base-200/60 focus-visible:bg-base-200/60 min-h-8 min-w-0 flex-1 truncate rounded-md px-2 text-end text-[0.8em] transition-colors duration-150 focus-visible:outline-none'
                         }
                         aria-pressed={isListening}
                         aria-label={`${_(entry.description)}: ${isListening ? _('Listening…') : bindingLabel || _('Set key')}`}
+                        title={bindingLabel || _('Set key')}
                         onClick={() => (isListening ? stopListening() : setListening(action))}
                       >
                         {isListening ? _('Listening…') : bindingLabel || _('Set key')}
@@ -257,19 +291,45 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
 
       {pendingReplacement && (
         <ModalPortal>
-          <Alert
-            title={_('Replace shortcut?')}
-            message={_('The shortcut {{shortcut}} is already assigned to {{actions}}.', {
-              shortcut: formatKeyForDisplay(pendingReplacement.binding, isMac),
-              actions: pendingReplacement.conflicts
-                .map((action) => _(shortcuts[action].description))
-                .join(', '),
-            })}
-            confirmLabel={_('Replace')}
-            confirmButtonClassName='btn-contrast'
-            onCancel={() => setPendingReplacement(null)}
-            onConfirm={confirmReplacement}
-          />
+          <div
+            ref={replacementDialogRef}
+            role='alertdialog'
+            aria-modal='true'
+            aria-labelledby='shortcut-replacement-title'
+            aria-describedby='shortcut-replacement-description'
+            className='modal-box bg-base-100 w-[min(420px,calc(100vw-2rem))] rounded-2xl p-5'
+          >
+            <h3 id='shortcut-replacement-title' className='mb-1.5 font-semibold tracking-tight'>
+              {_('Replace shortcut?')}
+            </h3>
+            <p
+              id='shortcut-replacement-description'
+              className='text-base-content/70 leading-relaxed'
+            >
+              {_('The shortcut {{shortcut}} is already assigned to {{actions}}.', {
+                shortcut: formatKeyForDisplay(pendingReplacement.binding, isMac),
+                actions: pendingReplacement.conflicts
+                  .map((action) => _(shortcuts[action].description))
+                  .join(', '),
+              })}
+            </p>
+            <div className='mt-5 flex justify-end gap-2'>
+              <button
+                type='button'
+                className='btn btn-ghost btn-sm h-8 min-h-8'
+                onClick={() => setPendingReplacement(null)}
+              >
+                {_('Cancel')}
+              </button>
+              <button
+                type='button'
+                className='btn btn-contrast btn-sm h-8 min-h-8'
+                onClick={confirmReplacement}
+              >
+                {_('Replace')}
+              </button>
+            </div>
+          </div>
         </ModalPortal>
       )}
     </div>

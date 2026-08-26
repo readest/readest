@@ -1571,34 +1571,52 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   useShortcuts(
     {
       onHighlightSelection: () => {
+        if (!selection?.text) return false;
         handleHighlight(false, 'highlight');
+        return true;
       },
       onUnderlineSelection: () => {
+        if (!selection?.text) return false;
         handleHighlight(false, 'underline');
+        return true;
       },
       onAnnotateSelection: () => {
+        if (!selection?.text || (selection.popup && !selection.cfi)) return false;
         handleAnnotate();
+        return true;
       },
       onSearchSelection: () => {
+        if (!selection?.text) return false;
         handleSearch();
+        return true;
       },
       onCopySelection: () => {
+        if (!selection?.text) return false;
         handleCopy(false);
+        return true;
       },
       onTranslateSelection: () => {
+        if (!selection?.text) return false;
         handleTranslation();
+        return true;
       },
       onDictionarySelection: () => {
+        if (!selection?.text) return false;
         handleDictionary();
+        return true;
       },
       onReadAloudSelection: () => {
+        if (!selection?.text || selection.popup) return false;
         handleSpeakText();
+        return true;
       },
       onProofreadSelection: () => {
+        if (selection?.popup && !selection.cfi) return false;
         handleProofread();
+        return true;
       },
     },
-    [selection?.text],
+    [selection?.text, selection?.cfi, selection?.popup],
   );
 
   const handleImportAnnotations = (event: CustomEvent) => {

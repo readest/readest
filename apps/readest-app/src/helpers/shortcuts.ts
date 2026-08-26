@@ -56,7 +56,7 @@ const DEFAULT_SHORTCUTS = {
   onTTSPlayPause: {
     keys: [' '],
     description: _('Play / Pause TTS'),
-    section: '',
+    section: 'Text to Speech',
   },
   onTTSGoNextSentence: {
     keys: ['ctrl+]', 'cmd+]'],
@@ -303,12 +303,12 @@ const DEFAULT_SHORTCUTS = {
   onSaveNote: {
     keys: ['ctrl+Enter'],
     description: _('Save Note'),
-    section: '',
+    section: 'Notes',
   },
   onEscape: {
     keys: ['Escape'],
     description: _('Close'),
-    section: '',
+    section: 'General',
   },
 };
 
@@ -325,6 +325,7 @@ export const SHORTCUT_SECTIONS = [
   _('Selection'),
   _('Zoom'),
   _('Window'),
+  _('Notes'),
 ] as const;
 
 type ShortcutDisplayItem = {
@@ -361,13 +362,15 @@ export const getShortcutsForDisplay = (isMac: boolean): ShortcutDisplaySection[]
   });
 };
 
-export const getDefaultShortcuts = (): ShortcutConfig =>
+const cloneShortcuts = (shortcuts: ShortcutConfig): ShortcutConfig =>
   Object.fromEntries(
-    Object.entries(DEFAULT_SHORTCUTS).map(([action, entry]) => [
+    Object.entries(shortcuts).map(([action, entry]) => [
       action,
       { ...entry, keys: [...entry.keys] },
     ]),
   ) as ShortcutConfig;
+
+export const getDefaultShortcuts = (): ShortcutConfig => cloneShortcuts(DEFAULT_SHORTCUTS);
 
 const isShortcutAction = (value: string): value is ShortcutAction => value in DEFAULT_SHORTCUTS;
 
@@ -419,9 +422,7 @@ export const setShortcutBinding = (
   action: ShortcutAction,
   binding: string | null,
 ): ShortcutConfig => {
-  const result = Object.fromEntries(
-    Object.entries(shortcuts).map(([key, entry]) => [key, { ...entry, keys: [...entry.keys] }]),
-  ) as ShortcutConfig;
+  const result = cloneShortcuts(shortcuts);
   if (!binding) {
     result[action].keys = [];
     return result;
@@ -442,9 +443,7 @@ export const resetShortcutBinding = (
   shortcuts: ShortcutConfig,
   action: ShortcutAction,
 ): ShortcutConfig => {
-  const result = Object.fromEntries(
-    Object.entries(shortcuts).map(([key, entry]) => [key, { ...entry, keys: [...entry.keys] }]),
-  ) as ShortcutConfig;
+  const result = cloneShortcuts(shortcuts);
   const defaultKeys = new Set(DEFAULT_SHORTCUTS[action].keys.map(normalizeShortcut));
   for (const candidate of Object.keys(result) as ShortcutAction[]) {
     if (candidate === action) continue;
@@ -458,20 +457,24 @@ export const resetShortcutBinding = (
   return result;
 };
 
+export const isShortcutCustomized = (
+  shortcuts: ShortcutConfig,
+  action: ShortcutAction,
+): boolean => {
+  const keys = shortcuts[action].keys;
+  const defaultKeys = DEFAULT_SHORTCUTS[action].keys;
+  return (
+    keys.length !== defaultKeys.length || keys.some((key, index) => key !== defaultKeys[index])
+  );
+};
+
 // Save custom shortcuts to localStorage
 export const saveShortcuts = (shortcuts: ShortcutConfig) => {
   if (typeof localStorage === 'undefined') return;
   // Only persist bindings that differ from the defaults.
   const keysOnly: Record<string, string[]> = {};
   for (const action of Object.keys(DEFAULT_SHORTCUTS) as ShortcutAction[]) {
-    const keys = shortcuts[action].keys;
-    const defaultKeys = DEFAULT_SHORTCUTS[action].keys;
-    if (
-      keys.length !== defaultKeys.length ||
-      keys.some((key, index) => key !== defaultKeys[index])
-    ) {
-      keysOnly[action] = keys;
-    }
+    if (isShortcutCustomized(shortcuts, action)) keysOnly[action] = shortcuts[action].keys;
   }
   localStorage.setItem('customShortcuts', JSON.stringify(keysOnly));
   if (typeof window !== 'undefined') window.dispatchEvent(new Event('shortcutUpdate'));

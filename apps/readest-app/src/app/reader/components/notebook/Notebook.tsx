@@ -82,11 +82,11 @@ const Notebook: React.FC = ({}) => {
   };
 
   const handleHideNotebook = useCallback(() => {
-    if (!isNotebookPinned) {
-      setNotebookVisible(false);
-    }
+    if (!isNotebookVisible || isNotebookPinned) return false;
+    setNotebookVisible(false);
+    return true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNotebookPinned]);
+  }, [isNotebookVisible, isNotebookPinned]);
 
   useShortcuts({ onEscape: handleHideNotebook }, [handleHideNotebook]);
 

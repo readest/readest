@@ -181,7 +181,7 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
   };
 
   return (
-    <div className='space-y-2'>
+    <div className='space-y-2' data-shortcut-recording={listening ? 'true' : undefined}>
       <BoxedList
         title={_('Page Turner')}
         data-setting-id='settings.control.pageTurner'

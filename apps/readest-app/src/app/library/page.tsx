@@ -412,20 +412,17 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     },
   );
   useShortcuts({
-    onToggleFullscreen: async () => {
-      if (isTauriAppPlatform()) {
-        await tauriHandleToggleFullScreen();
-      }
+    onToggleFullscreen: () => {
+      if (!isTauriAppPlatform()) return false;
+      return tauriHandleToggleFullScreen().then(() => true);
     },
-    onCloseWindow: async () => {
-      if (isTauriAppPlatform()) {
-        await tauriHandleClose();
-      }
+    onCloseWindow: () => {
+      if (!isTauriAppPlatform()) return false;
+      return tauriHandleClose().then(() => true);
     },
-    onQuitApp: async () => {
-      if (isTauriAppPlatform()) {
-        await tauriQuitApp();
-      }
+    onQuitApp: () => {
+      if (!isTauriAppPlatform()) return false;
+      return tauriQuitApp().then(() => true);
     },
     onOpenFontLayoutSettings: () => {
       setSettingsDialogOpen(true);
