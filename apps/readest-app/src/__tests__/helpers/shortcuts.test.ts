@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 
 const getModule = async () => {
   return await import('../../helpers/shortcuts');
@@ -8,6 +8,10 @@ const getDefaults = async () => {
   const mod = await getModule();
   return mod.loadShortcuts();
 };
+
+beforeEach(() => {
+  localStorage.clear();
+});
 
 describe('Shortcut entry structure', () => {
   it('each shortcut entry has keys, description, and section', async () => {
@@ -172,5 +176,36 @@ describe('getShortcutsForDisplay', () => {
     expect(searchItem).toBeDefined();
     expect(searchItem!.keys.some((k) => k.includes('ctrl'))).toBe(true);
     expect(searchItem!.keys.some((k) => k.includes('cmd'))).toBe(false);
+  });
+});
+
+describe('shortcut customization', () => {
+  it('falls back safely when stored shortcuts are malformed', async () => {
+    localStorage.setItem('customShortcuts', '{not-json');
+
+    const shortcuts = await getDefaults();
+
+    expect(shortcuts.onToggleSideBar.keys).toEqual(['s']);
+  });
+
+  it('reassigns a binding, persists only overrides, and notifies mounted consumers', async () => {
+    const mod = await getModule();
+    const initial = mod.loadShortcuts();
+    const listener = vi.fn();
+    window.addEventListener('shortcutUpdate', listener);
+
+    const updated = mod.setShortcutBinding(initial, 'onToggleNotebook', 's');
+    mod.saveShortcuts(updated);
+
+    expect(initial.onToggleSideBar.keys).toEqual(['s']);
+    expect(updated.onToggleSideBar.keys).toEqual([]);
+    expect(updated.onToggleNotebook.keys).toEqual(['s']);
+    expect(JSON.parse(localStorage.getItem('customShortcuts')!)).toEqual({
+      onToggleSideBar: [],
+      onToggleNotebook: ['s'],
+    });
+    expect(listener).toHaveBeenCalledOnce();
+
+    window.removeEventListener('shortcutUpdate', listener);
   });
 });

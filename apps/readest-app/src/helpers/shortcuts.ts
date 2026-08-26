@@ -1,5 +1,5 @@
 import { stubTranslation as _ } from '@/utils/misc';
-import { filterPlatformKeys } from '@/utils/shortcutKeys';
+import { filterPlatformKeys, normalizeShortcut } from '@/utils/shortcutKeys';
 
 export type ShortcutEntry = {
   keys: string[];
@@ -16,6 +16,11 @@ const DEFAULT_SHORTCUTS = {
   onToggleSideBar: {
     keys: ['s'],
     description: _('Toggle Sidebar'),
+    section: 'General',
+  },
+  onOpenTableOfContents: {
+    keys: [],
+    description: _('Open Table of Contents'),
     section: 'General',
   },
   onToggleNotebook: {
@@ -311,6 +316,8 @@ export type ShortcutConfig = {
   [K in keyof typeof DEFAULT_SHORTCUTS]: ShortcutEntry;
 };
 
+export type ShortcutAction = keyof ShortcutConfig;
+
 export const SHORTCUT_SECTIONS = [
   _('General'),
   _('Navigation'),
@@ -337,6 +344,7 @@ export const getShortcutsForDisplay = (isMac: boolean): ShortcutDisplaySection[]
     for (const entry of Object.values(shortcuts)) {
       if (entry.section !== section) continue;
       const keys = filterPlatformKeys(entry.keys, isMac);
+      if (keys.length === 0) continue;
       const existing = itemMap.get(entry.description);
       if (existing) {
         // Merge keys for entries with the same description
@@ -353,29 +361,106 @@ export const getShortcutsForDisplay = (isMac: boolean): ShortcutDisplaySection[]
   });
 };
 
+export const getDefaultShortcuts = (): ShortcutConfig =>
+  Object.fromEntries(
+    Object.entries(DEFAULT_SHORTCUTS).map(([action, entry]) => [
+      action,
+      { ...entry, keys: [...entry.keys] },
+    ]),
+  ) as ShortcutConfig;
+
+const isShortcutAction = (value: string): value is ShortcutAction => value in DEFAULT_SHORTCUTS;
+
+const parseStoredShortcuts = (value: string | null): Record<string, string[]> => {
+  if (!value) return {};
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return Object.fromEntries(
+      Object.entries(parsed).filter(
+        (entry): entry is [string, string[]] =>
+          Array.isArray(entry[1]) && entry[1].every((key) => typeof key === 'string'),
+      ),
+    );
+  } catch {
+    return {};
+  }
+};
+
 // Load shortcuts from localStorage or fallback to defaults
 export const loadShortcuts = (): ShortcutConfig => {
-  if (typeof localStorage === 'undefined') return DEFAULT_SHORTCUTS;
-  const customShortcuts = JSON.parse(localStorage.getItem('customShortcuts') || '{}');
-  const result = { ...DEFAULT_SHORTCUTS };
+  const result = getDefaultShortcuts();
+  if (typeof localStorage === 'undefined') return result;
+  const customShortcuts = parseStoredShortcuts(localStorage.getItem('customShortcuts'));
   for (const [key, value] of Object.entries(customShortcuts)) {
-    const shortcutKey = key as keyof ShortcutConfig;
-    if (shortcutKey in result) {
+    if (isShortcutAction(key)) {
       // Custom overrides only replace keys, preserving description and section
-      if (Array.isArray(value)) {
-        result[shortcutKey] = { ...result[shortcutKey], keys: value };
-      }
+      result[key] = { ...result[key], keys: [...value] };
     }
   }
   return result;
 };
 
+export const getShortcutConflicts = (
+  shortcuts: ShortcutConfig,
+  action: ShortcutAction,
+  binding: string,
+): ShortcutAction[] => {
+  const normalizedBinding = normalizeShortcut(binding);
+  return (Object.keys(shortcuts) as ShortcutAction[]).filter(
+    (candidate) =>
+      candidate !== action &&
+      shortcuts[candidate].keys.some((key) => normalizeShortcut(key) === normalizedBinding),
+  );
+};
+
+export const setShortcutBinding = (
+  shortcuts: ShortcutConfig,
+  action: ShortcutAction,
+  binding: string | null,
+): ShortcutConfig => {
+  const result = Object.fromEntries(
+    Object.entries(shortcuts).map(([key, entry]) => [key, { ...entry, keys: [...entry.keys] }]),
+  ) as ShortcutConfig;
+  if (!binding) {
+    result[action].keys = [];
+    return result;
+  }
+
+  const normalizedBinding = normalizeShortcut(binding);
+  for (const candidate of Object.keys(result) as ShortcutAction[]) {
+    if (candidate === action) continue;
+    result[candidate].keys = result[candidate].keys.filter(
+      (key) => normalizeShortcut(key) !== normalizedBinding,
+    );
+  }
+  result[action].keys = [binding];
+  return result;
+};
+
+export const resetShortcutBinding = (
+  shortcuts: ShortcutConfig,
+  action: ShortcutAction,
+): ShortcutConfig => ({
+  ...shortcuts,
+  [action]: { ...shortcuts[action], keys: [...DEFAULT_SHORTCUTS[action].keys] },
+});
+
 // Save custom shortcuts to localStorage
 export const saveShortcuts = (shortcuts: ShortcutConfig) => {
-  // Only persist the keys arrays to localStorage
+  if (typeof localStorage === 'undefined') return;
+  // Only persist bindings that differ from the defaults.
   const keysOnly: Record<string, string[]> = {};
-  for (const [key, entry] of Object.entries(shortcuts)) {
-    keysOnly[key] = entry.keys;
+  for (const action of Object.keys(DEFAULT_SHORTCUTS) as ShortcutAction[]) {
+    const keys = shortcuts[action].keys;
+    const defaultKeys = DEFAULT_SHORTCUTS[action].keys;
+    if (
+      keys.length !== defaultKeys.length ||
+      keys.some((key, index) => key !== defaultKeys[index])
+    ) {
+      keysOnly[action] = keys;
+    }
   }
   localStorage.setItem('customShortcuts', JSON.stringify(keysOnly));
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('shortcutUpdate'));
 };
