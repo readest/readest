@@ -371,7 +371,7 @@ const BooknoteView: React.FC<{
   const isEmpty = sortedGroups.length === 0;
 
   return (
-    <div className='booknote-list rounded' role='tree'>
+    <div className='booknote-list rounded-sm' role='tree'>
       {type === 'annotation' && (
         <AnnotationsToolbar
           filterKind={filterKind}

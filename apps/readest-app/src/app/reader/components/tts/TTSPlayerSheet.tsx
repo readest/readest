@@ -284,7 +284,7 @@ const TTSPlayerSheet = ({
         type='button'
         aria-label={_('Close')}
         onClick={onClose}
-        className='bg-base-300/65 btn btn-ghost btn-circle absolute end-3 top-1 z-10 hidden h-6 min-h-6 w-6 focus:outline-none sm:flex'
+        className='bg-base-300/65 btn btn-ghost btn-circle absolute end-3 top-1 z-10 hidden h-6 min-h-6 w-6 focus:outline-hidden sm:flex'
       >
         <svg xmlns='http://www.w3.org/2000/svg' width='1em' height='1em' viewBox='0 0 24 24'>
           <path
@@ -299,7 +299,7 @@ const TTSPlayerSheet = ({
           type='button'
           aria-label={_('Go Back')}
           onClick={() => setView('main')}
-          className='btn btn-ghost btn-circle z-10 flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-none'
+          className='btn btn-ghost btn-circle z-10 flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-hidden'
         >
           <MdArrowBackIosNew size={iconSize24 * 0.8} className='rtl:rotate-180' />
         </button>
@@ -324,8 +324,8 @@ const TTSPlayerSheet = ({
       snapHeight={0.65}
       title={_('Read Aloud')}
       header={header}
-      boxClassName='sm:!h-auto sm:!max-h-[85%] sm:!w-[420px] sm:!min-w-0'
-      contentClassName='!px-4 sm:!px-4 mt-[-4px]'
+      boxClassName='sm:h-auto! sm:max-h-[85%]! sm:w-[420px]! sm:min-w-0!'
+      contentClassName='px-4! sm:px-4! mt-[-4px]'
       onClose={onClose}
     >
       {view === 'main' && (

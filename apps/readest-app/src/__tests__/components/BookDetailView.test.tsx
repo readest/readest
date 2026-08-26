@@ -122,9 +122,9 @@ describe('BookDetailView delete dropdown layout', () => {
     const menu = container.querySelector('.delete-menu');
     expect(menu).toBeTruthy();
     expect(menu!.className).not.toContain('dropdown-center');
-    // It should keep position: relative via the !relative override so it
+    // It should keep position: relative via the relative! override so it
     // anchors against the centered parent.
-    expect(menu!.className).toContain('!relative');
+    expect(menu!.className).toContain('relative!');
   });
 });
 

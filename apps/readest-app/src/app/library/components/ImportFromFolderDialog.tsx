@@ -328,7 +328,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
         title={_('Import Books')}
         onClose={onCancel}
         boxClassName={DIALOG_BOX_CLASS}
-        contentClassName='!px-6 !py-2'
+        contentClassName='px-6! py-2!'
       >
         <WatchedFoldersPane
           folders={watchedFolders}
@@ -356,7 +356,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
       title={_('Import Books')}
       onClose={onCancel}
       boxClassName={DIALOG_BOX_CLASS}
-      contentClassName='!px-6 !py-2'
+      contentClassName='px-6! py-2!'
     >
       <div className='flex flex-col gap-4 pt-2'>
         {/* Directory row — clickable input that pops the native folder
@@ -373,13 +373,13 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
               'eink-bordered flex w-full items-center gap-2 rounded-lg px-3 py-2.5',
               'text-start text-sm transition-colors duration-150',
               'border-base-300 bg-base-200/40 hover:bg-base-200/70',
-              'focus-visible:ring-primary/40 focus-visible:outline-none focus-visible:ring-2',
+              'focus-visible:ring-primary/40 focus-visible:outline-hidden focus-visible:ring-2',
               picking && 'opacity-60',
             )}
             title={directory || _('Choose a folder')}
             aria-label={_('Choose a folder')}
           >
-            <MdFolderOpen className='text-base-content/70 h-5 w-5 flex-shrink-0' />
+            <MdFolderOpen className='text-base-content/70 h-5 w-5 shrink-0' />
             <span className={clsx('min-w-0 flex-1 truncate', !directory && 'text-base-content/50')}>
               {directory || _('Choose a folder')}
             </span>
@@ -443,7 +443,7 @@ const ImportFromFolderDialog: React.FC<ImportFromFolderDialogProps> = ({
                 'no-spinner',
                 'h-full min-w-0 flex-1 rounded-s-lg bg-transparent',
                 'ps-2 pe-1 text-end text-sm',
-                'focus:outline-none',
+                'focus:outline-hidden',
               )}
               aria-label={_('Minimum file size (KB)')}
             />

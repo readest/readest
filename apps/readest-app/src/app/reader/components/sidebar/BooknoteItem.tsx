@@ -160,7 +160,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
       >
         <div className='flex w-full'>
           <TextEditor
-            className='!leading-normal'
+            className='leading-normal!'
             ref={editorRef}
             value={draftText}
             onChange={setDraftText}

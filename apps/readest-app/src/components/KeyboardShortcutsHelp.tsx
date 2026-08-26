@@ -55,7 +55,7 @@ export const KeyboardShortcutsHelp = () => {
                 {item.keys.map((key) => (
                   <kbd
                     key={key}
-                    className='border-base-300 bg-base-200 text-base-content inline-flex h-[22px] min-w-[22px] items-center justify-center rounded border px-1.5 text-xs shadow-sm'
+                    className='border-base-300 bg-base-200 text-base-content inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-sm border px-1.5 text-xs shadow-xs'
                     style={{ fontFamily: 'monospace' }}
                   >
                     {formatKeyForDisplay(key, isMac)}
@@ -118,7 +118,7 @@ export const KeyboardShortcutsHelp = () => {
       isOpen={isOpen}
       title={_('Keyboard Shortcuts')}
       onClose={handleClose}
-      boxClassName='sm:!w-[560px] md:!w-[780px] sm:!max-w-[90vw] sm:h-auto sm:!max-h-[80vh]'
+      boxClassName='sm:w-[560px]! md:w-[780px]! sm:max-w-[90vw]! sm:h-auto sm:max-h-[80vh]!'
     >
       {isOpen && (
         <div className='shortcuts-content pb-6 sm:pb-2'>

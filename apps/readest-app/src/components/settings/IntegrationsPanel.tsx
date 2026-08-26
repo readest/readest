@@ -814,12 +814,12 @@ const IntegrationRow: React.FC<IntegrationRowProps> = ({ icon: Icon, title, stat
       className={clsx(
         'group flex w-full items-center gap-3 px-4 py-3 text-left',
         'transition-colors duration-150',
-        'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
+        'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset',
       )}
     >
       <span
         className={clsx(
-          'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
           'bg-base-200 text-base-content/70',
           'transition-colors duration-150',
           'group-hover:bg-base-300/70',
@@ -831,7 +831,7 @@ const IntegrationRow: React.FC<IntegrationRowProps> = ({ icon: Icon, title, stat
         <SettingLabel>{title}</SettingLabel>
         <span className='text-base-content/65 truncate text-[0.85em]'>{status}</span>
       </div>
-      <MdChevronRight className='text-base-content/50 h-5 w-5 flex-shrink-0' />
+      <MdChevronRight className='text-base-content/50 h-5 w-5 shrink-0' />
     </button>
   );
 };
@@ -876,12 +876,12 @@ const CloudProviderRow: React.FC<CloudProviderRowProps> = ({
         onClick={onOpen}
         className={clsx(
           'flex min-w-0 flex-1 items-center gap-3 text-left',
-          'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
+          'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset',
         )}
       >
         <span
           className={clsx(
-            'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
             'bg-base-200 text-base-content/70',
             'transition-colors duration-150',
             'group-hover:bg-base-300/70',
@@ -897,7 +897,7 @@ const CloudProviderRow: React.FC<CloudProviderRowProps> = ({
       {badge && <span className='badge badge-sm badge-ghost shrink-0'>{badge}</span>}
       <input
         type='checkbox'
-        className='checkbox checkbox-sm flex-shrink-0'
+        className='checkbox checkbox-sm shrink-0'
         checked={checked}
         disabled={!canToggle}
         onChange={(e) => onToggle(e.target.checked)}
@@ -909,8 +909,8 @@ const CloudProviderRow: React.FC<CloudProviderRowProps> = ({
         onClick={onOpen}
         aria-label={title}
         className={clsx(
-          'text-base-content/50 hover:text-base-content/80 flex-shrink-0 rounded',
-          'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+          'text-base-content/50 hover:text-base-content/80 shrink-0 rounded-sm',
+          'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
         )}
       >
         <MdChevronRight className='h-5 w-5' />
@@ -943,7 +943,7 @@ const IntegrationToggleRow: React.FC<IntegrationToggleRowProps> = ({
     <label className='flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left'>
       <span
         className={clsx(
-          'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
           'bg-base-200 text-base-content/70',
         )}
       >
@@ -953,12 +953,7 @@ const IntegrationToggleRow: React.FC<IntegrationToggleRowProps> = ({
         <SettingLabel>{title}</SettingLabel>
         <span className='text-base-content/65 truncate text-[0.85em]'>{description}</span>
       </div>
-      <input
-        type='checkbox'
-        className='toggle flex-shrink-0'
-        checked={checked}
-        onChange={onChange}
-      />
+      <input type='checkbox' className='toggle shrink-0' checked={checked} onChange={onChange} />
     </label>
   );
 };

@@ -391,7 +391,7 @@ const Notebook: React.FC = ({}) => {
           onTouchStart={handleDragStart}
           onKeyDown={handleDragKeyDown}
         />
-        <div className='flex-shrink-0'>
+        <div className='shrink-0'>
           {isMobile && (
             <div
               role='slider'
@@ -434,7 +434,7 @@ const Notebook: React.FC = ({}) => {
             <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
           </div>
         ) : isNotesTabEmpty ? (
-          <div className='flex flex-grow items-center justify-center overflow-y-auto px-3'>
+          <div className='flex grow items-center justify-center overflow-y-auto px-3'>
             <EmptyState
               Icon={RiQuillPenLine}
               label={_('No Notes')}
@@ -442,7 +442,7 @@ const Notebook: React.FC = ({}) => {
             />
           </div>
         ) : (
-          <div className='flex-grow overflow-y-auto px-3'>
+          <div className='grow overflow-y-auto px-3'>
             {isSearchBarVisible && searchResults && !hasSearchResults && hasAnyNotes && (
               <div className='flex h-32 items-center justify-center text-gray-500'>
                 <p className='font-size-sm text-center'>{_('No notes match your search')}</p>
@@ -515,7 +515,7 @@ const Notebook: React.FC = ({}) => {
           </div>
         )}
         <div
-          className='flex-shrink-0'
+          className='shrink-0'
           style={{
             paddingBottom: `${(safeAreaInsets?.bottom || 0) / 2}px`,
           }}

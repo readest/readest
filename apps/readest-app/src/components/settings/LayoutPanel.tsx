@@ -510,11 +510,11 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           <SettingsRow label={_('Border Color')}>
             <div className='flex gap-4'>
               <button
-                className={`btn btn-circle btn-sm bg-red-300 hover:bg-red-500 ${borderColor === 'red' ? 'btn-active !bg-red-500' : ''}`}
+                className={`btn btn-circle btn-sm bg-red-300 hover:bg-red-500 ${borderColor === 'red' ? 'btn-active bg-red-500!' : ''}`}
                 onClick={() => setBorderColor('red')}
               ></button>
               <button
-                className={`btn btn-circle btn-sm bg-black/50 hover:bg-black ${borderColor === 'black' ? 'btn-active !bg-black' : ''}`}
+                className={`btn btn-circle btn-sm bg-black/50 hover:bg-black ${borderColor === 'black' ? 'btn-active bg-black!' : ''}`}
                 onClick={() => setBorderColor('black')}
               ></button>
             </div>

@@ -247,7 +247,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
             editMode ? 'sm:min-w-[600px] sm:max-w-[600px]' : 'sm:min-w-[480px] sm:max-w-[480px]',
             'sm:h-auto sm:max-h-[90%]',
           )}
-          contentClassName='!px-6 !py-4'
+          contentClassName='px-6! py-4!'
         >
           <div className='flex w-full select-text items-start justify-center'>
             {editMode && bookMeta ? (

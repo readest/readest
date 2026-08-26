@@ -122,7 +122,7 @@ const WebDAVForm: React.FC = () => {
               'h-10 rounded-lg px-4 text-sm font-medium',
               'text-error hover:bg-error/10',
               'transition-colors duration-150',
-              'focus-visible:ring-error/40 focus-visible:outline-none focus-visible:ring-2',
+              'focus-visible:ring-error/40 focus-visible:outline-hidden focus-visible:ring-2',
             )}
           >
             {_('Disconnect')}
@@ -148,7 +148,7 @@ const WebDAVForm: React.FC = () => {
           id='webdav-server-url'
           type='text'
           placeholder='https://dav.example.com'
-          className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+          className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
           spellCheck='false'
           value={url}
           onChange={(e) => setUrl(e.target.value)}
@@ -163,7 +163,7 @@ const WebDAVForm: React.FC = () => {
           id='webdav-username'
           type='text'
           placeholder={_('Your Username')}
-          className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+          className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
           spellCheck='false'
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -180,7 +180,7 @@ const WebDAVForm: React.FC = () => {
             id='webdav-password'
             type={showPassword ? 'text' : 'password'}
             placeholder={_('Your Password')}
-            className='input input-bordered eink-bordered h-11 w-full pe-11 text-sm focus:outline-none'
+            className='input eink-bordered h-11 w-full pe-11 text-sm focus:outline-hidden'
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete='current-password'
@@ -190,10 +190,10 @@ const WebDAVForm: React.FC = () => {
             onClick={() => setShowPassword((v) => !v)}
             className={clsx(
               'absolute end-2 top-1/2 -translate-y-1/2',
-              'flex h-8 w-8 items-center justify-center rounded',
+              'flex h-8 w-8 items-center justify-center rounded-sm',
               'text-base-content/60 hover:text-base-content',
               'hover:bg-base-200/60 transition-colors duration-150',
-              'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+              'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
             )}
             aria-label={showPassword ? _('Hide password') : _('Show password')}
             title={showPassword ? _('Hide password') : _('Show password')}
@@ -216,7 +216,7 @@ const WebDAVForm: React.FC = () => {
           id='webdav-root'
           type='text'
           placeholder='/'
-          className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+          className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
           spellCheck='false'
           value={rootPath}
           onChange={(e) => setRootPath(e.target.value)}
@@ -230,7 +230,7 @@ const WebDAVForm: React.FC = () => {
           className={clsx(
             'btn btn-contrast',
             'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
-            'focus-visible:ring-base-content/40 focus-visible:outline-none focus-visible:ring-2',
+            'focus-visible:ring-base-content/40 focus-visible:outline-hidden focus-visible:ring-2',
             isConnecting && 'opacity-60',
           )}
         >

@@ -76,7 +76,7 @@ export function FeedView({
   return (
     <div className='flex h-full flex-col'>
       {/* Header */}
-      <div className='opds-header flex-shrink-0 px-4 py-6'>
+      <div className='opds-header shrink-0 px-4 py-6'>
         {feed.metadata?.title && <h1 className='mb-2 text-xl font-bold'>{feed.metadata.title}</h1>}
         {feed.metadata?.subtitle && (
           <p className='text-base-content/70 text-sm'>{feed.metadata.subtitle}</p>
@@ -86,7 +86,7 @@ export function FeedView({
       <div className='flex min-h-0 flex-1 gap-6'>
         {/* Facets Sidebar */}
         {hasFacets && (
-          <aside className='hidden w-64 flex-shrink-0 overflow-y-auto lg:block'>
+          <aside className='hidden w-64 shrink-0 overflow-y-auto lg:block'>
             <div className='px-4'>
               {onAddCatalog && (
                 <div className='mb-4'>
@@ -119,7 +119,7 @@ export function FeedView({
                           <li key={linkIndex}>
                             <button
                               onClick={() => handleNavigationClick(href)}
-                              className={`w-full rounded px-3 py-1.5 text-left text-sm transition-colors ${
+                              className={`w-full rounded-sm px-3 py-1.5 text-left text-sm transition-colors ${
                                 isActive
                                   ? 'bg-primary text-primary-content font-medium'
                                   : 'hover:bg-base-200'
@@ -149,7 +149,7 @@ export function FeedView({
         <div className='flex min-w-0 flex-1 flex-col'>
           {/* Navigation Items */}
           {feed.navigation && feed.navigation.length > 0 && (
-            <section className='opds-navigation flex-shrink-0 pb-6'>
+            <section className='opds-navigation shrink-0 pb-6'>
               <div className={navigationClassName}>
                 {feed.navigation.map((item, index: number) => (
                   <NavigationCard
@@ -178,7 +178,7 @@ export function FeedView({
 
           {/* Groups */}
           {feed.groups?.map((group, groupIndex: number) => (
-            <section key={groupIndex} className={`flex-shrink-0 ${useCarousel ? 'mb-6' : 'mb-12'}`}>
+            <section key={groupIndex} className={`shrink-0 ${useCarousel ? 'mb-6' : 'mb-12'}`}>
               {group.metadata && (
                 <div
                   className={`flex items-center justify-between px-4 ${useCarousel ? 'mb-2' : 'mb-4'}`}
@@ -268,7 +268,7 @@ export function FeedView({
 
           {/* Pagination */}
           {pagination.some((links) => links && links.length > 0) && (
-            <nav className='flex flex-shrink-0 justify-center gap-2 py-4'>
+            <nav className='flex shrink-0 justify-center gap-2 py-4'>
               <button
                 onClick={() => handlePaginationClick(pagination[0])}
                 disabled={!pagination[0]}

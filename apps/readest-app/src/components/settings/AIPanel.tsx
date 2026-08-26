@@ -467,7 +467,7 @@ const AIPanel: React.FC = () => {
             </div>
             <input
               type='text'
-              className='input input-bordered input-sm w-full'
+              className='input input-sm w-full'
               value={ollamaUrl}
               onChange={(e) => setOllamaUrl(e.target.value)}
               placeholder='http://127.0.0.1:11434'
@@ -479,7 +479,7 @@ const AIPanel: React.FC = () => {
               <div className='flex flex-col gap-2 py-3 pe-4'>
                 <SettingLabel>{_('AI Model')}</SettingLabel>
                 <select
-                  className='select select-bordered select-sm bg-base-100 text-base-content w-full'
+                  className='select select-sm bg-base-100 text-base-content w-full'
                   value={ollamaModel}
                   onChange={(e) => setOllamaModel(e.target.value)}
                   disabled={!enabled}
@@ -494,7 +494,7 @@ const AIPanel: React.FC = () => {
               <div className='flex flex-col gap-2 py-3 pe-4'>
                 <SettingLabel>{_('Embedding Model')}</SettingLabel>
                 <select
-                  className='select select-bordered select-sm bg-base-100 text-base-content w-full'
+                  className='select select-sm bg-base-100 text-base-content w-full'
                   value={ollamaEmbeddingModel}
                   onChange={(e) => setOllamaEmbeddingModel(e.target.value)}
                   disabled={!enabled}
@@ -537,7 +537,7 @@ const AIPanel: React.FC = () => {
             </div>
             <input
               type='password'
-              className='input input-bordered input-sm w-full'
+              className='input input-sm w-full'
               value={gatewayKey}
               onChange={(e) => setGatewayKey(e.target.value)}
               placeholder='vck_...'
@@ -547,7 +547,7 @@ const AIPanel: React.FC = () => {
           <div className='flex flex-col gap-2 pe-4 py-3'>
             <SettingLabel>{_('Model')}</SettingLabel>
             <select
-              className='select select-bordered select-sm bg-base-100 text-base-content w-full'
+              className='select select-sm bg-base-100 text-base-content w-full'
               value={selectedModel}
               onChange={(e) => handleModelChange(e.target.value)}
               disabled={!enabled}
@@ -567,7 +567,7 @@ const AIPanel: React.FC = () => {
               <div className='flex w-full gap-2'>
                 <input
                   type='text'
-                  className='input input-bordered input-sm flex-1'
+                  className='input input-sm flex-1'
                   value={customModelInput}
                   onChange={(e) => {
                     setCustomModelInput(e.target.value);
@@ -627,7 +627,7 @@ const AIPanel: React.FC = () => {
             </div>
             <input
               type='password'
-              className='input input-bordered input-sm w-full'
+              className='input input-sm w-full'
               value={openrouterKey}
               onChange={(e) => setOpenrouterKey(e.target.value)}
               placeholder='sk-or-...'
@@ -656,7 +656,7 @@ const AIPanel: React.FC = () => {
             </div>
             <input
               type='text'
-              className='input input-bordered input-sm w-full'
+              className='input input-sm w-full'
               value={openrouterUrl}
               onChange={(e) => setOpenrouterUrl(e.target.value)}
               placeholder='https://openrouter.ai/api/v1'
@@ -669,7 +669,7 @@ const AIPanel: React.FC = () => {
             <SettingLabel>{_('LLM Model')}</SettingLabel>
             {openrouterModels.length > 0 ? (
               <select
-                className='select select-bordered select-sm bg-base-100 text-base-content w-full'
+                className='select select-sm bg-base-100 text-base-content w-full'
                 value={openrouterModel}
                 onChange={(e) => setOpenrouterModel(e.target.value)}
                 disabled={!enabled}
@@ -685,7 +685,7 @@ const AIPanel: React.FC = () => {
               // so the user isn't locked out before refreshing succeeds.
               <input
                 type='text'
-                className='input input-bordered input-sm w-full'
+                className='input input-sm w-full'
                 value={openrouterModel}
                 onChange={(e) => setOpenrouterModel(e.target.value)}
                 placeholder='openai/gpt-4o-mini'
@@ -711,7 +711,7 @@ const AIPanel: React.FC = () => {
             <SettingLabel>{_('Embedding Model')}</SettingLabel>
             {openrouterModels.length > 0 ? (
               <select
-                className='select select-bordered select-sm bg-base-100 text-base-content w-full'
+                className='select select-sm bg-base-100 text-base-content w-full'
                 value={openrouterEmbeddingModel}
                 onChange={(e) => setOpenrouterEmbeddingModel(e.target.value)}
                 disabled={!enabled}
@@ -726,7 +726,7 @@ const AIPanel: React.FC = () => {
             ) : (
               <input
                 type='text'
-                className='input input-bordered input-sm w-full'
+                className='input input-sm w-full'
                 value={openrouterEmbeddingModel}
                 onChange={(e) => setOpenrouterEmbeddingModel(e.target.value)}
                 placeholder='openai/text-embedding-3-small'

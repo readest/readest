@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useSafeAreaInsets } from './useSafeAreaInsets';
-import { themes, applyCustomTheme, Palette } from '@/styles/themes';
+import { applyCustomTheme, Palette } from '@/styles/themes';
 import { getStatusBarHeight, setSystemUIVisibility } from '@/utils/bridge';
 import { getOSPlatform } from '@/utils/misc';
-import { parseWebViewVersion } from '@/utils/ua';
 
 type UseThemeProps = {
   systemUIVisible?: boolean;
@@ -34,8 +33,6 @@ export const useTheme = ({
     setSystemUIAlwaysHidden,
   } = useThemeStore();
   const { onUpdateInsets } = useSafeAreaInsets();
-
-  const useFallbackColors = useRef(false);
 
   useEffect(() => {
     updateAppTheme(appThemeColor);
@@ -106,23 +103,9 @@ export const useTheme = ({
   }, [handleSystemUIVisibility]);
 
   useEffect(() => {
-    if (!appService?.isAndroidApp) return;
-    const webViewVersion = parseWebViewVersion(appService);
-    // OKLCH color model is supported in Chromium 111+
-    useFallbackColors.current = webViewVersion < 111;
-  }, [appService]);
-
-  useEffect(() => {
-    if (!themeColor || !themes.find((t) => t.name === themeColor)) return;
-    if (useFallbackColors.current) {
-      applyCustomTheme(undefined, themeColor, true);
-    }
-  }, [themeColor]);
-
-  useEffect(() => {
     const customThemes = settings.globalReadSettings?.customThemes ?? [];
     customThemes.forEach((customTheme) => {
-      applyCustomTheme(customTheme, undefined, useFallbackColors.current);
+      applyCustomTheme(customTheme);
     });
     localStorage.setItem('customThemes', JSON.stringify(customThemes));
   }, [settings.globalReadSettings?.customThemes]);

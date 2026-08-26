@@ -38,7 +38,7 @@ const Tips: React.FC<TipsProps> = ({ title, children, className }) => {
                 : child;
             return (
               <li key={i} className='flex items-start gap-2'>
-                <span className='flex h-[1.4em] w-4 flex-shrink-0 items-center justify-center'>
+                <span className='flex h-[1.4em] w-4 shrink-0 items-center justify-center'>
                   <span className='bg-base-content/70 h-1.5 w-1.5 rounded-full' />
                 </span>
                 <span className='min-w-0 flex-1'>{content}</span>

@@ -85,7 +85,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
         {shortcut && (
           <kbd
             className={clsx(
-              'border-base-300/40 bg-base-300/75 hidden rounded-md border shadow-sm sm:flex',
+              'border-base-300/40 bg-base-300/75 hidden rounded-md border shadow-xs sm:flex',
               'shrink-0 px-1.5 py-0.5 text-xs font-medium',
               disabled ? 'text-gray-400' : 'text-neutral-content',
             )}

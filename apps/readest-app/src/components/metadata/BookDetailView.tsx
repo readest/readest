@@ -162,8 +162,8 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
               >
                 <div
                   className={clsx(
-                    'delete-menu dropdown-content no-triangle !relative',
-                    'border-base-300 !bg-base-200 z-20 mt-1 max-w-[90vw] shadow-2xl',
+                    'delete-menu dropdown-content no-triangle relative!',
+                    'border-base-300 bg-base-200! z-20 mt-1 max-w-[90vw] shadow-2xl',
                   )}
                 >
                   <MenuItem
@@ -202,8 +202,8 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
             >
               <div
                 className={clsx(
-                  'more-menu dropdown-content no-triangle !relative',
-                  'border-base-300 !bg-base-200 z-20 mt-1 max-w-[90vw] shadow-2xl',
+                  'more-menu dropdown-content no-triangle relative!',
+                  'border-base-300 bg-base-200! z-20 mt-1 max-w-[90vw] shadow-2xl',
                 )}
               >
                 <MenuItem

@@ -65,7 +65,7 @@ const ReceiveRequestDialog: React.FC<ReceiveRequestDialogProps> = ({
                     <img
                       src={cover}
                       alt=''
-                      className='eink-bordered h-10 w-7 shrink-0 rounded-sm object-cover'
+                      className='eink-bordered h-10 w-7 shrink-0 rounded-xs object-cover'
                     />
                   )}
                   <span className='truncate'>{file.fileName}</span>

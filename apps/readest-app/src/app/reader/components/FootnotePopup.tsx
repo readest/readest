@@ -619,7 +619,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({ bookKey, bookDoc }) => {
               onClick={handleBack}
               className={clsx(
                 'btn btn-ghost btn-circle eink-bordered text-base-content bg-base-200/80 hover:bg-base-200',
-                'z-10 h-8 min-h-8 w-8 p-0 shadow-sm',
+                'z-10 h-8 min-h-8 w-8 p-0 shadow-xs',
               )}
             >
               <MdArrowBack size={size18} />

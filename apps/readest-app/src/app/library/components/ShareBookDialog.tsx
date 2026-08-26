@@ -241,7 +241,7 @@ const ShareBookDialog: React.FC<ShareBookDialogProps> = ({ isOpen, book, cfi, on
       title={_('Share Book')}
       onClose={onClose}
       boxClassName='sm:min-w-[460px] sm:max-w-[460px] sm:h-auto sm:max-h-[90%]'
-      contentClassName='!px-6 !py-4'
+      contentClassName='px-6! py-4!'
     >
       <div className='flex flex-col gap-5 pt-2'>
         {/* Hero: cover + metadata. Cover gets a real shadow so it reads as a
@@ -355,7 +355,7 @@ const ShareBookDialog: React.FC<ShareBookDialogProps> = ({ isOpen, book, cfi, on
                 readOnly
                 value={created.url}
                 aria-label={_('Share URL')}
-                className='text-base-content min-w-0 flex-1 bg-transparent font-mono text-xs outline-none'
+                className='text-base-content min-w-0 flex-1 bg-transparent font-mono text-xs outline-hidden'
                 onFocus={(e) => e.currentTarget.select()}
               />
               <button

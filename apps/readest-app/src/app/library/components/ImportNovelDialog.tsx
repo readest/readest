@@ -135,7 +135,7 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
       onClose={close}
       title={_('Import Web Novel')}
       // Size to content — same override as ImportFromUrlDialog.
-      boxClassName='sm:!w-[480px] sm:!max-w-[480px] sm:!h-auto sm:!max-h-[80vh]'
+      boxClassName='sm:w-[480px]! sm:max-w-[480px]! sm:h-auto! sm:max-h-[80vh]!'
     >
       <div className='flex flex-col gap-4 pb-6 pt-2'>
         {phase === 'url' && (
@@ -148,7 +148,7 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
             <input
               type='url'
               autoFocus
-              className='input input-bordered eink-bordered placeholder:text-base-content/35 w-full'
+              className='input eink-bordered placeholder:text-base-content/35 w-full'
               placeholder='https://example.com/novel'
               value={url}
               disabled={busy}

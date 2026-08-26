@@ -4,7 +4,7 @@ import { MdOutlineInfo, MdLock, MdLockOpen, MdError } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const inputBaseStyles =
-  'w-full rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500';
+  'w-full rounded-md px-3 py-2 focus:outline-hidden focus:ring-1 focus:ring-blue-500';
 const inputBackgroundStyles = 'bg-base-200/50';
 const labelStyles = 'text-base-content block text-sm font-medium';
 
@@ -45,7 +45,7 @@ const LockButton: React.FC<LockButtonProps> = ({ isLocked, onToggle, disabled = 
       onClick={onToggle}
       disabled={disabled}
       className={clsx(
-        'focus:outline-non absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 transition-colors',
+        'focus:outline-non absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 transition-colors',
         disabled && 'cursor-not-allowed opacity-50',
         isLocked ? 'bg-green-100 text-green-500 hover:bg-green-200' : 'text-base-content',
       )}

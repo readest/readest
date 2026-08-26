@@ -73,7 +73,7 @@ const SidebarContent: React.FC<{
     <>
       <div
         className={clsx(
-          'sidebar-content flex h-full min-h-0 flex-grow flex-col shadow-inner',
+          'sidebar-content flex h-full min-h-0 grow flex-col shadow-inner',
           'font-sans text-base font-normal sm:text-sm',
         )}
       >
@@ -115,7 +115,7 @@ const SidebarContent: React.FC<{
         )}
       </div>
       <div
-        className='flex-shrink-0'
+        className='shrink-0'
         style={
           {
             // paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) / 2)',

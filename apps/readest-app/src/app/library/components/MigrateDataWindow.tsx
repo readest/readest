@@ -282,7 +282,7 @@ export const MigrateDataWindow = () => {
       isOpen={isOpen}
       title={_('Change Data Location')}
       onClose={handleClose}
-      boxClassName='sm:!w-[520px] sm:!max-w-screen-sm sm:h-auto'
+      boxClassName='sm:w-[520px]! sm:max-w-(--breakpoint-sm)! sm:h-auto'
     >
       {isOpen && (
         <div className='migrate-data-dir-content flex flex-col gap-6 px-6 py-4'>
@@ -296,7 +296,7 @@ export const MigrateDataWindow = () => {
               className='bg-base-200 flex w-full items-center gap-2 rounded-lg p-3'
               onClick={() => handleRevealDir(currentDataDir)}
             >
-              <RiFolderOpenLine className='text-base-content/70 h-4 w-4 flex-shrink-0' />
+              <RiFolderOpenLine className='text-base-content/70 h-4 w-4 shrink-0' />
               <span className='text-base-content/80 break-all text-start font-mono text-sm'>
                 {currentDataDir || _('Loading...')}
               </span>
@@ -325,7 +325,7 @@ export const MigrateDataWindow = () => {
                 className='bg-primary/10 border-primary/20 flex w-full items-center gap-2 rounded-lg border p-3'
                 onClick={() => handleRevealDir(newDataDir)}
               >
-                <RiFolderOpenLine className='text-primary h-4 w-4 flex-shrink-0' />
+                <RiFolderOpenLine className='text-primary h-4 w-4 shrink-0' />
                 <span className='text-primary break-all text-start font-mono text-sm'>
                   {newDataDir}
                 </span>
@@ -343,7 +343,7 @@ export const MigrateDataWindow = () => {
                 <div
                   className={clsx(
                     'folder-menu dropdown-content no-triangle left-0',
-                    'border-base-300 !bg-base-200 z-20 mt-1 max-w-[90vw] shadow-2xl',
+                    'border-base-300 bg-base-200! z-20 mt-1 max-w-[90vw] shadow-2xl',
                   )}
                 >
                   {androidNewDirs.map((dir) => (
@@ -447,7 +447,7 @@ export const MigrateDataWindow = () => {
           {canStartMigration && (
             <div className='bg-warning/10 border-warning/20 rounded-lg border p-3'>
               <div className='flex items-start gap-2'>
-                <RiErrorWarningFill className='text-warning mt-0.5 h-4 w-4 flex-shrink-0' />
+                <RiErrorWarningFill className='text-warning mt-0.5 h-4 w-4 shrink-0' />
                 <div className='space-y-1'>
                   <p className='text-base-content text-sm font-medium'>{_('Important Notice')}</p>
                   <p className='text-base-content/80 text-sm'>

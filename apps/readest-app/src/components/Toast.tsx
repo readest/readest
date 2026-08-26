@@ -119,7 +119,7 @@ export const Toast = () => {
       <div
         data-capture-invalidating-overlay='true'
         className={clsx(
-          'toast z-[130] w-auto max-w-screen-sm transition-all duration-300',
+          'toast z-[130] w-auto max-w-(--breakpoint-sm) transition-all duration-300',
           toastClassMap[toastType],
           isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
         )}
@@ -131,16 +131,16 @@ export const Toast = () => {
       >
         <div
           className={clsx(
-            'alert flex items-center gap-3 shadow-2xl backdrop-blur-sm',
+            'alert flex items-center gap-3 shadow-2xl backdrop-blur-xs',
             'min-h-0 rounded-2xl px-5 py-4',
-            'not-eink:bg-gradient-to-r border-0',
+            'not-eink:bg-linear-to-r border-0',
             alertClassMap[toastType],
             'eink:bg-base-100 eink:border eink:border-base-content',
             toastType !== 'info' && 'text-white',
           )}
         >
           {/* Icon */}
-          <div className='flex-shrink-0'>{iconMap[toastType]}</div>
+          <div className='shrink-0'>{iconMap[toastType]}</div>
 
           {/* Message */}
           <span
@@ -165,7 +165,7 @@ export const Toast = () => {
           <button
             onClick={handleDismiss}
             className={clsx(
-              'flex-shrink-0 rounded-lg p-1 transition-colors',
+              'shrink-0 rounded-lg p-1 transition-colors',
               toastType === 'info'
                 ? 'hover:bg-base-300 hidden'
                 : 'hover:bg-white/20 active:bg-white/30',

@@ -277,7 +277,7 @@ const TOCView: React.FC<{
   }, [flatItems, activeHref, isSideBarVisible, isEink]);
 
   return (
-    <div ref={containerRef} className='toc-list rounded' role='tree'>
+    <div ref={containerRef} className='toc-list rounded-sm' role='tree'>
       <div ref={osRootRef} data-overlayscrollbars-initialize='' style={{ height: containerHeight }}>
         <Virtuoso
           ref={virtuosoRef}

@@ -67,7 +67,7 @@ const renderMenu = (
         >
           <Menu className={`dropdown-content no-triangle z-20 mt-2 shadow-2xl ${menuClassName}`}>
             {labels.map((label) => (
-              <MenuItem key={label} label={label} buttonClass='min-h-8 !py-1' transient />
+              <MenuItem key={label} label={label} buttonClass='min-h-8 py-1!' transient />
             ))}
           </Menu>
         </Dropdown>

@@ -1,6 +1,221 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss' source('../');
+@plugin '@tailwindcss/typography';
+@plugin 'daisyui' {
+  themes:
+    light --default,
+    dark --prefersdark;
+  logs: false;
+}
+/* The built-in Readest themes, compiled from themes.ts (see daisyui-themes.ts). */
+@plugin './daisyui-themes.ts';
+
+@custom-variant eink (html[data-eink='true'] &);
+@custom-variant not-eink (html:not([data-eink='true']) &);
+/* Theme names are `${color}-light` / `${color}-dark` (see themeStore
+   applyDataTheme). Tailwind's built-in `dark:` follows prefers-color-scheme,
+   which does not track the in-app theme, so branch on the attribute. */
+@custom-variant theme-dark (html[data-theme$='-dark'] &);
+/* Tailwind 4 gates `hover:` behind `@media (hover: hover)`; keep the v3
+   behavior so touch screens still get hover styles on tap. */
+@custom-variant hover (&:hover);
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Tailwind 4 replaced the default palette with wider-gamut oklch values, so
+     every `*-green-500`-style accent shifted (more vivid on P3 displays). Pin
+     the Tailwind 3 values for the families the app actually uses so no page
+     changes color. Adding a class from a family that is not listed here opts
+     that family into the newer palette — add the family instead of one shade. */
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #020617;
+
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+
+  --color-zinc-50: #fafafa;
+  --color-zinc-100: #f4f4f5;
+  --color-zinc-200: #e4e4e7;
+  --color-zinc-300: #d4d4d8;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-500: #71717a;
+  --color-zinc-600: #52525b;
+  --color-zinc-700: #3f3f46;
+  --color-zinc-800: #27272a;
+  --color-zinc-900: #18181b;
+  --color-zinc-950: #09090b;
+
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
+
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+  --color-red-900: #7f1d1d;
+  --color-red-950: #450a0a;
+
+  --color-orange-50: #fff7ed;
+  --color-orange-100: #ffedd5;
+  --color-orange-200: #fed7aa;
+  --color-orange-300: #fdba74;
+  --color-orange-400: #fb923c;
+  --color-orange-500: #f97316;
+  --color-orange-600: #ea580c;
+  --color-orange-700: #c2410c;
+  --color-orange-800: #9a3412;
+  --color-orange-900: #7c2d12;
+  --color-orange-950: #431407;
+
+  --color-amber-50: #fffbeb;
+  --color-amber-100: #fef3c7;
+  --color-amber-200: #fde68a;
+  --color-amber-300: #fcd34d;
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+  --color-amber-800: #92400e;
+  --color-amber-900: #78350f;
+  --color-amber-950: #451a03;
+
+  --color-yellow-50: #fefce8;
+  --color-yellow-100: #fef9c3;
+  --color-yellow-200: #fef08a;
+  --color-yellow-300: #fde047;
+  --color-yellow-400: #facc15;
+  --color-yellow-500: #eab308;
+  --color-yellow-600: #ca8a04;
+  --color-yellow-700: #a16207;
+  --color-yellow-800: #854d0e;
+  --color-yellow-900: #713f12;
+  --color-yellow-950: #422006;
+
+  --color-green-50: #f0fdf4;
+  --color-green-100: #dcfce7;
+  --color-green-200: #bbf7d0;
+  --color-green-300: #86efac;
+  --color-green-400: #4ade80;
+  --color-green-500: #22c55e;
+  --color-green-600: #16a34a;
+  --color-green-700: #15803d;
+  --color-green-800: #166534;
+  --color-green-900: #14532d;
+  --color-green-950: #052e16;
+
+  --color-emerald-50: #ecfdf5;
+  --color-emerald-100: #d1fae5;
+  --color-emerald-200: #a7f3d0;
+  --color-emerald-300: #6ee7b7;
+  --color-emerald-400: #34d399;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+  --color-emerald-800: #065f46;
+  --color-emerald-900: #064e3b;
+  --color-emerald-950: #022c22;
+
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+  --color-blue-950: #172554;
+
+  --color-indigo-50: #eef2ff;
+  --color-indigo-100: #e0e7ff;
+  --color-indigo-200: #c7d2fe;
+  --color-indigo-300: #a5b4fc;
+  --color-indigo-400: #818cf8;
+  --color-indigo-500: #6366f1;
+  --color-indigo-600: #4f46e5;
+  --color-indigo-700: #4338ca;
+  --color-indigo-800: #3730a3;
+  --color-indigo-900: #312e81;
+  --color-indigo-950: #1e1b4b;
+
+  --color-purple-50: #faf5ff;
+  --color-purple-100: #f3e8ff;
+  --color-purple-200: #e9d5ff;
+  --color-purple-300: #d8b4fe;
+  --color-purple-400: #c084fc;
+  --color-purple-500: #a855f7;
+  --color-purple-600: #9333ea;
+  --color-purple-700: #7e22ce;
+  --color-purple-800: #6b21a8;
+  --color-purple-900: #581c87;
+  --color-purple-950: #3b0764;
+
+  --color-rose-50: #fff1f2;
+  --color-rose-100: #ffe4e6;
+  --color-rose-200: #fecdd3;
+  --color-rose-300: #fda4af;
+  --color-rose-400: #fb7185;
+  --color-rose-500: #f43f5e;
+  --color-rose-600: #e11d48;
+  --color-rose-700: #be123c;
+  --color-rose-800: #9f1239;
+  --color-rose-900: #881337;
+  --color-rose-950: #4c0519;
+}
+
+/* Tailwind 3 Preflight defaults that v4 changed; the UI was tuned on them. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
 
 @font-face {
   font-family: 'Inter';
@@ -18,1065 +233,1158 @@
   font-display: swap;
 }
 
-:root {
-  border-radius: 10px;
-  scrollbar-gutter: auto !important;
-  overscroll-behavior: none;
-  background-color: transparent;
+/* Hide the native number-input spinner arrows. WebKit on macOS draws
+   them on top of rounded input borders, which looks broken; Firefox
+   respects -moz-appearance: textfield. */
+@utility no-spinner {
+  -moz-appearance: textfield;
 
-  --scroll-bg-color: theme('colors.base-200');
-  --safe-area-inset-top: env(safe-area-inset-top);
-  --safe-area-inset-right: env(safe-area-inset-right);
-  --safe-area-inset-bottom: env(safe-area-inset-bottom);
-  --safe-area-inset-left: env(safe-area-inset-left);
-}
-
-/* Native rubber-band belongs to the library page and the bookshelf only. The
-   reader's scrolled-mode container is a nested scroller too, and iOS WKWebView
-   would bounce it; the foliate view must never overscroll. (#5148) */
-foliate-view::part(container) {
-  overscroll-behavior: none;
-}
-
-/* Fixes the scrollbar gutter issue for DaisyUI */
-/* https://github.com/saadeghi/daisyui/issues/3040#issuecomment-2250530354 */
-:root:has(:is(.modal-open, .modal:target, .modal-toggle:checked + .modal, .modal[open])) {
-  scrollbar-gutter: unset !important;
-}
-
-html[data-page='default'] {
-  background: theme('colors.base-100');
-}
-
-html[data-page='library'] {
-  background: theme('colors.base-200');
-}
-
-html[data-page='reader'] {
-  background: theme('colors.base-100');
-}
-
-body {
-  border-radius: 10px;
-  background-color: transparent;
-  cursor: default;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-
-  /* Hide the native number-input spinner arrows. WebKit on macOS draws
-     them on top of rounded input borders, which looks broken; Firefox
-     respects -moz-appearance: textfield. */
-  .no-spinner {
-    -moz-appearance: textfield;
-  }
-  .no-spinner::-webkit-outer-spin-button,
-  .no-spinner::-webkit-inner-spin-button {
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
 }
 
-.full-height {
-  height: 100vh;
-}
+/* Everything below competes with Tailwind's utilities inside the `utilities`
+   layer, the way it did under Tailwind 3: a utility on the element still wins
+   by specificity/order, while daisyUI's components (nested `daisyui.*`
+   sub-layers) yield to these rules. Left unlayered, these would outrank every
+   utility, e.g. `w-44` could no longer override `:where(.dropdown-content)`. */
+@layer utilities {
+  :root {
+    border-radius: 10px;
+    scrollbar-gutter: auto !important;
+    overscroll-behavior: none;
+    background-color: transparent;
 
-@supports (height: 100dvh) {
+    --scroll-bg-color: var(--color-base-200);
+    --safe-area-inset-top: env(safe-area-inset-top);
+    --safe-area-inset-right: env(safe-area-inset-right);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom);
+    --safe-area-inset-left: env(safe-area-inset-left);
+  }
+
+  /* Native rubber-band belongs to the library page and the bookshelf only. The
+     reader's scrolled-mode container is a nested scroller too, and iOS WKWebView
+     would bounce it; the foliate view must never overscroll. (#5148) */
+  foliate-view::part(container) {
+    overscroll-behavior: none;
+  }
+
+  /* Fixes the scrollbar gutter issue for DaisyUI */
+  /* https://github.com/saadeghi/daisyui/issues/3040#issuecomment-2250530354 */
+  :root:has(:is(.modal-open, .modal:target, .modal-toggle:checked + .modal, .modal[open])) {
+    scrollbar-gutter: unset !important;
+  }
+
+  html[data-page='default'] {
+    background: var(--color-base-100);
+  }
+
+  html[data-page='library'] {
+    background: var(--color-base-200);
+  }
+
+  html[data-page='reader'] {
+    background: var(--color-base-100);
+  }
+
+  body {
+    border-radius: 10px;
+    background-color: transparent;
+    cursor: default;
+  }
+
   .full-height {
-    height: 100dvh;
-  }
-}
-
-:root.edge-to-edge .full-height {
-  height: 100vh !important;
-}
-
-foliate-view {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-foliate-fxl {
-  overflow: scroll;
-}
-
-@keyframes scaleUpAndDown {
-  0% {
-    transform: scale(1);
+    height: 100vh;
   }
 
-  50% {
-    transform: scale(1.02);
+  @supports (height: 100dvh) {
+    .full-height {
+      height: 100dvh;
+    }
   }
 
-  100% {
-    transform: scale(1);
+  :root.edge-to-edge .full-height {
+    height: 100vh !important;
   }
-}
 
-.hover-bar-anim:hover ~ .foliate-viewer {
-  animation: scaleUpAndDown 0.3s ease forwards;
-}
+  foliate-view {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
 
-.window-button {
-  @apply inline-flex h-6 w-6 items-center justify-center rounded-full;
-  @apply transform transition duration-200 ease-in-out hover:scale-105;
-}
+  foliate-fxl {
+    overflow: scroll;
+  }
 
-.rounded-window {
-  border-radius: 10px;
-}
+  @keyframes scaleUpAndDown {
+    0% {
+      transform: scale(1);
+    }
 
-.rounded-window-top-left {
-  border-top-left-radius: 10px;
-}
+    50% {
+      transform: scale(1.02);
+    }
 
-.rounded-window-bottom-left {
-  border-bottom-left-radius: 10px;
-}
+    100% {
+      transform: scale(1);
+    }
+  }
 
-.rounded-window-top-right {
-  border-top-right-radius: 10px;
-}
+  .hover-bar-anim:hover ~ .foliate-viewer {
+    animation: scaleUpAndDown 0.3s ease forwards;
+  }
 
-.rounded-window-bottom-right {
-  border-bottom-right-radius: 10px;
-}
+  .window-button {
+    @apply inline-flex h-6 w-6 items-center justify-center rounded-full;
+    @apply transform transition duration-200 ease-in-out hover:scale-105;
+  }
 
-.window-border {
-  border-radius: 10px;
-  z-index: 99;
-  position: relative;
-}
+  .rounded-window {
+    border-radius: 10px;
+  }
 
-.window-border::before {
-  content: '';
-  z-index: 999;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border: 1px solid theme('colors.base-300');
-  border-radius: 10px;
-  pointer-events: none;
-}
+  .rounded-window-top-left {
+    border-top-left-radius: 10px;
+  }
 
-.dropdown-content {
-  position: relative;
-  @apply bg-base-100;
-  padding: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-  border-radius: 14px;
-}
+  .rounded-window-bottom-left {
+    border-bottom-left-radius: 10px;
+  }
 
-/* Menu labels wrap (no nowrap), so the anchor-positioned shrink-to-fit box
-   would collapse toward its longest word; keep the natural content width but
-   cap it to the viewport so long translations wrap instead of overflowing the
-   screen (#5259 — Dropdown shifts the box back inside). Zero specificity so
-   explicit utility widths (w-44, max-w-[90vw]) still win. */
-:where(.dropdown-content) {
-  width: max-content;
-  max-width: calc(100vw - 32px);
-}
+  .rounded-window-top-right {
+    border-top-right-radius: 10px;
+  }
 
-.dropdown-content::before,
-.dropdown-content::after {
-  content: '';
-  position: absolute;
-  top: -12px;
-  width: 0;
-  height: 0;
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-}
+  .rounded-window-bottom-right {
+    border-bottom-right-radius: 10px;
+  }
 
-.dropdown-content::before {
-  border-bottom: 12px solid theme('colors.base-100');
-  z-index: 1;
-}
+  .window-border {
+    border-radius: 10px;
+    z-index: 99;
+    position: relative;
+  }
 
-.dropdown-content::after {
-  top: -14px;
-  border-bottom: 13px solid rgba(0, 0, 0, 0.02);
-  z-index: 0;
-}
+  .window-border::before {
+    content: '';
+    z-index: 999;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 1px solid var(--color-base-300);
+    border-radius: 10px;
+    pointer-events: none;
+  }
 
-.dropdown-content.bgcolor-base-200 {
-  background-color: theme('colors.base-200');
-}
+  /* daisyUI 5 fades and scales every dropdown open, <details> ones included,
+     which daisyUI 4 left static. Keep them static: the Dropdown clamps the open
+     menu into the viewport from its measured box, and a menu mid-scale measures
+     narrower than it ends up (#5259 regression guard in dropdown-viewport). */
+  :where(.dropdown .dropdown-content) {
+    animation: none;
+    transition: none;
+  }
 
-.dropdown-content.bgcolor-base-200::before {
-  border-bottom: 12px solid theme('colors.base-200');
-  z-index: 1;
-}
+  /* daisyUI 4 hid a closed dropdown with `visibility: hidden`; v5 relies on
+     `display: none`, which any display utility on the content (`inline`,
+     `flex`) overrides, leaving an invisible but clickable menu in place. */
+  :where(
+    .dropdown:not(details, .dropdown-open, .dropdown-hover:hover, :focus-within) .dropdown-content
+  ) {
+    visibility: hidden;
+  }
 
-.dropdown-content.bordercolor-content::before {
-  border-bottom: 12px solid theme('colors.base-content');
-  z-index: 1;
-}
+  .dropdown-content {
+    @apply bg-base-100;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    border-radius: 14px;
+  }
 
-.dropdown-content.bordercolor-content::after {
-  top: -11px;
-  border-bottom: 13px solid theme('colors.base-100');
-  z-index: 1;
-}
+  /* Menu labels wrap (no nowrap), so the anchor-positioned shrink-to-fit box
+     would collapse toward its longest word; keep the natural content width but
+     cap it to the viewport so long translations wrap instead of overflowing the
+     screen (#5259 — Dropdown shifts the box back inside). Zero specificity so
+     explicit utility widths (w-44, max-w-[90vw]) still win. */
+  :where(.dropdown-content) {
+    width: max-content;
+    max-width: calc(100vw - 32px);
+  }
 
-.dropdown-left::before,
-.dropdown-left::after {
-  left: 20px;
-  transform: translateX(0);
-}
+  .dropdown-content::before,
+  .dropdown-content::after {
+    content: '';
+    position: absolute;
+    top: -12px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+  }
 
-.dropdown-center {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
+  .dropdown-content::before {
+    border-bottom: 12px solid var(--color-base-100);
+    z-index: 1;
+  }
 
-.dropdown-right::before,
-.dropdown-right::after {
-  right: 20px;
-  transform: translateX(0);
-}
+  .dropdown-content::after {
+    top: -14px;
+    border-bottom: 13px solid rgba(0, 0, 0, 0.02);
+    z-index: 0;
+  }
 
-.ui-rtl .dropdown-left::before,
-.ui-rtl .dropdown-left::after {
-  left: auto;
-  right: 20px;
-}
+  .dropdown-content.bgcolor-base-200 {
+    background-color: var(--color-base-200);
+  }
 
-.ui-rtl .dropdown-right::before,
-.ui-rtl .dropdown-right::after {
-  right: auto;
-  left: 20px;
-}
+  .dropdown-content.bgcolor-base-200::before {
+    border-bottom: 12px solid var(--color-base-200);
+    z-index: 1;
+  }
 
-.ui-rtl .dropdown-end > :where(.dropdown-content) {
-  inset-inline-end: auto;
-  inset-inline-start: 0;
-}
+  .dropdown-content.bordercolor-content::before {
+    border-bottom: 12px solid var(--color-base-content);
+    z-index: 1;
+  }
 
-.ui-rtl .settings-menu,
-.ui-rtl .view-menu {
-  inset-inline-end: auto;
-  inset-inline-start: 0;
-}
+  .dropdown-content.bordercolor-content::after {
+    top: -11px;
+    border-bottom: 13px solid var(--color-base-100);
+    z-index: 1;
+  }
 
-.ui-rtl .dropdown-content,
-.ui-rtl .settings-menu,
-.ui-rtl .view-menu {
-  direction: rtl;
-}
+  .dropdown-left::before,
+  .dropdown-left::after {
+    left: 20px;
+    transform: translateX(0);
+  }
 
-.dropdown-content.no-triangle::before,
-.dropdown-content.no-triangle::after {
-  display: none;
-}
+  .dropdown-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
 
-.tooltip.no-triangle::before,
-.tooltip.no-triangle::after,
-.tooltip-top.no-triangle::before,
-.tooltip-top.no-triangle::after,
-.tooltip-bottom.no-triangle::before,
-.tooltip-bottom.no-triangle::after {
-  display: none;
-}
+  .dropdown-right::before,
+  .dropdown-right::after {
+    right: 20px;
+    transform: translateX(0);
+  }
 
-.dropdown-content,
-.settings-content {
-  font-size: 14px;
-  font-weight: 400;
-}
+  .ui-rtl .dropdown-left::before,
+  .ui-rtl .dropdown-left::after {
+    left: auto;
+    right: 20px;
+  }
 
-@media (max-width: 768px) {
+  .ui-rtl .dropdown-right::before,
+  .ui-rtl .dropdown-right::after {
+    right: auto;
+    left: 20px;
+  }
+
+  .ui-rtl .dropdown-end > :where(.dropdown-content) {
+    inset-inline-end: auto;
+    inset-inline-start: 0;
+  }
+
+  .ui-rtl .settings-menu,
+  .ui-rtl .view-menu {
+    inset-inline-end: auto;
+    inset-inline-start: 0;
+  }
+
+  .ui-rtl .dropdown-content,
+  .ui-rtl .settings-menu,
+  .ui-rtl .view-menu {
+    direction: rtl;
+  }
+
+  .dropdown-content.no-triangle::before,
+  .dropdown-content.no-triangle::after {
+    display: none;
+  }
+
+  .tooltip.no-triangle::before,
+  .tooltip.no-triangle::after,
+  .tooltip-top.no-triangle::before,
+  .tooltip-top.no-triangle::after,
+  .tooltip-bottom.no-triangle::before,
+  .tooltip-bottom.no-triangle::after {
+    display: none;
+  }
+
   .dropdown-content,
   .settings-content {
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  @media (max-width: 768px) {
+    .dropdown-content,
+    .settings-content {
+      font-size: 16px;
+    }
+  }
+
+  .config-item {
+    @apply flex h-14 items-center justify-between p-4;
+    @apply hover:bg-base-100/50;
+  }
+
+  .config-item > span {
+    @apply line-clamp-2;
+  }
+
+  .collapse-arrow > .collapse-title:after {
+    top: var(--top-override, default-value);
+    inset-inline-end: var(--end-override, default-value);
+  }
+
+  .search-bar {
+    max-height: 0;
+    visibility: hidden;
+    overflow: visible;
+    transition: max-height 0.3s ease-out;
+  }
+
+  .search-bar-visible {
+    max-height: 100%;
+    visibility: visible;
+  }
+
+  .pull-refresh-loading {
+    position: fixed;
+    width: 100%;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-lighter);
+    z-index: 10;
+  }
+
+  .content {
     font-size: 16px;
   }
-}
 
-.config-item {
-  @apply flex h-14 items-center justify-between p-4;
-  @apply hover:bg-base-100/50;
-}
-
-.config-item > span {
-  @apply line-clamp-2;
-}
-
-.collapse-arrow > .collapse-title:after {
-  top: var(--top-override, default-value);
-  inset-inline-end: var(--end-override, default-value);
-}
-
-.search-bar {
-  max-height: 0;
-  visibility: hidden;
-  overflow: visible;
-  transition: max-height 0.3s ease-out;
-}
-
-.search-bar-visible {
-  max-height: 100%;
-  visibility: visible;
-}
-
-.pull-refresh-loading {
-  position: fixed;
-  width: 100%;
-  background-color: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-lighter);
-  z-index: 10;
-}
-
-.content {
-  font-size: 16px;
-}
-
-@media (max-width: 480px) {
-  .content {
-    font-size: 20px;
-  }
-}
-
-@media (min-width: 481px) and (max-width: 1024px) {
-  .content {
-    font-size: 18.4px;
-  }
-}
-
-.content.font-size-base {
-  font-size: 1em !important;
-  line-height: 1.5em;
-}
-
-.content.font-size-sm {
-  font-size: 0.875em !important;
-  line-height: 1.25em;
-}
-
-.content.font-size-xs {
-  font-size: 0.75em !important;
-  line-height: 1em;
-}
-
-.writing-vertical-rl {
-  writing-mode: vertical-rl;
-}
-
-.direction-rtl {
-  direction: rtl;
-}
-
-.drop-zone {
-  position: relative;
-}
-
-.drag-over {
-  border: 2px dashed #4a90e2 !important;
-  background-color: rgba(74, 144, 226, 0.1) !important;
-  transition: all 0.2s ease-in-out;
-}
-
-.drag-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 20;
-  pointer-events: none;
-}
-
-.drop-zone.drag-over .drag-overlay {
-  display: block;
-}
-
-.drop-indicator {
-  display: none;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 50;
-  padding: 20px;
-  background-color: theme('colors.base-300');
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  pointer-events: none;
-}
-
-.drop-zone.drag-over .drop-indicator {
-  display: block;
-}
-
-.touch-target {
-  position: relative;
-}
-
-/* Grow the hit area to the 44px mobile target (DESIGN.md) instead of bleeding
-   a fixed 12px past the icon: on narrow screens the reader header packs 32px
-   controls with 8px gaps, and a 12px bleed reached 4px into the neighboring
-   icon, so a tap on one icon fired the other. */
-.touch-target::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: max(100%, 44px);
-  height: max(100%, 44px);
-  transform: translate(-50%, -50%);
-}
-
-.no-context-menu {
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  touch-action: manipulation;
-}
-
-.no-context-menu img,
-.no-context-menu a {
-  -webkit-touch-callout: none;
-  -webkit-user-drag: none;
-  user-select: none;
-}
-
-/* Stolen from https://varundhawan.com/blog/2022/01/18/skeuomorphic-book-cover-css */
-.book-spine {
-  background: linear-gradient(
-    to right,
-    rgba(0, 0, 0, 0.02) 0%,
-    rgba(0, 0, 0, 0.05) 0.75%,
-    rgba(255, 255, 255, 0.5) 1.0%,
-    rgba(255, 255, 255, 0.6) 1.3%,
-    rgba(255, 255, 255, 0.5) 1.4%,
-    rgba(255, 255, 255, 0.3) 1.5%,
-    rgba(255, 255, 255, 0.3) 2.4%,
-    rgba(0, 0, 0, 0.05) 2.7%,
-    rgba(0, 0, 0, 0.05) 3.5%,
-    rgba(255, 255, 255, 0.3) 4%,
-    rgba(255, 255, 255, 0.3) 4.5%,
-    rgba(244, 244, 244, 0.1) 5.4%,
-    rgba(244, 244, 244, 0.1) 99%,
-    rgba(144, 144, 144, 0.2) 100%
-  );
-}
-
-.visible-focus-inset-2:focus-visible {
-  outline: none;
-  box-shadow:
-    inset 0 0 0 2px transparent,
-    inset 0 0 0 3px #6396e7;
-}
-
-.window-button {
-  position: relative;
-}
-
-.window-button::before {
-  content: '';
-  position: absolute;
-  inset: -8px;
-}
-
-/* The desktop trio sits 8px apart, so -8px is the widest halo that still tiles
-   exactly — any more and a button would swallow its neighbor's edge. When
-   close is rendered alone (the reader header on mobile: minimize and maximize
-   need a window bar) there is no neighbor, so it takes the full 44px target
-   the tap deserves (#5401). */
-.window-button:only-child::before {
-  inset: -10px;
-}
-
-input[type='range'].slider-input {
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-@keyframes spin-counterclockwise {
-  from {
-    transform: rotate(0deg);
+  @media (max-width: 480px) {
+    .content {
+      font-size: 20px;
+    }
   }
 
-  to {
-    transform: rotate(-360deg);
+  @media (min-width: 481px) and (max-width: 1024px) {
+    .content {
+      font-size: 18.4px;
+    }
   }
-}
 
-.btn-ghost.btn-active {
-  background-color: theme('colors.base-300');
-}
+  .content.font-size-base {
+    font-size: 1em !important;
+    line-height: 1.5em;
+  }
 
-.animate-reverse-spin {
-  animation: spin-counterclockwise 1s linear;
-}
+  .content.font-size-sm {
+    font-size: 0.875em !important;
+    line-height: 1.25em;
+  }
 
-[data-eink='true'] [class*='shadow-'] {
-  box-shadow: none !important;
-}
+  .content.font-size-xs {
+    font-size: 0.75em !important;
+    line-height: 1em;
+  }
 
-[data-eink='true'] [class*='text-base-content'] {
-  color: theme('colors.base-content') !important;
-}
+  .writing-vertical-rl {
+    writing-mode: vertical-rl;
+  }
 
-[data-eink='true'] [class*='text-blue'] {
-  color: theme('colors.base-content') !important;
-  font-weight: normal;
-}
+  .direction-rtl {
+    direction: rtl;
+  }
 
-[data-eink='true'] [class*='text-red'] {
-  color: theme('colors.base-content') !important;
-  font-weight: normal;
-}
+  .drop-zone {
+    position: relative;
+  }
 
-[data-eink='true'] [class*='text-neutral-content'] {
-  color: theme('colors.base-content') !important;
-}
+  .drag-over {
+    border: 2px dashed #4a90e2 !important;
+    background-color: rgba(74, 144, 226, 0.1) !important;
+    transition: all 0.2s ease-in-out;
+  }
 
-[data-eink='true'] [class*='placeholder']::placeholder {
-  color: theme('colors.base-content') !important;
-}
+  .drag-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 20;
+    pointer-events: none;
+  }
 
-/* E-ink cannot render a translucent wash, so a tinted base-content surface is
-   flattened to solid ink. `[class*=…]` matches the class attribute as plain
-   text, so skip elements whose only match is variant-prefixed: `hover:`,
-   `not-eink:hover:`, `group-hover:` and friends were painted solid at rest, on
-   every screen, which swallowed the footer bar's page indicator whole (#5667)
-   and forced `eink-inverted` workarounds elsewhere (#4454). A variant that
-   really does want ink on e-ink (`eink:bg-base-content`) emits its own rule. */
-[data-eink='true'] [class*='bg-base-content']:not([class*=':bg-base-content']) {
-  background-color: theme('colors.base-content') !important;
-}
+  .drop-zone.drag-over .drag-overlay {
+    display: block;
+  }
 
-/* Inverted chip for e-ink: base-content fill, base-100 content. Declared after
-   the substring matchers above so the content color wins the cascade. */
-[data-eink='true'] .eink-inverted {
-  background-color: theme('colors.base-content') !important;
-  color: theme('colors.base-100') !important;
-}
+  .drop-indicator {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 50;
+    padding: 20px;
+    background-color: var(--color-base-300);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+  }
 
-[data-eink='true'] [class*='font-light'] {
-  font-weight: normal !important;
-}
+  .drop-zone.drag-over .drop-indicator {
+    display: block;
+  }
 
-[data-eink='true'] [class*='text-bold-in-eink'] {
-  font-weight: bold;
-}
+  .touch-target {
+    position: relative;
+  }
 
-/* Emphasized query term inside search result excerpts — shared by the library
-   results and the reader sidebar so custom CSS can restyle both at once. */
-.search-term-highlight {
-  color: theme('colors.red.500');
-  font-weight: 600;
-}
+  /* Grow the hit area to the 44px mobile target (DESIGN.md) instead of bleeding
+     a fixed 12px past the icon: on narrow screens the reader header packs 32px
+     controls with 8px gaps, and a 12px bleed reached 4px into the neighboring
+     icon, so a tap on one icon fired the other. */
+  .touch-target::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
 
-[data-eink='true'] .search-term-highlight {
-  color: theme('colors.base-content') !important;
-  font-weight: bold;
-}
+  .no-context-menu {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
 
-[data-eink='true'] .eink-bordered {
-  border-width: 1px !important;
-  border-color: theme('colors.base-content') !important;
-  background-color: theme('colors.base-100') !important;
-}
+  .no-context-menu img,
+  .no-context-menu a {
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
+    user-select: none;
+  }
 
-/* Hide the horizontal scrollbar on the virtualized OPDS group carousels. */
-.no-scrollbar {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
+  /* Stolen from https://varundhawan.com/blog/2022/01/18/skeuomorphic-book-cover-css */
+  .book-spine {
+    background: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.02) 0%,
+      rgba(0, 0, 0, 0.05) 0.75%,
+      rgba(255, 255, 255, 0.5) 1.0%,
+      rgba(255, 255, 255, 0.6) 1.3%,
+      rgba(255, 255, 255, 0.5) 1.4%,
+      rgba(255, 255, 255, 0.3) 1.5%,
+      rgba(255, 255, 255, 0.3) 2.4%,
+      rgba(0, 0, 0, 0.05) 2.7%,
+      rgba(0, 0, 0, 0.05) 3.5%,
+      rgba(255, 255, 255, 0.3) 4%,
+      rgba(255, 255, 255, 0.3) 4.5%,
+      rgba(244, 244, 244, 0.1) 5.4%,
+      rgba(244, 244, 244, 0.1) 99%,
+      rgba(144, 144, 144, 0.2) 100%
+    );
+  }
 
-[data-eink='true'] input.search-input,
-[data-eink='true'] input.search-input:focus {
-  border-width: 1px !important;
-  border-radius: 9999px;
-  border-color: theme('colors.base-content') !important;
-  background-color: theme('colors.base-100') !important;
-}
+  .visible-focus-inset-2:focus-visible {
+    outline: none;
+    box-shadow:
+      inset 0 0 0 2px transparent,
+      inset 0 0 0 3px #6396e7;
+  }
 
-[data-eink='true'] .modal-box {
-  box-shadow: none !important;
-  border-width: 1px !important;
-  border-color: theme('colors.base-content') !important;
-}
+  .window-button {
+    position: relative;
+  }
 
-[data-eink='true'] .dialog-overlay {
-  background-color: transparent !important;
-}
+  .window-button::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+  }
 
-[data-eink='true'] .menu-container {
-  background-color: theme('colors.base-100') !important;
-  border: 1px solid theme('colors.base-content') !important;
-}
+  /* The desktop trio sits 8px apart, so -8px is the widest halo that still tiles
+     exactly — any more and a button would swallow its neighbor's edge. When
+     close is rendered alone (the reader header on mobile: minimize and maximize
+     need a window bar) there is no neighbor, so it takes the full 44px target
+     the tap deserves (#5401). */
+  .window-button:only-child::before {
+    inset: -10px;
+  }
 
-[data-eink='true'] hr {
-  border-color: theme('colors.base-content/0.75') !important;
-}
+  input[type='range'].slider-input {
+    -webkit-appearance: none;
+    appearance: none;
+  }
 
-[data-eink='true'] button,
-[data-eink='true'] .btn {
-  color: theme('colors.base-content') !important;
-}
+  @keyframes spin-counterclockwise {
+    from {
+      transform: rotate(0deg);
+    }
 
-/* btn-contrast — a solid, high-contrast CTA: base-content background with a
-   base-100 label. Theme-neutral (unlike the colored btn-primary); fits the
-   minimalist themes and is already e-ink-correct. */
-.btn-contrast {
-  background-color: theme('colors.base-content') !important;
-  border: 1px solid theme('colors.base-content') !important;
-  color: theme('colors.base-100') !important;
-}
-.btn-contrast:hover {
-  opacity: 0.9;
-}
+    to {
+      transform: rotate(-360deg);
+    }
+  }
 
-[data-eink='true'] .btn-primary,
-[data-eink='true'] .btn-outline,
-[data-eink='true'] .btn-contrast,
-[data-eink='true'] .eink-contrast {
-  background-color: theme('colors.base-content') !important;
-  border: 1px solid theme('colors.base-content') !important;
-  color: theme('colors.base-100') !important;
-}
+  .btn-ghost.btn-active {
+    background-color: var(--color-base-300);
+  }
 
-[data-eink='true'] .bg-primary {
-  background-color: theme('colors.base-100') !important;
-  border: 1px solid theme('colors.base-content') !important;
-  color: theme('colors.base-content') !important;
-}
+  /* daisyUI 4 -> 5 compatibility. daisyUI 5 shrank md fields from 3rem to 2.5rem,
+     small-size type from 0.875rem to 0.75rem and md input text from 1rem to
+     0.875rem, tied the checkbox radius to the pill badge/toggle radius, and turned
+     `.label` into an inline caption. The layouts were tuned on v4, so pin those.
+     Every rule here stands in for a daisyUI component default, so it is wrapped
+     in `:where()`: living directly in the utilities layer already outranks
+     daisyUI's nested sub-layers, and zero specificity keeps a utility on the
+     element (`w-44`, `rounded-full`, ...) winning exactly as it did on v4. */
+  :where(.btn:not(.btn-xs, .btn-sm, .btn-lg, .btn-xl)) {
+    --size: calc(var(--size-field, 0.25rem) * 12);
+  }
 
-[data-eink='true'] .dropdown-toggle {
-  background-color: theme('colors.transparent') !important;
-  /* A toggle that also carries a fill class (e.g. btn-outline) gets its label
-     inverted to base-100 by the rule above; with the background neutralized to
-     transparent that leaves white-on-white. Keep the text base-content so the
-     label stays legible (issue #4435). */
-  color: theme('colors.base-content') !important;
-}
+  :where(.btn-sm) {
+    --fontsize: 0.875rem;
+  }
 
-[data-eink='true'] .opds-navigation .card {
-  background-color: theme('colors.base-100') !important;
-  border: 1px solid theme('colors.base-content') !important;
-}
+  :where(.btn-xs) {
+    --fontsize: 0.75rem;
+  }
 
-[data-eink='true'] .booknote-item {
-  background-color: theme('colors.base-100') !important;
-  border: 1px solid theme('colors.base-content') !important;
-}
+  :where(.input:not(.input-xs, .input-sm, .input-lg, .input-xl)) {
+    --in-size-mul: 12;
+    --font-size-min: 1rem;
+  }
 
-[data-eink='true'] .booknote-text {
-  background-color: theme('colors.base-100') !important;
-}
+  :where(.select:not(.select-xs, .select-sm, .select-lg, .select-xl)) {
+    --sl-size-mul: 12;
+  }
 
-[data-eink='true'] .bookitem-main,
-[data-eink='true'] .groupitem-main {
-  border: 1px solid theme('colors.base-content') !important;
-}
+  :where(.input-sm, .select-sm, .textarea-sm) {
+    --font-size-min: 0.875rem;
+  }
 
-[data-eink='true'] .popup-container {
-  border: 1px solid theme('colors.base-content') !important;
-  background-color: theme('colors.base-100') !important;
-}
+  :where(.input-xs, .select-xs, .textarea-xs) {
+    --font-size-min: 0.75rem;
+  }
 
-[data-eink='true'] .popup-triangle-outer {
-  color: theme('colors.base-content') !important;
-}
+  :where(.checkbox) {
+    border-radius: var(--radius-field);
+  }
 
-[data-eink='true'] .popup-triangle-inner {
-  color: theme('colors.base-100') !important;
-}
+  /* daisyUI 5 renders the <select> popup in-page (`appearance: base-select`,
+     #5587) and lets it inherit the select's background, which is transparent
+     on the chromeless settings selects. Paint it like the app's other menus. */
+  :where(.select)::picker(select) {
+    background-color: var(--color-base-100);
+    color: var(--color-base-content);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  }
 
-[data-eink='true'] .annotation-notes {
-  transform-origin: top left;
-  transform: translate(-1px, -1px);
-}
+  /* v4 drew the select's focus ring at 20% base-content; v5 draws it solid and
+     also while the in-page picker is open. */
+  :where(.select:focus, .select:focus-within, .select:open) {
+    outline-color: color-mix(in oklab, var(--color-base-content) 20%, transparent);
+  }
 
-[data-eink='true'] .alert {
-  color: theme('colors.base-content') !important;
-  border: 1px solid theme('colors.base-content') !important;
-  background-color: theme('colors.base-100') !important;
-}
+  /* daisyUI 5's toggle already matches v4's look (base-100 track, base-content
+     knob); only the track got narrower, from 3rem to 2.5rem. */
+  :where(.toggle) {
+    width: 3rem;
+  }
 
-[data-eink='true'] input[type='checkbox'] {
-  --tglbg: theme('colors.base-100') !important;
-}
-
-/* DaisyUI checkboxes on e-ink: the default unchecked border is a ~20%-opacity
- * theme color that barely registers on a grayscale panel, so a configured-but-
- * disabled control (e.g. a cloud sync provider's enable box, #5141) reads as
- * empty space. Give the box a crisp 1px base-content outline so it stays
- * visible when unchecked. Scoped to `.checkbox` so the `.toggle` switch keeps
- * its own treatment. */
-[data-eink='true'] input[type='checkbox'].checkbox {
-  border-width: 1px !important;
-  border-color: theme('colors.base-content') !important;
-}
-
-/* Dictionary popup font size (#4443).
- *
- * `--dict-font-scale` is set per content card by DictionaryResultsView; `1`
- * = default sizes. It scales every provider's rendered definition while
- * leaving the popup chrome (header, source label, web-search rows — all
- * outside this scope) untouched.
- *
- * `[data-dict-content]` is the per-tab content root. Light-DOM providers
- * size text with Tailwind `text-*` utilities (root-relative `rem`), which a
- * container `font-size` alone can't move — so those utilities are re-based to
- * `em` WITHIN THIS SCOPE ONLY, letting them ride the scaled root.
- *
- * MDict renders into a shadow root, so its body is unreachable by ordinary
- * selectors; `::part(dict-content)` (exposed on the body in mdictProvider) is
- * the only hook that crosses the boundary. */
-[data-dict-content] {
-  font-size: calc(var(--dict-font-scale, 1) * 1em);
-}
-
-[data-dict-content] .text-xs {
-  font-size: 0.75em;
-}
-
-[data-dict-content] .text-sm {
-  font-size: 0.875em;
-}
-
-[data-dict-content] .text-base {
-  font-size: 1em;
-}
-
-[data-dict-content] .text-lg {
-  font-size: 1.125em;
-}
-
-[data-dict-content] .dict-shadow-host::part(dict-content) {
-  font-size: calc(var(--dict-font-scale, 1) * 0.875rem);
-}
-
-.no-transitions * {
-  transition: none !important;
-}
-
-/* settings highlight animation for command palette */
-@keyframes settings-highlight-pulse {
-  0%,
-  100% {
+  /* daisyUI 5 also paints `.btn-disabled` on elements that are not buttons
+     (menu header rows use it for the inert state); v4 only removed pointer
+     events there. */
+  :where(.btn-disabled:not(.btn)) {
     background-color: transparent;
+    color: inherit;
   }
 
-  50% {
-    background-color: theme('colors.primary/0.15');
+  /* daisyUI 5 menus shrink to fit and inherit the body line-height; v4 menus
+     filled their container at the text-sm line-height, which nested menus and
+     their trailing carets were laid out on. */
+  :where(.menu) {
+    width: auto;
+    line-height: 1.25rem;
   }
-}
 
-.settings-highlight {
-  animation: settings-highlight-pulse 0.5s ease-in-out 2;
-  border-radius: 8px;
-}
-
-/* View Transitions for library navigation */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 0.3s;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-html[data-nav-direction='forward'] ::view-transition-old(root) {
-  animation-name: slide-fade-out-left;
-}
-
-html[data-nav-direction='forward'] ::view-transition-new(root) {
-  animation-name: slide-fade-in-right;
-}
-
-html[data-nav-direction='back'] ::view-transition-old(root) {
-  animation-name: slide-fade-out-right;
-}
-
-html[data-nav-direction='back'] ::view-transition-new(root) {
-  animation-name: slide-fade-in-left;
-}
-
-/* Forward animations */
-@keyframes slide-fade-out-left {
-  from {
-    opacity: 1;
-    transform: translateX(0);
+  .animate-reverse-spin {
+    animation: spin-counterclockwise 1s linear;
   }
-  to {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-}
 
-@keyframes slide-fade-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
+  [data-eink='true'] [class*='shadow-'] {
+    box-shadow: none !important;
   }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
 
-/* Back animations */
-@keyframes slide-fade-out-right {
-  from {
-    opacity: 1;
-    transform: translateX(0);
+  [data-eink='true'] [class*='text-base-content'] {
+    color: var(--color-base-content) !important;
   }
-  to {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-}
 
-@keyframes slide-fade-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
+  [data-eink='true'] [class*='text-blue'] {
+    color: var(--color-base-content) !important;
+    font-weight: normal;
   }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
 
-/* Simpler fade for reduced motion preference */
-@media (prefers-reduced-motion: reduce) {
+  [data-eink='true'] [class*='text-red'] {
+    color: var(--color-base-content) !important;
+    font-weight: normal;
+  }
+
+  [data-eink='true'] [class*='text-neutral-content'] {
+    color: var(--color-base-content) !important;
+  }
+
+  [data-eink='true'] [class*='placeholder']::placeholder {
+    color: var(--color-base-content) !important;
+  }
+
+  /* E-ink cannot render a translucent wash, so a tinted base-content surface is
+     flattened to solid ink. `[class*=…]` matches the class attribute as plain
+     text, so skip elements whose only match is variant-prefixed: `hover:`,
+     `not-eink:hover:`, `group-hover:` and friends were painted solid at rest, on
+     every screen, which swallowed the footer bar's page indicator whole (#5667)
+     and forced `eink-inverted` workarounds elsewhere (#4454). A variant that
+     really does want ink on e-ink (`eink:bg-base-content`) emits its own rule. */
+  [data-eink='true'] [class*='bg-base-content']:not([class*=':bg-base-content']) {
+    background-color: var(--color-base-content) !important;
+  }
+
+  /* Inverted chip for e-ink: base-content fill, base-100 content. Declared after
+     the substring matchers above so the content color wins the cascade. */
+  [data-eink='true'] .eink-inverted {
+    background-color: var(--color-base-content) !important;
+    color: var(--color-base-100) !important;
+  }
+
+  [data-eink='true'] [class*='font-light'] {
+    font-weight: normal !important;
+  }
+
+  [data-eink='true'] [class*='text-bold-in-eink'] {
+    font-weight: bold;
+  }
+
+  /* Emphasized query term inside search result excerpts — shared by the library
+     results and the reader sidebar so custom CSS can restyle both at once. */
+  .search-term-highlight {
+    color: var(--color-red-500);
+    font-weight: 600;
+  }
+
+  [data-eink='true'] .search-term-highlight {
+    color: var(--color-base-content) !important;
+    font-weight: bold;
+  }
+
+  [data-eink='true'] .eink-bordered {
+    border-width: 1px !important;
+    border-color: var(--color-base-content) !important;
+    background-color: var(--color-base-100) !important;
+  }
+
+  /* Hide the horizontal scrollbar on the virtualized OPDS group carousels. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  [data-eink='true'] input.search-input,
+  [data-eink='true'] input.search-input:focus {
+    border-width: 1px !important;
+    border-radius: 9999px;
+    border-color: var(--color-base-content) !important;
+    background-color: var(--color-base-100) !important;
+  }
+
+  [data-eink='true'] .modal-box {
+    box-shadow: none !important;
+    border-width: 1px !important;
+    border-color: var(--color-base-content) !important;
+  }
+
+  [data-eink='true'] .dialog-overlay {
+    background-color: transparent !important;
+  }
+
+  [data-eink='true'] .menu-container {
+    background-color: var(--color-base-100) !important;
+    border: 1px solid var(--color-base-content) !important;
+  }
+
+  [data-eink='true'] hr {
+    border-color: color-mix(in oklab, var(--color-base-content) 75%, transparent) !important;
+  }
+
+  [data-eink='true'] button,
+  [data-eink='true'] .btn {
+    color: var(--color-base-content) !important;
+  }
+
+  /* btn-contrast — a solid, high-contrast CTA: base-content background with a
+     base-100 label. Theme-neutral (unlike the colored btn-primary); fits the
+     minimalist themes and is already e-ink-correct. */
+  .btn-contrast {
+    background-color: var(--color-base-content) !important;
+    border: 1px solid var(--color-base-content) !important;
+    color: var(--color-base-100) !important;
+  }
+  .btn-contrast:hover {
+    opacity: 0.9;
+  }
+
+  [data-eink='true'] .btn-primary,
+  [data-eink='true'] .btn-outline,
+  [data-eink='true'] .btn-contrast,
+  [data-eink='true'] .eink-contrast {
+    background-color: var(--color-base-content) !important;
+    border: 1px solid var(--color-base-content) !important;
+    color: var(--color-base-100) !important;
+  }
+
+  [data-eink='true'] .bg-primary {
+    background-color: var(--color-base-100) !important;
+    border: 1px solid var(--color-base-content) !important;
+    color: var(--color-base-content) !important;
+  }
+
+  [data-eink='true'] .dropdown-toggle {
+    background-color: transparent !important;
+    /* A toggle that also carries a fill class (e.g. btn-outline) gets its label
+       inverted to base-100 by the rule above; with the background neutralized to
+       transparent that leaves white-on-white. Keep the text base-content so the
+       label stays legible (issue #4435). */
+    color: var(--color-base-content) !important;
+  }
+
+  [data-eink='true'] .opds-navigation .card {
+    background-color: var(--color-base-100) !important;
+    border: 1px solid var(--color-base-content) !important;
+  }
+
+  [data-eink='true'] .booknote-item {
+    background-color: var(--color-base-100) !important;
+    border: 1px solid var(--color-base-content) !important;
+  }
+
+  [data-eink='true'] .booknote-text {
+    background-color: var(--color-base-100) !important;
+  }
+
+  [data-eink='true'] .bookitem-main,
+  [data-eink='true'] .groupitem-main {
+    border: 1px solid var(--color-base-content) !important;
+  }
+
+  [data-eink='true'] .popup-container {
+    border: 1px solid var(--color-base-content) !important;
+    background-color: var(--color-base-100) !important;
+  }
+
+  [data-eink='true'] .popup-triangle-outer {
+    color: var(--color-base-content) !important;
+  }
+
+  [data-eink='true'] .popup-triangle-inner {
+    color: var(--color-base-100) !important;
+  }
+
+  [data-eink='true'] .annotation-notes {
+    transform-origin: top left;
+    transform: translate(-1px, -1px);
+  }
+
+  [data-eink='true'] .alert {
+    color: var(--color-base-content) !important;
+    border: 1px solid var(--color-base-content) !important;
+    background-color: var(--color-base-100) !important;
+  }
+
+  /* DaisyUI checkboxes on e-ink: the default unchecked border is a ~20%-opacity
+   * theme color that barely registers on a grayscale panel, so a configured-but-
+   * disabled control (e.g. a cloud sync provider's enable box, #5141) reads as
+   * empty space. Give the box a crisp 1px base-content outline so it stays
+   * visible when unchecked. Scoped to `.checkbox` so the `.toggle` switch keeps
+   * its own treatment. */
+  [data-eink='true'] input[type='checkbox'].checkbox {
+    border-width: 1px !important;
+    border-color: var(--color-base-content) !important;
+  }
+
+  /* Dictionary popup font size (#4443).
+   *
+   * `--dict-font-scale` is set per content card by DictionaryResultsView; `1`
+   * = default sizes. It scales every provider's rendered definition while
+   * leaving the popup chrome (header, source label, web-search rows — all
+   * outside this scope) untouched.
+   *
+   * `[data-dict-content]` is the per-tab content root. Light-DOM providers
+   * size text with Tailwind `text-*` utilities (root-relative `rem`), which a
+   * container `font-size` alone can't move — so those utilities are re-based to
+   * `em` WITHIN THIS SCOPE ONLY, letting them ride the scaled root.
+   *
+   * MDict renders into a shadow root, so its body is unreachable by ordinary
+   * selectors; `::part(dict-content)` (exposed on the body in mdictProvider) is
+   * the only hook that crosses the boundary. */
+  [data-dict-content] {
+    font-size: calc(var(--dict-font-scale, 1) * 1em);
+  }
+
+  [data-dict-content] .text-xs {
+    font-size: 0.75em;
+  }
+
+  [data-dict-content] .text-sm {
+    font-size: 0.875em;
+  }
+
+  [data-dict-content] .text-base {
+    font-size: 1em;
+  }
+
+  [data-dict-content] .text-lg {
+    font-size: 1.125em;
+  }
+
+  [data-dict-content] .dict-shadow-host::part(dict-content) {
+    font-size: calc(var(--dict-font-scale, 1) * 0.875rem);
+  }
+
+  .no-transitions * {
+    transition: none !important;
+  }
+
+  /* settings highlight animation for command palette */
+  @keyframes settings-highlight-pulse {
+    0%,
+    100% {
+      background-color: transparent;
+    }
+
+    50% {
+      background-color: color-mix(in oklab, var(--color-primary) 15%, transparent);
+    }
+  }
+
+  .settings-highlight {
+    animation: settings-highlight-pulse 0.5s ease-in-out 2;
+    border-radius: 8px;
+  }
+
+  /* View Transitions for library navigation */
   ::view-transition-old(root),
   ::view-transition-new(root) {
-    animation-duration: 0.15s;
+    animation-duration: 0.3s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  ::view-transition-old(root) {
-    animation-name: simple-fade-out !important;
+  html[data-nav-direction='forward'] ::view-transition-old(root) {
+    animation-name: slide-fade-out-left;
   }
 
-  ::view-transition-new(root) {
-    animation-name: simple-fade-in !important;
+  html[data-nav-direction='forward'] ::view-transition-new(root) {
+    animation-name: slide-fade-in-right;
   }
 
-  @keyframes simple-fade-out {
+  html[data-nav-direction='back'] ::view-transition-old(root) {
+    animation-name: slide-fade-out-right;
+  }
+
+  html[data-nav-direction='back'] ::view-transition-new(root) {
+    animation-name: slide-fade-in-left;
+  }
+
+  /* Forward animations */
+  @keyframes slide-fade-out-left {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
     to {
       opacity: 0;
+      transform: translateX(-30px);
     }
   }
 
-  @keyframes simple-fade-in {
+  @keyframes slide-fade-in-right {
     from {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Back animations */
+  @keyframes slide-fade-out-right {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+  }
+
+  @keyframes slide-fade-in-left {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Simpler fade for reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 0.15s;
+    }
+
+    ::view-transition-old(root) {
+      animation-name: simple-fade-out !important;
+    }
+
+    ::view-transition-new(root) {
+      animation-name: simple-fade-in !important;
+    }
+
+    @keyframes simple-fade-out {
+      to {
+        opacity: 0;
+      }
+    }
+
+    @keyframes simple-fade-in {
+      from {
+        opacity: 0;
+      }
+    }
+  }
+
+  /* Atmosphere overlay */
+  #atmosphere-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 700ms var(--ease-out, ease-out);
+  }
+
+  body.atmosphere #atmosphere-overlay {
+    opacity: 0.5;
+  }
+
+  @keyframes spin-cw {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(180deg);
+    }
+  }
+
+  @keyframes spin-ccw {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(-180deg);
+    }
+  }
+
+  .animate-spin-cw {
+    animation: spin-cw 0.6s ease-in-out;
+  }
+
+  .animate-spin-ccw {
+    animation: spin-ccw 0.6s ease-in-out;
+  }
+
+  @keyframes shake {
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+    10% {
+      transform: rotate(-8deg);
+    }
+    20% {
+      transform: rotate(8deg);
+    }
+    30% {
+      transform: rotate(-8deg);
+    }
+    40% {
+      transform: rotate(8deg);
+    }
+    50% {
+      transform: rotate(-6deg);
+    }
+    60% {
+      transform: rotate(6deg);
+    }
+    70% {
+      transform: rotate(-4deg);
+    }
+    80% {
+      transform: rotate(4deg);
+    }
+    90% {
+      transform: rotate(-2deg);
+    }
+  }
+
+  .animate-shake {
+    animation: shake 0.8s ease-in-out;
+  }
+
+  @keyframes pin-shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20% {
+      transform: translateX(-8px);
+    }
+    40% {
+      transform: translateX(8px);
+    }
+    60% {
+      transform: translateX(-6px);
+    }
+    80% {
+      transform: translateX(6px);
+    }
+  }
+
+  .animate-pin-shake {
+    animation: pin-shake 0.4s ease-in-out;
+  }
+
+  @keyframes pin-cursor-blink {
+    0%,
+    49% {
+      opacity: 1;
+    }
+    50%,
+    100% {
       opacity: 0;
     }
   }
-}
 
-/* Atmosphere overlay */
-#atmosphere-overlay {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top;
-  mix-blend-mode: multiply;
-  pointer-events: none;
-  z-index: 999;
-  opacity: 0;
-  transition: opacity 700ms var(--ease-out, ease-out);
-}
+  .animate-pin-cursor-blink {
+    animation: pin-cursor-blink 1s step-end infinite;
+  }
 
-body.atmosphere #atmosphere-overlay {
-  opacity: 0.5;
-}
+  /*
+   * Suppress the daisyUI / browser focus ring on text inputs and
+   * textareas. The element's own border (daisyUI's default input border)
+   * already conveys focus via color shift, so the additional outer ring
+   * was visually redundant and read as a "double border". Buttons keep
+   * their focus ring for accessibility — only typed-in surfaces lose it.
+   */
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):focus,
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):focus-visible,
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):focus-within,
+  textarea:focus,
+  textarea:focus-visible,
+  textarea:focus-within,
+  .input:focus,
+  .input:focus-visible,
+  .input:focus-within,
+  .textarea:focus,
+  .textarea:focus-visible,
+  .textarea:focus-within {
+    outline: none !important;
+    box-shadow: none !important;
+  }
 
-@keyframes spin-cw {
-  from {
-    transform: rotate(0deg);
+  /* A captured or View Transition curl/slide snapshot already contains the
+     visible reader chrome. Sync its live copy underneath without playing the
+     regular toolbar transition alongside the page turn or cancellation. */
+  .captured-turn-sync-chrome .header-bar,
+  .captured-turn-sync-chrome .footer-bar {
+    transition: none !important;
   }
-  to {
-    transform: rotate(180deg);
-  }
-}
 
-@keyframes spin-ccw {
-  from {
-    transform: rotate(0deg);
+  /* Native snapshots must not bake transient host chrome (for example Toast)
+     into the page texture. The live element remains above the turn after capture. */
+  .captured-turn-filter-transient-overlays [data-capture-invalidating-overlay='true'] {
+    visibility: hidden !important;
   }
-  to {
-    transform: rotate(-180deg);
-  }
-}
 
-.animate-spin-cw {
-  animation: spin-cw 0.6s ease-in-out;
-}
+  /* TTS player scrubber: the track is painted by an inline three-stop gradient
+     (played / buffered / rest), so the native appearance must be blanked and
+     the element itself becomes the 4px track. Thumb inherits currentColor. */
+  .tts-scrubber {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 9999px;
+  }
+  .tts-scrubber::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 9999px;
+    background: currentColor;
+  }
+  .tts-scrubber::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: none;
+    border-radius: 9999px;
+    background: currentColor;
+  }
+  .tts-scrubber:disabled {
+    opacity: 0.5;
+  }
 
-.animate-spin-ccw {
-  animation: spin-ccw 0.6s ease-in-out;
-}
-
-@keyframes shake {
-  0%,
-  100% {
-    transform: rotate(0deg);
+  /* E-ink: the gradient's grey stops wash out, so a crisp 1px border marks the
+     track's extent while the solid currentColor fill and thumb carry the
+     position. Slightly taller so the fill stays visible inside the border. */
+  [data-eink='true'] .tts-scrubber {
+    height: 6px;
+    border: 1px solid currentColor;
   }
-  10% {
-    transform: rotate(-8deg);
-  }
-  20% {
-    transform: rotate(8deg);
-  }
-  30% {
-    transform: rotate(-8deg);
-  }
-  40% {
-    transform: rotate(8deg);
-  }
-  50% {
-    transform: rotate(-6deg);
-  }
-  60% {
-    transform: rotate(6deg);
-  }
-  70% {
-    transform: rotate(-4deg);
-  }
-  80% {
-    transform: rotate(4deg);
-  }
-  90% {
-    transform: rotate(-2deg);
-  }
-}
-
-.animate-shake {
-  animation: shake 0.8s ease-in-out;
-}
-
-@keyframes pin-shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  20% {
-    transform: translateX(-8px);
-  }
-  40% {
-    transform: translateX(8px);
-  }
-  60% {
-    transform: translateX(-6px);
-  }
-  80% {
-    transform: translateX(6px);
-  }
-}
-
-.animate-pin-shake {
-  animation: pin-shake 0.4s ease-in-out;
-}
-
-@keyframes pin-cursor-blink {
-  0%,
-  49% {
-    opacity: 1;
-  }
-  50%,
-  100% {
-    opacity: 0;
-  }
-}
-
-.animate-pin-cursor-blink {
-  animation: pin-cursor-blink 1s step-end infinite;
-}
-
-/*
- * Suppress the daisyUI / browser focus ring on text inputs and
- * textareas. The element's own border (input-bordered, textarea-bordered)
- * already conveys focus via color shift, so the additional outer ring
- * was visually redundant and read as a "double border". Buttons keep
- * their focus ring for accessibility — only typed-in surfaces lose it.
- */
-input:not([type='checkbox']):not([type='radio']):not([type='range']):focus,
-input:not([type='checkbox']):not([type='radio']):not([type='range']):focus-visible,
-input:not([type='checkbox']):not([type='radio']):not([type='range']):focus-within,
-textarea:focus,
-textarea:focus-visible,
-textarea:focus-within,
-.input:focus,
-.input:focus-visible,
-.input:focus-within,
-.textarea:focus,
-.textarea:focus-visible,
-.textarea:focus-within {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* A captured or View Transition curl/slide snapshot already contains the
-   visible reader chrome. Sync its live copy underneath without playing the
-   regular toolbar transition alongside the page turn or cancellation. */
-.captured-turn-sync-chrome .header-bar,
-.captured-turn-sync-chrome .footer-bar {
-  transition: none !important;
-}
-
-/* Native snapshots must not bake transient host chrome (for example Toast)
-   into the page texture. The live element remains above the turn after capture. */
-.captured-turn-filter-transient-overlays [data-capture-invalidating-overlay='true'] {
-  visibility: hidden !important;
-}
-
-/* TTS player scrubber: the track is painted by an inline three-stop gradient
-   (played / buffered / rest), so the native appearance must be blanked and
-   the element itself becomes the 4px track. Thumb inherits currentColor. */
-.tts-scrubber {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 4px;
-  border-radius: 9999px;
-}
-.tts-scrubber::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 9999px;
-  background: currentColor;
-}
-.tts-scrubber::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  border: none;
-  border-radius: 9999px;
-  background: currentColor;
-}
-.tts-scrubber:disabled {
-  opacity: 0.5;
-}
-
-/* E-ink: the gradient's grey stops wash out, so a crisp 1px border marks the
-   track's extent while the solid currentColor fill and thumb carry the
-   position. Slightly taller so the fill stays visible inside the border. */
-[data-eink='true'] .tts-scrubber {
-  height: 6px;
-  border: 1px solid currentColor;
 }

@@ -120,7 +120,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           spellCheck={false}
           onChange={handleInputChange}
           placeholder={_('Search excerpts...')}
-          className='w-full bg-transparent p-2 font-sans text-sm font-light focus:outline-none'
+          className='w-full bg-transparent p-2 font-sans text-sm font-light focus:outline-hidden'
         />
 
         {searchTerm && (
