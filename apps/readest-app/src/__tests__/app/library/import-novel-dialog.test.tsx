@@ -129,6 +129,13 @@ describe('ImportNovelDialog', () => {
     expect(chapterCheckboxes.every((checkbox) => (checkbox as HTMLInputElement).checked)).toBe(
       true,
     );
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Book title' }), {
+      target: { value: '   ' },
+    });
+    expect((screen.getByRole('button', { name: 'Import' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
   });
 
   it('downloads only selected chapters under the chosen book title', async () => {
@@ -136,7 +143,7 @@ describe('ImportNovelDialog', () => {
     await goToPreview();
 
     const titleInput = screen.getByRole('textbox', { name: 'Book title' }) as HTMLInputElement;
-    expect(titleInput.value).toBe('My Novel');
+    expect(titleInput.value).toBe('My Novel Chapters 1 - 6');
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Chapter 1' }));
     expect(titleInput.value).toBe('My Novel Chapters 2 - 6');
@@ -153,8 +160,62 @@ describe('ImportNovelDialog', () => {
         chapters: toc.chapters.slice(2),
       },
       'https://n.example.org/toc',
-      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      expect.objectContaining({
+        identityKey: [
+          'https://n.example.org/toc',
+          ...toc.chapters.slice(2).map((chapter) => chapter.url),
+        ].join('\n'),
+        signal: expect.any(AbortSignal),
+      }),
     );
+  });
+
+  it('suggests titles for single and non-contiguous chapter selections', async () => {
+    setup();
+    await goToPreview();
+
+    const titleInput = screen.getByRole('textbox', { name: 'Book title' }) as HTMLInputElement;
+    fireEvent.click(screen.getByRole('button', { name: 'Deselect all' }));
+    expect(titleInput.value).toBe('My Novel');
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Chapter 2' }));
+    expect(titleInput.value).toBe('My Novel Chapter 2');
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Chapter 4' }));
+    expect(titleInput.value).toBe('My Novel (2 chapters)');
+  });
+
+  it('sets download progress to the selected chapter count', async () => {
+    downloadNovelMock.mockImplementation(() => new Promise(() => {}));
+    setup();
+    await goToPreview();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Chapter 1' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Chapter 2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+
+    await screen.findByText('Downloading chapters…');
+    expect(screen.getByText('0 / 4')).toBeTruthy();
+  });
+
+  it('resets selection and title suggestions when reopened', async () => {
+    const { onClose, onImport, rerender } = setup();
+    await goToPreview();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Chapter 1' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Book title' }), {
+      target: { value: 'Custom Volume' },
+    });
+
+    rerender(<ImportNovelDialog isOpen={false} onClose={onClose} onImport={onImport} />);
+    rerender(<ImportNovelDialog isOpen onClose={onClose} onImport={onImport} />);
+    await goToPreview();
+
+    const checkboxes = screen.getAllByRole('checkbox') as HTMLInputElement[];
+    expect(checkboxes.every((checkbox) => checkbox.checked)).toBe(true);
+    const titleInput = screen.getByRole('textbox', { name: 'Book title' }) as HTMLInputElement;
+    expect(titleInput.value).toBe('My Novel Chapters 1 - 6');
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Chapter 1' }));
+    expect(titleInput.value).toBe('My Novel Chapters 2 - 6');
   });
 
   it('downloads on Import and hands the file to onImport', async () => {
@@ -162,6 +223,11 @@ describe('ImportNovelDialog', () => {
     await goToPreview();
     fireEvent.click(screen.getByText('Import'));
     await waitFor(() => expect(onImport).toHaveBeenCalledWith(book.file));
+    expect(downloadNovelMock).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'My Novel Chapters 1 - 6' }),
+      'https://n.example.org/toc',
+      expect.objectContaining({ identityKey: 'https://n.example.org/toc' }),
+    );
     expect(onClose).toHaveBeenCalled();
   });
 

@@ -71,7 +71,7 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
   };
 
   const suggestedBookTitle = (novel: NovelToc, selected: Set<number>): string => {
-    if (selected.size === 0 || selected.size === novel.chapters.length) return novel.title;
+    if (selected.size === 0) return novel.title;
 
     const indexes = [...selected].sort((a, b) => a - b);
     const first = indexes[0]! + 1;
@@ -113,7 +113,7 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
       setToc(parsed);
       setSourceUrl(target);
       setSelectedChapterIndexes(selected);
-      setBookTitle(parsed.title);
+      setBookTitle(suggestedBookTitle(parsed, selected));
       setTitleEdited(false);
       setPhase('preview');
     } catch (e) {
@@ -129,6 +129,10 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
     const title = bookTitle.trim();
     if (selectedChapters.length === 0 || !title) return;
     const selectedToc = { ...toc, title, chapters: selectedChapters };
+    const identityKey =
+      selectedChapters.length === toc.chapters.length
+        ? sourceUrl
+        : [sourceUrl, ...selectedChapters.map((chapter) => chapter.url)].join('\n');
     const controller = new AbortController();
     abortRef.current = controller;
     setPhase('downloading');
@@ -137,6 +141,7 @@ const ImportNovelDialog: React.FC<ImportNovelDialogProps> = ({ isOpen, onClose, 
     try {
       const book = await downloadNovel(selectedToc, sourceUrl, {
         signal: controller.signal,
+        identityKey,
         translate: _,
         onProgress: (done, total) => setProgress({ done, total }),
       });
