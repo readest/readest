@@ -5,10 +5,8 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
-import { useCommandPalette } from '@/components/command-palette';
 import { tauriHandleClose, tauriHandleToggleFullScreen, tauriQuitApp } from '@/utils/window';
 import { eventDispatcher } from '@/utils/event';
-import { setShortcutsDialogVisible } from '@/components/KeyboardShortcutsHelp';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import { getParagraphActionForKey } from '@/utils/paragraphPresentation';
 import { getScrollGapAttr } from '@/utils/webtoon';
@@ -25,13 +23,14 @@ interface UseBookShortcutsProps {
 }
 
 const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) => {
-  const { getView, getViewState, getViewSettings, setViewSettings } = useReaderStore();
-  const { toggleSideBar, setSideBarBookKey } = useSidebarStore();
+  const { getView, getViewState, getViewSettings, setViewSettings, setHoveredBookKey } =
+    useReaderStore();
+  const { toggleSideBar, setSideBarBookKey, setSideBarVisible, setSearchBarVisible } =
+    useSidebarStore();
   const { setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
-  const { getBookData } = useBookDataStore();
+  const { getBookData, getConfig, setConfig } = useBookDataStore();
   const { toggleNotebook } = useNotebookStore();
   const { getNextBookKey } = useBooksManager();
-  const { open: openCommandPalette } = useCommandPalette();
   const lastParagraphToggleRef = useRef(0);
   const viewSettings = getViewSettings(sideBarBookKey ?? '');
   const fontSize = viewSettings?.defaultFontSize ?? 16;
@@ -71,6 +70,26 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
   const switchSideBar = () => {
     if (sideBarBookKey) setSideBarBookKey(getNextBookKey(sideBarBookKey));
+  };
+
+  const openTableOfContents = (event?: KeyboardEvent | MessageEvent) => {
+    const eventBookKey =
+      event instanceof MessageEvent && typeof event.data?.bookKey === 'string'
+        ? event.data.bookKey
+        : null;
+    const bookKey = eventBookKey || sideBarBookKey;
+    if (!bookKey) return false;
+    const config = getConfig(bookKey);
+    if (config?.viewSettings) {
+      setConfig(bookKey, {
+        viewSettings: { ...config.viewSettings, sideBarTab: 'toc' },
+      });
+    }
+    setSideBarBookKey(bookKey);
+    setSearchBarVisible(false);
+    setHoveredBookKey('');
+    setSideBarVisible(true);
+    return true;
   };
 
   // Standard desktop selection shortcuts (#4728). After a selection the reader
@@ -409,6 +428,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onAdjustTextSelection: adjustTextSelection,
       onSwitchSideBar: switchSideBar,
       onToggleSideBar: toggleSideBar,
+      onOpenTableOfContents: openTableOfContents,
       onToggleNotebook: toggleNotebook,
       onToggleScrollMode: toggleScrollMode,
       onToggleBookmark: toggleBookmark,
@@ -451,8 +471,6 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onZoomIn: zoomIn,
       onZoomOut: zoomOut,
       onResetZoom: resetZoom,
-      onOpenCommandPalette: openCommandPalette,
-      onOpenShortcutsHelp: () => setShortcutsDialogVisible(true),
     },
     [sideBarBookKey, bookKeys],
   );

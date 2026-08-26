@@ -112,6 +112,37 @@ describe('iframeEventHandlers click gestures', () => {
     expect(types).toContain('iframe-double-click');
     expect(types).not.toContain('iframe-single-click');
   });
+
+  test('side buttons use a configured shortcut or fall back to reader history', async () => {
+    const { eventDispatcher } = await import('@/utils/event');
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatchSync').mockReturnValue(true);
+    const { handleAuxclick, handleMousedown, handleMouseup } = await importHandlers();
+    const consumedDown = mouseEvent({ button: 3 });
+    const consumedUp = mouseEvent({ button: 3 });
+    const consumedAux = mouseEvent({ button: 3 });
+
+    handleMousedown('book-1', consumedDown);
+    handleMouseup('book-1', consumedUp);
+    handleAuxclick('book-1', consumedAux);
+
+    expect(dispatchSpy).toHaveBeenCalledWith('iframe-shortcut-mouseup', {
+      bookKey: 'book-1',
+      event: consumedUp,
+    });
+    expect(consumedDown.preventDefault).toHaveBeenCalledOnce();
+    expect(consumedUp.preventDefault).toHaveBeenCalledOnce();
+    expect(consumedAux.preventDefault).toHaveBeenCalledOnce();
+    expect(postedTypes(postSpy)).not.toContain('iframe-mouseup');
+
+    dispatchSpy.mockReturnValue(false);
+    handleMouseup('book-1', mouseEvent({ button: 4 }));
+    expect(
+      postSpy.mock.calls.some((call: unknown[]) => {
+        const message = call[0] as { type?: string; button?: number };
+        return message.type === 'iframe-mouseup' && message.button === 4;
+      }),
+    ).toBe(true);
+  });
 });
 
 describe('single-tap opens image gallery / table zoom in reflowable books (#4584)', () => {

@@ -29,12 +29,12 @@ const SidebarContent: React.FC<{
   const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
   const aiEnabled = settings?.aiSettings?.enabled ?? false;
 
+  const configuredTab = config?.viewSettings?.sideBarTab || 'toc';
   useEffect(() => {
-    if (!sideBarBookKey) return;
-    const config = getConfig(sideBarBookKey!)!;
-    setActiveTab(config.viewSettings!.sideBarTab!);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sideBarBookKey]);
+    setActiveTab(configuredTab);
+    setTargetTab(configuredTab);
+    setFade(false);
+  }, [sideBarBookKey, configuredTab]);
 
   // reset to toc if history tab was active but AI is now disabled
   useEffect(() => {

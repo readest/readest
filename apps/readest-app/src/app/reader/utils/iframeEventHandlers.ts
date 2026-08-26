@@ -318,6 +318,7 @@ export const handleMousedown = (bookKey: string, event: MouseEvent) => {
   if (event.button === 1 && autoscrollArmedBooks.has(bookKey)) {
     event.preventDefault();
   }
+  if (event.button === 3 || event.button === 4) event.preventDefault();
 
   window.postMessage(
     {
@@ -344,6 +345,7 @@ export const handleAuxclick = (bookKey: string, event: MouseEvent) => {
   if (event.button === 1 && autoscrollArmedBooks.has(bookKey)) {
     event.preventDefault();
   }
+  if (event.button === 3 || event.button === 4) event.preventDefault();
 };
 
 export const handleMousemove = (bookKey: string, event: MouseEvent) => {
@@ -364,6 +366,10 @@ export const handleMouseup = (bookKey: string, event: MouseEvent) => {
   // we will handle mouse back and forward buttons ourselves
   if ([3, 4].includes(event.button)) {
     event.preventDefault();
+    if (eventDispatcher.dispatchSync('iframe-shortcut-mouseup', { bookKey, event })) {
+      event.stopImmediatePropagation();
+      return;
+    }
   }
   window.postMessage(
     {

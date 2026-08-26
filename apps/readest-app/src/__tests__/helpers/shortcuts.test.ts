@@ -180,17 +180,12 @@ describe('getShortcutsForDisplay', () => {
 });
 
 describe('shortcut customization', () => {
-  it('falls back safely when stored shortcuts are malformed', async () => {
+  it('loads, reassigns, resets, persists, and notifies safely', async () => {
     localStorage.setItem('customShortcuts', '{not-json');
-
-    const shortcuts = await getDefaults();
-
-    expect(shortcuts.onToggleSideBar.keys).toEqual(['s']);
-  });
-
-  it('reassigns a binding, persists only overrides, and notifies mounted consumers', async () => {
     const mod = await getModule();
     const initial = mod.loadShortcuts();
+    expect(initial.onToggleSideBar.keys).toEqual(['s']);
+
     const listener = vi.fn();
     window.addEventListener('shortcutUpdate', listener);
 
@@ -205,6 +200,10 @@ describe('shortcut customization', () => {
       onToggleNotebook: ['s'],
     });
     expect(listener).toHaveBeenCalledOnce();
+
+    const reset = mod.resetShortcutBinding(updated, 'onToggleSideBar');
+    expect(reset.onToggleSideBar.keys).toEqual(['s']);
+    expect(reset.onToggleNotebook.keys).toEqual([]);
 
     window.removeEventListener('shortcutUpdate', listener);
   });

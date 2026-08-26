@@ -441,10 +441,22 @@ export const setShortcutBinding = (
 export const resetShortcutBinding = (
   shortcuts: ShortcutConfig,
   action: ShortcutAction,
-): ShortcutConfig => ({
-  ...shortcuts,
-  [action]: { ...shortcuts[action], keys: [...DEFAULT_SHORTCUTS[action].keys] },
-});
+): ShortcutConfig => {
+  const result = Object.fromEntries(
+    Object.entries(shortcuts).map(([key, entry]) => [key, { ...entry, keys: [...entry.keys] }]),
+  ) as ShortcutConfig;
+  const defaultKeys = new Set(DEFAULT_SHORTCUTS[action].keys.map(normalizeShortcut));
+  for (const candidate of Object.keys(result) as ShortcutAction[]) {
+    if (candidate === action) continue;
+    const candidateDefaults = new Set(DEFAULT_SHORTCUTS[candidate].keys.map(normalizeShortcut));
+    result[candidate].keys = result[candidate].keys.filter((key) => {
+      const normalizedKey = normalizeShortcut(key);
+      return !defaultKeys.has(normalizedKey) || candidateDefaults.has(normalizedKey);
+    });
+  }
+  result[action].keys = [...DEFAULT_SHORTCUTS[action].keys];
+  return result;
+};
 
 // Save custom shortcuts to localStorage
 export const saveShortcuts = (shortcuts: ShortcutConfig) => {
