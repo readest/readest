@@ -53,13 +53,18 @@ const getSentence = (paragraph: string | undefined, selectedText: string): strin
 
   const before = paragraph.slice(0, selectedIndex);
   const after = paragraph.slice(selectedIndex + selectedText.length);
-  const sentenceStart = Math.max(before.lastIndexOf('.'), before.lastIndexOf('!'), before.lastIndexOf('?'));
+  const sentenceStart = Math.max(
+    before.lastIndexOf('.'),
+    before.lastIndexOf('!'),
+    before.lastIndexOf('?'),
+  );
   const afterStops = [after.indexOf('.'), after.indexOf('!'), after.indexOf('?')].filter(
     (index) => index >= 0,
   );
   const sentenceEnd = afterStops.length > 0 ? Math.min(...afterStops) : -1;
   const start = sentenceStart >= 0 ? sentenceStart + 1 : 0;
-  const end = sentenceEnd >= 0 ? selectedIndex + selectedText.length + sentenceEnd + 1 : paragraph.length;
+  const end =
+    sentenceEnd >= 0 ? selectedIndex + selectedText.length + sentenceEnd + 1 : paragraph.length;
   return paragraph.slice(start, end).trim();
 };
 

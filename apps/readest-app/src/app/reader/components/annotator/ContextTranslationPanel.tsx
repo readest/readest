@@ -28,7 +28,10 @@ type ContextTranslationPanelProps = {
 let lastContextTranslationDetailLevel: ContextTranslationDetailLevel = 'normal';
 
 const isConfigured = (settings: ContextTranslationSettings) =>
-  settings.enabled && !!settings.baseUrl.trim() && !!settings.apiKey.trim() && !!settings.modelId.trim();
+  settings.enabled &&
+  !!settings.baseUrl.trim() &&
+  !!settings.apiKey.trim() &&
+  !!settings.modelId.trim();
 
 const toMessage = (error: unknown): { message: string; retryable: boolean } => {
   if (error instanceof ContextTranslationError) {

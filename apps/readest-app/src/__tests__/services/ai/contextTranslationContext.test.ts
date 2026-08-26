@@ -19,7 +19,8 @@ const selectText = (container: HTMLElement, text: string) => {
 
 describe('buildContextTranslationContext', () => {
   it('preserves nearby text around the selection', () => {
-    document.body.innerHTML = '<p>When reading, looking up selected text often requires careful context.</p>';
+    document.body.innerHTML =
+      '<p>When reading, looking up selected text often requires careful context.</p>';
     const range = selectText(document.body, 'requires');
 
     const context = buildContextTranslationContext({ text: 'requires', range }, 80);
@@ -40,9 +41,9 @@ describe('buildContextTranslationContext', () => {
 
     const context = buildContextTranslationContext({ text: 'target', range }, 30);
 
-    expect(context.beforeContext.length + 'target'.length + context.afterContext.length).toBeLessThanOrEqual(
-      30,
-    );
+    expect(
+      context.beforeContext.length + 'target'.length + context.afterContext.length,
+    ).toBeLessThanOrEqual(30);
     expect(context.beforeContext.endsWith('before')).toBe(true);
     expect(context.afterContext.startsWith('after')).toBe(true);
   });

@@ -41,7 +41,10 @@ const assertConfigured = (settings: ContextTranslationSettings): void => {
   }
 };
 
-const buildCacheKey = (input: ContextTranslationInput, settings: ContextTranslationSettings): string =>
+const buildCacheKey = (
+  input: ContextTranslationInput,
+  settings: ContextTranslationSettings,
+): string =>
   JSON.stringify({
     input,
     prompt: buildContextTranslationSystemPrompt(input.detailLevel),
@@ -107,7 +110,8 @@ const isAbortError = (error: unknown): boolean =>
   error instanceof DOMException && error.name === 'AbortError';
 
 const CJK_TEXT_PATTERN = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
-const CJK_TARGET_LANGUAGE_PATTERN = /chinese|mandarin|cantonese|japanese|korean|中文|汉语|漢語|日本語|한국어|조선말/i;
+const CJK_TARGET_LANGUAGE_PATTERN =
+  /chinese|mandarin|cantonese|japanese|korean|中文|汉语|漢語|日本語|한국어|조선말/i;
 
 const allowsCjkText = (targetLanguage: string): boolean =>
   CJK_TARGET_LANGUAGE_PATTERN.test(targetLanguage);
@@ -123,11 +127,9 @@ const collectResultText = (result: ContextTranslationResult): string[] => {
   ];
 };
 
-const hasUnexpectedCjkText = (
-  result: ContextTranslationResult,
-  targetLanguage: string,
-): boolean =>
-  !allowsCjkText(targetLanguage) && collectResultText(result).some((text) => CJK_TEXT_PATTERN.test(text));
+const hasUnexpectedCjkText = (result: ContextTranslationResult, targetLanguage: string): boolean =>
+  !allowsCjkText(targetLanguage) &&
+  collectResultText(result).some((text) => CJK_TEXT_PATTERN.test(text));
 
 const requestChatCompletion = async (
   input: ContextTranslationInput,
@@ -199,7 +201,9 @@ export const requestContextTranslation = async (
     if (error instanceof ContextTranslationError) throw error;
     throw new ContextTranslationError(
       'invalid-response',
-      error instanceof Error ? error.message : 'Context translation provider returned an invalid response.',
+      error instanceof Error
+        ? error.message
+        : 'Context translation provider returned an invalid response.',
       false,
     );
   }

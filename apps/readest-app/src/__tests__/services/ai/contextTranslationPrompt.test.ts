@@ -6,7 +6,9 @@ describe('buildContextTranslationSystemPrompt', () => {
   it('requires every normal result field to use the target language', () => {
     const prompt = buildContextTranslationSystemPrompt('normal');
 
-    expect(prompt).toContain('Every user-facing JSON string value must be written in the target language');
+    expect(prompt).toContain(
+      'Every user-facing JSON string value must be written in the target language',
+    );
   });
 
   it('requires detailed explanatory fields to use the target language', () => {

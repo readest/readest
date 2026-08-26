@@ -16,14 +16,13 @@ describe('annotationToolbar helpers', () => {
     expect(ALL_ANNOTATION_TOOL_TYPES).toEqual(annotationToolButtons.map((b) => b.type));
   });
 
-  test('default toolbar is the non-share tools in canonical order', () => {
+  test('default toolbar is the pre-existing non-share tools in canonical order', () => {
     expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).toEqual([
       'copy',
       'highlight',
       'annotate',
       'search',
       'dictionary',
-      'contextTranslate',
       'translate',
       'tts',
       'proofread',
@@ -31,14 +30,23 @@ describe('annotationToolbar helpers', () => {
     expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).not.toContain('share');
   });
 
-  test('copylink is opt-in: off the default toolbar, offered in the available tray', () => {
+  test('copylink and context translate are opt-in: off the default toolbar, offered in the available tray', () => {
     expect(ALL_ANNOTATION_TOOL_TYPES).toContain('copylink');
+    expect(ALL_ANNOTATION_TOOL_TYPES).toContain('contextTranslate');
     expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).not.toContain('copylink');
+    expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).not.toContain('contextTranslate');
     expect(getToolbarToolTypes(undefined, true)).not.toContain('copylink');
+    expect(getToolbarToolTypes(undefined, true)).not.toContain('contextTranslate');
     expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, true)).toContain('copylink');
+    expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, true)).toContain(
+      'contextTranslate',
+    );
     expect(getToolbarToolTypes([...DEFAULT_ANNOTATION_TOOLBAR_ITEMS, 'copylink'], true)).toContain(
       'copylink',
     );
+    expect(
+      getToolbarToolTypes([...DEFAULT_ANNOTATION_TOOLBAR_ITEMS, 'contextTranslate'], true),
+    ).toContain('contextTranslate');
   });
 
   test('getToolbarToolTypes preserves order and falls back to default when undefined', () => {

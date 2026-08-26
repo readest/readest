@@ -1,4 +1,7 @@
-import type { ContextTranslationDetailLevel, ContextTranslationInput } from './contextTranslationTypes';
+import type {
+  ContextTranslationDetailLevel,
+  ContextTranslationInput,
+} from './contextTranslationTypes';
 
 const NORMAL_PROMPT = `You are a contextual ebook reading assistant.
 

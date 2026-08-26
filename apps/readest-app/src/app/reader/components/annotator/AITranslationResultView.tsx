@@ -67,7 +67,11 @@ const ErrorView = ({
   </div>
 );
 
-const NormalResultView = ({ result }: { result: Extract<ContextTranslationResult, { mode: 'normal' }> }) => (
+const NormalResultView = ({
+  result,
+}: {
+  result: Extract<ContextTranslationResult, { mode: 'normal' }>;
+}) => (
   <div className='space-y-3'>
     <Section title='Explanation'>
       <p>{result.explanation}</p>

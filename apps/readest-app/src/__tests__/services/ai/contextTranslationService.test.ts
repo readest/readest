@@ -159,7 +159,9 @@ describe('requestContextTranslation', () => {
   });
 
   it('maps 429 to rate limit error without leaking API key', async () => {
-    mockFetch.mockResolvedValueOnce(jsonResponse({ error: { message: 'Too many requests' } }, { status: 429 }));
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse({ error: { message: 'Too many requests' } }, { status: 429 }),
+    );
 
     await expect(requestContextTranslation(input, settings)).rejects.toSatisfy((error: unknown) => {
       expect(error).toMatchObject({ code: 'rate-limited', retryable: true });

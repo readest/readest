@@ -118,7 +118,9 @@ const AIPanel: React.FC = () => {
   const [contextTranslation, setContextTranslation] = useState<ContextTranslationSettings>(
     contextTranslationSettings,
   );
-  const [contextTranslationModels, setContextTranslationModels] = useState<OpenRouterModelInfo[]>([]);
+  const [contextTranslationModels, setContextTranslationModels] = useState<OpenRouterModelInfo[]>(
+    [],
+  );
   const [contextTranslationFetchingModels, setContextTranslationFetchingModels] = useState(false);
   const [contextTranslationModelsError, setContextTranslationModelsError] = useState('');
 
@@ -158,7 +160,9 @@ const AIPanel: React.FC = () => {
         ...DEFAULT_AI_SETTINGS,
         ...(currentSettings.aiSettings ?? {}),
         contextTranslation: getContextTranslationSettings(
-          currentSettings.aiSettings?.contextTranslation as Partial<ContextTranslationSettings> | undefined,
+          currentSettings.aiSettings?.contextTranslation as
+            | Partial<ContextTranslationSettings>
+            | undefined,
         ),
       };
       const newAiSettings: AISettings = { ...currentAiSettings, [key]: value };
@@ -351,11 +355,7 @@ const AIPanel: React.FC = () => {
   }, [_, contextTranslation, saveContextTranslationSetting]);
 
   useEffect(() => {
-    if (
-      contextTranslation.enabled &&
-      contextTranslation.baseUrl &&
-      contextTranslation.apiKey
-    ) {
+    if (contextTranslation.enabled && contextTranslation.baseUrl && contextTranslation.apiKey) {
       fetchContextTranslationModelList();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -41,7 +41,11 @@ describe('parseContextTranslationResult', () => {
         explanation: 'Detailed explanation.',
         examples: [{ sentence: 'Navigation often requires a map.', explanation: 'Similar use.' }],
         synonyms: [
-          { phrase: 'frequently demands', example: 'It frequently demands care.', nuance: 'Stronger.' },
+          {
+            phrase: 'frequently demands',
+            example: 'It frequently demands care.',
+            nuance: 'Stronger.',
+          },
         ],
       }),
       'detailed',
