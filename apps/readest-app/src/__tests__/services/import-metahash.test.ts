@@ -894,9 +894,9 @@ describe('importBook PDF filename-aware dedup', () => {
     language: 'en',
   };
 
-  function setupMockPdfDoc() {
+  function setupMockPdfDoc(metadata = PDF_METADATA) {
     const bookDoc = {
-      metadata: { ...PDF_METADATA },
+      metadata: { ...metadata },
       getCover: vi.fn().mockResolvedValue(null),
     };
     mockOpen.mockResolvedValue({ book: bookDoc, format: 'PDF' });
@@ -954,6 +954,134 @@ describe('importBook PDF filename-aware dedup', () => {
     expect(book2).toBe(book1);
     expect(books.filter((b) => !b.deletedAt)).toHaveLength(1);
     expect(book1!.hash).toBe('pdf-hash-2');
+  });
+
+  it('updates embedded metadata and stored bytes when a PDF re-import keeps the same partial hash', async () => {
+    const originalMetadata = {
+      title: 'Canon R7 Custom Buttons',
+      author: 'Canon',
+      language: 'en',
+    };
+    const changedMetadata = {
+      ...originalMetadata,
+      title: 'Canon R7 Buttons Guide',
+      author: 'Canon.com',
+    };
+    const filename = 'canon-r7-custom-buttons.pdf';
+    const existingBook = makeBook({
+      hash: 'same-partial-hash',
+      format: 'PDF' as Book['format'],
+      metaHash: getMetadataHash(originalMetadata, 'canon-r7-custom-buttons'),
+      title: originalMetadata.title,
+      sourceTitle: undefined,
+      author: originalMetadata.author,
+      metadata: originalMetadata,
+      uploadedAt: Date.now() - 5000,
+      deletedAt: Date.now() - 1000,
+    });
+    const books = [existingBook];
+    const originalFile = new File(['original metadata bytes'], filename, {
+      type: 'application/pdf',
+    });
+    const changedFile = new File(['changed metadata bytes'], filename, {
+      type: 'application/pdf',
+    });
+
+    mockPartialMD5.mockResolvedValue(existingBook.hash);
+    setupMockPdfDoc(changedMetadata);
+    service.getFs().exists.mockImplementation(async (path: string) => path.endsWith('.pdf'));
+    service.getFs().openFile.mockResolvedValue(originalFile);
+
+    const imported = await service.importBook(changedFile, books);
+
+    expect(imported).toBe(existingBook);
+    expect(existingBook.deletedAt).toBeNull();
+    expect(existingBook.title).toBe('Canon R7 Buttons Guide');
+    expect(existingBook.sourceTitle).toBe('Canon R7 Custom Buttons');
+    expect(existingBook.author).toBe('Canon.com');
+    expect(existingBook.metadata).toEqual(changedMetadata);
+    expect(existingBook.metaHash).toBe(getMetadataHash(changedMetadata, 'canon-r7-custom-buttons'));
+    expect(existingBook.metadataUpdatedAt).toBe(existingBook.updatedAt);
+    expect(existingBook.uploadedAt).toBeNull();
+    expect(service.getFs().writeFile).toHaveBeenCalledWith(
+      'same-partial-hash/Canon R7 Custom Buttons.pdf',
+      'Books',
+      changedFile,
+    );
+  });
+
+  it('keeps the original metadata and bytes when a same-hash refresh fails before commit', async () => {
+    const originalMetadata = { title: 'Original Title', author: 'Original Author', language: 'en' };
+    const changedMetadata = { ...originalMetadata, author: 'Changed Author' };
+    const existingBook = makeBook({
+      hash: 'same-partial-hash',
+      format: 'PDF' as Book['format'],
+      metaHash: getMetadataHash(originalMetadata, 'book'),
+      title: originalMetadata.title,
+      sourceTitle: originalMetadata.title,
+      author: originalMetadata.author,
+      metadata: originalMetadata,
+    });
+    const originalFile = new File(['original bytes'], 'book.pdf', { type: 'application/pdf' });
+    const changedFile = new File(['changed bytes'], 'book.pdf', { type: 'application/pdf' });
+
+    mockPartialMD5.mockResolvedValue(existingBook.hash);
+    mockOpen.mockResolvedValue({
+      book: {
+        metadata: changedMetadata,
+        getCover: vi.fn().mockRejectedValue(new Error('cover failed')),
+      },
+      format: 'PDF',
+    });
+    service.getFs().exists.mockImplementation(async (path: string) => path.endsWith('.pdf'));
+    service.getFs().openFile.mockResolvedValue(originalFile);
+
+    await expect(service.importBook(changedFile, [existingBook])).rejects.toThrow('cover failed');
+
+    expect(existingBook.author).toBe('Original Author');
+    expect(existingBook.metadata).toEqual(originalMetadata);
+    expect(service.getFs().writeFile).not.toHaveBeenCalledWith(
+      expect.any(String),
+      'Books',
+      changedFile,
+    );
+  });
+
+  it('preserves user metadata when unchanged PDF bytes are re-imported under a new filename', async () => {
+    const embeddedMetadata = {
+      title: 'Canon R7 Custom Buttons',
+      author: 'Canon',
+      language: 'en',
+    };
+    const existingBook = makeBook({
+      hash: 'same-partial-hash',
+      format: 'PDF' as Book['format'],
+      metaHash: getMetadataHash(embeddedMetadata, 'original-filename'),
+      title: 'My Camera Reference',
+      sourceTitle: embeddedMetadata.title,
+      author: 'Edited Author',
+      metadata: {
+        ...embeddedMetadata,
+        title: 'My Camera Reference',
+        author: 'Edited Author',
+      },
+    });
+    const books = [existingBook];
+    const unchangedFile = new File(['unchanged bytes'], 'renamed-filename.pdf', {
+      type: 'application/pdf',
+    });
+
+    mockPartialMD5.mockResolvedValue(existingBook.hash);
+    setupMockPdfDoc(embeddedMetadata);
+    service.getFs().exists.mockImplementation(async (path: string) => path.endsWith('.pdf'));
+    service.getFs().openFile.mockResolvedValue(unchangedFile);
+
+    const imported = await service.importBook(unchangedFile, books);
+
+    expect(imported).toBe(existingBook);
+    expect(existingBook.title).toBe('My Camera Reference');
+    expect(existingBook.author).toBe('Edited Author');
+    expect(existingBook.metadata).toEqual(embeddedMetadata);
   });
 
   it('refreshBookMetadata preserves the salted metaHash for PDFs', async () => {
@@ -1033,6 +1161,32 @@ describe('importBook with BookLookupIndex', () => {
 
     // Should reuse the existing book object via lookup index
     expect(result).toBe(existingBook);
+  });
+
+  it('rekeys the metadata lookup index after an exact-hash metadata-changing re-import', async () => {
+    const originalMetadata = { ...TEST_METADATA };
+    const changedMetadata = { ...TEST_METADATA, author: 'Updated Author' };
+    const originalMetaHash = getMetadataHash(originalMetadata)!;
+    const changedMetaHash = getMetadataHash(changedMetadata)!;
+    const existingBook = makeBook({
+      hash: 'existing',
+      metaHash: originalMetaHash,
+      metadata: originalMetadata,
+    });
+    const books = [existingBook];
+    const lookupIndex = buildBookLookupIndex(books);
+
+    mockPartialMD5.mockResolvedValue(existingBook.hash);
+    setupMockBookDoc(changedMetadata);
+
+    await service.importBook(
+      new File(['changed metadata bytes'], 'test.epub', { type: 'application/epub+zip' }),
+      books,
+      { lookupIndex },
+    );
+
+    expect(lookupIndex.byMetaKey.get(`${originalMetaHash}:EPUB`) ?? []).not.toContain(existingBook);
+    expect(lookupIndex.byMetaKey.get(`${changedMetaHash}:EPUB`)).toContain(existingBook);
   });
 
   it('buildBookLookupIndex skips deleted and url-backed books in byFilePath', async () => {

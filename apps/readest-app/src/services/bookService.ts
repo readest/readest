@@ -72,6 +72,32 @@ export function buildBookLookupIndex(books: Book[], osPlatform?: OsPlatform): Bo
   return { byHash, byMetaKey, byFilePath };
 }
 
+function rekeyBookMetadataIndex(
+  lookupIndex: BookLookupIndex,
+  book: Book,
+  previousMetaKey: string | undefined,
+) {
+  const nextMetaKey =
+    book.metaHash && !book.deletedAt ? `${book.metaHash}:${book.format}` : undefined;
+  if (previousMetaKey === nextMetaKey) return;
+
+  if (previousMetaKey) {
+    const previousBooks = lookupIndex.byMetaKey
+      .get(previousMetaKey)
+      ?.filter((item) => item !== book);
+    if (previousBooks?.length) lookupIndex.byMetaKey.set(previousMetaKey, previousBooks);
+    else lookupIndex.byMetaKey.delete(previousMetaKey);
+  }
+  if (nextMetaKey) {
+    const nextBooks = lookupIndex.byMetaKey.get(nextMetaKey);
+    if (nextBooks) {
+      if (!nextBooks.includes(book)) nextBooks.push(book);
+    } else {
+      lookupIndex.byMetaKey.set(nextMetaKey, [book]);
+    }
+  }
+}
+
 /**
  * Normalize an absolute file path into a stable map key for `byFilePath`.
  *
@@ -434,6 +460,45 @@ export interface ImportBookInternalOptions extends ImportBookOptions {
   osPlatform?: OsPlatform;
 }
 
+// NativeFile caches slices up to and including 1 MiB. Stay above that limit so
+// large comparisons keep only the current pair of chunks in memory.
+const FILE_COMPARE_CHUNK_SIZE = 2 * 1024 * 1024;
+
+async function filesHaveSameBytes(left: File, right: File): Promise<boolean> {
+  if (left.size !== right.size) return false;
+  for (let start = 0; start < left.size; start += FILE_COMPARE_CHUNK_SIZE) {
+    const end = Math.min(start + FILE_COMPARE_CHUNK_SIZE, left.size);
+    const [leftChunk, rightChunk] = await Promise.all([
+      left.slice(start, end).arrayBuffer(),
+      right.slice(start, end).arrayBuffer(),
+    ]);
+    const leftBytes = new Uint8Array(leftChunk);
+    const rightBytes = new Uint8Array(rightChunk);
+    if (leftBytes.some((byte, index) => byte !== rightBytes[index])) return false;
+  }
+  return true;
+}
+
+async function matchesStoredBookBytes(fs: FileSystem, book: Book, candidate: File) {
+  const source = await resolveBookContentSource(fs, book);
+  if (!isBookFileContentSource(source) || source.kind === 'url') return false;
+
+  let storedFile: File | undefined;
+  try {
+    storedFile = await fs.openFile(source.path, source.base);
+    return await filesHaveSameBytes(storedFile, candidate);
+  } catch {
+    return false;
+  } finally {
+    const closable = storedFile as ClosableFile | undefined;
+    if (closable?.close) {
+      try {
+        await closable.close();
+      } catch {}
+    }
+  }
+}
+
 export async function importBook(
   fs: FileSystem,
   // file might be:
@@ -591,6 +656,21 @@ export async function importBook(
     let existingBook = lookupIndex
       ? lookupIndex.byHash.get(hash)
       : books.find((b) => b.hash === hash);
+    const previousMetaKey = existingBook?.metaHash
+      ? `${existingBook.metaHash}:${existingBook.format}`
+      : undefined;
+    // partialMD5 intentionally samples large files, so an edit confined to an
+    // unsampled metadata block can keep the same content hash (#5885). The
+    // metadata hash distinguishes that external edit from a true same-file
+    // re-import, where user-edited title/author fields must stay untouched.
+    let sameHashMetadataChanged =
+      !transient && !!existingBook?.metaHash && !!metaHash && existingBook.metaHash !== metaHash;
+    // PDF metaHash includes the import filename (#5411), so a rename alone
+    // also changes it. Compare the complete bytes only on this rare collision
+    // path to distinguish a rename from an edit outside partialMD5's samples.
+    if (sameHashMetadataChanged && format === 'PDF' && fileobj) {
+      sameHashMetadataChanged = !(await matchesStoredBookBytes(fs, existingBook!, fileobj));
+    }
     let metaHashMatch = false;
     let oldBookDir: string | undefined;
     if (existingBook) {
@@ -658,16 +738,24 @@ export async function importBook(
       }
     }
     // update book metadata when reimporting the same book
-    if (existingBook && metaHashMatch) {
-      // MetaHash match (different file, same book): override metadata and hash
+    if (existingBook && (metaHashMatch || sameHashMetadataChanged)) {
+      // A metadata match identifies a new file version of the same book. A
+      // same-hash metadata change identifies edits outside sampled ranges.
+      // Both are explicit re-imports, so file-derived metadata wins.
       existingBook.hash = hash;
       existingBook.format = book.format;
       existingBook.metaHash = metaHash;
+      if (sameHashMetadataChanged) {
+        book.sourceTitle = existingBook.sourceTitle || existingBook.title || book.sourceTitle;
+      }
       existingBook.title = book.title;
       existingBook.sourceTitle = book.sourceTitle;
       existingBook.author = book.author;
       existingBook.primaryLanguage = book.primaryLanguage;
       existingBook.metadata = book.metadata;
+      if (sameHashMetadataChanged) {
+        existingBook.metadataUpdatedAt = existingBook.updatedAt;
+      }
       existingBook.uploadedAt = null;
       existingBook.downloadedAt = Date.now();
     } else if (existingBook) {
@@ -694,8 +782,9 @@ export async function importBook(
       !transient &&
       !inPlace &&
       !!fileobj &&
-      (!(await fs.exists(bookFilename, 'Books')) || overwrite);
-    if (willWriteBookFile && fileobj) {
+      (!(await fs.exists(bookFilename, 'Books')) || overwrite || sameHashMetadataChanged);
+    const writeBookFile = async () => {
+      if (!fileobj) return;
       if (/\.txt$/i.test(filename)) {
         await fs.writeFile(bookFilename, 'Books', fileobj);
       } else if (typeof file === 'string' && isContentURI(file)) {
@@ -712,8 +801,14 @@ export async function importBook(
       } else {
         await fs.writeFile(bookFilename, 'Books', fileobj);
       }
+    };
+    if (willWriteBookFile && !sameHashMetadataChanged) {
+      await writeBookFile();
     }
-    if (saveCover && (!(await fs.exists(getCoverFilename(book), 'Books')) || overwrite)) {
+    if (
+      saveCover &&
+      (!(await fs.exists(getCoverFilename(book), 'Books')) || overwrite || sameHashMetadataChanged)
+    ) {
       let cover = await loadedBook.getCover();
       if (cover?.type === 'image/svg+xml') {
         try {
@@ -809,6 +904,13 @@ export async function importBook(
       await fs.writeFile(getConfigFilename(book), 'Books', serializeRawConfig(config));
     }
 
+    // Keep the original managed bytes intact until cover/config work has
+    // succeeded. If either fails, the metadata rollback still describes the
+    // file on disk; the replacement is the final fallible commit step.
+    if (willWriteBookFile && sameHashMetadataChanged) {
+      await writeBookFile();
+    }
+
     // Past this point the target book/config is authoritative. A later cleanup
     // failure must leave the library pointing at the new hash, not roll it back
     // to a directory whose retirement may already have started.
@@ -875,6 +977,10 @@ export async function importBook(
       }
     }
     book.coverImageUrl = await generateCoverImageUrlFn(book);
+
+    if (lookupIndex && existingBook) {
+      rekeyBookMetadataIndex(lookupIndex, existingBook, previousMetaKey);
+    }
 
     return existingBook || book;
   } catch (error) {
