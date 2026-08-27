@@ -68,6 +68,20 @@ describe('useTTSLyrics', () => {
     expect(result.current.lines).toEqual([]);
   });
 
+  test('treats a transcript that cannot be read as no transcript', async () => {
+    const { result } = renderHook(() =>
+      useTTSLyrics({
+        bookKey: 'b',
+        enabled: true,
+        onGetLyrics: vi.fn().mockRejectedValue(new Error('chunk load failed')),
+        onGetActiveIndex: () => 0,
+      }),
+    );
+    // Falls back to the cover rather than leaving the lyric layout over nothing.
+    await waitFor(() => expect(result.current.unavailable).toBe(true));
+    expect(result.current.lines).toEqual([]);
+  });
+
   test('reloads the sheet when playback crosses into another chapter', async () => {
     const onGetLyrics = vi
       .fn()

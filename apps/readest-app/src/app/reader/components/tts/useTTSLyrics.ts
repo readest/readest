@@ -59,6 +59,12 @@ export const useTTSLyrics = ({
             ? next
             : null,
       );
+    } catch {
+      // A transcript that cannot be read is a section with no sheet to show:
+      // fall back to the cover rather than leaving the lyric layout standing
+      // over nothing (and leaving the rejection unhandled).
+      setUnavailable(true);
+      setLyrics(null);
     } finally {
       loadingRef.current = false;
     }

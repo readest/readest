@@ -213,6 +213,30 @@ describe('TTSLyricsView', () => {
     expect(defaults.onGetLyricPage).toHaveBeenCalledWith(3);
   });
 
+  test('drops a carried-over pick when playback crosses into a new chapter', () => {
+    const { rerender } = renderView({ activeIndex: 0 });
+    dragTo(3);
+    expect(screen.getByLabelText('Play')).toBeTruthy();
+
+    // New chapter, new ordinals: pressing play on index 3 of the old sheet
+    // would seek to whatever sentence sits there now.
+    rerender(
+      <TTSLyricsView {...defaults} lines={['Fresh chapter.', 'Second line.']} activeIndex={0} />,
+    );
+    expect(screen.queryByLabelText('Play')).toBeNull();
+  });
+
+  test('drops a committed line when the chapter changes before its audio lands', async () => {
+    const { rerender } = renderView({ activeIndex: 0 });
+    dragTo(2);
+    fireEvent.click(screen.getByLabelText('Play'));
+    expect(document.querySelector('.loading-spinner')).toBeTruthy();
+
+    rerender(<TTSLyricsView {...defaults} lines={['Fresh chapter.']} activeIndex={0} buffering />);
+    // Otherwise it spins against an ordinal the new chapter will never report.
+    await waitFor(() => expect(document.querySelector('.loading-spinner')).toBeNull());
+  });
+
   test('the play button reads from the dragged line, not the spoken one', () => {
     renderView({ activeIndex: 0 });
     dragTo(2);

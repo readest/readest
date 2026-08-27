@@ -145,6 +145,18 @@ const TTSLyricsView = ({
 
   useEffect(() => clearIdleTimer, []);
 
+  // A new chapter is a new set of ordinals. Anything the reader had picked in
+  // the old one must go with it: pressing play on a carried-over index would
+  // seek to whatever sentence happens to sit there now, and a carried-over
+  // commit would spin until its watchdog.
+  useEffect(() => {
+    seekingRef.current = false;
+    clearIdleTimer();
+    setSeekIndex(null);
+    setPending(null);
+    setPage(null);
+  }, [lines]);
+
   // Only a real gesture opens the seek row: the follow effect above scrolls
   // this same element, and that must never read as the reader scrubbing.
   // Movement, not contact — a tap that arms this would turn the next follow

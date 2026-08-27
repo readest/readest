@@ -767,7 +767,12 @@ export class TTSController extends EventTarget {
       return this.#sectionTimeline;
     }
     const doc = this.#ttsDoc;
-    if (!doc || this.#ttsSectionIndex < 0) return null;
+    // Pin the section this build is FOR. The enumeration below awaits, and a
+    // chapter can turn inside that await; committing then would file sentences
+    // read out of the old document under the new section's index, which every
+    // `#timelineSectionIndex === #ttsSectionIndex` guard would wave through.
+    const sectionIndex = this.#ttsSectionIndex;
+    if (!doc || sectionIndex < 0) return null;
     const sentences: TimelineSentence[] = [];
     if (this.narrationActive) {
       // The recording's own clip boundaries — exact durations, so the scrubber
@@ -786,6 +791,10 @@ export class TTSController extends EventTarget {
         sentences.push({ ...entry, text: entry.range.toString() });
       }
     }
+    // The section moved on while this was being enumerated: these sentences
+    // belong to a document nobody is reading any more. Drop them; the next
+    // caller rebuilds against the section now loaded.
+    if (this.#ttsSectionIndex !== sectionIndex || this.#ttsDoc !== doc) return null;
     const timeline = new SectionTimeline(
       sentences,
       this.ttsLang || 'en',
@@ -793,12 +802,12 @@ export class TTSController extends EventTarget {
     );
     timeline.setRate(this.ttsRate);
     this.#sectionTimeline = timeline;
-    this.#timelineSectionIndex = this.#ttsSectionIndex;
+    this.#timelineSectionIndex = sectionIndex;
     // Tell the cache which sentences make up this section (ordinal-keyed);
     // once every ordinal has a recorded synthesis key, the section can be
     // compacted into one pack file.
     this.ttsClient.registerSectionManifest?.(
-      this.#ttsSectionIndex,
+      sectionIndex,
       sentences.map((s) => `${s.blockIndex}:${s.markName}`),
     );
     // Off the critical path: pull cached per-sentence durations (downloaded
@@ -806,7 +815,7 @@ export class TTSController extends EventTarget {
     // chapter reports a fully measured timeline — without this the buffered
     // bar showed an "unbuffered" tail on downloaded chapters until every
     // sentence had been replayed.
-    void this.#hydrateTimelineDurations(timeline, sentences, this.#ttsSectionIndex);
+    void this.#hydrateTimelineDurations(timeline, sentences, sectionIndex);
     return timeline;
   }
 
