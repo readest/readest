@@ -33,7 +33,7 @@ export const DEFAULT_FORMAT_GROUPS: FormatGroup[] = [
   { id: 'mobi', label: 'MOBI/AZW/AZW3', exts: ['mobi', 'azw', 'azw3'] },
   { id: 'fb2', label: 'FB2', exts: ['fb2'] },
   { id: 'cbz', label: 'CBZ/ZIP', exts: ['cbz', 'zip'] },
-  { id: 'txt', label: 'TXT', exts: ['txt'] },
+  { id: 'txt', label: 'TXT/MD', exts: ['txt', 'md'] },
 ];
 
 export interface ImportFromFolderResult {
