@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrent } from '@tauri-apps/plugin-deep-link';
 import { useEnv } from '@/context/EnvContext';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useBookTransferActions } from '@/app/library/hooks/useBookTransferActions';
+import { useMakeBookAvailable } from './useMakeBookAvailable';
 import { isTauriAppPlatform } from '@/services/environment';
 import { isAudiobook } from '@/utils/audiobook';
 import { navigateToReader } from '@/utils/nav';
@@ -16,6 +18,12 @@ import { useTranslation } from './useTranslation';
 // remount would re-read the cold-start URL.
 let coldStartConsumed = false;
 
+// A widget tap has no shelf item to put a spinner or a progress overlay on, so
+// the download plumbing below gets stable no-op sinks. Module-scoped so their
+// identity never changes: `makeBookAvailable` is memoized on them, and a fresh
+// closure per render would re-subscribe the deep-link listener every render.
+const noop = () => {};
+
 /**
  * Receive `readest://book/{hash}` deep links (home-screen widget taps) and open
  * the book in the reader. Subscribes to the shared 'app-incoming-url' event for
@@ -25,13 +33,22 @@ let coldStartConsumed = false;
 export function useOpenBookLink() {
   const _ = useTranslation();
   const router = useRouter();
-  const { appService } = useEnv();
+  const { envConfig, appService } = useEnv();
   const getBookByHash = useLibraryStore((s) => s.getBookByHash);
+  const updateBook = useLibraryStore((s) => s.updateBook);
   const libraryLoaded = useLibraryStore((s) => s.libraryLoaded);
   const pending = useRef<string | null>(null);
+  const [, setTransferProgress] = useState<{ [key: string]: number }>({});
+  const { handleBookDownload } = useBookTransferActions(
+    envConfig,
+    appService,
+    updateBook,
+    setTransferProgress,
+  );
+  const makeBookAvailable = useMakeBookAvailable({ setLoading: noop, handleBookDownload });
 
   const resolveAndNavigate = useCallback(
-    (bookHash: string) => {
+    async (bookHash: string) => {
       const book = getBookByHash(bookHash);
       if (!book) {
         eventDispatcher.dispatch('toast', {
@@ -51,6 +68,14 @@ export function useOpenBookLink() {
         router.push(`/player?id=${bookHash}`);
         return;
       }
+      // The widget lists whatever is currently being read, and on a second
+      // device that set includes cloud-synced books that arrived as metadata +
+      // progress with no file blob. Fetch the file before opening anything -
+      // exactly what a library tap does via useOpenBook - otherwise the reader
+      // (or the in-place switch below) drives loadBookContent at a path that
+      // does not exist and dies on the spinner.
+      if (!(await makeBookAvailable(book))) return;
+
       // If a reader is already mounted, switch in place via useBooksManager: it
       // focuses the book if it is already open (checked against the live
       // bookKeys) or replaces the open book(s) with it otherwise. A plain
@@ -63,7 +88,7 @@ export function useOpenBookLink() {
       // No reader mounted (library / cold start) - navigate fresh.
       navigateToReader(router, [bookHash]);
     },
-    [_, getBookByHash, router],
+    [_, getBookByHash, makeBookAvailable, router],
   );
 
   useEffect(() => {
@@ -92,7 +117,7 @@ export function useOpenBookLink() {
         pending.current = parsed.bookHash;
         return;
       }
-      resolveAndNavigate(parsed.bookHash);
+      void resolveAndNavigate(parsed.bookHash);
     };
 
     if (!coldStartConsumed) {
@@ -116,6 +141,6 @@ export function useOpenBookLink() {
     if (!libraryLoaded || !pending.current) return;
     const bookHash = pending.current;
     pending.current = null;
-    resolveAndNavigate(bookHash);
+    void resolveAndNavigate(bookHash);
   }, [libraryLoaded, resolveAndNavigate]);
 }
