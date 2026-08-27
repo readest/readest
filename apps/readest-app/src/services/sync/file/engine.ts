@@ -535,7 +535,16 @@ export class FileSyncEngine {
     // so an unchanged index means no remote-side news — the run can skip the
     // index download AND the discovery scan.
     let remoteIndexUnchanged = false;
-    if (canPull) {
+    // Always pulled, even under 'send' (canPull === false): the final re-push
+    // below needs the remote's `uploadedHashes` / `emptyDirs` and any book
+    // entries this device doesn't locally know about (chiefly a peer's
+    // upload or tombstone), or a Send Only run rewrites library.json from
+    // this device's state alone — silently dropping every previously
+    // confirmed upload and every peer-only book (#5900). The per-book pull
+    // behaviors (metadata reconciliation, deletion propagation, discovery,
+    // config pull-merge) stay independently gated on `canPull` below, so
+    // 'send' still performs its documented blind, local-authoritative push.
+    {
       // Cheap change probe: one metadata stat. `etag` is Drive's md5 / the
       // WebDAV ETag; a provider without one always re-pulls. An AUTH failure
       // aborts exactly like the pull below; any other probe failure falls
@@ -590,8 +599,10 @@ export class FileSyncEngine {
     // Incremental cursor: a book needs a push only when its local copy is newer
     // than (or absent from) the shared library.json index. `book.updatedAt`
     // bumps on every progress / notes / metadata save, so the index is a
-    // reliable per-book change marker. When no index is available (send mode,
-    // or a failed pull) every local book counts as new and is pushed.
+    // reliable per-book change marker. 'send' ignores this cursor entirely —
+    // it is a blind, local-authoritative push (see class doc) — regardless of
+    // what the (now always-pulled) remote index says; a failed pull aborts
+    // before this point, so every local book also counts as new then.
     const remoteByHash = new Map<string, Book>();
     if (remoteIndex?.books) {
       for (const rb of remoteIndex.books) {
@@ -599,6 +610,7 @@ export class FileSyncEngine {
       }
     }
     const isLocalNewer = (book: Book): boolean => {
+      if (!canPull) return true;
       const remote = remoteByHash.get(book.hash);
       if (!remote) return true;
       return (book.updatedAt ?? 0) > (remote.updatedAt ?? 0);
