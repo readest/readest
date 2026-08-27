@@ -1,6 +1,6 @@
 ---
 name: footnote-popup-jump-to-location-5766
-description: "#5766 footnote popup jump-to-location button; foliate scrolled() ignores margin-* so popup chrome must reserve space via body padding-block-start"
+description: "#5766 footnote popup jump-to-location button; foliate scrolled() ignores margin-* so popup chrome is OVERLAID on the text, never given a reserved strip"
 metadata:
   type: project
 ---
@@ -17,12 +17,15 @@ Load-bearing facts:
   `0px <side> 0px <side>` and only publishes `--page-margin-*` as CSS vars. The
   footnote popup is always `flow: scrolled`, so its `backButtonMargin` was dead
   code and the Back button had **always** overlapped the popup's first line.
-  Reserve chrome in the popup document instead, via the stylesheet passed to
-  `renderer.setStyles`: `body { padding-block-start: calc(1em + 32px) !important }`
-  (must be `!important` to beat `getFootnoteStyles()`'s `padding: 1em !important`).
-  `padding-block-start` resolves to the top in `horizontal-tb` and the **right
-  edge** in `vertical-rl` (browser-verified), which is exactly where the chrome
-  strip sits in each mode.
+  ABANDONED first attempt (kept only for the CSS facts it established, see the
+  "chrome OVERLAYS the text" bullet below for what shipped): reserve chrome in
+  the popup document via the stylesheet passed to `renderer.setStyles`,
+  `body { padding-block-start: calc(1em + 32px) !important }` (needs
+  `!important` to beat `getFootnoteStyles()`'s `padding: 1em !important`).
+  Still-true fact from it: `padding-block-start` resolves to the top in
+  `horizontal-tb` and the **right edge** in `vertical-rl` (browser-verified),
+  which is where the chrome strip sits in each mode. It was dropped because it
+  put a band of dead space above every short footnote.
 - **`margin-top: 32px` on the popup renderer BREAKS the popup outright** (found
   the hard way: chrox reported footnotes not opening in GEB
   `4d3ce53db692da09e5a901f461bab370`). The popup box starts at 88px, the

@@ -57,10 +57,17 @@ when the paginator has no primary view) - only the cross-axis branch guards
 `> 0`; a detached iframe stops delivering RO callbacks in Chrome (verified), so it
 is latent there but untested on WebKit, which is where the reporter verified.
 `stopTrackingPopupContentSize()` is missing from the in-popup `link` handler and
-`handleBack`, contradicting commit f18444e93's message. The added test
-`FootnotePopupSizing.test.tsx` stubs `ResizeObserver` to a no-op and only covers
-the alt-attribute path (it IS a real regression test there: fails on main with
-`88px`, passes with `152px`), so the observer path has no coverage.
+`handleBack`, contradicting commit f18444e93's message.
+
+AS REVIEWED (the contributor's #5887 branch), `FootnotePopupSizing.test.tsx`
+stubbed `ResizeObserver` to a no-op and covered only the alt-attribute path (a
+real regression test there: fails on main with `88px`, passes with `152px`), so
+the observer path had no coverage. THAT NO LONGER HOLDS: my e13f58c05 on top
+replaced the stub with the controllable one described above (callbacks captured
+in `h.resizeObservers`, frames in `h.frames`) and added the second describe,
+"footnote popup whose section never emits relocate", which fires
+`h.resizeObservers.forEach(cb => cb([]))` + `flushFrames()` and asserts
+`aria-hidden` flips to `false`. The observer path IS covered on main.
 
 Gates before merge: `pnpm test` 10154 passed / 16 skipped, `pnpm lint` (tsc + biome)
 green. Rebased on #5892, one commit behind main.
