@@ -65,7 +65,12 @@ const useShortcuts = (
       }
     }
     // Keep Backspace from navigating away when no action claims it.
-    return eventLike.key.toLowerCase() === 'backspace';
+    return (
+      eventLike.key.toLowerCase() === 'backspace' &&
+      !eventLike.ctrlKey &&
+      !eventLike.altKey &&
+      !eventLike.metaKey
+    );
   };
 
   const unifiedHandleKeyDown = (event: KeyboardEvent | MessageEvent) => {
@@ -138,28 +143,23 @@ const useShortcuts = (
     };
   };
 
-  const hasMouseShortcut = (eventLike: ShortcutEventLike) =>
-    Object.entries(actions).some(([actionName, handler]) => {
-      const entry = shortcuts[actionName as keyof ShortcutConfig];
-      return !!handler && !!entry && matchesShortcut(eventLike, entry.keys);
-    });
-
-  const handleMouseEvent = (event: MouseEvent) => {
+  const handleMouseUp = (event: MouseEvent) => {
     const eventLike = getMouseEventLike(event);
-    if (!eventLike || !hasMouseShortcut(eventLike)) return;
-    event.preventDefault();
-    if (event.type !== 'mouseup') return;
+    if (!eventLike) return;
     const message = new MessageEvent('shortcut-mouseup', {
       data: { type: 'shortcut-mouseup', button: event.button },
     });
-    if (processKeyEvent(eventLike, message)) event.stopImmediatePropagation();
+    if (processKeyEvent(eventLike, message)) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
   };
 
   const handleIframeMouseUp = (customEvent: CustomEvent) => {
     const detail = customEvent.detail as { bookKey?: string; event?: MouseEvent } | undefined;
     if (!detail?.event) return false;
     const eventLike = getMouseEventLike(detail.event);
-    if (!eventLike || !hasMouseShortcut(eventLike)) return false;
+    if (!eventLike) return false;
     const message = new MessageEvent('iframe-mouseup', {
       data: {
         type: 'iframe-mouseup',
@@ -173,13 +173,13 @@ const useShortcuts = (
   const handleIframeKeyDown = (customEvent: CustomEvent) => {
     const detail = customEvent.detail as { bookKey?: string; event?: KeyboardEvent } | undefined;
     if (!detail?.event) return false;
-    if (
-      (isInteractiveTarget(detail.event.target) || isNativeActivation(detail.event)) &&
-      !options.allowInInputs
-    ) {
+    const interactiveTarget =
+      isInteractiveTarget(detail.event.target) || isNativeActivation(detail.event);
+    if (interactiveTarget && !options.allowInInputs) return false;
+    const { key, code, ctrlKey, altKey, metaKey, shiftKey, repeat } = detail.event;
+    if (interactiveTarget && options.requireModifierInInputs && !ctrlKey && !altKey && !metaKey) {
       return false;
     }
-    const { key, code, ctrlKey, altKey, metaKey, shiftKey, repeat } = detail.event;
     const eventLike: ShortcutEventLike = {
       key,
       ctrlKey,
@@ -208,23 +208,25 @@ const useShortcuts = (
   useEffect(() => {
     window.addEventListener('keydown', unifiedHandleKeyDown, options.capture);
     window.addEventListener('message', unifiedHandleKeyDown);
-    window.addEventListener('mousedown', handleMouseEvent);
-    window.addEventListener('mouseup', handleMouseEvent);
-    window.addEventListener('auxclick', handleMouseEvent);
+    window.addEventListener('mouseup', handleMouseUp);
     eventDispatcher.onSync('iframe-shortcut-mouseup', handleIframeMouseUp);
     eventDispatcher.onSync('iframe-shortcut-keydown', handleIframeKeyDown);
 
     return () => {
       window.removeEventListener('keydown', unifiedHandleKeyDown, options.capture);
       window.removeEventListener('message', unifiedHandleKeyDown);
-      window.removeEventListener('mousedown', handleMouseEvent);
-      window.removeEventListener('mouseup', handleMouseEvent);
-      window.removeEventListener('auxclick', handleMouseEvent);
+      window.removeEventListener('mouseup', handleMouseUp);
       eventDispatcher.offSync('iframe-shortcut-mouseup', handleIframeMouseUp);
       eventDispatcher.offSync('iframe-shortcut-keydown', handleIframeKeyDown);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shortcuts, options.allowInInputs, options.capture, ...dependencies]);
+  }, [
+    shortcuts,
+    options.allowInInputs,
+    options.capture,
+    options.requireModifierInInputs,
+    ...dependencies,
+  ]);
 };
 
 export default useShortcuts;

@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { BookDoc } from '@/libs/document';
 import { useReaderStore } from '@/store/readerStore';
@@ -26,21 +26,30 @@ const SidebarContent: React.FC<{
   const [activeTab, setActiveTab] = useState(config?.viewSettings?.sideBarTab || 'toc');
   const [fade, setFade] = useState(false);
   const [targetTab, setTargetTab] = useState(activeTab);
+  const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
   const aiEnabled = settings?.aiSettings?.enabled ?? false;
 
   const configuredTab = config?.viewSettings?.sideBarTab || 'toc';
   useEffect(() => {
+    if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+    transitionTimeoutRef.current = null;
     setActiveTab(configuredTab);
     setTargetTab(configuredTab);
     setFade(false);
+    return () => {
+      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+    };
   }, [sideBarBookKey, configuredTab]);
 
   // reset to toc if history tab was active but AI is now disabled
   useEffect(() => {
     if ((activeTab === 'history' || targetTab === 'history') && !aiEnabled) {
+      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
+      transitionTimeoutRef.current = null;
       setActiveTab('toc');
       setTargetTab('toc');
+      setFade(false);
     }
   }, [aiEnabled, activeTab, targetTab]);
 
@@ -56,17 +65,20 @@ const SidebarContent: React.FC<{
     // The header search icon is contextual (annotation search vs in-book
     // search), so an open search bar never survives a tab switch.
     setSearchBarVisible(false);
+    if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
     setFade(true);
-    const timeout = setTimeout(() => {
+    setActiveTab(tab);
+    transitionTimeoutRef.current = setTimeout(() => {
+      transitionTimeoutRef.current = null;
       setTargetTab(tab);
       setFade(false);
-      setConfig(sideBarBookKey!, config);
-      clearTimeout(timeout);
+      const latestConfig = getConfig(sideBarBookKey);
+      if (latestConfig) {
+        setConfig(sideBarBookKey, {
+          viewSettings: { ...latestConfig.viewSettings, sideBarTab: tab },
+        });
+      }
     }, 300);
-
-    setActiveTab(tab);
-    const config = getConfig(sideBarBookKey!)!;
-    config.viewSettings!.sideBarTab = tab;
   };
 
   return (

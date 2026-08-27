@@ -52,6 +52,16 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
   useKeyDownActions({ onCancel: onBack, enabled: !listening && !pendingReplacement });
 
   useEffect(() => {
+    const syncShortcuts = () => {
+      const next = loadShortcuts();
+      shortcutsRef.current = next;
+      setShortcuts(next);
+    };
+    window.addEventListener('shortcutUpdate', syncShortcuts);
+    return () => window.removeEventListener('shortcutUpdate', syncShortcuts);
+  }, []);
+
+  useEffect(() => {
     const frame = requestAnimationFrame(() => {
       let parent = rootRef.current?.parentElement;
       while (parent && parent.tagName !== 'DIALOG') {

@@ -1571,12 +1571,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   useShortcuts(
     {
       onHighlightSelection: () => {
-        if (!selection?.text) return false;
+        if (!selection?.text || (selection.popup && !selection.cfi)) return false;
         handleHighlight(false, 'highlight');
         return true;
       },
       onUnderlineSelection: () => {
-        if (!selection?.text) return false;
+        if (!selection?.text || (selection.popup && !selection.cfi)) return false;
         handleHighlight(false, 'underline');
         return true;
       },
