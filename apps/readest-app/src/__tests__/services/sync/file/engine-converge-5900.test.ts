@@ -1,0 +1,362 @@
+import { describe, expect, test, vi } from 'vitest';
+
+import type { Book } from '@/types/book';
+import { FileSyncEngine } from '@/services/sync/file/engine';
+import { FileSyncError, type FileSyncProvider } from '@/services/sync/file/provider';
+import type { LocalStore } from '@/services/sync/file/localStore';
+import type { RemoteLibraryIndex } from '@/services/sync/file/wire';
+
+/**
+ * #5900: multi-device file sync never converged. Defect 1 — a 'send' run
+ * rewriting library.json it never read — and its blind-push invariant are
+ * covered by engine-send-only-index-safety.test.ts. This file covers the rest:
+ *
+ *   - the other records that re-push carries (emptyDirs), and the abort that
+ *     protects them when the index cannot be read at all;
+ *   - that reading the index did NOT turn 'send' into a consumer of the
+ *     remote's uploaded-file record — #5900 reports that record being wrong,
+ *     and Send Only is the recovery path;
+ *   - defect 2, the actual standoff: republishing a live row over a peer's
+ *     tombstone carried the row's OLD `updatedAt`, and a peer revives only on
+ *     `remote.updatedAt > local.deletedAt`, so a row last edited before the
+ *     deletion could never win. The two devices ping-ponged live row vs
+ *     tombstone forever (the reporter's "BOOX stays at 129 books");
+ *   - defect 3, a failed library.json write swallowed by a console.warn, so a
+ *     run that converged nothing still reported success.
+ */
+
+const makeBook = (hash: string, overrides: Partial<Book> = {}): Book => ({
+  hash,
+  format: 'EPUB',
+  title: `Book ${hash}`,
+  sourceTitle: `Book ${hash}`,
+  author: 'A',
+  createdAt: 1,
+  updatedAt: 100,
+  ...overrides,
+});
+
+type Captured = { writes: { path: string; body: string }[] };
+
+const fakeProvider = (
+  opts: Partial<FileSyncProvider> & { captured?: Captured } = {},
+): FileSyncProvider => ({
+  rootPath: '/',
+  readText: opts.readText ?? (async () => null),
+  readBinary: opts.readBinary ?? (async () => new ArrayBuffer(8)),
+  head: opts.head ?? (async () => null),
+  list: opts.list ?? (async () => []),
+  writeText:
+    opts.writeText ??
+    (async (path: string, body: string) => {
+      opts.captured?.writes.push({ path, body });
+    }),
+  writeBinary: opts.writeBinary ?? (async () => {}),
+  ensureDir: opts.ensureDir ?? (async () => {}),
+  deleteDir: opts.deleteDir ?? (async () => {}),
+});
+
+const fakeStore = (opts: Partial<LocalStore> = {}): LocalStore => ({
+  loadConfig: opts.loadConfig ?? (async () => ({ updatedAt: 1, booknotes: [] })),
+  saveBookConfig: opts.saveBookConfig ?? (async () => {}),
+  loadBookFile: opts.loadBookFile ?? (async () => ({ bytes: new ArrayBuffer(16), size: 16 })),
+  resolveLocalBookPath: opts.resolveLocalBookPath ?? (async () => ({ path: '/src', size: 16 })),
+  saveBookFile: opts.saveBookFile ?? (async () => {}),
+  prepareLocalBookPath: opts.prepareLocalBookPath ?? (async () => '/local/dst'),
+  loadBookCover: opts.loadBookCover ?? (async () => null),
+  saveBookCover: opts.saveBookCover ?? (async () => {}),
+  addBookToLibrary: opts.addBookToLibrary ?? (async () => {}),
+  updateBookMetadata: opts.updateBookMetadata ?? (async () => {}),
+  deleteBookLocally: opts.deleteBookLocally ?? (async () => {}),
+  markBooksUploaded: opts.markBooksUploaded ?? (async () => {}),
+});
+
+const indexServing = (index: RemoteLibraryIndex) => async (p: string) =>
+  p.endsWith('library.json') ? JSON.stringify(index) : null;
+
+const pushedIndex = (captured: Captured): RemoteLibraryIndex | null => {
+  const write = captured.writes.find((w) => w.path.endsWith('library.json'));
+  return write ? (JSON.parse(write.body) as RemoteLibraryIndex) : null;
+};
+
+describe('FileSyncEngine.syncLibrary — Send Only reads the index safely (#5900)', () => {
+  test('carries forward the remote emptyDirs record', async () => {
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: indexServing({
+        schemaVersion: 1,
+        updatedAt: 1,
+        books: [makeBook('h1')],
+        emptyDirs: ['h9'],
+      }),
+      captured,
+    });
+
+    await new FileSyncEngine(provider, fakeStore()).syncLibrary([makeBook('h1')], {
+      strategy: 'send',
+      syncBooks: false,
+      deviceId: 'pc',
+    });
+
+    expect(pushedIndex(captured)!.emptyDirs).toEqual(['h9']);
+  });
+
+  test('aborts rather than rewriting an index it could not read', async () => {
+    // Now that the re-push carries peers' books, tombstones and uploaded-file
+    // record forward, writing an index we failed to READ would wipe all three.
+    // An unreadable index (throw) is not an absent one (404 -> null).
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: async (p) => {
+        if (p.endsWith('library.json')) throw new FileSyncError('offline', 'NETWORK', 503);
+        return null;
+      },
+      captured,
+    });
+
+    await expect(
+      new FileSyncEngine(provider, fakeStore()).syncLibrary([makeBook('h1')], {
+        strategy: 'send',
+        syncBooks: false,
+        deviceId: 'pc',
+      }),
+    ).rejects.toThrow('offline');
+    expect(pushedIndex(captured)).toBeNull();
+  });
+
+  test('still verifies book files it has not confirmed itself', async () => {
+    // Reading the index must not make 'send' trust the remote's uploaded-file
+    // record: #5900 is a report of that record being WRONG, and Send Only is
+    // the recovery path a user reaches for. It re-probes every local file.
+    const heads: string[] = [];
+    const provider = fakeProvider({
+      readText: indexServing({
+        schemaVersion: 1,
+        updatedAt: 1,
+        books: [makeBook('h1')],
+        uploadedHashes: ['h1'],
+      }),
+      head: async (p) => {
+        heads.push(p);
+        return null;
+      },
+    });
+
+    const res = await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      [makeBook('h1', { downloadedAt: 1 })],
+      { strategy: 'send', syncBooks: true, fullSync: false, deviceId: 'pc' },
+    );
+
+    expect(res.filesUploaded).toBe(1);
+    expect(heads.some((p) => p.includes('/books/h1/'))).toBe(true);
+  });
+});
+
+describe('FileSyncEngine.syncLibrary — tombstone revival converges (#5900)', () => {
+  test('a send push over a peer tombstone publishes a row that outranks it', async () => {
+    // The reporter's deadlock: the PC keeps the book (last edited at 100), a
+    // peer deleted it at 5000. Republishing with updatedAt 100 can never beat
+    // the peer's `deletedAt` 5000, so the peer re-pushes its tombstone and the
+    // two devices ping-pong forever. The republish IS the newer decision and
+    // must be stamped as such.
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: indexServing({
+        schemaVersion: 1,
+        updatedAt: 1,
+        books: [makeBook('h1', { updatedAt: 100, deletedAt: 5000 })],
+      }),
+      captured,
+    });
+
+    await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      { strategy: 'send', syncBooks: false, deviceId: 'pc' },
+    );
+
+    const row = pushedIndex(captured)!.books.find((b) => b.hash === 'h1')!;
+    expect(row.deletedAt).toBeFalsy();
+    expect(row.updatedAt).toBeGreaterThan(5000);
+  });
+
+  test('persists the revival stamp locally so the next run does not regress it', async () => {
+    const updateBookMetadata = vi.fn<(b: Book) => Promise<void>>(async () => {});
+    const provider = fakeProvider({
+      readText: indexServing({
+        schemaVersion: 1,
+        updatedAt: 1,
+        books: [makeBook('h1', { updatedAt: 100, deletedAt: 5000 })],
+      }),
+    });
+
+    await new FileSyncEngine(provider, fakeStore({ updateBookMetadata })).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      { strategy: 'send', syncBooks: false, deviceId: 'pc' },
+    );
+
+    expect(updateBookMetadata).toHaveBeenCalledTimes(1);
+    const saved = updateBookMetadata.mock.calls[0]![0];
+    expect(saved.hash).toBe('h1');
+    expect(saved.updatedAt).toBeGreaterThan(5000);
+    expect(saved.deletedAt).toBeFalsy();
+  });
+
+  test('does not stamp a row the remote already has live', async () => {
+    // Only a republish OVER a tombstone is a new decision. An ordinary send
+    // must leave `updatedAt` alone, or every run rewrites every row.
+    const captured: Captured = { writes: [] };
+    const updateBookMetadata = vi.fn<(b: Book) => Promise<void>>(async () => {});
+    const provider = fakeProvider({
+      readText: indexServing({
+        schemaVersion: 1,
+        updatedAt: 1,
+        books: [makeBook('h1', { updatedAt: 100 })],
+      }),
+      captured,
+    });
+
+    await new FileSyncEngine(provider, fakeStore({ updateBookMetadata })).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      { strategy: 'send', syncBooks: false, deviceId: 'pc' },
+    );
+
+    expect(updateBookMetadata).not.toHaveBeenCalled();
+    expect(pushedIndex(captured)!.books.find((b) => b.hash === 'h1')!.updatedAt).toBe(100);
+  });
+
+  test('a peer revives its tombstone from the stamped row', async () => {
+    // The other half of the handshake: given the row the test above publishes,
+    // the peer that holds the tombstone must put the book back on its shelf.
+    const addBookToLibrary = vi.fn<(b: Book) => Promise<void>>(async () => {});
+    const provider = fakeProvider({
+      readText: indexServing({
+        schemaVersion: 1,
+        updatedAt: 1,
+        books: [makeBook('h1', { updatedAt: 5001 })],
+      }),
+      list: async (p) =>
+        p.endsWith('/books')
+          ? [{ name: 'h1', path: '/Readest/books/h1', isDirectory: true }]
+          : [
+              {
+                name: 'Book h1.epub',
+                path: '/Readest/books/h1/Book h1.epub',
+                isDirectory: false,
+                size: 10,
+              },
+            ],
+    });
+
+    const res = await new FileSyncEngine(provider, fakeStore({ addBookToLibrary })).syncLibrary(
+      [makeBook('h1', { updatedAt: 5000, deletedAt: 5000 })],
+      { strategy: 'silent', syncBooks: false, fullSync: true, deviceId: 'boox' },
+    );
+
+    expect(res.booksAdded).toBe(1);
+    expect(addBookToLibrary).toHaveBeenCalledTimes(1);
+    expect(addBookToLibrary.mock.calls[0]![0].hash).toBe('h1');
+  });
+});
+
+describe('FileSyncEngine.syncLibrary — two devices converge (#5900)', () => {
+  test('a Send Only PC and a peer holding a tombstone settle on one library', async () => {
+    // The reporter's exact standoff, played out round by round against one
+    // shared remote: the PC keeps a book it last touched at 100, the BOOX
+    // deleted it at 5000 and pushed that tombstone. Neither shelf ever
+    // changed, run after run. Convergence means the tombstone loses (the PC
+    // is the authoritative sender) and STAYS lost.
+    let remote = JSON.stringify({
+      schemaVersion: 1,
+      updatedAt: 1,
+      books: [makeBook('h1', { updatedAt: 100, deletedAt: 5000 })],
+    } satisfies RemoteLibraryIndex);
+
+    const sharedRemote = (): Partial<FileSyncProvider> => ({
+      readText: async (p) => (p.endsWith('library.json') ? remote : null),
+      writeText: async (p, body) => {
+        if (p.endsWith('library.json')) remote = body;
+      },
+      list: async (p) =>
+        p.endsWith('/books')
+          ? [{ name: 'h1', path: '/Readest/books/h1', isDirectory: true }]
+          : [
+              {
+                name: 'Book h1.epub',
+                path: '/Readest/books/h1/Book h1.epub',
+                isDirectory: false,
+                size: 10,
+              },
+            ],
+    });
+
+    const liveRow = () =>
+      (JSON.parse(remote) as RemoteLibraryIndex).books.find((b) => b.hash === 'h1')!;
+
+    // --- Round 1: the PC sends. It must stamp its republish to outrank 5000.
+    let pcBooks = [makeBook('h1', { updatedAt: 100 })];
+    await new FileSyncEngine(
+      fakeProvider(sharedRemote()),
+      fakeStore({
+        updateBookMetadata: async (b) => {
+          pcBooks = [b];
+        },
+      }),
+    ).syncLibrary(pcBooks, { strategy: 'send', syncBooks: false, deviceId: 'pc' });
+    expect(liveRow().deletedAt).toBeFalsy();
+
+    // --- Round 2: the BOOX pulls. Its tombstone must give way.
+    let booxBooks = [makeBook('h1', { updatedAt: 5000, deletedAt: 5000 })];
+    const addBookToLibrary = vi.fn<(b: Book) => Promise<void>>(async (b) => {
+      booxBooks = [{ ...b, deletedAt: null }];
+    });
+    const boox = await new FileSyncEngine(
+      fakeProvider(sharedRemote()),
+      fakeStore({ addBookToLibrary }),
+    ).syncLibrary(booxBooks, { strategy: 'silent', syncBooks: false, deviceId: 'boox' });
+    expect(boox.booksAdded).toBe(1);
+    expect(booxBooks[0]!.deletedAt).toBeFalsy();
+    // The BOOX's own re-push must not put the tombstone back.
+    expect(liveRow().deletedAt).toBeFalsy();
+
+    // --- Round 3: the PC sends again. Nothing left to override, so it must
+    // stop restamping — a stamp per run would churn the index forever.
+    const restamp = vi.fn<(b: Book) => Promise<void>>(async () => {});
+    await new FileSyncEngine(
+      fakeProvider(sharedRemote()),
+      fakeStore({ updateBookMetadata: restamp }),
+    ).syncLibrary(pcBooks, { strategy: 'send', syncBooks: false, deviceId: 'pc' });
+    expect(restamp).not.toHaveBeenCalled();
+    expect(liveRow().deletedAt).toBeFalsy();
+  });
+});
+
+describe('FileSyncEngine.syncLibrary — index write failure is reported (#5900)', () => {
+  test('surfaces a failed library.json write instead of swallowing it', async () => {
+    const provider = fakeProvider({
+      readText: indexServing({ schemaVersion: 1, updatedAt: 1, books: [makeBook('h1')] }),
+      writeText: async (p) => {
+        if (p.endsWith('library.json')) throw new Error('507 Insufficient Storage');
+      },
+    });
+
+    const res = await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      [makeBook('h1', { updatedAt: 200 })],
+      { strategy: 'silent', syncBooks: false, deviceId: 'pc' },
+    );
+
+    expect(res.indexPushFailed).toBe(true);
+  });
+
+  test('reports a healthy run as not failed', async () => {
+    const provider = fakeProvider({
+      readText: indexServing({ schemaVersion: 1, updatedAt: 1, books: [makeBook('h1')] }),
+    });
+
+    const res = await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      [makeBook('h1', { updatedAt: 200 })],
+      { strategy: 'silent', syncBooks: false, deviceId: 'pc' },
+    );
+
+    expect(res.indexPushFailed).toBe(false);
+  });
+});

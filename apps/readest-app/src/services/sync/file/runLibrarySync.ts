@@ -158,8 +158,17 @@ export const runFileLibrarySyncPass = async (
         const result = await syncOneBackend(envConfig, kind, _);
         useFileSyncStore.getState().setLastError(kind, null);
         if (result) {
+          // Spread the latest counters, but ACCUMULATE everything that reports
+          // trouble — a plain spread let a healthy second mirror erase the
+          // first one's failures and its unwritten index (#5900).
           merged = merged
-            ? { ...result, booksSynced: merged.booksSynced + result.booksSynced }
+            ? {
+                ...result,
+                booksSynced: merged.booksSynced + result.booksSynced,
+                failures: merged.failures + result.failures,
+                failedBooks: [...merged.failedBooks, ...result.failedBooks],
+                indexPushFailed: merged.indexPushFailed || result.indexPushFailed,
+              }
             : result;
         }
       } catch (e) {

@@ -46,7 +46,11 @@ const routing = vi.hoisted(() => ({
 }));
 
 const runFileLibrarySyncPass = vi.hoisted(() =>
-  vi.fn(async (): Promise<{ booksSynced: number } | null> => ({ booksSynced: 1 })),
+  vi.fn(
+    async (): Promise<{ booksSynced: number; indexPushFailed?: boolean } | null> => ({
+      booksSynced: 1,
+    }),
+  ),
 );
 
 vi.mock('@/context/AuthContext', () => ({
@@ -200,6 +204,32 @@ describe('useBooksSync pullLibrary routing (issue #5062)', () => {
     const toastCalls = dispatchSpy.mock.calls.filter(([event]) => event === 'toast');
     expect(toastCalls).toHaveLength(1);
     expect(toastCalls[0]?.[1]).toMatchObject({ type: 'info', message: '7 book(s) synced' });
+  });
+
+  it('reports a failure when the file pass could not write the shared index (#5900)', async () => {
+    // library.json IS the convergence point: peers read membership, tombstones
+    // and the uploaded-file record from it. A run that uploaded books but could
+    // not write it converged nothing, and must not toast a book count.
+    routing.readestEnabled = false;
+    routing.backends = ['gdrive'];
+
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch');
+
+    const { result } = renderHook(() => useBooksSync());
+
+    await waitFor(() => expect(runFileLibrarySyncPass).toHaveBeenCalled());
+
+    dispatchSpy.mockClear();
+    runFileLibrarySyncPass.mockClear();
+    runFileLibrarySyncPass.mockResolvedValueOnce({ booksSynced: 4, indexPushFailed: true });
+
+    await act(async () => {
+      await result.current.pullLibrary(false, true);
+    });
+
+    const toastCalls = dispatchSpy.mock.calls.filter(([event]) => event === 'toast');
+    expect(toastCalls).toHaveLength(1);
+    expect(toastCalls[0]?.[1]).toMatchObject({ type: 'error', message: 'Sync failed' });
   });
 
   it('still reports a combined success when the file pass fails but the native pull succeeds', async () => {

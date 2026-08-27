@@ -115,7 +115,11 @@ export const useBooksSync = () => {
         let fileSucceeded = false;
         if (runFilePass) {
           const result = await runFileLibrarySyncPass(envConfig, _);
-          fileSucceeded = result !== null;
+          // A run that could not write library.json converged NOTHING, however
+          // many books it uploaded: peers read membership, tombstones and the
+          // uploaded-file record from that one file. Reporting it as "N books
+          // synced" is what let #5900 go unnoticed for so long.
+          fileSucceeded = result !== null && !result.indexPushFailed;
           fileSynced = result?.booksSynced ?? 0;
         }
 
