@@ -9,6 +9,8 @@ export type KeyActionHandlers = {
   ) => void | boolean | Promise<void | boolean>;
 };
 
+const NOTE_EDITOR_ACTIONS = new Set<keyof ShortcutConfig>(['onSaveNote', 'onEscape']);
+
 const isInteractiveTarget = (target: EventTarget | null): boolean => {
   const element = target as HTMLElement | null;
   return !!element?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(element?.tagName ?? '');
@@ -22,7 +24,11 @@ const isNativeActivation = (event: KeyboardEvent): boolean => {
 const useShortcuts = (
   actions: KeyActionHandlers,
   dependencies: React.DependencyList = [],
-  options: { allowInInputs?: boolean; capture?: boolean } = {},
+  options: {
+    allowInInputs?: boolean;
+    capture?: boolean;
+    requireModifierInInputs?: boolean;
+  } = {},
 ) => {
   const [shortcuts, setShortcuts] = useState<ShortcutConfig>(loadShortcuts);
 
@@ -42,9 +48,14 @@ const useShortcuts = (
     };
   }, []);
 
-  const processKeyEvent = (eventLike: ShortcutEventLike, event: KeyboardEvent | MessageEvent) => {
+  const processKeyEvent = (
+    eventLike: ShortcutEventLike,
+    event: KeyboardEvent | MessageEvent,
+    allowedActions?: ReadonlySet<keyof ShortcutConfig>,
+  ) => {
     for (const [actionName, actionHandler] of Object.entries(actions)) {
       const shortcutKey = actionName as keyof ShortcutConfig;
+      if (allowedActions && !allowedActions.has(shortcutKey)) continue;
       const handler = actionHandler as KeyActionHandlers[keyof ShortcutConfig];
       const shortcutEntry = shortcuts[shortcutKey as keyof ShortcutConfig];
       // console.log('Checking action:', shortcutKey);
@@ -67,25 +78,24 @@ const useShortcuts = (
       event instanceof MessageEvent &&
       event.data?.type === 'iframe-keydown' &&
       !!event.data.interactiveTarget;
+    const isInteractiveInput = isInteractiveElement || iframeInteractiveTarget;
 
     const isNoteEditor =
       activeElement?.tagName === 'TEXTAREA' && activeElement.classList.contains('note-editor');
 
-    if (
-      ((isInteractiveElement && !isNoteEditor) || iframeInteractiveTarget) &&
-      !options.allowInInputs
-    ) {
+    if (isInteractiveInput && !isNoteEditor && !options.allowInInputs) {
       return; // Skip handling if the user is typing in an input, textarea, or contenteditable
     }
+    const hasCommandModifier =
+      event instanceof KeyboardEvent
+        ? event.ctrlKey || event.altKey || event.metaKey
+        : !!(event.data?.ctrlKey || event.data?.altKey || event.data?.metaKey);
+    if (isInteractiveInput && options.requireModifierInInputs && !hasCommandModifier) return;
 
     if (event instanceof KeyboardEvent) {
       const { key, ctrlKey, altKey, metaKey, shiftKey } = event;
 
       if (isNativeActivation(event) && !options.allowInInputs) return;
-
-      if (isNoteEditor && !((key === 'Enter' && ctrlKey) || key == 'Escape')) {
-        return;
-      }
 
       if (ctrlKey && key.toLowerCase() === 'f') {
         event.preventDefault();
@@ -101,6 +111,7 @@ const useShortcuts = (
           altGraphKey: event.getModifierState('AltGraph'),
         },
         event,
+        isNoteEditor ? NOTE_EDITOR_ACTIONS : undefined,
       );
       // console.log('Key event handled:', key, handled);
       if (handled) event.preventDefault();

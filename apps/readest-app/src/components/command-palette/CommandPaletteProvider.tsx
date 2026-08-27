@@ -192,7 +192,7 @@ export const CommandPaletteProvider: React.FC<CommandPaletteProviderProps> = ({ 
       },
     },
     [toggle, setSettingsDialogOpen],
-    { allowInInputs: true, capture: true },
+    { allowInInputs: true, capture: true, requireModifierInInputs: true },
   );
 
   const value = useMemo(
