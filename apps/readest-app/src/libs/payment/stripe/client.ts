@@ -59,7 +59,11 @@ export const createStripeCheckoutSession = async (
   });
 
   if (!response.ok) {
-    throw new Error('Failed to create Stripe checkout session');
+    const detail = await response
+      .json()
+      .then((data) => data?.message as string | undefined)
+      .catch(() => undefined);
+    throw new Error(detail || 'Failed to create Stripe checkout session');
   }
 
   return response.json();
