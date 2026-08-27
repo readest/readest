@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 
-import { LYRIC_MAX_LINES, useTTSLyrics } from '@/app/reader/components/tts/useTTSLyrics';
+import {
+  LYRIC_MAX_LINES,
+  type TTSLyrics as TTSLyricsResult,
+  useTTSLyrics,
+} from '@/app/reader/components/tts/useTTSLyrics';
 import { eventDispatcher } from '@/utils/event';
 
 const lines = ['One.', 'Two.', 'Three.'];
@@ -107,6 +111,39 @@ describe('useTTSLyrics', () => {
       await eventDispatcher.dispatch('tts-position', { bookKey: 'b', sectionIndex: 4 });
     });
     await waitFor(() => expect(result.current.lines).toEqual(['Next chapter.']));
+  });
+
+  test('runs a chapter change that arrived while a fetch was still out', async () => {
+    let releaseFirst: ((value: TTSLyricsResult) => void) | null = null;
+    const onGetLyrics = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<TTSLyricsResult>((resolve) => {
+            releaseFirst = resolve;
+          }),
+      )
+      .mockResolvedValueOnce({ sectionIndex: 4, lines: ['Next chapter.'] });
+    const { result } = renderHook(() =>
+      useTTSLyrics({
+        bookKey: 'b',
+        enabled: true,
+        onGetLyrics,
+        onGetActiveIndex: () => 0,
+      }),
+    );
+    await waitFor(() => expect(onGetLyrics).toHaveBeenCalledTimes(1));
+
+    // The chapter turns before the first fetch has come back.
+    await act(async () => {
+      await eventDispatcher.dispatch('tts-position', { bookKey: 'b', sectionIndex: 4 });
+    });
+    // Dropping it would leave section 3 on screen until the next sentence.
+    await act(async () => {
+      releaseFirst!({ sectionIndex: 3, lines });
+    });
+    await waitFor(() => expect(result.current.lines).toEqual(['Next chapter.']));
+    expect(onGetLyrics).toHaveBeenCalledTimes(2);
   });
 
   test('ignores position events from another book', async () => {
