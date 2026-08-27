@@ -40,31 +40,46 @@ export const useTTSLyrics = ({
   const [unavailable, setUnavailable] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const loadingRef = useRef(false);
+  const reloadWantedRef = useRef(false);
 
   const loadLyrics = useCallback(async () => {
-    if (loadingRef.current) return;
+    if (loadingRef.current) {
+      // A chapter turned while the previous fetch was still out. Dropping the
+      // request would leave the previous chapter's lines (or the cover) up
+      // until the next sentence boundary happened to ask again, so queue it.
+      reloadWantedRef.current = true;
+      return;
+    }
     loadingRef.current = true;
     try {
-      const next = await onGetLyrics();
-      const usable = !!next && next.lines.length > 0 && next.lines.length <= LYRIC_MAX_LINES;
-      setUnavailable(!usable);
-      setLyrics((prev) =>
-        // Identity matters: a new array re-measures the whole list.
-        prev &&
-        next &&
-        prev.sectionIndex === next.sectionIndex &&
-        prev.lines.length === next.lines.length
-          ? prev
-          : usable
-            ? next
-            : null,
-      );
-    } catch {
-      // A transcript that cannot be read is a section with no sheet to show:
-      // fall back to the cover rather than leaving the lyric layout standing
-      // over nothing (and leaving the rejection unhandled).
-      setUnavailable(true);
-      setLyrics(null);
+      do {
+        reloadWantedRef.current = false;
+        try {
+          const next = await onGetLyrics();
+          const usable = !!next && next.lines.length > 0 && next.lines.length <= LYRIC_MAX_LINES;
+          setUnavailable(!usable);
+          setLyrics((prev) =>
+            // Identity matters: a new array re-measures the whole list.
+            prev &&
+            next &&
+            prev.sectionIndex === next.sectionIndex &&
+            prev.lines.length === next.lines.length
+              ? prev
+              : usable
+                ? next
+                : null,
+          );
+        } catch {
+          // A transcript that cannot be read is a section with no sheet to
+          // show: fall back to the cover rather than leaving the lyric layout
+          // standing over nothing (and leaving the rejection unhandled).
+          setUnavailable(true);
+          setLyrics(null);
+        }
+        // Bounded by the number of chapter changes that actually queued up:
+        // each pass clears the flag before fetching, so only a change that
+        // arrived during THAT fetch runs another.
+      } while (reloadWantedRef.current);
     } finally {
       loadingRef.current = false;
     }
