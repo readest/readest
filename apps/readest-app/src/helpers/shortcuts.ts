@@ -20,7 +20,7 @@ const DEFAULT_SHORTCUTS = {
   },
   onOpenTableOfContents: {
     keys: [],
-    description: _('Open Table of Contents'),
+    description: _('Toggle Table of Contents'),
     section: 'General',
   },
   onToggleNotebook: {

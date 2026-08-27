@@ -80,6 +80,17 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     const bookKey = eventBookKey || sideBarBookKey;
     if (!bookKey) return false;
     const config = getConfig(bookKey);
+    const {
+      isSideBarPinned,
+      isSideBarVisible,
+      sideBarBookKey: visibleBookKey,
+    } = useSidebarStore.getState();
+    const isCurrentTableOfContents =
+      isSideBarVisible && visibleBookKey === bookKey && config?.viewSettings?.sideBarTab === 'toc';
+    if (isCurrentTableOfContents) {
+      if (!isSideBarPinned) setSideBarVisible(false);
+      return true;
+    }
     if (config?.viewSettings) {
       setConfig(bookKey, {
         viewSettings: { ...config.viewSettings, sideBarTab: 'toc' },

@@ -41,20 +41,42 @@ const currentViewSettings = {
   paragraphMode: { enabled: false },
 };
 
+const sideBarState = {
+  isSideBarPinned: false,
+  isSideBarVisible: false,
+  sideBarBookKey: 'book-1',
+};
+let currentSideBarTab = 'toc';
+const mockSetHoveredBookKey = vi.fn();
+const mockSetSideBarBookKey = vi.fn();
+const mockSetSideBarVisible = vi.fn();
+const mockSetSearchBarVisible = vi.fn();
+const mockToggleSideBar = vi.fn();
+const mockGetConfig = vi.fn(() => ({
+  viewSettings: { sideBarTab: currentSideBarTab },
+}));
+const mockSetConfig = vi.fn();
+
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     getView: () => mockView,
     getViewState: () => currentViewState,
     getViewSettings: () => currentViewSettings,
     setViewSettings: vi.fn(),
+    setHoveredBookKey: mockSetHoveredBookKey,
   }),
 }));
 
 vi.mock('@/store/sidebarStore', () => ({
-  useSidebarStore: () => ({
-    toggleSideBar: vi.fn(),
-    setSideBarBookKey: vi.fn(),
-  }),
+  useSidebarStore: Object.assign(
+    () => ({
+      toggleSideBar: mockToggleSideBar,
+      setSideBarBookKey: mockSetSideBarBookKey,
+      setSideBarVisible: mockSetSideBarVisible,
+      setSearchBarVisible: mockSetSearchBarVisible,
+    }),
+    { getState: () => sideBarState },
+  ),
 }));
 
 const mockSetSettingsDialogOpen = vi.fn();
@@ -69,6 +91,8 @@ vi.mock('@/store/settingsStore', () => ({
 vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: () => ({
     getBookData: vi.fn(),
+    getConfig: mockGetConfig,
+    setConfig: mockSetConfig,
   }),
 }));
 
@@ -138,6 +162,10 @@ describe('useBookShortcuts', () => {
     currentViewSettings.paragraphMode.enabled = false;
     currentViewState.inited = true;
     mockView.book.dir = 'ltr';
+    sideBarState.isSideBarPinned = false;
+    sideBarState.isSideBarVisible = false;
+    sideBarState.sideBarBookKey = 'book-1';
+    currentSideBarTab = 'toc';
   });
 
   afterEach(() => {
@@ -229,5 +257,64 @@ describe('useBookShortcuts', () => {
 
     expect(mockSetSettingsDialogBookKey).toHaveBeenCalledWith('book-1');
     expect(mockSetSettingsDialogOpen).toHaveBeenCalledWith(true);
+  });
+
+  it.each([
+    {
+      name: 'opens a hidden table of contents',
+      state: { isSideBarVisible: false, sideBarBookKey: 'book-1', tab: 'toc' },
+      expectedVisibility: true,
+      writesTab: true,
+    },
+    {
+      name: 'switches another sidebar tab to the table of contents',
+      state: { isSideBarVisible: true, sideBarBookKey: 'book-1', tab: 'search' },
+      expectedVisibility: true,
+      writesTab: true,
+    },
+    {
+      name: "switches another book's sidebar to the table of contents",
+      state: { isSideBarVisible: true, sideBarBookKey: 'book-2', tab: 'toc' },
+      expectedVisibility: true,
+      writesTab: true,
+    },
+    {
+      name: 'closes the current unpinned table of contents',
+      state: { isSideBarVisible: true, sideBarBookKey: 'book-1', tab: 'toc' },
+      expectedVisibility: false,
+      writesTab: false,
+    },
+    {
+      name: 'keeps the current pinned table of contents open',
+      state: {
+        isSideBarPinned: true,
+        isSideBarVisible: true,
+        sideBarBookKey: 'book-1',
+        tab: 'toc',
+      },
+      expectedVisibility: undefined,
+      writesTab: false,
+    },
+  ])('$name', ({ state, expectedVisibility, writesTab }) => {
+    Object.assign(sideBarState, state);
+    currentSideBarTab = state.tab;
+    render(<Harness />);
+
+    shortcutState.actions?.['onOpenTableOfContents']?.();
+
+    if (expectedVisibility === undefined) {
+      expect(mockSetSideBarVisible).not.toHaveBeenCalled();
+      expect(mockSetSideBarBookKey).not.toHaveBeenCalled();
+      expect(mockSetHoveredBookKey).not.toHaveBeenCalled();
+    } else {
+      expect(mockSetSideBarVisible).toHaveBeenCalledWith(expectedVisibility);
+    }
+    if (writesTab) {
+      expect(mockSetConfig).toHaveBeenCalledWith('book-1', {
+        viewSettings: { sideBarTab: 'toc' },
+      });
+    } else {
+      expect(mockSetConfig).not.toHaveBeenCalled();
+    }
   });
 });
