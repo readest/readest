@@ -127,6 +127,14 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   onGetPlaybackInfo: vi
     .fn()
     .mockReturnValue({ position: 10, duration: 100, measuredFraction: 0.4 }),
+  // Lyric view off by default here: these tests cover the cover player, and
+  // the lyric layout has its own suite.
+  supportsLyrics: false,
+  buffering: false,
+  onGetLyrics: vi.fn().mockResolvedValue(null),
+  onGetActiveIndex: vi.fn().mockReturnValue(-1),
+  onGetLyricPage: vi.fn().mockResolvedValue(null),
+  onPlayFromLyric: vi.fn().mockResolvedValue(undefined),
   downloads: {
     supported: false,
     chapters: [],
@@ -249,7 +257,59 @@ describe('TTSPlayerSheet', () => {
     const { container } = render(<TTSPlayerSheet {...makeProps()} />);
     const cover = container.querySelector('img');
     expect(cover).toBeTruthy();
-    expect(cover?.parentElement?.className).toContain('sm:pt-4');
+    // The cover sits inside the artwork/title block, which the main view owns.
+    expect(cover?.parentElement?.parentElement?.className).toContain('sm:pt-4');
+  });
+
+  test('rings the transport button while the engine has no audio out yet', () => {
+    const { container, rerender } = render(<TTSPlayerSheet {...makeProps()} />);
+    const button = screen.getByLabelText('Pause');
+    expect(button.getAttribute('aria-busy')).toBe('false');
+    expect(container.querySelector('svg circle')).toBeNull();
+
+    rerender(<TTSPlayerSheet {...makeProps({ buffering: true })} />);
+    const busy = screen.getByLabelText('Pause');
+    expect(busy.getAttribute('aria-busy')).toBe('true');
+    // The glyph stays: a reader must still be able to pause mid-fetch.
+    expect(busy.querySelector('svg circle')).toBeTruthy();
+  });
+
+  test('an aligned engine swaps the cover billing for the lyric sheet', async () => {
+    getBookData.mockReturnValue({
+      book: { title: 'Alice in Wonderland', coverImageUrl: 'blob:cover' },
+    });
+    const { container } = render(
+      <TTSPlayerSheet
+        {...makeProps({
+          supportsLyrics: true,
+          onGetLyrics: vi
+            .fn()
+            .mockResolvedValue({ sectionIndex: 0, lines: ['Down the rabbit hole.'] }),
+        })}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText('Down the rabbit hole.')).toBeTruthy());
+    // The artwork steps aside into a thumbnail so the transcript gets the room.
+    expect(container.querySelector('img')?.className).toContain('h-12');
+  });
+
+  test('a section with nothing to transcribe keeps the cover player', async () => {
+    getBookData.mockReturnValue({
+      book: { title: 'Alice in Wonderland', coverImageUrl: 'blob:cover' },
+    });
+    const onGetLyrics = vi.fn().mockResolvedValue(null);
+    const { container } = render(
+      <TTSPlayerSheet {...makeProps({ supportsLyrics: true, onGetLyrics })} />,
+    );
+    await waitFor(() => expect(onGetLyrics).toHaveBeenCalled());
+    await waitFor(() => expect(container.querySelector('img')?.className).toContain('h-32'));
+  });
+
+  test('an engine without sentence alignment never asks for a transcript', async () => {
+    const onGetLyrics = vi.fn().mockResolvedValue({ sectionIndex: 0, lines: ['nope'] });
+    render(<TTSPlayerSheet {...makeProps({ supportsLyrics: false, onGetLyrics })} />);
+    await waitFor(() => expect(screen.getByText('Alice in Wonderland')).toBeTruthy());
+    expect(onGetLyrics).not.toHaveBeenCalled();
   });
 
   test('the speed caption pads and truncates like its sibling captions', () => {

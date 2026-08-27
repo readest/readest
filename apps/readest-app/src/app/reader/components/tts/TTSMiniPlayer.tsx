@@ -27,6 +27,7 @@ import { isForcedMobileLayout } from '../../utils/mobileLayout';
 import { TTSPlaybackInfo, usePlaybackInfo } from './usePlaybackInfo';
 import { useCountdownLabel } from './useCountdownLabel';
 import { formatRate } from './SpeedRuler';
+import BufferingRing from './BufferingRing';
 import { getTTSMiniPlayerBottomOffset } from '../../utils/ttsMiniPlayerPosition';
 
 // Playback-settings glyph: a hex nut whose top-right edge is left open so
@@ -61,6 +62,8 @@ const SpeedSettingsIcon = ({ size, label }: { size: number; label: string }) => 
 type TTSMiniPlayerProps = {
   bookKey: string;
   isPlaying: boolean;
+  // Playing, but nothing audible yet — the play/pause button wears a ring.
+  buffering: boolean;
   isEink: boolean;
   visible: boolean;
   hasTimeline: boolean;
@@ -93,6 +96,7 @@ type TTSMiniPlayerProps = {
 const TTSMiniPlayer = ({
   bookKey,
   isPlaying,
+  buffering,
   isEink,
   visible,
   hasTimeline,
@@ -280,8 +284,9 @@ const TTSMiniPlayer = ({
               </button>
               <button
                 type='button'
-                className='shrink-0 rounded-full p-0.5'
+                className='relative shrink-0 rounded-full p-0.5'
                 aria-label={isPlaying ? _('Pause') : _('Play')}
+                aria-busy={buffering}
                 onClick={onTogglePlay}
               >
                 {isPlaying ? (
@@ -289,6 +294,10 @@ const TTSMiniPlayer = ({
                 ) : (
                   <MdPlayCircleFilled size={iconSize40} />
                 )}
+                {/* Hugging the filled glyph: the drawn circle only fills about
+                    five sixths of the icon box, so the ring tracks the box
+                    rather than standing off from it. */}
+                {buffering && <BufferingRing size={iconSize40 - 2} isEink={isEink} />}
               </button>
               <button
                 type='button'
@@ -365,12 +374,14 @@ const TTSMiniPlayer = ({
             </button>
             <button
               type='button'
-              className='shrink-0 rounded-full p-1'
+              className='relative shrink-0 rounded-full p-1'
               aria-label={isPlaying ? _('Pause') : _('Play')}
+              aria-busy={buffering}
               onClick={onTogglePlay}
             >
               {/* Same canvas size for both glyphs, or the row shifts on toggle. */}
               {isPlaying ? <MdOutlinePause size={iconSize26} /> : <MdPlayArrow size={iconSize26} />}
+              {buffering && <BufferingRing size={iconSize26 + 8} isEink={isEink} />}
             </button>
             <button
               type='button'

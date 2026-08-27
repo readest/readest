@@ -33,9 +33,13 @@ import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { getLanguageName } from '@/utils/lang';
 import { formatPlaybackTime } from '@/utils/time';
 import Dialog from '@/components/Dialog';
+import { PageInfo } from '@/types/book';
 import { TTSPlaybackInfo } from './usePlaybackInfo';
 import { useCountdownLabel } from './useCountdownLabel';
 import TTSScrubber from './TTSScrubber';
+import TTSLyricsView from './TTSLyricsView';
+import BufferingRing from './BufferingRing';
+import { TTSLyrics, useTTSLyrics } from './useTTSLyrics';
 import SpeedRuler, { formatRate } from './SpeedRuler';
 import TTSChaptersView from './TTSChaptersView';
 import { TTS_STOP_AT_CHAPTER_END } from '@/services/tts/TTSSessionManager';
@@ -90,6 +94,15 @@ type TTSPlayerSheetProps = {
   onSeek: (seconds: number) => Promise<void>;
   onSeekPreview: (seconds: number) => void;
   onGetPlaybackInfo: () => TTSPlaybackInfo | null;
+  // Lyric view (#5755). Present only when the engine aligns audio to the text;
+  // supportsLyrics false keeps the cover player.
+  supportsLyrics: boolean;
+  // Playing, but nothing audible yet — the transport button wears a ring.
+  buffering: boolean;
+  onGetLyrics: () => Promise<TTSLyrics | null>;
+  onGetActiveIndex: () => number;
+  onGetLyricPage: (index: number) => Promise<PageInfo | null>;
+  onPlayFromLyric: (index: number) => Promise<void>;
   downloads: UseTTSDownloadsResult;
   activeSectionIndex: number | null;
 };
@@ -119,6 +132,12 @@ const TTSPlayerSheet = ({
   onSeek,
   onSeekPreview,
   onGetPlaybackInfo,
+  supportsLyrics,
+  buffering,
+  onGetLyrics,
+  onGetActiveIndex,
+  onGetLyricPage,
+  onPlayFromLyric,
   downloads,
   activeSectionIndex,
 }: TTSPlayerSheetProps) => {
@@ -161,6 +180,18 @@ const TTSPlayerSheet = ({
   const book = getBookData(bookKey)?.book;
   const sectionLabel = progress?.sectionLabel;
   const isEink = viewSettings?.isEink ?? false;
+  const coverImage = book?.coverImageUrl && !coverFailed ? book.coverImageUrl : null;
+
+  const lyrics = useTTSLyrics({
+    bookKey,
+    enabled: supportsLyrics && isOpen,
+    onGetLyrics,
+    onGetActiveIndex,
+  });
+  // Committed up front on capability alone so the sheet does not flip layouts a
+  // frame after opening; `unavailable` only pulls it back for the sections that
+  // genuinely have no sheet to show (empty, or too long to render).
+  const showLyrics = supportsLyrics && !lyrics.unavailable;
 
   // Books with recorded narration expose it as a voice; while it is playing
   // there is nothing to pre-download, since the audio ships with the book.
@@ -321,7 +352,9 @@ const TTSPlayerSheet = ({
     <Dialog
       id='tts_player_sheet'
       isOpen={isOpen}
-      snapHeight={0.65}
+      // The lyric sheet needs room to read as one: at the cover player's 0.65
+      // it collapses to two or three visible lines.
+      snapHeight={showLyrics ? 0.8 : 0.65}
       title={_('Read Aloud')}
       header={header}
       boxClassName='sm:h-auto! sm:max-h-[85%]! sm:w-[420px]! sm:min-w-0!'
@@ -332,22 +365,60 @@ const TTSPlayerSheet = ({
         // sm:pt-4 keeps the cover clear of the box's rounded top edge on
         // desktop, where the mobile drag handle (and its clearance) is
         // hidden; on mobile the handle already provides the gap.
-        <div className='flex w-full flex-col items-center gap-4 pb-4 sm:pt-4'>
-          {book?.coverImageUrl && !coverFailed ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={book.coverImageUrl}
-              alt=''
-              className='not-eink:shadow-lg eink-bordered h-32 w-auto rounded-xl object-cover'
-              onError={() => setCoverFailed(true)}
-            />
-          ) : null}
-          <div className='flex w-full flex-col items-center gap-0.5 text-center'>
-            <span className='line-clamp-1 font-semibold'>{book?.title ?? ''}</span>
-            {sectionLabel && (
-              <span className='text-base-content/70 line-clamp-1 text-sm'>{sectionLabel}</span>
+        <div
+          className={clsx(
+            'flex w-full flex-col items-center gap-4 pb-4 sm:pt-4',
+            // The lyric sheet is the one element here that can take whatever
+            // height is left, so it claims it — and the transport below stays
+            // put instead of being pushed into a scroll.
+            showLyrics && 'h-full sm:h-auto',
+          )}
+        >
+          {/* With lyrics the artwork steps aside into a thumbnail row so the
+              transcript gets the vertical space; without them the cover keeps
+              the full-width billing it has always had. */}
+          <div
+            className={clsx(
+              'flex w-full min-w-0',
+              showLyrics ? 'flex-row items-center gap-3' : 'flex-col items-center gap-4',
             )}
+          >
+            {coverImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={coverImage}
+                alt=''
+                className={clsx(
+                  'not-eink:shadow-lg eink-bordered w-auto shrink-0 rounded-xl object-cover',
+                  showLyrics ? 'h-12' : 'h-32',
+                )}
+                onError={() => setCoverFailed(true)}
+              />
+            )}
+            <div
+              className={clsx(
+                'flex min-w-0 flex-col gap-0.5',
+                showLyrics ? 'flex-1 items-start text-start' : 'w-full items-center text-center',
+              )}
+            >
+              <span className='line-clamp-1 w-full font-semibold'>{book?.title ?? ''}</span>
+              {sectionLabel && (
+                <span className='text-base-content/70 line-clamp-1 w-full text-sm'>
+                  {sectionLabel}
+                </span>
+              )}
+            </div>
           </div>
+          {showLyrics && (
+            <TTSLyricsView
+              lines={lyrics.lines}
+              activeIndex={lyrics.activeIndex}
+              buffering={buffering}
+              isEink={isEink}
+              onGetLyricPage={onGetLyricPage}
+              onPlayFrom={onPlayFromLyric}
+            />
+          )}
           {hasTimeline ? (
             <TTSScrubber
               bookKey={bookKey}
@@ -392,11 +463,15 @@ const TTSPlayerSheet = ({
             </button>
             <button
               type='button'
-              className='btn btn-primary btn-circle mx-2 h-14 min-h-14 w-14'
+              className='btn btn-primary btn-circle relative mx-2 h-14 min-h-14 w-14'
               aria-label={isPlaying ? _('Pause') : _('Play')}
+              aria-busy={buffering}
               onClick={onTogglePlay}
             >
               {isPlaying ? <MdOutlinePause size={iconSize32} /> : <MdPlayArrow size={iconSize32} />}
+              {/* Inside the button's edge, so it reads against the fill rather
+                  than against whatever the sheet puts behind it. */}
+              {buffering && <BufferingRing size={50} isEink={isEink} />}
             </button>
             <button
               type='button'

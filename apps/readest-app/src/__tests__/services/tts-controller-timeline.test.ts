@@ -152,6 +152,12 @@ const makeView = () => {
     renderer: { getContents: () => [contents], primaryIndex: 0 },
     language: { isCJK: false },
     getCFI: vi.fn().mockReturnValue('epubcfi(/6/2!/4/2)'),
+    getCFIProgress: vi.fn().mockResolvedValue({
+      fraction: 0.05,
+      section: { current: 4, total: 12 },
+      location: { current: 2, next: 3, total: 30 },
+      time: { section: 60, total: 900 },
+    }),
     resolveCFI: vi.fn().mockReturnValue({ anchor: () => sentenceRanges[0] }),
     tts: null,
   } as unknown as FoliateView;
@@ -242,5 +248,125 @@ describe('TTSController section timeline', () => {
     await controller.ensureTimeline();
     await controller.shutdown();
     expect(controller.getPlaybackInfo()).toBeNull();
+  });
+});
+
+// Lyric view (#5755): the player draws the section's sentences as scrollable
+// lines only when the engine aligns audio to them. Everything below reads the
+// SAME timeline the scrubber uses, addressed by ordinal instead of by seconds.
+describe('TTSController lyrics', () => {
+  let controller: TTSController;
+
+  beforeEach(async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    buildSectionDoc();
+    controller = new TTSController(null, makeView());
+    await controller.init();
+    await controller.initViewTTS(0);
+  });
+
+  test('supportsLyrics requires both a media clock and real text timing', async () => {
+    expect(controller.supportsLyrics()).toBe(true);
+
+    // A chapter-only audiobook pairing: exact audio clock, no sentence
+    // alignment — the plain cover player, not lyrics.
+    (controller.ttsClient.getCapabilities as ReturnType<typeof vi.fn>).mockReturnValue({
+      wordBoundaries: false,
+      mediaClock: true,
+      gapControl: false,
+      liveRateChange: true,
+      textHighlight: false,
+    });
+    expect(controller.supportsLyrics()).toBe(false);
+
+    // A direct-speak engine has no clock to seek with at all.
+    controller.ttsClient = controller.ttsWebClient;
+    expect(controller.supportsLyrics()).toBe(false);
+    expect(await controller.getLyrics()).toBeNull();
+  });
+
+  test('getLyrics returns one normalized line per timeline sentence', async () => {
+    const lyrics = await controller.getLyrics();
+    expect(lyrics).not.toBeNull();
+    expect(lyrics!.sectionIndex).toBe(0);
+    expect(lyrics!.lines).toEqual([S0, S1, S2]);
+  });
+
+  test('getCurrentLyricIndex falls back to the last spoken range', async () => {
+    expect(controller.getCurrentLyricIndex()).toBe(-1); // no timeline yet
+    await controller.ensureTimeline();
+    expect(controller.getCurrentLyricIndex()).toBe(0);
+  });
+
+  test('seekToLyric speaks from that line, even from a parked session', async () => {
+    await controller.ensureTimeline();
+    controller.state = 'paused';
+    await controller.seekToLyric(2);
+    const tts = controller.view.tts as unknown as { from: ReturnType<typeof vi.fn> };
+    expect(tts.from).toHaveBeenCalledTimes(1);
+    expect((tts.from.mock.calls[0]![0] as Range).toString()).toBe(S2);
+    // The play button means "read from here": it never leaves the session parked.
+    await vi.waitFor(() => expect(controller.state).toBe('playing'));
+  });
+
+  test('seekToLyric ignores an ordinal the section does not have', async () => {
+    await controller.ensureTimeline();
+    await controller.seekToLyric(99);
+    const tts = controller.view.tts as unknown as { from: ReturnType<typeof vi.fn> };
+    expect(tts.from).not.toHaveBeenCalled();
+  });
+
+  test('isBuffering covers the wait between handing over an utterance and hearing it', async () => {
+    await controller.ensureTimeline();
+    expect(controller.isBuffering()).toBe(false);
+
+    // A client that accepts the utterance and stays silent — synthesis in
+    // flight, or a recording still loading.
+    let release: (() => void) | null = null;
+    const audible = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    (controller.ttsClient.speak as ReturnType<typeof vi.fn>).mockImplementation(async function* (
+      _ssml: string,
+      _signal: AbortSignal,
+      preload?: boolean,
+    ) {
+      if (preload) return;
+      await audible;
+      yield { code: 'boundary', message: 'first chunk', mark: '0' };
+    });
+
+    await controller.seekToLyric(1);
+    await vi.waitFor(() => expect(controller.isBuffering()).toBe(true));
+
+    release!();
+    await vi.waitFor(() => expect(controller.isBuffering()).toBe(false));
+  });
+
+  test('isBuffering stays false while the session is not playing', async () => {
+    await controller.ensureTimeline();
+    controller.state = 'playing';
+    await controller.pause();
+    expect(controller.isBuffering()).toBe(false);
+  });
+
+  test('getLyricPage resolves the line to the page number the footer shows', async () => {
+    await controller.ensureTimeline();
+    const view = controller.view as unknown as {
+      getCFIProgress: ReturnType<typeof vi.fn>;
+      book: { rendition?: { layout?: string } };
+    };
+    expect(await controller.getLyricPage(1)).toEqual({ current: 2, next: 3, total: 30 });
+    expect(view.getCFIProgress).toHaveBeenCalledWith('epubcfi(/6/2!/4/2)');
+
+    // Fixed-layout books number pages by section, matching FooterBar.
+    view.book.rendition = { layout: 'pre-paginated' };
+    expect(await controller.getLyricPage(1)).toEqual({ current: 4, total: 12 });
+  });
+
+  test('getLyricPage is null before the timeline exists and for unknown lines', async () => {
+    expect(await controller.getLyricPage(0)).toBeNull();
+    await controller.ensureTimeline();
+    expect(await controller.getLyricPage(99)).toBeNull();
   });
 });

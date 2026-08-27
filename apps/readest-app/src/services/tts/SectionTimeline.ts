@@ -46,6 +46,14 @@ export class SectionTimeline {
     return this.#sentences.length;
   }
 
+  // Sentence at an ordinal, for callers that address the timeline by index
+  // rather than by time (the lyric view). Never round-trip an index through
+  // seconds to get here: positionAt() divides by the rate and sentenceAtTime()
+  // multiplies it back, and the float error can land a line early.
+  sentenceAt(index: number): TimelineSentence | null {
+    return this.#sentences[index] ?? null;
+  }
+
   setVoice(voiceId: string): void {
     if (voiceId === this.#voiceId) return;
     this.#voiceId = voiceId;

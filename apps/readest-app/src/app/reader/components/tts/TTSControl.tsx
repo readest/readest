@@ -106,6 +106,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
         <TTSMiniPlayer
           bookKey={bookKey}
           isPlaying={tts.isPlaying}
+          buffering={tts.buffering}
           isEink={isEink}
           visible={miniPlayerVisible}
           hasTimeline={hasTimeline}
@@ -144,6 +145,12 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           onSeek={tts.handleSeekTo}
           onSeekPreview={tts.handleSeekPreview}
           onGetPlaybackInfo={tts.handleGetPlaybackInfo}
+          supportsLyrics={tts.supportsLyrics}
+          buffering={tts.buffering}
+          onGetLyrics={tts.handleGetLyrics}
+          onGetActiveIndex={tts.handleGetLyricActiveIndex}
+          onGetLyricPage={tts.handleGetLyricPage}
+          onPlayFromLyric={tts.handlePlayFromLyric}
           downloads={downloads}
           activeSectionIndex={activeSectionIndex}
         />
