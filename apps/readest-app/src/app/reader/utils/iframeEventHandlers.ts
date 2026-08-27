@@ -428,6 +428,7 @@ export const handleClick = (
   bookKey: string,
   doubleClickDisabled: React.MutableRefObject<boolean>,
   isFixedLayout: boolean,
+  isComicBook: boolean,
   event: MouseEvent,
 ) => {
   const now = Date.now();
@@ -435,6 +436,17 @@ export const handleClick = (
 
   if (!doubleClickDisabled.current && now - lastClickTime < DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
     lastClickTime = now;
+    // A comic page is one full-bleed image with no text on it, so the
+    // double-click that starts a word selection everywhere else is free to do
+    // what a single tap does in a reflowable book: open the page in the image
+    // viewer, the only surface that can zoom past page-fit and save/share the
+    // image. Single tap cannot be used here - in fixed layout it is the
+    // page-turn / toolbar gesture.
+    const comicPage = isComicBook ? detectMediaTarget(event.target as HTMLElement | null) : null;
+    if (comicPage?.elementType === 'image') {
+      window.postMessage({ type: 'iframe-open-media', bookKey, ...comicPage }, '*');
+      return;
+    }
     window.postMessage(
       {
         type: 'iframe-double-click',

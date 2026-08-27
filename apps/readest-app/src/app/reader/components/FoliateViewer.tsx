@@ -460,7 +460,13 @@ const FoliateViewer: React.FC<{
         });
         detail.doc.addEventListener(
           'click',
-          handleClick.bind(null, bookKey, doubleClickDisabled, !!bookData?.isFixedLayout),
+          handleClick.bind(
+            null,
+            bookKey,
+            doubleClickDisabled,
+            !!bookData?.isFixedLayout,
+            bookData?.book?.format === 'CBZ',
+          ),
         );
         detail.doc.addEventListener('wheel', handleWheel.bind(null, bookKey));
         detail.doc.addEventListener('touchstart', handleTouchStart.bind(null, bookKey));
