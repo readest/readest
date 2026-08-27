@@ -67,4 +67,35 @@ describe('KeyboardShortcutsSettings', () => {
       onOpenBooks: ['ctrl+shift+9'],
     });
   });
+
+  test.each([
+    'customShortcuts',
+    null,
+  ])('keeps later edits based on a cross-tab storage update with key %s', (key) => {
+    saveShortcuts(setShortcutBinding(getDefaultShortcuts(), 'onOpenCommandPalette', 'ctrl+k'));
+    render(<KeyboardShortcutsSettings onBack={vi.fn()} />);
+    const oldValue = localStorage.getItem('customShortcuts');
+
+    if (key === null) localStorage.clear();
+    else localStorage.setItem('customShortcuts', '{}');
+    act(() => {
+      window.dispatchEvent(
+        new StorageEvent('storage', {
+          key,
+          oldValue,
+          newValue: key === null ? null : '{}',
+          storageArea: localStorage,
+        }),
+      );
+    });
+
+    expect(screen.getByRole('button', { name: 'Open Command Palette: Ctrl+Shift+P' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Books: Ctrl+O' }));
+    fireEvent.keyDown(window, { key: '9', ctrlKey: true, shiftKey: true });
+
+    expect(JSON.parse(localStorage.getItem('customShortcuts') ?? '{}')).toEqual({
+      onOpenBooks: ['ctrl+shift+9'],
+    });
+  });
 });

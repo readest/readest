@@ -57,8 +57,15 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
       shortcutsRef.current = next;
       setShortcuts(next);
     };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'customShortcuts' || event.key === null) syncShortcuts();
+    };
     window.addEventListener('shortcutUpdate', syncShortcuts);
-    return () => window.removeEventListener('shortcutUpdate', syncShortcuts);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('shortcutUpdate', syncShortcuts);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
 
   useEffect(() => {
