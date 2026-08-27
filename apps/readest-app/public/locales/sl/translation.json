@@ -2387,5 +2387,7 @@
   "{{count}} Annotations_two": "{{count}} opombi",
   "{{count}} Annotations_few": "{{count}} opombe",
   "{{count}} Annotations_other": "{{count}} opomb",
-  "Insert into Notebook": "Vstavi v beležnico"
+  "Insert into Notebook": "Vstavi v beležnico",
+  "This Book — Overrides Global Settings": "Ta knjiga — preglasi Globalne nastavitve",
+  "Always Global Settings": "Vedno Globalne nastavitve"
 }

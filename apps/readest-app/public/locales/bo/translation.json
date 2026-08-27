@@ -2204,5 +2204,7 @@
   "Notebook draft copied to clipboard": "ཟིན་དེབ་ཀྱི་སྔོན་བྲིས་འདྲ་བཤུས་ལྡེ་མིག་ཏུ་བྱས་ཟིན།",
   "With notes": "ཟིན་བྲིས་ཡོད་པ།",
   "{{count}} Annotations_other": "མཆན་ {{count}}",
-  "Insert into Notebook": "ཟིན་དེབ་ནང་འཇུག་པ།"
+  "Insert into Notebook": "ཟིན་དེབ་ནང་འཇུག་པ།",
+  "This Book — Overrides Global Settings": "དེབ་འདི — ཁྱོན་ཡོངས་སྒྲིག་བཀོད། ལས་བརྒལ།",
+  "Always Global Settings": "རྟག་ཏུ་ ཁྱོན་ཡོངས་སྒྲིག་བཀོད།"
 }

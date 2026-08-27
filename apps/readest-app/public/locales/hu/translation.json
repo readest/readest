@@ -2265,5 +2265,7 @@
   "With notes": "Jegyzettel",
   "{{count}} Annotations_one": "{{count}} megjegyzés",
   "{{count}} Annotations_other": "{{count}} megjegyzés",
-  "Insert into Notebook": "Beszúrás a jegyzetfüzetbe"
+  "Insert into Notebook": "Beszúrás a jegyzetfüzetbe",
+  "This Book — Overrides Global Settings": "Ez a könyv — felülírja a Globális beállításokat",
+  "Always Global Settings": "Mindig Globális beállítások"
 }

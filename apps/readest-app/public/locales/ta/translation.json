@@ -2265,5 +2265,7 @@
   "With notes": "குறிப்புகளுடன்",
   "{{count}} Annotations_one": "{{count}} சிறுகுறிப்பு",
   "{{count}} Annotations_other": "{{count}} சிறுகுறிப்புகள்",
-  "Insert into Notebook": "குறிப்பேட்டில் செருகவும்"
+  "Insert into Notebook": "குறிப்பேட்டில் செருகவும்",
+  "This Book — Overrides Global Settings": "இந்தப் புத்தகம் — உலகளாவிய அமைப்புகளை மேலெழுதுகிறது",
+  "Always Global Settings": "எப்போதும் உலகளாவிய அமைப்புகள்"
 }

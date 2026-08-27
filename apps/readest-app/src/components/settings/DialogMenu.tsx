@@ -6,7 +6,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useReaderStore } from '@/store/readerStore';
 import { useCustomFontStore } from '@/store/customFontStore';
-import { saveViewSettings } from '@/helpers/settings';
+import { isSettingsScopeGlobal, saveViewSettings } from '@/helpers/settings';
 import { SettingsPanelType } from './SettingsDialog';
 import Menu from '@/components/Menu';
 import MenuItem from '@/components/MenuItem';
@@ -32,7 +32,7 @@ const DialogMenu: React.FC<DialogMenuProps> = ({
   const { getViewSettings } = useReaderStore();
   const { getAllFonts, removeFont, saveCustomFonts } = useCustomFontStore();
   const viewSettings = getViewSettings(bookKey);
-  const isSettingsGlobal = viewSettings?.isGlobal ?? true;
+  const isSettingsGlobal = isSettingsScopeGlobal(viewSettings);
 
   const handleToggleGlobal = () => {
     saveViewSettings(envConfig, bookKey, 'isGlobal', !isSettingsGlobal, true, false);

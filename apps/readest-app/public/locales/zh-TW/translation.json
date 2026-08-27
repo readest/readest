@@ -2204,5 +2204,7 @@
   "Notebook draft copied to clipboard": "筆記本草稿已複製到剪貼板",
   "With notes": "含筆記",
   "{{count}} Annotations_other": "{{count}} 則註解",
-  "Insert into Notebook": "插入到筆記本"
+  "Insert into Notebook": "插入到筆記本",
+  "This Book — Overrides Global Settings": "本書 — 覆蓋全局設置",
+  "Always Global Settings": "始終全局設置"
 }

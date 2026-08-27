@@ -2204,5 +2204,7 @@
   "Notebook draft copied to clipboard": "ノートの下書きをクリップボードにコピーしました",
   "With notes": "メモ付き",
   "{{count}} Annotations_other": "{{count}} 件の注釈",
-  "Insert into Notebook": "ノートに挿入"
+  "Insert into Notebook": "ノートに挿入",
+  "This Book — Overrides Global Settings": "この書籍 — 全体設定を上書き",
+  "Always Global Settings": "常に全体設定"
 }

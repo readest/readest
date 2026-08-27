@@ -2204,5 +2204,7 @@
   "Notebook draft copied to clipboard": "Đã sao chép bản nháp sổ ghi chép vào bảng ghi",
   "With notes": "Có ghi chú",
   "{{count}} Annotations_other": "{{count}} chú thích",
-  "Insert into Notebook": "Chèn vào sổ ghi chép"
+  "Insert into Notebook": "Chèn vào sổ ghi chép",
+  "This Book — Overrides Global Settings": "Sách này — ghi đè Cài đặt chung",
+  "Always Global Settings": "Luôn Cài đặt chung"
 }

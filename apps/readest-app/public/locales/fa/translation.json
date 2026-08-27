@@ -2265,5 +2265,7 @@
   "With notes": "با یادداشت",
   "{{count}} Annotations_one": "{{count}} یادداشت",
   "{{count}} Annotations_other": "{{count}} یادداشت",
-  "Insert into Notebook": "درج در دفترچه یادداشت"
+  "Insert into Notebook": "درج در دفترچه یادداشت",
+  "This Book — Overrides Global Settings": "این کتاب — تنظیمات سراسری را نادیده می‌گیرد",
+  "Always Global Settings": "همیشه تنظیمات سراسری"
 }

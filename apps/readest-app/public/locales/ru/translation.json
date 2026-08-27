@@ -2387,5 +2387,7 @@
   "{{count}} Annotations_few": "{{count}} аннотации",
   "{{count}} Annotations_many": "{{count}} аннотаций",
   "{{count}} Annotations_other": "{{count}} аннотаций",
-  "Insert into Notebook": "Вставить в блокнот"
+  "Insert into Notebook": "Вставить в блокнот",
+  "This Book — Overrides Global Settings": "Эта книга — переопределяет Общие настройки",
+  "Always Global Settings": "Всегда Общие настройки"
 }

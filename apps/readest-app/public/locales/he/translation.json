@@ -2326,5 +2326,7 @@
   "{{count}} Annotations_one": "{{count}} הערה",
   "{{count}} Annotations_two": "{{count}} הערות",
   "{{count}} Annotations_other": "{{count}} הערות",
-  "Insert into Notebook": "הוסף למחברת"
+  "Insert into Notebook": "הוסף למחברת",
+  "This Book — Overrides Global Settings": "ספר זה — עוקף הגדרות גלובליות",
+  "Always Global Settings": "הגדרות שתמיד חלות על כל הספרים"
 }
