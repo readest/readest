@@ -330,6 +330,210 @@ describe('FileSyncEngine.syncLibrary — two devices converge (#5900)', () => {
   });
 });
 
+describe('FileSyncEngine.syncLibrary — concurrent index writers', () => {
+  /**
+   * A provider over one shared `library.json` whose FIRST read returns a frozen
+   * snapshot — the deterministic stand-in for "this device read the index, then
+   * a peer pushed while it was still working". Later reads see the live file.
+   */
+  const racingProvider = (
+    staleSnapshot: string,
+    live: { body: string },
+    opts: { failReread?: boolean } = {},
+  ): FileSyncProvider => {
+    let reads = 0;
+    return fakeProvider({
+      readText: async (p) => {
+        if (!p.endsWith('library.json')) return null;
+        reads += 1;
+        if (reads === 1) return staleSnapshot;
+        if (opts.failReread) throw new FileSyncError('offline', 'NETWORK', 503);
+        return live.body;
+      },
+      writeText: async (p, body) => {
+        if (p.endsWith('library.json')) live.body = body;
+      },
+    });
+  };
+
+  test('does not drop a peer entry written while this run was working', async () => {
+    // This device started from an index holding only h1. While it worked, a
+    // peer pushed a book of its own, a confirmed upload, an empty-dir record
+    // and a tombstone. Rebuilding from the stale snapshot would erase all four.
+    const stale = JSON.stringify({
+      schemaVersion: 1,
+      updatedAt: 1,
+      books: [makeBook('h1')],
+      uploadedHashes: ['h1'],
+    } satisfies RemoteLibraryIndex);
+
+    const live = {
+      body: JSON.stringify({
+        schemaVersion: 1,
+        updatedAt: 2,
+        books: [makeBook('h1'), makeBook('peer'), makeBook('gone', { deletedAt: 9000 })],
+        uploadedHashes: ['h1', 'peer'],
+        emptyDirs: ['dir9'],
+      } satisfies RemoteLibraryIndex),
+    };
+
+    await new FileSyncEngine(racingProvider(stale, live), fakeStore()).syncLibrary(
+      [makeBook('h1', { updatedAt: 200 })],
+      { strategy: 'send', syncBooks: false, deviceId: 'pc' },
+    );
+
+    const idx = JSON.parse(live.body) as RemoteLibraryIndex;
+    expect(idx.books.map((b) => b.hash).sort()).toEqual(['gone', 'h1', 'peer']);
+    expect(idx.books.find((b) => b.hash === 'gone')!.deletedAt).toBe(9000);
+    expect(idx.uploadedHashes).toEqual(expect.arrayContaining(['h1', 'peer']));
+    expect(idx.emptyDirs).toEqual(['dir9']);
+  });
+
+  test('this run still wins for the books it actually owns', async () => {
+    // Folding the peer's entries in must not turn the re-push into a pull:
+    // 'send' remains authoritative for its own rows.
+    const stale = JSON.stringify({
+      schemaVersion: 1,
+      updatedAt: 1,
+      books: [makeBook('h1', { title: 'Old' })],
+    } satisfies RemoteLibraryIndex);
+    const live = {
+      body: JSON.stringify({
+        schemaVersion: 1,
+        updatedAt: 2,
+        books: [makeBook('h1', { title: 'Peer Wrote This' })],
+      } satisfies RemoteLibraryIndex),
+    };
+
+    await new FileSyncEngine(racingProvider(stale, live), fakeStore()).syncLibrary(
+      [makeBook('h1', { title: 'Mine', updatedAt: 200 })],
+      { strategy: 'send', syncBooks: false, deviceId: 'pc' },
+    );
+
+    expect((JSON.parse(live.body) as RemoteLibraryIndex).books[0]!.title).toBe('Mine');
+  });
+
+  test('an etag that moved during the run forces the fold', async () => {
+    // The short-circuit must key on "provably unchanged", not on having an
+    // etag at all: a peer writing mid-run moves it, and that is exactly when
+    // the fold has to happen.
+    const stale = JSON.stringify({
+      schemaVersion: 1,
+      updatedAt: 1,
+      books: [makeBook('h1')],
+    } satisfies RemoteLibraryIndex);
+    const live = {
+      body: JSON.stringify({
+        schemaVersion: 1,
+        updatedAt: 2,
+        books: [makeBook('h1'), makeBook('peer')],
+      } satisfies RemoteLibraryIndex),
+    };
+
+    let libraryHeads = 0;
+    let libraryReads = 0;
+    const provider = fakeProvider({
+      head: async (p) => {
+        if (!p.endsWith('library.json')) return null;
+        libraryHeads += 1;
+        return { etag: libraryHeads === 1 ? 'E1' : 'E2' };
+      },
+      readText: async (p) => {
+        if (!p.endsWith('library.json')) return null;
+        libraryReads += 1;
+        return libraryReads === 1 ? stale : live.body;
+      },
+      writeText: async (p, body) => {
+        if (p.endsWith('library.json')) live.body = body;
+      },
+    });
+
+    await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      [makeBook('h1', { updatedAt: 200 })],
+      { strategy: 'send', syncBooks: false, deviceId: 'pc' },
+    );
+
+    expect(libraryReads).toBe(2);
+    expect((JSON.parse(live.body) as RemoteLibraryIndex).books.map((b) => b.hash).sort()).toEqual([
+      'h1',
+      'peer',
+    ]);
+  });
+
+  test('the fold does not resurrect an empty-dir record this run disproved', async () => {
+    // Folding the peer's records back in must not undo newer knowledge: this
+    // run listed hx and found a book file in it, so the peer's "hx is empty"
+    // entry is stale, not a competing addition.
+    const stale = JSON.stringify({
+      schemaVersion: 1,
+      updatedAt: 1,
+      books: [],
+      emptyDirs: [],
+    } satisfies RemoteLibraryIndex);
+    const live = {
+      body: JSON.stringify({
+        schemaVersion: 1,
+        updatedAt: 2,
+        books: [],
+        emptyDirs: ['hx'],
+      } satisfies RemoteLibraryIndex),
+    };
+
+    let reads = 0;
+    const provider = fakeProvider({
+      readText: async (p) => {
+        if (!p.endsWith('library.json')) return null;
+        reads += 1;
+        return reads === 1 ? stale : live.body;
+      },
+      writeText: async (p, body) => {
+        if (p.endsWith('library.json')) live.body = body;
+      },
+      list: async (p) =>
+        p.endsWith('/books')
+          ? [{ name: 'hx', path: '/Readest/books/hx', isDirectory: true }]
+          : [
+              {
+                name: 'Book hx.epub',
+                path: '/Readest/books/hx/Book hx.epub',
+                isDirectory: false,
+                size: 10,
+              },
+            ],
+    });
+
+    await new FileSyncEngine(provider, fakeStore()).syncLibrary([], {
+      strategy: 'silent',
+      syncBooks: false,
+      fullSync: true,
+      deviceId: 'pc',
+    });
+
+    expect((JSON.parse(live.body) as RemoteLibraryIndex).emptyDirs).not.toContain('hx');
+  });
+
+  test('skips the push rather than clobbering when the pre-push re-read fails', async () => {
+    const stale = JSON.stringify({
+      schemaVersion: 1,
+      updatedAt: 1,
+      books: [makeBook('h1')],
+    } satisfies RemoteLibraryIndex);
+    const live = { body: 'PEER STATE MUST SURVIVE' };
+
+    const res = await new FileSyncEngine(
+      racingProvider(stale, live, { failReread: true }),
+      fakeStore(),
+    ).syncLibrary([makeBook('h1', { updatedAt: 200 })], {
+      strategy: 'send',
+      syncBooks: false,
+      deviceId: 'pc',
+    });
+
+    expect(live.body).toBe('PEER STATE MUST SURVIVE');
+    expect(res.indexPushFailed).toBe(true);
+  });
+});
+
 describe('FileSyncEngine.syncLibrary — index write failure is reported (#5900)', () => {
   test('surfaces a failed library.json write instead of swallowing it', async () => {
     const provider = fakeProvider({

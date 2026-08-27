@@ -838,6 +838,10 @@ export class FileSyncEngine {
     // Dirs discovery already inspected and found file-less (see wire.ts).
     // Carried forward through the index so no client re-lists them every run.
     const emptyDirs = new Set<string>(remoteIndex?.emptyDirs ?? []);
+    // Dirs THIS run looked inside and found a book file in. Kept so the
+    // pre-push reconcile below can tell "the peer knows something we don't"
+    // from "the peer's record is stale and we just disproved it".
+    const confirmedNonEmptyDirs = new Set<string>();
     // Whether the books/ listing ran and succeeded this run — the empty-dir
     // record may only be pruned against a listing that actually happened.
     let booksDirListed = false;
@@ -907,6 +911,7 @@ export class FileSyncEngine {
             continue;
           }
           emptyDirs.delete(hash);
+          confirmedNonEmptyDirs.add(hash);
 
           const extMatch = fileEntry.name.match(/\.([^.]+)$/);
           const ext = extMatch && extMatch[1] ? extMatch[1].toUpperCase() : 'EPUB';
@@ -1176,11 +1181,14 @@ export class FileSyncEngine {
       // Carry the uploaded-file record forward so the next incremental sync
       // stays O(changed). Keep only hashes that still map to a live indexed
       // book so the set can't grow unbounded with tombstoned / evicted books.
-      const nextUploadedHashes = Array.from(uploadedHashes).filter((hash) => {
-        const b = indexByHash.get(hash);
-        return !!b && !b.deletedAt;
+      const buildRecords = () => ({
+        uploadedHashes: Array.from(uploadedHashes).filter((hash) => {
+          const b = indexByHash.get(hash);
+          return !!b && !b.deletedAt;
+        }),
+        emptyDirs: Array.from(emptyDirs),
       });
-      const nextEmptyDirs = Array.from(emptyDirs);
+      const { uploadedHashes: nextUploadedHashes, emptyDirs: nextEmptyDirs } = buildRecords();
 
       // Skip the re-push when the rebuilt index is semantically identical to
       // the pulled one: a restamped byte-copy only churns the remote and
@@ -1205,12 +1213,60 @@ export class FileSyncEngine {
 
       if (indexDirty) {
         try {
+          // Last-moment reconcile. Everything above was computed from the index
+          // as it looked when this run STARTED, and a peer syncing in parallel
+          // may have rewritten it since — so publishing the rebuild as-is would
+          // drop whatever that peer added, which is the same lost-update this
+          // PR fixes for 'send', just on a shorter clock. Re-read and fold its
+          // entries in the same way: by hash, ours winning where both have an
+          // opinion.
+          //
+          // This NARROWS the read-modify-write window from the whole run (which
+          // spans every upload, so minutes on a big library) to the gap between
+          // this read and the PUT. It does not CLOSE it: two devices whose PUTs
+          // land inside that gap still race. Closing it needs a conditional
+          // write, and there is nothing portable to condition on today —
+          // `head()` exposes no version token at all on iCloud and only a
+          // server-dependent one on WebDAV, so an If-Match capability would
+          // have to be added to FileSyncProvider and degrade per backend.
+          // Tracked as follow-up; the union-by-hash CRDT means a lost row is
+          // re-published by the device that owns it on its next run.
+          //
+          // Skipped when the etag proves nothing has been written since we
+          // read: our snapshot IS the current file, so there is nothing to
+          // fold, and re-pulling would undo the change-probe short-circuit
+          // that keeps a quiet incremental run down to one metadata stat.
+          // A provider with no etag (iCloud, WebDAV servers that omit the
+          // header) can never prove it, so it always re-reads — which is the
+          // safe default, and those are the backends that need it most.
+          let unchangedSincePull = false;
+          if (remoteEtag !== undefined) {
+            try {
+              const now = (await this.provider.head(buildLibraryPath(this.provider.rootPath)))
+                ?.etag;
+              unchangedSincePull = now !== undefined && now === remoteEtag;
+            } catch {
+              // Probe failed: fall through to the full re-read.
+            }
+          }
+          const fresh = unchangedSincePull ? remoteIndex : await this.pullLibraryIndex();
+          for (const rb of fresh?.books ?? []) {
+            if (!indexByHash.has(rb.hash)) indexByHash.set(rb.hash, rb);
+          }
+          for (const hash of fresh?.uploadedHashes ?? []) uploadedHashes.add(hash);
+          for (const hash of fresh?.emptyDirs ?? []) {
+            // ...except a dir THIS run looked inside and found a file in. That
+            // is newer knowledge than the peer's record, not a competing entry.
+            if (!confirmedNonEmptyDirs.has(hash)) emptyDirs.add(hash);
+          }
+          const merged = buildRecords();
+
           const newIndex: RemoteLibraryIndex = {
             schemaVersion: 1,
             books: Array.from(indexByHash.values()).map(stripDeviceLocalFields),
             updatedAt: Date.now(),
-            uploadedHashes: nextUploadedHashes,
-            emptyDirs: nextEmptyDirs,
+            uploadedHashes: merged.uploadedHashes,
+            emptyDirs: merged.emptyDirs,
           };
           await this.pushLibraryIndex(newIndex);
           // Our own push changed the remote etag; drop the cached snapshot so
