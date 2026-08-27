@@ -78,11 +78,10 @@ describe('FileSyncEngine.syncLibrary — Send Only index safety (#5900)', () => 
       captured,
     });
 
-    const res = await new FileSyncEngine(provider, fakeStore()).syncLibrary([makeBook('h1')], {
-      strategy: 'send',
-      syncBooks: false,
-      deviceId: 'pc',
-    });
+    const res = await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      [makeBook('h1', { updatedAt: 200 })],
+      { strategy: 'send', syncBooks: false, deviceId: 'pc' },
+    );
 
     // 'send' still blindly pushes the local book's config (unaffected).
     expect(res.configsUploaded).toBe(1);
@@ -97,11 +96,11 @@ describe('FileSyncEngine.syncLibrary — Send Only index safety (#5900)', () => 
     expect(idx.books.map((b) => b.hash).sort()).toEqual(['h1', 'h2']);
   });
 
-  test('still performs a blind push regardless of the remote index (unchanged semantics)', async () => {
-    // Remote already has a newer copy of h1 than local — under 'silent' this
-    // would skip the push (remote wins the incremental cursor). 'send' must
-    // keep pushing anyway: it is documented as a blind, local-authoritative
-    // push, and reading the index for bookkeeping must not change that.
+  test('a Full Sync send still pushes over a newer remote row', async () => {
+    // Remote has a newer copy of h1 than local. The incremental cursor skips
+    // that push for every strategy (#5900: a 'send' run that re-pushed every
+    // book was O(library) per sync). Blind local-authoritative overwrite is
+    // what `fullSync` is for, so that is where this invariant now lives.
     const remoteIndex: RemoteLibraryIndex = {
       schemaVersion: 1,
       updatedAt: 1,
@@ -116,10 +115,32 @@ describe('FileSyncEngine.syncLibrary — Send Only index safety (#5900)', () => 
 
     const res = await new FileSyncEngine(provider, fakeStore()).syncLibrary(
       [makeBook('h1', { updatedAt: 100 })],
-      { strategy: 'send', syncBooks: false, deviceId: 'pc' },
+      { strategy: 'send', syncBooks: false, fullSync: true, deviceId: 'pc' },
     );
 
     expect(res.configsUploaded).toBe(1);
     expect(captured.writes.some((w) => w.path.endsWith('config.json'))).toBe(true);
+  });
+
+  test('an incremental send skips a book the index already has at the same version', async () => {
+    const remoteIndex: RemoteLibraryIndex = {
+      schemaVersion: 1,
+      updatedAt: 1,
+      books: [makeBook('h1', { updatedAt: 500 })],
+      uploadedHashes: ['h1'],
+    };
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: async (p) => (p.endsWith('library.json') ? JSON.stringify(remoteIndex) : null),
+      captured,
+    });
+
+    const res = await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      [makeBook('h1', { updatedAt: 100 })],
+      { strategy: 'send', syncBooks: false, deviceId: 'pc' },
+    );
+
+    expect(res.configsUploaded).toBe(0);
+    expect(captured.writes.some((w) => w.path.endsWith('config.json'))).toBe(false);
   });
 });

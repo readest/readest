@@ -8,14 +8,14 @@ import type { RemoteLibraryIndex } from '@/services/sync/file/wire';
 
 /**
  * #5900: multi-device file sync never converged. Defect 1 — a 'send' run
- * rewriting library.json it never read — and its blind-push invariant are
- * covered by engine-send-only-index-safety.test.ts. This file covers the rest:
+ * rewriting library.json it never read — is covered by
+ * engine-send-only-index-safety.test.ts. This file covers the rest:
  *
  *   - the other records that re-push carries (emptyDirs), and the abort that
  *     protects them when the index cannot be read at all;
- *   - that reading the index did NOT turn 'send' into a consumer of the
- *     remote's uploaded-file record — #5900 reports that record being wrong,
- *     and Send Only is the recovery path;
+ *   - the incremental/Full Sync split: an incremental run of ANY strategy stays
+ *     O(changed) and never re-reads the index, while Full Sync is the pass that
+ *     re-audits files and reconciles against concurrent writers;
  *   - defect 2, the actual standoff: republishing a live row over a peer's
  *     tombstone carried the row's OLD `updatedAt`, and a peer revives only on
  *     `remote.updatedAt > local.deletedAt`, so a row last edited before the
@@ -92,11 +92,10 @@ describe('FileSyncEngine.syncLibrary — Send Only reads the index safely (#5900
       captured,
     });
 
-    await new FileSyncEngine(provider, fakeStore()).syncLibrary([makeBook('h1')], {
-      strategy: 'send',
-      syncBooks: false,
-      deviceId: 'pc',
-    });
+    await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      [makeBook('h1', { updatedAt: 200 })],
+      { strategy: 'send', syncBooks: false, deviceId: 'pc' },
+    );
 
     expect(pushedIndex(captured)!.emptyDirs).toEqual(['h9']);
   });
@@ -124,11 +123,12 @@ describe('FileSyncEngine.syncLibrary — Send Only reads the index safely (#5900
     expect(pushedIndex(captured)).toBeNull();
   });
 
-  test('still verifies book files it has not confirmed itself', async () => {
-    // Reading the index must not make 'send' trust the remote's uploaded-file
-    // record: #5900 is a report of that record being WRONG, and Send Only is
-    // the recovery path a user reaches for. It re-probes every local file.
-    const heads: string[] = [];
+  test('an incremental send trusts the uploaded-file record and stays O(changed)', async () => {
+    // Before #5900 'send' never read the index, so `uploadedHashes` was always
+    // empty and every run re-probed every book — an O(library) storm of remote
+    // HEADs and local fs stats that a large library cannot afford. Reading the
+    // index is what makes Send Only incremental. Drift is Full Sync's job.
+    const fileProbes: string[] = [];
     const provider = fakeProvider({
       readText: indexServing({
         schemaVersion: 1,
@@ -137,7 +137,7 @@ describe('FileSyncEngine.syncLibrary — Send Only reads the index safely (#5900
         uploadedHashes: ['h1'],
       }),
       head: async (p) => {
-        heads.push(p);
+        if (p.endsWith('.epub')) fileProbes.push(p);
         return null;
       },
     });
@@ -147,8 +147,34 @@ describe('FileSyncEngine.syncLibrary — Send Only reads the index safely (#5900
       { strategy: 'send', syncBooks: true, fullSync: false, deviceId: 'pc' },
     );
 
+    expect(fileProbes).toEqual([]);
+    expect(res.filesUploaded).toBe(0);
+  });
+
+  test('a Full Sync send re-audits the file even when the record claims it', async () => {
+    // The escape hatch the incremental path defers to: Full Sync bypasses the
+    // record and verifies the bytes are really there.
+    const fileProbes: string[] = [];
+    const provider = fakeProvider({
+      readText: indexServing({
+        schemaVersion: 1,
+        updatedAt: 1,
+        books: [makeBook('h1')],
+        uploadedHashes: ['h1'],
+      }),
+      head: async (p) => {
+        if (p.endsWith('.epub')) fileProbes.push(p);
+        return null;
+      },
+    });
+
+    const res = await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      [makeBook('h1', { downloadedAt: 1 })],
+      { strategy: 'send', syncBooks: true, fullSync: true, deviceId: 'pc' },
+    );
+
+    expect(fileProbes.length).toBe(1);
     expect(res.filesUploaded).toBe(1);
-    expect(heads.some((p) => p.includes('/books/h1/'))).toBe(true);
   });
 });
 
@@ -216,12 +242,12 @@ describe('FileSyncEngine.syncLibrary — tombstone revival converges (#5900)', (
     });
 
     await new FileSyncEngine(provider, fakeStore({ updateBookMetadata })).syncLibrary(
-      [makeBook('h1', { updatedAt: 100 })],
+      [makeBook('h1', { updatedAt: 200 })],
       { strategy: 'send', syncBooks: false, deviceId: 'pc' },
     );
 
     expect(updateBookMetadata).not.toHaveBeenCalled();
-    expect(pushedIndex(captured)!.books.find((b) => b.hash === 'h1')!.updatedAt).toBe(100);
+    expect(pushedIndex(captured)!.books.find((b) => b.hash === 'h1')!.updatedAt).toBe(200);
   });
 
   test('a peer revives its tombstone from the stamped row', async () => {
@@ -330,7 +356,7 @@ describe('FileSyncEngine.syncLibrary — two devices converge (#5900)', () => {
   });
 });
 
-describe('FileSyncEngine.syncLibrary — concurrent index writers', () => {
+describe('FileSyncEngine.syncLibrary — concurrent index writers (Full Sync)', () => {
   /**
    * A provider over one shared `library.json` whose FIRST read returns a frozen
    * snapshot — the deterministic stand-in for "this device read the index, then
@@ -379,7 +405,7 @@ describe('FileSyncEngine.syncLibrary — concurrent index writers', () => {
 
     await new FileSyncEngine(racingProvider(stale, live), fakeStore()).syncLibrary(
       [makeBook('h1', { updatedAt: 200 })],
-      { strategy: 'send', syncBooks: false, deviceId: 'pc' },
+      { strategy: 'send', syncBooks: false, fullSync: true, deviceId: 'pc' },
     );
 
     const idx = JSON.parse(live.body) as RemoteLibraryIndex;
@@ -407,41 +433,60 @@ describe('FileSyncEngine.syncLibrary — concurrent index writers', () => {
 
     await new FileSyncEngine(racingProvider(stale, live), fakeStore()).syncLibrary(
       [makeBook('h1', { title: 'Mine', updatedAt: 200 })],
-      { strategy: 'send', syncBooks: false, deviceId: 'pc' },
+      { strategy: 'send', syncBooks: false, fullSync: true, deviceId: 'pc' },
     );
 
     expect((JSON.parse(live.body) as RemoteLibraryIndex).books[0]!.title).toBe('Mine');
   });
 
-  test('an etag that moved during the run forces the fold', async () => {
-    // The short-circuit must key on "provably unchanged", not on having an
-    // etag at all: a peer writing mid-run moves it, and that is exactly when
-    // the fold has to happen.
+  test('a backend with no etag skips the discovery scan on an unchanged index', async () => {
+    // iCloud has no etag at all and many WebDAV servers omit it, so the etag
+    // short-circuit never fired for them and every incremental sync re-listed
+    // the whole remote books/ directory. The index content answers the same
+    // question — nobody wrote since — and we already downloaded it.
+    const idx = JSON.stringify({
+      schemaVersion: 1,
+      updatedAt: 1,
+      books: [makeBook('h1')],
+      uploadedHashes: ['h1'],
+    } satisfies RemoteLibraryIndex);
+    let lists = 0;
+    const provider = fakeProvider({
+      head: async () => null, // no etag, like iCloud
+      readText: async (p) => (p.endsWith('library.json') ? idx : null),
+      list: async () => {
+        lists += 1;
+        return [];
+      },
+    });
+    const opts = { strategy: 'silent', syncBooks: false, deviceId: 'pc' } as const;
+
+    await new FileSyncEngine(provider, fakeStore()).syncLibrary([makeBook('h1')], opts);
+    expect(lists).toBeGreaterThan(0); // first run has no snapshot: it scans
+
+    lists = 0;
+    await new FileSyncEngine(provider, fakeStore()).syncLibrary([makeBook('h1')], opts);
+    expect(lists).toBe(0);
+  });
+
+  test('an incremental run never re-reads the index before pushing', async () => {
+    // The incremental path's contract is speed: it is best-effort, runs
+    // unattended on every library change, and must not pay a second GET of
+    // library.json (tens to hundreds of KB) to win a race it is allowed to
+    // lose. Losing one is self-healing anyway — membership is a union-by-hash
+    // CRDT, so the device that owns a dropped row re-publishes it.
     const stale = JSON.stringify({
       schemaVersion: 1,
       updatedAt: 1,
       books: [makeBook('h1')],
     } satisfies RemoteLibraryIndex);
-    const live = {
-      body: JSON.stringify({
-        schemaVersion: 1,
-        updatedAt: 2,
-        books: [makeBook('h1'), makeBook('peer')],
-      } satisfies RemoteLibraryIndex),
-    };
-
-    let libraryHeads = 0;
+    const live = { body: stale };
     let libraryReads = 0;
     const provider = fakeProvider({
-      head: async (p) => {
-        if (!p.endsWith('library.json')) return null;
-        libraryHeads += 1;
-        return { etag: libraryHeads === 1 ? 'E1' : 'E2' };
-      },
       readText: async (p) => {
         if (!p.endsWith('library.json')) return null;
         libraryReads += 1;
-        return libraryReads === 1 ? stale : live.body;
+        return live.body;
       },
       writeText: async (p, body) => {
         if (p.endsWith('library.json')) live.body = body;
@@ -450,14 +495,10 @@ describe('FileSyncEngine.syncLibrary — concurrent index writers', () => {
 
     await new FileSyncEngine(provider, fakeStore()).syncLibrary(
       [makeBook('h1', { updatedAt: 200 })],
-      { strategy: 'send', syncBooks: false, deviceId: 'pc' },
+      { strategy: 'send', syncBooks: false, fullSync: false, deviceId: 'pc' },
     );
 
-    expect(libraryReads).toBe(2);
-    expect((JSON.parse(live.body) as RemoteLibraryIndex).books.map((b) => b.hash).sort()).toEqual([
-      'h1',
-      'peer',
-    ]);
+    expect(libraryReads).toBe(1);
   });
 
   test('the fold does not resurrect an empty-dir record this run disproved', async () => {
@@ -526,6 +567,7 @@ describe('FileSyncEngine.syncLibrary — concurrent index writers', () => {
     ).syncLibrary([makeBook('h1', { updatedAt: 200 })], {
       strategy: 'send',
       syncBooks: false,
+      fullSync: true,
       deviceId: 'pc',
     });
 

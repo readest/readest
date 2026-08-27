@@ -188,17 +188,25 @@ const runPool = async <T>(
 };
 
 /**
- * The last successfully pulled library.json (+ its etag) per provider
- * instance. Providers are memoised per connection (see providerRegistry), so
- * this lives for the session and dies with a reconnect / settings change.
- * Lets a run whose etag probe matches skip the full index download — and,
- * since every peer mutation rewrites library.json, skip the discovery scan
- * too. Entries are cloned on read AND write so neither the caching run nor a
+ * The last successfully pulled library.json per provider instance, with both
+ * change signals we can get: the `etag` when the backend has one, and a
+ * `fingerprint` of the content when it does not. Providers are memoised per
+ * connection (see providerRegistry), so this lives for the session and dies
+ * with a reconnect / settings change.
+ *
+ * An etag match skips the index download entirely. A fingerprint match cannot
+ * (we had to download it to compare), but it still proves no peer wrote since
+ * our last run — which is what lets the run skip the DISCOVERY SCAN, a full
+ * listing of books/. Without it, a backend with no etag (iCloud; WebDAV
+ * servers that omit the header) re-listed the whole remote directory on every
+ * incremental sync, which a large library cannot afford.
+ *
+ * Entries are cloned on read AND write so neither the caching run nor a
  * reusing run can pollute the snapshot through in-place row mutations.
  */
 const remoteIndexCache = new WeakMap<
   FileSyncProvider,
-  { etag: string; index: RemoteLibraryIndex }
+  { etag?: string; fingerprint: string; index: RemoteLibraryIndex }
 >();
 
 /**
@@ -504,9 +512,15 @@ export class FileSyncEngine {
    * → pull-merge-push each local config + cover + (optionally) file → re-push
    * the merged index.
    *
-   * Strategy gating: 'silent' two-way, 'send' push-only (blind, local
-   * authoritative), 'receive' pull-only. Single-book failures are caught and
-   * counted so one bad apple never aborts the rest of the library.
+   * Strategy gating: 'silent' two-way, 'send' push-only, 'receive' pull-only.
+   * 'send' applies nothing from the remote — no metadata reconciliation, no
+   * deletion propagation, no discovery, no config pull-merge — but it is still
+   * INCREMENTAL: it reads library.json to know what it already published, and
+   * pushes only what changed locally. The blind local-authoritative overwrite
+   * ("re-push everything, my copy wins") is `fullSync`, not `'send'`, so it is
+   * reached deliberately instead of charged to every background run (#5900).
+   * Single-book failures are caught and counted so one bad apple never aborts
+   * the rest of the library.
    */
   async syncLibrary(books: Book[], options: SyncLibraryOptions): Promise<SyncLibraryResult> {
     const result: SyncLibraryResult = {
@@ -579,9 +593,18 @@ export class FileSyncEngine {
       // resurrecting deleted books. Abort the run instead; callers surface
       // one error.
       remoteIndex = await this.pullLibraryIndex();
-      if (remoteIndex && remoteEtag !== undefined) {
+      if (remoteIndex) {
+        const fingerprint = JSON.stringify(remoteIndex);
+        // No etag to probe with: the download already happened, so compare
+        // what came back against the last snapshot instead. Identical content
+        // carries the same news as a matching etag — nobody wrote since — and
+        // that is what lets the discovery scan below be skipped.
+        if (!fullSync && remoteEtag === undefined && cachedIndex?.fingerprint === fingerprint) {
+          remoteIndexUnchanged = true;
+        }
         remoteIndexCache.set(this.provider, {
           etag: remoteEtag,
+          fingerprint,
           index: structuredClone(remoteIndex),
         });
       }
@@ -607,10 +630,14 @@ export class FileSyncEngine {
     // Incremental cursor: a book needs a push only when its local copy is newer
     // than (or absent from) the shared library.json index. `book.updatedAt`
     // bumps on every progress / notes / metadata save, so the index is a
-    // reliable per-book change marker. 'send' ignores the cursor entirely — it
-    // is a blind, local-authoritative push (see class doc), so reading the
-    // index for bookkeeping must not start letting a remote row suppress a
-    // local push (#5900). A failed pull aborts before this point.
+    // reliable per-book change marker. EVERY strategy uses it, 'send'
+    // included: before #5900 send never read the index, so it re-pushed every
+    // config and re-probed every cover on every run — O(library) per sync,
+    // which a large library cannot afford. A book whose local row has not
+    // changed since the index was written has nothing new to send, so the
+    // cursor costs it nothing. Blind local-authoritative overwrite is Full
+    // Sync's job (see class doc), reached deliberately rather than paid for on
+    // every background run. A failed pull aborts before this point.
     const remoteByHash = new Map<string, Book>();
     if (remoteIndex?.books) {
       for (const rb of remoteIndex.books) {
@@ -618,7 +645,6 @@ export class FileSyncEngine {
       }
     }
     const isLocalNewer = (book: Book): boolean => {
-      if (!canPull) return true;
       const remote = remoteByHash.get(book.hash);
       if (!remote) return true;
       return (book.updatedAt ?? 0) > (remote.updatedAt ?? 0);
@@ -632,10 +658,14 @@ export class FileSyncEngine {
     // forward (plus this run's uploads) into the re-pushed index. Empty on a
     // fresh remote, so the first sync verifies every file once.
     //
-    // 'send' seeds it too — it has to, or the re-push forgets every upload a
-    // peer confirmed — but reads it ONLY to carry it forward, never to skip a
-    // probe (see needsFilePush). #5900 is a report of this record being wrong,
-    // and Send Only is the recovery path a user reaches for when it is.
+    // 'send' now seeds it too. Before #5900 it could not (it never read the
+    // index), so every Send Only run re-probed every book: an O(library) storm
+    // of remote HEADs and local fs stats that made a big library unsyncable.
+    // Trusting the record is what keeps EVERY incremental run O(changed),
+    // whatever the strategy. The record being wrong is a drift case, and drift
+    // in either direction is healed by Full Sync, which bypasses all three
+    // records and audits the real filesystem — that is the escape hatch, not a
+    // per-run re-audit.
     const uploadedHashes = new Set<string>(remoteIndex?.uploadedHashes ?? []);
     // A file needs (re)uploading only when syncBooks is on, the remote copy
     // isn't recorded yet, and the LIBRARY ROW says this device holds the file.
@@ -661,7 +691,7 @@ export class FileSyncEngine {
       options.syncBooks &&
       !isAudiobook(book) &&
       (fullSync ||
-        ((!canPull || !uploadedHashes.has(book.hash)) &&
+        (!uploadedHashes.has(book.hash) &&
           hasLocalFile(book) &&
           knownNoSource.get(book.hash) !== (book.updatedAt ?? 0)));
 
@@ -1213,51 +1243,42 @@ export class FileSyncEngine {
 
       if (indexDirty) {
         try {
-          // Last-moment reconcile. Everything above was computed from the index
-          // as it looked when this run STARTED, and a peer syncing in parallel
-          // may have rewritten it since — so publishing the rebuild as-is would
-          // drop whatever that peer added, which is the same lost-update this
-          // PR fixes for 'send', just on a shorter clock. Re-read and fold its
-          // entries in the same way: by hash, ours winning where both have an
+          // FULL SYNC ONLY: last-moment reconcile. Everything above was
+          // computed from the index as it looked when this run STARTED, and a
+          // peer syncing in parallel may have rewritten it since — so
+          // publishing the rebuild as-is drops whatever that peer added. Re-read
+          // and fold its entries in by hash, ours winning where both have an
           // opinion.
           //
-          // This NARROWS the read-modify-write window from the whole run (which
-          // spans every upload, so minutes on a big library) to the gap between
-          // this read and the PUT. It does not CLOSE it: two devices whose PUTs
-          // land inside that gap still race. Closing it needs a conditional
-          // write, and there is nothing portable to condition on today —
-          // `head()` exposes no version token at all on iCloud and only a
-          // server-dependent one on WebDAV, so an If-Match capability would
-          // have to be added to FileSyncProvider and degrade per backend.
-          // Tracked as follow-up; the union-by-hash CRDT means a lost row is
-          // re-published by the device that owns it on its next run.
+          // Deliberately NOT done on the incremental path. It costs a second
+          // GET of library.json on every pushing run (tens to hundreds of KB
+          // for a real library), and the incremental contract is speed, not
+          // convergence: it is best-effort, runs unattended on every library
+          // change, and is allowed to lose a race. Full Sync is where this
+          // library pays for correctness — the same split that already makes it
+          // the repair path for row-vs-filesystem drift above. A lost row is
+          // in any case re-published by the device that owns it locally, since
+          // membership is a union-by-hash CRDT.
           //
-          // Skipped when the etag proves nothing has been written since we
-          // read: our snapshot IS the current file, so there is nothing to
-          // fold, and re-pulling would undo the change-probe short-circuit
-          // that keeps a quiet incremental run down to one metadata stat.
-          // A provider with no etag (iCloud, WebDAV servers that omit the
-          // header) can never prove it, so it always re-reads — which is the
-          // safe default, and those are the backends that need it most.
-          let unchangedSincePull = false;
-          if (remoteEtag !== undefined) {
-            try {
-              const now = (await this.provider.head(buildLibraryPath(this.provider.rootPath)))
-                ?.etag;
-              unchangedSincePull = now !== undefined && now === remoteEtag;
-            } catch {
-              // Probe failed: fall through to the full re-read.
+          // Even here the window is narrowed, not closed: two Full Syncs whose
+          // PUTs land between this read and the write still race. Closing it
+          // needs a conditional write, and there is nothing portable to
+          // condition on — `head()` exposes no version token at all on iCloud
+          // and only a server-dependent one on WebDAV, so an If-Match
+          // capability would have to be added to FileSyncProvider and degrade
+          // per backend. Follow-up.
+          if (fullSync) {
+            const fresh = await this.pullLibraryIndex();
+            for (const rb of fresh?.books ?? []) {
+              if (!indexByHash.has(rb.hash)) indexByHash.set(rb.hash, rb);
             }
-          }
-          const fresh = unchangedSincePull ? remoteIndex : await this.pullLibraryIndex();
-          for (const rb of fresh?.books ?? []) {
-            if (!indexByHash.has(rb.hash)) indexByHash.set(rb.hash, rb);
-          }
-          for (const hash of fresh?.uploadedHashes ?? []) uploadedHashes.add(hash);
-          for (const hash of fresh?.emptyDirs ?? []) {
-            // ...except a dir THIS run looked inside and found a file in. That
-            // is newer knowledge than the peer's record, not a competing entry.
-            if (!confirmedNonEmptyDirs.has(hash)) emptyDirs.add(hash);
+            for (const hash of fresh?.uploadedHashes ?? []) uploadedHashes.add(hash);
+            for (const hash of fresh?.emptyDirs ?? []) {
+              // ...except a dir THIS run looked inside and found a file in.
+              // That is newer knowledge than the peer's record, not a
+              // competing entry.
+              if (!confirmedNonEmptyDirs.has(hash)) emptyDirs.add(hash);
+            }
           }
           const merged = buildRecords();
 
