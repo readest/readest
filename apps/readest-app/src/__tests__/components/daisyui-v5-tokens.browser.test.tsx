@@ -16,6 +16,7 @@ await import('@/styles/globals.css');
 afterEach(() => {
   cleanup();
   document.documentElement.removeAttribute('data-theme');
+  document.documentElement.removeAttribute('data-eink');
 });
 
 const rgb = (hex: string) => {
@@ -101,6 +102,40 @@ describe('daisyUI 5 theme tokens', () => {
     expect([box('toggle-xs').width, box('toggle-xs').height]).toEqual([24, 16]);
     // daisyUI 5 shrank `loading-lg` from 2.5rem to 1.75rem.
     expect(box('loading-lg').width).toBe(40);
+  });
+
+  it('keeps the loading animations at full speed', () => {
+    // daisyUI 5 ships each `.loading-*` mask twice: a slowed-down base rule that
+    // stands in for reduced motion, then an `@media (prefers-reduced-motion:
+    // no-preference)` override at full speed.  Tailwind emits the media block
+    // *before* the base rule for some of them, so the slow mask wins for everyone
+    // and the dots drift up and down instead of bouncing.
+    expect(window.matchMedia('(prefers-reduced-motion: no-preference)').matches).toBe(true);
+    const { getByTestId } = render(
+      <>
+        <span data-testid='dots' className='loading loading-dots' />
+        <span data-testid='spinner' className='loading loading-spinner' />
+        <span data-testid='infinity' className='loading loading-infinity' />
+        <span data-testid='plain' className='loading' />
+        <span
+          data-testid='variant'
+          className='loading loading-lg not-eink:loading-dots eink:loading-spinner'
+        />
+      </>,
+    );
+    const durations = (id: string) =>
+      [...getComputedStyle(getByTestId(id)).maskImage.matchAll(/dur='([^']+)'/g)].map((m) => m[1]);
+    expect(durations('dots')).toEqual(['1.05s', '1.05s', '1.05s']);
+    expect(durations('infinity')).toEqual(['2s']);
+    expect(durations('spinner')).toEqual(['2s', '1.5s', '1.5s']);
+    expect(durations('plain')).toEqual(['2s', '1.5s', '1.5s']);
+    // `Spinner` reaches the dots through the `not-eink:` variant, which Tailwind
+    // emits as a second, separately ordered copy of the same pair.
+    expect(durations('variant')).toEqual(['1.05s', '1.05s', '1.05s']);
+    // Restoring it must not leak past the variant: e-ink still swaps in the
+    // spinner, whose steady sweep survives a slow panel refresh.
+    document.documentElement.setAttribute('data-eink', 'true');
+    expect(durations('variant')).toEqual(['2s', '1.5s', '1.5s']);
   });
 
   it('keeps the Tailwind 3 default palette', () => {
