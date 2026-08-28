@@ -34,7 +34,13 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
   ariaLabel,
 }) => {
   return (
-    <div className='flex max-w-[60%] items-center rounded-md focus-within:bg-transparent hover:bg-transparent'>
+    // The picker's implicit anchor is the <select>, which stops short of the
+    // MdArrowDropDown below -- the chevron the user reads as the edge of the
+    // control -- so the popup lines up ~20px inside it. Anchor to the wrapper
+    // instead, and scope the name so a page full of these rows resolves each
+    // picker to its own wrapper rather than to the last one in tree order.
+    // `position-anchor` is applied to `::picker(select)` in globals.css.
+    <div className='[anchor-name:--settings-select] [anchor-scope:--settings-select] flex max-w-[60%] items-center rounded-md focus-within:bg-transparent hover:bg-transparent'>
       {/* No `appearance-none!` here: daisyUI's `.select` already hides the
           native arrow and, where supported, opts into `appearance: base-select`
           so the option popup is painted by the page in the app theme instead

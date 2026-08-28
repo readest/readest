@@ -825,6 +825,30 @@
     background-color: var(--color-base-100);
     color: var(--color-base-content);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    /* daisyUI already end-aligns the picker to the select
+       (`position-area: self-start span-self-start`) and then pushes it back off
+       that edge by 16px: `margin-inline: 8px` plus `translate: -8px`, mirrored
+       as `translate: .5rem` under [dir=rtl]. Drop both so the popup lines up
+       with the value it belongs to. Only the end-side margin goes -- the
+       start-side one still keeps a wide picker off the opposite edge -- and
+       both properties are direction-agnostic, so RTL stays correct. */
+    margin-inline-end: 0;
+    translate: none;
+  }
+
+  /* SettingsSelect renders its chevron as a separate icon *outside* the
+     <select>, so the picker's implicit anchor stops ~20px short of the control's
+     visible trailing edge. It anchors to its wrapper instead (see
+     SettingsSelect); the wrapper scopes the name so each row resolves its own. */
+  :where(.settings-content)::picker(select) {
+    position-anchor: --settings-select;
+  }
+
+  /* Because that picker is painted in-page, CSS on <option> is live, and
+     daisyUI 5 ships `white-space: normal` on it, so a long entry
+     ("Português (Brasil)") wraps onto several lines in a narrow select. */
+  :where(.select) option {
+    white-space: nowrap;
   }
 
   /* v4 drew the select's focus ring at 20% base-content; v5 draws it solid and

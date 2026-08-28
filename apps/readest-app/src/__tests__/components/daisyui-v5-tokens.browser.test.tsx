@@ -10,6 +10,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import { themes, applyCustomTheme } from '@/styles/themes';
 import SettingsSelect from '@/components/settings/primitives/SettingsSelect';
+import Select from '@/components/Select';
 
 await import('@/styles/globals.css');
 
@@ -171,5 +172,97 @@ describe('daisyUI 5 theme tokens', () => {
     // The settings primitive strips daisyUI's chevron and chrome; it must not
     // also strip the appearance, or the popup falls back to the OS one.
     expect(getComputedStyle(getByLabelText('Settings select')).appearance).toBe('base-select');
+  });
+
+  it('keeps picker options on one line', () => {
+    // Because the picker is painted in-page, CSS on <option> is live, and
+    // daisyUI 5 ships `:is(.select,.select select) option { white-space: normal }`.
+    // A long entry — "Português (Brasil)", "System Language" — then wraps onto
+    // several lines inside a narrow select, which is what the translator popup's
+    // language and provider pickers are.
+    const { getByTestId } = render(
+      <select className='select'>
+        <option data-testid='option'>Português (Brasil)</option>
+      </select>,
+    );
+    expect(getComputedStyle(getByTestId('option')).whiteSpace).toBe('nowrap');
+  });
+
+  it('anchors the settings picker to the whole control, chevron included', () => {
+    // SettingsSelect suppresses daisyUI's in-select chevron and renders a
+    // separate 20px MdArrowDropDown *outside* the <select>. The picker's
+    // implicit anchor is the <select>, so it lands short of the control's
+    // visible trailing edge. Measured on device: <select> right 913px, wrapper
+    // right 968px, picker right 910px -- 20px adrift of the chevron the user
+    // reads as the edge of the control. Anchoring to the wrapper lands it at
+    // 965px, flush.
+    const { getByLabelText } = render(
+      <SettingsSelect
+        value='a'
+        onChange={() => {}}
+        options={[{ value: 'a', label: 'A' }]}
+        ariaLabel='Anchored select'
+      />,
+    );
+    const select = getByLabelText('Anchored select');
+    const wrapper = select.parentElement!;
+    const css = (el: Element, prop: string, pseudo?: string) =>
+      getComputedStyle(el as HTMLElement, pseudo)
+        .getPropertyValue(prop)
+        .trim();
+
+    expect(css(wrapper, 'anchor-name')).toBe('--settings-select');
+    // Scoped, so a page full of these rows resolves each picker to its own
+    // wrapper rather than to the last one in tree order.
+    expect(css(wrapper, 'anchor-scope')).toBe('--settings-select');
+    expect(css(select, 'position-anchor', '::picker(select)')).toBe('--settings-select');
+  });
+
+  it('sizes Select to its value so the label ends against the chevron', () => {
+    // daisyUI 5 gives `.select` `width: clamp(3rem,20rem,100%)`, so the box
+    // stretches to its max width whatever the value is and the label sits at the
+    // far start of a wide box. v4 hugged the content, which is what made the
+    // component's `text-align-last: end` read as end-aligned. The value itself
+    // cannot be aligned under `appearance: base-select`: it is painted into a
+    // UA-generated <selectedcontent> in the shadow root, so neither
+    // `text-align-last` nor an author rule on `selectedcontent` reaches it.
+    const { getByTestId } = render(
+      <div
+        data-testid='row'
+        style={{ width: 400, display: 'flex', justifyContent: 'space-between' }}
+      >
+        <span>Translated Text</span>
+        <Select value='a' onChange={() => {}} options={[{ value: 'a', label: 'A' }]} />
+      </div>,
+    );
+    const row = getByTestId('row').getBoundingClientRect();
+    const select = getByTestId('row').querySelector('select')!.getBoundingClientRect();
+    // Hugging the value, not filling the row.
+    expect(select.width).toBeLessThan(row.width / 2);
+    // And still parked at the row's end, where the chevron is.
+    expect(Math.round(select.right)).toBe(Math.round(row.right));
+  });
+
+  it('lines the picker up with the end of the select', () => {
+    // daisyUI already end-aligns the picker (`position-area: self-start
+    // span-self-start`) but then insets it: `margin-inline: 8px` plus
+    // `translate: -8px` (mirrored as `translate: .5rem` under [dir=rtl]). That
+    // is 16px of drift, so the popup visibly fails to line up with the value it
+    // belongs to. Zeroing both is what makes it flush; `margin-inline-end` and
+    // `translate: none` are both direction-agnostic, so RTL stays correct.
+    const { getByTestId } = render(
+      <select data-testid='select' className='select'>
+        <option>A</option>
+      </select>,
+    );
+    const picker = getComputedStyle(getByTestId('select'), '::picker(select)');
+    expect(picker.translate).toBe('none');
+    expect(picker.marginInlineEnd).toBe('0px');
+
+    // The RTL mirror must not reintroduce the nudge either.
+    document.documentElement.setAttribute('dir', 'rtl');
+    const rtl = getComputedStyle(getByTestId('select'), '::picker(select)');
+    expect(rtl.translate).toBe('none');
+    document.documentElement.removeAttribute('dir');
   });
 });
