@@ -188,6 +188,35 @@ describe('daisyUI 5 theme tokens', () => {
     expect(getComputedStyle(getByTestId('option')).whiteSpace).toBe('nowrap');
   });
 
+  it('tracks the selected value, not the widest option, without base-select', () => {
+    // Under `appearance: base-select` the selected value already drives the
+    // width. An engine without it falls back to native select rendering, where
+    // `w-auto` means the width of the widest *option* — and TranslatorPopup
+    // hands this the whole language list, so a one-character value measured
+    // 240px instead of 49px. `field-sizing: content` keeps the fallback sized to
+    // the selection. Asserted through the fallback on purpose: under
+    // base-select this passes with or without the fix and would guard nothing.
+    const { getByTestId } = render(
+      <div data-testid='row' style={{ width: 400 }}>
+        <Select
+          value='a'
+          onChange={() => {}}
+          options={[
+            { value: 'a', label: 'A' },
+            { value: 'long', label: 'Português (Brasil) and a very long unselected label' },
+          ]}
+        />
+      </div>,
+    );
+    const select = getByTestId('row').querySelector('select')!;
+    const withBaseSelect = select.getBoundingClientRect().width;
+
+    select.style.appearance = 'none';
+    const withoutBaseSelect = select.getBoundingClientRect().width;
+
+    expect(withoutBaseSelect).toBeLessThanOrEqual(withBaseSelect + 1);
+  });
+
   it('anchors the settings picker to the whole control, chevron included', () => {
     // SettingsSelect suppresses daisyUI's in-select chevron and renders a
     // separate 20px MdArrowDropDown *outside* the <select>. The picker's

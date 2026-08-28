@@ -37,7 +37,13 @@ export default function Select({
         // below cannot, because `appearance: base-select` paints the value into
         // a UA-generated <selectedcontent> in the shadow root that author CSS
         // never reaches. `max-w-[60%]` with `truncate` still caps a long value.
-        'select bg-transparent h-8 min-h-8 w-auto max-w-[60%] truncate rounded-md border-none text-sm',
+        // `field-sizing:content` covers the engines that lack `base-select` and
+        // fall back to native select rendering, where `w-auto` means the widest
+        // *option* rather than the selected one -- and the popup feeds this the
+        // entire language list, so a one-character value measured 240px instead
+        // of 49px. Where `base-select` applies the value already drives the
+        // width and this changes nothing.
+        'select bg-transparent h-8 min-h-8 w-auto max-w-[60%] [field-sizing:content] truncate rounded-md border-none text-sm',
         'focus:outline-hidden focus:ring-0 focus-visible:outline-hidden',
         className,
       )}
