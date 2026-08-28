@@ -1,27 +1,18 @@
 import clsx from 'clsx';
 import React from 'react';
 
-import { FiSearch } from 'react-icons/fi';
 import { RiQuillPenLine } from 'react-icons/ri';
+import { PiNotePencil } from 'react-icons/pi';
 import { MdArrowBackIosNew, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 
 const NotebookHeader: React.FC<{
   isPinned: boolean;
-  isSearchBarVisible: boolean;
   handleClose: () => void;
   handleTogglePin: () => void;
-  handleToggleSearchBar: () => void;
-  showSearchButton?: boolean;
-}> = ({
-  isPinned,
-  isSearchBarVisible,
-  handleClose,
-  handleTogglePin,
-  handleToggleSearchBar,
-  showSearchButton = true,
-}) => {
+  handleOpenAnnotations: () => void;
+}> = ({ isPinned, handleClose, handleTogglePin, handleOpenAnnotations }) => {
   const _ = useTranslation();
   const iconSize15 = useResponsiveSize(15);
   const iconSize18 = useResponsiveSize(18);
@@ -50,20 +41,16 @@ const NotebookHeader: React.FC<{
           <MdArrowBackIosNew />
         </button>
       </div>
-      {showSearchButton && (
-        <div className='flex items-center justify-end gap-x-4'>
-          <button
-            title={isSearchBarVisible ? _('Hide Search Bar') : _('Show Search Bar')}
-            onClick={handleToggleSearchBar}
-            className={clsx(
-              'btn btn-ghost h-8 min-h-8 w-8 p-0',
-              isSearchBarVisible && 'bg-base-300',
-            )}
-          >
-            <FiSearch size={iconSize18} />
-          </button>
-        </div>
-      )}
+      <button
+        type='button'
+        title={_('Annotations')}
+        aria-label={_('Open Annotations')}
+        onClick={handleOpenAnnotations}
+        className='btn btn-ghost h-10 min-h-10 gap-1 px-2 text-xs font-normal max-sm:h-11 max-sm:min-h-11'
+      >
+        <PiNotePencil size={iconSize18} />
+        <span className='hidden sm:inline'>{_('Annotations')}</span>
+      </button>
     </div>
   );
 };

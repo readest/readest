@@ -19,6 +19,7 @@ import { getBookProgress, useBookProgress } from '@/store/readerProgressStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
+import { useNotebookDocumentStore } from '@/store/notebookDocumentStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { isSystemDictionaryEnabled } from '@/services/dictionaries/registry';
@@ -57,6 +58,8 @@ import { getWordCount, isSingleLookupTerm } from '@/utils/word';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { writeTextToClipboard } from '@/utils/clipboard';
 import { buildAnnotationUrl } from '@/utils/deeplink';
+import { buildAnnotationCopyMarkdown } from '@/utils/note';
+import { insertNotebookMarkdown, validateNotebookMutation } from '../../utils/notebookDocument';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { canShareText, shareSelectedText } from '@/utils/share';
 import { getToolbarToolTypes, supportsProofread } from '@/utils/annotationToolbar';
@@ -122,9 +125,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const getView = useReaderStore((s) => s.getView);
   const getViewsById = useReaderStore((s) => s.getViewsById);
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
-  const { setNotebookVisible, setNotebookNewAnnotation, setNotebookNewHighlightIds } =
-    useNotebookStore();
-  const { clearBooknotesNav, isSideBarVisible } = useSidebarStore();
+  const { setNotebookVisible, setNotebookActiveTab } = useNotebookStore();
+  const {
+    clearBooknotesNav,
+    isSideBarVisible,
+    setAnnotationEditTarget,
+    setSearchBarVisible,
+    setSideBarVisible,
+  } = useSidebarStore();
   const { listenToNativeTouchEvents } = useDeviceControlStore();
   const { loadCustomDictionaries } = useCustomDictionaryStore();
   const { selectFiles } = useFileSelector(appService, _);
@@ -1223,29 +1231,59 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const cfi = selection.popup ? selection.cfi : view?.getCFI(selection.index, selection.range);
     if (!cfi) return;
 
-    eventDispatcher.dispatch('toast', {
-      type: 'info',
-      message: _('Copied to notebook'),
-      className: 'whitespace-nowrap',
-      timeout: 2000,
-    });
-
     const { booknotes: annotations = [] } = config;
+    const existingIndex = annotations.findIndex(
+      (annotation) =>
+        annotation.cfi === cfi && annotation.type === 'excerpt' && !annotation.deletedAt,
+    );
+    const existing = existingIndex === -1 ? null : annotations[existingIndex]!;
+    const now = Date.now();
     const annotation: BookNote = {
-      id: uniqueId(),
+      id: existing?.id ?? uniqueId(),
       type: 'excerpt',
       cfi,
       note: '',
       text: selection.text,
       page: selection.page,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
     };
 
-    const existingIndex = annotations.findIndex(
-      (annotation) =>
-        annotation.cfi === cfi && annotation.type === 'excerpt' && !annotation.deletedAt,
+    const bookHash = bookKey.split('-')[0]!;
+    const linkType = viewSettings.noteExportConfig?.linkType ?? DEFAULT_NOTE_EXPORT_CONFIG.linkType;
+    const url = buildAnnotationUrl(
+      { bookHash, noteId: annotation.id, cfi: annotation.cfi },
+      linkType,
     );
+    const markdown = buildAnnotationCopyMarkdown({
+      text: annotation.text,
+      note: annotation.note,
+      noteLabel: _('Note'),
+      url,
+      linkLabel: annotation.page
+        ? _('Page: {{number}}', { number: annotation.page })
+        : _('Open in Readest'),
+    });
+
+    const notebook = useNotebookDocumentStore.getState();
+    const session = notebook.sessions[bookHash];
+    const currentContent = session?.content ?? '';
+    const prospective = insertNotebookMarkdown(
+      currentContent,
+      markdown,
+      session?.selectionStart ?? currentContent.length,
+      session?.selectionEnd ?? currentContent.length,
+    );
+    if (!validateNotebookMutation(currentContent, prospective.content).accepted) {
+      notebook.mutate(bookHash, prospective.content);
+      eventDispatcher.dispatch('toast', {
+        type: 'warning',
+        message: _('Notebook is too large to save. Copy or remove some text to continue.'),
+        timeout: 3000,
+      });
+      return;
+    }
+
     if (existingIndex !== -1) {
       annotations[existingIndex] = annotation;
     } else {
@@ -1254,8 +1292,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const updatedConfig = updateBooknotes(bookKey, annotations);
     if (updatedConfig) {
       saveConfig(envConfig, bookKey, updatedConfig, settings);
+      notebook.insert(bookHash, markdown);
     }
+    eventDispatcher.dispatch('toast', {
+      type: 'info',
+      message: _('Copied to Notebook'),
+      className: 'whitespace-nowrap',
+      timeout: 2000,
+    });
     if (!appService?.isMobile) {
+      setNotebookActiveTab('notes');
       setNotebookVisible(true);
     }
   };
@@ -1467,13 +1513,24 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       selection.href = href;
     }
     const created = handleHighlight(true);
-    setNotebookVisible(true);
-    setNotebookNewAnnotation(selection);
-    // Remember the eagerly-created highlights (one per page of a cross-page
-    // selection) so the notebook can remove them if the note is never saved. A
-    // restyle of an existing highlight creates none — that record predates this
-    // flow and must survive a cancel (#4791).
-    setNotebookNewHighlightIds(created.map((annotation) => annotation.id));
+    const cfi = selection.popup ? selection.cfi : view?.getCFI(selection.index, selection.range);
+    const target =
+      created[0] ??
+      getConfig(bookKey)?.booknotes?.find(
+        (annotation) =>
+          annotation.type === 'annotation' && annotation.cfi === cfi && !annotation.deletedAt,
+      );
+    if (!target) return;
+    setAnnotationEditTarget(bookKey, {
+      annotationId: target.id,
+      placeholderIds: created.map((annotation) => annotation.id),
+    });
+    setSearchBarVisible(false);
+    clearBooknotesNav(bookKey);
+    setConfig(bookKey, {
+      viewSettings: { ...viewSettings, sideBarTab: 'annotations' },
+    });
+    setSideBarVisible(true);
     handleDismissPopup();
   };
 
@@ -1878,7 +1935,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
     const config = getConfig(bookKey)!;
     const { booknotes: allNotes = [] } = config;
-    const booknotes = allNotes.filter((note) => !note.deletedAt);
+    const booknotes = allNotes.filter((note) => note.type !== 'notebook' && !note.deletedAt);
     if (booknotes.length === 0) {
       eventDispatcher.dispatch('toast', {
         type: 'info',

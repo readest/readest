@@ -1,13 +1,15 @@
 import clsx from 'clsx';
 import dayjs from 'dayjs';
-import React, { useMemo } from 'react';
-import { MdEdit, MdDelete, MdContentCopy } from 'react-icons/md';
+import React, { useEffect, useMemo } from 'react';
+import { MdEdit, MdDelete, MdContentCopy, MdPlaylistAdd } from 'react-icons/md';
 
 import { useEnv } from '@/context/EnvContext';
 import { BookNote, HighlightColor } from '@/types/book';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
+import { useNotebookDocumentStore } from '@/store/notebookDocumentStore';
+import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -17,7 +19,10 @@ import { buildAnnotationUrl } from '@/utils/deeplink';
 import { buildAnnotationCopyMarkdown } from '@/utils/note';
 import { writeTextToClipboard } from '@/utils/clipboard';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
-import { removeBookNoteOverlays } from '../../utils/annotatorUtil';
+import {
+  removeBookNoteOverlays,
+  removeEmptyAnnotationPlaceholder,
+} from '../../utils/annotatorUtil';
 import { parseNoteMarkdown } from '../../utils/noteMarkdown';
 import { useSaveBooknoteNoteText } from '../../hooks/useSaveBooknoteNoteText';
 import { useInlineTextEditor } from '../../hooks/useInlineTextEditor';
@@ -30,6 +35,9 @@ interface BooknoteItemProps {
   isNearest?: boolean;
   onClick?: () => void;
   inlineNoteEditing?: boolean;
+  startEditing?: boolean;
+  placeholderIds?: string[];
+  onFinishEditing?: () => void;
 }
 
 const BooknoteItem: React.FC<BooknoteItemProps> = ({
@@ -38,13 +46,18 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
   isNearest,
   onClick,
   inlineNoteEditing,
+  startEditing,
+  placeholderIds = [],
+  onFinishEditing,
 }) => {
   const _ = useTranslation();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
   const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
   const { getProgress, getView, getViewsById, getViewSettings } = useReaderStore();
-  const { setNotebookEditAnnotation, setNotebookVisible } = useNotebookStore();
+  const { setNotebookActiveTab, setNotebookEditAnnotation, setNotebookVisible } =
+    useNotebookStore();
+  const { setSideBarVisible } = useSidebarStore();
 
   const globalReadSettings = settings.globalReadSettings;
   const customColors = globalReadSettings.customHighlightColors;
@@ -66,9 +79,11 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     }
   };
   const { editorRef, draftText, setDraftText, inlineEditMode, startEdit, cancelEdit, save } =
-    useInlineTextEditor(
-      isBookmark ? saveBookmarkText : (noteText) => saveBooknoteNoteText(item.id, noteText),
-    );
+    useInlineTextEditor((draftText) => {
+      if (isBookmark) saveBookmarkText(draftText);
+      else saveBooknoteNoteText(item.id, draftText);
+      onFinishEditing?.();
+    });
   const separatorWidth = useResponsiveSize(3);
   const size18 = useResponsiveSize(18);
 
@@ -121,7 +136,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     setNotebookEditAnnotation(note);
   };
 
-  const handleCopyLink = () => {
+  const buildSourceMarkdown = () => {
     const bookHash = item.bookHash || bookKey.split('-')[0]!;
     const linkType =
       getViewSettings(bookKey)?.noteExportConfig?.linkType ?? DEFAULT_NOTE_EXPORT_CONFIG.linkType;
@@ -129,13 +144,20 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     const linkLabel = item.page
       ? _('Page: {{number}}', { number: item.page })
       : _('Open in Readest');
-    const markdown = buildAnnotationCopyMarkdown({
-      text: item.text,
-      note: item.note,
-      noteLabel: _('Note'),
-      url,
-      linkLabel,
-    });
+    return {
+      bookHash,
+      markdown: buildAnnotationCopyMarkdown({
+        text: item.text,
+        note: item.note,
+        noteLabel: _('Note'),
+        url,
+        linkLabel,
+      }),
+    };
+  };
+
+  const handleCopyLink = () => {
+    const { markdown } = buildSourceMarkdown();
     void writeTextToClipboard(markdown);
     eventDispatcher.dispatch('toast', {
       type: 'info',
@@ -145,9 +167,51 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     });
   };
 
+  const handleInsertIntoNotebook = () => {
+    const { bookHash, markdown } = buildSourceMarkdown();
+    const result = useNotebookDocumentStore.getState().insert(bookHash, markdown);
+    if (!result.accepted) {
+      eventDispatcher.dispatch('toast', {
+        type: 'warning',
+        message: _('Notebook is too large to save. Copy or remove some text to continue.'),
+        timeout: 3000,
+      });
+      return;
+    }
+    setNotebookActiveTab('notes');
+    setNotebookVisible(true);
+    if (appService?.isMobile || window.innerWidth < 640 || window.innerHeight < 640) {
+      setSideBarVisible(false);
+    }
+  };
+
   const editBookmark = () => startEdit(text || '');
 
   const editNoteInline = () => startEdit(item.note || '');
+
+  useEffect(() => {
+    if (startEditing) startEdit(item.note || '');
+  }, [item.note, startEdit, startEditing]);
+
+  const cancelRequestedEdit = () => {
+    if (placeholderIds.length > 0) {
+      const config = getConfig(bookKey);
+      const { booknotes = [] } = config ?? {};
+      const removed = placeholderIds
+        .map((id) => removeEmptyAnnotationPlaceholder(booknotes, id, Date.now()))
+        .filter((placeholder): placeholder is BookNote => placeholder !== null);
+      if (removed.length > 0) {
+        const views = getViewsById(bookKey.split('-')[0]!);
+        removed.forEach((placeholder) => {
+          views.forEach((view) => removeBookNoteOverlays(view, placeholder));
+        });
+        const updatedConfig = updateBooknotes(bookKey, booknotes);
+        if (updatedConfig) saveConfig(envConfig, bookKey, updatedConfig, settings);
+      }
+    }
+    cancelEdit();
+    onFinishEditing?.();
+  };
 
   if (inlineEditMode) {
     return (
@@ -165,13 +229,15 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
             value={draftText}
             onChange={setDraftText}
             onSave={save}
-            onEscape={cancelEdit}
+            onEscape={startEditing ? cancelRequestedEdit : cancelEdit}
             spellCheck={false}
             autoFocus
           />
         </div>
         <div className='flex justify-end space-x-3 p-2' dir='ltr'>
-          <TextButton onClick={cancelEdit}>{_('Cancel')}</TextButton>
+          <TextButton onClick={startEditing ? cancelRequestedEdit : cancelEdit}>
+            {_('Cancel')}
+          </TextButton>
           <TextButton onClick={save} disabled={isBookmark && !draftText}>
             {_('Save')}
           </TextButton>
@@ -301,6 +367,16 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
             >
               <MdContentCopy size={size18} />
             </button>
+
+            {(item.type === 'annotation' || item.type === 'excerpt') && (
+              <button
+                onClick={handleInsertIntoNotebook}
+                className='btn btn-ghost btn-xs text-base-content p-0 opacity-0 transition duration-300 ease-in-out hover:bg-transparent group-focus-within:opacity-100 group-hover:opacity-100'
+                aria-label={_('Insert into Notebook')}
+              >
+                <MdPlaylistAdd size={size18} />
+              </button>
+            )}
 
             <button
               onClick={deleteNote.bind(null, item)}

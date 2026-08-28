@@ -170,6 +170,21 @@ describe('buildAnnotationExport', () => {
 
     expect(payload.annotations.map((a) => a.type)).toEqual(['annotation', 'bookmark', 'excerpt']);
   });
+
+  it('does not include the reserved Notebook document in annotation exports', () => {
+    const payload = buildAnnotationExport({
+      book: { title: 'Book', author: 'Author' },
+      groups: [
+        makeGroup([
+          makeNote({ id: 'a', type: 'annotation' }),
+          makeNote({ id: 'notebook', type: 'notebook', note: '# Private workspace' }),
+        ]),
+      ],
+      exportedAt: 7000,
+    });
+
+    expect(payload.annotations.map((a) => a.id)).toEqual(['a']);
+  });
 });
 
 describe('parseAnnotationExport', () => {

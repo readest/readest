@@ -13,7 +13,11 @@ const mocks = vi.hoisted(() => {
   return {
     state,
     setNotebookVisible: vi.fn(),
+    setNotebookActiveTab: vi.fn(),
     setNotebookEditAnnotation: vi.fn(),
+    insertNotebook: vi.fn(() => ({ accepted: true })),
+    setSideBarVisible: vi.fn(),
+    toast: vi.fn(),
     addAnnotation: vi.fn(),
     saveConfig: vi.fn(),
     // Mirrors the real store: `updateBooknotes` writes back whatever array
@@ -29,12 +33,23 @@ const mocks = vi.hoisted(() => {
 vi.mock('@/store/notebookStore', () => ({
   useNotebookStore: () => ({
     setNotebookVisible: mocks.setNotebookVisible,
+    setNotebookActiveTab: mocks.setNotebookActiveTab,
     setNotebookEditAnnotation: mocks.setNotebookEditAnnotation,
   }),
 }));
 
+vi.mock('@/store/notebookDocumentStore', () => ({
+  useNotebookDocumentStore: Object.assign(vi.fn(), {
+    getState: () => ({ insert: mocks.insertNotebook }),
+  }),
+}));
+
+vi.mock('@/store/sidebarStore', () => ({
+  useSidebarStore: () => ({ setSideBarVisible: mocks.setSideBarVisible }),
+}));
+
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {} }),
+  useEnv: () => ({ envConfig: {}, appService: { isMobile: false } }),
 }));
 
 vi.mock('@/store/settingsStore', () => ({
@@ -83,15 +98,27 @@ const makeItem = (overrides: Partial<BookNote> = {}): BookNote => ({
   ...overrides,
 });
 
-const renderItem = (item: BookNote, inlineNoteEditing?: boolean) =>
+const renderItem = (
+  item: BookNote,
+  inlineNoteEditing?: boolean,
+  editTarget?: { placeholderIds: string[]; onFinish: () => void },
+) =>
   render(
     <ul>
-      <BooknoteItem bookKey='hash1-primary' item={item} inlineNoteEditing={inlineNoteEditing} />
+      <BooknoteItem
+        bookKey='hash1-primary'
+        item={item}
+        inlineNoteEditing={inlineNoteEditing}
+        startEditing={!!editTarget}
+        placeholderIds={editTarget?.placeholderIds}
+        onFinishEditing={editTarget?.onFinish}
+      />
     </ul>,
   );
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.insertNotebook.mockReturnValue({ accepted: true });
   mocks.state.booknotes = [];
 });
 
@@ -187,5 +214,56 @@ describe('BooknoteItem', () => {
     renderItem(makeItem());
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Add Note' })).toBeNull();
+  });
+
+  it('inserts linked source Markdown into the current book Notebook', () => {
+    renderItem(makeItem({ note: 'my thought' }), true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Insert into Notebook' }));
+
+    expect(mocks.insertNotebook).toHaveBeenCalledWith(
+      'hash1',
+      expect.stringContaining('highlighted words'),
+    );
+    expect(mocks.setNotebookActiveTab).toHaveBeenCalledWith('notes');
+    expect(mocks.setNotebookVisible).toHaveBeenCalledWith(true);
+    expect(mocks.setSideBarVisible).not.toHaveBeenCalled();
+  });
+
+  it('keeps the Notebook closed when the insertion exceeds the size limit', () => {
+    mocks.insertNotebook.mockReturnValue({ accepted: false });
+    renderItem(makeItem(), true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Insert into Notebook' }));
+
+    expect(mocks.setNotebookVisible).not.toHaveBeenCalled();
+  });
+
+  it('opens a requested annotation editor and keeps a saved placeholder', () => {
+    const item = makeItem();
+    const onFinish = vi.fn();
+    mocks.state.booknotes = [item];
+    renderItem(item, true, { placeholderIds: [item.id], onFinish });
+
+    const editor = screen.getByRole('textbox');
+    fireEvent.change(editor, { target: { value: 'new thought' } });
+    fireEvent.click(screen.getByText('Save'));
+
+    expect((mocks.state.booknotes[0] as BookNote).note).toBe('new thought');
+    expect((mocks.state.booknotes[0] as BookNote).deletedAt).toBeUndefined();
+    expect(onFinish).toHaveBeenCalledTimes(1);
+  });
+
+  it('removes a new empty placeholder when requested editing is cancelled', () => {
+    const item = makeItem();
+    const onFinish = vi.fn();
+    mocks.state.booknotes = [item];
+    renderItem(item, true, { placeholderIds: [item.id], onFinish });
+
+    fireEvent.click(screen.getByText('Cancel'));
+
+    expect((mocks.state.booknotes[0] as BookNote).deletedAt).toBeTypeOf('number');
+    expect(mocks.saveConfig).toHaveBeenCalledTimes(1);
+    expect(onFinish).toHaveBeenCalledTimes(1);
   });
 });

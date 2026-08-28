@@ -99,8 +99,7 @@ const Reader: React.FC<{ ids?: string }> = ({ ids }) => {
       } else if (getIsNotebookVisible() && !isNotebookPinned) {
         setNotebookVisible(false);
       } else {
-        eventDispatcher.dispatch('close-reader');
-        router.back();
+        void eventDispatcher.dispatch('close-reader', { onClose: () => router.back() });
       }
       return true;
     }

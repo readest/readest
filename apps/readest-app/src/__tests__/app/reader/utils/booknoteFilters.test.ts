@@ -26,20 +26,26 @@ const makeNote = (overrides: Partial<BookNote> = {}): BookNote => ({
 describe('filterBooknotes', () => {
   const highlight = makeNote({ text: 'The Cheshire Cat grinned' });
   const noted = makeNote({ text: 'down the rabbit hole', note: 'Metaphor for curiosity' });
+  const clipping = makeNote({ type: 'excerpt', text: 'Drink me' });
+  const notebook = makeNote({ id: 'notebook', type: 'notebook', text: undefined, note: '# Notes' });
   const tombstoned = makeNote({ text: 'gone', note: 'gone note', deletedAt: 2000 });
 
   it('excludes tombstoned notes for every kind', () => {
-    for (const kind of ['all', 'highlights', 'notes'] as const) {
+    for (const kind of ['all', 'notes', 'clippings'] as const) {
       expect(filterBooknotes([tombstoned], { kind, query: '' })).toEqual([]);
       expect(filterBooknotes([tombstoned], { kind, query: 'gone' })).toEqual([]);
     }
   });
 
-  it('partitions by note-body emptiness', () => {
-    const notes = [highlight, noted];
-    expect(filterBooknotes(notes, { kind: 'all', query: '' })).toEqual([highlight, noted]);
-    expect(filterBooknotes(notes, { kind: 'highlights', query: '' })).toEqual([highlight]);
+  it('combines annotations and excerpts while excluding the notebook document', () => {
+    const notes = [highlight, noted, clipping, notebook];
+    expect(filterBooknotes(notes, { kind: 'all', query: '' })).toEqual([
+      highlight,
+      noted,
+      clipping,
+    ]);
     expect(filterBooknotes(notes, { kind: 'notes', query: '' })).toEqual([noted]);
+    expect(filterBooknotes(notes, { kind: 'clippings', query: '' })).toEqual([clipping]);
   });
 
   it('matches the query against highlight text, case-insensitively', () => {
@@ -55,11 +61,11 @@ describe('filterBooknotes', () => {
   });
 
   it('applies kind and query together', () => {
-    expect(filterBooknotes([highlight, noted], { kind: 'highlights', query: 'rabbit' })).toEqual(
-      [],
-    );
     expect(filterBooknotes([highlight, noted], { kind: 'notes', query: 'rabbit' })).toEqual([
       noted,
+    ]);
+    expect(filterBooknotes([highlight, clipping], { kind: 'clippings', query: 'drink' })).toEqual([
+      clipping,
     ]);
   });
 

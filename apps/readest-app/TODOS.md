@@ -1,5 +1,19 @@
 # TODOS
 
+## Notebook editor follow-ups
+
+### Verify near-limit editing on Android API 26
+
+**What:** Run the Notebook document's 10 KiB and 256 KiB input, recovery, and serialization benchmark on an Android API 26 emulator using the minimum-supported System WebView profile.
+
+**Why:** The issue 5917 implementation intentionally uses a real-Chromium performance gate, which does not prove that near-limit typing meets the same latency budget on Readest's oldest supported Android runtime.
+
+**Context:** The browser gate requires 50 operations with p95 below 16 ms at 10 KiB and below 50 ms at 256 KiB, with no operation above 100 ms. Reuse that workload on API 26 and move recovery storage away from synchronous `localStorage` if the device profile misses the budget.
+
+**Effort:** S
+**Priority:** P2
+**Depends on:** Issue 5917 Notebook editor implementation
+
 ## Cloud Sync provider selection follow-ups (deferred by /autoplan, 2026-07-06)
 
 Deferred from the Cloud Sync provider-selection plan (#4959/#4380). See the

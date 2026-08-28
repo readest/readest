@@ -15,7 +15,7 @@ import {
 } from '../../utils/annotatorUtil';
 import Dropdown from '@/components/Dropdown';
 
-const FILTER_KINDS: AnnotationFilterKind[] = ['all', 'highlights', 'notes'];
+const FILTER_KINDS: AnnotationFilterKind[] = ['all', 'notes', 'clippings'];
 
 interface AnnotationsFilterPanelProps {
   filterKind: AnnotationFilterKind;
@@ -50,8 +50,8 @@ const AnnotationsFilterPanel: React.FC<AnnotationsFilterPanelProps> = ({
 
   const filterLabels: Record<AnnotationFilterKind, string> = {
     all: _('All'),
-    highlights: _('Highlights'),
-    notes: _('Notes'),
+    notes: _('With notes'),
+    clippings: _('Clippings'),
   };
 
   const showColors = colors.length >= 2;
@@ -176,8 +176,8 @@ interface AnnotationsToolbarProps {
   filterKind: AnnotationFilterKind;
   searchInput: string;
   isSearchVisible: boolean;
-  highlightCount: number;
-  noteCount: number;
+  annotationCount: number;
+  clippingCount: number;
   matchCount: number;
   isFiltering: boolean;
   colors: HighlightColor[];
@@ -196,8 +196,8 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
   filterKind,
   searchInput,
   isSearchVisible,
-  highlightCount,
-  noteCount,
+  annotationCount,
+  clippingCount,
   matchCount,
   isFiltering,
   colors,
@@ -228,10 +228,10 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
   // The search field takes the whole row when it is open, so the summary only
   // speaks while it is closed: the mix of the book's annotations at rest, and
   // how much of it survives the filters once any are on.
-  const total = highlightCount + noteCount;
+  const total = annotationCount + clippingCount;
   const kindLabels = [
-    highlightCount > 0 && _('{{count}} Highlights', { count: highlightCount }),
-    noteCount > 0 && _('{{count}} Notes', { count: noteCount }),
+    annotationCount > 0 && _('{{count}} Annotations', { count: annotationCount }),
+    clippingCount > 0 && _('{{count}} Clippings', { count: clippingCount }),
   ].filter(Boolean);
   const summary = isFiltering
     ? _('{{matched}} of {{total}}', { matched: matchCount, total })

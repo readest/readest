@@ -39,6 +39,10 @@ vi.mock('@/store/sidebarStore', () => ({
   useSidebarStore: () => ({
     setActiveBooknoteType: vi.fn(),
     setBooknoteResults: vi.fn(),
+    isSearchBarVisible: false,
+    setSearchBarVisible: vi.fn(),
+    annotationEditTargets: {},
+    setAnnotationEditTarget: vi.fn(),
   }),
 }));
 

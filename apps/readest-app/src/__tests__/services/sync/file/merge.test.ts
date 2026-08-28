@@ -74,6 +74,17 @@ describe('mergeNotes (element-set CRDT)', () => {
     expect(lr.note).toBe('remote');
     expect(rl.note).toBe('remote');
   });
+
+  test('merges the singleton Notebook by stable id without changing its type', () => {
+    const local = { ...note('notebook', 5), type: 'notebook' as const, note: 'local' };
+    const remote = { ...local, note: 'remote', updatedAt: 9 };
+
+    const out = mergeNotes([local], [remote]);
+
+    expect(out).toEqual([
+      expect.objectContaining({ id: 'notebook', type: 'notebook', note: 'remote' }),
+    ]);
+  });
 });
 
 describe('mergeBookConfig (LWW scalars + CRDT notes)', () => {

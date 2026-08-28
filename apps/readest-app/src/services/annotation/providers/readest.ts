@@ -73,7 +73,7 @@ export const buildAnnotationExport = ({
   const annotations: ReadestAnnotationEntry[] = [];
   for (const group of groups) {
     for (const note of group.booknotes) {
-      if (note.deletedAt) continue;
+      if (note.deletedAt || !BOOK_NOTE_TYPES.includes(note.type)) continue;
       const entry: ReadestAnnotationEntry = {
         id: note.id,
         type: note.type,

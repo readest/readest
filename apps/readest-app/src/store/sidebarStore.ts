@@ -19,6 +19,11 @@ interface BooknotesNavState {
   booknoteIndex: number;
 }
 
+export interface AnnotationEditTarget {
+  annotationId: string;
+  placeholderIds: string[];
+}
+
 interface SidebarState {
   sideBarBookKey: string | null;
   sideBarWidth: string;
@@ -29,6 +34,7 @@ interface SidebarState {
   searchNavStates: Record<string, SearchNavState>;
   booknotesNavStates: Record<string, BooknotesNavState>;
   searchStatuses: Record<string, SearchStatus>;
+  annotationEditTargets: Record<string, AnnotationEditTarget>;
   getIsSideBarVisible: () => boolean;
   getSideBarWidth: () => string;
   setSideBarBookKey: (key: string) => void;
@@ -57,6 +63,7 @@ interface SidebarState {
   setBooknoteResults: (bookKey: string, results: BookNote[] | null) => void;
   setBooknoteIndex: (bookKey: string, index: number) => void;
   clearBooknotesNav: (bookKey: string) => void;
+  setAnnotationEditTarget: (bookKey: string, target: AnnotationEditTarget | null) => void;
 }
 
 const defaultSearchNavState: SearchNavState = {
@@ -83,6 +90,7 @@ export const useSidebarStore = create<SidebarState>((set, get) => ({
   searchNavStates: {},
   booknotesNavStates: {},
   searchStatuses: {},
+  annotationEditTargets: {},
   getIsSideBarVisible: () => get().isSideBarVisible,
   getSideBarWidth: () => get().sideBarWidth,
   setSideBarBookKey: (key: string) => set({ sideBarBookKey: key }),
@@ -208,4 +216,11 @@ export const useSidebarStore = create<SidebarState>((set, get) => ({
         [bookKey]: { ...defaultBooknotesNavState },
       },
     })),
+  setAnnotationEditTarget: (bookKey: string, target: AnnotationEditTarget | null) =>
+    set((state) => {
+      const annotationEditTargets = { ...state.annotationEditTargets };
+      if (target) annotationEditTargets[bookKey] = target;
+      else delete annotationEditTargets[bookKey];
+      return { annotationEditTargets };
+    }),
 }));

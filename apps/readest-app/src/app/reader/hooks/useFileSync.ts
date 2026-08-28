@@ -484,9 +484,9 @@ export const useFileSync = (bookKey: string) => {
       const previousById = new Map((config.booknotes ?? []).map((n) => [n.id, n]));
       for (const note of mergedNotes) {
         const prev = previousById.get(note.id);
-        if (note.deletedAt && (!prev || !prev.deletedAt)) {
+        if (note.type === 'annotation' && note.deletedAt && (!prev || !prev.deletedAt)) {
           getViewsById(bookKey.split('-')[0]!).forEach((v) => removeBookNoteOverlays(v, note));
-        } else if (!note.deletedAt && note.cfi && view) {
+        } else if (note.type === 'annotation' && !note.deletedAt && note.cfi && view) {
           try {
             view.addAnnotation(note);
           } catch {

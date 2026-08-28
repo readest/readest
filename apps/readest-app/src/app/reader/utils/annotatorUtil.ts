@@ -452,7 +452,7 @@ export function mergeRestyledAnnotation(existing: BookNote, restyled: BookNote):
   };
 }
 
-export type AnnotationFilterKind = 'all' | 'highlights' | 'notes';
+export type AnnotationFilterKind = 'all' | 'notes' | 'clippings';
 
 export interface BooknoteFilter {
   kind: AnnotationFilterKind;
@@ -462,24 +462,21 @@ export interface BooknoteFilter {
 }
 
 /**
- * Filter booknotes for the annotations hub and the Notebook search.
+ * Filter source material for the annotations hub.
  *
- * Tombstones are always excluded. `kind` partitions on the note body:
- * a unified annotation is a "note" when `note` is non-empty and a plain
- * "highlight" otherwise (#5398's All/Highlights/Notes chips). An empty or
- * whitespace query matches everything; otherwise the query is matched
- * case-insensitively against the highlighted text and the note body
- * (same semantics the Notebook SearchBar has always used). Excluded
- * colors/styles drop matching notes; a note without the attribute always
- * passes (the same keep rule as filterExportGroups).
+ * Tombstones and the reserved Notebook document are always excluded. All
+ * combines annotations and excerpts, With notes selects annotations carrying
+ * a note body, and Clippings selects excerpts. Query and facet filters compose
+ * with that kind filter.
  */
 export function filterBooknotes(notes: BookNote[], filter: BooknoteFilter): BookNote[] {
   const { kind, excludedColors, excludedStyles } = filter;
   const lowercaseQuery = filter.query.trim().toLowerCase();
   return notes.filter((note) => {
     if (note.deletedAt) return false;
-    if (kind === 'notes' && !note.note) return false;
-    if (kind === 'highlights' && note.note) return false;
+    if (note.type !== 'annotation' && note.type !== 'excerpt') return false;
+    if (kind === 'notes' && (note.type !== 'annotation' || !note.note)) return false;
+    if (kind === 'clippings' && note.type !== 'excerpt') return false;
     if (note.color && excludedColors?.includes(note.color)) return false;
     if (note.style && excludedStyles?.includes(note.style)) return false;
     if (!lowercaseQuery) return true;
@@ -516,26 +513,25 @@ export function collectAnnotationFacets(notes: BookNote[]): AnnotationFacets {
   return { colors, styles };
 }
 
-export interface AnnotationCounts {
-  highlights: number;
-  notes: number;
+export interface AnnotationHubCounts {
+  annotations: number;
+  clippings: number;
 }
 
 /**
- * How many live annotations are plain highlights and how many carry a note
- * body, for the hub toolbar's summary line. Partitions on `note.note`
- * truthiness — the same untrimmed rule filterBooknotes applies — so the
- * summary always agrees with what the Highlights/Notes chips select.
+ * Non-overlapping source-material totals for the annotations hub. Annotations
+ * carrying notes still count once as annotations; the With notes chip is a
+ * subset filter rather than another count bucket.
  */
-export function summarizeAnnotations(notes: BookNote[]): AnnotationCounts {
-  let highlights = 0;
-  let noteCount = 0;
+export function summarizeAnnotationHub(notes: BookNote[]): AnnotationHubCounts {
+  let annotations = 0;
+  let clippings = 0;
   for (const note of notes) {
     if (note.deletedAt) continue;
-    if (note.note) noteCount += 1;
-    else highlights += 1;
+    if (note.type === 'annotation') annotations += 1;
+    if (note.type === 'excerpt') clippings += 1;
   }
-  return { highlights, notes: noteCount };
+  return { annotations, clippings };
 }
 
 export type NoteBubbleTransition = 'add' | 'remove' | 'none';

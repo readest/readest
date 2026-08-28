@@ -59,7 +59,11 @@ export const useNotesSync = (bookKey: string) => {
               ...note,
               xpointer0: xpResult.pos0 || xpResult.xpointer,
               xpointer1: xpResult.pos1,
-              updatedAt: Date.now(),
+              // Notebook uses a fixed compatibility anchor rather than a
+              // semantic annotation position. Enrich its transport metadata
+              // without manufacturing a newer content revision; otherwise an
+              // older client can repeatedly win LWW with unchanged Markdown.
+              updatedAt: note.type === 'notebook' ? note.updatedAt : Date.now(),
             });
             continue;
           }
@@ -222,7 +226,7 @@ export const useNotesSync = (bookKey: string) => {
           // local copy, which is the one holding the cfi it was drawn with,
           // unless the local note was edited after that deletion.
           const local = oldNotes.find((oldNote) => oldNote.id === note.id);
-          if (local && !local.deletedAt && incomingWins(local, note)) {
+          if (local?.type === 'annotation' && !local.deletedAt && incomingWins(local, note)) {
             getViewsById(bookKey.split('-')[0]!).forEach((v) => {
               removeBookNoteOverlays(v, local);
               if (local.global) removeGlobalAnnotationOverlays(v, local);
@@ -231,7 +235,7 @@ export const useNotesSync = (bookKey: string) => {
             // tombstones the duplicate row under its book hash as well.
             note.updatedAt = Date.now();
           }
-        } else if (note.cfi) {
+        } else if (note.type === 'annotation' && note.cfi) {
           const index = getIndexFromCfi(note.cfi);
           if (index === view?.renderer.primaryIndex) {
             view.addAnnotation(note);

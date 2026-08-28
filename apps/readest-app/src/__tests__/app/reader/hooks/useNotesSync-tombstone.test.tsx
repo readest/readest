@@ -280,4 +280,25 @@ describe('useNotesSync pulled tombstones', () => {
     expect(h.view.addAnnotation).toHaveBeenCalledWith(expect.objectContaining({ id: 'n3' }));
     expect(savedNote('n3')?.deletedAt).toBeUndefined();
   });
+
+  test('a pulled Notebook record is stored but never drawn as a reader overlay', async () => {
+    h.state.syncedNotes = [
+      {
+        ...h.localNote,
+        id: 'notebook',
+        type: 'notebook',
+        cfi: 'epubcfi(/6/2!/4/2/1:0)',
+        note: '# Synced workspace',
+        bookHash: 'r',
+        metaHash: 'm1',
+        updatedAt: 4000,
+      },
+    ];
+
+    renderHook(() => useNotesSync('r-1'));
+
+    await waitFor(() => expect(h.setConfigMock).toHaveBeenCalled());
+    expect(savedNote('notebook')?.type).toBe('notebook');
+    expect(h.view.addAnnotation).not.toHaveBeenCalled();
+  });
 });

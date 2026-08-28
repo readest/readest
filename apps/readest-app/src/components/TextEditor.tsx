@@ -14,6 +14,11 @@ interface TextEditorProps {
   disabled?: boolean;
   maxRows?: number;
   minRows?: number;
+  autoResize?: boolean;
+  ariaLabel?: string;
+  onSelect?: (start: number, end: number) => void;
+  onCompositionStart?: () => void;
+  onCompositionEnd?: (value: string) => void;
 }
 
 export interface TextEditorRef {
@@ -39,6 +44,11 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
       disabled = false,
       maxRows,
       minRows = 1,
+      autoResize = true,
+      ariaLabel,
+      onSelect,
+      onCompositionStart,
+      onCompositionEnd,
     },
     ref,
   ) => {
@@ -70,7 +80,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
     }, [autoFocus]);
 
     useEffect(() => {
-      if (editorRef.current) {
+      if (autoResize && editorRef.current) {
         editorRef.current.value = value;
         adjustHeight();
       }
@@ -129,9 +139,16 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
         rows={minRows}
         spellCheck={spellCheck}
         disabled={disabled}
+        aria-label={ariaLabel}
         onChange={handleChange}
         onBlur={onBlur}
         onKeyDown={handleKeyDown}
+        onSelect={(event) =>
+          onSelect?.(event.currentTarget.selectionStart, event.currentTarget.selectionEnd)
+        }
+        onCompositionStart={onCompositionStart}
+        onCompositionEnd={(event) => onCompositionEnd?.(event.currentTarget.value)}
+        defaultValue={value}
         placeholder={placeholder || ''}
       />
     );
