@@ -9,6 +9,7 @@ import { RiBookmark3Line, RiBookmarkLine } from 'react-icons/ri';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useBuddyReadStore } from '@/store/buddyReadStore';
 import { findTocItemBS } from '@/services/nav';
 import { findNearestCfi } from '@/utils/cfi';
 import { TOCItem } from '@/libs/document';
@@ -53,7 +54,13 @@ const BooknoteView: React.FC<{
     useSidebarStore();
   const config = getConfig(bookKey)!;
   const progress = getProgress(bookKey);
-  const allNotes = config.booknotes ?? [];
+  const buddyReadAnnotations = useBuddyReadStore((s) => s.annotations) || [];
+  const allNotes = useMemo(() => {
+    const localNotes = config.booknotes ?? [];
+    const localIds = new Set(localNotes.map((n) => n.id));
+    const filteredBuddyNotes = buddyReadAnnotations.filter((n) => !localIds.has(n.id));
+    return [...localNotes, ...filteredBuddyNotes];
+  }, [config.booknotes, buddyReadAnnotations]);
 
   const [filterKind, setFilterKind] = useState<AnnotationFilterKind>('all');
   const [searchInput, setSearchInput] = useState('');

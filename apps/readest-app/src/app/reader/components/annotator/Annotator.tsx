@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { RiDeleteBinLine } from 'react-icons/ri';
 
 import * as CFI from 'foliate-js/epubcfi.js';
-import { Overlayer } from 'foliate-js/overlayer.js';
 import { useEnv } from '@/context/EnvContext';
 import {
   BookNote,
@@ -61,14 +60,13 @@ import { writeTextToClipboard } from '@/utils/clipboard';
 import { buildAnnotationUrl } from '@/utils/deeplink';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { canShareText, shareSelectedText } from '@/utils/share';
-import { getToolbarToolTypes } from '@/utils/annotationToolbar';
+import { getToolbarToolTypes, supportsProofread } from '@/utils/annotationToolbar';
 import { AnnotationToolType } from '@/types/annotator';
 import { TransformContext } from '@/services/transformers/types';
 import { transformContent } from '@/services/transformService';
 import {
   buildTTSSentenceHighlight,
-  decideAnnotationDraw,
-  getHighlightColorHex,
+  drawAnnotationOverlay,
   mergeRestyledAnnotation,
   removeBookNoteOverlays,
 } from '../../utils/annotatorUtil';
@@ -158,6 +156,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   const [selection, setSelection] = useState<TextSelection | null>(null);
+  const [translationEpoch, setTranslationEpoch] = useState(0);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
@@ -363,8 +362,115 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   const handleDismissPopupAndSelection = () => {
     handleDismissPopup();
     view?.deselect();
+    // A popup-window selection lives in its own document (the footnote popup
+    // view's iframe or the host document), which view.deselect() can't reach.
+    if (selection?.popup) {
+      selection.range.startContainer.ownerDocument?.getSelection()?.removeAllRanges();
+    }
     isTextSelected.current = false;
   };
+
+  // Whether the currently shown selection came from the footnote popup, for
+  // event handlers that only know the incoming event, not the selection state.
+  const selectionIsPopupRef = useRef(false);
+  useEffect(() => {
+    selectionIsPopupRef.current = !!selection?.popup;
+  }, [selection]);
+
+  // Selections made inside the footnote popup window (FootnotePopup) arrive
+  // via this event: the popup renders its own foliate view (or a host-document
+  // element for data-attribute footnotes), so the per-section listeners
+  // attached in onLoad below never see them. A detail without a range means
+  // the popup selection was cleared or the popup closed.
+  const footnoteSelectionEpochRef = useRef(0);
+  useEffect(() => {
+    const onFootnoteSelection = async (event: CustomEvent) => {
+      const detail = event.detail as {
+        key: string;
+        range?: Range;
+        index?: number;
+        cfi?: string;
+        href?: string;
+        annotated?: boolean;
+        isNote?: boolean;
+        rect?: TextSelection['rect'];
+      };
+      if (detail.key !== bookKey) return;
+      // Every event for this book advances the epoch so a handler still
+      // awaiting getAnnotationText below can detect it was superseded — a
+      // cleared or newer selection must not be overwritten by stale state.
+      const epoch = ++footnoteSelectionEpochRef.current;
+      if (!detail.range) {
+        if (selectionIsPopupRef.current) handleDismissPopup();
+        return;
+      }
+      // A click on an overlay drawn in the popup: a highlight opens the
+      // toolbar in its annotated state (Delete Highlight + style options), a
+      // note bubble opens the note view — like the same clicks in the main
+      // view, minus the range-edit handles, which only operate on main view
+      // documents.
+      if (detail.annotated && detail.cfi) {
+        const { booknotes: localBooknotes = [] } = getConfig(bookKey)!;
+        const buddyReadAnnotations = useBuddyReadStore.getState().annotations || [];
+        const localIds = new Set(localBooknotes.map((n) => n.id));
+        const filteredBuddyNotes = buddyReadAnnotations.filter((n) => !localIds.has(n.id));
+        const booknotes = [...localBooknotes, ...filteredBuddyNotes];
+        const annotation = booknotes.find(
+          (b) =>
+            b.type === 'annotation' &&
+            !b.deletedAt &&
+            b.cfi === detail.cfi &&
+            (detail.isNote ? b.note : b.style),
+        );
+        if (annotation) {
+          const text = annotation.text || (await getAnnotationText(detail.range));
+          if (epoch !== footnoteSelectionEpochRef.current) return;
+          if (detail.isNote) {
+            setShowAnnotationNotes(true);
+            setHighlightOptionsVisible(false);
+          } else {
+            if (annotation.style && annotation.color) {
+              setSelectedStyle(annotation.style);
+              setSelectedColor(annotation.color);
+            }
+            setShowAnnotationNotes(false);
+            setAnnotationNotes([]);
+          }
+          setEditingAnnotation(null);
+          setSelection({
+            key: bookKey,
+            text,
+            range: detail.range,
+            index: detail.index ?? -1,
+            cfi: detail.cfi,
+            href: detail.href,
+            rect: detail.isNote ? detail.rect : undefined,
+            page: annotation.page ?? getBookProgress(bookKey)?.page ?? 0,
+            annotated: true,
+            popup: true,
+          });
+          return;
+        }
+      }
+      const text = await getAnnotationText(detail.range);
+      if (epoch !== footnoteSelectionEpochRef.current) return;
+      setSelection({
+        key: bookKey,
+        text,
+        range: detail.range,
+        index: detail.index ?? -1,
+        cfi: detail.cfi,
+        href: detail.href,
+        page: getBookProgress(bookKey)?.page ?? 0,
+        popup: true,
+      });
+    };
+    eventDispatcher.on('footnote-selection', onFootnoteSelection);
+    return () => {
+      eventDispatcher.off('footnote-selection', onFootnoteSelection);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookKey]);
 
   const onLoad = (event: Event) => {
     const detail = (event as CustomEvent).detail;
@@ -503,94 +609,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
   const onDrawAnnotation = (event: Event) => {
     const viewSettings = getViewSettings(bookKey)!;
-    const isBwEink = viewSettings.isEink && !viewSettings.isColorEink;
-    const detail = (event as CustomEvent).detail;
-    const { draw, annotation, doc, range } = detail;
-    const { style, color, reaction } = annotation as BookNote;
-    const value = (annotation as BookNote & { value?: string }).value;
-    const hexColor = getHighlightColorHex(settings, color);
-    const einkBgColor = isDarkMode ? '#000000' : '#ffffff';
-    const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
-    // Choose what to draw from the overlay's `value` (cfi vs NOTE_PREFIX+cfi),
-    // not from `annotation.note`: a unified record (style + note) is added as
-    // two overlays and must draw a highlight for the cfi overlay AND a bubble
-    // for the note overlay. Keying off `note` drew only the bubble (#4511).
-    const kind = decideAnnotationDraw(value, style);
-
-    const drawCombined = (rects: any[]) => {
-      const parentG = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
-      let styleG = null;
-
-      if (kind === 'bubble') {
-        const { defaultView } = doc;
-        const node = range.startContainer;
-        const el = node.nodeType === 1 ? node : node.parentElement;
-        const { writingMode } = defaultView.getComputedStyle(el);
-        styleG = Overlayer.bubble(rects, { writingMode });
-      } else if (kind === 'highlight') {
-        styleG = Overlayer.highlight(rects, {
-          color: isBwEink ? einkBgColor : hexColor,
-          vertical: viewSettings.vertical,
-        });
-      } else if (kind === 'underline' || kind === 'squiggly') {
-        const { defaultView } = doc;
-        const node = range.startContainer;
-        const el = node.nodeType === 1 ? node : node.parentElement;
-        const { writingMode, lineHeight, fontSize } = defaultView.getComputedStyle(el);
-        const fontSizeValue = parseFloat(fontSize) || viewSettings.defaultFontSize;
-        const lineHeightValue = parseFloat(lineHeight) || viewSettings.lineHeight * fontSizeValue;
-        const strokeWidth = 2;
-        const verticalCompensation = appService?.isMobile ? 0 : -1;
-        const horizontalCompensation = appService?.isMobile ? -1 : 0;
-        const padding = viewSettings.vertical
-          ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
-          : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
-        styleG = Overlayer[kind](rects, {
-          writingMode,
-          color: isBwEink ? einkFgColor : hexColor,
-          padding,
-        });
-      }
-
-      if (styleG) {
-        parentG.appendChild(styleG);
-      }
-
-      // Render reaction emoji if present (on highlight layer, not note-bubble to avoid duplicate emojis)
-      if (reaction && kind !== 'bubble' && rects.length > 0) {
-        const size = 20;
-        const firstRect = rects[0];
-        if (firstRect) {
-          const foreignObject = doc.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-          const x = firstRect.right - size / 2;
-          const y = firstRect.top - size - 2;
-
-          foreignObject.setAttribute('x', x.toString());
-          foreignObject.setAttribute('y', y.toString());
-          foreignObject.setAttribute('width', size.toString());
-          foreignObject.setAttribute('height', size.toString());
-
-          const div = doc.createElement('div');
-          div.style.width = '100%';
-          div.style.height = '100%';
-          div.style.display = 'flex';
-          div.style.alignItems = 'center';
-          div.style.justifyContent = 'center';
-          div.style.fontSize = '14px';
-          div.style.lineHeight = '1';
-          div.style.filter = 'drop-shadow(0px 1px 2px rgba(0,0,0,0.3))';
-          div.style.cursor = 'pointer';
-          div.style.userSelect = 'none';
-          div.textContent = reaction;
-
-          foreignObject.appendChild(div);
-          parentG.appendChild(foreignObject);
-        }
-      }
-      return parentG;
-    };
-
-    draw(drawCombined);
+    drawAnnotationOverlay((event as CustomEvent).detail, {
+      settings,
+      viewSettings,
+      isDarkMode,
+      isMobile: !!appService?.isMobile,
+    });
   };
 
   const onShowAnnotation = (event: Event) => {
@@ -598,7 +622,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const { value, index, range } = detail;
     const { booknotes: localBooknotes = [] } = getConfig(bookKey)!;
     const buddyReadAnnotations = useBuddyReadStore.getState().annotations || [];
-    const booknotes = [...localBooknotes, ...buddyReadAnnotations];
+    const localIds = new Set(localBooknotes.map((n) => n.id));
+    const filteredBuddyNotes = buddyReadAnnotations.filter((n) => !localIds.has(n.id));
+    const booknotes = [...localBooknotes, ...filteredBuddyNotes];
     const isNote = value.startsWith(NOTE_PREFIX);
     const rawValue = isNote ? value.replace(NOTE_PREFIX, '') : value;
     // A click on a fan-out copy of a global annotation reports a
@@ -994,6 +1020,15 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
           // toolbar so highlighting and copying stay reachable (#5213).
           if (selection && isSingleLookupTerm(selection.text)) {
             handleDictionary();
+            // The instant lookup consumes the gesture: the word was tapped to be
+            // looked up, not selected. Drop the selection so iOS's native
+            // handles and blue highlight — painted above web content — don't sit
+            // on top of the popup, and so dismissing it has no live selection to
+            // return a toolbar to (#5585, the other side of #5213's boundary).
+            // Clear the flag before deselecting: the selectionchange this fires
+            // would otherwise dismiss the popup we just opened.
+            isTextSelected.current = false;
+            view?.deselect();
           } else {
             handleShowAnnotPopup();
           }
@@ -1098,10 +1133,12 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // array so we don't re-walk N items each turn just to find the same few
   // global ones. The index is recomputed only when `booknotes` itself
   // changes (add/remove/edit) — not on every page turn.
-  const buddyReadAnnotations = useBuddyReadStore((s) => s.annotations);
+  const buddyReadAnnotations = useBuddyReadStore((s) => s.annotations) || [];
   const combinedNotes = useMemo(() => {
     const localNotes = config.booknotes ?? [];
-    return [...localNotes, ...buddyReadAnnotations];
+    const localIds = new Set(localNotes.map((n) => n.id));
+    const filteredBuddyNotes = buddyReadAnnotations.filter((n) => !localIds.has(n.id));
+    return [...localNotes, ...filteredBuddyNotes];
   }, [config.booknotes, buddyReadAnnotations]);
 
   const annotationIndex = useMemo(() => buildAnnotationIndex(combinedNotes), [combinedNotes]);
@@ -1137,7 +1174,29 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       console.warn(e);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress, annotationIndex]);
+  }, [progress, annotationIndex, translationEpoch]);
+
+  // Translations are appended long after a section's annotations were drawn, so
+  // a highlight anchored inside translated text has nothing to attach to at
+  // draw time. Bumping this re-runs the draw effect above once the inserts
+  // settle; they arrive in bursts, hence the debounce.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const handleTranslationInserted = (event: CustomEvent) => {
+      const detail = event.detail as { bookKey: string } | undefined;
+      if (!detail || detail.bookKey !== bookKey) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        setTranslationEpoch((epoch) => epoch + 1);
+      }, 150);
+    };
+    eventDispatcher.on('translation-inserted', handleTranslationInserted);
+    return () => {
+      if (timer) clearTimeout(timer);
+      eventDispatcher.off('translation-inserted', handleTranslationInserted);
+    };
+  }, [bookKey]);
 
   useEffect(() => {
     if (!config.booknotes || !selection?.cfi || !showAnnotationNotes) return;
@@ -1172,6 +1231,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
     if (!viewSettings?.copyToNotebook) return;
 
+    // A popup-window range is not in a main view document; use the CFI the
+    // popup mapped into the pristine section (absent for data-attribute
+    // footnotes, which have no real text node to anchor to). Resolve it
+    // before the toast so an unanchorable excerpt isn't reported as saved.
+    const cfi = selection.popup ? selection.cfi : view?.getCFI(selection.index, selection.range);
+    if (!cfi) return;
+
     eventDispatcher.dispatch('toast', {
       type: 'info',
       message: _('Copied to notebook'),
@@ -1180,8 +1246,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     });
 
     const { booknotes: annotations = [] } = config;
-    const cfi = view?.getCFI(selection.index, selection.range);
-    if (!cfi) return;
     const annotation: BookNote = {
       id: uniqueId(),
       type: 'excerpt',
@@ -1218,7 +1282,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
   // required to be present.
   const handleCopyLink = () => {
     if (!selection) return;
-    const cfi = selection.cfi || view?.getCFI(selection.index, selection.range);
+    const cfi =
+      selection.cfi || (selection.popup ? null : view?.getCFI(selection.index, selection.range));
     if (!cfi) return;
     const noteId = config.booknotes?.find((note) => note.cfi === cfi && !note.deletedAt)?.id;
     const linkType = viewSettings.noteExportConfig?.linkType ?? DEFAULT_NOTE_EXPORT_CONFIG.linkType;
@@ -1253,7 +1318,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     if (!selection || !selection.text) return null;
     setHighlightOptionsVisible(true);
     const { booknotes: annotations = [] } = config;
-    const cfi = view?.getCFI(selection.index, selection.range);
+    // Popup-window selections carry the CFI mapped into the pristine section;
+    // recomputing from the popup range would yield an unresolvable path.
+    const cfi = selection.popup ? selection.cfi : view?.getCFI(selection.index, selection.range);
     if (!cfi) return null;
     const style = highlightStyle || settings.globalReadSettings.highlightStyle;
     const color = settings.globalReadSettings.highlightStyles[style];
@@ -1450,8 +1517,15 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
   const handleAnnotate = () => {
     if (!selection || !selection.text) return;
-    const { sectionHref: href } = progress;
-    selection.href = href;
+    // A popup selection without a CFI has nothing to anchor a note to (the
+    // toolbar button is disabled, this guards the keyboard shortcut).
+    if (selection.popup && !selection.cfi) return;
+    // A popup selection already carries the footnote target's href; the
+    // current reading position would file the note under the wrong section.
+    if (!selection.popup) {
+      const { sectionHref: href } = progress;
+      selection.href = href;
+    }
     const created = handleHighlight(true);
     setNotebookVisible(true);
     setNotebookNewAnnotation(selection);
@@ -1509,6 +1583,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 
   const handleSpeakText = async (oneTime = false) => {
     if (!selection || !selection.text) return;
+    // TTS walks the main view's documents; a popup-window range can't seed it
+    // (the toolbar button is disabled, this guards the keyboard shortcut).
+    if (selection.popup) return;
     setShowAnnotPopup(false);
     setEditingAnnotation(null);
     eventDispatcher.dispatch('tts-speak', {
@@ -1531,6 +1608,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       setProofreadRulesVisibility(true);
       return;
     }
+    // Proofread rules anchor to a CFI; a popup selection without one (data-
+    // attribute footnotes) has nothing to attach to.
+    if (selection.popup && !selection.cfi) return;
     setShowAnnotPopup(false);
     setShowProofreadPopup(true);
 
@@ -1988,6 +2068,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     !!selection?.text &&
     selection.text.trim().length > 0;
   const globalToggleActive = !!currentAnnotation?.global;
+  // A popup-window selection without a CFI (data-attribute footnotes render
+  // synthesized text with no real text node in the book) can't anchor
+  // anything; and TTS always needs a range in a main view document.
+  const popupSelectionNoCfi = !!selection?.popup && !selection?.cfi;
   const buildToolButton = (type: AnnotationToolType) => {
     const def = annotationToolButtons.find((button) => button.type === type);
     if (!def) return null;
@@ -1996,15 +2080,26 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       case 'copy':
         return { tooltipText: _(label), Icon, onClick: handleCopy };
       case 'copylink':
-        return { tooltipText: _(label), Icon, onClick: handleCopyLink };
+        return {
+          tooltipText: _(label),
+          Icon,
+          onClick: handleCopyLink,
+          disabled: popupSelectionNoCfi,
+        };
       case 'highlight':
         return {
           tooltipText: selectionAnnotated ? _('Delete Highlight') : _(label),
           Icon: selectionAnnotated ? RiDeleteBinLine : Icon,
           onClick: handleHighlight,
+          disabled: popupSelectionNoCfi,
         };
       case 'annotate':
-        return { tooltipText: _(label), Icon, onClick: handleAnnotate };
+        return {
+          tooltipText: _(label),
+          Icon,
+          onClick: handleAnnotate,
+          disabled: popupSelectionNoCfi,
+        };
       case 'search':
         return { tooltipText: _(label), Icon, onClick: handleSearch };
       case 'dictionary':
@@ -2012,13 +2107,18 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       case 'translate':
         return { tooltipText: _(label), Icon, onClick: handleTranslation };
       case 'tts':
-        return { tooltipText: _(label), Icon, onClick: handleSpeakText };
+        return {
+          tooltipText: _(label),
+          Icon,
+          onClick: handleSpeakText,
+          disabled: !!selection?.popup,
+        };
       case 'proofread':
         return {
           tooltipText: _(label),
           Icon,
           onClick: handleProofread,
-          disabled: bookData.book?.format !== 'EPUB',
+          disabled: !supportsProofread(bookData.book?.format) || popupSelectionNoCfi,
         };
       case 'share':
         return { tooltipText: _(label), Icon, onClick: handleShare };
