@@ -33,6 +33,20 @@ pub struct CopyURIResponse {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct RenderPdfCoverRequest {
+    pub file_path: String,
+    pub max_long_edge: u32,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RenderPdfCoverResponse {
+    pub cover_base64: String,
+    pub cover_mime: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SaveImageToGalleryRequest {
     /// Absolute path of the source image file on disk.
     pub src_path: String,

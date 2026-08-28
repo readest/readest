@@ -60,6 +60,13 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn render_pdf_cover(
+        &self,
+        _payload: RenderPdfCoverRequest,
+    ) -> crate::Result<RenderPdfCoverResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn save_image_to_gallery(
         &self,
         _payload: SaveImageToGalleryRequest,

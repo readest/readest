@@ -23,6 +23,8 @@
     "allow-parse-epub-full",
     "allow-parse-mobi-metadata",
     "allow-extract-mobi-cover-full",
+    "allow-parse-pdf-metadata",
+    "allow-render-pdf-cover",
     "allow-auth-with-safari",
     "allow-start-apple-sign-in",
     "allow-set-traffic-lights",

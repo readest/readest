@@ -111,10 +111,14 @@ pub fn maybe_resize_cover(bytes: Vec<u8>, hint_mime: &str) -> (Vec<u8>, String) 
 /// d41d8cd9... We must reproduce that behaviour bit-for-bit so existing
 /// on-disk hashes (`Books/<hash>/...`) keep matching.
 pub fn compute_partial_md5(path: &Path) -> std::io::Result<String> {
+    let mut file = File::open(path)?;
+    compute_partial_md5_file(&mut file)
+}
+
+pub fn compute_partial_md5_file(file: &mut File) -> std::io::Result<String> {
     const STEP: u32 = 1024;
     const CHUNK: u64 = 1024;
 
-    let mut file = File::open(path)?;
     let file_len = file.metadata()?.len();
 
     let mut hasher = Md5::new();

@@ -1084,6 +1084,32 @@ Denies the remove_listener command without any pre-configured scope.
 <tr>
 <td>
 
+`native-bridge:allow-render-pdf-cover`
+
+</td>
+<td>
+
+Enables the render_pdf_cover command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`native-bridge:deny-render-pdf-cover`
+
+</td>
+<td>
+
+Denies the render_pdf_cover command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 `native-bridge:allow-request-permissions`
 
 </td>

@@ -32,6 +32,7 @@ import { getAudiobookDirectory, isAudiobookFilePath } from '@/services/audiobook
 import { isAudiobook } from '@/utils/audiobook';
 import { tryNativeParseEpub } from '@/utils/tauriEpubBridge';
 import { tryNativeParseMobi } from '@/utils/tauriMobiBridge';
+import { tryNativeParsePdf } from '@/utils/tauriPdfBridge';
 import { isPseStreamFileName, openPseStreamBook, parsePseStreamFileName } from './opds/pseStream';
 import { DEFAULT_BOOK_SEARCH_CONFIG, DEFAULT_FIXED_LAYOUT_VIEW_SETTINGS } from './constants';
 import { isContentURI, isValidURL, makeSafeFilename } from '@/utils/misc';
@@ -478,7 +479,6 @@ export async function importBook(
     // When the Rust EPUB parser succeeds it gives us the partialMD5 for free,
     // so we can short-circuit the JS hashing pass below.
     let nativeHash: string | undefined;
-    let usedNativeParser = false;
 
     if (transient && typeof file !== 'string') {
       throw new Error('Transient import is only supported for file paths');
@@ -534,30 +534,36 @@ export async function importBook(
         // scan, nav/ncx inflate, or PDB record-table walk would be
         // pure waste here.
         //
-        // Both bridges are no-ops on web / non-eligible paths, so
-        // the cost when neither matches is just two cheap regex
+        // The bridges are no-ops on web / non-eligible paths, so
+        // the cost when none matches is just a few cheap regex
         // tests.
         let nativeBookDoc: BookDoc | undefined;
         let nativeFormat: BookFormat | undefined;
         if (typeof file === 'string' && !/\.txt$/i.test(filename)) {
-          const nativeEpub = await tryNativeParseEpub(file);
-          if (nativeEpub) {
-            nativeBookDoc = nativeEpub.bookDoc;
-            nativeFormat = 'EPUB' as BookFormat;
-            nativeHash = nativeEpub.partialMd5;
+          const nativePdf = await tryNativeParsePdf(file, fileobj, osPlatform);
+          if (nativePdf) {
+            nativeBookDoc = nativePdf.bookDoc;
+            nativeFormat = 'PDF' as BookFormat;
+            nativeHash = nativePdf.partialMd5;
           } else {
-            const nativeMobi = await tryNativeParseMobi(file, fileobj);
-            if (nativeMobi) {
-              nativeBookDoc = nativeMobi.bookDoc;
-              nativeFormat = nativeMobi.format;
-              nativeHash = nativeMobi.partialMd5;
+            const nativeEpub = await tryNativeParseEpub(file);
+            if (nativeEpub) {
+              nativeBookDoc = nativeEpub.bookDoc;
+              nativeFormat = 'EPUB' as BookFormat;
+              nativeHash = nativeEpub.partialMd5;
+            } else {
+              const nativeMobi = await tryNativeParseMobi(file, fileobj);
+              if (nativeMobi) {
+                nativeBookDoc = nativeMobi.bookDoc;
+                nativeFormat = nativeMobi.format;
+                nativeHash = nativeMobi.partialMd5;
+              }
             }
           }
         }
         if (nativeBookDoc && nativeFormat) {
           loadedBook = nativeBookDoc;
           format = nativeFormat;
-          usedNativeParser = true;
         } else {
           ({ book: loadedBook, format } = await new DocumentLoader(fileobj).open());
         }
@@ -574,11 +580,7 @@ export async function importBook(
       throw new Error(`Failed to open the book file: ${(error as Error).message || error}`);
     }
 
-    const hash = isPseStream
-      ? md5(file as string)
-      : usedNativeParser
-        ? nativeHash!
-        : await partialMD5(fileobj!);
+    const hash = isPseStream ? md5(file as string) : (nativeHash ?? (await partialMD5(fileobj!)));
 
     // PDF metadata is often generic boilerplate (e.g. every PowerPoint export
     // is titled "PowerPoint Presentation" by the same author), so metadata
@@ -702,7 +704,10 @@ export async function importBook(
       if (/\.txt$/i.test(filename)) {
         await fs.writeFile(bookFilename, 'Books', fileobj);
       } else if (typeof file === 'string' && isContentURI(file)) {
-        await fs.copyFile(file, 'None', bookFilename, 'Books');
+        // openFile has already materialized opaque providers into a seekable
+        // NativeFile. Reuse that path instead of streaming the provider URI a
+        // second time into Books.
+        await fs.writeFile(bookFilename, 'Books', fileobj);
       } else if (typeof file === 'string' && !isValidURL(file)) {
         try {
           // try to copy the file directly first in case of large files to avoid memory issues

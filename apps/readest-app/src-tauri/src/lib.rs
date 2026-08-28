@@ -34,6 +34,7 @@ mod macos;
 mod mobi_parser;
 mod nightly_update;
 mod parser_common;
+mod pdf_parser;
 mod range_file;
 mod sentry_config;
 #[cfg(desktop)]
@@ -421,6 +422,8 @@ pub fn run() {
             epub_parser::parse_epub_full,
             mobi_parser::parse_mobi_metadata,
             mobi_parser::extract_mobi_cover_full,
+            pdf_parser::parse_pdf_metadata,
+            pdf_parser::render_pdf_cover,
             #[cfg(target_os = "macos")]
             macos::safari_auth::auth_with_safari,
             #[cfg(target_os = "macos")]

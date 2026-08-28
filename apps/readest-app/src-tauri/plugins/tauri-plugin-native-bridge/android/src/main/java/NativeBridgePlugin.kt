@@ -24,6 +24,7 @@ import android.view.WindowInsetsController
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Rect
+import android.graphics.pdf.PdfRenderer
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -31,6 +32,7 @@ import android.hardware.SensorManager
 import android.hardware.input.InputManager
 import android.os.Handler
 import android.os.Looper
+import android.os.ParcelFileDescriptor
 import android.util.Base64
 import android.view.PixelCopy
 import android.webkit.WebView
@@ -58,6 +60,7 @@ import app.tauri.plugin.Invoke
 import org.json.JSONArray
 import java.io.*
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlinx.coroutines.*
 
 @InvokeArg
@@ -70,6 +73,12 @@ class AuthRequestArgs {
 class CopyURIRequestArgs {
     var uri: String? = null
     var dst: String? = null
+}
+
+@InvokeArg
+class RenderPdfCoverArgs {
+    var filePath: String? = null
+    var maxLongEdge: Int = 512
 }
 
 @InvokeArg
@@ -588,6 +597,63 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
                 r
             }
             if (isActive) invoke.resolve(ret)
+        }
+    }
+
+    @Command
+    fun render_pdf_cover(invoke: Invoke) {
+        val args = invoke.parseArgs(RenderPdfCoverArgs::class.java)
+        pluginScope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    val filePath = args.filePath ?: throw IllegalArgumentException("filePath is required")
+                    val maxLongEdge = args.maxLongEdge.takeIf { it > 0 }?.coerceAtMost(512) ?: 512
+                    val descriptor = if (filePath.startsWith("content://")) {
+                        activity.contentResolver.openFileDescriptor(Uri.parse(filePath), "r")
+                            ?: throw IOException("Failed to open PDF content URI")
+                    } else {
+                        ParcelFileDescriptor.open(File(filePath), ParcelFileDescriptor.MODE_READ_ONLY)
+                    }
+                    descriptor.use { fd ->
+                        PdfRenderer(fd).use { renderer ->
+                            if (renderer.pageCount == 0) throw IOException("PDF has no pages")
+                            renderer.openPage(0).use { page ->
+                                val scale = minOf(
+                                    1f,
+                                    maxLongEdge.toFloat() / maxOf(page.width, page.height).toFloat(),
+                                )
+                                val width = maxOf(1, (page.width * scale).roundToInt())
+                                val height = maxOf(1, (page.height * scale).roundToInt())
+                                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                                try {
+                                    bitmap.eraseColor(Color.WHITE)
+                                    page.render(
+                                        bitmap,
+                                        null,
+                                        null,
+                                        PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY,
+                                    )
+                                    val bytes = ByteArrayOutputStream().use { output ->
+                                        if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 85, output)) {
+                                            throw IOException("Failed to encode PDF cover")
+                                        }
+                                        output.toByteArray()
+                                    }
+                                    JSObject().apply {
+                                        put("coverBase64", Base64.encodeToString(bytes, Base64.NO_WRAP))
+                                        put("coverMime", "image/jpeg")
+                                    }
+                                } finally {
+                                    bitmap.recycle()
+                                }
+                            }
+                        }
+                    }
+                }
+                if (isActive) invoke.resolve(result)
+            } catch (e: Exception) {
+                if (isActive) invoke.reject(e.message ?: "PDF cover rendering failed")
+            }
         }
     }
 

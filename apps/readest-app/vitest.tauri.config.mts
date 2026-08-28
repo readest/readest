@@ -1,3 +1,4 @@
+import path from 'path';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 import { webdriverio } from '@vitest/browser-webdriverio';
@@ -12,6 +13,9 @@ export default defineConfig({
     'process.env': JSON.stringify(env),
   },
   resolve: {
+    alias: {
+      '@pdfjs': path.resolve(__dirname, 'public/vendor/pdfjs'),
+    },
     conditions: ['development'],
   },
   optimizeDeps: {

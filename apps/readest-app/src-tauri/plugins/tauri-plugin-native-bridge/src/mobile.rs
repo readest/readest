@@ -46,6 +46,15 @@ impl<R: Runtime> NativeBridge<R> {
             .run_mobile_plugin("copy_uri_to_path", payload)
             .map_err(Into::into)
     }
+
+    pub fn render_pdf_cover(
+        &self,
+        payload: RenderPdfCoverRequest,
+    ) -> crate::Result<RenderPdfCoverResponse> {
+        self.0
+            .run_mobile_plugin("render_pdf_cover", payload)
+            .map_err(Into::into)
+    }
 }
 
 impl<R: Runtime> NativeBridge<R> {

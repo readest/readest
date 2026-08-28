@@ -41,6 +41,8 @@ fn main() {
             "parse_epub_full",
             "parse_mobi_metadata",
             "extract_mobi_cover_full",
+            "parse_pdf_metadata",
+            "render_pdf_cover",
             "auth_with_safari",
             "start_apple_sign_in",
             "set_traffic_lights",

@@ -6,6 +6,7 @@ const writeFileMock = vi.fn().mockResolvedValue(undefined);
 const mkdirMock = vi.fn().mockResolvedValue(undefined);
 const saveDialogMock = vi.fn().mockResolvedValue('/tmp/exported.md');
 const shareFileMock = vi.fn().mockResolvedValue(undefined);
+const copyURIToPathMock = vi.fn().mockResolvedValue({ success: true });
 
 vi.mock('@tauri-apps/plugin-os', () => ({
   type: () => osTypeMock(),
@@ -51,13 +52,17 @@ vi.mock('@choochmeque/tauri-plugin-sharekit-api', () => ({
 }));
 
 vi.mock('@/utils/bridge', () => ({
-  copyURIToPath: vi.fn().mockResolvedValue({ path: '' }),
+  copyURIToPath: (...args: unknown[]) => copyURIToPathMock(...args),
   getStorefrontRegionCode: vi.fn().mockResolvedValue({ regionCode: null }),
   hasAmbientLightSensor: vi.fn().mockResolvedValue({ available: false }),
 }));
 
 vi.mock('@/utils/file', () => ({
-  NativeFile: class {},
+  NativeFile: class {
+    async open() {
+      return this;
+    }
+  },
   RemoteFile: class {},
 }));
 
@@ -85,6 +90,23 @@ describe('NativeAppService.saveFile share gating', () => {
     mkdirMock.mockClear();
     saveDialogMock.mockClear();
     shareFileMock.mockClear();
+    copyURIToPathMock.mockClear();
+  });
+
+  test('uses a unique cache path for same-named content-provider files', async () => {
+    const service = await loadServiceWithOS('android');
+
+    await Promise.all([
+      service.openFile('content://com.example.documents/first/book.pdf', 'None'),
+      service.openFile('content://com.example.documents/second/book.pdf', 'None'),
+    ]);
+
+    const destinations = copyURIToPathMock.mock.calls.map(
+      ([request]) => (request as { dst: string }).dst,
+    );
+    expect(destinations).toHaveLength(2);
+    expect(new Set(destinations).size).toBe(2);
+    expect(destinations.every((destination) => destination.endsWith('-book.pdf'))).toBe(true);
   });
 
   test('uses native share on macOS when share=true', async () => {

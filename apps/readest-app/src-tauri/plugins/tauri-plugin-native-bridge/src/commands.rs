@@ -31,6 +31,14 @@ pub(crate) async fn copy_uri_to_path<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn render_pdf_cover<R: Runtime>(
+    app: AppHandle<R>,
+    payload: RenderPdfCoverRequest,
+) -> Result<RenderPdfCoverResponse> {
+    app.native_bridge().render_pdf_cover(payload)
+}
+
+#[command]
 pub(crate) async fn save_image_to_gallery<R: Runtime>(
     app: AppHandle<R>,
     payload: SaveImageToGalleryRequest,
