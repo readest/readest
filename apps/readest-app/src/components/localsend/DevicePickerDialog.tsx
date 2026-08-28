@@ -127,7 +127,7 @@ const DevicePickerDialog: React.FC<DevicePickerDialogProps> = ({ files, onClose 
 
         {!status?.running ? (
           <div className='flex flex-col items-start gap-2 text-sm'>
-            <span>{_('Enable LocalSend in Settings to send books.')}</span>
+            <span>{_('Enable Nearby BookDrop in Settings to send books.')}</span>
             <button
               type='button'
               className='btn btn-contrast btn-sm'
@@ -154,7 +154,9 @@ const DevicePickerDialog: React.FC<DevicePickerDialogProps> = ({ files, onClose 
           </div>
         ) : devices.length === 0 ? (
           <div className='text-base-content/70 text-sm'>
-            {_('No devices found. Make sure LocalSend is open on the other device.')}
+            {_(
+              'No devices found. Make sure Nearby BookDrop or LocalSend is open on the other device.',
+            )}
           </div>
         ) : (
           <div className='flex max-h-64 flex-col gap-1 overflow-y-auto'>

@@ -293,8 +293,8 @@ msgstr "Hantar buku sekarang"
 msgid "Pull books now"
 msgstr "Tarik buku sekarang"
 
-msgid "Receive via LocalSend"
-msgstr "Terima melalui LocalSend"
+msgid "Receive via Nearby BookDrop"
+msgstr "Terima melalui Nearby BookDrop"
 
 msgid "Upload current book to Readest"
 msgstr "Muat naik buku semasa ke Readest"
@@ -359,17 +359,17 @@ msgstr "Penyegerakan buku gagal"
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Tetapkan folder muat turun Readest atau folder utama KOReader dahulu."
 
-msgid "LocalSend error: could not find a free port."
-msgstr "Ralat LocalSend: tidak dapat mencari port yang kosong."
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Ralat Nearby BookDrop: tidak dapat mencari port yang kosong."
 
-msgid "LocalSend failed to start."
-msgstr "LocalSend gagal dimulakan."
+msgid "Nearby BookDrop failed to start."
+msgstr "Nearby BookDrop gagal dimulakan."
 
-msgid "Starting LocalSend…"
-msgstr "Memulakan LocalSend…"
+msgid "Starting Nearby BookDrop…"
+msgstr "Memulakan Nearby BookDrop…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "LocalSend akan bermula apabila Wi-Fi disambung."
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Nearby BookDrop akan bermula apabila Wi-Fi disambung."
 
 msgid "… and %1 more"
 msgstr "…dan %1 lagi"
@@ -386,23 +386,23 @@ msgstr "Tolak"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "Menerima %1 fail daripada %2…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend: menerima %1 fail, %2 gagal."
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: menerima %1 fail, %2 gagal."
 
-msgid "LocalSend transfer cancelled."
-msgstr "Pemindahan LocalSend dibatalkan."
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Pemindahan Nearby BookDrop dibatalkan."
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend: menerima %1 fail."
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: menerima %1 fail."
 
-msgid "LocalSend not available on this device"
-msgstr "LocalSend tidak tersedia pada peranti ini"
+msgid "Nearby BookDrop not available on this device"
+msgstr "Nearby BookDrop tidak tersedia pada peranti ini"
 
 msgid "Scanning for nearby devices…"
 msgstr "Mengimbas peranti berdekatan…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "Tiada peranti berdekatan ditemui. Pastikan peranti lain membuka LocalSend/Readest."
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "Tiada peranti berdekatan ditemui. Pastikan peranti lain membuka Nearby BookDrop atau LocalSend."
 
 msgid "Rescan"
 msgstr "Imbas semula"
@@ -428,11 +428,11 @@ msgstr "Pemindahan dibatalkan."
 msgid "Send failed: %1"
 msgstr "Penghantaran gagal: %1"
 
-msgid "LocalSend error: %1"
-msgstr "Ralat LocalSend: %1"
+msgid "Nearby BookDrop error: %1"
+msgstr "Ralat Nearby BookDrop: %1"
 
-msgid "LocalSend off"
-msgstr "LocalSend dimatikan"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop dimatikan"
 
 msgid "Visible as %1"
 msgstr "Kelihatan sebagai %1"

@@ -608,7 +608,7 @@ function ReadestSync:addToMainMenu(menu_items)
                 end,
             },
             {
-                text = _("Receive via LocalSend"),
+                text = _("Receive via Nearby BookDrop"),
                 enabled_func = function()
                     return self.localsend:isAvailable()
                 end,

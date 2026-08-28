@@ -293,8 +293,8 @@ msgstr "Kitoblarni hozir yuborish"
 msgid "Pull books now"
 msgstr "Kitoblarni hozir olish"
 
-msgid "Receive via LocalSend"
-msgstr "LocalSend orqali qabul qilish"
+msgid "Receive via Nearby BookDrop"
+msgstr "Nearby BookDrop orqali qabul qilish"
 
 msgid "Upload current book to Readest"
 msgstr "Joriy kitobni Readest-ga yuklash"
@@ -359,17 +359,17 @@ msgstr "Kitoblarni sinxronlab boʻlmadi"
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Avval Readest yuklab olish jildini yoki KOReader asosiy jildini belgilang."
 
-msgid "LocalSend error: could not find a free port."
-msgstr "LocalSend xatosi: bo'sh port topilmadi."
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Nearby BookDrop xatosi: bo'sh port topilmadi."
 
-msgid "LocalSend failed to start."
-msgstr "LocalSend ishga tushmadi."
+msgid "Nearby BookDrop failed to start."
+msgstr "Nearby BookDrop ishga tushmadi."
 
-msgid "Starting LocalSend…"
-msgstr "LocalSend ishga tushirilmoqda…"
+msgid "Starting Nearby BookDrop…"
+msgstr "Nearby BookDrop ishga tushirilmoqda…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "Wi-Fi ulanganda LocalSend ishga tushadi."
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Wi-Fi ulanganda Nearby BookDrop ishga tushadi."
 
 msgid "… and %1 more"
 msgstr "… va yana %1 ta"
@@ -386,23 +386,23 @@ msgstr "Rad etish"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "%2 dan %1 ta fayl qabul qilinmoqda…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend: %1 ta fayl qabul qilindi, %2 tasi muvaffaqiyatsiz."
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: %1 ta fayl qabul qilindi, %2 tasi muvaffaqiyatsiz."
 
-msgid "LocalSend transfer cancelled."
-msgstr "LocalSend uzatishi bekor qilindi."
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Nearby BookDrop uzatishi bekor qilindi."
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend: %1 ta fayl qabul qilindi."
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: %1 ta fayl qabul qilindi."
 
-msgid "LocalSend not available on this device"
-msgstr "Bu qurilmada LocalSend mavjud emas"
+msgid "Nearby BookDrop not available on this device"
+msgstr "Bu qurilmada Nearby BookDrop mavjud emas"
 
 msgid "Scanning for nearby devices…"
 msgstr "Yaqin-atrofdagi qurilmalar qidirilmoqda…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "Yaqin-atrofda qurilma topilmadi. Boshqa qurilmada LocalSend/Readest ochiqligiga ishonch hosil qiling."
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "Yaqin-atrofda qurilma topilmadi. Boshqa qurilmada Nearby BookDrop yoki LocalSend ochiqligiga ishonch hosil qiling."
 
 msgid "Rescan"
 msgstr "Qayta qidirish"
@@ -428,11 +428,11 @@ msgstr "Uzatish bekor qilindi."
 msgid "Send failed: %1"
 msgstr "Yuborish muvaffaqiyatsiz: %1"
 
-msgid "LocalSend error: %1"
-msgstr "LocalSend xatosi: %1"
+msgid "Nearby BookDrop error: %1"
+msgstr "Nearby BookDrop xatosi: %1"
 
-msgid "LocalSend off"
-msgstr "LocalSend o'chiq"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop o'chiq"
 
 msgid "Visible as %1"
 msgstr "%1 sifatida ko'rinadi"

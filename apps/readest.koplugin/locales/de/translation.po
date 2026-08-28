@@ -293,8 +293,8 @@ msgstr "Bücher jetzt senden"
 msgid "Pull books now"
 msgstr "Bücher jetzt abrufen"
 
-msgid "Receive via LocalSend"
-msgstr "Über LocalSend empfangen"
+msgid "Receive via Nearby BookDrop"
+msgstr "Über Nearby BookDrop empfangen"
 
 msgid "Upload current book to Readest"
 msgstr "Aktuelles Buch zu Readest hochladen"
@@ -359,17 +359,17 @@ msgstr "Bücher-Synchronisierung fehlgeschlagen"
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Lege zuerst einen Readest-Download-Ordner oder einen KOReader-Home-Ordner fest."
 
-msgid "LocalSend error: could not find a free port."
-msgstr "LocalSend-Fehler: Kein freier Port gefunden."
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Nearby BookDrop-Fehler: Kein freier Port gefunden."
 
-msgid "LocalSend failed to start."
-msgstr "LocalSend konnte nicht gestartet werden."
+msgid "Nearby BookDrop failed to start."
+msgstr "Nearby BookDrop konnte nicht gestartet werden."
 
-msgid "Starting LocalSend…"
-msgstr "LocalSend wird gestartet…"
+msgid "Starting Nearby BookDrop…"
+msgstr "Nearby BookDrop wird gestartet…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "LocalSend startet, sobald Wi-Fi verbunden ist."
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Nearby BookDrop startet, sobald Wi-Fi verbunden ist."
 
 msgid "… and %1 more"
 msgstr "… und %1 weitere"
@@ -386,23 +386,23 @@ msgstr "Ablehnen"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "Empfange %1 Datei(en) von %2…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend: %1 Datei(en) empfangen, %2 fehlgeschlagen."
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: %1 Datei(en) empfangen, %2 fehlgeschlagen."
 
-msgid "LocalSend transfer cancelled."
-msgstr "LocalSend-Übertragung abgebrochen."
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Nearby BookDrop-Übertragung abgebrochen."
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend: %1 Datei(en) empfangen."
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: %1 Datei(en) empfangen."
 
-msgid "LocalSend not available on this device"
-msgstr "LocalSend auf diesem Gerät nicht verfügbar"
+msgid "Nearby BookDrop not available on this device"
+msgstr "Nearby BookDrop auf diesem Gerät nicht verfügbar"
 
 msgid "Scanning for nearby devices…"
 msgstr "Suche nach Geräten in der Nähe…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "Keine Geräte in der Nähe gefunden. Stelle sicher, dass auf dem anderen Gerät LocalSend/Readest geöffnet ist."
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "Keine Geräte in der Nähe gefunden. Stelle sicher, dass auf dem anderen Gerät Nearby BookDrop oder LocalSend geöffnet ist."
 
 msgid "Rescan"
 msgstr "Erneut suchen"
@@ -428,11 +428,11 @@ msgstr "Übertragung abgebrochen."
 msgid "Send failed: %1"
 msgstr "Senden fehlgeschlagen: %1"
 
-msgid "LocalSend error: %1"
-msgstr "LocalSend-Fehler: %1"
+msgid "Nearby BookDrop error: %1"
+msgstr "Nearby BookDrop-Fehler: %1"
 
-msgid "LocalSend off"
-msgstr "LocalSend aus"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop aus"
 
 msgid "Visible as %1"
 msgstr "Sichtbar als %1"

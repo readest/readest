@@ -770,7 +770,7 @@ const IntegrationsPanel: React.FC = () => {
             {isTauriAppPlatform() && (
               <IntegrationRow
                 icon={RiWifiLine}
-                title={_('LocalSend')}
+                title={_('Nearby BookDrop')}
                 status={isLocalSendEnabled() ? _('On') : _('Off')}
                 onClick={() => setSubPage('localsend')}
               />

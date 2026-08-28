@@ -293,8 +293,8 @@ msgstr "དེབ་རྣམས་ད་ལྟ་སྐུར་"
 msgid "Pull books now"
 msgstr "དེབ་རྣམས་ད་ལྟ་ལེན་"
 
-msgid "Receive via LocalSend"
-msgstr "LocalSend བརྒྱུད་ནས་ལེན།"
+msgid "Receive via Nearby BookDrop"
+msgstr "Nearby BookDrop བརྒྱུད་ནས་ལེན།"
 
 msgid "Upload current book to Readest"
 msgstr "མིག་སྔའི་དཔེ་ཆ་ Readest ལ་སྦར་བ།"
@@ -359,17 +359,17 @@ msgstr "དེབ་མཉམ་སྦྱོར་མ་ཐུབ་"
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "ཐོག་མར་ Readest ཕབ་ལེན་ཡིག་སྣོད་དམ་ KOReader གཙོ་ཡིག་སྣོད་ཅིག་སྒྲིག་རོགས།"
 
-msgid "LocalSend error: could not find a free port."
-msgstr "LocalSend ནོར་འཁྲུལ: འབྲེལ་མཐུད་ཁ་སྟོང་པ་ཞིག་རྙེད་མ་སོང་།"
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Nearby BookDrop ནོར་འཁྲུལ: འབྲེལ་མཐུད་ཁ་སྟོང་པ་ཞིག་རྙེད་མ་སོང་།"
 
-msgid "LocalSend failed to start."
-msgstr "LocalSend འགོ་འཛུགས་མ་ཐུབ།"
+msgid "Nearby BookDrop failed to start."
+msgstr "Nearby BookDrop འགོ་འཛུགས་མ་ཐུབ།"
 
-msgid "Starting LocalSend…"
-msgstr "LocalSend འགོ་འཛུགས་བཞིན…"
+msgid "Starting Nearby BookDrop…"
+msgstr "Nearby BookDrop འགོ་འཛུགས་བཞིན…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "Wi-Fi འབྲེལ་མཐུད་སྐབས་ LocalSend འགོ་འཛུགས།"
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Wi-Fi འབྲེལ་མཐུད་སྐབས་ Nearby BookDrop འགོ་འཛུགས།"
 
 msgid "… and %1 more"
 msgstr "… དང་ %1 ལྷག"
@@ -386,23 +386,23 @@ msgstr "དོར།"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "%2 ནས་ཡིག་ཆ་ %1 ལེན་བཞིན…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend: ཡིག་ཆ་ %1 ལེན་ཟིན། %2 ཕམ།"
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: ཡིག་ཆ་ %1 ལེན་ཟིན། %2 ཕམ།"
 
-msgid "LocalSend transfer cancelled."
-msgstr "LocalSend སྤོ་འདྲེན་ཕྱིར་འཐེན་བྱས།"
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Nearby BookDrop སྤོ་འདྲེན་ཕྱིར་འཐེན་བྱས།"
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend: ཡིག་ཆ་ %1 ལེན་ཟིན།"
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: ཡིག་ཆ་ %1 ལེན་ཟིན།"
 
-msgid "LocalSend not available on this device"
-msgstr "སྒྲིག་ཆས་འདིར་ LocalSend མི་འཐོབ།"
+msgid "Nearby BookDrop not available on this device"
+msgstr "སྒྲིག་ཆས་འདིར་ Nearby BookDrop མི་འཐོབ།"
 
 msgid "Scanning for nearby devices…"
 msgstr "ཉེ་འགྲམ་གྱི་སྒྲིག་ཆས་འཚོལ་བཞིན…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "ཉེ་འགྲམ་དུ་སྒྲིག་ཆས་གང་ཡང་མ་རྙེད། སྒྲིག་ཆས་གཞན་དེར་ LocalSend/Readest ཁ་ཕྱེ་ཡོད་པ་ངེས་པར་བྱོས།"
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "ཉེ་འགྲམ་དུ་སྒྲིག་ཆས་གང་ཡང་མ་རྙེད། སྒྲིག་ཆས་གཞན་དེར་ Nearby BookDrop ཡང་ན་ LocalSend ཁ་ཕྱེ་ཡོད་པ་ངེས་པར་བྱོས།"
 
 msgid "Rescan"
 msgstr "སླར་ཡང་འཚོལ།"
@@ -428,11 +428,11 @@ msgstr "སྤོ་འདྲེན་ཕྱིར་འཐེན་བྱས།
 msgid "Send failed: %1"
 msgstr "སྐུར་བ་ཕམ: %1"
 
-msgid "LocalSend error: %1"
-msgstr "LocalSend ནོར་འཁྲུལ: %1"
+msgid "Nearby BookDrop error: %1"
+msgstr "Nearby BookDrop ནོར་འཁྲུལ: %1"
 
-msgid "LocalSend off"
-msgstr "LocalSend བཀག"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop བཀག"
 
 msgid "Visible as %1"
 msgstr "%1 ཞེས་མངོན།"

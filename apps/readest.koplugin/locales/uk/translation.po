@@ -293,8 +293,8 @@ msgstr "Надіслати книги зараз"
 msgid "Pull books now"
 msgstr "Отримати книги зараз"
 
-msgid "Receive via LocalSend"
-msgstr "Отримати через LocalSend"
+msgid "Receive via Nearby BookDrop"
+msgstr "Отримати через Nearby BookDrop"
 
 msgid "Upload current book to Readest"
 msgstr "Завантажити поточну книгу до Readest"
@@ -359,17 +359,17 @@ msgstr "Не вдалося синхронізувати книги"
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "Спочатку вкажіть папку завантажень Readest або домашню папку KOReader."
 
-msgid "LocalSend error: could not find a free port."
-msgstr "Помилка LocalSend: не знайдено вільного порту."
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Помилка Nearby BookDrop: не знайдено вільного порту."
 
-msgid "LocalSend failed to start."
-msgstr "Не вдалося запустити LocalSend."
+msgid "Nearby BookDrop failed to start."
+msgstr "Не вдалося запустити Nearby BookDrop."
 
-msgid "Starting LocalSend…"
-msgstr "Запуск LocalSend…"
+msgid "Starting Nearby BookDrop…"
+msgstr "Запуск Nearby BookDrop…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "LocalSend запуститься після підключення до Wi-Fi."
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Nearby BookDrop запуститься після підключення до Wi-Fi."
 
 msgid "… and %1 more"
 msgstr "… та ще %1"
@@ -386,23 +386,23 @@ msgstr "Відхилити"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "Отримання %1 файл(ів) від %2…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend: отримано %1 файл(ів), %2 з помилкою."
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: отримано %1 файл(ів), %2 з помилкою."
 
-msgid "LocalSend transfer cancelled."
-msgstr "Передавання LocalSend скасовано."
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Передавання Nearby BookDrop скасовано."
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend: отримано %1 файл(ів)."
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: отримано %1 файл(ів)."
 
-msgid "LocalSend not available on this device"
-msgstr "LocalSend недоступний на цьому пристрої"
+msgid "Nearby BookDrop not available on this device"
+msgstr "Nearby BookDrop недоступний на цьому пристрої"
 
 msgid "Scanning for nearby devices…"
 msgstr "Пошук пристроїв поблизу…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "Пристроїв поблизу не знайдено. Переконайтеся, що на іншому пристрої відкрито LocalSend/Readest."
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "Пристроїв поблизу не знайдено. Переконайтеся, що на іншому пристрої відкрито Nearby BookDrop або LocalSend."
 
 msgid "Rescan"
 msgstr "Повторити пошук"
@@ -428,11 +428,11 @@ msgstr "Передавання скасовано."
 msgid "Send failed: %1"
 msgstr "Помилка надсилання: %1"
 
-msgid "LocalSend error: %1"
-msgstr "Помилка LocalSend: %1"
+msgid "Nearby BookDrop error: %1"
+msgstr "Помилка Nearby BookDrop: %1"
 
-msgid "LocalSend off"
-msgstr "LocalSend вимкнено"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop вимкнено"
 
 msgid "Visible as %1"
 msgstr "Видимий як %1"

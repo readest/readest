@@ -293,8 +293,8 @@ msgstr "இப்போது புத்தகங்களை அனுப்�
 msgid "Pull books now"
 msgstr "இப்போது புத்தகங்களைப் பெறு"
 
-msgid "Receive via LocalSend"
-msgstr "LocalSend வழியாகப் பெறு"
+msgid "Receive via Nearby BookDrop"
+msgstr "Nearby BookDrop வழியாகப் பெறு"
 
 msgid "Upload current book to Readest"
 msgstr "தற்போதைய புத்தகத்தை Readest-இல் பதிவேற்று"
@@ -359,17 +359,17 @@ msgstr "புத்தகங்கள் ஒத்திசைவு தோல�
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "முதலில் ஒரு Readest பதிவிறக்க கோப்புறை அல்லது KOReader முகப்பு கோப்புறையை அமைக்கவும்."
 
-msgid "LocalSend error: could not find a free port."
-msgstr "LocalSend பிழை: காலி போர்ட் கிடைக்கவில்லை."
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Nearby BookDrop பிழை: காலி போர்ட் கிடைக்கவில்லை."
 
-msgid "LocalSend failed to start."
-msgstr "LocalSend தொடங்கவில்லை."
+msgid "Nearby BookDrop failed to start."
+msgstr "Nearby BookDrop தொடங்கவில்லை."
 
-msgid "Starting LocalSend…"
-msgstr "LocalSend தொடங்குகிறது…"
+msgid "Starting Nearby BookDrop…"
+msgstr "Nearby BookDrop தொடங்குகிறது…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "Wi-Fi இணைந்ததும் LocalSend தொடங்கும்."
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Wi-Fi இணைந்ததும் Nearby BookDrop தொடங்கும்."
 
 msgid "… and %1 more"
 msgstr "… மேலும் %1"
@@ -386,23 +386,23 @@ msgstr "நிராகரி"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "%2 இலிருந்து %1 கோப்புகள் பெறப்படுகின்றன…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend: %1 கோப்புகள் பெறப்பட்டன, %2 தோல்வி."
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: %1 கோப்புகள் பெறப்பட்டன, %2 தோல்வி."
 
-msgid "LocalSend transfer cancelled."
-msgstr "LocalSend பரிமாற்றம் ரத்து செய்யப்பட்டது."
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Nearby BookDrop பரிமாற்றம் ரத்து செய்யப்பட்டது."
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend: %1 கோப்புகள் பெறப்பட்டன."
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: %1 கோப்புகள் பெறப்பட்டன."
 
-msgid "LocalSend not available on this device"
-msgstr "இந்த சாதனத்தில் LocalSend கிடைக்கவில்லை"
+msgid "Nearby BookDrop not available on this device"
+msgstr "இந்த சாதனத்தில் Nearby BookDrop கிடைக்கவில்லை"
 
 msgid "Scanning for nearby devices…"
 msgstr "அருகிலுள்ள சாதனங்கள் தேடப்படுகின்றன…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "அருகில் சாதனங்கள் எதுவும் கிடைக்கவில்லை. மற்ற சாதனத்தில் LocalSend/Readest திறந்திருப்பதை உறுதிசெய்யவும்."
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "அருகில் சாதனங்கள் எதுவும் கிடைக்கவில்லை. மற்ற சாதனத்தில் Nearby BookDrop அல்லது LocalSend திறந்திருப்பதை உறுதிசெய்யவும்."
 
 msgid "Rescan"
 msgstr "மீண்டும் தேடு"
@@ -428,11 +428,11 @@ msgstr "பரிமாற்றம் ரத்து செய்யப்ப�
 msgid "Send failed: %1"
 msgstr "அனுப்புதல் தோல்வி: %1"
 
-msgid "LocalSend error: %1"
-msgstr "LocalSend பிழை: %1"
+msgid "Nearby BookDrop error: %1"
+msgstr "Nearby BookDrop பிழை: %1"
 
-msgid "LocalSend off"
-msgstr "LocalSend அணைக்கப்பட்டது"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop அணைக்கப்பட்டது"
 
 msgid "Visible as %1"
 msgstr "%1 என்ற பெயரில் தெரிகிறது"

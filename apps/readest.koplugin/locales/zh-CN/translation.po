@@ -293,8 +293,8 @@ msgstr "立即推送书籍"
 msgid "Pull books now"
 msgstr "立即拉取书籍"
 
-msgid "Receive via LocalSend"
-msgstr "通过 LocalSend 接收"
+msgid "Receive via Nearby BookDrop"
+msgstr "通过 Nearby BookDrop 接收"
 
 msgid "Upload current book to Readest"
 msgstr "上传当前书籍到 Readest"
@@ -359,17 +359,17 @@ msgstr "书籍同步失败"
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "请先设置 Readest 下载文件夹或 KOReader 主文件夹。"
 
-msgid "LocalSend error: could not find a free port."
-msgstr "LocalSend 错误：找不到可用端口。"
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Nearby BookDrop 错误：找不到可用端口。"
 
-msgid "LocalSend failed to start."
-msgstr "LocalSend 启动失败。"
+msgid "Nearby BookDrop failed to start."
+msgstr "Nearby BookDrop 启动失败。"
 
-msgid "Starting LocalSend…"
-msgstr "正在启动 LocalSend…"
+msgid "Starting Nearby BookDrop…"
+msgstr "正在启动 Nearby BookDrop…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "LocalSend 将在 Wi-Fi 连接后启动。"
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Nearby BookDrop 将在 Wi-Fi 连接后启动。"
 
 msgid "… and %1 more"
 msgstr "…还有 %1 个"
@@ -386,23 +386,23 @@ msgstr "拒绝"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "正在从 %2 接收 %1 个文件…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend：已接收 %1 个文件，%2 个失败。"
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop：已接收 %1 个文件，%2 个失败。"
 
-msgid "LocalSend transfer cancelled."
-msgstr "LocalSend 传输已取消。"
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Nearby BookDrop 传输已取消。"
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend：已接收 %1 个文件。"
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop：已接收 %1 个文件。"
 
-msgid "LocalSend not available on this device"
-msgstr "此设备不支持 LocalSend"
+msgid "Nearby BookDrop not available on this device"
+msgstr "此设备不支持 Nearby BookDrop"
 
 msgid "Scanning for nearby devices…"
 msgstr "正在扫描附近的设备…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "未找到附近的设备。请确保对方设备已打开 LocalSend/Readest。"
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "未找到附近的设备。请确保对方设备已打开 Nearby BookDrop 或 LocalSend。"
 
 msgid "Rescan"
 msgstr "重新扫描"
@@ -428,11 +428,11 @@ msgstr "传输已取消。"
 msgid "Send failed: %1"
 msgstr "发送失败：%1"
 
-msgid "LocalSend error: %1"
-msgstr "LocalSend 错误：%1"
+msgid "Nearby BookDrop error: %1"
+msgstr "Nearby BookDrop 错误：%1"
 
-msgid "LocalSend off"
-msgstr "LocalSend 已关闭"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop 已关闭"
 
 msgid "Visible as %1"
 msgstr "显示为 %1"

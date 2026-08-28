@@ -67,16 +67,16 @@ const LocalSendForm: React.FC<LocalSendFormProps> = ({ onBack }) => {
     <div className='w-full space-y-6'>
       <SubPageHeader
         parentLabel={_('Integrations')}
-        currentLabel={_('LocalSend')}
+        currentLabel={_('Nearby BookDrop')}
         description={_(
-          'Send and receive books with LocalSend apps and other Readest devices on your local network.',
+          'Drop books to nearby Readest devices, and to LocalSend apps, over your local network.',
         )}
         onBack={onBack}
       />
 
       <BoxedList>
         <SettingsSwitchRow
-          label={_('Enable LocalSend')}
+          label={_('Enable Nearby BookDrop')}
           description={_('Receive books while Readest is open')}
           checked={enabled}
           onChange={toggleEnabled}

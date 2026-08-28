@@ -293,8 +293,8 @@ msgstr "अभी पुस्तकें पुश करें"
 msgid "Pull books now"
 msgstr "अभी पुस्तकें पुल करें"
 
-msgid "Receive via LocalSend"
-msgstr "LocalSend से प्राप्त करें"
+msgid "Receive via Nearby BookDrop"
+msgstr "Nearby BookDrop से प्राप्त करें"
 
 msgid "Upload current book to Readest"
 msgstr "वर्तमान पुस्तक को Readest पर अपलोड करें"
@@ -359,17 +359,17 @@ msgstr "पुस्तकें सिंक विफल"
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "पहले Readest डाउनलोड फ़ोल्डर या KOReader होम फ़ोल्डर सेट करें।"
 
-msgid "LocalSend error: could not find a free port."
-msgstr "LocalSend त्रुटि: कोई खाली पोर्ट नहीं मिला।"
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Nearby BookDrop त्रुटि: कोई खाली पोर्ट नहीं मिला।"
 
-msgid "LocalSend failed to start."
-msgstr "LocalSend शुरू नहीं हो सका।"
+msgid "Nearby BookDrop failed to start."
+msgstr "Nearby BookDrop शुरू नहीं हो सका।"
 
-msgid "Starting LocalSend…"
-msgstr "LocalSend शुरू हो रहा है…"
+msgid "Starting Nearby BookDrop…"
+msgstr "Nearby BookDrop शुरू हो रहा है…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "Wi-Fi कनेक्ट होने पर LocalSend शुरू होगा।"
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Wi-Fi कनेक्ट होने पर Nearby BookDrop शुरू होगा।"
 
 msgid "… and %1 more"
 msgstr "… और %1 अन्य"
@@ -386,23 +386,23 @@ msgstr "अस्वीकारें"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "%2 से %1 फ़ाइलें प्राप्त हो रही हैं…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend: %1 फ़ाइलें प्राप्त हुईं, %2 विफल।"
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: %1 फ़ाइलें प्राप्त हुईं, %2 विफल।"
 
-msgid "LocalSend transfer cancelled."
-msgstr "LocalSend स्थानांतरण रद्द किया गया।"
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Nearby BookDrop स्थानांतरण रद्द किया गया।"
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend: %1 फ़ाइलें प्राप्त हुईं।"
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: %1 फ़ाइलें प्राप्त हुईं।"
 
-msgid "LocalSend not available on this device"
-msgstr "इस डिवाइस पर LocalSend उपलब्ध नहीं है"
+msgid "Nearby BookDrop not available on this device"
+msgstr "इस डिवाइस पर Nearby BookDrop उपलब्ध नहीं है"
 
 msgid "Scanning for nearby devices…"
 msgstr "आस-पास के डिवाइस खोजे जा रहे हैं…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "कोई आस-पास का डिवाइस नहीं मिला। सुनिश्चित करें कि दूसरे डिवाइस पर LocalSend/Readest खुला है।"
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "कोई आस-पास का डिवाइस नहीं मिला। सुनिश्चित करें कि दूसरे डिवाइस पर Nearby BookDrop या LocalSend खुला है।"
 
 msgid "Rescan"
 msgstr "फिर से स्कैन करें"
@@ -428,11 +428,11 @@ msgstr "स्थानांतरण रद्द किया गया।"
 msgid "Send failed: %1"
 msgstr "भेजना विफल: %1"
 
-msgid "LocalSend error: %1"
-msgstr "LocalSend त्रुटि: %1"
+msgid "Nearby BookDrop error: %1"
+msgstr "Nearby BookDrop त्रुटि: %1"
 
-msgid "LocalSend off"
-msgstr "LocalSend बंद"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop बंद"
 
 msgid "Visible as %1"
 msgstr "%1 के रूप में दिखाई दे रहा है"

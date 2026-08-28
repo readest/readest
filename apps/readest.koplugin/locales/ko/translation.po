@@ -293,8 +293,8 @@ msgstr "지금 책 푸시"
 msgid "Pull books now"
 msgstr "지금 책 풀"
 
-msgid "Receive via LocalSend"
-msgstr "LocalSend로 받기"
+msgid "Receive via Nearby BookDrop"
+msgstr "Nearby BookDrop으로 받기"
 
 msgid "Upload current book to Readest"
 msgstr "현재 책을 Readest에 업로드"
@@ -359,17 +359,17 @@ msgstr "책 동기화 실패"
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "먼저 Readest 다운로드 폴더나 KOReader 홈 폴더를 설정하세요."
 
-msgid "LocalSend error: could not find a free port."
-msgstr "LocalSend 오류: 사용 가능한 포트를 찾을 수 없습니다."
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "Nearby BookDrop 오류: 사용 가능한 포트를 찾을 수 없습니다."
 
-msgid "LocalSend failed to start."
-msgstr "LocalSend를 시작하지 못했습니다."
+msgid "Nearby BookDrop failed to start."
+msgstr "Nearby BookDrop을 시작하지 못했습니다."
 
-msgid "Starting LocalSend…"
-msgstr "LocalSend 시작 중…"
+msgid "Starting Nearby BookDrop…"
+msgstr "Nearby BookDrop 시작 중…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "Wi-Fi에 연결되면 LocalSend가 시작됩니다."
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Wi-Fi에 연결되면 Nearby BookDrop이 시작됩니다."
 
 msgid "… and %1 more"
 msgstr "…외 %1개"
@@ -386,23 +386,23 @@ msgstr "거절"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "%2에서 파일 %1개를 받는 중…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend: 파일 %1개를 받았고 %2개는 실패했습니다."
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: 파일 %1개를 받았고 %2개는 실패했습니다."
 
-msgid "LocalSend transfer cancelled."
-msgstr "LocalSend 전송이 취소되었습니다."
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "Nearby BookDrop 전송이 취소되었습니다."
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend: 파일 %1개를 받았습니다."
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: 파일 %1개를 받았습니다."
 
-msgid "LocalSend not available on this device"
-msgstr "이 기기에서는 LocalSend를 사용할 수 없습니다"
+msgid "Nearby BookDrop not available on this device"
+msgstr "이 기기에서는 Nearby BookDrop을 사용할 수 없습니다"
 
 msgid "Scanning for nearby devices…"
 msgstr "근처 기기 검색 중…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "근처에서 기기를 찾을 수 없습니다. 상대 기기에서 LocalSend/Readest가 열려 있는지 확인하세요."
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "근처에서 기기를 찾을 수 없습니다. 상대 기기에서 Nearby BookDrop 또는 LocalSend가 열려 있는지 확인하세요."
 
 msgid "Rescan"
 msgstr "다시 검색"
@@ -428,11 +428,11 @@ msgstr "전송이 취소되었습니다."
 msgid "Send failed: %1"
 msgstr "전송 실패: %1"
 
-msgid "LocalSend error: %1"
-msgstr "LocalSend 오류: %1"
+msgid "Nearby BookDrop error: %1"
+msgstr "Nearby BookDrop 오류: %1"
 
-msgid "LocalSend off"
-msgstr "LocalSend 꺼짐"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop 꺼짐"
 
 msgid "Visible as %1"
 msgstr "%1(으)로 표시됨"

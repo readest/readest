@@ -293,8 +293,8 @@ msgstr "שלח ספרים עכשיו"
 msgid "Pull books now"
 msgstr "משוך ספרים עכשיו"
 
-msgid "Receive via LocalSend"
-msgstr "קבלה דרך LocalSend"
+msgid "Receive via Nearby BookDrop"
+msgstr "קבלה דרך Nearby BookDrop"
 
 msgid "Upload current book to Readest"
 msgstr "העלה את הספר הנוכחי ל-Readest"
@@ -359,17 +359,17 @@ msgstr "סנכרון הספרים נכשל"
 msgid "Set a Readest download folder or a KOReader home folder first."
 msgstr "תחילה הגדירו תיקיית הורדות של Readest או תיקיית בית של KOReader."
 
-msgid "LocalSend error: could not find a free port."
-msgstr "שגיאת LocalSend: לא נמצאה יציאה פנויה."
+msgid "Nearby BookDrop error: could not find a free port."
+msgstr "שגיאת Nearby BookDrop: לא נמצאה יציאה פנויה."
 
-msgid "LocalSend failed to start."
-msgstr "הפעלת LocalSend נכשלה."
+msgid "Nearby BookDrop failed to start."
+msgstr "הפעלת Nearby BookDrop נכשלה."
 
-msgid "Starting LocalSend…"
-msgstr "מפעיל את LocalSend…"
+msgid "Starting Nearby BookDrop…"
+msgstr "מפעיל את Nearby BookDrop…"
 
-msgid "LocalSend will start when Wi-Fi connects."
-msgstr "LocalSend יופעל כשה-Wi-Fi יתחבר."
+msgid "Nearby BookDrop will start when Wi-Fi connects."
+msgstr "Nearby BookDrop יופעל כשה-Wi-Fi יתחבר."
 
 msgid "… and %1 more"
 msgstr "… ועוד %1"
@@ -386,23 +386,23 @@ msgstr "דחה"
 msgid "Receiving %1 file(s) from %2…"
 msgstr "מקבל %1 קבצים מ-%2…"
 
-msgid "LocalSend: received %1 file(s), %2 failed."
-msgstr "LocalSend: התקבלו %1 קבצים, %2 נכשלו."
+msgid "Nearby BookDrop: received %1 file(s), %2 failed."
+msgstr "Nearby BookDrop: התקבלו %1 קבצים, %2 נכשלו."
 
-msgid "LocalSend transfer cancelled."
-msgstr "העברת LocalSend בוטלה."
+msgid "Nearby BookDrop transfer cancelled."
+msgstr "העברת Nearby BookDrop בוטלה."
 
-msgid "LocalSend: received %1 file(s)."
-msgstr "LocalSend: התקבלו %1 קבצים."
+msgid "Nearby BookDrop: received %1 file(s)."
+msgstr "Nearby BookDrop: התקבלו %1 קבצים."
 
-msgid "LocalSend not available on this device"
-msgstr "LocalSend אינו זמין במכשיר זה"
+msgid "Nearby BookDrop not available on this device"
+msgstr "Nearby BookDrop אינו זמין במכשיר זה"
 
 msgid "Scanning for nearby devices…"
 msgstr "סורק מכשירים בקרבת מקום…"
 
-msgid "No nearby devices found. Make sure the other device has LocalSend/Readest open."
-msgstr "לא נמצאו מכשירים בקרבת מקום. ודאו שה-LocalSend/Readest פתוח במכשיר האחר."
+msgid "No nearby devices found. Make sure the other device has Nearby BookDrop or LocalSend open."
+msgstr "לא נמצאו מכשירים בקרבת מקום. ודאו ש-Nearby BookDrop או LocalSend פתוח במכשיר האחר."
 
 msgid "Rescan"
 msgstr "סרוק שוב"
@@ -428,11 +428,11 @@ msgstr "ההעברה בוטלה."
 msgid "Send failed: %1"
 msgstr "השליחה נכשלה: %1"
 
-msgid "LocalSend error: %1"
-msgstr "שגיאת LocalSend: %1"
+msgid "Nearby BookDrop error: %1"
+msgstr "שגיאת Nearby BookDrop: %1"
 
-msgid "LocalSend off"
-msgstr "LocalSend כבוי"
+msgid "Nearby BookDrop off"
+msgstr "Nearby BookDrop כבוי"
 
 msgid "Visible as %1"
 msgstr "מופיע בשם %1"
