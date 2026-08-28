@@ -107,6 +107,14 @@ export interface Book {
   group?: string; // deprecated in favor of groupId and groupName
   groupId?: string;
   groupName?: string;
+  // Field-level LWW timestamp for group membership (groupId + groupName), so an
+  // unrelated row bump cannot clobber a grouping edit. The row's updatedAt is
+  // stamped by things that have nothing to do with groups -- most notably
+  // `cloudService.uploadBook`, which bumps it on every UPLOAD -- so whole-row
+  // LWW let a peer holding a never-grouped copy win and erase the group for the
+  // whole fleet (#5911). Mirrors readingStatusUpdatedAt / coverUpdatedAt /
+  // metadataUpdatedAt.
+  groupUpdatedAt?: number | null;
   tags?: string[];
   coverImageUrl?: string | null;
   // Partial MD5 of the local cover.png. Content-addressed cover-change signal:

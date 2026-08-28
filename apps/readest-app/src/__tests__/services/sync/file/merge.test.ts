@@ -236,7 +236,27 @@ describe('mergeBookMetadata (LWW field subset)', () => {
     expect(m.groupName).toBe('Sci-Fi');
   });
 
-  test('propagates group removal when remote cleared membership (#4942)', () => {
+  test('propagates a STAMPED group removal (#4942, now on the group clock)', () => {
+    const local = {
+      hash: 'h',
+      title: 'T',
+      author: 'A',
+      groupId: 'g1',
+      groupName: 'Sci-Fi',
+      updatedAt: 1,
+      groupUpdatedAt: 1,
+    } as Book;
+    const remote = { hash: 'h', title: 'T', author: 'A', updatedAt: 9, groupUpdatedAt: 9 } as Book;
+    const m = mergeBookMetadata(local, remote);
+    expect(m.groupId).toBeUndefined();
+    expect(m.groupName).toBeUndefined();
+  });
+
+  test('an UNSTAMPED ungrouped remote row never clears the group (#5911)', () => {
+    // The data loss: `updatedAt` is bumped by an upload as well as by an edit,
+    // so a peer that never learned about the group could win the row and erase
+    // it for the whole fleet. With both sides unstamped (every legacy row) the
+    // group is preserved instead.
     const local = {
       hash: 'h',
       title: 'T',
@@ -245,10 +265,36 @@ describe('mergeBookMetadata (LWW field subset)', () => {
       groupName: 'Sci-Fi',
       updatedAt: 1,
     } as Book;
-    const remote = { hash: 'h', title: 'T', author: 'A', updatedAt: 9 } as Book;
+    const remote = { hash: 'h', title: 'T', author: 'A', updatedAt: 9_000 } as Book;
     const m = mergeBookMetadata(local, remote);
-    expect(m.groupId).toBeUndefined();
-    expect(m.groupName).toBeUndefined();
+    expect(m.groupId).toBe('g1');
+    expect(m.groupName).toBe('Sci-Fi');
+  });
+
+  test('a group edit that lost the row clock still wins (#5911)', () => {
+    const local = {
+      hash: 'h',
+      title: 'T',
+      author: 'A',
+      groupId: 'g1',
+      groupName: 'Sci-Fi',
+      updatedAt: 1,
+      groupUpdatedAt: 300,
+    } as Book;
+    const remote = { hash: 'h', title: 'T', author: 'A', updatedAt: 9_000 } as Book;
+    expect(mergeBookMetadata(local, remote).groupId).toBe('g1');
+  });
+
+  test('an absent remote metadata blob never clears the local description (#5912)', () => {
+    const local = {
+      hash: 'h',
+      title: 'T',
+      author: 'A',
+      updatedAt: 1,
+      metadata: { title: 'T', author: 'A', description: 'A long blurb' },
+    } as Book;
+    const remote = { hash: 'h', title: 'T', author: 'A', updatedAt: 9_000 } as Book;
+    expect(mergeBookMetadata(local, remote).metadata?.description).toBe('A long blurb');
   });
 
   test('carries remote tags when remote is newer; tag removal propagates', () => {

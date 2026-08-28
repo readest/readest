@@ -22,7 +22,12 @@ import {
   stripDeviceLocalFields,
   RemoteLibraryIndex,
 } from './wire';
-import { mergeBookConfig, mergeBookMetadata, shouldApplyRemoteBookMetadata } from './merge';
+import {
+  isRemoteBookClockNewer,
+  mergeBookConfig,
+  mergeBookMetadata,
+  shouldApplyRemoteBookMetadata,
+} from './merge';
 
 export type SyncStrategy = 'silent' | 'send' | 'receive';
 
@@ -744,22 +749,31 @@ export class FileSyncEngine {
         async (rb) => {
           const local = allBooksMap.get(rb.hash)!;
           const merged = mergeBookMetadata(local, rb);
+          // A book can also reach this pass with no clock newer at all, when
+          // the index simply holds a group or a description this device is
+          // missing (#5911 / #5912). That is an index-field repair: nothing
+          // says the remote BYTES moved, so it must not cost a cover GET and a
+          // config GET per book — which on a first run after the fix would be
+          // one of each for the whole library.
+          const bytesMayHaveMoved = isRemoteBookClockNewer(local, rb);
           // Re-pull the cover so a changed cover travels with the metadata. The
           // subsequent push-side pushBookCover HEAD/size short-circuit then
           // matches (local now equals remote), so we never bounce it back up.
-          try {
-            const coverBytes = await this.pullBookCover(rb.hash);
-            if (coverBytes) await this.store.saveBookCover(merged, coverBytes);
-          } catch (e) {
-            noteAbort(e);
-            console.warn('file sync: metadata cover pull failed', rb.hash, e);
+          if (bytesMayHaveMoved) {
+            try {
+              const coverBytes = await this.pullBookCover(rb.hash);
+              if (coverBytes) await this.store.saveBookCover(merged, coverBytes);
+            } catch (e) {
+              noteAbort(e);
+              console.warn('file sync: metadata cover pull failed', rb.hash, e);
+            }
           }
           // Incremental only: the per-book push loop below skips remote-newer
           // books, so pull their config here too — otherwise a peer's progress /
           // notes wouldn't propagate without re-walking every book. In full-sync
           // mode the push loop pulls each config, so we skip this to avoid a
           // duplicate GET.
-          if (!fullSync) {
+          if (!fullSync && bytesMayHaveMoved) {
             try {
               const localConfig = (await this.store.loadConfig(merged)) ?? {
                 updatedAt: 0,

@@ -118,6 +118,11 @@ export function useClipUrlIngress() {
         }
         if (options.groupId) ingested.groupId = options.groupId;
         if (options.groupName) ingested.groupName = options.groupName;
+        if (options.groupId || options.groupName) {
+          // Group membership merges on its own clock (#5911).
+          ingested.updatedAt = Date.now();
+          ingested.groupUpdatedAt = ingested.updatedAt;
+        }
         await useLibraryStore.getState().updateBooks(envConfig, [ingested]);
         eventDispatcher.dispatch('toast', {
           type: 'success',

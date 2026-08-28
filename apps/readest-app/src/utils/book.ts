@@ -241,6 +241,69 @@ export const getPrimaryLanguage = (lang: string | string[] | undefined) => {
   return 'en';
 };
 
+/** The group-membership fields resolved together by {@link pickFresherGroup}. */
+export interface BookGroupFields {
+  groupId?: string;
+  groupName?: string;
+  groupUpdatedAt?: number | null;
+}
+
+/**
+ * Field-level last-writer-wins for group membership (issue #5911), the client
+ * mirror of `resolveGroupMerge` in `pages/api/sync.ts`. Shared by the native
+ * cloud merge (`useBooksSync`) and the third-party file-sync merge
+ * (`services/sync/file/merge.ts`) so both backends resolve a group the same way.
+ *
+ * Group membership used to ride the row's `updatedAt`, which is stamped by
+ * operations that have nothing to do with grouping — above all
+ * `cloudService.uploadBook`, which bumps it on every UPLOAD. A peer holding a
+ * never-grouped copy of a row could therefore win whole-row LWW and erase the
+ * group, and the emptied row then propagated to every other device.
+ *
+ * Resolution, in order:
+ *   1. Different stamps → the newer stamp wins. This is what makes a real
+ *      grouping edit — including a removal — propagate regardless of who won
+ *      the row (#4942).
+ *   2. Equal stamps, one side grouped and the other not → the GROUPED side
+ *      wins. On a tie an absent group is ambiguous: "never grouped" and
+ *      "ungrouped by a client too old to stamp" are indistinguishable, and the
+ *      legacy fleet is entirely unstamped (0 === 0). Erasing a real group is
+ *      unrecoverable; losing an un-group is not, and the next stamped edit
+ *      resolves it.
+ *   3. Equal stamps and both sides agree about having a group → the row winner,
+ *      preserving the historical behaviour for two genuinely competing groups.
+ */
+export const pickFresherGroup = <T extends BookGroupFields>(
+  local: T,
+  remote: T,
+  remoteRowWins: boolean,
+): BookGroupFields => {
+  const localMs = local.groupUpdatedAt ?? 0;
+  const remoteMs = remote.groupUpdatedAt ?? 0;
+  let winner: T;
+  if (localMs !== remoteMs) {
+    winner = remoteMs > localMs ? remote : local;
+  } else {
+    const localHasGroup = !!local.groupId || !!local.groupName;
+    const remoteHasGroup = !!remote.groupId || !!remote.groupName;
+    if (localHasGroup !== remoteHasGroup) {
+      winner = localHasGroup ? local : remote;
+    } else {
+      winner = remoteRowWins ? remote : local;
+    }
+  }
+  return {
+    groupId: winner.groupId,
+    groupName: winner.groupName,
+    groupUpdatedAt: winner.groupUpdatedAt,
+  };
+};
+
+/** True when `resolved` names a different group than `current` does. */
+export const bookGroupDiffers = (current: BookGroupFields, resolved: BookGroupFields): boolean =>
+  (current.groupId ?? undefined) !== (resolved.groupId ?? undefined) ||
+  (current.groupName ?? undefined) !== (resolved.groupName ?? undefined);
+
 // Immutably apply edited metadata to a book, returning a NEW book object.
 // Callers must not mutate the existing book in place: <BookCover> is memoized
 // and compares fields off the book, so an in-place mutation makes the memo's

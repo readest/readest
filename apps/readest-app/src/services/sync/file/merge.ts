@@ -1,5 +1,6 @@
 import { Book, BookConfig, BookNote } from '@/types/book';
 import { resolveReferencePageCount } from '@/utils/progress';
+import { bookGroupDiffers, pickFresherGroup } from '@/utils/book';
 import { RemoteBookConfig } from './wire';
 
 /**
@@ -115,12 +116,18 @@ export const mergeBookConfig = (
  *
  * Two independent merge clocks, mirroring the native cloud sync:
  *   - The metadata field subset applies only when `remote.updatedAt` is
- *     strictly newer (whole-subset LWW). Group membership (`groupId` /
- *     `groupName`) and `tags` travel with it — without them a re-group or
- *     re-tag of an already-synced book bumps `updatedAt`, wins LWW, yet the
- *     change is dropped by the overlay and never propagates (#4942).
- *     Assigning the raw remote values (not `?? local`) lets removals
- *     (undefined) clear on peers too.
+ *     strictly newer (whole-subset LWW). `tags` travels with it — without that
+ *     a re-tag of an already-synced book bumps `updatedAt`, wins LWW, yet the
+ *     change is dropped by the overlay and never propagates (#4942). Assigning
+ *     the raw remote value (not `?? local`) lets removals clear on peers too.
+ *   - Group membership (`groupId` / `groupName`) used to ride that same clock,
+ *     and that is what erased users' groups fleet-wide (#5911): `updatedAt` is
+ *     stamped by an UPLOAD as well as by an edit, so a peer holding a
+ *     never-grouped copy could win the row and clear the group. It now merges
+ *     on its own `groupUpdatedAt` clock via `pickFresherGroup`, which also
+ *     refuses to let an unstamped ungrouped row clear a group. A stamped
+ *     removal still propagates — that is the #4942 contract, now on the right
+ *     clock.
  *   - `readingStatus` merges on its own `readingStatusUpdatedAt` clock
  *     (field-level LWW, the client-side mirror of the native server merge,
  *     #4634). This survives the asymmetric race where this device edited
@@ -152,8 +159,6 @@ export const mergeBookMetadata = (local: Book, remote: Book): Book => {
         author: remote.author,
         metadata: remote.metadata ?? local.metadata,
         primaryLanguage: remote.primaryLanguage ?? local.primaryLanguage,
-        groupId: remote.groupId,
-        groupName: remote.groupName,
         tags: remote.tags,
         progress: remote.progress ?? local.progress,
         updatedAt: remote.updatedAt,
@@ -183,6 +188,18 @@ export const mergeBookMetadata = (local: Book, remote: Book): Book => {
     merged.primaryLanguage = winner.primaryLanguage ?? merged.primaryLanguage;
     merged.metadataUpdatedAt = winner.metadataUpdatedAt;
   }
+  // Group membership on its own clock (#5911), resolved after both row-level
+  // branches so it is applied whichever side won the row.
+  const group = pickFresherGroup(local, remote, remoteMetaNewer);
+  merged.groupId = group.groupId;
+  merged.groupName = group.groupName;
+  merged.groupUpdatedAt = group.groupUpdatedAt;
+  // An absent `metadata` blob means "this side never had one" — a cloud-shelf
+  // row, a discovery row, an old client — never "the user cleared it": nothing
+  // in the app empties book.metadata. So it never wins, on any clock. Without
+  // this a metadata-less peer erased every book's description across the fleet
+  // (#5912).
+  merged.metadata = merged.metadata ?? remote.metadata ?? local.metadata;
   return merged;
 };
 
@@ -196,16 +213,45 @@ export const isRemoteBookMetadataNewer = (local: Book, remote: Book): boolean =>
   !remote.deletedAt && !local.deletedAt && (remote.updatedAt ?? 0) > (local.updatedAt ?? 0);
 
 /**
- * Reconciliation trigger: apply `mergeBookMetadata` when the remote copy is
- * newer on ANY clock — book row (`updatedAt`), reading status
- * (`readingStatusUpdatedAt`), or the metadata group (`metadataUpdatedAt`,
- * #5438). Checking only `updatedAt` would skip the field-only-newer cases
- * entirely, so a peer's Finished mark or metadata edit could never reach a
- * device that touched the book row afterwards.
+ * True when the remote copy is newer on ANY clock — book row (`updatedAt`),
+ * reading status (`readingStatusUpdatedAt`), or the metadata group
+ * (`metadataUpdatedAt`, #5438). Checking only `updatedAt` would skip the
+ * field-only-newer cases entirely, so a peer's Finished mark or metadata edit
+ * could never reach a device that touched the book row afterwards.
+ *
+ * This is also what tells the engine the remote BYTES may have moved, so it is
+ * the gate for re-pulling the cover and the config — the repair cases below
+ * change only index fields and must not cost a download each.
  */
+export const isRemoteBookClockNewer = (local: Book, remote: Book): boolean =>
+  (remote.updatedAt ?? 0) > (local.updatedAt ?? 0) ||
+  (remote.readingStatusUpdatedAt ?? 0) > (local.readingStatusUpdatedAt ?? 0) ||
+  (remote.metadataUpdatedAt ?? 0) > (local.metadataUpdatedAt ?? 0);
+
+/**
+ * Fields the remote index holds that this device is missing outright, with no
+ * clock saying so — the repair half of the reconciliation trigger.
+ *
+ * Both cases are "an absent value must never win", and neither can loop:
+ * applying the merge makes the local row equal the resolution, after which
+ * this is false again.
+ *
+ *  - A group the resolution says this device should be showing but isn't. The
+ *    index re-push rebuilds library.json from the LOCAL rows, so without this
+ *    a device whose row merely TIED the row clock republished its ungrouped
+ *    copy over the peer's grouped one and the group was gone for the whole
+ *    fleet (#5911). `pickFresherGroup` is asked with `remoteRowWins: false`
+ *    on purpose: whenever the remote genuinely wins the row,
+ *    {@link isRemoteBookClockNewer} has already returned true, so the only
+ *    question left here is the tie — and on a tie the merge itself resolves
+ *    the same way.
+ *  - A description this device does not have and the peer does (#5912).
+ */
+export const isRemoteBookMissingLocally = (local: Book, remote: Book): boolean =>
+  bookGroupDiffers(local, pickFresherGroup(local, remote, false)) ||
+  (!local.metadata && !!remote.metadata);
+
 export const shouldApplyRemoteBookMetadata = (local: Book, remote: Book): boolean =>
   !remote.deletedAt &&
   !local.deletedAt &&
-  ((remote.updatedAt ?? 0) > (local.updatedAt ?? 0) ||
-    (remote.readingStatusUpdatedAt ?? 0) > (local.readingStatusUpdatedAt ?? 0) ||
-    (remote.metadataUpdatedAt ?? 0) > (local.metadataUpdatedAt ?? 0));
+  (isRemoteBookClockNewer(local, remote) || isRemoteBookMissingLocally(local, remote));

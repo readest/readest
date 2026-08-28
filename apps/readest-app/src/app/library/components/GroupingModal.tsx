@@ -131,6 +131,11 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
           book.groupId = undefined;
           book.groupName = undefined;
           book.updatedAt = Date.now();
+          // Group membership merges on its own clock so an unrelated row bump
+          // on a peer cannot clobber this edit (#5911). A removal MUST be
+          // stamped: an unstamped ungrouped row is treated as "never knew
+          // about the group" and loses to a grouped peer by design.
+          book.groupUpdatedAt = book.updatedAt;
         }
       }
     });
@@ -152,10 +157,12 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
             book.groupName = groupName;
             book.groupId = getGroupId(book.groupName);
             book.updatedAt = Date.now();
+            book.groupUpdatedAt = book.updatedAt;
           } else if (book.groupName?.startsWith(oldGroupName + '/')) {
             book.groupName = book.groupName.replace(oldGroupName, groupName);
             book.groupId = getGroupId(book.groupName);
             book.updatedAt = Date.now();
+            book.groupUpdatedAt = book.updatedAt;
           }
         });
 
@@ -208,6 +215,7 @@ const GroupingModal: React.FC<GroupingModalProps> = ({
           book.groupId = selectedGroup.id;
           book.groupName = selectedGroup.name;
           book.updatedAt = Date.now();
+          book.groupUpdatedAt = book.updatedAt;
         }
       }
     });
