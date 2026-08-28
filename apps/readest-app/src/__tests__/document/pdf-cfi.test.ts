@@ -31,7 +31,7 @@ describe('PDF CFI resolution with real document', () => {
   };
 
   beforeAll(async () => {
-    await import('foliate-js/pdf.js');
+    await import('@pdfjs/pdf.min.mjs');
     const pdfjsLib = (globalThis as Record<string, unknown>)['pdfjsLib'] as {
       GlobalWorkerOptions: { workerSrc: string };
     };

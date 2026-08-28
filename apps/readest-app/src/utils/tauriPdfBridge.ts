@@ -96,7 +96,7 @@ export const tryNativeParsePdf = async (
 
   const rust = metadataResult.status === 'fulfilled' ? metadataResult.value : undefined;
   const cover = coverResult.status === 'fulfilled' ? coverFromBase64(coverResult.value) : null;
-  const pdfMetadataModule = (await import('foliate-js/pdf-metadata.js')) as unknown as {
+  const pdfMetadataModule = (await import('foliate-js/pdf.js')) as unknown as {
     parsePDFMetadata: (input: {
       info?: RustPdfInfo;
       xmp?: number[] | Uint8Array | null;

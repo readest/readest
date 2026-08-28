@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parsePDFMetadata } from 'foliate-js/pdf-metadata.js';
+import { parsePDFMetadata } from 'foliate-js/pdf.js';
 import { DocumentLoader, type BookMetadata } from '@/libs/document';
 import { partialMD5 } from '@/utils/md5';
 import { invoke } from './tauri-invoke';

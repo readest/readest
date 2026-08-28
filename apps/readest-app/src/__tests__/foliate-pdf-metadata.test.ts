@@ -1,5 +1,13 @@
-import { describe, expect, it } from 'vitest';
-import { decodePDFString, parsePDFMetadata } from 'foliate-js/pdf-metadata.js';
+import { describe, expect, it, vi } from 'vitest';
+import { decodePDFString, parsePDFMetadata } from 'foliate-js/pdf.js';
+
+const { loadPdfJsRuntime } = vi.hoisted(() => ({ loadPdfJsRuntime: vi.fn() }));
+
+vi.mock('@pdfjs/pdf.min.mjs', () => {
+  loadPdfJsRuntime();
+  (globalThis as Record<string, unknown>)['pdfjsLib'] = { GlobalWorkerOptions: {} };
+  return {};
+});
 
 const bytes = (value: string): Uint8Array => new TextEncoder().encode(value);
 
@@ -30,6 +38,10 @@ const XMP = `<?xpacket begin=""?>
 </x:xmpmeta>`;
 
 describe('PDF metadata normalization', () => {
+  it('does not load the PDF.js runtime for metadata-only imports', () => {
+    expect(loadPdfJsRuntime).not.toHaveBeenCalled();
+  });
+
   it('decodes every PDF string encoding handled by pdf.js', () => {
     expect(decodePDFString(bytes('Plain ASCII'))).toBe('Plain ASCII');
     expect(decodePDFString(Uint8Array.from([0xef, 0xbb, 0xbf, 0xe4, 0xbd, 0xa0]))).toBe('你');
