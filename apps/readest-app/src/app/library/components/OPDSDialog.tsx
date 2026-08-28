@@ -16,8 +16,8 @@ export function CatalogDialog({ onClose }: CatalogDialogProps) {
       isOpen={true}
       title={appService?.isOnlineCatalogsAccessible ? _('Online Library') : _('OPDS Catalogs')}
       onClose={onClose}
-      bgClassName={'sm:!bg-black/75'}
-      boxClassName='sm:min-w-[520px] sm:w-3/4 sm:h-[85%] sm:!max-w-screen-sm'
+      bgClassName={'sm:bg-black/75!'}
+      boxClassName='sm:min-w-[520px] sm:w-3/4 sm:h-[85%] sm:max-w-(--breakpoint-sm)!'
     >
       <div className={clsx('bg-base-100 relative flex flex-col overflow-y-auto pb-4')}>
         <CatalogManager />

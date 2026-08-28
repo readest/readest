@@ -549,7 +549,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({ settings, onUpdateS
       {!cleanupMode && !loadError && entries.length > 0 && (
         <div className='flex items-center gap-2 px-1'>
           <div className='eink-bordered bg-base-100 flex h-8 min-w-0 flex-1 items-center rounded-lg'>
-            <MdSearch className='text-base-content/50 ms-2 h-4 w-4 flex-shrink-0' />
+            <MdSearch className='text-base-content/50 ms-2 h-4 w-4 shrink-0' />
             <input
               type='text'
               value={query}
@@ -560,13 +560,13 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({ settings, onUpdateS
               onKeyDown={(e) => e.stopPropagation()}
               placeholder={_('Filter')}
               aria-label={_('Filter')}
-              className='min-w-0 flex-1 bg-transparent px-2 text-sm focus:outline-none'
+              className='min-w-0 flex-1 bg-transparent px-2 text-sm focus:outline-hidden'
             />
             {query && (
               <button
                 type='button'
                 onClick={() => setQuery('')}
-                className='btn btn-ghost h-8 min-h-8 w-8 flex-shrink-0 rounded-none rounded-e-lg p-0'
+                className='btn btn-ghost h-8 min-h-8 w-8 shrink-0 rounded-none rounded-e-lg p-0'
                 title={_('Clear')}
                 aria-label={_('Clear')}
               >
@@ -579,7 +579,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({ settings, onUpdateS
             onChange={handleSortByChange}
             onKeyDown={(e) => e.stopPropagation()}
             aria-label={_('Sort by')}
-            className='select select-bordered select-sm eink-bordered bg-base-100 text-base-content h-8 min-h-8 flex-shrink-0'
+            className='select select-sm eink-bordered bg-base-100 text-base-content h-8 min-h-8 shrink-0'
           >
             <option value='name'>{_('Name')}</option>
             <option value='modified'>{_('Date modified')}</option>
@@ -589,7 +589,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({ settings, onUpdateS
           <button
             type='button'
             onClick={handleToggleDirection}
-            className='btn btn-ghost btn-sm eink-bordered h-8 min-h-8 w-8 flex-shrink-0 px-0'
+            className='btn btn-ghost btn-sm eink-bordered h-8 min-h-8 w-8 shrink-0 px-0'
             title={ascending ? _('Sort ascending') : _('Sort descending')}
             aria-label={ascending ? _('Sort ascending') : _('Sort descending')}
           >
@@ -686,7 +686,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({ settings, onUpdateS
                       // Checkbox replaces the icon: every visible
                       // row in cleanup is by definition deleted, so
                       // showing MdFolderOff for all of them is noise.
-                      <span className='flex h-8 w-8 flex-shrink-0 items-center justify-center'>
+                      <span className='flex h-8 w-8 shrink-0 items-center justify-center'>
                         <input
                           type='checkbox'
                           className='checkbox checkbox-sm'
@@ -701,7 +701,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({ settings, onUpdateS
                     ) : (
                       <span
                         className={clsx(
-                          'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded',
+                          'flex h-8 w-8 shrink-0 items-center justify-center rounded-sm',
                           'bg-base-200 text-base-content/70',
                         )}
                       >
@@ -763,7 +763,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({ settings, onUpdateS
                         }}
                         disabled={dlState === 'downloading' || dlState === 'done'}
                         className={clsx(
-                          'btn btn-ghost btn-sm h-8 min-h-8 flex-shrink-0 px-2',
+                          'btn btn-ghost btn-sm h-8 min-h-8 shrink-0 px-2',
                           (dlState === 'downloading' || dlState === 'done') && 'opacity-60',
                         )}
                         title={
@@ -817,7 +817,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({ settings, onUpdateS
                 }}
                 disabled={displayedEntries.length === 0 || isDeleting}
                 className={clsx(
-                  'btn btn-ghost btn-xs flex-shrink-0',
+                  'btn btn-ghost btn-xs shrink-0',
                   (displayedEntries.length === 0 || isDeleting) && 'opacity-40',
                 )}
               >
@@ -838,7 +838,7 @@ const WebDAVBrowsePane: React.FC<WebDAVBrowsePaneProps> = ({ settings, onUpdateS
                 onClick={handleDelete}
                 disabled={selected.size === 0 || isDeleting}
                 className={clsx(
-                  'btn btn-error btn-sm flex-shrink-0 gap-1',
+                  'btn btn-error btn-sm shrink-0 gap-1',
                   (selected.size === 0 || isDeleting) && 'opacity-60',
                 )}
               >

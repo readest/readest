@@ -153,7 +153,7 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
           {binding && !isListening && (
             <button
               type='button'
-              className='text-base-content/70 hover:text-base-content text-end text-[0.85em] focus:outline-none'
+              className='text-base-content/70 hover:text-base-content text-end text-[0.85em] focus:outline-hidden'
               disabled={!config.enabled}
               aria-label={`${_('Clear')}: ${label}`}
               onClick={() => persist({ ...config, bindings: { ...config.bindings, [slot]: null } })}
@@ -163,7 +163,7 @@ const PageTurnerSettings: React.FC<PageTurnerSettingsProps> = ({ bookKey, onRegi
           )}
           <button
             type='button'
-            className='text-base-content/70 hover:text-base-content py-1 text-end text-[0.85em] focus:outline-none'
+            className='text-base-content/70 hover:text-base-content py-1 text-end text-[0.85em] focus:outline-hidden'
             disabled={!config.enabled}
             aria-pressed={isListening}
             aria-label={`${label}: ${isListening ? _('Listening…') : _('Set key')}`}

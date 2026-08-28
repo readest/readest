@@ -58,6 +58,7 @@ function mockRouter() {
     forward: vi.fn(),
     refresh: vi.fn(),
     prefetch: vi.fn(),
+    bfcacheId: 'test-bfcache-id',
   };
 }
 

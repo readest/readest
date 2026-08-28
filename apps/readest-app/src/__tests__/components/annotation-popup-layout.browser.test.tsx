@@ -123,8 +123,11 @@ const expectElement = (locator: unknown) =>
  * where the triangle points up and highlight options float above.
  */
 const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  // One of the app's own themes, not daisyUI's stock `dark`: the stock palette
+  // is daisyUI's to change between releases (it did in v5), while the app's
+  // themes are pinned in themes.ts.
   <div
-    data-theme='dark'
+    data-theme='default-dark'
     style={{
       position: 'relative',
       width: POPUP_W,

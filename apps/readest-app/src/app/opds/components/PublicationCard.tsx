@@ -51,7 +51,7 @@ export function PublicationCard({
 
   return (
     <div role='none' onClick={onClick} className='card cursor-pointer transition-shadow'>
-      <figure className='bg-base-200 relative aspect-[28/41] overflow-hidden rounded shadow-md'>
+      <figure className='bg-base-200 relative aspect-[28/41] overflow-hidden rounded-sm shadow-md'>
         <CachedImage
           src={imageUrl}
           alt={publication.metadata?.title || 'Book cover'}

@@ -16,6 +16,8 @@ import { Overlay } from './Overlay';
 
 const VELOCITY_THRESHOLD = 0.5;
 const SNAP_THRESHOLD = 0.2;
+// How long the modal takes to fade and scale away once `isOpen` goes false.
+const CLOSE_TRANSITION_MS = 300;
 
 interface DialogProps {
   id?: string;
@@ -66,6 +68,28 @@ const Dialog: React.FC<DialogProps> = ({
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
   const iconSize22 = useResponsiveSize(22);
   const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
+
+  // Callers gate the body on the same flag they pass as `isOpen`
+  // (`<Dialog isOpen={open}>{open && <Body />}</Dialog>`), so the body would
+  // vanish on the frame the close starts and the box would collapse onto its
+  // title bar for the length of the fade. Keep the last body until the fade is
+  // over. The closing render picks it up itself rather than an effect handing
+  // it back: an effect only runs once React has already committed the tree
+  // without it, and a passive one only once the browser may have painted that.
+  // The state below just ends the hold.
+  const lastBodyRef = useRef<ReactNode>(null);
+  const [isBodyHoldOver, setIsBodyHoldOver] = useState(false);
+  if (isOpen) lastBodyRef.current = children;
+  const body = isOpen ? children : isBodyHoldOver ? null : lastBodyRef.current;
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsBodyHoldOver(false);
+      return;
+    }
+    const timer = setTimeout(() => setIsBodyHoldOver(true), CLOSE_TRANSITION_MS);
+    return () => clearTimeout(timer);
+  }, [isOpen]);
 
   const handleKeyDown = (event: KeyboardEvent | CustomEvent) => {
     if (event instanceof CustomEvent) {
@@ -199,7 +223,7 @@ const Dialog: React.FC<DialogProps> = ({
       aria-label={title}
       aria-hidden={!isOpen}
       className={clsx(
-        'modal sm:min-w-90 z-50 h-full w-full !items-start !bg-transparent sm:w-full sm:!items-center',
+        'modal sm:min-w-90 z-50 h-full w-full items-start! bg-transparent! sm:w-full sm:items-center!',
         className,
       )}
       dir={isRtl ? 'rtl' : undefined}
@@ -256,7 +280,7 @@ const Dialog: React.FC<DialogProps> = ({
                 onClick={onClose}
                 disabled={!dismissible}
                 className={
-                  'btn btn-ghost btn-circle flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-none disabled:bg-transparent sm:hidden'
+                  'btn btn-ghost btn-circle flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-hidden disabled:bg-transparent sm:hidden'
                 }
               >
                 {isRtl ? (
@@ -274,7 +298,7 @@ const Dialog: React.FC<DialogProps> = ({
                 onClick={onClose}
                 disabled={!dismissible}
                 className={
-                  'bg-base-300/65 btn btn-ghost btn-circle ml-auto hidden h-6 min-h-6 w-6 focus:outline-none sm:flex'
+                  'bg-base-300/65 btn btn-ghost btn-circle ml-auto hidden h-6 min-h-6 w-6 focus:outline-hidden sm:flex'
                 }
               >
                 <svg
@@ -299,23 +323,23 @@ const Dialog: React.FC<DialogProps> = ({
           // padding chassis so the body still occupies remaining height
           // and the children's horizontal rhythm is unchanged.
           <OverlayScrollbarsComponent
-            className={clsx('text-base-content my-2 flex-grow px-6 sm:px-[10%]', contentClassName)}
+            className={clsx('text-base-content my-2 grow px-6 sm:px-[10%]', contentClassName)}
             options={{
               scrollbars: { autoHide: 'scroll', clickScroll: true },
               showNativeOverlaidScrollbars: false,
             }}
             defer
           >
-            {children}
+            {body}
           </OverlayScrollbarsComponent>
         ) : (
           <div
             className={clsx(
-              'text-base-content my-2 flex-grow overflow-y-auto px-6 sm:px-[10%]',
+              'text-base-content my-2 grow overflow-y-auto px-6 sm:px-[10%]',
               contentClassName,
             )}
           >
-            {children}
+            {body}
           </div>
         )}
       </div>

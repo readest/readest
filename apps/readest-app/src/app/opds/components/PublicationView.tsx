@@ -191,7 +191,7 @@ export function PublicationView({
       // it opens.
       className={clsx(
         'dropdown-content no-triangle',
-        'border-base-300 eink-bordered !bg-base-200 z-20 mt-2 max-w-[80vw] min-w-max',
+        'border-base-300 eink-bordered bg-base-200! z-20 mt-2 max-w-[80vw] min-w-max',
         'rounded-2xl border shadow-2xl',
       )}
     >
@@ -215,7 +215,7 @@ export function PublicationView({
   // has no shape to split, so its caret rendered as a detached sliver.
   const SOLID_ACTION = 'btn btn-contrast';
   const FLAT_ACTION =
-    'btn eink-bordered border-transparent !bg-base-200 hover:!bg-base-300 text-base-content';
+    'btn eink-bordered border-transparent bg-base-200! hover:bg-base-300! text-base-content';
 
   /**
    * A default action plus, when there is more than one format to choose from, a
@@ -273,7 +273,7 @@ export function PublicationView({
   return (
     <div className='flex w-full flex-col px-6 py-6'>
       <div className='mb-6 flex w-full flex-row items-start gap-6 max-[320px]:flex-col'>
-        <div className='h-44 flex-shrink-0 sm:h-56 md:h-64'>
+        <div className='h-44 shrink-0 sm:h-56 md:h-64'>
           <div className='bg-base-200 relative aspect-[28/41] h-full overflow-hidden rounded-none shadow-lg'>
             <CachedImage
               src={imageUrl}

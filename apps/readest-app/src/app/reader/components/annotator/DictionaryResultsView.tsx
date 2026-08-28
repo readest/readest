@@ -503,7 +503,7 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
                 {isLoading && (
                   <div
                     data-testid='dict-card-skeleton'
-                    className='bg-base-200/50 h-12 animate-pulse rounded'
+                    className='bg-base-200/50 h-12 animate-pulse rounded-sm'
                   />
                 )}
                 <div

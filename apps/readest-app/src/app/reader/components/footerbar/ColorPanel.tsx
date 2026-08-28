@@ -142,7 +142,7 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
               key={name}
               onClick={() => setThemeColor(name)}
               className={clsx(
-                'flex flex-shrink-0 flex-col items-center justify-center rounded-lg p-3 transition-all',
+                'flex shrink-0 flex-col items-center justify-center rounded-lg p-3 transition-all',
                 'h-[40px] min-w-[80px]',
                 themeColor === name
                   ? 'ring-primary ring-offset-base-200 ring-2 ring-offset-2'
@@ -159,7 +159,7 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
           <button
             onClick={() => cycleThemeMode()}
             className={clsx(
-              'flex flex-shrink-0 flex-col items-center justify-center rounded-lg p-3 transition-all',
+              'flex shrink-0 flex-col items-center justify-center rounded-lg p-3 transition-all',
               'h-[40px] min-w-[80px]',
               themeMode === 'dark'
                 ? 'ring-primary ring-offset-base-200 ring-2 ring-offset-2'

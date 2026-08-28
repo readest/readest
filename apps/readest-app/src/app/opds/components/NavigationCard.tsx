@@ -20,7 +20,7 @@ export function NavigationCard({ item, baseURL, onClick, resolveURL }: Navigatio
     <div
       role='none'
       onClick={() => onClick(href)}
-      className='card bg-base-100 border-base-300 hover:bg-base-200/30 cursor-pointer rounded-lg border shadow-sm transition-shadow'
+      className='card bg-base-100 border-base-300 hover:bg-base-200/30 cursor-pointer rounded-lg border shadow-xs transition-shadow'
     >
       <div className='card-body flex justify-center p-4'>
         <div className='flex items-start gap-3'>
@@ -40,7 +40,7 @@ export function NavigationCard({ item, baseURL, onClick, resolveURL }: Navigatio
             )}
           </div>
           <div className='flex h-full items-center justify-center'>
-            <IoChevronForward className='text-base-content/40 h-5 w-5 flex-shrink-0' />
+            <IoChevronForward className='text-base-content/40 h-5 w-5 shrink-0' />
           </div>
         </div>
       </div>

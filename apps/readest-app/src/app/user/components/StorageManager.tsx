@@ -343,7 +343,7 @@ const StorageManager = () => {
               placeholder={_('Search files...')}
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className='input input-bordered input-sm w-full sm:w-64'
+              className='input input-sm w-full sm:w-64'
               disabled={loading}
             />
 
@@ -355,7 +355,7 @@ const StorageManager = () => {
                 setSortOrder(newSortOrder as 'asc' | 'desc');
               }}
               disabled={loading}
-              className='select select-bordered select-sm'
+              className='select select-sm'
             >
               <option value='created_at-desc'>{_('Newest First')}</option>
               <option value='created_at-asc'>{_('Oldest First')}</option>
@@ -399,7 +399,7 @@ const StorageManager = () => {
                     />
                   </div>
                 </th>
-                <th className='!ps-0'>{_('File Name')}</th>
+                <th className='ps-0!'>{_('File Name')}</th>
                 <th className='hidden sm:table-cell'>{_('Size')}</th>
                 <th className='hidden sm:table-cell'>{_('Created')}</th>
               </tr>
@@ -412,7 +412,7 @@ const StorageManager = () => {
                       <td className='min-w-16'>
                         <div className='skeleton h-5 w-5'></div>
                       </td>
-                      <td className='max-w-0 !ps-0 sm:w-[80%]'>
+                      <td className='max-w-0 ps-0! sm:w-[80%]'>
                         <div className='flex flex-col gap-2'>
                           <div className='skeleton h-4 w-3/4'></div>
                           <div className='skeleton h-3 w-1/2 sm:hidden'></div>
@@ -448,7 +448,7 @@ const StorageManager = () => {
                   return (
                     <React.Fragment key={bookHash}>
                       {/* Main book row */}
-                      <tr className='hover'>
+                      <tr className='hover:bg-base-200'>
                         <td>
                           <div className='flex items-center gap-1'>
                             <input
@@ -471,14 +471,14 @@ const StorageManager = () => {
                             )}
                           </div>
                         </td>
-                        <td className='max-w-0 !ps-0 sm:w-[80%]'>
+                        <td className='max-w-0 ps-0! sm:w-[80%]'>
                           <div className='flex flex-col'>
                             <div className='flex items-center gap-2'>
                               <span className='text-base-content block max-w-full truncate font-medium'>
                                 {getFileName(mainFile.file_key)}
                               </span>
                               {hasMultipleFiles && (
-                                <span className='text-base-content/60 flex-shrink-0 whitespace-nowrap text-xs'>
+                                <span className='text-base-content/60 shrink-0 whitespace-nowrap text-xs'>
                                   ({bookFiles.length} {_('files')})
                                 </span>
                               )}
@@ -500,7 +500,7 @@ const StorageManager = () => {
                       {/* Expanded files (excluding covers unless expanded) */}
                       {isExpanded &&
                         bookFiles.map((file) => (
-                          <tr key={file.file_key} className='hover bg-base-200/50'>
+                          <tr key={file.file_key} className='hover:bg-base-200 bg-base-200/50'>
                             <td>
                               <div className='pl-4'>
                                 <input
@@ -514,7 +514,7 @@ const StorageManager = () => {
                                 />
                               </div>
                             </td>
-                            <td className='max-w-0 !ps-0 sm:w-[80%]'>
+                            <td className='max-w-0 ps-0! sm:w-[80%]'>
                               <div className='flex flex-col'>
                                 <span className='text-base-content/80 text-xs'>
                                   {getFileName(file.file_key)}

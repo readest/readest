@@ -266,7 +266,7 @@ const AnnotationsToolbar: React.FC<AnnotationsToolbarProps> = ({
               if (e.key === 'Escape') onCloseSearch();
             }}
             placeholder={_('Search annotations...')}
-            className='w-full min-w-0 bg-transparent p-2 font-sans text-sm font-light focus:outline-none'
+            className='w-full min-w-0 bg-transparent p-2 font-sans text-sm font-light focus:outline-hidden'
           />
           <button
             onClick={onCloseSearch}

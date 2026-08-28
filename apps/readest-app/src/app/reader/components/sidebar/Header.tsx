@@ -64,7 +64,7 @@ const SidebarHeader: React.FC<{
             window.innerWidth < 640 ? 'dropdown-end' : 'dropdown-center',
             'dropdown-bottom',
           )}
-          menuClassName={clsx('no-triangle mt-1', window.innerWidth < 640 ? '' : '!relative')}
+          menuClassName={clsx('no-triangle mt-1', window.innerWidth < 640 ? '' : 'relative!')}
           buttonClassName='btn btn-ghost h-8 min-h-8 w-8 p-0'
           containerClassName='h-8'
           toggleButton={<MdOutlineMenu className='fill-base-content' />}

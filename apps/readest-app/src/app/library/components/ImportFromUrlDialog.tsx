@@ -69,7 +69,7 @@ const ImportFromUrlDialog: React.FC<ImportFromUrlDialogProps> = ({ isOpen, onClo
       // `sm:h-[65%]` so we don't end up with a near-full-height modal
       // for a one-line form. Width-constrained to a comfortable
       // reading measure.
-      boxClassName='sm:!w-[480px] sm:!max-w-[480px] sm:!h-auto sm:!max-h-[80vh]'
+      boxClassName='sm:w-[480px]! sm:max-w-[480px]! sm:h-auto! sm:max-h-[80vh]!'
     >
       <div className='flex flex-col gap-4 pb-6 pt-2'>
         <p className='text-base-content/60 text-sm leading-relaxed'>
@@ -78,10 +78,10 @@ const ImportFromUrlDialog: React.FC<ImportFromUrlDialogProps> = ({ isOpen, onClo
         <input
           type='url'
           autoFocus
-          // Explicit placeholder colour — daisyUI's `input-bordered`
+          // Explicit placeholder colour — daisyUI's input border
           // leaves placeholders too dark on light themes; the user
           // can mistake the example for actual content.
-          className='input input-bordered eink-bordered placeholder:text-base-content/35 w-full'
+          className='input eink-bordered placeholder:text-base-content/35 w-full'
           placeholder='https://example.com/article'
           value={url}
           disabled={submitting}

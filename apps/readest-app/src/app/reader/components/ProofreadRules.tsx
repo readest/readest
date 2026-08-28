@@ -119,7 +119,10 @@ const RuleItem: React.FC<{
             {isSelection ? _('Selected text:') : _('Find:')}
           </label>
           <input
-            className={clsx('input input-sm text-sm', isSelection && 'bg-base-200 opacity-60')}
+            className={clsx(
+              'input input-sm border-transparent text-sm',
+              isSelection && 'bg-base-200 opacity-60',
+            )}
             value={editingData.pattern}
             disabled={isSelection}
             spellCheck='false'
@@ -130,7 +133,7 @@ const RuleItem: React.FC<{
         <div className='flex flex-col gap-1.5'>
           <label className='text-base-content/70 text-xs font-medium'>{_('Replace with:')}</label>
           <input
-            className='input input-sm text-sm'
+            className='input input-sm border-transparent text-sm'
             value={editingData.replacement}
             spellCheck='false'
             onChange={(e) => onEditChange({ replacement: e.target.value })}
@@ -561,12 +564,12 @@ export const ProofreadRulesManager: React.FC = () => {
       title={_('Proofread Replacement Rules')}
       // Cap the height on desktop (where the modal is auto-height) so the body
       // scrolls; on mobile the modal is full-height and the body fills it.
-      boxClassName='sm:!min-w-[560px] sm:!max-w-[640px] sm:h-auto sm:!max-h-[80vh]'
+      boxClassName='sm:min-w-[560px]! sm:max-w-[640px]! sm:h-auto sm:max-h-[80vh]!'
       // Drop the body's default horizontal padding so the scrollbar rides the
       // modal's right edge (the inner `p-4 sm:p-6` keeps content off it), and
       // `min-h-0` lets the flex-grow body shrink-to-scroll inside the capped
       // modal instead of overflowing.
-      contentClassName='!px-0 min-h-0'
+      contentClassName='px-0! min-h-0'
     >
       {isOpen && (
         <div className='flex flex-col gap-6 p-4 sm:p-6'>
@@ -574,14 +577,14 @@ export const ProofreadRulesManager: React.FC = () => {
             <SectionTitle>{_('Add Rule')}</SectionTitle>
             <div className='card eink-bordered border-base-200 bg-base-100 gap-3 border p-4'>
               <input
-                className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+                className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
                 placeholder={_('Find...')}
                 spellCheck='false'
                 value={addPattern}
                 onChange={(e) => setAddPattern(e.target.value)}
               />
               <input
-                className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+                className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
                 placeholder={_('Replace with...')}
                 spellCheck='false'
                 value={addReplacement}
@@ -594,7 +597,7 @@ export const ProofreadRulesManager: React.FC = () => {
                 <label className='flex items-center gap-2'>
                   <span className='text-base-content/70 text-sm'>{_('Scope:')}</span>
                   <select
-                    className='select select-sm select-bordered eink-bordered min-h-9 h-9'
+                    className='select select-sm eink-bordered min-h-9 h-9'
                     value={addScope}
                     onChange={(e) =>
                       setAddScope(e.target.value as Exclude<ProofreadScope, 'selection'>)

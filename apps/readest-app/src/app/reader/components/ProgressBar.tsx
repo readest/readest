@@ -288,7 +288,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
         <div
           className={clsx(
-            'progress-info items-center text-end tabular-nums truncate',
+            'progress-readout items-center text-end tabular-nums truncate',
             !stickyBarActive && 'flex-1 min-w-0',
           )}
         >

@@ -7,11 +7,13 @@
 - [Paginator & Scroll Fixes](paginator-scroll-fixes.md) · [Build & CI Recipes](build-ci-recipes.md)
 ## Safety & Security
 - [Android launch crash: widget thumbnail 1px cover](widget-thumbnail-degenerate-cover-crash.md) `width must be > 0` in pluginScope.launch = fatal every launch; MERGED #5874 (79b4c2e7c), worktree removed; Xiaomi + emulator e2e VERIFIED; reporter verify pending; MIUI ADB-install dialog needs uiautomator tap and auto-denies when the screen is locked (use the emulator)
+- [Stripe checkout 500 on storage add-on](stripe-checkout-500-storage-purchase.md) root cause UNCONFIRMED; ui_mode ruled out; diagnostics MERGED #5896 give code/param only; Play builds cannot reproduce (hasIAP gate), desktop likely affected
 - [Apple lost storage purchase](apple-iap-lost-storage-purchase-restore-verify.md) 2 buyers CREDITED manually (MSXWGYVFZK 08-13, MLYD8F9573 08-25); restore-verify #5669 MERGED but UNRELEASED (v0.12.1 predates it) so shipped iOS Restore can't self-heal; credit recipe inside
 - [0.12.1 App Review crash](appstore-review-crash-0121-aswebauth-anchor.md) UNFIXED; `presentationAnchor` nil-window; reviewer = `xnu_development` in Sentry
 - [iOS <=16 fonts.ready WebContent crash](ios16-fonts-ready-webcontent-crash.md) MERGED #5654 + foliate#71; verify pending; poll `fonts.status` on old WebKit
 - [Google RTDN verify downgrade](google-rtdn-worker-verify-downgrade-incident.md) googleapis dead on workerd · [Play storage add-ons never consumed](google-iap-consume-storage-purchases.md) MERGED #5545
 - [In-place delete wiped originals](in-place-delete-wiped-originals.md) never `fs.removeFile` `external` · [#5084/#5265 "Delete locally" wiped Drive](gdrive-delete-locally-wiped-cloud-5084.md) MERGED #5376
+- [#5876 empty-library data location](migrate-data-empty-library-scan-guard-5876.md) MERGED #5878 (aa619f8f8); the `!filesToMigrate.length` guard ALSO stood in for "scan succeeded" -> dropping it let a failed `readDirectory` reach `deleteDir` and wipe the data dir; fix = `dirScanned` flag
 - [#4703 backup zip Win paths](backup-windows-zip-paths-4703.md) · [#4639 download_file scope](download-file-scope-android-regression.md)
 - [#5147 Drive "Untitled" root files](gdrive-untitled-root-files-5147.md) · [Security advisories 2026-06](security-advisories-web-2026-06.md)
 - [#5118 iOS PDF WebContent OOM](pdf-ios-webcontent-oom-zoom-5118.md) clamp renderDpr; [#5251 blurry desktop](pdf-blurry-desktop-dpr-clamp-5251.md) budget mobile-only
@@ -36,6 +38,7 @@
 - [#5675 font sync "Unknown error"](font-sync-download-unknown-error-5675.md) PR #5700; mkdir FUSED with id minting; `Unknown error` collapse UNFIXED
 - [#5716 reference page count never synced](reference-page-count-sync-5716.md) MERGED #5727; per-book viewSettings cross NEITHER backend; verify pending
 - [deleted_at OR cursor invariant](sync-deleted-at-cursor-invariant.md) load-bearing
+- [#5883 file sync never moved the live reader](file-sync-live-view-progress-5883.md) MERGED #5886 (39580e754), branch deleted; pullNow merged+toasted but never `view.goTo` unlike cloud/KOSync; jump is UNCONDITIONAL (merge is LWW both directions) + hint moved after the await; PUSH_DEBOUNCE_MS 15s -> 5s (trailing-only, page turns reset it); reporter verify pending, never device-tested
 - [#5839 Qiniu S3 "Authentication failed" on `()` keys](s3-key-rfc3986-wire-encoding-5839.md) MERGED #5849; Qiniu verify by reporter pending
 - [#5846 Hardcover picks the wrong book](hardcover-link-book-5846.md) MERGED #5857; Link Book picker + device-local `BookConfig.hardcover`; NOT verified live; cross-device link sync = follow-up
 - [#5818 KO highlight deletions lost to id-dedupe](koreader-highlight-deletion-dedupe-5818.md) MERGED #5853; `dedupeLatest` + latest-change merge; server half DEAD until web deploy; bookmark deletions still don't propagate
@@ -43,6 +46,7 @@
 - [#5838 koplugin auto sync Wi-Fi prompts](koplugin-auto-sync-no-wifi-bringup-5838.md) MERGED #5848 = bypass bring-up only for "prompt"; OP's turn_on shape NOT fixed by design; per-book push cursor = real fix for orphaned offline notes
 - [#5625 loadDocument parsererror fallback](loaddocument-xhtml-parsererror-5625.md) MERGED #5630 + foliate#70; device verify pending
 ## Build, Testing & CI
+- [TypeScript 7 upgrade #5260](typescript-7-upgrade-5260.md) MERGED #5893 (squash 09ce80872, 2026-08-26), worktree+branches cleared; `git rebase --skip` is BLOCKED by the auto-mode classifier so dev's 7 unsquashed #5884 duplicates cannot be rebased away from an agent turn (chrox used `git reset origin/main`); TS7 has NO JS compiler API and NO tsserver so `tsgo` bin is gone (lint = `tsc`); Next 16.2 hard-rejects TS>=7 -> next 16.3.3 whose `experimental.useTypeScriptCli` shells out to the same Go tsc (lint and `next build` lost their second opinion); TS7 enforces inferred rootDir under noEmit -> TS6059 on js-mdict, fix = `"rootDir": "../.."`; extension stays TS5 (ts-loader needs the removed API)
 - [Nix FOD hash staleness](nix-fod-hash-staleness.md) MERGED #5779; new pnpmDeps.hash from the PR check's `got:` line, NEVER docker/OrbStack (user ban)
 - Stable recipes → [Build & CI Recipes](build-ci-recipes.md) · [Store listings in fastlane](store-listings-fastlane-5573.md) MERGED #5573; readest-promotions NOT live
 - [git push needs the SOCKS proxy](git-push-socks-proxy.md) GitHub reachable ONLY via ~/.ssh/config ProxyCommand nc -x 127.0.0.1:8119; direct ssh.github.com:443 firewalled; pre-push hook holding the link idle stalls the push -> run gates manually + `git push --no-verify` w/ ServerAliveInterval
@@ -57,9 +61,13 @@
 - [APKs opened with Readest](android-intent-filter-pathpattern-needs-host.md) MERGED #5610, verify PENDING; `pathPattern` DEAD without `android:host`
 - [#5799 BT HID hotplug recreates activity](android-configchanges-navigation-recreate-5799.md) MERGED #5804; manifest regen reintroduces it; verify PENDING
 ## Reader Features & UI
+- [daisyUI 5 + Tailwind 4 migration](daisyui-v5-tailwind-v4-migration.md) MERGED #5884 (8ef527af7); fixes #5587 via base-select; custom CSS MUST live in `@layer utilities`; v3 palette + v4 metrics pinned; iOS floor 16.4, WebView floor 111. 3 post-merge regressions Chrome-VERIFIED 2026-08-27: toast collapsed to 0px (`w-auto` beats v5's `width:max-content`), `loading-lg` 2.5rem->1.75rem (already fixed by chrox in #5892), dialog close left a title-only strip (pre-existing on v4, fixed in Dialog by holding the body 300ms); toast+dialog = PR #5894 MERGED (800af00f3)
 - [#480 IDPF EPUB3 sample sweep](epub3-samples-idpf-480.md) MERGED #5872 (07371ccce) + foliate#84, worktree removed (inline MathML wrapper + math pre-wrap, epub:switch transformer, bitmap-spine viewport, SVG-spine font crash); all 42 samples Chrome-verified; reporter verify pending; calibre can't even open the bitmap/SVG-spine/kusamakura samples; full-screen calibre OCCLUDES Chrome (MCP timeouts)
 - [#1812 Kotobee EPUB embedded video](epub-embedded-video-kotobee-1812.md) MERGED #5868 (5aae8d6c5) + foliate #83; ROOT: script-built `<video src=../x.mp4>` can't resolve against the `blob:` base -> media error -> Kotobee tears its player down; Chromium + Xiaomi VERIFIED, reporter verify pending (issue still OPEN); adversarial probe caught a stale-resolution race on src-swap (fixed, tested); foliate squash-merges so ALWAYS re-pin the submodule; file:// VIEW intent does NOT import on Android (use the app picker); XHTML docs have lowercase tagName
 - Resolved/stable feature memories → [Reader Feature Fixes](reader-feature-fixes.md)
+- [#5887 footnote popup size](footnote-popup-content-size-5887.md) MERGED 7c0419961; e13f58c05 fixed the never-shown image popup; RO fit UNCAPPED + image staircase still OPEN
+- [#5766 footnote popup jump to location](footnote-popup-jump-to-location-5766.md) MERGED #5889 (squash aab58241d), worktree removed; Chrome VERIFIED, reporter verify pending; NEVER set non-zero `margin-*` on the popup renderer (88px box + margin row = infinite ResizeObserver loop, popup never opens); chrome OVERLAYS the text (pointer-events-none row), NEVER reserve a strip; jump button gated on `isLinkTargetVisible` (reader CSS hides inline notes); NEVER drop the popup's forced `follow:true` (#559)
+- [#5888 cross-page selection edge turn](cross-page-selection-edge-turn-5888.md) MERGED a91b503e5, cleaned up; 4 review defects fixed (cherry-pick onto real head, NEVER push the rebased worktree branch); `viewSettings.rtl` also true when UI lang is RTL; device verify pending
 - [#5852 TOC long headings truncated](toc-multiline-headings-5852.md) MERGED #5858; `min-w-0 break-words` (min-w-0 load-bearing); Chrome VERIFIED; reporter verify pending
 - [#5813 cover full screen](book-cover-fullscreen-viewer-5813.md) MERGED #5827; device verify pending; aria-labels are translated
 - [Audiobookshelf phases 1+2](audiobookshelf-integration-phase1.md) MERGED #5801 + #5841; abs_server sync DEAD until web deploy (migration 020); device verify pending
@@ -89,6 +97,7 @@
 - [Word Lens en-hu pack](wordlens-en-hu-pack-5738.md) PUBLISHED to R2 2026-08-20; merging does NOT publish, `pnpm wordlens:sync` is manual
 - [kaikki raw dump for Word Lens](wordlens-en-vi-pack-5737.md) per-language kaikki file DEPRECATED (wiktextract#1178); build streams raw-wiktextract-data.jsonl.gz gzipped, filters lang_code; MERGED #5861 2026-08-24; regenerated en-vi/en-hu SYNCED to CDN (verified sha256)
 - [Readest Voice self-hosted TTS](selfhosted-premium-tts-plans.md) APPROVED 2026-07-08; not started
+- [TTS word highlight skipped Word Lens words](tts-word-highlight-wordlens-ruby-collapse.md) `expandRangeOverRuby` widened over `cfi-skip` wl-gloss ruby -> before/after the ruby are the SAME CFI step -> range COLLAPSES -> empty highlight; fix = expand only for spoken kana `<rt>`; Xiaomi-verified (32/241 draws empty before)
 - [PR #5690 TTS download queue](tts-download-queue-5690.md) MERGED 2026-08-16, Xiaomi verified; non-pt-BR i18n pending
 - [#4584 tap-death](issue-4584-tap-death-investigation.md) UNFIXED; likely WebView-148 · [#5353 italic last glyph clipped](italic-synthetic-oblique-clip-5353.md) WebView regression, not Readest code
 - [#5250 invert img dead w/ overrideColor](invert-img-dark-override-5250.md) PR #5383 open, VERIFIED

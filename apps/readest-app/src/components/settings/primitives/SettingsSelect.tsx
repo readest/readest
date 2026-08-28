@@ -18,7 +18,7 @@ interface SettingsSelectProps {
 /**
  * Chromeless trailing-edge select for use inside `<SettingsRow>` /
  * `<BoxedList>`. Renders the daisyui `<select>` element with all chrome
- * suppressed (`!border-0 !bg-transparent !bg-none focus:!outline-none ...`)
+ * suppressed (`border-0! bg-transparent! bg-none! focus:outline-hidden! ...`)
  * plus a real `<MdArrowDropDown>` icon at the cell's trailing edge so the
  * chevron lands at the same X as toggles in adjacent rows.
  *
@@ -35,13 +35,17 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
 }) => {
   return (
     <div className='flex max-w-[60%] items-center rounded-md focus-within:bg-transparent hover:bg-transparent'>
+      {/* No `appearance-none!` here: daisyUI's `.select` already hides the
+          native arrow and, where supported, opts into `appearance: base-select`
+          so the option popup is painted by the page in the app theme instead
+          of by the OS (#5587). */}
       <select
         value={value}
         onChange={onChange}
         onKeyDown={(e) => e.stopPropagation()}
         disabled={disabled}
         aria-label={ariaLabel}
-        className='select settings-content h-9 min-w-0 cursor-pointer !appearance-none truncate !border-0 !bg-transparent !bg-none !pe-1 !ps-2 text-end focus:!border-0 focus:!shadow-none focus:!outline-none focus:!ring-0'
+        className='select settings-content h-9 min-w-0 cursor-pointer truncate border-0! bg-transparent! bg-none! pe-1! ps-2! text-end focus:border-0! focus:shadow-none! focus:outline-hidden! focus:ring-0! open:outline-hidden!'
         style={{
           textAlignLast: 'end',
         }}
@@ -54,7 +58,7 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
       </select>
       <MdArrowDropDown
         aria-hidden='true'
-        className='text-base-content/55 pointer-events-none h-5 w-5 flex-shrink-0'
+        className='text-base-content/55 pointer-events-none h-5 w-5 shrink-0'
       />
     </div>
   );

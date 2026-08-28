@@ -1,3 +1,5 @@
+import type { FoliateView } from '@/types/view';
+
 // Heuristically classify a link as a possible footnote marker based on its
 // text content. The bare numeric pattern matches things like `1`, `12`, `a1`,
 // `[1`, which are common when a book formats footnotes as plain digits.
@@ -37,4 +39,39 @@ export const shouldCheckAsFootnote = (anchor: HTMLAnchorElement): boolean => {
     container = container.parentElement;
   }
   return true;
+};
+
+// The reader hides inline footnote bodies in `getLayoutStyles`
+// (`.duokan-footnote-content`, `.epubtype-footnote`, `aside[epub|type~=note]`
+// and friends), so a link pointing at one leads to a spot the reader cannot
+// see. Report whether a link target is somewhere worth being taken to, so the
+// footnote popup can withhold its jump button (#5766).
+export const isLinkTargetVisible = (view: FoliateView, href: string): boolean => {
+  try {
+    const { index, anchor } = view.resolveNavigation(href);
+    const doc = view.renderer.getContents().find((content) => content.index === index)?.doc;
+    // An inline footnote body always sits beside its reference, so it is always
+    // in a rendered section. Anything else is a real destination, and loading
+    // its section just to measure would stall the popup.
+    if (!doc || !anchor) return true;
+    const resolved = anchor(doc) as unknown;
+    if (!resolved || typeof resolved === 'number') return true;
+    const node =
+      typeof resolved === 'object' && 'startContainer' in resolved
+        ? (resolved as Range).startContainer
+        : (resolved as Node);
+    let element = node.nodeType === 1 ? (node as Element) : node.parentElement;
+    // Walk the ancestors rather than measuring boxes: footnote targets are
+    // often empty inline anchors that have no box of their own even when the
+    // paragraph around them is on the page.
+    const window = doc.defaultView;
+    while (element && window) {
+      const { display, visibility } = window.getComputedStyle(element);
+      if (display === 'none' || visibility === 'hidden') return false;
+      element = element.parentElement;
+    }
+    return true;
+  } catch {
+    return true;
+  }
 };

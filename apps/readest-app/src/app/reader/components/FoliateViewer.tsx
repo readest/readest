@@ -460,7 +460,13 @@ const FoliateViewer: React.FC<{
         });
         detail.doc.addEventListener(
           'click',
-          handleClick.bind(null, bookKey, doubleClickDisabled, !!bookData?.isFixedLayout),
+          handleClick.bind(
+            null,
+            bookKey,
+            doubleClickDisabled,
+            !!bookData?.isFixedLayout,
+            bookData?.book?.format === 'CBZ',
+          ),
         );
         detail.doc.addEventListener('wheel', handleWheel.bind(null, bookKey));
         detail.doc.addEventListener('touchstart', handleTouchStart.bind(null, bookKey));
@@ -1086,7 +1092,7 @@ const FoliateViewer: React.FC<{
         role='main'
         aria-label={_('Book Content')}
         className={clsx(
-          'foliate-viewer absolute h-[100%] w-[100%] focus:outline-none',
+          'foliate-viewer absolute h-[100%] w-[100%] focus:outline-hidden',
           viewState?.loading && 'bg-base-100',
         )}
         style={{

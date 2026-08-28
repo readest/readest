@@ -50,6 +50,7 @@ const gridInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const makeProps = (overrides: Record<string, unknown> = {}) => ({
   bookKey: 'b1',
   isPlaying: true,
+  buffering: false,
   isEink: false,
   visible: true,
   hasTimeline: true,
@@ -415,5 +416,15 @@ describe('TTSMiniPlayer', () => {
     render(<TTSMiniPlayer {...props} />);
     fireEvent.click(screen.getByLabelText('Open Read Aloud player'));
     expect(props.onExpand).toHaveBeenCalled();
+  });
+
+  test('rings the play button while the engine has no audio out yet', () => {
+    const { rerender } = render(<TTSMiniPlayer {...makeProps()} />);
+    expect(screen.getByLabelText('Pause').getAttribute('aria-busy')).toBe('false');
+
+    rerender(<TTSMiniPlayer {...makeProps({ buffering: true })} />);
+    const busy = screen.getByLabelText('Pause');
+    expect(busy.getAttribute('aria-busy')).toBe('true');
+    expect(busy.querySelector('svg circle')).toBeTruthy();
   });
 });

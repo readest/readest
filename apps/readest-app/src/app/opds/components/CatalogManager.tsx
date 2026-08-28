@@ -182,7 +182,7 @@ function CatalogCard({
       }}
       className={clsx(
         'card eink-bordered bg-base-100 border-base-200 group/card flex flex-col border transition-colors duration-150',
-        'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+        'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
         isDragging && 'z-10 shadow-md',
         catalog.disabled ? 'cursor-not-allowed opacity-60' : 'hover:bg-base-300 cursor-pointer',
       )}
@@ -197,7 +197,7 @@ function CatalogCard({
             // onKeyDown) keeps handle clicks and Space/arrow keys from also
             // browsing the catalog.
             <div
-              className='-ms-1.5 -mt-1 flex-shrink-0'
+              className='-ms-1.5 -mt-1 shrink-0'
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
             >
@@ -207,7 +207,7 @@ function CatalogCard({
                   over the catalog name and swallow taps meant to browse. */}
               <button
                 type='button'
-                className='text-base-content/45 hover:bg-base-200 hover:text-base-content focus-visible:ring-base-content/15 flex h-7 w-7 cursor-grab touch-none items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 active:cursor-grabbing'
+                className='text-base-content/45 hover:bg-base-200 hover:text-base-content focus-visible:ring-base-content/15 flex h-7 w-7 cursor-grab touch-none items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 active:cursor-grabbing'
                 {...attributes}
                 {...listeners}
                 aria-label={_('Drag to reorder')}
@@ -218,7 +218,7 @@ function CatalogCard({
             </div>
           )}
           <h4 className='flex min-w-0 flex-1 items-center gap-1.5 text-sm font-semibold'>
-            {catalog.icon && <span className='flex-shrink-0'>{catalog.icon}</span>}
+            {catalog.icon && <span className='shrink-0'>{catalog.icon}</span>}
             <span className='truncate'>{catalog.name}</span>
           </h4>
           {/* stopPropagation on the trigger wrapper so opening
@@ -228,14 +228,14 @@ function CatalogCard({
               position:absolute rule — don't add !relative here
               or the menu inlines into the card layout. */}
           <div
-            className='-me-1.5 -mt-1 flex-shrink-0'
+            className='-me-1.5 -mt-1 shrink-0'
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
           >
             <Dropdown
               label={_('Catalog actions')}
               className='dropdown-bottom dropdown-end'
-              buttonClassName='text-base-content/55 hover:bg-base-200 hover:text-base-content focus-visible:ring-base-content/15 flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
+              buttonClassName='text-base-content/55 hover:bg-base-200 hover:text-base-content focus-visible:ring-base-content/15 flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2'
               toggleButton={<IoEllipsisVertical className='h-4 w-4' />}
             >
               <Menu className='dropdown-content no-triangle border-base-300 z-20 mt-1 min-w-[8rem] rounded-lg border shadow-lg'>
@@ -288,7 +288,7 @@ function CatalogCard({
             </span>
             <input
               type='checkbox'
-              className='toggle toggle-sm toggle-primary flex-shrink-0'
+              className='toggle toggle-sm toggle-primary shrink-0'
               checked={!!catalog.autoDownload}
               disabled={!!catalog.disabled}
               onChange={() => onRequestToggleAutoDownload(catalog.id)}
@@ -674,7 +674,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
           <SectionTitle>{_('My Catalogs')}</SectionTitle>
           <button
             onClick={() => setShowAddDialog(true)}
-            className='eink-bordered border-base-200 hover:border-base-300 hover:bg-base-200/60 focus-visible:ring-base-content/15 inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
+            className='eink-bordered border-base-200 hover:border-base-300 hover:bg-base-200/60 focus-visible:ring-base-content/15 inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2'
           >
             <IoAdd className='h-4 w-4' />
             {_('Add Catalog')}
@@ -735,9 +735,9 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                   <button
                     type='button'
                     onClick={() => handleOpenCatalog(catalog)}
-                    className='flex w-full min-w-0 items-center gap-1.5 rounded-sm text-start text-sm font-semibold transition-colors duration-150 hover:underline focus-visible:underline focus-visible:outline-none'
+                    className='flex w-full min-w-0 items-center gap-1.5 rounded-xs text-start text-sm font-semibold transition-colors duration-150 hover:underline focus-visible:underline focus-visible:outline-hidden'
                   >
-                    {catalog.icon && <span className='flex-shrink-0'>{catalog.icon}</span>}
+                    {catalog.icon && <span className='shrink-0'>{catalog.icon}</span>}
                     <span className='truncate'>{catalog.name}</span>
                   </button>
                 </h4>
@@ -749,14 +749,14 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                 <div className='border-base-200 mt-auto flex items-center justify-end gap-1 border-t pt-3'>
                   <button
                     onClick={() => handleAddPopularCatalog(catalog)}
-                    className='hover:bg-base-200 focus-visible:ring-base-content/15 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
+                    className='hover:bg-base-200 focus-visible:ring-base-content/15 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2'
                   >
                     <IoAdd className='h-4 w-4' />
                     {_('Add')}
                   </button>
                   <button
                     onClick={() => handleOpenCatalog(catalog)}
-                    className='hover:bg-base-200 focus-visible:ring-base-content/15 inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
+                    className='hover:bg-base-200 focus-visible:ring-base-content/15 inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2'
                   >
                     {_('Browse')}
                     <MdChevronRight className='h-4 w-4' />
@@ -783,24 +783,24 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                 }}
                 className='space-y-4'
               >
-                <div className='form-control'>
-                  <div className='label'>
-                    <span className='label-text'>{_('Catalog Name')} *</span>
+                <div className='flex flex-col'>
+                  <div className='flex select-none items-center justify-between px-1 py-2'>
+                    <span className='text-sm'>{_('Catalog Name')} *</span>
                   </div>
                   <input
                     type='text'
                     value={newCatalog.name}
                     onChange={(e) => setNewCatalog({ ...newCatalog, name: e.target.value })}
                     placeholder={_('My Calibre Library')}
-                    className='input input-bordered eink-bordered placeholder:text-sm'
+                    className='input eink-bordered placeholder:text-sm'
                     disabled={isValidating}
                     required
                   />
                 </div>
 
-                <div className='form-control'>
-                  <div className='label'>
-                    <span className='label-text'>{_('OPDS URL')} *</span>
+                <div className='flex flex-col'>
+                  <div className='flex select-none items-center justify-between px-1 py-2'>
+                    <span className='text-sm'>{_('OPDS URL')} *</span>
                   </div>
                   <input
                     type='url'
@@ -810,20 +810,20 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                       setUrlError('');
                     }}
                     placeholder='https://example.com/opds'
-                    className='input input-bordered eink-bordered placeholder:text-sm'
+                    className='input eink-bordered placeholder:text-sm'
                     disabled={isValidating}
                     required
                   />
                   {urlError && (
-                    <div className='label'>
-                      <span className='label-text-alt text-error'>{urlError}</span>
+                    <div className='flex select-none items-center justify-between px-1 py-2'>
+                      <span className='text-xs text-error'>{urlError}</span>
                     </div>
                   )}
                 </div>
 
-                <div className='form-control'>
-                  <div className='label'>
-                    <span className='label-text'>{_('Username (optional)')}</span>
+                <div className='flex flex-col'>
+                  <div className='flex select-none items-center justify-between px-1 py-2'>
+                    <span className='text-sm'>{_('Username (optional)')}</span>
                   </div>
                   <input
                     type='text'
@@ -833,15 +833,15 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                       setProxyConsentError('');
                     }}
                     placeholder={_('Username')}
-                    className='input input-bordered eink-bordered placeholder:text-sm'
+                    className='input eink-bordered placeholder:text-sm'
                     disabled={isValidating}
                     autoComplete='username'
                   />
                 </div>
 
-                <div className='form-control'>
-                  <div className='label'>
-                    <span className='label-text'>{_('Password (optional)')}</span>
+                <div className='flex flex-col'>
+                  <div className='flex select-none items-center justify-between px-1 py-2'>
+                    <span className='text-sm'>{_('Password (optional)')}</span>
                   </div>
                   <div className='relative'>
                     <input
@@ -852,7 +852,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                         setProxyConsentError('');
                       }}
                       placeholder={_('Password')}
-                      className='input input-bordered eink-bordered w-full pr-10 placeholder:text-sm'
+                      className='input eink-bordered w-full pr-10 placeholder:text-sm'
                       disabled={isValidating}
                       autoComplete='current-password'
                     />
@@ -871,9 +871,9 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                   </div>
                 </div>
 
-                <div className='form-control'>
-                  <div className='label'>
-                    <span className='label-text'>{_('Custom Headers (optional)')}</span>
+                <div className='flex flex-col'>
+                  <div className='flex select-none items-center justify-between px-1 py-2'>
+                    <span className='text-sm'>{_('Custom Headers (optional)')}</span>
                   </div>
                   <textarea
                     value={newCatalog.customHeadersInput}
@@ -886,26 +886,26 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                       'CF-Access-Client-Id': 'your-client-id',
                       'CF-Access-Client-Secret': 'your-client-secret',
                     })}
-                    className='textarea textarea-bordered eink-bordered font-mono text-sm placeholder:text-xs'
+                    className='textarea eink-bordered font-mono text-sm placeholder:text-xs'
                     rows={4}
                     disabled={isValidating}
                     spellCheck={false}
                   />
-                  <div className='label'>
-                    <span className='label-text-alt text-base-content/60'>
+                  <div className='flex select-none items-center justify-between px-1 py-2'>
+                    <span className='text-xs text-base-content/60'>
                       {_('Add one header per line using "Header-Name: value".')}
                     </span>
                   </div>
                   {headerError && (
-                    <div className='label pt-0'>
-                      <span className='label-text-alt text-error'>{headerError}</span>
+                    <div className='flex select-none items-center justify-between px-1 pb-2 pt-0'>
+                      <span className='text-xs text-error'>{headerError}</span>
                     </div>
                   )}
                 </div>
 
                 {isWebCatalogProxyWarningRequired && (
-                  <div className='form-control border-warning/30 bg-warning/10 rounded-lg border p-4'>
-                    <label className='label cursor-pointer items-start justify-start gap-3 p-0'>
+                  <div className='flex flex-col border-warning/30 bg-warning/10 rounded-lg border p-4'>
+                    <label className='flex cursor-pointer select-none items-start justify-start gap-3 p-0'>
                       <input
                         type='checkbox'
                         className='checkbox checkbox-sm mt-0.5'
@@ -916,36 +916,36 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                         }}
                         disabled={isValidating}
                       />
-                      <span className='label-text text-sm leading-6'>
+                      <span className='text-sm text-sm leading-6'>
                         {_(
                           'I understand this OPDS connection will be proxied through Readest servers on the web app. If I do not trust Readest with these credentials or headers, I should use the native app instead.',
                         )}
                       </span>
                     </label>
                     {proxyConsentError && (
-                      <div className='label px-0 pb-0 pt-2'>
-                        <span className='label-text-alt text-error'>{proxyConsentError}</span>
+                      <div className='flex select-none items-center justify-between px-0 pb-0 pt-2'>
+                        <span className='text-xs text-error'>{proxyConsentError}</span>
                       </div>
                     )}
                   </div>
                 )}
 
-                <div className='form-control'>
-                  <div className='label'>
-                    <span className='label-text'>{_('Description (optional)')}</span>
+                <div className='flex flex-col'>
+                  <div className='flex select-none items-center justify-between px-1 py-2'>
+                    <span className='text-sm'>{_('Description (optional)')}</span>
                   </div>
                   <textarea
                     value={newCatalog.description}
                     onChange={(e) => setNewCatalog({ ...newCatalog, description: e.target.value })}
                     placeholder={_('A brief description of this catalog')}
-                    className='textarea textarea-bordered eink-bordered text-sm placeholder:text-sm'
+                    className='textarea eink-bordered text-sm placeholder:text-sm'
                     rows={2}
                     disabled={isValidating}
                   />
                 </div>
 
-                <div className='form-control'>
-                  <label className='label cursor-pointer justify-start gap-3 p-0'>
+                <div className='flex flex-col'>
+                  <label className='flex cursor-pointer select-none items-center justify-start gap-3 p-0'>
                     <input
                       type='checkbox'
                       className='toggle toggle-sm toggle-primary'
@@ -956,7 +956,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                       disabled={isValidating}
                     />
                     <div>
-                      <span className='label-text'>{_('Auto-download new items')}</span>
+                      <span className='text-sm'>{_('Auto-download new items')}</span>
                       <p className='text-base-content/60 text-xs'>
                         {_('Automatically download new publications when the app syncs')}
                       </p>
@@ -974,7 +974,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                       'h-10 rounded-lg px-4 text-sm font-medium',
                       'text-base-content hover:bg-base-200',
                       'transition-colors duration-150',
-                      'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+                      'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
                       'disabled:cursor-not-allowed disabled:opacity-60',
                       'disabled:hover:bg-transparent',
                     )}
@@ -985,9 +985,9 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                     type='submit'
                     disabled={isValidating}
                     className={clsx(
-                      'btn btn-primary',
+                      'btn btn-contrast',
                       'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
-                      'focus-visible:ring-primary/40 focus-visible:outline-none focus-visible:ring-2',
+                      'focus-visible:ring-base-content/40 focus-visible:outline-hidden focus-visible:ring-2',
                       isValidating && 'opacity-60',
                     )}
                   >

@@ -158,7 +158,7 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
         className={clsx(
           'not-eink:bg-base-300 eink-bordered flex items-center gap-2 rounded-full shadow-lg',
           'h-14 max-w-[calc(100vw-2rem)] min-w-[60vw] sm:min-w-0 cursor-pointer px-2',
-          'focus-visible:ring-primary focus-visible:ring-2 focus-visible:outline-none',
+          'focus-visible:ring-primary focus-visible:ring-2 focus-visible:outline-hidden',
         )}
       >
         {coverImageUrl ? (
@@ -175,7 +175,7 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
         )}
         <button
           type='button'
-          className='touch-target shrink-0 p-1 focus-visible:ring-primary focus-visible:ring-2 focus-visible:outline-none'
+          className='touch-target shrink-0 p-1 focus-visible:ring-primary focus-visible:ring-2 focus-visible:outline-hidden'
           aria-label={isPlaying ? _('Pause') : _('Play')}
           onClick={(e) => {
             e.stopPropagation();
@@ -186,7 +186,7 @@ const NowPlayingBar = ({ isSelectMode }: NowPlayingBarProps) => {
         </button>
         <button
           type='button'
-          className='touch-target shrink-0 p-1 focus-visible:ring-primary focus-visible:ring-2 focus-visible:outline-none'
+          className='touch-target shrink-0 p-1 focus-visible:ring-primary focus-visible:ring-2 focus-visible:outline-hidden'
           aria-label={_('Stop reading aloud')}
           onClick={(e) => {
             e.stopPropagation();

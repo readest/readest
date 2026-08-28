@@ -163,7 +163,7 @@ jobs:
         run: |
           pnpm format:check || (pnpm format && git diff && exit 1)
 
-      # pnpm lint here is web-only (tsgo + biome). The koplugin syntax check
+      # pnpm lint here is web-only (tsc + biome). The koplugin syntax check
       # (lint:lua) runs in the test_extensions job, which installs LuaJIT only
       # when the koplugin sources changed.
       - name: run lint

@@ -846,7 +846,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
             'transition-colors duration-150',
             'hover:border-base-300 hover:bg-base-300/40',
             'active:bg-base-200/80',
-            'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+            'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
             'disabled:cursor-not-allowed disabled:opacity-60',
             'disabled:hover:border-base-200 disabled:hover:bg-base-100',
           )}
@@ -890,7 +890,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
             'transition-colors duration-150',
             'hover:border-base-300 hover:bg-base-300/40',
             'active:bg-base-200/80',
-            'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+            'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
           )}
         >
           <span
@@ -956,28 +956,28 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
               {webModal.editingId ? _('Edit Web Search') : _('Add Web Search')}
             </h3>
             <div className='mt-4 space-y-3'>
-              <label className='form-control w-full'>
-                <span className='label-text text-sm'>{_('Name')}</span>
+              <label className='flex flex-col w-full'>
+                <span className='text-sm text-sm'>{_('Name')}</span>
                 <input
                   type='text'
-                  className='input input-bordered input-sm w-full'
+                  className='input input-sm w-full'
                   value={webModal.name}
                   placeholder={_('e.g. Google')}
                   onChange={(e) => setWebModal((m) => (m ? { ...m, name: e.target.value } : m))}
                 />
               </label>
-              <label className='form-control w-full'>
-                <span className='label-text text-sm'>{_('URL Template')}</span>
+              <label className='flex flex-col w-full'>
+                <span className='text-sm text-sm'>{_('URL Template')}</span>
                 <input
                   type='url'
-                  className='input input-bordered input-sm w-full'
+                  className='input input-sm w-full'
                   value={webModal.urlTemplate}
                   placeholder='https://www.google.com/search?q=%WORD%'
                   onChange={(e) =>
                     setWebModal((m) => (m ? { ...m, urlTemplate: e.target.value } : m))
                   }
                 />
-                <span className='label-text-alt text-base-content/60 mt-1 text-xs'>
+                <span className='text-xs text-base-content/60 mt-1 text-xs'>
                   {_('Use %WORD% where the looked-up word should appear.')}
                 </span>
               </label>
@@ -1008,11 +1008,11 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           <div className='modal-box w-11/12 max-w-md'>
             <h3 className='text-base font-semibold'>{_('Edit Dictionary')}</h3>
             <div className='mt-4 space-y-3'>
-              <label className='form-control w-full'>
-                <span className='label-text text-sm'>{_('Name')}</span>
+              <label className='flex flex-col w-full'>
+                <span className='text-sm text-sm'>{_('Name')}</span>
                 <input
                   type='text'
-                  className='input input-bordered input-sm w-full'
+                  className='input input-sm w-full'
                   value={dictModal.name}
                   placeholder={_('Dictionary name')}
                   onChange={(e) => setDictModal((m) => (m ? { ...m, name: e.target.value } : m))}

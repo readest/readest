@@ -176,7 +176,7 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
           <p className='text-base'>{text}</p>
         </div>
 
-        <div className='mx-4 flex-shrink-0 border-t border-base-content/20'></div>
+        <div className='mx-4 shrink-0 border-t border-base-content/20'></div>
 
         <div className='overflow-y-auto p-4 font-sans'>
           <div className='mb-2 flex items-center justify-between'>

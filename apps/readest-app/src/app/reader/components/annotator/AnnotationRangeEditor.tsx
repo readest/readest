@@ -103,7 +103,13 @@ export const Handle: React.FC<HandleProps> = ({
         width={size}
         height={size + stemHeight}
         viewBox={`0 0 ${size} ${size + stemHeight}`}
-        className={clsx(type === 'start' && 'rotate-180')}
+        // NOTE: no `rotate-*` utility here. Tailwind v4 emits those as the
+        // standalone `rotate` property, which COMPOSES with `transform`
+        // instead of being overridden by it (v3 folded it into `transform`
+        // via --tw-rotate). A `rotate-180` alongside this transform added a
+        // half turn to every start handle: 180+180 = 0 horizontally and
+        // 180+270 = 90 vertically, both leaving the start ball on the same
+        // side as the end ball instead of mirroring it.
         style={{
           transform: isVertical
             ? type === 'start'

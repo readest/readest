@@ -552,7 +552,7 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
         // The dialog is focused programmatically (so it receives keys); it is not
         // a tab stop, so suppress the focus ring that would otherwise outline the
         // whole viewport.
-        'outline-none',
+        'outline-hidden',
         'transition-opacity duration-300 ease-out',
         isOverlayMounted ? 'opacity-100' : 'opacity-0',
       )}

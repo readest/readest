@@ -46,7 +46,7 @@ const AudiobookChapterPicker = ({
       <div className='border-base-200 flex items-center gap-2 border-b p-2'>
         <input
           type='search'
-          className='input input-sm eink-bordered min-w-0 flex-1'
+          className='input input-sm eink-bordered min-w-0 flex-1 border-transparent'
           aria-label={_('Search audio chapters')}
           placeholder={_('Search audio chapters')}
           value={query}
@@ -75,7 +75,7 @@ const AudiobookChapterPicker = ({
           onClick={() => onSelect('')}
         >
           <span className='min-w-0 flex-1'>{_('No audio')}</span>
-          {!value && <MdCheck className='h-5 w-5 flex-shrink-0' />}
+          {!value && <MdCheck className='h-5 w-5 shrink-0' />}
         </button>
         {filtered.map((chapter) => {
           const selected = chapter.id === value;
@@ -92,11 +92,11 @@ const AudiobookChapterPicker = ({
                 <span className='min-w-0 flex-1 truncate'>
                   {chapter.label} · {formatAudiobookTimecode(chapter.end - chapter.start)}
                 </span>
-                {selected && <MdCheck className='h-5 w-5 flex-shrink-0' />}
+                {selected && <MdCheck className='h-5 w-5 shrink-0' />}
               </button>
               <button
                 type='button'
-                className='btn btn-ghost btn-sm btn-square flex-shrink-0'
+                className='btn btn-ghost btn-sm btn-square shrink-0'
                 aria-label={
                   previewing
                     ? _('Stop previewing {{chapter}}', { chapter: chapter.label })

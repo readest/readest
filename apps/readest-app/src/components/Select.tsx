@@ -31,7 +31,7 @@ export default function Select({
         // Transparent so the select takes the color of whatever surface it sits
         // on (these all live in popups) instead of tinting a block onto it.
         'select bg-transparent h-8 min-h-8 max-w-[60%] truncate rounded-md border-none text-sm',
-        'focus:outline-none focus:ring-0 focus-visible:outline-none',
+        'focus:outline-hidden focus:ring-0 focus-visible:outline-hidden',
         className,
       )}
       disabled={disabled}

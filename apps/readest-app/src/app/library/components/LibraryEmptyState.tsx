@@ -48,7 +48,7 @@ const LibraryEmptyState: React.FC<LibraryEmptyStateProps> = ({ onImport }) => {
               className={clsx(
                 'text-base-content/70 hover:text-base-content mt-1 py-2 text-sm font-medium',
                 'underline underline-offset-4',
-                'focus-visible:text-base-content focus-visible:outline-none',
+                'focus-visible:text-base-content focus-visible:outline-hidden',
               )}
               onClick={() => navigateToLogin(router)}
             >

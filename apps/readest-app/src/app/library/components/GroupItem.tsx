@@ -103,7 +103,7 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
     <div className={clsx('group-item', appService?.hasContextMenu ? 'cursor-pointer' : '')}>
       <div
         className={clsx(
-          'groupitem-main relative flex overflow-hidden rounded',
+          'groupitem-main relative flex overflow-hidden rounded-sm',
           mode === 'grid' && 'bg-base-100 aspect-[28/41] items-center justify-center shadow-md',
           mode === 'list' && 'items-center justify-start gap-4 py-2',
         )}
@@ -140,7 +140,7 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
                 className={clsx(
                   'relative aspect-[28/41] h-full',
                   mode === 'grid' && 'w-full',
-                  mode === 'list' && 'flex-shrink-0',
+                  mode === 'list' && 'shrink-0',
                 )}
               >
                 <BookCover
@@ -154,7 +154,7 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
           </div>
           {mode === 'list' && showLeftArrow && (
             <div className='absolute left-[-0.5px] top-0 h-full w-12'>
-              <div className='from-base-200/85 via-base-200/20 absolute inset-0 bg-gradient-to-r to-transparent'></div>
+              <div className='from-base-200/85 via-base-200/20 absolute inset-0 bg-linear-to-r to-transparent'></div>
               <button
                 aria-label={_('Scroll left')}
                 onClick={handleLeftArrowClick}
@@ -165,7 +165,7 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
                 onPointerLeave={(e) => stopEvent(e)}
                 className='absolute left-2 top-1/2 -translate-y-1/2 transition-all duration-200 hover:scale-110'
               >
-                <div className='bg-base-100 border-base-content/10 hover:border-base-content/30 rounded-full border p-1 shadow-sm transition-colors duration-200'>
+                <div className='bg-base-100 border-base-content/10 hover:border-base-content/30 rounded-full border p-1 shadow-xs transition-colors duration-200'>
                   <MdChevronLeft
                     size={16}
                     className='text-base-content/50 hover:text-base-content/70'
@@ -176,7 +176,7 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
           )}
           {mode === 'list' && showRightArrow && (
             <div className='absolute right-[-0.5px] top-0 h-full w-12'>
-              <div className='from-base-200/85 via-base-200/20 absolute inset-0 bg-gradient-to-l to-transparent'></div>
+              <div className='from-base-200/85 via-base-200/20 absolute inset-0 bg-linear-to-l to-transparent'></div>
               <button
                 aria-label={_('Scroll right')}
                 onClick={handleRightArrowClick}
@@ -187,7 +187,7 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
                 onPointerLeave={(e) => stopEvent(e)}
                 className='absolute right-2 top-1/2 -translate-y-1/2 transition-all duration-200 hover:scale-110'
               >
-                <div className='bg-base-100 border-base-content/10 hover:border-base-content/30 rounded-full border p-1 shadow-sm transition-colors duration-200'>
+                <div className='bg-base-100 border-base-content/10 hover:border-base-content/30 rounded-full border p-1 shadow-xs transition-colors duration-200'>
                   <MdChevronRight
                     size={16}
                     className='text-base-content/50 hover:text-base-content/70'
@@ -210,7 +210,7 @@ const GroupItem: React.FC<GroupItemProps> = ({ mode, group, isSelectMode, groupS
             {groupSelected ? (
               <MdCheckCircle className='fill-blue-500' />
             ) : (
-              <MdCheckCircleOutline className='fill-gray-300 drop-shadow-sm' />
+              <MdCheckCircleOutline className='fill-gray-300 drop-shadow-xs' />
             )}
           </div>
         )}

@@ -40,7 +40,7 @@ const TextButton: React.FC<TextButtonProps> = ({
         'content settings-content btn btn-ghost hover:bg-transparent',
         'flex items-end p-0',
         sizeClasses[size],
-        disabled ? 'btn-disabled !bg-opacity-0' : '',
+        disabled ? 'btn-disabled bg-transparent!' : '',
         className,
       )}
       onClick={onClick}

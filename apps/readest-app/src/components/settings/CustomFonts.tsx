@@ -193,7 +193,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
             'border-base-200 hover:border-base-300 hover:bg-base-300/40 border',
             'text-base-content text-sm font-medium',
             'transition-colors duration-150',
-            'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+            'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
           )}
         >
           <span
@@ -212,7 +212,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
         </button>
 
         {importingFont && (
-          <div className='card border-base-200 bg-base-100 h-12 border shadow-sm'>
+          <div className='card border-base-200 bg-base-100 h-12 border shadow-xs'>
             <div className='card-body flex items-center justify-center p-2'>
               {typeof importingFont === 'object' ? (
                 <div
@@ -250,7 +250,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
             role='none'
             key={family.name}
             className={clsx(
-              'card h-12 border shadow-sm',
+              'card h-12 border shadow-xs',
               currentFontFamily === family.name
                 ? // eink-bordered: bg-primary/50 dodges the eink normalizer, so
                   // without it the selected card is black-on-black (#4454).

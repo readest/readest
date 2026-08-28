@@ -216,7 +216,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
             aria-label={_('Select {{style}} style', { style: _(style) })}
             onClick={() => handleSelectStyle(style)}
             className={clsx(
-              'eink-bordered not-eink:shadow-sm flex items-center justify-center rounded-full p-0',
+              'eink-bordered not-eink:shadow-xs flex items-center justify-center rounded-full p-0',
               'bg-base-300 theme-dark:bg-base-100',
               selectedStyle === style
                 ? 'border-current border-2'
@@ -248,7 +248,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
                 ...(style === 'squiggly' && { textDecorationStyle: 'wavy' }),
               }}
               className={clsx(
-                'decoration-inherit rounded-sm p-0 leading-none',
+                'decoration-inherit rounded-xs p-0 leading-none',
                 // The marker glyph always sets its own ink above, so it must
                 // stay off `text-base-content`: the e-ink rule for that class
                 // flattens the color with `!important`, which outranks the
@@ -281,7 +281,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
           title={_('Apply to every occurrence in the book')}
           onClick={() => onToggleGlobal?.()}
           className={clsx(
-            'not-eink:border-base-content/20 eink-bordered not-eink:shadow-sm flex flex-shrink-0 items-center justify-center rounded-full border p-0 transition-colors',
+            'not-eink:border-base-content/20 eink-bordered not-eink:shadow-xs flex shrink-0 items-center justify-center rounded-full border p-0 transition-colors',
             'bg-base-300 theme-dark:bg-base-100',
             globalToggleActive
               ? 'not-eink:text-primary'
@@ -297,7 +297,7 @@ const HighlightOptions: React.FC<HighlightOptionsProps> = ({
         ref={colorStripRef}
         {...stripPointerHandlers}
         className={clsx(
-          'not-eink:border-base-content/20 eink-bordered not-eink:shadow-sm flex items-center gap-2 rounded-3xl border',
+          'not-eink:border-base-content/20 eink-bordered not-eink:shadow-xs flex items-center gap-2 rounded-3xl border',
           'bg-base-300 theme-dark:bg-base-100',
           isVertical ? 'flex-col overflow-y-auto py-2' : 'min-w-0 flex-row overflow-x-auto px-2',
           !isVertical && 'cursor-grab',

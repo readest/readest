@@ -137,7 +137,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
           <div className={clsx('flex h-full w-full justify-start')}>
             <div
               className={clsx(
-                'flex h-full max-h-full items-end',
+                'flex h-full max-h-full',
                 mode === 'grid' ? 'items-end' : 'items-center',
               )}
             >

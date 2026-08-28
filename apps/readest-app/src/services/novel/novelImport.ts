@@ -49,6 +49,9 @@ export interface NovelBook extends ConvertedBook {
 export interface NovelDownloadOptions {
   onProgress?: (done: number, total: number) => void;
   signal?: AbortSignal;
+  /** Stable input for the EPUB identifier. Defaults to the chapter-list URL;
+   *  selected volumes supply their chapter URLs so each volume stays distinct. */
+  identityKey?: string;
   fetchPage?: FetchPage;
   fetchCover?: FetchCover;
   /** Runtime translator for text baked into the EPUB (failure placeholders).
@@ -283,7 +286,7 @@ export async function downloadNovel(
   const fetchPage = withTransientRetry(options.fetchPage ?? defaultFetchPage);
   const fetchCover = options.fetchCover ?? defaultFetchCover;
   const translate = options.translate ?? ((key: string) => key);
-  const { onProgress, signal } = options;
+  const { onProgress, signal, identityKey = sourceUrl } = options;
 
   const chapters = toc.chapters.slice(0, MAX_NOVEL_CHAPTERS);
   const total = chapters.length;
@@ -368,7 +371,7 @@ export async function downloadNovel(
       title: toc.title,
       author: toc.author,
       language,
-      identifier: stableIdentifier(sourceUrl),
+      identifier: stableIdentifier(identityKey),
     },
     [],
     cover,

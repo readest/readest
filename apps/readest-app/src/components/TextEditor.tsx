@@ -120,7 +120,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
       <textarea
         ref={editorRef}
         className={clsx(
-          'textarea textarea-ghost min-h-[1em] resize-none !outline-none',
+          'textarea textarea-ghost min-h-[1em] resize-none outline-hidden!',
           'inset-0 w-full rounded-none border-0 bg-transparent p-0',
           'content font-size-sm',
           className,

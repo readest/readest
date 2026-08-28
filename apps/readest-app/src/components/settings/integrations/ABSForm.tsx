@@ -156,7 +156,7 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
                   id='abs-server-url'
                   type='text'
                   placeholder='http://audiobookshelf.local:13378'
-                  className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+                  className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
                   spellCheck='false'
                   value={url}
                   onChange={(e) => {
@@ -174,7 +174,7 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
                   id='abs-username'
                   type='text'
                   placeholder={_('Your Username')}
-                  className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+                  className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
                   spellCheck='false'
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -190,7 +190,7 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
                   id='abs-password'
                   type='password'
                   placeholder={_('Your Password')}
-                  className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+                  className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete='current-password'
@@ -206,7 +206,7 @@ const ABSForm: React.FC<ABSFormProps> = ({ onBack }) => {
                   className={clsx(
                     'btn btn-contrast',
                     'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',
-                    'focus-visible:ring-base-content/40 focus-visible:outline-none focus-visible:ring-2',
+                    'focus-visible:ring-base-content/40 focus-visible:outline-hidden focus-visible:ring-2',
                     isConnecting && 'opacity-60',
                   )}
                 >
@@ -339,7 +339,7 @@ const ABSServerDetail: React.FC<ABSServerDetailProps> = ({
       <button
         type='button'
         onClick={onBack}
-        className='text-base-content/70 hover:text-primary -mt-2 px-4 text-[0.85em] transition-colors duration-150 focus-visible:underline focus-visible:outline-none'
+        className='text-base-content/70 hover:text-primary -mt-2 px-4 text-[0.85em] transition-colors duration-150 focus-visible:underline focus-visible:outline-hidden'
       >
         {_('All Servers')}
       </button>
@@ -351,7 +351,7 @@ const ABSServerDetail: React.FC<ABSServerDetailProps> = ({
         <input
           id='abs-server-name'
           type='text'
-          className='input input-bordered eink-bordered h-11 w-full text-sm focus:outline-none'
+          className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
           value={name}
           onChange={(e) => setName(e.target.value)}
           onBlur={handleNameBlur}
@@ -365,7 +365,7 @@ const ABSServerDetail: React.FC<ABSServerDetailProps> = ({
         <input
           type='text'
           disabled
-          className='input input-bordered eink-bordered h-11 w-full text-sm opacity-70'
+          className='input eink-bordered h-11 w-full text-sm opacity-70'
           value={server.url}
         />
       </div>
@@ -427,7 +427,7 @@ const ABSServerDetail: React.FC<ABSServerDetailProps> = ({
             'h-9 rounded-lg px-4 text-sm font-medium',
             'text-error hover:bg-error/10',
             'transition-colors duration-150',
-            'focus-visible:ring-error/40 focus-visible:outline-none focus-visible:ring-2',
+            'focus-visible:ring-error/40 focus-visible:outline-hidden focus-visible:ring-2',
             isRemoving && 'opacity-60',
           )}
         >

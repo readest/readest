@@ -114,7 +114,7 @@ export function Navigation({
         appService?.isMobile ? '' : 'bg-base-100',
       )}
     >
-      <div className={clsx('justify-start gap-1 sm:gap-3', isTrafficLightVisible && '!pl-16')}>
+      <div className={clsx('justify-start gap-1 sm:gap-3', isTrafficLightVisible && 'pl-16!')}>
         <div className='flex gap-1'>
           {onBack && (
             <button
@@ -142,7 +142,7 @@ export function Navigation({
         </button>
       </div>
 
-      <div className='flex-grow px-3 sm:px-5'>
+      <div className='grow px-3 sm:px-5'>
         <div className='exclude-title-bar-mousedown relative flex w-full items-center'>
           <span className='text-base-content/50 absolute left-3'>
             <FaSearch className='h-4 w-4' />
@@ -156,13 +156,13 @@ export function Navigation({
             onChange={handleSearchChange}
             spellCheck='false'
             className={clsx(
-              'input rounded-badge h-9 w-full pl-10 pr-4 sm:h-7',
+              'input rounded-selector h-9 w-full pl-10 pr-4 sm:h-7',
               viewSettings?.isEink
                 ? 'border-1 border-base-content focus:border-base-content'
                 : 'bg-base-300/45 border-none',
               'font-sans text-sm font-light',
               'placeholder:text-base-content/50 truncate',
-              'focus:outline-none focus:ring-0',
+              'focus:outline-hidden focus:ring-0',
             )}
           />
           <div className='text-base-content/50 absolute right-2 flex items-center space-x-2 sm:space-x-4'>

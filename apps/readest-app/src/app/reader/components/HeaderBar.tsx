@@ -261,7 +261,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
                   : _('Enable Quick Action on Selection')
               }
               className='exclude-title-bar-mousedown dropdown-bottom dropdown-center'
-              menuClassName='!relative'
+              menuClassName='relative!'
               buttonClassName={clsx(
                 'btn btn-ghost h-8 min-h-8 w-8 p-0',
                 viewSettings?.annotationQuickAction && 'bg-base-300/50',
@@ -296,7 +296,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           className={clsx(
             'header-title z-15 bg-base-100 pointer-events-none hidden flex-1 items-center justify-center sm:flex',
             !windowButtonVisible && 'absolute inset-0',
-            isHeaderCompact && '!hidden',
+            isHeaderCompact && 'hidden!',
           )}
           {...getBookDataAttributes(bookTitle, bookData?.book?.metadata)}
         >

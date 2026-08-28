@@ -164,7 +164,7 @@ export const CacheManagerWindow = () => {
   const ghostBtn = clsx(
     'eink-bordered flex h-11 items-center justify-center rounded-xl border border-transparent',
     'text-base-content hover:bg-base-200 text-sm font-medium transition-colors',
-    'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+    'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
     'disabled:opacity-40',
   );
 
@@ -194,7 +194,7 @@ export const CacheManagerWindow = () => {
       isOpen={isOpen}
       title={_('Manage Cache')}
       onClose={handleClose}
-      boxClassName='sm:!w-[440px] sm:!max-w-screen-sm sm:h-auto'
+      boxClassName='sm:w-[440px]! sm:max-w-(--breakpoint-sm)! sm:h-auto'
     >
       {isOpen && (
         <div className='cache-manager-content flex flex-col gap-7 px-2 pb-2 pt-3'>

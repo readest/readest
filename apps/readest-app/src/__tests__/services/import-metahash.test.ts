@@ -894,9 +894,9 @@ describe('importBook PDF filename-aware dedup', () => {
     language: 'en',
   };
 
-  function setupMockPdfDoc() {
+  function setupMockPdfDoc(metadata = PDF_METADATA) {
     const bookDoc = {
-      metadata: { ...PDF_METADATA },
+      metadata: { ...metadata },
       getCover: vi.fn().mockResolvedValue(null),
     };
     mockOpen.mockResolvedValue({ book: bookDoc, format: 'PDF' });
@@ -954,6 +954,45 @@ describe('importBook PDF filename-aware dedup', () => {
     expect(book2).toBe(book1);
     expect(books.filter((b) => !b.deletedAt)).toHaveLength(1);
     expect(book1!.hash).toBe('pdf-hash-2');
+  });
+
+  it('refreshes parsed metadata without comparing stored bytes on an exact-hash PDF re-import', async () => {
+    const originalMetadata = {
+      title: 'Canon R7 Custom Buttons',
+      author: 'Canon',
+      language: 'en',
+    };
+    const changedMetadata = { ...originalMetadata, author: 'Canon.com' };
+    const existingBook = makeBook({
+      hash: 'same-partial-hash',
+      format: 'PDF' as Book['format'],
+      metaHash: getMetadataHash(originalMetadata, 'canon-r7-custom-buttons'),
+      title: originalMetadata.title,
+      sourceTitle: originalMetadata.title,
+      author: originalMetadata.author,
+      metadata: originalMetadata,
+    });
+    const originalFile = new File(['original metadata bytes'], 'canon-r7-custom-buttons.pdf', {
+      type: 'application/pdf',
+    });
+    const changedFile = new File(['changed metadata bytes'], 'canon-r7-custom-buttons.pdf', {
+      type: 'application/pdf',
+    });
+
+    mockPartialMD5.mockResolvedValue(existingBook.hash);
+    setupMockPdfDoc(changedMetadata);
+    service.getFs().exists.mockImplementation(async (path: string) => path.endsWith('.pdf'));
+    service.getFs().openFile.mockResolvedValue(originalFile);
+
+    const imported = await service.importBook(changedFile, [existingBook]);
+
+    expect(imported).toBe(existingBook);
+    expect(existingBook.title).toBe(changedMetadata.title);
+    expect(existingBook.sourceTitle).toBe(originalMetadata.title);
+    expect(existingBook.author).toBe(changedMetadata.author);
+    expect(existingBook.metadata).toEqual(changedMetadata);
+    expect(existingBook.metadataUpdatedAt).toBe(existingBook.updatedAt);
+    expect(service.getFs().openFile).not.toHaveBeenCalled();
   });
 
   it('refreshBookMetadata preserves the salted metaHash for PDFs', async () => {

@@ -2,7 +2,7 @@ name: Readest
 options:
   bundleIdPrefix: com.bilingify.readest
   deploymentTarget:
-    iOS: 15.0
+    iOS: 16.4
 fileGroups: [../../src]
 packages:
   Sentry:
@@ -191,7 +191,7 @@ targets:
         # file was modified during the build", fix it by adding the
         # auto-derived keys to the source file, not by re-enabling this flag.
         SWIFT_VERSION: "5.0"
-        IPHONEOS_DEPLOYMENT_TARGET: 15.0
+        IPHONEOS_DEPLOYMENT_TARGET: 16.4
         ARCHS: [arm64]
         VALID_ARCHS: arm64
         EXCLUDED_ARCHS[sdk=iphoneos*]: x86_64
@@ -224,7 +224,7 @@ targets:
         # com.apple.security.application-groups, so the widget reads an empty
         # snapshot from the App Group and shows only the placeholder book icon.
         SWIFT_VERSION: "5.0"
-        IPHONEOS_DEPLOYMENT_TARGET: 15.0
+        IPHONEOS_DEPLOYMENT_TARGET: 16.4
         ARCHS: [arm64]
         VALID_ARCHS: arm64
         EXCLUDED_ARCHS[sdk=iphoneos*]: x86_64

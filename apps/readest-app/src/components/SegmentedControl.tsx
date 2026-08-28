@@ -78,7 +78,7 @@ const SegmentedControl = <T extends string | number>({
               fullWidth && 'flex-1',
               sizeClasses,
               selected
-                ? 'bg-primary text-primary-content shadow-sm'
+                ? 'bg-primary text-primary-content shadow-xs'
                 : 'text-base-content/70 hover:text-base-content',
             )}
           >

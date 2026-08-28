@@ -9,7 +9,7 @@ interface HighlightCharsProps {
 const HighlightChars: React.FC<HighlightCharsProps> = ({
   str,
   indices,
-  highlightClassName = 'bg-primary/30 text-primary rounded-sm',
+  highlightClassName = 'bg-primary/30 text-primary rounded-xs',
 }) => {
   if (indices.size === 0) {
     return <>{str}</>;

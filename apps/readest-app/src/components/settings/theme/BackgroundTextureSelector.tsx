@@ -81,9 +81,9 @@ const BackgroundTextureSelector: React.FC<BackgroundTextureSelectorProps> = ({
                   // em-based like SectionTitle, not rem-based text-sm — the
                   // settings-content wrapper scales 14/16px (DESIGN.md §5).
                   'flex h-9 items-center justify-center rounded-full px-3 text-[0.85em] font-medium transition-colors',
-                  'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+                  'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
                   active
-                    ? 'bg-base-300 text-base-content eink-inverted shadow-sm'
+                    ? 'bg-base-300 text-base-content eink-inverted shadow-xs'
                     : 'text-base-content/60 hover:text-base-content',
                 )}
               >

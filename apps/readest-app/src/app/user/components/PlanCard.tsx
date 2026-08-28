@@ -37,7 +37,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
   return (
     <div
       key={plan.plan}
-      className='w-full flex-shrink-0 px-4 py-6 sm:min-w-96 sm:max-w-96'
+      className='w-full shrink-0 px-4 py-6 sm:min-w-96 sm:max-w-96'
       style={{ scrollSnapAlign: 'start' }}
     >
       <div
@@ -61,7 +61,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
           {plan.features.map((feature, featureIndex) => (
             <div key={featureIndex} className='flex flex-col'>
               <div className='flex items-center gap-2'>
-                <IoCheckmark className='h-5 w-5 flex-shrink-0 text-green-500' />
+                <IoCheckmark className='h-5 w-5 shrink-0 text-green-500' />
                 <span>{_(feature.label)}</span>
               </div>
               {feature.description && (

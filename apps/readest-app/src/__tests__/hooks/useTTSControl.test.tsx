@@ -1069,6 +1069,9 @@ describe('useTTSControl background session lifecycle', () => {
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
       redispatchPosition: vi.fn(),
+      usesAudioTransport: vi.fn().mockReturnValue(false),
+      supportsLyrics: vi.fn().mockReturnValue(true),
+      isBuffering: vi.fn().mockReturnValue(false),
     };
     mockSessionManager.getSessionByHash.mockReturnValue({
       bookHash: 'book',

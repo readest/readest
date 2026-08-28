@@ -180,7 +180,7 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
       onClose={handleClose}
       snapHeight={appService?.isMobile ? 0.45 : undefined}
       dismissible={!isProcessing}
-      boxClassName='sm:!w-[520px] sm:!max-w-screen-sm sm:h-auto'
+      boxClassName='sm:w-[520px]! sm:max-w-(--breakpoint-sm)! sm:h-auto'
     >
       {isOpen && (
         <div className='backup-content flex flex-col gap-6 px-6 py-4'>

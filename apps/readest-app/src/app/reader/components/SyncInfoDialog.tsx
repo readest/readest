@@ -44,7 +44,7 @@ const SyncInfoDialog: React.FC<SyncInfoDialogProps> = ({
       onClose={onClose}
       snapHeight={0.7}
       title={_('Sync Info')}
-      boxClassName='sm:!min-w-[520px] sm:h-auto'
+      boxClassName='sm:min-w-[520px]! sm:h-auto'
     >
       {isOpen && (
         <div className='mb-4 mt-0 flex flex-col gap-3 p-2 sm:p-4'>

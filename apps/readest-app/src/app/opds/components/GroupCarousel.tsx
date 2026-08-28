@@ -95,7 +95,7 @@ export function GroupCarousel({
           aria-label={_('Scroll left')}
           onClick={() => scrollByPage(-1)}
           style={{ top: coverCenter ?? '50%' }}
-          className='eink-bordered bg-base-100 border-base-content/10 hover:border-base-content/30 absolute left-2 -translate-y-1/2 rounded-full border p-1 shadow-sm transition-colors duration-200'
+          className='eink-bordered bg-base-100 border-base-content/10 hover:border-base-content/30 absolute left-2 -translate-y-1/2 rounded-full border p-1 shadow-xs transition-colors duration-200'
         >
           <MdChevronLeft size={20} className='text-base-content/60 hover:text-base-content/80' />
         </button>
@@ -105,7 +105,7 @@ export function GroupCarousel({
           aria-label={_('Scroll right')}
           onClick={() => scrollByPage(1)}
           style={{ top: coverCenter ?? '50%' }}
-          className='eink-bordered bg-base-100 border-base-content/10 hover:border-base-content/30 absolute right-2 -translate-y-1/2 rounded-full border p-1 shadow-sm transition-colors duration-200'
+          className='eink-bordered bg-base-100 border-base-content/10 hover:border-base-content/30 absolute right-2 -translate-y-1/2 rounded-full border p-1 shadow-xs transition-colors duration-200'
         >
           <MdChevronRight size={20} className='text-base-content/60 hover:text-base-content/80' />
         </button>

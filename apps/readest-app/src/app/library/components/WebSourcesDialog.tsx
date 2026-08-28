@@ -94,7 +94,7 @@ const WebSourcesDialog: React.FC<WebSourcesDialogProps> = ({ isOpen, onClose }) 
       isOpen={isOpen}
       onClose={onClose}
       title={_('From Web Browser')}
-      boxClassName='sm:!w-[480px] sm:!max-w-[480px] sm:!h-auto sm:!max-h-[80vh]'
+      boxClassName='sm:w-[480px]! sm:max-w-[480px]! sm:h-auto! sm:max-h-[80vh]!'
     >
       <div className='flex flex-col gap-4 pb-6 pt-2'>
         <p className='text-base-content/60 text-sm leading-relaxed'>
@@ -113,7 +113,7 @@ const WebSourcesDialog: React.FC<WebSourcesDialogProps> = ({ isOpen, onClose }) 
                   onClick={() => void handleOpen(source)}
                   className={clsx(
                     'flex min-w-0 flex-1 items-center gap-3 py-3 text-start',
-                    'focus-visible:ring-base-content/15 rounded-md focus-visible:outline-none focus-visible:ring-2',
+                    'focus-visible:ring-base-content/15 rounded-md focus-visible:outline-hidden focus-visible:ring-2',
                   )}
                 >
                   <MdLanguage className='text-base-content/70 h-5 w-5 shrink-0' />
@@ -139,14 +139,14 @@ const WebSourcesDialog: React.FC<WebSourcesDialogProps> = ({ isOpen, onClose }) 
         <div className='flex flex-col gap-2'>
           <input
             type='text'
-            className='input input-bordered eink-bordered placeholder:text-base-content/35 w-full'
+            className='input eink-bordered placeholder:text-base-content/35 w-full'
             placeholder={_('Name (optional)')}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
           <input
             type='url'
-            className='input input-bordered eink-bordered placeholder:text-base-content/35 w-full'
+            className='input eink-bordered placeholder:text-base-content/35 w-full'
             placeholder='https://calibre.example.com'
             value={url}
             onChange={(e) => setUrl(e.target.value)}

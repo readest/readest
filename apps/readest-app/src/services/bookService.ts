@@ -671,14 +671,17 @@ export async function importBook(
       existingBook.uploadedAt = null;
       existingBook.downloadedAt = Date.now();
     } else if (existingBook) {
-      // Same file hash: preserve user edits
+      // Re-imports always refresh file-derived metadata. Keep sourceTitle
+      // stable because it locates the managed file on disk.
+      book.sourceTitle = existingBook.sourceTitle || existingBook.title || book.sourceTitle;
       existingBook.format = book.format;
       existingBook.metaHash = metaHash;
-      existingBook.title = existingBook.title.trim() ? existingBook.title.trim() : book.title;
-      existingBook.sourceTitle = existingBook.sourceTitle ?? book.sourceTitle;
-      existingBook.author = existingBook.author ?? book.author;
-      existingBook.primaryLanguage = existingBook.primaryLanguage ?? book.primaryLanguage;
+      existingBook.title = book.title;
+      existingBook.sourceTitle = book.sourceTitle;
+      existingBook.author = book.author;
+      existingBook.primaryLanguage = book.primaryLanguage;
       existingBook.metadata = book.metadata;
+      existingBook.metadataUpdatedAt = existingBook.updatedAt;
       existingBook.downloadedAt = Date.now();
     }
 

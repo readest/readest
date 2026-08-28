@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { configureZip } from '@/utils/zip';
 import { downloadNovel, fetchNovelToc, isNovelImportCancelled } from '@/services/novel/novelImport';
+import { stableIdentifier } from '@/services/send/conversion/convertToEpub';
 import { ConversionError } from '@/services/send/conversion/types';
 import type { NovelToc } from '@/services/novel/chapterList';
 
@@ -96,6 +97,9 @@ describe('downloadNovel', () => {
     const opf = files.get('content.opf')!;
     expect(opf).toContain('<dc:title>My Novel</dc:title>');
     expect(opf).toContain('<dc:creator>Author X</dc:creator>');
+    expect(opf).toContain(
+      `<dc:identifier id="book-id">${stableIdentifier(TOC_URL)}</dc:identifier>`,
+    );
     for (let n = 1; n <= 6; n++) {
       const xhtml = files.get(`OEBPS/chapter${n}.xhtml`)!;
       expect(xhtml).toContain(`<h1>Chapter ${n}: Part ${n}</h1>`);
@@ -104,6 +108,36 @@ describe('downloadNovel', () => {
     // toc.ncx lists every chapter
     const ncx = files.get('toc.ncx')!;
     expect(ncx).toContain('Chapter 6: Part 6');
+  });
+
+  it('uses a selection identity to distinguish volumes from the same chapter list', async () => {
+    const firstChapters = toc().chapters.slice(0, 2);
+    const secondChapters = toc().chapters.slice(2, 4);
+    const firstIdentity = [TOC_URL, ...firstChapters.map((chapter) => chapter.url)].join('\n');
+    const secondIdentity = [TOC_URL, ...secondChapters.map((chapter) => chapter.url)].join('\n');
+
+    const [firstVolume, secondVolume] = await Promise.all([
+      downloadNovel(toc({ chapters: firstChapters }), TOC_URL, {
+        fetchPage: makeFetchPage(),
+        identityKey: firstIdentity,
+      }),
+      downloadNovel(toc({ chapters: secondChapters }), TOC_URL, {
+        fetchPage: makeFetchPage(),
+        identityKey: secondIdentity,
+      }),
+    ]);
+    const [firstFiles, secondFiles] = await Promise.all([
+      unzipEpub(firstVolume.file),
+      unzipEpub(secondVolume.file),
+    ]);
+
+    expect(firstFiles.get('content.opf')).toContain(
+      `<dc:identifier id="book-id">${stableIdentifier(firstIdentity)}</dc:identifier>`,
+    );
+    expect(secondFiles.get('content.opf')).toContain(
+      `<dc:identifier id="book-id">${stableIdentifier(secondIdentity)}</dc:identifier>`,
+    );
+    expect(stableIdentifier(firstIdentity)).not.toBe(stableIdentifier(secondIdentity));
   });
 
   it('strips images from chapter content', async () => {

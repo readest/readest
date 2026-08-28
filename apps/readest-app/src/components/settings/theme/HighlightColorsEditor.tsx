@@ -77,7 +77,7 @@ const LabelPopover: React.FC<{
         }}
         placeholder={_('Name')}
         maxLength={20}
-        className='bg-base-100 w-24 text-center text-xs outline-none'
+        className='bg-base-100 w-24 text-center text-xs outline-hidden'
       />
     </div>
   );

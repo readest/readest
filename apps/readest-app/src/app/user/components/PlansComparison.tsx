@@ -132,7 +132,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
   };
 
   return (
-    <div className='bg-base-100 border-base-200 overflow-hidden rounded-xl border shadow-sm'>
+    <div className='bg-base-100 border-base-200 overflow-hidden rounded-xl border shadow-xs'>
       <PlanNavigation
         allPlans={allPlans.filter((plan) => plan.plan !== 'free')}
         currentPlan={userPlans[currentPlanIndex]!}

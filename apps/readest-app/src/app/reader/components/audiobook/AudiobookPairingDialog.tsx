@@ -464,7 +464,7 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
         />
         <div className='eink-bordered border-base-200 bg-base-100 mb-5 rounded-lg border'>
           <div className='flex min-h-14 items-center gap-3 px-4 py-3'>
-            <span className='bg-base-200 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full'>
+            <span className='bg-base-200 flex h-9 w-9 shrink-0 items-center justify-center rounded-full'>
               {streamedFrom ? (
                 <MdHeadphones className='h-5 w-5' />
               ) : (
@@ -552,7 +552,7 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
           'eink-bordered group flex min-h-28 w-full flex-col items-center justify-center gap-3',
           'border-base-200 bg-base-100 rounded-lg border px-6 py-5',
           'hover:border-base-300 hover:bg-base-200/60 transition-colors duration-150',
-          'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+          'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
         )}
       >
         <span className='bg-base-200 group-hover:bg-base-content group-hover:text-base-100 flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-150'>
@@ -570,7 +570,7 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
             'eink-bordered group mt-4 flex min-h-28 w-full flex-col items-center justify-center gap-3',
             'border-base-200 bg-base-100 rounded-lg border px-6 py-5',
             'hover:border-base-300 hover:bg-base-200/60 transition-colors duration-150',
-            'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+            'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
           )}
         >
           <span className='bg-base-200 group-hover:bg-base-content group-hover:text-base-100 flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-150'>
@@ -605,7 +605,7 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
         <div className='border-base-200 border-b p-2'>
           <input
             type='search'
-            className='input input-sm eink-bordered w-full'
+            className='input input-sm eink-bordered w-full border-transparent'
             aria-label={_('Search audiobooks')}
             placeholder={_('Search audiobooks')}
             value={absQuery}
@@ -622,7 +622,7 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
               disabled={busy}
               onClick={() => chooseAbsBook(candidate)}
             >
-              <span className='bg-base-200 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full'>
+              <span className='bg-base-200 flex h-9 w-9 shrink-0 items-center justify-center rounded-full'>
                 <MdHeadphones className='h-5 w-5' />
               </span>
               <span className='min-w-0 flex-1'>
@@ -674,7 +674,7 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
           <div className='hover:bg-base-200/60 focus-within:bg-base-200/60 flex w-full items-center rounded-md sm:max-w-[60%]'>
             <select
               id='audiobook-ebook-anchor'
-              className='select h-9 min-w-0 flex-1 cursor-pointer !appearance-none truncate !border-0 !bg-transparent !bg-none !pe-1 !ps-2 text-end focus:!border-0 focus:!shadow-none focus:!outline-none focus:!ring-0'
+              className='select h-9 min-w-0 flex-1 cursor-pointer truncate border-0! bg-transparent! bg-none! pe-1! ps-2! text-end focus:border-0! focus:shadow-none! focus:outline-hidden! focus:ring-0! open:outline-hidden!'
               value={selectedEbookChapterId}
               onChange={(event) => setSelectedEbookChapterId(event.target.value)}
             >
@@ -686,7 +686,7 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
             </select>
             <MdArrowDropDown
               aria-hidden='true'
-              className='text-base-content/55 pointer-events-none h-5 w-5 flex-shrink-0'
+              className='text-base-content/55 pointer-events-none h-5 w-5 shrink-0'
             />
           </div>
         </div>
@@ -698,7 +698,7 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
             <div className='hover:bg-base-200/60 focus-within:bg-base-200/60 flex min-w-0 flex-1 items-center rounded-md'>
               <select
                 id='audiobook-audio-anchor'
-                className='select h-9 min-w-0 flex-1 cursor-pointer !appearance-none truncate !border-0 !bg-transparent !bg-none !pe-1 !ps-2 text-end focus:!border-0 focus:!shadow-none focus:!outline-none focus:!ring-0'
+                className='select h-9 min-w-0 flex-1 cursor-pointer truncate border-0! bg-transparent! bg-none! pe-1! ps-2! text-end focus:border-0! focus:shadow-none! focus:outline-hidden! focus:ring-0! open:outline-hidden!'
                 value={selectedAudioChapterId}
                 onChange={(event) => setSelectedAudioChapterId(event.target.value)}
               >
@@ -710,13 +710,13 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
               </select>
               <MdArrowDropDown
                 aria-hidden='true'
-                className='text-base-content/55 pointer-events-none h-5 w-5 flex-shrink-0'
+                className='text-base-content/55 pointer-events-none h-5 w-5 shrink-0'
               />
             </div>
             {audioChapterById.get(selectedAudioChapterId) && (
               <button
                 type='button'
-                className='btn btn-ghost btn-sm btn-square flex-shrink-0'
+                className='btn btn-ghost btn-sm btn-square shrink-0'
                 aria-label={
                   previewingAudioChapterId === selectedAudioChapterId
                     ? _('Stop audio preview')
@@ -820,12 +820,12 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
                         ? `${mappedAudio.label} · ${formatAudiobookTimecode(mappedAudio.end - mappedAudio.start)}`
                         : _('No audio')}
                     </span>
-                    <MdArrowDropDown className='h-5 w-5 flex-shrink-0' />
+                    <MdArrowDropDown className='h-5 w-5 shrink-0' />
                   </button>
                   {mappedAudio && (
                     <button
                       type='button'
-                      className='btn btn-ghost btn-sm btn-square flex-shrink-0'
+                      className='btn btn-ghost btn-sm btn-square shrink-0'
                       aria-label={
                         previewingAudioChapterId === mappedAudio.id
                           ? _('Stop previewing {{chapter}}', { chapter: mappedAudio.label })
@@ -886,7 +886,7 @@ const AudiobookPairingDialog = ({ bookKey, bookDoc, onClose }: AudiobookPairingD
       title={association ? _('Manage Audiobook') : _('Pair Audiobook')}
       onClose={onClose}
       boxClassName='sm:h-[80%] sm:min-w-[620px] sm:max-w-[720px]'
-      contentClassName='!px-6 sm:!px-8'
+      contentClassName='px-6! sm:px-8!'
       useOverlayScroll
     >
       <div className='pb-6 pt-2'>

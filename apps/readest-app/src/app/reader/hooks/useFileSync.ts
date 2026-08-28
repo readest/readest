@@ -55,8 +55,9 @@ import { useWindowActiveChanged } from './useWindowActiveChanged';
  * one result would silently drop whichever mirror lost the race.
  *
  * Energy budget — these constants are deliberately tuned for mobile:
- *   - Push debounce: 15 s. Real reading sessions involve continuous page-turns,
- *     so a longer window collapses many turns into one PUT.
+ *   - Push debounce: 5 s. Long enough to collapse a swipe burst into one PUT,
+ *     short enough that an ordinary page-turn cadence (well over 5 s per page)
+ *     still publishes each position instead of resetting the timer forever.
  *   - Pull cooldown: 60 s. Window focus shouldn't trigger a fresh fetch on every
  *     alt-tab; once a minute is plenty for cross-device drift.
  *   - Open-pull skip: 30 s. Quickly closing/reopening a book shouldn't re-fetch
@@ -69,8 +70,16 @@ import { useWindowActiveChanged } from './useWindowActiveChanged';
  *   - 'prompt': not implemented — falls back to 'silent'
  */
 
-/** Debounce window for auto-push triggered by progress / booknote churn. */
-const PUSH_DEBOUNCE_MS = 15_000;
+/**
+ * Debounce window for auto-push triggered by progress / booknote churn.
+ *
+ * Trailing-only: every page turn restarts the timer, so the window is the
+ * longest a position can sit unpublished during a reading pause. At 15 s a
+ * steady reader kept resetting it and their position reached the other device
+ * minutes late, or not until the book was closed (#5883). 5 s matches KOSync's
+ * push debounce and sits between Readest Cloud's 3 s and the old value.
+ */
+const PUSH_DEBOUNCE_MS = 5_000;
 /** Minimum gap between automatic pulls (e.g. window-focus, open-book). */
 const PULL_COOLDOWN_MS = 60_000;
 /**
@@ -488,15 +497,29 @@ export const useFileSync = (bookKey: string) => {
     }
 
     setConfig(bookKey, working);
-    // Parity with the native cloud sync: surface the same top-right hint when a
-    // remote reading position was fetched and applied. `working` is already
-    // masked per backend, so this is false when every pulling backend opted
-    // out of progress.
+    // Parity with the native cloud sync (and KOSync): a merged remote position
+    // has to move the LIVE view, not just the stored config. Writing the config
+    // alone left the reader on the old page until the book was closed and
+    // reopened, while the hint below already claimed the progress had been
+    // applied (#5883). `working` is masked per backend, so this is skipped when
+    // every pulling backend opted out of progress.
     if (remoteProgressApplied(config.location, working.location)) {
-      eventDispatcher.dispatch('hint', {
-        bookKey,
-        message: _('Reading Progress Synced'),
-      });
+      const view = getView(bookKey);
+      // Don't yank the view while previewing a deep-link target — the user came
+      // here to look at a specific annotation. The merged config is already
+      // stored, so the next open resolves to the synced position normally.
+      const previewing = useReaderStore.getState().getViewState(bookKey)?.previewMode;
+      if (view && !previewing) {
+        // `view.goTo` swallows its own resolution failures, so an unresolvable
+        // remote CFI leaves the reader where it is instead of throwing here.
+        await view.goTo(working.location!);
+        // Announce only once the position is actually on screen, so the hint
+        // never lies about what the user is looking at.
+        eventDispatcher.dispatch('hint', {
+          bookKey,
+          message: _('Reading Progress Synced'),
+        });
+      }
     }
     const latest = getConfig(bookKey);
     if (latest) await saveConfig(envConfig, bookKey, latest, settings);

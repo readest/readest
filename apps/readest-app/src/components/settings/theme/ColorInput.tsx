@@ -71,7 +71,7 @@ const ColorInput: React.FC<ColorInputProps> = ({
       <button
         type='button'
         onClick={() => setIsOpen(!isOpen)}
-        className='border-base-300 focus-visible:ring-base-content/20 focus-visible:ring-offset-base-100 h-7 w-7 rounded-full border-2 shadow-sm transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1'
+        className='border-base-300 focus-visible:ring-base-content/20 focus-visible:ring-offset-base-100 h-7 w-7 rounded-full border-2 shadow-xs transition-transform hover:scale-110 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1'
         style={{ backgroundColor: value }}
         aria-label={label || 'Choose color'}
         title={label || 'Choose color'}
@@ -80,7 +80,7 @@ const ColorInput: React.FC<ColorInputProps> = ({
         <button
           type='button'
           onClick={() => setIsOpen(!isOpen)}
-          className='text-base-content/60 hover:bg-base-200 hover:text-base-content focus-visible:ring-base-content/15 inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2'
+          className='text-base-content/60 hover:bg-base-200 hover:text-base-content focus-visible:ring-base-content/15 inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2'
           aria-label={label || 'Choose color'}
           title={label || 'Choose color'}
         >

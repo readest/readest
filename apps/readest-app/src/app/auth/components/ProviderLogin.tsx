@@ -30,7 +30,7 @@ export const ProviderLogin: React.FC<ProviderLoginProp> = ({
         'transition-colors duration-150',
         'hover:border-base-300 hover:bg-base-200/60',
         'active:bg-base-200/80',
-        'focus-visible:ring-base-content/15 focus-visible:outline-none focus-visible:ring-2',
+        'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
       )}
     >
       <Icon className='h-5 w-5' aria-hidden='true' />

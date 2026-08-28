@@ -75,7 +75,7 @@
     "iOS": {
       "developmentTeam": "J5W48D69VR",
       "infoPlist": "./Info-ios.plist",
-      "minimumSystemVersion": "15.0"
+      "minimumSystemVersion": "16.4"
     },
     "fileAssociations": [
       {
@@ -228,7 +228,7 @@
     },
     "webview-upgrade": {
       "minUpgradeMajor": 121,
-      "minSupportedMajor": 92
+      "minSupportedMajor": 111
     }
   }
 }

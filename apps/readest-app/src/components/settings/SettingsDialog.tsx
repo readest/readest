@@ -352,8 +352,8 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       // inside RSVP shows on top instead of behind it (#3235), and below the
       // modal layer (z-120) so a modal opened from inside Settings (e.g. Add
       // OPDS Catalog) renders on top. !important beats the Dialog's hardcoded z-50.
-      className='modal-open !z-[110]'
-      bgClassName={bookKey ? 'sm:!bg-black/20' : 'sm:!bg-black/50'}
+      className='modal-open z-[110]!'
+      bgClassName={bookKey ? 'sm:bg-black/20!' : 'sm:bg-black/50!'}
       boxClassName={clsx(
         'sm:min-w-[520px] overflow-hidden not-eink:bg-base-200',
         appService?.isMobile && 'sm:max-w-[90%] sm:w-3/4',
@@ -371,7 +371,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
               aria-label={_('Close')}
               onClick={handleClose}
               className={
-                'btn btn-ghost btn-circle absolute left-3 flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-none'
+                'btn btn-ghost btn-circle absolute left-3 flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-hidden'
               }
             >
               {isRtl ? <MdArrowForwardIos /> : <MdArrowBackIosNew />}

@@ -205,15 +205,15 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
               onClick={handleSelectLocalImage}
               disabled={isCoverLocked}
               className={clsx(
-                'flex w-1/2 min-w-0 items-center justify-center gap-1 rounded p-1 sm:w-3/5',
+                'flex w-1/2 min-w-0 items-center justify-center gap-1 rounded-sm p-1 sm:w-3/5',
                 'text-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:text-xs',
-                isCoverLocked ? '!text-base-content bg-base-200' : 'bg-gray-100 !text-gray-500',
+                isCoverLocked ? 'text-base-content! bg-base-200' : 'bg-gray-100 text-gray-500!',
               )}
               title={_('Change cover image')}
             >
               <MdEdit
                 className={clsx(
-                  'h-5 w-5 flex-shrink-0 sm:h-4 sm:w-4',
+                  'h-5 w-5 shrink-0 sm:h-4 sm:w-4',
                   isCoverLocked ? 'fill-base-content' : 'fill-gray-600',
                 )}
               />
@@ -229,10 +229,10 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
               }}
               disabled={isCoverLocked}
               className={clsx(
-                'flex w-1/4 items-center justify-center rounded p-1 sm:w-1/5',
+                'flex w-1/4 items-center justify-center rounded-sm p-1 sm:w-1/5',
                 'disabled:cursor-not-allowed disabled:opacity-50',
                 'text-red-500 hover:bg-red-50 hover:text-red-600',
-                isCoverLocked ? '!text-base-content bg-base-200' : 'bg-gray-100',
+                isCoverLocked ? 'text-base-content! bg-base-200' : 'bg-gray-100',
               )}
               title={_('Remove cover image')}
             >
@@ -242,7 +242,7 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
             <button
               onClick={() => onToggleFieldLock('coverImageUrl')}
               className={clsx(
-                'flex w-1/4 items-center justify-center rounded p-1 hover:bg-gray-50 sm:w-1/5',
+                'flex w-1/4 items-center justify-center rounded-sm p-1 hover:bg-gray-50 sm:w-1/5',
                 isCoverLocked
                   ? 'bg-green-100 text-green-500 hover:bg-green-200'
                   : 'bg-gray-100 text-gray-500',
@@ -340,7 +340,7 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
               onClick={onUnlockAll}
               disabled={!hasLockedFields}
               className={clsx(
-                'hover:bg-base-200 flex items-center gap-1 rounded px-2 py-1 text-sm',
+                'hover:bg-base-200 flex items-center gap-1 rounded-sm px-2 py-1 text-sm',
                 'disabled:cursor-not-allowed disabled:opacity-80',
                 'text-yellow-600 hover:text-yellow-700',
               )}
@@ -353,7 +353,7 @@ const BookDetailEdit: React.FC<BookDetailEditProps> = ({
               onClick={onLockAll}
               disabled={allFieldsLocked}
               className={clsx(
-                'hover:bg-base-200 flex items-center gap-1 rounded px-2 py-1 text-sm',
+                'hover:bg-base-200 flex items-center gap-1 rounded-sm px-2 py-1 text-sm',
                 'disabled:cursor-not-allowed disabled:opacity-80',
                 'text-green-600 hover:text-green-700',
               )}

@@ -29,8 +29,8 @@ const ImportAnnotationsDialog: React.FC<ImportAnnotationsDialogProps> = ({
       isOpen={isOpen}
       title={_('Import Annotations')}
       onClose={onClose}
-      boxClassName='sm:!h-auto sm:!max-h-[90vh] sm:!w-[420px]'
-      contentClassName='sm:!px-6'
+      boxClassName='sm:h-auto! sm:max-h-[90vh]! sm:w-[420px]!'
+      contentClassName='sm:px-6!'
     >
       <BoxedList
         title={_('Import From')}

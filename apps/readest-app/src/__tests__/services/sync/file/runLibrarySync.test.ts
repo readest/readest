@@ -5,7 +5,16 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
 import type { SystemSettings } from '@/types/settings';
 
-const syncLibrary = vi.fn().mockResolvedValue({ booksSynced: 0 });
+/** A complete SyncLibraryResult shape; the pass merges every reporting field. */
+const syncResult = (over: Record<string, unknown> = {}) => ({
+  booksSynced: 0,
+  failures: 0,
+  failedBooks: [],
+  indexPushFailed: false,
+  ...over,
+});
+
+const syncLibrary = vi.fn().mockResolvedValue(syncResult());
 const pushBookFile = vi.fn().mockResolvedValue({ uploaded: true });
 const pushBookCover = vi.fn().mockResolvedValue({ uploaded: true });
 const downloadBookFile = vi.fn().mockResolvedValue(true);
@@ -96,7 +105,7 @@ const multiProviderSettings = {
 
 describe('runFileLibrarySyncPass', () => {
   beforeEach(() => {
-    syncLibrary.mockReset().mockResolvedValue({ booksSynced: 1 });
+    syncLibrary.mockReset().mockResolvedValue(syncResult({ booksSynced: 1 }));
     useSettingsStore.getState().setSettings(multiProviderSettings);
     useLibraryStore.setState({ library: [makeBook('h1')], libraryLoaded: true });
     useFileSyncStore.setState({ byKind: {}, activeKind: null, lastErrorByKind: {} });
@@ -109,12 +118,36 @@ describe('runFileLibrarySyncPass', () => {
     expect(result?.booksSynced).toBe(2);
   });
 
+  test('aggregates failures across backends instead of keeping only the last (#5900)', async () => {
+    // A spread of the LAST result silently replaced the earlier backends'
+    // failure counts, so a pass where the first mirror failed every book and
+    // the second succeeded reported a clean run.
+    syncLibrary
+      .mockReset()
+      .mockResolvedValueOnce(
+        syncResult({
+          booksSynced: 1,
+          failures: 3,
+          failedBooks: [{ hash: 'h1', title: 'A', reason: 'no source', phase: 'upload-file' }],
+          indexPushFailed: true,
+        }),
+      )
+      .mockResolvedValueOnce(syncResult({ booksSynced: 1 }));
+
+    const result = await runFileLibrarySyncPass(envConfig, translationFn);
+
+    expect(result?.booksSynced).toBe(2);
+    expect(result?.failures).toBe(3);
+    expect(result?.failedBooks).toHaveLength(1);
+    expect(result?.indexPushFailed).toBe(true);
+  });
+
   test('holds the mutex for the whole pass', async () => {
     let lockedDuringPass: boolean | null = null;
     syncLibrary.mockImplementation(async () => {
       // A racing auto-sync must be refused while the pass is mid-flight.
       lockedDuringPass = useFileSyncStore.getState().beginSync('s3', 'Syncing…') === false;
-      return { booksSynced: 1 };
+      return syncResult({ booksSynced: 1 });
     });
     await runFileLibrarySyncPass(envConfig, translationFn);
     expect(lockedDuringPass).toBe(true);
@@ -145,7 +178,7 @@ describe('runFileLibrarySyncPass', () => {
   test('a failing backend does not stop the others', async () => {
     syncLibrary
       .mockRejectedValueOnce(new Error('token expired'))
-      .mockResolvedValueOnce({ booksSynced: 3 });
+      .mockResolvedValueOnce(syncResult({ booksSynced: 3 }));
 
     const result = await runFileLibrarySyncPass(envConfig, translationFn);
 
