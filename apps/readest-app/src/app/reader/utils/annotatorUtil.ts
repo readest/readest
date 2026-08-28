@@ -381,13 +381,31 @@ export function drawAnnotationOverlay(
     viewSettings: ViewSettings;
     isDarkMode: boolean;
     isMobile: boolean;
+    supabaseUserId?: string | null;
   },
 ): void {
   const { draw, annotation, doc, range } = detail;
-  const { settings, viewSettings, isDarkMode, isMobile } = ctx;
+  const { settings, viewSettings, isDarkMode, isMobile, supabaseUserId } = ctx;
   const isBwEink = viewSettings.isEink && !viewSettings.isColorEink;
   const { style, color, value } = annotation;
   const hexColor = getHighlightColorHex(settings, color);
+
+  const isOtherUserAnnotation =
+    !!(annotation as any).user_name &&
+    (!supabaseUserId || (annotation as any).supabaseUserId !== supabaseUserId);
+
+  const wrappedDraw = (func: any, opts?: any) => {
+    return (rects: any[]) => {
+      const el = func(rects, opts);
+      if (el && isOtherUserAnnotation && (annotation as any).user_name) {
+        const titleEl = doc.createElementNS('http://www.w3.org/2000/svg', 'title');
+        titleEl.textContent = (annotation as any).user_name;
+        el.appendChild(titleEl);
+      }
+      return el;
+    };
+  };
+
   // Choose what to draw from the overlay's `value` (cfi vs NOTE_PREFIX+cfi),
   // not from `annotation.note`: a unified record (style + note) is added as
   // two overlays and must draw a highlight for the cfi overlay AND a bubble
@@ -397,14 +415,89 @@ export function drawAnnotationOverlay(
     const node = range.startContainer;
     return node.nodeType === 1 ? (node as Element) : node.parentElement!;
   };
+  const reaction = annotation.reaction;
   if (kind === 'bubble') {
     const { writingMode } = doc.defaultView!.getComputedStyle(startElement());
-    draw(Overlayer.bubble, { writingMode });
+    (draw as any)(wrappedDraw(Overlayer.bubble, { writingMode }));
+  } else if (reaction && kind !== 'bubble') {
+    const drawCombined = (rects: any[]) => {
+      const parentG = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
+      let styleG: SVGElement | null = null;
+      if (kind === 'highlight') {
+        styleG = Overlayer.highlight(rects, {
+          color: getAnnotationOverlayColor('highlight', hexColor, { isBwEink, isDarkMode }),
+          vertical: viewSettings.vertical,
+        });
+      } else if (kind === 'underline' || kind === 'squiggly') {
+        const { writingMode, lineHeight, fontSize } = doc.defaultView!.getComputedStyle(
+          startElement(),
+        );
+        const fontSizeValue = parseFloat(fontSize) || viewSettings.defaultFontSize;
+        const lineHeightValue = parseFloat(lineHeight) || viewSettings.lineHeight * fontSizeValue;
+        const strokeWidth = 2;
+        const verticalCompensation = isMobile ? 0 : -1;
+        const horizontalCompensation = isMobile ? -1 : 0;
+        const padding = viewSettings.vertical
+          ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
+          : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
+        styleG = Overlayer[kind](rects, {
+          writingMode,
+          color: getAnnotationOverlayColor(kind, hexColor, { isBwEink, isDarkMode }),
+          padding,
+        });
+      }
+
+      if (styleG) {
+        parentG.appendChild(styleG);
+      }
+
+      if (rects.length > 0) {
+        const size = 20;
+        const firstRect = rects[0];
+        if (firstRect) {
+          const foreignObject = doc.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+          const x = firstRect.right - size / 2;
+          const y = firstRect.top - size - 2;
+
+          foreignObject.setAttribute('x', x.toString());
+          foreignObject.setAttribute('y', y.toString());
+          foreignObject.setAttribute('width', size.toString());
+          foreignObject.setAttribute('height', size.toString());
+
+          const div = doc.createElement('div');
+          div.style.width = '100%';
+          div.style.height = '100%';
+          div.style.display = 'flex';
+          div.style.alignItems = 'center';
+          div.style.justifyContent = 'center';
+          div.style.fontSize = '14px';
+          div.style.lineHeight = '1';
+          div.style.filter = 'drop-shadow(0px 1px 2px rgba(0,0,0,0.3))';
+          div.style.cursor = 'pointer';
+          div.style.userSelect = 'none';
+          div.textContent = reaction;
+
+          foreignObject.appendChild(div);
+          parentG.appendChild(foreignObject);
+        }
+      }
+
+      if (isOtherUserAnnotation && (annotation as any).user_name) {
+        const titleEl = doc.createElementNS('http://www.w3.org/2000/svg', 'title');
+        titleEl.textContent = (annotation as any).user_name;
+        parentG.appendChild(titleEl);
+      }
+
+      return parentG;
+    };
+    (draw as (func: unknown) => void)(drawCombined);
   } else if (kind === 'highlight') {
-    draw(Overlayer.highlight, {
-      color: getAnnotationOverlayColor('highlight', hexColor, { isBwEink, isDarkMode }),
-      vertical: viewSettings.vertical,
-    });
+    (draw as any)(
+      wrappedDraw(Overlayer.highlight, {
+        color: getAnnotationOverlayColor('highlight', hexColor, { isBwEink, isDarkMode }),
+        vertical: viewSettings.vertical,
+      }),
+    );
   } else if (kind === 'underline' || kind === 'squiggly') {
     const { writingMode, lineHeight, fontSize } = doc.defaultView!.getComputedStyle(startElement());
     const fontSizeValue = parseFloat(fontSize) || viewSettings.defaultFontSize;
@@ -415,11 +508,13 @@ export function drawAnnotationOverlay(
     const padding = viewSettings.vertical
       ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
       : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
-    draw(Overlayer[kind], {
-      writingMode,
-      color: getAnnotationOverlayColor(kind, hexColor, { isBwEink, isDarkMode }),
-      padding,
-    });
+    (draw as any)(
+      wrappedDraw(Overlayer[kind], {
+        writingMode,
+        color: getAnnotationOverlayColor(kind, hexColor, { isBwEink, isDarkMode }),
+        padding,
+      }),
+    );
   }
 }
 
@@ -452,7 +547,7 @@ export function mergeRestyledAnnotation(existing: BookNote, restyled: BookNote):
   };
 }
 
-export type AnnotationFilterKind = 'all' | 'notes';
+export type AnnotationFilterKind = 'all' | 'highlights' | 'notes';
 
 export interface BooknoteFilter {
   kind: AnnotationFilterKind;
@@ -462,19 +557,24 @@ export interface BooknoteFilter {
 }
 
 /**
- * Filter source material for the annotations hub.
+ * Filter booknotes for the annotations hub and the Notebook search.
  *
- * Tombstones and non-annotation records are always excluded. All includes
- * every annotation, while With notes selects annotations carrying a note body.
- * Query and facet filters compose with that kind filter.
+ * Tombstones are always excluded. `kind` partitions on the note body:
+ * a unified annotation is a "note" when `note` is non-empty and a plain
+ * "highlight" otherwise (#5398's All/Highlights/Notes chips). An empty or
+ * whitespace query matches everything; otherwise the query is matched
+ * case-insensitively against the highlighted text and the note body
+ * (same semantics the Notebook SearchBar has always used). Excluded
+ * colors/styles drop matching notes; a note without the attribute always
+ * passes (the same keep rule as filterExportGroups).
  */
 export function filterBooknotes(notes: BookNote[], filter: BooknoteFilter): BookNote[] {
   const { kind, excludedColors, excludedStyles } = filter;
   const lowercaseQuery = filter.query.trim().toLowerCase();
   return notes.filter((note) => {
     if (note.deletedAt) return false;
-    if (note.type !== 'annotation') return false;
     if (kind === 'notes' && !note.note) return false;
+    if (kind === 'highlights' && note.note) return false;
     if (note.color && excludedColors?.includes(note.color)) return false;
     if (note.style && excludedStyles?.includes(note.style)) return false;
     if (!lowercaseQuery) return true;
@@ -511,22 +611,26 @@ export function collectAnnotationFacets(notes: BookNote[]): AnnotationFacets {
   return { colors, styles };
 }
 
-export interface AnnotationHubCounts {
-  annotations: number;
+export interface AnnotationCounts {
+  highlights: number;
+  notes: number;
 }
 
 /**
- * Non-overlapping source-material totals for the annotations hub. Annotations
- * carrying notes still count once as annotations; the With notes chip is a
- * subset filter rather than another count bucket.
+ * How many live annotations are plain highlights and how many carry a note
+ * body, for the hub toolbar's summary line. Partitions on `note.note`
+ * truthiness — the same untrimmed rule filterBooknotes applies — so the
+ * summary always agrees with what the Highlights/Notes chips select.
  */
-export function summarizeAnnotationHub(notes: BookNote[]): AnnotationHubCounts {
-  let annotations = 0;
+export function summarizeAnnotations(notes: BookNote[]): AnnotationCounts {
+  let highlights = 0;
+  let noteCount = 0;
   for (const note of notes) {
     if (note.deletedAt) continue;
-    if (note.type === 'annotation') annotations += 1;
+    if (note.note) noteCount += 1;
+    else highlights += 1;
   }
-  return { annotations };
+  return { highlights, notes: noteCount };
 }
 
 export type NoteBubbleTransition = 'add' | 'remove' | 'none';

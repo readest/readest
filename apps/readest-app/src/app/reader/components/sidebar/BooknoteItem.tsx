@@ -216,6 +216,14 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
         }
       }}
     >
+      {item.reaction && (
+        <div
+          className='absolute top-2 right-2 flex items-center justify-center w-6 h-6 rounded-full bg-base-200 border border-base-300 text-sm shadow-sm select-none z-10'
+          title={_('Reaction')}
+        >
+          {item.reaction}
+        </div>
+      )}
       <div
         className={clsx('min-h-4 p-0 transition-all duration-300 ease-in-out')}
         style={

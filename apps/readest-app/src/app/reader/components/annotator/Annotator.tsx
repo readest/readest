@@ -3,6 +3,7 @@ import { RiDeleteBinLine } from 'react-icons/ri';
 
 import * as CFI from 'foliate-js/epubcfi.js';
 import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
 import {
   BookNote,
   BooknoteGroup,
@@ -109,6 +110,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
+  const { user } = useAuth();
   const { settings, setSettingsDialogBookKey, setSettingsDialogOpen, setActiveSettingsItemId } =
     useSettingsStore();
   const { isDarkMode } = useThemeStore();
@@ -528,6 +530,45 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     detail.doc?.addEventListener('pointerup', handlePointerUp.bind(null, doc, index));
     detail.doc?.addEventListener('selectionchange', handleSelectionchange.bind(null, doc, index));
 
+    let lastHoveredElement: HTMLElement | null = null;
+    let originalTitle = '';
+
+    detail.doc?.addEventListener('mousemove', (ev: MouseEvent) => {
+      const overlayer = view?.renderer?.getContents()?.find((c) => c.index === index)?.overlayer;
+      if (!overlayer) return;
+      const [value] = (overlayer as any).hitTest(ev);
+      const target = ev.target as HTMLElement;
+
+      if (value && !value.startsWith(NOTE_PREFIX)) {
+        const buddyReadAnnotations = useBuddyReadStore.getState().annotations || [];
+        const annotation = buddyReadAnnotations.find(
+          (b) => b.cfi === value && b.type === 'annotation' && !b.deletedAt,
+        );
+
+        if (annotation && (annotation as any).user_name) {
+          const currentUserId = user?.id;
+          const isOther = !currentUserId || (annotation as any).supabaseUserId !== currentUserId;
+          if (isOther) {
+            if (lastHoveredElement !== target) {
+              if (lastHoveredElement) {
+                lastHoveredElement.setAttribute('title', originalTitle);
+              }
+              lastHoveredElement = target;
+              originalTitle = target.getAttribute('title') || '';
+              target.setAttribute('title', (annotation as any).user_name);
+            }
+            return;
+          }
+        }
+      }
+
+      if (lastHoveredElement) {
+        lastHoveredElement.setAttribute('title', originalTitle);
+        lastHoveredElement = null;
+        originalTitle = '';
+      }
+    });
+
     // For PDF selections, enable right-click context menu to directly open translator popup.
     if (bookData.isFixedLayout) {
       detail.doc?.addEventListener('contextmenu', (e: Event) => {
@@ -614,6 +655,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       viewSettings,
       isDarkMode,
       isMobile: !!appService?.isMobile,
+      supabaseUserId: user?.id,
     });
   };
 
