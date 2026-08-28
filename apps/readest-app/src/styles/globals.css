@@ -278,6 +278,20 @@
     scrollbar-gutter: unset !important;
   }
 
+  /* daisyUI 5 moved the enter animation onto `.modal-box` itself
+     (`opacity: 0; scale: .95`) and only un-hides it from
+     `.modal:is(.modal-open, [open], :popover-open, :target) > .modal-box`. In
+     daisyUI 4 that state lived on `.modal`, so the app also uses `.modal-box`
+     as a standalone box chassis (background, radius, shadow, eink border) under
+     its own hand-rolled overlays. Those boxes have no `.modal` ancestor to
+     un-hide them, so after the v5 migration they laid out but never painted.
+     Restore the v4 resting state for that case only; a box inside a `.modal`
+     still animates, including the close transition Dialog.tsx depends on. */
+  :where(.modal-box):not(:where(.modal *)) {
+    opacity: 1;
+    scale: 1;
+  }
+
   html[data-page='default'] {
     background: var(--color-base-100);
   }
