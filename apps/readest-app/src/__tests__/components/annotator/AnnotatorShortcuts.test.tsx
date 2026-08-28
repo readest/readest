@@ -1,10 +1,18 @@
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { useNotebookDocumentStore } from '@/store/notebookDocumentStore';
 import { eventDispatcher } from '@/utils/event';
 
 const h = vi.hoisted(() => ({
   actions: null as null | Record<string, () => boolean>,
   config: { booknotes: [] as unknown[], viewSettings: {} },
+  viewSettings: {
+    annotationToolbarItems: [] as string[],
+    noteExportConfig: {},
+    copyToNotebook: false,
+    rtl: false,
+    vertical: false,
+  },
   saveConfig: vi.fn(),
   updateBooknotes: vi.fn(),
 }));
@@ -69,12 +77,7 @@ vi.mock('@/store/readerStore', () => {
   const state = {
     getView: () => null,
     getViewsById: () => [],
-    getViewSettings: () => ({
-      annotationToolbarItems: [],
-      noteExportConfig: {},
-      rtl: false,
-      vertical: false,
-    }),
+    getViewSettings: () => h.viewSettings,
   };
   return { useReaderStore: (selector: (value: typeof state) => unknown) => selector(state) };
 });
@@ -87,6 +90,7 @@ vi.mock('@/store/readerProgressStore', () => ({
 vi.mock('@/store/notebookStore', () => ({
   useNotebookStore: () => ({
     setNotebookVisible: vi.fn(),
+    setNotebookActiveTab: vi.fn(),
     setNotebookNewAnnotation: vi.fn(),
     setNotebookNewHighlightIds: vi.fn(),
   }),
@@ -183,7 +187,9 @@ describe('Annotator popup shortcuts', () => {
   beforeEach(() => {
     h.actions = null;
     h.config.booknotes = [];
+    h.viewSettings.copyToNotebook = false;
     h.updateBooknotes.mockImplementation(() => h.config);
+    useNotebookDocumentStore.getState().reset();
     vi.clearAllMocks();
   });
 
@@ -221,5 +227,21 @@ describe('Annotator popup shortcuts', () => {
 
     expect(handled).toBe(true);
     expect(h.updateBooknotes).toHaveBeenCalledOnce();
+  });
+
+  test('stores copied excerpts without inserting them into the Notebook editor', async () => {
+    h.viewSettings.copyToNotebook = true;
+    useNotebookDocumentStore.getState().hydrate('book', '# Existing notes', null);
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectPopupText('epubcfi(/6/2!/4/2)');
+
+    act(() => {
+      h.actions?.['onCopySelection']?.();
+    });
+
+    expect(h.config.booknotes).toEqual([
+      expect.objectContaining({ type: 'excerpt', text: 'selected text' }),
+    ]);
+    expect(useNotebookDocumentStore.getState().sessions['book']?.content).toBe('# Existing notes');
   });
 });

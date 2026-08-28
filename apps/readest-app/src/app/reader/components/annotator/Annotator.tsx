@@ -19,7 +19,6 @@ import { getBookProgress, useBookProgress } from '@/store/readerProgressStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
-import { useNotebookDocumentStore } from '@/store/notebookDocumentStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { isSystemDictionaryEnabled } from '@/services/dictionaries/registry';
@@ -58,8 +57,6 @@ import { getWordCount, isSingleLookupTerm } from '@/utils/word';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { writeTextToClipboard } from '@/utils/clipboard';
 import { buildAnnotationUrl } from '@/utils/deeplink';
-import { buildAnnotationCopyMarkdown } from '@/utils/note';
-import { insertNotebookMarkdown, validateNotebookMutation } from '../../utils/notebookDocument';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { canShareText, shareSelectedText } from '@/utils/share';
 import { getToolbarToolTypes, supportsProofread } from '@/utils/annotationToolbar';
@@ -1249,41 +1246,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
       updatedAt: now,
     };
 
-    const bookHash = bookKey.split('-')[0]!;
-    const linkType = viewSettings.noteExportConfig?.linkType ?? DEFAULT_NOTE_EXPORT_CONFIG.linkType;
-    const url = buildAnnotationUrl(
-      { bookHash, noteId: annotation.id, cfi: annotation.cfi },
-      linkType,
-    );
-    const markdown = buildAnnotationCopyMarkdown({
-      text: annotation.text,
-      note: annotation.note,
-      noteLabel: _('Note'),
-      url,
-      linkLabel: annotation.page
-        ? _('Page: {{number}}', { number: annotation.page })
-        : _('Open in Readest'),
-    });
-
-    const notebook = useNotebookDocumentStore.getState();
-    const session = notebook.sessions[bookHash];
-    const currentContent = session?.content ?? '';
-    const prospective = insertNotebookMarkdown(
-      currentContent,
-      markdown,
-      session?.selectionStart ?? currentContent.length,
-      session?.selectionEnd ?? currentContent.length,
-    );
-    if (!validateNotebookMutation(currentContent, prospective.content).accepted) {
-      notebook.mutate(bookHash, prospective.content);
-      eventDispatcher.dispatch('toast', {
-        type: 'warning',
-        message: _('Notebook is too large to save. Copy or remove some text to continue.'),
-        timeout: 3000,
-      });
-      return;
-    }
-
     if (existingIndex !== -1) {
       annotations[existingIndex] = annotation;
     } else {
@@ -1292,7 +1254,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets }> = ({
     const updatedConfig = updateBooknotes(bookKey, annotations);
     if (updatedConfig) {
       saveConfig(envConfig, bookKey, updatedConfig, settings);
-      notebook.insert(bookHash, markdown);
     }
     eventDispatcher.dispatch('toast', {
       type: 'info',
