@@ -83,3 +83,66 @@ describe('RemoteFile.fromNativePath (rangefile query-range scheme)', () => {
     expect(noRangeHeader()).toBe(true);
   });
 });
+
+// readest#5918: a cached chunk covers [chunkStart, chunkStart + byteLength - 1].
+// The cache-hit test used to accept an inclusive `end` one byte past that, and
+// `ArrayBuffer.slice` clamps instead of throwing — so the caller got a buffer
+// one byte short with no error. A short PalmDOC record read corrupts every
+// byte offset after it in a MOBI/AZW3 book.
+describe('RemoteFile chunk cache', () => {
+  const TOTAL = 1024 * 1024;
+  let data: Uint8Array;
+
+  beforeEach(() => {
+    data = new Uint8Array(TOTAL);
+    for (let i = 0; i < data.length; i++) data[i] = (i * 31 + 7) & 0xff;
+    globalThis.fetch = vi.fn(async (_input: unknown, init?: RequestInit) => {
+      const headers = (init?.headers ?? {}) as Record<string, string>;
+      const range = headers['Range'];
+      if (!range) {
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-length': String(TOTAL) }),
+          arrayBuffer: async () => data.buffer.slice(0),
+        } as unknown as Response;
+      }
+      const [, s, e] = /bytes=(\d+)-(\d+)/.exec(range)!;
+      const body = data.slice(Number(s), Math.min(Number(e) + 1, TOTAL));
+      return {
+        ok: true,
+        status: 206,
+        headers: new Headers({ 'content-range': `bytes ${s}-${e}/${TOTAL}` }),
+        arrayBuffer: async () =>
+          body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength),
+      } as unknown as Response;
+    }) as unknown as typeof fetch;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('never serves fewer bytes than requested from a cached chunk', async () => {
+    const f = new RemoteFile('http://example.test/book.azw3', 'book.azw3');
+    f._open_with_head = async () => {
+      Object.defineProperty(f, 'size', { value: TOTAL, configurable: true });
+      return f;
+    };
+    Object.defineProperty(f, 'size', { value: TOTAL, configurable: true });
+
+    // Seed a chunk: a small read caches [start - 1024, start - 1024 + 131071].
+    const seedStart = 200_000;
+    await f.slice(seedStart, seedStart + 4096).arrayBuffer();
+    const chunkStart = seedStart - 1024;
+    const bufferSize = 1024 * 128;
+
+    // Request a window whose last byte sits exactly one past the cached chunk.
+    const start = chunkStart + 127_000;
+    const endExclusive = chunkStart + bufferSize + 1;
+    const got = new Uint8Array(await f.slice(start, endExclusive).arrayBuffer());
+
+    expect(got.length).toBe(endExclusive - start);
+    expect(Array.from(got)).toEqual(Array.from(data.subarray(start, endExclusive)));
+  });
+});

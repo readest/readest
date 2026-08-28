@@ -430,7 +430,12 @@ export class RemoteFile extends File implements ClosableFile {
       const cachedChunkStart = Array.from(this.#cache.keys()).find((chunkStart) => {
         const buffer = this.#cache.get(chunkStart)!;
         const bufferSize = buffer.byteLength;
-        return start >= chunkStart && end <= chunkStart + bufferSize;
+        // `end` is inclusive, so the cached chunk's last byte is at
+        // `chunkStart + bufferSize - 1`. Accepting `end === chunkStart +
+        // bufferSize` here would take the cache branch for a range whose last
+        // byte the chunk doesn't hold, and `buffer.slice` clamps rather than
+        // throws — the caller silently gets one byte less than it asked for.
+        return start >= chunkStart && end < chunkStart + bufferSize;
       });
       if (cachedChunkStart !== undefined) {
         this.#updateAccessOrder(cachedChunkStart);
