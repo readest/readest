@@ -109,20 +109,12 @@ const BooknoteView: React.FC<{
     setExcludedStyles([]);
   }, []);
 
-  // Facets apply only to annotations; excerpts do not carry a highlight style.
   const liveAnnotations = useMemo(
     () => allNotes.filter((note) => note.type === 'annotation' && !note.deletedAt),
     [allNotes],
   );
-  const sourceMaterial = useMemo(
-    () =>
-      allNotes.filter(
-        (note) => (note.type === 'annotation' || note.type === 'excerpt') && !note.deletedAt,
-      ),
-    [allNotes],
-  );
   const facets = useMemo(() => collectAnnotationFacets(liveAnnotations), [liveAnnotations]);
-  const counts = useMemo(() => summarizeAnnotationHub(sourceMaterial), [sourceMaterial]);
+  const counts = useMemo(() => summarizeAnnotationHub(liveAnnotations), [liveAnnotations]);
 
   // Filter active notes of this type, then apply the hub's kind/query/facet
   // filter (annotation tab only). useMemo so referential stability flows
@@ -132,13 +124,13 @@ const BooknoteView: React.FC<{
     if (type !== 'annotation') {
       return allNotes.filter((note) => note.type === type && !note.deletedAt);
     }
-    return filterBooknotes(sourceMaterial, {
+    return filterBooknotes(liveAnnotations, {
       kind: filterKind,
       query,
       excludedColors,
       excludedStyles,
     });
-  }, [allNotes, sourceMaterial, type, filterKind, query, excludedColors, excludedStyles]);
+  }, [allNotes, liveAnnotations, type, filterKind, query, excludedColors, excludedStyles]);
 
   // Build groups + sort by toc id and intra-group cfi.
   const sortedGroups = useMemo<BooknoteGroup[]>(() => {
@@ -400,7 +392,7 @@ const BooknoteView: React.FC<{
       role='tree'
       data-annotations-heading={type === 'annotation' ? '' : undefined}
       tabIndex={type === 'annotation' ? -1 : undefined}
-      aria-label={type === 'annotation' ? _('Annotations and Clippings') : undefined}
+      aria-label={type === 'annotation' ? _('Annotations') : undefined}
     >
       {type === 'annotation' && (
         <AnnotationsToolbar
@@ -408,7 +400,6 @@ const BooknoteView: React.FC<{
           searchInput={searchInput}
           isSearchVisible={isSearchBarVisible}
           annotationCount={counts.annotations}
-          clippingCount={counts.clippings}
           matchCount={filteredNotes.length}
           isFiltering={isFiltering}
           onCloseSearch={() => setSearchBarVisible(false)}
@@ -438,7 +429,7 @@ const BooknoteView: React.FC<{
           >
             <EmptyState
               Icon={type === 'annotation' ? PiNotePencil : RiBookmark3Line}
-              label={type === 'annotation' ? _('No Annotations or Clippings') : _('No Bookmarks')}
+              label={type === 'annotation' ? _('No Annotations') : _('No Bookmarks')}
               hint={type === 'annotation' ? _('Select some text to highlight') : undefined}
               action={
                 type === 'bookmark' ? (

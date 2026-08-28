@@ -5,7 +5,6 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { BookNote } from '@/types/book';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
-import { filterBooknotes } from '@/app/reader/utils/annotatorUtil';
 
 interface SearchBarProps {
   isVisible: boolean;
@@ -98,7 +97,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
     }
 
     const { booknotes: allNotes = [] } = config;
-    const results = filterBooknotes(allNotes, { kind: 'all', query: term });
+    const query = term.trim().toLowerCase();
+    const results = allNotes.filter(
+      (note) =>
+        note.type === 'excerpt' &&
+        !note.deletedAt &&
+        (note.text?.toLowerCase().includes(query) || note.note?.toLowerCase().includes(query)),
+    );
     onSearchResultChange(results);
   };
 

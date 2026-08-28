@@ -194,7 +194,7 @@ describe('summarizeAnnotationHub', () => {
       makeNote({ id: 'b', note: 'thought' }),
       makeNote({ id: 'c' }),
     ]);
-    expect(counts).toEqual({ annotations: 3, clippings: 0 });
+    expect(counts).toEqual({ annotations: 3 });
   });
 
   it('ignores tombstoned source material', () => {
@@ -204,23 +204,23 @@ describe('summarizeAnnotationHub', () => {
       makeNote({ id: 'c', type: 'excerpt' }),
       makeNote({ id: 'd', type: 'excerpt', deletedAt: 3 }),
     ]);
-    expect(counts).toEqual({ annotations: 1, clippings: 1 });
+    expect(counts).toEqual({ annotations: 1 });
   });
 
   it('keeps the With notes filter as a subset of the annotation total', () => {
     const notes = [makeNote({ note: '   ' })];
-    expect(summarizeAnnotationHub(notes)).toEqual({ annotations: 1, clippings: 0 });
+    expect(summarizeAnnotationHub(notes)).toEqual({ annotations: 1 });
     expect(filterBooknotes(notes, { kind: 'notes', query: '' }).length).toBe(1);
   });
 
   it('returns zeroes for an empty list', () => {
-    expect(summarizeAnnotationHub([])).toEqual({ annotations: 0, clippings: 0 });
+    expect(summarizeAnnotationHub([])).toEqual({ annotations: 0 });
   });
 
   it('excludes the notebook document', () => {
     expect(
       summarizeAnnotationHub([makeNote({ id: 'notebook', type: 'notebook', note: '# Notes' })]),
-    ).toEqual({ annotations: 0, clippings: 0 });
+    ).toEqual({ annotations: 0 });
   });
 });
 

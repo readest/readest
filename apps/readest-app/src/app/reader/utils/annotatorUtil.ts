@@ -452,7 +452,7 @@ export function mergeRestyledAnnotation(existing: BookNote, restyled: BookNote):
   };
 }
 
-export type AnnotationFilterKind = 'all' | 'notes' | 'clippings';
+export type AnnotationFilterKind = 'all' | 'notes';
 
 export interface BooknoteFilter {
   kind: AnnotationFilterKind;
@@ -464,19 +464,17 @@ export interface BooknoteFilter {
 /**
  * Filter source material for the annotations hub.
  *
- * Tombstones and the reserved Notebook document are always excluded. All
- * combines annotations and excerpts, With notes selects annotations carrying
- * a note body, and Clippings selects excerpts. Query and facet filters compose
- * with that kind filter.
+ * Tombstones and non-annotation records are always excluded. All includes
+ * every annotation, while With notes selects annotations carrying a note body.
+ * Query and facet filters compose with that kind filter.
  */
 export function filterBooknotes(notes: BookNote[], filter: BooknoteFilter): BookNote[] {
   const { kind, excludedColors, excludedStyles } = filter;
   const lowercaseQuery = filter.query.trim().toLowerCase();
   return notes.filter((note) => {
     if (note.deletedAt) return false;
-    if (note.type !== 'annotation' && note.type !== 'excerpt') return false;
-    if (kind === 'notes' && (note.type !== 'annotation' || !note.note)) return false;
-    if (kind === 'clippings' && note.type !== 'excerpt') return false;
+    if (note.type !== 'annotation') return false;
+    if (kind === 'notes' && !note.note) return false;
     if (note.color && excludedColors?.includes(note.color)) return false;
     if (note.style && excludedStyles?.includes(note.style)) return false;
     if (!lowercaseQuery) return true;
@@ -515,7 +513,6 @@ export function collectAnnotationFacets(notes: BookNote[]): AnnotationFacets {
 
 export interface AnnotationHubCounts {
   annotations: number;
-  clippings: number;
 }
 
 /**
@@ -525,13 +522,11 @@ export interface AnnotationHubCounts {
  */
 export function summarizeAnnotationHub(notes: BookNote[]): AnnotationHubCounts {
   let annotations = 0;
-  let clippings = 0;
   for (const note of notes) {
     if (note.deletedAt) continue;
     if (note.type === 'annotation') annotations += 1;
-    if (note.type === 'excerpt') clippings += 1;
   }
-  return { annotations, clippings };
+  return { annotations };
 }
 
 export type NoteBubbleTransition = 'add' | 'remove' | 'none';

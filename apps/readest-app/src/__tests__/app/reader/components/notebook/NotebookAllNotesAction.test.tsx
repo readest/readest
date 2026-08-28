@@ -29,7 +29,14 @@ describe('Notebook All notes action', () => {
 
   it('opens all notes from the editor footer', () => {
     const handleOpenAnnotations = vi.fn();
-    render(<NotebookEditor bookKey='book-view' handleOpenAnnotations={handleOpenAnnotations} />);
+    render(
+      <NotebookEditor
+        bookKey='book-view'
+        handleOpenAnnotations={handleOpenAnnotations}
+        excerpts={[]}
+        onDeleteExcerpt={vi.fn()}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'All notes' }));
     expect(handleOpenAnnotations).toHaveBeenCalledTimes(1);

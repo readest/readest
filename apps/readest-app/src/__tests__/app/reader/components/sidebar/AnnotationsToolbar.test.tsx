@@ -40,8 +40,7 @@ const defaultProps = {
   searchInput: '',
   isSearchVisible: false,
   annotationCount: 9,
-  clippingCount: 3,
-  matchCount: 12,
+  matchCount: 9,
   isFiltering: false,
   colors: [] as HighlightColor[],
   styles: [] as HighlightStyle[],
@@ -68,8 +67,7 @@ describe('AnnotationsToolbar', () => {
     render(<AnnotationsToolbar {...defaultProps} />);
     fireEvent.click(screen.getByRole('button', { name: 'With notes' }));
     expect(defaultProps.onFilterKindChange).toHaveBeenCalledWith('notes');
-    fireEvent.click(screen.getByRole('button', { name: 'Clippings' }));
-    expect(defaultProps.onFilterKindChange).toHaveBeenCalledWith('clippings');
+    expect(screen.queryByRole('button', { name: 'Clippings' })).toBeNull();
   });
 
   it('marks the active chip with aria-pressed', () => {
@@ -142,27 +140,18 @@ describe('AnnotationsToolbar', () => {
     );
   });
 
-  it('summarizes the annotation mix', () => {
+  it('summarizes annotations', () => {
     render(<AnnotationsToolbar {...defaultProps} />);
-    expect(screen.getByTestId('annotations-summary').textContent).toBe(
-      '9 Annotations · 3 Clippings',
-    );
-  });
-
-  it('names only the kind that is present', () => {
-    const { rerender } = render(<AnnotationsToolbar {...defaultProps} clippingCount={0} />);
     expect(screen.getByTestId('annotations-summary').textContent).toBe('9 Annotations');
-    rerender(<AnnotationsToolbar {...defaultProps} annotationCount={0} />);
-    expect(screen.getByTestId('annotations-summary').textContent).toBe('3 Clippings');
   });
 
   it('reports matches against the total while filtering', () => {
     render(<AnnotationsToolbar {...defaultProps} isFiltering matchCount={5} />);
-    expect(screen.getByTestId('annotations-summary').textContent).toBe('5 of 12');
+    expect(screen.getByTestId('annotations-summary').textContent).toBe('5 of 9');
   });
 
   it('stays silent when there is nothing to count', () => {
-    render(<AnnotationsToolbar {...defaultProps} annotationCount={0} clippingCount={0} />);
+    render(<AnnotationsToolbar {...defaultProps} annotationCount={0} />);
     expect(screen.queryByTestId('annotations-summary')).toBeNull();
   });
 

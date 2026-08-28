@@ -31,21 +31,16 @@ describe('filterBooknotes', () => {
   const tombstoned = makeNote({ text: 'gone', note: 'gone note', deletedAt: 2000 });
 
   it('excludes tombstoned notes for every kind', () => {
-    for (const kind of ['all', 'notes', 'clippings'] as const) {
+    for (const kind of ['all', 'notes'] as const) {
       expect(filterBooknotes([tombstoned], { kind, query: '' })).toEqual([]);
       expect(filterBooknotes([tombstoned], { kind, query: 'gone' })).toEqual([]);
     }
   });
 
-  it('combines annotations and excerpts while excluding the notebook document', () => {
+  it('includes annotations while excluding excerpts and the notebook document', () => {
     const notes = [highlight, noted, clipping, notebook];
-    expect(filterBooknotes(notes, { kind: 'all', query: '' })).toEqual([
-      highlight,
-      noted,
-      clipping,
-    ]);
+    expect(filterBooknotes(notes, { kind: 'all', query: '' })).toEqual([highlight, noted]);
     expect(filterBooknotes(notes, { kind: 'notes', query: '' })).toEqual([noted]);
-    expect(filterBooknotes(notes, { kind: 'clippings', query: '' })).toEqual([clipping]);
   });
 
   it('matches the query against highlight text, case-insensitively', () => {
@@ -63,9 +58,6 @@ describe('filterBooknotes', () => {
   it('applies kind and query together', () => {
     expect(filterBooknotes([highlight, noted], { kind: 'notes', query: 'rabbit' })).toEqual([
       noted,
-    ]);
-    expect(filterBooknotes([highlight, clipping], { kind: 'clippings', query: 'drink' })).toEqual([
-      clipping,
     ]);
   });
 

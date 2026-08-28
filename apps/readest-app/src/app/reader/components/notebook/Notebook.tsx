@@ -13,6 +13,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss';
 import { usePanelResize } from '@/hooks/usePanelResize';
 import { eventDispatcher } from '@/utils/event';
+import { BookNote } from '@/types/book';
 import { getBookDirFromLanguage } from '@/utils/book';
 import { getPanelTopInset } from '@/utils/insets';
 import { Overlay } from '@/components/Overlay';
@@ -49,7 +50,7 @@ const Notebook: React.FC = () => {
     toggleNotebookPin,
     setNotebookActiveTab,
   } = useNotebookStore();
-  const { getBookData, getConfig, setConfig } = useBookDataStore();
+  const { getBookData, getConfig, setConfig, updateBooknotes, saveConfig } = useBookDataStore();
   const { getViewSettings } = useReaderStore();
   const { activeConversationId } = useAIChatStore();
 
@@ -153,6 +154,17 @@ const Notebook: React.FC = () => {
     });
   };
 
+  const handleDeleteExcerpt = (excerpt: BookNote) => {
+    if (!sideBarBookKey) return;
+    const config = getConfig(sideBarBookKey);
+    if (!config?.booknotes) return;
+    const booknotes = config.booknotes.map((note) =>
+      note.id === excerpt.id && note.type === 'excerpt' ? { ...note, deletedAt: Date.now() } : note,
+    );
+    const updatedConfig = updateBooknotes(sideBarBookKey, booknotes);
+    if (updatedConfig) void saveConfig(envConfig, sideBarBookKey, updatedConfig, settings);
+  };
+
   const { handleResizeStart: handleDragStart, handleResizeKeyDown: handleDragKeyDown } =
     usePanelResize({
       side: 'end',
@@ -164,6 +176,9 @@ const Notebook: React.FC = () => {
 
   if (!sideBarBookKey) return null;
   const bookData = getBookData(sideBarBookKey);
+  const excerptNotes = (getConfig(sideBarBookKey)?.booknotes ?? [])
+    .filter((note) => note.type === 'excerpt' && note.text && !note.deletedAt)
+    .sort((a, b) => a.createdAt - b.createdAt);
   const viewSettings = getViewSettings(sideBarBookKey);
   if (!bookData?.bookDoc) return null;
   const languageDir = getBookDirFromLanguage(bookData.bookDoc.metadata.language);
@@ -250,7 +265,12 @@ const Notebook: React.FC = () => {
             <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
           </div>
         ) : (
-          <NotebookEditor bookKey={sideBarBookKey} handleOpenAnnotations={handleOpenAnnotations} />
+          <NotebookEditor
+            bookKey={sideBarBookKey}
+            handleOpenAnnotations={handleOpenAnnotations}
+            excerpts={excerptNotes}
+            onDeleteExcerpt={handleDeleteExcerpt}
+          />
         )}
         <div
           className='shrink-0'
