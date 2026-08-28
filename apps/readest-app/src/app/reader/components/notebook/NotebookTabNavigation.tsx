@@ -23,6 +23,8 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
 
   const tabs: NotebookTab[] = aiEnabled ? ['notes', 'ai'] : [];
 
+  if (tabs.length === 0) return null;
+
   const getTabLabel = (tab: NotebookTab) => {
     switch (tab) {
       case 'notes':
