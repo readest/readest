@@ -124,6 +124,7 @@
 - [#5680 Read-in-place uncheck](readinplace-uncheck-unregister-5680.md) MERGED #5685; drag-drop ingress MUST pass real registration state, else silent unregister
 - [#5360 Wayland tap kills native menu](wayland-tap-context-menu-5360.md) MERGED #5467; verify pending
 ## Networking & LAN
+- [Nearby BookDrop branding](nearby-bookdrop-branding.md) LocalSend feature renamed in UI 2026-08-28; code ids stay `localsend`; brand untranslated
 - [LocalSend integration](localsend-integration.md) MERGED #5611; fork `readest/localsend`; mTLS needs `WebConfig{upload:true}`; commands need 3-place ACL
 - [koplugin LocalSend receive+send](koplugin-localsend-receive.md) MERGED #5687; static-musl BINARY+subprocess (Kindle glibc); fork pinned 3cae1825; ANDROID exec IMPOSSIBLE
 - LocalSend discovery was DEAD 3 ways — MERGED #5626 + fork rev 37219949; rev bumps rebase BOTH patches
