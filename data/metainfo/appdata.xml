@@ -70,6 +70,22 @@
   </supports>
 
   <releases>
+    <release version="0.12.6" date="2026-08-29">
+      <description>
+        <ul>
+          <li>Audiobooks: Added Audiobookshelf support for streaming audiobooks and podcasts, and you can now pair an audiobook with its ebook to read along as it plays</li>
+          <li>Text-to-Speech: Added a lyric-style view that shows the sentences around the one being read, plus per-book offline voice downloads and steadier pauses between sentences</li>
+          <li>Library: You can now browse the web inside Readest to add books, choose which chapters to import from a web novel, hide covers for privacy, and watch download progress right on the shelf</li>
+          <li>Sharing: Added Nearby BookDrop to send and receive books between nearby devices over your local network, including KOReader devices</li>
+          <li>Reading: Added customizable keyboard and mouse shortcuts, Yomitan dictionary support, a full-screen book cover view, and right-to-left page order for comics and fixed-layout books</li>
+          <li>Reading: The Notebook is now a full writing workspace, where your notes save as you type, sync across devices, and link back to the passage they came from</li>
+          <li>Footnotes: Footnote popups no longer get cut off, let you select and look up text, and can jump straight to the note's place in the book</li>
+          <li>PDF: You can now select text across page boundaries, copy paragraphs without broken line breaks, and see the printed page numbers as reference pages</li>
+          <li>Sync: Your book groups and shelves now sync, file sync between devices settles reliably, highlights you delete in KOReader come across, and your progress survives an OPDS re-download</li>
+          <li>More: Fixed crashes on launch, garbled AZW3 books, the reading position drifting after rotating the screen, and unreadable highlights on e-ink screens</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.12.1" date="2026-08-08">
       <description>
         <ul>
@@ -206,22 +222,6 @@
           <li>Reading: Added support for inline CJK ruby annotations (warichu/Gezhu), improved footnote detection</li>
           <li>Speed Reading: Reading position now resumes correctly across devices and inside long sections</li>
           <li>Fixes: Many fixes across PDFs, MOBIs, EPUBs, TTS, scrolling, and accessibility</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.10.6" date="2026-04-13">
-      <description>
-        <ul>
-          <li>Library: Much faster browsing for large collections</li>
-          <li>Reading: Added an option to keep the book's original paragraph layout</li>
-          <li>Reading: Fixed page navigation for Arabic books</li>
-          <li>PDF: Fixed TTS reading interruptions at line breaks in PDFs</li>
-          <li>PDF: You can now apply your chosen theme colors to PDFs</li>
-          <li>Sync: Added HTTP Basic auth support for CWA</li>
-          <li>Sync: Improved progress sync with Hardcover.app</li>
-          <li>OPDS: You can now edit your registered catalogs, with better handling of download filenames</li>
-          <li>Speed Reading: Your reading position now syncs across devices</li>
-          <li>Platform: Fixed window buttons on macOS, reduced crashes on iOS</li>
         </ul>
       </description>
     </release>

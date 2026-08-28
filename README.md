@@ -60,6 +60,7 @@
 | **Library Management**                     | Organize, sort, and manage your entire ebook library.                                                                  | ✅         |
 | **OPDS/Calibre Integration**               | Integrate OPDS/Calibre to access online libraries and catalogs.                                                        | ✅         |
 | **Translate with DeepL and Yandex**        | From a single sentence to the entire book—translate instantly.                                                         | ✅         |
+| **Audiobook Support**                      | Extend functionality to play and manage audiobooks.                                                        | ✅           |
 | **Text-to-Speech (TTS) Support**           | Enjoy smooth, multilingual narration—even within a single book.                                                        | ✅         |
 | [**Read-Along Narration**][link-readalong] | Play embedded EPUB 3 Media Overlays with timed highlighting, or pair a reflowable EPUB locally with DRM-free MP3, M4A, or M4B narration. [Storyteller][link-storyteller] remains an option for generating phrase-aligned EPUBs. | ✅         |
 | **Sync across Platforms**                  | Synchronize book files, reading progress, notes, and bookmarks across all supported platforms.                         | ✅         |
@@ -76,7 +77,6 @@
 | ------------------------------- | -------------------------------------------------------------------------- | ------------ |
 | **AI-Powered Summarization**    | Generate summaries of books or chapters using AI for quick insights.       | 🛠           |
 | **Advanced Reading Stats**      | Track reading time, pages read, and more for detailed insights.            | 🛠           |
-| **Audiobook Support**           | Extend functionality to play and manage audiobooks.                        | 🔄           |
 | **Handwriting Annotations**     | Add support for handwriting annotations using a pen on compatible devices. | 🔄           |
 
 Stay tuned for continuous improvements and updates! Contributions and suggestions are always welcome—let's build the ultimate reading experience together. 😊
