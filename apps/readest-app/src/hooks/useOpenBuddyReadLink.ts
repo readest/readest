@@ -9,11 +9,14 @@ import { useAuth } from '@/context/AuthContext';
 import { navigateToReader } from '@/utils/nav';
 import { useTranslation } from './useTranslation';
 import { useBuddyReadStore } from '@/store/buddyReadStore';
+import { importShare } from '@/libs/share';
+import { ensureSharedBookLocal } from '@/libs/shareImport';
 
 let coldStartConsumed = false;
 
 export interface BuddyReadDeepLink {
   buddyReadId: number;
+  shareToken?: string | null;
 }
 
 export function parseBuddyReadDeepLink(urlStr: string): BuddyReadDeepLink | null {
@@ -22,19 +25,27 @@ export function parseBuddyReadDeepLink(urlStr: string): BuddyReadDeepLink | null
     if (url.protocol === 'readest:') {
       if (url.host === 'buddy-read') {
         const id = url.searchParams.get('id') || url.pathname.split('/').pop();
-        if (id && !isNaN(Number(id))) return { buddyReadId: Number(id) };
+        const shareToken = url.searchParams.get('shareToken') || url.searchParams.get('token');
+        if (id && !isNaN(Number(id)))
+          return { buddyReadId: Number(id), shareToken: shareToken || null };
       }
     } else {
       if (url.pathname.includes('/buddy-read/join') || url.pathname.includes('/buddy-read/')) {
         const id = url.searchParams.get('id') || url.pathname.split('/').pop();
-        if (id && !isNaN(Number(id))) return { buddyReadId: Number(id) };
+        const shareToken = url.searchParams.get('shareToken') || url.searchParams.get('token');
+        if (id && !isNaN(Number(id)))
+          return { buddyReadId: Number(id), shareToken: shareToken || null };
       }
     }
   } catch {
     const match =
       urlStr.match(/buddy-read(?:\/join)?[\/?]id=(\d+)/) || urlStr.match(/buddy-read\/(\d+)/);
     if (match && match[1]) {
-      return { buddyReadId: Number(match[1]) };
+      const shareTokenMatch = urlStr.match(/shareToken=([^&]+)/) || urlStr.match(/token=([^&]+)/);
+      return {
+        buddyReadId: Number(match[1]),
+        shareToken: shareTokenMatch ? shareTokenMatch[1] : null,
+      };
     }
   }
   return null;
@@ -49,7 +60,7 @@ export function useOpenBuddyReadLink() {
   const pending = useRef<BuddyReadDeepLink | null>(null);
 
   const handleBuddyReadLink = useCallback(
-    async ({ buddyReadId }: BuddyReadDeepLink) => {
+    async ({ buddyReadId, shareToken }: BuddyReadDeepLink) => {
       if (!user) {
         eventDispatcher.dispatch('toast', {
           type: 'info',
@@ -62,6 +73,27 @@ export function useOpenBuddyReadLink() {
 
       try {
         const store = useBuddyReadStore.getState();
+
+        let importedBookHash: string | null = null;
+        if (shareToken) {
+          try {
+            eventDispatcher.dispatch('toast', {
+              type: 'info',
+              message: _('Importing shared book...'),
+              timeout: 2000,
+            });
+            const result = await importShare(shareToken);
+            const book = await ensureSharedBookLocal({
+              token: shareToken,
+              importResult: result,
+              appService,
+            });
+            importedBookHash = book.hash;
+          } catch (importErr) {
+            console.error('Failed to auto-import book from shareToken:', importErr);
+          }
+        }
+
         // Join the buddy read
         await store.joinBuddyRead(buddyReadId);
         const details = await store.fetchBuddyReadDetails(buddyReadId);
@@ -73,7 +105,9 @@ export function useOpenBuddyReadLink() {
         // Check if the book is already in the library
         const library = useLibraryStore.getState().library || [];
         const existingBook = library.find(
-          (b) => b.title?.toLowerCase() === details.title?.toLowerCase(),
+          (b) =>
+            (importedBookHash && b.hash === importedBookHash) ||
+            b.title?.toLowerCase() === details.book_title?.toLowerCase(),
         );
 
         if (existingBook?.hash) {

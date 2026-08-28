@@ -5,6 +5,11 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
+import { useEnv } from '@/context/EnvContext';
+import { useSettingsStore } from '@/store/settingsStore';
+import { createShare } from '@/libs/share';
+import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
+import { READEST_WEB_BASE_URL } from '@/services/constants';
 import clsx from 'clsx';
 
 const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
@@ -12,6 +17,8 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const progress = useBookProgress(bookKey);
   const { getBookData } = useBookDataStore();
   const { user } = useAuth();
+  const { appService } = useEnv();
+  const [copyingInvite, setCopyingInvite] = useState(false);
 
   const {
     currentBuddyReadId,
@@ -195,14 +202,53 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     }
   };
 
-  const copyInviteLink = () => {
-    const inviteUrl = `${window.location.origin}/buddy-read/join?id=${currentBuddyReadId}`;
-    navigator.clipboard.writeText(inviteUrl);
-    eventDispatcher.dispatch('toast', {
-      type: 'success',
-      message: _('Invitation link copied to clipboard!'),
-      timeout: 2500,
-    });
+  const copyInviteLink = async () => {
+    if (copyingInvite) return;
+    setCopyingInvite(true);
+
+    let inviteUrl = `${READEST_WEB_BASE_URL}/buddy-read/join?id=${currentBuddyReadId}`;
+
+    try {
+      if (book) {
+        const settings = useSettingsStore.getState().settings;
+        const inReadestStorage = !!book.uploadedAt && isReadestCloudStorageActive(settings);
+
+        if (!inReadestStorage && appService) {
+          eventDispatcher.dispatch('toast', {
+            type: 'info',
+            message: _('Uploading book to cloud to generate shareable invite...'),
+            timeout: 3000,
+          });
+          await appService.uploadBook(book, () => {});
+        }
+
+        const response = await createShare({
+          bookHash: book.hash,
+          expirationDays: 7,
+          title: book.title,
+          author: book.author ?? null,
+          format: book.format,
+          cfi: null,
+        });
+
+        if (response?.token) {
+          inviteUrl += `&shareToken=${response.token}`;
+        }
+      }
+    } catch (err) {
+      console.warn(
+        'Could not generate share token for buddy read invite. Falling back to basic link.',
+        err,
+      );
+    } finally {
+      navigator.clipboard.writeText(inviteUrl);
+      eventDispatcher.dispatch('toast', {
+        type: 'success',
+        message: _('Invitation link copied to clipboard!'),
+        timeout: 2500,
+      });
+      setCopyingInvite(false);
+    }
   };
 
   const toggleReveal = (commentId: number) => {
@@ -224,9 +270,10 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         </p>
         <button
           onClick={copyInviteLink}
+          disabled={copyingInvite}
           className='btn btn-xs btn-outline btn-primary mt-2.5 w-full capitalize text-xs font-semibold'
         >
-          {_('Invite Buddies')}
+          {copyingInvite ? _('Generating Invite...') : _('Invite Buddies')}
         </button>
       </div>
 
