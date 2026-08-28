@@ -2173,7 +2173,7 @@
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "ショートカット {{shortcut}} はすでに {{actions}} に割り当てられています。",
   "Toggle Table of Contents": "目次の切り替え",
   "{{title}} Chapter {{chapter}}": "{{title}} 第{{chapter}}章",
-  "{{title}} Chapters {{first}} - {{last}}": "{{title}} 第{{first}} - {{last}}章",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} 第{{first}}章～第{{last}}章",
   "{{title}} ({{count}} chapters)_other": "{{title}}（{{count}}章）",
   "Loading audiobook chapters": "オーディオブックの章を読み込み中",
   "Failed to load the audiobook.": "オーディオブックを読み込めませんでした。",
