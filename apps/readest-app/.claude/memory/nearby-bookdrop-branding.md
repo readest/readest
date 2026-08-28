@@ -8,7 +8,7 @@ metadata:
   originSessionId: b9b94a53-b9d4-4e47-a727-327cb2286b22
 ---
 
-The LAN book-transfer feature (LocalSend protocol) is **user-facing branded "Nearby BookDrop"** as of 2026-08-28. Renamed across readest-app + readest.koplugin, all 34 JSON locales and all 33 koplugin `.po` catalogs.
+The LAN book-transfer feature (LocalSend protocol) is **user-facing branded "Nearby BookDrop"**. MERGED #5915 (a03b5144d, 2026-08-28), branch deleted, dev reset to main. Renamed across readest-app + readest.koplugin, all 34 JSON locales and all 33 koplugin `.po` catalogs. Device check of the Settings screen and the KOReader menu entry still pending.
 
 **Why:** chrox wanted a Readest-owned brand — users drop/send books to nearby Readest devices — instead of surfacing the third-party protocol name as the feature name.
 
@@ -25,5 +25,11 @@ The LAN book-transfer feature (LocalSend protocol) is **user-facing branded "Nea
 - The 15 Audiobookshelf / novel-import keys that were missing from every JSON locale are now **translated in all 34** (same session). Fixed, not outstanding.
 - `ro` had 5 keys where the *placeholder name itself* was translated (`{{eroare}}`, `{{dimensiune}}`, `{{fișier}}`, `{{formate}}`, `{{număr}}`) — i18next can't interpolate those, so they rendered literally. Fixed.
 - **`bo` (Tibetan) still has a broken cluster, NOT fixed.** One wrong string, `དེབ་གནས་བཅས་པའི་སྤྱོད་བྱས་མ་ཐུབ།`, is duplicated across `Calculating file info...`, `Migrating data...`, `Copying: {{file}}`, `{{current}} of {{total}} files`, `The book file is corrupted/empty`, `Failed to open the book file`; another duplicate covers the whole `Migration *` group. Two of them also dropped their `{{error}}` / `{{file}}` placeholders. Needs a real Tibetan pass, not a mechanical fix.
+
+**CodeRabbit review on #5915 — 5 of 10 applied.** Verify every i18n finding against the file's own terminology before acting; half of them were style or misfires.
+
+- Applied: `ja` chapter range (`第N章～第M章`, not the hyphenated abbreviation); `ru` unpair strings (file pairs with сопоставить, not открепить); `ka` unpair strings (file links with დაკავშირება, so sever კავშირი; გაითიშა also reads "switched off"); `id` "Toggel" -> "Alihkan" and `th` เปลี่ยน -> สลับ, in **three** keys each, not the one flagged.
+- Skipped: `tr` "Değiştir" is the file's own convention (8 of 12 Toggle keys); `fr` / `ru` chapter-label style (that key is a **book-title suggestion**, and all 34 locales follow the separator-free English shape); `fa` already in the جفت family.
+- **Open follow-up (real bug, pre-existing):** `{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}` is not plural-aware. `useTranslation` forwards options verbatim and i18next pluralizes only on `count`, but the call site passes `chapters`, so **English renders "1 audio chapters"** too. Fix is source-level: rename to `count` + plural variants in 34 locales, and it must also cover the sibling ternary branch `{{files}} files · {{chapters}} audio chapters · {{duration}}`, which has two numbers and cannot be pluralized with a single `count`.
 
 **Validation worth repeating after any `/i18n` run:** compare `{{var}}` sets between each key and its value (allowing `count` to be dropped in spelled-out plural forms). That check is what surfaced both defects above.

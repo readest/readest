@@ -38,6 +38,10 @@
 - [#5675 font sync "Unknown error"](font-sync-download-unknown-error-5675.md) PR #5700; mkdir FUSED with id minting; `Unknown error` collapse UNFIXED
 - [#5716 reference page count never synced](reference-page-count-sync-5716.md) MERGED #5727; per-book viewSettings cross NEITHER backend; verify pending
 - [deleted_at OR cursor invariant](sync-deleted-at-cursor-invariant.md) load-bearing
+- [#5911 groups + #5912 descriptions erased by row LWW](group-metadata-row-lww-clobber-5911-5912.md) ONE defect; #5905 fixed NEITHER; MERGED #5921 (80f196a9b) via groupUpdatedAt field clock; server half DEAD until web deploy
+- [#5923 storage search auto-fired mid-IME](storage-manager-search-button-5923.md) 1s debounce + `disabled={loading}` ON THE INPUT; fix = Search button form + isComposing guard; MERGED #5925 (0fcbd16f7), cleaned up; NO browser verify (page is auth-gated); reporter verify pending
+- [#5910 reader menu ignored third-party sync](reader-menu-third-party-sync-status-5910.md) label read Readest-Cloud stamps only AND the tap was inert; MERGED #5922 (8aaf2759f) via shared useCloudSyncStatus
+- [#5900 file sync never converged](file-sync-converge-5900.md) MERGED #5905 (fda5a364a); RULE: incremental sync = O(changed), NEVER a whole local/remote dir read; hardening + blind overwrite belong to Full Sync
 - [#5883 file sync never moved the live reader](file-sync-live-view-progress-5883.md) MERGED #5886 (39580e754), branch deleted; pullNow merged+toasted but never `view.goTo` unlike cloud/KOSync; jump is UNCONDITIONAL (merge is LWW both directions) + hint moved after the await; PUSH_DEBOUNCE_MS 15s -> 5s (trailing-only, page turns reset it); reporter verify pending, never device-tested
 - [#5839 Qiniu S3 "Authentication failed" on `()` keys](s3-key-rfc3986-wire-encoding-5839.md) MERGED #5849; Qiniu verify by reporter pending
 - [#5846 Hardcover picks the wrong book](hardcover-link-book-5846.md) MERGED #5857; Link Book picker + device-local `BookConfig.hardcover`; NOT verified live; cross-device link sync = follow-up
@@ -61,7 +65,7 @@
 - [APKs opened with Readest](android-intent-filter-pathpattern-needs-host.md) MERGED #5610, verify PENDING; `pathPattern` DEAD without `android:host`
 - [#5799 BT HID hotplug recreates activity](android-configchanges-navigation-recreate-5799.md) MERGED #5804; manifest regen reintroduces it; verify PENDING
 ## Reader Features & UI
-- [daisyUI 5 + Tailwind 4 migration](daisyui-v5-tailwind-v4-migration.md) MERGED #5884 (8ef527af7); fixes #5587 via base-select; custom CSS MUST live in `@layer utilities`; v3 palette + v4 metrics pinned; iOS floor 16.4, WebView floor 111. 3 post-merge regressions Chrome-VERIFIED 2026-08-27: toast collapsed to 0px (`w-auto` beats v5's `width:max-content`), `loading-lg` 2.5rem->1.75rem (already fixed by chrox in #5892), dialog close left a title-only strip (pre-existing on v4, fixed in Dialog by holding the body 300ms); toast+dialog = PR #5894 MERGED (800af00f3)
+- [daisyUI 5 + Tailwind 4 migration](daisyui-v5-tailwind-v4-migration.md) MERGED #5884; custom CSS MUST live in `@layer utilities`; 4 post-merge regressions fixed: toast 0px, `loading-lg`, dialog close strip, bare `.modal-box` never paints outside `.modal` = #5916 (f8a3e3d2d)
 - [#480 IDPF EPUB3 sample sweep](epub3-samples-idpf-480.md) MERGED #5872 (07371ccce) + foliate#84, worktree removed (inline MathML wrapper + math pre-wrap, epub:switch transformer, bitmap-spine viewport, SVG-spine font crash); all 42 samples Chrome-verified; reporter verify pending; calibre can't even open the bitmap/SVG-spine/kusamakura samples; full-screen calibre OCCLUDES Chrome (MCP timeouts)
 - [#1812 Kotobee EPUB embedded video](epub-embedded-video-kotobee-1812.md) MERGED #5868 (5aae8d6c5) + foliate #83; ROOT: script-built `<video src=../x.mp4>` can't resolve against the `blob:` base -> media error -> Kotobee tears its player down; Chromium + Xiaomi VERIFIED, reporter verify pending (issue still OPEN); adversarial probe caught a stale-resolution race on src-swap (fixed, tested); foliate squash-merges so ALWAYS re-pin the submodule; file:// VIEW intent does NOT import on Android (use the app picker); XHTML docs have lowercase tagName
 - Resolved/stable feature memories → [Reader Feature Fixes](reader-feature-fixes.md)
@@ -76,6 +80,8 @@
 - [#5795 e-ink per-device CSS](eink-per-device-css-data-eink-5795.md) MERGED #5803; Boox verify PENDING
 - [#5662 Alert sized off its own text](alert-flex-item-content-sizing-5662.md) MERGED; `w-full` wrapper LOAD-BEARING; needs browser test
 - [#1582 translated text loses formatting](translation-inline-markup-1582.md) STILL OPEN; default `deepl` CORRUPTS markup
+- [en->zh provider verification 2026-08-28](translation-providers-device-verification-2026-08.md) MERGED #5913 (e782af530), branch cleared; all 4 OK on Xiaomi; DeepL ZH-HANT/ZH-TW 500 was OUR casing bug (`.toUpperCase()` on the whole code); `ZH-Hant` works, FIXED; Google 429 ROOT = the Tauri Rust HTTP client (window.fetch 200 vs tauriFetch 429, same URL/instant) -> google.ts now always uses window.fetch + cap 4, device-VERIFIED; azure conc 3->10 on Tauri
+- [Xiaomi loses ALL network when locked](xiaomi-monoproxy-freezes-when-locked.md) MonoProxy per-app VPN (uid 10452) freezes -> Readest blackholes; unlock FIRST; Tauri re-injects IPC and silently kills invoke hooks
 - [#5772 iframe translation observer](translation-iframe-observer-5772.md) MERGED; PR's root cause FALSE; `allTextNodes` INDEX-COUPLED
 - [#5600 PDF quota toast on every selection](pdf-translation-quota-toast-5600.md) MERGED #5617; contextmenu auto-open + stale `translationEnabled` UNFIXED
 - [#5538 highlight resize orphan bubble](highlight-resize-orphan-note-bubble-5538.md) MERGED #5541; drag-race overlay UNFIXED
@@ -98,6 +104,8 @@
 - [kaikki raw dump for Word Lens](wordlens-en-vi-pack-5737.md) per-language kaikki file DEPRECATED (wiktextract#1178); build streams raw-wiktextract-data.jsonl.gz gzipped, filters lang_code; MERGED #5861 2026-08-24; regenerated en-vi/en-hu SYNCED to CDN (verified sha256)
 - [Readest Voice self-hosted TTS](selfhosted-premium-tts-plans.md) APPROVED 2026-07-08; not started
 - [TTS word highlight skipped Word Lens words](tts-word-highlight-wordlens-ruby-collapse.md) `expandRangeOverRuby` widened over `cfi-skip` wl-gloss ruby -> before/after the ruby are the SAME CFI step -> range COLLAPSES -> empty highlight; fix = expand only for spoken kana `<rt>`; Xiaomi-verified (32/241 draws empty before)
+- [#3772 custom keyboard/mouse shortcuts](custom-shortcuts-3772.md) MERGED #5907 (d27d324e1), cleaned up; bare `.modal-box` NEVER paints outside `.modal modal-open`; first-match-wins killed 6 default bindings
+- [#5755 TTS lyric-style sentence view](tts-lyric-view-5755.md) MERGED #5908 (fabbcc640) + #5909 (c04ba5a80); gate = `mediaClock && textHighlight !== false`; auto-scroll broke on stale line-centre cache (observe the CONTENT box, not just the scroller)
 - [PR #5690 TTS download queue](tts-download-queue-5690.md) MERGED 2026-08-16, Xiaomi verified; non-pt-BR i18n pending
 - [#4584 tap-death](issue-4584-tap-death-investigation.md) UNFIXED; likely WebView-148 · [#5353 italic last glyph clipped](italic-synthetic-oblique-clip-5353.md) WebView regression, not Readest code
 - [#5250 invert img dead w/ overrideColor](invert-img-dark-override-5250.md) PR #5383 open, VERIFIED
@@ -114,6 +122,8 @@
 - [#5583 download format filter](opds-download-format-filter-5583.md) PR #5593
 - [#5645 self-update crash on KOReader 2026.07+](koplugin-selfupdate-unpackarchive-5645.md) PR #5656; Device:unpackArchive DROPPED upstream
 - [#5745 CBZ split-chapter folder order](cbz-split-folder-page-order-5745.md) MERGED #5762 + foliate#79; use `pnpm worktree:rm` for submodule worktrees
+- [#5924 RTL blank pages mid-chapter](rtl-skip-link-blank-pages-5924.md) a11y skip link `left:0` resolves vs the EXPANDED iframe -> `contentSize`==iframe width ratchet; fix `left:auto`; MERGED #5926 (86493e801)
+- [#5918 AZW3 garbled + dead TOC](azw3-loadraw-concurrency-5918.md) ROOT: KF8 `loadRaw` races itself when section loads overlap on RemoteFile reads; MERGED #5920 (7e8abebcd) + foliate#86 (ca3f118); cleaned up; reporter verify pending; + RemoteFile cache off-by-one short read
 ## Library Fixes
 - [#5148 no overscroll on mobile = LIBRARY grid, not reader](overscroll-library-not-reader-5148.md) MERGED #5867 squash bc4b253b6 (2026-08-25), chrox VERIFIED iOS + Android, worktrees/branches/remote/dev duplicates cleared; RULE: overscroll ON for library page + bookshelf, NEVER for foliate view; iOS native bounce + JS rubber-band both edges elsewhere (MAX 96/k 0.35, touchcancel snap-back); Android WebView can NEVER draw native overscroll here (pullGlow maxY gate, OVER_SCROLL_ALWAYS no effect); `-webkit-overflow-scrolling` dead on iOS 13+/Blink; goToFraction(1) auto-marks FINISHED
 - [#5775 in-app web browser as book source](in-app-browser-book-source-5775.md) MERGED #5870 (merge f45036556, 2026-08-25); worktree removed, branch deleted; desktop = WebviewWindow.on_download + injected pill chrome (no `unstable`), mobile = native WebBrowserController; CodeRabbit review handled (4 fixed: atomic file reserve, partial-file cleanup, spawn_blocking, subscription catch; 2 misfires skipped); OPEN: target=_blank closes the desktop browser window; device happy-path smoke-test pending (Xiaomi locked)
@@ -124,7 +134,7 @@
 - [#5680 Read-in-place uncheck](readinplace-uncheck-unregister-5680.md) MERGED #5685; drag-drop ingress MUST pass real registration state, else silent unregister
 - [#5360 Wayland tap kills native menu](wayland-tap-context-menu-5360.md) MERGED #5467; verify pending
 ## Networking & LAN
-- [Nearby BookDrop branding](nearby-bookdrop-branding.md) LocalSend feature renamed in UI 2026-08-28; code ids stay `localsend`; brand untranslated
+- [Nearby BookDrop branding](nearby-bookdrop-branding.md) MERGED #5915 (a03b5144d); code ids stay `localsend`; brand untranslated; ABS row NOT plural-aware (open)
 - [LocalSend integration](localsend-integration.md) MERGED #5611; fork `readest/localsend`; mTLS needs `WebConfig{upload:true}`; commands need 3-place ACL
 - [koplugin LocalSend receive+send](koplugin-localsend-receive.md) MERGED #5687; static-musl BINARY+subprocess (Kindle glibc); fork pinned 3cae1825; ANDROID exec IMPOSSIBLE
 - LocalSend discovery was DEAD 3 ways — MERGED #5626 + fork rev 37219949; rev bumps rebase BOTH patches

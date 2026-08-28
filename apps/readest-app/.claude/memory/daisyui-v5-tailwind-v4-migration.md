@@ -32,7 +32,7 @@ MERGED 2026-08-26 as PR #5884 (squash `8ef527af7`); worktree and branch removed.
 - **`loading-lg` shrank 2.5rem -> 1.75rem** (v5 put the sizes on `calc(var(--size-selector,.25rem) * N)`, lg = 7). xs/sm/md are unchanged. Already fixed by chrox in #5892 (`8f9028579`) with `:where(.loading-lg){width:2.5rem}` - do not re-fix.
 - **Dialog close showed a title-only strip.** NOT a v5 regression (production v4 does the same) but v5 makes it worse: v4 faded the whole `.modal` (`opacity: 0` in the base rule, 200ms, no delay); v5's `.modal` base has no opacity at all, only `visibility .3s allow-discrete`, and `.modal-box` fades `opacity .2s ease-out 50ms`. All 8 dialogs gate their body on `isOpen` (`<Dialog isOpen={o}>{o && <Body/>}</Dialog>`), so the body unmounts on the closing frame and the box collapses onto its header. FIX in Dialog.tsx: hold the last body in a ref + state for `CLOSE_TRANSITION_MS` 300 (box opacity is already 0 at 250ms, so the unmount is never visible). PlayerView.test.tsx needed `await waitFor(...toBeNull())` because the episodes sheet's rows now outlive the close.
 
-- **Loading dots ran at reduced-motion speed for everyone (4th post-merge regression, found 2026-08-27).** daisyUI 5 ships each `.loading-*` mask TWICE: a slowed base rule that stands in for reduced motion (dots `dur='3s'`, infinity `6s`), then an `@media (prefers-reduced-motion:no-preference)` override at full speed (dots `1.05s`, infinity `2s`). Tailwind 4 REORDERS them inside `@layer utilities`, and not uniformly: `.loading` and `.loading-spinner` keep base-then-media (correct), while `.loading-dots`, `.loading-infinity` AND the `not-eink:loading-dots` variant copy come out media-then-base, so the SLOW mask wins. Visible as dots that drift up and down instead of bouncing. Upstream bug: daisyui.com itself computes `dur='3s'` with `prefers-reduced-motion: no-preference` matching. The v5 full-speed SVGs are BYTE-IDENTICAL to v4's, so re-applying them restores the v4 look exactly. FIX in globals.css (`@layer utilities`, after the `:where(.loading-lg)` pin): one `@media (prefers-reduced-motion: no-preference)` block re-declaring the fast masks for `:where(.loading-dots)` and `:where(html:not([data-eink='true'])) :where(.not-eink\:loading-dots)` (Spinner.tsx + EpisodesView reach dots through that VARIANT class, which `:where(.loading-dots)` does NOT match -- and it must stay e-ink-gated or e-ink loses its `loading-spinner` swap) plus `:where(.loading-infinity)`. Guarded in daisyui-v5-tokens.browser.test.tsx by asserting the `dur=` values parsed out of the computed `maskImage`.
+- **Loading dots ran at reduced-motion speed for everyone (4th post-merge regression, MERGED 2026-08-27 as PR #5906, squash `9131dc946`; worktree + local/remote branch removed; all 14 CI checks green, CodeRabbit clean; reporter = chrox, no device verify needed since it is CSS-only).** daisyUI 5 ships each `.loading-*` mask TWICE: a slowed base rule that stands in for reduced motion (dots `dur='3s'`, infinity `6s`), then an `@media (prefers-reduced-motion:no-preference)` override at full speed (dots `1.05s`, infinity `2s`). Tailwind 4 REORDERS them inside `@layer utilities`, and not uniformly: `.loading` and `.loading-spinner` keep base-then-media (correct), while `.loading-dots`, `.loading-infinity` AND the `not-eink:loading-dots` variant copy come out media-then-base, so the SLOW mask wins. Visible as dots that drift up and down instead of bouncing. Upstream bug: daisyui.com itself computes `dur='3s'` with `prefers-reduced-motion: no-preference` matching. The v5 full-speed SVGs are BYTE-IDENTICAL to v4's, so re-applying them restores the v4 look exactly. FIX in globals.css (`@layer utilities`, after the `:where(.loading-lg)` pin): one `@media (prefers-reduced-motion: no-preference)` block re-declaring the fast masks for `:where(.loading-dots)` and `:where(html:not([data-eink='true'])) :where(.not-eink\:loading-dots)` (Spinner.tsx + EpisodesView reach dots through that VARIANT class, which `:where(.loading-dots)` does NOT match -- and it must stay e-ink-gated or e-ink loses its `loading-spinner` swap) plus `:where(.loading-infinity)`. Guarded in daisyui-v5-tokens.browser.test.tsx by asserting the `dur=` values parsed out of the computed `maskImage`.
 - **Diagnosis recipe for "which daisyUI rule actually won":** `npx @tailwindcss/cli -i src/styles/globals.css -o out.css` renders the app's real cascade in ~600ms (no dev server, no Next build); then scan for each selector's occurrences and note which is LAST. Reading `node_modules/daisyui/components/*.css` alone is misleading -- the authored order there is correct and Tailwind is what flips it.
 
 **Verify recipes that worked here (no worktree needed):**
@@ -49,3 +49,106 @@ MERGED 2026-08-26 as PR #5884 (squash `8ef527af7`); worktree and branch removed.
 **Tailwind v4 `rotate-*` / `scale-*` / `translate-*` COMPOSE with `transform`; they no longer lose to it.** v3 folded them into `transform` via `--tw-rotate`, so an inline `style={{transform:'rotate(180deg)'}}` overrode a `rotate-180` class. v4 emits the standalone CSS `rotate` property, and the engine applies `translate` -> `rotate` -> `scale` -> `transform` in sequence, so BOTH apply and the angles ADD. Found 2026-08-27 in the selection-drag `Handle` (`AnnotationRangeEditor.tsx`), which carried `className={clsx(type==='start' && 'rotate-180')}` next to an inline transform: the start handle got 180+180=0 horizontally and 180+270=90 vertically, rendering identical to the end handle instead of mirroring it (the ball sat on the text side rather than outside the column). Fix = delete the class, keep the inline transform as the single source. DIAGNOSIS RECIPE on-device: `getComputedStyle(svg)` reports them SEPARATELY - `rotate: "180deg"` alongside `transform: "matrix(0,-1,1,0,0,0)"` - so a computed-style dump is the tell; the composed result never shows up in `transform`. `svg.style.rotate='none'` patches it live for a before/after screencap without a rebuild. Audit any `rotate-*`/`scale-*`/`translate-*` class that shares an element with an inline or CSS `transform`.
 
 Related: [[bug-patterns]], [[css-style-fixes]], [[eink-class-substring-matchers]].
+
+## Select regressions found 2026-08-28 (device-verified on Xiaomi, Chrome 153)
+
+Three separate v5 select regressions, all in the translator popup / settings selects:
+
+1. **Options wrap.** daisyUI ships `:is(.select,.select select) option { white-space: normal }`.
+   Because `.select` opts into `appearance: base-select` the picker is painted
+   IN-PAGE, so CSS on `<option>` is live and long entries ("Português (Brasil)",
+   "System Language") wrap in a narrow select. FIX: `:where(.select) option
+   { white-space: nowrap }` in globals.css `@layer utilities`.
+
+2. **Value no longer end-aligns.** `Select.tsx` sets `text-align-last: end`, which
+   worked in v4. In v5 it is inert for two reasons: `.select` gets
+   `width: clamp(3rem,20rem,100%)` so the box stretches to its max width whatever
+   the value is (200px while the value needs 96-154px), and the value is painted
+   into a UA-generated `<selectedcontent>` in the SHADOW ROOT. Author CSS cannot
+   reach it -- verified: `text-align:end` on the select and an injected
+   `select.select selectedcontent{text-align:end}` both did nothing, and daisyUI's
+   own `selectedcontent` rule is equally inert. FIX: `w-auto` on Select so the box
+   hugs its value; `justify-between` on the row then puts it against the chevron.
+
+3. **Picker popup not flush with the select.** daisyUI already end-aligns it
+   (`position-area: self-start span-self-start`) then pushes it back 16px:
+   `margin-inline: 8px` + `translate: -8px` (mirrored `[dir=rtl] translate: .5rem`).
+   FIX: `margin-inline-end: 0; translate: none` on `:where(.select)::picker(select)`.
+   Keep the START margin so a wide picker stays off the opposite edge.
+
+**How to debug a `::picker(select)`:** it has no DOM node, so measure it with
+`getComputedStyle(select, '::picker(select)')` -- that returns real `translate`,
+`margin-inline-*`, `position-area`, `width`. To prove a selector reaches it, set
+`background-color: red` and screenshot. Do NOT eyeball pixel offsets from
+screenshots; and note Chrome 153 in the Android WebView does NOT support
+`justify-self: anchor-end` or `anchor()` in `inset-inline-*` (both silently
+dropped), while `position-area` IS supported.
+
+**Also fixed the same day:** `TranslatorPopup` used
+`grid-rows-[1fr,auto,1fr,auto]`, which Tailwind emits verbatim as
+`grid-template-rows:1fr,auto,1fr,auto` -- commas are not track separators, the
+browser DISCARDS the declaration, and every row became an implicit auto track
+sized to content, pushing the translated pane and the provider footer off screen
+with nothing scrollable. Tracks need `_` separators AND `minmax(0,1fr)` (a bare
+`1fr` floors at min-content and overflows the capped popup again). This was the
+only comma-in-arbitrary-grid usage in the repo. RULE: assert resolved layout in a
+browser test, never the class string -- and on the popup itself
+`getComputedStyle().gridTemplateRows` reports USED track sizes even when the
+declaration was dropped, so probe an EMPTY grid with the same class, where a
+dropped declaration reports `none`.
+
+OPEN (minor, not fixed): `.select` also carries `flex-shrink: 1`, so in a narrow
+popup the footer's provider select can be shrunk ~4px below its content and
+`truncate` clips the label ("Yandex Translate" measured clientW 150 / scrollW 154
+in a narrow popup; clean at 154/154 in a 367px-wide one). `shrink-0` would fix it
+but no deterministic failing test could be built, so it was left alone.
+
+## Post-merge regression 2026-08-28: `.modal-box` never paints without a `.modal`
+
+MERGED as PR #5916 (squash `f8a3e3d2d`), branch deleted. Reporter verify pending;
+never clicked through a running app (the menu item is behind sign-in), proven at the
+CSS layer against the real compiled stylesheet.
+
+**Symptom:** Library -> account submenu -> "Cloud File Transfers" dimmed the screen
+and showed nothing. Same for the Group Books sheet and the Annotator's
+"importing annotations" spinner.
+
+**Root cause:** daisyUI 4 kept the enter animation on `.modal`; daisyUI 5 moved it
+onto the child (`.modal-box{opacity:0;scale:.95}`) and only un-hides it from
+`.modal:is(.modal-open,[open],:popover-open,:target)>.modal-box`. The app also uses
+`.modal-box` as a standalone BOX CHASSIS (bg-base-100, radius, shadow, and the
+`[data-eink='true'] .modal-box` border) under its own hand-rolled `fixed inset-0`
+overlays. Those boxes have no `.modal` ancestor, so they laid out, swallowed
+clicks, and never painted -- the backdrop was the only thing visible.
+
+**Fix** (`globals.css`, `@layer utilities`, one rule, covers every present and
+future site):
+```css
+:where(.modal-box):not(:where(.modal *)) { opacity: 1; scale: 1; }
+```
+`:where()` keeps specificity 0 so Tailwind utilities still win; the rule sits
+UNLAYERED inside `@layer utilities` while daisyUI ships in the nested sublayer
+`daisyui.l1.l2.l3`, and unlayered-in-a-layer beats that layer's sublayers
+regardless of specificity. The `:not(:where(.modal *))` guard is load-bearing: a
+box inside a CLOSED `.modal` must stay at opacity 0 or `Dialog.tsx`'s close
+transition (guarded by `dialog-close-frames.browser.test.tsx`) breaks.
+
+**Sites that were dark:** `TransferQueuePanel.tsx:256`, `GroupingModal.tsx:257`,
+`Annotator.tsx:2286`. Correct already (inside `.modal modal-open` / `<dialog
+class='modal' open>`): CatalogManager, FailedDownloadsDialog, TelemetryConsentDialog,
+KeyboardShortcutsSettings (patched per-site in #3772 -- see
+[[custom-shortcuts-3772]]), AppLockDialog, PassphrasePrompt, CustomDictionaries,
+Dialog.tsx.
+
+**Sweep for the same bug class** (a daisyUI child class whose OWN base rule hides
+it until an ancestor/sibling state matches): parse `node_modules/daisyui/components/*.css`
+for base-layer blocks declaring `opacity:0` / `display:none` / `visibility:hidden`.
+The full v5 list is `modal-box`, `collapse-content`, `drawer-side`, `tab-content`,
+`validator-hint`, `menu-dropdown`, `megamenu-vertical`, `floating-label>span`,
+`swap-on/off`. Only `modal-box` and `collapse-content` are used here, and the one
+`collapse-content` (`Notebook.tsx:490`) sits in a real `.collapse`. NOT this bug:
+`dropdown-content` hides only via `.dropdown ... .dropdown-content`, so a bare one
+is over-visible rather than invisible.
+
+Regression test: `src/__tests__/styles/modal-box-standalone.browser.test.ts`
+(browser, real stylesheet -- a jsdom test cannot see this).
