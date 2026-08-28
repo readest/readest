@@ -98,22 +98,17 @@ const Notebook: React.FC = () => {
     if (settings.globalReadSettings.notebookActiveTab) {
       setNotebookActiveTab(settings.globalReadSettings.notebookActiveTab);
     }
+    // The settings store only hydrates the Notebook store when this panel mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  useEffect(() => {
     const onNavigate = () => {
       if (!useNotebookStore.getState().isNotebookPinned) hideNotebook();
     };
     eventDispatcher.on('navigate', onNavigate);
     return () => eventDispatcher.off('navigate', onNavigate);
-  }, [
-    hideNotebook,
-    setNotebookActiveTab,
-    setNotebookPin,
-    setNotebookVisible,
-    setNotebookWidth,
-    settings.globalReadSettings.isNotebookPinned,
-    settings.globalReadSettings.notebookActiveTab,
-    settings.globalReadSettings.notebookWidth,
-  ]);
+  }, [hideNotebook]);
 
   const handleNotebookResize = (newWidth: string) => {
     setNotebookWidth(newWidth);
