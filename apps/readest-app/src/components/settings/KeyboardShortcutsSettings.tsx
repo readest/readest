@@ -240,7 +240,10 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
         }
       />
 
-      <div className='space-y-6 px-4 pb-4'>
+      {/* No px-4 here: BoxedList's `SectionTitle` carries its own `ps-4`, so the
+          group titles line up with the SubPageHeader breadcrumb and the cards
+          bleed to the panel edge — the same shape as the Integrations panel. */}
+      <div className='space-y-6 pb-4'>
         {SHORTCUT_SECTIONS.map((section) => {
           const actions = (Object.keys(shortcuts) as ShortcutAction[]).filter(
             (action) => shortcuts[action].section === section,
