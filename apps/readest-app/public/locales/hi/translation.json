@@ -2247,5 +2247,9 @@
   "Choose Audiobook": "ऑडियोबुक चुनें",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}” के साथ युग्मित करने के लिए Audiobookshelf ऑडियोबुक चुनें।",
   "Search audiobooks": "ऑडियोबुक खोजें",
-  "No matching audiobooks": "कोई मेल खाती ऑडियोबुक नहीं"
+  "No matching audiobooks": "कोई मेल खाती ऑडियोबुक नहीं",
+  "Last Synced — {{provider}}": "अंतिम सिंक — {{provider}}",
+  "Synced via {{count}} providers_one": "{{count}} प्रदाता के माध्यम से सिंक",
+  "Synced via {{count}} providers_other": "{{count}} प्रदाताओं के माध्यम से सिंक",
+  "Synced via {{provider}}": "{{provider}} के माध्यम से सिंक"
 }

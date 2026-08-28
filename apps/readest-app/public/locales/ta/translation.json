@@ -2247,5 +2247,9 @@
   "Choose Audiobook": "ஆடியோபுக்கைத் தேர்வுசெய்க",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}” உடன் இணைக்க Audiobookshelf ஆடியோபுக்கைத் தேர்வுசெய்க.",
   "Search audiobooks": "ஆடியோபுக்குகளைத் தேடு",
-  "No matching audiobooks": "பொருந்தும் ஆடியோபுக் எதுவும் இல்லை"
+  "No matching audiobooks": "பொருந்தும் ஆடியோபுக் எதுவும் இல்லை",
+  "Last Synced — {{provider}}": "கடைசி ஒத்திசைவு — {{provider}}",
+  "Synced via {{count}} providers_one": "{{count}} வழங்குநர் வழியாக ஒத்திசைக்கப்பட்டது",
+  "Synced via {{count}} providers_other": "{{count}} வழங்குநர்கள் வழியாக ஒத்திசைக்கப்பட்டது",
+  "Synced via {{provider}}": "{{provider}} வழியாக ஒத்திசைக்கப்பட்டது"
 }

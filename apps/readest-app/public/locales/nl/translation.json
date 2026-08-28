@@ -2247,5 +2247,9 @@
   "Choose Audiobook": "Luisterboek kiezen",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Kies het Audiobookshelf-luisterboek dat u aan ‘{{book}}’ wilt koppelen.",
   "Search audiobooks": "Luisterboeken zoeken",
-  "No matching audiobooks": "Geen overeenkomende luisterboeken"
+  "No matching audiobooks": "Geen overeenkomende luisterboeken",
+  "Last Synced — {{provider}}": "Laatst gesynchroniseerd — {{provider}}",
+  "Synced via {{count}} providers_one": "Gesynchroniseerd via {{count}} provider",
+  "Synced via {{count}} providers_other": "Gesynchroniseerd via {{count}} providers",
+  "Synced via {{provider}}": "Gesynchroniseerd via {{provider}}"
 }

@@ -2247,5 +2247,9 @@
   "Choose Audiobook": "অডিওবুক বেছে নিন",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}”-এর সাথে পেয়ার করার জন্য Audiobookshelf অডিওবুক বেছে নিন।",
   "Search audiobooks": "অডিওবুক খুঁজুন",
-  "No matching audiobooks": "মিল আছে এমন কোনো অডিওবুক নেই"
+  "No matching audiobooks": "মিল আছে এমন কোনো অডিওবুক নেই",
+  "Last Synced — {{provider}}": "শেষ সিঙ্ক — {{provider}}",
+  "Synced via {{count}} providers_one": "{{count}}টি প্রোভাইডারের মাধ্যমে সিঙ্ক",
+  "Synced via {{count}} providers_other": "{{count}}টি প্রোভাইডারের মাধ্যমে সিঙ্ক",
+  "Synced via {{provider}}": "{{provider}} এর মাধ্যমে সিঙ্ক"
 }

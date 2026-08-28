@@ -2308,5 +2308,10 @@
   "Choose Audiobook": "Alege cartea audio",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Alege cartea audio Audiobookshelf de asociat cu „{{book}}”.",
   "Search audiobooks": "Caută cărți audio",
-  "No matching audiobooks": "Nicio carte audio potrivită"
+  "No matching audiobooks": "Nicio carte audio potrivită",
+  "Last Synced — {{provider}}": "Ultima sincronizare — {{provider}}",
+  "Synced via {{count}} providers_one": "Sincronizat prin {{count}} furnizor",
+  "Synced via {{count}} providers_few": "Sincronizat prin {{count}} furnizori",
+  "Synced via {{count}} providers_other": "Sincronizat prin {{count}} de furnizori",
+  "Synced via {{provider}}": "Sincronizat prin {{provider}}"
 }

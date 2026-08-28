@@ -2247,5 +2247,9 @@
   "Choose Audiobook": "Επιλογή ηχητικού βιβλίου",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Επιλέξτε το ηχητικό βιβλίο Audiobookshelf που θα συνδεθεί με το «{{book}}».",
   "Search audiobooks": "Αναζήτηση ηχητικών βιβλίων",
-  "No matching audiobooks": "Δεν βρέθηκαν ηχητικά βιβλία"
+  "No matching audiobooks": "Δεν βρέθηκαν ηχητικά βιβλία",
+  "Last Synced — {{provider}}": "Τελευταίος συγχρονισμός — {{provider}}",
+  "Synced via {{count}} providers_one": "Συγχρονίστηκε μέσω {{count}} παρόχου",
+  "Synced via {{count}} providers_other": "Συγχρονίστηκε μέσω {{count}} παρόχων",
+  "Synced via {{provider}}": "Συγχρονίστηκε μέσω {{provider}}"
 }

@@ -2247,5 +2247,9 @@
   "Choose Audiobook": "Välj ljudbok",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Välj den Audiobookshelf-ljudbok som ska kopplas till ”{{book}}”.",
   "Search audiobooks": "Sök ljudböcker",
-  "No matching audiobooks": "Inga matchande ljudböcker"
+  "No matching audiobooks": "Inga matchande ljudböcker",
+  "Last Synced — {{provider}}": "Senast synkroniserad — {{provider}}",
+  "Synced via {{count}} providers_one": "Synkroniserad via {{count}} leverantör",
+  "Synced via {{count}} providers_other": "Synkroniserad via {{count}} leverantörer",
+  "Synced via {{provider}}": "Synkroniserad via {{provider}}"
 }

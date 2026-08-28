@@ -2247,5 +2247,9 @@
   "Choose Audiobook": "ශ්‍රව්‍ය පොත තෝරන්න",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}” සමඟ යුගල කිරීමට Audiobookshelf ශ්‍රව්‍ය පොත තෝරන්න.",
   "Search audiobooks": "ශ්‍රව්‍ය පොත් සොයන්න",
-  "No matching audiobooks": "ගැළපෙන ශ්‍රව්‍ය පොත් නැත"
+  "No matching audiobooks": "ගැළපෙන ශ්‍රව්‍ය පොත් නැත",
+  "Last Synced — {{provider}}": "අවසන් සමමුහුර්තය — {{provider}}",
+  "Synced via {{count}} providers_one": "සපයන්නන් {{count}}ක් හරහා සමමුහූර්ත කළා",
+  "Synced via {{count}} providers_other": "සපයන්නන් {{count}}ක් හරහා සමමුහූර්ත කළා",
+  "Synced via {{provider}}": "{{provider}} හරහා සමමුහූර්ත කළා"
 }

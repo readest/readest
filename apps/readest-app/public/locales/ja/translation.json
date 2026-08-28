@@ -2186,5 +2186,8 @@
   "Choose Audiobook": "オーディオブックを選択",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "「{{book}}」とペアリングするAudiobookshelfのオーディオブックを選択してください。",
   "Search audiobooks": "オーディオブックを検索",
-  "No matching audiobooks": "一致するオーディオブックがありません"
+  "No matching audiobooks": "一致するオーディオブックがありません",
+  "Last Synced — {{provider}}": "最終同期：{{provider}}",
+  "Synced via {{count}} providers_other": "{{count}} 件のプロバイダー経由で同期",
+  "Synced via {{provider}}": "{{provider}} 経由で同期"
 }

@@ -2247,5 +2247,9 @@
   "Choose Audiobook": "Hangoskönyv választása",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Válassza ki azt az Audiobookshelf-hangoskönyvet, amelyet a(z) „{{book}}” könyvhöz párosít.",
   "Search audiobooks": "Hangoskönyvek keresése",
-  "No matching audiobooks": "Nincs találat a hangoskönyvek között"
+  "No matching audiobooks": "Nincs találat a hangoskönyvek között",
+  "Last Synced — {{provider}}": "Utolsó szinkronizálás — {{provider}}",
+  "Synced via {{count}} providers_one": "Szinkronizálva {{count}} szolgáltatón keresztül",
+  "Synced via {{count}} providers_other": "Szinkronizálva {{count}} szolgáltatón keresztül",
+  "Synced via {{provider}}": "Szinkronizálva a következőn keresztül: {{provider}}"
 }

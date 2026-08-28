@@ -2308,5 +2308,10 @@
   "Choose Audiobook": "Scegli audiolibro",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Scegli l'audiolibro Audiobookshelf da associare a «{{book}}».",
   "Search audiobooks": "Cerca audiolibri",
-  "No matching audiobooks": "Nessun audiolibro corrispondente"
+  "No matching audiobooks": "Nessun audiolibro corrispondente",
+  "Last Synced — {{provider}}": "Ultima sincronizzazione — {{provider}}",
+  "Synced via {{count}} providers_one": "Sincronizzato tramite {{count}} fornitore",
+  "Synced via {{count}} providers_many": "Sincronizzato tramite {{count}} fornitori",
+  "Synced via {{count}} providers_other": "Sincronizzato tramite {{count}} fornitori",
+  "Synced via {{provider}}": "Sincronizzato tramite {{provider}}"
 }

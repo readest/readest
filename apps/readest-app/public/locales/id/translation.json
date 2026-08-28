@@ -2186,5 +2186,8 @@
   "Choose Audiobook": "Pilih Buku Audio",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Pilih buku audio Audiobookshelf untuk dipasangkan dengan “{{book}}”.",
   "Search audiobooks": "Cari buku audio",
-  "No matching audiobooks": "Tidak ada buku audio yang cocok"
+  "No matching audiobooks": "Tidak ada buku audio yang cocok",
+  "Last Synced — {{provider}}": "Sinkronisasi terakhir — {{provider}}",
+  "Synced via {{count}} providers_other": "Disinkronkan melalui {{count}} penyedia",
+  "Synced via {{provider}}": "Disinkronkan melalui {{provider}}"
 }

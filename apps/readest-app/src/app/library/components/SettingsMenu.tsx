@@ -14,17 +14,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
-import { useFileSyncStore } from '@/store/fileSyncStore';
-import {
-  isReadestCloudEnabled,
-  cloudProvidersDisplayName,
-  settingsKeyForBackend,
-  type CloudSyncProviderKind,
-} from '@/services/sync/cloudSyncProvider';
-import { getReadyFileSyncBackends } from '@/services/sync/file/runLibrarySync';
+import { isReadestCloudEnabled } from '@/services/sync/cloudSyncProvider';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useCloudSyncStatus } from '@/hooks/useCloudSyncStatus';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
@@ -40,8 +34,6 @@ import {
 } from '@/services/biometric';
 import { selectDirectory } from '@/utils/bridge';
 import { nextThemeMode } from '@/utils/ambientLight';
-import dayjs from 'dayjs';
-import { clampSyncTimeForDisplay } from '@/utils/time';
 import UserAvatar from '@/components/UserAvatar';
 import MenuItem from '@/components/MenuItem';
 import Quota from '@/components/Quota';
@@ -102,8 +94,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setIsDropdownOpen?.(false);
   };
   const { isSyncing, setLibrary } = useLibraryStore();
-  const fileSyncByKind = useFileSyncStore((s) => s.byKind);
-  const fileSyncLastError = useFileSyncStore((s) => s.lastErrorByKind);
   const { stats, hasActiveTransfers, setIsTransferQueueOpen } = useTransferQueue();
 
   const openTransferQueue = () => {
@@ -276,37 +266,20 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   // cursors freeze while Readest Cloud is off (the book/progress/note channels
   // are gated), so the file engine's timestamps have to stand in.
   const readestEnabled = isReadestCloudEnabled(settings);
-  // Only the providers that can ACTUALLY sync right now. A web Google Drive whose
-  // token expired is still enabled but silently skipped, so it must not be counted
-  // as active or reported as synced (it would otherwise inflate the count and lend
-  // its stale lastSyncedAt to "Synced X ago").
-  const backends = getReadyFileSyncBackends(settings);
-  const providers: CloudSyncProviderKind[] = [
-    ...(readestEnabled ? (['readest'] as const) : []),
-    ...backends,
-  ];
-  const providerNames = cloudProvidersDisplayName(providers);
-
-  const providerSyncing = backends.some((kind) => !!fileSyncByKind[kind]?.isSyncing);
-  const providerLastError = backends.map((kind) => fileSyncLastError[kind]).find(Boolean);
-  const backendLastSyncedAt = Math.max(
-    0,
-    ...backends.map((kind) => settings[settingsKeyForBackend(kind)]?.lastSyncedAt || 0),
+  // Shared with the reader's View menu (#5910) so both surfaces answer "is my
+  // sync healthy?" identically. The hook gates the native cursors on whether
+  // Readest Cloud is actually enabled and drops backends that cannot run right
+  // now (a web Google Drive whose token expired is still `enabled` but silently
+  // skipped, so counting it would inflate the count and lend its stale
+  // lastSyncedAt to "Synced X ago").
+  const syncStatus = useCloudSyncStatus(
+    Math.max(
+      settings.lastSyncedAtBooks || 0,
+      settings.lastSyncedAtConfigs || 0,
+      settings.lastSyncedAtNotes || 0,
+    ),
   );
-  const nativeLastSyncedAt = readestEnabled
-    ? Math.max(
-        settings.lastSyncedAtBooks || 0,
-        settings.lastSyncedAtConfigs || 0,
-        settings.lastSyncedAtNotes || 0,
-      )
-    : 0;
-  const lastSyncTime = Math.max(backendLastSyncedAt, nativeLastSyncedAt);
-
-  const syncRowLabel = providerLastError
-    ? _('Sync failed')
-    : lastSyncTime
-      ? _('Synced {{time}}', { time: dayjs(clampSyncTimeForDisplay(lastSyncTime)).fromNow() })
-      : _('Never synced');
+  const fileBackendCount = syncStatus.providers.filter((p) => p.kind !== 'readest').length;
 
   return (
     <Menu
@@ -350,21 +323,27 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
               onClick={openTransferQueue}
             />
             <MenuItem
-              label={syncRowLabel}
-              Icon={user ? MdSync : MdSyncProblem}
+              label={syncStatus.label}
+              Icon={syncStatus.needsSignIn || syncStatus.failed ? MdSyncProblem : MdSync}
               labelClass='ps-2 pe-1 mx-0!'
-              iconClassName={(user && isSyncing) || providerSyncing ? 'animate-reverse-spin' : ''}
+              iconClassName={
+                (user && isSyncing) || syncStatus.syncing ? 'animate-reverse-spin' : ''
+              }
               onClick={handleSyncLibrary}
               description={
-                backends.length === 0
+                fileBackendCount === 0
                   ? undefined
-                  : providers.length > 1
+                  : syncStatus.providers.length > 1
                     ? // Several providers named in full would overrun the row; show a
                       // count. `count` (not a plain var) so i18next applies each
                       // locale's plural rule — the common case is exactly 2, where
                       // Slavic/Arabic paucal forms differ from the generic plural.
-                      _('Library sync via {{count}} providers', { count: providers.length })
-                    : _('Library sync via {{provider}}', { provider: providerNames })
+                      _('Library sync via {{count}} providers', {
+                        count: syncStatus.providers.length,
+                      })
+                    : _('Library sync via {{provider}}', {
+                        provider: syncStatus.providers[0]!.name,
+                      })
               }
             />
             {readestEnabled ? (

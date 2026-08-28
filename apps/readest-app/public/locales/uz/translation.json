@@ -2247,5 +2247,9 @@
   "Choose Audiobook": "Audiokitobni tanlang",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}” bilan bogʻlash uchun Audiobookshelf audiokitobini tanlang.",
   "Search audiobooks": "Audiokitoblarni qidirish",
-  "No matching audiobooks": "Mos audiokitob topilmadi"
+  "No matching audiobooks": "Mos audiokitob topilmadi",
+  "Last Synced — {{provider}}": "Oxirgi sinxronlash — {{provider}}",
+  "Synced via {{count}} providers_one": "{{count}} ta provayder orqali sinxronlandi",
+  "Synced via {{count}} providers_other": "{{count}} ta provayder orqali sinxronlandi",
+  "Synced via {{provider}}": "{{provider}} orqali sinxronlandi"
 }

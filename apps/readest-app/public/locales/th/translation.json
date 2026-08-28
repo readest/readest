@@ -2186,5 +2186,8 @@
   "Choose Audiobook": "เลือกหนังสือเสียง",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "เลือกหนังสือเสียงจาก Audiobookshelf เพื่อจับคู่กับ “{{book}}”",
   "Search audiobooks": "ค้นหาหนังสือเสียง",
-  "No matching audiobooks": "ไม่พบหนังสือเสียงที่ตรงกัน"
+  "No matching audiobooks": "ไม่พบหนังสือเสียงที่ตรงกัน",
+  "Last Synced — {{provider}}": "ซิงค์ล่าสุด：{{provider}}",
+  "Synced via {{count}} providers_other": "ซิงค์ผ่านผู้ให้บริการ {{count}} ราย",
+  "Synced via {{provider}}": "ซิงค์ผ่าน {{provider}}"
 }

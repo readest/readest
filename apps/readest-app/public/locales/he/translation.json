@@ -2308,5 +2308,10 @@
   "Choose Audiobook": "בחירת ספר קולי",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "בחרו את הספר הקולי מ-Audiobookshelf שיצורף אל “{{book}}”.",
   "Search audiobooks": "חיפוש ספרים קוליים",
-  "No matching audiobooks": "לא נמצאו ספרים קוליים תואמים"
+  "No matching audiobooks": "לא נמצאו ספרים קוליים תואמים",
+  "Last Synced — {{provider}}": "סונכרן לאחרונה — {{provider}}",
+  "Synced via {{count}} providers_one": "סונכרן באמצעות {{count}} ספק",
+  "Synced via {{count}} providers_two": "סונכרן באמצעות {{count}} ספקים",
+  "Synced via {{count}} providers_other": "סונכרן באמצעות {{count}} ספקים",
+  "Synced via {{provider}}": "סונכרן באמצעות {{provider}}"
 }

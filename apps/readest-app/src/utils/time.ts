@@ -3,6 +3,11 @@ import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 dayjs.extend(duration);
+// At module scope, not only inside `initDayjs`: `formatSyncTimeFromNow` below
+// is called from a hook that unit tests mount directly, where the app's startup
+// `initDayjs` never ran. `extend` is idempotent, so `initDayjs` keeps its call
+// for the locale.
+dayjs.extend(relativeTime);
 
 import 'dayjs/locale/en';
 import 'dayjs/locale/zh';
@@ -40,6 +45,10 @@ export const initDayjs = (locale: string) => {
 // label would read "Synced in an hour" (#5661). Clamp to local now at display
 // time only; the record-derived pull cursor must never be clamped.
 export const clampSyncTimeForDisplay = (time: number): number => Math.min(time, Date.now());
+
+/** The clamped "x minutes ago" used by every "Synced {{time}}" row. */
+export const formatSyncTimeFromNow = (time: number): string =>
+  dayjs(clampSyncTimeForDisplay(time)).fromNow();
 
 // Clock-style playback time for the TTS scrubber: m:ss below one hour,
 // h:mm:ss above. Pass forceHours so both labels of a row share the format

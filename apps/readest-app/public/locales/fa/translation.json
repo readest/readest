@@ -2247,5 +2247,9 @@
   "Choose Audiobook": "انتخاب کتاب صوتی",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "کتاب صوتی Audiobookshelf را برای جفت‌شدن با «{{book}}» انتخاب کنید.",
   "Search audiobooks": "جستجوی کتاب‌های صوتی",
-  "No matching audiobooks": "کتاب صوتی مطابقی یافت نشد"
+  "No matching audiobooks": "کتاب صوتی مطابقی یافت نشد",
+  "Last Synced — {{provider}}": "آخرین همگام‌سازی — {{provider}}",
+  "Synced via {{count}} providers_one": "همگام‌سازی از طریق {{count}} ارائه‌دهنده",
+  "Synced via {{count}} providers_other": "همگام‌سازی از طریق {{count}} ارائه‌دهنده",
+  "Synced via {{provider}}": "همگام‌سازی از طریق {{provider}}"
 }

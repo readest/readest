@@ -2247,5 +2247,9 @@
   "Choose Audiobook": "აირჩიეთ აუდიოწიგნი",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "აირჩიეთ Audiobookshelf-ის აუდიოწიგნი „{{book}}“-თან დასაკავშირებლად.",
   "Search audiobooks": "აუდიოწიგნების ძებნა",
-  "No matching audiobooks": "შესაბამისი აუდიოწიგნი ვერ მოიძებნა"
+  "No matching audiobooks": "შესაბამისი აუდიოწიგნი ვერ მოიძებნა",
+  "Last Synced — {{provider}}": "ბოლო სინქრონიზაცია：{{provider}}",
+  "Synced via {{count}} providers_one": "სინქრონიზებულია {{count}} პროვაიდერით",
+  "Synced via {{count}} providers_other": "სინქრონიზებულია {{count}} პროვაიდერით",
+  "Synced via {{provider}}": "სინქრონიზებულია: {{provider}}"
 }

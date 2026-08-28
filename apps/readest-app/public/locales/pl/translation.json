@@ -2369,5 +2369,11 @@
   "Choose Audiobook": "Wybierz audiobook",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Wybierz audiobook z Audiobookshelf do sparowania z „{{book}}”.",
   "Search audiobooks": "Szukaj audiobooków",
-  "No matching audiobooks": "Brak pasujących audiobooków"
+  "No matching audiobooks": "Brak pasujących audiobooków",
+  "Last Synced — {{provider}}": "Ostatnia synchronizacja — {{provider}}",
+  "Synced via {{count}} providers_one": "Zsynchronizowano przez {{count}} dostawcę",
+  "Synced via {{count}} providers_few": "Zsynchronizowano przez {{count}} dostawców",
+  "Synced via {{count}} providers_many": "Zsynchronizowano przez {{count}} dostawców",
+  "Synced via {{count}} providers_other": "Zsynchronizowano przez {{count}} dostawców",
+  "Synced via {{provider}}": "Zsynchronizowano przez {{provider}}"
 }

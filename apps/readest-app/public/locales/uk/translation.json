@@ -2369,5 +2369,11 @@
   "Choose Audiobook": "Вибір аудіокниги",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Виберіть аудіокнигу Audiobookshelf для зіставлення з «{{book}}».",
   "Search audiobooks": "Пошук аудіокниг",
-  "No matching audiobooks": "Немає відповідних аудіокниг"
+  "No matching audiobooks": "Немає відповідних аудіокниг",
+  "Last Synced — {{provider}}": "Остання синхронізація — {{provider}}",
+  "Synced via {{count}} providers_one": "Синхронізовано через {{count}} сервіс",
+  "Synced via {{count}} providers_few": "Синхронізовано через {{count}} сервіси",
+  "Synced via {{count}} providers_many": "Синхронізовано через {{count}} сервісів",
+  "Synced via {{count}} providers_other": "Синхронізовано через {{count}} сервісів",
+  "Synced via {{provider}}": "Синхронізовано через {{provider}}"
 }

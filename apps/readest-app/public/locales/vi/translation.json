@@ -2186,5 +2186,8 @@
   "Choose Audiobook": "Chọn sách nói",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Chọn sách nói Audiobookshelf để ghép nối với “{{book}}”.",
   "Search audiobooks": "Tìm sách nói",
-  "No matching audiobooks": "Không có sách nói phù hợp"
+  "No matching audiobooks": "Không có sách nói phù hợp",
+  "Last Synced — {{provider}}": "Đồng bộ lần cuối — {{provider}}",
+  "Synced via {{count}} providers_other": "Đã đồng bộ qua {{count}} nhà cung cấp",
+  "Synced via {{provider}}": "Đã đồng bộ qua {{provider}}"
 }

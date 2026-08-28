@@ -2491,5 +2491,13 @@
   "Choose Audiobook": "اختيار كتاب صوتي",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "اختر كتاب Audiobookshelf الصوتي لاقترانه بـ “{{book}}”.",
   "Search audiobooks": "البحث في الكتب الصوتية",
-  "No matching audiobooks": "لا توجد كتب صوتية مطابقة"
+  "No matching audiobooks": "لا توجد كتب صوتية مطابقة",
+  "Last Synced — {{provider}}": "آخر مزامنة — {{provider}}",
+  "Synced via {{count}} providers_zero": "تمت المزامنة عبر {{count}} مزودين",
+  "Synced via {{count}} providers_one": "تمت المزامنة عبر {{count}} مزود",
+  "Synced via {{count}} providers_two": "تمت المزامنة عبر {{count}} مزودين",
+  "Synced via {{count}} providers_few": "تمت المزامنة عبر {{count}} مزودين",
+  "Synced via {{count}} providers_many": "تمت المزامنة عبر {{count}} مزودًا",
+  "Synced via {{count}} providers_other": "تمت المزامنة عبر {{count}} مزود",
+  "Synced via {{provider}}": "تمت المزامنة عبر {{provider}}"
 }

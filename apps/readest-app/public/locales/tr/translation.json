@@ -2247,5 +2247,9 @@
   "Choose Audiobook": "Sesli Kitap Seç",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}” ile eşleştirilecek Audiobookshelf sesli kitabını seçin.",
   "Search audiobooks": "Sesli kitap ara",
-  "No matching audiobooks": "Eşleşen sesli kitap yok"
+  "No matching audiobooks": "Eşleşen sesli kitap yok",
+  "Last Synced — {{provider}}": "Son senkronizasyon — {{provider}}",
+  "Synced via {{count}} providers_one": "{{count}} sağlayıcı ile senkronize edildi",
+  "Synced via {{count}} providers_other": "{{count}} sağlayıcı ile senkronize edildi",
+  "Synced via {{provider}}": "{{provider}} ile senkronize edildi"
 }

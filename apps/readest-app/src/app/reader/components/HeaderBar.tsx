@@ -71,8 +71,17 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const viewSettings = getViewSettings(bookKey);
   const bookData = getBookData(bookKey);
   const bookConfig = getConfig(bookKey);
-  const lastSyncedAt =
-    Math.max(bookConfig?.lastSyncedAtConfig || 0, bookConfig?.lastSyncedAtNotes || 0) || undefined;
+  // Readest Cloud's per-book stamps. Includes the PUSH stamps so this agrees
+  // with the View menu's sync row, which has always counted them — otherwise
+  // the row could read "Synced 2 minutes ago" while this dialog said "Never
+  // synced" for the same book.
+  const nativeLastSyncedAt =
+    Math.max(
+      bookConfig?.lastSyncedAtConfig || 0,
+      bookConfig?.lastSyncedAtNotes || 0,
+      bookConfig?.lastPushedAtConfig || 0,
+      bookConfig?.lastPushedAtNotes || 0,
+    ) || undefined;
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMetaHashDialogOpen, setIsMetaHashDialogOpen] = useState(false);
@@ -332,7 +341,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
                 isOpen={isMetaHashDialogOpen}
                 metadata={bookData?.bookDoc?.metadata ?? bookData?.book?.metadata}
                 storedMetaHash={bookData?.book?.metaHash}
-                lastSyncedAt={lastSyncedAt}
+                nativeLastSyncedAt={nativeLastSyncedAt}
                 onClose={() => setIsMetaHashDialogOpen(false)}
               />
             </ModalPortal>

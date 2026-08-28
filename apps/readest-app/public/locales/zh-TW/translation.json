@@ -2186,5 +2186,8 @@
   "Choose Audiobook": "選擇有聲書",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "選擇要與「{{book}}」配對的 Audiobookshelf 有聲書。",
   "Search audiobooks": "搜尋有聲書",
-  "No matching audiobooks": "沒有相符的有聲書"
+  "No matching audiobooks": "沒有相符的有聲書",
+  "Last Synced — {{provider}}": "上一次同步：{{provider}}",
+  "Synced via {{count}} providers_other": "透過 {{count}} 個服務同步",
+  "Synced via {{provider}}": "透過 {{provider}} 同步"
 }

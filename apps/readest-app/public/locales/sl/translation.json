@@ -2369,5 +2369,11 @@
   "Choose Audiobook": "Izberite zvočno knjigo",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Izberite zvočno knjigo Audiobookshelf za povezavo z »{{book}}«.",
   "Search audiobooks": "Iskanje zvočnih knjig",
-  "No matching audiobooks": "Ni ustreznih zvočnih knjig"
+  "No matching audiobooks": "Ni ustreznih zvočnih knjig",
+  "Last Synced — {{provider}}": "Zadnja sinhronizacija — {{provider}}",
+  "Synced via {{count}} providers_one": "Sinhronizirano prek {{count}} ponudnika",
+  "Synced via {{count}} providers_two": "Sinhronizirano prek {{count}} ponudnikov",
+  "Synced via {{count}} providers_few": "Sinhronizirano prek {{count}} ponudnikov",
+  "Synced via {{count}} providers_other": "Sinhronizirano prek {{count}} ponudnikov",
+  "Synced via {{provider}}": "Sinhronizirano prek {{provider}}"
 }

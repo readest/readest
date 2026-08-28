@@ -2186,5 +2186,8 @@
   "Choose Audiobook": "오디오북 선택",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}”과(와) 페어링할 Audiobookshelf 오디오북을 선택하세요.",
   "Search audiobooks": "오디오북 검색",
-  "No matching audiobooks": "일치하는 오디오북이 없습니다"
+  "No matching audiobooks": "일치하는 오디오북이 없습니다",
+  "Last Synced — {{provider}}": "마지막 동기화：{{provider}}",
+  "Synced via {{count}} providers_other": "{{count}}개의 제공자를 통해 동기화",
+  "Synced via {{provider}}": "{{provider}}을(를) 통해 동기화"
 }

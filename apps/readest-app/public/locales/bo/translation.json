@@ -2186,5 +2186,8 @@
   "Choose Audiobook": "སྒྲ་དེབ་འདེམས།",
   "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}” དང་སྦྲེལ་མཐུད་བྱེད་པའི་ Audiobookshelf སྒྲ་དེབ་འདེམས་རོགས།",
   "Search audiobooks": "སྒྲ་དེབ་འཚོལ།",
-  "No matching audiobooks": "མཐུན་པའི་སྒྲ་དེབ་མི་འདུག"
+  "No matching audiobooks": "མཐུན་པའི་སྒྲ་དེབ་མི་འདུག",
+  "Last Synced — {{provider}}": "མཐའ་མའི་མཉམ་སྒྲིག — {{provider}}",
+  "Synced via {{count}} providers_other": "སྤྲོད་མཁན་ {{count}} བརྒྱུད་ནས་མཉམ་སྒྲིག་བྱས།",
+  "Synced via {{provider}}": "{{provider}} བརྒྱུད་ནས་མཉམ་སྒྲིག་བྱས།"
 }
