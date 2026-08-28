@@ -323,13 +323,22 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           comments.map((msg) => {
             const isSpoiler = (msg.progressPercentage || 0) > currentProgressPercent;
             const isRevealed = revealedComments[msg.commentId];
+            const isMe = msg.supabaseUserId === user?.id;
 
             return (
-              <div key={msg.commentId} className='chat chat-start flex flex-col items-start'>
+              <div
+                key={msg.commentId}
+                className={clsx(
+                  'chat',
+                  isMe
+                    ? 'chat-end flex flex-col items-end'
+                    : 'chat-start flex flex-col items-start',
+                )}
+              >
                 {/* Meta details */}
                 <div className='chat-header flex items-center gap-1.5 mb-1 text-xs opacity-75'>
                   <span className='font-bold text-base-content/90'>
-                    {msg.user_name || 'Reader'}
+                    {isMe ? _('You') : msg.user_name || 'Reader'}
                   </span>
                   <span className='text-[10px] bg-primary/10 text-primary font-bold px-1 rounded-sm'>
                     {_('Page')} {msg.pageNumber || 1} ({msg.progressPercentage || 0}%)
@@ -342,7 +351,9 @@ const BuddyReadView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                     'chat-bubble max-w-full text-sm py-2 px-3 rounded-lg border',
                     isSpoiler && !isRevealed
                       ? 'bg-warning/10 border-warning/35 text-warning-content cursor-pointer'
-                      : 'bg-base-200 border-base-300 text-base-content',
+                      : isMe
+                        ? 'bg-primary text-primary-content border-transparent'
+                        : 'bg-base-200 border-base-300 text-base-content',
                   )}
                   onClick={() => isSpoiler && toggleReveal(msg.commentId)}
                 >
