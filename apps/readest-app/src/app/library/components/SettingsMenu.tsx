@@ -280,6 +280,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     ),
   );
   const fileBackendCount = syncStatus.providers.filter((p) => p.kind !== 'readest').length;
+  // Hoisted out of the `_()` call below: i18next-scanner parses the options
+  // object with esprima, which chokes on TypeScript's `!` non-null assertion.
+  const firstProviderName = syncStatus.providers[0]?.name ?? '';
 
   return (
     <Menu
@@ -342,7 +345,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
                         count: syncStatus.providers.length,
                       })
                     : _('Library sync via {{provider}}', {
-                        provider: syncStatus.providers[0]!.name,
+                        provider: firstProviderName,
                       })
               }
             />
