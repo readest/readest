@@ -2231,5 +2231,21 @@
   "Reset all": "Återställ alla",
   "Replace shortcut?": "Ersätt genvägen?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Genvägen {{shortcut}} är redan tilldelad {{actions}}.",
-  "Toggle Table of Contents": "Visa/dölj innehåll"
+  "Toggle Table of Contents": "Visa/dölj innehåll",
+  "{{title}} Chapter {{chapter}}": "{{title}} Kapitel {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} Kapitel {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}} kapitel)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} kapitel)",
+  "Loading audiobook chapters": "Läser in ljudbokskapitel",
+  "Failed to load the audiobook.": "Det gick inte att läsa in ljudboken.",
+  "Audiobook unpaired.": "Ljudboken har kopplats bort.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "Hantera Audiobookshelf-ljudboken som är kopplad till den här e-boken.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} ljudkapitel · {{duration}} · Strömmas från {{server}}",
+  "Unpair this audiobook?": "Vill du koppla bort den här ljudboken?",
+  "Choose from Audiobookshelf": "Välj från Audiobookshelf",
+  "Streamed from your server, nothing to download": "Strömmas från din server, inget att ladda ned",
+  "Choose Audiobook": "Välj ljudbok",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Välj den Audiobookshelf-ljudbok som ska kopplas till ”{{book}}”.",
+  "Search audiobooks": "Sök ljudböcker",
+  "No matching audiobooks": "Inga matchande ljudböcker"
 }

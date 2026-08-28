@@ -2231,5 +2231,21 @@
   "Reset all": "Összes visszaállítása",
   "Replace shortcut?": "Lecseréled a billentyűparancsot?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "A(z) {{shortcut}} billentyűparancs már ehhez van rendelve: {{actions}}.",
-  "Toggle Table of Contents": "Tartalomjegyzék megjelenítése/elrejtése"
+  "Toggle Table of Contents": "Tartalomjegyzék megjelenítése/elrejtése",
+  "{{title}} Chapter {{chapter}}": "{{title}} {{chapter}}. fejezet",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} {{first}} - {{last}}. fejezet",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}} fejezet)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} fejezet)",
+  "Loading audiobook chapters": "Hangoskönyv-fejezetek betöltése",
+  "Failed to load the audiobook.": "Nem sikerült betölteni a hangoskönyvet.",
+  "Audiobook unpaired.": "A hangoskönyv párosítása megszüntetve.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "Kezelje az ehhez az e-könyvhöz párosított Audiobookshelf-hangoskönyvet.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} hangfejezet · {{duration}} · Streamelve innen: {{server}}",
+  "Unpair this audiobook?": "Megszünteti a hangoskönyv párosítását?",
+  "Choose from Audiobookshelf": "Választás az Audiobookshelfről",
+  "Streamed from your server, nothing to download": "A saját kiszolgálójáról streamel, nincs mit letölteni",
+  "Choose Audiobook": "Hangoskönyv választása",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Válassza ki azt az Audiobookshelf-hangoskönyvet, amelyet a(z) „{{book}}” könyvhöz párosít.",
+  "Search audiobooks": "Hangoskönyvek keresése",
+  "No matching audiobooks": "Nincs találat a hangoskönyvek között"
 }

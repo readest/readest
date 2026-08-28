@@ -2231,5 +2231,21 @@
   "Reset all": "Επαναφορά όλων",
   "Replace shortcut?": "Αντικατάσταση συντόμευσης;",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Η συντόμευση {{shortcut}} έχει ήδη αντιστοιχιστεί σε: {{actions}}.",
-  "Toggle Table of Contents": "Εναλλαγή πίνακα περιεχομένων"
+  "Toggle Table of Contents": "Εναλλαγή πίνακα περιεχομένων",
+  "{{title}} Chapter {{chapter}}": "{{title}} Κεφάλαιο {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} Κεφάλαια {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}} κεφάλαιο)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} κεφάλαια)",
+  "Loading audiobook chapters": "Φόρτωση κεφαλαίων ηχητικού βιβλίου",
+  "Failed to load the audiobook.": "Η φόρτωση του ηχητικού βιβλίου απέτυχε.",
+  "Audiobook unpaired.": "Το ηχητικό βιβλίο αποσυνδέθηκε.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "Διαχειριστείτε το ηχητικό βιβλίο Audiobookshelf που είναι συνδεδεμένο με αυτό το e-book.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} ηχητικά κεφάλαια · {{duration}} · Ροή από {{server}}",
+  "Unpair this audiobook?": "Αποσύνδεση αυτού του ηχητικού βιβλίου;",
+  "Choose from Audiobookshelf": "Επιλογή από το Audiobookshelf",
+  "Streamed from your server, nothing to download": "Ροή από τον διακομιστή σας, χωρίς λήψη",
+  "Choose Audiobook": "Επιλογή ηχητικού βιβλίου",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Επιλέξτε το ηχητικό βιβλίο Audiobookshelf που θα συνδεθεί με το «{{book}}».",
+  "Search audiobooks": "Αναζήτηση ηχητικών βιβλίων",
+  "No matching audiobooks": "Δεν βρέθηκαν ηχητικά βιβλία"
 }

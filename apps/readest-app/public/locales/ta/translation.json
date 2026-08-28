@@ -2231,5 +2231,21 @@
   "Reset all": "அனைத்தையும் மீட்டமைக்கவும்",
   "Replace shortcut?": "குறுக்குவழியை மாற்றவா?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "{{shortcut}} குறுக்குவழி ஏற்கனவே {{actions}} க்கு ஒதுக்கப்பட்டுள்ளது.",
-  "Toggle Table of Contents": "உள்ளடக்கத்தை மாற்றவும்"
+  "Toggle Table of Contents": "உள்ளடக்கத்தை மாற்றவும்",
+  "{{title}} Chapter {{chapter}}": "{{title}} அத்தியாயம் {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} அத்தியாயங்கள் {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}} அத்தியாயம்)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} அத்தியாயங்கள்)",
+  "Loading audiobook chapters": "ஆடியோபுக் அத்தியாயங்கள் ஏற்றப்படுகின்றன",
+  "Failed to load the audiobook.": "ஆடியோபுக்கை ஏற்ற முடியவில்லை.",
+  "Audiobook unpaired.": "ஆடியோபுக் இணைப்பு நீக்கப்பட்டது.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "இந்த மின்புத்தகத்துடன் இணைக்கப்பட்ட Audiobookshelf ஆடியோபுக்கை நிர்வகிக்கவும்.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} ஆடியோ அத்தியாயங்கள் · {{duration}} · {{server}} இலிருந்து ஸ்ட்ரீம்",
+  "Unpair this audiobook?": "இந்த ஆடியோபுக் இணைப்பை நீக்கவா?",
+  "Choose from Audiobookshelf": "Audiobookshelf இலிருந்து தேர்வுசெய்க",
+  "Streamed from your server, nothing to download": "உங்கள் சேவையகத்திலிருந்து ஸ்ட்ரீம் ஆகிறது, பதிவிறக்க வேண்டியதில்லை",
+  "Choose Audiobook": "ஆடியோபுக்கைத் தேர்வுசெய்க",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}” உடன் இணைக்க Audiobookshelf ஆடியோபுக்கைத் தேர்வுசெய்க.",
+  "Search audiobooks": "ஆடியோபுக்குகளைத் தேடு",
+  "No matching audiobooks": "பொருந்தும் ஆடியோபுக் எதுவும் இல்லை"
 }

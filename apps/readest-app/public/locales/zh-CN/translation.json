@@ -2171,5 +2171,20 @@
   "Reset all": "全部重置",
   "Replace shortcut?": "替换快捷键？",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "快捷键 {{shortcut}} 已分配给 {{actions}}。",
-  "Toggle Table of Contents": "切换目录"
+  "Toggle Table of Contents": "切换目录",
+  "{{title}} Chapter {{chapter}}": "{{title}} 第 {{chapter}} 章",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} 第 {{first}} - {{last}} 章",
+  "{{title}} ({{count}} chapters)_other": "{{title}}（{{count}} 章）",
+  "Loading audiobook chapters": "正在加载有声书章节",
+  "Failed to load the audiobook.": "无法加载有声书。",
+  "Audiobook unpaired.": "已取消有声书配对。",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "管理与此电子书配对的 Audiobookshelf 有声书。",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} 个音频章节 · {{duration}} · 来自 {{server}} 的流式播放",
+  "Unpair this audiobook?": "要取消此有声书的配对吗？",
+  "Choose from Audiobookshelf": "从 Audiobookshelf 选择",
+  "Streamed from your server, nothing to download": "从你的服务器流式播放，无需下载",
+  "Choose Audiobook": "选择有声书",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "选择要与“{{book}}”配对的 Audiobookshelf 有声书。",
+  "Search audiobooks": "搜索有声书",
+  "No matching audiobooks": "没有匹配的有声书"
 }

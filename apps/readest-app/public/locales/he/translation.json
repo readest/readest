@@ -2291,5 +2291,22 @@
   "Reset all": "אפס הכול",
   "Replace shortcut?": "להחליף את הקיצור?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "הקיצור {{shortcut}} כבר משויך אל {{actions}}.",
-  "Toggle Table of Contents": "הצג/הסתר תוכן עניינים"
+  "Toggle Table of Contents": "הצג/הסתר תוכן עניינים",
+  "{{title}} Chapter {{chapter}}": "{{title}} פרק {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} פרקים {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_one": "{{title}} (פרק אחד)",
+  "{{title}} ({{count}} chapters)_two": "{{title}} (שני פרקים)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} פרקים)",
+  "Loading audiobook chapters": "טוען את פרקי הספר הקולי",
+  "Failed to load the audiobook.": "טעינת הספר הקולי נכשלה.",
+  "Audiobook unpaired.": "צירוף הספר הקולי בוטל.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "ניהול הספר הקולי מ-Audiobookshelf המצורף לספר האלקטרוני הזה.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} פרקי שמע · {{duration}} · הזרמה מ-{{server}}",
+  "Unpair this audiobook?": "לבטל את צירוף הספר הקולי הזה?",
+  "Choose from Audiobookshelf": "בחירה מ-Audiobookshelf",
+  "Streamed from your server, nothing to download": "מוזרם מהשרת שלכם, אין מה להוריד",
+  "Choose Audiobook": "בחירת ספר קולי",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "בחרו את הספר הקולי מ-Audiobookshelf שיצורף אל “{{book}}”.",
+  "Search audiobooks": "חיפוש ספרים קוליים",
+  "No matching audiobooks": "לא נמצאו ספרים קוליים תואמים"
 }

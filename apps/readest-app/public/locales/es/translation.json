@@ -2291,5 +2291,22 @@
   "Reset all": "Restablecer todo",
   "Replace shortcut?": "¿Reemplazar el atajo?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "El atajo {{shortcut}} ya está asignado a {{actions}}.",
-  "Toggle Table of Contents": "Alternar índice"
+  "Toggle Table of Contents": "Alternar índice",
+  "{{title}} Chapter {{chapter}}": "{{title}} Capítulo {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} Capítulos {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}} capítulo)",
+  "{{title}} ({{count}} chapters)_many": "{{title}} ({{count}} capítulos)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} capítulos)",
+  "Loading audiobook chapters": "Cargando los capítulos del audiolibro",
+  "Failed to load the audiobook.": "No se pudo cargar el audiolibro.",
+  "Audiobook unpaired.": "Audiolibro desvinculado.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "Gestiona el audiolibro de Audiobookshelf vinculado a este libro electrónico.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} capítulos de audio · {{duration}} · Transmitido desde {{server}}",
+  "Unpair this audiobook?": "¿Desvincular este audiolibro?",
+  "Choose from Audiobookshelf": "Elegir de Audiobookshelf",
+  "Streamed from your server, nothing to download": "Se transmite desde tu servidor, sin descargas",
+  "Choose Audiobook": "Elegir audiolibro",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Elige el audiolibro de Audiobookshelf que quieres vincular con «{{book}}».",
+  "Search audiobooks": "Buscar audiolibros",
+  "No matching audiobooks": "No hay audiolibros coincidentes"
 }

@@ -2231,5 +2231,21 @@
   "Reset all": "ყველას აღდგენა",
   "Replace shortcut?": "შევცვალოთ მალსახმობი?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "მალსახმობი {{shortcut}} უკვე მინიჭებულია: {{actions}}.",
-  "Toggle Table of Contents": "სარჩევის გადართვა"
+  "Toggle Table of Contents": "სარჩევის გადართვა",
+  "{{title}} Chapter {{chapter}}": "{{title}} თავი {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} თავები {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}} თავი)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} თავი)",
+  "Loading audiobook chapters": "აუდიოწიგნის თავები იტვირთება",
+  "Failed to load the audiobook.": "აუდიოწიგნის ჩატვირთვა ვერ მოხერხდა.",
+  "Audiobook unpaired.": "აუდიოწიგნი გაითიშა.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "მართეთ ამ ელწიგნთან დაკავშირებული Audiobookshelf-ის აუდიოწიგნი.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} აუდიო თავი · {{duration}} · სტრიმინგი {{server}}-იდან",
+  "Unpair this audiobook?": "გაითიშოს ეს აუდიოწიგნი?",
+  "Choose from Audiobookshelf": "არჩევა Audiobookshelf-იდან",
+  "Streamed from your server, nothing to download": "სტრიმინგი თქვენი სერვერიდან, ჩამოტვირთვის გარეშე",
+  "Choose Audiobook": "აირჩიეთ აუდიოწიგნი",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "აირჩიეთ Audiobookshelf-ის აუდიოწიგნი „{{book}}“-თან დასაკავშირებლად.",
+  "Search audiobooks": "აუდიოწიგნების ძებნა",
+  "No matching audiobooks": "შესაბამისი აუდიოწიგნი ვერ მოიძებნა"
 }

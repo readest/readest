@@ -2231,5 +2231,21 @@
   "Reset all": "Tümünü sıfırla",
   "Replace shortcut?": "Kısayol değiştirilsin mi?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "{{shortcut}} kısayolu zaten {{actions}} işlemine atanmış.",
-  "Toggle Table of Contents": "İçindekileri Değiştir"
+  "Toggle Table of Contents": "İçindekileri Değiştir",
+  "{{title}} Chapter {{chapter}}": "{{title}} Bölüm {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} Bölüm {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}} bölüm)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} bölüm)",
+  "Loading audiobook chapters": "Sesli kitap bölümleri yükleniyor",
+  "Failed to load the audiobook.": "Sesli kitap yüklenemedi.",
+  "Audiobook unpaired.": "Sesli kitap eşleştirmesi kaldırıldı.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "Bu e-kitapla eşleştirilmiş Audiobookshelf sesli kitabını yönetin.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} ses bölümü · {{duration}} · {{server}} üzerinden akış",
+  "Unpair this audiobook?": "Bu sesli kitabın eşleştirmesi kaldırılsın mı?",
+  "Choose from Audiobookshelf": "Audiobookshelf'ten seç",
+  "Streamed from your server, nothing to download": "Sunucunuzdan akış sağlanır, indirme gerekmez",
+  "Choose Audiobook": "Sesli Kitap Seç",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}” ile eşleştirilecek Audiobookshelf sesli kitabını seçin.",
+  "Search audiobooks": "Sesli kitap ara",
+  "No matching audiobooks": "Eşleşen sesli kitap yok"
 }

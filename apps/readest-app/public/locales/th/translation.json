@@ -2171,5 +2171,20 @@
   "Reset all": "รีเซ็ตทั้งหมด",
   "Replace shortcut?": "แทนที่แป้นพิมพ์ลัดหรือไม่?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "แป้นพิมพ์ลัด {{shortcut}} ถูกกำหนดให้กับ {{actions}} แล้ว",
-  "Toggle Table of Contents": "เปลี่ยนสารบัญ"
+  "Toggle Table of Contents": "เปลี่ยนสารบัญ",
+  "{{title}} Chapter {{chapter}}": "{{title}} บทที่ {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} บทที่ {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} บท)",
+  "Loading audiobook chapters": "กำลังโหลดบทของหนังสือเสียง",
+  "Failed to load the audiobook.": "ไม่สามารถโหลดหนังสือเสียงได้",
+  "Audiobook unpaired.": "ยกเลิกการจับคู่หนังสือเสียงแล้ว",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "จัดการหนังสือเสียงจาก Audiobookshelf ที่จับคู่กับอีบุ๊กนี้",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "บทเสียง {{chapters}} บท · {{duration}} · สตรีมจาก {{server}}",
+  "Unpair this audiobook?": "ยกเลิกการจับคู่หนังสือเสียงนี้หรือไม่?",
+  "Choose from Audiobookshelf": "เลือกจาก Audiobookshelf",
+  "Streamed from your server, nothing to download": "สตรีมจากเซิร์ฟเวอร์ของคุณ ไม่ต้องดาวน์โหลด",
+  "Choose Audiobook": "เลือกหนังสือเสียง",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "เลือกหนังสือเสียงจาก Audiobookshelf เพื่อจับคู่กับ “{{book}}”",
+  "Search audiobooks": "ค้นหาหนังสือเสียง",
+  "No matching audiobooks": "ไม่พบหนังสือเสียงที่ตรงกัน"
 }

@@ -2231,5 +2231,21 @@
   "Reset all": "सभी रीसेट करें",
   "Replace shortcut?": "शॉर्टकट बदलें?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "शॉर्टकट {{shortcut}} पहले से {{actions}} को सौंपा गया है।",
-  "Toggle Table of Contents": "सामग्री टॉगल करें"
+  "Toggle Table of Contents": "सामग्री टॉगल करें",
+  "{{title}} Chapter {{chapter}}": "{{title}} अध्याय {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} अध्याय {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}} अध्याय)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} अध्याय)",
+  "Loading audiobook chapters": "ऑडियोबुक के अध्याय लोड हो रहे हैं",
+  "Failed to load the audiobook.": "ऑडियोबुक लोड नहीं हो सकी।",
+  "Audiobook unpaired.": "ऑडियोबुक का युग्मन हटा दिया गया।",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "इस ई-पुस्तक के साथ युग्मित Audiobookshelf ऑडियोबुक प्रबंधित करें।",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} ऑडियो अध्याय · {{duration}} · {{server}} से स्ट्रीम",
+  "Unpair this audiobook?": "क्या इस ऑडियोबुक का युग्मन हटाएँ?",
+  "Choose from Audiobookshelf": "Audiobookshelf से चुनें",
+  "Streamed from your server, nothing to download": "आपके सर्वर से स्ट्रीम, डाउनलोड की ज़रूरत नहीं",
+  "Choose Audiobook": "ऑडियोबुक चुनें",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}” के साथ युग्मित करने के लिए Audiobookshelf ऑडियोबुक चुनें।",
+  "Search audiobooks": "ऑडियोबुक खोजें",
+  "No matching audiobooks": "कोई मेल खाती ऑडियोबुक नहीं"
 }

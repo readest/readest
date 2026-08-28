@@ -2171,5 +2171,20 @@
   "Reset all": "ཡོངས་རྫོགས་བསྐྱར་སྒྲིག",
   "Replace shortcut?": "མྱུར་ལམ་བརྗེ་བ་ཡིན་ནམ།",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "མྱུར་ལམ་ {{shortcut}} ནི་ {{actions}} ལ་སྔོན་ནས་སྤྲད་ཟིན།",
-  "Toggle Table of Contents": "དཀར་ཆག་སྤོ་བ།"
+  "Toggle Table of Contents": "དཀར་ཆག་སྤོ་བ།",
+  "{{title}} Chapter {{chapter}}": "{{title}} ལེའུ་ {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} ལེའུ་ {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_other": "{{title}} (ལེའུ་ {{count}})",
+  "Loading audiobook chapters": "སྒྲ་དེབ་ཀྱི་ལེའུ་ལེན་བཞིན་པ།",
+  "Failed to load the audiobook.": "སྒྲ་དེབ་ལེན་མ་ཐུབ།",
+  "Audiobook unpaired.": "སྒྲ་དེབ་ཀྱི་སྦྲེལ་མཐུད་བཤིག་ཟིན།",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "ཨི་དེབ་འདི་དང་སྦྲེལ་མཐུད་ཡོད་པའི་ Audiobookshelf སྒྲ་དེབ་དོ་དམ་བྱོས།",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "སྒྲ་ལེའུ་ {{chapters}} · {{duration}} · {{server}} ནས་རྒྱུན་སྐྱེལ།",
+  "Unpair this audiobook?": "སྒྲ་དེབ་འདིའི་སྦྲེལ་མཐུད་བཤིག་དགོས་སམ།",
+  "Choose from Audiobookshelf": "Audiobookshelf ནས་འདེམས།",
+  "Streamed from your server, nothing to download": "ཁྱེད་ཀྱི་ཞབས་ཞུ་བ་ནས་རྒྱུན་སྐྱེལ་བྱེད་པས་ཕབ་ལེན་མི་དགོས།",
+  "Choose Audiobook": "སྒྲ་དེབ་འདེམས།",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}” དང་སྦྲེལ་མཐུད་བྱེད་པའི་ Audiobookshelf སྒྲ་དེབ་འདེམས་རོགས།",
+  "Search audiobooks": "སྒྲ་དེབ་འཚོལ།",
+  "No matching audiobooks": "མཐུན་པའི་སྒྲ་དེབ་མི་འདུག"
 }

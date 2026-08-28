@@ -2231,5 +2231,21 @@
   "Reset all": "সব রিসেট করুন",
   "Replace shortcut?": "শর্টকাট প্রতিস্থাপন করবেন?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "{{shortcut}} শর্টকাটটি ইতিমধ্যে {{actions}}-এ বরাদ্দ করা আছে।",
-  "Toggle Table of Contents": "সূচিপত্র টগল করুন"
+  "Toggle Table of Contents": "সূচিপত্র টগল করুন",
+  "{{title}} Chapter {{chapter}}": "{{title}} অধ্যায় {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} অধ্যায় {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}}টি অধ্যায়)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}}টি অধ্যায়)",
+  "Loading audiobook chapters": "অডিওবুকের অধ্যায় লোড হচ্ছে",
+  "Failed to load the audiobook.": "অডিওবুক লোড করা যায়নি।",
+  "Audiobook unpaired.": "অডিওবুকের পেয়ারিং সরানো হয়েছে।",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "এই ই-বুকের সাথে পেয়ার করা Audiobookshelf অডিওবুক পরিচালনা করুন।",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}}টি অডিও অধ্যায় · {{duration}} · {{server}} থেকে স্ট্রিম করা হচ্ছে",
+  "Unpair this audiobook?": "এই অডিওবুকের পেয়ারিং সরাবেন?",
+  "Choose from Audiobookshelf": "Audiobookshelf থেকে বেছে নিন",
+  "Streamed from your server, nothing to download": "আপনার সার্ভার থেকে স্ট্রিম, ডাউনলোড করার কিছু নেই",
+  "Choose Audiobook": "অডিওবুক বেছে নিন",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}”-এর সাথে পেয়ার করার জন্য Audiobookshelf অডিওবুক বেছে নিন।",
+  "Search audiobooks": "অডিওবুক খুঁজুন",
+  "No matching audiobooks": "মিল আছে এমন কোনো অডিওবুক নেই"
 }

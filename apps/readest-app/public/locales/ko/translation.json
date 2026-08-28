@@ -2171,5 +2171,20 @@
   "Reset all": "모두 초기화",
   "Replace shortcut?": "단축키를 교체할까요?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "단축키 {{shortcut}}은(는) 이미 {{actions}}에 할당되어 있습니다.",
-  "Toggle Table of Contents": "목차 전환"
+  "Toggle Table of Contents": "목차 전환",
+  "{{title}} Chapter {{chapter}}": "{{title}} 챕터 {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} 챕터 {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_other": "{{title}} (챕터 {{count}}개)",
+  "Loading audiobook chapters": "오디오북 챕터를 불러오는 중",
+  "Failed to load the audiobook.": "오디오북을 불러오지 못했습니다.",
+  "Audiobook unpaired.": "오디오북 페어링을 해제했습니다.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "이 전자책과 페어링된 Audiobookshelf 오디오북을 관리합니다.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "오디오 챕터 {{chapters}}개 · {{duration}} · {{server}}에서 스트리밍",
+  "Unpair this audiobook?": "이 오디오북의 페어링을 해제할까요?",
+  "Choose from Audiobookshelf": "Audiobookshelf에서 선택",
+  "Streamed from your server, nothing to download": "서버에서 스트리밍하므로 다운로드가 필요 없습니다",
+  "Choose Audiobook": "오디오북 선택",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}”과(와) 페어링할 Audiobookshelf 오디오북을 선택하세요.",
+  "Search audiobooks": "오디오북 검색",
+  "No matching audiobooks": "일치하는 오디오북이 없습니다"
 }

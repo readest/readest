@@ -2291,5 +2291,22 @@
   "Reset all": "Ripristina tutto",
   "Replace shortcut?": "Sostituire la scorciatoia?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "La scorciatoia {{shortcut}} è già assegnata a {{actions}}.",
-  "Toggle Table of Contents": "Mostra/Nascondi sommario"
+  "Toggle Table of Contents": "Mostra/Nascondi sommario",
+  "{{title}} Chapter {{chapter}}": "{{title}} Capitolo {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} Capitoli {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}} capitolo)",
+  "{{title}} ({{count}} chapters)_many": "{{title}} ({{count}} capitoli)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} capitoli)",
+  "Loading audiobook chapters": "Caricamento dei capitoli dell'audiolibro",
+  "Failed to load the audiobook.": "Impossibile caricare l'audiolibro.",
+  "Audiobook unpaired.": "Audiolibro dissociato.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "Gestisci l'audiolibro Audiobookshelf associato a questo ebook.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} capitoli audio · {{duration}} · In streaming da {{server}}",
+  "Unpair this audiobook?": "Dissociare questo audiolibro?",
+  "Choose from Audiobookshelf": "Scegli da Audiobookshelf",
+  "Streamed from your server, nothing to download": "In streaming dal tuo server, nessun download",
+  "Choose Audiobook": "Scegli audiolibro",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Scegli l'audiolibro Audiobookshelf da associare a «{{book}}».",
+  "Search audiobooks": "Cerca audiolibri",
+  "No matching audiobooks": "Nessun audiolibro corrispondente"
 }

@@ -2231,5 +2231,21 @@
   "Reset all": "Hammasini tiklash",
   "Replace shortcut?": "Yorliq almashtirilsinmi?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "{{shortcut}} yorlig'i allaqachon {{actions}} uchun belgilangan.",
-  "Toggle Table of Contents": "Mundarijani ochish/yopish"
+  "Toggle Table of Contents": "Mundarijani ochish/yopish",
+  "{{title}} Chapter {{chapter}}": "{{title}} {{chapter}}-bob",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} {{first}} - {{last}}-boblar",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}} ta bob)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} ta bob)",
+  "Loading audiobook chapters": "Audiokitob boblari yuklanmoqda",
+  "Failed to load the audiobook.": "Audiokitobni yuklab boʻlmadi.",
+  "Audiobook unpaired.": "Audiokitob bogʻlanishi uzildi.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "Ushbu e-kitob bilan bogʻlangan Audiobookshelf audiokitobini boshqaring.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} ta audio bob · {{duration}} · {{server}} dan translyatsiya",
+  "Unpair this audiobook?": "Ushbu audiokitob bogʻlanishi uzilsinmi?",
+  "Choose from Audiobookshelf": "Audiobookshelf dan tanlash",
+  "Streamed from your server, nothing to download": "Serveringizdan translyatsiya qilinadi, yuklab olish shart emas",
+  "Choose Audiobook": "Audiokitobni tanlang",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "“{{book}}” bilan bogʻlash uchun Audiobookshelf audiokitobini tanlang.",
+  "Search audiobooks": "Audiokitoblarni qidirish",
+  "No matching audiobooks": "Mos audiokitob topilmadi"
 }

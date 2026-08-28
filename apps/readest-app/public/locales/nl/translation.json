@@ -2231,5 +2231,21 @@
   "Reset all": "Alles herstellen",
   "Replace shortcut?": "Sneltoets vervangen?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "De sneltoets {{shortcut}} is al toegewezen aan {{actions}}.",
-  "Toggle Table of Contents": "Inhoudsopgave wisselen"
+  "Toggle Table of Contents": "Inhoudsopgave wisselen",
+  "{{title}} Chapter {{chapter}}": "{{title}} Hoofdstuk {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} Hoofdstukken {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}} hoofdstuk)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} hoofdstukken)",
+  "Loading audiobook chapters": "Luisterboekhoofdstukken laden",
+  "Failed to load the audiobook.": "Kan het luisterboek niet laden.",
+  "Audiobook unpaired.": "Luisterboek ontkoppeld.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "Beheer het Audiobookshelf-luisterboek dat aan dit e-boek is gekoppeld.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} audiohoofdstukken · {{duration}} · Gestreamd vanaf {{server}}",
+  "Unpair this audiobook?": "Dit luisterboek ontkoppelen?",
+  "Choose from Audiobookshelf": "Kiezen uit Audiobookshelf",
+  "Streamed from your server, nothing to download": "Wordt gestreamd vanaf uw server, niets te downloaden",
+  "Choose Audiobook": "Luisterboek kiezen",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Kies het Audiobookshelf-luisterboek dat u aan ‘{{book}}’ wilt koppelen.",
+  "Search audiobooks": "Luisterboeken zoeken",
+  "No matching audiobooks": "Geen overeenkomende luisterboeken"
 }

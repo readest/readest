@@ -2171,5 +2171,20 @@
   "Reset all": "Reset semua",
   "Replace shortcut?": "Ganti pintasan?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Pintasan {{shortcut}} sudah ditetapkan untuk {{actions}}.",
-  "Toggle Table of Contents": "Toggel Daftar Isi"
+  "Toggle Table of Contents": "Toggel Daftar Isi",
+  "{{title}} Chapter {{chapter}}": "{{title}} Bab {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} Bab {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} bab)",
+  "Loading audiobook chapters": "Memuat bab buku audio",
+  "Failed to load the audiobook.": "Gagal memuat buku audio.",
+  "Audiobook unpaired.": "Pemasangan buku audio dilepas.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "Kelola buku audio Audiobookshelf yang dipasangkan dengan ebook ini.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} bab audio · {{duration}} · Dialirkan dari {{server}}",
+  "Unpair this audiobook?": "Lepaskan pemasangan buku audio ini?",
+  "Choose from Audiobookshelf": "Pilih dari Audiobookshelf",
+  "Streamed from your server, nothing to download": "Dialirkan dari server Anda, tanpa unduhan",
+  "Choose Audiobook": "Pilih Buku Audio",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Pilih buku audio Audiobookshelf untuk dipasangkan dengan “{{book}}”.",
+  "Search audiobooks": "Cari buku audio",
+  "No matching audiobooks": "Tidak ada buku audio yang cocok"
 }

@@ -2171,5 +2171,20 @@
   "Reset all": "Đặt lại tất cả",
   "Replace shortcut?": "Thay thế phím tắt?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Phím tắt {{shortcut}} đã được gán cho {{actions}}.",
-  "Toggle Table of Contents": "Chuyển đổi mục lục"
+  "Toggle Table of Contents": "Chuyển đổi mục lục",
+  "{{title}} Chapter {{chapter}}": "{{title}} Chương {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} Chương {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} chương)",
+  "Loading audiobook chapters": "Đang tải các chương sách nói",
+  "Failed to load the audiobook.": "Không thể tải sách nói.",
+  "Audiobook unpaired.": "Đã hủy ghép nối sách nói.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "Quản lý sách nói Audiobookshelf đã ghép nối với ebook này.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} chương âm thanh · {{duration}} · Phát trực tuyến từ {{server}}",
+  "Unpair this audiobook?": "Hủy ghép nối sách nói này?",
+  "Choose from Audiobookshelf": "Chọn từ Audiobookshelf",
+  "Streamed from your server, nothing to download": "Phát trực tuyến từ máy chủ của bạn, không cần tải xuống",
+  "Choose Audiobook": "Chọn sách nói",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Chọn sách nói Audiobookshelf để ghép nối với “{{book}}”.",
+  "Search audiobooks": "Tìm sách nói",
+  "No matching audiobooks": "Không có sách nói phù hợp"
 }

@@ -2171,5 +2171,20 @@
   "Reset all": "すべてリセット",
   "Replace shortcut?": "ショートカットを置き換えますか？",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "ショートカット {{shortcut}} はすでに {{actions}} に割り当てられています。",
-  "Toggle Table of Contents": "目次の切り替え"
+  "Toggle Table of Contents": "目次の切り替え",
+  "{{title}} Chapter {{chapter}}": "{{title}} 第{{chapter}}章",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} 第{{first}} - {{last}}章",
+  "{{title}} ({{count}} chapters)_other": "{{title}}（{{count}}章）",
+  "Loading audiobook chapters": "オーディオブックの章を読み込み中",
+  "Failed to load the audiobook.": "オーディオブックを読み込めませんでした。",
+  "Audiobook unpaired.": "オーディオブックのペアリングを解除しました。",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "この電子書籍とペアリングされたAudiobookshelfのオーディオブックを管理します。",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}}音声章 · {{duration}} · {{server}} からストリーミング",
+  "Unpair this audiobook?": "このオーディオブックのペアリングを解除しますか？",
+  "Choose from Audiobookshelf": "Audiobookshelf から選択",
+  "Streamed from your server, nothing to download": "サーバーからストリーミングするためダウンロード不要",
+  "Choose Audiobook": "オーディオブックを選択",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "「{{book}}」とペアリングするAudiobookshelfのオーディオブックを選択してください。",
+  "Search audiobooks": "オーディオブックを検索",
+  "No matching audiobooks": "一致するオーディオブックがありません"
 }

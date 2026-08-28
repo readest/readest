@@ -2291,5 +2291,22 @@
   "Reset all": "Tout réinitialiser",
   "Replace shortcut?": "Remplacer le raccourci ?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Le raccourci {{shortcut}} est déjà attribué à {{actions}}.",
-  "Toggle Table of Contents": "Afficher/Masquer la table des matières"
+  "Toggle Table of Contents": "Afficher/Masquer la table des matières",
+  "{{title}} Chapter {{chapter}}": "{{title}} Chapitre {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} Chapitres {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}} chapitre)",
+  "{{title}} ({{count}} chapters)_many": "{{title}} ({{count}} chapitres)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} chapitres)",
+  "Loading audiobook chapters": "Chargement des chapitres du livre audio",
+  "Failed to load the audiobook.": "Impossible de charger le livre audio.",
+  "Audiobook unpaired.": "Livre audio dissocié.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "Gérez le livre audio Audiobookshelf associé à cet e-book.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} chapitres audio · {{duration}} · Diffusé depuis {{server}}",
+  "Unpair this audiobook?": "Dissocier ce livre audio ?",
+  "Choose from Audiobookshelf": "Choisir depuis Audiobookshelf",
+  "Streamed from your server, nothing to download": "Diffusé depuis votre serveur, rien à télécharger",
+  "Choose Audiobook": "Choisir un livre audio",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Choisissez le livre audio Audiobookshelf à associer à « {{book}} ».",
+  "Search audiobooks": "Rechercher des livres audio",
+  "No matching audiobooks": "Aucun livre audio correspondant"
 }

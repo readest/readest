@@ -2231,5 +2231,21 @@
   "Reset all": "Alle zurücksetzen",
   "Replace shortcut?": "Kürzel ersetzen?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Das Kürzel {{shortcut}} ist bereits {{actions}} zugewiesen.",
-  "Toggle Table of Contents": "Inhaltsverzeichnis umschalten"
+  "Toggle Table of Contents": "Inhaltsverzeichnis umschalten",
+  "{{title}} Chapter {{chapter}}": "{{title}} Kapitel {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} Kapitel {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}} Kapitel)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} Kapitel)",
+  "Loading audiobook chapters": "Hörbuchkapitel werden geladen",
+  "Failed to load the audiobook.": "Das Hörbuch konnte nicht geladen werden.",
+  "Audiobook unpaired.": "Hörbuchverknüpfung aufgehoben.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "Verwalten Sie das mit diesem E-Book verknüpfte Audiobookshelf-Hörbuch.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} Audiokapitel · {{duration}} · Gestreamt von {{server}}",
+  "Unpair this audiobook?": "Verknüpfung dieses Hörbuchs aufheben?",
+  "Choose from Audiobookshelf": "Aus Audiobookshelf wählen",
+  "Streamed from your server, nothing to download": "Wird von Ihrem Server gestreamt, kein Download nötig",
+  "Choose Audiobook": "Hörbuch auswählen",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Wählen Sie das Audiobookshelf-Hörbuch, das mit „{{book}}“ verknüpft werden soll.",
+  "Search audiobooks": "Hörbücher suchen",
+  "No matching audiobooks": "Keine passenden Hörbücher"
 }

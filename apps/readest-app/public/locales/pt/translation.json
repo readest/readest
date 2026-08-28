@@ -2291,5 +2291,22 @@
   "Reset all": "Redefinir tudo",
   "Replace shortcut?": "Substituir o atalho?",
   "The shortcut {{shortcut}} is already assigned to {{actions}}.": "O atalho {{shortcut}} já está atribuído a {{actions}}.",
-  "Toggle Table of Contents": "Alternar Índice"
+  "Toggle Table of Contents": "Alternar Índice",
+  "{{title}} Chapter {{chapter}}": "{{title}} Capítulo {{chapter}}",
+  "{{title}} Chapters {{first}} - {{last}}": "{{title}} Capítulos {{first}} - {{last}}",
+  "{{title}} ({{count}} chapters)_one": "{{title}} ({{count}} capítulo)",
+  "{{title}} ({{count}} chapters)_many": "{{title}} ({{count}} capítulos)",
+  "{{title}} ({{count}} chapters)_other": "{{title}} ({{count}} capítulos)",
+  "Loading audiobook chapters": "A carregar os capítulos do audiolivro",
+  "Failed to load the audiobook.": "Não foi possível carregar o audiolivro.",
+  "Audiobook unpaired.": "Audiolivro desassociado.",
+  "Manage the Audiobookshelf audiobook paired with this ebook.": "Faça a gestão do audiolivro do Audiobookshelf associado a este e-book.",
+  "{{chapters}} audio chapters · {{duration}} · Streamed from {{server}}": "{{chapters}} capítulos de áudio · {{duration}} · Transmitido de {{server}}",
+  "Unpair this audiobook?": "Desassociar este audiolivro?",
+  "Choose from Audiobookshelf": "Escolher do Audiobookshelf",
+  "Streamed from your server, nothing to download": "Transmitido do seu servidor, nada para transferir",
+  "Choose Audiobook": "Escolher audiolivro",
+  "Pick the Audiobookshelf audiobook to pair with “{{book}}”.": "Escolha o audiolivro do Audiobookshelf para associar a “{{book}}”.",
+  "Search audiobooks": "Procurar audiolivros",
+  "No matching audiobooks": "Nenhum audiolivro correspondente"
 }
