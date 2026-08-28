@@ -456,3 +456,51 @@ describe('FileSyncEngine.syncLibrary — incremental stays O(changed)', () => {
     expect(reads.some((p) => p.endsWith('cover.png'))).toBe(true);
   });
 });
+
+describe('FileSyncEngine.syncLibrary — publishing never erases a peer metadata edit', () => {
+  // Review follow-up (#5921). The row is decided the other way from the
+  // metadata group: this device won the ROW on a page turn, while the peer
+  // holds the newer description.
+  const remoteRow = makeBook('h1', {
+    updatedAt: 100,
+    metadata: withDescription('Newer blurb'),
+    metadataUpdatedAt: 900,
+  });
+  const localRow = makeBook('h1', {
+    updatedAt: 500,
+    metadata: withDescription('Stale blurb'),
+    metadataUpdatedAt: 100,
+  });
+  // A second, genuinely changed book so the index is dirty and really gets
+  // re-pushed — otherwise the publish path is never exercised.
+  const dirtyLocal = makeBook('h2', { updatedAt: 900 });
+  const dirtyRemote = makeBook('h2', { updatedAt: 1 });
+
+  const publishedDescription = async (strategy: 'silent' | 'send') => {
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: indexServing({
+        schemaVersion: 1,
+        updatedAt: 1,
+        books: [remoteRow, dirtyRemote],
+      }),
+      captured,
+    });
+    await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      [{ ...localRow }, { ...dirtyLocal }],
+      { strategy, syncBooks: false, deviceId: 'pc' },
+    );
+    return pushedIndex(captured)?.books?.find((b) => b.hash === 'h1')?.metadata?.description;
+  };
+
+  test('silent: the reconcile pass resolves it before the push', async () => {
+    expect(await publishedDescription('silent')).toBe('Newer blurb');
+  });
+
+  test('send: the publish resolver is the only thing protecting it', async () => {
+    // 'send' applies nothing from the remote, so the reconcile block never
+    // runs and `resolvePublishedBook` carries the whole burden. A send run may
+    // publish its own rows but must not erase what a peer contributed (#5900).
+    expect(await publishedDescription('send')).toBe('Newer blurb');
+  });
+});

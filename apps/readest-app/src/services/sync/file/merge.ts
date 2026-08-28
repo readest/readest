@@ -282,16 +282,42 @@ export const isRemoteBookMissingLocally = (local: Book, remote: Book): boolean =
 export const resolvePublishedBook = (local: Book, remote: Book | undefined): Book => {
   if (!remote || remote.deletedAt || local.deletedAt) return local;
   const group = pickFresherGroup(local, remote, (remote.updatedAt ?? 0) > (local.updatedAt ?? 0));
-  // Never delete a blob the remote has; never claim a newer edit than we made,
-  // so the metadata clock is left alone (see mergeBookMetadata).
-  const metadata = local.metadata ?? remote.metadata;
+  // The metadata group resolves on its own `metadataUpdatedAt` clock here too,
+  // and as a GROUP (title / author / tags / blob move together) exactly as
+  // `mergeBookMetadata` resolves it — otherwise the published row would pair
+  // one device's title with another's description.
+  //
+  // Under 'silent' the reconcile pass has already applied this to the local row
+  // before the push, so this is a no-op. Under 'send' it is the only thing
+  // standing between a peer's newer description and a stale local blob: that
+  // strategy applies nothing from the remote, so the reconcile never runs.
+  // Publishing over it anyway would erase what a peer contributed, which is the
+  // invariant #5900 established for send runs and the index.
+  const remoteMetaNewer = (remote.metadataUpdatedAt ?? 0) > (local.metadataUpdatedAt ?? 0);
+  const meta = remoteMetaNewer ? remote : local;
+  // Never delete a blob the remote has, whichever side won the clock.
+  const metadata = meta.metadata ?? local.metadata ?? remote.metadata;
   if (
     group.groupId === local.groupId &&
     group.groupName === local.groupName &&
     group.groupUpdatedAt === local.groupUpdatedAt &&
+    !remoteMetaNewer &&
     metadata === local.metadata
   ) {
     return local;
   }
-  return { ...local, ...group, metadata };
+  return {
+    ...local,
+    ...group,
+    ...(remoteMetaNewer
+      ? {
+          title: remote.title,
+          author: remote.author,
+          tags: remote.tags,
+          primaryLanguage: remote.primaryLanguage ?? local.primaryLanguage,
+          metadataUpdatedAt: remote.metadataUpdatedAt,
+        }
+      : {}),
+    metadata,
+  };
 };
