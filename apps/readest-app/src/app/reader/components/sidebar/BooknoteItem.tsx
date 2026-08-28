@@ -216,6 +216,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
   if (inlineEditMode) {
     return (
       <div
+        data-testid='booknote-note-editor'
         className={clsx(
           'border-base-300 content group relative my-2 cursor-pointer rounded-lg p-2',
           isCurrent ? 'bg-base-300/85 hover:bg-base-300' : 'hover:bg-base-300/55 bg-base-100',

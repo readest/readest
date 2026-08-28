@@ -48,7 +48,9 @@ export class ReaderPage extends BasePage {
     this.dictionaryPopup = page.locator('.popup-container:has([data-testid="dict-title"])');
     this.translatorPopup = page.locator('.popup-container:has(h1:text-is("Original Text"))');
     this.proofreadPopup = page.locator('.popup-container:has-text("Selected text:")');
-    this.noteEditor = page.locator('.note-editor-container');
+    // Attached notes are written in the left Annotations panel: Annotate drops
+    // the new annotation straight into BooknoteItem's inline editor.
+    this.noteEditor = page.locator('[data-testid="booknote-note-editor"]');
     this.annotationItems = page.locator('li.booknote-item[role="button"]');
     // The app-drawn range-edit handles (the selection / annotation range
     // editors), as opposed to the browser's native selection handles.
@@ -487,12 +489,16 @@ export class ReaderPage extends BasePage {
     await this.page.locator(`[aria-label="Select ${color} color"]`).click();
   }
 
-  /** Annotate the current selection with a note. */
+  /**
+   * Annotate the current selection with a note. Annotate highlights the
+   * selection and opens the annotations tab with the new item already in edit
+   * mode, so the note is written and saved inside that item.
+   */
   async addNote(text: string): Promise<void> {
     await this.popupTool('Annotate').click();
     await this.noteEditor.waitFor({ state: 'visible' });
     await this.noteEditor.getByRole('textbox').fill(text);
-    await this.notebook.getByRole('button', { name: 'Save' }).click();
+    await this.noteEditor.getByRole('button', { name: 'Save' }).click();
   }
 
   /** Read the system clipboard (the context must grant `clipboard-read`). */
