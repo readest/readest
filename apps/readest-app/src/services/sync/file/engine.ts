@@ -24,8 +24,10 @@ import {
 } from './wire';
 import {
   isRemoteBookClockNewer,
+  isRemoteBookMissingLocally,
   mergeBookConfig,
   mergeBookMetadata,
+  resolvePublishedBook,
   shouldApplyRemoteBookMetadata,
 } from './merge';
 
@@ -741,7 +743,15 @@ export class FileSyncEngine {
       const remoteNewer = remoteIndex.books.filter((rb) => {
         if (rb.deletedAt) return false;
         const local = allBooksMap.get(rb.hash);
-        return !!local && !local.deletedAt && shouldApplyRemoteBookMetadata(local, rb);
+        if (!local || local.deletedAt) return false;
+        // Full Sync additionally REPAIRS a shelf that lost its groups or
+        // descriptions to #5911 / #5912. That is true for a whole library at
+        // once and costs a library write each, so it must never run on the
+        // incremental path — see isRemoteBookMissingLocally.
+        return (
+          shouldApplyRemoteBookMetadata(local, rb) ||
+          (fullSync && isRemoteBookMissingLocally(local, rb))
+        );
       });
       await runPool(
         remoteNewer,
@@ -1190,7 +1200,17 @@ export class FileSyncEngine {
       const indexByHash = new Map(allBooksMap);
       if (remoteIndex?.books) {
         for (const rb of remoteIndex.books) {
-          if (!indexByHash.has(rb.hash)) indexByHash.set(rb.hash, rb);
+          const local = indexByHash.get(rb.hash);
+          if (!local) {
+            indexByHash.set(rb.hash, rb);
+            continue;
+          }
+          // Publishing must never DELETE the group or the description the
+          // remote already carries — that clobber, on a row this device merely
+          // TIED, is what emptied every peer's shelf (#5911 / #5912). Pure
+          // in-memory over a map this push already walks: no request, no
+          // library write, incremental sync stays O(changed).
+          indexByHash.set(rb.hash, resolvePublishedBook(local, rb));
         }
       }
 

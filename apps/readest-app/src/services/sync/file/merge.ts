@@ -228,30 +228,70 @@ export const isRemoteBookClockNewer = (local: Book, remote: Book): boolean =>
   (remote.readingStatusUpdatedAt ?? 0) > (local.readingStatusUpdatedAt ?? 0) ||
   (remote.metadataUpdatedAt ?? 0) > (local.metadataUpdatedAt ?? 0);
 
+export const shouldApplyRemoteBookMetadata = (local: Book, remote: Book): boolean =>
+  !remote.deletedAt && !local.deletedAt && isRemoteBookClockNewer(local, remote);
+
 /**
- * Fields the remote index holds that this device is missing outright, with no
- * clock saying so — the repair half of the reconciliation trigger.
+ * FULL SYNC ONLY. Fields the remote index holds that this device is missing
+ * outright, with no clock saying so — the repair half of the reconciliation
+ * trigger, and the pass that gets a device's own shelf back after #5911 / #5912
+ * emptied it.
  *
  * Both cases are "an absent value must never win", and neither can loop:
- * applying the merge makes the local row equal the resolution, after which
- * this is false again.
+ * applying the merge makes the local row equal the resolution, after which this
+ * is false again.
  *
- *  - A group the resolution says this device should be showing but isn't. The
- *    index re-push rebuilds library.json from the LOCAL rows, so without this
- *    a device whose row merely TIED the row clock republished its ungrouped
- *    copy over the peer's grouped one and the group was gone for the whole
- *    fleet (#5911). `pickFresherGroup` is asked with `remoteRowWins: false`
- *    on purpose: whenever the remote genuinely wins the row,
- *    {@link isRemoteBookClockNewer} has already returned true, so the only
- *    question left here is the tie — and on a tie the merge itself resolves
- *    the same way.
- *  - A description this device does not have and the peer does (#5912).
+ *  - A group the resolution says this device should be showing but isn't.
+ *    `pickFresherGroup` is asked with `remoteRowWins: false` on purpose:
+ *    whenever the remote genuinely wins the row, {@link isRemoteBookClockNewer}
+ *    has already returned true, so the only question left here is the tie — and
+ *    on a tie the merge itself resolves the same way.
+ *  - A description this device does not have and the peer does.
+ *
+ * Never on the incremental path. It is true for an entire library at once on
+ * the first run after the fix, and every hit costs a local library write
+ * (`updateBookMetadata` -> `saveLibraryBooks` rewrites the WHOLE library file
+ * plus its backup), so an incremental run would go quadratic in bytes written.
+ * Incremental sync is O(changed) by contract; drift repair is Full Sync's job,
+ * exactly as it is for `uploadedHashes` / `emptyDirs` and row-vs-filesystem
+ * split-brain. Stopping the DAMAGE needs none of this — that is
+ * {@link resolvePublishedBook}, which is free.
  */
 export const isRemoteBookMissingLocally = (local: Book, remote: Book): boolean =>
-  bookGroupDiffers(local, pickFresherGroup(local, remote, false)) ||
-  (!local.metadata && !!remote.metadata);
-
-export const shouldApplyRemoteBookMetadata = (local: Book, remote: Book): boolean =>
   !remote.deletedAt &&
   !local.deletedAt &&
-  (isRemoteBookClockNewer(local, remote) || isRemoteBookMissingLocally(local, remote));
+  (bookGroupDiffers(local, pickFresherGroup(local, remote, false)) ||
+    (!local.metadata && !!remote.metadata));
+
+/**
+ * The row to PUBLISH into library.json for a book this device also holds,
+ * resolved against the remote index entry.
+ *
+ * The index re-push rebuilds library.json from the LOCAL rows, so a device
+ * whose row merely TIED the row clock republished its ungrouped, description-
+ * less copy over the peer's good one — and every other device then pulled the
+ * emptied row. That propagation is the whole of #5911 / #5912, and it is fixed
+ * here rather than by reconciling local state: this is pure in-memory work over
+ * a map the push already walks, so it costs no request and no library write and
+ * keeps an incremental sync O(changed).
+ *
+ * Deliberately NOT a `mergeBookMetadata` call. This device's row still wins the
+ * row on its own clock; the only claim made here is the narrow one that
+ * publishing must never DELETE what the remote already had.
+ */
+export const resolvePublishedBook = (local: Book, remote: Book | undefined): Book => {
+  if (!remote || remote.deletedAt || local.deletedAt) return local;
+  const group = pickFresherGroup(local, remote, (remote.updatedAt ?? 0) > (local.updatedAt ?? 0));
+  // Never delete a blob the remote has; never claim a newer edit than we made,
+  // so the metadata clock is left alone (see mergeBookMetadata).
+  const metadata = local.metadata ?? remote.metadata;
+  if (
+    group.groupId === local.groupId &&
+    group.groupName === local.groupName &&
+    group.groupUpdatedAt === local.groupUpdatedAt &&
+    metadata === local.metadata
+  ) {
+    return local;
+  }
+  return { ...local, ...group, metadata };
+};

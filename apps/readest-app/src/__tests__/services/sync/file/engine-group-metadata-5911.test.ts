@@ -104,7 +104,7 @@ describe('FileSyncEngine.syncLibrary — group membership (#5911)', () => {
     expect(published?.groupName).toBe('Sci-Fi');
   });
 
-  test('the group is restored on the device that had lost it', async () => {
+  test('Full Sync restores the group on the device that had lost it', async () => {
     const applied: Book[] = [];
     const provider = fakeProvider({
       readText: indexServing({
@@ -124,6 +124,7 @@ describe('FileSyncEngine.syncLibrary — group membership (#5911)', () => {
       strategy: 'silent',
       syncBooks: false,
       deviceId: 'boox',
+      fullSync: true,
     });
 
     expect(applied[0]?.groupId).toBe('g1');
@@ -215,7 +216,7 @@ describe('FileSyncEngine.syncLibrary — book metadata (#5912)', () => {
     expect(pushedIndex(captured)?.books?.[0]?.metadata?.description).toBe('A long blurb');
   });
 
-  test('the description is restored on the device that had lost it', async () => {
+  test('Full Sync restores the description on the device that had lost it', async () => {
     const applied: Book[] = [];
     const provider = fakeProvider({
       readText: indexServing({
@@ -235,6 +236,7 @@ describe('FileSyncEngine.syncLibrary — book metadata (#5912)', () => {
       strategy: 'silent',
       syncBooks: false,
       deviceId: 'peer',
+      fullSync: true,
     });
 
     expect(applied[0]?.metadata?.description).toBe('A long blurb');
@@ -301,11 +303,89 @@ describe('FileSyncEngine.syncLibrary — no churn', () => {
   });
 });
 
-describe('FileSyncEngine.syncLibrary — repair costs no downloads', () => {
-  test('a group/description-only repair pulls neither cover nor config', async () => {
+describe('FileSyncEngine.syncLibrary — incremental stays O(changed)', () => {
+  test('an incremental run repairs nothing locally and issues no extra requests', async () => {
+    // The repair case is true for an ENTIRE library at once on the first run
+    // after the fix, and every hit costs a whole-library write. It belongs to
+    // Full Sync; an incremental run must not touch the library at all.
+    const reads: string[] = [];
+    const applied: Book[] = [];
+    const provider = fakeProvider({
+      readText: async (p: string) => {
+        reads.push(p);
+        return p.endsWith('library.json')
+          ? JSON.stringify({
+              schemaVersion: 1,
+              updatedAt: 1,
+              books: [
+                makeBook('h1', {
+                  updatedAt: 100,
+                  groupId: 'g1',
+                  groupName: 'Sci-Fi',
+                  metadata: withDescription('A long blurb'),
+                }),
+              ],
+            })
+          : null;
+      },
+      readBinary: async (p: string) => {
+        reads.push(p);
+        return new ArrayBuffer(8);
+      },
+    });
+    await new FileSyncEngine(
+      provider,
+      fakeStore({
+        updateBookMetadata: async (b) => {
+          applied.push(b);
+        },
+      }),
+    ).syncLibrary([makeBook('h1', { updatedAt: 100 })], {
+      strategy: 'silent',
+      syncBooks: false,
+      deviceId: 'peer',
+    });
+
+    expect(applied).toEqual([]);
+    expect(reads.filter((p) => p.endsWith('cover.png'))).toEqual([]);
+    expect(reads.filter((p) => p.endsWith('config.json'))).toEqual([]);
+  });
+
+  test('...but still never publishes a row that deletes the remote group', async () => {
+    // Stopping the damage is free and unconditional: it is pure in-memory work
+    // over a map the index push already walks.
+    const captured: Captured = { writes: [] };
+    const provider = fakeProvider({
+      readText: indexServing({
+        schemaVersion: 1,
+        updatedAt: 1,
+        books: [
+          makeBook('h1', {
+            updatedAt: 100,
+            groupId: 'g1',
+            groupName: 'Sci-Fi',
+            metadata: withDescription('A long blurb'),
+          }),
+          makeBook('h2', { updatedAt: 1 }),
+        ],
+      }),
+      captured,
+    });
+    await new FileSyncEngine(provider, fakeStore()).syncLibrary(
+      // h2 changed, so the index is dirty and DOES get re-pushed; h1 must
+      // survive that push untouched even though this device's copy is bare.
+      [makeBook('h1', { updatedAt: 100 }), makeBook('h2', { updatedAt: 900 })],
+      { strategy: 'silent', syncBooks: false, deviceId: 'peer' },
+    );
+
+    const published = pushedIndex(captured)?.books?.find((b) => b.hash === 'h1');
+    expect(published?.groupId).toBe('g1');
+    expect(published?.metadata?.description).toBe('A long blurb');
+  });
+
+  test('a Full Sync repair pulls no cover it does not need', async () => {
     // Nothing says the remote BYTES moved: no clock is newer, the index just
-    // holds fields this device is missing. On a first run after the fix that
-    // is true for a whole library at once, so it must stay free.
+    // holds fields this device is missing.
     const reads: string[] = [];
     const provider = fakeProvider({
       readText: async (p: string) => {
@@ -342,12 +422,12 @@ describe('FileSyncEngine.syncLibrary — repair costs no downloads', () => {
       strategy: 'silent',
       syncBooks: false,
       deviceId: 'peer',
+      fullSync: true,
     });
 
     expect(applied[0]?.groupId).toBe('g1');
     expect(applied[0]?.metadata?.description).toBe('A long blurb');
     expect(reads.filter((p) => p.endsWith('cover.png'))).toEqual([]);
-    expect(reads.filter((p) => p.endsWith('config.json'))).toEqual([]);
   });
 
   test('a genuinely newer remote row still re-pulls the cover', async () => {
