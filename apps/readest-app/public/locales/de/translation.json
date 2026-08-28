@@ -2224,5 +2224,12 @@
   "Not secure": "Nicht sicher",
   "Importing": "Wird importiert",
   "Added to library": "Zur Bibliothek hinzugefügt",
-  "Not a supported book format": "Kein unterstütztes Buchformat"
+  "Not a supported book format": "Kein unterstütztes Buchformat",
+  "Shortcuts": "Tastenkürzel",
+  "Customize keyboard and mouse controls": "Tastatur- und Maussteuerung anpassen",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Wählen Sie die Tasten oder Maustasten, die Readest steuern.",
+  "Reset all": "Alle zurücksetzen",
+  "Replace shortcut?": "Kürzel ersetzen?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Das Kürzel {{shortcut}} ist bereits {{actions}} zugewiesen.",
+  "Toggle Table of Contents": "Inhaltsverzeichnis umschalten"
 }

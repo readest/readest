@@ -2284,5 +2284,12 @@
   "Not secure": "No seguro",
   "Importing": "Importando",
   "Added to library": "Añadido a la biblioteca",
-  "Not a supported book format": "Formato de libro no compatible"
+  "Not a supported book format": "Formato de libro no compatible",
+  "Shortcuts": "Atajos",
+  "Customize keyboard and mouse controls": "Personaliza los controles de teclado y ratón",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Elige las teclas o los botones del ratón que controlan Readest.",
+  "Reset all": "Restablecer todo",
+  "Replace shortcut?": "¿Reemplazar el atajo?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "El atajo {{shortcut}} ya está asignado a {{actions}}.",
+  "Toggle Table of Contents": "Alternar índice"
 }

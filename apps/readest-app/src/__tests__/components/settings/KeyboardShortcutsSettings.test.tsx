@@ -98,4 +98,25 @@ describe('KeyboardShortcutsSettings', () => {
       onOpenBooks: ['ctrl+shift+9'],
     });
   });
+
+  test('renders the replacement dialog inside an open daisyui modal', () => {
+    render(<KeyboardShortcutsSettings onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Books: Ctrl+O' }));
+    fireEvent.keyDown(window, { key: 'n' });
+
+    // `hidden: true` because jsdom applies the UA `dialog:not([open])
+    // { display: none }` rule — in the app daisyui's `.modal` display:grid
+    // overrides it, which is exactly what the wrapper is here to restore.
+    const dialog = screen.getByRole('alertdialog', { hidden: true });
+    expect(dialog.textContent).toContain('The shortcut {{shortcut}} is already assigned to');
+    // `.modal-box` is invisible (opacity 0, scale .95) unless it sits inside an
+    // open `.modal` — without the wrapper the dialog lays out but never paints.
+    const modal = dialog.closest('dialog.modal');
+    expect(modal).not.toBeNull();
+    expect(modal!.classList.contains('modal-open')).toBe(true);
+    expect(dialog.classList.contains('modal-box')).toBe(true);
+    // Nothing is written until the user confirms.
+    expect(localStorage.getItem('customShortcuts')).toBeNull();
+  });
 });

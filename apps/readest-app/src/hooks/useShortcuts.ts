@@ -37,7 +37,8 @@ const useShortcuts = (
       setShortcuts(loadShortcuts());
     };
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === 'customShortcuts') handleShortcutUpdate();
+      // `key` is null when another tab called localStorage.clear().
+      if (event.key === null || event.key === 'customShortcuts') handleShortcutUpdate();
     };
 
     window.addEventListener('shortcutUpdate', handleShortcutUpdate);

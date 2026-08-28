@@ -2224,5 +2224,12 @@
   "Not secure": "Inte säker",
   "Importing": "Importerar",
   "Added to library": "Tillagd i biblioteket",
-  "Not a supported book format": "Bokformatet stöds inte"
+  "Not a supported book format": "Bokformatet stöds inte",
+  "Shortcuts": "Genvägar",
+  "Customize keyboard and mouse controls": "Anpassa tangentbords- och muskontroller",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Välj de tangenter eller musknappar som styr Readest.",
+  "Reset all": "Återställ alla",
+  "Replace shortcut?": "Ersätt genvägen?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Genvägen {{shortcut}} är redan tilldelad {{actions}}.",
+  "Toggle Table of Contents": "Visa/dölj innehåll"
 }

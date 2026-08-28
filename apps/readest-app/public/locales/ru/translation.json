@@ -2344,5 +2344,12 @@
   "Not secure": "Не защищено",
   "Importing": "Импорт",
   "Added to library": "Добавлено в библиотеку",
-  "Not a supported book format": "Неподдерживаемый формат книги"
+  "Not a supported book format": "Неподдерживаемый формат книги",
+  "Shortcuts": "Сочетания клавиш",
+  "Customize keyboard and mouse controls": "Настройка управления клавиатурой и мышью",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Выберите клавиши или кнопки мыши для управления Readest.",
+  "Reset all": "Сбросить всё",
+  "Replace shortcut?": "Заменить сочетание?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Сочетание {{shortcut}} уже назначено для: {{actions}}.",
+  "Toggle Table of Contents": "Переключить содержание"
 }

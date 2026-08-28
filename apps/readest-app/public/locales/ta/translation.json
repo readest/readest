@@ -2224,5 +2224,12 @@
   "Not secure": "பாதுகாப்பற்றது",
   "Importing": "இறக்குமதி செய்கிறது",
   "Added to library": "நூலகத்தில் சேர்க்கப்பட்டது",
-  "Not a supported book format": "ஆதரிக்கப்படாத புத்தக வடிவம்"
+  "Not a supported book format": "ஆதரிக்கப்படாத புத்தக வடிவம்",
+  "Shortcuts": "குறுக்குவழிகள்",
+  "Customize keyboard and mouse controls": "விசைப்பலகை மற்றும் சுட்டி கட்டுப்பாடுகளைத் தனிப்பயனாக்கு",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Readest ஐக் கட்டுப்படுத்தும் விசைகள் அல்லது சுட்டி பொத்தான்களைத் தேர்ந்தெடுக்கவும்.",
+  "Reset all": "அனைத்தையும் மீட்டமைக்கவும்",
+  "Replace shortcut?": "குறுக்குவழியை மாற்றவா?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "{{shortcut}} குறுக்குவழி ஏற்கனவே {{actions}} க்கு ஒதுக்கப்பட்டுள்ளது.",
+  "Toggle Table of Contents": "உள்ளடக்கத்தை மாற்றவும்"
 }

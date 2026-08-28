@@ -2164,5 +2164,12 @@
   "Not secure": "Không an toàn",
   "Importing": "Đang nhập",
   "Added to library": "Đã thêm vào thư viện",
-  "Not a supported book format": "Định dạng sách không được hỗ trợ"
+  "Not a supported book format": "Định dạng sách không được hỗ trợ",
+  "Shortcuts": "Phím tắt",
+  "Customize keyboard and mouse controls": "Tùy chỉnh điều khiển bàn phím và chuột",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Chọn phím bàn phím hoặc nút chuột điều khiển Readest.",
+  "Reset all": "Đặt lại tất cả",
+  "Replace shortcut?": "Thay thế phím tắt?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Phím tắt {{shortcut}} đã được gán cho {{actions}}.",
+  "Toggle Table of Contents": "Chuyển đổi mục lục"
 }

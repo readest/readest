@@ -2224,5 +2224,12 @@
   "Not secure": "ආරක්ෂිත නොවේ",
   "Importing": "ආයාත කරමින්",
   "Added to library": "පුස්තකාලයට එක් කරන ලදී",
-  "Not a supported book format": "සහාය නොදක්වන පොත් ආකෘතියකි"
+  "Not a supported book format": "සහාය නොදක්වන පොත් ආකෘතියකි",
+  "Shortcuts": "කෙටිමං",
+  "Customize keyboard and mouse controls": "යතුරුපුවරු සහ මූසික පාලන අභිරුචිකරණය කරන්න",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Readest පාලනය කරන යතුරුපුවරු යතුරු හෝ මූසික බොත්තම් තෝරන්න.",
+  "Reset all": "සියල්ල නැවත සකසන්න",
+  "Replace shortcut?": "කෙටිමඟ ආදේශ කරන්නද?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "{{shortcut}} කෙටිමඟ දැනටමත් {{actions}} සඳහා පවරා ඇත.",
+  "Toggle Table of Contents": "සූචිය මාරු කරන්න"
 }

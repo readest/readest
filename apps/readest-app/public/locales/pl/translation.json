@@ -2344,5 +2344,12 @@
   "Not secure": "Niezabezpieczona",
   "Importing": "Importowanie",
   "Added to library": "Dodano do biblioteki",
-  "Not a supported book format": "Nieobsługiwany format książki"
+  "Not a supported book format": "Nieobsługiwany format książki",
+  "Shortcuts": "Skróty",
+  "Customize keyboard and mouse controls": "Dostosuj sterowanie klawiaturą i myszą",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Wybierz klawisze lub przyciski myszy sterujące Readest.",
+  "Reset all": "Zresetuj wszystko",
+  "Replace shortcut?": "Zastąpić skrót?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Skrót {{shortcut}} jest już przypisany do: {{actions}}.",
+  "Toggle Table of Contents": "Włącz/Wyłącz spis treści"
 }

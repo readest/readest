@@ -2224,5 +2224,12 @@
   "Not secure": "Nem biztonságos",
   "Importing": "Importálás",
   "Added to library": "Hozzáadva a könyvtárhoz",
-  "Not a supported book format": "Nem támogatott könyvformátum"
+  "Not a supported book format": "Nem támogatott könyvformátum",
+  "Shortcuts": "Gyorsbillentyűk",
+  "Customize keyboard and mouse controls": "Billentyűzet- és egérvezérlők testreszabása",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Válaszd ki a Readestet vezérlő billentyűket vagy egérgombokat.",
+  "Reset all": "Összes visszaállítása",
+  "Replace shortcut?": "Lecseréled a billentyűparancsot?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "A(z) {{shortcut}} billentyűparancs már ehhez van rendelve: {{actions}}.",
+  "Toggle Table of Contents": "Tartalomjegyzék megjelenítése/elrejtése"
 }

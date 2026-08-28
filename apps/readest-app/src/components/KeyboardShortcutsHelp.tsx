@@ -17,7 +17,8 @@ export const KeyboardShortcutsHelp = () => {
   useEffect(() => {
     const refreshShortcuts = () => setSections(getShortcutsForDisplay(isMac));
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === 'customShortcuts') refreshShortcuts();
+      // `key` is null when another tab called localStorage.clear().
+      if (event.key === null || event.key === 'customShortcuts') refreshShortcuts();
     };
     window.addEventListener('shortcutUpdate', refreshShortcuts);
     window.addEventListener('storage', handleStorage);

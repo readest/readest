@@ -2164,5 +2164,12 @@
   "Not secure": "Tidak selamat",
   "Importing": "Mengimport",
   "Added to library": "Ditambah ke perpustakaan",
-  "Not a supported book format": "Format buku tidak disokong"
+  "Not a supported book format": "Format buku tidak disokong",
+  "Shortcuts": "Pintasan",
+  "Customize keyboard and mouse controls": "Sesuaikan kawalan papan kekunci dan tetikus",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Pilih kekunci papan kekunci atau butang tetikus yang mengawal Readest.",
+  "Reset all": "Tetapkan semula semua",
+  "Replace shortcut?": "Ganti pintasan?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Pintasan {{shortcut}} telah pun ditetapkan kepada {{actions}}.",
+  "Toggle Table of Contents": "Togol Kandungan"
 }

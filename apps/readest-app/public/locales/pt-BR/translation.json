@@ -2284,5 +2284,12 @@
   "Not secure": "Não seguro",
   "Importing": "Importando",
   "Added to library": "Adicionado à biblioteca",
-  "Not a supported book format": "Formato de livro não suportado"
+  "Not a supported book format": "Formato de livro não suportado",
+  "Shortcuts": "Atalhos",
+  "Customize keyboard and mouse controls": "Personalize os controles de teclado e mouse",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Escolha as teclas ou os botões do mouse que controlam o Readest.",
+  "Reset all": "Redefinir tudo",
+  "Replace shortcut?": "Substituir o atalho?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "O atalho {{shortcut}} já está atribuído a {{actions}}.",
+  "Toggle Table of Contents": "Alternar sumário"
 }

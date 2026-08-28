@@ -2224,5 +2224,12 @@
   "Not secure": "सुरक्षित नहीं",
   "Importing": "आयात हो रहा है",
   "Added to library": "लाइब्रेरी में जोड़ा गया",
-  "Not a supported book format": "असमर्थित पुस्तक प्रारूप"
+  "Not a supported book format": "असमर्थित पुस्तक प्रारूप",
+  "Shortcuts": "शॉर्टकट",
+  "Customize keyboard and mouse controls": "कीबोर्ड और माउस नियंत्रण अनुकूलित करें",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "वे कीबोर्ड कुंजियाँ या माउस बटन चुनें जो Readest को नियंत्रित करते हैं।",
+  "Reset all": "सभी रीसेट करें",
+  "Replace shortcut?": "शॉर्टकट बदलें?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "शॉर्टकट {{shortcut}} पहले से {{actions}} को सौंपा गया है।",
+  "Toggle Table of Contents": "सामग्री टॉगल करें"
 }

@@ -2224,5 +2224,12 @@
   "Not secure": "Xavfsiz emas",
   "Importing": "Import qilinmoqda",
   "Added to library": "Kutubxonaga qo‘shildi",
-  "Not a supported book format": "Qo‘llab-quvvatlanmaydigan kitob formati"
+  "Not a supported book format": "Qo‘llab-quvvatlanmaydigan kitob formati",
+  "Shortcuts": "Yorliqlar",
+  "Customize keyboard and mouse controls": "Klaviatura va sichqoncha boshqaruvini sozlash",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Readest'ni boshqaradigan klaviatura tugmalari yoki sichqoncha tugmalarini tanlang.",
+  "Reset all": "Hammasini tiklash",
+  "Replace shortcut?": "Yorliq almashtirilsinmi?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "{{shortcut}} yorlig'i allaqachon {{actions}} uchun belgilangan.",
+  "Toggle Table of Contents": "Mundarijani ochish/yopish"
 }

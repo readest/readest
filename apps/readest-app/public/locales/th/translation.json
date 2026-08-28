@@ -2164,5 +2164,12 @@
   "Not secure": "ไม่ปลอดภัย",
   "Importing": "กำลังนำเข้า",
   "Added to library": "เพิ่มลงในคลังหนังสือแล้ว",
-  "Not a supported book format": "รูปแบบหนังสือไม่รองรับ"
+  "Not a supported book format": "รูปแบบหนังสือไม่รองรับ",
+  "Shortcuts": "ทางลัด",
+  "Customize keyboard and mouse controls": "ปรับแต่งการควบคุมด้วยแป้นพิมพ์และเมาส์",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "เลือกปุ่มบนแป้นพิมพ์หรือปุ่มเมาส์ที่ใช้ควบคุม Readest",
+  "Reset all": "รีเซ็ตทั้งหมด",
+  "Replace shortcut?": "แทนที่แป้นพิมพ์ลัดหรือไม่?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "แป้นพิมพ์ลัด {{shortcut}} ถูกกำหนดให้กับ {{actions}} แล้ว",
+  "Toggle Table of Contents": "เปลี่ยนสารบัญ"
 }

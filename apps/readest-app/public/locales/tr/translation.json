@@ -2224,5 +2224,12 @@
   "Not secure": "Güvenli değil",
   "Importing": "İçe aktarılıyor",
   "Added to library": "Kitaplığa eklendi",
-  "Not a supported book format": "Desteklenmeyen kitap biçimi"
+  "Not a supported book format": "Desteklenmeyen kitap biçimi",
+  "Shortcuts": "Kısayollar",
+  "Customize keyboard and mouse controls": "Klavye ve fare denetimlerini özelleştirin",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Readest'i denetleyen klavye tuşlarını veya fare düğmelerini seçin.",
+  "Reset all": "Tümünü sıfırla",
+  "Replace shortcut?": "Kısayol değiştirilsin mi?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "{{shortcut}} kısayolu zaten {{actions}} işlemine atanmış.",
+  "Toggle Table of Contents": "İçindekileri Değiştir"
 }

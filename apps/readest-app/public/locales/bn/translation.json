@@ -2224,5 +2224,12 @@
   "Not secure": "নিরাপদ নয়",
   "Importing": "ইমপোর্ট হচ্ছে",
   "Added to library": "লাইব্রেরিতে যোগ করা হয়েছে",
-  "Not a supported book format": "অসমর্থিত বইয়ের ফরম্যাট"
+  "Not a supported book format": "অসমর্থিত বইয়ের ফরম্যাট",
+  "Shortcuts": "শর্টকাট",
+  "Customize keyboard and mouse controls": "কীবোর্ড ও মাউস নিয়ন্ত্রণ কাস্টমাইজ করুন",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Readest নিয়ন্ত্রণ করে এমন কীবোর্ড কী বা মাউস বোতাম বেছে নিন।",
+  "Reset all": "সব রিসেট করুন",
+  "Replace shortcut?": "শর্টকাট প্রতিস্থাপন করবেন?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "{{shortcut}} শর্টকাটটি ইতিমধ্যে {{actions}}-এ বরাদ্দ করা আছে।",
+  "Toggle Table of Contents": "সূচিপত্র টগল করুন"
 }

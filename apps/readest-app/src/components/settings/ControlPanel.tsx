@@ -28,7 +28,6 @@ import { DEFAULT_ANNOTATION_TOOLBAR_ITEMS } from '@/utils/annotationToolbar';
 import { canShareText } from '@/utils/share';
 import { optInTelemetry, optOutTelemetry } from '@/utils/telemetry';
 import KeyboardShortcutsSettings from './KeyboardShortcutsSettings';
-import { getDefaultShortcuts, saveShortcuts } from '@/helpers/shortcuts';
 
 const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
@@ -120,7 +119,8 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       true,
     );
     pageTurnerResetRef.current();
-    saveShortcuts(getDefaultShortcuts());
+    // Keyboard/mouse bindings are NOT reset here — they are device-local and
+    // have their own "Reset all" inside the Keyboard Shortcuts sub-page.
   };
 
   useEffect(() => {

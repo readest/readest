@@ -2224,5 +2224,12 @@
   "Not secure": "ناامن",
   "Importing": "در حال وارد کردن",
   "Added to library": "به کتابخانه افزوده شد",
-  "Not a supported book format": "قالب کتاب پشتیبانی نمی‌شود"
+  "Not a supported book format": "قالب کتاب پشتیبانی نمی‌شود",
+  "Shortcuts": "میان‌برها",
+  "Customize keyboard and mouse controls": "سفارشی‌سازی کنترل‌های صفحه‌کلید و ماوس",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "کلیدهای صفحه‌کلید یا دکمه‌های ماوس کنترل‌کننده Readest را انتخاب کنید.",
+  "Reset all": "بازنشانی همه",
+  "Replace shortcut?": "میان‌بر جایگزین شود؟",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "میان‌بر {{shortcut}} از قبل به {{actions}} اختصاص یافته است.",
+  "Toggle Table of Contents": "تغییر وضعیت فهرست مطالب"
 }

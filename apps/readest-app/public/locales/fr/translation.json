@@ -2284,5 +2284,12 @@
   "Not secure": "Non sécurisé",
   "Importing": "Importation en cours",
   "Added to library": "Ajouté à la bibliothèque",
-  "Not a supported book format": "Format de livre non pris en charge"
+  "Not a supported book format": "Format de livre non pris en charge",
+  "Shortcuts": "Raccourcis",
+  "Customize keyboard and mouse controls": "Personnaliser les commandes clavier et souris",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Choisissez les touches ou les boutons de souris qui contrôlent Readest.",
+  "Reset all": "Tout réinitialiser",
+  "Replace shortcut?": "Remplacer le raccourci ?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Le raccourci {{shortcut}} est déjà attribué à {{actions}}.",
+  "Toggle Table of Contents": "Afficher/Masquer la table des matières"
 }

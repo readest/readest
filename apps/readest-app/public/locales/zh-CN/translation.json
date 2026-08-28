@@ -2164,5 +2164,12 @@
   "Not secure": "不安全",
   "Importing": "正在导入",
   "Added to library": "已加入书库",
-  "Not a supported book format": "不支持的图书格式"
+  "Not a supported book format": "不支持的图书格式",
+  "Shortcuts": "快捷键",
+  "Customize keyboard and mouse controls": "自定义键盘和鼠标操作",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "选择用于控制 Readest 的键盘按键或鼠标按钮。",
+  "Reset all": "全部重置",
+  "Replace shortcut?": "替换快捷键？",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "快捷键 {{shortcut}} 已分配给 {{actions}}。",
+  "Toggle Table of Contents": "切换目录"
 }

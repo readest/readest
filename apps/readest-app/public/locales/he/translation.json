@@ -2284,5 +2284,12 @@
   "Not secure": "לא מאובטח",
   "Importing": "מייבא",
   "Added to library": "נוסף לספרייה",
-  "Not a supported book format": "פורמט ספר לא נתמך"
+  "Not a supported book format": "פורמט ספר לא נתמך",
+  "Shortcuts": "קיצורי דרך",
+  "Customize keyboard and mouse controls": "התאמה אישית של פקדי המקלדת והעכבר",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "בחר את מקשי המקלדת או לחצני העכבר ששולטים ב-Readest.",
+  "Reset all": "אפס הכול",
+  "Replace shortcut?": "להחליף את הקיצור?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "הקיצור {{shortcut}} כבר משויך אל {{actions}}.",
+  "Toggle Table of Contents": "הצג/הסתר תוכן עניינים"
 }

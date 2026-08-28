@@ -2164,5 +2164,12 @@
   "Not secure": "保護されていない通信",
   "Importing": "インポート中",
   "Added to library": "ライブラリに追加しました",
-  "Not a supported book format": "対応していない書籍形式です"
+  "Not a supported book format": "対応していない書籍形式です",
+  "Shortcuts": "ショートカット",
+  "Customize keyboard and mouse controls": "キーボードとマウスの操作をカスタマイズ",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Readest を操作するキーまたはマウスボタンを選択します。",
+  "Reset all": "すべてリセット",
+  "Replace shortcut?": "ショートカットを置き換えますか？",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "ショートカット {{shortcut}} はすでに {{actions}} に割り当てられています。",
+  "Toggle Table of Contents": "目次の切り替え"
 }

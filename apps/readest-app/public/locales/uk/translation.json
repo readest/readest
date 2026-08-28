@@ -2344,5 +2344,12 @@
   "Not secure": "Не захищено",
   "Importing": "Імпортування",
   "Added to library": "Додано до бібліотеки",
-  "Not a supported book format": "Непідтримуваний формат книги"
+  "Not a supported book format": "Непідтримуваний формат книги",
+  "Shortcuts": "Комбінації клавіш",
+  "Customize keyboard and mouse controls": "Налаштування керування клавіатурою та мишею",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Виберіть клавіші або кнопки миші, якими керується Readest.",
+  "Reset all": "Скинути все",
+  "Replace shortcut?": "Замінити комбінацію?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Комбінацію {{shortcut}} уже призначено для: {{actions}}.",
+  "Toggle Table of Contents": "Перемкнути зміст"
 }

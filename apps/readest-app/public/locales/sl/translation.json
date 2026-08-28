@@ -2344,5 +2344,12 @@
   "Not secure": "Ni varno",
   "Importing": "Uvažanje",
   "Added to library": "Dodano v knjižnico",
-  "Not a supported book format": "Nepodprta oblika knjige"
+  "Not a supported book format": "Nepodprta oblika knjige",
+  "Shortcuts": "Bližnjice",
+  "Customize keyboard and mouse controls": "Prilagodite tipkovne in miškine kontrolnike",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Izberite tipke ali gumbe miške, ki upravljajo Readest.",
+  "Reset all": "Ponastavi vse",
+  "Replace shortcut?": "Zamenjam bližnjico?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Bližnjica {{shortcut}} je že dodeljena: {{actions}}.",
+  "Toggle Table of Contents": "Preklopi kazalo vsebine"
 }

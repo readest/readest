@@ -2464,5 +2464,12 @@
   "Not secure": "غير آمن",
   "Importing": "جارٍ الاستيراد",
   "Added to library": "تمت الإضافة إلى المكتبة",
-  "Not a supported book format": "تنسيق كتاب غير مدعوم"
+  "Not a supported book format": "تنسيق كتاب غير مدعوم",
+  "Shortcuts": "الاختصارات",
+  "Customize keyboard and mouse controls": "تخصيص عناصر تحكم لوحة المفاتيح والفأرة",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "اختر مفاتيح لوحة المفاتيح أو أزرار الفأرة التي تتحكم في Readest.",
+  "Reset all": "إعادة تعيين الكل",
+  "Replace shortcut?": "استبدال الاختصار؟",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "الاختصار {{shortcut}} معيَّن بالفعل لـ {{actions}}.",
+  "Toggle Table of Contents": "تبديل جدول المحتويات"
 }

@@ -25,9 +25,12 @@ import { MdClose, MdRestartAlt } from 'react-icons/md';
 import SubPageHeader from './SubPageHeader';
 import { BoxedList, SettingsRow } from './primitives';
 
-const LEARN_TIMEOUT_MS = 8000;
+const LEARN_TIMEOUT_MS = 15000;
+// Clear / Reset stay out of the way on pointer devices — 50-odd rows each
+// carrying a permanent ✕ reads as clutter. They are always visible where
+// hover doesn't exist: touch widths (<sm) and e-ink.
 const ROW_ACTION_CLASS =
-  'touch-target hover:bg-base-200/60 focus-visible:bg-base-200/60 flex h-8 min-h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none';
+  'touch-target hover:bg-base-200/60 focus-visible:bg-base-200/60 flex h-8 min-h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors duration-150 focus-visible:outline-none not-eink:sm:opacity-0 not-eink:sm:group-hover:opacity-100 not-eink:sm:group-focus-within:opacity-100';
 
 type PendingReplacement = {
   action: ShortcutAction;
@@ -253,6 +256,7 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
                 return (
                   <SettingsRow
                     key={action}
+                    className='group'
                     label={_(entry.description)}
                     data-setting-id={`settings.control.keyboardShortcuts.${action}`}
                   >
@@ -308,45 +312,50 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
 
       {pendingReplacement && (
         <ModalPortal>
-          <div
-            ref={replacementDialogRef}
-            role='alertdialog'
-            aria-modal='true'
-            aria-labelledby='shortcut-replacement-title'
-            aria-describedby='shortcut-replacement-description'
-            className='modal-box bg-base-100 w-[min(420px,calc(100vw-2rem))] rounded-2xl p-5'
-          >
-            <h3 id='shortcut-replacement-title' className='mb-1.5 font-semibold tracking-tight'>
-              {_('Replace shortcut?')}
-            </h3>
-            <p
-              id='shortcut-replacement-description'
-              className='text-base-content/70 leading-relaxed'
+          {/* daisyUI 5 keeps `.modal-box` at opacity 0 / scale .95 unless it
+              sits inside an open `.modal` — without this wrapper the dialog
+              lays out but never paints. */}
+          <dialog className='modal modal-open'>
+            <div
+              ref={replacementDialogRef}
+              role='alertdialog'
+              aria-modal='true'
+              aria-labelledby='shortcut-replacement-title'
+              aria-describedby='shortcut-replacement-description'
+              className='modal-box bg-base-100 w-[min(420px,calc(100vw-2rem))] rounded-2xl p-5'
             >
-              {_('The shortcut {{shortcut}} is already assigned to {{actions}}.', {
-                shortcut: formatKeyForDisplay(pendingReplacement.binding, isMac),
-                actions: pendingReplacement.conflicts
-                  .map((action) => _(shortcuts[action].description))
-                  .join(', '),
-              })}
-            </p>
-            <div className='mt-5 flex justify-end gap-2'>
-              <button
-                type='button'
-                className='btn btn-ghost btn-sm h-8 min-h-8'
-                onClick={() => setPendingReplacement(null)}
+              <h3 id='shortcut-replacement-title' className='mb-1.5 font-semibold tracking-tight'>
+                {_('Replace shortcut?')}
+              </h3>
+              <p
+                id='shortcut-replacement-description'
+                className='text-base-content/70 leading-relaxed'
               >
-                {_('Cancel')}
-              </button>
-              <button
-                type='button'
-                className='btn btn-contrast btn-sm h-8 min-h-8'
-                onClick={confirmReplacement}
-              >
-                {_('Replace')}
-              </button>
+                {_('The shortcut {{shortcut}} is already assigned to {{actions}}.', {
+                  shortcut: formatKeyForDisplay(pendingReplacement.binding, isMac),
+                  actions: pendingReplacement.conflicts
+                    .map((action) => _(shortcuts[action].description))
+                    .join(', '),
+                })}
+              </p>
+              <div className='mt-5 flex justify-end gap-2'>
+                <button
+                  type='button'
+                  className='btn btn-ghost btn-sm h-8 min-h-8'
+                  onClick={() => setPendingReplacement(null)}
+                >
+                  {_('Cancel')}
+                </button>
+                <button
+                  type='button'
+                  className='btn btn-contrast btn-sm h-8 min-h-8'
+                  onClick={confirmReplacement}
+                >
+                  {_('Replace')}
+                </button>
+              </div>
             </div>
-          </div>
+          </dialog>
         </ModalPortal>
       )}
     </div>

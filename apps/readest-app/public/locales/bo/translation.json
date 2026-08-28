@@ -2164,5 +2164,12 @@
   "Not secure": "བདེ་འཇགས་མེད།",
   "Importing": "ནང་འདྲེན་བྱེད་བཞིན་པ།",
   "Added to library": "དཔེ་མཛོད་ནང་སྣོན་འཇུག་བྱས།",
-  "Not a supported book format": "རྒྱབ་སྐྱོར་མེད་པའི་དཔེ་དེབ་རྣམ་གཞག"
+  "Not a supported book format": "རྒྱབ་སྐྱོར་མེད་པའི་དཔེ་དེབ་རྣམ་གཞག",
+  "Shortcuts": "མྱུར་ལམ།",
+  "Customize keyboard and mouse controls": "མཐེབ་གཞོང་དང་ཙི་གུའི་ཚོད་འཛིན་རང་སྒྲིག",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Readest ཚོད་འཛིན་བྱེད་པའི་མཐེབ་གཞོང་གི་མཐེབ་གཞི་འམ་ཙི་གུའི་གནོན་མཐེབ་འདེམས།",
+  "Reset all": "ཡོངས་རྫོགས་བསྐྱར་སྒྲིག",
+  "Replace shortcut?": "མྱུར་ལམ་བརྗེ་བ་ཡིན་ནམ།",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "མྱུར་ལམ་ {{shortcut}} ནི་ {{actions}} ལ་སྔོན་ནས་སྤྲད་ཟིན།",
+  "Toggle Table of Contents": "དཀར་ཆག་སྤོ་བ།"
 }

@@ -2224,5 +2224,12 @@
   "Not secure": "Μη ασφαλής",
   "Importing": "Γίνεται εισαγωγή",
   "Added to library": "Προστέθηκε στη βιβλιοθήκη",
-  "Not a supported book format": "Μη υποστηριζόμενη μορφή βιβλίου"
+  "Not a supported book format": "Μη υποστηριζόμενη μορφή βιβλίου",
+  "Shortcuts": "Συντομεύσεις",
+  "Customize keyboard and mouse controls": "Προσαρμογή χειριστηρίων πληκτρολογίου και ποντικιού",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Επιλέξτε τα πλήκτρα ή τα κουμπιά του ποντικιού που ελέγχουν το Readest.",
+  "Reset all": "Επαναφορά όλων",
+  "Replace shortcut?": "Αντικατάσταση συντόμευσης;",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Η συντόμευση {{shortcut}} έχει ήδη αντιστοιχιστεί σε: {{actions}}.",
+  "Toggle Table of Contents": "Εναλλαγή πίνακα περιεχομένων"
 }

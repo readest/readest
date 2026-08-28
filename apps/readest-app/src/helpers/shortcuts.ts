@@ -181,7 +181,7 @@ const DEFAULT_SHORTCUTS = {
     section: 'General',
   },
   onOpenBooks: {
-    keys: ['ctrl+o'],
+    keys: ['ctrl+o', 'cmd+o'],
     description: _('Open Books'),
     section: 'General',
   },
@@ -226,7 +226,8 @@ const DEFAULT_SHORTCUTS = {
     section: 'Navigation',
   },
   onGoNext: {
-    keys: ['shift+j', 'shift+ArrowRight', 'shift+ArrowDown', 'PageDown'],
+    // 'shift+j' belongs to Toggle Scroll Mode, which claims it first.
+    keys: ['shift+ArrowRight', 'shift+ArrowDown', 'PageDown'],
     description: _('Next Page'),
     section: 'Navigation',
   },
@@ -256,12 +257,14 @@ const DEFAULT_SHORTCUTS = {
     section: 'Navigation',
   },
   onGoHalfPageDown: {
-    keys: ['shift+ArrowDown', 'd'],
+    // 'shift+ArrowDown' belongs to Next Page, which claims it first.
+    keys: ['d'],
     description: _('Scroll Half Page Down'),
     section: 'Navigation',
   },
   onGoHalfPageUp: {
-    keys: ['shift+ArrowUp', 'u'],
+    // 'shift+ArrowUp' belongs to Previous Page, which claims it first.
+    keys: ['u'],
     description: _('Scroll Half Page Up'),
     section: 'Navigation',
   },
@@ -276,12 +279,16 @@ const DEFAULT_SHORTCUTS = {
     section: 'Navigation',
   },
   onGoBack: {
-    keys: ['shift+ArrowLeft', 'shift+h', 'alt+ArrowLeft'],
+    // 'shift+ArrowLeft' belongs to Previous Page and 'alt+ArrowLeft' to
+    // Previous Chapter; both claim them first.
+    keys: ['shift+h'],
     description: _('Go Back'),
     section: 'Navigation',
   },
   onGoForward: {
-    keys: ['shift+ArrowRight', 'shift+l', 'alt+ArrowRight'],
+    // 'shift+ArrowRight' belongs to Next Page and 'alt+ArrowRight' to
+    // Next Chapter; both claim them first.
+    keys: ['shift+l'],
     description: _('Go Forward'),
     section: 'Navigation',
   },
@@ -301,7 +308,7 @@ const DEFAULT_SHORTCUTS = {
     section: 'Zoom',
   },
   onSaveNote: {
-    keys: ['ctrl+Enter'],
+    keys: ['ctrl+Enter', 'cmd+Enter'],
     description: _('Save Note'),
     section: 'Notes',
   },

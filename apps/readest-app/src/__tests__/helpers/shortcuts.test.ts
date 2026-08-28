@@ -204,3 +204,83 @@ describe('shortcut customization', () => {
     window.removeEventListener('shortcutUpdate', listener);
   });
 });
+
+describe('Default bindings that always fire', () => {
+  // useBookShortcuts registers one action map, and useShortcuts stops at the
+  // first action whose handler does not return `false`. Actions listed here
+  // never decline, so a binding claimed by an earlier one can never reach a
+  // later one — the Shortcuts settings page would advertise a dead key.
+  // Order mirrors the useShortcuts({...}) call in useBookShortcuts.ts.
+  const ALWAYS_FIRING_IN_ORDER = [
+    'onSwitchSideBar',
+    'onToggleSideBar',
+    'onToggleNotebook',
+    'onToggleScrollMode',
+    'onToggleBookmark',
+    'onStartRSVP',
+    'onToggleAutoScroll',
+    'onOpenFontLayoutSettings',
+    'onShowSearchBar',
+    'onToggleTTS',
+    'onTTSGoNextSentence',
+    'onTTSGoPreviousSentence',
+    'onTTSGoNextParagraph',
+    'onTTSGoPreviousParagraph',
+    'onTTSHighlightSentence',
+    'onReloadPage',
+    'onGoLeft',
+    'onGoRight',
+    'onGoPrev',
+    'onGoNext',
+    'onGoHalfPageDown',
+    'onGoHalfPageUp',
+    'onGoPrevSection',
+    'onGoNextSection',
+    'onGoLeftSection',
+    'onGoRightSection',
+    'onGoBookStart',
+    'onGoBookEnd',
+    'onGoBack',
+    'onGoForward',
+    'onZoomIn',
+    'onZoomOut',
+    'onResetZoom',
+  ] as const;
+
+  it('no action shadows a later one', async () => {
+    const { normalizeShortcut } = await import('../../utils/shortcutKeys');
+    const shortcuts = await getDefaults();
+    const claimedBy = new Map<string, string>();
+    const shadowed: string[] = [];
+    for (const action of ALWAYS_FIRING_IN_ORDER) {
+      for (const key of shortcuts[action].keys) {
+        const normalized = normalizeShortcut(key);
+        const owner = claimedBy.get(normalized);
+        // Within one action, `alt+X`/`opt+X` are deliberate platform aliases
+        // that normalize to the same binding — only cross-action collisions
+        // shadow anything.
+        if (owner && owner !== action) {
+          shadowed.push(`${action} '${key}' is already claimed by ${owner}`);
+        } else if (!owner) {
+          claimedBy.set(normalized, action);
+        }
+      }
+    }
+    expect(shadowed).toEqual([]);
+  });
+});
+
+describe('macOS command bindings', () => {
+  it('offers a cmd variant wherever a ctrl-only binding would be shown on Mac', async () => {
+    const { filterPlatformKeys } = await import('../../utils/shortcutKeys');
+    const shortcuts = await getDefaults();
+    const ctrlOnlyOnMac: string[] = [];
+    for (const [action, entry] of Object.entries(shortcuts)) {
+      const macKeys = filterPlatformKeys(entry.keys, true);
+      if (macKeys.length && macKeys.every((key) => /(^|\+)ctrl\+/.test(key.toLowerCase()))) {
+        ctrlOnlyOnMac.push(action);
+      }
+    }
+    expect(ctrlOnlyOnMac).toEqual([]);
+  });
+});

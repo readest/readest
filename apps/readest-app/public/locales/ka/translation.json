@@ -2224,5 +2224,12 @@
   "Not secure": "დაუცველი",
   "Importing": "იმპორტირდება",
   "Added to library": "ბიბლიოთეკაში დაემატა",
-  "Not a supported book format": "წიგნის ფორმატი მხარდაუჭერელია"
+  "Not a supported book format": "წიგნის ფორმატი მხარდაუჭერელია",
+  "Shortcuts": "მალსახმობები",
+  "Customize keyboard and mouse controls": "კლავიატურისა და თაგვის მართვის მორგება",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "აირჩიეთ კლავიშები ან თაგვის ღილაკები, რომლებიც Readest-ს მართავს.",
+  "Reset all": "ყველას აღდგენა",
+  "Replace shortcut?": "შევცვალოთ მალსახმობი?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "მალსახმობი {{shortcut}} უკვე მინიჭებულია: {{actions}}.",
+  "Toggle Table of Contents": "სარჩევის გადართვა"
 }

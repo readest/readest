@@ -2224,5 +2224,12 @@
   "Not secure": "Niet beveiligd",
   "Importing": "Importeren",
   "Added to library": "Toegevoegd aan bibliotheek",
-  "Not a supported book format": "Boekformaat wordt niet ondersteund"
+  "Not a supported book format": "Boekformaat wordt niet ondersteund",
+  "Shortcuts": "Sneltoetsen",
+  "Customize keyboard and mouse controls": "Toetsenbord- en muisbediening aanpassen",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Kies de toetsen of muisknoppen waarmee je Readest bedient.",
+  "Reset all": "Alles herstellen",
+  "Replace shortcut?": "Sneltoets vervangen?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "De sneltoets {{shortcut}} is al toegewezen aan {{actions}}.",
+  "Toggle Table of Contents": "Inhoudsopgave wisselen"
 }

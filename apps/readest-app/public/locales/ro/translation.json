@@ -2284,5 +2284,12 @@
   "Not secure": "Nesecurizat",
   "Importing": "Se importă",
   "Added to library": "Adăugat în bibliotecă",
-  "Not a supported book format": "Format de carte neacceptat"
+  "Not a supported book format": "Format de carte neacceptat",
+  "Shortcuts": "Scurtături",
+  "Customize keyboard and mouse controls": "Personalizează comenzile de la tastatură și mouse",
+  "Choose the keyboard keys or mouse buttons that control Readest.": "Alege tastele sau butoanele mouse-ului care controlează Readest.",
+  "Reset all": "Resetează tot",
+  "Replace shortcut?": "Înlocuiți scurtătura?",
+  "The shortcut {{shortcut}} is already assigned to {{actions}}.": "Scurtătura {{shortcut}} este deja atribuită pentru {{actions}}.",
+  "Toggle Table of Contents": "Comută cuprinsul"
 }
