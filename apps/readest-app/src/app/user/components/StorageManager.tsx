@@ -1,7 +1,8 @@
 'use client';
 
 import clsx from 'clsx';
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { MdSearch } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useLibraryStore } from '@/store/libraryStore';
@@ -16,7 +17,6 @@ import {
   type ListFilesParams,
 } from '@/libs/storage';
 import { eventDispatcher } from '@/utils/event';
-import { debounce } from '@/utils/debounce';
 import Spinner from '@/components/Spinner';
 import Alert from '@/components/Alert';
 
@@ -242,18 +242,13 @@ const StorageManager = () => {
     }
   };
 
-  const handleSearchChange = useMemo(
-    () =>
-      debounce((value: string) => {
-        setSearchQuery(value);
-        setCurrentPage(1);
-      }, 1000),
-    [setSearchQuery, setCurrentPage],
-  );
-
-  useEffect(() => {
-    handleSearchChange(searchInput);
-  }, [searchInput, handleSearchChange]);
+  // Search runs only when it is asked for. Searching as the user types
+  // interrupts IME candidate selection and long queries, and the pending
+  // request steals the input while it loads.
+  const submitSearch = () => {
+    setSearchQuery(searchInput.trim());
+    setCurrentPage(1);
+  };
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
@@ -338,14 +333,32 @@ const StorageManager = () => {
           </div>
 
           <div className='flex flex-col gap-2 sm:flex-row'>
-            <input
-              type='text'
-              placeholder={_('Search files...')}
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className='input input-sm w-full sm:w-64'
-              disabled={loading}
-            />
+            <form
+              className='flex gap-2'
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitSearch();
+              }}
+            >
+              <input
+                type='search'
+                placeholder={_('Search files...')}
+                aria-label={_('Search files...')}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  // Enter commits the IME candidate; it must not submit too.
+                  if (e.key === 'Enter' && e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                  }
+                }}
+                className='input input-sm eink-bordered w-full min-w-0 sm:w-64'
+              />
+              <button type='submit' className='btn btn-sm btn-contrast shrink-0' disabled={loading}>
+                <MdSearch className='h-4 w-4' />
+                {_('Search')}
+              </button>
+            </form>
 
             <select
               value={`${sortBy}-${sortOrder}`}
