@@ -5,6 +5,7 @@ import { normalizeToShortLang } from '@/utils/lang';
 import { TranslationProvider } from '../types';
 import { splitTextIntoChunks } from '../utils';
 import { YANDEX_REQUEST_HEADERS, YANDEX_SESSION_URL, YANDEX_TRANSLATE_URL } from './yandexShared';
+import { initSimpleCC, runSimpleCC } from '@/utils/simplecc';
 
 /**
  * Direct client for the Yandex Translate web API — the same endpoints the
@@ -300,6 +301,16 @@ export const yandexProvider: TranslationProvider = {
     translatedChunks.forEach((chunks, index) => {
       results[index] = chunks.join('');
     });
+
+    // Yandex only speaks `zh`, and it is Simplified: `normalizeLang` above
+    // collapses every zh variant onto it, so a zh-TW/zh-HK/zh-MO reader was
+    // handed Simplified text labelled as their language. Convert the reply
+    // locally instead -- unlike DeepL, there is no target code to ask for.
+    if (normalizeToShortLang(targetLang) === 'zh-Hant') {
+      await initSimpleCC();
+      return results.map((text) => (text ? runSimpleCC(text, 's2t') : text));
+    }
+
     return results;
   },
 };

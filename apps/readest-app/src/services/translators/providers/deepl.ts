@@ -8,6 +8,22 @@ import { saveDailyUsage } from '../utils';
 
 const DEEPL_API_ENDPOINT = getAPIBaseUrl() + '/deepl/translate';
 
+/**
+ * DeepL language codes are upper-case, but the service answers 500 when the
+ * *script* subtag is upper-cased too. Measured against the live endpoint:
+ * `ZH-HANT` and `ZH-TW` both fail, while `ZH-Hant` answers 200 with real
+ * Traditional Chinese — and the same holds for `source_lang`. Upper-casing the
+ * whole code therefore turned every zh-TW/zh-HK/zh-MO translation into a hard
+ * failure. `normalizeToShortLang` already returns the canonical `zh-Hans` /
+ * `zh-Hant`, so only the primary subtag is upper-cased and the script subtag
+ * keeps the casing it came with. Languages without a script subtag ('en' -> 'EN',
+ * and 'AUTO' -> 'AUTO') are unaffected.
+ */
+const toDeepLLang = (lang: string): string => {
+  const [primary, ...rest] = normalizeToShortLang(lang).split('-');
+  return [primary!.toUpperCase(), ...rest].join('-');
+};
+
 export const deeplProvider: TranslationProvider = {
   name: 'deepl',
   label: _('DeepL'),
@@ -46,11 +62,11 @@ export const deeplProvider: TranslationProvider = {
       throw new Error('Authentication token is required for DeepL translation');
     }
 
-    const normalizedSourceLang = normalizeToShortLang(sourceLang).toUpperCase();
+    const normalizedSourceLang = toDeepLLang(sourceLang);
     const body = JSON.stringify({
       text: text,
       ...(normalizedSourceLang !== 'AUTO' ? { source_lang: normalizedSourceLang } : {}),
-      target_lang: normalizeToShortLang(targetLang).toUpperCase(),
+      target_lang: toDeepLLang(targetLang),
       use_cache: useCache,
     });
 
