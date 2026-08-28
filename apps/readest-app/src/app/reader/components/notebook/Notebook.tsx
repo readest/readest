@@ -243,7 +243,6 @@ const Notebook: React.FC = () => {
             isPinned={isNotebookPinned}
             handleClose={hideNotebook}
             handleTogglePin={handleTogglePin}
-            handleOpenAnnotations={handleOpenAnnotations}
           />
         </div>
         {notebookActiveTab === 'ai' ? (
@@ -251,7 +250,7 @@ const Notebook: React.FC = () => {
             <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
           </div>
         ) : (
-          <NotebookEditor bookKey={sideBarBookKey} />
+          <NotebookEditor bookKey={sideBarBookKey} handleOpenAnnotations={handleOpenAnnotations} />
         )}
         <div
           className='shrink-0'

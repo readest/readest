@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { PiNotePencil } from 'react-icons/pi';
 import TextEditor, { TextEditorRef } from '@/components/TextEditor';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useNotebookDocumentStore } from '@/store/notebookDocumentStore';
@@ -6,9 +7,10 @@ import { flushNotebookDocument } from '../../hooks/useNotebookDocumentCoordinato
 
 interface NotebookEditorProps {
   bookKey: string;
+  handleOpenAnnotations: () => void;
 }
 
-const NotebookEditor: React.FC<NotebookEditorProps> = ({ bookKey }) => {
+const NotebookEditor: React.FC<NotebookEditorProps> = ({ bookKey, handleOpenAnnotations }) => {
   const _ = useTranslation();
   const bookHash = bookKey.split('-')[0]!;
   const session = useNotebookDocumentStore((state) => state.sessions[bookHash]);
@@ -80,8 +82,16 @@ const NotebookEditor: React.FC<NotebookEditorProps> = ({ bookKey }) => {
           autoResize={false}
         />
       </div>
-      <div className='flex min-h-5 items-center justify-between gap-2 text-xs'>
-        <span className='text-error'>
+      <div className='flex min-h-8 flex-wrap items-center gap-2 text-xs'>
+        <button
+          type='button'
+          onClick={handleOpenAnnotations}
+          className='eink-bordered btn btn-ghost h-8 min-h-8 gap-1 px-2 text-xs font-normal max-sm:h-11 max-sm:min-h-11'
+        >
+          <PiNotePencil size={16} />
+          {_('All notes')}
+        </button>
+        <span className='text-error flex-1'>
           {session.error === 'size-limit'
             ? _('Notebook is too large to save. Copy or remove some text to continue.')
             : !session.recoveryAvailable && session.revision > session.savedRevision

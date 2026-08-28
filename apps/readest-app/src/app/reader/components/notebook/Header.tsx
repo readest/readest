@@ -2,7 +2,6 @@ import clsx from 'clsx';
 import React from 'react';
 
 import { RiQuillPenLine } from 'react-icons/ri';
-import { PiNotePencil } from 'react-icons/pi';
 import { MdArrowBackIosNew, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -11,8 +10,7 @@ const NotebookHeader: React.FC<{
   isPinned: boolean;
   handleClose: () => void;
   handleTogglePin: () => void;
-  handleOpenAnnotations: () => void;
-}> = ({ isPinned, handleClose, handleTogglePin, handleOpenAnnotations }) => {
+}> = ({ isPinned, handleClose, handleTogglePin }) => {
   const _ = useTranslation();
   const iconSize15 = useResponsiveSize(15);
   const iconSize18 = useResponsiveSize(18);
@@ -42,16 +40,6 @@ const NotebookHeader: React.FC<{
           <MdArrowBackIosNew />
         </button>
       </div>
-      <button
-        type='button'
-        title={_('Annotations')}
-        aria-label={_('Open Annotations')}
-        onClick={handleOpenAnnotations}
-        className='btn btn-ghost h-10 min-h-10 gap-1 px-2 text-xs font-normal max-sm:h-11 max-sm:min-h-11 max-sm:w-11 max-sm:px-0'
-      >
-        <PiNotePencil size={iconSize18} />
-        <span className='hidden sm:inline'>{_('Annotations')}</span>
-      </button>
     </div>
   );
 };
