@@ -1,0 +1,84 @@
+# Fork release flow: tag a version (or dispatch manually) and get a GitHub
+# Release with the Windows installer + Android APK attached.
+#
+#   git tag v0.12.6.1 && git push origin v0.12.6.1
+#
+# Versioning scheme (owner decision): the first three segments mirror the
+# upstream base (0.12.6) and the fourth counts fork releases on that base
+# (0.12.6.1, 0.12.6.2, ...); syncing upstream to 0.12.7 resets to 0.12.7.1.
+# The tag (v0.12.6.1) yields the stamped build version (0.12.6.1) and a
+# monotonic Android versionCode computed by the build workflow.
+
+name: Fork Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag, e.g. v0.12.6.1'
+        required: true
+        type: string
+      android_abi:
+        description: 'Android ABI: aarch64 (fast, real devices) or all (universal 4-ABI)'
+        type: string
+        default: 'aarch64'
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - name: resolve tag and version
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+          version="${tag#v}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: resolve
+    uses: ./.github/workflows/build-win-android.yml
+    with:
+      build_windows: true
+      build_android: true
+      android_abi: ${{ github.event_name == 'workflow_dispatch' && inputs.android_abi || 'aarch64' }}
+      version_override: ${{ needs.resolve.outputs.version }}
+
+  release:
+    needs: [resolve, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: dist
+      - name: publish release with assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          ls -la dist/
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --title "$TAG" --generate-notes
+          fi

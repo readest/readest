@@ -20,6 +20,24 @@
 name: Fork Build (Windows + Android)
 
 on:
+  workflow_call:
+    inputs:
+      build_windows:
+        description: 'Build Windows installer'
+        type: boolean
+        default: true
+      build_android:
+        description: 'Build Android APK'
+        type: boolean
+        default: true
+      android_abi:
+        description: 'Android ABI: aarch64 (fast, real devices) or all (universal 4-ABI)'
+        type: string
+        default: 'aarch64'
+      version_override:
+        description: 'Fork version stamped into builds (e.g. 0.12.6.1); empty = keep repo version'
+        type: string
+        default: ''
   workflow_dispatch:
     inputs:
       build_windows:
@@ -31,12 +49,13 @@ on:
         type: boolean
         default: true
       android_abi:
-        description: 'Android ABI (aarch64 = fast single-target for real devices, all = universal 4-ABI)'
-        type: choice
+        description: 'Android ABI: aarch64 (fast, real devices) or all (universal 4-ABI)'
+        type: string
         default: 'aarch64'
-        options:
-          - aarch64
-          - all
+      version_override:
+        description: 'Override fork version (releases pass it automatically)'
+        type: string
+        default: ''
   push:
     branches: [main, 'feat/**', 'fix/**']
     paths:
@@ -98,6 +117,37 @@ jobs:
           SENTRY_DSN=
           EOF
           cp .env.local apps/readest-app/.env.local
+
+      - name: stamp fork version
+        if: ${{ inputs.version_override != '' }}
+        env:
+          VERSION: ${{ inputs.version_override }}
+        run: |
+          # Stamp the fork version into package.json (installer name + app
+          # version) and derive a monotonic Android versionCode from the
+          # four segments: major*10M + minor*100K + patch*1K + forkIndex.
+          # Four-segment versions are not valid semver, so the tauri CLI
+          # would otherwise fall back to versionCode=1 and Android would
+          # refuse every overwrite-install. Kept in sync with the Android
+          # job's stamp step.
+          node -e "
+            const fs = require('fs');
+            const version = process.env.VERSION;
+            const pkgPath = 'apps/readest-app/package.json';
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+            pkg.version = version;
+            fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+            const seg = version.split('.').map((n) => parseInt(n, 10) || 0);
+            const versionCode =
+              (seg[0] || 0) * 10000000 + (seg[1] || 0) * 100000 + (seg[2] || 0) * 1000 + (seg[3] || 0);
+            const confPath = 'apps/readest-app/src-tauri/tauri.fork.conf.json';
+            const conf = JSON.parse(fs.readFileSync(confPath, 'utf8'));
+            conf.bundle = conf.bundle || {};
+            conf.bundle.android = conf.bundle.android || {};
+            conf.bundle.android.versionCode = versionCode;
+            fs.writeFileSync(confPath, JSON.stringify(conf, null, 2) + '\n');
+            console.log('stamped', version, '-> android versionCode', versionCode);
+          "
 
       - name: generate throwaway updater signing key (safety net)
         id: updater-key
@@ -196,6 +246,32 @@ jobs:
           SENTRY_DSN=
           EOF
           cp .env.local apps/readest-app/.env.local
+
+      - name: stamp fork version
+        if: ${{ inputs.version_override != '' }}
+        env:
+          VERSION: ${{ inputs.version_override }}
+        run: |
+          # See the Windows job's stamp step: package.json version + a
+          # monotonic Android versionCode derived from the four segments.
+          node -e "
+            const fs = require('fs');
+            const version = process.env.VERSION;
+            const pkgPath = 'apps/readest-app/package.json';
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+            pkg.version = version;
+            fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+            const seg = version.split('.').map((n) => parseInt(n, 10) || 0);
+            const versionCode =
+              (seg[0] || 0) * 10000000 + (seg[1] || 0) * 100000 + (seg[2] || 0) * 1000 + (seg[3] || 0);
+            const confPath = 'apps/readest-app/src-tauri/tauri.fork.conf.json';
+            const conf = JSON.parse(fs.readFileSync(confPath, 'utf8'));
+            conf.bundle = conf.bundle || {};
+            conf.bundle.android = conf.bundle.android || {};
+            conf.bundle.android.versionCode = versionCode;
+            fs.writeFileSync(confPath, JSON.stringify(conf, null, 2) + '\n');
+            console.log('stamped', version, '-> android versionCode', versionCode);
+          "
 
       - name: regenerate android scaffolding
         run: |
