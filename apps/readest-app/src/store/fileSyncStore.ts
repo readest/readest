@@ -30,6 +30,8 @@ export interface ProviderSyncProgress {
   progressLabel: string | null;
   /** Secondary line — the current book's title — or null. */
   progressDetail: string | null;
+  /** 0-100 completion of the run, or null when the run can't know a total. */
+  progressPercent: number | null;
   /** Wall-clock millis when this backend's run kicked off, or null. */
   startedAt: number | null;
 }
@@ -39,6 +41,7 @@ const IDLE: ProviderSyncProgress = Object.freeze({
   isSyncing: false,
   progressLabel: null,
   progressDetail: null,
+  progressPercent: null,
   startedAt: null,
 });
 
@@ -73,7 +76,12 @@ interface FileSyncState {
    * {@link beginSync}); it is a no-op when the lock is free.
    */
   switchSync: (kind: FileSyncBackendKind, label: string) => void;
-  updateProgress: (kind: FileSyncBackendKind, label: string, detail?: string | null) => void;
+  updateProgress: (
+    kind: FileSyncBackendKind,
+    label: string,
+    detail?: string | null,
+    percent?: number | null,
+  ) => void;
   endSync: (kind: FileSyncBackendKind) => void;
   setLastError: (kind: FileSyncBackendKind, message: string | null) => void;
 }
@@ -121,7 +129,7 @@ export const useFileSyncStore = create<FileSyncState>((set, get) => ({
       };
     }),
 
-  updateProgress: (kind, label, detail = null) =>
+  updateProgress: (kind, label, detail = null, percent = null) =>
     set((s) => ({
       byKind: {
         ...s.byKind,
@@ -130,6 +138,7 @@ export const useFileSyncStore = create<FileSyncState>((set, get) => ({
           isSyncing: true,
           progressLabel: label,
           progressDetail: detail,
+          progressPercent: percent,
         },
       },
     })),

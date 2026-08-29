@@ -87,6 +87,7 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
   const isSyncing = useFileSyncStore((s) => s.byKind[kind]?.isSyncing ?? false);
   const syncProgressLabel = useFileSyncStore((s) => s.byKind[kind]?.progressLabel ?? null);
   const syncProgressDetail = useFileSyncStore((s) => s.byKind[kind]?.progressDetail ?? null);
+  const syncProgressPercent = useFileSyncStore((s) => s.byKind[kind]?.progressPercent ?? null);
   const beginSync = useFileSyncStore((s) => s.beginSync);
   const updateProgress = useFileSyncStore((s) => s.updateProgress);
   const endSync = useFileSyncStore((s) => s.endSync);
@@ -158,6 +159,7 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
             kind,
             _('{{action}} {{n}} / {{total}}', { action: actionStr, n: index + 1, total }),
             book.title || book.hash.slice(0, 8),
+            total > 0 ? Math.round(((index + 1) / total) * 100) : null,
           );
         },
       });
@@ -217,11 +219,26 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
       </SettingsRow>
       <SettingsRow
         label={
-          syncProgressLabel
-            ? syncProgressLabel
-            : stored.lastSyncedAt
-              ? _('Synced {{time}}', { time: dayjs(stored.lastSyncedAt).fromNow() })
-              : _('Never synced')
+          <span className='flex w-full flex-col gap-1.5'>
+            <span>
+              {syncProgressLabel
+                ? syncProgressLabel
+                : stored.lastSyncedAt
+                  ? _('Synced {{time}}', { time: dayjs(stored.lastSyncedAt).fromNow() })
+                  : _('Never synced')}
+            </span>
+            {isSyncing && syncProgressPercent != null && (
+              <span
+                aria-hidden
+                className='bg-base-300 block h-1.5 w-full overflow-hidden rounded-full'
+              >
+                <span
+                  className='bg-primary block h-full rounded-full transition-[width] duration-300'
+                  style={{ width: `${Math.max(2, Math.min(100, syncProgressPercent))}%` }}
+                />
+              </span>
+            )}
+          </span>
         }
         description={
           syncProgressDetail ? (
