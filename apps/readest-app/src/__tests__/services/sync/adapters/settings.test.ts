@@ -281,6 +281,7 @@ describe('settingsAdapter', () => {
       'bookorbit.customHeaders',
       'readwise.accessToken',
       'hardcover.accessToken',
+      'notion.accessToken',
       'webdav.username',
       'webdav.password',
       's3.accessKeyId',
