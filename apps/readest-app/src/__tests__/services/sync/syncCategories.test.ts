@@ -26,14 +26,15 @@ beforeEach(() => clearSettings());
 afterEach(() => clearSettings());
 
 describe('isSyncCategoryEnabled', () => {
-  test('defaults to true when settings are not loaded yet', () => {
-    expect(isSyncCategoryEnabled('book')).toBe(true);
+  test('defaults per category when settings are not loaded yet', () => {
+    // 'book' is opt-in (cloud file quota); everything else defaults on.
+    expect(isSyncCategoryEnabled('book')).toBe(false);
     expect(isSyncCategoryEnabled('dictionary')).toBe(true);
   });
 
-  test('defaults to true when syncCategories map is missing', () => {
+  test('defaults per category when syncCategories map is missing', () => {
     setSettings({});
-    expect(isSyncCategoryEnabled('book')).toBe(true);
+    expect(isSyncCategoryEnabled('book')).toBe(false);
     expect(isSyncCategoryEnabled('opds_catalog')).toBe(true);
   });
 
@@ -84,9 +85,12 @@ describe('isSyncCategoryEnabled', () => {
     });
 
     test('no gating when readest is the provider', () => {
+      // book is opted in explicitly so the PROVIDER gate is the only variable
+      // here (the category itself defaults off).
       setSettings({
         webdav: { enabled: false },
         googleDrive: { enabled: false },
+        syncCategories: { book: true },
       } as Partial<SystemSettings>);
       expect(isSyncCategoryEnabled('book')).toBe(true);
       expect(isSyncCategoryEnabled('progress')).toBe(true);
@@ -197,6 +201,7 @@ describe('isSyncCategoryEnabled', () => {
       setSettings({
         readestCloud: { enabled: true },
         googleDrive: { enabled: true },
+        syncCategories: { book: true },
       } as Partial<SystemSettings>);
       expect(isSyncCategoryEnabled('book')).toBe(true);
       expect(isSyncCategoryEnabled('progress')).toBe(true);

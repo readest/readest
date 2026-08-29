@@ -11,6 +11,7 @@ import {
 } from '@/services/sync/cloudSyncProvider';
 import {
   SYNC_CATEGORIES,
+  isSyncCategoryDefaultOff,
   isSyncCategoryLocked,
   type SyncCategory,
 } from '@/services/sync/syncCategories';
@@ -88,10 +89,11 @@ export function SyncCategoriesSection() {
 
   const enabled = (category: SyncCategory): boolean => {
     const value = settings.syncCategories?.[category];
-    // 'credentials' is the only category that defaults OFF — sync of
-    // sensitive fields (OPDS / KOSync / Readwise / Hardcover tokens) is
-    // explicit opt-in. Every other category defaults ON when unset.
-    if (category === 'credentials') return value === true;
+    // Opt-in categories ('book', 'credentials') default OFF: book because
+    // mass imports must not drain the small Readest Cloud storage (manual
+    // per-book Upload / Send still uploads), credentials because sensitive
+    // field sync is explicit opt-in. Every other category defaults ON.
+    if (isSyncCategoryDefaultOff(category)) return value === true;
     return value !== false;
   };
 

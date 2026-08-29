@@ -239,8 +239,10 @@ export async function ingestFile(
   }
 
   // Sent books force the upload so they reach the user's other devices even
-  // when book sync is off; normal library imports honor the Manage Sync
-  // "book" toggle, which defaults on — upload unless the user turns it off.
+  // when book sync is off; normal library imports auto-upload only when the
+  // user opted into the Manage Sync "Books" toggle (default OFF — Readest
+  // Cloud storage is small and a mass import must not drain the quota;
+  // manual per-book Upload / Send actions always work regardless).
   // Transient imports are never uploaded — they're short-lived previews
   // (e.g. /send view) and shouldn't pollute the user's cloud library.
   // In-place imports (book.filePath set, content under one of the user's
@@ -257,7 +259,7 @@ export async function ingestFile(
     !opts.transient &&
     isLoggedIn &&
     !book.uploadedAt &&
-    (opts.forceUpload || settings.syncCategories?.book !== false) &&
+    (opts.forceUpload || settings.syncCategories?.book === true) &&
     isReadestCloudStorageActive(settings)
   ) {
     transferManager.queueUpload(book);

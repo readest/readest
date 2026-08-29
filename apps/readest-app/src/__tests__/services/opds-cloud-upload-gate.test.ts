@@ -40,6 +40,8 @@ afterEach(() => {
 
 describe('queueOPDSBookUploads', () => {
   test('queues an upload for a new book after the init delay', () => {
+    // Cloud book upload is opt-in (default OFF).
+    setSettings({ syncCategories: { book: true } });
     const book = makeBook('b1');
     queueOPDSBookUploads(true, useSettingsStore.getState().settings, [book]);
 
@@ -72,6 +74,7 @@ describe('queueOPDSBookUploads', () => {
   });
 
   test('skips books that already have a cloud copy and dedupes by hash', () => {
+    setSettings({ syncCategories: { book: true } });
     const fresh = makeBook('fresh');
     const uploaded = makeBook('uploaded', { uploadedAt: 123 });
     queueOPDSBookUploads(true, useSettingsStore.getState().settings, [fresh, fresh, uploaded]);

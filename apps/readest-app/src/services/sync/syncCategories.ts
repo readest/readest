@@ -53,15 +53,21 @@ const CATEGORY_DEPENDENTS: Partial<Record<SyncCategory, readonly SyncCategory[]>
  * `syncCategories[category]` is absent) is OFF rather than the global
  * "missing key → on" default.
  *
- * `credentials` is the only such category today: it gates the
- * encrypted-credential fields (OPDS username/password, kosync.username
- * / .userkey / .password, readwise.accessToken, hardcover.accessToken)
- * across the OPDS-catalog and bundled-settings replicas. Sync of those
- * fields is opt-in by deliberate policy — users who never visit the
- * panel keep their credentials local-only and never see the
+ * `credentials` gates the encrypted-credential fields (OPDS username/password,
+ * kosync.username / .userkey / .password, readwise.accessToken,
+ * hardcover.accessToken) across the OPDS-catalog and bundled-settings
+ * replicas. Sync of those fields is opt-in by deliberate policy — users who
+ * never visit the panel keep their credentials local-only and never see the
  * sync-passphrase dialog.
+ *
+ * `book` gates cloud book-FILE uploads (import / OPDS auto-upload) on top of
+ * the native book-row channel: Readest Cloud storage is small, so mass
+ * importing without opt-in must not drain the quota. Manual per-book Upload /
+ * Send actions bypass this gate and always upload, and file backends
+ * (WebDAV / LAN / …) mirror files regardless — only the Readest Cloud
+ * auto-upload is opt-in.
  */
-const DEFAULT_OFF_CATEGORIES: ReadonlySet<SyncCategory> = new Set(['credentials']);
+const DEFAULT_OFF_CATEGORIES: ReadonlySet<SyncCategory> = new Set(['book', 'credentials']);
 
 /**
  * Map a callsite identifier (replica kind, legacy SyncType, etc.) to
@@ -147,7 +153,17 @@ export const isSyncCategoryEnabled = (id: string): boolean => {
  * Push pipelines drop the encrypted fields from the wire when this
  * returns false; pull pipelines strip incoming cipher payloads before
  * they hit any adapter unpack so the local plaintext copy is preserved
- * and the passphrase prompt never fires. The Sync passphrase UI is
+ * and the sync-passphrase prompt never fires. The Sync passphrase UI is
  * hidden in this state.
  */
 export const isCredentialsSyncEnabled = (): boolean => isCategoryRawEnabled('credentials');
+
+/**
+ * True when `category` is opt-in: absent toggle renders (and behaves) as OFF,
+ * unlike the global "missing key → on" default. Call sites that gate
+ * *automatic* cloud uploads must not use the raw
+ * `syncCategories?.[category] !== false` idiom — it reads absent as ON and
+ * would contradict the toggle's rendered default for such categories.
+ */
+export const isSyncCategoryDefaultOff = (category: SyncCategory): boolean =>
+  DEFAULT_OFF_CATEGORIES.has(category);
