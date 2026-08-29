@@ -1,6 +1,12 @@
 import type { AppService } from '@/types/system';
 import type { DatabaseService, DatabaseRow } from '@/types/database';
-import type { PageStatEvent, StatBook } from '@/types/statistics';
+import type {
+  BookReadTime,
+  DailyReadTime,
+  PageStatEvent,
+  StatBook,
+  TotalReadStats,
+} from '@/types/statistics';
 
 interface BookRow extends DatabaseRow {
   id: number;
@@ -13,7 +19,7 @@ interface BookRow extends DatabaseRow {
   pages: number;
 }
 
-type CursorKey = 'push' | 'pull' | 'bookorbit-push';
+type CursorKey = 'push' | 'pull' | 'bookorbit-push' | 'file-push';
 
 /**
  * Per-tab singleton open promise. OPFS permits only ONE access handle per file
@@ -169,6 +175,90 @@ export class StatisticsDb {
   async getBookByMd5(md5: string): Promise<BookRow | null> {
     const rows = await this.db.select<BookRow>(`SELECT * FROM book WHERE md5 = ? LIMIT 1`, [md5]);
     return rows[0] ?? null;
+  }
+
+  // ---- Derived aggregates for the stats UI (never stored; see types/statistics.ts).
+  // Day buckets use `tzOffsetSecs` = -new Date().getTimezoneOffset() * 60 so the
+  // grouping is by LOCAL day; SQLite's integer division is fine here because
+  // start_time + tzOffsetSecs is always positive.
+
+  /** All-time totals: total seconds, distinct local days read, first event time. */
+  async getTotalReadStats(tzOffsetSecs: number): Promise<TotalReadStats> {
+    const rows = await this.db.select<{ total: number; days: number; first: number | null }>(
+      `SELECT COALESCE(SUM(duration), 0) AS total,
+              COUNT(DISTINCT (start_time + ?) / 86400) AS days,
+              MIN(start_time) AS first
+       FROM page_stat_data`,
+      [tzOffsetSecs],
+    );
+    const row = rows[0];
+    return {
+      totalSeconds: Number(row?.total ?? 0),
+      readDays: Number(row?.days ?? 0),
+      firstStartTime: row?.first != null ? Number(row.first) : null,
+    };
+  }
+
+  /** Sum of reading seconds whose events START within [fromTs, toTs). */
+  async getReadTimeBetween(fromTs: number, toTs: number): Promise<number> {
+    const rows = await this.db.select<{ total: number }>(
+      `SELECT COALESCE(SUM(duration), 0) AS total
+       FROM page_stat_data
+       WHERE start_time >= ? AND start_time < ?`,
+      [fromTs, toTs],
+    );
+    return Number(rows[0]?.total ?? 0);
+  }
+
+  /** Reading seconds per LOCAL day for events starting within [fromTs, toTs). */
+  async getDailyReadTimeBetween(
+    fromTs: number,
+    toTs: number,
+    tzOffsetSecs: number,
+  ): Promise<DailyReadTime[]> {
+    const rows = await this.db.select<{ dayIdx: number; seconds: number }>(
+      `SELECT (start_time + ?) / 86400 AS dayIdx, SUM(duration) AS seconds
+       FROM page_stat_data
+       WHERE start_time >= ? AND start_time < ?
+       GROUP BY dayIdx
+       ORDER BY dayIdx ASC`,
+      [tzOffsetSecs, fromTs, toTs],
+    );
+    return rows.map((r) => ({
+      dayStartTs: Number(r.dayIdx) * 86400 - tzOffsetSecs,
+      seconds: Number(r.seconds),
+    }));
+  }
+
+  /** Per-book reading seconds for events starting within [fromTs, toTs), longest first. */
+  async getBookReadTimesBetween(
+    fromTs: number,
+    toTs: number,
+    limit = 100,
+  ): Promise<BookReadTime[]> {
+    const rows = await this.db.select<{
+      bookMd5: string;
+      title: string;
+      authors: string;
+      seconds: number;
+      pages: number;
+    }>(
+      `SELECT b.md5 AS bookMd5, b.title AS title, b.authors AS authors,
+              SUM(p.duration) AS seconds, COUNT(DISTINCT p.page) AS pages
+       FROM page_stat_data p JOIN book b ON b.id = p.id_book
+       WHERE p.start_time >= ? AND p.start_time < ?
+       GROUP BY p.id_book
+       ORDER BY seconds DESC
+       LIMIT ?`,
+      [fromTs, toTs, limit],
+    );
+    return rows.map((r) => ({
+      bookMd5: String(r.bookMd5),
+      title: String(r.title),
+      authors: String(r.authors),
+      seconds: Number(r.seconds),
+      pages: Number(r.pages),
+    }));
   }
 
   /**

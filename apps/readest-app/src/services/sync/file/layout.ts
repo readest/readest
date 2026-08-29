@@ -36,6 +36,9 @@ export const SYNC_BOOK_COVER_FILE = 'cover.png';
 // per-book subdirectory. Additive to the frozen layout above: older clients
 // simply never look inside it.
 export const SYNC_BOOK_TTS_DIR = 'tts';
+// Per-device reading-statistics snapshots (stats/<deviceId>.json). Additive;
+// older clients never look inside it.
+export const SYNC_STATS_DIR = 'stats';
 
 /**
  * Normalise the user-entered rootPath so the rest of the code can rely on
@@ -78,6 +81,14 @@ export const buildBookConfigPath = (rootPath: string, bookHash: string): string 
 /** Absolute path of the shared library.json index. */
 export const buildLibraryPath = (rootPath: string): string =>
   join(buildBasePath(rootPath), SYNC_LIBRARY_FILE);
+
+/** Absolute path of the per-device statistics snapshot directory. */
+export const buildStatsDirPath = (rootPath: string): string =>
+  join(buildBasePath(rootPath), SYNC_STATS_DIR);
+
+/** Absolute path of one device's statistics snapshot file. */
+export const buildStatsFilePath = (rootPath: string, deviceKey: string): string =>
+  join(buildStatsDirPath(rootPath), `${deviceKey}.json`);
 
 /**
  * Friendly book file name "<sanitized title>.<ext>" used inside the

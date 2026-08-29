@@ -87,6 +87,7 @@ import {
 import { LibraryGroupByType } from '@/types/settings';
 import { BookMetadata } from '@/libs/document';
 import { AboutWindow } from '@/components/AboutWindow';
+import StatsDialog from '@/components/stats/StatsDialog';
 import { KeyboardShortcutsHelp } from '@/components/KeyboardShortcutsHelp';
 import LocalSendManager from '@/components/localsend/LocalSendManager';
 import LanSyncManager from '@/components/lan/LanSyncManager';
@@ -2143,6 +2144,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           <TransferQueuePanel />
         </ModalPortal>
       )}
+      <StatsDialog onShowBookDetails={handleShowDetailsBook} />
       <AboutWindow />
       <KeyboardShortcutsHelp />
       <LocalSendManager />

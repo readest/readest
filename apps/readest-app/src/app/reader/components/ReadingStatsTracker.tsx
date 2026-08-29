@@ -13,6 +13,7 @@ import { SyncClient } from '@/libs/sync';
 import { BookOrbitClient } from '@/services/bookorbit/BookOrbitClient';
 import { pushStatsToBookOrbit } from '@/services/bookorbit/statsPush';
 import { pushStats, pullStats } from '@/services/statistics/statsSync';
+import { pushStatsSnapshot, pullStatsSnapshots } from '@/services/statistics/statsFileSync';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
@@ -75,6 +76,8 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
 
   const pushToAllTargets = (db: StatisticsDb) => {
     if (syncEnabled()) runBestEffort(pushStats(db, new SyncClient()));
+    // File-backend snapshots (LAN/WebDAV) need no Readest account.
+    runBestEffort(pushStatsSnapshot(db));
     const bookOrbitPush = bookOrbitStatsPush(db);
     if (bookOrbitPush) runBestEffort(bookOrbitPush);
   };
@@ -91,10 +94,11 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
     if (!appService) return;
     let cancelled = false;
     runBestEffort(
-      StatisticsDb.open(appService).then((db) => {
+      StatisticsDb.open(appService).then(async (db) => {
         if (cancelled) return;
         dbRef.current = db;
         if (syncEnabled()) runBestEffort(pullStats(db, new SyncClient()));
+        runBestEffort(pullStatsSnapshots(db));
       }),
     );
     return () => {

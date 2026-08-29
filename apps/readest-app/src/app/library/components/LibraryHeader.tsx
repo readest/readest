@@ -5,6 +5,7 @@ import { MdManageSearch } from 'react-icons/md';
 import { PiPlus } from 'react-icons/pi';
 import { PiSelectionAll, PiSelectionAllFill } from 'react-icons/pi';
 import { PiDotsThreeCircle } from 'react-icons/pi';
+import { PiChartBar } from 'react-icons/pi';
 import { MdOutlineMenu } from 'react-icons/md';
 import { IoMdCloseCircle } from 'react-icons/io';
 
@@ -18,6 +19,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import useShortcuts from '@/hooks/useShortcuts';
 import WindowButtons from '@/components/WindowButtons';
 import Dropdown from '@/components/Dropdown';
+import { setStatsDialogVisible } from '@/components/stats/StatsDialog';
 import SettingsMenu from './SettingsMenu';
 import ImportMenu from './ImportMenu';
 import LibrarySearchOptionsMenu from './LibrarySearchOptionsMenu';
@@ -254,6 +256,16 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
           </div>
         ) : (
           <div className='flex h-full items-center gap-x-2 sm:gap-x-4'>
+            {!isMobile && (
+              <button
+                onClick={() => setStatsDialogVisible(true)}
+                aria-label={_('Reading Time')}
+                title={_('Reading Time')}
+                className='btn btn-ghost text-base-content/60 hover:text-base-content h-8 min-h-8 w-8 p-0'
+              >
+                <PiChartBar role='none' size={iconSize18} />
+              </button>
+            )}
             <Dropdown
               label={_('View Menu')}
               className='exclude-title-bar-mousedown dropdown-bottom dropdown-end'

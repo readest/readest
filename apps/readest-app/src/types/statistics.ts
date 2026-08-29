@@ -35,3 +35,32 @@ export const DEFAULT_STATS_TRACKING_CONFIG: StatsTrackingConfig = {
   maxEventSeconds: 120,
   minEventSeconds: 3,
 };
+
+/** Aggregates derived on demand over page_stat_data — never stored or synced. */
+
+/** The stats dialog's time scope. Week starts Monday; month/year are calendar units; all local time. */
+export type StatsPeriod = 'total' | 'year' | 'month' | 'week';
+
+/** All-time totals for the "总计" summary card. */
+export interface TotalReadStats {
+  totalSeconds: number;
+  /** Distinct LOCAL days (per tzOffsetSecs) with any recorded reading. */
+  readDays: number;
+  firstStartTime: number | null;
+}
+
+/** Reading seconds bucketed into one LOCAL day; `dayStartTs` is the UTC Unix second of that day's local midnight. */
+export interface DailyReadTime {
+  dayStartTs: number;
+  seconds: number;
+}
+
+/** Per-book reading time within a period, for the ranking list. */
+export interface BookReadTime {
+  bookMd5: string;
+  title: string;
+  authors: string;
+  seconds: number;
+  /** Distinct pages touched in the period (engine-relative; informational only). */
+  pages: number;
+}

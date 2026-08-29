@@ -17,6 +17,8 @@ import { getBookGoodreadsQuery, getGoodreadsSearchUrl } from '@/utils/goodreads'
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useEnv } from '@/context/EnvContext';
+import { useBookReadSeconds } from '@/hooks/useBookReadSeconds';
+import { formatReadingDuration } from '@/utils/stats';
 import {
   formatAuthors,
   formatCalibreColumnValue,
@@ -68,6 +70,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
+  const readSeconds = useBookReadSeconds(book.hash);
   const [subjectsExpanded, setSubjectsExpanded] = useState(false);
   const { coverSrc, openCoverViewer, closeCoverViewer } = useBookCoverViewer(book);
   const subjects = getContributorNames(metadata?.subject);
@@ -299,6 +302,12 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                   <span className='font-bold'>{_('File Size')}</span>
                   <p className='text-neutral-content text-sm'>
                     {formatBytes(fileSize) || _('Unknown')}
+                  </p>
+                </div>
+                <div className='overflow-hidden'>
+                  <span className='font-bold'>{_('Reading Time')}</span>
+                  <p className='text-neutral-content text-sm'>
+                    {readSeconds != null ? formatReadingDuration(readSeconds, _) : _('Unknown')}
                   </p>
                 </div>
                 {/*

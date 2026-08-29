@@ -199,6 +199,93 @@ describe('StatisticsDb', () => {
   });
 });
 
+describe('StatisticsDb aggregates', () => {
+  let stats: StatisticsDb;
+  beforeEach(async () => {
+    stats = StatisticsDb.from(await freshStatsDb());
+  });
+
+  const DAY = 86400;
+
+  async function seedBook(
+    md5: string,
+    events: { page: number; startTime: number; duration: number }[],
+  ) {
+    const id = await stats.upsertBook({ bookMd5: md5, title: `T-${md5}`, authors: 'A' });
+    for (const e of events) {
+      await stats.insertPageEvent(id, { ...e, totalPages: 50 });
+    }
+    return id;
+  }
+
+  it('sums all-time totals and counts distinct local days', async () => {
+    await seedBook('m1', [
+      { page: 1, startTime: 0, duration: 10 },
+      { page: 2, startTime: 3600, duration: 20 }, // same local day (tz 0)
+      { page: 1, startTime: DAY, duration: 30 },
+    ]);
+    const totals = await stats.getTotalReadStats(0);
+    expect(totals.totalSeconds).toBe(60);
+    expect(totals.readDays).toBe(2);
+    expect(totals.firstStartTime).toBe(0);
+  });
+
+  it('sums empty stats to zero without nulls', async () => {
+    const totals = await stats.getTotalReadStats(0);
+    expect(totals).toEqual({ totalSeconds: 0, readDays: 0, firstStartTime: null });
+    expect(await stats.getReadTimeBetween(0, DAY)).toBe(0);
+  });
+
+  it('buckets events into [from, to) ranges', async () => {
+    await seedBook('m1', [
+      { page: 1, startTime: 100, duration: 10 }, // at from → included
+      { page: 2, startTime: 200, duration: 20 },
+      { page: 3, startTime: 300, duration: 40 }, // at to → excluded
+    ]);
+    expect(await stats.getReadTimeBetween(100, 300)).toBe(30);
+    expect(await stats.getReadTimeBetween(101, 300)).toBe(20);
+  });
+
+  it('groups daily read time by local day with a timezone offset', async () => {
+    const TZ = 8 * 3600; // UTC+8
+    // 22:00 UTC on day 0 is already 06:00 of day 1 in UTC+8.
+    await seedBook('m1', [
+      { page: 1, startTime: 0, duration: 10 }, // local day 0 (epoch = 08:00 local)
+      { page: 2, startTime: 22 * 3600, duration: 20 }, // local day 1
+      { page: 3, startTime: DAY + 3600, duration: 40 }, // 01:00 UTC day 1 → local day 1
+    ]);
+    const daily = await stats.getDailyReadTimeBetween(0, 10 * DAY, TZ);
+    expect(daily).toEqual([
+      { dayStartTs: 0 * DAY - TZ, seconds: 10 },
+      { dayStartTs: 1 * DAY - TZ, seconds: 60 },
+    ]);
+  });
+
+  it('ranks books by reading time and honors the limit', async () => {
+    await seedBook('m-a', [
+      { page: 1, startTime: 100, duration: 10 },
+      { page: 2, startTime: 150, duration: 10 },
+    ]);
+    await seedBook('m-b', [{ page: 1, startTime: 120, duration: 50 }]);
+    await seedBook('m-c', [{ page: 1, startTime: 130, duration: 25 }]);
+
+    const ranked = await stats.getBookReadTimesBetween(0, DAY, 10);
+    expect(ranked.map((b) => [b.title, b.seconds])).toEqual([
+      ['T-m-b', 50],
+      ['T-m-c', 25],
+      ['T-m-a', 20],
+    ]);
+    expect(ranked[0]!.pages).toBe(1);
+
+    const top1 = await stats.getBookReadTimesBetween(0, DAY, 1);
+    expect(top1.map((b) => b.title)).toEqual(['T-m-b']);
+
+    // Period filter: only m-a's second event is inside [150, 160).
+    const slice = await stats.getBookReadTimesBetween(150, 160, 10);
+    expect(slice.map((b) => [b.title, b.seconds])).toEqual([['T-m-a', 10]]);
+  });
+});
+
 describe('StatisticsDb.open', () => {
   it('retries after a transient singleton open failure', async () => {
     const db = await freshStatsDb();
