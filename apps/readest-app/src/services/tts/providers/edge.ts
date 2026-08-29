@@ -74,6 +74,16 @@ export class EdgeSpeechProvider implements SpeechProvider {
     // Avoid AnaNeural (a child voice) as an accidental English default.
     const first = voices[0];
     if (first?.id === 'en-US-AnaNeural') return 'en-US-AriaNeural';
+    // Chinese content: prefer the Mandarin studio voice (Xiaoxiao) no matter
+    // which zh region variant the book's metadata carries — the zh-HK/zh-TW
+    // Cantonese accents read simplified-Chinese books poorly, and this
+    // mirrors the mobile default. A user-chosen preferred voice still wins
+    // (checked before this hook in BufferedTTSClient).
+    if (first?.id?.startsWith('zh')) {
+      if (voices.some((v) => v.id === 'zh-CN-XiaoxiaoNeural')) return 'zh-CN-XiaoxiaoNeural';
+      const mandarin = voices.find((v) => v.id.startsWith('zh-CN'));
+      if (mandarin) return mandarin.id;
+    }
     return first?.id;
   }
 }
