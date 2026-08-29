@@ -954,6 +954,14 @@ export const MAX_ZOOM_LEVEL = 500;
 export const MIN_ZOOM_LEVEL = 50;
 export const ZOOM_STEP = 10;
 
+// Reader body font size bounds, shared by the font panel slider and the
+// Ctrl+wheel font-size stepping in useBookShortcuts.
+export const FONT_SIZE_LIMITS = {
+  MIN: 8,
+  MAX: 30,
+  DEFAULT: 16,
+} as const;
+
 export const MAX_CONTRAST = 300;
 export const MIN_CONTRAST = 50;
 export const CONTRAST_STEP = 10;

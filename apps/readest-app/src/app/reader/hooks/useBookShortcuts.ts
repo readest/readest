@@ -1,13 +1,15 @@
 import { useEffect, useRef } from 'react';
+import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { saveViewSettings } from '@/helpers/settings';
 import { tauriHandleClose, tauriHandleToggleFullScreen, tauriQuitApp } from '@/utils/window';
 import { eventDispatcher } from '@/utils/event';
-import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
+import { FONT_SIZE_LIMITS, MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import { getParagraphActionForKey } from '@/utils/paragraphPresentation';
 import { getScrollGapAttr } from '@/utils/webtoon';
 import { extendSelectionFromContents, KeyModifiers } from '@/utils/sel';
@@ -31,6 +33,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
   const { getBookData, getConfig, setConfig } = useBookDataStore();
   const { toggleNotebook } = useNotebookStore();
   const { getNextBookKey } = useBooksManager();
+  const { envConfig } = useEnv();
   const lastParagraphToggleRef = useRef(0);
   const viewSettings = getViewSettings(sideBarBookKey ?? '');
   const fontSize = viewSettings?.defaultFontSize ?? 16;
@@ -316,14 +319,54 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     zoomOutFactor();
   };
 
+  // Ctrl+wheel on reflowable books steps the font size instead of the page
+  // zoom level. Raw wheel deltas accumulate so trackpad inertia changes the
+  // size one pixel at a time; the residue drops when clamped at a bound so
+  // scrolling back doesn't fire a burst of changes.
+  const fontSizeWheelAccumRef = useRef(0);
+
+  const stepFontSize = (delta: number) => {
+    if (!sideBarBookKey) return;
+    const viewSettings = getViewSettings(sideBarBookKey);
+    if (!viewSettings) return;
+    const minSize = Math.max(
+      FONT_SIZE_LIMITS.MIN,
+      viewSettings.minimumFontSize ?? FONT_SIZE_LIMITS.MIN,
+    );
+    const initialSize = viewSettings.defaultFontSize ?? FONT_SIZE_LIMITS.DEFAULT;
+    let size = initialSize;
+    fontSizeWheelAccumRef.current += delta;
+    while (Math.abs(fontSizeWheelAccumRef.current) >= 100) {
+      const step = fontSizeWheelAccumRef.current > 0 ? 1 : -1;
+      fontSizeWheelAccumRef.current -= step * 100;
+      const next = Math.min(FONT_SIZE_LIMITS.MAX, Math.max(minSize, size + step));
+      if (next === size) {
+        fontSizeWheelAccumRef.current = 0;
+        break;
+      }
+      size = next;
+    }
+    if (size !== initialSize) {
+      saveViewSettings(envConfig, sideBarBookKey, 'defaultFontSize', size);
+    }
+  };
+
   const handleZoomIn = (event: CustomEvent) => {
     const factor = event.detail?.factor || 1.0;
-    zoomInFactor(factor);
+    if (getBookData(sideBarBookKey ?? '')?.isFixedLayout) {
+      zoomInFactor(factor);
+    } else {
+      stepFontSize(factor * 100);
+    }
   };
 
   const handleZoomOut = (event: CustomEvent) => {
     const factor = event.detail?.factor || 1.0;
-    zoomOutFactor(factor);
+    if (getBookData(sideBarBookKey ?? '')?.isFixedLayout) {
+      zoomOutFactor(factor);
+    } else {
+      stepFontSize(-factor * 100);
+    }
   };
 
   const resetZoom = () => {

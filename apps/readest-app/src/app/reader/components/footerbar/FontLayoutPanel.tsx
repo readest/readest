@@ -8,13 +8,8 @@ import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { saveViewSettings } from '@/helpers/settings';
+import { FONT_SIZE_LIMITS } from '@/services/constants';
 import Slider from '@/components/Slider';
-
-const FONT_SIZE_LIMITS = {
-  MIN: 8,
-  MAX: 30,
-  DEFAULT: 16,
-} as const;
 
 const LINE_HEIGHT_LIMITS = {
   MIN: 8,
