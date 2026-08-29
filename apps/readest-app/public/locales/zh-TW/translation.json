@@ -2204,5 +2204,20 @@
   "Notebook draft copied to clipboard": "筆記本草稿已複製到剪貼板",
   "With notes": "含筆記",
   "{{count}} Annotations_other": "{{count}} 則註解",
-  "Insert into Notebook": "插入到筆記本"
+  "Insert into Notebook": "插入到筆記本",
+  "Peer Address": "對端位址",
+  "Peer Port": "對端連接埠",
+  "Pairing Token": "配對權杖",
+  "Generate": "產生",
+  "Generate a new pairing token": "產生新的配對權杖",
+  "Same token on both devices": "兩台裝置使用同一權杖",
+  "This device's LAN addresses": "本機的區域網路位址",
+  "Type one of these into the peer device": "將其中任一位址填入對端裝置",
+  "The peer rejected the pairing token": "對端拒絕了配對權杖",
+  "Device unreachable on the local network": "區域網路內無法存取該裝置",
+  "Connected to {{name}}": "已連線到 {{name}}",
+  "LAN Sync": "區域網路同步",
+  "Sync with LAN": "透過區域網路同步",
+  "Sync your library, reading progress, and highlights with another Readest device on your local network.": "與區域網路中的另一台 Readest 裝置同步書庫、閱讀進度和高亮。",
+  "Both devices must be on the same network, run Readest with LAN Sync enabled, and share the same pairing token.": "兩台裝置必須位於同一網路、均開啟 Readest 區域網路同步，並共用同一配對權杖。"
 }

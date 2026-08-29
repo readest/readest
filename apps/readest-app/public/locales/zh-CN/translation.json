@@ -2204,5 +2204,20 @@
   "Notebook draft copied to clipboard": "笔记本草稿已复制到剪贴板",
   "With notes": "含笔记",
   "{{count}} Annotations_other": "{{count}} 条注释",
-  "Insert into Notebook": "插入到笔记本"
+  "Insert into Notebook": "插入到笔记本",
+  "Peer Address": "对端地址",
+  "Peer Port": "对端端口",
+  "Pairing Token": "配对令牌",
+  "Generate": "生成",
+  "Generate a new pairing token": "生成新的配对令牌",
+  "Same token on both devices": "两台设备使用同一令牌",
+  "This device's LAN addresses": "本机的局域网地址",
+  "Type one of these into the peer device": "将其中任一地址填入对端设备",
+  "The peer rejected the pairing token": "对端拒绝了配对令牌",
+  "Device unreachable on the local network": "局域网内无法访问该设备",
+  "Connected to {{name}}": "已连接到 {{name}}",
+  "LAN Sync": "局域网同步",
+  "Sync with LAN": "通过局域网同步",
+  "Sync your library, reading progress, and highlights with another Readest device on your local network.": "与本地网络中的另一台 Readest 设备同步书库、阅读进度和高亮。",
+  "Both devices must be on the same network, run Readest with LAN Sync enabled, and share the same pairing token.": "两台设备须位于同一网络、均开启 Readest 局域网同步，并共享同一配对令牌。"
 }
