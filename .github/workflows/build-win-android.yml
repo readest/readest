@@ -119,6 +119,7 @@ jobs:
           cp .env.local apps/readest-app/.env.local
 
       - name: resolve versions
+        shell: bash
         run: |
           # version = upstream-valid semver baked into the app (tauri's config
           # validation rejects four-segment versions). name_version carries the
@@ -131,6 +132,7 @@ jobs:
 
       - name: stamp fork android versionCode
         if: ${{ inputs.version_override != '' }}
+        shell: bash
         env:
           NAME_VERSION: ${{ inputs.version_override }}
         run: |
@@ -139,7 +141,7 @@ jobs:
           # validation; the fork segment lives in artifact/file names, and a
           # monotonic Android versionCode is derived here:
           # major*10M + minor*100K + patch*1K + forkIndex (0.12.6.1 -> 1206001).
-          # Kept in sync with the Windows job's stamp step.
+          # Kept in sync with the Android job's stamp step.
           node -e "
             const fs = require('fs');
             const seg = process.env.NAME_VERSION.split('.').map((n) => parseInt(n, 10) || 0);
@@ -251,6 +253,7 @@ jobs:
           cp .env.local apps/readest-app/.env.local
 
       - name: resolve versions
+        shell: bash
         run: |
           # See the Windows job's resolve step: app version stays upstream-semver,
           # name_version carries the fork segment for artifact names.
@@ -262,6 +265,7 @@ jobs:
 
       - name: stamp fork android versionCode
         if: ${{ inputs.version_override != '' }}
+        shell: bash
         env:
           NAME_VERSION: ${{ inputs.version_override }}
         run: |
