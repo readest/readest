@@ -53,33 +53,6 @@ export const getBackgroundTextureSettings = (
   };
 };
 
-/**
- * This function reads the settings scope of a book. The callers use the result
- * to select a store.
- *
- * The banner, the Settings Menu and the save path all call this function. The
- * three results are thus always the same.
- *
- * This function reads global scope when the view settings are null. A view state
- * holds null view settings for the full reload, and `applyViewSettings` writes
- * nothing while they are null. Book scope would thus lose the write. Six dialog
- * rows start such a reload.
- *
- * This function also reads global scope when the flag is not a boolean. `?? true`
- * let such a value through, and a corrupt `0` or `''` then gave book scope. The
- * type forbids these values, so only a hand-edited or foreign-written
- * `book_configs` entry can hold one.
- */
-export const isSettingsScopeGlobal = (
-  bookViewSettings: ViewSettings | null | undefined,
-): boolean => {
-  // The library sends no book, and a view holds null while it reloads. This
-  // function reads global for both.
-  if (!bookViewSettings) return true;
-  const chosen = bookViewSettings.isGlobal;
-  return typeof chosen === 'boolean' ? chosen : true;
-};
-
 export const saveViewSettings = async <K extends keyof ViewSettings>(
   envConfig: EnvConfigType,
   bookKey: string,
@@ -110,7 +83,7 @@ export const saveViewSettings = async <K extends keyof ViewSettings>(
     }
   };
 
-  const isSettingsGlobal = isSettingsScopeGlobal(getViewSettings(bookKey));
+  const isSettingsGlobal = getViewSettings(bookKey)?.isGlobal ?? true;
   if (isSettingsGlobal && !skipGlobal) {
     // Build a NEW settings object (and a NEW globalViewSettings) so the
     // settingsStore subscriber that gates replica push fires — it compares

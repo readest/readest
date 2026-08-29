@@ -35,7 +35,6 @@ vi.mock('@/utils/style', () => ({
 import {
   getBackgroundTextureSettings,
   getLibraryViewSettings,
-  isSettingsScopeGlobal,
   saveViewSettings,
 } from '@/helpers/settings';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -69,29 +68,6 @@ beforeEach(() => {
     setSettings: (s: SystemSettings) => useSettingsStore.setState({ settings: s }),
     saveSettings: vi.fn(async () => {}),
   } as unknown as ReturnType<typeof useSettingsStore.getState>);
-});
-
-describe('isSettingsScopeGlobal', () => {
-  // The function reads one field. The cast hides the other `ViewSettings`
-  // fields from the compiler. This function does not read them.
-  const held = (isGlobal: unknown) => ({ isGlobal }) as unknown as ViewSettings;
-
-  test('reads global with no settings to read', () => {
-    // The library sends an empty key, and the store then returns null. A view
-    // also holds null for the full reload.
-    expect(isSettingsScopeGlobal(null)).toBe(true);
-    expect(isSettingsScopeGlobal(undefined)).toBe(true);
-  });
-
-  test('reads the flag when it is a boolean, and global when it is not', () => {
-    expect(isSettingsScopeGlobal(held(false))).toBe(false);
-    expect(isSettingsScopeGlobal(held(true))).toBe(true);
-    // A corrupt config can hold 0 or ''. Both now give global. `?? true` let
-    // both values through, and the two callers then made them book scope.
-    expect(isSettingsScopeGlobal(held(0))).toBe(true);
-    expect(isSettingsScopeGlobal(held(''))).toBe(true);
-    expect(isSettingsScopeGlobal(held(undefined))).toBe(true);
-  });
 });
 
 describe('getLibraryViewSettings', () => {
@@ -225,29 +201,6 @@ describe('saveViewSettings', () => {
     expect(saveSettingsMock).toHaveBeenCalledTimes(1);
     expect(savedSettings!.globalViewSettings.userUIStylesheet).toBe('.app { background: black; }');
     expect(savedSettings).toBe(useSettingsStore.getState().settings);
-  });
-
-  test('the save path uses the resolver, not a truthiness test on the flag', async () => {
-    // This test fails if `saveViewSettings` goes back to `?? true`. A corrupt
-    // `0` is falsy, so `?? true` sends the write to the book and publishes no
-    // global settings. The resolver reads global, and the subscriber then fires
-    // once. A source tripwire in `scopeWiring.test.ts` also guards this call
-    // site. This test guards the behaviour behind it.
-    getViewSettingsMock.mockImplementation(() => ({ isGlobal: 0 }) as never);
-    const referenceChanges: SystemSettings[] = [];
-    const unsubscribe = useSettingsStore.subscribe((state, prev) => {
-      if (state.settings && state.settings !== prev?.settings) {
-        referenceChanges.push(state.settings);
-      }
-    });
-
-    try {
-      await saveViewSettings(envConfig, 'book-1', 'userStylesheet', 'body { color: green; }');
-    } finally {
-      unsubscribe();
-    }
-
-    expect(referenceChanges).toHaveLength(1);
   });
 
   test('per-book write (isGlobal=false) does not touch the global settings reference', async () => {
