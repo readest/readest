@@ -1,0 +1,161 @@
+/**
+ * LAN peer transport for the file-sync engine: talks to the axum server
+ * embedded in the peer's Readest app (src-tauri/src/lan_sync). Both devices
+ * run the same server, so the "remote" tree this provider sees is the peer's
+ * `<app_data>/LanSync` directory, already laid out in the frozen wire format
+ * of `layout.ts` — which is why this stays thin: no per-backend path/id
+ * resolution (unlike Drive), the URL is the path.
+ *
+ * Transport: on Tauri platforms requests go through the plugin-http Rust
+ * bridge (the KOSync client's approach), so webview CORS and Android's
+ * cleartext policy don't apply. The peer server still answers CORS so web
+ * fallbacks keep working.
+ */
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { isTauriAppPlatform } from '@/services/environment';
+import {
+  FileSyncError,
+  type FileEntry,
+  type FileHead,
+  type FileSyncProvider,
+} from '@/services/sync/file/provider';
+import type { LanSyncSettings } from '@/types/settings';
+
+const peerBase = (settings: LanSyncSettings): string => {
+  const host = settings.host
+    .trim()
+    .replace(/^https?:\/\//, '')
+    .replace(/\/+$/, '');
+  if (!host) {
+    throw new FileSyncError('LAN sync: peer host is not configured', 'UNKNOWN');
+  }
+  return host.includes(':') ? `http://${host}` : `http://${host}:${settings.port}`;
+};
+
+const doFetch = async (
+  settings: LanSyncSettings,
+  path: string,
+  init?: { method?: string; body?: BodyInit; contentType?: string },
+): Promise<Response> => {
+  const headers: Record<string, string> = { Authorization: `Bearer ${settings.token}` };
+  if (init?.body !== undefined) {
+    headers['Content-Type'] =
+      init.contentType ??
+      (typeof init.body === 'string' ? 'text/plain; charset=utf-8' : 'application/octet-stream');
+  }
+  const fetcher = isTauriAppPlatform() ? tauriFetch : window.fetch.bind(window);
+  try {
+    return await fetcher(`${peerBase(settings)}${path}`, {
+      method: init?.method ?? 'GET',
+      headers,
+      body: init?.body,
+    });
+  } catch (err) {
+    throw new FileSyncError(
+      `LAN peer unreachable (${settings.host}:${settings.port}): ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+      'NETWORK',
+    );
+  }
+};
+
+const mapStatus = (res: Response, action: string): void => {
+  if (res.status === 401 || res.status === 403) {
+    throw new FileSyncError(
+      `LAN peer rejected the pairing token (${action})`,
+      'AUTH_FAILED',
+      res.status,
+    );
+  }
+  if (!res.ok) {
+    throw new FileSyncError(`LAN peer error ${res.status} (${action})`, 'UNKNOWN', res.status);
+  }
+};
+
+/** Request a /files path; resolves null on 404 per the provider contract. */
+const fileRequest = async (
+  settings: LanSyncSettings,
+  path: string,
+  init?: { method?: string; body?: BodyInit },
+): Promise<Response | null> => {
+  const res = await doFetch(settings, `/files${path}`, init);
+  if (res.status === 404) return null;
+  mapStatus(res, `${init?.method ?? 'GET'} ${path}`);
+  return res;
+};
+
+/**
+ * Ping the peer — used by the LAN settings form's "test connection" button.
+ * Throws {@link FileSyncError} on anything other than a token-accepted 200.
+ */
+export const lanSyncPing = async (
+  settings: LanSyncSettings,
+): Promise<{ name: string; device_id: string; protocol?: string }> => {
+  const res = await doFetch(settings, '/ping');
+  mapStatus(res, 'ping');
+  return (await res.json()) as { name: string; device_id: string; protocol?: string };
+};
+
+export const createLanSyncProvider = (settings: LanSyncSettings): FileSyncProvider => ({
+  rootPath: '/',
+
+  readText: async (path) => {
+    const res = await fileRequest(settings, path, { method: 'GET' });
+    return res ? res.text() : null;
+  },
+
+  readBinary: async (path) => {
+    const res = await fileRequest(settings, path, { method: 'GET' });
+    return res ? res.arrayBuffer() : null;
+  },
+
+  head: async (path) => {
+    const res = await fileRequest(settings, path, { method: 'HEAD' });
+    if (!res) return null;
+    const sizeHeader = Number(res.headers.get('content-length') ?? '');
+    const head: FileHead = {
+      size: Number.isFinite(sizeHeader) && sizeHeader > 0 ? sizeHeader : undefined,
+      etag: res.headers.get('etag') ?? undefined,
+    };
+    return head;
+  },
+
+  list: async (path) => {
+    const res = await doFetch(settings, '/list', {
+      method: 'POST',
+      body: JSON.stringify({ dir: path }),
+      contentType: 'application/json',
+    });
+    mapStatus(res, `list ${path}`);
+    const data = (await res.json()) as {
+      entries?: Array<Pick<FileEntry, 'name' | 'path' | 'isDirectory' | 'size' | 'lastModified'>>;
+    };
+    return (data.entries ?? []).map((entry) => ({
+      name: entry.name,
+      path: entry.path,
+      isDirectory: !!entry.isDirectory,
+      size: entry.size,
+      lastModified: entry.lastModified,
+    }));
+  },
+
+  writeText: async (path, body) => {
+    await fileRequest(settings, path, { method: 'PUT', body });
+  },
+
+  writeBinary: async (path, body) => {
+    await fileRequest(settings, path, { method: 'PUT', body });
+  },
+
+  ensureDir: async () => {
+    // The peer creates parent directories on every PUT, and the engine never
+    // lists a directory it has not written — so there is nothing to pre-create.
+  },
+
+  deleteDir: async (path) => {
+    // Missing is success per the provider contract; the server also treats it
+    // that way, but tolerate a null (404) response defensively.
+    await fileRequest(settings, path, { method: 'DELETE' });
+  },
+});

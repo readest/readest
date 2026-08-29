@@ -11,14 +11,15 @@
  * keychain token, so it needs no settings to construct.
  */
 import type { FileSyncProvider } from './provider';
-import type { S3Settings, WebDAVSettings } from '@/types/settings';
+import type { LanSyncSettings, S3Settings, WebDAVSettings } from '@/types/settings';
 import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVProvider';
+import { createLanSyncProvider } from '@/services/sync/providers/lan/LanSyncProvider';
 import { buildGoogleDriveProvider } from '@/services/sync/providers/gdrive/buildGoogleDriveProvider';
 import { buildOneDriveProvider } from '@/services/sync/providers/onedrive/buildOneDriveProvider';
 import { buildICloudProvider } from '@/services/sync/providers/icloud/buildICloudProvider';
 import { createS3Provider } from '@/services/sync/providers/s3/S3Provider';
 
-export type FileSyncBackendKind = 'webdav' | 'gdrive' | 's3' | 'onedrive' | 'icloud';
+export type FileSyncBackendKind = 'webdav' | 'gdrive' | 's3' | 'onedrive' | 'icloud' | 'lan';
 
 /** Minimal settings the registry reads to pick + build backends. */
 export interface FileSyncBackendsSettings {
@@ -27,6 +28,7 @@ export interface FileSyncBackendsSettings {
   s3?: S3Settings;
   onedrive?: { enabled?: boolean };
   icloud?: { enabled?: boolean };
+  lan?: LanSyncSettings;
 }
 
 /**
@@ -61,6 +63,10 @@ const providerCacheKey = (
   }
   if (kind === 'onedrive') return 'onedrive';
   if (kind === 'icloud') return 'icloud';
+  if (kind === 'lan') {
+    const l = settings.lan;
+    return `lan:${l?.enabled}:${l?.host}:${l?.port}:${l?.token}`;
+  }
   return 'gdrive';
 };
 
@@ -93,7 +99,11 @@ export const createFileSyncProvider = async (
           ? await buildOneDriveProvider()
           : kind === 'icloud'
             ? await buildICloudProvider()
-            : await buildGoogleDriveProvider();
+            : kind === 'lan'
+              ? settings.lan
+                ? createLanSyncProvider(settings.lan)
+                : null
+              : await buildGoogleDriveProvider();
   if (provider) providerCache.set(kind, { key, provider });
   return provider;
 };

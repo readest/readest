@@ -20,7 +20,7 @@ export type CloudSyncProviderKind = 'readest' | FileSyncBackendKind;
 /** Settings slice key for a third-party backend kind. */
 export const settingsKeyForBackend = (
   kind: FileSyncBackendKind,
-): 'webdav' | 'googleDrive' | 's3' | 'onedrive' | 'icloud' =>
+): 'webdav' | 'googleDrive' | 's3' | 'onedrive' | 'icloud' | 'lan' =>
   kind === 'gdrive' ? 'googleDrive' : kind;
 
 /** Human-readable provider name (product names — deliberately untranslated). */
@@ -35,7 +35,9 @@ export const cloudProviderDisplayName = (kind: CloudSyncProviderKind): string =>
           ? 'OneDrive'
           : kind === 'icloud'
             ? 'iCloud'
-            : 'Readest Cloud';
+            : kind === 'lan'
+              ? 'LAN'
+              : 'Readest Cloud';
 
 /**
  * The third-party backends the user has switched on, in a STABLE order that
@@ -50,12 +52,16 @@ export const getEnabledFileSyncBackends = (
   if (settings?.s3?.enabled) enabled.push('s3');
   if (settings?.onedrive?.enabled) enabled.push('onedrive');
   if (settings?.icloud?.enabled) enabled.push('icloud');
+  // LAN last: the fork's home-network backend — local peers, no cloud plan.
+  if (settings?.lan?.enabled) enabled.push('lan');
   return enabled;
 };
 
-/** Any third-party file-sync backend switched on. */
+/** Any third-party file-sync backend switched on ('lan' excluded — see the gate). */
 export const hasAnyThirdPartyEnabled = (settings: SystemSettings | null | undefined): boolean =>
-  getEnabledFileSyncBackends(settings).length > 0;
+  // 'lan' is excluded on purpose: the home-network backend has no cloud plan,
+  // so flipping it on must not derive Readest Cloud's enabled default to off.
+  getEnabledFileSyncBackends(settings).some((k) => k !== 'lan');
 
 /**
  * Whether Readest Cloud syncs the library channels on this device.
@@ -102,7 +108,7 @@ export const getCachedUserPlan = (): UserPlan => cachedUserPlan;
 export interface CloudSyncGate {
   /** Readest Cloud syncs the library channels (rows, progress, notes, files). */
   readest: boolean;
-  /** Third-party backends the user switched on, in the fixed webdav/gdrive/s3/onedrive/icloud order. */
+  /** Third-party backends the user switched on, in the fixed webdav/gdrive/s3/onedrive/icloud/lan order. */
   backends: FileSyncBackendKind[];
   /**
    * True when third-party backends are switched on but the plan does not allow
@@ -118,10 +124,13 @@ export const resolveCloudSyncGate = (
   plan: UserPlan = cachedUserPlan,
 ): CloudSyncGate => {
   const backends = getEnabledFileSyncBackends(settings);
+  const cloudBackends = backends.filter((k) => k !== 'lan');
   return {
     readest: isReadestCloudEnabled(settings),
     backends,
-    paused: backends.length > 0 && !isCloudSyncAllowed(plan),
+    // 'lan' never pauses: it is a local-network channel with no plan or quota —
+    // the fork's "LAN sync sits outside the sync quota" guarantee.
+    paused: cloudBackends.length > 0 && !isCloudSyncAllowed(plan),
   };
 };
 
@@ -131,7 +140,8 @@ export const getActiveFileSyncBackends = (
   plan?: UserPlan,
 ): FileSyncBackendKind[] => {
   const gate = resolveCloudSyncGate(settings, plan);
-  return gate.paused ? [] : gate.backends;
+  // When the cloud plan pauses the third-party backends, 'lan' keeps running.
+  return gate.paused ? gate.backends.filter((k) => k === 'lan') : gate.backends;
 };
 
 /**
@@ -177,6 +187,12 @@ export const applySyncBooksAutoEnable = (settings: SystemSettings): boolean => {
       case 'icloud':
         if (settings.icloud && !settings.icloud.syncBooks) {
           settings.icloud = { ...settings.icloud, syncBooks: true };
+          changed = true;
+        }
+        break;
+      case 'lan':
+        if (settings.lan && !settings.lan.syncBooks) {
+          settings.lan = { ...settings.lan, syncBooks: true };
           changed = true;
         }
         break;
