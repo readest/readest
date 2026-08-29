@@ -38,7 +38,7 @@ on:
           - aarch64
           - all
   push:
-    branches: [main]
+    branches: [main, 'feat/**', 'fix/**']
     paths:
       - 'apps/readest-app/**'
       - 'packages/**'
