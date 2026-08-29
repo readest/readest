@@ -13,6 +13,7 @@
  */
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { isTauriAppPlatform } from '@/services/environment';
+import { tauriDownload, tauriUpload } from '@/utils/transfer';
 import {
   FileSyncError,
   type FileEntry,
@@ -99,65 +100,109 @@ export const lanSyncPing = async (
   return (await res.json()) as { name: string; device_id: string; protocol?: string };
 };
 
-export const createLanSyncProvider = (settings: LanSyncSettings): FileSyncProvider => ({
-  rootPath: '/',
+export const createLanSyncProvider = (settings: LanSyncSettings): FileSyncProvider => {
+  const provider: FileSyncProvider = {
+    rootPath: '/',
 
-  readText: async (path) => {
-    const res = await fileRequest(settings, path, { method: 'GET' });
-    return res ? res.text() : null;
-  },
+    readText: async (path) => {
+      const res = await fileRequest(settings, path, { method: 'GET' });
+      return res ? res.text() : null;
+    },
 
-  readBinary: async (path) => {
-    const res = await fileRequest(settings, path, { method: 'GET' });
-    return res ? res.arrayBuffer() : null;
-  },
+    readBinary: async (path) => {
+      const res = await fileRequest(settings, path, { method: 'GET' });
+      return res ? res.arrayBuffer() : null;
+    },
 
-  head: async (path) => {
-    const res = await fileRequest(settings, path, { method: 'HEAD' });
-    if (!res) return null;
-    const sizeHeader = Number(res.headers.get('content-length') ?? '');
-    const head: FileHead = {
-      size: Number.isFinite(sizeHeader) && sizeHeader > 0 ? sizeHeader : undefined,
-      etag: res.headers.get('etag') ?? undefined,
-    };
-    return head;
-  },
+    head: async (path) => {
+      const res = await fileRequest(settings, path, { method: 'HEAD' });
+      if (!res) return null;
+      const sizeHeader = Number(res.headers.get('content-length') ?? '');
+      const head: FileHead = {
+        size: Number.isFinite(sizeHeader) && sizeHeader > 0 ? sizeHeader : undefined,
+        etag: res.headers.get('etag') ?? undefined,
+      };
+      return head;
+    },
 
-  list: async (path) => {
-    const res = await doFetch(settings, '/list', {
-      method: 'POST',
-      body: JSON.stringify({ dir: path }),
-      contentType: 'application/json',
+    list: async (path) => {
+      const res = await doFetch(settings, '/list', {
+        method: 'POST',
+        body: JSON.stringify({ dir: path }),
+        contentType: 'application/json',
+      });
+      mapStatus(res, `list ${path}`);
+      const data = (await res.json()) as {
+        entries?: Array<Pick<FileEntry, 'name' | 'path' | 'isDirectory' | 'size' | 'lastModified'>>;
+      };
+      return (data.entries ?? []).map((entry) => ({
+        name: entry.name,
+        path: entry.path,
+        isDirectory: !!entry.isDirectory,
+        size: entry.size,
+        lastModified: entry.lastModified,
+      }));
+    },
+
+    writeText: async (path, body) => {
+      await fileRequest(settings, path, { method: 'PUT', body });
+    },
+
+    writeBinary: async (path, body) => {
+      await fileRequest(settings, path, { method: 'PUT', body });
+    },
+
+    ensureDir: async () => {
+      // The peer creates parent directories on every PUT, and the engine never
+      // lists a directory it has not written — so there is nothing to pre-create.
+    },
+
+    deleteDir: async (path) => {
+      // Missing is success per the provider contract; the server also treats it
+      // that way, but tolerate a null (404) response defensively.
+      await fileRequest(settings, path, { method: 'DELETE' });
+    },
+  };
+
+  // Streaming transfers, Tauri only (same ownership + fallback rules as the
+  // other providers): without these the engine falls back to the buffered
+  // path, which hauls every book byte twice across the webview main thread
+  // (fs IPC in, plugin-http IPC out) and stalls the whole app on large
+  // libraries. The Rust side streams straight from disk to the peer instead.
+  if (isTauriAppPlatform()) {
+    const authHeaders = (): Record<string, string> => ({
+      Authorization: `Bearer ${settings.token}`,
     });
-    mapStatus(res, `list ${path}`);
-    const data = (await res.json()) as {
-      entries?: Array<Pick<FileEntry, 'name' | 'path' | 'isDirectory' | 'size' | 'lastModified'>>;
+    const fileUrl = (path: string): string => `${peerBase(settings)}/files${path}`;
+
+    provider.uploadStream = async (remotePath, localPath) => {
+      try {
+        // tauriUpload's TS type says Map, but the Rust command accepts a JSON
+        // object → HashMap<String, String>; pass the headers object directly.
+        await tauriUpload(
+          fileUrl(remotePath),
+          localPath,
+          'PUT',
+          undefined,
+          authHeaders() as unknown as Map<string, string>,
+        );
+        return true;
+      } catch (e) {
+        console.warn('LanSyncProvider.uploadStream failed', remotePath, e);
+        return false;
+      }
     };
-    return (data.entries ?? []).map((entry) => ({
-      name: entry.name,
-      path: entry.path,
-      isDirectory: !!entry.isDirectory,
-      size: entry.size,
-      lastModified: entry.lastModified,
-    }));
-  },
 
-  writeText: async (path, body) => {
-    await fileRequest(settings, path, { method: 'PUT', body });
-  },
+    provider.downloadStream = async (remotePath, localPath, onProgress) => {
+      try {
+        await tauriDownload(fileUrl(remotePath), localPath, onProgress, authHeaders());
+        return true;
+      } catch (e) {
+        console.warn('LanSyncProvider.downloadStream failed', remotePath, e);
+        return false;
+      }
+    };
+  }
 
-  writeBinary: async (path, body) => {
-    await fileRequest(settings, path, { method: 'PUT', body });
-  },
-
-  ensureDir: async () => {
-    // The peer creates parent directories on every PUT, and the engine never
-    // lists a directory it has not written — so there is nothing to pre-create.
-  },
-
-  deleteDir: async (path) => {
-    // Missing is success per the provider contract; the server also treats it
-    // that way, but tolerate a null (404) response defensively.
-    await fileRequest(settings, path, { method: 'DELETE' });
-  },
-});
+  return provider;
+};
