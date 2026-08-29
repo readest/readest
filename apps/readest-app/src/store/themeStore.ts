@@ -416,22 +416,31 @@ export const loadDataTheme = (scope: ThemeScope = getThemeScopeForPath()) => {
 
   const themeMode = localStorage.getItem('themeMode');
   const themeColor = localStorage.getItem('themeColor');
-  if (themeMode && themeColor) {
-    const systemIsDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const ambientIsDarkMode = getInitialAmbientIsDarkMode(systemIsDarkMode);
-    const effective = resolveScopedTheme(scope, {
-      readerThemeMode: isValidThemeMode(themeMode) ? themeMode : 'auto',
-      readerThemeColor: themeColor,
-      libraryThemeMode: getInitialLibraryThemeMode(),
-      libraryThemeColor: getInitialLibraryThemeColor(),
-    });
-    const isDarkMode = resolveThemeIsDarkMode(
-      effective.themeMode,
-      systemIsDarkMode,
-      ambientIsDarkMode,
-    );
-    applyDataTheme(effective.themeColor, isDarkMode);
-  }
+  const libraryThemeMode = getInitialLibraryThemeMode();
+  const libraryThemeColor = getInitialLibraryThemeColor();
+  // Nothing configured at all: leave the attribute alone and let useTheme
+  // paint the default. A library-only override still counts as configured —
+  // decoupling the library writes only its own key, so a user who never
+  // touched the reader theme has no reader keys to gate on, and checking
+  // those alone would skip the early paint in exactly that case.
+  if (!(themeMode && themeColor) && !libraryThemeMode && !libraryThemeColor) return;
+
+  const systemIsDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const ambientIsDarkMode = getInitialAmbientIsDarkMode(systemIsDarkMode);
+  const effective = resolveScopedTheme(scope, {
+    // Via the same helpers the store initializes from, so an absent reader key
+    // resolves to the implicit default rather than a null in the attribute.
+    readerThemeMode: getInitialThemeMode(),
+    readerThemeColor: getInitialThemeColor(),
+    libraryThemeMode,
+    libraryThemeColor,
+  });
+  const isDarkMode = resolveThemeIsDarkMode(
+    effective.themeMode,
+    systemIsDarkMode,
+    ambientIsDarkMode,
+  );
+  applyDataTheme(effective.themeColor, isDarkMode);
 };
 
 export const initSystemThemeListener = (appService: AppService) => {
