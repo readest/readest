@@ -1,14 +1,20 @@
 # Fork CI build: Windows NSIS installer + Android APK, artifacts only (no release).
 #
-# Differences from upstream release.yml / nightly.yml, per prosecutor review #1:
+# Differences from upstream release.yml / nightly.yml, per prosecutor reviews #1-#3:
 #   - Android keystore comes from repo secrets (ANDROID_KEY_BASE64 / ALIAS /
 #     PASSWORD) so the signing identity is stable across runs and APKs can
 #     overwrite-install. The job FAILS LOUDLY if the secrets are missing —
 #     never generate a throwaway keystore per run.
 #   - Desktop updater artifacts are disabled via the tauri.fork.conf.json
-#     overlay (createUpdaterArtifacts: false), so no TAURI_SIGNING_* secrets.
-#   - gen/android is tracked in this repo and matches the pinned tauri CLI,
-#     so we do NOT `tauri android init` per run — just drop keystore.properties.
+#     overlay (createUpdaterArtifacts: false). A throwaway updater key is
+#     still generated and exported under BOTH the v2 (TAURI_SIGNING_*) and
+#     legacy (TAURI_PRIVATE_KEY*) env names as a safety net, so the bundle
+#     phase can never die after the long Rust compile.
+#   - gen/android only tracks the ~30 customized files (build.gradle.kts,
+#     manifest, MainActivity, icons); the gradle scaffolding is regenerated
+#     every run (tauri android init) and the tracked customizations are then
+#     restored with `git checkout .` — same as upstream android-e2e.yml.
+#     Keystore.properties is written AFTER that, or rm/init would drop it.
 #   - Cloud/telemetry keys stay empty on purpose; the app degrades to
 #     "not signed in" instead of failing (upload-sourcemaps is a no-op then).
 name: Fork Build (Windows + Android)
@@ -51,7 +57,7 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_windows }}
     name: Windows x64 (NSIS)
     runs-on: windows-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -93,10 +99,26 @@ jobs:
           EOF
           cp .env.local apps/readest-app/.env.local
 
+      - name: generate throwaway updater signing key (safety net)
+        id: updater-key
+        shell: bash
+        run: |
+          # tauri.fork.conf.json disables updater artifacts, so this key should
+          # never be used. Exported anyway (both v2 and legacy env names) so a
+          # bundler "no private key" error can never surface after the ~40min
+          # Rust compile.
+          pnpm tauri signer generate -w "$RUNNER_TEMP/updater.key" --password "" --force
+          echo "private_key=$(cat "$RUNNER_TEMP/updater.key")" >> "$GITHUB_OUTPUT"
+
       - name: build Windows installer (NSIS, updater disabled)
         shell: bash
+        timeout-minutes: 60
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
+          TAURI_SIGNING_PRIVATE_KEY: ${{ steps.updater-key.outputs.private_key }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+          TAURI_PRIVATE_KEY: ${{ steps.updater-key.outputs.private_key }}
+          TAURI_PRIVATE_KEY_PASSWORD: ''
         run: |
           version=$(node -p "require('./apps/readest-app/package.json').version")
           echo "version=$version" >> "$GITHUB_ENV"
@@ -175,6 +197,14 @@ jobs:
           EOF
           cp .env.local apps/readest-app/.env.local
 
+      - name: regenerate android scaffolding
+        run: |
+          cd apps/readest-app
+          rm -rf src-tauri/gen/android
+          pnpm tauri android init
+          pnpm tauri icon ../../data/icons/readest-book.png
+          git checkout .
+
       - name: write signing keystore from secrets
         env:
           ANDROID_KEY_BASE64: ${{ secrets.ANDROID_KEY_BASE64 }}
@@ -207,6 +237,8 @@ jobs:
           else
             pnpm tauri android build -t aarch64
           fi
+          # no --config here on purpose: the android bundler never creates
+          # updater artifacts, so there is nothing to disable.
 
       - name: collect artifacts
         run: |
