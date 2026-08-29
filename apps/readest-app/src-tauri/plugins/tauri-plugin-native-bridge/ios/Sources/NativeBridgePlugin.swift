@@ -1694,8 +1694,11 @@ class NativeBridgePlugin: Plugin {
     DispatchQueue.main.async {
       self.activeWebBrowser?.setStatus(
         state: args.state, filename: args.filename, bookHash: args.bookHash)
-      invoke.resolve()
     }
+    // Acknowledge off the main queue, as `NativeBridgePlugin.kt` does. Resolving
+    // from inside the hop deadlocks any caller that is itself on the main thread
+    // (`run_mobile_plugin` blocks it), which the iOS watchdog kills after 10s.
+    invoke.resolve()
   }
 
   /// Read + delete a page-HTML file the Share Extension captured from
