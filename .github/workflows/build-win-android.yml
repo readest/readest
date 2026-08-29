@@ -118,26 +118,31 @@ jobs:
           EOF
           cp .env.local apps/readest-app/.env.local
 
-      - name: stamp fork version
+      - name: resolve versions
+        run: |
+          # version = upstream-valid semver baked into the app (tauri's config
+          # validation rejects four-segment versions). name_version carries the
+          # fork segment for release file names when version_override is set.
+          version=$(node -p "require('./apps/readest-app/package.json').version")
+          name_version="${{ inputs.version_override }}"
+          [ -z "$name_version" ] && name_version="$version"
+          echo "version=$version" >> "$GITHUB_ENV"
+          echo "name_version=$name_version" >> "$GITHUB_ENV"
+
+      - name: stamp fork android versionCode
         if: ${{ inputs.version_override != '' }}
         env:
-          VERSION: ${{ inputs.version_override }}
+          NAME_VERSION: ${{ inputs.version_override }}
         run: |
-          # Stamp the fork version into package.json (installer name + app
-          # version) and derive a monotonic Android versionCode from the
-          # four segments: major*10M + minor*100K + patch*1K + forkIndex.
-          # Four-segment versions are not valid semver, so the tauri CLI
-          # would otherwise fall back to versionCode=1 and Android would
-          # refuse every overwrite-install. Kept in sync with the Android
-          # job's stamp step.
+          # Four-segment fork versions (0.12.6.1) are not valid semver, so
+          # package.json keeps the upstream version for tauri's config
+          # validation; the fork segment lives in artifact/file names, and a
+          # monotonic Android versionCode is derived here:
+          # major*10M + minor*100K + patch*1K + forkIndex (0.12.6.1 -> 1206001).
+          # Kept in sync with the Windows job's stamp step.
           node -e "
             const fs = require('fs');
-            const version = process.env.VERSION;
-            const pkgPath = 'apps/readest-app/package.json';
-            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-            pkg.version = version;
-            fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-            const seg = version.split('.').map((n) => parseInt(n, 10) || 0);
+            const seg = process.env.NAME_VERSION.split('.').map((n) => parseInt(n, 10) || 0);
             const versionCode =
               (seg[0] || 0) * 10000000 + (seg[1] || 0) * 100000 + (seg[2] || 0) * 1000 + (seg[3] || 0);
             const confPath = 'apps/readest-app/src-tauri/tauri.fork.conf.json';
@@ -146,7 +151,7 @@ jobs:
             conf.bundle.android = conf.bundle.android || {};
             conf.bundle.android.versionCode = versionCode;
             fs.writeFileSync(confPath, JSON.stringify(conf, null, 2) + '\n');
-            console.log('stamped', version, '-> android versionCode', versionCode);
+            console.log('android versionCode', versionCode);
           "
 
       - name: generate throwaway updater signing key (safety net)
@@ -170,8 +175,6 @@ jobs:
           TAURI_PRIVATE_KEY: ${{ steps.updater-key.outputs.private_key }}
           TAURI_PRIVATE_KEY_PASSWORD: ''
         run: |
-          version=$(node -p "require('./apps/readest-app/package.json').version")
-          echo "version=$version" >> "$GITHUB_ENV"
           cd apps/readest-app
           pnpm tauri build --target x86_64-pc-windows-msvc --bundles nsis \
             --config src-tauri/tauri.fork.conf.json
@@ -179,14 +182,14 @@ jobs:
       - name: collect artifacts
         shell: bash
         run: |
-          version="${{ env.version }}"
           mkdir -p fork-out
-          cp "target/x86_64-pc-windows-msvc/release/bundle/nsis/Readest_${version}_x64-setup.exe" fork-out/
+          src="target/x86_64-pc-windows-msvc/release/bundle/nsis/Readest_${{ env.version }}_x64-setup.exe"
+          cp "$src" "fork-out/Readest_${{ env.name_version }}_x64-setup.exe"
 
       - name: upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: Readest_${{ env.version }}_windows_x64
+          name: Readest_${{ env.name_version }}_windows_x64
           path: fork-out/
           if-no-files-found: error
 
@@ -247,21 +250,26 @@ jobs:
           EOF
           cp .env.local apps/readest-app/.env.local
 
-      - name: stamp fork version
+      - name: resolve versions
+        run: |
+          # See the Windows job's resolve step: app version stays upstream-semver,
+          # name_version carries the fork segment for artifact names.
+          version=$(node -p "require('./apps/readest-app/package.json').version")
+          name_version="${{ inputs.version_override }}"
+          [ -z "$name_version" ] && name_version="$version"
+          echo "version=$version" >> "$GITHUB_ENV"
+          echo "name_version=$name_version" >> "$GITHUB_ENV"
+
+      - name: stamp fork android versionCode
         if: ${{ inputs.version_override != '' }}
         env:
-          VERSION: ${{ inputs.version_override }}
+          NAME_VERSION: ${{ inputs.version_override }}
         run: |
-          # See the Windows job's stamp step: package.json version + a
-          # monotonic Android versionCode derived from the four segments.
+          # Same stamp as the Windows job: monotonic Android versionCode from
+          # the four release segments (0.12.6.1 -> 1206001).
           node -e "
             const fs = require('fs');
-            const version = process.env.VERSION;
-            const pkgPath = 'apps/readest-app/package.json';
-            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-            pkg.version = version;
-            fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-            const seg = version.split('.').map((n) => parseInt(n, 10) || 0);
+            const seg = process.env.NAME_VERSION.split('.').map((n) => parseInt(n, 10) || 0);
             const versionCode =
               (seg[0] || 0) * 10000000 + (seg[1] || 0) * 100000 + (seg[2] || 0) * 1000 + (seg[3] || 0);
             const confPath = 'apps/readest-app/src-tauri/tauri.fork.conf.json';
@@ -270,7 +278,7 @@ jobs:
             conf.bundle.android = conf.bundle.android || {};
             conf.bundle.android.versionCode = versionCode;
             fs.writeFileSync(confPath, JSON.stringify(conf, null, 2) + '\n');
-            console.log('stamped', version, '-> android versionCode', versionCode);
+            console.log('android versionCode', versionCode);
           "
 
       - name: regenerate android scaffolding
@@ -305,8 +313,6 @@ jobs:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
           NODE_OPTIONS: '--max-old-space-size=8192'
         run: |
-          version=$(node -p "require('./apps/readest-app/package.json').version")
-          echo "version=$version" >> "$GITHUB_ENV"
           cd apps/readest-app
           if [ "${{ inputs.android_abi || 'aarch64' }}" = "all" ]; then
             pnpm tauri android build
@@ -318,12 +324,11 @@ jobs:
 
       - name: collect artifacts
         run: |
-          version="${{ env.version }}"
           mkdir -p fork-out
           if [ "${{ inputs.android_abi || 'aarch64' }}" = "all" ]; then
-            name="Readest_${version}_universal.apk"
+            name="Readest_${{ env.name_version }}_universal.apk"
           else
-            name="Readest_${version}_arm64.apk"
+            name="Readest_${{ env.name_version }}_arm64.apk"
           fi
           outdir=apps/readest-app/src-tauri/gen/android/app/build/outputs/apk/universal/release
           if [ -f "$outdir/app-universal-release.apk" ]; then
@@ -337,6 +342,6 @@ jobs:
       - name: upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: Readest_${{ env.version }}_android_${{ inputs.android_abi || 'aarch64' }}
+          name: Readest_${{ env.name_version }}_android_${{ inputs.android_abi || 'aarch64' }}
           path: fork-out/
           if-no-files-found: error
