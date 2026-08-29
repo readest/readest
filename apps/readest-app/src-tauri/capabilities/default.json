@@ -248,6 +248,9 @@
     "allow-localsend-respond",
     "allow-localsend-cancel-receive",
     "allow-localsend-send-files",
-    "allow-localsend-cancel-send"
+    "allow-localsend-cancel-send",
+    "allow-lan-sync-start",
+    "allow-lan-sync-stop",
+    "allow-lan-sync-status"
   ]
 }

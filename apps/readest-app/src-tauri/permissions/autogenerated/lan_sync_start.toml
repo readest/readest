@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lan-sync-start"
+description = "Enables the lan_sync_start command without any pre-configured scope."
+commands.allow = ["lan_sync_start"]
+
+[[permission]]
+identifier = "deny-lan-sync-start"
+description = "Denies the lan_sync_start command without any pre-configured scope."
+commands.deny = ["lan_sync_start"]
