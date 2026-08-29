@@ -289,6 +289,29 @@ describe('createBookGroups', () => {
       expect(subjectGroups.find(({ name }) => name === 'Science')?.books).toHaveLength(2);
       expect(subjectGroups.find(({ name }) => name === 'Biography')?.books).toHaveLength(1);
     });
+
+    it('groups explicitly assigned reading statuses and leaves unstatused books standalone', () => {
+      const unread = createMockBook({ hash: 'unread', readingStatus: 'unread' });
+      const finished = createMockBook({ hash: 'finished', readingStatus: 'finished' });
+      const onHold = createMockBook({ hash: 'on-hold', readingStatus: 'abandoned' });
+      const unstatused = createMockBook({ hash: 'unstatused' });
+
+      const result = createBookGroups(
+        [unread, finished, onHold, unstatused],
+        LibraryGroupByType.Status,
+      );
+      const groups = result.filter((item): item is BooksGroup => 'books' in item);
+      const standalone = result.filter((item): item is Book => 'format' in item);
+
+      expect(groups.map(({ name }) => name)).toEqual(['unread', 'finished', 'abandoned']);
+      expect(groups.map(({ displayName }) => displayName)).toEqual([
+        'Unread',
+        'Finished',
+        'On Hold',
+      ]);
+      expect(groups.every(({ books }) => books.length > 0)).toBe(true);
+      expect(standalone.map(({ hash }) => hash)).toEqual(['unstatused']);
+    });
   });
 });
 

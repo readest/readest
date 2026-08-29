@@ -306,7 +306,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       | typeof LibraryGroupByType.Series
       | typeof LibraryGroupByType.Author
       | typeof LibraryGroupByType.Tag
-      | typeof LibraryGroupByType.Subject;
+      | typeof LibraryGroupByType.Subject
+      | typeof LibraryGroupByType.Status;
     groupName: string;
   } | null>(null);
   // Direct (non-queued) download progress, keyed by book hash. Entries are
@@ -874,7 +875,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       (groupBy === LibraryGroupByType.Series ||
         groupBy === LibraryGroupByType.Author ||
         groupBy === LibraryGroupByType.Tag ||
-        groupBy === LibraryGroupByType.Subject)
+        groupBy === LibraryGroupByType.Subject ||
+        groupBy === LibraryGroupByType.Status)
     ) {
       // Find the group to get its name
       const allGroups = createBookGroups(

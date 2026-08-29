@@ -493,6 +493,15 @@ export const createBookGroups = (
   if (groupBy === LibraryGroupByType.Subject) {
     return createValueGroups(activeBooks, 'subject', getBookSubjects);
   }
+  if (groupBy === LibraryGroupByType.Status) {
+    return createValueGroups(
+      activeBooks,
+      'status',
+      (book) => (book.readingStatus ? [book.readingStatus] : []),
+      (status) =>
+        status === 'abandoned' ? 'On Hold' : `${status.charAt(0).toUpperCase()}${status.slice(1)}`,
+    );
+  }
 
   // 'group' mode is handled separately by generateBookshelfItems
   return activeBooks;
@@ -580,8 +589,9 @@ const createAuthorGroups = (books: Book[]): (Book | BooksGroup)[] => {
 
 const createValueGroups = (
   books: Book[],
-  namespace: 'tag' | 'subject',
+  namespace: 'tag' | 'subject' | 'status',
   getValues: (book: Book) => string[],
+  getDisplayName: (value: string) => string = (value) => value,
 ): (Book | BooksGroup)[] => {
   const valueMap = new Map<string, Book[]>();
   const ungroupedBooks: Book[] = [];
@@ -603,7 +613,7 @@ const createValueGroups = (
     ([name, groupBooks]): BooksGroup => ({
       id: md5Fingerprint(`${namespace}:${name}`),
       name,
-      displayName: name,
+      displayName: getDisplayName(name),
       books: groupBooks,
       updatedAt: Math.max(...groupBooks.map(({ updatedAt }) => updatedAt)),
     }),
